@@ -5,7 +5,6 @@
 #[cfg(feature = "trace")]
 #[macro_use]
 extern crate lazy_static;
-extern crate rusqlite;
 
 #[cfg(feature = "trace")]
 fn main() {

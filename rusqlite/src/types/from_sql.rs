@@ -19,11 +19,23 @@ pub enum FromSqlError {
     InvalidI128Size(usize),
 
     /// An error case available for implementors of the `FromSql` trait.
-    Other(Box<Error + Send + Sync>),
+    Other(Box<dyn Error + Send + Sync>),
+}
+
+impl PartialEq for FromSqlError {
+    fn eq(&self, other: &FromSqlError) -> bool {
+        match (self, other) {
+            (FromSqlError::InvalidType, FromSqlError::InvalidType) => true,
+            (FromSqlError::OutOfRange(n1), FromSqlError::OutOfRange(n2)) => n1 == n2,
+            #[cfg(feature = "i128_blob")]
+            (FromSqlError::InvalidI128Size(s1), FromSqlError::InvalidI128Size(s2)) => s1 == s2,
+            (_, _) => false,
+        }
+    }
 }
 
 impl fmt::Display for FromSqlError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
             FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
@@ -47,8 +59,9 @@ impl Error for FromSqlError {
         }
     }
 
-    #[cfg_attr(feature = "clippy", allow(match_same_arms))]
-    fn cause(&self) -> Option<&Error> {
+    #[allow(clippy::match_same_arms)]
+    #[allow(deprecated)]
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
             FromSqlError::Other(ref err) => err.cause(),
             FromSqlError::InvalidType | FromSqlError::OutOfRange(_) => None,
@@ -73,11 +86,11 @@ pub type FromSqlResult<T> = Result<T, FromSqlError>;
 /// fetching values as i64 and then doing the interpretation themselves or by
 /// defining a newtype and implementing `FromSql`/`ToSql` for it.
 pub trait FromSql: Sized {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self>;
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self>;
 }
 
 impl FromSql for isize {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         i64::column_result(value).and_then(|i| {
             if i < isize::min_value() as i64 || i > isize::max_value() as i64 {
                 Err(FromSqlError::OutOfRange(i))
@@ -91,7 +104,7 @@ impl FromSql for isize {
 macro_rules! from_sql_integral(
     ($t:ident) => (
         impl FromSql for $t {
-            fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+            fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
                 i64::column_result(value).and_then(|i| {
                     if i < i64::from($t::min_value()) || i > i64::from($t::max_value()) {
                         Err(FromSqlError::OutOfRange(i))
@@ -112,13 +125,13 @@ from_sql_integral!(u16);
 from_sql_integral!(u32);
 
 impl FromSql for i64 {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_i64()
     }
 }
 
 impl FromSql for f64 {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Integer(i) => Ok(i as f64),
             ValueRef::Real(f) => Ok(f),
@@ -128,7 +141,7 @@ impl FromSql for f64 {
 }
 
 impl FromSql for bool {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         i64::column_result(value).map(|i| match i {
             0 => false,
             _ => true,
@@ -137,20 +150,20 @@ impl FromSql for bool {
 }
 
 impl FromSql for String {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().map(|s| s.to_string())
     }
 }
 
 impl FromSql for Vec<u8> {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_blob().map(|b| b.to_vec())
     }
 }
 
 #[cfg(feature = "i128_blob")]
 impl FromSql for i128 {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         use byteorder::{BigEndian, ByteOrder};
 
         value.as_blob().and_then(|bytes| {
@@ -164,7 +177,7 @@ impl FromSql for i128 {
 }
 
 impl<T: FromSql> FromSql for Option<T> {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Null => Ok(None),
             _ => FromSql::column_result(value).map(Some),
@@ -173,7 +186,7 @@ impl<T: FromSql> FromSql for Option<T> {
 }
 
 impl FromSql for Value {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         Ok(value.into())
     }
 }
@@ -181,7 +194,7 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use super::FromSql;
-    use {Connection, Error};
+    use crate::{Connection, Error};
 
     fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()
@@ -219,11 +232,11 @@ mod test {
         check_ranges::<i16>(&db, &[-32769, 32768], &[-32768, -1, 0, 1, 32767]);
         check_ranges::<i32>(
             &db,
-            &[-2147483649, 2147483648],
-            &[-2147483648, -1, 0, 1, 2147483647],
+            &[-2_147_483_649, 2_147_483_648],
+            &[-2_147_483_648, -1, 0, 1, 2_147_483_647],
         );
         check_ranges::<u8>(&db, &[-2, -1, 256], &[0, 1, 255]);
         check_ranges::<u16>(&db, &[-2, -1, 65536], &[0, 1, 65535]);
-        check_ranges::<u32>(&db, &[-2, -1, 4294967296], &[0, 1, 4294967295]);
+        check_ranges::<u32>(&db, &[-2, -1, 4_294_967_296], &[0, 1, 4_294_967_295]);
     }
 }

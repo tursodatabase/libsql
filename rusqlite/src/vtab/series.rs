@@ -4,13 +4,13 @@
 use std::default::Default;
 use std::os::raw::c_int;
 
-use ffi;
-use types::Type;
-use vtab::{
+use crate::ffi;
+use crate::types::Type;
+use crate::vtab::{
     eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
     VTabCursor, Values,
 };
-use {Connection, Result};
+use crate::{Connection, Result};
 
 /// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
@@ -184,23 +184,23 @@ impl SeriesTabCursor {
     }
 }
 impl VTabCursor for SeriesTabCursor {
-    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
+    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;
         if idx_num.contains(QueryPlanFlags::START) {
-            self.min_value = try!(args.get(i));
+            self.min_value = args.get(i)?;
             i += 1;
         } else {
             self.min_value = 0;
         }
         if idx_num.contains(QueryPlanFlags::STOP) {
-            self.max_value = try!(args.get(i));
+            self.max_value = args.get(i)?;
             i += 1;
         } else {
             self.max_value = 0xffff_ffff;
         }
         if idx_num.contains(QueryPlanFlags::STEP) {
-            self.step = try!(args.get(i));
+            self.step = args.get(i)?;
             if self.step < 1 {
                 self.step = 1;
             }
@@ -263,14 +263,14 @@ impl VTabCursor for SeriesTabCursor {
 
 #[cfg(test)]
 mod test {
-    use ffi;
-    use vtab::series;
-    use {Connection, NO_PARAMS};
+    use crate::ffi;
+    use crate::vtab::series;
+    use crate::{Connection, NO_PARAMS};
 
     #[test]
     fn test_series_module() {
         let version = unsafe { ffi::sqlite3_libversion_number() };
-        if version < 3008012 {
+        if version < 3_008_012 {
             return;
         }
 

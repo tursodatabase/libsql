@@ -17,12 +17,12 @@ use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
 
-use context::set_result;
-use error::error_from_sqlite_code;
-use ffi;
-pub use ffi::{sqlite3_vtab, sqlite3_vtab_cursor};
-use types::{FromSql, FromSqlError, ToSql, ValueRef};
-use {str_to_cstring, Connection, Error, InnerConnection, Result};
+use crate::context::set_result;
+use crate::error::error_from_sqlite_code;
+use crate::ffi;
+pub use crate::ffi::{sqlite3_vtab, sqlite3_vtab_cursor};
+use crate::types::{FromSql, FromSqlError, ToSql, ValueRef};
+use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -99,6 +99,8 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
+        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
+        xShadowName: None,
     };
     Module {
         base: ffi_module,
@@ -137,6 +139,8 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
+        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
+        xShadowName: None,
     };
     Module {
         base: ffi_module,
@@ -250,7 +254,7 @@ pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
     /// Record WHERE clause constraints.
-    pub fn constraints(&self) -> IndexConstraintIter {
+    pub fn constraints(&self) -> IndexConstraintIter<'_> {
         let constraints =
             unsafe { slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize) };
         IndexConstraintIter {
@@ -259,7 +263,7 @@ impl IndexInfo {
     }
 
     /// Information about the ORDER BY clause.
-    pub fn order_bys(&self) -> OrderByIter {
+    pub fn order_bys(&self) -> OrderByIter<'_> {
         let order_bys =
             unsafe { slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize) };
         OrderByIter {
@@ -272,7 +276,7 @@ impl IndexInfo {
         unsafe { (*self.0).nOrderBy as usize }
     }
 
-    pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage {
+    pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage<'_> {
         let constraint_usages = unsafe {
             slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
         };
@@ -412,7 +416,7 @@ impl<'a> OrderBy<'a> {
 pub trait VTabCursor: Sized {
     /// Begin a search of a virtual table.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xfilter_method))
-    fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
+    fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values<'_>) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xnext_method))
     fn next(&mut self) -> Result<()>;
@@ -467,6 +471,8 @@ impl<'a> Values<'a> {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
         })
     }
 
@@ -474,7 +480,7 @@ impl<'a> Values<'a> {
     // So it seems not possible to enhance `ValueRef::from_value`.
     #[cfg(feature = "array")]
     pub(crate) fn get_array(&self, idx: usize) -> Result<Option<array::Array>> {
-        use types::Value;
+        use crate::types::Value;
         let arg = self.args[idx];
         let ptr = unsafe { ffi::sqlite3_value_pointer(arg, array::ARRAY_TYPE) };
         if ptr.is_null() {
@@ -489,7 +495,7 @@ impl<'a> Values<'a> {
         }
     }
 
-    pub fn iter(&self) -> ValueIter {
+    pub fn iter(&self) -> ValueIter<'_> {
         ValueIter {
             iter: self.args.iter(),
         }
@@ -544,7 +550,7 @@ impl InnerConnection {
         module: &Module<T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
-        let c_name = try!(str_to_cstring(module_name));
+        let c_name = str_to_cstring(module_name)?;
         let r = match aux {
             Some(aux) => {
                 let boxed_aux: *mut T::Aux = Box::into_raw(Box::new(aux));
@@ -573,7 +579,7 @@ impl InnerConnection {
 }
 
 /// Escape double-quote (`"`) character occurences by doubling them (`""`).
-pub fn escape_double_quote(identifier: &str) -> Cow<str> {
+pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {
         // escape quote by doubling them
         Owned(identifier.replace("\"", "\"\""))

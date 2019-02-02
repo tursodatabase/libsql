@@ -1,18 +1,14 @@
+use crate::types::Type;
+use crate::{errmsg_to_string, ffi};
 use std::error;
 use std::fmt;
 use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::str;
-use types::Type;
-use {errmsg_to_string, ffi};
-
-/// Old name for `Error`. `SqliteError` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use Error instead")]
-pub type SqliteError = Error;
 
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
-#[allow(enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),
@@ -23,7 +19,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but it cannot
     /// be converted to the requested Rust type.
-    FromSqlConversionFailure(usize, Type, Box<error::Error + Send + Sync>),
+    FromSqlConversionFailure(usize, Type, Box<dyn error::Error + Send + Sync>),
 
     /// Error when SQLite gives us an integral value outside the range of the
     /// requested type (e.g., trying to get the value 1000 into a `u8`).
@@ -82,10 +78,10 @@ pub enum Error {
     /// `create_scalar_function`).
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
-    UserFunctionError(Box<error::Error + Send + Sync>),
+    UserFunctionError(Box<dyn error::Error + Send + Sync>),
 
     /// Error available for the implementors of the `ToSql` trait.
-    ToSqlConversionFailure(Box<error::Error + Send + Sync>),
+    ToSqlConversionFailure(Box<dyn error::Error + Send + Sync>),
 
     /// Error when the SQL is not a `SELECT`, is not read-only.
     InvalidQuery,
@@ -96,8 +92,57 @@ pub enum Error {
     #[allow(dead_code)]
     ModuleError(String),
 
+    #[cfg(feature = "functions")]
+    UnwindingPanic,
+
+    /// An error returned when `Context::get_aux` attempts to retrieve data
+    /// of a different type than what had been stored using `Context::set_aux`.
+    #[cfg(feature = "functions")]
+    GetAuxWrongType,
+
     /// Error when the SQL contains multiple statements.
-    MultipleStatement,
+    MultipleStatement,}
+
+impl PartialEq for Error {
+    fn eq(&self, other: &Error) -> bool {
+        match (self, other) {
+            (Error::SqliteFailure(e1, s1), Error::SqliteFailure(e2, s2)) => e1 == e2 && s1 == s2,
+            (Error::SqliteSingleThreadedMode, Error::SqliteSingleThreadedMode) => true,
+            (Error::IntegralValueOutOfRange(i1, n1), Error::IntegralValueOutOfRange(i2, n2)) => {
+                i1 == i2 && n1 == n2
+            }
+            (Error::Utf8Error(e1), Error::Utf8Error(e2)) => e1 == e2,
+            (Error::NulError(e1), Error::NulError(e2)) => e1 == e2,
+            (Error::InvalidParameterName(n1), Error::InvalidParameterName(n2)) => n1 == n2,
+            (Error::InvalidPath(p1), Error::InvalidPath(p2)) => p1 == p2,
+            (Error::ExecuteReturnedResults, Error::ExecuteReturnedResults) => true,
+            (Error::QueryReturnedNoRows, Error::QueryReturnedNoRows) => true,
+            (Error::InvalidColumnIndex(i1), Error::InvalidColumnIndex(i2)) => i1 == i2,
+            (Error::InvalidColumnName(n1), Error::InvalidColumnName(n2)) => n1 == n2,
+            (Error::InvalidColumnType(i1, t1), Error::InvalidColumnType(i2, t2)) => {
+                i1 == i2 && t1 == t2
+            }
+            (Error::StatementChangedRows(n1), Error::StatementChangedRows(n2)) => n1 == n2,
+            #[cfg(feature = "functions")]
+            (
+                Error::InvalidFunctionParameterType(i1, t1),
+                Error::InvalidFunctionParameterType(i2, t2),
+            ) => i1 == i2 && t1 == t2,
+            #[cfg(feature = "vtab")]
+            (
+                Error::InvalidFilterParameterType(i1, t1),
+                Error::InvalidFilterParameterType(i2, t2),
+            ) => i1 == i2 && t1 == t2,
+            (Error::InvalidQuery, Error::InvalidQuery) => true,
+            #[cfg(feature = "vtab")]
+            (Error::ModuleError(s1), Error::ModuleError(s2)) => s1 == s2,
+            #[cfg(feature = "functions")]
+            (Error::UnwindingPanic, Error::UnwindingPanic) => true,
+            #[cfg(feature = "functions")]
+            (Error::GetAuxWrongType, Error::GetAuxWrongType) => true,
+            (_, _) => false,
+        }
+    }
 }
 
 impl From<str::Utf8Error> for Error {
@@ -113,7 +158,7 @@ impl From<::std::ffi::NulError> for Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::SqliteFailure(ref err, None) => err.fmt(f),
             Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
@@ -158,6 +203,10 @@ impl fmt::Display for Error {
             Error::InvalidQuery => write!(f, "Query is not read-only"),
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => write!(f, "{}", desc),
+            #[cfg(feature = "functions")]
+            Error::UnwindingPanic => write!(f, "unwinding panic"),
+            #[cfg(feature = "functions")]
+            Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
             Error::MultipleStatement => write!(f, "Multiple statements provided"),
         }
     }
@@ -196,11 +245,15 @@ impl error::Error for Error {
             Error::InvalidQuery => "query is not read-only",
             #[cfg(feature = "vtab")]
             Error::ModuleError(ref desc) => desc,
+            #[cfg(feature = "functions")]
+            Error::UnwindingPanic => "unwinding panic",
+            #[cfg(feature = "functions")]
+            Error::GetAuxWrongType => "get_aux called with wrong type",
             Error::MultipleStatement => "multiple statements provided",
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
             Error::Utf8Error(ref err) => Some(err),
@@ -232,6 +285,12 @@ impl error::Error for Error {
 
             #[cfg(feature = "vtab")]
             Error::ModuleError(_) => None,
+
+            #[cfg(feature = "functions")]
+            Error::UnwindingPanic => None,
+
+            #[cfg(feature = "functions")]
+            Error::GetAuxWrongType => None,
         }
     }
 }
@@ -249,4 +308,13 @@ pub fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
         Some(unsafe { errmsg_to_string(ffi::sqlite3_errmsg(db)) })
     };
     error_from_sqlite_code(code, message)
+}
+
+macro_rules! check {
+    ($funcall:expr) => {{
+        let rc = $funcall;
+        if rc != crate::ffi::SQLITE_OK {
+            Err(crate::error::error_from_sqlite_code(rc, None))?;
+        }
+    }};
 }

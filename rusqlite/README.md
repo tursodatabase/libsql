@@ -10,9 +10,6 @@ Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expo
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 
 ```rust
-extern crate rusqlite;
-extern crate time;
-
 use rusqlite::types::ToSql;
 use rusqlite::{Connection, NO_PARAMS};
 use time::Timespec;
@@ -77,26 +74,26 @@ newer SQLite version; see details below.
 Rusqlite provides several features that are behind [Cargo
 features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section). They are:
 
-* [`load_extension`](https://docs.rs/rusqlite/0.15.0/rusqlite/struct.LoadExtensionGuard.html)
+* [`load_extension`](https://docs.rs/rusqlite/0.16.0/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
-* [`backup`](https://docs.rs/rusqlite/0.15.0/rusqlite/backup/index.html)
+* [`backup`](https://docs.rs/rusqlite/0.16.0/rusqlite/backup/index.html)
   allows use of SQLite's online backup API. Note: This feature requires SQLite 3.6.11 or later.
-* [`functions`](https://docs.rs/rusqlite/0.15.0/rusqlite/functions/index.html)
+* [`functions`](https://docs.rs/rusqlite/0.16.0/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
   Note: This feature requires SQLite 3.7.3 or later.
-* [`trace`](https://docs.rs/rusqlite/0.15.0/rusqlite/trace/index.html)
+* [`trace`](https://docs.rs/rusqlite/0.16.0/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs. Note: This feature
   requires SQLite 3.6.23 or later.
-* [`blob`](https://docs.rs/rusqlite/0.15.0/rusqlite/blob/index.html)
+* [`blob`](https://docs.rs/rusqlite/0.16.0/rusqlite/blob/index.html)
   gives `std::io::{Read, Write, Seek}` access to SQL BLOBs. Note: This feature
   requires SQLite 3.7.4 or later.
-* [`limits`](https://docs.rs/rusqlite/0.15.0/rusqlite/struct.Connection.html#method.limit)
+* [`limits`](https://docs.rs/rusqlite/0.16.0/rusqlite/struct.Connection.html#method.limit)
   allows you to set and retrieve SQLite's per connection limits.
-* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/0.15.0/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/0.15.0/rusqlite/types/trait.ToSql.html) for various
+* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.ToSql.html) for various
   types from the [`chrono` crate](https://crates.io/crates/chrono).
-* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/0.15.0/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/0.15.0/rusqlite/types/trait.ToSql.html) for the
+* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
@@ -106,6 +103,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust.
 * [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
 * `i128_blob` allows storing values of type `i128` type in SQLite databases. Internally, the data is stored as a 16 byte big-endian blob, with the most significant bit flipped, which allows ordering and comparison between different blobs storing i128s to work as expected.
+* [`session`](https://sqlite.org/sessionintro.html), Session module extension.
 
 ## Notes on building rusqlite and libsqlite3-sys
 
@@ -118,11 +116,11 @@ You can adjust this behavior in a number of ways:
 * If you use the `bundled` feature, `libsqlite3-sys` will use the
   [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
   link against that. This source is embedded in the `libsqlite3-sys` crate and
-  is currently SQLite 3.25.2 (as of `rusqlite` 0.15.0 / `libsqlite3-sys`
-  0.10.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
+  is currently SQLite 3.26.0 (as of `rusqlite` 0.16.0 / `libsqlite3-sys`
+  0.11.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
   ```
   [dependencies.rusqlite]
-  version = "0.15.0"
+  version = "0.16.0"
   features = ["bundled"]
   ```
 * You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite

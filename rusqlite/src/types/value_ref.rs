@@ -1,5 +1,5 @@
 use super::{Type, Value};
-use types::{FromSqlError, FromSqlResult};
+use crate::types::{FromSqlError, FromSqlResult};
 
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
 /// memory backing this value is owned by SQLite.
@@ -70,7 +70,7 @@ impl<'a> ValueRef<'a> {
 }
 
 impl<'a> From<ValueRef<'a>> for Value {
-    fn from(borrowed: ValueRef) -> Value {
+    fn from(borrowed: ValueRef<'_>) -> Value {
         match borrowed {
             ValueRef::Null => Value::Null,
             ValueRef::Integer(i) => Value::Integer(i),
@@ -82,13 +82,13 @@ impl<'a> From<ValueRef<'a>> for Value {
 }
 
 impl<'a> From<&'a str> for ValueRef<'a> {
-    fn from(s: &str) -> ValueRef {
+    fn from(s: &str) -> ValueRef<'_> {
         ValueRef::Text(s)
     }
 }
 
 impl<'a> From<&'a [u8]> for ValueRef<'a> {
-    fn from(s: &[u8]) -> ValueRef {
+    fn from(s: &[u8]) -> ValueRef<'_> {
         ValueRef::Blob(s)
     }
 }
@@ -101,6 +101,59 @@ impl<'a> From<&'a Value> for ValueRef<'a> {
             Value::Real(r) => ValueRef::Real(r),
             Value::Text(ref s) => ValueRef::Text(s),
             Value::Blob(ref b) => ValueRef::Blob(b),
+        }
+    }
+}
+
+#[cfg(any(feature = "functions", feature = "session", feature = "vtab"))]
+impl<'a> ValueRef<'a> {
+    pub(crate) unsafe fn from_value(value: *mut crate::ffi::sqlite3_value) -> ValueRef<'a> {
+        use crate::ffi;
+        use std::ffi::CStr;
+        use std::os::raw::c_char;
+        use std::slice::from_raw_parts;
+
+        match ffi::sqlite3_value_type(value) {
+            ffi::SQLITE_NULL => ValueRef::Null,
+            ffi::SQLITE_INTEGER => ValueRef::Integer(ffi::sqlite3_value_int64(value)),
+            ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_value_double(value)),
+            ffi::SQLITE_TEXT => {
+                let text = ffi::sqlite3_value_text(value);
+                assert!(
+                    !text.is_null(),
+                    "unexpected SQLITE_TEXT value type with NULL data"
+                );
+                let s = CStr::from_ptr(text as *const c_char);
+
+                // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
+                let s = s
+                    .to_str()
+                    .expect("sqlite3_value_text returned invalid UTF-8");
+                ValueRef::Text(s)
+            }
+            ffi::SQLITE_BLOB => {
+                let (blob, len) = (
+                    ffi::sqlite3_value_blob(value),
+                    ffi::sqlite3_value_bytes(value),
+                );
+
+                assert!(
+                    len >= 0,
+                    "unexpected negative return from sqlite3_value_bytes"
+                );
+                if len > 0 {
+                    assert!(
+                        !blob.is_null(),
+                        "unexpected SQLITE_BLOB value type with NULL data"
+                    );
+                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                } else {
+                    // The return value from sqlite3_value_blob() for a zero-length BLOB
+                    // is a NULL pointer.
+                    ValueRef::Blob(&[])
+                }
+            }
+            _ => unreachable!("sqlite3_value_type returned invalid value"),
         }
     }
 }

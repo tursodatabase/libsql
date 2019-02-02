@@ -1,16 +1,16 @@
 //! Convert most of the [Time Strings](http://sqlite.org/lang_datefunc.html) to chrono types.
-extern crate chrono;
+use chrono;
 
 use std::borrow::Cow;
 
 use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
-use Result;
+use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use crate::Result;
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
 impl ToSql for NaiveDate {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%Y-%m-%d").to_string();
         Ok(ToSqlOutput::from(date_str))
     }
@@ -18,7 +18,7 @@ impl ToSql for NaiveDate {
 
 /// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value
             .as_str()
             .and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
@@ -30,7 +30,7 @@ impl FromSql for NaiveDate {
 
 /// ISO 8601 time without timezone => "HH:MM:SS.SSS"
 impl ToSql for NaiveTime {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%H:%M:%S%.f").to_string();
         Ok(ToSqlOutput::from(date_str))
     }
@@ -38,7 +38,7 @@ impl ToSql for NaiveTime {
 
 /// "HH:MM"/"HH:MM:SS"/"HH:MM:SS.SSS" => ISO 8601 time without timezone.
 impl FromSql for NaiveTime {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().and_then(|s| {
             let fmt = match s.len() {
                 5 => "%H:%M",
@@ -56,7 +56,7 @@ impl FromSql for NaiveTime {
 /// ISO 8601 combined date and time without timezone =>
 /// "YYYY-MM-DD HH:MM:SS.SSS"
 impl ToSql for NaiveDateTime {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%Y-%m-%dT%H:%M:%S%.f").to_string();
         Ok(ToSqlOutput::from(date_str))
     }
@@ -66,7 +66,7 @@ impl ToSql for NaiveDateTime {
 /// and time without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS"
 /// also supported)
 impl FromSql for NaiveDateTime {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().and_then(|s| {
             let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
                 "%Y-%m-%dT%H:%M:%S%.f"
@@ -85,17 +85,17 @@ impl FromSql for NaiveDateTime {
 /// Date and time with time zone => UTC RFC3339 timestamp
 /// ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
 impl<Tz: TimeZone> ToSql for DateTime<Tz> {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.with_timezone(&Utc).to_rfc3339()))
     }
 }
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Utc>`.
 impl FromSql for DateTime<Utc> {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         {
             // Try to parse value as rfc3339 first.
-            let s = try!(value.as_str());
+            let s = value.as_str()?;
 
             // If timestamp looks space-separated, make a copy and replace it with 'T'.
             let s = if s.len() >= 11 && s.as_bytes()[10] == b' ' {
@@ -121,8 +121,8 @@ impl FromSql for DateTime<Utc> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Local>`.
 impl FromSql for DateTime<Local> {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        let utc_dt = try!(DateTime::<Utc>::column_result(value));
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let utc_dt = DateTime::<Utc>::column_result(value)?;
         Ok(utc_dt.with_timezone(&Local))
     }
 }
@@ -132,7 +132,7 @@ mod test {
     use super::chrono::{
         DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
     };
-    use {Connection, NO_PARAMS};
+    use crate::{Connection, Result, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -262,5 +262,22 @@ mod test {
             .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
             .unwrap();
         assert_eq!(local, v);
+    }
+
+    #[test]
+    fn test_sqlite_functions() {
+        let db = checked_memory_handle();
+        let result: Result<NaiveTime> =
+            db.query_row("SELECT CURRENT_TIME", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
+        let result: Result<NaiveDate> =
+            db.query_row("SELECT CURRENT_DATE", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
+        let result: Result<NaiveDateTime> =
+            db.query_row("SELECT CURRENT_TIMESTAMP", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
+        let result: Result<DateTime<Utc>> =
+            db.query_row("SELECT CURRENT_TIMESTAMP", NO_PARAMS, |r| r.get(0));
+        assert!(result.is_ok());
     }
 }

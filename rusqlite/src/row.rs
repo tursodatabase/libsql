@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::{convert, result};
 
 use super::{Error, Result, Statement};
-use types::{FromSql, FromSqlError, ValueRef};
+use crate::types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
@@ -27,7 +27,7 @@ impl<'stmt> Rows<'stmt> {
     /// This is a "streaming iterator". For a more natural interface,
     /// consider using `query_map` or `query_and_then` instead, which
     /// return types that implement `Iterator`.
-    #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))] // cannot implement Iterator
+    #[allow(clippy::should_implement_trait)] // cannot implement Iterator
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt.and_then(|stmt| match stmt.step() {
             Ok(true) => Some(Ok(Row {
@@ -73,7 +73,7 @@ pub struct MappedRows<'stmt, F> {
 
 impl<'stmt, T, F> MappedRows<'stmt, F>
 where
-    F: FnMut(&Row) -> T,
+    F: FnMut(&Row<'_, '_>) -> T,
 {
     pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
         MappedRows { rows, map: f }
@@ -82,7 +82,7 @@ where
 
 impl<'conn, T, F> Iterator for MappedRows<'conn, F>
 where
-    F: FnMut(&Row) -> T,
+    F: FnMut(&Row<'_, '_>) -> T,
 {
     type Item = Result<T>;
 
@@ -103,7 +103,7 @@ pub struct AndThenRows<'stmt, F> {
 
 impl<'stmt, T, E, F> AndThenRows<'stmt, F>
 where
-    F: FnMut(&Row) -> result::Result<T, E>,
+    F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
 {
     pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
         AndThenRows { rows, map: f }
@@ -113,7 +113,7 @@ where
 impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
 where
     E: convert::From<Error>,
-    F: FnMut(&Row) -> result::Result<T, E>,
+    F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
 {
     type Item = result::Result<T, E>;
 
@@ -165,7 +165,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// enabled), and the underlying SQLite column is a blob whose size is not
     /// 16 bytes, `Error::InvalidColumnType` will also be returned.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
-        let idx = try!(idx.idx(self.stmt));
+        let idx = idx.idx(self.stmt)?;
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
@@ -231,12 +231,12 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
 pub trait RowIndex {
     /// Returns the index of the appropriate column, or `None` if no such
     /// column exists.
-    fn idx(&self, stmt: &Statement) -> Result<usize>;
+    fn idx(&self, stmt: &Statement<'_>) -> Result<usize>;
 }
 
 impl RowIndex for usize {
     #[inline]
-    fn idx(&self, stmt: &Statement) -> Result<usize> {
+    fn idx(&self, stmt: &Statement<'_>) -> Result<usize> {
         if *self >= stmt.column_count() {
             Err(Error::InvalidColumnIndex(*self))
         } else {
@@ -247,7 +247,7 @@ impl RowIndex for usize {
 
 impl<'a> RowIndex for &'a str {
     #[inline]
-    fn idx(&self, stmt: &Statement) -> Result<usize> {
+    fn idx(&self, stmt: &Statement<'_>) -> Result<usize> {
         stmt.column_index(*self)
     }
 }

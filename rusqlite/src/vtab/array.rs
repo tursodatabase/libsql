@@ -5,13 +5,13 @@ use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 
-use ffi;
-use types::{ToSql, ToSqlOutput, Value};
-use vtab::{
+use crate::ffi;
+use crate::types::{ToSql, ToSqlOutput, Value};
+use crate::vtab::{
     eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
     VTabCursor, Values,
 };
-use {Connection, Result};
+use crate::{Connection, Result};
 
 // http://sqlite.org/bindptr.html
 
@@ -24,7 +24,7 @@ pub(crate) unsafe extern "C" fn free_array(p: *mut c_void) {
 pub type Array = Rc<Vec<Value>>;
 
 impl ToSql for Array {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::Array(self.clone()))
     }
 }
@@ -129,9 +129,9 @@ impl ArrayTabCursor {
     }
 }
 impl VTabCursor for ArrayTabCursor {
-    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values) -> Result<()> {
+    fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         if idx_num > 0 {
-            self.ptr = try!(args.get_array(0));
+            self.ptr = args.get_array(0)?;
         } else {
             self.ptr = None;
         }
@@ -169,10 +169,10 @@ impl VTabCursor for ArrayTabCursor {
 
 #[cfg(test)]
 mod test {
+    use crate::types::Value;
+    use crate::vtab::array;
+    use crate::Connection;
     use std::rc::Rc;
-    use types::Value;
-    use vtab::array;
-    use Connection;
 
     #[test]
     fn test_array_module() {
@@ -180,7 +180,7 @@ mod test {
         array::load_module(&db).unwrap();
 
         let v = vec![1i64, 2, 3, 4];
-        let values = v.into_iter().map(|i| Value::from(i)).collect();
+        let values = v.into_iter().map(Value::from).collect();
         let ptr = Rc::new(values);
         {
             let mut stmt = db.prepare("SELECT value from rarray(?);").unwrap();

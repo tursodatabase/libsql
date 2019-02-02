@@ -1,9 +1,6 @@
 //! Ensure Virtual tables can be declared outside `rusqlite` crate.
 
 #[cfg(feature = "vtab")]
-extern crate rusqlite;
-
-#[cfg(feature = "vtab")]
 #[test]
 fn test_dummy_module() {
     use rusqlite::types::ToSql;
@@ -61,7 +58,7 @@ fn test_dummy_module() {
             &mut self,
             _idx_num: c_int,
             _idx_str: Option<&str>,
-            _args: &Values,
+            _args: &Values<'_>,
         ) -> Result<()> {
             self.row_id = 1;
             Ok(())
@@ -91,14 +88,14 @@ fn test_dummy_module() {
         .unwrap();
 
     let version = version_number();
-    if version < 3008012 {
+    if version < 3_008_012 {
         return;
     }
 
     let mut s = db.prepare("SELECT * FROM dummy()").unwrap();
 
     let dummy = s
-        .query_row(&[] as &[&ToSql], |row| row.get::<_, i32>(0))
+        .query_row(&[] as &[&dyn ToSql], |row| row.get::<_, i32>(0))
         .unwrap();
     assert_eq!(1, dummy);
 }

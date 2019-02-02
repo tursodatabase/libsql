@@ -14,9 +14,6 @@
 //! ## Example
 //!
 //! ```rust
-//! extern crate libsqlite3_sys;
-//! extern crate rusqlite;
-//!
 //! use rusqlite::blob::ZeroBlob;
 //! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
 //! use std::io::{Read, Seek, SeekFrom, Write};
@@ -64,7 +61,7 @@ use std::ptr;
 
 use super::ffi;
 use super::types::{ToSql, ToSqlOutput};
-use {Connection, DatabaseName, Result};
+use crate::{Connection, DatabaseName, Result};
 
 /// Handle to an open BLOB.
 pub struct Blob<'conn> {
@@ -84,7 +81,7 @@ impl Connection {
     /// fails.
     pub fn blob_open<'a>(
         &'a self,
-        db: DatabaseName,
+        db: DatabaseName<'_>,
         table: &str,
         column: &str,
         row_id: i64,
@@ -92,9 +89,9 @@ impl Connection {
     ) -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
-        let db = try!(db.to_cstring());
-        let table = try!(super::str_to_cstring(table));
-        let column = try!(super::str_to_cstring(column));
+        let db = db.to_cstring()?;
+        let table = super::str_to_cstring(table)?;
+        let column = super::str_to_cstring(column)?;
         let rc = unsafe {
             ffi::sqlite3_blob_open(
                 c.db(),
@@ -254,7 +251,7 @@ impl<'conn> Drop for Blob<'conn> {
 pub struct ZeroBlob(pub i32);
 
 impl ToSql for ZeroBlob {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let ZeroBlob(length) = *self;
         Ok(ToSqlOutput::ZeroBlob(length))
     }
@@ -262,16 +259,16 @@ impl ToSql for ZeroBlob {
 
 #[cfg(test)]
 mod test {
+    use crate::{Connection, DatabaseName, Result};
     use std::io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
-    use {Connection, DatabaseName, Result};
 
     fn db_with_test_blob() -> Result<(Connection, i64)> {
-        let db = try!(Connection::open_in_memory());
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE test (content BLOB);
                    INSERT INTO test VALUES (ZEROBLOB(10));
                    END;";
-        try!(db.execute_batch(sql));
+        db.execute_batch(sql)?;
         let rowid = db.last_insert_rowid();
         Ok((db, rowid))
     }

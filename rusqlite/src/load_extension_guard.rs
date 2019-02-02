@@ -1,8 +1,4 @@
-use {Connection, Result};
-
-/// Old name for `LoadExtensionGuard`. `SqliteLoadExtensionGuard` is deprecated.
-#[deprecated(since = "0.6.0", note = "Use LoadExtensionGuard instead")]
-pub type SqliteLoadExtensionGuard<'conn> = LoadExtensionGuard<'conn>;
+use crate::{Connection, Result};
 
 /// RAII guard temporarily enabling SQLite extensions to be loaded.
 ///
@@ -12,7 +8,7 @@ pub type SqliteLoadExtensionGuard<'conn> = LoadExtensionGuard<'conn>;
 /// # use rusqlite::{Connection, Result, LoadExtensionGuard};
 /// # use std::path::{Path};
 /// fn load_my_extension(conn: &Connection) -> Result<()> {
-///     let _guard = try!(LoadExtensionGuard::new(conn));
+///     let _guard = LoadExtensionGuard::new(conn)?;
 ///
 ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
 /// }
@@ -25,7 +21,7 @@ impl<'conn> LoadExtensionGuard<'conn> {
     /// Attempt to enable loading extensions. Loading extensions will be
     /// disabled when this guard goes out of scope. Cannot be meaningfully
     /// nested.
-    pub fn new(conn: &Connection) -> Result<LoadExtensionGuard> {
+    pub fn new(conn: &Connection) -> Result<LoadExtensionGuard<'_>> {
         conn.load_extension_enable()
             .map(|_| LoadExtensionGuard { conn })
     }

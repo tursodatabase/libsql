@@ -11,9 +11,9 @@ use super::str_to_cstring;
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
-use types::{ToSql, ToSqlOutput};
+use crate::types::{ToSql, ToSqlOutput};
 #[cfg(feature = "array")]
-use vtab::array::{free_array, ARRAY_TYPE};
+use crate::vtab::array::{free_array, ARRAY_TYPE};
 
 /// A prepared statement.
 pub struct Statement<'conn> {
@@ -70,10 +70,10 @@ impl<'conn> Statement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn update_rows(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = try!(conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?"));
+    ///     let mut stmt = conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?")?;
     ///
-    ///     try!(stmt.execute(&[1i32]));
-    ///     try!(stmt.execute(&[2i32]));
+    ///     stmt.execute(&[1i32])?;
+    ///     stmt.execute(&[2i32])?;
     ///
     ///     Ok(())
     /// }
@@ -89,7 +89,7 @@ impl<'conn> Statement<'conn> {
         P: IntoIterator,
         P::Item: ToSql,
     {
-        try!(self.bind_parameters(params));
+        self.bind_parameters(params)?;
         self.execute_with_bound_parameters()
     }
 
@@ -107,8 +107,19 @@ impl<'conn> Statement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn insert(conn: &Connection) -> Result<usize> {
-    ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
+    ///     let mut stmt = conn.prepare("INSERT INTO test (name) VALUES (:name)")?;
     ///     stmt.execute_named(&[(":name", &"one")])
+    /// }
+    /// ```
+    ///
+    /// Note, the `named_params` macro is provided for syntactic convenience,
+    /// and so the above example could also be written as:
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result, named_params};
+    /// fn insert(conn: &Connection) -> Result<usize> {
+    ///     let mut stmt = conn.prepare("INSERT INTO test (name) VALUES (:name)")?;
+    ///     stmt.execute_named(named_params!{":name": "one"})
     /// }
     /// ```
     ///
@@ -117,8 +128,8 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
     /// underling SQLite call fails.
-    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<usize> {
-        try!(self.bind_parameters_named(params));
+    pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
+        self.bind_parameters_named(params)?;
         self.execute_with_bound_parameters()
     }
 
@@ -140,7 +151,7 @@ impl<'conn> Statement<'conn> {
         P: IntoIterator,
         P::Item: ToSql,
     {
-        let changes = try!(self.execute(params));
+        let changes = self.execute(params)?;
         match changes {
             1 => Ok(self.conn.last_insert_rowid()),
             _ => Err(Error::StatementChangedRows(changes)),
@@ -159,12 +170,12 @@ impl<'conn> Statement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
-    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let mut rows = try!(stmt.query(NO_PARAMS));
+    ///     let mut stmt = conn.prepare("SELECT name FROM people")?;
+    ///     let mut rows = stmt.query(NO_PARAMS)?;
     ///
     ///     let mut names = Vec::new();
     ///     while let Some(result_row) = rows.next() {
-    ///         let row = try!(result_row);
+    ///         let row = result_row?;
     ///         names.push(row.get(0));
     ///     }
     ///
@@ -175,13 +186,13 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query<'a, P>(&'a mut self, params: P) -> Result<Rows<'a>>
+    pub fn query<P>(&mut self, params: P) -> Result<Rows<'_>>
     where
         P: IntoIterator,
         P::Item: ToSql,
     {
-        try!(self.check_readonly());
-        try!(self.bind_parameters(params));
+        self.check_readonly()?;
+        self.bind_parameters(params)?;
         Ok(Rows::new(self))
     }
 
@@ -196,8 +207,23 @@ impl<'conn> Statement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn query(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
-    ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
+    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
+    ///     let mut rows = stmt.query_named(&[(":name", &"one")])?;
+    ///     while let Some(row) = rows.next() {
+    ///         // ...
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// Note, the `named_params!` macro is provided for syntactic convenience,
+    /// and so the above example could also be written as:
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result, named_params};
+    /// fn query(conn: &Connection) -> Result<()> {
+    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
+    ///     let mut rows = stmt.query_named(named_params!{ ":name": "one" })?;
     ///     while let Some(row) = rows.next() {
     ///         // ...
     ///     }
@@ -208,9 +234,9 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> Result<Rows<'a>> {
-        try!(self.check_readonly());
-        try!(self.bind_parameters_named(params));
+    pub fn query_named<'a>(&'a mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'a>> {
+        self.check_readonly()?;
+        self.bind_parameters_named(params)?;
         Ok(Rows::new(self))
     }
 
@@ -222,12 +248,12 @@ impl<'conn> Statement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
-    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let rows = try!(stmt.query_map(NO_PARAMS, |row| row.get(0)));
+    ///     let mut stmt = conn.prepare("SELECT name FROM people")?;
+    ///     let rows = stmt.query_map(NO_PARAMS, |row| row.get(0))?;
     ///
     ///     let mut names = Vec::new();
     ///     for name_result in rows {
-    ///         names.push(try!(name_result));
+    ///         names.push(name_result?);
     ///     }
     ///
     ///     Ok(names)
@@ -237,11 +263,11 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_map<'a, T, P, F>(&'a mut self, params: P, f: F) -> Result<MappedRows<'a, F>>
+    pub fn query_map<T, P, F>(&mut self, params: P, f: F) -> Result<MappedRows<'_, F>>
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row) -> T,
+        F: FnMut(&Row<'_, '_>) -> T,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -259,12 +285,12 @@ impl<'conn> Statement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
-    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people WHERE id = :id"));
-    ///     let rows = try!(stmt.query_map_named(&[(":id", &"one")], |row| row.get(0)));
+    ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = :id")?;
+    ///     let rows = stmt.query_map_named(&[(":id", &"one")], |row| row.get(0))?;
     ///
     ///     let mut names = Vec::new();
     ///     for name_result in rows {
-    ///         names.push(try!(name_result));
+    ///         names.push(name_result?);
     ///     }
     ///
     ///     Ok(names)
@@ -276,11 +302,11 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_map_named<'a, T, F>(
         &'a mut self,
-        params: &[(&str, &ToSql)],
+        params: &[(&str, &dyn ToSql)],
         f: F,
     ) -> Result<MappedRows<'a, F>>
     where
-        F: FnMut(&Row) -> T,
+        F: FnMut(&Row<'_, '_>) -> T,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -293,16 +319,12 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then<'a, T, E, P, F>(
-        &'a mut self,
-        params: P,
-        f: F,
-    ) -> Result<AndThenRows<'a, F>>
+    pub fn query_and_then<T, E, P, F>(&mut self, params: P, f: F) -> Result<AndThenRows<'_, F>>
     where
         P: IntoIterator,
         P::Item: ToSql,
         E: convert::From<Error>,
-        F: FnMut(&Row) -> result::Result<T, E>,
+        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -330,13 +352,13 @@ impl<'conn> Statement<'conn> {
     /// }
     ///
     /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
-    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people WHERE id = :id"));
+    ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = :id")?;
     ///     let rows =
-    ///         try!(stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0))));
+    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)))?;
     ///
     ///     let mut persons = Vec::new();
     ///     for person_result in rows {
-    ///         persons.push(try!(person_result));
+    ///         persons.push(person_result?);
     ///     }
     ///
     ///     Ok(persons)
@@ -348,12 +370,12 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_and_then_named<'a, T, E, F>(
         &'a mut self,
-        params: &[(&str, &ToSql)],
+        params: &[(&str, &dyn ToSql)],
         f: F,
     ) -> Result<AndThenRows<'a, F>>
     where
         E: convert::From<Error>,
-        F: FnMut(&Row) -> result::Result<T, E>,
+        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -366,13 +388,8 @@ impl<'conn> Statement<'conn> {
         P: IntoIterator,
         P::Item: ToSql,
     {
-        let mut rows = try!(self.query(params));
-        let exists = {
-            match rows.next() {
-                Some(_) => true,
-                None => false,
-            }
-        };
+        let mut rows = self.query(params)?;
+        let exists = rows.next().is_some();
         Ok(exists)
     }
 
@@ -382,6 +399,10 @@ impl<'conn> Statement<'conn> {
     /// If the query returns more than one row, all rows except the first are
     /// ignored.
     ///
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
+    /// query truly is optional, you can call `.optional()` on the result of
+    /// this to get a `Result<Option<T>>`.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
@@ -389,9 +410,9 @@ impl<'conn> Statement<'conn> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row) -> T,
+        F: FnOnce(&Row<'_, '_>) -> T,
     {
-        let mut rows = try!(self.query(params));
+        let mut rows = self.query(params)?;
 
         rows.get_expected_row().map(|r| f(&r))
     }
@@ -415,7 +436,7 @@ impl<'conn> Statement<'conn> {
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
     pub fn parameter_index(&self, name: &str) -> Result<Option<usize>> {
-        let c_name = try!(str_to_cstring(name));
+        let c_name = str_to_cstring(name)?;
         Ok(self.stmt.bind_parameter_index(&c_name))
     }
 
@@ -431,7 +452,7 @@ impl<'conn> Statement<'conn> {
             if index > expected {
                 break;
             }
-            try!(self.bind_parameter(&p, index));
+            self.bind_parameter(&p, index)?;
         }
         assert_eq!(
             index, expected,
@@ -442,10 +463,10 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
+    fn bind_parameters_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<()> {
         for &(name, value) in params {
-            if let Some(i) = try!(self.parameter_index(name)) {
-                try!(self.bind_parameter(value, i));
+            if let Some(i) = self.parameter_index(name)? {
+                self.bind_parameter(value, i)?;
             } else {
                 return Err(Error::InvalidParameterName(name.into()));
             }
@@ -453,8 +474,8 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn bind_parameter(&self, param: &ToSql, col: usize) -> Result<()> {
-        let value = try!(param.to_sql());
+    fn bind_parameter(&self, param: &dyn ToSql, col: usize) -> Result<()> {
+        let value = param.to_sql()?;
 
         let ptr = unsafe { self.stmt.ptr() };
         let value = match value {
@@ -489,7 +510,7 @@ impl<'conn> Statement<'conn> {
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
                 } else {
-                    let c_str = try!(str_to_cstring(s));
+                    let c_str = str_to_cstring(s)?;
                     let destructor = if length > 0 {
                         ffi::SQLITE_TRANSIENT()
                     } else {
@@ -571,6 +592,17 @@ impl<'conn> Statement<'conn> {
         }
     }
 
+    /// Get the value for one of the status counters for this statement.
+    pub fn get_status(&self, status: StatementStatus) -> i32 {
+        self.stmt.get_status(status, false)
+    }
+
+    /// Reset the value of one of the status counters for this statement,
+    /// returning the value it had before resetting.
+    pub fn reset_status(&self, status: StatementStatus) -> i32 {
+        self.stmt.get_status(status, true)
+    }
+
     pub(crate) fn check_no_tail(&self) -> Result<()> {
         if self.stmt.has_tail() {
             Err(Error::MultipleStatement)
@@ -589,7 +621,7 @@ impl<'conn> Into<RawStatement> for Statement<'conn> {
 }
 
 impl<'conn> fmt::Debug for Statement<'conn> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sql = str::from_utf8(self.stmt.sql().to_bytes());
         f.debug_struct("Statement")
             .field("conn", self.conn)
@@ -607,11 +639,11 @@ impl<'conn> Drop for Statement<'conn> {
 }
 
 impl<'conn> Statement<'conn> {
-    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement {
+    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }
 
-    pub(crate) fn value_ref(&self, col: usize) -> ValueRef {
+    pub(crate) fn value_ref(&self, col: usize) -> ValueRef<'_> {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {
@@ -679,9 +711,36 @@ impl<'conn> Statement<'conn> {
     }
 }
 
+/// Prepared statement status counters.
+///
+/// See https://www.sqlite.org/c3ref/c_stmtstatus_counter.html
+/// for explanations of each.
+///
+/// Note that depending on your version of SQLite, all of these
+/// may not be available.
+#[repr(i32)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum StatementStatus {
+    /// Equivalent to SQLITE_STMTSTATUS_FULLSCAN_STEP
+    FullscanStep = 1,
+    /// Equivalent to SQLITE_STMTSTATUS_SORT
+    Sort = 2,
+    /// Equivalent to SQLITE_STMTSTATUS_AUTOINDEX
+    AutoIndex = 3,
+    /// Equivalent to SQLITE_STMTSTATUS_VM_STEP
+    VmStep = 4,
+    /// Equivalent to SQLITE_STMTSTATUS_REPREPARE
+    RePrepare = 5,
+    /// Equivalent to SQLITE_STMTSTATUS_RUN
+    Run = 6,
+    /// Equivalent to SQLITE_STMTSTATUS_MEMUSED
+    MemUsed = 99,
+}
+
 #[cfg(test)]
 mod test {
-    use {Connection, Error, Result, NO_PARAMS};
+    use crate::types::ToSql;
+    use crate::{Connection, Error, Result, NO_PARAMS};
 
     #[test]
     fn test_execute_named() {
@@ -803,6 +862,7 @@ mod test {
         assert_eq!(1, doubled_id);
 
         // second row should be Err
+        #[allow(clippy::match_wild_err_arm)]
         match rows.next().unwrap() {
             Ok(_) => panic!("invalid Ok"),
             Err(Error::SqliteSingleThreadedMode) => (),
@@ -962,5 +1022,41 @@ mod test {
         let stmt = db.prepare("SELECT ?").unwrap();
         stmt.bind_parameter(&1, 1).unwrap();
         assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
+    }
+
+    #[test]
+    fn test_bind_parameters() {
+        let db = Connection::open_in_memory().unwrap();
+        // dynamic slice:
+        db.query_row(
+            "SELECT ?1, ?2, ?3",
+            &[&1u8 as &dyn ToSql, &"one", &Some("one")],
+            |row| row.get::<_, u8>(0),
+        )
+        .unwrap();
+        // existing collection:
+        let data = vec![1, 2, 3];
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, u8>(0))
+            .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data.as_slice(), |row| {
+            row.get::<_, u8>(0)
+        })
+        .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data, |row| row.get::<_, u8>(0))
+            .unwrap();
+
+        use std::collections::BTreeSet;
+        let data: BTreeSet<String> = ["one", "two", "three"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, String>(0))
+            .unwrap();
+
+        let data = [0; 3];
+        db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, u8>(0))
+            .unwrap();
+        db.query_row("SELECT ?1, ?2, ?3", data.iter(), |row| row.get::<_, u8>(0))
+            .unwrap();
     }
 }

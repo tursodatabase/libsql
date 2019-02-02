@@ -1,11 +1,12 @@
 ///! Busy handler (when the database is locked)
 use std::mem;
 use std::os::raw::{c_int, c_void};
+use std::panic::catch_unwind;
 use std::ptr;
 use std::time::Duration;
 
-use ffi;
-use {Connection, InnerConnection, Result};
+use crate::ffi;
+use crate::{Connection, InnerConnection, Result};
 
 impl Connection {
     /// Set a busy handler that sleeps for a specified amount of time when a
@@ -48,7 +49,7 @@ impl Connection {
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);
-            if handler_fn(count) {
+            if let Ok(true) = catch_unwind(|| handler_fn(count)) {
                 1
             } else {
                 0
@@ -74,14 +75,14 @@ impl InnerConnection {
 
 #[cfg(test)]
 mod test {
-    extern crate tempdir;
     use self::tempdir::TempDir;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time::Duration;
+    use tempdir;
 
-    use {Connection, Error, ErrorCode, TransactionBehavior, NO_PARAMS};
+    use crate::{Connection, Error, ErrorCode, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_default_busy() {
