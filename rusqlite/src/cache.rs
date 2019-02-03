@@ -79,7 +79,7 @@ impl<'conn> DerefMut for CachedStatement<'conn> {
     }
 }
 
-impl<'conn> Drop for CachedStatement<'conn> {
+impl Drop for CachedStatement<'_> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
@@ -88,8 +88,8 @@ impl<'conn> Drop for CachedStatement<'conn> {
     }
 }
 
-impl<'conn> CachedStatement<'conn> {
-    fn new(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
+impl CachedStatement<'_> {
+    fn new<'conn>(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
         CachedStatement {
             stmt: Some(stmt),
             cache,

@@ -337,7 +337,7 @@ impl<'a> Iterator for IndexConstraintIter<'a> {
 /// WHERE clause constraint
 pub struct IndexConstraint<'a>(&'a ffi::sqlite3_index_constraint);
 
-impl<'a> IndexConstraint<'a> {
+impl IndexConstraint<'_> {
     /// Column constrained.  -1 for ROWID
     pub fn column(&self) -> c_int {
         self.0.iColumn
@@ -357,7 +357,7 @@ impl<'a> IndexConstraint<'a> {
 /// Information about what parameters to pass to `VTabCursor.filter`.
 pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
-impl<'a> IndexConstraintUsage<'a> {
+impl IndexConstraintUsage<'_> {
     /// if `argv_index` > 0, constraint is part of argv to `VTabCursor.filter`
     pub fn set_argv_index(&mut self, argv_index: c_int) {
         self.0.argvIndex = argv_index;
@@ -388,7 +388,7 @@ impl<'a> Iterator for OrderByIter<'a> {
 /// A column of the ORDER BY clause.
 pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
 
-impl<'a> OrderBy<'a> {
+impl OrderBy<'_> {
     /// Column number
     pub fn column(&self) -> c_int {
         self.0.iColumn
@@ -453,7 +453,7 @@ pub struct Values<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
 
-impl<'a> Values<'a> {
+impl Values<'_> {
     pub fn len(&self) -> usize {
         self.args.len()
     }

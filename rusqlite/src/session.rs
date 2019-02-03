@@ -28,14 +28,17 @@ pub struct Session<'conn> {
     filter: Option<Box<dyn Fn(&str) -> bool>>,
 }
 
-impl<'conn> Session<'conn> {
+impl Session<'_> {
     /// Create a new session object
-    pub fn new(db: &'conn Connection) -> Result<Session<'conn>> {
+    pub fn new<'conn>(db: &'conn Connection) -> Result<Session<'conn>> {
         Session::new_with_name(db, DatabaseName::Main)
     }
 
     /// Create a new session object
-    pub fn new_with_name(db: &'conn Connection, name: DatabaseName<'_>) -> Result<Session<'conn>> {
+    pub fn new_with_name<'conn>(
+        db: &'conn Connection,
+        name: DatabaseName<'_>,
+    ) -> Result<Session<'conn>> {
         let name = name.to_cstring()?;
 
         let db = db.db.borrow_mut().db;
@@ -196,7 +199,7 @@ impl<'conn> Session<'conn> {
     }
 }
 
-impl<'conn> Drop for Session<'conn> {
+impl Drop for Session<'_> {
     fn drop(&mut self) {
         if self.filter.is_some() {
             self.table_filter(None::<fn(&str) -> bool>);
@@ -292,7 +295,7 @@ pub struct ChangesetIter<'changeset> {
     item: Option<ChangesetItem>,
 }
 
-impl<'changeset> ChangesetIter<'changeset> {
+impl ChangesetIter<'_> {
     /// Create an iterator on `input`
     pub fn start_strm<'input>(input: &'input mut dyn Read) -> Result<ChangesetIter<'input>> {
         let input_ref = &input;
@@ -312,7 +315,7 @@ impl<'changeset> ChangesetIter<'changeset> {
     }
 }
 
-impl<'changeset> FallibleStreamingIterator for ChangesetIter<'changeset> {
+impl FallibleStreamingIterator for ChangesetIter<'_> {
     type Error = crate::error::Error;
     type Item = ChangesetItem;
 
@@ -343,7 +346,7 @@ pub struct Operation<'item> {
     indirect: bool,
 }
 
-impl<'item> Operation<'item> {
+impl Operation<'_> {
     pub fn table_name(&self) -> &str {
         self.table_name
     }
@@ -361,7 +364,7 @@ impl<'item> Operation<'item> {
     }
 }
 
-impl<'changeset> Drop for ChangesetIter<'changeset> {
+impl Drop for ChangesetIter<'_> {
     fn drop(&mut self) {
         unsafe {
             ffi::sqlite3changeset_finalize(self.it);

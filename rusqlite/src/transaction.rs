@@ -87,7 +87,7 @@ pub struct Savepoint<'conn> {
     committed: bool,
 }
 
-impl<'conn> Transaction<'conn> {
+impl Transaction<'_> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested
     /// transactions.
     /// Even though we don't mutate the connection, we take a `&mut Connection`
@@ -195,7 +195,7 @@ impl<'conn> Transaction<'conn> {
     }
 }
 
-impl<'conn> Deref for Transaction<'conn> {
+impl Deref for Transaction<'_> {
     type Target = Connection;
 
     fn deref(&self) -> &Connection {
@@ -204,13 +204,13 @@ impl<'conn> Deref for Transaction<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for Transaction<'conn> {
+impl Drop for Transaction<'_> {
     fn drop(&mut self) {
         self.finish_();
     }
 }
 
-impl<'conn> Savepoint<'conn> {
+impl Savepoint<'_> {
     fn with_depth_and_name<T: Into<String>>(
         conn: &Connection,
         depth: u32,
@@ -308,7 +308,7 @@ impl<'conn> Savepoint<'conn> {
     }
 }
 
-impl<'conn> Deref for Savepoint<'conn> {
+impl Deref for Savepoint<'_> {
     type Target = Connection;
 
     fn deref(&self) -> &Connection {
@@ -317,7 +317,7 @@ impl<'conn> Deref for Savepoint<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for Savepoint<'conn> {
+impl Drop for Savepoint<'_> {
     fn drop(&mut self) {
         self.finish_();
     }
