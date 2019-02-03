@@ -117,6 +117,7 @@ mod inner_connection;
 pub mod limits;
 #[cfg(feature = "load_extension")]
 mod load_extension_guard;
+mod pragma;
 mod raw_statement;
 mod row;
 #[cfg(feature = "session")]
