@@ -264,7 +264,7 @@ pub enum DatabaseName<'a> {
     feature = "session",
     feature = "bundled"
 ))]
-impl<'a> DatabaseName<'a> {
+impl DatabaseName<'_> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};
         match *self {

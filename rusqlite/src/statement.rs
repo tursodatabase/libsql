@@ -21,7 +21,7 @@ pub struct Statement<'conn> {
     stmt: RawStatement,
 }
 
-impl<'conn> Statement<'conn> {
+impl Statement<'_> {
     /// Get all the column names in the result set of the prepared statement.
     pub fn column_names(&self) -> Vec<&str> {
         let n = self.column_count();
@@ -234,7 +234,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_named<'a>(&'a mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'a>> {
+    pub fn query_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'_>> {
         self.check_readonly()?;
         self.bind_parameters_named(params)?;
         Ok(Rows::new(self))
@@ -300,11 +300,11 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_map_named<'a, T, F>(
-        &'a mut self,
+    pub fn query_map_named<T, F>(
+        &mut self,
         params: &[(&str, &dyn ToSql)],
         f: F,
-    ) -> Result<MappedRows<'a, F>>
+    ) -> Result<MappedRows<'_, F>>
     where
         F: FnMut(&Row<'_, '_>) -> T,
     {
@@ -368,11 +368,11 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then_named<'a, T, E, F>(
-        &'a mut self,
+    pub fn query_and_then_named<T, E, F>(
+        &mut self,
         params: &[(&str, &dyn ToSql)],
         f: F,
-    ) -> Result<AndThenRows<'a, F>>
+    ) -> Result<AndThenRows<'_, F>>
     where
         E: convert::From<Error>,
         F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
@@ -604,7 +604,7 @@ impl<'conn> Statement<'conn> {
     }
 }
 
-impl<'conn> Into<RawStatement> for Statement<'conn> {
+impl Into<RawStatement> for Statement<'_> {
     fn into(mut self) -> RawStatement {
         let mut stmt = RawStatement::new(ptr::null_mut());
         mem::swap(&mut stmt, &mut self.stmt);
@@ -612,7 +612,7 @@ impl<'conn> Into<RawStatement> for Statement<'conn> {
     }
 }
 
-impl<'conn> fmt::Debug for Statement<'conn> {
+impl fmt::Debug for Statement<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sql = str::from_utf8(self.stmt.sql().to_bytes());
         f.debug_struct("Statement")
@@ -623,14 +623,14 @@ impl<'conn> fmt::Debug for Statement<'conn> {
     }
 }
 
-impl<'conn> Drop for Statement<'conn> {
+impl Drop for Statement<'_> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.finalize_();
     }
 }
 
-impl<'conn> Statement<'conn> {
+impl Statement<'_> {
     pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }

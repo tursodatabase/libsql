@@ -111,7 +111,7 @@ impl Connection {
     }
 }
 
-impl<'conn> Blob<'conn> {
+impl Blob<'_> {
     /// Move a BLOB handle to a new row.
     ///
     /// # Failure
@@ -151,7 +151,7 @@ impl<'conn> Blob<'conn> {
     }
 }
 
-impl<'conn> io::Read for Blob<'conn> {
+impl io::Read for Blob<'_> {
     /// Read data from a BLOB incrementally. Will return Ok(0) if the end of
     /// the blob has been reached.
     ///
@@ -175,7 +175,7 @@ impl<'conn> io::Read for Blob<'conn> {
     }
 }
 
-impl<'conn> io::Write for Blob<'conn> {
+impl io::Write for Blob<'_> {
     /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of
     /// the blob has been reached; consider using `Write::write_all(buf)`
     /// if you want to get an error if the entirety of the buffer cannot be
@@ -208,7 +208,7 @@ impl<'conn> io::Write for Blob<'conn> {
     }
 }
 
-impl<'conn> io::Seek for Blob<'conn> {
+impl io::Seek for Blob<'_> {
     /// Seek to an offset, in bytes, in BLOB.
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         let pos = match pos {
@@ -235,7 +235,7 @@ impl<'conn> io::Seek for Blob<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for Blob<'conn> {
+impl Drop for Blob<'_> {
     fn drop(&mut self) {
         self.close_();
     }

@@ -104,7 +104,7 @@ pub struct Context<'a> {
     args: &'a [*mut sqlite3_value],
 }
 
-impl<'a> Context<'a> {
+impl Context<'_> {
     /// Returns the number of arguments to the function.
     pub fn len(&self) -> usize {
         self.args.len()
@@ -146,7 +146,7 @@ impl<'a> Context<'a> {
     /// # Failure
     ///
     /// Will panic if `idx` is greater than or equal to `self.len()`.
-    pub fn get_raw(&self, idx: usize) -> ValueRef<'a> {
+    pub fn get_raw(&self, idx: usize) -> ValueRef<'_> {
         let arg = self.args[idx];
         unsafe { ValueRef::from_value(arg) }
     }

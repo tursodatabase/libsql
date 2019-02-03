@@ -19,7 +19,7 @@ pub enum ValueRef<'a> {
     Blob(&'a [u8]),
 }
 
-impl<'a> ValueRef<'a> {
+impl ValueRef<'_> {
     pub fn data_type(&self) -> Type {
         match *self {
             ValueRef::Null => Type::Null,
@@ -69,7 +69,7 @@ impl<'a> ValueRef<'a> {
     }
 }
 
-impl<'a> From<ValueRef<'a>> for Value {
+impl From<ValueRef<'_>> for Value {
     fn from(borrowed: ValueRef<'_>) -> Value {
         match borrowed {
             ValueRef::Null => Value::Null,

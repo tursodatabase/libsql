@@ -59,7 +59,7 @@ impl<'stmt> Rows<'stmt> {
     }
 }
 
-impl<'stmt> Drop for Rows<'stmt> {
+impl Drop for Rows<'_> {
     fn drop(&mut self) {
         self.reset();
     }
@@ -80,7 +80,7 @@ where
     }
 }
 
-impl<'conn, T, F> Iterator for MappedRows<'conn, F>
+impl<T, F> Iterator for MappedRows<'_, F>
 where
     F: FnMut(&Row<'_, '_>) -> T,
 {
@@ -110,7 +110,7 @@ where
     }
 }
 
-impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
+impl<T, E, F> Iterator for AndThenRows<'_, F>
 where
     E: convert::From<Error>,
     F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
@@ -245,7 +245,7 @@ impl RowIndex for usize {
     }
 }
 
-impl<'a> RowIndex for &'a str {
+impl RowIndex for &'_ str {
     #[inline]
     fn idx(&self, stmt: &Statement<'_>) -> Result<usize> {
         stmt.column_index(*self)
