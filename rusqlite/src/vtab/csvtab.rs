@@ -346,7 +346,7 @@ impl From<csv::Error> for Error {
 #[cfg(test)]
 mod test {
     use crate::vtab::csvtab;
-    use crate::{Connection, Result, NO_PARAMS};
+    use crate::{Connection, FallibleStreamingIterator, Result, NO_PARAMS};
 
     #[test]
     fn test_csv_module() {

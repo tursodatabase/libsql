@@ -110,7 +110,7 @@ mod test {
     use time;
 
     use super::Value;
-    use crate::{Connection, Error, NO_PARAMS};
+    use crate::{Connection, Error, FallibleStreamingIterator, NO_PARAMS};
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
 

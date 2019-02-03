@@ -80,6 +80,8 @@ use std::str;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
+pub use fallible_streaming_iterator::FallibleStreamingIterator;
+
 use crate::cache::StatementCache;
 use crate::inner_connection::{InnerConnection, BYPASS_SQLITE_INIT};
 use crate::raw_statement::RawStatement;
@@ -89,7 +91,7 @@ pub use crate::cache::CachedStatement;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
 #[cfg(feature = "hooks")]
-pub use crate::hooks::*;
+pub use crate::hooks::Action;
 #[cfg(feature = "load_extension")]
 pub use crate::load_extension_guard::LoadExtensionGuard;
 pub use crate::row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
@@ -474,7 +476,7 @@ impl Connection {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_>) -> T,
     {
         let mut stmt = self.prepare(sql)?;
         stmt.query_row(params, f)
@@ -496,7 +498,7 @@ impl Connection {
     /// or if the underlying SQLite call fails.
     pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
     where
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_>) -> T,
     {
         let mut stmt = self.prepare(sql)?;
         let mut rows = stmt.query_named(params)?;
@@ -533,7 +535,7 @@ impl Connection {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnOnce(&Row<'_>) -> result::Result<T, E>,
         E: convert::From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
@@ -1061,8 +1063,8 @@ mod test {
             let mut rows = query.query(&[4i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next() {
-                v.push(row.unwrap().get(0));
+            while let Some(row) = rows.next().unwrap() {
+                v.push(row.get(0));
             }
 
             assert_eq!(v, [3i32, 2, 1]);
@@ -1072,8 +1074,8 @@ mod test {
             let mut rows = query.query(&[3i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next() {
-                v.push(row.unwrap().get(0));
+            while let Some(row) = rows.next().unwrap() {
+                v.push(row.get(0));
             }
 
             assert_eq!(v, [2i32, 1]);
@@ -1215,7 +1217,7 @@ mod test {
         {
             let mut rows = stmt.query(NO_PARAMS).unwrap();
             assert!(!db.is_busy());
-            let row = rows.next();
+            let row = rows.next().unwrap();
             assert!(db.is_busy());
             assert!(row.is_some());
         }
@@ -1327,8 +1329,7 @@ mod test {
         let mut query = db.prepare("SELECT i, x FROM foo").unwrap();
         let mut rows = query.query(NO_PARAMS).unwrap();
 
-        while let Some(res) = rows.next() {
-            let row = res.unwrap();
+        while let Some(row) = rows.next().unwrap() {
             let i = row.get_raw(0).as_i64().unwrap();
             let expect = vals[i as usize];
             let x = row.get_raw("x").as_str().unwrap();

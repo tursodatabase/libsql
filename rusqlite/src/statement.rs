@@ -9,7 +9,8 @@ use std::{convert, fmt, mem, ptr, result, str};
 use super::ffi;
 use super::str_to_cstring;
 use super::{
-    AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
+    AndThenRows, Connection, Error, FallibleStreamingIterator, MappedRows, RawStatement, Result,
+    Row, Rows, ValueRef,
 };
 use crate::types::{ToSql, ToSqlOutput};
 #[cfg(feature = "array")]
@@ -267,7 +268,7 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row<'_, '_>) -> T,
+        F: FnMut(&Row<'_>) -> T,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -306,7 +307,7 @@ impl Statement<'_> {
         f: F,
     ) -> Result<MappedRows<'_, F>>
     where
-        F: FnMut(&Row<'_, '_>) -> T,
+        F: FnMut(&Row<'_>) -> T,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -324,7 +325,7 @@ impl Statement<'_> {
         P: IntoIterator,
         P::Item: ToSql,
         E: convert::From<Error>,
-        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -375,7 +376,7 @@ impl Statement<'_> {
     ) -> Result<AndThenRows<'_, F>>
     where
         E: convert::From<Error>,
-        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -389,7 +390,7 @@ impl Statement<'_> {
         P::Item: ToSql,
     {
         let mut rows = self.query(params)?;
-        let exists = rows.next().is_some();
+        let exists = rows.next()?.is_some();
         Ok(exists)
     }
 
@@ -410,7 +411,7 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_>) -> T,
     {
         let mut rows = self.query(params)?;
 
@@ -732,7 +733,7 @@ pub enum StatementStatus {
 #[cfg(test)]
 mod test {
     use crate::types::ToSql;
-    use crate::{Connection, Error, Result, NO_PARAMS};
+    use crate::{Connection, Error, FallibleStreamingIterator, Result, NO_PARAMS};
 
     #[test]
     fn test_execute_named() {

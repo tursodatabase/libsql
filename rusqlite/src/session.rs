@@ -10,13 +10,13 @@ use std::panic::{catch_unwind, RefUnwindSafe};
 use std::ptr;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
 
-use fallible_streaming_iterator::FallibleStreamingIterator;
-
 use crate::error::error_from_sqlite_code;
 use crate::ffi;
 use crate::hooks::Action;
 use crate::types::ValueRef;
-use crate::{errmsg_to_string, str_to_cstring, Connection, DatabaseName, Result};
+use crate::{
+    errmsg_to_string, str_to_cstring, Connection, DatabaseName, FallibleStreamingIterator, Result,
+};
 
 // https://sqlite.org/session.html
 
@@ -719,12 +719,11 @@ unsafe extern "C" fn x_output(p_out: *mut c_void, data: *const c_void, len: c_in
 
 #[cfg(test)]
 mod test {
-    use fallible_streaming_iterator::FallibleStreamingIterator;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     use super::{Changeset, ChangesetIter, ConflictAction, ConflictType, Session};
     use crate::hooks::Action;
-    use crate::Connection;
+    use crate::{Connection, FallibleStreamingIterator};
 
     fn one_changeset() -> Changeset {
         let db = Connection::open_in_memory().unwrap();
