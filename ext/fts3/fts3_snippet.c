@@ -476,11 +476,14 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
     int iFirst = 0;
     pPhrase->pList = pCsr;
     fts3GetDeltaPosition(&pCsr, &iFirst);
-    assert( iFirst>=0 );
-    pPhrase->pHead = pCsr;
-    pPhrase->pTail = pCsr;
-    pPhrase->iHead = iFirst;
-    pPhrase->iTail = iFirst;
+    if( iFirst<0 ){
+      rc = FTS_CORRUPT_VTAB;
+    }else{
+      pPhrase->pHead = pCsr;
+      pPhrase->pTail = pCsr;
+      pPhrase->iHead = iFirst;
+      pPhrase->iTail = iFirst;
+    }
   }else{
     assert( rc!=SQLITE_OK || (
        pPhrase->pList==0 && pPhrase->pHead==0 && pPhrase->pTail==0 
