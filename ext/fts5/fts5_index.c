@@ -4552,6 +4552,7 @@ static void fts5FlushOneHash(Fts5Index *p){
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
             writer.bFirstRowidInPage = 0;
             fts5WriteDlidxAppend(p, &writer, iRowid);
+            if( p->rc!=SQLITE_OK ) break;
           }else{
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iDelta);
           }
