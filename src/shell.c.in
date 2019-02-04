@@ -8675,6 +8675,7 @@ static const char zOptions[] =
 #if defined(SQLITE_ENABLE_DESERIALIZE)
   "   -maxsize N           maximum size for a --deserialize database\n"
 #endif
+  "   -memtrace            trace all memory allocations and deallocations\n"
   "   -mmap N              default mmap size set to N\n"
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
