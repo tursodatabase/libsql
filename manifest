@@ -1,5 +1,5 @@
-C Do\snot\srun\sshmlock.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.
-D 2019-02-04T16:42:57.996
+C Ensure\sthat\sthe\ssqlite3_exec()\scallback\sgets\sthe\scorrect\snumber\sof\scolumns\nfor\sa\squery,\seven\sif\sthe\sschema\schanges\sout\sfrom\sunder\sit.
+D 2019-02-04T19:12:54.437
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -476,7 +476,7 @@ F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3ed9ceaa4b7d56a6f2613355e1cd1ae5cfe31712bce2bf5aa93c5f1f130704b2
-F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
+F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 27d7265625ea6eaccdfe7c53ef41adc179c9357a077702a860c1a3b0a037a16f
 F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e467e4c8fa256ddd6c26c1f21bc26289a21f18b781737eaf706bc813ed8234fa
-R e08c01cce02d0dbb29ddb0449bc65fb9
-U dan
-Z 6723cba0480c8d70c3e9bd6fa8f41161
+P d3fea69cbb071867a90ad56ca05123ebf8e44689a92577a525a883c176c791bd
+R 2c871c531f70747307731415293fd53f
+U drh
+Z 520bd9b7175cb6c9db4e0d6ced40ee32
