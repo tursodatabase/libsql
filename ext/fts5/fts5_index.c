@@ -4784,11 +4784,13 @@ static void fts5AppendPoslist(
   Fts5Buffer *pBuf
 ){
   int nData = pMulti->base.nData;
+  int nByte = nData + 9 + 9 + FTS5_DATA_ZERO_PADDING;
   assert( nData>0 );
-  if( p->rc==SQLITE_OK && 0==fts5BufferGrow(&p->rc, pBuf, nData+9+9) ){
+  if( p->rc==SQLITE_OK && 0==fts5BufferGrow(&p->rc, pBuf, nByte) ){
     fts5BufferSafeAppendVarint(pBuf, iDelta);
     fts5BufferSafeAppendVarint(pBuf, nData*2);
     fts5BufferSafeAppendBlob(pBuf, pMulti->base.pData, nData);
+    memset(&pBuf->p[pBuf->n], 0, FTS5_DATA_ZERO_PADDING);
   }
 }
 
