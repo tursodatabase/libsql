@@ -58,11 +58,9 @@ sqlite3 db3 test.db2
 do_execsql_test -db db3 1.4.1 {
   ALTER TABLE t1 ADD COLUMN a;
 }
-breakpoint
 do_execsql_test -db db2 1.4.2 {
   SELECT * FROM t1;
 } {1 2 3 {} 4 5 6 {}}
-exit
 do_execsql_test 1.4.3 {
   SELECT * FROM t1;
 } {}

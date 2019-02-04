@@ -487,6 +487,21 @@ void sqlite3SchemaClear(void *p){
   pSchema->schemaFlags &= ~(DB_SchemaLoaded|DB_ResetWanted);
 }
 
+void sqlite3SchemaZero(sqlite3 *db, int iDb){
+  Db *pDb = &db->aDb[iDb];
+  if( IsReuseSchema(db) && iDb!=1 ){
+    if( pDb->pSPool ){
+      Schema *pNew = sqlite3SchemaGet(db, 0);
+      if( pNew ){
+        sqlite3SchemaDisconnect(db, iDb);
+        pDb->pSchema = pNew;
+      }
+      return;
+    }
+  }
+  sqlite3SchemaClear(pDb->pSchema);
+}
+
 /*
 ** Global linked list of SchemaPool objects. Read and write access must
 ** be protected by the SQLITE_MUTEX_STATIC_MASTER mutex.
@@ -577,11 +592,14 @@ void sqlite3SchemaDisconnect(sqlite3 *db, int iDb){
     pSPool->nRef--;
     if( pSPool->nRef<=0 ){
       Schema *pNext;
+      SchemaPool **pp;
       while( pSPool->pSchema ){
         Schema *pNext = pSPool->pSchema->pNext;
         schemaDelete(pSPool->pSchema);
         pSPool->pSchema = pNext;
       }
+      for(pp=&schemaPoolList; (*pp)!=pSPool; pp=&((*pp)->pNext));
+      *pp = pSPool->pNext;
       sqlite3_free(pSPool);
     }
     sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );

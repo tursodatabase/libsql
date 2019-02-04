@@ -4295,6 +4295,7 @@ int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 void sqlite3SchemaClear(void *);
 int sqlite3SchemaConnect(sqlite3*, int, u64);
 void sqlite3SchemaDisconnect(sqlite3 *, int);
+void sqlite3SchemaZero(sqlite3*, int);
 Schema *sqlite3SchemaExtract(SchemaPool*);
 void sqlite3SchemaReleaseAll(sqlite3 *);
 void sqlite3SchemaWritable(Parse*, int);
