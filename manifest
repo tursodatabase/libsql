@@ -1,5 +1,5 @@
-C Update\sthe\stest/fuzzdata8.db\sdatabase\swith\snew\sinteresting\scases\sfrom\ndbsqlfuzz.
-D 2019-02-04T16:36:24.587
+C Do\snot\srun\sshmlock.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.
+D 2019-02-04T16:42:57.996
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -1195,7 +1195,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 5b729823f3f4b8a488c64dee3484cfb4e924ee0713c7eef1da3ed99ea8573d80
+F test/permutations.test 52d2c37fe8cc07ec7362024c214b04bb69432995b3a984a3fbabc60fa6ada3ee
 F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0da6e0dd1f9a9ba7646ee6bb3c14945e570303c9a42d20fa8a653570e12c3f9
-R b21eae45a85440732ce3f3facc693fc8
-U drh
-Z 0021583978ed0d812f82afc74ea54b8c
+P e467e4c8fa256ddd6c26c1f21bc26289a21f18b781737eaf706bc813ed8234fa
+R e08c01cce02d0dbb29ddb0449bc65fb9
+U dan
+Z 6723cba0480c8d70c3e9bd6fa8f41161
