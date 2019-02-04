@@ -82,6 +82,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   int rc;
   int i;
   sqlite3_int64 x;
+  char *zErr = 0;
 
   if( eVerbosity>=1 ){
     printf("************** nByte=%d ***************\n", (int)nByte);
@@ -106,7 +107,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
       printf("%s\n", azSql[i]);
       fflush(stdout);
     }
-    sqlite3_exec(db, azSql[i], 0, 0, 0);
+    zErr = 0;
+    rc = sqlite3_exec(db, azSql[i], 0, 0, &zErr);
+    if( rc && eVerbosity>=1 ){
+      printf("-- rc=%d zErr=%s\n", rc, zErr);
+    }
+    sqlite3_free(zErr);
   }
   rc = sqlite3_close(db);
   if( rc!=SQLITE_OK ){
