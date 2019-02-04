@@ -72,6 +72,89 @@ static int bVdbeDebug = 0;
 /* Maximum size of the in-memory database file */
 static sqlite3_int64 szMax = 104857600;
 
+/***** Copy/paste from ext/misc/memtrace.c ***************************/
+/* The original memory allocation routines */
+static sqlite3_mem_methods memtraceBase;
+static FILE *memtraceOut;
+
+/* Methods that trace memory allocations */
+static void *memtraceMalloc(int n){
+  if( memtraceOut ){
+    fprintf(memtraceOut, "MEMTRACE: allocate %d bytes\n", 
+            memtraceBase.xRoundup(n));
+  }
+  return memtraceBase.xMalloc(n);
+}
+static void memtraceFree(void *p){
+  if( p==0 ) return;
+  if( memtraceOut ){
+    fprintf(memtraceOut, "MEMTRACE: free %d bytes\n", memtraceBase.xSize(p));
+  }
+  memtraceBase.xFree(p);
+}
+static void *memtraceRealloc(void *p, int n){
+  if( p==0 ) return memtraceMalloc(n);
+  if( n==0 ){
+    memtraceFree(p);
+    return 0;
+  }
+  if( memtraceOut ){
+    fprintf(memtraceOut, "MEMTRACE: resize %d -> %d bytes\n",
+            memtraceBase.xSize(p), memtraceBase.xRoundup(n));
+  }
+  return memtraceBase.xRealloc(p, n);
+}
+static int memtraceSize(void *p){
+  return memtraceBase.xSize(p);
+}
+static int memtraceRoundup(int n){
+  return memtraceBase.xRoundup(n);
+}
+static int memtraceInit(void *p){
+  return memtraceBase.xInit(p);
+}
+static void memtraceShutdown(void *p){
+  memtraceBase.xShutdown(p);
+}
+
+/* The substitute memory allocator */
+static sqlite3_mem_methods ersaztMethods = {
+  memtraceMalloc,
+  memtraceFree,
+  memtraceRealloc,
+  memtraceSize,
+  memtraceRoundup,
+  memtraceInit,
+  memtraceShutdown
+};
+
+/* Begin tracing memory allocations to out. */
+int sqlite3MemTraceActivate(FILE *out){
+  int rc = SQLITE_OK;
+  if( memtraceBase.xMalloc==0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memtraceBase);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &ersaztMethods);
+    }
+  }
+  memtraceOut = out;
+  return rc;
+}
+
+/* Deactivate memory tracing */
+int sqlite3MemTraceDeactivate(void){
+  int rc = SQLITE_OK;
+  if( memtraceBase.xMalloc!=0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memtraceBase);
+    if( rc==SQLITE_OK ){
+      memset(&memtraceBase, 0, sizeof(memtraceBase));
+    }
+  }
+  memtraceOut = 0;
+  return rc;
+}
+/***** End copy/paste from ext/misc/memtrace.c ***************************/
+
 /* libFuzzer invokes this routine with fuzzed database files (in aData).
 ** This routine run SQLite against the malformed database to see if it
 ** can provoke a failure or malfunction.
@@ -159,6 +242,14 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
         continue;
       }
       if( strcmp(z,"vdbe-debug")==0 ){
+        bVdbeDebug = 1;
+        continue;
+      }
+      if( strcmp(z,"memtrace")==0 ){
+        sqlite3MemTraceActivate(stdout);
+        continue;
+      }
+      if( strcmp(z,"mem")==0 ){
         bVdbeDebug = 1;
         continue;
       }

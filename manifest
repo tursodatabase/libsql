@@ -1,5 +1,5 @@
-C Enhance\sdbfuzz2\sso\sthat\swith\sthe\s-v\soption\sit\sshows\sthe\sreturn\scode\sand\nerror\smessage\sfor\sany\sfailing\sSQL\sstatements.
-D 2019-02-04T19:45:26.504
+C Add\sthe\s-memtrace\soption\sto\sdbfuzz2.
+D 2019-02-04T19:50:44.697
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -784,7 +784,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 9617fb870f7d655c27994749955efee5d93a641c082dce4c59059796ff81145e
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 71ea3927983aee93c94dee75cdf9dd1aa4aa4d6f31b9ed9eab52b981cc924726
+F test/dbfuzz2.c 5d5eb817dc8195e0228227510ee6a4b49f46e679fc2d5be96841cce819bf42f7
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a16ffb5a4b30f1ac4a8384fccde0a0f69e49545b6f9be9267928609328c4a151
-R a139ef61e5002cce118ec9f4cb5dfe8e
+P 3a127ef9f7feafe6ba8c75e4eb29e28aa61a30249082cc8767ada1ec0cc0b7f1
+R e25958fad2de4af7af166897ea114883
 U drh
-Z 84a13f1251514491dd128cf3ef3fa435
+Z 7c66e0b946b61f4c979a9f3ffc097fd3
