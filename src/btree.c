@@ -4520,6 +4520,25 @@ u32 sqlite3BtreePayloadSize(BtCursor *pCur){
 }
 
 /*
+** Return an upper bound on the size of any record for the table
+** that the cursor is pointing into.
+**
+** This is an optimization.  Everything will still work if this
+** routine always returns 2147483647 (which is the largest record
+** that SQLite can handle) or more.  But returning a smaller value might
+** prevent large memory allocations when trying to interpret a
+** corrupt datrabase.
+**
+** The current implementation merely returns the size of the underlying
+** database file.
+*/
+sqlite3_int64 sqlite3BtreeMaxRecordSize(BtCursor *pCur){
+  assert( cursorHoldsMutex(pCur) );
+  assert( pCur->eState==CURSOR_VALID );
+  return pCur->pBt->pageSize * (sqlite3_int64)pCur->pBt->nPage;
+}
+
+/*
 ** Given the page number of an overflow page in the database (parameter
 ** ovfl), this function finds the page number of the next page in the 
 ** linked list of overflow pages. If possible, it uses the auto-vacuum

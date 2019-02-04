@@ -1,5 +1,5 @@
-C Mention\sthe\snew\s-memtrace\scommand-line\soption\sin\sthe\s-help\soutput\sof\sthe\sCLI.
-D 2019-02-04T19:52:39.638
+C Early\sdetection\sof\simplausibly\ssized\srecords\sto\savoid\sunnecessary\nlarge\smemory\sallocations.
+D 2019-02-04T21:10:24.890
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -455,8 +455,8 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 9649c95a846deddf256525125ae257ef1ce0cf29409031df8378330a45d513a6
-F src/btree.h febb2e817be499570b7a2e32a9bbb4b607a9234f6b84bb9ae84916d4806e96f2
+F src/btree.c 84b7c5c3829b60823e15e7a8407462b69be3818f96518fef28f97ac0fbbca72b
+F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
 F src/build.c fe6e3753c4cfc76f9c621a24ef5f6fd62aac5aa6c843710b542509f493274eca
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
@@ -591,7 +591,7 @@ F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
 F src/vdbeaux.c 4fa28b32452f6197dba7c8780dde11576b9a6d8ce6f35adbb69efc3e7d37fa0c
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 8d170e387c230d12250d2feaec2c1a0d9a7184753f676df10a4b28f17abfcdaf
+F src/vdbemem.c 3173f0275cf8643a03ed02084ee56b97fc1a17a2edb5907facec504f59c3172d
 F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7f
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 2462b7d6fd72b0b916477f5ef210ee49ab58cec195483ebdac0c8c5e3ec42cab
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67fecbc79d3e927a7e22f3589be3184114322635874e4b3170666e352d0bfe9d
-R 319fe51837c8fb8507e620f83f1a6e73
+P ada91aefe37efe3c009691b5599e4d6acf182e5ec3cf28dda0871d09858498b3
+R bc6315f0c52b3f1996f4a6c2c085613b
 U drh
-Z bc0567bf7f048d791b550b3ee05f5962
+Z a2568dbaff1f58a28451297447dddc5f
