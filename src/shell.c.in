@@ -1086,11 +1086,11 @@ struct ShellState {
 #define SHELL_TRACE_NORMALIZED 2      /* Show normalized SQL text */
 
 /* Bits in the ShellState.flgProgress variable */
-#define PROGRESS_QUIET   0x01         /* Omit announcing every progress callback */
-#define PROGRESS_RESET   0x02         /* Reset the count when the progres
-                                      ** callback limit is reached, and for each
-                                      ** top-level SQL statement */
-#define PROGRESS_ONCE    0x04         /* Cancel the --limit after firing once */
+#define SHELL_PROGRESS_QUIET 0x01  /* Omit announcing every progress callback */
+#define SHELL_PROGRESS_RESET 0x02  /* Reset the count when the progres
+                                   ** callback limit is reached, and for each
+                                   ** top-level SQL statement */
+#define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
 
 /*
 ** These are the allowed shellFlgs values
@@ -1800,11 +1800,11 @@ static int progress_handler(void *pClientData) {
   p->nProgress++;
   if( p->nProgress>=p->mxProgress && p->mxProgress>0 ){
     raw_printf(p->out, "Progress limit reached (%u)\n", p->nProgress);
-    if( p->flgProgress & PROGRESS_RESET ) p->nProgress = 0;
-    if( p->flgProgress & PROGRESS_ONCE ) p->mxProgress = 0;
+    if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
+    if( p->flgProgress & SHELL_PROGRESS_ONCE ) p->mxProgress = 0;
     return 1;
   }
-  if( (p->flgProgress & PROGRESS_QUIET)==0 ){
+  if( (p->flgProgress & SHELL_PROGRESS_QUIET)==0 ){
     raw_printf(p->out, "Progress %u\n", p->nProgress);
   }
   return 0;
@@ -7035,7 +7035,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='p' && n>=3 && strncmp(azArg[0], "progress", n)==0 ){
     int i;
-    int n = 0;
+    int nn = 0;
     p->flgProgress = 0;
     p->mxProgress = 0;
     p->nProgress = 0;
@@ -7045,15 +7045,15 @@ static int do_meta_command(char *zLine, ShellState *p){
         z++;
         if( z[0]=='-' ) z++;
         if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
-          p->flgProgress |= PROGRESS_QUIET;
+          p->flgProgress |= SHELL_PROGRESS_QUIET;
           continue;
         }
         if( strcmp(z,"reset")==0 ){
-          p->flgProgress |= PROGRESS_RESET;
+          p->flgProgress |= SHELL_PROGRESS_RESET;
           continue;
         }
         if( strcmp(z,"once")==0 ){
-          p->flgProgress |= PROGRESS_ONCE;
+          p->flgProgress |= SHELL_PROGRESS_ONCE;
           continue;
         }
         if( strcmp(z,"limit")==0 ){
@@ -7070,11 +7070,11 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }else{
-        n = (int)integerValue(z);
+        nn = (int)integerValue(z);
       }
     }
     open_db(p, 0);
-    sqlite3_progress_handler(p->db, n, progress_handler, p);
+    sqlite3_progress_handler(p->db, nn, progress_handler, p);
   }else
 
   if( c=='p' && strncmp(azArg[0], "prompt", n)==0 ){
@@ -8412,7 +8412,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 
   open_db(p, 0);
   if( ShellHasFlag(p,SHFLG_Backslash) ) resolve_backslashes(zSql);
-  if( p->flgProgress & PROGRESS_RESET ) p->nProgress = 0;
+  if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
   BEGIN_TIMER;
   rc = shell_exec(p, zSql, &zErrMsg);
   END_TIMER;

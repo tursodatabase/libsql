@@ -1,5 +1,5 @@
-C Update\sthe\stester.tcl\s--malloctrace\soption\sso\sthat\sit\suses\seu-addr2line\sinstead\sof\saddr2line.
-D 2019-02-05T16:53:26.720
+C Fix\scompiler\swarnings\son\sWindows.
+D 2019-02-05T19:48:46.307
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -515,7 +515,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 8e22fda41a737c391e8b797f7c71e7ded1d107c31181b07bb10b3d4f22a28cd9
-F src/shell.c.in 72a09544a79ac9cb799eeb5a2e15de26e3921b78aa5610c525c4295f1580bf4e
+F src/shell.c.in b5149a7d195b27672a1bc24620e12bfde0bde4436942c726f34889c7c0307271
 F src/sqlite.h.in 7da74fd5bd7a9dbe92297060f036935520b26e240457287c5e67c7b9db51a986
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d840e9bb023a1e84a7739d764a0f6cf608fc3183ff8c366fcdb486ebd932f0c1
-R ea7e86862ddb85c5a7b59ce084622209
-U dan
-Z 8eeb937aab4d4557109f58c2979ba7c0
+P 79c073878d56fc638b751b0e61295df182f7ee6f8ebd7319c1eeac1608abbac8
+R 849c0b19a8b86343d05866d0b31e75f5
+U drh
+Z 1e1bbef1183a4378ceff05350a8de166
