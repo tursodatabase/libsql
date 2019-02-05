@@ -83,6 +83,10 @@ do_test 210 {
   db eval VACUUM
   sqlite3_db_config db RESET_DB 0
 
+  # If using sqlite3_prepare() instead of _v2() or _v3(), the block 
+  # below raises an SQLITE_SCHEMA error. The following fixes this.
+  if {[permutation]=="prepare"} { catchsql "SELECT * FROM sqlite_master" db2 }
+
   # Verify that the reset took, even on the separate database connection
   catchsql {
      PRAGMA page_count;
