@@ -1,5 +1,5 @@
-C Keep\sthe\stemp_store_directory\sand\sdata_store_directory\spragmas\seven\swhen\ncompiling\swith\sSQLITE_OMIT_DEPRECATED.
-D 2019-02-05T12:16:53.335
+C The\sIS\sNOT\sNULL\soperator\sdoes\snot\simply\sthat\sthe\soperand\sis\snever\sNULL.\nFix\sfor\sticket\s[5948e09b8c415bc45da5cf]
+D 2019-02-05T14:36:33.250
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -466,7 +466,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c c6c10cd52d7d62c358c0bea8f1633c58b56ce4d2b6c9e11923ee3d72d1450ee7
+F src/expr.c 182dc9ff30aa6a430b7f728ce84fda85ec10890e29fdf75be1e871d13222a99c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
 F src/func.c 0341881d22903aac5ba7f352b188806d6436e1d6ae4235ff01e44d56879dfe63
@@ -1057,7 +1057,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 62372ad3ddcc5d0eb8ff9097dcb0aad8961bf1b9cb45ba634f6e284695126f9a
-F test/join.test b6f771f4db4b8cee20ef79936f16efa351d2e90563a01aa1ab789e3052262350
+F test/join.test d53a3662762eff50b65da8775201e609878a27dd0885a1ae7bcde9bb46cecbc5
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95d338124be2e0e18f17354b28f4320336202f1a4ec1177df753b2800e954bfb
-R ce6ca2a39dbf22c181e8ff8780de6293
+P 93386a7c97f27df69f79052ef4d80143bb6832a806885249c315d226b2a256b2
+R 9525c6c7752c2e03d4ece72428ce320c
 U drh
-Z d19d9609fae54f85002f2ec829a4be91
+Z 40b8fe7fbea274d9f1afcec96201f3fd

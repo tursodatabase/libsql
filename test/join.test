@@ -850,4 +850,18 @@ do_execsql_test join-15.110 {
    ORDER BY a1, a2, a3, a4, a5;
 } {1 {} {} {} {} 1 11 {} {} {} 1 12 {} {} {} 1 12 121 {} {} 1 13 {} {} {}}
 
+# 2019-02-05 Ticket https://www.sqlite.org/src/tktview/5948e09b8c415bc45da5c
+# Error in join due to the LEFT JOIN strength reduction optimization.
+#
+do_execsql_test join-16.100 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1(a) VALUES(1);
+  CREATE TABLE t2(b INT);
+  SELECT a, b
+    FROM t1 LEFT JOIN t2 ON 0
+   WHERE (b IS NOT NULL)=0;
+} {1 {}}
+
 finish_test

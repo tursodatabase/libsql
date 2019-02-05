@@ -4986,6 +4986,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_ISNOT:
     case TK_NOT:
     case TK_ISNULL:
+    case TK_NOTNULL:
     case TK_IS:
     case TK_OR:
     case TK_CASE:
@@ -4994,6 +4995,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_ISNOT );
       testcase( pExpr->op==TK_NOT );
       testcase( pExpr->op==TK_ISNULL );
+      testcase( pExpr->op==TK_NOTNULL );
       testcase( pExpr->op==TK_IS );
       testcase( pExpr->op==TK_OR );
       testcase( pExpr->op==TK_CASE );
