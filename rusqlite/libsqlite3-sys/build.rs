@@ -134,8 +134,14 @@ mod build {
         }
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
-            println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
-            println!("cargo:rustc-link-search={}", dir);
+            // Try to use pkg-config to determine link commands
+            let pkgconfig_path = Path::new(&dir).join("pkgconfig");
+            env::set_var("PKG_CONFIG_PATH", pkgconfig_path);
+            if let Err(_) = pkg_config::Config::new().probe(link_lib) {
+                // Otherwise just emit the bare minimum link commands.
+                println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+                println!("cargo:rustc-link-search={}", dir);
+            }
             return HeaderLocation::FromEnvironment;
         }
 
