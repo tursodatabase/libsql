@@ -192,13 +192,9 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     if( (pDb->pSchema = sqlite3SchemaExtract(pDb->pSPool)) ){
       return SQLITE_OK;
     }
-    sqlite3SchemaDisconnect(db, iDb);
-    assert( pDb->pSchema==0 && pDb->pSPool==0 );
-    pDb->pSchema = sqlite3SchemaGet(db, 0);
-    if( pDb->pSchema==0 ){
-      rc = SQLITE_NOMEM_BKPT;
-      goto error_out;
-    }
+    rc = sqlite3SchemaDisconnect(db, iDb, 1);
+    if( rc!=SQLITE_OK ) goto error_out;
+    assert( pDb->pSchema && pDb->pSPool==0 );
   }
 
   db->init.busy = 1;

@@ -1185,7 +1185,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
       sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
       if( j!=1 ){
-        sqlite3SchemaDisconnect(db, j);
+        sqlite3SchemaDisconnect(db, j, 0);
         pDb->pSchema = 0;
       }
     }

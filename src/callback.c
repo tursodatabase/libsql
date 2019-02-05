@@ -16,6 +16,21 @@
 
 #include "sqliteInt.h"
 
+/*
+** Connections opened with the SQLITE_OPEN_REUSE_SCHEMA flag specified
+** may use SchemaPool objects for any database that is not the temp db
+** (iDb==1). For such databases (type "struct Db") there are three states
+** the Schema/SchemaPool object may be in.
+**
+**   1) pSPool==0, pSchema points to an empty object allocated by
+**      sqlite3_malloc(). DB_SchemaLoaded flag is clear.
+**
+**   2) pSPool!=0, pSchema points to a populated object owned by the
+**      SchemaPool. DB_SchemaLoaded flag is set.
+**
+**   3) pSPool!=0, pSchema points to the SchemaPool's static object
+**      (SchemaPool.sSchema).
+*/
 struct SchemaPool {
   int nRef;                       /* Number of pointers to this object */
   u64 cksum;                      /* Checksum for this Schema contents */
@@ -23,6 +38,36 @@ struct SchemaPool {
   Schema sSchema;                 /* The single dummy schema object */
   SchemaPool *pNext;              /* Next element in schemaPoolList */
 };
+
+#ifdef SQLITE_DEBUG
+static void assert_schema_state_ok(sqlite3 *db){
+  if( IsReuseSchema(db) ){
+    int i;
+    for(i=0; i<db->nDb; i++){
+      if( i!=1 ){
+        Db *pDb = &db->aDb[i];
+        Btree *pBt = pDb->pBt;
+        if( pDb->pSPool ){
+          if( DbHasProperty(db, i, DB_SchemaLoaded)==0 ){
+            assert( pDb->pSchema->tblHash.count==0 );
+            assert( pDb->pSchema==&pDb->pSPool->sSchema );
+          }else{
+            assert( pBt==0 || pDb->pSchema!=sqlite3BtreeSchema(pBt, 0, 0) );
+            assert( pDb->pSchema!=&pDb->pSPool->sSchema );
+          }
+        }else{
+          assert( DbHasProperty(db, i, DB_SchemaLoaded)==0 );
+          assert( pDb->pSchema->tblHash.count==0 );
+          assert( pBt==0 || pDb->pSchema!=sqlite3BtreeSchema(pBt, 0, 0) );
+          assert( pDb->pSchema!=&pDb->pSPool->sSchema );
+        }
+      }
+    }
+  }
+}
+#else
+# define assert_schema_state_ok(x)
+#endif
 
 /*
 ** Invoke the 'collation needed' callback to request a collation sequence
@@ -493,7 +538,7 @@ void sqlite3SchemaZero(sqlite3 *db, int iDb){
     if( pDb->pSPool ){
       Schema *pNew = sqlite3SchemaGet(db, 0);
       if( pNew ){
-        sqlite3SchemaDisconnect(db, iDb);
+        sqlite3SchemaDisconnect(db, iDb, 0);
         pDb->pSchema = pNew;
       }
       return;
@@ -525,6 +570,18 @@ void sqlite3SchemaWritable(Parse *pParse, int iDb){
 static void schemaDelete(Schema *pSchema){
   sqlite3SchemaClear((void*)pSchema);
   sqlite3_free(pSchema);
+}
+
+static void schemaRelease(Db *pDb){
+  assert( pDb->pSPool && pDb->pSchema );
+  assert( pDb->pSchema->schemaFlags & DB_SchemaLoaded );
+  assert( sqlite3_mutex_held(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER)) );
+
+  pDb->pSchema->pNext = pDb->pSPool->pSchema;
+  pDb->pSPool->pSchema = pDb->pSchema;
+  pDb->pSchema = &pDb->pSPool->sSchema;
+
+  assert( (pDb->pSchema->schemaFlags & DB_SchemaLoaded)==0 );
 }
 
 /*
@@ -580,30 +637,53 @@ int sqlite3SchemaConnect(sqlite3 *db, int iDb, u64 cksum){
   return (p ? SQLITE_OK : SQLITE_NOMEM);
 }
 
-void sqlite3SchemaDisconnect(sqlite3 *db, int iDb){
-  Db *pDb = &db->aDb[iDb];
-  if( pDb->pSPool ){
+int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
+  int rc = SQLITE_OK;
+  if( IsReuseSchema(db) && iDb!=1 ){
+    Db *pDb = &db->aDb[iDb];
     SchemaPool *pSPool = pDb->pSPool;
-    pDb->pSPool = 0;
-    assert( iDb!=1 );
+    assert_schema_state_ok(db);
+    assert( pDb->pSchema );
 
-    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-    assert( pSPool->nRef>=1 );
-    pSPool->nRef--;
-    if( pSPool->nRef<=0 ){
-      Schema *pNext;
-      SchemaPool **pp;
-      while( pSPool->pSchema ){
-        Schema *pNext = pSPool->pSchema->pNext;
-        schemaDelete(pSPool->pSchema);
-        pSPool->pSchema = pNext;
+    if( pSPool==0 ){
+      if( bNew==0 ){
+        schemaDelete(pDb->pSchema);
+        pDb->pSchema = 0;
       }
-      for(pp=&schemaPoolList; (*pp)!=pSPool; pp=&((*pp)->pNext));
-      *pp = pSPool->pNext;
-      sqlite3_free(pSPool);
+    }else{
+      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+      if( DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+        schemaRelease(pDb);
+      }
+      if( bNew ){
+        Schema *pNew = sqlite3SchemaGet(db, 0);
+        if( pNew==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          pDb->pSchema = pNew;
+        }
+      }
+      if( rc==SQLITE_OK ){
+        assert( pSPool->nRef>=1 );
+        pDb->pSPool = 0;
+        pSPool->nRef--;
+        if( pSPool->nRef<=0 ){
+          Schema *pNext;
+          SchemaPool **pp;
+          while( pSPool->pSchema ){
+            Schema *pNext = pSPool->pSchema->pNext;
+            schemaDelete(pSPool->pSchema);
+            pSPool->pSchema = pNext;
+          }
+          for(pp=&schemaPoolList; (*pp)!=pSPool; pp=&((*pp)->pNext));
+          *pp = pSPool->pNext;
+          sqlite3_free(pSPool);
+        }
+      }
+      sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
     }
-    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
   }
+  return rc;
 }
 
 /*
@@ -627,19 +707,17 @@ Schema *sqlite3SchemaExtract(SchemaPool *pSPool){
 
 void sqlite3SchemaReleaseAll(sqlite3 *db){
   int i;
+  assert_schema_state_ok(db);
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
   for(i=0; i<db->nDb; i++){
     if( i!=1 ){
       Db *pDb = &db->aDb[i];
       if( pDb->pSPool && pDb->pSchema && DbHasProperty(db,i,DB_SchemaLoaded) ){
-        sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-        pDb->pSchema->pNext = pDb->pSPool->pSchema;
-        pDb->pSPool->pSchema = pDb->pSchema;
-        pDb->pSchema = &pDb->pSPool->sSchema;
-        assert( DbHasProperty(db, i, DB_SchemaLoaded)==0 );
-        sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+        schemaRelease(pDb);
       }
     }
   }
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }
 
 /*
