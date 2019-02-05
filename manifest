@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\son\sWindows.
-D 2019-02-05T19:48:46.307
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\smemtrace.c\sextension.
+D 2019-02-05T19:52:39.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -290,7 +290,7 @@ F ext/misc/fuzzer.c 9e79c337faffdd4c5fe4485467537438359b43e0858a40038d4300b894ff
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 8af4672f43634257dbcfdb4515b4070325463d67c6968b4be1bd414de28d4d58
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
-F ext/misc/memtrace.c a485c778b6ee2806d540c7114d55a54518ef3bbacbcc65922099bd432ee4db10
+F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
 F ext/misc/mmapwarm.c 8c5fe90d807a23e44a8b93e96e8b812b19b300d5fd8c1d40a4fd1d8224e33f46
 F ext/misc/nextchar.c 279f80fe8ef5ba413242e2704e246503ac601f005eefb180d19e6c920338a0ba
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79c073878d56fc638b751b0e61295df182f7ee6f8ebd7319c1eeac1608abbac8
-R 849c0b19a8b86343d05866d0b31e75f5
+P 4978ee8b5405f958723b4ebbd4288bd08bff2b453da2d1c032d1ae904c2a3821
+R cdb2c90ee0a305aff630d3277982c1ce
 U drh
-Z 1e1bbef1183a4378ceff05350a8de166
+Z b3f86d11f843cf24b9aff44a0fffb3a1

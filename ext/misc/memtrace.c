@@ -77,7 +77,8 @@ static sqlite3_mem_methods ersaztMethods = {
   memtraceSize,
   memtraceRoundup,
   memtraceInit,
-  memtraceShutdown
+  memtraceShutdown,
+  0
 };
 
 /* Begin tracing memory allocations to out. */
