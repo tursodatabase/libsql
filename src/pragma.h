@@ -219,13 +219,11 @@ static const PragmaName aPragmaName[] = {
 #endif
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "data_store_directory",
   /* ePragTyp:  */ PragTyp_DATA_STORE_DIRECTORY,
   /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
-#endif
 #endif
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "data_version",
@@ -602,15 +600,11 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
-#endif
-#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "temp_store_directory",
   /* ePragTyp:  */ PragTyp_TEMP_STORE_DIRECTORY,
   /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
-#endif
 #endif
 #if defined(SQLITE_HAS_CODEC)
  {/* zName:     */ "textkey",
