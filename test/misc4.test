@@ -212,6 +212,7 @@ do_test misc4-6.2 {
 #
 db close
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test misc4-7.1 {
   CREATE TABLE t7(x);
   PRAGMA writable_schema=ON;

@@ -28,9 +28,16 @@
 **
 ** Or, if zName is not a system table, zero is returned.
 */
-static int isSystemTable(Parse *pParse, const char *zName){
-  if( 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
-    sqlite3ErrorMsg(pParse, "table %s may not be altered", zName);
+static int isAlterableTable(Parse *pParse, Table *pTab){
+  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+   || ( (pTab->tabFlags & TF_Shadow) 
+     && (pParse->db->flags & SQLITE_Defensive)
+     && pParse->db->nVdbeExec==0
+   )
+#endif
+  ){
+    sqlite3ErrorMsg(pParse, "table %s may not be altered", pTab->zName);
     return 1;
   }
   return 0;
@@ -126,7 +133,7 @@ void sqlite3AlterRenameTable(
   /* Make sure it is not a system table being altered, or a reserved name
   ** that the table is being renamed to.
   */
-  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ){
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
     goto exit_rename_table;
   }
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){ goto
@@ -424,7 +431,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     sqlite3ErrorMsg(pParse, "Cannot add a column to a view");
     goto exit_begin_add_column;
   }
-  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ){
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
     goto exit_begin_add_column;
   }
 
@@ -526,7 +533,7 @@ void sqlite3AlterRenameColumn(
   if( !pTab ) goto exit_rename_column;
 
   /* Cannot alter a system table */
-  if( SQLITE_OK!=isSystemTable(pParse, pTab->zName) ) goto exit_rename_column;
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_rename_column;
   if( SQLITE_OK!=isRealTable(pParse, pTab) ) goto exit_rename_column;
 
   /* Which schema holds the table to be altered */  
@@ -667,10 +674,16 @@ static void renameTokenCheckAll(Parse *pParse, void *pPtr){
 #endif
 
 /*
-** Add a new RenameToken object mapping parse tree element pPtr into
-** token *pToken to the Parse object currently under construction.
+** Remember that the parser tree element pPtr was created using
+** the token pToken.
 **
-** Return a copy of pPtr.
+** In other words, construct a new RenameToken object and add it
+** to the list of RenameToken objects currently being built up
+** in pParse->pRename.
+**
+** The pPtr argument is returned so that this routine can be used
+** with tail recursion in tokenExpr() routine, for a small performance
+** improvement.
 */
 void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
@@ -775,13 +788,30 @@ static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
 }
 
 /*
+** Iterate through the Select objects that are part of WITH clauses attached
+** to select statement pSelect.
+*/
+static void renameWalkWith(Walker *pWalker, Select *pSelect){
+  if( pSelect->pWith ){
+    int i;
+    for(i=0; i<pSelect->pWith->nCte; i++){
+      Select *p = pSelect->pWith->a[i].pSelect;
+      NameContext sNC;
+      memset(&sNC, 0, sizeof(sNC));
+      sNC.pParse = pWalker->pParse;
+      sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      sqlite3WalkSelect(pWalker, p);
+    }
+  }
+}
+
+/*
 ** This is a Walker select callback. It does nothing. It is only required
 ** because without a dummy callback, sqlite3WalkExpr() and similar do not
 ** descend into sub-select statements.
 */
 static int renameColumnSelectCb(Walker *pWalker, Select *p){
-  UNUSED_PARAMETER(pWalker);
-  UNUSED_PARAMETER(p);
+  renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
 
@@ -931,7 +961,6 @@ static int renameParseSql(
   rc = sqlite3RunParser(p, zSql, &zErr);
   assert( p->zErrMsg==0 );
   assert( rc!=SQLITE_OK || zErr==0 );
-  assert( (0!=p->pNewTable) + (0!=p->pNewIndex) + (0!=p->pNewTrigger)<2 );
   p->zErrMsg = zErr;
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK 
@@ -1114,6 +1143,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
           }
           sNC.ncFlags = 0;
         }
+        sNC.pSrcList = 0;
       }
     }
   }
@@ -1151,11 +1181,15 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
 */
 static void renameParseCleanup(Parse *pParse){
   sqlite3 *db = pParse->db;
+  Index *pIdx;
   if( pParse->pVdbe ){
     sqlite3VdbeFinalize(pParse->pVdbe);
   }
   sqlite3DeleteTable(db, pParse->pNewTable);
-  if( pParse->pNewIndex ) sqlite3FreeIndex(db, pParse->pNewIndex);
+  while( (pIdx = pParse->pNewIndex)!=0 ){
+    pParse->pNewIndex = pIdx->pNext;
+    sqlite3FreeIndex(db, pIdx);
+  }
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->zErrMsg);
   renameTokenFree(db, pParse->pRename);
@@ -1182,15 +1216,8 @@ static void renameParseCleanup(Parse *pParse){
 ** into zNew.  The name should be quoted if bQuote is true.
 **
 ** This function is used internally by the ALTER TABLE RENAME COLUMN command.
-** Though accessible to application code, it is not intended for use by
-** applications.  The existance of this function, and the way it works,
-** is subject to change without notice.
-**
-** If any of the parameters are out-of-bounds, then simply return NULL.
-** An out-of-bounds parameter can only occur when the application calls
-** this function directly.  The parameters will always be well-formed when
-** this routine is invoked by the bytecode for a legitimate ALTER TABLE
-** statement.
+** It is only accessible to SQL created using sqlite3NestedParse().  It is
+** not reachable from ordinary SQL passed into sqlite3_prepare().
 */
 static void renameColumnFunc(
   sqlite3_context *context,
@@ -1271,6 +1298,9 @@ static void renameColumnFunc(
         }
         sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
         for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
+          sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+        }
+        for(pIdx=sParse.pNewIndex; pIdx; pIdx=pIdx->pNext){
           sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
         }
       }
@@ -1359,12 +1389,17 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   int i;
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
+  if( pSrc==0 ){
+    assert( pWalker->pParse->db->mallocFailed );
+    return WRC_Abort;
+  }
   for(i=0; i<pSrc->nSrc; i++){
     struct SrcList_item *pItem = &pSrc->a[i];
     if( pItem->pTab==p->pTab ){
       renameTokenFind(pWalker->pParse, p, pItem->zName);
     }
   }
+  renameWalkWith(pWalker, pSelect);
 
   return WRC_Continue;
 }
@@ -1444,7 +1479,7 @@ static void renameTableFunc(
         }else{
           /* Modify any FK definitions to point to the new table. */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-          if( db->flags & SQLITE_ForeignKeys ){
+          if( isLegacy==0 || (db->flags & SQLITE_ForeignKeys) ){
             FKey *pFKey;
             for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
               if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
@@ -1598,9 +1633,9 @@ static void renameTableTest(
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
-    FUNCTION(sqlite_rename_column,  9, 0, 0, renameColumnFunc),
-    FUNCTION(sqlite_rename_table,  7, 0, 0, renameTableFunc),
-    FUNCTION(sqlite_rename_test,  5, 0, 0, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_rename_column, 9, renameColumnFunc),
+    INTERNAL_FUNCTION(sqlite_rename_table,  7, renameTableFunc),
+    INTERNAL_FUNCTION(sqlite_rename_test,   5, renameTableTest),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

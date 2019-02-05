@@ -33,6 +33,7 @@ do_execsql_test 1.0 {
 do_execsql_test 1.1 {
   SELECT quote(root) from t1_segdir;
 } {X'00036F6E6509010200010200010200'}
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.2 {
   UPDATE t1_segdir SET root = X'00036F6E650EFFFFFFFFFFFFFFFFFFFFFFFF0200';
 }

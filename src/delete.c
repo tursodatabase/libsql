@@ -44,32 +44,49 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   return pTab;
 }
 
+/* Return true if table pTab is read-only.
+**
+** A table is read-only if any of the following are true:
+**
+**   1) It is a virtual table and no implementation of the xUpdate method
+**      has been provided
+**
+**   2) It is a system table (i.e. sqlite_master), this call is not
+**      part of a nested parse and writable_schema pragma has not 
+**      been specified
+**
+**   3) The table is a shadow table, the database connection is in
+**      defensive mode, and the current sqlite3_prepare()
+**      is for a top-level SQL statement.
+*/
+static int tabIsReadOnly(Parse *pParse, Table *pTab){
+  sqlite3 *db;
+  if( IsVirtual(pTab) ){
+    return sqlite3GetVTable(pParse->db, pTab)->pMod->pModule->xUpdate==0;
+  }
+  if( (pTab->tabFlags & (TF_Readonly|TF_Shadow))==0 ) return 0;
+  db = pParse->db;
+  if( (pTab->tabFlags & TF_Readonly)!=0 ){
+    return sqlite3WritableSchema(db)==0 && pParse->nested==0;
+  }
+  assert( pTab->tabFlags & TF_Shadow );
+  return (db->flags & SQLITE_Defensive)!=0 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+          && db->pVtabCtx==0
+#endif
+          && db->nVdbeExec==0;
+}
+
 /*
 ** Check to make sure the given table is writable.  If it is not
 ** writable, generate an error message and return 1.  If it is
 ** writable return 0;
 */
 int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
-  /* A table is not writable under the following circumstances:
-  **
-  **   1) It is a virtual table and no implementation of the xUpdate method
-  **      has been provided, or
-  **   2) It is a system table (i.e. sqlite_master), this call is not
-  **      part of a nested parse and writable_schema pragma has not 
-  **      been specified.
-  **
-  ** In either case leave an error message in pParse and return non-zero.
-  */
-  if( ( IsVirtual(pTab) 
-     && sqlite3GetVTable(pParse->db, pTab)->pMod->pModule->xUpdate==0 )
-   || ( (pTab->tabFlags & TF_Readonly)!=0
-     && sqlite3WritableSchema(pParse->db)==0
-     && pParse->nested==0)
-  ){
+  if( tabIsReadOnly(pParse, pTab) ){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;
   }
-
 #ifndef SQLITE_OMIT_VIEW
   if( !viewOk && pTab->pSelect ){
     sqlite3ErrorMsg(pParse,"cannot modify %s because it is a view",pTab->zName);
@@ -100,7 +117,7 @@ void sqlite3MaterializeView(
   sqlite3 *db = pParse->db;
   int iDb = sqlite3SchemaToIndex(db, pView->pSchema);
   pWhere = sqlite3ExprDup(db, pWhere, 0);
-  pFrom = sqlite3SrcListAppend(db, 0, 0, 0);
+  pFrom = sqlite3SrcListAppend(pParse, 0, 0, 0);
   if( pFrom ){
     assert( pFrom->nSrc==1 );
     pFrom->a[0].zName = sqlite3DbStrDup(db, pView->zName);
@@ -500,7 +517,7 @@ void sqlite3DeleteFrom(
     /* If this DELETE cannot use the ONEPASS strategy, this is the 
     ** end of the WHERE loop */
     if( eOnePass!=ONEPASS_OFF ){
-      addrBypass = sqlite3VdbeMakeLabel(v);
+      addrBypass = sqlite3VdbeMakeLabel(pParse);
     }else{
       sqlite3WhereEnd(pWInfo);
     }
@@ -689,7 +706,7 @@ void sqlite3GenerateRowDelete(
   /* Seek cursor iCur to the row to delete. If this row no longer exists 
   ** (this can happen if a trigger program has already deleted it), do
   ** not attempt to delete it or fire any DELETE triggers.  */
-  iLabel = sqlite3VdbeMakeLabel(v);
+  iLabel = sqlite3VdbeMakeLabel(pParse);
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
   if( eMode==ONEPASS_OFF ){
     sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
@@ -895,7 +912,7 @@ int sqlite3GenerateIndexKey(
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
-      *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
+      *piPartIdxLabel = sqlite3VdbeMakeLabel(pParse);
       pParse->iSelfTab = iDataCur + 1;
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);

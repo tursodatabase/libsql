@@ -329,7 +329,7 @@ static void fkLookupParent(
   int i;                                    /* Iterator variable */
   Vdbe *v = sqlite3GetVdbe(pParse);         /* Vdbe to add code to */
   int iCur = pParse->nTab - 1;              /* Cursor number to use */
-  int iOk = sqlite3VdbeMakeLabel(v);        /* jump here if parent key found */
+  int iOk = sqlite3VdbeMakeLabel(pParse);   /* jump here if parent key found */
 
   sqlite3VdbeVerifyAbortable(v,
     (!pFKey->isDeferred
@@ -602,8 +602,11 @@ static void fkScanChildren(
   **     NOT( $current_a==a AND $current_b==b AND ... )
   **
   ** The first form is used for rowid tables.  The second form is used
-  ** for WITHOUT ROWID tables.  In the second form, the primary key is
-  ** (a,b,...)
+  ** for WITHOUT ROWID tables. In the second form, the *parent* key is
+  ** (a,b,...). Either the parent or primary key could be used to 
+  ** uniquely identify the current row, but the parent key is more convenient
+  ** as the required values have already been loaded into registers
+  ** by the caller.
   */
   if( pTab==pFKey->pFrom && nIncr>0 ){
     Expr *pNe;                    /* Expression (pLeft != pRight) */
@@ -615,14 +618,13 @@ static void fkScanChildren(
       pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight);
     }else{
       Expr *pEq, *pAll = 0;
-      Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       assert( pIdx!=0 );
-      for(i=0; i<pPk->nKeyCol; i++){
+      for(i=0; i<pIdx->nKeyCol; i++){
         i16 iCol = pIdx->aiColumn[i];
         assert( iCol>=0 );
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
-        pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, iCol);
-        pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
+        pRight = sqlite3Expr(db, TK_ID, pTab->aCol[iCol].zName);
+        pEq = sqlite3PExpr(pParse, TK_IS, pLeft, pRight);
         pAll = sqlite3ExprAnd(db, pAll, pEq);
       }
       pNe = sqlite3PExpr(pParse, TK_NOT, pAll, 0);
@@ -727,7 +729,7 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
         if( p->isDeferred || (db->flags & SQLITE_DeferFKs) ) break;
       }
       if( !p ) return;
-      iSkip = sqlite3VdbeMakeLabel(v);
+      iSkip = sqlite3VdbeMakeLabel(pParse);
       sqlite3VdbeAddOp2(v, OP_FkIfZero, 1, iSkip); VdbeCoverage(v);
     }
 
@@ -1012,7 +1014,7 @@ void sqlite3FkCheck(
 
     /* Create a SrcList structure containing the child table.  We need the
     ** child table as a SrcList for sqlite3WhereBegin() */
-    pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+    pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( pSrc ){
       struct SrcList_item *pItem = pSrc->a;
       pItem->pTab = pFKey->pFrom;
@@ -1289,7 +1291,7 @@ static Trigger *fkActionTrigger(
       }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),
-          sqlite3SrcListAppend(db, 0, &tFrom, 0),
+          sqlite3SrcListAppend(pParse, 0, &tFrom, 0),
           pWhere,
           0, 0, 0, 0, 0
       );

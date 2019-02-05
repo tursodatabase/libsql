@@ -115,7 +115,7 @@ static int fts5StorageGetStmt(
         char *zBind;
         int i;
 
-        zBind = sqlite3_malloc(1 + nCol*2);
+        zBind = sqlite3_malloc64(1 + nCol*2);
         if( zBind ){
           for(i=0; i<nCol; i++){
             zBind[i*2] = '?';
@@ -136,8 +136,9 @@ static int fts5StorageGetStmt(
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v3(pC->db, zSql, -1,
-                              SQLITE_PREPARE_PERSISTENT, &p->aStmt[eStmt], 0);
+      int f = SQLITE_PREPARE_PERSISTENT;
+      if( eStmt>FTS5_STMT_LOOKUP ) f |= SQLITE_PREPARE_NO_VTAB;
+      rc = sqlite3_prepare_v3(pC->db, zSql, -1, f, &p->aStmt[eStmt], 0);
       sqlite3_free(zSql);
       if( rc!=SQLITE_OK && pzErrMsg ){
         *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));
@@ -281,11 +282,11 @@ int sqlite3Fts5StorageOpen(
 ){
   int rc = SQLITE_OK;
   Fts5Storage *p;                 /* New object */
-  int nByte;                      /* Bytes of space to allocate */
+  sqlite3_int64 nByte;            /* Bytes of space to allocate */
 
   nByte = sizeof(Fts5Storage)               /* Fts5Storage object */
         + pConfig->nCol * sizeof(i64);      /* Fts5Storage.aTotalSize[] */
-  *pp = p = (Fts5Storage*)sqlite3_malloc(nByte);
+  *pp = p = (Fts5Storage*)sqlite3_malloc64(nByte);
   if( !p ) return SQLITE_NOMEM;
 
   memset(p, 0, nByte);
@@ -296,7 +297,7 @@ int sqlite3Fts5StorageOpen(
   if( bCreate ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
       int nDefn = 32 + pConfig->nCol*10;
-      char *zDefn = sqlite3_malloc(32 + pConfig->nCol * 10);
+      char *zDefn = sqlite3_malloc64(32 + (sqlite3_int64)pConfig->nCol * 10);
       if( zDefn==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -587,7 +588,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
   Fts5Config *pConfig = p->pConfig;
   sqlite3_stmt *pScan = 0;
   Fts5InsertCtx ctx;
-  int rc;
+  int rc, rc2;
 
   memset(&ctx, 0, sizeof(Fts5InsertCtx));
   ctx.pStorage = p;
@@ -626,6 +627,8 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
     }
   }
   sqlite3_free(buf.p);
+  rc2 = sqlite3_reset(pScan);
+  if( rc==SQLITE_OK ) rc = rc2;
 
   /* Write the averages record */
   if( rc==SQLITE_OK ){
@@ -875,7 +878,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 
   memset(&ctx, 0, sizeof(Fts5IntegrityCtx));
   ctx.pConfig = p->pConfig;
-  aTotalSize = (i64*)sqlite3_malloc(pConfig->nCol * (sizeof(int)+sizeof(i64)));
+  aTotalSize = (i64*)sqlite3_malloc64(pConfig->nCol*(sizeof(int)+sizeof(i64)));
   if( !aTotalSize ) return SQLITE_NOMEM;
   aColSize = (int*)&aTotalSize[pConfig->nCol];
   memset(aTotalSize, 0, sizeof(i64) * pConfig->nCol);
@@ -1075,7 +1078,13 @@ int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnToken){
 int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
   int rc = fts5StorageLoadTotals(p, 0);
   if( rc==SQLITE_OK ){
+    /* nTotalRow being zero does not necessarily indicate a corrupt 
+    ** database - it might be that the FTS5 table really does contain zero
+    ** rows. However this function is only called from the xRowCount() API,
+    ** and there is no way for that API to be invoked if the table contains
+    ** no rows. Hence the FTS5_CORRUPT return.  */
     *pnRow = p->nTotalRow;
+    if( p->nTotalRow<=0 ) rc = FTS5_CORRUPT;
   }
   return rc;
 }

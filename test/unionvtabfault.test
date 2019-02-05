@@ -81,4 +81,3 @@ do_faultsim_test 2.0 -faults * -prep {
 
 
 finish_test
-

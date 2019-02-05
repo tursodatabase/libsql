@@ -248,4 +248,3 @@ do_execsql_test 6.4 {
 
 
 finish_test
-

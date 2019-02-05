@@ -33,6 +33,7 @@ ifcapable !pager_pragmas {
 # Create a database with a freelist containing at least two pages.
 #
 do_test corrupt5-1.1 {
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     CREATE TABLE t1(a,b,c);
     CREATE INDEX i1 ON t1(a,b);

@@ -87,6 +87,12 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(x)
 #endif
 
+/*
+** A version of memcmp() that does not cause asan errors if one of the pointer
+** parameters is NULL and the number of bytes to compare is zero.
+*/
+#define fts5Memcmp(s1, s2, n) ((n)==0 ? 0 : memcmp((s1), (s2), (n)))
+
 /* Mark a function parameter as unused, to suppress nuisance compiler
 ** warnings. */
 #ifndef UNUSED_PARAM
@@ -274,7 +280,7 @@ void sqlite3Fts5Put32(u8*, int);
 int sqlite3Fts5Get32(const u8*);
 
 #define FTS5_POS2COLUMN(iPos) (int)(iPos >> 32)
-#define FTS5_POS2OFFSET(iPos) (int)(iPos & 0xFFFFFFFF)
+#define FTS5_POS2OFFSET(iPos) (int)(iPos & 0x7FFFFFFF)
 
 typedef struct Fts5PoslistReader Fts5PoslistReader;
 struct Fts5PoslistReader {
@@ -309,7 +315,7 @@ int sqlite3Fts5PoslistNext64(
 );
 
 /* Malloc utility */
-void *sqlite3Fts5MallocZero(int *pRc, int nByte);
+void *sqlite3Fts5MallocZero(int *pRc, sqlite3_int64 nByte);
 char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn);
 
 /* Character set tests (like isspace(), isalpha() etc.) */
@@ -520,8 +526,18 @@ int sqlite3Fts5PutVarint(unsigned char *p, u64 v);
 
 
 /**************************************************************************
-** Interface to code in fts5.c. 
+** Interface to code in fts5_main.c. 
 */
+
+/*
+** Virtual-table object.
+*/
+typedef struct Fts5Table Fts5Table;
+struct Fts5Table {
+  sqlite3_vtab base;              /* Base class used by SQLite core */
+  Fts5Config *pConfig;            /* Virtual table configuration */
+  Fts5Index *pIndex;              /* Full-text index */
+};
 
 int sqlite3Fts5GetTokenizer(
   Fts5Global*, 
@@ -532,7 +548,9 @@ int sqlite3Fts5GetTokenizer(
   char **pzErr
 );
 
-Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global*, i64, Fts5Config **);
+Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
+
+int sqlite3Fts5FlushToDisk(Fts5Table*);
 
 /*
 ** End of interface to code in fts5.c.
@@ -788,7 +806,7 @@ int sqlite3Fts5UnicodeIsdiacritic(int c);
 int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 
 int sqlite3Fts5UnicodeCatParse(const char*, u8*);
-int sqlite3Fts5UnicodeCategory(int iCode);
+int sqlite3Fts5UnicodeCategory(u32 iCode);
 void sqlite3Fts5UnicodeAscii(u8*, u8*);
 /*
 ** End of interface to code in fts5_unicode2.c.

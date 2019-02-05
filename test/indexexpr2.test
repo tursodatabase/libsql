@@ -201,33 +201,82 @@ do_test 4.130 {
 # Additional test cases to show that UPDATE does not modify indexes that
 # do not involve unchanged columns.
 #
-load_static_extension db explain
-do_execsql_test 4.200 {
-  CREATE TABLE t2(a,b,c,d,e,f);
-  INSERT INTO t2 VALUES(2,3,4,5,6,7);
-  CREATE INDEX t2abc ON t2(a+b+c);
-  CREATE INDEX t2cd ON t2(c*d);
-  CREATE INDEX t2def ON t2(d,e+25*f);
-  SELECT sqlite_master.name 
-    FROM sqlite_master, explain('UPDATE t2 SET b=b+1')
-   WHERE explain.opcode LIKE 'Open%'
-     AND sqlite_master.rootpage=explain.p2
-   ORDER BY 1;
-} {t2 t2abc}
-do_execsql_test 4.210 {
-  SELECT sqlite_master.name 
-    FROM sqlite_master, explain('UPDATE t2 SET c=c+1')
-   WHERE explain.opcode LIKE 'Open%'
-     AND sqlite_master.rootpage=explain.p2
-   ORDER BY 1;
-} {t2 t2abc t2cd}
-do_execsql_test 4.220 {
-  SELECT sqlite_master.name 
-    FROM sqlite_master, explain('UPDATE t2 SET c=c+1, f=NULL')
-   WHERE explain.opcode LIKE 'Open%'
-     AND sqlite_master.rootpage=explain.p2
-   ORDER BY 1;
-} {t2 t2abc t2cd t2def}
+ifcapable vtab {
+  load_static_extension db explain
+  do_execsql_test 4.200 {
+    CREATE TABLE t2(a,b,c,d,e,f);
+    INSERT INTO t2 VALUES(2,3,4,5,6,7);
+    CREATE INDEX t2abc ON t2(a+b+c);
+    CREATE INDEX t2cd ON t2(c*d);
+    CREATE INDEX t2def ON t2(d,e+25*f);
+    SELECT sqlite_master.name 
+      FROM sqlite_master, explain('UPDATE t2 SET b=b+1')
+     WHERE explain.opcode LIKE 'Open%'
+       AND sqlite_master.rootpage=explain.p2
+     ORDER BY 1;
+  } {t2 t2abc}
+  do_execsql_test 4.210 {
+    SELECT sqlite_master.name 
+      FROM sqlite_master, explain('UPDATE t2 SET c=c+1')
+     WHERE explain.opcode LIKE 'Open%'
+       AND sqlite_master.rootpage=explain.p2
+     ORDER BY 1;
+  } {t2 t2abc t2cd}
+  do_execsql_test 4.220 {
+    SELECT sqlite_master.name 
+      FROM sqlite_master, explain('UPDATE t2 SET c=c+1, f=NULL')
+     WHERE explain.opcode LIKE 'Open%'
+       AND sqlite_master.rootpage=explain.p2
+     ORDER BY 1;
+  } {t2 t2abc t2cd t2def}
+}
+
+#-------------------------------------------------------------------------
+# Test that ticket [d96eba87] has been fixed.
+#
+do_execsql_test 5.0 {
+  CREATE TABLE t5(a INTEGER, b INTEGER);
+  INSERT INTO t5 VALUES(2, 4), (3, 9);
+}
+do_execsql_test 5.1 {
+  SELECT * FROM t5 WHERE abs(a)=2 or abs(b)=9;
+} {2 4 3 9}
+do_execsql_test 5.2 {
+  CREATE INDEX t5a ON t5( abs(a) );
+  CREATE INDEX t5b ON t5( abs(b) );
+}
+do_execsql_test 5.4 {
+  SELECT * FROM t5 WHERE abs(a)=2 or abs(b)=9;
+} {2 4 3 9}
+
+#-------------------------------------------------------------------------
+do_execsql_test 6.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO x1 VALUES
+      (1, 123), (2, '123'), (3, '123abc'), (4, 123.0), (5, 1234);
+}
+
+do_execsql_test 6.1.1 {
+  SELECT a, b FROM x1 WHERE CAST(b AS INTEGER) = 123;
+} {1 123   2 123   3 123abc  4 123.0}
+do_execsql_test 6.1.2 {
+  CREATE INDEX x1i ON x1( CAST(b AS INTEGER) );
+  SELECT a, b FROM x1 WHERE CAST(b AS INTEGER) = 123;
+} {1 123   2 123   3 123abc  4 123.0}
+do_eqp_test 6.1.3 {
+  SELECT a, b FROM x1 WHERE CAST(b AS INTEGER) = 123;
+} {SEARCH TABLE x1 USING INDEX x1i (<expr>=?)}
+
+do_execsql_test 6.2.1 {
+  SELECT a, b FROM x1 WHERE CAST(b AS TEXT) = 123;
+} {1 123   2 123}
+do_execsql_test 6.2.2 {
+  CREATE INDEX x1i2 ON x1( CAST(b AS TEXT) );
+  SELECT a, b FROM x1 WHERE CAST(b AS TEXT) = 123;
+} {1 123   2 123}
+do_eqp_test 6.2.3 {
+  SELECT a, b FROM x1 WHERE CAST(b AS TEXT) = 123;
+} {SEARCH TABLE x1 USING INDEX x1i2 (<expr>=?)}
 
 
 finish_test

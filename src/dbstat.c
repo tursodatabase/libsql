@@ -194,17 +194,15 @@ static int statDisconnect(sqlite3_vtab *pVtab){
 static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
 
-  pIdxInfo->estimatedCost = 1.0e6;  /* Initial cost estimate */
-
   /* Look for a valid schema=? constraint.  If found, change the idxNum to
   ** 1 and request the value of that constraint be sent to xFilter.  And
   ** lower the cost estimate to encourage the constrained version to be
   ** used.
   */
   for(i=0; i<pIdxInfo->nConstraint; i++){
-    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
-    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     if( pIdxInfo->aConstraint[i].iColumn!=10 ) continue;
+    if( pIdxInfo->aConstraint[i].usable==0 ) return SQLITE_CONSTRAINT;
+    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     pIdxInfo->idxNum = 1;
     pIdxInfo->estimatedCost = 1.0;
     pIdxInfo->aConstraintUsage[i].argvIndex = 1;
@@ -397,6 +395,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         if( nPayload>(u32)nLocal ){
           int j;
           int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
+          if( iOff+nLocal>nUsable ) goto statPageIsCorrupt;
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
           pCell->nOvfl = nOvfl;
           pCell->aOvfl = sqlite3_malloc64(sizeof(u32)*nOvfl);
@@ -532,6 +531,10 @@ statNextRestart:
       goto statNextRestart; /* Tail recursion */
     }
     pCsr->iPage++;
+    if( pCsr->iPage>=ArraySize(pCsr->aPage) ){
+      statResetCsr(pCsr);
+      return SQLITE_CORRUPT_BKPT;
+    }
     assert( p==&pCsr->aPage[pCsr->iPage-1] );
 
     if( p->iCell==p->nCell ){
@@ -603,7 +606,6 @@ static int statFilter(
   StatTable *pTab = (StatTable*)(pCursor->pVtab);
   char *zSql;
   int rc = SQLITE_OK;
-  char *zMaster;
 
   if( idxNum==1 ){
     const char *zDbase = (const char*)sqlite3_value_text(argv[0]);
@@ -619,13 +621,12 @@ static int statFilter(
   statResetCsr(pCsr);
   sqlite3_finalize(pCsr->pStmt);
   pCsr->pStmt = 0;
-  zMaster = pCsr->iDb==1 ? "sqlite_temp_master" : "sqlite_master";
   zSql = sqlite3_mprintf(
       "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
       "  UNION ALL  "
       "SELECT name, rootpage, type"
-      "  FROM \"%w\".%s WHERE rootpage!=0"
-      "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zDbSName, zMaster);
+      "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
+      "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zDbSName);
   if( zSql==0 ){
     return SQLITE_NOMEM_BKPT;
   }else{
@@ -720,6 +721,7 @@ int sqlite3DbstatRegister(sqlite3 *db){
     0,                            /* xSavepoint */
     0,                            /* xRelease */
     0,                            /* xRollbackTo */
+    0                             /* xShadowName */
   };
   return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }

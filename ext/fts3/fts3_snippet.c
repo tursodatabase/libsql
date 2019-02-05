@@ -178,7 +178,7 @@ static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
     aOut = &p->aMatchinfo[p->nElem+2];
     xRet = fts3MIBufferFree;
   }else{
-    aOut = (u32*)sqlite3_malloc(p->nElem * sizeof(u32));
+    aOut = (u32*)sqlite3_malloc64(p->nElem * sizeof(u32));
     if( aOut ){
       xRet = sqlite3_free;
       if( p->bGlobal ) memcpy(aOut, &p->aMatchinfo[1], p->nElem*sizeof(u32));
@@ -433,7 +433,8 @@ static void fts3SnippetDetails(
         int j;
         u64 mPhrase = (u64)1 << i;
         u64 mPos = (u64)1 << (iCsr - iStart);
-        assert( iCsr>=iStart );
+        assert( iCsr>=iStart && (iCsr - iStart)<=64 );
+        assert( i>=0 && i<=64 );
         if( (mCover|mCovered)&mPhrase ){
           iScore++;
         }else{
@@ -475,11 +476,14 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
     int iFirst = 0;
     pPhrase->pList = pCsr;
     fts3GetDeltaPosition(&pCsr, &iFirst);
-    assert( iFirst>=0 );
-    pPhrase->pHead = pCsr;
-    pPhrase->pTail = pCsr;
-    pPhrase->iHead = iFirst;
-    pPhrase->iTail = iFirst;
+    if( iFirst<0 ){
+      rc = FTS_CORRUPT_VTAB;
+    }else{
+      pPhrase->pHead = pCsr;
+      pPhrase->pTail = pCsr;
+      pPhrase->iHead = iFirst;
+      pPhrase->iTail = iFirst;
+    }
   }else{
     assert( rc!=SQLITE_OK || (
        pPhrase->pList==0 && pPhrase->pHead==0 && pPhrase->pTail==0 
@@ -516,7 +520,7 @@ static int fts3BestSnippet(
   int rc;                         /* Return Code */
   int nList;                      /* Number of phrases in expression */
   SnippetIter sIter;              /* Iterates through snippet candidates */
-  int nByte;                      /* Number of bytes of space to allocate */
+  sqlite3_int64 nByte;            /* Number of bytes of space to allocate */
   int iBestScore = -1;            /* Best snippet score found so far */
   int i;                          /* Loop counter */
 
@@ -534,7 +538,7 @@ static int fts3BestSnippet(
   ** the required space using malloc().
   */
   nByte = sizeof(SnippetPhrase) * nList;
-  sIter.aPhrase = (SnippetPhrase *)sqlite3_malloc(nByte);
+  sIter.aPhrase = (SnippetPhrase *)sqlite3_malloc64(nByte);
   if( !sIter.aPhrase ){
     return SQLITE_NOMEM;
   }
@@ -604,8 +608,8 @@ static int fts3StringAppend(
   ** appended data.
   */
   if( pStr->n+nAppend+1>=pStr->nAlloc ){
-    int nAlloc = pStr->nAlloc+nAppend+100;
-    char *zNew = sqlite3_realloc(pStr->z, nAlloc);
+    sqlite3_int64 nAlloc = pStr->nAlloc+(sqlite3_int64)nAppend+100;
+    char *zNew = sqlite3_realloc64(pStr->z, nAlloc);
     if( !zNew ){
       return SQLITE_NOMEM;
     }
@@ -660,6 +664,7 @@ static int fts3SnippetShift(
 
     for(nLeft=0; !(hlmask & ((u64)1 << nLeft)); nLeft++);
     for(nRight=0; !(hlmask & ((u64)1 << (nSnippet-1-nRight))); nRight++);
+    assert( (nSnippet-1-nRight)<=63 && (nSnippet-1-nRight)>=0 );
     nDesired = (nLeft-nRight)/2;
 
     /* Ideally, the start of the snippet should be pushed forward in the
@@ -852,7 +857,7 @@ static int fts3ColumnlistCount(char **ppCollist){
 /*
 ** This function gathers 'y' or 'b' data for a single phrase.
 */
-static void fts3ExprLHits(
+static int fts3ExprLHits(
   Fts3Expr *pExpr,                /* Phrase expression node */
   MatchInfo *p                    /* Matchinfo context */
 ){
@@ -882,25 +887,29 @@ static void fts3ExprLHits(
     if( *pIter!=0x01 ) break;
     pIter++;
     pIter += fts3GetVarint32(pIter, &iCol);
+    if( iCol>=p->nCol ) return FTS_CORRUPT_VTAB;
   }
+  return SQLITE_OK;
 }
 
 /*
 ** Gather the results for matchinfo directives 'y' and 'b'.
 */
-static void fts3ExprLHitGather(
+static int fts3ExprLHitGather(
   Fts3Expr *pExpr,
   MatchInfo *p
 ){
+  int rc = SQLITE_OK;
   assert( (pExpr->pLeft==0)==(pExpr->pRight==0) );
   if( pExpr->bEof==0 && pExpr->iDocid==p->pCursor->iPrevId ){
     if( pExpr->pLeft ){
-      fts3ExprLHitGather(pExpr->pLeft, p);
-      fts3ExprLHitGather(pExpr->pRight, p);
+      rc = fts3ExprLHitGather(pExpr->pLeft, p);
+      if( rc==SQLITE_OK ) rc = fts3ExprLHitGather(pExpr->pRight, p);
     }else{
-      fts3ExprLHits(pExpr, p);
+      rc = fts3ExprLHits(pExpr, p);
     }
   }
+  return rc;
 }
 
 /*
@@ -1117,11 +1126,12 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   int i;
   int iCol;
   int nToken = 0;
+  int rc = SQLITE_OK;
 
   /* Allocate and populate the array of LcsIterator objects. The array
   ** contains one element for each matchable phrase in the query.
   **/
-  aIter = sqlite3_malloc(sizeof(LcsIterator) * pCsr->nPhrase);
+  aIter = sqlite3_malloc64(sizeof(LcsIterator) * pCsr->nPhrase);
   if( !aIter ) return SQLITE_NOMEM;
   memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
   (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
@@ -1137,13 +1147,16 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     int nLive = 0;                /* Number of iterators in aIter not at EOF */
 
     for(i=0; i<pInfo->nPhrase; i++){
-      int rc;
       LcsIterator *pIt = &aIter[i];
       rc = sqlite3Fts3EvalPhrasePoslist(pCsr, pIt->pExpr, iCol, &pIt->pRead);
-      if( rc!=SQLITE_OK ) return rc;
+      if( rc!=SQLITE_OK ) goto matchinfo_lcs_out;
       if( pIt->pRead ){
         pIt->iPos = pIt->iPosOffset;
-        fts3LcsIteratorAdvance(&aIter[i]);
+        fts3LcsIteratorAdvance(pIt);
+        if( pIt->pRead==0 ){
+          rc = FTS_CORRUPT_VTAB;
+          goto matchinfo_lcs_out;
+        }
         nLive++;
       }
     }
@@ -1175,8 +1188,9 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     pInfo->aMatchinfo[iCol] = nLcs;
   }
 
+ matchinfo_lcs_out:
   sqlite3_free(aIter);
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -1272,7 +1286,7 @@ static int fts3MatchinfoValues(
       case FTS3_MATCHINFO_LHITS: {
         int nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
         memset(pInfo->aMatchinfo, 0, nZero);
-        fts3ExprLHitGather(pCsr->pExpr, pInfo);
+        rc = fts3ExprLHitGather(pCsr->pExpr, pInfo);
         break;
       }
 
@@ -1424,6 +1438,10 @@ void sqlite3Fts3Snippet(
     return;
   }
 
+  /* Limit the snippet length to 64 tokens. */
+  if( nToken<-64 ) nToken = -64;
+  if( nToken>+64 ) nToken = +64;
+
   for(nSnippet=1; 1; nSnippet++){
 
     int iSnip;                    /* Loop counter 0..nSnippet-1 */
@@ -1566,7 +1584,7 @@ void sqlite3Fts3Offsets(
   if( rc!=SQLITE_OK ) goto offsets_out;
 
   /* Allocate the array of TermOffset iterators. */
-  sCtx.aTerm = (TermOffset *)sqlite3_malloc(sizeof(TermOffset)*nToken);
+  sCtx.aTerm = (TermOffset *)sqlite3_malloc64(sizeof(TermOffset)*nToken);
   if( 0==sCtx.aTerm ){
     rc = SQLITE_NOMEM;
     goto offsets_out;

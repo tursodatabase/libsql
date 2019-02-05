@@ -38,8 +38,7 @@ do_execsql_test 1.0 {
 do_execsql_test 1.1 {
   DROP TABLE t1;
   SELECT name, sql FROM sqlite_master;
-} {
-}
+} {}
 
 #-------------------------------------------------------------------------
 #
@@ -409,6 +408,7 @@ do_test 14.3 {
 do_execsql_test 15.0 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 15.1 {
   UPDATE t1_content SET c1 = 'xyz xyz xyz xyz xyz abc' WHERE rowid = 1;
 }

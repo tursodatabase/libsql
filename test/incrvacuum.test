@@ -783,4 +783,54 @@ do_test incrvacuum-15.1 {
   }
 } {ok}
 
+#-------------------------------------------------------------------------
+# At one point it was unsafe to truncate a db file on windows while there
+# were outstanding xFetch() references. This test case attempts to hit
+# that case.
+#
+ifcapable mmap {
+  reset_db
+  do_execsql_test incrvacuum-16.0 {
+    PRAGMA auto_vacuum = 2;
+    CREATE TABLE t3(a);
+    INSERT INTO t3 VALUES(1), (2), (3), (4);
+  
+    CREATE TABLE t2(x);
+    INSERT INTO t2 VALUES( randomblob(1000) );
+    INSERT INTO t2 VALUES( randomblob(1000) );
+    INSERT INTO t2 VALUES( randomblob(1000) );
+    INSERT INTO t2 VALUES( randomblob(1000) );
+    INSERT INTO t2 VALUES( randomblob(1000) );
+    INSERT INTO t2 VALUES( randomblob(1000) );
+  } {}
+  
+  # Reopen db to ensure the page-cache is empty.
+  #
+  db close
+  sqlite3 db test.db
+  
+  # Open db in mmap-mode. Open a transaction, delete some data, then run
+  # incremental-vacuum. Do not commit the transaction. 
+  #
+  do_execsql_test incrvacuum-16.1 {
+    PRAGMA mmap_size = 1000000;
+    BEGIN;
+    DELETE FROM t2;
+    PRAGMA incremental_vacuum = 1000;
+  } {1000000}
+
+  # Scan through table t3 (which is all clean pages - so mmap is used). Then,
+  # midway through, commit the transaction. This causes the db to be truncated
+  # while there are outstanding xFetch pages.
+  #
+  do_test incrvacuum-16.2 {
+    set res [list]
+    db eval { SELECT a FROM t3 } {
+      if {$a==3} { db eval COMMIT }
+      lappend res $a
+    }
+    set res
+  } {1 2 3 4}
+}
+  
 finish_test

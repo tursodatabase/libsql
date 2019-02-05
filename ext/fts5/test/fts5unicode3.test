@@ -21,7 +21,7 @@ ifcapable !fts5 {
 }
 
 proc fts3_unicode_path {file} {
-  file join [file dirname [info script]] .. .. fts3 unicode $file
+  file join .. [file dirname [info script]] .. .. fts3 unicode $file
 }
 
 source [fts3_unicode_path parseunicode.tcl]
@@ -36,24 +36,26 @@ foreach x [an_load_unicodedata_text $UD] {
 }
 
 foreach {y} [rd_load_unicodedata_text $UD] {
-  foreach {code ascii} $y {}
+  foreach {code ascii f} $y {}
   if {$ascii==""} {
     set int 0
   } else {
     binary scan $ascii c int
   }
-  set aDiacritic($code) $int
+  set aDiacritic($code,$f) $int
+  if {$f==0} { set aDiacritic($code,1) $int }
 }
 
 proc tcl_fold {i {bRemoveDiacritic 0}} {
   global tl_lookup_table
   global aDiacritic
+  set f [expr $bRemoveDiacritic==2]
 
   if {[info exists tl_lookup_table($i)]} {
     set i $tl_lookup_table($i)
   }
-  if {$bRemoveDiacritic && [info exists aDiacritic($i)]} {
-    set i $aDiacritic($i)
+  if {$bRemoveDiacritic && [info exists aDiacritic($i,$f)]} {
+    set i $aDiacritic($i,$f)
   }
   expr $i
 }
@@ -85,7 +87,7 @@ do_execsql_test 1.1 {
   SELECT count(*), min(i) FROM ii WHERE fts5_fold(i)!=CAST(tcl_fold(i) AS int);
 } {0 {}}
 
-do_execsql_test 1.2 {
+do_execsql_test 1.2.1 {
   WITH ii(i) AS (
     SELECT -1
     UNION ALL
@@ -93,6 +95,16 @@ do_execsql_test 1.2 {
   )
   SELECT count(*), min(i) FROM ii 
   WHERE fts5_fold(i,1)!=CAST(tcl_fold(i,1) AS int);
+} {0 {}}
+
+do_execsql_test 1.2.2 {
+  WITH ii(i) AS (
+    SELECT -1
+    UNION ALL
+    SELECT i+1 FROM ii WHERE i<100000
+  )
+  SELECT count(*), min(i) FROM ii 
+  WHERE fts5_fold(i,2)!=CAST(tcl_fold(i,2) AS int);
 } {0 {}}
 
 do_execsql_test 1.3 {

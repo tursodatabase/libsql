@@ -102,10 +102,12 @@ struct PgHdr1 {
   PCache1 *pCache;               /* Cache that currently owns this page */
   PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
   PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
+                                 /* NB: pLruPrev is only valid if pLruNext!=0 */
 };
 
 /*
-** A page is pinned if it is no on the LRU list
+** A page is pinned if it is not on the LRU list.  To be "pinned" means
+** that the page is in active use and must not be deallocated.
 */
 #define PAGE_IS_PINNED(p)    ((p)->pLruNext==0)
 #define PAGE_IS_UNPINNED(p)  ((p)->pLruNext!=0)
@@ -166,6 +168,7 @@ struct PCache1 {
   unsigned int nMax;                  /* Configured "cache_size" value */
   unsigned int n90pct;                /* nMax*9/10 */
   unsigned int iMaxKey;               /* Largest key seen since xTruncate() */
+  unsigned int nPurgeableDummy;       /* pnPurgeable points here when not used*/
 
   /* Hash table of all pages. The following variables may only be accessed
   ** when the accessor is holding the PGroup mutex.
@@ -475,6 +478,9 @@ static void pcache1FreePage(PgHdr1 *p){
 ** exists, this function falls back to sqlite3Malloc().
 */
 void *sqlite3PageMalloc(int sz){
+  /* During rebalance operations on a corrupt database file, it is sometimes
+  ** (rarely) possible to overread the temporary page buffer by a few bytes.
+  ** Enlarge the allocation slightly so that this does not cause problems. */
   return pcache1Alloc(sz);
 }
 
@@ -569,7 +575,8 @@ static PgHdr1 *pcache1PinPage(PgHdr1 *pPage){
   pPage->pLruPrev->pLruNext = pPage->pLruNext;
   pPage->pLruNext->pLruPrev = pPage->pLruPrev;
   pPage->pLruNext = 0;
-  pPage->pLruPrev = 0;
+  /* pPage->pLruPrev = 0;
+  ** No need to clear pLruPrev as it is never accessed if pLruNext is 0 */
   assert( pPage->isAnchor==0 );
   assert( pPage->pCache->pGroup->lru.isAnchor==1 );
   pPage->pCache->nRecyclable--;
@@ -779,8 +786,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
       pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
       pCache->pnPurgeable = &pGroup->nPurgeable;
     }else{
-      static unsigned int dummyCurrentPage;
-      pCache->pnPurgeable = &dummyCurrentPage;
+      pCache->pnPurgeable = &pCache->nPurgeableDummy;
     }
     pcache1LeaveMutex(pGroup);
     if( pCache->nHash==0 ){
@@ -907,8 +913,9 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
     pPage->iKey = iKey;
     pPage->pNext = pCache->apHash[h];
     pPage->pCache = pCache;
-    pPage->pLruPrev = 0;
     pPage->pLruNext = 0;
+    /* pPage->pLruPrev = 0;
+    ** No need to clear pLruPrev since it is not accessed when pLruNext==0 */
     *(void **)pPage->page.pExtra = 0;
     pCache->apHash[h] = pPage;
     if( iKey>pCache->iMaxKey ){
@@ -1068,7 +1075,7 @@ static void pcache1Unpin(
   /* It is an error to call this function if the page is already 
   ** part of the PGroup LRU list.
   */
-  assert( pPage->pLruPrev==0 && pPage->pLruNext==0 );
+  assert( pPage->pLruNext==0 );
   assert( PAGE_IS_PINNED(pPage) );
 
   if( reuseUnlikely || pGroup->nPurgeable>pGroup->nMaxPage ){

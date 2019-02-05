@@ -1156,7 +1156,7 @@ static void analyzeOneTable(
     addrNextRow = sqlite3VdbeCurrentAddr(v);
 
     if( nColTest>0 ){
-      int endDistinctTest = sqlite3VdbeMakeLabel(v);
+      int endDistinctTest = sqlite3VdbeMakeLabel(pParse);
       int *aGotoChng;               /* Array of jump instruction addresses */
       aGotoChng = sqlite3DbMallocRawNN(db, sizeof(int)*nColTest);
       if( aGotoChng==0 ) continue;

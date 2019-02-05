@@ -545,73 +545,6 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
   return i;
 }
 
-#ifdef SQLITE_ENABLE_NORMALIZE
-/*
-** Return the length (in bytes) of the token that begins at z[0].
-** Store the token type in *tokenType before returning.  If flags has
-** SQLITE_TOKEN_NORMALIZE flag enabled, use the identifier token type
-** for keywords.  Add SQLITE_TOKEN_QUOTED to flags if the token was
-** actually a quoted identifier.  Add SQLITE_TOKEN_KEYWORD to flags
-** if the token was recognized as a keyword; this is useful when the
-** SQLITE_TOKEN_NORMALIZE flag is used, because it enables the caller
-** to differentiate between a keyword being treated as an identifier
-** (for normalization purposes) and an actual identifier.
-*/
-int sqlite3GetTokenNormalized(
-  const unsigned char *z,
-  int *tokenType,
-  int *flags
-){
-  int n;
-  unsigned char iClass = aiClass[*z];
-  if( iClass==CC_KYWD ){
-    int i;
-    for(i=1; aiClass[z[i]]<=CC_KYWD; i++){}
-    if( IdChar(z[i]) ){
-      /* This token started out using characters that can appear in keywords,
-      ** but z[i] is a character not allowed within keywords, so this must
-      ** be an identifier instead */
-      i++;
-      while( IdChar(z[i]) ){ i++; }
-      *tokenType = TK_ID;
-      return i;
-    }
-    *tokenType = TK_ID;
-    n = keywordCode((char*)z, i, tokenType);
-    /* If the token is no longer considered to be an identifier, then it is a
-    ** keyword of some kind.  Make the token back into an identifier and then
-    ** set the SQLITE_TOKEN_KEYWORD flag.  Several non-identifier tokens are
-    ** used verbatim, including IN, IS, NOT, and NULL. */
-    switch( *tokenType ){
-      case TK_ID: {
-        /* do nothing, handled by caller */
-        break;
-      }
-      case TK_IN:
-      case TK_IS:
-      case TK_NOT:
-      case TK_NULL: {
-        *flags |= SQLITE_TOKEN_KEYWORD;
-        break;
-      }
-      default: {
-        *tokenType = TK_ID;
-        *flags |= SQLITE_TOKEN_KEYWORD;
-        break;
-      }
-    }
-  }else{
-    n = sqlite3GetToken(z, tokenType);
-    /* If the token is considered to be an identifier and the character class
-    ** of the first character is a quote, set the SQLITE_TOKEN_QUOTED flag. */
-    if( *tokenType==TK_ID && (iClass==CC_QUOTE || iClass==CC_QUOTE2) ){
-      *flags |= SQLITE_TOKEN_QUOTED;
-    }
-  }
-  return n;
-}
-#endif /* SQLITE_ENABLE_NORMALIZE */
-
 /*
 ** Run the parser on the given SQL string.  The parser structure is
 ** passed in.  An SQLITE_ status code is returned.  If an error occurs
@@ -639,7 +572,14 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
   assert( pzErrMsg!=0 );
-  /* sqlite3ParserTrace(stdout, "parser: "); */
+#ifdef SQLITE_DEBUG
+  if( db->flags & SQLITE_ParserTrace ){
+    printf("parser: [[[%s]]]\n", zSql);
+    sqlite3ParserTrace(stdout, "parser: ");
+  }else{
+    sqlite3ParserTrace(0, 0);
+  }
+#endif
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   pEngine = &sEngine;
   sqlite3ParserInit(pEngine, pParse);
@@ -781,3 +721,138 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( nErr==0 || pParse->rc!=SQLITE_OK );
   return nErr;
 }
+
+
+#ifdef SQLITE_ENABLE_NORMALIZE
+/*
+** Insert a single space character into pStr if the current string
+** ends with an identifier
+*/
+static void addSpaceSeparator(sqlite3_str *pStr){
+  if( pStr->nChar && sqlite3IsIdChar(pStr->zText[pStr->nChar-1]) ){
+    sqlite3_str_append(pStr, " ", 1);
+  }
+}
+
+/*
+** Compute a normalization of the SQL given by zSql[0..nSql-1].  Return
+** the normalization in space obtained from sqlite3DbMalloc().  Or return
+** NULL if anything goes wrong or if zSql is NULL.
+*/
+char *sqlite3Normalize(
+  Vdbe *pVdbe,       /* VM being reprepared */
+  const char *zSql   /* The original SQL string */
+){
+  sqlite3 *db;       /* The database connection */
+  int i;             /* Next unread byte of zSql[] */
+  int n;             /* length of current token */
+  int tokenType;     /* type of current token */
+  int prevType = 0;  /* Previous non-whitespace token */
+  int nParen;        /* Number of nested levels of parentheses */
+  int iStartIN;      /* Start of RHS of IN operator in z[] */
+  int nParenAtIN;    /* Value of nParent at start of RHS of IN operator */
+  int j;             /* Bytes of normalized SQL generated so far */
+  sqlite3_str *pStr; /* The normalized SQL string under construction */
+
+  db = sqlite3VdbeDb(pVdbe);
+  tokenType = -1;
+  nParen = iStartIN = nParenAtIN = 0;
+  pStr = sqlite3_str_new(db);
+  assert( pStr!=0 );  /* sqlite3_str_new() never returns NULL */
+  for(i=0; zSql[i] && pStr->accError==0; i+=n){
+    if( tokenType!=TK_SPACE ){
+      prevType = tokenType;
+    }
+    n = sqlite3GetToken((unsigned char*)zSql+i, &tokenType);
+    if( NEVER(n<=0) ) break;
+    switch( tokenType ){
+      case TK_SPACE: {
+        break;
+      }
+      case TK_NULL: {
+        if( prevType==TK_IS || prevType==TK_NOT ){
+          sqlite3_str_append(pStr, " NULL", 5);
+          break;
+        }
+        /* Fall through */
+      }
+      case TK_STRING:
+      case TK_INTEGER:
+      case TK_FLOAT:
+      case TK_VARIABLE:
+      case TK_BLOB: {
+        sqlite3_str_append(pStr, "?", 1);
+        break;
+      }
+      case TK_LP: {
+        nParen++;
+        if( prevType==TK_IN ){
+          iStartIN = pStr->nChar;
+          nParenAtIN = nParen;
+        }
+        sqlite3_str_append(pStr, "(", 1);
+        break;
+      }
+      case TK_RP: {
+        if( iStartIN>0 && nParen==nParenAtIN ){
+          assert( pStr->nChar>=iStartIN );
+          pStr->nChar = iStartIN+1;
+          sqlite3_str_append(pStr, "?,?,?", 5);
+          iStartIN = 0;
+        }
+        nParen--;
+        sqlite3_str_append(pStr, ")", 1);
+        break;
+      }
+      case TK_ID: {
+        iStartIN = 0;
+        j = pStr->nChar;
+        if( sqlite3Isquote(zSql[i]) ){
+          char *zId = sqlite3DbStrNDup(db, zSql+i, n);
+          int nId;
+          int eType = 0;
+          if( zId==0 ) break;
+          sqlite3Dequote(zId);
+          if( zSql[i]=='"' && sqlite3VdbeUsesDoubleQuotedString(pVdbe, zId) ){
+            sqlite3_str_append(pStr, "?", 1);
+            sqlite3DbFree(db, zId);
+            break;
+          }
+          nId = sqlite3Strlen30(zId);
+          if( sqlite3GetToken((u8*)zId, &eType)==nId && eType==TK_ID ){
+            addSpaceSeparator(pStr);
+            sqlite3_str_append(pStr, zId, nId);
+          }else{
+            sqlite3_str_appendf(pStr, "\"%w\"", zId);
+          }
+          sqlite3DbFree(db, zId);
+        }else{
+          addSpaceSeparator(pStr);
+          sqlite3_str_append(pStr, zSql+i, n);
+        }
+        while( j<pStr->nChar ){
+          pStr->zText[j] = sqlite3Tolower(pStr->zText[j]);
+          j++;
+        }
+        break;
+      }
+      case TK_SELECT: {
+        iStartIN = 0;
+        /* fall through */
+      }
+      default: {
+        if( sqlite3IsIdChar(zSql[i]) ) addSpaceSeparator(pStr);
+        j = pStr->nChar;
+        sqlite3_str_append(pStr, zSql+i, n);
+        while( j<pStr->nChar ){
+          pStr->zText[j] = sqlite3Toupper(pStr->zText[j]);
+          j++;
+        }
+        break;
+      }
+    }
+  }
+  if( tokenType!=TK_SEMI ) sqlite3_str_append(pStr, ";", 1);
+  return sqlite3_str_finish(pStr);
+}
+#endif /* SQLITE_ENABLE_NORMALIZE */

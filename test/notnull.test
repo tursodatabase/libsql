@@ -606,4 +606,3 @@ do_uses_op_next_test notnull-6.9 "SELECT * FROM t8 WHERE a IS ?" 0
 do_uses_op_next_test notnull-6.10 "SELECT * FROM t8 WHERE a IS ?" 0
 
 finish_test
-

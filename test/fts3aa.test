@@ -250,5 +250,16 @@ do_execsql_test 9.2 {
   CREATE VIRTUAL TABLE t10 USING fts3(<, b, c);
 }
 
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE z1 USING fts3;
+  INSERT INTO z1 VALUES('one two three'),('four one five'),('six two five');
+  CREATE TRIGGER z1r1 AFTER DELETE ON z1_content BEGIN
+    DELETE FROM z1;
+  END;
+}
+do_catchsql_test 10.1 {
+  DELETE FROM z1;
+} {1 {SQL logic error}}
+
 expand_all_sql db
 finish_test

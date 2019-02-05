@@ -86,7 +86,7 @@ do_test 201 {
 } {}
 do_test 202 {
   sqlite3_normalized_sql $STMT
-} {}
+} {SELECT a,b FROM t1 WHERE b=?ORDER BY a;}
 do_test 203 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
@@ -207,7 +207,7 @@ foreach {tnum sql flags norm} {
   430
   {SELECT "a" FROM t1 WHERE "x" IN ("1","2",'3');}
   0x2
-  {0 {SELECT"a"FROM t1 WHERE"x"IN(?,?,?);}}
+  {0 {SELECT a FROM t1 WHERE x IN(?,?,?);}}
 
   440
   {SELECT 'a' FROM t1 WHERE 'x';}
@@ -217,7 +217,7 @@ foreach {tnum sql flags norm} {
   450
   {SELECT [a] FROM t1 WHERE [x];}
   0x2
-  {0 {SELECT"a"FROM t1 WHERE"x";}}
+  {0 {SELECT a FROM t1 WHERE x;}}
 
   460
   {SELECT * FROM t1 WHERE x IN (x);}
@@ -232,12 +232,12 @@ foreach {tnum sql flags norm} {
   480
   {SELECT * FROM t1 WHERE x IN ([x],"a");}
   0x2
-  {0 {SELECT*FROM t1 WHERE x IN("x","a");}}
+  {0 {SELECT*FROM t1 WHERE x IN(x,a);}}
 
   500
   {SELECT * FROM t1 WHERE x IN ([x],"a",'b',sqlite_version());}
   0x2
-  {0 {SELECT*FROM t1 WHERE x IN("x","a",?,sqlite_version());}}
+  {0 {SELECT*FROM t1 WHERE x IN(x,a,?,sqlite_version());}}
 
   520
   {SELECT * FROM t1 WHERE x IN (SELECT x FROM t1);}
@@ -247,12 +247,12 @@ foreach {tnum sql flags norm} {
   540
   {SELECT * FROM t1 WHERE x IN ((SELECT x FROM t1));}
   0x2
-  {0 {SELECT*FROM t1 WHERE x IN(?,?,?);}}
+  {0 {SELECT*FROM t1 WHERE x IN((SELECT x FROM t1));}}
 
   550
   {SELECT a, a+1, a||'b', a+"b" FROM t1;}
   0x2
-  {0 {SELECT a,a+?,a||?,a+"b"FROM t1;}}
+  {0 {SELECT a,a+?,a||?,a+b FROM t1;}}
 
   570
   {SELECT * FROM t1 WHERE x IN (1);}
@@ -316,7 +316,7 @@ foreach {tnum sql flags norm} {
   680
   {SELECT a, "col f" FROM t1 LEFT OUTER JOIN t2 ON [t1].[col f] == [t2].[col y];}
   0x2
-  {0 {SELECT a,"col f"FROM t1 LEFT OUTER JOIN t2 ON"t1"."col f"=="t2"."col y";}}
+  {0 {SELECT a,"col f"FROM t1 LEFT OUTER JOIN t2 ON t1."col f"==t2."col y";}}
 
   690
   {SELECT * FROM ( WITH x AS ( SELECT * FROM t1 WHERE x IN ( 1)) SELECT 10);}
@@ -346,7 +346,7 @@ foreach {tnum sql flags norm} {
   760
   {SELECT x FROM t1 WHERE x IN ([x] IS NOT NULL, NULL, 1, 'a', "b", x'00');}
   0x2
-  {0 {SELECT x FROM t1 WHERE x IN("x"IS NOT NULL,?,?,?,"b",?);}}
+  {0 {SELECT x FROM t1 WHERE x IN(x IS NOT NULL,?,?,?,b,?);}}
 } {
   do_test $tnum {
     set code [catch {

@@ -396,10 +396,12 @@ static int fts3SqlStmt(
   
   pStmt = p->aStmt[eStmt];
   if( !pStmt ){
+    int f = SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB;
     char *zSql;
     if( eStmt==SQL_CONTENT_INSERT ){
       zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName, p->zWriteExprlist);
     }else if( eStmt==SQL_SELECT_CONTENT_BY_ROWID ){
+      f &= ~SQLITE_PREPARE_NO_VTAB;
       zSql = sqlite3_mprintf(azSql[eStmt], p->zReadExprlist);
     }else{
       zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName);
@@ -407,8 +409,7 @@ static int fts3SqlStmt(
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v3(p->db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
-                              &pStmt, NULL);
+      rc = sqlite3_prepare_v3(p->db, zSql, -1, f, &pStmt, NULL);
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pStmt==0 );
       p->aStmt[eStmt] = pStmt;
@@ -566,7 +567,7 @@ static sqlite3_int64 getAbsoluteLevel(
   int iLevel                      /* Level of segments */
 ){
   sqlite3_int64 iBase;            /* First absolute level for iLangid/iIndex */
-  assert( iLangid>=0 );
+  assert_fts3_nc( iLangid>=0 );
   assert( p->nIndex>0 );
   assert( iIndex>=0 && iIndex<p->nIndex );
 
@@ -1408,7 +1409,7 @@ static int fts3SegReaderNext(
   ** b-tree node. And that the final byte of the doclist is 0x00. If either 
   ** of these statements is untrue, then the data structure is corrupt.
   */
-  if( (&pReader->aNode[pReader->nNode] - pReader->aDoclist)<pReader->nDoclist
+  if( pReader->nDoclist > pReader->nNode-(pReader->aDoclist-pReader->aNode)
    || (pReader->nPopulate==0 && pReader->aDoclist[pReader->nDoclist-1])
   ){
     return FTS_CORRUPT_VTAB;
@@ -1608,8 +1609,13 @@ int sqlite3Fts3SegReaderNew(
   Fts3SegReader *pReader;         /* Newly allocated SegReader object */
   int nExtra = 0;                 /* Bytes to allocate segment root node */
 
-  assert( iStartLeaf<=iEndLeaf );
+  assert( zRoot!=0 || nRoot==0 );
+#ifdef CORRUPT_DB
+  assert( zRoot!=0 || CORRUPT_DB );
+#endif
+
   if( iStartLeaf==0 ){
+    if( iEndLeaf!=0 ) return FTS_CORRUPT_VTAB;
     nExtra = nRoot + FTS3_NODE_PADDING;
   }
 
@@ -1629,7 +1635,7 @@ int sqlite3Fts3SegReaderNew(
     pReader->aNode = (char *)&pReader[1];
     pReader->rootOnly = 1;
     pReader->nNode = nRoot;
-    memcpy(pReader->aNode, zRoot, nRoot);
+    if( nRoot ) memcpy(pReader->aNode, zRoot, nRoot);
     memset(&pReader->aNode[nRoot], 0, FTS3_NODE_PADDING);
   }else{
     pReader->iCurrentBlock = iStartLeaf-1;
@@ -2248,6 +2254,11 @@ static int fts3SegWriterAdd(
 
   nPrefix = fts3PrefixCompress(pWriter->zTerm, pWriter->nTerm, zTerm, nTerm);
   nSuffix = nTerm-nPrefix;
+
+  /* If nSuffix is zero or less, then zTerm/nTerm must be a prefix of 
+  ** pWriter->zTerm/pWriter->nTerm. i.e. must be equal to or less than when
+  ** compared with BINARY collation. This indicates corruption.  */
+  if( nSuffix<=0 ) return FTS_CORRUPT_VTAB;
 
   /* Figure out how many bytes are required by this new entry */
   nReq = sqlite3Fts3VarintLen(nPrefix) +    /* varint containing prefix size */
@@ -2956,7 +2967,9 @@ int sqlite3Fts3SegReaderStep(
           }else{
             iDelta = iDocid - iPrev;
           }
-          assert( iDelta>0 || (nDoclist==0 && iDelta==iDocid) );
+          if( iDelta<=0 && (nDoclist>0 || iDelta!=iDocid) ){
+            return FTS_CORRUPT_VTAB;
+          }
           assert( nDoclist>0 || iDelta==iDocid );
 
           nByte = sqlite3Fts3VarintLen(iDelta) + (isRequirePos?nList+1:0);
@@ -3322,14 +3335,16 @@ static void fts3DecodeIntArray(
   const char *zBuf,  /* The BLOB containing the varints */
   int nBuf           /* size of the BLOB */
 ){
-  int i, j;
-  UNUSED_PARAMETER(nBuf);
-  for(i=j=0; i<N; i++){
-    sqlite3_int64 x;
-    j += sqlite3Fts3GetVarint(&zBuf[j], &x);
-    assert(j<=nBuf);
-    a[i] = (u32)(x & 0xffffffff);
+  int i = 0;
+  if( nBuf && (zBuf[nBuf-1]&0x80)==0 ){
+    int j;
+    for(i=j=0; i<N && j<nBuf; i++){
+      sqlite3_int64 x;
+      j += sqlite3Fts3GetVarint(&zBuf[j], &x);
+      a[i] = (u32)(x & 0xffffffff);
+    }
   }
+  while( i<N ) a[i++] = 0;
 }
 
 /*
@@ -3735,7 +3750,7 @@ static int nodeReaderNext(NodeReader *p){
     p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &nSuffix);
 
     if( nPrefix>p->iOff || nSuffix>p->nNode-p->iOff ){
-      return SQLITE_CORRUPT_VTAB;
+      return FTS_CORRUPT_VTAB;
     }
     blobGrowBuffer(&p->term, nPrefix+nSuffix, &rc);
     if( rc==SQLITE_OK ){
@@ -3745,7 +3760,7 @@ static int nodeReaderNext(NodeReader *p){
       if( p->iChild==0 ){
         p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &p->nDoclist);
         if( (p->nNode-p->iOff)<p->nDoclist ){
-          return SQLITE_CORRUPT_VTAB;
+          return FTS_CORRUPT_VTAB;
         }
         p->aDoclist = &p->aNode[p->iOff];
         p->iOff += p->nDoclist;

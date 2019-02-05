@@ -659,6 +659,7 @@ do_execsql_test misc1-22.1 {
 #
 db close
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test misc1-23.1 {
   CREATE TABLE t1(x);
   PRAGMA writable_schema=ON;
@@ -674,6 +675,7 @@ do_execsql_test misc1-23.1 {
 db close
 database_may_be_corrupt
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test misc1-23.2 {
   CREATE TABLE t1(x UNIQUE);
   PRAGMA writable_schema=ON;
@@ -685,6 +687,7 @@ do_catchsql_test misc1-23.2 {
 } {1 {no such table: F}}
 db close
 sqlite3 db :memory:
+sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test misc1-23.3 {
   CREATE TABLE t1(x UNIQUE);
   PRAGMA writable_schema=ON;
@@ -741,5 +744,19 @@ do_execsql_test misc1-27.1 {
   SELECT a,b,c FROM dup1;
 } {10 11 12}
 
+# 2018-12-20
+#
+# The Cursor.seekOp debugging value set incorrectly
+# in OP_NotExists.
+#
+sqlite3 db :memory:
+do_execsql_test misc1-28.0 {
+  CREATE TABLE t1(x);
+  CREATE UNIQUE INDEX t1x ON t1(x) WHERE x=1;
+  INSERT OR ABORT INTO t1 DEFAULT VALUES;
+  UPDATE OR REPLACE t1 SET x = 1;
+  PRAGMA integrity_check;
+  SELECT * FROM t1;
+} {ok 1}
 
 finish_test

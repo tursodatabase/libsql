@@ -422,11 +422,11 @@ static closure_avl *queuePull(closure_queue *pQueue){
 **     `mno`   becomes   mno
 */
 static char *closureDequote(const char *zIn){
-  int nIn;                        /* Size of input string, in bytes */
+  sqlite3_int64 nIn;              /* Size of input string, in bytes */
   char *zOut;                     /* Output (dequoted) string */
 
-  nIn = (int)strlen(zIn);
-  zOut = sqlite3_malloc(nIn+1);
+  nIn = strlen(zIn);
+  zOut = sqlite3_malloc64(nIn+1);
   if( zOut ){
     char q = zIn[0];              /* Quote character (if any ) */
 
@@ -938,7 +938,8 @@ static sqlite3_module closureModule = {
   0,                      /* xRename */
   0,                      /* xSavepoint */
   0,                      /* xRelease */
-  0                       /* xRollbackTo */
+  0,                      /* xRollbackTo */
+  0                       /* xShadowName */
 };
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

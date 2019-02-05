@@ -90,14 +90,14 @@ int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    int nByte;
+    sqlite3_int64 nByte;
     memset(pNew, 0, sizeof(Fts5Hash));
     pNew->pnByte = pnByte;
     pNew->eDetail = pConfig->eDetail;
 
     pNew->nSlot = 1024;
     nByte = sizeof(Fts5HashEntry*) * pNew->nSlot;
-    pNew->aSlot = (Fts5HashEntry**)sqlite3_malloc(nByte);
+    pNew->aSlot = (Fts5HashEntry**)sqlite3_malloc64(nByte);
     if( pNew->aSlot==0 ){
       sqlite3_free(pNew);
       *ppNew = 0;
@@ -165,7 +165,7 @@ static int fts5HashResize(Fts5Hash *pHash){
   Fts5HashEntry **apNew;
   Fts5HashEntry **apOld = pHash->aSlot;
 
-  apNew = (Fts5HashEntry**)sqlite3_malloc(nNew*sizeof(Fts5HashEntry*));
+  apNew = (Fts5HashEntry**)sqlite3_malloc64(nNew*sizeof(Fts5HashEntry*));
   if( !apNew ) return SQLITE_NOMEM;
   memset(apNew, 0, nNew*sizeof(Fts5HashEntry*));
 
@@ -259,7 +259,7 @@ int sqlite3Fts5HashWrite(
   if( p==0 ){
     /* Figure out how much space to allocate */
     char *zKey;
-    int nByte = sizeof(Fts5HashEntry) + (nToken+1) + 1 + 64;
+    sqlite3_int64 nByte = sizeof(Fts5HashEntry) + (nToken+1) + 1 + 64;
     if( nByte<128 ) nByte = 128;
 
     /* Grow the Fts5Hash.aSlot[] array if necessary. */
@@ -270,7 +270,7 @@ int sqlite3Fts5HashWrite(
     }
 
     /* Allocate new Fts5HashEntry and add it to the hash table. */
-    p = (Fts5HashEntry*)sqlite3_malloc(nByte);
+    p = (Fts5HashEntry*)sqlite3_malloc64(nByte);
     if( !p ) return SQLITE_NOMEM;
     memset(p, 0, sizeof(Fts5HashEntry));
     p->nAlloc = nByte;
@@ -309,12 +309,12 @@ int sqlite3Fts5HashWrite(
     **     + 5 bytes for the new position offset (32-bit max).
     */
     if( (p->nAlloc - p->nData) < (9 + 4 + 1 + 3 + 5) ){
-      int nNew = p->nAlloc * 2;
+      sqlite3_int64 nNew = p->nAlloc * 2;
       Fts5HashEntry *pNew;
       Fts5HashEntry **pp;
-      pNew = (Fts5HashEntry*)sqlite3_realloc(p, nNew);
+      pNew = (Fts5HashEntry*)sqlite3_realloc64(p, nNew);
       if( pNew==0 ) return SQLITE_NOMEM;
-      pNew->nAlloc = nNew;
+      pNew->nAlloc = (int)nNew;
       for(pp=&pHash->aSlot[iHash]; *pp!=p; pp=&(*pp)->pHashNext);
       *pp = pNew;
       p = pNew;
@@ -438,7 +438,7 @@ static int fts5HashEntrySort(
   int i;
 
   *ppSorted = 0;
-  ap = sqlite3_malloc(sizeof(Fts5HashEntry*) * nMergeSlot);
+  ap = sqlite3_malloc64(sizeof(Fts5HashEntry*) * nMergeSlot);
   if( !ap ) return SQLITE_NOMEM;
   memset(ap, 0, sizeof(Fts5HashEntry*) * nMergeSlot);
 
@@ -483,7 +483,8 @@ int sqlite3Fts5HashQuery(
 
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     zKey = fts5EntryKey(p);
-    if( memcmp(zKey, pTerm, nTerm)==0 && zKey[nTerm]==0 ) break;
+    assert( p->nKey+1==(int)strlen(zKey) );
+    if( nTerm==p->nKey+1 && memcmp(zKey, pTerm, nTerm)==0 ) break;
   }
 
   if( p ){
@@ -534,4 +535,3 @@ void sqlite3Fts5HashScanEntry(
     *pnDoclist = 0;
   }
 }
-

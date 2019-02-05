@@ -151,7 +151,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   /* Allocate and store the Y */
   if( p->nUsed>=p->nAlloc ){
     unsigned n = p->nAlloc*2 + 250;
-    double *a = sqlite3_realloc(p->a, sizeof(double)*n);
+    double *a = sqlite3_realloc64(p->a, sizeof(double)*n);
     if( a==0 ){
       sqlite3_free(p->a);
       memset(p, 0, sizeof(*p));

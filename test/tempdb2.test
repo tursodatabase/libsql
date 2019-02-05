@@ -76,4 +76,25 @@ do_execsql_test 1.4 {
   SELECT b=int2str(2) FROM t1
 } {1 1 1}
 
+#-------------------------------------------------------------------------
+db close
+sqlite3 db ""
+db func int2str int2str
+
+do_execsql_test 2.0 {
+  PRAGMA cache_size = -100;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  WITH c(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100 ) 
+    INSERT INTO t1 SELECT x, int2str(x) FROM c;
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO t1 VALUES(10001, int2str(1001) || int2str(1001) || int2str(1001));
+}
+
+do_execsql_test 2.2 {
+  SELECT b FROM t1 WHERE a = 10001;
+} "[int2str 1001][int2str 1001][int2str 1001]"
+
 finish_test
+

@@ -2418,7 +2418,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
-  **     $db deserialize ?DATABASE? VALUE
+  **     $db deserialize ?-maxsize N? ?-readonly BOOL? ?DATABASE? VALUE
   **
   ** Reopen DATABASE (default "main") using the content in $VALUE
   */
@@ -2428,38 +2428,65 @@ static int SQLITE_TCLAPI DbObjCmd(
                      (char*)0);
     rc = TCL_ERROR;
 #else
-    const char *zSchema;
-    Tcl_Obj *pValue;
+    const char *zSchema = 0;
+    Tcl_Obj *pValue = 0;
     unsigned char *pBA;
     unsigned char *pData;
     int len, xrc;
-    
-    if( objc==3 ){
-      zSchema = 0;
-      pValue = objv[2];
-    }else if( objc==4 ){
-      zSchema = Tcl_GetString(objv[2]);
-      pValue = objv[3];
-    }else{
+    sqlite3_int64 mxSize = 0;
+    int i;
+    int isReadonly = 0;
+
+
+    if( objc<3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? VALUE");
       rc = TCL_ERROR;
       break;
     }
+    for(i=2; i<objc-1; i++){
+      const char *z = Tcl_GetString(objv[i]);
+      if( strcmp(z,"-maxsize")==0 && i<objc-2 ){
+        rc = Tcl_GetWideIntFromObj(interp, objv[++i], &mxSize);
+        if( rc ) goto deserialize_error;
+        continue;
+      }
+      if( strcmp(z,"-readonly")==0 && i<objc-2 ){
+        rc = Tcl_GetBooleanFromObj(interp, objv[++i], &isReadonly);
+        if( rc ) goto deserialize_error;
+        continue;
+      }
+      if( zSchema==0 && i==objc-2 && z[0]!='-' ){
+        zSchema = z;
+        continue;
+      }
+      Tcl_AppendResult(interp, "unknown option: ", z, (char*)0);
+      rc = TCL_ERROR;
+      goto deserialize_error;
+    }
+    pValue = objv[objc-1];
     pBA = Tcl_GetByteArrayFromObj(pValue, &len);
     pData = sqlite3_malloc64( len );
     if( pData==0 && len>0 ){
       Tcl_AppendResult(interp, "out of memory", (char*)0);
       rc = TCL_ERROR;
     }else{
+      int flags;
       if( len>0 ) memcpy(pData, pBA, len);
-      xrc = sqlite3_deserialize(pDb->db, zSchema, pData, len, len,
-                SQLITE_DESERIALIZE_FREEONCLOSE |
-                SQLITE_DESERIALIZE_RESIZEABLE);
+      if( isReadonly ){
+        flags = SQLITE_DESERIALIZE_FREEONCLOSE | SQLITE_DESERIALIZE_READONLY;
+      }else{
+        flags = SQLITE_DESERIALIZE_FREEONCLOSE | SQLITE_DESERIALIZE_RESIZEABLE;
+      }
+      xrc = sqlite3_deserialize(pDb->db, zSchema, pData, len, len, flags);
       if( xrc ){
         Tcl_AppendResult(interp, "unable to set MEMDB content", (char*)0);
         rc = TCL_ERROR;
       }
+      if( mxSize>0 ){
+        sqlite3_file_control(pDb->db, zSchema,SQLITE_FCNTL_SIZE_LIMIT,&mxSize);
+      }
     }
+deserialize_error:
 #endif
     break; 
   }

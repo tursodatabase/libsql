@@ -144,6 +144,14 @@ do_execsql_test 3.1 {
   {[a b c d e]}
 }
 
+do_execsql_test 3.2 {
+  SELECT highlight(ft, 0, NULL, NULL) FROM ft WHERE ft MATCH 'a+b+c AND c+d+e';
+} {
+  {a b c x c d e}
+  {a b c c d e}
+  {a b c d e}
+}
+
 }
 
 finish_test

@@ -397,4 +397,3 @@ do_test 3.5 {
 
 catch { db close }
 finish_test
-

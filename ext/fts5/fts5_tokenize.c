@@ -152,7 +152,7 @@ static int fts5AsciiTokenize(
     nByte = ie-is;
     if( nByte>nFold ){
       if( pFold!=aFold ) sqlite3_free(pFold);
-      pFold = sqlite3_malloc(nByte*2);
+      pFold = sqlite3_malloc64((sqlite3_int64)nByte*2);
       if( pFold==0 ){
         rc = SQLITE_NOMEM;
         break;
@@ -234,12 +234,17 @@ struct Unicode61Tokenizer {
   unsigned char aTokenChar[128];  /* ASCII range token characters */
   char *aFold;                    /* Buffer to fold text into */
   int nFold;                      /* Size of aFold[] in bytes */
-  int bRemoveDiacritic;           /* True if remove_diacritics=1 is set */
+  int eRemoveDiacritic;           /* True if remove_diacritics=1 is set */
   int nException;
   int *aiException;
 
   unsigned char aCategory[32];    /* True for token char categories */
 };
+
+/* Values for eRemoveDiacritic (must match internals of fts5_unicode2.c) */
+#define FTS5_REMOVE_DIACRITICS_NONE    0
+#define FTS5_REMOVE_DIACRITICS_SIMPLE  1
+#define FTS5_REMOVE_DIACRITICS_COMPLEX 2
 
 static int fts5UnicodeAddExceptions(
   Unicode61Tokenizer *p,          /* Tokenizer object */
@@ -251,13 +256,14 @@ static int fts5UnicodeAddExceptions(
   int *aNew;
 
   if( n>0 ){
-    aNew = (int*)sqlite3_realloc(p->aiException, (n+p->nException)*sizeof(int));
+    aNew = (int*)sqlite3_realloc64(p->aiException,
+                                   (n+p->nException)*sizeof(int));
     if( aNew ){
       int nNew = p->nException;
       const unsigned char *zCsr = (const unsigned char*)z;
       const unsigned char *zTerm = (const unsigned char*)&z[n];
       while( zCsr<zTerm ){
-        int iCode;
+        u32 iCode;
         int bToken;
         READ_UTF8(zCsr, zTerm, iCode);
         if( iCode<128 ){
@@ -269,7 +275,7 @@ static int fts5UnicodeAddExceptions(
           if( bToken!=bTokenChars && sqlite3Fts5UnicodeIsdiacritic(iCode)==0 ){
             int i;
             for(i=0; i<nNew; i++){
-              if( aNew[i]>iCode ) break;
+              if( (u32)aNew[i]>iCode ) break;
             }
             memmove(&aNew[i+1], &aNew[i], (nNew-i)*sizeof(int));
             aNew[i] = iCode;
@@ -361,7 +367,7 @@ static int fts5UnicodeCreate(
       int i;
       memset(p, 0, sizeof(Unicode61Tokenizer));
 
-      p->bRemoveDiacritic = 1;
+      p->eRemoveDiacritic = FTS5_REMOVE_DIACRITICS_SIMPLE;
       p->nFold = 64;
       p->aFold = sqlite3_malloc(p->nFold * sizeof(char));
       if( p->aFold==0 ){
@@ -382,10 +388,15 @@ static int fts5UnicodeCreate(
       for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
         const char *zArg = azArg[i+1];
         if( 0==sqlite3_stricmp(azArg[i], "remove_diacritics") ){
-          if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1] ){
+          if( (zArg[0]!='0' && zArg[0]!='1' && zArg[0]!='2') || zArg[1] ){
             rc = SQLITE_ERROR;
+          }else{
+            p->eRemoveDiacritic = (zArg[0] - '0');
+            assert( p->eRemoveDiacritic==FTS5_REMOVE_DIACRITICS_NONE
+                 || p->eRemoveDiacritic==FTS5_REMOVE_DIACRITICS_SIMPLE
+                 || p->eRemoveDiacritic==FTS5_REMOVE_DIACRITICS_COMPLEX
+            );
           }
-          p->bRemoveDiacritic = (zArg[0]=='1');
         }else
         if( 0==sqlite3_stricmp(azArg[i], "tokenchars") ){
           rc = fts5UnicodeAddExceptions(p, zArg, 1);
@@ -419,7 +430,7 @@ static int fts5UnicodeCreate(
 */
 static int fts5UnicodeIsAlnum(Unicode61Tokenizer *p, int iCode){
   return (
-    p->aCategory[sqlite3Fts5UnicodeCategory(iCode)]
+    p->aCategory[sqlite3Fts5UnicodeCategory((u32)iCode)]
     ^ fts5UnicodeIsException(p, iCode)
   );
 }
@@ -448,7 +459,7 @@ static int fts5UnicodeTokenize(
   /* Each iteration of this loop gobbles up a contiguous run of separators,
   ** then the next token.  */
   while( rc==SQLITE_OK ){
-    int iCode;                    /* non-ASCII codepoint read from input */
+    u32 iCode;                    /* non-ASCII codepoint read from input */
     char *zOut = aFold;
     int is;
     int ie;
@@ -480,7 +491,7 @@ static int fts5UnicodeTokenize(
       /* Grow the output buffer so that there is sufficient space to fit the
       ** largest possible utf-8 character.  */
       if( zOut>pEnd ){
-        aFold = sqlite3_malloc(nFold*2);
+        aFold = sqlite3_malloc64((sqlite3_int64)nFold*2);
         if( aFold==0 ){
           rc = SQLITE_NOMEM;
           goto tokenize_done;
@@ -499,7 +510,7 @@ static int fts5UnicodeTokenize(
         READ_UTF8(zCsr, zTerm, iCode);
         if( fts5UnicodeIsAlnum(p,iCode)||sqlite3Fts5UnicodeIsdiacritic(iCode) ){
  non_ascii_tokenchar:
-          iCode = sqlite3Fts5UnicodeFold(iCode, p->bRemoveDiacritic);
+          iCode = sqlite3Fts5UnicodeFold(iCode, p->eRemoveDiacritic);
           if( iCode ) WRITE_UTF8(zOut, iCode);
         }else{
           break;
@@ -1274,5 +1285,3 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
 
   return rc;
 }
-
-

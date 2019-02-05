@@ -93,4 +93,3 @@ do_catchsql_test 3.3 {
   SELECT * FROM x2('^a');
 } {1 {fts5: phrase queries are not supported (detail!=full)}}
 finish_test
-

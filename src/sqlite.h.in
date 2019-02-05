@@ -825,6 +825,15 @@ struct sqlite3_io_methods {
 ** file space based on this hint in order to help writes to the database
 ** file run faster.
 **
+** <li>[[SQLITE_FCNTL_SIZE_LIMIT]]
+** The [SQLITE_FCNTL_SIZE_LIMIT] opcode is used by in-memory VFS that
+** implements [sqlite3_deserialize()] to set an upper bound on the size
+** of the in-memory database.  The argument is a pointer to a [sqlite3_int64].
+** If the integer pointed to is negative, then it is filled in with the
+** current limit.  Otherwise the limit is set to the larger of the value
+** of the integer pointed to and the current database size.  The integer
+** pointed to is set to the new limit.
+**
 ** <li>[[SQLITE_FCNTL_CHUNK_SIZE]]
 ** The [SQLITE_FCNTL_CHUNK_SIZE] opcode is used to request that the VFS
 ** extends and truncates the database file in chunks of a size specified
@@ -1133,6 +1142,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
 #define SQLITE_FCNTL_LOCK_TIMEOUT           34
 #define SQLITE_FCNTL_DATA_VERSION           35
+#define SQLITE_FCNTL_SIZE_LIMIT             36
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1974,6 +1984,17 @@ struct sqlite3_mem_methods {
 ** negative value for this option restores the default behaviour.
 ** This option is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
+**
+** [[SQLITE_CONFIG_MEMDB_MAXSIZE]]
+** <dt>SQLITE_CONFIG_MEMDB_MAXSIZE
+** <dd>The SQLITE_CONFIG_MEMDB_MAXSIZE option accepts a single parameter
+** [sqlite3_int64] parameter which is the default maximum size for an in-memory
+** database created using [sqlite3_deserialize()].  This default maximum
+** size can be adjusted up or down for individual databases using the
+** [SQLITE_FCNTL_SIZE_LIMIT] [sqlite3_file_control|file-control].  If this
+** configuration setting is never used, then the default maximum is determined
+** by the [SQLITE_MEMDB_DEFAULT_MAXSIZE] compile-time option.  If that
+** compile-time option is not set, then the default maximum is 1073741824.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -2004,6 +2025,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 #define SQLITE_CONFIG_SMALL_MALLOC        27  /* boolean */
 #define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
+#define SQLITE_CONFIG_MEMDB_MAXSIZE       29  /* sqlite3_int64 */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
@@ -2019,6 +2041,7 @@ struct sqlite3_mem_methods {
 ** is invoked.
 **
 ** <dl>
+** [[SQLITE_DBCONFIG_LOOKASIDE]]
 ** <dt>SQLITE_DBCONFIG_LOOKASIDE</dt>
 ** <dd> ^This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
@@ -2041,6 +2064,7 @@ struct sqlite3_mem_methods {
 ** memory is in use leaves the configuration unchanged and returns 
 ** [SQLITE_BUSY].)^</dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_FKEY]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FKEY</dt>
 ** <dd> ^This option is used to enable or disable the enforcement of
 ** [foreign key constraints].  There should be two additional arguments.
@@ -2051,6 +2075,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the FK enforcement setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_TRIGGER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_TRIGGER</dt>
 ** <dd> ^This option is used to enable or disable [CREATE TRIGGER | triggers].
 ** There should be two additional arguments.
@@ -2061,6 +2086,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the trigger setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
 ** <dd> ^This option is used to enable or disable the two-argument
 ** version of the [fts3_tokenizer()] function which is part of the
@@ -2074,6 +2100,7 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the new setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>
 ** <dd> ^This option is used to enable or disable the [sqlite3_load_extension()]
 ** interface independently of the [load_extension()] SQL function.
@@ -2091,7 +2118,7 @@ struct sqlite3_mem_methods {
 ** be a NULL pointer, in which case the new setting is not reported back.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
+** [[SQLITE_DBCONFIG_MAINDBNAME]] <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
 ** <dd> ^This option is used to change the name of the "main" database
 ** schema.  ^The sole argument is a pointer to a constant UTF8 string
 ** which will become the new schema name in place of "main".  ^SQLite
@@ -2100,6 +2127,7 @@ struct sqlite3_mem_methods {
 ** until after the database connection closes.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE]] 
 ** <dt>SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE</dt>
 ** <dd> Usually, when a database in wal mode is closed or detached from a 
 ** database handle, SQLite checks if this will mean that there are now no 
@@ -2113,7 +2141,7 @@ struct sqlite3_mem_methods {
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
+** [[SQLITE_DBCONFIG_ENABLE_QPSG]] <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
 ** <dd>^(The SQLITE_DBCONFIG_ENABLE_QPSG option activates or deactivates
 ** the [query planner stability guarantee] (QPSG).  When the QPSG is active,
 ** a single SQL query statement will always use the same algorithm regardless
@@ -2129,7 +2157,7 @@ struct sqlite3_mem_methods {
 ** following this call.
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
+** [[SQLITE_DBCONFIG_TRIGGER_EQP]] <dt>SQLITE_DBCONFIG_TRIGGER_EQP</dt>
 ** <dd> By default, the output of EXPLAIN QUERY PLAN commands does not 
 ** include output for any operations performed by trigger programs. This
 ** option is used to set or clear (the default) a flag that governs this
@@ -2141,7 +2169,7 @@ struct sqlite3_mem_methods {
 ** it is not disabled, 1 if it is.  
 ** </dd>
 **
-** <dt>SQLITE_DBCONFIG_RESET_DATABASE</dt>
+** [[SQLITE_DBCONFIG_RESET_DATABASE]] <dt>SQLITE_DBCONFIG_RESET_DATABASE</dt>
 ** <dd> Set the SQLITE_DBCONFIG_RESET_DATABASE flag and then run
 ** [VACUUM] in order to reset a database back to an empty database
 ** with no schema and no content. The following process works even for
@@ -2161,28 +2189,17 @@ struct sqlite3_mem_methods {
 ** process requires the use of this obscure API and multiple steps to help
 ** ensure that it does not happen by accident.
 **
-** <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
-** <dd>The SQLITE_DBCONFIG_DEFENSIVE option actives or deactivates the
+** [[SQLITE_DBCONFIG_DEFENSIVE]] <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
+** <dd>The SQLITE_DBCONFIG_DEFENSIVE option activates or deactivates the
 ** "defensive" flag for a database connection.  When the defensive
-** flag is enabled, some obscure features of SQLite are disabled in order
-** to reduce the attack surface. Applications that run untrusted SQL
-** can activate this flag to reduce the risk of zero-day exploits.
-** <p>
-** Features disabled by the defensive flag include:
+** flag is enabled, language features that allow ordinary SQL to 
+** deliberately corrupt the database file are disabled.  The disabled
+** features include but are not limited to the following:
 ** <ul>
-** <li>The [PRAGMA writable_schema=ON] statement.
-** <li>Writes to the [sqlite_dbpage] virtual table.
+** <li> The [PRAGMA writable_schema=ON] statement.
+** <li> Writes to the [sqlite_dbpage] virtual table.
+** <li> Direct writes to [shadow tables].
 ** </ul>
-** New restrictions may be added in future releases.
-** <p>
-** To be clear: It should never be possible for hostile SQL to cause
-** arbitrary memory reads, memory leaks, buffer overflows, assertion
-** faults, arbitrary code execution, crashes, or other mischief, regardless
-** of the value of the defensive flag.  Any occurrance of these problems
-** is considered a serious bug and will be fixed promptly.  It is not
-** necessary to enable the defensive flag in order to make SQLite secure
-** against attack. The defensive flag merely provides an additional layer
-** of defense against unknown vulnerabilities.
 ** </dd>
 ** </dl>
 */
@@ -2998,9 +3015,9 @@ int sqlite3_set_authorizer(
 ** time is in units of nanoseconds, however the current implementation
 ** is only capable of millisecond resolution so the six least significant
 ** digits in the time are meaningless.  Future versions of SQLite
-** might provide greater resolution on the profiler callback.  The
-** sqlite3_profile() function is considered experimental and is
-** subject to change in future versions of SQLite.
+** might provide greater resolution on the profiler callback.  Invoking
+** either [sqlite3_trace()] or [sqlite3_trace_v2()] will cancel the
+** profile callback.
 */
 SQLITE_DEPRECATED void *sqlite3_trace(sqlite3*,
    void(*xTrace)(void*,const char*), void*);
@@ -3414,6 +3431,8 @@ int sqlite3_open_v2(
 ** is not a database file pathname pointer that SQLite passed into the xOpen
 ** VFS method, then the behavior of this routine is undefined and probably
 ** undesirable.
+**
+** See the [URI filename] documentation for additional information.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
 int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
@@ -3636,18 +3655,23 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** deplete the limited store of lookaside memory. Future versions of
 ** SQLite may act on this hint differently.
 **
-** [[SQLITE_PREPARE_NORMALIZE]] ^(<dt>SQLITE_PREPARE_NORMALIZE</dt>
-** <dd>The SQLITE_PREPARE_NORMALIZE flag indicates that a normalized
-** representation of the SQL statement should be calculated and then
-** associated with the prepared statement, which can be obtained via
-** the [sqlite3_normalized_sql()] interface.  The semantics used to
-** normalize a SQL statement are unspecified and subject to change.
-** At a minimum, literal values will be replaced with suitable
-** placeholders.
+** [[SQLITE_PREPARE_NORMALIZE]] <dt>SQLITE_PREPARE_NORMALIZE</dt>
+** <dd>The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used
+** to be required for any prepared statement that wanted to use the
+** [sqlite3_normalized_sql()] interface.  However, the
+** [sqlite3_normalized_sql()] interface is now available to all
+** prepared statements, regardless of whether or not they use this
+** flag.
+**
+** [[SQLITE_PREPARE_NO_VTAB]] <dt>SQLITE_PREPARE_NO_VTAB</dt>
+** <dd>The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler
+** to return an error (error code SQLITE_ERROR) if the statement uses
+** any virtual tables.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
+#define SQLITE_PREPARE_NO_VTAB                 0x04
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -6324,6 +6348,9 @@ struct sqlite3_module {
   int (*xSavepoint)(sqlite3_vtab *pVTab, int);
   int (*xRelease)(sqlite3_vtab *pVTab, int);
   int (*xRollbackTo)(sqlite3_vtab *pVTab, int);
+  /* The methods above are in versions 1 and 2 of the sqlite_module object.
+  ** Those below are for version 3 and greater. */
+  int (*xShadowName)(const char*);
 };
 
 /*
@@ -7246,6 +7273,7 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_OPTIMIZATIONS           15
 #define SQLITE_TESTCTRL_ISKEYWORD               16  /* NOT USED */
 #define SQLITE_TESTCTRL_SCRATCHMALLOC           17  /* NOT USED */
+#define SQLITE_TESTCTRL_INTERNAL_FUNCTIONS      17
 #define SQLITE_TESTCTRL_LOCALTIME_FAULT         18
 #define SQLITE_TESTCTRL_EXPLAIN_STMT            19  /* NOT USED */
 #define SQLITE_TESTCTRL_ONCE_RESET_THRESHOLD    19
@@ -8658,6 +8686,7 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** can use to customize and optimize their behavior.
 **
 ** <dl>
+** [[SQLITE_VTAB_CONSTRAINT_SUPPORT]]
 ** <dt>SQLITE_VTAB_CONSTRAINT_SUPPORT
 ** <dd>Calls of the form
 ** [sqlite3_vtab_config](db,SQLITE_VTAB_CONSTRAINT_SUPPORT,X) are supported,

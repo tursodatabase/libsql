@@ -1001,6 +1001,7 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
       const sqlite3_module *pMod = pVTab->pMod->pModule;
       if( pVTab->pVtab && pMod->iVersion>=2 ){
         int (*xMethod)(sqlite3_vtab *, int);
+        sqlite3VtabLock(pVTab);
         switch( op ){
           case SAVEPOINT_BEGIN:
             xMethod = pMod->xSavepoint;
@@ -1016,6 +1017,7 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
         if( xMethod && pVTab->iSavepoint>iSavepoint ){
           rc = xMethod(pVTab->pVtab, iSavepoint);
         }
+        sqlite3VtabUnlock(pVTab);
       }
     }
   }

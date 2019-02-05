@@ -183,4 +183,8 @@ int sqlite3HeaderSizePcache1(void);
 /* Number of dirty pages as a percentage of the configured cache size */
 int sqlite3PCachePercentDirty(PCache*);
 
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+int sqlite3PCacheIsDirty(PCache *pCache);
+#endif
+
 #endif /* _PCACHE_H_ */

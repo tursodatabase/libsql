@@ -492,6 +492,7 @@ static sqlite3_module vtablogModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
+  0,                         /* xShadowName */
 };
 
 #ifdef _WIN32

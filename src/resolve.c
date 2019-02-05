@@ -80,7 +80,6 @@ static void resolveAlias(
     if( pExpr->op==TK_COLLATE ){
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
-    ExprSetProperty(pDup, EP_Alias);
 
     /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
     ** prevents ExprDelete() from deleting the Expr structure itself,
@@ -474,6 +473,25 @@ static int lookupName(
   if( cnt==0 && zTab==0 ){
     assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+      /* If a double-quoted identifier does not match any known column name,
+      ** then treat it as a string.
+      **
+      ** This hack was added in the early days of SQLite in a misguided attempt
+      ** to be compatible with MySQL 3.x, which used double-quotes for strings.
+      ** I now sorely regret putting in this hack. The effect of this hack is
+      ** that misspelled identifier names are silently converted into strings
+      ** rather than causing an error, to the frustration of countless
+      ** programmers. To all those frustrated programmers, my apologies.
+      **
+      ** Someday, I hope to get rid of this hack. Unfortunately there is
+      ** a huge amount of legacy SQL that uses it. So for now, we just
+      ** issue a warning.
+      */
+      sqlite3_log(SQLITE_WARNING,
+        "double-quoted string literal: \"%w\"", zCol);
+#ifdef SQLITE_ENABLE_NORMALIZE
+      sqlite3VdbeAddDblquoteStr(db, pParse->pVdbe, zCol);
+#endif
       pExpr->op = TK_STRING;
       pExpr->y.pTab = 0;
       return WRC_Prune;
@@ -771,6 +789,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           notValid(pParse, pNC, "non-deterministic functions",
                    NC_IdxExpr|NC_PartIdx);
         }
+        if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
+         && pParse->nested==0
+         && sqlite3Config.bInternalFunctions==0
+        ){
+          /* Internal-use-only functions are disallowed unless the
+          ** SQL is being compiled using sqlite3NestedParse() */
+          no_such_func = 1;
+          pDef = 0;
+        }
       }
 
       if( 0==IN_RENAME_OBJECT ){
@@ -831,10 +858,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->y.pWin ){
           Select *pSel = pNC->pWinSelect;
+          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
           sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
-          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           if( 0==pSel->pWin 
            || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
           ){
@@ -1111,32 +1138,53 @@ static int resolveCompoundOrderBy(
       }else{
         iCol = resolveAsName(pParse, pEList, pE);
         if( iCol==0 ){
-          pDup = sqlite3ExprDup(db, pE, 0);
+          /* Now test if expression pE matches one of the values returned
+          ** by pSelect. In the usual case this is done by duplicating the 
+          ** expression, resolving any symbols in it, and then comparing
+          ** it against each expression returned by the SELECT statement.
+          ** Once the comparisons are finished, the duplicate expression
+          ** is deleted.
+          **
+          ** Or, if this is running as part of an ALTER TABLE operation,
+          ** resolve the symbols in the actual expression, not a duplicate.
+          ** And, if one of the comparisons is successful, leave the expression
+          ** as is instead of transforming it to an integer as in the usual
+          ** case. This allows the code in alter.c to modify column
+          ** refererences within the ORDER BY expression as required.  */
+          if( IN_RENAME_OBJECT ){
+            pDup = pE;
+          }else{
+            pDup = sqlite3ExprDup(db, pE, 0);
+          }
           if( !db->mallocFailed ){
             assert(pDup);
             iCol = resolveOrderByTermToExprList(pParse, pSelect, pDup);
           }
-          sqlite3ExprDelete(db, pDup);
+          if( !IN_RENAME_OBJECT ){
+            sqlite3ExprDelete(db, pDup);
+          }
         }
       }
       if( iCol>0 ){
         /* Convert the ORDER BY term into an integer column number iCol,
         ** taking care to preserve the COLLATE clause if it exists */
-        Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
-        if( pNew==0 ) return 1;
-        pNew->flags |= EP_IntValue;
-        pNew->u.iValue = iCol;
-        if( pItem->pExpr==pE ){
-          pItem->pExpr = pNew;
-        }else{
-          Expr *pParent = pItem->pExpr;
-          assert( pParent->op==TK_COLLATE );
-          while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
-          assert( pParent->pLeft==pE );
-          pParent->pLeft = pNew;
+        if( !IN_RENAME_OBJECT ){
+          Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
+          if( pNew==0 ) return 1;
+          pNew->flags |= EP_IntValue;
+          pNew->u.iValue = iCol;
+          if( pItem->pExpr==pE ){
+            pItem->pExpr = pNew;
+          }else{
+            Expr *pParent = pItem->pExpr;
+            assert( pParent->op==TK_COLLATE );
+            while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
+            assert( pParent->pLeft==pE );
+            pParent->pLeft = pNew;
+          }
+          sqlite3ExprDelete(db, pE);
+          pItem->u.x.iOrderByCol = (u16)iCol;
         }
-        sqlite3ExprDelete(db, pE);
-        pItem->u.x.iOrderByCol = (u16)iCol;
         pItem->done = 1;
       }else{
         moreToDo = 1;
@@ -1485,6 +1533,17 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       }
     }
 
+    if( IN_RENAME_OBJECT ){
+      Window *pWin;
+      for(pWin=p->pWinDefn; pWin; pWin=pWin->pNextWin){
+        if( sqlite3ResolveExprListNames(&sNC, pWin->pOrderBy)
+         || sqlite3ResolveExprListNames(&sNC, pWin->pPartition)
+        ){
+          return WRC_Abort;
+        }
+      }
+    }
+
     /* If this is part of a compound SELECT, check that it has the right
     ** number of expressions in the select list. */
     if( p->pNext && p->pEList->nExpr!=p->pNext->pEList->nExpr ){
@@ -1635,36 +1694,45 @@ void sqlite3ResolveSelectNames(
 }
 
 /*
-** Resolve names in expressions that can only reference a single table:
+** Resolve names in expressions that can only reference a single table
+** or which cannot reference any tables at all.  Examples:
 **
-**    *   CHECK constraints
-**    *   WHERE clauses on partial indices
+**    (1)   CHECK constraints
+**    (2)   WHERE clauses on partial indices
+**    (3)   Expressions in indexes on expressions
+**    (4)   Expression arguments to VACUUM INTO.
 **
-** The Expr.iTable value for Expr.op==TK_COLUMN nodes of the expression
-** is set to -1 and the Expr.iColumn value is set to the column number.
+** In all cases except (4), the Expr.iTable value for Expr.op==TK_COLUMN
+** nodes of the expression is set to -1 and the Expr.iColumn value is
+** set to the column number.  In case (4), TK_COLUMN nodes cause an error.
 **
 ** Any errors cause an error message to be set in pParse.
 */
-void sqlite3ResolveSelfReference(
+int sqlite3ResolveSelfReference(
   Parse *pParse,      /* Parsing context */
-  Table *pTab,        /* The table being referenced */
-  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
+  Table *pTab,        /* The table being referenced, or NULL */
+  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr, or 0 */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
   ExprList *pList     /* Expression list to resolve.  May be NULL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
+  int rc;
 
-  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr );
+  assert( type==0 || pTab!=0 );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
-  sSrc.nSrc = 1;
-  sSrc.a[0].zName = pTab->zName;
-  sSrc.a[0].pTab = pTab;
-  sSrc.a[0].iCursor = -1;
+  if( pTab ){
+    sSrc.nSrc = 1;
+    sSrc.a[0].zName = pTab->zName;
+    sSrc.a[0].pTab = pTab;
+    sSrc.a[0].iCursor = -1;
+  }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
-  if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
-  if( pList ) sqlite3ResolveExprListNames(&sNC, pList);
+  if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
+  if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);
+  return rc;
 }

@@ -670,4 +670,3 @@ foreach {tn3 create_vfs destroy_vfs} {
 
 
 finish_test
-

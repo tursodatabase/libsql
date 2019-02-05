@@ -364,8 +364,10 @@ ifcapable explain {
     QUERY PLAN
     |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
-       |--SEARCH TABLE t2 USING INDEX t2d (d=?)
-       `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+       |--INDEX 1
+       |  `--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       `--INDEX 3
+          `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
   }]
   do_eqp_test where9-3.2 {
     SELECT coalesce(t2.a,9999)
@@ -375,8 +377,10 @@ ifcapable explain {
     QUERY PLAN
     |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
-       |--SEARCH TABLE t2 USING INDEX t2d (d=?)
-       `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+       |--INDEX 1
+       |  `--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       `--INDEX 2
+          `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
   }]
 } 
 
@@ -456,8 +460,10 @@ do_eqp_test where9-5.1 {
 } {
   QUERY PLAN
   `--MULTI-INDEX OR
-     |--SEARCH TABLE t1 USING INDEX t1c (c=?)
-     `--SEARCH TABLE t1 USING INDEX t1d (d=?)
+     |--INDEX 1
+     |  `--SEARCH TABLE t1 USING INDEX t1c (c=?)
+     `--INDEX 2
+        `--SEARCH TABLE t1 USING INDEX t1d (d=?)
 }
 
 # In contrast, b=1000 is preferred over any OR-clause.

@@ -430,10 +430,18 @@ lappend ::testsuitelist xxx
 test_suite "coverage-wal" -description {
   Coverage tests for file wal.c.
 } -files {
-  wal.test       wal2.test     wal3.test       walmode.test    
-  walbak.test    walhook.test  walcrash2.test  walcksum.test
-  walfault.test  walbig.test   walnoshm.test
-  wal5.test
+  wal.test wal2.test wal3.test wal4.test wal5.test
+  wal64k.test wal6.test wal7.test wal8.test wal9.test
+  walbak.test walbig.test walblock.test walcksum.test walcrash2.test
+  walcrash3.test walcrash4.test walcrash.test walfault.test walhook.test
+  walmode.test walnoshm.test waloverwrite.test walpersist.test 
+  walprotocol2.test walprotocol.test walro2.test walrofault.test 
+  walro.test walshared.test walslow.test walvfs.test
+  walfault2.test
+  nockpt.test
+
+  snapshot2.test snapshot3.test snapshot4.test
+  snapshot_fault.test snapshot.test snapshot_up.test
 } 
 
 test_suite "coverage-pager" -description {
@@ -744,7 +752,7 @@ test_suite "inmemory_journal" -description {
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
-  journal3.test 8_3_names.test
+  journal3.test 8_3_names.test shmlock.test
 
   pager1.test async4.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
@@ -958,7 +966,7 @@ test_suite "journaltest" -description {
   async4.test bigfile.test backcompat.test e_wal* fstat.test mmap2.test
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
-  delete_db.test
+  delete_db.test shmlock.test
 }]
 
 if {[info commands register_demovfs] != ""} {

@@ -43,6 +43,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include "sqlite3.h"
 
 /*
@@ -64,6 +66,95 @@ static const char *azSql[] = {
 /* Output verbosity level.  0 means complete silence */
 int eVerbosity = 0;
 
+/* True to activate PRAGMA vdbe_debug=on */
+static int bVdbeDebug = 0;
+
+/* Maximum size of the in-memory database file */
+static sqlite3_int64 szMax = 104857600;
+
+/***** Copy/paste from ext/misc/memtrace.c ***************************/
+/* The original memory allocation routines */
+static sqlite3_mem_methods memtraceBase;
+static FILE *memtraceOut;
+
+/* Methods that trace memory allocations */
+static void *memtraceMalloc(int n){
+  if( memtraceOut ){
+    fprintf(memtraceOut, "MEMTRACE: allocate %d bytes\n", 
+            memtraceBase.xRoundup(n));
+  }
+  return memtraceBase.xMalloc(n);
+}
+static void memtraceFree(void *p){
+  if( p==0 ) return;
+  if( memtraceOut ){
+    fprintf(memtraceOut, "MEMTRACE: free %d bytes\n", memtraceBase.xSize(p));
+  }
+  memtraceBase.xFree(p);
+}
+static void *memtraceRealloc(void *p, int n){
+  if( p==0 ) return memtraceMalloc(n);
+  if( n==0 ){
+    memtraceFree(p);
+    return 0;
+  }
+  if( memtraceOut ){
+    fprintf(memtraceOut, "MEMTRACE: resize %d -> %d bytes\n",
+            memtraceBase.xSize(p), memtraceBase.xRoundup(n));
+  }
+  return memtraceBase.xRealloc(p, n);
+}
+static int memtraceSize(void *p){
+  return memtraceBase.xSize(p);
+}
+static int memtraceRoundup(int n){
+  return memtraceBase.xRoundup(n);
+}
+static int memtraceInit(void *p){
+  return memtraceBase.xInit(p);
+}
+static void memtraceShutdown(void *p){
+  memtraceBase.xShutdown(p);
+}
+
+/* The substitute memory allocator */
+static sqlite3_mem_methods ersaztMethods = {
+  memtraceMalloc,
+  memtraceFree,
+  memtraceRealloc,
+  memtraceSize,
+  memtraceRoundup,
+  memtraceInit,
+  memtraceShutdown
+};
+
+/* Begin tracing memory allocations to out. */
+int sqlite3MemTraceActivate(FILE *out){
+  int rc = SQLITE_OK;
+  if( memtraceBase.xMalloc==0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memtraceBase);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &ersaztMethods);
+    }
+  }
+  memtraceOut = out;
+  return rc;
+}
+
+/* Deactivate memory tracing */
+int sqlite3MemTraceDeactivate(void){
+  int rc = SQLITE_OK;
+  if( memtraceBase.xMalloc!=0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memtraceBase);
+    if( rc==SQLITE_OK ){
+      memset(&memtraceBase, 0, sizeof(memtraceBase));
+    }
+  }
+  memtraceOut = 0;
+  return rc;
+}
+/***** End copy/paste from ext/misc/memtrace.c ***************************/
+
 /* libFuzzer invokes this routine with fuzzed database files (in aData).
 ** This routine run SQLite against the malformed database to see if it
 ** can provoke a failure or malfunction.
@@ -73,11 +164,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   sqlite3 *db;
   int rc;
   int i;
+  sqlite3_int64 x;
+  char *zErr = 0;
 
   if( eVerbosity>=1 ){
     printf("************** nByte=%d ***************\n", (int)nByte);
     fflush(stdout);
   }
+  if( sqlite3_initialize() ) return 0;
   rc = sqlite3_open(0, &db);
   if( rc ) return 1;
   a = sqlite3_malloc64(nByte+1);
@@ -86,12 +180,22 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   sqlite3_deserialize(db, "main", a, nByte, nByte,
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
+  x = szMax;
+  sqlite3_file_control(db, "main", SQLITE_FCNTL_SIZE_LIMIT, &x);
+  if( bVdbeDebug ){
+    sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
+  }
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
     if( eVerbosity>=1 ){
       printf("%s\n", azSql[i]);
       fflush(stdout);
     }
-    sqlite3_exec(db, azSql[i], 0, 0, 0);
+    zErr = 0;
+    rc = sqlite3_exec(db, azSql[i], 0, 0, &zErr);
+    if( rc && eVerbosity>=1 ){
+      printf("-- rc=%d zErr=%s\n", rc, zErr);
+    }
+    sqlite3_free(zErr);
   }
   rc = sqlite3_close(db);
   if( rc!=SQLITE_OK ){
@@ -108,31 +212,142 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   return 0;
 }
 
+/*
+** Return the number of "v" characters in a string.  Return 0 if there
+** are any characters in the string other than "v".
+*/
+static int numberOfVChar(const char *z){
+  int N = 0;
+  while( z[0] && z[0]=='v' ){
+    z++;
+    N++;
+  }
+  return z[0]==0 ? N : 0;
+}
+
 /* libFuzzer invokes this routine once when the executable starts, to
 ** process the command-line arguments.
 */
 int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
-  int i, j;
+  int i, j, n;
   int argc = *pArgc;
-  char **newArgv;
   char **argv = *pArgv;
-  newArgv = malloc( sizeof(char*)*(argc+1) );
-  if( newArgv==0 ) return 0;
-  newArgv[0] = argv[0];
   for(i=j=1; i<argc; i++){
     char *z = argv[i];
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
-      if( strcmp(z,"v")==0 ){
-        eVerbosity++;
+      if( z[0]=='v' && (n = numberOfVChar(z))>0 ){
+        eVerbosity += n;
+        continue;
+      }
+      if( strcmp(z,"vdbe-debug")==0 ){
+        bVdbeDebug = 1;
+        continue;
+      }
+      if( strcmp(z,"memtrace")==0 ){
+        sqlite3MemTraceActivate(stdout);
+        continue;
+      }
+      if( strcmp(z,"mem")==0 ){
+        bVdbeDebug = 1;
+        continue;
+      }
+      if( strcmp(z,"max-db-size")==0 ){
+        if( i+1==argc ){
+          fprintf(stderr, "missing argument to %s\n", argv[i]);
+          exit(1);
+        }
+        szMax = strtol(argv[++i], 0, 0);
+        continue;
+      }
+      if( strcmp(z,"max-stack")==0
+       || strcmp(z,"max-data")==0
+       || strcmp(z,"max-as")==0
+      ){
+        struct rlimit x,y;
+        int resource = RLIMIT_STACK;
+        char *zType = "RLIMIT_STACK";
+        if( i+1==argc ){
+          fprintf(stderr, "missing argument to %s\n", argv[i]);
+          exit(1);
+        }
+        if( z[4]=='d' ){
+          resource = RLIMIT_DATA;
+          zType = "RLIMIT_DATA";
+        }
+        if( z[4]=='a' ){
+          resource = RLIMIT_AS;
+          zType = "RLIMIT_AS";
+        }
+        memset(&x,0,sizeof(x));
+        getrlimit(resource, &x);
+        y.rlim_cur = atoi(argv[++i]);
+        y.rlim_max = x.rlim_cur;
+        setrlimit(resource, &y);
+        memset(&y,0,sizeof(y));
+        getrlimit(resource, &y);
+        printf("%s changed from %d to %d\n", 
+               zType, (int)x.rlim_cur, (int)y.rlim_cur);
         continue;
       }
     }
-    newArgv[j++] = argv[i];
+    argv[j++] = argv[i];
   }
-  newArgv[j] = 0;
-  *pArgv = newArgv;
+  argv[j] = 0;
   *pArgc = j;
   return 0;
 }
+
+#ifdef STANDALONE
+/*
+** Read an entire file into memory.  Space to hold the file comes
+** from malloc().
+*/
+static unsigned char *readFile(const char *zName, int *pnByte){
+  FILE *in = fopen(zName, "rb");
+  long nIn;
+  size_t nRead;
+  unsigned char *pBuf;
+  if( in==0 ) return 0;
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = malloc( nIn+1 );
+  if( pBuf==0 ){ fclose(in); return 0; }
+  nRead = fread(pBuf, nIn, 1, in);
+  fclose(in);
+  if( nRead!=1 ){
+    free(pBuf);
+    return 0;
+  }
+  pBuf[nIn] = 0;
+  if( pnByte ) *pnByte = nIn;
+  return pBuf;
+}
+#endif /* STANDALONE */
+
+#ifdef STANDALONE
+int main(int argc, char **argv){
+  int i;
+  LLVMFuzzerInitialize(&argc, &argv);
+  for(i=1; i<argc; i++){
+    unsigned char *pIn;
+    int nIn;
+    pIn = readFile(argv[i], &nIn);
+    if( pIn ){
+      LLVMFuzzerTestOneInput((const uint8_t*)pIn, (size_t)nIn);
+      free(pIn);
+    }
+  }
+  if( eVerbosity>0 ){
+    struct rusage x;
+    printf("SQLite %s\n", sqlite3_sourceid());
+    memset(&x, 0, sizeof(x));
+    if( getrusage(RUSAGE_SELF, &x)==0 ){
+      printf("Maximum RSS = %ld KB\n", x.ru_maxrss);
+    }
+  }
+  return 0;
+}
+#endif /*STANDALONE*/

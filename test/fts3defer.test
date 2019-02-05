@@ -59,6 +59,7 @@ set tests {
 
 do_select_tests 1.2 $tests
 
+sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.3 {
   SELECT count(*) FROM t1_segments WHERE length(block)>10000;
   UPDATE t1_segments 
@@ -225,6 +226,7 @@ foreach {tn setup} {
     execsql { CREATE VIRTUAL TABLE t1 USING FTS4 }
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
     add_empty_records 1000
+    sqlite3_db_config db DEFENSIVE 0
     execsql $zero_long_doclists
   }
   4 {
@@ -233,6 +235,7 @@ foreach {tn setup} {
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
     add_empty_records 1000
     execsql "INSERT INTO t1(t1) VALUES('optimize')"
+    sqlite3_db_config db DEFENSIVE 0
     execsql $zero_long_doclists
   }
   5 {
@@ -240,6 +243,7 @@ foreach {tn setup} {
     execsql { CREATE VIRTUAL TABLE t1 USING FTS4(matchinfo=fts3) }
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
     add_empty_records 1000
+    sqlite3_db_config db DEFENSIVE 0
     execsql $zero_long_doclists
   }
 } {

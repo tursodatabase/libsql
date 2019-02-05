@@ -2477,7 +2477,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, int *pbRetry){
         if( *zExtra=='\0' ) zExtra = 0;
       }
 
-      zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1%s%s", 
+      zTarget = sqlite3_mprintf("file:%s-vactmp?rbu_memory=1%s%s", 
           sqlite3_db_filename(p->dbRbu, "main"),
           (zExtra==0 ? "" : "&"), (zExtra==0 ? "" : zExtra)
       );
@@ -3743,6 +3743,12 @@ sqlite3rbu *sqlite3rbu_vacuum(
   const char *zState
 ){
   if( zTarget==0 ){ return rbuMisuseError(); }
+  if( zState ){
+    int n = strlen(zState);
+    if( n>=7 && 0==memcmp("-vactmp", &zState[n-7], 7) ){
+      return rbuMisuseError();
+    }
+  }
   /* TODO: Check that both arguments are non-NULL */
   return openRbuHandle(0, zTarget, zState);
 }
@@ -3939,7 +3945,10 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
   if( p->eStage==RBU_STAGE_OAL ){
     assert( rc!=SQLITE_DONE );
     if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "COMMIT", 0, 0, 0);
-    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, 0);
+    if( rc==SQLITE_OK ){ 
+      const char *zBegin = rbuIsVacuum(p) ? "BEGIN" : "BEGIN IMMEDIATE";
+      rc = sqlite3_exec(p->dbRbu, zBegin, 0, 0, 0);
+    }
     if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0,0);
   }
 

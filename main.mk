@@ -369,6 +369,7 @@ TESTSRC += \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/normalize.c \
   $(TOP)/ext/misc/percentile.c \
+  $(TOP)/ext/misc/prefixes.c \
   $(TOP)/ext/misc/regexp.c \
   $(TOP)/ext/misc/remember.c \
   $(TOP)/ext/misc/series.c \
@@ -396,6 +397,7 @@ TESTSRC2 = \
   $(TOP)/src/dbstat.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
+  $(TOP)/src/global.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/wal.c \
   $(TOP)/src/main.c \
@@ -508,7 +510,8 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata4.db \
   $(TOP)/test/fuzzdata5.db \
   $(TOP)/test/fuzzdata6.db \
-  $(TOP)/test/fuzzdata7.db
+  $(TOP)/test/fuzzdata7.db \
+  $(TOP)/test/fuzzdata8.db
 
 # Standard options to testfixture
 #
@@ -529,6 +532,11 @@ FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
+FUZZCHECK_OPT += -DSQLITE_ENABLE_DESERIALIZE
+FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS4
+FUZZCHECK_OPT += -DSQLITE_ENABLE_RTREE
+FUZZCHECK_OPT += -DSQLITE_ENABLE_GEOPOLY
+FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 DBFUZZ_OPT =
 KV_OPT = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
 ST_OPT = -DSQLITE_THREADSAFE=0
@@ -572,6 +580,20 @@ dbfuzz$(EXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(TCCX) -o dbfuzz$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 	  $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
+
+DBFUZZ2_OPTS = \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_ENABLE_DESERIALIZE \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5
+
+dbfuzz2$(EXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
+	$(TCCX) -I. -g -O0 -DSTANDALONE -o dbfuzz2$(EXE) \
+	  $(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c  $(TLIBS) $(THREADLIB)
 
 fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(TOP)/test/ossfuzz.c
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
@@ -718,6 +740,7 @@ SHELL_SRC = \
 	$(TOP)/ext/expert/sqlite3expert.c \
 	$(TOP)/ext/expert/sqlite3expert.h \
 	$(TOP)/ext/misc/zipfile.c \
+	$(TOP)/ext/misc/memtrace.c \
         $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
@@ -975,6 +998,9 @@ $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
 
+dbtotxt$(EXE):	$(TOP)/tool/dbtotxt.c
+	$(TCC) -o dbtotxt$(EXE) $(TOP)/tool/dbtotxt.c
+
 showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showdb$(EXE) \
 		$(TOP)/tool/showdb.c sqlite3.o $(THREADLIB)
@@ -994,9 +1020,17 @@ showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 showshm$(EXE):	$(TOP)/tool/showshm.c
 	$(TCC) -o showshm$(EXE) $(TOP)/tool/showshm.c
 
+index_usage$(EXE): $(TOP)/tool/index_usage.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_DEPRECATED $(SHELL_OPTS) -o index_usage$(EXE) \
+		$(TOP)/tool/index_usage.c sqlite3.o $(THREADLIB)
+
 changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \
 		$(TOP)/ext/session/changeset.c sqlite3.o $(THREADLIB)
+
+changesetfuzz$(EXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changesetfuzz$(EXE) \
+		$(TOP)/ext/session/changesetfuzz.c sqlite3.o $(THREADLIB)
 
 fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o fts3view$(EXE) \

@@ -311,6 +311,17 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
 }
 
 /*
+** This is whereScanInit() for the case of an index on an expression.
+** It is factored out into a separate tail-recursion subroutine so that
+** the normal whereScanInit() routine, which is a high-runner, does not
+** need to push registers onto the stack as part of its prologue.
+*/
+static SQLITE_NOINLINE WhereTerm *whereScanInitIndexExpr(WhereScan *pScan){
+  pScan->idxaff = sqlite3ExprAffinity(pScan->pIdxExpr);
+  return whereScanNext(pScan);
+}
+
+/*
 ** Initialize a WHERE clause scanner object.  Return a pointer to the
 ** first match.  Return NULL if there are no matches.
 **
@@ -342,12 +353,19 @@ static WhereTerm *whereScanInit(
   pScan->pIdxExpr = 0;
   pScan->idxaff = 0;
   pScan->zCollName = 0;
+  pScan->opMask = opMask;
+  pScan->k = 0;
+  pScan->aiCur[0] = iCur;
+  pScan->nEquiv = 1;
+  pScan->iEquiv = 1;
   if( pIdx ){
     int j = iColumn;
     iColumn = pIdx->aiColumn[j];
     if( iColumn==XN_EXPR ){
       pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
       pScan->zCollName = pIdx->azColl[j];
+      pScan->aiColumn[0] = XN_EXPR;
+      return whereScanInitIndexExpr(pScan);
     }else if( iColumn==pIdx->pTable->iPKey ){
       iColumn = XN_ROWID;
     }else if( iColumn>=0 ){
@@ -357,12 +375,7 @@ static WhereTerm *whereScanInit(
   }else if( iColumn==XN_EXPR ){
     return 0;
   }
-  pScan->opMask = opMask;
-  pScan->k = 0;
-  pScan->aiCur[0] = iCur;
   pScan->aiColumn[0] = iColumn;
-  pScan->nEquiv = 1;
-  pScan->iEquiv = 1;
   return whereScanNext(pScan);
 }
 
@@ -837,7 +850,7 @@ static void constructAutomaticIndex(
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
   }
   if( pPartial ){
-    iContinue = sqlite3VdbeMakeLabel(v);
+    iContinue = sqlite3VdbeMakeLabel(pParse);
     sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
     pLoop->wsFlags |= WHERE_PARTIALIDX;
   }
@@ -854,6 +867,7 @@ static void constructAutomaticIndex(
     translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
                           pTabItem->regResult, 1);
     sqlite3VdbeGoto(v, addrTop);
+    pTabItem->fg.viaCoroutine = 0;
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
   }
@@ -1031,9 +1045,11 @@ static sqlite3_index_info *allocateIndexInfo(
 ** method of the virtual table with the sqlite3_index_info object that
 ** comes in as the 3rd argument to this function.
 **
-** If an error occurs, pParse is populated with an error message and a
-** non-zero value is returned. Otherwise, 0 is returned and the output
-** part of the sqlite3_index_info structure is left populated.
+** If an error occurs, pParse is populated with an error message and an
+** appropriate error code is returned.  A return of SQLITE_CONSTRAINT from
+** xBestIndex is not considered an error.  SQLITE_CONSTRAINT indicates that
+** the current configuration of "unusable" flags in sqlite3_index_info can
+** not result in a valid plan.
 **
 ** Whether or not an error is returned, it is the responsibility of the
 ** caller to eventually free p->idxStr if p->needToFreeIdxStr indicates
@@ -1047,7 +1063,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   rc = pVtab->pModule->xBestIndex(pVtab, p);
   TRACE_IDX_OUTPUTS(p);
 
-  if( rc!=SQLITE_OK ){
+  if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT ){
     if( rc==SQLITE_NOMEM ){
       sqlite3OomFault(pParse->db);
     }else if( !pVtab->zErrMsg ){
@@ -1058,19 +1074,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   }
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = 0;
-
-#if 0
-  /* This error is now caught by the caller.
-  ** Search for "xBestIndex malfunction" below */
-  for(i=0; i<p->nConstraint; i++){
-    if( !p->aConstraint[i].usable && p->aConstraintUsage[i].argvIndex>0 ){
-      sqlite3ErrorMsg(pParse, 
-          "table %s: xBestIndex returned an invalid plan", pTab->zName);
-    }
-  }
-#endif
-
-  return pParse->nErr;
+  return rc;
 }
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
@@ -2219,7 +2223,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   rc = whereLoopXfer(db, p, pTemplate);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     Index *pIndex = p->u.btree.pIndex;
-    if( pIndex && pIndex->tnum==0 ){
+    if( pIndex && pIndex->idxType==SQLITE_IDXTYPE_IPK ){
       p->u.btree.pIndex = 0;
     }
   }
@@ -2386,8 +2390,8 @@ static int whereRangeVectorLen(
 ** terms only. If it is modified, this value is restored before this 
 ** function returns.
 **
-** If pProbe->tnum==0, that means pIndex is a fake index used for the
-** INTEGER PRIMARY KEY.
+** If pProbe->idxType==SQLITE_IDXTYPE_IPK, that means pIndex is 
+** a fake index used for the INTEGER PRIMARY KEY.
 */
 static int whereLoopAddBtreeIndex(
   WhereLoopBuilder *pBuilder,     /* The WhereLoop factory */
@@ -2887,6 +2891,7 @@ static int whereLoopAddBtree(
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
     sPk.szIdxRow = pTab->szTabRow;
+    sPk.idxType = SQLITE_IDXTYPE_IPK;
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
     pFirst = pSrc->pTab->pIndex;
@@ -2977,7 +2982,7 @@ static int whereLoopAddBtree(
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
     /* The ONEPASS_DESIRED flags never occurs together with ORDER BY */
     assert( (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || b==0 );
-    if( pProbe->tnum<=0 ){
+    if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
       /* Integer primary key index */
       pNew->wsFlags = WHERE_IPK;
 
@@ -3143,7 +3148,17 @@ static int whereLoopAddVirtualOne(
 
   /* Invoke the virtual table xBestIndex() method */
   rc = vtabBestIndex(pParse, pSrc->pTab, pIdxInfo);
-  if( rc ) return rc;
+  if( rc ){
+    if( rc==SQLITE_CONSTRAINT ){
+      /* If the xBestIndex method returns SQLITE_CONSTRAINT, that means
+      ** that the particular combination of parameters provided is unusable.
+      ** Make no entries in the loop table.
+      */
+      WHERETRACE(0xffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      return SQLITE_OK;
+    }
+    return rc;
+  }
 
   mxTerm = -1;
   assert( pNew->nLSlot>=nConstraint );
@@ -4643,7 +4658,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pResultSet = pResultSet;
   pWInfo->aiCurOnePass[0] = pWInfo->aiCurOnePass[1] = -1;
   pWInfo->nLevel = nTabList;
-  pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
+  pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(pParse);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->iLimit = iAuxArg;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
@@ -4917,9 +4932,10 @@ WhereInfo *sqlite3WhereBegin(
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
     int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
     int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
+    assert( !(wsFlags & WHERE_VIRTUALTABLE) || IsVirtual(pTabList->a[0].pTab) );
     if( bOnerow || (
         0!=(wctrlFlags & WHERE_ONEPASS_MULTIROW)
-     && 0==(wsFlags & WHERE_VIRTUALTABLE)
+     && !IsVirtual(pTabList->a[0].pTab)
      && (0==(wsFlags & WHERE_MULTI_OR) || (wctrlFlags & WHERE_DUPLICATES_OK))
     )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
@@ -5074,7 +5090,7 @@ WhereInfo *sqlite3WhereBegin(
         pParse, pTabList, pLevel, wctrlFlags
     );
     pLevel->addrBody = sqlite3VdbeCurrentAddr(v);
-    notReady = sqlite3WhereCodeOneLoopStart(pWInfo, ii, notReady);
+    notReady = sqlite3WhereCodeOneLoopStart(pParse,v,pWInfo,ii,pLevel,notReady);
     pWInfo->iContinue = pLevel->addrCont;
     if( (wsFlags&WHERE_MULTI_OR)==0 && (wctrlFlags&WHERE_OR_SUBCLAUSE)==0 ){
       sqlite3WhereAddScanStatus(v, pTabList, pLevel, addrExplain);
@@ -5258,6 +5274,29 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
                             pTabItem->regResult, 0);
       continue;
     }
+
+#ifdef SQLITE_ENABLE_EARLY_CURSOR_CLOSE
+    /* Close all of the cursors that were opened by sqlite3WhereBegin.
+    ** Except, do not close cursors that will be reused by the OR optimization
+    ** (WHERE_OR_SUBCLAUSE).  And do not close the OP_OpenWrite cursors
+    ** created for the ONEPASS optimization.
+    */
+    if( (pTab->tabFlags & TF_Ephemeral)==0
+     && pTab->pSelect==0
+     && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
+    ){
+      int ws = pLoop->wsFlags;
+      if( pWInfo->eOnePass==ONEPASS_OFF && (ws & WHERE_IDX_ONLY)==0 ){
+        sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
+      }
+      if( (ws & WHERE_INDEXED)!=0
+       && (ws & (WHERE_IPK|WHERE_AUTO_INDEX))==0 
+       && pLevel->iIdxCur!=pWInfo->aiCurOnePass[1]
+      ){
+        sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
+      }
+    }
+#endif
 
     /* If this scan uses an index, make VDBE code substitutions to read data
     ** from the index instead of from the table where possible.  In some cases

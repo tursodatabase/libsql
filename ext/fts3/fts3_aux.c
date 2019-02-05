@@ -66,7 +66,7 @@ static int fts3auxConnectMethod(
   char const *zFts3;              /* Name of fts3 table */
   int nDb;                        /* Result of strlen(zDb) */
   int nFts3;                      /* Result of strlen(zFts3) */
-  int nByte;                      /* Bytes of space to allocate here */
+  sqlite3_int64 nByte;            /* Bytes of space to allocate here */
   int rc;                         /* value returned by declare_vtab() */
   Fts3auxTable *p;                /* Virtual table object to return */
 
@@ -98,7 +98,7 @@ static int fts3auxConnectMethod(
   if( rc!=SQLITE_OK ) return rc;
 
   nByte = sizeof(Fts3auxTable) + sizeof(Fts3Table) + nDb + nFts3 + 2;
-  p = (Fts3auxTable *)sqlite3_malloc(nByte);
+  p = (Fts3auxTable *)sqlite3_malloc64(nByte);
   if( !p ) return SQLITE_NOMEM;
   memset(p, 0, nByte);
 
@@ -248,7 +248,7 @@ static int fts3auxCloseMethod(sqlite3_vtab_cursor *pCursor){
 static int fts3auxGrowStatArray(Fts3auxCursor *pCsr, int nSize){
   if( nSize>pCsr->nStat ){
     struct Fts3auxColstats *aNew;
-    aNew = (struct Fts3auxColstats *)sqlite3_realloc(pCsr->aStat, 
+    aNew = (struct Fts3auxColstats *)sqlite3_realloc64(pCsr->aStat, 
         sizeof(struct Fts3auxColstats) * nSize
     );
     if( aNew==0 ) return SQLITE_NOMEM;
@@ -416,15 +416,15 @@ static int fts3auxFilterMethod(
     assert( (iEq==0 && iGe==-1) || (iEq==-1 && iGe==0) );
     if( zStr ){
       pCsr->filter.zTerm = sqlite3_mprintf("%s", zStr);
-      pCsr->filter.nTerm = sqlite3_value_bytes(apVal[0]);
       if( pCsr->filter.zTerm==0 ) return SQLITE_NOMEM;
+      pCsr->filter.nTerm = (int)strlen(pCsr->filter.zTerm);
     }
   }
 
   if( iLe>=0 ){
     pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iLe]));
-    pCsr->nStop = sqlite3_value_bytes(apVal[iLe]);
     if( pCsr->zStop==0 ) return SQLITE_NOMEM;
+    pCsr->nStop = (int)strlen(pCsr->zStop);
   }
   
   if( iLangid>=0 ){
@@ -539,7 +539,8 @@ int sqlite3Fts3InitAux(sqlite3 *db){
      0,                           /* xRename       */
      0,                           /* xSavepoint    */
      0,                           /* xRelease      */
-     0                            /* xRollbackTo   */
+     0,                           /* xRollbackTo   */
+     0                            /* xShadowName   */
   };
   int rc;                         /* Return code */
 

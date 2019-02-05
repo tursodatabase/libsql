@@ -825,19 +825,30 @@ static const unsigned char aJournalMagic[] = {
 */
 #define isOpen(pFd) ((pFd)->pMethods!=0)
 
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
 /*
-** Return true if this pager uses a write-ahead log to read page pgno.
-** Return false if the pager reads pgno directly from the database.
+** Return true if page pgno can be read directly from the database file
+** by the b-tree layer. This is the case if:
+**
+**   * the database file is open,
+**   * there are no dirty pages in the cache, and
+**   * the desired page is not currently in the wal file.
 */
-#if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_DIRECT_OVERFLOW_READ)
-int sqlite3PagerUseWal(Pager *pPager, Pgno pgno){
-  u32 iRead = 0;
-  int rc;
-  if( pPager->pWal==0 ) return 0;
-  rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-  return rc || iRead;
+int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
+  if( pPager->fd->pMethods==0 ) return 0;
+  if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
+#ifndef SQLITE_OMIT_WAL
+  if( pPager->pWal ){
+    u32 iRead = 0;
+    int rc;
+    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
+    return (rc==SQLITE_OK && iRead==0);
+  }
+#endif
+  return 1;
 }
 #endif
+
 #ifndef SQLITE_OMIT_WAL
 # define pagerUseWal(x) ((x)->pWal!=0)
 #else
@@ -3828,7 +3839,10 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
     pPager->mxPgno = mxPage;
   }
   assert( pPager->eState!=PAGER_OPEN );      /* Called only by OP_MaxPgcnt */
-  assert( pPager->mxPgno>=pPager->dbSize );  /* OP_MaxPgcnt enforces this */
+  /* assert( pPager->mxPgno>=pPager->dbSize ); */
+  /* OP_MaxPgcnt ensures that the parameter passed to this function is not
+  ** less than the total number of valid pages in the database. But this
+  ** may be less than Pager.dbSize, and so the assert() above is not valid */
   return pPager->mxPgno;
 }
 
@@ -7021,8 +7035,11 @@ void sqlite3PagerSetCodec(
   void (*xCodecFree)(void*),
   void *pCodec
 ){
-  pager_reset(pPager);
-  if( pPager->xCodecFree ) pPager->xCodecFree(pPager->pCodec);
+  if( pPager->xCodecFree ){
+    pPager->xCodecFree(pPager->pCodec);
+  }else{
+    pager_reset(pPager);
+  }
   pPager->xCodec = pPager->memDb ? 0 : xCodec;
   pPager->xCodecSizeChng = xCodecSizeChng;
   pPager->xCodecFree = xCodecFree;

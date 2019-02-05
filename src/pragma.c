@@ -816,7 +816,7 @@ void sqlite3Pragma(
       if( sqlite3GetBoolean(zRight, size!=0) ){
         db->flags |= SQLITE_CacheSpill;
       }else{
-        db->flags &= ~SQLITE_CacheSpill;
+        db->flags &= ~(u64)SQLITE_CacheSpill;
       }
       setAllPagerFlags(db);
     }
@@ -1086,12 +1086,13 @@ void sqlite3Pragma(
     Table *pTab;
     pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
     if( pTab ){
+      int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       int i, k;
       int nHidden = 0;
       Column *pCol;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       pParse->nMem = 7;
-      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         int isHidden = IsHiddenColumn(pCol);
@@ -1152,6 +1153,7 @@ void sqlite3Pragma(
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
+      int iIdxDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
       int i;
       int mx;
       if( pPragma->iArg ){
@@ -1164,7 +1166,7 @@ void sqlite3Pragma(
         pParse->nMem = 3;
       }
       pTab = pIdx->pTable;
-      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3CodeVerifySchema(pParse, iIdxDb);
       assert( pParse->nMem<=pPragma->nPragCName );
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
@@ -1188,8 +1190,9 @@ void sqlite3Pragma(
     int i;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
+      int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       pParse->nMem = 5;
-      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
       for(pIdx=pTab->pIndex, i=0; pIdx; pIdx=pIdx->pNext, i++){
         const char *azOrigin[] = { "c", "u", "pk" };
         sqlite3VdbeMultiLoad(v, 1, "isisi",
@@ -1236,6 +1239,7 @@ void sqlite3Pragma(
     pParse->nMem = 2;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
+        if( p->funcFlags & SQLITE_FUNC_INTERNAL ) continue;
         sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
       }
     }
@@ -1277,9 +1281,10 @@ void sqlite3Pragma(
     if( pTab ){
       pFK = pTab->pFKey;
       if( pFK ){
+        int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
         int i = 0; 
         pParse->nMem = 8;
-        sqlite3CodeVerifySchema(pParse, iDb);
+        sqlite3CodeVerifySchema(pParse, iTabDb);
         while(pFK){
           int j;
           for(j=0; j<pFK->nCol; j++){
@@ -1324,9 +1329,9 @@ void sqlite3Pragma(
     pParse->nMem += 4;
     regKey = ++pParse->nMem;
     regRow = ++pParse->nMem;
-    sqlite3CodeVerifySchema(pParse, iDb);
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
+      int iTabDb;
       if( zRight ){
         pTab = sqlite3LocateTable(pParse, 0, zRight, zDb);
         k = 0;
@@ -1335,21 +1340,23 @@ void sqlite3Pragma(
         k = sqliteHashNext(k);
       }
       if( pTab==0 || pTab->pFKey==0 ) continue;
-      sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+      iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+      sqlite3CodeVerifySchema(pParse, iTabDb);
+      sqlite3TableLock(pParse, iTabDb, pTab->tnum, 0, pTab->zName);
       if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
-      sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
+      sqlite3OpenTable(pParse, 0, iTabDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         if( pParent==0 ) continue;
         pIdx = 0;
-        sqlite3TableLock(pParse, iDb, pParent->tnum, 0, pParent->zName);
+        sqlite3TableLock(pParse, iTabDb, pParent->tnum, 0, pParent->zName);
         x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, 0);
         if( x==0 ){
           if( pIdx==0 ){
-            sqlite3OpenTable(pParse, i, iDb, pParent, OP_OpenRead);
+            sqlite3OpenTable(pParse, i, iTabDb, pParent, OP_OpenRead);
           }else{
-            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iDb);
+            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iTabDb);
             sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           }
         }else{
@@ -1369,7 +1376,7 @@ void sqlite3Pragma(
           x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
           assert( x==0 );
         }
-        addrOk = sqlite3VdbeMakeLabel(v);
+        addrOk = sqlite3VdbeMakeLabel(pParse);
 
         /* Generate code to read the child key values into registers
         ** regRow..regRow+n. If any of the child key values are NULL, this 
@@ -1413,19 +1420,6 @@ void sqlite3Pragma(
   break;
 #endif /* !defined(SQLITE_OMIT_TRIGGER) */
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
-
-#ifndef NDEBUG
-  case PragTyp_PARSER_TRACE: {
-    if( zRight ){
-      if( sqlite3GetBoolean(zRight, 0) ){
-        sqlite3ParserTrace(stdout, "parser: ");
-      }else{
-        sqlite3ParserTrace(0, 0);
-      }
-    }
-  }
-  break;
-#endif
 
   /* Reinstall the LIKE and GLOB functions.  The variant of LIKE
   ** used will be case sensitive or not depending on the RHS.
@@ -1589,8 +1583,8 @@ void sqlite3Pragma(
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
           ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
           if( db->mallocFailed==0 ){
-            int addrCkFault = sqlite3VdbeMakeLabel(v);
-            int addrCkOk = sqlite3VdbeMakeLabel(v);
+            int addrCkFault = sqlite3VdbeMakeLabel(pParse);
+            int addrCkOk = sqlite3VdbeMakeLabel(pParse);
             char *zErr;
             int k;
             pParse->iSelfTab = iDataCur + 1;
@@ -1613,7 +1607,7 @@ void sqlite3Pragma(
           /* Validate index entries for the current row */
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
             int jmp2, jmp3, jmp4, jmp5;
-            int ckUniq = sqlite3VdbeMakeLabel(v);
+            int ckUniq = sqlite3VdbeMakeLabel(pParse);
             if( pPk==pIdx ) continue;
             r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3,
                                          pPrior, r1);
@@ -1634,7 +1628,7 @@ void sqlite3Pragma(
             ** current key.  The entry is unique if (1) any column is NULL
             ** or (2) the next entry has a different key */
             if( IsUniqueIndex(pIdx) ){
-              int uniqOk = sqlite3VdbeMakeLabel(v);
+              int uniqOk = sqlite3VdbeMakeLabel(pParse);
               int jmp6;
               int kk;
               for(kk=0; kk<pIdx->nKeyCol; kk++){
@@ -2477,7 +2471,8 @@ static const sqlite3_module pragmaVtabModule = {
   0,                           /* xRename - rename the table */
   0,                           /* xSavepoint */
   0,                           /* xRelease */
-  0                            /* xRollbackTo */
+  0,                           /* xRollbackTo */
+  0                            /* xShadowName */
 };
 
 /*

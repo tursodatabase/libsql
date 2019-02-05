@@ -179,9 +179,6 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerWalCallback(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
   int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
-# ifdef SQLITE_DIRECT_OVERFLOW_READ
-  int sqlite3PagerUseWal(Pager *pPager, Pgno);
-# endif
 # ifdef SQLITE_ENABLE_SNAPSHOT
   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
@@ -189,8 +186,10 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot);
   void sqlite3PagerSnapshotUnlock(Pager *pPager);
 # endif
-#else
-# define sqlite3PagerUseWal(x,y) 0
+#endif
+
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+  int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno);
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS

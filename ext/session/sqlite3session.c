@@ -363,7 +363,7 @@ static void sessionPutI64(u8 *aBuf, sqlite3_int64 i){
 static int sessionSerializeValue(
   u8 *aBuf,                       /* If non-NULL, write serialized value here */
   sqlite3_value *pValue,          /* Value to serialize */
-  int *pnWrite                    /* IN/OUT: Increment by bytes written */
+  sqlite3_int64 *pnWrite          /* IN/OUT: Increment by bytes written */
 ){
   int nByte;                      /* Size of serialized value in bytes */
 
@@ -904,7 +904,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
     SessionChange **apNew;
     int nNew = (pTab->nChange ? pTab->nChange : 128) * 2;
 
-    apNew = (SessionChange **)sqlite3_malloc(sizeof(SessionChange *) * nNew);
+    apNew = (SessionChange **)sqlite3_malloc64(sizeof(SessionChange *) * nNew);
     if( apNew==0 ){
       if( pTab->nChange==0 ){
         return SQLITE_ERROR;
@@ -970,7 +970,7 @@ static int sessionTableInfo(
   char *zPragma;
   sqlite3_stmt *pStmt;
   int rc;
-  int nByte;
+  sqlite3_int64 nByte;
   int nDbCol = 0;
   int nThis;
   int i;
@@ -1013,7 +1013,7 @@ static int sessionTableInfo(
 
   if( rc==SQLITE_OK ){
     nByte += nDbCol * (sizeof(const char *) + sizeof(u8) + 1);
-    pAlloc = sqlite3_malloc(nByte);
+    pAlloc = sqlite3_malloc64(nByte);
     if( pAlloc==0 ){
       rc = SQLITE_NOMEM;
     }
@@ -1154,7 +1154,7 @@ static void sessionPreupdateOneChange(
   int iHash; 
   int bNull = 0; 
   int rc = SQLITE_OK;
-  SessionStat1Ctx stat1 = {0};
+  SessionStat1Ctx stat1 = {{0,0,0,0,0},0};
 
   if( pSession->rc ) return;
 
@@ -1211,7 +1211,7 @@ static void sessionPreupdateOneChange(
       ** this is an SQLITE_UPDATE or SQLITE_DELETE), or just the PK
       ** values (if this is an INSERT). */
       SessionChange *pChange; /* New change object */
-      int nByte;              /* Number of bytes to allocate */
+      sqlite3_int64 nByte;    /* Number of bytes to allocate */
       int i;                  /* Used to iterate through columns */
   
       assert( rc==SQLITE_OK );
@@ -1236,7 +1236,7 @@ static void sessionPreupdateOneChange(
       }
   
       /* Allocate the change object */
-      pChange = (SessionChange *)sqlite3_malloc(nByte);
+      pChange = (SessionChange *)sqlite3_malloc64(nByte);
       if( !pChange ){
         rc = SQLITE_NOMEM;
         goto error_out;
@@ -1680,7 +1680,7 @@ int sqlite3session_create(
   *ppSession = 0;
 
   /* Allocate and populate the new session object. */
-  pNew = (sqlite3_session *)sqlite3_malloc(sizeof(sqlite3_session) + nDb + 1);
+  pNew = (sqlite3_session *)sqlite3_malloc64(sizeof(sqlite3_session) + nDb + 1);
   if( !pNew ) return SQLITE_NOMEM;
   memset(pNew, 0, sizeof(sqlite3_session));
   pNew->db = db;
@@ -1799,7 +1799,7 @@ int sqlite3session_attach(
 
     if( !pTab ){
       /* Allocate new SessionTable object. */
-      pTab = (SessionTable *)sqlite3_malloc(sizeof(SessionTable) + nName + 1);
+      pTab = (SessionTable *)sqlite3_malloc64(sizeof(SessionTable) + nName + 1);
       if( !pTab ){
         rc = SQLITE_NOMEM;
       }else{
@@ -1859,7 +1859,7 @@ static int sessionBufferGrow(SessionBuffer *p, int nByte, int *pRc){
 static void sessionAppendValue(SessionBuffer *p, sqlite3_value *pVal, int *pRc){
   int rc = *pRc;
   if( rc==SQLITE_OK ){
-    int nByte = 0;
+    sqlite3_int64 nByte = 0;
     rc = sessionSerializeValue(0, pVal, &nByte);
     sessionBufferGrow(p, nByte, &rc);
     if( rc==SQLITE_OK ){
@@ -2735,7 +2735,7 @@ static int sessionValueSetStr(
   ** argument to sqlite3ValueSetStr() and have the copy created 
   ** automatically. But doing so makes it difficult to detect any OOM
   ** error. Hence the code to create the copy externally. */
-  u8 *aCopy = sqlite3_malloc(nData+1);
+  u8 *aCopy = sqlite3_malloc64((sqlite3_int64)nData+1);
   if( aCopy==0 ) return SQLITE_NOMEM;
   memcpy(aCopy, aData, nData);
   sqlite3ValueSetStr(pVal, nData, (char*)aCopy, enc, sqlite3_free);
@@ -3348,7 +3348,7 @@ static int sessionChangesetInvert(
         int iCol;
 
         if( 0==apVal ){
-          apVal = (sqlite3_value **)sqlite3_malloc(sizeof(apVal[0])*nCol*2);
+          apVal = (sqlite3_value **)sqlite3_malloc64(sizeof(apVal[0])*nCol*2);
           if( 0==apVal ){
             rc = SQLITE_NOMEM;
             goto finished_invert;
@@ -4621,7 +4621,7 @@ static int sessionChangeMerge(
   int rc = SQLITE_OK;
 
   if( !pExist ){
-    pNew = (SessionChange *)sqlite3_malloc(sizeof(SessionChange) + nRec);
+    pNew = (SessionChange *)sqlite3_malloc64(sizeof(SessionChange) + nRec);
     if( !pNew ){
       return SQLITE_NOMEM;
     }
@@ -4654,8 +4654,8 @@ static int sessionChangeMerge(
     if( pExist->op==SQLITE_DELETE && pExist->bIndirect ){
       *ppNew = pExist;
     }else{
-      int nByte = nRec + pExist->nRecord + sizeof(SessionChange);
-      pNew = (SessionChange*)sqlite3_malloc(nByte);
+      sqlite3_int64 nByte = nRec + pExist->nRecord + sizeof(SessionChange);
+      pNew = (SessionChange*)sqlite3_malloc64(nByte);
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -4715,14 +4715,14 @@ static int sessionChangeMerge(
       assert( pNew==0 );
     }else{
       u8 *aExist = pExist->aRecord;
-      int nByte;
+      sqlite3_int64 nByte;
       u8 *aCsr;
 
       /* Allocate a new SessionChange object. Ensure that the aRecord[]
       ** buffer of the new object is large enough to hold any record that
       ** may be generated by combining the input records.  */
       nByte = sizeof(SessionChange) + pExist->nRecord + nRec;
-      pNew = (SessionChange *)sqlite3_malloc(nByte);
+      pNew = (SessionChange *)sqlite3_malloc64(nByte);
       if( !pNew ){
         sqlite3_free(pExist);
         return SQLITE_NOMEM;
@@ -4828,7 +4828,7 @@ static int sessionChangesetToHash(
       if( !pTab ){
         SessionTable **ppTab;
 
-        pTab = sqlite3_malloc(sizeof(SessionTable) + nCol + nNew+1);
+        pTab = sqlite3_malloc64(sizeof(SessionTable) + nCol + nNew+1);
         if( !pTab ){
           rc = SQLITE_NOMEM;
           break;

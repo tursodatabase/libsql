@@ -591,7 +591,114 @@ do_execsql_test 13.5 {
   SELECT a, rank() OVER(ORDER BY b) FROM t1
     INTERSECT 
   SELECT a, rank() OVER(ORDER BY b DESC) FROM t1;
-} {
+} {}
+
+# 2018-12-06
+# https://www.sqlite.org/src/info/f09fcd17810f65f7
+# Assertion fault when window functions are used.
+#
+# Root cause is the query flattener invoking sqlite3ExprDup() on
+# expressions that contain subqueries with window functions.  The
+# sqlite3ExprDup() routine is not making correctly initializing
+# Select.pWin field of the subqueries.
+#
+sqlite3 db :memory:
+do_execsql_test 14.0 {
+  SELECT * FROM(
+    SELECT * FROM (SELECT 1 AS c) WHERE c IN (
+        SELECT (row_number() OVER()) FROM (VALUES (0))
+    )
+  );
+} {1}
+do_execsql_test 14.1 {
+  CREATE TABLE t1(x); INSERT INTO t1(x) VALUES(12345);
+  CREATE TABLE t2(c); INSERT INTO t2(c) VALUES(1);
+  SELECT y, y+1, y+2 FROM (
+    SELECT c IN (
+      SELECT (row_number() OVER()) FROM t1
+    ) AS y FROM t2
+  );
+} {1 2 3}
+
+# 2018-12-31
+# https://www.sqlite.org/src/info/d0866b26f83e9c55
+# Window function in correlated subquery causes assertion fault 
+#
+do_catchsql_test 15.0 {
+  WITH t(id, parent) AS (
+  SELECT CAST(1 AS INT), CAST(NULL AS INT)
+  UNION ALL
+  SELECT 2, NULL
+  UNION ALL
+  SELECT 3, 1
+  UNION ALL
+  SELECT 4, 1
+  UNION ALL
+  SELECT 5, 2
+  UNION ALL
+  SELECT 6, 2
+  ), q AS (
+  SELECT t.*, ROW_NUMBER() OVER (ORDER BY t.id) AS rn
+    FROM t
+   WHERE parent IS NULL
+   UNION ALL
+  SELECT t.*, ROW_NUMBER() OVER (ORDER BY t.id) AS rn
+    FROM q
+    JOIN t
+      ON t.parent = q.id
+  )
+  SELECT *
+    FROM q;
+} {1 {cannot use window functions in recursive queries}}
+do_execsql_test 15.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('a'), ('b'), ('c');
+  CREATE TABLE t2(a, b);
+  INSERT INTO t2 VALUES('X', 1), ('X', 2), ('Y', 2), ('Y', 3);
+  SELECT x, (
+    SELECT sum(b)
+      OVER (PARTITION BY a ROWS BETWEEN UNBOUNDED PRECEDING
+                                    AND UNBOUNDED FOLLOWING)
+    FROM t2 WHERE b<x
+  ) FROM t1;
+} {a 3 b 3 c 3}
+
+do_execsql_test 15.2 {
+  SELECT(
+    WITH c AS(
+      VALUES(1)
+    ) SELECT '' FROM c,c
+  ) x WHERE x+x;
+} {}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 16.0 {
+  CREATE TABLE t7(a,b); 
+  INSERT INTO t7(rowid, a, b) VALUES
+      (1, 1, 3),
+      (2, 10, 4),
+      (3, 100, 2);
 }
+
+do_execsql_test 16.1 {
+  SELECT rowid, sum(a) OVER (PARTITION BY b IN (SELECT rowid FROM t7)) FROM t7;
+} {
+  2 10
+  1 101
+  3 101
+}
+
+do_execsql_test 16.2 {
+  SELECT rowid, sum(a) OVER w1 FROM t7 
+  WINDOW w1 AS (PARTITION BY b IN (SELECT rowid FROM t7));
+} {
+  2 10
+  1 101
+  3 101
+}
+
 
 finish_test

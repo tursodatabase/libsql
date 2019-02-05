@@ -494,9 +494,16 @@ struct CellInfo {
 ** found at self->pBt->mutex. 
 **
 ** skipNext meaning:
-**    eState==SKIPNEXT && skipNext>0:  Next sqlite3BtreeNext() is no-op.
-**    eState==SKIPNEXT && skipNext<0:  Next sqlite3BtreePrevious() is no-op.
-**    eState==FAULT:                   Cursor fault with skipNext as error code.
+** The meaning of skipNext depends on the value of eState:
+**
+**   eState            Meaning of skipNext
+**   VALID             skipNext is meaningless and is ignored
+**   INVALID           skipNext is meaningless and is ignored
+**   SKIPNEXT          sqlite3BtreeNext() is a no-op if skipNext>0 and
+**                     sqlite3BtreePrevious() is no-op if skipNext<0.
+**   REQUIRESEEK       restoreCursorPosition() restores the cursor to
+**                     eState=SKIPNEXT if skipNext!=0
+**   FAULT             skipNext holds the cursor fault error code.
 */
 struct BtCursor {
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
