@@ -1792,6 +1792,7 @@ static void eqp_render(ShellState *p){
   }
 }
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
 ** Progress handler callback.
 */
@@ -1809,6 +1810,7 @@ static int progress_handler(void *pClientData) {
   }
   return 0;
 }
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
 ** This is the callback routine that the shell
@@ -3496,11 +3498,13 @@ static const char *(azHelp[]) = {
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
   "     If FILE begins with '|' then open it as a pipe.",
   ".print STRING...         Print literal STRING",
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   ".progress N              Invoke progress handler after every N opcodes",
   "   --limit N                 Interrupt after N progress callbacks",
   "   --once                    Do no more than one progress interrupt",
   "   --quiet|-q                No output except at interrupts",
   "   --reset                   Reset the count for each input and interrupt",
+#endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
   ".quit                    Exit this program",
   ".read FILE               Read input from FILE",
@@ -7033,6 +7037,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     raw_printf(p->out, "\n");
   }else
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( c=='p' && n>=3 && strncmp(azArg[0], "progress", n)==0 ){
     int i;
     int nn = 0;
@@ -7076,6 +7081,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     sqlite3_progress_handler(p->db, nn, progress_handler, p);
   }else
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
   if( c=='p' && strncmp(azArg[0], "prompt", n)==0 ){
     if( nArg >= 2) {
