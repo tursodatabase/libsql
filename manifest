@@ -1,5 +1,5 @@
-C When\sextending\sthe\ssize\sof\sSrcList\sobjects,\sdo\snot\sattempt\sto\suse\nextra\sspace\son\sthe\send\sof\sthe\sallocation,\sas\sthat\sprovides\sscarcely\sany\nperformance\sbenefit\sbut\sdoes\sgreatly\scomplicate\scross-platform\stesting.
-D 2019-02-06T01:18:36.265
+C Fix\sa\sproblem\spreventing\stestfixture\sfrom\sbeing\sbuilt\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2019-02-06T13:41:19.971
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -296,7 +296,7 @@ F ext/misc/mmapwarm.c 8c5fe90d807a23e44a8b93e96e8b812b19b300d5fd8c1d40a4fd1d8224
 F ext/misc/nextchar.c 279f80fe8ef5ba413242e2704e246503ac601f005eefb180d19e6c920338a0ba
 F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c a6a1594c104da2d0ceab38fe609eb2f65529272377827f6f8a2b5c9fa6119e7e
-F ext/misc/prefixes.c 1eb85b7b64b8adf5cbb18a72c51a8f2910a7bc0fd5fbc81a9213ba4af2d51811
+F ext/misc/prefixes.c 7be86d17525cfae6ed462fc3c519efc44488ac329890f77491c8f82871f57e17
 F ext/misc/regexp.c 79345bf03496155a640ee0300d3307296761cebb5e115b4e342cc2fb5861ec10
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
@@ -524,7 +524,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 6b19e7562195aaf881f3e35e2472dc01ae3cb156961db5126c3d616744729b7e
-F src/test1.c 64cdc914a77102e008dfae7adaa4ded54c2d4953d1464ea8709805a2aab755eb
+F src/test1.c 353b066e7ec761c4c715c1c20b888e0e7a0b0c0eda7f68c110e032d63713cade
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d3b142f1045080beb775a9cfe88ec143aa460750132e20059fd510291449850
-R d41aafcf787e802c644013f64e8a2340
-U drh
-Z 00fab67b3e6a43dd7c12c17d8ee399d1
+P 3087a0c31e9fbfaedb7cf10a2fda59bc22318ff178614aefcc00ac83d9a7bb14
+R 8b56ce01d9688db09683490a688f55d6
+U dan
+Z 7f146451be4266c97b71a0741a05a13b

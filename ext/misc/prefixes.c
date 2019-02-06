@@ -19,6 +19,7 @@
 ** and the input string itself.  The order of prefixes is from longest
 ** to shortest.
 */
+#if !defined(SQLITE_CORE) || !defined(SQLITE_OMIT_VIRTUALTABLE)
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
 #endif
@@ -315,3 +316,4 @@ int sqlite3_prefixes_init(
   }
   return rc;
 }
+#endif /* !defined(SQLITE_CORE) || !defined(SQLITE_OMIT_VIRTUALTABLE) */
