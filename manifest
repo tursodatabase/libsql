@@ -1,5 +1,5 @@
-C If\sthe\squery\sflattener\sdetects\san\serror,\scause\sthe\sSELECT\scode\sgenerator\nto\sabort\simmediately.
-D 2019-02-06T00:55:47.828
+C When\sextending\sthe\ssize\sof\sSrcList\sobjects,\sdo\snot\sattempt\sto\suse\nextra\sspace\son\sthe\send\sof\sthe\sallocation,\sas\sthat\sprovides\sscarcely\sany\nperformance\sbenefit\sbut\sdoes\sgreatly\scomplicate\scross-platform\stesting.
+D 2019-02-06T01:18:36.265
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -458,7 +458,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 84b7c5c3829b60823e15e7a8407462b69be3818f96518fef28f97ac0fbbca72b
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
-F src/build.c fe6e3753c4cfc76f9c621a24ef5f6fd62aac5aa6c843710b542509f493274eca
+F src/build.c 906ca6663b9dcd413e72ae9c44dd51e596d8336b04d52e678a7501e71c20cab2
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9dbf512d1c4627a28d60f4e7238cb100d7a4e11f976139b07ad1c59e9b584c7d
-R ca58665185cfe5589ddb3b692b238c22
+P 3d3b142f1045080beb775a9cfe88ec143aa460750132e20059fd510291449850
+R d41aafcf787e802c644013f64e8a2340
 U drh
-Z 59f6ada64abb2878ef107d5499df001c
+Z 00fab67b3e6a43dd7c12c17d8ee399d1
