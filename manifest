@@ -1,5 +1,5 @@
-C Back\sout\scheck-in\s[008112bcef561a8],\sreenabling\sdeprecated\sPRAGMAs\swhen\sthe\nSQLITE_OMIT_DEPRECATED\scompile-time\soption\sis\sused,\sbecause\sway\stoo\smany\nTH3\stests\sdepend\son\sthose\sdeprecated\sPRAGMAs.
-D 2019-02-06T00:11:13.958
+C If\sthe\squery\sflattener\sdetects\san\serror,\scause\sthe\sSELECT\scode\sgenerator\nto\sabort\simmediately.
+D 2019-02-06T00:55:47.828
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -514,7 +514,7 @@ F src/printf.c cbf27c320091a83279d1738f68a27a9fe01698c607ce80516ab6bdb5a9c36a1a
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 8e22fda41a737c391e8b797f7c71e7ded1d107c31181b07bb10b3d4f22a28cd9
+F src/select.c c998f694759e37799929e28df8a2649747f8774d4fc233529ab6bda689388e15
 F src/shell.c.in f2c1adbee3f6f36686b4a38d2168ebfc25298b4ad1e6d95199fc4e95b539251d
 F src/sqlite.h.in 7da74fd5bd7a9dbe92297060f036935520b26e240457287c5e67c7b9db51a986
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1685,7 +1685,7 @@ F test/window4.test c5d6bf3403e4ade2f19df2afe4c16f29fb817c392c6c1c8017edb7165c19
 F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652821e
 F test/window6.test 5eae4ae7a590ccf1e605880969ca0bad3955616ac91cad3031baea38748badb3
 F test/windowfault.test 12ceb6bbb355d13e8fcd88c5731a57256dfdf77b9a7ae20842a76fcd4623df5b
-F test/with1.test f1fcc3e35e5c8729f63bb91c4122c05130ce65838f72156c973cac1d1a29b9e4
+F test/with1.test a07b5aad7f77acdf13e52e8814ea94606fcc72e9ea4c99baf293e9d7c63940be
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 8d26920c88283e0a473ceebd3451554922108ce7b2a6a1157c47eb0a7011212c
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
@@ -1804,8 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d0a949fd92e19fbf243a2e3a1a7c2cdb111f9a6943949d2420dd846bc7d9285
-Q -008112bcef561a8a3ebfb007cbef36cbc0071f547e6ebdba3d3bbb39e2c48c7a
-R e01453527140ec2a2012d628a621e74b
+P 9dbf512d1c4627a28d60f4e7238cb100d7a4e11f976139b07ad1c59e9b584c7d
+R ca58665185cfe5589ddb3b692b238c22
 U drh
-Z c3002d5f26f5b478b7bc6524b1b4ade0
+Z 59f6ada64abb2878ef107d5499df001c
