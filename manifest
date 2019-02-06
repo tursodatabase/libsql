@@ -1,5 +1,5 @@
-C Add\s-DSQLITE_ENABLE_DESERIALIZE\sto\sthe\sdefault\stesting\sconfiguration\sin\stest/releasetest.tcl.
-D 2019-02-06T15:23:43.214
+C Update\stest\sfile\sdbfuzz001.test\sso\sthat\sit\sworks\swith\sSQLITE_ENABLE_OVERSIZE_CELL_CHECK\sbuilds.
+D 2019-02-06T18:08:42.581
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -782,7 +782,7 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
-F test/dbfuzz001.test 9617fb870f7d655c27994749955efee5d93a641c082dce4c59059796ff81145e
+F test/dbfuzz001.test 29b6c6b39a701b6b5b08035c637674b76e1ecea515b1a184b29e3bd0f2d02dad
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c 5d5eb817dc8195e0228227510ee6a4b49f46e679fc2d5be96841cce819bf42f7
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3839e9098107604e1526c2b1e813c019607077dfe39d7eeb92f3466518dec3b1
-R 75cc10d375ea2db1c9efea9ae5b0c6e6
+P 433d6ef637a10ee017b5d8cadd125a162cfedc9895ae862b8dde6dddb7eda59b
+R 140493311e0e207154d6983d82a1d0da
 U dan
-Z e88f08e9628dff53dc70edfa07be42f7
+Z 03494d745416e1c6f32b0dda6a823d51
