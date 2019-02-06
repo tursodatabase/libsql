@@ -1,5 +1,5 @@
-C Avoid\sattempting\sto\sdelete\sa\sfile\swhile\sit\sis\sstill\sopen\sin\swalfault2.test.
-D 2019-02-06T19:42:02.100
+C Update\san\sassert()\sin\stest_journal.c\sto\stake\sthe\snew\s"VACUUM\sINTO"\sfunctionality\sinto\saccount.
+D 2019-02-06T20:12:00.950
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -549,7 +549,7 @@ F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
 F src/test_intarray.c 39b4181662a0f33a427748d87218e7578d913e683dc27eab7098bb41617cac71
 F src/test_intarray.h d57ae92f420cda25e22790dac474d60961bd0c500cbaa3338a05152d4a669ef7
-F src/test_journal.c 619f2aa10e0d7a5f87c0f06825bc61dfce1c6b9c7f3ad990fb13de6c3b8874a3
+F src/test_journal.c a0b9709b2f12b1ec819eea8a1176f283bca6d688a6d4a502bd6fd79786f4e287
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c dec0aa821b230773aeb3dd11d652c1193f7cedb18a20b25659bc672288115242
 F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8c
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4371a0c46ee7bfbc0a1507796bd9eefd3371adad81b8dda214d018854316727b
-R d4922208e2eda6491c188a2294d5966b
+P 9d54a63d6e3cd47b483cf0ee868a5e7f638bcb0e3cbdeaecc667f293b87a3e99
+R 8c85950d3cd30dc89de951d666875053
 U dan
-Z c62087236c08b1954dc9b06cf8c680a3
+Z a7b437b21243f686db6fff4b720de94a
