@@ -36,6 +36,7 @@ do_execsql_test 1.0 {
 faultsim_save_and_close
 
 do_faultsim_test 1 -prep {
+  catch { db close }
   faultsim_restore
   sqlite3 db file:test.db?psow=0 -uri 1
   file_control_powersafe_overwrite db 0

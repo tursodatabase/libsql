@@ -1,5 +1,5 @@
-C Update\stest\sfile\sdbfuzz001.test\sso\sthat\sit\sworks\swith\sSQLITE_ENABLE_OVERSIZE_CELL_CHECK\sbuilds.
-D 2019-02-06T18:08:42.581
+C Avoid\sattempting\sto\sdelete\sa\sfile\swhile\sit\sis\sstill\sopen\sin\swalfault2.test.
+D 2019-02-06T19:42:02.100
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -1630,7 +1630,7 @@ F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
 F test/walcrash3.test e426aa58122d20f2b9fbe9a507f9eb8cab85b8af
 F test/walcrash4.test e7b6e7639a950a0cca8e210e248c8dad4d63bf20
 F test/walfault.test 09b8ad7e52d2f54bce50e31aa7ea51412bb9f70ac13c74e669ddcd8b48b0d98d
-F test/walfault2.test 39337e9ca6906b3942734ab212e099edd7d331b2819a04dbf3b2bd4d58526251
+F test/walfault2.test e039ac66c78d5561683cacde04097213cdad3b58e2b3f3fe1112862217bfd915
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test cd6e7cff618eaaa5910ce57c3657aa50110397f86213886a2400afb9bfec7b7b
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 433d6ef637a10ee017b5d8cadd125a162cfedc9895ae862b8dde6dddb7eda59b
-R 140493311e0e207154d6983d82a1d0da
+P 4371a0c46ee7bfbc0a1507796bd9eefd3371adad81b8dda214d018854316727b
+R d4922208e2eda6491c188a2294d5966b
 U dan
-Z 03494d745416e1c6f32b0dda6a823d51
+Z c62087236c08b1954dc9b06cf8c680a3
