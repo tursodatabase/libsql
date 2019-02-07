@@ -1,5 +1,5 @@
-C Ensure\sall\sbytes\sof\sthe\sPgHdr1\sstructure\sare\sinitialized.\sThis\savoids\sa\svalgrind\serror\swhen\srunning\scorruptI.test.
-D 2019-02-06T20:49:49.545
+C In\sthe\sfuzzcheck\stest\sprogram,\smake\ssure\sthe\sisspace()\sand\srelated\sroutines\nare\snot\sgiven\svalues\soutside\sthe\srange\sof\s-1\sto\s255.
+D 2019-02-07T00:17:36.218
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -984,7 +984,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 6bb28cc6ad247950e22bcc106bbeefff8c3c737f80c24573d8c18ef1cac6f2ac
+F test/fuzzcheck.c 7ab35ca464fa0fa9c8340b71f08a16c50c14b961264c172cc3d1a67289b2800d
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e6249cb958a40ead0edf6e75a2c46e8657db3d358c5fe78a9dc0fa5ed7ad929
-R ae802dacb8527f87f376ccfd3e8e8a19
-U dan
-Z afd2fa2b6e156ba28cf67431d1126efa
+P a505e34d4ec31159a4508ec827fcffed0cf3bd5ea5ef0ac293016da02367a53a
+R d5115c238fed46e746b74b22004ee963
+U drh
+Z 2225211b2294245a758dcb28378cffd6
