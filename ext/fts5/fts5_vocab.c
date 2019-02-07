@@ -484,6 +484,7 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
       int nTerm;
 
       zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
+      assert( nTerm>=0 );
       if( pCsr->nLeTerm>=0 ){
         int nCmp = MIN(nTerm, pCsr->nLeTerm);
         int bCmp = memcmp(pCsr->zLeTerm, zTerm, nCmp);

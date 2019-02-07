@@ -1652,7 +1652,7 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   int nNew;                       /* Bytes of new data */
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
-  if( iOff+nNew>pIter->pLeaf->szLeaf || nKeep>pIter->term.n ){
+  if( iOff+nNew>pIter->pLeaf->szLeaf || nKeep>pIter->term.n || nNew==0 ){
     p->rc = FTS5_CORRUPT;
     return;
   }
@@ -2326,7 +2326,7 @@ static void fts5LeafSeek(
 
  search_success:
   pIter->iLeafOffset = iOff + nNew;
-  if( pIter->iLeafOffset>n ){
+  if( pIter->iLeafOffset>n || nNew<1 ){
     p->rc = FTS5_CORRUPT;
     return;
   }
@@ -3104,7 +3104,8 @@ static void fts5SegiterPoslist(
   Fts5Colset *pColset,
   Fts5Buffer *pBuf
 ){
-  if( 0==fts5BufferGrow(&p->rc, pBuf, pSeg->nPos) ){
+  if( 0==fts5BufferGrow(&p->rc, pBuf, pSeg->nPos+FTS5_DATA_ZERO_PADDING) ){
+    memset(&pBuf->p[pBuf->n+pSeg->nPos], 0, FTS5_DATA_ZERO_PADDING);
     if( pColset==0 ){
       fts5ChunkIterate(p, pSeg, (void*)pBuf, fts5PoslistCallback);
     }else{
@@ -4551,6 +4552,7 @@ static void fts5FlushOneHash(Fts5Index *p){
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
             writer.bFirstRowidInPage = 0;
             fts5WriteDlidxAppend(p, &writer, iRowid);
+            if( p->rc!=SQLITE_OK ) break;
           }else{
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iDelta);
           }
@@ -4782,11 +4784,13 @@ static void fts5AppendPoslist(
   Fts5Buffer *pBuf
 ){
   int nData = pMulti->base.nData;
+  int nByte = nData + 9 + 9 + FTS5_DATA_ZERO_PADDING;
   assert( nData>0 );
-  if( p->rc==SQLITE_OK && 0==fts5BufferGrow(&p->rc, pBuf, nData+9+9) ){
+  if( p->rc==SQLITE_OK && 0==fts5BufferGrow(&p->rc, pBuf, nByte) ){
     fts5BufferSafeAppendVarint(pBuf, iDelta);
     fts5BufferSafeAppendVarint(pBuf, nData*2);
     fts5BufferSafeAppendBlob(pBuf, pMulti->base.pData, nData);
+    memset(&pBuf->p[pBuf->n], 0, FTS5_DATA_ZERO_PADDING);
   }
 }
 
@@ -5000,7 +5004,7 @@ static void fts5MergePrefixLists(
               sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
               if( iPos1<0 ) break;
             }else{
-              assert( iPos2!=iPrev );
+              assert_nc( iPos2!=iPrev );
               sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
               sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
               if( iPos2<0 ) break;
@@ -6426,6 +6430,10 @@ static void fts5DecodeFunction(
     /* Decode any more doclist data that appears on the page before the
     ** first term. */
     nDoclist = (iTermOff ? iTermOff : szLeaf) - iOff;
+    if( nDoclist+iOff>n ){
+      rc = FTS5_CORRUPT;
+      goto decode_out;
+    }
     fts5DecodeDoclist(&rc, &s, &a[iOff], nDoclist);
 
     while( iPgidxOff<n && rc==SQLITE_OK ){

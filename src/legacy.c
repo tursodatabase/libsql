@@ -51,7 +51,7 @@ int sqlite3_exec(
   sqlite3_mutex_enter(db->mutex);
   sqlite3Error(db, SQLITE_OK);
   while( rc==SQLITE_OK && zSql[0] ){
-    int nCol;
+    int nCol = 0;
     char **azVals = 0;
 
     pStmt = 0;
@@ -65,9 +65,7 @@ int sqlite3_exec(
       zSql = zLeftover;
       continue;
     }
-
     callbackIsInit = 0;
-    nCol = sqlite3_column_count(pStmt);
 
     while( 1 ){
       int i;
@@ -78,6 +76,7 @@ int sqlite3_exec(
           (SQLITE_DONE==rc && !callbackIsInit
                            && db->flags&SQLITE_NullCallback)) ){
         if( !callbackIsInit ){
+          nCol = sqlite3_column_count(pStmt);
           azCols = sqlite3DbMallocRaw(db, (2*nCol+1)*sizeof(const char*));
           if( azCols==0 ){
             goto exec_out;

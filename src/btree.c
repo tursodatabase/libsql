@@ -4526,6 +4526,25 @@ u32 sqlite3BtreePayloadSize(BtCursor *pCur){
 }
 
 /*
+** Return an upper bound on the size of any record for the table
+** that the cursor is pointing into.
+**
+** This is an optimization.  Everything will still work if this
+** routine always returns 2147483647 (which is the largest record
+** that SQLite can handle) or more.  But returning a smaller value might
+** prevent large memory allocations when trying to interpret a
+** corrupt datrabase.
+**
+** The current implementation merely returns the size of the underlying
+** database file.
+*/
+sqlite3_int64 sqlite3BtreeMaxRecordSize(BtCursor *pCur){
+  assert( cursorHoldsMutex(pCur) );
+  assert( pCur->eState==CURSOR_VALID );
+  return pCur->pBt->pageSize * (sqlite3_int64)pCur->pBt->nPage;
+}
+
+/*
 ** Given the page number of an overflow page in the database (parameter
 ** ovfl), this function finds the page number of the next page in the 
 ** linked list of overflow pages. If possible, it uses the auto-vacuum
@@ -6734,7 +6753,7 @@ static void insertCell(
 **  |Child-1|   |Child-2|   |Child-3|
 **  ---------   ---------   ---------
 **
-** The order of cells is in the array is:
+** The order of cells is in the array is for an index btree is:
 **
 **       1.  All cells from Child-1 in order
 **       2.  The first divider cell from Parent
@@ -6742,15 +6761,26 @@ static void insertCell(
 **       4.  The second divider cell from Parent
 **       5.  All cells from Child-3 in order
 **
-** The apEnd[] array holds pointer to the end of page for Child-1, the
-** Parent, Child-2, the Parent (again), and Child-3.  The ixNx[] array
-** holds the number of cells contained in each of these 5 stages, and
-** all stages to the left.  Hence:
+** For a table-btree (with rowids) the items 2 and 4 are empty because
+** content exists only in leaves and there are no divider cells.
+**
+** For an index btree, the apEnd[] array holds pointer to the end of page
+** for Child-1, the Parent, Child-2, the Parent (again), and Child-3,
+** respectively. The ixNx[] array holds the number of cells contained in
+** each of these 5 stages, and all stages to the left.  Hence:
+**
 **    ixNx[0] = Number of cells in Child-1.
 **    ixNx[1] = Number of cells in Child-1 plus 1 for first divider.
 **    ixNx[2] = Number of cells in Child-1 and Child-2 + 1 for 1st divider.
 **    ixNx[3] = Number of cells in Child-1 and Child-2 + both divider cells
 **    ixNx[4] = Total number of cells.
+**
+** For a table-btree, the concept is similar, except only apEnd[0]..apEnd[2]
+** are used and they point to the leaf pages only, and the ixNx value are:
+**
+**    ixNx[0] = Number of cells in Child-1.
+**    ixNx[1] = Number of cells in Child-1 and Child-2 + 1 for 1st divider.
+**    ixNx[2] = Number of cells in Child-1 and Child-2 + both divider cells
 */
 typedef struct CellArray CellArray;
 struct CellArray {
@@ -7664,12 +7694,15 @@ static int balance_nonroot(
   ** 
   */
   usableSpace = pBt->usableSize - 12 + leafCorrection;
-  for(i=0; i<nOld; i++){
+  for(i=k=0; i<nOld; i++, k++){
     MemPage *p = apOld[i];
-    b.apEnd[i*2] = p->aDataEnd;
-    b.apEnd[i*2+1] = pParent->aDataEnd;
-    b.ixNx[i*2] = cntOld[i];
-    b.ixNx[i*2+1] = cntOld[i]+1;
+    b.apEnd[k] = p->aDataEnd;
+    b.ixNx[k] = cntOld[i];
+    if( !leafData ){
+      k++;
+      b.apEnd[k] = pParent->aDataEnd;
+      b.ixNx[k] = cntOld[i]+1;
+    }
     szNew[i] = usableSpace - p->nFree;
     for(j=0; j<p->nOverflow; j++){
       szNew[i] += 2 + p->xCellSize(p, p->apOvfl[j]);

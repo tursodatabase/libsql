@@ -315,6 +315,7 @@ i64 sqlite3BtreeOffset(BtCursor*);
 int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
 u32 sqlite3BtreePayloadSize(BtCursor*);
+sqlite3_int64 sqlite3BtreeMaxRecordSize(BtCursor*);
 
 char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot, int, int*);
 struct Pager *sqlite3BtreePager(Btree*);

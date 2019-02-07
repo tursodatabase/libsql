@@ -25,25 +25,21 @@ set pragma_def {
   TYPE: FLAG
   ARG:  SQLITE_FullColNames
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: short_column_names
   TYPE: FLAG
   ARG:  SQLITE_ShortColNames
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: count_changes
   TYPE: FLAG
   ARG:  SQLITE_CountRows
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: empty_result_callbacks
   TYPE: FLAG
   ARG:  SQLITE_NullCallback
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: legacy_file_format
   TYPE: FLAG
@@ -156,9 +152,7 @@ set pragma_def {
   NAME: default_cache_size
   FLAG: NeedSchema Result0 SchemaReq NoColumns1
   COLS: cache_size
-  IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
-
+  IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: page_size
   FLAG: Result0 SchemaReq NoColumns1
@@ -211,12 +205,10 @@ set pragma_def {
   NAME: temp_store_directory
   FLAG: NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: data_store_directory
   FLAG: NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
-  IF:   !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: lock_proxy_file
   FLAG: NoColumns1
@@ -302,7 +294,10 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: parser_trace
-  IF:   defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
+  TYPE: FLAG
+  ARG:  SQLITE_ParserTrace
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+  IF:   defined(SQLITE_DEBUG)
 
   NAME: case_sensitive_like
   FLAG: NoColumns

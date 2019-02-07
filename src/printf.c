@@ -155,6 +155,27 @@ static char *getTextArg(PrintfArguments *p){
   return (char*)sqlite3_value_text(p->apArg[p->nUsed++]);
 }
 
+/*
+** Allocate memory for a temporary buffer needed for printf rendering.
+**
+** If the requested size of the temp buffer is larger than the size
+** of the output buffer in pAccum, then cause an SQLITE_TOOBIG error.
+** Do the size check before the memory allocation to prevent rogue
+** SQL from requesting large allocations using the precision or width
+** field of the printf() function.
+*/
+static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
+  char *z;
+  if( n>pAccum->nAlloc && n>pAccum->mxAlloc ){
+    setStrAccumError(pAccum, SQLITE_TOOBIG);
+    return 0;
+  }
+  z = sqlite3DbMallocRaw(pAccum->db, n);
+  if( z==0 ){
+    setStrAccumError(pAccum, SQLITE_NOMEM);
+  }
+  return z;
+}
 
 /*
 ** On machines with a small stack size, you can redefine the
@@ -237,6 +258,9 @@ void sqlite3_str_vappendf(
     flag_leftjustify = flag_prefix = cThousand =
      flag_alternateform = flag_altform2 = flag_zeropad = 0;
     done = 0;
+    width = 0;
+    flag_long = 0;
+    precision = -1;
     do{
       switch( c ){
         case '-':   flag_leftjustify = 1;     break;
@@ -247,80 +271,93 @@ void sqlite3_str_vappendf(
         case '0':   flag_zeropad = 1;         break;
         case ',':   cThousand = ',';          break;
         default:    done = 1;                 break;
+        case 'l': {
+          flag_long = 1;
+          c = *++fmt;
+          if( c=='l' ){
+            c = *++fmt;
+            flag_long = 2;
+          }
+          done = 1;
+          break;
+        }
+        case '1': case '2': case '3': case '4': case '5':
+        case '6': case '7': case '8': case '9': {
+          unsigned wx = c - '0';
+          while( (c = *++fmt)>='0' && c<='9' ){
+            wx = wx*10 + c - '0';
+          }
+          testcase( wx>0x7fffffff );
+          width = wx & 0x7fffffff;
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+          if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
+            width = SQLITE_PRINTF_PRECISION_LIMIT;
+          }
+#endif
+          if( c!='.' && c!='l' ){
+            done = 1;
+          }else{
+            fmt--;
+          }
+          break;
+        }
+        case '*': {
+          if( bArgList ){
+            width = (int)getIntArg(pArgList);
+          }else{
+            width = va_arg(ap,int);
+          }
+          if( width<0 ){
+            flag_leftjustify = 1;
+            width = width >= -2147483647 ? -width : 0;
+          }
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+          if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
+            width = SQLITE_PRINTF_PRECISION_LIMIT;
+          }
+#endif
+          if( (c = fmt[1])!='.' && c!='l' ){
+            c = *++fmt;
+            done = 1;
+          }
+          break;
+        }
+        case '.': {
+          c = *++fmt;
+          if( c=='*' ){
+            if( bArgList ){
+              precision = (int)getIntArg(pArgList);
+            }else{
+              precision = va_arg(ap,int);
+            }
+            if( precision<0 ){
+              precision = precision >= -2147483647 ? -precision : -1;
+            }
+            c = *++fmt;
+          }else{
+            unsigned px = 0;
+            while( c>='0' && c<='9' ){
+              px = px*10 + c - '0';
+              c = *++fmt;
+            }
+            testcase( px>0x7fffffff );
+            precision = px & 0x7fffffff;
+          }
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+          if( precision>SQLITE_PRINTF_PRECISION_LIMIT ){
+            precision = SQLITE_PRINTF_PRECISION_LIMIT;
+          }
+#endif
+          if( c=='l' ){
+            --fmt;
+          }else{
+            done = 1;
+          }
+          break;
+        }
       }
     }while( !done && (c=(*++fmt))!=0 );
-    /* Get the field width */
-    if( c=='*' ){
-      if( bArgList ){
-        width = (int)getIntArg(pArgList);
-      }else{
-        width = va_arg(ap,int);
-      }
-      if( width<0 ){
-        flag_leftjustify = 1;
-        width = width >= -2147483647 ? -width : 0;
-      }
-      c = *++fmt;
-    }else{
-      unsigned wx = 0;
-      while( c>='0' && c<='9' ){
-        wx = wx*10 + c - '0';
-        c = *++fmt;
-      }
-      testcase( wx>0x7fffffff );
-      width = wx & 0x7fffffff;
-    }
-    assert( width>=0 );
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-    if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
-      width = SQLITE_PRINTF_PRECISION_LIMIT;
-    }
-#endif
 
-    /* Get the precision */
-    if( c=='.' ){
-      c = *++fmt;
-      if( c=='*' ){
-        if( bArgList ){
-          precision = (int)getIntArg(pArgList);
-        }else{
-          precision = va_arg(ap,int);
-        }
-        c = *++fmt;
-        if( precision<0 ){
-          precision = precision >= -2147483647 ? -precision : -1;
-        }
-      }else{
-        unsigned px = 0;
-        while( c>='0' && c<='9' ){
-          px = px*10 + c - '0';
-          c = *++fmt;
-        }
-        testcase( px>0x7fffffff );
-        precision = px & 0x7fffffff;
-      }
-    }else{
-      precision = -1;
-    }
-    assert( precision>=(-1) );
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-    if( precision>SQLITE_PRINTF_PRECISION_LIMIT ){
-      precision = SQLITE_PRINTF_PRECISION_LIMIT;
-    }
-#endif
-
-
-    /* Get the conversion type modifier */
-    if( c=='l' ){
-      flag_long = 1;
-      c = *++fmt;
-      if( c=='l' ){
-        flag_long = 2;
-        c = *++fmt;
-      }
-    }else{
-      flag_long = 0;
-    }
     /* Fetch the info entry for the field */
     infop = &fmtinfo[0];
     xtype = etINVALID;
@@ -405,12 +442,11 @@ void sqlite3_str_vappendf(
           nOut = etBUFSIZE;
           zOut = buf;
         }else{
-          u64 n = (u64)precision + 10 + precision/3;
-          zOut = zExtra = sqlite3Malloc( n );
-          if( zOut==0 ){
-            setStrAccumError(pAccum, SQLITE_NOMEM);
-            return;
-          }
+          u64 n;
+          n = (u64)precision + 10;
+          if( cThousand ) n += precision/3;
+          zOut = zExtra = printfTempBuf(pAccum, n);
+          if( zOut==0 ) return;
           nOut = (int)n;
         }
         bufpt = &zOut[nOut-1];
@@ -529,12 +565,12 @@ void sqlite3_str_vappendf(
         }else{
           e2 = exp;
         }
-        if( MAX(e2,0)+(i64)precision+(i64)width > etBUFSIZE - 15 ){
-          bufpt = zExtra 
-              = sqlite3Malloc( MAX(e2,0)+(i64)precision+(i64)width+15 );
-          if( bufpt==0 ){
-            setStrAccumError(pAccum, SQLITE_NOMEM);
-            return;
+        {
+          i64 szBufNeeded;           /* Size of a temporary buffer needed */
+          szBufNeeded = MAX(e2,0)+(i64)precision+(i64)width+15;
+          if( szBufNeeded > etBUFSIZE ){
+            bufpt = zExtra = printfTempBuf(pAccum, szBufNeeded);
+            if( bufpt==0 ) return;
           }
         }
         zOut = bufpt;
@@ -758,11 +794,8 @@ void sqlite3_str_vappendf(
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 3;
         if( n>etBUFSIZE ){
-          bufpt = zExtra = sqlite3Malloc( n );
-          if( bufpt==0 ){
-            setStrAccumError(pAccum, SQLITE_NOMEM);
-            return;
-          }
+          bufpt = zExtra = printfTempBuf(pAccum, n);
+          if( bufpt==0 ) return;
         }else{
           bufpt = buf;
         }

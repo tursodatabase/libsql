@@ -2083,9 +2083,11 @@ proc memdebug_log_sql {filename} {
   set tbl2 "CREATE TABLE ${database}.frame(frame INTEGER PRIMARY KEY, line);\n"
   set tbl3 "CREATE TABLE ${database}.file(name PRIMARY KEY, content);\n"
 
+  set pid [pid]
+
   foreach f [array names frames] {
     set addr [format %x $f]
-    set cmd "addr2line -e [info nameofexec] $addr"
+    set cmd "eu-addr2line --pid=$pid $addr"
     set line [eval exec $cmd]
     append sql "INSERT INTO ${database}.frame VALUES($f, '$line');\n"
 

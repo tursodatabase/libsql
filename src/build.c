@@ -3487,6 +3487,14 @@ void sqlite3CreateIndex(
       Index *p;
       assert( !IN_SPECIAL_PARSE );
       assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
+      if( pTblName!=0 ){
+        pIndex->tnum = db->init.newTnum;
+        if( sqlite3IndexHasDuplicateRootPage(pIndex) ){
+          sqlite3ErrorMsg(pParse, "invalid rootpage");
+          pParse->rc = SQLITE_CORRUPT_BKPT;
+          goto exit_create_index;
+        }
+      }
       p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
           pIndex->zName, pIndex);
       if( p ){
@@ -3495,9 +3503,6 @@ void sqlite3CreateIndex(
         goto exit_create_index;
       }
       db->mDbFlags |= DBFLAG_SchemaChange;
-      if( pTblName!=0 ){
-        pIndex->tnum = db->init.newTnum;
-      }
     }
 
     /* If this is the initial CREATE INDEX statement (or CREATE TABLE if the
@@ -3873,7 +3878,6 @@ SrcList *sqlite3SrcListEnlarge(
   if( (u32)pSrc->nSrc+nExtra>pSrc->nAlloc ){
     SrcList *pNew;
     int nAlloc = pSrc->nSrc*2+nExtra;
-    int nGot;
     sqlite3 *db = pParse->db;
 
     if( pSrc->nSrc+nExtra>=SQLITE_MAX_SRCLIST ){
@@ -3889,8 +3893,7 @@ SrcList *sqlite3SrcListEnlarge(
       return 0;
     }
     pSrc = pNew;
-    nGot = (sqlite3DbMallocSize(db, pNew) - sizeof(*pSrc))/sizeof(pSrc->a[0])+1;
-    pSrc->nAlloc = nGot;
+    pSrc->nAlloc = nAlloc;
   }
 
   /* Move existing slots that come after the newly inserted slots

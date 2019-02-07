@@ -288,7 +288,7 @@ static void fts5CheckTransactionState(Fts5FullTable *p, int op, int iSavepoint){
 
     case FTS5_ROLLBACKTO:
       assert( p->ts.eState==1 );
-      assert( iSavepoint>=0 );
+      assert( iSavepoint>=-1 );
       assert( iSavepoint<=p->ts.iSavepoint );
       p->ts.iSavepoint = iSavepoint;
       break;

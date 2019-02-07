@@ -1571,6 +1571,7 @@ struct sqlite3 {
 #define SQLITE_VdbeTrace      HI(0x0004)  /* True to trace VDBE execution */
 #define SQLITE_VdbeAddopTrace HI(0x0008)  /* Trace sqlite3VdbeAddOp() calls */
 #define SQLITE_VdbeEQP        HI(0x0010)  /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_ParserTrace    HI(0x0020)  /* PRAGMA parser_trace=ON */
 #endif
 
 /*
@@ -3443,6 +3444,9 @@ struct Sqlite3Config {
   void (*xVdbeBranch)(void*,unsigned iSrcLine,u8 eThis,u8 eMx);  /* Callback */
   void *pVdbeBranchArg;                                     /* 1st argument */
 #endif
+#ifdef SQLITE_ENABLE_DESERIALIZE
+  sqlite3_int64 mxMemdbSize;        /* Default max memdb size */
+#endif
 #ifndef SQLITE_UNTESTABLE
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
 #endif
@@ -3860,6 +3864,7 @@ void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
 u32 sqlite3ExprListFlags(const ExprList*);
+int sqlite3IndexHasDuplicateRootPage(Index*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
 int sqlite3InitOne(sqlite3*, int, char**, u32);
@@ -3893,6 +3898,11 @@ void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
+#ifdef SQLITE_HAS_CODEC
+  int sqlite3CodecQueryParameters(sqlite3*,const char*,const char*);
+#else
+# define sqlite3CodecQueryParameters(A,B,C) 0
+#endif
 Btree *sqlite3DbNameToBtree(sqlite3*,const char*);
 
 #ifdef SQLITE_UNTESTABLE

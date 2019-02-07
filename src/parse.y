@@ -826,6 +826,10 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
+#ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+  sqlite3ExprListDelete(pParse->db, O); O = 0;
+  sqlite3ExprDelete(pParse->db, L); L = 0;
+#endif
   sqlite3DeleteFrom(pParse,X,W,O,L);
 }
 %endif

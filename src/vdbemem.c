@@ -1124,6 +1124,9 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
 ){
   int rc;
   pMem->flags = MEM_Null;
+  if( sqlite3BtreeMaxRecordSize(pCur)<offset+amt ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){
     rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){

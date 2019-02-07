@@ -42,11 +42,6 @@ struct MemFile {
   int eLock;                      /* Most recent lock against this file */
 };
 
-/* The default maximum size of an in-memory database */
-#ifndef SQLITE_MEMDB_DEFAULT_MAXSIZE
-# define SQLITE_MEMDB_DEFAULT_MAXSIZE 1073741824
-#endif
-
 /*
 ** Methods for MemFile
 */
@@ -311,7 +306,6 @@ static int memdbFetch(
 ){
   MemFile *p = (MemFile *)pFile;
   if( iOfst+iAmt>p->sz ){
-    assert( CORRUPT_DB );
     *pp = 0;
   }else{
     p->nMmap++;
@@ -346,7 +340,7 @@ static int memdbOpen(
   assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
   *pOutFlags = flags | SQLITE_OPEN_MEMORY;
   p->base.pMethods = &memdb_io_methods;
-  p->szMax = SQLITE_MEMDB_DEFAULT_MAXSIZE;
+  p->szMax = sqlite3GlobalConfig.mxMemdbSize;
   return SQLITE_OK;
 }
 
@@ -598,8 +592,8 @@ int sqlite3_deserialize(
     p->sz = szDb;
     p->szAlloc = szBuf;
     p->szMax = szBuf;
-    if( p->szMax<SQLITE_MEMDB_DEFAULT_MAXSIZE ){
-      p->szMax = SQLITE_MEMDB_DEFAULT_MAXSIZE;
+    if( p->szMax<sqlite3GlobalConfig.mxMemdbSize ){
+      p->szMax = sqlite3GlobalConfig.mxMemdbSize;
     }
     p->mFlags = mFlags;
     rc = SQLITE_OK;

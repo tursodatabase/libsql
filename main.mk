@@ -1026,7 +1026,7 @@ showshm$(EXE):	$(TOP)/tool/showshm.c
 	$(TCC) -o showshm$(EXE) $(TOP)/tool/showshm.c
 
 index_usage$(EXE): $(TOP)/tool/index_usage.c sqlite3.o
-	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_DEPRECATED -o index_usage$(EXE) \
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_DEPRECATED $(SHELL_OPTS) -o index_usage$(EXE) \
 		$(TOP)/tool/index_usage.c sqlite3.o $(THREADLIB)
 
 changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o

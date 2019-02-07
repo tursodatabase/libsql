@@ -49,8 +49,7 @@
 #define PragTyp_HEXKEY                        41
 #define PragTyp_KEY                           42
 #define PragTyp_LOCK_STATUS                   43
-#define PragTyp_PARSER_TRACE                  44
-#define PragTyp_STATS                         45
+#define PragTyp_STATS                         44
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -211,22 +210,18 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "count_changes",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_CountRows },
 #endif
-#endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "data_store_directory",
   /* ePragTyp:  */ PragTyp_DATA_STORE_DIRECTORY,
   /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
-#endif
 #endif
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "data_version",
@@ -242,14 +237,12 @@ static const PragmaName aPragmaName[] = {
   /* ColNames:  */ 35, 3,
   /* iArg:      */ 0 },
 #endif
-#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "default_cache_size",
   /* ePragTyp:  */ PragTyp_DEFAULT_CACHE_SIZE,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 45, 1,
   /* iArg:      */ 0 },
-#endif
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
@@ -261,13 +254,11 @@ static const PragmaName aPragmaName[] = {
 #endif
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "empty_result_callbacks",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_NullCallback },
-#endif
 #endif
 #if !defined(SQLITE_OMIT_UTF16)
  {/* zName:     */ "encoding",
@@ -307,15 +298,11 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ BTREE_FREE_PAGE_COUNT },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "full_column_names",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_FullColNames },
-#endif
-#endif
-#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "fullfsync",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
@@ -473,12 +460,14 @@ static const PragmaName aPragmaName[] = {
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
-#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+#if defined(SQLITE_DEBUG)
  {/* zName:     */ "parser_trace",
-  /* ePragTyp:  */ PragTyp_PARSER_TRACE,
-  /* ePragFlg:  */ 0,
+  /* ePragTyp:  */ PragTyp_FLAG,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ 0 },
+  /* iArg:      */ SQLITE_ParserTrace },
+#endif
 #endif
 #if defined(SQLITE_INTROSPECTION_PRAGMAS)
  {/* zName:     */ "pragma_list",
@@ -542,13 +531,11 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "short_column_names",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_ShortColNames },
-#endif
 #endif
  {/* zName:     */ "shrink_memory",
   /* ePragTyp:  */ PragTyp_SHRINK_MEMORY,
@@ -601,15 +588,11 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
-#endif
-#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
-#if !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "temp_store_directory",
   /* ePragTyp:  */ PragTyp_TEMP_STORE_DIRECTORY,
   /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
-#endif
 #endif
 #if defined(SQLITE_HAS_CODEC)
  {/* zName:     */ "textkey",

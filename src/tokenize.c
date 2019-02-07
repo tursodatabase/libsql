@@ -572,7 +572,14 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
   assert( pzErrMsg!=0 );
-  /* sqlite3ParserTrace(stdout, "parser: "); */
+#ifdef SQLITE_DEBUG
+  if( db->flags & SQLITE_ParserTrace ){
+    printf("parser: [[[%s]]]\n", zSql);
+    sqlite3ParserTrace(stdout, "parser: ");
+  }else{
+    sqlite3ParserTrace(0, 0);
+  }
+#endif
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   pEngine = &sEngine;
   sqlite3ParserInit(pEngine, pParse);
@@ -740,7 +747,7 @@ char *sqlite3Normalize(
   int i;             /* Next unread byte of zSql[] */
   int n;             /* length of current token */
   int tokenType;     /* type of current token */
-  int prevType;      /* Previous non-whitespace token */
+  int prevType = 0;  /* Previous non-whitespace token */
   int nParen;        /* Number of nested levels of parentheses */
   int iStartIN;      /* Start of RHS of IN operator in z[] */
   int nParenAtIN;    /* Value of nParent at start of RHS of IN operator */
