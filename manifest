@@ -1,5 +1,5 @@
-C Version\s3.27.0
-D 2019-02-07T17:02:52.652
+C Change\sVACUUM\sso\sthat\sit\spreserves\sROWID\svalues.
+D 2019-02-07T19:07:11.330
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -475,7 +475,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 3ed9ceaa4b7d56a6f2613355e1cd1ae5cfe31712bce2bf5aa93c5f1f130704b2
+F src/insert.c 4cf069988908f650bec92fd821a082f6eda87c01191047e49a1a5007af93274c
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 27d7265625ea6eaccdfe7c53ef41adc179c9357a077702a860c1a3b0a037a16f
@@ -821,7 +821,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test 47eeb2960e74613f0f8722b2f13aef08fde69daa16e5380ac93df84dac8b1f72
-F test/e_vacuum.test 1b8b4772d05374aa1b8958669138bbb4213ee26a
+F test/e_vacuum.test 44acfe525e01071ca50e76c68875db6fa084dd7743a3a16b5b503455539d03ca
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
@@ -1804,10 +1804,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f298328771d5aaba798d05f50c77ac239c7c72422ff35953463d6876a9659f74
-R d5115c238fed46e746b74b22004ee963
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.27.0 *
+P 97744701c3bd414e6c9d7182639d8c2ce7cf124c4fce625071ae65658ac61713 f264015f84de51d74f681ba62a5f26bd859480d93e1eaf9e1018b3e9b4e0bea3
+R 05b9e1b76adf5831324340b3998a8a97
+T +closed f264015f84de51d74f681ba62a5f26bd859480d93e1eaf9e1018b3e9b4e0bea3
 U drh
-Z 01296668b9d6cd12052a19573f2fcbb6
+Z 5264352d0dc2fc8c551bb88bbcc0d82f
