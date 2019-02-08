@@ -93,6 +93,7 @@ void sqlite3MemoryBarrier(void){
   SQLITE_MEMORY_BARRIER;
 #elif defined(__GNUC__) && GCC_VERSION>=4001000
   __sync_synchronize();
+# define sqlite3MemoryBarrier_IS_RELIABLE 1
 #endif
 }
 

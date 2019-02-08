@@ -4893,8 +4893,10 @@ static void unixShmBarrier(
   assert( fd->pMethods->xLock==nolockLock 
        || unixFileMutexNotheld((unixFile*)fd) 
   );
+#ifndef sqlite3MemoryBarrier_IS_RELIABLE
   unixEnterMutex();               /* Also mutex, for redundancy */
   unixLeaveMutex();
+#endif
 }
 
 /*

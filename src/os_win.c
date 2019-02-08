@@ -4174,8 +4174,10 @@ static void winShmBarrier(
 ){
   UNUSED_PARAMETER(fd);
   sqlite3MemoryBarrier();   /* compiler-defined memory barrier */
+#ifndef sqlite3MemoryBarrier_IS_RELIABLE
   winShmEnterMutex();       /* Also mutex, for redundancy */
   winShmLeaveMutex();
+#endif
 }
 
 /*
