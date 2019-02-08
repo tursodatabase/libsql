@@ -1,12 +1,12 @@
-C Version\s3.27.0
-D 2019-02-07T17:02:52.652
+C Increase\sthe\sversion\snumber\sto\s3.27.1.
+D 2019-02-08T12:44:08.416
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5df60c70edb157feb2148a14c687551969599bd065875a0b959b6b139721ca72
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
-F VERSION 453e2f4529ca208196d5567db28d549d7151f79efd33f6e6cfe6e613e583a0be
+F VERSION 15b2d421b2265aad451c0493066c1c31a511a72c5153bb4e9d5f62adbc12134c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -33,7 +33,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure e2b4021dcb8ee6f9a91e7f4011316957868e8065019ac994f68e27363120c272 x
+F configure 2b0310f5ddb82f4e2c524c0bc7bacf480b0ac21bf05b543d7e72e2682772eaac x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1804,10 +1804,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f298328771d5aaba798d05f50c77ac239c7c72422ff35953463d6876a9659f74
-R d5115c238fed46e746b74b22004ee963
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.27.0 *
+P 97744701c3bd414e6c9d7182639d8c2ce7cf124c4fce625071ae65658ac61713
+R 89eaa0fde4af812b2eca85c2a914d5ef
+T *branch * branch-3.27
+T *sym-branch-3.27 *
+T -sym-trunk *
 U drh
-Z 01296668b9d6cd12052a19573f2fcbb6
+Z e06770915c3d5c8faecb97047db22f3d
