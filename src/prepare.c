@@ -414,6 +414,20 @@ error_out:
   return rc;
 }
 
+int sqlite3LockReusableSchema(sqlite3 *db){
+  if( IsReuseSchema(db) && (db->mDbFlags & DBFLAG_SchemaInuse)==0 ){
+    db->mDbFlags |= DBFLAG_SchemaInuse;
+    return 1;
+  }
+  return 0;
+}
+void sqlite3UnlockReusableSchema(sqlite3 *db, int bRelease){
+  if( bRelease ){
+    db->mDbFlags &= ~DBFLAG_SchemaInuse;
+    sqlite3SchemaReleaseAll(db);
+  }
+}
+
 /*
 ** Initialize all database files - the main database file, the file
 ** used to store temporary tables, and any additional database files
@@ -425,8 +439,12 @@ error_out:
 ** file was of zero-length, then the DB_Empty flag is also set.
 */
 int sqlite3Init(sqlite3 *db, char **pzErrMsg){
-  int i, rc;
+  int rc = SQLITE_OK;
+  int bReleaseSchema;
+  int i;
   int commit_internal = !(db->mDbFlags&DBFLAG_SchemaChange);
+
+  bReleaseSchema = sqlite3LockReusableSchema(db);
   
   assert( sqlite3_mutex_held(db->mutex) );
   assert( sqlite3BtreeHoldsMutex(db->aDb[0].pBt) );
@@ -436,20 +454,19 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   /* Do the main schema first */
   if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
     rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
-    if( rc ) return rc;
   }
   /* All other schemas after the main schema. The "temp" schema must be last */
-  for(i=db->nDb-1; i>0; i--){
+  for(i=db->nDb-1; rc==SQLITE_OK && i>0; i--){
     assert( i==1 || sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
     if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
       rc = sqlite3InitOne(db, i, pzErrMsg, 0);
-      if( rc ) return rc;
     }
   }
-  if( commit_internal ){
+  if( rc==SQLITE_OK && commit_internal ){
     sqlite3CommitInternalChanges(db);
   }
-  return SQLITE_OK;
+  sqlite3UnlockReusableSchema(db, bReleaseSchema);
+  return rc;
 }
 
 /*
@@ -748,12 +765,7 @@ static int sqlite3LockAndPrepare(
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
-  if( IsReuseSchema(db) ){
-    if( (db->mDbFlags & DBFLAG_SchemaInuse)==0 ){
-      db->mDbFlags |= DBFLAG_SchemaInuse;
-      bReleaseSchema = 1;
-    }
-  }
+  bReleaseSchema = sqlite3LockReusableSchema(db);
   sqlite3BtreeEnterAll(db);
   do{
     /* Make multiple attempts to compile the SQL, until it either succeeds
@@ -766,10 +778,7 @@ static int sqlite3LockAndPrepare(
 
   sqlite3BtreeLeaveAll(db);
 
-  if( bReleaseSchema ){
-    db->mDbFlags &= ~DBFLAG_SchemaInuse;
-    sqlite3SchemaReleaseAll(db);
-  }
+  sqlite3UnlockReusableSchema(db, bReleaseSchema);
 
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );

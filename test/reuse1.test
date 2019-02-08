@@ -16,6 +16,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix reuse1
 
+if 1 {
 
 forcedelete test.db2
 sqlite3 db2 test.db2
@@ -36,7 +37,7 @@ do_test 1.2 {
   db close
   db2 close
   sqlite3 db2 test.db2 -reuse-schema 1
-  sqlite3 db test.db -reuse-schema 1
+  sqlite3 db  test.db -reuse-schema 1
 } {}
 
 do_execsql_test -db db2 1.3.1 {
@@ -91,4 +92,301 @@ foreach {tn sql} {
   do_catchsql_test 1.5.$tn $sql {1 {attempt to modify read-only schema}}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+ifcapable fts5 {
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    INSERT INTO ft VALUES('one'), ('two'), ('three');
+    ATTACH 'test.db2' AS aux;
+    CREATE VIRTUAL TABLE aux.ft USING fts5(a);
+    INSERT INTO aux.ft VALUES('aux1'), ('aux2'), ('aux3');
+  }
+
+  db close
+  sqlite3 db  test.db -reuse-schema 1
+
+  do_execsql_test 2.1 {
+    ATTACH 'test.db2' AS aux;
+    SELECT * FROM main.ft;
+  } {one two three}
+
+  do_execsql_test 2.2 {
+    SELECT * FROM aux.ft;
+  } {aux1 aux2 aux3}
+
+  do_execsql_test 2.2 {
+    SELECT * FROM aux.ft_content;
+  } {1 aux1 2 aux2 3 aux3}
+}
+
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE TRIGGER v1_ins INSTEAD OF INSERT ON v1 BEGIN
+    INSERT INTO t1 VALUES(new.a, new.b, new.c);
+  END;
+  CREATE TRIGGER v1_del INSTEAD OF DELETE ON v1 BEGIN
+    DELETE FROM t1 WHERE a=old.a;
+  END;
+  CREATE TRIGGER v1_up INSTEAD OF UPDATE ON v1 BEGIN
+    UPDATE t1 SET a=new.a, b=new.b, c=new.c WHERE a=old.a;
+  END;
+}
+forcecopy test.db test.db2
+
+do_test 3.1 {
+  sqlite3 db2 test.db2
+  execsql { INSERT INTO t1 VALUES(1, 2, 3) } db
+  execsql { INSERT INTO t1 VALUES(4, 5, 6) } db2
+  db2 close
+  execsql { ATTACH 'test.db2' AS aux; }
+} {}
+
+do_execsql_test 3.2 {
+  SELECT * FROM main.v1;
+} {1 2 3}
+
+do_execsql_test 3.3 {
+  SELECT * FROM aux.v1;
+} {4 5 6}
+
+db close
+sqlite3 db test.db -reuse-schema 1
+
+do_execsql_test 3.4 { ATTACH 'test.db2' AS aux } {}
+do_execsql_test 3.5 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.6 { SELECT * FROM aux.v1  } {4 5 6}
+
+do_execsql_test 3.7.1 { INSERT INTO aux.t1 VALUES(8, 9, 10); }
+do_execsql_test 3.7.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.7.3 { SELECT * FROM aux.v1  } {4 5 6 8 9 10}
+
+do_execsql_test 3.8.1 { DELETE FROM aux.t1 WHERE b=5 }
+do_execsql_test 3.8.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.8.3 { SELECT * FROM aux.v1  } {8 9 10}
+
+do_execsql_test 3.9.1 { UPDATE aux.t1 SET b='abc' }
+do_execsql_test 3.9.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.9.3 { SELECT * FROM aux.v1  } {8 abc 10}
+
+do_execsql_test 3.10.1 { INSERT INTO aux.v1 VALUES(11, 12, 13) }
+do_execsql_test 3.10.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.10.3 { SELECT * FROM aux.v1  } {8 abc 10 11 12 13}
+
+do_execsql_test 3.11.1 { DELETE FROM aux.v1 WHERE b='abc' }
+do_execsql_test 3.11.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.11.3 { SELECT * FROM aux.v1  } {11 12 13}
+
+do_execsql_test 3.12.1 { UPDATE aux.v1 SET b='def' }
+do_execsql_test 3.12.2 { SELECT * FROM main.v1 } {1 2 3}
+do_execsql_test 3.12.3 { SELECT * FROM aux.v1  } {11 def 13}
+
+do_execsql_test 3.13.1 {
+  CREATE TEMP TRIGGER xyz AFTER INSERT ON aux.t1 BEGIN
+    INSERT INTO v1 VALUES(new.a, new.b, new.c);
+  END
+}
+do_execsql_test 3.13.2 {
+  INSERT INTO aux.v1 VALUES('x', 'y', 'z');
+}
+do_execsql_test 3.13.3 {
+  SELECT * FROM v1;
+} {1 2 3 x y z}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE);
+  CREATE TABLE del(a, b, c);
+  CREATE TRIGGER tr1 AFTER DELETE ON t1 BEGIN
+    INSERT INTO del VALUES(old.a, old.b, old.c);
+  END;
+}
+forcecopy test.db test.db2
+
+db close
+sqlite3 db test.db -reuse-schema 1
+execsql { 
+  ATTACH 'test.db2' AS aux;
+  PRAGMA recursive_triggers = 1;
+}
+
+do_execsql_test 4.1 {
+  INSERT INTO main.t1 VALUES(1, 2, 3);
+  INSERT INTO aux.t1 VALUES(4, 5, 6);
+}
+
+do_execsql_test 4.2.1 {
+  INSERT OR REPLACE INTO aux.t1 VALUES('a', 'b', 6);
+  SELECT * FROM aux.t1;
+} {a b 6}
+do_execsql_test 4.2.2 { SELECT * FROM aux.del  } {4 5 6}
+do_execsql_test 4.2.3 { SELECT * FROM main.del } {}
+
+do_execsql_test 4.3.1 {
+  INSERT INTO aux.t1 VALUES('x', 'y', 'z');
+  UPDATE OR REPLACE aux.t1 SET c='z' WHERE a='a';
+} {}
+do_execsql_test 4.3.2 { SELECT * FROM aux.del  } {4 5 6 x y z}
+do_execsql_test 4.3.3 { SELECT * FROM main.del } {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  INSERT INTO t1 VALUES(1, 2, 3), (4, 5, 6);
+  ANALYZE;
+  PRAGMA writable_schema = 1;
+  DELETE FROM sqlite_stat1;
+}
+db close
+forcecopy test.db test.db2
+sqlite3 db test.db -reuse-schema 1
+execsql { ATTACH 'test.db2' AS aux }
+
+foreach {tn sql} {
+  1 { CREATE TABLE t3(x) }
+  2 { DROP TABLE t2 }
+  3 { CREATE INDEX i2 ON t2(b) }
+  4 { DROP INDEX i1 }
+  5 { ALTER TABLE t1 ADD COLUMN d }
+  6 { ALTER TABLE t1 RENAME TO t3 }
+  7 { ALTER TABLE t1 RENAME c TO d }
+} {
+  do_catchsql_test 5.1.$tn $sql {1 {attempt to modify read-only schema}}
+}
+
+do_execsql_test 5.2.1 { ANALYZE aux.t1 } {}
+do_execsql_test 5.2.2 { SELECT * FROM aux.sqlite_stat1  } {t1 i1 {2 1}}
+do_execsql_test 5.2.3 { SELECT * FROM main.sqlite_stat1 } {}
+
+do_test 5.3.0 {
+  sqlite3 db2 test.db2
+  db2 eval { 
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_stat1;
+  }
+} {}
+
+do_execsql_test 5.3.1 { SELECT * FROM aux.sqlite_stat1  } {}
+do_execsql_test 5.3.2 { ANALYZE aux } {}
+do_execsql_test 5.3.3 { SELECT * FROM aux.sqlite_stat1  } {t1 i1 {2 1}}
+do_execsql_test 5.3.4 { SELECT * FROM main.sqlite_stat1 } {}
+
+#-------------------------------------------------------------------------
+# Attempting to run ANALYZE when the required sqlite_statXX functions
+# are missing is an error (because it would modify the database schema).
+#
+reset_db
+do_execsql_test 5.4 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  INSERT INTO t1 VALUES(1, 2, 3), (4, 5, 6);
+}
+db close
+sqlite3 db test.db -reuse-schema 1
+breakpoint
+foreach {tn sql} {
+  1 { ANALYZE }
+  2 { ANALYZE t1 }
+  3 { ANALYZE i1 }
+  4 { ANALYZE main }
+  5 { ANALYZE main.t1 }
+  6 { ANALYZE main.i1 }
+} {
+  do_catchsql_test 5.4.$tn $sql {1 {attempt to modify read-only schema}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t1;
+}
+db close
+forcecopy test.db test.db2
+sqlite3 db test.db -reuse-schema 1
+execsql { ATTACH 'test.db2' AS aux }
+
+do_execsql_test 6.1 {
+  INSERT INTO main.t1(a) VALUES(1), (2), (3);
+  INSERT INTO aux.t1(a) VALUES(4), (5), (6);
+  CREATE TEMP TABLE t2(i,t);
+  INSERT INTO t2 VALUES(2, 'two'), (5, 'five');
+}
+
+do_execsql_test 6.2 {
+  SELECT t FROM t2 WHERE i IN (SELECT a FROM aux.t1)
+} {five}
+do_execsql_test 6.3 {
+  SELECT t FROM t2 WHERE i IN (SELECT a FROM aux.v1)
+} {five}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE p1(a PRIMARY KEY, b);
+  CREATE TABLE p2(a PRIMARY KEY, b);
+  CREATE TABLE c1(x REFERENCES p1 ON UPDATE CASCADE ON DELETE CASCADE);
+}
+
+db close
+forcecopy test.db test.db2
+sqlite3 db test.db -reuse-schema 1
+execsql { ATTACH 'test.db2' AS aux }
+
+do_execsql_test 7.1 {
+  INSERT INTO aux.p1 VALUES(1, 'one');
+  INSERT INTO aux.p1 VALUES(2, 'two');
+  PRAGMA foreign_keys = on;
+}
+
+do_execsql_test 7.2 {
+  INSERT INTO aux.c1 VALUES(2);
+}
+
+do_execsql_test 7.3.1 {
+  PRAGMA foreign_keys = off;
+  INSERT INTO main.p2 SELECT * FROM aux.p1;
+}
+do_execsql_test 7.3.2 {
+  SELECT * FROM main.p2;
+} {1 one 2 two}
+
+do_execsql_test 7.3.3 {
+  INSERT INTO aux.p2 VALUES(1, 2);
+}
+
+do_execsql_test 7.3.4 {
+  SELECT main.p2.a FROM main.p2, aux.p2;
+} {1 2}
+
+do_execsql_test 7.3.5 {
+  SELECT * FROM main.p2, aux.p2;
+} {1 one 1 2   2 two 1 2}
+
+do_execsql_test 7.4 {
+  SELECT count(*) FROM aux.p2;
+} {1}
+
+
 finish_test
+
+

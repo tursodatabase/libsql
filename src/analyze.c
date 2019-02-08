@@ -216,6 +216,7 @@ static void openStatTable(
         ** side-effect of the CREATE TABLE statement is to leave the rootpage 
         ** of the new table in register pParse->regRoot. This is important 
         ** because the OpenWrite opcode below will be needing it. */
+        sqlite3SchemaWritable(pParse, iDb);
         sqlite3NestedParse(pParse,
             "CREATE TABLE %Q.%s(%s)", pDb->zDbSName, zTab, aTable[i].zCols
         );
@@ -1339,7 +1340,6 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   int iMem;
   int iTab;
 
-  sqlite3SchemaWritable(pParse, iDb);
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 3;

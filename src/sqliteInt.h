@@ -3262,6 +3262,7 @@ struct Trigger {
                              the <column-list> is stored here */
   Schema *pSchema;        /* Schema containing the trigger */
   Schema *pTabSchema;     /* Schema containing the table */
+  char *zTabSchema;       /* Temp triggers in IsReuseSchema() dbs only */
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
 };
@@ -4329,6 +4330,9 @@ void sqlite3KeyInfoUnref(KeyInfo*);
 KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
 KeyInfo *sqlite3KeyInfoOfIndex(Parse*, Index*);
 KeyInfo *sqlite3KeyInfoFromExprList(Parse*, ExprList*, int, int);
+
+void sqlite3UnlockReusableSchema(sqlite3 *db, int bRelease);
+int sqlite3LockReusableSchema(sqlite3 *db);
 
 #ifdef SQLITE_DEBUG
 int sqlite3KeyInfoIsWriteable(KeyInfo*);

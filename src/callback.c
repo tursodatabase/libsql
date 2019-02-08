@@ -41,7 +41,7 @@ struct SchemaPool {
 
 #ifdef SQLITE_DEBUG
 static void assert_schema_state_ok(sqlite3 *db){
-  if( IsReuseSchema(db) ){
+  if( IsReuseSchema(db) && db->magic!=SQLITE_MAGIC_ZOMBIE ){
     int i;
     for(i=0; i<db->nDb; i++){
       if( i!=1 ){

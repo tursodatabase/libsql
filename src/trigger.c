@@ -55,15 +55,24 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   }
 
   if( pTmpSchema!=pTab->pSchema ){
+    sqlite3 *db = pParse->db;
     HashElem *p;
-    assert( sqlite3SchemaMutexHeld(pParse->db, 0, pTmpSchema) );
+    char *zSchema = 0;
+    if( IsReuseSchema(db) ){
+      zSchema = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
+    }
+    assert( sqlite3SchemaMutexHeld(db, 0, pTmpSchema) );
     for(p=sqliteHashFirst(&pTmpSchema->trigHash); p; p=sqliteHashNext(p)){
       Trigger *pTrig = (Trigger *)sqliteHashData(p);
-      if( pTrig->pTabSchema==pTab->pSchema
-       && 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
+      if( (zSchema==0 && pTrig->pTabSchema==pTab->pSchema)
+       || (zSchema!=0 && 0==sqlite3StrICmp(pTrig->zTabSchema, zSchema))
       ){
-        pTrig->pNext = (pList ? pList : pTab->pTrigger);
-        pList = pTrig;
+        if( 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
+        ){
+          pTrig->pTabSchema = pTab->pSchema;
+          pTrig->pNext = (pList ? pList : pTab->pTrigger);
+          pList = pTrig;
+        }
       }
     }
   }
@@ -244,6 +253,10 @@ void sqlite3BeginTrigger(
   pTrigger->zName = zName;
   zName = 0;
   pTrigger->table = sqlite3DbStrDup(db, pTableName->a[0].zName);
+  if( IsReuseSchema(db) && iDb==1 ){
+    int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    pTrigger->zTabSchema = sqlite3DbStrDup(db, db->aDb[iTabDb].zDbSName);
+  }
   pTrigger->pSchema = db->aDb[iDb].pSchema;
   pTrigger->pTabSchema = pTab->pSchema;
   pTrigger->op = (u8)op;
@@ -541,6 +554,7 @@ void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);
+  sqlite3DbFree(db, pTrigger->zTabSchema);
   sqlite3ExprDelete(db, pTrigger->pWhen);
   sqlite3IdListDelete(db, pTrigger->pColumns);
   sqlite3DbFree(db, pTrigger);
