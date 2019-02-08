@@ -1,5 +1,5 @@
-C Do\snot\sdo\sthe\soptimization\sthat\sattempts\sto\spull\sexpression\svalues\sfrom\nan\sindex\son\sthat\sexpression\swhen\sprocessing\sa\smulti-index\sOR\n(see\scheck-in\s[a47efb7c8520a0111])\sbecause\sthe\sexpression\stransformations\nthat\sare\sapplied\sbecome\sinvalid\swhen\sthe\sprocessing\smoves\soff\sof\sthe\scurrent\nindex\sand\son\sto\sthe\snext\sindex.\s\sFix\sfor\sticket\s[4e8e4857d32d401f].
-D 2019-02-08T04:15:19.414
+C Give\sthe\ssqlite3\sobject\sa\spointer\sto\sthe\scurrent\sParse\sso\sthat\sif\san\sOOM\noccurs,\sit\scan\sautomatically\sset\sthe\sParse.rc\svalue\sto\sSQLITE_NOMEM.\s\sThis\navoids\sa\sfrequent\sextra\stest\sof\sdb.mallocFailed\sin\sthe\sinnermost\sparser\sloop.
+D 2019-02-08T14:55:30.490
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -479,7 +479,7 @@ F src/insert.c 4cf069988908f650bec92fd821a082f6eda87c01191047e49a1a5007af93274c
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 27d7265625ea6eaccdfe7c53ef41adc179c9357a077702a860c1a3b0a037a16f
-F src/malloc.c 07295435093ce354c6d9063ac05a2eeae28bd251d2e63c48b3d67c12c76f7e18
+F src/malloc.c 0f9da2a66b230a5785af94b9672126845099b57b70a32c987d04ac28c69da990
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -519,7 +519,7 @@ F src/shell.c.in f2c1adbee3f6f36686b4a38d2168ebfc25298b4ad1e6d95199fc4e95b539251
 F src/sqlite.h.in 7da74fd5bd7a9dbe92297060f036935520b26e240457287c5e67c7b9db51a986
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h f657e35d824fdc17ddf46bb85f0193df3b965e8354ded9ec37825057e3224bcc
+F src/sqliteInt.h 8628c582eafa5ca93523cdaa7c45b2f38a11132e419c7923850706da7fa36bc2
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -577,7 +577,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 0a065eaa31f494ba31ac21d4a5d24a5a7865a7d849459f8c6266df1ac6b9aedf
+F src/tokenize.c e61ead283dff63762a9f5be462dbd258dba948e5fb4e3b261fc03703426eb12e
 F src/treeview.c c6ff90da4cc1813ff2d9bb11f17d4d927db62c47e552faa1835edc47269d753d
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49e5d11d463de078c2b8a963f5ed436210937e6dfddf06942132db9ec685bfd8
-R dda90614b467e8a8b1ef42222365d2b0
+P 440a7cda000164d3b46109caf2e1dde80681ba9b0d94ba9be6847d2b917445cf
+R d896d8bd0769798bd0ceee3ae07599f8
 U drh
-Z 81faba5054f3c2fda65d1c18f6a345b6
+Z 9fd176c740cfae5da5074aab30ee1252

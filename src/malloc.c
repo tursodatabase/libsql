@@ -661,6 +661,9 @@ void sqlite3OomFault(sqlite3 *db){
       db->u1.isInterrupted = 1;
     }
     db->lookaside.bDisable++;
+    if( db->pParse ){
+      db->pParse->rc = SQLITE_NOMEM_BKPT;
+    }
   }
 }
 
