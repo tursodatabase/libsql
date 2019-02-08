@@ -1,5 +1,5 @@
-C Cherrypick\sthe\sfix\sfor\sticket\s[4e8e4857d32d401f]\sfrom\strunk.
-D 2019-02-08T12:46:07.957
+C Version\s3.27.1
+D 2019-02-08T13:17:39.690
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -1804,8 +1804,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b94d5428bb78a49bba8a92556d6368673652290c75db877f6aba431ad14c5fde
-Q +440a7cda000164d3b46109caf2e1dde80681ba9b0d94ba9be6847d2b917445cf
+P d5d944d7947d7b44ba9a1c844418af49c5f39dbe84f181af790bb1412daed578
 R 2251df76230cd55e64293ef8a825ebab
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.27.1 *
 U drh
-Z b244e4c43be553deb57135944f88ebbe
+Z 4aa002629995b65b1d5f498ebad69e25
