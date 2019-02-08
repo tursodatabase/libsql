@@ -1756,8 +1756,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** the cursor. In this case it is important to do the full evaluation,
     ** as the result of the expression may not be NULL, even if all table
     ** column values are.  https://www.sqlite.org/src/info/7fa8049685b50b5a
+    **
+    ** Also, do not do this when processing one index an a multi-index
+    ** OR clause, since the transformation will become invalid once we
+    ** move forward to the next index.
+    ** https://sqlite.org/src/info/4e8e4857d32d401f
     */
-    if( pLevel->iLeftJoin==0 ){
+    if( pLevel->iLeftJoin==0 && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 ){
       whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
     }
 
