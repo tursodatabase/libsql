@@ -178,8 +178,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 }
 
 /*
-** Make sure pMem->z points to a writable allocation of at least 
-** min(n,32) bytes.
+** Make sure pMem->z points to a writable allocation of at least n bytes.
 **
 ** If the bPreserve argument is true, then copy of the content of
 ** pMem->z into the new allocation.  pMem must be either a string or
@@ -198,7 +197,6 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   assert( pMem->szMalloc==0
        || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
-  if( n<32 ) n = 32;
   if( pMem->szMalloc>0 && bPreserve && pMem->z==pMem->zMalloc ){
     pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
     bPreserve = 0;
