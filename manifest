@@ -1,5 +1,5 @@
-C Change\sVACUUM\sso\sthat\sit\spreserves\sROWID\svalues.
-D 2019-02-07T19:07:11.330
+C Do\snot\sdo\sthe\soptimization\sthat\sattempts\sto\spull\sexpression\svalues\sfrom\nan\sindex\son\sthat\sexpression\swhen\sprocessing\sa\smulti-index\sOR\n(see\scheck-in\s[a47efb7c8520a0111])\sbecause\sthe\sexpression\stransformations\nthat\sare\sapplied\sbecome\sinvalid\swhen\sthe\sprocessing\smoves\soff\sof\sthe\scurrent\nindex\sand\son\sto\sthe\snext\sindex.\s\sFix\sfor\sticket\s[4e8e4857d32d401f].
+D 2019-02-08T04:15:19.414
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -601,7 +601,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c 89d2ec668aec884dfa7ac500c6744e42ec0590fcd72fb740a8b48326a8412811
+F src/wherecode.c a571d8d7c19d6db786a201f2df8788b320fefcb2842f2a1eb9a85b85e91bc35f
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
 F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1061,7 +1061,7 @@ F test/join.test d53a3662762eff50b65da8775201e609878a27dd0885a1ae7bcde9bb46cecbc
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test 1df0a9b94f34a6c40c7f708f550dcb1cb80109f0ed774dba5a95915fbfbb6bc9
+F test/join5.test f8b5ffdf3c1513486b52ad4e49225507ecee5005f210eb18688f791d25370972
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -1804,8 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97744701c3bd414e6c9d7182639d8c2ce7cf124c4fce625071ae65658ac61713 f264015f84de51d74f681ba62a5f26bd859480d93e1eaf9e1018b3e9b4e0bea3
-R 05b9e1b76adf5831324340b3998a8a97
-T +closed f264015f84de51d74f681ba62a5f26bd859480d93e1eaf9e1018b3e9b4e0bea3
+P 49e5d11d463de078c2b8a963f5ed436210937e6dfddf06942132db9ec685bfd8
+R dda90614b467e8a8b1ef42222365d2b0
 U drh
-Z 5264352d0dc2fc8c551bb88bbcc0d82f
+Z 81faba5054f3c2fda65d1c18f6a345b6
