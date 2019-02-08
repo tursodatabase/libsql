@@ -1533,16 +1533,16 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
 ** causes the fragmentation count to exceed 60.
 */
 static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
-  const int hdr = pPg->hdrOffset;
-  u8 * const aData = pPg->aData;
-  int iAddr = hdr + 1;
-  int pc = get2byte(&aData[iAddr]);
-  int x;
-  int usableSize = pPg->pBt->usableSize;
-  int size;            /* Size of the free slot */
+  const int hdr = pPg->hdrOffset;            /* Offset to page header */
+  u8 * const aData = pPg->aData;             /* Page data */
+  int iAddr = hdr + 1;                       /* Address of ptr to pc */
+  int pc = get2byte(&aData[iAddr]);          /* Address of a free slot */
+  int x;                                     /* Excess size of the slot */
+  int maxPC = pPg->pBt->usableSize - nByte;  /* Max address for a usable slot */
+  int size;                                  /* Size of the free slot */
 
   assert( pc>0 );
-  while( pc<=usableSize-4 ){
+  while( pc<=maxPC ){
     /* EVIDENCE-OF: R-22710-53328 The third and fourth bytes of each
     ** freeblock form a big-endian integer which is the size of the freeblock
     ** in bytes, including the 4-byte header. */
@@ -1550,10 +1550,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     if( (x = size - nByte)>=0 ){
       testcase( x==4 );
       testcase( x==3 );
-      if( size+pc > usableSize ){
-        *pRc = SQLITE_CORRUPT_PAGE(pPg);
-        return 0;
-      }else if( x<4 ){
+      if( x<4 ){
         /* EVIDENCE-OF: R-11498-58022 In a well-formed b-tree page, the total
         ** number of bytes in fragments may not exceed 60. */
         if( aData[hdr+7]>57 ) return 0;
@@ -1562,21 +1559,31 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
         aData[hdr+7] += (u8)x;
+      }else if( x+pc > maxPC ){
+        /* This slot extends off the end of the usable part of the page */
+        *pRc = SQLITE_CORRUPT_PAGE(pPg);
+        return 0;
       }else{
         /* The slot remains on the free-list. Reduce its size to account
-         ** for the portion used by the new allocation. */
+        ** for the portion used by the new allocation. */
         put2byte(&aData[pc+2], x);
       }
       return &aData[pc + x];
     }
     iAddr = pc;
     pc = get2byte(&aData[pc]);
-    if( pc<iAddr+size ) break;
+    if( pc<iAddr+size ){
+      if( pc ){
+        /* The next slot in the chain is not past the end of the current slot */
+        *pRc = SQLITE_CORRUPT_PAGE(pPg);
+      }
+      return 0;
+    }
   }
-  if( pc ){
+  if( pc>maxPC+nByte-4 ){
+    /* The free slot chain extends off the end of the page */
     *pRc = SQLITE_CORRUPT_PAGE(pPg);
   }
-
   return 0;
 }
 

@@ -1,5 +1,5 @@
-C Further\ssimplifications\sto\ssqlite3VdbeMemSetStr().
-D 2019-02-08T17:28:20.169
+C Small\sperformance\simprovement\sand\ssize\sreduction\sfor\spageFindSlot()\s-\sthe\nroutine\sin\sbtree.c\sthat\slocates\sa\sfree\sslot\sfor\sa\scell\son\sa\sbtree\spage.
+D 2019-02-08T22:34:59.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 84b7c5c3829b60823e15e7a8407462b69be3818f96518fef28f97ac0fbbca72b
+F src/btree.c 18046bf14f0e3fa294ef3f7c2dc30ca7e95f3ac11ec222ad906e40b150051bde
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
 F src/build.c 906ca6663b9dcd413e72ae9c44dd51e596d8336b04d52e678a7501e71c20cab2
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c499da8a4d0babc56883aa362ae124772fd9214a51169a88a5dee523d051658
-R 9c9226b3cda6f38720edaaa5f3813b03
+P 1d212957079a2caa30f3c9d80f43464781bc9634c2b5181a5814efbddae31711
+R 1d32a81f0717480499f3dabeb3b2a4f0
 U drh
-Z 9bc13d9b07eaf6edcfa1cadc644eb143
+Z 7c08fbb57c9ef7825a1477c0d3fbf8a6
