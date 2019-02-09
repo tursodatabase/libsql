@@ -5,7 +5,7 @@ use std::os::raw::c_int;
 use std::path::Path;
 use std::ptr;
 use std::str;
-use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 
 use super::ffi;
@@ -292,7 +292,7 @@ impl Drop for InnerConnection {
 #[cfg(not(feature = "bundled"))]
 static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
 #[cfg(not(feature = "bundled"))]
-pub static BYPASS_VERSION_CHECK: AtomicBool = ATOMIC_BOOL_INIT;
+pub static BYPASS_VERSION_CHECK: AtomicBool = AtomicBool::new(false);
 
 #[cfg(not(feature = "bundled"))]
 fn ensure_valid_sqlite_version() {
@@ -339,7 +339,7 @@ rusqlite was built against SQLite {} but the runtime SQLite version is {}. To fi
 }
 
 static SQLITE_INIT: Once = ONCE_INIT;
-pub static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
+pub static BYPASS_SQLITE_INIT: AtomicBool = AtomicBool::new(false);
 
 fn ensure_safe_sqlite_threading_mode() -> Result<()> {
     // Ensure SQLite was compiled in thredsafe mode.
