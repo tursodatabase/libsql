@@ -169,14 +169,13 @@ impl Statement<'_> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result, NO_PARAMS};
+    /// # use rusqlite::{Connection, FallibleStreamingIterator, Result, NO_PARAMS};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
     ///     let mut stmt = conn.prepare("SELECT name FROM people")?;
     ///     let mut rows = stmt.query(NO_PARAMS)?;
     ///
     ///     let mut names = Vec::new();
-    ///     while let Some(result_row) = rows.next() {
-    ///         let row = result_row?;
+    ///     while let Some(row) = rows.next()? {
     ///         names.push(row.get(0));
     ///     }
     ///
@@ -206,11 +205,11 @@ impl Statement<'_> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
+    /// # use rusqlite::{Connection, FallibleStreamingIterator, Result};
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(&[(":name", &"one")])?;
-    ///     while let Some(row) = rows.next() {
+    ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -221,11 +220,11 @@ impl Statement<'_> {
     /// and so the above example could also be written as:
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result, named_params};
+    /// # use rusqlite::{Connection, FallibleStreamingIterator, Result, named_params};
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(named_params!{ ":name": "one" })?;
-    ///     while let Some(row) = rows.next() {
+    ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -816,14 +815,12 @@ mod test {
             .prepare("SELECT id FROM test where name = :name")
             .unwrap();
         let mut rows = stmt
-            .query_map_named(&[(":name", &"one")], |row| {
+            .query_named(&[(":name", &"one")]).unwrap().map(|row| {
                 let id: i32 = row.get(0);
                 2 * id
-            })
-            .unwrap();
+            });
 
-        let doubled_id: i32 = rows.next().unwrap().unwrap();
-        assert_eq!(2, doubled_id);
+        assert_eq!(Ok(Some(&2)), rows.next());
     }
 
     #[test]
