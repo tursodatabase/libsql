@@ -7550,12 +7550,16 @@ static int balance_nonroot(
   pgno = get4byte(pRight);
   while( 1 ){
     rc = getAndInitPage(pBt, pgno, &apOld[i], 0, 0);
-    if( rc==0 && apOld[i]->nFree<0 ){
-      rc = btreeComputeFreeSpace(apOld[i]);
-    }
     if( rc ){
       memset(apOld, 0, (i+1)*sizeof(MemPage*));
       goto balance_cleanup;
+    }
+    if( apOld[i]->nFree<0 ){
+      rc = btreeComputeFreeSpace(apOld[i]);
+      if( rc ){
+        memset(apOld, 0, (i)*sizeof(MemPage*));
+        goto balance_cleanup;
+      }
     }
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
