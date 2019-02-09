@@ -1204,6 +1204,7 @@ struct Db {
   u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
   SchemaPool *pSPool;  /* For REUSE_SCHEMA mode */
+  VTable *pVTable;     /* List of all VTable objects (REUSE_SCHEMA mode only) */
 };
 
 /*
@@ -1956,6 +1957,7 @@ struct VTable {
   u8 bConstraint;           /* True if constraints are supported */
   int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
+  char *zName;              /* Table name (REUSE_SCHEMA mode) */
 };
 
 /*

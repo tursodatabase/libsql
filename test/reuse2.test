@@ -16,7 +16,6 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix reuse2
 
-
 do_execsql_test 1.0 {
   CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE, z);
   CREATE INDEX i1 ON t1(z);
@@ -41,5 +40,20 @@ do_execsql_test -db db2 1.3.2 {
 do_execsql_test 1.3.3 {
   SELECT * FROM t1;
 } {1 2 3 4 5 6}
+
+#--------------------------------------------------------------------------
+reset_db
+ifcapable fts5 {
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(c);
+    INSERT INTO ft VALUES('one two three');
+  }
+  db close
+  sqlite3 db test.db -reuse-schema 1
+
+  do_execsql_test 2.1 {
+    SELECT * FROM ft
+  } {{one two three}}
+}
 
 finish_test

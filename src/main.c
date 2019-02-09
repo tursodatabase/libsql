@@ -1054,6 +1054,15 @@ static void disconnectAllVtab(sqlite3 *db){
         if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
       }
     }
+    if( i!=1 && IsReuseSchema(db) ){
+      VTable *pVTable;
+      VTable *pNext;
+      for(pVTable=db->aDb[i].pVTable; pVTable; pVTable=pNext){
+        pNext = pVTable->pNext;
+        sqlite3VtabUnlock(pVTable);
+      }
+      db->aDb[i].pVTable = 0;
+    }
   }
   for(p=sqliteHashFirst(&db->aModule); p; p=sqliteHashNext(p)){
     Module *pMod = (Module *)sqliteHashData(p);

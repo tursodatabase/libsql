@@ -144,6 +144,15 @@ void sqlite3VtabLock(VTable *pVTab){
 VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
   VTable *pVtab;
   assert( IsVirtual(pTab) );
+  if( IsReuseSchema(db) ){
+    int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    if( iDb!=1 ){
+      for(pVtab=db->aDb[iDb].pVTable; pVtab; pVtab=pVtab->pNext){
+        if( sqlite3StrICmp(pTab->zName, pVtab->zName)==0 ) break;
+      }
+      return pVtab;
+    }
+  }
   for(pVtab=pTab->pVTable; pVtab && pVtab->db!=db; pVtab=pVtab->pNext);
   return pVtab;
 }
@@ -508,6 +517,7 @@ static int vtabCallConstructor(
   char *zModuleName;
   int iDb;
   VtabCtx *pCtx;
+  int nByte;                      /* Bytes of space to allocate */
 
   /* Check that the virtual-table is not already being initialized */
   for(pCtx=db->pVtabCtx; pCtx; pCtx=pCtx->pPrior){
@@ -524,7 +534,8 @@ static int vtabCallConstructor(
     return SQLITE_NOMEM_BKPT;
   }
 
-  pVTable = sqlite3MallocZero(sizeof(VTable));
+  nByte = sizeof(VTable) + sqlite3Strlen30(pTab->zName) + 1;
+  pVTable = (VTable*)sqlite3MallocZero(nByte);
   if( !pVTable ){
     sqlite3OomFault(db);
     sqlite3DbFree(db, zModuleName);
@@ -532,6 +543,8 @@ static int vtabCallConstructor(
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
+  pVTable->zName = (char*)&pVTable[1];
+  memcpy(pVTable->zName, pTab->zName, nByte-sizeof(VTable));
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   pTab->azModuleArg[1] = db->aDb[iDb].zDbSName;
@@ -572,12 +585,19 @@ static int vtabCallConstructor(
       int iCol;
       u8 oooHidden = 0;
       /* If everything went according to plan, link the new VTable structure
-      ** into the linked list headed by pTab->pVTable. Then loop through the 
-      ** columns of the table to see if any of them contain the token "hidden".
-      ** If so, set the Column COLFLAG_HIDDEN flag and remove the token from
-      ** the type string.  */
-      pVTable->pNext = pTab->pVTable;
-      pTab->pVTable = pVTable;
+      ** into the linked list headed by pTab->pVTable. Or, if this is a
+      ** reusable schema, into the linked list headed by Db.pVTable.
+      **
+      ** Then loop through the columns of the table to see if any of them
+      ** contain the token "hidden". If so, set the Column COLFLAG_HIDDEN flag
+      ** and remove the token from the type string.  */
+      if( IsReuseSchema(db) && iDb!=1 ){
+        pVTable->pNext = db->aDb[iDb].pVTable;
+        db->aDb[iDb].pVTable = pVTable;
+      }else{
+        pVTable->pNext = pTab->pVTable;
+        pTab->pVTable = pVTable;
+      }
 
       for(iCol=0; iCol<pTab->nCol; iCol++){
         char *zType = sqlite3ColumnType(&pTab->aCol[iCol], "");

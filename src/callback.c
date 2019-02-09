@@ -631,11 +631,19 @@ int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
     assert( pDb->pSchema );
 
     if( pSPool==0 ){
+      assert( pDb->pVTable==0 );
       if( bNew==0 ){
         schemaDelete(pDb->pSchema);
         pDb->pSchema = 0;
       }
     }else{
+      VTable *p;
+      VTable *pNext;
+      for(p=pDb->pVTable; p; p=pNext){
+        pNext = p->pNext;
+        sqlite3VtabUnlock(p);
+      }
+      pDb->pVTable = 0;
       sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
       if( DbHasProperty(db, iDb, DB_SchemaLoaded) ){
         schemaRelease(pDb);
@@ -710,7 +718,7 @@ void sqlite3SchemaReleaseAll(sqlite3 *db){
 ** a new one if necessary.
 */
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
-  Schema * p;
+  Schema *p;
   if( pBt && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA)==0 ){
     p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
