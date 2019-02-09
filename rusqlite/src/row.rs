@@ -148,11 +148,11 @@ impl<'stmt> Row<'stmt> {
     /// Panics if calling `row.get_checked(idx)` would return an error,
     /// including:
     ///
-    ///    * If the underlying SQLite column type is not a valid type as a
-    ///      source for `T`
-    ///    * If the underlying SQLite integral value is outside the range
-    ///      representable by `T`
-    ///    * If `idx` is outside the range of columns in the returned query
+    /// * If the underlying SQLite column type is not a valid type as a
+    ///   source for `T`
+    /// * If the underlying SQLite integral value is outside the range
+    ///   representable by `T`
+    /// * If `idx` is outside the range of columns in the returned query
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
@@ -224,8 +224,8 @@ impl<'stmt> Row<'stmt> {
     /// Panics if calling `row.get_raw_checked(idx)` would return an error,
     /// including:
     ///
-    ///    * If `idx` is outside the range of columns in the returned query.
-    ///    * If `idx` is not a valid column name for this row.
+    /// * If `idx` is outside the range of columns in the returned query.
+    /// * If `idx` is not a valid column name for this row.
     pub fn get_raw<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
         self.get_raw_checked(idx).unwrap()
     }
