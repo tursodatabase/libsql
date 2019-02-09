@@ -7781,6 +7781,7 @@ do_execsql_test 55.2 {
   ROLLBACK TO one;
 }
 
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
 
