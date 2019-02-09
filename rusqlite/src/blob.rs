@@ -15,10 +15,11 @@
 //!
 //! ```rust
 //! use rusqlite::blob::ZeroBlob;
-//! use rusqlite::{Connection, DatabaseName, Result, NO_PARAMS};
+//! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! use std::error::Error;
 //! use std::io::{Read, Seek, SeekFrom, Write};
 //!
-//! fn main() -> Result<()> {
+//! fn main() -> Result<(), Box<Error>> {
 //!     let db = Connection::open_in_memory()?;
 //!     db.execute_batch("CREATE TABLE test (content BLOB);")?;
 //!     db.execute(
