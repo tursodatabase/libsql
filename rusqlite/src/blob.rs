@@ -16,43 +16,41 @@
 //! ```rust
 //! use rusqlite::blob::ZeroBlob;
 //! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! use std::error::Error;
 //! use std::io::{Read, Seek, SeekFrom, Write};
 //!
-//! fn main() {
-//!     let db = Connection::open_in_memory().unwrap();
-//!     db.execute_batch("CREATE TABLE test (content BLOB);")
-//!         .unwrap();
+//! fn main() -> Result<(), Box<Error>> {
+//!     let db = Connection::open_in_memory()?;
+//!     db.execute_batch("CREATE TABLE test (content BLOB);")?;
 //!     db.execute(
 //!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
 //!         NO_PARAMS,
-//!     )
-//!     .unwrap();
+//!     )?;
 //!
 //!     let rowid = db.last_insert_rowid();
 //!     let mut blob = db
-//!         .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-//!         .unwrap();
+//!         .blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
 //!
 //!     // Make sure to test that the number of bytes written matches what you expect;
 //!     // if you try to write too much, the data will be truncated to the size of the
 //!     // BLOB.
-//!     let bytes_written = blob.write(b"01234567").unwrap();
+//!     let bytes_written = blob.write(b"01234567")?;
 //!     assert_eq!(bytes_written, 8);
 //!
 //!     // Same guidance - make sure you check the number of bytes read!
-//!     blob.seek(SeekFrom::Start(0)).unwrap();
+//!     blob.seek(SeekFrom::Start(0))?;
 //!     let mut buf = [0u8; 20];
-//!     let bytes_read = blob.read(&mut buf[..]).unwrap();
+//!     let bytes_read = blob.read(&mut buf[..])?;
 //!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
 //!
-//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])
-//!         .unwrap();
+//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])?;
 //!
 //!     // given a new row ID, we can reopen the blob on that row
 //!     let rowid = db.last_insert_rowid();
-//!     blob.reopen(rowid).unwrap();
+//!     blob.reopen(rowid)?;
 //!
 //!     assert_eq!(blob.size(), 64);
+//!     Ok(())
 //! }
 //! ```
 use std::cmp::min;

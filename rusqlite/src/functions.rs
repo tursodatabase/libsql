@@ -34,19 +34,19 @@
 //!     })
 //! }
 //!
-//! fn main() {
-//!     let db = Connection::open_in_memory().unwrap();
-//!     add_regexp_function(&db).unwrap();
+//! fn main() -> Result<()> {
+//!     let db = Connection::open_in_memory()?;
+//!     add_regexp_function(&db)?;
 //!
 //!     let is_match: bool = db
 //!         .query_row(
 //!             "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
 //!             NO_PARAMS,
 //!             |row| row.get(0),
-//!         )
-//!         .unwrap();
+//!         )?;
 //!
 //!     assert!(is_match);
+//!     Ok(())
 //! }
 //! ```
 use std::error::Error as StdError;

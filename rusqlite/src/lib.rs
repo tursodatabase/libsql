@@ -3,7 +3,7 @@
 //!
 //! ```rust
 //! use rusqlite::types::ToSql;
-//! use rusqlite::{params, Connection};
+//! use rusqlite::{params, Connection, Result};
 //! use time::Timespec;
 //!
 //! #[derive(Debug)]
@@ -14,8 +14,8 @@
 //!     data: Option<Vec<u8>>,
 //! }
 //!
-//! fn main() {
-//!     let conn = Connection::open_in_memory().unwrap();
+//! fn main() -> Result<()> {
+//!     let conn = Connection::open_in_memory()?;
 //!
 //!     conn.execute(
 //!         "CREATE TABLE person (
@@ -25,8 +25,7 @@
 //!                   data            BLOB
 //!                   )",
 //!         params![],
-//!     )
-//!     .unwrap();
+//!     )?;
 //!     let me = Person {
 //!         id: 0,
 //!         name: "Steven".to_string(),
@@ -37,24 +36,22 @@
 //!         "INSERT INTO person (name, time_created, data)
 //!                   VALUES (?1, ?2, ?3)",
 //!         params![me.name, me.time_created, me.data],
-//!     )
-//!     .unwrap();
+//!     )?;
 //!
 //!     let mut stmt = conn
-//!         .prepare("SELECT id, name, time_created, data FROM person")
-//!         .unwrap();
+//!         .prepare("SELECT id, name, time_created, data FROM person")?;
 //!     let person_iter = stmt
 //!         .query_map(params![], |row| Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
 //!             time_created: row.get(2),
 //!             data: row.get(3),
-//!         })
-//!         .unwrap();
+//!         })?;
 //!
 //!     for person in person_iter {
 //!         println!("Found person {:?}", person.unwrap());
 //!     }
+//!     Ok(())
 //! }
 //! ```
 #![allow(unknown_lints)]
