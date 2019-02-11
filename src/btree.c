@@ -1634,9 +1634,9 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     }
   }
 
-  /* If there is enough space between gap and top for one more cell pointer
-  ** array entry offset, and if the freelist is not empty, then search the
-  ** freelist looking for a free slot big enough to satisfy the request.
+  /* If there is enough space between gap and top for one more cell pointer,
+  ** and if the freelist is not empty, then search the
+  ** freelist looking for a slot big enough to satisfy the request.
   */
   testcase( gap+2==top );
   testcase( gap+1==top );
