@@ -3235,8 +3235,10 @@ static int fts3SegmentMerge(
   if( rc!=SQLITE_OK ) goto finished;
 
   assert( csr.nSegment>0 );
-  assert( iNewLevel>=getAbsoluteLevel(p, iLangid, iIndex, 0) );
-  assert( iNewLevel<getAbsoluteLevel(p, iLangid, iIndex,FTS3_SEGDIR_MAXLEVEL) );
+  assert_fts3_nc( iNewLevel>=getAbsoluteLevel(p, iLangid, iIndex, 0) );
+  assert_fts3_nc( 
+    iNewLevel<getAbsoluteLevel(p, iLangid, iIndex,FTS3_SEGDIR_MAXLEVEL) 
+  );
 
   memset(&filter, 0, sizeof(Fts3SegFilter));
   filter.flags = FTS3_SEGMENT_REQUIRE_POS;

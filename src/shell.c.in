@@ -1087,11 +1087,11 @@ struct ShellState {
 #define SHELL_TRACE_NORMALIZED 2      /* Show normalized SQL text */
 
 /* Bits in the ShellState.flgProgress variable */
-#define PROGRESS_QUIET   0x01         /* Omit announcing every progress callback */
-#define PROGRESS_RESET   0x02         /* Reset the count when the progres
-                                      ** callback limit is reached, and for each
-                                      ** top-level SQL statement */
-#define PROGRESS_ONCE    0x04         /* Cancel the --limit after firing once */
+#define SHELL_PROGRESS_QUIET 0x01  /* Omit announcing every progress callback */
+#define SHELL_PROGRESS_RESET 0x02  /* Reset the count when the progres
+                                   ** callback limit is reached, and for each
+                                   ** top-level SQL statement */
+#define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
 
 /*
 ** These are the allowed shellFlgs values
@@ -1793,6 +1793,7 @@ static void eqp_render(ShellState *p){
   }
 }
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
 ** Progress handler callback.
 */
@@ -1801,15 +1802,16 @@ static int progress_handler(void *pClientData) {
   p->nProgress++;
   if( p->nProgress>=p->mxProgress && p->mxProgress>0 ){
     raw_printf(p->out, "Progress limit reached (%u)\n", p->nProgress);
-    if( p->flgProgress & PROGRESS_RESET ) p->nProgress = 0;
-    if( p->flgProgress & PROGRESS_ONCE ) p->mxProgress = 0;
+    if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
+    if( p->flgProgress & SHELL_PROGRESS_ONCE ) p->mxProgress = 0;
     return 1;
   }
-  if( (p->flgProgress & PROGRESS_QUIET)==0 ){
+  if( (p->flgProgress & SHELL_PROGRESS_QUIET)==0 ){
     raw_printf(p->out, "Progress %u\n", p->nProgress);
   }
   return 0;
 }
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
 ** This is the callback routine that the shell
@@ -3497,11 +3499,13 @@ static const char *(azHelp[]) = {
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
   "     If FILE begins with '|' then open it as a pipe.",
   ".print STRING...         Print literal STRING",
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   ".progress N              Invoke progress handler after every N opcodes",
   "   --limit N                 Interrupt after N progress callbacks",
   "   --once                    Do no more than one progress interrupt",
   "   --quiet|-q                No output except at interrupts",
   "   --reset                   Reset the count for each input and interrupt",
+#endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
   ".quit                    Exit this program",
   ".read FILE               Read input from FILE",
@@ -7042,9 +7046,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     raw_printf(p->out, "\n");
   }else
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( c=='p' && n>=3 && strncmp(azArg[0], "progress", n)==0 ){
     int i;
-    int n = 0;
+    int nn = 0;
     p->flgProgress = 0;
     p->mxProgress = 0;
     p->nProgress = 0;
@@ -7054,15 +7059,15 @@ static int do_meta_command(char *zLine, ShellState *p){
         z++;
         if( z[0]=='-' ) z++;
         if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
-          p->flgProgress |= PROGRESS_QUIET;
+          p->flgProgress |= SHELL_PROGRESS_QUIET;
           continue;
         }
         if( strcmp(z,"reset")==0 ){
-          p->flgProgress |= PROGRESS_RESET;
+          p->flgProgress |= SHELL_PROGRESS_RESET;
           continue;
         }
         if( strcmp(z,"once")==0 ){
-          p->flgProgress |= PROGRESS_ONCE;
+          p->flgProgress |= SHELL_PROGRESS_ONCE;
           continue;
         }
         if( strcmp(z,"limit")==0 ){
@@ -7079,12 +7084,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }else{
-        n = (int)integerValue(z);
+        nn = (int)integerValue(z);
       }
     }
     open_db(p, 0);
-    sqlite3_progress_handler(p->db, n, progress_handler, p);
+    sqlite3_progress_handler(p->db, nn, progress_handler, p);
   }else
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
   if( c=='p' && strncmp(azArg[0], "prompt", n)==0 ){
     if( nArg >= 2) {
@@ -8421,7 +8427,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 
   open_db(p, 0);
   if( ShellHasFlag(p,SHFLG_Backslash) ) resolve_backslashes(zSql);
-  if( p->flgProgress & PROGRESS_RESET ) p->nProgress = 0;
+  if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
   BEGIN_TIMER;
   rc = shell_exec(p, zSql, &zErrMsg);
   END_TIMER;

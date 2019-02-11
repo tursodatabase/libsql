@@ -1533,6 +1533,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       }
     }
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( IN_RENAME_OBJECT ){
       Window *pWin;
       for(pWin=p->pWinDefn; pWin; pWin=pWin->pNextWin){
@@ -1543,6 +1544,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         }
       }
     }
+#endif
 
     /* If this is part of a compound SELECT, check that it has the right
     ** number of expressions in the select list. */

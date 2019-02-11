@@ -4169,13 +4169,14 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
           /* Set up the new page-index array */
           fts5BufferAppendVarint(&p->rc, &buf, 4);
           if( pSeg->iLeafPgno==pSeg->iTermLeafPgno 
-              && pSeg->iEndofDoclist<pData->szLeaf 
-            ){
+           && pSeg->iEndofDoclist<pData->szLeaf
+           && pSeg->iPgidxOff<=pData->nn
+          ){
             int nDiff = pData->szLeaf - pSeg->iEndofDoclist;
             fts5BufferAppendVarint(&p->rc, &buf, buf.n - 1 - nDiff - 4);
             fts5BufferAppendBlob(&p->rc, &buf, 
                 pData->nn - pSeg->iPgidxOff, &pData->p[pSeg->iPgidxOff]
-                );
+            );
           }
 
           pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;

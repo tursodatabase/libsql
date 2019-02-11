@@ -168,8 +168,20 @@ do_test dbfuzz001-100 {
     |    496: 01 0d 3f 00 00 48 01 54 00 01 f7 01 ec 01 c5 01   ..?..H.T........
     | end c4.db
   }]
-  db eval {PRAGMA writable_schema=on; PRAGMA integrity_check}
-} {/Fragmentation of 384 bytes reported as 0 on page 8/}
+} {}
+
+ifcapable !oversize_cell_check {
+  # Non SQLITE_ENABLE_OVERSIZE_CELL_CHECK builds:
+  do_test dbfuzz001-101a {
+    db eval {PRAGMA writable_schema=on; PRAGMA integrity_check}
+  } {/Fragmentation of 384 bytes reported as 0 on page 8/}
+} else {
+  # SQLITE_ENABLE_OVERSIZE_CELL_CHECK builds:
+  do_catchsql_test dbfuzz001-101b {
+    PRAGMA writable_schema=on; 
+    PRAGMA integrity_check;
+  } {1 {database disk image is malformed}}
+}
 
 # The DELETE query below deletes the very last cell from page 8.
 # Prior to a certain fix to sqlite3BtreeDelete() and because of the
@@ -177,9 +189,11 @@ do_test dbfuzz001-100 {
 # cause a rebalance operation, which would leave the btree in a weird
 # state that would lead to segfaults and or assertion faults.
 #
-do_execsql_test dbfuzz001-110 {
+set res {0 {}}
+ifcapable oversize_cell_check { set res {1 {database disk image is malformed}} }
+do_catchsql_test dbfuzz001-110 {
   DELETE FROM t3 WHERE x IS NOT NULL AND +rowid=6;
-} {}
+} $res
 
 # This is a dbfuzz2-generate test case that can cause a page with
 # pPage->nCell==0 to enter the balancer.
@@ -270,7 +284,7 @@ do_test dbfuzz001-200 {
 } {1 {database disk image is malformed}}
 
 
-do_test dbfuzz001-110 {
+do_test dbfuzz001-310 {
   sqlite3 db {}
   db deserialize [decode_hexdb {
 | size 3584 pagesize 512 filename x/c02.db
@@ -349,11 +363,11 @@ do_test dbfuzz001-110 {
   }]
 } {}
 
-do_catchsql_test dbfuzz001-120 {
+do_catchsql_test dbfuzz001-320 {
   PRAGMA integrity_check;
 } {1 {database disk image is malformed}}
 
-do_catchsql_test dbfuzz001-130 {
+do_catchsql_test dbfuzz001-330 {
   DELETE FROM t3 WHERE x IN (SELECT x FROM t4);
 } {1 {database disk image is malformed}}
 

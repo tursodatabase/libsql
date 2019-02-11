@@ -128,6 +128,7 @@ do_execsql_test 2.1 {
 # Segfault due to multiple uses of the same subquery where the
 # subquery is implemented via coroutine.
 #
+ifcapable windowfunc {
 sqlite3 db :memory:
 do_execsql_test 3.0 {
   -- This is the original test case reported on the mailing list
@@ -166,6 +167,8 @@ do_execsql_test 3.0 {
       AND (albums.id IN (1, 2)))
   ));
 } {1 Ar}
+} ;# windowfunc
+
 # The remaining test cases were discovered (by Dan) during trouble-shooting
 sqlite3 db :memory:
 do_execsql_test 3.1 {

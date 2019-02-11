@@ -533,7 +533,7 @@ static int decodeDatabase(
   }
   memset(a, 0, nAlloc);
   for(i=k=0; i<n; i++){
-    char c = zIn[i];
+    unsigned char c = (unsigned char)zIn[i];
     if( isxdigit(c) ){
       k++;
       if( k & 1 ){
@@ -651,7 +651,7 @@ static int block_troublesome_sql(
 static int runDbSql(sqlite3 *db, const char *zSql){
   int rc;
   sqlite3_stmt *pStmt;
-  while( isspace(zSql[0]) ) zSql++;
+  while( isspace(zSql[0]&0x7f) ) zSql++;
   if( zSql[0]==0 ) return SQLITE_OK;
   if( eVerbosity>=4 ){
     printf("RUNNING-SQL: [%s]\n", zSql);

@@ -1089,6 +1089,6 @@ do_catchsql_test 22.1 {
      SELECT 3 FROM c,c,c,c,c,c,c,c,c
   )
   SELECT 4 FROM c,c,c,c,c,c,c,c,c;
-} {1 {at most 64 tables in a join}}
+} {1 {too many FROM clause terms, max: 200}}
 
 finish_test

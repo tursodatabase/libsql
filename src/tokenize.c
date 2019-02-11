@@ -560,6 +560,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
+  VVA_ONLY( u8 startedWithOom = db->mallocFailed );
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
 #endif
@@ -594,6 +595,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->pNewTrigger==0 );
   assert( pParse->nVar==0 );
   assert( pParse->pVList==0 );
+  pParse->pParentParse = db->pParse;
+  db->pParse = pParse;
   while( 1 ){
     n = sqlite3GetToken((u8*)zSql, &tokenType);
     mxSqlLen -= n;
@@ -650,7 +653,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     sqlite3Parser(pEngine, tokenType, pParse->sLastToken);
     lastTokenParsed = tokenType;
     zSql += n;
-    if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
+    assert( db->mallocFailed==0 || pParse->rc!=SQLITE_OK || startedWithOom );
+    if( pParse->rc!=SQLITE_OK ) break;
   }
   assert( nErr==0 );
 #ifdef YYTRACKMAXSTACKDEPTH
@@ -718,6 +722,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     pParse->pZombieTab = p->pNextZombie;
     sqlite3DeleteTable(db, p);
   }
+  db->pParse = pParse->pParentParse;
+  pParse->pParentParse = 0;
   assert( nErr==0 || pParse->rc!=SQLITE_OK );
   return nErr;
 }
