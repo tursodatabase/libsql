@@ -7225,15 +7225,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( pPage->nOverflow==1 );
   
   if( pPage->nCell==0 ) return SQLITE_CORRUPT_BKPT;  /* dbfuzz001.test */
-  if( pPage->nFree<0 ){
-    rc = btreeComputeFreeSpace(pPage);
-    if( rc ) return rc;
-  }
-  if( pParent->nFree<0 ){
-    rc = btreeComputeFreeSpace(pParent);
-    if( rc ) return rc;
-  }
-
+  assert( pPage->nFree>=0 );
+  assert( pParent->nFree>=0 );
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell
@@ -7511,10 +7504,7 @@ static int balance_nonroot(
   if( !aOvflSpace ){
     return SQLITE_NOMEM_BKPT;
   }
-  if( pParent->nFree<0 ){
-    rc = btreeComputeFreeSpace(pParent);
-    if( rc ) return rc;
-  }
+  assert( pParent->nFree>=0 );
 
   /* Find the sibling pages to balance. Also locate the cells in pParent 
   ** that divide the siblings. An attempt is made to find NN siblings on 
@@ -8336,6 +8326,9 @@ static int balance(BtCursor *pCur){
       int const iIdx = pCur->aiIdx[iPage-1];
 
       rc = sqlite3PagerWrite(pParent->pDbPage);
+      if( rc==SQLITE_OK && pParent->nFree<0 ){
+        rc = btreeComputeFreeSpace(pParent);
+      }
       if( rc==SQLITE_OK ){
 #ifndef SQLITE_OMIT_QUICKBALANCE
         if( pPage->intKeyLeaf
