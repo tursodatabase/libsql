@@ -1,5 +1,5 @@
-C Change\sa\sfew\sassert()\sstatements\sin\sfts3\sthat\smight\sfail\sif\sthe\sdatabase\sis\scorrupt.
-D 2019-02-09T19:23:54.418
+C Add\san\sassert()\sin\san\sattempt\sto\srepro\san\sASAN\swarning\sfrom\sOSSFuzz.
+D 2019-02-11T01:58:34.543
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -458,7 +458,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 18046bf14f0e3fa294ef3f7c2dc30ca7e95f3ac11ec222ad906e40b150051bde
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h cd82f0f08886078bf99b29e1a7045960b1ca5d9d5829c38607e1299c508eaf00
-F src/build.c 906ca6663b9dcd413e72ae9c44dd51e596d8336b04d52e678a7501e71c20cab2
+F src/build.c b0a9ee5b551afbc8357a68eb30693973300daf845c8c0e564f672d9b3fdeec56
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1969372ac72d25cc642a0268f4bb0ae4b59f2dca568c119ef61b67183b3a8bd9
-R 337fdf56fb6120be7b5570f5a6b13c97
-U dan
-Z 3ee700c86d7982301bd59c67543d08c0
+P db74a56af73d92b7a9d43ceda7e4540915c580c68a0266b4ddefb9e0d5cbcbeb
+R 1fd4b57b62af4e0212956b359519b83a
+U drh
+Z 5762b97a486210ea28819af0c187d1f7
