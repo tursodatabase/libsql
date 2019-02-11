@@ -1433,8 +1433,8 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   if( (int)data[hdr+7]<=nMaxFrag ){
     int iFree = get2byte(&data[hdr+1]);
 
-    /* If the initial freeblock offset were out of bounds, that would
-    ** have been detected by btreeInitPage() when it was computing the
+    /* If the initial freeblock offset were out of bounds, that would have
+    ** been detected by btreeComputeFreeSpace() when it was computing the
     ** number of free bytes on the page. */
     assert( iFree<=usableSize-4 );
     if( iFree ){
