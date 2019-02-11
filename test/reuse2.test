@@ -56,4 +56,61 @@ ifcapable fts5 {
   } {{one two three}}
 }
 
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE, z);
+  CREATE INDEX i1 ON t1(z);
+  PRAGMA schema_version;
+} {2}
+
+do_test 3.1 {
+  sqlite3 db1 test.db -reuse-schema 1
+  sqlite3 db2 test.db -reuse-schema 1
+} {}
+
+do_execsql_test -db db1 3.2.1 { SELECT * FROM t1 }
+do_execsql_test -db db2 3.2.2 { SELECT * FROM t1 }
+
+register_schemapool_module db
+do_execsql_test 3.3 { 
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
+} {nref=2 nschema=1}
+
+sqlite3 db3 test.db -reuse-schema 1
+register_schemapool_module db3
+
+do_execsql_test 3.5 { 
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
+} {nref=2 nschema=1}
+
+do_execsql_test -db db3 3.6 { 
+  SELECT * FROM t1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
+} {nref=3 nschema=1}
+
+do_execsql_test 3.7 { 
+  CREATE TABLE t2(x);
+}
+
+do_execsql_test 3.8 { 
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
+} {nref=3 nschema=1}
+
+do_execsql_test -db db1 3.9.1 { SELECT * FROM t1 }
+do_execsql_test 3.9.2 { 
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=1 nschema=1 nref=2 nschema=1}
+
+do_execsql_test -db db2 3.10.1 { SELECT * FROM t1 }
+do_execsql_test 3.10.2 { 
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=1 nschema=1 nref=2 nschema=1}
+
+do_execsql_test -db db3 3.11.1 { SELECT * FROM t1 }
+do_execsql_test 3.11.2 { 
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=3 nschema=1}
+
 finish_test
+

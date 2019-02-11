@@ -77,6 +77,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int Sqlitetest_malloc_Init(Tcl_Interp*);
   extern int Sqlitetest_mutex_Init(Tcl_Interp*);
   extern int Sqlitetestschema_Init(Tcl_Interp*);
+  extern int Sqlitetestschemapool_Init(Tcl_Interp*);
   extern int Sqlitetestsse_Init(Tcl_Interp*);
   extern int Sqlitetesttclvar_Init(Tcl_Interp*);
   extern int Sqlitetestfs_Init(Tcl_Interp*);
@@ -146,6 +147,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   Sqlitetest_malloc_Init(interp);
   Sqlitetest_mutex_Init(interp);
   Sqlitetestschema_Init(interp);
+  Sqlitetestschemapool_Init(interp);
   Sqlitetesttclvar_Init(interp);
   Sqlitetestfs_Init(interp);
   SqlitetestThread_Init(interp);

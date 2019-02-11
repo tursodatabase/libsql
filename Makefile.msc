@@ -1491,6 +1491,7 @@ TESTSRC = \
   $(TOP)\src\test_quota.c \
   $(TOP)\src\test_rtree.c \
   $(TOP)\src\test_schema.c \
+  $(TOP)\src\test_schemapool.c \
   $(TOP)\src\test_server.c \
   $(TOP)\src\test_superlock.c \
   $(TOP)\src\test_syscall.c \

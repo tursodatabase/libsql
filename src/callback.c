@@ -47,18 +47,18 @@ static void assert_schema_state_ok(sqlite3 *db){
       if( i!=1 ){
         Db *pDb = &db->aDb[i];
         Btree *pBt = pDb->pBt;
+        assert( pBt==0 || sqlite3BtreeSchema(pBt, 0, 0)==0 );
+        assert( pDb->pSchema );
         if( pDb->pSPool ){
           if( DbHasProperty(db, i, DB_SchemaLoaded)==0 ){
             assert( pDb->pSchema->tblHash.count==0 );
             assert( pDb->pSchema==&pDb->pSPool->sSchema );
           }else{
-            assert( pBt==0 || pDb->pSchema!=sqlite3BtreeSchema(pBt, 0, 0) );
             assert( pDb->pSchema!=&pDb->pSPool->sSchema );
           }
         }else{
           assert( DbHasProperty(db, i, DB_SchemaLoaded)==0 );
           assert( pDb->pSchema->tblHash.count==0 );
-          assert( pBt==0 || pDb->pSchema!=sqlite3BtreeSchema(pBt, 0, 0) );
           assert( pDb->pSchema!=&pDb->pSPool->sSchema );
         }
       }
@@ -538,6 +538,10 @@ void sqlite3SchemaZero(sqlite3 *db, int iDb){
 */
 static SchemaPool *SQLITE_WSD schemaPoolList = 0;
 
+#ifdef SQLITE_TEST
+SchemaPool *sqlite3SchemaPoolList(void){ return schemaPoolList; }
+#endif
+
 /*
 ** Check that the schema of db iDb is writable (either because it is the temp
 ** db schema or because the db handle was opened without
@@ -661,7 +665,6 @@ int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
         pDb->pSPool = 0;
         pSPool->nRef--;
         if( pSPool->nRef<=0 ){
-          Schema *pNext;
           SchemaPool **pp;
           while( pSPool->pSchema ){
             Schema *pNext = pSPool->pSchema->pNext;
