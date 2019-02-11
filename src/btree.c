@@ -7396,6 +7396,7 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     */
     pTo->isInit = 0;
     rc = btreeInitPage(pTo);
+    if( rc==SQLITE_OK ) rc = btreeComputeFreeSpace(pTo);
     if( rc!=SQLITE_OK ){
       *pRC = rc;
       return;
@@ -8294,10 +8295,7 @@ static int balance(BtCursor *pCur){
     int iPage = pCur->iPage;
     MemPage *pPage = pCur->pPage;
 
-    if( pPage->nFree<0 ){
-      rc = btreeComputeFreeSpace(pPage);
-      if( rc ) break;
-    }
+    assert( pPage->nFree>=0 );
     if( iPage==0 ){
       if( pPage->nOverflow ){
         /* The root page of the b-tree is overfull. In this case call the
