@@ -1,5 +1,5 @@
-C Build\sand\stest\sfixes\sfor\sSQLITE_OMIT_WINDOWFUNC\sbuilds.
-D 2019-02-11T11:34:01.543
+C Fix\stypos\sin\scomments\sin\sfts5.h.\sNo\schanges\sto\scode.
+D 2019-02-11T13:25:33.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -108,7 +108,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 49499f7964504438e2b04cca0627827945bb2499154e2d3ec216b22d20b969ae
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h fed314270c1a61de3a0e373b11c2f8228b1c76ce59447dd96d0b6fae7d66399b
+F ext/fts5/fts5.h 7c9da96f2b9dcfa4dd94081fb2d87ec418d8cdb35b25df56756c334b6b558fd7
 F ext/fts5/fts5Int.h 0b002fc71ea705d2c4ec66a63ecd38a2c11127e5b52239b5d71d1dd28309fc19
 F ext/fts5/fts5_aux.c afe8c2394cf6de2a48f278442f4f4342365bf99a5983709ef8e6955c2cf4daf9
 F ext/fts5/fts5_buffer.c 2e750cd4c0d456d4e1a8dcc649382708422b535dc32b375fd3d3306fb9727046
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a4952d38e8177ed8d59aaa575410bebf76787dd6d801fdbdb809d4f8c670da0
-R 4aac589bf9cf7fce5455cfa1c89ecb09
+P 8824115a9776e876a3677f0cb479e311ee65584d43872b37766a146afec72d8f
+R 59e3e019c9cfe20837b7acf6dfa9f2f6
 U dan
-Z 4bc44ec4d01e27527069f21963ea2977
+Z 4febd88c4488be00b2982567fef37d96
