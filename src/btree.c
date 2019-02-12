@@ -8295,7 +8295,7 @@ static int balance(BtCursor *pCur){
     int iPage = pCur->iPage;
     MemPage *pPage = pCur->pPage;
 
-    assert( pPage->nFree>=0 );
+    if( NEVER(pPage->nFree<0) && btreeComputeFreeSpace(pPage) ) break;
     if( iPage==0 ){
       if( pPage->nOverflow ){
         /* The root page of the b-tree is overfull. In this case call the

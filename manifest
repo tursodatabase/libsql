@@ -1,5 +1,5 @@
-C Do\snot\sinvoke\sbtreeComputeFreeSpace()\swhen\snot\snecessary.
-D 2019-02-11T22:50:01.937
+C Change\san\sassert()\sinto\sa\sNEVER(),\ssince\sthe\scondition\sis\sdifficult\sto\sprove\nwith\scertainty.\s\sImproved\scomment\son\sthe\sMemPage.nFree\sfield.
+D 2019-02-12T00:58:10.125
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -455,9 +455,9 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 70ac9dc86196416147baa94969c71372d1e3dacaca54602bda9c516b02f6da82
+F src/btree.c 7457f7813873877041ec7e04d76a041c81831704a73419882fbe1c222ce6a68c
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
-F src/btreeInt.h d7520b98e72f9a7e2a3140cc476df461fa8a34a3d56258184f8c26f70248cef9
+F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 906ca6663b9dcd413e72ae9c44dd51e596d8336b04d52e678a7501e71c20cab2
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16eb0fc8f8cce51eaa5305ebc9f3bd8c8d935dd3ebebab6820e5629f9292eec2
-R 42eb74538b26ea8a320f8b836f86ea2e
+P f11b0ed47402034378ded2c60b82841b81cd1319cdb72d1ef052faef29a5294d
+R b9fd86c9b0e983ebe73f0426098d02c6
 U drh
-Z 326f7ed87f29a92b24fc21835b66ed1d
+Z 3b166eeca4670760101eb14216736649
