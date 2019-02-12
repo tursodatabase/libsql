@@ -1667,7 +1667,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
 
 
   /* Allocate memory from the gap in between the cell pointer array
-  ** and the cell content area.  The btreeInitPage() call has already
+  ** and the cell content area.  The btreeComputeFreeSpace() call has already
   ** validated the freelist.  Given that the freelist is valid, there
   ** is no way that the allocation can extend off the end of the page.
   ** The assert() below verifies the previous sentence.
@@ -1686,7 +1686,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
 **
 ** Adjacent freeblocks are coalesced.
 **
-** Note that even though the freeblock list was checked by btreeInitPage(),
+** Even though the freeblock list was checked by btreeComputeFreeSpace(),
 ** that routine will not detect overlap between cells or freeblocks.  Nor
 ** does it detect cells or freeblocks that encrouch into the reserved bytes
 ** at the end of the page.  So do additional corruption checks inside this
@@ -1930,6 +1930,42 @@ static int btreeComputeFreeSpace(MemPage *pPage){
 }
 
 /*
+** Do additional sanity check after btreeInitPage() if
+** PRAGMA cell_size_check=ON 
+*/
+static SQLITE_NOINLINE int btreeCellSizeCheck(MemPage *pPage){
+  int iCellFirst;    /* First allowable cell or freeblock offset */
+  int iCellLast;     /* Last possible cell or freeblock offset */
+  int i;             /* Index into the cell pointer array */
+  int sz;            /* Size of a cell */
+  int pc;            /* Address of a freeblock within pPage->aData[] */
+  u8 *data;          /* Equal to pPage->aData */
+  int usableSize;    /* Maximum usable space on the page */
+  int cellOffset;    /* Start of cell content area */
+
+  iCellFirst = pPage->cellOffset + 2*pPage->nCell;
+  usableSize = pPage->pBt->usableSize;
+  iCellLast = usableSize - 4;
+  data = pPage->aData;
+  cellOffset = pPage->cellOffset;
+  if( !pPage->leaf ) iCellLast--;
+  for(i=0; i<pPage->nCell; i++){
+    pc = get2byteAligned(&data[cellOffset+i*2]);
+    testcase( pc==iCellFirst );
+    testcase( pc==iCellLast );
+    if( pc<iCellFirst || pc>iCellLast ){
+      return SQLITE_CORRUPT_PAGE(pPage);
+    }
+    sz = pPage->xCellSize(pPage, &data[pc]);
+    testcase( pc+sz==usableSize );
+    if( pc+sz>usableSize ){
+      return SQLITE_CORRUPT_PAGE(pPage);
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Initialize the auxiliary information for a disk block.
 **
 ** Return SQLITE_OK on success.  If we see that the page does
@@ -1939,14 +1975,8 @@ static int btreeComputeFreeSpace(MemPage *pPage){
 ** we failed to detect any corruption.
 */
 static int btreeInitPage(MemPage *pPage){
-  int pc;            /* Address of a freeblock within pPage->aData[] */
-  u8 hdr;            /* Offset to beginning of page header */
   u8 *data;          /* Equal to pPage->aData */
   BtShared *pBt;        /* The main btree structure */
-  int usableSize;    /* Amount of usable space on each page */
-  u16 cellOffset;    /* Offset from start of page to first cell pointer */
-  int iCellFirst;    /* First allowable cell or freeblock offset */
-  int iCellLast;     /* Last possible cell or freeblock offset */
 
   assert( pPage->pBt!=0 );
   assert( pPage->pBt->db!=0 );
@@ -1957,24 +1987,22 @@ static int btreeInitPage(MemPage *pPage){
   assert( pPage->isInit==0 );
 
   pBt = pPage->pBt;
-  hdr = pPage->hdrOffset;
-  data = pPage->aData;
+  data = pPage->aData + pPage->hdrOffset;
   /* EVIDENCE-OF: R-28594-02890 The one-byte flag at offset 0 indicating
   ** the b-tree page type. */
-  if( decodeFlags(pPage, data[hdr]) ){
+  if( decodeFlags(pPage, data[0]) ){
     return SQLITE_CORRUPT_PAGE(pPage);
   }
   assert( pBt->pageSize>=512 && pBt->pageSize<=65536 );
   pPage->maskPage = (u16)(pBt->pageSize - 1);
   pPage->nOverflow = 0;
-  usableSize = pBt->usableSize;
-  pPage->cellOffset = cellOffset = hdr + 8 + pPage->childPtrSize;
-  pPage->aDataEnd = &data[usableSize];
-  pPage->aCellIdx = &data[cellOffset];
-  pPage->aDataOfst = &data[pPage->childPtrSize];
+  pPage->cellOffset = pPage->hdrOffset + 8 + pPage->childPtrSize;
+  pPage->aCellIdx = data + pPage->childPtrSize + 8;
+  pPage->aDataEnd = pPage->aData + pBt->usableSize;
+  pPage->aDataOfst = pPage->aData + pPage->childPtrSize;
   /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
   ** number of cells on the page. */
-  pPage->nCell = get2byte(&data[hdr+3]);
+  pPage->nCell = get2byte(&data[3]);
   if( pPage->nCell>MX_CELL(pBt) ){
     /* To many cells for a single page.  The page must be corrupt */
     return SQLITE_CORRUPT_PAGE(pPage);
@@ -1985,40 +2013,13 @@ static int btreeInitPage(MemPage *pPage){
   ** offset to the cell content area will equal the page size minus the
   ** bytes of reserved space. */
   assert( pPage->nCell>0
-       || get2byteNotZero(&data[hdr+5])==usableSize
+       || get2byteNotZero(&data[5])==pBt->usableSize
        || CORRUPT_DB );
-
-  /* A malformed database page might cause us to read past the end
-  ** of page when parsing a cell.  
-  **
-  ** The following block of code checks early to see if a cell extends
-  ** past the end of a page boundary and causes SQLITE_CORRUPT to be 
-  ** returned if it does.
-  */
-  iCellFirst = cellOffset + 2*pPage->nCell;
-  iCellLast = usableSize - 4;
-  if( pBt->db->flags & SQLITE_CellSizeCk ){
-    int i;            /* Index into the cell pointer array */
-    int sz;           /* Size of a cell */
-
-    if( !pPage->leaf ) iCellLast--;
-    for(i=0; i<pPage->nCell; i++){
-      pc = get2byteAligned(&data[cellOffset+i*2]);
-      testcase( pc==iCellFirst );
-      testcase( pc==iCellLast );
-      if( pc<iCellFirst || pc>iCellLast ){
-        return SQLITE_CORRUPT_PAGE(pPage);
-      }
-      sz = pPage->xCellSize(pPage, &data[pc]);
-      testcase( pc+sz==usableSize );
-      if( pc+sz>usableSize ){
-        return SQLITE_CORRUPT_PAGE(pPage);
-      }
-    }
-    if( !pPage->leaf ) iCellLast++;
-  }  
   pPage->nFree = -1;  /* Indicate that this value is yet uncomputed */
   pPage->isInit = 1;
+  if( pBt->db->flags & SQLITE_CellSizeCk ){
+    return btreeCellSizeCheck(pPage);
+  }
   return SQLITE_OK;
 }
 
@@ -9930,9 +9931,9 @@ static int checkTreePage(
     i = get2byte(&data[hdr+1]);
     while( i>0 ){
       int size, j;
-      assert( (u32)i<=usableSize-4 );     /* Enforced by btreeInitPage() */
+      assert( (u32)i<=usableSize-4 ); /* Enforced by btreeComputeFreeSpace() */
       size = get2byte(&data[i+2]);
-      assert( (u32)(i+size)<=usableSize );  /* Enforced by btreeInitPage() */
+      assert( (u32)(i+size)<=usableSize ); /* due to btreeComputeFreeSpace() */
       btreeHeapInsert(heap, (((u32)i)<<16)|(i+size-1));
       /* EVIDENCE-OF: R-58208-19414 The first 2 bytes of a freeblock are a
       ** big-endian integer which is the offset in the b-tree page of the next
@@ -9941,8 +9942,8 @@ static int checkTreePage(
       j = get2byte(&data[i]);
       /* EVIDENCE-OF: R-06866-39125 Freeblocks are always connected in order of
       ** increasing offset. */
-      assert( j==0 || j>i+size );  /* Enforced by btreeInitPage() */
-      assert( (u32)j<=usableSize-4 );   /* Enforced by btreeInitPage() */
+      assert( j==0 || j>i+size );     /* Enforced by btreeComputeFreeSpace() */
+      assert( (u32)j<=usableSize-4 ); /* Enforced by btreeComputeFreeSpace() */
       i = j;
     }
     /* Analyze the min-heap looking for overlap between cells and/or 
