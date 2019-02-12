@@ -95,11 +95,11 @@ do_test corrupt2-1.4 {
   close $f
 
   sqlite3 db2 corrupt.db
-  catchsql "
-    $::presql
-    SELECT * FROM sqlite_master;
-  " db2
-} {1 {database disk image is malformed}}
+  # Note: This test is no longer meaningful due to the deferred computation
+  # of MemPage.nFree 
+  catchsql {PRAGMA quick_check} db2
+} {0 {{*** in database main ***
+Page 1: free space corruption}}}
 
 do_test corrupt2-1.5 {
   db2 close
@@ -118,11 +118,9 @@ do_test corrupt2-1.5 {
   close $f
 
   sqlite3 db2 corrupt.db
-  catchsql "
-    $::presql
-    SELECT * FROM sqlite_master;
-  " db2
-} {1 {database disk image is malformed}}
+  catchsql {PRAGMA quick_check} db2
+} {0 {{*** in database main ***
+Page 1: free space corruption}}}
 db2 close
 
 # Corrupt a database by having 2 indices of the same name:
