@@ -311,9 +311,20 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     for(i=OMIT_TEMPDB; i<db->nDb; i++){
       int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
+        int bUnload = 0;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
+        if( IsReuseSchema(db) 
+         && DbHasProperty(db, j, DB_SchemaLoaded)==0 
+         && db->init.busy==0
+        ){
+          sqlite3InitOne(db, j, 0, 0);
+          bUnload = (j!=1);
+        }
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
+        if( bUnload ){
+          sqlite3SchemaRelease(db, j);
+        }
       }
     }
     /* Not found.  If the name we were looking for was temp.sqlite_master
@@ -347,6 +358,7 @@ Table *sqlite3LocateTable(
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
   if( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 
+   && !IsReuseSchema(db)
    && SQLITE_OK!=sqlite3ReadSchema(pParse)
   ){
     return 0;
@@ -363,8 +375,16 @@ Table *sqlite3LocateTable(
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
-      if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
-        return pMod->pEpoTab;
+      if( pMod ){
+        if( IsReuseSchema(db)
+         && DbHasProperty(db, 0, DB_SchemaLoaded)==0 
+         && db->init.busy==0
+        ){
+          sqlite3InitOne(db, 0, 0, 0);
+        }
+        if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
+          return pMod->pEpoTab;
+        }
       }
     }
 #endif
@@ -536,7 +556,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
   if( db->nSchemaLock==0 ){
     for(i=0; i<db->nDb; i++){
       if( DbHasProperty(db, i, DB_ResetWanted) ){
-        sqlite3SchemaZero(db, i);
+        sqlite3SchemaClearOrDisconnect(db, i);
       }
     }
   }
@@ -553,7 +573,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
       if( db->nSchemaLock==0 ){
-        sqlite3SchemaClear(pDb->pSchema);
+        sqlite3SchemaClearOrDisconnect(db, i);
       }else{
         DbSetProperty(db, i, DB_ResetWanted);
       }

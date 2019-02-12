@@ -231,12 +231,14 @@ static void attachFunc(
   ** way we found it.
   */
   if( rc==SQLITE_OK ){
-    sqlite3BtreeEnterAll(db);
     db->init.iDb = 0;
     db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
-    rc = sqlite3Init(db, &zErrDyn);
-    sqlite3BtreeLeaveAll(db);
-    assert( zErrDyn==0 || rc!=SQLITE_OK );
+    if( !IsReuseSchema(db) ){
+      sqlite3BtreeEnterAll(db);
+      rc = sqlite3Init(db, &zErrDyn);
+      sqlite3BtreeLeaveAll(db);
+      assert( zErrDyn==0 || rc!=SQLITE_OK );
+    }
   }
 #ifdef SQLITE_USER_AUTHENTICATION
   if( rc==SQLITE_OK ){

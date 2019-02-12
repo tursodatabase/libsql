@@ -5779,6 +5779,7 @@ case OP_ParseSchema: {
 
 #ifndef SQLITE_OMIT_ALTERTABLE
   if( pOp->p4.z==0 ){
+    assert( !IsReuseSchema(db) || iDb==1 );
     sqlite3SchemaClear(db->aDb[iDb].pSchema);
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
     rc = sqlite3InitOne(db, iDb, &p->zErrMsg, INITFLAG_AlterTable);

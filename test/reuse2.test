@@ -112,5 +112,140 @@ do_execsql_test 3.11.2 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
 } {nref=3 nschema=1}
 
+#--------------------------------------------------------------------------
+catch {db1 close}
+catch {db2 close}
+catch {db3 close}
+reset_db
+do_execsql_test 4.0.1 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX x1a ON x1(a);
+  CREATE INDEX x1b ON x1(b);
+}
+do_test 4.0.2 {
+  db close
+  for {set i 1} {$i < 6} {incr i} {
+    forcedelete test.db${i}-journal test.db${i}-wal test.db${i}-wal2 
+    forcecopy test.db test.db${i}
+  }
+  sqlite3 db  test.db
+  sqlite3 db2 test.db -reuse-schema 1
+} {}
+
+register_schemapool_module db
+do_execsql_test 4.0.3 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {}
+
+do_test 4.1.1 {
+  execsql { 
+    ATTACH 'test.db1' AS db1; 
+    ATTACH 'test.db2' AS db2;
+    ATTACH 'test.db3' AS db3;
+    ATTACH 'test.db4' AS db4;
+    ATTACH 'test.db5' AS db5;
+  } db2
+} {}
+do_execsql_test 4.1.2 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {}
+do_execsql_test -db db2 4.1.3 {
+  SELECT * FROM db3.x1
+}
+do_execsql_test 4.1.4 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=1 nschema=1}
+do_execsql_test -db db2 4.1.5 {
+  SELECT * FROM db2.x1
+}
+do_execsql_test 4.1.6 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=2 nschema=1}
+do_execsql_test -db db2 4.1.7 {
+  SELECT * FROM x1
+}
+do_execsql_test 4.1.8 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=3 nschema=1}
+
+do_test 4.2.1 {
+  catchsql { SELECT * FROM abc } db2
+} {1 {no such table: abc}}
+do_execsql_test 4.2.2 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=6 nschema=1}
+
+register_schemapool_module db2
+do_execsql_test -db db2 4.3.1 {
+  INSERT INTO x1 VALUES(1, 2, 3);
+  INSERT INTO db1.x1 VALUES(4, 5, 6);
+  INSERT INTO db2.x1 VALUES(7, 8, 9);
+  INSERT INTO db3.x1 VALUES(10, 11, 12);
+  INSERT INTO db4.x1 VALUES(13, 14, 15);
+  INSERT INTO db5.x1 VALUES(16, 17, 18);
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=6 nschema=1}
+
+do_execsql_test -db db2 4.3.2 {
+  SELECT * FROM db5.x1;
+  SELECT * FROM db4.x1;
+  SELECT * FROM db3.x1;
+  SELECT * FROM db2.x1;
+  SELECT * FROM db1.x1;
+  SELECT * FROM x1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {
+  16 17 18  13 14 15  10 11 12  7 8 9  4 5 6  1 2 3
+  nref=6 nschema=1
+}
+
+do_execsql_test -db db2 4.3.3 {
+  UPDATE x1 SET a=a+10;
+  UPDATE db5.x1 SET a=a+10;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {
+  nref=6 nschema=1
+}
+
+do_execsql_test -db db2 4.3.4 {
+  SELECT * FROM db5.x1;
+  SELECT * FROM db4.x1;
+  SELECT * FROM db3.x1;
+  SELECT * FROM db2.x1;
+  SELECT * FROM db1.x1;
+  SELECT * FROM x1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {
+  26 17 18  13 14 15  10 11 12  7 8 9  4 5 6  11 2 3
+  nref=6 nschema=1
+}
+
+do_execsql_test -db db2 4.3.5 {
+  DELETE FROM db3.x1;
+  DELETE FROM x1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {
+  nref=6 nschema=1
+}
+
+do_execsql_test -db db2 4.3.6 {
+  SELECT * FROM db5.x1;
+  SELECT * FROM db4.x1;
+  SELECT * FROM db3.x1;
+  SELECT * FROM db2.x1;
+  SELECT * FROM db1.x1;
+  SELECT * FROM x1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {
+  26 17 18  13 14 15  7 8 9  4 5 6 
+  nref=6 nschema=1
+}
+
+do_execsql_test -db db2 4.3.6 {
+  SELECT * FROM db5.x1, db4.x1, db1.x1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {26 17 18 13 14 15 4 5 6 nref=6 nschema=3}
+
 finish_test
+
 

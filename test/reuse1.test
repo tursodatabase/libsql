@@ -113,6 +113,7 @@ ifcapable fts5 {
     SELECT * FROM main.ft;
   } {one two three}
 
+breakpoint
   do_execsql_test 2.2 {
     SELECT * FROM aux.ft;
   } {aux1 aux2 aux3}
@@ -300,7 +301,6 @@ do_execsql_test 5.4 {
 }
 db close
 sqlite3 db test.db -reuse-schema 1
-breakpoint
 foreach {tn sql} {
   1 { ANALYZE }
   2 { ANALYZE t1 }

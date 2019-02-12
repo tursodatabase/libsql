@@ -195,12 +195,14 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
 
   pDb = &db->aDb[iDb];
+  assert( pDb->pSPool==0 || IsReuseSchema(db) );
   if( pDb->pSPool ){
-    assert( IsReuseSchema(db) );
     /* See if there is a free schema object in the schema-pool. If not,
     ** disconnect from said schema pool and continue. This function will
     ** connect to a (possibly different) schema-pool before returning. */
-    if( (pDb->pSchema = sqlite3SchemaExtract(pDb->pSPool)) ){
+    Schema *pNew = sqlite3SchemaExtract(pDb->pSPool);
+    if( pNew ){
+      pDb->pSchema = pNew;
       return SQLITE_OK;
     }
     rc = sqlite3SchemaDisconnect(db, iDb, 1);

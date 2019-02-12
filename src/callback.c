@@ -517,19 +517,22 @@ void sqlite3SchemaClear(void *p){
   pSchema->schemaFlags &= ~(DB_SchemaLoaded|DB_ResetWanted);
 }
 
-void sqlite3SchemaZero(sqlite3 *db, int iDb){
+/*
+** If this database was opened with the SQLITE_OPEN_REUSE_SCHEMA flag
+** and iDb!=1, then disconnect from the schema-pool associated with
+** database iDb. Otherwise, clear the Schema object belonging to
+** database iDb. 
+**
+** If an OOM error occurs while disconnecting from a schema-pool, 
+** the db->mallocFailed flag is set.
+*/
+void sqlite3SchemaClearOrDisconnect(sqlite3 *db, int iDb){
   Db *pDb = &db->aDb[iDb];
   if( IsReuseSchema(db) && iDb!=1 ){
-    if( pDb->pSPool ){
-      Schema *pNew = sqlite3SchemaGet(db, 0);
-      if( pNew ){
-        sqlite3SchemaDisconnect(db, iDb, 0);
-        pDb->pSchema = pNew;
-      }
-      return;
-    }
+    sqlite3SchemaDisconnect(db, iDb, 1);
+  }else{
+    sqlite3SchemaClear(pDb->pSchema);
   }
-  sqlite3SchemaClear(pDb->pSchema);
 }
 
 /*
@@ -708,10 +711,21 @@ void sqlite3SchemaReleaseAll(sqlite3 *db){
   for(i=0; i<db->nDb; i++){
     if( i!=1 ){
       Db *pDb = &db->aDb[i];
-      if( pDb->pSPool && pDb->pSchema && DbHasProperty(db,i,DB_SchemaLoaded) ){
+      if( pDb->pSPool && DbHasProperty(db,i,DB_SchemaLoaded) ){
         schemaRelease(pDb);
       }
     }
+  }
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+}
+
+void sqlite3SchemaRelease(sqlite3 *db, int iDb){
+  Db *pDb = &db->aDb[iDb];
+  assert( iDb!=1 );
+  assert_schema_state_ok(db);
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  if( pDb->pSPool && DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+    schemaRelease(pDb);
   }
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }
