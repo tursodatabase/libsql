@@ -823,6 +823,7 @@ check_for_interrupt:
     assert( db->nProgressOps!=0 );
     nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
     if( db->xProgress(db->pProgressArg) ){
+      nProgressLimit = 0xffffffff;
       rc = SQLITE_INTERRUPT;
       goto abort_due_to_error;
     }
@@ -1367,18 +1368,6 @@ case OP_ResultRow: {
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
-
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  /* Run the progress counter just before returning.
-  */
-  if( db->xProgress!=0
-   && nVmStep>=nProgressLimit 
-   && db->xProgress(db->pProgressArg)!=0
-  ){
-    rc = SQLITE_INTERRUPT;
-    goto abort_due_to_error;
-  }
-#endif
 
   /* If this statement has violated immediate foreign key constraints, do
   ** not return the number of rows modified. And do not RELEASE the statement
@@ -2606,15 +2595,15 @@ case OP_Column: {
       zEndHdr = zData + aOffset[0];
       testcase( zHdr>=zEndHdr );
       do{
-        if( (t = zHdr[0])<0x80 ){
+        if( (pC->aType[i] = t = zHdr[0])<0x80 ){
           zHdr++;
           offset64 += sqlite3VdbeOneByteSerialTypeLen(t);
         }else{
           zHdr += sqlite3GetVarint32(zHdr, &t);
+          pC->aType[i] = t;
           offset64 += sqlite3VdbeSerialTypeLen(t);
         }
-        pC->aType[i++] = t;
-        aOffset[i] = (u32)(offset64 & 0xffffffff);
+        aOffset[++i] = (u32)(offset64 & 0xffffffff);
       }while( i<=p2 && zHdr<zEndHdr );
 
       /* The record is corrupt if any of the following are true:
@@ -7595,7 +7584,15 @@ abort_due_to_error:
   ** release the mutexes on btrees that were acquired at the
   ** top. */
 vdbe_return:
-  testcase( nVmStep>0 );
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+    if( db->xProgress(db->pProgressArg) ){
+      nProgressLimit = 0xffffffff;
+      rc = SQLITE_INTERRUPT;
+      goto abort_due_to_error;
+    }
+  }
+#endif
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
   sqlite3VdbeLeave(p);
   assert( rc!=SQLITE_OK || nExtraDelete==0 
