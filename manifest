@@ -1,5 +1,5 @@
-C New\stest\scases\sin\stest/fuzzdata8.db.
-D 2019-02-12T01:28:24.338
+C Register\sthe\s"vfsstat"\svirtual\stable\simmediately\swhen\sloading\sthe\svfsstat.c\nextension.
+D 2019-02-12T12:25:34.464
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -312,7 +312,7 @@ F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf3
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/unionvtab.c 34ee634d09670909563dbde59c5bfb2ac048b27051f65f1aeac918b061d646d8
 F ext/misc/vfslog.c 3b25c2f56ba60788db247287be6ab024b53c4afffd412b4876db563389be0d35
-F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
+F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057b1cdb
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 177f5f40eabfcfd229ac7f291dfed9e9ee35762e86923a0f356915f389da177d
-R 2d60be7dcbefd8d4a6b47ae377c56c93
+P ab2356f580384e4b40d128fc04fd6bc4dfcf50109df77d05d59adcc20f339066
+R 7eb957d7cfbe3386d7aef59ec17a4212
 U drh
-Z 534fc52f9a0359d5cf02e80291c038a3
+Z 2d3d347cdf155951a74054dc105976d7
