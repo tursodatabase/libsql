@@ -622,6 +622,15 @@ int sqlite3VdbeExec(
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
   sqlite3VdbeEnter(p);
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( db->xProgress ){
+    u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
+    assert( 0 < db->nProgressOps );
+    nProgressLimit = db->nProgressOps - (iPrior % db->nProgressOps);
+  }else{
+    nProgressLimit = 0xffffffff;
+  }
+#endif
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
@@ -635,15 +644,6 @@ int sqlite3VdbeExec(
   db->busyHandler.nBusy = 0;
   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  if( db->xProgress ){
-    u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
-    assert( 0 < db->nProgressOps );
-    nProgressLimit = db->nProgressOps - (iPrior % db->nProgressOps);
-  }else{
-    nProgressLimit = 0xffffffff;
-  }
-#endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
   if( p->pc==0
