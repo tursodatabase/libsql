@@ -246,6 +246,47 @@ do_execsql_test -db db2 4.3.6 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
 } {26 17 18 13 14 15 4 5 6 nref=6 nschema=3}
 
-finish_test
+#--------------------------------------------------------------------------
+# Test the incremental-blob API with REUSE_SCHEMA connections.
+#
+catch {db1 close}
+catch {db2 close}
+catch {db3 close}
+reset_db
+do_execsql_test 5.0.1 {
+  CREATE TABLE bbb(a INTEGER PRIMARY KEY, b);
+}
+db close
+do_test 5.0.2 {
+  sqlite3 db2 test.db -reuse-schema 1
+  register_schemapool_module db2
+  for {set i 1} {$i<6} {incr i} {
+    forcedelete test.db${i}-journal test.db${i}-wal test.db${i}-wal2 
+    forcecopy test.db test.db${i}
+    sqlite3 db test.db${i}
+    db eval { INSERT INTO bbb VALUES(123, 'database_' || $i) }
+    db close
+    db2 eval "ATTACH 'test.db${i}' AS db${i}"
+  }
+  execsql {
+    SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  } db2
+} {nref=6 nschema=1}
 
+do_test 5.1.1 {
+  set res [list]
+  for {set i 1} {$i<6} {incr i} {
+    set chan [db2 incrblob db${i} bbb b 123]
+    lappend res [gets $chan]
+    close $chan
+  }
+  set res
+} {database_1 database_2 database_3 database_4 database_5}
+
+do_execsql_test -db db2 5.1.2 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=6 nschema=1}
+
+
+finish_test
 
