@@ -148,6 +148,7 @@ int sqlite3_blob_open(
   wrFlag = !!wrFlag;                /* wrFlag = (wrFlag ? 1 : 0); */
 
   sqlite3_mutex_enter(db->mutex);
+  assert( db->pParse==0 );
 
   bUnlock = sqlite3LockReusableSchema(db);
   pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
@@ -155,6 +156,7 @@ int sqlite3_blob_open(
     memset(&sParse, 0, sizeof(Parse));
     if( !pBlob ) goto blob_open_out;
     sParse.db = db;
+    db->pParse = &sParse;
     sqlite3DbFree(db, zErr);
     zErr = 0;
 
@@ -333,6 +335,7 @@ int sqlite3_blob_open(
   } while( (++nAttempt)<SQLITE_MAX_SCHEMA_RETRY && rc==SQLITE_SCHEMA );
 
 blob_open_out:
+  db->pParse = 0;
   sqlite3UnlockReusableSchema(db, bUnlock);
   if( rc==SQLITE_OK && db->mallocFailed==0 ){
     *ppBlob = (sqlite3_blob *)pBlob;

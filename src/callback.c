@@ -528,7 +528,7 @@ void sqlite3SchemaClear(void *p){
 */
 void sqlite3SchemaClearOrDisconnect(sqlite3 *db, int iDb){
   Db *pDb = &db->aDb[iDb];
-  if( IsReuseSchema(db) && iDb!=1 ){
+  if( IsReuseSchema(db) && iDb!=1 && pDb->pSPool ){
     sqlite3SchemaDisconnect(db, iDb, 1);
   }else{
     sqlite3SchemaClear(pDb->pSchema);

@@ -282,6 +282,22 @@ int sqlite3UserAuthTable(const char *zTable){
 }
 #endif
 
+static int loadReusableSchema(sqlite3 *db, int iDb){
+  if( IsReuseSchema(db) 
+   && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
+   && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
+  ){
+    char *zDummy = 0;
+    struct sqlite3InitInfo sv = db->init;
+    memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
+    sqlite3InitOne(db, iDb, &zDummy, 0);
+    sqlite3_free(zDummy);
+    db->init = sv;
+    return (iDb!=1);
+  }
+  return 0;
+}
+
 /*
 ** Locate the in-memory structure that describes a particular database
 ** table given the name of that table and (optionally) the name of the
@@ -311,18 +327,9 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     for(i=OMIT_TEMPDB; i<db->nDb; i++){
       int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
-        int bUnload = 0;
+        int bUnload;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        if( IsReuseSchema(db) 
-         && DbHasProperty(db, j, DB_SchemaLoaded)==0 
-         && (db->init.busy==0 || (j!=1 && db->init.iDb==1))
-        ){
-          struct sqlite3InitInfo sv = db->init;
-          memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
-          sqlite3InitOne(db, j, 0, 0);
-          bUnload = (j!=1);
-          db->init = sv;
-        }
+        bUnload = loadReusableSchema(db, j);
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
         if( bUnload ){
@@ -379,12 +386,7 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod ){
-        if( IsReuseSchema(db)
-         && DbHasProperty(db, 0, DB_SchemaLoaded)==0 
-         && db->init.busy==0
-        ){
-          sqlite3InitOne(db, 0, 0, 0);
-        }
+        loadReusableSchema(db, 0);
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
           return pMod->pEpoTab;
         }

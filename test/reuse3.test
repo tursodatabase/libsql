@@ -67,6 +67,26 @@ do_execsql_test 1.9 {
   SELECT * FROM v1
 } {1 2 3 4 5 6}
 
-finish_test
+#-------------------------------------------------------------------------
+# Test error messages when parsing the schema with a REUSE_SCHEMA 
+# connection.
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE TABLE y1(d, e, f);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET sql = 'CREATE TBL y1(d, e, f)' WHERE name = 'y1';
+}
+db close
 
+sqlite3 db test.db -reuse-schema 1
+do_catchsql_test 2.1 {
+  SELECT * FROM x1;
+} {1 {no such table: x1}}
+
+do_catchsql_test 2.2 {
+  SELECT * FROM x1;
+} {1 {no such table: x1}}
+
+finish_test
 
