@@ -52,11 +52,18 @@ do_execsql_test 1.6 {
   BEGIN;
     DROP TRIGGER tr1;
   ROLLBACK;
+}
+
+do_execsql_test 1.7 {
+  SELECT * FROM v1
+} {1 2 3}
+
+do_execsql_test 1.8 {
   INSERT INTO t1 VALUES(4, 5, 6);
   SELECT * FROM t2
 } {1 4}
 
-do_execsql_test 1.7 {
+do_execsql_test 1.9 {
   SELECT * FROM v1
 } {1 2 3 4 5 6}
 

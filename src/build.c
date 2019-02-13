@@ -315,10 +315,13 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
         if( IsReuseSchema(db) 
          && DbHasProperty(db, j, DB_SchemaLoaded)==0 
-         && db->init.busy==0
+         && (db->init.busy==0 || (j!=1 && db->init.iDb==1))
         ){
+          struct sqlite3InitInfo sv = db->init;
+          memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
           sqlite3InitOne(db, j, 0, 0);
           bUnload = (j!=1);
+          db->init = sv;
         }
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
