@@ -463,21 +463,12 @@ static SQLITE_NOINLINE int parseSchemaOp(Vdbe *p, VdbeOp *pOp, sqlite3 *db){
     if( zSql==0 ){
       rc = SQLITE_NOMEM_BKPT;
     }else{
-      bRelease = sqlite3LockReusableSchema(db);
-      if( IsReuseSchema(db) ){
-        rc = sqlite3Init(db, &p->zErrMsg);
-        if( rc ){
-          sqlite3UnlockReusableSchema(db, bRelease);
-          return rc;
-        }
-      }
       assert( db->init.busy==0 );
       db->init.busy = 1;
       initData.rc = SQLITE_OK;
       initData.nInitRow = 0;
       assert( !db->mallocFailed );
       rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
-      sqlite3UnlockReusableSchema(db, bRelease);
       if( rc==SQLITE_OK ) rc = initData.rc;
       if( rc==SQLITE_OK && initData.nInitRow==0 ){
         /* The OP_ParseSchema opcode with a non-NULL P4 argument should parse

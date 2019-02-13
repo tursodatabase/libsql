@@ -3604,7 +3604,7 @@ int sqlite3_table_column_metadata(
   int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
   int *pAutoinc               /* OUTPUT: True if column is auto-increment */
 ){
-  int rc;
+  int rc = SQLITE_OK;
   char *zErrMsg = 0;
   Table *pTab = 0;
   Column *pCol = 0;
@@ -3614,6 +3614,7 @@ int sqlite3_table_column_metadata(
   int notnull = 0;
   int primarykey = 0;
   int autoinc = 0;
+  int bUnlock;
 
 
 #ifdef SQLITE_ENABLE_API_ARMOR
@@ -3624,11 +3625,15 @@ int sqlite3_table_column_metadata(
 
   /* Ensure the database schema has been loaded */
   sqlite3_mutex_enter(db->mutex);
+  bUnlock = sqlite3LockReusableSchema(db);
   sqlite3BtreeEnterAll(db);
-  rc = sqlite3Init(db, &zErrMsg);
+  if( IsReuseSchema(db)==0 ){
+    rc = sqlite3Init(db, &zErrMsg);
+  }
   if( SQLITE_OK!=rc ){
     goto error_out;
   }
+
 
   /* Locate the table in question */
   pTab = sqlite3FindTable(db, zTableName, zDbName);
@@ -3704,6 +3709,7 @@ error_out:
   sqlite3ErrorWithMsg(db, rc, (zErrMsg?"%s":0), zErrMsg);
   sqlite3DbFree(db, zErrMsg);
   rc = sqlite3ApiExit(db, rc);
+  sqlite3UnlockReusableSchema(db, bUnlock);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }

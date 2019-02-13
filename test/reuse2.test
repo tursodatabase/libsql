@@ -287,6 +287,16 @@ do_execsql_test -db db2 5.1.2 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
 } {nref=6 nschema=1}
 
+do_test 5.2.1 {
+  sqlite3_table_column_metadata db2 main bbb a
+} {INTEGER BINARY 0 1 0}
+do_test 5.2.2 {
+  sqlite3_table_column_metadata db2 main bbb b
+} {{} BINARY 0 0 0}
+
+do_execsql_test -db db2 5.2.3 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {nref=6 nschema=1}
 
 finish_test
 
