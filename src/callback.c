@@ -550,6 +550,28 @@ SchemaPool *sqlite3SchemaPoolList(void){ return schemaPoolList; }
 #endif
 
 /*
+** Database handle db was opened with the SHARED_SCHEMA flag, and database
+** iDb is currently connected to a schema-pool. When this function is called,
+** (*pnByte) is set to nInit plus the amount of memory used to store a 
+** single instance of the Schema objects managed by the schema-pool.
+** This function adjusts (*pnByte) sot hat it is set to nInit plus
+** (nSchema/nRef) of the amount of memory used by a single Schema object,
+** where nSchema is the number of Schema objects allocated by this pool,
+** and nRef is the number of connections to the schema-pool.
+*/
+void sqlite3SchemaAdjustUsed(sqlite3 *db, int iDb, int nInit, int *pnByte){
+  SchemaPool *pSPool = db->aDb[iDb].pSPool;
+  int nSchema = 0;
+  Schema *p;
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  for(p=pSPool->pSchema; p; p=p->pNext){
+    nSchema++;
+  }
+  *pnByte = nInit + ((*pnByte - nInit) * nSchema) / pSPool->nRef;
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+}
+
+/*
 ** Check that the schema of db iDb is writable (either because it is the 
 ** temp db schema or because the db handle was opened without
 ** SQLITE_OPEN_SHARED_SCHEMA). If so, do nothing. Otherwise, leave an 

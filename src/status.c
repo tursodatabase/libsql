@@ -275,11 +275,19 @@ int sqlite3_db_status(
     case SQLITE_DBSTATUS_SCHEMA_USED: {
       int i;                      /* Used to iterate through schemas */
       int nByte = 0;              /* Used to accumulate return value */
+      int bReleaseSchema;
 
       sqlite3BtreeEnterAll(db);
+      bReleaseSchema = sqlite3LockReusableSchema(db);
       db->pnBytesFreed = &nByte;
       for(i=0; i<db->nDb; i++){
-        Schema *pSchema = db->aDb[i].pSchema;
+        int bUnload = 0;
+        int nUsed = nByte;
+        Schema *pSchema;
+        if( db->aDb[i].pSPool ){
+          bUnload = sqlite3SchemaLoad(db, i);
+        }
+        pSchema = db->aDb[i].pSchema;
         if( ALWAYS(pSchema!=0) ){
           HashElem *p;
 
@@ -301,7 +309,12 @@ int sqlite3_db_status(
             sqlite3DeleteTable(db, (Table *)sqliteHashData(p));
           }
         }
+        if( db->aDb[i].pSPool ){
+          if( bUnload ) sqlite3SchemaRelease(db, i);
+          sqlite3SchemaAdjustUsed(db, i, nUsed, &nByte);
+        }
       }
+      sqlite3UnlockReusableSchema(db, bReleaseSchema);
       db->pnBytesFreed = 0;
       sqlite3BtreeLeaveAll(db);
 

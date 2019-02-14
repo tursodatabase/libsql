@@ -33,9 +33,9 @@ database is treated as empty. This usually means that corruption results in
 a "no such table: xxx" error instead of a more specific error message.
 
 For SQLITE&#95;OPEN&#95;SHARED&#95;SCHEMA connections, the
-SQLITE&#95;DBSTATUS&#95;SCHEMA&#95;USED sqlite3&#95;db&#95;used() distributes
-the memory used for a shared schema object evenly between all database
-connections that share it.
+SQLITE&#95;DBSTATUS&#95;SCHEMA&#95;USED sqlite3&#95;db&#95;status() verb
+distributes the memory used for a shared schema object evenly between all
+database connections that share it.
 
 ## Implementation Notes
 

@@ -88,5 +88,41 @@ do_catchsql_test 2.2 {
   SELECT * FROM x1;
 } {1 {no such table: x1}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX i1 ON x1(a, b, c);
+  CREATE TRIGGER tr1 AFTER INSERT ON x1 BEGIN
+    SELECT 1, 2, 3, 4, 5;
+  END;
+  INSERT INTO x1 VALUES(1, 2, 3);
+}
+sqlite3 db1 test.db -shared-schema 1
+
+do_test 3.1 {
+  execsql { SELECT * FROM x1 } db1
+  set N [lindex [sqlite3_db_status db1 SCHEMA_USED 0] 1]
+  expr $N==$N
+} 1
+
+sqlite3 db2 test.db -shared-schema 1
+do_test 3.2 {
+  execsql { SELECT * FROM x1 } db2
+  breakpoint
+  set N2 [lindex [sqlite3_db_status db2 SCHEMA_USED 0] 1]
+  expr $N2>($N/2) && $N2<($N/2)+400
+} 1
+
+sqlite3 db3 test.db -shared-schema 1
+sqlite3 db4 test.db -shared-schema 1
+do_test 3.3 {
+  execsql { SELECT * FROM x1 } db3
+  execsql { SELECT * FROM x1 } db4
+  set N4 [lindex [sqlite3_db_status db2 SCHEMA_USED 0] 1]
+  set M [expr 2*($N-$N2)]
+  expr {$N4 == (($M / 4) + $N-$M)}
+} 1
+
 finish_test
 

@@ -294,7 +294,7 @@ int sqlite3UserAuthTable(const char *zTable){
 ** Non-zero is returned if a schema is loaded, or zero if it was already 
 ** loaded when this function was called..
 */
-static int loadSharableSchema(sqlite3 *db, int iDb){
+int sqlite3SchemaLoad(sqlite3 *db, int iDb){
   if( IsReuseSchema(db) 
    && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
    && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
@@ -341,7 +341,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
         int bUnload;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        bUnload = loadSharableSchema(db, j);
+        bUnload = sqlite3SchemaLoad(db, j);
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
         if( bUnload ){
@@ -398,7 +398,7 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod ){
-        loadSharableSchema(db, 0);
+        sqlite3SchemaLoad(db, 0);
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
           return pMod->pEpoTab;
         }
