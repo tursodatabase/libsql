@@ -286,7 +286,7 @@ struct MemPage {
   u16 maxLocal;        /* Copy of BtShared.maxLocal or BtShared.maxLeaf */
   u16 minLocal;        /* Copy of BtShared.minLocal or BtShared.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
-  u16 nFree;           /* Number of free bytes on the page */
+  int nFree;           /* Number of free bytes on the page. -1 for unknown */
   u16 nCell;           /* Number of cells on this page, local and ovfl */
   u16 maskPage;        /* Mask for page offset */
   u16 aiOvfl[4];       /* Insert the i-th overflow cell before the aiOvfl-th
