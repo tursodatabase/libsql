@@ -17,7 +17,7 @@
 #include "sqliteInt.h"
 
 /*
-** Connections opened with the SQLITE_OPEN_REUSE_SCHEMA flag specified
+** Connections opened with the SQLITE_OPEN_SHARED_SCHEMA flag specified
 ** may use SchemaPool objects for any database that is not the temp db
 ** (iDb==1). For such databases (type "struct Db") there are three states
 ** the Schema/SchemaPool object may be in.
@@ -518,7 +518,7 @@ void sqlite3SchemaClear(void *p){
 }
 
 /*
-** If this database was opened with the SQLITE_OPEN_REUSE_SCHEMA flag
+** If this database was opened with the SQLITE_OPEN_SHARED_SCHEMA flag
 ** and iDb!=1, then disconnect from the schema-pool associated with
 ** database iDb. Otherwise, clear the Schema object belonging to
 ** database iDb. 
@@ -552,11 +552,11 @@ SchemaPool *sqlite3SchemaPoolList(void){ return schemaPoolList; }
 /*
 ** Check that the schema of db iDb is writable (either because it is the 
 ** temp db schema or because the db handle was opened without
-** SQLITE_OPEN_REUSE_SCHEMA). If so, do nothing. Otherwise, leave an 
+** SQLITE_OPEN_SHARED_SCHEMA). If so, do nothing. Otherwise, leave an 
 ** error in the Parse object.
 */
 void sqlite3SchemaWritable(Parse *pParse, int iDb){
-  if( iDb!=1 && (pParse->db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) 
+  if( iDb!=1 && (pParse->db->openFlags & SQLITE_OPEN_SHARED_SCHEMA) 
    && IN_DECLARE_VTAB==0
   ){
     sqlite3ErrorMsg(pParse, "attempt to modify read-only schema");
@@ -595,7 +595,7 @@ static void schemaRelease(Db *pDb){
 
 /*
 ** The schema for database iDb of database handle db, which was opened
-** with SQLITE_OPEN_REUSE_SCHEMA, has just been parsed. This function either
+** with SQLITE_OPEN_SHARED_SCHEMA, has just been parsed. This function either
 ** finds a matching SchemaPool object on the global list (schemaPoolList) or
 ** else allocates a new one and sets the Db.pSPool variable accordingly.
 **
@@ -651,7 +651,7 @@ int sqlite3SchemaConnect(sqlite3 *db, int iDb, u64 cksum){
 
 /*
 ** If parameter iDb is 1 (the temp db), or if connection handle db was not
-** opened with the SQLITE_OPEN_REUSE_SCHEMA flag, this function is a no-op.
+** opened with the SQLITE_OPEN_SHARED_SCHEMA flag, this function is a no-op.
 ** Otherwise, it disconnects from the schema-pool associated with database
 ** iDb, assuming it is connected.
 **
@@ -778,13 +778,13 @@ void sqlite3SchemaRelease(sqlite3 *db, int iDb){
 /*
 ** In most cases, this function finds and returns the schema associated 
 ** with BTree handle pBt, creating a new one if necessary. However, if
-** the database handle was opened with the SQLITE_OPEN_REUSE_SCHEMA flag
+** the database handle was opened with the SQLITE_OPEN_SHARED_SCHEMA flag
 ** specified, a new, empty, Schema object in memory obtained by 
 ** sqlite3_malloc() is always returned.
 */
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema *p;
-  if( pBt && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA)==0 ){
+  if( pBt && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA)==0 ){
     p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
     p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));

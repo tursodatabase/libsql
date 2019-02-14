@@ -1505,7 +1505,7 @@ struct sqlite3 {
 #endif
 };
 
-#define IsReuseSchema(db) (((db)->openFlags & SQLITE_OPEN_REUSE_SCHEMA)!=0)
+#define IsReuseSchema(db) (((db)->openFlags & SQLITE_OPEN_SHARED_SCHEMA)!=0)
 
 /*
 ** A macro to discover the encoding of a database.

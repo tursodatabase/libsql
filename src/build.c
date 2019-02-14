@@ -282,7 +282,19 @@ int sqlite3UserAuthTable(const char *zTable){
 }
 #endif
 
-static int loadReusableSchema(sqlite3 *db, int iDb){
+/*
+** If this database connection was opened with the SQLITE_OPEN_SHARED_SCHEMA
+** flag specified, then ensure that the database schema for database iDb
+** is loaded. Either by obtaining a Schema object from the schema-pool, or
+** by reading the contents of the sqlite_master table.
+**
+** If the database handle was not opened with SQLITE_OPEN_SHARED_SCHEMA, or
+** if the schema for database iDb is already loaded, this function is a no-op.
+**
+** Non-zero is returned if a schema is loaded, or zero if it was already 
+** loaded when this function was called..
+*/
+static int loadSharableSchema(sqlite3 *db, int iDb){
   if( IsReuseSchema(db) 
    && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
    && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
@@ -329,7 +341,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
         int bUnload;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        bUnload = loadReusableSchema(db, j);
+        bUnload = loadSharableSchema(db, j);
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
         if( bUnload ){
@@ -386,7 +398,7 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod ){
-        loadReusableSchema(db, 0);
+        loadSharableSchema(db, 0);
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
           return pMod->pEpoTab;
         }

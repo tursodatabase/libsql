@@ -567,7 +567,7 @@ int sqlite3_exec(
 #define SQLITE_OPEN_WAL              0x00080000  /* VFS only */
 
 /* Reserved:                         0x00F00000 */
-#define SQLITE_OPEN_REUSE_SCHEMA     0x01000000  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_SHARED_SCHEMA    0x01000000  /* Ok for sqlite3_open_v2() */
 
 
 /*

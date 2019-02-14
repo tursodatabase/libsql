@@ -161,7 +161,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     }
   }
 
-  if( iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+  if( iDb!=1 && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA) ){
     schemaUpdateChecksum(pData, argv[0], argv[1], argv[2]);
   }
   return 0;
@@ -392,7 +392,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     rc = SQLITE_OK;
   }
 
-  if( rc==SQLITE_OK && iDb!=1 && (db->openFlags & SQLITE_OPEN_REUSE_SCHEMA) ){
+  if( rc==SQLITE_OK && iDb!=1 && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA) ){
     rc = sqlite3SchemaConnect(db, iDb, initData.cksum);
   }
 

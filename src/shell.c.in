@@ -3914,7 +3914,7 @@ static void open_db(ShellState *p, int openFlags){
       }
       case SHELL_OPEN_REUSESCHEMA: {
         sqlite3_open_v2(p->zDbFilename, &p->db,
-           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_REUSE_SCHEMA, 0);
+          SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_SHARED_SCHEMA,0);
         break;
       }
       case SHELL_OPEN_UNSPEC:

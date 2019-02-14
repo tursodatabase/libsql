@@ -23,7 +23,7 @@ do_execsql_test 1.0 {
 } {}
 
 db close
-sqlite3 db test.db -reuse-schema 1
+sqlite3 db test.db -shared-schema 1
 
 do_execsql_test 1.1 {
   CREATE TEMP VIEW v1 AS SELECT * FROM t1;
@@ -79,7 +79,7 @@ do_execsql_test 2.0 {
 }
 db close
 
-sqlite3 db test.db -reuse-schema 1
+sqlite3 db test.db -shared-schema 1
 do_catchsql_test 2.1 {
   SELECT * FROM x1;
 } {1 {no such table: x1}}
