@@ -327,7 +327,7 @@ fn is_identifier_continue(c: char) -> bool {
 mod test {
     use super::Sql;
     use crate::pragma;
-    use crate::{Connection, DatabaseName, NO_PARAMS};
+    use crate::{Connection, DatabaseName};
 
     #[test]
     fn pragma_query_value() {
@@ -341,6 +341,8 @@ mod test {
     #[test]
     #[cfg(feature = "bundled")]
     fn pragma_func_query_value() {
+        use crate::NO_PARAMS;
+
         let db = Connection::open_in_memory().unwrap();
         let user_version: i32 = db
             .query_row(
