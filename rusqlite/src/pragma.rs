@@ -161,6 +161,9 @@ impl Connection {
     ///
     /// Some pragmas will return multiple rows/values which cannot be retrieved
     /// with this method.
+    ///
+    /// Prefer [PRAGMA function](https://sqlite.org/pragma.html#pragfunc) introduced in SQLite 3.20:
+    /// `SELECT user_version FROM pragma_user_version;`
     pub fn pragma_query_value<T, F>(
         &self,
         schema_name: Option<DatabaseName<'_>>,
@@ -183,6 +186,9 @@ impl Connection {
     }
 
     /// Query the current rows/values of `pragma_name`.
+    ///
+    /// Prefer [PRAGMA function](https://sqlite.org/pragma.html#pragfunc) introduced in SQLite 3.20:
+    /// `SELECT * FROM pragma_collation_list;`
     pub fn pragma_query<F>(
         &self,
         schema_name: Option<DatabaseName<'_>>,
@@ -207,8 +213,11 @@ impl Connection {
     /// `pragma_value`.
     ///
     /// This method can be used with query-only pragmas which need an argument
-    /// (e.g. `table_info('one_tbl')`) or pragmas which return the updated value
-    /// (e.g. `journal_mode`).
+    /// (e.g. `table_info('one_tbl')`) or pragmas which returns value(s)
+    /// (e.g. `integrity_check`).
+    ///
+    /// Prefer [PRAGMA function](https://sqlite.org/pragma.html#pragfunc) introduced in SQLite 3.20:
+    /// `SELECT * FROM pragma_table_info(?);`
     pub fn pragma<F>(
         &self,
         schema_name: Option<DatabaseName<'_>>,
@@ -318,13 +327,27 @@ fn is_identifier_continue(c: char) -> bool {
 mod test {
     use super::Sql;
     use crate::pragma;
-    use crate::{Connection, DatabaseName};
+    use crate::{Connection, DatabaseName, NO_PARAMS};
 
     #[test]
     fn pragma_query_value() {
         let db = Connection::open_in_memory().unwrap();
         let user_version: i32 = db
             .pragma_query_value(None, "user_version", |row| row.get_checked(0))
+            .unwrap();
+        assert_eq!(0, user_version);
+    }
+
+    #[test]
+    #[cfg(feature = "bundled")]
+    fn pragma_func_query_value() {
+        let db = Connection::open_in_memory().unwrap();
+        let user_version: i32 = db
+            .query_row(
+                "SELECT user_version FROM pragma_user_version",
+                NO_PARAMS,
+                |row| row.get(0),
+            )
             .unwrap();
         assert_eq!(0, user_version);
     }
@@ -363,6 +386,22 @@ mod test {
             Ok(())
         })
         .unwrap();
+        assert_eq!(5, columns.len());
+    }
+
+    #[test]
+    #[cfg(feature = "bundled")]
+    fn pragma_func() {
+        let db = Connection::open_in_memory().unwrap();
+        let mut table_info = db.prepare("SELECT * FROM pragma_table_info(?)").unwrap();
+        let mut columns = Vec::new();
+        let mut rows = table_info.query(&["sqlite_master"]).unwrap();
+
+        while let Some(row) = rows.next() {
+            let row = row.unwrap();
+            let column: String = row.get(1);
+            columns.push(column);
+        }
         assert_eq!(5, columns.len());
     }
 
