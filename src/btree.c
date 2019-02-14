@@ -6817,8 +6817,13 @@ static void insertCell(
 ** are used and they point to the leaf pages only, and the ixNx value are:
 **
 **    ixNx[0] = Number of cells in Child-1.
-**    ixNx[1] = Number of cells in Child-1 and Child-2 + 1 for 1st divider.
-**    ixNx[2] = Number of cells in Child-1 and Child-2 + both divider cells
+**    ixNx[1] = Number of cells in Child-1 and Child-2.
+**    ixNx[2] = Total number of cells.
+**
+** Sometimes when deleting, a child page can have zero cells.  In those
+** cases, ixNx[] entries with higher indexes, and the corresponding apEnd[]
+** entries, shift down.  The end result is that each ixNx[] entry should
+** be larger than the previous
 */
 typedef struct CellArray CellArray;
 struct CellArray {
@@ -7747,6 +7752,9 @@ static int balance_nonroot(
     MemPage *p = apOld[i];
     b.apEnd[k] = p->aDataEnd;
     b.ixNx[k] = cntOld[i];
+    if( k && b.ixNx[k]==b.ixNx[k-1] ){
+      k--;  /* Omit b.ixNx[] entry for child pages with no cells */
+    }
     if( !leafData ){
       k++;
       b.apEnd[k] = pParent->aDataEnd;
@@ -7978,18 +7986,17 @@ static int balance_nonroot(
   if( ISAUTOVACUUM ){
     MemPage *pOld;
     MemPage *pNew = pOld = apNew[0];
-    u8 *aOld = pNew->aData;
     int cntOldNext = pNew->nCell + pNew->nOverflow;
-    int usableSize = pBt->usableSize;
     int iNew = 0;
     int iOld = 0;
 
     for(i=0; i<b.nCell; i++){
       u8 *pCell = b.apCell[i];
-      if( i==cntOldNext ){
-        pOld = (++iOld)<nNew ? apNew[iOld] : apOld[iOld];
+      while( i==cntOldNext ){
+        iOld++;
+        assert( iOld<nNew || iOld<nOld );
+        pOld = iOld<nNew ? apNew[iOld] : apOld[iOld];
         cntOldNext += pOld->nCell + pOld->nOverflow + !leafData;
-        aOld = pOld->aData;
       }
       if( i==cntNew[iNew] ){
         pNew = apNew[++iNew];
@@ -8004,7 +8011,7 @@ static int balance_nonroot(
       ** overflow cell), we can skip updating the pointer map entries.  */
       if( iOld>=nNew
        || pNew->pgno!=aPgno[iOld]
-       || !SQLITE_WITHIN(pCell,aOld,&aOld[usableSize])
+       || !SQLITE_WITHIN(pCell,pOld->aData,pOld->aDataEnd)
       ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
