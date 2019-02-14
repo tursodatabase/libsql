@@ -88,6 +88,7 @@ foreach {tn sql} {
   8  { DROP TABLE t1 }
   9  { DROP TRIGGER tr1 }
   10 { ANALYZE }
+  11 { ALTER TABLE t1 RENAME z TO zzz }
 } {
   do_catchsql_test 1.5.$tn $sql {1 {attempt to modify read-only schema}}
 }
