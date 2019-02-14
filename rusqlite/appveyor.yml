@@ -16,10 +16,10 @@ install:
   - rustc -V
   - cargo -V
   # download SQLite dll (useful only when the `bundled` feature is not set)
-  - appveyor-retry appveyor DownloadFile https://sqlite.org/2018/sqlite-dll-win64-x64-3250000.zip -FileName sqlite-dll-win64-x64.zip
+  - appveyor-retry appveyor DownloadFile https://sqlite.org/2018/sqlite-dll-win64-x64-3260000.zip -FileName sqlite-dll-win64-x64.zip
   - if not defined VCPKG_DEFAULT_TRIPLET 7z e sqlite-dll-win64-x64.zip -y > nul
   # download SQLite headers (useful only when the `bundled` feature is not set)
-  - appveyor-retry appveyor DownloadFile https://sqlite.org/2018/sqlite-amalgamation-3250000.zip -FileName sqlite-amalgamation.zip
+  - appveyor-retry appveyor DownloadFile https://sqlite.org/2018/sqlite-amalgamation-3260000.zip -FileName sqlite-amalgamation.zip
   - if not defined VCPKG_DEFAULT_TRIPLET 7z e sqlite-amalgamation.zip -y > nul
   # specify where the SQLite dll has been downloaded (useful only when the `bundled` feature is not set)
   - if not defined VCPKG_DEFAULT_TRIPLET SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
@@ -33,10 +33,10 @@ build: false
 test_script:
   - cargo test --lib --verbose
   - cargo test --lib --verbose --features bundled
-  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab"
-  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab buildtime_bindgen"
-  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab bundled"
-  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab bundled buildtime_bindgen"
+  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3"
+  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3 buildtime_bindgen"
+  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3 bundled"
+  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3 bundled buildtime_bindgen"
 
 cache:
   - C:\Users\appveyor\.cargo
