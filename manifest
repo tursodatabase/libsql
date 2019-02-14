@@ -1,5 +1,5 @@
-C Add\sdocumentation\sfile\sdoc/shared_schema.md\sto\sdescribe\sthe\schange\son\sthis\sbranch.
-D 2019-02-14T17:51:38.838
+C Fix\sa\stypo\sin\sshared_schema.md.
+D 2019-02-14T17:59:36.324
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 56456706c4da271309914c756c9c8ea537685f1c79f8785afa72f968d6810482
@@ -39,7 +39,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
-F doc/shared_schema.md def187628942d7a8cec7b3184e31e18f7efc9893d28decbc6e283e75374e40a4
+F doc/shared_schema.md 8659d89eaeab5547c435284e0356237df31beb30a7575f30d76d9bc0eb825f9d
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
@@ -1809,7 +1809,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 577d1638362666a8220401d0d0d8bfb3c028ab09e7def1e4bf195db37269c22f
-R 1acea7f4385670d217f2748b0e41615f
+P a5f8067dde1e8974f779ab838a02416a7dd9d20d253af860d08d635cfede6fee
+R 952f290d6bface17a7cafe346ea48f9d
 U dan
-Z 3acdb019d8c7c568a8d8932e68a09746
+Z a99cb125e58b7df930a104ad1379ef4e

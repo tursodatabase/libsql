@@ -39,7 +39,7 @@ connections that share it.
 
 ## Implementation Notes
 
-A single Schema object is never used by more than database simultaneously,
+A single Schema object is never used by more than one database simultaneously,
 regardless of whether or not those databases are attached to the same or
 different database handles. Instead, a pool of schema objects is maintained 
 for each unique sqlite&#95;master-contents/schema-cookie combination
