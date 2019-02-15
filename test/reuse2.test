@@ -74,43 +74,50 @@ do_execsql_test -db db2 3.2.2 { SELECT * FROM t1 }
 
 register_schemapool_module db
 do_execsql_test 3.3 { 
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
-} {nref=2 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=2 nschema=1 ndelete=0}
 
 sqlite3 db3 test.db -shared-schema 1
 register_schemapool_module db3
 
 do_execsql_test 3.5 { 
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
-} {nref=2 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=2 nschema=1 ndelete=0}
 
 do_execsql_test -db db3 3.6 { 
   SELECT * FROM t1;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
-} {nref=3 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=3 nschema=1 ndelete=0}
 
 do_execsql_test 3.7 { 
   CREATE TABLE t2(x);
 }
 
 do_execsql_test 3.8 { 
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
-} {nref=3 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=3 nschema=1 ndelete=0}
 
 do_execsql_test -db db1 3.9.1 { SELECT * FROM t1 }
 do_execsql_test 3.9.2 { 
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=1 nschema=1 nref=2 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=1 nschema=1 ndelete=0 nref=2 nschema=1 ndelete=0}
 
 do_execsql_test -db db2 3.10.1 { SELECT * FROM t1 }
 do_execsql_test 3.10.2 { 
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=1 nschema=1 nref=2 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool ORDER BY 1;
+} {nref=1 nschema=1 ndelete=0 nref=2 nschema=1 ndelete=0}
 
 do_execsql_test -db db3 3.11.1 { SELECT * FROM t1 }
 do_execsql_test 3.11.2 { 
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=3 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=3 nschema=1 ndelete=0}
 
 #--------------------------------------------------------------------------
 catch {db1 close}
@@ -134,7 +141,8 @@ do_test 4.0.2 {
 
 register_schemapool_module db
 do_execsql_test 4.0.3 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {}
 
 do_test 4.1.1 {
@@ -147,33 +155,38 @@ do_test 4.1.1 {
   } db2
 } {}
 do_execsql_test 4.1.2 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {}
 do_execsql_test -db db2 4.1.3 {
   SELECT * FROM db3.x1
 }
 do_execsql_test 4.1.4 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=1 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=1 nschema=1 ndelete=0}
 do_execsql_test -db db2 4.1.5 {
   SELECT * FROM db2.x1
 }
 do_execsql_test 4.1.6 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=2 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=2 nschema=1 ndelete=0}
 do_execsql_test -db db2 4.1.7 {
   SELECT * FROM x1
 }
 do_execsql_test 4.1.8 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=6 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=6 nschema=1 ndelete=0}
 
 do_test 4.2.1 {
   catchsql { SELECT * FROM abc } db2
 } {1 {no such table: abc}}
 do_execsql_test 4.2.2 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=6 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=6 nschema=1 ndelete=0}
 
 register_schemapool_module db2
 do_execsql_test -db db2 4.3.1 {
@@ -183,8 +196,9 @@ do_execsql_test -db db2 4.3.1 {
   INSERT INTO db3.x1 VALUES(10, 11, 12);
   INSERT INTO db4.x1 VALUES(13, 14, 15);
   INSERT INTO db5.x1 VALUES(16, 17, 18);
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=6 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=6 nschema=1 ndelete=0}
 
 do_execsql_test -db db2 4.3.2 {
   SELECT * FROM db5.x1;
@@ -193,18 +207,20 @@ do_execsql_test -db db2 4.3.2 {
   SELECT * FROM db2.x1;
   SELECT * FROM db1.x1;
   SELECT * FROM x1;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {
   16 17 18  13 14 15  10 11 12  7 8 9  4 5 6  1 2 3
-  nref=6 nschema=1
+  nref=6 nschema=1 ndelete=0
 }
 
 do_execsql_test -db db2 4.3.3 {
   UPDATE x1 SET a=a+10;
   UPDATE db5.x1 SET a=a+10;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {
-  nref=6 nschema=1
+  nref=6 nschema=1 ndelete=0
 }
 
 do_execsql_test -db db2 4.3.4 {
@@ -214,18 +230,20 @@ do_execsql_test -db db2 4.3.4 {
   SELECT * FROM db2.x1;
   SELECT * FROM db1.x1;
   SELECT * FROM x1;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {
   26 17 18  13 14 15  10 11 12  7 8 9  4 5 6  11 2 3
-  nref=6 nschema=1
+  nref=6 nschema=1 ndelete=0
 }
 
 do_execsql_test -db db2 4.3.5 {
   DELETE FROM db3.x1;
   DELETE FROM x1;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {
-  nref=6 nschema=1
+  nref=6 nschema=1 ndelete=0
 }
 
 do_execsql_test -db db2 4.3.6 {
@@ -235,16 +253,18 @@ do_execsql_test -db db2 4.3.6 {
   SELECT * FROM db2.x1;
   SELECT * FROM db1.x1;
   SELECT * FROM x1;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
 } {
   26 17 18  13 14 15  7 8 9  4 5 6 
-  nref=6 nschema=1
+  nref=6 nschema=1 ndelete=0
 }
 
 do_execsql_test -db db2 4.3.6 {
   SELECT * FROM db5.x1, db4.x1, db1.x1;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {26 17 18 13 14 15 4 5 6 nref=6 nschema=3}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {26 17 18 13 14 15 4 5 6 nref=6 nschema=3 ndelete=0}
 
 #--------------------------------------------------------------------------
 # Test the incremental-blob API with REUSE_SCHEMA connections.
@@ -269,9 +289,10 @@ do_test 5.0.2 {
     db2 eval "ATTACH 'test.db${i}' AS db${i}"
   }
   execsql {
-    SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+    SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+      FROM schemapool;
   } db2
-} {nref=6 nschema=1}
+} {nref=6 nschema=1 ndelete=0}
 
 do_test 5.1.1 {
   set res [list]
@@ -284,8 +305,9 @@ do_test 5.1.1 {
 } {database_1 database_2 database_3 database_4 database_5}
 
 do_execsql_test -db db2 5.1.2 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=6 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=6 nschema=1 ndelete=0}
 
 do_test 5.2.1 {
   sqlite3_table_column_metadata db2 main bbb a
@@ -295,14 +317,15 @@ do_test 5.2.2 {
 } {{} BINARY 0 0 0}
 
 do_execsql_test -db db2 5.2.3 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {nref=6 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {nref=6 nschema=1 ndelete=0}
 
-breakpoint
 do_execsql_test -db db2 5.2.4 {
   PRAGMA integrity_check;
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
-} {ok nref=6 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
+  FROM schemapool;
+} {ok nref=6 nschema=1 ndelete=5}
 
 finish_test
 

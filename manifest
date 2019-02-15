@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\seponymous\svirtual\stables\sand\sSHARED_SCHEMA\sdatabases.\sAlso,\safter\spreparing\sstatements\sthat\srequire\sall\sdatabase\sschemas\s(REINDEX,\sANALYZE,\sCREATE,\sDROP\sand\ssome\sPRAGMA\sstatements),\sdo\snot\sallow\sthe\sdatabase\sconnection\sto\sreturn\smore\sthan\sone\sschema\sto\seach\sschema-pool.
-D 2019-02-15T19:00:41.452
+C Enhance\sthe\svirtual\stable\sin\stest_schemapool.c\sso\sthat\sit\scan\sbe\sused\sto\scheck\sthat\sSHARED_SCHEMA\sconnections\sare\snot\sallocating\sand\sfreeing\sschemas\swhen\sthey\sshould\snot\sbe.
+D 2019-02-15T19:36:47.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 56456706c4da271309914c756c9c8ea537685f1c79f8785afa72f968d6810482
@@ -460,7 +460,7 @@ F src/btree.c 161b6a57b91d160065e512a4d0be180e402a16a059034a380cbdc2411924f8ac
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 9ee9a6d4dc5e8cddd0657fc9f2208849e83a59b9cd862bd828260ff28dd972a6
-F src/callback.c 434dc7a483d98cf02bda4a1306813a000b4620fe67f6dfea1635b519f1daf26b
+F src/callback.c df42b5473587c3322038d594be585a6d92d532e1a67f5c340b324de887b8a44a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
 F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
@@ -564,7 +564,7 @@ F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
 F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
 F src/test_rtree.c 671f3fae50ff116ef2e32a3bf1fe21b5615b4b7b
 F src/test_schema.c f575932cb6274d12147a77e13ea4b49d52408513
-F src/test_schemapool.c 5a2f06baeb4071ba547db5b47fb0fb43ffe7bdc96e65e0d5045703a726f32c10
+F src/test_schemapool.c 605de5c8bd8de59a09a2a9d139d004c00a6ba390647c6b3e07b5889dbbcc09af
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c 11e6ce7575f489155c604ac4b439f2ac1d3d5aef
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
@@ -1228,8 +1228,8 @@ F test/releasetest.tcl 7712811e0f4e2f198ec786cb2e1352b3793d7395f48a3cceef0572d88
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/reuse1.test 31c312375ccfcc5c2abc1fca5e4a89d6309c57ea6b1fa3179a5eee68016f9c74
-F test/reuse2.test c33a8973b2de3b4f8b4ffe5c5b455c00a2394b8d71996ee37ed7e861b9f19f1e
-F test/reuse3.test b0f7c7236129fdf7ec51528b75fecaa609408a9fccff2ffed34bfa60d27e5881
+F test/reuse2.test 04d88621f0c51a8b3bf5512b9e61a5d7a61059e33097a1a6b1c6f6cf2d1f2a35
+F test/reuse3.test 624e389467085f6e1c06dcb5815740afce13639033beb108b3ef89796dd0f5f5
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1809,7 +1809,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03c4f00317233a34f29e1218786166d17837d47206532a29d2713093f01adea5
-R fccecdff4cf8aba660dc6d3dc546a5dd
+P ecf6251ec0bb745a4ef9bad9f9ecd3babb687a3806fd96554b265313625270c5
+R af9505b450d481737fb31789b721e9d0
 U dan
-Z c88bba0b0856cf8c79509301a9c9f542
+Z e6a41c81ac1abbc49dfae8dadf58f8cc

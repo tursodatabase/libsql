@@ -29,8 +29,11 @@
 "CREATE TABLE x("         \
 "  cksum   INTEGER, "     \
 "  nref    INTEGER, "     \
-"  nschema INTEGER  "     \
+"  nschema INTEGER, "     \
+"  ndelete INTEGER  "     \
 ")"
+
+#define SCHEMAPOOL_NFIELD 4
 
 typedef struct schemapool_vtab schemapool_vtab;
 typedef struct schemapool_cursor schemapool_cursor;
@@ -106,8 +109,8 @@ static int schemaPoolClose(sqlite3_vtab_cursor *cur){
 */
 static int schemaPoolColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   schemapool_cursor *pCur = (schemapool_cursor*)cur;
-  assert( i==0 || i==1 || i==2 );
-  sqlite3_result_int64(ctx, pCur->aData[pCur->iRow*3 + i]);
+  assert( i==0 || i==1 || i==2 || i==3 );
+  sqlite3_result_int64(ctx, pCur->aData[pCur->iRow*SCHEMAPOOL_NFIELD + i]);
   return SQLITE_OK;
 }
 
@@ -136,6 +139,7 @@ static int schemaPoolNext(sqlite3_vtab_cursor *cur){
 
 struct SchemaPool {
   int nRef;                       /* Number of pointers to this object */
+  int nDelete;                    /* Schema objects deleted by ReleaseAll() */
   u64 cksum;                      /* Checksum for this Schema contents */
   Schema *pSchema;                /* Linked list of Schema objects */
   Schema sSchema;                 /* The single dummy schema object */
@@ -165,7 +169,8 @@ static int schemaPoolFilter(
 
   if( pCur->nRow ){
     int iRow = 0;
-    pCur->aData = (i64*)sqlite3_malloc(3 * pCur->nRow * sizeof(i64));
+    int nByte = SCHEMAPOOL_NFIELD * pCur->nRow * sizeof(i64);
+    pCur->aData = (i64*)sqlite3_malloc(nByte);
     if( pCur->aData==0 ) return SQLITE_NOMEM;
     for(pSPool = sqlite3SchemaPoolList(); pSPool; pSPool=pSPool->pNext){
       Schema *p;
@@ -173,9 +178,10 @@ static int schemaPoolFilter(
       for(p=pSPool->pSchema; p; p=p->pNext){
         nSchema++;
       }
-      pCur->aData[0 + iRow*3] = pSPool->cksum;
-      pCur->aData[1 + iRow*3] = (i64)pSPool->nRef;
-      pCur->aData[2 + iRow*3] = nSchema;
+      pCur->aData[0 + iRow*SCHEMAPOOL_NFIELD] = pSPool->cksum;
+      pCur->aData[1 + iRow*SCHEMAPOOL_NFIELD] = (i64)pSPool->nRef;
+      pCur->aData[2 + iRow*SCHEMAPOOL_NFIELD] = nSchema;
+      pCur->aData[3 + iRow*SCHEMAPOOL_NFIELD] = (i64)pSPool->nDelete;
       iRow++;
     }
   }

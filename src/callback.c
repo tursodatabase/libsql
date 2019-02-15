@@ -33,6 +33,7 @@
 */
 struct SchemaPool {
   int nRef;                       /* Number of pointers to this object */
+  int nDelete;                    /* Schema objects deleted by ReleaseAll() */
   u64 cksum;                      /* Checksum for this Schema contents */
   Schema *pSchema;                /* Linked list of Schema objects */
   Schema sSchema;                 /* The single dummy schema object */
@@ -622,6 +623,7 @@ static void schemaRelease(sqlite3 *db, Db *pDb){
     for(i=0; i<db->nDb; i++){
       Db *p = &db->aDb[i];
       if( p!=pDb && p->pSchema!=&pSPool->sSchema && pDb->pSPool==p->pSPool ){
+        pSPool->nDelete++;
         schemaDelete(pRelease);
         return;
       }

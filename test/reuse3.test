@@ -156,23 +156,27 @@ do_test 4.1.2 {
   }
   register_schemapool_module db
   set {} {}
-  execsql { SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool }
-} {nref=5 nschema=1}
+  execsql { 
+    SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool 
+  }
+} {nref=5 nschema=1 ndelete=0}
 
+breakpoint
 do_execsql_test 4.1.3 {
-  REINDEX x1;
-  REINDEX x1a;
-  REINDEX x1b;
-  REINDEX x1c;
-  REINDEX db1.x1a;
-  REINDEX db2.x1b;
-  REINDEX db3.x1c;
-  REINDEX;
+  REINDEX  x1;
+  REINDEX  x1a;
+  REINDEX  x1b;
+  REINDEX  x1c;
+  REINDEX  db1.x1a;
+  REINDEX  db2.x1b;
+  REINDEX  db3.x1c;
 }
 
 do_execsql_test 4.1.4 {
-  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
-} {nref=5 nschema=1}
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool 
+} {nref=5 nschema=1 ndelete=28}
 
 finish_test
 
