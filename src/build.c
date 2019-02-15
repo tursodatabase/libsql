@@ -400,7 +400,10 @@ Table *sqlite3LocateTable(
       if( pMod ){
         sqlite3SchemaLoad(db, 0);
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
-          return pMod->pEpoTab;
+          Table *pEpoTab = pMod->pEpoTab;
+          assert( IsReuseSchema(db) || pEpoTab->pSchema==db->aDb[0].pSchema );
+          pEpoTab->pSchema = db->aDb[0].pSchema;  /* For SHARED_SCHEMA mode */
+          return pEpoTab;
         }
       }
     }

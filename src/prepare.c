@@ -481,6 +481,7 @@ int sqlite3ReadSchema(Parse *pParse){
   sqlite3 *db = pParse->db;
   assert( sqlite3_mutex_held(db->mutex) );
   if( !db->init.busy ){
+    db->mDbFlags |= DBFLAG_FreeSchema;      /* For sharable-schema mode */
     rc = sqlite3Init(db, &pParse->zErrMsg);
     if( rc!=SQLITE_OK ){
       pParse->rc = rc;

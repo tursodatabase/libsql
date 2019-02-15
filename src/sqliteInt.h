@@ -1573,7 +1573,8 @@ struct sqlite3 {
 #define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
 #define DBFLAG_SchemaKnownOk  0x0008  /* Schema is known to be valid */
 
-#define DBFLAG_SchemaInuse    0x0010  /* Do not free schemas */
+#define DBFLAG_SchemaInuse    0x0010  /* Do not release sharable schemas */
+#define DBFLAG_FreeSchema     0x0020  /* Free extra shared schemas on release */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the

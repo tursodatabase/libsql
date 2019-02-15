@@ -298,5 +298,11 @@ do_execsql_test -db db2 5.2.3 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
 } {nref=6 nschema=1}
 
+breakpoint
+do_execsql_test -db db2 5.2.4 {
+  PRAGMA integrity_check;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool ORDER BY 1;
+} {ok nref=6 nschema=1}
+
 finish_test
 

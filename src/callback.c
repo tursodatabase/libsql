@@ -603,16 +603,33 @@ static void schemaDelete(Schema *pSchema){
 ** This function returns the Schema object to the schema-pool and sets
 ** Db.pSchema to point to the schema-pool's static, empty, Schema object.
 */
-static void schemaRelease(Db *pDb){
-  assert( pDb->pSPool && pDb->pSchema );
-  assert( pDb->pSchema->schemaFlags & DB_SchemaLoaded );
+static void schemaRelease(sqlite3 *db, Db *pDb){
+  Schema *pRelease = pDb->pSchema;
+  SchemaPool *pSPool = pDb->pSPool;
+
+  pDb->pSchema = &pSPool->sSchema;
+
+  assert( pDb->pSPool && pRelease );
+  assert( pRelease->schemaFlags & DB_SchemaLoaded );
+  assert( (pDb->pSchema->schemaFlags & DB_SchemaLoaded)==0 );
   assert( sqlite3_mutex_held(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER)) );
 
-  pDb->pSchema->pNext = pDb->pSPool->pSchema;
-  pDb->pSPool->pSchema = pDb->pSchema;
-  pDb->pSchema = &pDb->pSPool->sSchema;
+  /* If the DBFLAG_FreeSchema flag is set and the database connection holds
+  ** at least one other copy of the schema being released, delete it instead
+  ** of returning it to the schema-pool.  */
+  if( db->mDbFlags & DBFLAG_FreeSchema ){
+    int i;
+    for(i=0; i<db->nDb; i++){
+      Db *p = &db->aDb[i];
+      if( p!=pDb && p->pSchema!=&pSPool->sSchema && pDb->pSPool==p->pSPool ){
+        schemaDelete(pRelease);
+        return;
+      }
+    }
+  }
 
-  assert( (pDb->pSchema->schemaFlags & DB_SchemaLoaded)==0 );
+  pRelease->pNext = pDb->pSPool->pSchema;
+  pDb->pSPool->pSchema = pRelease;
 }
 
 /*
@@ -710,7 +727,7 @@ int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
       pDb->pVTable = 0;
       sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
       if( DbHasProperty(db, iDb, DB_SchemaLoaded) ){
-        schemaRelease(pDb);
+        schemaRelease(db, pDb);
       }
       if( bNew ){
         Schema *pNew = sqlite3SchemaGet(db, 0);
@@ -774,10 +791,11 @@ void sqlite3SchemaReleaseAll(sqlite3 *db){
     if( i!=1 ){
       Db *pDb = &db->aDb[i];
       if( pDb->pSPool && DbHasProperty(db,i,DB_SchemaLoaded) ){
-        schemaRelease(pDb);
+        schemaRelease(db, pDb);
       }
     }
   }
+  db->flags &= ~DBFLAG_FreeSchema;
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }
 
@@ -792,7 +810,7 @@ void sqlite3SchemaRelease(sqlite3 *db, int iDb){
   assert_schema_state_ok(db);
   sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
   if( pDb->pSPool && DbHasProperty(db, iDb, DB_SchemaLoaded) ){
-    schemaRelease(pDb);
+    schemaRelease(db, pDb);
   }
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }

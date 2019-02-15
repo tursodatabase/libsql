@@ -109,7 +109,6 @@ do_test 3.1 {
 sqlite3 db2 test.db -shared-schema 1
 do_test 3.2 {
   execsql { SELECT * FROM x1 } db2
-  breakpoint
   set N2 [lindex [sqlite3_db_status db2 SCHEMA_USED 0] 1]
   expr $N2>($N/2) && $N2<($N/2)+400
 } 1
@@ -123,6 +122,57 @@ do_test 3.3 {
   set M [expr 2*($N-$N2)]
   expr {$N4 == (($M / 4) + $N-$M)}
 } 1
+
+catch { db1 close }
+catch { db2 close }
+catch { db3 close }
+catch { db4 close }
+
+#-------------------------------------------------------------------------
+# Test the REINDEX command.
+reset_db
+do_execsql_test 4.1.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX x1a ON x1(a);
+  CREATE INDEX x1b ON x1(b);
+  CREATE INDEX x1c ON x1(c);
+}
+db close
+sqlite3 db test.db -shared-schema 1
+
+do_execsql_test 4.1.1 {
+  REINDEX x1;
+  REINDEX x1a;
+  REINDEX x1b;
+  REINDEX x1c;
+  REINDEX;
+}
+
+do_test 4.1.2 {
+  for {set i 1} {$i < 5} {incr i} {
+    forcedelete test.db${i} test.db${i}-wal test.db${i}-journal
+    forcecopy test.db test.db${i}
+    execsql "ATTACH 'test.db${i}' AS db${i}"
+  }
+  register_schemapool_module db
+  set {} {}
+  execsql { SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool }
+} {nref=5 nschema=1}
+
+do_execsql_test 4.1.3 {
+  REINDEX x1;
+  REINDEX x1a;
+  REINDEX x1b;
+  REINDEX x1c;
+  REINDEX db1.x1a;
+  REINDEX db2.x1b;
+  REINDEX db3.x1c;
+  REINDEX;
+}
+
+do_execsql_test 4.1.4 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool;
+} {nref=5 nschema=1}
 
 finish_test
 
