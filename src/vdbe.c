@@ -412,77 +412,6 @@ static u16 numericType(Mem *pMem){
   return 0;
 }
 
-/*
-** This is the implementation of the OP_ParseSchema opcode.  It is factored
-** out of the main sqlite3VdbeExec() routine because it is not a performance-
-** critical opcode and by factoring it out, it frees up registers in order
-** to help the compiler optimizer do a better job with the other opcodes
-** that are performance critical.
-*/
-static SQLITE_NOINLINE int parseSchemaOp(Vdbe *p, VdbeOp *pOp, sqlite3 *db){
-  int iDb;
-  const char *zMaster;
-  char *zSql;
-  InitData initData;
-  int bRelease;
-  int rc = SQLITE_OK;
-
-  /* Any prepared statement that invokes this opcode will hold mutexes
-  ** on every btree.  This is a prerequisite for invoking 
-  ** sqlite3InitCallback().
-  */
-#ifdef SQLITE_DEBUG
-  for(iDb=0; iDb<db->nDb; iDb++){
-    assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
-  }
-#endif
-
-  iDb = pOp->p1;
-  assert( iDb>=0 && iDb<db->nDb );
-  assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
-
-#ifndef SQLITE_OMIT_ALTERTABLE
-  if( pOp->p4.z==0 ){
-    assert( !IsReuseSchema(db) || iDb==1 );
-    sqlite3SchemaClear(db->aDb[iDb].pSchema);
-    db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
-    rc = sqlite3InitOne(db, iDb, &p->zErrMsg, INITFLAG_AlterTable);
-    db->mDbFlags |= DBFLAG_SchemaChange;
-    p->expired = 0;
-  }else
-#endif
-  {
-    zMaster = MASTER_NAME;
-    initData.db = db;
-    initData.iDb = iDb;
-    initData.pzErrMsg = &p->zErrMsg;
-    initData.mInitFlags = 0;
-    zSql = sqlite3MPrintf(db,
-       "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s ORDER BY rowid",
-       db->aDb[iDb].zDbSName, zMaster, pOp->p4.z);
-    if( zSql==0 ){
-      rc = SQLITE_NOMEM_BKPT;
-    }else{
-      assert( db->init.busy==0 );
-      db->init.busy = 1;
-      initData.rc = SQLITE_OK;
-      initData.nInitRow = 0;
-      assert( !db->mallocFailed );
-      rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
-      if( rc==SQLITE_OK ) rc = initData.rc;
-      if( rc==SQLITE_OK && initData.nInitRow==0 ){
-        /* The OP_ParseSchema opcode with a non-NULL P4 argument should parse
-        ** at least one SQL statement. Any less than that indicates that
-        ** the sqlite_master table is corrupt. */
-        rc = SQLITE_CORRUPT_BKPT;
-      }
-      sqlite3DbFreeNN(db, zSql);
-      db->init.busy = 0;
-    }
-  }
-  return rc;
-}
-
 #ifdef SQLITE_DEBUG
 /*
 ** Write a nice string representation of the contents of cell pMem
@@ -5817,7 +5746,63 @@ case OP_SqlExec: {
 ** then runs the new virtual machine.  It is thus a re-entrant opcode.
 */
 case OP_ParseSchema: {
-  rc = parseSchemaOp(p, pOp, db);
+  int iDb;
+  const char *zMaster;
+  char *zSql;
+  InitData initData;
+
+  /* Any prepared statement that invokes this opcode will hold mutexes
+  ** on every btree.  This is a prerequisite for invoking 
+  ** sqlite3InitCallback().
+  */
+#ifdef SQLITE_DEBUG
+  for(iDb=0; iDb<db->nDb; iDb++){
+    assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
+  }
+#endif
+
+  iDb = pOp->p1;
+  assert( iDb>=0 && iDb<db->nDb );
+  assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
+
+#ifndef SQLITE_OMIT_ALTERTABLE
+  if( pOp->p4.z==0 ){
+    sqlite3SchemaClear(db->aDb[iDb].pSchema);
+    db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
+    rc = sqlite3InitOne(db, iDb, &p->zErrMsg, INITFLAG_AlterTable);
+    db->mDbFlags |= DBFLAG_SchemaChange;
+    p->expired = 0;
+  }else
+#endif
+  {
+    zMaster = MASTER_NAME;
+    initData.db = db;
+    initData.iDb = iDb;
+    initData.pzErrMsg = &p->zErrMsg;
+    initData.mInitFlags = 0;
+    zSql = sqlite3MPrintf(db,
+       "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s ORDER BY rowid",
+       db->aDb[iDb].zDbSName, zMaster, pOp->p4.z);
+    if( zSql==0 ){
+      rc = SQLITE_NOMEM_BKPT;
+    }else{
+      assert( db->init.busy==0 );
+      db->init.busy = 1;
+      initData.rc = SQLITE_OK;
+      initData.nInitRow = 0;
+      assert( !db->mallocFailed );
+      rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
+      if( rc==SQLITE_OK ) rc = initData.rc;
+      if( rc==SQLITE_OK && initData.nInitRow==0 ){
+        /* The OP_ParseSchema opcode with a non-NULL P4 argument should parse
+        ** at least one SQL statement. Any less than that indicates that
+        ** the sqlite_master table is corrupt. */
+        rc = SQLITE_CORRUPT_BKPT;
+      }
+      sqlite3DbFreeNN(db, zSql);
+      db->init.busy = 0;
+    }
+  }
   if( rc ){
     sqlite3ResetAllSchemasOfConnection(db);
     if( rc==SQLITE_NOMEM ){

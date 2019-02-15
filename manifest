@@ -1,5 +1,5 @@
-C Fix\sSQLITE_DBSTATUS_SCHEMA_USED\sso\sthat\sit\sworks\swith\sSQLITE_OPEN_SHARED_SCHEMA\sconnections.
-D 2019-02-14T21:04:27.065
+C Revert\sthe\srearrangement\sof\sVDBE\scode\sin\s[219b39e14]\sso\sthat\svdbe.c\smatches\strunk.\sSince\sthe\snew\scall\sto\ssqlite3Init()\sin\sOP_ParseSchema\swas\sremoved,\sthe\srearrangement\sno\slonger\sprovides\sany\sperformance\sadvantage.
+D 2019-02-15T11:54:57.779
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 56456706c4da271309914c756c9c8ea537685f1c79f8785afa72f968d6810482
@@ -587,7 +587,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
 F src/vacuum.c 7dbed4a756f014f3ce54e6ae3c403ee725e8179cf73fc6dd5c064e5627649f9f
-F src/vdbe.c 33953552c3fd0fc798f69678520ba307da02f1a724a89580db6b1c805fa75b62
+F src/vdbe.c c67c8c46bea825421ee97511328fe1405537b586cbbe4db06e17c4ac5ab4dbed
 F src/vdbe.h 323218c4bfd64c719ba85d05fbc87cdd126991cadb39e73ccac7b59f30c3d53e
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
@@ -1809,7 +1809,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7257fcc8c990b46a4f6a9e506f4a4a40195e6b2c626efd380cfa01f0ce8eb0fb
-R 335d544fb33c769d2c93a5ba7269ae2c
+P d43b3c056cb13930865c504c9498b2c83e4bebce9bff01ee21293e7dc7a6711e
+R 1f22cd83b4c1800027f7ed3169157ca0
 U dan
-Z 4a0370c09441d299e3638aa59f7363a2
+Z 9acec97381a6b009ff18f8e8766d7723
