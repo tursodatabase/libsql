@@ -1,5 +1,5 @@
-C Improved\soversized\scell\sdetection\swhen\supdating\sptrmap\spages\sin\nbalance_nonroot().
-D 2019-02-14T15:27:12.650
+C Fix\san\sassert()\sthat\smight\sbe\sfalse\sfor\sa\scorrupt\sdatabase.
+D 2019-02-16T22:45:55.998
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -455,7 +455,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 161b6a57b91d160065e512a4d0be180e402a16a059034a380cbdc2411924f8ac
+F src/btree.c 2105865a621c211cd76d8d21a6831249c31c876d7d1fe7d7ebe27410cd893747
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c b0a9ee5b551afbc8357a68eb30693973300daf845c8c0e564f672d9b3fdeec56
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 167b91df77fff1a84791f6ab5f72239b90475475be690a838248119b6dd312f0
-R 5fce60e5e60143c7168638176073d3e9
+P aa61435a4c3800f023788081c1342ad6a05a41449a424fa6c039d5ca46072256
+R 17aed5b419bf8f1e5cfa29ef4f74b9e7
 U drh
-Z 1127274df05b3c005a32360404b93266
+Z d53e7c6537b08070a7f2249013f3162e
