@@ -1633,13 +1633,14 @@ wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
 windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
 windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
   assert( Z!=0 );
+  sqlite3WindowChain(pParse, Z, Y);
   Z->pNextWin = Y;
   A = Z;
 }
 
 %type windowdefn {Window*}
 %destructor windowdefn {sqlite3WindowDelete(pParse->db, $$);}
-windowdefn(A) ::= nm(X) AS window(Y). {
+windowdefn(A) ::= nm(X) AS LP window(Y) RP. {
   if( ALWAYS(Y) ){
     Y->zName = sqlite3DbStrNDup(pParse->db, X.z, X.n);
   }
@@ -1667,19 +1668,27 @@ windowdefn(A) ::= nm(X) AS window(Y). {
 %type frame_bound_e {struct FrameBound}
 %destructor frame_bound_e {sqlite3ExprDelete(pParse->db, $$.pExpr);}
 
-window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
+window(A) ::= PARTITION BY nexprlist(X) orderby_opt(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, X, Y, 0);
+}
+window(A) ::= nm(W) PARTITION BY nexprlist(X) orderby_opt(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, X, Y, &W);
+}
+window(A) ::= ORDER BY sortlist(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, 0, Y, 0);
+}
+window(A) ::= nm(W) ORDER BY sortlist(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, 0, Y, &W);
+}
+window(A) ::= frame_opt(Z). {
   A = Z;
-  if( ALWAYS(A) ){
-    A->pPartition = X;
-    A->pOrderBy = Y;
-  }
+}
+window(A) ::= nm(W) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, 0, 0, &W);
 }
 
-part_opt(A) ::= PARTITION BY nexprlist(X). { A = X; }
-part_opt(A) ::= .                          { A = 0; }
-
 frame_opt(A) ::= .                             { 
-  A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
+  A = sqlite3WindowAlloc(pParse, 0, TK_UNBOUNDED, 0, TK_CURRENT, 0);
 }
 frame_opt(A) ::= range_or_rows(X) frame_bound_s(Y). { 
   A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0);
@@ -1707,7 +1716,7 @@ window_clause(A) ::= WINDOW windowdefn_list(B). { A = B; }
 
 %type over_clause {Window*}
 %destructor over_clause {sqlite3WindowDelete(pParse->db, $$);}
-over_clause(A) ::= filter_opt(W) OVER window(Z). {
+over_clause(A) ::= filter_opt(W) OVER LP window(Z) RP. {
   A = Z;
   assert( A!=0 );
   A->pFilter = W;

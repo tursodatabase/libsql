@@ -512,6 +512,17 @@ void sqlite3WindowFunctions(void){
   sqlite3InsertBuiltinFuncs(aWindowFuncs, ArraySize(aWindowFuncs));
 }
 
+static Window *windowFind(Parse *pParse, Window *pList, const char *zName){
+  Window *p;
+  for(p=pList; p; p=p->pNextWin){
+    if( sqlite3StrICmp(p->zName, zName)==0 ) break;
+  }
+  if( p==0 ){
+    sqlite3ErrorMsg(pParse, "no such window: %s", zName);
+  }
+  return p;
+}
+
 /*
 ** This function is called immediately after resolving the function name
 ** for a window function within a SELECT statement. Argument pList is a
@@ -536,14 +547,8 @@ void sqlite3WindowUpdate(
   FuncDef *pFunc                  /* Window function definition */
 ){
   if( pWin->zName && pWin->eType==0 ){
-    Window *p;
-    for(p=pList; p; p=p->pNextWin){
-      if( sqlite3StrICmp(p->zName, pWin->zName)==0 ) break;
-    }
-    if( p==0 ){
-      sqlite3ErrorMsg(pParse, "no such window: %s", pWin->zName);
-      return;
-    }
+    Window *p = windowFind(pParse, pList, pWin->zName);
+    if( p==0 ) return;
     pWin->pPartition = sqlite3ExprListDup(pParse->db, p->pPartition, 0);
     pWin->pOrderBy = sqlite3ExprListDup(pParse->db, p->pOrderBy, 0);
     pWin->pStart = sqlite3ExprDup(pParse->db, p->pStart, 0);
@@ -551,6 +556,8 @@ void sqlite3WindowUpdate(
     pWin->eStart = p->eStart;
     pWin->eEnd = p->eEnd;
     pWin->eType = p->eType;
+  }else{
+    sqlite3WindowChain(pParse, pWin, pList);
   }
   if( pFunc->funcFlags & SQLITE_FUNC_WINDOW ){
     sqlite3 *db = pParse->db;
@@ -856,6 +863,7 @@ void sqlite3WindowDelete(sqlite3 *db, Window *p){
     sqlite3ExprDelete(db, p->pEnd);
     sqlite3ExprDelete(db, p->pStart);
     sqlite3DbFree(db, p->zName);
+    sqlite3DbFree(db, p->zBase);
     sqlite3DbFree(db, p);
   }
 }
@@ -899,9 +907,10 @@ Window *sqlite3WindowAlloc(
   Expr *pEnd        /* End window size if TK_FOLLOWING or PRECEDING */
 ){
   Window *pWin = 0;
+  int bImplicitFrame = 0;
 
   /* Parser assures the following: */
-  assert( eType==TK_RANGE || eType==TK_ROWS );
+  assert( eType==0 || eType==TK_RANGE || eType==TK_ROWS );
   assert( eStart==TK_CURRENT || eStart==TK_PRECEDING
            || eStart==TK_UNBOUNDED || eStart==TK_FOLLOWING );
   assert( eEnd==TK_CURRENT || eEnd==TK_FOLLOWING
@@ -909,6 +918,10 @@ Window *sqlite3WindowAlloc(
   assert( (eStart==TK_PRECEDING || eStart==TK_FOLLOWING)==(pStart!=0) );
   assert( (eEnd==TK_FOLLOWING || eEnd==TK_PRECEDING)==(pEnd!=0) );
 
+  if( eType==0 ){
+    bImplicitFrame = 1;
+    eType = TK_RANGE;
+  }
 
   /* If a frame is declared "RANGE" (not "ROWS"), then it may not use
   ** either "<expr> PRECEDING" or "<expr> FOLLOWING".
@@ -944,6 +957,7 @@ Window *sqlite3WindowAlloc(
   pWin->eType = eType;
   pWin->eStart = eStart;
   pWin->eEnd = eEnd;
+  pWin->bImplicitFrame = bImplicitFrame;
   pWin->pEnd = sqlite3WindowOffsetExpr(pParse, pEnd);
   pWin->pStart = sqlite3WindowOffsetExpr(pParse, pStart);
   return pWin;
@@ -952,6 +966,69 @@ windowAllocErr:
   sqlite3ExprDelete(pParse->db, pEnd);
   sqlite3ExprDelete(pParse->db, pStart);
   return 0;
+}
+
+/*
+** Attach PARTITION and ORDER BY clauses pPartition and pOrderBy to window
+** pWin. Also, if parameter pBase is not NULL, set pWin->zBase to the
+** equivalent nul-terminated string.
+*/
+Window *sqlite3WindowAssemble(
+  Parse *pParse, 
+  Window *pWin, 
+  ExprList *pPartition, 
+  ExprList *pOrderBy, 
+  Token *pBase
+){
+  if( pWin ){
+    pWin->pPartition = pPartition;
+    pWin->pOrderBy = pOrderBy;
+    if( pBase ){
+      pWin->zBase = sqlite3DbStrNDup(pParse->db, pBase->z, pBase->n);
+    }
+  }else{
+    sqlite3ExprListDelete(pParse->db, pPartition);
+    sqlite3ExprListDelete(pParse->db, pOrderBy);
+  }
+  return pWin;
+}
+
+/*
+** Window *pWin has just been created from a WINDOW clause. Tokne pBase
+** is the base window. Earlier windows from the same WINDOW clause are
+** stored in the linked list starting at pWin->pNextWin. This function
+** either updates *pWin according to the base specification, or else
+** leaves an error in pParse.
+*/
+void sqlite3WindowChain(Parse *pParse, Window *pWin, Window *pList){
+  if( pWin->zBase ){
+    sqlite3 *db = pParse->db;
+    Window *pExist = windowFind(pParse, pList, pWin->zBase);
+    if( pExist ){
+      const char *zErr = 0;
+      /* Check for errors */
+      if( pWin->pPartition ){
+        zErr = "PARTITION clause";
+      }else if( pExist->pOrderBy && pWin->pOrderBy ){
+        zErr = "ORDER BY clause";
+      }else if( pExist->bImplicitFrame==0 ){
+        zErr = "frame specification";
+      }
+      if( zErr ){
+        sqlite3ErrorMsg(pParse, 
+            "cannot override %s of window: %s", zErr, pWin->zBase
+        );
+      }else{
+        pWin->pPartition = sqlite3ExprListDup(db, pExist->pPartition, 0);
+        if( pExist->pOrderBy ){
+          assert( pWin->pOrderBy==0 );
+          pWin->pOrderBy = sqlite3ExprListDup(db, pExist->pOrderBy, 0);
+        }
+        sqlite3DbFree(db, pWin->zBase);
+        pWin->zBase = 0;
+      }
+    }
+  }
 }
 
 /*

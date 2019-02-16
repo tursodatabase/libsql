@@ -700,5 +700,106 @@ do_execsql_test 16.2 {
   3 101
 }
 
+#-------------------------------------------------------------------------
+# Test error cases from chaining window definitions.
+#
+reset_db
+do_execsql_test 17.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);
+  INSERT INTO t1 VALUES(1, 'odd',  'one',   1);
+  INSERT INTO t1 VALUES(2, 'even', 'two',   2);
+  INSERT INTO t1 VALUES(3, 'odd',  'three', 3);
+  INSERT INTO t1 VALUES(4, 'even', 'four',  4);
+  INSERT INTO t1 VALUES(5, 'odd',  'five',  5);
+  INSERT INTO t1 VALUES(6, 'even', 'six',   6);
+}
+
+foreach {tn sql error} {
+  1 {
+    SELECT c, sum(d) OVER win2 FROM t1
+      WINDOW win1 AS (ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING), 
+             win2 AS (win1 ORDER BY b)
+  } {cannot override frame specification of window: win1}
+
+  2 {
+    SELECT c, sum(d) OVER win2 FROM t1
+      WINDOW win1 AS (),
+             win2 AS (win4 ORDER BY b)
+  } {no such window: win4}
+
+  3 {
+    SELECT c, sum(d) OVER win2 FROM t1
+      WINDOW win1 AS (),
+             win2 AS (win1 PARTITION BY d)
+  } {cannot override PARTITION clause of window: win1}
+
+  4 {
+    SELECT c, sum(d) OVER win2 FROM t1
+      WINDOW win1 AS (ORDER BY b),
+             win2 AS (win1 ORDER BY d)
+  } {cannot override ORDER BY clause of window: win1}
+} {
+  do_catchsql_test 17.1.$tn $sql [list 1 $error]
+}
+
+foreach {tn sql error} {
+  1 {
+    SELECT c, sum(d) OVER (win1 ORDER BY b) FROM t1
+      WINDOW win1 AS (ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+  } {cannot override frame specification of window: win1}
+
+  2 {
+    SELECT c, sum(d) OVER (win4 ORDER BY b) FROM t1
+      WINDOW win1 AS ()
+  } {no such window: win4}
+
+  3 {
+    SELECT c, sum(d) OVER (win1 PARTITION BY d) FROM t1
+      WINDOW win1 AS ()
+  } {cannot override PARTITION clause of window: win1}
+
+  4 {
+    SELECT c, sum(d) OVER (win1 ORDER BY d) FROM t1
+      WINDOW win1 AS (ORDER BY b)
+  } {cannot override ORDER BY clause of window: win1}
+} {
+  do_catchsql_test 17.2.$tn $sql [list 1 $error]
+}
+
+do_execsql_test 17.3.1 {
+  SELECT group_concat(c, '.') OVER (PARTITION BY b ORDER BY c)
+  FROM t1
+} {four four.six four.six.two five five.one five.one.three}
+
+do_execsql_test 17.3.2 {
+  SELECT group_concat(c, '.') OVER (win1 ORDER BY c)
+  FROM t1
+  WINDOW win1 AS (PARTITION BY b)
+} {four four.six four.six.two five five.one five.one.three}
+
+do_execsql_test 17.3.3 {
+  SELECT group_concat(c, '.') OVER win2
+  FROM t1
+  WINDOW win1 AS (PARTITION BY b),
+         win2 AS (win1 ORDER BY c)
+} {four four.six four.six.two five five.one five.one.three}
+
+do_execsql_test 17.3.4 {
+  SELECT group_concat(c, '.') OVER (win2)
+  FROM t1
+  WINDOW win1 AS (PARTITION BY b),
+         win2 AS (win1 ORDER BY c)
+} {four four.six four.six.two five five.one five.one.three}
+
+do_execsql_test 17.3.5 {
+  SELECT group_concat(c, '.') OVER win5
+  FROM t1
+  WINDOW win1 AS (PARTITION BY b),
+         win2 AS (win1),
+         win3 AS (win2),
+         win4 AS (win3),
+         win5 AS (win4 ORDER BY c)
+} {four four.six four.six.two five five.one five.one.three}
 
 finish_test
