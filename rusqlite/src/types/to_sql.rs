@@ -40,7 +40,7 @@ where
 // be converted into Values.
 macro_rules! from_value(
     ($t:ty) => (
-        impl<'a> From<$t> for ToSqlOutput<'a> {
+        impl From<$t> for ToSqlOutput<'_> {
             fn from(t: $t) -> Self { ToSqlOutput::Owned(t.into())}
         }
     )
@@ -65,7 +65,7 @@ from_value!(Vec<u8>);
 #[cfg(feature = "i128_blob")]
 from_value!(i128);
 
-impl<'a> ToSql for ToSqlOutput<'a> {
+impl ToSql for ToSqlOutput<'_> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(match *self {
             ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
@@ -121,7 +121,7 @@ to_sql_self!(f64);
 #[cfg(feature = "i128_blob")]
 to_sql_self!(i128);
 
-impl<'a, T: ?Sized> ToSql for &'a T
+impl<T: ?Sized> ToSql for &'_ T
 where
     T: ToSql,
 {
@@ -169,7 +169,7 @@ impl<T: ToSql> ToSql for Option<T> {
     }
 }
 
-impl<'a> ToSql for Cow<'a, str> {
+impl ToSql for Cow<'_, str> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.as_ref()))
     }

@@ -17,7 +17,7 @@ pub struct LoadExtensionGuard<'conn> {
     conn: &'conn Connection,
 }
 
-impl<'conn> LoadExtensionGuard<'conn> {
+impl LoadExtensionGuard<'_> {
     /// Attempt to enable loading extensions. Loading extensions will be
     /// disabled when this guard goes out of scope. Cannot be meaningfully
     /// nested.
@@ -28,7 +28,7 @@ impl<'conn> LoadExtensionGuard<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for LoadExtensionGuard<'conn> {
+impl Drop for LoadExtensionGuard<'_> {
     fn drop(&mut self) {
         self.conn.load_extension_disable();
     }
