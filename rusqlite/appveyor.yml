@@ -33,8 +33,8 @@ build: false
 test_script:
   - cargo test --lib --verbose
   - cargo test --lib --verbose --features bundled
-  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3"
-  - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3 buildtime_bindgen"
+  - cargo test --lib --features "backup blob chrono functions hooks limits load_extension serde_json trace"
+  - cargo test --lib --features "backup blob chrono functions hooks limits load_extension serde_json trace buildtime_bindgen"
   - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3 bundled"
   - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab_v3 bundled buildtime_bindgen"
 
