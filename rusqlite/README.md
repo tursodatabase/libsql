@@ -128,8 +128,12 @@ You can adjust this behavior in a number of ways:
 * Installing the sqlite3 development packages will usually be all that is required, but
   the build helpers for [pkg-config](https://github.com/alexcrichton/pkg-config-rs)
   and [vcpkg](https://github.com/mcgoo/vcpkg-rs) have some additional configuration
-  options. The default when using vcpkg is to dynamically link. `vcpkg install sqlite3:x64-windows` will install the required library.
-
+  options. The default when using vcpkg is to dynamically link,
+  which must be enabled by setting `VCPKGRS_DYNAMIC=1` environment variable before build.
+  `vcpkg install sqlite3:x64-windows` will install the required library.
+  
+*Note:* to change the way `libsqlite3-sys` is built, you need to run `cargo clean libsqlite3-sys` first.
+  
 ### Binding generation
 
 We use [bindgen](https://crates.io/crates/bindgen) to generate the Rust
