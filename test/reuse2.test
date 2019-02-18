@@ -178,7 +178,7 @@ do_execsql_test -db db2 4.1.7 {
 do_execsql_test 4.1.8 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
   FROM schemapool;
-} {nref=6 nschema=1 ndelete=0}
+} {nref=3 nschema=1 ndelete=0}
 
 do_test 4.2.1 {
   catchsql { SELECT * FROM abc } db2

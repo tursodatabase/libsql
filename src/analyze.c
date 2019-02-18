@@ -210,7 +210,7 @@ static void openStatTable(
   for(i=0; i<ArraySize(aTable); i++){
     const char *zTab = aTable[i].zName;
     Table *pStat;
-    if( (pStat = sqlite3FindTable(db, zTab, pDb->zDbSName))==0 ){
+    if( (pStat = sqlite3FindTable(0, db, zTab, pDb->zDbSName))==0 ){
       if( aTable[i].zCols ){
         /* The sqlite_statN table does not exist. Create it. Note that a 
         ** side-effect of the CREATE TABLE statement is to leave the rootpage 
@@ -1536,7 +1536,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   if( argv==0 || argv[0]==0 || argv[2]==0 ){
     return 0;
   }
-  pTable = sqlite3FindTable(pInfo->db, argv[0], pInfo->zDatabase);
+  pTable = sqlite3FindTable(0, pInfo->db, argv[0], pInfo->zDatabase);
   if( pTable==0 ){
     return 0;
   }
@@ -1678,7 +1678,7 @@ static Index *findIndexOrPrimaryKey(
 ){
   Index *pIdx = sqlite3FindIndex(db, zName, zDb);
   if( pIdx==0 ){
-    Table *pTab = sqlite3FindTable(db, zName, zDb);
+    Table *pTab = sqlite3FindTable(0, db, zName, zDb);
     if( pTab && !HasRowid(pTab) ) pIdx = sqlite3PrimaryKeyIndex(pTab);
   }
   return pIdx;
@@ -1827,7 +1827,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
   int rc = SQLITE_OK;             /* Result codes from subroutines */
 
   assert( db->lookaside.bDisable );
-  if( sqlite3FindTable(db, "sqlite_stat4", zDb) ){
+  if( sqlite3FindTable(0, db, "sqlite_stat4", zDb) ){
     rc = loadStatTbl(db, 0,
       "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
@@ -1835,7 +1835,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     );
   }
 
-  if( rc==SQLITE_OK && sqlite3FindTable(db, "sqlite_stat3", zDb) ){
+  if( rc==SQLITE_OK && sqlite3FindTable(0, db, "sqlite_stat3", zDb) ){
     rc = loadStatTbl(db, 1,
       "SELECT idx,count(*) FROM %Q.sqlite_stat3 GROUP BY idx", 
       "SELECT idx,neq,nlt,ndlt,sqlite_record(sample) FROM %Q.sqlite_stat3",
@@ -1895,7 +1895,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load new statistics out of the sqlite_stat1 table */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zDbSName;
-  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)!=0 ){
+  if( sqlite3FindTable(0, db, "sqlite_stat1", sInfo.zDatabase)!=0 ){
     zSql = sqlite3MPrintf(db, 
         "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
     if( zSql==0 ){

@@ -129,7 +129,9 @@ catch { db3 close }
 catch { db4 close }
 
 #-------------------------------------------------------------------------
-# Test the REINDEX command.
+# 4.1 Test the REINDEX command.
+# 4.2 Test CREATE TEMP ... commands.
+#
 reset_db
 do_execsql_test 4.1.0 {
   CREATE TABLE x1(a, b, c);
@@ -162,7 +164,6 @@ do_test 4.1.2 {
   }
 } {nref=5 nschema=1 ndelete=0}
 
-breakpoint
 do_execsql_test 4.1.3 {
   REINDEX  x1;
   REINDEX  x1a;
@@ -177,6 +178,68 @@ do_execsql_test 4.1.4 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
     FROM schemapool 
 } {nref=5 nschema=1 ndelete=28}
+
+#-------------------------------------------------------------------------
+db close
+sqlite3 db test.db -shared-schema 1
+register_schemapool_module db
+do_execsql_test 4.2.0 {
+  ATTACH 'test.db1' AS db1;
+  ATTACH 'test.db2' AS db2;
+  ATTACH 'test.db3' AS db3;
+  ATTACH 'test.db4' AS db4;
+
+  SELECT * FROM db1.x1;
+  SELECT * FROM db2.x1;
+  SELECT * FROM db3.x1;
+  SELECT * FROM db4.x1;
+}
+
+do_execsql_test 4.2.1 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.2 {
+  CREATE TEMP TABLE t1(a, b, c);
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.3 {
+  CREATE INDEX t1a ON t1(a);
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.4 {
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT 1,2,3,4;
+  END;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.5 {
+  DROP TABLE t1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.6 {
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON db2.x1 BEGIN
+    SELECT 1,2,3,4;
+  END;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.7 {
+  DROP TRIGGER tr1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=4}
+
 
 finish_test
 

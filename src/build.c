@@ -294,20 +294,19 @@ int sqlite3UserAuthTable(const char *zTable){
 ** Non-zero is returned if a schema is loaded, or zero if it was already 
 ** loaded when this function was called..
 */
-int sqlite3SchemaLoad(sqlite3 *db, int iDb){
+int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
+  int rc = SQLITE_OK;
   if( IsReuseSchema(db) 
-   && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
-   && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
+      && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
+      && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
   ){
-    char *zDummy = 0;
     struct sqlite3InitInfo sv = db->init;
     memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
-    sqlite3InitOne(db, iDb, &zDummy, 0);
-    sqlite3_free(zDummy);
+    rc = sqlite3InitOne(db, iDb, pzErr, 0);
     db->init = sv;
-    return (iDb!=1);
+    *pbUnload = (iDb!=1);
   }
-  return 0;
+  return rc;
 }
 
 /*
@@ -322,7 +321,12 @@ int sqlite3SchemaLoad(sqlite3 *db, int iDb){
 **
 ** See also sqlite3LocateTable().
 */
-Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
+Table *sqlite3FindTable(
+  Parse *pParse, 
+  sqlite3 *db, 
+  const char *zName, 
+  const char *zDatabase
+){
   Table *p = 0;
   int i;
 
@@ -339,9 +343,12 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     for(i=OMIT_TEMPDB; i<db->nDb; i++){
       int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
-        int bUnload;
+        int bUnload = 0;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        bUnload = sqlite3SchemaLoad(db, j);
+        if( IsReuseSchema(db) && pParse && pParse->nErr==0 ){
+          pParse->rc = sqlite3SchemaLoad(db, j, &bUnload, &pParse->zErrMsg);
+          if( pParse->rc ) pParse->nErr++;
+        }
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
         if( bUnload ){
@@ -386,7 +393,7 @@ Table *sqlite3LocateTable(
     return 0;
   }
 
-  p = sqlite3FindTable(db, zName, zDbase);
+  p = sqlite3FindTable(pParse, db, zName, zDbase);
   if( p==0 ){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     /* If zName is the not the name of a table in the schema created using
@@ -398,7 +405,11 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod ){
-        sqlite3SchemaLoad(db, 0);
+        if( IsReuseSchema(db) && pParse->nErr==0 ){
+          int bDummy = 0;
+          pParse->rc = sqlite3SchemaLoad(db, 0, &bDummy, &pParse->zErrMsg);
+          if( pParse->rc ) pParse->nErr++;
+        }
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
           Table *pEpoTab = pMod->pEpoTab;
           assert( IsReuseSchema(db) || pEpoTab->pSchema==db->aDb[0].pSchema );
@@ -981,10 +992,10 @@ void sqlite3StartTable(
   */
   if( !IN_SPECIAL_PARSE ){
     char *zDb = db->aDb[iDb].zDbSName;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    if( !IsReuseSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
       goto begin_table_error;
     }
-    pTable = sqlite3FindTable(db, zName, zDb);
+    pTable = sqlite3FindTable(pParse, db, zName, zDb);
     if( pTable ){
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "table %T already exists", pName);
@@ -1956,7 +1967,7 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
-  pTab = sqlite3FindTable(db, zName, 0);
+  pTab = sqlite3FindTable(0, db, zName, 0);
   *zTail = '_';
   if( pTab==0 ) return 0;
   if( !IsVirtual(pTab) ) return 0;
@@ -2606,7 +2617,7 @@ static void sqlite3ClearStatTables(
   for(i=1; i<=4; i++){
     char zTab[24];
     sqlite3_snprintf(sizeof(zTab),zTab,"sqlite_stat%d",i);
-    if( sqlite3FindTable(pParse->db, zTab, zDbName) ){
+    if( sqlite3FindTable(0, pParse->db, zTab, zDbName) ){
       sqlite3NestedParse(pParse,
         "DELETE FROM %Q.%s WHERE %s=%Q",
         zDbName, zTab, zType, zName
@@ -2701,7 +2712,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
-  if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
+  if( !IsReuseSchema(db) && sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   assert( isView==0 || isView==LOCATE_VIEW );
   pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[0]);
@@ -3125,7 +3136,7 @@ void sqlite3CreateIndex(
   if( IN_DECLARE_VTAB && idxType!=SQLITE_IDXTYPE_PRIMARYKEY ){
     goto exit_create_index;
   }
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+  if( !IsReuseSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_create_index;
   }
 
@@ -3231,7 +3242,7 @@ void sqlite3CreateIndex(
     }
     if( !IN_RENAME_OBJECT ){
       if( !db->init.busy ){
-        if( sqlite3FindTable(db, zName, 0)!=0 ){
+        if( sqlite3FindTable(0, db, zName, 0)!=0 ){
           sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
           goto exit_create_index;
         }
@@ -4585,7 +4596,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   z = sqlite3NameFromToken(db, pObjName);
   if( z==0 ) return;
   zDb = db->aDb[iDb].zDbSName;
-  pTab = sqlite3FindTable(db, z, zDb);
+  pTab = sqlite3FindTable(0, db, z, zDb);
   if( pTab ){
     reindexTable(pParse, pTab, 0);
     sqlite3DbFree(db, z);

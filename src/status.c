@@ -285,7 +285,10 @@ int sqlite3_db_status(
         int nUsed = nByte;
         Schema *pSchema;
         if( db->aDb[i].pSPool ){
-          bUnload = sqlite3SchemaLoad(db, i);
+          char *zDummy = 0;
+          rc = sqlite3SchemaLoad(db, i, &bUnload, &zDummy);
+          sqlite3_free(zDummy);
+          if( rc ) break;
         }
         pSchema = db->aDb[i].pSchema;
         if( ALWAYS(pSchema!=0) ){

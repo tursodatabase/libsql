@@ -908,7 +908,7 @@ void sqlite3FkCheck(
     ** schema items cannot be located, set an error in pParse and return 
     ** early.  */
     if( pParse->disableTriggers ){
-      pTo = sqlite3FindTable(db, pFKey->zTo, zDb);
+      pTo = sqlite3FindTable(0, db, pFKey->zTo, zDb);
     }else{
       pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
     }

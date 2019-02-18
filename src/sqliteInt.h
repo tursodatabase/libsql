@@ -4013,7 +4013,7 @@ int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int, u8);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
-Table *sqlite3FindTable(sqlite3*,const char*, const char*);
+Table *sqlite3FindTable(Parse*,sqlite3*,const char*, const char*);
 #define LOCATE_VIEW    0x01
 #define LOCATE_NOERR   0x02
 Table *sqlite3LocateTable(Parse*,u32 flags,const char*, const char*);
@@ -4326,7 +4326,7 @@ int sqlite3SchemaConnect(sqlite3*, int, u64);
 int sqlite3SchemaDisconnect(sqlite3 *, int, int);
 void sqlite3SchemaClearOrDisconnect(sqlite3*, int);
 Schema *sqlite3SchemaExtract(SchemaPool*);
-int sqlite3SchemaLoad(sqlite3*, int);
+int sqlite3SchemaLoad(sqlite3*, int, int*, char**);
 void sqlite3SchemaReleaseAll(sqlite3*);
 void sqlite3SchemaRelease(sqlite3*, int);
 void sqlite3SchemaAdjustUsed(sqlite3*, int, int, int*);

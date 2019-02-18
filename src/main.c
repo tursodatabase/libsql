@@ -3616,7 +3616,6 @@ int sqlite3_table_column_metadata(
   int autoinc = 0;
   int bUnlock;
 
-
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zTableName==0 ){
     return SQLITE_MISUSE_BKPT;
@@ -3630,13 +3629,17 @@ int sqlite3_table_column_metadata(
   if( IsReuseSchema(db)==0 ){
     rc = sqlite3Init(db, &zErrMsg);
   }
-  if( SQLITE_OK!=rc ){
-    goto error_out;
-  }
-
 
   /* Locate the table in question */
-  pTab = sqlite3FindTable(db, zTableName, zDbName);
+  if( rc==SQLITE_OK ){
+    Parse sParse;                   /* Fake Parse object for FindTable */
+    memset(&sParse, 0, sizeof(sParse));
+    pTab = sqlite3FindTable(&sParse, db, zTableName, zDbName);
+    sqlite3_free(sParse.zErrMsg);
+    rc = sParse.rc;
+  }
+  if( SQLITE_OK!=rc ) goto error_out;
+
   if( !pTab || pTab->pSelect ){
     pTab = 0;
     goto error_out;
