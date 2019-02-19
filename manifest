@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\smight\snot\sbe\strue\sif\sthe\sdatabase\sfile\sis\scorrupt.
-D 2019-02-19T16:42:54.196
+C Fix\sa\spotential\smemory\sleak\sin\sRBU\sif\sthe\srbu_fossil_delta()\sSQL\sfunction\sis\nmisused.\s\sMisuse\snever\shappens\sin\sa\sworking\sRBU\ssystem,\sso\sthis\sis\snot\sa\s\nparticularly\simportant\sfix.
+D 2019-02-19T17:45:31.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -354,7 +354,7 @@ F ext/rbu/rbutemplimit.test 7f408f49b90fa0a720d7599f3aec74a3c85e6cd78e56fdf726ce
 F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697d79f73534
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
-F ext/rbu/sqlite3rbu.c d643661c7c85e79f4d0bc56c73f6f2dd55c35732dd41f378b0fd3b182a33242d
+F ext/rbu/sqlite3rbu.c d0627582dc894d96e70a1f4b3c8953abdd9fd4870f9a229479309ebfca9eda41
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0abace8a7aecca01c8677d07f3ec1bafb289ceffe5bcd60284701a7bf813f415
-R bfae54bdd2f15a7a8fbc764b3228c6f1
+P f2d400db4dbfb05e2540178ed3662f97f8c57a95f8129886c7081c35e53adf0d
+R 8d9f63c20f18bc4035bf1d3926ca6101
 U drh
-Z aaec93d3bd3865148d42c2428c55baee
+Z 3f3200a2e92dbd4c9a6a6ed07ff60873
