@@ -974,7 +974,7 @@ static int deltaparsevtabBestIndex(
   pIdxInfo->idxNum = 0;
   pIdxInfo->estimatedCost = (double)0x7fffffff;
   pIdxInfo->estimatedRows = 0x7fffffff;
-  return SQLITE_OK;
+  return SQLITE_CONSTRAINT;
 }
 
 /*
