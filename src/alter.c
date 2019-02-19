@@ -124,7 +124,7 @@ void sqlite3AlterRenameTable(
   /* Check that a table or index named 'zName' does not already exist
   ** in database iDb. If so, this is an error.
   */
-  if( sqlite3FindTable(0, db, zName, zDb) || sqlite3FindIndex(db, zName, zDb) ){
+  if( sqlite3FindTable(db, zName, zDb) || sqlite3FindIndex(db, zName, zDb) ){
     sqlite3ErrorMsg(pParse, 
         "there is already another table or index with this name: %s", zName);
     goto exit_rename_table;
@@ -211,7 +211,7 @@ void sqlite3AlterRenameTable(
   /* If the sqlite_sequence table exists in this database, then update 
   ** it with the new table name.
   */
-  if( sqlite3FindTable(0, db, "sqlite_sequence", zDb) ){
+  if( sqlite3FindTable(db, "sqlite_sequence", zDb) ){
     sqlite3NestedParse(pParse,
         "UPDATE \"%w\".sqlite_sequence set name = %Q WHERE name = %Q",
         zDb, zName, pTab->zName);
@@ -288,7 +288,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   zTab = &pNew->zName[16];  /* Skip the "sqlite_altertab_" prefix on the name */
   pCol = &pNew->aCol[pNew->nCol-1];
   pDflt = pCol->pDflt;
-  pTab = sqlite3FindTable(0, db, zTab, zDb);
+  pTab = sqlite3FindTable(db, zTab, zDb);
   assert( pTab );
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -1086,7 +1086,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pParse;
   assert( pNew->pTabSchema );
-  pParse->pTriggerTab = sqlite3FindTable(0, db, pNew->table, 
+  pParse->pTriggerTab = sqlite3FindTable(db, pNew->table, 
       db->aDb[sqlite3SchemaToIndex(db, pNew->pTabSchema)].zDbSName
   );
   pParse->eTriggerOp = pNew->op;
@@ -1250,7 +1250,7 @@ static void renameColumnFunc(
   if( zNew==0 ) return;
   if( iCol<0 ) return;
   sqlite3BtreeEnterAll(db);
-  pTab = sqlite3FindTable(0, db, zTable, zDb);
+  pTab = sqlite3FindTable(db, zTable, zDb);
   if( pTab==0 || iCol>=pTab->nCol ){
     sqlite3BtreeLeaveAll(db);
     return;
@@ -1452,7 +1452,7 @@ static void renameTableFunc(
     sqlite3BtreeEnterAll(db);
 
     memset(&sCtx, 0, sizeof(RenameCtx));
-    sCtx.pTab = sqlite3FindTable(0, db, zOld, zDb);
+    sCtx.pTab = sqlite3FindTable(db, zOld, zDb);
     memset(&sWalker, 0, sizeof(Walker));
     sWalker.pParse = &sParse;
     sWalker.xExprCallback = renameTableExprCb;

@@ -1188,7 +1188,7 @@ void sqlite3Pragma(
     Index *pIdx;
     Table *pTab;
     int i;
-    pTab = sqlite3FindTable(0, db, zRight, zDb);
+    pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       pParse->nMem = 5;
@@ -1277,7 +1277,7 @@ void sqlite3Pragma(
   case PragTyp_FOREIGN_KEY_LIST: if( zRight ){
     FKey *pFK;
     Table *pTab;
-    pTab = sqlite3FindTable(0, db, zRight, zDb);
+    pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       pFK = pTab->pFKey;
       if( pFK ){
@@ -1347,7 +1347,7 @@ void sqlite3Pragma(
       sqlite3OpenTable(pParse, 0, iTabDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
-        pParent = sqlite3FindTable(0, db, pFK->zTo, zDb);
+        pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         if( pParent==0 ) continue;
         pIdx = 0;
         sqlite3TableLock(pParse, iTabDb, pParent->tnum, 0, pParent->zName);
@@ -1369,7 +1369,7 @@ void sqlite3Pragma(
       if( pParse->nTab<i ) pParse->nTab = i;
       addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0); VdbeCoverage(v);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
-        pParent = sqlite3FindTable(0, db, pFK->zTo, zDb);
+        pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         pIdx = 0;
         aiCols = 0;
         if( pParent ){

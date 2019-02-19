@@ -719,7 +719,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   Module *pMod;
   const char *zMod;
 
-  pTab = sqlite3FindTable(0, db, zTab, db->aDb[iDb].zDbSName);
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
   assert( pTab && IsVirtual(pTab) && !pTab->pVTable );
 
   /* Locate the required virtual table module */
@@ -843,7 +843,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   int rc = SQLITE_OK;
   Table *pTab;
 
-  pTab = sqlite3FindTable(0, db, zTab, db->aDb[iDb].zDbSName);
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
   if( pTab!=0 && ALWAYS(pTab->pVTable!=0) ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);

@@ -4013,7 +4013,7 @@ int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int, u8);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
-Table *sqlite3FindTable(Parse*,sqlite3*,const char*, const char*);
+Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 #define LOCATE_VIEW    0x01
 #define LOCATE_NOERR   0x02
 Table *sqlite3LocateTable(Parse*,u32 flags,const char*, const char*);

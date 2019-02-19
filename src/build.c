@@ -321,12 +321,7 @@ int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
 **
 ** See also sqlite3LocateTable().
 */
-Table *sqlite3FindTable(
-  Parse *pParse, 
-  sqlite3 *db, 
-  const char *zName, 
-  const char *zDatabase
-){
+Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
 
@@ -345,9 +340,12 @@ Table *sqlite3FindTable(
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
         int bUnload = 0;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        if( IsReuseSchema(db) && pParse && pParse->nErr==0 ){
-          pParse->rc = sqlite3SchemaLoad(db, j, &bUnload, &pParse->zErrMsg);
-          if( pParse->rc ) pParse->nErr++;
+        if( IsReuseSchema(db) ){
+          Parse *pParse = db->pParse;
+          if( pParse && pParse->nErr==0 ){
+            pParse->rc = sqlite3SchemaLoad(db, j, &bUnload, &pParse->zErrMsg);
+            if( pParse->rc ) pParse->nErr++;
+          }
         }
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
@@ -393,7 +391,7 @@ Table *sqlite3LocateTable(
     return 0;
   }
 
-  p = sqlite3FindTable(pParse, db, zName, zDbase);
+  p = sqlite3FindTable(db, zName, zDbase);
   if( p==0 ){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     /* If zName is the not the name of a table in the schema created using
@@ -425,7 +423,7 @@ Table *sqlite3LocateTable(
     p = 0;
   }
 
-  if( p==0 ){
+  if( p==0 && pParse->nErr==0 ){
     const char *zMsg = flags & LOCATE_VIEW ? "no such view" : "no such table";
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
@@ -995,7 +993,7 @@ void sqlite3StartTable(
     if( !IsReuseSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
       goto begin_table_error;
     }
-    pTable = sqlite3FindTable(pParse, db, zName, zDb);
+    pTable = sqlite3FindTable(db, zName, zDb);
     if( pTable ){
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "table %T already exists", pName);
@@ -1967,7 +1965,7 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
-  pTab = sqlite3FindTable(0, db, zName, 0);
+  pTab = sqlite3FindTable(db, zName, 0);
   *zTail = '_';
   if( pTab==0 ) return 0;
   if( !IsVirtual(pTab) ) return 0;
@@ -2617,7 +2615,7 @@ static void sqlite3ClearStatTables(
   for(i=1; i<=4; i++){
     char zTab[24];
     sqlite3_snprintf(sizeof(zTab),zTab,"sqlite_stat%d",i);
-    if( sqlite3FindTable(0, pParse->db, zTab, zDbName) ){
+    if( sqlite3FindTable(pParse->db, zTab, zDbName) ){
       sqlite3NestedParse(pParse,
         "DELETE FROM %Q.%s WHERE %s=%Q",
         zDbName, zTab, zType, zName
@@ -3242,7 +3240,7 @@ void sqlite3CreateIndex(
     }
     if( !IN_RENAME_OBJECT ){
       if( !db->init.busy ){
-        if( sqlite3FindTable(0, db, zName, 0)!=0 ){
+        if( sqlite3FindTable(db, zName, 0)!=0 ){
           sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
           goto exit_create_index;
         }
@@ -4596,7 +4594,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   z = sqlite3NameFromToken(db, pObjName);
   if( z==0 ) return;
   zDb = db->aDb[iDb].zDbSName;
-  pTab = sqlite3FindTable(0, db, z, zDb);
+  pTab = sqlite3FindTable(db, z, zDb);
   if( pTab ){
     reindexTable(pParse, pTab, 0);
     sqlite3DbFree(db, z);

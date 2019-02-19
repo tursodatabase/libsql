@@ -34,6 +34,11 @@ static void corruptSchema(
     pData->rc = SQLITE_ERROR;
   }else if( db->flags & SQLITE_WriteSchema ){
     pData->rc = SQLITE_CORRUPT_BKPT;
+  }else if( IsReuseSchema(db) 
+         && 0==sqlite3StrNICmp(zExtra, "malformed database schema", 17)
+  ){
+    pData->rc = SQLITE_CORRUPT_BKPT;
+    *pData->pzErrMsg = sqlite3DbStrDup(db, zExtra);
   }else{
     char *z;
     if( zObj==0 ) zObj = "?";

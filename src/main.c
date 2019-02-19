@@ -3633,10 +3633,13 @@ int sqlite3_table_column_metadata(
   /* Locate the table in question */
   if( rc==SQLITE_OK ){
     Parse sParse;                   /* Fake Parse object for FindTable */
+    Parse *pSaved = db->pParse;
     memset(&sParse, 0, sizeof(sParse));
-    pTab = sqlite3FindTable(&sParse, db, zTableName, zDbName);
+    db->pParse = &sParse;
+    pTab = sqlite3FindTable(db, zTableName, zDbName);
     sqlite3_free(sParse.zErrMsg);
     rc = sParse.rc;
+    db->pParse = pSaved;
   }
   if( SQLITE_OK!=rc ) goto error_out;
 
