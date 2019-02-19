@@ -134,7 +134,7 @@ static void putInt(unsigned int v, char **pz){
 ** the integer.  The *pLen parameter holds the length of the string
 ** in *pz and is decremented once for each character in the integer.
 */
-static unsigned int getInt(const char **pz, int *pLen){
+static unsigned int deltaGetInt(const char **pz, int *pLen){
   static const signed char zValue[] = {
     -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
@@ -484,7 +484,7 @@ static int delta_create(
 */
 static int delta_output_size(const char *zDelta, int lenDelta){
   int size;
-  size = getInt(&zDelta, &lenDelta);
+  size = deltaGetInt(&zDelta, &lenDelta);
   if( *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
@@ -526,7 +526,7 @@ static int delta_apply(
   char *zOrigOut = zOut;
 #endif
 
-  limit = getInt(&zDelta, &lenDelta);
+  limit = deltaGetInt(&zDelta, &lenDelta);
   if( *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
@@ -534,11 +534,11 @@ static int delta_apply(
   zDelta++; lenDelta--;
   while( *zDelta && lenDelta>0 ){
     unsigned int cnt, ofst;
-    cnt = getInt(&zDelta, &lenDelta);
+    cnt = deltaGetInt(&zDelta, &lenDelta);
     switch( zDelta[0] ){
       case '@': {
         zDelta++; lenDelta--;
-        ofst = getInt(&zDelta, &lenDelta);
+        ofst = deltaGetInt(&zDelta, &lenDelta);
         if( lenDelta>0 && zDelta[0]!=',' ){
           /* ERROR: copy command not terminated by ',' */
           return -1;
@@ -588,67 +588,6 @@ static int delta_apply(
           return -1;
         }
         return total;
-      }
-      default: {
-        /* ERROR: unknown delta operator */
-        return -1;
-      }
-    }
-  }
-  /* ERROR: unterminated delta */
-  return -1;
-}
-
-/*
-** Analyze a delta.  Figure out the total number of bytes copied from
-** source to target, and the total number of bytes inserted by the delta,
-** and return both numbers.
-*/
-static int delta_analyze(
-  const char *zDelta,    /* Delta to apply to the pattern */
-  int lenDelta,          /* Length of the delta */
-  int *pnCopy,           /* OUT: Number of bytes copied */
-  int *pnInsert          /* OUT: Number of bytes inserted */
-){
-  unsigned int nInsert = 0;
-  unsigned int nCopy = 0;
-
-  (void)getInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
-    /* ERROR: size integer not terminated by "\n" */
-    return -1;
-  }
-  zDelta++; lenDelta--;
-  while( *zDelta && lenDelta>0 ){
-    unsigned int cnt;
-    cnt = getInt(&zDelta, &lenDelta);
-    switch( zDelta[0] ){
-      case '@': {
-        zDelta++; lenDelta--;
-        (void)getInt(&zDelta, &lenDelta);
-        if( lenDelta>0 && zDelta[0]!=',' ){
-          /* ERROR: copy command not terminated by ',' */
-          return -1;
-        }
-        zDelta++; lenDelta--;
-        nCopy += cnt;
-        break;
-      }
-      case ':': {
-        zDelta++; lenDelta--;
-        nInsert += cnt;
-        if( cnt>lenDelta ){
-          /* ERROR: insert count exceeds size of delta */
-          return -1;
-        }
-        zDelta += cnt;
-        lenDelta -= cnt;
-        break;
-      }
-      case ';': {
-        *pnCopy = nCopy;
-        *pnInsert = nInsert;
-        return 0;
       }
       default: {
         /* ERROR: unknown delta operator */
@@ -765,6 +704,311 @@ static void deltaOutputSizeFunc(
   }
 }
 
+/* The deltaparse(DELTA) table-valued function parses the DELTA in
+** its input and returns a table that describes that delta.
+*/
+typedef struct deltaparsevtab_vtab deltaparsevtab_vtab;
+typedef struct deltaparsevtab_cursor deltaparsevtab_cursor;
+struct deltaparsevtab_vtab {
+  sqlite3_vtab base;  /* Base class - must be first */
+  /* No additional information needed */
+};
+struct deltaparsevtab_cursor {
+  sqlite3_vtab_cursor base;  /* Base class - must be first */
+  char *aDelta;              /* The delta being parsed */
+  int nDelta;                /* Number of bytes in the delta */
+  int iCursor;               /* Current cursor location */
+  int eOp;                   /* Name of current operator */
+  unsigned int a1, a2;       /* Arguments to current operator */
+  int iNext;                 /* Next cursor value */
+};
+
+/* Operator names:
+*/
+static const char *azOp[] = {
+  "SIZE", "COPY", "INSERT", "CHECKSUM", "ERROR", "EOF"
+};
+#define DELTAPARSE_OP_SIZE         0
+#define DELTAPARSE_OP_COPY         1
+#define DELTAPARSE_OP_INSERT       2
+#define DELTAPARSE_OP_CHECKSUM     3
+#define DELTAPARSE_OP_ERROR        4
+#define DELTAPARSE_OP_EOF          5
+
+/*
+** The deltaparsevtabConnect() method is invoked to create a new
+** deltaparse virtual table.
+**
+** Think of this routine as the constructor for deltaparsevtab_vtab objects.
+**
+** All this routine needs to do is:
+**
+**    (1) Allocate the deltaparsevtab_vtab object and initialize all fields.
+**
+**    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
+**        result set of queries against the virtual table will look like.
+*/
+static int deltaparsevtabConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  deltaparsevtab_vtab *pNew;
+  int rc;
+
+  rc = sqlite3_declare_vtab(db,
+           "CREATE TABLE x(op,a1,a2,delta HIDDEN)"
+       );
+  /* For convenience, define symbolic names for the index to each column. */
+#define DELTAPARSEVTAB_OP     0
+#define DELTAPARSEVTAB_A1     1
+#define DELTAPARSEVTAB_A2     2
+#define DELTAPARSEVTAB_DELTA  3
+  if( rc==SQLITE_OK ){
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
+    *ppVtab = (sqlite3_vtab*)pNew;
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(*pNew));
+  }
+  return rc;
+}
+
+/*
+** This method is the destructor for deltaparsevtab_vtab objects.
+*/
+static int deltaparsevtabDisconnect(sqlite3_vtab *pVtab){
+  deltaparsevtab_vtab *p = (deltaparsevtab_vtab*)pVtab;
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
+
+/*
+** Constructor for a new deltaparsevtab_cursor object.
+*/
+static int deltaparsevtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
+  deltaparsevtab_cursor *pCur;
+  pCur = sqlite3_malloc( sizeof(*pCur) );
+  if( pCur==0 ) return SQLITE_NOMEM;
+  memset(pCur, 0, sizeof(*pCur));
+  *ppCursor = &pCur->base;
+  return SQLITE_OK;
+}
+
+/*
+** Destructor for a deltaparsevtab_cursor.
+*/
+static int deltaparsevtabClose(sqlite3_vtab_cursor *cur){
+  deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
+  sqlite3_free(pCur);
+  return SQLITE_OK;
+}
+
+
+/*
+** Advance a deltaparsevtab_cursor to its next row of output.
+*/
+static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
+  deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
+  const char *z;
+  int i = 0;
+
+  pCur->iCursor = pCur->iNext;
+  z = pCur->aDelta + pCur->iCursor;
+  pCur->a1 = deltaGetInt(&z, &i);
+  switch( z[0] ){
+    case '@': {
+      z++;
+      pCur->a2 = deltaGetInt(&z, &i);
+      pCur->eOp = DELTAPARSE_OP_COPY;
+      pCur->iNext = (int)(&z[1] - pCur->aDelta);
+      break;
+    }
+    case ':': {
+      z++;
+      pCur->a2 = (unsigned int)(z - pCur->aDelta);
+      pCur->eOp = DELTAPARSE_OP_INSERT;
+      pCur->iNext = (int)(&z[pCur->a1] - pCur->aDelta);
+      break;
+    }
+    case ';': {
+      pCur->eOp = DELTAPARSE_OP_CHECKSUM;
+      pCur->iNext = pCur->nDelta;
+      break;
+    }
+    default: {
+      if( pCur->iNext==pCur->nDelta ){
+        pCur->eOp = DELTAPARSE_OP_EOF;
+      }else{
+        pCur->eOp = DELTAPARSE_OP_ERROR;
+        pCur->iNext = pCur->nDelta;
+      }
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Return values of columns for the row at which the deltaparsevtab_cursor
+** is currently pointing.
+*/
+static int deltaparsevtabColumn(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
+  switch( i ){
+    case DELTAPARSEVTAB_OP: {
+      sqlite3_result_text(ctx, azOp[pCur->eOp], -1, SQLITE_STATIC);
+      break;
+    }
+    case DELTAPARSEVTAB_A1: {
+      sqlite3_result_int(ctx, pCur->a1);
+      break;
+    }
+    case DELTAPARSEVTAB_A2: {
+      if( pCur->eOp==DELTAPARSE_OP_COPY ){
+        sqlite3_result_int(ctx, pCur->a2);
+      }else if( pCur->eOp==DELTAPARSE_OP_INSERT ){
+        sqlite3_result_blob(ctx, pCur->aDelta+pCur->a2, pCur->a1,
+                            SQLITE_TRANSIENT);
+      }
+      break;
+    }
+    case DELTAPARSEVTAB_DELTA: {
+      sqlite3_result_blob(ctx, pCur->aDelta, pCur->nDelta, SQLITE_TRANSIENT);
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Return the rowid for the current row.  In this implementation, the
+** rowid is the same as the output value.
+*/
+static int deltaparsevtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
+  *pRowid = pCur->iCursor;
+  return SQLITE_OK;
+}
+
+/*
+** Return TRUE if the cursor has been moved off of the last
+** row of output.
+*/
+static int deltaparsevtabEof(sqlite3_vtab_cursor *cur){
+  deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
+  return pCur->eOp==DELTAPARSE_OP_EOF;
+}
+
+/*
+** This method is called to "rewind" the deltaparsevtab_cursor object back
+** to the first row of output.  This method is always called at least
+** once prior to any call to deltaparsevtabColumn() or deltaparsevtabRowid() or 
+** deltaparsevtabEof().
+*/
+static int deltaparsevtabFilter(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor *)pVtabCursor;
+  const char *a;
+  int i = 0;
+  pCur->eOp = DELTAPARSE_OP_ERROR;
+  if( idxNum!=1 ){
+    return SQLITE_OK;
+  }
+  pCur->nDelta = sqlite3_value_bytes(argv[0]);
+  a = (const char*)sqlite3_value_blob(argv[0]);
+  if( pCur->nDelta==0 || a==0 ){
+    return SQLITE_OK;
+  }
+  pCur->aDelta = sqlite3_malloc64( pCur->nDelta+1 );
+  if( pCur->aDelta==0 ){
+    pCur->nDelta = 0;
+    return SQLITE_NOMEM;
+  }
+  memcpy(pCur->aDelta, a, pCur->nDelta);
+  pCur->aDelta[pCur->nDelta] = 0;
+  a = pCur->aDelta;
+  pCur->eOp = DELTAPARSE_OP_SIZE;
+  pCur->a1 = deltaGetInt(&a, &i);
+  if( a[0]!='\n' ){
+    pCur->eOp = DELTAPARSE_OP_ERROR;
+    pCur->a1 = pCur->a2 = 0;
+    pCur->iNext = pCur->nDelta;
+    return SQLITE_OK;
+  }
+  a++;
+  pCur->iNext = (unsigned int)(a - pCur->aDelta);
+  return SQLITE_OK;
+}
+
+/*
+** SQLite will invoke this method one or more times while planning a query
+** that uses the virtual table.  This routine needs to create
+** a query plan for each invocation and compute an estimated cost for that
+** plan.
+*/
+static int deltaparsevtabBestIndex(
+  sqlite3_vtab *tab,
+  sqlite3_index_info *pIdxInfo
+){
+  int i;
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    if( pIdxInfo->aConstraint[i].iColumn != DELTAPARSEVTAB_DELTA ) continue;
+    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
+    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[i].omit = 1;
+    pIdxInfo->estimatedCost = (double)1;
+    pIdxInfo->estimatedRows = 10;
+    pIdxInfo->idxNum = 1;
+    return SQLITE_OK;
+  }
+  pIdxInfo->idxNum = 0;
+  pIdxInfo->estimatedCost = (double)0x7fffffff;
+  pIdxInfo->estimatedRows = 0x7fffffff;
+  return SQLITE_OK;
+}
+
+/*
+** This following structure defines all the methods for the 
+** virtual table.
+*/
+static sqlite3_module deltaparsevtabModule = {
+  /* iVersion    */ 0,
+  /* xCreate     */ 0,
+  /* xConnect    */ deltaparsevtabConnect,
+  /* xBestIndex  */ deltaparsevtabBestIndex,
+  /* xDisconnect */ deltaparsevtabDisconnect,
+  /* xDestroy    */ 0,
+  /* xOpen       */ deltaparsevtabOpen,
+  /* xClose      */ deltaparsevtabClose,
+  /* xFilter     */ deltaparsevtabFilter,
+  /* xNext       */ deltaparsevtabNext,
+  /* xEof        */ deltaparsevtabEof,
+  /* xColumn     */ deltaparsevtabColumn,
+  /* xRowid      */ deltaparsevtabRowid,
+  /* xUpdate     */ 0,
+  /* xBegin      */ 0,
+  /* xSync       */ 0,
+  /* xCommit     */ 0,
+  /* xRollback   */ 0,
+  /* xFindMethod */ 0,
+  /* xRename     */ 0,
+  /* xSavepoint  */ 0,
+  /* xRelease    */ 0,
+  /* xRollbackTo */ 0,
+  /* xShadowName */ 0
+};
+
+
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -786,6 +1030,9 @@ int sqlite3_fossildelta_init(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "delta_output_size", 1, SQLITE_UTF8, 0,
                                  deltaOutputSizeFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "delta_parse", &deltaparsevtabModule, 0);
   }
   return rc;
 }
