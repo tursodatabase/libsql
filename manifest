@@ -1,5 +1,5 @@
-C Fix\sa\spotential\smemory\sleak\sin\sRBU\sif\sthe\srbu_fossil_delta()\sSQL\sfunction\sis\nmisused.\s\sMisuse\snever\shappens\sin\sa\sworking\sRBU\ssystem,\sso\sthis\sis\snot\sa\s\nparticularly\simportant\sfix.
-D 2019-02-19T17:45:31.317
+C Add\sthe\sfossildelta.c\sextension\sin\sext/misc\swith\simplementations\sof\sthe\sFossil\ndelta\sfunctions.
+D 2019-02-19T18:39:16.475
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -286,6 +286,7 @@ F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
 F ext/misc/fileio.c 592d6531d8413d81b25f5a47a45d7e310e455d33e03a64c6ae85724c6524a5d5
+F ext/misc/fossildelta.c 64619ac4ff0d865e01f25436fd1b82c3dd7f6bc6184c9a06e002b16a121cd652
 F ext/misc/fuzzer.c 9e79c337faffdd4c5fe4485467537438359b43e0858a40038d4300b894ff553f
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 8af4672f43634257dbcfdb4515b4070325463d67c6968b4be1bd414de28d4d58
@@ -1804,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2d400db4dbfb05e2540178ed3662f97f8c57a95f8129886c7081c35e53adf0d
-R 8d9f63c20f18bc4035bf1d3926ca6101
+P 12517d1b15da46bc90bd95bb9c161d7f2ecdd7f28b1b3a5ed4397939ef986061
+R e38db5ccc4de4d9df319413343ad8fcf
 U drh
-Z 3f3200a2e92dbd4c9a6a6ed07ff60873
+Z 993efe1b585ff08956441be0e9d0910b
