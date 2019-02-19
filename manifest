@@ -1,5 +1,5 @@
-C Always\suse\sthe\ssymbolic\sname\sSQLITE_IDXTYPE_PRIMARYKEY\srather\sthan\sa\shard-coded\nmagic\snumber\s2.
-D 2019-02-19T13:08:35.738
+C New\sassert()\sto\sverify\sthe\sTF_HasprimaryKey\sflag.
+D 2019-02-19T13:51:58.095
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -458,7 +458,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 2105865a621c211cd76d8d21a6831249c31c876d7d1fe7d7ebe27410cd893747
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c b0a9ee5b551afbc8357a68eb30693973300daf845c8c0e564f672d9b3fdeec56
+F src/build.c ac41c86b486f480b2bcad7e55c6cc19d7151082f74682ab048c45980d6c9ddac
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1804,7 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6509ca3dc2602c7d0376230ee63c1bb4c4066f007e77e9ac20d8eee966e5e13
-R 704b4d956a0ce2c9b781aab7a71ed157
+P 55d43adc894a6b1e0f77bf481dad6dd604a0dc0022e72bbf2e3037f97351971e
+R 4957484ea90ae4ee926291ee2f0443fe
 U drh
-Z b0619f705fb89193b6dad39d43e9fd99
+Z 06b0b1933b49b6d18ffce83176015625

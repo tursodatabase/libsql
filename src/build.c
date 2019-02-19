@@ -1991,6 +1991,11 @@ void sqlite3EndTable(
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
   }
 
+  assert( (p->tabFlags & TF_HasPrimaryKey)==0
+       || p->iPKey>=0 || sqlite3PrimaryKeyIndex(p)!=0 );
+  assert( (p->tabFlags & TF_HasPrimaryKey)!=0
+       || (p->iPKey<0 && sqlite3PrimaryKeyIndex(p)==0) );
+
   /* Special processing for WITHOUT ROWID Tables */
   if( tabOpts & TF_WithoutRowid ){
     if( (p->tabFlags & TF_Autoincrement) ){
