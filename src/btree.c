@@ -8261,7 +8261,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   }
   assert( sqlite3PagerIswriteable(pChild->pDbPage) );
   assert( sqlite3PagerIswriteable(pRoot->pDbPage) );
-  assert( pChild->nCell==pRoot->nCell );
+  assert( pChild->nCell==pRoot->nCell || CORRUPT_DB );
 
   TRACE(("BALANCE: copy root %d into %d\n", pRoot->pgno, pChild->pgno));
 
