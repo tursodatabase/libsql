@@ -1,0 +1,49 @@
+# 2019 February 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix reusefault
+
+do_execsql_test 1.0 {
+  PRAGMA cache_size = 10;
+  CREATE TABLE t1(a UNIQUE, b UNIQUE);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+}
+faultsim_save_and_close
+
+do_faultsim_test 1.1 -prep {
+  faultsim_restore
+  sqlite3 db test.db -shared-schema 1
+} -body {
+  execsql { SELECT * FROM t1 }
+} -test {
+  faultsim_test_result {0 {1 2 3 4}}
+}
+
+do_faultsim_test 1.2 -prep {
+  faultsim_restore
+  sqlite3 db test.db -shared-schema 1
+  execsql { SELECT * FROM t1 }
+  sqlite3 db2 test.db
+  db2 eval {CREATE TABLE a(a)}
+  db2 close
+} -body {
+  execsql { SELECT  * FROM t1 }
+} -test {
+  faultsim_test_result {0 {1 2 3 4}}
+}
+
+
+finish_test
+

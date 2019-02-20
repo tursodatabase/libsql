@@ -678,7 +678,7 @@ int sqlite3SchemaConnect(sqlite3 *db, int iDb, u64 cksum){
 
   /* If the SchemaPool contains one or more free schemas at the moment, 
   ** delete one of them. */
-  if( p->pSchema ){
+  if( p && p->pSchema ){
     Schema *pDel = p->pSchema;
     p->pSchema = pDel->pNext;
     schemaDelete(pDel);
@@ -707,7 +707,7 @@ int sqlite3SchemaConnect(sqlite3 *db, int iDb, u64 cksum){
 */
 int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
   int rc = SQLITE_OK;
-  if( IsReuseSchema(db) && iDb!=1 ){
+  if( IsReuseSchema(db) ){
     Db *pDb = &db->aDb[iDb];
     SchemaPool *pSPool = pDb->pSPool;
     assert_schema_state_ok(db);
@@ -715,10 +715,9 @@ int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
 
     if( pSPool==0 ){
       assert( pDb->pVTable==0 );
-      if( bNew==0 ){
-        schemaDelete(pDb->pSchema);
-        pDb->pSchema = 0;
-      }
+      assert( bNew==0 );
+      schemaDelete(pDb->pSchema);
+      pDb->pSchema = 0;
     }else{
       VTable *p;
       VTable *pNext;
@@ -768,15 +767,13 @@ int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
 */
 Schema *sqlite3SchemaExtract(SchemaPool *pSPool){
   Schema *pRet = 0;
-  if( pSPool ){
-    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-    if( pSPool->pSchema ){
-      pRet = pSPool->pSchema;
-      pSPool->pSchema = pRet->pNext;
-      pRet->pNext = 0;
-    }
-    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
+  if( pSPool->pSchema ){
+    pRet = pSPool->pSchema;
+    pSPool->pSchema = pRet->pNext;
+    pRet->pNext = 0;
   }
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
   return pRet;
 }
 
@@ -811,9 +808,7 @@ void sqlite3SchemaRelease(sqlite3 *db, int iDb){
   assert( iDb!=1 );
   assert_schema_state_ok(db);
   sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
-  if( pDb->pSPool && DbHasProperty(db, iDb, DB_SchemaLoaded) ){
-    schemaRelease(db, pDb);
-  }
+  schemaRelease(db, pDb);
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }
 
@@ -827,9 +822,11 @@ void sqlite3SchemaRelease(sqlite3 *db, int iDb){
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema *p;
   if( pBt && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA)==0 ){
-    p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
+    p = (Schema*)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
-    p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));
+    db->lookaside.bDisable++;
+    p = (Schema*)sqlite3DbMallocZero(db, sizeof(Schema));
+    db->lookaside.bDisable--;
   }
   if( !p ){
     sqlite3OomFault(db);

@@ -273,5 +273,37 @@ do_test 5.5 {
   catchsql { SELECT nref,nschema FROM schemapool } db2
 } {0 {1 1}}
 
+db2 close
+db close
+do_test 5.6.1 {
+  forcedelete test.db2 test.db2-wal test.db2-journal
+  forcecopy test.db test.db2
+  sqlite3 db test.db
+  sqlite3 db2 test.db  -shared-schema 1
+  sqlite3 db3 test.db2 -shared-schema 1
+  register_schemapool_module db
+} {}
+
+do_execsql_test -db db2 5.6.2 { SELECT * FROM t1 }
+do_execsql_test -db db3 5.6.3 { SELECT * FROM t1 }
+do_execsql_test 5.6.4 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
+  CREATE TABLE t4(x);
+  DROP TABLE t4;
+} {nref=2 nschema=1}
+do_execsql_test -db db2 5.6.5 { SELECT * FROM t1 }
+do_execsql_test -db db3 5.6.6 { SELECT * FROM t1 }
+do_execsql_test 5.6.7 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
+  ATTACH 'test.db2' AS db2;
+  CREATE TABLE db2.t4(x);
+  DROP TABLE db2.t4;
+} {nref=1 nschema=1 nref=1 nschema=1}
+do_execsql_test -db db2 5.6.8 { SELECT * FROM t1 }
+do_execsql_test -db db3 5.6.9 { SELECT * FROM t1 }
+do_execsql_test 5.6.10 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
+} {nref=2 nschema=1}
+
 finish_test
 
