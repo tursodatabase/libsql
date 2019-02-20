@@ -1,5 +1,5 @@
-C Improve\serror\smessages\scaused\sby\scorrupt\sdatabase\sschemas\sin\sOPEN_SHARED_SCHEMA\smode.
-D 2019-02-19T18:00:28.023
+C Add\stest\sand\sfixes\sfor\sSQLITE_OPEN_SHARED_SCHEMA\smode.
+D 2019-02-20T17:36:10.699
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 56456706c4da271309914c756c9c8ea537685f1c79f8785afa72f968d6810482
@@ -39,7 +39,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
-F doc/shared_schema.md 4c1ea0da3c9a83afe646c696f4402827b38134dbc73c1e0637adce6546cb2a79
+F doc/shared_schema.md 327dbde6dd7d8cc2d7f0efadf4237a7724af6fbc35125d8e6965d1e2253ced81
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
@@ -451,7 +451,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 995b37de876639f1b6c14fcf15f3ee1004e3cbea354ebb43d7f5c4de0d649a64
 F src/analyze.c e75c3c1d6534265f74a4763282f17e9ad946606ef0a68c5517fcfb355cc243d0
-F src/attach.c 06897ba0fa023ab6aea459afa813c767879c99c8cccedad41126369af455c254
+F src/attach.c aef8849d3d05da5f57a4054b855c83f1fca61179fc12592e56a57f35bbd1ba39
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -564,7 +564,7 @@ F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
 F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
 F src/test_rtree.c 671f3fae50ff116ef2e32a3bf1fe21b5615b4b7b
 F src/test_schema.c f575932cb6274d12147a77e13ea4b49d52408513
-F src/test_schemapool.c 605de5c8bd8de59a09a2a9d139d004c00a6ba390647c6b3e07b5889dbbcc09af
+F src/test_schemapool.c a94030902625581c2c71c2a9989dd5895d3d0b77cc84419eea58f5b0efd6c7cd
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c 11e6ce7575f489155c604ac4b439f2ac1d3d5aef
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
@@ -1229,7 +1229,8 @@ F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5e
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/reuse1.test 31c312375ccfcc5c2abc1fca5e4a89d6309c57ea6b1fa3179a5eee68016f9c74
 F test/reuse2.test 04d88621f0c51a8b3bf5512b9e61a5d7a61059e33097a1a6b1c6f6cf2d1f2a35
-F test/reuse3.test 9966883b8344f9138ae16520724cc858207c1ba02505a57652911d3ef881d094
+F test/reuse3.test ff322d93790008578ca1c3e716d3fc981e9c4d870a99c3177521764f1ec5550c
+F test/reuse4.test 1aef94898fd51bc87750d81074185a4f57cccd0bf87b9f98ae58b9c799452d42
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1809,7 +1810,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88cbf54eee7845f9e40e6879fc38eb98a80e81c987b7edeb39f3058590003347
-R 41f099ad9e145360c83364c4143d8da9
+P 8ac75b8a880447ea67cf7646fc5af1379ce35861f396634119d7381e1dde404a
+R 5f4776749e5c7ce4a4f932d0629de2a0
 U dan
-Z 73616eb33deb0ebb50092d3e7cb882f0
+Z c8bea540cedb5b2e606c76fa8a2b79be

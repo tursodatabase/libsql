@@ -260,5 +260,18 @@ do_test 5.2 {
   catchsql { SELECT * FROM t1 } db2
 } {1 {malformed database schema (t3) - near "a": syntax error}}
 
+do_test 5.3 { 
+  catchsql { SELECT nref,nschema FROM schemapool } db2
+} {1 {vtable constructor failed: schemapool}}
+
+do_execsql_test 5.4 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET sql='CREATE TABLE t3(a,b)' WHERE name = 't3';
+}
+
+do_test 5.5 { 
+  catchsql { SELECT nref,nschema FROM schemapool } db2
+} {0 {1 1}}
+
 finish_test
 

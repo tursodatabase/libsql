@@ -1,0 +1,119 @@
+# 2019 February 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix reuse4
+
+foreach {tn sharedschema} {
+  1 0  
+  2 1  
+} {
+  reset_db
+
+  do_execsql_test 1.$tn.0 {
+    CREATE TABLE x1(a, b);
+    CREATE INDEX x1a ON x1(a);
+    CREATE INDEX x1b ON x1(b);
+    CREATE TABLE x2(a, b);
+  }
+  db close
+  
+  do_test 1.$tn.1 {
+    for {set i 1} {$i<4} {incr i} {
+      forcedelete test.db$i test.db$i-journal test.db$i-wal
+      forcecopy test.db test.db$i
+    }
+  
+    sqlite3 db test.db -shared-schema $sharedschema
+    for {set i 1} {$i<4} {incr i} {
+      execsql " ATTACH 'test.db$i' AS db$i "
+    }
+  } {}
+  
+  do_execsql_test 1.$tn.2 {
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10 )
+    INSERT INTO x1 SELECT i, i FROM s;
+  
+    INSERT INTO db3.x2 SELECT * FROM x1;
+    INSERT INTO db2.x1 SELECT * FROM db3.x2;
+    CREATE TEMP TRIGGER tr1 AFTER INSERT ON db2.x2 BEGIN
+      INSERT INTO x1 VALUES(new.a, new.b);
+    END;
+    INSERT INTO db2.x2 SELECT * FROM x1 WHERE a%2;
+    DELETE FROM x1 WHERE a<3;
+    INSERT INTO db3.x1 SELECT * FROM db2.x2;
+  
+    DETACH db3;
+    ATTACH 'test.db3' AS db3;
+  
+    UPDATE db3.x1 SET a=a-10 WHERE b NOT IN (SELECT b FROM db2.x2);
+  
+    CREATE TEMP TABLE x1(a, b);
+    INSERT INTO db2.x2 VALUES(50, 60), (60, 70), (80, 90);
+    ALTER TABLE x1 RENAME TO x2;
+    ALTER TABLE x2 ADD COLUMN c;
+    ALTER TABLE x2 RENAME a TO aaa;
+    DELETE FROM x1 WHERE b>8;
+    UPDATE db3.x2 SET b=b*10;
+  
+    BEGIN;
+      CREATE TEMP TABLE x5(x);
+      INSERT INTO x5 VALUES(1);
+    ROLLBACK;
+  
+    INSERT INTO main.x2 VALUES(123, 456);
+  }
+  
+  integrity_check 1.$tn.3
+  
+  do_execsql_test 1.$tn.4 {
+    SELECT * FROM main.x1; SELECT 'xxx';
+    SELECT * FROM main.x2; SELECT 'xxx';
+    SELECT * FROM temp.x2; SELECT 'xxx';
+  
+    SELECT * FROM db1.x1; SELECT 'xxx';
+    SELECT * FROM db1.x2; SELECT 'xxx';
+    SELECT * FROM db2.x1; SELECT 'xxx';
+    SELECT * FROM db2.x2; SELECT 'xxx';
+    SELECT * FROM db3.x1; SELECT 'xxx';
+    SELECT * FROM db3.x2; SELECT 'xxx';
+  } {
+    3 3 4 4 5 5 6 6 7 7 8 8 3 3 5 5 7 7 xxx 
+    123 456 xxx 
+    50 60 {} 60 70 {} 80 90 {} xxx
+    xxx
+    xxx
+    1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 xxx
+    1 1 3 3 5 5 7 7 9 9 50 60 60 70 80 90 xxx
+    1 1 3 3  5 5 7 7 9 9 xxx 
+    1 10 2 20 3 30 4 40 5 50 6 60 7 70 8 80 9 90 10 100 xxx
+  }
+  
+  do_test 1.$tn.5.1 {
+    sqlite3 db2 test.db
+    db2 eval { CREATE TABLE x3(x) }
+  } {}
+  do_execsql_test 1.$tn.5.2 {
+    SELECT * FROM main.x1; SELECT 'xxx';
+    SELECT * FROM main.x2; SELECT 'xxx';
+    SELECT * FROM main.x3; SELECT 'xxx';
+  } {
+    3 3 4 4 5 5 6 6 7 7 8 8 3 3 5 5 7 7 xxx 
+    123 456 xxx 
+    xxx
+  }
+}
+
+finish_test
+

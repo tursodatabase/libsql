@@ -323,6 +323,7 @@ static void detachFunc(
     goto detach_error;
   }
 
+  sqlite3SchemaDisconnect(db, i, 0);
   sqlite3BtreeClose(pDb->pBt);
   pDb->pBt = 0;
   pDb->pSchema = 0;

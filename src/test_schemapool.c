@@ -74,6 +74,10 @@ static int schemaPoolCreate(
   if( pVtab ){
     memset(pVtab, 0, sizeof(schemapool_vtab));
     rc = sqlite3_declare_vtab(db, SCHEMAPOOL_SCHEMA);
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pVtab);
+      pVtab = 0;
+    }
   }
   *ppVtab = (sqlite3_vtab *)pVtab;
   return rc;
