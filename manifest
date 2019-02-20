@@ -1,12 +1,12 @@
-C When\san\sIN\soperator\sdrives\sa\squery\sloop,\smark\sit\sas\s"CODED"\sso\sthat\sit\nwill\snot\sbe\sused\safterwards\sfor\sa\s(pointless)\smembership\stest.
-D 2019-02-20T13:12:01.065
+C Increment\sthe\sversion\snumber\sto\s3.27.2.
+D 2019-02-20T13:14:23.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5df60c70edb157feb2148a14c687551969599bd065875a0b959b6b139721ca72
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
-F VERSION 15b2d421b2265aad451c0493066c1c31a511a72c5153bb4e9d5f62adbc12134c
+F VERSION a45c4d2eb2f9c1432c4e49d9306ccb0cd3f88dccddfa52ea1fe7460ce005e58a
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -33,7 +33,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 2b0310f5ddb82f4e2c524c0bc7bacf480b0ac21bf05b543d7e72e2682772eaac x
+F configure 7fd4706775d3c31e928d3e94bcfca5150a60d5abfc6a36a20fa43ad66dc4d467 x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1804,8 +1804,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0eca3dd3d38b31c92b49ca2d311128b74584714d9e7de895b1a6286ef959a1dd
-Q +fa792714ae62fa980f1767acc6d622a6727ceb677870243c88548423795dcb5b
-R c5b96be1f96fcfa69feecf2b0f9fd141
+P 55e38d53adf1b3e95b0931359f8e135f0b2c063f34676b8dd27d933acdd6af5f
+R 027b5d93617809fb316cea967931a5e7
 U drh
-Z 5c60d6a8895b7807210836040f3119cf
+Z 9cf90ec2a6f82b28c22cd026c4884d86
