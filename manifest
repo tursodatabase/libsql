@@ -1,5 +1,5 @@
-C Progress\shandler\simprovements:\n(1)\sInvoke\sthe\scallback\safter\sOP_Program\sopcodes\n(2)\sInvoke\sthe\scallback\smultiple\stimes\sin\sa\srow\sto\scatch\sup\safter\sa\nlong\srun\sof\sno\sprogress\schecks.
-D 2019-02-20T13:55:45.206
+C Avoid\sthe\suse\sof\sfunction\spointers\sin\scolumnName(),\sas\sfunction\spointers\nappear\sto\sbe\sa\ssource\sof\sconsternation\sto\sLLVM.
+D 2019-02-20T18:13:57.436
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -589,7 +589,7 @@ F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
 F src/vdbe.c f11f5b935d0858ffeb3b2f0f50d9f4c368b8100c2ae6761178828e2aa38b63f2
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
-F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
+F src/vdbeapi.c cde63790c9d18ba5941d52c9f49e1a862cf6503141d5b9c112a05eb0adbf30a9
 F src/vdbeaux.c 4fa28b32452f6197dba7c8780dde11576b9a6d8ce6f35adbb69efc3e7d37fa0c
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 3e89e087df928eba80e520824078dc563c579a0848b1557ac36845ec14392923
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa792714ae62fa980f1767acc6d622a6727ceb677870243c88548423795dcb5b
-R cb450b63e0ffca7c3eab4ce48996cd46
+P 0c5db18d79366d9c23925ce3ed835500311f32a10aa7dbfdd09148b1e8a2507b
+R f560accc195a8327b3c508cd93ca6133
 U drh
-Z b23f78f7b715d3492f6587cfb6b97b37
+Z c7b49bfb62bb08bc015b1f1c480e7f4b
