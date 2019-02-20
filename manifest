@@ -1,5 +1,5 @@
-C Avoid\sthe\suse\sof\sfunction\spointers\sin\scolumnName(),\sas\sfunction\spointers\nappear\sto\sbe\sa\ssource\sof\sconsternation\sto\sLLVM.
-D 2019-02-20T18:13:57.436
+C Disable\sunix-specific\sfeatures\sof\sdbfuzz2\swhen\scompiling\son\swindows.
+D 2019-02-20T19:06:16.881
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -785,7 +785,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 29b6c6b39a701b6b5b08035c637674b76e1ecea515b1a184b29e3bd0f2d02dad
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 5d5eb817dc8195e0228227510ee6a4b49f46e679fc2d5be96841cce819bf42f7
+F test/dbfuzz2.c 1065d6debd1003c70dccc498c54fd18f4e9da2a73943ba4a953be7dcaf4f724e
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c5db18d79366d9c23925ce3ed835500311f32a10aa7dbfdd09148b1e8a2507b
-R f560accc195a8327b3c508cd93ca6133
+P c48f6f39c5f89a338fed7153553a27a5d882d4d8db8221e911b96e0dd57c53d9
+R c53acd05ed5644e7475bccbd6fd360d7
 U drh
-Z c7b49bfb62bb08bc015b1f1c480e7f4b
+Z 28f4d380ceac9c7278e8092207ce3937
