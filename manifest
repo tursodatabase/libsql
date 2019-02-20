@@ -1,5 +1,5 @@
-C When\san\sIN\soperator\sdrives\sa\squery\sloop,\smark\sit\sas\s"CODED"\sso\sthat\sit\nwill\snot\sbe\sused\safterwards\sfor\sa\s(pointless)\smembership\stest.\s\sThis\sis\na\sbetter\sfix\sfor\sticket\s[df46dfb631f75694]\sthan\sthe\sprevious\sfix\sthat\sis\nnow\son\sa\sbranch\sas\sit\spreserves\sthe\sfull\soptimization\sof\ncheck-in\s[e130319317e76119].
-D 2019-02-20T12:52:47.452
+C Progress\shandler\simprovements:\n(1)\sInvoke\sthe\scallback\safter\sOP_Program\sopcodes\n(2)\sInvoke\sthe\scallback\smultiple\stimes\sin\sa\srow\sto\scatch\sup\safter\sa\nlong\srun\sof\sno\sprogress\schecks.
+D 2019-02-20T13:55:45.206
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -586,7 +586,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
 F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
-F src/vdbe.c c67c8c46bea825421ee97511328fe1405537b586cbbe4db06e17c4ac5ab4dbed
+F src/vdbe.c f11f5b935d0858ffeb3b2f0f50d9f4c368b8100c2ae6761178828e2aa38b63f2
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 57a2d794a8833f269b878dbc24e955369bdb379af6c4e93ebc5ce1a20fa3daf4
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f16d127c3b4a735afae1fc236bcf90f31adff079c7d3a896f901d908ff8b8532
-R 305348511782a1081a30b2475753ee53
+P fa792714ae62fa980f1767acc6d622a6727ceb677870243c88548423795dcb5b
+R cb450b63e0ffca7c3eab4ce48996cd46
 U drh
-Z ef9d1f96fc42c68bd56fd0d4769bee0b
+Z b23f78f7b715d3492f6587cfb6b97b37

@@ -819,9 +819,9 @@ check_for_interrupt:
   ** If the progress callback returns non-zero, exit the virtual machine with
   ** a return code SQLITE_ABORT.
   */
-  if( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+  while( nVmStep>=nProgressLimit && db->xProgress!=0 ){
     assert( db->nProgressOps!=0 );
-    nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
+    nProgressLimit += db->nProgressOps;
     if( db->xProgress(db->pProgressArg) ){
       nProgressLimit = 0xffffffff;
       rc = SQLITE_INTERRUPT;
@@ -6174,8 +6174,7 @@ case OP_Program: {        /* jump */
   }
 #endif
   pOp = &aOp[-1];
-
-  break;
+  goto check_for_interrupt;
 }
 
 /* Opcode: Param P1 P2 * * *
@@ -7585,7 +7584,8 @@ abort_due_to_error:
   ** top. */
 vdbe_return:
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  if( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+  while( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+    nProgressLimit += db->nProgressOps;
     if( db->xProgress(db->pProgressArg) ){
       nProgressLimit = 0xffffffff;
       rc = SQLITE_INTERRUPT;
