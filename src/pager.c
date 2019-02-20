@@ -7743,7 +7743,7 @@ int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot){
 */
 void sqlite3PagerSnapshotUnlock(Pager *pPager){
   assert( pPager->pWal );
-  return sqlite3WalSnapshotUnlock(pPager->pWal);
+  sqlite3WalSnapshotUnlock(pPager->pWal);
 }
 
 #endif /* SQLITE_ENABLE_SNAPSHOT */

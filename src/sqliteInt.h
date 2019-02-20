@@ -1447,6 +1447,7 @@ struct sqlite3 {
   void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
+  Parse *pParse;                /* Current parse */
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   void *pPreUpdateArg;          /* First argument to xPreUpdateCallback */
   void (*xPreUpdateCallback)(   /* Registered using sqlite3_preupdate_hook() */
@@ -3110,6 +3111,7 @@ struct Parse {
   AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
+  Parse *pParentParse; /* Parent parser if this parser is nested */
   int addrCrTab;       /* Address of OP_CreateBtree opcode on CREATE TABLE */
   u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */

@@ -1348,7 +1348,9 @@ static int fts3SegReaderNext(
 
     /* If iCurrentBlock>=iLeafEndBlock, this is an EOF condition. All leaf 
     ** blocks have already been traversed.  */
-    assert( pReader->iCurrentBlock<=pReader->iLeafEndBlock );
+#ifdef CORRUPT_DB
+    assert( pReader->iCurrentBlock<=pReader->iLeafEndBlock || CORRUPT_DB );
+#endif
     if( pReader->iCurrentBlock>=pReader->iLeafEndBlock ){
       return SQLITE_OK;
     }
@@ -3235,8 +3237,10 @@ static int fts3SegmentMerge(
   if( rc!=SQLITE_OK ) goto finished;
 
   assert( csr.nSegment>0 );
-  assert( iNewLevel>=getAbsoluteLevel(p, iLangid, iIndex, 0) );
-  assert( iNewLevel<getAbsoluteLevel(p, iLangid, iIndex,FTS3_SEGDIR_MAXLEVEL) );
+  assert_fts3_nc( iNewLevel>=getAbsoluteLevel(p, iLangid, iIndex, 0) );
+  assert_fts3_nc( 
+    iNewLevel<getAbsoluteLevel(p, iLangid, iIndex,FTS3_SEGDIR_MAXLEVEL) 
+  );
 
   memset(&filter, 0, sizeof(Fts3SegFilter));
   filter.flags = FTS3_SEGMENT_REQUIRE_POS;

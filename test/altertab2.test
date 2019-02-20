@@ -179,6 +179,7 @@ do_execsql_test 4.3 {
 }
 
 #-------------------------------------------------------------------------
+ifcapable windowfunc {
 do_execsql_test 5.0 {
   CREATE TABLE t2(a);
   CREATE TRIGGER r2 AFTER INSERT ON t2 WHEN new.a NOT NULL BEGIN
@@ -235,6 +236,7 @@ do_execsql_test 5.2 {
 do_execsql_test 5.3 {
   INSERT INTO t2x VALUES(1);
 } {}
+} ;# windowfunc
 
 #-------------------------------------------------------------------------
 

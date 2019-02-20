@@ -684,6 +684,7 @@ static void rbuFossilDeltaFunc(
   }else{
     nOut2 = rbuDeltaApply(aOrig, nOrig, aDelta, nDelta, aOut);
     if( nOut2!=nOut ){
+      sqlite3_free(aOut);
       sqlite3_result_error(context, "corrupt fossil delta", -1);
     }else{
       sqlite3_result_blob(context, aOut, nOut, sqlite3_free);

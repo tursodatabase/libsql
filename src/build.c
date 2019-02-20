@@ -1821,6 +1821,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pTab->iPKey = -1;
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
 
     /*
     ** Remove all redundant columns from the PRIMARY KEY.  For example, change
@@ -1989,6 +1990,11 @@ void sqlite3EndTable(
     p->tnum = db->init.newTnum;
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
   }
+
+  assert( (p->tabFlags & TF_HasPrimaryKey)==0
+       || p->iPKey>=0 || sqlite3PrimaryKeyIndex(p)!=0 );
+  assert( (p->tabFlags & TF_HasPrimaryKey)!=0
+       || (p->iPKey<0 && sqlite3PrimaryKeyIndex(p)==0) );
 
   /* Special processing for WITHOUT ROWID Tables */
   if( tabOpts & TF_WithoutRowid ){
