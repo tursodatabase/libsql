@@ -1,5 +1,5 @@
-C Version\s3.27.1
-D 2019-02-08T13:17:39.690
+C When\san\sIN\soperator\sdrives\sa\squery\sloop,\smark\sit\sas\s"CODED"\sso\sthat\sit\nwill\snot\sbe\sused\safterwards\sfor\sa\s(pointless)\smembership\stest.
+D 2019-02-20T13:12:01.065
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -601,7 +601,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c a571d8d7c19d6db786a201f2df8788b320fefcb2842f2a1eb9a85b85e91bc35f
+F src/wherecode.c 5ee878f714218352a2f452907572d4bf1e4303393288458f87ffc86edaf2cfbe
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
 F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1006,7 +1006,7 @@ F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
 F test/icu.test 41aa8847745a879b897a7febea0f8f9efc8e67fe8bf680589b6e07c7b0a1569a
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
-F test/in.test 2fa2dfba1afe30eb830f327e7131dfadaa7a701d677de0eb65f9303d99e18fe0
+F test/in.test 63933d7b71eed01a49df55541a73a75398302b50a05b5333f90481460a32ff49
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
@@ -1804,10 +1804,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d5d944d7947d7b44ba9a1c844418af49c5f39dbe84f181af790bb1412daed578
-R 2251df76230cd55e64293ef8a825ebab
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.27.1 *
+P 0eca3dd3d38b31c92b49ca2d311128b74584714d9e7de895b1a6286ef959a1dd
+Q +fa792714ae62fa980f1767acc6d622a6727ceb677870243c88548423795dcb5b
+R c5b96be1f96fcfa69feecf2b0f9fd141
 U drh
-Z 4aa002629995b65b1d5f498ebad69e25
+Z 5c60d6a8895b7807210836040f3119cf
