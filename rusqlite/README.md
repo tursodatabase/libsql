@@ -49,12 +49,12 @@ fn main() -> Result<()> {
     let mut stmt = conn
         .prepare("SELECT id, name, time_created, data FROM person")?;
     let person_iter = stmt
-        .query_map(NO_PARAMS, |row| Person {
-            id: row.get(0),
-            name: row.get(1),
-            time_created: row.get(2),
-            data: row.get(3),
-        })?;
+        .query_map(NO_PARAMS, |row| Ok(Person {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            time_created: row.get(2)?,
+            data: row.get(3)?,
+        }))?;
 
     for person in person_iter {
         println!("Found person {:?}", person.unwrap());

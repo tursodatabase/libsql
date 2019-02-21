@@ -229,7 +229,7 @@ mod test {
 
         let res = stmt
             .query_map(NO_PARAMS, |row| {
-                (row.get::<_, i128>(0), row.get::<_, String>(1))
+                Ok((row.get::<_, i128>(0)?, row.get::<_, String>(1)?))
             })
             .unwrap()
             .collect::<Result<Vec<_>, _>>()

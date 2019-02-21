@@ -28,8 +28,7 @@
 //!     )?;
 //!
 //!     let rowid = db.last_insert_rowid();
-//!     let mut blob = db
-//!         .blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
+//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
 //!
 //!     // Make sure to test that the number of bytes written matches what you expect;
 //!     // if you try to write too much, the data will be truncated to the size of the

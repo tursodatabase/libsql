@@ -38,12 +38,11 @@
 //!     let db = Connection::open_in_memory()?;
 //!     add_regexp_function(&db)?;
 //!
-//!     let is_match: bool = db
-//!         .query_row(
-//!             "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
-//!             NO_PARAMS,
-//!             |row| row.get(0),
-//!         )?;
+//!     let is_match: bool = db.query_row(
+//!         "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
+//!         NO_PARAMS,
+//!         |row| row.get(0),
+//!     )?;
 //!
 //!     assert!(is_match);
 //!     Ok(())
@@ -771,7 +770,7 @@ mod test {
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
                         2, 1)";
         let result: (i64, i64) = db
-            .query_row(dual_sum, NO_PARAMS, |r| (r.get(0), r.get(1)))
+            .query_row(dual_sum, NO_PARAMS, |r| Ok((r.get(0)?, r.get(1)?)))
             .unwrap();
         assert_eq!((4, 2), result);
     }
