@@ -1102,6 +1102,7 @@ case OP_String8: {         /* same as TK_STRING, out2 */
   if( encoding!=SQLITE_UTF8 ){
     rc = sqlite3VdbeMemSetStr(pOut, pOp->p4.z, -1, SQLITE_UTF8, SQLITE_STATIC);
     assert( rc==SQLITE_OK || rc==SQLITE_TOOBIG );
+    if( rc ) goto too_big;
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
     assert( pOut->szMalloc>0 && pOut->zMalloc==pOut->z );
     assert( VdbeMemDynamic(pOut)==0 );
@@ -1114,7 +1115,6 @@ case OP_String8: {         /* same as TK_STRING, out2 */
     pOp->p4.z = pOut->z;
     pOp->p1 = pOut->n;
   }
-  testcase( rc==SQLITE_TOOBIG );
 #endif
   if( pOp->p1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
