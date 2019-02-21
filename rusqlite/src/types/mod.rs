@@ -207,16 +207,16 @@ mod test {
 
         {
             let row1 = rows.next().unwrap().unwrap();
-            let s1: Option<String> = row1.get(0);
-            let b1: Option<Vec<u8>> = row1.get(1);
+            let s1: Option<String> = row1.get_unwrap(0);
+            let b1: Option<Vec<u8>> = row1.get_unwrap(1);
             assert_eq!(s.unwrap(), s1.unwrap());
             assert!(b1.is_none());
         }
 
         {
             let row2 = rows.next().unwrap().unwrap();
-            let s2: Option<String> = row2.get(0);
-            let b2: Option<Vec<u8>> = row2.get(1);
+            let s2: Option<String> = row2.get_unwrap(0);
+            let b2: Option<Vec<u8>> = row2.get_unwrap(1);
             assert!(s2.is_none());
             assert_eq!(b, b2);
         }
@@ -246,102 +246,94 @@ mod test {
         let row = rows.next().unwrap().unwrap();
 
         // check the correct types come back as expected
-        assert_eq!(vec![1, 2], row.get_checked::<_, Vec<u8>>(0).unwrap());
-        assert_eq!("text", row.get_checked::<_, String>(1).unwrap());
-        assert_eq!(1, row.get_checked::<_, c_int>(2).unwrap());
-        assert!((1.5 - row.get_checked::<_, c_double>(3).unwrap()).abs() < EPSILON);
-        assert!(row.get_checked::<_, Option<c_int>>(4).unwrap().is_none());
-        assert!(row.get_checked::<_, Option<c_double>>(4).unwrap().is_none());
-        assert!(row.get_checked::<_, Option<String>>(4).unwrap().is_none());
+        assert_eq!(vec![1, 2], row.get::<_, Vec<u8>>(0).unwrap());
+        assert_eq!("text", row.get::<_, String>(1).unwrap());
+        assert_eq!(1, row.get::<_, c_int>(2).unwrap());
+        assert!((1.5 - row.get::<_, c_double>(3).unwrap()).abs() < EPSILON);
+        assert!(row.get::<_, Option<c_int>>(4).unwrap().is_none());
+        assert!(row.get::<_, Option<c_double>>(4).unwrap().is_none());
+        assert!(row.get::<_, Option<String>>(4).unwrap().is_none());
 
         // check some invalid types
 
         // 0 is actually a blob (Vec<u8>)
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_int>(0).err().unwrap()
+            row.get::<_, c_int>(0).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_int>(0).err().unwrap()
+            row.get::<_, c_int>(0).err().unwrap()
+        ));
+        assert!(is_invalid_column_type(row.get::<_, i64>(0).err().unwrap()));
+        assert!(is_invalid_column_type(
+            row.get::<_, c_double>(0).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, i64>(0).err().unwrap()
+            row.get::<_, String>(0).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_double>(0).err().unwrap()
+            row.get::<_, time::Timespec>(0).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, String>(0).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, time::Timespec>(0).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, Option<c_int>>(0).err().unwrap()
+            row.get::<_, Option<c_int>>(0).err().unwrap()
         ));
 
         // 1 is actually a text (String)
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_int>(1).err().unwrap()
+            row.get::<_, c_int>(1).err().unwrap()
+        ));
+        assert!(is_invalid_column_type(row.get::<_, i64>(1).err().unwrap()));
+        assert!(is_invalid_column_type(
+            row.get::<_, c_double>(1).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, i64>(1).err().unwrap()
+            row.get::<_, Vec<u8>>(1).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_double>(1).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, Vec<u8>>(1).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, Option<c_int>>(1).err().unwrap()
+            row.get::<_, Option<c_int>>(1).err().unwrap()
         ));
 
         // 2 is actually an integer
         assert!(is_invalid_column_type(
-            row.get_checked::<_, String>(2).err().unwrap()
+            row.get::<_, String>(2).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, Vec<u8>>(2).err().unwrap()
+            row.get::<_, Vec<u8>>(2).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, Option<String>>(2).err().unwrap()
+            row.get::<_, Option<String>>(2).err().unwrap()
         ));
 
         // 3 is actually a float (c_double)
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_int>(3).err().unwrap()
+            row.get::<_, c_int>(3).err().unwrap()
+        ));
+        assert!(is_invalid_column_type(row.get::<_, i64>(3).err().unwrap()));
+        assert!(is_invalid_column_type(
+            row.get::<_, String>(3).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, i64>(3).err().unwrap()
+            row.get::<_, Vec<u8>>(3).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, String>(3).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, Vec<u8>>(3).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, Option<c_int>>(3).err().unwrap()
+            row.get::<_, Option<c_int>>(3).err().unwrap()
         ));
 
         // 4 is actually NULL
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_int>(4).err().unwrap()
+            row.get::<_, c_int>(4).err().unwrap()
+        ));
+        assert!(is_invalid_column_type(row.get::<_, i64>(4).err().unwrap()));
+        assert!(is_invalid_column_type(
+            row.get::<_, c_double>(4).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, i64>(4).err().unwrap()
+            row.get::<_, String>(4).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, c_double>(4).err().unwrap()
+            row.get::<_, Vec<u8>>(4).err().unwrap()
         ));
         assert!(is_invalid_column_type(
-            row.get_checked::<_, String>(4).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, Vec<u8>>(4).err().unwrap()
-        ));
-        assert!(is_invalid_column_type(
-            row.get_checked::<_, time::Timespec>(4).err().unwrap()
+            row.get::<_, time::Timespec>(4).err().unwrap()
         ));
     }
 
@@ -360,19 +352,16 @@ mod test {
         let mut rows = stmt.query(NO_PARAMS).unwrap();
 
         let row = rows.next().unwrap().unwrap();
-        assert_eq!(
-            Value::Blob(vec![1, 2]),
-            row.get_checked::<_, Value>(0).unwrap()
-        );
+        assert_eq!(Value::Blob(vec![1, 2]), row.get::<_, Value>(0).unwrap());
         assert_eq!(
             Value::Text(String::from("text")),
-            row.get_checked::<_, Value>(1).unwrap()
+            row.get::<_, Value>(1).unwrap()
         );
-        assert_eq!(Value::Integer(1), row.get_checked::<_, Value>(2).unwrap());
-        match row.get_checked::<_, Value>(3).unwrap() {
+        assert_eq!(Value::Integer(1), row.get::<_, Value>(2).unwrap());
+        match row.get::<_, Value>(3).unwrap() {
             Value::Real(val) => assert!((1.5 - val).abs() < EPSILON),
             x => panic!("Invalid Value {:?}", x),
         }
-        assert_eq!(Value::Null, row.get_checked::<_, Value>(4).unwrap());
+        assert_eq!(Value::Null, row.get::<_, Value>(4).unwrap());
     }
 }

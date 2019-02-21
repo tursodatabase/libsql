@@ -176,7 +176,7 @@ impl Statement<'_> {
     ///     let mut names = Vec::new();
     ///     while let Some(result_row) = rows.next() {
     ///         let row = result_row?;
-    ///         names.push(row.get(0));
+    ///         names.push(row.get(0)?);
     ///     }
     ///
     ///     Ok(names)
@@ -267,7 +267,7 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row<'_, '_>) -> T,
+        F: FnMut(&Row<'_, '_>) -> Result<T>,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -306,7 +306,7 @@ impl Statement<'_> {
         f: F,
     ) -> Result<MappedRows<'_, F>>
     where
-        F: FnMut(&Row<'_, '_>) -> T,
+        F: FnMut(&Row<'_, '_>) -> Result<T>,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -354,7 +354,7 @@ impl Statement<'_> {
     /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
     ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = :id")?;
     ///     let rows =
-    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)))?;
+    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)?))?;
     ///
     ///     let mut persons = Vec::new();
     ///     for person_result in rows {
@@ -410,11 +410,11 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_, '_>) -> Result<T>,
     {
         let mut rows = self.query(params)?;
 
-        rows.get_expected_row().map(|r| f(&r))
+        rows.get_expected_row().and_then(|r| f(&r))
     }
 
     /// Consumes the statement.
@@ -798,8 +798,8 @@ mod test {
             .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
-        let id: i32 = rows.next().unwrap().unwrap().get(0);
-        assert_eq!(1, id);
+        let id: Result<i32> = rows.next().unwrap().and_then(|row| row.get(0));
+        assert_eq!(Ok(1), id);
     }
 
     #[test]
@@ -816,8 +816,8 @@ mod test {
             .unwrap();
         let mut rows = stmt
             .query_map_named(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0);
-                2 * id
+                let id: Result<i32> = row.get(0);
+                id.map(|i| 2 * i)
             })
             .unwrap();
 
@@ -840,7 +840,7 @@ mod test {
             .unwrap();
         let mut rows = stmt
             .query_and_then_named(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0);
+                let id: i32 = row.get(0)?;
                 if id == 1 {
                     Ok(id)
                 } else {
