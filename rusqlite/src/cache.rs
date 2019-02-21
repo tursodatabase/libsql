@@ -298,7 +298,7 @@ mod test {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
                 (1i32, 2i32),
-                stmt.query_map(NO_PARAMS, |r| (r.get(0), r.get(1)))
+                stmt.query_map(NO_PARAMS, |r| Ok((r.get(0)?, r.get(1)?)))
                     .unwrap()
                     .next()
                     .unwrap()

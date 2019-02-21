@@ -73,7 +73,7 @@ pub struct MappedRows<'stmt, F> {
 
 impl<'stmt, T, F> MappedRows<'stmt, F>
 where
-    F: FnMut(&Row<'_, '_>) -> T,
+    F: FnMut(&Row<'_, '_>) -> Result<T>,
 {
     pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
         MappedRows { rows, map: f }
@@ -82,7 +82,7 @@ where
 
 impl<T, F> Iterator for MappedRows<'_, F>
 where
-    F: FnMut(&Row<'_, '_>) -> T,
+    F: FnMut(&Row<'_, '_>) -> Result<T>,
 {
     type Item = Result<T>;
 
@@ -90,7 +90,7 @@ where
         let map = &mut self.map;
         self.rows
             .next()
-            .map(|row_result| row_result.map(|row| (map)(&row)))
+            .map(|row_result| row_result.and_then(|row| (map)(&row)))
     }
 }
 
@@ -136,16 +136,16 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if calling `row.get_checked(idx)` would return an error,
+    /// Panics if calling `row.get(idx)` would return an error,
     /// including:
     ///
-    /// * If the underlying SQLite column type is not a valid type as a
-    ///   source for `T`
+    /// * If the underlying SQLite column type is not a valid type as a source
+    ///   for `T`
     /// * If the underlying SQLite integral value is outside the range
     ///   representable by `T`
     /// * If `idx` is outside the range of columns in the returned query
-    pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
-        self.get_checked(idx).unwrap()
+    pub fn get_unwrap<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
+        self.get(idx).unwrap()
     }
 
     /// Get the value of a particular column of the result row.
@@ -164,7 +164,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// If the result type is i128 (which requires the `i128_blob` feature to be
     /// enabled), and the underlying SQLite column is a blob whose size is not
     /// 16 bytes, `Error::InvalidColumnType` will also be returned.
-    pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = idx.idx(self.stmt)?;
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
@@ -184,7 +184,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// This `ValueRef` is valid only as long as this Row, which is enforced by
     /// it's lifetime. This means that while this method is completely safe,
     /// it can be somewhat difficult to use, and most callers will be better
-    /// served by `get` or `get_checked`.
+    /// served by `get` or `get`.
     ///
     /// ## Failure
     ///
@@ -208,7 +208,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// This `ValueRef` is valid only as long as this Row, which is enforced by
     /// it's lifetime. This means that while this method is completely safe,
     /// it can be difficult to use, and most callers will be better served by
-    /// `get` or `get_checked`.
+    /// `get` or `get`.
     ///
     /// ## Failure
     ///
