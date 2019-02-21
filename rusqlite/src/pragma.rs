@@ -230,7 +230,7 @@ impl Connection {
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
-        // The argument is may be either in parentheses
+        // The argument may be either in parentheses
         // or it may be separated from the pragma name by an equal sign.
         // The two syntaxes yield identical results.
         sql.open_brace();
@@ -257,7 +257,7 @@ impl Connection {
     ) -> Result<()> {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
-        // The argument is may be either in parentheses
+        // The argument may be either in parentheses
         // or it may be separated from the pragma name by an equal sign.
         // The two syntaxes yield identical results.
         sql.push_equal_sign();
@@ -280,7 +280,7 @@ impl Connection {
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
-        // The argument is may be either in parentheses
+        // The argument may be either in parentheses
         // or it may be separated from the pragma name by an equal sign.
         // The two syntaxes yield identical results.
         sql.push_equal_sign();
