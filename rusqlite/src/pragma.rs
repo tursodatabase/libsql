@@ -171,18 +171,11 @@ impl Connection {
         f: F,
     ) -> Result<T>
     where
-        F: FnOnce(Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_, '_>) -> Result<T>,
     {
         let mut query = Sql::new();
         query.push_pragma(schema_name, pragma_name)?;
-        let mut stmt = self.prepare(&query)?;
-        let mut rows = stmt.query(NO_PARAMS)?;
-        if let Some(result_row) = rows.next() {
-            let row = result_row?;
-            f(row)
-        } else {
-            Err(Error::QueryReturnedNoRows)
-        }
+        self.query_row(&query, NO_PARAMS, f)
     }
 
     /// Query the current rows/values of `pragma_name`.
@@ -276,7 +269,7 @@ impl Connection {
         f: F,
     ) -> Result<T>
     where
-        F: FnOnce(Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_, '_>) -> Result<T>,
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
@@ -285,14 +278,7 @@ impl Connection {
         // The two syntaxes yield identical results.
         sql.push_equal_sign();
         sql.push_value(pragma_value)?;
-        let mut stmt = self.prepare(&sql)?;
-        let mut rows = stmt.query(NO_PARAMS)?;
-        if let Some(result_row) = rows.next() {
-            let row = result_row?;
-            f(row)
-        } else {
-            Err(Error::QueryReturnedNoRows)
-        }
+        self.query_row(&sql, NO_PARAMS, f)
     }
 }
 
@@ -333,7 +319,7 @@ mod test {
     fn pragma_query_value() {
         let db = Connection::open_in_memory().unwrap();
         let user_version: i32 = db
-            .pragma_query_value(None, "user_version", |row| row.get_checked(0))
+            .pragma_query_value(None, "user_version", |row| row.get(0))
             .unwrap();
         assert_eq!(0, user_version);
     }
@@ -359,7 +345,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         let mut user_version = -1;
         db.pragma_query(None, "user_version", |row| {
-            user_version = row.get_checked(0)?;
+            user_version = row.get(0)?;
             Ok(())
         })
         .unwrap();
@@ -371,7 +357,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         let mut user_version = -1;
         db.pragma_query(Some(DatabaseName::Main), "user_version", |row| {
-            user_version = row.get_checked(0)?;
+            user_version = row.get(0)?;
             Ok(())
         })
         .unwrap();
@@ -383,7 +369,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         let mut columns = Vec::new();
         db.pragma(None, "table_info", &"sqlite_master", |row| {
-            let column: String = row.get_checked(1)?;
+            let column: String = row.get(1)?;
             columns.push(column);
             Ok(())
         })
@@ -401,7 +387,7 @@ mod test {
 
         while let Some(row) = rows.next() {
             let row = row.unwrap();
-            let column: String = row.get(1);
+            let column: String = row.get(1).unwrap();
             columns.push(column);
         }
         assert_eq!(5, columns.len());
@@ -417,7 +403,7 @@ mod test {
     fn pragma_update_and_check() {
         let db = Connection::open_in_memory().unwrap();
         let journal_mode: String = db
-            .pragma_update_and_check(None, "journal_mode", &"OFF", |row| row.get_checked(0))
+            .pragma_update_and_check(None, "journal_mode", &"OFF", |row| row.get(0))
             .unwrap();
         assert_eq!("off", &journal_mode);
     }
