@@ -250,26 +250,26 @@ void sqlite3FinishCoding(Parse *pParse){
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
-  char *zErrMsg = 0;
   sqlite3 *db = pParse->db;
-  char saveBuf[PARSE_TAIL_SZ];
 
   if( pParse->nErr ) return;
   assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
   va_start(ap, zFormat);
   zSql = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
-  if( zSql==0 ){
-    return;   /* A malloc must have failed */
+  assert( zSql!=0 || db->mallocFailed );
+  if( db->mallocFailed==0 ){
+    char *zErrMsg = 0;
+    char saveBuf[PARSE_TAIL_SZ];
+    pParse->nested++;
+    memcpy(saveBuf, PARSE_TAIL(pParse), PARSE_TAIL_SZ);
+    memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
+    sqlite3RunParser(pParse, zSql, &zErrMsg);
+    sqlite3DbFree(db, zErrMsg);
+    memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
+    pParse->nested--;
   }
-  pParse->nested++;
-  memcpy(saveBuf, PARSE_TAIL(pParse), PARSE_TAIL_SZ);
-  memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
-  sqlite3RunParser(pParse, zSql, &zErrMsg);
-  sqlite3DbFree(db, zErrMsg);
   sqlite3DbFree(db, zSql);
-  memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
-  pParse->nested--;
 }
 
 #if SQLITE_USER_AUTHENTICATION
