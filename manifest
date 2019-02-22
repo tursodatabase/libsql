@@ -1,5 +1,5 @@
-C Detect\soversized\sstrings\sin\sthe\sOP_String\sopcode\seven\sif\sthe\sP4\sargument\nis\soriginally\sUTF8\sand\shas\sto\sbe\sconverted\sto\sUTF16\sto\smatch\sthe\sdatabase\nfile\sand\sthat\sconversion\scauses\sthe\sstring\sto\sbecome\sshorter\sand\scross\nbelow\sSQLITE_LIMIT_LENGTH\sthreshold.\s\sThis\smight\sfix\san\sOSSFuzz\sproblem\nthat\swe\shave\sbeen\sso\sfar\sunable\sto\sreproduce.
-D 2019-02-21T16:41:34.321
+C Modify\ssqlite3_str_finish()\sand\ssqlite3VMPrintf()\sso\sthat\sthey\salways\nreturn\sNULL\son\sany\sOOM\sor\sSQLITE_LIMIT_LENGTH\serror.
+D 2019-02-22T15:42:10.523
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -511,7 +511,7 @@ F src/pcache1.c a72804486dfa8e4b6bc30d666c97ecf1155f91a4351fc6e48ea4097e4eb304fb
 F src/pragma.c af67dedaad8bafe9a5f9adcec32a0da6dd118617dd8220ad1d118f5a6bf83a02
 F src/pragma.h a776bb9c915207e9d1117b5754743ddf1bf6a39cc092a4a44e74e6cb5fab1177
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
-F src/printf.c cbf27c320091a83279d1738f68a27a9fe01698c607ce80516ab6bdb5a9c36a1a
+F src/printf.c 93a3d539019264683a444bc043c875e9a6cca43fe935ae7bf6cfff0af3bba118
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1588690ee4cc39b4b9ea3230d4e3543d5ec3b5e898c87521f1375af0f1934cd4
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
@@ -1205,7 +1205,7 @@ F test/pragma4.test 52d8186f9e8d09b87189432cdd401dfa66d0b32445e837fa19046c8ae762
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
-F test/printf.test a3e559bc9d922e7fe44e9d05c6965fee34fe3bc28300a4248c6a063425246ffd
+F test/printf.test 0300699733e53101b2ce48800518427249edd4053bb50fa0621c6607482f0fdb
 F test/printf2.test 30b5dd0b4b992dc5626496846ecce17ff592cacbcb11c3e589f3ac4d7e129dae
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be21a6416d47ff7db995006a0422b745044d9b8bb5bad3c53342aa6e2e524771
-R c5273df2e86448fbe31848ca521a60a4
+P c13d563925db12bc2c91ff9432050261e5bd39d960e2739777a66bf804df2e31
+R 86ff0d78e3b0371bb1c17329fcb2b62e
 U drh
-Z 34aa1885dbc38a0426f19597b6e0799d
+Z 1f9977e43574c881ad05ccf22d06573e
