@@ -1,5 +1,5 @@
-C Modify\ssqlite3_str_finish()\sand\ssqlite3VMPrintf()\sso\sthat\sthey\salways\nreturn\sNULL\son\sany\sOOM\sor\sSQLITE_LIMIT_LENGTH\serror.
-D 2019-02-22T15:42:10.523
+C In\ssqlite3NestedParse()\sbe\ssure\sto\sdetect\sall\sSQLITE_NOMEM\sand\sSQLITE_TOOBIG\nerrors\sand\sto\sdistinguish\sbetween\sthem.
+D 2019-02-22T16:18:12.478
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -459,7 +459,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 026f48c39b179a5602423904fcaaae87bbd75f659fd672b3756fea43356d9909
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c ac41c86b486f480b2bcad7e55c6cc19d7151082f74682ab048c45980d6c9ddac
+F src/build.c 3acec29b23948042173301a8befebae01a98344debf66cbd4467c8b9077707b8
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1036,7 +1036,7 @@ F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
 F test/indexexpr1.test 635261197bcdc19b9b2c59bbfa7227d525c00e9587faddb2d293c44d287ce60e
 F test/indexexpr2.test 38020c247ee77ba19322fadde99db84bdf2aef34f714866786563c3834bb2dce
-F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
+F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 9773604f8e1a2595f51488a5643c359d8a11dc55a11cb185910d93387d378458
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c13d563925db12bc2c91ff9432050261e5bd39d960e2739777a66bf804df2e31
-R 86ff0d78e3b0371bb1c17329fcb2b62e
+P e7144ffd21294d7aebbfa6aa5a262797a6d16de11193f1bf6b75f5f27b04c940
+R 11deec5828b62a731a0a037d39c47b89
 U drh
-Z 1f9977e43574c881ad05ccf22d06573e
+Z cf16021848b0cf5e1e8ad8e5d4d2b4c8
