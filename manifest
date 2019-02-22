@@ -1,5 +1,5 @@
-C Check-in\s[fa792714ae62fa980]\sis\snot\sa\svalid\sfix\sfor\sticket\n[df46dfb631f75694],\sas\sthe\snew\stest\scase\sin\sthis\scheck-in\sdemonstrates.\nThe\sfix\shere\scauses\stest\scases\sfor\sthe\s[df46dfb631f75694]\sbug\sto\sfail\nagain,\sso\sthis\scheck-in\sis\son\sa\sbranch.\s\sA\snew\sfix\sis\sneeded\sfor\n[df46dfb631f75694].
-D 2019-02-22T21:33:56.743
+C Make\sall\sephemeral\stables\sbuilt\sto\shold\sthe\sRHS\sof\san\sIN\soperator\sbe\nindex-btrees,\snever\stable-btrees,\sregardless\sof\swhether\sor\snot\sthey\sare\nused\sas\sIN_INDEX_LOOP\sor\sIN_INDEX_MEMBERSHIP.\s\sThat\sway,\sthe\ssame\sephmerial\ntable\scan\sbe\sreused\sfor\sboth\scases.
+D 2019-02-22T23:29:56.457
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -467,7 +467,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 182dc9ff30aa6a430b7f728ce84fda85ec10890e29fdf75be1e871d13222a99c
+F src/expr.c f2d0ecf68213770be4fad83128ce02e67667deebaa0a44061313f7e4f2a4ae28
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
 F src/func.c 0341881d22903aac5ba7f352b188806d6436e1d6ae4235ff01e44d56879dfe63
@@ -476,7 +476,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 305f6ea82a90c3d506ad26d3b6530655bcf08dbff20403ce9f20c21758fbd5c0
+F src/insert.c 4ce12b5ba3bcbfa17ec37ce960d499fc287b6289df2c00b31201f716a3c7df45
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 27d7265625ea6eaccdfe7c53ef41adc179c9357a077702a860c1a3b0a037a16f
@@ -520,7 +520,7 @@ F src/shell.c.in f2c1adbee3f6f36686b4a38d2168ebfc25298b4ad1e6d95199fc4e95b539251
 F src/sqlite.h.in 7da74fd5bd7a9dbe92297060f036935520b26e240457287c5e67c7b9db51a986
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h 8628c582eafa5ca93523cdaa7c45b2f38a11132e419c7923850706da7fa36bc2
+F src/sqliteInt.h f253c4ec15e577a293a462e5049f8ea1d0c7a31819b3a88acdd24698df8f4d0b
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -586,7 +586,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
 F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
-F src/vdbe.c c2ebe27a1e4176f5e4b48269917b7a3df096b125d3c407da90e769a9fe4e406e
+F src/vdbe.c f1e7b5320df80ff58c67176e35cb48062cbda2a9c9811f11db5faa48071d3fe4
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c cde63790c9d18ba5941d52c9f49e1a862cf6503141d5b9c112a05eb0adbf30a9
@@ -1805,10 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 579b66eaa0816561c6e47ea116b46f229188f0fc84c1173bfe0d21df2dff9a9a
-R 44233d0aa266189ff2ae6bf0b0a0a078
-T *branch * tkt-df46dfb631
-T *sym-tkt-df46dfb631 *
-T -sym-trunk *
+P 0d456456da6e25b20d9d27ca95f1013082bca52ee74ee9bf91732a9fa843ea45
+R 63e80740e79601900e62b0317140d8ef
 U drh
-Z ab4cb17ec0e626c52e7694e3fdcbcc49
+Z b87326ad069ad8da755635bc9cbd9517
