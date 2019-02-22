@@ -6730,7 +6730,7 @@ static void insertCell(
     pPage->nCell++;
     /* increment the cell count */
     if( (++data[pPage->hdrOffset+4])==0 ) data[pPage->hdrOffset+3]++;
-    assert( get2byte(&data[pPage->hdrOffset+3])==pPage->nCell );
+    assert( get2byte(&data[pPage->hdrOffset+3])==pPage->nCell || CORRUPT_DB );
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
       /* The cell may contain a pointer to an overflow page. If so, write
@@ -8261,7 +8261,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   }
   assert( sqlite3PagerIswriteable(pChild->pDbPage) );
   assert( sqlite3PagerIswriteable(pRoot->pDbPage) );
-  assert( pChild->nCell==pRoot->nCell );
+  assert( pChild->nCell==pRoot->nCell || CORRUPT_DB );
 
   TRACE(("BALANCE: copy root %d into %d\n", pRoot->pgno, pChild->pgno));
 
