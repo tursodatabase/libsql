@@ -1,5 +1,5 @@
-C Internally,\sremove\sall\sreferences\sto\sa\sWindow\sobject\sthat\sbelongs\sto\san\sexpression\sin\san\sORDER\sBY\sclause\sif\sthat\sexpression\sis\sconverted\sto\san\salias\sof\sa\sresult-set\sexpression.\sFix\sfor\s[4feb3159c6].
-D 2019-02-22T19:24:16.635
+C Check-in\s[fa792714ae62fa980]\sis\snot\sa\svalid\sfix\sfor\sticket\n[df46dfb631f75694],\sas\sthe\snew\stest\scase\sin\sthis\scheck-in\sdemonstrates.\nThe\sfix\shere\scauses\stest\scases\sfor\sthe\s[df46dfb631f75694]\sbug\sto\sfail\nagain,\sso\sthis\scheck-in\sis\son\sa\sbranch.\s\sA\snew\sfix\sis\sneeded\sfor\n[df46dfb631f75694].
+D 2019-02-22T21:33:56.743
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -602,7 +602,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c 5ee878f714218352a2f452907572d4bf1e4303393288458f87ffc86edaf2cfbe
+F src/wherecode.c cdeb7c7028dfcf1c473c5d91c4ae4e579a8d35337e0042788022063bb6db2a51
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
 F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1646,7 +1646,7 @@ F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/walvfs.test c0faffda13d045a96dfc541347886bb1a3d6f3205857fc98e683edfab766ea88
-F test/where.test 8215d220633f08da331781cf9ede7fb7aed50eb113473c10acd39a643fd258ba
+F test/where.test 93738e224cd5e7819565a9f272c19fd0ee5893d9cd7f5238ce026bae09b8d710
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1805,7 +1805,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73056b314bd63288c662752e9bd469b70264c38031c1c857460e64fdb1ed4e2e
-R 0862848065a4a98f23b3c741ebf45b9f
-U dan
-Z 231e5f595c30e40261d6e69369fc6dc0
+P 579b66eaa0816561c6e47ea116b46f229188f0fc84c1173bfe0d21df2dff9a9a
+R 44233d0aa266189ff2ae6bf0b0a0a078
+T *branch * tkt-df46dfb631
+T *sym-tkt-df46dfb631 *
+T -sym-trunk *
+U drh
+Z ab4cb17ec0e626c52e7694e3fdcbcc49

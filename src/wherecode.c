@@ -1344,7 +1344,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
     pLevel->op = OP_Noop;
-    pTerm->wtFlags |= TERM_CODED;
+    if( (pTerm->prereqAll & pLevel->notReady)==0 ){
+      pTerm->wtFlags |= TERM_CODED;
+    }
   }else if( (pLoop->wsFlags & WHERE_IPK)!=0
          && (pLoop->wsFlags & WHERE_COLUMN_RANGE)!=0
   ){
