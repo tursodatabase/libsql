@@ -1,5 +1,5 @@
-C Check-in\s[fa792714ae62fa98]\sis\sincorrect.\s\sAdd\sa\stest\scase\sto\srefute\sit\sand\nalso\sa\sfix\sto\smake\sit\sright.\s\nThen\sadd\san\salternative\sfix\sto\sticket\s[df46dfb631f75694]\sin\swhich\nall\sephemeral\stables\sused\sas\sthe\sRHS\sof\san\sIN\soperator\sbe\sindex\sbtrees\nand\snever\stable\sbtrees\sso\sthat\sthey\scan\salways\sbe\sreused.
-D 2019-02-23T00:21:00.186
+C Fix\sa\scouple\sof\sassert()\sstatements\sin\sfts3\sthat\scan\sbe\sfalse\sif\sthe\sdatabase\sis\scorrupt.
+D 2019-02-23T20:48:41.063
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -89,7 +89,7 @@ F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c ac1f8945375d07076b7178de1fe549982e6ae6f050095e7f7e400ec4448f31df
+F ext/fts3/fts3_snippet.c d002c29d3e71c15b27326b818c1e49a4d0d5fc342cc8e9522e2bf2a3077c75a2
 F ext/fts3/fts3_term.c 12f7b2318f1254e6cc46dd306e5f2ac5b00b06d6761f5cae09fee5e1817cc32a
 F ext/fts3/fts3_test.c b6e9f3fd7155cb388c6bc203fb24817a721fb61d9ce28810c73fcfda8c16fda6
 F ext/fts3/fts3_tokenize_vtab.c 969c132816b6f46ee2c7efafd2547a9bfd50b0aac3f8cef3f2dca2cbd90639c7
@@ -919,7 +919,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test 46b9ddda7f6588fd5a5b1f4bb4fc0618dc45010e7dddb8a3a188baf3197177ae
 F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999fe3b0d25f3
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 2afb0da4fe1fb6468a485f96d6a1bc4959734f515176ec29294dd49b0ad4c946
+F test/fts3corrupt4.test 8733b9589701df24cf5f35ed36fec865edd67f24961f24ac69d751b4221494f7
 F test/fts3cov.test cb932743da52a1c79a1ab8983e26c8121cf02263d6ff16e1f642e6f9b8348338
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -1805,8 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 579b66eaa0816561c6e47ea116b46f229188f0fc84c1173bfe0d21df2dff9a9a 90c5a17cd526b256753f876e575f3e731d5e8b9dd6e196cf8d8f7306e099b91c
-R c922ba3f62286cb9bc5a2acd31d21a66
-T +closed 90c5a17cd526b256753f876e575f3e731d5e8b9dd6e196cf8d8f7306e099b91c
-U drh
-Z 6d379fa0271550d77de94db4756b85a3
+P d3915230e3ee5878fe2e65a0afb7e91ee124aaf46b4e28c6e00053d6df13d445
+R 6e690e8ab06a9d23902df3ac745bd5b0
+U dan
+Z 7adf75902be04c3b9b4844266efca292
