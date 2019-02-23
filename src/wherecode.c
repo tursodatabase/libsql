@@ -582,7 +582,6 @@ static int codeEqualityTerm(
         if( pLoop->aLTerm[i]->pExpr==pX ){
           int iOut = iReg + i - iEq;
           if( eType==IN_INDEX_ROWID ){
-            testcase( nEq>1 );  /* Happens with a UNIQUE index on ROWID */
             pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iOut);
           }else{
             int iCol = aiMap ? aiMap[iMap++] : 0;
@@ -1344,7 +1343,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
     pLevel->op = OP_Noop;
-    pTerm->wtFlags |= TERM_CODED;
+    if( (pTerm->prereqAll & pLevel->notReady)==0 ){
+      pTerm->wtFlags |= TERM_CODED;
+    }
   }else if( (pLoop->wsFlags & WHERE_IPK)!=0
          && (pLoop->wsFlags & WHERE_COLUMN_RANGE)!=0
   ){

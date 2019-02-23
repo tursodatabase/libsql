@@ -4580,14 +4580,7 @@ case OP_NewRowid: {           /* out2 */
 ** This instruction only works on tables.  The equivalent instruction
 ** for indices is OP_IdxInsert.
 */
-/* Opcode: InsertInt P1 P2 P3 P4 P5
-** Synopsis: intkey=P3 data=r[P2]
-**
-** This works exactly like OP_Insert except that the key is the
-** integer value P3, not the value of the integer stored in register P3.
-*/
-case OP_Insert: 
-case OP_InsertInt: {
+case OP_Insert: {
   Mem *pData;       /* MEM cell holding data for the record to be inserted */
   Mem *pKey;        /* MEM cell holding key  for the record */
   VdbeCursor *pC;   /* Cursor to table into which insert is written */
@@ -4608,16 +4601,11 @@ case OP_InsertInt: {
   REGISTER_TRACE(pOp->p2, pData);
   sqlite3VdbeIncrWriteCounter(p, pC);
 
-  if( pOp->opcode==OP_Insert ){
-    pKey = &aMem[pOp->p3];
-    assert( pKey->flags & MEM_Int );
-    assert( memIsValid(pKey) );
-    REGISTER_TRACE(pOp->p3, pKey);
-    x.nKey = pKey->u.i;
-  }else{
-    assert( pOp->opcode==OP_InsertInt );
-    x.nKey = pOp->p3;
-  }
+  pKey = &aMem[pOp->p3];
+  assert( pKey->flags & MEM_Int );
+  assert( memIsValid(pKey) );
+  REGISTER_TRACE(pOp->p3, pKey);
+  x.nKey = pKey->u.i;
 
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
