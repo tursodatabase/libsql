@@ -1,5 +1,5 @@
-C Internally,\sremove\sall\sreferences\sto\sa\sWindow\sobject\sthat\sbelongs\sto\san\sexpression\sin\san\sORDER\sBY\sclause\sif\sthat\sexpression\sis\sconverted\sto\san\salias\sof\sa\sresult-set\sexpression.
-D 2019-02-25T15:55:53.511
+C Version\s3.27.2
+D 2019-02-25T16:06:06.705
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -1804,8 +1804,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4febdfb37b475361378b07075ed58e7273e3c229bb93e319e4f78c217682d0b8
-Q +579b66eaa0816561c6e47ea116b46f229188f0fc84c1173bfe0d21df2dff9a9a
+P a21ffcd8176672e791c11e7d3869878b0655e9f7fb3646378421fb7480d4d8c6
 R a79d07126ad692dd98c735ebc3ce8975
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.27.2 *
 U drh
-Z 903d8ee651a8167a7ca2acbad07f1e06
+Z 1721b9485efb0ba623f21704b685d9c7
