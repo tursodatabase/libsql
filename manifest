@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_total_changes().
-D 2019-02-25T14:16:19.183
+C Update\scomments\son\sthe\sfossildelta\sextension.\s\sNo\schanges\sto\scode.
+D 2019-02-25T14:52:43.832
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -286,7 +286,7 @@ F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
 F ext/misc/fileio.c 592d6531d8413d81b25f5a47a45d7e310e455d33e03a64c6ae85724c6524a5d5
-F ext/misc/fossildelta.c 31b64084789228ac0d1113e5e39dc79c2ae16dd131d5c988ad9550ae1b9bc4b4
+F ext/misc/fossildelta.c 3cc9a9b2f39889b43cd176c19f286bc7dd652f4c202c202d008481252d820316
 F ext/misc/fuzzer.c 9e79c337faffdd4c5fe4485467537438359b43e0858a40038d4300b894ff553f
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 8af4672f43634257dbcfdb4515b4070325463d67c6968b4be1bd414de28d4d58
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84162af521f29df8a186163fbdef9856e1aa8aba78e74d7df0ba2cc83bb86240
-R a2b016f8e876d7afed026960b97cfb9a
+P 8474c1560e0c3a28c6a7ed360202a8e7caae3c8259f60bbfa6d2948ab7876f51
+R b6b94692df1ff68d1775b0307c4b76d3
 U drh
-Z 55e24971867c6a920f00e5ee1b3ee79b
+Z 398771f938c8db2543123478ba7fdec9
