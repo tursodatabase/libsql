@@ -1,5 +1,5 @@
-C Import\sfrom\strunk\sthe\snew\sfix\sto\sticket\s[df46dfb631f75694]\sin\swhich\nall\sephemeral\stables\sused\sas\sthe\sRHS\sof\san\sIN\soperator\sbe\sindex\sbtrees\nand\snever\stable\sbtrees\sso\sthat\sthey\scan\salways\sbe\sreused.
-D 2019-02-23T00:56:05.548
+C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_total_changes().
+D 2019-02-25T14:25:42.778
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -516,7 +516,7 @@ F src/resolve.c c8f207247472c41ac73d738e1c1a80719ad253d1dbb617ed57740492b2a6c097
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c c998f694759e37799929e28df8a2649747f8774d4fc233529ab6bda689388e15
 F src/shell.c.in f2c1adbee3f6f36686b4a38d2168ebfc25298b4ad1e6d95199fc4e95b539251d
-F src/sqlite.h.in 7da74fd5bd7a9dbe92297060f036935520b26e240457287c5e67c7b9db51a986
+F src/sqlite.h.in 8859e0b45b48d4186fbc466885e508f8272420a349099acdebcdb8d410d54824
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
 F src/sqliteInt.h ea0b5769140ca4bed03aeca8e7abb5c7a3eef4ffac723c8db3cfde88c390f807
@@ -1804,8 +1804,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a70d67d8af3dd41fb7139e213e433516e4469a71aaededd3c88cf6e225288bf1
-Q +d3915230e3ee5878fe2e65a0afb7e91ee124aaf46b4e28c6e00053d6df13d445
-R 529ec9abee9d7082d40b473e097c7f60
+P 0e64ac122aac469aff4ca7f55a494c8d2d34bbcc1b854f3d579db5926590a660
+Q +8474c1560e0c3a28c6a7ed360202a8e7caae3c8259f60bbfa6d2948ab7876f51
+R d79b1fbae35de34d8696dc327df3acfa
 U drh
-Z c36fc67223c62b267adb844e47f924d2
+Z 2ab091dd0605bd13d01a019bd758cd1d
