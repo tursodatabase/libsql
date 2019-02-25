@@ -794,7 +794,7 @@ void sqlite3SchemaReleaseAll(sqlite3 *db){
       }
     }
   }
-  db->flags &= ~DBFLAG_FreeSchema;
+  db->mDbFlags &= ~DBFLAG_FreeSchema;
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }
 

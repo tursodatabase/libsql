@@ -308,7 +308,7 @@ int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
     memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
     rc = sqlite3InitOne(db, iDb, pzErr, 0);
     db->init = sv;
-    *pbUnload = (rc==SQLITE_OK && (iDb!=1));
+    if( pbUnload ) *pbUnload = (rc==SQLITE_OK && (iDb!=1));
   }
   return rc;
 }

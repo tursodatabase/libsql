@@ -420,7 +420,13 @@ void sqlite3Pragma(
 
   /* Make sure the database schema is loaded if the pragma requires that */
   if( (pPragma->mPragFlg & PragFlg_NeedSchema)!=0 ){
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+    if( IsReuseSchema(db) && (zDb || (pPragma->mPragFlg & PragFlg_OneSchema)) ){
+      assert( iDb>=0 && iDb<db->nDb );
+      pParse->rc = sqlite3SchemaLoad(db, iDb, 0, &pParse->zErrMsg);
+      if( pParse->rc ) goto pragma_out;
+    }else{
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+    }
   }
 
   /* Register the result column names for pragmas that return results */
@@ -1802,9 +1808,10 @@ void sqlite3Pragma(
   ** applications for any purpose.
   */
   case PragTyp_HEADER_VALUE: {
-    int iCookie = pPragma->iArg;  /* Which cookie to read or write */
+    int iCookie;                  /* Which cookie to read or write */
+    iCookie = pPragma->iArg & PRAGMA_HEADER_VALUE_MASK;     
     sqlite3VdbeUsesBtree(v, iDb);
-    if( zRight && (pPragma->mPragFlg & PragFlg_ReadOnly)==0 ){
+    if( zRight && (pPragma->iArg & PRAGMA_HEADER_VALUE_READONLY)==0 ){
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {
         { OP_Transaction,    0,  1,  0},    /* 0 */

@@ -12,7 +12,7 @@
 
 # Flag meanings:
 set flagMeaning(NeedSchema) {Force schema load before running}
-set flagMeaning(ReadOnly)   {Read-only HEADER_VALUE}
+set flagMeaning(OneSchema)  {Only a single schema required}
 set flagMeaning(Result0)    {Acts as query when no argument}
 set flagMeaning(Result1)    {Acts as query when has one argument}
 set flagMeaning(SchemaReq)  {Schema required - "main" is default}
@@ -150,7 +150,7 @@ set pragma_def {
   ARG:  SQLITE_CellSizeCk
 
   NAME: default_cache_size
-  FLAG: NeedSchema Result0 SchemaReq NoColumns1
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1 OneSchema
   COLS: cache_size
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
 
@@ -163,12 +163,12 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: page_count
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq OneSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: max_page_count
   TYPE: PAGE_COUNT
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq OneSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: locking_mode
@@ -176,7 +176,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: journal_mode
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq OneSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: journal_size_limit
@@ -184,18 +184,18 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: cache_size
-  FLAG: NeedSchema Result0 SchemaReq NoColumns1
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1 OneSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: mmap_size
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: auto_vacuum
-  FLAG: NeedSchema Result0 SchemaReq NoColumns1
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1 OneSchema
   IF:   !defined(SQLITE_OMIT_AUTOVACUUM)
 
   NAME: incremental_vacuum
-  FLAG: NeedSchema NoColumns
+  FLAG: NeedSchema NoColumns OneSchema
   IF:   !defined(SQLITE_OMIT_AUTOVACUUM)
 
   NAME: temp_store
@@ -215,7 +215,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
 
   NAME: synchronous
-  FLAG: NeedSchema Result0 SchemaReq NoColumns1
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1 OneSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: table_info
@@ -232,7 +232,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: stats
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq OneSchema
   COLS: tbl idx wdth hght flgs
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) && defined(SQLITE_DEBUG)
 
@@ -256,7 +256,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: database_list
-  FLAG: NeedSchema Result0
+  FLAG: NeedSchema Result0 OneSchema
   COLS: seq name file
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
@@ -284,12 +284,12 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: foreign_key_list
-  FLAG: NeedSchema Result1 SchemaOpt
+  FLAG: NeedSchema Result1 SchemaOpt OneSchema
   COLS: id seq table from to on_update on_delete match
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY)
 
   NAME: foreign_key_check
-  FLAG: NeedSchema Result0
+  FLAG: NeedSchema Result0 OneSchema
   COLS: table rowid parent fkid
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
@@ -329,14 +329,14 @@ set pragma_def {
 
   NAME: data_version
   TYPE: HEADER_VALUE
-  ARG:  BTREE_DATA_VERSION
-  FLAG: ReadOnly Result0
+  ARG:  BTREE_DATA_VERSION|PRAGMA_HEADER_VALUE_READONLY
+  FLAG: Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: freelist_count
   TYPE: HEADER_VALUE
-  ARG:  BTREE_FREE_PAGE_COUNT
-  FLAG: ReadOnly Result0
+  ARG:  BTREE_FREE_PAGE_COUNT|PRAGMA_HEADER_VALUE_READONLY
+  FLAG: Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: application_id
@@ -350,7 +350,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_COMPILEOPTION_DIAGS)
 
   NAME: wal_checkpoint
-  FLAG: NeedSchema
+  FLAG: NeedSchema OneSchema
   COLS: busy log checkpointed
   IF:   !defined(SQLITE_OMIT_WAL)
 
@@ -532,6 +532,12 @@ foreach f [lsort [array names allflags]] {
              $f $fv $flagMeaning($f)]
   set fv [expr {$fv*2}]
 }
+
+puts $fd "\n/* For PragTyp_HEADER_VALUE pragmas the Pragma.iArg value is set"
+puts $fd "** to the index of the header field to access (always 10 or less)."
+puts $fd "** Ored with HEADER_VALUE_READONLY if the field is read only. */"
+puts $fd "#define PRAGMA_HEADER_VALUE_READONLY 0x0100"
+puts $fd "#define PRAGMA_HEADER_VALUE_MASK 0x00FF\n"
 
 # Sort the column lists so that longer column lists occur first
 #

@@ -115,5 +115,54 @@ foreach {tn sharedschema} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test some PRAGMA statements with shared-schema connections.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX t1abc ON t1(a, b, c);
+}
+
+foreach {tn pragma nSchema nDelete} {
+  1 "PRAGMA synchronous = OFF"     1 0
+  2 "PRAGMA cache_size = 200"      1 0
+  3 "PRAGMA aux2.integrity_check"  1 0
+  4 "PRAGMA      integrity_check"  1 5
+  5 "PRAGMA index_info=t1abc"      1 5
+  6 "PRAGMA aux3.index_info=t1abc" 1 0
+  7 "PRAGMA journal_mode"          1 0
+  8 "PRAGMA aux2.wal_checkpoint"   1 0
+  9 "PRAGMA wal_checkpoint"        1 0
+} {
+  do_test 2.$tn.1 {
+    catch { db close }
+    catch { db2 close }
+    for {set i 1} {$i < 6} {incr i} {
+      forcedelete "test.db$i" "test.db${i}-wal" "test.db${i}-journal"
+      forcecopy test.db test.db$i
+    }
+    sqlite3 db2 test.db -shared-schema 1
+    for {set i 1} {$i < 6} {incr i} {
+      execsql "ATTACH 'test.db$i' AS aux$i" db2
+    }
+  } {}
+
+  sqlite3 db test.db
+  register_schemapool_module db
+
+  do_test 2.$tn.2 {
+    execsql $pragma db2
+    execsql { SELECT 'nschema='||nschema, 'ndelete='||nDelete FROM schemapool }
+  } "nschema=$nSchema ndelete=$nDelete"
+
+  do_test 2.$tn.3 {
+    execsql {
+      SELECT * FROM main.t1,aux1.t1,aux2.t1,aux3.t1,aux4.t1,aux5.t1
+    } db2
+    execsql { SELECT 'nschema=' || nschema, 'nref=' || nref FROM schemapool }
+  } "nschema=6 nref=6"
+}
+
 finish_test
 
