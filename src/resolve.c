@@ -1243,6 +1243,38 @@ int sqlite3ResolveOrderGroupBy(
   return 0;
 }
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
+/*
+** Walker callback for resolveRemoveWindows().
+*/
+static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
+  if( ExprHasProperty(pExpr, EP_WinFunc) ){
+    Window **pp;
+    for(pp=&pWalker->u.pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
+      if( *pp==pExpr->y.pWin ){
+        *pp = (*pp)->pNextWin;
+        break;
+      }    
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** Remove any Window objects owned by the expression pExpr from the
+** Select.pWin list of Select object pSelect.
+*/
+static void resolveRemoveWindows(Select *pSelect, Expr *pExpr){
+  Walker sWalker;
+  memset(&sWalker, 0, sizeof(Walker));
+  sWalker.xExprCallback = resolveRemoveWindowsCb;
+  sWalker.u.pSelect = pSelect;
+  sqlite3WalkExpr(&sWalker, pExpr);
+}
+#else
+# define resolveRemoveWindows(x,y)
+#endif
+
 /*
 ** pOrderBy is an ORDER BY or GROUP BY clause in SELECT statement pSelect.
 ** The Name context of the SELECT statement is pNC.  zType is either
@@ -1309,19 +1341,10 @@ static int resolveOrderGroupBy(
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
       if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
-#ifndef SQLITE_OMIT_WINDOWFUNC
-        if( ExprHasProperty(pE, EP_WinFunc) ){
-          /* Since this window function is being changed into a reference
-          ** to the same window function the result set, remove the instance
-          ** of this window function from the Select.pWin list. */
-          Window **pp;
-          for(pp=&pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
-            if( *pp==pE->y.pWin ){
-              *pp = (*pp)->pNextWin;
-            }    
-          }
-        }
-#endif
+        /* Since this expresion is being changed into a reference
+        ** to an identical expression in the result set, remove all Window
+        ** objects belonging to the expression from the Select.pWin list. */
+        resolveRemoveWindows(pSelect, pE);
         pItem->u.x.iOrderByCol = j+1;
       }
     }
