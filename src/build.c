@@ -290,13 +290,17 @@ int sqlite3UserAuthTable(const char *zTable){
 ** If this database connection was opened with the SQLITE_OPEN_SHARED_SCHEMA
 ** flag specified, then ensure that the database schema for database iDb
 ** is loaded. Either by obtaining a Schema object from the schema-pool, or
-** by reading the contents of the sqlite_master table.
+** by reading the contents of the sqlite_master table. Unless it is NULL, 
+** the location indicated by parameter pbUnload is set to 1 if a shared-schema 
+** is loaded.
 **
 ** If the database handle was not opened with SQLITE_OPEN_SHARED_SCHEMA, or
 ** if the schema for database iDb is already loaded, this function is a no-op.
 **
-** Non-zero is returned if a schema is loaded, or zero if it was already 
-** loaded when this function was called..
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise. If
+** an error code is returned, (*pzErr) may be set to point to a buffer
+** containing an error message. It is the responsibility of the caller to
+** eventually free this buffer using sqlite3_free().
 */
 int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
   int rc = SQLITE_OK;
@@ -308,7 +312,7 @@ int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
     memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
     rc = sqlite3InitOne(db, iDb, pzErr, 0);
     db->init = sv;
-    if( pbUnload ) *pbUnload = (rc==SQLITE_OK && (iDb!=1));
+    if( pbUnload && rc==SQLITE_OK && iDb!=1 ) *pbUnload = 1;
   }
   return rc;
 }
