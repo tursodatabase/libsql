@@ -600,7 +600,7 @@ static int delta_apply(
 }
 
 /*
-** SQL functions:  fossildelta_create(X,Y)
+** SQL functions:  delta_create(X,Y)
 **
 ** Return a delta for carrying X into Y.
 */
@@ -635,7 +635,7 @@ static void deltaCreateFunc(
 }
 
 /*
-** SQL functions:  fossildelta_apply(X,D)
+** SQL functions:  delta_apply(X,D)
 **
 ** Return the result of applying delta D to input X.
 */
@@ -678,7 +678,7 @@ static void deltaApplyFunc(
 
 
 /*
-** SQL functions:  fossildelta_output_size(D)
+** SQL functions:  delta_output_size(D)
 **
 ** Return the size of the output that results from applying delta D.
 */
@@ -704,8 +704,38 @@ static void deltaOutputSizeFunc(
   }
 }
 
-/* The deltaparse(DELTA) table-valued function parses the DELTA in
-** its input and returns a table that describes that delta.
+/*****************************************************************************
+** Table-valued SQL function:   delta_parse(DELTA)
+**
+** Schema:
+**
+**     CREATE TABLE delta_parse(
+**       op TEXT,
+**       a1 INT,
+**       a2 ANY,
+**       delta HIDDEN BLOB
+**     );
+**
+** Given an input DELTA, this function parses the delta and returns
+** rows for each entry in the delta.  The op column has one of the
+** values SIZE, COPY, INSERT, CHECKSUM, ERROR.
+**
+** Assuming no errors, the first row has op='SIZE'.  a1 is the size of
+** the output in bytes and a2 is NULL.
+**
+** After the initial SIZE row, there are zero or more 'COPY' and/or 'INSERT'
+** rows.  A COPY row means content is copied from the source into the
+** output.  Column a1 is the number of bytes to copy and a2 is the offset
+** into source from which to begin copying.  An INSERT row means to
+** insert text into the output stream.  Column a1 is the number of bytes
+** to insert and column is a BLOB that contains the text to be inserted.
+**
+** The last row of a well-formed delta will have an op value of 'CHECKSUM'.
+** The a1 column will be the value of the checksum and a2 will be NULL.
+**
+** If the input delta is not well-formed, then a row with an op value
+** of 'ERROR' is returned.  The a1 value of the ERROR row is the offset
+** into the delta where the error was encountered and a2 is NULL.
 */
 typedef struct deltaparsevtab_vtab deltaparsevtab_vtab;
 typedef struct deltaparsevtab_cursor deltaparsevtab_cursor;
