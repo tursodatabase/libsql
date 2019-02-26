@@ -1,5 +1,5 @@
-C Allocate\sa\sfew\sextra\sbytes\sfor\sthe\spager\stemp\spage\sas\san\soverrun\sbuffer\swhile\nprocessing\scorrupt\sdatabase\sfiles.
-D 2019-02-26T17:49:07.980
+C New\stest\scases\sadded\sto\stest/fuzzdata8.db.
+D 2019-02-26T17:52:44.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -993,7 +993,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 3fc78e65dfe0be9df9e262075d5a335f18f627da47dfc691d1a7b822f34d4b99
-F test/fuzzdata8.db 04d95f81db43fa4a247531d25573544125d9dd2777ae43594c9eb57e2a8b901c
+F test/fuzzdata8.db 2328494c8c0c18d95e5e04b05cc6dd94bc6b5baf9641fc36b1e881619b897b54
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05b87e0755638d31f6d8918f8758362f8c3981661449b5171180a8498f66bd9d
-R 77af06549b97efcb59d5193751ddb805
+P e7aca0714bc475e04b16e9db78722ce025d2a1382f80cfc0a49cff2af904eae5
+R a16512abbf69d78b036f59b691e0a9de
 U drh
-Z 56c9cac7536ccfb12071d041335842f8
+Z 48cb44477903aa54b0e5eb2c3b8cff1f
