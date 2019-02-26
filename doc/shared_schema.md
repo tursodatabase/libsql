@@ -31,6 +31,65 @@ SQLITE&#95;DBSTATUS&#95;SCHEMA&#95;USED sqlite3&#95;db&#95;status() verb
 distributes the memory used for a shared schema object evenly between all
 database connections that share it.
 
+## The ".shared-schema" Command
+
+The shell tool on this branch contains a special dot-command to help with
+managing databases. The ".shared-schema" dot-command can be used to test
+whether or not two databases are similar enough to share in-memory schemas,
+and to fix minor problems that prevent them from doing so. To test if
+two or more database are compatible, one database is opened directly using 
+the shell tool and the following command issued:
+
+        .shared-schema check <database-1> [<database-2>]...
+
+where &lt;database-1;&gt; etc. are replaced with the names of database files
+on disk. For each database specified on the command line, a single line of
+output is produced. If the database can share an in-memory schema with the
+main database opened by the shell tool, the output is of the form:
+
+        <database> is compatible
+
+Otherwise, if the database cannot share a schema with the main db, the output
+is of the form:
+
+        <database> is NOT compatible (<reason>)
+
+where &lt;reason&gt; indicates the cause of the incompatibility. &lt;reason&gt;
+is always one of the following.
+
+<ul>
+  <li> <b>objects</b> - the databases contain a different set schema objects
+  (tables, indexes, views and triggers).
+
+  <li> <b>SQL</b> - the databases contain the same set of objects, but the SQL
+  statements used to create them were not the same.
+
+  <li> <b>root pages</b> - the databases contain the same set of objects created
+  by the same SQL statements, but the root pages are not the same.
+
+  <li> <b>order of sqlite&#95;master rows</b> - the databases contain the same
+  set of objects created by the same SQL statements with the same root pages,
+  but the order of the rows in the sqlite&#95;master tables are different.
+
+  <li> <b>schema cookie</b> - the database schemas are compatible, but the 
+  schema cookie values ("PRAGMA schema&#95;version") are different.
+</ul>
+
+The final three problems in the list above can be fixed using the
+.shared-schema command. To modify such a database so that it can share a 
+schema with the main database, the following shell command is used:
+
+        .shared-schema fix <database-1> [<database-2>]...
+
+If a database can be modified so that it may share a schema with the main
+database opened by the shell tool, output is as follows:
+
+        Fixing <database>... <database> is compatible
+
+If a database does not require modification, or cannot be modified such that
+it can share a schema with the main database, the output of "fix" is identical
+to that of the "check" command.
+
 ## Implementation Notes
 
 A single Schema object is never used by more than one database simultaneously,
