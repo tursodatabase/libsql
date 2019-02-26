@@ -1,5 +1,5 @@
-C Use\sunsigned\sintegers\sto\scount\sthe\snumber\sof\spages\sin\sa\sfreelist\sduring\nan\sintegrity_check,\sto\savoid\sany\spossibility\sof\sa\ssigned\sinteger\soverflow.
-D 2019-02-26T16:17:06.560
+C Allocate\sa\sfew\sextra\sbytes\sfor\sthe\spager\stemp\spage\sas\san\soverrun\sbuffer\swhile\nprocessing\scorrupt\sdatabase\sfiles.
+D 2019-02-26T17:49:07.980
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -502,7 +502,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 2b9604eb5c12f40a0613e832b6267f5814f84479d570d482ba6f98d7affa7c1c
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 38022624ac9fba1f601d3068d7c393fcc909727fccab556242c93d9c7897b640
+F src/pager.c 5420ef6ea46db11b6ba1231f39fc2a1bf19ccad185efc6dc46f1520a608de4f8
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y 741a270b7f2f85bc5d026d06fb5a9ccba5335304ff2831e1cb44b36cd0da6006
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 848869ced988ca4d0ac76d43f984360fd11997a580719cccf8d55becea4e8fb1
-R 5bfaa50c9d0b312e0c5de93392fc2854
+P 05b87e0755638d31f6d8918f8758362f8c3981661449b5171180a8498f66bd9d
+R 77af06549b97efcb59d5193751ddb805
 U drh
-Z d36c5219418a3d97914eaaa4ccab9e4b
+Z 56c9cac7536ccfb12071d041335842f8
