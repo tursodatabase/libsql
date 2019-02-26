@@ -183,7 +183,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
   x = szMax;
+#ifdef SQLITE_FCNTL_SIZE_LIMIT
   sqlite3_file_control(db, "main", SQLITE_FCNTL_SIZE_LIMIT, &x);
+#endif
   if( bVdbeDebug ){
     sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
   }

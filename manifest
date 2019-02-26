@@ -1,5 +1,5 @@
-C New\stest\scases\sadded\sto\stest/fuzzdata8.db.
-D 2019-02-26T17:52:44.425
+C Minor\schange\sto\sdbfuzz2\sthat\sallows\sit\sto\sbe\scompiled\sagainst\solder\sversions\nof\sSQLite.
+D 2019-02-26T18:21:08.097
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -785,7 +785,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 29b6c6b39a701b6b5b08035c637674b76e1ecea515b1a184b29e3bd0f2d02dad
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 1065d6debd1003c70dccc498c54fd18f4e9da2a73943ba4a953be7dcaf4f724e
+F test/dbfuzz2.c 9a6d58fc669e0881c89342a3ab408a98abd64cab9cb8a51cc85aeee9b96e398a
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7aca0714bc475e04b16e9db78722ce025d2a1382f80cfc0a49cff2af904eae5
-R a16512abbf69d78b036f59b691e0a9de
+P 61fdfc57b9539cb6da5fc24653da2c8fb7c041a7409df911df11b987ed479a3a
+R 8a086356711bdae53b7d275ff93df2e6
 U drh
-Z 48cb44477903aa54b0e5eb2c3b8cff1f
+Z 49f6be04f686338ed5b2d5276a561231
