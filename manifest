@@ -1,8 +1,8 @@
-C Enhance\sthe\scommand-line\sshell\sto\saccept\sbound\sparameters,\susing\sthe\nTEMP\stable\snamed\s"$Parameters"\sto\slook\sup\sthe\svalues\sfor\sbound\sparameters.
-D 2019-02-25T18:43:54.244
+C Update\sthe\sconfigure-generated\smakekfile\sto\sgenerate\sa\sportable\spkgIndex.tcl.
+D 2019-02-26T12:29:25.097
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
+F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5df60c70edb157feb2148a14c687551969599bd065875a0b959b6b139721ca72
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9da4fb59b28686630d63a79988b458726332cf06cc0e6e84d7c0a7600f5fcab0
-R 6ea2c77700991e615d8d2faccc53ab72
+P 7c941ce5bcc872ec92cbe0e409fd773f44a5ab1f814e689ad57f756b911e2b96
+R ba8a1248c5f79d4761a702c6089dec67
 U drh
-Z 82b4b57ac959f29e2a6d5db5cac484ef
+Z 71e12f1b2a3ae7b8dbcc15250648d27c
