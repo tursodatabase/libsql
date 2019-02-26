@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\sbuild.c.
-D 2019-02-25T19:23:01.367
+C Add\sthe\s".shared-schema\scheck|fix\sDB1\sDB2..."\scommand\sto\sthe\sshell\stool.\sFor\schecking\sif\sa\sdatabase\sis\seligible\sto\sshare\san\sin-memory\swith\sthe\smain\sdatabase,\sand\sfor\sfixing\ssmall\sproblems\sthat\sprevent\sit\sfrom\sbeing\sso.
+D 2019-02-26T15:43:45.362
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 56456706c4da271309914c756c9c8ea537685f1c79f8785afa72f968d6810482
@@ -517,7 +517,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 09419ad5c432190b69be7c0c326e03abb548a97c2c50675b81b459e1b382d1d2
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c c998f694759e37799929e28df8a2649747f8774d4fc233529ab6bda689388e15
-F src/shell.c.in d7d63fd1ecef44d19088adc188652252327eab782d59cf1958657943132b5082
+F src/shell.c.in 89848d1ebdf1bb2078c18c173fb05d61a8ee0b35b5f4f26b21d02c9c9e4fe870
 F src/sqlite.h.in a25272dca43fdb730faacade32ec4650d9f5c86839551853c560e01a8861c590
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1812,7 +1812,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c1cf30859ed734eb2d6bc52adb057ca62a6b5a7eef66d8da1fa833e84468dee
-R 8e28445e51bbd44868112d648be6aca8
+P d6a9bff6f5cc52957deffe47fdba1197db111cac110760dec7680f91499a99f1
+R 34f2e101b58b731079737a037ea057bd
 U dan
-Z 15ea225cf86c07603b7ff5af7f2624e7
+Z 9d509830be576ee0a26a75cf3961d117
