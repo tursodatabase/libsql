@@ -1,5 +1,5 @@
-C Update\sthe\sconfigure-generated\smakekfile\sto\sgenerate\sa\sportable\spkgIndex.tcl.
-D 2019-02-26T12:29:25.097
+C Fix\sa\sharmless\scompiler\swarning\sthat\sonly\scomes\sup\sduring\sdebug\sbuilds.
+D 2019-02-26T16:11:46.752
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -578,7 +578,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c e61ead283dff63762a9f5be462dbd258dba948e5fb4e3b261fc03703426eb12e
+F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c c6ff90da4cc1813ff2d9bb11f17d4d927db62c47e552faa1835edc47269d753d
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c941ce5bcc872ec92cbe0e409fd773f44a5ab1f814e689ad57f756b911e2b96
-R ba8a1248c5f79d4761a702c6089dec67
+P 35cbee7fe4a0b7ca06206ca2f69fc35abe3de4929070d6585ab765af82027438
+R d5f269750441e62c6e89c0272d884f83
 U drh
-Z 71e12f1b2a3ae7b8dbcc15250648d27c
+Z 26f5e510f6fdca054128434e6c62bf8f
