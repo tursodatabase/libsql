@@ -9616,10 +9616,10 @@ static void checkList(
   IntegrityCk *pCheck,  /* Integrity checking context */
   int isFreeList,       /* True for a freelist.  False for overflow page list */
   int iPage,            /* Page number for first page in the list */
-  int N                 /* Expected number of pages in the list */
+  u32 N                 /* Expected number of pages in the list */
 ){
   int i;
-  int expected = N;
+  u32 expected = N;
   int nErrAtStart = pCheck->nErr;
   while( iPage!=0 && pCheck->mxErr ){
     DbPage *pOvflPage;
@@ -9878,7 +9878,7 @@ static int checkTreePage(
 
     /* Check the content overflow list */
     if( info.nPayload>info.nLocal ){
-      int nPage;       /* Number of pages on the overflow chain */
+      u32 nPage;       /* Number of pages on the overflow chain */
       Pgno pgnoOvfl;   /* First page of the overflow chain */
       assert( pc + info.nSize - 4 <= usableSize );
       nPage = (info.nPayload - info.nLocal + usableSize - 5)/(usableSize - 4);

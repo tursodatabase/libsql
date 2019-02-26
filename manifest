@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sthat\sonly\scomes\sup\sduring\sdebug\sbuilds.
-D 2019-02-26T16:11:46.752
+C Use\sunsigned\sintegers\sto\scount\sthe\snumber\sof\spages\sin\sa\sfreelist\sduring\nan\sintegrity_check,\sto\savoid\sany\spossibility\sof\sa\ssigned\sinteger\soverflow.
+D 2019-02-26T16:17:06.560
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -456,7 +456,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 026f48c39b179a5602423904fcaaae87bbd75f659fd672b3756fea43356d9909
+F src/btree.c f85f8abe99ec3e72671f0fc9b09114188974fe0b9a3ea9edc77977e853ff75e9
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 3acec29b23948042173301a8befebae01a98344debf66cbd4467c8b9077707b8
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35cbee7fe4a0b7ca06206ca2f69fc35abe3de4929070d6585ab765af82027438
-R d5f269750441e62c6e89c0272d884f83
+P 848869ced988ca4d0ac76d43f984360fd11997a580719cccf8d55becea4e8fb1
+R 5bfaa50c9d0b312e0c5de93392fc2854
 U drh
-Z 26f5e510f6fdca054128434e6c62bf8f
+Z d36c5219418a3d97914eaaa4ccab9e4b
