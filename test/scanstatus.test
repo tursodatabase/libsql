@@ -254,7 +254,7 @@ do_execsql_test 4.0 {
 }
 
 do_execsql_test    4.1.1 { INSERT INTO t1 VALUES(1, 2, 3); }
-do_scanstatus_test 4.1.2 { }
+do_scanstatus_test 4.1.2 {}
 
 do_execsql_test 4.2 {
   CREATE TABLE p1(x PRIMARY KEY);

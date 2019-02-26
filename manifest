@@ -1,5 +1,5 @@
-C Minor\schange\sto\sdbfuzz2\sthat\sallows\sit\sto\sbe\scompiled\sagainst\solder\sversions\nof\sSQLite.
-D 2019-02-26T18:21:08.097
+C Reformat\sthe\swhite-space\sin\sa\sfew\stest\scases\sso\sthat\sthe\stests\swork\swith\sTcl\s8.6.9.
+D 2019-02-26T19:16:49.866
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -411,7 +411,7 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
 F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
-F ext/session/sessionB.test 886252dcb7e692e62ef7e357456200912e367823
+F ext/session/sessionB.test c4fb7f8a688787111606e123a555f18ee04f65bb9f2a4bb2aa71d55ce4e6d02c
 F ext/session/sessionC.test f8a5508bc059ae646e5ec9bdbca66ad24bc92fe99fda5790ac57e1f59fce2fdf
 F ext/session/sessionD.test 4f91d0ca8afc4c3969c72c9f0b5ea9527e21de29039937d0d973f821e8470724
 F ext/session/sessionE.test b2010949c9d7415306f64e3c2072ddabc4b8250c98478d3c0c4d064bce83111d
@@ -930,7 +930,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test ebae205a7a89446c32583bcd492dcb817b9f6b31819bb4dde2583bb99c77e526
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
-F test/fts3expr4.test cac5dd815fe6b5921741abdccdde3b7f50b86394de91e13308ee7986859c4a9f
+F test/fts3expr4.test f5b2832549f01b1f7f73389fa21d4b875499bc95bf7c8b36271844888c6a0938
 F test/fts3expr5.test 1368738e3298a7ce0dee3a44d6ebb8f468b2a76f3d1dd18d4ea6d8bc2eeccc1b
 F test/fts3fault.test 798e45af84be7978ca33d5bdc94246eb44724db24174b5d8e9b1ac46c57fb08d
 F test/fts3fault2.test 6a17a11d8034b1c4eca9f3091649273d56c49ff049e2173df8060f94341e9da0
@@ -1251,7 +1251,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test d14842d0a2757ee059bcffa365746453d60952ba1077980c9a348a9fefbd232a
+F test/scanstatus.test 874e35011779b07725a47dbf1dd6282b0ca04af7e028fb0b534ee544b571be42
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61fdfc57b9539cb6da5fc24653da2c8fb7c041a7409df911df11b987ed479a3a
-R 8a086356711bdae53b7d275ff93df2e6
-U drh
-Z 49f6be04f686338ed5b2d5276a561231
+P 6d39d6a68bf09e0b4f6706218373e74fc03148fd8bdba5031c3de2f750d87cf2
+R 671879425f3f9b82caeef04f70c245b6
+U dan
+Z 7bb0b1b162b8573d979a1b96ab7f58d3
