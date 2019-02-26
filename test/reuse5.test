@@ -1,0 +1,120 @@
+# 2019 February 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix reuse5
+set CLI [test_find_cli]
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE t2(a, b, c);
+  CREATE INDEX t1x ON t1(x);
+  CREATE INDEX t1y ON t1(y);
+  CREATE VIEW v1 AS SELECT * FROM t2;
+}
+
+foreach {tn sql out1 out2} {
+  1 {
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t1x ON t1(x);
+    CREATE INDEX t1y ON t1(y);
+    CREATE VIEW v1 AS SELECT * FROM t2;
+  } {
+    test.db2 is compatible
+  } {}
+
+  2 {
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t1x ON t1(x);
+    CREATE INDEX t1y ON t1(y);
+    CREATE VIEW v1 AS SELECT * FROM t2;
+    CREATE TABLE x1(x);
+    DROP TABLE x1;
+  } {
+    test.db2 is NOT compatible (schema cookie)
+  } {
+    Fixing test.db2... test.db2 is compatible
+  }
+
+  3 {
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t1y ON t1(y);
+    CREATE VIEW v1 AS SELECT * FROM t2;
+  } {
+    test.db2 is NOT compatible (objects)
+  } {}
+
+  4 {
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t1x ON t1(X);
+    CREATE INDEX t1y ON t1(y);
+    CREATE VIEW v1 AS SELECT * FROM t2;
+  } {
+    test.db2 is NOT compatible (SQL)
+  } {}
+
+  5 {
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t1y ON t1(y);
+    CREATE INDEX t1x ON t1(x);
+    CREATE VIEW v1 AS SELECT * FROM t2;
+  } {
+    test.db2 is NOT compatible (root pages)
+  } {
+    Fixing test.db2... test.db2 is compatible
+  }
+
+  6 {
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t1x ON t1(x);
+    CREATE INDEX t1y ON t1(y);
+    CREATE VIEW v1 AS SELECT * FROM t2;
+    DROP INDEX t1x;
+    CREATE INDEX t1x ON t1(x);
+  } {
+    test.db2 is NOT compatible (order of sqlite_master rows)
+  } {
+    Fixing test.db2... test.db2 is compatible
+  }
+
+} {
+  forcedelete test.db2
+  sqlite3 db2 test.db2
+  db2 eval $sql
+  db2 close
+
+  if {$out2==""} {set out2 $out1}
+
+  do_test 1.$tn.1 {
+    catchcmd test.db ".shared-schema check test.db2"
+  } [list 0 [string trim $out1]]
+
+  do_test 1.$tn.2 {
+    catchcmd test.db ".shared-schema fix test.db2"
+  } [list 0 [string trim $out2]]
+
+  do_test 1.$tn.3 {
+    catchcmd test.db2 "PRAGMA integrity_check"
+  } [list 0 ok]
+}
+
+
+finish_test
+

@@ -1,5 +1,5 @@
-C Add\sthe\s".shared-schema\scheck|fix\sDB1\sDB2..."\scommand\sto\sthe\sshell\stool.\sFor\schecking\sif\sa\sdatabase\sis\seligible\sto\sshare\san\sin-memory\swith\sthe\smain\sdatabase,\sand\sfor\sfixing\ssmall\sproblems\sthat\sprevent\sit\sfrom\sbeing\sso.
-D 2019-02-26T15:43:45.362
+C Add\snew\stest\sfile\sreuse5.test.\sFor\stesting\sthe\sshell\stool\s".shared-schema"\scommand.
+D 2019-02-26T16:13:43.604
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 56456706c4da271309914c756c9c8ea537685f1c79f8785afa72f968d6810482
@@ -1232,6 +1232,7 @@ F test/reuse1.test 31c312375ccfcc5c2abc1fca5e4a89d6309c57ea6b1fa3179a5eee68016f9
 F test/reuse2.test 04d88621f0c51a8b3bf5512b9e61a5d7a61059e33097a1a6b1c6f6cf2d1f2a35
 F test/reuse3.test 75071034556d4915066adc249bfac364c6ed0fc62c997c4b02410fdacd3bfb9d
 F test/reuse4.test 5a5aa075db13fb09299b68b43040f9e205c3ad8f84a0f083030dc8df32a7cac8
+F test/reuse5.test f3b8a355b9031205d614ad7e62db2186168539bb3fe56ea3b4ceac1b83e96e1e
 F test/reusefault.test 5d60bfbcaccfaffa02132f2137d849dc4b3802da8a929054e23f483bf5dc06e4
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
@@ -1812,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6a9bff6f5cc52957deffe47fdba1197db111cac110760dec7680f91499a99f1
-R 34f2e101b58b731079737a037ea057bd
+P 7d8e8a957235479fba568e1d3ff2cdfe4695184ee1a7ac64bce905a993725164
+R 6413f829102abca209f662f93d696844
 U dan
-Z 9d509830be576ee0a26a75cf3961d117
+Z c2c3e0d5a31997ac258189b5e4aa26d6
