@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 
 use super::ffi;
-use super::str_to_cstring;
+use super::{str_to_cstring, str_for_sqlite};
 use super::{Connection, InterruptHandle, OpenFlags, Result};
 use crate::error::{error_from_handle, error_from_sqlite_code, Error};
 use crate::raw_statement::RawStatement;
@@ -207,20 +207,16 @@ impl InnerConnection {
     }
 
     pub fn prepare<'a>(&mut self, conn: &'a Connection, sql: &str) -> Result<Statement<'a>> {
-        if sql.len() >= ::std::i32::MAX as usize {
-            return Err(error_from_sqlite_code(ffi::SQLITE_TOOBIG, None));
-        }
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
-        let c_sql = str_to_cstring(sql)?;
-        let len_with_nul = (sql.len() + 1) as c_int;
+        let (c_sql, len, _) = str_for_sqlite(sql)?;
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {
                 let mut rc;
                 loop {
                     rc = ffi::sqlite3_prepare_v2(
                         self.db(),
-                        c_sql.as_ptr(),
-                        len_with_nul,
+                        c_sql,
+                        len,
                         &mut c_stmt,
                         ptr::null_mut(),
                     );
@@ -236,8 +232,8 @@ impl InnerConnection {
             } else {
                 ffi::sqlite3_prepare_v2(
                     self.db(),
-                    c_sql.as_ptr(),
-                    len_with_nul,
+                    c_sql,
+                    len,
                     &mut c_stmt,
                     ptr::null_mut(),
                 )
