@@ -1,5 +1,5 @@
-C Reformat\sthe\swhite-space\sin\sa\sfew\stest\scases\sso\sthat\sthe\stests\swork\swith\sTcl\s8.6.9.
-D 2019-02-26T19:16:49.866
+C Verify\sthat\sfts5\sauxiliary\sfunctions\scannot\sbe\sused\sin\saggregate\squeries.
+D 2019-02-27T15:26:03.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -142,7 +142,7 @@ F ext/fts5/test/fts5ak.test fc3595f8e6873bb86d70c9bd4b67d0413ce577bd4793c39a2b60
 F ext/fts5/test/fts5al.test 00c4c1c6a1366b73aa48ce2068c634520867c3cf7f5d1676ebbb775ee1f35734
 F ext/fts5/test/fts5alter.test 5565f7e4605512b69171ac18ca84398603f9f6456dbe377beeca97e83cc242cd
 F ext/fts5/test/fts5auto.test 78989e6527ce69c9eddbef7392fea5c10b0010cd2b2ae68eec7bc869c471e691
-F ext/fts5/test/fts5aux.test 8e7f9c96f8570f48402f2fd7b74e1ccfadd319fa56ef677321880000f9739846
+F ext/fts5/test/fts5aux.test ebf6f2ff7cb556e83f66991b7f12bff016d3c83d4eab36704b649dd6b1437318
 F ext/fts5/test/fts5auxdata.test eacc97ff04892f1a5f3d4df5a73f8bcbc3955ea1d12c9f24137eb1fc079e7611
 F ext/fts5/test/fts5bigpl.test 6466c89b38439f0aba26ac09e232a6b963f29b1cbe1304f6a664fe1e7a8f5fd3
 F ext/fts5/test/fts5bigtok.test 541119e616c637caea925a8c028c37c2c29e94383e00aa2f9198d530724b6e36
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d39d6a68bf09e0b4f6706218373e74fc03148fd8bdba5031c3de2f750d87cf2
-R 671879425f3f9b82caeef04f70c245b6
+P 29d02bf2fa9ecacbcc3e862ca70382f5875da8c1dc7fd27366190045fcc42b15
+R 71be3f9cadb3d3db22b5f61c5be60610
 U dan
-Z 7bb0b1b162b8573d979a1b96ab7f58d3
+Z a18dd99afd6d91ff1d4c6dbed66d97ea
