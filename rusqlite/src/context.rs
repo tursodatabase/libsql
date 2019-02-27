@@ -7,7 +7,7 @@ use std::rc::Rc;
 use crate::ffi;
 use crate::ffi::sqlite3_context;
 
-use crate::str_to_cstring;
+use crate::str_for_sqlite;
 use crate::types::{ToSqlOutput, ValueRef};
 #[cfg(feature = "array")]
 use crate::vtab::array::{free_array, ARRAY_TYPE};
@@ -38,25 +38,20 @@ pub(crate) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
         ValueRef::Real(r) => ffi::sqlite3_result_double(ctx, r),
         ValueRef::Text(s) => {
             let length = s.len();
-            if length > ::std::i32::MAX as usize {
+            if length > c_int::max_value() as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
             } else {
-                let c_str = match str_to_cstring(s) {
+                let (c_str, len, destructor) = match str_for_sqlite(s) {
                     Ok(c_str) => c_str,
                     // TODO sqlite3_result_error
                     Err(_) => return ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE),
                 };
-                let destructor = if length > 0 {
-                    ffi::SQLITE_TRANSIENT()
-                } else {
-                    ffi::SQLITE_STATIC()
-                };
-                ffi::sqlite3_result_text(ctx, c_str.as_ptr(), length as c_int, destructor);
+                ffi::sqlite3_result_text(ctx, c_str, len, destructor);
             }
         }
         ValueRef::Blob(b) => {
             let length = b.len();
-            if length > ::std::i32::MAX as usize {
+            if length > c_int::max_value() as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
             } else if length == 0 {
                 ffi::sqlite3_result_zeroblob(ctx, 0)

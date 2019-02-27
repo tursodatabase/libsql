@@ -237,6 +237,39 @@ fn str_to_cstring(s: &str) -> Result<CString> {
     Ok(CString::new(s)?)
 }
 
+/// Returns `Ok((string ptr, len as c_int, SQLITE_STATIC | SQLITE_TRANSIENT))`
+/// normally.
+/// Returns errors if the string has embedded nuls or is too large for sqlite.
+/// The `sqlite3_destructor_type` item is always `SQLITE_TRANSIENT` unless
+/// the string was empty (in which case it's `SQLITE_STATIC`, and the ptr is
+/// static).
+fn str_for_sqlite(s: &str) -> Result<(*const c_char, c_int, ffi::sqlite3_destructor_type)> {
+    let len = len_as_c_int(s.len())?;
+    if memchr::memchr(0, s.as_bytes()).is_none() {
+        let (ptr, dtor_info) = if len != 0 {
+            (s.as_ptr() as *const c_char, ffi::SQLITE_TRANSIENT())
+        } else {
+            // Return a pointer guaranteed to live forever
+            ("".as_ptr() as *const c_char, ffi::SQLITE_STATIC())
+        };
+        Ok((ptr, len, dtor_info))
+    } else {
+        // There's an embedded nul, so we fabricate a NulError.
+        let e = CString::new(s);
+        Err(Error::NulError(e.unwrap_err()))
+    }
+}
+
+// Helper to cast to c_int safely, returning the correct error type if the cast
+// failed.
+fn len_as_c_int(len: usize) -> Result<c_int> {
+    if len >= (c_int::max_value() as usize) {
+        Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_TOOBIG), None))
+    } else {
+        Ok(len as c_int)
+    }
+}
+
 fn path_to_cstring(p: &Path) -> Result<CString> {
     let s = p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned()))?;
     str_to_cstring(s)

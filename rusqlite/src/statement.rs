@@ -7,7 +7,7 @@ use std::slice::from_raw_parts;
 use std::{convert, fmt, mem, ptr, result, str};
 
 use super::ffi;
-use super::str_to_cstring;
+use super::{str_to_cstring, str_for_sqlite, len_as_c_int};
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
@@ -506,37 +506,25 @@ impl Statement<'_> {
             ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col as c_int, i) },
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
             ValueRef::Text(s) => unsafe {
-                let length = s.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else {
-                    let c_str = str_to_cstring(s)?;
-                    let destructor = if length > 0 {
-                        ffi::SQLITE_TRANSIENT()
-                    } else {
-                        ffi::SQLITE_STATIC()
-                    };
-                    ffi::sqlite3_bind_text(
-                        ptr,
-                        col as c_int,
-                        c_str.as_ptr(),
-                        length as c_int,
-                        destructor,
-                    )
-                }
+                let (c_str, len, destructor) = str_for_sqlite(s)?;
+                ffi::sqlite3_bind_text(
+                    ptr,
+                    col as c_int,
+                    c_str,
+                    len,
+                    destructor,
+                )
             },
             ValueRef::Blob(b) => unsafe {
-                let length = b.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else if length == 0 {
+                let length = len_as_c_int(b.len())?;
+                if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
                     ffi::sqlite3_bind_blob(
                         ptr,
                         col as c_int,
                         b.as_ptr() as *const c_void,
-                        length as c_int,
+                        length,
                         ffi::SQLITE_TRANSIENT(),
                     )
                 }
