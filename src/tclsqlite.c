@@ -93,6 +93,14 @@ typedef struct SqliteDb SqliteDb;
 /*
 ** New SQL functions can be created as TCL scripts.  Each such function
 ** is described by an instance of the following structure.
+**
+** Variable eType may be set to SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT,
+** SQLITE_BLOB or SQLITE_NULL. If it is SQLITE_NULL, then the implementation
+** attempts to determine the type of the result based on the Tcl object.
+** If it is SQLITE_TEXT or SQLITE_BLOB, then a text (sqlite3_result_text())
+** or blob (sqlite3_result_blob()) is returned. If it is SQLITE_INTEGER
+** or SQLITE_FLOAT, then an attempt is made to return an integer or float
+** value, falling back to float and then text if this is not possible.
 */
 typedef struct SqlFunc SqlFunc;
 struct SqlFunc {
@@ -100,6 +108,7 @@ struct SqlFunc {
   Tcl_Obj *pScript;     /* The Tcl_Obj representation of the script */
   SqliteDb *pDb;        /* Database connection that owns this function */
   int useEvalObjv;      /* True if it is safe to use Tcl_EvalObjv */
+  int eType;            /* Type of value to return */
   char *zName;          /* Name of this function */
   SqlFunc *pNext;       /* Next function on the list of them all */
 };
@@ -995,27 +1004,54 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     u8 *data;
     const char *zType = (pVar->typePtr ? pVar->typePtr->name : "");
     char c = zType[0];
-    if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
-      /* Only return a BLOB type if the Tcl variable is a bytearray and
-      ** has no string representation. */
-      data = Tcl_GetByteArrayFromObj(pVar, &n);
-      sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
-    }else if( c=='b' && strcmp(zType,"boolean")==0 ){
-      Tcl_GetIntFromObj(0, pVar, &n);
-      sqlite3_result_int(context, n);
-    }else if( c=='d' && strcmp(zType,"double")==0 ){
-      double r;
-      Tcl_GetDoubleFromObj(0, pVar, &r);
-      sqlite3_result_double(context, r);
-    }else if( (c=='w' && strcmp(zType,"wideInt")==0) ||
-          (c=='i' && strcmp(zType,"int")==0) ){
-      Tcl_WideInt v;
-      Tcl_GetWideIntFromObj(0, pVar, &v);
-      sqlite3_result_int64(context, v);
-    }else{
-      data = (unsigned char *)Tcl_GetStringFromObj(pVar, &n);
-      sqlite3_result_text(context, (char *)data, n, SQLITE_TRANSIENT);
+    int eType = p->eType;
+
+    if( eType==SQLITE_NULL ){
+      if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
+        /* Only return a BLOB type if the Tcl variable is a bytearray and
+        ** has no string representation. */
+        eType = SQLITE_BLOB;
+      }else if( (c=='b' && strcmp(zType,"boolean")==0)
+             || (c=='w' && strcmp(zType,"wideInt")==0)
+             || (c=='i' && strcmp(zType,"int")==0) 
+      ){
+        eType = SQLITE_INTEGER;
+      }else if( c=='d' && strcmp(zType,"double")==0 ){
+        eType = SQLITE_FLOAT;
+      }else{
+        eType = SQLITE_TEXT;
+      }
     }
+
+    switch( eType ){
+      case SQLITE_BLOB: {
+        data = Tcl_GetByteArrayFromObj(pVar, &n);
+        sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
+        break;
+      }
+      case SQLITE_INTEGER: {
+        Tcl_WideInt v;
+        if( TCL_OK==Tcl_GetWideIntFromObj(0, pVar, &v) ){
+          sqlite3_result_int64(context, v);
+          break;
+        }
+        /* fall-through */
+      }
+      case SQLITE_FLOAT: {
+        double r;
+        if( TCL_OK==Tcl_GetDoubleFromObj(0, pVar, &r) ){
+          sqlite3_result_double(context, r);
+          break;
+        }
+        /* fall-through */
+      }
+      default: {
+        data = (unsigned char *)Tcl_GetStringFromObj(pVar, &n);
+        sqlite3_result_text(context, (char *)data, n, SQLITE_TRANSIENT);
+        break;
+      }
+    }
+
   }
 }
 
@@ -2646,6 +2682,7 @@ deserialize_error:
     char *zName;
     int nArg = -1;
     int i;
+    int eType = SQLITE_NULL;
     if( objc<4 ){
       Tcl_WrongNumArgs(interp, 2, objv, "NAME ?SWITCHES? SCRIPT");
       return TCL_ERROR;
@@ -2653,7 +2690,7 @@ deserialize_error:
     for(i=3; i<(objc-1); i++){
       const char *z = Tcl_GetString(objv[i]);
       int n = strlen30(z);
-      if( n>2 && strncmp(z, "-argcount",n)==0 ){
+      if( n>1 && strncmp(z, "-argcount",n)==0 ){
         if( i==(objc-2) ){
           Tcl_AppendResult(interp, "option requires an argument: ", z,(char*)0);
           return TCL_ERROR;
@@ -2666,11 +2703,25 @@ deserialize_error:
         }
         i++;
       }else
-      if( n>2 && strncmp(z, "-deterministic",n)==0 ){
+      if( n>1 && strncmp(z, "-deterministic",n)==0 ){
         flags |= SQLITE_DETERMINISTIC;
+      }else
+      if( n>1 && strncmp(z, "-returntype", n)==0 ){
+        const char *azType[] = {"integer", "real", "text", "blob", "any", 0};
+        assert( SQLITE_INTEGER==1 && SQLITE_FLOAT==2 && SQLITE_TEXT==3 );
+        assert( SQLITE_BLOB==4 && SQLITE_NULL==5 );
+        if( i==(objc-2) ){
+          Tcl_AppendResult(interp, "option requires an argument: ", z,(char*)0);
+          return TCL_ERROR;
+        }
+        i++;
+        if( Tcl_GetIndexFromObj(interp, objv[i], azType, "type", 0, &eType) ){
+          return TCL_ERROR;
+        }
+        eType++;
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
-            "\": must be -argcount or -deterministic", (char*)0
+            "\": must be -argcount, -deterministic or -returntype", (char*)0
         );
         return TCL_ERROR;
       }
@@ -2686,6 +2737,7 @@ deserialize_error:
     pFunc->pScript = pScript;
     Tcl_IncrRefCount(pScript);
     pFunc->useEvalObjv = safeToUseEvalObjv(interp, pScript);
+    pFunc->eType = eType;
     rc = sqlite3_create_function(pDb->db, zName, nArg, flags,
         pFunc, tclSqlFunc, 0, 0);
     if( rc!=SQLITE_OK ){
