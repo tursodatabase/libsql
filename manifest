@@ -1,5 +1,5 @@
-C Fix\sthe\sreadfile()\sUDF\sso\sthat\sit\sreturns\san\sempty\sBLOB,\snot\san\sOOM\serror,\nwhen\sreading\san\sempty\sfile.
-D 2019-02-27T19:59:56.536
+C Enable\sthe\sLIKE\soptimization\swhen\sthe\sESCAPE\skeyword\sis\spresent\sand\sthe\nPRAGMA\scase_sensitive_like\spragma\sis\sON.
+D 2019-02-27T23:05:14.316
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -470,7 +470,7 @@ F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
 F src/expr.c f2d0ecf68213770be4fad83128ce02e67667deebaa0a44061313f7e4f2a4ae28
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
-F src/func.c 0341881d22903aac5ba7f352b188806d6436e1d6ae4235ff01e44d56879dfe63
+F src/func.c 2ccf4ae12430b1ae7096be5f0675887e1bd0732828af0ac0f7496339b7c6edee
 F src/global.c 0dea3065ea72a65ae941559b6686aad6516d4913e76fa4f79a95ff7787f624ec
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -1081,7 +1081,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d6767e11d7
 F test/like.test 11cfd7d4ef8625389df9efc46735ff0b0b41d5e62047ef0f3bc24c380d28a7a6
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/like3.test 430691e6057e11a59e934be74c06b85605b80061d45af5714d52886a811efeb7
+F test/like3.test 0ce2630e39e32e42ce02d171f0a315189ca71fec37c5ddfb0191eecc3fe9d4da
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/loadext.test faa4f6eed07a5aac35d57fdd7bc07f8fc82464cfd327567c10cf0ba3c86cde04
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 789a492b68c353e2b763d67d399722b7ab61bfe09b472466df2821f65cab1be9
-R 8430a5ae199ad097ee7aa582e73883cd
+P 0edad5339e36d69aed9289bb3e60d35f9930386d76a62bb0194c4fdf420d16fb
+R 5105eecccd0b13c8698eaccb6e160d90
 U drh
-Z 4cf753a6552dd62b27fdf5e7f3a478a4
+Z 96b31332bdac2a0724df8a5af90860de
