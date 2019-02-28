@@ -1421,7 +1421,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   hdr = pPage->hdrOffset;
   cellOffset = pPage->cellOffset;
   nCell = pPage->nCell;
-  assert( nCell==get2byte(&data[hdr+3]) );
+  assert( nCell==get2byte(&data[hdr+3]) || CORRUPT_DB );
   iCellFirst = cellOffset + 2*nCell;
   usableSize = pPage->pBt->usableSize;
 
