@@ -1,5 +1,5 @@
-C Avoid\san\sassert()\sfailure\sand\san\sundefined\sleft-shift\soperation\sin\sthe\sfts3\ssnippet()\sfunction\sthat\scould\soccur\sif\sthe\sdatabase\swas\scorrupt.
-D 2019-02-28T13:41:35.509
+C New\stest\scase\sloaded\sinto\stest/fuzzdata8.db.
+D 2019-02-28T14:09:14.893
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -993,7 +993,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 3fc78e65dfe0be9df9e262075d5a335f18f627da47dfc691d1a7b822f34d4b99
-F test/fuzzdata8.db 91d6b30312ae7661d8b772314f51759a8a4c565957b25e16cdb9109f89624423
+F test/fuzzdata8.db bcdd2175b8876c3679aa1c00874a9f69368f464e498f800d3917bd74a0563127
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bfd8655f006e031c0d4c988356c4b9206efa6bfdb034fde8ffa3361521a4844
-R ec544e5efe12bbc6177aac59b37c5a1c
-U dan
-Z d16afbf29591bc852a3e6830b1d24630
+P d5250db6322103326f0d5782ba049996d9ce8784f9e53a3112fb6f09f888f1c3
+R 76ee1637810bdaf539a762a9c646979d
+U drh
+Z ac7f7b28caabfd1523a4f739ee67d612
