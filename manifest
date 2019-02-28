@@ -1,5 +1,5 @@
-C Add\sthe\snew\s"bind_fallback"\smethod\sto\sthe\s"sqlite3"\sobject\sin\sthe\sTCL\ninterface.
-D 2019-02-28T17:29:19.212
+C Add\sthe\s".parameter"\scommand\sto\sthe\sCLI.
+D 2019-02-28T20:10:52.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -516,7 +516,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 09419ad5c432190b69be7c0c326e03abb548a97c2c50675b81b459e1b382d1d2
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c c998f694759e37799929e28df8a2649747f8774d4fc233529ab6bda689388e15
-F src/shell.c.in a238f3f80f7085d31056c69930ec13a87872da0d0d08fd561f5aff78cc618f5d
+F src/shell.c.in 249c0bf34f7ce272cb17162c297c45ab674a52a5d85193a86191f131196de47f
 F src/sqlite.h.in 8859e0b45b48d4186fbc466885e508f8272420a349099acdebcdb8d410d54824
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 00ae0c6c4815366bd2f36bc054b13bc7b568dd0a3caceddf0eba4db33f010ee4
-R 448ca78435be9ef8ac1ee1c7bdd459a0
+P c7f70b6d96338dba201e005104e7f7148c1a8cd767ab05e35b44617c4c797bc5
+R 2fecd2e603ada3a0c6460ef11e6e9c28
 U drh
-Z 8dd6bd727b5289a2522f6d5168203921
+Z f7dd879e1ba76ea61ec7d6d44725ec74
