@@ -700,5 +700,25 @@ do_execsql_test 16.2 {
   3 101
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 17.0 {
+  CREATE TABLE t8(a);
+  INSERT INTO t8 VALUES(1), (2), (3);
+}
+
+do_execsql_test 17.1 {
+  SELECT +sum(0) OVER () ORDER BY +sum(0) OVER ();
+} {0}
+
+do_execsql_test 17.2 {
+  select +sum(a) OVER () FROM t8 ORDER BY +sum(a) OVER () DESC;
+} {6 6 6}
+
+do_execsql_test 17.3 {
+  SELECT 10+sum(a) OVER (ORDER BY a) 
+  FROM t8 
+  ORDER BY 10+sum(a) OVER (ORDER BY a) DESC;
+} {16 13 11}
+
 
 finish_test

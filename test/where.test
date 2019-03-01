@@ -1425,5 +1425,17 @@ do_execsql_test where-22.1 {
   SELECT count(*) FROM t1 LEFT JOIN t2 ON a IS NOT NULL;
 } {5}
 
+# 20190-02-22:  A bug introduced by checkin
+# https://www.sqlite.org/src/info/fa792714ae62fa98.
+#
+do_execsql_test where-23.0 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  INSERT INTO t1(a) VALUES(1),(2),(3);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y INT);
+  INSERT INTO t2(y) VALUES(2),(3);
+  SELECT * FROM t1, t2 WHERE a=y AND y=3;
+} {3 2 3}
 
 finish_test

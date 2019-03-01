@@ -2747,6 +2747,65 @@ static void restore_debug_trace_modes(void){
 #endif
 }
 
+/* Name of the TEMP table that holds bind parameter values */
+#define BIND_PARAM_TABLE "$Parameters"
+
+/* Create the TEMP table used to store parameter bindings */
+static void bind_table_init(ShellState *p){
+  sqlite3_exec(p->db,
+    "CREATE TABLE IF NOT EXISTS temp.[" BIND_PARAM_TABLE "](\n"
+    "  key TEXT PRIMARY KEY,\n"
+    "  value ANY\n"
+    ") WITHOUT ROWID;",
+    0, 0, 0);
+}
+
+/*
+** Bind parameters on a prepared statement.
+**
+** Parameter bindings are taken from a TEMP table of the form:
+**
+**    CREATE TEMP TABLE "$Parameters"(key TEXT PRIMARY KEY, value)
+**    WITHOUT ROWID;
+**
+** No bindings occur if this table does not exist.  The special character '$'
+** is included in the table name to help prevent collisions with actual tables.
+** The table must be in the TEMP schema.
+*/
+static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
+  int nVar;
+  int i;
+  int rc;
+  sqlite3_stmt *pQ = 0;
+
+  nVar = sqlite3_bind_parameter_count(pStmt);
+  if( nVar==0 ) return;  /* Nothing to do */
+  if( sqlite3_table_column_metadata(pArg->db, "TEMP", BIND_PARAM_TABLE,
+                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
+    return; /* Parameter table does not exist */
+  }
+  rc = sqlite3_prepare_v2(pArg->db,
+          "SELECT value FROM temp.\"" BIND_PARAM_TABLE "\""
+          " WHERE key=?1", -1, &pQ, 0);
+  if( rc || pQ==0 ) return;
+  for(i=1; i<=nVar; i++){
+    char zNum[30];
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+    if( zVar==0 ){
+      sqlite3_snprintf(sizeof(zNum),zNum,"?%d",i);
+      zVar = zNum;
+    }
+    sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
+    if( sqlite3_step(pQ)==SQLITE_ROW ){
+      sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
+    }else{
+      sqlite3_bind_null(pStmt, i);
+    }
+    sqlite3_reset(pQ);
+  }
+  sqlite3_finalize(pQ);
+}
+
 /*
 ** Run a prepared statement
 */
@@ -3066,6 +3125,7 @@ static int shell_exec(
         }
       }
 
+      bind_prepared_stmt(pArg, pStmt);
       exec_prepared_stmt(pArg, pStmt);
       explain_data_delete(pArg);
       eqp_render(pArg);
@@ -3497,6 +3557,13 @@ static const char *(azHelp[]) = {
   "        --zip           FILE is a ZIP archive",
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
   "     If FILE begins with '|' then open it as a pipe.",
+  ".parameter CMD ...       Manage SQL parameter bindings",
+  "   clear                   Erase all bindings",
+  "   init                    Initialize the TEMP table that holds bindings",
+  "   list                    List the current parameter bindings",
+  "   set PARAMETER VALUE     Given SQL parameter PARAMETER a value of VALUE",
+  "                           PARAMETER should start with '$', ':', '@', or '?'",
+  "   unset PARAMETER         Remove PARAMETER from the binding table",
   ".print STRING...         Print literal STRING",
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   ".progress N              Invoke progress handler after every N opcodes",
@@ -7026,6 +7093,110 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
+  }else
+
+  if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
+    open_db(p,0);
+    if( nArg<=1 ) goto parameter_syntax_error;
+
+    /* .parameter clear
+    ** Clear all bind parameters by dropping the TEMP table that holds them.
+    */
+    if( nArg==2 && strcmp(azArg[1],"clear")==0 ){
+      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.[" BIND_PARAM_TABLE "];",
+                   0, 0, 0);
+    }else
+
+    /* .parameter list
+    ** List all bind parameters.
+    */
+    if( nArg==2 && strcmp(azArg[1],"list")==0 ){
+      sqlite3_stmt *pStmt = 0;
+      int rx;
+      int len = 0;
+      rx = sqlite3_prepare_v2(p->db,
+             "SELECT max(length(key)) "
+             "FROM temp.[" BIND_PARAM_TABLE "];", -1, &pStmt, 0);
+      if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+        len = sqlite3_column_int(pStmt, 0);
+        if( len>40 ) len = 40;
+      }
+      sqlite3_finalize(pStmt);
+      pStmt = 0;
+      if( len ){
+        rx = sqlite3_prepare_v2(p->db,
+             "SELECT key, quote(value) "
+             "FROM temp.[" BIND_PARAM_TABLE "];", -1, &pStmt, 0);
+        while( sqlite3_step(pStmt)==SQLITE_ROW ){
+          utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
+                      sqlite3_column_text(pStmt,1));
+        }
+        sqlite3_finalize(pStmt);
+      }
+    }else
+
+    /* .parameter init
+    ** Make sure the TEMP table used to hold bind parameters exists.
+    ** Create it if necessary.
+    */
+    if( nArg==2 && strcmp(azArg[1],"init")==0 ){
+      bind_table_init(p);
+    }else
+
+    /* .parameter set NAME VALUE
+    ** Set or reset a bind parameter.  NAME should be the full parameter
+    ** name exactly as it appears in the query.  (ex: $abc, @def).  The
+    ** VALUE can be in either SQL literal notation, or if not it will be
+    ** understood to be a text string.
+    */
+    if( nArg==4 && strcmp(azArg[1],"set")==0 ){
+      int rx;
+      char *zSql;
+      sqlite3_stmt *pStmt;
+      const char *zKey = azArg[2];
+      const char *zValue = azArg[3];
+      bind_table_init(p);
+      zSql = sqlite3_mprintf(
+                  "REPLACE INTO temp.[" BIND_PARAM_TABLE "](key,value)"
+                  "VALUES(%Q,%s);", zKey, zValue);
+      if( zSql==0 ) shell_out_of_memory();
+      pStmt = 0;
+      rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+      sqlite3_free(zSql);
+      if( rx!=SQLITE_OK ){
+        sqlite3_finalize(pStmt);
+        pStmt = 0;
+        zSql = sqlite3_mprintf(
+                   "REPLACE INTO temp.[" BIND_PARAM_TABLE "](key,value)"
+                   "VALUES(%Q,%Q);", zKey, zValue);
+        if( zSql==0 ) shell_out_of_memory();
+        rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+        sqlite3_free(zSql);
+        if( rx!=SQLITE_OK ){
+          utf8_printf(p->out, "Error: %s\n", sqlite3_errmsg(p->db));
+          sqlite3_finalize(pStmt);
+          pStmt = 0;
+          rc = 1;
+        }
+      }
+      sqlite3_step(pStmt);
+      sqlite3_finalize(pStmt);
+    }else
+
+    /* .parameter unset NAME
+    ** Remove the NAME binding from the parameter binding table, if it
+    ** exists.
+    */
+    if( nArg==3 && strcmp(azArg[1],"unset")==0 ){
+      char *zSql = sqlite3_mprintf(
+          "DELETE FROM temp.[" BIND_PARAM_TABLE "] WHERE key=%Q", azArg[2]);
+      if( zSql==0 ) shell_out_of_memory();
+      sqlite3_exec(p->db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }else
+    /* If no command name matches, show a syntax error */
+    parameter_syntax_error:
+    showHelp(p->out, "parameter");
   }else
 
   if( c=='p' && n>=3 && strncmp(azArg[0], "print", n)==0 ){

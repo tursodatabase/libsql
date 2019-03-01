@@ -560,10 +560,10 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
-  VVA_ONLY( u8 startedWithOom = db->mallocFailed );
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
 #endif
+  VVA_ONLY( u8 startedWithOom = db->mallocFailed );
 
   assert( zSql!=0 );
   mxSqlLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];

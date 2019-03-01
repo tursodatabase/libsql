@@ -136,7 +136,7 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 static void setStrAccumError(StrAccum *p, u8 eError){
   assert( eError==SQLITE_NOMEM || eError==SQLITE_TOOBIG );
   p->accError = eError;
-  p->nAlloc = 0;
+  if( p->mxAlloc ) sqlite3_str_reset(p);
 }
 
 /*
@@ -166,6 +166,7 @@ static char *getTextArg(PrintfArguments *p){
 */
 static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
   char *z;
+  if( pAccum->accError ) return 0;
   if( n>pAccum->nAlloc && n>pAccum->mxAlloc ){
     setStrAccumError(pAccum, SQLITE_TOOBIG);
     return 0;
@@ -885,9 +886,8 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     return 0;
   }
   if( p->mxAlloc==0 ){
-    N = p->nAlloc - p->nChar - 1;
     setStrAccumError(p, SQLITE_TOOBIG);
-    return N;
+    return p->nAlloc - p->nChar - 1;
   }else{
     char *zOld = isMalloced(p) ? p->zText : 0;
     i64 szNew = p->nChar;
@@ -959,7 +959,7 @@ void sqlite3_str_append(sqlite3_str *p, const char *z, int N){
   assert( z!=0 || N==0 );
   assert( p->zText!=0 || p->nChar==0 || p->accError );
   assert( N>=0 );
-  assert( p->accError==0 || p->nAlloc==0 );
+  assert( p->accError==0 || p->nAlloc==0 || p->mxAlloc==0 );
   if( p->nChar+N >= p->nAlloc ){
     enlargeAndAppend(p,z,N);
   }else if( N ){

@@ -429,7 +429,7 @@ static void fts3SnippetDetails(
       char *pCsr = pPhrase->pTail;
       int iCsr = pPhrase->iTail;
 
-      while( iCsr<(iStart+pIter->nSnippet) ){
+      while( iCsr<(iStart+pIter->nSnippet) && iCsr>=iStart ){
         int j;
         u64 mPhrase = (u64)1 << i;
         u64 mPos = (u64)1 << (iCsr - iStart);
@@ -1543,7 +1543,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   nTerm = pExpr->pPhrase->nToken;
   if( pList ){
     fts3GetDeltaPosition(&pList, &iPos);
-    assert( iPos>=0 );
+    assert_fts3_nc( iPos>=0 );
   }
 
   for(iTerm=0; iTerm<nTerm; iTerm++){
@@ -1653,7 +1653,7 @@ void sqlite3Fts3Offsets(
         /* All offsets for this column have been gathered. */
         rc = SQLITE_DONE;
       }else{
-        assert( iCurrent<=iMinPos );
+        assert_fts3_nc( iCurrent<=iMinPos );
         if( 0==(0xFE&*pTerm->pList) ){
           pTerm->pList = 0;
         }else{

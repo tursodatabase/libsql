@@ -178,4 +178,56 @@ do_eqp_test like3-5.211 {
   `--SEARCH TABLE t5b USING COVERING INDEX sqlite_autoindex_t5b_1 (x>? AND x<?)
 }
 
+# 2019-02-27
+# Verify that the LIKE optimization works with an ESCAPE clause when
+# using PRAGMA case_sensitive_like=ON.
+#
+do_execsql_test like3-6.100 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(path TEXT COLLATE nocase PRIMARY KEY,a,b,c) WITHOUT ROWID;
+}
+do_eqp_test like3-6.110 {
+  SELECT * FROM t1 WHERE path LIKE 'a%';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t1 USING PRIMARY KEY (path>? AND path<?)
+}
+do_eqp_test like3-6.120 {
+  SELECT * FROM t1 WHERE path LIKE 'a%' ESCAPE '_';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t1 USING PRIMARY KEY (path>? AND path<?)
+}
+do_execsql_test like3-6.200 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(path TEXT,x,y,z);
+  CREATE INDEX t2path ON t2(path COLLATE nocase);
+  CREATE INDEX t2path2 ON t2(path);
+}
+do_eqp_test like3-6.210 {
+  SELECT * FROM t2 WHERE path LIKE 'a%';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t2 USING INDEX t2path (path>? AND path<?)
+}
+do_eqp_test like3-6.220 {
+  SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '_';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t2 USING INDEX t2path (path>? AND path<?)
+}
+db eval {PRAGMA case_sensitive_like=ON}
+do_eqp_test like3-6.230 {
+  SELECT * FROM t2 WHERE path LIKE 'a%';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)
+}
+do_eqp_test like3-6.240 {
+  SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '_';
+} {
+  QUERY PLAN
+  `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)
+}
+
 finish_test

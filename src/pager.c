@@ -3798,8 +3798,14 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
       rc = sqlite3OsFileSize(pPager->fd, &nByte);
     }
     if( rc==SQLITE_OK ){
-      pNew = (char *)sqlite3PageMalloc(pageSize);
-      if( !pNew ) rc = SQLITE_NOMEM_BKPT;
+      /* 8 bytes of zeroed overrun space is sufficient so that the b-tree
+      * cell header parser will never run off the end of the allocation */
+      pNew = (char *)sqlite3PageMalloc(pageSize+8);
+      if( !pNew ){
+        rc = SQLITE_NOMEM_BKPT;
+      }else{
+        memset(pNew+pageSize, 0, 8);
+      }
     }
 
     if( rc==SQLITE_OK ){

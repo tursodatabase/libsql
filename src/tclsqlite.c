@@ -93,6 +93,14 @@ typedef struct SqliteDb SqliteDb;
 /*
 ** New SQL functions can be created as TCL scripts.  Each such function
 ** is described by an instance of the following structure.
+**
+** Variable eType may be set to SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT,
+** SQLITE_BLOB or SQLITE_NULL. If it is SQLITE_NULL, then the implementation
+** attempts to determine the type of the result based on the Tcl object.
+** If it is SQLITE_TEXT or SQLITE_BLOB, then a text (sqlite3_result_text())
+** or blob (sqlite3_result_blob()) is returned. If it is SQLITE_INTEGER
+** or SQLITE_FLOAT, then an attempt is made to return an integer or float
+** value, falling back to float and then text if this is not possible.
 */
 typedef struct SqlFunc SqlFunc;
 struct SqlFunc {
@@ -100,6 +108,7 @@ struct SqlFunc {
   Tcl_Obj *pScript;     /* The Tcl_Obj representation of the script */
   SqliteDb *pDb;        /* Database connection that owns this function */
   int useEvalObjv;      /* True if it is safe to use Tcl_EvalObjv */
+  int eType;            /* Type of value to return */
   char *zName;          /* Name of this function */
   SqlFunc *pNext;       /* Next function on the list of them all */
 };
@@ -150,6 +159,7 @@ struct SqliteDb {
   char *zTraceV2;            /* The trace_v2 callback routine */
   char *zProfile;            /* The profile callback routine */
   char *zProgress;           /* The progress callback routine */
+  char *zBindFallback;       /* Callback to invoke on a binding miss */
   char *zAuth;               /* The authorization callback routine */
   int disableAuth;           /* Disable the authorizer if it exists */
   char *zNull;               /* Text to substitute for an SQL NULL value */
@@ -539,6 +549,9 @@ static void SQLITE_TCLAPI DbDeleteCmd(void *db){
   }
   if( pDb->zProfile ){
     Tcl_Free(pDb->zProfile);
+  }
+  if( pDb->zBindFallback ){
+    Tcl_Free(pDb->zBindFallback);
   }
   if( pDb->zAuth ){
     Tcl_Free(pDb->zAuth);
@@ -995,27 +1008,54 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     u8 *data;
     const char *zType = (pVar->typePtr ? pVar->typePtr->name : "");
     char c = zType[0];
-    if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
-      /* Only return a BLOB type if the Tcl variable is a bytearray and
-      ** has no string representation. */
-      data = Tcl_GetByteArrayFromObj(pVar, &n);
-      sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
-    }else if( c=='b' && strcmp(zType,"boolean")==0 ){
-      Tcl_GetIntFromObj(0, pVar, &n);
-      sqlite3_result_int(context, n);
-    }else if( c=='d' && strcmp(zType,"double")==0 ){
-      double r;
-      Tcl_GetDoubleFromObj(0, pVar, &r);
-      sqlite3_result_double(context, r);
-    }else if( (c=='w' && strcmp(zType,"wideInt")==0) ||
-          (c=='i' && strcmp(zType,"int")==0) ){
-      Tcl_WideInt v;
-      Tcl_GetWideIntFromObj(0, pVar, &v);
-      sqlite3_result_int64(context, v);
-    }else{
-      data = (unsigned char *)Tcl_GetStringFromObj(pVar, &n);
-      sqlite3_result_text(context, (char *)data, n, SQLITE_TRANSIENT);
+    int eType = p->eType;
+
+    if( eType==SQLITE_NULL ){
+      if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
+        /* Only return a BLOB type if the Tcl variable is a bytearray and
+        ** has no string representation. */
+        eType = SQLITE_BLOB;
+      }else if( (c=='b' && strcmp(zType,"boolean")==0)
+             || (c=='w' && strcmp(zType,"wideInt")==0)
+             || (c=='i' && strcmp(zType,"int")==0) 
+      ){
+        eType = SQLITE_INTEGER;
+      }else if( c=='d' && strcmp(zType,"double")==0 ){
+        eType = SQLITE_FLOAT;
+      }else{
+        eType = SQLITE_TEXT;
+      }
     }
+
+    switch( eType ){
+      case SQLITE_BLOB: {
+        data = Tcl_GetByteArrayFromObj(pVar, &n);
+        sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
+        break;
+      }
+      case SQLITE_INTEGER: {
+        Tcl_WideInt v;
+        if( TCL_OK==Tcl_GetWideIntFromObj(0, pVar, &v) ){
+          sqlite3_result_int64(context, v);
+          break;
+        }
+        /* fall-through */
+      }
+      case SQLITE_FLOAT: {
+        double r;
+        if( TCL_OK==Tcl_GetDoubleFromObj(0, pVar, &r) ){
+          sqlite3_result_double(context, r);
+          break;
+        }
+        /* fall-through */
+      }
+      default: {
+        data = (unsigned char *)Tcl_GetStringFromObj(pVar, &n);
+        sqlite3_result_text(context, (char *)data, n, SQLITE_TRANSIENT);
+        break;
+      }
+    }
+
   }
 }
 
@@ -1265,6 +1305,8 @@ static int dbPrepareAndBind(
   int iParm = 0;                  /* Next free entry in apParm */
   char c;
   int i;
+  int needResultReset = 0;        /* Need to invoke Tcl_ResetResult() */
+  int rc = SQLITE_OK;             /* Value to return */
   Tcl_Interp *interp = pDb->interp;
 
   *ppPreStmt = 0;
@@ -1352,6 +1394,25 @@ static int dbPrepareAndBind(
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
     if( zVar!=0 && (zVar[0]=='$' || zVar[0]==':' || zVar[0]=='@') ){
       Tcl_Obj *pVar = Tcl_GetVar2Ex(interp, &zVar[1], 0, 0);
+      if( pVar==0 && pDb->zBindFallback!=0 ){
+        Tcl_Obj *pCmd;
+        int rx;
+        pCmd = Tcl_NewStringObj(pDb->zBindFallback, -1);
+        Tcl_IncrRefCount(pCmd);
+        Tcl_ListObjAppendElement(interp, pCmd, Tcl_NewStringObj(zVar,-1));
+        if( needResultReset ) Tcl_ResetResult(interp);
+        needResultReset = 1;
+        rx = Tcl_EvalObjEx(interp, pCmd, TCL_EVAL_DIRECT);
+        Tcl_DecrRefCount(pCmd);
+        if( rx==TCL_OK ){
+          pVar = Tcl_GetObjResult(interp);
+        }else if( rx==TCL_ERROR ){
+          rc = TCL_ERROR;
+          break;
+        }else{
+          pVar = 0;
+        }
+      }
       if( pVar ){
         int n;
         u8 *data;
@@ -1387,12 +1448,14 @@ static int dbPrepareAndBind(
       }else{
         sqlite3_bind_null(pStmt, i);
       }
+      if( needResultReset ) Tcl_ResetResult(pDb->interp);
     }
   }
   pPreStmt->nParm = iParm;
   *ppPreStmt = pPreStmt;
+  if( needResultReset && rc==TCL_OK ) Tcl_ResetResult(pDb->interp);
 
-  return TCL_OK;
+  return rc;
 }
 
 /*
@@ -1851,35 +1914,36 @@ static int SQLITE_TCLAPI DbObjCmd(
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",             "backup",                "busy",
-    "cache",                  "changes",               "close",
-    "collate",                "collation_needed",      "commit_hook",
-    "complete",               "copy",                  "deserialize",
-    "enable_load_extension",  "errorcode",             "eval",
-    "exists",                 "function",              "incrblob",
-    "interrupt",              "last_insert_rowid",     "nullvalue",
-    "onecolumn",              "preupdate",             "profile",
-    "progress",               "rekey",                 "restore",
-    "rollback_hook",          "serialize",             "status",
-    "timeout",                "total_changes",         "trace",
-    "trace_v2",               "transaction",           "unlock_notify",
-    "update_hook",            "version",               "wal_hook",
-    0                        
+    "authorizer",             "backup",                "bind_fallback",
+    "busy",                   "cache",                 "changes",
+    "close",                  "collate",               "collation_needed",
+    "commit_hook",            "complete",              "copy",
+    "deserialize",            "enable_load_extension", "errorcode",
+    "eval",                   "exists",                "function",
+    "incrblob",               "interrupt",             "last_insert_rowid",
+    "nullvalue",              "onecolumn",             "preupdate",
+    "profile",                "progress",              "rekey",
+    "restore",                "rollback_hook",         "serialize",
+    "status",                 "timeout",               "total_changes",
+    "trace",                  "trace_v2",              "transaction",
+    "unlock_notify",          "update_hook",           "version",
+    "wal_hook",               0                        
   };
   enum DB_enum {
-    DB_AUTHORIZER,            DB_BACKUP,               DB_BUSY,
-    DB_CACHE,                 DB_CHANGES,              DB_CLOSE,
-    DB_COLLATE,               DB_COLLATION_NEEDED,     DB_COMMIT_HOOK,
-    DB_COMPLETE,              DB_COPY,                 DB_DESERIALIZE,
-    DB_ENABLE_LOAD_EXTENSION, DB_ERRORCODE,            DB_EVAL,
-    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
-    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
-    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
-    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
-    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
-    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
-    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
-    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK
+    DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
+    DB_BUSY,                  DB_CACHE,                DB_CHANGES,
+    DB_CLOSE,                 DB_COLLATE,              DB_COLLATION_NEEDED,
+    DB_COMMIT_HOOK,           DB_COMPLETE,             DB_COPY,
+    DB_DESERIALIZE,           DB_ENABLE_LOAD_EXTENSION,DB_ERRORCODE,
+    DB_EVAL,                  DB_EXISTS,               DB_FUNCTION,
+    DB_INCRBLOB,              DB_INTERRUPT,            DB_LAST_INSERT_ROWID,
+    DB_NULLVALUE,             DB_ONECOLUMN,            DB_PREUPDATE,
+    DB_PROFILE,               DB_PROGRESS,             DB_REKEY,
+    DB_RESTORE,               DB_ROLLBACK_HOOK,        DB_SERIALIZE,
+    DB_STATUS,                DB_TIMEOUT,              DB_TOTAL_CHANGES,
+    DB_TRACE,                 DB_TRACE_V2,             DB_TRANSACTION,
+    DB_UNLOCK_NOTIFY,         DB_UPDATE_HOOK,          DB_VERSION,
+    DB_WAL_HOOK             
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1998,6 +2062,49 @@ static int SQLITE_TCLAPI DbObjCmd(
       rc = TCL_ERROR;
     }
     sqlite3_close(pDest);
+    break;
+  }
+
+  /*    $db bind_fallback ?CALLBACK?
+  **
+  ** When resolving bind parameters in an SQL statement, if the parameter
+  ** cannot be associated with a TCL variable then invoke CALLBACK with a
+  ** single argument that is the name of the parameter and use the return
+  ** value of the CALLBACK as the binding.  If CALLBACK returns something
+  ** other than TCL_OK or TCL_ERROR then bind a NULL.
+  **
+  ** If CALLBACK is an empty string, then revert to the default behavior 
+  ** which is to set the binding to NULL.
+  **
+  ** If CALLBACK returns an error, that causes the statement execution to
+  ** abort.  Hence, to configure a connection so that it throws an error
+  ** on an attempt to bind an unknown variable, do something like this:
+  **
+  **     proc bind_error {name} {error "no such variable: $name"}
+  **     db bind_fallback bind_error
+  */
+  case DB_BIND_FALLBACK: {
+    if( objc>3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+      return TCL_ERROR;
+    }else if( objc==2 ){
+      if( pDb->zBindFallback ){
+        Tcl_AppendResult(interp, pDb->zBindFallback, (char*)0);
+      }
+    }else{
+      char *zCallback;
+      int len;
+      if( pDb->zBindFallback ){
+        Tcl_Free(pDb->zBindFallback);
+      }
+      zCallback = Tcl_GetStringFromObj(objv[2], &len);
+      if( zCallback && len>0 ){
+        pDb->zBindFallback = Tcl_Alloc( len + 1 );
+        memcpy(pDb->zBindFallback, zCallback, len+1);
+      }else{
+        pDb->zBindFallback = 0;
+      }
+    }
     break;
   }
 
@@ -2646,6 +2753,7 @@ deserialize_error:
     char *zName;
     int nArg = -1;
     int i;
+    int eType = SQLITE_NULL;
     if( objc<4 ){
       Tcl_WrongNumArgs(interp, 2, objv, "NAME ?SWITCHES? SCRIPT");
       return TCL_ERROR;
@@ -2653,7 +2761,7 @@ deserialize_error:
     for(i=3; i<(objc-1); i++){
       const char *z = Tcl_GetString(objv[i]);
       int n = strlen30(z);
-      if( n>2 && strncmp(z, "-argcount",n)==0 ){
+      if( n>1 && strncmp(z, "-argcount",n)==0 ){
         if( i==(objc-2) ){
           Tcl_AppendResult(interp, "option requires an argument: ", z,(char*)0);
           return TCL_ERROR;
@@ -2666,11 +2774,25 @@ deserialize_error:
         }
         i++;
       }else
-      if( n>2 && strncmp(z, "-deterministic",n)==0 ){
+      if( n>1 && strncmp(z, "-deterministic",n)==0 ){
         flags |= SQLITE_DETERMINISTIC;
+      }else
+      if( n>1 && strncmp(z, "-returntype", n)==0 ){
+        const char *azType[] = {"integer", "real", "text", "blob", "any", 0};
+        assert( SQLITE_INTEGER==1 && SQLITE_FLOAT==2 && SQLITE_TEXT==3 );
+        assert( SQLITE_BLOB==4 && SQLITE_NULL==5 );
+        if( i==(objc-2) ){
+          Tcl_AppendResult(interp, "option requires an argument: ", z,(char*)0);
+          return TCL_ERROR;
+        }
+        i++;
+        if( Tcl_GetIndexFromObj(interp, objv[i], azType, "type", 0, &eType) ){
+          return TCL_ERROR;
+        }
+        eType++;
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
-            "\": must be -argcount or -deterministic", (char*)0
+            "\": must be -argcount, -deterministic or -returntype", (char*)0
         );
         return TCL_ERROR;
       }
@@ -2686,6 +2808,7 @@ deserialize_error:
     pFunc->pScript = pScript;
     Tcl_IncrRefCount(pScript);
     pFunc->useEvalObjv = safeToUseEvalObjv(interp, pScript);
+    pFunc->eType = eType;
     rc = sqlite3_create_function(pDb->db, zName, nArg, flags,
         pFunc, tclSqlFunc, 0, 0);
     if( rc!=SQLITE_OK ){

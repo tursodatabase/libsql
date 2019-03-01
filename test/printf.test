@@ -540,7 +540,7 @@ do_test printf-2.1.2.9 {
 } {abc: 1 1 (1e-20) :xyz}
 do_test printf-2.1.2.10 {
   sqlite3_mprintf_double {abc: %*.*f}  2000000000 1000000000 1.0e-20
-} {abc: }
+} {}
 do_test printf-2.1.3.1 {
   sqlite3_mprintf_double {abc: (%*.*f) :xyz} 1 1 1.0
 } {abc: (1.0) :xyz}
