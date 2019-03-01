@@ -1,5 +1,5 @@
-C Add\sthe\s".parameter"\scommand\sto\sthe\sCLI.
-D 2019-02-28T20:10:52.766
+C In\sa\squery\sthat\suses\sa\spartial\sindex,\sthe\sexpression\sthat\sis\sthe\sWHERE\sclause\nof\sthe\spartial\sindex\smust\salways\sbe\strue.\s\sUse\sthis\sfact\sto\savoid\sevaluating\nidentical\sterms\sin\sthe\sWHERE\sclause\sof\sthe\squery.
+D 2019-03-01T18:07:05.251
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -602,7 +602,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c 061848646cc46a137d9038e47e666a955b3b2a1b458365eeed76b004c0053f3b
+F src/wherecode.c ce7b21e1be2b981d62683fc59c4ca73a04a7ff2f1ebec23d41baf2da2349afd6
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
 F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7f70b6d96338dba201e005104e7f7148c1a8cd767ab05e35b44617c4c797bc5
-R 2fecd2e603ada3a0c6460ef11e6e9c28
+P 1f9fa58541dc974989eee9c9a5d453956f7dbcf42965ece2db2cb5dee3f3f5e2
+R 999cfe5c6c09ddc9e9ba3498e400f74c
 U drh
-Z f7dd879e1ba76ea61ec7d6d44725ec74
+Z 0f8a04d58b07ebfff6d09b88278bd01c
