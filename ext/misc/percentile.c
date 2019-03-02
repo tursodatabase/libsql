@@ -108,8 +108,8 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   /* Requirement 3:  P must be a number between 0 and 100 */
   eType = sqlite3_value_numeric_type(argv[1]);
   rPct = sqlite3_value_double(argv[1]);
-  if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT) ||
-      ((rPct = sqlite3_value_double(argv[1]))<0.0 || rPct>100.0) ){
+  if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
+   || rPct<0.0 || rPct>100.0 ){
     sqlite3_result_error(pCtx, "2nd argument to percentile() is not "
                          "a number between 0.0 and 100.0", -1);
     return;
