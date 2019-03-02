@@ -10,7 +10,25 @@
 **
 ******************************************************************************
 **
-** This SQLite extension implements the delta functions used by Fossil.
+** This SQLite extension implements the delta functions used by the RBU
+** extension. Three scalar functions and one table-valued function are
+** implemented here:
+**
+**   delta_apply(X,D)     -- apply delta D to file X and return the result
+**   delta_create(X,Y)    -- compute and return a delta that carries X into Y
+**   delta_output_size(D) -- blob size in bytes output from applying delta D
+**   delta_parse(D)       -- returns rows describing delta D
+**
+** The delta format is the Fossil delta format, described in a comment
+** on the delete_create() function implementation below, and also at
+**
+**    https://www.fossil-scm.org/fossil/doc/trunk/www/delta_format.wiki
+**
+** This delta format is used by the RBU extension, which is the main
+** reason that these routines are included in the extension library.
+** RBU does not use this extension directly.  Rather, this extension is
+** provided as a convenience to developers who want to analyze RBU files 
+** that contain deltas.
 */
 #include <string.h>
 #include <assert.h>
