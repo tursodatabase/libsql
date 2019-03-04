@@ -1160,6 +1160,34 @@ static void whereIndexExprTrans(
 }
 
 /*
+** The pTruth expression is always tree because it is the WHERE clause
+** a partial index that is driving a query loop.  Look through all of the
+** WHERE clause terms on the query, and if any of those terms must be
+** true because pTruth is true, then mark those WHERE clause terms as
+** coded.
+*/
+static void whereApplyPartialIndexConstraints(
+  Expr *pTruth,
+  int iTabCur,
+  WhereClause *pWC
+){
+  int i;
+  WhereTerm *pTerm;
+  while( pTruth->op==TK_AND ){
+    whereApplyPartialIndexConstraints(pTruth->pLeft, iTabCur, pWC);
+    pTruth = pTruth->pRight;
+  }
+  for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    Expr *pExpr;
+    if( pTerm->wtFlags & TERM_CODED ) continue;
+    pExpr = pTerm->pExpr;
+    if( sqlite3ExprCompare(0, pExpr, pTruth, iTabCur)==0 ){
+      pTerm->wtFlags |= TERM_CODED;
+    }
+  }
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -1766,6 +1794,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     */
     if( pLevel->iLeftJoin==0 && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 ){
       whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
+    }
+
+    /* If a partial index is driving the loop, try to eliminate WHERE clause
+    ** terms from the query that must be true due to the WHERE clause of
+    ** the partial index
+    */
+    if( pIdx->pPartIdxWhere ){
+      whereApplyPartialIndexConstraints(pIdx->pPartIdxWhere, iCur, pWC);
     }
 
     /* Record the instruction used to terminate the loop. */

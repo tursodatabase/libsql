@@ -429,7 +429,7 @@ static void fts3SnippetDetails(
       char *pCsr = pPhrase->pTail;
       int iCsr = pPhrase->iTail;
 
-      while( iCsr<(iStart+pIter->nSnippet) ){
+      while( iCsr<(iStart+pIter->nSnippet) && iCsr>=iStart ){
         int j;
         u64 mPhrase = (u64)1 << i;
         u64 mPos = (u64)1 << (iCsr - iStart);

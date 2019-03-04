@@ -837,6 +837,9 @@ static const unsigned char aJournalMagic[] = {
 int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->fd->pMethods==0 ) return 0;
   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
+#ifdef SQLITE_HAS_CODEC
+  if( pPager->xCodec!=0 ) return 0;
+#endif
 #ifndef SQLITE_OMIT_WAL
   if( pPager->pWal ){
     u32 iRead = 0;
@@ -3786,8 +3789,14 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
       rc = sqlite3OsFileSize(pPager->fd, &nByte);
     }
     if( rc==SQLITE_OK ){
-      pNew = (char *)sqlite3PageMalloc(pageSize);
-      if( !pNew ) rc = SQLITE_NOMEM_BKPT;
+      /* 8 bytes of zeroed overrun space is sufficient so that the b-tree
+      * cell header parser will never run off the end of the allocation */
+      pNew = (char *)sqlite3PageMalloc(pageSize+8);
+      if( !pNew ){
+        rc = SQLITE_NOMEM_BKPT;
+      }else{
+        memset(pNew+pageSize, 0, 8);
+      }
     }
 
     if( rc==SQLITE_OK ){
