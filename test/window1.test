@@ -701,10 +701,30 @@ do_execsql_test 16.2 {
 }
 
 #-------------------------------------------------------------------------
+do_execsql_test 17.0 {
+  CREATE TABLE t8(a);
+  INSERT INTO t8 VALUES(1), (2), (3);
+}
+
+do_execsql_test 17.1 {
+  SELECT +sum(0) OVER () ORDER BY +sum(0) OVER ();
+} {0}
+
+do_execsql_test 17.2 {
+  select +sum(a) OVER () FROM t8 ORDER BY +sum(a) OVER () DESC;
+} {6 6 6}
+
+do_execsql_test 17.3 {
+  SELECT 10+sum(a) OVER (ORDER BY a) 
+  FROM t8 
+  ORDER BY 10+sum(a) OVER (ORDER BY a) DESC;
+} {16 13 11}
+
+#-------------------------------------------------------------------------
 # Test error cases from chaining window definitions.
 #
 reset_db
-do_execsql_test 17.0 {
+do_execsql_test 18.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d INTEGER);
   INSERT INTO t1 VALUES(1, 'odd',  'one',   1);
@@ -740,7 +760,7 @@ foreach {tn sql error} {
              win2 AS (win1 ORDER BY d)
   } {cannot override ORDER BY clause of window: win1}
 } {
-  do_catchsql_test 17.1.$tn $sql [list 1 $error]
+  do_catchsql_test 18.1.$tn $sql [list 1 $error]
 }
 
 foreach {tn sql error} {
@@ -764,35 +784,35 @@ foreach {tn sql error} {
       WINDOW win1 AS (ORDER BY b)
   } {cannot override ORDER BY clause of window: win1}
 } {
-  do_catchsql_test 17.2.$tn $sql [list 1 $error]
+  do_catchsql_test 18.2.$tn $sql [list 1 $error]
 }
 
-do_execsql_test 17.3.1 {
+do_execsql_test 18.3.1 {
   SELECT group_concat(c, '.') OVER (PARTITION BY b ORDER BY c)
   FROM t1
 } {four four.six four.six.two five five.one five.one.three}
 
-do_execsql_test 17.3.2 {
+do_execsql_test 18.3.2 {
   SELECT group_concat(c, '.') OVER (win1 ORDER BY c)
   FROM t1
   WINDOW win1 AS (PARTITION BY b)
 } {four four.six four.six.two five five.one five.one.three}
 
-do_execsql_test 17.3.3 {
+do_execsql_test 18.3.3 {
   SELECT group_concat(c, '.') OVER win2
   FROM t1
   WINDOW win1 AS (PARTITION BY b),
          win2 AS (win1 ORDER BY c)
 } {four four.six four.six.two five five.one five.one.three}
 
-do_execsql_test 17.3.4 {
+do_execsql_test 18.3.4 {
   SELECT group_concat(c, '.') OVER (win2)
   FROM t1
   WINDOW win1 AS (PARTITION BY b),
          win2 AS (win1 ORDER BY c)
 } {four four.six four.six.two five five.one five.one.three}
 
-do_execsql_test 17.3.5 {
+do_execsql_test 18.3.5 {
   SELECT group_concat(c, '.') OVER win5
   FROM t1
   WINDOW win1 AS (PARTITION BY b),

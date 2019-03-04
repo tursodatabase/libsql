@@ -1806,6 +1806,10 @@ static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
   if( ALWAYS(pDef) ){
     pDef->funcFlags |= flagVal;
   }
+  pDef = sqlite3FindFunction(db, zName, 3, SQLITE_UTF8, 0);
+  if( pDef ){
+    pDef->funcFlags |= flagVal;
+  }
 }
 
 /*

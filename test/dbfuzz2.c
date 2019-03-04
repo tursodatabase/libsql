@@ -43,8 +43,10 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdint.h>
+#ifndef _WIN32
 #include <sys/time.h>
 #include <sys/resource.h>
+#endif
 #include "sqlite3.h"
 
 /*
@@ -181,7 +183,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
         SQLITE_DESERIALIZE_RESIZEABLE |
         SQLITE_DESERIALIZE_FREEONCLOSE);
   x = szMax;
+#ifdef SQLITE_FCNTL_SIZE_LIMIT
   sqlite3_file_control(db, "main", SQLITE_FCNTL_SIZE_LIMIT, &x);
+#endif
   if( bVdbeDebug ){
     sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
   }
@@ -261,6 +265,7 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
         szMax = strtol(argv[++i], 0, 0);
         continue;
       }
+#ifndef _WIN32
       if( strcmp(z,"max-stack")==0
        || strcmp(z,"max-data")==0
        || strcmp(z,"max-as")==0
@@ -291,6 +296,7 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
                zType, (int)x.rlim_cur, (int)y.rlim_cur);
         continue;
       }
+#endif /* _WIN32 */
     }
     argv[j++] = argv[i];
   }

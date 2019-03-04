@@ -819,9 +819,9 @@ check_for_interrupt:
   ** If the progress callback returns non-zero, exit the virtual machine with
   ** a return code SQLITE_ABORT.
   */
-  if( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+  while( nVmStep>=nProgressLimit && db->xProgress!=0 ){
     assert( db->nProgressOps!=0 );
-    nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
+    nProgressLimit += db->nProgressOps;
     if( db->xProgress(db->pProgressArg) ){
       nProgressLimit = 0xffffffff;
       rc = SQLITE_INTERRUPT;
@@ -1102,6 +1102,7 @@ case OP_String8: {         /* same as TK_STRING, out2 */
   if( encoding!=SQLITE_UTF8 ){
     rc = sqlite3VdbeMemSetStr(pOut, pOp->p4.z, -1, SQLITE_UTF8, SQLITE_STATIC);
     assert( rc==SQLITE_OK || rc==SQLITE_TOOBIG );
+    if( rc ) goto too_big;
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
     assert( pOut->szMalloc>0 && pOut->zMalloc==pOut->z );
     assert( VdbeMemDynamic(pOut)==0 );
@@ -1114,7 +1115,6 @@ case OP_String8: {         /* same as TK_STRING, out2 */
     pOp->p4.z = pOut->z;
     pOp->p1 = pOut->n;
   }
-  testcase( rc==SQLITE_TOOBIG );
 #endif
   if( pOp->p1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
@@ -4569,14 +4569,7 @@ case OP_NewRowid: {           /* out2 */
 ** This instruction only works on tables.  The equivalent instruction
 ** for indices is OP_IdxInsert.
 */
-/* Opcode: InsertInt P1 P2 P3 P4 P5
-** Synopsis: intkey=P3 data=r[P2]
-**
-** This works exactly like OP_Insert except that the key is the
-** integer value P3, not the value of the integer stored in register P3.
-*/
-case OP_Insert: 
-case OP_InsertInt: {
+case OP_Insert: {
   Mem *pData;       /* MEM cell holding data for the record to be inserted */
   Mem *pKey;        /* MEM cell holding key  for the record */
   VdbeCursor *pC;   /* Cursor to table into which insert is written */
@@ -4597,16 +4590,11 @@ case OP_InsertInt: {
   REGISTER_TRACE(pOp->p2, pData);
   sqlite3VdbeIncrWriteCounter(p, pC);
 
-  if( pOp->opcode==OP_Insert ){
-    pKey = &aMem[pOp->p3];
-    assert( pKey->flags & MEM_Int );
-    assert( memIsValid(pKey) );
-    REGISTER_TRACE(pOp->p3, pKey);
-    x.nKey = pKey->u.i;
-  }else{
-    assert( pOp->opcode==OP_InsertInt );
-    x.nKey = pOp->p3;
-  }
+  pKey = &aMem[pOp->p3];
+  assert( pKey->flags & MEM_Int );
+  assert( memIsValid(pKey) );
+  REGISTER_TRACE(pOp->p3, pKey);
+  x.nKey = pKey->u.i;
 
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
@@ -6174,8 +6162,7 @@ case OP_Program: {        /* jump */
   }
 #endif
   pOp = &aOp[-1];
-
-  break;
+  goto check_for_interrupt;
 }
 
 /* Opcode: Param P1 P2 * * *
@@ -7585,7 +7572,8 @@ abort_due_to_error:
   ** top. */
 vdbe_return:
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  if( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+  while( nVmStep>=nProgressLimit && db->xProgress!=0 ){
+    nProgressLimit += db->nProgressOps;
     if( db->xProgress(db->pProgressArg) ){
       nProgressLimit = 0xffffffff;
       rc = SQLITE_INTERRUPT;
