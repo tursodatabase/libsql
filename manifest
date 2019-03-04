@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\schaining\sof\sWINDOW\sdefinitions.
-D 2019-02-16T17:27:51.404
+C Support\ssome\s"ROWS\sBETWEEN\sN\sPRECEDING\sAND\sM\sFOLLOWING"\swindow\sfunctions\swithout\scaching\sentire\spartitions.
+D 2019-03-04T21:07:11.233
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -519,7 +519,7 @@ F src/shell.c.in f2c1adbee3f6f36686b4a38d2168ebfc25298b4ad1e6d95199fc4e95b539251
 F src/sqlite.h.in 7da74fd5bd7a9dbe92297060f036935520b26e240457287c5e67c7b9db51a986
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
-F src/sqliteInt.h f44de7fea38d4fd03ee8db7f851f2727b701d4ec3fc21a8335e8d3888dda7176
+F src/sqliteInt.h fa802d30bdb2c41a3645875006c08876ff2beca44f4e3715b6794fce9451538a
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -603,7 +603,7 @@ F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c a571d8d7c19d6db786a201f2df8788b320fefcb2842f2a1eb9a85b85e91bc35f
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
-F src/window.c a96e58c91e77690726512e1dc5de2f95ece975097171e8554a9e8dbd3cdfb0d9
+F src/window.c b2316f6082849e6a98a7f46209528721082533297c3c8b535edd5581863610d7
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1196,7 +1196,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 52d2c37fe8cc07ec7362024c214b04bb69432995b3a984a3fbabc60fa6ada3ee
-F test/pg_common.tcl 301ac19c1a52fd55166d26db929b3b89165c634d52b5f8ad76ea8cb06960db30
+F test/pg_common.tcl 72d4c464cf323768bbeb260ea2439602af2a780458b2e67d40e459127fd42b8b
 F test/pragma.test c267bf02742c823a191960895b3d52933cebd7beee26757d1ed694f213fcd867
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
@@ -1684,6 +1684,10 @@ F test/window4.tcl 511425f6b0abf9b953df54cc9c7295cc7c25d78f4ed6f7a74b094eec0120e
 F test/window4.test c5d6bf3403e4ade2f19df2afe4c16f29fb817c392c6c1c8017edb7165c191a62
 F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652821e
 F test/window6.test 5eae4ae7a590ccf1e605880969ca0bad3955616ac91cad3031baea38748badb3
+F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d76108f
+F test/window7.test ce7f865241fdd1c5c4db869cd7bb2986c3be836bc2e73649a6846dd920f63e0f
+F test/windowerr.tcl 5211e12818c013af2180c8da8f6dc007ef746e4cf386a5f2a87a5c340cb76829
+F test/windowerr.test 8a38c774e41c1b0c76e20d035c979040a69e104fcc6f10d9d3d2d50daa3cfafd
 F test/windowfault.test 12ceb6bbb355d13e8fcd88c5731a57256dfdf77b9a7ae20842a76fcd4623df5b
 F test/with1.test a07b5aad7f77acdf13e52e8814ea94606fcc72e9ea4c99baf293e9d7c63940be
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
@@ -1804,10 +1808,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa61435a4c3800f023788081c1342ad6a05a41449a424fa6c039d5ca46072256
-R f8f3f55ce4dbb9bcc0042a3bde2239b1
-T *branch * window-functions
-T *sym-window-functions *
-T -sym-trunk *
+P c155125fd5dddb438c09d40f5137c47d88defb7a6ede4261f09d7bdaad250d37
+R af19e2d286499d03a5f60c3423d10c17
+T +closed 9c17fdebd5a44754ee5d23b5403b0c51fae6ba98eb4b2b54e1389de4d4b142f7
 U dan
-Z b3b312efff88db643f5cb6a825d2a2ac
+Z 3c7515a96a0c664794629970af14a8d6

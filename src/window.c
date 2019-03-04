@@ -788,6 +788,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** The OpenEphemeral instruction is coded later, after it is known how
     ** many columns the table will have.  */
     pMWin->iEphCsr = pParse->nTab++;
+    pParse->nTab += 3;
 
     selectWindowRewriteEList(pParse, pMWin, pSrc, p->pEList, &pSublist);
     selectWindowRewriteEList(pParse, pMWin, pSrc, p->pOrderBy, &pSublist);
@@ -843,6 +844,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       }
 
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pSublist->nExpr);
+      sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+1, pMWin->iEphCsr);
+      sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+2, pMWin->iEphCsr);
+      sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+3, pMWin->iEphCsr);
     }else{
       sqlite3SelectDelete(db, pSub);
     }
@@ -1085,6 +1089,9 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
     pParse->nMem += nPart;
     sqlite3VdbeAddOp3(v, OP_Null, 0, pMWin->regPart, pMWin->regPart+nPart-1);
   }
+
+  pMWin->regFirst = ++pParse->nMem;
+  sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regFirst);
 
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *p = pWin->pFunc;
@@ -1429,10 +1436,10 @@ static void windowReturnOneRow(
     }
     else if( pFunc->zName==leadName || pFunc->zName==lagName ){
       int nArg = pWin->pOwner->x.pList->nExpr;
-      int iEph = pMWin->iEphCsr;
       int csr = pWin->csrApp;
       int lbl = sqlite3VdbeMakeLabel(pParse);
       int tmpReg = sqlite3GetTempReg(pParse);
+      int iEph = pMWin->iEphCsr;
 
       if( nArg<3 ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regResult);
@@ -1832,6 +1839,154 @@ static void windowCodeRowExprStep(
 
   /* Jump to here to skip over flush_partition */
   sqlite3VdbeJumpHere(v, addrGoto);
+}
+
+static void windowCodeStep(
+  Parse *pParse, 
+  Select *p,
+  WhereInfo *pWInfo,
+  int regGosub, 
+  int addrGosub
+){
+  Window *pMWin = p->pWin;
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  int regFlushPart;               /* Register for "Gosub flush_partition" */
+
+  int regArg;
+  int csrCurrent = pMWin->iEphCsr;
+  int csrWrite = csrCurrent+1;
+  int csrStart = csrCurrent+2;
+  int csrEnd = csrCurrent+3;
+
+  int regStart;                    /* Value of <expr> PRECEDING */
+  int regEnd;                      /* Value of <expr> FOLLOWING */
+
+  int iSubCsr = p->pSrc->a[0].iCursor;
+  int nSub = p->pSrc->a[0].pTab->nCol;
+  int k;
+
+  int addrGoto;
+  int addrIf;
+  int addrIfEnd;
+  int addrIfStart;
+  int addrGosubFlush;
+  int addrInteger;
+  int addrGoto2;
+
+  int reg = pParse->nMem+1;
+  int regRecord = reg+nSub;
+  int regRowid = regRecord+1;
+
+  pParse->nMem += 1 + nSub + 1;
+
+  regFlushPart = ++pParse->nMem;
+  regStart = ++pParse->nMem;
+  regEnd = ++pParse->nMem;
+
+  assert( pMWin->eStart==TK_PRECEDING 
+       || pMWin->eStart==TK_CURRENT 
+       || pMWin->eStart==TK_FOLLOWING 
+       || pMWin->eStart==TK_UNBOUNDED 
+  );
+  assert( pMWin->eEnd==TK_FOLLOWING 
+       || pMWin->eEnd==TK_CURRENT 
+       || pMWin->eEnd==TK_UNBOUNDED 
+       || pMWin->eEnd==TK_PRECEDING 
+  );
+
+  /* Load the column values for the row returned by the sub-select
+  ** into an array of registers starting at reg. Assemble them into
+  ** a record in register regRecord. TODO: An optimization here? */
+  for(k=0; k<nSub; k++){
+    sqlite3VdbeAddOp3(v, OP_Column, iSubCsr, k, reg+k);
+  }
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, nSub, regRecord);
+
+  /* Check if the current iteration is the first row of a new partition */
+  if( pMWin->pPartition ){
+    int addr;
+    ExprList *pPart = pMWin->pPartition;
+    int nPart = pPart->nExpr;
+    int regNewPart = reg + pMWin->nBufferCol;
+    KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
+
+    addrIf = sqlite3VdbeAddOp1(v, OP_If, pMWin->regFirst);
+    addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart, nPart);
+    sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+    sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+3, addr+2);
+    VdbeCoverageEqNe(v);
+    addrGosubFlush = sqlite3VdbeAddOp1(v, OP_Gosub, regFlushPart);
+    VdbeComment((v, "call flush_partition"));
+    sqlite3VdbeJumpHere(v, addrIf);
+  }
+
+  /* Insert the new row into the ephemeral table */
+  sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, regRowid);
+  sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, regRowid);
+
+  /* This block is run for the first row of each partition */
+  addrIf = sqlite3VdbeAddOp1(v, OP_IfNot, pMWin->regFirst);
+  if( pMWin->pPartition ){
+    sqlite3VdbeAddOp3(v, OP_Copy, 
+        reg+pMWin->nBufferCol, pMWin->regPart, pMWin->pPartition->nExpr-1
+    );
+  }
+  sqlite3VdbeAddOp2(v, OP_Rewind, csrStart, 1);   sqlite3VdbeChangeP5(v, 1);
+  sqlite3VdbeAddOp2(v, OP_Rewind, csrCurrent, 1); sqlite3VdbeChangeP5(v, 1);
+  sqlite3VdbeAddOp2(v, OP_Rewind, csrEnd, 1);
+  regArg = windowInitAccum(pParse, pMWin);
+
+  sqlite3VdbeAddOp2(v, OP_Integer, 0, pMWin->regFirst);
+  sqlite3ExprCode(pParse, pMWin->pStart, regStart);
+  windowCheckIntValue(pParse, regStart, 0);
+  sqlite3ExprCode(pParse, pMWin->pEnd, regEnd);
+  windowCheckIntValue(pParse, regEnd, 1);
+  addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
+
+  /* This block is run for the second and subsequent rows of each partition */
+  sqlite3VdbeJumpHere(v, addrIf);
+  sqlite3VdbeAddOp2(v, OP_Next, csrEnd, sqlite3VdbeCurrentAddr(v)+1);
+  addrIfEnd = sqlite3VdbeAddOp3(v, OP_IfPos, regEnd, 0, 1);
+  windowAggFinal(pParse, pMWin, 0);
+  sqlite3VdbeAddOp2(v, OP_Next, csrCurrent, sqlite3VdbeCurrentAddr(v)+1);
+  windowReturnOneRow(pParse, pMWin, regGosub, addrGosub);
+  addrIfStart = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0, 1);
+  sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+1);
+  windowAggStep(pParse, pMWin, csrStart, 1, regArg, 0);
+  sqlite3VdbeJumpHere(v, addrIfStart);
+  sqlite3VdbeJumpHere(v, addrIfEnd);
+
+  sqlite3VdbeJumpHere(v, addrGoto);
+  windowAggStep(pParse, pMWin, csrEnd, 0, regArg, 0);
+
+  /* End of the main input loop */
+  sqlite3WhereEnd(pWInfo);
+
+  /* Fall through */
+  if( pMWin->pPartition ){
+    addrInteger = sqlite3VdbeAddOp2(v, OP_Integer, 0, regFlushPart);
+    sqlite3VdbeJumpHere(v, addrGosubFlush);
+  }
+
+  sqlite3VdbeAddOp2(v, OP_Next, csrCurrent, sqlite3VdbeCurrentAddr(v)+2);
+  addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
+  windowAggFinal(pParse, pMWin, 0);
+  windowReturnOneRow(pParse, pMWin, regGosub, addrGosub);
+  addrIfStart = sqlite3VdbeAddOp3(v, OP_IfPos, regStart, 0, 1);
+  sqlite3VdbeAddOp2(v, OP_Next, csrStart, sqlite3VdbeCurrentAddr(v)+2);
+  addrGoto2 = sqlite3VdbeAddOp0(v, OP_Goto);
+  windowAggStep(pParse, pMWin, csrStart, 1, regArg, 0);
+  sqlite3VdbeJumpHere(v, addrIfStart);
+  sqlite3VdbeAddOp2(v, OP_Goto, 0, addrGoto-1);
+  sqlite3VdbeJumpHere(v, addrGoto);
+  sqlite3VdbeJumpHere(v, addrGoto2);
+
+  sqlite3VdbeAddOp1(v, OP_ResetSorter, csrCurrent);
+  sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regFirst);
+  if( pMWin->pPartition ){
+    sqlite3VdbeChangeP1(v, addrInteger, sqlite3VdbeCurrentAddr(v));
+    sqlite3VdbeAddOp1(v, OP_Return, regFlushPart);
+  }
 }
 
 /*
@@ -2296,8 +2451,29 @@ void sqlite3WindowCodeStep(
   if( pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy)
   ){
-    VdbeModuleComment((pParse->pVdbe, "Begin RowExprStep()"));
-    windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);
+    Window *pWin;
+    int bCache = 0;               /* True to use CacheStep() */
+    for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
+      FuncDef *pFunc = pWin->pFunc;
+      if( (pFunc->funcFlags & SQLITE_FUNC_WINDOW_SIZE)
+        || (pFunc->zName==nth_valueName)
+        || (pFunc->zName==first_valueName)
+        || (pFunc->zName==leadName)
+        || (pFunc->zName==lagName)
+      ){
+        bCache = 1;
+        break;
+      }
+    }
+    if( bCache || pMWin->eStart!=TK_PRECEDING || pMWin->eEnd!=TK_FOLLOWING ){
+      VdbeModuleComment((pParse->pVdbe, "Begin RowExprStep()"));
+      windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);
+      VdbeModuleComment((pParse->pVdbe, "End RowExprStep()"));
+    }else{
+      VdbeModuleComment((pParse->pVdbe, "Begin windowCodeStep()"));
+      windowCodeStep(pParse, p, pWInfo, regGosub, addrGosub);
+      VdbeModuleComment((pParse->pVdbe, "End windowCodeStep()"));
+    }
   }else{
     Window *pWin;
     int bCache = 0;               /* True to use CacheStep() */
@@ -2323,9 +2499,11 @@ void sqlite3WindowCodeStep(
     if( bCache ){
       VdbeModuleComment((pParse->pVdbe, "Begin CacheStep()"));
       windowCodeCacheStep(pParse, p, pWInfo, regGosub, addrGosub);
+      VdbeModuleComment((pParse->pVdbe, "End CacheStep()"));
     }else{
       VdbeModuleComment((pParse->pVdbe, "Begin DefaultStep()"));
       windowCodeDefaultStep(pParse, p, pWInfo, regGosub, addrGosub);
+      VdbeModuleComment((pParse->pVdbe, "End DefaultStep()"));
     }
   }
 }

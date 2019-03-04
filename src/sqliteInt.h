@@ -3577,6 +3577,8 @@ struct Window {
   Expr *pOwner;           /* Expression object this window is attached to */
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
+
+  int regFirst;
 };
 
 #ifndef SQLITE_OMIT_WINDOWFUNC

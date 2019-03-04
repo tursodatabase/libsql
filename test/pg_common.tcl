@@ -67,6 +67,19 @@ proc execsql_test {tn sql} {
   puts $::fd ""
 }
 
+proc errorsql_test {tn sql} {
+  set rc [catch {execsql $sql} msg]
+  if {$rc==0} {
+    error "errorsql_test SQL did not cause an error!"
+  }
+  puts $::fd "# PG says \"[string trim $msg]\""
+  set sql [string map {string_agg group_concat} $sql]
+  puts $::fd "do_test $tn { catch { execsql {"
+  puts $::fd "  [string trim $sql]"
+  puts $::fd "} } } 1"
+  puts $::fd ""
+}
+
 # Same as [execsql_test], except coerce all results to floating point values
 # with two decimal points.
 #
