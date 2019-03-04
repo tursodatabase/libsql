@@ -1144,9 +1144,12 @@ static const void *columnName(
     N += useType*n;
     sqlite3_mutex_enter(db->mutex);
     assert( db->mallocFailed==0 );
+#ifndef SQLITE_OMIT_UTF16
     if( useUtf16 ){
       ret = sqlite3_value_text16((sqlite3_value*)&p->aColName[N]);
-    }else{
+    }else
+#endif
+    {
       ret = sqlite3_value_text((sqlite3_value*)&p->aColName[N]);
     }
     /* A malloc may have failed inside of the _text() call. If this

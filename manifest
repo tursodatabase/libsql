@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\sfossildelta.c\sextension.
-D 2019-03-02T20:09:35.788
+C Fix\sa\sproblem\spreventing\scompilation\swith\sSQLITE_OMIT_UTF16.
+D 2019-03-04T07:15:57.844
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -589,7 +589,7 @@ F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
 F src/vdbe.c f1e7b5320df80ff58c67176e35cb48062cbda2a9c9811f11db5faa48071d3fe4
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
-F src/vdbeapi.c cde63790c9d18ba5941d52c9f49e1a862cf6503141d5b9c112a05eb0adbf30a9
+F src/vdbeapi.c 0eb687d3287d6ab45661f7ffcabbda6f345713e800ef0f29053597933ca2a0bf
 F src/vdbeaux.c 4fa28b32452f6197dba7c8780dde11576b9a6d8ce6f35adbb69efc3e7d37fa0c
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 3e89e087df928eba80e520824078dc563c579a0848b1557ac36845ec14392923
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd085e9260bec18f968704abb2dd324d954baa121d13b67c3f5b801e9e3834aa
-R 2f413ab89884ce894ab037220c4ef892
-U drh
-Z 4ebc8a2db088c512de2eab3689f25c24
+P d7d23f0450d659b2c7df34e4df8623ca7b6fe3bd19422e3e9234515214ae8510
+R dc88e96e04121683ea3d6378eccdabf0
+U dan
+Z 97fe7239616646a62550c014b5d021f5
