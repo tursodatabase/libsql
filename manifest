@@ -1,5 +1,5 @@
-C If\sthe\sinitial\sbyte\sof\sa\srecord\sis\sa\slarge\svalue,\sthen\salways\sused\sthe\ngeneralized\srecord\scomparison\sroutine\ssqlite3VdbeRecordCompare()\srather\sthan\none\sof\sthe\sspecialized\sversions\sthat\sare\soptimized\sfor\sshorter\srecords.
-D 2019-03-05T14:39:00.353
+C New\sdbfuzz2\stest\scases\sadded\sto\stest/fuzzdata7.db
+D 2019-03-05T14:47:53.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -992,7 +992,7 @@ F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
-F test/fuzzdata7.db 3fc78e65dfe0be9df9e262075d5a335f18f627da47dfc691d1a7b822f34d4b99
+F test/fuzzdata7.db 7b04dfb4e2e28f7174d0b83920ee564ebb5261e23f0b843c383a7868788a300c
 F test/fuzzdata8.db bcdd2175b8876c3679aa1c00874a9f69368f464e498f800d3917bd74a0563127
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
@@ -1805,7 +1805,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 906d1fd8650874236e0bf5734d5347dcc45ec036164a56570fec37da4ffeaf8f
-R 277179fe4b547cee2092289e5ab7fb47
+P c1ac00706bae45fe9735061ada025880606cdfb8ecfdaa36b4e2d04275820861
+R 2e94b0f834d7ac20e94dce95126d5b76
 U drh
-Z 5d5f3c87362d69305d6cbcaac8d39497
+Z 1db0422f5a22bbfbf5d8023e5f9edc60
