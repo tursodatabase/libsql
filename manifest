@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2019-03-04T21:08:53.342
+C Extend\swindowCodeStep()\sto\shandle\sany\sROWS\sPRECEDING/FOLLOWING\sframe\sspecification.
+D 2019-03-05T19:29:36.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -604,7 +604,7 @@ F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c ce7b21e1be2b981d62683fc59c4ca73a04a7ff2f1ebec23d41baf2da2349afd6
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
-F src/window.c b2316f6082849e6a98a7f46209528721082533297c3c8b535edd5581863610d7
+F src/window.c d722f9b0cb3f12ee3fab8cc2d05407078d99346969e9c7e2030da21d0588675f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1809,7 +1809,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7a91f12282afb5d5d7d78397a11d18e0268ee0c931d85e21fce00d13929494e 906d1fd8650874236e0bf5734d5347dcc45ec036164a56570fec37da4ffeaf8f
-R 30a9373810c2da7278ca9b29b61f206e
+P 9b4d561f68febdab6624d8c567fb4357bf67dda500664cf708d16a76f37b8ec1
+R f1949de6e35750b066f9dbae4754f91b
+T +closed d661659f6934dd7a7ef67d1090e078343fc05e85c3ce3586883921ed32484d13
 U dan
-Z 5d336602dfcf4b9ecdc6fcf657926dd9
+Z 8f284cc4f98c73f741a81ab913586d8b
