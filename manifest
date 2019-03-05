@@ -1,5 +1,5 @@
-C New\sdbfuzz2\stest\scases\sadded\sto\stest/fuzzdata7.db
-D 2019-03-05T14:47:53.704
+C Add\sa\sscript\sto\stool/\sthat\swill\sextract\sthe\ssqlite3.h\sheader\sfile\sfrom\san\nsqlite3.c\samalgamation.
+D 2019-03-05T16:53:16.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -1715,6 +1715,7 @@ F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/dbtotxt.c 04e25f26be7c7743cdfb4111a8483de0b111925d6afeeb7559ade0ceb73f7f52
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
+F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -1805,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1ac00706bae45fe9735061ada025880606cdfb8ecfdaa36b4e2d04275820861
-R 2e94b0f834d7ac20e94dce95126d5b76
+P 25975e1fb2be0c011542c0a6b001385cec8113662df93dc618f725f2a4692bc2
+R 7b54cf6ff336794f41ef4c328e35aa5d
 U drh
-Z 1db0422f5a22bbfbf5d8023e5f9edc60
+Z 222794cfa228dcef3bcc8d908fb8115a
