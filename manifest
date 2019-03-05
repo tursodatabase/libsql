@@ -1,5 +1,5 @@
-C Add\sa\sscript\sto\stool/\sthat\swill\sextract\sthe\ssqlite3.h\sheader\sfile\sfrom\san\nsqlite3.c\samalgamation.
-D 2019-03-05T16:53:16.649
+C Fix\sa\spotential\s32-bit\sinteger\soverflow\sin\sthe\s"showdb"\sutility\sprogram\swhen\nit\sis\strying\sto\sinterpret\sa\scorrupt\sdatabase\sfile.
+D 2019-03-05T23:49:17.602
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -1756,7 +1756,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c e6bc9dba233bf1b57ca0a525a2bba762db4e223de84990739db3f09c46151b1e
+F tool/showdb.c af978d1437562776fa4d94bf0cb772314c464e71ef24134a6e2301564ae60bc2
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25975e1fb2be0c011542c0a6b001385cec8113662df93dc618f725f2a4692bc2
-R 7b54cf6ff336794f41ef4c328e35aa5d
+P 38d2e510cdedf38153466b161c0842b1604aef7b5589c51f628ae7cbb6a8722a
+R 5f08c12dd4cf8ba7c214856356c2450a
 U drh
-Z 222794cfa228dcef3bcc8d908fb8115a
+Z fa7715e4b91d1f3064235b4ac30911e1
