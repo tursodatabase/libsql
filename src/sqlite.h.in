@@ -3895,6 +3895,18 @@ const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
 /*
+** CAPI3REF: Query The EXPLAIN Setting For A Prepared Statement
+** METHOD: sqlite3_stmt
+**
+** ^The sqlite3_stmt_isexplain(S) interface returns 1 if the
+** prepared statement S is an EXPLAIN statement, or 2 if the
+** statement S is an EXPLAIN QUERY PLAN.
+** ^The sqlite3_stmt_isexplain(S) interface returns 0 if S is
+** an ordinary statement or a NULL pointer.
+*/
+int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
+
+/*
 ** CAPI3REF: Determine If A Prepared Statement Has Been Reset
 ** METHOD: sqlite3_stmt
 **

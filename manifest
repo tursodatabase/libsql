@@ -1,5 +1,5 @@
-C Add\san\s"||\sCORRUPT_DB"\sterm\sto\san\sassert()\sthat\smight\sbe\sfalse\sif\sthe\sdatabase\nis\scorrupt.\s\sAlso\sadd\sa\sbranch\sto\shave\ssqlite3PagerMovepage()\sreturn\nSQLITE_CORRUPT\sin\sthat\scase.
-D 2019-03-06T14:08:41.132
+C Add\sthe\ssqlite3_stmt_isexplain()\sinterface.
+D 2019-03-06T14:53:27.483
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -516,8 +516,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 09419ad5c432190b69be7c0c326e03abb548a97c2c50675b81b459e1b382d1d2
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9263f5c30dd44c7ac2eb29f40a7ec64322a96885b71c00de6bc30b756c2e1c49
-F src/shell.c.in 249c0bf34f7ce272cb17162c297c45ab674a52a5d85193a86191f131196de47f
-F src/sqlite.h.in f19f7b7646ccd331511b123e2e23d4dc3f3d02f74e1c04d2bb560ea50a323e4c
+F src/shell.c.in 01c0cc01391d00d247fdf640052d38c267fc16d975bc4f3154a02277c232dbeb
+F src/sqlite.h.in 02be315feaf20c06028aacf3b032b5e7211e9aae066284eef77b081646b43ea0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
 F src/sqliteInt.h f253c4ec15e577a293a462e5049f8ea1d0c7a31819b3a88acdd24698df8f4d0b
@@ -525,7 +525,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c cfe7f93daf9d8787f65e099efb67d7cdfc2c35236dec5d3f6758520bd3519424
-F src/test1.c 353b066e7ec761c4c715c1c20b888e0e7a0b0c0eda7f68c110e032d63713cade
+F src/test1.c cfb303eeddd3670409af6b58d2ddb928b8e9e70822d681d3df88dfaabb7bea6a
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -589,7 +589,7 @@ F src/vacuum.c a9f389f41556c0ec310bc9169dc9476603c30a0a913ad92bfbc75c86886967ca
 F src/vdbe.c f1e7b5320df80ff58c67176e35cb48062cbda2a9c9811f11db5faa48071d3fe4
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
-F src/vdbeapi.c 0eb687d3287d6ab45661f7ffcabbda6f345713e800ef0f29053597933ca2a0bf
+F src/vdbeapi.c 7a052df80d7e2e55382076174633e888f21fe200feb5d49b1b441b4c38ab851a
 F src/vdbeaux.c 4fa28b32452f6197dba7c8780dde11576b9a6d8ce6f35adbb69efc3e7d37fa0c
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 3e89e087df928eba80e520824078dc563c579a0848b1557ac36845ec14392923
@@ -713,7 +713,7 @@ F test/capi2.test 34a1a9a96d543a2ec2c209696b11b164444f57253b1f2cba1c2e53fadede6c
 F test/capi3.test 3910a73c38ac76d69778dd9eb481ab7cd6ed59117fc047b4f6056a5c72529de1
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
-F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
+F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 5ceb920718d280b61163500a7d29e0e0a86458b1cbd92d96f962c9d970aa3857
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3803e750384ec37091b0a6c350f8ef67720e316fd6f74c95e3c5f231c4a01ceb
-R 5ce5e7502772fd8fb0367a42a020f65d
+P b0d5cf40bba34e459caa7480bc84a1d75496c2ab52029f4bb0a31f2d9369a8ee
+R f7bdcd8bffdce5eed151de0a075f21b3
 U drh
-Z e5a870506571dc7c7e8d899a4f9fe623
+Z f31ea26ece43f3a0263dc6076fee4b21
