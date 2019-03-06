@@ -3579,6 +3579,7 @@ struct Window {
   int iArgCol;            /* Offset of first argument for this function */
 
   int regFirst;
+  int regSize;
 };
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
