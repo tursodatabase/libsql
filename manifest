@@ -1,5 +1,5 @@
-C Fix\sa\spotential\s32-bit\sinteger\soverflow\sin\sthe\s"showdb"\sutility\sprogram\swhen\nit\sis\strying\sto\sinterpret\sa\scorrupt\sdatabase\sfile.
-D 2019-03-05T23:49:17.602
+C Add\san\s"||\sCORRUPT_DB"\sterm\sto\san\sassert()\sthat\smight\sbe\sfalse\sif\sthe\sdatabase\nis\scorrupt.\s\sAlso\sadd\sa\sbranch\sto\shave\ssqlite3PagerMovepage()\sreturn\nSQLITE_CORRUPT\sin\sthat\scase.
+D 2019-03-06T14:08:41.132
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -502,7 +502,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 2b9604eb5c12f40a0613e832b6267f5814f84479d570d482ba6f98d7affa7c1c
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 5ff85a1dafdbbc3d27e21dbb52ac02066507b1e2d7da4cd4961408eed2cce23a
+F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y 741a270b7f2f85bc5d026d06fb5a9ccba5335304ff2831e1cb44b36cd0da6006
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
@@ -993,7 +993,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 7b04dfb4e2e28f7174d0b83920ee564ebb5261e23f0b843c383a7868788a300c
-F test/fuzzdata8.db bcdd2175b8876c3679aa1c00874a9f69368f464e498f800d3917bd74a0563127
+F test/fuzzdata8.db f6906d0e04c050e661272aba5f82cf35eb232e25493850bba5a5f339dddb7327
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38d2e510cdedf38153466b161c0842b1604aef7b5589c51f628ae7cbb6a8722a
-R 5f08c12dd4cf8ba7c214856356c2450a
+P 3803e750384ec37091b0a6c350f8ef67720e316fd6f74c95e3c5f231c4a01ceb
+R 5ce5e7502772fd8fb0367a42a020f65d
 U drh
-Z fa7715e4b91d1f3064235b4ac30911e1
+Z e5a870506571dc7c7e8d899a4f9fe623
