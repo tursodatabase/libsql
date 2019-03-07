@@ -1892,13 +1892,6 @@ static int windowCodeOp(
     addrIf = sqlite3VdbeAddOp3(v, OP_IfPos, regCountdown, 0, 1);
   }
 
-  if( jumpOnEof ){
-    sqlite3VdbeAddOp2(v, OP_Next, csr, sqlite3VdbeCurrentAddr(v)+2);
-    ret = sqlite3VdbeAddOp0(v, OP_Goto);
-  }else{
-    sqlite3VdbeAddOp2(v, OP_Next, csr, sqlite3VdbeCurrentAddr(v)+1);
-  }
-
   switch( op ){
     case WINDOW_RETURN_ROW:
       windowAggFinal(p->pParse, p->pMWin, 0);
@@ -1914,9 +1907,13 @@ static int windowCodeOp(
       break;
   }
 
-  if( ret ){
-    sqlite3VdbeJumpHere(v, ret);
+  if( jumpOnEof ){
+    sqlite3VdbeAddOp2(v, OP_Next, csr, sqlite3VdbeCurrentAddr(v)+2);
+    ret = sqlite3VdbeAddOp0(v, OP_Goto);
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Next, csr, sqlite3VdbeCurrentAddr(v)+1);
   }
+
   if( regCountdown>0 ){
     sqlite3VdbeJumpHere(v, addrIf);
   }
@@ -2024,6 +2021,7 @@ static void windowCodeStep(
   int addrCacheNext;
 
   int addrShortcut = 0;
+  int addrEmpty = 0;
 
   int bCache = windowCachePartition(pMWin);
 
@@ -2137,9 +2135,9 @@ static void windowCodeStep(
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regStart);
   }
 
-  sqlite3VdbeAddOp2(v, OP_Rewind, csrStart, 1);   sqlite3VdbeChangeP5(v, 1);
-  sqlite3VdbeAddOp2(v, OP_Rewind, csrCurrent, 1); sqlite3VdbeChangeP5(v, 1);
-  sqlite3VdbeAddOp2(v, OP_Rewind, csrEnd, 1); sqlite3VdbeChangeP5(v, 1);
+  sqlite3VdbeAddOp2(v, OP_Rewind, csrStart, 1);
+  sqlite3VdbeAddOp2(v, OP_Rewind, csrCurrent, 1);
+  sqlite3VdbeAddOp2(v, OP_Rewind, csrEnd, 1);
 
   sqlite3VdbeAddOp2(v, OP_Integer, 0, pMWin->regFirst);
   addrGoto = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -2152,6 +2150,7 @@ static void windowCodeStep(
     sqlite3VdbeJumpHere(v, addrIf);
   }
   if( pMWin->eStart==TK_FOLLOWING ){
+    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, 0, 0);
     windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, regEnd, 0);
     windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 0);
   }else
@@ -2160,21 +2159,17 @@ static void windowCodeStep(
     windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 0);
     windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 0);
   }else{
-    int addr = sqlite3VdbeAddOp3(v, OP_IfPos, regEnd, 0, 1);
+    int addr;
+    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, 0, 0);
+    addr = sqlite3VdbeAddOp3(v, OP_IfPos, regEnd, 0, 1);
     windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 0);
     windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 0);
     sqlite3VdbeJumpHere(v, addr);
   }
   VdbeModuleComment((pParse->pVdbe, "End windowCodeStep.SECOND_ROW_CODE"));
 
-  VdbeModuleComment((pParse->pVdbe, "Begin windowCodeStep.ALL_ROW_CODE"));
-  sqlite3VdbeJumpHere(v, addrGoto);
-  if( pMWin->eEnd!=TK_PRECEDING ){
-    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, 0, 0);
-  }
-  VdbeModuleComment((pParse->pVdbe, "End windowCodeStep.ALL_ROW_CODE"));
-
   /* End of the main input loop */
+  sqlite3VdbeJumpHere(v, addrGoto);
   if( bCache ){
     sqlite3VdbeAddOp2(v, OP_Next, csrWrite, addrCacheNext);
     sqlite3VdbeJumpHere(v, addrCacheRewind); 
@@ -2184,29 +2179,44 @@ static void windowCodeStep(
   }
 
   /* Fall through */
-
-  VdbeModuleComment((pParse->pVdbe, "Begin windowCodeStep.FLUSH_CODE"));
   if( pMWin->pPartition && bCache==0 ){
     addrInteger = sqlite3VdbeAddOp2(v, OP_Integer, 0, regFlushPart);
     sqlite3VdbeJumpHere(v, addrGosubFlush);
   }
 
+  VdbeModuleComment((pParse->pVdbe, "Begin windowCodeStep.FLUSH_CODE"));
+  addrEmpty = sqlite3VdbeAddOp1(v, OP_Rewind, csrWrite);
   if( pMWin->eEnd==TK_PRECEDING ){
-    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, regEnd, 1);
-    windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 1);
+    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, regEnd, 0);
+    windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 0);
+  }else if( pMWin->eStart==TK_FOLLOWING ){
+    int addrStart;
+    int addrBreak1;
+    int addrBreak2;
+    int addrBreak3;
+    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, 0, 0);
+    addrStart = sqlite3VdbeCurrentAddr(v);
+    addrBreak1 = windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, regEnd, 1);
+    addrBreak2 = windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 1);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrStart);
+    sqlite3VdbeJumpHere(v, addrBreak2);
+    addrStart = sqlite3VdbeCurrentAddr(v);
+    addrBreak3 = windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 1);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrStart);
+    sqlite3VdbeJumpHere(v, addrBreak1);
+    sqlite3VdbeJumpHere(v, addrBreak3);
   }else{
     int addrBreak;
-    int addrStart = sqlite3VdbeCurrentAddr(v);
-    if( pMWin->eStart==TK_FOLLOWING ){
-      addrBreak = windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, regEnd, 1);
-      windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 1);
-    }else{
-      addrBreak = windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 1);
-      windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 0);
-    }
+    int addrStart;
+    windowCodeOp(&s, WINDOW_AGGSTEP, csrEnd, 0, 0);
+    addrStart = sqlite3VdbeCurrentAddr(v);
+    addrBreak = windowCodeOp(&s, WINDOW_RETURN_ROW, csrCurrent, 0, 1);
+    windowCodeOp(&s, WINDOW_AGGINVERSE, csrStart, regStart, 0);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrStart);
     sqlite3VdbeJumpHere(v, addrBreak);
   }
+
+  sqlite3VdbeJumpHere(v, addrEmpty);
 
   if( bCache && addrShortcut>0 ) sqlite3VdbeJumpHere(v, addrShortcut);
   sqlite3VdbeAddOp1(v, OP_ResetSorter, csrCurrent);
@@ -2681,8 +2691,9 @@ void sqlite3WindowCodeStep(
   if( pMWin->eType==TK_ROWS 
    && (pMWin->eStart!=TK_UNBOUNDED||pMWin->eEnd!=TK_CURRENT||!pMWin->pOrderBy)
   ){
-    if( (pMWin->eStart!=TK_PRECEDING && pMWin->eStart!=TK_FOLLOWING)
-     || (pMWin->eEnd!=TK_FOLLOWING && pMWin->eEnd!=TK_PRECEDING) 
+    int bCache = windowCachePartition(pMWin);
+    if( (pMWin->eEnd!=TK_FOLLOWING   && pMWin->eEnd!=TK_PRECEDING) 
+     || (pMWin->eStart!=TK_FOLLOWING && pMWin->eStart!=TK_PRECEDING) 
     ){
       VdbeModuleComment((pParse->pVdbe, "Begin RowExprStep()"));
       windowCodeRowExprStep(pParse, p, pWInfo, regGosub, addrGosub);
