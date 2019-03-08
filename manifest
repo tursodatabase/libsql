@@ -1,5 +1,5 @@
-C Finish\sconsolidation\sof\swindow\sframe\scode.\sAdd\suntested\ssupport\sfor\sGROUPS\sframes.
-D 2019-03-08T20:02:52.323
+C Add\ssimple\stests\sfor\sGROUPS\swindow\sframes.
+D 2019-03-08T20:57:05.841
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 1ad7263f38329c0ecea543c80f30af839ee714ea77fc391bf1a3fbb919a5b6b5
@@ -1687,6 +1687,8 @@ F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652
 F test/window6.test 5eae4ae7a590ccf1e605880969ca0bad3955616ac91cad3031baea38748badb3
 F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d76108f
 F test/window7.test ce7f865241fdd1c5c4db869cd7bb2986c3be836bc2e73649a6846dd920f63e0f
+F test/window8.tcl 7b7da7cf72510247f9bcafc7e4af85f6192e0eb3c4fcaeedd83afa497bf46367
+F test/window8.test e7f8169b4f1c0aed2a2386aaa058c7417778db49c77786fe2edfc69de81c1884
 F test/windowerr.tcl 5211e12818c013af2180c8da8f6dc007ef746e4cf386a5f2a87a5c340cb76829
 F test/windowerr.test 8a38c774e41c1b0c76e20d035c979040a69e104fcc6f10d9d3d2d50daa3cfafd
 F test/windowfault.test 12ceb6bbb355d13e8fcd88c5731a57256dfdf77b9a7ae20842a76fcd4623df5b
@@ -1809,8 +1811,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a5f68f66472610b5beb4fe28669fbbfe83a32742be73cecad9b2ae28f8a17b30
-R 1d357a160938e85235a93301382f7128
-T +closed 467c1946fd2bfda359eac2044bbe40142a83607fbf7a46473db466a57914fd61
+P 954bf369935083c188c3b14e77ed89fc5ec4323cc5b0c67e4a2e48fcc278df45
+R 2625a0c0cc0f524fba52fd02e8f6ed83
 U dan
-Z 4204779764817a38b1e99ea1d813b082
+Z 3f5534f676772c7eb6ce9db976564ed6
