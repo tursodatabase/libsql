@@ -1044,4 +1044,51 @@ do_execsql_test 20.2 {
   WITH c(i)AS(VALUES(5)UNIoN SELECT 0)SELECT min(1)-i fROM c;
 } {1}
 
+# 2018-12-26
+# Two different CTE tables with the same name appear in within a single FROM
+# clause due to the query-flattener optimization.  make sure this does not cause
+# problems.  This problem was discovered by Matt Denton.
+#
+do_execsql_test 21.1 {
+   WITH RECURSIVE t21(a,b) AS (
+    WITH t21(x) AS (VALUES(1))
+    SELECT x, x FROM t21 ORDER BY 1
+  )
+  SELECT * FROM t21 AS tA, t21 AS tB
+} {1 1 1 1}
+do_execsql_test 21.1b {
+   /* This variant from chromium bug 922312 on 2019-01-16 */
+   WITH RECURSIVE t21(a,b) AS (
+    WITH t21(x) AS (VALUES(1))
+    SELECT x, x FROM t21 ORDER BY 1 LIMIT 5
+  )
+  SELECT * FROM t21 AS tA, t21 AS tB
+} {1 1 1 1}
+do_execsql_test 21.2 {
+  SELECT printf('',
+     EXISTS (WITH RECURSIVE Table0 AS (WITH Table0 AS (SELECT DISTINCT 1)
+                                       SELECT *, * FROM Table0 ORDER BY 1 DESC)
+             SELECT * FROM Table0  NATURAL JOIN  Table0));
+} {{}}
+
+# 2019-01-17
+# Make sure crazy nexted CTE joins terminate with an error quickly.
+#
+do_catchsql_test 22.1 {
+  WITH RECURSIVE c AS (
+     WITH RECURSIVE c AS (
+        WITH RECURSIVE c AS (
+           WITH RECURSIVE c AS (
+               WITH  c AS (VALUES(0))
+               SELECT 1 FROM c LEFT JOIN c ON ltrim(1)
+           )
+           SELECT 1 FROM c,c,c,c,c,c,c,c,c
+        )
+        SELECT  2 FROM c,c,c,c,c,c,c,c,c
+     )
+     SELECT 3 FROM c,c,c,c,c,c,c,c,c
+  )
+  SELECT 4 FROM c,c,c,c,c,c,c,c,c;
+} {1 {too many FROM clause terms, max: 200}}
+
 finish_test

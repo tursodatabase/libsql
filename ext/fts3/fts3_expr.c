@@ -122,8 +122,8 @@ static int fts3isspace(char c){
 ** zero the memory before returning a pointer to it. If unsuccessful, 
 ** return NULL.
 */
-static void *fts3MallocZero(int nByte){
-  void *pRet = sqlite3_malloc(nByte);
+static void *fts3MallocZero(sqlite3_int64 nByte){
+  void *pRet = sqlite3_malloc64(nByte);
   if( pRet ) memset(pRet, 0, nByte);
   return pRet;
 }
@@ -198,7 +198,7 @@ static int getNextToken(
   if( rc==SQLITE_OK ){
     const char *zToken;
     int nToken = 0, iStart = 0, iEnd = 0, iPosition = 0;
-    int nByte;                               /* total space to allocate */
+    sqlite3_int64 nByte;                    /* total space to allocate */
 
     rc = pModule->xNext(pCursor, &zToken, &nToken, &iStart, &iEnd, &iPosition);
     if( rc==SQLITE_OK ){
@@ -252,8 +252,8 @@ static int getNextToken(
 ** Enlarge a memory allocation.  If an out-of-memory allocation occurs,
 ** then free the old allocation.
 */
-static void *fts3ReallocOrFree(void *pOrig, int nNew){
-  void *pRet = sqlite3_realloc(pOrig, nNew);
+static void *fts3ReallocOrFree(void *pOrig, sqlite3_int64 nNew){
+  void *pRet = sqlite3_realloc64(pOrig, nNew);
   if( !pRet ){
     sqlite3_free(pOrig);
   }
@@ -497,7 +497,6 @@ static int getNextNode(
       int nConsumed = 0;
       pParse->nNest++;
       rc = fts3ExprParse(pParse, zInput+1, nInput-1, ppExpr, &nConsumed);
-      if( rc==SQLITE_OK && !*ppExpr ){ rc = SQLITE_DONE; }
       *pnConsumed = (int)(zInput - z) + 1 + nConsumed;
       return rc;
     }else if( *zInput==')' ){
@@ -796,7 +795,7 @@ static int fts3ExprBalance(Fts3Expr **pp, int nMaxDepth){
   if( rc==SQLITE_OK ){
     if( (eType==FTSQUERY_AND || eType==FTSQUERY_OR) ){
       Fts3Expr **apLeaf;
-      apLeaf = (Fts3Expr **)sqlite3_malloc(sizeof(Fts3Expr *) * nMaxDepth);
+      apLeaf = (Fts3Expr **)sqlite3_malloc64(sizeof(Fts3Expr *) * nMaxDepth);
       if( 0==apLeaf ){
         rc = SQLITE_NOMEM;
       }else{
@@ -1216,7 +1215,7 @@ static void fts3ExprTestCommon(
   zExpr = (const char *)sqlite3_value_text(argv[1]);
   nExpr = sqlite3_value_bytes(argv[1]);
   nCol = argc-2;
-  azCol = (char **)sqlite3_malloc(nCol*sizeof(char *));
+  azCol = (char **)sqlite3_malloc64(nCol*sizeof(char *));
   if( !azCol ){
     sqlite3_result_error_nomem(context);
     goto exprtest_out;

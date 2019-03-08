@@ -290,7 +290,7 @@ struct MemPage {
   u16 maxLocal;        /* Copy of BtShared.maxLocal or BtShared.maxLeaf */
   u16 minLocal;        /* Copy of BtShared.minLocal or BtShared.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
-  u16 nFree;           /* Number of free bytes on the page */
+  int nFree;           /* Number of free bytes on the page. -1 for unknown */
   u16 nCell;           /* Number of cells on this page, local and ovfl */
   u16 maskPage;        /* Mask for page offset */
   u16 aiOvfl[4];       /* Insert the i-th overflow cell before the aiOvfl-th
@@ -501,9 +501,16 @@ struct CellInfo {
 ** found at self->pBt->mutex. 
 **
 ** skipNext meaning:
-**    eState==SKIPNEXT && skipNext>0:  Next sqlite3BtreeNext() is no-op.
-**    eState==SKIPNEXT && skipNext<0:  Next sqlite3BtreePrevious() is no-op.
-**    eState==FAULT:                   Cursor fault with skipNext as error code.
+** The meaning of skipNext depends on the value of eState:
+**
+**   eState            Meaning of skipNext
+**   VALID             skipNext is meaningless and is ignored
+**   INVALID           skipNext is meaningless and is ignored
+**   SKIPNEXT          sqlite3BtreeNext() is a no-op if skipNext>0 and
+**                     sqlite3BtreePrevious() is no-op if skipNext<0.
+**   REQUIRESEEK       restoreCursorPosition() restores the cursor to
+**                     eState=SKIPNEXT if skipNext!=0
+**   FAULT             skipNext holds the cursor fault error code.
 */
 struct BtCursor {
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */

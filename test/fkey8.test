@@ -164,4 +164,38 @@ do_catchsql_test 2.3.1 {
   DELETE FROM p3 WHERE a=1
 } {1 {FOREIGN KEY constraint failed}}
 
+
+do_execsql_test 3.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE t2(
+    a PRIMARY KEY, b, c, d, e,
+      FOREIGN KEY(b, c) REFERENCES t2(d, e)
+  ) WITHOUT ROWID;
+  CREATE UNIQUE INDEX idx ON t2(d, e);
+
+  INSERT INTO t2 VALUES(1, 'one', 'one', 'one', 'one'); -- row is parent of self
+  INSERT INTO t2 VALUES(2, 'one', 'one', 'one', NULL);  -- parent is row 1
+}
+
+do_catchsql_test 3.1 {
+  DELETE FROM t2 WHERE a=1;
+} {1 {FOREIGN KEY constraint failed}}
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1 (
+      c1 PRIMARY KEY,
+      c2 NUMERIC,
+      FOREIGN KEY(c1) REFERENCES t1(c2)
+      ) WITHOUT ROWID ;
+  CREATE INDEX t1c1 ON t1(c1);
+  CREATE UNIQUE INDEX t1c1unique ON t1(c2);
+}
+do_catchsql_test 4.1 {
+  INSERT OR REPLACE INTO t1 VALUES(10000, 20000);
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test 4.2 {
+  INSERT OR REPLACE INTO t1 VALUES(20000, 20000);
+}
+
 finish_test
+

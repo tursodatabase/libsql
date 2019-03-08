@@ -337,6 +337,16 @@ do_faultsim_test 4.2 -faults custom -prep {
   faultsim_test_result {0 {}} 
 }
 
+do_faultsim_test 5 -prep {
+  reset_db
+} -body {
+  execsql { 
+ CREATE TABLE reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallylongname(a PRIMARY KEY) WITHOUT ROWID;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
 uninstall_custom_faultsim
 
 finish_test

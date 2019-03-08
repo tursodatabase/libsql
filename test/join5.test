@@ -241,6 +241,18 @@ do_execsql_test 6.3.2 {
   SELECT ifnull(z, '!!!') FROM t3 LEFT JOIN t4 ON (x=y);
 } {!!!}
 
+# 2019-02-08 https://sqlite.org/src/info/4e8e4857d32d401f
+reset_db
+do_execsql_test 6.100 {
+  CREATE TABLE t1(aa, bb);
+  CREATE INDEX t1x1 on t1(abs(aa), abs(bb));
+  INSERT INTO t1 VALUES(-2,-3),(+2,-3),(-2,+3),(+2,+3);
+  SELECT * FROM (t1) 
+   WHERE ((abs(aa)=1 AND 1=2) OR abs(aa)=2)
+     AND abs(bb)=3
+  ORDER BY +1, +2;
+} {-2 -3 -2 3 2 -3 2 3}
+
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -267,8 +279,10 @@ do_eqp_test 7.2 {
   QUERY PLAN
   |--SCAN TABLE t1
   `--MULTI-INDEX OR
-     |--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
-     `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+     |--INDEX 1
+     |  `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
+     `--INDEX 2
+        `--SEARCH TABLE t2 USING INDEX t2xy (x=? AND y=?)
 }
 
 do_execsql_test 7.3 {

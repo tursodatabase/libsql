@@ -45,6 +45,19 @@ static void corruptSchema(
 }
 
 /*
+** Check to see if any sibling index (another index on the same table)
+** of pIndex has the same root page number, and if it does, return true.
+** This would indicate a corrupt schema.
+*/
+int sqlite3IndexHasDuplicateRootPage(Index *pIndex){
+  Index *p;
+  for(p=pIndex->pTable->pIndex; p; p=p->pNext){
+    if( p->tnum==pIndex->tnum && p!=pIndex ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** This is the callback routine for the code that initializes the
 ** database.  See sqlite3Init() below for additional information.
 ** This routine is also called from the OP_ParseSchema opcode of the VDBE.
@@ -65,6 +78,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   UNUSED_PARAMETER2(NotUsed, argc);
   assert( sqlite3_mutex_held(db->mutex) );
   DbClearProperty(db, iDb, DB_Empty);
+  pData->nInitRow++;
   if( db->mallocFailed ){
     corruptSchema(pData, argv[0], 0);
     return 1;
@@ -118,15 +132,12 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     */
     Index *pIndex;
     pIndex = sqlite3FindIndex(db, argv[0], db->aDb[iDb].zDbSName);
-    if( pIndex==0 ){
-      /* This can occur if there exists an index on a TEMP table which
-      ** has the same name as another index on a permanent index.  Since
-      ** the permanent table is hidden by the TEMP table, we can also
-      ** safely ignore the index on the permanent table.
-      */
-      /* Do Nothing */;
-    }else if( sqlite3GetInt32(argv[1], &pIndex->tnum)==0 ){
-      corruptSchema(pData, argv[0], "invalid rootpage");
+    if( pIndex==0
+     || sqlite3GetInt32(argv[1],&pIndex->tnum)==0
+     || pIndex->tnum<2
+     || sqlite3IndexHasDuplicateRootPage(pIndex)
+    ){
+      corruptSchema(pData, argv[0], pIndex?"invalid rootpage":"orphan index");
     }
   }
   return 0;
@@ -176,6 +187,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   initData.rc = SQLITE_OK;
   initData.pzErrMsg = pzErrMsg;
   initData.mInitFlags = mFlags;
+  initData.nInitRow = 0;
   sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   if( initData.rc ){
     rc = initData.rc;
@@ -545,6 +557,7 @@ static int sqlite3Prepare(
     sParse.disableLookaside++;
     db->lookaside.bDisable++;
   }
+  sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that

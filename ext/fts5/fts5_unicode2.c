@@ -1,5 +1,5 @@
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -47,8 +47,8 @@ static int fts5_remove_diacritic(int c, int bComplex){
     62830, 62890, 62924, 62974, 63032, 63050, 63082, 63118, 
     63182, 63242, 63274, 63310, 63368, 63390, 
   };
-#define HIBIT ((char)0x80)
-  char aChar[] = {
+#define HIBIT ((unsigned char)0x80)
+  unsigned char aChar[] = {
     '\0',      'a',       'c',       'e',       'i',       'n',       
     'o',       'u',       'y',       'y',       'a',       'c',       
     'd',       'e',       'e',       'g',       'h',       'i',       
@@ -69,7 +69,7 @@ static int fts5_remove_diacritic(int c, int bComplex){
     'w',       'x',       'y',       'z',       'h',       't',       
     'w',       'y',       'a',       'a'|HIBIT, 'a'|HIBIT, 'a'|HIBIT, 
     'e',       'e'|HIBIT, 'e'|HIBIT, 'i',       'o',       'o'|HIBIT, 
-    'o'|HIBIT, 'o'|HIBIT, 'u',       'u'|HIBIT, 'u'|HIBIT, 'y',  
+    'o'|HIBIT, 'o'|HIBIT, 'u',       'u'|HIBIT, 'u'|HIBIT, 'y',       
   };
 
   unsigned int key = (((unsigned int)c)<<3) | 0x00000007;
@@ -100,8 +100,8 @@ int sqlite3Fts5UnicodeIsdiacritic(int c){
   unsigned int mask1 = 0x000361F8;
   if( c<768 || c>817 ) return 0;
   return (c < 768+32) ?
-      (mask0 & (1 << (c-768))) :
-      (mask1 & (1 << (c-768-32)));
+      (mask0 & ((unsigned int)1 << (c-768))) :
+      (mask1 & ((unsigned int)1 << (c-768-32)));
 }
 
 
@@ -248,6 +248,7 @@ int sqlite3Fts5UnicodeFold(int c, int eRemoveDiacritic){
 
   return ret;
 }
+
 
 int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
   aArray[0] = 1;
@@ -730,7 +731,7 @@ static u16 aFts5UnicodeData[] = {
     34,    3074,  7692,  63,    63,    
   };
 
-int sqlite3Fts5UnicodeCategory(int iCode) { 
+int sqlite3Fts5UnicodeCategory(u32 iCode) { 
   int iRes = -1;
   int iHi;
   int iLo;

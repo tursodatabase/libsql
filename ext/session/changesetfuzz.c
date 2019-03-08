@@ -141,7 +141,7 @@ static void usage(const char *argv0){
 */
 static void fuzzReadFile(const char *zFilename, int *pSz, void **ppBuf){
   FILE *f;
-  int sz;
+  sqlite3_int64 sz;
   void *pBuf;
   f = fopen(zFilename, "rb");
   if( f==0 ){
@@ -149,9 +149,9 @@ static void fuzzReadFile(const char *zFilename, int *pSz, void **ppBuf){
     exit(1);
   }
   fseek(f, 0, SEEK_END);
-  sz = (int)ftell(f);
+  sz = ftell(f);
   rewind(f);
-  pBuf = sqlite3_malloc( sz ? sz : 1 );
+  pBuf = sqlite3_malloc64( sz ? sz : 1 );
   if( pBuf==0 ){
     fprintf(stderr, "cannot allocate %d to hold content of \"%s\"\n",
             sz, zFilename);
@@ -340,8 +340,8 @@ struct FuzzChange {
 /*
 ** Allocate and return nByte bytes of zeroed memory.
 */
-static void *fuzzMalloc(int nByte){
-  void *pRet = sqlite3_malloc(nByte);
+static void *fuzzMalloc(sqlite3_int64 nByte){
+  void *pRet = sqlite3_malloc64(nByte);
   if( pRet ){
     memset(pRet, 0, nByte);
   }
@@ -631,7 +631,7 @@ static int fuzzParseChangeset(
     /* If the table-header was successfully parsed, add the new change-group
     ** to the array and parse the associated changes. */
     if( rc==SQLITE_OK ){
-      FuzzChangesetGroup **apNew = (FuzzChangesetGroup**)sqlite3_realloc(
+      FuzzChangesetGroup **apNew = (FuzzChangesetGroup**)sqlite3_realloc64(
           pParse->apGroup, sizeof(FuzzChangesetGroup*)*(pParse->nGroup+1)
       );
       if( apNew==0 ){
@@ -1214,7 +1214,7 @@ int main(int argc, char **argv){
         fuzzPrintGroup(&changeset, changeset.apGroup[i]);
       }
     }else{
-      pBuf = (u8*)fuzzMalloc(nChangeset*2 + 1024);
+      pBuf = (u8*)fuzzMalloc((sqlite3_int64)nChangeset*2 + 1024);
       if( pBuf==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -1237,4 +1237,3 @@ int main(int argc, char **argv){
 
   return rc;
 }
-

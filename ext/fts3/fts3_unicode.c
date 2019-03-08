@@ -155,7 +155,7 @@ static int unicodeAddExceptions(
     int *aNew;                    /* New aiException[] array */
     int nNew;                     /* Number of valid entries in array aNew[] */
 
-    aNew = sqlite3_realloc(p->aiException, (p->nException+nEntry)*sizeof(int));
+    aNew = sqlite3_realloc64(p->aiException,(p->nException+nEntry)*sizeof(int));
     if( aNew==0 ) return SQLITE_NOMEM;
     nNew = p->nException;
 
@@ -344,7 +344,7 @@ static int unicodeNext(
 
     /* Grow the output buffer if required. */
     if( (zOut-pCsr->zToken)>=(pCsr->nAlloc-4) ){
-      char *zNew = sqlite3_realloc(pCsr->zToken, pCsr->nAlloc+64);
+      char *zNew = sqlite3_realloc64(pCsr->zToken, pCsr->nAlloc+64);
       if( !zNew ) return SQLITE_NOMEM;
       zOut = &zNew[zOut - pCsr->zToken];
       pCsr->zToken = zNew;

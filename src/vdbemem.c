@@ -178,8 +178,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 }
 
 /*
-** Make sure pMem->z points to a writable allocation of at least 
-** min(n,32) bytes.
+** Make sure pMem->z points to a writable allocation of at least n bytes.
 **
 ** If the bPreserve argument is true, then copy of the content of
 ** pMem->z into the new allocation.  pMem must be either a string or
@@ -198,7 +197,6 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   assert( pMem->szMalloc==0
        || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
-  if( n<32 ) n = 32;
   if( pMem->szMalloc>0 && bPreserve && pMem->z==pMem->zMalloc ){
     pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
     bPreserve = 0;
@@ -243,7 +241,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 ** if unable to complete the resizing.
 */
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
-  assert( szNew>0 );
+  assert( CORRUPT_DB || szNew>0 );
   assert( (pMem->flags & MEM_Dyn)==0 || pMem->szMalloc==0 );
   if( pMem->szMalloc<szNew ){
     return sqlite3VdbeMemGrow(pMem, szNew, 0);
@@ -1047,7 +1045,6 @@ int sqlite3VdbeMemSetStr(
     assert( enc!=0 );
     if( enc==SQLITE_UTF8 ){
       nByte = 0x7fffffff & (int)strlen(z);
-      if( nByte>iLimit ) nByte = iLimit+1;
     }else{
       for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
     }
@@ -1059,7 +1056,7 @@ int sqlite3VdbeMemSetStr(
   ** management (one of MEM_Dyn or MEM_Static).
   */
   if( xDel==SQLITE_TRANSIENT ){
-    int nAlloc = nByte;
+    u32 nAlloc = nByte;
     if( flags&MEM_Term ){
       nAlloc += (enc==SQLITE_UTF8?1:2);
     }
@@ -1069,19 +1066,20 @@ int sqlite3VdbeMemSetStr(
     testcase( nAlloc==0 );
     testcase( nAlloc==31 );
     testcase( nAlloc==32 );
-    if( sqlite3VdbeMemClearAndResize(pMem, MAX(nAlloc,32)) ){
+    if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
       return SQLITE_NOMEM_BKPT;
     }
     memcpy(pMem->z, z, nAlloc);
-  }else if( xDel==SQLITE_DYNAMIC ){
-    sqlite3VdbeMemRelease(pMem);
-    pMem->zMalloc = pMem->z = (char *)z;
-    pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
-    pMem->xDel = xDel;
-    flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
+    if( xDel==SQLITE_DYNAMIC ){
+      pMem->zMalloc = pMem->z;
+      pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
+    }else{
+      pMem->xDel = xDel;
+      flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
+    }
   }
 
   pMem->n = nByte;
@@ -1124,6 +1122,9 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
 ){
   int rc;
   pMem->flags = MEM_Null;
+  if( sqlite3BtreeMaxRecordSize(pCur)<offset+amt ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){
     rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){
@@ -1530,9 +1531,11 @@ static int valueFromExpr(
   }
 #endif
   else if( op==TK_TRUEFALSE ){
-     pVal = valueNew(db, pCtx);
-     pVal->flags = MEM_Int;
-     pVal->u.i = pExpr->u.zToken[4]==0;
+    pVal = valueNew(db, pCtx);
+    if( pVal ){
+      pVal->flags = MEM_Int;
+      pVal->u.i = pExpr->u.zToken[4]==0;
+    }
   }
 
   *ppVal = pVal;

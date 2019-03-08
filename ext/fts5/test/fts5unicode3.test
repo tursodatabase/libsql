@@ -21,7 +21,7 @@ ifcapable !fts5 {
 }
 
 proc fts3_unicode_path {file} {
-  file join [file dirname [info script]] .. .. fts3 unicode $file
+  file join .. [file dirname [info script]] .. .. fts3 unicode $file
 }
 
 source [fts3_unicode_path parseunicode.tcl]

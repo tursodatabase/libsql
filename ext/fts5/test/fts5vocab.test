@@ -79,8 +79,8 @@ do_execsql_test 1.1.2 {
   3 cnt {} 0 {} 0
 }
 
-do_execsql_test 1.2.1 { SELECT * FROM v1 } { }
-do_execsql_test 1.2.2 { SELECT * FROM v2 } { }
+do_execsql_test 1.2.1 { SELECT * FROM v1 } {}
+do_execsql_test 1.2.2 { SELECT * FROM v2 } {}
 
 do_execsql_test 1.3 {
   INSERT INTO t1 VALUES('x y z');
@@ -479,6 +479,68 @@ do_test 9.6 {
   expr [lsearch $e2 SorterSort]<0
 } 0
 
+#-------------------------------------------------------------------------
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b, c);
+  CREATE VIRTUAL TABLE t2 USING fts5vocab('ft','row');
+  CREATE VIRTUAL TABLE t3 USING fts5vocab('ft','row');
+}
 
+do_execsql_test 10.1 {
+  BEGIN;
+    INSERT INTO ft(b) VALUES('x y');
+}
+
+do_execsql_test 10.2 {
+  SELECT t2.term FROM t2;
+} {x y}
+
+do_execsql_test 10.3 {
+  SELECT t2.term, t3.term FROM t2, t3;
+} {x x x y y x y y}
+
+do_execsql_test 10.4 {
+  COMMIT;
+}
+
+do_execsql_test 10.5 {
+  BEGIN;
+    INSERT INTO ft(a) VALUES('1 2 3');
+    INSERT INTO ft(a) VALUES('4 5 6');
+    INSERT INTO ft(a) VALUES('1 2 3');
+    INSERT INTO ft(a) VALUES('4 5 6');
+    INSERT INTO ft(a) VALUES('1 2 3');
+    INSERT INTO ft(a) VALUES('4 5 6');
+}
+
+do_test 10.6 {
+  set res [list]
+  db eval { SELECT rowid FROM ft('4') } x {
+    db eval { SELECT * FROM t2 }
+    lappend res $x(rowid)
+  }
+  db eval COMMIT
+  set res
+} {3 5 7}
+
+do_execsql_test 10.6.1 {
+  SELECT * FROM t2 WHERE term<NULL;
+}
+do_execsql_test 10.6.2 {
+  SELECT * FROM t2 WHERE term>NULL;
+}
+do_execsql_test 10.6.3 {
+  SELECT * FROM t2 WHERE term=NULL;
+}
+do_execsql_test 10.7.1 {
+  SELECT * FROM t2 WHERE term<?;
+}
+do_execsql_test 10.7.2 {
+  SELECT * FROM t2 WHERE term>?;
+}
+do_execsql_test 10.7.3 {
+  SELECT * FROM t2 WHERE term=?;
+}
 
 finish_test
+

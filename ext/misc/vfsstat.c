@@ -783,8 +783,8 @@ static sqlite3_module VfsStatModule = {
 */
 static int vstatRegister(
   sqlite3 *db,
-  const char **pzErrMsg,
-  const struct sqlite3_api_routines *pThunk
+  char **pzErrMsg,
+  const sqlite3_api_routines *pThunk
 ){
   return sqlite3_create_module(db, "vfsstat", &VfsStatModule, 0);
 }
@@ -809,7 +809,10 @@ int sqlite3_vfsstat_init(
   vstat_vfs.base.szOsFile = sizeof(VStatFile) + vstat_vfs.pVfs->szOsFile;
   rc = sqlite3_vfs_register(&vstat_vfs.base, 1);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_auto_extension(vstatRegister);
+    rc = vstatRegister(db, pzErrMsg, pApi);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_auto_extension(vstatRegister);
+    }
   }
   if( rc==SQLITE_OK ) rc = SQLITE_OK_LOAD_PERMANENTLY;
   return rc;

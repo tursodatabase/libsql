@@ -137,7 +137,7 @@ static int fts5tokDequoteArray(
       nByte += (int)(strlen(argv[i]) + 1);
     }
 
-    *pazDequote = azDequote = sqlite3_malloc(sizeof(char *)*argc + nByte);
+    *pazDequote = azDequote = sqlite3_malloc64(sizeof(char *)*argc + nByte);
     if( azDequote==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -335,7 +335,7 @@ static int fts5tokCb(
   if( (pCsr->nRow & (pCsr->nRow-1))==0 ){
     int nNew = pCsr->nRow ? pCsr->nRow*2 : 32;
     Fts5tokRow *aNew;
-    aNew = (Fts5tokRow*)sqlite3_realloc(pCsr->aRow, nNew*sizeof(Fts5tokRow));
+    aNew = (Fts5tokRow*)sqlite3_realloc64(pCsr->aRow, nNew*sizeof(Fts5tokRow));
     if( aNew==0 ) return SQLITE_NOMEM;
     memset(&aNew[pCsr->nRow], 0, sizeof(Fts5tokRow)*(nNew-pCsr->nRow));
     pCsr->aRow = aNew;
@@ -378,7 +378,7 @@ static int fts5tokFilterMethod(
     if( pCsr->zInput==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      memcpy(pCsr->zInput, zByte, nByte);
+      if( nByte>0 ) memcpy(pCsr->zInput, zByte, nByte);
       pCsr->zInput[nByte] = 0;
       rc = pTab->tok.xTokenize(
           pTab->pTok, (void*)pCsr, 0, zByte, nByte, fts5tokCb

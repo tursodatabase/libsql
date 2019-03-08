@@ -449,6 +449,15 @@ do_execsql_test insert-13.1 {
   SELECT * FROM t13 ORDER BY +b;
 } {2 0 6 2 1 5}
 
+# 2019-01-17.  From the chromium fuzzer.
+#
+do_execsql_test insert-14.1 {
+  DROP TABLE IF EXISTS t14;
+  CREATE TABLE t14(x INTEGER PRIMARY KEY);
+  INSERT INTO t14 VALUES(CASE WHEN 1 THEN null END);
+  SELECT x FROM t14;
+} {1}
+
 integrity_check insert-99.0
 
 finish_test

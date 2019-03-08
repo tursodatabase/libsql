@@ -95,6 +95,8 @@ SQLITE_EXTENSION_INIT3
 */
 #define FTS3_VARINT_MAX 10
 
+#define FTS3_BUFFER_PADDING 8
+
 /*
 ** FTS4 virtual tables may maintain multiple indexes - one index of all terms
 ** in the document set and zero or more prefix indexes. All indexes are stored
@@ -126,6 +128,18 @@ SQLITE_EXTENSION_INIT3
 */
 #define POS_COLUMN  (1)     /* Column-list terminator */
 #define POS_END     (0)     /* Position-list terminator */ 
+
+/*
+** The assert_fts3_nc() macro is similar to the assert() macro, except that it
+** is used for assert() conditions that are true only if it can be 
+** guranteed that the database is not corrupt.
+*/
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
+extern int sqlite3_fts3_may_be_corrupt;
+# define assert_fts3_nc(x) assert(sqlite3_fts3_may_be_corrupt || (x))
+#else
+# define assert_fts3_nc(x) assert(x)
+#endif
 
 /*
 ** This section provides definitions to allow the

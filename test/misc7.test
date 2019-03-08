@@ -227,6 +227,9 @@ ifcapable vtab {
     }
   } {1}
   set sqlite_where_trace 0
+  do_catchsql_test misc7-10.1 {
+    INSERT INTO t1(a,b,c) VALUES(12345,2,3) ON CONFLICT(a) DO NOTHING;
+  } {1 {UPSERT not implemented for virtual table "t1"}}
 
   # Specify an ORDER BY clause that cannot be indexed.
   do_test misc7-11 {

@@ -619,7 +619,7 @@ static int amatchLoadOneRule(
     if( p->rDel==0 || p->rDel>rCost ) p->rDel = rCost;
   }else
   {
-    pRule = sqlite3_malloc( sizeof(*pRule) + nFrom + nTo );
+    pRule = sqlite3_malloc64( sizeof(*pRule) + nFrom + nTo );
     if( pRule==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -738,11 +738,11 @@ static int amatchLoadRules(
 **     `mno`   becomes   mno
 */
 static char *amatchDequote(const char *zIn){
-  int nIn;                        /* Size of input string, in bytes */
+  sqlite3_int64 nIn;              /* Size of input string, in bytes */
   char *zOut;                     /* Output (dequoted) string */
 
-  nIn = (int)strlen(zIn);
-  zOut = sqlite3_malloc(nIn+1);
+  nIn = strlen(zIn);
+  zOut = sqlite3_malloc64(nIn+1);
   if( zOut ){
     char q = zIn[0];              /* Quote character (if any ) */
 
@@ -1069,7 +1069,7 @@ static void amatchAddWord(
     }
     return;
   }
-  pWord = sqlite3_malloc( sizeof(*pWord) + nBase + nTail - 1 );
+  pWord = sqlite3_malloc64( sizeof(*pWord) + nBase + nTail - 1 );
   if( pWord==0 ) return;
   memset(pWord, 0, sizeof(*pWord));
   pWord->rCost = rCost;

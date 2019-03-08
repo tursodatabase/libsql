@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
  
 /* Return true if the line is all zeros */
 static int allZero(unsigned char *aLine){
@@ -47,6 +48,11 @@ int main(int argc, char **argv){
   int iPage;                  /* Current page number */
   unsigned char aLine[16];    /* A single line of the file */
   unsigned char aHdr[100];    /* File header */
+  unsigned char bShow[256];      /* Characters ok to display */
+  memset(bShow, '.', sizeof(bShow));
+  for(i=' '; i<='~'; i++){
+    if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = i;
+  }
   for(i=1; i<argc; i++){
     if( argv[i][0]=='-' ){
       const char *z = argv[i];
@@ -87,8 +93,8 @@ int main(int argc, char **argv){
   fseek(in, 0, SEEK_END);
   szFile = ftell(in);
   rewind(in);
-  if( szFile<512 ){
-    fprintf(stderr, "File too short. Minimum size is 512 bytes.\n");
+  if( szFile<100 ){
+    fprintf(stderr, "File too short. Minimum size is 100 bytes.\n");
     exit(1);
   }
   if( fread(aHdr, 100, 1, in)!=1 ){
@@ -106,7 +112,7 @@ int main(int argc, char **argv){
   }
   zBaseName = zInputFile;
   for(i=0; zInputFile[i]; i++){
-    if( zInputFile[i]=='/' && zInputFile[i+1]!=0 ) zBaseName = zInputFile+1;
+    if( zInputFile[i]=='/' && zInputFile[i+1]!=0 ) zBaseName = zInputFile+i+1;
   }
   printf("| size %d pagesize %d filename %s\n",(int)szFile,pgsz,zBaseName);
   for(i=0; i<szFile; i+=16){
@@ -129,8 +135,8 @@ int main(int argc, char **argv){
     for(j=0; j<16; j++) printf(" %02x", aLine[j]);
     printf("   ");
     for(j=0; j<16; j++){
-      char c = aLine[j];
-      fputc(c>=0x20 && c<=0x7e ? c : '.', stdout);
+      unsigned char c = (unsigned char)aLine[j];
+      fputc( bShow[c], stdout);
     }
     fputc('\n', stdout);
   }

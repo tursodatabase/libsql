@@ -858,10 +858,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->y.pWin ){
           Select *pSel = pNC->pWinSelect;
+          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
           sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
-          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
           if( 0==pSel->pWin 
            || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
           ){
@@ -1138,32 +1138,53 @@ static int resolveCompoundOrderBy(
       }else{
         iCol = resolveAsName(pParse, pEList, pE);
         if( iCol==0 ){
-          pDup = sqlite3ExprDup(db, pE, 0);
+          /* Now test if expression pE matches one of the values returned
+          ** by pSelect. In the usual case this is done by duplicating the 
+          ** expression, resolving any symbols in it, and then comparing
+          ** it against each expression returned by the SELECT statement.
+          ** Once the comparisons are finished, the duplicate expression
+          ** is deleted.
+          **
+          ** Or, if this is running as part of an ALTER TABLE operation,
+          ** resolve the symbols in the actual expression, not a duplicate.
+          ** And, if one of the comparisons is successful, leave the expression
+          ** as is instead of transforming it to an integer as in the usual
+          ** case. This allows the code in alter.c to modify column
+          ** refererences within the ORDER BY expression as required.  */
+          if( IN_RENAME_OBJECT ){
+            pDup = pE;
+          }else{
+            pDup = sqlite3ExprDup(db, pE, 0);
+          }
           if( !db->mallocFailed ){
             assert(pDup);
             iCol = resolveOrderByTermToExprList(pParse, pSelect, pDup);
           }
-          sqlite3ExprDelete(db, pDup);
+          if( !IN_RENAME_OBJECT ){
+            sqlite3ExprDelete(db, pDup);
+          }
         }
       }
       if( iCol>0 ){
         /* Convert the ORDER BY term into an integer column number iCol,
         ** taking care to preserve the COLLATE clause if it exists */
-        Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
-        if( pNew==0 ) return 1;
-        pNew->flags |= EP_IntValue;
-        pNew->u.iValue = iCol;
-        if( pItem->pExpr==pE ){
-          pItem->pExpr = pNew;
-        }else{
-          Expr *pParent = pItem->pExpr;
-          assert( pParent->op==TK_COLLATE );
-          while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
-          assert( pParent->pLeft==pE );
-          pParent->pLeft = pNew;
+        if( !IN_RENAME_OBJECT ){
+          Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
+          if( pNew==0 ) return 1;
+          pNew->flags |= EP_IntValue;
+          pNew->u.iValue = iCol;
+          if( pItem->pExpr==pE ){
+            pItem->pExpr = pNew;
+          }else{
+            Expr *pParent = pItem->pExpr;
+            assert( pParent->op==TK_COLLATE );
+            while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
+            assert( pParent->pLeft==pE );
+            pParent->pLeft = pNew;
+          }
+          sqlite3ExprDelete(db, pE);
+          pItem->u.x.iOrderByCol = (u16)iCol;
         }
-        sqlite3ExprDelete(db, pE);
-        pItem->u.x.iOrderByCol = (u16)iCol;
         pItem->done = 1;
       }else{
         moreToDo = 1;
@@ -1221,6 +1242,38 @@ int sqlite3ResolveOrderGroupBy(
   }
   return 0;
 }
+
+#ifndef SQLITE_OMIT_WINDOWFUNC
+/*
+** Walker callback for resolveRemoveWindows().
+*/
+static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
+  if( ExprHasProperty(pExpr, EP_WinFunc) ){
+    Window **pp;
+    for(pp=&pWalker->u.pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
+      if( *pp==pExpr->y.pWin ){
+        *pp = (*pp)->pNextWin;
+        break;
+      }    
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** Remove any Window objects owned by the expression pExpr from the
+** Select.pWin list of Select object pSelect.
+*/
+static void resolveRemoveWindows(Select *pSelect, Expr *pExpr){
+  Walker sWalker;
+  memset(&sWalker, 0, sizeof(Walker));
+  sWalker.xExprCallback = resolveRemoveWindowsCb;
+  sWalker.u.pSelect = pSelect;
+  sqlite3WalkExpr(&sWalker, pExpr);
+}
+#else
+# define resolveRemoveWindows(x,y)
+#endif
 
 /*
 ** pOrderBy is an ORDER BY or GROUP BY clause in SELECT statement pSelect.
@@ -1288,19 +1341,10 @@ static int resolveOrderGroupBy(
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
       if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
-#ifndef SQLITE_OMIT_WINDOWFUNC
-        if( ExprHasProperty(pE, EP_WinFunc) ){
-          /* Since this window function is being changed into a reference
-          ** to the same window function the result set, remove the instance
-          ** of this window function from the Select.pWin list. */
-          Window **pp;
-          for(pp=&pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
-            if( *pp==pE->y.pWin ){
-              *pp = (*pp)->pNextWin;
-            }    
-          }
-        }
-#endif
+        /* Since this expresion is being changed into a reference
+        ** to an identical expression in the result set, remove all Window
+        ** objects belonging to the expression from the Select.pWin list. */
+        resolveRemoveWindows(pSelect, pE);
         pItem->u.x.iOrderByCol = j+1;
       }
     }
@@ -1512,6 +1556,19 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       }
     }
 
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    if( IN_RENAME_OBJECT ){
+      Window *pWin;
+      for(pWin=p->pWinDefn; pWin; pWin=pWin->pNextWin){
+        if( sqlite3ResolveExprListNames(&sNC, pWin->pOrderBy)
+         || sqlite3ResolveExprListNames(&sNC, pWin->pPartition)
+        ){
+          return WRC_Abort;
+        }
+      }
+    }
+#endif
+
     /* If this is part of a compound SELECT, check that it has the right
     ** number of expressions in the select list. */
     if( p->pNext && p->pEList->nExpr!=p->pNext->pEList->nExpr ){
@@ -1662,36 +1719,45 @@ void sqlite3ResolveSelectNames(
 }
 
 /*
-** Resolve names in expressions that can only reference a single table:
+** Resolve names in expressions that can only reference a single table
+** or which cannot reference any tables at all.  Examples:
 **
-**    *   CHECK constraints
-**    *   WHERE clauses on partial indices
+**    (1)   CHECK constraints
+**    (2)   WHERE clauses on partial indices
+**    (3)   Expressions in indexes on expressions
+**    (4)   Expression arguments to VACUUM INTO.
 **
-** The Expr.iTable value for Expr.op==TK_COLUMN nodes of the expression
-** is set to -1 and the Expr.iColumn value is set to the column number.
+** In all cases except (4), the Expr.iTable value for Expr.op==TK_COLUMN
+** nodes of the expression is set to -1 and the Expr.iColumn value is
+** set to the column number.  In case (4), TK_COLUMN nodes cause an error.
 **
 ** Any errors cause an error message to be set in pParse.
 */
-void sqlite3ResolveSelfReference(
+int sqlite3ResolveSelfReference(
   Parse *pParse,      /* Parsing context */
-  Table *pTab,        /* The table being referenced */
-  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
+  Table *pTab,        /* The table being referenced, or NULL */
+  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr, or 0 */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
   ExprList *pList     /* Expression list to resolve.  May be NULL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
+  int rc;
 
-  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr );
+  assert( type==0 || pTab!=0 );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
-  sSrc.nSrc = 1;
-  sSrc.a[0].zName = pTab->zName;
-  sSrc.a[0].pTab = pTab;
-  sSrc.a[0].iCursor = -1;
+  if( pTab ){
+    sSrc.nSrc = 1;
+    sSrc.a[0].zName = pTab->zName;
+    sSrc.a[0].pTab = pTab;
+    sSrc.a[0].iCursor = -1;
+  }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
-  if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
-  if( pList ) sqlite3ResolveExprListNames(&sNC, pList);
+  if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
+  if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);
+  return rc;
 }

@@ -671,20 +671,26 @@ jointest join-12.5 65 {1 {at most 64 tables in a join}}
 jointest join-12.6 66 {1 {at most 64 tables in a join}}
 jointest join-12.7 127 {1 {at most 64 tables in a join}}
 jointest join-12.8 128 {1 {at most 64 tables in a join}}
-jointest join-12.9 1000 {1 {at most 64 tables in a join}}
 
-# If SQLite is built with SQLITE_MEMDEBUG, then the huge number of realloc()
-# calls made by the following test cases are too time consuming to run.
-# Without SQLITE_MEMDEBUG, realloc() is fast enough that these are not
-# a problem.
-ifcapable pragma&&compileoption_diags {
-  if {[lsearch [db eval {PRAGMA compile_options}] MEMDEBUG]<0} {
-    jointest join-12.10 65534 {1 {at most 64 tables in a join}}
-    jointest join-12.11 65535 {1 {too many references to "t14": max 65535}}
-    jointest join-12.12 65536 {1 {too many references to "t14": max 65535}}
-    jointest join-12.13 65537 {1 {too many references to "t14": max 65535}}
-  }
-}
+# As of 2019-01-17, the number of elements in a SrcList is limited
+# to 200.  The following tests still run, but the answer is now
+# an SQLITE_NOMEM error.
+#
+# jointest join-12.9 1000 {1 {at most 64 tables in a join}}
+#
+#  If SQLite is built with SQLITE_MEMDEBUG, then the huge number of realloc()
+#  calls made by the following test cases are too time consuming to run.
+#  Without SQLITE_MEMDEBUG, realloc() is fast enough that these are not
+#  a problem.
+#
+# ifcapable pragma&&compileoption_diags {
+#    if {[lsearch [db eval {PRAGMA compile_options}] MEMDEBUG]<0} {
+#     jointest join-12.10 65534 {1 {at most 64 tables in a join}}
+#     jointest join-12.11 65535 {1 {too many references to "t14": max 65535}}
+#     jointest join-12.12 65536 {1 {too many references to "t14": max 65535}}
+#     jointest join-12.13 65537 {1 {too many references to "t14": max 65535}}
+#   }
+# }
 
 
 #-------------------------------------------------------------------------
@@ -843,5 +849,19 @@ do_execsql_test join-15.110 {
           ON x4 IS TRUE AND b5=a4
    ORDER BY a1, a2, a3, a4, a5;
 } {1 {} {} {} {} 1 11 {} {} {} 1 12 {} {} {} 1 12 121 {} {} 1 13 {} {} {}}
+
+# 2019-02-05 Ticket https://www.sqlite.org/src/tktview/5948e09b8c415bc45da5c
+# Error in join due to the LEFT JOIN strength reduction optimization.
+#
+do_execsql_test join-16.100 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1(a) VALUES(1);
+  CREATE TABLE t2(b INT);
+  SELECT a, b
+    FROM t1 LEFT JOIN t2 ON 0
+   WHERE (b IS NOT NULL)=0;
+} {1 {}}
 
 finish_test

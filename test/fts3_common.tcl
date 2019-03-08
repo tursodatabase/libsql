@@ -44,6 +44,10 @@
 #
 #
 
+ifcapable fts3 {
+  sqlite3_fts3_may_be_corrupt 0 
+}
+
 #-------------------------------------------------------------------------
 # USAGE: fts3_build_db_1 SWITCHES N
 #

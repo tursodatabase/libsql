@@ -68,7 +68,7 @@ do_icu_expr_test 3.2 {*lOl* *h4h*} {
   AND {AND {AND {PHRASE 3 0 *} {PHRASE 3 0 lol+}} {PHRASE 3 0 *}} {PHRASE 3 0 h4h+}
 }
 
-do_simple_expr_test 3.3 { * }    { }
+do_simple_expr_test 3.3 { * }    {}
 do_simple_expr_test 3.4 { *a }   { PHRASE 3 0 a }
 do_simple_expr_test 3.5 { a*b }  { AND {PHRASE 3 0 a+} {PHRASE 3 0 b} }
 do_simple_expr_test 3.6 { *a*b } { AND {PHRASE 3 0 a+} {PHRASE 3 0 b} }

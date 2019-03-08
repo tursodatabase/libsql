@@ -225,7 +225,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
     pToFree = 0;
     aStateSet[0].aState = aSpace;
   }else{
-    pToFree = sqlite3_malloc( sizeof(ReStateNumber)*2*pRe->nState );
+    pToFree = sqlite3_malloc64( sizeof(ReStateNumber)*2*pRe->nState );
     if( pToFree==0 ) return -1;
     aStateSet[0].aState = pToFree;
   }
@@ -337,10 +337,10 @@ re_match_end:
 static int re_resize(ReCompiled *p, int N){
   char *aOp;
   int *aArg;
-  aOp = sqlite3_realloc(p->aOp, N*sizeof(p->aOp[0]));
+  aOp = sqlite3_realloc64(p->aOp, N*sizeof(p->aOp[0]));
   if( aOp==0 ) return 1;
   p->aOp = aOp;
-  aArg = sqlite3_realloc(p->aArg, N*sizeof(p->aArg[0]));
+  aArg = sqlite3_realloc64(p->aArg, N*sizeof(p->aArg[0]));
   if( aArg==0 ) return 1;
   p->aArg = aArg;
   p->nAlloc = N;

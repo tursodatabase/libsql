@@ -373,7 +373,7 @@ do_execsql_test 4.3.3 {
 }
 do_execsql_test 4.3.4 {
   SELECT * FROM sl WHERE rowid<-9223372036854775808
-} { }
+} {}
 
 do_execsql_test 4.4.1 {
   SELECT * FROM sl WHERE rowid<9223372036854775807
@@ -394,7 +394,7 @@ do_execsql_test 4.4.3 {
 }
 do_execsql_test 4.4.4 {
   SELECT * FROM sl WHERE rowid>9223372036854775807
-} { }
+} {}
 
 #-------------------------------------------------------------------------
 # More than 8 source tables.

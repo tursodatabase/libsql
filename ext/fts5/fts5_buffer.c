@@ -17,12 +17,12 @@
 
 int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
   if( (u32)pBuf->nSpace<nByte ){
-    u32 nNew = pBuf->nSpace ? pBuf->nSpace : 64;
+    u64 nNew = pBuf->nSpace ? pBuf->nSpace : 64;
     u8 *pNew;
     while( nNew<nByte ){
       nNew = nNew * 2;
     }
-    pNew = sqlite3_realloc(pBuf->p, nNew);
+    pNew = sqlite3_realloc64(pBuf->p, nNew);
     if( pNew==0 ){
       *pRc = SQLITE_NOMEM;
       return 1;
@@ -52,7 +52,7 @@ void sqlite3Fts5Put32(u8 *aBuf, int iVal){
 }
 
 int sqlite3Fts5Get32(const u8 *aBuf){
-  return (aBuf[0] << 24) + (aBuf[1] << 16) + (aBuf[2] << 8) + aBuf[3];
+  return (int)((((u32)aBuf[0])<<24) + (aBuf[1]<<16) + (aBuf[2]<<8) + aBuf[3]);
 }
 
 /*
@@ -183,7 +183,7 @@ int sqlite3Fts5PoslistNext64(
       iOff = ((i64)iVal) << 32;
       fts5FastGetVarint32(a, i, iVal);
     }
-    *piOff = iOff + (iVal-2);
+    *piOff = iOff + ((iVal-2) & 0x7FFFFFFF);
     *pi = i;
     return 0;
   }
@@ -244,10 +244,10 @@ int sqlite3Fts5PoslistWriterAppend(
   return SQLITE_OK;
 }
 
-void *sqlite3Fts5MallocZero(int *pRc, int nByte){
+void *sqlite3Fts5MallocZero(int *pRc, sqlite3_int64 nByte){
   void *pRet = 0;
   if( *pRc==SQLITE_OK ){
-    pRet = sqlite3_malloc(nByte);
+    pRet = sqlite3_malloc64(nByte);
     if( pRet==0 ){
       if( nByte>0 ) *pRc = SQLITE_NOMEM;
     }else{
