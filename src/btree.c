@@ -7152,8 +7152,9 @@ static int editPage(
     int iCell = (iOld + pPg->aiOvfl[i]) - iNew;
     if( iCell>=0 && iCell<nNew ){
       pCellptr = &pPg->aCellIdx[iCell * 2];
-      assert( nCell>=iCell );
-      memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+      if( nCell>iCell ){
+        memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+      }
       nCell++;
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
