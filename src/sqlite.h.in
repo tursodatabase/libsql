@@ -823,6 +823,15 @@ struct sqlite3_io_methods {
 ** file space based on this hint in order to help writes to the database
 ** file run faster.
 **
+** <li>[[SQLITE_FCNTL_SIZE_LIMIT]]
+** The [SQLITE_FCNTL_SIZE_LIMIT] opcode is used by in-memory VFS that
+** implements [sqlite3_deserialize()] to set an upper bound on the size
+** of the in-memory database.  The argument is a pointer to a [sqlite3_int64].
+** If the integer pointed to is negative, then it is filled in with the
+** current limit.  Otherwise the limit is set to the larger of the value
+** of the integer pointed to and the current database size.  The integer
+** pointed to is set to the new limit.
+**
 ** <li>[[SQLITE_FCNTL_CHUNK_SIZE]]
 ** The [SQLITE_FCNTL_CHUNK_SIZE] opcode is used to request that the VFS
 ** extends and truncates the database file in chunks of a size specified
@@ -1131,6 +1140,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
 #define SQLITE_FCNTL_LOCK_TIMEOUT           34
 #define SQLITE_FCNTL_DATA_VERSION           35
+#define SQLITE_FCNTL_SIZE_LIMIT             36
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1972,6 +1982,17 @@ struct sqlite3_mem_methods {
 ** negative value for this option restores the default behaviour.
 ** This option is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
+**
+** [[SQLITE_CONFIG_MEMDB_MAXSIZE]]
+** <dt>SQLITE_CONFIG_MEMDB_MAXSIZE
+** <dd>The SQLITE_CONFIG_MEMDB_MAXSIZE option accepts a single parameter
+** [sqlite3_int64] parameter which is the default maximum size for an in-memory
+** database created using [sqlite3_deserialize()].  This default maximum
+** size can be adjusted up or down for individual databases using the
+** [SQLITE_FCNTL_SIZE_LIMIT] [sqlite3_file_control|file-control].  If this
+** configuration setting is never used, then the default maximum is determined
+** by the [SQLITE_MEMDB_DEFAULT_MAXSIZE] compile-time option.  If that
+** compile-time option is not set, then the default maximum is 1073741824.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -2002,6 +2023,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 #define SQLITE_CONFIG_SMALL_MALLOC        27  /* boolean */
 #define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
+#define SQLITE_CONFIG_MEMDB_MAXSIZE       29  /* sqlite3_int64 */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
@@ -2064,8 +2086,8 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
-** <dd> ^This option is used to enable or disable the two-argument
-** version of the [fts3_tokenizer()] function which is part of the
+** <dd> ^This option is used to enable or disable the
+** [fts3_tokenizer()] function which is part of the
 ** [FTS3] full-text search engine extension.
 ** There should be two additional arguments.
 ** The first argument is an integer which is 0 to disable fts3_tokenizer() or
@@ -2347,7 +2369,7 @@ int sqlite3_changes(sqlite3*);
 ** not. ^Changes to a view that are intercepted by INSTEAD OF triggers 
 ** are not counted.
 **
-** This the [sqlite3_total_changes(D)] interface only reports the number
+** The [sqlite3_total_changes(D)] interface only reports the number
 ** of rows that changed due to SQL statement run against database
 ** connection D.  Any changes by other database connections are ignored.
 ** To detect changes against a database file from other database
@@ -3407,6 +3429,8 @@ int sqlite3_open_v2(
 ** is not a database file pathname pointer that SQLite passed into the xOpen
 ** VFS method, then the behavior of this routine is undefined and probably
 ** undesirable.
+**
+** See the [URI filename] documentation for additional information.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
 int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
@@ -3869,6 +3893,18 @@ const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 ** sqlite3_stmt_readonly() returns false for those commands.
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
+
+/*
+** CAPI3REF: Query The EXPLAIN Setting For A Prepared Statement
+** METHOD: sqlite3_stmt
+**
+** ^The sqlite3_stmt_isexplain(S) interface returns 1 if the
+** prepared statement S is an EXPLAIN statement, or 2 if the
+** statement S is an EXPLAIN QUERY PLAN.
+** ^The sqlite3_stmt_isexplain(S) interface returns 0 if S is
+** an ordinary statement or a NULL pointer.
+*/
+int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Determine If A Prepared Statement Has Been Reset

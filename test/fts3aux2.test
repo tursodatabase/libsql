@@ -141,4 +141,28 @@ do_execsql_test 1.4.6 {
   five * 1 1 2     five 0 1 1 2 
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts3();
+  INSERT INTO ft VALUES('a_234567890123456789');
+  INSERT INTO ft VALUES('b_234567890123456789');
+  INSERT INTO ft VALUES('c_234567890123456789');
+  CREATE VIRTUAL TABLE t2 USING fts4aux(ft);
+}
+
+do_execsql_test 2.1 {
+  SELECT term FROM t2 WHERE term=X'625f323334353637383930313233343536373839';
+}
+
+do_execsql_test 2.2 {
+  SELECT term FROM t2 WHERE term<X'625f003334353637383930313233343536373839';
+} {
+  234567890123456789 234567890123456789 a a b b
+}
+
+do_execsql_test 2.3 {
+  SELECT term FROM t2 WHERE term=X'625f003334353637383930313233343536373839';
+}
+
+
 finish_test

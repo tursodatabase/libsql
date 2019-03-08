@@ -555,6 +555,11 @@ do_test 4.2 {
   }]
 } {64}
 
+do_test 4.3 {
+  llength [db one {
+    SELECT snippet(t4, '', '', '', 0, 150) FROM t4 WHERE t4 MATCH 'E'
+  }]
+} {64}
 
 
 

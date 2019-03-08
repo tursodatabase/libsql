@@ -115,5 +115,43 @@ do_execsql_test 2.2.integrity {
   INSERT INTO x2(x2) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x3 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO x3 VALUES('one');
+  INSERT INTO x3 VALUES('two');
+  INSERT INTO x3 VALUES('one');
+  INSERT INTO x3 VALUES('two');
+  INSERT INTO x3 VALUES('one');
 }
+
+do_test 3.1 {
+  db eval { SELECT * FROM x3('one') } {
+    db eval {
+      INSERT INTO x3(x3) VALUES('optimize');
+    }
+  }
+} {}
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x4 USING fts5(a, detail=%DETAIL%);
+  INSERT INTO x4 VALUES('one two three');
+  INSERT INTO x4(rowid, a) VALUES('2', 'one two three');
+  INSERT INTO x4(rowid, a) VALUES('3.0', 'one two three');
+}
+do_catchsql_test 4.1 {
+  INSERT INTO x4(rowid, a) VALUES('four', 'one two three');
+} {1 {datatype mismatch}}
+
+do_catchsql_test 4.2 {
+  UPDATE x4 SET rowid = 'four' WHERE rowid=1;
+} {1 {datatype mismatch}}
+
+
+}
+
+reset_db
+do_catchsql_test 4.0 { CREATE VIRTUAL TABLE t1 USING fts5(a,b,c); } {0 {}}
+do_catchsql_test 4.1 { DELETE FROM t1 WHERE t1 MATCH 'f*'; } {0 {}}
 finish_test

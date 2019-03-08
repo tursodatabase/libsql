@@ -258,8 +258,7 @@ do_patchconcat_test 4.3.3 {
   INSERT INTO t2 VALUES('a', 'a', 'a', 'a');
 } {
   DELETE FROM t2 WHERE c = 'a';
-} {
-}
+} {}
 
 # INSERT + UPDATE
 do_patchconcat_test 4.3.4 {

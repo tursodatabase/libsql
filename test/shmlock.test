@@ -114,6 +114,11 @@ sqlite3 db0 test.db
 sqlite3 db1 test.db
 do_test 3.1 { execsql { SELECT * FROM t1 } db0 } {1 2}
 do_test 3.2 { execsql { SELECT * FROM t1 } db1 } {1 2}
+if {$tcl_platform(platform)=="windows"} {
+  set isWindows 1
+} else {
+  set isWindows 0
+}
 
 set L(0) {n n n n n n n n}
 set L(1) {n n n n n n n n}
@@ -134,6 +139,10 @@ proc random_lock_test {idx} {
       if {$locktype=="e"} {
         for {set l $iSlot} {$l<8 && [lindex $L($idx) $l]=="n"} {incr l} {}
         set n [expr int(rand()*($l-$iSlot))+1]
+        # The LockFile() and UnlockFile() apis on windows require that
+        # every unlock correspond exactly to a prior lock.  Hence, we cannot
+        # lock arbitrary ranges in this test on windows.
+        if {$::isWindows} {set n 1}
         # puts "iSlot=$iSlot l=$l L=$L($idx)"
         # puts "$iSlot $n"
       }
@@ -169,5 +178,3 @@ db0 close
 db1 close
 
 finish_test
-
-

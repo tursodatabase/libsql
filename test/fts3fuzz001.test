@@ -90,6 +90,7 @@ do_test fts3fuzz001-100 {
 | end c6.db
   }]
   catchsql {
+    PRAGMA writable_schema=on; -- disable schema corruption detection
     INSERT INTO t1(t1) SELECT x FROM t2;
   }
 } {1 {database disk image is malformed}}
@@ -102,7 +103,7 @@ do_test fts3fuzz001-120 {
   catchsql {
     INSERT INTO t1(t1) VALUES('optimize');
   }
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_test fts3fuzz001-121 {
   catchsql {
     INSERT INTO t1(t1) VALUES('integrity-check');

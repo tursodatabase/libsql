@@ -574,6 +574,33 @@ static int SQLITE_TCLAPI fts3_test_varint_cmd(
 ** End of tokenizer code.
 **************************************************************************/ 
 
+/*
+**      sqlite3_fts3_may_be_corrupt BOOLEAN
+**
+** Set or clear the global "may-be-corrupt" flag. Return the old value.
+*/
+static int SQLITE_TCLAPI fts3_may_be_corrupt(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int bOld = sqlite3_fts3_may_be_corrupt;
+
+  if( objc!=2 && objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?BOOLEAN?");
+    return TCL_ERROR;
+  }
+  if( objc==2 ){
+    int bNew;
+    if( Tcl_GetBooleanFromObj(interp, objv[1], &bNew) ) return TCL_ERROR;
+    sqlite3_fts3_may_be_corrupt = bNew;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(bOld));
+  return TCL_OK;
+}
+
 int Sqlitetestfts3_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "fts3_near_match", fts3_near_match_cmd, 0, 0);
   Tcl_CreateObjCommand(interp, 
@@ -582,9 +609,11 @@ int Sqlitetestfts3_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(
       interp, "fts3_test_tokenizer", fts3_test_tokenizer_cmd, 0, 0
   );
-
   Tcl_CreateObjCommand(
       interp, "fts3_test_varint", fts3_test_varint_cmd, 0, 0
+  );
+  Tcl_CreateObjCommand(
+      interp, "sqlite3_fts3_may_be_corrupt", fts3_may_be_corrupt, 0, 0
   );
   return TCL_OK;
 }

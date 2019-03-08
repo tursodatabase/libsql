@@ -63,8 +63,8 @@ proc print_rd {map} {
   }
   puts ""
   puts "  \};"
-  puts "#define HIBIT ((char)0x80)"
-  puts "  char aChar\[\] = \{"
+  puts "#define HIBIT ((unsigned char)0x80)"
+  puts "  unsigned char aChar\[\] = \{"
   puts -nonewline "    '\\0',      "
   set i 1
   foreach c $aChar f $aFlag {
@@ -838,7 +838,7 @@ proc print_fold_test {zFunc mappings} {
 proc print_fileheader {} {
   puts [string trim {
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:

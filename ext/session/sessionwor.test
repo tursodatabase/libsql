@@ -30,27 +30,71 @@ proc test_reset {} {
   sqlite3 db2 test.db2
 }
 
+foreach {tn wo} {
+  1 ""
+  2 "WITHOUT ROWID"
+} {
+  reset_db
 
-do_execsql_test 1.0 {
-  CREATE TABLE t1(a PRIMARY KEY, b) WITHOUT ROWID;
+  do_execsql_test 1.$tn.0 "CREATE TABLE t1(a PRIMARY KEY, b) $wo ;"
+  
+  do_iterator_test 1.$tn.1 t1 {
+    INSERT INTO t1 VALUES('one', 'two');
+  } {
+    {INSERT t1 0 X. {} {t one t two}}
+  }
+  
+  do_iterator_test 1.$tn.2 t1 {
+    UPDATE t1 SET b='three'
+  } {
+    {UPDATE t1 0 X. {t one t two} {{} {} t three}}
+  }
+  
+  do_iterator_test 1.$tn.3 t1 {
+    REPLACE INTO t1 VALUES('one', 'four');
+  } {
+    {UPDATE t1 0 X. {t one t three} {{} {} t four}}
+  }
+  
+  do_iterator_test 1.$tn.4 t1 {
+    DELETE FROM t1;
+  } {
+    {DELETE t1 0 X. {t one t four} {}}
+  }
 }
 
-do_iterator_test 1.1 t1 {
-  INSERT INTO t1 VALUES('one', 'two');
+foreach {tn wo} {
+  1 ""
+  2 "WITHOUT ROWID"
 } {
-  {INSERT t1 0 X. {} {t one t two}}
-}
+  reset_db
 
-do_iterator_test 1.2 t1 {
-  UPDATE t1 SET b='three'
-} {
-  {UPDATE t1 0 X. {t one t two} {{} {} t three}}
-}
-
-do_iterator_test 1.3 t1 {
-  DELETE FROM t1;
-} {
-  {DELETE t1 0 X. {t one t three} {}}
+  do_execsql_test 2.$tn.0 "CREATE TABLE t1(a INTEGER PRIMARY KEY, b) $wo ;"
+  
+  do_iterator_test 1.1 t1 {
+    INSERT INTO t1 VALUES(1, 'two');
+  } {
+    {INSERT t1 0 X. {} {i 1 t two}}
+  }
+  
+  do_iterator_test 2.$tn.2 t1 {
+    UPDATE t1 SET b='three'
+  } {
+    {UPDATE t1 0 X. {i 1 t two} {{} {} t three}}
+  }
+  
+  do_iterator_test 2.$tn.3 t1 {
+    REPLACE INTO t1 VALUES(1, 'four');
+  } {
+    {UPDATE t1 0 X. {i 1 t three} {{} {} t four}}
+  }
+  
+  do_iterator_test 2.$tn.4 t1 {
+    DELETE FROM t1;
+  } {
+    {DELETE t1 0 X. {i 1 t four} {}}
+  }
 }
 
 finish_test
+

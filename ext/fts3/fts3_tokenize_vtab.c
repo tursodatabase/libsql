@@ -122,7 +122,7 @@ static int fts3tokDequoteArray(
       nByte += (int)(strlen(argv[i]) + 1);
     }
 
-    *pazDequote = azDequote = sqlite3_malloc(sizeof(char *)*argc + nByte);
+    *pazDequote = azDequote = sqlite3_malloc64(sizeof(char *)*argc + nByte);
     if( azDequote==0 ){
       rc = SQLITE_NOMEM;
     }else{

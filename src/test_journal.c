@@ -560,7 +560,7 @@ static int jtWrite(
       /* The following assert() statements may fail if this layer is used
       ** with a connection in "PRAGMA synchronous=off" mode. If they
       ** fail with sync=normal or sync=full, this may indicate problem.  */
-      assert( pgno<=p->nPage || p->nSync>0 );
+      assert( p->nPage==0 || pgno<=p->nPage || p->nSync>0 );
       assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
     }
   }

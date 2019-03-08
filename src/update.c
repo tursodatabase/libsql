@@ -365,6 +365,7 @@ void sqlite3Update(
   ** being updated.  Fill in aRegIdx[] with a register number that will hold
   ** the key for accessing each index.
   */
+  if( onError==OE_Replace ) bReplace = 1;
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
     if( chngKey || hasFK>1 || pIdx==pPk
@@ -378,9 +379,7 @@ void sqlite3Update(
         if( indexColumnIsBeingUpdated(pIdx, i, aXRef, chngRowid) ){
           reg = ++pParse->nMem;
           pParse->nMem += pIdx->nColumn;
-          if( (onError==OE_Replace)
-           || (onError==OE_Default && pIdx->onError==OE_Replace) 
-          ){
+          if( onError==OE_Default && pIdx->onError==OE_Replace ){
             bReplace = 1;
           }
           break;

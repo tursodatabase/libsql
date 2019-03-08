@@ -1457,7 +1457,12 @@ static void generateSortTail(
     regRow = pDest->iSdst;
   }else{
     regRowid = sqlite3GetTempReg(pParse);
-    regRow = sqlite3GetTempRange(pParse, nColumn);
+    if( eDest==SRT_EphemTab || eDest==SRT_Table ){
+      regRow = sqlite3GetTempReg(pParse);
+      nColumn = 0;
+    }else{
+      regRow = sqlite3GetTempRange(pParse, nColumn);
+    }
   }
   nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
@@ -1537,6 +1542,7 @@ static void generateSortTail(
   switch( eDest ){
     case SRT_Table:
     case SRT_EphemTab: {
+      sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq, regRow);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
@@ -2083,9 +2089,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   db->flags &= ~(u64)SQLITE_FullColNames;
   db->flags |= SQLITE_ShortColNames;
   sqlite3SelectPrep(pParse, pSelect, 0);
+  db->flags = savedFlags;
   if( pParse->nErr ) return 0;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
-  db->flags = savedFlags;
   pTab = sqlite3DbMallocZero(db, sizeof(Table) );
   if( pTab==0 ){
     return 0;
@@ -3954,11 +3960,9 @@ static int flattenSubquery(
       jointype = pSubitem->fg.jointype;
     }else{
       assert( pParent!=p );  /* 2nd and subsequent times through the loop */
-      pSrc = pParent->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
-      if( pSrc==0 ){
-        assert( db->mallocFailed );
-        break;
-      }
+      pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+      if( pSrc==0 ) break;
+      pParent->pSrc = pSrc;
     }
 
     /* The subquery uses a single slot of the FROM clause of the outer
@@ -3977,10 +3981,9 @@ static int flattenSubquery(
     ** for the two elements in the FROM clause of the subquery.
     */
     if( nSubSrc>1 ){
-      pParent->pSrc = pSrc = sqlite3SrcListEnlarge(db, pSrc, nSubSrc-1,iFrom+1);
-      if( db->mallocFailed ){
-        break;
-      }
+      pSrc = sqlite3SrcListEnlarge(pParse, pSrc, nSubSrc-1,iFrom+1);
+      if( pSrc==0 ) break;
+      pParent->pSrc = pSrc;
     }
 
     /* Transfer the FROM clause terms from the subquery into the
@@ -5303,7 +5306,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
 **
 ** If regAcc is non-zero and there are no min() or max() aggregates
 ** in pAggInfo, then only populate the pAggInfo->nAccumulator accumulator
-** registers i register regAcc contains 0. The caller will take care
+** registers if register regAcc contains 0. The caller will take care
 ** of setting and clearing regAcc.
 */
 static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
@@ -5740,6 +5743,7 @@ int sqlite3Select(
     }
 
     if( flattenSubquery(pParse, p, i, isAgg) ){
+      if( pParse->nErr ) goto select_end;
       /* This subquery can be absorbed into its parent. */
       i = -1;
     }

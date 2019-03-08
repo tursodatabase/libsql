@@ -778,6 +778,32 @@ do_execsql_test 19.1 {
   {CREATE VIEW v2(e) AS SELECT coalesce(t2.c,t1.f) FROM t1, t2 WHERE t1.b=t2.d}
 }
 
+# 2019-01-08: https://www.sqlite.org/src/tktview/bc8d94f0fbd633fd9a051e3
+#
+# ALTER TABLE RENAME COLUMN does not work for tables that have redundant
+# UNIQUE constraints.
+#
+sqlite3 db :memory:
+do_execsql_test 20.100 {
+  CREATE TABLE t1(aaa,b,c,UNIQUE(aaA),PRIMARY KEY(aAa),UNIQUE(aAA));
+  ALTER TABLE t1 RENAME aaa TO bbb;
+  SELECT sql FROM sqlite_master WHERE name='t1';
+} {{CREATE TABLE t1(bbb,b,c,UNIQUE(bbb),PRIMARY KEY(bbb),UNIQUE(bbb))}}
+do_execsql_test 20.105 {
+  DROP TABLE t1;
+  CREATE TABLE t1(aaa,b,c,UNIQUE(aaA),PRIMARY KEY(aAa),UNIQUE(aAA))WITHOUT ROWID;
+  ALTER TABLE t1 RENAME aaa TO bbb;
+  SELECT sql FROM sqlite_master WHERE name='t1';
+} {{CREATE TABLE t1(bbb,b,c,UNIQUE(bbb),PRIMARY KEY(bbb),UNIQUE(bbb))WITHOUT ROWID}}
+do_execsql_test 20.110 {
+  DROP TABLE t1;
+  CREATE TABLE t1(aa UNIQUE,bb UNIQUE,cc UNIQUE,UNIQUE(aA),PRIMARY KEY(bB),UNIQUE(cC));
+  ALTER TABLE t1 RENAME aa TO xx;
+  ALTER TABLE t1 RENAME bb TO yy;
+  ALTER TABLE t1 RENAME cc TO zz;
+  SELECT sql FROM sqlite_master WHERE name='t1';
+} {{CREATE TABLE t1(xx UNIQUE,yy UNIQUE,zz UNIQUE,UNIQUE(xx),PRIMARY KEY(yy),UNIQUE(zz))}}
+
 
 
 finish_test
