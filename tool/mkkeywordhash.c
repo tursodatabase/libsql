@@ -216,6 +216,7 @@ static Keyword aKeywordTable[] = {
   { "FULL",             "TK_JOIN_KW",      ALWAYS                 },
   { "GLOB",             "TK_LIKE_KW",      ALWAYS                 },
   { "GROUP",            "TK_GROUP",        ALWAYS                 },
+  { "GROUPS",           "TK_GROUPS",       WINDOWFUNC             },
   { "HAVING",           "TK_HAVING",       ALWAYS                 },
   { "IF",               "TK_IF",           ALWAYS                 },
   { "IGNORE",           "TK_IGNORE",       CONFLICT|TRIGGER       },

@@ -1224,10 +1224,12 @@ do_test 9.3 {
     lappend myres [format %.4f [set r]]
   }
   set res2 {1.0000 0.0000 1.0000 0.0000 1.0000 0.0000 4.0000 0.0000 4.0000 0.0000 6.0000 0.0000 7.0000 0.0000}
+  set i 0
   foreach r [set myres] r2 [set res2] {
     if {[set r]<([set r2]-0.0001) || [set r]>([set r2]+0.0001)} {
       error "list element [set i] does not match: got=[set r] expected=[set r2]"
     }
+    incr i
   }
   set {} {}
 } {}
@@ -1247,10 +1249,12 @@ do_test 9.6 {
     lappend myres [format %.4f [set r]]
   }
   set res2 {0.0000 0.0000 0.0000}
+  set i 0
   foreach r [set myres] r2 [set res2] {
     if {[set r]<([set r2]-0.0001) || [set r]>([set r2]+0.0001)} {
       error "list element [set i] does not match: got=[set r] expected=[set r2]"
     }
+    incr i
   }
   set {} {}
 } {}
@@ -1262,10 +1266,12 @@ do_test 9.7 {
     lappend myres [format %.4f [set r]]
   }
   set res2 {1.0000 1.0000 1.0000}
+  set i 0
   foreach r [set myres] r2 [set res2] {
     if {[set r]<([set r2]-0.0001) || [set r]>([set r2]+0.0001)} {
       error "list element [set i] does not match: got=[set r] expected=[set r2]"
     }
+    incr i
   }
   set {} {}
 } {}

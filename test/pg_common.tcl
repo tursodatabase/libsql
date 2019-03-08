@@ -101,10 +101,12 @@ do_test $tn {
     lappend myres [format $F [set r]]
   }
   set res2 {$res2}
+  set i 0
   foreach r [set myres] r2 [set res2] {
     if {[set r]<([set r2]-$T) || [set r]>([set r2]+$T)} {
       error "list element [set i] does not match: got=[set r] expected=[set r2]"
     }
+    incr i
   }
   set {} {}
 } {}

@@ -1699,6 +1699,7 @@ frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND frame_bound_e(Z).
 
 range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
 range_or_rows(A) ::= ROWS.    { A = TK_ROWS;  }
+range_or_rows(A) ::= GROUPS.  { A = TK_GROUPS;}
 
 
 frame_bound_s(A) ::= frame_bound(X). { A = X; }
