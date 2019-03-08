@@ -1,10 +1,10 @@
-C Add\snew\sfile\sdoc/wal2.md\sto\sthis\sbranch.
-D 2019-01-11T14:58:03.764
+C Add\sthe\sbgckpt.c\sextension\sto\sMakefile.in\sand\sMakefile.msc.
+D 2019-03-08T15:39:24.036
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F Makefile.in d8b254f8bb81bab43c340d70d17dc3babab40fcc8a348c8255881f780a45fee6
+F Makefile.in 903e48404f86dea5701c47f326933e4c846f68f35b22ecd349bddba80bbf8a94
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 3c4c7e94419ff28cb68850188c9d153b343aed4c5ebed5965426232ed67ff9d9
+F Makefile.msc 366f2446655bc49eabcfb1a042e1e3d317fd05441f36ab9ddc0ad16e46de2388
 F README.md 377233394b905d3b2e2b33741289e093bc93f2e7adbe00923b2c5958c9a9edee
 F VERSION 453e2f4529ca208196d5567db28d549d7151f79efd33f6e6cfe6e613e583a0be
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8445fb6d5dae98a0129514a10a15f08412bac5a1d8114b12e592c744ea2bc4c9
-R 4b991801ac5f384be1f414fb71a05937
-U dan
-Z 736399187a1b654bff250254a2a37532
+P b495dce153f7f886f3dba09593f29ce2375718bf6508f2cfffd1af8071a995ae
+R 097e453c6dbf0709087c24fac1c6c3b8
+U drh
+Z 49a629fd05fa20141267e72d5e7eee4a
