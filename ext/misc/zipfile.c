@@ -358,7 +358,7 @@ static int zipfileConnect(
 
   rc = sqlite3_declare_vtab(db, ZIPFILE_SCHEMA);
   if( rc==SQLITE_OK ){
-    pNew = (ZipfileTab*)sqlite3_malloc(nByte+nFile);
+    pNew = (ZipfileTab*)sqlite3_malloc64((sqlite3_int64)nByte+nFile);
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, nByte+nFile);
     pNew->db = db;
@@ -806,7 +806,7 @@ static int zipfileGetEntry(
   }
 
   if( rc==SQLITE_OK ){
-    int nAlloc;
+    sqlite3_int64 nAlloc;
     ZipfileEntry *pNew;
 
     int nFile = zipfileGetU16(&aRead[ZIPFILE_CDS_NFILE_OFF]);
@@ -818,7 +818,7 @@ static int zipfileGetEntry(
       nAlloc += zipfileGetU32(&aRead[ZIPFILE_CDS_SZCOMPRESSED_OFF]);
     }
 
-    pNew = (ZipfileEntry*)sqlite3_malloc(nAlloc);
+    pNew = (ZipfileEntry*)sqlite3_malloc64(nAlloc);
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -981,11 +981,11 @@ static int zipfileDeflate(
   u8 **ppOut, int *pnOut,         /* Output */
   char **pzErr                    /* OUT: Error message */
 ){
-  int nAlloc = (int)compressBound(nIn);
+  sqlite3_int64 nAlloc = compressBound(nIn);
   u8 *aOut;
   int rc = SQLITE_OK;
 
-  aOut = (u8*)sqlite3_malloc(nAlloc);
+  aOut = (u8*)sqlite3_malloc64(nAlloc);
   if( aOut==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -1058,7 +1058,7 @@ static int zipfileColumn(
           if( pCsr->pCurrent->aData ){
             aBuf = pCsr->pCurrent->aData;
           }else{
-            aBuf = aFree = sqlite3_malloc(sz);
+            aBuf = aFree = sqlite3_malloc64(sz);
             if( aBuf==0 ){
               rc = SQLITE_NOMEM;
             }else{
@@ -1897,14 +1897,14 @@ struct ZipfileCtx {
 static int zipfileBufferGrow(ZipfileBuffer *pBuf, int nByte){
   if( pBuf->n+nByte>pBuf->nAlloc ){
     u8 *aNew;
-    int nNew = pBuf->n ? pBuf->n*2 : 512;
+    sqlite3_int64 nNew = pBuf->n ? pBuf->n*2 : 512;
     int nReq = pBuf->n + nByte;
 
     while( nNew<nReq ) nNew = nNew*2;
-    aNew = sqlite3_realloc(pBuf->a, nNew);
+    aNew = sqlite3_realloc64(pBuf->a, nNew);
     if( aNew==0 ) return SQLITE_NOMEM;
     pBuf->a = aNew;
-    pBuf->nAlloc = nNew;
+    pBuf->nAlloc = (int)nNew;
   }
   return SQLITE_OK;
 }
@@ -2095,7 +2095,7 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
 void zipfileFinal(sqlite3_context *pCtx){
   ZipfileCtx *p;
   ZipfileEOCD eocd;
-  int nZip;
+  sqlite3_int64 nZip;
   u8 *aZip;
 
   p = (ZipfileCtx*)sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
@@ -2108,14 +2108,14 @@ void zipfileFinal(sqlite3_context *pCtx){
     eocd.iOffset = p->body.n;
 
     nZip = p->body.n + p->cds.n + ZIPFILE_EOCD_FIXED_SZ;
-    aZip = (u8*)sqlite3_malloc(nZip);
+    aZip = (u8*)sqlite3_malloc64(nZip);
     if( aZip==0 ){
       sqlite3_result_error_nomem(pCtx);
     }else{
       memcpy(aZip, p->body.a, p->body.n);
       memcpy(&aZip[p->body.n], p->cds.a, p->cds.n);
       zipfileSerializeEOCD(&eocd, &aZip[p->body.n + p->cds.n]);
-      sqlite3_result_blob(pCtx, aZip, nZip, zipfileFree);
+      sqlite3_result_blob(pCtx, aZip, (int)nZip, zipfileFree);
     }
   }
 

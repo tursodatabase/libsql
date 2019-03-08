@@ -44,7 +44,7 @@ static int callback(void *pCtx, int argc, char **argv, char **colnames){
       /* Using sqlite3_realloc64() would be better, but it is a recent
       ** addition and will cause a segfault if loaded by an older version
       ** of SQLite.  */
-      zNew = p->nAlloc<=0x7fffffff ? sqlite3_realloc(p->z, (int)p->nAlloc) : 0;
+      zNew = p->nAlloc<=0x7fffffff ? sqlite3_realloc64(p->z, p->nAlloc) : 0;
       if( zNew==0 ){
         sqlite3_free(p->z);
         memset(p, 0, sizeof(*p));

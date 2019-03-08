@@ -117,7 +117,7 @@ void sqlite3MaterializeView(
   sqlite3 *db = pParse->db;
   int iDb = sqlite3SchemaToIndex(db, pView->pSchema);
   pWhere = sqlite3ExprDup(db, pWhere, 0);
-  pFrom = sqlite3SrcListAppend(db, 0, 0, 0);
+  pFrom = sqlite3SrcListAppend(pParse, 0, 0, 0);
   if( pFrom ){
     assert( pFrom->nSrc==1 );
     pFrom->a[0].zName = sqlite3DbStrDup(db, pView->zName);

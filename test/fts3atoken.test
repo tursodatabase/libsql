@@ -107,6 +107,7 @@ do_test fts3atoken-2.1 {
 # simple input string via the built-in test function. This is as much
 # to test the test function as the tokenizer implementations.
 #
+sqlite3_db_config db SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1
 do_test fts3atoken-3.1 {
   execsql {
     SELECT fts3_tokenizer_test('simple', 'I don''t see how');

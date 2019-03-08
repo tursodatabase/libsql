@@ -70,18 +70,22 @@ do_test 200 {
     UPDATE sqlite_dbpage SET data=randomblob(4096) WHERE pgno=1;
     PRAGMA quick_check;
   }
-} {1 {unsupported file format}}
+} {1 {file is not a database}}
 do_test 201 {
   catchsql {
     PRAGMA quick_check;
   } db2
-} {1 {unsupported file format}}
+} {1 {file is not a database}}
 
 do_test 210 {
   # Reset the database file using SQLITE_DBCONFIG_RESET_DATABASE
   sqlite3_db_config db RESET_DB 1
   db eval VACUUM
   sqlite3_db_config db RESET_DB 0
+
+  # If using sqlite3_prepare() instead of _v2() or _v3(), the block 
+  # below raises an SQLITE_SCHEMA error. The following fixes this.
+  if {[permutation]=="prepare"} { catchsql "SELECT * FROM sqlite_master" db2 }
 
   # Verify that the reset took, even on the separate database connection
   catchsql {

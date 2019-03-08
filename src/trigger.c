@@ -731,7 +731,7 @@ static SrcList *targetSrcList(
   int iDb;             /* Index of the database to use */
   SrcList *pSrc;       /* SrcList to be returned */
 
-  pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+  pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
   if( pSrc ){
     assert( pSrc->nSrc>0 );
     pSrc->a[pSrc->nSrc-1].zName = sqlite3DbStrDup(db, pStep->zTarget);

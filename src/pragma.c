@@ -1422,19 +1422,6 @@ void sqlite3Pragma(
 #endif /* !defined(SQLITE_OMIT_TRIGGER) */
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
-#ifndef NDEBUG
-  case PragTyp_PARSER_TRACE: {
-    if( zRight ){
-      if( sqlite3GetBoolean(zRight, 0) ){
-        sqlite3ParserTrace(stdout, "parser: ");
-      }else{
-        sqlite3ParserTrace(0, 0);
-      }
-    }
-  }
-  break;
-#endif
-
   /* Reinstall the LIKE and GLOB functions.  The variant of LIKE
   ** used will be case sensitive or not depending on the RHS.
   */

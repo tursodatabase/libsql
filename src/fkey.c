@@ -1014,7 +1014,7 @@ void sqlite3FkCheck(
 
     /* Create a SrcList structure containing the child table.  We need the
     ** child table as a SrcList for sqlite3WhereBegin() */
-    pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+    pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( pSrc ){
       struct SrcList_item *pItem = pSrc->a;
       pItem->pTab = pFKey->pFrom;
@@ -1291,7 +1291,7 @@ static Trigger *fkActionTrigger(
       }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),
-          sqlite3SrcListAppend(db, 0, &tFrom, 0),
+          sqlite3SrcListAppend(pParse, 0, &tFrom, 0),
           pWhere,
           0, 0, 0, 0, 0
       );

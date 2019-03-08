@@ -294,7 +294,10 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: parser_trace
-  IF:   defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
+  TYPE: FLAG
+  ARG:  SQLITE_ParserTrace
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+  IF:   defined(SQLITE_DEBUG)
 
   NAME: case_sensitive_like
   FLAG: NoColumns

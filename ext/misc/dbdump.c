@@ -195,7 +195,7 @@ static char **tableColumnList(DState *p, const char *zTab){
     if( nCol>=nAlloc-2 ){
       char **azNew;
       nAlloc = nAlloc*2 + nCol + 10;
-      azNew = sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
+      azNew = sqlite3_realloc64(azCol, nAlloc*sizeof(azCol[0]));
       if( azNew==0 ) goto col_oom;
       azCol = azNew;
       azCol[0] = 0;

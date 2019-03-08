@@ -2675,6 +2675,33 @@ static int SQLITE_TCLAPI test_stmt_readonly(
 }
 
 /*
+** Usage:  sqlite3_stmt_isexplain  STMT
+**
+** Return 1, 2, or 0 respectively if STMT is an EXPLAIN statement, an
+** EXPLAIN QUERY PLAN statement or an ordinary statement or NULL pointer.
+*/
+static int SQLITE_TCLAPI test_stmt_isexplain(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " STMT", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  rc = sqlite3_stmt_isexplain(pStmt);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite3_stmt_busy  STMT
 **
 ** Return true if STMT is a non-NULL pointer to a statement
@@ -7141,6 +7168,9 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  extern int sqlite3_prefixes_init(sqlite3*,char**,const sqlite3_api_routines*);
+#endif
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_remember_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7166,6 +7196,9 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "ieee754",               sqlite3_ieee_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
     { "percentile",            sqlite3_percentile_init           },
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    { "prefixes",              sqlite3_prefixes_init             },
+#endif
     { "regexp",                sqlite3_regexp_init               },
     { "remember",              sqlite3_remember_init             },
     { "series",                sqlite3_series_init               },
@@ -7834,6 +7867,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
      { "sqlite3_stmt_readonly",         test_stmt_readonly ,0 },
+     { "sqlite3_stmt_isexplain",        test_stmt_isexplain,0 },
      { "sqlite3_stmt_busy",             test_stmt_busy     ,0 },
      { "uses_stmt_journal",             uses_stmt_journal ,0 },
 

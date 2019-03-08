@@ -72,6 +72,31 @@ do_execsql_test 140 {
   PRAGMA page_count;
 } {2}
 
+do_test 150 {
+  catch {db deserialize -unknown 1 $db1} msg
+  set msg
+} {unknown option: -unknown}
+do_test 151 {
+  db deserialize -readonly 1 $db1
+  db eval {SELECT * FROM t1}
+} {1 2}
+do_test 152 {
+  catchsql {INSERT INTO t1 VALUES(3,4);}
+} {1 {attempt to write a readonly database}}
+
+breakpoint
+do_test 160 {
+  db deserialize -maxsize 32768 $db1
+  db eval {SELECT * FROM t1}
+} {1 2}
+do_test 161 {
+  db eval {INSERT INTO t1 VALUES(3,4); SELECT * FROM t1}
+} {1 2 3 4}
+do_test 162 {
+  catchsql {INSERT INTO t1 VALUES(5,randomblob(100000))}
+} {1 {database or disk is full}}
+
+
 # Build a largish on-disk database and serialize it.  Verify that the
 # serialization works.
 #
@@ -154,7 +179,7 @@ do_test 600 {
 do_test 610 {
   set rc [catch {db deserialize a b c} msg]
   lappend rc $msg
-} {1 {wrong # args: should be "db deserialize ?DATABASE? VALUE"}}
+} {1 {unknown option: a}}
 do_test 620 {
   set rc [catch {db serialize a b} msg]
   lappend rc $msg

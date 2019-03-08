@@ -823,8 +823,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     pSub = sqlite3SelectNew(
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
     );
-    p->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
-    assert( p->pSrc || db->mallocFailed );
+    p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
@@ -881,6 +880,7 @@ void sqlite3WindowListDelete(sqlite3 *db, Window *p){
 */
 static Expr *sqlite3WindowOffsetExpr(Parse *pParse, Expr *pExpr){
   if( 0==sqlite3ExprIsConstant(pExpr) ){
+    if( IN_RENAME_OBJECT ) sqlite3RenameExprUnmap(pParse, pExpr);
     sqlite3ExprDelete(pParse->db, pExpr);
     pExpr = sqlite3ExprAlloc(pParse->db, TK_NULL, 0, 0);
   }
@@ -1075,6 +1075,7 @@ static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
   VdbeCoverageNeverNullIf(v, eCond==0);
   VdbeCoverageNeverNullIf(v, eCond==1);
   VdbeCoverageNeverNullIf(v, eCond==2);
+  sqlite3MayAbort(pParse);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
   sqlite3ReleaseTempReg(pParse, regZero);

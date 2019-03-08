@@ -120,12 +120,8 @@ struct Fts5PhraseIter {
 **
 **   Usually, output parameter *piPhrase is set to the phrase number, *piCol
 **   to the column in which it occurs and *piOff the token offset of the
-**   first token of the phrase. The exception is if the table was created
-**   with the offsets=0 option specified. In this case *piOff is always
-**   set to -1.
-**
-**   Returns SQLITE_OK if successful, or an error code (i.e. SQLITE_NOMEM) 
-**   if an error occurs.
+**   first token of the phrase. Returns SQLITE_OK if successful, or an error
+**   code (i.e. SQLITE_NOMEM) if an error occurs.
 **
 **   This API can be quite slow if used with an FTS5 table created with the
 **   "detail=none" or "detail=column" option. 
@@ -166,7 +162,7 @@ struct Fts5PhraseIter {
 **   Save the pointer passed as the second argument as the extension functions 
 **   "auxiliary data". The pointer may then be retrieved by the current or any
 **   future invocation of the same fts5 extension function made as part of
-**   of the same MATCH query using the xGetAuxdata() API.
+**   the same MATCH query using the xGetAuxdata() API.
 **
 **   Each extension function is allocated a single auxiliary data slot for
 **   each FTS query (MATCH expression). If the extension function is invoked 
@@ -181,7 +177,7 @@ struct Fts5PhraseIter {
 **   The xDelete callback, if one is specified, is also invoked on the
 **   auxiliary data pointer after the FTS5 query has finished.
 **
-**   If an error (e.g. an OOM condition) occurs within this function, an
+**   If an error (e.g. an OOM condition) occurs within this function,
 **   the auxiliary data is set to NULL and an error code returned. If the
 **   xDelete parameter was not NULL, it is invoked on the auxiliary data
 **   pointer before returning.

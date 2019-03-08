@@ -105,4 +105,3 @@ int sqlite3_mmap_warm(sqlite3 *db, const char *zDb){
 
   return rc;
 }
-
