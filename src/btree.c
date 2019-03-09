@@ -5552,7 +5552,7 @@ int sqlite3BtreeMovetoUnpacked(
             sqlite3_free(pCellKey);
             goto moveto_finish;
           }
-          c = xRecordCompare(nCell, pCellKey, pIdxKey);
+          c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
         assert( 
@@ -7152,8 +7152,9 @@ static int editPage(
     int iCell = (iOld + pPg->aiOvfl[i]) - iNew;
     if( iCell>=0 && iCell<nNew ){
       pCellptr = &pPg->aCellIdx[iCell * 2];
-      assert( nCell>=iCell );
-      memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+      if( nCell>iCell ){
+        memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+      }
       nCell++;
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
@@ -9268,6 +9269,9 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( p->inTrans==TRANS_WRITE );
   assert( iTable>=2 );
+  if( iTable>btreePagecount(pBt) ){
+    return SQLITE_CORRUPT_BKPT;
+  }
 
   rc = btreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
   if( rc ) return rc;

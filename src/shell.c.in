@@ -3058,7 +3058,7 @@ static int shell_exec(
       }
 
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
-      if( pArg && pArg->autoEQP && sqlite3_strlike("EXPLAIN%",zStmtSql,0)!=0 ){
+      if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
         sqlite3_stmt *pExplain;
         char *zEQP;
         int triggerEQP = 0;
@@ -3107,13 +3107,10 @@ static int shell_exec(
       if( pArg ){
         pArg->cMode = pArg->mode;
         if( pArg->autoExplain ){
-          if( sqlite3_column_count(pStmt)==8
-           && sqlite3_strlike("EXPLAIN%", zStmtSql,0)==0
-          ){
+          if( sqlite3_stmt_isexplain(pStmt)==1 ){
             pArg->cMode = MODE_Explain;
           }
-          if( sqlite3_column_count(pStmt)==4
-           && sqlite3_strlike("EXPLAIN QUERY PLAN%", zStmtSql,0)==0 ){
+          if( sqlite3_stmt_isexplain(pStmt)==2 ){
             pArg->cMode = MODE_EQP;
           }
         }
