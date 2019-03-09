@@ -433,4 +433,25 @@ do_execsql_test 1.19.5 {
   SELECT a, b, min(c) OVER (ORDER BY a,b  GROUPS BETWEEN 1 FOLLOWING         AND UNBOUNDED FOLLOWING ) FROM t3 ORDER BY 1, 2, 3;
 } {AA aa 102   AA aa 102   AA aa 102   AA aa 102   AA bb 102   AA bb 102   AA bb 102   AA bb 102   BB aa 102   BB aa 102   BB aa 102   BB aa 102   BB aa 102   BB aa 102   BB bb 102   BB bb 102   BB bb 102   BB bb 102   BB bb 102   BB bb 102   CC aa 102   CC aa 102   CC aa 102   CC aa 102   CC bb 102   CC bb 102   DD aa 102   DD aa 102   DD aa 102   DD bb 102   DD bb 102   DD bb 102   DD bb 102   EE aa 102   EE aa 102   EE bb 102   EE bb 102   EE bb 102   FF aa 102   FF aa 102   FF aa 102   FF aa 102   FF bb 113   FF bb 113   FF bb 113   FF bb 113   FF bb 113   FF bb 113   GG aa 113   GG aa 113   GG aa 113   GG aa 113   GG bb 113   GG bb 113   GG bb 113   GG bb 113   HH aa 113   HH aa 113   HH aa 113   HH bb 113   HH bb 113   HH bb 113   HH bb 113   HH bb 113   HH bb 113   II aa 113   II aa 113   II bb 113   II bb 113   II bb 113   II bb 113   II bb 113   JJ aa 257   JJ aa 257   JJ aa 257   JJ aa 257   JJ bb {}   JJ bb {}   JJ bb {}   JJ bb {}}
 
+#==========================================================================
+
+do_execsql_test 2.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER, b INTEGER);
+  INSERT INTO t1 VALUES
+      (13, 26), (15, 30);
+} {}
+
+do_execsql_test 2.1 {
+  SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING )
+} {13 56   15 56}
+
+do_execsql_test 2.2 {
+  SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 10 PRECEDING AND 5 PRECEDING )
+} {13 {}   15 {}}
+
+do_execsql_test 2.3 {
+  SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 2 FOLLOWING AND 3 FOLLOWING )
+} {13 30   15 {}}
+
 finish_test

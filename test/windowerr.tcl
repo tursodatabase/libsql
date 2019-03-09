@@ -20,6 +20,11 @@ ifcapable !windowfunc
 execsql_test 1.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a INTEGER, b INTEGER);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
+  INSERT INTO t1 VALUES(3, 3);
+  INSERT INTO t1 VALUES(4, 4);
+  INSERT INTO t1 VALUES(5, 5);
 }
 
 foreach {tn frame} {
@@ -31,11 +36,13 @@ foreach {tn frame} {
 
   5 "ORDER BY a GROUPS BETWEEN -1 PRECEDING AND 1 FOLLOWING"
   6 "ORDER BY a GROUPS BETWEEN  1 PRECEDING AND -1 FOLLOWING"
+
+  7 "ORDER BY a,b RANGE BETWEEN  1 PRECEDING AND 1 FOLLOWING"
 } {
   errorsql_test 1.$tn "
   SELECT a, sum(b) OVER (
     $frame
-  ) FROM t3 ORDER BY 1
+  ) FROM t1 ORDER BY 1
   "
 }
 

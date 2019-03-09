@@ -72,7 +72,8 @@ proc errorsql_test {tn sql} {
   if {$rc==0} {
     error "errorsql_test SQL did not cause an error!"
   }
-  puts $::fd "# PG says \"[string trim $msg]\""
+  set msg [lindex [split [string trim $msg] "\n"] 0]
+  puts $::fd "# PG says $msg"
   set sql [string map {string_agg group_concat} $sql]
   puts $::fd "do_test $tn { catch { execsql {"
   puts $::fd "  [string trim $sql]"

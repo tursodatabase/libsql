@@ -89,6 +89,24 @@ foreach {tn frame} {
   "
 }
 
+==========
+
+execsql_test 2.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER, b INTEGER);
+  INSERT INTO t1 VALUES
+      (13, 26), (15, 30);
+}
+
+foreach {tn frame} {
+  1 { ORDER BY a RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING }
+  2 { ORDER BY a RANGE BETWEEN 10 PRECEDING AND 5 PRECEDING }
+  3 { ORDER BY a RANGE BETWEEN 2 FOLLOWING AND 3 FOLLOWING }
+} {
+  execsql_test 2.$tn "SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ($frame)"
+}
+
+
 finish_test
 
 

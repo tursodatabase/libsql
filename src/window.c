@@ -559,6 +559,14 @@ void sqlite3WindowUpdate(
   }else{
     sqlite3WindowChain(pParse, pWin, pList);
   }
+  if( (pWin->eType==TK_RANGE)
+   && (pWin->pStart || pWin->pEnd) 
+   && (pWin->pOrderBy==0 || pWin->pOrderBy->nExpr!=1)
+  ){
+    sqlite3ErrorMsg(pParse, 
+      "RANGE with offset PRECEDING/FOLLOWING requires one ORDER BY expression"
+    );
+  }else
   if( pFunc->funcFlags & SQLITE_FUNC_WINDOW ){
     sqlite3 *db = pParse->db;
     if( pWin->pFilter ){
@@ -927,14 +935,6 @@ Window *sqlite3WindowAlloc(
     eType = TK_RANGE;
   }
 
-  /* If a frame is declared "RANGE" (not "ROWS"), then it may not use
-  ** either "<expr> PRECEDING" or "<expr> FOLLOWING".
-  */
-  if( eType==TK_RANGE && (pStart!=0 || pEnd!=0) ){
-    sqlite3ErrorMsg(pParse, "RANGE must use only UNBOUNDED or CURRENT ROW");
-    goto windowAllocErr;
-  }
-
   /* Additionally, the
   ** starting boundary type may not occur earlier in the following list than
   ** the ending boundary type:
@@ -952,7 +952,7 @@ Window *sqlite3WindowAlloc(
   if( (eStart==TK_CURRENT && eEnd==TK_PRECEDING)
    || (eStart==TK_FOLLOWING && (eEnd==TK_PRECEDING || eEnd==TK_CURRENT))
   ){
-    sqlite3ErrorMsg(pParse, "unsupported frame delimiter for ROWS");
+    sqlite3ErrorMsg(pParse, "unsupported frame specification");
     goto windowAllocErr;
   }
 
@@ -1485,7 +1485,7 @@ static int windowIfNewPeer(
     sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
     addr = sqlite3VdbeAddOp3(
         v, OP_Jump, sqlite3VdbeCurrentAddr(v)+1, 0, sqlite3VdbeCurrentAddr(v)+1
-        );
+    );
     VdbeCoverageEqNe(v);
     sqlite3VdbeAddOp3(v, OP_Copy, regNew, regOld, nVal-1);
   }else{
@@ -1539,6 +1539,39 @@ static void windowReadPeerValues(
   }
 }
 
+/*
+** This function is called as part of generating VM programs for RANGE
+** offset PRECEDING/FOLLOWING frame boundaries. It generates code equivalent
+** to:
+**
+**   if( csr1.peerVal + regVal >= csr2.peerVal ) goto lbl;
+**   if( csr1.rowid >= csr2.rowid ) goto lbl;
+*/
+static void windowCodeRangeTest(
+  WindowCodeArg *p, 
+  int op,                          /* OP_Ge or OP_Gt */
+  int csr1, 
+  int regVal, 
+  int csr2,
+  int lbl
+){
+  Parse *pParse = p->pParse;
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  int reg1 = sqlite3GetTempReg(pParse);
+  int reg2 = sqlite3GetTempReg(pParse);
+  windowReadPeerValues(p, csr1, reg1);
+  windowReadPeerValues(p, csr2, reg2);
+  sqlite3VdbeAddOp3(v, OP_Add, reg1, regVal, reg1);
+  sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1);
+  sqlite3VdbeAddOp2(v, OP_Rowid, csr1, reg1);
+  sqlite3VdbeAddOp2(v, OP_Rowid, csr2, reg2);
+  sqlite3VdbeAddOp3(v, OP_Gt, reg2, lbl, reg1);
+  sqlite3ReleaseTempReg(pParse, reg1);
+  sqlite3ReleaseTempReg(pParse, reg2);
+
+  assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );
+}
+
 static int windowCodeOp(
  WindowCodeArg *p,
  int op,
@@ -1555,6 +1588,9 @@ static int windowCodeOp(
   int addrGoto = 0;
   int bPeer = (pMWin->eType!=TK_ROWS);
 
+  int lblDone = sqlite3VdbeMakeLabel(pParse);
+  int addrNextRange = 0;
+
   /* Special case - WINDOW_AGGINVERSE is always a no-op if the frame
   ** starts with UNBOUNDED PRECEDING. */
   if( op==WINDOW_AGGINVERSE && pMWin->eStart==TK_UNBOUNDED ){
@@ -1563,7 +1599,39 @@ static int windowCodeOp(
   }
 
   if( regCountdown>0 ){
-    addrIf = sqlite3VdbeAddOp3(v, OP_IfPos, regCountdown, 0, 1);
+    if( pMWin->eType==TK_RANGE ){
+      addrNextRange = sqlite3VdbeCurrentAddr(v);
+
+      switch( op ){
+        case WINDOW_RETURN_ROW: {
+          assert( 0 );
+          break;
+        }
+
+        case WINDOW_AGGINVERSE: {
+          if( pMWin->eStart==TK_FOLLOWING ){
+            windowCodeRangeTest(
+                p, OP_Le, p->current.csr, regCountdown, p->start.csr, lblDone
+            );
+          }else{
+            windowCodeRangeTest(
+                p, OP_Ge, p->start.csr, regCountdown, p->current.csr, lblDone
+            );
+          }
+          break;
+        }
+
+        case WINDOW_AGGSTEP: {
+          windowCodeRangeTest(
+            p, OP_Gt, p->end.csr, regCountdown, p->current.csr, lblDone
+          );
+          break;
+        }
+      }
+
+    }else{
+      addrIf = sqlite3VdbeAddOp3(v, OP_IfPos, regCountdown, 0, 1);
+    }
   }
 
   if( op==WINDOW_RETURN_ROW ){
@@ -1610,6 +1678,10 @@ static int windowCodeOp(
     sqlite3ReleaseTempRange(pParse, regTmp, nReg);
   }
 
+  if( addrNextRange ){
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrNextRange);
+  }
+  sqlite3VdbeResolveLabel(v, lblDone);
   if( addrGoto ) sqlite3VdbeJumpHere(v, addrGoto);
   if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
   return ret;
@@ -1724,6 +1796,13 @@ static void windowCodeStep(
   int regNewPeer = 0;
   WindowCodeArg s;
 
+  assert( pMWin->eStart==TK_PRECEDING || pMWin->eStart==TK_CURRENT 
+       || pMWin->eStart==TK_FOLLOWING || pMWin->eStart==TK_UNBOUNDED 
+  );
+  assert( pMWin->eEnd==TK_FOLLOWING || pMWin->eEnd==TK_CURRENT 
+       || pMWin->eEnd==TK_UNBOUNDED || pMWin->eEnd==TK_PRECEDING 
+  );
+
   memset(&s, 0, sizeof(WindowCodeArg));
   s.pParse = pParse;
   s.pMWin = pMWin;
@@ -1745,8 +1824,9 @@ static void windowCodeStep(
     regEnd = ++pParse->nMem;
   }
 
-  /* If this is not a "ROWS BETWEEN ..." frame, then allocate registers to
-  ** store a copy of the current ORDER BY expressions. */
+  /* If this is not a "ROWS BETWEEN ..." frame, then allocate arrays of
+  ** registers to store a copies of the ORDER BY expressions for the
+  ** main loop, and for each cursor (start, current and end). */
   if( pMWin->eType!=TK_ROWS ){
     int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
     regNewPeer = reg + pMWin->nBufferCol;
@@ -1757,18 +1837,6 @@ static void windowCodeStep(
     s.current.reg = pParse->nMem+1; pParse->nMem += nPeer;
     s.end.reg = pParse->nMem+1;     pParse->nMem += nPeer;
   }
-
-  assert( pMWin->eStart==TK_PRECEDING 
-       || pMWin->eStart==TK_CURRENT 
-       || pMWin->eStart==TK_FOLLOWING 
-       || pMWin->eStart==TK_UNBOUNDED 
-  );
-  assert( pMWin->eEnd==TK_FOLLOWING 
-       || pMWin->eEnd==TK_CURRENT 
-       || pMWin->eEnd==TK_UNBOUNDED 
-       || pMWin->eEnd==TK_PRECEDING 
-  );
-
 
   /* Load the column values for the row returned by the sub-select
   ** into an array of registers starting at reg. Assemble them into
@@ -1791,14 +1859,12 @@ static void windowCodeStep(
     int regNewPart = reg + pMWin->nBufferCol;
     KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
 
-    addrIf = sqlite3VdbeAddOp1(v, OP_If, pMWin->regFirst);
     addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart, nPart);
     sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
     sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+4, addr+2);
     VdbeCoverageEqNe(v);
     addrGosubFlush = sqlite3VdbeAddOp1(v, OP_Gosub, regFlushPart);
     VdbeComment((v, "call flush_partition"));
-    sqlite3VdbeJumpHere(v, addrIf);
     sqlite3VdbeAddOp3(v, OP_Copy, regNewPart, pMWin->regPart, nPart-1);
   }
 
@@ -1848,7 +1914,7 @@ static void windowCodeStep(
     addrShortcut = sqlite3VdbeAddOp0(v, OP_Goto);
     sqlite3VdbeJumpHere(v, addrGe);
   }
-  if( pMWin->eStart==TK_FOLLOWING && regEnd ){
+  if( pMWin->eStart==TK_FOLLOWING && pMWin->eType!=TK_RANGE && regEnd ){
     assert( pMWin->eEnd==TK_FOLLOWING );
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regStart);
   }
@@ -1888,8 +1954,18 @@ static void windowCodeStep(
   if( pMWin->eStart==TK_FOLLOWING ){
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
     if( pMWin->eEnd!=TK_UNBOUNDED ){
-      windowCodeOp(&s, WINDOW_RETURN_ROW, regEnd, 0);
-      windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
+      if( pMWin->eType==TK_RANGE ){
+        int lbl = sqlite3VdbeMakeLabel(pParse);
+        int addrNext = sqlite3VdbeCurrentAddr(v);
+        windowCodeRangeTest(&s, OP_Ge, s.current.csr, regEnd, s.end.csr, lbl);
+        windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
+        windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, addrNext);
+        sqlite3VdbeResolveLabel(v, lbl);
+      }else{
+        windowCodeOp(&s, WINDOW_RETURN_ROW, regEnd, 0);
+        windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
+      }
     }
   }else
   if( pMWin->eEnd==TK_PRECEDING ){
@@ -1900,10 +1976,25 @@ static void windowCodeStep(
     int addr;
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
     if( pMWin->eEnd!=TK_UNBOUNDED ){
-      if( regEnd ) addr = sqlite3VdbeAddOp3(v, OP_IfPos, regEnd, 0, 1);
-      windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
-      windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
-      if( regEnd ) sqlite3VdbeJumpHere(v, addr);
+      if( pMWin->eType==TK_RANGE ){
+        int lbl;
+        addr = sqlite3VdbeCurrentAddr(v);
+        if( regEnd ){
+          lbl = sqlite3VdbeMakeLabel(pParse);
+          windowCodeRangeTest(&s, OP_Ge, s.current.csr, regEnd, s.end.csr, lbl);
+        }
+        windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
+        windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
+        if( regEnd ){
+          sqlite3VdbeAddOp2(v, OP_Goto, 0, addr);
+          sqlite3VdbeResolveLabel(v, lbl);
+        }
+      }else{
+        if( regEnd ) addr = sqlite3VdbeAddOp3(v, OP_IfPos, regEnd, 0, 1);
+        windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
+        windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
+        if( regEnd ) sqlite3VdbeJumpHere(v, addr);
+      }
     }
   }
   if( addrPeerJump ){
@@ -1938,6 +2029,11 @@ static void windowCodeStep(
     int addrBreak2;
     int addrBreak3;
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
+    if( pMWin->eType==TK_RANGE ){
+      addrStart = sqlite3VdbeCurrentAddr(v);
+      addrBreak2 = windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 1);
+      addrBreak1 = windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 1);
+    }else
     if( pMWin->eEnd==TK_UNBOUNDED ){
       addrStart = sqlite3VdbeCurrentAddr(v);
       addrBreak1 = windowCodeOp(&s, WINDOW_RETURN_ROW, regStart, 1);
