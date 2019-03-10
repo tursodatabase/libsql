@@ -66,6 +66,8 @@ mod from_sql;
 mod serde_json;
 mod time;
 mod to_sql;
+#[cfg(feature = "url")]
+mod url;
 mod value;
 mod value_ref;
 

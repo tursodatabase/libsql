@@ -95,6 +95,9 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
+* `url` implements [`FromSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.ToSql.html) for the
+  `Url` type from the [`url` crate](https://crates.io/crates/url).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 * `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
