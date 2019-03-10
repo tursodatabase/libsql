@@ -151,7 +151,7 @@ impl FromSql for bool {
 
 impl FromSql for String {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        value.as_str().map(|s| s.to_string())
+        value.as_str().map(ToString::to_string)
     }
 }
 

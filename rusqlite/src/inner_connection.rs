@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 
 use super::ffi;
-use super::{str_to_cstring, str_for_sqlite};
+use super::{str_for_sqlite, str_to_cstring};
 use super::{Connection, InterruptHandle, OpenFlags, Result};
 use crate::error::{error_from_handle, error_from_sqlite_code, Error};
 use crate::raw_statement::RawStatement;
@@ -230,13 +230,7 @@ impl InnerConnection {
                 }
                 rc
             } else {
-                ffi::sqlite3_prepare_v2(
-                    self.db(),
-                    c_sql,
-                    len,
-                    &mut c_stmt,
-                    ptr::null_mut(),
-                )
+                ffi::sqlite3_prepare_v2(self.db(), c_sql, len, &mut c_stmt, ptr::null_mut())
             }
         };
         self.decode_result(r)

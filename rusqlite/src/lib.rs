@@ -86,7 +86,7 @@ pub use crate::cache::CachedStatement;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
 #[cfg(feature = "hooks")]
-pub use crate::hooks::*;
+pub use crate::hooks::Action;
 #[cfg(feature = "load_extension")]
 pub use crate::load_extension_guard::LoadExtensionGuard;
 pub use crate::row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
@@ -265,7 +265,10 @@ fn str_for_sqlite(s: &str) -> Result<(*const c_char, c_int, ffi::sqlite3_destruc
 // failed.
 fn len_as_c_int(len: usize) -> Result<c_int> {
     if len >= (c_int::max_value() as usize) {
-        Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_TOOBIG), None))
+        Err(Error::SqliteFailure(
+            ffi::Error::new(ffi::SQLITE_TOOBIG),
+            None,
+        ))
     } else {
         Ok(len as c_int)
     }
@@ -507,7 +510,7 @@ impl Connection {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
         stmt.query_row(params, f)
@@ -529,7 +532,7 @@ impl Connection {
     /// or if the underlying SQLite call fails.
     pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
     where
-        F: FnOnce(&Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
         let mut rows = stmt.query_named(params)?;
@@ -566,7 +569,7 @@ impl Connection {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnOnce(&Row<'_>) -> result::Result<T, E>,
         E: convert::From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
@@ -841,6 +844,7 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod test {
+    use fallible_iterator::FallibleIterator;
     use self::tempdir::TempDir;
     pub use super::*;
     use crate::ffi;
@@ -1094,8 +1098,8 @@ mod test {
             let mut rows = query.query(&[4i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next() {
-                v.push(row.unwrap().get(0).unwrap());
+            while let Some(row) = rows.next().unwrap() {
+                v.push(row.get(0).unwrap());
             }
 
             assert_eq!(v, [3i32, 2, 1]);
@@ -1105,8 +1109,8 @@ mod test {
             let mut rows = query.query(&[3i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next() {
-                v.push(row.unwrap().get(0).unwrap());
+            while let Some(row) = rows.next().unwrap() {
+                v.push(row.get(0).unwrap());
             }
 
             assert_eq!(v, [2i32, 1]);
@@ -1127,8 +1131,7 @@ mod test {
 
         let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
         let results: Result<Vec<String>> = query
-            .query_map(NO_PARAMS, |row| row.get(1))
-            .unwrap()
+            .query(NO_PARAMS).unwrap().map(|row| row.get(1))
             .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");
@@ -1248,7 +1251,7 @@ mod test {
         {
             let mut rows = stmt.query(NO_PARAMS).unwrap();
             assert!(!db.is_busy());
-            let row = rows.next();
+            let row = rows.next().unwrap();
             assert!(db.is_busy());
             assert!(row.is_some());
         }
@@ -1317,7 +1320,7 @@ mod test {
             .prepare("SELECT interrupt() FROM (SELECT 1 UNION SELECT 2 UNION SELECT 3)")
             .unwrap();
 
-        let result: Result<Vec<i32>> = stmt.query_map(NO_PARAMS, |r| r.get(0)).unwrap().collect();
+        let result: Result<Vec<i32>> = stmt.query(NO_PARAMS).unwrap().map(|r| r.get(0)).collect();
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
@@ -1360,8 +1363,7 @@ mod test {
         let mut query = db.prepare("SELECT i, x FROM foo").unwrap();
         let mut rows = query.query(NO_PARAMS).unwrap();
 
-        while let Some(res) = rows.next() {
-            let row = res.unwrap();
+        while let Some(row) = rows.next().unwrap() {
             let i = row.get_raw(0).as_i64().unwrap();
             let expect = vals[i as usize];
             let x = row.get_raw("x").as_str().unwrap();

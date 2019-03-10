@@ -7,7 +7,7 @@ use std::slice::from_raw_parts;
 use std::{convert, fmt, mem, ptr, result, str};
 
 use super::ffi;
-use super::{str_to_cstring, str_for_sqlite, len_as_c_int};
+use super::{len_as_c_int, str_for_sqlite, str_to_cstring};
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
@@ -174,8 +174,7 @@ impl Statement<'_> {
     ///     let mut rows = stmt.query(NO_PARAMS)?;
     ///
     ///     let mut names = Vec::new();
-    ///     while let Some(result_row) = rows.next() {
-    ///         let row = result_row?;
+    ///     while let Some(row) = rows.next()? {
     ///         names.push(row.get(0)?);
     ///     }
     ///
@@ -209,7 +208,7 @@ impl Statement<'_> {
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(&[(":name", &"one")])?;
-    ///     while let Some(row) = rows.next() {
+    ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -224,7 +223,7 @@ impl Statement<'_> {
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(named_params!{ ":name": "one" })?;
-    ///     while let Some(row) = rows.next() {
+    ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -267,7 +266,7 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row<'_, '_>) -> Result<T>,
+        F: FnMut(&Row<'_>) -> Result<T>,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -306,7 +305,7 @@ impl Statement<'_> {
         f: F,
     ) -> Result<MappedRows<'_, F>>
     where
-        F: FnMut(&Row<'_, '_>) -> Result<T>,
+        F: FnMut(&Row<'_>) -> Result<T>,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -324,7 +323,7 @@ impl Statement<'_> {
         P: IntoIterator,
         P::Item: ToSql,
         E: convert::From<Error>,
-        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -375,7 +374,7 @@ impl Statement<'_> {
     ) -> Result<AndThenRows<'_, F>>
     where
         E: convert::From<Error>,
-        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -389,7 +388,7 @@ impl Statement<'_> {
         P::Item: ToSql,
     {
         let mut rows = self.query(params)?;
-        let exists = rows.next().is_some();
+        let exists = rows.next()?.is_some();
         Ok(exists)
     }
 
@@ -410,7 +409,7 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut rows = self.query(params)?;
 
@@ -507,13 +506,7 @@ impl Statement<'_> {
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
             ValueRef::Text(s) => unsafe {
                 let (c_str, len, destructor) = str_for_sqlite(s)?;
-                ffi::sqlite3_bind_text(
-                    ptr,
-                    col as c_int,
-                    c_str,
-                    len,
-                    destructor,
-                )
+                ffi::sqlite3_bind_text(ptr, col as c_int, c_str, len, destructor)
             },
             ValueRef::Blob(b) => unsafe {
                 let length = len_as_c_int(b.len())?;
@@ -786,7 +779,7 @@ mod test {
             .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
-        let id: Result<i32> = rows.next().unwrap().and_then(|row| row.get(0));
+        let id: Result<i32> = rows.next().unwrap().unwrap().get(0);
         assert_eq!(Ok(1), id);
     }
 

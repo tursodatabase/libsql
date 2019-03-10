@@ -171,7 +171,7 @@ impl Connection {
         f: F,
     ) -> Result<T>
     where
-        F: FnOnce(&Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut query = Sql::new();
         query.push_pragma(schema_name, pragma_name)?;
@@ -189,14 +189,14 @@ impl Connection {
         mut f: F,
     ) -> Result<()>
     where
-        F: FnMut(&Row<'_, '_>) -> Result<()>,
+        F: FnMut(&Row<'_>) -> Result<()>,
     {
         let mut query = Sql::new();
         query.push_pragma(schema_name, pragma_name)?;
         let mut stmt = self.prepare(&query)?;
         let mut rows = stmt.query(NO_PARAMS)?;
-        while let Some(result_row) = rows.next() {
-            let row = result_row?;
+        while let Some(result_row) = rows.next()? {
+            let row = result_row;
             f(&row)?;
         }
         Ok(())
@@ -219,7 +219,7 @@ impl Connection {
         mut f: F,
     ) -> Result<()>
     where
-        F: FnMut(&Row<'_, '_>) -> Result<()>,
+        F: FnMut(&Row<'_>) -> Result<()>,
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
@@ -231,8 +231,8 @@ impl Connection {
         sql.close_brace();
         let mut stmt = self.prepare(&sql)?;
         let mut rows = stmt.query(NO_PARAMS)?;
-        while let Some(result_row) = rows.next() {
-            let row = result_row?;
+        while let Some(result_row) = rows.next()? {
+            let row = result_row;
             f(&row)?;
         }
         Ok(())
@@ -269,7 +269,7 @@ impl Connection {
         f: F,
     ) -> Result<T>
     where
-        F: FnOnce(&Row<'_, '_>) -> Result<T>,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
@@ -385,8 +385,8 @@ mod test {
         let mut columns = Vec::new();
         let mut rows = table_info.query(&["sqlite_master"]).unwrap();
 
-        while let Some(row) = rows.next() {
-            let row = row.unwrap();
+        while let Some(row) = rows.next().unwrap() {
+            let row = row;
             let column: String = row.get(1).unwrap();
             columns.push(column);
         }
