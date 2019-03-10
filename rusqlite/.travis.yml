@@ -36,12 +36,13 @@ script:
   - cargo test --features trace
   - cargo test --features chrono
   - cargo test --features serde_json
+  - cargo test --features url
   - cargo test --features bundled
   - cargo test --features sqlcipher
   - cargo test --features i128_blob
   - cargo test --features "unlock_notify bundled"
   - cargo test --features "array bundled csvtab vtab"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab buildtime_bindgen"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab bundled"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab bundled buildtime_bindgen"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab buildtime_bindgen"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab bundled"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab bundled buildtime_bindgen"

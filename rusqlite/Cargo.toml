@@ -56,6 +56,7 @@ lru-cache = "0.1"
 chrono = { version = "0.4", optional = true }
 serde_json = { version = "1.0", optional = true }
 csv = { version = "1.0", optional = true }
+url = { version = "1.7", optional = true }
 lazy_static = { version = "1.0", optional = true }
 byteorder = { version = "1.2", features = ["i128"], optional = true }
 fallible-streaming-iterator = { version = "0.1", optional = true }
@@ -81,7 +82,7 @@ name = "deny_single_threaded_sqlite_config"
 name = "vtab"
 
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace", "vtab" ]
+features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
