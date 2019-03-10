@@ -1,6 +1,8 @@
+use fallible_iterator::FallibleIterator;
+use fallible_streaming_iterator::FallibleStreamingIterator;
 use std::{convert, result};
 
-use super::{Error, FallibleStreamingIterator, Result, Statement};
+use super::{Error, Result, Statement};
 use crate::types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
@@ -32,6 +34,13 @@ impl<'stmt> Rows<'stmt> {
         self.advance()?;
         Ok((*self).get())
     }
+
+    pub fn map<F, B>(self, f: F) -> Map<'stmt, F>
+    where
+        F: FnMut(&Row<'_>) -> Result<B>,
+    {
+        Map { rows: self, f: f }
+    }
 }
 
 impl<'stmt> Rows<'stmt> {
@@ -53,6 +62,26 @@ impl<'stmt> Rows<'stmt> {
 impl Drop for Rows<'_> {
     fn drop(&mut self) {
         self.reset();
+    }
+}
+
+pub struct Map<'stmt, F> {
+    rows: Rows<'stmt>,
+    f: F,
+}
+
+impl<F, B> FallibleIterator for Map<'_, F>
+where
+    F: FnMut(&Row<'_>) -> Result<B>,
+{
+    type Error = Error;
+    type Item = B;
+
+    fn next(&mut self) -> Result<Option<B>> {
+        match self.rows.next()? {
+            Some(v) => Ok(Some((self.f)(v)?)),
+            None => Ok(None),
+        }
     }
 }
 

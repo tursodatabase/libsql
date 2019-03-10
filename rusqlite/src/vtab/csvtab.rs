@@ -345,6 +345,7 @@ impl From<csv::Error> for Error {
 
 #[cfg(test)]
 mod test {
+    use fallible_iterator::FallibleIterator;
     use crate::vtab::csvtab;
     use crate::{Connection, Result, NO_PARAMS};
 
@@ -363,8 +364,7 @@ mod test {
             }
 
             let ids: Result<Vec<i32>> = s
-                .query_map(NO_PARAMS, |row| row.get::<_, i32>(0))
-                .unwrap()
+                .query(NO_PARAMS).unwrap().map(|row| row.get::<_, i32>(0))
                 .collect();
             let sum = ids.unwrap().iter().sum::<i32>();
             assert_eq!(sum, 15);

@@ -77,8 +77,6 @@ use std::str;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
-pub use fallible_streaming_iterator::FallibleStreamingIterator;
-
 use crate::cache::StatementCache;
 use crate::inner_connection::{InnerConnection, BYPASS_SQLITE_INIT};
 use crate::raw_statement::RawStatement;
@@ -846,6 +844,7 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod test {
+    use fallible_iterator::FallibleIterator;
     use self::tempdir::TempDir;
     pub use super::*;
     use crate::ffi;
@@ -1132,8 +1131,7 @@ mod test {
 
         let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
         let results: Result<Vec<String>> = query
-            .query_map(NO_PARAMS, |row| row.get(1))
-            .unwrap()
+            .query(NO_PARAMS).unwrap().map(|row| row.get(1))
             .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");
@@ -1322,7 +1320,7 @@ mod test {
             .prepare("SELECT interrupt() FROM (SELECT 1 UNION SELECT 2 UNION SELECT 3)")
             .unwrap();
 
-        let result: Result<Vec<i32>> = stmt.query_map(NO_PARAMS, |r| r.get(0)).unwrap().collect();
+        let result: Result<Vec<i32>> = stmt.query(NO_PARAMS).unwrap().map(|r| r.get(0)).collect();
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {

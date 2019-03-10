@@ -168,7 +168,7 @@ impl Statement<'_> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, FallibleStreamingIterator, Result, NO_PARAMS};
+    /// # use rusqlite::{Connection, Result, NO_PARAMS};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
     ///     let mut stmt = conn.prepare("SELECT name FROM people")?;
     ///     let mut rows = stmt.query(NO_PARAMS)?;
@@ -204,7 +204,7 @@ impl Statement<'_> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, FallibleStreamingIterator, Result};
+    /// # use rusqlite::{Connection, Result};
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(&[(":name", &"one")])?;
@@ -219,7 +219,7 @@ impl Statement<'_> {
     /// and so the above example could also be written as:
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, FallibleStreamingIterator, Result, named_params};
+    /// # use rusqlite::{Connection, Result, named_params};
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(named_params!{ ":name": "one" })?;
