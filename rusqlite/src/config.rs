@@ -25,12 +25,18 @@ pub enum DbConfig {
 impl Connection {
     /// Returns the current value of a `config`.
     ///
-    /// - SQLITE_DBCONFIG_ENABLE_FKEY: return `false` or `true` to indicate whether FK enforcement is off or on
-    /// - SQLITE_DBCONFIG_ENABLE_TRIGGER: return `false` or `true` to indicate whether triggers are disabled or enabled
-    /// - SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER: return `false` or `true` to indicate whether fts3_tokenizer are disabled or enabled
-    /// - SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE: return `false` to indicate checkpoints-on-close are not disabled or `true` if they are
-    /// - SQLITE_DBCONFIG_ENABLE_QPSG: return `false` or `true` to indicate whether the QPSG is disabled or enabled
-    /// - SQLITE_DBCONFIG_TRIGGER_EQP: return `false` to indicate output-for-trigger are not disabled or `true` if it is
+    /// - SQLITE_DBCONFIG_ENABLE_FKEY: return `false` or `true` to indicate
+    ///   whether FK enforcement is off or on
+    /// - SQLITE_DBCONFIG_ENABLE_TRIGGER: return `false` or `true` to indicate
+    ///   whether triggers are disabled or enabled
+    /// - SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER: return `false` or `true` to
+    ///   indicate whether fts3_tokenizer are disabled or enabled
+    /// - SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE: return `false` to indicate
+    ///   checkpoints-on-close are not disabled or `true` if they are
+    /// - SQLITE_DBCONFIG_ENABLE_QPSG: return `false` or `true` to indicate
+    ///   whether the QPSG is disabled or enabled
+    /// - SQLITE_DBCONFIG_TRIGGER_EQP: return `false` to indicate
+    ///   output-for-trigger are not disabled or `true` if it is
     pub fn db_config(&self, config: DbConfig) -> Result<bool> {
         let c = self.db.borrow();
         unsafe {
@@ -47,12 +53,18 @@ impl Connection {
 
     /// Make configuration changes to a database connection
     ///
-    /// - SQLITE_DBCONFIG_ENABLE_FKEY: `false` to disable FK enforcement, `true` to enable FK enforcement
-    /// - SQLITE_DBCONFIG_ENABLE_TRIGGER: `false` to disable triggers, `true` to enable triggers
-    /// - SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER: `false` to disable fts3_tokenizer(), `true` to enable fts3_tokenizer()
-    /// - SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE: `false` (the default) to enable checkpoints-on-close, `true` to disable them
-    /// - SQLITE_DBCONFIG_ENABLE_QPSG: `false` to disable the QPSG, `true` to enable QPSG
-    /// - SQLITE_DBCONFIG_TRIGGER_EQP: `false` to disable output for trigger programs, `true` to enable it
+    /// - SQLITE_DBCONFIG_ENABLE_FKEY: `false` to disable FK enforcement, `true`
+    ///   to enable FK enforcement
+    /// - SQLITE_DBCONFIG_ENABLE_TRIGGER: `false` to disable triggers, `true` to
+    ///   enable triggers
+    /// - SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER: `false` to disable
+    ///   fts3_tokenizer(), `true` to enable fts3_tokenizer()
+    /// - SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE: `false` (the default) to enable
+    ///   checkpoints-on-close, `true` to disable them
+    /// - SQLITE_DBCONFIG_ENABLE_QPSG: `false` to disable the QPSG, `true` to
+    ///   enable QPSG
+    /// - SQLITE_DBCONFIG_TRIGGER_EQP: `false` to disable output for trigger
+    ///   programs, `true` to enable it
     pub fn set_db_config(&self, config: DbConfig, new_val: bool) -> Result<bool> {
         let c = self.db.borrow_mut();
         unsafe {
@@ -78,11 +90,25 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
 
         let opposite = !db.db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY).unwrap();
-        assert_eq!(db.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY, opposite), Ok(opposite));
-        assert_eq!(db.db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY), Ok(opposite));
+        assert_eq!(
+            db.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY, opposite),
+            Ok(opposite)
+        );
+        assert_eq!(
+            db.db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY),
+            Ok(opposite)
+        );
 
-        let opposite = !db.db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER).unwrap();
-        assert_eq!(db.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER, opposite), Ok(opposite));
-        assert_eq!(db.db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER), Ok(opposite));
+        let opposite = !db
+            .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER)
+            .unwrap();
+        assert_eq!(
+            db.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER, opposite),
+            Ok(opposite)
+        );
+        assert_eq!(
+            db.db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER),
+            Ok(opposite)
+        );
     }
 }

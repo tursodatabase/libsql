@@ -346,7 +346,7 @@ impl From<csv::Error> for Error {
 #[cfg(test)]
 mod test {
     use crate::vtab::csvtab;
-    use crate::{Connection, FallibleStreamingIterator, Result, NO_PARAMS};
+    use crate::{Connection, Result, NO_PARAMS};
 
     #[test]
     fn test_csv_module() {
@@ -389,7 +389,7 @@ mod test {
 
             let mut rows = s.query(NO_PARAMS).unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<_, i32>(0), 2);
+            assert_eq!(row.get_unwrap::<_, i32>(0), 2);
         }
         db.execute_batch("DROP TABLE vtab").unwrap();
     }

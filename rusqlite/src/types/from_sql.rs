@@ -151,7 +151,7 @@ impl FromSql for bool {
 
 impl FromSql for String {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        value.as_str().map(|s| s.to_string())
+        value.as_str().map(ToString::to_string)
     }
 }
 
@@ -210,8 +210,7 @@ mod test {
         {
             for n in out_of_range {
                 let err = db
-                    .query_row("SELECT ?", &[n], |r| r.get_checked::<_, T>(0))
-                    .unwrap()
+                    .query_row("SELECT ?", &[n], |r| r.get::<_, T>(0))
                     .unwrap_err();
                 match err {
                     Error::IntegralValueOutOfRange(_, value) => assert_eq!(*n, value),

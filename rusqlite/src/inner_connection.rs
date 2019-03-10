@@ -5,11 +5,11 @@ use std::os::raw::c_int;
 use std::path::Path;
 use std::ptr;
 use std::str;
-use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once, ONCE_INIT};
 
 use super::ffi;
-use super::str_to_cstring;
+use super::{str_for_sqlite, str_to_cstring};
 use super::{Connection, InterruptHandle, OpenFlags, Result};
 use crate::error::{error_from_handle, error_from_sqlite_code, Error};
 use crate::raw_statement::RawStatement;
@@ -207,20 +207,16 @@ impl InnerConnection {
     }
 
     pub fn prepare<'a>(&mut self, conn: &'a Connection, sql: &str) -> Result<Statement<'a>> {
-        if sql.len() >= ::std::i32::MAX as usize {
-            return Err(error_from_sqlite_code(ffi::SQLITE_TOOBIG, None));
-        }
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
-        let c_sql = str_to_cstring(sql)?;
-        let len_with_nul = (sql.len() + 1) as c_int;
+        let (c_sql, len, _) = str_for_sqlite(sql)?;
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {
                 let mut rc;
                 loop {
                     rc = ffi::sqlite3_prepare_v2(
                         self.db(),
-                        c_sql.as_ptr(),
-                        len_with_nul,
+                        c_sql,
+                        len,
                         &mut c_stmt,
                         ptr::null_mut(),
                     );
@@ -234,13 +230,7 @@ impl InnerConnection {
                 }
                 rc
             } else {
-                ffi::sqlite3_prepare_v2(
-                    self.db(),
-                    c_sql.as_ptr(),
-                    len_with_nul,
-                    &mut c_stmt,
-                    ptr::null_mut(),
-                )
+                ffi::sqlite3_prepare_v2(self.db(), c_sql, len, &mut c_stmt, ptr::null_mut())
             }
         };
         self.decode_result(r)
@@ -292,7 +282,7 @@ impl Drop for InnerConnection {
 #[cfg(not(feature = "bundled"))]
 static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
 #[cfg(not(feature = "bundled"))]
-pub static BYPASS_VERSION_CHECK: AtomicBool = ATOMIC_BOOL_INIT;
+pub static BYPASS_VERSION_CHECK: AtomicBool = AtomicBool::new(false);
 
 #[cfg(not(feature = "bundled"))]
 fn ensure_valid_sqlite_version() {
@@ -339,7 +329,7 @@ rusqlite was built against SQLite {} but the runtime SQLite version is {}. To fi
 }
 
 static SQLITE_INIT: Once = ONCE_INIT;
-pub static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
+pub static BYPASS_SQLITE_INIT: AtomicBool = AtomicBool::new(false);
 
 fn ensure_safe_sqlite_threading_mode() -> Result<()> {
     // Ensure SQLite was compiled in thredsafe mode.

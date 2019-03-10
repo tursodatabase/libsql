@@ -152,7 +152,7 @@ impl StatementCache {
 #[cfg(test)]
 mod test {
     use super::StatementCache;
-    use crate::{Connection, FallibleStreamingIterator, NO_PARAMS};
+    use crate::{Connection, NO_PARAMS};
 
     impl StatementCache {
         fn clear(&self) {
@@ -277,9 +277,12 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
-                Ok(Some(&1i32)),
-                stmt.query(NO_PARAMS).unwrap().map(|r| r.get(0))
+                1i32,
+                stmt.query_map::<i32, _, _>(NO_PARAMS, |r| r.get(0))
+                    .unwrap()
                     .next()
+                    .unwrap()
+                    .unwrap()
             );
         }
 
@@ -294,9 +297,12 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
-                Ok(Some(&(1i32, 2i32))),
-                stmt.query(NO_PARAMS).unwrap().map(|r| (r.get(0), r.get(1)))
+                (1i32, 2i32),
+                stmt.query_map(NO_PARAMS, |r| Ok((r.get(0)?, r.get(1)?)))
+                    .unwrap()
                     .next()
+                    .unwrap()
+                    .unwrap()
             );
         }
     }

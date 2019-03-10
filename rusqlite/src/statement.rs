@@ -7,10 +7,9 @@ use std::slice::from_raw_parts;
 use std::{convert, fmt, mem, ptr, result, str};
 
 use super::ffi;
-use super::str_to_cstring;
+use super::{len_as_c_int, str_for_sqlite, str_to_cstring};
 use super::{
-    AndThenRows, Connection, Error, FallibleStreamingIterator, MappedRows, RawStatement, Result,
-    Row, Rows, ValueRef,
+    AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
 use crate::types::{ToSql, ToSqlOutput};
 #[cfg(feature = "array")]
@@ -176,7 +175,7 @@ impl Statement<'_> {
     ///
     ///     let mut names = Vec::new();
     ///     while let Some(row) = rows.next()? {
-    ///         names.push(row.get(0));
+    ///         names.push(row.get(0)?);
     ///     }
     ///
     ///     Ok(names)
@@ -267,7 +266,7 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row<'_>) -> T,
+        F: FnMut(&Row<'_>) -> Result<T>,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -306,7 +305,7 @@ impl Statement<'_> {
         f: F,
     ) -> Result<MappedRows<'_, F>>
     where
-        F: FnMut(&Row<'_>) -> T,
+        F: FnMut(&Row<'_>) -> Result<T>,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -354,7 +353,7 @@ impl Statement<'_> {
     /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
     ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = :id")?;
     ///     let rows =
-    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)))?;
+    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)?))?;
     ///
     ///     let mut persons = Vec::new();
     ///     for person_result in rows {
@@ -410,11 +409,11 @@ impl Statement<'_> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_>) -> T,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut rows = self.query(params)?;
 
-        rows.get_expected_row().map(|r| f(&r))
+        rows.get_expected_row().and_then(|r| f(&r))
     }
 
     /// Consumes the statement.
@@ -506,37 +505,19 @@ impl Statement<'_> {
             ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col as c_int, i) },
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
             ValueRef::Text(s) => unsafe {
-                let length = s.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else {
-                    let c_str = str_to_cstring(s)?;
-                    let destructor = if length > 0 {
-                        ffi::SQLITE_TRANSIENT()
-                    } else {
-                        ffi::SQLITE_STATIC()
-                    };
-                    ffi::sqlite3_bind_text(
-                        ptr,
-                        col as c_int,
-                        c_str.as_ptr(),
-                        length as c_int,
-                        destructor,
-                    )
-                }
+                let (c_str, len, destructor) = str_for_sqlite(s)?;
+                ffi::sqlite3_bind_text(ptr, col as c_int, c_str, len, destructor)
             },
             ValueRef::Blob(b) => unsafe {
-                let length = b.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else if length == 0 {
+                let length = len_as_c_int(b.len())?;
+                if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
                     ffi::sqlite3_bind_blob(
                         ptr,
                         col as c_int,
                         b.as_ptr() as *const c_void,
-                        length as c_int,
+                        length,
                         ffi::SQLITE_TRANSIENT(),
                     )
                 }
@@ -732,7 +713,7 @@ pub enum StatementStatus {
 #[cfg(test)]
 mod test {
     use crate::types::ToSql;
-    use crate::{Connection, Error, FallibleStreamingIterator, Result, NO_PARAMS};
+    use crate::{Connection, Error, Result, NO_PARAMS};
 
     #[test]
     fn test_execute_named() {
@@ -798,8 +779,8 @@ mod test {
             .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
-        let id: i32 = rows.next().unwrap().unwrap().get(0);
-        assert_eq!(1, id);
+        let id: Result<i32> = rows.next().unwrap().unwrap().get(0);
+        assert_eq!(Ok(1), id);
     }
 
     #[test]
@@ -815,12 +796,14 @@ mod test {
             .prepare("SELECT id FROM test where name = :name")
             .unwrap();
         let mut rows = stmt
-            .query_named(&[(":name", &"one")]).unwrap().map(|row| {
-                let id: i32 = row.get(0);
-                2 * id
-            });
+            .query_map_named(&[(":name", &"one")], |row| {
+                let id: Result<i32> = row.get(0);
+                id.map(|i| 2 * i)
+            })
+            .unwrap();
 
-        assert_eq!(Ok(Some(&2)), rows.next());
+        let doubled_id: i32 = rows.next().unwrap().unwrap();
+        assert_eq!(2, doubled_id);
     }
 
     #[test]
@@ -838,7 +821,7 @@ mod test {
             .unwrap();
         let mut rows = stmt
             .query_and_then_named(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0);
+                let id: i32 = row.get(0)?;
                 if id == 1 {
                     Ok(id)
                 } else {
