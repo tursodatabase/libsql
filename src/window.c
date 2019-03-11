@@ -1559,17 +1559,28 @@ static void windowCodeRangeTest(
   Vdbe *v = sqlite3GetVdbe(pParse);
   int reg1 = sqlite3GetTempReg(pParse);
   int reg2 = sqlite3GetTempReg(pParse);
+  int arith = OP_Add;
+
+  assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
+  assert( p->pMWin->pOrderBy && p->pMWin->pOrderBy->nExpr==1 );
+  if( p->pMWin->pOrderBy->a[0].sortOrder ){
+    switch( op ){
+      case OP_Ge: op = OP_Le; break;
+      case OP_Gt: op = OP_Lt; break;
+      default: assert( op==OP_Le ); op = OP_Ge; break;
+    }
+    arith = OP_Subtract;
+  }
+
   windowReadPeerValues(p, csr1, reg1);
   windowReadPeerValues(p, csr2, reg2);
-  sqlite3VdbeAddOp3(v, OP_Add, reg1, regVal, reg1);
+  sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1);
   sqlite3VdbeAddOp2(v, OP_Rowid, csr1, reg1);
   sqlite3VdbeAddOp2(v, OP_Rowid, csr2, reg2);
   sqlite3VdbeAddOp3(v, OP_Gt, reg2, lbl, reg1);
   sqlite3ReleaseTempReg(pParse, reg1);
   sqlite3ReleaseTempReg(pParse, reg2);
-
-  assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );
 }
 
 static int windowCodeOp(

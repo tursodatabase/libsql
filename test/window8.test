@@ -439,19 +439,32 @@ do_execsql_test 2.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a INTEGER, b INTEGER);
   INSERT INTO t1 VALUES
-      (13, 26), (15, 30);
+      (5, 10), (10, 20), (13, 26), (13, 26), 
+      (15, 30), (20, 40), (22,80), (30, 90);
 } {}
 
 do_execsql_test 2.1 {
   SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING )
-} {13 56   15 56}
+} {5 30   10 112   13 102   13 102   15 142   20 150   22 120   30 90}
 
 do_execsql_test 2.2 {
   SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 10 PRECEDING AND 5 PRECEDING )
-} {13 {}   15 {}}
+} {5 {}   10 10   13 10   13 10   15 30   20 102   22 82   30 120}
 
 do_execsql_test 2.3 {
   SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 2 FOLLOWING AND 3 FOLLOWING )
-} {13 30   15 {}}
+} {5 {}   10 52   13 30   13 30   15 {}   20 80   22 {}   30 {}}
+
+do_execsql_test 2.4 {
+  SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING )
+} {30 90   22 120   20 150   15 142   13 102   13 102   10 112   5 30}
+
+do_execsql_test 2.5 {
+  SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 10 PRECEDING AND 5 PRECEDING )
+} {30 {}   22 90   20 90   15 120   13 120   13 120   10 70   5 102}
+
+do_execsql_test 2.6 {
+  SELECT a, sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 2 FOLLOWING AND 3 FOLLOWING )
+} {30 {}   22 40   20 {}   15 52   13 20   13 20   10 {}   5 {}}
 
 finish_test
