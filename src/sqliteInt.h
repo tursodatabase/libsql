@@ -1691,7 +1691,6 @@ struct FuncDestructor {
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
-#define SQLITE_FUNC_WINDOW_SIZE 0x20000 /* Requires partition size as arg. */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 
 /*
@@ -3577,9 +3576,7 @@ struct Window {
   Expr *pOwner;           /* Expression object this window is attached to */
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
-
   int regFirst;
-  int regSize;
 };
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
