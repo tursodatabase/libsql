@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sbug\sin\sthe\sMakefile.
-D 2019-03-08T20:26:12.981
+C Fix\sa\scrash\sthat\scould\soccur\sif\sthe\sRHS\sof\san\sIN\sexpression\sis\sa\scorrelated\ssub-query\sthat\srefers\sto\sthe\souter\squery\sfrom\swithin\sa\swindow\sframe\sdefinition\sonly.
+D 2019-03-12T09:49:10.588
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -603,7 +603,7 @@ F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c ce7b21e1be2b981d62683fc59c4ca73a04a7ff2f1ebec23d41baf2da2349afd6
-F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
+F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
 F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1676,7 +1676,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test d141eba02ee4d7441dcb45148d776aded21992e8de6ddbbe2aae8151e5fad45e
+F test/window1.test 53db04133c48065c7554cb7195b0d23b879feb2dc9dacf0945a259c423687133
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl 577a3b1ff913208e5248c04dab9df17fd760ce159a752789e26d0cb4a5f91823
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97bdc090f30610cc5dd29101452d1647550387f9c6f742e50f1e07c3cf68a147
-R e38aa4b66cd269b29252cf26ddab05d5
-U drh
-Z 728bf8d37c934f85cf7e41786d45a23f
+P 62ac9cb07f5f2d14e716cd0f99f3f2fd34f6c9b4303619be8dfbca2eecf5b727
+R f78918e0b364121e19ff80946d925c4e
+U dan
+Z 7d7161881019dbf0683fedbc71abbce6
