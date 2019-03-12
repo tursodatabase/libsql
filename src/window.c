@@ -1168,6 +1168,12 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
   }
 }
 
+#define WINDOW_STARTING_INT  0
+#define WINDOW_ENDING_INT    1
+#define WINDOW_NTH_VALUE_INT 2
+#define WINDOW_STARTING_NUM  3
+#define WINDOW_ENDING_NUM    4
+
 /*
 ** A "PRECEDING <expr>" (eCond==0) or "FOLLOWING <expr>" (eCond==1) or the
 ** value of the second argument to nth_value() (eCond==2) has just been
@@ -1175,18 +1181,21 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
 ** code to check that the value is a non-negative integer and throws an
 ** exception if it is not.
 */
-static void windowCheckIntValue(Parse *pParse, int reg, int eCond){
+static void windowCheckValue(Parse *pParse, int reg, int eCond){
   static const char *azErr[] = {
     "frame starting offset must be a non-negative integer",
     "frame ending offset must be a non-negative integer",
-    "second argument to nth_value must be a positive integer"
+    "second argument to nth_value must be a positive integer",
+    "frame starting offset must be a non-negative number",
+    "frame ending offset must be a non-negative number",
   };
-  static int aOp[] = { OP_Ge, OP_Ge, OP_Gt };
+  static int aOp[] = { OP_Ge, OP_Ge, OP_Gt, OP_Ge, OP_Ge };
   Vdbe *v = sqlite3GetVdbe(pParse);
   int regZero = sqlite3GetTempReg(pParse);
-  assert( eCond==0 || eCond==1 || eCond==2 );
+  assert( eCond>=0 && eCond<ArraySize(azErr) );
   sqlite3VdbeAddOp2(v, OP_Integer, 0, regZero);
   sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
+  if( eCond>=WINDOW_STARTING_NUM ) sqlite3VdbeChangeP5(v, 1);
   VdbeCoverageIf(v, eCond==0);
   VdbeCoverageIf(v, eCond==1);
   VdbeCoverageIf(v, eCond==2);
@@ -1383,7 +1392,7 @@ static void windowReturnOneRow(
 
       if( pFunc->zName==nth_valueName ){
         sqlite3VdbeAddOp3(v, OP_Column, pMWin->iEphCsr, pWin->iArgCol+1,tmpReg);
-        windowCheckIntValue(pParse, tmpReg, 2);
+        windowCheckValue(pParse, tmpReg, 2);
       }else{
         sqlite3VdbeAddOp2(v, OP_Integer, 1, tmpReg);
       }
@@ -2214,11 +2223,11 @@ void sqlite3WindowCodeStep(
 
   if( regStart ){
     sqlite3ExprCode(pParse, pMWin->pStart, regStart);
-    windowCheckIntValue(pParse, regStart, 0);
+    windowCheckValue(pParse, regStart, 0 + (pMWin->eType==TK_RANGE ? 3 : 0));
   }
   if( regEnd ){
     sqlite3ExprCode(pParse, pMWin->pEnd, regEnd);
-    windowCheckIntValue(pParse, regEnd, 1);
+    windowCheckValue(pParse, regEnd, 1 + (pMWin->eType==TK_RANGE ? 3 : 0));
   }
 
   if( pMWin->eStart==pMWin->eEnd && regStart && regEnd ){
