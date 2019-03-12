@@ -1,5 +1,5 @@
-C Remove\s"cache\smode"\sfrom\sthe\swindow\sframe\scode\sgenerator.\sHandle\sthe\ssame\scases\sby\sediting\sthe\swindow\sframe\sspecification\sitself.
-D 2019-03-11T19:50:54.722
+C Expand\son\sheader\scomment\sfor\ssqlite3WindowCodeStep().\sFurther\ssimplify\sthe\simplementation\sof\sthe\ssame.
+D 2019-03-12T15:21:51.703
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -604,7 +604,7 @@ F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c ce7b21e1be2b981d62683fc59c4ca73a04a7ff2f1ebec23d41baf2da2349afd6
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
-F src/window.c f41e0b36e6c26aa8b858f488498aa8152d6441a09c0e96baa5979269e1f0d199
+F src/window.c 4763c2e81e8bb5d79fc378ba650cfcf076653d78065bd85790d592d441c9ae7a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1812,7 +1812,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bd1a07949ff3d394056bfcc813444401ef00806e3f0e0423ff6962541e84bdb
-R 895a04edfc289d379068084b0a252ef5
+P 081263538332bb9c07e62630629007ccbba31bef5dc890f60b4ba58a355f70ac
+R b359af1c195991083b8f00df3e4dfe08
 U dan
-Z ab8b6521d2f2f661581dab04391f3c9a
+Z 98fef6b18eded687d4fe3a47cb60a7a7
