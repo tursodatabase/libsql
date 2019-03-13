@@ -2114,7 +2114,6 @@ void sqlite3WindowCodeStep(
   Window *pMWin = p->pWin;
   ExprList *pOrderBy = pMWin->pOrderBy;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int regFlushPart;               /* Register for "Gosub flush_partition" */
   int csrWrite;                   /* Cursor used to write to eph. table */
   int csrInput = p->pSrc->a[0].iCursor;     /* Cursor of sub-select */
   int nInput = p->pSrc->a[0].pTab->nCol;    /* Number of cols returned by sub */
@@ -2122,7 +2121,7 @@ void sqlite3WindowCodeStep(
   int addrIfNot;                  /* Address of OP_IfNot */
   int addrGosubFlush;             /* Address of OP_Gosub to flush: */
   int addrInteger;                /* Address of OP_Integer */
-  int addrEmpty = 0;              /* Address of OP_Rewind in flush: */
+  int addrEmpty;                  /* Address of OP_Rewind in flush: */
   int regStart = 0;               /* Value of <expr> PRECEDING */
   int regEnd = 0;                 /* Value of <expr> FOLLOWING */
   int regNew;                     /* Array of registers holding new input row */
@@ -2130,6 +2129,7 @@ void sqlite3WindowCodeStep(
   int regRowid;                   /* Rowid for regRecord in eph table */
   int regNewPeer = 0;             /* Peer values for new row (part of regNew) */
   int regPeer = 0;                /* Peer values for current row */
+  int regFlushPart = 0;           /* Register for "Gosub flush_partition" */
   WindowCodeArg s;                /* Context object for sub-routines */
   int lblWhereEnd;                /* Label just before sqlite3WhereEnd() code */
 
@@ -2154,11 +2154,13 @@ void sqlite3WindowCodeStep(
   s.start.csr = s.current.csr+2;
   s.end.csr = s.current.csr+3;
 
+  /* Allocate registers for the array of values from the sub-query, the
+  ** samve values in record form, and the rowid used to insert said record
+  ** into the ephemeral table.  */
   regNew = pParse->nMem+1;
   pParse->nMem += nInput;
   regRecord = ++pParse->nMem;
   regRowid = ++pParse->nMem;
-  regFlushPart = ++pParse->nMem;
 
   /* If the window frame contains an "<expr> PRECEDING" or "<expr> FOLLOWING"
   ** clause, allocate registers to store the results of evaluating each
@@ -2203,6 +2205,7 @@ void sqlite3WindowCodeStep(
     int regNewPart = regNew + pMWin->nBufferCol;
     KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pPart, 0, 0);
 
+    regFlushPart = ++pParse->nMem;
     addr = sqlite3VdbeAddOp3(v, OP_Compare, regNewPart, pMWin->regPart, nPart);
     sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
     sqlite3VdbeAddOp3(v, OP_Jump, addr+2, addr+4, addr+2);
