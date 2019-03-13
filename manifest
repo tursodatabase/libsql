@@ -1,5 +1,5 @@
-C When\sdeserializing\sa\sdatabase\s(sqlite3_deserialize()),\sdo\snot\sattempt\sto\sparse\sthe\sschema\sbefore\sthe\sdata\sis\sloaded.
-D 2019-03-13T11:40:30.869
+C New\stest\scases\sadded\sto\stest/fuzzdata8.db
+D 2019-03-13T13:19:05.629
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -993,7 +993,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 7b04dfb4e2e28f7174d0b83920ee564ebb5261e23f0b843c383a7868788a300c
-F test/fuzzdata8.db 7078218ccbb313302199c83e08df28970685d0b6ad21e2c4d02c4df6453ca3af
+F test/fuzzdata8.db 4451d0dd309e51b38e48a768364dab735b5d9c29bbd2bde2e41fc795906a3a76
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4f0568fde1d4070e7522ec36c0958be7426076002a7fa2da12a46411ab2e92d
-R 28c4ad3dde6d7aec82a4c48dd1580e74
-U dan
-Z 408d5c8f93fbd7f52078e3dfa65eb9dc
+P 4e1b005e8b397a22161a6b89cbd3f17bda70a6e0a86d8abdc61856edf2a74da4
+R 72bf5085eb8ad2e7341fed5987ec95cf
+U drh
+Z d6a52f5ceaf622e4596e35b74cc6b2d3
