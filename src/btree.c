@@ -1573,7 +1573,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     }
     iAddr = pc;
     pc = get2byte(&aData[pc]);
-    if( pc<iAddr+size ){
+    if( pc<=iAddr+size ){
       if( pc ){
         /* The next slot in the chain is not past the end of the current slot */
         *pRc = SQLITE_CORRUPT_PAGE(pPg);
