@@ -1118,12 +1118,14 @@ int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
 void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
   Window *pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int nPart = (pMWin->pPartition ? pMWin->pPartition->nExpr : 0);
-  nPart += (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
-  if( nPart ){
+
+  /* Allocate registers to use for PARTITION BY values, if any. Initialize
+  ** said registers to NULL.  */
+  if( pMWin->pPartition ){
+    int nExpr = pMWin->pPartition->nExpr;
     pMWin->regPart = pParse->nMem+1;
-    pParse->nMem += nPart;
-    sqlite3VdbeAddOp3(v, OP_Null, 0, pMWin->regPart, pMWin->regPart+nPart-1);
+    pParse->nMem += nExpr;
+    sqlite3VdbeAddOp3(v, OP_Null, 0, pMWin->regPart, pMWin->regPart+nExpr-1);
   }
 
   pMWin->regFirst = ++pParse->nMem;
@@ -2111,6 +2113,8 @@ Window *sqlite3WindowListDup(sqlite3 *db, Window *p){
 **         RETURN_ROW
 **       }
 **
+** The text above leaves out many details. Refer to the code and comments
+** below for a more complete picture.
 */
 void sqlite3WindowCodeStep(
   Parse *pParse,                  /* Parse context */
@@ -2302,8 +2306,6 @@ void sqlite3WindowCodeStep(
   sqlite3VdbeAddOp2(v, OP_Integer, 0, pMWin->regFirst);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
 
-  /* Begin generating SECOND_ROW_CODE */
-  VdbeModuleComment((pParse->pVdbe, "Begin WindowCodeStep.SECOND_ROW"));
   sqlite3VdbeJumpHere(v, addrIfNot);
   if( regPeer ){
     windowIfNewPeer(pParse, pOrderBy, regNewPeer, regPeer, lblWhereEnd);
@@ -2354,7 +2356,6 @@ void sqlite3WindowCodeStep(
       }
     }
   }
-  VdbeModuleComment((pParse->pVdbe, "End WindowCodeStep.SECOND_ROW"));
 
   /* End of the main input loop */
   sqlite3VdbeResolveLabel(v, lblWhereEnd);
@@ -2366,7 +2367,6 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeJumpHere(v, addrGosubFlush);
   }
 
-  VdbeModuleComment((pParse->pVdbe, "Begin WindowCodeStep.FLUSH"));
   addrEmpty = sqlite3VdbeAddOp1(v, OP_Rewind, csrWrite);
   if( pMWin->eEnd==TK_PRECEDING ){
     windowCodeOp(&s, WINDOW_AGGSTEP, regEnd, 0);
@@ -2413,7 +2413,6 @@ void sqlite3WindowCodeStep(
 
   sqlite3VdbeAddOp1(v, OP_ResetSorter, s.current.csr);
   sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regFirst);
-  VdbeModuleComment((pParse->pVdbe, "End WindowCodeStep.FLUSH"));
   if( pMWin->pPartition ){
     sqlite3VdbeChangeP1(v, addrInteger, sqlite3VdbeCurrentAddr(v));
     sqlite3VdbeAddOp1(v, OP_Return, regFlushPart);

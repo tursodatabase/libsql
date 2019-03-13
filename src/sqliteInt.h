@@ -3571,8 +3571,7 @@ struct Window {
   int regResult;
   int csrApp;             /* Function cursor (used by min/max) */
   int regApp;             /* Function register (also used by min/max) */
-  int regPart;            /* First in a set of registers holding PARTITION BY
-                          ** and ORDER BY values for the window */
+  int regPart;            /* Array of registers for PARTITION BY values */
   Expr *pOwner;           /* Expression object this window is attached to */
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
