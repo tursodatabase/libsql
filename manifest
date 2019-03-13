@@ -1,5 +1,5 @@
-C Minor\soptimization\sin\ssqlite3WindowCodeStep().
-D 2019-03-13T08:28:51.566
+C Remove\srows\sfrom\sthe\sephemeral\stable\sused\sby\swindow\sfunctions\sonce\sthey\sare\sno\slonger\srequired.
+D 2019-03-13T15:29:14.931
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -456,7 +456,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 51ff9c432f55f7fb8dca32d96707bc191327c1e29b1b83769d3ff6486df3948b
+F src/btree.c 3aa86a5230912958908564b465b0893e5fa98aac61cd255591f8fe58c85390a6
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 3acec29b23948042173301a8befebae01a98344debf66cbd4467c8b9077707b8
@@ -604,7 +604,7 @@ F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c ce7b21e1be2b981d62683fc59c4ca73a04a7ff2f1ebec23d41baf2da2349afd6
 F src/whereexpr.c 36b47f7261d6b6f1a72d774c113b74beddf6745aba1018e64b196e29db233442
-F src/window.c ac687a055121a757d951584285d1ae4554245f98cd17f6092118b29c17340d8f
+F src/window.c e05db1c6684a5ee877c930edbb7186e887bbcd756124db6dc4bf423f6f5a10fd
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1812,7 +1812,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25ff7091cb12c63b1864ce68a9151f8432af5804b5ae905a2175761ab4b9fdd8
-R 8c316b11f34d1b1237d8105ff52ba315
+P b1322ffb6e63a110998068bf4f0a903028bd4fc0464ae1e517d745fb46423f39
+R ab6734715fa673e5e023d8c418a37782
 U dan
-Z b674509c0d99256be9c341d8d5499a74
+Z ae82d7d89959a9f160b7f989622338e5

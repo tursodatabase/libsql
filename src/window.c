@@ -611,6 +611,7 @@ void sqlite3WindowUpdate(
         { cume_distName,    TK_GROUPS, TK_FOLLOWING, TK_UNBOUNDED }, 
         { ntileName,        TK_ROWS,   TK_CURRENT,   TK_UNBOUNDED }, 
         { leadName,         TK_ROWS,   TK_UNBOUNDED, TK_UNBOUNDED }, 
+        { lagName,          TK_ROWS,   TK_UNBOUNDED, TK_CURRENT }, 
       };
       int i;
       for(i=0; i<ArraySize(aUp); i++){
@@ -1472,7 +1473,6 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
   return regArg;
 }
 
-#if 0
 /* 
 ** Return true if the current frame should be cached in the ephemeral table,
 ** even if there are no xInverse() calls required.
@@ -1483,7 +1483,7 @@ static int windowCacheFrame(Window *pMWin){
     FuncDef *pFunc = pWin->pFunc;
     if( (pFunc->zName==nth_valueName)
      || (pFunc->zName==first_valueName)
-     || (pFunc->zName==leadName) */
+     || (pFunc->zName==leadName)
      || (pFunc->zName==lagName)
     ){
       return 1;
@@ -1491,7 +1491,6 @@ static int windowCacheFrame(Window *pMWin){
   }
   return 0;
 }
-#endif
 
 /*
 ** regOld and regNew are each the first register in an array of size
@@ -1532,6 +1531,7 @@ struct WindowCsrAndReg {
   int csr;
   int reg;
 };
+
 struct WindowCodeArg {
   Parse *pParse;
   Window *pMWin;
@@ -1539,12 +1539,16 @@ struct WindowCodeArg {
   int regGosub;
   int addrGosub;
   int regArg;
+  int eDelete;
 
   WindowCsrAndReg start;
   WindowCsrAndReg current;
   WindowCsrAndReg end;
 };
 
+/*
+** Values that may be passed as the second argument to windowCodeOp().
+*/
 #define WINDOW_RETURN_ROW 1
 #define WINDOW_AGGINVERSE 2
 #define WINDOW_AGGSTEP    3
@@ -1701,6 +1705,11 @@ static int windowCodeOp(
       break;
   }
 
+  if( op==p->eDelete ){
+    sqlite3VdbeAddOp1(v, OP_Delete, csr);
+    sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
+  }
+
   if( jumpOnEof ){
     sqlite3VdbeAddOp2(v, OP_Next, csr, sqlite3VdbeCurrentAddr(v)+2);
     ret = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -1712,7 +1721,6 @@ static int windowCodeOp(
   }
 
   if( bPeer ){
-    int addr;
     int nReg = (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
     int regTmp = (nReg ? sqlite3GetTempRange(pParse, nReg) : 0);
     windowReadPeerValues(p, csr, regTmp);
@@ -2153,6 +2161,37 @@ void sqlite3WindowCodeStep(
   csrWrite = s.current.csr+1;
   s.start.csr = s.current.csr+2;
   s.end.csr = s.current.csr+3;
+
+  /* Figure out when rows may be deleted from the ephemeral table. There
+  ** are four options - they may never be deleted (eDelete==0), they may 
+  ** be deleted as soon as they are no longer part of the window frame
+  ** (eDelete==WINDOW_AGGINVERSE), they may be deleted as after the row 
+  ** has been returned to the caller (WINDOW_RETURN_ROW), or they may
+  ** be deleted after they enter the frame (WINDOW_AGGSTEP). */
+  switch( pMWin->eStart ){
+    case TK_FOLLOWING: {
+      sqlite3 *db = pParse->db;
+      sqlite3_value *pVal = 0;
+      sqlite3ValueFromExpr(db, pMWin->pStart, db->enc,SQLITE_AFF_NUMERIC,&pVal);
+      if( pVal && sqlite3_value_int(pVal)>0 ){
+        s.eDelete = WINDOW_RETURN_ROW;
+      }
+      sqlite3ValueFree(pVal);
+      break;
+    }
+    case TK_UNBOUNDED:
+      if( windowCacheFrame(pMWin)==0 ){
+        if( pMWin->eEnd==TK_PRECEDING ){
+          s.eDelete = WINDOW_AGGSTEP;
+        }else{
+          s.eDelete = WINDOW_RETURN_ROW;
+        }
+      }
+      break;
+    default:
+      s.eDelete = WINDOW_AGGINVERSE;
+      break;
+  }
 
   /* Allocate registers for the array of values from the sub-query, the
   ** samve values in record form, and the rowid used to insert said record
