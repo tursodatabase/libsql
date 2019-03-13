@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scould\soccur\sif\sthe\sRHS\sof\san\sIN\sexpression\sis\sa\scorrelated\ssub-query\sthat\srefers\sto\sthe\souter\squery\sfrom\swithin\sa\swindow\sframe\sdefinition\sonly.
-D 2019-03-12T09:49:10.588
+C Detect\szero-length\sfree\sslots\son\sbtree\spages\sand\sreport\sthat\sas\scorruption.
+D 2019-03-13T10:29:16.433
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -456,7 +456,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 51ff9c432f55f7fb8dca32d96707bc191327c1e29b1b83769d3ff6486df3948b
+F src/btree.c 4c09765664b0baecce2a35529c86d004fc9a1524c1fa4c94d5b72e04908b43e7
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 3acec29b23948042173301a8befebae01a98344debf66cbd4467c8b9077707b8
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62ac9cb07f5f2d14e716cd0f99f3f2fd34f6c9b4303619be8dfbca2eecf5b727
-R f78918e0b364121e19ff80946d925c4e
-U dan
-Z 7d7161881019dbf0683fedbc71abbce6
+P 0524aaaf45681437c2dca3d31ff26a65bee7bd2074730277c29136635ee0be0f
+R 2a0639499790296cac8f1196b2abf969
+U drh
+Z 96361658abec8da0d4f99b5cce724c5b
