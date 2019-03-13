@@ -1,5 +1,5 @@
-C New\stest\scases\sadded\sto\stest/fuzzdata8.db
-D 2019-03-13T13:19:05.629
+C Improvements\sto\sthe\ssqlite3_db_filename()\sAPI\sdocumentation.\s\sNo\scode\schanges.
+D 2019-03-13T23:51:05.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -517,7 +517,7 @@ F src/resolve.c 09419ad5c432190b69be7c0c326e03abb548a97c2c50675b81b459e1b382d1d2
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9263f5c30dd44c7ac2eb29f40a7ec64322a96885b71c00de6bc30b756c2e1c49
 F src/shell.c.in 01c0cc01391d00d247fdf640052d38c267fc16d975bc4f3154a02277c232dbeb
-F src/sqlite.h.in 02be315feaf20c06028aacf3b032b5e7211e9aae066284eef77b081646b43ea0
+F src/sqlite.h.in c4b05fbafbcd28ad4f0a7f7c204108d10879d83b595fbb6ba321dc942dbe8f34
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
 F src/sqliteInt.h f253c4ec15e577a293a462e5049f8ea1d0c7a31819b3a88acdd24698df8f4d0b
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e1b005e8b397a22161a6b89cbd3f17bda70a6e0a86d8abdc61856edf2a74da4
-R 72bf5085eb8ad2e7341fed5987ec95cf
+P 049e9926202317f58c54b6351ff120fb69bf821f409909b1a1c5e335c0396707
+R 39c174379b5366cfc858dc478a80ca32
 U drh
-Z d6a52f5ceaf622e4596e35b74cc6b2d3
+Z 8e6e583280280788d9483d2f649c2e61
