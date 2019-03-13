@@ -1,5 +1,5 @@
-C Detect\szero-length\sfree\sslots\son\sbtree\spages\sand\sreport\sthat\sas\scorruption.
-D 2019-03-13T10:29:16.433
+C When\sdeserializing\sa\sdatabase\s(sqlite3_deserialize()),\sdo\snot\sattempt\sto\sparse\sthe\sschema\sbefore\sthe\sdata\sis\sloaded.
+D 2019-03-13T11:40:30.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -451,7 +451,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cb691d6cd330312b7951c9d3bc0bc29804bbe80beac1cdd137d824b119b6f28a
 F src/analyze.c 58db66344a5c58dcabb57f26696f6f2993956c830446da40b444051d2fdaf644
-F src/attach.c 3f9b0f6c79500cc40f4e543bc130a0b4ee13f52b45cbb6735608776cbdb79f0e
+F src/attach.c 732d45dbf802b79f66503614a23e862887231d4d4937eac7c28a92c6fdb78e1f
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -758,7 +758,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test 0f64242b83db6d0bd5b6e38c205bf7c2a3bc6c9f80351f49c4dee1639aca60d8
+F test/corruptL.test 2d85d5581f4de7cad3c1ff2016a1880646ef041b3c03e673ee9f1b80376dde8f
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/countofview.test e3d4cd6900e4e4f074968ab24b8b87d3671cd624961bef40fd3a6b8f574343cf
@@ -1124,7 +1124,7 @@ F test/malloctraceviewer.tcl b7a54595270c1d201abf1c3f3d461f27eaf24cdef623ad08a0f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test 0632e6ea56c48e3c6e9b0c73e120310bad8f93762543f809e267888f5a37943f
+F test/memdb1.test 86fe8f259c5aa0b3118cf78a5a895882c4f398497ad5ea5d08f6604145eac685
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0524aaaf45681437c2dca3d31ff26a65bee7bd2074730277c29136635ee0be0f
-R 2a0639499790296cac8f1196b2abf969
-U drh
-Z 96361658abec8da0d4f99b5cce724c5b
+P c4f0568fde1d4070e7522ec36c0958be7426076002a7fa2da12a46411ab2e92d
+R 28c4ad3dde6d7aec82a4c48dd1580e74
+U dan
+Z 408d5c8f93fbd7f52078e3dfa65eb9dc
