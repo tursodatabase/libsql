@@ -3561,6 +3561,7 @@ struct Window {
   u8 eStart;              /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   u8 eEnd;                /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   u8 bImplicitFrame;      /* True if frame was implicitly specified */
+  u8 eExclude;
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
   Window *pNextWin;       /* Next window function belonging to this SELECT */
@@ -3576,6 +3577,9 @@ struct Window {
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
   int regFirst;
+
+  int regStartRowid;
+  int regEndRowid;
 };
 
 #ifndef SQLITE_OMIT_WINDOWFUNC

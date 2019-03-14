@@ -89,9 +89,32 @@ foreach {tn frame} {
   "
 }
 
+
+foreach {tn ex} {
+  1  { EXCLUDE NO OTHERS }
+  2  { EXCLUDE CURRENT ROW }
+  3  { EXCLUDE GROUP }
+  4  { EXCLUDE TIES }
+} {
+  execsql_test 2.$tn.1 "
+    SELECT row_number() OVER win 
+    FROM t3
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING $ex
+    )
+  "
+
+  execsql_test 2.$tn.2 "
+    SELECT nth_value(c, 14) OVER win 
+    FROM t3
+    WINDOW win AS (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING $ex)
+  "
+}
+
 ==========
 
-execsql_test 2.0 {
+execsql_test 3.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a REAL, b INTEGER);
   INSERT INTO t1 VALUES
@@ -114,7 +137,7 @@ foreach {tn frame} {
   11 { ORDER BY a DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 5.9 PRECEDING }
   12 { ORDER BY a DESC RANGE BETWEEN 2.1 FOLLOWING AND UNBOUNDED FOLLOWING }
 } {
-  execsql_test 2.$tn "
+  execsql_test 3.$tn "
     SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ($frame)
   "
 }

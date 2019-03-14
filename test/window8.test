@@ -433,9 +433,69 @@ do_execsql_test 1.19.5 {
   SELECT a, b, min(c) OVER (ORDER BY a,b  GROUPS BETWEEN 1 FOLLOWING         AND UNBOUNDED FOLLOWING ) FROM t3 ORDER BY 1, 2, 3;
 } {AA aa 102   AA aa 102   AA aa 102   AA aa 102   AA bb 102   AA bb 102   AA bb 102   AA bb 102   BB aa 102   BB aa 102   BB aa 102   BB aa 102   BB aa 102   BB aa 102   BB bb 102   BB bb 102   BB bb 102   BB bb 102   BB bb 102   BB bb 102   CC aa 102   CC aa 102   CC aa 102   CC aa 102   CC bb 102   CC bb 102   DD aa 102   DD aa 102   DD aa 102   DD bb 102   DD bb 102   DD bb 102   DD bb 102   EE aa 102   EE aa 102   EE bb 102   EE bb 102   EE bb 102   FF aa 102   FF aa 102   FF aa 102   FF aa 102   FF bb 113   FF bb 113   FF bb 113   FF bb 113   FF bb 113   FF bb 113   GG aa 113   GG aa 113   GG aa 113   GG aa 113   GG bb 113   GG bb 113   GG bb 113   GG bb 113   HH aa 113   HH aa 113   HH aa 113   HH bb 113   HH bb 113   HH bb 113   HH bb 113   HH bb 113   HH bb 113   II aa 113   II aa 113   II bb 113   II bb 113   II bb 113   II bb 113   II bb 113   JJ aa 257   JJ aa 257   JJ aa 257   JJ aa 257   JJ bb {}   JJ bb {}   JJ bb {}   JJ bb {}}
 
+do_execsql_test 2.1.1 {
+  SELECT row_number() OVER win 
+    FROM t3
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE NO OTHERS 
+    )
+} {1   2   3   4   5   6   7   8   9   10   11   12   13   14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31   32   33   34   35   36   37   38   39   40   41   42   43   44   45   46   47   48   49   50   51   52   53   54   55   56   57   58   59   60   61   62   63   64   65   66   67   68   69   70   71   72   73   74   75   76   77   78   79   80}
+
+do_execsql_test 2.1.2 {
+  SELECT nth_value(c, 14) OVER win 
+    FROM t3
+    WINDOW win AS (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE NO OTHERS )
+} {938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938}
+
+do_execsql_test 2.2.1 {
+  SELECT row_number() OVER win 
+    FROM t3
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE CURRENT ROW 
+    )
+} {1   2   3   4   5   6   7   8   9   10   11   12   13   14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31   32   33   34   35   36   37   38   39   40   41   42   43   44   45   46   47   48   49   50   51   52   53   54   55   56   57   58   59   60   61   62   63   64   65   66   67   68   69   70   71   72   73   74   75   76   77   78   79   80}
+
+do_execsql_test 2.2.2 {
+  SELECT nth_value(c, 14) OVER win 
+    FROM t3
+    WINDOW win AS (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE CURRENT ROW )
+} {660   660   660   660   660   660   660   660   660   660   660   660   660   660   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938   938}
+
+do_execsql_test 2.3.1 {
+  SELECT row_number() OVER win 
+    FROM t3
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE GROUP 
+    )
+} {1   2   3   4   5   6   7   8   9   10   11   12   13   14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31   32   33   34   35   36   37   38   39   40   41   42   43   44   45   46   47   48   49   50   51   52   53   54   55   56   57   58   59   60   61   62   63   64   65   66   67   68   69   70   71   72   73   74   75   76   77   78   79   80}
+
+do_execsql_test 2.3.2 {
+  SELECT nth_value(c, 14) OVER win 
+    FROM t3
+    WINDOW win AS (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE GROUP )
+} {{}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}}
+
+do_execsql_test 2.4.1 {
+  SELECT row_number() OVER win 
+    FROM t3
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE TIES 
+    )
+} {1   2   3   4   5   6   7   8   9   10   11   12   13   14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31   32   33   34   35   36   37   38   39   40   41   42   43   44   45   46   47   48   49   50   51   52   53   54   55   56   57   58   59   60   61   62   63   64   65   66   67   68   69   70   71   72   73   74   75   76   77   78   79   80}
+
+do_execsql_test 2.4.2 {
+  SELECT nth_value(c, 14) OVER win 
+    FROM t3
+    WINDOW win AS (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  EXCLUDE TIES )
+} {{}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}   {}}
+
 #==========================================================================
 
-do_execsql_test 2.0 {
+do_execsql_test 3.0 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a REAL, b INTEGER);
   INSERT INTO t1 VALUES
@@ -443,51 +503,51 @@ do_execsql_test 2.0 {
       (15, 30), (20, 40), (22,80), (30, 90);
 } {}
 
-do_execsql_test 2.1 {
+do_execsql_test 3.1 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING )
 } {5 30   10 112   13 102   13 102   15 142   20 150   22 120   30 90}
 
-do_execsql_test 2.2 {
+do_execsql_test 3.2 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 10 PRECEDING AND 5 PRECEDING )
 } {5 {}   10 10   13 10   13 10   15 30   20 102   22 82   30 120}
 
-do_execsql_test 2.3 {
+do_execsql_test 3.3 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 2 FOLLOWING AND 3 FOLLOWING )
 } {5 {}   10 52   13 30   13 30   15 {}   20 80   22 {}   30 {}}
 
-do_execsql_test 2.4 {
+do_execsql_test 3.4 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING )
 } {30 90   22 120   20 150   15 142   13 102   13 102   10 112   5 30}
 
-do_execsql_test 2.5 {
+do_execsql_test 3.5 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 10 PRECEDING AND 5 PRECEDING )
 } {30 {}   22 90   20 90   15 120   13 120   13 120   10 70   5 102}
 
-do_execsql_test 2.6 {
+do_execsql_test 3.6 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 2 FOLLOWING AND 3 FOLLOWING )
 } {30 {}   22 40   20 {}   15 52   13 20   13 20   10 {}   5 {}}
 
-do_execsql_test 2.7 {
+do_execsql_test 3.7 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 5.1 PRECEDING AND 5.3 FOLLOWING )
 } {5 30   10 112   13 102   13 102   15 142   20 150   22 120   30 90}
 
-do_execsql_test 2.8 {
+do_execsql_test 3.8 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 10.2 PRECEDING AND 5.4 PRECEDING )
 } {5 {}   10 {}   13 10   13 10   15 10   20 72   22 82   30 120}
 
-do_execsql_test 2.9 {
+do_execsql_test 3.9 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE BETWEEN 2.6 FOLLOWING AND 3.5 FOLLOWING )
 } {5 {}   10 52   13 {}   13 {}   15 {}   20 {}   22 {}   30 {}}
 
-do_execsql_test 2.10 {
+do_execsql_test 3.10 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 5.7 PRECEDING AND 5.8 FOLLOWING )
 } {30 90   22 120   20 150   15 142   13 102   13 102   10 112   5 30}
 
-do_execsql_test 2.11 {
+do_execsql_test 3.11 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 5.9 PRECEDING )
 } {30 {}   22 90   20 90   15 170   13 210   13 210   10 210   5 292}
 
-do_execsql_test 2.12 {
+do_execsql_test 3.12 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 2.1 FOLLOWING AND UNBOUNDED FOLLOWING )
 } {30 232   22 112   20 112   15 30   13 30   13 30   10 10   5 {}}
 
