@@ -1688,13 +1688,13 @@ window(A) ::= nm(W) frame_opt(Z). {
 }
 
 frame_opt(A) ::= .                             { 
-  A = sqlite3WindowAlloc(pParse, 0, TK_UNBOUNDED, 0, TK_CURRENT, 0);
+  A = sqlite3WindowAlloc(pParse, 0, TK_UNBOUNDED, 0, TK_CURRENT, 0, 0);
 }
-frame_opt(A) ::= range_or_rows(X) frame_bound_s(Y). { 
-  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0);
+frame_opt(A) ::= range_or_rows(X) frame_bound_s(Y) frame_exclude_opt(Z). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0, Z);
 }
-frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND frame_bound_e(Z). { 
-  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr);
+frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND frame_bound_e(Z) frame_exclude_opt(W). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr, W);
 }
 
 range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
@@ -1710,6 +1710,17 @@ frame_bound_e(A) ::= UNBOUNDED FOLLOWING. {A.eType = TK_UNBOUNDED; A.pExpr = 0;}
 frame_bound(A) ::= expr(X) PRECEDING.   { A.eType = TK_PRECEDING; A.pExpr = X; }
 frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
 frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
+
+%type frame_exclude_opt {u8}
+frame_exclude_opt(A) ::= . { A = TK_NO; }
+frame_exclude_opt(A) ::= EXCLUDE frame_exclude(X). { A = X; }
+
+%type frame_exclude {u8}
+frame_exclude(A) ::= NO OTHERS.   { A = 0; }
+frame_exclude(A) ::= CURRENT ROW. { A = TK_CURRENT; }
+frame_exclude(A) ::= GROUP.       { A = TK_GROUP; }
+frame_exclude(A) ::= TIES.        { A = TK_TIES; }
+
 
 %type window_clause {Window*}
 %destructor window_clause {sqlite3WindowListDelete(pParse->db, $$);}

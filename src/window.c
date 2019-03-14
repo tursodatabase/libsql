@@ -994,7 +994,8 @@ Window *sqlite3WindowAlloc(
   int eStart,       /* Start type: CURRENT, PRECEDING, FOLLOWING, UNBOUNDED */
   Expr *pStart,     /* Start window size if TK_PRECEDING or FOLLOWING */
   int eEnd,         /* End type: CURRENT, FOLLOWING, TK_UNBOUNDED, PRECEDING */
-  Expr *pEnd        /* End window size if TK_FOLLOWING or PRECEDING */
+  Expr *pEnd,       /* End window size if TK_FOLLOWING or PRECEDING */
+  u8 eExclude       /* EXCLUDE clause */
 ){
   Window *pWin = 0;
   int bImplicitFrame = 0;
@@ -1039,6 +1040,7 @@ Window *sqlite3WindowAlloc(
   pWin->eType = eType;
   pWin->eStart = eStart;
   pWin->eEnd = eEnd;
+  pWin->eExclude = eExclude;
   pWin->bImplicitFrame = bImplicitFrame;
   pWin->pEnd = sqlite3WindowOffsetExpr(pParse, pEnd);
   pWin->pStart = sqlite3WindowOffsetExpr(pParse, pStart);
