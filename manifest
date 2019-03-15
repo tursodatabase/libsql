@@ -1,5 +1,5 @@
-C Ensure\sthat\sALTER\sTABLE\scommands\sopen\sstatement\stransactions.\sFix\sfor\s[596d059a].
-D 2019-03-15T16:17:32.141
+C Remove\sa\sdebugging\sprintf()\sleft\sin\stest/sessionfuzz.c.
+D 2019-03-15T18:57:49.909
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -1280,7 +1280,7 @@ F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae
 F test/server1.test c2b00864514a68a0e6fd518659dc95d0050307a357a08969872bef027d785dc4
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
-F test/sessionfuzz.c b0fcdcf757451957e17396a3af5171f1fdf9b2babc81da9fa35675df46c4729a
+F test/sessionfuzz.c be9c4d4afd359ce80024d8b541b9b8a880510aef5cf263df56fc0e9b947727f1
 F test/shared.test 1826673eb5eb745fb91a3bdac99a7737057742ae38dcb0fe076a384d6727578b
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ab693f9b6e156b8bfb2a0ad94f29fe69602a5d38
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb60150aeedc3898cb249c75c98a7cb48fcec090f94ded7896b634e436c7daa5
-R 9c1616030cffb3d985828895a447cc16
+P 0f2129f59f7df929106e2af876c2976dea6528c1dc1850d64cddb256f20e121a
+R cf3b6737b55e7f2c6cba64730dfa541b
 U dan
-Z b828561af328df4e9d756c31d4d6a1b0
+Z 92b68b45672b080ac2ba5752753fcf1e
