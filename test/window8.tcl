@@ -87,6 +87,15 @@ foreach {tn frame} {
   execsql_test 1.$tn.5 "
     SELECT a, b, min(c) OVER (ORDER BY a,b $frame) FROM t3 ORDER BY 1, 2, 3;
   "
+
+  set f2 "$frame EXCLUDE CURRENT ROW"
+
+  execsql_test 1.$tn.6 "
+    SELECT a, b, sum(c) OVER (ORDER BY a $f2) FROM t3 ORDER BY 1, 2, 3;
+  "
+  execsql_test 1.$tn.7 "
+    SELECT a, b, sum(c) OVER (ORDER BY a,b $f2) FROM t3 ORDER BY 1, 2, 3;
+  "
 }
 
 
@@ -108,7 +117,10 @@ foreach {tn ex} {
   execsql_test 2.$tn.2 "
     SELECT nth_value(c, 14) OVER win 
     FROM t3
-    WINDOW win AS (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING $ex)
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING $ex
+    )
   "
 }
 
