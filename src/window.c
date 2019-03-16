@@ -1206,8 +1206,8 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
     sqlite3VdbeAddOp3(v, OP_Null, 0, pMWin->regPart, pMWin->regPart+nExpr-1);
   }
 
-  pMWin->regFirst = ++pParse->nMem;
-  sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regFirst);
+  pMWin->regOne = ++pParse->nMem;
+  sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regOne);
 
   if( pMWin->eExclude ){
     pMWin->regStartRowid = ++pParse->nMem;
@@ -2304,7 +2304,7 @@ void sqlite3WindowCodeStep(
   int csrInput = p->pSrc->a[0].iCursor;     /* Cursor of sub-select */
   int nInput = p->pSrc->a[0].pTab->nCol;    /* Number of cols returned by sub */
   int iInput;                               /* To iterate through sub cols */
-  int addrIfNot;                  /* Address of OP_IfNot */
+  int addrNe;                     /* Address of OP_Ne */
   int addrGosubFlush;             /* Address of OP_Gosub to flush: */
   int addrInteger;                /* Address of OP_Integer */
   int addrEmpty;                  /* Address of OP_Rewind in flush: */
@@ -2435,8 +2435,7 @@ void sqlite3WindowCodeStep(
   /* Insert the new row into the ephemeral table */
   sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, regRowid);
   sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, regRowid);
-
-  addrIfNot = sqlite3VdbeAddOp1(v, OP_IfNot, pMWin->regFirst);
+  addrNe = sqlite3VdbeAddOp3(v, OP_Ne, pMWin->regOne, 0, regRowid);
 
   /* This block is run for the first row of each partition */
   s.regArg = windowInitAccum(pParse, pMWin);
@@ -2477,10 +2476,9 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeAddOp3(v, OP_Copy, regPeer, s.end.reg, pOrderBy->nExpr-1);
   }
 
-  sqlite3VdbeAddOp2(v, OP_Integer, 0, pMWin->regFirst);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
 
-  sqlite3VdbeJumpHere(v, addrIfNot);
+  sqlite3VdbeJumpHere(v, addrNe);
   if( regPeer ){
     windowIfNewPeer(pParse, pOrderBy, regNewPeer, regPeer, lblWhereEnd);
   }
@@ -2586,7 +2584,6 @@ void sqlite3WindowCodeStep(
   sqlite3VdbeJumpHere(v, addrEmpty);
 
   sqlite3VdbeAddOp1(v, OP_ResetSorter, s.current.csr);
-  sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regFirst);
   if( pMWin->pPartition ){
     if( pMWin->regStartRowid ){
       sqlite3VdbeAddOp2(v, OP_Integer, 1, pMWin->regStartRowid);
