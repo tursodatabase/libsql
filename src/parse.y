@@ -1712,7 +1712,7 @@ frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
 frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
 
 %type frame_exclude_opt {u8}
-frame_exclude_opt(A) ::= . { A = TK_NO; }
+frame_exclude_opt(A) ::= . { A = 0; }
 frame_exclude_opt(A) ::= EXCLUDE frame_exclude(X). { A = X; }
 
 %type frame_exclude {u8}

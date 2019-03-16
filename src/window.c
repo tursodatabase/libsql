@@ -1076,7 +1076,6 @@ Window *sqlite3WindowAlloc(
   pWin->bImplicitFrame = bImplicitFrame;
   pWin->pEnd = sqlite3WindowOffsetExpr(pParse, pEnd);
   pWin->pStart = sqlite3WindowOffsetExpr(pParse, pStart);
-  /* pWin->eExclude = 1; */
   return pWin;
 
 windowAllocErr:
@@ -1742,11 +1741,14 @@ static void windowIfNewPeer(
 
 /*
 ** This function is called as part of generating VM programs for RANGE
-** offset PRECEDING/FOLLOWING frame boundaries. It generates code equivalent
-** to:
+** offset PRECEDING/FOLLOWING frame boundaries. Assuming "ASC" order for
+** the ORDER BY term in the window, it generates code equivalent to:
 **
 **   if( csr1.peerVal + regVal >= csr2.peerVal ) goto lbl;
-**   if( csr1.rowid >= csr2.rowid ) goto lbl;
+**
+** A special type of arithmetic is used such that if csr.peerVal is not
+** a numeric type (real or integer), then the result of the addition is
+** a copy of csr1.peerVal.
 */
 static void windowCodeRangeTest(
   WindowCodeArg *p, 
@@ -1761,6 +1763,10 @@ static void windowCodeRangeTest(
   int reg1 = sqlite3GetTempReg(pParse);
   int reg2 = sqlite3GetTempReg(pParse);
   int arith = OP_Add;
+  int addrGe;
+  int addrNotNull;
+
+  int regString = ++pParse->nMem;
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( p->pMWin->pOrderBy && p->pMWin->pOrderBy->nExpr==1 );
@@ -1775,11 +1781,24 @@ static void windowCodeRangeTest(
 
   windowReadPeerValues(p, csr1, reg1);
   windowReadPeerValues(p, csr2, reg2);
+
+  /* Check if the peer value for csr1 value is a text or blob by comparing
+  ** it to the smallest possible string - ''. */
+  sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
+  addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
+
+  if( op==OP_Le ){
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg1, lbl);
+  }
+  if( op==OP_Ge ){
+    sqlite3VdbeAddOp2(v, OP_NotNull, reg1, sqlite3VdbeCurrentAddr(v)+2);
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl);
+  }
+
   sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
+  sqlite3VdbeJumpHere(v, addrGe);
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1);
-  sqlite3VdbeAddOp2(v, OP_Rowid, csr1, reg1);
-  sqlite3VdbeAddOp2(v, OP_Rowid, csr2, reg2);
-  sqlite3VdbeAddOp3(v, OP_Gt, reg2, lbl, reg1);
+
   sqlite3ReleaseTempReg(pParse, reg1);
   sqlite3ReleaseTempReg(pParse, reg2);
 }

@@ -122,6 +122,14 @@ foreach {tn ex} {
       ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING $ex
     )
   "
+
+  execsql_test 2.$tn.3 "
+    SELECT min(c) OVER win, max(c) OVER win, sum(c) OVER win FROM t3
+    WINDOW win AS (
+      ORDER BY c, b, a
+      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW $ex
+    ) ORDER BY a, b, c;
+  "
 }
 
 ==========
@@ -154,6 +162,20 @@ foreach {tn frame} {
   "
 }
 
+==========
+
+execsql_test 4.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER, b INTEGER);
+  INSERT INTO t1 VALUES
+    (NULL, 1), (NULL, 2), (NULL, 3), (10, 4), (10, 5);
+}
+
+execsql_test 4.1 {
+  SELECT sum(b) OVER (
+    ORDER BY a RANGE BETWEEN 5 PRECEDING AND 10 FOLLOWING
+  ) FROM t1 ORDER BY 1;
+}
 
 finish_test
 

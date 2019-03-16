@@ -40,17 +40,26 @@ proc execsql {sql} {
   #puts $lSql
 
   set ret ""
+  set nChar 0
   foreach stmt $lSql {
     set res [pg_exec $::db $stmt]
     set err [pg_result $res -error]
     if {$err!=""} { error $err }
+
     for {set i 0} {$i < [pg_result $res -numTuples]} {incr i} {
-      if {$i==0} {
-        set ret [pg_result $res -getTuple 0]
+      set t [pg_result $res -getTuple $i]
+      set nNew [string length $t]
+      if {$nChar>0 && ($nChar+$nNew+3)>75} {
+        append ret "\n  "
+        set nChar 0
       } else {
-        append ret "   [pg_result $res -getTuple $i]"
+        if {$nChar>0} {
+          append ret "   "
+          incr nChar 3
+        }
       }
-      # lappend ret {*}[pg_result $res -getTuple $i]
+      incr nChar $nNew
+      append ret $t
     }
     pg_result $res -clear
   }

@@ -849,4 +849,81 @@ do_execsql_test 18.3.5 {
          win5 AS (win4 ORDER BY c)
 } {four four.six four.six.two five five.one five.one.three}
 
+#-------------------------------------------------------------------------
+# Test RANGE <expr> PRECEDING/FOLLOWING when there are string, blob
+# and NULL values in the dataset.
+#
+reset_db
+do_execsql_test 19.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES
+    (1, 1), (2, 2), (3, 3), (4, 4), (5, 5),
+    ('a', 6), ('b', 7), ('c', 8), ('d', 9), ('e', 10);
+}
+do_execsql_test 19.1 {
+  SELECT a, sum(b) OVER (ORDER BY a) FROM t1;
+} {1 1  2 3  3 6  4 10  5 15  a 21 b 28 c 36 d 45 e 55}
+
+do_execsql_test 19.2.1 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1;
+} {1 3 2 6 3 9 4 12 5 9 a 6 b 7 c 8 d 9 e 10}
+do_execsql_test 19.2.2 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a DESC RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1 ORDER BY a ASC;
+} {1 3 2 6 3 9 4 12 5 9 a 6 b 7 c 8 d 9 e 10}
+
+do_execsql_test 19.3.1 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a RANGE BETWEEN 2 PRECEDING AND 1 FOLLOWING
+  ) FROM t1;
+} {1 3 2 6 3 10 4 14 5 12 a 6 b 7 c 8 d 9 e 10}
+do_execsql_test 19.3.2 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a DESC RANGE BETWEEN 1 PRECEDING AND 2 FOLLOWING
+  ) FROM t1 ORDER BY a ASC;
+} {1 3 2 6 3 10 4 14 5 12 a 6 b 7 c 8 d 9 e 10}
+
+
+reset_db
+do_execsql_test 20.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES
+    (NULL, 100), (NULL, 100), 
+    (1, 1), (2, 2), (3, 3), (4, 4), (5, 5),
+    ('a', 6), ('b', 7), ('c', 8), ('d', 9), ('e', 10);
+}
+do_execsql_test 20.1 {
+  SELECT a, sum(b) OVER (ORDER BY a) FROM t1;
+} {
+  {} 200 {} 200 1 201  2 203  3 206  4 210  5 215  
+  a 221 b 228 c 236 d 245 e 255
+}
+
+do_execsql_test 20.2.1 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1;
+} {{} 200 {} 200 1 3 2 6 3 9 4 12 5 9 a 6 b 7 c 8 d 9 e 10}
+do_execsql_test 20.2.2 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a DESC RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1 ORDER BY a ASC;
+} {{} 200 {} 200 1 3 2 6 3 9 4 12 5 9 a 6 b 7 c 8 d 9 e 10}
+
+do_execsql_test 20.3.1 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a RANGE BETWEEN 2 PRECEDING AND 1 FOLLOWING
+  ) FROM t1;
+} {{} 200 {} 200 1 3 2 6 3 10 4 14 5 12 a 6 b 7 c 8 d 9 e 10}
+do_execsql_test 20.3.2 {
+  SELECT a, sum(b) OVER (
+    ORDER BY a DESC RANGE BETWEEN 1 PRECEDING AND 2 FOLLOWING
+  ) FROM t1 ORDER BY a ASC;
+} {{} 200 {} 200 1 3 2 6 3 10 4 14 5 12 a 6 b 7 c 8 d 9 e 10}
+
 finish_test
+
+
