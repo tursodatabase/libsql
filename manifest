@@ -1,11 +1,11 @@
-C Update\sthe\sREADME.md\sfile\sat\sthe\stop\slevel\sto\stalk\sabout\show\sto\sdeal\swith\nversion\snames\sand\show\sto\sverify\sthe\scode\sin\sGit\smirrors.
-D 2019-03-17T23:44:16.475
+C New\shyperlink\son\sthe\sREADME.md\sfile.
+D 2019-03-17T23:59:02.190
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5df60c70edb157feb2148a14c687551969599bd065875a0b959b6b139721ca72
-F README.md 1f3d347b2f8716878f00d54baf2e7caf8a7a5e1838e7442f7dcf6ce5ccb9c0ce
+F README.md ebcdb6d5656020ef5ca37a6fc1ad89b4c80560ea33a3d70c250f9b845cf9da62
 F VERSION 288d756b1b7be03ecdbf1795c23af2c8425f2e46ba6979a14ef53360308f080d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d801a3b2c48dc8a918d6da047bc877acf033d5f5c4e1d4b412ba7678ed6f8b3
-R d8fc549e8dd256986c9af5a900a70a1f
+P e8c87a0ac1bf434c12a8ab602e7913a89a51898e818f30fa541a9b5708864212
+R c1e4ee575a3a1d0c6e07b68af4bbe6e7
 U drh
-Z 007a0bb7f6e7e0fc6bf846f8fa4712b1
+Z 068ab2c2ccb9a9140d0def91aab4dc94

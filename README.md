@@ -10,7 +10,7 @@ and most of the documentation are managed separately.
 SQLite sources are managed using the
 [Fossil](https://www.fossil-scm.org/), a distributed version control system
 that was specifically designed and written to support SQLite development.
-The Fossil repository contains the urtext.
+The [Fossil repository](https://sqlite.org/src/timeline) contains the urtext.
 
 If you are reading this on GitHub or some other Git repository or service,
 then you are looking at a mirror.  The names of check-ins and
