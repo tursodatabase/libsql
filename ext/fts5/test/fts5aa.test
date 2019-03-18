@@ -622,6 +622,19 @@ do_execsql_test 24.3 {
     SELECT * FROM t12('aaaa');
 } {aaaa}
 
+#-------------------------------------------------------------------------
+do_execsql_test 25.0 {
+  CREATE VIRTUAL TABLE t13 USING fts5(x, detail=%DETAIL%);
+}
+do_execsql_test 25.1 {
+  BEGIN;
+  INSERT INTO t13 VALUES('AAAA');
+SELECT * FROM t13('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB*');
+
+  END;
+}
+
+
 }
 
 expand_all_sql db
