@@ -2457,31 +2457,40 @@ static void fts5SegIterHashInit(
   int flags,                      /* Mask of FTS5INDEX_XXX flags */
   Fts5SegIter *pIter              /* Object to populate */
 ){
-  const u8 *pList = 0;
   int nList = 0;
   const u8 *z = 0;
   int n = 0;
+  Fts5Data *pLeaf = 0;
 
   assert( p->pHash );
   assert( p->rc==SQLITE_OK );
 
   if( pTerm==0 || (flags & FTS5INDEX_QUERY_SCAN) ){
+    const u8 *pList = 0;
+
     p->rc = sqlite3Fts5HashScanInit(p->pHash, (const char*)pTerm, nTerm);
     sqlite3Fts5HashScanEntry(p->pHash, (const char**)&z, &pList, &nList);
     n = (z ? (int)strlen((const char*)z) : 0);
+    if( pList ){
+      pLeaf = fts5IdxMalloc(p, sizeof(Fts5Data));
+      if( pLeaf ){
+        pLeaf->p = pList;
+      }
+    }
   }else{
-    pIter->flags |= FTS5_SEGITER_ONETERM;
-    sqlite3Fts5HashQuery(p->pHash, (const char*)pTerm, nTerm, &pList, &nList);
+    p->rc = sqlite3Fts5HashQuery(p->pHash, sizeof(Fts5Data), 
+        (const char*)pTerm, nTerm, (void**)&pLeaf, &nList
+    );
+    if( pLeaf ){
+      pLeaf->p = (u8*)&pLeaf[1];
+    }
     z = pTerm;
     n = nTerm;
+    pIter->flags |= FTS5_SEGITER_ONETERM;
   }
 
-  if( pList ){
-    Fts5Data *pLeaf;
+  if( pLeaf ){
     sqlite3Fts5BufferSet(&p->rc, &pIter->term, n, z);
-    pLeaf = fts5IdxMalloc(p, sizeof(Fts5Data));
-    if( pLeaf==0 ) return;
-    pLeaf->p = (u8*)pList;
     pLeaf->nn = pLeaf->szLeaf = nList;
     pIter->pLeaf = pLeaf;
     pIter->iLeafOffset = fts5GetVarint(pLeaf->p, (u64*)&pIter->iRowid);
