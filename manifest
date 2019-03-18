@@ -1,5 +1,5 @@
-C New\shyperlink\son\sthe\sREADME.md\sfile.
-D 2019-03-17T23:59:02.190
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2019-03-18T10:30:00.584
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -602,7 +602,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c ce7b21e1be2b981d62683fc59c4ca73a04a7ff2f1ebec23d41baf2da2349afd6
+F src/wherecode.c 6fa4056c5ce019e4a8af33795906340176813cb3c1236f4b7b08df76a1b6287b
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
 F src/window.c df2456386e0b1553a8d1fcf3a0ddc4c058fe2c650ea8c74b6bf8862082ddafc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1806,7 +1806,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8c87a0ac1bf434c12a8ab602e7913a89a51898e818f30fa541a9b5708864212
-R c1e4ee575a3a1d0c6e07b68af4bbe6e7
+P cc5ab96715ebb1089b4e9aa647badd2510aaa056f26004718f921f4ac07e2f93
+R f2e78fe7c431a9d5d5c38396254f84a9
 U drh
-Z 068ab2c2ccb9a9140d0def91aab4dc94
+Z bc384137fbed0b2633da2a4e6bec9594
