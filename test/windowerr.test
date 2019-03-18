@@ -79,4 +79,11 @@ do_test 1.7 { catch { execsql {
   ) FROM t1 ORDER BY 1
 } } } 1
 
+# PG says ERROR:  RANGE with offset PRECEDING/FOLLOWING requires exactly one ORDER BY column
+do_test 1.8 { catch { execsql {
+  SELECT a, sum(b) OVER (
+    PARTITION BY a RANGE BETWEEN  1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1 ORDER BY 1
+} } } 1
+
 finish_test

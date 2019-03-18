@@ -248,16 +248,9 @@ static void nth_valueStepFunc(
       pCtx, "second argument to nth_value must be a positive integer", -1
   );
 }
-static void nth_valueValueFunc(sqlite3_context *pCtx){
-  struct NthValueCtx *p;
-  p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p && p->pValue ){
-    sqlite3_result_value(pCtx, p->pValue);
-  }
-}
 static void nth_valueFinalizeFunc(sqlite3_context *pCtx){
   struct NthValueCtx *p;
-  p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, 0);
   if( p && p->pValue ){
     sqlite3_result_value(pCtx, p->pValue);
     sqlite3_value_free(p->pValue);
@@ -265,6 +258,7 @@ static void nth_valueFinalizeFunc(sqlite3_context *pCtx){
   }
 }
 #define nth_valueInvFunc noopStepFunc
+#define nth_valueValueFunc noopValueFunc
 
 static void first_valueStepFunc(
   sqlite3_context *pCtx, 
@@ -282,13 +276,6 @@ static void first_valueStepFunc(
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
 }
-static void first_valueValueFunc(sqlite3_context *pCtx){
-  struct NthValueCtx *p;
-  p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p && p->pValue ){
-    sqlite3_result_value(pCtx, p->pValue);
-  }
-}
 static void first_valueFinalizeFunc(sqlite3_context *pCtx){
   struct NthValueCtx *p;
   p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
@@ -299,6 +286,7 @@ static void first_valueFinalizeFunc(sqlite3_context *pCtx){
   }
 }
 #define first_valueInvFunc noopStepFunc
+#define first_valueValueFunc noopValueFunc
 
 /*
 ** Implementation of built-in window function rank(). Assumes that
@@ -404,8 +392,8 @@ static void cume_distInvFunc(
 }
 static void cume_distValueFunc(sqlite3_context *pCtx){
   struct CallCount *p;
-  p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
-  if( p && p->nTotal ){
+  p = (struct CallCount*)sqlite3_aggregate_context(pCtx, 0);
+  if( p ){
     double r = (double)(p->nStep) / (double)(p->nTotal);
     sqlite3_result_double(pCtx, r);
   }
@@ -529,7 +517,7 @@ static void last_valueInvFunc(
 }
 static void last_valueValueFunc(sqlite3_context *pCtx){
   struct LastValueCtx *p;
-  p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (struct LastValueCtx*)sqlite3_aggregate_context(pCtx, 0);
   if( p && p->pVal ){
     sqlite3_result_value(pCtx, p->pVal);
   }
@@ -1405,8 +1393,6 @@ static void windowAggStep(
       );
       assert( bInverse==0 || bInverse==1 );
       sqlite3VdbeAddOp2(v, OP_AddImm, pWin->regApp+1-bInverse, 1);
-    }else if( pFunc->zName==leadName || pFunc->zName==lagName ){
-      /* no-op */
     }else if( pFunc->xSFunc!=noopStepFunc ){
       int addrIf = 0;
       if( pWin->pFilter ){
@@ -1506,9 +1492,6 @@ static void windowAggFinal(WindowCodeArg *p, int bFin){
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_Column, pWin->csrApp, 0, pWin->regResult);
       sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
-      if( bFin ){
-        sqlite3VdbeAddOp1(v, OP_ResetSorter, pWin->csrApp);
-      }
     }else if( pWin->regApp ){
       assert( pMWin->regStartRowid==0 );
     }else{
@@ -1526,6 +1509,12 @@ static void windowAggFinal(WindowCodeArg *p, int bFin){
   }
 }
 
+/*
+** Generate code to calculate the current values of all window functions in the
+** p->pMWin list by doing a full scan of the current window frame. Store the
+** results in the Window.regResult registers, ready to return the upper
+** layer.
+*/
 static void windowFullScan(WindowCodeArg *p){
   Window *pWin;
   Parse *pParse = p->pParse;
@@ -1828,11 +1817,17 @@ static void windowCodeRangeTest(
   sqlite3ReleaseTempReg(pParse, reg2);
 }
 
+/*
+** Helper function for sqlite3WindowCodeStep(). Each call to this function
+** generates VM code for a single RETURN_ROW, AGGSTEP or AGGINVERSE 
+** operation. Refer to the header comment for sqlite3WindowCodeStep() for
+** details.
+*/
 static int windowCodeOp(
- WindowCodeArg *p,
- int op,
- int regCountdown,
- int jumpOnEof
+ WindowCodeArg *p,                /* Context object */
+ int op,                          /* WINDOW_RETURN_ROW, AGGSTEP or AGGINVERSE */
+ int regCountdown,                /* Register for OP_IfPos countdown */
+ int jumpOnEof                    /* Jump here if stepped cursor reaches EOF */
 ){
   int csr, reg;
   Parse *pParse = p->pParse;
@@ -1857,40 +1852,28 @@ static int windowCodeOp(
   if( regCountdown>0 ){
     if( pMWin->eType==TK_RANGE ){
       addrNextRange = sqlite3VdbeCurrentAddr(v);
-
-      switch( op ){
-        case WINDOW_RETURN_ROW: {
-          assert( 0 );
-          break;
-        }
-
-        case WINDOW_AGGINVERSE: {
-          if( pMWin->eStart==TK_FOLLOWING ){
-            windowCodeRangeTest(
-                p, OP_Le, p->current.csr, regCountdown, p->start.csr, lblDone
-            );
-          }else{
-            windowCodeRangeTest(
-                p, OP_Ge, p->start.csr, regCountdown, p->current.csr, lblDone
-            );
-          }
-          break;
-        }
-
-        case WINDOW_AGGSTEP: {
+      assert( op==WINDOW_AGGINVERSE || op==WINDOW_AGGSTEP );
+      if( op==WINDOW_AGGINVERSE ){
+        if( pMWin->eStart==TK_FOLLOWING ){
           windowCodeRangeTest(
-            p, OP_Gt, p->end.csr, regCountdown, p->current.csr, lblDone
+              p, OP_Le, p->current.csr, regCountdown, p->start.csr, lblDone
           );
-          break;
+        }else{
+          windowCodeRangeTest(
+              p, OP_Ge, p->start.csr, regCountdown, p->current.csr, lblDone
+          );
         }
+      }else{
+        windowCodeRangeTest(
+            p, OP_Gt, p->end.csr, regCountdown, p->current.csr, lblDone
+        );
       }
-
     }else{
       addrIf = sqlite3VdbeAddOp3(v, OP_IfPos, regCountdown, 0, 1);
     }
   }
 
-  if( op==WINDOW_RETURN_ROW ){
+  if( op==WINDOW_RETURN_ROW && pMWin->regStartRowid==0 ){
     windowAggFinal(p, 0);
   }
   addrContinue = sqlite3VdbeCurrentAddr(v);
@@ -1912,7 +1895,8 @@ static int windowCodeOp(
       }
       break;
 
-    case WINDOW_AGGSTEP:
+    default:
+      assert( op==WINDOW_AGGSTEP );
       csr = p->end.csr;
       reg = p->end.reg;
       if( pMWin->regStartRowid ){
@@ -2421,8 +2405,6 @@ void sqlite3WindowCodeStep(
       break;
   }
 
-  s.eDelete = 0;
-
   /* Allocate registers for the array of values from the sub-query, the
   ** samve values in record form, and the rowid used to insert said record
   ** into the ephemeral table.  */
@@ -2501,7 +2483,7 @@ void sqlite3WindowCodeStep(
     windowCheckValue(pParse, regEnd, 1 + (pMWin->eType==TK_RANGE ? 3 : 0));
   }
 
-  if( pMWin->eStart==pMWin->eEnd && regStart && regEnd ){
+  if( pMWin->eStart==pMWin->eEnd && regStart ){
     int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
     int addrGe = sqlite3VdbeAddOp3(v, op, regStart, 0, regEnd);
     windowAggFinal(&s, 0);
