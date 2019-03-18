@@ -215,14 +215,38 @@ static void nth_valueStepFunc(
   struct NthValueCtx *p;
   p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
-    i64 iVal = sqlite3_value_int64(apArg[1]);
+    i64 iVal;
+    switch( sqlite3_value_numeric_type(apArg[1]) ){
+      case SQLITE_INTEGER:
+        iVal = sqlite3_value_int64(apArg[1]);
+        break;
+      case SQLITE_FLOAT: {
+        double fVal = sqlite3_value_double(apArg[1]);
+        if( ((i64)fVal)!=fVal ) goto error_out;
+        iVal = (i64)fVal;
+        break;
+      }
+      default:
+        goto error_out;
+    }
+    if( iVal<=0 ) goto error_out;
+
     p->nStep++;
     if( iVal==p->nStep ){
       p->pValue = sqlite3_value_dup(apArg[0]);
+      if( !p->pValue ){
+        sqlite3_result_error_nomem(pCtx);
+      }
     }
   }
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
+  return;
+
+ error_out:
+  sqlite3_result_error(
+      pCtx, "second argument to nth_value must be a positive integer", -1
+  );
 }
 static void nth_valueValueFunc(sqlite3_context *pCtx){
   struct NthValueCtx *p;
@@ -251,6 +275,9 @@ static void first_valueStepFunc(
   p = (struct NthValueCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p && p->pValue==0 ){
     p->pValue = sqlite3_value_dup(apArg[0]);
+    if( !p->pValue ){
+      sqlite3_result_error_nomem(pCtx);
+    }
   }
   UNUSED_PARAMETER(nArg);
   UNUSED_PARAMETER(apArg);
@@ -1072,6 +1099,9 @@ Window *sqlite3WindowAlloc(
   pWin->eType = eType;
   pWin->eStart = eStart;
   pWin->eEnd = eEnd;
+  if( eExclude==0 && OptimizationDisabled(pParse->db, SQLITE_QueryFlattener) ){
+    eExclude = TK_NO;
+  }
   pWin->eExclude = eExclude;
   pWin->bImplicitFrame = bImplicitFrame;
   pWin->pEnd = sqlite3WindowOffsetExpr(pParse, pEnd);
@@ -1536,12 +1566,15 @@ static void windowFullScan(WindowCodeArg *p){
   addrNext = sqlite3VdbeCurrentAddr(v);
   sqlite3VdbeAddOp2(v, OP_Rowid, csr, regRowid);
   sqlite3VdbeAddOp3(v, OP_Gt, pMWin->regEndRowid, lblBrk, regRowid);
+
   if( pMWin->eExclude==TK_CURRENT ){
     sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, lblNext, regRowid);
   }else if( pMWin->eExclude!=TK_NO ){
     int addr;
-    int addrEq = 0;;
-    KeyInfo *pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pMWin->pOrderBy,0,0);
+    int addrEq = 0;
+    KeyInfo *pKeyInfo;
+
+    pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pMWin->pOrderBy, 0, 0);
     if( pMWin->eExclude==TK_TIES ){
       addrEq = sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, lblNext, regRowid);
     }
@@ -1668,7 +1701,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
     FuncDef *pFunc = pWin->pFunc;
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
     nArg = MAX(nArg, windowArgCount(pWin));
-    if( pWin->eExclude==0 ){
+    if( pMWin->regStartRowid==0 ){
       if( pFunc->zName==nth_valueName || pFunc->zName==first_valueName ){
         sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp);
         sqlite3VdbeAddOp2(v, OP_Integer, 0, pWin->regApp+1);
@@ -1764,7 +1797,6 @@ static void windowCodeRangeTest(
   int reg2 = sqlite3GetTempReg(pParse);
   int arith = OP_Add;
   int addrGe;
-  int addrNotNull;
 
   int regString = ++pParse->nMem;
 
@@ -2336,6 +2368,10 @@ void sqlite3WindowCodeStep(
   );
   assert( pMWin->eEnd==TK_FOLLOWING || pMWin->eEnd==TK_CURRENT 
        || pMWin->eEnd==TK_UNBOUNDED || pMWin->eEnd==TK_PRECEDING 
+  );
+  assert( pMWin->eExclude==0 || pMWin->eExclude==TK_CURRENT
+       || pMWin->eExclude==TK_GROUP || pMWin->eExclude==TK_TIES
+       || pMWin->eExclude==TK_NO
   );
 
   lblWhereEnd = sqlite3VdbeMakeLabel(pParse);

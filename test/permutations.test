@@ -1032,13 +1032,15 @@ test_suite "rbu" -description {
 test_suite "no_optimization" -description {
   Run test scripts with optimizations disabled using the
   sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS) interface.
-} -files {
-  where.test where2.test where3.test where4.test where5.test
-  where6.test where7.test where8.test where9.test
-  whereA.test whereB.test wherelimit.test
-  select1.test select2.test select3.test select4.test select5.test
-  select7.test select8.test selectA.test selectC.test
-} -dbconfig {
+} -files [
+  test_set \
+    [glob -nocomplain $::testdir/window*.test]                       \
+    where.test where2.test where3.test where4.test where5.test       \
+    where6.test where7.test where8.test where9.test                  \
+    whereA.test whereB.test wherelimit.test                          \
+    select1.test select2.test select3.test select4.test select5.test \
+    select7.test select8.test selectA.test selectC.test     
+] -dbconfig {
   optimization_control $::dbhandle all 0
 }
 

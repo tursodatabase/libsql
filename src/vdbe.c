@@ -6540,6 +6540,7 @@ case OP_AggFinal: {
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( pOp->p3 ){
+    memAboutToChange(p, &aMem[pOp->p3]);
     rc = sqlite3VdbeMemAggValue(pMem, &aMem[pOp->p3], pOp->p4.pFunc);
     pMem = &aMem[pOp->p3];
   }else
