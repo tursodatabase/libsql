@@ -1924,7 +1924,6 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** OP_Eq or OP_Ne) then take the jump or not depending on whether
       ** or not both operands are null.
       */
-      assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
       assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 || CORRUPT_DB );
       testcase( (pOp->p5 & SQLITE_JUMPIFNULL)!=0 );
@@ -1933,7 +1932,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ){
         res = 0;  /* Operands are equal */
       }else{
-        res = 1;  /* Operands are not equal */
+        res = ((flags3 & MEM_Null) ? -1 : +1);  /* Operands are not equal */
       }
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,

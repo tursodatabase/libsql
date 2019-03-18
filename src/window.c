@@ -1783,21 +1783,14 @@ static void windowCodeRangeTest(
   windowReadPeerValues(p, csr2, reg2);
 
   /* Check if the peer value for csr1 value is a text or blob by comparing
-  ** it to the smallest possible string - ''. */
+  ** it to the smallest possible string - ''. If it is, jump over the
+  ** OP_Add or OP_Subtract operation and proceed directly to the comparison. */
   sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
   addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
-
-  if( op==OP_Le ){
-    sqlite3VdbeAddOp2(v, OP_IsNull, reg1, lbl);
-  }
-  if( op==OP_Ge ){
-    sqlite3VdbeAddOp2(v, OP_NotNull, reg1, sqlite3VdbeCurrentAddr(v)+2);
-    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl);
-  }
-
   sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
   sqlite3VdbeJumpHere(v, addrGe);
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1);
+  sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
 
   sqlite3ReleaseTempReg(pParse, reg1);
   sqlite3ReleaseTempReg(pParse, reg2);
@@ -2367,13 +2360,15 @@ void sqlite3WindowCodeStep(
   ** be deleted after they enter the frame (WINDOW_AGGSTEP). */
   switch( pMWin->eStart ){
     case TK_FOLLOWING: {
-      sqlite3 *db = pParse->db;
-      sqlite3_value *pVal = 0;
-      sqlite3ValueFromExpr(db, pMWin->pStart, db->enc,SQLITE_AFF_NUMERIC,&pVal);
-      if( pVal && sqlite3_value_int(pVal)>0 ){
-        s.eDelete = WINDOW_RETURN_ROW;
+      if( pMWin->eType!=TK_RANGE ){
+        sqlite3 *db = pParse->db;
+        sqlite3_value *pVal = 0;
+        sqlite3ValueFromExpr(db,pMWin->pStart,db->enc,SQLITE_AFF_NUMERIC,&pVal);
+        if( pVal && sqlite3_value_int(pVal)>0 ){
+          s.eDelete = WINDOW_RETURN_ROW;
+        }
+        sqlite3ValueFree(pVal);
       }
-      sqlite3ValueFree(pVal);
       break;
     }
     case TK_UNBOUNDED:
@@ -2389,6 +2384,8 @@ void sqlite3WindowCodeStep(
       s.eDelete = WINDOW_AGGINVERSE;
       break;
   }
+
+  s.eDelete = 0;
 
   /* Allocate registers for the array of values from the sub-query, the
   ** samve values in record form, and the rowid used to insert said record
