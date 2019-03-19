@@ -1,5 +1,5 @@
-C Add\sa\sLICENSE.md,\scontaining\sthe\stext\sof\sthe\sblessing.
-D 2019-03-19T09:57:52.736
+C Tweak\sthe\stool/cg_anno.tcl\sscript\sso\sthat\sit\scan\srun\son\ssystems\swithout\s/usr/bin/tclsh.
+D 2019-03-19T11:35:18.533
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1711,7 +1711,7 @@ F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/addopcodes.tcl 0288d5b26b9b35f4cb5affb76eec63f1dfce117bbc2020066708069ef60b86ff
 F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
-F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
+F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/dbtotxt.c 04e25f26be7c7743cdfb4111a8483de0b111925d6afeeb7559ade0ceb73f7f52
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3fa58dd7403dbd4d2e9f3ae23d7d1337830d6fef2aa2f137ac5174de0d5828e
-R 72c6f9bb24c0efeaea958b241f969436
-U drh
-Z 4e9235e5856178c79033d2c551aac4dd
+P cbb7e60272cda518fa1bd8d3e3cd02e031b657fef92a9d4d7ed8c2bfb97be7c8
+R c0731a33012713bd9f9a8b4e95797ee2
+U dan
+Z 07e39bf60d707adb20de126674d52dcf
