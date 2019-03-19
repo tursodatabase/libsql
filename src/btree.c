@@ -7559,7 +7559,6 @@ static int balance_nonroot(
         goto balance_cleanup;
       }
     }
-    nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
     if( pParent->nOverflow && i+nxDiv==pParent->aiOvfl[0] ){
@@ -7603,6 +7602,7 @@ static int balance_nonroot(
 
   /* Make nMaxCells a multiple of 4 in order to preserve 8-byte
   ** alignment */
+  nMaxCells = nOld*(MX_CELL(pBt) + ArraySize(pParent->apOvfl));
   nMaxCells = (nMaxCells + 3)&~3;
 
   /*
@@ -7613,7 +7613,7 @@ static int balance_nonroot(
      + nMaxCells*sizeof(u16)                       /* b.szCell */
      + pBt->pageSize;                              /* aSpace1 */
 
-  assert( szScratch<=6*(int)pBt->pageSize );
+  assert( szScratch<=7*(int)pBt->pageSize );
   b.apCell = sqlite3StackAllocRaw(0, szScratch );
   if( b.apCell==0 ){
     rc = SQLITE_NOMEM_BKPT;

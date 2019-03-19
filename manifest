@@ -1,5 +1,5 @@
-C Tweak\sthe\stool/cg_anno.tcl\sscript\sso\sthat\sit\scan\srun\son\ssystems\swithout\s/usr/bin/tclsh.
-D 2019-03-19T11:35:18.533
+C When\scomputing\sthe\samount\sof\sscratch\smemory\sneeded\sduring\sa\srebalance\soperation,\nassume\sthe\sworst\scase\sfor\sthe\snumber\sof\scells\sper\spage,\srather\sthan\srelying\non\sthe\sBtPage.nCell\svalue,\swhich\smight\sbe\sincorrect\sfor\sa\scorrupt\sdatabase.
+D 2019-03-19T15:36:46.725
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -457,7 +457,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 4c09765664b0baecce2a35529c86d004fc9a1524c1fa4c94d5b72e04908b43e7
+F src/btree.c a4e19b72925f65b421729c87fefe904a625dc0919491cd4ece9d230987f60400
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 3acec29b23948042173301a8befebae01a98344debf66cbd4467c8b9077707b8
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbb7e60272cda518fa1bd8d3e3cd02e031b657fef92a9d4d7ed8c2bfb97be7c8
-R c0731a33012713bd9f9a8b4e95797ee2
-U dan
-Z 07e39bf60d707adb20de126674d52dcf
+P a026189aa46114d2de4f1da5882aeef9cf446a5aa6ea068d51c27df0d7302ddb
+R 930d0e6ed02ecd076cace75127edc687
+U drh
+Z 703b9416cede629c6657cfe83687a7c6
