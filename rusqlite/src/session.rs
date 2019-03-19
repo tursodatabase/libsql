@@ -719,8 +719,8 @@ unsafe extern "C" fn x_output(p_out: *mut c_void, data: *const c_void, len: c_in
 
 #[cfg(test)]
 mod test {
-    use std::sync::atomic::{AtomicBool, Ordering};
     use fallible_streaming_iterator::FallibleStreamingIterator;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     use super::{Changeset, ChangesetIter, ConflictAction, ConflictType, Session};
     use crate::hooks::Action;
