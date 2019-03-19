@@ -3494,6 +3494,10 @@ do_execsql_test 3.12 {
   SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a DESC RANGE BETWEEN 2.1 FOLLOWING AND UNBOUNDED FOLLOWING )
 } {30 232   22 112   20 112   15 30   13 30   13 30   10 10   5 {}}
 
+do_execsql_test 3.13 {
+  SELECT CAST(a AS INTEGER), sum(b) OVER win FROM t1 WINDOW win AS ( ORDER BY a RANGE 5.1 PRECEDING )
+} {5 10   10 30   13 72   13 72   15 102   20 70   22 120   30 90}
+
 #==========================================================================
 
 do_execsql_test 4.0 {

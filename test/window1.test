@@ -970,6 +970,63 @@ foreach {tn expr err} {
   " $res
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 23.0 {
+  CREATE TABLE t5(a, b, c);
+  CREATE INDEX t5ab ON t5(a, b);
+}
+
+proc do_ordercount_test {tn sql nOrderBy} {
+  set plan [execsql "EXPLAIN QUERY PLAN $sql"]
+  uplevel [list do_test $tn [list regexp -all ORDER $plan] $nOrderBy]
+}
+
+do_ordercount_test 23.1 {
+  SELECT 
+    sum(c) OVER (ORDER BY a, b),
+    sum(c) OVER (PARTITION BY a ORDER BY b)
+  FROM t5
+} 0
+
+do_ordercount_test 23.2 {
+  SELECT 
+    sum(c) OVER (ORDER BY b, a),
+    sum(c) OVER (PARTITION BY b ORDER BY a)
+  FROM t5
+} 1
+
+do_ordercount_test 23.3 {
+  SELECT 
+    sum(c) OVER (ORDER BY b, a),
+    sum(c) OVER (ORDER BY c, b)
+  FROM t5
+} 2
+
+do_ordercount_test 23.4 {
+  SELECT 
+    sum(c) OVER (ORDER BY b ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+    sum(c) OVER (ORDER BY b RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+    sum(c) OVER (ORDER BY b GROUPS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+  FROM t5
+} 1
+
+do_ordercount_test 23.5 {
+  SELECT 
+    sum(c) OVER (ORDER BY b+1 ROWS UNBOUNDED PRECEDING),
+    sum(c) OVER (ORDER BY b+1 RANGE UNBOUNDED PRECEDING),
+    sum(c) OVER (ORDER BY b+1 GROUPS UNBOUNDED PRECEDING)
+  FROM t5
+} 1
+
+do_ordercount_test 23.6 {
+  SELECT 
+    sum(c) OVER (ORDER BY b+1 ROWS UNBOUNDED PRECEDING),
+    sum(c) OVER (ORDER BY b+2 RANGE UNBOUNDED PRECEDING),
+    sum(c) OVER (ORDER BY b+3 GROUPS UNBOUNDED PRECEDING)
+  FROM t5
+} 3
+
 finish_test
 
 
