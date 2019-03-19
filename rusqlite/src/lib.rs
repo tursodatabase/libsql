@@ -104,6 +104,7 @@ pub mod backup;
 pub mod blob;
 mod busy;
 mod cache;
+pub mod column;
 pub mod config;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;

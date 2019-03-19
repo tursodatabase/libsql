@@ -7,7 +7,7 @@ use crate::types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
-    stmt: Option<&'stmt Statement<'stmt>>,
+    pub(crate) stmt: Option<&'stmt Statement<'stmt>>,
     row: Option<Row<'stmt>>,
 }
 
@@ -183,7 +183,7 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
 
 /// A single result row of a query.
 pub struct Row<'stmt> {
-    stmt: &'stmt Statement<'stmt>,
+    pub(crate) stmt: &'stmt Statement<'stmt>,
 }
 
 impl<'stmt> Row<'stmt> {
@@ -274,11 +274,6 @@ impl<'stmt> Row<'stmt> {
     /// * If `idx` is not a valid column name for this row.
     pub fn get_raw<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
         self.get_raw_checked(idx).unwrap()
-    }
-
-    /// Return the number of columns in the current row.
-    pub fn column_count(&self) -> usize {
-        self.stmt.column_count()
     }
 }
 

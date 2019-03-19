@@ -18,48 +18,10 @@ use crate::vtab::array::{free_array, ARRAY_TYPE};
 /// A prepared statement.
 pub struct Statement<'conn> {
     conn: &'conn Connection,
-    stmt: RawStatement,
+    pub(crate) stmt: RawStatement,
 }
 
 impl Statement<'_> {
-    /// Get all the column names in the result set of the prepared statement.
-    pub fn column_names(&self) -> Vec<&str> {
-        let n = self.column_count();
-        let mut cols = Vec::with_capacity(n as usize);
-        for i in 0..n {
-            let slice = self.stmt.column_name(i);
-            let s = str::from_utf8(slice.to_bytes()).unwrap();
-            cols.push(s);
-        }
-        cols
-    }
-
-    /// Return the number of columns in the result set returned by the prepared
-    /// statement.
-    pub fn column_count(&self) -> usize {
-        self.stmt.column_count()
-    }
-
-    /// Returns the column index in the result set for a given column name.
-    ///
-    /// If there is no AS clause then the name of the column is unspecified and
-    /// may change from one release of SQLite to the next.
-    ///
-    /// # Failure
-    ///
-    /// Will return an `Error::InvalidColumnName` when there is no column with
-    /// the specified `name`.
-    pub fn column_index(&self, name: &str) -> Result<usize> {
-        let bytes = name.as_bytes();
-        let n = self.column_count();
-        for i in 0..n {
-            if bytes.eq_ignore_ascii_case(self.stmt.column_name(i).to_bytes()) {
-                return Ok(i);
-            }
-        }
-        Err(Error::InvalidColumnName(String::from(name)))
-    }
-
     /// Execute the prepared statement.
     ///
     /// On success, returns the number of rows that were changed or inserted or
