@@ -96,6 +96,15 @@ foreach {tn frame} {
   execsql_test 1.$tn.7 "
     SELECT a, b, sum(c) OVER (ORDER BY a,b $f2) FROM t3 ORDER BY 1, 2, 3;
   "
+
+  execsql_test 1.$tn.8 "
+    SELECT a, b, 
+      sum(c) OVER (ORDER BY a $f2),
+      sum(c) OVER (ORDER BY a $frame),
+      sum(c) OVER (ORDER BY a,b $f2),
+      sum(c) OVER (ORDER BY a,b $frame)
+    FROM t3 ORDER BY 1, 2, 3;
+  "
 }
 
 

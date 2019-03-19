@@ -4045,7 +4045,9 @@ typedef struct sqlite3_context sqlite3_context;
 ** ^The fifth argument to the BLOB and string binding interfaces
 ** is a destructor used to dispose of the BLOB or
 ** string after SQLite has finished with it.  ^The destructor is called
-** to dispose of the BLOB or string even if the call to bind API fails.
+** to dispose of the BLOB or string even if the call to the bind API fails,
+** except the destructor is not called if the third parameter is a NULL
+** pointer or the fourth parameter is negative.
 ** ^If the fifth argument is
 ** the special value [SQLITE_STATIC], then SQLite assumes that the
 ** information is in static, unmanaged space and does not need to be freed.
@@ -5803,7 +5805,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** associated with database N of connection D.  ^The main database file
 ** has the name "main".  If there is no attached database N on the database
 ** connection D, or if database N is a temporary or in-memory database, then
-** a NULL pointer is returned.
+** this function will return either a NULL pointer or an empty string.
 **
 ** ^The filename returned by this function is the output of the
 ** xFullPathname method of the [VFS].  ^In other words, the filename
