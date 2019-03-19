@@ -81,7 +81,38 @@ do_execsql_test 3.2 {
   SELECT sql FROM sqlite_master WHERE name = 'v1'
 } {{CREATE VIEW v1 AS SELECT * FROM t1 WHERE a=1 OR (bbb IN ())}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t3(e, f);
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2 VALUES(new.a, new.b);
+  END;
+}
 
+do_catchsql_test 4.1.2 {
+  BEGIN;
+    ALTER TABLE t3 RENAME TO t4;
+} {1 {error in trigger tr1: no such table: main.t2}}
+do_execsql_test 4.1.2 {
+  COMMIT;
+}
+do_execsql_test 4.1.3 {
+  SELECT * FROM sqlite_master WHERE type='table' AND name!='t1';
+} {table t3 t3 3 {CREATE TABLE t3(e, f)}}
+
+
+do_catchsql_test 4.2.1 {
+  BEGIN;
+    ALTER TABLE t3 RENAME e TO eee;
+} {1 {error in trigger tr1: no such table: main.t2}}
+do_execsql_test 4.2.2 {
+  COMMIT;
+}
+do_execsql_test 4.2.3 {
+  SELECT * FROM sqlite_master WHERE type='table' AND name!='t1';
+} {table t3 t3 3 {CREATE TABLE t3(e, f)}}
 
 finish_test
 

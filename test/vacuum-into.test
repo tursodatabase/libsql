@@ -86,5 +86,18 @@ do_catchsql_test vacuum-into-420 {
   VACUUM INTO target2()
 } {1 {no such function: target2}}
 
+# The ability to VACUUM INTO a read-only database
+db close
+sqlite3 db test.db -readonly 1
+forcedelete test.db2
+do_execsql_test vacuum-into-500 {
+  VACUUM INTO 'test.db2';
+}
+sqlite3 db2 test.db2
+do_test vacuum-into-510 {
+  db2 eval {SELECT name FROM sqlite_master ORDER BY 1}
+} {t1 t1b t2}
+db2 close
+db close
 
 finish_test

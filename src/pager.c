@@ -837,6 +837,9 @@ static const unsigned char aJournalMagic[] = {
 int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->fd->pMethods==0 ) return 0;
   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
+#ifdef SQLITE_HAS_CODEC
+  if( pPager->xCodec!=0 ) return 0;
+#endif
 #ifndef SQLITE_OMIT_WAL
   if( pPager->pWal ){
     u32 iRead = 0;
@@ -7209,8 +7212,12 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   */
   pPg->flags &= ~PGHDR_NEED_SYNC;
   pPgOld = sqlite3PagerLookup(pPager, pgno);
-  assert( !pPgOld || pPgOld->nRef==1 );
+  assert( !pPgOld || pPgOld->nRef==1 || CORRUPT_DB );
   if( pPgOld ){
+    if( pPgOld->nRef>1 ){
+      sqlite3PagerUnrefNotNull(pPgOld);
+      return SQLITE_CORRUPT_BKPT;
+    }
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
     if( pPager->tempFile ){
       /* Do not discard pages from an in-memory database since we might
