@@ -2474,7 +2474,7 @@ static void fts5SegIterHashInit(
     if( pList ){
       pLeaf = fts5IdxMalloc(p, sizeof(Fts5Data));
       if( pLeaf ){
-        pLeaf->p = pList;
+        pLeaf->p = (u8*)pList;
       }
     }
   }else{

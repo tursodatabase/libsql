@@ -1,5 +1,5 @@
-C When\scomputing\sthe\samount\sof\sscratch\smemory\sneeded\sduring\sa\srebalance\soperation,\nassume\sthe\sworst\scase\sfor\sthe\snumber\sof\scells\sper\spage,\srather\sthan\srelying\non\sthe\sBtPage.nCell\svalue,\swhich\smight\sbe\sincorrect\sfor\sa\scorrupt\sdatabase.
-D 2019-03-19T15:36:46.725
+C Fix\sa\scompiler\swarning\sin\sFTS5.
+D 2019-03-19T20:13:41.113
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -116,7 +116,7 @@ F ext/fts5/fts5_buffer.c 2e750cd4c0d456d4e1a8dcc649382708422b535dc32b375fd3d3306
 F ext/fts5/fts5_config.c eeec97cb0237991e7fa3bbae07b5cc354e3f238b661200c11228fe167c18f882
 F ext/fts5/fts5_expr.c 188d1dca5a262a0708efc5deb809f1aa6ecea4158986a439d2670cfe72d10b65
 F ext/fts5/fts5_hash.c c27852a632e3cacf40cd8262afbf019f32a3d67d948c27225ecdede6ab6ae3e7
-F ext/fts5/fts5_index.c 39b59af94153bbac8ae5419700410518db54ff8a7a73b4e43cf2d69b797e7546
+F ext/fts5/fts5_index.c 865302c41aee4e8336b5dd06759e962e5d8b68ed3cb96ccf0e0dee451f399a34
 F ext/fts5/fts5_main.c 95d63bbe6075955961e56878c3a8705dc475c2b17f5c767f7b8af14093ae614b
 F ext/fts5/fts5_storage.c 57e3f2b1a612961a27c944d6b8821028ec5fdb541d7e6b841785003ac3b0b43a
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a026189aa46114d2de4f1da5882aeef9cf446a5aa6ea068d51c27df0d7302ddb
-R 930d0e6ed02ecd076cace75127edc687
+P a420ebd08f5a96b9e61a37cb42e1b3f346c23505630d9c33fe30ce7882959b36
+R d0def85f54e342f262780b1d9fa1136f
 U drh
-Z 703b9416cede629c6657cfe83687a7c6
+Z d6df5afd89620a8bc9b9fcd06554263c
