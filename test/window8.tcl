@@ -221,6 +221,49 @@ execsql_test 4.4.2 {
     ORDER BY a DESC NULLS LAST ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
   ) FROM t1 ORDER BY 1 NULLS FIRST;
 }
+
+==========
+
+execsql_test 5.0 {
+  INSERT INTO t3 VALUES
+    (NULL, 'bb', 355), (NULL, 'cc', 158), (NULL, 'aa', 399), 
+    ('JJ', NULL, 839), ('FF', NULL, 618), ('BB', NULL, 393), 
+    (NULL, 'bb', 629), (NULL, NULL, 667), (NULL, NULL, 870);
+}
+
+foreach {tn ex} {
+  1  { EXCLUDE NO OTHERS }
+  2  { EXCLUDE CURRENT ROW }
+  3  { EXCLUDE GROUP }
+  4  { EXCLUDE TIES }
+} {
+  foreach {tn2 frame} {
+    1 { RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING }
+    2 { ORDER BY a NULLS FIRST 
+        RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING }
+    3 { PARTITION BY coalesce(a, '') 
+        RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING }
+    4 { ORDER BY a NULLS FIRST GROUPS 6 PRECEDING }
+    5 { ORDER BY c NULLS FIRST RANGE BETWEEN 6 PRECEDING AND 7 FOLLOWING }
+  } {
+    execsql_test 5.$tn.$tn2.1 "
+      SELECT max(c) OVER win,
+             min(c) OVER win
+      FROM t3
+      WINDOW win AS ( $frame $ex )
+      ORDER BY 1 NULLS FIRST, 2 NULLS FIRST
+    "
+
+    execsql_test 5.$tn.$tn2.2 "
+      SELECT sum(c) FILTER (WHERE (c%2)!=0) OVER win,
+             rank() OVER win
+      FROM t3
+      WINDOW win AS ( $frame $ex )
+      ORDER BY 1 NULLS FIRST, 2 NULLS FIRST
+    "
+  }
+}
+
 finish_test
 
 

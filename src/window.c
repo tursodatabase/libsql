@@ -1573,18 +1573,24 @@ static void windowFullScan(WindowCodeArg *p){
   }else if( pMWin->eExclude!=TK_NO ){
     int addr;
     int addrEq = 0;
-    KeyInfo *pKeyInfo;
+    KeyInfo *pKeyInfo = 0;
 
-    pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pMWin->pOrderBy, 0, 0);
-    if( pMWin->eExclude==TK_TIES ){
-      addrEq = sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, lblNext, regRowid);
+    if( pMWin->pOrderBy ){
+      pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pMWin->pOrderBy, 0, 0);
     }
-    windowReadPeerValues(p, csr, regPeer);
-    sqlite3VdbeAddOp3(v, OP_Compare, regPeer, regCPeer, nPeer);
-    sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
-    addr = sqlite3VdbeCurrentAddr(v)+1;
-    sqlite3VdbeAddOp3(v, OP_Jump, addr, lblNext, addr);
-    VdbeCoverageEqNe(v);
+    if( pMWin->eExclude==TK_TIES ){
+      addrEq = sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, 0, regRowid);
+    }
+    if( pKeyInfo ){
+      windowReadPeerValues(p, csr, regPeer);
+      sqlite3VdbeAddOp3(v, OP_Compare, regPeer, regCPeer, nPeer);
+      sqlite3VdbeAppendP4(v, (void*)pKeyInfo, P4_KEYINFO);
+      addr = sqlite3VdbeCurrentAddr(v)+1;
+      sqlite3VdbeAddOp3(v, OP_Jump, addr, lblNext, addr);
+      VdbeCoverageEqNe(v);
+    }else{
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, lblNext);
+    }
     if( addrEq ) sqlite3VdbeJumpHere(v, addrEq);
   }
 
