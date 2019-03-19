@@ -59,7 +59,7 @@ csv = { version = "1.0", optional = true }
 url = { version = "1.7", optional = true }
 lazy_static = { version = "1.0", optional = true }
 byteorder = { version = "1.2", features = ["i128"], optional = true }
-fallible-iterator = "0.1"
+fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 memchr = "2.2.0"
 
