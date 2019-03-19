@@ -245,21 +245,26 @@ foreach {tn ex} {
         RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING }
     4 { ORDER BY a NULLS FIRST GROUPS 6 PRECEDING }
     5 { ORDER BY c NULLS FIRST RANGE BETWEEN 6 PRECEDING AND 7 FOLLOWING }
+    6 { ORDER BY c NULLS FIRST RANGE BETWEEN 0 PRECEDING AND 0 FOLLOWING }
+    7 { ORDER BY c NULLS FIRST, b NULLS FIRST, a NULLS FIRST
+        ROWS BETWEEN 6 PRECEDING AND UNBOUNDED FOLLOWING }
   } {
     execsql_test 5.$tn.$tn2.1 "
       SELECT max(c) OVER win,
-             min(c) OVER win
+             min(c) OVER win,
+             count(a) OVER win
       FROM t3
       WINDOW win AS ( $frame $ex )
-      ORDER BY 1 NULLS FIRST, 2 NULLS FIRST
+      ORDER BY 1 NULLS FIRST, 2 NULLS FIRST, 3 NULLS FIRST
     "
 
     execsql_test 5.$tn.$tn2.2 "
       SELECT sum(c) FILTER (WHERE (c%2)!=0) OVER win,
-             rank() OVER win
+             rank() OVER win,
+             dense_rank() OVER win
       FROM t3
       WINDOW win AS ( $frame $ex )
-      ORDER BY 1 NULLS FIRST, 2 NULLS FIRST
+      ORDER BY 1 NULLS FIRST, 2 NULLS FIRST, 3 NULLS FIRST
     "
   }
 }

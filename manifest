@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sEXCLUDE\sclauses\son\swindow\sframes\swith\sno\sORDER\sBY.
-D 2019-03-19T19:19:53.610
+C Add\sfurther\stests\sto\swindow8.test.
+D 2019-03-19T19:39:42.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1688,8 +1688,8 @@ F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652
 F test/window6.test 604890f2b0f976339e6a1774cd90d48840e57a54b4f21a8b4b3047aa2c9787d1
 F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d76108f
 F test/window7.test ce7f865241fdd1c5c4db869cd7bb2986c3be836bc2e73649a6846dd920f63e0f
-F test/window8.tcl 38eca1d36735d785251e26ab4e6a53ab32b9f892dab25f3adc730288ebdf405a
-F test/window8.test 8d191c46d0d05f4dfd0cbacf2a1ba7f44a14ca8d0c4e8758cdab50ad54cd1293
+F test/window8.tcl 97de3829e0e1aae2c3aaae41a55c54bc1b0751bbc80dfdd93020431b7a889dad
+F test/window8.test 0dd7e2d32605bf59dc6163b924faeff5951419c1c17a9e506e5a38606e97ab7e
 F test/windowerr.tcl 727d77959ac512b473dd2d659937f58688ce5460482a442c2d569fc8656491e5
 F test/windowerr.test 7962cf9b39f27b11ea5c62105ab2322a61ceac098dce536e2b8569c3053f62e7
 F test/windowfault.test cb27a4d8c85982733b123af667921df3a96e23d3739b15d414de75054b334cbe
@@ -1813,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e195948a6876efe01b5cf2ed67bc9015a781fda39dca668099cb7edc1d331818
-R 7302062dc5c56ecf785fcf50d86c1879
+P e0255063799a2a8531f0eaa8790334509591a5ababc5b915035b46d2faa80363
+R 35c7ba821ef75c9b3e6a15f72b75c115
 U dan
-Z 9d652fe80863fdaec099639a4ce1b008
+Z a54d8b32ea4fb15a6f66e7fe3ce1d38d
