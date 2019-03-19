@@ -1302,8 +1302,14 @@ static void windowCheckValue(Parse *pParse, int reg, int eCond){
   int regZero = sqlite3GetTempReg(pParse);
   assert( eCond>=0 && eCond<ArraySize(azErr) );
   sqlite3VdbeAddOp2(v, OP_Integer, 0, regZero);
-  sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
-  if( eCond>=WINDOW_STARTING_NUM ) sqlite3VdbeChangeP5(v, 1);
+  if( eCond>=WINDOW_STARTING_NUM ){
+    int regString = sqlite3GetTempReg(pParse);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
+    sqlite3VdbeAddOp3(v, OP_Ge, regString, sqlite3VdbeCurrentAddr(v)+2, reg);
+    sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC);
+  }else{
+    sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
+  }
   VdbeCoverageIf(v, eCond==0);
   VdbeCoverageIf(v, eCond==1);
   VdbeCoverageIf(v, eCond==2);

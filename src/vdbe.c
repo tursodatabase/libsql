@@ -1723,25 +1723,19 @@ case OP_AddImm: {            /* in1 */
   break;
 }
 
-/* Opcode: MustBeInt P1 P2 * * P5
+/* Opcode: MustBeInt P1 P2 * * *
 ** 
-** If P5 is 0, force the value in register P1 to be an integer. If 
-** the value in P1 is not an integer and cannot be converted into an 
-** integer without data loss, then jump immediately to P2, or if P2==0
+** Force the value in register P1 to be an integer.  If the value
+** in P1 is not an integer and cannot be converted into an integer
+** without data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
-**
-** Or, if P5 is non-zero, then force the register in P1 to be a number
-** (real or integer). Jump to P2 if this cannot be accomplished without
-** data loss. P2 must be non-zero in this case.
 */
 case OP_MustBeInt: {            /* jump, in1 */
-  u8 f;
-  f = (pOp->p5 ? (MEM_Int|MEM_Real) : MEM_Int);
   pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & f)==0 ){
+  if( (pIn1->flags & MEM_Int)==0 ){
     applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
-    VdbeBranchTaken((pIn1->flags&f)==0, 2);
-    if( (pIn1->flags & f)==0 ){
+    VdbeBranchTaken((pIn1->flags&MEM_Int)==0, 2);
+    if( (pIn1->flags & MEM_Int)==0 ){
       if( pOp->p2==0 ){
         rc = SQLITE_MISMATCH;
         goto abort_due_to_error;
@@ -1750,7 +1744,7 @@ case OP_MustBeInt: {            /* jump, in1 */
       }
     }
   }
-  if( f==MEM_Int ) MemSetTypeFlag(pIn1, MEM_Int);
+  MemSetTypeFlag(pIn1, MEM_Int);
   break;
 }
 
