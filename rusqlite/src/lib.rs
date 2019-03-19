@@ -83,6 +83,7 @@ use crate::raw_statement::RawStatement;
 use crate::types::ValueRef;
 
 pub use crate::cache::CachedStatement;
+pub use crate::column::Column;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
 #[cfg(feature = "hooks")]
@@ -104,6 +105,7 @@ pub mod backup;
 pub mod blob;
 mod busy;
 mod cache;
+mod column;
 pub mod config;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;
@@ -844,10 +846,10 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod test {
-    use fallible_iterator::FallibleIterator;
     use self::tempdir::TempDir;
     pub use super::*;
     use crate::ffi;
+    use fallible_iterator::FallibleIterator;
     pub use std::error::Error as StdError;
     pub use std::fmt;
     use tempdir;
@@ -1131,7 +1133,9 @@ mod test {
 
         let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
         let results: Result<Vec<String>> = query
-            .query(NO_PARAMS).unwrap().map(|row| row.get(1))
+            .query(NO_PARAMS)
+            .unwrap()
+            .map(|row| row.get(1))
             .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");

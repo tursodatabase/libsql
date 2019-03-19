@@ -26,6 +26,17 @@ impl RawStatement {
         unsafe { ffi::sqlite3_column_type(self.0, idx as c_int) }
     }
 
+    pub fn column_decltype(&self, idx: usize) -> Option<&CStr> {
+        unsafe {
+            let decltype = ffi::sqlite3_column_decltype(self.0, idx as c_int);
+            if decltype.is_null() {
+                None
+            } else {
+                Some(CStr::from_ptr(decltype))
+            }
+        }
+    }
+
     pub fn column_name(&self, idx: usize) -> &CStr {
         unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx as c_int)) }
     }

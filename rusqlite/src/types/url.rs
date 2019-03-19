@@ -1,7 +1,7 @@
 //! `ToSql` and `FromSql` implementation for [`url::Url`].
-use url::Url;
-use crate::Result;
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use crate::Result;
+use url::Url;
 
 /// Serialize `Url` to text.
 impl ToSql for Url {
@@ -23,8 +23,8 @@ impl FromSql for Url {
 
 #[cfg(test)]
 mod test {
-    use url::{Url, ParseError};
-    use crate::{Connection, params, Error, Result};
+    use crate::{params, Connection, Error, Result};
+    use url::{ParseError, Url};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -34,11 +34,7 @@ mod test {
     }
 
     fn get_url(db: &Connection, id: i64) -> Result<Url> {
-        db.query_row(
-            "SELECT v FROM urls WHERE i = ?",
-            params![id],
-            |r| r.get(0),
-        )
+        db.query_row("SELECT v FROM urls WHERE i = ?", params![id], |r| r.get(0))
     }
 
     #[test]
