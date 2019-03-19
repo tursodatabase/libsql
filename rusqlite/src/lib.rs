@@ -83,6 +83,7 @@ use crate::raw_statement::RawStatement;
 use crate::types::ValueRef;
 
 pub use crate::cache::CachedStatement;
+pub use crate::column::Column;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
 #[cfg(feature = "hooks")]
@@ -104,7 +105,7 @@ pub mod backup;
 pub mod blob;
 mod busy;
 mod cache;
-pub mod column;
+mod column;
 pub mod config;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;

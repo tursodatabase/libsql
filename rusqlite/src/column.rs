@@ -1,4 +1,3 @@
-//! Query columns
 use std::str;
 
 use crate::{Error, Result, Row, Rows, Statement};
