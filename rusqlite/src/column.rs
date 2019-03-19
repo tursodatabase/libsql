@@ -121,13 +121,11 @@ mod test {
         );
         let column_types: Vec<Option<&str>> = columns.iter().map(Column::decl_type).collect();
         assert_eq!(
-            column_types.as_slice(),
+            &column_types[..3],
             &[
                 Some("text"),
                 Some("text"),
                 Some("text"),
-                Some("int"),
-                Some("text")
             ]
         );
     }
