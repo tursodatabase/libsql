@@ -924,6 +924,20 @@ do_execsql_test 20.3.2 {
   ) FROM t1 ORDER BY a ASC;
 } {{} 200 {} 200 1 3 2 6 3 10 4 14 5 12 a 6 b 7 c 8 d 9 e 10}
 
+#-------------------------------------------------------------------------
+do_execsql_test 21.0 {
+  CREATE TABLE keyword_tab(
+    current, exclude, filter, following, groups, no, others, over,
+    partition, preceding, range, ties, unbounded, window
+  );
+}
+do_execsql_test 21.1 {
+  SELECT
+    current, exclude, filter, following, groups, no, others, over,
+    partition, preceding, range, ties, unbounded, window
+  FROM keyword_tab
+}
+
 finish_test
 
 

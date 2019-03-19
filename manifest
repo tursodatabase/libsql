@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sfor\snew\swindow\sfunction\sfunctionality.
-D 2019-03-18T21:19:40.529
+C Ensure\sthat\sall\sthe\snew\swindow-function\skeywords\scan\sstill\sbe\sused\sas\sSQL\sidentifiers.
+D 2019-03-19T06:40:29.205
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 236d2739dc3e823c3c909bca2d6cef93009bafbefd7018a8f3281074ecb92954
@@ -504,7 +504,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y cff56367d4226fe067eb595151352658af63e6bf55da84e71d3a72c36f3a0b00
+F src/parse.y a020386af1739371b2eafba077497aacf2a840d1a178508dc6f8c19448e42054
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c a72804486dfa8e4b6bc30d666c97ecf1155f91a4351fc6e48ea4097e4eb304fb
@@ -1676,7 +1676,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 6c7bbed965407a28fc699d3bab2fd199e75dbd7a5b3fe88dfe8149c583a526eb
+F test/window1.test 1e0118726fd898a882c2c70244b13f40bbcea3f938154892bec871fc2008081d
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1812,7 +1812,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2879a691aca9304aea5acb46bab8e82bb2e08eb54201f3679d60bfc0e8383845
-R 29fe8f61f3ee63049a1a0d59268525ca
+P 1fbddf01b1c3fff95b05e2f2f709754e2b514296060b4846518791e7161d9ddb
+R 722fee323a7cbe33e6fc342286fa5da6
 U dan
-Z ab4dc94ee7f08da540a90fde4a158333
+Z 725b1daf1dcfd1566aa8e53f82b01c01
