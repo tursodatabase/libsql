@@ -1,5 +1,5 @@
-C Enhance\sthe\sVACUUM\sINTO\scommand\sso\sthat\sit\sworks\son\sread-only\sdatabases.
-D 2019-03-19T20:42:42.516
+C Enhance\sthe\srtreenode()\sfunction\sof\srtree\s(used\sfor\stesting)\sso\sthat\sit\nuses\sthe\snewer\ssqlite3_str\sobject\sfor\sbetter\sperformance\sand\simproved\nerror\sreporting.
+D 2019-03-20T11:16:09.278
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -370,7 +370,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 061432bddc38c4c10c7e4ce940d581c886d65bb5814b4b65b46ad046aa85eaa2
-F ext/rtree/rtree.c 57729cc19f3832e5f9051556af44ed264b5bd54b01543cd7e50d5143817b964c
+F ext/rtree/rtree.c f2ce90120f3e2e01f8a510a227cafbea224c08ba2bf6809b0139c671de2873dc
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 7573134f1b4f59df36c1b0a6de51268fd3b9c714d91f3811482263e734e416ea
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d5acf3af65f9608d4096b9b78289d84b21cd1ea463457f858ffeb20d5bd5d123
-R f00f2011633eed78de2ba493a3b1eac3
+P 55be6d0a9fa8a64b9c9c5ed51a2b9144304f7f0870a13b92d5864ac4d54491b6
+R 115ebe89ec824cbf47067b926d59573e
 U drh
-Z 1def333ee1f2c7ed9dc916a2f0ad220f
+Z 07d1c7d0324b01226c5f702e4b24bb20
