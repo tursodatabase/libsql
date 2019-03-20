@@ -1396,8 +1396,17 @@ void sqlite3GenerateConstraintChecks(
 #ifndef SQLITE_OMIT_CHECK
   if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
     ExprList *pCheck = pTab->pCheck;
+    VdbeOp *pOp;
     pParse->iSelfTab = -(regNewData+1);
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
+    sqlite3TableAffinity(v, pTab, regNewData+1);
+    pOp = sqlite3VdbeGetOp(v, -1);
+    if( pOp->opcode==OP_Affinity && pOp->p4.z!=0 ){
+      const char *zAff = pOp->p4.z;
+      for(i=0; zAff[i]; i++){
+        if( zAff[i]=='E' ) sqlite3VdbeAddOp1(v,OP_RealAffinity,regNewData+i+1);
+      }
+    }
     for(i=0; i<pCheck->nExpr; i++){
       int allOk;
       Expr *pExpr = pCheck->a[i].pExpr;

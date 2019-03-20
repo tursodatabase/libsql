@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sgive\sbetter\serror\smessages\sif\ssomething\sgoes\swrong\nwith\sthe\s".dbinfo"\scommand.
-D 2019-03-20T18:22:51.910
+C Experimental\schange\sto\sapply\saffinity\sbefore\srunning\sCHECK\sconstraints\son\nan\sINSERT.\s\sNote\sthat\sin\sthe\sCHECK\sconstraints,\sREAL\saffinity\sreally\sis\nREAL\saffinity,\sand\snot\snumeric\saffinity.\sThis\scauses\sfailures\sin\ssome\stests\nthat\sare\sassuming\saffinity\sis\sapplied\safter\sCHECK\sconstraints.
+D 2019-03-20T20:27:20.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 4ce12b5ba3bcbfa17ec37ce960d499fc287b6289df2c00b31201f716a3c7df45
+F src/insert.c 51a6219664f3fdd3fe7aea12ec8bd5bd35c14e5b5b0e05cfeffcd0e79d7aaf9a
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 27d7265625ea6eaccdfe7c53ef41adc179c9357a077702a860c1a3b0a037a16f
@@ -1807,7 +1807,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9e2393cf201e3fc24519c5ae65d0a5953147d78884e53d44a7958747b4a7e13
-R bac077ecc3827c57122ba7154b5e4a1d
+P 3649a77b79001ea6c5defe882f9934521b20b9d36aab26d03b5d42006c7fa228
+R c62b2b78dc2ca8850c277849afe0ea49
+T *branch * apply-affinity-first
+T *sym-apply-affinity-first *
+T -sym-trunk *
 U drh
-Z 6a80d73acf1c73bf71a6659d9de2609c
+Z d079a1d17a8c52037e914a1081005999
