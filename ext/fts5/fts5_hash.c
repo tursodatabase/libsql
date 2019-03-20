@@ -103,7 +103,7 @@ int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
       *ppNew = 0;
       rc = SQLITE_NOMEM;
     }else{
-      memset(pNew->aSlot, 0, nByte);
+      memset(pNew->aSlot, 0, (size_t)nByte);
     }
   }
   return rc;
@@ -284,7 +284,7 @@ int sqlite3Fts5HashWrite(
     p = (Fts5HashEntry*)sqlite3_malloc64(nByte);
     if( !p ) return SQLITE_NOMEM;
     memset(p, 0, sizeof(Fts5HashEntry));
-    p->nAlloc = nByte;
+    p->nAlloc = (int)nByte;
     zKey = fts5EntryKey(p);
     zKey[0] = bByte;
     memcpy(&zKey[1], pToken, nToken);

@@ -2013,7 +2013,7 @@ static int btreeInitPage(MemPage *pPage){
   ** offset to the cell content area will equal the page size minus the
   ** bytes of reserved space. */
   assert( pPage->nCell>0
-       || get2byteNotZero(&data[5])==pBt->usableSize
+       || get2byteNotZero(&data[5])==(int)pBt->usableSize
        || CORRUPT_DB );
   pPage->nFree = -1;  /* Indicate that this value is yet uncomputed */
   pPage->isInit = 1;
