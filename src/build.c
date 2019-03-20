@@ -431,7 +431,7 @@ Table *sqlite3LocateTable(
     p = 0;
   }
 
-  if( p==0 && pParse->nErr==0 ){
+  if( p==0 && (!IsReuseSchema(db) || pParse->nErr==0) ){
     const char *zMsg = flags & LOCATE_VIEW ? "no such view" : "no such table";
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
