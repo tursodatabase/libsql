@@ -256,7 +256,7 @@ static void *unionMalloc(int *pRc, sqlite3_int64 nByte){
   if( *pRc==SQLITE_OK ){
     pRet = sqlite3_malloc64(nByte);
     if( pRet ){
-      memset(pRet, 0, nByte);
+      memset(pRet, 0, (size_t)nByte);
     }else{
       *pRc = SQLITE_NOMEM;
     }
@@ -279,7 +279,7 @@ static char *unionStrdup(int *pRc, const char *zIn){
     sqlite3_int64 nByte = strlen(zIn) + 1;
     zRet = unionMalloc(pRc, nByte);
     if( zRet ){
-      memcpy(zRet, zIn, nByte);
+      memcpy(zRet, zIn, (size_t)nByte);
     }
   }
   return zRet;

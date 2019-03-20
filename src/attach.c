@@ -232,8 +232,8 @@ static void attachFunc(
   */
   if( rc==SQLITE_OK ){
     db->init.iDb = 0;
-    if( !IsReuseSchema(db) ){
-      db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
+    db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
+    if( !IsReuseSchema(db) && !REOPEN_AS_MEMDB(db) ){
       sqlite3BtreeEnterAll(db);
       rc = sqlite3Init(db, &zErrDyn);
       sqlite3BtreeLeaveAll(db);

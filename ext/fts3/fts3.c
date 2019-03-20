@@ -1873,7 +1873,7 @@ static int fts3ScanInteriorNode(
     zCsr += fts3GetVarint32(zCsr, &nSuffix);
     
     assert( nPrefix>=0 && nSuffix>=0 );
-    if( nPrefix>zCsr-zNode || nSuffix>zEnd-zCsr ){
+    if( nPrefix>zCsr-zNode || nSuffix>zEnd-zCsr || nSuffix==0 ){
       rc = FTS_CORRUPT_VTAB;
       goto finish_scan;
     }

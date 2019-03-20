@@ -1,6 +1,7 @@
 #!/bin/sh
 # \
-exec tclsh  "$0" ${1+"$@"}
+exec tclsh "$0" ${1+"$@"}
+#
 # A wrapper around cg_annotate that sets appropriate command-line options
 # and rearranges the output so that annotated files occur in a consistent
 # sorted order.  Used by the speed-check.tcl script.

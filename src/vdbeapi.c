@@ -1609,6 +1609,14 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 }
 
 /*
+** Return 1 if the statement is an EXPLAIN and return 2 if the
+** statement is an EXPLAIN QUERY PLAN
+*/
+int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
+  return pStmt ? ((Vdbe*)pStmt)->explain : 0;
+}
+
+/*
 ** Return true if the prepared statement is in need of being reset.
 */
 int sqlite3_stmt_busy(sqlite3_stmt *pStmt){

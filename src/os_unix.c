@@ -7822,9 +7822,6 @@ int sqlite3_os_init(void){
     UNIXVFS("unix",          autolockIoFinder ),
 #elif OS_VXWORKS
     UNIXVFS("unix",          vxworksIoFinder ),
-#elif __Fuchsia__
-    /* We are told that Fuchsia only supports dot-file locking */
-    UNIXVFS("unix",          dotlockIoFinder ),
 #else
     UNIXVFS("unix",          posixIoFinder ),
 #endif

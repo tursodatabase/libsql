@@ -3897,6 +3897,18 @@ const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
 /*
+** CAPI3REF: Query The EXPLAIN Setting For A Prepared Statement
+** METHOD: sqlite3_stmt
+**
+** ^The sqlite3_stmt_isexplain(S) interface returns 1 if the
+** prepared statement S is an EXPLAIN statement, or 2 if the
+** statement S is an EXPLAIN QUERY PLAN.
+** ^The sqlite3_stmt_isexplain(S) interface returns 0 if S is
+** an ordinary statement or a NULL pointer.
+*/
+int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
+
+/*
 ** CAPI3REF: Determine If A Prepared Statement Has Been Reset
 ** METHOD: sqlite3_stmt
 **
@@ -4035,7 +4047,9 @@ typedef struct sqlite3_context sqlite3_context;
 ** ^The fifth argument to the BLOB and string binding interfaces
 ** is a destructor used to dispose of the BLOB or
 ** string after SQLite has finished with it.  ^The destructor is called
-** to dispose of the BLOB or string even if the call to bind API fails.
+** to dispose of the BLOB or string even if the call to the bind API fails,
+** except the destructor is not called if the third parameter is a NULL
+** pointer or the fourth parameter is negative.
 ** ^If the fifth argument is
 ** the special value [SQLITE_STATIC], then SQLite assumes that the
 ** information is in static, unmanaged space and does not need to be freed.
@@ -5793,7 +5807,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** associated with database N of connection D.  ^The main database file
 ** has the name "main".  If there is no attached database N on the database
 ** connection D, or if database N is a temporary or in-memory database, then
-** a NULL pointer is returned.
+** this function will return either a NULL pointer or an empty string.
 **
 ** ^The filename returned by this function is the output of the
 ** xFullPathname method of the [VFS].  ^In other words, the filename

@@ -1573,7 +1573,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     }
     iAddr = pc;
     pc = get2byte(&aData[pc]);
-    if( pc<iAddr+size ){
+    if( pc<=iAddr+size ){
       if( pc ){
         /* The next slot in the chain is not past the end of the current slot */
         *pRc = SQLITE_CORRUPT_PAGE(pPg);
@@ -2013,7 +2013,7 @@ static int btreeInitPage(MemPage *pPage){
   ** offset to the cell content area will equal the page size minus the
   ** bytes of reserved space. */
   assert( pPage->nCell>0
-       || get2byteNotZero(&data[5])==pBt->usableSize
+       || get2byteNotZero(&data[5])==(int)pBt->usableSize
        || CORRUPT_DB );
   pPage->nFree = -1;  /* Indicate that this value is yet uncomputed */
   pPage->isInit = 1;
@@ -5552,7 +5552,7 @@ int sqlite3BtreeMovetoUnpacked(
             sqlite3_free(pCellKey);
             goto moveto_finish;
           }
-          c = xRecordCompare(nCell, pCellKey, pIdxKey);
+          c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
         assert( 
@@ -7152,8 +7152,9 @@ static int editPage(
     int iCell = (iOld + pPg->aiOvfl[i]) - iNew;
     if( iCell>=0 && iCell<nNew ){
       pCellptr = &pPg->aCellIdx[iCell * 2];
-      assert( nCell>=iCell );
-      memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+      if( nCell>iCell ){
+        memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+      }
       nCell++;
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
@@ -7558,7 +7559,6 @@ static int balance_nonroot(
         goto balance_cleanup;
       }
     }
-    nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
     if( pParent->nOverflow && i+nxDiv==pParent->aiOvfl[0] ){
@@ -7602,6 +7602,7 @@ static int balance_nonroot(
 
   /* Make nMaxCells a multiple of 4 in order to preserve 8-byte
   ** alignment */
+  nMaxCells = nOld*(MX_CELL(pBt) + ArraySize(pParent->apOvfl));
   nMaxCells = (nMaxCells + 3)&~3;
 
   /*
@@ -7612,7 +7613,7 @@ static int balance_nonroot(
      + nMaxCells*sizeof(u16)                       /* b.szCell */
      + pBt->pageSize;                              /* aSpace1 */
 
-  assert( szScratch<=6*(int)pBt->pageSize );
+  assert( szScratch<=7*(int)pBt->pageSize );
   b.apCell = sqlite3StackAllocRaw(0, szScratch );
   if( b.apCell==0 ){
     rc = SQLITE_NOMEM_BKPT;
@@ -9268,6 +9269,9 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( p->inTrans==TRANS_WRITE );
   assert( iTable>=2 );
+  if( iTable>btreePagecount(pBt) ){
+    return SQLITE_CORRUPT_BKPT;
+  }
 
   rc = btreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
   if( rc ) return rc;

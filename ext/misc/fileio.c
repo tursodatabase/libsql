@@ -158,7 +158,7 @@ static void readFileContents(sqlite3_context *ctx, const char *zName){
     fclose(in);
     return;
   }
-  if( nIn==fread(pBuf, 1, nIn, in) ){
+  if( nIn==fread(pBuf, 1, (size_t)nIn, in) ){
     sqlite3_result_blob64(ctx, pBuf, nIn, sqlite3_free);
   }else{
     sqlite3_result_error_code(ctx, SQLITE_IOERR);
