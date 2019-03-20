@@ -353,7 +353,7 @@ static int fts5SnippetScore(
     sqlite3_int64 iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
     if( (iAdj+nToken)>nDocsize ) iAdj = nDocsize - nToken;
     if( iAdj<0 ) iAdj = 0;
-    *piPos = iAdj;
+    *piPos = (int)iAdj;
   }
 
   return rc;
@@ -581,7 +581,7 @@ static int fts5Bm25GetData(
     if( p==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      memset(p, 0, nByte);
+      memset(p, 0, (size_t)nByte);
       p->nPhrase = nPhrase;
       p->aIDF = (double*)&p[1];
       p->aFreq = &p->aIDF[nPhrase];

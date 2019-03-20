@@ -633,7 +633,7 @@ static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
     pCsr = (Fts5Cursor*)sqlite3_malloc64(nByte);
     if( pCsr ){
       Fts5Global *pGlobal = pTab->pGlobal;
-      memset(pCsr, 0, nByte);
+      memset(pCsr, 0, (size_t)nByte);
       pCsr->aColumnSize = (int*)&pCsr[1];
       pCsr->pNext = pGlobal->pCsr;
       pGlobal->pCsr = pCsr;
@@ -914,7 +914,7 @@ static int fts5CursorFirstSorted(
   nByte = sizeof(Fts5Sorter) + sizeof(int) * (nPhrase-1);
   pSorter = (Fts5Sorter*)sqlite3_malloc64(nByte);
   if( pSorter==0 ) return SQLITE_NOMEM;
-  memset(pSorter, 0, nByte);
+  memset(pSorter, 0, (size_t)nByte);
   pSorter->nIdx = nPhrase;
 
   /* TODO: It would be better to have some system for reusing statement
