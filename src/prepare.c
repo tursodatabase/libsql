@@ -34,7 +34,7 @@ static void corruptSchema(
     pData->rc = SQLITE_ERROR;
   }else if( db->flags & SQLITE_WriteSchema ){
     pData->rc = SQLITE_CORRUPT_BKPT;
-  }else if( IsReuseSchema(db) 
+  }else if( IsSharedSchema(db) 
          && 0==sqlite3StrNICmp(zExtra, "malformed database schema", 17)
   ){
     pData->rc = SQLITE_CORRUPT_BKPT;
@@ -169,7 +169,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     }
   }
 
-  if( iDb!=1 && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA) ){
+  if( iDb!=1 && IsSharedSchema(db) ){
     schemaUpdateChecksum(pData, argv[0], argv[1], argv[2]);
   }
   return 0;
@@ -198,12 +198,12 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   assert( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 );
   assert( iDb>=0 && iDb<db->nDb );
-  assert( db->aDb[iDb].pSchema || (IsReuseSchema(db) && iDb!=1) );
+  assert( db->aDb[iDb].pSchema || (IsSharedSchema(db) && iDb!=1) );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
 
   pDb = &db->aDb[iDb];
-  assert( pDb->pSPool==0 || IsReuseSchema(db) );
+  assert( pDb->pSPool==0 || IsSharedSchema(db) );
   if( pDb->pSPool ){
     /* See if there is a free schema object in the schema-pool. If not,
     ** disconnect from said schema pool and continue. This function will
@@ -400,7 +400,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     rc = SQLITE_OK;
   }
 
-  if( rc==SQLITE_OK && iDb!=1 && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA) ){
+  if( rc==SQLITE_OK && iDb!=1 && IsSharedSchema(db) ){
     rc = sqlite3SchemaConnect(db, iDb, initData.cksum);
   }
 
@@ -426,7 +426,7 @@ error_out:
 }
 
 int sqlite3LockReusableSchema(sqlite3 *db){
-  if( IsReuseSchema(db) && (db->mDbFlags & DBFLAG_SchemaInuse)==0 ){
+  if( IsSharedSchema(db) && (db->mDbFlags & DBFLAG_SchemaInuse)==0 ){
     db->mDbFlags |= DBFLAG_SchemaInuse;
     return 1;
   }
@@ -494,7 +494,7 @@ int sqlite3ReadSchema(Parse *pParse){
     if( rc!=SQLITE_OK ){
       pParse->rc = rc;
       pParse->nErr++;
-    }else if( db->noSharedCache && !IsReuseSchema(db) ){
+    }else if( db->noSharedCache && !IsSharedSchema(db) ){
       db->mDbFlags |= DBFLAG_SchemaKnownOk;
     }
   }

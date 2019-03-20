@@ -1505,7 +1505,7 @@ struct sqlite3 {
 #endif
 };
 
-#define IsReuseSchema(db) (((db)->openFlags & SQLITE_OPEN_SHARED_SCHEMA)!=0)
+#define IsSharedSchema(db) (((db)->openFlags & SQLITE_OPEN_SHARED_SCHEMA)!=0)
 
 /*
 ** A macro to discover the encoding of a database.
@@ -3267,7 +3267,7 @@ struct Trigger {
                              the <column-list> is stored here */
   Schema *pSchema;        /* Schema containing the trigger */
   Schema *pTabSchema;     /* Schema containing the table */
-  char *zTabSchema;       /* Temp triggers in IsReuseSchema() dbs only */
+  char *zTabSchema;       /* Temp triggers in IsSharedSchema() dbs only */
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
 };

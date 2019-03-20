@@ -144,7 +144,7 @@ void sqlite3VtabLock(VTable *pVTab){
 VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
   VTable *pVtab;
   assert( IsVirtual(pTab) );
-  if( IsReuseSchema(db) ){
+  if( IsSharedSchema(db) ){
     int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     if( iDb!=1 ){
       for(pVtab=db->aDb[iDb].pVTable; pVtab; pVtab=pVtab->pNext){
@@ -591,7 +591,7 @@ static int vtabCallConstructor(
       ** Then loop through the columns of the table to see if any of them
       ** contain the token "hidden". If so, set the Column COLFLAG_HIDDEN flag
       ** and remove the token from the type string.  */
-      if( IsReuseSchema(db) && iDb!=1 ){
+      if( IsSharedSchema(db) && iDb!=1 ){
         pVTable->pNext = db->aDb[iDb].pVTable;
         db->aDb[iDb].pVTable = pVTable;
       }else{

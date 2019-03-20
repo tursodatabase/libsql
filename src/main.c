@@ -1054,7 +1054,7 @@ static void disconnectAllVtab(sqlite3 *db){
         if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
       }
     }
-    if( i!=1 && IsReuseSchema(db) ){
+    if( i!=1 && IsSharedSchema(db) ){
       VTable *pVTable;
       VTable *pNext;
       for(pVTable=db->aDb[i].pVTable; pVTable; pVTable=pNext){
@@ -3626,7 +3626,7 @@ int sqlite3_table_column_metadata(
   sqlite3_mutex_enter(db->mutex);
   bUnlock = sqlite3LockReusableSchema(db);
   sqlite3BtreeEnterAll(db);
-  if( IsReuseSchema(db)==0 ){
+  if( IsSharedSchema(db)==0 ){
     rc = sqlite3Init(db, &zErrMsg);
   }
 

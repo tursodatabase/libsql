@@ -420,7 +420,7 @@ void sqlite3Pragma(
 
   /* Make sure the database schema is loaded if the pragma requires that */
   if( (pPragma->mPragFlg & PragFlg_NeedSchema)!=0 ){
-    if( IsReuseSchema(db) && (zDb || (pPragma->mPragFlg & PragFlg_OneSchema)) ){
+    if( IsSharedSchema(db) && (zDb || (pPragma->mPragFlg & PragFlg_OneSchema)) ){
       assert( iDb>=0 && iDb<db->nDb );
       pParse->rc = sqlite3SchemaLoad(db, iDb, 0, &pParse->zErrMsg);
       if( pParse->rc ) goto pragma_out;

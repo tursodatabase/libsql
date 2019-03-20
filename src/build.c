@@ -304,7 +304,7 @@ int sqlite3UserAuthTable(const char *zTable){
 */
 int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
   int rc = SQLITE_OK;
-  if( IsReuseSchema(db) 
+  if( IsSharedSchema(db) 
       && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
       && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
   ){
@@ -348,7 +348,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
         int bUnload = 0;
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        if( IsReuseSchema(db) ){
+        if( IsSharedSchema(db) ){
           Parse *pParse = db->pParse;
           if( pParse && pParse->nErr==0 ){
             pParse->rc = sqlite3SchemaLoad(db, j, &bUnload, &pParse->zErrMsg);
@@ -393,7 +393,7 @@ Table *sqlite3LocateTable(
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
   if( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 
-   && !IsReuseSchema(db)
+   && !IsSharedSchema(db)
    && SQLITE_OK!=sqlite3ReadSchema(pParse)
   ){
     return 0;
@@ -411,14 +411,14 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod ){
-        if( IsReuseSchema(db) && pParse->nErr==0 ){
+        if( IsSharedSchema(db) && pParse->nErr==0 ){
           int bDummy = 0;
           pParse->rc = sqlite3SchemaLoad(db, 0, &bDummy, &pParse->zErrMsg);
           if( pParse->rc ) pParse->nErr++;
         }
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
           Table *pEpoTab = pMod->pEpoTab;
-          assert( IsReuseSchema(db) || pEpoTab->pSchema==db->aDb[0].pSchema );
+          assert( IsSharedSchema(db) || pEpoTab->pSchema==db->aDb[0].pSchema );
           pEpoTab->pSchema = db->aDb[0].pSchema;  /* For SHARED_SCHEMA mode */
           return pEpoTab;
         }
@@ -431,7 +431,7 @@ Table *sqlite3LocateTable(
     p = 0;
   }
 
-  if( p==0 && (!IsReuseSchema(db) || pParse->nErr==0) ){
+  if( p==0 && (!IsSharedSchema(db) || pParse->nErr==0) ){
     const char *zMsg = flags & LOCATE_VIEW ? "no such view" : "no such table";
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
@@ -998,7 +998,7 @@ void sqlite3StartTable(
   */
   if( !IN_SPECIAL_PARSE ){
     char *zDb = db->aDb[iDb].zDbSName;
-    if( !IsReuseSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    if( !IsSharedSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
       goto begin_table_error;
     }
     pTable = sqlite3FindTable(db, zName, zDb);
@@ -2723,7 +2723,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
-  if( !IsReuseSchema(db) && sqlite3ReadSchema(pParse) ) goto exit_drop_table;
+  if( !IsSharedSchema(db) && sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   assert( isView==0 || isView==LOCATE_VIEW );
   pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[0]);
@@ -3147,7 +3147,7 @@ void sqlite3CreateIndex(
   if( IN_DECLARE_VTAB && idxType!=SQLITE_IDXTYPE_PRIMARYKEY ){
     goto exit_create_index;
   }
-  if( !IsReuseSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+  if( !IsSharedSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_create_index;
   }
 

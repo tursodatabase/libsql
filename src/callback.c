@@ -42,7 +42,7 @@ struct SchemaPool {
 
 #ifdef SQLITE_DEBUG
 static void assert_schema_state_ok(sqlite3 *db){
-  if( IsReuseSchema(db) && db->magic!=SQLITE_MAGIC_ZOMBIE ){
+  if( IsSharedSchema(db) && db->magic!=SQLITE_MAGIC_ZOMBIE ){
     int i;
     for(i=0; i<db->nDb; i++){
       if( i!=1 ){
@@ -529,7 +529,7 @@ void sqlite3SchemaClear(void *p){
 */
 void sqlite3SchemaClearOrDisconnect(sqlite3 *db, int iDb){
   Db *pDb = &db->aDb[iDb];
-  if( IsReuseSchema(db) && iDb!=1 && pDb->pSPool ){
+  if( IsSharedSchema(db) && iDb!=1 && pDb->pSPool ){
     sqlite3SchemaDisconnect(db, iDb, 1);
   }else{
     sqlite3SchemaClear(pDb->pSchema);
@@ -579,9 +579,7 @@ void sqlite3SchemaAdjustUsed(sqlite3 *db, int iDb, int nInit, int *pnByte){
 ** error in the Parse object.
 */
 void sqlite3SchemaWritable(Parse *pParse, int iDb){
-  if( iDb!=1 && (pParse->db->openFlags & SQLITE_OPEN_SHARED_SCHEMA) 
-   && IN_DECLARE_VTAB==0
-  ){
+  if( iDb!=1 && IsSharedSchema(pParse->db) && IN_DECLARE_VTAB==0 ){
     sqlite3ErrorMsg(pParse, "attempt to modify read-only schema");
   }
 }
@@ -707,7 +705,7 @@ int sqlite3SchemaConnect(sqlite3 *db, int iDb, u64 cksum){
 */
 int sqlite3SchemaDisconnect(sqlite3 *db, int iDb, int bNew){
   int rc = SQLITE_OK;
-  if( IsReuseSchema(db) ){
+  if( IsSharedSchema(db) ){
     Db *pDb = &db->aDb[iDb];
     SchemaPool *pSPool = pDb->pSPool;
     assert_schema_state_ok(db);
@@ -821,7 +819,7 @@ void sqlite3SchemaRelease(sqlite3 *db, int iDb){
 */
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema *p;
-  if( pBt && (db->openFlags & SQLITE_OPEN_SHARED_SCHEMA)==0 ){
+  if( pBt && IsSharedSchema(db)==0 ){
     p = (Schema*)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
     db->lookaside.bDisable++;

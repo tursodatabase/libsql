@@ -58,7 +58,7 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     sqlite3 *db = pParse->db;
     HashElem *p;
     char *zSchema = 0;
-    if( IsReuseSchema(db) ){
+    if( IsSharedSchema(db) ){
       zSchema = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
     }
     assert( sqlite3SchemaMutexHeld(db, 0, pTmpSchema) );
@@ -253,7 +253,7 @@ void sqlite3BeginTrigger(
   pTrigger->zName = zName;
   zName = 0;
   pTrigger->table = sqlite3DbStrDup(db, pTableName->a[0].zName);
-  if( IsReuseSchema(db) && iDb==1 ){
+  if( IsSharedSchema(db) && iDb==1 ){
     int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     pTrigger->zTabSchema = sqlite3DbStrDup(db, db->aDb[iTabDb].zDbSName);
   }
