@@ -114,6 +114,32 @@ do_execsql_test 4.2.3 {
   SELECT * FROM sqlite_master WHERE type='table' AND name!='t1';
 } {table t3 t3 3 {CREATE TABLE t3(e, f)}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1 (
+      c1 integer, c2, PRIMARY KEY(c1 collate rtrim),
+      UNIQUE(c2)
+  )
+}
+do_execsql_test 5.1 {
+  ALTER TABLE t1 RENAME c1 TO c3;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TEMPORARY TABLE Table0 (
+    Col0 INTEGER, 
+    PRIMARY KEY(Col0 COLLATE RTRIM), 
+    FOREIGN KEY (Col0) REFERENCES Table0
+  );
+}
+
+do_execsql_test 6.1 {
+  ALTER TABLE Table0 RENAME Col0 TO Col0;
+}
+
 finish_test
 
 
