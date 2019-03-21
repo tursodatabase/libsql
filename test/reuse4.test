@@ -15,6 +15,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix reuse4
 
+ifcapable !sharedschema {
+  finish_test
+  return
+}
+
 foreach {tn sharedschema} {
   1 0  
   2 1  

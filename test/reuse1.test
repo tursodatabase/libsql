@@ -16,7 +16,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix reuse1
 
-if 1 {
+ifcapable !sharedschema {
+  finish_test
+  return
+}
 
 forcedelete test.db2
 sqlite3 db2 test.db2
@@ -122,8 +125,6 @@ breakpoint
   do_execsql_test 2.2 {
     SELECT * FROM aux.ft_content;
   } {1 aux1 2 aux2 3 aux3}
-}
-
 }
 
 #-------------------------------------------------------------------------

@@ -144,6 +144,7 @@ void sqlite3VtabLock(VTable *pVTab){
 VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
   VTable *pVtab;
   assert( IsVirtual(pTab) );
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
   if( IsSharedSchema(db) ){
     int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     if( iDb!=1 ){
@@ -153,6 +154,7 @@ VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
       return pVtab;
     }
   }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   for(pVtab=pTab->pVTable; pVtab && pVtab->db!=db; pVtab=pVtab->pNext);
   return pVtab;
 }
@@ -534,7 +536,10 @@ static int vtabCallConstructor(
     return SQLITE_NOMEM_BKPT;
   }
 
-  nByte = sizeof(VTable) + sqlite3Strlen30(pTab->zName) + 1;
+  nByte = sizeof(VTable);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  nByte += sqlite3Strlen30(pTab->zName) + 1;
+#endif
   pVTable = (VTable*)sqlite3MallocZero(nByte);
   if( !pVTable ){
     sqlite3OomFault(db);
@@ -543,8 +548,10 @@ static int vtabCallConstructor(
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
   pVTable->zName = (char*)&pVTable[1];
   memcpy(pVTable->zName, pTab->zName, nByte-sizeof(VTable));
+#endif
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   pTab->azModuleArg[1] = db->aDb[iDb].zDbSName;
@@ -591,10 +598,13 @@ static int vtabCallConstructor(
       ** Then loop through the columns of the table to see if any of them
       ** contain the token "hidden". If so, set the Column COLFLAG_HIDDEN flag
       ** and remove the token from the type string.  */
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
       if( IsSharedSchema(db) && iDb!=1 ){
         pVTable->pNext = db->aDb[iDb].pVTable;
         db->aDb[iDb].pVTable = pVTable;
-      }else{
+      }else
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+      {
         pVTable->pNext = pTab->pVTable;
         pTab->pVTable = pVTable;
       }

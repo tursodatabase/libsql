@@ -286,6 +286,7 @@ int sqlite3UserAuthTable(const char *zTable){
 }
 #endif
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
 /*
 ** If this database connection was opened with the SQLITE_OPEN_SHARED_SCHEMA
 ** flag specified, then ensure that the database schema for database iDb
@@ -316,6 +317,7 @@ int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
   }
   return rc;
 }
+#endif
 
 /*
 ** Locate the in-memory structure that describes a particular database

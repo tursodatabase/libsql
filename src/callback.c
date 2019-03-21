@@ -40,6 +40,7 @@ struct SchemaPool {
   SchemaPool *pNext;              /* Next element in schemaPoolList */
 };
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
 #ifdef SQLITE_DEBUG
 static void assert_schema_state_ok(sqlite3 *db){
   if( IsSharedSchema(db) && db->magic!=SQLITE_MAGIC_ZOMBIE ){
@@ -69,6 +70,7 @@ static void assert_schema_state_ok(sqlite3 *db){
 #else
 # define assert_schema_state_ok(x)
 #endif
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
 
 /*
 ** Invoke the 'collation needed' callback to request a collation sequence
@@ -529,13 +531,17 @@ void sqlite3SchemaClear(void *p){
 */
 void sqlite3SchemaClearOrDisconnect(sqlite3 *db, int iDb){
   Db *pDb = &db->aDb[iDb];
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
   if( IsSharedSchema(db) && iDb!=1 && pDb->pSPool ){
     sqlite3SchemaDisconnect(db, iDb, 1);
-  }else{
+  }else
+#endif
+  {
     sqlite3SchemaClear(pDb->pSchema);
   }
 }
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
 /*
 ** Global linked list of SchemaPool objects. Read and write access must
 ** be protected by the SQLITE_MUTEX_STATIC_MASTER mutex.
@@ -810,6 +816,8 @@ void sqlite3SchemaRelease(sqlite3 *db, int iDb){
   sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER) );
 }
 
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+
 /*
 ** In most cases, this function finds and returns the schema associated 
 ** with BTree handle pBt, creating a new one if necessary. However, if
@@ -822,9 +830,7 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   if( pBt && IsSharedSchema(db)==0 ){
     p = (Schema*)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
-    db->lookaside.bDisable++;
-    p = (Schema*)sqlite3DbMallocZero(db, sizeof(Schema));
-    db->lookaside.bDisable--;
+    p = (Schema*)sqlite3DbMallocZero(0, sizeof(Schema));
   }
   if( !p ){
     sqlite3OomFault(db);

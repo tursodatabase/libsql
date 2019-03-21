@@ -1054,7 +1054,8 @@ static void disconnectAllVtab(sqlite3 *db){
         if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
       }
     }
-    if( i!=1 && IsSharedSchema(db) ){
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    if( IsSharedSchema(db) && i!=1 ){
       VTable *pVTable;
       VTable *pNext;
       for(pVTable=db->aDb[i].pVTable; pVTable; pVTable=pNext){
@@ -1063,6 +1064,7 @@ static void disconnectAllVtab(sqlite3 *db){
       }
       db->aDb[i].pVTable = 0;
     }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   }
   for(p=sqliteHashFirst(&db->aModule); p; p=sqliteHashNext(p)){
     Module *pMod = (Module *)sqliteHashData(p);
@@ -3632,14 +3634,18 @@ int sqlite3_table_column_metadata(
 
   /* Locate the table in question */
   if( rc==SQLITE_OK ){
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
     Parse sParse;                   /* Fake Parse object for FindTable */
     Parse *pSaved = db->pParse;
     memset(&sParse, 0, sizeof(sParse));
     db->pParse = &sParse;
+#endif
     pTab = sqlite3FindTable(db, zTableName, zDbName);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
     sqlite3_free(sParse.zErrMsg);
     rc = sParse.rc;
     db->pParse = pSaved;
+#endif
   }
   if( SQLITE_OK!=rc ) goto error_out;
 

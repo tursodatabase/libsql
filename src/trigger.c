@@ -57,18 +57,24 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   if( pTmpSchema!=pTab->pSchema ){
     sqlite3 *db = pParse->db;
     HashElem *p;
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
     char *zSchema = 0;
     if( IsSharedSchema(db) ){
       zSchema = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
     }
+#endif
     assert( sqlite3SchemaMutexHeld(db, 0, pTmpSchema) );
     for(p=sqliteHashFirst(&pTmpSchema->trigHash); p; p=sqliteHashNext(p)){
       Trigger *pTrig = (Trigger *)sqliteHashData(p);
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
       if( (zSchema==0 && pTrig->pTabSchema==pTab->pSchema)
-       || (zSchema!=0 && 0==sqlite3StrICmp(pTrig->zTabSchema, zSchema))
-      ){
-        if( 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
-        ){
+       || (zSchema!=0 && 0==sqlite3StrICmp(pTrig->zTabSchema, zSchema)) )
+#else 
+      if( pTrig->pTabSchema==pTab->pSchema )
+#endif
+      {
+        if( 0==sqlite3StrICmp(pTrig->table, pTab->zName) ){
           pTrig->pTabSchema = pTab->pSchema;
           pTrig->pNext = (pList ? pList : pTab->pTrigger);
           pList = pTrig;
@@ -253,10 +259,12 @@ void sqlite3BeginTrigger(
   pTrigger->zName = zName;
   zName = 0;
   pTrigger->table = sqlite3DbStrDup(db, pTableName->a[0].zName);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
   if( IsSharedSchema(db) && iDb==1 ){
     int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     pTrigger->zTabSchema = sqlite3DbStrDup(db, db->aDb[iTabDb].zDbSName);
   }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   pTrigger->pSchema = db->aDb[iDb].pSchema;
   pTrigger->pTabSchema = pTab->pSchema;
   pTrigger->op = (u8)op;
@@ -554,7 +562,9 @@ void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
   sqlite3DbFree(db, pTrigger->zTabSchema);
+#endif
   sqlite3ExprDelete(db, pTrigger->pWhen);
   sqlite3IdListDelete(db, pTrigger->pColumns);
   sqlite3DbFree(db, pTrigger);

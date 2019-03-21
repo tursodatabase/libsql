@@ -19,8 +19,11 @@
 */
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_TEST)
 
-#include "sqliteInt.h"
 #include <tcl.h>
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+
+#include "sqliteInt.h"
 
 /* The code in this file defines a sqlite3 virtual-table module with
 ** the following schema.
@@ -253,12 +256,14 @@ static int SQLITE_TCLAPI register_schemapool_module(
   return TCL_OK;
 }
 
-#endif
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_TEST) */
 
 /*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetestschemapool_Init(Tcl_Interp *interp){
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
   static struct {
      char *zName;
      Tcl_ObjCmdProc *xProc;
@@ -271,6 +276,7 @@ int Sqlitetestschemapool_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
         aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   return TCL_OK;
 }
 

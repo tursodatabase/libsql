@@ -1071,14 +1071,14 @@ struct ShellState {
 
 /* Allowed values for ShellState.openMode
 */
-#define SHELL_OPEN_UNSPEC      0      /* No open-mode specified */
-#define SHELL_OPEN_NORMAL      1      /* Normal database file */
-#define SHELL_OPEN_APPENDVFS   2      /* Use appendvfs */
-#define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
-#define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
-#define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
-#define SHELL_OPEN_HEXDB       6      /* Use "dbtotxt" output as data source */
-#define SHELL_OPEN_REUSESCHEMA 7      /* Open for schema reuse */
+#define SHELL_OPEN_UNSPEC       0    /* No open-mode specified */
+#define SHELL_OPEN_NORMAL       1    /* Normal database file */
+#define SHELL_OPEN_APPENDVFS    2    /* Use appendvfs */
+#define SHELL_OPEN_ZIPFILE      3    /* Use the zipfile virtual table */
+#define SHELL_OPEN_READONLY     4    /* Open a normal database read-only */
+#define SHELL_OPEN_DESERIALIZE  5    /* Open using sqlite3_deserialize() */
+#define SHELL_OPEN_HEXDB        6    /* Use "dbtotxt" output as data source */
+#define SHELL_OPEN_SHAREDSCHEMA 7    /* Open for schema reuse */
 
 /* Allowed values for ShellState.eTraceType
 */
@@ -4301,7 +4301,7 @@ static void open_db(ShellState *p, int openFlags){
         sqlite3_open_v2(p->zDbFilename, &p->db, SQLITE_OPEN_READONLY, 0);
         break;
       }
-      case SHELL_OPEN_REUSESCHEMA: {
+      case SHELL_OPEN_SHAREDSCHEMA: {
         sqlite3_open_v2(p->zDbFilename, &p->db,
           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_SHARED_SCHEMA,0);
         break;
@@ -7245,8 +7245,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_APPENDVFS;
       }else if( optionMatch(z, "readonly") ){
         p->openMode = SHELL_OPEN_READONLY;
-      }else if( optionMatch(z, "reuseschema") ){
-        p->openMode = SHELL_OPEN_REUSESCHEMA;
+      }else if( optionMatch(z, "sharedschema") ){
+        p->openMode = SHELL_OPEN_SHAREDSCHEMA;
       }else if( z[0]=='-' ){
 #ifdef SQLITE_ENABLE_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
@@ -9435,8 +9435,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
-    }else if( strcmp(z,"-reuseschema")==0 ){
-      data.openMode = SHELL_OPEN_REUSESCHEMA;
+    }else if( strcmp(z,"-sharedschema")==0 ){
+      data.openMode = SHELL_OPEN_SHAREDSCHEMA;
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
     }else if( strncmp(z, "-A",2)==0 ){
       /* All remaining command-line arguments are passed to the ".archive"
@@ -9540,8 +9540,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
-    }else if( strcmp(z,"-reuseschema")==0 ){
-      data.openMode = SHELL_OPEN_REUSESCHEMA;
+    }else if( strcmp(z,"-sharedschema")==0 ){
+      data.openMode = SHELL_OPEN_SHAREDSCHEMA;
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,

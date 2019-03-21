@@ -16,6 +16,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix reuse3
 
+ifcapable !sharedschema {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE, z);
   CREATE INDEX i1 ON t1(z);
