@@ -1027,6 +1027,15 @@ do_ordercount_test 23.6 {
   FROM t5
 } 3
 
+do_execsql_test 24.1 {
+  SELECT sum(44) OVER ()
+} {44}
+
+do_execsql_test 24.2 {
+  SELECT lead(44) OVER ()
+} {{}}
+
+
 finish_test
 
 

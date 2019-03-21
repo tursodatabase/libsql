@@ -1262,14 +1262,12 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
     else if( p->zName==nth_valueName || p->zName==first_valueName ){
       /* Allocate two registers at pWin->regApp. These will be used to
       ** store the start and end index of the current frame.  */
-      assert( pMWin->iEphCsr );
       pWin->regApp = pParse->nMem+1;
       pWin->csrApp = pParse->nTab++;
       pParse->nMem += 2;
       sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
     }
     else if( p->zName==leadName || p->zName==lagName ){
-      assert( pMWin->iEphCsr );
       pWin->csrApp = pParse->nTab++;
       sqlite3VdbeAddOp2(v, OP_OpenDup, pWin->csrApp, pMWin->iEphCsr);
     }
