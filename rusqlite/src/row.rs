@@ -39,7 +39,7 @@ impl<'stmt> Rows<'stmt> {
     where
         F: FnMut(&Row<'_>) -> Result<B>,
     {
-        Map { rows: self, f: f }
+        Map { rows: self, f }
     }
 }
 

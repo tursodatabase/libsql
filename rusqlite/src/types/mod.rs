@@ -225,7 +225,7 @@ mod test {
     }
 
     #[test]
-    #[allow(clippy::cyclomatic_complexity)]
+    #[allow(clippy::cognitive_complexity)]
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
