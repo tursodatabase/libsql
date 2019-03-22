@@ -1,5 +1,5 @@
-C Add\san\sextra\stest\sfor\sdatabase\scorruption\sto\sdefragmentPage().
-D 2019-03-21T21:18:36.010
+C Add\sthe\s--limit\sN\soption\sto\sdbfuzz2.\s\sSet\sthe\sdefault\scallback\slimit\sto\s250K.
+D 2019-03-22T11:38:14.598
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 90ed1536586c23327fe452ce67ebd6e98590e09adc6e3c57005b59c59b9b8796 x
+F configure b013bf805064650b072817c7c7f0a295cfcec5b1afec15e59ea4e9996543f51e x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -786,7 +786,7 @@ F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 29b6c6b39a701b6b5b08035c637674b76e1ecea515b1a184b29e3bd0f2d02dad
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 9a6d58fc669e0881c89342a3ab408a98abd64cab9cb8a51cc85aeee9b96e398a
+F test/dbfuzz2.c 6c355cf70c4a308b1b84a11a65282bcac5b4038db77de5cfc8ad080ef371f109
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3649a77b79001ea6c5defe882f9934521b20b9d36aab26d03b5d42006c7fa228
-R 789f387ec4f6b6af07f80141e08e441d
-U dan
-Z 2fecf32bc8423285cc68d4e5421b07c7
+P 80e951fce3e5aaa224c8dba6449832d2efabcdc24e86eb6b7833f85cf08ecc00
+R b244b5e17562bcdcd04926d04362f958
+U drh
+Z 4d8a567c4836a65843b5f46bbe798ef1
