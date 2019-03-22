@@ -1,5 +1,5 @@
-C Support\sbuilding\sthe\sTcl\sbindings\sDLL\susing\sMSVC.
-D 2019-03-22T01:25:16.136
+C Sync\sup\sthe\sautoconf\smakefile\sfor\sMSVC.
+D 2019-03-22T01:26:39.151
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am e14b629addaa1ce372b72043f28f40de2e32b7e211b6e0fc18dbb87989197e40
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.msc ee8ab2b6b5d712f68acc4c186e3fad7b831b87a2b118e0a123043ea8a2c8b016
+F autoconf/Makefile.msc 32c31aa15f9f3263e2a62b1cd2e1a09074c6ca56f56ba64017323ebac3d8c1b2
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac 308de24343e76ecfbe9a67f8fcd4c5216b790d230c5d9ce10210b7d5965d6192
@@ -1807,10 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80e951fce3e5aaa224c8dba6449832d2efabcdc24e86eb6b7833f85cf08ecc00
-R b5417c5ecafd99add57f46e1b9681f7d
-T *branch * msvcTcl
-T *sym-msvcTcl *
-T -sym-trunk *
+P 908c4c891fa7472b43d232bde7d3789105c5f5b2cfaf6652bf6d5829236933cf
+R 457ef153bac61328fd4ef7e64d2104a9
 U mistachkin
-Z 31740cffe405ba9dd0aa14199ba03fc4
+Z ce507797ad6f43c2bc842bad36dd2bcf
