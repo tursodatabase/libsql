@@ -1424,7 +1424,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     */
     for(i=0; i<p->pSrc->nSrc; i++){
       struct SrcList_item *pItem = &p->pSrc->a[i];
-      if( pItem->pSelect ){
+      if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
         NameContext *pNC;         /* Used to iterate name contexts */
         int nRef = 0;             /* Refcount for pOuterNC and outer contexts */
         const char *zSavedContext = pParse->zAuthContext;
