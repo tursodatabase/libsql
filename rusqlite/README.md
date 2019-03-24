@@ -132,8 +132,6 @@ You can adjust this behavior in a number of ways:
   which must be enabled by setting `VCPKGRS_DYNAMIC=1` environment variable before build.
   `vcpkg install sqlite3:x64-windows` will install the required library.
   
-*Note:* to change the way `libsqlite3-sys` is built, you need to run `cargo clean libsqlite3-sys` first.
-  
 ### Binding generation
 
 We use [bindgen](https://crates.io/crates/bindgen) to generate the Rust
