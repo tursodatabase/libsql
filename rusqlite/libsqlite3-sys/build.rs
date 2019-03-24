@@ -132,6 +132,9 @@ mod build {
         if cfg!(target_os = "windows") {
             println!("cargo:rerun-if-env-changed=PATH");
         }
+        if cfg!(all(feature = "vcpkg", target_env = "msvc")) {
+            println!("cargo:rerun-if-env-changed=VCPKGRS_DYNAMIC");
+        }
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
             // Try to use pkg-config to determine link commands
