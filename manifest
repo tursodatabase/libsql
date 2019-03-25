@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\sparameter\stable\sin\sthe\sCLI\sto\s"sqlite_parameters".\nDoing\sso\sinvolves\sadding\sSQLITE_DBCONFIG_WRITABLE_SCHEMA\sand\sallowing\sthe\ncreation\sof\stables\swhose\snames\sbegin\swith\s"sqlite_"\sand\sthat\sare\sindexed\nwhile\swritable_schema\sis\son.
-D 2019-03-25T21:35:41.214
+C Remove\sa\stest\sfrom\sthe\sindex\sbuild\slogic\swhich\sis\sno\slonger\sneeded\sand\sis\nin\sfact\sunreachable.
+D 2019-03-25T21:55:44.004
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -460,7 +460,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 6bea02598917ad9549d2d0c78bf8cc288eeb7a0b0f4298cbe1713db01340f9be
 F src/btree.h 63b94fb38ce571c15eb6a3661815561b501d23d5948b2d1e951fbd7a2d04e8d3
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c 2c7cde0fe872d004ae7d550bffdbe9bc063566cab5ec810fbaf3b75975460ae6
+F src/build.c 7c8851893fb616115d7f6ae1e07df5076c6d4a8f592cd2affa04f3112176c38c
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c80b004cae71aaf820a31dba80c100ed162ef5bae845fb4535ff4d3be407500
-R 598d7ef91d996641cc357a2717b6bdf3
+P 24ef3844692debc2db7b1d427f5dcf4050481a8c7f71c3b516766b819ecab587
+R 75db24fb7326935aad62d0550ceb9756
 U drh
-Z 3d6b3a6f8d55ba274c391f3538973f56
+Z 5b47104ca3efed6ea8072ae7494788c8
