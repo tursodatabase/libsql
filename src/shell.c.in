@@ -2766,7 +2766,7 @@ static void bind_table_init(ShellState *p){
 **
 ** Parameter bindings are taken from a TEMP table of the form:
 **
-**    CREATE TEMP TABLE "$Parameters"(key TEXT PRIMARY KEY, value)
+**    CREATE TEMP TABLE sqlite_parameters(key TEXT PRIMARY KEY, value)
 **    WITHOUT ROWID;
 **
 ** No bindings occur if this table does not exist.  The special character '$'
