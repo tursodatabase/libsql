@@ -1,5 +1,5 @@
-C Fix\sthe\swritefile()\sSQL\sfunction\simplemented\sby\sext/misc/fileio.c\ssuch\sthat\nany\sdirectories\screated\shave\sstandard\sumask\spermissions,\snot\spermissions\nof\sthe\sfile\sthat\sis\sto\sbe\swritten.
-D 2019-03-25T15:06:16.816
+C Improvements\sto\sthe\shelp\stext\sin\sthe\sCLI.
+D 2019-03-25T15:09:19.966
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -517,7 +517,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 09419ad5c432190b69be7c0c326e03abb548a97c2c50675b81b459e1b382d1d2
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9263f5c30dd44c7ac2eb29f40a7ec64322a96885b71c00de6bc30b756c2e1c49
-F src/shell.c.in 652ba411c798b64a0c71079e16b022b6cd530a4c1161e220e4cd8a0a127dba60
+F src/shell.c.in 9c166e417a0e1d0fb7c5fa620782532c43fa16a0b82eae7d333835921a09a05d
 F src/sqlite.h.in e33a4df7e32d742aac29623b38a1edd7e07a2b964a5d0257e2923c8a724faddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 960f1b86c3610fa23cb6a267572a97dcf286e77aa0dd3b9b23292ffaa1ea8683
@@ -1807,7 +1807,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 191a023ae708490eca61b3a42a3df41bb6709079f3905881abb82ebd46182607
-R 0b42a1a08fa95c825c79a098e3edba8d
+P f11c89595dc65f89be6df62830c8cddd3933acfd4baaecd348ecd99e71db5831
+R 513e05fdb845e2ba170e4e37ddb59ef5
 U drh
-Z cc72a2ef5eb3e08d527f17d5141c1543
+Z 1162f3d32ce9f5ee6d7d932b24ca06a2

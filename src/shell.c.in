@@ -3452,7 +3452,7 @@ static const char *(azHelp[]) = {
   ".archive ...             Manage SQL archives",
   "   Each command must have exactly one of the following options:",
   "     -c, --create               Create a new archive",
-  "     -u, --update               Add files or update files with newer mtime",
+  "     -u, --update               Add files or update files with changed mtime",
   "     -i, --insert               Like -u but always add even if mtime unchanged",
   "     -t, --list                 List contents of archive",
   "     -x, --extract              Extract files from archive",
