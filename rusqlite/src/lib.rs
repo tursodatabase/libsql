@@ -276,6 +276,13 @@ fn len_as_c_int(len: usize) -> Result<c_int> {
     }
 }
 
+#[cfg(unix)]
+fn path_to_cstring(p: &Path) -> Result<CString> {
+    use std::os::unix::ffi::OsStrExt;
+    Ok(CString::new(p.as_os_str().as_bytes())?)
+}
+
+#[cfg(not(unix))]
 fn path_to_cstring(p: &Path) -> Result<CString> {
     let s = p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned()))?;
     str_to_cstring(s)
@@ -836,7 +843,17 @@ unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
     if db_filename.is_null() {
         None
     } else {
-        CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
+        let cstr = CStr::from_ptr(db_filename);
+        #[cfg(unix)]
+        {
+            use std::ffi::OsStr;
+            use std::os::unix::ffi::OsStrExt;
+            Some(OsStr::from_bytes(cstr.to_bytes()).into())
+        }
+        #[cfg(not(unix))]
+        {
+            cstr.to_str().ok().map(PathBuf::from)
+        }
     }
 }
 #[cfg(not(feature = "bundled"))]
@@ -934,6 +951,35 @@ mod test {
 
         let path_string = path.to_str().unwrap();
         let db = Connection::open(&path_string).unwrap();
+        let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0));
+
+        assert_eq!(42i64, the_answer.unwrap());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_invalid_unicode_file_names() {
+        use std::ffi::OsStr;
+        use std::fs::File;
+        use std::os::unix::ffi::OsStrExt;
+        let temp_dir = TempDir::new("test_invalid_unicode").unwrap();
+        let path = temp_dir.path();
+        if File::create(path.join(OsStr::from_bytes(&[0xFE]))).is_err() {
+            // Skip test, filesystem doesn't support invalid Unicode
+            return;
+        }
+        let db_path = path.join(OsStr::from_bytes(&[0xFF]));
+
+        {
+            let db = Connection::open(&db_path).unwrap();
+            let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER);
+                   INSERT INTO foo VALUES(42);
+                   END;";
+            db.execute_batch(sql).unwrap();
+        }
+
+        let db = Connection::open(&db_path).unwrap();
         let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0));
 
         assert_eq!(42i64, the_answer.unwrap());
