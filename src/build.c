@@ -3154,6 +3154,7 @@ void sqlite3CreateIndex(
   assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
        && db->init.busy==0
+       && pTblName!=0
 #if SQLITE_USER_AUTHENTICATION
        && sqlite3UserAuthTable(pTab->zName)==0
 #endif

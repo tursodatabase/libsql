@@ -2199,6 +2199,17 @@ struct sqlite3_mem_methods {
 ** <li> Direct writes to [shadow tables].
 ** </ul>
 ** </dd>
+**
+** [[SQLITE_DBCONFIG_WRITABLE_SCHEMA]] <dt>SQLITE_DBCONFIG_WRITABLE_SCHEMA</dt>
+** <dd>The SQLITE_DBCONFIG_WRITABLE_SCHEMA option activates or deactivates the
+** "writable_schema" flag. This has the same effect and is logically equivalent
+** to setting [PRAGMA writable_schema=ON] or [PRAGMA writable_schema=OFF].
+** The first argument to this setting is an integer which is 0 to disable 
+** the writable_schema, positive to enable writable_schema, or negative to
+** leave the setting unchanged. The second parameter is a pointer to an
+** integer into which is written 0 or 1 to indicate whether the writable_schema
+** is enabled or disabled following this call.
+** </dd>
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2212,7 +2223,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_TRIGGER_EQP           1008 /* int int* */
 #define SQLITE_DBCONFIG_RESET_DATABASE        1009 /* int int* */
 #define SQLITE_DBCONFIG_DEFENSIVE             1010 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1010 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_WRITABLE_SCHEMA       1011 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1011 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
