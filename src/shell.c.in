@@ -2747,16 +2747,13 @@ static void restore_debug_trace_modes(void){
 #endif
 }
 
-/* Name of the TEMP table that holds bind parameter values */
-#define BIND_PARAM_TABLE "sqlite_parameters"
-
 /* Create the TEMP table used to store parameter bindings */
 static void bind_table_init(ShellState *p){
   int wrSchema = 0;
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
   sqlite3_exec(p->db,
-    "CREATE TABLE IF NOT EXISTS temp." BIND_PARAM_TABLE "(\n"
+    "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value ANY\n"
     ") WITHOUT ROWID;",
@@ -2784,12 +2781,12 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
 
   nVar = sqlite3_bind_parameter_count(pStmt);
   if( nVar==0 ) return;  /* Nothing to do */
-  if( sqlite3_table_column_metadata(pArg->db, "TEMP", BIND_PARAM_TABLE,
+  if( sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
                                     "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
     return; /* Parameter table does not exist */
   }
   rc = sqlite3_prepare_v2(pArg->db,
-          "SELECT value FROM temp." BIND_PARAM_TABLE
+          "SELECT value FROM temp.sqlite_parameters"
           " WHERE key=?1", -1, &pQ, 0);
   if( rc || pQ==0 ) return;
   for(i=1; i<=nVar; i++){
@@ -7149,7 +7146,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       int wrSchema = 0;
       sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
       sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
-      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp." BIND_PARAM_TABLE ";",
+      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
                    0, 0, 0);
       sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
     }else
@@ -7163,7 +7160,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       int len = 0;
       rx = sqlite3_prepare_v2(p->db,
              "SELECT max(length(key)) "
-             "FROM temp." BIND_PARAM_TABLE ";", -1, &pStmt, 0);
+             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
       if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
         len = sqlite3_column_int(pStmt, 0);
         if( len>40 ) len = 40;
@@ -7173,7 +7170,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( len ){
         rx = sqlite3_prepare_v2(p->db,
              "SELECT key, quote(value) "
-             "FROM temp." BIND_PARAM_TABLE ";", -1, &pStmt, 0);
+             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
         while( sqlite3_step(pStmt)==SQLITE_ROW ){
           utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
                       sqlite3_column_text(pStmt,1));
@@ -7204,7 +7201,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       const char *zValue = azArg[3];
       bind_table_init(p);
       zSql = sqlite3_mprintf(
-                  "REPLACE INTO temp." BIND_PARAM_TABLE "(key,value)"
+                  "REPLACE INTO temp.sqlite_parameters(key,value)"
                   "VALUES(%Q,%s);", zKey, zValue);
       if( zSql==0 ) shell_out_of_memory();
       pStmt = 0;
@@ -7214,7 +7211,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_finalize(pStmt);
         pStmt = 0;
         zSql = sqlite3_mprintf(
-                   "REPLACE INTO temp." BIND_PARAM_TABLE "(key,value)"
+                   "REPLACE INTO temp.sqlite_parameters(key,value)"
                    "VALUES(%Q,%Q);", zKey, zValue);
         if( zSql==0 ) shell_out_of_memory();
         rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
@@ -7236,7 +7233,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     */
     if( nArg==3 && strcmp(azArg[1],"unset")==0 ){
       char *zSql = sqlite3_mprintf(
-          "DELETE FROM temp." BIND_PARAM_TABLE " WHERE key=%Q", azArg[2]);
+          "DELETE FROM temp.sqlite_parameters WHERE key=%Q", azArg[2]);
       if( zSql==0 ) shell_out_of_memory();
       sqlite3_exec(p->db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
