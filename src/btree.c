@@ -8024,6 +8024,7 @@ static int balance_nonroot(
       memset(apOld, 0, (i+1)*sizeof(MemPage*));
       goto balance_cleanup;
     }
+    setMempageRoot(apOld[i], pgnoRoot);
     if( apOld[i]->nFree<0 ){
       rc = btreeComputeFreeSpace(apOld[i]);
       if( rc ){
@@ -8031,7 +8032,6 @@ static int balance_nonroot(
         goto balance_cleanup;
       }
     }
-    setMempageRoot(apOld[i], pgnoRoot);
     if( (i--)==0 ) break;
 
     if( pParent->nOverflow && i+nxDiv==pParent->aiOvfl[0] ){
