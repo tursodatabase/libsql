@@ -28,7 +28,7 @@ do_execsql_test 1.0 {
 }
 faultsim_save_and_close
 
-do_faultsim_test 1 -start 1 -faults oom-* -prep {
+do_faultsim_test 1 -start 1 -faults oom-t* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql {

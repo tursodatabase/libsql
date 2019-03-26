@@ -1918,7 +1918,6 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** OP_Eq or OP_Ne) then take the jump or not depending on whether
       ** or not both operands are null.
       */
-      assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
       assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 || CORRUPT_DB );
       testcase( (pOp->p5 & SQLITE_JUMPIFNULL)!=0 );
@@ -1927,7 +1926,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ){
         res = 0;  /* Operands are equal */
       }else{
-        res = 1;  /* Operands are not equal */
+        res = ((flags3 & MEM_Null) ? -1 : +1);  /* Operands are not equal */
       }
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,
@@ -3606,6 +3605,7 @@ case OP_OpenDup: {
   pCx->pKeyInfo = pOrig->pKeyInfo;
   pCx->isTable = pOrig->isTable;
   pCx->pgnoRoot = pOrig->pgnoRoot;
+  pCx->isOrdered = pOrig->isOrdered;
   rc = sqlite3BtreeCursor(pOrig->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
                           pCx->pKeyInfo, pCx->uc.pCursor);
   /* The sqlite3BtreeCursor() routine can only fail for the first cursor
@@ -6534,6 +6534,7 @@ case OP_AggFinal: {
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( pOp->p3 ){
+    memAboutToChange(p, &aMem[pOp->p3]);
     rc = sqlite3VdbeMemAggValue(pMem, &aMem[pOp->p3], pOp->p4.pFunc);
     pMem = &aMem[pOp->p3];
   }else
