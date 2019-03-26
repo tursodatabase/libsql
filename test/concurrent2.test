@@ -343,18 +343,21 @@ do_execsql_test 7.3.2 {
 # of corruption.
 #
 reset_db
-do_execsql_test 8.1 {
-  PRAGMA journal_mode = wal;
-  CREATE TABLE kv(k INTEGER PRIMARY KEY, v UNIQUE);
-  INSERT INTO kv VALUES(NULL, randomblob(750));
-  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
-  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
-  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
-  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
-  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
-  DELETE FROM kv WHERE rowid%2;
-  PRAGMA freelist_count;
-} {wal 34}
+do_test 8.1 {
+  execsql {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE kv(k INTEGER PRIMARY KEY, v UNIQUE);
+    INSERT INTO kv VALUES(NULL, randomblob(750));
+    INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+    INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+    INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+    INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+    INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+    DELETE FROM kv WHERE rowid%2;
+  }
+  set v [db one {PRAGMA freelist_count}]
+  expr $v==33 || $v==34
+} {1}
 do_execsql_test 8.2 { PRAGMA integrity_check } ok
 do_execsql_test 8.3 { 
   BEGIN CONCURRENT;

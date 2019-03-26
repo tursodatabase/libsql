@@ -489,8 +489,9 @@ static void randomFunc(
   sqlite3_value **NotUsed2
 ){
   sqlite_int64 r;
+  sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_randomness(sizeof(r), &r);
+  sqlite3FastRandomness(&db->sPrng, sizeof(r), &r);
   if( r<0 ){
     /* We need to prevent a random number of 0x8000000000000000 
     ** (or -9223372036854775808) since when you do abs() of that
@@ -516,6 +517,7 @@ static void randomBlob(
 ){
   sqlite3_int64 n;
   unsigned char *p;
+  sqlite3 *db = sqlite3_context_db_handle(context);
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   n = sqlite3_value_int64(argv[0]);
@@ -524,7 +526,7 @@ static void randomBlob(
   }
   p = contextMalloc(context, n);
   if( p ){
-    sqlite3_randomness(n, p);
+    sqlite3FastRandomness(&db->sPrng, n, p);
     sqlite3_result_blob(context, (char*)p, n, sqlite3_free);
   }
 }
