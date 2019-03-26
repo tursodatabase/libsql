@@ -310,5 +310,46 @@ do_execsql_test 5.6.10 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
 } {nref=2 nschema=1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE t3(a, b);
+}
+
+do_test 6.1 {
+  db close
+  sqlite3 db test.db -shared-schema 1
+  for {set i 1} {$i < 5} {incr i} {
+    set base "test.db$i"
+    set nm "aux$i"
+    forcedelete $base $base-wal $base-journal
+    forcecopy test.db $base
+    execsql "ATTACH '$base' AS $nm"
+  }
+} {}
+
+do_test 6.2 {
+  set N1 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  set N2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  expr ($N1==0 && $N2==0)
+} {1}
+
+do_test 6.3 {
+  execsql { SELECT * FROM main.t1 }
+  set N1 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  set N2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  puts $N1
+  expr {$N1>0 && $N2>0 && $N1==$N2}
+} {1}
+
+do_test 6.4 {
+  execsql { SELECT * FROM aux1.t1 }
+  set N3 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  set N4 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  expr {$N3==$N1 && $N4==$N1}
+} {1}
+
 finish_test
 

@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements.
-D 2019-03-26T11:57:50.513
+C Add\sa\sfew\sextra\stests\sfor\sSQLITE_STATUS_SCHEMA_USED\swith\sshared-schema\sdatabases.
+D 2019-03-26T18:40:38.821
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1231,7 +1231,7 @@ F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5e
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/reuse1.test faa2ce5ff566d936b8a10d9e22ba2ee66a54ce89fdcf8aef561df6b15b0ff3d3
 F test/reuse2.test 5dd9c98579358f0d5a90d25e36dd6e678a03e23446b6c7f2630a8da22ae7ca94
-F test/reuse3.test c7c57dc70e2e113dafbbfa5d4de3050df435f74f5e31ec5266f92a009f4345bd
+F test/reuse3.test 9c8414c309493b2cb2d2dd6895ecdac01168dd9e89116e7a2e6311f5c1f6a50b
 F test/reuse4.test adaad66253aea6cc748674328abe69b650c5c78b8676ed1162d3de09742519f9
 F test/reuse5.test bbe6cf7384ef90f134392edd93d626385ef0bf6f40eefc3d993535cd0861d83b
 F test/reusefault.test ef646a0fb51d50ddfb4b7cd872f88e7d36eaba64bde7797b3418c3774e1c8d14
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3196f5f480f221dc71bb92e6718a5c356782774be25df4df79dda0ac1101255a fade103cbac1b067f9544935b767f36dc266aceb3269cc84a3ae3b04ad9a4823
-R 70fe5c4eb0d77c1597f63831f6a210b5
-U drh
-Z c1a61bb336e937c32caf25928a122f25
+P db4e2cc36acca2708e9bd2e0febb4e1b3d6a6a3fa60d9bd6f2a49f4a8d1bc523
+R a5bb440856796621ea54d65e4d4819f0
+U dan
+Z 678eb2cf3c66fa016d2e3d589d08d308
