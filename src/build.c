@@ -1406,7 +1406,8 @@ void sqlite3AddPrimaryKey(
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_OBJECT && pList ){
-      sqlite3RenameTokenRemap(pParse, &pTab->iPKey, pList->a[0].pExpr);
+      Expr *pCExpr = sqlite3ExprSkipCollate(pList->a[0].pExpr);
+      sqlite3RenameTokenRemap(pParse, &pTab->iPKey, pCExpr);
     }
     pTab->iPKey = iCol;
     pTab->keyConf = (u8)onError;
@@ -3155,13 +3156,13 @@ void sqlite3CreateIndex(
   assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
        && db->init.busy==0
+       && pTblName!=0
 #if SQLITE_USER_AUTHENTICATION
        && sqlite3UserAuthTable(pTab->zName)==0
 #endif
 #ifdef SQLITE_ALLOW_SQLITE_MASTER_INDEX
        && sqlite3StrICmp(&pTab->zName[7],"master")!=0
 #endif
-       && sqlite3StrNICmp(&pTab->zName[7],"altertab_",9)!=0
  ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;

@@ -325,7 +325,7 @@ static int fts5ConfigParseSpecial(
           rc = SQLITE_ERROR;
         }else{
           rc = sqlite3Fts5GetTokenizer(pGlobal, 
-              (const char**)azArg, nArg, &pConfig->pTok, &pConfig->pTokApi,
+              (const char**)azArg, (int)nArg, &pConfig->pTok, &pConfig->pTokApi,
               pzErr
           );
         }
@@ -435,7 +435,7 @@ static const char *fts5ConfigGobbleWord(
   if( zOut==0 ){
     *pRc = SQLITE_NOMEM;
   }else{
-    memcpy(zOut, zIn, nIn+1);
+    memcpy(zOut, zIn, (size_t)(nIn+1));
     if( fts5_isopenquote(zOut[0]) ){
       int ii = fts5Dequote(zOut);
       zRet = &zIn[ii];

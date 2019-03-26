@@ -2199,6 +2199,17 @@ struct sqlite3_mem_methods {
 ** <li> Direct writes to [shadow tables].
 ** </ul>
 ** </dd>
+**
+** [[SQLITE_DBCONFIG_WRITABLE_SCHEMA]] <dt>SQLITE_DBCONFIG_WRITABLE_SCHEMA</dt>
+** <dd>The SQLITE_DBCONFIG_WRITABLE_SCHEMA option activates or deactivates the
+** "writable_schema" flag. This has the same effect and is logically equivalent
+** to setting [PRAGMA writable_schema=ON] or [PRAGMA writable_schema=OFF].
+** The first argument to this setting is an integer which is 0 to disable 
+** the writable_schema, positive to enable writable_schema, or negative to
+** leave the setting unchanged. The second parameter is a pointer to an
+** integer into which is written 0 or 1 to indicate whether the writable_schema
+** is enabled or disabled following this call.
+** </dd>
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2212,7 +2223,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_TRIGGER_EQP           1008 /* int int* */
 #define SQLITE_DBCONFIG_RESET_DATABASE        1009 /* int int* */
 #define SQLITE_DBCONFIG_DEFENSIVE             1010 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1010 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_WRITABLE_SCHEMA       1011 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1011 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -4045,7 +4057,9 @@ typedef struct sqlite3_context sqlite3_context;
 ** ^The fifth argument to the BLOB and string binding interfaces
 ** is a destructor used to dispose of the BLOB or
 ** string after SQLite has finished with it.  ^The destructor is called
-** to dispose of the BLOB or string even if the call to bind API fails.
+** to dispose of the BLOB or string even if the call to the bind API fails,
+** except the destructor is not called if the third parameter is a NULL
+** pointer or the fourth parameter is negative.
 ** ^If the fifth argument is
 ** the special value [SQLITE_STATIC], then SQLite assumes that the
 ** information is in static, unmanaged space and does not need to be freed.
@@ -5803,7 +5817,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** associated with database N of connection D.  ^The main database file
 ** has the name "main".  If there is no attached database N on the database
 ** connection D, or if database N is a temporary or in-memory database, then
-** a NULL pointer is returned.
+** this function will return either a NULL pointer or an empty string.
 **
 ** ^The filename returned by this function is the output of the
 ** xFullPathname method of the [VFS].  ^In other words, the filename

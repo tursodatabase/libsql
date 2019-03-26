@@ -1150,10 +1150,10 @@ fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
-sqlite3session.lo:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
+userauth.lo:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
-userauth.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
 
 json1.lo:	$(TOP)/ext/misc/json1.c

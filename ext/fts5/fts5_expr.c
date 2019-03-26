@@ -1487,7 +1487,7 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
       if( pRet==0 ){
         pParse->rc = SQLITE_NOMEM;
       }else{
-        memset(pRet, 0, nByte);
+        memset(pRet, 0, (size_t)nByte);
       }
     }else if( (pNear->nPhrase % SZALLOC)==0 ){
       int nNew = pNear->nPhrase + SZALLOC;
@@ -1563,7 +1563,7 @@ static int fts5ParseTokenize(
     if( pSyn==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      memset(pSyn, 0, nByte);
+      memset(pSyn, 0, (size_t)nByte);
       pSyn->zTerm = ((char*)pSyn) + sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer);
       memcpy(pSyn->zTerm, pToken, nToken);
       pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
@@ -1723,7 +1723,7 @@ int sqlite3Fts5ExprClonePhrase(
       nByte = sizeof(Fts5Colset) + (pColsetOrig->nCol-1) * sizeof(int);
       pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
       if( pColset ){ 
-        memcpy(pColset, pColsetOrig, nByte);
+        memcpy(pColset, pColsetOrig, (size_t)nByte);
       }
       pNew->pRoot->pNear->pColset = pColset;
     }
@@ -1940,7 +1940,7 @@ static Fts5Colset *fts5CloneColset(int *pRc, Fts5Colset *pOrig){
     sqlite3_int64 nByte = sizeof(Fts5Colset) + (pOrig->nCol-1) * sizeof(int);
     pRet = (Fts5Colset*)sqlite3Fts5MallocZero(pRc, nByte);
     if( pRet ){ 
-      memcpy(pRet, pOrig, nByte);
+      memcpy(pRet, pOrig, (size_t)nByte);
     }
   }else{
     pRet = 0;

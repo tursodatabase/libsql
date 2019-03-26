@@ -427,7 +427,7 @@ proc funk {} {
   db eval { UPDATE n1_config SET v=50 WHERE k='version' }
   set fd [db incrblob main n1_data block 10]
   fconfigure $fd -encoding binary -translation binary
-  puts -nonewline $fd "\x44\x45"
+#  puts -nonewline $fd "\x44\x45"
   close $fd
 }
 db func funk funk
@@ -602,6 +602,38 @@ do_execsql_test 23.1 {
 do_execsql_test 23.2 {
   SELECT * FROM t11, t10 WHERE t10.rowid IS NULL;
 }
+
+#-------------------------------------------------------------------------
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE t12 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO t12 VALUES('aaaa');
+}
+do_execsql_test 24.1 {
+  BEGIN;
+    DELETE FROM t12 WHERE rowid=1;
+    SELECT * FROM t12('aaaa');
+    INSERT INTO t12 VALUES('aaaa');
+  END;
+}
+do_execsql_test 24.2 {
+  INSERT INTO t12(t12) VALUES('integrity-check');
+}
+do_execsql_test 24.3 {
+    SELECT * FROM t12('aaaa');
+} {aaaa}
+
+#-------------------------------------------------------------------------
+do_execsql_test 25.0 {
+  CREATE VIRTUAL TABLE t13 USING fts5(x, detail=%DETAIL%);
+}
+do_execsql_test 25.1 {
+  BEGIN;
+  INSERT INTO t13 VALUES('AAAA');
+SELECT * FROM t13('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB*');
+
+  END;
+}
+
 
 }
 
