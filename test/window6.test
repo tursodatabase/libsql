@@ -337,4 +337,35 @@ do_execsql_test 11.2 {
   25 {} 90    30 thirty 150   30 thirty 150   50 {} 200
 }
 
+do_execsql_test 11.3.1 {
+  SELECT a, sum(a) OVER win FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+} {
+  10 10 15 25 20 45 20 65 25 90 30 120 30 150 50 200
+}
+do_execsql_test 11.3.2 {
+  SELECT a, sum(a) OVER win FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN UNBOUNDED PRECEDING AND 0 FOLLOWING)
+} {
+  10 10 15 25 20 45 20 65 25 90 30 120 30 150 50 200
+}
+do_execsql_test 11.3.3 {
+  SELECT a, sum(a) OVER win FROM t1
+  WINDOW win AS (ORDER BY a ROWS BETWEEN UNBOUNDED PRECEDING AND 0 PRECEDING)
+} {
+  10 10 15 25 20 45 20 65 25 90 30 120 30 150 50 200
+}
+
+do_execsql_test 11.4.1 {
+  SELECT y, group_concat(y, '.') OVER win FROM t3
+  WINDOW win AS (
+    ORDER BY y RANGE BETWEEN UNBOUNDED PRECEDING AND 10 PRECEDING
+  );
+} {
+  fifteen fifteen 
+  ten     fifteen.ten 
+  thirty  fifteen.ten.thirty
+}
+
 finish_test
+

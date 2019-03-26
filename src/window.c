@@ -2014,6 +2014,26 @@ Window *sqlite3WindowListDup(sqlite3 *db, Window *p){
 }
 
 /*
+** Return true if it can be determined at compile time that expression 
+** pExpr evaluates to a value that, when cast to an integer, is greater 
+** than zero. False otherwise.
+**
+** If an OOM error occurs, this function sets the Parse.db.mallocFailed 
+** flag and returns zero.
+*/
+static int windowExprGtZero(Parse *pParse, Expr *pExpr){
+  int ret = 0;
+  sqlite3 *db = pParse->db;
+  sqlite3_value *pVal = 0;
+  sqlite3ValueFromExpr(db, pExpr, db->enc, SQLITE_AFF_NUMERIC, &pVal);
+  if( pVal && sqlite3_value_int(pVal)>0 ){
+    ret = 1;
+  }
+  sqlite3ValueFree(pVal);
+  return ret;
+}
+
+/*
 ** sqlite3WhereBegin() has already been called for the SELECT statement 
 ** passed as the second argument when this function is invoked. It generates
 ** code to populate the Window.regResult register for each window function 
@@ -2406,22 +2426,17 @@ void sqlite3WindowCodeStep(
   ** has been returned to the caller (WINDOW_RETURN_ROW), or they may
   ** be deleted after they enter the frame (WINDOW_AGGSTEP). */
   switch( pMWin->eStart ){
-    case TK_FOLLOWING: {
-      if( pMWin->eType!=TK_RANGE ){
-        sqlite3 *db = pParse->db;
-        sqlite3_value *pVal = 0;
-        sqlite3ValueFromExpr(db,pMWin->pStart,db->enc,SQLITE_AFF_NUMERIC,&pVal);
-        if( pVal && sqlite3_value_int(pVal)>0 ){
-          s.eDelete = WINDOW_RETURN_ROW;
-        }
-        sqlite3ValueFree(pVal);
+    case TK_FOLLOWING:
+      if( pMWin->eType!=TK_RANGE && windowExprGtZero(pParse, pMWin->pStart) ){
+        s.eDelete = WINDOW_RETURN_ROW;
       }
       break;
-    }
     case TK_UNBOUNDED:
       if( windowCacheFrame(pMWin)==0 ){
         if( pMWin->eEnd==TK_PRECEDING ){
-          s.eDelete = WINDOW_AGGSTEP;
+          if( pMWin->eType!=TK_RANGE && windowExprGtZero(pParse, pMWin->pEnd) ){
+            s.eDelete = WINDOW_AGGSTEP;
+          }
         }else{
           s.eDelete = WINDOW_RETURN_ROW;
         }
