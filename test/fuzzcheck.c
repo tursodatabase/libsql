@@ -531,7 +531,7 @@ static int decodeDatabase(
     fprintf(stderr, "Out of memory!\n");
     exit(1);
   }
-  memset(a, 0, nAlloc);
+  memset(a, 0, (size_t)nAlloc);
   for(i=k=0; i<n; i++){
     unsigned char c = (unsigned char)zIn[i];
     if( isxdigit(c) ){
@@ -568,7 +568,7 @@ static int decodeDatabase(
             exit(1);
           }
           assert( newSize > nAlloc );
-          memset(a+nAlloc, 0, newSize - nAlloc);
+          memset(a+nAlloc, 0, (size_t)(newSize - nAlloc));
           nAlloc = newSize;
         }
         if( j>=(unsigned)mx ){

@@ -1160,7 +1160,7 @@ static void whereIndexExprTrans(
 }
 
 /*
-** The pTruth expression is always tree because it is the WHERE clause
+** The pTruth expression is always true because it is the WHERE clause
 ** a partial index that is driving a query loop.  Look through all of the
 ** WHERE clause terms on the query, and if any of those terms must be
 ** true because pTruth is true, then mark those WHERE clause terms as

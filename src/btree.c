@@ -1455,7 +1455,10 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
           if( iFree2+sz2 > usableSize ) return SQLITE_CORRUPT_PAGE(pPage);
           memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
           sz += sz2;
+        }else if( iFree+sz>usableSize ){
+          return SQLITE_CORRUPT_PAGE(pPage);
         }
+
         cbrk = top+sz;
         assert( cbrk+(iFree-top) <= usableSize );
         memmove(&data[cbrk], &data[top], iFree-top);
@@ -1573,7 +1576,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     }
     iAddr = pc;
     pc = get2byte(&aData[pc]);
-    if( pc<iAddr+size ){
+    if( pc<=iAddr+size ){
       if( pc ){
         /* The next slot in the chain is not past the end of the current slot */
         *pRc = SQLITE_CORRUPT_PAGE(pPg);
@@ -2013,7 +2016,7 @@ static int btreeInitPage(MemPage *pPage){
   ** offset to the cell content area will equal the page size minus the
   ** bytes of reserved space. */
   assert( pPage->nCell>0
-       || get2byteNotZero(&data[5])==pBt->usableSize
+       || get2byteNotZero(&data[5])==(int)pBt->usableSize
        || CORRUPT_DB );
   pPage->nFree = -1;  /* Indicate that this value is yet uncomputed */
   pPage->isInit = 1;
@@ -6190,7 +6193,9 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( iPage<2 ) return SQLITE_CORRUPT_BKPT;
+  if( iPage<2 || iPage>pBt->nPage ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( pMemPage ){
     pPage = pMemPage;
     sqlite3PagerRef(pPage->pDbPage);
@@ -7559,7 +7564,6 @@ static int balance_nonroot(
         goto balance_cleanup;
       }
     }
-    nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
     if( pParent->nOverflow && i+nxDiv==pParent->aiOvfl[0] ){
@@ -7603,6 +7607,7 @@ static int balance_nonroot(
 
   /* Make nMaxCells a multiple of 4 in order to preserve 8-byte
   ** alignment */
+  nMaxCells = nOld*(MX_CELL(pBt) + ArraySize(pParent->apOvfl));
   nMaxCells = (nMaxCells + 3)&~3;
 
   /*
@@ -7613,7 +7618,7 @@ static int balance_nonroot(
      + nMaxCells*sizeof(u16)                       /* b.szCell */
      + pBt->pageSize;                              /* aSpace1 */
 
-  assert( szScratch<=6*(int)pBt->pageSize );
+  assert( szScratch<=7*(int)pBt->pageSize );
   b.apCell = sqlite3StackAllocRaw(0, szScratch );
   if( b.apCell==0 ){
     rc = SQLITE_NOMEM_BKPT;
@@ -8163,7 +8168,8 @@ static int balance_nonroot(
     rc = defragmentPage(apNew[0], -1);
     testcase( rc!=SQLITE_OK );
     assert( apNew[0]->nFree == 
-        (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
+        (get2byteNotZero(&apNew[0]->aData[5]) - apNew[0]->cellOffset
+          - apNew[0]->nCell*2)
       || rc!=SQLITE_OK
     );
     copyNodeContent(apNew[0], pParent, &rc);

@@ -103,7 +103,7 @@ int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
       *ppNew = 0;
       rc = SQLITE_NOMEM;
     }else{
-      memset(pNew->aSlot, 0, nByte);
+      memset(pNew->aSlot, 0, (size_t)nByte);
     }
   }
   return rc;
@@ -187,19 +187,25 @@ static int fts5HashResize(Fts5Hash *pHash){
   return SQLITE_OK;
 }
 
-static void fts5HashAddPoslistSize(Fts5Hash *pHash, Fts5HashEntry *p){
+static int fts5HashAddPoslistSize(
+  Fts5Hash *pHash, 
+  Fts5HashEntry *p,
+  Fts5HashEntry *p2
+){
+  int nRet = 0;
   if( p->iSzPoslist ){
-    u8 *pPtr = (u8*)p;
+    u8 *pPtr = p2 ? (u8*)p2 : (u8*)p;
+    int nData = p->nData;
     if( pHash->eDetail==FTS5_DETAIL_NONE ){
-      assert( p->nData==p->iSzPoslist );
+      assert( nData==p->iSzPoslist );
       if( p->bDel ){
-        pPtr[p->nData++] = 0x00;
+        pPtr[nData++] = 0x00;
         if( p->bContent ){
-          pPtr[p->nData++] = 0x00;
+          pPtr[nData++] = 0x00;
         }
       }
     }else{
-      int nSz = (p->nData - p->iSzPoslist - 1);       /* Size in bytes */
+      int nSz = (nData - p->iSzPoslist - 1);       /* Size in bytes */
       int nPos = nSz*2 + p->bDel;                     /* Value of nPos field */
 
       assert( p->bDel==0 || p->bDel==1 );
@@ -209,14 +215,19 @@ static void fts5HashAddPoslistSize(Fts5Hash *pHash, Fts5HashEntry *p){
         int nByte = sqlite3Fts5GetVarintLen((u32)nPos);
         memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
         sqlite3Fts5PutVarint(&pPtr[p->iSzPoslist], nPos);
-        p->nData += (nByte-1);
+        nData += (nByte-1);
       }
     }
 
-    p->iSzPoslist = 0;
-    p->bDel = 0;
-    p->bContent = 0;
+    nRet = nData - p->nData;
+    if( p2==0 ){
+      p->iSzPoslist = 0;
+      p->bDel = 0;
+      p->bContent = 0;
+      p->nData = nData;
+    }
   }
+  return nRet;
 }
 
 /*
@@ -273,7 +284,7 @@ int sqlite3Fts5HashWrite(
     p = (Fts5HashEntry*)sqlite3_malloc64(nByte);
     if( !p ) return SQLITE_NOMEM;
     memset(p, 0, sizeof(Fts5HashEntry));
-    p->nAlloc = nByte;
+    p->nAlloc = (int)nByte;
     zKey = fts5EntryKey(p);
     zKey[0] = bByte;
     memcpy(&zKey[1], pToken, nToken);
@@ -328,7 +339,7 @@ int sqlite3Fts5HashWrite(
   /* If this is a new rowid, append the 4-byte size field for the previous
   ** entry, and the new rowid for this entry.  */
   if( iRowid!=p->iRowid ){
-    fts5HashAddPoslistSize(pHash, p);
+    fts5HashAddPoslistSize(pHash, p, 0);
     p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iRowid - p->iRowid);
     p->iRowid = iRowid;
     bNew = 1;
@@ -445,7 +456,9 @@ static int fts5HashEntrySort(
   for(iSlot=0; iSlot<pHash->nSlot; iSlot++){
     Fts5HashEntry *pIter;
     for(pIter=pHash->aSlot[iSlot]; pIter; pIter=pIter->pHashNext){
-      if( pTerm==0 || 0==memcmp(fts5EntryKey(pIter), pTerm, nTerm) ){
+      if( pTerm==0 
+       || (pIter->nKey+1>=nTerm && 0==memcmp(fts5EntryKey(pIter), pTerm, nTerm))
+      ){
         Fts5HashEntry *pEntry = pIter;
         pEntry->pScanNext = 0;
         for(i=0; ap[i]; i++){
@@ -473,8 +486,9 @@ static int fts5HashEntrySort(
 */
 int sqlite3Fts5HashQuery(
   Fts5Hash *pHash,                /* Hash table to query */
+  int nPre,
   const char *pTerm, int nTerm,   /* Query term */
-  const u8 **ppDoclist,           /* OUT: Pointer to doclist for pTerm */
+  void **ppOut,                   /* OUT: Pointer to new object */
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 ){
   unsigned int iHash = fts5HashKey(pHash->nSlot, (const u8*)pTerm, nTerm);
@@ -488,11 +502,20 @@ int sqlite3Fts5HashQuery(
   }
 
   if( p ){
-    fts5HashAddPoslistSize(pHash, p);
-    *ppDoclist = (const u8*)&zKey[nTerm+1];
-    *pnDoclist = p->nData - (sizeof(Fts5HashEntry) + nTerm + 1);
+    int nHashPre = sizeof(Fts5HashEntry) + nTerm + 1;
+    int nList = p->nData - nHashPre;
+    u8 *pRet = (u8*)(*ppOut = sqlite3_malloc64(nPre + nList + 10));
+    if( pRet ){
+      Fts5HashEntry *pFaux = (Fts5HashEntry*)&pRet[nPre-nHashPre];
+      memcpy(&pRet[nPre], &((u8*)p)[nHashPre], nList);
+      nList += fts5HashAddPoslistSize(pHash, p, pFaux);
+      *pnDoclist = nList;
+    }else{
+      *pnDoclist = 0;
+      return SQLITE_NOMEM;
+    }
   }else{
-    *ppDoclist = 0;
+    *ppOut = 0;
     *pnDoclist = 0;
   }
 
@@ -525,7 +548,7 @@ void sqlite3Fts5HashScanEntry(
   if( (p = pHash->pScan) ){
     char *zKey = fts5EntryKey(p);
     int nTerm = (int)strlen(zKey);
-    fts5HashAddPoslistSize(pHash, p);
+    fts5HashAddPoslistSize(pHash, p, 0);
     *pzTerm = zKey;
     *ppDoclist = (const u8*)&zKey[nTerm+1];
     *pnDoclist = p->nData - (sizeof(Fts5HashEntry) + nTerm + 1);

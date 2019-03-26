@@ -185,4 +185,20 @@ do_test 620 {
   lappend rc $msg
 } {1 {wrong # args: should be "db serialize ?DATABASE?"}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 700 {
+  CREATE TABLE t1(a, b);
+  PRAGMA schema_version = 0;
+}
+do_test 710 {
+  set ser [db serialize main]
+  db close
+  sqlite3 db
+  db deserialize main $ser
+  catchsql {
+    CREATE VIRTUAL TABLE t1 USING rtree(id, a, b, c, d);
+  }
+} {1 {table t1 already exists}}
+
 finish_test

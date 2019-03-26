@@ -5,16 +5,28 @@ This repository contains the complete source code for the
 are also included.  However, many other test scripts
 and most of the documentation are managed separately.
 
-SQLite [does not use Git](https://sqlite.org/whynotgit.html).
-If you are reading this on GitHub, then you are looking at an
-unofficial mirror. See <https://sqlite.org/src> for the official
-repository.
-
-## Obtaining The Code
+## Version Control
 
 SQLite sources are managed using the
 [Fossil](https://www.fossil-scm.org/), a distributed version control system
-that was specifically designed to support SQLite development.
+that was specifically designed and written to support SQLite development.
+The [Fossil repository](https://sqlite.org/src/timeline) contains the urtext.
+
+If you are reading this on GitHub or some other Git repository or service,
+then you are looking at a mirror.  The names of check-ins and
+other artifacts in a Git mirror are different from the official
+names for those objects.  The offical names for check-ins are
+found in a footer on the check-in comment for authorized mirrors.
+The official check-in name can also be seen in the `manifest.uuid` file
+in the root of the tree.  Always use the official name, not  the
+Git-name, when communicating about an SQLite check-in.
+
+If you pulled your SQLite source code from a secondary source and want to
+verify its integrity, there are hints on how to do that in the
+[Verifying Code Authenticity](#vauth) section below.
+
+## Obtaining The Code
+
 If you do not want to use Fossil, you can download tarballs or ZIP
 archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
 
@@ -294,6 +306,33 @@ Key files:
 There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
 
+<a name="vauth"></a>
+## Verifying Code Authenticity
+
+If you obtained an SQLite source tree from a secondary source, such as a
+GitHub mirror, and you want to verify that it has not been altered, there
+are a couple of ways to do that.
+
+If you have an official release version of SQLite, and you are using the
+`sqlite3.c` amalgamation, then SHA3-256 hashes for the amalgamation are
+available in the [change log](https://www.sqlite.org/changes.html) on
+the official website.  After building the `sqlite3.c` file, you can check
+that is authentic by comparing the hash.  This does not ensure that the
+test scripts are unaltered, but it does validate the deliverable part of
+the code and only involves computing and comparing a single hash.
+
+For versions other than an official release, or if you are building the
+`sqlite3.c` amalgamation using non-standard build options, the verification
+process is a little more involved.  The `manifest` file at the root directory
+of the source tree ([example](https://sqlite.org/src/artifact/bd49a8271d650fa8))
+contains either a SHA3-256 hash (for newer files) or a SHA1 hash (for 
+older files) for every source file in the repository.  You can write a script
+to extracts hashes from `manifest` and verifies the hashes against the 
+corresponding files in the source tree.  The SHA3-256 hash of the `manifest`
+file itself is the official name of the version of the source tree that you
+have.  The `manifest.uuid` file should contain the SHA3-256 hash of the
+`manifest` file.  If all of the above hash comparisons are correct, then
+you can be confident that your source tree is authentic and unadulterated.
 
 ## Contacts
 
