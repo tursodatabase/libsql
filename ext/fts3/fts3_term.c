@@ -98,7 +98,7 @@ static int fts3termConnectMethod(
   nByte = sizeof(Fts3termTable) + sizeof(Fts3Table) + nDb + nFts3 + 2;
   p = (Fts3termTable *)sqlite3_malloc64(nByte);
   if( !p ) return SQLITE_NOMEM;
-  memset(p, 0, nByte);
+  memset(p, 0, (size_t)nByte);
 
   p->pFts3Tab = (Fts3Table *)&p[1];
   p->pFts3Tab->zDb = (char *)&p->pFts3Tab[1];
