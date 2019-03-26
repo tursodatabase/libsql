@@ -332,6 +332,7 @@ static void percent_rankStepFunc(
 ){
   struct CallCount *p;
   UNUSED_PARAMETER(nArg); assert( nArg==0 );
+  UNUSED_PARAMETER(apArg);
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
     p->nTotal++;
@@ -344,6 +345,7 @@ static void percent_rankInvFunc(
 ){
   struct CallCount *p;
   UNUSED_PARAMETER(nArg); assert( nArg==0 );
+  UNUSED_PARAMETER(apArg);
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   p->nStep++;
 }
@@ -375,6 +377,7 @@ static void cume_distStepFunc(
 ){
   struct CallCount *p;
   UNUSED_PARAMETER(nArg); assert( nArg==0 );
+  UNUSED_PARAMETER(apArg);
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p ){
     p->nTotal++;
@@ -387,6 +390,7 @@ static void cume_distInvFunc(
 ){
   struct CallCount *p;
   UNUSED_PARAMETER(nArg); assert( nArg==0 );
+  UNUSED_PARAMETER(apArg);
   p = (struct CallCount*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   p->nStep++;
 }
@@ -442,6 +446,7 @@ static void ntileInvFunc(
 ){
   struct NtileCtx *p;
   assert( nArg==1 ); UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(apArg);
   p = (struct NtileCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   p->iRow++;
 }
@@ -2355,8 +2360,8 @@ void sqlite3WindowCodeStep(
   int nInput = p->pSrc->a[0].pTab->nCol;    /* Number of cols returned by sub */
   int iInput;                               /* To iterate through sub cols */
   int addrNe;                     /* Address of OP_Ne */
-  int addrGosubFlush;             /* Address of OP_Gosub to flush: */
-  int addrInteger;                /* Address of OP_Integer */
+  int addrGosubFlush = 0;         /* Address of OP_Gosub to flush: */
+  int addrInteger = 0;            /* Address of OP_Integer */
   int addrEmpty;                  /* Address of OP_Rewind in flush: */
   int regStart = 0;               /* Value of <expr> PRECEDING */
   int regEnd = 0;                 /* Value of <expr> FOLLOWING */

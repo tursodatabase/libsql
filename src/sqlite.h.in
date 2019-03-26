@@ -189,6 +189,9 @@ int sqlite3_libversion_number(void);
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3_compileoption_used(const char *zOptName);
 const char *sqlite3_compileoption_get(int N);
+#else
+# define sqlite3_compileoption_used(X) 0
+# define sqlite3_compileoption_get(X)  ((void*)0)
 #endif
 
 /*
