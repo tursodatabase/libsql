@@ -143,7 +143,7 @@ static int memstatFindSchemas(memstat_cursor *pCur){
   }
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     char **az, *z;
-    az = sqlite3_realloc(pCur->azDb, sizeof(char*)*(pCur->nDb+1));
+    az = sqlite3_realloc64(pCur->azDb, sizeof(char*)*(pCur->nDb+1));
     if( az==0 ){
       memstatClearSchema(pCur);
       return SQLITE_NOMEM;

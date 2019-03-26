@@ -35,8 +35,8 @@
 /*
 ** Malloc and Free functions
 */
-static void *fts3HashMalloc(int n){
-  void *p = sqlite3_malloc(n);
+static void *fts3HashMalloc(sqlite3_int64 n){
+  void *p = sqlite3_malloc64(n);
   if( p ){
     memset(p, 0, n);
   }

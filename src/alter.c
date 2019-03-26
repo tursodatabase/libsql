@@ -166,15 +166,15 @@ void sqlite3AlterRenameTable(
   }
 #endif
 
-  /* Begin a transaction for database iDb. 
-  ** Then modify the schema cookie (since the ALTER TABLE modifies the
-  ** schema). Open a statement transaction if the table is a virtual
-  ** table.
-  */
+  /* Begin a transaction for database iDb. Then modify the schema cookie
+  ** (since the ALTER TABLE modifies the schema). Call sqlite3MayAbort(),
+  ** as the scalar functions (e.g. sqlite_rename_table()) invoked by the 
+  ** nested SQL may raise an exception.  */
   v = sqlite3GetVdbe(pParse);
   if( v==0 ){
     goto exit_rename_table;
   }
+  sqlite3MayAbort(pParse);
 
   /* figure out how many UTF-8 characters are in zName */
   zTabName = pTab->zName;
@@ -243,7 +243,6 @@ void sqlite3AlterRenameTable(
     int i = ++pParse->nMem;
     sqlite3VdbeLoadString(v, i, zName);
     sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pVTab, P4_VTAB);
-    sqlite3MayAbort(pParse);
   }
 #endif
 
@@ -564,6 +563,7 @@ void sqlite3AlterRenameColumn(
   ** uses the sqlite_rename_column() SQL function to compute the new
   ** CREATE statement text for the sqlite_master table.
   */
+  sqlite3MayAbort(pParse);
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
   assert( pNew->n>0 );
@@ -961,7 +961,6 @@ static int renameParseSql(
   rc = sqlite3RunParser(p, zSql, &zErr);
   assert( p->zErrMsg==0 );
   assert( rc!=SQLITE_OK || zErr==0 );
-  assert( (0!=p->pNewTable) + (0!=p->pNewIndex) + (0!=p->pNewTrigger)<2 );
   p->zErrMsg = zErr;
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK 
@@ -1144,6 +1143,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
           }
           sNC.ncFlags = 0;
         }
+        sNC.pSrcList = 0;
       }
     }
   }
@@ -1181,11 +1181,15 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
 */
 static void renameParseCleanup(Parse *pParse){
   sqlite3 *db = pParse->db;
+  Index *pIdx;
   if( pParse->pVdbe ){
     sqlite3VdbeFinalize(pParse->pVdbe);
   }
   sqlite3DeleteTable(db, pParse->pNewTable);
-  if( pParse->pNewIndex ) sqlite3FreeIndex(db, pParse->pNewIndex);
+  while( (pIdx = pParse->pNewIndex)!=0 ){
+    pParse->pNewIndex = pIdx->pNext;
+    sqlite3FreeIndex(db, pIdx);
+  }
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->zErrMsg);
   renameTokenFree(db, pParse->pRename);
@@ -1294,6 +1298,9 @@ static void renameColumnFunc(
         }
         sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
         for(pIdx=sParse.pNewTable->pIndex; pIdx; pIdx=pIdx->pNext){
+          sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
+        }
+        for(pIdx=sParse.pNewIndex; pIdx; pIdx=pIdx->pNext){
           sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
         }
       }

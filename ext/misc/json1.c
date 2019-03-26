@@ -691,7 +691,7 @@ static JSON_NOINLINE int jsonParseAddNodeExpand(
   assert( pParse->nNode>=pParse->nAlloc );
   if( pParse->oom ) return -1;
   nNew = pParse->nAlloc*2 + 10;
-  pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
+  pNew = sqlite3_realloc64(pParse->aNode, sizeof(JsonNode)*nNew);
   if( pNew==0 ){
     pParse->oom = 1;
     return -1;
@@ -965,7 +965,7 @@ static void jsonParseFillInParentage(JsonParse *pParse, u32 i, u32 iParent){
 static int jsonParseFindParents(JsonParse *pParse){
   u32 *aUp;
   assert( pParse->aUp==0 );
-  aUp = pParse->aUp = sqlite3_malloc( sizeof(u32)*pParse->nNode );
+  aUp = pParse->aUp = sqlite3_malloc64( sizeof(u32)*pParse->nNode );
   if( aUp==0 ){
     pParse->oom = 1;
     return SQLITE_NOMEM;
@@ -1027,7 +1027,7 @@ static JsonParse *jsonParseCached(
     pMatch->iHold = iMaxHold+1;
     return pMatch;
   }
-  p = sqlite3_malloc( sizeof(*p) + nJson + 1 );
+  p = sqlite3_malloc64( sizeof(*p) + nJson + 1 );
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
     return 0;

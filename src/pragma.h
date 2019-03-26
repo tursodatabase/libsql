@@ -49,8 +49,7 @@
 #define PragTyp_HEXKEY                        41
 #define PragTyp_KEY                           42
 #define PragTyp_LOCK_STATUS                   43
-#define PragTyp_PARSER_TRACE                  44
-#define PragTyp_STATS                         45
+#define PragTyp_STATS                         44
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -461,12 +460,14 @@ static const PragmaName aPragmaName[] = {
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
-#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+#if defined(SQLITE_DEBUG)
  {/* zName:     */ "parser_trace",
-  /* ePragTyp:  */ PragTyp_PARSER_TRACE,
-  /* ePragFlg:  */ 0,
+  /* ePragTyp:  */ PragTyp_FLAG,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ 0 },
+  /* iArg:      */ SQLITE_ParserTrace },
+#endif
 #endif
 #if defined(SQLITE_INTROSPECTION_PRAGMAS)
  {/* zName:     */ "pragma_list",

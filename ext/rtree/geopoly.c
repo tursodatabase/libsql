@@ -124,6 +124,14 @@ struct GeoPoly {
 */
 #define GEOPOLY_SZ(N)  (sizeof(GeoPoly) + sizeof(GeoCoord)*2*((N)-4))
 
+/* Macros to access coordinates of a GeoPoly.
+** We have to use these macros, rather than just say p->a[i] in order
+** to silence (incorrect) UBSAN warnings if the array index is too large.
+*/
+#define GeoX(P,I)  (((GeoCoord*)(P)->a)[(I)*2])
+#define GeoY(P,I)  (((GeoCoord*)(P)->a)[(I)*2+1])
+
+
 /*
 ** State of a parse of a GeoJSON input.
 */
@@ -316,8 +324,9 @@ static GeoPoly *geopolyFuncParam(
         memcpy(p->hdr, a, nByte);
         if( a[0] != *(unsigned char*)&x ){
           int ii;
-          for(ii=0; ii<nVertex*2; ii++){
-            geopolySwab32((unsigned char*)&p->a[ii]);
+          for(ii=0; ii<nVertex; ii++){
+            geopolySwab32((unsigned char*)&GeoX(p,ii));
+            geopolySwab32((unsigned char*)&GeoY(p,ii));
           }
           p->hdr[0] ^= 1;
         }
@@ -376,9 +385,9 @@ static void geopolyJsonFunc(
     int i;
     sqlite3_str_append(x, "[", 1);
     for(i=0; i<p->nVertex; i++){
-      sqlite3_str_appendf(x, "[%!g,%!g],", p->a[i*2], p->a[i*2+1]);
+      sqlite3_str_appendf(x, "[%!g,%!g],", GeoX(p,i), GeoY(p,i));
     }
-    sqlite3_str_appendf(x, "[%!g,%!g]]", p->a[0], p->a[1]);
+    sqlite3_str_appendf(x, "[%!g,%!g]]", GeoX(p,0), GeoY(p,0));
     sqlite3_result_text(context, sqlite3_str_finish(x), -1, sqlite3_free);
     sqlite3_free(p);
   }
@@ -395,7 +404,9 @@ static void geopolySvgFunc(
   int argc,
   sqlite3_value **argv
 ){
-  GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  GeoPoly *p;
+  if( argc<1 ) return;
+  p = geopolyFuncParam(context, argv[0], 0);
   if( p ){
     sqlite3 *db = sqlite3_context_db_handle(context);
     sqlite3_str *x = sqlite3_str_new(db);
@@ -403,10 +414,10 @@ static void geopolySvgFunc(
     char cSep = '\'';
     sqlite3_str_appendf(x, "<polyline points=");
     for(i=0; i<p->nVertex; i++){
-      sqlite3_str_appendf(x, "%c%g,%g", cSep, p->a[i*2], p->a[i*2+1]);
+      sqlite3_str_appendf(x, "%c%g,%g", cSep, GeoX(p,i), GeoY(p,i));
       cSep = ' ';
     }
-    sqlite3_str_appendf(x, " %g,%g'", p->a[0], p->a[1]);
+    sqlite3_str_appendf(x, " %g,%g'", GeoX(p,0), GeoY(p,0));
     for(i=1; i<argc; i++){
       const char *z = (const char*)sqlite3_value_text(argv[i]);
       if( z && z[0] ){
@@ -451,12 +462,12 @@ static void geopolyXformFunc(
   int ii;
   if( p ){
     for(ii=0; ii<p->nVertex; ii++){
-      x0 = p->a[ii*2];
-      y0 = p->a[ii*2+1];
+      x0 = GeoX(p,ii);
+      y0 = GeoY(p,ii);
       x1 = (GeoCoord)(A*x0 + B*y0 + E);
       y1 = (GeoCoord)(C*x0 + D*y0 + F);
-      p->a[ii*2] = x1;
-      p->a[ii*2+1] = y1;
+      GeoX(p,ii) = x1;
+      GeoY(p,ii) = y1;
     }
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
@@ -475,12 +486,12 @@ static double geopolyArea(GeoPoly *p){
   double rArea = 0.0;
   int ii;
   for(ii=0; ii<p->nVertex-1; ii++){
-    rArea += (p->a[ii*2] - p->a[ii*2+2])           /* (x0 - x1) */
-              * (p->a[ii*2+1] + p->a[ii*2+3])      /* (y0 + y1) */
+    rArea += (GeoX(p,ii) - GeoX(p,ii+1))           /* (x0 - x1) */
+              * (GeoY(p,ii) + GeoY(p,ii+1))        /* (y0 + y1) */
               * 0.5;
   }
-  rArea += (p->a[ii*2] - p->a[0])                  /* (xN - x0) */
-           * (p->a[ii*2+1] + p->a[1])              /* (yN + y0) */
+  rArea += (GeoX(p,ii) - GeoX(p,0))                /* (xN - x0) */
+           * (GeoY(p,ii) + GeoY(p,0))              /* (yN + y0) */
            * 0.5;
   return rArea;
 }
@@ -527,13 +538,13 @@ static void geopolyCcwFunc(
   if( p ){
     if( geopolyArea(p)<0.0 ){
       int ii, jj;
-      for(ii=2, jj=p->nVertex*2 - 2; ii<jj; ii+=2, jj-=2){
-        GeoCoord t = p->a[ii];
-        p->a[ii] = p->a[jj];
-        p->a[jj] = t;
-        t = p->a[ii+1];
-        p->a[ii+1] = p->a[jj+1];
-        p->a[jj+1] = t;
+      for(ii=1, jj=p->nVertex-1; ii<jj; ii++, jj--){
+        GeoCoord t = GeoX(p,ii);
+        GeoX(p,ii) = GeoX(p,jj);
+        GeoX(p,jj) = t;
+        t = GeoY(p,ii);
+        GeoY(p,ii) = GeoY(p,jj);
+        GeoY(p,jj) = t;
       }
     }
     sqlite3_result_blob(context, p->hdr, 
@@ -593,8 +604,8 @@ static void geopolyRegularFunc(
   p->hdr[3] = n&0xff;
   for(i=0; i<n; i++){
     double rAngle = 2.0*GEOPOLY_PI*i/n;
-    p->a[i*2] = x - r*geopolySine(rAngle-0.5*GEOPOLY_PI);
-    p->a[i*2+1] = y + r*geopolySine(rAngle);
+    GeoX(p,i) = x - r*geopolySine(rAngle-0.5*GEOPOLY_PI);
+    GeoY(p,i) = y + r*geopolySine(rAngle);
   }
   sqlite3_result_blob(context, p->hdr, 4+8*n, SQLITE_TRANSIENT);
   sqlite3_free(p);
@@ -631,13 +642,13 @@ static GeoPoly *geopolyBBox(
   }
   if( p ){
     int ii;
-    mnX = mxX = p->a[0];
-    mnY = mxY = p->a[1];
+    mnX = mxX = GeoX(p,0);
+    mnY = mxY = GeoY(p,0);
     for(ii=1; ii<p->nVertex; ii++){
-      double r = p->a[ii*2];
+      double r = GeoX(p,ii);
       if( r<mnX ) mnX = (float)r;
       else if( r>mxX ) mxX = (float)r;
-      r = p->a[ii*2+1];
+      r = GeoY(p,ii);
       if( r<mnY ) mnY = (float)r;
       else if( r>mxY ) mxY = (float)r;
     }
@@ -657,14 +668,14 @@ static GeoPoly *geopolyBBox(
       pOut->hdr[1] = 0;
       pOut->hdr[2] = 0;
       pOut->hdr[3] = 4;
-      pOut->a[0] = mnX;
-      pOut->a[1] = mnY;
-      pOut->a[2] = mxX;
-      pOut->a[3] = mnY;
-      pOut->a[4] = mxX;
-      pOut->a[5] = mxY;
-      pOut->a[6] = mnX;
-      pOut->a[7] = mxY;
+      GeoX(pOut,0) = mnX;
+      GeoY(pOut,0) = mnY;
+      GeoX(pOut,1) = mxX;
+      GeoY(pOut,1) = mnY;
+      GeoX(pOut,2) = mxX;
+      GeoY(pOut,2) = mxY;
+      GeoX(pOut,3) = mnX;
+      GeoY(pOut,3) = mxY;
     }else{
       sqlite3_free(p);
       aCoord[0].f = mnX;
@@ -802,14 +813,14 @@ static void geopolyContainsPointFunc(
   int ii;
   if( p1==0 ) return;
   for(ii=0; ii<p1->nVertex-1; ii++){
-    v = pointBeneathLine(x0,y0,p1->a[ii*2],p1->a[ii*2+1],
-                               p1->a[ii*2+2],p1->a[ii*2+3]);
+    v = pointBeneathLine(x0,y0,GeoX(p1,ii), GeoY(p1,ii),
+                               GeoX(p1,ii+1),GeoY(p1,ii+1));
     if( v==2 ) break;
     cnt += v;
   }
   if( v!=2 ){
-    v = pointBeneathLine(x0,y0,p1->a[ii*2],p1->a[ii*2+1],
-                               p1->a[0],p1->a[1]);
+    v = pointBeneathLine(x0,y0,GeoX(p1,ii), GeoY(p1,ii),
+                               GeoX(p1,0),  GeoY(p1,0));
   }
   if( v==2 ){
     sqlite3_result_int(context, 1);
@@ -931,10 +942,10 @@ static void geopolyAddSegments(
   unsigned int i;
   GeoCoord *x;
   for(i=0; i<(unsigned)pPoly->nVertex-1; i++){
-    x = pPoly->a + (i*2);
+    x = &GeoX(pPoly,i);
     geopolyAddOneSegment(p, x[0], x[1], x[2], x[3], side, i);
   }
-  x = pPoly->a + (i*2);
+  x = &GeoX(pPoly,i);
   geopolyAddOneSegment(p, x[0], x[1], pPoly->a[0], pPoly->a[1], side, i);
 }
 

@@ -250,13 +250,13 @@ struct UnionCsr {
 ** is attempted but fails, NULL is returned and *pRc is set to 
 ** SQLITE_NOMEM.
 */
-static void *unionMalloc(int *pRc, int nByte){
+static void *unionMalloc(int *pRc, sqlite3_int64 nByte){
   void *pRet;
   assert( nByte>0 );
   if( *pRc==SQLITE_OK ){
-    pRet = sqlite3_malloc(nByte);
+    pRet = sqlite3_malloc64(nByte);
     if( pRet ){
-      memset(pRet, 0, nByte);
+      memset(pRet, 0, (size_t)nByte);
     }else{
       *pRc = SQLITE_NOMEM;
     }
@@ -276,10 +276,10 @@ static void *unionMalloc(int *pRc, int nByte){
 static char *unionStrdup(int *pRc, const char *zIn){
   char *zRet = 0;
   if( zIn ){
-    int nByte = (int)strlen(zIn) + 1;
+    sqlite3_int64 nByte = strlen(zIn) + 1;
     zRet = unionMalloc(pRc, nByte);
     if( zRet ){
-      memcpy(zRet, zIn, nByte);
+      memcpy(zRet, zIn, (size_t)nByte);
     }
   }
   return zRet;
@@ -939,7 +939,7 @@ static int unionConnect(
       /* Grow the pTab->aSrc[] array if required. */
       if( nAlloc<=pTab->nSrc ){
         int nNew = nAlloc ? nAlloc*2 : 8;
-        UnionSrc *aNew = (UnionSrc*)sqlite3_realloc(
+        UnionSrc *aNew = (UnionSrc*)sqlite3_realloc64(
             pTab->aSrc, nNew*sizeof(UnionSrc)
         );
         if( aNew==0 ){

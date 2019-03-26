@@ -115,9 +115,29 @@ ifcapable wal {
 test_is_readonly capi3d-2.8 {PRAGMA application_id=1234} 0
 test_is_readonly capi3d-2.9 {VACUUM} 0
 test_is_readonly capi3d-2.10 {PRAGMA integrity_check} 1
-do_test capi3-2.99 {
+do_test capi3-2.49 {
   sqlite3_stmt_readonly 0
 } 1
+
+
+# Tests for the is-explain interface.
+#
+proc test_is_explain {testname sql truth} {
+  do_test $testname [format {
+    set DB [sqlite3_connection_pointer db]
+    set STMT [sqlite3_prepare $DB {%s} -1 TAIL]
+    set rc [sqlite3_stmt_isexplain $STMT]
+    sqlite3_finalize $STMT
+    set rc
+  } $sql] $truth
+}
+
+test_is_explain capi3d-2.51 {SELECT * FROM sqlite_master} 0
+test_is_explain capi3d-2.52 { explain SELECT * FROM sqlite_master} 1
+test_is_explain capi3d-2.53 {  Explain Query Plan select * FROM sqlite_master} 2
+do_test capi3-2.99 {
+  sqlite3_stmt_isexplain 0
+} 0
 
 # Tests for sqlite3_stmt_busy
 #

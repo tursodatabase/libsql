@@ -34,7 +34,8 @@ typedef struct MemFile MemFile;
 struct MemFile {
   sqlite3_file base;              /* IO methods */
   sqlite3_int64 sz;               /* Size of the file */
-  sqlite3_int64 szMax;            /* Space allocated to aData */
+  sqlite3_int64 szAlloc;          /* Space allocated to aData */
+  sqlite3_int64 szMax;            /* Maximum allowed size of the file */
   unsigned char *aData;           /* content of the file */
   int nMmap;                      /* Number of memory mapped pages */
   unsigned mFlags;                /* Flags */
@@ -160,10 +161,15 @@ static int memdbEnlarge(MemFile *p, sqlite3_int64 newSz){
   if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 || p->nMmap>0 ){
     return SQLITE_FULL;
   }
+  if( newSz>p->szMax ){
+    return SQLITE_FULL;
+  }
+  newSz *= 2;
+  if( newSz>p->szMax ) newSz = p->szMax;
   pNew = sqlite3_realloc64(p->aData, newSz);
   if( pNew==0 ) return SQLITE_NOMEM;
   p->aData = pNew;
-  p->szMax = newSz;
+  p->szAlloc = newSz;
   return SQLITE_OK;
 }
 
@@ -177,10 +183,11 @@ static int memdbWrite(
   sqlite_int64 iOfst
 ){
   MemFile *p = (MemFile *)pFile;
+  if( NEVER(p->mFlags & SQLITE_DESERIALIZE_READONLY) ) return SQLITE_READONLY;
   if( iOfst+iAmt>p->sz ){
     int rc;
-    if( iOfst+iAmt>p->szMax
-     && (rc = memdbEnlarge(p, (iOfst+iAmt)*2))!=SQLITE_OK
+    if( iOfst+iAmt>p->szAlloc
+     && (rc = memdbEnlarge(p, iOfst+iAmt))!=SQLITE_OK
     ){
       return rc;
     }
@@ -226,6 +233,11 @@ static int memdbFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 */
 static int memdbLock(sqlite3_file *pFile, int eLock){
   MemFile *p = (MemFile *)pFile;
+  if( eLock>SQLITE_LOCK_SHARED 
+   && (p->mFlags & SQLITE_DESERIALIZE_READONLY)!=0
+  ){
+    return SQLITE_READONLY;
+  }
   p->eLock = eLock;
   return SQLITE_OK;
 }
@@ -248,6 +260,19 @@ static int memdbFileControl(sqlite3_file *pFile, int op, void *pArg){
   int rc = SQLITE_NOTFOUND;
   if( op==SQLITE_FCNTL_VFSNAME ){
     *(char**)pArg = sqlite3_mprintf("memdb(%p,%lld)", p->aData, p->sz);
+    rc = SQLITE_OK;
+  }
+  if( op==SQLITE_FCNTL_SIZE_LIMIT ){
+    sqlite3_int64 iLimit = *(sqlite3_int64*)pArg;
+    if( iLimit<p->sz ){
+      if( iLimit<0 ){
+        iLimit = p->szMax;
+      }else{
+        iLimit = p->sz;
+      }
+    }
+    p->szMax = iLimit;
+    *(sqlite3_int64*)pArg = iLimit;
     rc = SQLITE_OK;
   }
   return rc;
@@ -280,8 +305,12 @@ static int memdbFetch(
   void **pp
 ){
   MemFile *p = (MemFile *)pFile;
-  p->nMmap++;
-  *pp = (void*)(p->aData + iOfst);
+  if( iOfst+iAmt>p->sz ){
+    *pp = 0;
+  }else{
+    p->nMmap++;
+    *pp = (void*)(p->aData + iOfst);
+  }
   return SQLITE_OK;
 }
 
@@ -311,6 +340,7 @@ static int memdbOpen(
   assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
   *pOutFlags = flags | SQLITE_OPEN_MEMORY;
   p->base.pMethods = &memdb_io_methods;
+  p->szMax = sqlite3GlobalConfig.mxMemdbSize;
   return SQLITE_OK;
 }
 
@@ -560,7 +590,11 @@ int sqlite3_deserialize(
   }else{
     p->aData = pData;
     p->sz = szDb;
+    p->szAlloc = szBuf;
     p->szMax = szBuf;
+    if( p->szMax<sqlite3GlobalConfig.mxMemdbSize ){
+      p->szMax = sqlite3GlobalConfig.mxMemdbSize;
+    }
     p->mFlags = mFlags;
     rc = SQLITE_OK;
   }

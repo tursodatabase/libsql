@@ -121,22 +121,47 @@ SQLITE_EXTENSION_INIT1
 
 /*
 ** Set the result stored by context ctx to a blob containing the 
-** contents of file zName.
+** contents of file zName.  Or, leave the result unchanged (NULL)
+** if the file does not exist or is unreadable.
+**
+** If the file exceeds the SQLite blob size limit, through an
+** SQLITE_TOOBIG error.
+**
+** Throw an SQLITE_IOERR if there are difficulties pulling the file
+** off of disk.
 */
 static void readFileContents(sqlite3_context *ctx, const char *zName){
   FILE *in;
-  long nIn;
+  sqlite3_int64 nIn;
   void *pBuf;
+  sqlite3 *db;
+  int mxBlob;
 
   in = fopen(zName, "rb");
-  if( in==0 ) return;
+  if( in==0 ){
+    /* File does not exist or is unreadable. Leave the result set to NULL. */
+    return;
+  }
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc( nIn );
-  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
-    sqlite3_result_blob(ctx, pBuf, nIn, sqlite3_free);
+  db = sqlite3_context_db_handle(ctx);
+  mxBlob = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
+  if( nIn>mxBlob ){
+    sqlite3_result_error_code(ctx, SQLITE_TOOBIG);
+    fclose(in);
+    return;
+  }
+  pBuf = sqlite3_malloc64( nIn ? nIn : 1 );
+  if( pBuf==0 ){
+    sqlite3_result_error_nomem(ctx);
+    fclose(in);
+    return;
+  }
+  if( nIn==fread(pBuf, 1, (size_t)nIn, in) ){
+    sqlite3_result_blob64(ctx, pBuf, nIn, sqlite3_free);
   }else{
+    sqlite3_result_error_code(ctx, SQLITE_IOERR);
     sqlite3_free(pBuf);
   }
   fclose(in);
@@ -268,15 +293,15 @@ static int fileLinkStat(
 ** Argument zFile is the name of a file that will be created and/or written
 ** by SQL function writefile(). This function ensures that the directory
 ** zFile will be written to exists, creating it if required. The permissions
-** for any path components created by this function are set to (mode&0777).
+** for any path components created by this function are set in accordance
+** with the current umask.
 **
 ** If an OOM condition is encountered, SQLITE_NOMEM is returned. Otherwise,
 ** SQLITE_OK is returned if the directory is successfully created, or
 ** SQLITE_ERROR otherwise.
 */
 static int makeDirectory(
-  const char *zFile,
-  mode_t mode
+  const char *zFile
 ){
   char *zCopy = sqlite3_mprintf("%s", zFile);
   int rc = SQLITE_OK;
@@ -297,7 +322,7 @@ static int makeDirectory(
 
       rc2 = fileStat(zCopy, &sStat);
       if( rc2!=0 ){
-        if( mkdir(zCopy, mode & 0777) ) rc = SQLITE_ERROR;
+        if( mkdir(zCopy, 0777) ) rc = SQLITE_ERROR;
       }else{
         if( !S_ISDIR(sStat.st_mode) ) rc = SQLITE_ERROR;
       }
@@ -455,7 +480,7 @@ static void writefileFunc(
 
   res = writeFile(context, zFile, argv[1], mode, mtime);
   if( res==1 && errno==ENOENT ){
-    if( makeDirectory(zFile, mode)==SQLITE_OK ){
+    if( makeDirectory(zFile)==SQLITE_OK ){
       res = writeFile(context, zFile, argv[1], mode, mtime);
     }
   }
@@ -646,8 +671,8 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
     FsdirLevel *pLvl;
     if( iNew>=pCur->nLvl ){
       int nNew = iNew+1;
-      int nByte = nNew*sizeof(FsdirLevel);
-      FsdirLevel *aNew = (FsdirLevel*)sqlite3_realloc(pCur->aLvl, nByte);
+      sqlite3_int64 nByte = nNew*sizeof(FsdirLevel);
+      FsdirLevel *aNew = (FsdirLevel*)sqlite3_realloc64(pCur->aLvl, nByte);
       if( aNew==0 ) return SQLITE_NOMEM;
       memset(&aNew[pCur->nLvl], 0, sizeof(FsdirLevel)*(nNew-pCur->nLvl));
       pCur->aLvl = aNew;
@@ -727,7 +752,7 @@ static int fsdirColumn(
       }else if( S_ISLNK(m) ){
         char aStatic[64];
         char *aBuf = aStatic;
-        int nBuf = 64;
+        sqlite3_int64 nBuf = 64;
         int n;
 
         while( 1 ){
@@ -735,7 +760,7 @@ static int fsdirColumn(
           if( n<nBuf ) break;
           if( aBuf!=aStatic ) sqlite3_free(aBuf);
           nBuf = nBuf*2;
-          aBuf = sqlite3_malloc(nBuf);
+          aBuf = sqlite3_malloc64(nBuf);
           if( aBuf==0 ){
             sqlite3_result_error_nomem(ctx);
             return SQLITE_NOMEM;

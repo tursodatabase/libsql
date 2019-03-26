@@ -828,7 +828,7 @@ static void page_usage_cell(
     while( ovfl && (cnt++)<g.mxPage ){
       page_usage_msg(ovfl, "overflow %d from cell %d of page %d",
                      cnt, cellno, pgno);
-      a = fileRead((ovfl-1)*g.pagesize, 4);
+      a = fileRead((ovfl-1)*(sqlite3_int64)g.pagesize, 4);
       ovfl = decodeInt32(a);
       sqlite3_free(a);
     }

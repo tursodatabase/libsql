@@ -201,6 +201,7 @@ static void instrFunc(
   int typeHaystack, typeNeedle;
   int N = 1;
   int isText;
+  unsigned char firstChar;
 
   UNUSED_PARAMETER(argc);
   typeHaystack = sqlite3_value_type(argv[0]);
@@ -219,7 +220,10 @@ static void instrFunc(
       isText = 1;
     }
     if( zNeedle==0 || (nHaystack && zHaystack==0) ) return;
-    while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
+    firstChar = zNeedle[0];
+    while( nNeedle<=nHaystack
+       && (zHaystack[0]!=firstChar || memcmp(zHaystack, zNeedle, nNeedle)!=0)
+    ){
       N++;
       do{
         nHaystack--;
@@ -510,11 +514,11 @@ static void randomBlob(
   int argc,
   sqlite3_value **argv
 ){
-  int n;
+  sqlite3_int64 n;
   unsigned char *p;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  n = sqlite3_value_int(argv[0]);
+  n = sqlite3_value_int64(argv[0]);
   if( n<1 ){
     n = 1;
   }
@@ -1800,6 +1804,10 @@ static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
   FuncDef *pDef;
   pDef = sqlite3FindFunction(db, zName, 2, SQLITE_UTF8, 0);
   if( ALWAYS(pDef) ){
+    pDef->funcFlags |= flagVal;
+  }
+  pDef = sqlite3FindFunction(db, zName, 3, SQLITE_UTF8, 0);
+  if( pDef ){
     pDef->funcFlags |= flagVal;
   }
 }

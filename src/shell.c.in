@@ -138,6 +138,9 @@ typedef unsigned char u8;
 # ifndef unlink
 #  define unlink _unlink
 # endif
+# ifndef strdup
+#  define strdup _strdup
+# endif
 # undef popen
 # define popen _popen
 # undef pclose
@@ -937,6 +940,7 @@ INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
 INCLUDE ../ext/misc/appendvfs.c
+INCLUDE ../ext/misc/memtrace.c
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -1002,6 +1006,7 @@ struct ShellState {
   u8 autoExplain;        /* Automatically turn on .explain mode */
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   u8 autoEQPtest;        /* autoEQP is in test mode */
+  u8 autoEQPtrace;       /* autoEQP is in trace mode */
   u8 statsOn;            /* True to display memory stats before each finalize */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
@@ -1023,7 +1028,11 @@ struct ShellState {
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
   int nCheck;            /* Number of ".check" commands run */
+  unsigned nProgress;    /* Number of progress callbacks encountered */
+  unsigned mxProgress;   /* Maximum progress callbacks before failing */
+  unsigned flgProgress;  /* Flags for the progress callback */
   unsigned shellFlgs;    /* Various flags */
+  sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
   char zTestcase[30];    /* Name of current test case */
@@ -1075,6 +1084,13 @@ struct ShellState {
 #define SHELL_TRACE_PLAIN      0      /* Show input SQL text */
 #define SHELL_TRACE_EXPANDED   1      /* Show expanded SQL text */
 #define SHELL_TRACE_NORMALIZED 2      /* Show normalized SQL text */
+
+/* Bits in the ShellState.flgProgress variable */
+#define SHELL_PROGRESS_QUIET 0x01  /* Omit announcing every progress callback */
+#define SHELL_PROGRESS_RESET 0x02  /* Reset the count when the progres
+                                   ** callback limit is reached, and for each
+                                   ** top-level SQL statement */
+#define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
 
 /*
 ** These are the allowed shellFlgs values
@@ -1775,6 +1791,26 @@ static void eqp_render(ShellState *p){
     eqp_reset(p);
   }
 }
+
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+/*
+** Progress handler callback.
+*/
+static int progress_handler(void *pClientData) {
+  ShellState *p = (ShellState*)pClientData;
+  p->nProgress++;
+  if( p->nProgress>=p->mxProgress && p->mxProgress>0 ){
+    raw_printf(p->out, "Progress limit reached (%u)\n", p->nProgress);
+    if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
+    if( p->flgProgress & SHELL_PROGRESS_ONCE ) p->mxProgress = 0;
+    return 1;
+  }
+  if( (p->flgProgress & SHELL_PROGRESS_QUIET)==0 ){
+    raw_printf(p->out, "Progress %u\n", p->nProgress);
+  }
+  return 0;
+}
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
 ** This is the callback routine that the shell
@@ -2711,6 +2747,66 @@ static void restore_debug_trace_modes(void){
 #endif
 }
 
+/* Create the TEMP table used to store parameter bindings */
+static void bind_table_init(ShellState *p){
+  int wrSchema = 0;
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+  sqlite3_exec(p->db,
+    "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
+    "  key TEXT PRIMARY KEY,\n"
+    "  value ANY\n"
+    ") WITHOUT ROWID;",
+    0, 0, 0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
+}
+
+/*
+** Bind parameters on a prepared statement.
+**
+** Parameter bindings are taken from a TEMP table of the form:
+**
+**    CREATE TEMP TABLE sqlite_parameters(key TEXT PRIMARY KEY, value)
+**    WITHOUT ROWID;
+**
+** No bindings occur if this table does not exist.  The special character '$'
+** is included in the table name to help prevent collisions with actual tables.
+** The table must be in the TEMP schema.
+*/
+static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
+  int nVar;
+  int i;
+  int rc;
+  sqlite3_stmt *pQ = 0;
+
+  nVar = sqlite3_bind_parameter_count(pStmt);
+  if( nVar==0 ) return;  /* Nothing to do */
+  if( sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
+                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
+    return; /* Parameter table does not exist */
+  }
+  rc = sqlite3_prepare_v2(pArg->db,
+          "SELECT value FROM temp.sqlite_parameters"
+          " WHERE key=?1", -1, &pQ, 0);
+  if( rc || pQ==0 ) return;
+  for(i=1; i<=nVar; i++){
+    char zNum[30];
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+    if( zVar==0 ){
+      sqlite3_snprintf(sizeof(zNum),zNum,"?%d",i);
+      zVar = zNum;
+    }
+    sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
+    if( sqlite3_step(pQ)==SQLITE_ROW ){
+      sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
+    }else{
+      sqlite3_bind_null(pStmt, i);
+    }
+    sqlite3_reset(pQ);
+  }
+  sqlite3_finalize(pQ);
+}
+
 /*
 ** Run a prepared statement
 */
@@ -2963,7 +3059,7 @@ static int shell_exec(
       }
 
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
-      if( pArg && pArg->autoEQP && sqlite3_strlike("EXPLAIN%",zStmtSql,0)!=0 ){
+      if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
         sqlite3_stmt *pExplain;
         char *zEQP;
         int triggerEQP = 0;
@@ -3012,13 +3108,10 @@ static int shell_exec(
       if( pArg ){
         pArg->cMode = pArg->mode;
         if( pArg->autoExplain ){
-          if( sqlite3_column_count(pStmt)==8
-           && sqlite3_strlike("EXPLAIN%", zStmtSql,0)==0
-          ){
+          if( sqlite3_stmt_isexplain(pStmt)==1 ){
             pArg->cMode = MODE_Explain;
           }
-          if( sqlite3_column_count(pStmt)==4
-           && sqlite3_strlike("EXPLAIN QUERY PLAN%", zStmtSql,0)==0 ){
+          if( sqlite3_stmt_isexplain(pStmt)==2 ){
             pArg->cMode = MODE_EQP;
           }
         }
@@ -3030,6 +3123,7 @@ static int shell_exec(
         }
       }
 
+      bind_prepared_stmt(pArg, pStmt);
       exec_prepared_stmt(pArg, pStmt);
       explain_data_delete(pArg);
       eqp_render(pArg);
@@ -3359,7 +3453,8 @@ static const char *(azHelp[]) = {
   ".archive ...             Manage SQL archives",
   "   Each command must have exactly one of the following options:",
   "     -c, --create               Create a new archive",
-  "     -u, --update               Update or add files to an existing archive",
+  "     -u, --update               Add files or update files with changed mtime",
+  "     -i, --insert               Like -u but always add even if mtime unchanged",
   "     -t, --list                 List contents of archive",
   "     -x, --extract              Extract files from archive",
   "   Optional arguments:",
@@ -3396,7 +3491,13 @@ static const char *(azHelp[]) = {
   "     --newlines             Allow unescaped newline characters in output",
   "   TABLE is LIKE pattern for the tables to dump",
   ".echo on|off             Turn command echo on or off",
-  ".eqp on|off|full         Enable or disable automatic EXPLAIN QUERY PLAN",
+  ".eqp on|off|full|...     Enable or disable automatic EXPLAIN QUERY PLAN",
+  "   Other Modes:",
+#ifdef SQLITE_DEBUG
+  "      test                  Show raw EXPLAIN QUERY PLAN output",
+  "      trace                 Like \"full\" but also enable \"PRAGMA vdbe_trace\"",
+#endif
+  "      trigger               Like \"full\" but also show trigger bytecode",
   ".excel                   Display the output of next command in a spreadsheet",
   ".exit ?CODE?             Exit this program with return-code CODE",
   ".expert                  EXPERIMENTAL. Suggest indexes for specified queries",
@@ -3448,13 +3549,28 @@ static const char *(azHelp[]) = {
 #ifdef SQLITE_ENABLE_DESERIALIZE
   "        --deserialize   Load into memory useing sqlite3_deserialize()",
   "        --hexdb         Load the output of \"dbtotxt\" as an in-memory database",
+  "        --maxsize N     Maximum size for --hexdb or --deserialized database",
 #endif
   "        --new           Initialize FILE to an empty database",
   "        --readonly      Open FILE readonly",
   "        --zip           FILE is a ZIP archive",
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
   "     If FILE begins with '|' then open it as a pipe.",
+  ".parameter CMD ...       Manage SQL parameter bindings",
+  "   clear                   Erase all bindings",
+  "   init                    Initialize the TEMP table that holds bindings",
+  "   list                    List the current parameter bindings",
+  "   set PARAMETER VALUE     Given SQL parameter PARAMETER a value of VALUE",
+  "                           PARAMETER should start with '$', ':', '@', or '?'",
+  "   unset PARAMETER         Remove PARAMETER from the binding table",
   ".print STRING...         Print literal STRING",
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  ".progress N              Invoke progress handler after every N opcodes",
+  "   --limit N                 Interrupt after N progress callbacks",
+  "   --once                    Do no more than one progress interrupt",
+  "   --quiet|-q                No output except at interrupts",
+  "   --reset                   Reset the count for each input and interrupt",
+#endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
   ".quit                    Exit this program",
   ".read FILE               Read input from FILE",
@@ -3871,7 +3987,10 @@ static void open_db(ShellState *p, int openFlags){
     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
       utf8_printf(stderr,"Error: unable to open database \"%s\": %s\n",
           p->zDbFilename, sqlite3_errmsg(p->db));
-      if( openFlags & OPEN_DB_KEEPALIVE ) return;
+      if( openFlags & OPEN_DB_KEEPALIVE ){
+        sqlite3_open(":memory:", &p->db);
+        return;
+      }
       exit(1);
     }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -3922,6 +4041,9 @@ static void open_db(ShellState *p, int openFlags){
                    SQLITE_DESERIALIZE_FREEONCLOSE);
       if( rc ){
         utf8_printf(stderr, "Error: sqlite3_deserialize() returns %d\n", rc);
+      }
+      if( p->szMax>0 ){
+        sqlite3_file_control(p->db, "main", SQLITE_FCNTL_SIZE_LIMIT, &p->szMax);
       }
     }
 #endif
@@ -4653,7 +4775,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
      { "schema size:",
        "SELECT total(length(sql)) FROM %s" },
   };
-  int i;
+  int i, rc;
   unsigned iDataVersion;
   char *zSchemaTab;
   char *zDb = nArg>=2 ? azArg[1] : "main";
@@ -4661,8 +4783,19 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   unsigned char aHdr[100];
   open_db(p, 0);
   if( p->db==0 ) return 1;
-  sqlite3_prepare_v2(p->db,"SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
-                     -1, &pStmt, 0);
+  rc = sqlite3_prepare_v2(p->db,
+             "SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
+             -1, &pStmt, 0);
+  if( rc ){
+    if( !sqlite3_compileoption_used("ENABLE_DBPAGE_VTAB") ){
+      utf8_printf(stderr, "the \".dbinfo\" command requires the "
+                          "-DSQLITE_ENABLE_DBPAGE_VTAB compile-time options\n");
+    }else{
+      utf8_printf(stderr, "error: %s\n", sqlite3_errmsg(p->db));
+    }
+    sqlite3_finalize(pStmt);
+    return 1;
+  }
   sqlite3_bind_text(pStmt, 1, zDb, -1, SQLITE_STATIC);
   if( sqlite3_step(pStmt)==SQLITE_ROW
    && sqlite3_column_bytes(pStmt,0)>100
@@ -5256,19 +5389,20 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
 ** Values for ArCommand.eCmd.
 */
 #define AR_CMD_CREATE       1
-#define AR_CMD_EXTRACT      2
-#define AR_CMD_LIST         3
-#define AR_CMD_UPDATE       4
-#define AR_CMD_HELP         5
+#define AR_CMD_UPDATE       2
+#define AR_CMD_INSERT       3
+#define AR_CMD_EXTRACT      4
+#define AR_CMD_LIST         5
+#define AR_CMD_HELP         6
 
 /*
 ** Other (non-command) switches.
 */
-#define AR_SWITCH_VERBOSE     6
-#define AR_SWITCH_FILE        7
-#define AR_SWITCH_DIRECTORY   8
-#define AR_SWITCH_APPEND      9
-#define AR_SWITCH_DRYRUN     10
+#define AR_SWITCH_VERBOSE     7
+#define AR_SWITCH_FILE        8
+#define AR_SWITCH_DIRECTORY   9
+#define AR_SWITCH_APPEND     10
+#define AR_SWITCH_DRYRUN     11
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){
@@ -5276,6 +5410,7 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
     case AR_CMD_EXTRACT:
     case AR_CMD_LIST:
     case AR_CMD_UPDATE:
+    case AR_CMD_INSERT:
     case AR_CMD_HELP:
       if( pAr->eCmd ){
         return arErrorMsg(pAr, "multiple command options");
@@ -5322,6 +5457,7 @@ static int arParseCommand(
   } aSwitch[] = {
     { "create",    'c', AR_CMD_CREATE,       0 },
     { "extract",   'x', AR_CMD_EXTRACT,      0 },
+    { "insert",    'i', AR_CMD_INSERT,       0 },
     { "list",      't', AR_CMD_LIST,         0 },
     { "update",    'u', AR_CMD_UPDATE,       0 },
     { "help",      'h', AR_CMD_HELP,         0 },
@@ -5657,7 +5793,12 @@ static int arExecSql(ArCommand *pAr, const char *zSql){
 
 
 /*
-** Implementation of .ar "create" and "update" commands.
+** Implementation of .ar "create", "insert", and "update" commands.
+**
+**     create    ->     Create a new SQL archive
+**     insert    ->     Insert or reinsert all files listed
+**     update    ->     Insert files that have changed or that were not
+**                      previously in the archive
 **
 ** Create the "sqlar" table in the database if it does not already exist.
 ** Then add each file in the azFile[] array to the archive. Directories
@@ -5665,11 +5806,14 @@ static int arExecSql(ArCommand *pAr, const char *zSql){
 ** printed on stdout for each file archived.
 **
 ** The create command is the same as update, except that it drops
-** any existing "sqlar" table before beginning.
+** any existing "sqlar" table before beginning.  The "insert" command
+** always overwrites every file named on the command-line, where as
+** "update" only overwrites if the size or mtime or mode has changed.
 */
 static int arCreateOrUpdateCommand(
   ArCommand *pAr,                 /* Command arguments and options */
-  int bUpdate                     /* true for a --create.  false for --update */
+  int bUpdate,                    /* true for a --create. */
+  int bOnlyIfChanged              /* Only update if file has changed */
 ){
   const char *zCreate = 
       "CREATE TABLE IF NOT EXISTS sqlar(\n"
@@ -5691,22 +5835,24 @@ static int arCreateOrUpdateCommand(
      "      WHEN 'd' THEN 0\n"
      "      ELSE -1 END,\n"
      "    sqlar_compress(data)\n"
-     "  FROM fsdir(%Q,%Q)\n"
-     "  WHERE lsmode(mode) NOT LIKE '?%%';",
+     "  FROM fsdir(%Q,%Q) AS disk\n"
+     "  WHERE lsmode(mode) NOT LIKE '?%%'%s;"
+     ,
      "REPLACE INTO %s(name,mode,mtime,data)\n"
      "  SELECT\n"
      "    %s,\n"
      "    mode,\n"
      "    mtime,\n"
      "    data\n"
-     "  FROM fsdir(%Q,%Q)\n"
-     "  WHERE lsmode(mode) NOT LIKE '?%%';"
+     "  FROM fsdir(%Q,%Q) AS disk\n"
+     "  WHERE lsmode(mode) NOT LIKE '?%%'%s;"
   };
   int i;                          /* For iterating through azFile[] */
   int rc;                         /* Return code */
   const char *zTab = 0;           /* SQL table into which to insert */
   char *zSql;
   char zTemp[50];
+  char *zExists = 0;
 
   arExecSql(pAr, "PRAGMA page_size=512");
   rc = arExecSql(pAr, "SAVEPOINT ar;");
@@ -5737,16 +5883,27 @@ static int arCreateOrUpdateCommand(
     }
     rc = arExecSql(pAr, zCreate);
   }
+  if( bOnlyIfChanged ){
+    zExists = sqlite3_mprintf(
+      " AND NOT EXISTS("
+          "SELECT 1 FROM %s AS mem"
+          " WHERE mem.name=disk.name"
+          " AND mem.mtime=disk.mtime"
+          " AND mem.mode=disk.mode)", zTab);
+  }else{
+    zExists = sqlite3_mprintf("");
+  }
+  if( zExists==0 ) rc = SQLITE_NOMEM;
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
     char *zSql2 = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
         pAr->bVerbose ? "shell_putsnl(name)" : "name",
-        pAr->azArg[i], pAr->zDir);
+        pAr->azArg[i], pAr->zDir, zExists);
     rc = arExecSql(pAr, zSql2);
     sqlite3_free(zSql2);
   }
 end_ar_transaction:
   if( rc!=SQLITE_OK ){
-    arExecSql(pAr, "ROLLBACK TO ar; RELEASE ar;");
+    sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
   }else{
     rc = arExecSql(pAr, "RELEASE ar;");
     if( pAr->bZip && pAr->zFile ){
@@ -5755,6 +5912,7 @@ end_ar_transaction:
       sqlite3_free(zSql);
     }
   }
+  sqlite3_free(zExists);
   return rc;
 }
 
@@ -5793,7 +5951,8 @@ static int arDotCommand(
     }else if( cmd.zFile ){
       int flags;
       if( cmd.bAppend ) eDbType = SHELL_OPEN_APPENDVFS;
-      if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_UPDATE ){
+      if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_INSERT 
+           || cmd.eCmd==AR_CMD_UPDATE ){
         flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
       }else{
         flags = SQLITE_OPEN_READONLY;
@@ -5830,7 +5989,7 @@ static int arDotCommand(
 
     switch( cmd.eCmd ){
       case AR_CMD_CREATE:
-        rc = arCreateOrUpdateCommand(&cmd, 0);
+        rc = arCreateOrUpdateCommand(&cmd, 0, 0);
         break;
 
       case AR_CMD_EXTRACT:
@@ -5845,9 +6004,13 @@ static int arDotCommand(
         arUsage(pState->out);
         break;
 
+      case AR_CMD_INSERT:
+        rc = arCreateOrUpdateCommand(&cmd, 1, 0);
+        break;
+
       default:
         assert( cmd.eCmd==AR_CMD_UPDATE );
-        rc = arCreateOrUpdateCommand(&cmd, 1);
+        rc = arCreateOrUpdateCommand(&cmd, 1, 1);
         break;
     }
   }
@@ -6252,18 +6415,30 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='e' && strncmp(azArg[0], "eqp", n)==0 ){
     if( nArg==2 ){
       p->autoEQPtest = 0;
+      if( p->autoEQPtrace ){
+        if( p->db ) sqlite3_exec(p->db, "PRAGMA vdbe_trace=OFF;", 0, 0, 0);
+        p->autoEQPtrace = 0;
+      }
       if( strcmp(azArg[1],"full")==0 ){
         p->autoEQP = AUTOEQP_full;
       }else if( strcmp(azArg[1],"trigger")==0 ){
         p->autoEQP = AUTOEQP_trigger;
+#ifdef SQLITE_DEBUG
       }else if( strcmp(azArg[1],"test")==0 ){
         p->autoEQP = AUTOEQP_on;
         p->autoEQPtest = 1;
+      }else if( strcmp(azArg[1],"trace")==0 ){
+        p->autoEQP = AUTOEQP_full;
+        p->autoEQPtrace = 1;
+        open_db(p, 0);
+        sqlite3_exec(p->db, "SELECT name FROM sqlite_master LIMIT 1", 0, 0, 0);
+        sqlite3_exec(p->db, "PRAGMA vdbe_trace=ON;", 0, 0, 0);
+#endif
       }else{
         p->autoEQP = (u8)booleanValue(azArg[1]);
       }
     }else{
-      raw_printf(stderr, "Usage: .eqp off|on|trigger|full\n");
+      raw_printf(stderr, "Usage: .eqp off|on|trace|trigger|full\n");
       rc = 1;
     }
   }else
@@ -6837,6 +7012,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(p->zFreeOnClose);
     p->zFreeOnClose = 0;
     p->openMode = SHELL_OPEN_UNSPEC;
+    p->szMax = 0;
     /* Check for command-line arguments */
     for(iName=1; iName<nArg && azArg[iName][0]=='-'; iName++){
       const char *z = azArg[iName];
@@ -6855,6 +7031,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_DESERIALIZE;
       }else if( optionMatch(z, "hexdb") ){
         p->openMode = SHELL_OPEN_HEXDB;
+      }else if( optionMatch(z, "maxsize") && iName+1<nArg ){
+        p->szMax = integerValue(azArg[++iName]);
 #endif /* SQLITE_ENABLE_DESERIALIZE */
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
@@ -6957,6 +7135,114 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
+    open_db(p,0);
+    if( nArg<=1 ) goto parameter_syntax_error;
+
+    /* .parameter clear
+    ** Clear all bind parameters by dropping the TEMP table that holds them.
+    */
+    if( nArg==2 && strcmp(azArg[1],"clear")==0 ){
+      int wrSchema = 0;
+      sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
+      sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
+                   0, 0, 0);
+      sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
+    }else
+
+    /* .parameter list
+    ** List all bind parameters.
+    */
+    if( nArg==2 && strcmp(azArg[1],"list")==0 ){
+      sqlite3_stmt *pStmt = 0;
+      int rx;
+      int len = 0;
+      rx = sqlite3_prepare_v2(p->db,
+             "SELECT max(length(key)) "
+             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
+      if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+        len = sqlite3_column_int(pStmt, 0);
+        if( len>40 ) len = 40;
+      }
+      sqlite3_finalize(pStmt);
+      pStmt = 0;
+      if( len ){
+        rx = sqlite3_prepare_v2(p->db,
+             "SELECT key, quote(value) "
+             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
+        while( sqlite3_step(pStmt)==SQLITE_ROW ){
+          utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
+                      sqlite3_column_text(pStmt,1));
+        }
+        sqlite3_finalize(pStmt);
+      }
+    }else
+
+    /* .parameter init
+    ** Make sure the TEMP table used to hold bind parameters exists.
+    ** Create it if necessary.
+    */
+    if( nArg==2 && strcmp(azArg[1],"init")==0 ){
+      bind_table_init(p);
+    }else
+
+    /* .parameter set NAME VALUE
+    ** Set or reset a bind parameter.  NAME should be the full parameter
+    ** name exactly as it appears in the query.  (ex: $abc, @def).  The
+    ** VALUE can be in either SQL literal notation, or if not it will be
+    ** understood to be a text string.
+    */
+    if( nArg==4 && strcmp(azArg[1],"set")==0 ){
+      int rx;
+      char *zSql;
+      sqlite3_stmt *pStmt;
+      const char *zKey = azArg[2];
+      const char *zValue = azArg[3];
+      bind_table_init(p);
+      zSql = sqlite3_mprintf(
+                  "REPLACE INTO temp.sqlite_parameters(key,value)"
+                  "VALUES(%Q,%s);", zKey, zValue);
+      if( zSql==0 ) shell_out_of_memory();
+      pStmt = 0;
+      rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+      sqlite3_free(zSql);
+      if( rx!=SQLITE_OK ){
+        sqlite3_finalize(pStmt);
+        pStmt = 0;
+        zSql = sqlite3_mprintf(
+                   "REPLACE INTO temp.sqlite_parameters(key,value)"
+                   "VALUES(%Q,%Q);", zKey, zValue);
+        if( zSql==0 ) shell_out_of_memory();
+        rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+        sqlite3_free(zSql);
+        if( rx!=SQLITE_OK ){
+          utf8_printf(p->out, "Error: %s\n", sqlite3_errmsg(p->db));
+          sqlite3_finalize(pStmt);
+          pStmt = 0;
+          rc = 1;
+        }
+      }
+      sqlite3_step(pStmt);
+      sqlite3_finalize(pStmt);
+    }else
+
+    /* .parameter unset NAME
+    ** Remove the NAME binding from the parameter binding table, if it
+    ** exists.
+    */
+    if( nArg==3 && strcmp(azArg[1],"unset")==0 ){
+      char *zSql = sqlite3_mprintf(
+          "DELETE FROM temp.sqlite_parameters WHERE key=%Q", azArg[2]);
+      if( zSql==0 ) shell_out_of_memory();
+      sqlite3_exec(p->db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }else
+    /* If no command name matches, show a syntax error */
+    parameter_syntax_error:
+    showHelp(p->out, "parameter");
+  }else
+
   if( c=='p' && n>=3 && strncmp(azArg[0], "print", n)==0 ){
     int i;
     for(i=1; i<nArg; i++){
@@ -6965,6 +7251,52 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     raw_printf(p->out, "\n");
   }else
+
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( c=='p' && n>=3 && strncmp(azArg[0], "progress", n)==0 ){
+    int i;
+    int nn = 0;
+    p->flgProgress = 0;
+    p->mxProgress = 0;
+    p->nProgress = 0;
+    for(i=1; i<nArg; i++){
+      const char *z = azArg[i];
+      if( z[0]=='-' ){
+        z++;
+        if( z[0]=='-' ) z++;
+        if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
+          p->flgProgress |= SHELL_PROGRESS_QUIET;
+          continue;
+        }
+        if( strcmp(z,"reset")==0 ){
+          p->flgProgress |= SHELL_PROGRESS_RESET;
+          continue;
+        }
+        if( strcmp(z,"once")==0 ){
+          p->flgProgress |= SHELL_PROGRESS_ONCE;
+          continue;
+        }
+        if( strcmp(z,"limit")==0 ){
+          if( i+1>=nArg ){
+            utf8_printf(stderr, "Error: missing argument on --limit\n");
+            rc = 1;
+            goto meta_command_exit;
+          }else{
+            p->mxProgress = (int)integerValue(azArg[++i]);
+          }
+          continue;
+        }
+        utf8_printf(stderr, "Error: unknown option: \"%s\"\n", azArg[i]);
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        nn = (int)integerValue(z);
+      }
+    }
+    open_db(p, 0);
+    sqlite3_progress_handler(p->db, nn, progress_handler, p);
+  }else
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
   if( c=='p' && strncmp(azArg[0], "prompt", n)==0 ){
     if( nArg >= 2) {
@@ -8301,6 +8633,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 
   open_db(p, 0);
   if( ShellHasFlag(p,SHFLG_Backslash) ) resolve_backslashes(zSql);
+  if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
   BEGIN_TIMER;
   rc = shell_exec(p, zSql, &zErrMsg);
   END_TIMER;
@@ -8545,6 +8878,9 @@ static const char zOptions[] =
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
+#if defined(SQLITE_ENABLE_DESERIALIZE)
+  "   -deserialize         open the database using sqlite3_deserialize()\n"
+#endif
   "   -echo                print commands before execution\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
@@ -8557,6 +8893,10 @@ static const char zOptions[] =
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
   "   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory\n"
+#if defined(SQLITE_ENABLE_DESERIALIZE)
+  "   -maxsize N           maximum size for a --deserialize database\n"
+#endif
+  "   -memtrace            trace all memory allocations and deallocations\n"
   "   -mmap N              default mmap size set to N\n"
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
@@ -8867,6 +9207,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_ENABLE_DESERIALIZE
     }else if( strcmp(z,"-deserialize")==0 ){
       data.openMode = SHELL_OPEN_DESERIALIZE;
+    }else if( strcmp(z,"-maxsize")==0 && i+1<argc ){
+      data.szMax = integerValue(argv[++i]);
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
@@ -8876,6 +9218,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       ** command, so ignore them */
       break;
 #endif
+    }else if( strcmp(z, "-memtrace")==0 ){
+      sqlite3MemTraceActivate(stderr);
     }
   }
   verify_uninitialized();
@@ -8966,6 +9310,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_ENABLE_DESERIALIZE
     }else if( strcmp(z,"-deserialize")==0 ){
       data.openMode = SHELL_OPEN_DESERIALIZE;
+    }else if( strcmp(z,"-maxsize")==0 && i+1<argc ){
+      data.szMax = integerValue(argv[++i]);
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
@@ -9021,6 +9367,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-lookaside")==0 ){
       i+=2;
     }else if( strcmp(z,"-mmap")==0 ){
+      i++;
+    }else if( strcmp(z,"-memtrace")==0 ){
       i++;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     }else if( strcmp(z,"-sorterref")==0 ){

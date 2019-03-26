@@ -93,8 +93,8 @@ int main(int argc, char **argv){
   fseek(in, 0, SEEK_END);
   szFile = ftell(in);
   rewind(in);
-  if( szFile<512 ){
-    fprintf(stderr, "File too short. Minimum size is 512 bytes.\n");
+  if( szFile<100 ){
+    fprintf(stderr, "File too short. Minimum size is 100 bytes.\n");
     exit(1);
   }
   if( fread(aHdr, 100, 1, in)!=1 ){

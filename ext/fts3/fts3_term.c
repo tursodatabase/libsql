@@ -68,9 +68,9 @@ static int fts3termConnectMethod(
   char const *zFts3;              /* Name of fts3 table */
   int nDb;                        /* Result of strlen(zDb) */
   int nFts3;                      /* Result of strlen(zFts3) */
-  int nByte;                      /* Bytes of space to allocate here */
+  sqlite3_int64 nByte;            /* Bytes of space to allocate here */
   int rc;                         /* value returned by declare_vtab() */
-  Fts3termTable *p;                /* Virtual table object to return */
+  Fts3termTable *p;               /* Virtual table object to return */
   int iIndex = 0;
 
   UNUSED_PARAMETER(pCtx);
@@ -96,9 +96,9 @@ static int fts3termConnectMethod(
   if( rc!=SQLITE_OK ) return rc;
 
   nByte = sizeof(Fts3termTable) + sizeof(Fts3Table) + nDb + nFts3 + 2;
-  p = (Fts3termTable *)sqlite3_malloc(nByte);
+  p = (Fts3termTable *)sqlite3_malloc64(nByte);
   if( !p ) return SQLITE_NOMEM;
-  memset(p, 0, nByte);
+  memset(p, 0, (size_t)nByte);
 
   p->pFts3Tab = (Fts3Table *)&p[1];
   p->pFts3Tab->zDb = (char *)&p->pFts3Tab[1];

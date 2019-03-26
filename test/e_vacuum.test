@@ -219,6 +219,8 @@ do_test e_vacuum-2.1.8 { expr {[file size test.db2]<$::original_size} } 1
 #   a database is VACUUMed. Tests e_vacuum-3.1.3 - 3.1.4 show that adding
 #   an INTEGER PRIMARY KEY column to a table stops this from happening.
 #
+#   Update 2019-01-07:  Rowids are now preserved by VACUUM.
+#
 do_execsql_test e_vacuum-3.1.1 {
   CREATE TABLE t4(x);
   INSERT INTO t4(x) VALUES('x');
@@ -230,7 +232,8 @@ do_execsql_test e_vacuum-3.1.1 {
 do_execsql_test e_vacuum-3.1.2 {
   VACUUM;
   SELECT rowid, x FROM t4;
-} {1 x 2 z}
+} {1 x 3 z}
+# Was: {1 x 2 z}
 
 do_execsql_test e_vacuum-3.1.3 {
   CREATE TABLE t5(x, y INTEGER PRIMARY KEY);

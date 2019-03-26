@@ -52,8 +52,10 @@
 
   SECURITY: If the fts3 extension is used in an environment where potentially
     malicious users may execute arbitrary SQL (i.e. gears), they should be
-    prevented from invoking the fts3_tokenizer() function, possibly using the
-    authorisation callback.
+    prevented from invoking the fts3_tokenizer() function.  The
+    fts3_tokenizer() function is disabled by default. It is only enabled
+    by SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER. Do not enable it in
+    security sensitive environments.
 
   See "Sample code" below for an example of calling the fts3_tokenizer()
   function from C code.

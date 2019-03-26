@@ -1,5 +1,5 @@
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -178,8 +178,8 @@ static int remove_diacritic(int c, int bComplex){
     62830, 62890, 62924, 62974, 63032, 63050, 63082, 63118, 
     63182, 63242, 63274, 63310, 63368, 63390, 
   };
-#define HIBIT ((char)0x80)
-  char aChar[] = {
+#define HIBIT ((unsigned char)0x80)
+  unsigned char aChar[] = {
     '\0',      'a',       'c',       'e',       'i',       'n',       
     'o',       'u',       'y',       'y',       'a',       'c',       
     'd',       'e',       'e',       'g',       'h',       'i',       

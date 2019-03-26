@@ -189,6 +189,13 @@ const unsigned char sqlite3CtypeMap[256] = {
 #endif
 
 
+/* The default maximum size of an in-memory database created using
+** sqlite3_deserialize()
+*/
+#ifndef SQLITE_MEMDB_DEFAULT_MAXSIZE
+# define SQLITE_MEMDB_DEFAULT_MAXSIZE 1073741824
+#endif
+
 /*
 ** The following singleton contains the global configuration for
 ** the SQLite library.
@@ -236,13 +243,16 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* xVdbeBranch */
    0,                         /* pVbeBranchArg */
 #endif
+#ifdef SQLITE_ENABLE_DESERIALIZE
+   SQLITE_MEMDB_DEFAULT_MAXSIZE,   /* mxMemdbSize */
+#endif
 #ifndef SQLITE_UNTESTABLE
    0,                         /* xTestCallback */
 #endif
    0,                         /* bLocaltimeFault */
    0,                         /* bInternalFunctions */
    0x7ffffffe,                /* iOnceResetThreshold */
-   SQLITE_DEFAULT_SORTERREF_SIZE   /* szSorterRef */
+   SQLITE_DEFAULT_SORTERREF_SIZE,   /* szSorterRef */
 };
 
 /*

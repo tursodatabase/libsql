@@ -337,7 +337,7 @@ static int fuzzerLoadOneRule(
     rc = SQLITE_ERROR;    
   }else{
 
-    pRule = sqlite3_malloc( sizeof(*pRule) + nFrom + nTo );
+    pRule = sqlite3_malloc64( sizeof(*pRule) + nFrom + nTo );
     if( pRule==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -447,16 +447,16 @@ static int fuzzerLoadRules(
 **     `mno`   becomes   mno
 */
 static char *fuzzerDequote(const char *zIn){
-  int nIn;                        /* Size of input string, in bytes */
+  sqlite3_int64 nIn;              /* Size of input string, in bytes */
   char *zOut;                     /* Output (dequoted) string */
 
-  nIn = (int)strlen(zIn);
-  zOut = sqlite3_malloc(nIn+1);
+  nIn = strlen(zIn);
+  zOut = sqlite3_malloc64(nIn+1);
   if( zOut ){
     char q = zIn[0];              /* Quote character (if any ) */
 
     if( q!='[' && q!= '\'' && q!='"' && q!='`' ){
-      memcpy(zOut, zIn, nIn+1);
+      memcpy(zOut, zIn, (size_t)(nIn+1));
     }else{
       int iOut = 0;               /* Index of next byte to write to output */
       int iIn;                    /* Index of next byte to read from input */
@@ -513,10 +513,10 @@ static int fuzzerConnect(
     );
     rc = SQLITE_ERROR;
   }else{
-    int nModule;                  /* Length of zModule, in bytes */
+    sqlite3_int64 nModule;        /* Length of zModule, in bytes */
 
-    nModule = (int)strlen(zModule);
-    pNew = sqlite3_malloc( sizeof(*pNew) + nModule + 1);
+    nModule = strlen(zModule);
+    pNew = sqlite3_malloc64( sizeof(*pNew) + nModule + 1);
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -524,7 +524,7 @@ static int fuzzerConnect(
 
       memset(pNew, 0, sizeof(*pNew));
       pNew->zClassName = (char*)&pNew[1];
-      memcpy(pNew->zClassName, zModule, nModule+1);
+      memcpy(pNew->zClassName, zModule, (size_t)(nModule+1));
 
       zTab = fuzzerDequote(argv[3]);
       if( zTab==0 ){
@@ -872,7 +872,7 @@ static fuzzer_stem *fuzzerNewStem(
   fuzzer_rule *pRule;
   unsigned int h;
 
-  pNew = sqlite3_malloc( sizeof(*pNew) + (int)strlen(zWord) + 1 );
+  pNew = sqlite3_malloc64( sizeof(*pNew) + strlen(zWord) + 1 );
   if( pNew==0 ) return 0;
   memset(pNew, 0, sizeof(*pNew));
   pNew->zBasis = (char*)&pNew[1];

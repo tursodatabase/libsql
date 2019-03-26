@@ -653,6 +653,13 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_ENABLE_SORTER_REFERENCES */
 
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    case SQLITE_CONFIG_MEMDB_MAXSIZE: {
+      sqlite3GlobalConfig.mxMemdbSize = va_arg(ap, sqlite3_int64);
+      break;
+    }
+#endif /* SQLITE_ENABLE_DESERIALIZE */
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -836,6 +843,8 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_TRIGGER_EQP,           SQLITE_TriggerEQP     },
         { SQLITE_DBCONFIG_RESET_DATABASE,        SQLITE_ResetDatabase  },
         { SQLITE_DBCONFIG_DEFENSIVE,             SQLITE_Defensive      },
+        { SQLITE_DBCONFIG_WRITABLE_SCHEMA,       SQLITE_WriteSchema|
+                                                 SQLITE_NoSchemaError  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -2935,6 +2944,40 @@ int sqlite3ParseUri(
   return rc;
 }
 
+#if defined(SQLITE_HAS_CODEC)
+/*
+** Process URI filename query parameters relevant to the SQLite Encryption
+** Extension.  Return true if any of the relevant query parameters are
+** seen and return false if not.
+*/
+int sqlite3CodecQueryParameters(
+  sqlite3 *db,           /* Database connection */
+  const char *zDb,       /* Which schema is being created/attached */
+  const char *zUri       /* URI filename */
+){
+  const char *zKey;
+  if( (zKey = sqlite3_uri_parameter(zUri, "hexkey"))!=0 && zKey[0] ){
+    u8 iByte;
+    int i;
+    char zDecoded[40];
+    for(i=0, iByte=0; i<sizeof(zDecoded)*2 && sqlite3Isxdigit(zKey[i]); i++){
+      iByte = (iByte<<4) + sqlite3HexToInt(zKey[i]);
+      if( (i&1)!=0 ) zDecoded[i/2] = iByte;
+    }
+    sqlite3_key_v2(db, zDb, zDecoded, i/2);
+    return 1;
+  }else if( (zKey = sqlite3_uri_parameter(zUri, "key"))!=0 ){
+    sqlite3_key_v2(db, zDb, zKey, sqlite3Strlen30(zKey));
+    return 1;
+  }else if( (zKey = sqlite3_uri_parameter(zUri, "textkey"))!=0 ){
+    sqlite3_key_v2(db, zDb, zKey, -1);
+    return 1;
+  }else{
+    return 0;
+  }
+}
+#endif
+
 
 /*
 ** This routine does the work of opening a database on behalf of
@@ -3280,25 +3323,12 @@ opendb_out:
   }
 #endif
 #if defined(SQLITE_HAS_CODEC)
-  if( rc==SQLITE_OK ){
-    const char *zKey;
-    if( (zKey = sqlite3_uri_parameter(zOpen, "hexkey"))!=0 && zKey[0] ){
-      u8 iByte;
-      int i;
-      char zDecoded[40];
-      for(i=0, iByte=0; i<sizeof(zDecoded)*2 && sqlite3Isxdigit(zKey[i]); i++){
-        iByte = (iByte<<4) + sqlite3HexToInt(zKey[i]);
-        if( (i&1)!=0 ) zDecoded[i/2] = iByte;
-      }
-      sqlite3_key_v2(db, 0, zDecoded, i/2);
-    }else if( (zKey = sqlite3_uri_parameter(zOpen, "key"))!=0 ){
-      sqlite3_key_v2(db, 0, zKey, sqlite3Strlen30(zKey));
-    }
-  }
+  if( rc==SQLITE_OK ) sqlite3CodecQueryParameters(db, 0, zOpen);
 #endif
   sqlite3_free(zOpen);
   return rc & 0xff;
 }
+
 
 /*
 ** Open a new database handle.

@@ -4674,6 +4674,7 @@ void ReportTable(
   /* Append any addition code the user desires */
   tplt_print(out,lemp,lemp->extracode,&lineno);
 
+  acttab_free(pActtab);
   fclose(in);
   fclose(out);
   return;

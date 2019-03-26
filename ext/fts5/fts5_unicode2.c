@@ -1,5 +1,5 @@
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -47,8 +47,8 @@ static int fts5_remove_diacritic(int c, int bComplex){
     62830, 62890, 62924, 62974, 63032, 63050, 63082, 63118, 
     63182, 63242, 63274, 63310, 63368, 63390, 
   };
-#define HIBIT ((char)0x80)
-  char aChar[] = {
+#define HIBIT ((unsigned char)0x80)
+  unsigned char aChar[] = {
     '\0',      'a',       'c',       'e',       'i',       'n',       
     'o',       'u',       'y',       'y',       'a',       'c',       
     'd',       'e',       'e',       'g',       'h',       'i',       
@@ -769,9 +769,8 @@ void sqlite3Fts5UnicodeAscii(u8 *aArray, u8 *aAscii){
     int bToken = aArray[ aFts5UnicodeData[iTbl] & 0x1F ];
     int n = (aFts5UnicodeData[iTbl] >> 5) + i;
     for(; i<128 && i<n; i++){
-      aAscii[i] = bToken;
+      aAscii[i] = (u8)bToken;
     }
     iTbl++;
   }
 }
-
