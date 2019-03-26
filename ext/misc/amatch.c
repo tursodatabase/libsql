@@ -747,7 +747,7 @@ static char *amatchDequote(const char *zIn){
     char q = zIn[0];              /* Quote character (if any ) */
 
     if( q!='[' && q!= '\'' && q!='"' && q!='`' ){
-      memcpy(zOut, zIn, nIn+1);
+      memcpy(zOut, zIn, (size_t)(nIn+1));
     }else{
       int iOut = 0;               /* Index of next byte to write to output */
       int iIn;                    /* Index of next byte to read from input */

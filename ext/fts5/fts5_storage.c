@@ -289,7 +289,7 @@ int sqlite3Fts5StorageOpen(
   *pp = p = (Fts5Storage*)sqlite3_malloc64(nByte);
   if( !p ) return SQLITE_NOMEM;
 
-  memset(p, 0, nByte);
+  memset(p, 0, (size_t)nByte);
   p->aTotalSize = (i64*)&p[1];
   p->pConfig = pConfig;
   p->pIndex = pIndex;

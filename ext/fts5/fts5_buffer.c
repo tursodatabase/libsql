@@ -27,7 +27,7 @@ int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
       *pRc = SQLITE_NOMEM;
       return 1;
     }else{
-      pBuf->nSpace = nNew;
+      pBuf->nSpace = (int)nNew;
       pBuf->p = pNew;
     }
   }
@@ -251,7 +251,7 @@ void *sqlite3Fts5MallocZero(int *pRc, sqlite3_int64 nByte){
     if( pRet==0 ){
       if( nByte>0 ) *pRc = SQLITE_NOMEM;
     }else{
-      memset(pRet, 0, nByte);
+      memset(pRet, 0, (size_t)nByte);
     }
   }
   return pRet;

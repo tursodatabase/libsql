@@ -237,14 +237,10 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
 
   if( pCsr->pDir ){
     struct DIRENT *pRes = 0;
-#if defined(__MINGW_H)
     pRes = readdir(pCsr->pDir);
     if( pRes!=0 ){
       memcpy(&pCsr->entry, pRes, sizeof(struct DIRENT));
     }
-#else
-    readdir_r(pCsr->pDir, &pCsr->entry, &pRes);
-#endif
     if( pRes==0 ){
       closedir(pCsr->pDir);
       pCsr->pDir = 0;

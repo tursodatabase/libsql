@@ -456,7 +456,7 @@ static char *fuzzerDequote(const char *zIn){
     char q = zIn[0];              /* Quote character (if any ) */
 
     if( q!='[' && q!= '\'' && q!='"' && q!='`' ){
-      memcpy(zOut, zIn, nIn+1);
+      memcpy(zOut, zIn, (size_t)(nIn+1));
     }else{
       int iOut = 0;               /* Index of next byte to write to output */
       int iIn;                    /* Index of next byte to read from input */
@@ -524,7 +524,7 @@ static int fuzzerConnect(
 
       memset(pNew, 0, sizeof(*pNew));
       pNew->zClassName = (char*)&pNew[1];
-      memcpy(pNew->zClassName, zModule, nModule+1);
+      memcpy(pNew->zClassName, zModule, (size_t)(nModule+1));
 
       zTab = fuzzerDequote(argv[3]);
       if( zTab==0 ){
