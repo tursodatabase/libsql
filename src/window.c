@@ -2586,11 +2586,11 @@ void sqlite3WindowCodeStep(
     windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
     windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
   }else{
-    int addr;
+    int addr = 0;
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
     if( pMWin->eEnd!=TK_UNBOUNDED ){
       if( pMWin->eType==TK_RANGE ){
-        int lbl;
+        int lbl = 0;
         addr = sqlite3VdbeCurrentAddr(v);
         if( regEnd ){
           lbl = sqlite3VdbeMakeLabel(pParse);

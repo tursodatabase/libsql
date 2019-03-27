@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\swindow\sframes\sthat\suse\s"BETWEEN\s<start>\sAND\s0\sPRECEDING".
-D 2019-03-26T16:47:17.206
+C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
+D 2019-03-27T14:58:18.546
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -605,7 +605,7 @@ F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 6fa4056c5ce019e4a8af33795906340176813cb3c1236f4b7b08df76a1b6287b
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
-F src/window.c adddab66ab5a215013cdb6b18524ccc60bad54ff07cf88cfa623f5140f7e6822
+F src/window.c 2e3fdb046dfe32a0a30855b952152ea8f1cb5cffdccb2b9d6845ca1f3a4d3bdc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1813,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a063f7c426d1ac066bf05cc03288f49b1c92e06a8cb2bc271cce9bd3022a74ea
-R db784829c0f2878bb0ca7d0ba624b0b5
-U dan
-Z fdd5aeecc1b40e5250e6c92a62ab475a
+P 7927b6b023502e990d23f30251b5b0918b547726b863bfb6747dcd7f1f71d19a
+R 91dd12ee0141b63217047662f037131e
+U mistachkin
+Z 0ad9818737d465756e0842d513487ee6
