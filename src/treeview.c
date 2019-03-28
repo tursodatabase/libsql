@@ -310,22 +310,21 @@ void sqlite3TreeViewBound(
 */
 void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
   int nElement = 0;
+  if( pWin->pFilter ){
+    sqlite3TreeViewItem(pView, "FILTER", 1);
+    sqlite3TreeViewExpr(pView, pWin->pFilter, 0);
+    sqlite3TreeViewPop(pView);
+  }
   pView = sqlite3TreeViewPush(pView, more);
   if( pWin->zName ){
     sqlite3TreeViewLine(pView, "OVER %s", pWin->zName);
   }else{
     sqlite3TreeViewLine(pView, "OVER");
   }
-  if( pWin->pFilter )  nElement++;
   if( pWin->zBase )    nElement++;
   if( pWin->pOrderBy ) nElement++;
   if( pWin->eFrmType ) nElement++;
   if( pWin->eExclude ) nElement++;
-  if( pWin->pFilter ){
-    sqlite3TreeViewItem(pView, "FILTER", (--nElement)>0);
-    sqlite3TreeViewExpr(pView, pWin->pFilter, 0);
-    sqlite3TreeViewPop(pView);
-  }
   if( pWin->zBase ){
     sqlite3TreeViewPush(pView, (--nElement)>0);
     sqlite3TreeViewLine(pView, "window: %s", pWin->zBase);
@@ -338,10 +337,13 @@ void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
     sqlite3TreeViewExprList(pView, pWin->pOrderBy, (--nElement)>0, "ORDER-BY");
   }
   if( pWin->eFrmType ){
+    char zBuf[30];
     const char *zFrmType = "ROWS";
     if( pWin->eFrmType==TK_RANGE ) zFrmType = "RANGE";
     if( pWin->eFrmType==TK_GROUPS ) zFrmType = "GROUPS";
-    sqlite3TreeViewItem(pView, zFrmType, (--nElement)>0);
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%s%s",zFrmType,
+        pWin->bImplicitFrame ? " (implied)" : "");
+    sqlite3TreeViewItem(pView, zBuf, (--nElement)>0);
     sqlite3TreeViewBound(pView, pWin->eStart, pWin->pStart, 1);
     sqlite3TreeViewBound(pView, pWin->eEnd, pWin->pEnd, 0);
     sqlite3TreeViewPop(pView);
