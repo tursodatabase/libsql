@@ -1,5 +1,5 @@
-C More\simprovements\sto\sTreeView\soutput\sfor\sWindow\sobjects:\n(1)\sShow\swhen\sthe\sframe-spec\sis\simplied\srather\sthan\sexplicit.\n(2)\sMove\sthe\sFILTER\sclause\sout\sfrom\swithin\sthe\sOVER\sclause,\smaking\sit\na\ssibling\sof\sthe\sOVER\sclause,\sto\smatch\ssyntax.
-D 2019-03-28T13:35:28.585
+C Show\sthe\spointer\saddress\sfor\sWindow\sobjects\sin\sthe\sTreeView\sdisplay.
+D 2019-03-28T13:53:12.447
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -580,7 +580,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
-F src/treeview.c 3885029c8297eb391f7196d6ee23bbee23dc2b7543eb50509b38e0a5efc55b9d
+F src/treeview.c 56724725c62a0d0f408f7c257475dc33309198afee36a1d18be1bc268b09055e
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
@@ -1813,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec2f207dedb223077bbd3e4584499250eb12219712c917e930acccfa2c46e23b
-R bf6c31ccc3d2df556342ad1b283d4361
+P d6a07433421ac9a475ff0014587f0beefdf88ce89aef9443f8a20cd26083731f
+R 3deaf590c74da9946fe9cff2d3a982aa
 U drh
-Z 72ed78e3b1da4bfd00333fe521bbd678
+Z 76c6e9606a0268ca5b5e4d17c3f7d054

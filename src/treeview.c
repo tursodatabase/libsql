@@ -317,9 +317,9 @@ void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
   }
   pView = sqlite3TreeViewPush(pView, more);
   if( pWin->zName ){
-    sqlite3TreeViewLine(pView, "OVER %s", pWin->zName);
+    sqlite3TreeViewLine(pView, "OVER %s (%p)", pWin->zName, pWin);
   }else{
-    sqlite3TreeViewLine(pView, "OVER");
+    sqlite3TreeViewLine(pView, "OVER (%p)", pWin);
   }
   if( pWin->zBase )    nElement++;
   if( pWin->pOrderBy ) nElement++;
