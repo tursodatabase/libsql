@@ -84,6 +84,13 @@ pub trait ToSql {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>>;
 }
 
+impl ToSql for Box<dyn ToSql> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+        let derefed: &dyn ToSql = &**self;
+        derefed.to_sql()
+    }
+}
+
 // We should be able to use a generic impl like this:
 //
 // impl<T: Copy> ToSql for T where T: Into<Value> {

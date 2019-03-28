@@ -1615,5 +1615,17 @@ mod test {
             })
             .unwrap();
         }
+        #[test]
+        fn test_dyn_box() {
+            let db = checked_memory_handle();
+            db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+            let b: Box<dyn ToSql> = Box::new(5);
+            db.execute("INSERT INTO foo VALUES(?)", &[b]).unwrap();
+            db.query_row("SELECT x FROM foo", params![], |r| {
+                assert_eq!(5, r.get_unwrap::<_, i32>(0));
+                Ok(())
+            })
+            .unwrap();
+        }
     }
 }
