@@ -47,6 +47,14 @@ foreach {tn frame} {
   ) FROM t1 ORDER BY 1
   "
 }
+errorsql_test 2.1 {
+  SELECT sum( sum(a) OVER () ) FROM t1;
+}
+
+errorsql_test 2.2 {
+  SELECT sum(a) OVER () AS xyz FROM t1 ORDER BY sum(xyz);
+}
+
 
 finish_test
 

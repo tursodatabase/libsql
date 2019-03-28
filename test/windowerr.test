@@ -86,4 +86,14 @@ do_test 1.8 { catch { execsql {
   ) FROM t1 ORDER BY 1
 } } } 1
 
+# PG says ERROR:  aggregate function calls cannot contain window function calls
+do_test 2.1 { catch { execsql {
+  SELECT sum( sum(a) OVER () ) FROM t1;
+} } } 1
+
+# PG says ERROR:  column "xyz" does not exist
+do_test 2.2 { catch { execsql {
+  SELECT sum(a) OVER () AS xyz FROM t1 ORDER BY sum(xyz);
+} } } 1
+
 finish_test

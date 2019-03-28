@@ -2524,6 +2524,7 @@ struct Expr {
 #define EP_WinFunc  0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
 #define EP_Subrtn   0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
 #define EP_Quoted   0x4000000 /* TK_ID was originally quoted */
+#define EP_Win      0x8000000 /* Contains window functions */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2780,6 +2781,7 @@ struct NameContext {
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x4000  /* Window functions are allowed here */
+#define NC_HasWin    0x8000  /* One or more window functions seen */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
