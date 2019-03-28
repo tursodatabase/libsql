@@ -264,6 +264,7 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
     ** exceeds SQLITE_LIMIT_LENGTH.  In the latter case, we need to set
     ** an error */
     if( !db->mallocFailed ) pParse->rc = SQLITE_TOOBIG;
+    pParse->nErr++;
     return;
   }
   pParse->nested++;
