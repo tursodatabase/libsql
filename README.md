@@ -41,7 +41,7 @@ archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
      [SQLite-archive](https://www.sqlite.org/src/sqlar/sqlite.sqlar?r=release).
 
   *  For other check-ins, substitute an appropriate branch name or
-     tag or hash prefix for "release" in the URLs of the previous
+     tag or hash prefix in place of "release" in the URLs of the previous
      bullet.  Or browse the [timeline](https://www.sqlite.org/src/timeline)
      to locate the check-in desired, click on its information page link,
      then click on the "Tarball" or "ZIP Archive" links on the information
@@ -313,18 +313,19 @@ If you obtained an SQLite source tree from a secondary source, such as a
 GitHub mirror, and you want to verify that it has not been altered, there
 are a couple of ways to do that.
 
-If you have an official release version of SQLite, and you are using the
+If you have a release version of SQLite, and you are using the
 `sqlite3.c` amalgamation, then SHA3-256 hashes for the amalgamation are
 available in the [change log](https://www.sqlite.org/changes.html) on
 the official website.  After building the `sqlite3.c` file, you can check
-that is authentic by comparing the hash.  This does not ensure that the
+that it is authentic by comparing the hash.  This does not ensure that the
 test scripts are unaltered, but it does validate the deliverable part of
-the code and only involves computing and comparing a single hash.
+the code and the verification process only involves computing and
+comparing a single hash.
 
 For versions other than an official release, or if you are building the
 `sqlite3.c` amalgamation using non-standard build options, the verification
 process is a little more involved.  The `manifest` file at the root directory
-of the source tree ([example](https://sqlite.org/src/artifact/bd49a8271d650fa8))
+of the source tree
 contains either a SHA3-256 hash (for newer files) or a SHA1 hash (for 
 older files) for every source file in the repository.  You can write a script
 to extracts hashes from `manifest` and verifies the hashes against the 
@@ -334,9 +335,13 @@ have.  The `manifest.uuid` file should contain the SHA3-256 hash of the
 `manifest` file.  If all of the above hash comparisons are correct, then
 you can be confident that your source tree is authentic and unadulterated.
 
+The format of the `manifest` file should be mostly self-explanatory, but
+if you want details, they are available
+[here](https://fossil-scm.org/fossil/doc/trunk/www/fileformat.wiki#manifest).
+
 ## Contacts
 
-The main SQLite webpage is [http://www.sqlite.org/](http://www.sqlite.org/)
+The main SQLite website is [http://www.sqlite.org/](http://www.sqlite.org/)
 with geographically distributed backups at
 [http://www2.sqlite.org/](http://www2.sqlite.org) and
 [http://www3.sqlite.org/](http://www3.sqlite.org).
