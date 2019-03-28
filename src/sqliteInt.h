@@ -3535,7 +3535,7 @@ struct TreeView {
 #endif /* SQLITE_DEBUG */
 
 /*
-** This object is used in varioius ways, all related to window functions
+** This object is used in various ways, all related to window functions
 **
 **   (1) A single instance of this structure is attached to the
 **       the Expr.pWin field for each window function in an expression tree.
@@ -3550,18 +3550,18 @@ struct TreeView {
 **       object on a linked list attached to Select.pWinDefn.
 **
 ** The uses (1) and (2) are really the same Window object that just happens
-** to be accessible in two different ways.  Use (3) is are separate objects.
+** to be accessible in two different ways.  Use case (3) are separate objects.
 */
 struct Window {
   char *zName;            /* Name of window (may be NULL) */
   char *zBase;            /* Name of base window for chaining (may be NULL) */
   ExprList *pPartition;   /* PARTITION BY clause */
   ExprList *pOrderBy;     /* ORDER BY clause */
-  u8 eType;               /* TK_RANGE or TK_ROWS */
+  u8 eFrmType;            /* TK_RANGE, TK_GROUPS, TK_ROWS, or 0 */
   u8 eStart;              /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   u8 eEnd;                /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   u8 bImplicitFrame;      /* True if frame was implicitly specified */
-  u8 eExclude;
+  u8 eExclude;            /* TK_NO, TK_CURRENT, TK_TIES, TK_GROUP, or 0 */
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
   Window *pNextWin;       /* Next window function belonging to this SELECT */

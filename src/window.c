@@ -662,7 +662,7 @@ void sqlite3WindowUpdate(
   Window *pWin,                   /* Window frame to update */
   FuncDef *pFunc                  /* Window function definition */
 ){
-  if( pWin->zName && pWin->eType==0 ){
+  if( pWin->zName && pWin->eFrmType==0 ){
     Window *p = windowFind(pParse, pList, pWin->zName);
     if( p==0 ) return;
     pWin->pPartition = sqlite3ExprListDup(pParse->db, p->pPartition, 0);
@@ -671,12 +671,12 @@ void sqlite3WindowUpdate(
     pWin->pEnd = sqlite3ExprDup(pParse->db, p->pEnd, 0);
     pWin->eStart = p->eStart;
     pWin->eEnd = p->eEnd;
-    pWin->eType = p->eType;
+    pWin->eFrmType = p->eFrmType;
     pWin->eExclude = p->eExclude;
   }else{
     sqlite3WindowChain(pParse, pWin, pList);
   }
-  if( (pWin->eType==TK_RANGE)
+  if( (pWin->eFrmType==TK_RANGE)
    && (pWin->pStart || pWin->pEnd) 
    && (pWin->pOrderBy==0 || pWin->pOrderBy->nExpr!=1)
   ){
@@ -693,7 +693,7 @@ void sqlite3WindowUpdate(
     }else{
       struct WindowUpdate {
         const char *zFunc;
-        int eType;
+        int eFrmType;
         int eStart;
         int eEnd;
       } aUp[] = {
@@ -712,7 +712,7 @@ void sqlite3WindowUpdate(
           sqlite3ExprDelete(db, pWin->pStart);
           sqlite3ExprDelete(db, pWin->pEnd);
           pWin->pEnd = pWin->pStart = 0;
-          pWin->eType = aUp[i].eType;
+          pWin->eFrmType = aUp[i].eFrmType;
           pWin->eStart = aUp[i].eStart;
           pWin->eEnd = aUp[i].eEnd;
           pWin->eExclude = 0;
@@ -1042,7 +1042,7 @@ static Expr *sqlite3WindowOffsetExpr(Parse *pParse, Expr *pExpr){
 */
 Window *sqlite3WindowAlloc(
   Parse *pParse,    /* Parsing context */
-  int eType,        /* Frame type. TK_RANGE or TK_ROWS */
+  int eType,        /* Frame type. TK_RANGE, TK_ROWS, TK_GROUPS, or 0 */
   int eStart,       /* Start type: CURRENT, PRECEDING, FOLLOWING, UNBOUNDED */
   Expr *pStart,     /* Start window size if TK_PRECEDING or FOLLOWING */
   int eEnd,         /* End type: CURRENT, FOLLOWING, TK_UNBOUNDED, PRECEDING */
@@ -1089,7 +1089,7 @@ Window *sqlite3WindowAlloc(
 
   pWin = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
   if( pWin==0 ) goto windowAllocErr;
-  pWin->eType = eType;
+  pWin->eFrmType = eType;
   pWin->eStart = eStart;
   pWin->eEnd = eEnd;
   if( eExclude==0 && OptimizationDisabled(pParse->db, SQLITE_QueryFlattener) ){
@@ -1198,7 +1198,7 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
 ** Identical window objects can be processed in a single scan.
 */
 int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
-  if( p1->eType!=p2->eType ) return 1;
+  if( p1->eFrmType!=p2->eFrmType ) return 1;
   if( p1->eStart!=p2->eStart ) return 1;
   if( p1->eEnd!=p2->eEnd ) return 1;
   if( p1->eExclude!=p2->eExclude ) return 1;
@@ -1861,7 +1861,7 @@ static int windowCodeOp(
   int addrIf = 0; 
   int addrContinue = 0;
   int addrGoto = 0;
-  int bPeer = (pMWin->eType!=TK_ROWS);
+  int bPeer = (pMWin->eFrmType!=TK_ROWS);
 
   int lblDone = sqlite3VdbeMakeLabel(pParse);
   int addrNextRange = 0;
@@ -1874,7 +1874,7 @@ static int windowCodeOp(
   }
 
   if( regCountdown>0 ){
-    if( pMWin->eType==TK_RANGE ){
+    if( pMWin->eFrmType==TK_RANGE ){
       addrNextRange = sqlite3VdbeCurrentAddr(v);
       assert( op==WINDOW_AGGINVERSE || op==WINDOW_AGGSTEP );
       if( op==WINDOW_AGGINVERSE ){
@@ -1983,7 +1983,7 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
       pNew->pFunc = p->pFunc;
       pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
       pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, 0);
-      pNew->eType = p->eType;
+      pNew->eFrmType = p->eFrmType;
       pNew->eEnd = p->eEnd;
       pNew->eStart = p->eStart;
       pNew->eExclude = p->eExclude;
@@ -2427,14 +2427,18 @@ void sqlite3WindowCodeStep(
   ** be deleted after they enter the frame (WINDOW_AGGSTEP). */
   switch( pMWin->eStart ){
     case TK_FOLLOWING:
-      if( pMWin->eType!=TK_RANGE && windowExprGtZero(pParse, pMWin->pStart) ){
+      if( pMWin->eFrmType!=TK_RANGE
+       && windowExprGtZero(pParse, pMWin->pStart)
+      ){
         s.eDelete = WINDOW_RETURN_ROW;
       }
       break;
     case TK_UNBOUNDED:
       if( windowCacheFrame(pMWin)==0 ){
         if( pMWin->eEnd==TK_PRECEDING ){
-          if( pMWin->eType!=TK_RANGE && windowExprGtZero(pParse, pMWin->pEnd) ){
+          if( pMWin->eFrmType!=TK_RANGE
+           && windowExprGtZero(pParse, pMWin->pEnd)
+          ){
             s.eDelete = WINDOW_AGGSTEP;
           }
         }else{
@@ -2468,7 +2472,7 @@ void sqlite3WindowCodeStep(
   /* If this is not a "ROWS BETWEEN ..." frame, then allocate arrays of
   ** registers to store copies of the ORDER BY expressions (peer values) 
   ** for the main loop, and for each cursor (start, current and end). */
-  if( pMWin->eType!=TK_ROWS ){
+  if( pMWin->eFrmType!=TK_ROWS ){
     int nPeer = (pOrderBy ? pOrderBy->nExpr : 0);
     regNewPeer = regNew + pMWin->nBufferCol;
     if( pMWin->pPartition ) regNewPeer += pMWin->pPartition->nExpr;
@@ -2519,11 +2523,11 @@ void sqlite3WindowCodeStep(
 
   if( regStart ){
     sqlite3ExprCode(pParse, pMWin->pStart, regStart);
-    windowCheckValue(pParse, regStart, 0 + (pMWin->eType==TK_RANGE ? 3 : 0));
+    windowCheckValue(pParse, regStart, 0 + (pMWin->eFrmType==TK_RANGE ? 3 : 0));
   }
   if( regEnd ){
     sqlite3ExprCode(pParse, pMWin->pEnd, regEnd);
-    windowCheckValue(pParse, regEnd, 1 + (pMWin->eType==TK_RANGE ? 3 : 0));
+    windowCheckValue(pParse, regEnd, 1 + (pMWin->eFrmType==TK_RANGE ? 3 : 0));
   }
 
   if( pMWin->eStart==pMWin->eEnd && regStart ){
@@ -2538,7 +2542,7 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
     sqlite3VdbeJumpHere(v, addrGe);
   }
-  if( pMWin->eStart==TK_FOLLOWING && pMWin->eType!=TK_RANGE && regEnd ){
+  if( pMWin->eStart==TK_FOLLOWING && pMWin->eFrmType!=TK_RANGE && regEnd ){
     assert( pMWin->eEnd==TK_FOLLOWING );
     sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regStart);
   }
@@ -2567,7 +2571,7 @@ void sqlite3WindowCodeStep(
   if( pMWin->eStart==TK_FOLLOWING ){
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
     if( pMWin->eEnd!=TK_UNBOUNDED ){
-      if( pMWin->eType==TK_RANGE ){
+      if( pMWin->eFrmType==TK_RANGE ){
         int lbl = sqlite3VdbeMakeLabel(pParse);
         int addrNext = sqlite3VdbeCurrentAddr(v);
         windowCodeRangeTest(&s, OP_Ge, s.current.csr, regEnd, s.end.csr, lbl);
@@ -2589,7 +2593,7 @@ void sqlite3WindowCodeStep(
     int addr = 0;
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
     if( pMWin->eEnd!=TK_UNBOUNDED ){
-      if( pMWin->eType==TK_RANGE ){
+      if( pMWin->eFrmType==TK_RANGE ){
         int lbl = 0;
         addr = sqlite3VdbeCurrentAddr(v);
         if( regEnd ){
@@ -2635,7 +2639,7 @@ void sqlite3WindowCodeStep(
     int addrBreak2;
     int addrBreak3;
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
-    if( pMWin->eType==TK_RANGE ){
+    if( pMWin->eFrmType==TK_RANGE ){
       addrStart = sqlite3VdbeCurrentAddr(v);
       addrBreak2 = windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 1);
       addrBreak1 = windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 1);
