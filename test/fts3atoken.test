@@ -86,10 +86,24 @@ do_test fts3atoken-1.5 {
   }
 } {{There was movement at the station}}
 
+unset -nocomplain simple
+set simple [db one {SELECT fts3_tokenizer('simple')}]
 sqlite3_db_config db SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 0
 do_catchsql_test 1.6 {
   SELECT fts3_tokenizer('blah', fts3_tokenizer('simple')) IS NULL;
 } {1 {fts3tokenize disabled}}
+do_test fts3atoken-1.7 {
+  execsql {
+    SELECT fts3_tokenizer('blah2', $simple) IS NULL;
+  }
+} {1}
+sqlite3_db_config db SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1
+do_test fts3atoken-1.8 {
+  execsql {
+    SELECT fts3_tokenizer('blah2') == fts3_tokenizer('simple');
+  }
+} {1}
+
 
 
 #--------------------------------------------------------------------------
