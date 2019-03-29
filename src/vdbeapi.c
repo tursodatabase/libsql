@@ -275,6 +275,11 @@ int sqlite3_value_nochange(sqlite3_value *pVal){
   return (pVal->flags&(MEM_Null|MEM_Zero))==(MEM_Null|MEM_Zero);
 }
 
+/* Return true if a parameter value originated from an sqlite3_bind() */
+int sqlite3_value_frombind(sqlite3_value *pVal){
+  return (pVal->flags&MEM_FromBind)!=0;
+}
+
 /* Make a copy of an sqlite3_value object
 */
 sqlite3_value *sqlite3_value_dup(const sqlite3_value *pOrig){
