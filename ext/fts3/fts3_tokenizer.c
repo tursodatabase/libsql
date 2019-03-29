@@ -106,7 +106,7 @@ static void fts3TokenizerFunc(
       return;
     }
   }
-  if( fts3TokenizerEnabled(context) ){
+  if( fts3TokenizerEnabled(context) || sqlite3_value_frombind(argv[0]) ){
     sqlite3_result_blob(context, (void *)&pPtr, sizeof(pPtr), SQLITE_TRANSIENT);
   }
 }
