@@ -1673,12 +1673,11 @@ int sqlite3ResolveExprNames(
 #if SQLITE_MAX_EXPR_DEPTH>0
   w.pParse->nHeight -= pExpr->nHeight;
 #endif
-  if( pNC->ncFlags & NC_HasAgg ){
-    ExprSetProperty(pExpr, EP_Agg);
-  }
-  if( pNC->ncFlags & NC_HasWin ){
-    ExprSetProperty(pExpr, EP_Win);
-  }
+  assert( EP_Agg==NC_HasAgg );
+  assert( EP_Win==NC_HasWin );
+  testcase( pNC->ncFlags & NC_HasAgg );
+  testcase( pNC->ncFlags & NC_HasWin );
+  ExprSetProperty(pExpr, pNC->ncFlags & (NC_HasAgg|NC_HasWin) );
   pNC->ncFlags |= savedHasAgg;
   return pNC->nErr>0 || w.pParse->nErr>0;
 }

@@ -2496,12 +2496,16 @@ struct Expr {
 
 /*
 ** The following are the meanings of bits in the Expr.flags field.
+** Value restrictions:
+**
+**          EP_Agg == NC_HasAgg == SF_HasAgg
+**          EP_Win == NC_HasWin
 */
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
-#define EP_Agg       0x000002 /* Contains one or more aggregate functions */
+#define EP_Distinct  0x000002 /* Aggregate function with DISTINCT keyword */
 #define EP_HasFunc   0x000004 /* Contains one or more functions of any kind */
 #define EP_FixedCol  0x000008 /* TK_Column with a known fixed value */
-#define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
+#define EP_Agg       0x000010 /* Contains one or more aggregate functions */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
 #define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
@@ -2512,7 +2516,7 @@ struct Expr {
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
 #define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static    0x008000 /* Held in memory not obtained from malloc() */
+#define EP_Win       0x008000 /* Contains window functions */
 #define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
 #define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
@@ -2524,7 +2528,7 @@ struct Expr {
 #define EP_WinFunc  0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
 #define EP_Subrtn   0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
 #define EP_Quoted   0x4000000 /* TK_ID was originally quoted */
-#define EP_Win      0x8000000 /* Contains window functions */
+#define EP_Static   0x8000000 /* Held in memory not obtained from malloc() */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2764,8 +2768,9 @@ struct NameContext {
 ** Allowed values for the NameContext, ncFlags field.
 **
 ** Value constraints (all checked via assert()):
-**    NC_HasAgg    == SF_HasAgg
+**    NC_HasAgg    == SF_HasAgg    == EP_Agg
 **    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
+**    NC_HasWin    == EP_Win
 **
 */
 #define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
