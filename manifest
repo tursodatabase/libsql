@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\scomments\sof\sthe\ssessions\sextension,\sone\sof\swhich\saffects\nthe\sgenerated\sdocumentation.\sNo\scode\schanges.
-D 2019-03-29T11:48:10.580
+C Fix\sa\sfairly\sobscure\sproblem\scausing\sthe\splanner\sto\ssometimes\schoose\ssub-optimal\splans\sfor\sa\squery\swith\sa\ssingle\svirtual\stable\sin\sthe\sFROM\sclause,\sand\sat\sleast\sone\sIN(...)\sconstraint\sin\sthe\sWHERE\sclause.
+D 2019-03-29T13:17:50.351
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -601,7 +601,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
-F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
+F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 6fa4056c5ce019e4a8af33795906340176813cb3c1236f4b7b08df76a1b6287b
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
@@ -679,7 +679,7 @@ F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
-F test/bestindex1.test 852170bddbb21daa121fabcc274640ff83d7d8705912e8b5fe7ed2c5a9a9224a
+F test/bestindex1.test 705b57d7f51d53ee5fd043dd9666236e1fc18f4d59abf51da0ea5ea1b4804947
 F test/bestindex2.test 9a0ccd320b6525eec3a706aae6cdab7e1b7b5abca75027e39f39f755e76e5928
 F test/bestindex3.test 7622e792ff2da16d262d3cea6ad914591ac4806d57ed128e6c940b7920b47b84
 F test/bestindex4.test 038e3d0789332f3f1d61474f9bbc9c6d08c6bd1783a978f31f38ad82688de601
@@ -1813,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 965cbcea117835d2c6d2ec58c8025b227f491c35805e282cb31228436bc6bec1
-R ef1c408597d0be46fbc1470ecf47aa02
-U drh
-Z 8c0f94643e07344b7f966cc60e0031a9
+P 040d5d515bcb37bea05e0d156dbaf066c68052ac574f1b0b2cb118d473a353e0
+R e546ad670b8973ed4f54c42d6a6b4e3e
+U dan
+Z 48108f154421a71bdf9883e42b6bbc73
