@@ -3862,7 +3862,7 @@ static int sessionSeekToRow(
 }
 
 /*
-** This function is called from within sqlite3changset_apply_v2() when
+** This function is called from within sqlite3changeset_apply_v2() when
 ** a conflict is encountered and resolved using conflict resolution
 ** mode eType (either SQLITE_CHANGESET_OMIT or SQLITE_CHANGESET_REPLACE)..
 ** It adds a conflict resolution record to the buffer in 

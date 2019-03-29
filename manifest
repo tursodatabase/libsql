@@ -1,5 +1,5 @@
-C Recover\sa\ssome\sof\sthe\sperformance\slost\sby\swindow\sfunction\salias\sfix\stwo\ncheck-ins\sback.
-D 2019-03-29T01:15:11.116
+C Fix\stypos\sin\sthe\scomments\sof\sthe\ssessions\sextension,\sone\sof\swhich\saffects\nthe\sgenerated\sdocumentation.\sNo\scode\schanges.
+D 2019-03-29T11:48:10.580
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -429,8 +429,8 @@ F ext/session/sessioninvert.test ae1a003a9ab1f8d64227dbb5c3a4c97e65b561b01e7b295
 F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2f05e82363b9142810
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 67b5ab91d4f93ce65ff1f58240ac5ddf73f8670facc1ffa49cef56293d52818d
-F ext/session/sqlite3session.c 4c79daf65e89c78dd62fd97a1b2eac3e53be700b29914101453a0d951f7ba9c8
-F ext/session/sqlite3session.h 54d6356f5769d3695e5f63d719c6ee27671b2614973a2b675a3ff4d30d574233
+F ext/session/sqlite3session.c faf074fedbb3d17d82b1321575b5412e234746a2d5bd2244bc85484786ab686d
+F ext/session/sqlite3session.h 919be6649d39d6413ce7a63fc3e3bca3270e18bc2d57ad4040a70007b9e54397
 F ext/session/test_session.c 98797aba475a799376c9a42214f2d1debf2d0c3cb657d9c8bbf4f70bf3fb4aec
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -1813,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f908cd40b275a5753d5167ebb25871300381687adcb3a7fcb1f14b57a20ee3d0
-R d09d343d4a65e6083144623bc2793fd6
+P 965cbcea117835d2c6d2ec58c8025b227f491c35805e282cb31228436bc6bec1
+R ef1c408597d0be46fbc1470ecf47aa02
 U drh
-Z 9d5464d6e79c7b4f0d1819c4eb226890
+Z 8c0f94643e07344b7f966cc60e0031a9

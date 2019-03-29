@@ -1415,7 +1415,7 @@ int sqlite3rebaser_configure(
 ** in size. This function allocates and populates a buffer with a copy
 ** of the changeset rebased rebased according to the configuration of the
 ** rebaser object passed as the first argument. If successful, (*ppOut)
-** is set to point to the new buffer containing the rebased changset and 
+** is set to point to the new buffer containing the rebased changeset and 
 ** (*pnOut) to its size in bytes and SQLITE_OK returned. It is the
 ** responsibility of the caller to eventually free the new buffer using
 ** sqlite3_free(). Otherwise, if an error occurs, (*ppOut) and (*pnOut)
