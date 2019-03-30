@@ -1310,14 +1310,18 @@ static void windowCheckValue(Parse *pParse, int reg, int eCond){
     sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
     sqlite3VdbeAddOp3(v, OP_Ge, regString, sqlite3VdbeCurrentAddr(v)+2, reg);
     sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC);
+    VdbeCoverage(v);
+    assert( eCond==3 || eCond==4 );
+    VdbeCoverageIf(v, eCond==3);
+    VdbeCoverageIf(v, eCond==4);
   }else{
     sqlite3VdbeAddOp2(v, OP_MustBeInt, reg, sqlite3VdbeCurrentAddr(v)+2);
+    VdbeCoverage(v);
+    assert( eCond==0 || eCond==1 || eCond==2 );
+    VdbeCoverageIf(v, eCond==0);
+    VdbeCoverageIf(v, eCond==1);
+    VdbeCoverageIf(v, eCond==2);
   }
-  VdbeCoverageIf(v, eCond==0);
-  VdbeCoverageIf(v, eCond==1);
-  VdbeCoverageIf(v, eCond==2);
-  VdbeCoverageIf(v, eCond==3);
-  VdbeCoverageIf(v, eCond==4);
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
   VdbeCoverageNeverNullIf(v, eCond==0);
   VdbeCoverageNeverNullIf(v, eCond==1);
@@ -1833,12 +1837,13 @@ static void windowCodeRangeTest(
   VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
   sqlite3VdbeJumpHere(v, addrGe);
-  sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1);
+  sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
-  assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
-  VdbeCoverageIf(v, op==OP_Ge);
-  VdbeCoverageIf(v, op==OP_Gt);
-  VdbeCoverageIf(v, op==OP_Le);
+  assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );
+  testcase(op==OP_Ge); VdbeCoverageIf(v, op==OP_Ge);
+  testcase(op==OP_Lt); VdbeCoverageIf(v, op==OP_Lt);
+  testcase(op==OP_Le); VdbeCoverageIf(v, op==OP_Le);
+  testcase(op==OP_Gt); VdbeCoverageIf(v, op==OP_Gt);
 
   sqlite3ReleaseTempReg(pParse, reg1);
   sqlite3ReleaseTempReg(pParse, reg2);
@@ -2536,6 +2541,7 @@ void sqlite3WindowCodeStep(
   if( pMWin->eStart==pMWin->eEnd && regStart ){
     int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
     int addrGe = sqlite3VdbeAddOp3(v, op, regStart, 0, regEnd);
+    VdbeCoverage(v);
     VdbeCoverageIf(v, op==OP_Ge);
     VdbeCoverageIf(v, op==OP_Le);
     windowAggFinal(&s, 0);
