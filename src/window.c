@@ -1835,7 +1835,10 @@ static void windowCodeRangeTest(
   sqlite3VdbeJumpHere(v, addrGe);
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
-  VdbeCoverage(v);
+  assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
+  VdbeCoverageIf(v, op==OP_Ge);
+  VdbeCoverageIf(v, op==OP_Gt);
+  VdbeCoverageIf(v, op==OP_Le);
 
   sqlite3ReleaseTempReg(pParse, reg1);
   sqlite3ReleaseTempReg(pParse, reg2);
@@ -2533,7 +2536,8 @@ void sqlite3WindowCodeStep(
   if( pMWin->eStart==pMWin->eEnd && regStart ){
     int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
     int addrGe = sqlite3VdbeAddOp3(v, op, regStart, 0, regEnd);
-    VdbeCoverage(v);
+    VdbeCoverageIf(v, op==OP_Ge);
+    VdbeCoverageIf(v, op==OP_Le);
     windowAggFinal(&s, 0);
     sqlite3VdbeAddOp2(v, OP_Rewind, s.current.csr, 1);
     VdbeCoverageNeverTaken(v);
