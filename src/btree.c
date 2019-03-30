@@ -840,7 +840,11 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
     return pCur->skipNext;
   }
   pCur->eState = CURSOR_INVALID;
-  rc = btreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &skipNext);
+  if( sqlite3FaultSim(410) ){
+    rc = SQLITE_IOERR;
+  }else{
+    rc = btreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &skipNext);
+  }
   if( rc==SQLITE_OK ){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
