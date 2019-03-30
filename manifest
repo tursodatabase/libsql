@@ -1,5 +1,5 @@
-C Add\sa\scall\sto\ssqlite3FaultSim(410)\sinside\sof\sbtreeRestoreCursorPosition()\nto\ssimplify\stesting\sof\serror\sscenarios.
-D 2019-03-30T19:17:35.813
+C Improvements\sto\sVdbeCoverage\smacros.
+D 2019-03-30T20:43:40.472
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,9 +604,9 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c 6fa4056c5ce019e4a8af33795906340176813cb3c1236f4b7b08df76a1b6287b
+F src/wherecode.c 9572aab9eff42859a5f3e9b212f704521a84bf77e444217f0339d8b811e6333f
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
-F src/window.c 92b6d593a63f27b29360176f71eb5839562bdb7dae6effd35f4c69168ea5455d
+F src/window.c a63ef839f4987d789cb595a38cf5063a38ab47bb1d0357af65121363fae4734d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1814,7 +1814,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb125bd338ab32b33d02fe61b76497b6d4a2a160056d6e759e15c94903e61a41
-R 8f4f4aa5fa1e18b205524f2c4d480b03
+P bb643bac535ac7d5fb4c13edb8782cd13540bbc7d2b2deb689f4ca8d1914f422 b5f72f10f2dfdbee9fe98c63ffb933e841203790746a920b99df14ca5c14127c
+R 856eb43817b0dd995ab38a2e36f5cc99
+T +closed b5f72f10f2dfdbee9fe98c63ffb933e841203790746a920b99df14ca5c14127c
 U drh
-Z dc00a457f1974bbe0545af29b34f5385
+Z a58fae3a822064c17bae1f6aac94f517
