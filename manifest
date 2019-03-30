@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sP5\sflag\sfrom\sthe\sOP_Rewind\sopcode.
-D 2019-03-29T15:21:22.609
+C Add\san\sextra\sIO-error\stest\sto\swindowfault.test.
+D 2019-03-30T17:07:23.564
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1692,7 +1692,7 @@ F test/window8.tcl 97de3829e0e1aae2c3aaae41a55c54bc1b0751bbc80dfdd93020431b7a889
 F test/window8.test 0dd7e2d32605bf59dc6163b924faeff5951419c1c17a9e506e5a38606e97ab7e
 F test/windowerr.tcl 678bb2c3ddcaaf605163bd9fe647454fa0097688cfd2fecc5dd9f3a5b45b13f2
 F test/windowerr.test 7eb7439332d3855dd53c58dca8838f6990746f40fac7045c0153172083a9452b
-F test/windowfault.test cb27a4d8c85982733b123af667921df3a96e23d3739b15d414de75054b334cbe
+F test/windowfault.test 16e906a2c4110c88372ff4bd5de59ac7397ec2f025912eff8e5677eedd126898
 F test/with1.test a07b5aad7f77acdf13e52e8814ea94606fcc72e9ea4c99baf293e9d7c63940be
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 8d26920c88283e0a473ceebd3451554922108ce7b2a6a1157c47eb0a7011212c
@@ -1813,7 +1813,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f5752517f590b37bfc0267650f5800320e22a8ecaba34aa6893281ce8d268026
-R 52c966134f5bf9130baedd9b89ea4a62
-U drh
-Z b847805c39c91cec51745d9c89877e86
+P c2edbf3b8c643edcd5823eb907fd7531cf5be8a8b6a014fa1b123eb0ea3231cf
+R 86d53f0a0cd55849b6bfbfc0814c8bf0
+U dan
+Z 7c8bdcb225b3e1ae6999bd7e018164b5
