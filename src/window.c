@@ -1323,11 +1323,11 @@ static void windowCheckValue(Parse *pParse, int reg, int eCond){
     VdbeCoverageIf(v, eCond==2);
   }
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
-  VdbeCoverageNeverNullIf(v, eCond==0);
-  VdbeCoverageNeverNullIf(v, eCond==1);
-  VdbeCoverageNeverNullIf(v, eCond==2);
-  VdbeCoverageNeverNullIf(v, eCond==3);
-  VdbeCoverageNeverNullIf(v, eCond==4);
+  VdbeCoverageIf(v, eCond==0);
+  VdbeCoverageIf(v, eCond==1);
+  VdbeCoverageIf(v, eCond==2);
+  VdbeCoverageIf(v, eCond==3);
+  VdbeCoverageIf(v, eCond==4);
   sqlite3MayAbort(pParse);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
@@ -1577,6 +1577,7 @@ static void windowFullScan(WindowCodeArg *p){
 
   if( pMWin->eExclude==TK_CURRENT ){
     sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, lblNext, regRowid);
+    VdbeCoverage(v);
   }else if( pMWin->eExclude!=TK_NO ){
     int addr;
     int addrEq = 0;
@@ -1587,6 +1588,7 @@ static void windowFullScan(WindowCodeArg *p){
     }
     if( pMWin->eExclude==TK_TIES ){
       addrEq = sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, 0, regRowid);
+      VdbeCoverage(v);
     }
     if( pKeyInfo ){
       windowReadPeerValues(p, csr, regPeer);
