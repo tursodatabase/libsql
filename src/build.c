@@ -3265,6 +3265,7 @@ void sqlite3CreateIndex(
     sqlite3ExprListSetSortOrder(pList, sortOrder);
   }else{
     sqlite3ExprListCheckLength(pParse, pList, "index");
+    if( pParse->nErr ) goto exit_create_index;
   }
 
   /* Figure out how many bytes of space are required to store explicitly
@@ -3283,6 +3284,7 @@ void sqlite3CreateIndex(
   */
   nName = sqlite3Strlen30(zName);
   nExtraCol = pPk ? pPk->nKeyCol : 1;
+  assert( pList->nExpr + nExtraCol <= 32767 /* Fits in i16 */ );
   pIndex = sqlite3AllocateIndexObject(db, pList->nExpr + nExtraCol,
                                       nName + nExtra + 1, &zExtra);
   if( db->mallocFailed ){
