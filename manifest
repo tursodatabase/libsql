@@ -1,5 +1,5 @@
-C Mark\srowid-comparison\sopcodes\sas\snever-null\sfor\sVDBE\scoverage\stracking\npurposes.
-D 2019-04-01T15:55:38.356
+C Frame\srange\scomparisons\scan\snever\sbe\sNULL\sbecause\sthe\svalues\swill\shave\nbeen\schecked\sfor\sNULL\sprior\sto\sthe\stest.
+D 2019-04-01T16:23:21.090
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 9572aab9eff42859a5f3e9b212f704521a84bf77e444217f0339d8b811e6333f
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
-F src/window.c 8d840b83ecbe3ef29def5daab64b10bc5c6dde4f42901e07f1bb66a997788f13
+F src/window.c aefd7e4511a537ddae2d1206aa300167a2f9d04689ceb94ac32aabe7fe6e92bc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1814,7 +1814,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f56d305a7bad6608d51d8c8cef417ddb66cff50f0a75d28554ea669e47f3d90d
-R e9bd711a9d06e12f07abf04ecdf4ba62
+P a69bb4f257500e40ef4056d5628ef25266def5bcef07eebdb471a79fffe80237
+R 6d364528f50c302348e507fdadd69990
 U drh
-Z 575007d3367381647c876aa4c0326b9d
+Z bef8059dc047f9b4a9aef3c5115a18a8

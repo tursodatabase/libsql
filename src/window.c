@@ -2543,9 +2543,8 @@ void sqlite3WindowCodeStep(
   if( pMWin->eStart==pMWin->eEnd && regStart ){
     int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
     int addrGe = sqlite3VdbeAddOp3(v, op, regStart, 0, regEnd);
-    VdbeCoverage(v);
-    VdbeCoverageIf(v, op==OP_Ge);
-    VdbeCoverageIf(v, op==OP_Le);
+    VdbeCoverageNeverNullIf(v, op==OP_Ge); /* NeverNull because bound <expr> */
+    VdbeCoverageNeverNullIf(v, op==OP_Le); /*   values previously checked */
     windowAggFinal(&s, 0);
     sqlite3VdbeAddOp2(v, OP_Rewind, s.current.csr, 1);
     VdbeCoverageNeverTaken(v);
