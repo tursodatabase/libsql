@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\scover\sa\smissed\sVDBE\sbranch\sgenerated\sby\swindow.c.
-D 2019-04-01T18:43:09.978
+C Improvements\sto\sthe\ssqlite3ExprImpliesNonNullRow()\stheorem\sprover.
+D 2019-04-01T19:42:42.832
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c f2d0ecf68213770be4fad83128ce02e67667deebaa0a44061313f7e4f2a4ae28
+F src/expr.c 7f39a0138ca8e07daaa25fccff97f43c2b29df1153b6e462d43fb23833be2eaf
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
 F src/func.c 2ccf4ae12430b1ae7096be5f0675887e1bd0732828af0ac0f7496339b7c6edee
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0ed714637bf30443d0551d9b6fececa00fc9dfe9669fe720c4598ef71c61e2c
-R b75d12f9234f2b1e702210af1ac04c4a
-U dan
-Z 54f6e80cb73a18a92422dd48e4043d4f
+P b36813d6467c82159bd3bb69d34ac28fc161a13052ca67d7cf9ad75e2aaea9d5
+R 53cefdd43a017d7f72ed1400359072e1
+U drh
+Z 294bced1998ead69a391511a2008e481
