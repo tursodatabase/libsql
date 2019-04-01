@@ -1236,8 +1236,10 @@ case OP_Variable: {            /* out2 */
     goto too_big;
   }
   pOut = &aMem[pOp->p2];
-  sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
-  pOut->flags |= MEM_FromBind;
+  if( VdbeMemDynamic(pOut) ) sqlite3VdbeMemSetNull(pOut);
+  memcpy(pOut, pVar, MEMCELLSIZE);
+  pOut->flags &= ~(MEM_Dyn|MEM_Ephem);
+  pOut->flags |= MEM_Static|MEM_FromBind;
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }

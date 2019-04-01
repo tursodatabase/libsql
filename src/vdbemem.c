@@ -57,7 +57,7 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
               ((p->flags&MEM_Static)!=0 ? 1 : 0) <= 1 );
 
       /* No other bits set */
-      assert( (p->flags & ~(MEM_Null|MEM_Term|MEM_Subtype
+      assert( (p->flags & ~(MEM_Null|MEM_Term|MEM_Subtype|MEM_FromBind
                            |MEM_Dyn|MEM_Ephem|MEM_Static))==0 );
     }else{
       /* A pure NULL might have other flags, such as MEM_Static, MEM_Dyn,
