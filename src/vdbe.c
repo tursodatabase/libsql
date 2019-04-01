@@ -2044,7 +2044,7 @@ compare_op:
     pOut->u.i = res2;
     REGISTER_TRACE(pOp->p2, pOut);
   }else{
-    VdbeBranchTaken(res!=0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
+    VdbeBranchTaken(res2!=0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     if( res2 ){
       goto jump_to_p2;
     }
