@@ -1067,6 +1067,19 @@ do_execsql_test 26.3 {
   ) FROM t2
 } {1 1  2 0  3 1  4 0}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 27.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(NULL), (1), (2), (3), (4), (5);
+}
+do_execsql_test 27.1 {
+  SELECT min(x) FROM t1;
+} {1}
+do_execsql_test 27.2 {
+  SELECT min(x) OVER win FROM t1
+  WINDOW win AS (ORDER BY rowid ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+} {1 1 1 2 3 4}
 
 
 finish_test

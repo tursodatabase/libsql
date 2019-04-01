@@ -1330,7 +1330,7 @@ proc vdbe_coverage_report {} {
   }
   set fd [open vdbe_coverage.txt w]
   foreach miss [vdbe_coverage report] {
-    foreach {line branch} $miss {}
+    foreach {line branch never} $miss {}
     set nextfile ""
     while {[llength $lSrc]>0 && [lindex $lSrc 0 0] < $line} {
       set nextfile [lindex $lSrc 0 1]
@@ -1340,7 +1340,7 @@ proc vdbe_coverage_report {} {
       puts $fd ""
       puts $fd "### $nextfile ###"
     }
-    puts $fd "Vdbe branch $line: path $branch never taken"
+    puts $fd "Vdbe branch $line: never $never (path $branch)"
   }
   close $fd
 }

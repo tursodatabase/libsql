@@ -36,11 +36,17 @@ static void test_vdbe_branch(
   }
 }
 
-static void appendToList(Tcl_Obj *pList, int iLine, int iPath){
+static void appendToList(
+  Tcl_Obj *pList, 
+  int iLine, 
+  int iPath, 
+  const char *zNever
+){
   Tcl_Obj *pNew = Tcl_NewObj();
   Tcl_IncrRefCount(pNew);
   Tcl_ListObjAppendElement(0, pNew, Tcl_NewIntObj(iLine));
   Tcl_ListObjAppendElement(0, pNew, Tcl_NewIntObj(iPath));
+  Tcl_ListObjAppendElement(0, pNew, Tcl_NewStringObj(zNever, -1));
   Tcl_ListObjAppendElement(0, pList, pNew);
   Tcl_DecrRefCount(pNew);
 }
@@ -76,10 +82,17 @@ static int SQLITE_TCLAPI test_vdbe_coverage(
       Tcl_IncrRefCount(pRes);
       for(i=0; i<sizeof(aBranchArray); i++){
         u8 b = aBranchArray[i];
+        int bFlag = ((b >> 4)==4);
         if( b ){
-          if( (b & 0x01)==0 ) appendToList(pRes, i, 0);
-          if( (b & 0x02)==0 ) appendToList(pRes, i, 1);
-          if( (b & 0x04)==0 ) appendToList(pRes, i, 2);
+          if( (b & 0x01)==0 ){
+            appendToList(pRes, i, 0, bFlag ? "less than" : "falls through");
+          }
+          if( (b & 0x02)==0 ){
+            appendToList(pRes, i, 1, bFlag ? "equal" : "taken");
+          }
+          if( (b & 0x04)==0 ){
+            appendToList(pRes, i, 2, bFlag ? "greater-than" : "NULL");
+          }
         }
       }
       Tcl_SetObjResult(interp, pRes);

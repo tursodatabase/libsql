@@ -1,5 +1,5 @@
-C If\sthe\slibrary\sis\sbuilt\swith\sSQLITE_VDBE_COVERAGE\sdefined,\shave\sthe\sTcl\stests\sgenerate\sa\svdbe\scoverage\sreport\sin\sfile\stestdir/vdbe_coverage.txt.
-D 2019-04-01T17:24:20.449
+C Add\sa\stest\scase\sto\scover\sa\smissed\sVDBE\sbranch\sgenerated\sby\swindow.c.
+D 2019-04-01T18:43:09.978
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -573,7 +573,7 @@ F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
 F src/test_tclsh.c eeafce33ad2136d57e5dec10f1e9a4347447eb72ffd504a1c7b9c6bfe2e71578
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
-F src/test_vdbecov.c acabb99f510041cb4c9428078f5a7113793a53fa48d5fe28a2e7b7047ea6e6a8
+F src/test_vdbecov.c f60c6f135ec42c0de013a1d5136777aa328a776d33277f92abac648930453d43
 F src/test_vfs.c c6c6a58f66b26876c7b5769fb323a58b2c7120299b5084e7212c4116f902cbaa
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
@@ -1377,7 +1377,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 6e7b44695fc072765921ceb8a23bc745eeb86acc3a0e6c3023ab20160af7dab7
+F test/tester.tcl 64ac253a411db1af7649438f674213a45876ca70609570310a8652edf23e5d77
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1679,7 +1679,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 7484bf9a2ef2d845a50c9aff866efb8cd9d244b5916a9e97fb384e05f33d242b
+F test/window1.test 71bb9bfb705edff56ac592c1cf47286096558559b3fba7578e2ee5c8448e2a78
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa37cf9a6aa3e4325674cb6af68f617d25e349c3f694d0117a19a36fc42daf15
-R 5a984bd4dc22a21ee2cbeb73c0aebdfa
+P f0ed714637bf30443d0551d9b6fececa00fc9dfe9669fe720c4598ef71c61e2c
+R b75d12f9234f2b1e702210af1ac04c4a
 U dan
-Z c5db50cf41ee79fb991a649e5739587f
+Z 54f6e80cb73a18a92422dd48e4043d4f
