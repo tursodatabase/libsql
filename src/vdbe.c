@@ -122,12 +122,20 @@ int sqlite3_found_count = 0;
 ** feature is used for test suite validation only and does not appear an
 ** production builds.
 **
-** M is an integer between 2 and 4.  2 indicates a ordinary two-way
-** branch (I=0 means fall through and I=1 means taken).  3 indicates
-** a 3-way branch where the third way is when one of the operands is
-** NULL.  4 indicates the OP_Jump instruction which has three destinations
-** depending on whether the first operand is less than, equal to, or greater
-** than the second. 
+** M is the type of branch.  I is the direction taken for this instance of
+** the branch.
+**
+**   M: 2 - two-way branch (I=0: fall-thru   1: jump                )
+**      3 - two-way + NULL (I=0: fall-thru   1: jump      2: NULL   )
+**      4 - OP_Jump        (I=0: jump p1     1: jump p2   2: jump p3)
+**
+** In other words, if M is 2, then I is either 0 (for fall-through) or
+** 1 (for when the branch is taken).  If M is 3, the I is 0 for an
+** ordinary fall-through, I is 1 if the branch was taken, and I is 2 
+** if the result of comparison is NULL.  For M=3, I=2 the jump may or
+** may not be taken, depending on the SQLITE_JUMPIFNULL flags in p5.
+** When M is 4, that means that an OP_Jump is being run.  I is 0, 1, or 2
+** depending on if the operands are less than, equal, or greater than.
 **
 ** iSrcLine is the source code line (from the __LINE__ macro) that
 ** generated the VDBE instruction combined with flag bits.  The source
@@ -138,9 +146,9 @@ int sqlite3_found_count = 0;
 ** alternate branch are never taken.  If a branch is never taken then
 ** flags should be 0x06 since only the fall-through approach is allowed.
 **
-** Bit 0x04 of the flags indicates an OP_Jump opcode that is only
+** Bit 0x08 of the flags indicates an OP_Jump opcode that is only
 ** interested in equal or not-equal.  In other words, I==0 and I==2
-** should be treated the same.
+** should be treated as equivalent
 **
 ** Since only a line number is retained, not the filename, this macro
 ** only works for amalgamation builds.  But that is ok, since these macros
@@ -164,6 +172,18 @@ int sqlite3_found_count = 0;
     mNever = iSrcLine >> 24;
     assert( (I & mNever)==0 );
     if( sqlite3GlobalConfig.xVdbeBranch==0 ) return;  /*NO_TEST*/
+    /* Invoke the branch coverage callback with three arguments:
+    **    iSrcLine - the line number of the VdbeCoverage() macro, with
+    **               flags removed.
+    **    I        - Mask of bits 0x07 indicating which cases are are
+    **               fulfilled by this instance of the jump.  0x01 means
+    **               fall-thru, 0x02 means taken, 0x04 means NULL.  Any
+    **               impossible cases (ex: if the comparison is never NULL)
+    **               are filled in automatically so that the coverage
+    **               measurement logic does not flag those impossible cases
+    **               as missed coverage.
+    **    M        - Type of jump.  Same as M argument above
+    */
     I |= mNever;
     if( M==2 ) I |= 0x04;
     if( M==4 ){
@@ -1734,8 +1754,8 @@ case OP_MustBeInt: {            /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   if( (pIn1->flags & MEM_Int)==0 ){
     applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
-    VdbeBranchTaken((pIn1->flags&MEM_Int)==0, 2);
     if( (pIn1->flags & MEM_Int)==0 ){
+      VdbeBranchTaken(1, 2);
       if( pOp->p2==0 ){
         rc = SQLITE_MISMATCH;
         goto abort_due_to_error;
@@ -1744,6 +1764,7 @@ case OP_MustBeInt: {            /* jump, in1 */
       }
     }
   }
+  VdbeBranchTaken(0, 2);
   MemSetTypeFlag(pIn1, MEM_Int);
   break;
 }

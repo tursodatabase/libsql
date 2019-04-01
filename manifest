@@ -1,5 +1,5 @@
-C Fix\sa\sdefect\sin\sthe\sVDBE\sbranch\scoverage\stesting\slogic.
-D 2019-04-01T13:06:19.535
+C Improved\scomments\son\sthe\sVDBE\sbranch\scoverage\stesting\slogic.\s\sFix\sthe\nVDBE\sbranch\scoverage\smeasurement\son\sthe\sOP_MustBeInt\sopcode.
+D 2019-04-01T14:01:21.321
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
 F src/vacuum.c 532553ee1d47f69c1198858107b1f3af3d16af25f2ab4ce3b1263d9e333f26e2
-F src/vdbe.c 1528ce3ba17a3e6fea4e6826a1fe3a0720649eecf9ec95b50b49c05a98039214
+F src/vdbe.c eeaf0af94b48379b01a25566013138a68e286c82a2da68b2ab30974442518470
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h a76d5eed62c76bcd8de7afd3147fac1bc40c5a870582664bcd7d071ef437c37f
 F src/vdbeapi.c 7a052df80d7e2e55382076174633e888f21fe200feb5d49b1b441b4c38ab851a
@@ -1814,7 +1814,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6cf8b18ec20f11c25ff7396f29c742404d3a88d5e97a5fd53ccfaff51dec3f33
-R b92610a214fa68c9d99cf58b794058b4
+P 1fcf3307d37f0e8e0c8c54491c609b73c7add6eaa38409a41c7cd6614a877a19
+R 548d264b85d1f84e31c647fc92a651ab
 U drh
-Z 48bc3a72c5a2f4b3ff012adefbb09d94
+Z 3917bade205e6ba6a19fe2a0919e61ee
