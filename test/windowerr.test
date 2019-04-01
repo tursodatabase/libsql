@@ -96,4 +96,16 @@ do_test 2.2 { catch { execsql {
   SELECT sum(a) OVER () AS xyz FROM t1 ORDER BY sum(xyz);
 } } } 1
 
+# PG says ERROR:  invalid input syntax for integer: "hello"
+do_test 3.0 { catch { execsql {
+  SELECT sum(a) OVER win FROM t1
+  WINDOW win AS (ROWS BETWEEN 'hello' PRECEDING AND 10 FOLLOWING)
+} } } 1
+
+# PG says ERROR:  argument of ROWS must be type bigint, not type bit
+do_test 3.2 { catch { execsql {
+  SELECT sum(a) OVER win FROM t1
+  WINDOW win AS (ROWS BETWEEN 10 PRECEDING AND x'ABCD' FOLLOWING)
+} } } 1
+
 finish_test

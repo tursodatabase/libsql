@@ -55,6 +55,15 @@ errorsql_test 2.2 {
   SELECT sum(a) OVER () AS xyz FROM t1 ORDER BY sum(xyz);
 }
 
+errorsql_test 3.0 {
+  SELECT sum(a) OVER win FROM t1
+  WINDOW win AS (ROWS BETWEEN 'hello' PRECEDING AND 10 FOLLOWING)
+}
+errorsql_test 3.2 {
+  SELECT sum(a) OVER win FROM t1
+  WINDOW win AS (ROWS BETWEEN 10 PRECEDING AND x'ABCD' FOLLOWING)
+}
+
 
 finish_test
 
