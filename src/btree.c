@@ -833,7 +833,7 @@ moveto_done:
 */
 static int btreeRestoreCursorPosition(BtCursor *pCur){
   int rc;
-  int skipNext;
+  int skipNext = 0;
   assert( cursorOwnsBtShared(pCur) );
   assert( pCur->eState>=CURSOR_REQUIRESEEK );
   if( pCur->eState==CURSOR_FAULT ){
