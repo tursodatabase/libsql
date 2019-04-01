@@ -1309,7 +1309,7 @@ static void windowCheckValue(Parse *pParse, int reg, int eCond){
     int regString = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
     sqlite3VdbeAddOp3(v, OP_Ge, regString, sqlite3VdbeCurrentAddr(v)+2, reg);
-    sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC);
+    sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC|SQLITE_JUMPIFNULL);
     VdbeCoverage(v);
     assert( eCond==3 || eCond==4 );
     VdbeCoverageIf(v, eCond==3);
@@ -1323,11 +1323,11 @@ static void windowCheckValue(Parse *pParse, int reg, int eCond){
     VdbeCoverageIf(v, eCond==2);
   }
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
-  VdbeCoverageIf(v, eCond==0);
-  VdbeCoverageIf(v, eCond==1);
-  VdbeCoverageIf(v, eCond==2);
-  VdbeCoverageIf(v, eCond==3);
-  VdbeCoverageIf(v, eCond==4);
+  VdbeCoverageNeverNullIf(v, eCond==0); /* NULL case captured by */
+  VdbeCoverageNeverNullIf(v, eCond==1); /*   the OP_MustBeInt */
+  VdbeCoverageNeverNullIf(v, eCond==2);
+  VdbeCoverageNeverNullIf(v, eCond==3); /* NULL case caught by */
+  VdbeCoverageNeverNullIf(v, eCond==4); /*   the OP_Ge */
   sqlite3MayAbort(pParse);
   sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
   sqlite3VdbeAppendP4(v, (void*)azErr[eCond], P4_STATIC);
