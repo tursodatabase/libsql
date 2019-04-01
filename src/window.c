@@ -1577,7 +1577,7 @@ static void windowFullScan(WindowCodeArg *p){
 
   if( pMWin->eExclude==TK_CURRENT ){
     sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, lblNext, regRowid);
-    VdbeCoverage(v);
+    VdbeCoverageNeverNull(v);
   }else if( pMWin->eExclude!=TK_NO ){
     int addr;
     int addrEq = 0;
@@ -1588,7 +1588,7 @@ static void windowFullScan(WindowCodeArg *p){
     }
     if( pMWin->eExclude==TK_TIES ){
       addrEq = sqlite3VdbeAddOp3(v, OP_Eq, regCRowid, 0, regRowid);
-      VdbeCoverage(v);
+      VdbeCoverageNeverNull(v);
     }
     if( pKeyInfo ){
       windowReadPeerValues(p, csr, regPeer);
@@ -2526,7 +2526,7 @@ void sqlite3WindowCodeStep(
   sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, regRowid);
   sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, regRowid);
   addrNe = sqlite3VdbeAddOp3(v, OP_Ne, pMWin->regOne, 0, regRowid);
-  VdbeCoverage(v);
+  VdbeCoverageNeverNull(v);
 
   /* This block is run for the first row of each partition */
   s.regArg = windowInitAccum(pParse, pMWin);
