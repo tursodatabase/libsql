@@ -630,6 +630,24 @@ static void test_getsubtype(
   sqlite3_result_int(context, (int)sqlite3_value_subtype(argv[0]));
 }
 
+/*         test_frombind(A,B,C,...)
+**
+** Return an integer bitmask that has a bit set for every argument
+** (up to the first 63 arguments) that originates from a bind a parameter.
+*/
+static void test_frombind(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_uint64 m = 0;
+  int i;
+  for(i=0; i<argc && i<63; i++){
+    if( sqlite3_value_frombind(argv[i]) ) m |= ((sqlite3_uint64)1)<<i;
+  }
+  sqlite3_result_int64(context, (sqlite3_int64)m);
+}
+
 /*         test_setsubtype(V, T)
 **
 ** Return the value V with its subtype changed to T
@@ -675,6 +693,7 @@ static int registerTestFunctions(
     { "test_zeroblob",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC, test_zeroblob},
     { "test_getsubtype",       1, SQLITE_UTF8, test_getsubtype},
     { "test_setsubtype",       2, SQLITE_UTF8, test_setsubtype},
+    { "test_frombind",        -1, SQLITE_UTF8, test_frombind},
   };
   int i;
 

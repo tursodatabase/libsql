@@ -79,7 +79,7 @@ static void fts3TokenizerFunc(
   nName = sqlite3_value_bytes(argv[0])+1;
 
   if( argc==2 ){
-    if( fts3TokenizerEnabled(context) ){
+    if( fts3TokenizerEnabled(context) || sqlite3_value_frombind(argv[1]) ){
       void *pOld;
       int n = sqlite3_value_bytes(argv[1]);
       if( zName==0 || n!=sizeof(pPtr) ){
@@ -106,7 +106,7 @@ static void fts3TokenizerFunc(
       return;
     }
   }
-  if( fts3TokenizerEnabled(context) ){
+  if( fts3TokenizerEnabled(context) || sqlite3_value_frombind(argv[0]) ){
     sqlite3_result_blob(context, (void *)&pPtr, sizeof(pPtr), SQLITE_TRANSIENT);
   }
 }
