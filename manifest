@@ -1,5 +1,5 @@
-C Including\sthe\sphrase\sEXCLUDE\sNO\sOTHERS\sin\sthe\sframe-spec\sof\sa\swindow\sfunction\n(which\sis\sthe\sdefault\ssetting\sfor\sEXCLUDE)\ssilently\sdisables\sthe\sxInverse\noptimization.\s\sThis\sis\sa\sfeature,\sbut\swe\swill\skeep\sit\sundocumented\sfor\snow\nin\scase\swe\slater\sdecide\sit\sis\sa\sbad\sidea.
-D 2019-04-02T17:45:01.994
+C Use\sa\sseparate\sbit\son\sdb->dbOptFlags\sto\sdisable\sthe\sxInverse\soptimization\son\nwindow\sfunctions,\srather\sthan\sreusing\sthe\squery-flattener\sdisable\sbit.
+D 2019-04-02T17:45:56.576
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -522,7 +522,7 @@ F src/shell.c.in c1986496062f9dba4ed5b70db06b5e0f32e1954cdcfab0b30372c6c18679681
 F src/sqlite.h.in e8a8dd45ae6849b3e40b243eca41181a740b4f4ac67d5b65fcea519d454db785
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h 59b625f88bf96cad4cd1a6a6ded615c161f518fb56da3e49f2ff70429e49095f
+F src/sqliteInt.h b4641800cd3d4de5747f43bdddb6ce5feb84ab0dc99cfdaf4ab177cb27d9e6f3
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -607,7 +607,7 @@ F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 9572aab9eff42859a5f3e9b212f704521a84bf77e444217f0339d8b811e6333f
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
-F src/window.c aefd7e4511a537ddae2d1206aa300167a2f9d04689ceb94ac32aabe7fe6e92bc
+F src/window.c 1c3e20fc23e1c3cc0c2516626d7b0bcaf6a25d9a19ba397153363fd57bde2325
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac98b23b34632fbc654a34a8b3d842ce65603e4c04d89c589b46f4d48a61152d
-R ccc26cc09417891dfc0ff61e732d7e8b
+P 10aedce3dd2c0c9f0ee9e0aefd0b4d2c2eb17c4ca72003c4db9768ea5cdafcf4
+R f1a10ca86f18e0715bc6dca126e4cb23
 U drh
-Z a38f1dddda472c0bcfd7c92782bb8c85
+Z eb8e54dc09491a0338a5611748ad5dd1
