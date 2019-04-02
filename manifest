@@ -1,5 +1,5 @@
-C Add\snew\sAPIs\sto\sthe\sextension\sloading\smechanism.
-D 2019-04-02T00:48:29.981
+C Make\ssure\sthe\sMEM_FromBind\sbit\sinthe\sMem.flags\sfield\sis\snot\sincluded\sin\nthe\sMEM_TypeMask.\s\sThis\scritical\schanges\swas\somitted\sfrom\sthe\sprevious\stwo\ncheck-ins\sby\smistake,\sand\sso\sthose\scheck-ins\sare\snot\sfully\sfunctional.
+D 2019-04-02T00:56:20.542
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -591,7 +591,7 @@ F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
 F src/vacuum.c 532553ee1d47f69c1198858107b1f3af3d16af25f2ab4ce3b1263d9e333f26e2
 F src/vdbe.c 711ef421b3bb3db3b2476067b2dc3c71ef5844d9b1a723026578f89f6da621e8
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
-F src/vdbeInt.h 5ea6f6548a14b20a9210ca055a989478a37d16f84740cc123834f13e4527bce7
+F src/vdbeInt.h d0c78ec6ba57e438164c46ee8129ee00ccd898c472b27e325c9758eda533e37e
 F src/vdbeapi.c a6e462bd7853e272cf614d6fbda7f3f20c89a2d255805855b32895a5983ddcec
 F src/vdbeaux.c 7aa412e7e56eb53649d87766f3064994a31991ee2b2716bf8c3129fa15cc7653
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3f2c3205a28dc21ea7080e5e1ba246ce9c9b90c1309262ca11d8e40943ed677
-R 338d4d0689967779de0d5735cc4ee00a
+P 6f122faf8a34b986e58ba4622cff918c6d133d6f91d4b723b50bd086d5bed8e1
+R c3133c578f7e494c50d02207c9632dd8
 U drh
-Z e697057715e9b33dbc37ee2b3bec6fe3
+Z c6ab367b45144d07fee8de57758b279c
