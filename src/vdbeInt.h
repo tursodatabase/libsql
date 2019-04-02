@@ -250,7 +250,7 @@ struct sqlite3_value {
 /* Available          0x0040   */
 #define MEM_Undefined 0x0080   /* Value is undefined */
 #define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
-#define MEM_TypeMask  0xc1ff   /* Mask of type bits */
+#define MEM_TypeMask  0xc1df   /* Mask of type bits */
 
 
 /* Whenever Mem contains a valid string or blob representation, one of
