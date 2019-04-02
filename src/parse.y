@@ -1694,33 +1694,30 @@ frame_opt(A) ::= .                             {
 frame_opt(A) ::= range_or_rows(X) frame_bound_s(Y) frame_exclude_opt(Z). { 
   A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0, Z);
 }
-frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND frame_bound_e(Z) frame_exclude_opt(W). { 
+frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND
+                          frame_bound_e(Z) frame_exclude_opt(W). { 
   A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr, W);
 }
 
-range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
-range_or_rows(A) ::= ROWS.    { A = TK_ROWS;  }
-range_or_rows(A) ::= GROUPS.  { A = TK_GROUPS;}
+range_or_rows(A) ::= RANGE|ROWS|GROUPS(X).   {A = @X; /*A-overwrites-X*/}
 
+frame_bound_s(A) ::= frame_bound(X).         {A = X;}
+frame_bound_s(A) ::= UNBOUNDED(X) PRECEDING. {A.eType = @X; A.pExpr = 0;}
+frame_bound_e(A) ::= frame_bound(X).         {A = X;}
+frame_bound_e(A) ::= UNBOUNDED(X) FOLLOWING. {A.eType = @X; A.pExpr = 0;}
 
-frame_bound_s(A) ::= frame_bound(X). { A = X; }
-frame_bound_s(A) ::= UNBOUNDED PRECEDING. {A.eType = TK_UNBOUNDED; A.pExpr = 0;}
-frame_bound_e(A) ::= frame_bound(X). { A = X; }
-frame_bound_e(A) ::= UNBOUNDED FOLLOWING. {A.eType = TK_UNBOUNDED; A.pExpr = 0;}
-
-frame_bound(A) ::= expr(X) PRECEDING.   { A.eType = TK_PRECEDING; A.pExpr = X; }
-frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
-frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
+frame_bound(A) ::= expr(X) PRECEDING|FOLLOWING(Y).
+                                             {A.eType = @Y; A.pExpr = X;}
+frame_bound(A) ::= CURRENT(X) ROW.           {A.eType = @X; A.pExpr = 0;}
 
 %type frame_exclude_opt {u8}
-frame_exclude_opt(A) ::= . { A = 0; }
-frame_exclude_opt(A) ::= EXCLUDE frame_exclude(X). { A = X; }
+frame_exclude_opt(A) ::= . {A = 0;}
+frame_exclude_opt(A) ::= EXCLUDE frame_exclude(X). {A = X;}
 
 %type frame_exclude {u8}
-frame_exclude(A) ::= NO OTHERS.   { A = TK_NO; }
-frame_exclude(A) ::= CURRENT ROW. { A = TK_CURRENT; }
-frame_exclude(A) ::= GROUP.       { A = TK_GROUP; }
-frame_exclude(A) ::= TIES.        { A = TK_TIES; }
+frame_exclude(A) ::= NO(X) OTHERS.   {A = @X; /*A-overwrites-X*/}
+frame_exclude(A) ::= CURRENT(X) ROW. {A = @X; /*A-overwrites-X*/}
+frame_exclude(A) ::= GROUP|TIES(X).  {A = @X; /*A-overwrites-X*/}
 
 
 %type window_clause {Window*}
