@@ -425,6 +425,7 @@ TESTSRC = \
   $(TOP)/src/test_tclsh.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_vdbecov.c \
   $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_window.c \

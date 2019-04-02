@@ -28,7 +28,7 @@ do_execsql_test 1.0 {
 }
 faultsim_save_and_close
 
-do_faultsim_test 1 -start 1 -faults oom-* -prep {
+do_faultsim_test 1 -start 1 -faults oom-t* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql {
@@ -161,5 +161,66 @@ do_faultsim_test 8 -faults oom-t* -prep {
 } -test {
   faultsim_test_result {0 {1 2 5 6 9 10}}
 }
+
+#-------------------------------------------------------------------------
+# The following test causes a cursor in REQURESEEK state to be passed
+# to sqlite3BtreeDelete(). An error is simulated within the seek operation
+# to restore the cursors position.
+#
+reset_db
+set big [string repeat x 900]
+do_execsql_test 9.0 {
+  PRAGMA page_size = 512;
+  PRAGMA cache_size = 2;
+  CREATE TABLE t(x INTEGER PRIMARY KEY, y TEXT);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1900
+  )
+  INSERT INTO t(y) SELECT $big FROM s;
+}
+db close
+
+testvfs tvfs -default 1
+tvfs script vfs_callback
+tvfs filter xRead
+
+sqlite3 db test.db
+proc vfs_callback {method file args} {
+  if {$file=="" && [info exists ::tmp_read_fail]} {
+    incr ::tmp_read_fail -1
+    if {$::tmp_read_fail<=0} {
+      return "SQLITE_IOERR"
+    }
+  }
+  return "SQLITE_OK"
+}
+
+set FAULTSIM(tmpread) [list                \
+  -injectstart   tmpread_injectstart       \
+  -injectstop    tmpread_injectstop        \
+  -injecterrlist {{1 {disk I/O error}}}    \
+]
+proc tmpread_injectstart {iFail} {
+  set ::tmp_read_fail $iFail
+}
+proc tmpread_injectstop {} {
+  set ret [expr $::tmp_read_fail<=0]
+  unset -nocomplain ::tmp_read_fail 
+  return $ret
+}
+
+do_faultsim_test 9 -end 25 -faults tmpread -body {
+  execsql {
+    SELECT sum(y) OVER win FROM t
+    WINDOW win AS (
+      ORDER BY x ROWS BETWEEN UNBOUNDED PRECEDING AND 1800 FOLLOWING
+    )
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+catch {db close}
+tvfs delete
 
 finish_test

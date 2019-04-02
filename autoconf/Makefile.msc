@@ -433,9 +433,9 @@ UCRTLIBPATH = $(UCRTLIBPATH:\\=\)
 # will run on the platform that is doing the build.
 #
 !IF $(USE_FULLWARN)!=0
-BCC = $(NCC) -nologo -W4 $(CCOPTS) $(BCCOPTS)
+BCC = $(NCC) -nologo -W4 -Fd$*.pdb $(CCOPTS) $(BCCOPTS)
 !ELSE
-BCC = $(NCC) -nologo -W3 $(CCOPTS) $(BCCOPTS)
+BCC = $(NCC) -nologo -W3 -Fd$*.pdb $(CCOPTS) $(BCCOPTS)
 !ENDIF
 
 # Check if assembly code listings should be generated for the source
@@ -808,7 +808,7 @@ BCC = $(BCC) -Zi
 # Command line prefixes for compiling code, compiling resources,
 # linking, etc.
 #
-LTCOMPILE = $(TCC) -Fo$@
+LTCOMPILE = $(TCC) -Fo$@ -Fd$*.pdb
 LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
 LTLINK = $(TCC) -Fe$@
@@ -826,6 +826,11 @@ LTLIBS = $(LTLIBS) rpcrt4.lib
 !IFDEF PLATFORM
 LTLINKOPTS = /NOLOGO /MACHINE:$(PLATFORM)
 LTLIBOPTS = /NOLOGO /MACHINE:$(PLATFORM)
+!ELSEIF "$(VISUALSTUDIOVERSION)"=="12.0" || \
+        "$(VISUALSTUDIOVERSION)"=="14.0" || \
+        "$(VISUALSTUDIOVERSION)"=="15.0"
+LTLINKOPTS = /NOLOGO /MACHINE:x86
+LTLIBOPTS = /NOLOGO /MACHINE:x86
 !ELSE
 LTLINKOPTS = /NOLOGO
 LTLIBOPTS = /NOLOGO

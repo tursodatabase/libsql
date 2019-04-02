@@ -86,11 +86,48 @@ do_test fts3atoken-1.5 {
   }
 } {{There was movement at the station}}
 
+unset -nocomplain simple blah2name simplename
+set simplename "simple"
+set blah2name "blah2"
+set simple [db one {SELECT fts3_tokenizer('simple')}]
 sqlite3_db_config db SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 0
 do_catchsql_test 1.6 {
   SELECT fts3_tokenizer('blah', fts3_tokenizer('simple')) IS NULL;
 } {1 {fts3tokenize disabled}}
+do_test fts3atoken-1.7 {
+  execsql {
+    SELECT fts3_tokenizer('blah2', $simple) IS NULL;
+  }
+} {1}
 
+# With ENABLE_FTS3_TOKENIZER off, the fts3_tokenzer(1) function
+# returns NULL unless the first parameter is a bound parameter.
+# If the first parameter is a bound parameter, then fts3_tokenizer(1)
+# returns the actual pointer value as a BLOB.
+#
+do_test fts3atoken-1.8 {
+  execsql {
+    SELECT fts3_tokenizer($blah2name) == fts3_tokenizer($simplename),
+           typeof(fts3_tokenizer($blah2name)),
+           typeof(fts3_tokenizer('blah2')),
+           typeof(fts3_tokenizer($simplename)),
+           typeof(fts3_tokenizer('simple'));
+  }
+} {1 blob null blob null}
+
+# With ENABLE_FTS3_TOKENIZER on, fts3_tokenizer() always returns
+# the BLOB pointer, regardless the parameter
+#
+sqlite3_db_config db SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1
+do_test fts3atoken-1.9 {
+  execsql {
+    SELECT fts3_tokenizer('blah2') == fts3_tokenizer('simple'),
+           typeof(fts3_tokenizer($blah2name)),
+           typeof(fts3_tokenizer('blah2')),
+           typeof(fts3_tokenizer($simplename)),
+           typeof(fts3_tokenizer('simple'));
+  }
+} {1 blob blob blob blob}
 
 #--------------------------------------------------------------------------
 # Test cases fts3atoken-2.* test error cases in the scalar function based

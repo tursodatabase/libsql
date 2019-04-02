@@ -2197,8 +2197,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         u32 x = pLevel->iLikeRepCntr;
         if( x>0 ){
           skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)?OP_IfNot:OP_If,(int)(x>>1));
+          VdbeCoverageIf(v, (x&1)==1);
+          VdbeCoverageIf(v, (x&1)==0);
         }
-        VdbeCoverage(v);
 #endif
       }
 #ifdef WHERETRACE_ENABLED /* 0xffff */
