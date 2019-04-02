@@ -1717,7 +1717,7 @@ frame_exclude_opt(A) ::= . { A = 0; }
 frame_exclude_opt(A) ::= EXCLUDE frame_exclude(X). { A = X; }
 
 %type frame_exclude {u8}
-frame_exclude(A) ::= NO OTHERS.   { A = 0; }
+frame_exclude(A) ::= NO OTHERS.   { A = TK_NO; }
 frame_exclude(A) ::= CURRENT ROW. { A = TK_CURRENT; }
 frame_exclude(A) ::= GROUP.       { A = TK_GROUP; }
 frame_exclude(A) ::= TIES.        { A = TK_TIES; }
