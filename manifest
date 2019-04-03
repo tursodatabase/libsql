@@ -1,5 +1,5 @@
-C Small\soptimizations\sto\sthe\sgrammar\sfor\swindow\sfunctions\ssave\sabout\s120\sbytes\nof\sspace\sin\sthe\sparser\stables.
-D 2019-04-02T18:12:20.162
+C Fix\sa\scouple\sof\sproblems\swith\s"RANGE\sBETWEEN\s<expr>\sPRECEDING\sAND\s<expr>\sPRECEDING"\sframes.
+D 2019-04-03T16:27:44.377
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 9572aab9eff42859a5f3e9b212f704521a84bf77e444217f0339d8b811e6333f
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
-F src/window.c 1c3e20fc23e1c3cc0c2516626d7b0bcaf6a25d9a19ba397153363fd57bde2325
+F src/window.c 038c248267e74ff70a2bb9b1884d40fd145c5183b017823ecb6cbb14bc781478
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1679,7 +1679,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 71bb9bfb705edff56ac592c1cf47286096558559b3fba7578e2ee5c8448e2a78
+F test/window1.test 8d453bfaa3f8f0873ba16ca1270c7368f18445065a0003a1b5954ac4e95797b4
 F test/window2.tcl 9bfa842d8a62b0d36dc8c1b5972206393c43847433c6d75940b87fec93ce3143
 F test/window2.test 8e6d2a1b9f54dfebee1cde961c8590cd87b4db45c50f44947a211e1b63c2a05e
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1690,8 +1690,8 @@ F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652
 F test/window6.test 465e608c021020fb0948a90200e154cd787bc910449e3dafee44c9ca5bd407fe
 F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d76108f
 F test/window7.test ce7f865241fdd1c5c4db869cd7bb2986c3be836bc2e73649a6846dd920f63e0f
-F test/window8.tcl 97de3829e0e1aae2c3aaae41a55c54bc1b0751bbc80dfdd93020431b7a889dad
-F test/window8.test 0dd7e2d32605bf59dc6163b924faeff5951419c1c17a9e506e5a38606e97ab7e
+F test/window8.tcl 9e9a82ae9eea90a4a83481d641a812b974980c38f9247f3b89a6e3c8bed45518
+F test/window8.test df187dc19921f7be0ab709d531d681bd80ccaac96a913a89ecee8b272b91d43f
 F test/windowerr.tcl abf4d6d0c6d360213af98ed7d538295d905689e83692106f3ece0e3afb9d7f36
 F test/windowerr.test 675b5e6debfc9370bfacb0b91e2a93a8923512f92600b16f4ea70a1cd9b8e6e4
 F test/windowfault.test 16e906a2c4110c88372ff4bd5de59ac7397ec2f025912eff8e5677eedd126898
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc0fb1c324be2fd668bc4398c7d364b7e3c5a98537fe5fb58a125b66f3e6d041
-R 31f79484d2e9bc79fcf8ee7f9041a857
-U drh
-Z 869b3f84b6baf5642194100f15e4c54e
+P bce01d9584e52b23d7c07c2e832d5fa5d6e6235711c856b903a296725f61ed6e
+R 2d8f926b545e1ca155da4ee78a88fc73
+U dan
+Z 299eef657559cfc0cc2116a950775914

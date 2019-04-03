@@ -1081,6 +1081,91 @@ do_execsql_test 27.2 {
   WINDOW win AS (ORDER BY rowid ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
 } {1 1 1 2 3 4}
 
+#-------------------------------------------------------------------------
+
+reset_db
+do_execsql_test 28.1.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b CHAR(1), c CHAR(2), d ANY);
+  INSERT INTO t1 VALUES (3, 'C', 'cc', 1.0);
+  INSERT INTO t1 VALUES (13,'M', 'cc', NULL);
+}
+
+do_execsql_test 28.1.2 {
+  SELECT group_concat(b,'') OVER w1 FROM t1
+    WINDOW w1 AS (ORDER BY a RANGE BETWEEN 3 PRECEDING AND 1 PRECEDING)
+} {
+  {} {}
+}
+
+do_execsql_test 28.2.1 {
+  CREATE TABLE t2(a TEXT, b INTEGER);
+  INSERT INTO t2 VALUES('A', NULL);
+  INSERT INTO t2 VALUES('B', NULL);
+}
+
+do_execsql_test 28.2.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b CHAR(1), c CHAR(2), d ANY);
+  INSERT INTO t1 VALUES
+    (10,'J', 'cc', NULL),
+    (11,'K', 'cc', 'xyz'),
+    (13,'M', 'cc', NULL);
+}
+
+do_execsql_test 28.2.2 {
+  SELECT a, b, c, quote(d), group_concat(b,'') OVER w1, '|' FROM t1
+    WINDOW w1 AS
+    (ORDER BY d DESC RANGE BETWEEN 7.0 PRECEDING AND 2.5 PRECEDING)
+    ORDER BY c, d, a;
+} {
+  10 J cc NULL JM |
+  13 M cc NULL JM | 
+  11 K cc 'xyz' K |
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 29.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b CHAR(1), c CHAR(2), d ANY);
+  INSERT INTO t1 VALUES
+    (1, 'A', 'aa', 2.5),
+    (2, 'B', 'bb', 3.75),
+    (3, 'C', 'cc', 1.0),
+    (4, 'D', 'cc', 8.25),
+    (5, 'E', 'bb', 6.5),
+    (6, 'F', 'aa', 6.5),
+    (7, 'G', 'aa', 6.0),
+    (8, 'H', 'bb', 9.0),
+    (9, 'I', 'aa', 3.75),
+    (10,'J', 'cc', NULL),
+    (11,'K', 'cc', 'xyz'),
+    (12,'L', 'cc', 'xyZ'),
+    (13,'M', 'cc', NULL);
+}
+
+do_execsql_test 29.2 {
+  SELECT a, b, c, quote(d), group_concat(b,'') OVER w1, '|' FROM t1
+    WINDOW w1 AS
+    (PARTITION BY c ORDER BY d DESC
+     RANGE BETWEEN 7.0 PRECEDING AND 2.5 PRECEDING)
+    ORDER BY c, d, a;
+} {
+  1 A aa 2.5 FG | 
+  9 I aa 3.75 F | 
+  7 G aa 6 {} | 
+  6 F aa 6.5 {} | 
+  2 B bb 3.75 HE |
+  5 E bb 6.5 H | 
+  8 H bb 9 {} | 
+  10 J cc NULL JM | 
+  13 M cc NULL JM | 
+  3 C cc 1 {} | 
+  4 D cc 8.25 {} | 
+  12 L cc 'xyZ' L | 
+  11 K cc 'xyz' K |
+}
 
 finish_test
 
