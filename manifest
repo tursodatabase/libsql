@@ -1,5 +1,5 @@
-C Version\s3.27.2
-D 2019-02-25T16:06:06.705
+C Add\sa\sdefense-in-depth\sNEVER()\stest\sto\sthe\sWAL\scleanup\scode.
+D 2019-04-03T17:54:38.675
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in 178d8eb6840771149cee40b322d1b3be30d330198c522c903c1b66fb5a1bfca4
@@ -596,7 +596,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 2462b7d6fd72b0b916477f5ef210ee49ab58cec195483ebdac0c8c5e3ec42cab
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
+F src/wal.c dbfeac3d6a55095e0d15c4dbd756b63a0c70dc4f8b727d57ab7b4b30438016da
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 8a207cb2ca6b99e1edb1e4bbff9b0504385a759cbf66180d1deb34d80ca4b799
@@ -1804,10 +1804,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a21ffcd8176672e791c11e7d3869878b0655e9f7fb3646378421fb7480d4d8c6
-R a79d07126ad692dd98c735ebc3ce8975
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.27.2 *
+P bd49a8271d650fa89e446b42e513b595a717b9212c91dd384aab871fc1d0f6d7
+Q +8d3af2010f4f652865f5c0d18e3bc793de05f8e75e75cc77786f61004b2ad28f
+R bd27168acef48bb73cd6a037135f6b02
 U drh
-Z 1721b9485efb0ba623f21704b685d9c7
+Z b7d566c2a9ab7ee18fcac1cf7e01e1b3
