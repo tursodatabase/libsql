@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sproblems\swith\s"RANGE\sBETWEEN\s<expr>\sPRECEDING\sAND\s<expr>\sPRECEDING"\sframes.
-D 2019-04-03T16:27:44.377
+C Add\sa\sdefense-in-depth\sNEVER()\stest\sto\sthe\sWAL\scleanup\scode.
+D 2019-04-03T17:48:10.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/vdbesort.c 90aad5a92608f2dd771c96749beabdb562c9d881131a860a7a5bccf66dc3be7
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 2462b7d6fd72b0b916477f5ef210ee49ab58cec195483ebdac0c8c5e3ec42cab
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 3f4f653daf234fe713edbcbca3fec2350417d159d28801feabc702a22c4e213f
+F src/wal.c 8bf87820896453ee3cca75f3082c57d7d82643e46cc089775612b18453732c12
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bce01d9584e52b23d7c07c2e832d5fa5d6e6235711c856b903a296725f61ed6e
-R 2d8f926b545e1ca155da4ee78a88fc73
-U dan
-Z 299eef657559cfc0cc2116a950775914
+P 39225cc77579896214dceb93b7f224b4b3bc95b3505a2e19b41b0b18b184fbc4
+R 0dd1f554ffbc4a883316ff6a874f4f2e
+U drh
+Z 7e18d59b9fd430c307d676e0d65f6d93
