@@ -266,7 +266,7 @@ do_execsql_test e_vacuum-3.1.6 {
   DETACH aux1;
 } {1 x 3 z}
 
-# Rowids are renumbered even if the table being vacuumed
+# Rowids are not renumbered if the table being vacuumed
 # has indexes.
 do_execsql_test e_vacuum-3.1.7 {
   DROP TABLE t5;
