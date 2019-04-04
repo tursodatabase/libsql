@@ -379,6 +379,17 @@ do_catchsql_test 10.3 {
 do_catchsql_test 10.4 {
   UPDATE t1 SET c=1 WHERE (a, b) = ('b', 'b');
 } {1 {UNIQUE constraint failed: t1.c}}
+do_catchsql_test 10.5 {
+  UPDATE t1 SET c=1 WHERE (a, b) = ('c', 'c');
+} {0 {}}
+
+do_execsql_test 10.6 {
+  CREATE TRIGGER t1_tr BEFORE UPDATE ON t1 BEGIN
+    DELETE FROM t1 WHERE a = new.a;
+  END;
+  UPDATE t1 SET c = c+1 WHERE a = 'a';
+  SELECT * FROM t1;
+} {b a 3  b b 4}
 
   
 finish_test
