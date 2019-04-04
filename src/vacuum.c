@@ -139,7 +139,7 @@ build_vacuum_end:
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqlite3RunVacuum(
+SQLITE_NOINLINE int sqlite3RunVacuum(
   char **pzErrMsg,        /* Write error message here */
   sqlite3 *db,            /* Database connection */
   int iDb,                /* Which attached DB to vacuum */
@@ -170,7 +170,6 @@ int sqlite3RunVacuum(
     return SQLITE_ERROR;
   }
   saved_openFlags = db->openFlags;
-  saved_mDbFlags = db->mDbFlags;
   if( pOut ){
     if( sqlite3_value_type(pOut)!=SQLITE_TEXT ){
       sqlite3SetString(pzErrMsg, db, "non-text filename");
@@ -179,20 +178,20 @@ int sqlite3RunVacuum(
     zOut = (const char*)sqlite3_value_text(pOut);
     db->openFlags &= ~SQLITE_OPEN_READONLY;
     db->openFlags |= SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE;
-    db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum | DBFLAG_VacuumInto;
   }else{
     zOut = "";
-    db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   }
 
   /* Save the current value of the database flags so that it can be 
   ** restored before returning. Then set the writable-schema flag, and
   ** disable CHECK and foreign key constraints.  */
   saved_flags = db->flags;
+  saved_mDbFlags = db->mDbFlags;
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   saved_mTrace = db->mTrace;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
+  db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   db->flags &= ~(u64)(SQLITE_ForeignKeys | SQLITE_ReverseOrder
                    | SQLITE_Defensive | SQLITE_CountRows);
   db->mTrace = 0;
@@ -231,6 +230,7 @@ int sqlite3RunVacuum(
       sqlite3SetString(pzErrMsg, db, "output file already exists");
       goto end_of_vacuum;
     }
+    db->mDbFlags |= DBFLAG_VacuumInto;
   }
   nRes = sqlite3BtreeGetOptimalReserve(pMain);
 
@@ -308,7 +308,7 @@ int sqlite3RunVacuum(
       zDbMain
   );
   assert( (db->mDbFlags & DBFLAG_Vacuum)!=0 );
-  db->mDbFlags &= ~(DBFLAG_Vacuum|DBFLAG_VacuumInto);
+  db->mDbFlags &= ~DBFLAG_Vacuum;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Copy the triggers, views, and virtual tables from the main database
