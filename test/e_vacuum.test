@@ -286,9 +286,9 @@ do_execsql_test e_vacuum-3.1.8 {
   SELECT rowid, x FROM t5;
 } {1 x 3 z}
 
-# EVIDENCE-OF: R-49563-33883 A VACUUM will fail if there is an open
-# transaction, or if there are one or more active SQL statements when it
-# is run.
+# EVIDENCE-OF: R-12218-18073 A VACUUM will fail if there is an open
+# transaction on the database connection that is attempting to run the
+# VACUUM.
 #
 do_execsql_test  e_vacuum-3.2.1.1 { BEGIN } {}
 do_catchsql_test e_vacuum-3.2.1.2 { 

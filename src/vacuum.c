@@ -163,11 +163,11 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
-    return SQLITE_ERROR;
+    return SQLITE_ERROR; /* IMP: R-12218-18073 */
   }
   if( db->nVdbeActive>1 ){
     sqlite3SetString(pzErrMsg, db,"cannot VACUUM - SQL statements in progress");
-    return SQLITE_ERROR;
+    return SQLITE_ERROR; /* IMP: R-15610-35227 */
   }
   saved_openFlags = db->openFlags;
   if( pOut ){
