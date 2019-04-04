@@ -986,6 +986,7 @@ static void walCleanupHash(Wal *pWal){
   int iLimit = 0;                 /* Zero values greater than this */
   int nByte;                      /* Number of bytes to zero in aPgno[] */
   int i;                          /* Used to iterate through aHash[] */
+  int rc;                         /* Return code form walHashGet() */
 
   assert( pWal->writeLock );
   testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE_ONE-1 );
@@ -996,11 +997,12 @@ static void walCleanupHash(Wal *pWal){
 
   /* Obtain pointers to the hash-table and page-number array containing 
   ** the entry that corresponds to frame pWal->hdr.mxFrame. It is guaranteed
-  ** that the page said hash-table and array reside on is already mapped.
+  ** that the page said hash-table and array reside on is already mapped.(1)
   */
   assert( pWal->nWiData>walFramePage(pWal->hdr.mxFrame) );
   assert( pWal->apWiData[walFramePage(pWal->hdr.mxFrame)] );
-  walHashGet(pWal, walFramePage(pWal->hdr.mxFrame), &sLoc);
+  rc = walHashGet(pWal, walFramePage(pWal->hdr.mxFrame), &sLoc);
+  if( NEVER(rc) ) return; /* Defense-in-depth, in case (1) above is wrong */
 
   /* Zero all hash-table entries that correspond to frame numbers greater
   ** than pWal->hdr.mxFrame.

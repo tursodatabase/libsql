@@ -183,5 +183,82 @@ do_execsql_test 6.1 {
   SELECT x FROM t2;
 } {5}
 
+#-------------------------------------------------------------------------
+# Test the effect of failing to find a table row based on an index key
+# within a DELETE. Either because the db is corrupt, or a trigger on another
+# row already deleted the entry, or because a BEFORE trigger on the current
+# row has already deleted it.
+#
+do_execsql_test 7.1.0 {
+  CREATE TABLE t3(id INT PRIMARY KEY, a, b) WITHOUT ROWID;
+  CREATE INDEX t3a ON t3(a);
+  CREATE INDEX t3b ON t3(b);
+
+  INSERT INTO t3 VALUES(1, 1, 1);
+  INSERT INTO t3 VALUES(2, 2, 2);
+  INSERT INTO t3 VALUES(3, 3, 3);
+  INSERT INTO t3 VALUES(4, 4, 1);
+}
+do_execsql_test 7.1.1 {
+  DELETE FROM t3 WHERE a=4 OR b=1;
+}
+do_execsql_test 7.1.2 {
+  SELECT * FROM t3;
+} { 2 2 2   3 3 3 }
+
+do_execsql_test 7.2.0 {
+  CREATE TABLE t4(a PRIMARY KEY, b) WITHOUT ROWID;
+  CREATE INDEX t4i ON t4(b);
+  INSERT INTO t4 VALUES(1, 'hello');
+  INSERT INTO t4 VALUES(2, 'world');
+
+  CREATE TABLE t5(a PRIMARY KEY, b) WITHOUT ROWID;
+  CREATE INDEX t5i ON t5(b);
+  INSERT INTO t5 VALUES(1, 'hello');
+  INSERT INTO t5 VALUES(3, 'world');
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET rootpage = (
+    SELECT rootpage FROM sqlite_master WHERE name = 't5'
+  ) WHERE name = 't4';
+}
+
+db close
+sqlite3 db test.db
+do_execsql_test 7.2.1 {
+  DELETE FROM t4 WHERE b='world'
+}
+reset_db
+
+do_execsql_test 7.3.0 {
+  CREATE TABLE t3(id INT PRIMARY KEY, a, b) WITHOUT ROWID;
+  INSERT INTO t3 VALUES(1, 2, 3);
+  INSERT INTO t3 VALUES(4, 5, 6);
+  INSERT INTO t3 VALUES(7, 8, 9);
+  CREATE TRIGGER t3t BEFORE DELETE ON t3 BEGIN
+    DELETE FROM t3 WHERE id=old.id+3;
+  END;
+}
+
+do_execsql_test 7.3.1 {
+  DELETE FROM t3 WHERE a IN(2, 5, 8);
+  SELECT * FROM t3;
+} {}
+
+do_execsql_test 7.3.2 {
+  DROP TRIGGER t3t;
+  INSERT INTO t3 VALUES(1, 2, 3);
+  INSERT INTO t3 VALUES(4, 5, 6);
+  INSERT INTO t3 VALUES(7, 8, 9);
+  CREATE TRIGGER t3t BEFORE DELETE ON t3 BEGIN
+    DELETE FROM t3 WHERE id=old.id;
+  END;
+}
+
+do_execsql_test 7.3.3 {
+  DELETE FROM t3 WHERE a IN(2, 5, 8);
+  SELECT * FROM t3;
+} {}
+
 
 finish_test

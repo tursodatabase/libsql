@@ -251,6 +251,31 @@ do_test pragma-1.14.4 {
     PRAGMA synchronous;
   }
 } {2}
+
+do_execsql_test 1.15.1 {
+  PRAGMA default_cache_size = 0;
+}
+do_execsql_test 1.15.2 {
+  PRAGMA default_cache_size;
+} $DFLT_CACHE_SZ
+do_execsql_test 1.15.3 {
+  PRAGMA default_cache_size = -500;
+}
+do_execsql_test 1.15.4 {
+  PRAGMA default_cache_size;
+} 500
+do_execsql_test 1.15.3 {
+  PRAGMA default_cache_size = 500;
+}
+do_execsql_test 1.15.4 {
+  PRAGMA default_cache_size;
+} 500
+db close
+hexio_write test.db 48 FFFFFF00
+sqlite3 db test.db
+do_execsql_test 1.15.4 {
+  PRAGMA default_cache_size;
+} 256
 } ;# ifcapable pager_pragmas
 
 # Test turning "flag" pragmas on and off.

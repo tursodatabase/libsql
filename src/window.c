@@ -1092,7 +1092,7 @@ Window *sqlite3WindowAlloc(
   pWin->eFrmType = eType;
   pWin->eStart = eStart;
   pWin->eEnd = eEnd;
-  if( eExclude==0 && OptimizationDisabled(pParse->db, SQLITE_QueryFlattener) ){
+  if( eExclude==0 && OptimizationDisabled(pParse->db, SQLITE_WindowFunc) ){
     eExclude = TK_NO;
   }
   pWin->eExclude = eExclude;
@@ -2323,18 +2323,21 @@ static int windowExprGtZero(Parse *pParse, Expr *pExpr){
 **         regEnd = <expr2>
 **         regStart = <expr1>
 **       }else{
-**         while( (csrEnd.key + regEnd) <= csrCurrent.key ){
+**         if( (csrEnd.key + regEnd) <= csrCurrent.key ){
 **           AGGSTEP
 **         }
-**         RETURN_ROW
 **         while( (csrStart.key + regStart) < csrCurrent.key ){
 **           AGGINVERSE
 **         }
+**         RETURN_ROW
 **       }
 **     }
 **     flush:
 **       while( (csrEnd.key + regEnd) <= csrCurrent.key ){
 **         AGGSTEP
+**       }
+**       while( (csrStart.key + regStart) < csrCurrent.key ){
+**         AGGINVERSE
 **       }
 **       RETURN_ROW
 **
@@ -2576,6 +2579,8 @@ void sqlite3WindowCodeStep(
   sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
 
   sqlite3VdbeJumpHere(v, addrNe);
+
+  /* Beginning of the block executed for the second and subsequent rows. */
   if( regPeer ){
     windowIfNewPeer(pParse, pOrderBy, regNewPeer, regPeer, lblWhereEnd);
   }
@@ -2597,9 +2602,11 @@ void sqlite3WindowCodeStep(
     }
   }else
   if( pMWin->eEnd==TK_PRECEDING ){
+    int bRPS = (pMWin->eStart==TK_PRECEDING && pMWin->eFrmType==TK_RANGE);
     windowCodeOp(&s, WINDOW_AGGSTEP, regEnd, 0);
+    if( bRPS ) windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
     windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
-    windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
+    if( !bRPS ) windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
   }else{
     int addr = 0;
     windowCodeOp(&s, WINDOW_AGGSTEP, 0, 0);
@@ -2642,7 +2649,9 @@ void sqlite3WindowCodeStep(
   addrEmpty = sqlite3VdbeAddOp1(v, OP_Rewind, csrWrite);
   VdbeCoverage(v);
   if( pMWin->eEnd==TK_PRECEDING ){
+    int bRPS = (pMWin->eStart==TK_PRECEDING && pMWin->eFrmType==TK_RANGE);
     windowCodeOp(&s, WINDOW_AGGSTEP, regEnd, 0);
+    if( bRPS ) windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 0);
     windowCodeOp(&s, WINDOW_RETURN_ROW, 0, 0);
   }else if( pMWin->eStart==TK_FOLLOWING ){
     int addrStart;

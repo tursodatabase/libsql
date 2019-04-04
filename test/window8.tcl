@@ -269,6 +269,31 @@ foreach {tn ex} {
   }
 }
 
+==========
+
+execsql_test 6.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a TEXT, b INTEGER);
+  INSERT INTO t2 VALUES('A', NULL);
+  INSERT INTO t2 VALUES('B', NULL);
+  INSERT INTO t2 VALUES('C', 1);
+}
+
+execsql_test 6.1 {
+  SELECT string_agg(a, '.') OVER (
+    ORDER BY b NULLS FIRST RANGE BETWEEN 7 PRECEDING AND 2 PRECEDING
+  )
+  FROM t2
+}
+
+execsql_test 6.2 {
+  SELECT string_agg(a, '.') OVER (
+    ORDER BY b DESC NULLS LAST RANGE BETWEEN 7 PRECEDING AND 2 PRECEDING
+  )
+  FROM t2
+}
+
+
 finish_test
 
 

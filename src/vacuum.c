@@ -139,7 +139,7 @@ build_vacuum_end:
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqlite3RunVacuum(
+SQLITE_NOINLINE int sqlite3RunVacuum(
   char **pzErrMsg,        /* Write error message here */
   sqlite3 *db,            /* Database connection */
   int iDb,                /* Which attached DB to vacuum */
@@ -163,11 +163,11 @@ int sqlite3RunVacuum(
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
-    return SQLITE_ERROR;
+    return SQLITE_ERROR; /* IMP: R-12218-18073 */
   }
   if( db->nVdbeActive>1 ){
     sqlite3SetString(pzErrMsg, db,"cannot VACUUM - SQL statements in progress");
-    return SQLITE_ERROR;
+    return SQLITE_ERROR; /* IMP: R-15610-35227 */
   }
   saved_openFlags = db->openFlags;
   if( pOut ){
@@ -230,6 +230,7 @@ int sqlite3RunVacuum(
       sqlite3SetString(pzErrMsg, db, "output file already exists");
       goto end_of_vacuum;
     }
+    db->mDbFlags |= DBFLAG_VacuumInto;
   }
   nRes = sqlite3BtreeGetOptimalReserve(pMain);
 

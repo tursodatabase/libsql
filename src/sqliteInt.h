@@ -1581,7 +1581,8 @@ struct sqlite3 {
 #define DBFLAG_SchemaChange   0x0001  /* Uncommitted Hash table changes */
 #define DBFLAG_PreferBuiltin  0x0002  /* Preference to built-in funcs */
 #define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
-#define DBFLAG_SchemaKnownOk  0x0008  /* Schema is known to be valid */
+#define DBFLAG_VacuumInto     0x0008  /* Currently running VACUUM INTO */
+#define DBFLAG_SchemaKnownOk  0x0010  /* Schema is known to be valid */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -1589,7 +1590,7 @@ struct sqlite3 {
 ** selectively disable various optimizations.
 */
 #define SQLITE_QueryFlattener 0x0001   /* Query flattening */
-                          /*  0x0002   available for reuse */
+#define SQLITE_WindowFunc     0x0002   /* Use xInverse for window functions */
 #define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
 #define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
 #define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */

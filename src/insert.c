@@ -2352,7 +2352,7 @@ static int xferOptimization(
       sqlite3RowidConstraint(pParse, onError, pDest);
       sqlite3VdbeJumpHere(v, addr2);
       autoIncStep(pParse, regAutoinc, regRowid);
-    }else if( pDest->pIndex==0 && !(db->mDbFlags & DBFLAG_Vacuum) ){
+    }else if( pDest->pIndex==0 && !(db->mDbFlags & DBFLAG_VacuumInto) ){
       addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
     }else{
       addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
