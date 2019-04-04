@@ -598,5 +598,25 @@ do_test 10.3 {
   set sqlite3_xferopt_count
 } {1}
 
+#-------------------------------------------------------------------------
+# xfer transfer between tables where the source has an empty partial index.
+#
+do_execsql_test 11.0 {
+  CREATE TABLE t9(a, b, c);
+  CREATE INDEX t9a ON t9(a);
+  CREATE INDEX t9b ON t9(b) WHERE c=0;
+
+  INSERT INTO t9 VALUES(1, 1, 1);
+  INSERT INTO t9 VALUES(2, 2, 2);
+  INSERT INTO t9 VALUES(3, 3, 3);
+
+  CREATE TABLE t10(a, b, c);
+  CREATE INDEX t10a ON t10(a);
+  CREATE INDEX t10b ON t10(b) WHERE c=0;
+
+  INSERT INTO t10 SELECT * FROM t9;
+  SELECT * FROM t10;
+  PRAGMA integrity_check;
+} {1 1 1  2 2 2  3 3 3  ok}
 
 finish_test
