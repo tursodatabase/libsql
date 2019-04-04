@@ -1,5 +1,5 @@
-C Add\sa\sdefense-in-depth\sNEVER()\stest\sto\sthe\sWAL\scleanup\scode.
-D 2019-04-03T17:48:10.352
+C Only\spreserve\srowid\svalues\sfor\sVACUUM\sINTO.\s\sKeep\sthe\slegacy\sbehavior\sof\nrenumbering\srowids\sfor\sordinary\sVACUUM.
+D 2019-04-04T14:00:23.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 4ce12b5ba3bcbfa17ec37ce960d499fc287b6289df2c00b31201f716a3c7df45
+F src/insert.c bf4f96aaf23511b8abd2d55bf2117687f3d7111d5860110963189e66cfc7bdac
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
 F src/main.c 11714c8cefd458970cb1fd005251d0ad02ad69598893833b5564ffaaef192a1f
@@ -522,7 +522,7 @@ F src/shell.c.in c1986496062f9dba4ed5b70db06b5e0f32e1954cdcfab0b30372c6c18679681
 F src/sqlite.h.in e8a8dd45ae6849b3e40b243eca41181a740b4f4ac67d5b65fcea519d454db785
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h b4641800cd3d4de5747f43bdddb6ce5feb84ab0dc99cfdaf4ab177cb27d9e6f3
+F src/sqliteInt.h f6a114e0c67a7082546a21fcbf64380e5e70004c1ff67b9d93d82a347aa86fb8
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -588,7 +588,7 @@ F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
 F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
-F src/vacuum.c 532553ee1d47f69c1198858107b1f3af3d16af25f2ab4ce3b1263d9e333f26e2
+F src/vacuum.c b26da99ec56937cb0231a2467e32b012a6d654419654ed5f10cb42ee40da57da
 F src/vdbe.c 711ef421b3bb3db3b2476067b2dc3c71ef5844d9b1a723026578f89f6da621e8
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h d0c78ec6ba57e438164c46ee8129ee00ccd898c472b27e325c9758eda533e37e
@@ -825,7 +825,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test 47eeb2960e74613f0f8722b2f13aef08fde69daa16e5380ac93df84dac8b1f72
-F test/e_vacuum.test 44acfe525e01071ca50e76c68875db6fa084dd7743a3a16b5b503455539d03ca
+F test/e_vacuum.test a1dc3148e280798f83e043ee22f7f952dfe1060df2c8be69d279000dddfa741b
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39225cc77579896214dceb93b7f224b4b3bc95b3505a2e19b41b0b18b184fbc4
-R 0dd1f554ffbc4a883316ff6a874f4f2e
+P 8d3af2010f4f652865f5c0d18e3bc793de05f8e75e75cc77786f61004b2ad28f
+R b7f78d0f1f931aabf223a3653cbdf791
 U drh
-Z 7e18d59b9fd430c307d676e0d65f6d93
+Z 5643f331aea8cc232f788756335e75c3
