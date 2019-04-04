@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\srecent\sVACUUM\schanges\sthat\smake\sthe\scode\smore\slike\nwhat\sit\swas\sbefore\sthe\schange.\s\sAlso,\smake\sthe\sVACUUM\scommand\sa\sno-inline\nprocedure\sto\swork\saround\sa\sperformance\sregression.
-D 2019-04-04T15:25:52.906
+C Correctly\sinitialize\sthe\sloadable\sextension\sthunk.
+D 2019-04-04T17:39:54.664
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -480,7 +480,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c bf4f96aaf23511b8abd2d55bf2117687f3d7111d5860110963189e66cfc7bdac
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c e6f10875d52aca3b7e57ce1ec174aeafc9b6c00b43000cd30d791f9cb490b7a6
+F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
 F src/main.c 11714c8cefd458970cb1fd005251d0ad02ad69598893833b5564ffaaef192a1f
 F src/malloc.c 0f9da2a66b230a5785af94b9672126845099b57b70a32c987d04ac28c69da990
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d293fb43f2eb64026ac1e0422f54d4839b101898cc9913fc7746760c08ed41f
-R e9ef2ca76b94d3f345755da3257abb70
+P 9cac5ac145d62117c918539baaa8a3c124230e031842e35fa1ba59f658c99518
+R 55c45bc6690a22b07dcf30361432b904
 U drh
-Z 61d0e658cab98af12ebf4f008f8de14c
+Z 6b0ba30371014dd71e3510d49c147a1e
