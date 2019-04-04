@@ -4980,7 +4980,7 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** <td>&rarr;&nbsp;&nbsp;<td>True if the column is unchanged in an UPDATE
 ** against a virtual table.
 ** <tr><td><b>sqlite3_value_frombind&nbsp;&nbsp;</b>
-** <td>&rarr;&nbsp;&nbsp;<td>True if value originated a bound parameter
+** <td>&rarr;&nbsp;&nbsp;<td>True if value originated from a [bound parameter]
 ** </table></blockquote>
 **
 ** <b>Details:</b>
