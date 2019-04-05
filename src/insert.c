@@ -2275,6 +2275,9 @@ static int xferOptimization(
     if( pSrcIdx==0 ){
       return 0;    /* pDestIdx has no corresponding index in pSrc */
     }
+    if( pSrcIdx->tnum==pDestIdx->tnum && pSrc->pSchema==pDest->pSchema ){
+      return 0;   /* Corrupt schema - two indexes on the same btree */
+    }
   }
 #ifndef SQLITE_OMIT_CHECK
   if( pDest->pCheck && sqlite3ExprListCompare(pSrc->pCheck,pDest->pCheck,-1) ){
