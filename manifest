@@ -1,5 +1,5 @@
-C In\sthe\sxfer-optimization,\sdo\searly\sdetection\sof\swhen\sthe\ssource\sand\sdestination\nindex\sshare\sthe\ssame\sbtree,\sto\savoid\sa\slong\sdelay\sprior\sto\sreporting\sthe\ndatabase\scorruption.
-D 2019-04-05T15:44:55.655
+C Add\sthe\sability\sto\soverride\sthe\snew\scorruption\sdetection\slogic\nof\sthe\sprevious\scheckin,\sin\sorder\sto\sexercise\sdownstream\scorruption\ndetection\sduring\stesting.
+D 2019-04-05T16:38:12.357
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 512f3f9da6d5784121e63f300530c75f0eee504e4fb9ae1d9dbc1cbbe1aa098a
+F src/insert.c fc3cf5c371f9a400144e8c2f148ab29cd3f67f7da7eaf47e6a6959f8255fd92c
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
 F src/main.c 11714c8cefd458970cb1fd005251d0ad02ad69598893833b5564ffaaef192a1f
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51a95e52fc58d8be2c9c51576dff7258c705735b66d203948f80db017b4c10d2
-R 73e8e342c28a7b239489fc7a6b7571ea
+P af1e5873d44d31466023ae145bdfc6b4191eb48b62e5752c6e683bcf571980e7
+R 28aaf4dfb15b7b2e27fc0b458021c43e
 U drh
-Z 5e4bc09f844d1f4233f16405f1cab4ab
+Z 328d00d21bceb1c9612dd5fe2faefc77

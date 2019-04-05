@@ -2275,7 +2275,11 @@ static int xferOptimization(
     if( pSrcIdx==0 ){
       return 0;    /* pDestIdx has no corresponding index in pSrc */
     }
-    if( pSrcIdx->tnum==pDestIdx->tnum && pSrc->pSchema==pDest->pSchema ){
+    if( pSrcIdx->tnum==pDestIdx->tnum && pSrc->pSchema==pDest->pSchema
+         && sqlite3FaultSim(411)==SQLITE_OK ){
+      /* The sqlite3FaultSim() call allows this corruption test to be
+      ** bypassed during testing, in order to exercise other corruption tests
+      ** further downstream. */
       return 0;   /* Corrupt schema - two indexes on the same btree */
     }
   }
