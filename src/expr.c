@@ -857,7 +857,7 @@ Expr *sqlite3PExpr(
     p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr));
     if( p ){
       memset(p, 0, sizeof(Expr));
-      p->op = op & TKFLG_MASK;
+      p->op = op & 0xff;
       p->iAgg = -1;
     }
     sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);

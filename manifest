@@ -1,11 +1,11 @@
-C Add\sfurther\stests\sso\sthat\sveryquick.test\scovers\sall\svdbe\sbranches.
-D 2019-04-05T20:47:15.092
+C Eliminate\sthe\stool/addopcodes.tcl\sscript.\s\sThe\spurpose\sof\sthat\sscript\swas\sto\nkeep\sthe\snumber\sof\sparser\scodes\sbelow\s256\sin\sorder\sto\ssave\sparser\stable\sspace.\nBut\swe\shave\slong\ssince\sblown\sthrough\sthat\sceiling\sso\sthe\saddopcodes.tcl\sscript\nwas\sjust\sneedless\scomplexity.\sThere\sis\sno\slonger\sany\sreason\sto\skeep\sit\saround.
+D 2019-04-05T20:56:46.626
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 6c3b7f3e54cb88b28d7663fb07de2320491e2bccefcaa04cfeec4deb0635182f
+F Makefile.in 48db9bb25227e17403c9225ed5e3b04b1f1fc8e1ff4f45aebcdbf9ad164a5627
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc bb7f028d34a3d0d18fddf149ad799ca8323f1933db5a7d1babb6c735d3ba0630
+F Makefile.msc 26957950b2b4f3b26e311eeea70437f85a77765f71d3a06489466d66ee321100
 F README.md 623c225551b176659e443ae9e466e91a2c8ff16157260618295db91aef0800b7
 F VERSION 288d756b1b7be03ecdbf1795c23af2c8425f2e46ba6979a14ef53360308f080d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -439,7 +439,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 55be8c12e73fd1d7faddc09093c231794fd25a2f8d8af63f34e800e825ddc104
+F main.mk 5df91c217c8d131a38a9f917e53c0a1a562b377e4916b10fd491d0ba5eeae382
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -469,7 +469,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 7f39a0138ca8e07daaa25fccff97f43c2b29df1153b6e462d43fb23833be2eaf
+F src/expr.c 03f583cf773c10ec64b8b82b2f8326501c38c4ad12deda884c6efda9bb925b7c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c bd0138acdc008c1845ccf92f8e73787880562de649471804801c06fed814c765
 F src/func.c 2ccf4ae12430b1ae7096be5f0675887e1bd0732828af0ac0f7496339b7c6edee
@@ -506,7 +506,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 209b0e396a1bde1e4b515b86d00b5b1d3f6e13ba7edf3adb6acd41fa8560edf0
+F src/parse.y 0d461b673a81d81dd08814cc31917909d649d5e2b52327e1282f90365c69d3cc
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c a72804486dfa8e4b6bc30d666c97ecf1155f91a4351fc6e48ea4097e4eb304fb
@@ -605,7 +605,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
-F src/wherecode.c 9572aab9eff42859a5f3e9b212f704521a84bf77e444217f0339d8b811e6333f
+F src/wherecode.c 83be72e8d1c0231d0db06ffe5cfd32c7834bd00d2ed869306a2c1e0828488752
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
 F src/window.c 038c248267e74ff70a2bb9b1884d40fd145c5183b017823ecb6cbb14bc781478
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1716,7 +1716,6 @@ F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a1688
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8995df40c4209808b31f24de0b58f90930239a234f7591e3675d45bfbb990c5d
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
-F tool/addopcodes.tcl 0288d5b26b9b35f4cb5affb76eec63f1dfce117bbc2020066708069ef60b86ff
 F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
@@ -1815,7 +1814,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 08b29672c552e5a6a3874746c6cc7025295e0e44dec43a1bfba3022acce849ff
-R cb0c2d91754f5e4c0807a93528feb911
-U dan
-Z 12e741d05cec0c5ef53b4e656215abfd
+P cbc67de5a3937fa65811ed7c13e870699c895660dc2132cf9d3cf5d83364e344
+R 6b7422836e2cf0094b1357ea103f645d
+U drh
+Z ab5caf5b38e447b955a6402d5a9f3f94
