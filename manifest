@@ -1,5 +1,5 @@
-C In\sthe\stest_vfs.c\sVFS,\sif\sa\sTcl\sxWrite\sscript\sreturns\s"SQLITE_OMIT",\ssilently\somit\sthe\swrite()\scall.
-D 2019-04-05T16:52:45.185
+C Improved\scomment\son\sthe\ssqlite3FaultSim()\sfunction.\s\sNo\schanges\sto\scode.
+D 2019-04-05T17:22:50.419
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -587,7 +587,7 @@ F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 810fbfebe12359f10bc2a011520a6e10879ab2a163bcb26c74768eab82ea62a5
-F src/util.c 82a2e3f691a3b654be872e305dab1f455e565dedf5e6a90c818c1ab307c00432
+F src/util.c 276d937c78e9d06f84db469d394573a5c533fb8d0e11a5114c575a99f3dabfa5
 F src/vacuum.c 72690ccb6877a88f8473a893cf9f6d7592236f3eebfebfa840b19c708acde574
 F src/vdbe.c 711ef421b3bb3db3b2476067b2dc3c71ef5844d9b1a723026578f89f6da621e8
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e859d3184606dd453b9fc4ee388922d7be4b61aad84a66ac82107935ffd56f3a
-R 332658940587dcc51a26ea4db241d049
-U dan
-Z 10d76a02a02b4b998319d243a03f3146
+P 8b5a621e2ee3bb9d7d4f905217872e7e59153be9477aaa626cea287d56710b5b
+R a676676e0d29cfc1877ab39ada4fce77
+U drh
+Z 78f83a4fc795e1afc885244eae54d1b9
