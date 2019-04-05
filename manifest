@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\soverride\sthe\snew\scorruption\sdetection\slogic\nof\sthe\sprevious\scheckin,\sin\sorder\sto\sexercise\sdownstream\scorruption\ndetection\sduring\stesting.
-D 2019-04-05T16:38:12.357
+C In\sthe\stest_vfs.c\sVFS,\sif\sa\sTcl\sxWrite\sscript\sreturns\s"SQLITE_OMIT",\ssilently\somit\sthe\swrite()\scall.
+D 2019-04-05T16:52:45.185
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -574,7 +574,7 @@ F src/test_tclsh.c eeafce33ad2136d57e5dec10f1e9a4347447eb72ffd504a1c7b9c6bfe2e71
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
 F src/test_vdbecov.c f60c6f135ec42c0de013a1d5136777aa328a776d33277f92abac648930453d43
-F src/test_vfs.c c6c6a58f66b26876c7b5769fb323a58b2c7120299b5084e7212c4116f902cbaa
+F src/test_vfs.c 0868f1d4d7cdc7c6df60e895ca26b19e4f433dd1be0fc9c18c3ee63755804039
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
@@ -1815,7 +1815,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af1e5873d44d31466023ae145bdfc6b4191eb48b62e5752c6e683bcf571980e7
-R 28aaf4dfb15b7b2e27fc0b458021c43e
-U drh
-Z 328d00d21bceb1c9612dd5fe2faefc77
+P e859d3184606dd453b9fc4ee388922d7be4b61aad84a66ac82107935ffd56f3a
+R 332658940587dcc51a26ea4db241d049
+U dan
+Z 10d76a02a02b4b998319d243a03f3146
