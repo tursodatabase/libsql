@@ -175,11 +175,8 @@ the src/parse.y file.  The conversion of "parse.y" into "parse.c" is done
 by the [lemon](./doc/lemon.html) LALR(1) parser generator.  The source code
 for lemon is at tool/lemon.c.  Lemon uses the tool/lempar.c file as a
 template for generating its parser.
-
 Lemon also generates the **parse.h** header file, at the same time it
-generates parse.c. But the parse.h header file is
-modified further (to add additional symbols) using the ./addopcodes.tcl
-Tcl script.
+generates parse.c.
 
 The **opcodes.h** header file contains macros that define the numbers
 corresponding to opcodes in the "VDBE" virtual machine.  The opcodes.h

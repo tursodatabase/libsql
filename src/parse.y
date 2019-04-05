@@ -193,9 +193,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 // improve performance and reduce the executable size.  The goal here is
 // to get the "jump" operations in ISNULL through ESCAPE to have numeric
 // values that are early enough so that all jump operations are clustered
-// at the beginning, but also so that the comparison tokens NE through GE
-// are as large as possible so that they are near to FUNCTION, which is a
-// token synthesized by addopcodes.tcl.
+// at the beginning.
 //
 %token ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST.
 %token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL.
