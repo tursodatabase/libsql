@@ -283,6 +283,12 @@ struct sqlite3_value {
    ((p)->flags = ((p)->flags&~(MEM_TypeMask|MEM_Zero))|f)
 
 /*
+** True if Mem X is a NULL-nochng type.
+*/
+#define MemNullNochng(X) \
+  ((X)->flags==(MEM_Null|MEM_Zero) && (X)->n==0 && (X)->u.nZero==0)
+
+/*
 ** Return true if a memory cell is not marked as invalid.  This macro
 ** is for use inside assert() statements only.
 */
