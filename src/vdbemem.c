@@ -302,7 +302,7 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   int nByte;
   assert( pMem->flags & MEM_Zero );
   assert( (pMem->flags&MEM_Blob)!=0 || MemNullNochng(pMem) );
-  testcase( MemNullNochng(pMem) )
+  testcase( sqlite3_value_nochange(pMem) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
