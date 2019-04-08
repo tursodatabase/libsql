@@ -65,6 +65,9 @@ from_value!(Vec<u8>);
 #[cfg(feature = "i128_blob")]
 from_value!(i128);
 
+#[cfg(feature = "uuid")]
+from_value!(uuid::Uuid);
+
 impl ToSql for ToSqlOutput<'_> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(match *self {
@@ -127,6 +130,9 @@ to_sql_self!(f64);
 
 #[cfg(feature = "i128_blob")]
 to_sql_self!(i128);
+
+#[cfg(feature = "uuid")]
+to_sql_self!(uuid::Uuid);
 
 impl<T: ?Sized> ToSql for &'_ T
 where
@@ -254,5 +260,37 @@ mod test {
                 (i128::MAX, "max".to_owned()),
             ]
         );
+    }
+
+    #[cfg(feature = "uuid")]
+    #[test]
+    fn test_uuid() {
+        use crate::{params, Connection};
+        use uuid::Uuid;
+
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE foo (id BLOB CHECK(length(id) = 16), label TEXT);")
+            .unwrap();
+
+        let id = Uuid::new_v4();
+
+        db.execute(
+            "INSERT INTO foo (id, label) VALUES (?, ?)",
+            params![id, "target"],
+        )
+        .unwrap();
+
+        let mut stmt = db
+            .prepare("SELECT id, label FROM foo WHERE id = ?")
+            .unwrap();
+
+        let mut rows = stmt.query(params![id]).unwrap();
+        let row = rows.next().unwrap().unwrap();
+
+        let found_id: Uuid = row.get_unwrap(0);
+        let found_label: String = row.get_unwrap(1);
+
+        assert_eq!(found_id, id);
+        assert_eq!(found_label, "target");
     }
 }

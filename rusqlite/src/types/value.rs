@@ -48,6 +48,13 @@ impl From<i128> for Value {
     }
 }
 
+#[cfg(feature = "uuid")]
+impl From<uuid::Uuid> for Value {
+    fn from(id: uuid::Uuid) -> Value {
+        Value::Blob(id.as_bytes().to_vec())
+    }
+}
+
 macro_rules! from_i64(
     ($t:ty) => (
         impl From<$t> for Value {

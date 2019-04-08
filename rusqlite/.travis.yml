@@ -40,6 +40,7 @@ script:
   - cargo test --features bundled
   - cargo test --features sqlcipher
   - cargo test --features i128_blob
+  - cargo test --features uuid
   - cargo test --features "unlock_notify bundled"
   - cargo test --features "array bundled csvtab vtab"
   - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab"
