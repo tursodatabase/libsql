@@ -230,6 +230,8 @@ impl<'stmt> Row<'stmt> {
             }
             #[cfg(feature = "i128_blob")]
             FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
+            #[cfg(feature = "uuid")]
+            FromSqlError::InvalidUuidSize(_) => Error::InvalidColumnType(idx, value.data_type()),
         })
     }
 
