@@ -1,5 +1,5 @@
-C Make\sthe\stestcase()\smacro\sadded\sin\sthe\sprevious\scheck-in\sreachable\sfor\ntesting.
-D 2019-04-07T18:21:12.384
+C Use\san\sunsigned\sinteger\sto\scount\sfree\spages\sin\sbtree.c:freePage2().
+D 2019-04-09T01:26:31.828
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -458,7 +458,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c d1261e5ed32d6bb659744866694da507544b46a6cdd565518fd12f34f859f789
+F src/btree.c 958939f608e351a36756e3749596472baa0e5aae54eebd14e6beffe7a68aafc7
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c cb2cddfbb2a3844e38c3d2232cda6791314d12f7f0abd8ece11ff9370b3d2ef1
@@ -1814,7 +1814,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df58774e994bd306b1a2e1f259e7e4408f01c5b1dc104673698168bbf8a63ce5
-R 8f225a384e99d5cc8fcbc3b1a5a25930
+P 80704a16f6dbbeacc65fa36a3623df10292a28aeacf9e2c1d2891258479e3b89
+R a7a6409815e913c81ead1cceeb888162
 U drh
-Z 42970063c3d79b8d4bcc406c6a540b2c
+Z 73949e4ba438719f8cc0421fc3433e7f
