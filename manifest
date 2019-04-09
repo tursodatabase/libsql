@@ -1,5 +1,5 @@
-C Use\san\sunsigned\sinteger\sto\scount\sfree\spages\sin\sbtree.c:freePage2().
-D 2019-04-09T01:26:31.828
+C Fix\sa\sproblem\scaused\sby\sa\ssmall\sSQLITE_LIMIT_LENGTH\svalue\sand\sa\sCREATE\sTABLE\swith\sa\svery\slarge\sname.
+D 2019-04-09T20:50:44.500
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -461,7 +461,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 958939f608e351a36756e3749596472baa0e5aae54eebd14e6beffe7a68aafc7
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c cb2cddfbb2a3844e38c3d2232cda6791314d12f7f0abd8ece11ff9370b3d2ef1
+F src/build.c 82954fd1865a07a42bf933e88994209cf3c0a1324abf5549feaa65739a76f01a
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1343,7 +1343,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
-F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
+F test/sqllimits1.test 264f4b0f941800ba139d25e33ee919c5d95fea06dfbe8ac291d6811a30984ca5
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/stat.test f8f1279ffffabe6df825723af18cc6e0ae70a893
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
@@ -1814,7 +1814,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80704a16f6dbbeacc65fa36a3623df10292a28aeacf9e2c1d2891258479e3b89
-R a7a6409815e913c81ead1cceeb888162
-U drh
-Z 73949e4ba438719f8cc0421fc3433e7f
+P 8820408597341344b308277ce6ef41b47c7514d6c613520789b05ee52cbedae8
+R 2f506e721a232e262678db15afc60ed4
+T *branch * toobig-fix
+T *sym-toobig-fix *
+T -sym-trunk *
+U dan
+Z 7e6db43cc67f0e6d83b039093a6c4e8b

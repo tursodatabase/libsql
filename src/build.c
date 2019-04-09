@@ -3222,6 +3222,8 @@ void sqlite3CreateIndex(
     for(pLoop=pTab->pIndex, n=1; pLoop; pLoop=pLoop->pNext, n++){}
     zName = sqlite3MPrintf(db, "sqlite_autoindex_%s_%d", pTab->zName, n);
     if( zName==0 ){
+      if( db->mallocFailed==0 ) pParse->rc = SQLITE_TOOBIG;
+      pParse->nErr++;
       goto exit_create_index;
     }
 
