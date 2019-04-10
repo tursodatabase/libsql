@@ -43,6 +43,11 @@ proc wapptest_init {} {
 
   # Either "config", "running" or "stopped":
   set G(state) "config"
+
+  set G(host) "(unknown host)"
+  catch { set G(host) [exec hostname] } 
+  append G(host) " $::tcl_platform(os) $::tcl_platform(osVersion)"
+  append G(host) " $::tcl_platform(machine) $::tcl_platform(byteOrder)"
 }
 
 # Check to see if there are uncommitted changes in the SQLite source
@@ -283,7 +288,9 @@ proc generate_main_page {{extra {}}} {
     }
   }
 
+  set host $G(host)
   wapp-trim {
+      <div class=div>%string($host)</div>
       <div class=div id=controls> 
       <form action="control" method="post" name="control">
   }
