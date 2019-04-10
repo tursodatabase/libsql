@@ -64,7 +64,7 @@ static Thread threadset[N_THREAD];
 /*
 ** The main loop for a thread.  Threads use busy waiting. 
 */
-static void *thread_main(void *pArg){
+static void *test_thread_main(void *pArg){
   Thread *p = (Thread*)pArg;
   if( p->db ){
     sqlite3_close(p->db);
@@ -151,7 +151,7 @@ static int SQLITE_TCLAPI tcl_thread_create(
   threadset[i].zFilename = sqlite3_mprintf("%s", argv[2]);
   threadset[i].opnum = 1;
   threadset[i].completed = 0;
-  rc = pthread_create(&x, 0, thread_main, &threadset[i]);
+  rc = pthread_create(&x, 0, test_thread_main, &threadset[i]);
   if( rc ){
     Tcl_AppendResult(interp, "failed to create the thread", 0);
     sqlite3_free(threadset[i].zFilename);
@@ -165,7 +165,7 @@ static int SQLITE_TCLAPI tcl_thread_create(
 /*
 ** Wait for a thread to reach its idle state.
 */
-static void thread_wait(Thread *p){
+static void test_thread_wait(Thread *p){
   while( p->opnum>p->completed ) sched_yield();
 }
 
@@ -193,18 +193,18 @@ static int SQLITE_TCLAPI tcl_thread_wait(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   return TCL_OK;
 }
 
 /*
 ** Stop a thread.
 */
-static void stop_thread(Thread *p){
-  thread_wait(p);
+static void test_stop_thread(Thread *p){
+  test_thread_wait(p);
   p->xOp = 0;
   p->opnum++;
-  thread_wait(p);
+  test_thread_wait(p);
   sqlite3_free(p->zArg);
   p->zArg = 0;
   sqlite3_free(p->zFilename);
@@ -233,7 +233,7 @@ static int SQLITE_TCLAPI tcl_thread_halt(
   }
   if( argv[1][0]=='*' && argv[1][1]==0 ){
     for(i=0; i<N_THREAD; i++){
-      if( threadset[i].busy ) stop_thread(&threadset[i]);
+      if( threadset[i].busy ) test_stop_thread(&threadset[i]);
     }
   }else{
     i = parse_thread_id(interp, argv[1]);
@@ -242,7 +242,7 @@ static int SQLITE_TCLAPI tcl_thread_halt(
       Tcl_AppendResult(interp, "no such thread", 0);
       return TCL_ERROR;
     }
-    stop_thread(&threadset[i]);
+    test_stop_thread(&threadset[i]);
   }
   return TCL_OK;
 }
@@ -273,7 +273,7 @@ static int SQLITE_TCLAPI tcl_thread_argc(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", threadset[i].argc);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
@@ -306,7 +306,7 @@ static int SQLITE_TCLAPI tcl_thread_argv(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   if( n<0 || n>=threadset[i].argc ){
     Tcl_AppendResult(interp, "column number out of range", 0);
     return TCL_ERROR;
@@ -342,7 +342,7 @@ static int SQLITE_TCLAPI tcl_thread_colname(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   if( n<0 || n>=threadset[i].argc ){
     Tcl_AppendResult(interp, "column number out of range", 0);
     return TCL_ERROR;
@@ -377,7 +377,7 @@ static int SQLITE_TCLAPI tcl_thread_result(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   zName = sqlite3ErrName(threadset[i].rc);
   Tcl_AppendResult(interp, zName, 0);
   return TCL_OK;
@@ -408,7 +408,7 @@ static int SQLITE_TCLAPI tcl_thread_error(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   Tcl_AppendResult(interp, threadset[i].zErr, 0);
   return TCL_OK;
 }
@@ -452,7 +452,7 @@ static int SQLITE_TCLAPI tcl_thread_compile(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   threadset[i].xOp = do_compile;
   sqlite3_free(threadset[i].zArg);
   threadset[i].zArg = sqlite3_mprintf("%s", argv[2]);
@@ -505,7 +505,7 @@ static int SQLITE_TCLAPI tcl_thread_step(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   threadset[i].xOp = do_step;
   threadset[i].opnum++;
   return TCL_OK;
@@ -547,7 +547,7 @@ static int SQLITE_TCLAPI tcl_thread_finalize(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   threadset[i].xOp = do_finalize;
   sqlite3_free(threadset[i].zArg);
   threadset[i].zArg = 0;
@@ -579,14 +579,14 @@ static int SQLITE_TCLAPI tcl_thread_swap(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   j = parse_thread_id(interp, argv[2]);
   if( j<0 ) return TCL_ERROR;
   if( !threadset[j].busy ){
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[j]);
+  test_thread_wait(&threadset[j]);
   temp = threadset[i].db;
   threadset[i].db = threadset[j].db;
   threadset[j].db = temp;
@@ -620,7 +620,7 @@ static int SQLITE_TCLAPI tcl_thread_db_get(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   sqlite3TestMakePointerStr(interp, zBuf, threadset[i].db);
   threadset[i].db = 0;
   Tcl_AppendResult(interp, zBuf, (char*)0);
@@ -651,7 +651,7 @@ static int SQLITE_TCLAPI tcl_thread_db_put(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   assert( !threadset[i].db );
   threadset[i].db = (sqlite3*)sqlite3TestTextToPtr(argv[2]);
   return TCL_OK;
@@ -683,7 +683,7 @@ static int SQLITE_TCLAPI tcl_thread_stmt_get(
     Tcl_AppendResult(interp, "no such thread", 0);
     return TCL_ERROR;
   }
-  thread_wait(&threadset[i]);
+  test_thread_wait(&threadset[i]);
   sqlite3TestMakePointerStr(interp, zBuf, threadset[i].pStmt);
   threadset[i].pStmt = 0;
   Tcl_AppendResult(interp, zBuf, (char*)0);
