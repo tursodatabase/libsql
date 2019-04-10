@@ -1,5 +1,5 @@
-C Further\srefinement\sof\sthe\ssqlite3VdbeMEmExpandBlob()\sfix\sof\scheck-in\n[df58774e994bd]\sto\sprevent\sa\sreference\sto\san\sunused\svariable\s-\sproblem\ndiscovered\sby\sValgrind.
-D 2019-04-10T13:24:35.112
+C Update\sthe\slist\sof\sOMIT\soptions\sin\sthe\somittest.tcl\sscript.
+D 2019-04-10T18:29:40.308
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1757,7 +1757,7 @@ F tool/mksqlite3h.tcl 080873e3856eceb9d289a08a00c4b30f875ea3feadcbece796bd509b15
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
-F tool/omittest.tcl dfc8b18a23e9e5289104145b712cdb887c2d840c2d70dc09ce5dbeba8ed8d47c
+F tool/omittest.tcl 27f9413c3343bac200a28d81e8234adb0f5e141c4771893cb19b40235a91f1e0
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
@@ -1814,7 +1814,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1cae7e7f0a612508c8f82b334d9ebc423f443e99b13092d52e26b348c7cbc5e
-R 8e269d3934eeae9a2e8d8aaa91e377d6
+P 09435b5700a2650816ad9ffa628be5fa19da62369c30329801feb5e840463c7e
+R c89b872afec7ce06422a149342fb3f54
 U drh
-Z 25ec07037e0f08a16877f401ab441c72
+Z 699722b98f7dc28bf23e9dba9c74ebe1
