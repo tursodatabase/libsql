@@ -1,5 +1,5 @@
-C New\stest\scase\sfor\sSQLITE_TOOBIG\serrors.
-D 2019-04-09T21:37:27.175
+C Do\snot\splace\sarbitrary\srestrictions\son\sthe\slength\sof\sthe\sfailure\smessage\nfor\sa\suniqueness\sconstraint.
+D 2019-04-10T00:58:07.720
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -461,7 +461,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 958939f608e351a36756e3749596472baa0e5aae54eebd14e6beffe7a68aafc7
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c cb2cddfbb2a3844e38c3d2232cda6791314d12f7f0abd8ece11ff9370b3d2ef1
+F src/build.c b3bda944006369ccc0ea79228474dab350d8bf7b4e32ae0a6b0d6206c827abfd
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1814,8 +1814,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea2d4b65e20e44e19219c821bf68e97ff3af1760b3b4762250d020ba2a5a6343 9b5d408864920b302f2d21abcae1d90f1e0cd68b18262136554ba0e6219d6025
-R b8d5357576ae2e0fcdef18b7eda69efa
-T +closed 9b5d408864920b302f2d21abcae1d90f1e0cd68b18262136554ba0e6219d6025
+P 4c77fbbe5d54248821161d708d0631fab65659bef31f95a61af681d4639f5918
+R be4da9f6b49c561e806f224dfc7c7be5
 U drh
-Z abb6ca0cd6165268889099a4d928667f
+Z 357c0e2f7d4294e9e0424d2062f7ff11
