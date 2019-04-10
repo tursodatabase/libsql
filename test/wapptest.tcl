@@ -2,9 +2,12 @@
 # \
 exec wapptclsh "$0" ${1+"$@"}
 
+# package required wapp
+source [file join [file dirname [info script]] wapp.tcl]
+
+# Read the data from the releasetest_data.tcl script.
 #
-#
-#
+source [file join [file dirname [info script]] releasetest_data.tcl]
 
 # Variables set by the "control" form:
 #
@@ -22,28 +25,25 @@ set G(msvc)     0
 set G(tcl)      ""
 set G(jobs)     3
 
-set G(sqlite_version) unknown
+proc wapptest_init {} {
+  global G
 
-# The root of the SQLite source tree.
-#
-set G(srcdir)   [file dirname [file dirname [info script]]]
+  set lSave [list platform test keep msvc tcl jobs] 
+  foreach k $lSave { set A($k) $G($k) }
+  array unset G
+  foreach k $lSave { set G($k) $A($k) }
 
-# Either "config", "running", "stopped":
-#
-set G(state) "config"
+  # The root of the SQLite source tree.
+  set G(srcdir)   [file dirname [file dirname [info script]]]
 
-# releasetest.tcl script
-#
-set G(releaseTest) [file join [file dirname [info script]] releasetest.tcl]
+  # releasetest.tcl script
+  set G(releaseTest) [file join [file dirname [info script]] releasetest.tcl]
 
-set G(cnt) 0
+  set G(sqlite_version) "unknown"
 
-# package required wapp
-source [file join [file dirname [info script]] wapp.tcl]
-
-# Read the data from the releasetest_data.tcl script.
-#
-source [file join [file dirname [info script]] releasetest_data.tcl]
+  # Either "config", "running" or "stopped":
+  set G(state) "config"
+}
 
 # Check to see if there are uncommitted changes in the SQLite source
 # directory. Return true if there are, or false otherwise.
@@ -162,6 +162,20 @@ proc count_tests_and_errors {name logfile} {
   }
 }
 
+proc slave_test_done {name rc} {
+  global G
+  set G(test.$name.done) [clock seconds]
+  set G(test.$name.nError) 0
+  set G(test.$name.nTest) 0
+  set G(test.$name.errmsg) ""
+  if {$rc} {
+    incr G(test.$name.nError)
+  }
+  if {[file exists $G(test.$name.log)]} {
+    count_tests_and_errors $name $G(test.$name.log)
+  }
+}
+
 proc slave_fileevent {name} {
   global G
   set fd $G(test.$name.channel)
@@ -170,16 +184,7 @@ proc slave_fileevent {name} {
     fconfigure $fd -blocking 1
     set rc [catch { close $fd }]
     unset G(test.$name.channel)
-    set G(test.$name.done) [clock seconds]
-    set G(test.$name.nError) 0
-    set G(test.$name.nTest) 0
-    set G(test.$name.errmsg) ""
-    if {$rc} {
-      incr G(test.$name.nError)
-    }
-    if {[file exists $G(test.$name.log)]} {
-      count_tests_and_errors $name $G(test.$name.log)
-    }
+    slave_test_done $name $rc
   } else {
     set line [gets $fd]
     if {[string trim $line] != ""} { puts "Trace   : $name - \"$line\"" }
@@ -215,6 +220,7 @@ proc do_some_stuff {} {
     catch {
       append G(result) " SQLite version $G(sqlite_version)"
     }
+    set G(state) "stopped"
   } else {
     set nLaunch [expr $G(jobs) - $nRunning]
     foreach j $G(test_array) {
@@ -241,10 +247,24 @@ proc do_some_stuff {} {
   }
 }
 
+proc generate_select_widget {label id lOpt opt} {
+  wapp-trim {
+    <label> %string($label) </label>
+    <select id=%string($id) name=%string($id)>
+  }
+  foreach o $lOpt {
+    set selected ""
+    if {$o==$opt} { set selected " selected=1" }
+    wapp-subst "<option $selected>$o</option>"
+  }
+  wapp-trim { </select> }
+}
+
 proc generate_main_page {{extra {}}} {
   global G
   set_test_array
 
+  # <meta http-equiv="refresh" content="5; URL=/">
   wapp-trim {
     <html>
     <head>
@@ -265,62 +285,77 @@ proc generate_main_page {{extra {}}} {
 
   wapp-trim {
       <div class=div id=controls> 
-        <form action="control" method="post" name="control">
-        <label> Platform: </label>
-        <select id="control_platform" name="control_platform">
+      <form action="control" method="post" name="control">
   }
-  foreach platform [array names ::Platforms] {
-    set selected ""
-    if {$platform==$G(platform)} { set selected " selected=1" }
-    wapp-subst "<option $selected>$platform</option>"
+
+  # Build the "platform" select widget. 
+  set lOpt [array names ::Platforms]
+  generate_select_widget Platform control_platform $lOpt $G(platform)
+
+  # Build the "test" select widget. 
+  set lOpt [list Normal Veryquick Smoketest Build-Only] 
+  generate_select_widget Test control_test $lOpt $G(test)
+
+  # Build the "jobs" select widget. Options are 1 to 8.
+  generate_select_widget Jobs control_jobs {1 2 3 4 5 6 7 8} $G(jobs)
+
+  switch $G(state) {
+    config {
+      set txt "Run Tests!"
+      set id control_run
+    }
+    running {
+      set txt "STOP Tests!"
+      set id control_stop
+    }
+    stopped {
+      set txt "Reset!"
+      set id control_reset
+    }
   }
   wapp-trim {
-        </select>
-        <label> Test: </label>
-        <select id="control_test" name="control_test">
+    <div class=right>
+    <input id=%string($id) name=%string($id) type=submit value="%string($txt)">
+    </input>
+    </div>
   }
-  foreach test [list Normal Veryquick Smoketest Build-Only] {
-    set selected ""
-    if {$test==$G(test)} { set selected " selected=1" }
-    wapp-subst "<option $selected>$test</option>"
-  }
-  wapp-trim [subst -nocommands {
-        </select>
+
+  wapp-trim {
+  <br><br>
         <label> Tcl: </label>
         <input id="control_tcl" name="control_tcl"></input>
-
         <label> Keep files: </label>
         <input id="control_keep" name="control_keep" type=checkbox value=1>
         </input>
         <label> Use MSVC: </label>
         <input id="control_msvc" name="control_msvc" type=checkbox value=1>
         </input>
-        <hr>
-        <div class=right>
-          <label> Jobs: </label>
-          <select id="control_jobs" name="control_jobs">
-  }]
-  for {set i 1} {$i <= 8} {incr i} {
-    if {$G(jobs)==$i} {
-      wapp-trim {
-        <option selected=1>%string($i)</option>
-      }
-    } else {
-      wapp-trim {
-        <option>%string($i)</option>
-      }
-    }
   }
   wapp-trim {
-          </select>
-          <input id=control_go name=control_go type=submit value="Run Tests!">
-          </input>
-        </div>
      </form>
-      </div>
-      <div class=div id=tests>    
-      <table>
   }
+  wapp-trim {
+     </div>
+     <div class=div2 id=tests>
+  }
+  wapp-page-tests
+
+  set script "script/$G(state).js"
+  wapp-trim {
+    </div>
+      <script src=%string($script)></script>
+    </body>
+    </html>
+  }
+}
+
+proc wapp-default {} {
+  generate_main_page
+}
+
+proc wapp-page-tests {} {
+  global G
+  wapp-trim { <table> }
   foreach t $G(test_array) {
     set config [dict get $t config]
     set target [dict get $t target]
@@ -371,58 +406,96 @@ proc generate_main_page {{extra {}}} {
     }
   }
 
-  wapp-trim {
-      </table>
-      </div>
-  }
+  wapp-trim { </table> }
+
   if {[info exists G(result)]} {
     set res $G(result)
     wapp-trim {
-      <div class=div id=log> %string($res) </div>
+      <div class=border id=result> %string($res) </div>
     }
   }
-  wapp-trim {
-    <script src="script.js"></script>
-    </body>
-    </html>
-  }
-  incr G(cnt)
 }
 
-proc wapp-default {} {
-  generate_main_page
-}
-
+# URI: /control
+#
+# Whenever the form at the top of the application page is submitted, it
+# is submitted here.
+#
 proc wapp-page-control {} {
   global G
-  foreach v {platform test tcl jobs keep msvc} {
+  catch { puts [wapp-param control_msvc] }
+  if {$::G(state)=="config"} {
+    set lControls [list platform test tcl jobs keep msvc]
+    set G(msvc) 0
+    set G(keep) 0
+  } else {
+    set lControls [list jobs]
+  }
+  foreach v $lControls {
     if {[wapp-param-exists control_$v]} {
       set G($v) [wapp-param control_$v]
-    } else {
-      set G($v) 0
     }
   }
 
-  if {[wapp-param-exists control_go]} {
-    # This is an actual "run test" command, not just a change of 
-    # configuration!
+  if {[wapp-param-exists control_run]} {
+    # This is a "run test" command.
     set_test_array
     set ::G(state) "running"
+  }
+
+  if {[wapp-param-exists control_stop]} {
+    # A "STOP tests" command.
+    set G(state) "stopped"
+    set G(result) "Test halted by user"
+    foreach j $G(test_array) {
+      set name [dict get $j config]
+      if { [info exists G(test.$name.channel)] } {
+        close $G(test.$name.channel)
+        unset G(test.$name.channel)
+        slave_test_done $name 1
+      }
+    }
+  }
+
+  if {[wapp-param-exists control_reset]} {
+    # A "reset app" command.
+    set G(state) "config"
+    wapptest_init
   }
 
   if {$::G(state) == "running"} {
     do_some_stuff
   }
-
   wapp-redirect /
 }
 
+# URI: /style.css
+#
+# Return the stylesheet for the application main page.
+#
 proc wapp-page-style.css {} {
   wapp-subst {
     .div {
       border: 3px groove #444444;
       margin: 1em;
       padding: 1em;
+    }
+
+    .border {
+      border: 3px groove #444444;
+      padding: 1em;
+      margin-top: 1em;
+      margin-bottom: 1em;
+    }
+
+    .div2 {
+      margin: 1em;
+    }
+
+    table {
+      padding: 1em;
+      width:100%;
+      border: 3px groove #444444;
     }
 
     .warning {
@@ -432,28 +505,39 @@ proc wapp-page-style.css {} {
       font-weight: bold;
     }
 
-    .right {
-    }
-
     .testfield {
       padding-right: 10ex;
+      white-space: nowrap;
     }
 
     .testwait {}
     .testrunning { color: blue }
     .testdone { color: green }
     .testfail { color: red }
+
+    .right { float: right; }
+
   }
 }
 
-proc wapp-page-script.js {} {
+# URI: /script/${state}.js
+#
+# The last part of this URI is always "config.js", "running.js" or 
+# "stopped.js", depending on the state of the application. It returns
+# the javascript part of the front-end for the requested state to the
+# browser.
+#
+proc wapp-page-script {} {
+  regexp {[^/]*$} [wapp-param REQUEST_URI] script
 
   set tcl $::G(tcl)
   set keep $::G(keep)
   set msvc $::G(msvc)
   
   wapp-subst {
-    var lElem = \["control_platform", "control_test", "control_msvc", "control_jobs"\];
+    var lElem = \["control_platform", "control_test", "control_msvc", 
+        "control_jobs"
+    \];
     lElem.forEach(function(e) {
       var elem = document.getElementById(e);
       elem.addEventListener("change", function() { control.submit() } );
@@ -469,10 +553,10 @@ proc wapp-page-script.js {} {
     elem.checked = %string($msvc);
   }
 
-  if {$::G(state)!="config"} {
+  if {$script != "config.js"} {
     wapp-subst {
       var lElem = \["control_platform", "control_test", 
-          "control_tcl", "control_keep", "control_msvc", "control_go"
+          "control_tcl", "control_keep", "control_msvc"
       \];
       lElem.forEach(function(e) {
         var elem = document.getElementById(e);
@@ -480,8 +564,33 @@ proc wapp-page-script.js {} {
       })
     }
   }
+
+  if {$script == "running.js"} {
+    wapp-subst {
+      function reload_tests() {
+        fetch('tests')
+          .then( data => data.text() )
+          .then( data => {
+            document.getElementById("tests").innerHTML = data;
+          })
+          .then( data => {
+            if( document.getElementById("result") ){
+              document.location = document.location;
+            } else {
+              setTimeout(reload_tests, 1000)
+            }
+          });
+      }
+
+      setTimeout(reload_tests, 1000)
+    }
+  }
 }
 
+# URI: /env
+#
+# This is for debugging only. Serves no other purpose.
+#
 proc wapp-page-env {} {
   wapp-allow-xorigin-params
   wapp-trim {
@@ -490,6 +599,11 @@ proc wapp-page-env {} {
   }
 }
 
+# URI: /log/dirname/test.log
+#
+# This URI reads file "dirname/test.log" from disk, wraps it in a <pre>
+# block, and returns it to the browser. Use for viewing log files.
+#
 proc wapp-page-log {} {
   set log [string range [wapp-param REQUEST_URI] 5 end]
   set fd [open $log]
@@ -502,5 +616,6 @@ proc wapp-page-log {} {
   }
 }
 
+wapptest_init
 wapp-start $argv
 
