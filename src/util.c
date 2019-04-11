@@ -234,6 +234,19 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
 }
 
 /*
+** If database connection db is currently parsing SQL, then transfer
+** error code errCode to that parser if the parser has not already
+** encountered some other kind of error.
+*/
+int sqlite3ErrorToParser(sqlite3 *db, int errCode){
+  Parse *pParse;
+  if( db==0 || (pParse = db->pParse)==0 ) return errCode;
+  pParse->rc = errCode;
+  pParse->nErr++;
+  return errCode;
+}
+
+/*
 ** Convert an SQL-style quoted string into a normal string by removing
 ** the quote characters.  The conversion is done in-place.  If the
 ** input does not begin with a quote character, then this routine

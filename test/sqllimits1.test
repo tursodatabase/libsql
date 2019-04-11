@@ -889,4 +889,14 @@ do_catchsql_test sqllimits1.17.0 {
 foreach {key value} [array get saved] {
   catch {set $key $value}
 }
+
+#-------------------------------------------------------------------------
+# At one point the following caused an assert() to fail.
+#
+sqlite3_limit db SQLITE_LIMIT_LENGTH 10000
+set nm [string repeat x 10000]
+do_catchsql_test sqllimits1-17.1 "
+  CREATE TABLE $nm (x PRIMARY KEY)
+" {1 {string or blob too big}}
+
 finish_test
