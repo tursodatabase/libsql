@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 # \
 exec wapptclsh "$0" ${1+"$@"}
 
@@ -22,13 +22,14 @@ set G(platform) $::tcl_platform(os)-$::tcl_platform(machine)
 set G(test)     Normal
 set G(keep)     0
 set G(msvc)     0
-set G(tcl)      ""
+set G(tcl)      [::tcl::pkgconfig get libdir,install]
 set G(jobs)     3
+set G(debug)    0
 
 proc wapptest_init {} {
   global G
 
-  set lSave [list platform test keep msvc tcl jobs] 
+  set lSave [list platform test keep msvc tcl jobs debug] 
   foreach k $lSave { set A($k) $G($k) }
   array unset G
   foreach k $lSave { set G($k) $A($k) }
@@ -44,8 +45,9 @@ proc wapptest_init {} {
   # Either "config", "running" or "stopped":
   set G(state) "config"
 
-  set G(host) "(unknown host)"
-  catch { set G(host) [exec hostname] } 
+  set G(hostname) "(unknown host)"
+  catch { set G(hostname) [exec hostname] } 
+  set G(host) $G(hostname)
   append G(host) " $::tcl_platform(os) $::tcl_platform(osVersion)"
   append G(host) " $::tcl_platform(machine) $::tcl_platform(byteOrder)"
 }
@@ -63,6 +65,29 @@ proc check_uncommitted {} {
   }
   cd $pwd
   return $ret
+}
+
+proc generate_fossil_info {} {
+  global G
+  set pwd [pwd]
+  cd $G(srcdir)
+  if {[catch {exec fossil info}    r1]} return
+  if {[catch {exec fossil changes} r2]} return
+  cd $pwd
+
+  foreach line [split $r1 "\n"] {
+    if {[regexp {^checkout: *(.*)$} $line -> co]} {
+      wapp-trim { <br> %html($co) }
+    }
+  }
+
+  if {[string trim $r2]!=""} {
+    wapp-trim { 
+      <br><span class=warning> 
+      WARNING: Uncommitted changes in checkout
+      </span>
+    }
+  }
 }
 
 # If the application is in "config" state, set the contents of the 
@@ -102,6 +127,22 @@ proc set_test_array {} {
       }
 
       lappend G(test_array) [dict create config $config target $target]
+
+      set exclude [list checksymbols valgrindtest fuzzoomtest]
+      if {$G(debug) && !($target in $exclude)} {
+        set debug_idx [lsearch -glob $::Configs($config) -DSQLITE_DEBUG*]
+        set xtarget $target
+        regsub -all {fulltest[a-z]*} $xtarget test xtarget
+        if {$debug_idx<0} {
+          lappend G(test_array) [
+            dict create config $config-(Debug) target $target
+          ]
+        } else {
+          lappend G(test_array) [
+            dict create config $config-(NDebug) target $xtarget
+          ]
+        }
+      }
     }
   }
 }
@@ -242,7 +283,26 @@ proc do_some_stuff {} {
         fileevent $fd readable [list slave_fileevent $name]
 
         puts $fd [list 0 $G(msvc) 0 $G(keep)]
-        set L [make_test_suite $G(msvc) "" $name $target $::Configs($name)]
+
+        set wtcl ""
+        if {$G(tcl)!=""} { set wtcl "--with-tcl=$G(tcl)" }
+
+        # If this configuration is named <name>-(Debug) or <name>-(NDebug),
+        # then add or remove the SQLITE_DEBUG option from the base
+        # configuration before running the test.
+        if {[regexp -- {(.*)-(\(.*\))} $name -> head tail]} {
+          set opts $::Configs($head)
+          if {$tail=="(Debug)"} {
+            append opts " -DSQLITE_DEBUG=1 -DSQLITE_EXTRA_IFNULLROW=1"
+          } else {
+            regsub { *-DSQLITE_MEMDEBUG[^ ]* *} $opts { } opts
+            regsub { *-DSQLITE_DEBUG[^ ]* *} $opts { } opts
+          }
+        } else {
+          set opts $::Configs($name)
+        }
+
+        set L [make_test_suite $G(msvc) $wtcl $name $target $opts]
         puts $fd $L
         flush $fd
         set G(test.$name.log) [file join [lindex $L 1] test.log]
@@ -269,30 +329,25 @@ proc generate_main_page {{extra {}}} {
   global G
   set_test_array
 
-  # <meta http-equiv="refresh" content="5; URL=/">
+  set hostname $G(hostname)
   wapp-trim {
     <html>
     <head>
+      <title> %html($hostname): wapptest.tcl </title>
       <link rel="stylesheet" type="text/css" href="style.css"/>
     </head>
     <body>
   }
 
-  # If the checkout contains uncommitted changs, put a warning at the top
-  # of the page.
-  if {[check_uncommitted]} {
-    wapp-trim {
-      <div class=warning>
-        WARNING: Uncommitted changes in checkout.
-      </div>
-    }
-  }
-
   set host $G(host)
   wapp-trim {
-      <div class=div>%string($host)</div>
-      <div class=div id=controls> 
-      <form action="control" method="post" name="control">
+    <div class="border">%string($host)
+  }
+  generate_fossil_info
+  wapp-trim {
+    </div>
+    <div class="border" id=controls> 
+    <form action="control" method="post" name="control">
   }
 
   # Build the "platform" select widget. 
@@ -336,6 +391,8 @@ proc generate_main_page {{extra {}}} {
         </input>
         <label> Use MSVC: </label>
         <input id="control_msvc" name="control_msvc" type=checkbox value=1>
+        <label> Debug tests: </label>
+        <input id="control_debug" name="control_debug" type=checkbox value=1>
         </input>
   }
   wapp-trim {
@@ -343,7 +400,7 @@ proc generate_main_page {{extra {}}} {
   }
   wapp-trim {
      </div>
-     <div class=div2 id=tests>
+     <div id=tests>
   }
   wapp-page-tests
 
@@ -362,7 +419,7 @@ proc wapp-default {} {
 
 proc wapp-page-tests {} {
   global G
-  wapp-trim { <table> }
+  wapp-trim { <table class="border" width=100%> }
   foreach t $G(test_array) {
     set config [dict get $t config]
     set target [dict get $t target]
@@ -391,10 +448,10 @@ proc wapp-page-tests {} {
 
     wapp-trim {
       <tr class=%string($class)>
-      <td class=testfield> %html($config) 
-      <td class=testfield> %html($target)
-      <td class=testfield> %html($seconds)
-      <td class=testfield>
+      <td class="nowrap"> %html($config) 
+      <td class="padleft nowrap"> %html($target)
+      <td class="padleft nowrap"> %html($seconds)
+      <td class="padleft nowrap">
     }
     if {[info exists G(test.$config.log)]} {
       set log $G(test.$config.log)
@@ -407,8 +464,7 @@ proc wapp-page-tests {} {
       set errmsg $G(test.$config.errmsg)
       wapp-trim {
         <tr class=testfail>
-        <td class=testfield>
-        <td class=testfield colspan=3> %html($errmsg)
+        <td> <td class="padleft" colspan=3> %html($errmsg)
       }
     }
   }
@@ -430,11 +486,11 @@ proc wapp-page-tests {} {
 #
 proc wapp-page-control {} {
   global G
-  catch { puts [wapp-param control_msvc] }
   if {$::G(state)=="config"} {
-    set lControls [list platform test tcl jobs keep msvc]
+    set lControls [list platform test tcl jobs keep msvc debug]
     set G(msvc) 0
     set G(keep) 0
+    set G(debug) 0
   } else {
     set lControls [list jobs]
   }
@@ -482,12 +538,8 @@ proc wapp-page-control {} {
 #
 proc wapp-page-style.css {} {
   wapp-subst {
-    .div {
-      border: 3px groove #444444;
-      margin: 1em;
-      padding: 1em;
-    }
 
+    /* The boxes with black borders use this class */
     .border {
       border: 3px groove #444444;
       padding: 1em;
@@ -495,35 +547,24 @@ proc wapp-page-style.css {} {
       margin-bottom: 1em;
     }
 
-    .div2 {
-      margin: 1em;
-    }
+    /* Float to the right (used for the Run/Stop/Reset button) */
+    .right { float: right; }
 
-    table {
-      padding: 1em;
-      width:100%;
-      border: 3px groove #444444;
-    }
-
+    /* Style for the large red warning at the top of the page */
     .warning {
-      text-align:center;
       color: red;
-      font-size: 2em;
       font-weight: bold;
     }
 
-    .testfield {
-      padding-right: 10ex;
-      white-space: nowrap;
-    }
+    /* Styles used by cells in the test table */
+    .padleft { padding-left: 5ex; }
+    .nowrap  { white-space: nowrap; }
 
-    .testwait {}
-    .testrunning { color: blue }
-    .testdone { color: green }
-    .testfail { color: red }
-
-    .right { float: right; }
-
+    /* Styles for individual tests, depending on the outcome */
+    .testwait    {              }
+    .testrunning { color: blue  }
+    .testdone    { color: green }
+    .testfail    { color: red   }
   }
 }
 
@@ -540,10 +581,11 @@ proc wapp-page-script {} {
   set tcl $::G(tcl)
   set keep $::G(keep)
   set msvc $::G(msvc)
+  set debug $::G(debug)
   
   wapp-subst {
     var lElem = \["control_platform", "control_test", "control_msvc", 
-        "control_jobs"
+        "control_jobs", "control_debug"
     \];
     lElem.forEach(function(e) {
       var elem = document.getElementById(e);
@@ -558,6 +600,9 @@ proc wapp-page-script {} {
 
     elem = document.getElementById("control_msvc");
     elem.checked = %string($msvc);
+
+    elem = document.getElementById("control_debug");
+    elem.checked = %string($debug);
   }
 
   if {$script != "config.js"} {

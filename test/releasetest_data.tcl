@@ -387,7 +387,7 @@ proc make_test_suite {msvc withtcl name testtarget config} {
 
   # Set the sub-directory to use.
   #
-  set dir [string tolower [string map {- _ " " _} $name]]
+  set dir [string tolower [string map {- _ " " _ "(" _ ")" _} $name]]
 
   # Join option lists into strings, using space as delimiter.
   #
