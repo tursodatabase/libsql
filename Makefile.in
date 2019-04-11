@@ -1372,8 +1372,9 @@ loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
 # releasetest.tcl script.
 #
 VALIDIDS=' sqlite3(changeset|changegroup|session)?_'
-checksymbols: sqlite3.lo
-	nm -g --defined-only sqlite3.lo | egrep -v $(VALIDIDS); test $$? -ne 0
+checksymbols: sqlite3.o
+	nm -g --defined-only sqlite3.o
+	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
 # Build the amalgamation-autoconf package.  The amalamgation-tarball target builds

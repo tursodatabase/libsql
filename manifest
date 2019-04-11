@@ -1,9 +1,9 @@
-C Have\swapptest.tcl\sdisplay\sthe\sname,\sOS\sand\sarchitecture\sof\sthe\shost.
-D 2019-04-10T19:45:19.357
+C Fix\sthe\schecksymbols\starget\sin\sMakefile.in.
+D 2019-04-11T06:50:52.687
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 48db9bb25227e17403c9225ed5e3b04b1f1fc8e1ff4f45aebcdbf9ad164a5627
+F Makefile.in 4640daf826b80947a924ac44275c451ffc13007c7c866a5730c8ce5cf9e1dc74
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 26957950b2b4f3b26e311eeea70437f85a77765f71d3a06489466d66ee321100
 F README.md 74745e53db87fdc86f571dd7ec1bd18e154d0abd6d37d2292a1062e931318a29
@@ -1817,7 +1817,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbf423656047f0cb5200be6981a205e0ae206eef8263aa686f4a3621fb07fb57
-R 7eca61acc97179ed46c0187409e26485
+P c47e53b4d0f29628bd20ba3daf7e759c4bfed07710d982c095445c01376d57f5
+R 3723816e896d55a0d5f9bdcd61b8be60
 U dan
-Z 0d7fd24e7057770008ab50d80da83648
+Z 08174164d0ec219d71d5119412864f95
