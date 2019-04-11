@@ -1,9 +1,9 @@
-C Remove\sthe\svfslog.c\sextension\sfrom\sthe\stestfixture\starget\sin\smain.mk,\sas\nthat\sextension\shas\sno\sTCL\sbindings\sand\sis\sinaccessible.
-D 2019-04-11T17:06:54.116
+C Add\sthe\stest/wapptest.tcl\sscript,\san\salternative\sto\sreleasetest.tcl\sthat\suses\swapp\sto\sprovide\sthe\suser-interface.
+D 2019-04-11T19:07:17.895
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 48db9bb25227e17403c9225ed5e3b04b1f1fc8e1ff4f45aebcdbf9ad164a5627
+F Makefile.in 4640daf826b80947a924ac44275c451ffc13007c7c866a5730c8ce5cf9e1dc74
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 26957950b2b4f3b26e311eeea70437f85a77765f71d3a06489466d66ee321100
 F README.md 74745e53db87fdc86f571dd7ec1bd18e154d0abd6d37d2292a1062e931318a29
@@ -1228,6 +1228,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.tcl 7712811e0f4e2f198ec786cb2e1352b3793d7395f48a3cceef0572d8823eb75e x
+F test/releasetest_data.tcl c3746248b5ad8f99a29020f83501bb25e024156ecc37e05c71c76da4fc8601c6
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
@@ -1650,6 +1651,8 @@ F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/walvfs.test c0faffda13d045a96dfc541347886bb1a3d6f3205857fc98e683edfab766ea88
+F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
+F test/wapptest.tcl a7ea78efd76045c1c9c5ee43964e359e6aaceeffbe52168ab370f128400e3938 x
 F test/where.test 0607caa5a1fbfe7b93b95705981b463a3a0408038f22ae6e9dc11b36902b0e95
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
@@ -1815,7 +1818,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31eb27f438ad727b095a518bfe0f7ed37cb806fc1e6929b821eddcc6cc9de260
-R cbbbb3778a413cc90626de66ac248a8f
-U drh
-Z 8fdd0117852b662c297bdeca2f73cdf8
+P d71f8bbc4efd8af935671c4e7626862d6e5a4c2e51527b9e82b2f0c94ddf6e93 d805fc0cf1c4ef07a7bc947f75828931e3788d0e64730caab3b42ae58009a194
+R 3c54551b10c87fc6f05051e8c995cc5e
+T +closed d805fc0cf1c4ef07a7bc947f75828931e3788d0e64730caab3b42ae58009a194
+U dan
+Z 54f6897aa8412eba0cb13c03efd1a483
