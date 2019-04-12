@@ -1,5 +1,5 @@
-C Test\scase\schanges\sso\sthat\sthey\swork\swith\sboth\sTcl8.6\sand\sTcl8.7.
-D 2019-04-12T16:25:42.811
+C Add\sthe\ssocketvfs\stest\sextension.
+D 2019-04-12T20:33:17.983
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -308,6 +308,8 @@ F ext/misc/series.c 0c97f63378fddc9f425e82ba139b9aaf902211f24ced115c2b6ae12b425f
 F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
 F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
+F ext/misc/socketvfs.c 07f4e382d2c2c175177b55189767d2a6a0eba14565a12f4fdb02e9b486d96259
+F ext/misc/socketvfs_server.tcl 370a38231f255439a219ff68c8cfdfa03c57d39031b4aa8a7b87906e9d3681e0
 F ext/misc/spellfix.c f88ecb2c0294453ce8b7704b211f5350c41b085b38c8e056852e3a08b0f5e484
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
 F ext/misc/stmt.c 8a8dc4675042e4551e4afe99b8d0cc7a4a2fc1a8dacc0a9ce1b1bbff145da93d
@@ -1818,7 +1820,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd248c186a157b5ed60bbdae669b31237b8354c1a7e6ed64d377904043bd57ee
-R b3f8e9d256ef93f75dfd1b764c21d6e8
-U drh
-Z 29d22b4357a8e51c272b10c19deb4f0a
+P 7b771405a9adc3ec191156be4ebe7122f4c698d88d69ae2134c75acb8d8feebb
+R b39fe5513a86675b826ef91bc6fba12d
+T *branch * socketvfs
+T *sym-socketvfs *
+T -sym-trunk *
+U dan
+Z 3ab2817f46fa2cfe678b228c9c20911b
