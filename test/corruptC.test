@@ -97,7 +97,8 @@ do_test corruptC-2.1 {
 
   sqlite3 db test.db
   catchsql {PRAGMA integrity_check}
-} {1 {database disk image is malformed}}
+} {0 {{*** in database main ***
+Page 3: free space corruption}}}
 
 # test that a corrupt content offset size is handled (seed 5649)
 #
