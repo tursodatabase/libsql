@@ -135,7 +135,7 @@ proc set_test_array {} {
         regsub -all {fulltest[a-z]*} $xtarget test xtarget
         if {$debug_idx<0} {
           lappend G(test_array) [
-            dict create config $config-(Debug) target $target
+            dict create config $config-(Debug) target $xtarget
           ]
         } else {
           lappend G(test_array) [
@@ -608,7 +608,8 @@ proc wapp-page-script {} {
   if {$script != "config.js"} {
     wapp-subst {
       var lElem = \["control_platform", "control_test", 
-          "control_tcl", "control_keep", "control_msvc"
+          "control_tcl", "control_keep", "control_msvc", 
+          "control_debug"
       \];
       lElem.forEach(function(e) {
         var elem = document.getElementById(e);
