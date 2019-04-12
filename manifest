@@ -1,5 +1,5 @@
-C Tweaks\sto\swapptest.tcl:\sEnsure\sthat\sthe\s"Debug"\scheckbox\sis\sdisabled\sunless\sthe\sapp\sis\sin\s"config"\sstate,\sand\shave\sDebug\svariants\srun\s"test"\sinstead\sof\s"fulltest".
-D 2019-04-12T13:40:54.346
+C Test\scase\schanges\sso\sthat\sthey\swork\swith\sboth\sTcl8.6\sand\sTcl8.7.
+D 2019-04-12T16:25:42.811
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -680,7 +680,7 @@ F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
-F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
+F test/badutf2.test f310fd3b24a491b6b77bccdf14923b85d6ebcce751068c180d93a6b8ff854399
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
 F test/bestindex1.test 705b57d7f51d53ee5fd043dd9666236e1fc18f4d59abf51da0ea5ea1b4804947
 F test/bestindex2.test 9a0ccd320b6525eec3a706aae6cdab7e1b7b5abca75027e39f39f755e76e5928
@@ -1070,7 +1070,7 @@ F test/join5.test f8b5ffdf3c1513486b52ad4e49225507ecee5005f210eb18688f791d253709
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
-F test/journal3.test c9c29883f5bf535ae82ae21c472df6263806a22e467b6db7cd0d6d545305b4f6
+F test/journal3.test 939a3578396dffa0cdaa9b2685088c5a1a644db90d61aca08bd7e19d33932c00
 F test/jrnlmode.test a6693f2bed4541a21e703aaa37bb3e10de154130645952933b82b2dec0a8b539
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
@@ -1298,7 +1298,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 0378c4e9e800da6fbb3c86c0c8f2cf5efc9e4155b4b6447d27dc71de648fc0a1
+F test/shell1.test 3c9707dce15e8fdca529503378660f099777d3ddcedccf801a37589a405c5942
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 1c6aef11daaa2d6830acaba3ac9cbec93fbc1c3d5530743a637f39b3987d08ce
@@ -1617,7 +1617,7 @@ F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bd
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
 F test/wal.test cdf0ca6cc0447520d19ef1c83287824ebeb3e82d75af856511ba96841a79fc9b
-F test/wal2.test 155b9efa999bdb38ce1cd729b9a4fcdbffd6b88be27f039bad1d2929d287d918
+F test/wal2.test 537f59e5c5932e3b45bf3591ae3e48a2601360c2e52821b633e222fe6ebd5b09
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56b664185e3e56ad22e0c16a5b946fc8204d4d33221b6b4269d6d650dfd9969c
-R fdce665679da9bba01108937d8d65192
-U dan
-Z b5e5e7f41f068b6d52baf2c4aa6a11f1
+P dd248c186a157b5ed60bbdae669b31237b8354c1a7e6ed64d377904043bd57ee
+R b3f8e9d256ef93f75dfd1b764c21d6e8
+U drh
+Z 29d22b4357a8e51c272b10c19deb4f0a

@@ -38,6 +38,9 @@ if {$::tcl_platform(platform) == "unix"
   } {
     db close
     #set effective [format %.5o [expr $permissions & ~$umask]]
+    if {$tcl_version>=8.7} {
+       regsub {^00} $permissions {0o} permissions
+    }
     set effective $permissions
     do_test journal3-1.2.$tn.1 {
       catch { forcedelete test.db-journal }
