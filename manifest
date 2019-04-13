@@ -1,5 +1,5 @@
-C Fix\sadditional\scompiler\swarnings\sintroduced\sby\sthe\sprevious\scheck-in\sand\sfound\nby\sMSVC.
-D 2019-04-13T14:17:09.598
+C Partially\srevert\sthe\stest\sfile\schanges\sin\s[4371a0c46e].\sIt\sis\sno\slonger\srequired\sfollowing\s[93ae382e97c23c90].
+D 2019-04-13T15:07:00.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -787,7 +787,7 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
-F test/dbfuzz001.test 29b6c6b39a701b6b5b08035c637674b76e1ecea515b1a184b29e3bd0f2d02dad
+F test/dbfuzz001.test e32d14465f1c77712896fda6a1ccc0f037b481c191c1696a9c44f6c9e4964faf
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c 6c355cf70c4a308b1b84a11a65282bcac5b4038db77de5cfc8ad080ef371f109
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c28c973ad6debd63f13e5d4d3da036f680baaec9d863eda039f2747db9f1cfd5
-R b2889ba2efb6123da4b3c2b9a04b0f08
-U drh
-Z 6870a410080a28a022c557121c526d92
+P 6fc0deffa4eed902fd13eefe6d2765f338f3dadc5b29f7cae5064e135417746b
+R e2acbab458283cdaffd67b36fa814ee1
+U dan
+Z 80d126619dd8bbe4e3a09aa21f560fbe
