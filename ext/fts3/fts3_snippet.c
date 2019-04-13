@@ -130,10 +130,11 @@ struct StrBuffer {
 */
 static MatchinfoBuffer *fts3MIBufferNew(int nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
-  int nByte = sizeof(u32) * (2*nElem + 1) + sizeof(MatchinfoBuffer);
-  int nStr = (int)strlen(zMatchinfo);
+  sqlite3_int64 nByte = sizeof(u32) * (2*(sqlite3_int64)nElem + 1)
+                           + sizeof(MatchinfoBuffer);
+  sqlite3_int64 nStr = strlen(zMatchinfo);
 
-  pRet = sqlite3_malloc(nByte + nStr+1);
+  pRet = sqlite3_malloc64(nByte + nStr+1);
   if( pRet ){
     memset(pRet, 0, nByte);
     pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;

@@ -269,7 +269,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
       GeoPoly *pOut;
       int x = 1;
       s.nVertex--;  /* Remove the redundant vertex at the end */
-      pOut = sqlite3_malloc64( GEOPOLY_SZ(s.nVertex) );
+      pOut = sqlite3_malloc64( GEOPOLY_SZ((sqlite3_int64)s.nVertex) );
       x = 1;
       if( pOut==0 ) goto parse_json_err;
       pOut->nVertex = s.nVertex;
@@ -655,7 +655,7 @@ static GeoPoly *geopolyBBox(
     if( pRc ) *pRc = SQLITE_OK;
     if( aCoord==0 ){
       geopolyBboxFill:
-      pOut = sqlite3_realloc(p, GEOPOLY_SZ(4));
+      pOut = sqlite3_realloc64(p, GEOPOLY_SZ(4));
       if( pOut==0 ){
         sqlite3_free(p);
         if( context ) sqlite3_result_error_nomem(context);
@@ -1051,9 +1051,9 @@ static GeoSegment *geopolySortSegmentsByYAndC(GeoSegment *pList){
 ** Determine the overlap between two polygons
 */
 static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
-  int nVertex = p1->nVertex + p2->nVertex + 2;
+  sqlite3_int64 nVertex = p1->nVertex + p2->nVertex + 2;
   GeoOverlap *p;
-  int nByte;
+  sqlite3_int64 nByte;
   GeoEvent *pThisEvent;
   double rX;
   int rc = 0;
@@ -1065,7 +1065,7 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
   nByte = sizeof(GeoEvent)*nVertex*2 
            + sizeof(GeoSegment)*nVertex 
            + sizeof(GeoOverlap);
-  p = sqlite3_malloc( nByte );
+  p = sqlite3_malloc64( nByte );
   if( p==0 ) return -1;
   p->aEvent = (GeoEvent*)&p[1];
   p->aSegment = (GeoSegment*)&p->aEvent[nVertex*2];
@@ -1224,8 +1224,8 @@ static int geopolyInit(
 ){
   int rc = SQLITE_OK;
   Rtree *pRtree;
-  int nDb;              /* Length of string argv[1] */
-  int nName;            /* Length of string argv[2] */
+  sqlite3_int64 nDb;              /* Length of string argv[1] */
+  sqlite3_int64 nName;            /* Length of string argv[2] */
   sqlite3_str *pSql;
   char *zSql;
   int ii;
@@ -1233,9 +1233,9 @@ static int geopolyInit(
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
 
   /* Allocate the sqlite3_vtab structure */
-  nDb = (int)strlen(argv[1]);
-  nName = (int)strlen(argv[2]);
-  pRtree = (Rtree *)sqlite3_malloc(sizeof(Rtree)+nDb+nName+2);
+  nDb = strlen(argv[1]);
+  nName = strlen(argv[2]);
+  pRtree = (Rtree *)sqlite3_malloc64(sizeof(Rtree)+nDb+nName+2);
   if( !pRtree ){
     return SQLITE_NOMEM;
   }
