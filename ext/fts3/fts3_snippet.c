@@ -128,7 +128,7 @@ struct StrBuffer {
 /*
 ** Allocate a two-slot MatchinfoBuffer object.
 */
-static MatchinfoBuffer *fts3MIBufferNew(int nElem, const char *zMatchinfo){
+static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
   sqlite3_int64 nByte = sizeof(u32) * (2*(sqlite3_int64)nElem + 1)
                            + sizeof(MatchinfoBuffer);
@@ -138,8 +138,9 @@ static MatchinfoBuffer *fts3MIBufferNew(int nElem, const char *zMatchinfo){
   if( pRet ){
     memset(pRet, 0, nByte);
     pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;
-    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0] + sizeof(u32)*(nElem+1);
-    pRet->nElem = nElem;
+    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0]
+                                      + sizeof(u32)*((int)nElem+1);
+    pRet->nElem = (int)nElem;
     pRet->zMatchinfo = ((char*)pRet) + nByte;
     memcpy(pRet->zMatchinfo, zMatchinfo, nStr+1);
     pRet->aRef[0] = 1;
@@ -1354,7 +1355,7 @@ static void fts3GetMatchinfo(
   ** initialize those elements that are constant for every row.
   */
   if( pCsr->pMIBuffer==0 ){
-    int nMatchinfo = 0;           /* Number of u32 elements in match-info */
+    size_t nMatchinfo = 0;        /* Number of u32 elements in match-info */
     int i;                        /* Used to iterate through zArg */
 
     /* Determine the number of phrases in the query */
