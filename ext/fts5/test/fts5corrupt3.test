@@ -7994,9 +7994,19 @@ do_test 56.0 {
 | end crash-2acc487d09f033.db
 }]} {}
 
-do_catchsql_test 56.1 {
-  INSERT INTO t1(b) VALUES(randomblob(250));
-  INSERT INTO t1(b) VALUES(randomblob(250));
+do_test 56.1 {
+  set res [catchsql {
+    INSERT INTO t1(b) VALUES(randomblob(250));
+    INSERT INTO t1(b) VALUES(randomblob(250));
+  }]
+
+  # For some permutations - those that use the page-cache - this test
+  # may return SQLITE_CONSTRAINT instead of SQLITE_CORRUPT. This is because
+  # the corrupt db in the test over-reads the page buffer slightly, with
+  # different results depending on whether or not the page-cache is in use.
+  if {$res=="1 {constraint failed}"} {
+    set res "1 {database disk image is malformed}"
+  }
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
