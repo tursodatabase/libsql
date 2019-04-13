@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\sin\sfts5corrupt3.test.
-D 2019-04-13T16:35:02.509
+C Fix\sthe\sfts3varint.test\sscript\sso\sthat\sit\sworks\seven\son\sversions\sof\sTCL\nfor\swhich\sTcl_GetWideIntFromObj()\sdoes\snot\swork.
+D 2019-04-13T16:43:58.010
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -956,7 +956,7 @@ F test/fts3snippet.test dace744104d1a44dc12dc9dd10b8d7542342df503d96942b7c4a5503
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test a663f4cac22a9505400bc22aacb818d7055240409c28729669ea7d4cc2120d15
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
-F test/fts3varint.test 752c08ed5d32c5d7dc211b056f4ed68a76b7e36e
+F test/fts3varint.test 0b84a3fd4eba8a39f3687523804d18f3b322e6d4539a55bf342079c3614f2ada
 F test/fts4aa.test 10aac8e9d62c7357590acfabe3fad01e9a9ce1cb
 F test/fts4check.test 6259f856604445d7b684c9b306b2efb6346834c3f50e8fc4a59a2ca6d5319ad0
 F test/fts4content.test 1518195a9f92b711d94419f76409a31cc78755854fb0abb1da2b74b9e0cf843e
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 593a7e6e20a2f91fe3497edd7effad50ac876f7f03c9222e332dfeb43d26882e
-R a313753b410309d2097004d21b05b25d
-U dan
-Z 30db34d1513c82db3572cc241354fd26
+P 858f62274eb727109d0452ad2d80c0e0acab0f569494b1218c404501e103ed39
+R 5dd70b7c2d6a43b013cdebc603a6d32b
+U drh
+Z 61a93c2cee3fbd6702f671061dce6f65
