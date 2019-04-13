@@ -1597,7 +1597,7 @@ VList *sqlite3VListAdd(
   assert( pIn==0 || pIn[0]>=3 );  /* Verify ok to add new elements */
   if( pIn==0 || pIn[1]+nInt > pIn[0] ){
     /* Enlarge the allocation */
-    int nAlloc = (pIn ? pIn[0]*2 : 10) + nInt;
+    sqlite3_int64 nAlloc = (pIn ? 2*(sqlite3_int64)pIn[0] : 10) + nInt;
     VList *pOut = sqlite3DbRealloc(db, pIn, nAlloc*sizeof(int));
     if( pOut==0 ) return pIn;
     if( pIn==0 ) pOut[1] = 2;
