@@ -159,7 +159,7 @@ static int growOpArray(Vdbe *v, int nOp){
                         : (sqlite3_int64)v->nOpAlloc+nOp);
 #else
   sqlite3_int64 nNew = (v->nOpAlloc ? 2*(sqlite3_int64)v->nOpAlloc
-                        : (sqlite3_int64)1024/sizeof(Op));
+                        : (sqlite3_int64)(1024/sizeof(Op)));
   UNUSED_PARAMETER(nOp);
 #endif
 
@@ -2068,9 +2068,9 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 ** of a ReusableSpace object by the allocSpace() routine below.
 */
 struct ReusableSpace {
-  u8 *pSpace;          /* Available memory */
-  int nFree;           /* Bytes of available memory */
-  int nNeeded;         /* Total bytes that could not be allocated */
+  u8 *pSpace;            /* Available memory */
+  sqlite3_int64 nFree;   /* Bytes of available memory */
+  sqlite3_int64 nNeeded; /* Total bytes that could not be allocated */
 };
 
 /* Try to allocate nByte bytes of 8-byte aligned bulk memory for pBuf
@@ -2090,7 +2090,7 @@ struct ReusableSpace {
 static void *allocSpace(
   struct ReusableSpace *p,  /* Bulk memory available for allocation */
   void *pBuf,               /* Pointer to a prior allocation */
-  int nByte                 /* Bytes of memory needed */
+  sqlite3_int64 nByte       /* Bytes of memory needed */
 ){
   assert( EIGHT_BYTE_ALIGNMENT(p->pSpace) );
   if( pBuf==0 ){

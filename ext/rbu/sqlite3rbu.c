@@ -1040,7 +1040,7 @@ static int rbuMPrintfExec(sqlite3rbu *p, sqlite3 *db, const char *zFmt, ...){
 ** immediately without attempting the allocation or modifying the stored
 ** error code.
 */
-static void *rbuMalloc(sqlite3rbu *p, int nByte){
+static void *rbuMalloc(sqlite3rbu *p, sqlite3_int64 nByte){
   void *pRet = 0;
   if( p->rc==SQLITE_OK ){
     assert( nByte>0 );
@@ -1061,7 +1061,7 @@ static void *rbuMalloc(sqlite3rbu *p, int nByte){
 ** error code in the RBU handle passed as the first argument.
 */
 static void rbuAllocateIterArrays(sqlite3rbu *p, RbuObjIter *pIter, int nCol){
-  int nByte = (2*sizeof(char*) + sizeof(int) + 3*sizeof(u8)) * nCol;
+  sqlite3_int64 nByte = (2*sizeof(char*) + sizeof(int) + 3*sizeof(u8)) * nCol;
   char **azNew;
 
   azNew = (char**)rbuMalloc(p, nByte);
@@ -1705,7 +1705,7 @@ static char *rbuObjIterGetSetlist(
 */
 static char *rbuObjIterGetBindlist(sqlite3rbu *p, int nBind){
   char *zRet = 0;
-  int nByte = nBind*2 + 1;
+  sqlite3_int64 nByte = 2*(sqlite3_int64)nBind + 1;
 
   zRet = (char*)rbuMalloc(p, nByte);
   if( zRet ){
@@ -4561,7 +4561,7 @@ static int rbuVfsShmMap(
   assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB) );
   if( eStage==RBU_STAGE_OAL || eStage==RBU_STAGE_MOVE ){
     if( iRegion<=p->nShm ){
-      int nByte = (iRegion+1) * sizeof(char*);
+      sqlite3_int64 nByte = (iRegion+1) * sizeof(char*);
       char **apNew = (char**)sqlite3_realloc64(p->apShm, nByte);
       if( apNew==0 ){
         rc = SQLITE_NOMEM;

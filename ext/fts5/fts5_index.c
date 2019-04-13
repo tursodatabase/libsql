@@ -3691,7 +3691,7 @@ static int fts5WriteDlidxGrow(
     if( aDlidx==0 ){
       p->rc = SQLITE_NOMEM;
     }else{
-      int nByte = sizeof(Fts5DlidxWriter) * (nLvl - pWriter->nDlidx);
+      size_t nByte = sizeof(Fts5DlidxWriter) * (nLvl - pWriter->nDlidx);
       memset(&aDlidx[pWriter->nDlidx], 0, nByte);
       pWriter->aDlidx = aDlidx;
       pWriter->nDlidx = nLvl;
