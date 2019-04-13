@@ -471,7 +471,7 @@ static int testTokenizerNext(
       pCsr->iInput = (int)(p - pCsr->aInput);
 
       *ppToken = pCsr->aBuffer;
-      *pnBytes = nToken;
+      *pnBytes = (int)nToken;
       *piStartOffset = (int)(pToken - pCsr->aInput);
       *piEndOffset = (int)(p - pCsr->aInput);
       *piPosition = pCsr->iToken;

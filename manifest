@@ -1,5 +1,5 @@
-C Fix\sthe\sfts3varint.test\sscript\sso\sthat\sit\sworks\seven\son\sversions\sof\sTCL\nfor\swhich\sTcl_GetWideIntFromObj()\sdoes\snot\swork.
-D 2019-04-13T16:43:58.010
+C Fix\sa\sharmless\scompiler\swarning\sin\stest\slogic.
+D 2019-04-13T16:50:21.864
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
 F ext/fts3/fts3_snippet.c 2f3a78b990f1c8658225618c8a0fa06ab60046688d6fb627a548e8ada9011150
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
-F ext/fts3/fts3_test.c 5f65679c195e53701d9e21d3dc73b0c09f146ae4ad86ae802d0ddaf62b29f9cd
+F ext/fts3/fts3_test.c 73b16e229e517c1b1f0fb8e1046182a4e5dbc8dbe6eea8a5d4353fcce7dbbf39
 F ext/fts3/fts3_tokenize_vtab.c 1de9a61acfa2a0445ed989310c31839c57f6b6086dd9d5c97177ae734a17fd8b
 F ext/fts3/fts3_tokenizer.c 8034a5604c31559493fef0fed432cb251a566c46043c0b2c11b92c740e6f036f
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 858f62274eb727109d0452ad2d80c0e0acab0f569494b1218c404501e103ed39
-R 5dd70b7c2d6a43b013cdebc603a6d32b
+P 53f787ad298756027f630bfefade98b46f01539eb152f7e359b280335c77379e
+R 8b1b0f0c47fe37665eee614aa93498ca
 U drh
-Z 61a93c2cee3fbd6702f671061dce6f65
+Z 1201afeefdebd0df9eb399ed653a500a
