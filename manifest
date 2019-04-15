@@ -1,5 +1,5 @@
-C Remove\sa\sstray\stab\sfrom\sthe\ssource\scode.
-D 2019-04-14T00:40:29.664
+C Update\stool/symbols.sh\sto\signore\ssymbols\sfrom\ssessions\sand\srebaser\sand\sto\snot\ntry\sto\scompile\swith\sICU\swhich\sis\snot\savailable\son\sall\splatforms.
+D 2019-04-15T13:51:27.890
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1790,7 +1790,7 @@ F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14e
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
-F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
+F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd084427319394386844d6651479256a2fd57a412fccb79ba53172ce76693eb1
-R bdea7eaed004b4cfa9fc23d1bb7a767a
+P 0ada58e9303d53aba8bdc37abe5904aa40e91f80e247eb51cb1192387b0d661c
+R d06e34268d47fe60caa0abd72ec2148e
 U drh
-Z c99e67ebce64d8ba06986a4aac00b602
+Z 9d31d16ab161c9ea2ddf9f92f3cb599e
