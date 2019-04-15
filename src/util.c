@@ -32,15 +32,23 @@ void sqlite3Coverage(int x){
 #endif
 
 /*
-** Give a callback to the test harness that can be used to simulate faults
-** in places where it is difficult or expensive to do so purely by means
-** of inputs.
+** Calls to sqlite3FaultSim() are used to simulate a failure during testing,
+** or to bypass normal error detection during testing in order to let 
+** execute proceed futher downstream.
 **
-** The intent of the integer argument is to let the fault simulator know
-** which of multiple sqlite3FaultSim() calls has been hit.
+** In deployment, sqlite3FaultSim() *always* return SQLITE_OK (0).  The
+** sqlite3FaultSim() function only returns non-zero during testing.
 **
-** Return whatever integer value the test callback returns, or return
-** SQLITE_OK if no test callback is installed.
+** During testing, if the test harness has set a fault-sim callback using
+** a call to sqlite3_test_control(SQLITE_TESTCTRL_FAULT_INSTALL), then
+** each call to sqlite3FaultSim() is relayed to that application-supplied
+** callback and the integer return value form the application-supplied
+** callback is returned by sqlite3FaultSim().
+**
+** The integer argument to sqlite3FaultSim() is a code to identify which
+** sqlite3FaultSim() instance is being invoked. Each call to sqlite3FaultSim()
+** should have a unique code.  To prevent legacy testing applications from
+** breaking, the codes should not be changed or reused.
 */
 #ifndef SQLITE_UNTESTABLE
 int sqlite3FaultSim(int iTest){
@@ -223,6 +231,19 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
     pParse->zErrMsg = zMsg;
     pParse->rc = SQLITE_ERROR;
   }
+}
+
+/*
+** If database connection db is currently parsing SQL, then transfer
+** error code errCode to that parser if the parser has not already
+** encountered some other kind of error.
+*/
+int sqlite3ErrorToParser(sqlite3 *db, int errCode){
+  Parse *pParse;
+  if( db==0 || (pParse = db->pParse)==0 ) return errCode;
+  pParse->rc = errCode;
+  pParse->nErr++;
+  return errCode;
 }
 
 /*
@@ -1576,7 +1597,7 @@ VList *sqlite3VListAdd(
   assert( pIn==0 || pIn[0]>=3 );  /* Verify ok to add new elements */
   if( pIn==0 || pIn[1]+nInt > pIn[0] ){
     /* Enlarge the allocation */
-    int nAlloc = (pIn ? pIn[0]*2 : 10) + nInt;
+    sqlite3_int64 nAlloc = (pIn ? 2*(sqlite3_int64)pIn[0] : 10) + nInt;
     VList *pOut = sqlite3DbRealloc(db, pIn, nAlloc*sizeof(int));
     if( pOut==0 ) return pIn;
     if( pIn==0 ) pOut[1] = 2;

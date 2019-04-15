@@ -575,7 +575,7 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
 
   /* Enlarge the pWal->apWiData[] array if required */
   if( pWal->nWiData<=iPage ){
-    int nByte = sizeof(u32*)*(iPage+1);
+    sqlite3_int64 nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
     apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
     if( !apNew ){
@@ -679,6 +679,7 @@ static void walChecksumBytes(
 
   assert( nByte>=8 );
   assert( (nByte&0x00000007)==0 );
+  assert( nByte<=65536 );
 
   if( nativeCksum ){
     do {
@@ -1621,7 +1622,7 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   WalIterator *p;                 /* Return value */
   int nSegment;                   /* Number of segments to merge */
   u32 iLast;                      /* Last frame in log */
-  int nByte;                      /* Number of bytes to allocate */
+  sqlite3_int64 nByte;            /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
   ht_slot *aTmp;                  /* Temp space used by merge-sort */
   int rc = SQLITE_OK;             /* Return Code */

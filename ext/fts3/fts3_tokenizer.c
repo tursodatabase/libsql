@@ -196,8 +196,8 @@ int sqlite3Fts3InitTokenizer(
     int iArg = 0;
     z = &z[n+1];
     while( z<zEnd && (NULL!=(z = (char *)sqlite3Fts3NextToken(z, &n))) ){
-      int nNew = sizeof(char *)*(iArg+1);
-      char const **aNew = (const char **)sqlite3_realloc((void *)aArg, nNew);
+      sqlite3_int64 nNew = sizeof(char *)*(iArg+1);
+      char const **aNew = (const char **)sqlite3_realloc64((void *)aArg, nNew);
       if( !aNew ){
         sqlite3_free(zCopy);
         sqlite3_free((void *)aArg);

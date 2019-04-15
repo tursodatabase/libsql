@@ -1022,6 +1022,8 @@ do_test shell1-5.0 {
     if {$i==0x0D || ($tcl_platform(platform)=="windows" && $i==0x1A)} {
       continue
     }
+    # Tcl 8.7 maps 0x80 through 0x9f into valid UTF8.  So skip those tests.
+    if {$i>=0x80 && $i<=0x9f} continue
     if {$i>=0xE0 && $tcl_platform(os)=="OpenBSD"}  continue
     if {$i>=0xE0 && $i<=0xEF && $tcl_platform(os)=="Linux"}  continue
     set hex [format %02X $i]

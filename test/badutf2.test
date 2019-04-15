@@ -98,12 +98,18 @@ foreach { i len uval xstr ustr u2u } {
     } $uval
   }
 
-  do_test badutf2-4.1.$i {
-    sqlite3_reset $S
-    sqlite3_bind_text $S 1 $xstr $len
-    sqlite3_step $S
-    utf8_to_ustr2 [ sqlite3_column_text $S 0 ]
-  } $ustr
+  # Tcl 8.7 and later do automatic bad-utf8 correction for
+  # characters 0x80 thru 0x9f so test case 5 does not work here.
+  if {$i==5 && $tcl_version>=8.7} {
+     # no-op
+  } else {
+    do_test badutf2-4.1.$i {
+      sqlite3_reset $S
+      sqlite3_bind_text $S 1 $xstr $len
+      sqlite3_step $S
+      utf8_to_ustr2 [ sqlite3_column_text $S 0 ]
+    } $ustr
+  }
 
   ifcapable debug {
     do_test badutf2-5.1.$i {

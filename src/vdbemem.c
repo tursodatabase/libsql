@@ -298,13 +298,15 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
   int nByte;
   assert( pMem->flags & MEM_Zero );
-  assert( pMem->flags&MEM_Blob );
+  assert( (pMem->flags&MEM_Blob)!=0 || MemNullNochng(pMem) );
+  testcase( sqlite3_value_nochange(pMem) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
   /* Set nByte to the number of bytes required to store the expanded blob. */
   nByte = pMem->n + pMem->u.nZero;
   if( nByte<=0 ){
+    if( (pMem->flags & MEM_Blob)==0 ) return SQLITE_OK;
     nByte = 1;
   }
   if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
@@ -1061,7 +1063,7 @@ int sqlite3VdbeMemSetStr(
       nAlloc += (enc==SQLITE_UTF8?1:2);
     }
     if( nByte>iLimit ){
-      return SQLITE_TOOBIG;
+      return sqlite3ErrorToParser(pMem->db, SQLITE_TOOBIG);
     }
     testcase( nAlloc==0 );
     testcase( nAlloc==31 );

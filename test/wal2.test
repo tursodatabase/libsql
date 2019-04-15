@@ -1109,7 +1109,7 @@ if {$::tcl_platform(platform) == "unix"} {
     set effective [format %.5o [expr $permissions & ~$umask]]
     do_test wal2-12.2.$tn.1 {
       file attributes test.db -permissions $permissions
-      file attributes test.db -permissions
+      string map {o 0} [file attributes test.db -permissions]
     } $permissions
     do_test wal2-12.2.$tn.2 {
       list [file exists test.db-wal] [file exists $shmpath]
@@ -1120,7 +1120,8 @@ if {$::tcl_platform(platform) == "unix"} {
       list [file exists test.db-wal] [file exists $shmpath]
     } {1 1}
     do_test wal2-12.2.$tn.4 {
-      list [file attr test.db-wal -perm] [file attr $shmpath -perm]
+      set x [list [file attr test.db-wal -perm] [file attr $shmpath -perm]]
+      string map {o 0} $x
     } [list $effective $effective]
     do_test wal2-12.2.$tn.5 {
       ifcapable enable_persist_wal {
@@ -1191,6 +1192,7 @@ if {$::tcl_platform(platform) == "unix"} {
       set     L [file attr test.db -perm]
       lappend L [file attr test.db-wal -perm]
       lappend L [file attr $shmpath -perm]
+      string map {o 0} $L
     } [list $db_perm $wal_perm $shm_perm]
 
     # If $can_open is true, then it should be possible to open a database

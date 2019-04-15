@@ -1438,4 +1438,105 @@ do_execsql_test where-23.0 {
   SELECT * FROM t1, t2 WHERE a=y AND y=3;
 } {3 2 3}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test where-24.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+}
+
+foreach {tn sql res} {
+  1 "SELECT b FROM t1"                   {one two three four}
+  2 "SELECT b FROM t1 WHERE a<4"         {one two three}
+  3 "SELECT b FROM t1 WHERE a>1"         {two three four}
+  4 "SELECT b FROM t1 WHERE a>1 AND a<4" {two three}
+
+  5 "SELECT b FROM t1 WHERE a>? AND a<4" {}
+  6 "SELECT b FROM t1 WHERE a>1 AND a<?" {}
+  7 "SELECT b FROM t1 WHERE a>? AND a<?" {}
+
+  7 "SELECT b FROM t1 WHERE a>=? AND a<=4" {}
+  8 "SELECT b FROM t1 WHERE a>=1 AND a<=?" {}
+  9 "SELECT b FROM t1 WHERE a>=? AND a<=?" {}
+} {
+  set rev [list]
+  foreach r $res { set rev [concat $r $rev] }
+
+  do_execsql_test where-24.$tn.1 "$sql"                     $res
+  do_execsql_test where-24.$tn.2 "$sql ORDER BY rowid"      $res
+  do_execsql_test where-24.$tn.3 "$sql ORDER BY rowid DESC" $rev
+
+  do_execsql_test where-24-$tn.4 "
+    BEGIN;
+      DELETE FROM t1;
+      $sql;
+      $sql ORDER BY rowid;
+      $sql ORDER BY rowid DESC;
+    ROLLBACK;
+  "
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test where-25.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i1 ON t1(c);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i2 ON t2(c);
+  INSERT INTO t2 VALUES(1, 'one', 'i');
+  INSERT INTO t2 VALUES(2, 'two', 'ii');
+  INSERT INTO t2 VALUES(3, 'three', 'iii');
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET rootpage = (
+    SELECT rootpage FROM sqlite_master WHERE name = 'i2'
+  ) WHERE name = 'i1';
+}
+db close
+sqlite3 db test.db
+do_catchsql_test where-25.1 {
+  DELETE FROM t1 WHERE c='iii'
+} {1 {database disk image is malformed}}
+do_catchsql_test where-25.2 {
+  INSERT INTO t1 VALUES(4, 'four', 'iii') 
+    ON CONFLICT(c) DO UPDATE SET b=NULL
+} {1 {database disk image is malformed}}
+
+reset_db
+do_execsql_test where-25.3 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
+  CREATE UNIQUE INDEX i1 ON t1(c);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i2 ON t2(c);
+  INSERT INTO t2 VALUES(1, 'one', 'i');
+  INSERT INTO t2 VALUES(2, 'two', 'ii');
+  INSERT INTO t2 VALUES(3, 'three', 'iii');
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET rootpage = (
+    SELECT rootpage FROM sqlite_master WHERE name = 'i2'
+  ) WHERE name = 'i1';
+}
+db close
+sqlite3 db test.db
+do_catchsql_test where-25.4 {
+  SELECT * FROM t1 WHERE c='iii'
+} {0 {}}
+do_catchsql_test where-25.5 {
+  INSERT INTO t1 VALUES(4, 'four', 'iii') 
+    ON CONFLICT(c) DO UPDATE SET b=NULL
+} {1 {corrupt database}}
+
 finish_test
+

@@ -740,7 +740,7 @@ static int fsColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
     fstat(fd, &sbuf);
 
     if( sbuf.st_size>=pCur->nAlloc ){
-      int nNew = sbuf.st_size*2;
+      sqlite3_int64 nNew = sbuf.st_size*2;
       char *zNew;
       if( nNew<1024 ) nNew = 1024;
 

@@ -6176,7 +6176,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   MemPage *pPage1 = pBt->pPage1;      /* Local reference to page 1 */
   MemPage *pPage;                     /* Page being freed. May be NULL. */
   int rc;                             /* Return Code */
-  int nFree;                          /* Initial number of pages on free-list */
+  u32 nFree;                          /* Initial number of pages on free-list */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( CORRUPT_DB || iPage>1 );
