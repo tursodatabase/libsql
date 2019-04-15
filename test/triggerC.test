@@ -1057,5 +1057,19 @@ do_catchsql_test 16.2 {
   HAVING raise(ABORT, 'msg');
 } {1 {RAISE() may only be used within a trigger-program}}
 
+#-------------------------------------------------------------------------
+# Datatype mismatch on IPK when there are BEFORE triggers.
+#
+do_execsql_test 17.0 {
+  CREATE TABLE xyz(x INTEGER PRIMARY KEY, y, z);
+  CREATE TRIGGER xyz_tr BEFORE INSERT ON xyz BEGIN
+    SELECT new.x;
+  END;
+}
+do_catchsql_test 17.1 {
+  INSERT INTO xyz VALUES('hello', 2, 3);
+} {1 {datatype mismatch}}
+
+
 finish_test
 

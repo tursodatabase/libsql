@@ -45,7 +45,7 @@ struct Hash {
   unsigned int count;       /* Number of entries in this table */
   HashElem *first;          /* The first element of the array */
   struct _ht {              /* the hash table */
-    int count;                 /* Number of entries with this hash */
+    unsigned int count;        /* Number of entries with this hash */
     HashElem *chain;           /* Pointer to first entry with this hash */
   } *ht;
 };

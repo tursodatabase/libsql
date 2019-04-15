@@ -40,17 +40,26 @@ proc execsql {sql} {
   #puts $lSql
 
   set ret ""
+  set nChar 0
   foreach stmt $lSql {
     set res [pg_exec $::db $stmt]
     set err [pg_result $res -error]
     if {$err!=""} { error $err }
+
     for {set i 0} {$i < [pg_result $res -numTuples]} {incr i} {
-      if {$i==0} {
-        set ret [pg_result $res -getTuple 0]
+      set t [pg_result $res -getTuple $i]
+      set nNew [string length $t]
+      if {$nChar>0 && ($nChar+$nNew+3)>75} {
+        append ret "\n  "
+        set nChar 0
       } else {
-        append ret "   [pg_result $res -getTuple $i]"
+        if {$nChar>0} {
+          append ret "   "
+          incr nChar 3
+        }
       }
-      # lappend ret {*}[pg_result $res -getTuple $i]
+      incr nChar $nNew
+      append ret $t
     }
     pg_result $res -clear
   }
@@ -61,9 +70,25 @@ proc execsql {sql} {
 proc execsql_test {tn sql} {
   set res [execsql $sql]
   set sql [string map {string_agg group_concat} $sql]
+  set sql [string map [list {NULLS FIRST} {}] $sql]
+  set sql [string map [list {NULLS LAST} {}] $sql]
   puts $::fd "do_execsql_test $tn {"
   puts $::fd "  [string trim $sql]"
   puts $::fd "} {$res}"
+  puts $::fd ""
+}
+
+proc errorsql_test {tn sql} {
+  set rc [catch {execsql $sql} msg]
+  if {$rc==0} {
+    error "errorsql_test SQL did not cause an error!"
+  }
+  set msg [lindex [split [string trim $msg] "\n"] 0]
+  puts $::fd "# PG says $msg"
+  set sql [string map {string_agg group_concat} $sql]
+  puts $::fd "do_test $tn { catch { execsql {"
+  puts $::fd "  [string trim $sql]"
+  puts $::fd "} } } 1"
   puts $::fd ""
 }
 
@@ -88,10 +113,12 @@ do_test $tn {
     lappend myres [format $F [set r]]
   }
   set res2 {$res2}
+  set i 0
   foreach r [set myres] r2 [set res2] {
     if {[set r]<([set r2]-$T) || [set r]>([set r2]+$T)} {
       error "list element [set i] does not match: got=[set r] expected=[set r2]"
     }
+    incr i
   }
   set {} {}
 } {}

@@ -345,4 +345,32 @@ do_execsql_test skipscan1-9.3 {
 } {/{SCAN TABLE t9a}/}
 optimization_control db skip-scan 1
 
+do_execsql_test skipscan1-2.1 {
+  CREATE TABLE t6(a TEXT, b INT, c INT, d INT);
+  CREATE INDEX t6abc ON t6(a,b,c);
+  INSERT INTO t6 VALUES('abc',123,4,5);
+
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1 VALUES('t6','t6abc','10000 5000 2000 10');
+  ANALYZE sqlite_master;
+  DELETE FROM t6;
+} {}
+
+do_execsql_test skipscan1-2.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t6 WHERE d<>99 AND b=345 ORDER BY a;
+} {/* USING INDEX t6abc (ANY(a) AND b=?)*/}
+do_execsql_test skipscan1-2.2 {
+  SELECT a,b,c,d,'|' FROM t6 WHERE d<>99 AND b=345 ORDER BY a;
+} {}
+
+do_execsql_test skipscan1-2.3eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t6 WHERE d<>99 AND b=345 ORDER BY a DESC;
+} {/* USING INDEX t6abc (ANY(a) AND b=?)*/}
+do_execsql_test skipscan1-2.3 {
+  SELECT a,b,c,d,'|' FROM t6 WHERE d<>99 AND b=345 ORDER BY a DESC;
+} {}
+
 finish_test

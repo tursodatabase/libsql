@@ -346,7 +346,7 @@ static int fts3tokFilterMethod(
   if( idxNum==1 ){
     const char *zByte = (const char *)sqlite3_value_text(apVal[0]);
     int nByte = sqlite3_value_bytes(apVal[0]);
-    pCsr->zInput = sqlite3_malloc(nByte+1);
+    pCsr->zInput = sqlite3_malloc64(nByte+1);
     if( pCsr->zInput==0 ){
       rc = SQLITE_NOMEM;
     }else{

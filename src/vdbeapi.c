@@ -67,7 +67,7 @@ static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   assert( p->zSql!=0 );
   sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
   iElapse = (iNow - p->startTime)*1000000;
-#ifndef SQLITE_OMIT_DEPRECATED  	
+#ifndef SQLITE_OMIT_DEPRECATED
   if( db->xProfile ){
     db->xProfile(db->pProfileArg, p->zSql, iElapse);
   }
@@ -273,6 +273,11 @@ int sqlite3_value_type(sqlite3_value* pVal){
 /* Return true if a parameter to xUpdate represents an unchanged column */
 int sqlite3_value_nochange(sqlite3_value *pVal){
   return (pVal->flags&(MEM_Null|MEM_Zero))==(MEM_Null|MEM_Zero);
+}
+
+/* Return true if a parameter value originated from an sqlite3_bind() */
+int sqlite3_value_frombind(sqlite3_value *pVal){
+  return (pVal->flags&MEM_FromBind)!=0;
 }
 
 /* Make a copy of an sqlite3_value object

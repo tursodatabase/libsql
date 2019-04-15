@@ -1391,4 +1391,32 @@ for {set i 65536} {$i<=0x10ffff} {incr i 139} {
 do_execsql_test func-31.1 { 
   SELECT char(), length(char()), typeof(char()) 
 } {{} 0 text}
+
+# sqlite3_value_frombind()
+#
+do_execsql_test func-32.100 {
+  SELECT test_frombind(1,2,3,4);
+} {0}
+do_execsql_test func-32.110 {
+  SELECT test_frombind(1,2,?,4);
+} {4}
+do_execsql_test func-32.120 {
+  SELECT test_frombind(1,(?),4,?+7);
+} {2}
+do_execsql_test func-32.130 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,e,f);
+  INSERT INTO t1 VALUES(1,2.5,'xyz',x'e0c1b2a3',null);
+  SELECT test_frombind(a,b,c,e,f,$xyz) FROM t1;
+} {32}
+do_execsql_test func-32.140 {
+  SELECT test_frombind(a,b,c,e,f,$xyz+f) FROM t1;
+} {0}
+do_execsql_test func-32.150 {
+  SELECT test_frombind(x.a,y.b,x.c,:123,y.e,x.f,$xyz+y.f) FROM t1 x, t1 y;
+} {8}
+
+
+
+
 finish_test

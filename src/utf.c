@@ -200,11 +200,11 @@ u32 sqlite3Utf8Read(
 ** encoding, or if *pMem does not contain a string value.
 */
 SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
-  int len;                    /* Maximum length of output string in bytes */
-  unsigned char *zOut;                  /* Output buffer */
-  unsigned char *zIn;                   /* Input iterator */
-  unsigned char *zTerm;                 /* End of input */
-  unsigned char *z;                     /* Output iterator */
+  sqlite3_int64 len;          /* Maximum length of output string in bytes */
+  unsigned char *zOut;        /* Output buffer */
+  unsigned char *zIn;         /* Input iterator */
+  unsigned char *zTerm;       /* End of input */
+  unsigned char *z;           /* Output iterator */
   unsigned int c;
 
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -253,14 +253,14 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     ** nul-terminator.
     */
     pMem->n &= ~1;
-    len = pMem->n * 2 + 1;
+    len = 2 * (sqlite3_int64)pMem->n + 1;
   }else{
     /* When converting from UTF-8 to UTF-16 the maximum growth is caused
     ** when a 1-byte UTF-8 character is translated into a 2-byte UTF-16
     ** character. Two bytes are required in the output buffer for the
     ** nul-terminator.
     */
-    len = pMem->n * 2 + 2;
+    len = 2 * (sqlite3_int64)pMem->n + 2;
   }
 
   /* Set zIn to point at the start of the input buffer and zTerm to point 1

@@ -836,7 +836,7 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
 
   /* Enlarge the pWal->apWiData[] array if required */
   if( pWal->nWiData<=iPage ){
-    int nByte = sizeof(u32*)*(iPage+1);
+    sqlite3_int64 nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
     apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
     if( !apNew ){
@@ -940,6 +940,7 @@ static void walChecksumBytes(
 
   assert( nByte>=8 );
   assert( (nByte&0x00000007)==0 );
+  assert( nByte<=65536 );
 
   if( nativeCksum ){
     do {
@@ -1299,6 +1300,7 @@ static void walCleanupHash(Wal *pWal){
   int iLimit = 0;                 /* Zero values greater than this */
   int nByte;                      /* Number of bytes to zero in aPgno[] */
   int i;                          /* Used to iterate through aHash[] */
+  int rc;                         /* Return code form walHashGet() */
   int iWal = walidxGetFile(&pWal->hdr);
   u32 mxFrame = walidxGetMxFrame(&pWal->hdr, iWal);
 
@@ -1319,11 +1321,12 @@ static void walCleanupHash(Wal *pWal){
 
   /* Obtain pointers to the hash-table and page-number array containing 
   ** the entry that corresponds to frame pWal->hdr.mxFrame. It is guaranteed
-  ** that the page said hash-table and array reside on is already mapped.
+  ** that the page said hash-table and array reside on is already mapped.(1)
   */
   assert( pWal->nWiData>walFramePage(iExternal) );
   assert( pWal->apWiData[walFramePage(iExternal)] );
-  walHashGet(pWal, walFramePage(iExternal), &sLoc);
+  rc = walHashGet(pWal, walFramePage(iExternal), &sLoc);
+  if( NEVER(rc) ) return; /* Defense-in-depth, in case (1) above is wrong */
 
   /* Zero all hash-table entries that correspond to frame numbers greater
   ** than pWal->hdr.mxFrame.
@@ -2090,7 +2093,7 @@ static int walIteratorInit(
   WalIterator *p;                 /* Return value */
   int nSegment;                   /* Number of segments to merge */
   u32 iLast;                      /* Last frame in log */
-  int nByte;                      /* Number of bytes to allocate */
+  sqlite3_int64 nByte;            /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
   int iLastSeg;                   /* Last hash table to iterate though */
   ht_slot *aTmp;                  /* Temp space used by merge-sort */

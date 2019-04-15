@@ -154,17 +154,18 @@ static void fuzzReadFile(const char *zFilename, int *pSz, void **ppBuf){
   pBuf = sqlite3_malloc64( sz ? sz : 1 );
   if( pBuf==0 ){
     fprintf(stderr, "cannot allocate %d to hold content of \"%s\"\n",
-            sz, zFilename);
+            (int)sz, zFilename);
     exit(1);
   }
   if( sz>0 ){
-    if( fread(pBuf, sz, 1, f)!=1 ){
-      fprintf(stderr, "cannot read all %d bytes of \"%s\"\n", sz, zFilename);
+    if( fread(pBuf, (size_t)sz, 1, f)!=1 ){
+      fprintf(stderr, "cannot read all %d bytes of \"%s\"\n",
+              (int)sz, zFilename);
       exit(1);
     }
     fclose(f);
   }
-  *pSz = sz;
+  *pSz = (int)sz;
   *ppBuf = pBuf;
 }
 
@@ -343,7 +344,7 @@ struct FuzzChange {
 static void *fuzzMalloc(sqlite3_int64 nByte){
   void *pRet = sqlite3_malloc64(nByte);
   if( pRet ){
-    memset(pRet, 0, nByte);
+    memset(pRet, 0, (size_t)nByte);
   }
   return pRet;
 }
@@ -384,7 +385,7 @@ static int fuzzGetVarint(u8 *p, int *pnVal){
 static int fuzzPutVarint(u8 *p, int nVal){
   assert( nVal>0 && nVal<2097152 );
   if( nVal<128 ){
-    p[0] = nVal;
+    p[0] = (u8)nVal;
     return 1;
   }
   if( nVal<16384 ){
@@ -459,7 +460,7 @@ static int fuzzParseHeader(
       pGrp->aPK = p;
       p += pGrp->nCol;
       pGrp->zTab = (const char*)p;
-      p = &p[strlen(p)+1];
+      p = &p[strlen((const char*)p)+1];
 
       if( p>=pEnd ){
         rc = fuzzCorrupt();
@@ -695,8 +696,6 @@ static int fuzzPrintRecord(FuzzChangesetGroup *pGrp, u8 **ppRec, int bPKOnly){
         case 0x03:                    /* text */
         case 0x04: {                  /* blob */
           int nTxt;
-          int sz;
-          int i;
           p += fuzzGetVarint(p, &nTxt);
           printf("%s%s", zPre, eType==0x03 ? "'" : "X'");
           for(i=0; i<nTxt; i++){
@@ -859,7 +858,7 @@ static int fuzzSelectChange(FuzzChangeset *pParse, FuzzChange *pChange){
         case 0x03:                    /* text */
         case 0x04: {                  /* blob */
           int nByte = fuzzRandomInt(48);
-          pChange->aSub[1] = nByte;
+          pChange->aSub[1] = (u8)nByte;
           fuzzRandomBlob(nByte, &pChange->aSub[2]);
           if( pChange->aSub[0]==0x03 ){
             int i;
@@ -1004,7 +1003,7 @@ static int fuzzCopyChange(
       }else if( p==pFuzz->pSub2 ){
         pCopy = pFuzz->pSub1;
       }else if( i==iUndef ){
-        pCopy = "\0";
+        pCopy = (u8*)"\0";
       }
 
       if( pCopy[0]==0x00 && eNew!=eType && eType==SQLITE_UPDATE && iRec==0 ){
@@ -1067,7 +1066,7 @@ static int fuzzCopyChange(
       for(i=0; i<pGrp->nCol; i++){
         int sz;
         u8 *pCopy = pCsr;
-        if( pGrp->aPK[i] ) pCopy = "\0";
+        if( pGrp->aPK[i] ) pCopy = (u8*)"\0";
         fuzzChangeSize(pCopy, &sz);
         memcpy(pOut, pCopy, sz);
         pOut += sz;

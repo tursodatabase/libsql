@@ -232,9 +232,9 @@ do_execsql_test e_vacuum-3.1.1 {
 do_execsql_test e_vacuum-3.1.2 {
   VACUUM;
   SELECT rowid, x FROM t4;
-} {1 x 3 z}
-# Was: {1 x 2 z}
+} {1 x 2 z}
 
+# Rowids are preserved if an INTEGER PRIMARY KEY is used
 do_execsql_test e_vacuum-3.1.3 {
   CREATE TABLE t5(x, y INTEGER PRIMARY KEY);
   INSERT INTO t5(x) VALUES('x');
@@ -248,9 +248,47 @@ do_execsql_test e_vacuum-3.1.4 {
   SELECT rowid, x FROM t5;
 } {1 x 3 z}
 
-# EVIDENCE-OF: R-49563-33883 A VACUUM will fail if there is an open
-# transaction, or if there are one or more active SQL statements when it
-# is run.
+# Rowid is preserved for VACUUM INTO
+do_execsql_test e_vacuum-3.1.5 {
+  DROP TABLE t5;
+  CREATE TABLE t5(x);
+  INSERT INTO t5(x) VALUES('x');
+  INSERT INTO t5(x) VALUES('y');
+  INSERT INTO t5(x) VALUES('z');
+  DELETE FROM t5 WHERE x = 'y';
+  SELECT rowid, x FROM t5;
+} {1 x 3 z}
+forcedelete test2.db
+do_execsql_test e_vacuum-3.1.6 {
+  VACUUM INTO 'test2.db';
+  ATTACH 'test2.db' AS aux1;
+  SELECT rowid, x FROM aux1.t5;
+  DETACH aux1;
+} {1 x 3 z}
+
+# Rowids are not renumbered if the table being vacuumed
+# has indexes.
+do_execsql_test e_vacuum-3.1.7 {
+  DROP TABLE t5;
+  CREATE TABLE t5(x,y,z);
+  INSERT INTO t5(x) VALUES('x');
+  INSERT INTO t5(x) VALUES('y');
+  INSERT INTO t5(x) VALUES('z');
+  UPDATE t5 SET y=x, z=random();
+  DELETE FROM t5 WHERE x = 'y';
+  CREATE INDEX t5x ON t5(x);
+  CREATE UNIQUE INDEX t5y ON t5(y);
+  CREATE INDEX t5zxy ON t5(z,x,y);
+  SELECT rowid, x FROM t5;
+} {1 x 3 z}
+do_execsql_test e_vacuum-3.1.8 {
+  VACUUM;
+  SELECT rowid, x FROM t5;
+} {1 x 3 z}
+
+# EVIDENCE-OF: R-12218-18073 A VACUUM will fail if there is an open
+# transaction on the database connection that is attempting to run the
+# VACUUM.
 #
 do_execsql_test  e_vacuum-3.2.1.1 { BEGIN } {}
 do_catchsql_test e_vacuum-3.2.1.2 { 
