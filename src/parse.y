@@ -193,9 +193,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 // improve performance and reduce the executable size.  The goal here is
 // to get the "jump" operations in ISNULL through ESCAPE to have numeric
 // values that are early enough so that all jump operations are clustered
-// at the beginning, but also so that the comparison tokens NE through GE
-// are as large as possible so that they are near to FUNCTION, which is a
-// token synthesized by addopcodes.tcl.
+// at the beginning.
 //
 %token ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST.
 %token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL.
@@ -218,6 +216,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %endif SQLITE_OMIT_COMPOUND_SELECT
 %ifndef SQLITE_OMIT_WINDOWFUNC
   CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
+  EXCLUDE GROUPS OTHERS TIES
 %endif SQLITE_OMIT_WINDOWFUNC
   REINDEX RENAME CTIME_KW IF
   .
@@ -1633,13 +1632,14 @@ wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
 windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
 windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
   assert( Z!=0 );
+  sqlite3WindowChain(pParse, Z, Y);
   Z->pNextWin = Y;
   A = Z;
 }
 
 %type windowdefn {Window*}
 %destructor windowdefn {sqlite3WindowDelete(pParse->db, $$);}
-windowdefn(A) ::= nm(X) AS window(Y). {
+windowdefn(A) ::= nm(X) AS LP window(Y) RP. {
   if( ALWAYS(Y) ){
     Y->zName = sqlite3DbStrNDup(pParse->db, X.z, X.n);
   }
@@ -1667,39 +1667,56 @@ windowdefn(A) ::= nm(X) AS window(Y). {
 %type frame_bound_e {struct FrameBound}
 %destructor frame_bound_e {sqlite3ExprDelete(pParse->db, $$.pExpr);}
 
-window(A) ::= LP part_opt(X) orderby_opt(Y) frame_opt(Z) RP. {
-  A = Z;
-  if( ALWAYS(A) ){
-    A->pPartition = X;
-    A->pOrderBy = Y;
-  }
+window(A) ::= PARTITION BY nexprlist(X) orderby_opt(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, X, Y, 0);
 }
-
-part_opt(A) ::= PARTITION BY nexprlist(X). { A = X; }
-part_opt(A) ::= .                          { A = 0; }
+window(A) ::= nm(W) PARTITION BY nexprlist(X) orderby_opt(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, X, Y, &W);
+}
+window(A) ::= ORDER BY sortlist(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, 0, Y, 0);
+}
+window(A) ::= nm(W) ORDER BY sortlist(Y) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, 0, Y, &W);
+}
+window(A) ::= frame_opt(Z). {
+  A = Z;
+}
+window(A) ::= nm(W) frame_opt(Z). {
+  A = sqlite3WindowAssemble(pParse, Z, 0, 0, &W);
+}
 
 frame_opt(A) ::= .                             { 
-  A = sqlite3WindowAlloc(pParse, TK_RANGE, TK_UNBOUNDED, 0, TK_CURRENT, 0);
+  A = sqlite3WindowAlloc(pParse, 0, TK_UNBOUNDED, 0, TK_CURRENT, 0, 0);
 }
-frame_opt(A) ::= range_or_rows(X) frame_bound_s(Y). { 
-  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0);
+frame_opt(A) ::= range_or_rows(X) frame_bound_s(Y) frame_exclude_opt(Z). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, TK_CURRENT, 0, Z);
 }
-frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND frame_bound_e(Z). { 
-  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr);
+frame_opt(A) ::= range_or_rows(X) BETWEEN frame_bound_s(Y) AND
+                          frame_bound_e(Z) frame_exclude_opt(W). { 
+  A = sqlite3WindowAlloc(pParse, X, Y.eType, Y.pExpr, Z.eType, Z.pExpr, W);
 }
 
-range_or_rows(A) ::= RANGE.   { A = TK_RANGE; }
-range_or_rows(A) ::= ROWS.    { A = TK_ROWS;  }
+range_or_rows(A) ::= RANGE|ROWS|GROUPS(X).   {A = @X; /*A-overwrites-X*/}
 
+frame_bound_s(A) ::= frame_bound(X).         {A = X;}
+frame_bound_s(A) ::= UNBOUNDED(X) PRECEDING. {A.eType = @X; A.pExpr = 0;}
+frame_bound_e(A) ::= frame_bound(X).         {A = X;}
+frame_bound_e(A) ::= UNBOUNDED(X) FOLLOWING. {A.eType = @X; A.pExpr = 0;}
 
-frame_bound_s(A) ::= frame_bound(X). { A = X; }
-frame_bound_s(A) ::= UNBOUNDED PRECEDING. {A.eType = TK_UNBOUNDED; A.pExpr = 0;}
-frame_bound_e(A) ::= frame_bound(X). { A = X; }
-frame_bound_e(A) ::= UNBOUNDED FOLLOWING. {A.eType = TK_UNBOUNDED; A.pExpr = 0;}
+frame_bound(A) ::= expr(X) PRECEDING|FOLLOWING(Y).
+                                             {A.eType = @Y; A.pExpr = X;}
+frame_bound(A) ::= CURRENT(X) ROW.           {A.eType = @X; A.pExpr = 0;}
 
-frame_bound(A) ::= expr(X) PRECEDING.   { A.eType = TK_PRECEDING; A.pExpr = X; }
-frame_bound(A) ::= CURRENT ROW.         { A.eType = TK_CURRENT  ; A.pExpr = 0; }
-frame_bound(A) ::= expr(X) FOLLOWING.   { A.eType = TK_FOLLOWING; A.pExpr = X; }
+%type frame_exclude_opt {u8}
+frame_exclude_opt(A) ::= . {A = 0;}
+frame_exclude_opt(A) ::= EXCLUDE frame_exclude(X). {A = X;}
+
+%type frame_exclude {u8}
+frame_exclude(A) ::= NO(X) OTHERS.   {A = @X; /*A-overwrites-X*/}
+frame_exclude(A) ::= CURRENT(X) ROW. {A = @X; /*A-overwrites-X*/}
+frame_exclude(A) ::= GROUP|TIES(X).  {A = @X; /*A-overwrites-X*/}
+
 
 %type window_clause {Window*}
 %destructor window_clause {sqlite3WindowListDelete(pParse->db, $$);}
@@ -1707,7 +1724,7 @@ window_clause(A) ::= WINDOW windowdefn_list(B). { A = B; }
 
 %type over_clause {Window*}
 %destructor over_clause {sqlite3WindowDelete(pParse->db, $$);}
-over_clause(A) ::= filter_opt(W) OVER window(Z). {
+over_clause(A) ::= filter_opt(W) OVER LP window(Z) RP. {
   A = Z;
   assert( A!=0 );
   A->pFilter = W;
@@ -1725,3 +1742,43 @@ over_clause(A) ::= filter_opt(W) OVER nm(Z). {
 filter_opt(A) ::= .                            { A = 0; }
 filter_opt(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 %endif /* SQLITE_OMIT_WINDOWFUNC */
+
+/*
+** The code generator needs some extra TK_ token values for tokens that
+** are synthesized and do not actually appear in the grammar:
+*/
+%token
+  TRUEFALSE       /* True or false keyword */
+  ISNOT           /* Combination of IS and NOT */
+  FUNCTION        /* A function invocation */
+  COLUMN          /* Reference to a table column */
+  AGG_FUNCTION    /* An aggregate function */
+  AGG_COLUMN      /* An aggregated column */
+  UMINUS          /* Unary minus */
+  UPLUS           /* Unary plus */
+  TRUTH           /* IS TRUE or IS FALSE or IS NOT TRUE or IS NOT FALSE */
+  REGISTER        /* Reference to a VDBE register */
+  VECTOR          /* Vector */
+  SELECT_COLUMN   /* Choose a single column from a multi-column SELECT */
+  IF_NULL_ROW     /* the if-null-row operator */
+  ASTERISK        /* The "*" in count(*) and similar */
+  SPAN            /* The span operator */
+.
+/* There must be no more than 255 tokens defined above.  If this grammar
+** is extended with new rules and tokens, they must either be so few in
+** number that TK_SPAN is no more than 255, or else the new tokens must
+** appear after this line.
+*/
+%include {
+#if TK_SPAN>255
+# error too many tokens in the grammar
+#endif
+}
+
+/*
+** The TK_SPACE and TK_ILLEGAL tokens must be the last two tokens.  The
+** parser depends on this.  Those tokens are not used in any grammar rule.
+** They are only used by the tokenizer.  Declare them last so that they
+** are guaranteed to be the last two tokens
+*/
+%token SPACE ILLEGAL.

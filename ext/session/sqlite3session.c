@@ -902,7 +902,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
   if( pTab->nChange==0 || pTab->nEntry>=(pTab->nChange/2) ){
     int i;
     SessionChange **apNew;
-    int nNew = (pTab->nChange ? pTab->nChange : 128) * 2;
+    sqlite3_int64 nNew = 2*(sqlite3_int64)(pTab->nChange ? pTab->nChange : 128);
 
     apNew = (SessionChange **)sqlite3_malloc64(sizeof(SessionChange *) * nNew);
     if( apNew==0 ){
@@ -1829,7 +1829,7 @@ int sqlite3session_attach(
 ** If successful, return zero. Otherwise, if an OOM condition is encountered,
 ** set *pRc to SQLITE_NOMEM and return non-zero.
 */
-static int sessionBufferGrow(SessionBuffer *p, int nByte, int *pRc){
+static int sessionBufferGrow(SessionBuffer *p, size_t nByte, int *pRc){
   if( *pRc==SQLITE_OK && p->nAlloc-p->nBuf<nByte ){
     u8 *aNew;
     i64 nNew = p->nAlloc ? p->nAlloc : 128;
@@ -2947,7 +2947,7 @@ static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
   }
 
   if( rc==SQLITE_OK ){
-    int iPK = sizeof(sqlite3_value*)*p->nCol*2;
+    size_t iPK = sizeof(sqlite3_value*)*p->nCol*2;
     memset(p->tblhdr.aBuf, 0, iPK);
     memcpy(&p->tblhdr.aBuf[iPK], &p->in.aData[p->in.iNext], nCopy);
     p->in.iNext += nCopy;
@@ -3862,7 +3862,7 @@ static int sessionSeekToRow(
 }
 
 /*
-** This function is called from within sqlite3changset_apply_v2() when
+** This function is called from within sqlite3changeset_apply_v2() when
 ** a conflict is encountered and resolved using conflict resolution
 ** mode eType (either SQLITE_CHANGESET_OMIT or SQLITE_CHANGESET_REPLACE)..
 ** It adds a conflict resolution record to the buffer in 
@@ -4251,7 +4251,7 @@ static int sessionRetryConstraints(
 
     rc = sessionChangesetStart(&pIter2, 0, 0, cons.nBuf, cons.aBuf, 0);
     if( rc==SQLITE_OK ){
-      int nByte = 2*pApply->nCol*sizeof(sqlite3_value*);
+      size_t nByte = 2*pApply->nCol*sizeof(sqlite3_value*);
       int rc2;
       pIter2->bPatchset = bPatchset;
       pIter2->zTab = (char*)zTab;

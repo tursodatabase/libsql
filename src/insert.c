@@ -2275,6 +2275,13 @@ static int xferOptimization(
     if( pSrcIdx==0 ){
       return 0;    /* pDestIdx has no corresponding index in pSrc */
     }
+    if( pSrcIdx->tnum==pDestIdx->tnum && pSrc->pSchema==pDest->pSchema
+         && sqlite3FaultSim(411)==SQLITE_OK ){
+      /* The sqlite3FaultSim() call allows this corruption test to be
+      ** bypassed during testing, in order to exercise other corruption tests
+      ** further downstream. */
+      return 0;   /* Corrupt schema - two indexes on the same btree */
+    }
   }
 #ifndef SQLITE_OMIT_CHECK
   if( pDest->pCheck && sqlite3ExprListCompare(pSrc->pCheck,pDest->pCheck,-1) ){
@@ -2352,7 +2359,7 @@ static int xferOptimization(
       sqlite3RowidConstraint(pParse, onError, pDest);
       sqlite3VdbeJumpHere(v, addr2);
       autoIncStep(pParse, regAutoinc, regRowid);
-    }else if( pDest->pIndex==0 && !(db->mDbFlags & DBFLAG_Vacuum) ){
+    }else if( pDest->pIndex==0 && !(db->mDbFlags & DBFLAG_VacuumInto) ){
       addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
     }else{
       addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);

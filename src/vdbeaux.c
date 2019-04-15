@@ -155,9 +155,11 @@ static int growOpArray(Vdbe *v, int nOp){
   ** operation (without SQLITE_TEST_REALLOC_STRESS) is to double the current
   ** size of the op array or add 1KB of space, whichever is smaller. */
 #ifdef SQLITE_TEST_REALLOC_STRESS
-  int nNew = (v->nOpAlloc>=512 ? v->nOpAlloc*2 : v->nOpAlloc+nOp);
+  sqlite3_int64 nNew = (v->nOpAlloc>=512 ? 2*(sqlite3_int64)v->nOpAlloc
+                        : (sqlite3_int64)v->nOpAlloc+nOp);
 #else
-  int nNew = (v->nOpAlloc ? v->nOpAlloc*2 : (int)(1024/sizeof(Op)));
+  sqlite3_int64 nNew = (v->nOpAlloc ? 2*(sqlite3_int64)v->nOpAlloc
+                        : (sqlite3_int64)(1024/sizeof(Op)));
   UNUSED_PARAMETER(nOp);
 #endif
 
@@ -947,7 +949,7 @@ void sqlite3VdbeScanStatus(
   LogEst nEst,                    /* Estimated number of output rows */
   const char *zName               /* Name of table or index being scanned */
 ){
-  int nByte = (p->nScan+1) * sizeof(ScanStatus);
+  sqlite3_int64 nByte = (p->nScan+1) * sizeof(ScanStatus);
   ScanStatus *aNew;
   aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
   if( aNew ){
@@ -2068,9 +2070,9 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 ** of a ReusableSpace object by the allocSpace() routine below.
 */
 struct ReusableSpace {
-  u8 *pSpace;          /* Available memory */
-  int nFree;           /* Bytes of available memory */
-  int nNeeded;         /* Total bytes that could not be allocated */
+  u8 *pSpace;            /* Available memory */
+  sqlite3_int64 nFree;   /* Bytes of available memory */
+  sqlite3_int64 nNeeded; /* Total bytes that could not be allocated */
 };
 
 /* Try to allocate nByte bytes of 8-byte aligned bulk memory for pBuf
@@ -2090,7 +2092,7 @@ struct ReusableSpace {
 static void *allocSpace(
   struct ReusableSpace *p,  /* Bulk memory available for allocation */
   void *pBuf,               /* Pointer to a prior allocation */
-  int nByte                 /* Bytes of memory needed */
+  sqlite3_int64 nByte       /* Bytes of memory needed */
 ){
   assert( EIGHT_BYTE_ALIGNMENT(p->pSpace) );
   if( pBuf==0 ){

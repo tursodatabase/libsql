@@ -369,7 +369,7 @@ static int fts5UnicodeCreate(
 
       p->eRemoveDiacritic = FTS5_REMOVE_DIACRITICS_SIMPLE;
       p->nFold = 64;
-      p->aFold = sqlite3_malloc(p->nFold * sizeof(char));
+      p->aFold = sqlite3_malloc64(p->nFold * sizeof(char));
       if( p->aFold==0 ){
         rc = SQLITE_NOMEM;
       }

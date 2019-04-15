@@ -266,5 +266,62 @@ do_execsql_test 3.5 {
   4 0 ValueB 4 0 ValueB
 }
 
+#-------------------------------------------------------------------------
+# If there is an IN(..) condition in the WHERE clause of a query on a
+# virtual table, the xBestIndex method is first invoked with the IN(...)
+# represented by a "usable" SQLITE_INDEX_CONSTRAINT_EQ constraint. If
+# the virtual table elects to use the IN(...) constraint, then the 
+# xBestIndex method is invoked again, this time with the IN(...) marked
+# as "not usable". Depending on the relative costs of the two plans as
+# defined by the virtual table implementation, and the cardinality of the
+# IN(...) operator, SQLite chooses the most efficient plan. 
+#
+# At one point the second invocation of xBestIndex() was only being made
+# for join queries. The following tests check that this problem has been
+# fixed.
+#
+proc vtab_command {method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b, c, d)"
+    }
+
+    xBestIndex {
+      set clist [lindex $args 0]
+      lappend ::bestindex_calls $clist
+      set ret "cost 1000000 idxnum 555"
+      for {set i 0} {$i < [llength $clist]} {incr i} {
+        array set C [lindex $clist $i]
+        if {$C(usable)} { lappend ret use $i }
+      }
+      return $ret
+    }
+  }
+  return {}
+}
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+} {}
+
+do_test 4.1 {
+  set ::bestindex_calls [list]
+  execsql {
+    SELECT * FROM x1 WHERE a=? AND b BETWEEN ? AND ? AND c IN (1, 2, 3, 4);
+  }
+  set ::bestindex_calls
+} [list \
+    [list {op eq column 0 usable 1} \
+          {op eq column 2 usable 1} \
+          {op ge column 1 usable 1} \
+          {op le column 1 usable 1} \
+    ] \
+    [list {op eq column 0 usable 1} \
+          {op eq column 2 usable 0} \
+          {op ge column 1 usable 1} \
+          {op le column 1 usable 1}
+    ]
+]
+
 
 finish_test

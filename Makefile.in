@@ -423,6 +423,7 @@ TESTSRC = \
   $(TOP)/src/test_tclsh.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_vdbecov.c \
   $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_window.c \
@@ -1052,12 +1053,9 @@ opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
 #
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/tool/addopcodes.tcl
+parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
-	rm -f parse.h
 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
-	mv parse.h parse.h.temp
-	$(TCLSH_CMD) $(TOP)/tool/addopcodes.tcl parse.h.temp >parse.h
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
@@ -1376,8 +1374,9 @@ loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
 # releasetest.tcl script.
 #
 VALIDIDS=' sqlite3(changeset|changegroup|session)?_'
-checksymbols: sqlite3.lo
-	nm -g --defined-only sqlite3.lo | egrep -v $(VALIDIDS); test $$? -ne 0
+checksymbols: sqlite3.o
+	nm -g --defined-only sqlite3.o
+	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
 # Build the amalgamation-autoconf package.  The amalamgation-tarball target builds

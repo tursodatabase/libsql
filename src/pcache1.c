@@ -489,9 +489,7 @@ static void pcache1FreePage(PgHdr1 *p){
 ** exists, this function falls back to sqlite3Malloc().
 */
 void *sqlite3PageMalloc(int sz){
-  /* During rebalance operations on a corrupt database file, it is sometimes
-  ** (rarely) possible to overread the temporary page buffer by a few bytes.
-  ** Enlarge the allocation slightly so that this does not cause problems. */
+  assert( sz<=65536+8 ); /* These allocations are never very large */
   return pcache1Alloc(sz);
 }
 

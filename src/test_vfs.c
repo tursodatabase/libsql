@@ -235,6 +235,7 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
     { SQLITE_BUSY,     "SQLITE_BUSY"   },
     { SQLITE_READONLY, "SQLITE_READONLY"   },
     { SQLITE_READONLY_CANTINIT, "SQLITE_READONLY_CANTINIT"   },
+    { -1,              "SQLITE_OMIT"   },
   };
 
   const char *z;
@@ -382,6 +383,7 @@ static int tvfsWrite(
         Tcl_NewWideIntObj(iOfst), Tcl_NewIntObj(iAmt)
     );
     tvfsResultCode(p, &rc);
+    if( rc<0 ) return SQLITE_OK;
   }
 
   if( rc==SQLITE_OK && tvfsInjectFullerr(p) ){

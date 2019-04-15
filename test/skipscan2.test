@@ -202,4 +202,5 @@ do_eqp_test skipscan2-3.3eqp {
 } {SEARCH TABLE t3 USING PRIMARY KEY (ANY(a) AND b=?)}
 
 
+
 finish_test
