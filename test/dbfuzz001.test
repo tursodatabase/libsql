@@ -189,11 +189,9 @@ ifcapable !oversize_cell_check {
 # cause a rebalance operation, which would leave the btree in a weird
 # state that would lead to segfaults and or assertion faults.
 #
-set res {0 {}}
-ifcapable oversize_cell_check { set res {1 {database disk image is malformed}} }
-do_catchsql_test dbfuzz001-110 {
+do_execsql_test dbfuzz001-110 {
   DELETE FROM t3 WHERE x IS NOT NULL AND +rowid=6;
-} $res
+} {}
 
 # This is a dbfuzz2-generate test case that can cause a page with
 # pPage->nCell==0 to enter the balancer.

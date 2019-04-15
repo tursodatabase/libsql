@@ -51,7 +51,7 @@ int main(int argc, char **argv){
   unsigned char bShow[256];      /* Characters ok to display */
   memset(bShow, '.', sizeof(bShow));
   for(i=' '; i<='~'; i++){
-    if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = i;
+    if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
   }
   for(i=1; i<argc; i++){
     if( argv[i][0]=='-' ){

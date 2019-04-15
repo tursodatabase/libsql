@@ -714,5 +714,26 @@ do_execsql_test in-15.6 {
          );
 } {1 Alice}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test in-16.0 {
+  CREATE TABLE x1(a, b);
+  INSERT INTO x1(a) VALUES(1), (2), (3), (4), (5), (6);
+  CREATE INDEX x1i ON x1(a, b);
+}
+
+do_execsql_test in-16.1 {
+  SELECT * FROM x1 
+  WHERE a IN (SELECT a FROM x1 WHERE (a%2)==0) 
+  ORDER BY a DESC, b;
+} {6 {} 4 {} 2 {}}
+
+do_execsql_test in-16.2 {
+  SELECT * FROM x1 
+  WHERE a IN (SELECT a FROM x1 WHERE (a%7)==0) 
+  ORDER BY a DESC, b;
+} {}
+
+
 
 finish_test

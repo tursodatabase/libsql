@@ -2643,8 +2643,8 @@ static int fts5MultiIterDoCompare(Fts5Iter *pIter, int iOut){
   }else{
     int res = fts5BufferCompare(&p1->term, &p2->term);
     if( res==0 ){
-      assert( i2>i1 );
-      assert( i2!=0 );
+      assert_nc( i2>i1 );
+      assert_nc( i2!=0 );
       pRes->bTermEq = 1;
       if( p1->iRowid==p2->iRowid ){
         p1->bDel = p2->bDel;
@@ -3691,7 +3691,7 @@ static int fts5WriteDlidxGrow(
     if( aDlidx==0 ){
       p->rc = SQLITE_NOMEM;
     }else{
-      int nByte = sizeof(Fts5DlidxWriter) * (nLvl - pWriter->nDlidx);
+      size_t nByte = sizeof(Fts5DlidxWriter) * (nLvl - pWriter->nDlidx);
       memset(&aDlidx[pWriter->nDlidx], 0, nByte);
       pWriter->aDlidx = aDlidx;
       pWriter->nDlidx = nLvl;
