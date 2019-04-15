@@ -12,7 +12,6 @@
 # focus of this file is testing that it is OK to create new tables
 # and indices while creating existing tables and indices.
 #
-# $Id: createtab.test,v 1.3 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -142,5 +141,14 @@ for {set av 0} {$av<=$upperBound} {incr av} {
   integrity_check createtab-$av.40
 
 }
+
+# 2019-03-31 Ensure that a proper error is returned for an index
+# with too many columns.
+#
+do_test createtab-3.1 {
+  db eval {DROP TABLE IF EXISTS t1;}
+  set sql "CREATE TABLE t1(x,UNIQUE(x[string repeat ,x 100000]))"
+  catchsql $sql
+} {1 {too many columns in index}}
   
 finish_test

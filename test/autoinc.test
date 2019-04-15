@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix autoinc
 
 # If the library is not compiled with autoincrement support then
 # skip all tests in this file.
@@ -855,5 +856,28 @@ do_test autoinc-12.7 {
   }} msg]
   lappend res $msg
 } {0 ok}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY AUTOINCREMENT, j);
+  CREATE TABLE t2(i INTEGER PRIMARY KEY AUTOINCREMENT, j);
+  CREATE TABLE t3(i INTEGER PRIMARY KEY AUTOINCREMENT, j);
+
+  INSERT INTO t1 VALUES(NULL, 1);
+  INSERT INTO t2 VALUES(NULL, 2);
+  INSERT INTO t3 VALUES(NULL, 3);
+
+  SELECT name FROM sqlite_sequence;
+} {t1 t2 t3}
+
+do_execsql_test 13.1 {
+  UPDATE sqlite_sequence SET name=NULL WHERE name='t2';
+  INSERT INTO t3 VALUES(NULL, 4);
+  DELETE FROM t3;
+  INSERT INTO t3 VALUES(NULL, 5);
+  SELECT * FROM t3;
+} {3 5}
+
 
 finish_test

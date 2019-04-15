@@ -1576,7 +1576,8 @@ struct sqlite3 {
 #define DBFLAG_SchemaChange   0x0001  /* Uncommitted Hash table changes */
 #define DBFLAG_PreferBuiltin  0x0002  /* Preference to built-in funcs */
 #define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
-#define DBFLAG_SchemaKnownOk  0x0008  /* Schema is known to be valid */
+#define DBFLAG_VacuumInto     0x0008  /* Currently running VACUUM INTO */
+#define DBFLAG_SchemaKnownOk  0x0010  /* Schema is known to be valid */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -1584,7 +1585,7 @@ struct sqlite3 {
 ** selectively disable various optimizations.
 */
 #define SQLITE_QueryFlattener 0x0001   /* Query flattening */
-                          /*  0x0002   available for reuse */
+#define SQLITE_WindowFunc     0x0002   /* Use xInverse for window functions */
 #define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
 #define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
 #define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */
@@ -1702,7 +1703,6 @@ struct FuncDestructor {
 #define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
-#define SQLITE_FUNC_WINDOW_SIZE 0x20000 /* Requires partition size as arg. */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 
 /*
@@ -2508,12 +2508,16 @@ struct Expr {
 
 /*
 ** The following are the meanings of bits in the Expr.flags field.
+** Value restrictions:
+**
+**          EP_Agg == NC_HasAgg == SF_HasAgg
+**          EP_Win == NC_HasWin
 */
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
-#define EP_Agg       0x000002 /* Contains one or more aggregate functions */
+#define EP_Distinct  0x000002 /* Aggregate function with DISTINCT keyword */
 #define EP_HasFunc   0x000004 /* Contains one or more functions of any kind */
 #define EP_FixedCol  0x000008 /* TK_Column with a known fixed value */
-#define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
+#define EP_Agg       0x000010 /* Contains one or more aggregate functions */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
 #define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
@@ -2524,7 +2528,7 @@ struct Expr {
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
 #define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static    0x008000 /* Held in memory not obtained from malloc() */
+#define EP_Win       0x008000 /* Contains window functions */
 #define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
 #define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
@@ -2536,6 +2540,7 @@ struct Expr {
 #define EP_WinFunc  0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
 #define EP_Subrtn   0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
 #define EP_Quoted   0x4000000 /* TK_ID was originally quoted */
+#define EP_Static   0x8000000 /* Held in memory not obtained from malloc() */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2775,8 +2780,9 @@ struct NameContext {
 ** Allowed values for the NameContext, ncFlags field.
 **
 ** Value constraints (all checked via assert()):
-**    NC_HasAgg    == SF_HasAgg
+**    NC_HasAgg    == SF_HasAgg    == EP_Agg
 **    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
+**    NC_HasWin    == EP_Win
 **
 */
 #define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
@@ -2792,6 +2798,7 @@ struct NameContext {
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x4000  /* Window functions are allowed here */
+#define NC_HasWin    0x8000  /* One or more window functions seen */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3547,7 +3554,7 @@ struct TreeView {
 #endif /* SQLITE_DEBUG */
 
 /*
-** This object is used in varioius ways, all related to window functions
+** This object is used in various ways, all related to window functions
 **
 **   (1) A single instance of this structure is attached to the
 **       the Expr.pWin field for each window function in an expression tree.
@@ -3562,15 +3569,18 @@ struct TreeView {
 **       object on a linked list attached to Select.pWinDefn.
 **
 ** The uses (1) and (2) are really the same Window object that just happens
-** to be accessible in two different ways.  Use (3) is are separate objects.
+** to be accessible in two different ways.  Use case (3) are separate objects.
 */
 struct Window {
   char *zName;            /* Name of window (may be NULL) */
+  char *zBase;            /* Name of base window for chaining (may be NULL) */
   ExprList *pPartition;   /* PARTITION BY clause */
   ExprList *pOrderBy;     /* ORDER BY clause */
-  u8 eType;               /* TK_RANGE or TK_ROWS */
+  u8 eFrmType;            /* TK_RANGE, TK_GROUPS, TK_ROWS, or 0 */
   u8 eStart;              /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
   u8 eEnd;                /* UNBOUNDED, CURRENT, PRECEDING or FOLLOWING */
+  u8 bImplicitFrame;      /* True if frame was implicitly specified */
+  u8 eExclude;            /* TK_NO, TK_CURRENT, TK_TIES, TK_GROUP, or 0 */
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
   Window *pNextWin;       /* Next window function belonging to this SELECT */
@@ -3581,17 +3591,19 @@ struct Window {
   int regResult;
   int csrApp;             /* Function cursor (used by min/max) */
   int regApp;             /* Function register (also used by min/max) */
-  int regPart;            /* First in a set of registers holding PARTITION BY
-                          ** and ORDER BY values for the window */
+  int regPart;            /* Array of registers for PARTITION BY values */
   Expr *pOwner;           /* Expression object this window is attached to */
   int nBufferCol;         /* Number of columns in buffer table */
   int iArgCol;            /* Offset of first argument for this function */
+  int regOne;             /* Register containing constant value 1 */
+  int regStartRowid;
+  int regEndRowid;
 };
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
-Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*);
+Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 int sqlite3WindowCompare(Parse*, Window*, Window*);
 void sqlite3WindowCodeInit(Parse*, Window*);
@@ -3602,6 +3614,8 @@ void sqlite3WindowUpdate(Parse*, Window*, Window*, FuncDef*);
 Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p);
 Window *sqlite3WindowListDup(sqlite3 *db, Window *p);
 void sqlite3WindowFunctions(void);
+void sqlite3WindowChain(Parse*, Window*, Window*);
+Window *sqlite3WindowAssemble(Parse*, Window*, ExprList*, ExprList*, Token*);
 #else
 # define sqlite3WindowDelete(a,b)
 # define sqlite3WindowFunctions()
@@ -3831,6 +3845,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 
 void sqlite3SetString(char **, sqlite3*, const char*);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
+int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
 void sqlite3TokenInit(Token*,char*);

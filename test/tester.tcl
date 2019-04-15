@@ -576,6 +576,10 @@ if {[info exists cmdlinearg]==0} {
   if {$cmdlinearg(verbose)==""} {
     set cmdlinearg(verbose) 1
   }
+
+  if {[info commands vdbe_coverage]!=""} {
+    vdbe_coverage start
+  }
 }
 
 # Update the soft-heap-limit each time this script is run. In that
@@ -1296,6 +1300,9 @@ proc finalize_testing {} {
       memdebug_log_sql leaks.tcl
     }
   }
+  if {[info commands vdbe_coverage]!=""} {
+    vdbe_coverage_report
+  }
   foreach f [glob -nocomplain test.db-*-journal] {
     forcedelete $f
   }
@@ -1303,6 +1310,39 @@ proc finalize_testing {} {
     forcedelete $f
   }
   exit [expr {$nErr>0}]
+}
+
+proc vdbe_coverage_report {} {
+  puts "Writing vdbe coverage report to vdbe_coverage.txt"
+  set lSrc [list]
+  set iLine 0
+  if {[file exists ../sqlite3.c]} {
+    set fd [open ../sqlite3.c]
+    set iLine
+    while { ![eof $fd] } {
+      set line [gets $fd]
+      incr iLine
+      if {[regexp {^/\** Begin file (.*\.c) \**/} $line -> file]} {
+        lappend lSrc [list $iLine $file]
+      }
+    }
+    close $fd
+  }
+  set fd [open vdbe_coverage.txt w]
+  foreach miss [vdbe_coverage report] {
+    foreach {line branch never} $miss {}
+    set nextfile ""
+    while {[llength $lSrc]>0 && [lindex $lSrc 0 0] < $line} {
+      set nextfile [lindex $lSrc 0 1]
+      set lSrc [lrange $lSrc 1 end]
+    }
+    if {$nextfile != ""} {
+      puts $fd ""
+      puts $fd "### $nextfile ###"
+    }
+    puts $fd "Vdbe branch $line: never $never (path $branch)"
+  }
+  close $fd
 }
 
 # Display memory statistics for analysis and debugging purposes.

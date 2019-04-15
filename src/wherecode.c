@@ -1967,7 +1967,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         pAndExpr = sqlite3ExprAnd(db, pAndExpr, pExpr);
       }
       if( pAndExpr ){
-        pAndExpr = sqlite3PExpr(pParse, TK_AND|TKFLG_DONTFOLD, 0, pAndExpr);
+        /* The extra 0x10000 bit on the opcode is masked off and does not
+        ** become part of the new Expr.op.  However, it does make the
+        ** op==TK_AND comparison inside of sqlite3PExpr() false, and this
+        ** prevents sqlite3PExpr() from implementing AND short-circuit 
+        ** optimization, which we do not want here. */
+        pAndExpr = sqlite3PExpr(pParse, TK_AND|0x10000, 0, pAndExpr);
       }
     }
 
@@ -2197,8 +2202,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         u32 x = pLevel->iLikeRepCntr;
         if( x>0 ){
           skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)?OP_IfNot:OP_If,(int)(x>>1));
+          VdbeCoverageIf(v, (x&1)==1);
+          VdbeCoverageIf(v, (x&1)==0);
         }
-        VdbeCoverage(v);
 #endif
       }
 #ifdef WHERETRACE_ENABLED /* 0xffff */

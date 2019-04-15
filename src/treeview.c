@@ -309,22 +309,60 @@ void sqlite3TreeViewBound(
 ** Generate a human-readable explanation for a Window object
 */
 void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
+  int nElement = 0;
+  if( pWin->pFilter ){
+    sqlite3TreeViewItem(pView, "FILTER", 1);
+    sqlite3TreeViewExpr(pView, pWin->pFilter, 0);
+    sqlite3TreeViewPop(pView);
+  }
   pView = sqlite3TreeViewPush(pView, more);
   if( pWin->zName ){
-    sqlite3TreeViewLine(pView, "OVER %s", pWin->zName);
+    sqlite3TreeViewLine(pView, "OVER %s (%p)", pWin->zName, pWin);
   }else{
-    sqlite3TreeViewLine(pView, "OVER");
+    sqlite3TreeViewLine(pView, "OVER (%p)", pWin);
+  }
+  if( pWin->zBase )    nElement++;
+  if( pWin->pOrderBy ) nElement++;
+  if( pWin->eFrmType ) nElement++;
+  if( pWin->eExclude ) nElement++;
+  if( pWin->zBase ){
+    sqlite3TreeViewPush(pView, (--nElement)>0);
+    sqlite3TreeViewLine(pView, "window: %s", pWin->zBase);
+    sqlite3TreeViewPop(pView);
   }
   if( pWin->pPartition ){
-    sqlite3TreeViewExprList(pView, pWin->pPartition, 1, "PARTITION-BY");
+    sqlite3TreeViewExprList(pView, pWin->pPartition, nElement>0,"PARTITION-BY");
   }
   if( pWin->pOrderBy ){
-    sqlite3TreeViewExprList(pView, pWin->pOrderBy, 1, "ORDER-BY");
+    sqlite3TreeViewExprList(pView, pWin->pOrderBy, (--nElement)>0, "ORDER-BY");
   }
-  if( pWin->eType ){
-    sqlite3TreeViewItem(pView, pWin->eType==TK_RANGE ? "RANGE" : "ROWS", 0);
+  if( pWin->eFrmType ){
+    char zBuf[30];
+    const char *zFrmType = "ROWS";
+    if( pWin->eFrmType==TK_RANGE ) zFrmType = "RANGE";
+    if( pWin->eFrmType==TK_GROUPS ) zFrmType = "GROUPS";
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%s%s",zFrmType,
+        pWin->bImplicitFrame ? " (implied)" : "");
+    sqlite3TreeViewItem(pView, zBuf, (--nElement)>0);
     sqlite3TreeViewBound(pView, pWin->eStart, pWin->pStart, 1);
     sqlite3TreeViewBound(pView, pWin->eEnd, pWin->pEnd, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pWin->eExclude ){
+    char zBuf[30];
+    const char *zExclude;
+    switch( pWin->eExclude ){
+      case TK_NO:      zExclude = "NO OTHERS";   break;
+      case TK_CURRENT: zExclude = "CURRENT ROW"; break;
+      case TK_GROUP:   zExclude = "GROUP";       break;
+      case TK_TIES:    zExclude = "TIES";        break;
+      default:
+        sqlite3_snprintf(sizeof(zBuf),zBuf,"invalid(%d)", pWin->eExclude);
+        zExclude = zBuf;
+        break;
+    }
+    sqlite3TreeViewPush(pView, 0);
+    sqlite3TreeViewLine(pView, "EXCLUDE %s", zExclude);
     sqlite3TreeViewPop(pView);
   }
   sqlite3TreeViewPop(pView);

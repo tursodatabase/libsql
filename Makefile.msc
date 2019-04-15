@@ -320,6 +320,13 @@ SQLITETCLH = sqlite_tcl.h
 SQLITETCLDECLSH = sqlite_tclDecls.h
 !ENDIF
 
+# This is the name to use for the dynamic link library (DLL) containing the
+# Tcl bindings for SQLite.
+#
+!IFNDEF SQLITE3TCLDLL
+SQLITE3TCLDLL = tclsqlite3.dll
+!ENDIF
+
 # These are the additional targets that the targets that integrate with the
 # Tcl library should depend on when compiling, etc.
 #
@@ -495,9 +502,9 @@ UCRTLIBPATH = $(UCRTLIBPATH:\\=\)
 # will run on the platform that is doing the build.
 #
 !IF $(USE_FULLWARN)!=0
-BCC = $(NCC) -nologo -W4 $(CCOPTS) $(BCCOPTS)
+BCC = $(NCC) -nologo -W4 -Fd$*.pdb $(CCOPTS) $(BCCOPTS)
 !ELSE
-BCC = $(NCC) -nologo -W3 $(CCOPTS) $(BCCOPTS)
+BCC = $(NCC) -nologo -W3 -Fd$*.pdb $(CCOPTS) $(BCCOPTS)
 !ENDIF
 
 # Check if assembly code listings should be generated for the source
@@ -853,6 +860,14 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
+!IFNDEF TCLVERSION
+TCLVERSION = 86
+!ENDIF
+
+!IFNDEF TCLSUFFIX
+TCLSUFFIX =
+!ENDIF
+
 !IFNDEF TCLDIR
 TCLDIR = $(TOP)\compat\tcl
 !ENDIF
@@ -866,11 +881,11 @@ TCLLIBDIR = $(TCLDIR)\lib
 !ENDIF
 
 !IFNDEF LIBTCL
-LIBTCL = tcl86.lib
+LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
 !IFNDEF LIBTCLSTUB
-LIBTCLSTUB = tclstub86.lib
+LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -1063,7 +1078,7 @@ RCC = $(RCC) -I$(ICUINCDIR)
 # Command line prefixes for compiling code, compiling resources,
 # linking, etc.
 #
-LTCOMPILE = $(TCC) -Fo$@
+LTCOMPILE = $(TCC) -Fo$@ -Fd$*.pdb
 LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
 LTLINK = $(TCC) -Fe$@
@@ -1081,6 +1096,11 @@ LTLIBS = $(LTLIBS) rpcrt4.lib
 !IFDEF PLATFORM
 LTLINKOPTS = /NOLOGO /MACHINE:$(PLATFORM)
 LTLIBOPTS = /NOLOGO /MACHINE:$(PLATFORM)
+!ELSEIF "$(VISUALSTUDIOVERSION)"=="12.0" || \
+        "$(VISUALSTUDIOVERSION)"=="14.0" || \
+        "$(VISUALSTUDIOVERSION)"=="15.0"
+LTLINKOPTS = /NOLOGO /MACHINE:x86
+LTLIBOPTS = /NOLOGO /MACHINE:x86
 !ELSE
 LTLINKOPTS = /NOLOGO
 LTLIBOPTS = /NOLOGO
@@ -1497,6 +1517,7 @@ TESTSRC = \
   $(TOP)\src\test_tclsh.c \
   $(TOP)\src\test_tclvar.c \
   $(TOP)\src\test_thread.c \
+  $(TOP)\src\test_vdbecov.c \
   $(TOP)\src\test_vfs.c \
   $(TOP)\src\test_windirent.c \
   $(TOP)\src\test_window.c \
@@ -1665,7 +1686,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra targets for the "all" target that require Tcl.
 #
 !IF $(NO_TCL)==0
-ALL_TCL_TARGETS = libtclsqlite3.lib
+ALL_TCL_TARGETS = $(SQLITE3TCLDLL)
 !ELSE
 ALL_TCL_TARGETS =
 !ENDIF
@@ -1697,7 +1718,22 @@ libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
+
+tclsqlite3.def:	tclsqlite.lo
+	echo EXPORTS > tclsqlite3.def
+	dumpbin /all tclsqlite.lo \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+/EXPORT:_?((?:Sqlite3|Tclsqlite3)_[^@]*)(?:@\d+)?$$" \1 \
+		| sort >> tclsqlite3.def
+
+pkgIndex.tcl:	$(TOP)\VERSION
+	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
+		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] sqlite3] \
+			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact @version@ %%V > pkgIndex.tcl \
+	)
+
+$(SQLITE3TCLDLL):	libtclsqlite3.lib $(LIBRESOBJS) tclsqlite3.def pkgIndex.tcl
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:tclsqlite3.def /OUT:$@ libtclsqlite3.lib $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 # <</mark>>
 
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
@@ -1837,7 +1873,7 @@ opcodes.lo:	opcodes.c
 #
 !IF $(USE_RC)!=0
 # <<block1>>
-$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H)
+$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H) $(TOP)\VERSION
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
@@ -2103,12 +2139,10 @@ opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl
 #
 parse.h:	parse.c
 
-parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
+parse.c:	$(TOP)\src\parse.y lemon.exe
 	del /Q parse.y parse.h parse.h.temp 2>NUL
 	copy $(TOP)\src\parse.y .
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) parse.y
-	move parse.h parse.h.temp
-	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
@@ -2514,6 +2548,7 @@ clean:
 	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
+	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
 	del /Q mksourceid.* mkkeywordhash.* keywordhash.h 2>NUL
@@ -2524,6 +2559,7 @@ clean:
 	del /Q .target_source 2>NUL
 	del /Q tclsqlite3.exe $(SQLITETCLH) $(SQLITETCLDECLSH) 2>NUL
 	del /Q lsm.dll lsmtest.exe 2>NUL
+	del /Q atrc.exe changesetfuzz.exe dbtotxt.exe index_usage.exe 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
