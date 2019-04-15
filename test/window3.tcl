@@ -21,7 +21,6 @@ execsql_test 1.0 {
   DROP TABLE IF EXISTS t2;
   CREATE TABLE t2(a INTEGER PRIMARY KEY, b INTEGER);
   INSERT INTO t2(a, b) VALUES
-  (1,0), (2,74), (3,41), (4,74), (5,23), (6,99), (7,26), (8,33), (9,2),
   (10,89), (11,81), (12,96), (13,59), (14,38), (15,68), (16,39), (17,62),
   (18,91), (19,46), (20,6), (21,99), (22,97), (23,27), (24,46), (25,78),
   (26,54), (27,97), (28,8), (29,67), (30,29), (31,93), (32,84), (33,77),
@@ -73,6 +72,11 @@ foreach {tn window} {
   15 "ROWS BETWEEN 4 PRECEDING    AND UNBOUNDED FOLLOWING"
   16 "ROWS BETWEEN CURRENT ROW         AND UNBOUNDED FOLLOWING"
   17 "ROWS BETWEEN 4 FOLLOWING    AND UNBOUNDED FOLLOWING"
+
+  18 "ROWS BETWEEN 4 PRECEDING    AND UNBOUNDED FOLLOWING EXCLUDE CURRENT ROW"
+  19 "ROWS BETWEEN 4 PRECEDING    AND UNBOUNDED FOLLOWING EXCLUDE TIES"
+  20 "ROWS BETWEEN 4 PRECEDING    AND UNBOUNDED FOLLOWING EXCLUDE GROUP"
+
 } {
   execsql_test 1.$tn.2.1 "SELECT max(b) OVER ( ORDER BY a $window ) FROM t2"
   execsql_test 1.$tn.2.2 "SELECT min(b) OVER ( ORDER BY a $window ) FROM t2"
@@ -305,6 +309,28 @@ foreach {tn window} {
   "
   execsql_test 1.$tn.14.6 "
     SELECT string_agg(CAST(b AS TEXT), '.') OVER (PARTITION BY b%2,a ORDER BY b%10 $window) FROM t2
+  "
+
+  execsql_test 1.$tn.14.7 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER (win1 ORDER BY b%10 $window) 
+    FROM t2
+    WINDOW win1 AS (PARTITION BY b%2,a)
+    ORDER BY 1
+  "
+
+  execsql_test 1.$tn.14.8 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER (win1 $window) 
+    FROM t2
+    WINDOW win1 AS (PARTITION BY b%2,a ORDER BY b%10)
+    ORDER BY 1
+  "
+
+  execsql_test 1.$tn.14.9 "
+    SELECT string_agg(CAST(b AS TEXT), '.') OVER win2
+    FROM t2
+    WINDOW win1 AS (PARTITION BY b%2,a ORDER BY b%10),
+           win2 AS (win1 $window)
+    ORDER BY 1
   "
 
   execsql_test 1.$tn.15.1 "

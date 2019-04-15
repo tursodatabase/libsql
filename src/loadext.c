@@ -455,10 +455,13 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_create_window_function,
   /* Version 3.26.0 and later */
 #ifdef SQLITE_ENABLE_NORMALIZE
-  sqlite3_normalized_sql
+  sqlite3_normalized_sql,
 #else
-  0
+  0,
 #endif
+  /* Version 3.28.0 and later */
+  sqlite3_stmt_isexplain,
+  sqlite3_value_frombind
 };
 
 /*
