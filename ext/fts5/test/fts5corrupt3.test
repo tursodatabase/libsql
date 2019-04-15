@@ -8007,6 +8007,7 @@ do_test 56.1 {
   if {$res=="1 {constraint failed}"} {
     set res "1 {database disk image is malformed}"
   }
+  set res
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
