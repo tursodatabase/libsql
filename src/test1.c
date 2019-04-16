@@ -4272,13 +4272,15 @@ static int SQLITE_TCLAPI test_prepare_v2(
   }
   pzTail = objc>=5 ? &zTail : 0;
   rc = sqlite3_prepare_v2(db, zCopy, bytes, &pStmt, pzTail);
+  if( objc>=5 ){
+    zTail = &zSql[(zTail - zCopy)];
+  }
   free(zCopy);
-  zTail = &zSql[(zTail - zCopy)];
 
   assert(rc==SQLITE_OK || pStmt==0);
   Tcl_ResetResult(interp);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
-  if( rc==SQLITE_OK && zTail && objc>=5 ){
+  if( rc==SQLITE_OK && objc>=5 && zTail ){
     if( bytes>=0 ){
       bytes = bytes - (int)(zTail-zSql);
     }

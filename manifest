@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\stest\smodule\stest_fs.c\scausing\sa\ssegfault\son\sOpenBSD.
-D 2019-04-15T19:17:50.242
+C Avoid\sa\ssanitizer\serror\sin\stest1.c.\sHave\sreleasetest.tcl/wapptest.tcl\screate\sa\sfile\scalled\s"makecommand.sh"\sthat\scan\sbe\sused\sto\srerun\sa\stest\sfrom\sthe\scommand\sline.
+D 2019-04-16T10:51:29.014
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c cfe7f93daf9d8787f65e099efb67d7cdfc2c35236dec5d3f6758520bd3519424
-F src/test1.c cfb303eeddd3670409af6b58d2ddb928b8e9e70822d681d3df88dfaabb7bea6a
+F src/test1.c 0dc98af0769302672dcefd07a6128ee14e837b9f6e338a1aaca7ac31e4d8d2f8
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 405834f6a93ec395cc4c9bb8ecebf7c3d8079e7ca16ae65e82d01afd229694bb
@@ -1227,7 +1227,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 7712811e0f4e2f198ec786cb2e1352b3793d7395f48a3cceef0572d8823eb75e x
+F test/releasetest.tcl 204efd3a87ec1d62da2efde42c673b18b955350a9d3c6ac0b4dbba5bc8595808 x
 F test/releasetest_data.tcl c3746248b5ad8f99a29020f83501bb25e024156ecc37e05c71c76da4fc8601c6
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09fa0b3c4adf7f81a777975762029ad43dbdc76b02dc32d2307e1c42465213c9
-R 2c29be806e15259c3d103a682fe95c22
+P ee886600297c2a03d9d1d10db88d3d107b48e5d4de5e5d91b0ab16cc7c447ede
+R 8b174ed25bfed0d8eb722ebaa3aaabbf
 U dan
-Z 7ef87e754e329fa1f6401ed2164f4318
+Z 97f4f18a7a6e556c0ee0ac2993a46468
