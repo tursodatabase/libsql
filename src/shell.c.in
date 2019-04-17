@@ -3858,7 +3858,11 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   int j, k;
   int rc;
   FILE *in;
+#if !defined(_MSC_VER) || _MSC_VER>=1900
   unsigned char x[16];
+#else
+  unsigned int x[16];
+#endif
   char zLine[1000];
   if( p->zDbFilename ){
     in = fopen(p->zDbFilename, "r");
@@ -3903,7 +3907,14 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     if( rc==17 ){
       k = iOffset+j;
       if( k+16<=n ){
+#if !defined(_MSC_VER) || _MSC_VER>=1900
         memcpy(a+k, x, 16);
+#else
+        int ii;
+        for(ii=0; ii<16; ii++){
+          a[k+ii] = (unsigned char)x[ii];
+        }
+#endif
       }
     }
   }

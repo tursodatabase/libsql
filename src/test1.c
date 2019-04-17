@@ -7699,7 +7699,11 @@ static int SQLITE_TCLAPI test_decode_hexdb(
   int iOffset = 0;
   int j, k;
   int rc;
+#if !defined(_MSC_VER) || _MSC_VER>=1900
   unsigned char x[16];
+#else
+  unsigned int x[16];
+#endif
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HEXDB");
     return TCL_ERROR;
@@ -7738,7 +7742,14 @@ static int SQLITE_TCLAPI test_decode_hexdb(
     if( rc==17 ){
       k = iOffset+j;
       if( k+16<=n ){
+#if !defined(_MSC_VER) || _MSC_VER>=1900
         memcpy(a+k, x, 16);
+#else
+        int ii;
+        for(ii=0; ii<16; ii++){
+          a[k+ii] = (unsigned char)x[ii];
+        }
+#endif
       }
       continue;
     }
