@@ -1,5 +1,5 @@
-C Faster\sand\ssmaller\simplementation\sof\ssqlite3StrICmp().
-D 2019-04-17T11:34:44.568
+C Small\sperformance\simprovement\son\sthe\svariable-length\sinteger\sdecoder:\nsqlite3GetVarint().
+D 2019-04-17T12:07:08.215
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
-F src/util.c 415fcd6ed9d3bb7cad27d411ae4b9320ea2a18e6750ceb03cbedf453373fec85
+F src/util.c 5061987401c2e8003177fa30d73196aa036727c8f04bf36a2df0c82b1904a236
 F src/vacuum.c 72690ccb6877a88f8473a893cf9f6d7592236f3eebfebfa840b19c708acde574
 F src/vdbe.c 711ef421b3bb3db3b2476067b2dc3c71ef5844d9b1a723026578f89f6da621e8
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 884b4b7e502b4e991677b53971277adfaf0a04a284f8e483e2553d0f83156b50
-R dcc66ec8a55d4cba7e12163fe5fbfbcf
+P 7ac500fb5abfe1ad60f2ffdcc8fbe5ccc1c641bbeed53f00940e9ff78788e53d
+R abb269365d71bef546a529ae44e4c54c
 U drh
-Z 40a9f6f7fce76c8f72a2cb9229b22090
+Z 80d8752f4698aa123849b705cd651c27

@@ -918,23 +918,12 @@ int sqlite3PutVarint(unsigned char *p, u64 v){
 u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   u32 a,b,s;
 
-  a = *p;
-  /* a: p0 (unmasked) */
-  if (!(a&0x80))
-  {
-    *v = a;
+  if( ((signed char*)p)[0]>=0 ){
+    *v = *p;
     return 1;
   }
-
-  p++;
-  b = *p;
-  /* b: p1 (unmasked) */
-  if (!(b&0x80))
-  {
-    a &= 0x7f;
-    a = a<<7;
-    a |= b;
-    *v = a;
+  if( ((signed char*)p)[1]>=0 ){
+    *v = ((u32)(p[0]&0x7f)<<7) | p[1];
     return 2;
   }
 
@@ -942,8 +931,9 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   assert( SLOT_2_0 == ((0x7f<<14) | (0x7f)) );
   assert( SLOT_4_2_0 == ((0xfU<<28) | (0x7f<<14) | (0x7f)) );
 
-  p++;
-  a = a<<14;
+  a = ((u32)p[0])<<14;
+  b = p[1];
+  p += 2;
   a |= *p;
   /* a: p0<<14 | p2 (unmasked) */
   if (!(a&0x80))
