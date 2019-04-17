@@ -3489,7 +3489,7 @@ static const char *(azHelp[]) = {
   "   Options:",
   "     --preserve-rowids      Include ROWID values in the output",
   "     --newlines             Allow unescaped newline characters in output",
-  "   TABLE is LIKE pattern for the tables to dump",
+  "   TABLE is a LIKE pattern for the tables to dump",
   ".echo on|off             Turn command echo on or off",
   ".eqp on|off|full|...     Enable or disable automatic EXPLAIN QUERY PLAN",
   "   Other Modes:",
