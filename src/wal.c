@@ -2908,9 +2908,9 @@ int sqlite3WalFindFrame(
     }
     nCollide = HASHTABLE_NSLOT;
     for(iKey=walHash(pgno); sLoc.aHash[iKey]; iKey=walNextHash(iKey)){
-      u32 iFrame = sLoc.aHash[iKey] + sLoc.iZero;
-      if( iFrame<=iLast && iFrame>=pWal->minFrame
-       && sLoc.aPgno[sLoc.aHash[iKey]]==pgno ){
+      u32 iH = sLoc.aHash[iKey];
+      u32 iFrame = iH + sLoc.iZero;
+      if( iFrame<=iLast && iFrame>=pWal->minFrame && sLoc.aPgno[iH]==pgno ){
         assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }

@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sCLI\shelp\soutput\sfor\sthe\s".dump"\scommand.
-D 2019-04-17T13:58:07.370
+C Small\sperformance\sand\ssize\soptimization\sin\ssqlite3WalFindFrame().
+D 2019-04-17T21:12:05.934
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -601,7 +601,7 @@ F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f4
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 4c5959e00b7a142198d178e3a822f4e05f36f2d1a3c57657373f9487154fc06b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 9eccc7ebb532a7b0fd3cabc16cff576b9afa763472272db67d84fb8cec96f5c0
+F src/wal.c b09a2a9cab50efa08451a8c81d47052120ad5da174048c6d0b08d405384abdf2
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c ff2955dc2743c1af05ba5a8232ab72724d9a63b76dbee256368f40fd3ef82db5
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2bda9dc41c07092ae37d0c6001c1271e0622bfff7151201fc2bb4c95422c087b
-R ee4f0f969d031bd4425aa6a98371d250
+P 57638248de147efe8d663b3ae1389f590c7b2b7225ecfe295699d68c2893cd09
+R f55569b51e361d573aabfbfaa6d9bc9b
 U drh
-Z ad2376f2f5e5882069506690bf4da926
+Z 08f602e532329cf65b2b6561fc1b8227
