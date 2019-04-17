@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\son\sthe\svariable-length\sinteger\sdecoder:\nsqlite3GetVarint().
-D 2019-04-17T12:07:08.215
+C In\sthe\s"pgidx"\scommand\sof\sthe\sshowdb\sutility,\stry\sto\sidentify\sorphaned\spages\nand\sshow\swhen\spages\shave\sbeen\szeroed\sout.
+D 2019-04-17T12:29:45.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1768,7 +1768,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c af978d1437562776fa4d94bf0cb772314c464e71ef24134a6e2301564ae60bc2
+F tool/showdb.c b4cd49d8f4df86349a6b41993a3eb5651e18a3f9903b4fbb70d18b66c8a358ca
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ac500fb5abfe1ad60f2ffdcc8fbe5ccc1c641bbeed53f00940e9ff78788e53d
-R abb269365d71bef546a529ae44e4c54c
+P 5df2bf62fcd4dfdaa195062dddbd5ce5420bc239b2649ac8f547e0db34e7f0bb
+R f4eb9f2a8e78f2d407da5d6c15776852
 U drh
-Z 80d8752f4698aa123849b705cd651c27
+Z 369a3d8533a731558ce8e524f18f4b7d

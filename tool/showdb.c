@@ -835,9 +835,20 @@ static void page_usage_cell(
   }
 }
 
+/*
+** True if the memory is all zeros
+*/
+static int allZero(unsigned char *a, int n){
+  while( n && (a++)[0]==0 ){ n--; }
+  return n==0;
+}
+
 
 /*
-** Describe the usages of a b-tree page
+** Describe the usages of a b-tree page.
+**
+** If parent==0, then this is the root of a btree.  If parent<0 then
+** this is an orphan page.
 */
 static void page_usage_btree(
   int pgno,             /* Page to describe */
@@ -854,16 +865,32 @@ static void page_usage_btree(
   if( pgno<=0 || pgno>g.mxPage ) return;
   a = fileRead((pgno-1)*g.pagesize, g.pagesize);
   switch( a[hdr] ){
+    case 0: {
+      if( allZero(a, g.pagesize) ){
+        zType = "zeroed page";
+      }else if( parent<0 ){
+        return;
+      }else{
+        zType = "corrupt node";
+      }
+      break;
+    }
     case 2:  zType = "interior node of index";  break;
     case 5:  zType = "interior node of table";  break;
     case 10: zType = "leaf of index";           break;
     case 13: zType = "leaf of table";           break;
+    default: {
+      if( parent<0 ) return;
+      zType = "corrupt node";
+    }
   }
-  if( parent ){
+  if( parent>0 ){
     page_usage_msg(pgno, "%s [%s], child %d of page %d",
                    zType, zName, idx, parent);
-  }else{
+  }else if( parent==0 ){
     page_usage_msg(pgno, "root %s [%s]", zType, zName);
+  }else{
+    page_usage_msg(pgno, "orphaned %s", zType);
   }
   nCell = a[hdr+3]*256 + a[hdr+4];
   if( a[hdr]==2 || a[hdr]==5 ){
@@ -988,6 +1015,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
 
   /* Print the report and free memory used */
   for(i=1; i<=g.mxPage; i++){
+    if( zPageUse[i]==0 ) page_usage_btree(i, -1, 0, 0);
     printf("%5d: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
     sqlite3_free(zPageUse[i]);
   }
