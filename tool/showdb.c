@@ -861,6 +861,7 @@ static void page_usage_btree(
   int nCell;
   int i;
   int hdr = pgno==1 ? 100 : 0;
+  char zEntry[30];
 
   if( pgno<=0 || pgno>g.mxPage ) return;
   a = fileRead((pgno-1)*g.pagesize, g.pagesize);
@@ -884,15 +885,20 @@ static void page_usage_btree(
       zType = "corrupt node";
     }
   }
-  if( parent>0 ){
-    page_usage_msg(pgno, "%s [%s], child %d of page %d",
-                   zType, zName, idx, parent);
-  }else if( parent==0 ){
-    page_usage_msg(pgno, "root %s [%s]", zType, zName);
-  }else{
-    page_usage_msg(pgno, "orphaned %s", zType);
-  }
   nCell = a[hdr+3]*256 + a[hdr+4];
+  if( nCell==1 ){
+    sqlite3_snprintf(sizeof(zEntry),zEntry,"1 row");
+  }else{
+    sqlite3_snprintf(sizeof(zEntry),zEntry,"%d rows", nCell);
+  }
+  if( parent>0 ){
+    page_usage_msg(pgno, "%s [%s], child %d of page %d, %s",
+                   zType, zName, idx, parent, zEntry);
+  }else if( parent==0 ){
+    page_usage_msg(pgno, "root %s [%s], %s", zType, zName, zEntry);
+  }else{
+    page_usage_msg(pgno, "orphaned %s, %s", zType, zEntry);
+  }
   if( a[hdr]==2 || a[hdr]==5 ){
     int cellstart = hdr+12;
     unsigned int child;
