@@ -529,6 +529,13 @@ static void test_decode(
   u8 *pBody;                      /* Current point in record data */
   u64 nHdr;                       /* Bytes in record header */
   Tcl_Obj *pRet;                  /* Return value */
+  Mem *pMem;                      /* Pointer to memory cell */
+
+  pMem = sqlite3_malloc(sizeof(Mem));
+  if( pMem==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
 
   pRet = Tcl_NewObj();
   Tcl_IncrRefCount(pRet);
@@ -541,17 +548,16 @@ static void test_decode(
   while( pHdr<pEndHdr ){
     Tcl_Obj *pVal = 0;
     u64 iSerialType;
-    Mem mem;
 
-    memset(&mem, 0, sizeof(mem));
-    mem.db = db;
-    mem.enc = ENC(db);
+    memset(pMem, 0, sizeof(Mem));
+    pMem->db = db;
+    pMem->enc = ENC(db);
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
-    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
+    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, pMem);
 
-    switch( sqlite3_value_type(&mem) ){
+    switch( sqlite3_value_type(pMem) ){
       case SQLITE_TEXT:
-        pVal = Tcl_NewStringObj((const char*)sqlite3_value_text(&mem), -1);
+        pVal = Tcl_NewStringObj((const char*)sqlite3_value_text(pMem), -1);
         break;
 
       case SQLITE_BLOB: {
@@ -559,8 +565,8 @@ static void test_decode(
           '0', '1', '2', '3', '4', '5', '6', '7',
           '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
         };
-        int n = sqlite3_value_bytes(&mem);
-        u8 *z = (u8*)sqlite3_value_blob(&mem);
+        int n = sqlite3_value_bytes(pMem);
+        u8 *z = (u8*)sqlite3_value_blob(pMem);
         int i;
         pVal = Tcl_NewStringObj("x'", -1);
         for(i=0; i<n; i++){
@@ -575,11 +581,11 @@ static void test_decode(
       }
 
       case SQLITE_FLOAT:
-        pVal = Tcl_NewDoubleObj(sqlite3_value_double(&mem));
+        pVal = Tcl_NewDoubleObj(sqlite3_value_double(pMem));
         break;
 
       case SQLITE_INTEGER:
-        pVal = Tcl_NewWideIntObj(sqlite3_value_int64(&mem));
+        pVal = Tcl_NewWideIntObj(sqlite3_value_int64(pMem));
         break;
 
       case SQLITE_NULL:
@@ -592,13 +598,14 @@ static void test_decode(
 
     Tcl_ListObjAppendElement(0, pRet, pVal);
 
-    if( mem.szMalloc ){
-      sqlite3DbFree(db, mem.zMalloc);
+    if( pMem->szMalloc ){
+      sqlite3DbFree(db, pMem->zMalloc);
     }
   }
 
   sqlite3_result_text(context, Tcl_GetString(pRet), -1, SQLITE_TRANSIENT);
   Tcl_DecrRefCount(pRet);
+  sqlite3_free(pMem);
 }
 
 /*
