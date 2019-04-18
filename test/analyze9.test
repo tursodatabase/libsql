@@ -808,7 +808,7 @@ do_test 16.1 {
     ANALYZE;
   }
   set nByte2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
-  # puts -nonewline " (nByte=$nByte nByte2=$nByte2)"
+  puts -nonewline " (nByte=$nByte nByte2=$nByte2)"
 
   expr {$nByte2 > $nByte+900 && $nByte2 < $nByte+1100}
 } {1}

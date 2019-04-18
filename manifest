@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sminor\stest\sissues.
-D 2019-04-17T23:56:54.310
+C Undo\schange\sto\s'analyze9.test'\sbecause\sthe\sextra\soutput\scan\sbe\suseful\sfor\sdebugging.
+D 2019-04-18T17:37:19.793
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 7b2667b879976ac4b90d8df80d5456328684f1f6f6fdef9469d6e53401f2f469
 F test/analyze7.test a37f4d9cb699a8af068ae02df1bb08bf844df8e98a92a8126cbff89e226879d8
 F test/analyze8.test e32a970564271114786703750e6939cf81dea4b8580874e38e9213ee092f6936
-F test/analyze9.test ff43df879a741c91a5eb29925c16df630fab7d91cc9cbbf2a88d7ab4be32ad9c
+F test/analyze9.test 9fbf0e0101eef4f5dc149769aa14e10b76ee06e7c28598264b32173cd1999a54
 F test/analyzeA.test 22a892d67bd2223126335b99774cce56ba91122cfe82446d2927afc43ad667dc
 F test/analyzeB.test a4c1c3048f6d9e090eb76e83eecb18bcf6d31a70
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6ebe1c2be91f1f02b2a68fa11d6da981d35771b5ad422e72a64a66ee1084f0d
-R 0d6ae83ec007891187d975026a136170
+P 1f1866d11c2fe3804ebc64cc7a54061c1d6db8650c2f19b43b70831afee53f2a
+R 5158dd629d595e98f0a10e54cb88f632
 U mistachkin
-Z 26092ffd8a652a1c29f2562b3137103b
+Z dcf04ec3a4b24653501f8c26b03685dd
