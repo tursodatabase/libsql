@@ -1,5 +1,5 @@
-C Small\sperformance\sand\ssize\soptimization\sin\ssqlite3WalFindFrame().
-D 2019-04-17T21:12:05.934
+C Minor\ssimplification\sof\sNULL\svalue\shandling\sfor\sSTAT4.
+D 2019-04-18T19:21:19.975
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -596,7 +596,7 @@ F src/vdbeInt.h 2c12704db9740c8e899786ecfc7a5797a9d067563496eb1b6ed03c592d7b8d90
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
 F src/vdbeaux.c f873b5c2efcf8a4d6ecfc5b1a5b06fd810419198f3bd882175d371cc03801873
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 8e6889761e344babdb8a56dd1ac8911501fa648396544d1644f1cd6a87c80dc0
+F src/vdbemem.c dd2ee49255c4c5450f2b0887ef44cea8faa1cd7a46501b39a1a82b113ae418e3
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 4c5959e00b7a142198d178e3a822f4e05f36f2d1a3c57657373f9487154fc06b
@@ -1818,7 +1818,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 57638248de147efe8d663b3ae1389f590c7b2b7225ecfe295699d68c2893cd09
-R f55569b51e361d573aabfbfaa6d9bc9b
-U drh
-Z 08f602e532329cf65b2b6561fc1b8227
+P 03f2e78899fad99b0a0951b3a408268276954d4cd785389ed9a0192c9217f6fe
+R eb7a1c9198e6574d14aeef303b481c00
+T *branch * nullStat4
+T *sym-nullStat4 *
+T -sym-trunk *
+U mistachkin
+Z c61752927ede7d3abde97db4bfed824e
