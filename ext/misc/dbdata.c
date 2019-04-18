@@ -23,6 +23,9 @@
 **       schema TEXT HIDDEN
 **     );
 **
+** IMPORTANT: THE VIRTUAL TABLE SCHEMA ABOVE IS SUBJECT TO CHANGE. IN THE
+** FUTURE NEW NON-HIDDEN COLUMNS MAY BE ADDED BETWEEN "value" AND "schema".
+**
 ** Each page of the database is inspected. If it cannot be interpreted as a
 ** b-tree page, or if it is a b-tree page containing 0 entries, the
 ** sqlite_dbdata table contains no rows for that page.  Otherwise, the table
@@ -52,6 +55,13 @@
 **
 ** This module requires that the "sqlite_dbpage" eponymous virtual table be
 ** available.
+**
+**
+**     CREATE TABLE sqlite_dbptr(
+**       pgno INTEGER,
+**       child INTEGER,
+**       schema TEXT HIDDEN
+**     );
 */
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
@@ -67,6 +77,7 @@ SQLITE_EXTENSION_INIT1
 typedef struct DbdataTable DbdataTable;
 typedef struct DbdataCursor DbdataCursor;
 
+
 /* A cursor for the sqlite_dbdata table */
 struct DbdataCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
@@ -77,19 +88,22 @@ struct DbdataCursor {
   int nPage;                      /* Size of aPage[] in bytes */
   int nCell;                      /* Number of cells on aPage[] */
   int iCell;                      /* Current cell number */
+  int bOnePage;                   /* True to stop after one page */
+  sqlite3_int64 iRowid;
+
+  /* Only for the sqlite_dbdata table */
   u8 *pRec;                       /* Buffer containing current record */
   int nRec;                       /* Size of pRec[] in bytes */
   int nField;                     /* Number of fields in pRec */
   int iField;                     /* Current field number */
   sqlite3_int64 iIntkey;          /* Integer key value */
-
-  sqlite3_int64 iRowid;
 };
 
 /* The sqlite_dbdata table */
 struct DbdataTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database connection */
+  int bPtr;                       /* True for sqlite3_dbptr table */
 };
 
 #define DBDATA_COLUMN_PGNO        0
@@ -98,12 +112,23 @@ struct DbdataTable {
 #define DBDATA_COLUMN_VALUE       3
 #define DBDATA_COLUMN_SCHEMA      4
 
+#define DBPTR_COLUMN_PGNO         0
+#define DBPTR_COLUMN_CHILD        1
+#define DBPTR_COLUMN_SCHEMA       2
+
 #define DBDATA_SCHEMA             \
       "CREATE TABLE x("           \
       "  pgno INTEGER,"           \
       "  cell INTEGER,"           \
       "  field INTEGER,"          \
       "  value ANY,"              \
+      "  schema TEXT HIDDEN"      \
+      ")"
+
+#define DBPTR_SCHEMA              \
+      "CREATE TABLE x("           \
+      "  pgno INTEGER,"           \
+      "  child INTEGER,"          \
       "  schema TEXT HIDDEN"      \
       ")"
 
@@ -118,7 +143,7 @@ static int dbdataConnect(
   char **pzErr
 ){
   DbdataTable *pTab = 0;
-  int rc = sqlite3_declare_vtab(db, DBDATA_SCHEMA);
+  int rc = sqlite3_declare_vtab(db, pAux ? DBPTR_SCHEMA : DBDATA_SCHEMA);
 
   if( rc==SQLITE_OK ){
     pTab = (DbdataTable*)sqlite3_malloc64(sizeof(DbdataTable));
@@ -127,6 +152,7 @@ static int dbdataConnect(
     }else{
       memset(pTab, 0, sizeof(DbdataTable));
       pTab->db = db;
+      pTab->bPtr = (pAux!=0);
     }
   }
 
@@ -157,14 +183,16 @@ static int dbdataDisconnect(sqlite3_vtab *pVtab){
 ** position 1.
 */
 static int dbdataBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  DbdataTable *pTab = (DbdataTable*)tab;
   int i;
   int iSchema = -1;
   int iPgno = -1;
+  int colSchema = (pTab->bPtr ? DBPTR_COLUMN_SCHEMA : DBDATA_COLUMN_SCHEMA);
 
   for(i=0; i<pIdxInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[i];
     if( p->op==SQLITE_INDEX_CONSTRAINT_EQ ){
-      if( p->iColumn==DBDATA_COLUMN_SCHEMA ){
+      if( p->iColumn==colSchema ){
         if( p->usable==0 ) return SQLITE_CONSTRAINT;
         iSchema = i;
       }
@@ -210,6 +238,7 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
   pCsr->iPgno = 1;
   pCsr->iCell = 0;
   pCsr->iField = 0;
+  pCsr->bOnePage = 0;
 }
 
 /*
@@ -281,132 +310,152 @@ static int dbdataGetVarint(const u8 *z, sqlite3_int64 *pVal){
 ** Move a dbdata cursor to the next entry in the file.
 */
 static int dbdataNext(sqlite3_vtab_cursor *pCursor){
-  DbdataCursor *pCsr = (DbdataCursor *)pCursor;
+  DbdataCursor *pCsr = (DbdataCursor*)pCursor;
+  DbdataTable *pTab = (DbdataTable*)pCursor->pVtab;
 
   pCsr->iRowid++;
   while( 1 ){
     int rc;
+    int iOff = (pCsr->iPgno==1 ? 100 : 0);
 
     if( pCsr->aPage==0 ){
       rc = dbdataLoadPage(pCsr, pCsr->iPgno, &pCsr->aPage, &pCsr->nPage);
-      if( rc!=SQLITE_OK ) return rc;
-      pCsr->iCell = 0;
-      pCsr->nCell = get_uint16(&pCsr->aPage[pCsr->iPgno==1 ? 103 : 3]);
+      if( rc!=SQLITE_OK || pCsr->aPage==0 ) return rc;
+      pCsr->iCell = pTab->bPtr ? -2 : 0;
+      pCsr->nCell = get_uint16(&pCsr->aPage[iOff+3]);
     }
 
-    /* If there is no record loaded, load it now. */
-    if( pCsr->pRec==0 ){
-      int iOff = (pCsr->iPgno==1 ? 100 : 0);
-      int bHasRowid = 0;
-      int nPointer = 0;
-      sqlite3_int64 nPayload = 0;
-      sqlite3_int64 nHdr = 0;
-      int iHdr;
-      int U, X;
-      int nLocal;
-
-      switch( pCsr->aPage[iOff] ){
-        case 0x02:
-          nPointer = 4;
-          break;
-        case 0x0a:
-          break;
-        case 0x0d:
-          bHasRowid = 1;
-          break;
-        default:
-          pCsr->iCell = pCsr->nCell;
-          break;
+    if( pTab->bPtr ){
+      if( pCsr->aPage[iOff]!=0x02 && pCsr->aPage[iOff]!=0x05 ){
+        pCsr->iCell = pCsr->nCell;
       }
+      pCsr->iCell++;
       if( pCsr->iCell>=pCsr->nCell ){
         sqlite3_free(pCsr->aPage);
         pCsr->aPage = 0;
+        if( pCsr->bOnePage ) return SQLITE_OK;
+        pCsr->iPgno++;
+      }else{
         return SQLITE_OK;
       }
+    }else{
+      /* If there is no record loaded, load it now. */
+      if( pCsr->pRec==0 ){
+        int bHasRowid = 0;
+        int nPointer = 0;
+        sqlite3_int64 nPayload = 0;
+        sqlite3_int64 nHdr = 0;
+        int iHdr;
+        int U, X;
+        int nLocal;
+  
+        switch( pCsr->aPage[iOff] ){
+          case 0x02:
+            nPointer = 4;
+            break;
+          case 0x0a:
+            break;
+          case 0x0d:
+            bHasRowid = 1;
+            break;
+          default:
+            /* This is not a b-tree page with records on it. Continue. */
+            pCsr->iCell = pCsr->nCell;
+            break;
+        }
 
-      iOff += 8 + nPointer + pCsr->iCell*2;
-      iOff = get_uint16(&pCsr->aPage[iOff]);
-
-      /* For an interior node cell, skip past the child-page number */
-      iOff += nPointer;
-
-      /* Load the "byte of payload including overflow" field */
-      iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
-
-      /* If this is a leaf intkey cell, load the rowid */
-      if( bHasRowid ){
-        iOff += dbdataGetVarint(&pCsr->aPage[iOff], &pCsr->iIntkey);
-      }
-
-      /* Allocate space for payload */
-      pCsr->pRec = (u8*)sqlite3_malloc64(nPayload);
-      if( pCsr->pRec==0 ) return SQLITE_NOMEM;
-      pCsr->nRec = nPayload;
-
-      U = pCsr->nPage;
-      if( bHasRowid ){
-        X = U-35;
-      }else{
-        X = ((U-12)*64/255)-23;
-      }
-      if( nPayload<=X ){
-        nLocal = nPayload;
-      }else{
-        int M, K;
-        M = ((U-12)*32/255)-23;
-        K = M+((nPayload-M)%(U-4));
-        if( K<=X ){
-          nLocal = K;
+        if( pCsr->iCell>=pCsr->nCell ){
+          sqlite3_free(pCsr->aPage);
+          pCsr->aPage = 0;
+          if( pCsr->bOnePage ) return SQLITE_OK;
+          pCsr->iPgno++;
+          continue;
+        }
+  
+        iOff += 8 + nPointer + pCsr->iCell*2;
+        iOff = get_uint16(&pCsr->aPage[iOff]);
+  
+        /* For an interior node cell, skip past the child-page number */
+        iOff += nPointer;
+  
+        /* Load the "byte of payload including overflow" field */
+        iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
+  
+        /* If this is a leaf intkey cell, load the rowid */
+        if( bHasRowid ){
+          iOff += dbdataGetVarint(&pCsr->aPage[iOff], &pCsr->iIntkey);
+        }
+  
+        /* Allocate space for payload */
+        pCsr->pRec = (u8*)sqlite3_malloc64(nPayload);
+        if( pCsr->pRec==0 ) return SQLITE_NOMEM;
+        pCsr->nRec = nPayload;
+  
+        U = pCsr->nPage;
+        if( bHasRowid ){
+          X = U-35;
         }else{
-          nLocal = M;
+          X = ((U-12)*64/255)-23;
         }
-      }
-
-      /* Load the nLocal bytes of payload */
-      memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
-      iOff += nLocal;
-
-      /* Load content from overflow pages */
-      if( nPayload>nLocal ){
-        sqlite3_int64 nRem = nPayload - nLocal;
-        u32 pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
-        while( nRem>0 ){
-          u8 *aOvfl = 0;
-          int nOvfl = 0;
-          int nCopy;
-          rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
-          assert( rc!=SQLITE_OK || nOvfl==pCsr->nPage );
-          if( rc!=SQLITE_OK ) return rc;
-
-          nCopy = U-4;
-          if( nCopy>nRem ) nCopy = nRem;
-          memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
-          nRem -= nCopy;
-
-          sqlite3_free(aOvfl);
+        if( nPayload<=X ){
+          nLocal = nPayload;
+        }else{
+          int M, K;
+          M = ((U-12)*32/255)-23;
+          K = M+((nPayload-M)%(U-4));
+          if( K<=X ){
+            nLocal = K;
+          }else{
+            nLocal = M;
+          }
         }
+  
+        /* Load the nLocal bytes of payload */
+        memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
+        iOff += nLocal;
+  
+        /* Load content from overflow pages */
+        if( nPayload>nLocal ){
+          sqlite3_int64 nRem = nPayload - nLocal;
+          u32 pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
+          while( nRem>0 ){
+            u8 *aOvfl = 0;
+            int nOvfl = 0;
+            int nCopy;
+            rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
+            assert( rc!=SQLITE_OK || nOvfl==pCsr->nPage );
+            if( rc!=SQLITE_OK ) return rc;
+  
+            nCopy = U-4;
+            if( nCopy>nRem ) nCopy = nRem;
+            memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
+            nRem -= nCopy;
+  
+            sqlite3_free(aOvfl);
+          }
+        }
+  
+        /* Figure out how many fields in the record */
+        pCsr->nField = 0;
+        iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
+        while( iHdr<nHdr ){
+          sqlite3_int64 iDummy;
+          iHdr += dbdataGetVarint(&pCsr->pRec[iHdr], &iDummy);
+          pCsr->nField++;
+        }
+  
+        pCsr->iField = (bHasRowid ? -2 : -1);
       }
-
-      /* Figure out how many fields in the record */
-      pCsr->nField = 0;
-      iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
-      while( iHdr<nHdr ){
-        sqlite3_int64 iDummy;
-        iHdr += dbdataGetVarint(&pCsr->pRec[iHdr], &iDummy);
-        pCsr->nField++;
-      }
-
-      pCsr->iField = (bHasRowid ? -2 : -1);
+  
+      pCsr->iField++;
+      if( pCsr->iField<pCsr->nField ) return SQLITE_OK;
+  
+      /* Advance to the next cell. The next iteration of the loop will load
+      ** the record and so on. */
+      sqlite3_free(pCsr->pRec);
+      pCsr->pRec = 0;
+      pCsr->iCell++;
     }
-
-    pCsr->iField++;
-    if( pCsr->iField<pCsr->nField ) return SQLITE_OK;
-
-    /* Advance to the next cell. The next iteration of the loop will load
-    ** the record and so on. */
-    sqlite3_free(pCsr->pRec);
-    pCsr->pRec = 0;
-    pCsr->iCell++;
   }
 
   assert( !"can't get here" );
@@ -440,6 +489,7 @@ static int dbdataFilter(
   }
   if( idxNum & 0x02 ){
     pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);
+    pCsr->bOnePage = 1;
   }
 
   rc = sqlite3_prepare_v2(pTab->db, 
@@ -533,34 +583,54 @@ static int dbdataColumn(
   int i
 ){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
-  switch( i ){
-    case DBDATA_COLUMN_PGNO:
-      sqlite3_result_int64(ctx, pCsr->iPgno);
-      break;
-    case DBDATA_COLUMN_CELL:
-      sqlite3_result_int(ctx, pCsr->iCell);
-      break;
-    case DBDATA_COLUMN_FIELD:
-      sqlite3_result_int(ctx, pCsr->iField);
-      break;
-    case DBDATA_COLUMN_VALUE: {
-      if( pCsr->iField<0 ){
-        sqlite3_result_int64(ctx, pCsr->iIntkey);
-      }else{
-        int iHdr;
-        sqlite3_int64 iType;
-        sqlite3_int64 iOff;
-        int i;
-        iHdr = dbdataGetVarint(pCsr->pRec, &iOff);
-        for(i=0; i<pCsr->iField; i++){
-          iHdr += dbdataGetVarint(&pCsr->pRec[iHdr], &iType);
-          iOff += dbdataValueBytes(iType);
+  DbdataTable *pTab = (DbdataTable*)pCursor->pVtab;
+  if( pTab->bPtr ){
+    switch( i ){
+      case DBPTR_COLUMN_PGNO:
+        sqlite3_result_int64(ctx, pCsr->iPgno);
+        break;
+      case DBPTR_COLUMN_CHILD: {
+        int iOff = pCsr->iPgno==1 ? 100 : 0;
+        if( pCsr->iCell<0 ){
+          iOff += 8;
+        }else{
+          iOff += 12 + pCsr->iCell*2;
+          iOff = get_uint16(&pCsr->aPage[iOff]);
         }
-        dbdataGetVarint(&pCsr->pRec[iHdr], &iType);
-
-        dbdataValue(ctx, iType, &pCsr->pRec[iOff]);
+        sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
+        break;
       }
-      break;
+    }
+  }else{
+    switch( i ){
+      case DBDATA_COLUMN_PGNO:
+        sqlite3_result_int64(ctx, pCsr->iPgno);
+        break;
+      case DBDATA_COLUMN_CELL:
+        sqlite3_result_int(ctx, pCsr->iCell);
+        break;
+      case DBDATA_COLUMN_FIELD:
+        sqlite3_result_int(ctx, pCsr->iField);
+        break;
+      case DBDATA_COLUMN_VALUE: {
+        if( pCsr->iField<0 ){
+          sqlite3_result_int64(ctx, pCsr->iIntkey);
+        }else{
+          int iHdr;
+          sqlite3_int64 iType;
+          sqlite3_int64 iOff;
+          int i;
+          iHdr = dbdataGetVarint(pCsr->pRec, &iOff);
+          for(i=0; i<pCsr->iField; i++){
+            iHdr += dbdataGetVarint(&pCsr->pRec[iHdr], &iType);
+            iOff += dbdataValueBytes(iType);
+          }
+          dbdataGetVarint(&pCsr->pRec[iHdr], &iType);
+
+          dbdataValue(ctx, iType, &pCsr->pRec[iOff]);
+        }
+        break;
+      }
     }
   }
   return SQLITE_OK;
@@ -604,7 +674,12 @@ static int sqlite3DbdataRegister(sqlite3 *db){
     0,                            /* xRollbackTo */
     0                             /* xShadowName */
   };
-  return sqlite3_create_module(db, "sqlite_dbdata", &dbdata_module, 0);
+
+  int rc = sqlite3_create_module(db, "sqlite_dbdata", &dbdata_module, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "sqlite_dbptr", &dbdata_module, (void*)1);
+  }
+  return rc;
 }
 
 #ifdef _WIN32
