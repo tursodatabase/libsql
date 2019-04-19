@@ -2530,6 +2530,8 @@ struct Expr {
 #define EP_Subrtn   0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
 #define EP_Quoted   0x4000000 /* TK_ID was originally quoted */
 #define EP_Static   0x8000000 /* Held in memory not obtained from malloc() */
+#define EP_IsTrue  0x10000000 /* Always has boolean value of TRUE */
+#define EP_IsFalse 0x20000000 /* Always has boolean value of FALSE */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2545,6 +2547,8 @@ struct Expr {
 #define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
+#define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
+#define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
 /* The ExprSetVVAProperty() macro is used for Verification, Validation,
 ** and Accreditation only.  It works like ExprSetProperty() during VVA
