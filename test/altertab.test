@@ -559,4 +559,14 @@ ifcapable fts3 {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.0 {
+  CREATE TABLE sqlite1234 (id integer);
+  ALTER TABLE sqlite1234 RENAME TO User;
+  SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL;
+} {
+  User {CREATE TABLE "User" (id integer)}
+}
+
 finish_test
