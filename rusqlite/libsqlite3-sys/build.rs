@@ -4,16 +4,35 @@ use std::path::Path;
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
-    build::main(&out_dir, &out_path);
+    if cfg!(feature = "sqlcipher") {
+        if cfg!(feature = "bundled") {
+            println!(
+                "cargo:warning={}",
+                "Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
+                 This can lead to issues if your version of SQLCipher is not up to date!");
+        }
+        build_linked::main(&out_dir, &out_path)
+    } else {
+        // This can't be `cfg!` without always requiring our `mod build_bundled` (and thus `cc`)
+        #[cfg(feature = "bundled")]
+        {
+            build_bundled::main(&out_dir, &out_path)
+        }
+        #[cfg(not(feature = "bundled"))]
+        {
+            build_linked::main(&out_dir, &out_path)
+        }
+    }
 }
 
 #[cfg(feature = "bundled")]
-mod build {
+mod build_bundled {
     use cc;
     use std::path::Path;
 
     pub fn main(out_dir: &str, out_path: &Path) {
         if cfg!(feature = "sqlcipher") {
+            // This is just a sanity check, the top level `main` should ensure this.
             panic!("Builds with bundled SQLCipher are not supported");
         }
 
@@ -98,8 +117,7 @@ impl From<HeaderLocation> for String {
     }
 }
 
-#[cfg(not(feature = "bundled"))]
-mod build {
+mod build_linked {
     use pkg_config;
 
     #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
@@ -111,7 +129,20 @@ mod build {
 
     pub fn main(_out_dir: &str, out_path: &Path) {
         let header = find_sqlite();
-        bindings::write_to_out_dir(header, out_path);
+        if cfg!(feature = "bundled") && !cfg!(feature = "buildtime_bindgen") {
+            // We can only get here if `bundled` and `sqlcipher` were both
+            // specified (and `builtime_bindgen` was not). In order to keep
+            // `rusqlite` relatively clean we hide the fact that `bundled` can
+            // be ignored in some cases, and just use the bundled bindings, even
+            // though the library we found might not match their version.
+            // Ideally we'd perform a version check here, but doing so is rather
+            // tricky, since we might not have access to executables (and
+            // moreover, we might be cross compiling).
+            std::fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
+                .expect("Could not copy bindings to output directory");
+        } else {
+            bindings::write_to_out_dir(header, out_path);
+        }
     }
 
     fn find_link_mode() -> &'static str {
@@ -202,7 +233,7 @@ mod build {
     }
 }
 
-#[cfg(all(not(feature = "buildtime_bindgen"), not(feature = "bundled")))]
+#[cfg(not(feature = "buildtime_bindgen"))]
 mod bindings {
     use super::HeaderLocation;
 
