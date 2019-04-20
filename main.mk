@@ -738,6 +738,7 @@ SHELL_SRC = \
 	$(TOP)/ext/expert/sqlite3expert.h \
 	$(TOP)/ext/misc/zipfile.c \
 	$(TOP)/ext/misc/memtrace.c \
+	$(TOP)/ext/misc/dbdata.c \
         $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl

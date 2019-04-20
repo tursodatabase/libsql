@@ -63,11 +63,11 @@
 **       schema TEXT HIDDEN
 **     );
 */
-#if !defined(SQLITEINT_H)
+#if !defined(SQLITEINT_H) 
 #include "sqlite3ext.h"
 
 typedef unsigned char u8;
-typedef unsigned int u32;
+typedef unsigned long u32;
 
 #endif
 SQLITE_EXTENSION_INIT1
@@ -94,8 +94,11 @@ struct DbdataCursor {
   /* Only for the sqlite_dbdata table */
   u8 *pRec;                       /* Buffer containing current record */
   int nRec;                       /* Size of pRec[] in bytes */
-  int nField;                     /* Number of fields in pRec */
+  int nHdr;                       /* Size of header in bytes */
   int iField;                     /* Current field number */
+  u8 *pHdrPtr;
+  u8 *pPtr;
+  
   sqlite3_int64 iIntkey;          /* Integer key value */
 };
 
@@ -306,6 +309,78 @@ static int dbdataGetVarint(const u8 *z, sqlite3_int64 *pVal){
   return 9;
 }
 
+static int dbdataValueBytes(int eType){
+  switch( eType ){
+    case 0: case 8: case 9:
+    case 10: case 11:
+      return 0;
+    case 1:
+      return 1;
+    case 2:
+      return 2;
+    case 3:
+      return 3;
+    case 4:
+      return 4;
+    case 5:
+      return 6;
+    case 6:
+    case 7:
+      return 8;
+    default:
+      return ((eType-12) / 2);
+  }
+}
+
+static void dbdataValue(sqlite3_context *pCtx, int eType, u8 *pData){
+  switch( eType ){
+    case 0: 
+    case 10: 
+    case 11: 
+      sqlite3_result_null(pCtx);
+      break;
+    
+    case 8: 
+      sqlite3_result_int(pCtx, 0);
+      break;
+    case 9:
+      sqlite3_result_int(pCtx, 1);
+      break;
+
+    case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
+      sqlite3_uint64 v = (signed char)pData[0];
+      pData++;
+      switch( eType ){
+        case 7:
+        case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+        case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+        case 4:  v = (v<<8) + pData[0];  pData++;
+        case 3:  v = (v<<8) + pData[0];  pData++;
+        case 2:  v = (v<<8) + pData[0];  pData++;
+      }
+
+      if( eType==7 ){
+        double r;
+        memcpy(&r, &v, sizeof(r));
+        sqlite3_result_double(pCtx, r);
+      }else{
+        sqlite3_result_int64(pCtx, (sqlite3_int64)v);
+      }
+      break;
+    }
+
+    default: {
+      int n = ((eType-12) / 2);
+      if( eType % 2 ){
+        sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
+      }else{
+        sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+      }
+    }
+  }
+}
+
+
 /*
 ** Move a dbdata cursor to the next entry in the file.
 */
@@ -435,20 +510,23 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           }
         }
   
-        /* Figure out how many fields in the record */
-        pCsr->nField = 0;
         iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
-        while( iHdr<nHdr ){
-          sqlite3_int64 iDummy;
-          iHdr += dbdataGetVarint(&pCsr->pRec[iHdr], &iDummy);
-          pCsr->nField++;
+        pCsr->nHdr = nHdr;
+        pCsr->pHdrPtr = &pCsr->pRec[iHdr];
+        pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
+        pCsr->iField = (bHasRowid ? -1 : 0);
+      }else{
+        pCsr->iField++;
+        if( pCsr->iField>0 ){
+          sqlite3_int64 iType;
+          pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
+          pCsr->pPtr += dbdataValueBytes(iType);
         }
-  
-        pCsr->iField = (bHasRowid ? -2 : -1);
       }
-  
-      pCsr->iField++;
-      if( pCsr->iField<pCsr->nField ) return SQLITE_OK;
+
+      if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->pRec[pCsr->nHdr] ){
+        return SQLITE_OK;
+      }
   
       /* Advance to the next cell. The next iteration of the loop will load
       ** the record and so on. */
@@ -485,7 +563,7 @@ static int dbdataFilter(
   dbdataResetCursor(pCsr);
   assert( pCsr->iPgno==1 );
   if( idxNum & 0x01 ){
-    zSchema = sqlite3_value_text(argv[0]);
+    zSchema = (const char*)sqlite3_value_text(argv[0]);
   }
   if( idxNum & 0x02 ){
     pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);
@@ -498,82 +576,13 @@ static int dbdataFilter(
   );
   if( rc==SQLITE_OK ){
     rc = sqlite3_bind_text(pCsr->pStmt, 1, zSchema, -1, SQLITE_TRANSIENT);
+  }else{
+    pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
   }
   if( rc==SQLITE_OK ){
     rc = dbdataNext(pCursor);
   }
   return rc;
-}
-
-static int dbdataValueBytes(int eType){
-  switch( eType ){
-    case 0: case 8: case 9:
-    case 10: case 11:
-      return 0;
-    case 1:
-      return 1;
-    case 2:
-      return 2;
-    case 3:
-      return 3;
-    case 4:
-      return 4;
-    case 5:
-      return 6;
-    case 6:
-    case 7:
-      return 8;
-    default:
-      return ((eType-12) / 2);
-  }
-}
-
-static void dbdataValue(sqlite3_context *pCtx, int eType, u8 *pData){
-  switch( eType ){
-    case 0: 
-    case 10: 
-    case 11: 
-      sqlite3_result_null(pCtx);
-      break;
-    
-    case 8: 
-      sqlite3_result_int(pCtx, 0);
-      break;
-    case 9:
-      sqlite3_result_int(pCtx, 1);
-      break;
-
-    case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
-      sqlite3_uint64 v = (signed char)pData[0];
-      pData++;
-      switch( eType ){
-        case 7:
-        case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-        case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-        case 4:  v = (v<<8) + pData[0];  pData++;
-        case 3:  v = (v<<8) + pData[0];  pData++;
-        case 2:  v = (v<<8) + pData[0];  pData++;
-      }
-
-      if( eType==7 ){
-        double r;
-        memcpy(&r, &v, sizeof(r));
-        sqlite3_result_double(pCtx, r);
-      }else{
-        sqlite3_result_int64(pCtx, (sqlite3_int64)v);
-      }
-      break;
-    }
-
-    default: {
-      int n = ((eType-12) / 2);
-      if( eType % 2 ){
-        sqlite3_result_text(pCtx, pData, n, SQLITE_TRANSIENT);
-      }else{
-        sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
-      }
-    }
-  }
 }
 
 /* Return a column for the sqlite_dbdata table */
@@ -616,18 +625,9 @@ static int dbdataColumn(
         if( pCsr->iField<0 ){
           sqlite3_result_int64(ctx, pCsr->iIntkey);
         }else{
-          int iHdr;
           sqlite3_int64 iType;
-          sqlite3_int64 iOff;
-          int i;
-          iHdr = dbdataGetVarint(pCsr->pRec, &iOff);
-          for(i=0; i<pCsr->iField; i++){
-            iHdr += dbdataGetVarint(&pCsr->pRec[iHdr], &iType);
-            iOff += dbdataValueBytes(iType);
-          }
-          dbdataGetVarint(&pCsr->pRec[iHdr], &iType);
-
-          dbdataValue(ctx, iType, &pCsr->pRec[iOff]);
+          dbdataGetVarint(pCsr->pHdrPtr, &iType);
+          dbdataValue(ctx, iType, pCsr->pPtr);
         }
         break;
       }

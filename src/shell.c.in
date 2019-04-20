@@ -948,6 +948,8 @@ INCLUDE ../ext/misc/sqlar.c
 INCLUDE ../ext/expert/sqlite3expert.h
 INCLUDE ../ext/expert/sqlite3expert.c
 
+INCLUDE ../ext/misc/dbdata.c
+
 #if defined(SQLITE_ENABLE_SESSION)
 /*
 ** State information for a single open session
@@ -1102,6 +1104,7 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+#define SHFLG_Recover        0x00000080 /* .dump is --recover */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -3999,6 +4002,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
+    sqlite3_dbdata_init(p->db, 0, 0);
 #ifdef SQLITE_HAVE_ZLIB
     sqlite3_zipfile_init(p->db, 0, 0);
     sqlite3_sqlar_init(p->db, 0, 0);
@@ -6026,6 +6030,238 @@ end_ar_command:
 **********************************************************************************/
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
 
+static void shellExec(sqlite3 *db, int *pRc, const char *zSql){
+  int rc = *pRc;
+  if( rc==SQLITE_OK ){
+    char *zErr = 0;
+    rc = sqlite3_exec(db, zSql, 0, 0, &zErr);
+    if( rc!=SQLITE_OK ){
+      raw_printf(stderr, "SQL error: %s\n", zErr);
+    }
+    *pRc = rc;
+  }
+}
+
+static void *shellMalloc(int *pRc, sqlite3_int64 nByte){
+  void *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    pRet = sqlite3_malloc64(nByte);
+    if( pRet==0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      memset(pRet, 0, nByte);
+    }
+  }
+  return pRet;
+}
+
+static char *shellMPrintf(int *pRc, const char *zFmt, ...){
+  char *z = 0;
+  if( *pRc==SQLITE_OK ){
+    va_list ap;
+    va_start(ap, zFmt);
+    z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
+    if( z==0 ){
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+  return z;
+}
+
+typedef struct RecoverTable RecoverTable;
+struct RecoverTable {
+  char *zName;                    /* Name of table */
+  char *zQuoted;                  /* Quoted version of zName */
+  char *zCreate;                  /* SQL to create table in default schema */
+  int nCol;                       /* Number of columns in table */
+  char **azlCol;                  /* Array of column lists */
+};
+
+/*
+** Free a RecoverTable object allocated by recoverNewTable()
+*/
+static void recoverFreeTable(RecoverTable *pTab){
+  if( pTab ){
+    sqlite3_free(pTab->zName);
+    sqlite3_free(pTab->zQuoted);
+    sqlite3_free(pTab->zCreate);
+    if( pTab->azlCol ){
+      int i;
+      for(i=0; i<pTab->nCol; i++){
+        sqlite3_free(pTab->azlCol[i]);
+      }
+      sqlite3_free(pTab->azlCol);
+    }
+    sqlite3_free(pTab);
+  }
+}
+
+static RecoverTable *recoverNewTable(
+  ShellState *pState, 
+  int *pRc,
+  int iRoot,
+  int nCol
+){
+  RecoverTable *pRet = 0;
+
+  pRet = (RecoverTable*)shellMalloc(pRc, sizeof(RecoverTable));
+  if( pRet ){
+    sqlite3_stmt *pStmt = 0;
+    pRet->zName = shellMPrintf(pRc, "orphan_%d_%d", nCol, iRoot);
+    pRet->zQuoted = shellMPrintf(pRc, "%Q", pRet->zName);
+    pRet->azlCol = (char**)shellMalloc(pRc, sizeof(char*) * nCol);
+    pRet->nCol = nCol;
+
+    shellPreparePrintf(pState->db, pRc, &pStmt, 
+      "WITH s(i) AS ("
+      "  SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<%d"
+      ")"
+      "SELECT i-1, group_concat('c' || i, ', ') OVER (ORDER BY i) FROM s",
+      nCol
+    );
+    while( *pRc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      int idx = sqlite3_column_int(pStmt, 0);
+      const char *zText = (const char*)sqlite3_column_text(pStmt, 1);
+      pRet->azlCol[idx] = shellMPrintf(pRc, "%s", zText);
+    }
+    shellFinalize(pRc, pStmt);
+
+    pRet->zCreate = shellMPrintf(pRc, "CREATE TABLE %Q (id, %s)", 
+        pRet->zName, pRet->azlCol[nCol-1]
+    );
+  }
+
+  if( *pRc!=SQLITE_OK ){
+    recoverFreeTable(pRet);
+    pRet = 0;
+  }
+
+  return pRet;
+}
+
+/*
+** This function is called to recover data from the database. A script
+** to construct a new database containing all recovered data is output
+** on stream pState->out.
+*/
+static int recoverDatabaseCmd(ShellState *pState){
+  const char *zSql;
+  int rc = SQLITE_OK;
+  sqlite3_stmt *pLoop = 0;        /* Loop through all root pages */
+
+  shellExec(pState->db, &rc, 
+    /* Attach an in-memory database named 'recovery'. Create an indexed 
+    ** cache of the sqlite_dbptr virtual table. */
+    "ATTACH '' AS recovery;"
+    "CREATE TABLE recovery.dbptr("
+    "      pgno, child, PRIMARY KEY(child, pgno)"
+    ") WITHOUT ROWID;"
+    "INSERT OR IGNORE INTO dbptr(pgno, child) SELECT * FROM sqlite_dbptr;"
+
+    /* Delete any pointer to page 1. This ensures that page 1 is considered
+    ** a root page, regardless of how corrupt the db is. */
+    "DELETE FROM recovery.dbptr WHERE child = 1;"
+
+    /* Delete all pointers to any pages that have more than one pointer
+    ** to them. Such pages will be treated as root pages when recovering
+    ** data.  */
+    "DELETE FROM recovery.dbptr WHERE child IN ("
+    "  SELECT child FROM recovery.dbptr GROUP BY child HAVING count(*)>1"
+    ");"
+
+    /* Create the "map" table that will (eventually) contain instructions
+    ** for dealing with each page in the db that contains one or more 
+    ** records. */
+    "CREATE TABLE recovery.map(pgno INTEGER PRIMARY KEY, maxlen INT, root INT);"
+
+    /* Populate table [map]. If there are circular loops of pages in the
+    ** database, the following adds all pages in such a loop to the map
+    ** as individual root pages. This could be handled better.  */
+    "WITH pages(i, maxlen) AS ("
+    "  SELECT page_count, max(field+1) "
+    "      FROM pragma_page_count, sqlite_dbdata WHERE pgno=page_count"
+    "    UNION ALL"
+    "  SELECT * FROM (SELECT i-1, max(field+1)"
+    "      FROM pages, sqlite_dbdata WHERE pgno=i-1 AND i>=2)"
+    ")"
+    "INSERT INTO recovery.map(pgno, maxlen, root) SELECT i, maxlen, ("
+    "    WITH p(orig, pgno, parent) AS ("
+    "      SELECT 0, i, (SELECT pgno FROM recovery.dbptr WHERE child=i)"
+    "        UNION ALL"
+    "      SELECT i, p.parent, "
+    "        (SELECT pgno FROM recovery.dbptr WHERE child=p.parent) FROM p"
+    "    )"
+    "    SELECT pgno FROM p WHERE (parent IS NULL OR pgno = orig)"
+    ") "
+    "FROM pages WHERE maxlen > 0;"
+
+    /* Extract data from page 1 and any linked pages into table
+    ** recovery.schema. With the same schema as an sqlite_master table.  */
+    "CREATE TABLE recovery.schema(type, name, tbl_name, rootpage, sql);"
+    "INSERT INTO recovery.schema SELECT "
+    "  max(CASE WHEN field=0 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=1 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=2 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=3 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=4 THEN value ELSE NULL END)"
+    "FROM sqlite_dbdata WHERE pgno IN ("
+    "  SELECT pgno FROM recovery.map WHERE root=1"
+    ")"
+    "GROUP BY pgno, cell;"
+  );
+
+#if 0
+  zSql = "SELECT type ||','|| name ||','|| tbl_name ||','|| rootpage ||','|| sql FROM recovery.schema;";
+  shellPrepare(pState->db, &rc, zSql, &pLoop);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLoop) ){
+    raw_printf(pState->out, "%s\n", (const char*)sqlite3_column_text(pLoop, 0));
+  }
+  shellFinalize(&rc, pLoop);
+  return rc;
+#endif
+
+  /* Loop through each root page. */
+  zSql = "SELECT root,max(maxlen) FROM recovery.map WHERE root>1 GROUP BY root";
+  shellPrepare(pState->db, &rc, zSql, &pLoop);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLoop) ){
+    int iRoot = sqlite3_column_int(pLoop, 0);
+    int nCol = sqlite3_column_int(pLoop, 1);
+    RecoverTable *pTab;
+
+    pTab = recoverNewTable(pState, &rc, iRoot, nCol);
+    if( pTab ){
+      sqlite3_stmt *pData = 0;
+      raw_printf(pState->out, "%s;\n", pTab->zCreate);
+      shellPreparePrintf(pState->db, &rc, &pData, 
+        "SELECT max(field), group_concat(quote(value), ', ') "
+        "FROM sqlite_dbdata WHERE pgno IN ("
+        "  SELECT pgno FROM recovery.map WHERE root=%d"
+        ")"
+        "GROUP BY pgno, cell;", iRoot
+      );
+      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pData) ){
+        int iMax = sqlite3_column_int(pData, 0);
+        const char *zVal = (const char*)sqlite3_column_text(pData, 1);
+        if( iMax+1==pTab->nCol ){
+          raw_printf(pState->out, "INSERT INTO %s VALUES( %s );\n", 
+              pTab->zQuoted, zVal);
+        }else{
+          raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
+              pTab->zQuoted, pTab->azlCol[iMax], zVal
+          );
+        }
+      }
+      shellFinalize(&rc, pData);
+    }
+    recoverFreeTable(pTab);
+  }
+  shellFinalize(&rc, pLoop);
+
+  sqlite3_exec(pState->db, "DETACH recovery", 0, 0, 0);
+  return rc;
+}
+
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -6313,6 +6549,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = shell_dbinfo_command(p, nArg, azArg);
   }else
 
+  if( c=='r' && strncmp(azArg[0], "recover", n)==0 ){
+    open_db(p, 0);
+    rc = recoverDatabaseCmd(p);
+  }else
+
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     const char *zLike = 0;
     int i;
@@ -6350,7 +6591,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         zLike = azArg[i];
       }
     }
+
     open_db(p, 0);
+
     /* When playing back a "dump", the content might appear in an order
     ** which causes immediate foreign key constraints to be violated.
     ** So disable foreign-key constraint enforcement to prevent problems. */
@@ -6365,30 +6608,30 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->nErr = 0;
     if( zLike==0 ){
       run_schema_dump_query(p,
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
-      );
+          "SELECT name, type, sql FROM sqlite_master "
+          "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
+          );
       run_schema_dump_query(p,
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE name=='sqlite_sequence'"
-      );
+          "SELECT name, type, sql FROM sqlite_master "
+          "WHERE name=='sqlite_sequence'"
+          );
       run_table_dump_query(p,
-        "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
-      );
+          "SELECT sql FROM sqlite_master "
+          "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
+          );
     }else{
       char *zSql;
       zSql = sqlite3_mprintf(
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE tbl_name LIKE %Q AND type=='table'"
-        "  AND sql NOT NULL", zLike);
+          "SELECT name, type, sql FROM sqlite_master "
+          "WHERE tbl_name LIKE %Q AND type=='table'"
+          "  AND sql NOT NULL", zLike);
       run_schema_dump_query(p,zSql);
       sqlite3_free(zSql);
       zSql = sqlite3_mprintf(
-        "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL"
-        "  AND type IN ('index','trigger','view')"
-        "  AND tbl_name LIKE %Q", zLike);
+          "SELECT sql FROM sqlite_master "
+          "WHERE sql NOT NULL"
+          "  AND type IN ('index','trigger','view')"
+          "  AND tbl_name LIKE %Q", zLike);
       run_table_dump_query(p, zSql, 0);
       sqlite3_free(zSql);
     }
@@ -6398,7 +6641,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
-    raw_printf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
+    raw_printf(p->out, p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n");
     p->showHeader = savedShowHeader;
     p->shellFlgs = savedShellFlags;
   }else

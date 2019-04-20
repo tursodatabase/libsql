@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite_dbptr\svirtual\stable\sto\sthe\sdbdata\sextension.\sFor\squerying\sthe\slinks\sbetween\sb-tree\spages.
-D 2019-04-18T21:14:11.260
+C Add\sthe\s".recovery"\scommand\sto\sthe\sshell\stool.\sFor\srecovering\sthe\smaximum\samount\sdata\sfrom\scorrupt\sdatabases.\sStill\sneeds\swork.
+D 2019-04-20T20:57:28.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -284,7 +284,7 @@ F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c8
 F ext/misc/completion.c cec672d40604075bb341a7f11ac48393efdcd90a979269b8fe7977ea62d0547f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c 7f047aeb68f5802e7ce6639292095d622a488bb43526ed04810e0649faa71ceb
-F ext/misc/dbdata.c 20d85d7d7503817a5f9ac7d93c4ae7bf5fcc40570a77adc417acab0500058c99
+F ext/misc/dbdata.c 8f74f25565e1f57942f75134ef94ab73058849bed87d92be619be7d3b8a7d054
 F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287c336
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
@@ -441,7 +441,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 23d3660f7053d196aef76938bf78b10fc3ce1831a85d96bd71565758788f34d4
+F main.mk 125adda36bb32c99dc3a11340bd029ef373b9523eac2b2af76087bfe82d4fdf8
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -520,7 +520,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9263f5c30dd44c7ac2eb29f40a7ec64322a96885b71c00de6bc30b756c2e1c49
-F src/shell.c.in c1986496062f9dba4ed5b70db06b5e0f32e1954cdcfab0b30372c6c186796810
+F src/shell.c.in 3646e448cc207fa3118266c2a23f177306b068e42aae6fee64323ffb13307680
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1754,7 +1754,7 @@ F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 49039adedafbc430d2959400da2e0e8f20ef8dcf6898e447c946e7d50ef5906b
-F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
+F tool/mkshellc.tcl d18a6769f766bd5a0fd5fd60e6bbde38ed6d1a41fced5fe32ac01ab9d2e0d5ec
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
@@ -1820,7 +1820,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3ab58832935e1399ecc7e4d8daefa3a6afa6b301792ce7176bc5d7c173510fb
-R 901e9e476021499846a29c847f49c578
+P 3213a15f2133afbb0a4fec3b8f6e0eeca8c0befafd6658c41074e84f589d5d32
+R 9a7e323fe9ebfe9eb0759e1c70136795
 U dan
-Z e0c2ac18f5bd53328c7a0485e8c7ef97
+Z 100e3ccaddf1d19d0bacd74d773a93b7
