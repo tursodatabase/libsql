@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\smay\sbe\sfalse\sfor\scorrupt\sdatabases.
-D 2019-04-22T11:47:40.572
+C Early\sdetection\sof\sSQLITE_TOOBIG\swhen\sprocessing\snested\squeries.
+D 2019-04-22T20:05:54.645
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,7 +518,7 @@ F src/printf.c 67f79227273a9009d86a017619717c3f554f50b371294526da59faa6014ed2cd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c e6c6a75e9aac747ea26b5e2d1d7a9af50b813ea5524d4ec556a0afc72a6d69d4
+F src/select.c e2c1f53e429753699593f3918c465d17b528cbdce3e41db08adcdfa9a19cd9ae
 F src/shell.c.in 0d1a1abd8f1056ac6b32981442618e988e1e192cec2e904e58c72fcf494c901e
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4f35b3b78a461b0617a5cd04f60d2ab277bcc7c994dae463851a3cb5d041a723
-R b79fbec9cc96d7584a3a8f94492a3f38
-U dan
-Z 002b02d6adc168b9ce09f7701a50dc63
+P b2ce5ed175cb5029ac07392ae371c86eeec23c74624aad007dee51cf359f3eeb
+R 1131fd6ab632cf843fd3481da275126c
+U drh
+Z 2b97e19a94f7f535b7b97df584acbe3e
