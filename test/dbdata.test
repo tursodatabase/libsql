@@ -67,6 +67,16 @@ do_execsql_test 1.3 {
   SELECT value FROM sqlite_dbdata WHERE pgno=2 AND cell=2 AND field=1;
 } $big
 
+do_execsql_test 1.4 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(NULL, randomblob(5050));
+}
+do_test 1.5 {
+  execsql {
+    SELECT quote(value) FROM sqlite_dbdata WHERE pgno=2 AND cell=0 AND field=1;
+  }
+} [db one {SELECT quote(b) FROM t1}]
+
 #-------------------------------------------------------------------------
 reset_db
 db enable_load_extension 1

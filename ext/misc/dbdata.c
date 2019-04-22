@@ -506,6 +506,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
             nRem -= nCopy;
   
+            pgnoOvfl = get_uint32(aOvfl);
             sqlite3_free(aOvfl);
           }
         }

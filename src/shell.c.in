@@ -6073,9 +6073,9 @@ typedef struct RecoverTable RecoverTable;
 struct RecoverTable {
   char *zName;                    /* Name of table */
   char *zQuoted;                  /* Quoted version of zName */
-  char *zCreate;                  /* SQL to create table in default schema */
   int nCol;                       /* Number of columns in table */
   char **azlCol;                  /* Array of column lists */
+  int iPk;
 };
 
 /*
@@ -6085,7 +6085,6 @@ static void recoverFreeTable(RecoverTable *pTab){
   if( pTab ){
     sqlite3_free(pTab->zName);
     sqlite3_free(pTab->zQuoted);
-    sqlite3_free(pTab->zCreate);
     if( pTab->azlCol ){
       int i;
       for(i=0; i<pTab->nCol; i++){
@@ -6097,17 +6096,141 @@ static void recoverFreeTable(RecoverTable *pTab){
   }
 }
 
+static void recoverOldTable(
+  int *pRc,                       /* IN/OUT: Error code */
+  RecoverTable *pTab,
+  const char *zName,              /* Name of table */
+  const char *zSql,               /* CREATE TABLE statement */
+  int bIntkey, 
+  int nCol
+){
+  sqlite3 *dbtmp = 0;             /* sqlite3 handle for testing CREATE TABLE */
+  int rc = *pRc;
+
+  if( rc==SQLITE_OK ){
+    int nSqlCol = 0;
+    int bSqlIntkey = 0;
+    sqlite3_stmt *pStmt = 0;
+
+    rc = sqlite3_open("", &dbtmp);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_exec(dbtmp, zSql, 0, 0, 0);
+      if( rc==SQLITE_ERROR ){
+        rc = SQLITE_OK;
+        goto finished;
+      }
+    }
+    shellPreparePrintf(dbtmp, &rc, &pStmt, 
+        "SELECT count(*) FROM pragma_table_info(%Q)", zName
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      nSqlCol = sqlite3_column_int(pStmt, 0);
+    }
+    shellFinalize(&rc, pStmt);
+
+    if( rc!=SQLITE_OK || nSqlCol<nCol ){
+      goto finished;
+    }
+
+    shellPreparePrintf(dbtmp, &rc, &pStmt, 
+      "SELECT ("
+      "  SELECT substr(data,1,1)==X'0D' FROM sqlite_dbpage WHERE pgno=rootpage"
+      ") FROM sqlite_master WHERE name = %Q", zName
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      bSqlIntkey = sqlite3_column_int(pStmt, 0);
+    }
+    shellFinalize(&rc, pStmt);
+
+    if( bIntkey==bSqlIntkey ){
+      const char *zPk = "_rowid_";
+      sqlite3_stmt *pPkFinder = 0;
+
+      shellPreparePrintf(dbtmp, &rc, &pPkFinder, 
+          "SELECT cid, name FROM pragma_table_info(%Q) "
+          "  WHERE pk=1 AND type='integer' COLLATE nocase"
+          "  AND NOT EXISTS (SELECT cid FROM pragma_table_info(%Q) WHERE pk=2)",
+          zName, zName
+      );
+      if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPkFinder) ){
+        pTab->iPk = sqlite3_column_int(pPkFinder, 0);
+        zPk = (const char*)sqlite3_column_text(pPkFinder, 1);
+      }
+
+      pTab->zName = shellMPrintf(&rc, "%s", zName);
+      pTab->zQuoted = shellMPrintf(&rc, "%Q", pTab->zName);
+      pTab->azlCol = (char**)shellMalloc(&rc, sizeof(char*) * nSqlCol);
+      pTab->nCol = nSqlCol;
+
+      if( nSqlCol==1 && pTab->iPk==0 ){
+        pTab->azlCol[0] = shellMPrintf(&rc, "%Q", zPk);
+      }else{
+        shellPreparePrintf(dbtmp, &rc, &pStmt, 
+          "SELECT -1+row_number()          OVER (ORDER BY cid),"
+          "    %Q||%Q||group_concat(name, ', ') FILTER (WHERE cid!=%d) "
+          "           OVER (ORDER BY cid) "
+          "FROM pragma_table_info(%Q)", 
+          (bIntkey ? zPk : ""), (bIntkey ? ", " : ""), 
+          pTab->iPk, zName
+        );
+        while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+          int idx = sqlite3_column_int(pStmt, 0);
+          const char *zText = (const char*)sqlite3_column_text(pStmt, 1);
+          pTab->azlCol[idx] = shellMPrintf(&rc, "%s", zText);
+        }
+        shellFinalize(&rc, pStmt);
+      }
+      shellFinalize(&rc, pPkFinder);
+    }
+  }
+
+ finished:
+  sqlite3_close(dbtmp);
+  *pRc = rc;
+}
+
 static RecoverTable *recoverNewTable(
   ShellState *pState, 
   int *pRc,
   int iRoot,
+  int bIntkey,
   int nCol
 ){
+  sqlite3_stmt *pStmt = 0;
   RecoverTable *pRet = 0;
+  int bNoop = 0;
+  const char *zSql = 0;
+  const char *zName = 0;
 
   pRet = (RecoverTable*)shellMalloc(pRc, sizeof(RecoverTable));
-  if( pRet ){
+  if( pRet ) pRet->iPk = -2;
+
+  /* Search the recovered schema for an object with root page iRoot. */
+  shellPreparePrintf(pState->db, pRc, &pStmt,
+      "SELECT type, name, sql FROM recovery.schema WHERE rootpage=%d", iRoot
+  );
+  while( *pRc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+    const char *zType = (const char*)sqlite3_column_text(pStmt, 0);
+    if( bIntkey==0 && sqlite3_stricmp(zType, "index")==0 ){
+      bNoop = 1;
+      break;
+    }
+    if( sqlite3_stricmp(zType, "table")==0 ){
+      zName = (const char*)sqlite3_column_text(pStmt, 1);
+      zSql = (const char*)sqlite3_column_text(pStmt, 2);
+      recoverOldTable(pRc, pRet, zName, zSql, bIntkey, nCol);
+      break;
+    }
+  }
+  shellFinalize(pRc, pStmt);
+  if( bNoop ){
+    sqlite3_free(pRet);
+    return 0;
+  }
+
+  if( pRet && pRet->zName==0 ){
     sqlite3_stmt *pStmt = 0;
+
     pRet->zName = shellMPrintf(pRc, "orphan_%d_%d", nCol, iRoot);
     pRet->zQuoted = shellMPrintf(pRc, "%Q", pRet->zName);
     pRet->azlCol = (char**)shellMalloc(pRc, sizeof(char*) * nCol);
@@ -6117,8 +6240,8 @@ static RecoverTable *recoverNewTable(
       "WITH s(i) AS ("
       "  SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<%d"
       ")"
-      "SELECT i-1, group_concat('c' || i, ', ') OVER (ORDER BY i) FROM s",
-      nCol
+      "SELECT i-1, %Q || group_concat('c' || i, ', ') OVER (ORDER BY i) FROM s",
+      nCol, (bIntkey ? "id, " : "")
     );
     while( *pRc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int idx = sqlite3_column_int(pStmt, 0);
@@ -6127,9 +6250,15 @@ static RecoverTable *recoverNewTable(
     }
     shellFinalize(pRc, pStmt);
 
-    pRet->zCreate = shellMPrintf(pRc, "CREATE TABLE %Q (id, %s)", 
+    if( *pRc==SQLITE_OK ){
+      char *zCreate = shellMPrintf(pRc, "CREATE TABLE %Q (%s)", 
         pRet->zName, pRet->azlCol[nCol-1]
-    );
+      );
+      if( zCreate ){
+        raw_printf(pState->out, "%s;\n", zCreate);
+        sqlite3_free(zCreate);
+      }
+    }
   }
 
   if( *pRc!=SQLITE_OK ){
@@ -6146,7 +6275,6 @@ static RecoverTable *recoverNewTable(
 ** on stream pState->out.
 */
 static int recoverDatabaseCmd(ShellState *pState){
-  const char *zSql;
   int rc = SQLITE_OK;
   sqlite3_stmt *pLoop = 0;        /* Loop through all root pages */
 
@@ -6173,7 +6301,9 @@ static int recoverDatabaseCmd(ShellState *pState){
     /* Create the "map" table that will (eventually) contain instructions
     ** for dealing with each page in the db that contains one or more 
     ** records. */
-    "CREATE TABLE recovery.map(pgno INTEGER PRIMARY KEY, maxlen INT, root INT);"
+    "CREATE TABLE recovery.map("
+      "pgno INTEGER PRIMARY KEY, maxlen INT, intkey, root INT"
+    ");"
 
     /* Populate table [map]. If there are circular loops of pages in the
     ** database, the following adds all pages in such a loop to the map
@@ -6182,10 +6312,12 @@ static int recoverDatabaseCmd(ShellState *pState){
     "  SELECT page_count, max(field+1) "
     "      FROM pragma_page_count, sqlite_dbdata WHERE pgno=page_count"
     "    UNION ALL"
-    "  SELECT * FROM (SELECT i-1, max(field+1)"
-    "      FROM pages, sqlite_dbdata WHERE pgno=i-1 AND i>=2)"
+    "  SELECT i-1, ("
+    "    SELECT max(field+1) FROM sqlite_dbdata WHERE pgno=i-1"
+    "  ) FROM pages WHERE i>=2"
     ")"
-    "INSERT INTO recovery.map(pgno, maxlen, root) SELECT i, maxlen, ("
+    "INSERT INTO recovery.map(pgno, maxlen, intkey, root) "
+    "  SELECT i, maxlen, NULL, ("
     "    WITH p(orig, pgno, parent) AS ("
     "      SELECT 0, i, (SELECT pgno FROM recovery.dbptr WHERE child=i)"
     "        UNION ALL"
@@ -6195,6 +6327,9 @@ static int recoverDatabaseCmd(ShellState *pState){
     "    SELECT pgno FROM p WHERE (parent IS NULL OR pgno = orig)"
     ") "
     "FROM pages WHERE maxlen > 0;"
+    "UPDATE recovery.map AS o SET intkey = ("
+    "  SELECT substr(data, 1, 1)==X'0D' FROM sqlite_dbpage WHERE pgno=o.pgno"
+    ");"
 
     /* Extract data from page 1 and any linked pages into table
     ** recovery.schema. With the same schema as an sqlite_master table.  */
@@ -6221,36 +6356,53 @@ static int recoverDatabaseCmd(ShellState *pState){
   return rc;
 #endif
 
+  /* Open a transaction, then print out all non-virtual, non-"sqlite_%" 
+  ** CREATE TABLE statements that extracted from the existing schema.  */
+  if( rc==SQLITE_OK ){
+    sqlite3_stmt *pStmt = 0;
+    raw_printf(pState->out, "BEGIN;\n");
+    shellPrepare(pState->db, &rc, 
+        "SELECT sql FROM recovery.schema "
+        "WHERE type='table' "
+        "  AND length(sql)>6"
+        "  AND sql LIKE 'create table%'"
+        "  AND name NOT LIKE 'sqliteX_%' ESCAPE 'X'", &pStmt
+    );
+    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      const char *zCreateTable = (const char*)sqlite3_column_text(pStmt, 0);
+      raw_printf(pState->out, "%s;\n", zCreateTable);
+    }
+    shellFinalize(&rc, pStmt);
+  }
+
   /* Loop through each root page. */
-  zSql = "SELECT root,max(maxlen) FROM recovery.map WHERE root>1 GROUP BY root";
-  shellPrepare(pState->db, &rc, zSql, &pLoop);
+  shellPrepare(pState->db, &rc, 
+      "SELECT root, intkey, max(maxlen) FROM recovery.map" 
+      " WHERE root>1 GROUP BY root, intkey", &pLoop
+  );
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLoop) ){
     int iRoot = sqlite3_column_int(pLoop, 0);
-    int nCol = sqlite3_column_int(pLoop, 1);
+    int bIntkey = sqlite3_column_int(pLoop, 1);
+    int nCol = sqlite3_column_int(pLoop, 2);
     RecoverTable *pTab;
 
-    pTab = recoverNewTable(pState, &rc, iRoot, nCol);
+    pTab = recoverNewTable(pState, &rc, iRoot, bIntkey, nCol);
     if( pTab ){
       sqlite3_stmt *pData = 0;
-      raw_printf(pState->out, "%s;\n", pTab->zCreate);
       shellPreparePrintf(pState->db, &rc, &pData, 
         "SELECT max(field), group_concat(quote(value), ', ') "
         "FROM sqlite_dbdata WHERE pgno IN ("
         "  SELECT pgno FROM recovery.map WHERE root=%d"
         ")"
-        "GROUP BY pgno, cell;", iRoot
+        " AND field!=%d "
+        "GROUP BY pgno, cell;", iRoot, pTab->iPk
       );
       while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pData) ){
         int iMax = sqlite3_column_int(pData, 0);
         const char *zVal = (const char*)sqlite3_column_text(pData, 1);
-        if( iMax+1==pTab->nCol ){
-          raw_printf(pState->out, "INSERT INTO %s VALUES( %s );\n", 
-              pTab->zQuoted, zVal);
-        }else{
-          raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
-              pTab->zQuoted, pTab->azlCol[iMax], zVal
-          );
-        }
+        raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
+            pTab->zQuoted, pTab->azlCol[iMax>0?iMax:0], zVal
+        );
       }
       shellFinalize(&rc, pData);
     }
@@ -6258,6 +6410,9 @@ static int recoverDatabaseCmd(ShellState *pState){
   }
   shellFinalize(&rc, pLoop);
 
+  if( rc==SQLITE_OK ){
+    raw_printf(pState->out, "COMMIT;\n");
+  }
   sqlite3_exec(pState->db, "DETACH recovery", 0, 0, 0);
   return rc;
 }
