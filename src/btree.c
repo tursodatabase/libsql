@@ -4284,10 +4284,9 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
       rc = newDatabase(pBt);
       pBt->nPage = get4byte(28 + pBt->pPage1->aData);
 
-      /* The database size was written into the offset 28 of the header
-      ** when the transaction started, so we know that the value at offset
-      ** 28 is nonzero. */
-      assert( pBt->nPage>0 );
+      /* pBt->nPage might be zero if the database was corrupt when 
+      ** the transaction was started. Otherwise, it must be at least 1.  */
+      assert( CORRUPT_DB || pBt->nPage>0 );
     }
     sqlite3BtreeLeave(p);
   }
