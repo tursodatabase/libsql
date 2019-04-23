@@ -1,5 +1,5 @@
-C Enhance\sthe\s".recover"\scommand.\sFix\sa\sproblem\swith\soverflow\spages\sin\sdbdata.c.
-D 2019-04-22T20:52:12.850
+C Fixes\sfor\sthe\s".recover"\sshell\scommand.
+D 2019-04-23T18:03:02.318
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9263f5c30dd44c7ac2eb29f40a7ec64322a96885b71c00de6bc30b756c2e1c49
-F src/shell.c.in 7dd0babc42bc136b8dd070152981ee2325b787571f58326e68e6ad35d764aa33
+F src/shell.c.in 6c02cbd1de3b878abc04b08f2f74cc4d65d0a8e52dd3e78194db2a79d686b841
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1226,6 +1226,7 @@ F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
+F test/recover.test a8fed5acf2742268e366abb76a01de6ddce278aae01658488b950c968ebef638
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
@@ -1820,7 +1821,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7461d2e120f2149315ddac2676d51d7445bcdb8e97543effd9c30603517ef9da
-R 14050e9b3d7e7a784dc8a127e6275222
+P f193ca587f9e4f925f4f2343b0b07053bd6f93dd87fc6f8f41cf4479e90cf562
+R 73bcd5cc8a48367ff5a018a5ccb0a79d
 U dan
-Z abcbf2aebf4cbfcbf65f71e558364487
+Z e408dc486ac689ec1d61c890dc79708f

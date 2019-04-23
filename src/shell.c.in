@@ -6114,6 +6114,9 @@ static void recoverOldTable(
 
     rc = sqlite3_open("", &dbtmp);
     if( rc==SQLITE_OK ){
+      rc = sqlite3_exec(dbtmp, "PRAGMA writable_schema = on", 0, 0, 0);
+    }
+    if( rc==SQLITE_OK ){
       rc = sqlite3_exec(dbtmp, zSql, 0, 0, 0);
       if( rc==SQLITE_ERROR ){
         rc = SQLITE_OK;
@@ -6361,16 +6364,16 @@ static int recoverDatabaseCmd(ShellState *pState){
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
     raw_printf(pState->out, "BEGIN;\n");
-    shellPrepare(pState->db, &rc, 
+    raw_printf(pState->out, "PRAGMA writable_schema = on;\n");
+    shellPrepare(pState->db, &rc,
         "SELECT sql FROM recovery.schema "
-        "WHERE type='table' "
-        "  AND length(sql)>6"
-        "  AND sql LIKE 'create table%'"
-        "  AND name NOT LIKE 'sqliteX_%' ESCAPE 'X'", &pStmt
+        "WHERE type='table' AND sql LIKE 'create table%'", &pStmt
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zCreateTable = (const char*)sqlite3_column_text(pStmt, 0);
-      raw_printf(pState->out, "%s;\n", zCreateTable);
+      raw_printf(pState->out, "CREATE TABLE IF NOT EXISTS %s;\n", 
+          &zCreateTable[12]
+      );
     }
     shellFinalize(&rc, pStmt);
   }
@@ -6378,7 +6381,9 @@ static int recoverDatabaseCmd(ShellState *pState){
   /* Loop through each root page. */
   shellPrepare(pState->db, &rc, 
       "SELECT root, intkey, max(maxlen) FROM recovery.map" 
-      " WHERE root>1 GROUP BY root, intkey", &pLoop
+      " WHERE root>1 GROUP BY root, intkey ORDER BY root=("
+      "  SELECT rootpage FROM recovery.schema WHERE name='sqlite_sequence'"
+      ")", &pLoop
   );
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLoop) ){
     int iRoot = sqlite3_column_int(pLoop, 0);
@@ -6389,6 +6394,9 @@ static int recoverDatabaseCmd(ShellState *pState){
     pTab = recoverNewTable(pState, &rc, iRoot, bIntkey, nCol);
     if( pTab ){
       sqlite3_stmt *pData = 0;
+      if( 0==sqlite3_stricmp(pTab->zName, "sqlite_sequence") ){
+        raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
+      }
       shellPreparePrintf(pState->db, &rc, &pData, 
         "SELECT max(field), group_concat(quote(value), ', ') "
         "FROM sqlite_dbdata WHERE pgno IN ("
@@ -6410,7 +6418,32 @@ static int recoverDatabaseCmd(ShellState *pState){
   }
   shellFinalize(&rc, pLoop);
 
+  /* The rest of the schema */
   if( rc==SQLITE_OK ){
+    sqlite3_stmt *pStmt = 0;
+    shellPrepare(pState->db, &rc, 
+        "SELECT sql, name FROM recovery.schema "
+        "WHERE (type='table' AND sql LIKE 'create table%') IS NOT TRUE", &pStmt
+    );
+    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      const char *zSql = (const char*)sqlite3_column_text(pStmt, 0);
+      if( sqlite3_strnicmp(zSql, "create virt", 11)==0 ){
+        const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
+        char *zPrint = shellMPrintf(&rc, 
+          "INSERT INTO sqlite_master VALUES('table', %Q, %Q, 0, %Q)",
+          zName, zName, zSql
+        );
+        raw_printf(pState->out, "%s;\n", zPrint);
+        sqlite3_free(zPrint);
+      }else{
+        raw_printf(pState->out, "%s;\n", zSql);
+      }
+    }
+    shellFinalize(&rc, pStmt);
+  }
+
+  if( rc==SQLITE_OK ){
+    raw_printf(pState->out, "PRAGMA writable_schema = off;\n");
     raw_printf(pState->out, "COMMIT;\n");
   }
   sqlite3_exec(pState->db, "DETACH recovery", 0, 0, 0);
