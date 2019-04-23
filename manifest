@@ -1,5 +1,5 @@
-C Version\s3.28.0
-D 2019-04-16T19:49:53.412
+C Minor\ssimplification\sof\sNULL\svalue\shandling\sfor\sSTAT4.\s\sCherrypick\sof\s[69bad9257f8db6a2]\sfrom\strunk.
+D 2019-04-23T15:21:00.287
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -596,7 +596,7 @@ F src/vdbeInt.h 2c12704db9740c8e899786ecfc7a5797a9d067563496eb1b6ed03c592d7b8d90
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
 F src/vdbeaux.c f873b5c2efcf8a4d6ecfc5b1a5b06fd810419198f3bd882175d371cc03801873
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 8e6889761e344babdb8a56dd1ac8911501fa648396544d1644f1cd6a87c80dc0
+F src/vdbemem.c dd2ee49255c4c5450f2b0887ef44cea8faa1cd7a46501b39a1a82b113ae418e3
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 4c5959e00b7a142198d178e3a822f4e05f36f2d1a3c57657373f9487154fc06b
@@ -1818,10 +1818,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af61a2fc45a0fa1277d7453779238b77de4c298a9f60714b7dc62ddca5874f80
-R 53d48b50e3fea254b204992be6aac766
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.28.0 *
-U drh
-Z 50f60d1cc2f388d0c03013011d963653
+P 884b4b7e502b4e991677b53971277adfaf0a04a284f8e483e2553d0f83156b50
+Q +69bad9257f8db6a2a761bdd298d972eb48d4f845ec11dedc802ba3bafb979915
+R 2de37cd24f2ad3bf37b8e18909c02d08
+T *branch * branch-3.28
+T *sym-branch-3.28 *
+T -sym-trunk *
+U mistachkin
+Z 1aa7165f44d1a77e48593cc1ad610fa8
