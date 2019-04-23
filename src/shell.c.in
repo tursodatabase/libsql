@@ -3934,6 +3934,96 @@ readHexDb_error:
 }
 #endif /* SQLITE_ENABLE_DESERIALIZE */
 
+/*
+** Scalar function "shell_escape_crnl" used by the .recover command.
+** The argument passed to this function is the output of built-in
+** function quote(). If the first character of the input is "'", 
+** indicating that the value passed to quote() was a text value,
+** then this function searches the input for "\n" and "\r" characters
+** and adds a wrapper similar to the following:
+**
+**   replace(replace(<input>, '\n', char(10), '\r', char(13));
+**
+** Or, if the first character of the input is not "'", then a copy
+** of the input is returned.
+*/
+static void shellEscapeCrnl(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const char *zText = (const char*)sqlite3_value_text(argv[0]);
+  if( zText[0]=='\'' ){
+    int nText = sqlite3_value_bytes(argv[0]);
+    int i;
+    char zBuf1[20];
+    char zBuf2[20];
+    const char *zNL = 0;
+    const char *zCR = 0;
+    int nCR = 0;
+    int nNL = 0;
+
+    for(i=0; zText[i]; i++){
+      if( zNL==0 && zText[i]=='\n' ){
+        zNL = unused_string(zText, "\\n", "\\012", zBuf1);
+        nNL = (int)strlen(zNL);
+      }
+      if( zCR==0 && zText[i]=='\r' ){
+        zCR = unused_string(zText, "\\r", "\\015", zBuf2);
+        nCR = (int)strlen(zCR);
+      }
+    }
+
+    if( zNL || zCR ){
+      int iOut = 0;
+      i64 nMax = (nNL > nCR) ? nNL : nCR;
+      i64 nAlloc = nMax * nText + (nMax+12)*2;
+      char *zOut = (char*)sqlite3_malloc64(nAlloc);
+      if( zOut==0 ){
+        sqlite3_result_error_nomem(context);
+        return;
+      }
+
+      if( zNL && zCR ){
+        memcpy(&zOut[iOut], "replace(replace(", 16);
+        iOut += 16;
+      }else{
+        memcpy(&zOut[iOut], "replace(", 8);
+        iOut += 8;
+      }
+      for(i=0; zText[i]; i++){
+        if( zText[i]=='\n' ){
+          memcpy(&zOut[iOut], zNL, nNL);
+          iOut += nNL;
+        }else if( zText[i]=='\r' ){
+          memcpy(&zOut[iOut], zCR, nCR);
+          iOut += nCR;
+        }else{
+          zOut[iOut] = zText[i];
+          iOut++;
+        }
+      }
+
+      if( zNL ){
+        memcpy(&zOut[iOut], ",'", 2); iOut += 2;
+        memcpy(&zOut[iOut], zNL, nNL); iOut += nNL;
+        memcpy(&zOut[iOut], "', char(10))", 12); iOut += 12;
+      }
+      if( zCR ){
+        memcpy(&zOut[iOut], ",'", 2); iOut += 2;
+        memcpy(&zOut[iOut], zCR, nCR); iOut += nCR;
+        memcpy(&zOut[iOut], "', char(13))", 12); iOut += 12;
+      }
+
+      sqlite3_result_text(context, zOut, iOut, SQLITE_TRANSIENT);
+      sqlite3_free(zOut);
+      return;
+    }
+  }
+
+  sqlite3_result_value(context, argv[0]);
+}
+
 /* Flags for open_db().
 **
 ** The default behavior of open_db() is to exit(1) if the database fails to
@@ -4013,6 +4103,8 @@ static void open_db(ShellState *p, int openFlags){
                             shellModuleSchema, 0, 0);
     sqlite3_create_function(p->db, "shell_putsnl", 1, SQLITE_UTF8, p,
                             shellPutsFunc, 0, 0);
+    sqlite3_create_function(p->db, "shell_escape_crnl", 1, SQLITE_UTF8, 0,
+                            shellEscapeCrnl, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
@@ -6349,16 +6441,6 @@ static int recoverDatabaseCmd(ShellState *pState){
     "GROUP BY pgno, cell;"
   );
 
-#if 0
-  zSql = "SELECT type ||','|| name ||','|| tbl_name ||','|| rootpage ||','|| sql FROM recovery.schema;";
-  shellPrepare(pState->db, &rc, zSql, &pLoop);
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLoop) ){
-    raw_printf(pState->out, "%s\n", (const char*)sqlite3_column_text(pLoop, 0));
-  }
-  shellFinalize(&rc, pLoop);
-  return rc;
-#endif
-
   /* Open a transaction, then print out all non-virtual, non-"sqlite_%" 
   ** CREATE TABLE statements that extracted from the existing schema.  */
   if( rc==SQLITE_OK ){
@@ -6398,7 +6480,7 @@ static int recoverDatabaseCmd(ShellState *pState){
         raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
       }
       shellPreparePrintf(pState->db, &rc, &pData, 
-        "SELECT max(field), group_concat(quote(value), ', ') "
+        "SELECT max(field), group_concat(shell_escape_crnl(quote(value)),', ')"
         "FROM sqlite_dbdata WHERE pgno IN ("
         "  SELECT pgno FROM recovery.map WHERE root=%d"
         ")"
@@ -6423,7 +6505,7 @@ static int recoverDatabaseCmd(ShellState *pState){
     sqlite3_stmt *pStmt = 0;
     shellPrepare(pState->db, &rc, 
         "SELECT sql, name FROM recovery.schema "
-        "WHERE (type='table' AND sql LIKE 'create table%') IS NOT TRUE", &pStmt
+        "WHERE sql NOT LIKE 'create table%'", &pStmt
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zSql = (const char*)sqlite3_column_text(pStmt, 0);
