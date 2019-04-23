@@ -26,6 +26,7 @@ script:
   - cargo build
   - cargo build --features bundled
   - cargo build --features sqlcipher
+  - cargo build --features "bundled sqlcipher"
   - cargo test
   - cargo test --features backup
   - cargo test --features blob
