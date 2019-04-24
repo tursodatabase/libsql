@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.17.0"
+version = "0.18.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 edition = "2018"
 description = "Ergonomic wrapper for SQLite"
@@ -72,7 +72,7 @@ uuid = { version = "0.7", features = ["v4"] }
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.13"
+version = "0.14"
 
 [[test]]
 name = "config_log"
