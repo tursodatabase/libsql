@@ -106,6 +106,7 @@ struct DbdataCursor {
 struct DbdataTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database connection */
+  sqlite3_stmt *pStmt;            /* For fetching database pages */
   int bPtr;                       /* True for sqlite3_dbptr table */
 };
 
@@ -167,7 +168,11 @@ static int dbdataConnect(
 ** Disconnect from or destroy a dbdata virtual table.
 */
 static int dbdataDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
+  DbdataTable *pTab = (DbdataTable*)pVtab;
+  if( pTab ){
+    sqlite3_finalize(pTab->pStmt);
+    sqlite3_free(pVtab);
+  }
   return SQLITE_OK;
 }
 
@@ -185,15 +190,15 @@ static int dbdataDisconnect(sqlite3_vtab *pVtab){
 ** If both parameters are present, schema is in position 0 and pgno in
 ** position 1.
 */
-static int dbdataBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+static int dbdataBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdx){
   DbdataTable *pTab = (DbdataTable*)tab;
   int i;
   int iSchema = -1;
   int iPgno = -1;
   int colSchema = (pTab->bPtr ? DBPTR_COLUMN_SCHEMA : DBDATA_COLUMN_SCHEMA);
 
-  for(i=0; i<pIdxInfo->nConstraint; i++){
-    struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[i];
+  for(i=0; i<pIdx->nConstraint; i++){
+    struct sqlite3_index_constraint *p = &pIdx->aConstraint[i];
     if( p->op==SQLITE_INDEX_CONSTRAINT_EQ ){
       if( p->iColumn==colSchema ){
         if( p->usable==0 ) return SQLITE_CONSTRAINT;
@@ -206,14 +211,29 @@ static int dbdataBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   }
 
   if( iSchema>=0 ){
-    pIdxInfo->aConstraintUsage[iSchema].argvIndex = 1;
-    pIdxInfo->aConstraintUsage[iSchema].omit = 1;
+    pIdx->aConstraintUsage[iSchema].argvIndex = 1;
+    pIdx->aConstraintUsage[iSchema].omit = 1;
   }
   if( iPgno>=0 ){
-    pIdxInfo->aConstraintUsage[iPgno].argvIndex = 1 + (iSchema>=0);
-    pIdxInfo->aConstraintUsage[iPgno].omit = 1;
+    pIdx->aConstraintUsage[iPgno].argvIndex = 1 + (iSchema>=0);
+    pIdx->aConstraintUsage[iPgno].omit = 1;
+    pIdx->estimatedCost = 100;
+    pIdx->estimatedRows =  50;
+
+    if( pTab->bPtr==0 && pIdx->nOrderBy && pIdx->aOrderBy[0].desc==0 ){
+      int iCol = pIdx->aOrderBy[0].iColumn;
+      if( pIdx->nOrderBy==1 ){
+        pIdx->orderByConsumed = (iCol==0 || iCol==1);
+      }else if( pIdx->nOrderBy==2 && pIdx->aOrderBy[1].desc==0 && iCol==0 ){
+        pIdx->orderByConsumed = (pIdx->aOrderBy[1].iColumn==1);
+      }
+    }
+
+  }else{
+    pIdx->estimatedCost = 100000000;
+    pIdx->estimatedRows = 1000000000;
   }
-  pIdxInfo->idxNum = (iSchema>=0 ? 0x01 : 0x00) | (iPgno>=0 ? 0x02 : 0x00);
+  pIdx->idxNum = (iSchema>=0 ? 0x01 : 0x00) | (iPgno>=0 ? 0x02 : 0x00);
   return SQLITE_OK;
 }
 
@@ -236,7 +256,12 @@ static int dbdataOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 }
 
 static void dbdataResetCursor(DbdataCursor *pCsr){
-  sqlite3_finalize(pCsr->pStmt);
+  DbdataTable *pTab = (DbdataTable*)(pCsr->base.pVtab);
+  if( pTab->pStmt==0 ){
+    pTab->pStmt = pCsr->pStmt;
+  }else{
+    sqlite3_finalize(pCsr->pStmt);
+  }
   pCsr->pStmt = 0;
   pCsr->iPgno = 1;
   pCsr->iCell = 0;
@@ -558,7 +583,7 @@ static int dbdataFilter(
 ){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
   DbdataTable *pTab = (DbdataTable*)pCursor->pVtab;
-  int rc;
+  int rc = SQLITE_OK;
   const char *zSchema = "main";
 
   dbdataResetCursor(pCsr);
@@ -571,10 +596,15 @@ static int dbdataFilter(
     pCsr->bOnePage = 1;
   }
 
-  rc = sqlite3_prepare_v2(pTab->db, 
-      "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
-      &pCsr->pStmt, 0
-  );
+  if( pTab->pStmt ){
+    pCsr->pStmt = pTab->pStmt;
+    pTab->pStmt = 0;
+  }else{
+    rc = sqlite3_prepare_v2(pTab->db, 
+        "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
+        &pCsr->pStmt, 0
+    );
+  }
   if( rc==SQLITE_OK ){
     rc = sqlite3_bind_text(pCsr->pStmt, 1, zSchema, -1, SQLITE_TRANSIENT);
   }else{

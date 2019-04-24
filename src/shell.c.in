@@ -6372,6 +6372,8 @@ static RecoverTable *recoverNewTable(
 static int recoverDatabaseCmd(ShellState *pState){
   int rc = SQLITE_OK;
   sqlite3_stmt *pLoop = 0;        /* Loop through all root pages */
+  sqlite3_stmt *pPages = 0;       /* Loop through all pages in a group */
+  sqlite3_stmt *pCells = 0;       /* Loop through all cells in a page */
 
   shellExec(pState->db, &rc, 
     /* Attach an in-memory database named 'recovery'. Create an indexed 
@@ -6460,6 +6462,15 @@ static int recoverDatabaseCmd(ShellState *pState){
     shellFinalize(&rc, pStmt);
   }
 
+  shellPrepare(pState->db, &rc,
+      "SELECT pgno FROM recovery.map WHERE root=?", &pPages
+  );
+  shellPrepare(pState->db, &rc,
+      "SELECT max(field), group_concat(shell_escape_crnl(quote(value)), ', ')"
+      "FROM sqlite_dbdata WHERE pgno = ? AND field != ?"
+      "GROUP BY cell", &pCells
+  );
+
   /* Loop through each root page. */
   shellPrepare(pState->db, &rc, 
       "SELECT root, intkey, max(maxlen) FROM recovery.map" 
@@ -6475,30 +6486,29 @@ static int recoverDatabaseCmd(ShellState *pState){
 
     pTab = recoverNewTable(pState, &rc, iRoot, bIntkey, nCol);
     if( pTab ){
-      sqlite3_stmt *pData = 0;
       if( 0==sqlite3_stricmp(pTab->zName, "sqlite_sequence") ){
         raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
       }
-      shellPreparePrintf(pState->db, &rc, &pData, 
-        "SELECT max(field), group_concat(shell_escape_crnl(quote(value)),', ')"
-        "FROM sqlite_dbdata WHERE pgno IN ("
-        "  SELECT pgno FROM recovery.map WHERE root=%d"
-        ")"
-        " AND field!=%d "
-        "GROUP BY pgno, cell;", iRoot, pTab->iPk
-      );
-      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pData) ){
-        int iMax = sqlite3_column_int(pData, 0);
-        const char *zVal = (const char*)sqlite3_column_text(pData, 1);
-        raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
-            pTab->zQuoted, pTab->azlCol[iMax>0?iMax:0], zVal
-        );
+      sqlite3_bind_int(pPages, 1, iRoot);
+      sqlite3_bind_int(pCells, 2, pTab->iPk);
+      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPages) ){
+        sqlite3_bind_int(pCells, 1, sqlite3_column_int(pPages, 0));
+        while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pCells) ){
+          int iMax = sqlite3_column_int(pCells, 0);
+          const char *zVal = (const char*)sqlite3_column_text(pCells, 1);
+          raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
+              pTab->zQuoted, pTab->azlCol[iMax>0?iMax:0], zVal
+          );
+        }
+        shellReset(&rc, pCells);
       }
-      shellFinalize(&rc, pData);
+      shellReset(&rc, pPages);
     }
     recoverFreeTable(pTab);
   }
   shellFinalize(&rc, pLoop);
+  shellFinalize(&rc, pPages);
+  shellFinalize(&rc, pCells);
 
   /* The rest of the schema */
   if( rc==SQLITE_OK ){
