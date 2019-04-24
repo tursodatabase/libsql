@@ -1,5 +1,5 @@
-C Make\sno\satttempt\sto\sgenerate\sVDBE\scode\sfor\sVACUUM\safter\sa\ssyntax\serror.
-D 2019-04-23T22:00:39.542
+C Fix\sfor\s8-byte\salignment\sasserts\sthat\scan\strigger\sin\ssome\scircumstances\swith\s32-bit\sMSVC.
+D 2019-04-24T00:37:11.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memdb.c 02a5fcec19b9d40dd449ca802dc1b2e8f93f255fbf2a886277a3c3800d8d35db
 F src/memjournal.c 6f3d36a0a8f72f48f6c3c722f04301ac64f2515435fa42924293e46fc7994661
-F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
+F src/msvc.h 65c892d4c5c768a0f36b1b0c09965f51831665a309507fa0dd156fd9c17e385b
 F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4258e42d92b0113ba59f407197fc24f21734900e5b02952deed07818be3e3e5d
-R 40626349b42f1ecb209e5658c03c5b3b
-U drh
-Z 1ac3dff11ee668e75202966a4ba9668f
+P 930842470da27d72650033ef2c1df413e70f7c40eb46f91027b35f5ee156af38
+R db45777028714d7f3fa10ea61bc6ed2b
+U mistachkin
+Z 65565ce83fc26900206c6f2ea5ccb844
