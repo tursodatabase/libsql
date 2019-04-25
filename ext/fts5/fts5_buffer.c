@@ -178,7 +178,11 @@ int sqlite3Fts5PoslistNext64(
     i64 iOff = *piOff;
     int iVal;
     fts5FastGetVarint32(a, i, iVal);
-    if( iVal==1 ){
+    if( iVal<=1 ){
+      if( iVal==0 ){
+        *pi = i;
+        return 0;
+      }
       fts5FastGetVarint32(a, i, iVal);
       iOff = ((i64)iVal) << 32;
       fts5FastGetVarint32(a, i, iVal);
