@@ -322,6 +322,8 @@ struct sqlite3_api_routines {
   /* Version 3.28.0 and later */
   int (*stmt_isexplain)(sqlite3_stmt*);
   int (*value_frombind)(sqlite3_value*);
+  /* Version 3.29.0 and later */
+  sqlite3_int64 (*hard_heap_limit64)(sqlite3_int64);
 };
 
 /*
@@ -614,6 +616,8 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.28.0 and later */
 #define sqlite3_stmt_isexplain         sqlite3_api->isexplain
 #define sqlite3_value_frombind         sqlite3_api->frombind
+/* Version 3.29.0 and later */
+#define sqlite3_hard_heap_limit64      sqlite3_api->hard_heap_limit64
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

@@ -405,6 +405,9 @@ set pragma_def {
   NAME: soft_heap_limit
   FLAG: Result0
 
+  NAME: hard_heap_limit
+  FLAG: Result0
+
   NAME: threads
   FLAG: Result0
 
