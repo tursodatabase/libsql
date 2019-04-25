@@ -6369,7 +6369,7 @@ static RecoverTable *recoverNewTable(
 ** to construct a new database containing all recovered data is output
 ** on stream pState->out.
 */
-static int recoverDatabaseCmd(ShellState *pState){
+static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   int rc = SQLITE_OK;
   sqlite3_stmt *pLoop = 0;        /* Loop through all root pages */
   sqlite3_stmt *pPages = 0;       /* Loop through all pages in a group */
@@ -6406,8 +6406,9 @@ static int recoverDatabaseCmd(ShellState *pState){
     ** database, the following adds all pages in such a loop to the map
     ** as individual root pages. This could be handled better.  */
     "WITH pages(i, maxlen) AS ("
-    "  SELECT page_count, max(field+1) "
-    "      FROM pragma_page_count, sqlite_dbdata WHERE pgno=page_count"
+    "  SELECT page_count, ("
+    "    SELECT max(field+1) FROM sqlite_dbdata WHERE pgno=page_count"
+    "  ) FROM pragma_page_count"
     "    UNION ALL"
     "  SELECT i-1, ("
     "    SELECT max(field+1) FROM sqlite_dbdata WHERE pgno=i-1"
@@ -6831,7 +6832,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='r' && strncmp(azArg[0], "recover", n)==0 ){
     open_db(p, 0);
-    rc = recoverDatabaseCmd(p);
+    rc = recoverDatabaseCmd(p, nArg, azArg);
   }else
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
