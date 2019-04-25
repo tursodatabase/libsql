@@ -3935,6 +3935,35 @@ readHexDb_error:
 #endif /* SQLITE_ENABLE_DESERIALIZE */
 
 /*
+** Scalar function "shell_int32". The first argument to this function
+** must be a blob. The second a non-negative integer. This function
+** reads and returns a 32-bit big-endian integer from byte
+** offset (4*<arg2>) of the blob.
+*/
+static void shellInt32(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const unsigned char *pBlob;
+  int nBlob;
+  int iInt;
+  
+  nBlob = sqlite3_value_bytes(argv[0]);
+  pBlob = (const unsigned char*)sqlite3_value_blob(argv[0]);
+  iInt = sqlite3_value_int(argv[1]);
+
+  if( iInt>=0 && (iInt+1)*4<=nBlob ){
+    const unsigned char *a = &pBlob[iInt*4];
+    sqlite3_int64 iVal = ((sqlite3_int64)a[0]<<24)
+                       + ((sqlite3_int64)a[1]<<16)
+                       + ((sqlite3_int64)a[2]<< 8)
+                       + ((sqlite3_int64)a[3]<< 0);
+    sqlite3_result_int64(context, iVal);
+  }
+}
+
+/*
 ** Scalar function "shell_escape_crnl" used by the .recover command.
 ** The argument passed to this function is the output of built-in
 ** function quote(). If the first character of the input is "'", 
@@ -4105,6 +4134,8 @@ static void open_db(ShellState *p, int openFlags){
                             shellPutsFunc, 0, 0);
     sqlite3_create_function(p->db, "shell_escape_crnl", 1, SQLITE_UTF8, 0,
                             shellEscapeCrnl, 0, 0);
+    sqlite3_create_function(p->db, "shell_int32", 2, SQLITE_UTF8, 0,
+                            shellInt32, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
@@ -6374,6 +6405,25 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   sqlite3_stmt *pLoop = 0;        /* Loop through all root pages */
   sqlite3_stmt *pPages = 0;       /* Loop through all pages in a group */
   sqlite3_stmt *pCells = 0;       /* Loop through all cells in a page */
+  int i;
+
+  int bFreelist = 1;              /* 0 if --freelist-corrupt is specified */
+  for(i=1; i<nArg; i++){
+    char *z = azArg[i];
+    int n;
+    if( z[0]=='-' && z[1]=='-' ) z++;
+    n = strlen(z);
+    if( n<=17 && memcmp("-freelist-corrupt", z, n)==0 ){
+      bFreelist = 0;
+    }
+    else{
+      raw_printf(stderr, 
+        "unexpected option: %s - expected \"--freelist-corrupt\"\n", 
+        azArg[i]
+      );
+      return 1;
+    }
+  }
 
   shellExec(pState->db, &rc, 
     /* Attach an in-memory database named 'recovery'. Create an indexed 
@@ -6395,6 +6445,32 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "  SELECT child FROM recovery.dbptr GROUP BY child HAVING count(*)>1"
     ");"
 
+    "CREATE TABLE recovery.freelist(pgno INTEGER PRIMARY KEY);"
+  );
+
+  if( bFreelist ){
+    shellExec(pState->db, &rc,
+      "WITH trunk(pgno) AS ("
+      "  SELECT shell_int32("
+      "      (SELECT data FROM sqlite_dbpage WHERE pgno=1), 8) AS x "
+      "      WHERE x>0"
+      "    UNION"
+      "  SELECT shell_int32("
+      "      (SELECT data FROM sqlite_dbpage WHERE pgno=trunk.pgno), 0) AS x "
+      "      FROM trunk WHERE x>0"
+      "),"
+      "freelist(data, n, freepgno) AS ("
+      "  SELECT data, shell_int32(data, 1)-1, t.pgno "
+      "      FROM trunk t, sqlite_dbpage s WHERE s.pgno=t.pgno"
+      "    UNION ALL"
+      "  SELECT data, n-1, shell_int32(data, 2+n) "
+      "      FROM freelist WHERE n>=0"
+      ")"
+      "REPLACE INTO recovery.freelist SELECT freepgno FROM freelist;"
+    );
+  }
+
+  shellExec(pState->db, &rc, 
     /* Create the "map" table that will (eventually) contain instructions
     ** for dealing with each page in the db that contains one or more 
     ** records. */
@@ -6424,7 +6500,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "    )"
     "    SELECT pgno FROM p WHERE (parent IS NULL OR pgno = orig)"
     ") "
-    "FROM pages WHERE maxlen > 0;"
+    "FROM pages WHERE maxlen > 0 AND i NOT IN freelist;"
     "UPDATE recovery.map AS o SET intkey = ("
     "  SELECT substr(data, 1, 1)==X'0D' FROM sqlite_dbpage WHERE pgno=o.pgno"
     ");"

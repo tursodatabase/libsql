@@ -1,5 +1,5 @@
-C Fix\sa\sbug\spreventing\s.recover\sfrom\sworking\son\sdatabases\swhere\sthe\sfinal\spage\sof\sthe\sdb\sis\scorrupt.
-D 2019-04-25T16:20:40.499
+C Unless\sthe\s"--freelist-corrupt"\soption\sis\sspecified,\sdo\snot\shave\sthe\s.recover\scommand\sattempt\sto\srecover\sdata\sfrom\spages\sthat\sare\son\sthe\sdatabase\sfree-list.
+D 2019-04-25T19:23:15.197
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9263f5c30dd44c7ac2eb29f40a7ec64322a96885b71c00de6bc30b756c2e1c49
-F src/shell.c.in 2e9b6b05fd202499bbe233632f9e5a913d2afcd645b59a114bfeb440c3e5cd38
+F src/shell.c.in a3b1bb23c3c3dde9aab1823dc37cb0f3e81debfd3937e40ee8fa69fe1f0e4c16
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1821,7 +1821,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a50768314d10d743a0cc013b434b516f0763e0a6c5b79655d8fefde7de53e869
-R 9da7af39576825c9e597192b24527e0d
+P 959bbd11e92cc789973daf20dfcb8a6d8dc724dd603b286cbdd59e5d1fdb2909
+R d86f5b916c733bd261b32efe2b58444b
 U dan
-Z 0de6a10b348dda1bb213a1119e4cc094
+Z 3b2dfcc08d011cfeb383f50fbff24d3e
