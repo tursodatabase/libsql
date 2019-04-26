@@ -137,6 +137,10 @@ impl Context<'_> {
             FromSqlError::InvalidI128Size(_) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
             }
+            #[cfg(feature = "uuid")]
+            FromSqlError::InvalidUuidSize(_) => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
+            }
         })
     }
 
