@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\swith\sdatabase\sfreelist\shandling\sin\sthe\s".recover"\scommand.
-D 2019-04-26T15:40:27.902
+C Have\s.recover\sstore\sall\sorphaned\srows\sin\sa\ssingle\stable,\swith\sextra\scolumns\sto\sindicate\sthe\sorphaned\spage\sand\ssub-tree\sthey\swere\sdiscovered\swithin.
+D 2019-04-26T21:11:37.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c b7304d2f491c11a03a7fbdf34bc218282ac54052377809d4dc3b4b1e7f4bfc93
-F src/shell.c.in 44dce9f5b3c68c07e30db740aa4e635819ab6fa01a229a21356ddd4fa8f1e47e
+F src/shell.c.in 146dbc2708a314556710f8e8b13226d647fbb70778c973bb6fd655186811ce63
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1821,7 +1821,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afdae10424f0f3d0f10a4b73e9732aa55c5ee664814d8ca0edd372cfb17c2445
-R 5b76306d65317b1b0fee3a74fc0359d7
+P bee2652ac26370e612a8c81dd7554befc2d523442a2fbbc77dc73479e6a0d7fd
+R 52eb405413df1bbf1e7b369ddce62695
 U dan
-Z 068a6ba7f1f2eaa523c5f432cd2b8c0c
+Z 87ebd735a2a8d2115b37082d2935a00e
