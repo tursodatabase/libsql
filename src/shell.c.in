@@ -6454,23 +6454,6 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "DROP TABLE IF EXISTS recovery.freelist;"
     "DROP TABLE IF EXISTS recovery.map;"
     "DROP TABLE IF EXISTS recovery.schema;"
-    "CREATE TABLE recovery.dbptr("
-    "      pgno, child, PRIMARY KEY(child, pgno)"
-    ") WITHOUT ROWID;"
-    "INSERT OR IGNORE INTO recovery.dbptr(pgno, child) "
-    "    SELECT * FROM sqlite_dbptr;"
-
-    /* Delete any pointer to page 1. This ensures that page 1 is considered
-    ** a root page, regardless of how corrupt the db is. */
-    "DELETE FROM recovery.dbptr WHERE child = 1;"
-
-    /* Delete all pointers to any pages that have more than one pointer
-    ** to them. Such pages will be treated as root pages when recovering
-    ** data.  */
-    "DELETE FROM recovery.dbptr WHERE child IN ("
-    "  SELECT child FROM recovery.dbptr GROUP BY child HAVING count(*)>1"
-    ");"
-
     "CREATE TABLE recovery.freelist(pgno INTEGER PRIMARY KEY);", zRecoveryDb
   );
 
@@ -6497,6 +6480,24 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   }
 
   shellExec(pState->db, &rc, 
+    "CREATE TABLE recovery.dbptr("
+    "      pgno, child, PRIMARY KEY(child, pgno)"
+    ") WITHOUT ROWID;"
+    "INSERT OR IGNORE INTO recovery.dbptr(pgno, child) "
+    "    SELECT * FROM sqlite_dbptr"
+    "      WHERE pgno NOT IN freelist AND child NOT IN freelist;"
+
+    /* Delete any pointer to page 1. This ensures that page 1 is considered
+    ** a root page, regardless of how corrupt the db is. */
+    "DELETE FROM recovery.dbptr WHERE child = 1;"
+
+    /* Delete all pointers to any pages that have more than one pointer
+    ** to them. Such pages will be treated as root pages when recovering
+    ** data.  */
+    "DELETE FROM recovery.dbptr WHERE child IN ("
+    "  SELECT child FROM recovery.dbptr GROUP BY child HAVING count(*)>1"
+    ");"
+
     /* Create the "map" table that will (eventually) contain instructions
     ** for dealing with each page in the db that contains one or more 
     ** records. */
