@@ -6165,6 +6165,22 @@ static void shellExec(sqlite3 *db, int *pRc, const char *zSql){
   }
 }
 
+static void shellExecPrintf(sqlite3 *db, int *pRc, const char *zFmt, ...){
+  char *z = 0;
+  if( *pRc==SQLITE_OK ){
+    va_list ap;
+    va_start(ap, zFmt);
+    z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
+    if( z==0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      shellExec(db, pRc, z);
+    }
+    sqlite3_free(z);
+  }
+}
+
 static void *shellMalloc(int *pRc, sqlite3_int64 nByte){
   void *pRet = 0;
   if( *pRc==SQLITE_OK ){
@@ -6405,6 +6421,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   sqlite3_stmt *pLoop = 0;        /* Loop through all root pages */
   sqlite3_stmt *pPages = 0;       /* Loop through all pages in a group */
   sqlite3_stmt *pCells = 0;       /* Loop through all cells in a page */
+  const char *zRecoveryDb = "";   /* Name of "recovery" database */
   int i;
 
   int bFreelist = 1;              /* 0 if --freelist-corrupt is specified */
@@ -6416,23 +6433,32 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     if( n<=17 && memcmp("-freelist-corrupt", z, n)==0 ){
       bFreelist = 0;
     }
+    if( n<=12 && memcmp("-recovery-db", z, n)==0 && i<(nArg-1) ){
+      i++;
+      zRecoveryDb = azArg[i];
+    }
     else{
-      raw_printf(stderr, 
-        "unexpected option: %s - expected \"--freelist-corrupt\"\n", 
-        azArg[i]
-      );
+      raw_printf(stderr, "unexpected option: %s\n", azArg[i]); 
+      raw_printf(stderr, "options are:\n");
+      raw_printf(stderr, "    --freelist-corrupt\n");
+      raw_printf(stderr, "    --recovery-db DATABASE\n");
       return 1;
     }
   }
 
-  shellExec(pState->db, &rc, 
+  shellExecPrintf(pState->db, &rc,
     /* Attach an in-memory database named 'recovery'. Create an indexed 
     ** cache of the sqlite_dbptr virtual table. */
-    "ATTACH '' AS recovery;"
+    "ATTACH %Q AS recovery;"
+    "DROP TABLE IF EXISTS recovery.dbptr;"
+    "DROP TABLE IF EXISTS recovery.freelist;"
+    "DROP TABLE IF EXISTS recovery.map;"
+    "DROP TABLE IF EXISTS recovery.schema;"
     "CREATE TABLE recovery.dbptr("
     "      pgno, child, PRIMARY KEY(child, pgno)"
     ") WITHOUT ROWID;"
-    "INSERT OR IGNORE INTO dbptr(pgno, child) SELECT * FROM sqlite_dbptr;"
+    "INSERT OR IGNORE INTO recovery.dbptr(pgno, child) "
+    "    SELECT * FROM sqlite_dbptr;"
 
     /* Delete any pointer to page 1. This ensures that page 1 is considered
     ** a root page, regardless of how corrupt the db is. */
@@ -6445,7 +6471,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "  SELECT child FROM recovery.dbptr GROUP BY child HAVING count(*)>1"
     ");"
 
-    "CREATE TABLE recovery.freelist(pgno INTEGER PRIMARY KEY);"
+    "CREATE TABLE recovery.freelist(pgno INTEGER PRIMARY KEY);", zRecoveryDb
   );
 
   if( bFreelist ){

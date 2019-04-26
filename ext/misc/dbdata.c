@@ -89,6 +89,7 @@ struct DbdataCursor {
   int nCell;                      /* Number of cells on aPage[] */
   int iCell;                      /* Current cell number */
   int bOnePage;                   /* True to stop after one page */
+  int szDb;
   sqlite3_int64 iRowid;
 
   /* Only for the sqlite_dbdata table */
@@ -303,18 +304,21 @@ static int dbdataLoadPage(
   sqlite3_bind_int64(pStmt, 2, pgno);
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
     int nCopy = sqlite3_column_bytes(pStmt, 0);
-    u8 *pPage = (u8*)sqlite3_malloc64(nCopy);
-    if( pPage==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
-      memcpy(pPage, pCopy, nCopy);
+    if( nCopy>0 ){
+      u8 *pPage;
+      pPage = (u8*)sqlite3_malloc64(nCopy);
+      if( pPage==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
+        memcpy(pPage, pCopy, nCopy);
+      }
       *ppPage = pPage;
       *pnPage = nCopy;
     }
   }
   rc2 = sqlite3_reset(pStmt);
-  if( *ppPage==0 ) rc = rc2;
+  if( rc==SQLITE_OK ) rc = rc2;
 
   return rc;
 }
@@ -419,8 +423,13 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
     int iOff = (pCsr->iPgno==1 ? 100 : 0);
 
     if( pCsr->aPage==0 ){
-      rc = dbdataLoadPage(pCsr, pCsr->iPgno, &pCsr->aPage, &pCsr->nPage);
-      if( rc!=SQLITE_OK || pCsr->aPage==0 ) return rc;
+      while( 1 ){
+        if( pCsr->bOnePage==0 && pCsr->iPgno>pCsr->szDb ) return SQLITE_OK;
+        rc = dbdataLoadPage(pCsr, pCsr->iPgno, &pCsr->aPage, &pCsr->nPage);
+        if( rc!=SQLITE_OK ) return rc;
+        if( pCsr->aPage ) break;
+        pCsr->iPgno++;
+      }
       pCsr->iCell = pTab->bPtr ? -2 : 0;
       pCsr->nCell = get_uint16(&pCsr->aPage[iOff+3]);
     }
@@ -574,6 +583,24 @@ static int dbdataEof(sqlite3_vtab_cursor *pCursor){
   return pCsr->aPage==0;
 }
 
+static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
+  DbdataTable *pTab = (DbdataTable*)pCsr->base.pVtab;
+  char *zSql = 0;
+  int rc, rc2;
+  sqlite3_stmt *pStmt = 0;
+
+  zSql = sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    pCsr->szDb = sqlite3_column_int(pStmt, 0);
+  }
+  rc2 = sqlite3_finalize(pStmt);
+  if( rc==SQLITE_OK ) rc = rc2;
+  return rc;
+}
+
 /* Position a cursor back to the beginning.
 */
 static int dbdataFilter(
@@ -594,16 +621,21 @@ static int dbdataFilter(
   if( idxNum & 0x02 ){
     pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);
     pCsr->bOnePage = 1;
+  }else{
+    pCsr->nPage = dbdataDbsize(pCsr, zSchema);
+    rc = dbdataDbsize(pCsr, zSchema);
   }
 
-  if( pTab->pStmt ){
-    pCsr->pStmt = pTab->pStmt;
-    pTab->pStmt = 0;
-  }else{
-    rc = sqlite3_prepare_v2(pTab->db, 
-        "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
-        &pCsr->pStmt, 0
-    );
+  if( rc==SQLITE_OK ){
+    if( pTab->pStmt ){
+      pCsr->pStmt = pTab->pStmt;
+      pTab->pStmt = 0;
+    }else{
+      rc = sqlite3_prepare_v2(pTab->db, 
+          "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
+          &pCsr->pStmt, 0
+      );
+    }
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_bind_text(pCsr->pStmt, 1, zSchema, -1, SQLITE_TRANSIENT);
