@@ -1,5 +1,5 @@
-C New\stest\scases\sin\stest/fuzzdata8.db.
-D 2019-04-24T17:04:02.548
+C Omit\stests\sof\sthe\sLIKE\soptimization\sin\slike3.test\swhen\sSQLITE_ENABLE_ICU\sis\sdefined.
+D 2019-04-26T17:08:50.839
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1085,7 +1085,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d6767e11d7
 F test/like.test 11cfd7d4ef8625389df9efc46735ff0b0b41d5e62047ef0f3bc24c380d28a7a6
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/like3.test 0ce2630e39e32e42ce02d171f0a315189ca71fec37c5ddfb0191eecc3fe9d4da
+F test/like3.test d3684b5c60dd2d1f9574f9f296b31c995187c8c10c6ca573f9918c96af9ba642
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/loadext.test faa4f6eed07a5aac35d57fdd7bc07f8fc82464cfd327567c10cf0ba3c86cde04
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1724f1d618cfbcfd1e495d8965a395656cfc1114e1bffd4bc3be0bd5cdb6550
-R 3e1175ca2cd3d699a0989ce182ed2c32
-U drh
-Z b7a4bb53a6677ebeb4f1be668326c373
+P 7be6222c9ec44596e4eddd906c831eb1272b90fbdf68641d791f216264feb7cf
+R 1ba2bc865b250121afcb0af52a507e48
+U dan
+Z 432d74fc77b640bcf830ac2298b92cb0

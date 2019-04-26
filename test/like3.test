@@ -182,6 +182,7 @@ do_eqp_test like3-5.211 {
 # Verify that the LIKE optimization works with an ESCAPE clause when
 # using PRAGMA case_sensitive_like=ON.
 #
+ifcapable !icu {
 do_execsql_test like3-6.100 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(path TEXT COLLATE nocase PRIMARY KEY,a,b,c) WITHOUT ROWID;
@@ -228,6 +229,7 @@ do_eqp_test like3-6.240 {
 } {
   QUERY PLAN
   `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)
+}
 }
 
 finish_test
