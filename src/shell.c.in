@@ -1772,7 +1772,7 @@ static void eqp_render_level(ShellState *p, int iEqpId){
 /*
 ** Display and reset the EXPLAIN QUERY PLAN data
 */
-static void eqp_render(ShellState *p){
+static void eqp_render(ShellState *p, sqlite3_stmt *pStmt){
   EQPGraphRow *pRow = p->sGraph.pRow;
   if( pRow ){
     if( pRow->zText[0]=='-' ){
@@ -1784,7 +1784,10 @@ static void eqp_render(ShellState *p){
       p->sGraph.pRow = pRow->pNext;
       sqlite3_free(pRow);
     }else{
-      utf8_printf(p->out, "QUERY PLAN\n");
+      int iCost, nRow;
+      iCost = sqlite3_stmt_status(pStmt, SQLITE_STMTSTATUS_EST_COST, 0);
+      nRow = sqlite3_stmt_status(pStmt, SQLITE_STMTSTATUS_EST_ROWS, 0);
+      utf8_printf(p->out, "QUERY PLAN (log est cost=%d rows=%d)\n", iCost, nRow);
     }
     p->sGraph.zPrefix[0] = 0;
     eqp_render_level(p, 0);
@@ -3075,10 +3078,10 @@ static int shell_exec(
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
             int iEqpId = sqlite3_column_int(pExplain, 0);
             int iParentId = sqlite3_column_int(pExplain, 1);
-            if( zEQPLine[0]=='-' ) eqp_render(pArg);
+            if( zEQPLine[0]=='-' ) eqp_render(pArg, pExplain);
             eqp_append(pArg, iEqpId, iParentId, zEQPLine);
           }
-          eqp_render(pArg);
+          eqp_render(pArg, pExplain);
         }
         sqlite3_finalize(pExplain);
         sqlite3_free(zEQP);
@@ -3126,7 +3129,7 @@ static int shell_exec(
       bind_prepared_stmt(pArg, pStmt);
       exec_prepared_stmt(pArg, pStmt);
       explain_data_delete(pArg);
-      eqp_render(pArg);
+      eqp_render(pArg, pStmt);
 
       /* print usage stats if stats on */
       if( pArg && pArg->statsOn ){

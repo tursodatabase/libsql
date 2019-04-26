@@ -4363,6 +4363,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
 
   pWInfo->nRowOut = pFrom->nRow;
+  pWInfo->iTotalCost = pFrom->rCost;
 
   /* Free temporary memory and return success */
   sqlite3DbFreeNN(db, pSpace);
@@ -5145,6 +5146,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Generate loop termination code.
   */
+  sqlite3VdbeUpdateCostEstimates(pParse, pWInfo->iTotalCost, pWInfo->nRowOut);
   VdbeModuleComment((v, "End WHERE-core"));
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;

@@ -7847,6 +7847,15 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** used to store the prepared statement.  ^This value is not actually
 ** a counter, and so the resetFlg parameter to sqlite3_stmt_status()
 ** is ignored when the opcode is SQLITE_STMTSTATUS_MEMUSED.
+**
+** [[SQLITE_STMTSTATUS_EST_ROWS]] <dt>SQLITE_STMTSTATUS_EST_ROWS</dt>
+** <dd>^A return value of X indicates that the query planner estimated
+** that the query will return pow(2,X/10.0) rows.
+**
+** [[SQLITE_STMTSTATUS_EST_COST]] <dt>SQLITE_STMTSTATUS_EST_COST</dt>
+** <dd>^A return value of X indicates that the query planner estimated
+** the relative cost of running this statement to completion is
+** pow(2,X/10.0).
 ** </dd>
 ** </dl>
 */
@@ -7857,6 +7866,8 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 #define SQLITE_STMTSTATUS_REPREPARE         5
 #define SQLITE_STMTSTATUS_RUN               6
 #define SQLITE_STMTSTATUS_MEMUSED           99
+#define SQLITE_STMTSTATUS_EST_ROWS          100
+#define SQLITE_STMTSTATUS_EST_COST          101
 
 /*
 ** CAPI3REF: Custom Page Cache Object

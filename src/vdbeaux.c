@@ -4849,6 +4849,20 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 }
 
 /*
+** Update the estimated cost fields
+*/
+void sqlite3VdbeUpdateCostEstimates(Parse *pParse, LogEst iCost, LogEst nRow){
+  Vdbe *v = pParse->pVdbe;
+  if( v->iCostEst ){
+    v->iCostEst = sqlite3LogEstAdd(v->iCostEst, iCost+pParse->nQueryLoop) + 1;
+    if( nRow > v->nRowEst ) v->nRowEst = nRow;
+  }else{
+    v->nRowEst = nRow;
+    v->iCostEst = iCost + 1;
+  }
+}
+
+/*
 ** Cause a function to throw an error if it was call from OP_PureFunc
 ** rather than OP_Function.
 **

@@ -1658,27 +1658,39 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
-  u32 v;
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( !pStmt 
-   || (op!=SQLITE_STMTSTATUS_MEMUSED && (op<0||op>=ArraySize(pVdbe->aCounter)))
-  ){
+  u32 v = 0;
+  if( !pStmt ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
-#endif
-  if( op==SQLITE_STMTSTATUS_MEMUSED ){
-    sqlite3 *db = pVdbe->db;
-    sqlite3_mutex_enter(db->mutex);
-    v = 0;
-    db->pnBytesFreed = (int*)&v;
-    sqlite3VdbeClearObject(db, pVdbe);
-    sqlite3DbFree(db, pVdbe);
-    db->pnBytesFreed = 0;
-    sqlite3_mutex_leave(db->mutex);
-  }else{
-    v = pVdbe->aCounter[op];
-    if( resetFlag ) pVdbe->aCounter[op] = 0;
+  switch( op ){
+    case SQLITE_STMTSTATUS_MEMUSED: {
+      sqlite3 *db = pVdbe->db;
+      sqlite3_mutex_enter(db->mutex);
+      v = 0;
+      db->pnBytesFreed = (int*)&v;
+      sqlite3VdbeClearObject(db, pVdbe);
+      sqlite3DbFree(db, pVdbe);
+      db->pnBytesFreed = 0;
+      sqlite3_mutex_leave(db->mutex);
+      break;
+    }
+    case SQLITE_STMTSTATUS_EST_ROWS: {
+      v = pVdbe->nRowEst;
+      break;
+    }
+    case SQLITE_STMTSTATUS_EST_COST: {
+      v = pVdbe->iCostEst;
+      break;
+    }
+    default: {
+      if( op>=0 && op<ArraySize(pVdbe->aCounter) ){
+        v = pVdbe->aCounter[op];
+        if( resetFlag ) pVdbe->aCounter[op] = 0;
+      }else{
+        (void)SQLITE_MISUSE_BKPT;
+      }
+    }
   }
   return (int)v;
 }
