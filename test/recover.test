@@ -39,7 +39,7 @@ proc compare_dbs {db1 db2} {
   }
 }
 
-proc do_recover_test {tn} {
+proc do_recover_test {tn {tsql {}} {res {}}} {
   set fd [open "|$::CLI test.db .recover"]
   fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
@@ -48,9 +48,12 @@ proc do_recover_test {tn} {
 
   forcedelete test.db2
   sqlite3 db2 test.db2
-  breakpoint
   execsql $sql db2
-  uplevel [list do_test $tn [list compare_dbs db db2] {}]
+  if {$tsql==""} {
+    uplevel [list do_test $tn [list compare_dbs db db2] {}]
+  } else {
+    uplevel [list do_execsql_test -db db2 $tn $tsql $res]
+  }
   db2 close
 }
 
@@ -95,5 +98,32 @@ do_execsql_test 2.1.0 {
 }
 
 do_recover_test 2.1.1
+
+do_execsql_test 2.2.0 {
+  PRAGMA writable_schema = 1;
+  DELETE FROM sqlite_master WHERE name='t1';
+}
+do_recover_test 2.2.1 {
+  SELECT name FROM sqlite_master
+} {lost_and_found}
+
+do_execsql_test 2.3.0 {
+  CREATE TABLE lost_and_found(a, b, c);
+}
+do_recover_test 2.3.1 {
+  SELECT name FROM sqlite_master
+} {lost_and_found lost_and_found_0}
+
+do_execsql_test 2.4.0 {
+  CREATE TABLE lost_and_found_0(a, b, c);
+}
+do_recover_test 2.4.1 {
+  SELECT name FROM sqlite_master;
+  SELECT * FROM lost_and_found_1;
+} {lost_and_found lost_and_found_0 lost_and_found_1
+  2 2 3 {} 2 3 1
+  2 2 3 {} 5 6 4
+  2 2 3 {} 8 9 7
+}
 
 finish_test

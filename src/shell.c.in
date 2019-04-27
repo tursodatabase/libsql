@@ -1104,7 +1104,6 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
-#define SHFLG_Recover        0x00000080 /* .dump is --recover */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -3577,6 +3576,7 @@ static const char *(azHelp[]) = {
   ".prompt MAIN CONTINUE    Replace the standard prompts",
   ".quit                    Exit this program",
   ".read FILE               Read input from FILE",
+  ".recover                 Recover as much data as possible from corrupt db.",
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
   ".save FILE               Write in-memory database into FILE",
   ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
@@ -6153,6 +6153,12 @@ end_ar_command:
 **********************************************************************************/
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
 
+/*
+** If (*pRc) is not SQLITE_OK when this function is called, it is a no-op.
+** Otherwise, the SQL statement or statements in zSql are executed using
+** database connection db and the error code written to *pRc before
+** this function returns.
+*/
 static void shellExec(sqlite3 *db, int *pRc, const char *zSql){
   int rc = *pRc;
   if( rc==SQLITE_OK ){
@@ -6165,6 +6171,9 @@ static void shellExec(sqlite3 *db, int *pRc, const char *zSql){
   }
 }
 
+/*
+** Like shellExec(), except that zFmt is a printf() style format string.
+*/
 static void shellExecPrintf(sqlite3 *db, int *pRc, const char *zFmt, ...){
   char *z = 0;
   if( *pRc==SQLITE_OK ){
@@ -6181,6 +6190,12 @@ static void shellExecPrintf(sqlite3 *db, int *pRc, const char *zFmt, ...){
   }
 }
 
+/*
+** If *pRc is not SQLITE_OK when this function is called, it is a no-op.
+** Otherwise, an attempt is made to allocate, zero and return a pointer
+** to a buffer nByte bytes in size. If an OOM error occurs, *pRc is set
+** to SQLITE_NOMEM and NULL returned.
+*/
 static void *shellMalloc(int *pRc, sqlite3_int64 nByte){
   void *pRet = 0;
   if( *pRc==SQLITE_OK ){
@@ -6194,6 +6209,17 @@ static void *shellMalloc(int *pRc, sqlite3_int64 nByte){
   return pRet;
 }
 
+/*
+** If *pRc is not SQLITE_OK when this function is called, it is a no-op.
+** Otherwise, zFmt is treated as a printf() style string. The result of
+** formatting it along with any trailing arguments is written into a 
+** buffer obtained from sqlite3_malloc(), and pointer to which is returned.
+** It is the responsibility of the caller to eventually free this buffer
+** using a call to sqlite3_free().
+** 
+** If an OOM error occurs, (*pRc) is set to SQLITE_NOMEM and a NULL 
+** pointer returned.
+*/
 static char *shellMPrintf(int *pRc, const char *zFmt, ...){
   char *z = 0;
   if( *pRc==SQLITE_OK ){
@@ -6208,21 +6234,25 @@ static char *shellMPrintf(int *pRc, const char *zFmt, ...){
   return z;
 }
 
+/*
+** When running the ".recover" command, each output table, and the special
+** orphaned row table if it is required, is represented by an instance
+** of the following struct.
+*/
 typedef struct RecoverTable RecoverTable;
 struct RecoverTable {
-  char *zName;                    /* Name of table */
-  char *zQuoted;                  /* Quoted version of zName */
+  char *zQuoted;                  /* Quoted version of table name */
   int nCol;                       /* Number of columns in table */
   char **azlCol;                  /* Array of column lists */
-  int iPk;
+  int iPk;                        /* Index of IPK column */
 };
 
 /*
-** Free a RecoverTable object allocated by recoverNewTable()
+** Free a RecoverTable object allocated by recoverFindTable() or
+** recoverOrphanTable().
 */
 static void recoverFreeTable(RecoverTable *pTab){
   if( pTab ){
-    sqlite3_free(pTab->zName);
     sqlite3_free(pTab->zQuoted);
     if( pTab->azlCol ){
       int i;
@@ -6235,7 +6265,14 @@ static void recoverFreeTable(RecoverTable *pTab){
   }
 }
 
-static RecoverTable *recoverOldTable(
+/*
+** This function is a no-op if (*pRc) is not SQLITE_OK when it is called.
+** Otherwise, it allocates and returns a RecoverTable object based on the
+** final four arguments passed to this function. It is the responsibility
+** of the caller to eventually free the returned object using
+** recoverFreeTable().
+*/
+static RecoverTable *recoverNewTable(
   int *pRc,                       /* IN/OUT: Error code */
   const char *zName,              /* Name of table */
   const char *zSql,               /* CREATE TABLE statement */
@@ -6309,8 +6346,7 @@ static RecoverTable *recoverOldTable(
         }
       }
 
-      pTab->zName = shellMPrintf(&rc, "%s", zName);
-      pTab->zQuoted = shellMPrintf(&rc, "%Q", pTab->zName);
+      pTab->zQuoted = shellMPrintf(&rc, "%Q", zName);
       pTab->azlCol = (char**)shellMalloc(&rc, sizeof(char*) * (nSqlCol+1));
       pTab->nCol = nSqlCol;
 
@@ -6349,7 +6385,7 @@ static RecoverTable *recoverOldTable(
   return pTab;
 }
 
-static RecoverTable *recoverNewTable(
+static RecoverTable *recoverFindTable(
   ShellState *pState, 
   int *pRc,
   int iRoot,
@@ -6362,7 +6398,6 @@ static RecoverTable *recoverNewTable(
   int bNoop = 0;
   const char *zSql = 0;
   const char *zName = 0;
-
 
   /* Search the recovered schema for an object with root page iRoot. */
   shellPreparePrintf(pState->db, pRc, &pStmt,
@@ -6377,7 +6412,7 @@ static RecoverTable *recoverNewTable(
     if( sqlite3_stricmp(zType, "table")==0 ){
       zName = (const char*)sqlite3_column_text(pStmt, 1);
       zSql = (const char*)sqlite3_column_text(pStmt, 2);
-      pRet = recoverOldTable(pRc, zName, zSql, bIntkey, nCol);
+      pRet = recoverNewTable(pRc, zName, zSql, bIntkey, nCol);
       break;
     }
   }
@@ -6390,24 +6425,35 @@ static RecoverTable *recoverNewTable(
 static RecoverTable *recoverOrphanTable(
   ShellState *pState, 
   int *pRc, 
+  const char *zLostAndFound,
   int nCol
 ){
   RecoverTable *pTab = 0;
   if( nCol>=0 && *pRc==SQLITE_OK ){
     int i;
-    raw_printf(pState->out, 
-        "CREATE TABLE recover_orphan(rootpgno INTEGER, "
-        "pgno INTEGER, nfield INTEGER, id INTEGER"
+
+    /* This block determines the name of the orphan table. The prefered
+    ** name is zLostAndFound. But if that clashes with another name
+    ** in the recovered schema, try zLostAndFound_0, zLostAndFound_1
+    ** and so on until a non-clashing name is found.  */
+    int iTab = 0;
+    char *zTab = shellMPrintf(pRc, "%s", zLostAndFound);
+    sqlite3_stmt *pTest = 0;
+    shellPrepare(pState->db, pRc,
+        "SELECT 1 FROM recovery.schema WHERE name=?", &pTest
     );
-    for(i=0; i<nCol; i++){
-      raw_printf(pState->out, ", c%d", i);
+    if( pTest ) sqlite3_bind_text(pTest, 1, zTab, -1, SQLITE_TRANSIENT);
+    while( *pRc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pTest) ){
+      shellReset(pRc, pTest);
+      sqlite3_free(zTab);
+      zTab = shellMPrintf(pRc, "%s_%d", zLostAndFound, iTab++);
+      sqlite3_bind_text(pTest, 1, zTab, -1, SQLITE_TRANSIENT);
     }
-    raw_printf(pState->out, ");\n");
+    shellFinalize(pRc, pTest);
 
     pTab = (RecoverTable*)shellMalloc(pRc, sizeof(RecoverTable));
     if( pTab ){
-      pTab->zName = shellMPrintf(pRc, "%s", "recover_orphan");
-      pTab->zQuoted = shellMPrintf(pRc, "%Q", pTab->zName);
+      pTab->zQuoted = shellMPrintf(pRc, "%Q", zTab);
       pTab->nCol = nCol;
       pTab->iPk = -2;
       if( nCol>0 ){
@@ -6419,12 +6465,22 @@ static RecoverTable *recoverOrphanTable(
           }
         }
       }
-    }
 
-    if( *pRc!=SQLITE_OK ){
-      recoverFreeTable(pTab);
-      pTab = 0;
+      if( *pRc!=SQLITE_OK ){
+        recoverFreeTable(pTab);
+        pTab = 0;
+      }else{
+        raw_printf(pState->out, 
+            "CREATE TABLE %s(rootpgno INTEGER, "
+            "pgno INTEGER, nfield INTEGER, id INTEGER", pTab->zQuoted
+        );
+        for(i=0; i<nCol; i++){
+          raw_printf(pState->out, ", c%d", i);
+        }
+        raw_printf(pState->out, ");\n");
+      }
     }
+    sqlite3_free(zTab);
   }
   return pTab;
 }
@@ -6440,6 +6496,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   sqlite3_stmt *pPages = 0;       /* Loop through all pages in a group */
   sqlite3_stmt *pCells = 0;       /* Loop through all cells in a page */
   const char *zRecoveryDb = "";   /* Name of "recovery" database */
+  const char *zLostAndFound = "lost_and_found";
   int i;
   int nOrphan = -1;
   RecoverTable *pOrphan = 0;
@@ -6452,16 +6509,21 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     n = strlen(z);
     if( n<=17 && memcmp("-freelist-corrupt", z, n)==0 ){
       bFreelist = 0;
-    }
+    }else
     if( n<=12 && memcmp("-recovery-db", z, n)==0 && i<(nArg-1) ){
       i++;
       zRecoveryDb = azArg[i];
+    }else
+    if( n<=15 && memcmp("-lost-and-found", z, n)==0 && i<(nArg-1) ){
+      i++;
+      zLostAndFound = azArg[i];
     }
     else{
       raw_printf(stderr, "unexpected option: %s\n", azArg[i]); 
       raw_printf(stderr, "options are:\n");
       raw_printf(stderr, "    --freelist-corrupt\n");
       raw_printf(stderr, "    --recovery-db DATABASE\n");
+      raw_printf(stderr, "    --lost-and-found TABLE-NAME\n");
       return 1;
     }
   }
@@ -6599,7 +6661,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   }
   shellFinalize(&rc, pLoop);
   pLoop = 0;
-  pOrphan = recoverOrphanTable(pState, &rc, nOrphan);
+  pOrphan = recoverOrphanTable(pState, &rc, zLostAndFound, nOrphan);
 
   shellPrepare(pState->db, &rc,
       "SELECT pgno FROM recovery.map WHERE root=?", &pPages
@@ -6624,11 +6686,11 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     int bNoop = 0;
     RecoverTable *pTab;
 
-    pTab = recoverNewTable(pState, &rc, iRoot, bIntkey, nCol, &bNoop);
+    pTab = recoverFindTable(pState, &rc, iRoot, bIntkey, nCol, &bNoop);
     if( bNoop || rc ) continue;
     if( pTab==0 ) pTab = pOrphan;
 
-    if( 0==sqlite3_stricmp(pTab->zName, "sqlite_sequence") ){
+    if( 0==sqlite3_stricmp(pTab->zQuoted, "'sqlite_sequence'") ){
       raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
     }
     sqlite3_bind_int(pPages, 1, iRoot);
@@ -7042,30 +7104,30 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->nErr = 0;
     if( zLike==0 ){
       run_schema_dump_query(p,
-          "SELECT name, type, sql FROM sqlite_master "
-          "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
-          );
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
+      );
       run_schema_dump_query(p,
-          "SELECT name, type, sql FROM sqlite_master "
-          "WHERE name=='sqlite_sequence'"
-          );
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE name=='sqlite_sequence'"
+      );
       run_table_dump_query(p,
-          "SELECT sql FROM sqlite_master "
-          "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
-          );
+        "SELECT sql FROM sqlite_master "
+        "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
+      );
     }else{
       char *zSql;
       zSql = sqlite3_mprintf(
-          "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE %Q AND type=='table'"
-          "  AND sql NOT NULL", zLike);
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE tbl_name LIKE %Q AND type=='table'"
+        "  AND sql NOT NULL", zLike);
       run_schema_dump_query(p,zSql);
       sqlite3_free(zSql);
       zSql = sqlite3_mprintf(
-          "SELECT sql FROM sqlite_master "
-          "WHERE sql NOT NULL"
-          "  AND type IN ('index','trigger','view')"
-          "  AND tbl_name LIKE %Q", zLike);
+        "SELECT sql FROM sqlite_master "
+        "WHERE sql NOT NULL"
+        "  AND type IN ('index','trigger','view')"
+        "  AND tbl_name LIKE %Q", zLike);
       run_table_dump_query(p, zSql, 0);
       sqlite3_free(zSql);
     }

@@ -10,10 +10,14 @@
 **
 ******************************************************************************
 **
-** This file contains an implementation of the eponymous "sqlite_dbdata"
-** virtual table. sqlite_dbdata is used to extract data directly from a
-** database b-tree page and its associated overflow pages, bypassing the b-tree
-** layer. The table schema is equivalent to:
+** This file contains an implementation of two eponymous virtual tables,
+** "sqlite_dbdata" and "sqlite_dbptr". Both modules require that the
+** "sqlite_dbpage" eponymous virtual table be available.
+**
+** SQLITE_DBDATA:
+**   sqlite_dbdata is used to extract data directly from a database b-tree
+**   page and its associated overflow pages, bypassing the b-tree layer.
+**   The table schema is equivalent to:
 **
 **     CREATE TABLE sqlite_dbdata(
 **       pgno INTEGER,
@@ -23,23 +27,25 @@
 **       schema TEXT HIDDEN
 **     );
 **
-** IMPORTANT: THE VIRTUAL TABLE SCHEMA ABOVE IS SUBJECT TO CHANGE. IN THE
-** FUTURE NEW NON-HIDDEN COLUMNS MAY BE ADDED BETWEEN "value" AND "schema".
+**   IMPORTANT: THE VIRTUAL TABLE SCHEMA ABOVE IS SUBJECT TO CHANGE. IN THE
+**   FUTURE NEW NON-HIDDEN COLUMNS MAY BE ADDED BETWEEN "value" AND
+**   "schema".
 **
-** Each page of the database is inspected. If it cannot be interpreted as a
-** b-tree page, or if it is a b-tree page containing 0 entries, the
-** sqlite_dbdata table contains no rows for that page.  Otherwise, the table
-** contains one row for each field in the record associated with each
-** cell on the page. For intkey b-trees, the key value is stored in field -1.
+**   Each page of the database is inspected. If it cannot be interpreted as
+**   a b-tree page, or if it is a b-tree page containing 0 entries, the
+**   sqlite_dbdata table contains no rows for that page.  Otherwise, the
+**   table contains one row for each field in the record associated with
+**   each cell on the page. For intkey b-trees, the key value is stored in
+**   field -1.
 **
-** For example, for the database:
+**   For example, for the database:
 **
 **     CREATE TABLE t1(a, b);     -- root page is page 2
 **     INSERT INTO t1(rowid, a, b) VALUES(5, 'v', 'five');
 **     INSERT INTO t1(rowid, a, b) VALUES(10, 'x', 'ten');
 **
-** the sqlite_dbdata table contains, as well as from entries related to 
-** page 1, content equivalent to:
+**   the sqlite_dbdata table contains, as well as from entries related to 
+**   page 1, content equivalent to:
 **
 **     INSERT INTO sqlite_dbdata(pgno, cell, field, value) VALUES
 **         (2, 0, -1, 5     ),
@@ -49,19 +55,21 @@
 **         (2, 1,  0, 'x'   ),
 **         (2, 1,  1, 'ten' );
 **
-** If database corruption is encountered, this module does not report an
-** error. Instead, it attempts to extract as much data as possible and
-** ignores the corruption.
+**   If database corruption is encountered, this module does not report an
+**   error. Instead, it attempts to extract as much data as possible and
+**   ignores the corruption.
 **
-** This module requires that the "sqlite_dbpage" eponymous virtual table be
-** available.
-**
+** SQLITE_DBPTR:
+**   The sqlite_dbptr table has the following schema:
 **
 **     CREATE TABLE sqlite_dbptr(
 **       pgno INTEGER,
 **       child INTEGER,
 **       schema TEXT HIDDEN
 **     );
+**
+**   It contains one entry for each b-tree pointer between a parent and
+**   child page in the database.
 */
 #if !defined(SQLITEINT_H) 
 #include "sqlite3ext.h"
@@ -77,8 +85,7 @@ SQLITE_EXTENSION_INIT1
 typedef struct DbdataTable DbdataTable;
 typedef struct DbdataCursor DbdataCursor;
 
-
-/* A cursor for the sqlite_dbdata table */
+/* Cursor object */
 struct DbdataCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   sqlite3_stmt *pStmt;            /* For fetching database pages */
@@ -103,7 +110,7 @@ struct DbdataCursor {
   sqlite3_int64 iIntkey;          /* Integer key value */
 };
 
-/* The sqlite_dbdata table */
+/* Table object */
 struct DbdataTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database connection */
@@ -111,16 +118,12 @@ struct DbdataTable {
   int bPtr;                       /* True for sqlite3_dbptr table */
 };
 
+/* Column and schema definitions for sqlite_dbdata */
 #define DBDATA_COLUMN_PGNO        0
 #define DBDATA_COLUMN_CELL        1
 #define DBDATA_COLUMN_FIELD       2
 #define DBDATA_COLUMN_VALUE       3
 #define DBDATA_COLUMN_SCHEMA      4
-
-#define DBPTR_COLUMN_PGNO         0
-#define DBPTR_COLUMN_CHILD        1
-#define DBPTR_COLUMN_SCHEMA       2
-
 #define DBDATA_SCHEMA             \
       "CREATE TABLE x("           \
       "  pgno INTEGER,"           \
@@ -130,6 +133,10 @@ struct DbdataTable {
       "  schema TEXT HIDDEN"      \
       ")"
 
+/* Column and schema definitions for sqlite_dbptr */
+#define DBPTR_COLUMN_PGNO         0
+#define DBPTR_COLUMN_CHILD        1
+#define DBPTR_COLUMN_SCHEMA       2
 #define DBPTR_SCHEMA              \
       "CREATE TABLE x("           \
       "  pgno INTEGER,"           \
@@ -138,7 +145,8 @@ struct DbdataTable {
       ")"
 
 /*
-** Connect to the sqlite_dbdata virtual table.
+** Connect to an sqlite_dbdata (pAux==0) or sqlite_dbptr (pAux!=0) virtual 
+** table.
 */
 static int dbdataConnect(
   sqlite3 *db,
@@ -166,7 +174,7 @@ static int dbdataConnect(
 }
 
 /*
-** Disconnect from or destroy a dbdata virtual table.
+** Disconnect from or destroy a sqlite_dbdata or sqlite_dbptr virtual table.
 */
 static int dbdataDisconnect(sqlite3_vtab *pVtab){
   DbdataTable *pTab = (DbdataTable*)pVtab;
@@ -178,7 +186,6 @@ static int dbdataDisconnect(sqlite3_vtab *pVtab){
 }
 
 /*
-**
 ** This function interprets two types of constraints:
 **
 **       schema=?
@@ -239,7 +246,7 @@ static int dbdataBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdx){
 }
 
 /*
-** Open a new dbdata cursor.
+** Open a new sqlite_dbdata or sqlite_dbptr cursor.
 */
 static int dbdataOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   DbdataCursor *pCsr;
@@ -256,6 +263,10 @@ static int dbdataOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
+/*
+** Restore a cursor object to the state it was in when first allocated 
+** by dbdataOpen().
+*/
 static void dbdataResetCursor(DbdataCursor *pCsr){
   DbdataTable *pTab = (DbdataTable*)(pCsr->base.pVtab);
   if( pTab->pStmt==0 ){
@@ -271,7 +282,7 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
 }
 
 /*
-** Close a dbdata cursor.
+** Close an sqlite_dbdata or sqlite_dbptr cursor.
 */
 static int dbdataClose(sqlite3_vtab_cursor *pCursor){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
@@ -280,8 +291,9 @@ static int dbdataClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
-
-/* Decode big-endian integers */
+/* 
+** Utility methods to decode 16 and 32-bit big-endian unsigned integers. 
+*/
 static unsigned int get_uint16(unsigned char *a){
   return (a[0]<<8)|a[1];
 }
@@ -289,11 +301,21 @@ static unsigned int get_uint32(unsigned char *a){
   return (a[0]<<24)|(a[1]<<16)|(a[2]<<8)|a[3];
 }
 
+/*
+** Load page pgno from the database via the sqlite_dbpage virtual table.
+** If successful, set (*ppPage) to point to a buffer containing the page
+** data, (*pnPage) to the size of that buffer in bytes and return
+** SQLITE_OK. In this case it is the responsibility of the caller to
+** eventually free the buffer using sqlite3_free().
+**
+** Or, if an error occurs, set both (*ppPage) and (*pnPage) to 0 and
+** return an SQLite error code.
+*/
 static int dbdataLoadPage(
-  DbdataCursor *pCsr, 
-  u32 pgno,
-  u8 **ppPage,
-  int *pnPage
+  DbdataCursor *pCsr,             /* Cursor object */
+  u32 pgno,                       /* Page number of page to load */
+  u8 **ppPage,                    /* OUT: pointer to page buffer */
+  int *pnPage                     /* OUT: Size of (*ppPage) in bytes */
 ){
   int rc2;
   int rc = SQLITE_OK;
@@ -338,6 +360,10 @@ static int dbdataGetVarint(const u8 *z, sqlite3_int64 *pVal){
   return 9;
 }
 
+/*
+** Return the number of bytes of space used by an SQLite value of type
+** eType.
+*/
 static int dbdataValueBytes(int eType){
   switch( eType ){
     case 0: case 8: case 9:
@@ -361,6 +387,10 @@ static int dbdataValueBytes(int eType){
   }
 }
 
+/*
+** Load a value of type eType from buffer pData and use it to set the
+** result of context object pCtx.
+*/
 static void dbdataValue(sqlite3_context *pCtx, int eType, u8 *pData){
   switch( eType ){
     case 0: 
@@ -411,7 +441,7 @@ static void dbdataValue(sqlite3_context *pCtx, int eType, u8 *pData){
 
 
 /*
-** Move a dbdata cursor to the next entry in the file.
+** Move an sqlite_dbdata or sqlite_dbptr cursor to the next entry.
 */
 static int dbdataNext(sqlite3_vtab_cursor *pCursor){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
@@ -575,14 +605,20 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
-/* We have reached EOF if previous sqlite3_step() returned
-** anything other than SQLITE_ROW;
+/* 
+** Return true if the cursor is at EOF.
 */
 static int dbdataEof(sqlite3_vtab_cursor *pCursor){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
   return pCsr->aPage==0;
 }
 
+/* 
+** Determine the size in pages of database zSchema (where zSchema is
+** "main", "temp" or the name of an attached database) and set 
+** pCsr->szDb accordingly. If successful, return SQLITE_OK. Otherwise,
+** an SQLite error code.
+*/
 static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   DbdataTable *pTab = (DbdataTable*)pCsr->base.pVtab;
   char *zSql = 0;
@@ -601,7 +637,8 @@ static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   return rc;
 }
 
-/* Position a cursor back to the beginning.
+/* 
+** xFilter method for sqlite_dbdata and sqlite_dbptr.
 */
 static int dbdataFilter(
   sqlite3_vtab_cursor *pCursor, 
@@ -648,7 +685,9 @@ static int dbdataFilter(
   return rc;
 }
 
-/* Return a column for the sqlite_dbdata table */
+/* 
+** Return a column for the sqlite_dbdata or sqlite_dbptr table.
+*/
 static int dbdataColumn(
   sqlite3_vtab_cursor *pCursor, 
   sqlite3_context *ctx, 
@@ -699,7 +738,9 @@ static int dbdataColumn(
   return SQLITE_OK;
 }
 
-/* Return the ROWID for the sqlite_dbdata table */
+/* 
+** Return the rowid for an sqlite_dbdata or sqlite_dptr table.
+*/
 static int dbdataRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
   *pRowid = pCsr->iRowid;
