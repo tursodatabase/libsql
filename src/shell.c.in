@@ -6385,13 +6385,28 @@ static RecoverTable *recoverNewTable(
   return pTab;
 }
 
+/*
+** This function is called to search the schema recovered from the
+** sqlite_master table of the (possibly) corrupt database as part
+** of a ".recover" command. Specifically, for a table with root page
+** iRoot and at least nCol columns. Additionally, if bIntkey is 0, the
+** table must be a WITHOUT ROWID table, or if non-zero, not one of
+** those.
+**
+** If a table is found, a (RecoverTable*) object is returned. Or, if
+** no such table is found, but bIntkey is false and iRoot is the 
+** root page of an index in the recovered schema, then (*pbNoop) is
+** set to true and NULL returned. Or, if there is no such table or
+** index, NULL is returned and (*pbNoop) set to 0, indicating that
+** the caller should write data to the orphans table.
+*/
 static RecoverTable *recoverFindTable(
-  ShellState *pState, 
-  int *pRc,
-  int iRoot,
-  int bIntkey,
-  int nCol,
-  int *pbNoop
+  ShellState *pState,             /* Shell state object */
+  int *pRc,                       /* IN/OUT: Error code */
+  int iRoot,                      /* Root page of table */
+  int bIntkey,                    /* True for an intkey table */
+  int nCol,                       /* Number of columns in table */
+  int *pbNoop                     /* OUT: True if iRoot is root of index */
 ){
   sqlite3_stmt *pStmt = 0;
   RecoverTable *pRet = 0;
@@ -6422,11 +6437,14 @@ static RecoverTable *recoverFindTable(
   return pRet;
 }
 
+/*
+** Return a RecoverTable object representing the orphans table.
+*/
 static RecoverTable *recoverOrphanTable(
-  ShellState *pState, 
-  int *pRc, 
-  const char *zLostAndFound,
-  int nCol
+  ShellState *pState,             /* Shell state object */
+  int *pRc,                       /* IN/OUT: Error code */
+  const char *zLostAndFound,      /* Base name for orphans table */
+  int nCol                        /* Number of user data columns */
 ){
   RecoverTable *pTab = 0;
   if( nCol>=0 && *pRc==SQLITE_OK ){
