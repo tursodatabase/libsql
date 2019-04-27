@@ -1329,7 +1329,7 @@ void sqlite3AddDefaultValue(
 ** accept it.  This routine does the necessary conversion.  It converts
 ** the expression given in its argument from a TK_STRING into a TK_ID
 ** if the expression is just a TK_STRING with an optional COLLATE clause.
-** If the epxression is anything other than TK_STRING, the expression is
+** If the expression is anything other than TK_STRING, the expression is
 ** unchanged.
 */
 static void sqlite3StringToId(Expr *p){

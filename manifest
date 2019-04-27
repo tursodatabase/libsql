@@ -1,5 +1,5 @@
-C Omit\stests\sof\sthe\sLIKE\soptimization\sin\slike3.test\swhen\sSQLITE_ENABLE_ICU\sis\sdefined.
-D 2019-04-26T17:08:50.839
+C Fix\sa\sminor\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2019-04-27T20:16:42.497
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -462,7 +462,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c ffe7101006aee2ab9e9dec2fc001998e57a8e59419c6ea4072d6c3935d3d50fb
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c 61655dad911a967a69fb49df57268fd15ce8f1af3fe0a1bd90c128ef2cacfb7a
+F src/build.c e9d560fdc39e0f037b1ebd78fde0ff616963646c8d85a7afa18db064c52c5b75
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1818,7 +1818,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7be6222c9ec44596e4eddd906c831eb1272b90fbdf68641d791f216264feb7cf
-R 1ba2bc865b250121afcb0af52a507e48
-U dan
-Z 432d74fc77b640bcf830ac2298b92cb0
+P af53c41a127c314c0608f3fd016d3a26896783745e46cd180976a188400cdb75
+R 5d8e72521d268ff442af4eda367a86ab
+U drh
+Z c27e4c4c6167f0761ffa85b745f3dbd7
