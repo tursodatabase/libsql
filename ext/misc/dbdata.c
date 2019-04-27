@@ -75,7 +75,6 @@
 #include "sqlite3ext.h"
 
 typedef unsigned char u8;
-typedef unsigned long u32;
 
 #endif
 SQLITE_EXTENSION_INIT1
@@ -313,7 +312,7 @@ static unsigned int get_uint32(unsigned char *a){
 */
 static int dbdataLoadPage(
   DbdataCursor *pCsr,             /* Cursor object */
-  u32 pgno,                       /* Page number of page to load */
+  unsigned int pgno,              /* Page number of page to load */
   u8 **ppPage,                    /* OUT: pointer to page buffer */
   int *pnPage                     /* OUT: Size of (*ppPage) in bytes */
 ){
@@ -556,7 +555,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         /* Load content from overflow pages */
         if( nPayload>nLocal ){
           sqlite3_int64 nRem = nPayload - nLocal;
-          u32 pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
+          unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
           while( nRem>0 ){
             u8 *aOvfl = 0;
             int nOvfl = 0;
