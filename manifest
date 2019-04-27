@@ -1,5 +1,5 @@
-C An\sexperimental\sinterface\sfor\sretrieving\sthe\sestimated\scost\sand\sestimated\nnumber\sof\soutput\srows\sfor\sa\squery.
-D 2019-04-26T17:20:33.254
+C Add\sthe\sshardvtab\svirtual\stable\sthat\suses\sthe\snew\scost\sestimation\sfunctions.
+D 2019-04-27T20:39:38.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -306,6 +306,7 @@ F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8d
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
 F ext/misc/series.c 0c97f63378fddc9f425e82ba139b9aaf902211f24ced115c2b6ae12b425f7334
 F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
+F ext/misc/shardvtab.c 5ff824125e1cbb4040ac2646f3ab3444fdc867a617c263f04f2f4d4da6ef4667
 F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c f88ecb2c0294453ce8b7704b211f5350c41b085b38c8e056852e3a08b0f5e484
@@ -1818,10 +1819,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7be6222c9ec44596e4eddd906c831eb1272b90fbdf68641d791f216264feb7cf
-R f445bfaab7875d7e9d6792f1def24978
-T *branch * cost-est
-T *sym-cost-est *
-T -sym-trunk *
+P 1b25fa108ab2c4ada75935abf919de2b4c3b39553b2a0ab2a485645a02352e7e
+R d379d98b062e48bddb17018fbaab4555
 U drh
-Z b1b37fe7015f8bb5921c7a5e02cfd8b8
+Z d532b28c8391dbdee92daa0c2fe6ec79
