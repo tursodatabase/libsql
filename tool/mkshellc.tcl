@@ -40,16 +40,21 @@ proc omit_redundant_typedefs {line} {
   }
   return $line
 }
+set iLine 0
 while {1} {
   set lx [omit_redundant_typedefs [gets $in]]
   if {[eof $in]} break;
+  incr iLine
   if {[regexp {^INCLUDE } $lx]} {
     set cfile [lindex $lx 1]
     puts $out "/************************* Begin $cfile ******************/"
+#   puts $out "#line 1 \"$cfile\""
     set in2 [open $topdir/src/$cfile rb]
     while {![eof $in2]} {
       set lx [omit_redundant_typedefs [gets $in2]]
-      if {[regexp {^#include "sqlite} $lx]} continue
+      if {[regexp {^#include "sqlite} $lx]} {
+        set lx "/* $lx */"
+      }
       if {[regexp {^# *include "test_windirent.h"} $lx]} {
         set lx "/* $lx */"
       }
@@ -58,6 +63,7 @@ while {1} {
     }
     close $in2
     puts $out "/************************* End $cfile ********************/"
+#   puts $out "#line [expr $iLine+1] \"shell.c.in\""
     continue
   }
   puts $out $lx

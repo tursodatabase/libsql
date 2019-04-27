@@ -1,5 +1,5 @@
-C Fix\sa\sminor\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
-D 2019-04-27T20:16:42.497
+C Add\sthe\s".recover"\scommand\sto\sthe\sshell\stool.\sFor\srecovering\sas\smuch\sdata\sas\spossible\sfrom\scorrupt\sdatabases.
+D 2019-04-27T20:30:19.423
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -284,6 +284,7 @@ F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c8
 F ext/misc/completion.c cec672d40604075bb341a7f11ac48393efdcd90a979269b8fe7977ea62d0547f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c 7f047aeb68f5802e7ce6639292095d622a488bb43526ed04810e0649faa71ceb
+F ext/misc/dbdata.c 1b3751b02d8f575d25c6bda358670d2e39ace368a0d05595989c308a10c615f6
 F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287c336
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
@@ -440,7 +441,7 @@ F ext/userauth/userauth.c f81aa5a3ecacf406f170c62a144405858f6f6de51dbdc0920134e6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 23d3660f7053d196aef76938bf78b10fc3ce1831a85d96bd71565758788f34d4
+F main.mk 125adda36bb32c99dc3a11340bd029ef373b9523eac2b2af76087bfe82d4fdf8
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -519,7 +520,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c b7304d2f491c11a03a7fbdf34bc218282ac54052377809d4dc3b4b1e7f4bfc93
-F src/shell.c.in bcfa17eb257bf8dc2359e99ba7e6bdfab7901705db013bc47a5be6d7fa7a037e
+F src/shell.c.in 104bbae904a2b67bc6c0c95337447544d15d0594dc46468608aae769d5f51da9
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -786,6 +787,7 @@ F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
+F test/dbdata.test c8d97bafd1b2efb1e445871c4641208dcd91e686d2dfbb6463d83934adbd1ac5
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test e32d14465f1c77712896fda6a1ccc0f037b481c191c1696a9c44f6c9e4964faf
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
@@ -1224,6 +1226,7 @@ F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
+F test/recover.test 52609c8cc24e72d3d8a20fb8bc32ba2ce8ca2093a7f4573bd4f2969f78f6d2b4
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
@@ -1752,7 +1755,7 @@ F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 49039adedafbc430d2959400da2e0e8f20ef8dcf6898e447c946e7d50ef5906b
-F tool/mkshellc.tcl 1f45770aea226ac093a9c72f718efbb88a2a2833409ec2e1c4cecae4202626f5
+F tool/mkshellc.tcl 70a9978e363b0f3280ca9ce1c46d72563ff479c1930a12a7375e3881b7325712
 F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
@@ -1818,7 +1821,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af53c41a127c314c0608f3fd016d3a26896783745e46cd180976a188400cdb75
-R 5d8e72521d268ff442af4eda367a86ab
-U drh
-Z c27e4c4c6167f0761ffa85b745f3dbd7
+P 95209072176ff21a91e96d5bd014b35ef100da2b0b93958baf6df4294a8daa85 425d708c3908fe74f69b62e6dd1722a0018088977e12f14b312dad1df0fbb804
+R f359cf293ea45304e0ddadd16c7a1206
+T +closed 425d708c3908fe74f69b62e6dd1722a0018088977e12f14b312dad1df0fbb804
+U dan
+Z ee7f2d083d1fca64ba3bb33b40a19208
