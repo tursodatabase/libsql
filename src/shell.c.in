@@ -6290,6 +6290,11 @@ static RecoverTable *recoverOldTable(
       const char *zPk = "_rowid_";
       sqlite3_stmt *pPkFinder = 0;
 
+      /* If this is an intkey table and there is an INTEGER PRIMARY KEY,
+      ** set zPk to the name of the PK column, and pTab->iPk to the index
+      ** of the column, where columns are 0-numbered from left to right.
+      ** Or, if this is a WITHOUT ROWID table or if there is no IPK column,
+      ** leave zPk as "_rowid_" and pTab->iPk at -2.  */
       pTab->iPk = -2;
       if( bIntkey ){
         shellPreparePrintf(dbtmp, &rc, &pPkFinder, 
@@ -6317,9 +6322,11 @@ static RecoverTable *recoverOldTable(
       i = 1;
       shellPreparePrintf(dbtmp, &rc, &pStmt, 
           "SELECT %Q || group_concat(name, ', ') "
-          "  FILTER (WHERE cid!=%d) OVER (ORDER BY cid) "
+          "  FILTER (WHERE cid!=%d) OVER (ORDER BY %s cid) "
           "FROM pragma_table_info(%Q)", 
-          bIntkey ? ", " : "", pTab->iPk, zName
+          bIntkey ? ", " : "", pTab->iPk, 
+          bIntkey ? "" : "(CASE WHEN pk=0 THEN 1000000 ELSE pk END), ",
+          zName
       );
       while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
         const char *zText = (const char*)sqlite3_column_text(pStmt, 0);
