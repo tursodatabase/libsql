@@ -1,5 +1,5 @@
-C Add\sthe\s".recover"\scommand\sto\sthe\sshell\stool.\sFor\srecovering\sas\smuch\sdata\sas\spossible\sfrom\scorrupt\sdatabases.
-D 2019-04-27T20:30:19.423
+C Take\scollating\ssequence\sinto\saccount\swhen\sremoving\sredundant\scolumns\sfrom\nindexes\son\sWITHOUT\sROWID\stables.\s\sThis\sis\sthe\sfirst\sproof-of-concept\sfix\nfor\sticket\s[3182d3879020ef3].\sMore\stesting\sneeded.
+D 2019-04-28T19:27:02.781
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -463,7 +463,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c ffe7101006aee2ab9e9dec2fc001998e57a8e59419c6ea4072d6c3935d3d50fb
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c e9d560fdc39e0f037b1ebd78fde0ff616963646c8d85a7afa18db064c52c5b75
+F src/build.c 3fedab95ff7a9b3ed51eceb12aaa61de6bbd063dabd276767494cc448a151b7b
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -1821,8 +1821,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95209072176ff21a91e96d5bd014b35ef100da2b0b93958baf6df4294a8daa85 425d708c3908fe74f69b62e6dd1722a0018088977e12f14b312dad1df0fbb804
-R f359cf293ea45304e0ddadd16c7a1206
-T +closed 425d708c3908fe74f69b62e6dd1722a0018088977e12f14b312dad1df0fbb804
-U dan
-Z ee7f2d083d1fca64ba3bb33b40a19208
+P 50fe48458942fa7a6bcc76316c6321f95b23dc34f2f8e0a483826483b2fb16f6
+R fa5b9567c2bc0a92e3c8181fab56d7f8
+T *branch * tkt-3182d38790
+T *sym-tkt-3182d38790 *
+T -sym-trunk *
+U drh
+Z dd82847aa38c87860cc4ec05cc3ab230
