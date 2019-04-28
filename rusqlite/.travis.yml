@@ -44,7 +44,7 @@ script:
   - cargo test --features uuid
   - cargo test --features "unlock_notify bundled"
   - cargo test --features "array bundled csvtab vtab"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab buildtime_bindgen"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab bundled"
-  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url vtab bundled buildtime_bindgen"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url uuid vtab"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url uuid vtab buildtime_bindgen"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url uuid vtab bundled"
+  - cargo test --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace url uuid vtab bundled buildtime_bindgen"
