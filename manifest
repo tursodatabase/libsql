@@ -1,5 +1,5 @@
-C Do\snot\sde-duplicate\scolumns\sindex\scolumns\sassociated\swith\sa\sWITHOUT\sROWID\stable\nif\sthe\scolumns\shave\sdifferent\scollating\ssequences.\s\sThis\sis\sthe\sfix\sfor\nticket\s[3182d3879020ef3b2].\s\sThere\sis\sone\stest\scase\sadded,\sbut\smost\sof\sthe\ntests\sare\sdone\sin\sTH3.
-D 2019-04-29T13:48:45.899
+C Changes\sto\soserror.test\sso\sthat\sit\sworks\seven\son\ssystems\sthat\sallow\nan\sunusually\slarge\snumber\sof\sfile\sdescriptors.
+D 2019-04-29T16:44:11.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1185,7 +1185,7 @@ F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
-F test/oserror.test e7b3416be4b9d5dd2fe0b42dd394daaddbb6c83eeec1f0e47b120b53e0ad3ace
+F test/oserror.test 1fc9746b83d778e70d115049747ba19c7fba154afce7cc165b09feb6ca6abbc5
 F test/ossfuzz.c 18af635fa73d12a109b305faca727a734c1fa28a421b161d9d15c5a84a4998a2
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
@@ -1821,8 +1821,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92facbc73a940d2844ac88fafd2d2dadb10886fb0b7c53e23f346d18fa6d6327 740d5ff6cc9bf7b151dfb8b27409e5923cfb2789b5398fe13d89563aff8ffc07
-R 202811e2e95855247d322c66d5116799
-T +closed 740d5ff6cc9bf7b151dfb8b27409e5923cfb2789b5398fe13d89563aff8ffc07
+P 1b1dd4d48cd79a585e1fa7ee79128e9f2a9ee9846339dc56bbd67b75112dcad5
+R 0bcdc9eac356966e584a16ee79a622df
 U drh
-Z b55be1ccaf3a50c1a3ba7b999ad660d8
+Z e312b5e28707c934ce76aba346ace36f
