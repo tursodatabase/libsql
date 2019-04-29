@@ -4010,7 +4010,7 @@ static void shellEscapeCrnl(
     if( zNL || zCR ){
       int iOut = 0;
       i64 nMax = (nNL > nCR) ? nNL : nCR;
-      i64 nAlloc = nMax * nText + (nMax+12)*2;
+      i64 nAlloc = nMax * nText + (nMax+64)*2;
       char *zOut = (char*)sqlite3_malloc64(nAlloc);
       if( zOut==0 ){
         sqlite3_result_error_nomem(context);
