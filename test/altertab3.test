@@ -142,6 +142,39 @@ do_execsql_test 6.1 {
   ALTER TABLE Table0 RENAME Col0 TO Col0;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.1.0 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    SELECT a, rank() OVER w1 FROM t1
+    WINDOW w1 AS (PARTITION BY b, percent_rank() OVER w1);
+  END;
+}
+
+do_execsql_test 7.1.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+  SELECT sql FROM sqlite_master;
+} {
+  {CREATE TABLE "t1x"(a,b,c)}
+  {CREATE TRIGGER AFTER INSERT ON "t1x" BEGIN
+    SELECT a, rank() OVER w1 FROM "t1x"
+    WINDOW w1 AS (PARTITION BY b, percent_rank() OVER w1);
+  END}
+}
+
+do_execsql_test 7.2.1 {
+  DROP TRIGGER after;
+  CREATE TRIGGER AFTER INSERT ON t1x BEGIN
+    SELECT a, rank() OVER w1 FROM t1x
+    WINDOW w1 AS (PARTITION BY b, percent_rank() OVER w1 ORDER BY d);
+  END;
+}
+
+do_catchsql_test 7.2.2 {
+  ALTER TABLE t1x RENAME TO t1;
+} {1 {error in trigger AFTER: no such column: d}}
+
 finish_test
 
 
