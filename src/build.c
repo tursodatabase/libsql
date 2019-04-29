@@ -1741,27 +1741,32 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 }
 
 /*
-** Return true if any of the first nKey entries of index pIdx1 exactly
-** match the iCol-th entry of pIdx2.
+** Return true if any of the first nKey entries of index pIdx exactly
+** match the iCol-th entry of pPk.  pPk is always a WITHOUT ROWID
+** PRIMARY KEY index.  pIdx is an index on the same table.  pIdx may
+** or may not be the same index as pPk.
 **
-** The first nKey entries of pIdx1 are guaranteed to be ordinary columns,
+** The first nKey entries of pIdx are guaranteed to be ordinary columns,
 ** not a rowid or expression.
 **
 ** This routine differs from hasColumn() in that both the column and the
 ** collating sequence must match for this routine, but for hasColumn() only
 ** the column name must match.
 */
-static int isDupColumn(Index *pIdx1, int nKey, Index *pIdx2, int iCol){
+static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
   int i, j;
-  assert( nKey<=pIdx1->nColumn );
-  assert( iCol<MAX(pIdx2->nColumn,pIdx2->nKeyCol) );
-  j = pIdx2->aiColumn[iCol];
-  testcase( j==XN_EXPR );
-  assert( j!=XN_ROWID );
+  assert( nKey<=pIdx->nColumn );
+  assert( iCol<MAX(pPk->nColumn,pPk->nKeyCol) );
+  assert( pPk->idxType==SQLITE_IDXTYPE_PRIMARYKEY );
+  assert( pPk->pTable->tabFlags & TF_WithoutRowid );
+  assert( pPk->pTable==pIdx->pTable );
+  testcase( pPk==pIdx );
+  j = pPk->aiColumn[iCol];
+  assert( j!=XN_ROWID && j!=XN_EXPR );
   for(i=0; i<nKey; i++){
-    assert( pIdx1->aiColumn[i]>=0 || j>=0 );
-    if( pIdx1->aiColumn[i]==j 
-     && sqlite3StrICmp(pIdx1->azColl[i],pIdx2->azColl[iCol])==0
+    assert( pIdx->aiColumn[i]>=0 || j>=0 );
+    if( pIdx->aiColumn[i]==j 
+     && sqlite3StrICmp(pIdx->azColl[i], pPk->azColl[iCol])==0
     ){
       return 1;
     }
