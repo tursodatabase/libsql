@@ -2791,7 +2791,6 @@ case OP_Affinity: {
 ** If P4 is NULL then all index fields have the affinity BLOB.
 */
 case OP_MakeRecord: {
-  u8 *zNewRecord;        /* A buffer to hold the data for the new record */
   Mem *pRec;             /* The new record */
   u64 nData;             /* Number of bytes of data space */
   int nHdr;              /* Number of bytes of header space */
@@ -2804,9 +2803,9 @@ case OP_MakeRecord: {
   int nField;            /* Number of fields in the record */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
-  int i;                 /* Space used in zNewRecord[] header */
-  int j;                 /* Space used in zNewRecord[] content */
   u32 len;               /* Length of a field */
+  u8 *zHdr;              /* Where to write next byte of the header */
+  u8 *zPayload;          /* Where to write next byte of the payload */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2933,34 +2932,34 @@ case OP_MakeRecord: {
       goto no_mem;
     }
   }
-  zNewRecord = (u8 *)pOut->z;
-
-  /* Write the record */
-  i = putVarint32(zNewRecord, nHdr);
-  j = nHdr;
-  assert( pData0<=pLast );
-  pRec = pData0;
-  do{
-    serial_type = pRec->uTemp;
-    /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
-    ** additional varints, one per column. */
-    i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
-    /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
-    ** immediately follow the header. */
-    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type); /* content */
-  }while( (++pRec)<=pLast );
-  assert( i==nHdr );
-  assert( j==nByte );
-
-  assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pOut->n = (int)nByte;
   pOut->flags = MEM_Blob;
   if( nZero ){
     pOut->u.nZero = nZero;
     pOut->flags |= MEM_Zero;
   }
-  REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
+  zHdr = (u8 *)pOut->z;
+  zPayload = zHdr + nHdr;
+
+  /* Write the record */
+  zHdr += putVarint32(zHdr, nHdr);
+  assert( pData0<=pLast );
+  pRec = pData0;
+  do{
+    serial_type = pRec->uTemp;
+    /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
+    ** additional varints, one per column. */
+    zHdr += putVarint32(zHdr, serial_type);            /* serial type */
+    /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
+    ** immediately follow the header. */
+    zPayload += sqlite3VdbeSerialPut(zPayload, pRec, serial_type); /* content */
+  }while( (++pRec)<=pLast );
+  assert( nHdr==(int)(zHdr - (u8*)pOut->z) );
+  assert( nByte==(int)(zPayload - (u8*)pOut->z) );
+
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
+  REGISTER_TRACE(pOp->p3, pOut);
   break;
 }
 
