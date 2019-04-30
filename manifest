@@ -1,5 +1,5 @@
-C Fix\san\serror\smessage\sin\sthe\sLemon\sparser\sgenerator.
-D 2019-04-30T14:26:31.199
+C Fix\sa\sproblem\sallowing\sa\sTable\sobject\sto\sbe\sdeleted\sfrom\swithin\sa\scall\sto\sthe\sxDestroy\smethod\sof\sthe\sassociated\svirtual\stable,\scausing\sa\suse-after-free\serror.
+D 2019-04-30T15:36:32.034
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c9419
 F src/vdbemem.c dd2ee49255c4c5450f2b0887ef44cea8faa1cd7a46501b39a1a82b113ae418e3
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
-F src/vtab.c 4c5959e00b7a142198d178e3a822f4e05f36f2d1a3c57657373f9487154fc06b
+F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b09a2a9cab50efa08451a8c81d47052120ad5da174048c6d0b08d405384abdf2
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -975,6 +975,7 @@ F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 5553d7bb2e20bf4a06b23e849352efc022ce6309
 F test/fts4onepass.test d69ddc4ee3415e40b0c5d1d0408488a87614d4f63ba9c44f3e52db541d6b7cc7
 F test/fts4opt.test 0fd0cc84000743ff2a883b9b84b4a5be07249f0ba790c8848a757164cdd46b2a
+F test/fts4rename.test 6015a355ec3a11a51eb5b88802b3b2c1788786c54b77b17f3e077b7c93ff8611
 F test/fts4umlaut.test fcaca4471de7e78c9d1f7e8976e3e8704d7d8ad979d57a739d00f3f757380429
 F test/fts4unicode.test ceca76422abc251818cb25dabe33d3c3970da5f7c90e1540f190824e6b3a7c95
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
@@ -1821,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f97626f921dafe596b615a168ef31987f4a1c0b52956443e1a5c1148b49cab74
-R 716d456c280daf5c4e086f08a5ceb68c
-U drh
-Z 897d4bc356296ccb4d7eda6e238b1690
+P b6d7d42b7426622a26b67809cd1f21285fea120aa1897377b9946840463b41f1
+R 6adb84036e04ae37c244138c75843359
+U dan
+Z bb2c7686d9426e0e670050982240668c
