@@ -20,8 +20,8 @@ source [file join [file dirname [info script]] releasetest_data.tcl]
 #
 set G(platform) $::tcl_platform(os)-$::tcl_platform(machine)
 set G(test)     Normal
-set G(keep)     0
-set G(msvc)     0
+set G(keep)     1
+set G(msvc)     [expr {$::tcl_platform(platform)=="windows"}]
 set G(tcl)      [::tcl::pkgconfig get libdir,install]
 set G(jobs)     3
 set G(debug)    0
@@ -197,6 +197,10 @@ proc count_tests_and_errors {name logfile} {
   }
 }
 
+# This command is invoked once a slave process has finished running its
+# tests, successfully or otherwise. Parameter $name is the name of the 
+# test, $rc the exit code returned by the slave process.
+#
 proc slave_test_done {name rc} {
   global G
   set G(test.$name.done) [clock seconds]
@@ -209,8 +213,28 @@ proc slave_test_done {name rc} {
   if {[file exists $G(test.$name.log)]} {
     count_tests_and_errors $name $G(test.$name.log)
   }
+
+  # If the "keep files" checkbox is clear, delete all files except for
+  # the executables and test logs. And any core file that is present.
+  if {$G(keep)==0} {
+    set keeplist {
+      testfixture testfixture.exe
+      sqlite3 sqlite3.exe
+      test.log test-out.txt
+      core
+    }
+    foreach f [glob -nocomplain [file join $G(test.$name.dir) *]] {
+      set t [file tail $f]
+      if {[lsearch $keeplist $t]<0} {
+        catch { file delete -force $f }
+      }
+    }
+  }
 }
 
+# This is a fileevent callback invoked each time a file-descriptor that
+# connects this process to a slave process is readable.
+#
 proc slave_fileevent {name} {
   global G
   set fd $G(test.$name.channel)
@@ -228,6 +252,14 @@ proc slave_fileevent {name} {
   do_some_stuff
 }
 
+# Return the contents of the "slave script" - the script run by slave 
+# processes to actually perform the test. It does two things:
+#
+#   1. Reads and [exec]s the contents of file wapptest_configure.sh.
+#   2. Reads and [exec]s the contents of file wapptest_make.sh.
+#
+# Step 1 is omitted if the test uses MSVC (which does not use configure).
+#
 proc wapptest_slave_script {} {
   global G
   set res {
@@ -270,6 +302,7 @@ proc slave_launch {
   foreach f [glob -nocomplain [file join $dir *]] {
     catch { file delete -force $f }
   }
+  set G(test.$name.dir) $dir
 
   # Write the configure command to wapptest_configure.sh. This file
   # is empty if using MSVC - MSVC does not use configure.
