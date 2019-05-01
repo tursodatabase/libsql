@@ -514,6 +514,8 @@ static void memTracePrint(Mem *p){
     printf(p->flags & MEM_Zero ? " NULL-nochng" : " NULL");
   }else if( (p->flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
     printf(" si:%lld", p->u.i);
+  }else if( (p->flags & (MEM_Int|MEM_IntReal))==(MEM_Int|MEM_IntReal) ){
+    printf(" ir:%lld", p->u.i);
   }else if( p->flags & MEM_Int ){
     printf(" i:%lld", p->u.i);
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -2776,13 +2778,20 @@ case OP_Affinity: {
   assert( pOp->p2>0 );
   assert( zAffinity[pOp->p2]==0 );
   pIn1 = &aMem[pOp->p1];
-  do{
+  while( 1 /*edit-by-break*/ ){
     assert( pIn1 <= &p->aMem[(p->nMem+1 - p->nCursor)] );
     assert( memIsValid(pIn1) );
-    applyAffinity(pIn1, *(zAffinity++), encoding);
+    applyAffinity(pIn1, zAffinity[0], encoding);
+    if( zAffinity[0]==SQLITE_AFF_REAL && (pIn1->flags & MEM_Int)!=0 ){
+      /* When applying REAL affinity, if the result is still MEM_Int, 
+      ** indicate that REAL is actually desired */
+      pIn1->flags |= MEM_IntReal;
+    }
     REGISTER_TRACE((int)(pIn1-aMem), pIn1);
+    zAffinity++;
+    if( zAffinity[0]==0 ) break;
     pIn1++;
-  }while( zAffinity[0] );
+  }
   break;
 }
 

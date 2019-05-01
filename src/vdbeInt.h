@@ -247,7 +247,7 @@ struct sqlite3_value {
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_AffMask   0x001f   /* Mask of affinity bits */
 #define MEM_FromBind  0x0020   /* Value originates from sqlite3_bind() */
-/* Available          0x0040   */
+#define MEM_IntReal   0x0040   /* MEM_Int that stringifies like MEM_Real */
 #define MEM_Undefined 0x0080   /* Value is undefined */
 #define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
 #define MEM_TypeMask  0xc1df   /* Mask of type bits */

@@ -92,6 +92,25 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
 }
 #endif
 
+/*
+** Render a Mem object which is either MEM_Int or MEM_Real into a
+** buffer.
+*/
+static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
+  StrAccum acc;
+  assert( p->flags & (MEM_Int|MEM_Real) );
+  sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
+  if( p->flags & MEM_IntReal ){
+    sqlite3_str_appendf(&acc, "%!.15g", (double)p->u.i);
+  }else if( p->flags & MEM_Int ){
+    sqlite3_str_appendf(&acc, "%lld", p->u.i);
+  }else{
+    sqlite3_str_appendf(&acc, "%!.15g", p->u.r);
+  }
+  assert( acc.zText==zBuf && acc.mxAlloc<=0 );
+  zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
+}
+
 #ifdef SQLITE_DEBUG
 /*
 ** Check that string value of pMem agrees with its integer or real value.
@@ -118,11 +137,7 @@ int sqlite3VdbeMemConsistentDualRep(Mem *p){
   int i, j, incr;
   if( (p->flags & MEM_Str)==0 ) return 1;
   if( (p->flags & (MEM_Int|MEM_Real))==0 ) return 1;
-  if( p->flags & MEM_Int ){
-    sqlite3_snprintf(sizeof(zBuf),zBuf,"%lld",p->u.i);
-  }else{
-    sqlite3_snprintf(sizeof(zBuf),zBuf,"%!.15g",p->u.r);
-  }
+  vdbeMemRenderNum(sizeof(zBuf), zBuf, p);
   z = p->z;
   i = j = 0;
   incr = 1;
@@ -248,7 +263,7 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
   }
   assert( (pMem->flags & MEM_Dyn)==0 );
   pMem->z = pMem->zMalloc;
-  pMem->flags &= (MEM_Null|MEM_Int|MEM_Real);
+  pMem->flags &= (MEM_Null|MEM_Int|MEM_Real|MEM_IntReal);
   return SQLITE_OK;
 }
 
@@ -349,13 +364,12 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 ** user and the latter is an internal programming error.
 */
 int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
-  int fg = pMem->flags;
   const int nByte = 32;
 
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  assert( !(fg&MEM_Zero) );
-  assert( !(fg&(MEM_Str|MEM_Blob)) );
-  assert( fg&(MEM_Int|MEM_Real) );
+  assert( !(pMem->flags&MEM_Zero) );
+  assert( !(pMem->flags&(MEM_Str|MEM_Blob)) );
+  assert( pMem->flags&(MEM_Int|MEM_Real) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
@@ -365,23 +379,12 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
     return SQLITE_NOMEM_BKPT;
   }
 
-  /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
-  ** string representation of the value. Then, if the required encoding
-  ** is UTF-16le or UTF-16be do a translation.
-  ** 
-  ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
-  */
-  if( fg & MEM_Int ){
-    sqlite3_snprintf(nByte, pMem->z, "%lld", pMem->u.i);
-  }else{
-    assert( fg & MEM_Real );
-    sqlite3_snprintf(nByte, pMem->z, "%!.15g", pMem->u.r);
-  }
+  vdbeMemRenderNum(nByte, pMem->z, pMem);
   assert( pMem->z!=0 );
   pMem->n = sqlite3Strlen30NN(pMem->z);
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
-  if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real);
+  if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal);
   sqlite3VdbeChangeEncoding(pMem, enc);
   return SQLITE_OK;
 }
@@ -741,7 +744,7 @@ void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
       pMem->flags |= (pMem->flags&MEM_Blob)>>3;
       sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
       assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
-      pMem->flags &= ~(MEM_Int|MEM_Real|MEM_Blob|MEM_Zero);
+      pMem->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal|MEM_Blob|MEM_Zero);
       break;
     }
   }
