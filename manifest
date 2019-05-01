@@ -1,5 +1,5 @@
-C Update\swapptest.tcl\sto\suse\sa\ssimpler\sslave\sscript.\sAnd\sto\sleave\sscripts\swapptest_configure.sh\sand\swapptest_make.sh\sin\seach\stest\sdirectory.
-D 2019-04-30T20:43:10.531
+C Fix\san\sincompatibility\swith\sauto-vacuum\smode\sin\snew\stest\sscript\srecover.test.
+D 2019-05-01T08:48:44.061
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1227,7 +1227,7 @@ F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
-F test/recover.test 52609c8cc24e72d3d8a20fb8bc32ba2ce8ca2093a7f4573bd4f2969f78f6d2b4
+F test/recover.test 4c45b1519c11c6d10cc28bced260e2a18f3967fc6abccaace44af6c22b30280c
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
@@ -1822,8 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1dbbb0101e8213b92b9a4c78c0fd2f9d0240a8ea3b40dff1033d1b8d71fb04ef
-R f8f2ef19afa4c11d5a1036e92efd9ad2
-T +closed 9e849f25029b05b44220acd881356bcade9ba76f9d1308556850cd4d6b6a94d7
+P 07e527d781838412b2a434e64baaa49cbf7410a51c7393f54adc7b8eaffd5229
+R 5ef0ce02daac1f5b87f34d32f98b67b4
 U dan
-Z 8ade123def7ea1f2c0a2e92932d92c90
+Z 076daaf71d4826b61a79c8ff95610b0a
