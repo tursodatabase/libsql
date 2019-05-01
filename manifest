@@ -1,5 +1,5 @@
-C Avoid\sunwelcomed\sside\seffects\son\sthe\sinput\soperands\sin\sthe\sOP_Concat\noperator.\s\sFix\sfor\sticket\s[3be1295b264be2fac49b681]
-D 2019-05-01T15:32:40.553
+C Fix\sa\scase\sin\swapptest.tcl\swhere\sa\sfailed\stest\smight\sreport\s0\serrors.
+D 2019-05-01T17:32:36.167
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1656,7 +1656,7 @@ F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/walvfs.test c0faffda13d045a96dfc541347886bb1a3d6f3205857fc98e683edfab766ea88
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
-F test/wapptest.tcl c4c32b89607f970500568cad83ed67a869beaf8c2f07bbc030a335ea6c7c750c x
+F test/wapptest.tcl 32a23f9b4c9fa1126d29250368ba6d5689b7503aa0694df7edf9253f1d56f1d7 x
 F test/where.test 0607caa5a1fbfe7b93b95705981b463a3a0408038f22ae6e9dc11b36902b0e95
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09623cc4cc82e3c123d1fd5d88b2f4b50ec5f2cc7e579a7203258bf0c246a74f
-R 36135537650a3222bb6001d7e31d8024
-U drh
-Z 34e12fa35e79c97a2bb14481b73be0be
+P 713caa382cf7ddef872e510a76a5fca40be1a8d8876ce2f91b632bb0810a6630
+R dc354a168f1bf70c2fd5f402743058b3
+U dan
+Z 22ec1d29c68aeb8e171bdc1d1c0ccaa3

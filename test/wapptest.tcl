@@ -222,6 +222,9 @@ proc slave_test_done {name rc} {
       sqlite3 sqlite3.exe
       test.log test-out.txt
       core
+      wapptest_make.sh
+      wapptest_configure.sh
+      wapptest_run.tcl
     }
     foreach f [glob -nocomplain [file join $G(test.$name.dir) *]] {
       set t [file tail $f]
@@ -277,15 +280,17 @@ proc wapptest_slave_script {} {
       set rc [catch { exec {*}$cfg >& test.log } msg]
       if {$rc==0} {
         set make [readfile wapptest_make.sh]
-        catch { exec {*}$make >>& test.log }
+        set rc [catch { exec {*}$make >>& test.log }]
       }
     } 
   } else { 
     append res {
       set make [readfile wapptest_make.sh]
-      catch { exec {*}$make >>& test.log }
+      set rc [catch { exec {*}$make >>& test.log }]
     }
   }
+
+  append res { exit $rc }
 
   set res
 }
