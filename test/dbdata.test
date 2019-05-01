@@ -20,8 +20,9 @@ ifcapable !vtab||!compound {
   finish_test
   return
 }
-db enable_load_extension 1
-if { [catch { db eval { SELECT load_extension('../dbdata') } }] } {
+if { [catch { db enable_load_extension 1 }]
+  || [catch { db eval { SELECT load_extension('../dbdata') } }] 
+} {
   finish_test
   return
 }

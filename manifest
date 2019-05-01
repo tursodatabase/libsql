@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\swapptest.tcl\swhere\sa\sfailed\stest\smight\sreport\s0\serrors.
-D 2019-05-01T17:32:36.167
+C Fix\san\sincompatibility\swith\s-DSQLITE_OMIT_LOAD_EXTENSION=1\sin\sdbdata.test.
+D 2019-05-01T17:36:56.822
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -787,7 +787,7 @@ F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/date2.test 74c234bece1b016e94dd4ef9c8cc7a199a8806c0e2291cab7ba64bace6350b10
-F test/dbdata.test c8d97bafd1b2efb1e445871c4641208dcd91e686d2dfbb6463d83934adbd1ac5
+F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test e32d14465f1c77712896fda6a1ccc0f037b481c191c1696a9c44f6c9e4964faf
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 713caa382cf7ddef872e510a76a5fca40be1a8d8876ce2f91b632bb0810a6630
-R dc354a168f1bf70c2fd5f402743058b3
+P 2be1ed70df605663822d1afdde757f426ccf2ee38add8dc6b6bb4fc4d90a31dc
+R ae90daf9628470675bc89644e7eb21cd
 U dan
-Z 22ec1d29c68aeb8e171bdc1d1c0ccaa3
+Z 1604ae08830baf499595804bc5cb5239
