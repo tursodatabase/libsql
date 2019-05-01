@@ -747,6 +747,15 @@ do_execsql_test index-22.0 {
   INSERT INTO t1(a,b) VALUES('a',1),('a',0);
   SELECT a, b, '|' FROM t1;
 } {a 1 | a 0 |}
-   
+
+# 2019-05-10 ticket https://www.sqlite.org/src/info/ae0f637bddc5290b
+do_execsql_test index-23.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, b REAL);
+  CREATE UNIQUE INDEX t1x1 ON t1(a GLOB b);
+  INSERT INTO t1(a,b) VALUES('0.0','1'),('1.0','1');
+  SELECT * FROM t1;
+  REINDEX;
+} {0.0 1.0 1.0 1.0}
 
 finish_test
