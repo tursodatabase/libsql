@@ -2769,6 +2769,7 @@ case OP_Affinity: {
     assert( pIn1 <= &p->aMem[(p->nMem+1 - p->nCursor)] );
     assert( memIsValid(pIn1) );
     applyAffinity(pIn1, *(zAffinity++), encoding);
+    REGISTER_TRACE((int)(pIn1-aMem), pIn1);
     pIn1++;
   }while( zAffinity[0] );
   break;

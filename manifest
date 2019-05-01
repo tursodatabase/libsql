@@ -1,5 +1,5 @@
-C Fix\san\sincompatibility\swith\sauto-vacuum\smode\sin\snew\stest\sscript\srecover.test.
-D 2019-05-01T08:48:44.061
+C In\s"PRAGMA\svdbe_trace"\soutput,\sshow\sthe\sresults\sof\sOP_Affinity\sopcodes.
+D 2019-05-01T14:41:47.678
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -591,7 +591,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 5061987401c2e8003177fa30d73196aa036727c8f04bf36a2df0c82b1904a236
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 2782da511932d17e45e128f04f73314e5f5d765f7a499f5ac4bb1e0a82e082cc
+F src/vdbe.c 74ee707ef31b74edc05923cddc04657d165c111fa9e6fe957df8fa7d5b63b8cf
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 2c12704db9740c8e899786ecfc7a5797a9d067563496eb1b6ed03c592d7b8d90
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07e527d781838412b2a434e64baaa49cbf7410a51c7393f54adc7b8eaffd5229
-R 5ef0ce02daac1f5b87f34d32f98b67b4
-U dan
-Z 076daaf71d4826b61a79c8ff95610b0a
+P 36dd5b0804797a35d0dc596b6ca4f71813a155c5a470237ab6e3d1bcd9ccc6be
+R ea64878fb21eadae4dca5f57318c8810
+U drh
+Z 04e7e3cb0fe5e91830c8ba41df015203
