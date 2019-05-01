@@ -196,14 +196,6 @@ int sqlite3_found_count = 0;
 #endif
 
 /*
-** Convert the given register into a string if it isn't one
-** already. Return non-zero if a malloc() fails.
-*/
-#define Stringify(P, enc) \
-   if(((P)->flags&(MEM_Str|MEM_Blob))==0 && sqlite3VdbeMemStringify(P,enc,0)) \
-     { goto no_mem; }
-
-/*
 ** An ephemeral string value (signified by the MEM_Ephem flag) contains
 ** a pointer to a dynamically allocated string where some other entity
 ** is responsible for deallocating that string.  Because the register
@@ -1463,19 +1455,34 @@ case OP_ResultRow: {
 ** to avoid a memcpy().
 */
 case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
-  i64 nByte;
+  i64 nByte;          /* Total size of the output string or blob */
+  u16 flags1;         /* Initial flags for P1 */
+  u16 flags2;         /* Initial flags for P2 */
 
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
   pOut = &aMem[pOp->p3];
+  testcase( pIn1==pIn2 );
+  testcase( pOut==pIn2 );
   assert( pIn1!=pOut );
-  if( (pIn1->flags | pIn2->flags) & MEM_Null ){
+  flags1 = pIn1->flags;
+  testcase( flags1 & MEM_Null );
+  testcase( pIn2->flags & MEM_Null );
+  if( (flags1 | pIn2->flags) & MEM_Null ){
     sqlite3VdbeMemSetNull(pOut);
     break;
   }
-  if( ExpandBlob(pIn1) || ExpandBlob(pIn2) ) goto no_mem;
-  Stringify(pIn1, encoding);
-  Stringify(pIn2, encoding);
+  if( (flags1 & (MEM_Str|MEM_Blob))==0 ){
+    if( sqlite3VdbeMemStringify(pIn1,encoding,0) ) goto no_mem;
+  }else if( (flags1 & MEM_Zero)!=0 ){
+    if( sqlite3VdbeMemExpandBlob(pIn1) ) goto no_mem;
+  }
+  flags2 = pIn2->flags;
+  if( (flags2 & (MEM_Str|MEM_Blob))==0 ){
+    if( sqlite3VdbeMemStringify(pIn2,encoding,0) ) goto no_mem;
+  }else if( (flags2 & MEM_Zero)!=0 ){
+    if( sqlite3VdbeMemExpandBlob(pIn2) ) goto no_mem;
+  }
   nByte = pIn1->n + pIn2->n;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
@@ -1486,8 +1493,12 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   MemSetTypeFlag(pOut, MEM_Str);
   if( pOut!=pIn2 ){
     memcpy(pOut->z, pIn2->z, pIn2->n);
+    assert( (pIn2->flags & MEM_Dyn) == (flags2 & MEM_Dyn) );
+    pIn2->flags = flags2;
   }
   memcpy(&pOut->z[pIn2->n], pIn1->z, pIn1->n);
+  assert( (pIn1->flags & MEM_Dyn) == (flags1 & MEM_Dyn) );
+  pIn1->flags = flags1;
   pOut->z[nByte]=0;
   pOut->z[nByte+1] = 0;
   pOut->flags |= MEM_Term;
