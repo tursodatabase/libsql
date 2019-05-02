@@ -1534,7 +1534,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       Mem *pMem = pOp->p4.pMem;
       if( pMem->flags & MEM_Str ){
         zP4 = pMem->z;
-      }else if( pMem->flags & MEM_Int ){
+      }else if( pMem->flags & (MEM_Int|MEM_IntReal) ){
         sqlite3_str_appendf(&x, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
         sqlite3_str_appendf(&x, "%.16g", pMem->u.r);
@@ -3432,7 +3432,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
     *pLen = 0;
     return 0;
   }
-  if( flags&MEM_Int ){
+  if( flags&(MEM_Int|MEM_IntReal) ){
     /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
 #   define MAX_6BYTE ((((i64)0x00008000)<<32)-1)
     i64 i = pMem->u.i;
@@ -4111,8 +4111,8 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
 
   /* At least one of the two values is a number
   */
-  if( combined_flags&(MEM_Int|MEM_Real) ){
-    if( (f1 & f2 & MEM_Int)!=0 ){
+  if( combined_flags&(MEM_Int|MEM_Real|MEM_IntReal) ){
+    if( (f1 & f2 & (MEM_Int|MEM_IntReal))!=0 ){
       if( pMem1->u.i < pMem2->u.i ) return -1;
       if( pMem1->u.i > pMem2->u.i ) return +1;
       return 0;
@@ -4122,15 +4122,19 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
       if( pMem1->u.r > pMem2->u.r ) return +1;
       return 0;
     }
-    if( (f1&MEM_Int)!=0 ){
+    if( (f1&(MEM_Int|MEM_IntReal))!=0 ){
       if( (f2&MEM_Real)!=0 ){
         return sqlite3IntFloatCompare(pMem1->u.i, pMem2->u.r);
+      }else if( (f2&(MEM_Int|MEM_IntReal))!=0 ){
+        if( pMem1->u.i < pMem2->u.i ) return -1;
+        if( pMem1->u.i > pMem2->u.i ) return +1;
+        return 0;
       }else{
         return -1;
       }
     }
     if( (f1&MEM_Real)!=0 ){
-      if( (f2&MEM_Int)!=0 ){
+      if( (f2&(MEM_Int|MEM_IntReal))!=0 ){
         return -sqlite3IntFloatCompare(pMem2->u.i, pMem1->u.r);
       }else{
         return -1;
@@ -4279,7 +4283,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     u32 serial_type;
 
     /* RHS is an integer */
-    if( pRhs->flags & MEM_Int ){
+    if( pRhs->flags & (MEM_Int|MEM_IntReal) ){
       serial_type = aKey1[idx1];
       testcase( serial_type==12 );
       if( serial_type>=10 ){
@@ -4624,7 +4628,9 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
     testcase( flags & MEM_Real );
     testcase( flags & MEM_Null );
     testcase( flags & MEM_Blob );
-    if( (flags & (MEM_Real|MEM_Null|MEM_Blob))==0 && p->pKeyInfo->aColl[0]==0 ){
+    if( (flags & (MEM_Real|MEM_IntReal|MEM_Null|MEM_Blob))==0
+     && p->pKeyInfo->aColl[0]==0
+    ){
       assert( flags & MEM_Str );
       return vdbeRecordCompareString;
     }

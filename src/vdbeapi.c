@@ -266,7 +266,7 @@ int sqlite3_value_type(sqlite3_value* pVal){
      SQLITE_NULL,     /* 0x1d */
      SQLITE_INTEGER,  /* 0x1e */
      SQLITE_NULL,     /* 0x1f */
-     SQLITE_BLOB,     /* 0x20 */
+     SQLITE_FLOAT,    /* 0x20 */
      SQLITE_NULL,     /* 0x21 */
      SQLITE_TEXT,     /* 0x22 */
      SQLITE_NULL,     /* 0x23 */
@@ -304,10 +304,10 @@ int sqlite3_value_type(sqlite3_value* pVal){
     int eType = SQLITE_BLOB;
     if( pVal->flags & MEM_Null ){
       eType = SQLITE_NULL;
-    }else if( pVal->flags & MEM_Int ){
-      eType = (pVal->flags & MEM_IntReal) ? SQLITE_FLOAT : SQLITE_INTEGER;
-    }else if( pVal->flags & MEM_Real ){
+    }else if( pVal->flags & (MEM_Real|MEM_IntReal) ){
       eType = SQLITE_FLOAT;
+    }else if( pVal->flags & MEM_Int ){
+      eType = SQLITE_INTEGER;
     }else if( pVal->flags & MEM_Str ){
       eType = SQLITE_TEXT;
     }
@@ -1849,7 +1849,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   }else if( iIdx>=p->pUnpacked->nField ){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
-    if( pMem->flags & MEM_Int ){
+    if( pMem->flags & (MEM_Int|MEM_IntReal) ){
       sqlite3VdbeMemRealify(pMem);
     }
   }
