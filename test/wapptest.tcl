@@ -21,15 +21,19 @@ source [file join [file dirname [info script]] releasetest_data.tcl]
 set G(platform) $::tcl_platform(os)-$::tcl_platform(machine)
 set G(test)     Normal
 set G(keep)     1
-set G(msvc)     [expr {$::tcl_platform(platform)=="windows"}]
+set G(msvc)     0
 set G(tcl)      [::tcl::pkgconfig get libdir,install]
 set G(jobs)     3
 set G(debug)    0
 
+set G(noui)     0
+set G(stdout)   0
+
+
 proc wapptest_init {} {
   global G
 
-  set lSave [list platform test keep msvc tcl jobs debug] 
+  set lSave [list platform test keep msvc tcl jobs debug noui stdout] 
   foreach k $lSave { set A($k) $G($k) }
   array unset G
   foreach k $lSave { set G($k) $A($k) }
@@ -47,6 +51,22 @@ proc wapptest_init {} {
   set G(host) $G(hostname)
   append G(host) " $::tcl_platform(os) $::tcl_platform(osVersion)"
   append G(host) " $::tcl_platform(machine) $::tcl_platform(byteOrder)"
+}
+
+proc wapptest_run {} {
+  global G
+  set_test_array
+  set G(state) "running"
+
+  wapptest_openlog
+
+  wapptest_output "Running the following for $G(platform). $G(jobs) jobs."
+  foreach t $G(test_array) {
+    set config [dict get $t config]
+    set target [dict get $t target]
+    wapptest_output [format "    %-25s%s" $config $target]
+  }
+  wapptest_output [string repeat * 70]
 }
 
 # Generate the text for the box at the top of the UI. The current SQLite
@@ -197,6 +217,31 @@ proc count_tests_and_errors {name logfile} {
   }
 }
 
+proc wapptest_output {str} {
+  global G
+  if {$G(stdout)} { puts $str }
+  if {[info exists G(log)]} { 
+    puts $G(log) $str 
+    flush $G(log)
+  }
+}
+proc wapptest_openlog {} {
+  global G
+  set G(log) [open wapptest-out.txt w+]
+}
+proc wapptest_closelog {} {
+  global G
+  close $G(log)
+  unset G(log)
+}
+
+proc format_seconds {seconds} {
+  set min [format %.2d [expr ($seconds / 60) % 60]]
+  set  hr [format %.2d [expr $seconds / 3600]]
+  set sec [format %.2d [expr $seconds % 60]]
+  return "$hr:$min:$sec"
+}
+
 # This command is invoked once a slave process has finished running its
 # tests, successfully or otherwise. Parameter $name is the name of the 
 # test, $rc the exit code returned by the slave process.
@@ -232,6 +277,18 @@ proc slave_test_done {name rc} {
         catch { file delete -force $f }
       }
     }
+  }
+
+  # Format a message regarding the success or failure of hte test.
+  set t [format_seconds [expr $G(test.$name.done) - $G(test.$name.start)]]
+  set res "OK"
+  if {$G(test.$name.nError)} { set res "FAILED" }
+  set dots [string repeat . [expr 60 - [string length $name]]]
+  set msg "$name $dots $res ($t)"
+
+  wapptest_output $msg
+  if {[info exists G(test.$name.errmsg)] && $G(test.$name.errmsg)!=""} {
+    wapptest_output "    $G(test.$config.errmsg)"
   }
 }
 
@@ -372,10 +429,15 @@ proc do_some_stuff {} {
       incr nConfig 
     }
     set G(result) "$nError errors from $nTest tests in $nConfig configurations."
+    wapptest_output [string repeat * 70]
+    wapptest_output $G(result)
     catch {
       append G(result) " SQLite version $G(sqlite_version)"
+      wapptest_output " SQLite version $G(sqlite_version)"
     }
     set G(state) "stopped"
+    wapptest_closelog
+    if {$G(noui)} { exit 0 }
   } else {
     set nLaunch [expr $G(jobs) - $nRunning]
     foreach j $G(test_array) {
@@ -543,11 +605,7 @@ proc wapp-page-tests {} {
         }
         set seconds [expr $G(test.$config.done) - $G(test.$config.start)]
       }
-
-      set min [format %.2d [expr ($seconds / 60) % 60]]
-      set  hr [format %.2d [expr $seconds / 3600]]
-      set sec [format %.2d [expr $seconds % 60]]
-      set seconds "$hr:$min:$sec"
+      set seconds [format_seconds $seconds]
     }
 
     wapp-trim {
@@ -606,8 +664,7 @@ proc wapp-page-control {} {
 
   if {[wapp-param-exists control_run]} {
     # This is a "run test" command.
-    set_test_array
-    set ::G(state) "running"
+    wapptest_run
   }
 
   if {[wapp-param-exists control_stop]} {
@@ -622,6 +679,7 @@ proc wapp-page-control {} {
         slave_test_done $name 1
       }
     }
+    wapptest_closelog
   }
 
   if {[wapp-param-exists control_reset]} {
@@ -773,6 +831,118 @@ proc wapp-page-log {} {
   }
 }
 
+# Print out a usage message. Then do [exit 1].
+#
+proc wapptest_usage {} {
+  puts stderr {
+This Tcl script is used to test various configurations of SQLite. By
+default it uses "wapp" to provide an interactive interface. Supported 
+command line options (all optional) are:
+
+    --platform    PLATFORM         (which tests to run)
+    --smoketest                    (run "make smoketest" only)
+    --veryquick                    (run veryquick.test only)
+    --buildonly                    (build executables, do not run tests)
+    --jobs        N                (number of concurrent jobs)
+    --tcl         DIR              (where to find tclConfig.sh)
+    --deletefiles                  (delete extra files after each test)
+    --msvc                         (Use MS Visual C)
+    --debug                        (Also run [n]debugging versions of tests)
+    --noui                         (do not use wapp)
+  }
+  exit 1
+}
+
+# Sort command line arguments into two groups: those that belong to wapp,
+# and those that belong to the application.
+set WAPPARG(-server)      1
+set WAPPARG(-local)       1
+set WAPPARG(-scgi)        1
+set WAPPARG(-remote-scgi) 1
+set WAPPARG(-fromip)      1
+set WAPPARG(-nowait)      0
+set WAPPARG(-cgi)         0
+set lWappArg [list]
+set lTestArg [list]
+for {set i 0} {$i < [llength $argv]} {incr i} {
+  set arg [lindex $argv $i]
+  if {[string range $arg 0 1]=="--"} {
+    set arg [string range $arg 1 end]
+  }
+  if {[info exists WAPPARG($arg)]} {
+    lappend lWappArg $arg
+    if {$WAPPARG($arg)} {
+      incr i
+      lappend lWappArg [lindex $argv $i]
+    }
+  } else {
+    lappend lTestArg $arg
+  }
+}
+
+for {set i 0} {$i < [llength $lTestArg]} {incr i} {
+  switch -- [lindex $lTestArg $i] {
+    -platform {
+      if {$i==[llength $lTestArg]-1} { wapptest_usage }
+      incr i
+      set arg [lindex $lTestArg $i]
+      set lPlatform [array names ::Platforms]
+      if {[lsearch $lPlatform $arg]<0} {
+        puts stderr "No such platform: $arg. Platforms are: $lPlatform"
+        exit -1
+      }
+      set G(platform) $arg
+    }
+
+    -smoketest { set G(test) Smoketest }
+    -veryquick { set G(test) Veryquick }
+    -buildonly { set G(test) Build-Only }
+    -jobs {
+      if {$i==[llength $lTestArg]-1} { wapptest_usage }
+      incr i
+      set G(jobs) [lindex $lTestArg $i]
+    }
+
+    -tcl {
+      if {$i==[llength $lTestArg]-1} { wapptest_usage }
+      incr i
+      set G(tcl) [lindex $lTestArg $i]
+    }
+
+    -deletefiles {
+      set G(keep) 0
+    }
+
+    -msvc {
+      set G(msvc) 1
+    }
+
+    -debug {
+      set G(debug) 1
+    }
+
+    -noui {
+      set G(noui) 1
+      set G(stdout) 1
+    }
+
+    -stdout {
+      set G(stdout) 1
+    }
+
+    default {
+      puts stderr "Unrecognized option: [lindex $lTestArg $i]"
+      wapptest_usage
+    }
+  }
+}
+
 wapptest_init
-wapp-start $argv
+if {$G(noui)==0} {
+  wapp-start $lWappArg
+} else {
+  wapptest_run
+  do_some_stuff
+  vwait forever
+}
 

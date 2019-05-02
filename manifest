@@ -1,5 +1,5 @@
-C Earlier\sdetection\sof\sa\sdatabase\scorruption\scase\sin\sbalance_nonroot(),\sto\nprevent\sa\spossible\suse\sof\san\suninitialized\svariable.
-D 2019-05-02T15:56:39.144
+C Add\soptions\sto\swapptest.tcl\ssimilar\sto\sthose\ssupported\sby\sreleasetest.tcl.\sAlso\sadd\sthe\s-noui\sswitch,\sfor\srunning\swithout\swapp\saltogether.
+D 2019-05-02T17:06:01.169
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1656,7 +1656,7 @@ F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/walvfs.test c0faffda13d045a96dfc541347886bb1a3d6f3205857fc98e683edfab766ea88
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
-F test/wapptest.tcl 32a23f9b4c9fa1126d29250368ba6d5689b7503aa0694df7edf9253f1d56f1d7 x
+F test/wapptest.tcl f387e81750b2938ccf445b8a061541626a4a31f55e9e500b3e38ef3ce177bc61 x
 F test/where.test 0607caa5a1fbfe7b93b95705981b463a3a0408038f22ae6e9dc11b36902b0e95
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b043a54c3de54b286c4eae564eab6b99118a410d99bdb63480faba3123d2ca11
-R 18ab7c62d0e00aa10b61e04e6385c846
-U drh
-Z 008cd703689ead8de489aed4e8570f99
+P c509d8a8aebe0da4847e95cf737c21313a665de9a540da2db57b8ed22f98a402
+R ae122c629293e3edebd8b79e5ad2d64a
+U dan
+Z 2ff4926d40df66aaffbb2191925f93c2
