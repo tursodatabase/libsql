@@ -1,5 +1,5 @@
-C The\scollating\ssequence\sof\sthe\scolumn\smust\sbe\sTEXT\sif\sthe\sLIKE\sor\sGLOB\spattern\nstarts\swith\sa\s"+"\ssign.\s\sThis\sis\sanother\scase\sof\sticket\n[c94369cae9b561b1f996d005]\sthat\swas\sdiscovered\sby\sManuel\sRigger.
-D 2019-05-02T01:41:53.006
+C Earlier\sdetection\sof\sa\sdatabase\scorruption\scase\sin\sbalance_nonroot(),\sto\nprevent\sa\spossible\suse\sof\san\suninitialized\svariable.
+D 2019-05-02T15:56:39.144
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -460,7 +460,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ffe7101006aee2ab9e9dec2fc001998e57a8e59419c6ea4072d6c3935d3d50fb
+F src/btree.c e048f240d9562ef0c6b87e9d8dfa31a08c262d6c8d52c1ac0d6ca340ed8188e0
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 2d9ddfeaf8e1dafc7e1fcc8a84e7a8b455199dac3b69037fc73af6279aa8447b
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3e897702f8f789fe5119b9042fb93eca3fbfcc44564fbfa66c65628725b1157d
-R 9786e5fb7c74febd927aa84f3b72acbe
+P b043a54c3de54b286c4eae564eab6b99118a410d99bdb63480faba3123d2ca11
+R 18ab7c62d0e00aa10b61e04e6385c846
 U drh
-Z a4cc8a25e8e445f4572d088b41336647
+Z 008cd703689ead8de489aed4e8570f99
