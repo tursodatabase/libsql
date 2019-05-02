@@ -178,6 +178,16 @@ do_eqp_test like3-5.211 {
   `--SEARCH TABLE t5b USING COVERING INDEX sqlite_autoindex_t5b_1 (x>? AND x<?)
 }
 
+# 2019-05-01
+# another case of the above reported on the mailing list by Manual Rigger.
+#
+do_execsql_test like3-5.300 {
+  CREATE TABLE t5c (c0 REAL);
+  CREATE INDEX t5c_0 ON t5c(c0 COLLATE NOCASE);
+  INSERT INTO t5c(rowid, c0) VALUES (99,'+/');
+  SELECT * FROM t5c WHERE (c0 LIKE '+/');
+} {+/}
+
 # 2019-02-27
 # Verify that the LIKE optimization works with an ESCAPE clause when
 # using PRAGMA case_sensitive_like=ON.
