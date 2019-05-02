@@ -757,5 +757,13 @@ do_execsql_test index-23.0 {
   SELECT * FROM t1;
   REINDEX;
 } {0.0 1.0 1.0 1.0}
+do_execsql_test index-23.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a REAL);
+  CREATE UNIQUE INDEX index_0 ON t1(TYPEOF(a));
+  INSERT OR IGNORE INTO t1(a) VALUES (0.1),(FALSE);
+  SELECT * FROM t1;
+  REINDEX;
+} {0.1}
 
 finish_test

@@ -1,5 +1,5 @@
-C Add\soptions\sto\swapptest.tcl\ssimilar\sto\sthose\ssupported\sby\sreleasetest.tcl.\sAlso\sadd\sthe\s-noui\sswitch,\sfor\srunning\swithout\swapp\saltogether.
-D 2019-05-02T17:06:01.169
+C Ensure\sthat\sthe\stypeof()\sfunction\salways\sreturns\sSQLITE_FLOAT\sfor\sfloating\npoint\svalues\seven\swhen\sthe\svalue\sis\sstored\sas\san\sinteger\sto\ssave\sspace.
+D 2019-05-02T17:45:52.902
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -593,8 +593,8 @@ F src/util.c 5061987401c2e8003177fa30d73196aa036727c8f04bf36a2df0c82b1904a236
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
 F src/vdbe.c 36993059b87e7c2adf671aaa4ef5e0f826b6f4d95be15b019aee14308f0047b5
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
-F src/vdbeInt.h 0e2c44958fb42d90a4eacb122d77e2d5b89b82f5e2b4b047b422962dc0346357
-F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
+F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
+F src/vdbeapi.c 5ef992332225d8b6151137fcaf33b4ba4d38db7e7c51f871d2e9ecb960f3709a
 F src/vdbeaux.c f873b5c2efcf8a4d6ecfc5b1a5b06fd810419198f3bd882175d371cc03801873
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c df36fd36c7585e42869f3a44f5da5dc70e13306bc97ba52eebe069e174ba55db
@@ -1031,7 +1031,7 @@ F test/incrvacuum.test 2aaee202b1f230e55779f70d155f6ba67bbdff8481d650214d256ab0f
 F test/incrvacuum2.test 7d26cfda66c7e55898d196de54ac4ec7d86a4e3d
 F test/incrvacuum3.test 75256fb1377e7c39ef2de62bfc42bbff67be295a
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
-F test/index.test 05414fc7e1e128c327e089c2216d041ae7fb02232571f708f009a79a482cf1a3
+F test/index.test a2e948ed949e575487b5c1d521767d4584ac42d352f2dcd8e48004638e7bc7dc
 F test/index2.test f835d5e13ca163bd78c4459ca15fd2e4ed487407
 F test/index3.test 51685f39345462b84fcf77eb8537af847fdf438cc96b05c45d6aaca4e473ade0
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c509d8a8aebe0da4847e95cf737c21313a665de9a540da2db57b8ed22f98a402
-R ae122c629293e3edebd8b79e5ad2d64a
-U dan
-Z 2ff4926d40df66aaffbb2191925f93c2
+P 005a169406ccea6e3cc42271620870d985e8bada1ad49a63656003db4911cb51
+R 1a712fa3e334798d542297677e583b67
+U drh
+Z 11e98b9b34589d0e8654b135f89f5a58

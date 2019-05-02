@@ -266,7 +266,54 @@ int sqlite3_value_type(sqlite3_value* pVal){
      SQLITE_NULL,     /* 0x1d */
      SQLITE_INTEGER,  /* 0x1e */
      SQLITE_NULL,     /* 0x1f */
+     SQLITE_BLOB,     /* 0x20 */
+     SQLITE_NULL,     /* 0x21 */
+     SQLITE_TEXT,     /* 0x22 */
+     SQLITE_NULL,     /* 0x23 */
+     SQLITE_FLOAT,    /* 0x24 */
+     SQLITE_NULL,     /* 0x25 */
+     SQLITE_FLOAT,    /* 0x26 */
+     SQLITE_NULL,     /* 0x27 */
+     SQLITE_FLOAT,    /* 0x28 */
+     SQLITE_NULL,     /* 0x29 */
+     SQLITE_FLOAT,    /* 0x2a */
+     SQLITE_NULL,     /* 0x2b */
+     SQLITE_FLOAT,    /* 0x2c */
+     SQLITE_NULL,     /* 0x2d */
+     SQLITE_FLOAT,    /* 0x2e */
+     SQLITE_NULL,     /* 0x2f */
+     SQLITE_BLOB,     /* 0x30 */
+     SQLITE_NULL,     /* 0x31 */
+     SQLITE_TEXT,     /* 0x32 */
+     SQLITE_NULL,     /* 0x33 */
+     SQLITE_FLOAT,    /* 0x34 */
+     SQLITE_NULL,     /* 0x35 */
+     SQLITE_FLOAT,    /* 0x36 */
+     SQLITE_NULL,     /* 0x37 */
+     SQLITE_FLOAT,    /* 0x38 */
+     SQLITE_NULL,     /* 0x39 */
+     SQLITE_FLOAT,    /* 0x3a */
+     SQLITE_NULL,     /* 0x3b */
+     SQLITE_FLOAT,    /* 0x3c */
+     SQLITE_NULL,     /* 0x3d */
+     SQLITE_FLOAT,    /* 0x3e */
+     SQLITE_NULL,     /* 0x3f */
   };
+#ifdef SQLITE_DEBUG
+  {
+    int eType = SQLITE_BLOB;
+    if( pVal->flags & MEM_Null ){
+      eType = SQLITE_NULL;
+    }else if( pVal->flags & MEM_Int ){
+      eType = (pVal->flags & MEM_IntReal) ? SQLITE_FLOAT : SQLITE_INTEGER;
+    }else if( pVal->flags & MEM_Real ){
+      eType = SQLITE_FLOAT;
+    }else if( pVal->flags & MEM_Str ){
+      eType = SQLITE_TEXT;
+    }
+    assert( eType == aType[pVal->flags&MEM_AffMask] );
+  }
+#endif
   return aType[pVal->flags&MEM_AffMask];
 }
 
