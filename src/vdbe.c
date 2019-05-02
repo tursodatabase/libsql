@@ -1476,14 +1476,18 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   }
   if( (flags1 & (MEM_Str|MEM_Blob))==0 ){
     if( sqlite3VdbeMemStringify(pIn1,encoding,0) ) goto no_mem;
+    flags1 = pIn1->flags & ~MEM_Str;
   }else if( (flags1 & MEM_Zero)!=0 ){
     if( sqlite3VdbeMemExpandBlob(pIn1) ) goto no_mem;
+    flags1 = pIn1->flags & ~MEM_Str;
   }
   flags2 = pIn2->flags;
   if( (flags2 & (MEM_Str|MEM_Blob))==0 ){
     if( sqlite3VdbeMemStringify(pIn2,encoding,0) ) goto no_mem;
+    flags2 = pIn2->flags & ~MEM_Str;
   }else if( (flags2 & MEM_Zero)!=0 ){
     if( sqlite3VdbeMemExpandBlob(pIn2) ) goto no_mem;
+    flags2 = pIn2->flags & ~MEM_Str;
   }
   nByte = pIn1->n + pIn2->n;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){

@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sticket\s[ae0f637bddc5290b44669e066a].
-D 2019-05-01T19:01:27.714
+C Fix\san\sissue\s(discovered\sby\sOSSFuzz)\sin\sthe\senhanced\sOP_Concat\soperator\nfrom\scheck-in\s[713caa382cf7dd]\searlier\stoday.
+D 2019-05-02T00:52:50.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -591,7 +591,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 5061987401c2e8003177fa30d73196aa036727c8f04bf36a2df0c82b1904a236
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c c15d6a105c41db6a166b0aa9650829bdc0d92918a8926a92332ea1feb27c33ba
+F src/vdbe.c 36993059b87e7c2adf671aaa4ef5e0f826b6f4d95be15b019aee14308f0047b5
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 0e2c44958fb42d90a4eacb122d77e2d5b89b82f5e2b4b047b422962dc0346357
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5997d075665faca6b70fa647e877ebc84c473b32887b96235865d59ce80247f8
-R c6735d94da423c75a5fbf44f945ad851
+P ece481695fc3c959c3eba0fb485cdda43a10b06d17259b0121e15bfc5e8e8b9f
+R e11be1adfb0c3f0eaf3587a8d84226ea
 U drh
-Z bc6fd770927f38308301380ce5d36731
+Z 373f392215a854f1484c07e1e5f7b6f0
