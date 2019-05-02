@@ -3848,7 +3848,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
           ErrorMsg(lemp->filename,rp->ruleline,
             "%s(%s) has the same label as the LHS but is not the left-most "
             "symbol on the RHS.",
-            rp->rhs[i]->name, rp->rhsalias);
+            rp->rhs[i]->name, rp->rhsalias[i]);
           lemp->errorcnt++;
         }
         for(j=0; j<i; j++){

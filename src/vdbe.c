@@ -196,14 +196,6 @@ int sqlite3_found_count = 0;
 #endif
 
 /*
-** Convert the given register into a string if it isn't one
-** already. Return non-zero if a malloc() fails.
-*/
-#define Stringify(P, enc) \
-   if(((P)->flags&(MEM_Str|MEM_Blob))==0 && sqlite3VdbeMemStringify(P,enc,0)) \
-     { goto no_mem; }
-
-/*
 ** An ephemeral string value (signified by the MEM_Ephem flag) contains
 ** a pointer to a dynamically allocated string where some other entity
 ** is responsible for deallocating that string.  Because the register
@@ -522,6 +514,8 @@ static void memTracePrint(Mem *p){
     printf(p->flags & MEM_Zero ? " NULL-nochng" : " NULL");
   }else if( (p->flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
     printf(" si:%lld", p->u.i);
+  }else if( (p->flags & (MEM_Int|MEM_IntReal))==(MEM_Int|MEM_IntReal) ){
+    printf(" ir:%lld", p->u.i);
   }else if( p->flags & MEM_Int ){
     printf(" i:%lld", p->u.i);
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -1463,19 +1457,38 @@ case OP_ResultRow: {
 ** to avoid a memcpy().
 */
 case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
-  i64 nByte;
+  i64 nByte;          /* Total size of the output string or blob */
+  u16 flags1;         /* Initial flags for P1 */
+  u16 flags2;         /* Initial flags for P2 */
 
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
   pOut = &aMem[pOp->p3];
+  testcase( pIn1==pIn2 );
+  testcase( pOut==pIn2 );
   assert( pIn1!=pOut );
-  if( (pIn1->flags | pIn2->flags) & MEM_Null ){
+  flags1 = pIn1->flags;
+  testcase( flags1 & MEM_Null );
+  testcase( pIn2->flags & MEM_Null );
+  if( (flags1 | pIn2->flags) & MEM_Null ){
     sqlite3VdbeMemSetNull(pOut);
     break;
   }
-  if( ExpandBlob(pIn1) || ExpandBlob(pIn2) ) goto no_mem;
-  Stringify(pIn1, encoding);
-  Stringify(pIn2, encoding);
+  if( (flags1 & (MEM_Str|MEM_Blob))==0 ){
+    if( sqlite3VdbeMemStringify(pIn1,encoding,0) ) goto no_mem;
+    flags1 = pIn1->flags & ~MEM_Str;
+  }else if( (flags1 & MEM_Zero)!=0 ){
+    if( sqlite3VdbeMemExpandBlob(pIn1) ) goto no_mem;
+    flags1 = pIn1->flags & ~MEM_Str;
+  }
+  flags2 = pIn2->flags;
+  if( (flags2 & (MEM_Str|MEM_Blob))==0 ){
+    if( sqlite3VdbeMemStringify(pIn2,encoding,0) ) goto no_mem;
+    flags2 = pIn2->flags & ~MEM_Str;
+  }else if( (flags2 & MEM_Zero)!=0 ){
+    if( sqlite3VdbeMemExpandBlob(pIn2) ) goto no_mem;
+    flags2 = pIn2->flags & ~MEM_Str;
+  }
   nByte = pIn1->n + pIn2->n;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
@@ -1486,8 +1499,12 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   MemSetTypeFlag(pOut, MEM_Str);
   if( pOut!=pIn2 ){
     memcpy(pOut->z, pIn2->z, pIn2->n);
+    assert( (pIn2->flags & MEM_Dyn) == (flags2 & MEM_Dyn) );
+    pIn2->flags = flags2;
   }
   memcpy(&pOut->z[pIn2->n], pIn1->z, pIn1->n);
+  assert( (pIn1->flags & MEM_Dyn) == (flags1 & MEM_Dyn) );
+  pIn1->flags = flags1;
   pOut->z[nByte]=0;
   pOut->z[nByte+1] = 0;
   pOut->flags |= MEM_Term;
@@ -2765,12 +2782,20 @@ case OP_Affinity: {
   assert( pOp->p2>0 );
   assert( zAffinity[pOp->p2]==0 );
   pIn1 = &aMem[pOp->p1];
-  do{
+  while( 1 /*edit-by-break*/ ){
     assert( pIn1 <= &p->aMem[(p->nMem+1 - p->nCursor)] );
     assert( memIsValid(pIn1) );
-    applyAffinity(pIn1, *(zAffinity++), encoding);
+    applyAffinity(pIn1, zAffinity[0], encoding);
+    if( zAffinity[0]==SQLITE_AFF_REAL && (pIn1->flags & MEM_Int)!=0 ){
+      /* When applying REAL affinity, if the result is still MEM_Int, 
+      ** indicate that REAL is actually desired */
+      pIn1->flags |= MEM_IntReal;
+    }
+    REGISTER_TRACE((int)(pIn1-aMem), pIn1);
+    zAffinity++;
+    if( zAffinity[0]==0 ) break;
     pIn1++;
-  }while( zAffinity[0] );
+  }
   break;
 }
 
@@ -2791,7 +2816,6 @@ case OP_Affinity: {
 ** If P4 is NULL then all index fields have the affinity BLOB.
 */
 case OP_MakeRecord: {
-  u8 *zNewRecord;        /* A buffer to hold the data for the new record */
   Mem *pRec;             /* The new record */
   u64 nData;             /* Number of bytes of data space */
   int nHdr;              /* Number of bytes of header space */
@@ -2804,9 +2828,9 @@ case OP_MakeRecord: {
   int nField;            /* Number of fields in the record */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
-  int i;                 /* Space used in zNewRecord[] header */
-  int j;                 /* Space used in zNewRecord[] content */
   u32 len;               /* Length of a field */
+  u8 *zHdr;              /* Where to write next byte of the header */
+  u8 *zPayload;          /* Where to write next byte of the payload */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2933,34 +2957,34 @@ case OP_MakeRecord: {
       goto no_mem;
     }
   }
-  zNewRecord = (u8 *)pOut->z;
-
-  /* Write the record */
-  i = putVarint32(zNewRecord, nHdr);
-  j = nHdr;
-  assert( pData0<=pLast );
-  pRec = pData0;
-  do{
-    serial_type = pRec->uTemp;
-    /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
-    ** additional varints, one per column. */
-    i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
-    /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
-    ** immediately follow the header. */
-    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type); /* content */
-  }while( (++pRec)<=pLast );
-  assert( i==nHdr );
-  assert( j==nByte );
-
-  assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pOut->n = (int)nByte;
   pOut->flags = MEM_Blob;
   if( nZero ){
     pOut->u.nZero = nZero;
     pOut->flags |= MEM_Zero;
   }
-  REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
+  zHdr = (u8 *)pOut->z;
+  zPayload = zHdr + nHdr;
+
+  /* Write the record */
+  zHdr += putVarint32(zHdr, nHdr);
+  assert( pData0<=pLast );
+  pRec = pData0;
+  do{
+    serial_type = pRec->uTemp;
+    /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
+    ** additional varints, one per column. */
+    zHdr += putVarint32(zHdr, serial_type);            /* serial type */
+    /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
+    ** immediately follow the header. */
+    zPayload += sqlite3VdbeSerialPut(zPayload, pRec, serial_type); /* content */
+  }while( (++pRec)<=pLast );
+  assert( nHdr==(int)(zHdr - (u8*)pOut->z) );
+  assert( nByte==(int)(zPayload - (u8*)pOut->z) );
+
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
+  REGISTER_TRACE(pOp->p3, pOut);
   break;
 }
 

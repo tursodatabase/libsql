@@ -391,5 +391,13 @@ do_execsql_test 10.6 {
   SELECT * FROM t1;
 } {b a 3  b b 4}
 
+# 2019-04-29 ticket https://www.sqlite.org/src/info/3182d3879020ef3
+do_execsql_test 11.1 {
+  CREATE TABLE t11(a TEXT PRIMARY KEY, b INT) WITHOUT ROWID;
+  CREATE INDEX t11a ON t11(a COLLATE NOCASE);
+  INSERT INTO t11(a,b) VALUES ('A',1),('a',2);
+  PRAGMA integrity_check;
+  SELECT a FROM t11 ORDER BY a COLLATE binary;
+} {ok A a}
   
 finish_test

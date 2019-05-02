@@ -20,8 +20,8 @@ source [file join [file dirname [info script]] releasetest_data.tcl]
 #
 set G(platform) $::tcl_platform(os)-$::tcl_platform(machine)
 set G(test)     Normal
-set G(keep)     0
-set G(msvc)     0
+set G(keep)     1
+set G(msvc)     [expr {$::tcl_platform(platform)=="windows"}]
 set G(tcl)      [::tcl::pkgconfig get libdir,install]
 set G(jobs)     3
 set G(debug)    0
@@ -37,9 +37,6 @@ proc wapptest_init {} {
   # The root of the SQLite source tree.
   set G(srcdir)   [file dirname [file dirname [info script]]]
 
-  # releasetest.tcl script
-  set G(releaseTest) [file join [file dirname [info script]] releasetest.tcl]
-
   set G(sqlite_version) "unknown"
 
   # Either "config", "running" or "stopped":
@@ -52,28 +49,20 @@ proc wapptest_init {} {
   append G(host) " $::tcl_platform(machine) $::tcl_platform(byteOrder)"
 }
 
-# Check to see if there are uncommitted changes in the SQLite source
-# directory. Return true if there are, or false otherwise.
+# Generate the text for the box at the top of the UI. The current SQLite
+# version, according to fossil, along with a warning if there are 
+# uncommitted changes in the checkout.
 #
-proc check_uncommitted {} {
-  global G
-  set ret 0
-  set pwd [pwd]
-  cd $G(srcdir)
-  if {[catch {exec fossil changes} res]==0 && [string trim $res]!=""} {
-    set ret 1
-  }
-  cd $pwd
-  return $ret
-}
-
 proc generate_fossil_info {} {
   global G
   set pwd [pwd]
   cd $G(srcdir)
-  if {[catch {exec fossil info}    r1]} return
-  if {[catch {exec fossil changes} r2]} return
+  set rc [catch {
+    set r1 [exec fossil info]
+    set r2 [exec fossil changes]
+  }]
   cd $pwd
+  if {$rc} return
 
   foreach line [split $r1 "\n"] {
     if {[regexp {^checkout: *(.*)$} $line -> co]} {
@@ -208,6 +197,10 @@ proc count_tests_and_errors {name logfile} {
   }
 }
 
+# This command is invoked once a slave process has finished running its
+# tests, successfully or otherwise. Parameter $name is the name of the 
+# test, $rc the exit code returned by the slave process.
+#
 proc slave_test_done {name rc} {
   global G
   set G(test.$name.done) [clock seconds]
@@ -220,8 +213,31 @@ proc slave_test_done {name rc} {
   if {[file exists $G(test.$name.log)]} {
     count_tests_and_errors $name $G(test.$name.log)
   }
+
+  # If the "keep files" checkbox is clear, delete all files except for
+  # the executables and test logs. And any core file that is present.
+  if {$G(keep)==0} {
+    set keeplist {
+      testfixture testfixture.exe
+      sqlite3 sqlite3.exe
+      test.log test-out.txt
+      core
+      wapptest_make.sh
+      wapptest_configure.sh
+      wapptest_run.tcl
+    }
+    foreach f [glob -nocomplain [file join $G(test.$name.dir) *]] {
+      set t [file tail $f]
+      if {[lsearch $keeplist $t]<0} {
+        catch { file delete -force $f }
+      }
+    }
+  }
 }
 
+# This is a fileevent callback invoked each time a file-descriptor that
+# connects this process to a slave process is readable.
+#
 proc slave_fileevent {name} {
   global G
   set fd $G(test.$name.channel)
@@ -237,6 +253,99 @@ proc slave_fileevent {name} {
   }
 
   do_some_stuff
+}
+
+# Return the contents of the "slave script" - the script run by slave 
+# processes to actually perform the test. It does two things:
+#
+#   1. Reads and [exec]s the contents of file wapptest_configure.sh.
+#   2. Reads and [exec]s the contents of file wapptest_make.sh.
+#
+# Step 1 is omitted if the test uses MSVC (which does not use configure).
+#
+proc wapptest_slave_script {} {
+  global G
+  set res {
+    proc readfile {filename} {
+      set fd [open $filename]
+      set data [read $fd]
+      close $fd
+      return $data
+    }
+  }
+
+  if {$G(msvc)==0} { 
+    append res {
+      set cfg  [readfile wapptest_configure.sh]
+      set rc [catch { exec {*}$cfg >& test.log } msg]
+      if {$rc==0} {
+        set make [readfile wapptest_make.sh]
+        set rc [catch { exec {*}$make >>& test.log }]
+      }
+    } 
+  } else { 
+    append res {
+      set make [readfile wapptest_make.sh]
+      set rc [catch { exec {*}$make >>& test.log }]
+    }
+  }
+
+  append res { exit $rc }
+
+  set res
+}
+
+
+# Launch a slave process to run a test.
+#
+proc slave_launch {
+  name wtcl title dir configOpts testtarget makeOpts cflags opts
+} {
+  global G
+
+  catch { file mkdir $dir } msg
+  foreach f [glob -nocomplain [file join $dir *]] {
+    catch { file delete -force $f }
+  }
+  set G(test.$name.dir) $dir
+
+  # Write the configure command to wapptest_configure.sh. This file
+  # is empty if using MSVC - MSVC does not use configure.
+  #
+  set fd1 [open [file join $dir wapptest_configure.sh] w]
+  if {$G(msvc)==0} {
+    puts $fd1 "[file join .. $G(srcdir) configure] $wtcl $configOpts"
+  }
+  close $fd1
+
+  # Write the make command to wapptest_make.sh. Using nmake for MSVC and
+  # make for all other systems.
+  #
+  set makecmd "make"
+  if {$G(msvc)} { 
+    set nativedir [file nativename $G(srcdir)]
+    set nativedir [string map [list "\\" "\\\\"] $nativedir]
+    set makecmd "nmake /f [file join $nativedir Makefile.msc] TOP=$nativedir"
+  }
+  set fd2 [open [file join $dir wapptest_make.sh] w]
+  puts $fd2 "$makecmd $makeOpts $testtarget \"CFLAGS=$cflags\" \"OPTS=$opts\""
+  close $fd2
+
+  # Write the wapptest_run.tcl script to the test directory. To run the
+  # commands in the other two files.
+  #
+  set fd3 [open [file join $dir wapptest_run.tcl] w]
+  puts $fd3 [wapptest_slave_script]
+  close $fd3
+
+  set pwd [pwd]
+  cd $dir
+  set fd [open "|[info nameofexecutable] wapptest_run.tcl" r+]
+  cd $pwd
+
+  set G(test.$name.channel) $fd
+  fconfigure $fd -blocking 0
+  fileevent $fd readable [list slave_fileevent $name]
 }
 
 proc do_some_stuff {} {
@@ -275,15 +384,9 @@ proc do_some_stuff {} {
       if { ![info exists G(test.$name.channel)]
         && ![info exists G(test.$name.done)]
       } {
+
         set target [dict get $j target]
         set G(test.$name.start) [clock seconds]
-        set fd [open "|[info nameofexecutable] $G(releaseTest) --slave" r+]
-        set G(test.$name.channel) $fd
-        fconfigure $fd -blocking 0
-        fileevent $fd readable [list slave_fileevent $name]
-
-        puts $fd [list 0 $G(msvc) 0 $G(keep)]
-
         set wtcl ""
         if {$G(tcl)!=""} { set wtcl "--with-tcl=$G(tcl)" }
 
@@ -303,8 +406,9 @@ proc do_some_stuff {} {
         }
 
         set L [make_test_suite $G(msvc) $wtcl $name $target $opts]
-        puts $fd $L
-        flush $fd
+        set G(test.$name.log) [file join [lindex $L 1] test.log]
+        slave_launch $name $wtcl {*}$L
+
         set G(test.$name.log) [file join [lindex $L 1] test.log]
         incr nLaunch -1
       }
