@@ -270,13 +270,19 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 /*
 ** It is already known that pMem contains an unterminated string.
 ** Add the zero terminator.
+**
+** Three bytes of zero are added.  In this way, there is guaranteed
+** to be a double-zero byte at an even byte boundary in order to
+** terminate a UTF16 string, even if the initial size of the buffer
+** is an odd number of bytes.
 */
 static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
-  if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
+  if( sqlite3VdbeMemGrow(pMem, pMem->n+3, 1) ){
     return SQLITE_NOMEM_BKPT;
   }
   pMem->z[pMem->n] = 0;
   pMem->z[pMem->n+1] = 0;
+  pMem->z[pMem->n+2] = 0;
   pMem->flags |= MEM_Term;
   return SQLITE_OK;
 }
@@ -350,9 +356,9 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 }
 
 /*
-** Add MEM_Str to the set of representations for the given Mem.  Numbers
-** are converted using sqlite3_snprintf().  Converting a BLOB to a string
-** is a no-op.
+** Add MEM_Str to the set of representations for the given Mem.  This
+** routine is only called if pMem is a number of some kind, not a NULL
+** or a BLOB.
 **
 ** Existing representations MEM_Int and MEM_Real are invalidated if
 ** bForce is true but are retained if bForce is false.

@@ -1,5 +1,5 @@
-C Fix\sa\smemory-leak/segfault\scaused\sby\susing\sOP_OpenDup\sand\sOP_OpenEphemeral\son\sthe\ssame\sVM\scursor.
-D 2019-05-03T18:50:24.588
+C Ensure\sthat\sUTF16\sstrings\sare\sproperly\szero-terminated\sbefore\sreturning\sthem\nin\san\ssqlite3_value_text16()\srequest,\seven\sif\sthe\sstring\sis\sinvalid\sUTF16\nbecause\sit\swas\sformed\sfrom\san\sarbitrary\sand/or\sodd-length\sBLOB.
+D 2019-05-03T19:34:41.227
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -597,7 +597,7 @@ F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c 5ef992332225d8b6151137fcaf33b4ba4d38db7e7c51f871d2e9ecb960f3709a
 F src/vdbeaux.c f873b5c2efcf8a4d6ecfc5b1a5b06fd810419198f3bd882175d371cc03801873
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c df36fd36c7585e42869f3a44f5da5dc70e13306bc97ba52eebe069e174ba55db
+F src/vdbemem.c 42a33c8f00728fcf141b05f9c4d1bc3a2d34ebc4427b8631898e31fc22ea944d
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c 79d6dbbc479267b255a7de8080eee6e729928a0ef93ed9b0bfa5618875b48392
 F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
@@ -1822,7 +1822,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74ef97bf51dd531a277cf22fa4d42043d93799d5a5bd550812648834460fe0b7
-R 5407b1be905c1bcf46d2ef60d3252201
-U dan
-Z efe7ecc358ec0708b5835450f237d48e
+P a9b90aa12eecdd9f2a8b2d23da8b7cac43d8b1789f5cefa3f4e939d9f2b59269
+R 0f91a6c43eba1f33d4776f7747589015
+U drh
+Z 872a39f55a8963133e9f411eb3938cfd
