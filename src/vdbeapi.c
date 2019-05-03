@@ -234,70 +234,70 @@ const void *sqlite3_value_text16le(sqlite3_value *pVal){
 */
 int sqlite3_value_type(sqlite3_value* pVal){
   static const u8 aType[] = {
-     SQLITE_BLOB,     /* 0x00 */
-     SQLITE_NULL,     /* 0x01 */
-     SQLITE_TEXT,     /* 0x02 */
-     SQLITE_NULL,     /* 0x03 */
-     SQLITE_INTEGER,  /* 0x04 */
-     SQLITE_NULL,     /* 0x05 */
-     SQLITE_INTEGER,  /* 0x06 */
-     SQLITE_NULL,     /* 0x07 */
-     SQLITE_FLOAT,    /* 0x08 */
-     SQLITE_NULL,     /* 0x09 */
-     SQLITE_FLOAT,    /* 0x0a */
-     SQLITE_NULL,     /* 0x0b */
-     SQLITE_INTEGER,  /* 0x0c */
-     SQLITE_NULL,     /* 0x0d */
-     SQLITE_INTEGER,  /* 0x0e */
-     SQLITE_NULL,     /* 0x0f */
-     SQLITE_BLOB,     /* 0x10 */
-     SQLITE_NULL,     /* 0x11 */
-     SQLITE_TEXT,     /* 0x12 */
-     SQLITE_NULL,     /* 0x13 */
-     SQLITE_INTEGER,  /* 0x14 */
-     SQLITE_NULL,     /* 0x15 */
-     SQLITE_INTEGER,  /* 0x16 */
-     SQLITE_NULL,     /* 0x17 */
-     SQLITE_FLOAT,    /* 0x18 */
-     SQLITE_NULL,     /* 0x19 */
-     SQLITE_FLOAT,    /* 0x1a */
-     SQLITE_NULL,     /* 0x1b */
-     SQLITE_INTEGER,  /* 0x1c */
-     SQLITE_NULL,     /* 0x1d */
-     SQLITE_INTEGER,  /* 0x1e */
-     SQLITE_NULL,     /* 0x1f */
-     SQLITE_FLOAT,    /* 0x20 */
-     SQLITE_NULL,     /* 0x21 */
-     SQLITE_TEXT,     /* 0x22 */
-     SQLITE_NULL,     /* 0x23 */
-     SQLITE_FLOAT,    /* 0x24 */
-     SQLITE_NULL,     /* 0x25 */
-     SQLITE_FLOAT,    /* 0x26 */
-     SQLITE_NULL,     /* 0x27 */
-     SQLITE_FLOAT,    /* 0x28 */
-     SQLITE_NULL,     /* 0x29 */
-     SQLITE_FLOAT,    /* 0x2a */
-     SQLITE_NULL,     /* 0x2b */
-     SQLITE_FLOAT,    /* 0x2c */
-     SQLITE_NULL,     /* 0x2d */
-     SQLITE_FLOAT,    /* 0x2e */
-     SQLITE_NULL,     /* 0x2f */
-     SQLITE_BLOB,     /* 0x30 */
-     SQLITE_NULL,     /* 0x31 */
-     SQLITE_TEXT,     /* 0x32 */
-     SQLITE_NULL,     /* 0x33 */
-     SQLITE_FLOAT,    /* 0x34 */
-     SQLITE_NULL,     /* 0x35 */
-     SQLITE_FLOAT,    /* 0x36 */
-     SQLITE_NULL,     /* 0x37 */
-     SQLITE_FLOAT,    /* 0x38 */
-     SQLITE_NULL,     /* 0x39 */
-     SQLITE_FLOAT,    /* 0x3a */
-     SQLITE_NULL,     /* 0x3b */
-     SQLITE_FLOAT,    /* 0x3c */
-     SQLITE_NULL,     /* 0x3d */
-     SQLITE_FLOAT,    /* 0x3e */
-     SQLITE_NULL,     /* 0x3f */
+     SQLITE_BLOB,     /* 0x00 (not possible) */
+     SQLITE_NULL,     /* 0x01 NULL */
+     SQLITE_TEXT,     /* 0x02 TEXT */
+     SQLITE_NULL,     /* 0x03 (not possible) */
+     SQLITE_INTEGER,  /* 0x04 INTEGER */
+     SQLITE_NULL,     /* 0x05 (not possible) */
+     SQLITE_INTEGER,  /* 0x06 INTEGER + TEXT */
+     SQLITE_NULL,     /* 0x07 (not possible) */
+     SQLITE_FLOAT,    /* 0x08 FLOAT */
+     SQLITE_NULL,     /* 0x09 (not possible) */
+     SQLITE_FLOAT,    /* 0x0a FLOAT + TEXT */
+     SQLITE_NULL,     /* 0x0b (not possible) */
+     SQLITE_INTEGER,  /* 0x0c (not possible) */
+     SQLITE_NULL,     /* 0x0d (not possible) */
+     SQLITE_INTEGER,  /* 0x0e (not possible) */
+     SQLITE_NULL,     /* 0x0f (not possible) */
+     SQLITE_BLOB,     /* 0x10 BLOB */
+     SQLITE_NULL,     /* 0x11 (not possible) */
+     SQLITE_TEXT,     /* 0x12 (not possible) */
+     SQLITE_NULL,     /* 0x13 (not possible) */
+     SQLITE_INTEGER,  /* 0x14 INTEGER + BLOB */
+     SQLITE_NULL,     /* 0x15 (not possible) */
+     SQLITE_INTEGER,  /* 0x16 (not possible) */
+     SQLITE_NULL,     /* 0x17 (not possible) */
+     SQLITE_FLOAT,    /* 0x18 FLOAT + BLOB */
+     SQLITE_NULL,     /* 0x19 (not possible) */
+     SQLITE_FLOAT,    /* 0x1a (not possible) */
+     SQLITE_NULL,     /* 0x1b (not possible) */
+     SQLITE_INTEGER,  /* 0x1c (not possible) */
+     SQLITE_NULL,     /* 0x1d (not possible) */
+     SQLITE_INTEGER,  /* 0x1e (not possible) */
+     SQLITE_NULL,     /* 0x1f (not possible) */
+     SQLITE_FLOAT,    /* 0x20 INTREAL */
+     SQLITE_NULL,     /* 0x21 (not possible) */
+     SQLITE_TEXT,     /* 0x22 INTREAL + TEXT */
+     SQLITE_NULL,     /* 0x23 (not possible) */
+     SQLITE_FLOAT,    /* 0x24 (not possible) */
+     SQLITE_NULL,     /* 0x25 (not possible) */
+     SQLITE_FLOAT,    /* 0x26 (not possible) */
+     SQLITE_NULL,     /* 0x27 (not possible) */
+     SQLITE_FLOAT,    /* 0x28 (not possible) */
+     SQLITE_NULL,     /* 0x29 (not possible) */
+     SQLITE_FLOAT,    /* 0x2a (not possible) */
+     SQLITE_NULL,     /* 0x2b (not possible) */
+     SQLITE_FLOAT,    /* 0x2c (not possible) */
+     SQLITE_NULL,     /* 0x2d (not possible) */
+     SQLITE_FLOAT,    /* 0x2e (not possible) */
+     SQLITE_NULL,     /* 0x2f (not possible) */
+     SQLITE_BLOB,     /* 0x30 (not possible) */
+     SQLITE_NULL,     /* 0x31 (not possible) */
+     SQLITE_TEXT,     /* 0x32 (not possible) */
+     SQLITE_NULL,     /* 0x33 (not possible) */
+     SQLITE_FLOAT,    /* 0x34 (not possible) */
+     SQLITE_NULL,     /* 0x35 (not possible) */
+     SQLITE_FLOAT,    /* 0x36 (not possible) */
+     SQLITE_NULL,     /* 0x37 (not possible) */
+     SQLITE_FLOAT,    /* 0x38 (not possible) */
+     SQLITE_NULL,     /* 0x39 (not possible) */
+     SQLITE_FLOAT,    /* 0x3a (not possible) */
+     SQLITE_NULL,     /* 0x3b (not possible) */
+     SQLITE_FLOAT,    /* 0x3c (not possible) */
+     SQLITE_NULL,     /* 0x3d (not possible) */
+     SQLITE_FLOAT,    /* 0x3e (not possible) */
+     SQLITE_NULL,     /* 0x3f (not possible) */
   };
 #ifdef SQLITE_DEBUG
   {
