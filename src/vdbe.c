@@ -256,7 +256,7 @@ static VdbeCursor *allocateCursor(
     ** is clear. Otherwise, if this is an ephemeral cursor created by 
     ** OP_OpenDup, the cursor will not be closed and will still be part
     ** of a BtShared.pCursor list.  */
-    p->apCsr[iCur]->isEphemeral = 0;
+    if( p->apCsr[iCur]->pBtx==0 ) p->apCsr[iCur]->isEphemeral = 0;
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
@@ -3710,7 +3710,10 @@ case OP_OpenEphemeral: {
   if( pCx ){
     /* If the ephermeral table is already open, erase all existing content
     ** so that the table is empty again, rather than creating a new table. */
-    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+    assert( pCx->isEphemeral );
+    if( pCx->pBtx ){
+      rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+    }
   }else{
     pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
