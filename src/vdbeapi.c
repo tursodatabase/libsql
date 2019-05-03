@@ -563,6 +563,21 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   sqlite3OomFault(pCtx->pOut->db);
 }
 
+#ifndef SQLITE_UNTESTABLE
+/* Force the INT64 value currently stored as the result to be
+** a MEM_IntReal value.  See the SQLITE_TESTCTRL_RESULT_INTREAL
+** test-control.
+*/
+void sqlite3ResultIntReal(sqlite3_context *pCtx){ 
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  if( pCtx->pOut->flags & MEM_Int ){
+    pCtx->pOut->flags &= ~MEM_Int;
+    pCtx->pOut->flags |= MEM_IntReal;
+  }
+}
+#endif
+
+
 /*
 ** This function is called after a transaction has been committed. It 
 ** invokes callbacks registered with sqlite3_wal_hook() as required.

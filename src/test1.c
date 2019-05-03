@@ -999,6 +999,20 @@ static void nondeterministicFunction(
 }
 
 /*
+** This SQL function returns the integer value of its argument as a MEM_IntReal
+** value.
+*/
+static void intrealFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  sqlite3_int64 v = sqlite3_value_int64(argv[0]);
+  sqlite3_result_int64(context, v);
+  sqlite3_test_control(SQLITE_TESTCTRL_RESULT_INTREAL, context);
+}
+
+/*
 ** Usage:  sqlite3_create_function DB
 **
 ** Call the sqlite3_create_function API on the given database in order
@@ -1060,6 +1074,14 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "counter2", -1, SQLITE_UTF8|SQLITE_DETERMINISTIC,
           0, nondeterministicFunction, 0, 0);
+  }
+
+  /* The intreal() function converts its argument to an integer and returns
+  ** it as a MEM_IntReal.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "intreal", 1, SQLITE_UTF8,
+          0, intrealFunction, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16
