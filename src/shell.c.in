@@ -3877,6 +3877,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   }else{
     in = p->in;
     nLine = p->lineno;
+    if( in==0 ) in = stdin;
   }
   *pnData = 0;
   nLine++;
