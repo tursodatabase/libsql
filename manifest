@@ -1,5 +1,5 @@
-C In\sthe\ssqlite3_value\sor\sMem\sobject,\smake\sthe\sMEM_IntReal\stype\scompletely\nindependent\sfrom\sMEM_Int\sand\sMEM_Real.\sThis\shelps\savoid\sproblems\swhen\ninserting\snon-float\svalues\sinto\sa\s"REAL"\scolumn.
-D 2019-05-04T01:41:18.778
+C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
+D 2019-05-04T03:56:47.610
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -457,7 +457,7 @@ F src/alter.c 85b41586b2527c8288b249fb0beb96f25860e5b2bf94c02f788b3d0f686354ee
 F src/analyze.c 58db66344a5c58dcabb57f26696f6f2993956c830446da40b444051d2fdaf644
 F src/attach.c 78e986baee90cb7b83fb9eafa79c22581a8ada14030fd633b0683c95cf11213c
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
-F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
+F src/backup.c b1d37f6f7f5913944583733ed0f9e182f3ece0d42c27f46701142141a6e6fd33
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e048f240d9562ef0c6b87e9d8dfa31a08c262d6c8d52c1ac0d6ca340ed8188e0
@@ -1823,8 +1823,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a16ddf91f0c9c516a7fc2a9d4a4f69a8326f9b8ea66421e9ef1a2d663687b70 8b8ef445ccccc148af2cda5975986af0d134352fe16283f65d0f8a91c9ffa932
-R 5ebe49882e1d0bab8f5a82c53795cea5
-T +closed 8b8ef445ccccc148af2cda5975986af0d134352fe16283f65d0f8a91c9ffa932
-U drh
-Z b24c2d1d6f04cff04fe0a08f3591f34a
+P 5a8a23ee5f60a31dbd167a0966d1ab3d0f1c07df2251906cb73f23d1f5466b46
+R 29fe64c5387c71445cd8a73a2e3fad84
+U mistachkin
+Z 07cacb21f6144af7a617e9e62f40ea51
