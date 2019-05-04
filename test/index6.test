@@ -410,4 +410,17 @@ do_execsql_test index6-12.1 {
 do_execsql_test index6-12.2 {
   SELECT x FROM t2 WHERE x IN (SELECT a FROM t1) ORDER BY +x;
 } {1 2}
+
+# 2019-05-04
+# Ticket https://www.sqlite.org/src/tktview/5c6955204c392ae763a95
+# Theorem prover error
+#
+do_execsql_test index6-13.1 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0);
+  CREATE INDEX index_0 ON t0(c0) WHERE c0 NOT NULL;
+  INSERT INTO t0(c0) VALUES (NULL);
+  SELECT * FROM t0 WHERE c0 OR 1;
+} {{}}
+
 finish_test
