@@ -564,6 +564,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   flags = pMem->flags;
   if( flags & (MEM_Int|MEM_IntReal) ){
+    testcase( flags & MEM_IntReal );
     return pMem->u.i;
   }else if( flags & MEM_Real ){
     return doubleToInt64(pMem->u.r);
@@ -593,6 +594,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
   if( pMem->flags & MEM_Real ){
     return pMem->u.r;
   }else if( pMem->flags & (MEM_Int|MEM_IntReal) ){
+    testcase( pMem->flags & MEM_IntReal );
     return (double)pMem->u.i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     return memRealValue(pMem);
@@ -607,6 +609,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
 ** Return the value ifNull if pMem is NULL.  
 */
 int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
+  testcase( pMem->flags & MEM_IntReal );
   if( pMem->flags & (MEM_Int|MEM_IntReal) ) return pMem->u.i!=0;
   if( pMem->flags & MEM_Null ) return ifNull;
   return sqlite3VdbeRealValue(pMem)!=0.0;
@@ -688,6 +691,10 @@ static int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
 ** as much of the string as we can and ignore the rest.
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
+  testcase( pMem->flags & MEM_Int );
+  testcase( pMem->flags & MEM_Real );
+  testcase( pMem->flags & MEM_IntReal );
+  testcase( pMem->flags & MEM_Null );
   if( (pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Null))==0 ){
     int rc;
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
@@ -1496,7 +1503,12 @@ static int valueFromExpr(
     }else{
       sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
     }
-    if( pVal->flags & (MEM_Int|MEM_IntReal|MEM_Real) ) pVal->flags &= ~MEM_Str;
+    assert( (pVal->flags & MEM_IntReal)==0 );
+    if( pVal->flags & (MEM_Int|MEM_IntReal|MEM_Real) ){
+      testcase( pVal->flags & MEM_Int );
+      testcase( pVal->flags & MEM_Real );
+      pVal->flags &= ~MEM_Str;
+    }
     if( enc!=SQLITE_UTF8 ){
       rc = sqlite3VdbeChangeEncoding(pVal, enc);
     }

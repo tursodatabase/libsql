@@ -353,6 +353,9 @@ static void applyAffinity(
     ** CPU cycles. */
     if( 0==(pRec->flags&MEM_Str) ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags&(MEM_Real|MEM_Int|MEM_IntReal)) ){
+        testcase( pRec->flags & MEM_Int );
+        testcase( pRec->flags & MEM_Real );
+        testcase( pRec->flags & MEM_IntReal );
         sqlite3VdbeMemStringify(pRec, enc, 1);
       }
     }
@@ -416,9 +419,14 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
 */
 static u16 numericType(Mem *pMem){
   if( pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal) ){
+    testcase( pMem->flags & MEM_Int );
+    testcase( pMem->flags & MEM_Real );
+    testcase( pMem->flags & MEM_IntReal );
     return pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal);
   }
   if( pMem->flags & (MEM_Str|MEM_Blob) ){
+    testcase( pMem->flags & MEM_Str );
+    testcase( pMem->flags & MEM_Blob );
     return computeNumericType(pMem);
   }
   return 0;
@@ -1802,6 +1810,8 @@ case OP_MustBeInt: {            /* jump, in1 */
 case OP_RealAffinity: {                  /* in1 */
   pIn1 = &aMem[pOp->p1];
   if( pIn1->flags & (MEM_Int|MEM_IntReal) ){
+    testcase( pIn1->flags & MEM_Int );
+    testcase( pIn1->flags & MEM_IntReal );
     sqlite3VdbeMemRealify(pIn1);
   }
   break;
@@ -4382,6 +4392,8 @@ case OP_SeekRowid: {        /* jump, in3 */
   u64 iKey;
 
   pIn3 = &aMem[pOp->p3];
+  testcase( pIn3->flags & MEM_Int );
+  testcase( pIn3->flags & MEM_IntReal );
   if( (pIn3->flags & (MEM_Int|MEM_IntReal))==0 ){
     /* Make sure pIn3->u.i contains a valid integer representation of
     ** the key value, but do not change the datatype of the register, as

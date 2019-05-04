@@ -1865,6 +1865,8 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
     if( pMem->flags & (MEM_Int|MEM_IntReal) ){
+      testcase( pMem->flags & MEM_Int );
+      testcase( pMem->flags & MEM_IntReal );
       sqlite3VdbeMemRealify(pMem);
     }
   }
