@@ -1859,13 +1859,16 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pList = sqlite3ExprListAppend(pParse, 0, 
                   sqlite3ExprAlloc(db, TK_ID, &ipkToken, 0));
     if( pList==0 ) return;
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenRemap(pParse, pList->a[0].pExpr, &pTab->iPKey);
+    }
     pList->a[0].sortOrder = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
+    pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
     if( db->mallocFailed || pParse->nErr ) return;
     pPk = sqlite3PrimaryKeyIndex(pTab);
-    pTab->iPKey = -1;
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk!=0 );

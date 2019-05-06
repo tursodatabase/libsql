@@ -1,5 +1,5 @@
-C Fix\sthe\sNOT\sNULL\slogic\sin\sthe\stheorem\sprover\sthat\sdetermines\swhen\sa\spartial\nindex\scan\sbe\sused.\s\sTicket\s[5c6955204c392ae763a95].
-D 2019-05-04T17:32:07.463
+C Fix\sa\sproblem\swith\srenaming\san\sINTEGER\sPRIMARY\sKEY\scolumn\sof\sa\sWITHOUT\sROWID\stable\susing\sALTER\sTABLE.
+D 2019-05-06T16:15:28.529
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -463,7 +463,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e048f240d9562ef0c6b87e9d8dfa31a08c262d6c8d52c1ac0d6ca340ed8188e0
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c 2d9ddfeaf8e1dafc7e1fcc8a84e7a8b455199dac3b69037fc73af6279aa8447b
+F src/build.c 23e9332b260cd0e45f6cbfabe711957a0776ea3ff836746378868fdfa64d267b
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -627,7 +627,7 @@ F test/altercol.test 54374d2ba18af25bb24e23acf18a60270d4ec120b7ec0558078b59d5aa1
 F test/alterlegacy.test 82022721ce0de29cedc9a7af63bc9fcc078b0ee000f8283b4b6ea9c3eab2f44b
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
-F test/altertab.test 372df7d8f09e1ee22d23551677cedff3b048b0059c1f1b9a01a6401b94a2367c
+F test/altertab.test b6901287474841cffbd8f90b098d3bd7d8445868b42caeb01b27034698f7245f
 F test/altertab2.test 5d423a2d1006085b05cc1b788863d5a860ea2da21c4f892d15e2f2a34c78348a
 F test/altertab3.test 2433d0cc6cb9cffe087f9138cd36818c7abd5c396804aa6e6dc8c2b80e2cd406
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1823,7 +1823,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5862b83eb36b93016d37e5b86ebb183d891bb553901facab1e5d83e114a38ec3
-R 2a4f7414ec472ef9ce3b0f33b024a5f6
-U drh
-Z dbe61bccc5333ce6e53e70d9eca235ed
+P c2e439bccc40825e211bfa9a88e6a251ff066ca7453d4e7cb5eab56ce7332635
+R 7ba20988fc908649bb79cc600d524699
+U dan
+Z c4cd27021c89d31b393f236a10b2a3a7
