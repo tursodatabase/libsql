@@ -1,5 +1,5 @@
-C Optimize\ssome\scases\sof\srestarting\san\sRBU\svacuum.
-D 2019-05-04T20:04:42.728
+C Optimize\sfurther\scases\sof\srestarting\san\sRBU\svacuum.
+D 2019-05-06T20:40:23.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -359,7 +359,8 @@ F ext/rbu/rbutemplimit.test 7f408f49b90fa0a720d7599f3aec74a3c85e6cd78e56fdf726ce
 F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697d79f73534
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
-F ext/rbu/sqlite3rbu.c 03d4acabf6a51e0714eb4119379e06464f0158ca1d6a0ebd73769b82e7477a11
+F ext/rbu/rbuvacuum4.test fcae689344a28acf1013c9e2563d334f15ef741f5a16396945701ab90799e877
+F ext/rbu/sqlite3rbu.c e2669fb2a716615f38628a0477ecd665a040970501cba2511e9dffe066e2c9c8
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1823,10 +1824,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2e439bccc40825e211bfa9a88e6a251ff066ca7453d4e7cb5eab56ce7332635
-R 837402c2e896349b349ad51f4a993cdf
-T *branch * rbu-opt
-T *sym-rbu-opt *
-T -sym-trunk *
+P cdc09867ed6522026ae7bfac1f59cd79b60fba6d07d49b99b030a501a7059ee4
+R aeb9fedb3c4f55c16b474638fcef63d3
 U dan
-Z 5640124653d86c97ac59112e02d029e7
+Z ccdab55de99d2c516e9414504dca1a30

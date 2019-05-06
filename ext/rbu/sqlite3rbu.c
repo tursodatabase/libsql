@@ -1476,6 +1476,7 @@ static char *rbuVacuumTableStart(
           zSelect = rbuMPrintf(p, "%z%squote(\"%w\")", zSelect, zSep2, zCol);
           zSep = ", ";
           zSep2 = "||','||";
+          break;
         }
       }
       if( i==pIter->nTblCol ) break;
@@ -1500,6 +1501,100 @@ static char *rbuVacuumTableStart(
     sqlite3_free(zSelect);
     sqlite3_free(zList);
   }
+  return zRet;
+}
+
+char *rbuVacuumIndexStart(
+  sqlite3rbu *p, 
+  RbuObjIter *pIter
+){
+  char *zOrder = 0;
+  char *zLhs = 0;
+  char *zSelect = 0;
+  char *zVector = 0;
+  char *zRet = 0;
+  int bFailed = 0;
+
+  if( p->rc==SQLITE_OK ){
+    const char *zSep = "";
+    int iCol = 0;
+    sqlite3_stmt *pXInfo = 0;
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zIdx)
+    );
+    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+      int iCid = sqlite3_column_int(pXInfo, 1);
+      const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
+      const char *zCol;
+      if( sqlite3_column_int(pXInfo, 3) ){
+        bFailed = 1;
+        break;
+      }
+
+      if( iCid<0 ){
+        if( pIter->eType==RBU_PK_IPK ){
+          int i;
+          for(i=0; pIter->abTblPk[i]==0; i++);
+          assert( i<pIter->nTblCol );
+          zCol = pIter->azTblCol[i];
+        }else{
+          zCol = "_rowid_";
+        }
+      }else{
+        zCol = pIter->azTblCol[iCid];
+      }
+
+      zLhs = rbuMPrintf(p, "%z%s \"%w\" COLLATE %Q",
+          zLhs, zSep, zCol, zCollate
+      );
+      zOrder = rbuMPrintf(p, "%z%s \"rbu_imp_%d%w\" COLLATE %Q DESC",
+          zOrder, zSep, iCol, zCol, zCollate
+      );
+      zSelect = rbuMPrintf(p, "%z%s quote(\"rbu_imp_%d%w\")",
+          zSelect, zSep, iCol, zCol
+      );
+      zSep = ", ";
+      iCol++;
+    }
+    rbuFinalize(p, pXInfo);
+  }
+  if( bFailed ) goto index_start_out;
+
+  if( p->rc==SQLITE_OK ){
+    int iCol;
+    sqlite3_stmt *pSel = 0;
+
+    if( p->rc==SQLITE_OK ){
+      p->rc = prepareFreeAndCollectError(p->dbMain, &pSel, &p->zErrmsg,
+          sqlite3_mprintf("SELECT %s FROM \"rbu_imp_%w\" ORDER BY %s LIMIT 1",
+            zSelect, pIter->zTbl, zOrder
+          )
+      );
+    }
+    if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSel) ){
+      const char *zSep = "";
+      for(iCol=0; iCol<pIter->nCol; iCol++){
+        const char *zQuoted = (const char*)sqlite3_column_text(pSel, iCol);
+        if( zQuoted[0]=='N' ){
+          bFailed = 1;
+          break;
+        }
+        zVector = rbuMPrintf(p, "%z%s%s", zVector, zSep, zQuoted);
+        zSep = ", ";
+      }
+
+      if( !bFailed ){
+        zRet = rbuMPrintf(p, "(%s) > (%s)", zLhs, zVector);
+      }
+    }
+    rbuFinalize(p, pSel);
+  }
+
+ index_start_out:
+  sqlite3_free(zOrder);
+  sqlite3_free(zSelect);
+  sqlite3_free(zVector);
+  sqlite3_free(zLhs);
   return zRet;
 }
 
@@ -2179,12 +2274,24 @@ static int rbuObjIterPrepareAll(
       if( p->rc==SQLITE_OK ){
         char *zSql;
         if( rbuIsVacuum(p) ){
+          const char *zStart = 0;
+          if( nOffset ){
+            zStart = rbuVacuumIndexStart(p, pIter);
+            if( zStart ){
+              sqlite3_free(zLimit);
+              zLimit = 0;
+            }
+          }
+
           zSql = sqlite3_mprintf(
-              "SELECT %s, 0 AS rbu_control FROM '%q' %s ORDER BY %s%s",
+              "SELECT %s, 0 AS rbu_control FROM '%q' %s %s %s ORDER BY %s%s",
               zCollist, 
               pIter->zDataTbl,
-              zPart, zCollist, zLimit
+              zPart, 
+              (zStart ? (zPart ? "AND" : "WHERE") : ""), zStart,
+              zCollist, zLimit
           );
+          sqlite3_free(zStart);
         }else
 
         if( pIter->eType==RBU_PK_EXTERNAL || pIter->eType==RBU_PK_NONE ){
@@ -2207,7 +2314,11 @@ static int rbuObjIterPrepareAll(
               zCollist, zLimit
           );
         }
-        p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz, zSql);
+        if( p->rc==SQLITE_OK ){
+          p->rc = prepareFreeAndCollectError(p->dbRbu,&pIter->pSelect,pz,zSql);
+        }else{
+          sqlite3_free(zSql);
+        }
       }
 
       sqlite3_free(zImposterCols);
