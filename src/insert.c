@@ -814,7 +814,7 @@ void sqlite3Insert(
     int nIdx;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, -1, 0,
                                       &iDataCur, &iIdxCur);
-    aRegIdx = sqlite3DbMallocRawNN(db, sizeof(int)*(nIdx+1));
+    aRegIdx = sqlite3DbMallocRawNN(db, sizeof(int)*(nIdx+2));
     if( aRegIdx==0 ){
       goto insert_cleanup;
     }
@@ -823,6 +823,7 @@ void sqlite3Insert(
       aRegIdx[i] = ++pParse->nMem;
       pParse->nMem += pIdx->nColumn;
     }
+    aRegIdx[i] = ++pParse->nMem;  /* Register to store the table record */
   }
 #ifndef SQLITE_OMIT_UPSERT
   if( pUpsert ){
@@ -1225,6 +1226,14 @@ int sqlite3ExprReferencesUpdatedColumn(
 ** indices where aRegIdx[i]==0.  The order of indices in aRegIdx[] is
 ** the same as the order of indices on the linked list of indices
 ** at pTab->pIndex.
+**
+** (2019-05-07) The generated code also creates a new record for the
+** main table, if pTab is a rowid table, and stores that record in the
+** register identified by aRegIdx[nIdx] - in other words in the first
+** entry of aRegIdx[] past the last index.  It is important that the
+** record be generated during constraint checks to avoid affinity changes
+** to the register content that occur after constraint checks but before
+** the new record is inserted.
 **
 ** The caller must have already opened writeable cursors on the main
 ** table and all applicable indices (that is to say, all indices for which
@@ -1845,6 +1854,16 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeJumpHere(v, ipkBottom);
   }
 
+  /* Generate the table record */
+  if( HasRowid(pTab) ){
+    int regRec = aRegIdx[ix];
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regNewData+1, pTab->nCol, regRec);
+    sqlite3SetMakeRecordP5(v, pTab);
+    if( !bAffinityDone ){
+      sqlite3TableAffinity(v, pTab, 0);
+    }
+  }
+
   *pbMayReplace = seenReplace;
   VdbeModuleComment((v, "END: GenCnstCks(%d)", seenReplace));
 }
@@ -1894,10 +1913,7 @@ void sqlite3CompleteInsertion(
   Vdbe *v;            /* Prepared statements under construction */
   Index *pIdx;        /* An index being inserted or updated */
   u8 pik_flags;       /* flag values passed to the btree insert */
-  int regData;        /* Content registers (after the rowid) */
-  int regRec;         /* Register holding assembled record for the table */
   int i;              /* Loop counter */
-  u8 bAffinityDone = 0; /* True if OP_Affinity has been run already */
 
   assert( update_flags==0
        || update_flags==OPFLAG_ISUPDATE
@@ -1909,7 +1925,6 @@ void sqlite3CompleteInsertion(
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( aRegIdx[i]==0 ) continue;
-    bAffinityDone = 1;
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
@@ -1937,13 +1952,6 @@ void sqlite3CompleteInsertion(
     sqlite3VdbeChangeP5(v, pik_flags);
   }
   if( !HasRowid(pTab) ) return;
-  regData = regNewData + 1;
-  regRec = sqlite3GetTempReg(pParse);
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
-  sqlite3SetMakeRecordP5(v, pTab);
-  if( !bAffinityDone ){
-    sqlite3TableAffinity(v, pTab, 0);
-  }
   if( pParse->nested ){
     pik_flags = 0;
   }else{
@@ -1956,7 +1964,7 @@ void sqlite3CompleteInsertion(
   if( useSeekResult ){
     pik_flags |= OPFLAG_USESEEKRESULT;
   }
-  sqlite3VdbeAddOp3(v, OP_Insert, iDataCur, regRec, regNewData);
+  sqlite3VdbeAddOp3(v, OP_Insert, iDataCur, aRegIdx[i], regNewData);
   if( !pParse->nested ){
     sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
   }
