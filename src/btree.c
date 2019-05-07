@@ -7989,6 +7989,7 @@ static int balance_nonroot(
       while( i==cntOldNext ){
         iOld++;
         assert( iOld<nNew || iOld<nOld );
+        assert( iOld>=0 && iOld<NB );
         pOld = iOld<nNew ? apNew[iOld] : apOld[iOld];
         cntOldNext += pOld->nCell + pOld->nOverflow + !leafData;
       }
