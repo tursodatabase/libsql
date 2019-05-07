@@ -71,6 +71,7 @@ do_execsql_test 4.0 {
   INSERT INTO x1 VALUES(NULL, 2, 5, NULL);
 
   CREATE INDEX x1ad ON x1(d, a);
+  CREATE INDEX x1null ON x1(d, a) WHERE d>15;
 }
 
 do_rbu_vacuum_test 4.1.1 1
@@ -81,6 +82,26 @@ do_execsql_test 4.2 {
 
 do_rbu_vacuum_test 4.1.2 0
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE "a b c"(a, "b b" PRIMARY KEY, "c c");
+  CREATE INDEX abc1 ON "a b c"(a, "c c");
 
+  INSERT INTO "a b c" VALUES(NULL, 'a', NULL);
+  INSERT INTO "a b c" VALUES(NULL, 'b', NULL);
+  INSERT INTO "a b c" VALUES(NULL, 'c', NULL);
+
+  INSERT INTO "a b c" VALUES(1, 2, 3);
+  INSERT INTO "a b c" VALUES(3, 9, 1);
+  INSERT INTO "a b c" VALUES('aaa', 'bbb', 'ccc');
+
+  CREATE TABLE x(a);
+  INSERT INTO x VALUES('a'), ('b'), ('d');
+  CREATE UNIQUE INDEX y ON x(a);
+}
+
+do_rbu_vacuum_test 5.1 1
+
+finish_test
 

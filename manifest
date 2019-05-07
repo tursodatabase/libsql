@@ -1,5 +1,5 @@
-C Optimize\sfurther\scases\sof\srestarting\san\sRBU\svacuum.
-D 2019-05-06T20:40:23.801
+C Remove\ssome\sredundant\scode\sfrom\ssqlite3rbu.c.\sAdd\stest\scases\sfor\sRBU\svacuum.
+D 2019-05-07T16:28:50.534
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -359,8 +359,8 @@ F ext/rbu/rbutemplimit.test 7f408f49b90fa0a720d7599f3aec74a3c85e6cd78e56fdf726ce
 F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697d79f73534
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
-F ext/rbu/rbuvacuum4.test fcae689344a28acf1013c9e2563d334f15ef741f5a16396945701ab90799e877
-F ext/rbu/sqlite3rbu.c e2669fb2a716615f38628a0477ecd665a040970501cba2511e9dffe066e2c9c8
+F ext/rbu/rbuvacuum4.test 08abd9e18d8aee5bb812de0d6a928cc8bbacae58ecb1f150637e80f4c93c8afa
+F ext/rbu/sqlite3rbu.c ec93d28c5cef16ccef7ed76c2b6c410e8eb078c73705b6e7b683f88f722228f2
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1824,7 +1824,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cdc09867ed6522026ae7bfac1f59cd79b60fba6d07d49b99b030a501a7059ee4
-R aeb9fedb3c4f55c16b474638fcef63d3
+P 6b3261bfa1d762aa29a57244a30cf5e35655f1fe9c30ee682c186dec29d7a2c2
+R 4a715a784b4b470a8ebf2ddbf655a0cc
 U dan
-Z ccdab55de99d2c516e9414504dca1a30
+Z c393b32565e9671e4034603b54f16352

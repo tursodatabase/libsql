@@ -930,7 +930,8 @@ static void rbuTargetNameFunc(
   zIn = (const char*)sqlite3_value_text(argv[0]);
   if( zIn ){
     if( rbuIsVacuum(p) ){
-      if( argc==1 || 0==sqlite3_value_int(argv[1]) ){
+      assert( argc==2 );
+      if( 0==sqlite3_value_int(argv[1]) ){
         sqlite3_result_text(pCtx, zIn, -1, SQLITE_STATIC);
       }
     }else{
@@ -1417,10 +1418,18 @@ static char *rbuObjIterGetCollist(
   return zList;
 }
 
+/*
+** Return a comma separated list of the quoted PRIMARY KEY column names,
+** in order, for the current table. Before each column name, add the text
+** zPre. After each column name, add the zPost text. Use zSeparator as
+** the separator text (usually ", ").
+*/
 static char *rbuObjIterGetPkList(
   sqlite3rbu *p,                  /* RBU object */
   RbuObjIter *pIter,              /* Object iterator for column names */
-  const char *zExtra
+  const char *zPre,               /* Before each quoted column name */
+  const char *zSeparator,         /* Separator to use between columns */
+  const char *zPost               /* After each quoted column name */
 ){
   int iPk = 1;
   char *zRet = 0;
@@ -1430,8 +1439,9 @@ static char *rbuObjIterGetPkList(
     for(i=0; i<pIter->nTblCol; i++){
       if( (int)pIter->abTblPk[i]==iPk ){
         const char *zCol = pIter->azTblCol[i];
-        zRet = rbuMPrintf(p, "%z%s\"%w\"%s", zRet, zSep, zCol, zExtra);
-        zSep = ", ";
+        zRet = rbuMPrintf(p, "%z%s%s\"%w\"%s", zRet, zSep, zPre, zCol, zPost);
+        zSep = zSeparator;
+        break;
       }
     }
     if( i==pIter->nTblCol ) break;
@@ -1440,11 +1450,30 @@ static char *rbuObjIterGetPkList(
   return zRet;
 }
 
+/*
+** This function is called as part of restarting an RBU vacuum within 
+** stage 1 of the process (while the *-oal file is being built) while
+** updating a table (not an index). The table may be a rowid table or
+** a WITHOUT ROWID table. It queries the target database to find the 
+** largest key that has already been written to the target table and
+** constructs a WHERE clause that can be used to extract the remaining
+** rows from the source table. For a rowid table, the WHERE clause
+** is of the form:
+**
+**     "WHERE _rowid_ > ?"
+**
+** and for WITHOUT ROWID tables:
+**
+**     "WHERE (key1, key2) > (?, ?)"
+**
+** Instead of "?" placeholders, the actual WHERE clauses created by
+** this function contain literal SQL values.
+*/
 static char *rbuVacuumTableStart(
-  sqlite3rbu *p, 
-  RbuObjIter *pIter,
-  int bRowid,
-  const char *zWrite
+  sqlite3rbu *p,                  /* RBU handle */
+  RbuObjIter *pIter,              /* RBU iterator object */
+  int bRowid,                     /* True for a rowid table */
+  const char *zWrite              /* Target table name prefix */
 ){
   sqlite3_stmt *pMax = 0;
   char *zRet = 0;
@@ -1460,28 +1489,9 @@ static char *rbuVacuumTableStart(
     }
     rbuFinalize(p, pMax);
   }else{
-    char *zOrder = 0;
-    char *zSelect = 0;
-    char *zList = 0;
-    int iPk = 1;
-    const char *zSep = "";
-    const char *zSep2 = "";
-    while( 1 ){
-      int i;
-      for(i=0; i<pIter->nTblCol; i++){
-        if( (int)pIter->abTblPk[i]==iPk ){
-          const char *zCol = pIter->azTblCol[i];
-          zOrder = rbuMPrintf(p, "%z%s\"%w\" DESC", zOrder, zSep, zCol);
-          zList = rbuMPrintf(p, "%z%s\"%w\"", zList, zSep, zCol);
-          zSelect = rbuMPrintf(p, "%z%squote(\"%w\")", zSelect, zSep2, zCol);
-          zSep = ", ";
-          zSep2 = "||','||";
-          break;
-        }
-      }
-      if( i==pIter->nTblCol ) break;
-      iPk++;
-    }
+    char *zOrder = rbuObjIterGetPkList(p, pIter, "", ", ", " DESC");
+    char *zSelect = rbuObjIterGetPkList(p, pIter, "quote(", "||','||", ")");
+    char *zList = rbuObjIterGetPkList(p, pIter, "", ", ", "");
 
     if( p->rc==SQLITE_OK ){
       p->rc = prepareFreeAndCollectError(p->dbMain, &pMax, &p->zErrmsg, 
@@ -1504,9 +1514,31 @@ static char *rbuVacuumTableStart(
   return zRet;
 }
 
+/*
+** This function is called as part of restating an RBU vacuum when the
+** current operation is writing content to an index. If possible, it
+** queries the target index b-tree for the largest key already written to
+** it, then composes and returns an expression that can be used in a WHERE 
+** clause to select the remaining required rows from the source table. 
+** It is only possible to return such an expression if:
+**
+**   * The index contains no DESC columns, and
+**   * The last key written to the index before the operation was 
+**     suspended does not contain any NULL values.
+**
+** The expression is of the form:
+**
+**   (index-field1, index-field2, ...) > (?, ?, ...)
+**
+** except that the "?" placeholders are replaced with literal values.
+**
+** If the expression cannot be created, NULL is returned. In this case,
+** the caller has to use an OFFSET clause to extract only the required 
+** rows from the sourct table, just as it does for an RBU update operation.
+*/
 char *rbuVacuumIndexStart(
-  sqlite3rbu *p, 
-  RbuObjIter *pIter
+  sqlite3rbu *p,                  /* RBU handle */
+  RbuObjIter *pIter               /* RBU iterator object */
 ){
   char *zOrder = 0;
   char *zLhs = 0;
@@ -2274,7 +2306,7 @@ static int rbuObjIterPrepareAll(
       if( p->rc==SQLITE_OK ){
         char *zSql;
         if( rbuIsVacuum(p) ){
-          const char *zStart = 0;
+          char *zStart = 0;
           if( nOffset ){
             zStart = rbuVacuumIndexStart(p, pIter);
             if( zStart ){
@@ -2435,7 +2467,7 @@ static int rbuObjIterPrepareAll(
           if( bRbuRowid ){
             zOrder = rbuMPrintf(p, "_rowid_");
           }else{
-            zOrder = rbuObjIterGetPkList(p, pIter, "");
+            zOrder = rbuObjIterGetPkList(p, pIter, "", ", ", "");
           }
         }
 
