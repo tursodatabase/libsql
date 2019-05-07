@@ -1,5 +1,5 @@
-C On\san\sINSERT\sor\sUPDATE,\sgenerate\sthe\snew\stable\srecord\sprior\sto\srunning\nforeign\skey\schecks,\sin\scase\sthe\sforeign\skey\schecks\schanges\sdatatypes\son\nthe\sregisters\sholding\scolumn\svalues.\s\sProposed\sfix\sfor\sticket\n[e63cbcfd3378afe6980d626].
-D 2019-05-07T19:13:42.131
+C Add\stest\scases\sfor\sthe\sfix\son\sthis\sbranch.
+D 2019-05-07T19:21:58.832
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -859,7 +859,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 24dd28eb3d9f1b5a174f47e9899ace5facb08373a4223593c8c631e6cf9f7d5a
 F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 24076d43d3449f12f25503909ca4bfb5fc5fefd5af1f930723a496343eb28454
-F test/fkey8.test 863c6d84f0d289fd2c1a1c293abb9803f77efd35211d9012c0986c8f6ccf5d5a
+F test/fkey8.test 1d44df25d3b9cba72db4b4324201daf6ae1fc8a85cb68146bd6669a977d8867d
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test eb93a2f34137bb87bdab88fcab06c0bd92719aff
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -1824,10 +1824,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b6691f619ed9a56f6aecbd878ebb447c40984f8767508b248494fd9ec68fbaa
-R ac9c1b91c829d87b45248e874c9bfe36
-T *branch * tkt-e63cbcfd
-T *sym-tkt-e63cbcfd *
-T -sym-trunk *
-U drh
-Z 017803aae35252cbb0229aaaad801bc4
+P 3f1c8051648a341db4dffad66d3b1f9980d8a2b314cb0ce879cb2a10d1779b84
+R 2d97d9191e7764860c32bedf82b06a8b
+U dan
+Z 37627195381a6f7ef79ed6ec381c9c3a
