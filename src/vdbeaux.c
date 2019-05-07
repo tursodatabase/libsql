@@ -2896,7 +2896,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
 
     /* Check for immediate foreign key violations. */
-    if( p->rc==SQLITE_OK ){
+    if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
       sqlite3VdbeCheckFk(p, 0);
     }
   
