@@ -1085,6 +1085,16 @@ static int exprStructSize(Expr *p){
 }
 
 /*
+** Copy the complete content of an Expr node, taking care not to read
+** past the end of the structure for a reduced-size version of the source
+** Expr.
+*/
+static void exprNodeCopy(Expr *pDest, Expr *pSrc){
+  memset(pDest, 0, sizeof(Expr));
+  memcpy(pDest, pSrc, exprStructSize(pSrc));
+}
+
+/*
 ** The dupedExpr*Size() routines each return the number of bytes required
 ** to store a copy of an expression or expression tree.  They differ in
 ** how much of the tree is measured.
@@ -4107,7 +4117,7 @@ expr_code_doover:
       nExpr = pEList->nExpr;
       endLabel = sqlite3VdbeMakeLabel(v);
       if( (pX = pExpr->pLeft)!=0 ){
-        tempX = *pX;
+        exprNodeCopy(&tempX, pX);
         testcase( pX->op==TK_COLUMN );
         exprToRegister(&tempX, exprCodeVector(pParse, &tempX, &regFree1));
         testcase( regFree1==0 );
@@ -4432,13 +4442,12 @@ static void exprCodeBetween(
   Expr exprX;       /* The  x  subexpression */
   int regFree1 = 0; /* Temporary use register */
 
-
   memset(&compLeft, 0, sizeof(Expr));
   memset(&compRight, 0, sizeof(Expr));
   memset(&exprAnd, 0, sizeof(Expr));
 
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  exprX = *pExpr->pLeft;
+  exprNodeCopy(&exprX, pExpr->pLeft);
   exprAnd.op = TK_AND;
   exprAnd.pLeft = &compLeft;
   exprAnd.pRight = &compRight;
