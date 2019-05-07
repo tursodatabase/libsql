@@ -1,5 +1,5 @@
-C Do\snot\scommit\san\s"OR\sFAIL"\sstatement\sthat\scauses\sforiegn\skey\sconstraint\sviolations.
-D 2019-05-07T19:44:11.323
+C Generate\sall\srecords\sfor\sINSERT\sor\sUPDATE\sprior\sto\srunning\sforeign\skey\nconstraint\schecks,\ssince\sthe\sFK\schecks\smight\smodify\sthe\sdatatype\sof\sregisters\nused\sto\sgenerate\sthe\srecords.\s\sFix\sfor\sticket\s[e63cbcfd3378afe6980d6].
+D 2019-05-07T20:06:41.906
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c fc3cf5c371f9a400144e8c2f148ab29cd3f67f7da7eaf47e6a6959f8255fd92c
+F src/insert.c 4ffc3aa5d2aed178b501533428a76e150907e92a1e4bf7af4ffbcb0d77e99823
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
 F src/main.c 3c3925b0bcb4c45687fd52f54c79e98e379252e1d3393f8b7dcccfa26181b661
@@ -587,7 +587,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c 56724725c62a0d0f408f7c257475dc33309198afee36a1d18be1bc268b09055e
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
-F src/update.c 0b973357d88092140531e07ff641139c26fb4380b0b9f5ed98c5f7691b4604d1
+F src/update.c fb29c2eb1f52a5009fd0e00f5041fb6ae14a7f9a5048da220e45e804c61b3559
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 5061987401c2e8003177fa30d73196aa036727c8f04bf36a2df0c82b1904a236
@@ -859,7 +859,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 24dd28eb3d9f1b5a174f47e9899ace5facb08373a4223593c8c631e6cf9f7d5a
 F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d031
-F test/fkey8.test 863c6d84f0d289fd2c1a1c293abb9803f77efd35211d9012c0986c8f6ccf5d5a
+F test/fkey8.test 1d44df25d3b9cba72db4b4324201daf6ae1fc8a85cb68146bd6669a977d8867d
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test eb93a2f34137bb87bdab88fcab06c0bd92719aff
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -1824,7 +1824,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b6691f619ed9a56f6aecbd878ebb447c40984f8767508b248494fd9ec68fbaa
-R f2edd00aa596a467ac6bf1c6aa5d2bbb
-U dan
-Z 61f5f496efda33a1a9f7b2adc6f41ef1
+P 659c551dcc374a0d349ba9419f692e3363839e11d791a17cc35fa1854a674a51 2e31abe0ae5937a8ce10179e0ae045ee4c5ed8b7e2622ab41243226c6d3f5425
+R fa2fed430d13a58c5e4ca86a2cdaef6a
+T +closed 2e31abe0ae5937a8ce10179e0ae045ee4c5ed8b7e2622ab41243226c6d3f5425
+U drh
+Z 73823319e7fa571b2383dfdc2d83370b
