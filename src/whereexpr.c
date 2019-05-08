@@ -262,6 +262,7 @@ static int isLikeOrGlob(
           zNew[iTo++] = zNew[iFrom];
         }
         zNew[iTo] = 0;
+        assert( iTo>0 );
 
         /* If the RHS begins with a digit or a +/- sign, then the LHS must be
         ** an ordinary column (not a virtual table column) with TEXT affinity.
@@ -278,7 +279,7 @@ static int isLikeOrGlob(
         if( sqlite3Isdigit(zNew[0])
          || zNew[0]=='-'
          || zNew[0]=='+'
-         || (iTo>0 && zNew[iTo-1]=='0'-1)
+         || zNew[iTo-1]=='0'-1
         ){
           if( pLeft->op!=TK_COLUMN 
            || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 

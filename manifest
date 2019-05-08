@@ -1,5 +1,5 @@
-C Add\sanother\stest\scase\sto\scover\sa\spreviously\suncovered\sbranch\sin\sthe\sRBU\smodule.
-D 2019-05-08T21:14:48.819
+C This\sis\spart\sof\sthe\sprevious\scheck-in\sthat\sdidn't\sget\scommitted\sfor\ssome\nreason\s-\sprobably\sbecause\sI\sfailed\sto\spress\sthe\s"Save"\sbutton\son\sthe\stext\neditor.
+D 2019-05-08T23:53:50.194
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -610,7 +610,7 @@ F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 99c7b718ef846ac952016083aaf4e22ede2290beceaf4730a2df55c023251369
 F src/whereInt.h 5f14db426ca46a83eabab1ae9aa6d4b8f27504ad35b64c290916289b1ddb2e88
 F src/wherecode.c 37a1004237d630d785c47bba2290eac652a7a8b0047518eba3cb7c808b604c4a
-F src/whereexpr.c 3a8abba627bffcd930c181bbd78cf5d31c5ef496126d49d0ba94874db16efa33
+F src/whereexpr.c 4219bdd5d310ba6424166d918efef301c21e1b7f6444e964b415c4a5b877a8fe
 F src/window.c 038c248267e74ff70a2bb9b1884d40fd145c5183b017823ecb6cbb14bc781478
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 740201107ae802c12b678e388ea524db01ad0eb70601c78490ad63eae0fe6cf1
-R ff7ca0f394a79f92ff440e2186231855
-U dan
-Z 1ece81ab31ff84ed46fe80ddad119ab3
+P 30392985612c51d4583a905f8fe766f08cd31b86d0e30a977adc6a6705649e00
+R 527f1e4ee0ee395de6eadc091c1777d2
+U drh
+Z 591de9be94bcabeead88d40aa6c4161a
