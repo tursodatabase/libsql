@@ -1811,9 +1811,9 @@ static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
 }
 
 /*
-** Register the built-in LIKE and GLOB functions.  The caseSensitive
+** Re-register the built-in LIKE functions.  The caseSensitive
 ** parameter determines whether or not the LIKE operator is case
-** sensitive.  GLOB is always case sensitive.
+** sensitive.
 */
 void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
   struct compareInfo *pInfo;
@@ -1824,9 +1824,6 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
   }
   sqlite3CreateFunc(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
   sqlite3CreateFunc(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
-  sqlite3CreateFunc(db, "glob", 2, SQLITE_UTF8, 
-      (struct compareInfo*)&globInfo, likeFunc, 0, 0, 0, 0, 0);
-  setLikeOptFlag(db, "glob", SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE);
   setLikeOptFlag(db, "like", 
       caseSensitive ? (SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE) : SQLITE_FUNC_LIKE);
 }
