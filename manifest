@@ -1,5 +1,5 @@
-C Add\stests\sto\simprove\scode\scoverage\sof\sthe\sRBU\smodule.
-D 2019-05-08T18:49:51.870
+C Avoid\san\sexcess\sregister\sallocation\sin\sUPDATE,\swhen\spossible.\s\sThis\simproves\nspeed\s(slightly)\sand\sreduces\sthe\scode\sfootprint.
+D 2019-05-08T19:06:59.709
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c 56724725c62a0d0f408f7c257475dc33309198afee36a1d18be1bc268b09055e
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
-F src/update.c fb29c2eb1f52a5009fd0e00f5041fb6ae14a7f9a5048da220e45e804c61b3559
+F src/update.c 3cb9150d2cf661d938e2f1b1749945f3faa767f88febdb739ab1793bbf895ff2
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 5061987401c2e8003177fa30d73196aa036727c8f04bf36a2df0c82b1904a236
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eabe7f2d4ff0e0dd868dcab7ec1d4a9168a25f80d3a52f0eeea2f90bd33782f2
-R f38629c2df688919c2eea086352e406a
-U dan
-Z 0dea2404f0db0801946b811401465571
+P ecb56b75a0e66462acdcce285b93f9fc56944c42902d886d6bada419059519a9
+R 2b2161dc021eeafc304f534286be079c
+U drh
+Z 70eeee98b674ce1a62d7db850c161190

@@ -155,6 +155,7 @@ void sqlite3Update(
   Index *pIdx;           /* For looping over indices */
   Index *pPk;            /* The PRIMARY KEY index for WITHOUT ROWID tables */
   int nIdx;              /* Number of indices that need updating */
+  int nAllIdx;           /* Total number of indexes */
   int iBaseCur;          /* Base cursor number */
   int iDataCur;          /* Cursor for the canonical data btree */
   int iIdxCur;           /* Cursor for the first index */
@@ -355,7 +356,7 @@ void sqlite3Update(
   ** the key for accessing each index.
   */
   if( onError==OE_Replace ) bReplace = 1;
-  for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
+  for(nAllIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nAllIdx++){
     int reg;
     if( chngKey || hasFK>1 || pIdx==pPk
      || indexWhereClauseMightChange(pIdx,aXRef,chngRowid)
@@ -375,10 +376,10 @@ void sqlite3Update(
         }
       }
     }
-    if( reg==0 ) aToOpen[j+1] = 0;
-    aRegIdx[j] = reg;
+    if( reg==0 ) aToOpen[nAllIdx+1] = 0;
+    aRegIdx[nAllIdx] = reg;
   }
-  aRegIdx[j] = ++pParse->nMem;  /* Register storing the table record */
+  aRegIdx[nAllIdx] = ++pParse->nMem;  /* Register storing the table record */
   if( bReplace ){
     /* If REPLACE conflict resolution might be invoked, open cursors on all 
     ** indexes in case they are needed to delete records.  */
@@ -393,7 +394,13 @@ void sqlite3Update(
 
   /* Allocate required registers. */
   if( !IsVirtual(pTab) ){
-    regRowSet = ++pParse->nMem;
+    /* For now, regRowSet and aRegIdx[nAllIdx] share the same register.
+    ** If regRowSet turns out to be needed, then aRegIdx[nAllIdx] will be
+    ** reallocated.  aRegIdx[nAllIdx] is the register in which the main
+    ** table record is written.  regRowSet holds the RowSet for the
+    ** two-pass update algorithm. */
+    assert( aRegIdx[nAllIdx]==pParse->nMem );
+    regRowSet = aRegIdx[nAllIdx];
     regOldRowid = regNewRowid = ++pParse->nMem;
     if( chngPk || pTrigger || hasFK ){
       regOld = pParse->nMem + 1;
@@ -523,6 +530,8 @@ void sqlite3Update(
     ** leave it in register regOldRowid.  */
     sqlite3VdbeAddOp2(v, OP_Rowid, iDataCur, regOldRowid);
     if( eOnePass==ONEPASS_OFF ){
+      /* We need to use regRowSet, so reallocate aRegIdx[nAllIdx] */
+      aRegIdx[nAllIdx] = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, regOldRowid);
     }
   }else{
