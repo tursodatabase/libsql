@@ -1630,7 +1630,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   top = get2byte(&data[hdr+5]);
   assert( top<=(int)pPage->pBt->usableSize ); /* by btreeComputeFreeSpace() */
   if( gap>top ){
-    if( top==0 && ALWAYS(pPage->pBt->usableSize==65536) ){
+    if( top==0 && pPage->pBt->usableSize==65536 ){
       top = 65536;
     }else{
       return SQLITE_CORRUPT_PAGE(pPage);
