@@ -83,7 +83,6 @@ foreach {fault errlist} {
 
   do_faultsim_test 3 -faults $fault -prep {
     faultsim_restore_and_reopen
-    forcedelete test.db2
   } -body {
     sqlite3rbu_vacuum rbu test.db test.db2
     rbu step
@@ -91,7 +90,6 @@ foreach {fault errlist} {
   } -test {
     eval [list faultsim_test_result {0 SQLITE_OK} {*}$::errlist]
   }
-
 }
 
 finish_test

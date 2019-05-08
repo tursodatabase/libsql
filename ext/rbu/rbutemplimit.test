@@ -65,6 +65,7 @@ proc step_rbu_cachesize {target rbu stepsize cachesize temp_limit} {
   while 1 {
     sqlite3rbu rbu $target $rbu
     rbu temp_size_limit $temp_limit
+    if { [rbu temp_size_limit -1]!=$temp_limit } { error "round trip problem!" }
     sqlite3_exec_nr [rbu db 1] "PRAGMA cache_size = $cachesize"
     for {set i 0} {$i < $stepsize} {incr i} {
       set rc [rbu step]

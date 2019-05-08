@@ -50,13 +50,20 @@ do_execsql_test 3.0 {
   INSERT INTO t1 VALUES(1, 2, 3);
   INSERT INTO t1 VALUES(4, 5, 6);
   INSERT INTO t1 VALUES(7, 8, 9);
+
+  CREATE TABLE t2(a, b, c INTEGER, PRIMARY KEY(c));
+  CREATE INDEX i2 oN t2(b, a);
+  INSERT INTO t2 VALUES('a', 'b', -1);
+  INSERT INTO t2 VALUES('c', 'd', -2);
+  INSERT INTO t2 VALUES('e', 'f', -3);
 }
 
 do_rbu_vacuum_test 3.1 1
 
 do_execsql_test 3.2 {
   SELECT * FROM t1;
-} {1 2 3 4 5 6 7 8 9}
+  SELECT * FROM t2;
+} {1 2 3 4 5 6 7 8 9 e f -3 c d -2 a b -1}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -95,6 +102,8 @@ do_execsql_test 5.0 {
   INSERT INTO "a b c" VALUES(1, 2, 3);
   INSERT INTO "a b c" VALUES(3, 9, 1);
   INSERT INTO "a b c" VALUES('aaa', 'bbb', 'ccc');
+
+  CREATE INDEX abc2 ON "a b c"("c c" DESC, a);
 
   CREATE TABLE x(a);
   INSERT INTO x VALUES('a'), ('b'), ('d');

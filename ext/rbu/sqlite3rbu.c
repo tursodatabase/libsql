@@ -1546,65 +1546,60 @@ char *rbuVacuumIndexStart(
   char *zVector = 0;
   char *zRet = 0;
   int bFailed = 0;
+  const char *zSep = "";
+  int iCol = 0;
+  sqlite3_stmt *pXInfo = 0;
 
-  if( p->rc==SQLITE_OK ){
-    const char *zSep = "";
-    int iCol = 0;
-    sqlite3_stmt *pXInfo = 0;
-    p->rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
-        sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zIdx)
-    );
-    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
-      int iCid = sqlite3_column_int(pXInfo, 1);
-      const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
-      const char *zCol;
-      if( sqlite3_column_int(pXInfo, 3) ){
-        bFailed = 1;
-        break;
-      }
-
-      if( iCid<0 ){
-        if( pIter->eType==RBU_PK_IPK ){
-          int i;
-          for(i=0; pIter->abTblPk[i]==0; i++);
-          assert( i<pIter->nTblCol );
-          zCol = pIter->azTblCol[i];
-        }else{
-          zCol = "_rowid_";
-        }
-      }else{
-        zCol = pIter->azTblCol[iCid];
-      }
-
-      zLhs = rbuMPrintf(p, "%z%s \"%w\" COLLATE %Q",
-          zLhs, zSep, zCol, zCollate
-      );
-      zOrder = rbuMPrintf(p, "%z%s \"rbu_imp_%d%w\" COLLATE %Q DESC",
-          zOrder, zSep, iCol, zCol, zCollate
-      );
-      zSelect = rbuMPrintf(p, "%z%s quote(\"rbu_imp_%d%w\")",
-          zSelect, zSep, iCol, zCol
-      );
-      zSep = ", ";
-      iCol++;
+  p->rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
+      sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zIdx)
+  );
+  while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+    int iCid = sqlite3_column_int(pXInfo, 1);
+    const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
+    const char *zCol;
+    if( sqlite3_column_int(pXInfo, 3) ){
+      bFailed = 1;
+      break;
     }
-    rbuFinalize(p, pXInfo);
+
+    if( iCid<0 ){
+      if( pIter->eType==RBU_PK_IPK ){
+        int i;
+        for(i=0; pIter->abTblPk[i]==0; i++);
+        assert( i<pIter->nTblCol );
+        zCol = pIter->azTblCol[i];
+      }else{
+        zCol = "_rowid_";
+      }
+    }else{
+      zCol = pIter->azTblCol[iCid];
+    }
+
+    zLhs = rbuMPrintf(p, "%z%s \"%w\" COLLATE %Q",
+        zLhs, zSep, zCol, zCollate
+        );
+    zOrder = rbuMPrintf(p, "%z%s \"rbu_imp_%d%w\" COLLATE %Q DESC",
+        zOrder, zSep, iCol, zCol, zCollate
+        );
+    zSelect = rbuMPrintf(p, "%z%s quote(\"rbu_imp_%d%w\")",
+        zSelect, zSep, iCol, zCol
+        );
+    zSep = ", ";
+    iCol++;
   }
+  rbuFinalize(p, pXInfo);
   if( bFailed ) goto index_start_out;
 
   if( p->rc==SQLITE_OK ){
-    int iCol;
     sqlite3_stmt *pSel = 0;
 
-    if( p->rc==SQLITE_OK ){
-      p->rc = prepareFreeAndCollectError(p->dbMain, &pSel, &p->zErrmsg,
-          sqlite3_mprintf("SELECT %s FROM \"rbu_imp_%w\" ORDER BY %s LIMIT 1",
-            zSelect, pIter->zTbl, zOrder
-          )
-      );
-    }
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pSel, &p->zErrmsg,
+        sqlite3_mprintf("SELECT %s FROM \"rbu_imp_%w\" ORDER BY %s LIMIT 1",
+          zSelect, pIter->zTbl, zOrder
+        )
+    );
     if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSel) ){
-      const char *zSep = "";
+      zSep = "";
       for(iCol=0; iCol<pIter->nCol; iCol++){
         const char *zQuoted = (const char*)sqlite3_column_text(pSel, iCol);
         if( zQuoted[0]=='N' ){
