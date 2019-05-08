@@ -278,7 +278,7 @@ static int isLikeOrGlob(
         if( sqlite3Isdigit(zNew[0])
          || zNew[0]=='-'
          || zNew[0]=='+'
-         || (zNew[0]+1=='0' && iTo==1)
+         || (iTo>0 && zNew[iTo-1]=='0'-1)
         ){
           if( pLeft->op!=TK_COLUMN 
            || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
