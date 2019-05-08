@@ -5050,7 +5050,8 @@ static int rbuVfsAccess(
   */
   if( rc==SQLITE_OK && flags==SQLITE_ACCESS_EXISTS ){
     rbu_file *pDb = rbuFindMaindb(pRbuVfs, zPath, 1);
-    if( pDb && pDb->pRbu && pDb->pRbu->eStage==RBU_STAGE_OAL ){
+    if( pDb && pDb->pRbu->eStage==RBU_STAGE_OAL ){
+      assert( pDb->pRbu );
       if( *pResOut ){
         rc = SQLITE_CANTOPEN;
       }else{
