@@ -8068,7 +8068,7 @@ static int balance_nonroot(
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
     insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno, &rc);
-    if( NEVER(rc!=SQLITE_OK) ) goto balance_cleanup;
+    if( rc!=SQLITE_OK ) goto balance_cleanup;
     assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   }
 
