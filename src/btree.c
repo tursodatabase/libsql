@@ -5294,6 +5294,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
     assert( pCur->ix==pCur->pPage->nCell-1 );
     assert( pCur->pPage->leaf );
 #endif
+    *pRes = 0;
     return SQLITE_OK;
   }
 
