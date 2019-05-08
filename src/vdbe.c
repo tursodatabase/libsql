@@ -4012,11 +4012,14 @@ case OP_SeekGT: {       /* jump, in3, group */
     ** loss of information, then special processing is required... */
     if( (pIn3->flags & (MEM_Int|MEM_IntReal))==0 ){
       if( (pIn3->flags & MEM_Real)==0 ){
-        /* If the P3 value cannot be converted into any kind of a number,
-        ** then the seek is not possible, so jump to P2 */
-        VdbeBranchTaken(1,2); goto jump_to_p2;
-        break;
-      }
+        if( (pIn3->flags & MEM_Null) || oc>=OP_SeekGE ){
+          VdbeBranchTaken(1,2); goto jump_to_p2;
+          break;
+        }else{
+          sqlite3BtreeLast(pC->uc.pCursor, &res);
+          goto seek_not_found;
+        }
+      }else
 
       /* If the approximation iKey is larger than the actual real search
       ** term, substitute >= for > and < for <=. e.g. if the search term
@@ -4040,7 +4043,7 @@ case OP_SeekGT: {       /* jump, in3, group */
         assert( (OP_SeekLT & 0x0001)==(OP_SeekGE & 0x0001) );
         if( (oc & 0x0001)==(OP_SeekLT & 0x0001) ) oc++;
       }
-    } 
+    }
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, 0, (u64)iKey, 0, &res);
     pC->movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
