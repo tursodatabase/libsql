@@ -495,6 +495,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         int iHdr;
         int U, X;
         int nLocal;
+        int bNextPage = 0;
   
         switch( pCsr->aPage[iOff] ){
           case 0x02:
@@ -512,82 +513,104 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         }
 
         if( pCsr->iCell>=pCsr->nCell ){
+          bNextPage = 1;
+        }else{
+  
+          iOff += 8 + nPointer + pCsr->iCell*2;
+          if( iOff>pCsr->nPage ){
+            bNextPage = 1;
+          }else{
+            iOff = get_uint16(&pCsr->aPage[iOff]);
+          }
+    
+          /* For an interior node cell, skip past the child-page number */
+          iOff += nPointer;
+    
+          /* Load the "byte of payload including overflow" field */
+          if( bNextPage || iOff>pCsr->nPage ){
+            bNextPage = 1;
+          }else{
+            iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
+          }
+    
+          /* If this is a leaf intkey cell, load the rowid */
+          if( bHasRowid && !bNextPage && iOff<pCsr->nPage ){
+            iOff += dbdataGetVarint(&pCsr->aPage[iOff], &pCsr->iIntkey);
+          }
+    
+          /* Figure out how much data to read from the local page */
+          U = pCsr->nPage;
+          if( bHasRowid ){
+            X = U-35;
+          }else{
+            X = ((U-12)*64/255)-23;
+          }
+          if( nPayload<=X ){
+            nLocal = nPayload;
+          }else{
+            int M, K;
+            M = ((U-12)*32/255)-23;
+            K = M+((nPayload-M)%(U-4));
+            if( K<=X ){
+              nLocal = K;
+            }else{
+              nLocal = M;
+            }
+          }
+
+          if( bNextPage || nLocal+iOff>pCsr->nPage ){
+            bNextPage = 1;
+          }else{
+
+            /* Allocate space for payload. And a bit more to catch small buffer
+            ** overruns caused by attempting to read a varint or similar from 
+            ** near the end of a corrupt record.  */
+            pCsr->pRec = (u8*)sqlite3_malloc64(nPayload+100);
+            if( pCsr->pRec==0 ) return SQLITE_NOMEM;
+            memset(pCsr->pRec, 0, nPayload+100);
+            pCsr->nRec = nPayload;
+
+            /* Load the nLocal bytes of payload */
+            memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
+            iOff += nLocal;
+
+            /* Load content from overflow pages */
+            if( nPayload>nLocal ){
+              sqlite3_int64 nRem = nPayload - nLocal;
+              unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
+              while( nRem>0 ){
+                u8 *aOvfl = 0;
+                int nOvfl = 0;
+                int nCopy;
+                rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
+                assert( rc!=SQLITE_OK || nOvfl==pCsr->nPage );
+                if( rc!=SQLITE_OK ) return rc;
+
+                nCopy = U-4;
+                if( nCopy>nRem ) nCopy = nRem;
+                memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
+                nRem -= nCopy;
+
+                pgnoOvfl = get_uint32(aOvfl);
+                sqlite3_free(aOvfl);
+              }
+            }
+    
+            iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
+            pCsr->nHdr = nHdr;
+            pCsr->pHdrPtr = &pCsr->pRec[iHdr];
+            pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
+            pCsr->iField = (bHasRowid ? -1 : 0);
+          }
+        }
+
+        if( bNextPage ){
           sqlite3_free(pCsr->aPage);
           pCsr->aPage = 0;
           if( pCsr->bOnePage ) return SQLITE_OK;
           pCsr->iPgno++;
           continue;
         }
-  
-        iOff += 8 + nPointer + pCsr->iCell*2;
-        iOff = get_uint16(&pCsr->aPage[iOff]);
-  
-        /* For an interior node cell, skip past the child-page number */
-        iOff += nPointer;
-  
-        /* Load the "byte of payload including overflow" field */
-        iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
-  
-        /* If this is a leaf intkey cell, load the rowid */
-        if( bHasRowid ){
-          iOff += dbdataGetVarint(&pCsr->aPage[iOff], &pCsr->iIntkey);
-        }
-  
-        /* Allocate space for payload */
-        pCsr->pRec = (u8*)sqlite3_malloc64(nPayload);
-        if( pCsr->pRec==0 ) return SQLITE_NOMEM;
-        pCsr->nRec = nPayload;
-  
-        U = pCsr->nPage;
-        if( bHasRowid ){
-          X = U-35;
-        }else{
-          X = ((U-12)*64/255)-23;
-        }
-        if( nPayload<=X ){
-          nLocal = nPayload;
-        }else{
-          int M, K;
-          M = ((U-12)*32/255)-23;
-          K = M+((nPayload-M)%(U-4));
-          if( K<=X ){
-            nLocal = K;
-          }else{
-            nLocal = M;
-          }
-        }
-  
-        /* Load the nLocal bytes of payload */
-        memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
-        iOff += nLocal;
-  
-        /* Load content from overflow pages */
-        if( nPayload>nLocal ){
-          sqlite3_int64 nRem = nPayload - nLocal;
-          unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
-          while( nRem>0 ){
-            u8 *aOvfl = 0;
-            int nOvfl = 0;
-            int nCopy;
-            rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
-            assert( rc!=SQLITE_OK || nOvfl==pCsr->nPage );
-            if( rc!=SQLITE_OK ) return rc;
-  
-            nCopy = U-4;
-            if( nCopy>nRem ) nCopy = nRem;
-            memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
-            nRem -= nCopy;
-  
-            pgnoOvfl = get_uint32(aOvfl);
-            sqlite3_free(aOvfl);
-          }
-        }
-  
-        iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
-        pCsr->nHdr = nHdr;
-        pCsr->pHdrPtr = &pCsr->pRec[iHdr];
-        pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
-        pCsr->iField = (bHasRowid ? -1 : 0);
       }else{
         pCsr->iField++;
         if( pCsr->iField>0 ){
