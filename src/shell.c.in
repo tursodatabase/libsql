@@ -6633,7 +6633,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "  SELECT i, maxlen, NULL, ("
     "    WITH p(orig, pgno, parent) AS ("
     "      SELECT 0, i, (SELECT pgno FROM recovery.dbptr WHERE child=i)"
-    "        UNION ALL"
+    "        UNION "
     "      SELECT i, p.parent, "
     "        (SELECT pgno FROM recovery.dbptr WHERE child=p.parent) FROM p"
     "    )"

@@ -301,7 +301,10 @@ static unsigned int get_uint16(unsigned char *a){
   return (a[0]<<8)|a[1];
 }
 static unsigned int get_uint32(unsigned char *a){
-  return (a[0]<<24)|(a[1]<<16)|(a[2]<<8)|a[3];
+  return ((unsigned int)a[0]<<24)
+       | ((unsigned int)a[1]<<16)
+       | ((unsigned int)a[2]<<8)
+       | ((unsigned int)a[3]);
 }
 
 /*
