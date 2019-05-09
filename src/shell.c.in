@@ -1681,6 +1681,8 @@ static int shellAuth(
 ** in FTS3/4/5 into CREATE TABLE IF NOT EXISTS statements.
 */
 static void printSchemaLine(FILE *out, const char *z, const char *zTail){
+  if( z==0 ) return;
+  if( zTail==0 ) return;
   if( sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
     utf8_printf(out, "CREATE TABLE IF NOT EXISTS %s%s", z+13, zTail);
   }else{

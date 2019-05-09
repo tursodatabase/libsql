@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sin\sthe\ssqlite_dbdata\smodule\sthat\scould\soccur\sif\sa\spointer\swithin\san\soverflow\schain\sin\sa\scorrupt\sdatabase\spointed\spast\sthe\send\sof\sthe\sdb.
-D 2019-05-09T17:54:27.219
+C Make\sthe\s".schema"\scommand\sin\sthe\sCLI\sresistant\sto\scorrupt\sdatabase\sfiles.
+D 2019-05-09T18:13:30.290
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -522,7 +522,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 408632d9531ca8f1df8591f00530797daaa7bde3fe0d3211de4d431cbb99347e
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c ef860c7e5882c89c030432a6d2cf13c67d1d51fd511cf45cbdfd5c2faf44d51d
-F src/shell.c.in 6aa1d26eb46ec11ed1ca300e425e7a0d36f915ca94f07f6e47f13d390e897823
+F src/shell.c.in 332af8613687d1fcf89ff072c2dfecda74b260a54f850230fc82d6757a3a4904
 F src/sqlite.h.in 0605c88d98c85fbcba8bbd9716e7cc10b361e7b21cf2375171130f577388c943
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b0915272f4d4052aa31e9297424a7db9a0234b676e8e2a44c3f2dc54236705a
-R 3d82445208a5a3c73a72b531756f0e8c
-U dan
-Z a691bf3746dae50fcaa6578b32c34fe1
+P 3eae4e301e3e4bcf14e96066f77be1434c5d4b3daadb10153cd36382589ac128
+R bb866c6c75a817d20565e49f7d81970f
+U drh
+Z 706d1f89fe233a2fdcafaa2e0adbab1c
