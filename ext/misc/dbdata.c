@@ -587,8 +587,9 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
                 int nOvfl = 0;
                 int nCopy;
                 rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
-                assert( rc!=SQLITE_OK || nOvfl==pCsr->nPage );
+                assert( rc!=SQLITE_OK || aOvfl==0 || nOvfl==pCsr->nPage );
                 if( rc!=SQLITE_OK ) return rc;
+                if( aOvfl==0 ) break;
 
                 nCopy = U-4;
                 if( nCopy>nRem ) nCopy = nRem;

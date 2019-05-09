@@ -1,5 +1,5 @@
-C Disable\sthe\soptimization\swhere\sa\sREAL\svalue\swith\sno\sfractional\spart\nis\sstored\sas\san\sINTEGER\swhen\sthe\sinteger\suses\sas\smuch\sspace\sas\sthe\sreal\nvalue\sit\sproposes\sto\sstand\sin\sfor\s(8\sbytes).\s\sThis\savoids\scorner\scases\nof\scomparing\sintegers\sagainst\sreal\svalues\sthat\sare\sbeyond\sthe\sresolution\nof\san\sIEEE\s754\sdouble.\s\sFix\sfor\sticket\s[6c1d3febc00b22d457c78c2]
-D 2019-05-09T17:10:30.104
+C Fix\sa\scrash\sin\sthe\ssqlite_dbdata\smodule\sthat\scould\soccur\sif\sa\spointer\swithin\san\soverflow\schain\sin\sa\scorrupt\sdatabase\spointed\spast\sthe\send\sof\sthe\sdb.
+D 2019-05-09T17:54:27.219
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -284,7 +284,7 @@ F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c8
 F ext/misc/completion.c cec672d40604075bb341a7f11ac48393efdcd90a979269b8fe7977ea62d0547f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c 7f047aeb68f5802e7ce6639292095d622a488bb43526ed04810e0649faa71ceb
-F ext/misc/dbdata.c e2b007604b58a6f2d10b247c4b381cab1d20a530165bc49474b11e48fe680877
+F ext/misc/dbdata.c 4b73a0a5218a411752441896b68252ba3ced4d452e7dd419fdb3b92ae6ecada0
 F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287c336
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20f06bf2e659212a68dcf138e444da7bd4220548ec15a97cfd7eb82e028b3630
-R 1e923a6ef9e14ab60fd1515804aac862
-U drh
-Z c06fe0d1d976fd970296d42fc604ced0
+P 9b0915272f4d4052aa31e9297424a7db9a0234b676e8e2a44c3f2dc54236705a
+R 3d82445208a5a3c73a72b531756f0e8c
+U dan
+Z a691bf3746dae50fcaa6578b32c34fe1
