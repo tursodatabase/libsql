@@ -3884,8 +3884,8 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   if( fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
-  if( n<=0 ) goto readHexDb_error;
-  a = sqlite3_malloc( n );
+  if( n<0 ) goto readHexDb_error;
+  a = sqlite3_malloc( n ? n : 1 );
   if( a==0 ){
     utf8_printf(stderr, "Out of memory!\n");
     goto readHexDb_error;
@@ -3924,7 +3924,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   return a;
 
 readHexDb_error:
-  if( in!=stdin ){
+  if( in!=p->in ){
     fclose(in);
   }else{
     while( fgets(zLine, sizeof(zLine), p->in)!=0 ){
@@ -4166,7 +4166,6 @@ static void open_db(ShellState *p, int openFlags){
       }else{
         aData = readHexDb(p, &nData);
         if( aData==0 ){
-          utf8_printf(stderr, "Error in hexdb input\n");
           return;
         }
       }
