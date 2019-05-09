@@ -6579,7 +6579,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       "      FROM trunk WHERE x>0"
       "),"
       "freelist(data, n, freepgno) AS ("
-      "  SELECT data, shell_int32(data, 1)-1, t.pgno "
+      "  SELECT data, min(16384, shell_int32(data, 1)-1), t.pgno "
       "      FROM trunk t, sqlite_dbpage s WHERE s.pgno=t.pgno"
       "    UNION ALL"
       "  SELECT data, n-1, shell_int32(data, 2+n) "
