@@ -3422,6 +3422,8 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
 
 /*
 ** Return the serial-type for the value stored in pMem.
+**
+** This routine might convert a large MEM_IntReal value into MEM_Real.
 */
 u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
@@ -3458,6 +3460,15 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
     if( u<=2147483647 ){ *pLen = 4; return 4; }
     if( u<=MAX_6BYTE ){ *pLen = 6; return 5; }
     *pLen = 8;
+    if( flags&MEM_IntReal ){
+      /* If the value is IntReal and is going to take up 8 bytes to store
+      ** as an integer, then we might as well make it an 8-byte floating
+      ** point value */
+      pMem->u.r = (double)pMem->u.i;
+      pMem->flags &= ~MEM_IntReal;
+      pMem->flags |= MEM_Real;
+      return 7;
+    }
     return 6;
   }
   if( flags&MEM_Real ){

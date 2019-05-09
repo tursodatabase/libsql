@@ -1,5 +1,5 @@
-C Avoid\slong\sdelays\sthat\scan\soccur\swhen\s".recover"ing\sdata\sfrom\sa\sdatabase\swith\sa\scorrupt\sfreelist.
-D 2019-05-09T16:57:39.190
+C Disable\sthe\soptimization\swhere\sa\sREAL\svalue\swith\sno\sfractional\spart\nis\sstored\sas\san\sINTEGER\swhen\sthe\sinteger\suses\sas\smuch\sspace\sas\sthe\sreal\nvalue\sit\sproposes\sto\sstand\sin\sfor\s(8\sbytes).\s\sThis\savoids\scorner\scases\nof\scomparing\sintegers\sagainst\sreal\svalues\sthat\sare\sbeyond\sthe\sresolution\nof\san\sIEEE\s754\sdouble.\s\sFix\sfor\sticket\s[6c1d3febc00b22d457c78c2]
+D 2019-05-09T17:10:30.104
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -597,7 +597,7 @@ F src/vdbe.c d4efd6e5ecff8eeef280ce5d622dc2c0cfe085014e5813401b346517574adb18
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
-F src/vdbeaux.c f9fb1f71e216850267744fde8a6a0b2d3822235d6f85568af368be4722e8da13
+F src/vdbeaux.c d444f4a3ff9c571965329a186701a57fe445e4c3f4c42f87402aca75386ba358
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c b76b42ac9d6a36fc55a0797929fc94cc33e1334eea2792f5ee1eef868ce13320
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
@@ -1275,7 +1275,7 @@ F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2f
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test 7d41f354998524070317207d4e2b68e725e4cf14a57835fc746d4bea686a8714
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
-F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
+F test/select3.test 3905450067c28766bc83ee397f6d87342de868baa60f2bcfd00f286dfbd62cb9
 F test/select4.test 5389d9895968d1196c457d59b3ee6515d771d328
 F test/select5.test df9ec0d218cedceb4fe7b63262025b547b50a55e59148c6f40b60ca25f1d4546
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac790729d9c8f8612936bab56dca6061408007bc2150ac8c7089132403d7f885
-R 6e5edbee3c41d65385191dd600b1b4bf
-U dan
-Z 90af5c9a4f9287285acd46f3e2e8c7ab
+P 20f06bf2e659212a68dcf138e444da7bd4220548ec15a97cfd7eb82e028b3630
+R 1e923a6ef9e14ab60fd1515804aac862
+U drh
+Z c06fe0d1d976fd970296d42fc604ced0
