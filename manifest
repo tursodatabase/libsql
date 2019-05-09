@@ -1,5 +1,5 @@
-C Merge\saccidental\sfork\sin\strunk.
-D 2019-05-09T11:21:32.067
+C Avoid\sreading\soutside\sa\srecord\sbuffer\swhen\sextracting\san\sSQL\svalue\sin\sthe\ssqlite_dbdata\svirtual\stable\scode.
+D 2019-05-09T11:34:31.409
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -284,7 +284,7 @@ F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c8
 F ext/misc/completion.c cec672d40604075bb341a7f11ac48393efdcd90a979269b8fe7977ea62d0547f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
 F ext/misc/csv.c 7f047aeb68f5802e7ce6639292095d622a488bb43526ed04810e0649faa71ceb
-F ext/misc/dbdata.c 1b3751b02d8f575d25c6bda358670d2e39ace368a0d05595989c308a10c615f6
+F ext/misc/dbdata.c 1d3d1ebd23d3e4e5debbc54719376781e146626c2ee0b989b412b1a9c8ccdd37
 F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287c336
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
@@ -1825,8 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ccf2e7d413adb109c61456a5f46e87d38884801dbaab93297a17e3050014b59 4fa831d5cd5861f6a0a8f08a738b2d4d371fb2a788178ce86482c5bba761f9de
-R 1ba7996ce03dd9a1187260e95804fc29
-T +closed 4fa831d5cd5861f6a0a8f08a738b2d4d371fb2a788178ce86482c5bba761f9de
+P ec9373031d76b34163a45d0ed05e43c0c9d585c8d47aa255f670340673bc7875
+R 792bbcbe6e2a990555a162dba387f00d
 U dan
-Z e19c180b1a7fc00850ba36320f2fd4c8
+Z f6d6e605cd200b1a74018499a0dcfaa6

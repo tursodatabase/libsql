@@ -382,7 +382,10 @@ static int dbdataValueBytes(int eType){
     case 7:
       return 8;
     default:
-      return ((eType-12) / 2);
+      if( eType>0 ){
+        return ((eType-12) / 2);
+      }
+      return 0;
   }
 }
 
@@ -390,54 +393,60 @@ static int dbdataValueBytes(int eType){
 ** Load a value of type eType from buffer pData and use it to set the
 ** result of context object pCtx.
 */
-static void dbdataValue(sqlite3_context *pCtx, int eType, u8 *pData){
-  switch( eType ){
-    case 0: 
-    case 10: 
-    case 11: 
-      sqlite3_result_null(pCtx);
-      break;
-    
-    case 8: 
-      sqlite3_result_int(pCtx, 0);
-      break;
-    case 9:
-      sqlite3_result_int(pCtx, 1);
-      break;
-
-    case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
-      sqlite3_uint64 v = (signed char)pData[0];
-      pData++;
-      switch( eType ){
-        case 7:
-        case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-        case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-        case 4:  v = (v<<8) + pData[0];  pData++;
-        case 3:  v = (v<<8) + pData[0];  pData++;
-        case 2:  v = (v<<8) + pData[0];  pData++;
+static void dbdataValue(
+  sqlite3_context *pCtx, 
+  int eType, 
+  u8 *pData,
+  int nData
+){
+  if( eType>=0 && dbdataValueBytes(eType)<=nData ){
+    switch( eType ){
+      case 0: 
+      case 10: 
+      case 11: 
+        sqlite3_result_null(pCtx);
+        break;
+      
+      case 8: 
+        sqlite3_result_int(pCtx, 0);
+        break;
+      case 9:
+        sqlite3_result_int(pCtx, 1);
+        break;
+  
+      case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
+        sqlite3_uint64 v = (signed char)pData[0];
+        pData++;
+        switch( eType ){
+          case 7:
+          case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+          case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+          case 4:  v = (v<<8) + pData[0];  pData++;
+          case 3:  v = (v<<8) + pData[0];  pData++;
+          case 2:  v = (v<<8) + pData[0];  pData++;
+        }
+  
+        if( eType==7 ){
+          double r;
+          memcpy(&r, &v, sizeof(r));
+          sqlite3_result_double(pCtx, r);
+        }else{
+          sqlite3_result_int64(pCtx, (sqlite3_int64)v);
+        }
+        break;
       }
-
-      if( eType==7 ){
-        double r;
-        memcpy(&r, &v, sizeof(r));
-        sqlite3_result_double(pCtx, r);
-      }else{
-        sqlite3_result_int64(pCtx, (sqlite3_int64)v);
-      }
-      break;
-    }
-
-    default: {
-      int n = ((eType-12) / 2);
-      if( eType % 2 ){
-        sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
-      }else{
-        sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+  
+      default: {
+        int n = ((eType-12) / 2);
+        if( eType % 2 ){
+          sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
+        }else{
+          sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+        }
       }
     }
   }
 }
-
 
 /*
 ** Move an sqlite_dbdata or sqlite_dbptr cursor to the next entry.
@@ -728,7 +737,9 @@ static int dbdataColumn(
         }else{
           sqlite3_int64 iType;
           dbdataGetVarint(pCsr->pHdrPtr, &iType);
-          dbdataValue(ctx, iType, pCsr->pPtr);
+          dbdataValue(
+              ctx, iType, pCsr->pPtr, &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
+          );
         }
         break;
       }
