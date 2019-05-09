@@ -4016,7 +4016,8 @@ case OP_SeekGT: {       /* jump, in3, group */
           VdbeBranchTaken(1,2); goto jump_to_p2;
           break;
         }else{
-          sqlite3BtreeLast(pC->uc.pCursor, &res);
+          rc = sqlite3BtreeLast(pC->uc.pCursor, &res);
+          if( rc!=SQLITE_OK ) goto abort_due_to_error;
           goto seek_not_found;
         }
       }else
