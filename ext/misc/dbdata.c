@@ -278,6 +278,10 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
   pCsr->iCell = 0;
   pCsr->iField = 0;
   pCsr->bOnePage = 0;
+  sqlite3_free(pCsr->aPage);
+  sqlite3_free(pCsr->pRec);
+  pCsr->pRec = 0;
+  pCsr->aPage = 0;
 }
 
 /*
@@ -459,6 +463,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
   while( 1 ){
     int rc;
     int iOff = (pCsr->iPgno==1 ? 100 : 0);
+    int bNextPage = 0;
 
     if( pCsr->aPage==0 ){
       while( 1 ){
@@ -495,7 +500,6 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         int iHdr;
         int U, X;
         int nLocal;
-        int bNextPage = 0;
   
         switch( pCsr->aPage[iOff] ){
           case 0x02:
@@ -603,32 +607,37 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             pCsr->iField = (bHasRowid ? -1 : 0);
           }
         }
-
-        if( bNextPage ){
-          sqlite3_free(pCsr->aPage);
-          pCsr->aPage = 0;
-          if( pCsr->bOnePage ) return SQLITE_OK;
-          pCsr->iPgno++;
-          continue;
-        }
       }else{
         pCsr->iField++;
         if( pCsr->iField>0 ){
           sqlite3_int64 iType;
-          pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
-          pCsr->pPtr += dbdataValueBytes(iType);
+          if( pCsr->pHdrPtr>&pCsr->pRec[pCsr->nRec] ){
+            bNextPage = 1;
+          }else{
+            pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
+            pCsr->pPtr += dbdataValueBytes(iType);
+          }
         }
       }
 
-      if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->pRec[pCsr->nHdr] ){
-        return SQLITE_OK;
+      if( bNextPage ){
+        sqlite3_free(pCsr->aPage);
+        sqlite3_free(pCsr->pRec);
+        pCsr->aPage = 0;
+        pCsr->pRec = 0;
+        if( pCsr->bOnePage ) return SQLITE_OK;
+        pCsr->iPgno++;
+      }else{
+        if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->pRec[pCsr->nHdr] ){
+          return SQLITE_OK;
+        }
+
+        /* Advance to the next cell. The next iteration of the loop will load
+        ** the record and so on. */
+        sqlite3_free(pCsr->pRec);
+        pCsr->pRec = 0;
+        pCsr->iCell++;
       }
-  
-      /* Advance to the next cell. The next iteration of the loop will load
-      ** the record and so on. */
-      sqlite3_free(pCsr->pRec);
-      pCsr->pRec = 0;
-      pCsr->iCell++;
     }
   }
 
@@ -737,9 +746,12 @@ static int dbdataColumn(
           iOff += 8;
         }else{
           iOff += 12 + pCsr->iCell*2;
+          if( iOff>pCsr->nPage ) return SQLITE_OK;
           iOff = get_uint16(&pCsr->aPage[iOff]);
         }
-        sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
+        if( iOff<=pCsr->nPage ){
+          sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
+        }
         break;
       }
     }
