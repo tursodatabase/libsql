@@ -81,6 +81,8 @@ SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
 
+#define DBDATA_PADDING_BYTES 100 
+
 typedef struct DbdataTable DbdataTable;
 typedef struct DbdataCursor DbdataCursor;
 
@@ -334,12 +336,13 @@ static int dbdataLoadPage(
     int nCopy = sqlite3_column_bytes(pStmt, 0);
     if( nCopy>0 ){
       u8 *pPage;
-      pPage = (u8*)sqlite3_malloc64(nCopy);
+      pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
       if( pPage==0 ){
         rc = SQLITE_NOMEM;
       }else{
         const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
         memcpy(pPage, pCopy, nCopy);
+        memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
       }
       *ppPage = pPage;
       *pnPage = nCopy;
@@ -572,9 +575,9 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             /* Allocate space for payload. And a bit more to catch small buffer
             ** overruns caused by attempting to read a varint or similar from 
             ** near the end of a corrupt record.  */
-            pCsr->pRec = (u8*)sqlite3_malloc64(nPayload+100);
+            pCsr->pRec = (u8*)sqlite3_malloc64(nPayload+DBDATA_PADDING_BYTES);
             if( pCsr->pRec==0 ) return SQLITE_NOMEM;
-            memset(pCsr->pRec, 0, nPayload+100);
+            memset(pCsr->pRec, 0, nPayload+DBDATA_PADDING_BYTES);
             pCsr->nRec = nPayload;
 
             /* Load the nLocal bytes of payload */
