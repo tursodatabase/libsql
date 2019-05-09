@@ -6621,7 +6621,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "WITH pages(i, maxlen) AS ("
     "  SELECT page_count, ("
     "    SELECT max(field+1) FROM sqlite_dbdata WHERE pgno=page_count"
-    "  ) FROM pragma_page_count"
+    "  ) FROM pragma_page_count WHERE page_count>0"
     "    UNION ALL"
     "  SELECT i-1, ("
     "    SELECT max(field+1) FROM sqlite_dbdata WHERE pgno=i-1"
