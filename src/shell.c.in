@@ -6388,7 +6388,7 @@ static RecoverTable *recoverNewTable(
  finished:
   sqlite3_close(dbtmp);
   *pRc = rc;
-  if( rc!=SQLITE_OK ){
+  if( rc!=SQLITE_OK || (pTab && pTab->zQuoted==0) ){
     recoverFreeTable(pTab);
     pTab = 0;
   }
@@ -6680,8 +6680,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   /* Figure out if an orphan table will be required. And if so, how many
   ** user columns it should contain */
   shellPrepare(pState->db, &rc, 
-      "SELECT coalesce(max(maxlen), -2) FROM recovery.map" 
-      "  WHERE root>1 AND root NOT IN (SELECT rootpage FROM recovery.schema)"
+      "SELECT coalesce(max(maxlen), -2) FROM recovery.map WHERE root>1"
       , &pLoop
   );
   if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLoop) ){
@@ -6689,7 +6688,6 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   }
   shellFinalize(&rc, pLoop);
   pLoop = 0;
-  pOrphan = recoverOrphanTable(pState, &rc, zLostAndFound, nOrphan);
 
   shellPrepare(pState->db, &rc,
       "SELECT pgno FROM recovery.map WHERE root=?", &pPages
@@ -6716,7 +6714,13 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 
     pTab = recoverFindTable(pState, &rc, iRoot, bIntkey, nCol, &bNoop);
     if( bNoop || rc ) continue;
-    if( pTab==0 ) pTab = pOrphan;
+    if( pTab==0 ){
+      if( pOrphan==0 ){
+        pOrphan = recoverOrphanTable(pState, &rc, zLostAndFound, nOrphan);
+      }
+      pTab = pOrphan;
+      if( pTab==0 ) break;
+    }
 
     if( 0==sqlite3_stricmp(pTab->zQuoted, "'sqlite_sequence'") ){
       raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
