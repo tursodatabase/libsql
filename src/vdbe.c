@@ -3030,8 +3030,9 @@ case OP_Count: {         /* out2 */
 /* Opcode: Savepoint P1 * * P4 *
 **
 ** Open, release or rollback the savepoint named by parameter P4, depending
-** on the value of P1. To open a new savepoint, P1==0. To release (commit) an
-** existing savepoint, P1==1, or to rollback an existing savepoint P1==2.
+** on the value of P1. To open a new savepoint set P1==0 (SAVEPOINT_BEGIN).
+** To release (commit) an existing savepoint set P1==1 (SAVEPOINT_RELEASE).
+** To rollback an existing savepoint set P1==2 (SAVEPOINT_ROLLBACK).
 */
 case OP_Savepoint: {
   int p1;                         /* Value of P1 operand */
@@ -3099,6 +3100,7 @@ case OP_Savepoint: {
       }
     }
   }else{
+    assert( p1==SAVEPOINT_RELEASE || p1==SAVEPOINT_ROLLBACK );
     iSavepoint = 0;
 
     /* Find the named savepoint. If there is no such savepoint, then an
@@ -3152,6 +3154,7 @@ case OP_Savepoint: {
             if( rc!=SQLITE_OK ) goto abort_due_to_error;
           }
         }else{
+          assert( p1==SAVEPOINT_RELEASE );
           isSchemaChange = 0;
         }
         for(ii=0; ii<db->nDb; ii++){
@@ -3188,6 +3191,7 @@ case OP_Savepoint: {
           db->nSavepoint--;
         }
       }else{
+        assert( p1==SAVEPOINT_ROLLBACK );
         db->nDeferredCons = pSavepoint->nDeferredCons;
         db->nDeferredImmCons = pSavepoint->nDeferredImmCons;
       }

@@ -1,5 +1,5 @@
-C Fix\sthe\sprevious\scheck-in\s[db9acef14d492121]\sso\sthat\sthe\samalgamation\sbuild\nworks\sfor\ssystems\sfor\swhich\slack\sHAVE_ISNAN.
-D 2019-05-10T12:14:51.652
+C Improved\scomments\sand\sextra\sassert()\sstatements\son\sthe\sOP_Savepoint\sopcode,\njust\sto\smake\sthe\scode\sa\slittle\seasier\sto\sread\sand\sreason\sabout.
+D 2019-05-10T14:03:07.714
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -593,7 +593,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 4c0669e042b4e50a08a9e5fd14cecc76e5f877efa288533dccddb6fe98f4d6b5
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c d4efd6e5ecff8eeef280ce5d622dc2c0cfe085014e5813401b346517574adb18
+F src/vdbe.c 4ab7c36d29e156835b23b6b797107f0dbdf6d729798d8cf0d33e40e411f02d68
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db9acef14d49212108c8082cc15a9b9b4a56b8afe4fe1104ddf62783739c1fbe
-R 2ae89586bd0923bfda8598a9d4f487b2
+P 3cc55e09e6c1de2059d97bdddf2fdfbdcc62c584b513f56faf9d3a39ef80cddd
+R 91d5b0019aab212ae793ae1752395d8d
 U drh
-Z c5db4a9c420d2bf9fb0aafb4f42e2d4b
+Z b0a1c28086400bbd580accea280a3220
