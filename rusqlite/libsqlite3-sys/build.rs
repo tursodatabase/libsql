@@ -70,11 +70,27 @@ mod build_bundled {
             .flag("-DSQLITE_ENABLE_RTREE")
             .flag("-DSQLITE_ENABLE_STAT2")
             .flag("-DSQLITE_ENABLE_STAT4")
-            .flag("-DSQLITE_HAVE_ISNAN")
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
             .flag("-DHAVE_USLEEP=1");
+        // Older versions of visual studio don't support c99 (including isnan), which causes a
+        // build failure when the linker fails to find the `isnan` function. `sqlite` provides its
+        // own implmentation, using the fact that x != x when x is NaN.
+        //
+        // There may be other platforms that don't support `isnan`, they should be tested for here.
+        if cfg!(target_env = "msvc") {
+            use self::cc::windows_registry::{find_vs_version, VsVers};
+            let vs_has_nan = match find_vs_version() {
+                Ok(ver) => ver != VsVers::Vs12,
+                Err(_msg) => false,
+            };
+            if vs_has_nan {
+                cfg.flag("-DSQLITE_HAVE_ISNAN");
+            }
+        } else {
+            cfg.flag("-DSQLITE_HAVE_ISNAN");
+        }
         if cfg!(feature = "unlock_notify") {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
