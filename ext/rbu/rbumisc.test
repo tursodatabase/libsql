@@ -18,14 +18,7 @@ sqlite3_shutdown
 sqlite3_config_uri 1
 reset_db
 
-#-------------------------------------------------------------------------
-# Ensure that RBU is not confused by oddly named tables in an RBU 
-# database.
-#
-do_execsql_test 1.0 {
-  CREATE TABLE x1(a, b, c INTEGER PRIMARY KEY);
-}
-do_test 1.1 {
+proc populate_rbu_db {} {
   forcedelete rbu.db
   sqlite3 rbu rbu.db
   rbu eval {
@@ -44,6 +37,17 @@ do_test 1.1 {
     INSERT INTO dat VALUES(3, 3, 3, 0);
   }
   rbu close
+}
+
+#-------------------------------------------------------------------------
+# Ensure that RBU is not confused by oddly named tables in an RBU 
+# database.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE x1(a, b, c INTEGER PRIMARY KEY);
+}
+do_test 1.1 {
+  populate_rbu_db
 } {}
 
 do_test 1.2 {
@@ -62,9 +66,7 @@ do_test 1.3 {
 
 do_test 1.4 {
   db eval { DELETE FROM x1 }
-  sqlite3 rbu rbu.db
-  rbu eval { DELETE FROM rbu_state }
-  rbu close
+  populate_rbu_db
 
   sqlite3rbu rbu test.db rbu.db
   rbu step
@@ -76,5 +78,103 @@ do_test 1.4 {
   rbu step
   list [catch { rbu close } msg] $msg
 } {1 {SQLITE_ERROR - cannot update wal mode database}}
+
+#-------------------------------------------------------------------------
+# Test the effect of a wal file appearing after the target database has
+# been opened, but before it has been locked.
+#
+catch { db close }
+testvfs tvfs -default 1
+
+for {set N 1} {$N < 10} {incr N} {
+  reset_db
+  populate_rbu_db
+  do_execsql_test 2.$N.0 {
+    CREATE TABLE x1(a, b, c INTEGER PRIMARY KEY);
+  }
+  
+  set nAccessCnt 0
+  do_test 2.$N.1 {
+    sqlite3rbu rbu test.db rbu.db
+    rbu step
+    rbu step
+    rbu close
+  } {SQLITE_OK}
+  
+  tvfs script xAccess
+  tvfs filter xAccess
+  set nAccessCnt 0
+  proc xAccess {method file args} {
+    global nAccessCnt
+    if {[file tail $file]=="test.db-wal"} {
+      incr nAccessCnt -1
+      if {$nAccessCnt==0} {
+        set fd [open test.db-wal w]
+        puts -nonewline $fd [string repeat 0 2000]
+        close $fd
+      }
+    }
+    return SQLITE_OK
+  }
+
+  foreach r {
+     {1 {SQLITE_ERROR - cannot update wal mode database}}
+     {0 SQLITE_OK}
+     {1 {SQLITE_CANTOPEN - unable to open database file}}
+  } {
+    set RES($r) 1
+  }
+  do_test 2.$N.2 {
+    set ::nAccessCnt $N
+    set res [list [catch {
+      sqlite3rbu rbu test.db rbu.db
+      rbu step
+      rbu close
+    } msg ] $msg]
+    set RES($res)
+  } {1}
+  catch {rbu close}
+}
+catch {db close}
+catch {tvfs delete}
+
+#-------------------------------------------------------------------------
+testvfs tvfs -default 1
+reset_db
+populate_rbu_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a, b, c INTEGER PRIMARY KEY);
+}
+  
+tvfs script xFileControl
+tvfs filter xFileControl
+
+proc xFileControl {method file verb args} {
+  if {$verb=="ZIPVFS" && [info exists ::zipvfs_filecontrol]} {
+    return $::zipvfs_filecontrol 
+  }
+  return "SQLITE_NOTFOUND"
+}
+
+breakpoint
+foreach {tn ret err} {
+  1 SQLITE_OK           0
+  2 SQLITE_ERROR        1
+  3 SQLITE_NOTFOUND     0
+  4 SQLITE_OMIT         1
+} {
+  set ::zipvfs_filecontrol $ret
+  do_test 3.$tn.1 {
+    catch {
+      sqlite3rbu rbu test.db rbu.db
+      rbu step
+      rbu close
+    }
+  } $err
+}
+catch {db close}
+catch {tvfs delete}
+
+#-------------------------------------------------------------------------
 
 finish_test

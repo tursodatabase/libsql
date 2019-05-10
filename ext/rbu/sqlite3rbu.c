@@ -4707,9 +4707,7 @@ static int rbuVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
       }else if( rc==SQLITE_NOTFOUND ){
         pRbu->pTargetFd = p;
         p->pRbu = pRbu;
-        if( p->openFlags & SQLITE_OPEN_MAIN_DB ){
-          rbuMainlistAdd(p);
-        }
+        rbuMainlistAdd(p);
         if( p->pWalFd ) p->pWalFd->pRbu = pRbu;
         rc = SQLITE_OK;
       }
@@ -4772,10 +4770,7 @@ static int rbuVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
     if( ofst==WAL_LOCK_CKPT && n==1 ) rc = SQLITE_BUSY;
   }else{
     int bCapture = 0;
-    if( n==1 && (flags & SQLITE_SHM_EXCLUSIVE)
-     && pRbu && pRbu->eStage==RBU_STAGE_CAPTURE
-     && (ofst==WAL_LOCK_WRITE || ofst==WAL_LOCK_CKPT || ofst==WAL_LOCK_READ0)
-    ){
+    if( pRbu && pRbu->eStage==RBU_STAGE_CAPTURE ){
       bCapture = 1;
     }
 
@@ -4808,20 +4803,24 @@ static int rbuVfsShmMap(
   ** rbu is in the RBU_STAGE_OAL state, use heap memory for *-shm space 
   ** instead of a file on disk.  */
   assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB) );
-  if( eStage==RBU_STAGE_OAL || eStage==RBU_STAGE_MOVE ){
-    if( iRegion<=p->nShm ){
-      sqlite3_int64 nByte = (iRegion+1) * sizeof(char*);
-      char **apNew = (char**)sqlite3_realloc64(p->apShm, nByte);
-      if( apNew==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        memset(&apNew[p->nShm], 0, sizeof(char*) * (1 + iRegion - p->nShm));
-        p->apShm = apNew;
-        p->nShm = iRegion+1;
-      }
+  if( eStage==RBU_STAGE_OAL ){
+    sqlite3_int64 nByte = (iRegion+1) * sizeof(char*);
+    char **apNew = (char**)sqlite3_realloc64(p->apShm, nByte);
+
+    /* This is an RBU connection that uses its own heap memory for the
+    ** pages of the *-shm file. Since no other process can have run
+    ** recovery, the connection must request *-shm pages in order
+    ** from start to finish.  */
+    assert( iRegion==p->nShm );
+    if( apNew==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(&apNew[p->nShm], 0, sizeof(char*) * (1 + iRegion - p->nShm));
+      p->apShm = apNew;
+      p->nShm = iRegion+1;
     }
 
-    if( rc==SQLITE_OK && p->apShm[iRegion]==0 ){
+    if( rc==SQLITE_OK ){
       char *pNew = (char*)sqlite3_malloc64(szRegion);
       if( pNew==0 ){
         rc = SQLITE_NOMEM;

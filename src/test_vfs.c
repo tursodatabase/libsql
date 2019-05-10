@@ -235,6 +235,7 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
     { SQLITE_BUSY,     "SQLITE_BUSY"   },
     { SQLITE_READONLY, "SQLITE_READONLY"   },
     { SQLITE_READONLY_CANTINIT, "SQLITE_READONLY_CANTINIT"   },
+    { SQLITE_NOTFOUND, "SQLITE_NOTFOUND"   },
     { -1,              "SQLITE_OMIT"   },
   };
 
@@ -552,6 +553,7 @@ static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
     } aF[] = {
       { SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, "BEGIN_ATOMIC_WRITE" },
       { SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, "COMMIT_ATOMIC_WRITE" },
+      { SQLITE_FCNTL_ZIPVFS, "ZIPVFS" },
     };
     int i;
     for(i=0; i<sizeof(aF)/sizeof(aF[0]); i++){
@@ -565,7 +567,7 @@ static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
           0, 0
       );
       tvfsResultCode(p, &rc);
-      if( rc ) return rc;
+      if( rc ) return (rc<0 ? SQLITE_OK : rc);
     }
   }
   return sqlite3OsFileControl(pFd->pReal, op, pArg);
