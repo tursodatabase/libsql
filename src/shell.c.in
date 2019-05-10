@@ -3955,7 +3955,8 @@ static void shellInt32(
   const unsigned char *pBlob;
   int nBlob;
   int iInt;
-  
+
+  UNUSED_PARAMETER(argc);
   nBlob = sqlite3_value_bytes(argv[0]);
   pBlob = (const unsigned char*)sqlite3_value_blob(argv[0]);
   iInt = sqlite3_value_int(argv[1]);
@@ -3989,6 +3990,7 @@ static void shellEscapeCrnl(
   sqlite3_value **argv
 ){
   const char *zText = (const char*)sqlite3_value_text(argv[0]);
+  UNUSED_PARAMETER(argc);
   if( zText[0]=='\'' ){
     int nText = sqlite3_value_bytes(argv[0]);
     int i;
@@ -5417,7 +5419,14 @@ static void shellPrepare(
   }
 }
 
-static void shellPreparePrintf(
+/*
+** Create a prepared statement using printf-style arguments for the SQL.
+**
+** This routine is could be marked "static".  But it is not always used,
+** depending on compile-time options.  By omitting the "static", we avoid
+** nuisance compiler warnings about "defined but not used".
+*/
+void shellPreparePrintf(
   sqlite3 *db, 
   int *pRc, 
   sqlite3_stmt **ppStmt,
@@ -5440,7 +5449,13 @@ static void shellPreparePrintf(
   }
 }
 
-static void shellFinalize(
+/* Finalize the prepared statement created using shellPreparePrintf().
+**
+** This routine is could be marked "static".  But it is not always used,
+** depending on compile-time options.  By omitting the "static", we avoid
+** nuisance compiler warnings about "defined but not used".
+*/
+void shellFinalize(
   int *pRc, 
   sqlite3_stmt *pStmt
 ){
@@ -5456,7 +5471,13 @@ static void shellFinalize(
   }
 }
 
-static void shellReset(
+/* Reset the prepared statement created using shellPreparePrintf().
+**
+** This routine is could be marked "static".  But it is not always used,
+** depending on compile-time options.  By omitting the "static", we avoid
+** nuisance compiler warnings about "defined but not used".
+*/
+void shellReset(
   int *pRc, 
   sqlite3_stmt *pStmt
 ){
