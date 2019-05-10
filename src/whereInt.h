@@ -14,6 +14,8 @@
 ** planner logic in "where.c".  These definitions are broken out into
 ** a separate source file for easier editing.
 */
+#ifndef SQLITE_WHEREINT_H
+#define SQLITE_WHEREINT_H
 
 /*
 ** Trace output macros
@@ -584,3 +586,5 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
 #define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */
 #define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */
+
+#endif /* !defined(SQLITE_WHEREINT_H) */
