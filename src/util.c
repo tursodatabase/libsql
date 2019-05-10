@@ -17,9 +17,7 @@
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
-#if HAVE_ISNAN || SQLITE_HAVE_ISNAN
-# include <math.h>
-#endif
+#include <math.h>
 
 /*
 ** Routine needed to support the testcase() macro.
