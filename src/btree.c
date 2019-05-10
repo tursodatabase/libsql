@@ -4154,6 +4154,18 @@ int sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
 }
 
 /*
+** Set the pBt->nPage field correctly, according to the current
+** state of the database.  Assume pBt->pPage1 is valid.
+*/
+static void btreeSetNPage(BtShared *pBt, MemPage *pPage1){
+  int nPage = get4byte(&pPage1->aData[28]);
+  testcase( nPage==0 );
+  if( nPage==0 ) sqlite3PagerPagecount(pBt->pPager, &nPage);
+  testcase( pBt->nPage!=nPage );
+  pBt->nPage = nPage;
+}
+
+/*
 ** Rollback the transaction in progress.
 **
 ** If tripCode is not SQLITE_OK then cursors will be invalidated (tripped).
@@ -4198,11 +4210,7 @@ int sqlite3BtreeRollback(Btree *p, int tripCode, int writeOnly){
     ** call btreeGetPage() on page 1 again to make
     ** sure pPage1->aData is set correctly. */
     if( btreeGetPage(pBt, 1, &pPage1, 0)==SQLITE_OK ){
-      int nPage = get4byte(28+(u8*)pPage1->aData);
-      testcase( nPage==0 );
-      if( nPage==0 ) sqlite3PagerPagecount(pBt->pPager, &nPage);
-      testcase( pBt->nPage!=nPage );
-      pBt->nPage = nPage;
+      btreeSetNPage(pBt, pPage1);
       releasePageOne(pPage1);
     }
     assert( countValidCursors(pBt, 1)==0 );
@@ -4282,7 +4290,7 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
         pBt->nPage = 0;
       }
       rc = newDatabase(pBt);
-      pBt->nPage = get4byte(28 + pBt->pPage1->aData);
+      btreeSetNPage(pBt, pBt->pPage1);
 
       /* pBt->nPage might be zero if the database was corrupt when 
       ** the transaction was started. Otherwise, it must be at least 1.  */
