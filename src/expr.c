@@ -4946,6 +4946,7 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
   if( pE2->op==TK_NOTNULL
    && pE1->op!=TK_ISNULL
    && pE1->op!=TK_IS
+   && pE1->op!=TK_ISNOT
    && pE1->op!=TK_OR
   ){
     Expr *pX = sqlite3ExprSkipCollate(pE1->pLeft);

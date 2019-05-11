@@ -423,4 +423,15 @@ do_execsql_test index6-13.1 {
   SELECT * FROM t0 WHERE c0 OR 1;
 } {{}}
 
+# 2019-05-11
+# Ticket https://sqlite.org/src/tktview/8025674847
+reset_db
+do_execsql_test index6-14.1 {
+  CREATE TABLE IF NOT EXISTS t0 (c0, c1);
+  CREATE INDEX IF NOT EXISTS i0 ON t0(c0, c1) WHERE c0 NOT NULL;
+  INSERT INTO t0(c0, c1) VALUES(NULL, 'row');
+  SELECT * FROM t0 WHERE t0.c0 IS NOT 1;
+} {{} row}
+
 finish_test
+
