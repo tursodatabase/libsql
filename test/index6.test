@@ -433,5 +433,9 @@ do_execsql_test index6-14.1 {
   SELECT * FROM t0 WHERE t0.c0 IS NOT 1;
 } {{} row}
 
+do_execsql_test index6-14.2 {
+  SELECT * FROM t0 WHERE CASE c0 WHEN 0 THEN 0 ELSE 1 END;
+} {{} row}
+
 finish_test
 
