@@ -54,7 +54,7 @@ impl FromSql for NaiveTime {
 }
 
 /// ISO 8601 combined date and time without timezone =>
-/// "YYYY-MM-DD HH:MM:SS.SSS"
+/// "YYYY-MM-DDTHH:MM:SS.SSS"
 impl ToSql for NaiveDateTime {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%Y-%m-%dT%H:%M:%S%.f").to_string();
