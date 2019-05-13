@@ -4965,6 +4965,7 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist+i1.nSize);
         fts5DoclistIterNext(&i1);
         if( i1.aPoslist==0 ) break;
+        assert( out.n<=((i1.aPoslist - p1->p) + (i2.aPoslist - p2->p) + 9) );
       }
       else if( i2.iRowid!=i1.iRowid ){
         /* Copy entry from i2 */
@@ -4972,6 +4973,7 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist+i2.nSize);
         fts5DoclistIterNext(&i2);
         if( i2.aPoslist==0 ) break;
+        assert( out.n<=((i1.aPoslist - p1->p) + (i2.aPoslist - p2->p) + 9) );
       }
       else{
         /* Merge the two position lists. */ 
@@ -5045,6 +5047,7 @@ static void fts5MergePrefixLists(
         fts5DoclistIterNext(&i2);
         assert( out.n<=(p1->n+p2->n+9) );
         if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
+        assert( out.n<=((i1.aPoslist - p1->p) + (i2.aPoslist - p2->p) + 9) );
       }
     }
 
