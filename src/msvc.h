@@ -33,4 +33,9 @@
 #pragma warning(disable : 4706)
 #endif /* defined(_MSC_VER) */
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#undef SQLITE_4_BYTE_ALIGNED_MALLOC
+#define SQLITE_4_BYTE_ALIGNED_MALLOC
+#endif /* defined(_MSC_VER) && !defined(_WIN64) */
+
 #endif /* SQLITE_MSVC_H */

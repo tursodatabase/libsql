@@ -1013,13 +1013,18 @@ sqlite3 db test.db
 # EVIDENCE-OF: R-22868-25880 The LIKE operator can be made case
 # sensitive using the case_sensitive_like pragma.
 #
-do_execsql_test e_expr-16.1.1 { SELECT 'abcxyz' LIKE 'ABC%' } 1
-do_execsql_test e_expr-16.1.2 { PRAGMA case_sensitive_like = 1 } {}
-do_execsql_test e_expr-16.1.3 { SELECT 'abcxyz' LIKE 'ABC%' } 0
-do_execsql_test e_expr-16.1.4 { SELECT 'ABCxyz' LIKE 'ABC%' } 1
-do_execsql_test e_expr-16.1.5 { PRAGMA case_sensitive_like = 0 } {}
-do_execsql_test e_expr-16.1.6 { SELECT 'abcxyz' LIKE 'ABC%' } 1
-do_execsql_test e_expr-16.1.7 { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.1  { SELECT 'abcxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.1b { SELECT 'abc%xyz' LIKE 'ABC\%x%' ESCAPE '\' } 1
+do_execsql_test e_expr-16.1.2  { PRAGMA case_sensitive_like = 1 } {}
+do_execsql_test e_expr-16.1.3  { SELECT 'abcxyz' LIKE 'ABC%' } 0
+do_execsql_test e_expr-16.1.3b { SELECT 'abc%xyz' LIKE 'ABC\%X%' ESCAPE '\' } 0
+do_execsql_test e_expr-16.1.4  { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.4b { SELECT 'ABC%xyz' LIKE 'ABC\%x%' ESCAPE '\' } 1
+do_execsql_test e_expr-16.1.5  { PRAGMA case_sensitive_like = 0 } {}
+do_execsql_test e_expr-16.1.6  { SELECT 'abcxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.6b { SELECT 'abc%xyz' LIKE 'ABC\%X%' ESCAPE '\' } 1
+do_execsql_test e_expr-16.1.7  { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.7b { SELECT 'ABC%xyz' LIKE 'ABC\%X%' ESCAPE '\' } 1
 
 # EVIDENCE-OF: R-52087-12043 The GLOB operator is similar to LIKE but
 # uses the Unix file globbing syntax for its wildcards.

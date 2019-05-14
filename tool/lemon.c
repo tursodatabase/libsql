@@ -483,22 +483,22 @@ void Configtable_clear(int(*)(struct config *));
 
 /* Allocate a new parser action */
 static struct action *Action_new(void){
-  static struct action *freelist = 0;
+  static struct action *actionfreelist = 0;
   struct action *newaction;
 
-  if( freelist==0 ){
+  if( actionfreelist==0 ){
     int i;
     int amt = 100;
-    freelist = (struct action *)calloc(amt, sizeof(struct action));
-    if( freelist==0 ){
+    actionfreelist = (struct action *)calloc(amt, sizeof(struct action));
+    if( actionfreelist==0 ){
       fprintf(stderr,"Unable to allocate memory for a new parser action.");
       exit(1);
     }
-    for(i=0; i<amt-1; i++) freelist[i].next = &freelist[i+1];
-    freelist[amt-1].next = 0;
+    for(i=0; i<amt-1; i++) actionfreelist[i].next = &actionfreelist[i+1];
+    actionfreelist[amt-1].next = 0;
   }
-  newaction = freelist;
-  freelist = freelist->next;
+  newaction = actionfreelist;
+  actionfreelist = actionfreelist->next;
   return newaction;
 }
 
@@ -1907,7 +1907,7 @@ static char *msort(
   return ep;
 }
 /************************ From the file "option.c" **************************/
-static char **argv;
+static char **g_argv;
 static struct s_options *op;
 static FILE *errstream;
 
@@ -1920,14 +1920,14 @@ static FILE *errstream;
 static void errline(int n, int k, FILE *err)
 {
   int spcnt, i;
-  if( argv[0] ) fprintf(err,"%s",argv[0]);
-  spcnt = lemonStrlen(argv[0]) + 1;
-  for(i=1; i<n && argv[i]; i++){
-    fprintf(err," %s",argv[i]);
-    spcnt += lemonStrlen(argv[i])+1;
+  if( g_argv[0] ) fprintf(err,"%s",g_argv[0]);
+  spcnt = lemonStrlen(g_argv[0]) + 1;
+  for(i=1; i<n && g_argv[i]; i++){
+    fprintf(err," %s",g_argv[i]);
+    spcnt += lemonStrlen(g_argv[i])+1;
   }
   spcnt += k;
-  for(; argv[i]; i++) fprintf(err," %s",argv[i]);
+  for(; g_argv[i]; i++) fprintf(err," %s",g_argv[i]);
   if( spcnt<20 ){
     fprintf(err,"\n%*s^-- here\n",spcnt,"");
   }else{
@@ -1943,13 +1943,13 @@ static int argindex(int n)
 {
   int i;
   int dashdash = 0;
-  if( argv!=0 && *argv!=0 ){
-    for(i=1; argv[i]; i++){
-      if( dashdash || !ISOPT(argv[i]) ){
+  if( g_argv!=0 && *g_argv!=0 ){
+    for(i=1; g_argv[i]; i++){
+      if( dashdash || !ISOPT(g_argv[i]) ){
         if( n==0 ) return i;
         n--;
       }
-      if( strcmp(argv[i],"--")==0 ) dashdash = 1;
+      if( strcmp(g_argv[i],"--")==0 ) dashdash = 1;
     }
   }
   return -1;
@@ -1966,9 +1966,9 @@ static int handleflags(int i, FILE *err)
   int errcnt = 0;
   int j;
   for(j=0; op[j].label; j++){
-    if( strncmp(&argv[i][1],op[j].label,lemonStrlen(op[j].label))==0 ) break;
+    if( strncmp(&g_argv[i][1],op[j].label,lemonStrlen(op[j].label))==0 ) break;
   }
-  v = argv[i][0]=='-' ? 1 : 0;
+  v = g_argv[i][0]=='-' ? 1 : 0;
   if( op[j].label==0 ){
     if( err ){
       fprintf(err,"%sundefined option.\n",emsg);
@@ -1982,7 +1982,7 @@ static int handleflags(int i, FILE *err)
   }else if( op[j].type==OPT_FFLAG ){
     (*(void(*)(int))(op[j].arg))(v);
   }else if( op[j].type==OPT_FSTR ){
-    (*(void(*)(char *))(op[j].arg))(&argv[i][2]);
+    (*(void(*)(char *))(op[j].arg))(&g_argv[i][2]);
   }else{
     if( err ){
       fprintf(err,"%smissing argument on switch.\n",emsg);
@@ -2004,11 +2004,11 @@ static int handleswitch(int i, FILE *err)
   char *cp;
   int j;
   int errcnt = 0;
-  cp = strchr(argv[i],'=');
+  cp = strchr(g_argv[i],'=');
   assert( cp!=0 );
   *cp = 0;
   for(j=0; op[j].label; j++){
-    if( strcmp(argv[i],op[j].label)==0 ) break;
+    if( strcmp(g_argv[i],op[j].label)==0 ) break;
   }
   *cp = '=';
   if( op[j].label==0 ){
@@ -2035,7 +2035,7 @@ static int handleswitch(int i, FILE *err)
           if( err ){
             fprintf(err,
                "%sillegal character in floating-point argument.\n",emsg);
-            errline(i,(int)((char*)end-(char*)argv[i]),err);
+            errline(i,(int)((char*)end-(char*)g_argv[i]),err);
           }
           errcnt++;
         }
@@ -2046,7 +2046,7 @@ static int handleswitch(int i, FILE *err)
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in integer argument.\n",emsg);
-            errline(i,(int)((char*)end-(char*)argv[i]),err);
+            errline(i,(int)((char*)end-(char*)g_argv[i]),err);
           }
           errcnt++;
         }
@@ -2086,15 +2086,15 @@ static int handleswitch(int i, FILE *err)
 int OptInit(char **a, struct s_options *o, FILE *err)
 {
   int errcnt = 0;
-  argv = a;
+  g_argv = a;
   op = o;
   errstream = err;
-  if( argv && *argv && op ){
+  if( g_argv && *g_argv && op ){
     int i;
-    for(i=1; argv[i]; i++){
-      if( argv[i][0]=='+' || argv[i][0]=='-' ){
+    for(i=1; g_argv[i]; i++){
+      if( g_argv[i][0]=='+' || g_argv[i][0]=='-' ){
         errcnt += handleflags(i,err);
-      }else if( strchr(argv[i],'=') ){
+      }else if( strchr(g_argv[i],'=') ){
         errcnt += handleswitch(i,err);
       }
     }
@@ -2111,10 +2111,10 @@ int OptNArgs(void){
   int cnt = 0;
   int dashdash = 0;
   int i;
-  if( argv!=0 && argv[0]!=0 ){
-    for(i=1; argv[i]; i++){
-      if( dashdash || !ISOPT(argv[i]) ) cnt++;
-      if( strcmp(argv[i],"--")==0 ) dashdash = 1;
+  if( g_argv!=0 && g_argv[0]!=0 ){
+    for(i=1; g_argv[i]; i++){
+      if( dashdash || !ISOPT(g_argv[i]) ) cnt++;
+      if( strcmp(g_argv[i],"--")==0 ) dashdash = 1;
     }
   }
   return cnt;
@@ -2124,7 +2124,7 @@ char *OptArg(int n)
 {
   int i;
   i = argindex(n);
-  return i>=0 ? argv[i] : 0;
+  return i>=0 ? g_argv[i] : 0;
 }
 
 void OptErr(int n)
@@ -2728,7 +2728,7 @@ to follow the previous rule.");
     case WAITING_FOR_CLASS_ID:
       if( !ISLOWER(x[0]) ){
         ErrorMsg(psp->filename, psp->tokenlineno,
-          "%%token_class must be followed by an identifier: ", x);
+          "%%token_class must be followed by an identifier: %s", x);
         psp->errorcnt++;
         psp->state = RESYNC_AFTER_DECL_ERROR;
      }else if( Symbol_find(x) ){
@@ -3848,7 +3848,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
           ErrorMsg(lemp->filename,rp->ruleline,
             "%s(%s) has the same label as the LHS but is not the left-most "
             "symbol on the RHS.",
-            rp->rhs[i]->name, rp->rhsalias);
+            rp->rhs[i]->name, rp->rhsalias[i]);
           lemp->errorcnt++;
         }
         for(j=0; j<i; j++){

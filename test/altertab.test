@@ -559,4 +559,39 @@ ifcapable fts3 {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.0 {
+  CREATE TABLE sqlite1234 (id integer);
+  ALTER TABLE sqlite1234 RENAME TO User;
+  SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL;
+} {
+  User {CREATE TABLE "User" (id integer)}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 18.1.0 {
+  CREATE TABLE t0 (c0 INTEGER, PRIMARY KEY(c0)) WITHOUT ROWID;
+}
+breakpoint
+do_execsql_test 18.1.1 {
+  ALTER TABLE t0 RENAME COLUMN c0 TO c1;
+}
+do_execsql_test 18.1.2 {
+  SELECT sql FROM sqlite_master;
+} {{CREATE TABLE t0 (c1 INTEGER, PRIMARY KEY(c1)) WITHOUT ROWID}}
+
+reset_db
+do_execsql_test 18.2.0 {
+  CREATE TABLE t0 (c0 INTEGER, PRIMARY KEY(c0));
+}
+do_execsql_test 18.2.1 {
+  ALTER TABLE t0 RENAME COLUMN c0 TO c1;
+}
+do_execsql_test 18.2.2 {
+  SELECT sql FROM sqlite_master;
+} {{CREATE TABLE t0 (c1 INTEGER, PRIMARY KEY(c1))}}
+
 finish_test
+

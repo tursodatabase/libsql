@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix reindex
 
 # There is nothing to test if REINDEX is disable for this build.
 #
@@ -167,5 +168,38 @@ do_test reindex-3.3 {
 do_test reindex-3.99 {
   db2 close
 } {}
+
+#-------------------------------------------------------------------------
+foreach {tn wo} {1 "" 2 "WITHOUT ROWID"} {
+  reset_db
+  eval [string map [list %without_rowid% $wo] {
+    do_execsql_test 4.$tn.0 {
+      CREATE TABLE t0 (
+        c0 INTEGER PRIMARY KEY DESC, 
+        c1 UNIQUE DEFAULT NULL
+      ) %without_rowid% ;
+      INSERT INTO t0(c0) VALUES (1), (2), (3), (4), (5);
+      SELECT c0 FROM t0 WHERE c1 IS NULL ORDER BY 1;
+    } {1 2 3 4 5}
+    
+    do_execsql_test 4.$tn.1 {
+      REINDEX;
+    }
+    
+    do_execsql_test 4.$tn.2 {
+      SELECT c0 FROM t0 WHERE c1 IS NULL ORDER BY 1;
+    } {1 2 3 4 5}
+
+    do_execsql_test 4.$tn.3 {
+      SELECT c0 FROM t0 WHERE c1 IS NULL AND c0 IN (1,2,3,4,5);
+    } {1 2 3 4 5}
+
+    do_execsql_test 4.$tn.4 {
+      PRAGMA integrity_check;
+    } {ok}
+  }]
+}
+
+
 
 finish_test

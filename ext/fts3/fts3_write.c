@@ -3754,7 +3754,7 @@ static int nodeReaderNext(NodeReader *p){
     }
     p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &nSuffix);
 
-    if( nPrefix>p->iOff || nSuffix>p->nNode-p->iOff ){
+    if( nPrefix>p->term.n || nSuffix>p->nNode-p->iOff || nSuffix==0 ){
       return FTS_CORRUPT_VTAB;
     }
     blobGrowBuffer(&p->term, nPrefix+nSuffix, &rc);
@@ -3773,7 +3773,7 @@ static int nodeReaderNext(NodeReader *p){
     }
   }
 
-  assert( p->iOff<=p->nNode );
+  assert_fts3_nc( p->iOff<=p->nNode );
   return rc;
 }
 

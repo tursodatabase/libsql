@@ -866,7 +866,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pExpr->y.pWin ){
           Select *pSel = pNC->pWinSelect;
-          sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
+          if( IN_RENAME_OBJECT==0 ){
+            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
+          }
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
           sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
           sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
