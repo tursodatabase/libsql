@@ -737,7 +737,7 @@ static void constructAutomaticIndex(
      && (pTerm->wtFlags & TERM_VIRTUAL)==0
      && !ExprHasProperty(pExpr, EP_FromJoin)
      && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor) ){
-      pPartial = sqlite3ExprAnd(pParse->db, pPartial,
+      pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
     }
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){

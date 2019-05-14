@@ -841,6 +841,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
     p = vtabDisconnectAll(db, pTab);
     xDestroy = p->pMod->pModule->xDestroy;
     assert( xDestroy!=0 );  /* Checked before the virtual table is created */
+    pTab->nTabRef++;
     rc = xDestroy(p->pVtab);
     /* Remove the sqlite3_vtab* from the aVTrans[] array, if applicable */
     if( rc==SQLITE_OK ){
@@ -849,6 +850,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
       pTab->pVTable = 0;
       sqlite3VtabUnlock(p);
     }
+    sqlite3DeleteTable(db, pTab);
   }
 
   return rc;

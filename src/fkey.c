@@ -591,7 +591,7 @@ static void fkScanChildren(
     zCol = pFKey->pFrom->aCol[iCol].zName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
     pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
-    pWhere = sqlite3ExprAnd(db, pWhere, pEq);
+    pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
   }
 
   /* If the child table is the same as the parent table, then add terms
@@ -625,11 +625,11 @@ static void fkScanChildren(
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
         pRight = sqlite3Expr(db, TK_ID, pTab->aCol[iCol].zName);
         pEq = sqlite3PExpr(pParse, TK_IS, pLeft, pRight);
-        pAll = sqlite3ExprAnd(db, pAll, pEq);
+        pAll = sqlite3ExprAnd(pParse, pAll, pEq);
       }
       pNe = sqlite3PExpr(pParse, TK_NOT, pAll, 0);
     }
-    pWhere = sqlite3ExprAnd(db, pWhere, pNe);
+    pWhere = sqlite3ExprAnd(pParse, pWhere, pNe);
   }
 
   /* Resolve the references in the WHERE clause. */
@@ -1235,7 +1235,7 @@ static Trigger *fkActionTrigger(
             sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)),
           sqlite3ExprAlloc(db, TK_ID, &tFromCol, 0)
       );
-      pWhere = sqlite3ExprAnd(db, pWhere, pEq);
+      pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
 
       /* For ON UPDATE, construct the next term of the WHEN clause.
       ** The final WHEN clause will be like this:
@@ -1251,7 +1251,7 @@ static Trigger *fkActionTrigger(
               sqlite3ExprAlloc(db, TK_ID, &tNew, 0),
               sqlite3ExprAlloc(db, TK_ID, &tToCol, 0))
             );
-        pWhen = sqlite3ExprAnd(db, pWhen, pEq);
+        pWhen = sqlite3ExprAnd(pParse, pWhen, pEq);
       }
   
       if( action!=OE_Restrict && (action!=OE_Cascade || pChanges) ){

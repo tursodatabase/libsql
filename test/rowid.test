@@ -659,6 +659,32 @@ do_test rowid-11.4 {
   execsql {SELECT rowid, a FROM t5 WHERE rowid<='abc'}
 } {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
 
+do_test rowid-11.asc.1 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>'abc' ORDER BY 1 ASC}
+} {}
+do_test rowid-11.asc.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>='abc' ORDER BY 1 ASC}
+} {}
+do_test rowid-11.asc.3 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<'abc' ORDER BY 1 ASC}
+} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
+do_test rowid-11.asc.4 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<='abc' ORDER BY 1 ASC}
+} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
+
+do_test rowid-11.desc.1 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>'abc' ORDER BY 1 DESC}
+} {}
+do_test rowid-11.desc.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>='abc' ORDER BY 1 DESC}
+} {}
+do_test rowid-11.desc.3 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<'abc' ORDER BY 1 DESC}
+} {8 8 7 7 6 6 5 5 4 4 3 3 2 2 1 1}
+do_test rowid-11.desc.4 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<='abc' ORDER BY 1 DESC}
+} {8 8 7 7 6 6 5 5 4 4 3 3 2 2 1 1}
+
 # Test the automatic generation of rowids when the table already contains
 # a rowid with the maximum value.
 #
@@ -718,5 +744,47 @@ do_execsql_test rowid-13.1 {
   SELECT rowid, x, addrow(rowid+1000), '|' FROM t13 LIMIT 3;
   SELECT last_insert_rowid();
 } {1234 5 2234 | 2234 4990756 3234 | 3234 10458756 4234 | 4234}
+
+#-------------------------------------------------------------------------
+do_execsql_test rowid-14.0 {
+  CREATE TABLE t14(x INTEGER PRIMARY KEY);
+  INSERT INTO t14(x) VALUES (100);
+}
+do_execsql_test rowid-14.1 {
+  SELECT * FROM t14 WHERE x < 'a' ORDER BY rowid ASC;
+} {100}
+do_execsql_test rowid-14.2 {
+  SELECT * FROM t14 WHERE x < 'a' ORDER BY rowid DESC;
+} {100}
+
+do_execsql_test rowid-14.3 {
+  DELETE FROM t14;
+  SELECT * FROM t14 WHERE x < 'a' ORDER BY rowid ASC;
+} {}
+do_execsql_test rowid-14.4 {
+  SELECT * FROM t14 WHERE x < 'a' ORDER BY rowid DESC;
+} {}
+
+reset_db
+do_execsql_test rowid-15.0 {
+  PRAGMA reverse_unordered_selects=true;
+  CREATE TABLE t1 (c0, c1);
+  CREATE TABLE t2 (c0 INT UNIQUE);
+  INSERT INTO t1(c0, c1) VALUES (0, 0), (0, NULL);
+  INSERT INTO t2(c0) VALUES (1);
+}
+
+do_execsql_test rowid-15.1 {
+  SELECT t2.c0, t1.c1 FROM t1, t2 
+  WHERE (t2.rowid <= 'a') OR (t1.c0 <= t2.c0) LIMIT 100
+} {1 {} 1 0}
+
+do_execsql_test rowid-15.2 {
+  SELECT 1, NULL INTERSECT SELECT * FROM (
+      SELECT t2.c0, t1.c1 FROM t1, t2
+      WHERE ((t2.rowid <= 'a')) OR (t1.c0 <= t2.c0) ORDER BY 'a' DESC LIMIT 100
+  );
+} {1 {}}
+
 
 finish_test
