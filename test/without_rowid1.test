@@ -399,5 +399,15 @@ do_execsql_test 11.1 {
   PRAGMA integrity_check;
   SELECT a FROM t11 ORDER BY a COLLATE binary;
 } {ok A a}
+
+# 2019-05-13 ticket https://www.sqlite.org/src/info/bba7b69f9849b5b
+do_execsql_test 12.1 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0 (c0 INTEGER PRIMARY KEY DESC, c1 UNIQUE DEFAULT NULL) WITHOUT ROWID;
+  INSERT INTO t0(c0) VALUES (1), (2), (3), (4), (5);
+  REINDEX;
+  PRAGMA integrity_check;
+} {ok}
+
   
 finish_test

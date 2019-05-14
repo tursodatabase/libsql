@@ -1928,6 +1928,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
         testcase( hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) );
         pIdx->aiColumn[j] = pPk->aiColumn[i];
         pIdx->azColl[j] = pPk->azColl[i];
+        if( pPk->aSortOrder[i] ){
+          /* See ticket https://www.sqlite.org/src/info/bba7b69f9849b5bf */
+          pIdx->bAscKeyBug = 1;
+        }
         j++;
       }
     }
@@ -3049,7 +3053,16 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
   sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);
-  sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+  if( !pIndex->bAscKeyBug ){
+    /* This OP_SeekEnd opcode makes index insert for a REINDEX go much
+    ** faster by avoiding unnecessary seeks.  But the optimization does
+    ** not work for UNIQUE constraint indexes on WITHOUT ROWID tables
+    ** with DESC primary keys, since those indexes have there keys in
+    ** a different order from the main table.
+    ** See ticket: https://www.sqlite.org/src/info/bba7b69f9849b5bf
+    */
+    sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+  }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
