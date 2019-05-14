@@ -52,6 +52,15 @@ do_faultsim_test 1 -faults oom* -prep {
 }
 
 
+sqlite3rbu_create_vfs -default rbu ""
+sqlite3 db test.db
+set ::vfsname [file_control_vfsname db]
+do_faultsim_test 2 -faults oom* -prep {
+} -body {
+  file_control_vfsname db
+} 
+db close
+sqlite3rbu_destroy_vfs rbu
 
 
 finish_test

@@ -1828,15 +1828,19 @@ int sqlite3VdbeSorterWrite(
 
     if( nMin>pSorter->nMemory ){
       u8 *aNew;
-      int iListOff = (u8*)pSorter->list.pList - pSorter->list.aMemory;
       sqlite3_int64 nNew = 2 * (sqlite3_int64)pSorter->nMemory;
+      int iListOff = -1;
+      if( pSorter->list.pList ){
+        iListOff = (u8*)pSorter->list.pList - pSorter->list.aMemory;
+      }
       while( nNew < nMin ) nNew = nNew*2;
       if( nNew > pSorter->mxPmaSize ) nNew = pSorter->mxPmaSize;
       if( nNew < nMin ) nNew = nMin;
-
       aNew = sqlite3Realloc(pSorter->list.aMemory, nNew);
       if( !aNew ) return SQLITE_NOMEM_BKPT;
-      pSorter->list.pList = (SorterRecord*)&aNew[iListOff];
+      if( iListOff>=0 ){
+        pSorter->list.pList = (SorterRecord*)&aNew[iListOff];
+      }
       pSorter->list.aMemory = aNew;
       pSorter->nMemory = nNew;
     }

@@ -274,7 +274,7 @@ static int backupOnePage(
   if( nSrcReserve!=nDestReserve ){
     u32 newPgsz = nSrcPgsz;
     rc = sqlite3PagerSetPagesize(pDestPager, &newPgsz, nSrcReserve);
-    if( rc==SQLITE_OK && newPgsz!=nSrcPgsz ) rc = SQLITE_READONLY;
+    if( rc==SQLITE_OK && newPgsz!=(u32)nSrcPgsz ) rc = SQLITE_READONLY;
   }
 #endif
 

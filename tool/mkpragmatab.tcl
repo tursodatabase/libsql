@@ -301,6 +301,7 @@ set pragma_def {
 
   NAME: case_sensitive_like
   FLAG: NoColumns
+  IF:   !defined(SQLITE_OMIT_CASE_SENSITIVE_LIKE_PRAGMA)
 
   NAME: integrity_check
   FLAG: NeedSchema Result0 Result1
