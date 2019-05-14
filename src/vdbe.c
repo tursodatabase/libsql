@@ -4001,6 +4001,8 @@ case OP_SeekGT: {       /* jump, in3, group */
   pC->seekOp = pOp->opcode;
 #endif
 
+  pC->deferredMoveto = 0;
+  pC->cacheStatus = CACHE_STALE;
   if( pC->isTable ){
     /* The BTREE_SEEK_EQ flag is only set on index cursors */
     assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0
@@ -4105,8 +4107,6 @@ case OP_SeekGT: {       /* jump, in3, group */
       goto seek_not_found;
     }
   }
-  pC->deferredMoveto = 0;
-  pC->cacheStatus = CACHE_STALE;
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif
