@@ -234,39 +234,86 @@ const void *sqlite3_value_text16le(sqlite3_value *pVal){
 */
 int sqlite3_value_type(sqlite3_value* pVal){
   static const u8 aType[] = {
-     SQLITE_BLOB,     /* 0x00 */
-     SQLITE_NULL,     /* 0x01 */
-     SQLITE_TEXT,     /* 0x02 */
-     SQLITE_NULL,     /* 0x03 */
-     SQLITE_INTEGER,  /* 0x04 */
-     SQLITE_NULL,     /* 0x05 */
-     SQLITE_INTEGER,  /* 0x06 */
-     SQLITE_NULL,     /* 0x07 */
-     SQLITE_FLOAT,    /* 0x08 */
-     SQLITE_NULL,     /* 0x09 */
-     SQLITE_FLOAT,    /* 0x0a */
-     SQLITE_NULL,     /* 0x0b */
-     SQLITE_INTEGER,  /* 0x0c */
-     SQLITE_NULL,     /* 0x0d */
-     SQLITE_INTEGER,  /* 0x0e */
-     SQLITE_NULL,     /* 0x0f */
-     SQLITE_BLOB,     /* 0x10 */
-     SQLITE_NULL,     /* 0x11 */
-     SQLITE_TEXT,     /* 0x12 */
-     SQLITE_NULL,     /* 0x13 */
-     SQLITE_INTEGER,  /* 0x14 */
-     SQLITE_NULL,     /* 0x15 */
-     SQLITE_INTEGER,  /* 0x16 */
-     SQLITE_NULL,     /* 0x17 */
-     SQLITE_FLOAT,    /* 0x18 */
-     SQLITE_NULL,     /* 0x19 */
-     SQLITE_FLOAT,    /* 0x1a */
-     SQLITE_NULL,     /* 0x1b */
-     SQLITE_INTEGER,  /* 0x1c */
-     SQLITE_NULL,     /* 0x1d */
-     SQLITE_INTEGER,  /* 0x1e */
-     SQLITE_NULL,     /* 0x1f */
+     SQLITE_BLOB,     /* 0x00 (not possible) */
+     SQLITE_NULL,     /* 0x01 NULL */
+     SQLITE_TEXT,     /* 0x02 TEXT */
+     SQLITE_NULL,     /* 0x03 (not possible) */
+     SQLITE_INTEGER,  /* 0x04 INTEGER */
+     SQLITE_NULL,     /* 0x05 (not possible) */
+     SQLITE_INTEGER,  /* 0x06 INTEGER + TEXT */
+     SQLITE_NULL,     /* 0x07 (not possible) */
+     SQLITE_FLOAT,    /* 0x08 FLOAT */
+     SQLITE_NULL,     /* 0x09 (not possible) */
+     SQLITE_FLOAT,    /* 0x0a FLOAT + TEXT */
+     SQLITE_NULL,     /* 0x0b (not possible) */
+     SQLITE_INTEGER,  /* 0x0c (not possible) */
+     SQLITE_NULL,     /* 0x0d (not possible) */
+     SQLITE_INTEGER,  /* 0x0e (not possible) */
+     SQLITE_NULL,     /* 0x0f (not possible) */
+     SQLITE_BLOB,     /* 0x10 BLOB */
+     SQLITE_NULL,     /* 0x11 (not possible) */
+     SQLITE_TEXT,     /* 0x12 (not possible) */
+     SQLITE_NULL,     /* 0x13 (not possible) */
+     SQLITE_INTEGER,  /* 0x14 INTEGER + BLOB */
+     SQLITE_NULL,     /* 0x15 (not possible) */
+     SQLITE_INTEGER,  /* 0x16 (not possible) */
+     SQLITE_NULL,     /* 0x17 (not possible) */
+     SQLITE_FLOAT,    /* 0x18 FLOAT + BLOB */
+     SQLITE_NULL,     /* 0x19 (not possible) */
+     SQLITE_FLOAT,    /* 0x1a (not possible) */
+     SQLITE_NULL,     /* 0x1b (not possible) */
+     SQLITE_INTEGER,  /* 0x1c (not possible) */
+     SQLITE_NULL,     /* 0x1d (not possible) */
+     SQLITE_INTEGER,  /* 0x1e (not possible) */
+     SQLITE_NULL,     /* 0x1f (not possible) */
+     SQLITE_FLOAT,    /* 0x20 INTREAL */
+     SQLITE_NULL,     /* 0x21 (not possible) */
+     SQLITE_TEXT,     /* 0x22 INTREAL + TEXT */
+     SQLITE_NULL,     /* 0x23 (not possible) */
+     SQLITE_FLOAT,    /* 0x24 (not possible) */
+     SQLITE_NULL,     /* 0x25 (not possible) */
+     SQLITE_FLOAT,    /* 0x26 (not possible) */
+     SQLITE_NULL,     /* 0x27 (not possible) */
+     SQLITE_FLOAT,    /* 0x28 (not possible) */
+     SQLITE_NULL,     /* 0x29 (not possible) */
+     SQLITE_FLOAT,    /* 0x2a (not possible) */
+     SQLITE_NULL,     /* 0x2b (not possible) */
+     SQLITE_FLOAT,    /* 0x2c (not possible) */
+     SQLITE_NULL,     /* 0x2d (not possible) */
+     SQLITE_FLOAT,    /* 0x2e (not possible) */
+     SQLITE_NULL,     /* 0x2f (not possible) */
+     SQLITE_BLOB,     /* 0x30 (not possible) */
+     SQLITE_NULL,     /* 0x31 (not possible) */
+     SQLITE_TEXT,     /* 0x32 (not possible) */
+     SQLITE_NULL,     /* 0x33 (not possible) */
+     SQLITE_FLOAT,    /* 0x34 (not possible) */
+     SQLITE_NULL,     /* 0x35 (not possible) */
+     SQLITE_FLOAT,    /* 0x36 (not possible) */
+     SQLITE_NULL,     /* 0x37 (not possible) */
+     SQLITE_FLOAT,    /* 0x38 (not possible) */
+     SQLITE_NULL,     /* 0x39 (not possible) */
+     SQLITE_FLOAT,    /* 0x3a (not possible) */
+     SQLITE_NULL,     /* 0x3b (not possible) */
+     SQLITE_FLOAT,    /* 0x3c (not possible) */
+     SQLITE_NULL,     /* 0x3d (not possible) */
+     SQLITE_FLOAT,    /* 0x3e (not possible) */
+     SQLITE_NULL,     /* 0x3f (not possible) */
   };
+#ifdef SQLITE_DEBUG
+  {
+    int eType = SQLITE_BLOB;
+    if( pVal->flags & MEM_Null ){
+      eType = SQLITE_NULL;
+    }else if( pVal->flags & (MEM_Real|MEM_IntReal) ){
+      eType = SQLITE_FLOAT;
+    }else if( pVal->flags & MEM_Int ){
+      eType = SQLITE_INTEGER;
+    }else if( pVal->flags & MEM_Str ){
+      eType = SQLITE_TEXT;
+    }
+    assert( eType == aType[pVal->flags&MEM_AffMask] );
+  }
+#endif
   return aType[pVal->flags&MEM_AffMask];
 }
 
@@ -515,6 +562,21 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   pCtx->isError = SQLITE_NOMEM_BKPT;
   sqlite3OomFault(pCtx->pOut->db);
 }
+
+#ifndef SQLITE_UNTESTABLE
+/* Force the INT64 value currently stored as the result to be
+** a MEM_IntReal value.  See the SQLITE_TESTCTRL_RESULT_INTREAL
+** test-control.
+*/
+void sqlite3ResultIntReal(sqlite3_context *pCtx){ 
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  if( pCtx->pOut->flags & MEM_Int ){
+    pCtx->pOut->flags &= ~MEM_Int;
+    pCtx->pOut->flags |= MEM_IntReal;
+  }
+}
+#endif
+
 
 /*
 ** This function is called after a transaction has been committed. It 
@@ -1802,7 +1864,9 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   }else if( iIdx>=p->pUnpacked->nField ){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
-    if( pMem->flags & MEM_Int ){
+    if( pMem->flags & (MEM_Int|MEM_IntReal) ){
+      testcase( pMem->flags & MEM_Int );
+      testcase( pMem->flags & MEM_IntReal );
       sqlite3VdbeMemRealify(pMem);
     }
   }

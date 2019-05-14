@@ -315,6 +315,9 @@ ifcapable floatingpoint {
   do_test func-4.38 {
     execsql {SELECT round(9999999999999.556,2);}
   } {9999999999999.56}
+  do_execsql_test func-4.39 {
+    SELECT round(1e500), round(-1e500);
+  } {Inf -Inf}
 }
 
 # Test the upper() and lower() functions
