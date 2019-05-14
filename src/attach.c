@@ -241,7 +241,7 @@ static void attachFunc(
     }
   }
 #ifdef SQLITE_USER_AUTHENTICATION
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && !REOPEN_AS_MEMDB(db) ){
     u8 newAuth = 0;
     rc = sqlite3UserAuthCheckLogin(db, zName, &newAuth);
     if( newAuth<db->auth.authLevel ){

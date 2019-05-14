@@ -106,6 +106,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm, Expr *pInto){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int iDb = 0;
   if( v==0 ) goto build_vacuum_end;
+  if( pParse->nErr ) goto build_vacuum_end;
   if( pNm ){
 #ifndef SQLITE_BUG_COMPATIBLE_20160819
     /* Default behavior:  Report an error if the argument to VACUUM is

@@ -1384,7 +1384,7 @@ void sqlite3AddDefaultValue(
 ** accept it.  This routine does the necessary conversion.  It converts
 ** the expression given in its argument from a TK_STRING into a TK_ID
 ** if the expression is just a TK_STRING with an optional COLLATE clause.
-** If the epxression is anything other than TK_STRING, the expression is
+** If the expression is anything other than TK_STRING, the expression is
 ** unchanged.
 */
 static void sqlite3StringToId(Expr *p){
@@ -1781,10 +1781,51 @@ static void estimateIndexWidth(Index *pIdx){
   pIdx->szIdxRow = sqlite3LogEst(wIndex*4);
 }
 
-/* Return true if value x is found any of the first nCol entries of aiCol[]
+/* Return true if column number x is any of the first nCol entries of aiCol[].
+** This is used to determine if the column number x appears in any of the
+** first nCol entries of an index.
 */
 static int hasColumn(const i16 *aiCol, int nCol, int x){
-  while( nCol-- > 0 ) if( x==*(aiCol++) ) return 1;
+  while( nCol-- > 0 ){
+    assert( aiCol[0]>=0 );
+    if( x==*(aiCol++) ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Return true if any of the first nKey entries of index pIdx exactly
+** match the iCol-th entry of pPk.  pPk is always a WITHOUT ROWID
+** PRIMARY KEY index.  pIdx is an index on the same table.  pIdx may
+** or may not be the same index as pPk.
+**
+** The first nKey entries of pIdx are guaranteed to be ordinary columns,
+** not a rowid or expression.
+**
+** This routine differs from hasColumn() in that both the column and the
+** collating sequence must match for this routine, but for hasColumn() only
+** the column name must match.
+*/
+static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
+  int i, j;
+  assert( nKey<=pIdx->nColumn );
+  assert( iCol<MAX(pPk->nColumn,pPk->nKeyCol) );
+  assert( pPk->idxType==SQLITE_IDXTYPE_PRIMARYKEY );
+  assert( pPk->pTable->tabFlags & TF_WithoutRowid );
+  assert( pPk->pTable==pIdx->pTable );
+  testcase( pPk==pIdx );
+  j = pPk->aiColumn[iCol];
+  assert( j!=XN_ROWID && j!=XN_EXPR );
+  for(i=0; i<nKey; i++){
+    assert( pIdx->aiColumn[i]>=0 || j>=0 );
+    if( pIdx->aiColumn[i]==j 
+     && sqlite3StrICmp(pIdx->azColl[i], pPk->azColl[iCol])==0
+    ){
+      return 1;
+    }
+  }
   return 0;
 }
 
@@ -1873,13 +1914,16 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pList = sqlite3ExprListAppend(pParse, 0, 
                   sqlite3ExprAlloc(db, TK_ID, &ipkToken, 0));
     if( pList==0 ) return;
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenRemap(pParse, pList->a[0].pExpr, &pTab->iPKey);
+    }
     pList->a[0].sortOrder = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
+    pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
     if( db->mallocFailed || pParse->nErr ) return;
     pPk = sqlite3PrimaryKeyIndex(pTab);
-    pTab->iPKey = -1;
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk!=0 );
@@ -1890,9 +1934,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     ** code assumes the PRIMARY KEY contains no repeated columns.
     */
     for(i=j=1; i<pPk->nKeyCol; i++){
-      if( hasColumn(pPk->aiColumn, j, pPk->aiColumn[i]) ){
+      if( isDupColumn(pPk, j, pPk, i) ){
         pPk->nColumn--;
       }else{
+        testcase( hasColumn(pPk->aiColumn, j, pPk->aiColumn[i]) );
         pPk->aiColumn[j++] = pPk->aiColumn[i];
       }
     }
@@ -1922,7 +1967,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     int n;
     if( IsPrimaryKeyIndex(pIdx) ) continue;
     for(i=n=0; i<nPk; i++){
-      if( !hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) ) n++;
+      if( !isDupColumn(pIdx, pIdx->nKeyCol, pPk, i) ){
+        testcase( hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) );
+        n++;
+      }
     }
     if( n==0 ){
       /* This index is a superset of the primary key */
@@ -1931,9 +1979,14 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     }
     if( resizeIndexObject(db, pIdx, pIdx->nKeyCol+n) ) return;
     for(i=0, j=pIdx->nKeyCol; i<nPk; i++){
-      if( !hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) ){
+      if( !isDupColumn(pIdx, pIdx->nKeyCol, pPk, i) ){
+        testcase( hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) );
         pIdx->aiColumn[j] = pPk->aiColumn[i];
         pIdx->azColl[j] = pPk->azColl[i];
+        if( pPk->aSortOrder[i] ){
+          /* See ticket https://www.sqlite.org/src/info/bba7b69f9849b5bf */
+          pIdx->bAscKeyBug = 1;
+        }
         j++;
       }
     }
@@ -3056,7 +3109,16 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
   sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);
-  sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+  if( !pIndex->bAscKeyBug ){
+    /* This OP_SeekEnd opcode makes index insert for a REINDEX go much
+    ** faster by avoiding unnecessary seeks.  But the optimization does
+    ** not work for UNIQUE constraint indexes on WITHOUT ROWID tables
+    ** with DESC primary keys, since those indexes have there keys in
+    ** a different order from the main table.
+    ** See ticket: https://www.sqlite.org/src/info/bba7b69f9849b5bf
+    */
+    sqlite3VdbeAddOp1(v, OP_SeekEnd, iIdx);
+  }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
@@ -3448,9 +3510,10 @@ void sqlite3CreateIndex(
     for(j=0; j<pPk->nKeyCol; j++){
       int x = pPk->aiColumn[j];
       assert( x>=0 );
-      if( hasColumn(pIndex->aiColumn, pIndex->nKeyCol, x) ){
+      if( isDupColumn(pIndex, pIndex->nKeyCol, pPk, j) ){
         pIndex->nColumn--; 
       }else{
+        testcase( hasColumn(pIndex->aiColumn,pIndex->nKeyCol,x) );
         pIndex->aiColumn[i] = x;
         pIndex->azColl[i] = pPk->azColl[j];
         pIndex->aSortOrder[i] = pPk->aSortOrder[j];

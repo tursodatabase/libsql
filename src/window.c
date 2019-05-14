@@ -868,13 +868,18 @@ static void selectWindowRewriteEList(
 static ExprList *exprListAppendList(
   Parse *pParse,          /* Parsing context */
   ExprList *pList,        /* List to which to append. Might be NULL */
-  ExprList *pAppend       /* List of values to append. Might be NULL */
+  ExprList *pAppend,      /* List of values to append. Might be NULL */
+  int bIntToNull
 ){
   if( pAppend ){
     int i;
     int nInit = pList ? pList->nExpr : 0;
     for(i=0; i<pAppend->nExpr; i++){
       Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
+      if( bIntToNull && pDup && pDup->op==TK_INTEGER ){
+        pDup->op = TK_NULL;
+        pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
+      }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
       if( pList ) pList->a[nInit+i].sortOrder = pAppend->a[i].sortOrder;
     }
@@ -914,7 +919,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** of the window PARTITION and ORDER BY clauses. Then, if this makes it
     ** redundant, remove the ORDER BY from the parent SELECT.  */
     pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
-    pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy);
+    pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy, 1);
     if( pSort && p->pOrderBy ){
       if( sqlite3ExprListCompare(pSort, p->pOrderBy, -1)==0 ){
         sqlite3ExprListDelete(db, p->pOrderBy);
@@ -935,8 +940,8 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     /* Append the PARTITION BY and ORDER BY expressions to the to the 
     ** sub-select expression list. They are required to figure out where 
     ** boundaries for partitions and sets of peer rows lie.  */
-    pSublist = exprListAppendList(pParse, pSublist, pMWin->pPartition);
-    pSublist = exprListAppendList(pParse, pSublist, pMWin->pOrderBy);
+    pSublist = exprListAppendList(pParse, pSublist, pMWin->pPartition, 0);
+    pSublist = exprListAppendList(pParse, pSublist, pMWin->pOrderBy, 0);
 
     /* Append the arguments passed to each window function to the
     ** sub-select expression list. Also allocate two registers for each
@@ -944,7 +949,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** results.  */
     for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
       pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
-      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList);
+      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList, 0);
       if( pWin->pFilter ){
         Expr *pFilter = sqlite3ExprDup(db, pWin->pFilter, 0);
         pSublist = sqlite3ExprListAppend(pParse, pSublist, pFilter);

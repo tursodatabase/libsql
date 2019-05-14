@@ -4132,6 +4132,22 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif /* defined(YYCOVERAGE) */
+
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_RESULT_INTREAL, sqlite3_context*);
+    **
+    ** This test-control causes the most recent sqlite3_result_int64() value
+    ** to be interpreted as a MEM_IntReal instead of as an MEM_Int.  Normally,
+    ** MEM_IntReal values only arise during an INSERT operation of integer
+    ** values into a REAL column, so they can be challenging to test.  This
+    ** test-control enables us to write an intreal() SQL function that can
+    ** inject an intreal() value at arbitrary places in an SQL statement,
+    ** for testing purposes.
+    */
+    case SQLITE_TESTCTRL_RESULT_INTREAL: {
+      sqlite3_context *pCtx = va_arg(ap, sqlite3_context*);
+      sqlite3ResultIntReal(pCtx);
+      break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */

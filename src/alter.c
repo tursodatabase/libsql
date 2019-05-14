@@ -54,7 +54,7 @@ static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
       "FROM \"%w\".%s "
-      "WHERE name NOT LIKE 'sqlite_%%'"
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
       " AND sqlite_rename_test(%Q, sql, type, name, %d)=NULL ",
       zDb, MASTER_NAME, 
@@ -65,7 +65,7 @@ static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
     sqlite3NestedParse(pParse, 
         "SELECT 1 "
         "FROM temp.%s "
-        "WHERE name NOT LIKE 'sqlite_%%'"
+        "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
         " AND sqlite_rename_test(%Q, sql, type, name, 1)=NULL ",
         MASTER_NAME, zDb 
@@ -186,7 +186,7 @@ void sqlite3AlterRenameTable(
       "UPDATE \"%w\".%s SET "
       "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) "
       "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
-      "AND   name NOT LIKE 'sqlite_%%'"
+      "AND   name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       , zDb, MASTER_NAME, zDb, zTabName, zName, (iDb==1), zTabName
   );
 
@@ -197,7 +197,8 @@ void sqlite3AlterRenameTable(
           "tbl_name = %Q, "
           "name = CASE "
             "WHEN type='table' THEN %Q "
-            "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
+            "WHEN name LIKE 'sqliteX_autoindex%%' ESCAPE 'X' "
+            "     AND type='index' THEN "
              "'sqlite_autoindex_' || %Q || substr(name,%d+18) "
             "ELSE name END "
       "WHERE tbl_name=%Q COLLATE nocase AND "
@@ -571,7 +572,8 @@ void sqlite3AlterRenameColumn(
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
-      "WHERE name NOT LIKE 'sqlite_%%' AND (type != 'index' OR tbl_name = %Q)"
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
+      " AND (type != 'index' OR tbl_name = %Q)"
       " AND sql NOT LIKE 'create virtual%%'",
       zDb, MASTER_NAME, 
       zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
