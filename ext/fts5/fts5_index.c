@@ -4953,8 +4953,14 @@ static void fts5MergePrefixLists(
     ** first rowid in one input is a large negative number, and the first in
     ** the other a non-negative number, the delta for the non-negative
     ** number will be larger on disk than the literal integer value
-    ** was.  */
-    if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n + 9) ) return;
+    ** was.  
+    **
+    ** Or, if the input position-lists are corrupt, then the output might
+    ** include up to 2 extra 10-byte positions created by interpreting -1
+    ** (the value PoslistNext64() uses for EOF) as a position and appending
+    ** it to the output. This can happen at most once for each input 
+    ** position-list, hence two 10 byte paddings.  */
+    if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n + 9+10+10) ) return;
     fts5DoclistIterInit(p1, &i1);
     fts5DoclistIterInit(p2, &i2);
 
@@ -4965,7 +4971,7 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist+i1.nSize);
         fts5DoclistIterNext(&i1);
         if( i1.aPoslist==0 ) break;
-        assert( out.n<=((i1.aPoslist - p1->p) + (i2.aPoslist - p2->p) + 9) );
+        assert( out.n<=((i1.aPoslist-p1->p) + (i2.aPoslist-p2->p)+9+10+10) );
       }
       else if( i2.iRowid!=i1.iRowid ){
         /* Copy entry from i2 */
@@ -4973,7 +4979,7 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist+i2.nSize);
         fts5DoclistIterNext(&i2);
         if( i2.aPoslist==0 ) break;
-        assert( out.n<=((i1.aPoslist - p1->p) + (i2.aPoslist - p2->p) + 9) );
+        assert( out.n<=((i1.aPoslist-p1->p) + (i2.aPoslist-p2->p)+9+10+10) );
       }
       else{
         /* Merge the two position lists. */ 
@@ -4997,7 +5003,7 @@ static void fts5MergePrefixLists(
 
         sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
         sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
-        assert( iPos1>=0 && iPos2>=0 );
+        assert_nc( iPos1>=0 && iPos2>=0 );
 
         if( iPos1<iPos2 ){
           sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
@@ -5006,7 +5012,6 @@ static void fts5MergePrefixLists(
           sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
           sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
         }
-
         if( iPos1>=0 && iPos2>=0 ){
           while( 1 ){
             if( iPos1<iPos2 ){
@@ -5031,7 +5036,7 @@ static void fts5MergePrefixLists(
           aCopy = &a1[iOff1];
           nCopy = i1.nPoslist - iOff1;
         }else{
-          assert( iPos2>=0 && iPos2!=iPrev );
+          assert_nc( iPos2>=0 && iPos2!=iPrev );
           sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
           aCopy = &a2[iOff2];
           nCopy = i2.nPoslist - iOff2;
@@ -5045,9 +5050,9 @@ static void fts5MergePrefixLists(
         fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
         fts5DoclistIterNext(&i1);
         fts5DoclistIterNext(&i2);
-        assert( out.n<=(p1->n+p2->n+9) );
+        assert_nc( out.n<=(p1->n+p2->n+9) );
         if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
-        assert( out.n<=((i1.aPoslist - p1->p) + (i2.aPoslist - p2->p) + 9) );
+        assert( out.n<=((i1.aPoslist-p1->p) + (i2.aPoslist-p2->p)+9+10+10) );
       }
     }
 
@@ -5059,7 +5064,7 @@ static void fts5MergePrefixLists(
       fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
       fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.aEof - i2.aPoslist);
     }
-    assert( out.n<=(p1->n+p2->n+9) );
+    assert_nc( out.n<=(p1->n+p2->n+9) );
 
     fts5BufferSet(&p->rc, p1, out.n, out.p);
     fts5BufferFree(&tmp);
