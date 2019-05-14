@@ -1634,7 +1634,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   ** However, that integer is too large to be stored in a 2-byte unsigned
   ** integer, so a value of 0 is used in its place. */
   top = get2byte(&data[hdr+5]);
-  assert( top<=(int)pPage->pBt->usableSize ); /* Prevent by getAndInitPage() */
+  assert( top<=(int)pPage->pBt->usableSize ); /* by btreeComputeFreeSpace() */
   if( gap>top ){
     if( top==0 && pPage->pBt->usableSize==65536 ){
       top = 65536;
@@ -1931,7 +1931,7 @@ static int btreeComputeFreeSpace(MemPage *pPage){
   ** serves to verify that the offset to the start of the cell-content
   ** area, according to the page header, lies within the page.
   */
-  if( nFree>usableSize ){
+  if( nFree>usableSize || nFree<iCellFirst ){
     return SQLITE_CORRUPT_PAGE(pPage);
   }
   pPage->nFree = (u16)(nFree - iCellFirst);
@@ -4160,6 +4160,18 @@ int sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
 }
 
 /*
+** Set the pBt->nPage field correctly, according to the current
+** state of the database.  Assume pBt->pPage1 is valid.
+*/
+static void btreeSetNPage(BtShared *pBt, MemPage *pPage1){
+  int nPage = get4byte(&pPage1->aData[28]);
+  testcase( nPage==0 );
+  if( nPage==0 ) sqlite3PagerPagecount(pBt->pPager, &nPage);
+  testcase( pBt->nPage!=nPage );
+  pBt->nPage = nPage;
+}
+
+/*
 ** Rollback the transaction in progress.
 **
 ** If tripCode is not SQLITE_OK then cursors will be invalidated (tripped).
@@ -4204,11 +4216,7 @@ int sqlite3BtreeRollback(Btree *p, int tripCode, int writeOnly){
     ** call btreeGetPage() on page 1 again to make
     ** sure pPage1->aData is set correctly. */
     if( btreeGetPage(pBt, 1, &pPage1, 0)==SQLITE_OK ){
-      int nPage = get4byte(28+(u8*)pPage1->aData);
-      testcase( nPage==0 );
-      if( nPage==0 ) sqlite3PagerPagecount(pBt->pPager, &nPage);
-      testcase( pBt->nPage!=nPage );
-      pBt->nPage = nPage;
+      btreeSetNPage(pBt, pPage1);
       releasePageOne(pPage1);
     }
     assert( countValidCursors(pBt, 1)==0 );
@@ -4288,12 +4296,11 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
         pBt->nPage = 0;
       }
       rc = newDatabase(pBt);
-      pBt->nPage = get4byte(28 + pBt->pPage1->aData);
+      btreeSetNPage(pBt, pBt->pPage1);
 
-      /* The database size was written into the offset 28 of the header
-      ** when the transaction started, so we know that the value at offset
-      ** 28 is nonzero. */
-      assert( pBt->nPage>0 );
+      /* pBt->nPage might be zero if the database was corrupt when 
+      ** the transaction was started. Otherwise, it must be at least 1.  */
+      assert( CORRUPT_DB || pBt->nPage>0 );
     }
     sqlite3BtreeLeave(p);
   }
@@ -5301,6 +5308,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
     assert( pCur->ix==pCur->pPage->nCell-1 );
     assert( pCur->pPage->leaf );
 #endif
+    *pRes = 0;
     return SQLITE_OK;
   }
 
@@ -7643,6 +7651,7 @@ static int balance_nonroot(
     u16 maskPage = pOld->maskPage;
     u8 *piCell = aData + pOld->cellOffset;
     u8 *piEnd;
+    VVA_ONLY( int nCellAtStart = b.nCell; )
 
     /* Verify that all sibling pages are of the same "type" (table-leaf,
     ** table-interior, index-leaf, or index-interior).
@@ -7671,6 +7680,10 @@ static int balance_nonroot(
     */
     memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*(limit+pOld->nOverflow));
     if( pOld->nOverflow>0 ){
+      if( limit<pOld->aiOvfl[0] ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto balance_cleanup;
+      }
       limit = pOld->aiOvfl[0];
       for(j=0; j<limit; j++){
         b.apCell[b.nCell] = aData + (maskPage & get2byteAligned(piCell));
@@ -7690,6 +7703,7 @@ static int balance_nonroot(
       piCell += 2;
       b.nCell++;
     }
+    assert( (b.nCell-nCellAtStart)==(pOld->nCell+pOld->nOverflow) );
 
     cntOld[i] = b.nCell;
     if( i<nOld-1 && !leafData){
@@ -7990,6 +8004,7 @@ static int balance_nonroot(
       while( i==cntOldNext ){
         iOld++;
         assert( iOld<nNew || iOld<nOld );
+        assert( iOld>=0 && iOld<NB );
         pOld = iOld<nNew ? apNew[iOld] : apOld[iOld];
         cntOldNext += pOld->nCell + pOld->nOverflow + !leafData;
       }

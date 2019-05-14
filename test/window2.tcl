@@ -417,6 +417,13 @@ execsql_test 4.8.4 {
   ) FROM t2 ORDER BY 1, 2;
 }
 
+execsql_float_test 4.9 {
+  SELECT 
+    rank() OVER win AS rank,
+    cume_dist() OVER win AS cume_dist FROM t1
+  WINDOW win AS (ORDER BY 1);
+}
+
 
 
 finish_test

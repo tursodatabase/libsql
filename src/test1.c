@@ -999,6 +999,20 @@ static void nondeterministicFunction(
 }
 
 /*
+** This SQL function returns the integer value of its argument as a MEM_IntReal
+** value.
+*/
+static void intrealFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  sqlite3_int64 v = sqlite3_value_int64(argv[0]);
+  sqlite3_result_int64(context, v);
+  sqlite3_test_control(SQLITE_TESTCTRL_RESULT_INTREAL, context);
+}
+
+/*
 ** Usage:  sqlite3_create_function DB
 **
 ** Call the sqlite3_create_function API on the given database in order
@@ -1060,6 +1074,14 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "counter2", -1, SQLITE_UTF8|SQLITE_DETERMINISTIC,
           0, nondeterministicFunction, 0, 0);
+  }
+
+  /* The intreal() function converts its argument to an integer and returns
+  ** it as a MEM_IntReal.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "intreal", 1, SQLITE_UTF8,
+          0, intrealFunction, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -4290,13 +4312,15 @@ static int SQLITE_TCLAPI test_prepare_v2(
   }
   pzTail = objc>=5 ? &zTail : 0;
   rc = sqlite3_prepare_v2(db, zCopy, bytes, &pStmt, pzTail);
+  if( objc>=5 ){
+    zTail = &zSql[(zTail - zCopy)];
+  }
   free(zCopy);
-  zTail = &zSql[(zTail - zCopy)];
 
   assert(rc==SQLITE_OK || pStmt==0);
   Tcl_ResetResult(interp);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
-  if( rc==SQLITE_OK && zTail && objc>=5 ){
+  if( rc==SQLITE_OK && objc>=5 && zTail ){
     if( bytes>=0 ){
       bytes = bytes - (int)(zTail-zSql);
     }
@@ -7888,7 +7912,7 @@ static int SQLITE_TCLAPI test_decode_hexdb(
   int iOffset = 0;
   int j, k;
   int rc;
-  unsigned char x[16];
+  unsigned int x[16];
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HEXDB");
     return TCL_ERROR;
@@ -7920,14 +7944,14 @@ static int SQLITE_TCLAPI test_decode_hexdb(
       iOffset = k;
       continue;
     }
-    rc = sscanf(zIn+i,"| %d: %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx"
-                      "  %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx",
+    rc = sscanf(zIn+i,"| %d: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
                 &j, &x[0], &x[1], &x[2], &x[3], &x[4], &x[5], &x[6], &x[7],
                 &x[8], &x[9], &x[10], &x[11], &x[12], &x[13], &x[14], &x[15]);
     if( rc==17 ){
       k = iOffset+j;
       if( k+16<=n ){
-        memcpy(a+k, x, 16);
+        int ii;
+        for(ii=0; ii<16; ii++) a[k+ii] = x[ii]&0xff;
       }
       continue;
     }

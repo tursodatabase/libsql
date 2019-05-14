@@ -2269,6 +2269,7 @@ struct Index {
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
+  unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
@@ -2546,6 +2547,8 @@ struct Expr {
 #define EP_Subrtn   0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
 #define EP_Quoted   0x4000000 /* TK_ID was originally quoted */
 #define EP_Static   0x8000000 /* Held in memory not obtained from malloc() */
+#define EP_IsTrue  0x10000000 /* Always has boolean value of TRUE */
+#define EP_IsFalse 0x20000000 /* Always has boolean value of FALSE */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2561,6 +2564,8 @@ struct Expr {
 #define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
+#define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
+#define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
 /* The ExprSetVVAProperty() macro is used for Verification, Validation,
 ** and Accreditation only.  It works like ExprSetProperty() during VVA
@@ -3870,7 +3875,8 @@ Expr *sqlite3Expr(sqlite3*,int,const char*);
 void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*);
 void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
-Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
+Expr *sqlite3ExprAnd(Parse*,Expr*, Expr*);
+Expr *sqlite3ExprSimplifiedAndOr(Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
@@ -4283,6 +4289,9 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));
 void sqlite3ValueSetNull(sqlite3_value*);
 void sqlite3ValueFree(sqlite3_value*);
+#ifndef SQLITE_UNTESTABLE
+void sqlite3ResultIntReal(sqlite3_context*);
+#endif
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
 #ifndef SQLITE_OMIT_UTF16
 char *sqlite3Utf16to8(sqlite3 *, const void*, int, u8);

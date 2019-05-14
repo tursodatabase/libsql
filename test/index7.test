@@ -186,7 +186,7 @@ do_test index7-1.15 {
   }
 } {t1 {15 1} t1a {10 1} t1b {8 1} t1c {15 1} ok}
 
-# Queries use partial indices as appropriate times.
+# Queries use partial indices at appropriate times.
 #
 do_test index7-2.1 {
   execsql {

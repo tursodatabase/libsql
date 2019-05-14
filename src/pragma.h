@@ -178,11 +178,13 @@ static const PragmaName aPragmaName[] = {
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_CASE_SENSITIVE_LIKE_PRAGMA)
  {/* zName:     */ "case_sensitive_like",
   /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
   /* ePragFlg:  */ PragFlg_NoColumns,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
+#endif
  {/* zName:     */ "cell_size_check",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,

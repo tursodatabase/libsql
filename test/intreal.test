@@ -1,0 +1,52 @@
+# 2019-05-03
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# Tests to exercise the MEM_IntReal representation of Mem objects.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix intreal
+
+sqlite3_create_function db
+do_execsql_test 100 {
+  SELECT intreal(5);
+} {5.0}
+do_execsql_test 110 {
+  SELECT intreal(5)=5, 6=intreal(6);
+} {1 1}
+do_execsql_test 120 {
+  SELECT intreal(7)=7.0, 8.0=intreal(8);
+} {1 1}
+do_execsql_test 130 {
+  SELECT typeof(intreal(9));
+} {real}
+do_execsql_test 140 {
+  SELECT 'a'||intreal(11)||'z';
+} {a11.0z}
+
+do_execsql_test 150 {
+  SELECT max(1.0,intreal(2),3.0), max(1,intreal(2),3);
+} {3.0 3}
+do_execsql_test 160 {
+  SELECT max(1.0,intreal(4),3.0), max(1,intreal(4),3);
+} {4.0 4.0}
+do_execsql_test 170 {
+  SELECT max(1.0,intreal(2),intreal(3),4.0),
+         max(1,intreal(2),intreal(3),4);
+} {4.0 4}
+do_execsql_test 180 {
+  SELECT max(1.0,intreal(5),intreal(3),4.0),
+         max(1,intreal(5),intreal(3),4);
+} {5.0 5.0}
+
+
+
+
+finish_test
