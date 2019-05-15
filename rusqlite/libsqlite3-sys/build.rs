@@ -80,12 +80,16 @@ mod build_bundled {
         if cfg!(feature = "session") {
             cfg.flag("-DSQLITE_ENABLE_SESSION");
         }
+
         if let Ok(limit) = env::var("SQLITE_MAX_VARIABLE_NUMBER") {
             cfg.flag(&format!("-DSQLITE_MAX_VARIABLE_NUMBER={}", limit));
         }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_VARIABLE_NUMBER");
+
         if let Ok(limit) = env::var("SQLITE_MAX_EXPR_DEPTH") {
             cfg.flag(&format!("-DSQLITE_MAX_EXPR_DEPTH={}", limit));
         }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH");
 
         cfg.compile("libsqlite3.a");
 
