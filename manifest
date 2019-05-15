@@ -1,12 +1,12 @@
-C Fix\sa\sproblem\swith\sthe\sfix\sfor\s[9cf6c9bb51]\s(commit\s[658b84d7])\sthat\scould\scause\sa\scursor\sto\sbe\sleft\sin\san\sinvalid\sstate\sfollowing\sa\s(rowid\s<\stext-value)\ssearch.
-D 2019-05-14T20:25:22.199
+C Simplify\sthe\s"Verifying\sCode\sAuthenticity"\ssection\sof\sthe\sREADME.md\sfile.\nNo\scode\schanges.
+D 2019-05-15T10:16:34.190
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 4640daf826b80947a924ac44275c451ffc13007c7c866a5730c8ce5cf9e1dc74
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 26957950b2b4f3b26e311eeea70437f85a77765f71d3a06489466d66ee321100
-F README.md 74745e53db87fdc86f571dd7ec1bd18e154d0abd6d37d2292a1062e931318a29
+F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION cc8cd90333c65cdf4cb346f356a2ce1eb0f5b7fa1d17a34d7350103e7320af1f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 228e1087c0602470e450586499de5a3e87e266c688bc828f20e3bad2fdc65ff1
-R d132bb7525b36863c7f0dbefbbac4ccc
-U dan
-Z 61ab05a485e7c528107861afc63f60a9
+P bc7d2c1656396bb4f5f1f814e60dbf816cc91c5a521b54ad593cd3da0fe8dcb4
+R 0f2b565ac9807e36fc0a9e8a572b8c12
+U drh
+Z 08150d30a9865a1ab89213245d21f470
