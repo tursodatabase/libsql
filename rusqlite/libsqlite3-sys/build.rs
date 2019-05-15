@@ -52,6 +52,8 @@ mod build_bundled {
         let mut cfg = cc::Build::new();
         cfg.file("sqlite3/sqlite3.c")
             .flag("-DSQLITE_CORE")
+            .flag("-DSQLITE_MAX_VARIABLE_NUMBER=250000")
+            .flag("-DSQLITE_MAX_EXPR_DEPTH=10000")
             .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
             .flag("-DSQLITE_ENABLE_API_ARMOR")
             .flag("-DSQLITE_ENABLE_COLUMN_METADATA")
