@@ -29,6 +29,7 @@ fn main() {
 mod build_bundled {
     use cc;
     use std::path::Path;
+    use std::env;
 
     pub fn main(out_dir: &str, out_path: &Path) {
         if cfg!(feature = "sqlcipher") {
@@ -52,8 +53,6 @@ mod build_bundled {
         let mut cfg = cc::Build::new();
         cfg.file("sqlite3/sqlite3.c")
             .flag("-DSQLITE_CORE")
-            .flag("-DSQLITE_MAX_VARIABLE_NUMBER=250000")
-            .flag("-DSQLITE_MAX_EXPR_DEPTH=10000")
             .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
             .flag("-DSQLITE_ENABLE_API_ARMOR")
             .flag("-DSQLITE_ENABLE_COLUMN_METADATA")
@@ -81,6 +80,13 @@ mod build_bundled {
         if cfg!(feature = "session") {
             cfg.flag("-DSQLITE_ENABLE_SESSION");
         }
+        if let Ok(limit) = env::var("SQLITE_MAX_VARIABLE_NUMBER") {
+            cfg.flag(&format!("-DSQLITE_MAX_VARIABLE_NUMBER={}", limit));
+        }
+        if let Ok(limit) = env::var("SQLITE_MAX_EXPR_DEPTH") {
+            cfg.flag(&format!("-DSQLITE_MAX_EXPR_DEPTH={}", limit));
+        }
+
         cfg.compile("libsqlite3.a");
 
         println!("cargo:lib_dir={}", out_dir);
