@@ -1,5 +1,5 @@
-C Initialize\sthe\s18-byte\soverrun\sarea\son\sthe\sbuffer\sused\sto\sreconstruct\noverflow\sbtree\scells\sduring\sa\sbtree\ssearch,\sto\savoid\sa\sharmless\njump-depends-on-uninit-values\swarning.
-D 2019-05-16T20:36:07.863
+C Add\stest\scases\sto\stest/fuzzdata7.db\sfor\s(harmless)\sdbfuzz2\sfinds.
+D 2019-05-16T20:40:08.037
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1002,7 +1002,7 @@ F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
-F test/fuzzdata7.db 2b13f8d7a4e475f164c733e64c9ebc459424ec58d0876ef103de62c1a99e2fca
+F test/fuzzdata7.db babb1c560fef766171972c119c1bc3b7be20b134e2f46ae0c52390cd3059b6f4
 F test/fuzzdata8.db ae3f4f364f798cd73b1769ca701878e40cbaa6fb8726a94148bce8062fada5c3
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
@@ -1826,7 +1826,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 915388ab39ba3ca8681cd2613b91314aa965967f23a5bface90f54a3d6423300
-R ed531e4ba41699ff8df485c2669f625d
+P 4b05caeb1b9767ba58cb4261ecc22cdd495216b3258d45f2165cdbd3ea079495
+R a338144cc8cfe21be9496df48c4b4839
 U drh
-Z 007bff55daf3bf51cb6e94d75161e1f9
+Z f89dd532b3c5655312d5052f04d46bf4
