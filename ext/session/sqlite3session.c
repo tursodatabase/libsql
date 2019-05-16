@@ -1830,7 +1830,7 @@ int sqlite3session_attach(
 ** set *pRc to SQLITE_NOMEM and return non-zero.
 */
 static int sessionBufferGrow(SessionBuffer *p, size_t nByte, int *pRc){
-  if( *pRc==SQLITE_OK && p->nAlloc-p->nBuf<nByte ){
+  if( *pRc==SQLITE_OK && (size_t)(p->nAlloc-p->nBuf)<nByte ){
     u8 *aNew;
     i64 nNew = p->nAlloc ? p->nAlloc : 128;
     do {
