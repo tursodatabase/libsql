@@ -147,7 +147,7 @@ int sqlite3VdbeMemValidStrRep(Mem *p){
   if( p->flags & MEM_Term ){
     /* Insure that the string is properly zero-terminated.  Pay particular
     ** attention to the case where p->n is odd */
-    if( p->z==p->zMalloc && p->szMalloc>0 ){
+    if( p->szMalloc>0 && p->z==p->zMalloc ){
       assert( p->enc==SQLITE_UTF8 || p->szMalloc >= ((p->n+1)&~1)+2 );
       assert( p->enc!=SQLITE_UTF8 || p->szMalloc >= p->n+1 );
     }
