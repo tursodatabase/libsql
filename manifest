@@ -1,5 +1,5 @@
-C Fix\sthe\scount-of-view\soptimization\sso\sthat\sit\sis\s(correctly)\sdisabled\sfor\na\squery\sthat\sincludes\sa\sWHERE\sclause\sor\sa\sGROUP\sBY\sclause.
-D 2019-05-15T18:42:15.232
+C Make\ssure\sthe\sOP_Concat\sopcode\salways\scorrectly\szero-terminates\sa\sUTF16\nstring,\seven\sif\sthe\sinput\sstrings\sare\sill-formed.\s\sThis\sis\sa\sfollowup\sto\ncheck-in\s[3a16ddf91f0c9c516a7]\sthat\sfixes\sa\scase\sthe\sprevious\scheck-in\smissed.\nAlso\sadd\sassert()s\sto\sprove\scorrect\szero\stermination.
+D 2019-05-16T01:22:21.954
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -593,13 +593,13 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 4c0669e042b4e50a08a9e5fd14cecc76e5f877efa288533dccddb6fe98f4d6b5
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c d14841dc77e5b0cbd5cb857dee026f17b07a9d1ab147c1c2c9557227be6a52c9
+F src/vdbe.c 27fe1628d39aa7d71645d6a26f70066bd0e17cd74d010bad3bf73879efbe216a
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
 F src/vdbeaux.c d444f4a3ff9c571965329a186701a57fe445e4c3f4c42f87402aca75386ba358
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c b76b42ac9d6a36fc55a0797929fc94cc33e1334eea2792f5ee1eef868ce13320
+F src/vdbemem.c 14618670d96151efdcc0e0f0dd44a7a1acf94e065701159921e42ef19077b7d1
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
@@ -1825,7 +1825,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P adebffc18e6165672947a6bda5ca23ea7723cca7ab8da4feb81fca8f83e4fcaf
-R b7271620cbaccc77f5dc0740795c22dc
+P 05897ca48a40c6771ff83ba8ecc3a5c60dafddf58651c222dd8cf89b9fc7b077
+R c1522be20733136f28ced9b4722a52aa
 U drh
-Z c38fee2bcfbeb4ee3d8baed90d28d7e4
+Z 5f545ffa57cd66d95ff033345f2b408a
