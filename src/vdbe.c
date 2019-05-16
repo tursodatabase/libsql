@@ -4784,7 +4784,7 @@ case OP_Delete: {
     ** OP_Delete will have also set the pC->movetoTarget field to the rowid of
     ** the row that is being deleted */
     i64 iKey = sqlite3BtreeIntegerKey(pC->uc.pCursor);
-    assert( pC->movetoTarget==iKey );
+    assert( CORRUPT_DB || pC->movetoTarget==iKey );
   }
 #endif
 
