@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sthe\sOP_Delete\sopcode\sthat\scould\sfail\swith\sa\scorrupt\sdatabase.
-D 2019-05-16T20:13:32.259
+C Initialize\sthe\s18-byte\soverrun\sarea\son\sthe\sbuffer\sused\sto\sreconstruct\noverflow\sbtree\scells\sduring\sa\sbtree\ssearch,\sto\savoid\sa\sharmless\njump-depends-on-uninit-values\swarning.
+D 2019-05-16T20:36:07.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -463,7 +463,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c b1d37f6f7f5913944583733ed0f9e182f3ece0d42c27f46701142141a6e6fd33
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 5e15f903fd44b076b864a8d2449d63b44a546efabb66fca7dfed90f106f5c756
+F src/btree.c 1dbc191e5c1d9bca84a956fed5d73924c574ae5390855009f067bd0f6422e462
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c aead3d74794ed4dac396fdd9323ba2272e3734f07c5d7f1f57389e5afbd99f3f
@@ -1826,7 +1826,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dfc4fe98a4821cbdbfd7dfddf221b00251b2a26bf58767a3956b64e9a4e92da
-R 4f3b5e878bd55096d308bc1102b9455e
-U dan
-Z 99032e8e5af3e03cd1215b2fa213f92f
+P 915388ab39ba3ca8681cd2613b91314aa965967f23a5bface90f54a3d6423300
+R ed531e4ba41699ff8df485c2669f625d
+U drh
+Z 007bff55daf3bf51cb6e94d75161e1f9
