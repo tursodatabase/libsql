@@ -2884,6 +2884,10 @@ case OP_MakeRecord: {
     pRec = pData0;
     do{
       applyAffinity(pRec, zAffinity[0], encoding);
+      if( zAffinity[0]==SQLITE_AFF_REAL && (pRec->flags & MEM_Int) ){
+        pRec->flags |= MEM_IntReal;
+        pRec->flags &= ~(MEM_Int);
+      }
       REGISTER_TRACE((int)(pRec-aMem), pRec);
       zAffinity++;
       pRec++;

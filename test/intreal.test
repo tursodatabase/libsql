@@ -46,7 +46,41 @@ do_execsql_test 180 {
          max(1,intreal(5),intreal(3),4);
 } {5.0 5.0}
 
+#-------------------------------------------------------------------------
+do_execsql_test 2.1 {
+  CREATE TABLE t2(a REAL);
+  INSERT INTO t2 VALUES( 836627109860825358 );
+  SELECT substr(a,1,4) FROM t2 WHERE a = CAST(836627109860825358 AS REAL);
+} {8.36}
 
+do_execsql_test 2.2 {
+  CREATE INDEX i2 ON t2(a);
+  SELECT substr(a,1,4) FROM t2 WHERE a = CAST(836627109860825358 AS REAL);
+} {8.36}
+
+do_execsql_test 2.3 {
+  CREATE TABLE t0 (c0);
+  CREATE TABLE t1 (c1 REAL);
+  INSERT INTO t1(c1) VALUES (8366271098608253588);
+  INSERT INTO t0(c0) VALUES ('a');
+}
+set D [db one {SELECT c1 FROM t1}]
+
+do_execsql_test 2.4 {
+  SELECT * FROM t1 WHERE (t1.c1 = CAST(8366271098608253588 AS REAL));
+} $D
+
+do_execsql_test 2.5 {
+  SELECT * FROM t0, t1 WHERE (t1.c1 = CAST(8366271098608253588 AS REAL));
+} [list a $D]
+
+do_execsql_test 2.6 {
+  SELECT * FROM t0, t1 
+  WHERE (
+        t1.c1 >= CAST(8366271098608253588 AS REAL) 
+    AND t1.c1 <= CAST(8366271098608253588 AS REAL)
+  );
+} [list a $D]
 
 
 finish_test
