@@ -644,6 +644,11 @@ void sqlite3Pragma(
         ** then do a query */
         eMode = PAGER_JOURNALMODE_QUERY;
       }
+      if( eMode==PAGER_JOURNALMODE_OFF && (db->flags & SQLITE_Defensive)!=0 ){
+        /* Do not allow journal-mode "OFF" in defensive since the database
+        ** can become corrupted using ordinary SQL when the journal is off */
+        eMode = PAGER_JOURNALMODE_QUERY;
+      }
     }
     if( eMode==PAGER_JOURNALMODE_QUERY && pId2->n==0 ){
       /* Convert "PRAGMA journal_mode" into "PRAGMA main.journal_mode" */
