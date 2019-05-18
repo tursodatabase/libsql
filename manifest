@@ -1,5 +1,5 @@
-C Disable\sPRAGMA\sjournal_mode=OFF\swhen\sSQLITE_DBCONFIG_DEFENSIVE\sis\sturned\son.\nTicket\s[f4ec250930342e0c].
-D 2019-05-17T20:37:17.292
+C Avoid\sincluding\sthe\scomment\sin\sthe\soutput\sof\s"PRAGMA\stable_info"\sin\ssituations\swhere\sthere\sis\sa\scomment\sfollowing\sa\sDEFAULT\svalue\swithin\sa\sCREATE\sTABLE\sstatement.
+D 2019-05-18T19:49:08.397
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,7 +511,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 22f64d8a8910acd17580450513b58d64187b0962848380c7f0a39376b8a48cee
+F src/parse.y 91f76f436db1c0ed3cc8a82ba6c945a592dc24a036f0ff7b48313bd80977d382
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c be64b2f3908a7f97c56c963676eb12f0d6254c95b28cdc1d73a186eff213219d
@@ -1212,7 +1212,7 @@ F test/pg_common.tcl 4740dc35190d6acdab14c097783331361301ab504a94d948f6afbb56ce0
 F test/pragma.test cf066fe0f7f5d49f4758de4986407b8676c61aaa7871599340d64f42a8edc352
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
-F test/pragma4.test 26b250531f1c58d9b6187b663f411cd6baf227a4afeffa8f75d0f4c101f4920d
+F test/pragma4.test 1cb4b32f1a304ed9e291d7c4d49c91c2c8dc1b9450e6d2c1198b2cc895d40d77
 F test/pragma5.test 824ce6ced5d6b7ec71abe37fc6005ff836fe39d638273dc5192b39864b9ee983
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
@@ -1826,7 +1826,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14c00b1016ba53ab2dc177c59a27b6b9209202973685f0f274112d296ba7dfcb
-R 288f772b42222d23f2e7cf9a9376af07
-U drh
-Z b868be56cdcb778989571f3a1cfd1c2d
+P a0f5eb5c79cc33b7224f3421d2baa02a2a19eb9d6eaa8117dda4a1878b229cb5
+R a29dae5cf2c74cf9fd15fd4830864202
+U dan
+Z 52a3c57118f7c33eb28d32312e370c68
