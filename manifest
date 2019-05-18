@@ -1,5 +1,5 @@
-C Avoid\sincluding\sthe\scomment\sin\sthe\soutput\sof\s"PRAGMA\stable_info"\sin\ssituations\swhere\sthere\sis\sa\scomment\sfollowing\sa\sDEFAULT\svalue\swithin\sa\sCREATE\sTABLE\sstatement.
-D 2019-05-18T19:49:08.397
+C Fix\san\sassert()\sfailure\sthat\scould\soccur\sin\sa\sjoin\squery\sif\sthe\sRHS\sof\san\sIN()\soperator\sis\sa\slist\scontaining\scorrelated\sexpressions.\sThis\sproblem\swas\sintroduced\sby\scheckin\s[e130319317e7611938]\swhich\swas\spart\sof\sthe\sfix\sfor\sticket\s[787fa716be3a7f650c]\s-\sso\sthis\scommit\sis\spart\sof\sthat\sticket's\sfix\stoo.
+D 2019-05-18T21:22:25.658
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c a41e5a03d60e2d99a8eac1535f21258e3833b29a3f52789e76284d97b54bed5f
+F src/expr.c 5176c490d28e9bc712c85794694790ac586232e9d3ddd6b5ab92019347e0d78b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 0e14d4bef8eac2d87bbd517e492d9084c65008d117823f8922c5e7b2b599bd33
 F src/func.c 08d6d07d138735dd79f12a2b0c623d1dc9270d0eea61b8be584625391ef84475
@@ -1073,7 +1073,7 @@ F test/join.test d53a3662762eff50b65da8775201e609878a27dd0885a1ae7bcde9bb46cecbc
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test f8b5ffdf3c1513486b52ad4e49225507ecee5005f210eb18688f791d25370972
+F test/join5.test 3a96dc62f0b45402d7207e22d1993fe0c2fce1c57644a11439891dd62b990eb7
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -1826,7 +1826,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0f5eb5c79cc33b7224f3421d2baa02a2a19eb9d6eaa8117dda4a1878b229cb5
-R a29dae5cf2c74cf9fd15fd4830864202
+P d91095ba7130e974f0c95334760c679a31479b07a3d458e15994a24eee474752
+R f1155cf0ff4484b435a49607e277353e
 U dan
-Z 52a3c57118f7c33eb28d32312e370c68
+Z 9a3b08c2ceb04898261f90540609f8f6

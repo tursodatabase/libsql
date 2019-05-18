@@ -2808,6 +2808,7 @@ void sqlite3CodeRhsOfIN(
       */
       if( addrOnce && !sqlite3ExprIsConstant(pE2) ){
         sqlite3VdbeChangeToNoop(v, addrOnce);
+        ExprClearProperty(pExpr, EP_Subrtn);
         addrOnce = 0;
       }
 
