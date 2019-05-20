@@ -2793,7 +2793,8 @@ struct NameContext {
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x4000  /* Window functions are allowed here */
 #define NC_HasWin    0x8000  /* One or more window functions seen */
-#define NC_NewSchema 0x10000 /* Currently resolving self-refs for new object */
+#define NC_NoDblQStr 0x10000 /* Do not allow double-quoted string hack.
+                             ** Mnemonic: "NO DouBLe-Quoted STRings" */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT

@@ -477,7 +477,7 @@ static int lookupName(
   if( cnt==0 && zTab==0 ){
     assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted) 
-     && 0==(pTopNC->ncFlags&NC_NewSchema) 
+     && 0==(pTopNC->ncFlags&NC_NoDblQStr) 
     ){
       /* If a double-quoted identifier does not match any known column name,
       ** then treat it as a string.
@@ -1771,8 +1771,8 @@ int sqlite3ResolveSelfReference(
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
-  if( pTab && !pParse->db->init.busy && !sqlite3WritableSchema(pParse->db) ){
-    sNC.ncFlags |= NC_NewSchema;
+  if( !pParse->db->init.busy && !sqlite3WritableSchema(pParse->db) ){
+    sNC.ncFlags |= NC_NoDblQStr;
   }
   if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
   if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);
