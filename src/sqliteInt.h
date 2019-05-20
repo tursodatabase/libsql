@@ -2766,7 +2766,7 @@ struct NameContext {
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
   int nErr;            /* Number of errors encountered while resolving names */
-  u16 ncFlags;         /* Zero or more NC_* flags defined below */
+  int ncFlags;         /* Zero or more NC_* flags defined below */
   Select *pWinSelect;  /* SELECT statement for any window functions */
 };
 
@@ -2793,6 +2793,7 @@ struct NameContext {
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x4000  /* Window functions are allowed here */
 #define NC_HasWin    0x8000  /* One or more window functions seen */
+#define NC_NewSchema 0x10000 /* Currently resolving self-refs for new object */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT

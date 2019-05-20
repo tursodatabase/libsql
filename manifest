@@ -1,5 +1,5 @@
-C Update\sthe\ssqlite3ExprCompare()\sroutine\sso\sthat\sit\sdoes\snot\sthink\s"?\sIS\sNOT\sTRUE"\sis\sthe\ssame\sas\s"?\sIS\sTRUE".\sFix\sfor\s[d3e7f2ba5b3].
-D 2019-05-20T10:36:15.759
+C Disallow\sstring\sconstants\senclosed\sin\sdouble-quotes\swithin\snew\sCREATE\sTABLE\sand\sCREATE\sINDEX\sstatements.\sIt\sis\sstill\spossible\sto\senclose\scolumn\snames\sin\sdouble-quotes,\sand\sexisting\sdatabase\sschemas\sthat\suse\sdouble-quotes\sfor\sstrings\scan\sstill\sbe\sloaded.\sThis\saddresses\sticket\s[9b78184b].
+D 2019-05-20T17:14:25.060
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,14 +520,14 @@ F src/pragma.h 482c26f352efd7a4ed1354d83ffa992e13004f6528edeee44cdbfd5025a490bd
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
 F src/printf.c 67f79227273a9009d86a017619717c3f554f50b371294526da59faa6014ed2cd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 408632d9531ca8f1df8591f00530797daaa7bde3fe0d3211de4d431cbb99347e
+F src/resolve.c 0b046cc3d4d980c92d37200b0d1c4d4c4685103d82734162aa991f965f01b1cb
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c c620bcd03b1fbf9fed7d0e49c5e32bea3233c3f7c67d896271c36d6e5a4c621c
 F src/shell.c.in 6c992809abf20dbb4aad89299d7c15c98ddf2504b23c83ef71eb435ad392cdc3
 F src/sqlite.h.in d19c873a17c2effd4417f687fad942b6cc0ab0c64535f669cc2f22a5b05db23b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h dd3fba28d7012f18ee91b58f5485ba33e016728b9812200a77d699c6e6872177
+F src/sqliteInt.h 4f3edd821ba26fd226a98cec496de1a610460824accbc59dad9640fee5c5b232
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -725,7 +725,7 @@ F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bc
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 5ceb920718d280b61163500a7d29e0e0a86458b1cbd92d96f962c9d970aa3857
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
-F test/check.test 33a698e8c63613449d85d624a38ef669bf20331daabebe3891c9405dd6df463a
+F test/check.test dcc952a127c394ce0de2aa634d26c78207e855327cc63a24d3638ca8fbfa641e
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
 F test/closure01.test 9905883f1b171a4638f98fc764879f154e214a306d3d8daf412a15e7f3a9b1e0
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1227,7 +1227,7 @@ F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
 F test/quota.test bfb269ce81ea52f593f9648316cd5013d766dd2a
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
-F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
+F test/quote.test 8258838e5135ff1034e4de929d14bfb5bdd73d2df5a2281404ae79d927b8fa70
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
@@ -1827,7 +1827,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 778b1224a318d0137c7dab8361128f593506d3677267898119b934b4d66dfe38
-R 5a1add4e7a87cebf7597568b0b99195a
+P 99eba69b3a64741c69d167bf7a05dbe138c9e7faecc54a1b8d8220cb23902830
+R d198ec0c1dbc6e91f8bbe5cf32cf98a3
 U dan
-Z 97bcb2ba5bbf708b820c2c5cf8e8bff1
+Z 7143d8b31f164a671db524d2917365c4
