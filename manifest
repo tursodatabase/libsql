@@ -1,5 +1,5 @@
-C A\sminor\svariation\son\scheck-in\s[1685610ef8e0dc]\swhich\s(hopefully)\smakes\sthe\nlogic\sa\slittle\seasier\sto\sfollow.\s\sAlso\sdisallows\sthe\suse\sof\sthe\sdouble-quoted\nstring\shack\sin\sthe\squery\sexpression\sused\sfor\sVACUUM\sINTO,\swhich\sis\snot\nstrictly\srequired,\sbut\smoves\sus\stoward\sthe\sgoal\sof\sdisallowing\sthe\sdouble-quoted\nstring\shack\severywhere.
-D 2019-05-20T18:35:49.273
+C Improvements\sto\sthe\sautomatic\scompile-time\sselection\sof\sbyte-order,\sas\nsuggested\son\sthe\smailing\slist\sby\sSeb\sKemper.
+D 2019-05-20T18:43:57.348
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -527,7 +527,7 @@ F src/shell.c.in 6c992809abf20dbb4aad89299d7c15c98ddf2504b23c83ef71eb435ad392cdc
 F src/sqlite.h.in d19c873a17c2effd4417f687fad942b6cc0ab0c64535f669cc2f22a5b05db23b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h edde1d3fa1e267a9b57ed39ca9293994ab957e45298af4681f4a71f584a8e415
+F src/sqliteInt.h 1ba98b4b8742f9b04ae3db1df36a607d4cf6591f3f6f6507f33d9e136fe2c136
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1827,7 +1827,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1685610ef8e0dc9218b02461ceab14dc6114f4f5ef7fcda0da395094aff443e1
-R 1113170f9c5e5be87c5119deda88593e
+P 3e1b55f3ab85710ed81574904718205c7370b5f0b5a41029e961486d2e3f37c7
+R a3c05b3b87a6165ad13eee712bf9c731
 U drh
-Z cb44fd552c668e19c46ce895661ff940
+Z f54a9475480094a81a3f137c4c413f13
