@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sthat\scould\soccur\sin\sa\sjoin\squery\sif\sthe\sRHS\sof\san\sIN()\soperator\sis\sa\slist\scontaining\scorrelated\sexpressions.\sThis\sproblem\swas\sintroduced\sby\scheckin\s[e130319317e7611938]\swhich\swas\spart\sof\sthe\sfix\sfor\sticket\s[787fa716be3a7f650c]\s-\sso\sthis\scommit\sis\spart\sof\sthat\sticket's\sfix\stoo.
-D 2019-05-18T21:22:25.658
+C Update\sthe\ssqlite3ExprCompare()\sroutine\sso\sthat\sit\sdoes\snot\sthink\s"?\sIS\sNOT\sTRUE"\sis\sthe\ssame\sas\s"?\sIS\sTRUE".\sFix\sfor\s[d3e7f2ba5b3].
+D 2019-05-20T10:36:15.759
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c ebe1dc7c8a347117bb02570f1a931c62dd78f4a2b1b516f4837d45b7d6426957
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 5176c490d28e9bc712c85794694790ac586232e9d3ddd6b5ab92019347e0d78b
+F src/expr.c 6b18f022871816c80b772abc3657276562630004b48f588085b404f104fd4430
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 0e14d4bef8eac2d87bbd517e492d9084c65008d117823f8922c5e7b2b599bd33
 F src/func.c 08d6d07d138735dd79f12a2b0c623d1dc9270d0eea61b8be584625391ef84475
@@ -527,7 +527,7 @@ F src/shell.c.in 6c992809abf20dbb4aad89299d7c15c98ddf2504b23c83ef71eb435ad392cdc
 F src/sqlite.h.in d19c873a17c2effd4417f687fad942b6cc0ab0c64535f669cc2f22a5b05db23b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h b78a1f0bdc46582f33876932f8b45a264be7ee4f3f6c31102f924d33fa6177ee
+F src/sqliteInt.h dd3fba28d7012f18ee91b58f5485ba33e016728b9812200a77d699c6e6872177
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -849,6 +849,7 @@ F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
 F test/expr.test 7cb55e80aeb41d65fec968c08212505123063fea60bdc355d764d747670e9eea
+F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 37a62e396a68eeede8f8d2ecf23573a80faceb630788d314d0a073d862616717
@@ -1040,7 +1041,7 @@ F test/index3.test 51685f39345462b84fcf77eb8537af847fdf438cc96b05c45d6aaca4e473a
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test a6cf96bb70bf57b2221e102060a18af46bc366f704722f410d6f42c13a75534a
-F test/index7.test be02a0b4e53ac4ad7db4995fe02b428597a2e104c4f574b0d4b2f6b082e96b28
+F test/index7.test 2222ccd1858097f734d6ac3d39117334fd1cc26460f92fced4ef57cd15c940c1
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
@@ -1826,7 +1827,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d91095ba7130e974f0c95334760c679a31479b07a3d458e15994a24eee474752
-R f1155cf0ff4484b435a49607e277353e
+P 778b1224a318d0137c7dab8361128f593506d3677267898119b934b4d66dfe38
+R 5a1add4e7a87cebf7597568b0b99195a
 U dan
-Z 9a3b08c2ceb04898261f90540609f8f6
+Z 97bcb2ba5bbf708b820c2c5cf8e8bff1
