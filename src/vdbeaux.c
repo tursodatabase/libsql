@@ -629,6 +629,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   int hasAbort = 0;
   int hasFkCounter = 0;
   int hasCreateTable = 0;
+  int hasCreateIndex = 0;
   int hasInitCoroutine = 0;
   Op *pOp;
   VdbeOpIter sIter;
@@ -647,6 +648,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
       break;
     }
     if( opcode==OP_CreateBtree && pOp->p3==BTREE_INTKEY ) hasCreateTable = 1;
+    if( opcode==OP_CreateBtree && pOp->p3==BTREE_BLOBKEY ) hasCreateIndex = 1;
     if( opcode==OP_InitCoroutine ) hasInitCoroutine = 1;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     if( opcode==OP_FkCounter && pOp->p1==0 && pOp->p2==1 ){
@@ -662,7 +664,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   ** true for this case to prevent the assert() in the callers frame
   ** from failing.  */
   return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter
-              || (hasCreateTable && hasInitCoroutine) );
+        || (hasCreateTable && hasInitCoroutine) || hasCreateIndex
+  );
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
