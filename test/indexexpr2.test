@@ -291,6 +291,9 @@ do_execsql_test 7.2 {
   SELECT sql FROM sqlite_master WHERE tbl_name = 't0';
   CREATE INDEX i0 ON t0(c0);
 } {{CREATE TABLE t0(c0)}}
+do_execsql_test 7.3 {
+  REINDEX;
+} {}
 
 
 
