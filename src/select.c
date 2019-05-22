@@ -4843,6 +4843,10 @@ static int selectExpander(Walker *pWalker, Select *p){
   if( (selFlags & SF_Expanded)!=0 ){
     return WRC_Prune;
   }
+  if( pWalker->eCode ){
+    /* Renumber selId because it has been copied from a view */
+    p->selId = ++pParse->nSelect;
+  }
   pTabList = p->pSrc;
   pEList = p->pEList;
   sqlite3WithPush(pParse, p->pWith, 0);
@@ -4892,12 +4896,15 @@ static int selectExpander(Walker *pWalker, Select *p){
 #if !defined(SQLITE_OMIT_VIEW) || !defined (SQLITE_OMIT_VIRTUALTABLE)
       if( IsVirtual(pTab) || pTab->pSelect ){
         i16 nCol;
+        u8 eCodeOrig = pWalker->eCode;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         nCol = pTab->nCol;
         pTab->nCol = -1;
+        pWalker->eCode = 1;  /* Turn on Select.selId renumbering */
         sqlite3WalkSelect(pWalker, pFrom->pSelect);
+        pWalker->eCode = eCodeOrig;
         pTab->nCol = nCol;
       }
 #endif
@@ -5147,6 +5154,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   }
   w.xSelectCallback = selectExpander;
   w.xSelectCallback2 = selectPopWith;
+  w.eCode = 0;
   sqlite3WalkSelect(&w, pSelect);
 }
 
