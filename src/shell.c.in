@@ -9019,10 +9019,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zSql);
   }else
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   if( c=='s' && strncmp(azArg[0], "shared-schema", n)==0 ){
     open_db(p, 0);
     sharedSchemaDotCommand(p, azArg, nArg);
   }else
+#endif
 
 #ifndef SQLITE_NOHAVE_SYSTEM
   if( c=='s'
