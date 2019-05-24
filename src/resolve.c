@@ -476,7 +476,9 @@ static int lookupName(
   */
   if( cnt==0 && zTab==0 ){
     assert( pExpr->op==TK_ID );
-    if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+    if( ExprHasProperty(pExpr,EP_DblQuoted) 
+     && 0==(pTopNC->ncFlags&NC_NoDblQStr) 
+    ){
       /* If a double-quoted identifier does not match any known column name,
       ** then treat it as a string.
       **
@@ -1654,7 +1656,7 @@ int sqlite3ResolveExprNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
   Expr *pExpr             /* The expression to be analyzed. */
 ){
-  u16 savedHasAgg;
+  int savedHasAgg;
   Walker w;
 
   if( pExpr==0 ) return SQLITE_OK;
@@ -1769,6 +1771,9 @@ int sqlite3ResolveSelfReference(
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
+  if( !pParse->db->init.busy && !sqlite3WritableSchema(pParse->db) ){
+    sNC.ncFlags |= NC_NoDblQStr;
+  }
   if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
   if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);
   return rc;

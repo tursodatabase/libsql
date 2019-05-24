@@ -3106,6 +3106,14 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     sqlite3UniqueConstraint(pParse, OE_Abort, pIndex);
     sqlite3VdbeJumpHere(v, j2);
   }else{
+    /* Most CREATE INDEX and REINDEX statements that are not UNIQUE can not
+    ** abort. The exception is if one of the indexed expressions contains a
+    ** user function that throws an exception when it is evaluated. But the
+    ** overhead of adding a statement journal to a CREATE INDEX statement is
+    ** very small (since most of the pages written do not contain content that
+    ** needs to be restored if the statement aborts), so we call 
+    ** sqlite3MayAbort() for all CREATE INDEX statements.  */
+    sqlite3MayAbort(pParse);
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
   sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);

@@ -117,11 +117,13 @@ do_test check-1.17 {
 
 do_test check-2.1 {
   execsql {
+    PRAGMA writable_schema = 1;
     CREATE TABLE t2(
       x INTEGER CONSTRAINT one CHECK( typeof(coalesce(x,0))=="integer" ),
       y REAL CONSTRAINT two CHECK( typeof(coalesce(y,0.1))=='real' ),
       z TEXT CONSTRAINT three CHECK( typeof(coalesce(z,''))=='text' )
     );
+    PRAGMA writable_schema = 0;
   }
 } {}
 do_test check-2.2 {

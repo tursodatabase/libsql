@@ -118,7 +118,10 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 
 #ifdef SQLITE_DEBUG
 /*
-** Check that string value of pMem agrees with its integer or real value.
+** Validity checks on pMem.  pMem holds a string.
+**
+** (1) Check that string value of pMem agrees with its integer or real value.
+** (2) Check that the string is correctly zero terminated
 **
 ** A single int or real value always converts to the same strings.  But
 ** many different strings can be converted into the same int or real.
@@ -136,11 +139,22 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 **
 ** This routine is for use inside of assert() statements only.
 */
-int sqlite3VdbeMemConsistentDualRep(Mem *p){
+int sqlite3VdbeMemValidStrRep(Mem *p){
   char zBuf[100];
   char *z;
   int i, j, incr;
   if( (p->flags & MEM_Str)==0 ) return 1;
+  if( p->flags & MEM_Term ){
+    /* Insure that the string is properly zero-terminated.  Pay particular
+    ** attention to the case where p->n is odd */
+    if( p->szMalloc>0 && p->z==p->zMalloc ){
+      assert( p->enc==SQLITE_UTF8 || p->szMalloc >= ((p->n+1)&~1)+2 );
+      assert( p->enc!=SQLITE_UTF8 || p->szMalloc >= p->n+1 );
+    }
+    assert( p->z[p->n]==0 );
+    assert( p->enc==SQLITE_UTF8 || p->z[(p->n+1)&~1]==0 );
+    assert( p->enc==SQLITE_UTF8 || p->z[((p->n+1)&~1)+1]==0 );
+  }
   if( (p->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 ) return 1;
   vdbeMemRenderNum(sizeof(zBuf), zBuf, p);
   z = p->z;
@@ -1221,7 +1235,7 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
               || pVal->db->mallocFailed );
   if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
-    assert( sqlite3VdbeMemConsistentDualRep(pVal) );
+    assert( sqlite3VdbeMemValidStrRep(pVal) );
     return pVal->z;
   }else{
     return 0;
@@ -1244,7 +1258,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
   assert( !sqlite3VdbeMemIsRowSet(pVal) );
   if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
-    assert( sqlite3VdbeMemConsistentDualRep(pVal) );
+    assert( sqlite3VdbeMemValidStrRep(pVal) );
     return pVal->z;
   }
   if( pVal->flags&MEM_Null ){
