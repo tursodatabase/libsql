@@ -1,5 +1,5 @@
-C Add\snew\scases\sto\sspeedtest1\sfor\smeasuring\sperformance\sof\sbinary\sto/from\sdecimal\nconversions\sof\sfloating\spoint\svalues.
-D 2019-05-25T13:14:19.953
+C Use\s"long\sdouble"\sliterals\sto\sinitialize\san\sarray\sof\s"long\sdouble"\sobjects.
+D 2019-05-25T17:41:07.575
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -592,7 +592,7 @@ F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 3cb9150d2cf661d938e2f1b1749945f3faa767f88febdb739ab1793bbf895ff2
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
-F src/util.c 4c0669e042b4e50a08a9e5fd14cecc76e5f877efa288533dccddb6fe98f4d6b5
+F src/util.c 94464ad0f6d893b439f773aa6acfb9c3220fd251f5ffd025529e290de6a1e2f7
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
 F src/vdbe.c 0380e94736e0b5a0717460d1d3546ae4b1338d0fe7ea07674633d1fd9a5fc42b
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
@@ -1829,7 +1829,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed250b4e18ea042d681bbe8d7ed00895564f4525c22928a003a84585b4756ec3
-R 2c768348491496273751373be91c3128
+P b84e7057c05338347b4267f7ccc1d7b9b6d4e9a941ce8b76bf2c27c26772000c
+R 93de9e77865611bdbf18a7a1be8bf013
 U drh
-Z 45355f8fcda3ba263b75983d16009530
+Z 961c5c6f7eb3026439aac298d02352ba

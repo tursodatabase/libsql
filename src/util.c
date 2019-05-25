@@ -359,15 +359,15 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 #if defined(_MSC_VER)
   static const LONGDOUBLE_TYPE x[] = {
-    1.0e+001,
-    1.0e+002,
-    1.0e+004,
-    1.0e+008,
-    1.0e+016,
-    1.0e+032,
-    1.0e+064,
-    1.0e+128,
-    1.0e+256
+    1.0e+001L,
+    1.0e+002L,
+    1.0e+004L,
+    1.0e+008L,
+    1.0e+016L,
+    1.0e+032L,
+    1.0e+064L,
+    1.0e+128L,
+    1.0e+256L
   };
   LONGDOUBLE_TYPE r = 1.0;
   int i;
