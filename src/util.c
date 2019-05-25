@@ -423,7 +423,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int e = 0;       /* exponent */
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
-  int nDigits = 0;
+  int nDigit = 0;  /* Number of digits processed */
   int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
@@ -454,14 +454,15 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }
 
   /* copy max significant digits to significand */
-  while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
+  while( z<zEnd && sqlite3Isdigit(*z) ){
     s = s*10 + (*z - '0');
-    z+=incr; nDigits++;
+    z+=incr; nDigit++;
+    if( s>=((LARGEST_INT64-9)/10) ){
+      /* skip non-significant significand digits
+      ** (increase exponent by d to shift decimal left) */
+      while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; d++; }
+    }
   }
-
-  /* skip non-significant significand digits
-  ** (increase exponent by d to shift decimal left) */
-  while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; nDigits++; d++; }
   if( z>=zEnd ) goto do_atof_calc;
 
   /* if decimal point is present */
@@ -473,8 +474,9 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
       if( s<((LARGEST_INT64-9)/10) ){
         s = s*10 + (*z - '0');
         d--;
+        nDigit++;
       }
-      z+=incr; nDigits++;
+      z+=incr;
     }
   }
   if( z>=zEnd ) goto do_atof_calc;
@@ -581,7 +583,7 @@ do_atof_calc:
   *pResult = result;
 
   /* return true if number and no extra non-whitespace chracters after */
-  return z==zEnd && nDigits>0 && eValid && nonNum==0;
+  return z==zEnd && nDigit>0 && eValid && nonNum==0;
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
