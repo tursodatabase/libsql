@@ -15,14 +15,9 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix round1
 
-if {$::longdouble_size<=8} {
-  finish_test
-  return
-}
-
 expr srand(0)
 unset -nocomplain iTest
-for {set iTest 1} {$iTest<=10000} {incr iTest} {
+for {set iTest 1} {$iTest<=50000} {incr iTest} {
    set x1 [expr int(rand()*100000)]
    set x2 [expr int(rand()*100000)+1000*int(rand()*10000)]
    set n [expr int(rand()*8)+1]
