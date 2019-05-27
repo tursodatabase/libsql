@@ -76,7 +76,7 @@ static void readblobFunc(
   sqlite3_blob_close(pBlob);
   if( rc ){
     sqlite3_free(aData);
-    sqlite3_result_error(context, "BLOB write failed", -1);
+    sqlite3_result_error(context, "BLOB read failed", -1);
   }else{
     sqlite3_result_blob(context, aData, nData, sqlite3_free);
   }
