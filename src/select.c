@@ -4045,10 +4045,10 @@ static int flattenSubquery(
       substSelect(&x, pParent, 0);
     }
   
-    /* The flattened query is distinct if either the inner or the
-    ** outer query is distinct. 
-    */
-    pParent->selFlags |= pSub->selFlags & SF_Distinct;
+    /* The flattened query is a compound if either the inner or the
+    ** outer query is a compound. */
+    pParent->selFlags |= pSub->selFlags & SF_Compound;
+    assert( (pSub->selFlags & SF_Distinct)==0 ); /* restriction (17b) */
   
     /*
     ** SELECT ... FROM (SELECT ... LIMIT a OFFSET b) LIMIT x OFFSET y;
