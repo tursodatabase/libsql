@@ -697,7 +697,7 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 ** comparison of "r1==(double)i" you sometimes get an answer of false even
 ** though the r1 and (double)i values are bit-for-bit the same.
 */
-static int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
+int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
   double r2 = (double)i;
   return memcmp(&r1, &r2, sizeof(r1))==0;
 }

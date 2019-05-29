@@ -397,8 +397,13 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 ** uses the encoding enc.  The string is not necessarily zero-terminated.
 **
 ** Return TRUE if the result is a valid real number (or integer) and FALSE
-** if the string is empty or contains extraneous text.  Valid numbers
-** are in one of these formats:
+** if the string is empty or contains extraneous text.  More specifically
+** return
+**      1          =>  The input string is a pure integer
+**      2 or more  =>  The input has a decimal point or eNNN clause
+**      0          =>  The input string is not a valid number
+**
+** Valid numbers are in one of these formats:
 **
 **    [+-]digits[E[+-]digits]
 **    [+-]digits.[digits][E[+-]digits]
@@ -424,7 +429,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
   int nDigit = 0;  /* Number of digits processed */
-  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
+  int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -436,7 +441,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     incr = 2;
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && z[i]==0; i+=2){}
-    nonNum = i<length;
+    if( i<length ) eType = -100;
     zEnd = &z[i^1];
     z += (enc&1);
   }
@@ -468,6 +473,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   /* if decimal point is present */
   if( *z=='.' ){
     z+=incr;
+    eType++;
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
     while( z<zEnd && sqlite3Isdigit(*z) ){
@@ -485,6 +491,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   if( *z=='e' || *z=='E' ){
     z+=incr;
     eValid = 0;
+    eType++;
 
     /* This branch is needed to avoid a (harmless) buffer overread.  The 
     ** special comment alerts the mutation tester that the correct answer
@@ -583,7 +590,7 @@ do_atof_calc:
   *pResult = result;
 
   /* return true if number and no extra non-whitespace chracters after */
-  return z==zEnd && nDigit>0 && eValid && nonNum==0;
+  return z==zEnd && nDigit>0 && eValid && eType>0 ? eType : 0;
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */

@@ -277,6 +277,30 @@ static VdbeCursor *allocateCursor(
 }
 
 /*
+** The string in pRec is known to look like an integer and to have a
+** floating point value of rValue.  Return true and set *piValue to the
+** integer value if the string is in range to be an integer.  Otherwise,
+** return false.
+*/
+static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
+  i64 iValue = (double)rValue;
+  if( sqlite3RealSameAsInt(rValue,iValue) ){
+    testcase( iValue<-2251799813685248 );
+    testcase( iValue==-2251799813685248 );
+    testcase( iValue==-2251799813685247 );
+    testcase( iValue>-2251799813685247 && iValue<+2251799813685247 );
+    testcase( iValue==+2251799813685247 );
+    testcase( iValue==+2251799813685248 );
+    testcase( iValue>+2251799813685248 );
+    if( iValue > -2251799813685248 && iValue < 2251799813685248 ){
+      *piValue = iValue;
+      return 1;
+    }
+  }
+  return 0==sqlite3Atoi64(pRec->z, piValue, pRec->n, pRec->enc);
+}
+
+/*
 ** Try to convert a value into a numeric representation if we can
 ** do so without loss of information.  In other words, if the string
 ** looks like a number, convert it into a number.  If it does not
@@ -293,12 +317,12 @@ static VdbeCursor *allocateCursor(
 */
 static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
-  i64 iValue;
   u8 enc = pRec->enc;
+  int rc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
-  if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
-  if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
-    pRec->u.i = iValue;
+  rc = sqlite3AtoF(pRec->z, &rValue, pRec->n, enc);
+  if( rc==0 ) return;
+  if( rc==1 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
   }else{
     pRec->u.r = rValue;
