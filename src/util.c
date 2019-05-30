@@ -58,47 +58,11 @@ int sqlite3FaultSim(int iTest){
 #ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Return true if the floating point value is Not a Number (NaN).
-**
-** Use the math library isnan() function if compiled with SQLITE_HAVE_ISNAN.
-** Otherwise, we have our own implementation that works on most systems.
 */
 int sqlite3IsNaN(double x){
-  int rc;   /* The value return */
-#if !SQLITE_HAVE_ISNAN && !HAVE_ISNAN
-  /*
-  ** Systems that support the isnan() library function should probably
-  ** make use of it by compiling with -DSQLITE_HAVE_ISNAN.  But we have
-  ** found that many systems do not have a working isnan() function so
-  ** this implementation is provided as an alternative.
-  **
-  ** This NaN test sometimes fails if compiled on GCC with -ffast-math.
-  ** On the other hand, the use of -ffast-math comes with the following
-  ** warning:
-  **
-  **      This option [-ffast-math] should never be turned on by any
-  **      -O option since it can result in incorrect output for programs
-  **      which depend on an exact implementation of IEEE or ISO 
-  **      rules/specifications for math functions.
-  **
-  ** Under MSVC, this NaN test may fail if compiled with a floating-
-  ** point precision mode other than /fp:precise.  From the MSDN 
-  ** documentation:
-  **
-  **      The compiler [with /fp:precise] will properly handle comparisons 
-  **      involving NaN. For example, x != x evaluates to true if x is NaN 
-  **      ...
-  */
-#ifdef __FAST_MATH__
-# error SQLite will not work correctly with the -ffast-math option of GCC.
-#endif
-  volatile double y = x;
-  volatile double z = y;
-  rc = (y!=z);
-#else  /* if HAVE_ISNAN */
-  rc = isnan(x);
-#endif /* HAVE_ISNAN */
-  testcase( rc );
-  return rc;
+  u64 y;
+  memcpy(&y,&x,sizeof(y));
+  return IsNaN(y);
 }
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 
