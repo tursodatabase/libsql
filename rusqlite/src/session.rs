@@ -65,7 +65,6 @@ impl Session<'_> {
         where
             F: Fn(&str) -> bool + RefUnwindSafe,
         {
-            use std::ffi::CStr;
             use std::str;
 
             let boxed_filter: *mut F = p_arg as *mut F;
@@ -648,7 +647,6 @@ where
     F: Fn(&str) -> bool + Send + RefUnwindSafe + 'static,
     C: Fn(ConflictType, ChangesetItem) -> ConflictAction + Send + RefUnwindSafe + 'static,
 {
-    use std::ffi::CStr;
     use std::str;
 
     let tuple: *mut (Option<F>, C) = p_ctx as *mut (Option<F>, C);
