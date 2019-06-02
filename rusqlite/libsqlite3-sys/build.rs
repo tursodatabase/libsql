@@ -13,7 +13,8 @@ fn main() {
         }
         build_linked::main(&out_dir, &out_path)
     } else {
-        // This can't be `cfg!` without always requiring our `mod build_bundled` (and thus `cc`)
+        // This can't be `cfg!` without always requiring our `mod build_bundled` (and
+        // thus `cc`)
         #[cfg(feature = "bundled")]
         {
             build_bundled::main(&out_dir, &out_path)
@@ -28,8 +29,8 @@ fn main() {
 #[cfg(feature = "bundled")]
 mod build_bundled {
     use cc;
-    use std::path::Path;
     use std::env;
+    use std::path::Path;
 
     pub fn main(out_dir: &str, out_path: &Path) {
         if cfg!(feature = "sqlcipher") {
