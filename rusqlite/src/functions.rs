@@ -11,26 +11,39 @@
 //! ```rust
 //! use regex::Regex;
 //! use rusqlite::{Connection, Error, Result, NO_PARAMS};
-//! use std::collections::HashMap;
 //!
 //! fn add_regexp_function(db: &Connection) -> Result<()> {
-//!     let mut cached_regexes = HashMap::new();
 //!     db.create_scalar_function("regexp", 2, true, move |ctx| {
-//!         let regex_s = ctx.get::<String>(0)?;
-//!         let entry = cached_regexes.entry(regex_s.clone());
-//!         let regex = {
-//!             use std::collections::hash_map::Entry::{Occupied, Vacant};
-//!             match entry {
-//!                 Occupied(occ) => occ.into_mut(),
-//!                 Vacant(vac) => match Regex::new(&regex_s) {
-//!                     Ok(r) => vac.insert(r),
+//!         assert_eq!(ctx.len(), 2, "called with unexpected number of arguments");
+//!
+//!         let saved_re: Option<&Regex> = ctx.get_aux(0)?;
+//!         let new_re = match saved_re {
+//!             None => {
+//!                 let s = ctx.get::<String>(0)?;
+//!                 match Regex::new(&s) {
+//!                     Ok(r) => Some(r),
 //!                     Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
-//!                 },
+//!                 }
 //!             }
+//!             Some(_) => None,
 //!         };
 //!
-//!         let text = ctx.get::<String>(1)?;
-//!         Ok(regex.is_match(&text))
+//!         let is_match = {
+//!             let re = saved_re.unwrap_or_else(|| new_re.as_ref().unwrap());
+//!
+//!             let text = ctx
+//!                 .get_raw(1)
+//!                 .as_str()
+//!                 .map_err(|e| Error::UserFunctionError(e.into()))?;
+//!
+//!             re.is_match(text)
+//!         };
+//!
+//!         if let Some(re) = new_re {
+//!             ctx.set_aux(0, re);
+//!         }
+//!
+//!         Ok(is_match)
 //!     })
 //! }
 //!
@@ -518,7 +531,6 @@ mod test {
     use regex;
 
     use self::regex::Regex;
-    use std::collections::HashMap;
     use std::f64::EPSILON;
     use std::os::raw::c_double;
 
@@ -602,60 +614,6 @@ mod test {
         .unwrap();
         db.create_scalar_function("regexp", 2, true, regexp_with_auxilliary)
             .unwrap();
-
-        let result: Result<bool> =
-            db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", NO_PARAMS, |r| {
-                r.get(0)
-            });
-
-        assert_eq!(true, result.unwrap());
-
-        let result: Result<i64> = db.query_row(
-            "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-            NO_PARAMS,
-            |r| r.get(0),
-        );
-
-        assert_eq!(2, result.unwrap());
-    }
-
-    #[test]
-    fn test_function_regexp_with_hashmap_cache() {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch(
-            "BEGIN;
-             CREATE TABLE foo (x string);
-             INSERT INTO foo VALUES ('lisa');
-             INSERT INTO foo VALUES ('lXsi');
-             INSERT INTO foo VALUES ('lisX');
-             END;",
-        )
-        .unwrap();
-
-        // This implementation of a regexp scalar function uses a captured HashMap
-        // to keep cached regular expressions around (even across multiple queries)
-        // until the function is removed.
-        let mut cached_regexes = HashMap::new();
-        db.create_scalar_function("regexp", 2, true, move |ctx| {
-            assert_eq!(ctx.len(), 2, "called with unexpected number of arguments");
-
-            let regex_s = ctx.get::<String>(0)?;
-            let entry = cached_regexes.entry(regex_s.clone());
-            let regex = {
-                use std::collections::hash_map::Entry::{Occupied, Vacant};
-                match entry {
-                    Occupied(occ) => occ.into_mut(),
-                    Vacant(vac) => match Regex::new(&regex_s) {
-                        Ok(r) => vac.insert(r),
-                        Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
-                    },
-                }
-            };
-
-            let text = ctx.get::<String>(1)?;
-            Ok(regex.is_match(&text))
-        })
-        .unwrap();
 
         let result: Result<bool> =
             db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", NO_PARAMS, |r| {
