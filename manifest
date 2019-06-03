@@ -1,5 +1,5 @@
-C Fix\sthe\scount-of-view\soptimization\sso\sthat\sit\sis\s(correctly)\sdisabled\sfor\sa\squery\sthat\sincludes\sa\sWHERE\sclause\sor\sa\sGROUP\sBY\sclause.\s\sCherrypick\sof\s[05897ca48a40c6771].
-D 2019-06-03T13:53:29.317
+C Fix\sharmless\scompiler\swarning\sin\slemon.
+D 2019-06-03T15:10:24.747
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1737,7 +1737,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 9ec344d29cbeb03fdc0fce668eedfb7495792170de933adf95cf8d6904a166ad
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 900a15b9efba9890d10e7959914db94c4ad5162912127f061c4328add122d6fb
+F tool/lemon.c bb64133868108d318dd8ee93ed9cb2bb65d109fb4a689911e33157b342b85435
 F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1818,8 +1818,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 442c177dc444d614e8a665cfb62c4576cbf1002ed147dc272cea4e80cd9b92b4
-Q +05897ca48a40c6771ff83ba8ecc3a5c60dafddf58651c222dd8cf89b9fc7b077
-R 35cd636938ff9dc80d52e6019e14c325
+P 583e5a0ab6bdf3ce3d76852089160a8d11df4c3dd151050a70997b3720c3d538
+Q +2da0eea02d128c37f2fbe764227ac526d3e993284516544adc0a216a035c5676
+R 39f8e643466c6bba6cc75fba889f0126
 U mistachkin
-Z cc5bdb18bd081d93fb6e2947dcf93916
+Z 1b104f17fb7909a93c773b24a5ac563f
