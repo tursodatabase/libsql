@@ -2,12 +2,19 @@
 Shared-Schema Mode Notes
 ========================
 
-This branch contains a patch to allow SQLite connections to share schemas
+The [reuse-schema](/timeline?r=reuse-schema) branch contains changes 
+to allow SQLite connections to share schemas
 between database connections within the same process in order to save memory.
 Schemas may be shared between multiple databases attached to the same or
 distinct connection handles.
 
-To activate shared-schemas, a database connection must be opened using the
+Compile with -DSQLITE\_ENABLE\_SHARED\_SCHEMA in order to enable the
+shared-schema enhancement.  Enabling the shared-schema enhancement causes
+approximately a 0.1% increase in CPU cycles consumed and about a 3000-byte
+increase in the size of the library, even if shared-schema is never used.
+
+Assuming the compile-time requirements are satisfied, the shared-schema
+feature is engaged by opening the database connection using the
 sqlite3&#95;open&#95;v2() API with the SQLITE&#95;OPEN&#95;SHARED&#95;SCHEMA
 flag specified.  The main database and any attached databases will then share
 an in-memory Schema object with any other database opened within the process
@@ -42,7 +49,7 @@ the shell tool and the following command issued:
 
         .shared-schema check <database-1> [<database-2>]...
 
-where &lt;database-1;&gt; etc. are replaced with the names of database files
+where &lt;database-1&gt; etc. are replaced with the names of database files
 on disk. For each database specified on the command line, a single line of
 output is produced. If the database can share an in-memory schema with the
 main database opened by the shell tool, the output is of the form:
@@ -133,6 +140,3 @@ Schema (and therefore Table) object may correspond to tables in two or more
 databases attached to a single connection. Instead, all virtual-table handles
 associated with a single database are stored in a linked-list headed at
 Db.pVTable.
-
-
-
