@@ -1,5 +1,5 @@
-C Optimization\sto\sthe\sround()\sSQL\sfunction\sfor\slarge\sinput\svalues\swithout\sa\nfractional\spart.
-D 2019-05-30T13:47:10.747
+C Fix\sharmless\scompiler\swarning\sin\slemon.
+D 2019-06-03T15:09:25.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1748,7 +1748,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 9ec344d29cbeb03fdc0fce668eedfb7495792170de933adf95cf8d6904a166ad
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c dbcb617f0d815a60c2cb5fedc09ac575af0ba7026b48726c7f80a5a20a5ba345
+F tool/lemon.c cc43148d2793ab93668e74a6a6319bb71c2e65c1ffcd6deeaa59e12be9362a43
 F tool/lempar.c 61af95b8fac2bfd59c09d55330e78f3f5e352d7aa80bf37404b96ef795be3fdc
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1829,7 +1829,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea748edecb261f2b862d542daff6e99a6fd8879a8ace94b440d99e110577d1c1
-R 7754d0bcda862a16960da7e5623f3f4e
-U drh
-Z 17021e3360c89f47e46d1424ad5de5c6
+P e95138f5f4febde598f39e031d6e4f4d5ad0adbd8dcdd34fd0baaa78ab393417
+R 4e760c7015e96f21477efba0202b23a8
+U mistachkin
+Z 1d06b8a525cc16af48fda6dc31562f9b
