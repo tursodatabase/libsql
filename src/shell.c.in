@@ -3618,6 +3618,12 @@ static const char *(azHelp[]) = {
   "      --sha3-384            Use the sha3-384 algorithm",
   "      --sha3-512            Use the sha3-512 algorithm",
   "    Any other argument is a LIKE pattern for tables to hash",
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+  ".shared-schema CMD DB1 DB2 ...",
+  "    Commands:",
+  "       check                Determine if DB1, DB2, etc have identical schemas",
+  "       fix                  Attempt to make DB1, DB2, etc compatible",
+#endif
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif

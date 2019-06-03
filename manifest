@@ -1,5 +1,5 @@
-C The\s".shared-schema"\scommand\sin\sthe\sCLI\srequires\sthe\ssqlite_dbpage\stable,\nso\sdisable\sit\sif\sthe\sbuild\sdoes\snot\sinclude\sthat\sextension.
-D 2019-05-24T13:15:52.784
+C In\sthe\sCLI,\sadd\s".help"\stext\sfor\sthe\s.shared-schema\scommand.
+D 2019-06-03T13:46:50.082
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -524,7 +524,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bae0a7562db77b02d87101b587819d5a5dcd8625e477d2d8a228a20bba4fead6
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c ccd314a204ef27edadeb58faebc7ded1f967fa83d6b9b858cd422c80ef171643
-F src/shell.c.in ce8c924348577301fac6c7caee8a9d585decbe36f767fa0ee0f0d81d3d9653b5
+F src/shell.c.in a0011abafc1a5ce74dacbcdb90883734b938fdb9448679a77cd3d3ca3947b8bf
 F src/sqlite.h.in 4571ab9105a6b9f49d5f4ea5333025f298a41c955091767e4f67deb376a05b99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff9f3e09510b4418cb166fa2557598a279e7baedc315a5d1c3ae63beb92c238d
-R ee343fa90dbb4dec70eb41ce57008d4b
+P 0913ff4dc38290677357885ca40fe19ce45dafea6168a4e7403f0af083a48c65
+R 2bd373ec5652a0b12aeedd89c298473b
 U drh
-Z 463c1d2be005db20501d54fc2f03c487
+Z 7f03ee7fec2240beefd81d88375683ce
