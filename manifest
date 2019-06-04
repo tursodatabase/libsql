@@ -1,5 +1,5 @@
-C New\sdbsqlfuzz\stest\scases\sadd\sto\stest/fuzzdata8.db.
-D 2019-06-04T15:47:37.663
+C In\sthe\sCLI,\sadd\sa\ssmall\sdelay\s(0.1\sseconds)\safter\slaunching\sthe\soutput\ncommand\sfor\s".once"\sbefore\sdeleting\sthe\stemporary\sfile.
+D 2019-06-04T18:21:59.709
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -523,7 +523,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bae0a7562db77b02d87101b587819d5a5dcd8625e477d2d8a228a20bba4fead6
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
-F src/shell.c.in 6c992809abf20dbb4aad89299d7c15c98ddf2504b23c83ef71eb435ad392cdc3
+F src/shell.c.in 6a58aac018b61c6fc3184f431d3955b4738154b57a73e29a10b38a7cdec008ac
 F src/sqlite.h.in d19c873a17c2effd4417f687fad942b6cc0ab0c64535f669cc2f22a5b05db23b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1829,7 +1829,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dff24c6c7a4e7623984b5bb24c2ff14fe079dc49a0ad048cbfc66f84c08875b0
-R 29942a5dadbf0c4873d5ec24774b4fae
+P 873aa46da3d0f97784cad94828fc367bb2ceb13d5ece2e105320f404b3971c85
+R 48f77e7ac5a86de88749e11daaba1779
 U drh
-Z a081c7a3023a2e7ea5f5e1dbd6001878
+Z 6e0dab7a2dd76f073fda77de4a7b24be

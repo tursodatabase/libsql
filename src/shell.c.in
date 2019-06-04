@@ -4849,6 +4849,7 @@ static void output_reset(ShellState *p){
       sqlite3_free(zCmd);
       outputModePop(p);
       p->doXdgOpen = 0;
+      sqlite3_sleep(100);
     }
 #endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
   }
