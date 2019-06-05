@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sunix\sSQLITE_FCNTL_CHUNK_SIZE\sfile-control.
-D 2019-06-05T13:14:19.264
+C CLI\senhancements:\s\sAdd\sthe\s".filectrl"\scommand.\s\sMake\sthe\s".testctrl"\scommand\nvisible\sto\s".help".
+D 2019-06-05T14:29:53.728
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -523,7 +523,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bae0a7562db77b02d87101b587819d5a5dcd8625e477d2d8a228a20bba4fead6
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
-F src/shell.c.in 6a58aac018b61c6fc3184f431d3955b4738154b57a73e29a10b38a7cdec008ac
+F src/shell.c.in 9648bc2035a4dc2a380c863535893dc1d9f8a62bab57b6f2943e530aa62d04a8
 F src/sqlite.h.in d19c873a17c2effd4417f687fad942b6cc0ab0c64535f669cc2f22a5b05db23b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4979f138e8c8bef7dd6b5921fb9ca9fea86bbf7ec1419934bb2d1a0d74e77183
-R 522b3167ef6a36c1a53d7505a94718e4
-U dan
-Z 3782252d7bfa19845f7bea0ebc102852
+P 3a477fd0c944440be03d23c667053b346c769c6a4f6ba1ef094b7581a08d7bd4
+R 177641f432f1c6b30cb4289f1dc2ad01
+U drh
+Z d627a69eae92e533d7c2a62b56c5ad5b
