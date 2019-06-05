@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sadd\sa\ssmall\sdelay\s(0.1\sseconds)\safter\slaunching\sthe\soutput\ncommand\sfor\s".once"\sbefore\sdeleting\sthe\stemporary\sfile.
-D 2019-06-04T18:21:59.709
+C Add\sa\stest\scase\sfor\sthe\sunix\sSQLITE_FCNTL_CHUNK_SIZE\sfile-control.
+D 2019-06-05T13:14:19.264
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -726,6 +726,7 @@ F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 5ceb920718d280b61163500a7d29e0e0a86458b1cbd92d96f962c9d970aa3857
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test dcc952a127c394ce0de2aa634d26c78207e855327cc63a24d3638ca8fbfa641e
+F test/chunksize.test 427d87791743486cbf0c3b8c625002f3255cb3a89c6eba655a98923b1387b760
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
 F test/closure01.test 9905883f1b171a4638f98fc764879f154e214a306d3d8daf412a15e7f3a9b1e0
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1829,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 873aa46da3d0f97784cad94828fc367bb2ceb13d5ece2e105320f404b3971c85
-R 48f77e7ac5a86de88749e11daaba1779
-U drh
-Z 6e0dab7a2dd76f073fda77de4a7b24be
+P 4979f138e8c8bef7dd6b5921fb9ca9fea86bbf7ec1419934bb2d1a0d74e77183
+R 522b3167ef6a36c1a53d7505a94718e4
+U dan
+Z 3782252d7bfa19845f7bea0ebc102852
