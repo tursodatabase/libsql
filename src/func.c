@@ -397,7 +397,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_error_nomem(context);
       return;
     }
-    if( !sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8) ){
+    if( sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8)<=0 ){
       assert( sqlite3_strglob("*Inf", zBuf)==0 );
       r = zBuf[0]=='-' ? -HUGE_VAL : +HUGE_VAL;
     } 

@@ -717,20 +717,22 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
   testcase( pMem->flags & MEM_Null );
   if( (pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Null))==0 ){
     int rc;
+    sqlite3_int64 ix;
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    rc = sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc);
-    if( rc==0 ){
-      MemSetTypeFlag(pMem, MEM_Int);
-    }else{
-      i64 i = pMem->u.i;
-      sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
-      if( rc==1 && sqlite3RealSameAsInt(pMem->u.r, i) ){
-        pMem->u.i = i;
+    rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+    if( rc<=0 ){
+      if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
+        pMem->u.i = ix;
         MemSetTypeFlag(pMem, MEM_Int);
       }else{
         MemSetTypeFlag(pMem, MEM_Real);
       }
+    }else if( rc==1 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)==0 ){
+      pMem->u.i = ix;
+      MemSetTypeFlag(pMem, MEM_Int);
+    }else{
+      MemSetTypeFlag(pMem, MEM_Real);
     }
   }
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Null))!=0 );

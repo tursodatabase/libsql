@@ -365,7 +365,9 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 ** return
 **      1          =>  The input string is a pure integer
 **      2 or more  =>  The input has a decimal point or eNNN clause
-**      0          =>  The input string is not a valid number
+**      0 or less  =>  The input string is not a valid number
+**     -1          =>  Not a valid number, but has a valid prefix which 
+**                     includes a decimal point and/or an eNNN clause
 **
 ** Valid numbers are in one of these formats:
 **
@@ -556,7 +558,13 @@ do_atof_calc:
   *pResult = result;
 
   /* return true if number and no extra non-whitespace chracters after */
-  return z==zEnd && nDigit>0 && eValid && eType>0 ? eType : 0;
+  if( z==zEnd && nDigit>0 && eValid && eType>0 ){
+    return eType;
+  }else if( eType>=2 && (eType==3 || eValid) ){
+    return -1;
+  }else{
+    return 0;
+  }
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
@@ -599,6 +607,7 @@ static int compare2pow63(const char *zNum, int incr){
 **
 ** Returns:
 **
+**    -1    Not even a prefix of the input text looks like an integer
 **     0    Successful transformation.  Fits in a 64-bit signed integer.
 **     1    Excess non-space text after the integer value
 **     2    Integer too large for a 64-bit signed integer or is malformed
@@ -658,9 +667,9 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     *pNum = (i64)u;
   }
   rc = 0;
-  if( (i==0 && zStart==zNum)     /* No digits */
-   || nonNum                     /* UTF16 with high-order bytes non-zero */
-  ){
+  if( i==0 && zStart==zNum ){    /* No digits */
+    rc = -1;
+  }else if( nonNum ){            /* UTF16 with high-order bytes non-zero */
     rc = 1;
   }else if( &zNum[i]<zEnd ){     /* Extra bytes at the end */
     int jj = i;

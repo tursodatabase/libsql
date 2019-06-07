@@ -388,4 +388,31 @@ do_execsql_test case-6.1 {
   SELECT * FROM t1;
 } {9000000000000000001 9000000000000000001 9000000000000000001 9000000000000000001}
 
+# 2019-06-07
+# https://www.sqlite.org/src/info/4c2d7639f076aa7c
+do_execsql_test case-7.1 {
+  SELECT CAST('-' AS NUMERIC);
+} {0}
+do_execsql_test case-7.2 {
+  SELECT CAST('-0' AS NUMERIC);
+} {0}
+do_execsql_test case-7.3 {
+  SELECT CAST('+' AS NUMERIC);
+} {0}
+do_execsql_test case-7.4 {
+  SELECT CAST('/' AS NUMERIC);
+} {0}
+
+# 2019-06-07
+# https://www.sqlite.org/src/info/e8bedb2a184001bb
+do_execsql_test case-7.10 {
+  SELECT '' - 2851427734582196970;
+} {-2851427734582196970}
+do_execsql_test case-7.11 {
+  SELECT 0 - 2851427734582196970;
+} {-2851427734582196970}
+do_execsql_test case-7.12 {
+  SELECT '' - 1;
+} {-1}
+
 finish_test
