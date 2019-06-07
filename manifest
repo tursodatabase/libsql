@@ -1,5 +1,5 @@
-C CLI\senhancements:\s\sAdd\sthe\s".filectrl"\scommand.\s\sMake\sthe\s".testctrl"\scommand\nvisible\sto\s".help".
-D 2019-06-05T14:29:53.728
+C Upgrade\sthe\sconfig.guess\sscript\sto\sthe\slatest\sversion.
+D 2019-06-07T18:53:51.086
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -31,7 +31,7 @@ F autoconf/tea/tclconfig/tcl.m4 66ddf0a5d5e4b1d29bff472c0985fd7fa89d0fb5
 F autoconf/tea/win/makefile.vc f89d0184d0eee5f7e356ea407964dcd139939928
 F autoconf/tea/win/nmakehlp.c 247538ad8e8c508f33c03ec1fbd67d3a07ef6291
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
-F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
+F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure 4a97fb6ccce582ebb3dc5a7e281e5e2823574dad851b8ccf814aa6de9f4c7ad2 x
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a477fd0c944440be03d23c667053b346c769c6a4f6ba1ef094b7581a08d7bd4
-R 177641f432f1c6b30cb4289f1dc2ad01
-U drh
-Z d627a69eae92e533d7c2a62b56c5ad5b
+P 7b3a99fce8b4a757f2b2ef2f0b02d68566f2528d9ae1e30628522717f872466c
+R d942243a0ac8489c407d7afb0b926ed4
+U dan
+Z 7a960d6982fc25800640fc7f687e4c6e
