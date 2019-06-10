@@ -79,7 +79,7 @@ do_execsql_test 3.1 {
 
 do_execsql_test 3.2 {
   SELECT sql FROM sqlite_master WHERE name = 'v1'
-} {{CREATE VIEW v1 AS SELECT * FROM t1 WHERE a=1 OR (bbb IN ())}}
+} {{CREATE VIEW v1 AS SELECT * FROM t1 WHERE a=1 OR (b IN ())}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -188,6 +188,24 @@ do_execsql_test 8.1 {
   {CREATE TABLE "t1"(c0)}
   {CREATE INDEX i0 ON "t1"('1' IN ())}
 }
+
+do_execsql_test 8.2.1 {
+  CREATE TABLE t2 (c0);
+  CREATE INDEX i2 ON t2((LIKELIHOOD(c0, 100) IN ()));
+  ALTER TABLE t2 RENAME COLUMN c0 TO c1;
+}
+do_execsql_test 8.2.2 {
+  SELECT sql FROM sqlite_master WHERE tbl_name = 't2';
+} {
+  {CREATE TABLE t2 (c1)} 
+  {CREATE INDEX i2 ON t2((LIKELIHOOD(c0, 100) IN ()))}
+}
+do_test 8.2.3 {
+  sqlite3 db2 test.db
+  db2 eval { INSERT INTO t2 VALUES (1), (2), (3) }
+  db close
+} {}
+
 
 
 finish_test

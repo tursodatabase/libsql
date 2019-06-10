@@ -1179,12 +1179,8 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** SQLite treats simple string literals in CREATE INDEX statements
       ** as column names, not constant expressions.
       */
-      if( IN_RENAME_OBJECT==0 ){
-        sqlite3ExprDelete(pParse->db, A);
-        A = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[N],1);
-      }else{
-        A = sqlite3PExpr(pParse, TK_UPLUS, A, 0);
-      }
+      sqlite3ExprDelete(pParse->db, A);
+      A = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[N],1);
     }else if( Y->nExpr==1 ){
       /* Expressions of the form:
       **
