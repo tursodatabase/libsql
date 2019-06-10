@@ -285,17 +285,8 @@ static VdbeCursor *allocateCursor(
 static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
   i64 iValue = (double)rValue;
   if( sqlite3RealSameAsInt(rValue,iValue) ){
-    testcase( iValue<-2251799813685248 );
-    testcase( iValue==-2251799813685248 );
-    testcase( iValue==-2251799813685247 );
-    testcase( iValue>-2251799813685247 && iValue<+2251799813685247 );
-    testcase( iValue==+2251799813685247 );
-    testcase( iValue==+2251799813685248 );
-    testcase( iValue>+2251799813685248 );
-    if( iValue > -2251799813685248 && iValue < 2251799813685248 ){
-      *piValue = iValue;
-      return 1;
-    }
+    *piValue = iValue;
+    return 1;
   }
   return 0==sqlite3Atoi64(pRec->z, piValue, pRec->n, pRec->enc);
 }

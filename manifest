@@ -1,5 +1,5 @@
-C Handle\srenaming\sa\scolumn\sor\stable\swhen\sthe\sschema\scontains\sa\s(meaningless)\sindex\son\sthe\sconstant\sexpression\s('text'\sIN\s())\sor\s('text'\sNOT\sIN()).
-D 2019-06-10T15:34:16.336
+C Make\ssure\sa\sCAST\sto\s"NUMERIC"\sresults\sin\san\sinteger\sif\sthe\svalue\scan\sbe\nlosslessly\sexpressed\sas\san\sinteger,\sas\sthe\sdocumentation\srequires.\nTicket\s[dd6bffbfb6e61db9].
+D 2019-06-10T18:33:16.336
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -594,13 +594,13 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 11e0e5e43850e29571301a3f3b87f43ad69a8ebaef99c69f8ac23793230ab7f9
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 51989be8322328fabc04a257dc207427646a6c165c51c6fe2260e783b72a9f9c
+F src/vdbe.c 42a7966812a5c3305cadd3e1060a0e962d6674e4a647fcc153e8693ecf59af74
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
 F src/vdbeaux.c 3a803d75875031309204df90977059b12ffb706d16b4baa5e2d99f4353962582
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c be520020f89c02de6e0a0df6767e37a4a2eeef3ec7bf9ae64ad6ba32005c19fb
+F src/vdbemem.c 44ef1a12855e0c866082622a60520d89194887b805390d8da3d9b5fd36897454
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
@@ -723,7 +723,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
 F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
-F test/cast.test 6505b8aecc0e17079536103328add23fe63418530d1f827e46c32e4151a29daf
+F test/cast.test 9fa79845ef0f701082bea0f86bfe4aa22bf714e8369862f227dfc8fd1c24879d
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test dcc952a127c394ce0de2aa634d26c78207e855327cc63a24d3638ca8fbfa641e
 F test/chunksize.test 427d87791743486cbf0c3b8c625002f3255cb3a89c6eba655a98923b1387b760
@@ -821,7 +821,7 @@ F test/e_createtable.test 1c602347e73ab80b11b9fa083f47155861aaafcff8054aac9e0b76
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 21ce09c361227ddbc9819a5608ee2700c276bdd5
-F test/e_expr.test 8cd7d85270cc7b1bca4cad6dc1c65f2d414b8851d0a13eb4eed0aa27a3516b9a
+F test/e_expr.test 628c1c5990e7df71bee17c83afcf59f31c3d34914b829ac098ee3a72b2f1d061
 F test/e_fkey.test 2febb2084aef9b0186782421c07bc9d377abf067c9cb4efd49d9647ae31f5afe
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94b58ab059cba9771e75f16d1460f313104a8fb879f9f8805725d362aa58cbcd
-R 690f23cd3c9b330abd9f7860557c7bc2
-U dan
-Z 9f6778172efe3826af7afd3381a81ce6
+P 567b13093956185b5d5e971b81ba4788fd9d26c03688f643b380f0f1c1a94da0
+R e1f8a32b710aa9d301370151b67c84ba
+U drh
+Z a526308cb484ae4690504962aa2e9239

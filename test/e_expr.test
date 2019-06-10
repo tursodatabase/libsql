@@ -1650,7 +1650,7 @@ do_expr_test e_expr-31.2.4 {
 # is lossless and reversible.
 #
 do_expr_test e_expr-32.1.1 { CAST('45'   AS NUMERIC)  } integer 45
-do_expr_test e_expr-32.1.2 { CAST('45.0' AS NUMERIC)  } real 45.0
+do_expr_test e_expr-32.1.2 { CAST('45.0' AS NUMERIC)  } integer 45
 do_expr_test e_expr-32.1.3 { CAST('45.2' AS NUMERIC)  } real 45.2
 do_expr_test e_expr-32.1.4 { CAST('11abc' AS NUMERIC) } integer 11
 do_expr_test e_expr-32.1.5 { CAST('11.1abc' AS NUMERIC) } real 11.1
@@ -1709,8 +1709,8 @@ do_execsql_test e_expr-32.2.8 {
  real 9.22337203685478e+18 \
  real 9.22337203685478e+18 \
  real 9.22337203685478e+18 \
- real -5.0 \
- real -5.0 \
+ integer -5 \
+ integer -5 \
 ]
 
 # EVIDENCE-OF: R-64550-29191 Note that the result from casting any

@@ -699,7 +699,8 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 */
 int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
   double r2 = (double)i;
-  return memcmp(&r1, &r2, sizeof(r1))==0;
+  return memcmp(&r1, &r2, sizeof(r1))==0
+      && i > -2251799813685248 && i < 2251799813685248;
 }
 
 /*
@@ -721,14 +722,9 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
-    if( rc<=0 ){
-      if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
-        pMem->u.i = ix;
-        MemSetTypeFlag(pMem, MEM_Int);
-      }else{
-        MemSetTypeFlag(pMem, MEM_Real);
-      }
-    }else if( rc==1 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)==0 ){
+    if( ((rc==0 || rc==1) && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1)
+     || sqlite3RealSameAsInt(pMem->u.r, (ix = (i64)pMem->u.r))
+    ){
       pMem->u.i = ix;
       MemSetTypeFlag(pMem, MEM_Int);
     }else{

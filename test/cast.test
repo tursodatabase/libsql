@@ -371,7 +371,8 @@ do_execsql_test cast-5.2 {
 do_execsql_test case-5.3 {
   SELECT CAST('123e+5' AS INTEGER);
   SELECT CAST('123e+5' AS NUMERIC);
-} {123 12300000.0}
+  SELECT CAST('123e+5' AS REAL);
+} {123 12300000 12300000.0}
 
 
 # The following does not have anything to do with the CAST operator,
@@ -414,5 +415,20 @@ do_execsql_test case-7.11 {
 do_execsql_test case-7.12 {
   SELECT '' - 1;
 } {-1}
+
+# 2019-06-10
+# https://www.sqlite.org/src/info/dd6bffbfb6e61db9
+#
+# EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC
+# first does a forced conversion into REAL but then further converts the
+# result into INTEGER if and only if the conversion from REAL to INTEGER
+# is lossless and reversible.
+#
+do_execsql_test cast-7.20 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0 (c0 TEXT);
+  INSERT INTO t0(c0) VALUES ('1.0');
+  SELECT CAST(c0 AS NUMERIC) FROM t0;
+} {1}
 
 finish_test
