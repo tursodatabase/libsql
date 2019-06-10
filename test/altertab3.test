@@ -175,6 +175,21 @@ do_catchsql_test 7.2.2 {
   ALTER TABLE t1x RENAME TO t1;
 } {1 {error in trigger AFTER: no such column: d}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0(c0);
+  CREATE INDEX i0 ON t0('1' IN ());
+}
+do_execsql_test 8.1 {
+  ALTER TABLE t0 RENAME TO t1;
+  SELECT sql FROM sqlite_master;
+} {
+  {CREATE TABLE "t1"(c0)}
+  {CREATE INDEX i0 ON "t1"('1' IN ())}
+}
+
+
 finish_test
 
 
