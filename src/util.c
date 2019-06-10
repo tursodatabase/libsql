@@ -560,7 +560,7 @@ do_atof_calc:
   /* return true if number and no extra non-whitespace chracters after */
   if( z==zEnd && nDigit>0 && eValid && eType>0 ){
     return eType;
-  }else if( eType>=2 && (eType==3 || eValid) ){
+  }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
     return -1;
   }else{
     return 0;

@@ -431,4 +431,21 @@ do_execsql_test cast-7.20 {
   SELECT CAST(c0 AS NUMERIC) FROM t0;
 } {1}
 
+# 2019-06-10
+# https://sqlite.org/src/info/27de823723a41df45af3
+#
+do_execsql_test cast-7.30 {
+  SELECT -'.';
+} 0
+do_execsql_test cast-7.31 {
+  SELECT '.'+0;
+} 0
+do_execsql_test cast-7.32 {
+  SELECT CAST('.' AS numeric);
+} 0
+do_execsql_test cast-7.33 {
+  SELECT -CAST('.' AS numeric);
+} 0
+
+
 finish_test
