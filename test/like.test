@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix like
 
 # Create some sample data to work with.
 #
@@ -1095,4 +1096,22 @@ do_execsql_test like-15.121 {
 } {/SEARCH/}
 }
 
+#-------------------------------------------------------------------------
+# Tests for ticket [b1d8c79314].
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(a INTEGER COLLATE NOCASE);
+  CREATE INDEX i1 ON t1(a);
+  INSERT INTO t1 VALUES(' 1x');
+  INSERT INTO t1 VALUES(' 1-');
+}
+do_execsql_test 16.1 {
+  SELECT * FROM t1 WHERE a LIKE ' 1%';
+} {{ 1x} { 1-}}
+do_execsql_test 16.2 {
+  SELECT * FROM t1 WHERE a LIKE ' 1-';
+} {{ 1-}}
+
 finish_test
+

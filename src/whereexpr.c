@@ -264,12 +264,12 @@ static int isLikeOrGlob(
         zNew[iTo] = 0;
         assert( iTo>0 );
 
-        /* If the RHS begins with a digit or a +/- sign, then the LHS must be
-        ** an ordinary column (not a virtual table column) with TEXT affinity.
-        ** Otherwise the LHS might be numeric and "lhs >= rhs" would be false
-        ** even though "lhs LIKE rhs" is true.  But if the RHS does not start
-        ** with a digit or +/-, then "lhs LIKE rhs" will always be false if
-        ** the LHS is numeric and so the optimization still works.
+        /* If the RHS begins with a digit, a +/- sign or whitespace, then the
+        ** LHS must be an ordinary column (not a virtual table column) with
+        ** TEXT affinity. Otherwise the LHS might be numeric and "lhs >= rhs"
+        ** would be false even though "lhs LIKE rhs" is true.  But if the RHS
+        ** does not start with a digit or +/-, then "lhs LIKE rhs" will always
+        ** be false if the LHS is numeric and so the optimization still works.
         **
         ** 2018-09-10 ticket c94369cae9b561b1f996d0054bfab11389f9d033
         ** The RHS pattern must not be '/%' because the termination condition
@@ -277,6 +277,7 @@ static int isLikeOrGlob(
         ** be converted into "x<0", which is incorrect.
         */
         if( sqlite3Isdigit(zNew[0])
+         || sqlite3Isspace(zNew[0])
          || zNew[0]=='-'
          || zNew[0]=='+'
          || zNew[iTo-1]=='0'-1
