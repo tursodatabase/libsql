@@ -894,9 +894,11 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
     return pRight;
   }else if( pRight==0 ){
     return pLeft;
-  }else if( pParse->nErr || IN_RENAME_OBJECT ){
-    return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
   }else if( ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight) ){
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameExprUnmap(pParse, pLeft);
+      sqlite3RenameExprUnmap(pParse, pRight);
+    }
     sqlite3ExprDelete(db, pLeft);
     sqlite3ExprDelete(db, pRight);
     return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
