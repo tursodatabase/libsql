@@ -1,5 +1,5 @@
-C Remove\sa\scomment\smade\sobsolete\sby\scheck-in\s[71643deb6bbad4b4].\s\sNo\schanges\nto\scode.
-D 2019-06-11T01:30:39.178
+C Fix\srepeated\stest\snumbers\sin\sthe\saltertab2.test\sfile.
+D 2019-06-11T01:56:42.626
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F test/alterlegacy.test 82022721ce0de29cedc9a7af63bc9fcc078b0ee000f8283b4b6ea9c3
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test b6901287474841cffbd8f90b098d3bd7d8445868b42caeb01b27034698f7245f
-F test/altertab2.test 5d423a2d1006085b05cc1b788863d5a860ea2da21c4f892d15e2f2a34c78348a
+F test/altertab2.test 429e4e84475f3e10b6b49cb4025d4a58a22ea1145277cd99b6ed81c02061e490
 F test/altertab3.test 47cdbc49c0e3638754be29966e3406f5b8041ff863ecdcc176d6352fa0f2b6d7
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 7168c8bffa5d5cbc53c05b7e9c7fcdd24b365a1bc5046ce80c45efa3c02e6b7c
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 57050162294efec90caa5cc3c2f8c1a85215526adcf57b284ce2d2e799286b78
-R fbb4255aba053df4ec4f1142e0f81c12
+P 211c8002d5ea4b224125d4ed395fe15767d1dc32a77b40b89fdfc80bdd1c5a48
+R e5606e998f2ab9c48506263561beeb14
 U drh
-Z 7d251f11a7688ef9709b135ca29074d3
+Z 5b483bb7289f1f0365328c5969127898
