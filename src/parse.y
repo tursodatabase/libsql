@@ -1172,12 +1172,6 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       **
       ** simplify to constants 0 (false) and 1 (true), respectively,
       ** regardless of the value of expr1.
-      **
-      ** Or, if this is part of an ALTER TABLE RENAME command, instead
-      ** change the expression to "+(expr1)". The unary + is required to
-      ** workaround the obscure case where expr1 is a string literal, as
-      ** SQLite treats simple string literals in CREATE INDEX statements
-      ** as column names, not constant expressions.
       */
       sqlite3ExprDelete(pParse->db, A);
       A = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[N],1);
