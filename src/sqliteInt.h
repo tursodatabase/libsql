@@ -2516,7 +2516,7 @@ struct Expr {
 #define EP_Generic   0x000200 /* Ignore COLLATE or affinity on this tree */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
 #define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
+#define EP_Skip      0x001000 /* Operator does not contribute to affinity */
 #define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
 #define EP_Win       0x008000 /* Contains window functions */

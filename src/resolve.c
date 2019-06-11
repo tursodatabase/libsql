@@ -747,7 +747,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }else{
         is_agg = pDef->xFinalize!=0;
         if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
-          ExprSetProperty(pExpr, EP_Unlikely|EP_Skip);
+          ExprSetProperty(pExpr, EP_Unlikely);
           if( n==2 ){
             pExpr->iTable = exprProbability(pList->a[1].pExpr);
             if( pExpr->iTable<0 ){

@@ -45,7 +45,11 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 char sqlite3ExprAffinity(Expr *pExpr){
   int op;
   if( pExpr->flags & EP_Generic ) return 0;
-  pExpr = sqlite3ExprSkipCollate(pExpr);
+  while( ExprHasProperty(pExpr, EP_Skip) ){
+    assert( pExpr->op==TK_COLLATE );
+    pExpr = pExpr->pLeft;
+    assert( pExpr!=0 );
+  }
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
@@ -106,7 +110,7 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 ** or likelihood() function at the root of an expression.
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
-  while( pExpr && ExprHasProperty(pExpr, EP_Skip) ){
+  while( pExpr && ExprHasProperty(pExpr, EP_Skip|EP_Unlikely) ){
     if( ExprHasProperty(pExpr, EP_Unlikely) ){
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       assert( pExpr->x.pList->nExpr>0 );
