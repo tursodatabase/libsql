@@ -895,12 +895,8 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
   }else if( pRight==0 ){
     return pLeft;
   }else if( ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight) ){
-    if( IN_RENAME_OBJECT ){
-      sqlite3RenameExprUnmap(pParse, pLeft);
-      sqlite3RenameExprUnmap(pParse, pRight);
-    }
-    sqlite3ExprDelete(db, pLeft);
-    sqlite3ExprDelete(db, pRight);
+    sqlite3ExprUnmapAndDelete(pParse, pLeft);
+    sqlite3ExprUnmapAndDelete(pParse, pRight);
     return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
   }else{
     return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
@@ -1058,6 +1054,18 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 }
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
+}
+
+/* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
+** expression.
+*/
+void sqlite3ExprUnmapAndDelete(Parse *pParse, Expr *p){
+  if( p ){
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameExprUnmap(pParse, p);
+    }
+    sqlite3ExprDeleteNN(pParse->db, p);
+  }
 }
 
 /*
@@ -1642,10 +1650,7 @@ ExprList *sqlite3ExprListAppendVector(
   }
 
 vector_append_error:
-  if( IN_RENAME_OBJECT ){
-    sqlite3RenameExprUnmap(pParse, pExpr);
-  }
-  sqlite3ExprDelete(db, pExpr);
+  sqlite3ExprUnmapAndDelete(pParse, pExpr);
   sqlite3IdListDelete(db, pColumns);
   return pList;
 }

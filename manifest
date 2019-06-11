@@ -1,5 +1,5 @@
-C The\sALTER\sTABLE\scommand\sshould\snot\sattempt\sto\srename\sobjects\sthat\sare\s\ncontained\swithin\san\sexpression\stree\sthat\shas\sbeen\soptimized\sout\sbecause\nit\sis\sthe\sother\sbranch\sof\san\s"AND\sfalse"\sexpression.\nTicket\s[533010b8cacebe82]
-D 2019-06-11T02:43:22.189
+C Add\sthe\snew\ssqlite3ExprUnmapAndDelete()\sfunction\sand\suse\sit\sin\splace\sof\nseparate\scalls\sto\ssqlite3RenameExprUnmap()\sand\ssqlite3ExprDelete().
+D 2019-06-11T10:43:56.870
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 19100ef384cbe1f985b2bf692bfe5100127365d81becb61122bed48667e0ad0d
+F src/expr.c f6b10414b5bd88f2966a407caee09a8f1703f3c80e1a67a5b0945e9dea3ef409
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 0e14d4bef8eac2d87bbd517e492d9084c65008d117823f8922c5e7b2b599bd33
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
@@ -511,7 +511,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 9e13554d106885123293b0f9dc8b3fb7d4a36f109ba24bc5984bbc6405b1c665
+F src/parse.y 026e3e6fff32432166a4eae0bdb78ad09a53c84eb49acb44dc32e49b4c0b8a48
 F src/pcache.c 696a01f1a6370c1b50a09c15972bc3bee3333f8fcd1f2da8e9a76b1b062c59ee
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c be64b2f3908a7f97c56c963676eb12f0d6254c95b28cdc1d73a186eff213219d
@@ -527,7 +527,7 @@ F src/shell.c.in 9648bc2035a4dc2a380c863535893dc1d9f8a62bab57b6f2943e530aa62d04a
 F src/sqlite.h.in e80973893802ec7980a602a449c93527f9265f1295ad156c83cbb48f9b58ce4e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h 73d93952552a7a5fdb29ae19ef9919041364070615ba04c2d673126185f523bf
+F src/sqliteInt.h 3f4d665dff31c852e9b724b0ec27f84af0d8c500eb0391d713faccdd86a3d379
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1006,7 +1006,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db babb1c560fef766171972c119c1bc3b7be20b134e2f46ae0c52390cd3059b6f4
-F test/fuzzdata8.db 2f2ebc7632affed8f0bb6c52447db5a73eb37f41afa4d745f7ac9013722feead
+F test/fuzzdata8.db b305f58033b043856d7d58c43bc0e8eb8fc2c102071a77d6b4c7f4efa667702d
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e82f235e7201a420149847cda630ac6f2fce5e3a4577b0ea4793f430d3dc1611
-R 68739974257ae8553d5364ff46bec812
+P 04bd5cb73287f926f1ecf578998fa6ce1379474e86918c692eae5778d0817cef
+R 6b6d800c72acd17bee33792b16c98170
 U drh
-Z d223dd9a1c633bbd46be540c239afe43
+Z 2841a4dab216457624e44ac4f8437ccd
