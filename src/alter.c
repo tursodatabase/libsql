@@ -731,7 +731,7 @@ static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
 ** Walker callback used by sqlite3RenameExprUnmap().
 */
 static int renameUnmapSelectCb(Walker *pWalker, Select *p){
-  if( p->pSrc ){
+  if( ALWAYS(p->pSrc) ){  /* Every Select as a SrcList, even if it is empty */
     Parse *pParse = pWalker->pParse;
     int i;
     for(i=0; i<p->pSrc->nSrc; i++){
