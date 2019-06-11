@@ -44,8 +44,8 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 */
 char sqlite3ExprAffinity(Expr *pExpr){
   int op;
-  pExpr = sqlite3ExprSkipCollate(pExpr);
   if( pExpr->flags & EP_Generic ) return 0;
+  pExpr = sqlite3ExprSkipCollate(pExpr);
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
