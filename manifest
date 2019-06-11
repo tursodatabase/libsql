@@ -1,5 +1,5 @@
-C Have\sthe\sALTER\sTABLE\scode\shandle\sthe\scase\swhere\san\sentire\sexpression\sthat\sincludes\sa\ssub-select\sis\sexcluded\sfrom\sa\sview,\strigger\sor\sindex.
-D 2019-06-11T12:03:10.803
+C Off-by-one\serror\sin\sthe\sCAST\sto\sNUMERIC\slogic.
+D 2019-06-11T16:06:05.646
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
 F src/vdbeaux.c 3a803d75875031309204df90977059b12ffb706d16b4baa5e2d99f4353962582
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 44ef1a12855e0c866082622a60520d89194887b805390d8da3d9b5fd36897454
+F src/vdbemem.c c970d2b480beca04f9a6a70be70acf07aa1aa261f7a723e5beb986d1a83cd851
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36ea13e0a851a749c9ef292377ecd82dbd4797d38df907b362487fa234c98ca5
-R 762a7a19236cec9b157d94379126d586
-U dan
-Z 99b4f10703988e7b4324363701c6ae00
+P f2c8179f3c0b77f10da3f9b0771db4dec30d0bbf0b7f4751ce439bfb08da8f6f
+R d01aca841c3dfa997035150c46c302cd
+U drh
+Z f2f716cd41c6e715a96225f6f1d51c75
