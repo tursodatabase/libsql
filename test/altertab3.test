@@ -188,7 +188,6 @@ do_execsql_test 8.1 {
   {CREATE TABLE "t1"(c0)}
   {CREATE INDEX i0 ON "t1"('1' IN ())}
 }
-
 do_execsql_test 8.2.1 {
   CREATE TABLE t2 (c0);
   CREATE INDEX i2 ON t2((LIKELIHOOD(c0, 100) IN ()));
@@ -206,6 +205,18 @@ do_test 8.2.3 {
   db close
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.1 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TRIGGER AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+    SELECT true WHERE (SELECT a, b FROM (t1)) IN ();
+  END;
+}
+
+do_execsql_test 9.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
 
 
 finish_test
