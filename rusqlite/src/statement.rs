@@ -378,6 +378,29 @@ impl Statement<'_> {
         rows.get_expected_row().and_then(|r| f(&r))
     }
 
+    /// Convenience method to execute a query with named parameter(s) that is
+    /// expected to return a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
+    ///
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
+    /// query truly is optional, you can call `.optional()` on the result of
+    /// this to get a `Result<Option<T>>`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
+    pub fn query_row_named<T, F>(&mut self, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
+    where
+        F: FnOnce(&Row<'_>) -> Result<T>,
+    {
+        let mut rows = self.query_named(params)?;
+
+        rows.get_expected_row().and_then(|r| f(&r))
+    }
+
     /// Consumes the statement.
     ///
     /// Functionally equivalent to the `Drop` implementation, but allows
@@ -716,14 +739,13 @@ mod test {
             .unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
+        let mut stmt = db
+            .prepare("SELECT COUNT(*) FROM test WHERE name = :name")
+            .unwrap();
         assert_eq!(
             1i32,
-            db.query_row_named::<i32, _>(
-                "SELECT COUNT(*) FROM test WHERE name = :name",
-                &[(":name", &"one")],
-                |r| r.get(0)
-            )
-            .unwrap()
+            stmt.query_row_named::<i32, _>(&[(":name", &"one")], |r| r.get(0))
+                .unwrap()
         );
     }
 
