@@ -419,10 +419,8 @@ do_execsql_test cast-7.12 {
 # 2019-06-10
 # https://www.sqlite.org/src/info/dd6bffbfb6e61db9
 #
-# EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC
-# first does a forced conversion into REAL but then further converts the
-# result into INTEGER if and only if the conversion from REAL to INTEGER
-# is lossless and reversible.
+# EVIDENCE-OF: R-55084-10555 Casting a TEXT or BLOB value into NUMERIC
+# yields either an INTEGER or a REAL result.
 #
 do_execsql_test cast-7.20 {
   DROP TABLE IF EXISTS t0;
