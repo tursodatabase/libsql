@@ -693,14 +693,17 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 /* Compare a floating point value to an integer.  Return true if the two
 ** values are the same within the precision of the floating point value.
 **
+** This function assumes that i was obtained by assignment from r1.
+**
 ** For some versions of GCC on 32-bit machines, if you do the more obvious
 ** comparison of "r1==(double)i" you sometimes get an answer of false even
 ** though the r1 and (double)i values are bit-for-bit the same.
 */
 int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
   double r2 = (double)i;
-  return memcmp(&r1, &r2, sizeof(r1))==0
-      && i >= -2251799813685248 && i < 2251799813685248;
+  return r1==0.0
+      || (memcmp(&r1, &r2, sizeof(r1))==0
+          && i >= -2251799813685248 && i < 2251799813685248);
 }
 
 /*

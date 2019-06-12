@@ -183,34 +183,34 @@ do_test cast-1.53 {
   execsql {SELECT CAST('123.5abc' AS integer)}
 } 123
 
-do_test case-1.60 {
+do_test cast-1.60 {
   execsql {SELECT CAST(null AS REAL)}
 } {{}}
-do_test case-1.61 {
+do_test cast-1.61 {
   execsql {SELECT typeof(CAST(null AS REAL))}
 } {null}
-do_test case-1.62 {
+do_test cast-1.62 {
   execsql {SELECT CAST(1 AS REAL)}
 } {1.0}
-do_test case-1.63 {
+do_test cast-1.63 {
   execsql {SELECT typeof(CAST(1 AS REAL))}
 } {real}
-do_test case-1.64 {
+do_test cast-1.64 {
   execsql {SELECT CAST('1' AS REAL)}
 } {1.0}
-do_test case-1.65 {
+do_test cast-1.65 {
   execsql {SELECT typeof(CAST('1' AS REAL))}
 } {real}
-do_test case-1.66 {
+do_test cast-1.66 {
   execsql {SELECT CAST('abc' AS REAL)}
 } {0.0}
-do_test case-1.67 {
+do_test cast-1.67 {
   execsql {SELECT typeof(CAST('abc' AS REAL))}
 } {real}
-do_test case-1.68 {
+do_test cast-1.68 {
   execsql {SELECT CAST(x'31' AS REAL)}
 } {1.0}
-do_test case-1.69 {
+do_test cast-1.69 {
   execsql {SELECT typeof(CAST(x'31' AS REAL))}
 } {real}
 
@@ -299,7 +299,7 @@ if {[db eval {PRAGMA encoding}]=="UTF-8"} {
     } 9223372036854774784
   }
 }
-do_test case-3.31 {
+do_test cast-3.31 {
   execsql {SELECT CAST(NULL AS numeric)}
 } {{}}
 
@@ -368,7 +368,7 @@ do_execsql_test cast-5.2 {
 # ignored because it is no part of the integer prefix.
 # EVIDENCE-OF: R-24225-46995 For example, "(CAST '123e+5' AS INTEGER)"
 # results in 123, not in 12300000.
-do_execsql_test case-5.3 {
+do_execsql_test cast-5.3 {
   SELECT CAST('123e+5' AS INTEGER);
   SELECT CAST('123e+5' AS NUMERIC);
   SELECT CAST('123e+5' AS REAL);
@@ -378,7 +378,7 @@ do_execsql_test case-5.3 {
 # The following does not have anything to do with the CAST operator,
 # but it does deal with affinity transformations.
 #
-do_execsql_test case-6.1 {
+do_execsql_test cast-6.1 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a NUMERIC);
   INSERT INTO t1 VALUES
@@ -391,28 +391,28 @@ do_execsql_test case-6.1 {
 
 # 2019-06-07
 # https://www.sqlite.org/src/info/4c2d7639f076aa7c
-do_execsql_test case-7.1 {
+do_execsql_test cast-7.1 {
   SELECT CAST('-' AS NUMERIC);
 } {0}
-do_execsql_test case-7.2 {
+do_execsql_test cast-7.2 {
   SELECT CAST('-0' AS NUMERIC);
 } {0}
-do_execsql_test case-7.3 {
+do_execsql_test cast-7.3 {
   SELECT CAST('+' AS NUMERIC);
 } {0}
-do_execsql_test case-7.4 {
+do_execsql_test cast-7.4 {
   SELECT CAST('/' AS NUMERIC);
 } {0}
 
 # 2019-06-07
 # https://www.sqlite.org/src/info/e8bedb2a184001bb
-do_execsql_test case-7.10 {
+do_execsql_test cast-7.10 {
   SELECT '' - 2851427734582196970;
 } {-2851427734582196970}
-do_execsql_test case-7.11 {
+do_execsql_test cast-7.11 {
   SELECT 0 - 2851427734582196970;
 } {-2851427734582196970}
-do_execsql_test case-7.12 {
+do_execsql_test cast-7.12 {
   SELECT '' - 1;
 } {-1}
 
@@ -446,6 +446,23 @@ do_execsql_test cast-7.32 {
 do_execsql_test cast-7.33 {
   SELECT -CAST('.' AS numeric);
 } 0
+
+# 2019-06-12
+# https://www.sqlite.org/src/info/674385aeba91c774
+#
+do_execsql_test cast-7.40 {
+  SELECT CAST('-0.0' AS numeric);
+} 0
+do_execsql_test cast-7.41 {
+  SELECT CAST('0.0' AS numeric);
+} 0
+do_execsql_test cast-7.42 {
+  SELECT CAST('+0.0' AS numeric);
+} 0
+do_execsql_test cast-7.43 {
+  SELECT CAST('-1.0' AS numeric);
+} -1
+
 
 
 finish_test
