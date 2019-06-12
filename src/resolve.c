@@ -930,11 +930,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     }
     case TK_IS:
     case TK_ISNOT: {
-      Expr *pRight;
+      Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
       assert( !ExprHasProperty(pExpr, EP_Reduced) );
       /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
       ** and "x IS NOT FALSE". */
-      if( (pRight = pExpr->pRight)->op==TK_ID ){
+      if( pRight->op==TK_ID ){
         int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
         if( pRight->op==TK_TRUEFALSE ){

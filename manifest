@@ -1,5 +1,5 @@
-C The\saffinity\sof\sthe\sunlikely()\sfunction\sand\sits\scousins\sshould\sbe\s"none".\nTicket\s[0c620df60bffd9ef]
-D 2019-06-11T21:02:15.752
+C Handle\sexpressions\slike\s"expr\sIS\sTRUE\sCOLLATE\sxyz"\sin\sthe\ssame\sway\sas\s"expr\sIS\sTRUE".\sFix\sfor\s[4d01eda8115b10d1].
+D 2019-06-12T13:49:32.380
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c d1eeebc0ffcbd16759a9c838f8fe7de334bb0ff2afcc3a7ab9f9b5693b99f4cd
+F src/expr.c 069de02008e6190bb684db65ca7cbcab65616f415629c3b884223ce9cbdefd61
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 0e14d4bef8eac2d87bbd517e492d9084c65008d117823f8922c5e7b2b599bd33
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
@@ -520,7 +520,7 @@ F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 38228d41d6ced02561463f568117afd72f3b90f22f24e790ec6437945e8f6cf9
+F src/resolve.c f71303e7202743e261b2fb885591b29d4bd826a7dc915745fa376fd1a3943f1a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
 F src/shell.c.in 9648bc2035a4dc2a380c863535893dc1d9f8a62bab57b6f2943e530aa62d04a8
@@ -587,7 +587,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
-F src/treeview.c 56724725c62a0d0f408f7c257475dc33309198afee36a1d18be1bc268b09055e
+F src/treeview.c cf03f9f6efb93288c7b9f17374ea48e4ce9111b0bc7e428d6850c3eee532b461
 F src/trigger.c bb034c08eca111e66a19cda045903a12547c1be2294b5570d794b869d9c44a73
 F src/update.c 3cb9150d2cf661d938e2f1b1749945f3faa767f88febdb739ab1793bbf895ff2
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
@@ -1071,7 +1071,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/istrue.test 62372ad3ddcc5d0eb8ff9097dcb0aad8961bf1b9cb45ba634f6e284695126f9a
+F test/istrue.test 75327829744e65cc8700e69340b8e6c192e10e39dfae7ccb0e970d3c4f49090a
 F test/join.test d53a3662762eff50b65da8775201e609878a27dd0885a1ae7bcde9bb46cecbc5
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f748fe58bbbb7ce3f30303da25ec811b2bbce249549aa9c7927979ac5b38013
-R fb267b0bd7f9dcadb198290597e652f2
-U drh
-Z c4bdfa1d3f232dffc50e68442790540c
+P 614ecb0af47038848e8ba2aed6b92db6f33ddc4aea6361795dbde440380f5a35
+R ff535e67a0f998f18172bd430f50d3e5
+U dan
+Z 1b38c763ebe911ce5080403db6734d6a
