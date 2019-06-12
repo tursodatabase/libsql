@@ -105,6 +105,13 @@ static const double arRound[] = {
   5.0e-06, 5.0e-07, 5.0e-08, 5.0e-09, 5.0e-10,
 };
 
+/* Return TRUE if a floating point number is negative, even a negative 0 */
+static int realIsNeg(double r){
+  i64 x;
+  memcpy(&x,&r,sizeof(x));
+  return x<0;
+}
+
 /*
 ** If SQLITE_OMIT_FLOATING_POINT is defined, then none of the floating point
 ** conversions will work.
@@ -515,7 +522,7 @@ void sqlite3_str_vappendf(
         length = 0;
 #else
         if( precision<0 ) precision = 6;         /* Set default precision */
-        if( realvalue<0.0 ){
+        if( realIsNeg(realvalue) ){
           realvalue = -realvalue;
           prefix = '-';
         }else{
