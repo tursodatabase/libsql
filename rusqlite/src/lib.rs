@@ -537,9 +537,7 @@ impl Connection {
         F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
-        let mut rows = stmt.query_named(params)?;
-
-        rows.get_expected_row().and_then(|r| f(&r))
+        stmt.query_row_named(params, f)
     }
 
     /// Convenience method to execute a query that is expected to return a
