@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\s%lld\sprintf\sconversion\sin\sthe\splatform\sprintf()\sas\ssome\nlegacy\splatforms\sdo\snot\ssupport\sit.
-D 2019-06-13T14:07:41.561
+C Add\sa\snew\srequirement\smark\son\sthe\sctime.c\scode.
+D 2019-06-13T16:14:53.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3
 F src/build.c c5b97d3518c13081169027f291ff84b12661d526deb605031d413223ff2e0f03
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
+F src/ctime.c 37f3d21193c4f7d141d0691cced5b39c99951bfef78df9887faf9167b9c42f37
 F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eaa34626e497d3af132dd8f13eddbbda89365d369ed43212a5f788175b3d6198
-R 1fb1eed0bdcf9929e26b84b1f1ce5b53
+P f8696b60eec0dcacfe92d9a31cbf1436d674140e5447de0cd1c2f52bff6c2be4
+R d629c2a79ba0d4b863d7e3516a4b3f0e
 U drh
-Z 487ea6fbf33dd8a246af175d9f9eddcb
+Z 26c2a9c5cf62b22c3542f90299b66f73
