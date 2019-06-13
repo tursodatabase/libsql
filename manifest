@@ -1,5 +1,5 @@
-C Fix\sa\sminor\serror\sin\sa\stest\sscript,\sand\sharmless\scompiler\swarnings\sin\sthe\sCLI\scode.
-D 2019-06-13T13:52:46.886
+C Do\snot\suse\sthe\s%lld\sprintf\sconversion\sin\sthe\splatform\sprintf()\sas\ssome\nlegacy\splatforms\sdo\snot\ssupport\sit.
+D 2019-06-13T14:07:41.561
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -523,7 +523,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c f71303e7202743e261b2fb885591b29d4bd826a7dc915745fa376fd1a3943f1a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
-F src/shell.c.in fec94208857c8a4a9524f53b0bdc34cbcf670a20c854507ee95cd407ce4ffcc5
+F src/shell.c.in ad3405c9995ff875e88ca0822f9c148490266629c49a0e35aeacf5d568b23ae8
 F src/sqlite.h.in e80973893802ec7980a602a449c93527f9265f1295ad156c83cbb48f9b58ce4e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ebb81dad1f43dac4636cd44d4055d1d4b198c675f73e23c5a2d8d992ae27fe1f
-R 3ad45f71cbea41cec7480c2849f85b1a
+P eaa34626e497d3af132dd8f13eddbbda89365d369ed43212a5f788175b3d6198
+R 1fb1eed0bdcf9929e26b84b1f1ce5b53
 U drh
-Z 6a6eb3ac5cb87ea62f48a0f2f89a912a
+Z 487ea6fbf33dd8a246af175d9f9eddcb

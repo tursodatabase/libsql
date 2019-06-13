@@ -7396,7 +7396,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       utf8_printf(p->out, "Usage: .filectrl %s %s\n", zCmd,aCtrl[iCtrl].zUsage);
       rc = 1;
     }else if( isOk==1 ){
-      raw_printf(p->out, "%lld\n", iRes);
+      char zBuf[100];
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%lld", iRes);
+      raw_printf(p->out, "%s\n", zBuf);
     }
   }else
 
