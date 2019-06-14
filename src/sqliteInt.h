@@ -1548,6 +1548,8 @@ struct sqlite3 {
 #define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
 #define SQLITE_NoSchemaError  0x08000000  /* Do not report schema parse errors*/
 #define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
+#define SQLITE_NoDQSSchema    0x20000000  /* No dbl-quote strings in CREATE */
+#define SQLITE_NoDQS          0x40000000  /* No double-quoted strings anywhere*/
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)

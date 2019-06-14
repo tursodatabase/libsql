@@ -2220,6 +2220,31 @@ struct sqlite3_mem_methods {
 ** integer into which is written 0 or 1 to indicate whether the writable_schema
 ** is enabled or disabled following this call.
 ** </dd>
+**
+** [[SQLITE_DBCONFIG_LEGACY_ALTER_TABLE]]
+** <dt>SQLITE_DBCONFIG_LEGACY_ALTER_TABLE</dt>
+** <dd>The SQLITE_DBCONFIG_LEGACY_ALTER_TABLE option activates or deactivates
+** the legacy behavior of the [ALTER TABLE RENAME] command such it
+** behaves as it did prior to [version 3.24.0] (2018-06-04).  See the
+** "Compatibility Notice" on the [ALTER TABLE RENAME documentation] for
+** additional information. This feature can also be turned on and off
+** using the [PRAGMA legacy_alter_table] statement.
+** </dd>
+**
+** [[SQLITE_DBCONFIG_NO_DQS_SCHEMA]]
+** <dt>SQLITE_DBCONFIG_NO_DQS_SCHEMA</td>
+** <dd>The SQLITE_DBCONFIG_NO_DQS_SCHEMA option activates or deactivates
+** the legacy [double-quoted string literal] misfeature for DDL statements.
+** </dd>
+**
+** [[SQLITE_DBCONFIG_NO_DQS]]
+** <dt>SQLITE_DBCONFIG_NO_DQS</td>
+** <dd>The SQLITE_DBCONFIG_NO_DQS option activates or deactivates
+** the legacy [double-quoted string literal] misfeature.  The
+** double-quoted string literal misfeature is on by default for
+** compatibility, though it might become off by default in some
+** future release of SQLite.
+** </dd>
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2234,7 +2259,10 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_RESET_DATABASE        1009 /* int int* */
 #define SQLITE_DBCONFIG_DEFENSIVE             1010 /* int int* */
 #define SQLITE_DBCONFIG_WRITABLE_SCHEMA       1011 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1011 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    1012 /* int int* */
+#define SQLITE_DBCONFIG_NO_DQS_SCHEMA         1013 /* int int* */
+#define SQLITE_DBCONFIG_NO_DQS                1014 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1014 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

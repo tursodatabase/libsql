@@ -1,5 +1,5 @@
-C Deprecate\sthe\sSQLITE_ALLOW_COVERING_INDEX_SCAN\scompile-time\soption\swhen\sit\sis\nturned\soff.\s\sThis\sprobably\swill\simpact\sno-one.\s\sIf\sit\sdoes,\sthey\swill\sget\san\nerror\smessage\sinstructing\sthem\sto\scontact\sdevelopers,\sso\sthat\swe\scan\sget\nfeedback\sthat\ssomebody\sis\sactually\susing\sthis\sfeature.\s\sStart-time\sdisabling\nof\scovering\sindex\sscan\sis\snot\saffected.
-D 2019-06-14T17:37:39.865
+C Add\sSQLITE_DBCONFIG\soptions\sLEGACY_ALTER_TABLE,\sNO_DQS_SCHEMA,\sand\sNO_DQS.
+D 2019-06-14T21:25:25.591
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c f20925c2c08144442dabeb73dcd0f5026f5f085d827f3d5635f7c45e5d195320
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
-F src/main.c ac968e9464bededb29b23d654f60645039631a9f5885e1c481f435381af55203
+F src/main.c a511e378ab8e839f77e041347fe045194b9f4b2203050c6dbfdb75902ff628c2
 F src/malloc.c 0f9da2a66b230a5785af94b9672126845099b57b70a32c987d04ac28c69da990
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -520,19 +520,19 @@ F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c f71303e7202743e261b2fb885591b29d4bd826a7dc915745fa376fd1a3943f1a
+F src/resolve.c 8fd2fca510e8ae7457f37f294809900d232a2e5c121943bb9e52068ae885a644
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
-F src/shell.c.in ad3405c9995ff875e88ca0822f9c148490266629c49a0e35aeacf5d568b23ae8
-F src/sqlite.h.in e80973893802ec7980a602a449c93527f9265f1295ad156c83cbb48f9b58ce4e
+F src/shell.c.in 21e30c2cf16aa873c9ce2cd6ca1c8933c830e69b73c1e74f4fdffbda80e9c356
+F src/sqlite.h.in e9a463ea16100b54f02b4063dc96a0add392c4a92963c50bfd6eb0324e118f3b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h dc9ec3b8754d28700d32302291c03fe048198fa1c8c491c3515cb41759e77e35
+F src/sqliteInt.h 377ffa32933137d5ce140713315df34263ddf2f68150a63fce51e4cd52ed0194
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c cfe7f93daf9d8787f65e099efb67d7cdfc2c35236dec5d3f6758520bd3519424
-F src/test1.c f4e0be5c344587b2beac474a58018a3833208fb6bbec35d37d58b1270a7a5917
+F src/test1.c 15752c6299f43e3e96004516d6a4895cc02fce6cb6da71dd4eeeeb922b8e10fb
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 405834f6a93ec395cc4c9bb8ecebf7c3d8079e7ca16ae65e82d01afd229694bb
@@ -1830,7 +1830,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86fa0087cd1f5c79ed51b99a226ec2eef5b0fa0a23981d469bec0e02fadf2a68
-R 873943208d4923d363fce49df4a77550
+P 23e49f9984f74f242602c6e56bfc645585c7c86bcdd585c322ab0d8e20958d86
+R 9bfbb0e600d24d42989c08db0f349d57
+T *branch * new-dbconfig-options
+T *sym-new-dbconfig-options *
+T -sym-trunk *
 U drh
-Z 6ba03e4464eda00fcc57e65ad21625a8
+Z 30e1c14e70d492d05922ad996c549711

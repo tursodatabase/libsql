@@ -845,6 +845,9 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_DEFENSIVE,             SQLITE_Defensive      },
         { SQLITE_DBCONFIG_WRITABLE_SCHEMA,       SQLITE_WriteSchema|
                                                  SQLITE_NoSchemaError  },
+        { SQLITE_DBCONFIG_LEGACY_ALTER_TABLE,    SQLITE_LegacyAlter    },
+        { SQLITE_DBCONFIG_NO_DQS_SCHEMA,         SQLITE_NoDQSSchema    },
+        { SQLITE_DBCONFIG_NO_DQS,                SQLITE_NoDQS          },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -3071,6 +3074,7 @@ static int openDatabase(
   db->nextPagesize = 0;
   db->nMaxSorterMmap = 0x7FFFFFFF;
   db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger | SQLITE_CacheSpill
+                 | SQLITE_NoDQSSchema
 #if !defined(SQLITE_DEFAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
                  | SQLITE_AutoIndex
 #endif
