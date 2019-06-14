@@ -1,5 +1,5 @@
-C Refactor\sthe\sLIKE\soptimization\sdecision\slogic\sso\sthat\sit\suses\nsqlite3AtoF()\son\sboth\sboundary\skeys\sto\sdetermine\sif\sthe\soptimization\scan\sbe\nused\swhen\sthe\sLHS\sis\ssomething\sthat\smight\snot\shave\sTEXT\saffinity.\nTicket\s[ce8717f0885af975].\s\sSee\salso\s[c94369cae9b561b1],\n[b043a54c3de54b28],\s[fd76310a5e843e07],\sand\s[158290c0abafde67].
-D 2019-06-14T12:28:21.568
+C Fix\sthe\simplementation\sof\sthe\sbuilt-in\sRTRIM\scollating\ssequence\sso\sthat\nit\sworks\sfor\scontrol\scharacters\sat\sthe\send\sof\sthe\sstring.\nTicket\s[f1580ba1b574e9e9]
+D 2019-06-14T13:24:46.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c f20925c2c08144442dabeb73dcd0f5026f5f085d827f3d5635f7c45e5d195320
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
-F src/main.c 3c3925b0bcb4c45687fd52f54c79e98e379252e1d3393f8b7dcccfa26181b661
+F src/main.c ac968e9464bededb29b23d654f60645039631a9f5885e1c481f435381af55203
 F src/malloc.c 0f9da2a66b230a5785af94b9672126845099b57b70a32c987d04ac28c69da990
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -730,7 +730,7 @@ F test/chunksize.test 427d87791743486cbf0c3b8c625002f3255cb3a89c6eba655a98923b13
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
 F test/closure01.test 9905883f1b171a4638f98fc764879f154e214a306d3d8daf412a15e7f3a9b1e0
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
-F test/collate1.test 08c18e7512a5a32c97938854263fa15362eeb846
+F test/collate1.test f9b653f515ef3324a0c4e3c6adbf136bb1903622af678d482a60c11c9c054e6c
 F test/collate2.test 9aaa410a00734e48bcb27f3872617d6f69b2a621
 F test/collate3.test 89defc49983ddfbf0a0555aca8c0521a676f56a5
 F test/collate4.test c953715fb498b87163e3e73dd94356bff1f317bd
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4b405687b010ee20ec02c42913a0540909d0155c88a4a56194fda99c704279e
-R 169cc5ff08963701bea2f41ccb640ca5
+P b4a9e09e60213ccff925d09f0b6e549e2a3e3862856c710f108779e2867dec76
+R c907d65d9b1a85d364fe810800c1a6e0
 U drh
-Z 338301df57dfe8eacff0a4b94bfd0060
+Z 282306ba184d64b78bcec7f67e84b8b9

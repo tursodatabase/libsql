@@ -875,28 +875,17 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   return rc;
 }
 
-
-/*
-** Return true if the buffer z[0..n-1] contains all spaces.
-*/
-static int allSpaces(const char *z, int n){
-  while( n>0 && z[n-1]==' ' ){ n--; }
-  return n==0;
-}
-
 /*
 ** This is the default collating function named "BINARY" which is always
 ** available.
-**
-** If the padFlag argument is not NULL then space padding at the end
-** of strings is ignored.  This implements the RTRIM collation.
 */
 static int binCollFunc(
-  void *padFlag,
+  void *NotUsed,
   int nKey1, const void *pKey1,
   int nKey2, const void *pKey2
 ){
   int rc, n;
+  UNUSED_PARAMETER(NotUsed);
   n = nKey1<nKey2 ? nKey1 : nKey2;
   /* EVIDENCE-OF: R-65033-28449 The built-in BINARY collation compares
   ** strings byte by byte using the memcmp() function from the standard C
@@ -904,29 +893,33 @@ static int binCollFunc(
   assert( pKey1 && pKey2 );
   rc = memcmp(pKey1, pKey2, n);
   if( rc==0 ){
-    if( padFlag
-     && allSpaces(((char*)pKey1)+n, nKey1-n)
-     && allSpaces(((char*)pKey2)+n, nKey2-n)
-    ){
-      /* EVIDENCE-OF: R-31624-24737 RTRIM is like BINARY except that extra
-      ** spaces at the end of either string do not change the result. In other
-      ** words, strings will compare equal to one another as long as they
-      ** differ only in the number of spaces at the end.
-      */
-    }else{
-      rc = nKey1 - nKey2;
-    }
+    rc = nKey1 - nKey2;
   }
   return rc;
+}
+
+/*
+** This is the collating function named "RTRIM" which is always
+** available.  Ignore trailing spaces.
+*/
+static int rtrimCollFunc(
+  void *pUser,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+  const u8 *pK1 = (const u8*)pKey1;
+  const u8 *pK2 = (const u8*)pKey2;
+  while( nKey1 && pK1[nKey1-1]==' ' ) nKey1--;
+  while( nKey2 && pK2[nKey2-1]==' ' ) nKey2--;
+  return binCollFunc(pUser, nKey1, pKey1, nKey2, pKey2);
 }
 
 /*
 ** Return true if CollSeq is the default built-in BINARY.
 */
 int sqlite3IsBinary(const CollSeq *p){
-  assert( p==0 || p->xCmp!=binCollFunc || p->pUser!=0
-            || strcmp(p->zName,"BINARY")==0 );
-  return p==0 || (p->xCmp==binCollFunc && p->pUser==0);
+  assert( p==0 || p->xCmp!=binCollFunc || strcmp(p->zName,"BINARY")==0 );
+  return p==0 || p->xCmp==binCollFunc;
 }
 
 /*
@@ -3128,7 +3121,7 @@ static int openDatabase(
   createCollation(db, sqlite3StrBINARY, SQLITE_UTF16BE, 0, binCollFunc, 0);
   createCollation(db, sqlite3StrBINARY, SQLITE_UTF16LE, 0, binCollFunc, 0);
   createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
-  createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
+  createCollation(db, "RTRIM", SQLITE_UTF8, 0, rtrimCollFunc, 0);
   if( db->mallocFailed ){
     goto opendb_out;
   }
