@@ -1,5 +1,5 @@
-C Fix\sthe\simplementation\sof\sthe\sbuilt-in\sRTRIM\scollating\ssequence\sso\sthat\nit\sworks\sfor\scontrol\scharacters\sat\sthe\send\sof\sthe\sstring.\nTicket\s[f1580ba1b574e9e9]
-D 2019-06-14T13:24:46.956
+C Deprecate\sthe\sSQLITE_ALLOW_COVERING_INDEX_SCAN\scompile-time\soption\swhen\sit\sis\nturned\soff.\s\sThis\sprobably\swill\simpact\sno-one.\s\sIf\sit\sdoes,\sthey\swill\sget\san\nerror\smessage\sinstructing\sthem\sto\scontact\sdevelopers,\sso\sthat\swe\scan\sget\nfeedback\sthat\ssomebody\sis\sactually\susing\sthis\sfeature.\s\sStart-time\sdisabling\nof\scovering\sindex\sscan\sis\snot\saffected.
+D 2019-06-14T17:37:39.865
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F src/expr.c 069de02008e6190bb684db65ca7cbcab65616f415629c3b884223ce9cbdefd61
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 0e14d4bef8eac2d87bbd517e492d9084c65008d117823f8922c5e7b2b599bd33
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
-F src/global.c 0dea3065ea72a65ae941559b6686aad6516d4913e76fa4f79a95ff7787f624ec
+F src/global.c 1e942b1e6fb6a2a15e6015bda72be0abefc4b1339a8640a47b1b71b7f317917b
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4a9e09e60213ccff925d09f0b6e549e2a3e3862856c710f108779e2867dec76
-R c907d65d9b1a85d364fe810800c1a6e0
+P 86fa0087cd1f5c79ed51b99a226ec2eef5b0fa0a23981d469bec0e02fadf2a68
+R 873943208d4923d363fce49df4a77550
 U drh
-Z 282306ba184d64b78bcec7f67e84b8b9
+Z 6ba03e4464eda00fcc57e65ad21625a8

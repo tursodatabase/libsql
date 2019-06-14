@@ -153,8 +153,15 @@ const unsigned char sqlite3CtypeMap[256] = {
 ** SQLITE_ALLOW_COVERING_INDEX_SCAN compile-time option, or is "on" if
 ** that compile-time option is omitted.
 */
-#ifndef SQLITE_ALLOW_COVERING_INDEX_SCAN
+#if !defined(SQLITE_ALLOW_COVERING_INDEX_SCAN)
 # define SQLITE_ALLOW_COVERING_INDEX_SCAN 1
+#else
+# if !SQLITE_ALLOW_COVERING_INDEX_SCAN 
+#   error "Compile-time disabling of covering index scan using the\
+ -DSQLITE_ALLOW_COVERING_INDEX_SCAN=0 option is deprecated.\
+ Contact SQLite developers if this is a problem for you, and\
+ delete this #error macro to continue with your build."
+# endif
 #endif
 
 /* The minimum PMA size is set to this value multiplied by the database
