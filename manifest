@@ -1,5 +1,5 @@
-C Add\sa\snew\srequirement\smark\son\sthe\sctime.c\scode.
-D 2019-06-13T16:14:53.717
+C Refactor\sthe\sLIKE\soptimization\sdecision\slogic\sso\sthat\sit\suses\nsqlite3AtoF()\son\sboth\sboundary\skeys\sto\sdetermine\sif\sthe\soptimization\scan\sbe\nused\swhen\sthe\sLHS\sis\ssomething\sthat\smight\snot\shave\sTEXT\saffinity.\nTicket\s[ce8717f0885af975].\s\sSee\salso\s[c94369cae9b561b1],\n[b043a54c3de54b28],\s[fd76310a5e843e07],\sand\s[158290c0abafde67].
+D 2019-06-14T12:28:21.568
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -611,7 +611,7 @@ F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 99c7b718ef846ac952016083aaf4e22ede2290beceaf4730a2df55c023251369
 F src/whereInt.h 1b728f71654ebf8421a1715497a587f02d6f538e819af58dc826908f8577e810
 F src/wherecode.c 37a1004237d630d785c47bba2290eac652a7a8b0047518eba3cb7c808b604c4a
-F src/whereexpr.c d0683adb125754b3edd44d7c73fa2e4ea175eaacd900f1dc6993da2f6f0149cc
+F src/whereexpr.c 5e559bdd24b06e3bc2e68f258bf751302954dc1e432daf71fdd8098a71462326
 F src/window.c 5be2cf7d8763cc97137fc44d015aed8a1a4a56fe9700d7933ed560172617c756
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1095,7 +1095,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d6767e11d7
 F test/like.test 5013f18e7242fe118524fcf8e484b8827bcd5906b509d106f3587c7bfcf274ae
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/like3.test ac61947ef35bde9d97718bcfa04659a17d9218f1fffc4104b135b3f82ed43836
+F test/like3.test 62bf82ac674b7d4126e73532e1ad96cdcd8e1752a4ed90b28a6f98305f5a66aa
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/loadext.test faa4f6eed07a5aac35d57fdd7bc07f8fc82464cfd327567c10cf0ba3c86cde04
@@ -1427,7 +1427,7 @@ F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 9db6e1d7209dc0794948b260d6f82b2b1de83a9f
 F test/tkt-6bfb98dfc0.test 24780633627b5cfc0635a5500c2389ebfb563336
 F test/tkt-752e1646fc.test ea78d88d14fe9866bdd991c634483334639e13bf
-F test/tkt-78e04e52ea.test 1b5be1bac961833a9fd70fe50738cb4064822c61f82c54f7d488435ec806ea62
+F test/tkt-78e04e52ea.test cb44d0f5e7940223be740a39913a1b9b9b30d7e4a17ed3349141f893bae1b8f2
 F test/tkt-7a31705a7e6.test 9e9c057b6a9497c8f7ba7b16871029414ccf6550e7345d9085d6d71c9a56bb6f
 F test/tkt-7bbfb7d442.test 7b2cd79c7a17ae6750e75ec1a7846712a69c9d18
 F test/tkt-80ba201079.test 105a721e6aad0ae3c5946d7615d1e4d03f6145b8
@@ -1606,7 +1606,7 @@ F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test 40d54c9ddf5b9fdee692bf936d3352159fe467838f92742aa1d08c7c7d1eac73
-F test/vtab1.test 60b4f70aafa6078d6fdfc11417af3bd216d7ef5eafce16707a6ca3dae5166d20
+F test/vtab1.test 47b935205d7b6290765973abd6fce0e13e94e040017099170f43f81886efa5ba
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
@@ -1621,7 +1621,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test 2a143fe75a11275781d1fd1988d86b66a3f69cb98f4add62e3da8fd0f637b45f
 F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
-F test/vtabH.test 3cf9aa1c1c4381b3b3ac33f933376f06fbb99d2294a83c79b7562d3ed87be450
+F test/vtabH.test e65540eed0f7434cdf0b160374570b51f3e3179548f0fa5e99b1d33f8dcdf9a0
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtabJ.test d7b73675708cf63cfcb9d443bb451fc01a028347275b7311e51f9fdf3ca6757f
 F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c3784c6783
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8696b60eec0dcacfe92d9a31cbf1436d674140e5447de0cd1c2f52bff6c2be4
-R d629c2a79ba0d4b863d7e3516a4b3f0e
+P c4b405687b010ee20ec02c42913a0540909d0155c88a4a56194fda99c704279e
+R 169cc5ff08963701bea2f41ccb640ca5
 U drh
-Z 26c2a9c5cf62b22c3542f90299b66f73
+Z 338301df57dfe8eacff0a4b94bfd0060
