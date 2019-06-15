@@ -1,5 +1,5 @@
-C Deprecate\sthe\sSQLITE_ALLOW_COVERING_INDEX_SCAN\scompile-time\soption\swhen\sit\sis\nturned\soff.\s\sThis\sprobably\swill\simpact\sno-one.\s\sIf\sit\sdoes,\sthey\swill\sget\san\nerror\smessage\sinstructing\sthem\sto\scontact\sdevelopers,\sso\sthat\swe\scan\sget\nfeedback\sthat\ssomebody\sis\sactually\susing\sthis\sfeature.\s\sStart-time\sdisabling\nof\scovering\sindex\sscan\sis\snot\saffected.
-D 2019-06-14T17:37:39.865
+C Ensure\sthat\ssqlite3RenameExprUnmap()\sdoes\san\sunmap\sof\sthe\sresult\sset\salias\nnames\sin\ssubqueries\swhen\sALTER\sTABLE\sfails\sbecause\sof\sa\ssyntax\serror\sin\sa\ntrigger.
+D 2019-06-15T15:21:49.851
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -456,7 +456,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 12f8c9a79ab51f7574998e3ed28dbafe59bbf0e8a435443c80bc788f661586f7
+F src/alter.c c1b5e5639b88dcc146db326315f2dea4f7f1c599e524eeb421d544927a0b1e86
 F src/analyze.c 58db66344a5c58dcabb57f26696f6f2993956c830446da40b444051d2fdaf644
 F src/attach.c 78e986baee90cb7b83fb9eafa79c22581a8ada14030fd633b0683c95cf11213c
 F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
@@ -1006,7 +1006,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db babb1c560fef766171972c119c1bc3b7be20b134e2f46ae0c52390cd3059b6f4
-F test/fuzzdata8.db 7f8f849d767a2935ea37a417794672d0508171835a39a55032f490b372732222
+F test/fuzzdata8.db c69ca6d4bf1b25fd56ab432e9b96f2db0da752cfc6aa32700867f3a2d8a0514a
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86fa0087cd1f5c79ed51b99a226ec2eef5b0fa0a23981d469bec0e02fadf2a68
-R 873943208d4923d363fce49df4a77550
+P 23e49f9984f74f242602c6e56bfc645585c7c86bcdd585c322ab0d8e20958d86
+R f32faa5640204e692c837bae7c67dc11
 U drh
-Z 6ba03e4464eda00fcc57e65ad21625a8
+Z 183153c8a75202803cdde578595e82c2
