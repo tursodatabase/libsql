@@ -1,5 +1,5 @@
-C Ensure\sthat\ssqlite3RenameExprUnmap()\sdoes\san\sunmap\sof\sthe\sresult\sset\salias\nnames\sin\ssubqueries\swhen\sALTER\sTABLE\sfails\sbecause\sof\sa\ssyntax\serror\sin\sa\ntrigger.
-D 2019-06-15T15:21:49.851
+C Add\sextra\stest\scase\sfor\sone\sof\sthe\sproblems\sfixed\sby\sthe\sprevious\scommit.
+D 2019-06-15T15:27:37.473
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test b6901287474841cffbd8f90b098d3bd7d8445868b42caeb01b27034698f7245f
 F test/altertab2.test 8883693952f6d7fb5f754dbf1d694ed780aa883027bef04cb1fb99a3b88c9272
-F test/altertab3.test 3d9f15e903b63649511a7217feb2875056d0d89cf006a4d23b976be8b579cd0e
+F test/altertab3.test 7a2419829b2b908985b2c83d680388ef2eb9a74e446b68cee7b9b1551ae69078
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 7168c8bffa5d5cbc53c05b7e9c7fcdd24b365a1bc5046ce80c45efa3c02e6b7c
 F test/analyze3.test ff62d9029e6deb2c914490c6b00caf7fae47cc85cdc046e4a0d0a4d4b87c71d8
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 23e49f9984f74f242602c6e56bfc645585c7c86bcdd585c322ab0d8e20958d86
-R f32faa5640204e692c837bae7c67dc11
-U drh
-Z 183153c8a75202803cdde578595e82c2
+P d3b6f1665f6fb5fc5cf1c0864d779d0b24746ada530f755c7b6ff34766bd2188
+R d55429e048628dac11cbe9c44c4e7b4d
+U dan
+Z c3d9c64d7fe6508d21ac15588bb74ca8

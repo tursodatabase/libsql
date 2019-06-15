@@ -214,9 +214,27 @@ do_execsql_test 9.1 {
     SELECT true WHERE (SELECT a, b FROM (t1)) IN ();
   END;
 }
-
 do_execsql_test 9.2 {
   ALTER TABLE t1 RENAME TO t1x;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(a, b, c);
+  CREATE VIEW v1 AS SELECT * FROM t1 WHERE (
+    SELECT t1.a FROM t1, t2
+  ) IN () OR t1.a=5;
+}
+
+do_execsql_test 10.2 {
+  ALTER TABLE t2 RENAME TO t3;
+  SELECT sql FROM sqlite_master WHERE name='v1';
+} {
+  {CREATE VIEW v1 AS SELECT * FROM t1 WHERE (
+    SELECT t1.a FROM t1, t2
+  ) IN () OR t1.a=5}
 }
 
 
