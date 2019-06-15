@@ -1,5 +1,5 @@
-C Add\sextra\stest\scase\sfor\sone\sof\sthe\sproblems\sfixed\sby\sthe\sprevious\scommit.
-D 2019-06-15T15:27:37.473
+C Fix\sminor\sproblems\sin\sthe\stest\scode\sin\stest_demovfs.c.
+D 2019-06-15T15:32:37.620
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,7 +549,7 @@ F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 5ebafbcd5c75ac1c16bb0c8fe926dc325cc03e780943a88ca50e0d9a4fc4d2f5
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
-F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
+F src/test_demovfs.c 86142ba864d4297d54c5b2e972e74f3141ae4b30f05b3a95824184ed2d3d7f91
 F src/test_devsym.c 1960abbb234b97e9b920f07e99503fc04b443f62bbc3c6ff2c2cea2133e3b8a2
 F src/test_fs.c ba1e1dc18fd3159fdba0b9c4256f14032159785320dfbd6776eb9973cb75d480
 F src/test_func.c 181f992e5495644434c4f0e3cc72362a78c295eb2cf3ff4d02498b8bde7aa276
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d3b6f1665f6fb5fc5cf1c0864d779d0b24746ada530f755c7b6ff34766bd2188
-R d55429e048628dac11cbe9c44c4e7b4d
+P 0bbceebb126c94b5159079a341fa16e8424b7f2f6b9364561516964e871fb6e0
+R ad3804e28123fb8cc31cc68386329653
 U dan
-Z c3d9c64d7fe6508d21ac15588bb74ca8
+Z ba4d1a6df34a3362ceba4b029fa2fe75
