@@ -3387,7 +3387,8 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 ** register iReg.  The caller must ensure that iReg already contains
 ** the correct value for the expression.
 */
-static void exprToRegister(Expr *p, int iReg){
+static void exprToRegister(Expr *pExpr, int iReg){
+  Expr *p = sqlite3ExprSkipCollate(pExpr);
   p->op2 = p->op;
   p->op = TK_REGISTER;
   p->iTable = iReg;
