@@ -57,7 +57,7 @@ impl InnerConnection {
         }
     }
 
-    pub fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
+    pub fn open_with_flags(c_path: &CString, flags: OpenFlags, vfs: Option(&CString)) -> Result<InnerConnection> {
         #[cfg(not(feature = "bundled"))]
         ensure_valid_sqlite_version();
         ensure_safe_sqlite_threading_mode()?;
@@ -77,9 +77,14 @@ impl InnerConnection {
             ));
         }
 
+        z_vfs = match(vfs) {
+            Some(c_vfs) => c_vfs.as_ptr(),
+            None => ptr::null()
+        }
+
         unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
-            let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
+            let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs);
             if r != ffi::SQLITE_OK {
                 let e = if db.is_null() {
                     error_from_sqlite_code(r, None)
