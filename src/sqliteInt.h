@@ -1548,6 +1548,8 @@ struct sqlite3 {
 #define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
 #define SQLITE_NoSchemaError  0x08000000  /* Do not report schema parse errors*/
 #define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
+#define SQLITE_DqsDDL         0x20000000  /* dbl-quoted strings allowed in DDL*/
+#define SQLITE_DqsDML         0x40000000  /* dbl-quoted strings allowed in DML*/
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)
@@ -2794,8 +2796,7 @@ struct NameContext {
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x4000  /* Window functions are allowed here */
 #define NC_HasWin    0x8000  /* One or more window functions seen */
-#define NC_NoDblQStr 0x10000 /* Do not allow double-quoted string hack.
-                             ** Mnemonic: "NO DouBLe-Quoted STRings" */
+#define NC_IsDDL    0x10000  /* Resolving names in a CREATE statement */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
