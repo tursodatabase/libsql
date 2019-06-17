@@ -2231,19 +2231,18 @@ struct sqlite3_mem_methods {
 ** using the [PRAGMA legacy_alter_table] statement.
 ** </dd>
 **
-** [[SQLITE_DBCONFIG_NO_DQS_SCHEMA]]
-** <dt>SQLITE_DBCONFIG_NO_DQS_SCHEMA</td>
-** <dd>The SQLITE_DBCONFIG_NO_DQS_SCHEMA option activates or deactivates
-** the legacy [double-quoted string literal] misfeature for DDL statements.
+** [[SQLITE_DBCONFIG_DQS_DML]]
+** <dt>SQLITE_DBCONFIG_DQS_DML</td>
+** <dd>The SQLITE_DBCONFIG_DQS_DML option activates or deactivates
+** the legacy [double-quoted string literal] misfeature for DML statement
+** only, that is DELETE, INSERT, SELECT, and UPDATE statements.
 ** </dd>
 **
-** [[SQLITE_DBCONFIG_NO_DQS]]
-** <dt>SQLITE_DBCONFIG_NO_DQS</td>
-** <dd>The SQLITE_DBCONFIG_NO_DQS option activates or deactivates
-** the legacy [double-quoted string literal] misfeature.  The
-** double-quoted string literal misfeature is on by default for
-** compatibility, though it might become off by default in some
-** future release of SQLite.
+** [[SQLITE_DBCONFIG_DQS_DDL]]
+** <dt>SQLITE_DBCONFIG_DQS_DDL</td>
+** <dd>The SQLITE_DBCONFIG_DQS option activates or deactivates
+** the legacy [double-quoted string literal] misfeature for DDL statements,
+** such as CREATE TABLE and CREATE INDEX.
 ** </dd>
 ** </dl>
 */
@@ -2260,8 +2259,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_DEFENSIVE             1010 /* int int* */
 #define SQLITE_DBCONFIG_WRITABLE_SCHEMA       1011 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    1012 /* int int* */
-#define SQLITE_DBCONFIG_NO_DQS_SCHEMA         1013 /* int int* */
-#define SQLITE_DBCONFIG_NO_DQS                1014 /* int int* */
+#define SQLITE_DBCONFIG_DQS_DML               1013 /* int int* */
+#define SQLITE_DBCONFIG_DQS_DDL               1014 /* int int* */
 #define SQLITE_DBCONFIG_MAX                   1014 /* Largest DBCONFIG */
 
 /*

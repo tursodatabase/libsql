@@ -7086,8 +7086,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
         { "wriable_schema",     SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
-        { "no_dqs_schema",      SQLITE_DBCONFIG_NO_DQS_SCHEMA         },
-        { "no_dqs",             SQLITE_DBCONFIG_NO_DQS                },
+        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
+        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
     };
     int ii, v;
     open_db(p, 0);

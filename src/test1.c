@@ -7619,8 +7619,8 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "DEFENSIVE",          SQLITE_DBCONFIG_DEFENSIVE },
     { "WRITABLE_SCHEMA",    SQLITE_DBCONFIG_WRITABLE_SCHEMA },
     { "LEGACY_ALTER_TABLE", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE },
-    { "NO_DQS_SCHEMA",      SQLITE_DBCONFIG_NO_DQS_SCHEMA },
-    { "NO_DQS",             SQLITE_DBCONFIG_NO_DQS },
+    { "DQS_DML",            SQLITE_DBCONFIG_DQS_DML },
+    { "DQS_DDL",            SQLITE_DBCONFIG_DQS_DDL },
   };
   int i;
   int v;
