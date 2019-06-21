@@ -7084,7 +7084,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
         { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
-        { "wriable_schema",     SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
+        { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
         { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
         { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },

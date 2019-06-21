@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\shandling\swith\shandling\squoted\spath\selements\sin\sextension\sfunctions\sjson_set()\sand\sjson_insert()\sreported\son\sthe\smailing\slist.
-D 2019-06-17T14:50:33.682
+C Fix\sa\stypo\sin\san\soption\sname\sfor\sthe\s.dbconfig\scommand\sin\sshell.c.in:\ss/wriable_schema/writable_schema/
+D 2019-06-21T14:05:27.839
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -523,7 +523,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 93b7bc7c45efa6322d92293361c51a873690daed50cf77eeff88a448246b0d5a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
-F src/shell.c.in 6edadde44b5b084cb0091340e73061e47c65a40c531befd7566fbfe64cfa85fc
+F src/shell.c.in 82f8a473c01662f52233c6c75b9bf88d0d2cab276086d5d4ca6f2ff57a3e48eb
 F src/sqlite.h.in bc4aa09a59dcf3c34b8e57ce9ade8ff6aed8ef7a7ddc59951f59f9b009fc7cc0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a61db8ff6713d66778a0500ca4049229c081a3ae95991f05eba09729434444b3
-R 31ce2b32bf2124cf303125809a64a6cf
+P 45bfcb88e71451a656982e217375e257fc8e68374349c2984be1266bf86fb8cf
+R 6c12d6336fc82578eae036f8206dac72
 U dan
-Z 2e7e8d8a7d7718b39f109f741c0f41e1
+Z d88e871f7274ab00b3162208bb6a423c
