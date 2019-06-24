@@ -338,6 +338,16 @@ impl Connection {
     /// OpenFlags::SQLITE_OPEN_READ_WRITE |
     /// OpenFlags::SQLITE_OPEN_CREATE)`.
     ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn open_my_db() -> Result<()> {
+    ///     let path = "./my_db.db3";
+    ///     let db = Connection::open(&path)?;
+    ///     println!("{}", db.is_autocommit());
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
     /// # Failure
     ///
     /// Will return `Err` if `path` cannot be converted to a C-compatible
