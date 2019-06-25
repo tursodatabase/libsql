@@ -59,7 +59,7 @@ pub enum Error {
     /// Error when the value of a particular column is requested, but the type
     /// of the result in that column cannot be converted to the requested
     /// Rust type.
-    InvalidColumnType(usize, Type),
+    InvalidColumnType(usize, String, Type),
 
     /// Error when a query that was expected to insert one row did not insert
     /// any or insert many.
@@ -117,8 +117,8 @@ impl PartialEq for Error {
             (Error::QueryReturnedNoRows, Error::QueryReturnedNoRows) => true,
             (Error::InvalidColumnIndex(i1), Error::InvalidColumnIndex(i2)) => i1 == i2,
             (Error::InvalidColumnName(n1), Error::InvalidColumnName(n2)) => n1 == n2,
-            (Error::InvalidColumnType(i1, t1), Error::InvalidColumnType(i2, t2)) => {
-                i1 == i2 && t1 == t2
+            (Error::InvalidColumnType(i1, n1, t1), Error::InvalidColumnType(i2, n2, t2)) => {
+                i1 == i2 && t1 == t2 && n1 == n2
             }
             (Error::StatementChangedRows(n1), Error::StatementChangedRows(n2)) => n1 == n2,
             #[cfg(feature = "functions")]
@@ -182,8 +182,8 @@ impl fmt::Display for Error {
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType(i, ref t) => {
-                write!(f, "Invalid column type {} at index: {}", t, i)
+            Error::InvalidColumnType(i, ref name, ref t) => {
+                write!(f, "Invalid column type {} at index: {}, name: {}", t, i, name)
             }
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
 
@@ -229,7 +229,7 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
-            Error::InvalidColumnType(_, _) => "invalid column type",
+            Error::InvalidColumnType(_, _, _) => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
 
             #[cfg(feature = "functions")]
@@ -262,7 +262,7 @@ impl error::Error for Error {
             | Error::QueryReturnedNoRows
             | Error::InvalidColumnIndex(_)
             | Error::InvalidColumnName(_)
-            | Error::InvalidColumnType(_, _)
+            | Error::InvalidColumnType(_, _, _)
             | Error::InvalidPath(_)
             | Error::StatementChangedRows(_)
             | Error::InvalidQuery => None,

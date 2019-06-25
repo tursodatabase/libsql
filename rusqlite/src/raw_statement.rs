@@ -37,8 +37,18 @@ impl RawStatement {
         }
     }
 
-    pub fn column_name(&self, idx: usize) -> &CStr {
-        unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx as c_int)) }
+    pub fn column_name(&self, idx: usize) -> Option<&CStr> {
+        let idx = idx as c_int;
+        if idx < 0 || idx >= self.column_count() as c_int {
+            return None;
+        }
+        unsafe {
+            let ptr = ffi::sqlite3_column_name(self.0, idx);
+            // If ptr is null here, it's an OOM, so there's probably nothing
+            // meaningful we can do. Just assert instead of returning None.
+            assert!(!ptr.is_null(), "Null pointer from sqlite3_column_name: Out of memory?");
+            Some(CStr::from_ptr(ptr))
+        }
     }
 
     pub fn step(&self) -> c_int {

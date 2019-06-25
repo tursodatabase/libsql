@@ -27,8 +27,7 @@ impl Statement<'_> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let slice = self.stmt.column_name(i);
-            let s = str::from_utf8(slice.to_bytes()).unwrap();
+            let s = self.column_name(i);
             cols.push(s);
         }
         cols
@@ -38,6 +37,13 @@ impl Statement<'_> {
     /// statement.
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
+    }
+
+    pub(crate) fn column_name(&self, col: usize) -> &str {
+        // Just panic if the bounds are wrong for now, we never call this
+        // without checking first.
+        let slice = self.stmt.column_name(col).expect("Column out of bounds");
+        str::from_utf8(slice.to_bytes()).unwrap()
     }
 
     /// Returns the column index in the result set for a given column name.
@@ -53,7 +59,9 @@ impl Statement<'_> {
         let bytes = name.as_bytes();
         let n = self.column_count();
         for i in 0..n {
-            if bytes.eq_ignore_ascii_case(self.stmt.column_name(i).to_bytes()) {
+            // Note: `column_name` is only fallible if `i` is out of bounds,
+            // which we've already checked.
+            if bytes.eq_ignore_ascii_case(self.stmt.column_name(i).unwrap().to_bytes()) {
                 return Ok(i);
             }
         }
@@ -65,8 +73,7 @@ impl Statement<'_> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let slice = self.stmt.column_name(i);
-            let name = str::from_utf8(slice.to_bytes()).unwrap();
+            let name = self.column_name(i);
             let slice = self.stmt.column_decltype(i);
             let decl_type = slice.map(|s| str::from_utf8(s.to_bytes()).unwrap());
             cols.push(Column { name, decl_type });
@@ -124,5 +131,39 @@ mod test {
             &column_types[..3],
             &[Some("text"), Some("text"), Some("text"),]
         );
+    }
+
+    #[test]
+    fn test_column_name_in_error() {
+        use crate::{types::Type, Error};
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "BEGIN;
+             CREATE TABLE foo(x INTEGER, y TEXT);
+             INSERT INTO foo VALUES(4, NULL);
+             END;").unwrap();
+        let mut stmt = db.prepare("SELECT x as renamed, y FROM foo").unwrap();
+        let mut rows = stmt.query(crate::NO_PARAMS).unwrap();
+        let row = rows.next().unwrap().unwrap();
+        match row.get::<_, String>(0).unwrap_err() {
+            Error::InvalidColumnType(idx, name, ty) => {
+                assert_eq!(idx, 0);
+                assert_eq!(name, "renamed");
+                assert_eq!(ty, Type::Integer);
+            }
+            e => {
+                panic!("Unexpected error type: {:?}", e);
+            }
+        }
+        match row.get::<_, String>("y").unwrap_err() {
+            Error::InvalidColumnType(idx, name, ty) => {
+                assert_eq!(idx, 1);
+                assert_eq!(name, "y");
+                assert_eq!(ty, Type::Null);
+            }
+            e => {
+                panic!("Unexpected error type: {:?}", e);
+            }
+        }
     }
 }
