@@ -49,6 +49,8 @@ csvtab = ["csv", "vtab"]
 array = ["vtab"]
 # session extension: 3.13.0
 session = ["libsqlite3-sys/session", "hooks"]
+# window functions: 3.25.0
+window = ["functions"]
 
 [dependencies]
 time = "0.1.0"

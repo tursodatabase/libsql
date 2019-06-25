@@ -28,12 +28,9 @@ script:
   - cargo build --features sqlcipher
   - cargo build --features "bundled sqlcipher"
   - cargo test
-  - cargo test --features backup
-  - cargo test --features blob
-  - cargo test --features collation
-  - cargo test --features functions
-  - cargo test --features hooks
-  - cargo test --features limits
+  - cargo test --features "backup blob"
+  - cargo test --features "collation functions"
+  - cargo test --features "hooks limits"
   - cargo test --features load_extension
   - cargo test --features trace
   - cargo test --features chrono
@@ -43,7 +40,7 @@ script:
   - cargo test --features sqlcipher
   - cargo test --features i128_blob
   - cargo test --features uuid
-  - cargo test --features "unlock_notify bundled"
+  - cargo test --features "bundled unlock_notify window"
   - cargo test --features "array bundled csvtab vtab"
   - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension serde_json trace url uuid vtab"
   - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension serde_json trace url uuid vtab buildtime_bindgen"
