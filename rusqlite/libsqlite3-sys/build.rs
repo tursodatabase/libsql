@@ -5,7 +5,10 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
     if cfg!(feature = "sqlcipher") {
-        if cfg!(any(feature = "bundled", all(windows, feature="bundled-windows"))) {
+        if cfg!(any(
+            feature = "bundled",
+            all(windows, feature = "bundled-windows")
+        )) {
             println!(
                 "cargo:warning={}",
                 "Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
@@ -15,18 +18,18 @@ fn main() {
     } else {
         // This can't be `cfg!` without always requiring our `mod build_bundled` (and
         // thus `cc`)
-        #[cfg(any(feature = "bundled", all(windows, feature="bundled-windows")))]
+        #[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
         {
             build_bundled::main(&out_dir, &out_path)
         }
-        #[cfg(not(any(feature = "bundled", all(windows, feature="bundled-windows"))))]
+        #[cfg(not(any(feature = "bundled", all(windows, feature = "bundled-windows"))))]
         {
             build_linked::main(&out_dir, &out_path)
         }
     }
 }
 
-#[cfg(any(feature = "bundled", all(windows, feature="bundled-windows")))]
+#[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
 mod build_bundled {
     use cc;
     use std::env;
@@ -142,7 +145,11 @@ mod build_linked {
 
     pub fn main(_out_dir: &str, out_path: &Path) {
         let header = find_sqlite();
-        if cfg!(any(feature = "bundled", all(windows, feature="bundled-windows"))) && !cfg!(feature = "buildtime_bindgen") {
+        if cfg!(any(
+            feature = "bundled",
+            all(windows, feature = "bundled-windows")
+        )) && !cfg!(feature = "buildtime_bindgen")
+        {
             // We can only get here if `bundled` and `sqlcipher` were both
             // specified (and `builtime_bindgen` was not). In order to keep
             // `rusqlite` relatively clean we hide the fact that `bundled` can
