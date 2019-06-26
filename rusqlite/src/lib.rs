@@ -1476,7 +1476,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                Error::InvalidColumnType(_, _) => (),
+                Error::InvalidColumnType(_, _, _) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1531,7 +1531,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1588,7 +1588,7 @@ mod test {
             });
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 

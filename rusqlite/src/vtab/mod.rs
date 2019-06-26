@@ -472,7 +472,7 @@ impl Values<'_> {
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, idx.to_string(), value.data_type()),
             #[cfg(feature = "uuid")]
             FromSqlError::InvalidUuidSize(_) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
