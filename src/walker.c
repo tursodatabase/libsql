@@ -74,6 +74,9 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
       if( ExprHasProperty(pExpr, EP_WinFunc) ){
         if( walkWindowList(pWalker, pExpr->y.pWin) ) return WRC_Abort;
       }
+      if( ExprHasProperty(pExpr, EP_Filter) ){
+        if( walkExpr(pWalker, pExpr->y.pFilter) ) return WRC_Abort;
+      }
 #endif
     }
     break;

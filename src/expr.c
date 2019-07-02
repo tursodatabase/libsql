@@ -1027,7 +1027,7 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 
   assert( !ExprHasProperty(p, EP_WinFunc) || p->y.pWin!=0 || db->mallocFailed );
   assert( p->op!=TK_FUNCTION || ExprHasProperty(p, EP_TokenOnly|EP_Reduced)
-          || p->y.pWin==0 || ExprHasProperty(p, EP_WinFunc) );
+          || p->y.pWin==0 || ExprHasProperty(p, EP_WinFunc|EP_Filter) );
 #ifdef SQLITE_DEBUG
   if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->pLeft==0 );
@@ -1046,10 +1046,15 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( ExprHasProperty(p, EP_WinFunc) ){
-      assert( p->op==TK_FUNCTION );
+      assert( p->op==TK_FUNCTION && !ExprHasProperty(p, EP_Filter) );
       sqlite3WindowDelete(db, p->y.pWin);
+    }else if( ExprHasProperty(p, EP_Filter) ){
+      assert( p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION );
+      sqlite3ExprDelete(db, p->y.pFilter);
     }
+#endif
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
   if( !ExprHasProperty(p, EP_Static) ){
@@ -1264,7 +1269,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
     }
 
     /* Fill in pNew->pLeft and pNew->pRight. */
-    if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly|EP_WinFunc) ){
+    if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly|EP_WinFunc|EP_Filter) ){
       zAlloc += dupedExprNodeSize(p, dupFlags);
       if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
         pNew->pLeft = p->pLeft ?
@@ -1276,6 +1281,10 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       if( ExprHasProperty(p, EP_WinFunc) ){
         pNew->y.pWin = sqlite3WindowDup(db, pNew, p->y.pWin);
         assert( ExprHasProperty(pNew, EP_WinFunc) );
+      }
+      if( ExprHasProperty(p, EP_Filter) ){
+        pNew->y.pFilter = sqlite3ExprDup(db, p->y.pFilter, 0);
+        assert( ExprHasProperty(pNew, EP_Filter) );
       }
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( pzBuffer ){
@@ -1332,8 +1341,8 @@ static With *withDup(sqlite3 *db, With *p){
 ** objects found there, assembling them onto the linked list at Select->pWin.
 */
 static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_FUNCTION && pExpr->y.pWin!=0 ){
-    assert( ExprHasProperty(pExpr, EP_WinFunc) );
+  if( pExpr->op==TK_FUNCTION && ExprHasProperty(pExpr, EP_WinFunc) ){
+    assert( pExpr->y.pWin );
     pExpr->y.pWin->pNextWin = pWalker->u.pSelect->pWin;
     pWalker->u.pSelect->pWin = pExpr->y.pWin;
   }
@@ -4862,6 +4871,14 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     }else if( ALWAYS(pB->u.zToken!=0) && strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    else if( pA->op==TK_AGG_FUNCTION ){
+      assert( ExprHasProperty(pA, EP_WinFunc)==0 );
+      if( sqlite3ExprCompare(pParse, pA->y.pFilter, pB->y.pFilter, iTab) ){
+        return 2;
+      }
+    }
+#endif
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
   if( (combinedFlags & EP_TokenOnly)==0 ){

@@ -1036,21 +1036,23 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
 %endif  SQLITE_OMIT_CAST
 
 
+%ifdef SQLITE_OMIT_WINDOWFUNC
 expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP. {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
 }
 expr(A) ::= id(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
+%endif
 
 %ifndef SQLITE_OMIT_WINDOWFUNC
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP over_clause(Z). {
+expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP filter_opt(F) over_opt(Z). {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
-  sqlite3WindowAttach(pParse, A, Z);
+  sqlite3WindowAttach(pParse, A, F, Z);
 }
-expr(A) ::= id(X) LP STAR RP over_clause(Z). {
+expr(A) ::= id(X) LP STAR RP filter_opt(F) over_opt(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
-  sqlite3WindowAttach(pParse, A, Z);
+  sqlite3WindowAttach(pParse, A, F, Z);
 }
 %endif
 
@@ -1724,20 +1726,17 @@ frame_exclude(A) ::= GROUP|TIES(X).  {A = @X; /*A-overwrites-X*/}
 %destructor window_clause {sqlite3WindowListDelete(pParse->db, $$);}
 window_clause(A) ::= WINDOW windowdefn_list(B). { A = B; }
 
-%type over_clause {Window*}
-%destructor over_clause {sqlite3WindowDelete(pParse->db, $$);}
-over_clause(A) ::= filter_opt(W) OVER LP window(Z) RP. {
+%type over_opt {Window*}
+%destructor over_opt {sqlite3WindowDelete(pParse->db, $$);}
+over_opt(A) ::= . { A=0; }
+over_opt(A) ::= OVER LP window(Z) RP. {
   A = Z;
   assert( A!=0 );
-  A->pFilter = W;
 }
-over_clause(A) ::= filter_opt(W) OVER nm(Z). {
+over_opt(A) ::= OVER nm(Z). {
   A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
   if( A ){
     A->zName = sqlite3DbStrNDup(pParse->db, Z.z, Z.n);
-    A->pFilter = W;
-  }else{
-    sqlite3ExprDelete(pParse->db, W);
   }
 }
 
