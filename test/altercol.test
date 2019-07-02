@@ -638,7 +638,7 @@ do_execsql_test 14.1 {
 
 do_execsql_test 14.2 {
   SELECT 
-  sqlite_rename_column(sql, type, object, db, tbl, icol, znew, bquote, 0)
+  sqlite_rename_column(sql, type, object, db, tbl, icol, znew, bquote, 0, 0)
   FROM ddd;
 } {{} {} {} {}}
 sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
@@ -648,7 +648,7 @@ sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
 # ordinary SQL.
 #
 do_catchsql_test 14.3 {
-  SELECT sqlite_rename_column(0,0,0,0,0,0,0,0,0);
+  SELECT sqlite_rename_column(0,0,0,0,0,0,0,0,0,0);
 } {1 {no such function: sqlite_rename_column}}
 
 #-------------------------------------------------------------------------

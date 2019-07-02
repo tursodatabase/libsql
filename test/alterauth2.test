@@ -82,7 +82,6 @@ do_auth_test 1.2 {
   {SQLITE_ALTER_TABLE main t2 {} {}} 
   {SQLITE_FUNCTION {} like {} {}} 
   {SQLITE_FUNCTION {} sqlite_rename_column {} {}} 
-  {SQLITE_FUNCTION {} sqlite_rename_test {} {}} 
   {SQLITE_READ sqlite_master name main {}} 
   {SQLITE_READ sqlite_master sql main {}} 
   {SQLITE_READ sqlite_master tbl_name main {}} 

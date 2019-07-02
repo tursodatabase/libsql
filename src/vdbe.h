@@ -283,6 +283,7 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 #endif
 
 int sqlite3NotPureFunc(sqlite3_context*);
+void sqlite3VdbeIncrReg(sqlite3_context*, int, int);
 
 /* Use SQLITE_ENABLE_COMMENTS to enable generation of extra comments on
 ** each VDBE opcode.

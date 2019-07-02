@@ -4910,6 +4910,16 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
   return 1;
 }
 
+/*
+** Increment the value of register iReg, which is guaranteed to be an 
+** integer, in the VM associated with context object pCtx by iVal.
+*/
+void sqlite3VdbeIncrReg(sqlite3_context *pCtx, int iReg, int iVal){
+  Mem *pMem = &pCtx->pVdbe->aMem[iReg];
+  assert( pMem->flags==MEM_Int );
+  pMem->u.i += iVal;
+}
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored

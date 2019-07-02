@@ -1,0 +1,49 @@
+# 2019 July 3
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing that SQLite can handle a subtle 
+# file format change that may be used in the future to implement
+# "ALTER TABLE ... RENAME COLUMN ... TO".
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix altercol2
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+sqlite3_db_config db DQS_DDL 1
+
+#-------------------------------------------------------------------------
+# Check that the ALTER TABLE statement used in bug [9b78184b] is now
+# an error (because it effectively transforms a constant string into a 
+# column ref).
+#
+do_execsql_test 1.0 {
+  CREATE TABLE t0(c1, c2);
+  INSERT INTO t0(c1, c2) VALUES  ('a', 1);
+  CREATE INDEX i0 ON t0("C3");
+}
+
+do_catchsql_test 1.1 {
+  ALTER TABLE t0 RENAME COLUMN c1 TO c3;
+} {1 {schema contains ambiguous double-quoted string}}
+
+do_execsql_test 1.2 {
+  ALTER TABLE t0 RENAME COLUMN c1 TO c4;
+  SELECT DISTINCT * FROM t0;
+} {a 1}
+
+finish_test

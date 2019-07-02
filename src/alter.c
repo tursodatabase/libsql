@@ -527,6 +527,8 @@ void sqlite3AlterRenameColumn(
   const char *zDb;                /* Name of schema containing the table */
   int iSchema;                    /* Index of the schema */
   int bQuote;                     /* True to quote the new name */
+  Vdbe *v;                        /* VDBE handle */
+  int regRefCnt;                  /* Register for number of refs to column */
 
   /* Locate the table to be altered */
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
@@ -560,10 +562,15 @@ void sqlite3AlterRenameColumn(
     goto exit_rename_column;
   }
 
-  /* Do the rename operation using a recursive UPDATE statement that
-  ** uses the sqlite_rename_column() SQL function to compute the new
-  ** CREATE statement text for the sqlite_master table.
-  */
+  /* Allocate a register to count the number of rewritten column refs. */
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) goto exit_rename_column;
+  regRefCnt = ++pParse->nMem;
+  sqlite3VdbeAddOp2(v, OP_Integer, 0, regRefCnt);
+
+  /* Do the rename operation using an UPDATE statement that uses the
+  ** sqlite_rename_column() SQL function to compute the new CREATE 
+  ** statement text for the sqlite_master table.  */
   sqlite3MayAbort(pParse);
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
@@ -571,26 +578,65 @@ void sqlite3AlterRenameColumn(
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\".%s SET "
-      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
+      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
       " AND (type != 'index' OR tbl_name = %Q)"
       " AND sql NOT LIKE 'create virtual%%'",
       zDb, MASTER_NAME, 
-      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
+      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1, regRefCnt,
       pTab->zName
   );
 
-  sqlite3NestedParse(pParse, 
-      "UPDATE temp.%s SET "
-      "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, 1) "
-      "WHERE type IN ('trigger', 'view')",
-      MASTER_NAME, 
-      zDb, pTab->zName, iCol, zNew, bQuote
-  );
+  if( iSchema!=1 ){
+    sqlite3NestedParse(pParse, 
+        "UPDATE temp.%s SET "
+        "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, 1, %d)"
+        "WHERE type IN ('trigger', 'view')",
+        MASTER_NAME, 
+        zDb, pTab->zName, iCol, zNew, bQuote, regRefCnt
+    );
+  }
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iSchema);
-  renameTestSchema(pParse, zDb, iSchema==1);
+
+  /* Now arrange for the sqlite_rename_column() function to be called a
+  ** second time on the already rewritten schema. This serves two purposes:
+  ** (a) to check that the schema can still be parsed, and (b) to decrement
+  ** register regRefCnt once for each reference to the renamed column in the
+  ** schema (the calls above incremented regRefCnt once for each such reference
+  ** prior to renaming). If register regRefCnt is not left set to 0, then 
+  ** renaming the column has left the schema with either more or fewer
+  ** references to the column than there was at the beginning of the 
+  ** operation. This is an error, so return an error message and SQLITE_ABORT
+  ** the statement.  */ 
+  sqlite3NestedParse(pParse, 
+      "SELECT 1 "
+      "FROM \"%w\".%s "
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
+      "  AND sql NOT LIKE 'create virtual%%'"
+      "  AND (type != 'index' OR tbl_name = %Q)"
+      "  AND sqlite_rename_column(sql,type,name,%Q,%Q,%d,%Q,%d,%d,%d)=NULL",
+      zDb, MASTER_NAME, 
+      pTab->zName,
+      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1, regRefCnt*-1
+  );
+  if( iSchema!=1 ){
+    sqlite3NestedParse(pParse, 
+        "SELECT 1 "
+        "FROM temp.%s "
+        "WHERE type IN ('trigger', 'view')"
+        "  AND sqlite_rename_column(sql,type,name,%Q,%Q,%d,%Q,%d,1,%d)=NULL",
+        MASTER_NAME,
+        zDb, pTab->zName, iCol, zNew, bQuote, regRefCnt*-1
+    );
+  }
+
+  sqlite3VdbeAddOp2(v, OP_IfNot, regRefCnt, sqlite3VdbeCurrentAddr(v)+2);
+  sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_ERROR, OE_Abort);
+  sqlite3VdbeChangeP4(v, -1, 
+      "schema contains ambiguous double-quoted string", P4_STATIC
+  );
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
@@ -1236,6 +1282,9 @@ static void renameParseCleanup(Parse *pParse){
 **   6. zNew:     New column name
 **   7. bQuote:   Non-zero if the new column name should be quoted.
 **   8. bTemp:    True if zSql comes from temp schema
+**   9. iReg:     Register to increment for each rewritten column ref. Or,
+**                if this parameter is negative, -1 times the id of a register
+**                to decrement for each rewritten column ref.
 **
 ** Do a column rename operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is renamed from zCol
@@ -1259,6 +1308,7 @@ static void renameColumnFunc(
   const char *zNew = (const char*)sqlite3_value_text(argv[6]);
   int bQuote = sqlite3_value_int(argv[7]);
   int bTemp = sqlite3_value_int(argv[8]);
+  int regRefCnt = sqlite3_value_int(argv[9]);
   const char *zOld;
   int rc;
   Parse sParse;
@@ -1367,7 +1417,6 @@ static void renameColumnFunc(
       }
     }
 
-
     /* Find tokens to edit in UPDATE OF clause */
     if( sParse.pTriggerTab==pTab ){
       renameColumnIdlistNames(&sParse, &sCtx,sParse.pNewTrigger->pColumns,zOld);
@@ -1378,12 +1427,16 @@ static void renameColumnFunc(
   }
 
   assert( rc==SQLITE_OK );
+  if( regRefCnt!=0 ){
+    int mul = (regRefCnt<0 ? -1 : 1);
+    sqlite3VdbeIncrReg(context, regRefCnt*mul, sCtx.nList*mul);
+  }
   rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
 
 renameColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( sParse.zErrMsg ){
-      renameColumnParseError(context, 0, argv[1], argv[2], &sParse);
+      renameColumnParseError(context, regRefCnt<0, argv[1], argv[2], &sParse);
     }else{
       sqlite3_result_error_code(context, rc);
     }
@@ -1659,7 +1712,7 @@ static void renameTableTest(
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
-    INTERNAL_FUNCTION(sqlite_rename_column, 9, renameColumnFunc),
+    INTERNAL_FUNCTION(sqlite_rename_column, 10, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,  7, renameTableFunc),
     INTERNAL_FUNCTION(sqlite_rename_test,   5, renameTableTest),
   };

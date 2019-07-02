@@ -686,7 +686,7 @@ do_test alter-8.2 {
 #
 sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
 do_test alter-9.1 {
-  execsql {SELECT SQLITE_RENAME_COLUMN(0,0,0,0,0,0,0,0,0)}
+  execsql {SELECT SQLITE_RENAME_COLUMN(0,0,0,0,0,0,0,0,0,0)}
 } {{}}
 foreach {tn sql} {
     1 { SELECT SQLITE_RENAME_TABLE(0,0,0,0,0,0,0) }
