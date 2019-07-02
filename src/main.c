@@ -3073,8 +3073,35 @@ static int openDatabase(
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
   db->nMaxSorterMmap = 0x7FFFFFFF;
-  db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger | SQLITE_CacheSpill
+  db->flags |= SQLITE_ShortColNames
+                 | SQLITE_EnableTrigger
+                 | SQLITE_CacheSpill
+
+/* The SQLITE_DQS compile-time option determines the default settings
+** for SQLITE_DBCONFIG_DQS_DDL and SQLITE_DBCONFIG_DQS_DML.
+**
+**    SQLITE_DQS     SQLITE_DBCONFIG_DQS_DDL    SQLITE_DBCONFIG_DQS_DML
+**    ----------     -----------------------    -----------------------
+**     undefined               on                          on   
+**         3                   on                          on
+**         2                   on                         off
+**         1                  off                          on
+**         0                  off                         off
+**
+** Legacy behavior is 3 (double-quoted string literals are allowed anywhere)
+** and so that is the default.  But developers are encouranged to use
+** -DSQLITE_DQS=0 (best) or -DSQLITE_DQS=1 (second choice) if possible.
+*/
+#if !defined(SQLITE_DQS)
+# define SQLITE_DQS 3
+#endif
+#if (SQLITE_DQS&1)==1
                  | SQLITE_DqsDML
+#endif
+#if (SQLITE_DQS&2)==2
+                 | SQLITE_DqsDDL
+#endif
+
 #if !defined(SQLITE_DEFAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
                  | SQLITE_AutoIndex
 #endif

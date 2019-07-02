@@ -1,5 +1,5 @@
-C Use\sthe\sOP_Sequence\sopcode\sfor\sgenerating\sunique\srowid\svalues\sfor\san\nautoindex\son\sa\sco-routine\simplementation\sof\sa\ssubquery.
-D 2019-06-28T07:08:13.998
+C Restore\sthe\slegacy\sbehavior\sof\senabling\sdouble-quoted\sstring\sliterals\sin\nall\scontexts.\s\sBut\salso\sprovide\sa\snew\scompile-time\soption\s(SQLITE_DQS)\sto\s\nchange\sthe\sdefault\sto\ssomething\smore\srestrictive.
+D 2019-07-02T12:23:09.339
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c f20925c2c08144442dabeb73dcd0f5026f5f085d827f3d5635f7c45e5d195320
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
-F src/main.c e16c702032930fd9d8c0533fed7575f3900022c13a59cc2817e60f07096a005e
+F src/main.c 591a0084b1a6b0ed6741f77181bd1a630ca10bb460420f00e8c11809da7df5b9
 F src/malloc.c 0f9da2a66b230a5785af94b9672126845099b57b70a32c987d04ac28c69da990
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -524,7 +524,7 @@ F src/resolve.c 93b7bc7c45efa6322d92293361c51a873690daed50cf77eeff88a448246b0d5a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9187f2c65744e975b191ccee49946732ee922f8bf40da998b322aca1633405ea
 F src/shell.c.in 82f8a473c01662f52233c6c75b9bf88d0d2cab276086d5d4ca6f2ff57a3e48eb
-F src/sqlite.h.in bc4aa09a59dcf3c34b8e57ce9ade8ff6aed8ef7a7ddc59951f59f9b009fc7cc0
+F src/sqlite.h.in 83ebc8ab1a2e82d92214006ea2c15bf8a0604f3fac2c31dd9ce9021f568c71f2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
 F src/sqliteInt.h bf65dfa6565fae2e0d501088fc9c5212244adc1429a543827a16b2f5eaf41982
@@ -1229,7 +1229,7 @@ F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
 F test/quota.test bfb269ce81ea52f593f9648316cd5013d766dd2a
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
-F test/quote.test 8258838e5135ff1034e4de929d14bfb5bdd73d2df5a2281404ae79d927b8fa70
+F test/quote.test 626149eda89ee64d81a3790de370f9f0211921b11568a49c28c861f394330508
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5fd20e09a522b62a529cf4d76fbdf0a09426f67ffa30430cac6b81ebf32ba43e
-R d8e38b1a6647f90f85dd30ba60740431
+P eab4297577e4d325fed4757867fc77860de7448998d86f098c8a50272e17d35e
+R 0b36af6a8df78e1b4ae21c7b05704310
 U drh
-Z 069759ad3085e2b5f17cc34ec369471a
+Z ed1c8cce590ac464550f943b9f1b0f06
