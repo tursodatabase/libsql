@@ -68,6 +68,65 @@ execsql_test 1.7 {
   ORDER BY 1, 2, 3, 4;
 }
 
+execsql_test 1.8 { 
+  SELECT sum(a+b) FILTER (WHERE a=NULL) FROM t1
+}
+
+execsql_test 1.9 {
+  SELECT (a%5) FROM t1 GROUP BY (a%5) 
+  HAVING sum(b) FILTER (WHERE b<20) > 34
+  ORDER BY 1
+}
+
+execsql_test 1.10 {
+  SELECT (a%5), sum(b) FILTER (WHERE b<20) AS bbb
+  FROM t1
+  GROUP BY (a%5) HAVING sum(b) FILTER (WHERE b<20) >34
+  ORDER BY 1
+}
+
+execsql_test 1.11 {
+  SELECT (a%5), sum(b) FILTER (WHERE b<20) AS bbb
+  FROM t1
+  GROUP BY (a%5) HAVING sum(b) FILTER (WHERE b<20) >34
+  ORDER BY 2
+}
+
+execsql_test 1.12 {
+  SELECT (a%5), 
+    sum(b) FILTER (WHERE b<20) AS bbb,
+    count(distinct b) FILTER (WHERE b<20 OR a=13) AS ccc
+  FROM t1 GROUP BY (a%5)
+  ORDER BY 2
+}
+
+execsql_test 1.13 {
+  SELECT 
+    string_agg(CAST(b AS TEXT), '_') FILTER (WHERE b%2!=0),
+    string_agg(CAST(b AS TEXT), '_') FILTER (WHERE b%2!=1),
+    count(*) FILTER (WHERE b%2!=0),
+    count(*) FILTER (WHERE b%2!=1)
+  FROM t1;
+}
+
+execsql_float_test 1.14 {
+  SELECT 
+    avg(b) FILTER (WHERE b>a),
+    avg(b) FILTER (WHERE b<a)
+  FROM t1 GROUP BY (a%2) ORDER BY 1,2;
+}
+
+execsql_test 1.15 {
+  SELECT 
+    a/5,
+    sum(b) FILTER (WHERE a%5=0),
+    sum(b) FILTER (WHERE a%5=1),
+    sum(b) FILTER (WHERE a%5=2),
+    sum(b) FILTER (WHERE a%5=3),
+    sum(b) FILTER (WHERE a%5=4)
+  FROM t1 GROUP BY (a/5) ORDER BY 1;
+}
+
 finish_test
 
 

@@ -83,7 +83,7 @@ do_catchsql_test 2.2 {
 
 do_catchsql_test 2.3 {
   SELECT sum(a) FILTER (WHERE 1 - count(a)) FROM t1
-} {1 {misuse of aggregate: count()}}
+} {1 {misuse of aggregate function count()}}
 
 finish_test
 

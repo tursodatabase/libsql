@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\sFILTER\sclause\sfor\saggregate\sfunctions.
-D 2019-07-02T11:56:47.637
+C Add\stests\sfor\sthe\sFILTER\sclause.\sAnd\sa\sbugfix.
+D 2019-07-03T18:31:20.108
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 65514625b68e79a4087d218107d51d489477509d55543e1be375d1e58f27c2f3
+F src/resolve.c 3c0dc44956a909e135b92e7691e77fb7cf65ab55f03f0439b4e9758b29841fda
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1774cc457eb0b6cd757a350fd9f5600c4d13f3e899d6615033aecaa4f00a5e7d
 F src/shell.c.in 82f8a473c01662f52233c6c75b9bf88d0d2cab276086d5d4ca6f2ff57a3e48eb
@@ -856,9 +856,9 @@ F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 37a62e396a68eeede8f8d2ecf23573a80faceb630788d314d0a073d862616717
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
-F test/filter1.test d706edd2c32c6b148143d885927e5cf4ea141106b803e243e5d1bfbdc7e2b5cf
-F test/filter2.tcl 87e24fd0a2ab502bd4d0350c4eee17a50e2b4364a1b67230f82b8f2a5029f6bf
-F test/filter2.test dfddced42a534e71a730aa3d4c6b148d9fbf29aa306f9cec6b51f31b8cf7e224
+F test/filter1.test 8a0f541d2138a10b41c513a9b8193af09d5218ca4e670bc6fd9ed121db1b7bf3
+F test/filter2.tcl 44e525497ce07382915f01bd29ffd0fa49dab3adb87253b5e5103ba8f93393e8
+F test/filter2.test 485cf95d1f6d6ceee5632201ca52a71868599836f430cdee42e5f7f14666e30a
 F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
 F test/fkey2.test d35d1c81e7569bdd2b872e91750f7098117d2e8291369f70b7e3d50a0e523dc2
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
@@ -1833,10 +1833,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eab4297577e4d325fed4757867fc77860de7448998d86f098c8a50272e17d35e
-R 43e2b0402b61e905810368aafa77ca67
-T *branch * filter-clause
-T *sym-filter-clause *
-T -sym-trunk *
+P 1f1ae2d6ac8dcbb62e5aa3dc17bc67d559cb565fc0d0a8c00a596075d35f8130
+R 384c2722df91a465eadfc4c7f6abdf98
 U dan
-Z 9e8394b31320bbcccfabf9cff0d64121
+Z 0118bb47bb74c9177a9d95a1278bf2e1
