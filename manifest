@@ -1,5 +1,5 @@
-C Restore\sthe\slegacy\sbehavior\sof\senabling\sdouble-quoted\sstring\sliterals\sin\nall\scontexts.\s\sBut\salso\sprovide\sa\snew\scompile-time\soption\s(SQLITE_DQS)\sto\s\nchange\sthe\sdefault\sto\ssomething\smore\srestrictive.
-D 2019-07-02T12:23:09.339
+C Fix\sa\srace\scondition\sthat\scould\soccur\sin\sSQLITE_ENABLE_MEMORY_MANAGEMENT\sbuilds\swhen\stwo\sthreads\ssimultaneously\sopen\sthe\sfirst\stwo\sdatabase\sconnections\sin\sthe\sprocess.
+D 2019-07-04T16:05:26.878
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -514,7 +514,7 @@ F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y 026e3e6fff32432166a4eae0bdb78ad09a53c84eb49acb44dc32e49b4c0b8a48
 F src/pcache.c fd2d0553b3222d6b9f7cb251079e5bca1299d1161da3027b525932d8bf46340a
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c be64b2f3908a7f97c56c963676eb12f0d6254c95b28cdc1d73a186eff213219d
+F src/pcache1.c e6373934cdafea272d94feb224344f9fd93ff94318221b64ccabd72d98b4672e
 F src/pragma.c 925bcac0afd98a0d4255c7524b93239ab4d83893d96f7f8fdccd78d4929a39bb
 F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 78027c6231fbb19ca186a5f5f0c0a1375d9c2cec0655273f9bd90d9ff74a34b3
@@ -1238,7 +1238,7 @@ F test/recover.test ccb8c2623902a92ebb76770edd075cb4f75a4760bb7afde38026572c6e79
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
-F test/releasetest.tcl 204efd3a87ec1d62da2efde42c673b18b955350a9d3c6ac0b4dbba5bc8595808 x
+F test/releasetest.tcl 968fc1e8fd23e113fb8a04379747f3a9f2c12d207b2de85aeff5a825962e1cd7 x
 F test/releasetest_data.tcl c3746248b5ad8f99a29020f83501bb25e024156ecc37e05c71c76da4fc8601c6
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eab4297577e4d325fed4757867fc77860de7448998d86f098c8a50272e17d35e
-R 0b36af6a8df78e1b4ae21c7b05704310
-U drh
-Z ed1c8cce590ac464550f943b9f1b0f06
+P 97a94446f3941c313c4c3a19d9f89f24d7ef06e842f79d66f0ad88810b872084
+R 9398ab014d6e6e64eafbbf681a19d3b0
+U dan
+Z fca5035aac627b4a455ff2174ca1daf0
