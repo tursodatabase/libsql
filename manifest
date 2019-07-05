@@ -1,5 +1,5 @@
-C As\sit\srequires\swal\smode\ssupport,\sdo\snot\srun\stest\sfile\schunksize.test\sas\spart\sof\sthe\s"journaltest"\spermutation.
-D 2019-07-04T19:19:08.667
+C Fix\sa\svalgrind\sproblem\sin\sfts3corrupt4.test.
+D 2019-07-05T15:16:22.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c b4c2e8fc90df14b0cdb78be934269689abe29ee652fc672e342a82e8e632cea5
+F ext/fts3/fts3_write.c 9e88111ca9f70e4079880d842c8323bffc4968b39ee38c0a75962a3485af9333
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1830,7 +1830,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 971b4422ae7a8eed67f5db62c0e1cc061faac9404ff5f7051d7e07decf2207a4
-R 79b5e680b38447bcaf019a79afae54b9
+P acd2df36c2876ff3cc477889fc99f493cdf53a656bdb84bde6121676c9eeed1f
+R 89c994fa71bff5aaeabc661835b668a5
 U dan
-Z 6b251d25a286a2d9a468d35d6244a9a1
+Z 2b04774a5a233cfa78160cfe1ff740cc
