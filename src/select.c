@@ -6240,7 +6240,9 @@ int sqlite3Select(
       sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
 #ifndef SQLITE_OMIT_WINDOWFUNC
       assert( !ExprHasProperty(pExpr, EP_WinFunc) );
-      sqlite3ExprAnalyzeAggregates(&sNC, pExpr->y.pFilter);
+      if( pExpr->y.pFilter ){
+        sqlite3ExprAnalyzeAggregates(&sNC, pExpr->y.pFilter);
+      }
 #endif
       sNC.ncFlags &= ~NC_InAggFunc;
     }

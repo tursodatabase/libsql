@@ -893,4 +893,8 @@ do_test 4.9 {
   set {} {}
 } {}
 
+do_execsql_test 4.10 {
+  SELECT count(*) OVER (ORDER BY b) FROM t1
+} {3   3   3   6   6   6}
+
 finish_test
