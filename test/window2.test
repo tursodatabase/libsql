@@ -897,4 +897,8 @@ do_execsql_test 4.10 {
   SELECT count(*) OVER (ORDER BY b) FROM t1
 } {3   3   3   6   6   6}
 
+do_execsql_test 4.11 {
+  SELECT count(distinct a) FILTER (WHERE b='odd') FROM t1
+} {3}
+
 finish_test
