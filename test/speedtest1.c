@@ -1191,6 +1191,19 @@ void testset_fp(void){
     speedtest1_run();
   }
   speedtest1_end_test();
+
+  n = g.szTest*5000;
+  speedtest1_begin_test(140, "%d calls to round()", n);
+  speedtest1_exec("SELECT sum(round(a,2)+round(b,4)) FROM t1;");
+  speedtest1_end_test();
+
+
+  speedtest1_begin_test(150, "%d printf() calls", n*4);
+  speedtest1_exec(
+    "WITH c(fmt) AS (VALUES('%%g'),('%%e'),('%%!g'),('%%.20f'))"
+    "SELECT sum(printf(fmt,a)) FROM t1, c"
+  );
+  speedtest1_end_test();
 }
 
 #ifdef SQLITE_ENABLE_RTREE

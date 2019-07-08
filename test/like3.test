@@ -198,6 +198,15 @@ do_execsql_test like3-5.400 {
   SELECT * FROM t0 WHERE t0.c0 LIKE './';
 } {./}
 
+# 2019-06-14
+# Ticket https://www.sqlite.org/src/info/ce8717f0885af975
+do_execsql_test like3-5.410 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INT UNIQUE COLLATE NOCASE);
+  INSERT INTO t0(c0) VALUES ('.1%');
+  SELECT * FROM t0 WHERE t0.c0 LIKE '.1%';
+} {.1%}
+
 
 # 2019-02-27
 # Verify that the LIKE optimization works with an ESCAPE clause when

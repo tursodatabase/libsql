@@ -278,5 +278,23 @@ do_eqp_test 6.2.3 {
   SELECT a, b FROM x1 WHERE CAST(b AS TEXT) = 123;
 } {SEARCH TABLE x1 USING INDEX x1i2 (<expr>=?)}
 
+do_execsql_test 7.0 {
+  CREATE TABLE IF NOT EXISTS t0(c0);
+  INSERT INTO t0(c0) VALUES (-9223372036854775808);
+  BEGIN;
+}
+do_catchsql_test 7.1 {
+  CREATE INDEX i0 ON t0(ABS(c0));
+} {1 {integer overflow}}
+do_execsql_test 7.2 {
+  COMMIT;
+  SELECT sql FROM sqlite_master WHERE tbl_name = 't0';
+  CREATE INDEX i0 ON t0(c0);
+} {{CREATE TABLE t0(c0)}}
+do_execsql_test 7.3 {
+  REINDEX;
+} {}
+
+
 
 finish_test

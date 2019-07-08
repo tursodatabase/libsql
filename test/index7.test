@@ -327,5 +327,17 @@ do_catchsql_test index7-6.5 {
   CREATE INDEX t5a ON t5(a) WHERE a=#1;
 } {1 {near "#1": syntax error}}
 
+do_execsql_test index7-7.0 {
+  CREATE TABLE t6(x, y);
+  INSERT INTO t6 VALUES(1, 1);
+  INSERT INTO t6 VALUES(0, 0);
+  SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
+} {1 1}
+
+do_execsql_test index7-7.1 {
+  CREATE INDEX i6 ON t6(x) WHERE y IS NOT TRUE;
+  SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
+} {1 1}
+
 
 finish_test

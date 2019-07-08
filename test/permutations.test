@@ -966,7 +966,7 @@ test_suite "journaltest" -description {
   async4.test bigfile.test backcompat.test e_wal* fstat.test mmap2.test
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
-  delete_db.test shmlock.test
+  delete_db.test shmlock.test chunksize.test
 }]
 
 if {[info commands register_demovfs] != ""} {
