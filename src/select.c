@@ -2096,9 +2096,6 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   if( pTab==0 ){
     return 0;
   }
-  /* The sqlite3ResultSetOfSelect() is only used n contexts where lookaside
-  ** is disabled */
-  assert( db->lookaside.bDisable );
   pTab->nTabRef = 1;
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
@@ -2540,6 +2537,7 @@ static int multiSelect(
   */
   assert( p && p->pPrior );  /* Calling function guarantees this much */
   assert( (p->selFlags & SF_Recursive)==0 || p->op==TK_ALL || p->op==TK_UNION );
+  assert( p->selFlags & SF_Compound );
   db = pParse->db;
   pPrior = p->pPrior;
   dest = *pDest;
@@ -4045,10 +4043,10 @@ static int flattenSubquery(
       substSelect(&x, pParent, 0);
     }
   
-    /* The flattened query is distinct if either the inner or the
-    ** outer query is distinct. 
-    */
-    pParent->selFlags |= pSub->selFlags & SF_Distinct;
+    /* The flattened query is a compound if either the inner or the
+    ** outer query is a compound. */
+    pParent->selFlags |= pSub->selFlags & SF_Compound;
+    assert( (pSub->selFlags & SF_Distinct)==0 ); /* restriction (17b) */
   
     /*
     ** SELECT ... FROM (SELECT ... LIMIT a OFFSET b) LIMIT x OFFSET y;

@@ -32,13 +32,27 @@ do_execsql_test 1.0 {
 
 foreach {tn sql expect} {
   1 "SELECT * FROM e6 WHERE b LIKE '8abc'" {
-    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b like ?}
-    xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} 8abc
+    xBestIndex 
+       {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b like ?}
+    xFilter
+       {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b like ?}
+       8ABC 8abd 8abc
   }
 
   2 "SELECT * FROM e6 WHERE b GLOB '8abc'" {
+     xBestIndex
+       {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b glob ?}
+     xFilter
+       {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b glob ?}
+       8abc 8abd 8abc
+  }
+  3 "SELECT * FROM e6 WHERE b LIKE '8e/'" {
+    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b like ?}
+    xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} 8e/
+  }
+  4 "SELECT * FROM e6 WHERE b GLOB '8e/'" {
     xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b glob ?}
-    xFilter {SELECT rowid, a, b FROM 't6' WHERE b glob ?} 8abc
+    xFilter {SELECT rowid, a, b FROM 't6' WHERE b glob ?} 8e/
   }
 } {
   do_test 1.$tn {

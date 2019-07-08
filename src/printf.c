@@ -99,6 +99,12 @@ static const et_info fmtinfo[] = {
   {  'r', 10, 1, etORDINAL,    0,  0 },
 };
 
+/* Floating point constants used for rounding */
+static const double arRound[] = {
+  5.0e-01, 5.0e-02, 5.0e-03, 5.0e-04, 5.0e-05,
+  5.0e-06, 5.0e-07, 5.0e-08, 5.0e-09, 5.0e-10,
+};
+
 /*
 ** If SQLITE_OMIT_FLOATING_POINT is defined, then none of the floating point
 ** conversions will work.
@@ -517,8 +523,18 @@ void sqlite3_str_vappendf(
         }
         if( xtype==etGENERIC && precision>0 ) precision--;
         testcase( precision>0xfff );
-        for(idx=precision&0xfff, rounder=0.5; idx>0; idx--, rounder*=0.1){}
-        if( xtype==etFLOAT ) realvalue += rounder;
+        idx = precision & 0xfff;
+        rounder = arRound[idx%10];
+        while( idx>=10 ){ rounder *= 1.0e-10; idx -= 10; }
+        if( xtype==etFLOAT ){
+          double rx = (double)realvalue;
+          sqlite3_uint64 u;
+          int ex;
+          memcpy(&u, &rx, sizeof(u));
+          ex = -1023 + (int)((u>>52)&0x7ff);
+          if( precision+(ex/3) < 15 ) rounder += realvalue*3e-16;
+          realvalue += rounder;
+        }
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
         if( sqlite3IsNaN((double)realvalue) ){

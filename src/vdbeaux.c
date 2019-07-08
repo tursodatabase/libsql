@@ -3654,7 +3654,7 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
 ** routine so that in most cases the overhead of moving the stack pointer
 ** is avoided.
 */ 
-static u32 SQLITE_NOINLINE serialGet(
+static u32 serialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
@@ -3686,7 +3686,7 @@ static u32 SQLITE_NOINLINE serialGet(
     assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
     swapMixedEndianFloat(x);
     memcpy(&pMem->u.r, &x, sizeof(x));
-    pMem->flags = sqlite3IsNaN(pMem->u.r) ? MEM_Null : MEM_Real;
+    pMem->flags = IsNaN(x) ? MEM_Null : MEM_Real;
   }
   return 8;
 }

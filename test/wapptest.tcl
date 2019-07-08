@@ -288,7 +288,7 @@ proc slave_test_done {name rc} {
 
   wapptest_output $msg
   if {[info exists G(test.$name.errmsg)] && $G(test.$name.errmsg)!=""} {
-    wapptest_output "    $G(test.$config.errmsg)"
+    wapptest_output "    $G(test.$name.errmsg)"
   }
 }
 

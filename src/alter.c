@@ -728,6 +728,29 @@ static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
 }
 
 /*
+** Walker callback used by sqlite3RenameExprUnmap().
+*/
+static int renameUnmapSelectCb(Walker *pWalker, Select *p){
+  Parse *pParse = pWalker->pParse;
+  int i;
+  if( ALWAYS(p->pEList) ){
+    ExprList *pList = p->pEList;
+    for(i=0; i<pList->nExpr; i++){
+      if( pList->a[i].zName ){
+        sqlite3RenameTokenRemap(pParse, 0, (void*)pList->a[i].zName);
+      }
+    }
+  }
+  if( ALWAYS(p->pSrc) ){  /* Every Select as a SrcList, even if it is empty */
+    SrcList *pSrc = p->pSrc;
+    for(i=0; i<pSrc->nSrc; i++){
+      sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
 ** Remove all nodes that are part of expression pExpr from the rename list.
 */
 void sqlite3RenameExprUnmap(Parse *pParse, Expr *pExpr){
@@ -735,6 +758,7 @@ void sqlite3RenameExprUnmap(Parse *pParse, Expr *pExpr){
   memset(&sWalker, 0, sizeof(Walker));
   sWalker.pParse = pParse;
   sWalker.xExprCallback = renameUnmapExprCb;
+  sWalker.xSelectCallback = renameUnmapSelectCb;
   sqlite3WalkExpr(&sWalker, pExpr);
 }
 

@@ -92,6 +92,8 @@ do_test quote-1.6 {
 # SQLite can load such a schema from disk.
 #
 reset_db 
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 0
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_execsql_test 2.0 {
   CREATE TABLE t1(x, y, z);
 }

@@ -505,6 +505,7 @@ void devsym_register(int iDeviceChar, int iSectorSize){
 
 void devsym_unregister(){
   sqlite3_vfs_unregister(&devsym_vfs);
+  sqlite3_vfs_unregister(&writecrash_vfs);
   g.pVfs = 0;
   g.iDeviceChar = 0;
   g.iSectorSize = 0;

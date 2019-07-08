@@ -1562,6 +1562,8 @@ struct sqlite3 {
 #define SQLITE_LegacyAlter    0x04000000  /* Legacy ALTER TABLE behaviour */
 #define SQLITE_NoSchemaError  0x08000000  /* Do not report schema parse errors*/
 #define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
+#define SQLITE_DqsDDL         0x20000000  /* dbl-quoted strings allowed in DDL*/
+#define SQLITE_DqsDML         0x40000000  /* dbl-quoted strings allowed in DML*/
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)
@@ -2536,7 +2538,7 @@ struct Expr {
 #define EP_Generic   0x000200 /* Ignore COLLATE or affinity on this tree */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
 #define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
+#define EP_Skip      0x001000 /* Operator does not contribute to affinity */
 #define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
 #define EP_Win       0x008000 /* Contains window functions */
@@ -2814,8 +2816,7 @@ struct NameContext {
 #define NC_Complex   0x2000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x4000  /* Window functions are allowed here */
 #define NC_HasWin    0x8000  /* One or more window functions seen */
-#define NC_NoDblQStr 0x10000 /* Do not allow double-quoted string hack.
-                             ** Mnemonic: "NO DouBLe-Quoted STRings" */
+#define NC_IsDDL    0x10000  /* Resolving names in a CREATE statement */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3826,8 +3827,12 @@ void sqlite3MutexWarnOnContention(sqlite3_mutex*);
 #endif
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
+# define EXP754 (((u64)0x7ff)<<52)
+# define MAN754 ((((u64)1)<<52)-1)
+# define IsNaN(X) (((X)&EXP754)==EXP754 && ((X)&MAN754)!=0)
   int sqlite3IsNaN(double);
 #else
+# define IsNaN(X)         0
 # define sqlite3IsNaN(X)  0
 #endif
 
@@ -3891,6 +3896,7 @@ Expr *sqlite3ExprSimplifiedAndOr(Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
+void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
 void sqlite3ExprListSetSortOrder(ExprList*,int);
@@ -4199,6 +4205,7 @@ int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
 int sqlite3FixExprList(DbFixer*, ExprList*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
+int sqlite3RealSameAsInt(double,sqlite3_int64);
 int sqlite3AtoF(const char *z, double*, int, u8);
 int sqlite3GetInt32(const char *, int*);
 int sqlite3Atoi(const char*);

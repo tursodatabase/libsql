@@ -277,6 +277,21 @@ static VdbeCursor *allocateCursor(
 }
 
 /*
+** The string in pRec is known to look like an integer and to have a
+** floating point value of rValue.  Return true and set *piValue to the
+** integer value if the string is in range to be an integer.  Otherwise,
+** return false.
+*/
+static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
+  i64 iValue = (double)rValue;
+  if( sqlite3RealSameAsInt(rValue,iValue) ){
+    *piValue = iValue;
+    return 1;
+  }
+  return 0==sqlite3Atoi64(pRec->z, piValue, pRec->n, pRec->enc);
+}
+
+/*
 ** Try to convert a value into a numeric representation if we can
 ** do so without loss of information.  In other words, if the string
 ** looks like a number, convert it into a number.  If it does not
@@ -293,12 +308,12 @@ static VdbeCursor *allocateCursor(
 */
 static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
-  i64 iValue;
   u8 enc = pRec->enc;
+  int rc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
-  if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
-  if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
-    pRec->u.i = iValue;
+  rc = sqlite3AtoF(pRec->z, &rValue, pRec->n, enc);
+  if( rc<=0 ) return;
+  if( rc==1 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
   }else{
     pRec->u.r = rValue;
@@ -398,13 +413,21 @@ void sqlite3ValueApplyAffinity(
 ** accordingly.
 */
 static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
+  int rc;
+  sqlite3_int64 ix;
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 );
   assert( (pMem->flags & (MEM_Str|MEM_Blob))!=0 );
   ExpandBlob(pMem);
-  if( sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc)==0 ){
-    return 0;
-  }
-  if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==0 ){
+  rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+  if( rc<=0 ){
+    if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
+      pMem->u.i = ix;
+      return MEM_Int;
+    }else{
+      return MEM_Real;
+    }
+  }else if( rc==1 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)==0 ){
+    pMem->u.i = ix;
     return MEM_Int;
   }
   return MEM_Real;
@@ -1566,7 +1589,6 @@ case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
 case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
-  char bIntint;   /* Started out as two integer operands */
   u16 flags;      /* Combined MEM_* flags from both inputs */
   u16 type1;      /* Numeric type of left operand */
   u16 type2;      /* Numeric type of right operand */
@@ -1584,7 +1606,6 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   if( (type1 & type2 & MEM_Int)!=0 ){
     iA = pIn1->u.i;
     iB = pIn2->u.i;
-    bIntint = 1;
     switch( pOp->opcode ){
       case OP_Add:       if( sqlite3AddInt64(&iB,iA) ) goto fp_math;  break;
       case OP_Subtract:  if( sqlite3SubInt64(&iB,iA) ) goto fp_math;  break;
@@ -1607,7 +1628,6 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   }else if( (flags & MEM_Null)!=0 ){
     goto arithmetic_result_is_null;
   }else{
-    bIntint = 0;
 fp_math:
     rA = sqlite3VdbeRealValue(pIn1);
     rB = sqlite3VdbeRealValue(pIn2);
@@ -1639,9 +1659,6 @@ fp_math:
     }
     pOut->u.r = rB;
     MemSetTypeFlag(pOut, MEM_Real);
-    if( ((type1|type2)&(MEM_Real|MEM_IntReal))==0 && !bIntint ){
-      sqlite3VdbeIntegerAffinity(pOut);
-    }
 #endif
   }
   break;
@@ -3736,13 +3753,14 @@ case OP_OpenEphemeral: {
     /* If the ephermeral table is already open, erase all existing content
     ** so that the table is empty again, rather than creating a new table. */
     assert( pCx->isEphemeral );
+    pCx->seqCount = 0;
+    pCx->cacheStatus = CACHE_STALE;
     if( pCx->pBtx ){
       rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
     }
   }else{
     pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
-    pCx->nullRow = 1;
     pCx->isEphemeral = 1;
     rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
                           BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
@@ -3778,6 +3796,7 @@ case OP_OpenEphemeral: {
     pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   }
   if( rc ) goto abort_due_to_error;
+  pCx->nullRow = 1;
   break;
 }
 
