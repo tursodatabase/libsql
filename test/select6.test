@@ -12,7 +12,6 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.29 2009/01/09 01:12:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -613,5 +612,21 @@ do_execsql_test 11.100 {
     FROM ( SELECT count(*) AS cnt FROM t1 );
 } {{}}
 
+# 2019-05-29 ticket https://www.sqlite.org/src/info/c41afac34f15781f
+# A LIMIT clause in a subquery is incorrectly applied to a subquery.
+#
+do_execsql_test 12.100 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  CREATE TABLE t2(b);
+  INSERT INTO t2 VALUES(3);
+  SELECT * FROM (
+    SELECT * FROM (SELECT * FROM t1 LIMIT 1)
+    UNION ALL
+    SELECT * from t2);
+} {1 3}
 
 finish_test

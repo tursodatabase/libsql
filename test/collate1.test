@@ -400,5 +400,21 @@ do_execsql_test 7.2 {
     ORDER BY 1 COLLATE binary COLLATE binary COLLATE binary COLLATE nocase;
 } {abc DEF}
 
+# 2019-06-14
+# https://sqlite.org/src/info/f1580ba1b574e9e9
+#
+do_execsql_test 8.0 {
+  SELECT ' ' > char(20) COLLATE rtrim;
+} 0
+do_execsql_test 8.1 {
+  SELECT '' < char(20) COLLATE rtrim;
+} 1
+do_execsql_test 8.2 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 COLLATE RTRIM, c1 BLOB UNIQUE,
+                  PRIMARY KEY (c0, c1)) WITHOUT ROWID;
+  INSERT INTO t0 VALUES (123, 3), (' ', 1), ('	', 2), ('', 4);
+  SELECT * FROM t0 WHERE c1 = 1;
+} {{ } 1}
 
 finish_test

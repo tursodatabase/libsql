@@ -5530,6 +5530,7 @@ int sqlite3BtreeMovetoUnpacked(
           ** case this happens.  */
           void *pCellKey;
           u8 * const pCellBody = pCell - pPage->childPtrSize;
+          const int nOverrun = 18;  /* Size of the overrun padding */
           pPage->xParseCell(pPage, pCellBody, &pCur->info);
           nCell = (int)pCur->info.nKey;
           testcase( nCell<0 );   /* True if key size is 2^32 or more */
@@ -5540,13 +5541,14 @@ int sqlite3BtreeMovetoUnpacked(
             rc = SQLITE_CORRUPT_PAGE(pPage);
             goto moveto_finish;
           }
-          pCellKey = sqlite3Malloc( nCell+18 );
+          pCellKey = sqlite3Malloc( nCell+nOverrun );
           if( pCellKey==0 ){
             rc = SQLITE_NOMEM_BKPT;
             goto moveto_finish;
           }
           pCur->ix = (u16)idx;
           rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0);
+          memset(((u8*)pCellKey)+nCell,0,nOverrun); /* Fix uninit warnings */
           pCur->curFlags &= ~BTCF_ValidOvfl;
           if( rc ){
             sqlite3_free(pCellKey);

@@ -306,4 +306,25 @@ do_eqp_test 7.4 {
   `--SEARCH TABLE t4 USING INDEX t4xz (x=?)
 } 
 
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0 (c0, c1, PRIMARY KEY (c0, c1));
+  CREATE TABLE t1 (c0);
+
+  INSERT INTO t1 VALUES (2);
+
+  INSERT INTO t0 VALUES(0, 10);
+  INSERT INTO t0 VALUES(1, 10);
+  INSERT INTO t0 VALUES(2, 10);
+  INSERT INTO t0 VALUES(3, 10);
+}
+
+do_execsql_test 8.1 {
+  SELECT * FROM t0, t1 
+  WHERE (t0.c1 >= 1 OR t0.c1 < 1) AND t0.c0 IN (1, t1.c0) ORDER BY 1;
+} {
+  1 10 2
+  2 10 2
+}
+
 finish_test

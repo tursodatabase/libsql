@@ -618,10 +618,14 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
 
 #ifdef SQLITE_DEBUG
   /* Record the number of outstanding lookaside allocations in schema Tables
-  ** prior to doing any free() operations.  Since schema Tables do not use
-  ** lookaside, this number should not change. */
+  ** prior to doing any free() operations. Since schema Tables do not use
+  ** lookaside, this number should not change. 
+  **
+  ** If malloc has already failed, it may be that it failed while allocating
+  ** a Table object that was going to be marked ephemeral. So do not check
+  ** that no lookaside memory is used in this case either. */
   int nLookaside = 0;
-  if( db && (pTable->tabFlags & TF_Ephemeral)==0 ){
+  if( db && !db->mallocFailed && (pTable->tabFlags & TF_Ephemeral)==0 ){
     nLookaside = sqlite3LookasideUsed(db, 0);
   }
 #endif
@@ -3050,6 +3054,14 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     sqlite3UniqueConstraint(pParse, OE_Abort, pIndex);
     sqlite3VdbeJumpHere(v, j2);
   }else{
+    /* Most CREATE INDEX and REINDEX statements that are not UNIQUE can not
+    ** abort. The exception is if one of the indexed expressions contains a
+    ** user function that throws an exception when it is evaluated. But the
+    ** overhead of adding a statement journal to a CREATE INDEX statement is
+    ** very small (since most of the pages written do not contain content that
+    ** needs to be restored if the statement aborts), so we call 
+    ** sqlite3MayAbort() for all CREATE INDEX statements.  */
+    sqlite3MayAbort(pParse);
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
   sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);

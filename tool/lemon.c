@@ -48,6 +48,7 @@ extern int access(const char *path, int mode);
 #define MAXRHS 1000
 #endif
 
+extern void memory_error();
 static int showPrecedenceConflict = 0;
 static char *msort(char*,char**,int(*)(const char*,const char*));
 
@@ -4919,7 +4920,6 @@ char *SetNew(void){
   char *s;
   s = (char*)calloc( size, 1);
   if( s==0 ){
-    extern void memory_error();
     memory_error();
   }
   return s;

@@ -377,6 +377,7 @@ int main(int argc, char **argv){
       free(pIn);
     }
   }
+#ifdef RUSAGE_SELF
   if( eVerbosity>0 ){
     struct rusage x;
     printf("SQLite %s\n", sqlite3_sourceid());
@@ -385,6 +386,7 @@ int main(int argc, char **argv){
       printf("Maximum RSS = %ld KB\n", x.ru_maxrss);
     }
   }
+#endif
   return 0;
 }
 #endif /*STANDALONE*/

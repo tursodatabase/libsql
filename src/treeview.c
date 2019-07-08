@@ -514,7 +514,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       };
       assert( pExpr->op2==TK_IS || pExpr->op2==TK_ISNOT );
       assert( pExpr->pRight );
-      assert( pExpr->pRight->op==TK_TRUEFALSE );
+      assert( sqlite3ExprSkipCollate(pExpr->pRight)->op==TK_TRUEFALSE );
       x = (pExpr->op2==TK_ISNOT)*2 + sqlite3ExprTruthValue(pExpr->pRight);
       zUniOp = azOp[x];
       break;

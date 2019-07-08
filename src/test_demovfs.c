@@ -240,6 +240,9 @@ static int demoRead(
   if( nRead==iAmt ){
     return SQLITE_OK;
   }else if( nRead>=0 ){
+    if( nRead<iAmt ){
+      memset(&((char*)zBuf)[nRead], 0, iAmt-nRead);
+    }
     return SQLITE_IOERR_SHORT_READ;
   }
 
@@ -369,7 +372,7 @@ static int demoCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 ** No xFileControl() verbs are implemented by this VFS.
 */
 static int demoFileControl(sqlite3_file *pFile, int op, void *pArg){
-  return SQLITE_OK;
+  return SQLITE_NOTFOUND;
 }
 
 /*

@@ -849,6 +849,7 @@ static int deltaparsevtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 */
 static int deltaparsevtabClose(sqlite3_vtab_cursor *cur){
   deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
+  sqlite3_free(pCur->aDelta);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }

@@ -119,5 +119,25 @@ do_test between-1.5.3 {
   }
 } {4 2 25 27 sort t1 *}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test between-2.0 {
+  CREATE TABLE t1(x TEXT, y TEXT COLLATE nocase);
+  INSERT INTO t1 VALUES('0', 'abc');
+}
+
+foreach {tn expr res} {
+  1 "x                BETWEEN 1 AND '5'" 0
+  2 "x COLLATE binary BETWEEN 1 AND '5'" 0
+  3 "x COLLATE nocase BETWEEN 1 AND '5'" 0
+
+  4 "y                  BETWEEN 'A' AND 'B'" 1
+  5 "y COLLATE nocase   BETWEEN 'A' AND 'B'" 1
+  6 "y COLLATE binary   BETWEEN 'A' AND 'B'" 0
+  7 "(y COLLATE binary) BETWEEN 'A' AND 'B'" 0
+} {
+  set sql "SELECT $expr FROM t1"
+  do_execsql_test between-2.1.$tn $sql $res
+}
 
 finish_test

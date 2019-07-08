@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix quote
 
 # Create a table with a strange name and with strange column names.
 #
@@ -84,6 +85,60 @@ do_test quote-1.6 {
   } msg ]
   lappend r $msg
 } {0 {}}
- 
+
+#-------------------------------------------------------------------------
+# Check that it is not possible to use double-quotes for a string
+# constant in a CHECK constraint or CREATE INDEX statement. However, 
+# SQLite can load such a schema from disk.
+#
+reset_db 
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 0
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x, y, z);
+}
+foreach {tn sql errname} {
+  1 { CREATE TABLE xyz(a, b, c CHECK (c!="null") ) } null
+  2 { CREATE INDEX i2 ON t1(x, y, z||"abc") }        abc
+  3 { CREATE INDEX i3 ON t1("w") }                   w
+  4 { CREATE INDEX i4 ON t1(x) WHERE z="w" }         w
+} {
+  do_catchsql_test 2.1.$tn $sql [list 1 "no such column: $errname"]
+}
+
+do_execsql_test 2.2 {
+  PRAGMA writable_schema = 1;
+  CREATE TABLE xyz(a, b, c CHECK (c!="null") );
+  CREATE INDEX i2 ON t1(x, y, z||"abc");
+  CREATE INDEX i3 ON t1("w");
+  CREATE INDEX i4 ON t1(x) WHERE z="w";
+}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 2.3.1 {
+  INSERT INTO xyz VALUES(1, 2, 3);
+}
+do_catchsql_test 2.3.2 {
+  INSERT INTO xyz VALUES(1, 2, 'null');
+} {1 {CHECK constraint failed: xyz}}
+
+do_execsql_test 2.4 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 'w');
+  SELECT * FROM t1 WHERE z='w';
+} {4 5 w}
+do_execsql_test 2.5 {
+  SELECT sql FROM sqlite_master;
+} {
+  {CREATE TABLE t1(x, y, z)}
+  {CREATE TABLE xyz(a, b, c CHECK (c!="null") )}
+  {CREATE INDEX i2 ON t1(x, y, z||"abc")}
+  {CREATE INDEX i3 ON t1("w")}
+  {CREATE INDEX i4 ON t1(x) WHERE z="w"}
+}
+
+
 
 finish_test

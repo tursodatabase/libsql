@@ -149,6 +149,23 @@ int sqlite3MatchSpanName(
 }
 
 /*
+** Return TRUE if the double-quoted string  mis-feature should be supported.
+*/
+static int areDoubleQuotedStringsEnabled(sqlite3 *db, NameContext *pTopNC){
+  if( db->init.busy ) return 1;  /* Always support for legacy schemas */
+  if( pTopNC->ncFlags & NC_IsDDL ){
+    /* Currently parsing a DDL statement */
+    if( sqlite3WritableSchema(db) && (db->flags & SQLITE_DqsDML)!=0 ){
+      return 1;
+    }
+    return (db->flags & SQLITE_DqsDDL)!=0;
+  }else{
+    /* Currently parsing a DML statement */
+    return (db->flags & SQLITE_DqsDML)!=0;
+  }
+}
+
+/*
 ** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
 ** that name in the set of source tables in pSrcList and make the pExpr 
 ** expression node refer back to that source column.  The following changes
@@ -476,7 +493,9 @@ static int lookupName(
   */
   if( cnt==0 && zTab==0 ){
     assert( pExpr->op==TK_ID );
-    if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+    if( ExprHasProperty(pExpr,EP_DblQuoted)
+     && areDoubleQuotedStringsEnabled(db, pTopNC)
+    ){
       /* If a double-quoted identifier does not match any known column name,
       ** then treat it as a string.
       **
@@ -745,7 +764,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }else{
         is_agg = pDef->xFinalize!=0;
         if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
-          ExprSetProperty(pExpr, EP_Unlikely|EP_Skip);
+          ExprSetProperty(pExpr, EP_Unlikely);
           if( n==2 ){
             pExpr->iTable = exprProbability(pList->a[1].pExpr);
             if( pExpr->iTable<0 ){
@@ -928,11 +947,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     }
     case TK_IS:
     case TK_ISNOT: {
-      Expr *pRight;
+      Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
       assert( !ExprHasProperty(pExpr, EP_Reduced) );
       /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
       ** and "x IS NOT FALSE". */
-      if( (pRight = pExpr->pRight)->op==TK_ID ){
+      if( pRight->op==TK_ID ){
         int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
         if( pRight->op==TK_TRUEFALSE ){
@@ -1654,7 +1673,7 @@ int sqlite3ResolveExprNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
   Expr *pExpr             /* The expression to be analyzed. */
 ){
-  u16 savedHasAgg;
+  int savedHasAgg;
   Walker w;
 
   if( pExpr==0 ) return SQLITE_OK;
@@ -1768,7 +1787,7 @@ int sqlite3ResolveSelfReference(
   }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
-  sNC.ncFlags = type;
+  sNC.ncFlags = type | NC_IsDDL;
   if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
   if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);
   return rc;
