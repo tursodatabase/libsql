@@ -618,10 +618,14 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
 
 #ifdef SQLITE_DEBUG
   /* Record the number of outstanding lookaside allocations in schema Tables
-  ** prior to doing any free() operations.  Since schema Tables do not use
-  ** lookaside, this number should not change. */
+  ** prior to doing any free() operations. Since schema Tables do not use
+  ** lookaside, this number should not change. 
+  **
+  ** If malloc has already failed, it may be that it failed while allocating
+  ** a Table object that was going to be marked ephemeral. So do not check
+  ** that no lookaside memory is used in this case either. */
   int nLookaside = 0;
-  if( db && (pTable->tabFlags & TF_Ephemeral)==0 ){
+  if( db && !db->mallocFailed && (pTable->tabFlags & TF_Ephemeral)==0 ){
     nLookaside = sqlite3LookasideUsed(db, 0);
   }
 #endif
