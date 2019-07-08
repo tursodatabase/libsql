@@ -264,27 +264,31 @@ static int isLikeOrGlob(
         zNew[iTo] = 0;
         assert( iTo>0 );
 
-        /* If the RHS begins with a digit or a +/- sign, then the LHS must be
-        ** an ordinary column (not a virtual table column) with TEXT affinity.
-        ** Otherwise the LHS might be numeric and "lhs >= rhs" would be false
-        ** even though "lhs LIKE rhs" is true.  But if the RHS does not start
-        ** with a digit or +/-, then "lhs LIKE rhs" will always be false if
-        ** the LHS is numeric and so the optimization still works.
+        /* If the LHS is not an ordinary column with TEXT affinity, then the
+        ** pattern prefix boundaries (both the start and end boundaries) must
+        ** not look like a number.  Otherwise the pattern might be treated as
+        ** a number, which will invalidate the LIKE optimization.
         **
-        ** 2018-09-10 ticket c94369cae9b561b1f996d0054bfab11389f9d033
-        ** The RHS pattern must not be '/%' because the termination condition
-        ** will then become "x<'0'" and if the affinity is numeric, will then
-        ** be converted into "x<0", which is incorrect.
+        ** Getting this right has been a persistent source of bugs in the
+        ** LIKE optimization.  See, for example:
+        **    2018-09-10 https://sqlite.org/src/info/c94369cae9b561b1
+        **    2019-05-02 https://sqlite.org/src/info/b043a54c3de54b28
+        **    2019-06-10 https://sqlite.org/src/info/fd76310a5e843e07
+        **    2019-06-14 https://sqlite.org/src/info/ce8717f0885af975
         */
-        if( sqlite3Isdigit(zNew[0])
-         || zNew[0]=='-'
-         || zNew[0]=='+'
-         || zNew[iTo-1]=='0'-1
+        if( pLeft->op!=TK_COLUMN 
+         || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
+         || IsVirtual(pLeft->y.pTab)  /* Value might be numeric */
         ){
-          if( pLeft->op!=TK_COLUMN 
-           || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-           || IsVirtual(pLeft->y.pTab)  /* Value might be numeric */
-          ){
+          int isNum;
+          double rDummy;
+          isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+          if( isNum<=0 ){
+            zNew[iTo-1]++;
+            isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+            zNew[iTo-1]--;
+          }
+          if( isNum>0 ){
             sqlite3ExprDelete(db, pPrefix);
             sqlite3ValueFree(pVal);
             return 0;

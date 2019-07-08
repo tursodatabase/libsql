@@ -41,7 +41,7 @@ do_test tkt-78e04-1.3 {
   }
 } {}
 do_test tkt-78e04-1.4 {
- db eval {EXPLAIN QUERY PLAN SELECT "" FROM "" WHERE "" LIKE '1abc%';}
+ db eval {EXPLAIN QUERY PLAN SELECT "" FROM "" WHERE "" LIKE '1e5%';}
 } {/*SCAN TABLE  USING COVERING INDEX i1*/}
 do_test tkt-78e04-1.5 {
   execsql {

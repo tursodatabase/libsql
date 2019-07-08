@@ -65,7 +65,16 @@ do_test jrnlmode-1.2 {
     PRAGMA temp.journal_mode;
   } 
 } [list persist persist [temp_journal_mode persist]]
-do_test jrnlmode-1.4 {
+do_test jrnlmode-1.4a {
+  # When defensive is on, unable to set journal_mode to OFF
+  sqlite3_db_config db DEFENSIVE 1
+  execsql {
+    PRAGMA journal_mode = off;
+  } 
+} {persist}
+do_test jrnlmode-1.4b {
+  # When defensive is on, unable to set journal_mode to OFF
+  sqlite3_db_config db DEFENSIVE 0
   execsql {
     PRAGMA journal_mode = off;
   } 

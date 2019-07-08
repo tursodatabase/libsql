@@ -40,4 +40,17 @@ do_execsql_test 1.3 {
   )
 } {3}
 
+# 2019-05-15
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1),(99),('abc');
+  CREATE VIEW v1(x,y) AS SELECT x,1 FROM t1 UNION ALL SELECT x,2 FROM t1;
+  SELECT count(*) FROM v1 WHERE x<>1;
+} {4}
+do_execsql_test 2.1 {
+  SELECT count(*) FROM v1 GROUP BY y;
+} {3 3}
+
+
+
 finish_test

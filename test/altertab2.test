@@ -338,15 +338,27 @@ do_execsql_test 8.3 {
   INSERT INTO t3 VALUES(4, 5, 6);
 }
 
-do_execsql_test 8.1 {
+do_execsql_test 8.4 {
   CREATE TABLE t4(a, b);
   CREATE VIEW v4 AS SELECT * FROM t4 WHERE (a=1 AND 0) OR b=2;
 }
-do_execsql_test 8.2 {
+
+# Do not rename branches of an expression tree that is optimized out by
+# the AND optimization.
+#
+do_execsql_test 8.5 {
   ALTER TABLE t4 RENAME a TO c;
   SELECT sql FROM sqlite_master WHERE name = 'v4'
-} {{CREATE VIEW v4 AS SELECT * FROM t4 WHERE (c=1 AND 0) OR b=2}}
+} {{CREATE VIEW v4 AS SELECT * FROM t4 WHERE (a=1 AND 0) OR b=2}}
+#                "a" is not renamed to "c" ---^
+
+# 2019-06-10 https://www.sqlite.org/src/info/533010b8cacebe82
+reset_db
+do_execsql_test 8.6 {
+  CREATE TABLE t0(c0);
+  CREATE INDEX i0 ON t0(LIKELIHOOD(1,2) AND 0);
+  ALTER TABLE t0 RENAME TO t1;
+  SELECT sql FROM sqlite_master WHERE name='i0';
+} {{CREATE INDEX i0 ON "t1"(LIKELIHOOD(1,2) AND 0)}}
 
 finish_test
-
-

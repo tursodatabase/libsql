@@ -3510,6 +3510,8 @@ static const char *(azHelp[]) = {
 /* Because explain mode comes on automatically now, the ".explain" mode
 ** is removed from the help screen.  It is still supported for legacy, however */
 /*".explain ?on|off|auto?   Turn EXPLAIN output mode on or off or to automatic",*/
+  ".filectrl CMD ...        Run various sqlite3_file_control() operations",
+  "                           Run \".filectrl\" with no arguments for details",
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
   ".headers on|off          Turn display of headers on or off",
   ".help ?-all? ?PATTERN?   Show help text for PATTERN",
@@ -3627,6 +3629,8 @@ static const char *(azHelp[]) = {
 #endif
   ".tables ?TABLE?          List names of tables matching LIKE pattern TABLE",
   ".testcase NAME           Begin redirecting output to 'testcase-out.txt'",
+  ".testctrl CMD ...        Run various sqlite3_test_control() operations",
+  "                           Run \".testctrl\" with no arguments for details",
   ".timeout MS              Try opening locked tables for MS milliseconds",
   ".timer on|off            Turn SQL timer on or off",
 #ifndef SQLITE_OMIT_TRACE
@@ -4849,6 +4853,7 @@ static void output_reset(ShellState *p){
       sqlite3_free(zCmd);
       outputModePop(p);
       p->doXdgOpen = 0;
+      sqlite3_sleep(100);
     }
 #endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
   }
@@ -6557,7 +6562,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     char *z = azArg[i];
     int n;
     if( z[0]=='-' && z[1]=='-' ) z++;
-    n = strlen(z);
+    n = strlen30(z);
     if( n<=17 && memcmp("-freelist-corrupt", z, n)==0 ){
       bFreelist = 0;
     }else
@@ -7070,15 +7075,19 @@ static int do_meta_command(char *zLine, ShellState *p){
       const char *zName;
       int op;
     } aDbConfig[] = {
-        { "enable_fkey",      SQLITE_DBCONFIG_ENABLE_FKEY            },
-        { "enable_trigger",   SQLITE_DBCONFIG_ENABLE_TRIGGER         },
-        { "fts3_tokenizer",   SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER  },
-        { "load_extension",   SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION  },
-        { "no_ckpt_on_close", SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE       },
-        { "enable_qpsg",      SQLITE_DBCONFIG_ENABLE_QPSG            },
-        { "trigger_eqp",      SQLITE_DBCONFIG_TRIGGER_EQP            },
-        { "reset_database",   SQLITE_DBCONFIG_RESET_DATABASE         },
-        { "defensive",        SQLITE_DBCONFIG_DEFENSIVE              },
+        { "enable_fkey",        SQLITE_DBCONFIG_ENABLE_FKEY           },
+        { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
+        { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+        { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
+        { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
+        { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
+        { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
+        { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
+        { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
+        { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
+        { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
+        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
+        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
     };
     int ii, v;
     open_db(p, 0);
@@ -7275,6 +7284,127 @@ static int do_meta_command(char *zLine, ShellState *p){
     expertDotCommand(p, azArg, nArg);
   }else
 #endif
+
+  if( c=='f' && strncmp(azArg[0], "filectrl", n)==0 ){
+    static const struct {
+       const char *zCtrlName;   /* Name of a test-control option */
+       int ctrlCode;            /* Integer code for that option */
+       const char *zUsage;      /* Usage notes */
+    } aCtrl[] = {
+      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
+      { "chunk_size",     SQLITE_FCNTL_CHUNK_SIZE,      "SIZE"           },
+   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
+      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
+      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
+   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
+      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+      { "has_moved",      SQLITE_FCNTL_HAS_MOVED,       ""               },  
+      { "lock_timeout",   SQLITE_FCNTL_LOCK_TIMEOUT,    "MILLISEC"       },
+    };
+    int filectrl = -1;
+    int iCtrl = -1;
+    sqlite3_int64 iRes = 0;  /* Integer result to display if rc2==1 */
+    int isOk = 0;            /* 0: usage  1: %lld  2: no-result */
+    int n2, i;
+    const char *zCmd = 0;
+
+    open_db(p, 0);
+    zCmd = nArg>=2 ? azArg[1] : "help";
+
+    /* The argument can optionally begin with "-" or "--" */
+    if( zCmd[0]=='-' && zCmd[1] ){
+      zCmd++;
+      if( zCmd[0]=='-' && zCmd[1] ) zCmd++;
+    }
+
+    /* --help lists all file-controls */
+    if( strcmp(zCmd,"help")==0 ){
+      utf8_printf(p->out, "Available file-controls:\n");
+      for(i=0; i<ArraySize(aCtrl); i++){
+        utf8_printf(p->out, "  .filectrl %s %s\n",
+                    aCtrl[i].zCtrlName, aCtrl[i].zUsage);
+      }
+      rc = 1;
+      goto meta_command_exit;
+    }
+
+    /* convert filectrl text option to value. allow any unique prefix
+    ** of the option name, or a numerical value. */
+    n2 = strlen30(zCmd);
+    for(i=0; i<ArraySize(aCtrl); i++){
+      if( strncmp(zCmd, aCtrl[i].zCtrlName, n2)==0 ){
+        if( filectrl<0 ){
+          filectrl = aCtrl[i].ctrlCode;
+          iCtrl = i;
+        }else{
+          utf8_printf(stderr, "Error: ambiguous file-control: \"%s\"\n"
+                              "Use \".filectrl --help\" for help\n", zCmd);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }
+    }
+    if( filectrl<0 ){
+      utf8_printf(stderr,"Error: unknown file-control: %s\n"
+                         "Use \".filectrl --help\" for help\n", zCmd);
+    }else{
+      switch(filectrl){
+        case SQLITE_FCNTL_SIZE_LIMIT: {
+          if( nArg!=2 && nArg!=3 ) break;
+          iRes = nArg==3 ? integerValue(azArg[2]) : -1;
+          sqlite3_file_control(p->db, 0, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
+          isOk = 1;
+          break;
+        }
+        case SQLITE_FCNTL_LOCK_TIMEOUT:
+        case SQLITE_FCNTL_CHUNK_SIZE: {
+          int x;
+          if( nArg!=3 ) break;
+          x = (int)integerValue(azArg[2]);
+          sqlite3_file_control(p->db, 0, filectrl, &x);
+          isOk = 2;
+          break;
+        }
+        case SQLITE_FCNTL_PERSIST_WAL:
+        case SQLITE_FCNTL_POWERSAFE_OVERWRITE: {
+          int x;
+          if( nArg!=2 && nArg!=3 ) break;
+          x = nArg==3 ? booleanValue(azArg[2]) : -1;
+          sqlite3_file_control(p->db, 0, filectrl, &x);
+          iRes = x;
+          isOk = 1;
+          break;
+        }
+        case SQLITE_FCNTL_HAS_MOVED: {
+          int x;
+          if( nArg!=2 ) break;
+          sqlite3_file_control(p->db, 0, filectrl, &x);
+          iRes = x;
+          isOk = 1;
+          break;
+        }
+        case SQLITE_FCNTL_TEMPFILENAME: {
+          char *z = 0;
+          if( nArg!=2 ) break;
+          sqlite3_file_control(p->db, 0, filectrl, &z);
+          if( z ){
+            utf8_printf(p->out, "%s\n", z);
+            sqlite3_free(z);
+          }
+          isOk = 2;
+          break;
+        }
+      }
+    }
+    if( isOk==0 && iCtrl>=0 ){
+      utf8_printf(p->out, "Usage: .filectrl %s %s\n", zCmd,aCtrl[iCtrl].zUsage);
+      rc = 1;
+    }else if( isOk==1 ){
+      char zBuf[100];
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%lld", iRes);
+      raw_printf(p->out, "%s\n", zBuf);
+    }
+  }else
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
     ShellState data;

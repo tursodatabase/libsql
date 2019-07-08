@@ -715,5 +715,13 @@ do_execsql_test view-26.0 {
   1 1 2 2 
   1 1 3 3
 }
+do_execsql_test view-26.1 {
+  WITH v17(x,y) AS (SELECT max(a), min(b) FROM t16 GROUP BY c)
+  SELECT * FROM v17 AS one, v17 AS two WHERE one.x=1;
+} {
+  1 1 1 1 
+  1 1 2 2 
+  1 1 3 3
+}
 
 finish_test
