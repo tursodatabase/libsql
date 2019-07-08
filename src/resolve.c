@@ -818,7 +818,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
          && sqlite3Config.bInternalFunctions==0
         ){
           /* Internal-use-only functions are disallowed unless the
-          ** SQL is being compiled using sqlite3NestedParse() */
+          ** SQL is being compiled using sqlite3NestedParse().  The
+          ** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test-control will override
+          ** this restriction for testing purposes. */
           no_such_func = 1;
           pDef = 0;
         }

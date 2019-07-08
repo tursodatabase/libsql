@@ -1271,7 +1271,9 @@ static void renameParseCleanup(Parse *pParse){
 /*
 ** SQL function:
 **
-**     sqlite_rename_column(zSql, iCol, bQuote, zNew, zTable, zOld)
+**     sqlite_rename_column(...)
+**
+** The function requires exactly 10 arguments:
 **
 **   0. zSql:     SQL statement to rewrite
 **   1. type:     Type of object ("table", "view" etc.)
@@ -1292,7 +1294,9 @@ static void renameParseCleanup(Parse *pParse){
 **
 ** This function is used internally by the ALTER TABLE RENAME COLUMN command.
 ** It is only accessible to SQL created using sqlite3NestedParse().  It is
-** not reachable from ordinary SQL passed into sqlite3_prepare().
+** not reachable from ordinary SQL passed into sqlite3_prepare().  Except,
+** this function is reachable for testing purposes if the
+** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test-control is engaged.
 */
 static void renameColumnFunc(
   sqlite3_context *context,
