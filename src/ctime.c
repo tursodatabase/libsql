@@ -14,7 +14,7 @@
 ** SQLite was built with.
 */
 
-#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS /* IMP: R-16824-07538 */
 
 /*
 ** Include the configuration header output by 'configure' if we're using the

@@ -387,20 +387,17 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   ** handle the rounding directly,
   ** otherwise use printf.
   */
-  if( n==0 && r>=0 && r<LARGEST_INT64-1 ){
-    r = (double)((sqlite_int64)(r+0.5));
-  }else if( n==0 && r<0 && (-r)<LARGEST_INT64-1 ){
-    r = -(double)((sqlite_int64)((-r)+0.5));
+  if( r<-4503599627370496.0 || r>+4503599627370496.0 ){
+    /* The value has no fractional part so there is nothing to round */
+  }else if( n==0 ){  
+    r = (double)((sqlite_int64)(r+(r<0?-0.5:+0.5)));
   }else{
     zBuf = sqlite3_mprintf("%.*f",n,r);
     if( zBuf==0 ){
       sqlite3_result_error_nomem(context);
       return;
     }
-    if( !sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8) ){
-      assert( sqlite3_strglob("*Inf", zBuf)==0 );
-      r = zBuf[0]=='-' ? -HUGE_VAL : +HUGE_VAL;
-    } 
+    sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8);
     sqlite3_free(zBuf);
   }
   sqlite3_result_double(context, r);

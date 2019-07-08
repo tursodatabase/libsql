@@ -734,6 +734,20 @@ do_execsql_test in-16.2 {
   ORDER BY a DESC, b;
 } {}
 
-
+# 2019-06-11
+# https://www.sqlite.org/src/info/57353f8243c637c0
+#
+do_execsql_test in-17.1 {
+  SELECT 1 IN ('1');
+} 0
+do_execsql_test in-17.2 {
+  SELECT 1 IN ('1' COLLATE nocase);
+} 0
+do_execsql_test in-17.3 {
+  SELECT 1 IN (CAST('1' AS text));
+} 0
+do_execsql_test in-17.4 {
+  SELECT 1 IN (CAST('1' AS text) COLLATE nocase);
+} 0
 
 finish_test
