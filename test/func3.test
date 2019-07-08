@@ -153,6 +153,19 @@ do_test func3-5.39 {
   db eval {EXPLAIN SELECT unlikely(min(1.0+'2.0',4*11))}
 } [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
 
+# Unlikely() does not preserve the affinity of X.
+# ticket https://www.sqlite.org/src/tktview/0c620df60b
+#
+do_execsql_test func3-5.40 {
+  SELECT likely(CAST(1 AS INT))=='1';
+} 0
+do_execsql_test func3-5.41 {
+  SELECT unlikely(CAST(1 AS INT))=='1';
+} 0
+do_execsql_test func3-5.41 {
+  SELECT likelihood(CAST(1 AS INT),0.5)=='1';
+} 0
+
 
 # EVIDENCE-OF: R-23735-03107 The likely(X) function returns the argument
 # X unchanged.

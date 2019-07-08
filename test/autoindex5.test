@@ -123,6 +123,20 @@ do_execsql_test 2.1 {
       SELECT sum(z) FROM vvv WHERE x='aaa'
   ) FROM one;
 } {8.0}
+do_execsql_test 2.2 {
+  DROP TABLE t1;
+  CREATE TABLE t1(aaa);
+  INSERT INTO t1(aaa) VALUES(9);
+  SELECT (
+    SELECT aaa FROM t1 GROUP BY (
+      SELECT bbb FROM (
+        SELECT ccc AS bbb FROM (
+           SELECT 1 ccc
+        ) WHERE rowid IS NOT 1
+      ) WHERE bbb = 1
+    )
+  );
+} {9}
 
 # Ticket https://www.sqlite.org/src/info/787fa716be3a7f65
 # Segfault due to multiple uses of the same subquery where the

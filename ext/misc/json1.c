@@ -1123,7 +1123,7 @@ static JsonNode *jsonLookupStep(
       u32 iStart, iLabel;
       JsonNode *pNode;
       iStart = jsonParseAddNode(pParse, JSON_OBJECT, 2, 0);
-      iLabel = jsonParseAddNode(pParse, JSON_STRING, i, zPath);
+      iLabel = jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
       zPath += i;
       pNode = jsonLookupAppend(pParse, zPath, pApnd, pzErr);
       if( pParse->oom ) return 0;

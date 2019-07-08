@@ -46,10 +46,9 @@
 #define PragTyp_WAL_AUTOCHECKPOINT            38
 #define PragTyp_WAL_CHECKPOINT                39
 #define PragTyp_ACTIVATE_EXTENSIONS           40
-#define PragTyp_HEXKEY                        41
-#define PragTyp_KEY                           42
-#define PragTyp_LOCK_STATUS                   43
-#define PragTyp_STATS                         44
+#define PragTyp_KEY                           41
+#define PragTyp_LOCK_STATUS                   42
+#define PragTyp_STATS                         43
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -322,12 +321,12 @@ static const PragmaName aPragmaName[] = {
 #endif
 #if defined(SQLITE_HAS_CODEC)
  {/* zName:     */ "hexkey",
-  /* ePragTyp:  */ PragTyp_HEXKEY,
+  /* ePragTyp:  */ PragTyp_KEY,
   /* ePragFlg:  */ 0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 2 },
  {/* zName:     */ "hexrekey",
-  /* ePragTyp:  */ PragTyp_HEXKEY,
+  /* ePragTyp:  */ PragTyp_KEY,
   /* ePragFlg:  */ 0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 3 },
