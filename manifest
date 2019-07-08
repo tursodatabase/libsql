@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\s[28196d89]\scaused\sto\sfail.
-D 2019-07-08T13:45:02.303
+C Fix\sdbfuzz2\sso\sthat\sit\swill\scompile\son\ssystems\sthat\sdo\snot\ssupport\sgetrlimit().
+D 2019-07-08T18:35:51.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,7 +795,7 @@ F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test e32d14465f1c77712896fda6a1ccc0f037b481c191c1696a9c44f6c9e4964faf
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 6c355cf70c4a308b1b84a11a65282bcac5b4038db77de5cfc8ad080ef371f109
+F test/dbfuzz2.c b93db9056ad057733463ba333f89d2d195a95155805065c5962422955d7fb011
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test cd83aa623b8aab477269bc94cf8aa90c1e195a144561dd04a1620770aaa8524e
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1831,7 +1831,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28196d894ac9fad9d8f877c7bf17ec9d299d12acdcc942f9ea0783777b14fdc5
-R 82e16c8e60b5eda4b2ce81c779dcc78d
-U dan
-Z 674e911c929b37c09c0bfdce73560c2c
+P 8fb0c6d5a38e77aa4c5f394fb8af1b0c7c6a4790e932aabc213a3078ee9acaf6
+R dcf77f4d7d0214b8fb64b9a4c8c10b8b
+U drh
+Z 19085f878a144e5e0a91542256409ad0
