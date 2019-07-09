@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\sin\swindowfault.test.
-D 2019-07-09T12:03:21.151
+C Update\srtree.c\sso\sthat\sSQLITE_DEBUG\sis\srequired\sto\sturn\son\sassert()\sstatements,\seven\sif\sit\sis\scompiled\sseparately\sfrom\sthe\samalgamation.
+D 2019-07-09T17:36:26.681
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -376,7 +376,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c c591164125808f8bba9659e92665b78412cd263e654b6f05294f3a8da7cdd9fb
-F ext/rtree/rtree.c f2ce90120f3e2e01f8a510a227cafbea224c08ba2bf6809b0139c671de2873dc
+F ext/rtree/rtree.c 78c0d989c32e5baac471f0463e83cda5006c7e71ded39d633b5fc001a301a26e
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 7573134f1b4f59df36c1b0a6de51268fd3b9c714d91f3811482263e734e416ea
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
@@ -1831,7 +1831,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36295dcebcb5487f2a462eabb41900ac28b8e839898ef0fae0aa4730bf9b0671
-R 5293da0dd88dc47f69a6050c0e30a3ba
+P 47010bf17cb080cc1c693c84d16b986ea4addf9c54bd7e22de1e0f6b555ea9d1
+R 91e4e80386bf036e5000c498446cc27b
 U dan
-Z 4096adedddf77a70cc3d742cdbc5f76a
+Z 1932317a5116a96fbe1bbfd4bfa15262
