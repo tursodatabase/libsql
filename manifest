@@ -1,5 +1,5 @@
-C Fix\sdbfuzz2\sso\sthat\sit\swill\scompile\son\ssystems\sthat\sdo\snot\ssupport\sgetrlimit().
-D 2019-07-08T18:35:51.425
+C Fix\sa\stest\sscript\sproblem\sin\swindowfault.test.
+D 2019-07-09T12:03:21.151
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1711,7 +1711,7 @@ F test/window8.test df187dc19921f7be0ab709d531d681bd80ccaac96a913a89ecee8b272b91
 F test/window9.test 06495ac733843849b1fca8a79d13ba330d04aba02099703198af2ba7e231f90c
 F test/windowerr.tcl abf4d6d0c6d360213af98ed7d538295d905689e83692106f3ece0e3afb9d7f36
 F test/windowerr.test 675b5e6debfc9370bfacb0b91e2a93a8923512f92600b16f4ea70a1cd9b8e6e4
-F test/windowfault.test 16e906a2c4110c88372ff4bd5de59ac7397ec2f025912eff8e5677eedd126898
+F test/windowfault.test 403693d7d951c5473f052f7ecddb61ed15ac9d212f238b8904ea270ba90f83e5
 F test/with1.test d32792084dcb5f6c047d77bb8a032822ef9fe050ade07d0aeffa37753a05e3c9
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test b5f1372097690c6ef84db2f13fc7e64a88c7263c3f88493605f90597e8a68d45
@@ -1831,7 +1831,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8fb0c6d5a38e77aa4c5f394fb8af1b0c7c6a4790e932aabc213a3078ee9acaf6
-R dcf77f4d7d0214b8fb64b9a4c8c10b8b
-U drh
-Z 19085f878a144e5e0a91542256409ad0
+P 36295dcebcb5487f2a462eabb41900ac28b8e839898ef0fae0aa4730bf9b0671
+R 5293da0dd88dc47f69a6050c0e30a3ba
+U dan
+Z 4096adedddf77a70cc3d742cdbc5f76a
