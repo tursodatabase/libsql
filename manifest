@@ -1,5 +1,5 @@
-C Update\srtree.c\sso\sthat\sSQLITE_DEBUG\sis\srequired\sto\sturn\son\sassert()\sstatements,\seven\sif\sit\sis\scompiled\sseparately\sfrom\sthe\samalgamation.
-D 2019-07-09T17:36:26.681
+C Add\sthe\s"LL"\ssuffix\son\sa\spair\sof\slarger\sinteger\sliterals,\sfor\scompatibility\nwith\solder\sC\scompilers.
+D 2019-07-09T23:35:50.948
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
 F src/vdbeaux.c 3a803d75875031309204df90977059b12ffb706d16b4baa5e2d99f4353962582
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
-F src/vdbemem.c 9ee3c0373bfc05dc8bf5307a4a92be6bea3055928c4846fdced7e708993b2d6d
+F src/vdbemem.c f6f277d17d50972571d1394535d4c3d156fdea871d8f327f5b9479984054015a
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
@@ -1831,7 +1831,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47010bf17cb080cc1c693c84d16b986ea4addf9c54bd7e22de1e0f6b555ea9d1
-R 91e4e80386bf036e5000c498446cc27b
-U dan
-Z 1932317a5116a96fbe1bbfd4bfa15262
+P b6e17f0139482a22c2fc84552767bc9a293b282499e3a790de069e0e84455fb2
+R 3dc95c8af87e7b557da20a5426ebc03a
+U drh
+Z 9df574be29bd88e38e7afa2c826b670f
