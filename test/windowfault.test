@@ -209,6 +209,7 @@ proc tmpread_injectstop {} {
   return $ret
 }
 
+set L [db eval {SELECT 0.0 FROM t}]
 do_faultsim_test 9 -end 25 -faults tmpread -body {
   execsql {
     SELECT sum(y) OVER win FROM t
@@ -217,7 +218,7 @@ do_faultsim_test 9 -end 25 -faults tmpread -body {
     )
   }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result [list 0 $::L]
 }
 
 catch {db close}
