@@ -182,9 +182,11 @@ impl fmt::Display for Error {
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType(i, ref name, ref t) => {
-                write!(f, "Invalid column type {} at index: {}, name: {}", t, i, name)
-            }
+            Error::InvalidColumnType(i, ref name, ref t) => write!(
+                f,
+                "Invalid column type {} at index: {}, name: {}",
+                t, i, name
+            ),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
 
             #[cfg(feature = "functions")]
@@ -309,7 +311,7 @@ macro_rules! check {
     ($funcall:expr) => {{
         let rc = $funcall;
         if rc != crate::ffi::SQLITE_OK {
-            Err(crate::error::error_from_sqlite_code(rc, None))?;
+            return Err(crate::error::error_from_sqlite_code(rc, None).into());
         }
     }};
 }
