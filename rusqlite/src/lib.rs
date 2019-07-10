@@ -966,23 +966,24 @@ mod test {
         // statement first.
         let raw_stmt = {
             use super::str_to_cstring;
-            use std::mem;
+            use std::mem::MaybeUninit;
             use std::os::raw::c_int;
             use std::ptr;
 
             let raw_db = db.db.borrow_mut().db;
             let sql = "SELECT 1";
-            let mut raw_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
+            let mut raw_stmt = MaybeUninit::uninit();
             let rc = unsafe {
                 ffi::sqlite3_prepare_v2(
                     raw_db,
                     str_to_cstring(sql).unwrap().as_ptr(),
                     (sql.len() + 1) as c_int,
-                    &mut raw_stmt,
+                    raw_stmt.as_mut_ptr(),
                     ptr::null_mut(),
                 )
             };
             assert_eq!(rc, ffi::SQLITE_OK);
+            let raw_stmt: *mut ffi::sqlite3_stmt = unsafe { raw_stmt.assume_init() };
             raw_stmt
         };
 
@@ -1339,7 +1340,6 @@ mod test {
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
                 assert_eq!(err.code, ErrorCode::OperationInterrupted);
-                return;
             }
             err => {
                 panic!("Unexpected error {}", err);

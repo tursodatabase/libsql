@@ -46,7 +46,10 @@ impl RawStatement {
             let ptr = ffi::sqlite3_column_name(self.0, idx);
             // If ptr is null here, it's an OOM, so there's probably nothing
             // meaningful we can do. Just assert instead of returning None.
-            assert!(!ptr.is_null(), "Null pointer from sqlite3_column_name: Out of memory?");
+            assert!(
+                !ptr.is_null(),
+                "Null pointer from sqlite3_column_name: Out of memory?"
+            );
             Some(CStr::from_ptr(ptr))
         }
     }

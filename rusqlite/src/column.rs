@@ -141,7 +141,9 @@ mod test {
             "BEGIN;
              CREATE TABLE foo(x INTEGER, y TEXT);
              INSERT INTO foo VALUES(4, NULL);
-             END;").unwrap();
+             END;",
+        )
+        .unwrap();
         let mut stmt = db.prepare("SELECT x as renamed, y FROM foo").unwrap();
         let mut rows = stmt.query(crate::NO_PARAMS).unwrap();
         let row = rows.next().unwrap().unwrap();

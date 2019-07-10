@@ -688,9 +688,9 @@ mod test {
     use std::f64::EPSILON;
     use std::os::raw::c_double;
 
-    use crate::functions::{Aggregate, Context};
     #[cfg(feature = "window")]
     use crate::functions::WindowAggregate;
+    use crate::functions::{Aggregate, Context};
     use crate::{Connection, Error, Result, NO_PARAMS};
 
     fn half(ctx: &Context<'_>) -> Result<c_double> {
