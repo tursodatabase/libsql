@@ -63,21 +63,26 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
       if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
        assert( pExpr->x.pList==0 || pExpr->pRight==0 );
       if( pExpr->pRight ){
+        assert( !ExprHasProperty(pExpr, EP_WinFunc|EP_Filter) );
         pExpr = pExpr->pRight;
         continue;
       }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+        assert( !ExprHasProperty(pExpr, EP_WinFunc|EP_Filter) );
         if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
-      }else if( pExpr->x.pList ){
-        if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
-      }
+      }else{
+        if( pExpr->x.pList ){
+          if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+        }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      if( ExprHasProperty(pExpr, EP_WinFunc) ){
-        if( walkWindowList(pWalker, pExpr->y.pWin) ) return WRC_Abort;
-      }
-      if( ExprHasProperty(pExpr, EP_Filter) ){
-        if( walkExpr(pWalker, pExpr->y.pFilter) ) return WRC_Abort;
-      }
+        if( ExprHasProperty(pExpr, EP_WinFunc|EP_Filter) ){
+          if( ExprHasProperty(pExpr, EP_WinFunc) ){
+            if( walkWindowList(pWalker, pExpr->y.pWin) ) return WRC_Abort;
+          }else if( ExprHasProperty(pExpr, EP_Filter) ){
+            if( walkExpr(pWalker, pExpr->y.pFilter) ) return WRC_Abort;
+          }
+        }
 #endif
+      }
     }
     break;
   }

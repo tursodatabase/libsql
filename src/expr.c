@@ -1040,21 +1040,25 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     assert( p->x.pList==0 || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
     if( p->pRight ){
+      assert( !ExprHasProperty(p, (EP_WinFunc|EP_Filter)) );
       sqlite3ExprDeleteNN(db, p->pRight);
     }else if( ExprHasProperty(p, EP_xIsSelect) ){
+      assert( !ExprHasProperty(p, (EP_WinFunc|EP_Filter)) );
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
-    }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-    if( ExprHasProperty(p, EP_WinFunc) ){
-      assert( p->op==TK_FUNCTION && !ExprHasProperty(p, EP_Filter) );
-      sqlite3WindowDelete(db, p->y.pWin);
-    }else if( ExprHasProperty(p, EP_Filter) ){
-      assert( p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION );
-      sqlite3ExprDelete(db, p->y.pFilter);
-    }
+      if( ExprHasProperty(p, (EP_WinFunc|EP_Filter)) ){
+        if( ExprHasProperty(p, EP_WinFunc) ){
+          assert( p->op==TK_FUNCTION && !ExprHasProperty(p, EP_Filter) );
+          sqlite3WindowDelete(db, p->y.pWin);
+        }else{
+          assert( p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION );
+          sqlite3ExprDeleteNN(db, p->y.pFilter);
+        }
+      }
 #endif
+    }
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
   if( !ExprHasProperty(p, EP_Static) ){
