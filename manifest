@@ -1,5 +1,5 @@
-C Move\sthe\ssqlite3VdbeSerialType()\sroutine\sin-line\sin\sthe\sOP_MakeRecord\sopcode.\nOptimizing\scompilers\swere\sdoing\sthis\salready.\s\sBy\sdoing\sit\smanually,\swe\scan\nomit\ssome\sredundant\stests\sand\smake\sthe\swhole\sthing\srun\sa\smillion\scycles\sfaster\nand\suse\sabout\s80\sbytes\sless\scode\sspace.
-D 2019-07-11T19:22:36.389
+C Increase\sthe\sversion\snumber\sto\s3.30.0\sfor\sthe\snext\srelease\scycle.
+D 2019-07-11T19:27:02.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 4640daf826b80947a924ac44275c451ffc13007c7c866a5730c8ce5cf9e1dc74
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 26957950b2b4f3b26e311eeea70437f85a77765f71d3a06489466d66ee321100
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
-F VERSION cc8cd90333c65cdf4cb346f356a2ce1eb0f5b7fa1d17a34d7350103e7320af1f
+F VERSION 4c516d84c2a5f26c477ed34c09ac4136630f71c68139631f2eb591b22eea7cf1
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 4a97fb6ccce582ebb3dc5a7e281e5e2823574dad851b8ccf814aa6de9f4c7ad2 x
+F configure 6f5136d2574d7aa08370021ab63be3ef8a8bf32af60594de08393b01feeb4bab x
 F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1831,7 +1831,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc82b73eaac8b36950e527f12c4b5dc1e147e6f4ad2217ae43ad82882a88bfa6
-R e260e19892adbd2f0708577d483baea9
+P d837ab0da52632699abc09320980606aef020df5020c253f99c97e24bf3c6d00
+R 6833cc22c98f4349178f2938814a212d
 U drh
-Z d46113f7ae5239b50bcbe10562e19614
+Z a695838ee167bf93e6ec909adf5a647f
