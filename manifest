@@ -1,5 +1,5 @@
-C Version\s3.29.0
-D 2019-07-10T17:32:03.802
+C Move\sthe\ssqlite3VdbeSerialType()\sroutine\sin-line\sin\sthe\sOP_MakeRecord\sopcode.\nOptimizing\scompilers\swere\sdoing\sthis\salready.\s\sBy\sdoing\sit\smanually,\swe\scan\nomit\ssome\sredundant\stests\sand\smake\sthe\swhole\sthing\srun\sa\smillion\scycles\sfaster\nand\suse\sabout\s80\sbytes\sless\scode\sspace.
+D 2019-07-11T19:22:36.389
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -594,11 +594,11 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c aef606a78b85d042138a841babbc0f98471b19b9a340b962e8fae307bc8cf3da
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c aaa36d1ac7d55baf007e9c03ee7c826834a51dfe7a56ba4c386318695dd87c99
+F src/vdbe.c 6747c7db45059c04b29dbf4ac2d942fc64eb9be630e6b57e5383b14963d54d74
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
-F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
+F src/vdbeInt.h 889c52272a02cea8af6e21b493b08bc9a043e3372a77fdfe838d25e73a47ac92
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
-F src/vdbeaux.c 3a803d75875031309204df90977059b12ffb706d16b4baa5e2d99f4353962582
+F src/vdbeaux.c a2da4e67d337d128ec91b295fbd747bb45b4fd3bed0c658af5d7d3000f202fa5
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c f6f277d17d50972571d1394535d4c3d156fdea871d8f327f5b9479984054015a
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
@@ -1831,10 +1831,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f328c35947d6b3a0741514757b8944692203e89bdb2e7f9bbce8ad9288be344
-R 3dc95c8af87e7b557da20a5426ebc03a
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.29.0 *
+P fc82b73eaac8b36950e527f12c4b5dc1e147e6f4ad2217ae43ad82882a88bfa6
+R e260e19892adbd2f0708577d483baea9
 U drh
-Z 4d356946c4c6edd871b6d6986b095a05
+Z d46113f7ae5239b50bcbe10562e19614
