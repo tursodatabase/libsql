@@ -76,7 +76,7 @@ unicase = "2.4.0"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.15"
+version = "0.16"
 
 [[test]]
 name = "config_log"
