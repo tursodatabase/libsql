@@ -2927,7 +2927,30 @@ case OP_MakeRecord: {
 #endif
 
   /* Loop through the elements that will make up the record to figure
-  ** out how much space is required for the new record.
+  ** out how much space is required for the new record.  After this loop,
+  ** the Mem.uTemp field of each term should hold the serial-type that will
+  ** be used for that term in the generated record:
+  **
+  **   Mem.uTemp value    type
+  **   ---------------    ---------------
+  **      0               NULL
+  **      1               1-byte signed integer
+  **      2               2-byte signed integer
+  **      3               3-byte signed integer
+  **      4               4-byte signed integer
+  **      5               6-byte signed integer
+  **      6               8-byte signed integer
+  **      7               IEEE float
+  **      8               Integer constant 0
+  **      9               Integer constant 1
+  **     10,11            reserved for expansion
+  **    N>=12 and even    BLOB
+  **    N>=13 and odd     text
+  **
+  ** The following additional values are computed:
+  **     nHdr        Number of bytes needed for the record header
+  **     nData       Number of bytes of data space needed for the record
+  **     nZero       Zero bytes at the end of the record
   */
   pRec = pLast;
   do{
@@ -2943,7 +2966,7 @@ case OP_MakeRecord: {
         assert( pOp->p5==OPFLAG_NOCHNG_MAGIC || CORRUPT_DB );
         pRec->uTemp = 10;
       }else{
-        pRec->uTemp = 0;  /* Serial-type 0 means NULL */
+        pRec->uTemp = 0;
       }
       nHdr++;
     }else if( pRec->flags & (MEM_Int|MEM_IntReal) ){
@@ -2958,6 +2981,11 @@ case OP_MakeRecord: {
         u = i;
       }
       nHdr++;
+      testcase( u==127 );               testcase( u==128 );
+      testcase( u==32767 );             testcase( u==32768 );
+      testcase( u==8388607 );           testcase( u==8388608 );
+      testcase( u==2147483647 );        testcase( u==2147483648 );
+      testcase( u==140737488355327LL ); testcase( u==140737488355328LL );
       if( u<=127 ){
         if( (i&1)==i && file_format>=4 ){
           pRec->uTemp = 8+(u32)u;
