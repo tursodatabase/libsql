@@ -67,6 +67,7 @@ pub struct Module<T: VTab> {
     phantom: PhantomData<T>,
 }
 
+unsafe impl<T: VTab> Send for Module<T> {}
 unsafe impl<T: VTab> Sync for Module<T> {}
 
 /// Create a read-only virtual table implementation.
@@ -984,7 +985,7 @@ fn mprintf(err_msg: &str) -> *mut c_char {
 pub mod array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
-#[cfg(feature = "bundled")]
+#[cfg(feature = "series")]
 pub mod series; // SQLite >= 3.9.0
 
 #[cfg(test)]
