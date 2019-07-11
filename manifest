@@ -1,5 +1,5 @@
-C Minor\sperformance\simprovement\sin\ssqlite3ExprDeleteNN().
-D 2019-07-10T20:16:53.830
+C Change\sthe\sparser\son\sthis\sbranch\sto\smore\sclosely\smatch\strunk.\sThis\ssaves\sa\sfew\smore\scycles.
+D 2019-07-11T18:43:33.538
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,7 +511,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 2902f393b08e33f4af42e2b63f943be62f5de096138461459de60084f598a056
+F src/parse.y 6f2e8ec7df1e4d4ab57c3c4f9e4815b13a78357685a917a512d6f3d949d8c435
 F src/pcache.c fd2d0553b3222d6b9f7cb251079e5bca1299d1161da3027b525932d8bf46340a
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c be64b2f3908a7f97c56c963676eb12f0d6254c95b28cdc1d73a186eff213219d
@@ -1833,7 +1833,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a1e30a17f57ca006dd84b6f97b0c7811bf4c6da4b02903452ffc4bc363cab9b
-R 6bd4ab9e9ad32527f5b65731f0494801
+P bcc8b38ac75b731a4cd2873ab83f423be036467a511b617c779869de9bbb5383
+R 7366949ada14c091807ed4dad610ae76
 U dan
-Z 7ff155988343772e802f3ddf15426065
+Z 9f13574d0ae5d3c1b08c0a4ecde014da
