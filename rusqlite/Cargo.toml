@@ -51,6 +51,9 @@ array = ["vtab"]
 session = ["libsqlite3-sys/session", "hooks"]
 # window functions: 3.25.0
 window = ["functions"]
+# 3.9.0
+series = ["vtab"]
+
 
 [dependencies]
 time = "0.1.0"
