@@ -1,5 +1,5 @@
-C Change\sthe\sparser\son\sthis\sbranch\sto\smore\sclosely\smatch\strunk.\sThis\ssaves\sa\sfew\smore\scycles.
-D 2019-07-11T18:43:33.538
+C Minor\sperformance\simprovement\sin\svdbeRecordCompareString().
+D 2019-07-12T15:15:43.883
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -598,7 +598,7 @@ F src/vdbe.c aaa36d1ac7d55baf007e9c03ee7c826834a51dfe7a56ba4c386318695dd87c99
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 3ba14553508d66f58753952d6dd287dce4ec735de02c6440858b4891aed51c17
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
-F src/vdbeaux.c 3a803d75875031309204df90977059b12ffb706d16b4baa5e2d99f4353962582
+F src/vdbeaux.c 6e690cf78b75cb30a35498be14d86656eda2a350e21b7f34723bac6fb4b06504
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
 F src/vdbemem.c 9ee3c0373bfc05dc8bf5307a4a92be6bea3055928c4846fdced7e708993b2d6d
 F src/vdbesort.c 66592d478dbb46f19aed0b42222325eadb84deb40a90eebe25c6e7c1d8468f47
@@ -1833,7 +1833,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcc8b38ac75b731a4cd2873ab83f423be036467a511b617c779869de9bbb5383
-R 7366949ada14c091807ed4dad610ae76
+P be01b801fbc258f0ab9542130cec12a5ea5e2d0bf087684a9eda909ad459c211
+R 2db1f8ff35294de6464c20bf61e9dedc
 U dan
-Z 9f13574d0ae5d3c1b08c0a4ecde014da
+Z ac0afc3f61428d63511d6d358e65ee50
