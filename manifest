@@ -1,5 +1,5 @@
-C Fix\serror\shandling\sfor\sthe\scase\swhere\sa\swindow\sfunction\sis\spassed\sthe\swrong\snumber\sof\sarguments.
-D 2019-07-13T17:45:25.999
+C Fix\sa\stypo\sin\stest\sfile\swindow1.test.
+D 2019-07-13T17:54:24.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1698,7 +1698,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 18ec9bbd5b01a21504817b278fffa1678d9a2339d7fbe8548a1822eb19f94b15
+F test/window1.test 82202e139647e3797d5257cd896bc957275906c2d2ee1486980f64a5f34f0c3b
 F test/window2.tcl a44834af6267be6e14882311ef8790bf5047f1b9bc25685ee1762d48dc24f1e7
 F test/window2.test 2f3ae63e171dce7f2ac29a41020f4da413b1d7bdaba48ee124fd336b152e34c5
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1834,7 +1834,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcd937d9786a82ef4147e657d54ea0beb6ac87e2eb1677186b318493d473077b
-R d26f001a613609b213ec4312466e7422
+P 871796bb19e61c1282d8ac97a82d8b57bde50f2a2a08004ab53136d77c138df4
+R 921a4617e136cc52806c1f24ca187b4c
 U dan
-Z b3f894d87d1da0039bf83bf1734fe28d
+Z 5c7ca9588a550e989ef1f517b9b8df16

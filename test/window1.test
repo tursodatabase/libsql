@@ -259,7 +259,7 @@ do_catchsql_test 7.1.7 {
 } {1 {no such window: abc}}
 do_catchsql_test 7.1.8 {
   SELECT row_number(x) OVER () FROM t1
-} {1 {wrong number of arguments to function row_number}}
+} {1 {wrong number of arguments to function row_number()}}
 
 do_execsql_test 7.2 {
   SELECT 
