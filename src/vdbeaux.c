@@ -4607,7 +4607,11 @@ static int vdbeRecordCompareString(
     nCmp = MIN( pPKey2->aMem[0].n, nStr );
     res = memcmp(&aKey1[szHdr], pPKey2->aMem[0].z, nCmp);
 
-    if( res==0 ){
+    if( res>0 ){
+      res = pPKey2->r2;
+    }else if( res<0 ){
+      res = pPKey2->r1;
+    }else{
       res = nStr - pPKey2->aMem[0].n;
       if( res==0 ){
         if( pPKey2->nField>1 ){
@@ -4621,10 +4625,6 @@ static int vdbeRecordCompareString(
       }else{
         res = pPKey2->r1;
       }
-    }else if( res>0 ){
-      res = pPKey2->r2;
-    }else{
-      res = pPKey2->r1;
     }
   }
 

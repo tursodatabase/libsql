@@ -1040,15 +1040,18 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     assert( p->x.pList==0 || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
     if( p->pRight ){
+      assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3ExprDeleteNN(db, p->pRight);
     }else if( ExprHasProperty(p, EP_xIsSelect) ){
+      assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
-    }
-    if( ExprHasProperty(p, EP_WinFunc) ){
-      assert( p->op==TK_FUNCTION );
-      sqlite3WindowDelete(db, p->y.pWin);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      if( ExprHasProperty(p, EP_WinFunc) ){
+        sqlite3WindowDelete(db, p->y.pWin);
+      }
+#endif
     }
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
@@ -1332,8 +1335,9 @@ static With *withDup(sqlite3 *db, With *p){
 ** objects found there, assembling them onto the linked list at Select->pWin.
 */
 static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_FUNCTION && pExpr->y.pWin!=0 ){
-    assert( ExprHasProperty(pExpr, EP_WinFunc) );
+  if( pExpr->op==TK_FUNCTION && ExprHasProperty(pExpr, EP_WinFunc) ){
+    assert( pExpr->y.pWin );
+    assert( IsWindowFunc(pExpr) );
     pExpr->y.pWin->pNextWin = pWalker->u.pSelect->pWin;
     pWalker->u.pSelect->pWin = pExpr->y.pWin;
   }
@@ -4839,20 +4843,17 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     return 2;
   }
   if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
-    if( pA->op==TK_FUNCTION ){
+    if( pA->op==TK_FUNCTION || pA->op==TK_AGG_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      /* Justification for the assert():
-      ** window functions have p->op==TK_FUNCTION but aggregate functions
-      ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
-      ** function and a window function should have failed before reaching
-      ** this point.  And, it is not possible to have a window function and
-      ** a scalar function with the same name and number of arguments.  So
-      ** if we reach this point, either A and B both window functions or
-      ** neither are a window functions. */
-      assert( ExprHasProperty(pA,EP_WinFunc)==ExprHasProperty(pB,EP_WinFunc) );
+      assert( pA->op==pB->op );
+      if( ExprHasProperty(pA,EP_WinFunc)!=ExprHasProperty(pB,EP_WinFunc) ){
+        return 2;
+      }
       if( ExprHasProperty(pA,EP_WinFunc) ){
-        if( sqlite3WindowCompare(pParse,pA->y.pWin,pB->y.pWin)!=0 ) return 2;
+        if( sqlite3WindowCompare(pParse, pA->y.pWin, pB->y.pWin, 1)!=0 ){
+          return 2;
+        }
       }
 #endif
     }else if( pA->op==TK_NULL ){
