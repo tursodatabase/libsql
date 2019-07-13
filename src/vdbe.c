@@ -3376,7 +3376,7 @@ case OP_AutoCommit: {
     rc = SQLITE_ERROR;
     goto abort_due_to_error;
   }
-  break;
+  /*NOTREACHED*/ assert(0);
 }
 
 /* Opcode: Transaction P1 P2 P3 P4 P5
@@ -4132,8 +4132,8 @@ case OP_SeekGT: {       /* jump, in3, group */
     if( (pIn3->flags & (MEM_Int|MEM_IntReal))==0 ){
       if( (pIn3->flags & MEM_Real)==0 ){
         if( (pIn3->flags & MEM_Null) || oc>=OP_SeekGE ){
-          VdbeBranchTaken(1,2); goto jump_to_p2;
-          break;
+          VdbeBranchTaken(1,2);
+          goto jump_to_p2;
         }else{
           rc = sqlite3BtreeLast(pC->uc.pCursor, &res);
           if( rc!=SQLITE_OK ) goto abort_due_to_error;
