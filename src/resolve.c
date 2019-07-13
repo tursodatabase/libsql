@@ -851,13 +851,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
           pNC->nErr++;
           is_agg = 0;
-        }else if( is_agg==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
-          assert( !IsWindowFunc(pExpr) );
-          sqlite3ErrorMsg(pParse, 
-              "filter clause may not be used with non-aggregate %.*s()", 
-              nId, zId
-          );
-          pNC->nErr++;
         }
 #else
         if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
@@ -878,6 +871,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
                nId, zId);
           pNC->nErr++;
         }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+        else if( is_agg==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
+          sqlite3ErrorMsg(pParse, 
+              "FILTER may not be used with non-aggregate %.*s()", 
+              nId, zId
+          );
+          pNC->nErr++;
+        }
+#endif
         if( is_agg ){
           /* Window functions may not be arguments of aggregate functions.
           ** Or arguments of other window functions. But aggregate functions

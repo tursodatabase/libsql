@@ -257,6 +257,9 @@ do_catchsql_test 7.1.6 {
 do_catchsql_test 7.1.7 {
   SELECT max(x) OVER abc FROM t1 WINDOW def AS (ORDER BY y);
 } {1 {no such window: abc}}
+do_catchsql_test 7.1.8 {
+  SELECT row_number(x) OVER () FROM t1
+} {1 {wrong number of arguments to function row_number}}
 
 do_execsql_test 7.2 {
   SELECT 

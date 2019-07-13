@@ -91,7 +91,7 @@ do_execsql_test 2.0 {
 
 do_catchsql_test 2.1 {
   SELECT upper(a) FILTER (WHERE a=1) FROM t1
-} {1 {filter clause may not be used with non-aggregate upper()}}
+} {1 {FILTER may not be used with non-aggregate upper()}}
 
 do_catchsql_test 2.2 {
   SELECT sum(a) FILTER (WHERE 1 - max(a) OVER () > 0) FROM t1
