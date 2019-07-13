@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\stest\sfile\swindow1.test.
-D 2019-07-13T17:54:24.708
+C Fix\sa\smemory\sleak\sthat\scould\sfollow\san\sOOM\sin\sthe\snew\sFILTER\scode.
+D 2019-07-13T18:27:54.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,7 +511,7 @@ F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y ef494825aa4d633b601af10f936fe50a630bd4c4a6ceb4d941ecfb6756e06c56
+F src/parse.y 8ec5ce13db0499d4f18303a535b176ba1606da9dad59ed340fa4ce54d13261a9
 F src/pcache.c fd2d0553b3222d6b9f7cb251079e5bca1299d1161da3027b525932d8bf46340a
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c e6373934cdafea272d94feb224344f9fd93ff94318221b64ccabd72d98b4672e
@@ -859,6 +859,7 @@ F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2
 F test/filter1.test b6d80d882bc2dfc8f5e6eff3799a2b24f23681cae18a5dc7c1770929cd5bc47e
 F test/filter2.tcl 44e525497ce07382915f01bd29ffd0fa49dab3adb87253b5e5103ba8f93393e8
 F test/filter2.test 485cf95d1f6d6ceee5632201ca52a71868599836f430cdee42e5f7f14666e30a
+F test/filterfault.test c08fb491d698e8df6c122c98f7db1c65ffcfcad2c1ab0e07fa8a5be1b34eaa8b
 F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
 F test/fkey2.test d35d1c81e7569bdd2b872e91750f7098117d2e8291369f70b7e3d50a0e523dc2
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
@@ -1834,7 +1835,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 871796bb19e61c1282d8ac97a82d8b57bde50f2a2a08004ab53136d77c138df4
-R 921a4617e136cc52806c1f24ca187b4c
+P 8c80e81d01abde9a5032cdc1a492d0fccd8db139f78d2db9413a60cfdc8e0f64
+R 992785f29513ad28163364a115438b27
 U dan
-Z 5c7ca9588a550e989ef1f517b9b8df16
+Z a79c487a88edbd1089ddc303df479f2f

@@ -1742,6 +1742,8 @@ filter_over(A) ::= filter_clause(F). {
   if( A ){
     A->eFrmType = TK_FILTER;
     A->pFilter = F;
+  }else{
+    sqlite3ExprDelete(pParse->db, F);
   }
 }
 
