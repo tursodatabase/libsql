@@ -8307,11 +8307,13 @@ static int balance(BtCursor *pCur){
   VVA_ONLY( int balance_deeper_called = 0 );
 
   do {
-    int iPage = pCur->iPage;
+    int iPage;
     MemPage *pPage = pCur->pPage;
 
     if( NEVER(pPage->nFree<0) && btreeComputeFreeSpace(pPage) ) break;
-    if( iPage==0 ){
+    if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
+      break;
+    }else if( (iPage = pCur->iPage)==0 ){
       if( pPage->nOverflow ){
         /* The root page of the b-tree is overfull. In this case call the
         ** balance_deeper() function to create a new child for the root-page
@@ -8332,8 +8334,6 @@ static int balance(BtCursor *pCur){
       }else{
         break;
       }
-    }else if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
-      break;
     }else{
       MemPage * const pParent = pCur->apPage[iPage-1];
       int const iIdx = pCur->aiIdx[iPage-1];

@@ -1,5 +1,5 @@
-C Minor\sperformance\simprovement\sin\svdbeRecordCompareString().
-D 2019-07-12T15:15:43.883
+C Trivial\sperformance\simprovement\sfor\sbalance().
+D 2019-07-13T09:55:33.596
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -463,7 +463,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c b1d37f6f7f5913944583733ed0f9e182f3ece0d42c27f46701142141a6e6fd33
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 1dbc191e5c1d9bca84a956fed5d73924c574ae5390855009f067bd0f6422e462
+F src/btree.c 0e30c98649796a91a889c2ab1c2f032da9918ac5244a3688ed97e8b5779b61fa
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c c5b97d3518c13081169027f291ff84b12661d526deb605031d413223ff2e0f03
@@ -1833,7 +1833,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be01b801fbc258f0ab9542130cec12a5ea5e2d0bf087684a9eda909ad459c211
-R 2db1f8ff35294de6464c20bf61e9dedc
+P 777fec84a5db968e033883920586ec0afef65578be0c1eb3021fce525111edde
+R 6059011e317373b890b2b02abcd3b80f
 U dan
-Z ac0afc3f61428d63511d6d358e65ee50
+Z d0830bba5f797d712713acf5cb732357
