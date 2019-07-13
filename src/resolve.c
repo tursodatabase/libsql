@@ -749,7 +749,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
       int savedAllowFlags = (pNC->ncFlags & (NC_AllowAgg | NC_AllowWin));
-
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      Window *pWin = (IsWindowFunc(pExpr) ? pExpr->y.pWin : 0);
+#endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
@@ -826,7 +828,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 
       if( 0==IN_RENAME_OBJECT ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        Window *pWin = (ExprHasProperty(pExpr, EP_WinFunc) ? pExpr->y.pWin : 0);
         assert( is_agg==0 || (pDef->funcFlags & SQLITE_FUNC_MINMAX)
           || (pDef->xValue==0 && pDef->xInverse==0)
           || (pDef->xValue && pDef->xInverse && pDef->xSFunc && pDef->xFinalize)
@@ -850,7 +851,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
           pNC->nErr++;
           is_agg = 0;
-        }else if( is_agg==0 && ExprHasProperty(pExpr, EP_Filter) ){
+        }else if( is_agg==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
+          assert( !IsWindowFunc(pExpr) );
           sqlite3ErrorMsg(pParse, 
               "filter clause may not be used with non-aggregate %.*s()", 
               nId, zId
@@ -890,16 +892,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        if( ExprHasProperty(pExpr, EP_WinFunc) ){
+        if( pWin ){
           Select *pSel = pNC->pWinSelect;
           if( IN_RENAME_OBJECT==0 ){
-            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
+            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pWin, pDef);
           }
-          sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
-          sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
-          sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
+          sqlite3WalkExprList(pWalker, pWin->pPartition);
+          sqlite3WalkExprList(pWalker, pWin->pOrderBy);
+          sqlite3WalkExpr(pWalker, pWin->pFilter);
           if( 0==pSel->pWin 
-           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
+           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pWin, 0)
           ){
             pExpr->y.pWin->pNextWin = pSel->pWin;
             pSel->pWin = pExpr->y.pWin;
@@ -912,7 +914,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pExpr->op = TK_AGG_FUNCTION;
           pExpr->op2 = 0;
 #ifndef SQLITE_OMIT_WINDOWFUNC
-          sqlite3WalkExpr(pWalker, pExpr->y.pFilter);
+          if( ExprHasProperty(pExpr, EP_WinFunc) ){
+            sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
+          }
 #endif
           while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
             pExpr->op2++;

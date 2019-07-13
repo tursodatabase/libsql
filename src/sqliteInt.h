@@ -2491,8 +2491,7 @@ struct Expr {
   union {
     Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
                            ** for a column of an index on an expression */
-    Window *pWin;          /* EP_WinFunc: Window definition for the func */
-    Expr *pFilter;         /* EP_Filter: Filter definition for the func */
+    Window *pWin;          /* EP_WinFunc: Window/Filter defn for a function */
     struct {               /* TK_IN, TK_SELECT, and TK_EXISTS */
       int iAddr;             /* Subroutine entry address */
       int regReturn;         /* Register used to hold return address */
@@ -2537,7 +2536,6 @@ struct Expr {
 #define EP_Static   0x8000000 /* Held in memory not obtained from malloc() */
 #define EP_IsTrue  0x10000000 /* Always has boolean value of TRUE */
 #define EP_IsFalse 0x20000000 /* Always has boolean value of FALSE */
-#define EP_Filter  0x40000000 /* TK_[AGG_]FUNCTION with Expr.y.pFilter set */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2580,6 +2578,14 @@ struct Expr {
 ** above sqlite3ExprDup() for details.
 */
 #define EXPRDUP_REDUCE         0x0001  /* Used reduced-size Expr nodes */
+
+/*
+** True if the expression passed as an argument was a function with
+** an OVER() clause (a window function).
+*/
+#define IsWindowFunc(p) ( \
+    ExprHasProperty((p), EP_WinFunc) && p->y.pWin->eFrmType!=TK_FILTER \
+)
 
 /*
 ** A list of expressions.  Each expression may optionally have a
@@ -3604,8 +3610,8 @@ struct Window {
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
-void sqlite3WindowAttach(Parse*, Expr*, Expr*, Window*);
-int sqlite3WindowCompare(Parse*, Window*, Window*);
+void sqlite3WindowAttach(Parse*, Expr*, Window*);
+int sqlite3WindowCompare(Parse*, Window*, Window*, int);
 void sqlite3WindowCodeInit(Parse*, Window*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 int sqlite3WindowRewrite(Parse*, Select*);
@@ -3619,7 +3625,7 @@ Window *sqlite3WindowAssemble(Parse*, Window*, ExprList*, ExprList*, Token*);
 #else
 # define sqlite3WindowDelete(a,b)
 # define sqlite3WindowFunctions()
-# define sqlite3WindowAttach(a,b,c,d)
+# define sqlite3WindowAttach(a,b,c)
 #endif
 
 /*

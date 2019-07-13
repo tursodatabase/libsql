@@ -55,9 +55,25 @@ do_execsql_test 1.6 {
   SELECT count(*) FILTER (WHERE a!=5) FROM t1
 } {8}
 
-do_execsql_test 1.6 {
+do_execsql_test 1.7 {
   SELECT min(a) FILTER (WHERE a>3) FROM t1 GROUP BY (a%2) ORDER BY 1;
 } {4 5}
+
+do_execsql_test 1.8 {
+  CREATE VIEW vv AS 
+  SELECT sum(a) FILTER( WHERE a>9 ),
+         sum(a) FILTER( WHERE a>8 ),
+         sum(a) FILTER( WHERE a>7 ),
+         sum(a) FILTER( WHERE a>6 ),
+         sum(a) FILTER( WHERE a>5 ),
+         sum(a) FILTER( WHERE a>4 ),
+         sum(a) FILTER( WHERE a>3 ),
+         sum(a) FILTER( WHERE a>2 ),
+         sum(a) FILTER( WHERE a>1 ),
+         sum(a) FILTER( WHERE a>0 )
+  FROM t1;
+  SELECT * FROM vv;
+} {{} 9 17 24 30 35 39 42 44 45}
 
 
 #-------------------------------------------------------------------------

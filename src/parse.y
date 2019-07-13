@@ -1044,23 +1044,13 @@ expr(A) ::= id(X) LP STAR RP. {
 }
 
 %ifndef SQLITE_OMIT_WINDOWFUNC
-%type filter_over {
-  struct FunctionTail {
-    Window *pWin;
-    Expr *pFilter;
-  }
-}
-%destructor filter_over {
-  sqlite3WindowDelete(pParse->db, $$.pWin);
-  sqlite3ExprDelete(pParse->db, $$.pFilter);
-}
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP filter_over(F). {
+expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
-  sqlite3WindowAttach(pParse, A, F.pFilter, F.pWin);
+  sqlite3WindowAttach(pParse, A, Z);
 }
-expr(A) ::= id(X) LP STAR RP filter_over(F). {
+expr(A) ::= id(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
-  sqlite3WindowAttach(pParse, A, F.pFilter, F.pWin);
+  sqlite3WindowAttach(pParse, A, Z);
 }
 %endif
 
@@ -1673,6 +1663,9 @@ windowdefn(A) ::= nm(X) AS LP window(Y) RP. {
 %type over_clause {Window*}
 %destructor over_clause {sqlite3WindowDelete(pParse->db, $$);}
 
+%type filter_over {Window*}
+%destructor filter_over {sqlite3WindowDelete(pParse->db, $$);}
+
 %type range_or_rows {int}
 
 %type frame_bound {struct FrameBound}
@@ -1737,17 +1730,19 @@ frame_exclude(A) ::= GROUP|TIES(X).  {A = @X; /*A-overwrites-X*/}
 %destructor window_clause {sqlite3WindowListDelete(pParse->db, $$);}
 window_clause(A) ::= WINDOW windowdefn_list(B). { A = B; }
 
-filter_over(F) ::= filter_clause(A) over_clause(B). {
-  F.pFilter = A;
-  F.pWin = B;
+filter_over(A) ::= filter_clause(F) over_clause(O). {
+  O->pFilter = F;
+  A = O;
 }
-filter_over(F) ::= over_clause(B). {
-  F.pFilter = 0;
-  F.pWin = B;
+filter_over(A) ::= over_clause(O). {
+  A = O;
 }
-filter_over(F) ::= filter_clause(A). {
-  F.pFilter = A;
-  F.pWin = 0;
+filter_over(A) ::= filter_clause(F). {
+  A = (Window*)sqlite3DbMallocZero(pParse->db, sizeof(Window));
+  if( A ){
+    A->eFrmType = TK_FILTER;
+    A->pFilter = F;
+  }
 }
 
 over_clause(A) ::= OVER LP window(Z) RP. {

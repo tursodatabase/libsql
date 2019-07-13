@@ -1027,7 +1027,7 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 
   assert( !ExprHasProperty(p, EP_WinFunc) || p->y.pWin!=0 || db->mallocFailed );
   assert( p->op!=TK_FUNCTION || ExprHasProperty(p, EP_TokenOnly|EP_Reduced)
-          || p->y.pWin==0 || ExprHasProperty(p, EP_WinFunc|EP_Filter) );
+          || p->y.pWin==0 || ExprHasProperty(p, EP_WinFunc) );
 #ifdef SQLITE_DEBUG
   if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->pLeft==0 );
@@ -1040,22 +1040,16 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     assert( p->x.pList==0 || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
     if( p->pRight ){
-      assert( !ExprHasProperty(p, (EP_WinFunc|EP_Filter)) );
+      assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3ExprDeleteNN(db, p->pRight);
     }else if( ExprHasProperty(p, EP_xIsSelect) ){
-      assert( !ExprHasProperty(p, (EP_WinFunc|EP_Filter)) );
+      assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      if( ExprHasProperty(p, (EP_WinFunc|EP_Filter)) ){
-        if( ExprHasProperty(p, EP_WinFunc) ){
-          assert( p->op==TK_FUNCTION && !ExprHasProperty(p, EP_Filter) );
-          sqlite3WindowDelete(db, p->y.pWin);
-        }else{
-          assert( p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION );
-          sqlite3ExprDeleteNN(db, p->y.pFilter);
-        }
+      if( ExprHasProperty(p, EP_WinFunc) ){
+        sqlite3WindowDelete(db, p->y.pWin);
       }
 #endif
     }
@@ -1273,7 +1267,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
     }
 
     /* Fill in pNew->pLeft and pNew->pRight. */
-    if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly|EP_WinFunc|EP_Filter) ){
+    if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly|EP_WinFunc) ){
       zAlloc += dupedExprNodeSize(p, dupFlags);
       if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
         pNew->pLeft = p->pLeft ?
@@ -1285,10 +1279,6 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       if( ExprHasProperty(p, EP_WinFunc) ){
         pNew->y.pWin = sqlite3WindowDup(db, pNew, p->y.pWin);
         assert( ExprHasProperty(pNew, EP_WinFunc) );
-      }
-      if( ExprHasProperty(p, EP_Filter) ){
-        pNew->y.pFilter = sqlite3ExprDup(db, p->y.pFilter, 0);
-        assert( ExprHasProperty(pNew, EP_Filter) );
       }
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( pzBuffer ){
@@ -1347,6 +1337,7 @@ static With *withDup(sqlite3 *db, With *p){
 static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_FUNCTION && ExprHasProperty(pExpr, EP_WinFunc) ){
     assert( pExpr->y.pWin );
+    assert( IsWindowFunc(pExpr) );
     pExpr->y.pWin->pNextWin = pWalker->u.pSelect->pWin;
     pWalker->u.pSelect->pWin = pExpr->y.pWin;
   }
@@ -4852,20 +4843,17 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     return 2;
   }
   if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
-    if( pA->op==TK_FUNCTION ){
+    if( pA->op==TK_FUNCTION || pA->op==TK_AGG_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      /* Justification for the assert():
-      ** window functions have p->op==TK_FUNCTION but aggregate functions
-      ** have p->op==TK_AGG_FUNCTION.  So any comparison between an aggregate
-      ** function and a window function should have failed before reaching
-      ** this point.  And, it is not possible to have a window function and
-      ** a scalar function with the same name and number of arguments.  So
-      ** if we reach this point, either A and B both window functions or
-      ** neither are a window functions. */
-      assert( ExprHasProperty(pA,EP_WinFunc)==ExprHasProperty(pB,EP_WinFunc) );
+      assert( pA->op==pB->op );
+      if( ExprHasProperty(pA,EP_WinFunc)!=ExprHasProperty(pB,EP_WinFunc) ){
+        return 2;
+      }
       if( ExprHasProperty(pA,EP_WinFunc) ){
-        if( sqlite3WindowCompare(pParse,pA->y.pWin,pB->y.pWin)!=0 ) return 2;
+        if( sqlite3WindowCompare(pParse, pA->y.pWin, pB->y.pWin, 1)!=0 ){
+          return 2;
+        }
       }
 #endif
     }else if( pA->op==TK_NULL ){
@@ -4875,14 +4863,6 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     }else if( ALWAYS(pB->u.zToken!=0) && strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
     }
-#ifndef SQLITE_OMIT_WINDOWFUNC
-    else if( pA->op==TK_AGG_FUNCTION ){
-      assert( ExprHasProperty(pA, EP_WinFunc)==0 );
-      if( sqlite3ExprCompare(pParse, pA->y.pFilter, pB->y.pFilter, iTab) ){
-        return 2;
-      }
-    }
-#endif
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
   if( (combinedFlags & EP_TokenOnly)==0 ){
