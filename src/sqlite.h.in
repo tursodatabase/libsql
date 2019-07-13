@@ -2235,14 +2235,18 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_DBCONFIG_DQS_DML</td>
 ** <dd>The SQLITE_DBCONFIG_DQS_DML option activates or deactivates
 ** the legacy [double-quoted string literal] misfeature for DML statement
-** only, that is DELETE, INSERT, SELECT, and UPDATE statements.
+** only, that is DELETE, INSERT, SELECT, and UPDATE statements. The
+** default value of this setting is determined by the [-DSQLITE_DQS]
+** compile-time option.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_DQS_DDL]]
 ** <dt>SQLITE_DBCONFIG_DQS_DDL</td>
 ** <dd>The SQLITE_DBCONFIG_DQS option activates or deactivates
 ** the legacy [double-quoted string literal] misfeature for DDL statements,
-** such as CREATE TABLE and CREATE INDEX.
+** such as CREATE TABLE and CREATE INDEX. The
+** default value of this setting is determined by the [-DSQLITE_DQS]
+** compile-time option.
 ** </dd>
 ** </dl>
 */
