@@ -635,7 +635,10 @@ static int sqlite3Prepare(
   rc = sParse.rc;
 
 #ifndef SQLITE_OMIT_EXPLAIN
-  if( sParse.explain && rc==SQLITE_OK && sParse.pVdbe ){
+  /* Justification for the ALWAYS(): The only way for rc to be SQLITE_OK and
+  ** sParse.pVdbe to be NULL is if the input SQL is an empty string, but in
+  ** that case, sParse.explain will be false. */
+  if( sParse.explain && rc==SQLITE_OK && ALWAYS(sParse.pVdbe) ){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
        "id", "parent", "notused", "detail"
