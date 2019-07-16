@@ -424,6 +424,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
 
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   if( pCache->pFree || (pCache->nPage==0 && pcache1InitBulk(pCache)) ){
+    assert( pCache->pFree!=0 );
     p = pCache->pFree;
     pCache->pFree = p->pNext;
     p->pNext = 0;

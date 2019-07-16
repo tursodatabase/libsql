@@ -748,6 +748,8 @@ struct WindowRewrite {
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
+  assert( p!=0 );
+  assert( p->pWin!=0 );
 
   /* If this function is being called from within a scalar sub-select
   ** that used by the SELECT statement being processed, only process
@@ -847,6 +849,7 @@ static void selectWindowRewriteEList(
   Walker sWalker;
   WindowRewrite sRewrite;
 
+  assert( pWin!=0 );
   memset(&sWalker, 0, sizeof(Walker));
   memset(&sRewrite, 0, sizeof(WindowRewrite));
 
@@ -1567,8 +1570,10 @@ static void windowFullScan(WindowCodeArg *p){
   int lblNext;
   int lblBrk;
   int addrNext;
-  int csr = pMWin->csrApp;
+  int csr;
 
+  assert( pMWin!=0 );
+  csr = pMWin->csrApp;
   nPeer = (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
 
   lblNext = sqlite3VdbeMakeLabel(pParse);

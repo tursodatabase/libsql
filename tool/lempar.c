@@ -567,6 +567,7 @@ static YYACTIONTYPE yy_find_shift_action(
 #endif /* YYWILDCARD */
       return yy_default[stateno];
     }else{
+      assert( i>=0 && i<sizeof(yy_action)/sizeof(yy_action[0]) );
       return yy_action[i];
     }
   }while(1);

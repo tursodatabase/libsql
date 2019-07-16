@@ -7962,6 +7962,8 @@ static int balance_nonroot(
   ));
 
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
+  assert( nNew>=1 && nNew<=ArraySize(apNew) );
+  assert( apNew[nNew-1]!=0 );
   put4byte(pRight, apNew[nNew-1]->pgno);
 
   /* If the sibling pages are not leaves, ensure that the right-child pointer

@@ -3629,6 +3629,7 @@ void sqlite3CreateIndex(
       /* Gather the complete text of the CREATE INDEX statement into
       ** the zStmt variable
       */
+      assert( pName!=0 || pStart==0 );
       if( pStart ){
         int n = (int)(pParse->sLastToken.z - pName->z) + pParse->sLastToken.n;
         if( pName->z[n-1]==';' ) n--;
