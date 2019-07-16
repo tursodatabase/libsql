@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sthat\scould\scause\sa\scrash\sif\sa\sblob\shandle\swere\sclosed\safter\sthe\sassociated\sdatabase\shandle\swas\sclosed\susing\ssqlite3_close_v2().
-D 2019-07-15T13:58:28.470
+C Call\sioctl()\swith\sthe\scorrect\ssignature\son\sboth\sAndroid\sand\sstock\sLinux.
+D 2019-07-16T05:11:16.359
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -506,7 +506,7 @@ F src/os.c 8aeb0b0f40f8f5b0da03fe49706695adaf42d2f516ab95abc72e86c245e119de
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 94576efb914859d235b879a4c784da3121bf1f5514e4cad972652d2c60db195d
+F src/os_unix.c 7a2e00cf63588096f356451b7405bf9c7316e1cd8543a7cfbe64e8ffed2e3f34
 F src/os_win.c 85d9e532d0444ab6c16d7431490c2e279e282aa0917b0e988996b1ae0de5c5a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
@@ -1835,7 +1835,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0fff105a3e501fd91877d67761459eb0323e6cf79916242027cce0d05697f554
-R 3e1676b4ed91442ef96f61576ecdb210
+P 52f463d29407fad691c42b13462880e7605603c9be9f480d18e953a0ef78149a 68e12e063fe41bcd65cf8a120f838b9b1723ed803ea85240fe0f2145b78df2d7
+R 1ddfb5d9b3cc78b453237f27b05e7d9c
+T +closed 68e12e063fe41bcd65cf8a120f838b9b1723ed803ea85240fe0f2145b78df2d7
 U dan
-Z a9ed82eb59dfd0268931c636761499e0
+Z 1d45fd94302d6b447ec50d51f5de73a4
