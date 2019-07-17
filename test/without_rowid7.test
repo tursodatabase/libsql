@@ -1,0 +1,38 @@
+# 2019 July 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix without_rowid7
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b COLLATE nocase, PRIMARY KEY(a, a, b)) WITHOUT ROWID;
+}
+
+do_catchsql_test 1.1 {
+  INSERT INTO t1 VALUES(1, 'one'), (1, 'ONE');
+} {1 {UNIQUE constraint failed: t1.a, t1.b}}
+
+
+do_execsql_test 2.0 {
+  CREATE TABLE t2(a, b, PRIMARY KEY(a, a COLLATE nocase, a)) WITHOUT ROWID;
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO t2 VALUES(1, 'one');
+  SELECT b FROM t2;
+} {one}
+
+
+finish_test
+

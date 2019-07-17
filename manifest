@@ -1,5 +1,5 @@
-C Add\scasts\sto\sshell.c.in\sto\savoid\swarnings\son\ssystems\swhere\ssize_t\sis\s32\sbits.
-D 2019-07-17T07:23:06.341
+C Fix\sproblems\swith\sduplicate\sfields\sin\sthe\sPRIMARY\sKEYs\sof\sWITHOUT\sROWID\stables.
+D 2019-07-17T09:18:06.336
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -466,7 +466,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 83a4b1b744fad3ff675f68bc4de73834ed0e31edb412097f54e33cf181bba1ee
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c cd19eb05c63ccaeee5e659e6e708a97d905b62f639de71af0c2c007062371a75
+F src/build.c 48f22e7c3b80550eb9c0cc3a3738f9117109b87d5f5fdba027009b7f2917df4a
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 37f3d21193c4f7d141d0691cced5b39c99951bfef78df9887faf9167b9c42f37
@@ -1727,6 +1727,7 @@ F test/without_rowid3.test ea4b59dd1b0d7f5f5e4b7cca978cdb905752a9d7c57dc4344a591
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
+F test/without_rowid7.test 7b47cd85b0b64bc0f373e9a0fff687f13de84b8e3eb61e65d63f8c1f0ca9da18
 F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
@@ -1835,7 +1836,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e66458592d40fbd96ea5f21339573110ca1cfe328238a020c9420a87d35dd72
-R e10a56ffab89aeb6c132764d41933ce5
+P fe014288ac03cdf0dc5410b7d45cad4768759b52746c0a22bce2fc03779c5d5a
+R 52845c43e6ecf22392d569b0697bd36c
+T *branch * wor-pk-dups
+T *sym-wor-pk-dups *
+T -sym-trunk *
 U dan
-Z 0a446b49c5cd11f0249e04708e61ac08
+Z aece81be789a779a58eb3b9812c06233
