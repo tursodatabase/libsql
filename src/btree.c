@@ -6664,12 +6664,7 @@ static void insertCell(
   assert( pPage->nOverflow<=ArraySize(pPage->apOvfl) );
   assert( ArraySize(pPage->apOvfl)==ArraySize(pPage->aiOvfl) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  /* The cell should normally be sized correctly.  However, when moving a
-  ** malformed cell from a leaf page to an interior page, if the cell size
-  ** wanted to be less than 4 but got rounded up to 4 on the leaf, then size
-  ** might be less than 8 (leaf-size + pointer) on the interior node.  Hence
-  ** the term after the || in the following assert(). */
-  assert( sz==pPage->xCellSize(pPage, pCell) || (sz==8 && iChild>0) );
+  assert( sz==pPage->xCellSize(pPage, pCell) || CORRUPT_DB );
   assert( pPage->nFree>=0 );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){

@@ -1,5 +1,5 @@
-C Improvement\sto\sthe\shexdb\sinterpreter\sbuilt\sinto\sthe\sCLI\sand\sinto\sthe\nTCL\stest\sharness:\sRound\sthe\s"size"\sup\sto\sthe\snext\smultiple\sof\sthe\s"pagesize".
-D 2019-07-17T15:05:16.339
+C Fix\san\sincorrect\sassert()\sin\sbalance_nonroot().
+D 2019-07-17T16:18:01.065
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -463,7 +463,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 83a4b1b744fad3ff675f68bc4de73834ed0e31edb412097f54e33cf181bba1ee
+F src/btree.c 4508402e266bebfd0043fbbdfb95bbe632e0000f0bb36e72e84a4185572bce03
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 48f22e7c3b80550eb9c0cc3a3738f9117109b87d5f5fdba027009b7f2917df4a
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ef7b23cbb1b9ace9f853238d9133320c153e6c3417e6823ab6394ee1fe56358
-R 6e2985f89ff68a775ef455242410e4b1
+P 9ec92939cb2d2c96ae15bc496feed233ce31424c25a6bf86ace7e0ef3eedec5b
+R 3702a3106595b5f6d6a04730cae30997
 U drh
-Z b432616aa5b09e1a9089723afa4c0f9c
+Z a30b17f39cdaae09fa64dd6ac4e1155d
