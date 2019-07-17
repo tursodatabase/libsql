@@ -7740,6 +7740,11 @@ static int SQLITE_TCLAPI test_decode_hexdb(
       int pgsz;
       rc = sscanf(zIn+i, "| size %d pagesize %d", &n, &pgsz);
       if( rc!=2 ) continue;
+      if( pgsz<512 || pgsz>65536 || (pgsz&(pgsz-1))!=0 ){
+        Tcl_AppendResult(interp, "bad 'pagesize' field", (void*)0);
+        return TCL_ERROR;
+      }
+      n = (n+pgsz-1)&~(pgsz-1);  /* Round n up to the next multiple of pgsz */
       if( n<512 ){
         Tcl_AppendResult(interp, "bad 'size' field", (void*)0);
         return TCL_ERROR;

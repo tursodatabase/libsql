@@ -3891,6 +3891,8 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
+  if( pgsz<512 || pgsz>65536 || (pgsz&(pgsz-1))!=0 ) goto readHexDb_error;
+  n = (n+pgsz-1)&~(pgsz-1);  /* Round n up to the next multiple of pgsz */
   a = sqlite3_malloc( n ? n : 1 );
   if( a==0 ){
     utf8_printf(stderr, "Out of memory!\n");
