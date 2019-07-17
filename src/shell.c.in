@@ -1256,12 +1256,12 @@ static void editFunc(
   }
   sz = sqlite3_value_bytes(argv[0]);
   if( bBin ){
-    x = fwrite(sqlite3_value_blob(argv[0]), 1, sz, f);
+    x = fwrite(sqlite3_value_blob(argv[0]), 1, (size_t)sz, f);
   }else{
     const char *z = (const char*)sqlite3_value_text(argv[0]);
     /* Remember whether or not the value originally contained \r\n */
     if( z && strstr(z,"\r\n")!=0 ) hasCRNL = 1;
-    x = fwrite(sqlite3_value_text(argv[0]), 1, sz, f);
+    x = fwrite(sqlite3_value_text(argv[0]), 1, (size_t)sz, f);
   }
   fclose(f);
   f = 0;
@@ -1294,7 +1294,7 @@ static void editFunc(
     sqlite3_result_error_nomem(context);
     goto edit_func_end;
   }
-  x = fread(p, 1, sz, f);
+  x = fread(p, 1, (size_t)sz, f);
   fclose(f);
   f = 0;
   if( x!=sz ){
