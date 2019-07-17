@@ -1,5 +1,5 @@
-C Version\s3.29.0
-D 2019-07-10T17:32:03.802
+C Fix\sproblems\swith\sduplicate\sfields\sin\sthe\sPRIMARY\sKEYs\sof\sWITHOUT\sROWID\stables.
+D 2019-07-17T18:11:11.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -466,7 +466,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 1dbc191e5c1d9bca84a956fed5d73924c574ae5390855009f067bd0f6422e462
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c 23a0253ab53e62feadcc0c6f31e7e418ef9d4b92c82a1398e98433776b920a4e
+F src/build.c 89af0fb6dfb732eadf80aacf49d14c214b87b88784c6c791835b227a75cfd038
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 37f3d21193c4f7d141d0691cced5b39c99951bfef78df9887faf9167b9c42f37
@@ -1723,6 +1723,7 @@ F test/without_rowid3.test ea4b59dd1b0d7f5f5e4b7cca978cdb905752a9d7c57dc4344a591
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
+F test/without_rowid7.test 7b47cd85b0b64bc0f373e9a0fff687f13de84b8e3eb61e65d63f8c1f0ca9da18
 F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
@@ -1831,10 +1832,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f328c35947d6b3a0741514757b8944692203e89bdb2e7f9bbce8ad9288be344
-R 3dc95c8af87e7b557da20a5426ebc03a
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.29.0 *
+P fc82b73eaac8b36950e527f12c4b5dc1e147e6f4ad2217ae43ad82882a88bfa6
+Q +bd9a47a3a2997bfbf9c8a11c5b7196e362974054e58a2fe701778b1580264de8
+R 6e3b077cbc863bc61723d6db0d269a4b
+T *branch * branch-3.29
+T *sym-branch-3.29 *
+T -sym-trunk *
 U drh
-Z 4d356946c4c6edd871b6d6986b095a05
+Z b46e6bc8500edd8e39c6061c68416a88
