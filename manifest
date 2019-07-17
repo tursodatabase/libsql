@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sduplicate\sfields\sin\sthe\sPRIMARY\sKEYs\sof\sWITHOUT\sROWID\stables.
-D 2019-07-17T18:11:11.876
+C When\sprocessing\sa\sBETWEEN\sor\sCASE\sexpression,\savoid\stransforming\sa\snode\sof\sthe\soriginal\sexpression\sinto\sa\sTK_REGISTER\snode.\sInstead,\stake\sa\scopy\sand\suse\sit\sinstead.\sFix\sfor\s[1be72aab9].
+D 2019-07-17T18:19:37.055
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 2756d2875ac5b7a7efcc54edea3c8a31f4126684ded18da6fb406f4d3780a5f5
+F src/expr.c b0107ae64427387b2460c86fc5939ca431e0a1c6070e4e2e91815a7779609c9e
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 0e14d4bef8eac2d87bbd517e492d9084c65008d117823f8922c5e7b2b599bd33
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
@@ -725,7 +725,8 @@ F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bc
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 3619f0c58c2e4b2a94aa86e75607e497d34ef40ab74418e71aef7b4ca5155895
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
-F test/check.test dcc952a127c394ce0de2aa634d26c78207e855327cc63a24d3638ca8fbfa641e
+F test/check.test e6527bed2b5557ffdbf5680765c4ae6fe61e9b68b7ee69a7f776787a4527b5da
+F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
 F test/chunksize.test 427d87791743486cbf0c3b8c625002f3255cb3a89c6eba655a98923b1387b760
 F test/close.test 799ea4599d2f5704b0a30f477d17c2c760d8523fa5d0c8be4a7df2a8cad787d8
 F test/closure01.test 9905883f1b171a4638f98fc764879f154e214a306d3d8daf412a15e7f3a9b1e0
@@ -1832,11 +1833,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc82b73eaac8b36950e527f12c4b5dc1e147e6f4ad2217ae43ad82882a88bfa6
-Q +bd9a47a3a2997bfbf9c8a11c5b7196e362974054e58a2fe701778b1580264de8
-R 6e3b077cbc863bc61723d6db0d269a4b
-T *branch * branch-3.29
-T *sym-branch-3.29 *
-T -sym-trunk *
+P bda258834b11545ba6288a78dc469eb99d014182bb36006f441da65b264249a9
+Q +7ef7b23cbb1b9ace9f853238d9133320c153e6c3417e6823ab6394ee1fe56358
+R 21c8a7b5e736be7a88ff7e37e54ca925
 U drh
-Z b46e6bc8500edd8e39c6061c68416a88
+Z 60243a2d293c2efae2edec47450f483b
