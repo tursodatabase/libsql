@@ -1,5 +1,5 @@
-C Fix\sthe\sWITHOUT\sROWID\stable\slogic\sso\sthat\sit\sgenerates\sa\scorrect\sKeyInfo\nobject\sfor\stables\sthat\shave\sa\sPRIMARY\sKEY\scontaining\sthe\ssame\scolumn\sused\nmore\sthan\sonce\swith\sdifferent\scollating\ssequences.\s\sEnhance\sthe\sindex_xinfo\npragma\sto\sassist\sin\stesting\sthe\sabove.\sFix\sfor\sticket\s[fd3aec0c7e3e2998].
-D 2019-07-17T12:49:16.424
+C When\sprocessing\sa\sBETWEEN\sor\sCASE\sexpression,\savoid\stransforming\sa\snode\sof\sthe\soriginal\sexpression\sinto\sa\sTK_REGISTER\snode.\sInstead,\stake\sa\scopy\sand\suse\sit\sinstead.\sFix\sfor\s[1be72aab9].
+D 2019-07-17T14:34:17.365
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 896c4576cd88a0dc5b5ae0abd236b507b778105b58744bd8974fac98fc432b4c
+F src/expr.c f1d87bc9f2d0f14df97b768d5a3d4e4e606fbe45372bc9a0cb6a2623d1933e6d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c ab1971900477e93b6aaabf160d2d1c79c06edd9227441ccfaf0de7e7431d7f48
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
@@ -725,7 +725,8 @@ F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bc
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 3619f0c58c2e4b2a94aa86e75607e497d34ef40ab74418e71aef7b4ca5155895
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
-F test/check.test dcc952a127c394ce0de2aa634d26c78207e855327cc63a24d3638ca8fbfa641e
+F test/check.test e6527bed2b5557ffdbf5680765c4ae6fe61e9b68b7ee69a7f776787a4527b5da
+F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
 F test/chunksize.test 427d87791743486cbf0c3b8c625002f3255cb3a89c6eba655a98923b1387b760
 F test/close.test eccbad8ecd611d974cbf47278c3d4e5874faf02d811338d5d348af42d56d647c
 F test/closure01.test 9905883f1b171a4638f98fc764879f154e214a306d3d8daf412a15e7f3a9b1e0
@@ -1836,8 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe014288ac03cdf0dc5410b7d45cad4768759b52746c0a22bce2fc03779c5d5a 340378c1e60da80263523776f4b6366a9d332a7ee25986637e8b157f4e8e4bd3
-R 5f5f2ffbc62c0e7052c26dec78f9d9ee
-T +closed 340378c1e60da80263523776f4b6366a9d332a7ee25986637e8b157f4e8e4bd3
-U drh
-Z a8a117274901c94c5f21fbb39eeada13
+P 84a51a755c18ac8253080db6eec505df894ee3b1e97cfa8e61039ac38001e270
+R b1d6ad05577abecc48e59e3ebea1a6ed
+U dan
+Z f2c9fb7d68d7563adaf07df958f5d837
