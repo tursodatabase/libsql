@@ -1,5 +1,5 @@
-C Enhance\sthe\s"PRAGMA\sindex_info()"\sand\s"PRAGMA\sindex_xinfo()"\sstatements\sso\sthat\nthey\sallow\sa\sWITHOUT\sROWID\stable\sas\stheir\sargument,\sand\sin\sthat\scase\sshow\nthe\sstructure\sof\sthe\sunderlying\sindex\sused\sto\simplement\sthe\sWITHOUT\sROWID\ntable.
-D 2019-07-17T11:01:11.853
+C New\stest\scases\sfor\sPRAGMA\sindex_xinfo\son\sa\sWITHOUT\sROWID\stable.\s\sAnd\snew\ntestcases\susing\sindex_xinfo\sto\sverify\sthat\sWITHOUT\sROWID\stables\sare\nconstructed\scorrectly.
+D 2019-07-17T12:42:15.670
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1610,7 +1610,7 @@ F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test 40d54c9ddf5b9fdee692bf936d3352159fe467838f92742aa1d08c7c7d1eac73
-F test/vtab1.test 47b935205d7b6290765973abd6fce0e13e94e040017099170f43f81886efa5ba
+F test/vtab1.test fa6baded08fdadd6f416a9c54956c049ae327b9bdd05d25bf8163f65e65e849c
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
@@ -1721,12 +1721,12 @@ F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1
 F test/with3.test b5f1372097690c6ef84db2f13fc7e64a88c7263c3f88493605f90597e8a68d45
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
-F test/without_rowid1.test 89d101a7c6e0802882002cf3713f405319ddb6b9f08449dcc08c6082c995cab1
+F test/without_rowid1.test edfccaea4c7d15d9f8ca1c6d7e58df5a7e64969140bcb4598a95edfe1bfd7e7e
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test ea4b59dd1b0d7f5f5e4b7cca978cdb905752a9d7c57dc4344a591dba765a3691
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
-F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
+F test/without_rowid6.test 3c1bbf0eb81c672115933158b62b009e67cf1a7f8c2c612bbce63a7385efa18e
 F test/without_rowid7.test 0e0d7be00f05f54898e20e07bcc947cd97b42d7106021fa0d2897324bc6d330e
 F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd9a47a3a2997bfbf9c8a11c5b7196e362974054e58a2fe701778b1580264de8
-R d99bb907d59b9a4c8d12aec0ee12fc91
+P 62274ff683ba077d8b0fa34ad653ce235a8c5cbfdb7ab8558469af7333d03698
+R 5f5f2ffbc62c0e7052c26dec78f9d9ee
 U drh
-Z 747b66d40e91b5de4396e1abb78ac5c8
+Z 9fdc925cff7a2aeb5d3ee2a9b3931134

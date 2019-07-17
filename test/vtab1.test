@@ -875,6 +875,14 @@ do_test vtab1.7-13 {
   }
 } {}
 
+# PRAGMA index_info and index_xinfo are no-ops on a virtual table
+do_test vtab1.7-14 {
+  execsql {
+    PRAGMA index_info('echo_abc');
+    PRAGMA index_xinfo('echo_abc');
+  }
+} {}
+
 ifcapable attach {
   do_test vtab1.8-1 {
     set echo_module ""
