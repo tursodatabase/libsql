@@ -25,7 +25,7 @@ do_catchsql_test 1.1 {
 
 
 do_execsql_test 2.0 {
-  CREATE TABLE t2(a, b, PRIMARY KEY(a, a COLLATE nocase, a)) WITHOUT ROWID;
+  CREATE TABLE t2(a, b, PRIMARY KEY(a COLLATE nocase, a)) WITHOUT ROWID;
 }
 
 do_execsql_test 2.1 {
@@ -33,6 +33,24 @@ do_execsql_test 2.1 {
   SELECT b FROM t2;
 } {one}
 
+do_execsql_test 2.2a {
+  PRAGMA index_info(t2);
+} {0 0 a 1 0 a}
+do_execsql_test 2.2b {
+  SELECT *, '|' FROM pragma_index_info('t2');
+} {0 0 a | 1 0 a |}
+do_execsql_test 2.3a {
+  PRAGMA index_xinfo(t2);
+} {0 0 a 0 nocase 1 1 0 a 0 BINARY 1 2 1 b 0 BINARY 0}
+do_execsql_test 2.3b {
+  SELECT *, '|' FROM pragma_index_xinfo('t2');
+} {0 0 a 0 nocase 1 | 1 0 a 0 BINARY 1 | 2 1 b 0 BINARY 0 |}
+
+do_execsql_test 2.4 {
+  CREATE TABLE t3(a, b, PRIMARY KEY(a COLLATE nocase, a));
+  PRAGMA index_info(t3);
+} {}
+
+
 
 finish_test
-

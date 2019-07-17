@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sduplicate\sfields\sin\sthe\sPRIMARY\sKEYs\sof\sWITHOUT\sROWID\stables.
-D 2019-07-17T09:18:06.336
+C Enhance\sthe\s"PRAGMA\sindex_info()"\sand\s"PRAGMA\sindex_xinfo()"\sstatements\sso\sthat\nthey\sallow\sa\sWITHOUT\sROWID\stable\sas\stheir\sargument,\sand\sin\sthat\scase\sshow\nthe\sstructure\sof\sthe\sunderlying\sindex\sused\sto\simplement\sthe\sWITHOUT\sROWID\ntable.
+D 2019-07-17T11:01:11.853
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F src/parse.y 22889d25bbab20b3fbff5eca1208a1f098ce9cf3ebc309f0dd0753dda79cc864
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
-F src/pragma.c 925bcac0afd98a0d4255c7524b93239ab4d83893d96f7f8fdccd78d4929a39bb
+F src/pragma.c a42d4c6040893a59b69a0c987e5ed0402730c444ee451fde9bbe6203e7f73b1d
 F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 1fdf68a8add154bd1de978dde5a4819478e2576d5701b93db2c65d78c3daf1c8
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
@@ -1727,7 +1727,7 @@ F test/without_rowid3.test ea4b59dd1b0d7f5f5e4b7cca978cdb905752a9d7c57dc4344a591
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
-F test/without_rowid7.test 7b47cd85b0b64bc0f373e9a0fff687f13de84b8e3eb61e65d63f8c1f0ca9da18
+F test/without_rowid7.test 0e0d7be00f05f54898e20e07bcc947cd97b42d7106021fa0d2897324bc6d330e
 F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
@@ -1836,10 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe014288ac03cdf0dc5410b7d45cad4768759b52746c0a22bce2fc03779c5d5a
-R 52845c43e6ecf22392d569b0697bd36c
-T *branch * wor-pk-dups
-T *sym-wor-pk-dups *
-T -sym-trunk *
-U dan
-Z aece81be789a779a58eb3b9812c06233
+P bd9a47a3a2997bfbf9c8a11c5b7196e362974054e58a2fe701778b1580264de8
+R d99bb907d59b9a4c8d12aec0ee12fc91
+U drh
+Z 747b66d40e91b5de4396e1abb78ac5c8
