@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\slemon.
-D 2019-06-03T15:10:24.747
+C Fix\sa\sproblem\swhere\sself-joins\son\sviews\sthat\sare\saggregate\squeries\smay\sreturn\sthe\swrong\sresult.\s\sCherrypick\sof\s[74ef97bf51dd531a].
+D 2019-07-18T20:55:07.058
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,7 +518,7 @@ F src/printf.c 67f79227273a9009d86a017619717c3f554f50b371294526da59faa6014ed2cd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c d9a1a0b21a85fdcc2000a38381ac551abe810f2409352c60bad6e7e122a91372
+F src/select.c 3c78ea0e7039cbe5e342c4734ad96ef707269d4e9ea6f748f349c54d6c4b33ae
 F src/shell.c.in c1986496062f9dba4ed5b70db06b5e0f32e1954cdcfab0b30372c6c186796810
 F src/sqlite.h.in 38390767acc1914d58930e03149595ee4710afa4e3c43ab6c3a8aea3f1a6b8cd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1593,7 +1593,7 @@ F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 71e1bf4c0e2e0d37c84d7db5b33cd47eb4a7662c19d93ede4112b350b186f61f
+F test/view.test ee9262cee79c7f4002fd2869887d3e8eccf70d9a4e1016f847242851edb18964
 F test/vtab1.test 60b4f70aafa6078d6fdfc11417af3bd216d7ef5eafce16707a6ca3dae5166d20
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1818,8 +1818,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 583e5a0ab6bdf3ce3d76852089160a8d11df4c3dd151050a70997b3720c3d538
-Q +2da0eea02d128c37f2fbe764227ac526d3e993284516544adc0a216a035c5676
-R 39f8e643466c6bba6cc75fba889f0126
+P 3a0524295371d7b19d260c60fcbad96d60fcf098580a69959c13c7fcd7d41389
+Q +74ef97bf51dd531a277cf22fa4d42043d93799d5a5bd550812648834460fe0b7
+R 165e95535447e55f82b2597985cf68d1
 U mistachkin
-Z 1b104f17fb7909a93c773b24a5ac563f
+Z 027292129f730d61e283397b87d1a358

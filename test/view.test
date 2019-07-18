@@ -701,4 +701,19 @@ do_test view-25.2 {
   set log
 } $res
 
+#-------------------------------------------------------------------------
+do_execsql_test view-26.0 {
+  CREATE TABLE t16(a, b, c UNIQUE);
+  INSERT INTO t16 VALUES(1, 1, 1);
+  INSERT INTO t16 VALUES(2, 2, 2);
+  INSERT INTO t16 VALUES(3, 3, 3);
+  CREATE VIEW v16 AS SELECT max(a) AS mx, min(b) AS mn FROM t16 GROUP BY c;
+
+  SELECT * FROM v16 AS one, v16 AS two WHERE one.mx=1;
+} {
+  1 1 1 1 
+  1 1 2 2 
+  1 1 3 3
+}
+
 finish_test

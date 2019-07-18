@@ -5481,7 +5481,9 @@ static struct SrcList_item *isSelfJoinView(
       ** names in the same FROM clause. */
       continue;
     }
-    if( sqlite3ExprCompare(0, pThis->pSelect->pWhere, pS1->pWhere, -1) ){
+    if( sqlite3ExprCompare(0, pThis->pSelect->pWhere, pS1->pWhere, -1)
+     || sqlite3ExprCompare(0, pThis->pSelect->pHaving, pS1->pHaving, -1) 
+    ){
       /* The view was modified by some other optimization such as
       ** pushDownWhereTerms() */
       continue;
