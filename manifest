@@ -1,5 +1,5 @@
-C Merge\sthe\sversion\s3.29.0\srelease\senhancements\sinto\sthe\sreuse-schema\sbranch.
-D 2019-07-10T18:45:50.897
+C Modify\sthe\sbits\sused\sfor\sspecial\sflags\son\sthis\sbranch\sto\saccount\sfor\sthe\sfact\sthat\ssome\sof\sthem\sare\snow\sused\sfor\sother\spurposes.
+D 2019-07-18T13:33:00.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/shell.c.in 46729dfe29e635882238e41f6f0c1126677b645a0f12f06ee3cd122f5ba0b9e
 F src/sqlite.h.in e7bdb21e7c59cd6db0eeaabee1478db3dc348270dfb3ce1987541ba133bf531a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h 99f3523d3c122b1a031bdd4d2b2ce92eb7e6f71acbe43a8c8955034701ce335b
+F src/sqliteInt.h 0854e01a3f81752c9b83b568e5e66dd50bca77007d6abd35605ae2cdc636bed3
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c d9f7d66ae8bee9ffbe4cf7ae72a8d3d429a269336dee1e705ecb3dbea27fa5e2
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1839,7 +1839,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fae92fee54685cf0d44937e246e79652ee4679baa3bfb2774ff3ecf739a1e1e7 fc82b73eaac8b36950e527f12c4b5dc1e147e6f4ad2217ae43ad82882a88bfa6
-R e3a8e5c3e184c59fd83cf25a37070bec
-U drh
-Z 0ab548ca92b502050944e8ca760390e4
+P 9819ead089ef5ed92f529d9addbd89760ca5be7eacb3d209c99f639ec5761004
+R d10f7b612de463da8cf1accfa765d9a3
+U dan
+Z eb3f72ed3d7373dd25b11e3f6be31e60
