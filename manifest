@@ -1,5 +1,5 @@
-C Modify\sthe\sbits\sused\sfor\sspecial\sflags\son\sthis\sbranch\sto\saccount\sfor\sthe\sfact\sthat\ssome\sof\sthem\sare\snow\sused\sfor\sother\spurposes.
-D 2019-07-18T13:33:00.960
+C Add\sa\sctime.c\sentry\sfor\sSQLITE_ENABLE_SHARED_SCHEMA.
+D 2019-07-18T19:50:54.911
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -470,7 +470,7 @@ F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3
 F src/build.c c3ea3b48aa6f06167474f492f22d37fde1dd0340bf2e4cd3642c5c976c6ebe5b
 F src/callback.c 5a9a83d7cecce452902da0a24bf51f6e4d232b5dc54b67418276ca9ad82c5bde
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 37f3d21193c4f7d141d0691cced5b39c99951bfef78df9887faf9167b9c42f37
+F src/ctime.c dd608385f81e622e5fbeae4c1e502cb5a034730d077ed2da39b9c73f9af324ad
 F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
@@ -1839,7 +1839,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9819ead089ef5ed92f529d9addbd89760ca5be7eacb3d209c99f639ec5761004
-R d10f7b612de463da8cf1accfa765d9a3
-U dan
-Z eb3f72ed3d7373dd25b11e3f6be31e60
+P 5a8d0f50f3c4dedfd7f97daba4cb1a8cfbe3bc44e0834199d4dd93a0d062ef81
+R 9b95e62fed21a00c84f37329246e09b9
+U drh
+Z ecf1fc73edef359eb8353e3a01debd69
