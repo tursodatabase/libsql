@@ -891,6 +891,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
         }
       }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      else if( pWin ){
+        is_agg = 1;
+      }
+#endif
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC

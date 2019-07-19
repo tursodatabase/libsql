@@ -318,4 +318,17 @@ do_execsql_test 12.2 {
   ALTER TABLE t1 RENAME TO t1x;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.1 {
+  CREATE TABLE t1(a);
+  CREATE TRIGGER r1 INSERT ON t1 BEGIN
+    SELECT a(*) OVER (ORDER BY (SELECT 1)) FROM t1;
+  END;
+}
+
+do_execsql_test 13.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
+
 finish_test
