@@ -237,5 +237,40 @@ do_execsql_test 10.2 {
   ) IN () OR t1.a=5}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 11.1 {
+  CREATE TABLE t1(
+      a,b,c,d,e,f,g,h,j,jj,jjb,k,aa,bb,cc,dd,ee DEFAULT 3.14,
+      ff DEFAULT('hiccup'),Wg NOD NULL DEFAULT(false)
+  );
+
+  CREATE TRIGGER b AFTER INSERT ON t1 WHEN new.a BEGIN
+    SELECT a, sum() w3 FROM t1 
+    WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM abc));
+  END;
+}
+
+do_catchsql_test 11.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger b: no such table: abc}}
+
+do_execsql_test 11.3 {
+  DROP TRIGGER b;
+  CREATE TRIGGER b AFTER INSERT ON t1 WHEN new.a BEGIN
+    SELECT a, sum() w3 FROM t1 
+    WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM t1));
+  END;
+} {}
+
+do_execsql_test 11.4 {
+  ALTER TABLE t1 RENAME TO t1x;
+  SELECT sql FROM sqlite_master WHERE name = 'b';
+} {
+{CREATE TRIGGER b AFTER INSERT ON "t1x" WHEN new.a BEGIN
+    SELECT a, sum() w3 FROM "t1x" 
+    WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM "t1x"));
+  END}
+}
 
 finish_test

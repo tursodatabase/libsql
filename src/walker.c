@@ -120,8 +120,9 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
   {
     Parse *pParse = pWalker->pParse;
     if( pParse && IN_RENAME_OBJECT ){
+      /* The following may return WRC_Abort if there are unresolvable
+      ** symbols (e.g. a table that does not exist) in a window definition. */
       int rc = walkWindowList(pWalker, p->pWinDefn);
-      assert( rc==WRC_Continue );
       return rc;
     }
   }
