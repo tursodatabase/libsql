@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srenaming\sa\stable\swhen\sthe\sschema\scontains\san\sinvocation\sof\sa\swindow\sfunction\sthat\sis\snot\scurrently\sregistered.
-D 2019-07-19T14:32:42.623
+C Refinement\sto\scheck-in\s[348e7f193a963390]\sthat\savoids\sunreachable\sbranches.
+D 2019-07-19T15:00:32.611
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/vtab.c 1fa256c6ddad7a81e2a4dc080d015d4b0a7135767717d311298e47f6fca64bb3
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
-F src/walker.c 20a8455cfd5ccd9ebbf9efe434b828b890ae71574a5659a95848d6f55cecd602
+F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 2f508c9a6dd2a42ad2b692105e77eb92cdec201d32916962ccdeff71836acb52
 F src/whereInt.h 1b728f71654ebf8421a1715497a587f02d6f538e819af58dc826908f8577e810
 F src/wherecode.c 37a1004237d630d785c47bba2290eac652a7a8b0047518eba3cb7c808b604c4a
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 348e7f193a963390a0595183d603541f85c5d1a911c98ed2e06599691ffe98f5
-R 2caa2651096f2a30c0266bd0880e783b
-U dan
-Z 31de9586c7ae48f0b0e62ceaa957aebc
+P ff290feb97f689cf6ce4162d6aa36f9f9dcf1bff3096847d53a85f39f728d2de
+R 6535622f80dc0d9ebf53ef790422b635
+U drh
+Z e57ea86f45822a56c5c84129128f3a39
