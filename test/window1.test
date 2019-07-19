@@ -1170,6 +1170,24 @@ do_execsql_test 29.2 {
   11 K cc 'xyz' K |
 }
 
+# 2019-07-18
+# Check-in [7ef7b23cbb1b9ace] (which was itself a fix for ticket
+# https://www.sqlite.org/src/info/1be72aab9) introduced a new problem
+# if the LHS of a BETWEEN operator is a WINDOW function.  The problem
+# was found by (the recently enhanced) dbsqlfuzz.
+#
+do_execsql_test 30.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('BB','aa',399);
+  SELECT
+    count () OVER win1 NOT BETWEEN 'a' AND 'mmm',
+    count () OVER win3
+  FROM t1
+  WINDOW win1 AS (ORDER BY a GROUPS BETWEEN 4 PRECEDING AND 1 FOLLOWING
+                  EXCLUDE CURRENT ROW),
+         win2 AS (PARTITION BY b ORDER BY a),
+         win3 AS (win2 RANGE BETWEEN 5.2 PRECEDING AND true PRECEDING );
+} {1 1}
+
 finish_test
-
-
