@@ -28,6 +28,8 @@ static int walkWindowList(Walker *pWalker, Window *pList){
     if( sqlite3WalkExprList(pWalker, pWin->pOrderBy) ) return WRC_Abort;
     if( sqlite3WalkExprList(pWalker, pWin->pPartition) ) return WRC_Abort;
     if( sqlite3WalkExpr(pWalker, pWin->pFilter) ) return WRC_Abort;
+    if( sqlite3WalkExpr(pWalker, pWin->pStart) ) return WRC_Abort;
+    if( sqlite3WalkExpr(pWalker, pWin->pEnd) ) return WRC_Abort;
   }
   return WRC_Continue;
 }

@@ -20,6 +20,7 @@ ifcapable !altertable {
   return
 }
 
+
 ifcapable windowfunc {
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
@@ -271,6 +272,50 @@ do_execsql_test 11.4 {
     SELECT a, sum() w3 FROM "t1x" 
     WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM "t1x"));
   END}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 12.1 {
+CREATE TABLE t1(a,b,c,d,e,f,g,h,j,jj,Zjj,k,aQ,bb,cc,dd,ee DEFAULT 3.14,
+ff DEFAULT('hiccup'),gg NOD NULL DEFAULT(false));
+CREATE TRIGGER AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+
+SELECT b () OVER , dense_rank() OVER d, d () OVER w1
+FROM t1
+WINDOW
+w1 AS
+( w1 ORDER BY d
+ROWS BETWEEN 2 NOT IN(SELECT a, sum(d) w2,max(d)OVER FROM t1
+WINDOW
+w1 AS
+(PARTITION BY d
+ROWS BETWEEN '' PRECEDING AND false FOLLOWING),
+d AS
+(PARTITION BY b ORDER BY d
+ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+) PRECEDING AND 1 FOLLOWING),
+w2 AS
+(PARTITION BY b ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+w3 AS
+(PARTITION BY b ORDER BY d
+ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+;
+SELECT a, sum(d) w2,max(d)OVER FROM t1
+WINDOW
+w1 AS
+(PARTITION BY d
+ROWS BETWEEN '' PRECEDING AND false FOLLOWING),
+d AS
+(PARTITION BY b ORDER BY d
+ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+;
+
+END;
+}
+
+do_execsql_test 12.2 {
+  ALTER TABLE t1 RENAME TO t1x;
 }
 
 finish_test
