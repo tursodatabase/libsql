@@ -2017,6 +2017,7 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
       pNew->eEnd = p->eEnd;
       pNew->eStart = p->eStart;
       pNew->eExclude = p->eExclude;
+      pNew->regResult = p->regResult;
       pNew->pStart = sqlite3ExprDup(db, p->pStart, 0);
       pNew->pEnd = sqlite3ExprDup(db, p->pEnd, 0);
       pNew->pOwner = pOwner;
