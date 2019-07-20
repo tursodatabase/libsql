@@ -3627,10 +3627,14 @@ Window *sqlite3WindowListDup(sqlite3 *db, Window *p);
 void sqlite3WindowFunctions(void);
 void sqlite3WindowChain(Parse*, Window*, Window*);
 Window *sqlite3WindowAssemble(Parse*, Window*, ExprList*, ExprList*, Token*);
+void sqlite3WindowRemoveExprFromSelect(Select*,Expr*);
+void sqlite3WindowRemoveExprListFromSelect(Select*,ExprList*);
 #else
 # define sqlite3WindowDelete(a,b)
 # define sqlite3WindowFunctions()
 # define sqlite3WindowAttach(a,b,c)
+# define sqlite3WindowRemoveExprFromSelect(Select*,Expr*);
+# define sqlite3WindowRemoveExprListFromSelect(Select*,ExprList*);
 #endif
 
 /*

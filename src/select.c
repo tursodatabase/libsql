@@ -5661,6 +5661,7 @@ int sqlite3Select(
            pDest->eDest==SRT_DistQueue || pDest->eDest==SRT_Fifo);
     /* If ORDER BY makes no difference in the output then neither does
     ** DISTINCT so it can be removed too. */
+    sqlite3WindowRemoveExprListFromSelect(p, p->pOrderBy);
     sqlite3ExprListDelete(db, p->pOrderBy);
     p->pOrderBy = 0;
     p->selFlags &= ~SF_Distinct;
