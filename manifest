@@ -1,5 +1,5 @@
-C New\stest\scases\sadded\sto\stest/fuzzdata8.db
-D 2019-07-22T16:57:13.538
+C Fix\sa\sbug\sin\sthe\slinked-list\shandling\scode\sadded\sby\scommit\s[fd7316cd].
+D 2019-07-22T17:28:43.613
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 3dba8ac22b89b6af10cff7d672f8cab4a71c7ee75abb4cbc0a6a79d32f752a4a
+F src/expr.c b49492392bf93b62dc508b31e0ec32186118df439cde9e2f9ebc98aab54e9fa7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c ab1971900477e93b6aaabf160d2d1c79c06edd9227441ccfaf0de7e7431d7f48
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
@@ -1713,7 +1713,7 @@ F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d761
 F test/window7.test ce7f865241fdd1c5c4db869cd7bb2986c3be836bc2e73649a6846dd920f63e0f
 F test/window8.tcl 9e9a82ae9eea90a4a83481d641a812b974980c38f9247f3b89a6e3c8bed45518
 F test/window8.test df187dc19921f7be0ab709d531d681bd80ccaac96a913a89ecee8b272b91d43f
-F test/window9.test 4329f463a151eb12ede2a73bbcf67abf0b9f781c8a1346f4138249f228a02b7e
+F test/window9.test 7bbefbb188cd95d96382d4f72dc418dd3104a9c509fb5b70d91f7f78255d67da
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 403693d7d951c5473f052f7ecddb61ed15ac9d212f238b8904ea270ba90f83e5
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd7316cda0fdfe86985f41a97dff3beba188606ec9bc6fef38a686a6976a6e01
-R 45d11109e6708bf4627af9528a656ade
-U drh
-Z ea733881a87798cdb6121c0f61beb864
+P 25fec62ac5a23382a54eee78d3705885eb4065826d7e8da098816d03ae9dc639
+R 5cbae4427975359f2ddc6c8d60a43a9b
+U dan
+Z 8c151ed28bc28c3158076ee41a997089

@@ -121,6 +121,16 @@ do_catchsql_test 3.3 {
   ) OVER (ORDER BY a);
 } {1 {near "OVER": syntax error}}
 
+do_catchsql_test 3.4 {
+  SELECT y, y+1, y+2 FROM (
+      SELECT c IN (
+        SELECT min(a) OVER (),
+        (abs(row_number() OVER())+22)/19,
+        max(a) OVER () FROM t1
+        ) AS y FROM t2
+      );
+} {1 {sub-select returns 3 columns - expected 1}}
+
 
 finish_test
 

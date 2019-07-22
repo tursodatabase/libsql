@@ -1330,8 +1330,8 @@ static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
     Window *pWin = pExpr->y.pWin;
     assert( pWin );
     assert( IsWindowFunc(pExpr) );
+    assert( pWin->ppThis==0 );
     if( pSelect->pWin ){
-      *pSelect->pWin->ppThis = pSelect->pWin->pNextWin;
       pSelect->pWin->ppThis = &pWin->pNextWin;
     }
     pWin->pNextWin = pSelect->pWin;
