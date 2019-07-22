@@ -1,5 +1,5 @@
-C Fix\sa\snew\sproblem\sin\sthe\sBETWEEN\soperator\swhen\sapplied\sto\sa\swindow\sfunction.\nThe\sproblem\swas\sintroduced\syesterday\sby\scheck-in\s[7ef7b23cbb1b9ace].\nThis\scherry-pick\salso\sneeded\sto\sremove\san\sassert\sfrom\ssqliteExprDelete().
-D 2019-07-19T01:25:27.859
+C Do\snot\suse\sthe\sinsert-overwrite\soptimization\sif\sthe\scell\smight\soverwrite\sthe\npage\sheader.
+D 2019-07-22T23:30:44.176
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -463,7 +463,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c b1d37f6f7f5913944583733ed0f9e182f3ece0d42c27f46701142141a6e6fd33
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 1dbc191e5c1d9bca84a956fed5d73924c574ae5390855009f067bd0f6422e462
+F src/btree.c af0a7159dbe59b0e79e15416378870b89b4cc71fde09ec3bd1ab77dd1979a3f2
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 89af0fb6dfb732eadf80aacf49d14c214b87b88784c6c791835b227a75cfd038
@@ -1833,8 +1833,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc6b0d73ee16c433b012ad3e69c9e09efd7ea34029ff0c29c2f004d7a3214c66
-Q +47e23064ba0205148f89e12803a62d5a4d6d2054f593f60c031e815112170b9b
-R 6b3818d1c8b5baad8fa6aa7051fca074
+P ce6bf395e2440f0e2fb333ff9e7355a733eb8d82aacb6c379b5b1c2779a5df14
+Q +f60a83069168899dcfd706b4d0901084c7ce92d85277950317e962a8a98ec668
+R 3fef2cae4bab728051e5c42c9f4bda25
 U drh
-Z 49af44ce1dd22fe5fe3e3e0cda2ce339
+Z 1b041046f6a2860db4add9ba1c0d1bcf
