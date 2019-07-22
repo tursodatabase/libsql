@@ -3594,6 +3594,7 @@ struct Window {
   u8 eExclude;            /* TK_NO, TK_CURRENT, TK_TIES, TK_GROUP, or 0 */
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
+  Window **ppThis;        /* Pointer to this object in Select.pWin list */
   Window *pNextWin;       /* Next window function belonging to this SELECT */
   Expr *pFilter;          /* The FILTER expression */
   FuncDef *pFunc;         /* The function */

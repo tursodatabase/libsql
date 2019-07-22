@@ -98,5 +98,29 @@ do_execsql_test 2.2.2 {
   SELECT b=='2', rank() OVER (ORDER BY a) FROM t1
 } {1 1   0 2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(a,b,c);
+}
+
+do_execsql_test 3.1 {
+  SELECT EXISTS(SELECT 1 FROM t1 ORDER BY sum(a) OVER ()) FROM t1;
+}
+
+do_execsql_test 3.2 {
+  SELECT sum(a) OVER () FROM t2
+   ORDER BY EXISTS(SELECT 1 FROM t2 ORDER BY sum(a) OVER ());
+}
+
+do_catchsql_test 3.3 {
+  SELECT a, sum(a) OVER (ORDER BY a DESC) FROM t2 
+  ORDER BY EXISTS(
+    SELECT 1 FROM t2 ORDER BY sum(a) OVER (ORDER BY a)
+  ) OVER (ORDER BY a);
+} {1 {near "OVER": syntax error}}
+
+
 finish_test
 

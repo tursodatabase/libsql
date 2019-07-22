@@ -1022,6 +1022,10 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
 */
 void sqlite3WindowDelete(sqlite3 *db, Window *p){
   if( p ){
+    if( p->ppThis ){
+      *p->ppThis = p->pNextWin;
+      if( p->pNextWin ) p->pNextWin->ppThis = p->ppThis;
+    }
     sqlite3ExprDelete(db, p->pFilter);
     sqlite3ExprListDelete(db, p->pPartition);
     sqlite3ExprListDelete(db, p->pOrderBy);
