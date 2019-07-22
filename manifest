@@ -1,5 +1,5 @@
-C Remove\sWindow\sobjects\sfrom\sthe\scorresponding\sSelect.pWin\slist\swhen\sthey\sare\sdeleted,\sas\sthey\sare,\sfor\sexample,\swhen\sthe\sORDER\sBY\sclause\sis\soptimized\sout.
-D 2019-07-22T16:33:02.936
+C New\stest\scases\sadded\sto\stest/fuzzdata8.db
+D 2019-07-22T16:57:13.538
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1011,7 +1011,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db babb1c560fef766171972c119c1bc3b7be20b134e2f46ae0c52390cd3059b6f4
-F test/fuzzdata8.db 8aa701701db4c374f45edd60a9649ab0043378c2d374f1cc21c81738888cf440
+F test/fuzzdata8.db 5142ecb1f8dae2ba6c6e3098c7b1a1bff635e2e6c3232bfe22c8d3b39b8a5e23
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1837,8 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd37ce3fb8dee8d538f6afc0bfc13cdc3ebdd504e6461f0130c6ecc8af585f68 d23f33168222dfa40a67dc7de58057418151989e81429e4af47617e86db04667
-R a453e99f9348decd797862fc4bdc9e7c
-T +closed d23f33168222dfa40a67dc7de58057418151989e81429e4af47617e86db04667
-U dan
-Z 969d210cbdfb355e385521e5fc73fac7
+P fd7316cda0fdfe86985f41a97dff3beba188606ec9bc6fef38a686a6976a6e01
+R 45d11109e6708bf4627af9528a656ade
+U drh
+Z ea733881a87798cdb6121c0f61beb864
