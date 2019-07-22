@@ -221,7 +221,7 @@ impl<'stmt> Row<'stmt> {
     /// 16 bytes, `Error::InvalidColumnType` will also be returned.
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = idx.idx(self.stmt)?;
-        let value = self.stmt.value_ref(idx);
+        let value = self.stmt.value_ref(idx)?;
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => {
                 Error::InvalidColumnType(idx, self.stmt.column_name(idx).into(), value.data_type())
@@ -262,7 +262,7 @@ impl<'stmt> Row<'stmt> {
         // returns) to `ValueRef<'a>` is needed because it's only valid until
         // the next call to sqlite3_step.
         let val_ref = self.stmt.value_ref(idx);
-        Ok(val_ref)
+        val_ref
     }
 
     /// Get the value of a particular column of the result row as a `ValueRef`,
