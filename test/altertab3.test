@@ -331,4 +331,19 @@ do_execsql_test 13.2 {
   ALTER TABLE t1 RENAME TO t1x;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 14.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    SELECT sum() FILTER (WHERE (SELECT sum() FILTER (WHERE 0)) AND a);
+  END;
+}
+
+do_catchsql_test 14.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger AFTER: no such column: a}}
+
 finish_test
+

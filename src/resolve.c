@@ -892,7 +892,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      else if( pWin ){
+      else if( ExprHasProperty(pExpr, EP_WinFunc) ){
         is_agg = 1;
       }
 #endif
