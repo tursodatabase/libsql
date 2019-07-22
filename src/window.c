@@ -1018,14 +1018,23 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
 }
 
 /*
+** Unlink the Window object from the Select to which it is attached,
+** if it is attached.
+*/
+void sqlite3WindowUnlinkFromSelect(Window *p){
+  if( p->ppThis ){
+    *p->ppThis = p->pNextWin;
+    if( p->pNextWin ) p->pNextWin->ppThis = p->ppThis;
+    p->ppThis = 0;
+  }
+}
+
+/*
 ** Free the Window object passed as the second argument.
 */
 void sqlite3WindowDelete(sqlite3 *db, Window *p){
   if( p ){
-    if( p->ppThis ){
-      *p->ppThis = p->pNextWin;
-      if( p->pNextWin ) p->pNextWin->ppThis = p->ppThis;
-    }
+    sqlite3WindowUnlinkFromSelect(p);
     sqlite3ExprDelete(db, p->pFilter);
     sqlite3ExprListDelete(db, p->pPartition);
     sqlite3ExprListDelete(db, p->pOrderBy);

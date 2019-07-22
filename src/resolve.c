@@ -1305,11 +1305,7 @@ int sqlite3ResolveOrderGroupBy(
 static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
   if( ExprHasProperty(pExpr, EP_WinFunc) ){
     Window *pWin = pExpr->y.pWin;
-    if( pWin->ppThis ){
-      *pWin->ppThis = pWin->pNextWin;
-      if( pWin->pNextWin ) pWin->pNextWin->ppThis = pWin->ppThis;
-      pWin->ppThis = 0;
-    }
+    sqlite3WindowUnlinkFromSelect(pWin);
   }
   return WRC_Continue;
 }
