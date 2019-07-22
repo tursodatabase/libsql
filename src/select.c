@@ -102,6 +102,7 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     }
 #endif
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
+    assert( p->pWin==0 );
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
     bFree = 1;
@@ -5661,7 +5662,6 @@ int sqlite3Select(
            pDest->eDest==SRT_DistQueue || pDest->eDest==SRT_Fifo);
     /* If ORDER BY makes no difference in the output then neither does
     ** DISTINCT so it can be removed too. */
-    sqlite3WindowRemoveExprListFromSelect(p, p->pOrderBy);
     sqlite3ExprListDelete(db, p->pOrderBy);
     p->pOrderBy = 0;
     p->selFlags &= ~SF_Distinct;

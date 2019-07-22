@@ -3594,6 +3594,7 @@ struct Window {
   u8 eExclude;            /* TK_NO, TK_CURRENT, TK_TIES, TK_GROUP, or 0 */
   Expr *pStart;           /* Expression for "<expr> PRECEDING" */
   Expr *pEnd;             /* Expression for "<expr> FOLLOWING" */
+  Window **ppThis;        /* Pointer to this object in Select.pWin list */
   Window *pNextWin;       /* Next window function belonging to this SELECT */
   Expr *pFilter;          /* The FILTER expression */
   FuncDef *pFunc;         /* The function */
@@ -3627,14 +3628,10 @@ Window *sqlite3WindowListDup(sqlite3 *db, Window *p);
 void sqlite3WindowFunctions(void);
 void sqlite3WindowChain(Parse*, Window*, Window*);
 Window *sqlite3WindowAssemble(Parse*, Window*, ExprList*, ExprList*, Token*);
-void sqlite3WindowRemoveExprFromSelect(Select*,Expr*);
-void sqlite3WindowRemoveExprListFromSelect(Select*,ExprList*);
 #else
 # define sqlite3WindowDelete(a,b)
 # define sqlite3WindowFunctions()
 # define sqlite3WindowAttach(a,b,c)
-# define sqlite3WindowRemoveExprFromSelect(Select*,Expr*);
-# define sqlite3WindowRemoveExprListFromSelect(Select*,ExprList*);
 #endif
 
 /*

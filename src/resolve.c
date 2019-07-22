@@ -901,6 +901,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pWin ){
           Select *pSel = pNC->pWinSelect;
+          assert( pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
             sqlite3WindowUpdate(pParse, pSel->pWinDefn, pWin, pDef);
           }
@@ -910,8 +911,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           if( 0==pSel->pWin 
            || 0==sqlite3WindowCompare(pParse, pSel->pWin, pWin, 0)
           ){
-            pExpr->y.pWin->pNextWin = pSel->pWin;
-            pSel->pWin = pExpr->y.pWin;
+            pWin->pNextWin = pSel->pWin;
+            if( pSel->pWin ){
+              pSel->pWin->ppThis = &pWin->pNextWin;
+            }
+            pSel->pWin = pWin;
+            pWin->ppThis = &pSel->pWin;
           }
           pNC->ncFlags |= NC_HasWin;
         }else
@@ -1295,17 +1300,15 @@ int sqlite3ResolveOrderGroupBy(
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 /*
-** Walker callback for sqlite3WindowRemoveExprFromSelect() and
-** sqlite3WindowRemoveExprListFromSelect()
+** Walker callback for windowRemoveExprFromSelect().
 */
 static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
   if( ExprHasProperty(pExpr, EP_WinFunc) ){
-    Window **pp;
-    for(pp=&pWalker->u.pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
-      if( *pp==pExpr->y.pWin ){
-        *pp = (*pp)->pNextWin;
-        break;
-      }    
+    Window *pWin = pExpr->y.pWin;
+    if( pWin->ppThis ){
+      *pWin->ppThis = pWin->pNextWin;
+      if( pWin->pNextWin ) pWin->pNextWin->ppThis = pWin->ppThis;
+      pWin->ppThis = 0;
     }
   }
   return WRC_Continue;
@@ -1315,7 +1318,7 @@ static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
 ** Remove any Window objects owned by the expression pExpr from the
 ** Select.pWin list of Select object pSelect.
 */
-void sqlite3WindowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
+static void windowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
   if( pSelect->pWin ){
     Walker sWalker;
     memset(&sWalker, 0, sizeof(Walker));
@@ -1324,23 +1327,8 @@ void sqlite3WindowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
     sqlite3WalkExpr(&sWalker, pExpr);
   }
 }
-
-/*
-** Remove any Window objects owned by the expression list from the
-** Select.pWin list of Select object pSelect.
-*/
-void sqlite3WindowRemoveExprListFromSelect(Select *pSelect, ExprList *pList){
-  if( pList && pSelect->pWin ){
-    int i;
-    Walker sWalker;
-    memset(&sWalker, 0, sizeof(Walker));
-    sWalker.xExprCallback = resolveRemoveWindowsCb;
-    sWalker.u.pSelect = pSelect;
-    for(i=0; i<pList->nExpr; i++){
-      sqlite3WalkExpr(&sWalker, pList->a[i].pExpr);
-    }
-  }
-}
+#else
+# define windowRemoveExprFromSelect(a, b)
 #endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
@@ -1412,7 +1400,7 @@ static int resolveOrderGroupBy(
         /* Since this expresion is being changed into a reference
         ** to an identical expression in the result set, remove all Window
         ** objects belonging to the expression from the Select.pWin list. */
-        sqlite3WindowRemoveExprFromSelect(pSelect, pE);
+        windowRemoveExprFromSelect(pSelect, pE);
         pItem->u.x.iOrderByCol = j+1;
       }
     }
