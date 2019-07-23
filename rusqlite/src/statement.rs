@@ -601,10 +601,10 @@ impl Statement<'_> {
         Statement { conn, stmt }
     }
 
-    pub(crate) fn value_ref(&self, col: usize) -> Result<ValueRef<'_>> {
+    pub(crate) fn value_ref(&self, col: usize) -> ValueRef<'_> {
         let raw = unsafe { self.stmt.ptr() };
 
-        Ok(match self.stmt.column_type(col) {
+        match self.stmt.column_type(col) {
             ffi::SQLITE_NULL => ValueRef::Null,
             ffi::SQLITE_INTEGER => {
                 ValueRef::Integer(unsafe { ffi::sqlite3_column_int64(raw, col as c_int) })
@@ -624,7 +624,8 @@ impl Statement<'_> {
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
                 let s = s
-                    .to_str()?;
+                    .to_str()
+                    .expect("sqlite3_column_text returned invalid UTF-8");
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
@@ -652,7 +653,7 @@ impl Statement<'_> {
                 }
             }
             _ => unreachable!("sqlite3_column_type returned invalid value"),
-        })
+        }
     }
 
     pub(crate) fn step(&self) -> Result<bool> {
