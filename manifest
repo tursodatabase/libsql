@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\sinsert-overwrite\soptimization\sif\sthe\scell\smight\soverwrite\sthe\npage\sheader.
-D 2019-07-22T23:24:01.858
+C Avoid\sredefining\stypes\su32\sand\su16\swhen\sfossildelta.c\sis\scompiled\sas\spart\sof\sthe\samalgamation.
+D 2019-07-23T13:26:43.019
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -290,7 +290,7 @@ F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287
 F ext/misc/eval.c 4b4757592d00fd32e44c7a067e6a0e4839c81a4d57abc4131ee7806d1be3104e
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
 F ext/misc/fileio.c 288e7230e0fe464d71b0694e2d8bdd3a353118ac2e31da3964b95f460f09915f
-F ext/misc/fossildelta.c 5c04d0a5657615daf4c6cd01c4281de8983dd28f6eed592b2691c10e3f6710e1
+F ext/misc/fossildelta.c 7708651072eb5620ab21bbfb518d184f27b2c29c0131b09b9a2d8852a8016430
 F ext/misc/fuzzer.c c4e27daf41433a64cad5265cd27dbcb891147e9994d0422200ce81ce9a54b625
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c c99b5f04fccba87c1c8c5ab5c0e53eef37c0144086e33911290a67dfba541d59
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e46b2afc99329c43de08d4a2e6ade4d2239d7409c5d5626bf272a3e0dd24d1b4
-R f02547e04f9016efb71b5df78bb77dee
-U drh
-Z 2c31e583b3a3e231570279d810b3f5f0
+P f60a83069168899dcfd706b4d0901084c7ce92d85277950317e962a8a98ec668
+R 84008622b9c994d74ed4e65360e28d93
+U dan
+Z 85dff92fade63aa4999107c46113ee46

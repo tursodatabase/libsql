@@ -36,6 +36,7 @@
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
+#ifndef SQLITE_AMALGAMATION
 /*
 ** The "u32" type must be an unsigned 32-bit integer.  Adjust this
 */
@@ -46,6 +47,8 @@ typedef unsigned int u32;
 */
 typedef short int s16;
 typedef unsigned short int u16;
+
+#endif /* SQLITE_AMALGAMATION */
 
 
 /*
