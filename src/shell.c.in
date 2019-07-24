@@ -6589,6 +6589,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   shellExecPrintf(pState->db, &rc,
     /* Attach an in-memory database named 'recovery'. Create an indexed 
     ** cache of the sqlite_dbptr virtual table. */
+    "PRAGMA writable_schema = on;"
     "ATTACH %Q AS recovery;"
     "DROP TABLE IF EXISTS recovery.dbptr;"
     "DROP TABLE IF EXISTS recovery.freelist;"
