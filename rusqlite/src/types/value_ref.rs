@@ -54,10 +54,9 @@ impl<'a> ValueRef<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_str(&self) -> FromSqlResult<&'a str> {
         match *self {
-            ValueRef::Text(t) => match std::str::from_utf8(t) {
-                Err(e) => Err(FromSqlError::Other(Box::new(e))),
-                Ok(r) => Ok(r),
-            },
+            ValueRef::Text(t) => {
+                std::str::from_utf8(t).map_err(|e| FromSqlError::Other(Box::new(e)))
+            }
             _ => Err(FromSqlError::InvalidType),
         }
     }
@@ -131,10 +130,7 @@ impl<'a> ValueRef<'a> {
                 );
                 let s = CStr::from_ptr(text as *const c_char);
 
-                // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s
-                    .to_str()
-                    .expect("sqlite3_value_text returned invalid UTF-8");
+                let s = s.to_bytes();
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {

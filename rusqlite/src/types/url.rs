@@ -14,10 +14,12 @@ impl ToSql for Url {
 impl FromSql for Url {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
-            ValueRef::Text(s) => Url::parse(s),
-            _ => return Err(FromSqlError::InvalidType),
+            ValueRef::Text(s) => {
+                let s = std::str::from_utf8(s).map_err(|e| FromSqlError::Other(Box::new(e)))?;
+                Url::parse(s).map_err(|e| FromSqlError::Other(Box::new(e)))
+            }
+            _ => Err(FromSqlError::InvalidType),
         }
-        .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 
