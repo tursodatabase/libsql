@@ -216,7 +216,7 @@ impl InnerConnection {
 
     pub fn prepare<'a>(&mut self, conn: &'a Connection, sql: &str) -> Result<Statement<'a>> {
         let mut c_stmt = MaybeUninit::uninit();
-        let (c_sql, len, _) = str_for_sqlite(sql)?;
+        let (c_sql, len, _) = str_for_sqlite(sql.as_bytes())?;
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {
                 let mut rc;

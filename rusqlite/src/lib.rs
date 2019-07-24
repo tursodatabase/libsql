@@ -248,9 +248,9 @@ fn str_to_cstring(s: &str) -> Result<CString> {
 /// The `sqlite3_destructor_type` item is always `SQLITE_TRANSIENT` unless
 /// the string was empty (in which case it's `SQLITE_STATIC`, and the ptr is
 /// static).
-fn str_for_sqlite(s: &str) -> Result<(*const c_char, c_int, ffi::sqlite3_destructor_type)> {
+fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int, ffi::sqlite3_destructor_type)> {
     let len = len_as_c_int(s.len())?;
-    if memchr::memchr(0, s.as_bytes()).is_none() {
+    if memchr::memchr(0, s).is_none() {
         let (ptr, dtor_info) = if len != 0 {
             (s.as_ptr() as *const c_char, ffi::SQLITE_TRANSIENT())
         } else {

@@ -14,7 +14,7 @@ pub enum ValueRef<'a> {
     /// The value is a floating point number.
     Real(f64),
     /// The value is a text string.
-    Text(&'a str),
+    Text(&'a [u8]),
     /// The value is a blob of data
     Blob(&'a [u8]),
 }
@@ -54,7 +54,10 @@ impl<'a> ValueRef<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_str(&self) -> FromSqlResult<&'a str> {
         match *self {
-            ValueRef::Text(t) => Ok(t),
+            ValueRef::Text(t) => match std::str::from_utf8(t) {
+                Err(e) => Err(FromSqlError::Other(Box::new(e))),
+                Ok(r) => Ok(r),
+            },
             _ => Err(FromSqlError::InvalidType),
         }
     }
@@ -75,7 +78,10 @@ impl From<ValueRef<'_>> for Value {
             ValueRef::Null => Value::Null,
             ValueRef::Integer(i) => Value::Integer(i),
             ValueRef::Real(r) => Value::Real(r),
-            ValueRef::Text(s) => Value::Text(s.to_string()),
+            ValueRef::Text(s) => {
+                let s = std::str::from_utf8(s).expect("invalid UTF-8");
+                Value::Text(s.to_string())
+            }
             ValueRef::Blob(b) => Value::Blob(b.to_vec()),
         }
     }
@@ -83,7 +89,7 @@ impl From<ValueRef<'_>> for Value {
 
 impl<'a> From<&'a str> for ValueRef<'a> {
     fn from(s: &str) -> ValueRef<'_> {
-        ValueRef::Text(s)
+        ValueRef::Text(s.as_bytes())
     }
 }
 
@@ -99,7 +105,7 @@ impl<'a> From<&'a Value> for ValueRef<'a> {
             Value::Null => ValueRef::Null,
             Value::Integer(i) => ValueRef::Integer(i),
             Value::Real(r) => ValueRef::Real(r),
-            Value::Text(ref s) => ValueRef::Text(s),
+            Value::Text(ref s) => ValueRef::Text(s.as_bytes()),
             Value::Blob(ref b) => ValueRef::Blob(b),
         }
     }
