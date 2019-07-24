@@ -6740,6 +6740,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   );
   shellPrepare(pState->db, &rc,
       "SELECT max(field), group_concat(shell_escape_crnl(quote(value)), ', ')"
+      ", min(field) "
       "FROM sqlite_dbdata WHERE pgno = ? AND field != ?"
       "GROUP BY cell", &pCells
   );
@@ -6758,6 +6759,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     int bNoop = 0;
     RecoverTable *pTab;
 
+    assert( bIntkey==0 || bIntkey==1 );
     pTab = recoverFindTable(pState, &rc, iRoot, bIntkey, nCol, &bNoop);
     if( bNoop || rc ) continue;
     if( pTab==0 ){
@@ -6779,18 +6781,28 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       sqlite3_bind_int(pCells, 1, iPgno);
       while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pCells) ){
         int nField = sqlite3_column_int(pCells, 0);
+        int iMin = sqlite3_column_int(pCells, 2);
         const char *zVal = (const char*)sqlite3_column_text(pCells, 1);
 
+        RecoverTable *pTab2 = pTab;
+        if( pTab!=pOrphan && (iMin<0)!=bIntkey ){
+          if( pOrphan==0 ){
+            pOrphan = recoverOrphanTable(pState, &rc, zLostAndFound, nOrphan);
+          }
+          pTab2 = pOrphan;
+          if( pTab2==0 ) break;
+        }
+
         nField = nField+1;
-        if( pTab==pOrphan ){
+        if( pTab2==pOrphan ){
           raw_printf(pState->out, 
               "INSERT INTO %s VALUES(%d, %d, %d, %s%s%s);\n",
-              pTab->zQuoted, iRoot, iPgno, nField, 
-              bIntkey ? "" : "NULL, ", zVal, pTab->azlCol[nField]
+              pTab2->zQuoted, iRoot, iPgno, nField,
+              iMin<0 ? "" : "NULL, ", zVal, pTab2->azlCol[nField]
           );
         }else{
           raw_printf(pState->out, "INSERT INTO %s(%s) VALUES( %s );\n", 
-              pTab->zQuoted, pTab->azlCol[nField], zVal
+              pTab2->zQuoted, pTab2->azlCol[nField], zVal
           );
         }
       }
