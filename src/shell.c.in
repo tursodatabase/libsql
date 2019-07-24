@@ -6397,7 +6397,7 @@ static RecoverTable *recoverNewTable(
       }
       i = 1;
       shellPreparePrintf(dbtmp, &rc, &pStmt, 
-          "SELECT %Q || group_concat(name, ', ') "
+          "SELECT %Q || group_concat(quote(name), ', ') "
           "  FILTER (WHERE cid!=%d) OVER (ORDER BY %s cid) "
           "FROM pragma_table_info(%Q)", 
           bIntkey ? ", " : "", pTab->iPk, 
@@ -6618,6 +6618,21 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       "REPLACE INTO recovery.freelist SELECT freepgno FROM freelist;"
     );
   }
+
+  /* If this is an auto-vacuum database, add all pointer-map pages to
+  ** the freelist table. Do this regardless of whether or not 
+  ** --freelist-corrupt was specified.  */
+  shellExec(pState->db, &rc, 
+    "WITH ptrmap(pgno) AS ("
+    "  SELECT 2 WHERE shell_int32("
+    "    (SELECT data FROM sqlite_dbpage WHERE pgno=1), 13"
+    "  )"
+    "    UNION ALL "
+    "  SELECT pgno+1+(SELECT page_size FROM pragma_page_size)/5 AS pp "
+    "  FROM ptrmap WHERE pp<=(SELECT page_count FROM pragma_page_count)"
+    ")"
+    "REPLACE INTO recovery.freelist SELECT pgno FROM ptrmap"
+  );
 
   shellExec(pState->db, &rc, 
     "CREATE TABLE recovery.dbptr("
