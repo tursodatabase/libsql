@@ -2216,6 +2216,13 @@ static char *rbuObjIterGetIndexWhere(sqlite3rbu *p, RbuObjIter *pIter){
             for(i++; 1; i++){
               if( zSql[i]==']' ) break;
             }
+          }else if( c=='-' && zSql[i+1]=='-' ){
+            for(i=i+2; zSql[i] && zSql[i]!='\n'; i++);
+            if( zSql[i]=='\0' ) break;
+          }else if( c=='/' && zSql[i+1]=='*' ){
+            for(i=i+2; zSql[i] && (zSql[i]!='*' || zSql[i+1]!='/'); i++);
+            if( zSql[i]=='\0' ) break;
+            i++;
           }
         }
         if( zSql[i] ){
