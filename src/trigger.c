@@ -361,6 +361,7 @@ void sqlite3FinishTrigger(
     Trigger *pLink = pTrig;
     Hash *pHash = &db->aDb[iDb].pSchema->trigHash;
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    assert( pLink!=0 );
     pTrig = sqlite3HashInsert(pHash, zName, pTrig);
     if( pTrig ){
       sqlite3OomFault(db);

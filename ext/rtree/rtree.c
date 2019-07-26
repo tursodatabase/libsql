@@ -1564,13 +1564,14 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
 
   eInt = pRtree->eCoordType==RTREE_COORD_INT32;
   while( (p = rtreeSearchPointFirst(pCur))!=0 && p->iLevel>0 ){
+    u8 *pCellData;
     pNode = rtreeNodeOfFirstSearchPoint(pCur, &rc);
     if( rc ) return rc;
     nCell = NCELL(pNode);
     assert( nCell<200 );
+    pCellData = pNode->zData + (4+pRtree->nBytesPerCell*p->iCell);
     while( p->iCell<nCell ){
       sqlite3_rtree_dbl rScore = (sqlite3_rtree_dbl)-1;
-      u8 *pCellData = pNode->zData + (4+pRtree->nBytesPerCell*p->iCell);
       eWithin = FULLY_WITHIN;
       for(ii=0; ii<nConstraint; ii++){
         RtreeConstraint *pConstraint = pCur->aConstraint + ii;
@@ -1583,13 +1584,23 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
         }else{
           rtreeNonleafConstraint(pConstraint, eInt, pCellData, &eWithin);
         }
-        if( eWithin==NOT_WITHIN ) break;
+        if( eWithin==NOT_WITHIN ){
+          p->iCell++;
+          pCellData += pRtree->nBytesPerCell;
+          break;
+        }
       }
-      p->iCell++;
       if( eWithin==NOT_WITHIN ) continue;
+      p->iCell++;
       x.iLevel = p->iLevel - 1;
       if( x.iLevel ){
         x.id = readInt64(pCellData);
+        for(ii=0; ii<pCur->nPoint; ii++){
+          if( pCur->aPoint[ii].id==x.id ){
+            RTREE_IS_CORRUPT(pRtree);
+            return SQLITE_CORRUPT_VTAB;
+          }
+        }
         x.iCell = 0;
       }else{
         x.id = p->id;

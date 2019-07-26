@@ -748,6 +748,8 @@ struct WindowRewrite {
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
+  assert( p!=0 );
+  assert( p->pWin!=0 );
 
   /* If this function is being called from within a scalar sub-select
   ** that used by the SELECT statement being processed, only process
@@ -847,6 +849,7 @@ static void selectWindowRewriteEList(
   Walker sWalker;
   WindowRewrite sRewrite;
 
+  assert( pWin!=0 );
   memset(&sWalker, 0, sizeof(Walker));
   memset(&sRewrite, 0, sizeof(WindowRewrite));
 
@@ -1015,10 +1018,23 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
 }
 
 /*
+** Unlink the Window object from the Select to which it is attached,
+** if it is attached.
+*/
+void sqlite3WindowUnlinkFromSelect(Window *p){
+  if( p->ppThis ){
+    *p->ppThis = p->pNextWin;
+    if( p->pNextWin ) p->pNextWin->ppThis = p->ppThis;
+    p->ppThis = 0;
+  }
+}
+
+/*
 ** Free the Window object passed as the second argument.
 */
 void sqlite3WindowDelete(sqlite3 *db, Window *p){
   if( p ){
+    sqlite3WindowUnlinkFromSelect(p);
     sqlite3ExprDelete(db, p->pFilter);
     sqlite3ExprListDelete(db, p->pPartition);
     sqlite3ExprListDelete(db, p->pOrderBy);
@@ -1196,17 +1212,14 @@ void sqlite3WindowChain(Parse *pParse, Window *pWin, Window *pList){
 void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
     assert( p->op==TK_FUNCTION );
-    /* This routine is only called for the parser.  If pWin was not
-    ** allocated due to an OOM, then the parser would fail before ever
-    ** invoking this routine */
-    if( ALWAYS(pWin) ){
-      p->y.pWin = pWin;
-      ExprSetProperty(p, EP_WinFunc);
-      pWin->pOwner = p;
-      if( p->flags & EP_Distinct ){
-        sqlite3ErrorMsg(pParse,
-           "DISTINCT is not supported for window functions");
-      }
+    assert( pWin );
+    p->y.pWin = pWin;
+    ExprSetProperty(p, EP_WinFunc);
+    pWin->pOwner = p;
+    if( (p->flags & EP_Distinct) && pWin->eFrmType!=TK_FILTER ){
+      sqlite3ErrorMsg(pParse,
+          "DISTINCT is not supported for window functions"
+      );
     }
   }else{
     sqlite3WindowDelete(pParse->db, pWin);
@@ -1217,7 +1230,7 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
 ** Return 0 if the two window objects are identical, or non-zero otherwise.
 ** Identical window objects can be processed in a single scan.
 */
-int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
+int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
   if( p1->eFrmType!=p2->eFrmType ) return 1;
   if( p1->eStart!=p2->eStart ) return 1;
   if( p1->eEnd!=p2->eEnd ) return 1;
@@ -1226,6 +1239,9 @@ int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
   if( sqlite3ExprCompare(pParse, p1->pEnd, p2->pEnd, -1) ) return 1;
   if( sqlite3ExprListCompare(p1->pPartition, p2->pPartition, -1) ) return 1;
   if( sqlite3ExprListCompare(p1->pOrderBy, p2->pOrderBy, -1) ) return 1;
+  if( bFilter ){
+    if( sqlite3ExprCompare(pParse, p1->pFilter, p2->pFilter, -1) ) return 1;
+  }
   return 0;
 }
 
@@ -1567,8 +1583,10 @@ static void windowFullScan(WindowCodeArg *p){
   int lblNext;
   int lblBrk;
   int addrNext;
-  int csr = pMWin->csrApp;
+  int csr;
 
+  assert( pMWin!=0 );
+  csr = pMWin->csrApp;
   nPeer = (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
 
   lblNext = sqlite3VdbeMakeLabel(pParse);
@@ -2017,6 +2035,7 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
       pNew->eEnd = p->eEnd;
       pNew->eStart = p->eStart;
       pNew->eExclude = p->eExclude;
+      pNew->regResult = p->regResult;
       pNew->pStart = sqlite3ExprDup(db, p->pStart, 0);
       pNew->pEnd = sqlite3ExprDup(db, p->pEnd, 0);
       pNew->pOwner = pOwner;

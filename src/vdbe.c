@@ -2927,14 +2927,36 @@ case OP_MakeRecord: {
 #endif
 
   /* Loop through the elements that will make up the record to figure
-  ** out how much space is required for the new record.
+  ** out how much space is required for the new record.  After this loop,
+  ** the Mem.uTemp field of each term should hold the serial-type that will
+  ** be used for that term in the generated record:
+  **
+  **   Mem.uTemp value    type
+  **   ---------------    ---------------
+  **      0               NULL
+  **      1               1-byte signed integer
+  **      2               2-byte signed integer
+  **      3               3-byte signed integer
+  **      4               4-byte signed integer
+  **      5               6-byte signed integer
+  **      6               8-byte signed integer
+  **      7               IEEE float
+  **      8               Integer constant 0
+  **      9               Integer constant 1
+  **     10,11            reserved for expansion
+  **    N>=12 and even    BLOB
+  **    N>=13 and odd     text
+  **
+  ** The following additional values are computed:
+  **     nHdr        Number of bytes needed for the record header
+  **     nData       Number of bytes of data space needed for the record
+  **     nZero       Zero bytes at the end of the record
   */
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
-    if( pRec->flags & MEM_Zero ){
-      if( serial_type==0 ){
+    if( pRec->flags & MEM_Null ){
+      if( pRec->flags & MEM_Zero ){
         /* Values with MEM_Null and MEM_Zero are created by xColumn virtual
         ** table methods that never invoke sqlite3_result_xxxxx() while
         ** computing an unchanging column value in an UPDATE statement.
@@ -2942,19 +2964,83 @@ case OP_MakeRecord: {
         ** so that they can be passed through to xUpdate and have
         ** a true sqlite3_value_nochange(). */
         assert( pOp->p5==OPFLAG_NOCHNG_MAGIC || CORRUPT_DB );
-        serial_type = 10;
-      }else if( nData ){
-        if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
+        pRec->uTemp = 10;
       }else{
-        nZero += pRec->u.nZero;
-        len -= pRec->u.nZero;
+        pRec->uTemp = 0;
       }
+      nHdr++;
+    }else if( pRec->flags & (MEM_Int|MEM_IntReal) ){
+      /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
+      i64 i = pRec->u.i;
+      u64 u;
+      testcase( pRec->flags & MEM_Int );
+      testcase( pRec->flags & MEM_IntReal );
+      if( i<0 ){
+        u = ~i;
+      }else{
+        u = i;
+      }
+      nHdr++;
+      testcase( u==127 );               testcase( u==128 );
+      testcase( u==32767 );             testcase( u==32768 );
+      testcase( u==8388607 );           testcase( u==8388608 );
+      testcase( u==2147483647 );        testcase( u==2147483648 );
+      testcase( u==140737488355327LL ); testcase( u==140737488355328LL );
+      if( u<=127 ){
+        if( (i&1)==i && file_format>=4 ){
+          pRec->uTemp = 8+(u32)u;
+        }else{
+          nData++;
+          pRec->uTemp = 1;
+        }
+      }else if( u<=32767 ){
+        nData += 2;
+        pRec->uTemp = 2;
+      }else if( u<=8388607 ){
+        nData += 3;
+        pRec->uTemp = 3;
+      }else if( u<=2147483647 ){
+        nData += 4;
+        pRec->uTemp = 4;
+      }else if( u<=140737488355327LL ){
+        nData += 6;
+        pRec->uTemp = 5;
+      }else{
+        nData += 8;
+        if( pRec->flags & MEM_IntReal ){
+          /* If the value is IntReal and is going to take up 8 bytes to store
+          ** as an integer, then we might as well make it an 8-byte floating
+          ** point value */
+          pRec->u.r = (double)pRec->u.i;
+          pRec->flags &= ~MEM_IntReal;
+          pRec->flags |= MEM_Real;
+          pRec->uTemp = 7;
+        }else{
+          pRec->uTemp = 6;
+        }
+      }
+    }else if( pRec->flags & MEM_Real ){
+      nHdr++;
+      nData += 8;
+      pRec->uTemp = 7;
+    }else{
+      assert( db->mallocFailed || pRec->flags&(MEM_Str|MEM_Blob) );
+      assert( pRec->n>=0 );
+      len = (u32)pRec->n;
+      serial_type = (len*2) + 12 + ((pRec->flags & MEM_Str)!=0);
+      if( pRec->flags & MEM_Zero ){
+        serial_type += pRec->u.nZero*2;
+        if( nData ){
+          if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
+          len += pRec->u.nZero;
+        }else{
+          nZero += pRec->u.nZero;
+        }
+      }
+      nData += len;
+      nHdr += sqlite3VarintLen(serial_type);
+      pRec->uTemp = serial_type;
     }
-    nData += len;
-    testcase( serial_type==127 );
-    testcase( serial_type==128 );
-    nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
-    pRec->uTemp = serial_type;
     if( pRec==pData0 ) break;
     pRec--;
   }while(1);
@@ -3290,7 +3376,7 @@ case OP_AutoCommit: {
     rc = SQLITE_ERROR;
     goto abort_due_to_error;
   }
-  break;
+  /*NOTREACHED*/ assert(0);
 }
 
 /* Opcode: Transaction P1 P2 P3 P4 P5
@@ -4046,8 +4132,8 @@ case OP_SeekGT: {       /* jump, in3, group */
     if( (pIn3->flags & (MEM_Int|MEM_IntReal))==0 ){
       if( (pIn3->flags & MEM_Real)==0 ){
         if( (pIn3->flags & MEM_Null) || oc>=OP_SeekGE ){
-          VdbeBranchTaken(1,2); goto jump_to_p2;
-          break;
+          VdbeBranchTaken(1,2);
+          goto jump_to_p2;
         }else{
           rc = sqlite3BtreeLast(pC->uc.pCursor, &res);
           if( rc!=SQLITE_OK ) goto abort_due_to_error;

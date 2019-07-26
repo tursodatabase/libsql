@@ -1332,6 +1332,7 @@ static Trigger *fkActionTrigger(
       return 0;
     }
     assert( pStep!=0 );
+    assert( pTrigger!=0 );
 
     switch( action ){
       case OE_Restrict:

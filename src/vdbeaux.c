@@ -1909,8 +1909,11 @@ int sqlite3VdbeList(
       ** pick up the appropriate opcode. */
       int j;
       i -= p->nOp;
+      assert( apSub!=0 );
+      assert( nSub>0 );
       for(j=0; i>=apSub[j]->nOp; j++){
         i -= apSub[j]->nOp;
+        assert( i<apSub[j]->nOp || j+1<nSub );
       }
       pOp = &apSub[j]->aOp[i];
     }
@@ -3432,10 +3435,16 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
 ** of SQLite will not understand those serial types.
 */
 
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Return the serial-type for the value stored in pMem.
 **
 ** This routine might convert a large MEM_IntReal value into MEM_Real.
+**
+** 2019-07-11:  The primary user of this subroutine was the OP_MakeRecord
+** opcode in the byte-code engine.  But by moving this routine in-line, we
+** can omit some redundant tests and make that opcode a lot faster.  So
+** this routine is now only used by the STAT3/4 logic.
 */
 u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
@@ -3496,6 +3505,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   *pLen = n;
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
 ** The sizes for serial types less than 128
@@ -4602,7 +4612,11 @@ static int vdbeRecordCompareString(
     nCmp = MIN( pPKey2->aMem[0].n, nStr );
     res = memcmp(&aKey1[szHdr], pPKey2->aMem[0].z, nCmp);
 
-    if( res==0 ){
+    if( res>0 ){
+      res = pPKey2->r2;
+    }else if( res<0 ){
+      res = pPKey2->r1;
+    }else{
       res = nStr - pPKey2->aMem[0].n;
       if( res==0 ){
         if( pPKey2->nField>1 ){
@@ -4616,10 +4630,6 @@ static int vdbeRecordCompareString(
       }else{
         res = pPKey2->r1;
       }
-    }else if( res>0 ){
-      res = pPKey2->r2;
-    }else{
-      res = pPKey2->r1;
     }
   }
 

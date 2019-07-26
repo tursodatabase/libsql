@@ -749,7 +749,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
       int savedAllowFlags = (pNC->ncFlags & (NC_AllowAgg | NC_AllowWin));
-
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      Window *pWin = (IsWindowFunc(pExpr) ? pExpr->y.pWin : 0);
+#endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
@@ -830,18 +832,18 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           || (pDef->xValue==0 && pDef->xInverse==0)
           || (pDef->xValue && pDef->xInverse && pDef->xSFunc && pDef->xFinalize)
         );
-        if( pDef && pDef->xValue==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
+        if( pDef && pDef->xValue==0 && pWin ){
           sqlite3ErrorMsg(pParse, 
               "%.*s() may not be used as a window function", nId, zId
           );
           pNC->nErr++;
         }else if( 
               (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
-           || (is_agg && (pDef->funcFlags&SQLITE_FUNC_WINDOW) && !pExpr->y.pWin)
-           || (is_agg && pExpr->y.pWin && (pNC->ncFlags & NC_AllowWin)==0)
+           || (is_agg && (pDef->funcFlags&SQLITE_FUNC_WINDOW) && !pWin)
+           || (is_agg && pWin && (pNC->ncFlags & NC_AllowWin)==0)
         ){
           const char *zType;
-          if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pExpr->y.pWin ){
+          if( (pDef->funcFlags & SQLITE_FUNC_WINDOW) || pWin ){
             zType = "window";
           }else{
             zType = "aggregate";
@@ -869,33 +871,52 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
                nId, zId);
           pNC->nErr++;
         }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+        else if( is_agg==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
+          sqlite3ErrorMsg(pParse, 
+              "FILTER may not be used with non-aggregate %.*s()", 
+              nId, zId
+          );
+          pNC->nErr++;
+        }
+#endif
         if( is_agg ){
           /* Window functions may not be arguments of aggregate functions.
           ** Or arguments of other window functions. But aggregate functions
           ** may be arguments for window functions.  */
 #ifndef SQLITE_OMIT_WINDOWFUNC
-          pNC->ncFlags &= ~(NC_AllowWin | (!pExpr->y.pWin ? NC_AllowAgg : 0));
+          pNC->ncFlags &= ~(NC_AllowWin | (!pWin ? NC_AllowAgg : 0));
 #else
           pNC->ncFlags &= ~NC_AllowAgg;
 #endif
         }
       }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      else if( ExprHasProperty(pExpr, EP_WinFunc) ){
+        is_agg = 1;
+      }
+#endif
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        if( pExpr->y.pWin ){
+        if( pWin ){
           Select *pSel = pNC->pWinSelect;
+          assert( pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
-            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pExpr->y.pWin, pDef);
+            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pWin, pDef);
           }
-          sqlite3WalkExprList(pWalker, pExpr->y.pWin->pPartition);
-          sqlite3WalkExprList(pWalker, pExpr->y.pWin->pOrderBy);
-          sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
+          sqlite3WalkExprList(pWalker, pWin->pPartition);
+          sqlite3WalkExprList(pWalker, pWin->pOrderBy);
+          sqlite3WalkExpr(pWalker, pWin->pFilter);
           if( 0==pSel->pWin 
-           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pExpr->y.pWin) 
+           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pWin, 0)
           ){
-            pExpr->y.pWin->pNextWin = pSel->pWin;
-            pSel->pWin = pExpr->y.pWin;
+            pWin->pNextWin = pSel->pWin;
+            if( pSel->pWin ){
+              pSel->pWin->ppThis = &pWin->pNextWin;
+            }
+            pSel->pWin = pWin;
+            pWin->ppThis = &pSel->pWin;
           }
           pNC->ncFlags |= NC_HasWin;
         }else
@@ -904,6 +925,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           NameContext *pNC2 = pNC;
           pExpr->op = TK_AGG_FUNCTION;
           pExpr->op2 = 0;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+          if( ExprHasProperty(pExpr, EP_WinFunc) ){
+            sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
+          }
+#endif
           while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
             pExpr->op2++;
             pNC2 = pNC2->pNext;
@@ -1274,17 +1300,12 @@ int sqlite3ResolveOrderGroupBy(
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 /*
-** Walker callback for resolveRemoveWindows().
+** Walker callback for windowRemoveExprFromSelect().
 */
 static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
   if( ExprHasProperty(pExpr, EP_WinFunc) ){
-    Window **pp;
-    for(pp=&pWalker->u.pSelect->pWin; *pp; pp=&(*pp)->pNextWin){
-      if( *pp==pExpr->y.pWin ){
-        *pp = (*pp)->pNextWin;
-        break;
-      }    
-    }
+    Window *pWin = pExpr->y.pWin;
+    sqlite3WindowUnlinkFromSelect(pWin);
   }
   return WRC_Continue;
 }
@@ -1293,16 +1314,18 @@ static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
 ** Remove any Window objects owned by the expression pExpr from the
 ** Select.pWin list of Select object pSelect.
 */
-static void resolveRemoveWindows(Select *pSelect, Expr *pExpr){
-  Walker sWalker;
-  memset(&sWalker, 0, sizeof(Walker));
-  sWalker.xExprCallback = resolveRemoveWindowsCb;
-  sWalker.u.pSelect = pSelect;
-  sqlite3WalkExpr(&sWalker, pExpr);
+static void windowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
+  if( pSelect->pWin ){
+    Walker sWalker;
+    memset(&sWalker, 0, sizeof(Walker));
+    sWalker.xExprCallback = resolveRemoveWindowsCb;
+    sWalker.u.pSelect = pSelect;
+    sqlite3WalkExpr(&sWalker, pExpr);
+  }
 }
 #else
-# define resolveRemoveWindows(x,y)
-#endif
+# define windowRemoveExprFromSelect(a, b)
+#endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
 ** pOrderBy is an ORDER BY or GROUP BY clause in SELECT statement pSelect.
@@ -1373,7 +1396,7 @@ static int resolveOrderGroupBy(
         /* Since this expresion is being changed into a reference
         ** to an identical expression in the result set, remove all Window
         ** objects belonging to the expression from the Select.pWin list. */
-        resolveRemoveWindows(pSelect, pE);
+        windowRemoveExprFromSelect(pSelect, pE);
         pItem->u.x.iOrderByCol = j+1;
       }
     }
