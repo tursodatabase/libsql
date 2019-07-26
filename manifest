@@ -1,5 +1,5 @@
-C Fix\sRBU\shandling\sof\spartial\sindexes\swith\scomments\sembedded\sin\stheir\sCREATE\sINDEX\sstatements.
-D 2019-07-26T16:16:31.199
+C Update\sRBU\sso\sthat\sit\ssupports\sindexes\son\sexpressions.
+D 2019-07-26T20:33:23.040
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -345,6 +345,7 @@ F ext/rbu/rbucrash.test 000981a1fe8a6e4d9a684232f6a129e66a3ef595f5ed74655e2f9c68
 F ext/rbu/rbucrash2.test efa143cc94228eb0266d3f1abfbee60a5838a84cef7cc3fcb8c145b74d96fd41
 F ext/rbu/rbudiff.test 156957851136b63c143478518dc1bda6c832103cdbe8ac1d7cdd47edb3cbe0a3
 F ext/rbu/rbudor.test e3e8623926012f43eebe51fedf06a102df2640750d971596b052495f2536db20
+F ext/rbu/rbuexpr.test 10d0420537c3bc7666e576d72adeffe7e86cfbb00dcc30aa9ce096c042415190
 F ext/rbu/rbufault.test 2d7f567b79d558f6e093c58808cab4354f8a174e3802f69e7790a9689b3c09f8
 F ext/rbu/rbufault2.test c81327a3ac2c385b9b954db3644d4e0df93eeebfc3de9f1f29975a1e73fd3d0c
 F ext/rbu/rbufault3.test b2fcc9db5c982b869f67d1d4688d8cb515d5b92f58011fff95665f2e62cec179
@@ -362,7 +363,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c 38c57ecab6697996cca56f56d4712ee0465a0957af1ea994a5a2ca815d5a06f6
+F ext/rbu/sqlite3rbu.c b254d13ae0058a07ee6322d01370fa15d4679e734a8962e923324e51b5cab556
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1837,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16472112b6886ada18d45cfb409cca2e83dde5a8ba8a36d481e87b61100b0186
-R b8711fee1b5f80da15fd5f89a8e1d802
+P e1ccf211aa975a6688a27f7dc4cea80784ed8dcfe1950b2fa6eb0a3cb938838a
+R d25f513b3e1c94b2e54a2b873df68d96
 U dan
-Z f0a7ed38f3e42e2ed2e83f589a12fac7
+Z 99e04d0115a0c5741a15100c0c189bee
