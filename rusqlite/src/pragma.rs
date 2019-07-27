@@ -86,6 +86,7 @@ impl Sql {
                 self.push_real(r);
             }
             ValueRef::Text(s) => {
+                let s = std::str::from_utf8(s)?;
                 self.push_string_literal(s);
             }
             _ => {

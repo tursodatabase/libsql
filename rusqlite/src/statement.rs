@@ -622,10 +622,7 @@ impl Statement<'_> {
                     CStr::from_ptr(text as *const c_char)
                 };
 
-                // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s
-                    .to_str()
-                    .expect("sqlite3_column_text returned invalid UTF-8");
+                let s = s.to_bytes();
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
