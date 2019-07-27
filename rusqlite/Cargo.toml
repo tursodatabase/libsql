@@ -92,7 +92,7 @@ name = "deny_single_threaded_sqlite_config"
 name = "vtab"
 
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab" ]
+features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab", "window" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
