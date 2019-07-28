@@ -550,11 +550,16 @@ impl Statement<'_> {
     /// Returns a string containing the SQL text of prepared statement with
     /// bound parameters expanded.
     #[cfg(feature = "bundled")]
-    pub fn expanded_sql(&self) -> Option<&str> {
+    pub fn expanded_sql(&self) -> Option<String> {
         unsafe {
-            self.stmt
-                .expanded_sql()
-                .map(|s| str::from_utf8_unchecked(s.to_bytes()))
+            match self.stmt.expanded_sql() {
+                Some(s) => {
+                    let sql = str::from_utf8_unchecked(s.to_bytes()).to_owned();
+                    ffi::sqlite3_free(s.as_ptr() as *mut _);
+                    Some(sql)
+                }
+                _ => None,
+            }
         }
     }
 
@@ -975,7 +980,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         let stmt = db.prepare("SELECT ?").unwrap();
         stmt.bind_parameter(&1, 1).unwrap();
-        assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
+        assert_eq!(Some("SELECT 1".to_owned()), stmt.expanded_sql());
     }
 
     #[test]
