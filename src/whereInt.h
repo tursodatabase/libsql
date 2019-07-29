@@ -128,7 +128,7 @@ struct WhereLoop {
       u16 nEq;               /* Number of equality constraints */
       u16 nBtm;              /* Size of BTM vector */
       u16 nTop;              /* Size of TOP vector */
-      u16 nIdxCol;           /* Index column used for ORDER BY */
+      u16 nDistinctCol;      /* Index columns used to sort for DISTINCT */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */

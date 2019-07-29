@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_Affinity\soperator\sso\sthat\swhen\sapplying\sREAL\saffinity,\sit\nonly\ssets\sMEM_IntReal\sif\sthe\sinteger\svalue\swill\sfit\sin\s6\sbytes\sor\sless.\nFix\sfor\sticket\s[ba2f4585cf495231]
-D 2019-07-29T06:06:53.317
+C When\susing\san\sindex\sfor\sboth\sDISTINCT\sand\sORDER\sBY,\sdo\snot\sconfuse\sthe\snumber\sof\scolumns\srequired\sfor\sdistinctness\swith\sthe\snumber\srequired\sto\sget\sthe\scorrect\ssort\sorder.\sFix\sfor\s[6749cb3c].
+D 2019-07-29T15:32:01.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,8 +609,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c 2f508c9a6dd2a42ad2b692105e77eb92cdec201d32916962ccdeff71836acb52
-F src/whereInt.h 1b728f71654ebf8421a1715497a587f02d6f538e819af58dc826908f8577e810
+F src/where.c a3c9a0e1215c0e67e508014084e8f47271895b56f780fc26ac57be34fac33c1a
+F src/whereInt.h 6fab4b6f7e4ae716f112ee09cd1343fc6dde3d4a1831feabc6b3ed3b54b8eef3
 F src/wherecode.c 37a1004237d630d785c47bba2290eac652a7a8b0047518eba3cb7c808b604c4a
 F src/whereexpr.c 5e559bdd24b06e3bc2e68f258bf751302954dc1e432daf71fdd8098a71462326
 F src/window.c 7728ba7a3d44084a44eefb60464a88fb2ff035eb20cdeb1160ae65ac3c0be6b9
@@ -812,7 +812,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test a1783b960ad8c15a77cd9f207be072898db1026c
-F test/distinct2.test df0bb52b754661ea84ec9ff488d48913c97bd31d83ca17ce0bf1334645e660cf
+F test/distinct2.test 1a01038083535fa9431f4a22587ae58d52d0a794910c36bd2bec07ba1e0e7367
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
@@ -1838,7 +1838,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cea8a892f76bddc63b921ffc11ea8dce8f8cf649a2c77aa908c7c5c91eed7f4c
-R a0bdb430e67719a9d96ef868306325b9
-U drh
-Z ff81b1edb3c7d78332a1b9e4fd7361e9
+P 2b221bb15fd2b9f6a426e5eb439f7dbabbe3c4cab010c49b87dae3bb1f16c081 b47169319ad88e8ffdbe8fbb91f4cced81ebd5c0ee1b018be2d0256c9a1c5159
+R ffca6544c35b35a1077b7fc419306dbe
+T +closed b47169319ad88e8ffdbe8fbb91f4cced81ebd5c0ee1b018be2d0256c9a1c5159
+U dan
+Z 1ada3406a2249a9b51e11c7a4e4d08f2

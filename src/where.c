@@ -3695,8 +3695,8 @@ static i8 wherePathSatisfiesOrderBy(
     if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
       if( pLoop->u.vtab.isOrdered ) obSat = obDone;
       break;
-    }else{
-      pLoop->u.btree.nIdxCol = 0;
+    }else if( wctrlFlags & WHERE_DISTINCTBY ){
+      pLoop->u.btree.nDistinctCol = 0;
     }
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
 
@@ -3838,7 +3838,9 @@ static i8 wherePathSatisfiesOrderBy(
             pColl = sqlite3ExprNNCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
           }
-          pLoop->u.btree.nIdxCol = j+1;
+          if( wctrlFlags & WHERE_DISTINCTBY ){
+            pLoop->u.btree.nDistinctCol = j+1;
+          }
           isMatch = 1;
           break;
         }
@@ -5159,7 +5161,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
        && i==pWInfo->nLevel-1  /* Ticket [ef9318757b152e3] 2017-10-21 */
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
-       && (n = pLoop->u.btree.nIdxCol)>0
+       && (n = pLoop->u.btree.nDistinctCol)>0
        && pIdx->aiRowLogEst[n]>=36
       ){
         int r1 = pParse->nMem+1;
