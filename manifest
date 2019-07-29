@@ -1,5 +1,5 @@
-C Sync\sup\swarning\srelated\scompiler\soptions\sin\sthe\sMakefiles\sfor\sMSVC.
-D 2019-07-29T02:52:11.458
+C Fix\sa\sminor\stypo\sin\sa\scomment.
+D 2019-07-29T05:23:01.121
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -595,7 +595,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c aef606a78b85d042138a841babbc0f98471b19b9a340b962e8fae307bc8cf3da
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c e9493a767fafd71bb9b10462a39b3af36d029d4e47e8cc4f531f89175dadf7f4
+F src/vdbe.c a6ee4cdf329ffef2f3a6928ae9e27304b260375572bc506f5db9e9be337cb158
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 889c52272a02cea8af6e21b493b08bc9a043e3372a77fdfe838d25e73a47ac92
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 857b2ba6d05d6f5a8cfdf269bae9005b25e1903ab9dc6b70546979d8c633f03b
-R 11de2cd5c31cbfac9f0185389bf14cae
-U mistachkin
-Z 653781d1a3e637bfd462044c7a088827
+P e77d48d1dd140967b18106044dd45e2ba6cd77b6aa5afa8bf3f0a9c16a50eec4
+R 05fd3ab1e6c5754fd410836a6a140be4
+U drh
+Z a54d4cc2649c875d2de255fae9382262
