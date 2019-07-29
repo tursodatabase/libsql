@@ -1837,7 +1837,7 @@ static int sessionBufferGrow(SessionBuffer *p, size_t nByte, int *pRc){
     i64 nNew = p->nAlloc ? p->nAlloc : 128;
     do {
       nNew = nNew*2;
-    }while( (nNew-p->nBuf)<nByte );
+    }while( (size_t)(nNew-p->nBuf)<nByte );
 
     aNew = (u8 *)sqlite3_realloc64(p->aBuf, nNew);
     if( 0==aNew ){
