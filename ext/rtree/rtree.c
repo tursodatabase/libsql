@@ -669,7 +669,6 @@ static int nodeAcquire(
   ** increase its reference count and return it.
   */
   if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
-    assert( !pParent || !pNode->pParent || pNode->pParent==pParent );
     if( pParent && !pNode->pParent ){
       if( nodeInParentChain(pNode, pParent) ){
         RTREE_IS_CORRUPT(pRtree);
@@ -677,6 +676,9 @@ static int nodeAcquire(
       }
       pParent->nRef++;
       pNode->pParent = pParent;
+    }else if( pParent && pNode->pParent && pParent!=pNode->pParent ){
+      RTREE_IS_CORRUPT(pRtree);
+      return SQLITE_CORRUPT_VTAB;
     }
     pNode->nRef++;
     *ppNode = pNode;
