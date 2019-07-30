@@ -374,20 +374,29 @@ do_execsql_test skipscan1-2.3 {
 } {}
 
 # 2019-07-29 Ticket ced41c7c7d6b4d36
-# Skip-scan is disabled for DISTINCT queries
+# A skipscan query is not order-distinct
 #
 db close
 sqlite3 db :memory:
 do_execsql_test skipscan1-3.1 {
   CREATE TABLE t1 (c1, c2, c3, c4, PRIMARY KEY(c4, c3));
-  INSERT INTO t1 VALUES(NULL,0,1,NULL);
-  INSERT INTO t1 VALUES(0,NULL,1,NULL);
-  INSERT INTO t1 VALUES(NULL,NULL,1,NULL);
+  INSERT INTO t1 VALUES(3,0,1,NULL);
+  INSERT INTO t1 VALUES(0,4,1,NULL);
+  INSERT INTO t1 VALUES(5,6,1,NULL);
+  INSERT INTO t1 VALUES(0,4,1,NULL);
   ANALYZE sqlite_master;
   INSERT INTO sqlite_stat1 VALUES('t1','sqlite_autoindex_t1_1','18 18 6');
   ANALYZE sqlite_master;
   SELECT DISTINCT quote(c1), quote(c2), quote(c3), quote(c4), '|'
     FROM t1 WHERE t1.c3 = 1;
-} {NULL 0 1 NULL | 0 NULL 1 NULL | NULL NULL 1 NULL |}
+} {3 0 1 NULL | 0 4 1 NULL | 5 6 1 NULL |}
+do_eqp_test skipscan1-3.2 {
+  SELECT DISTINCT quote(c1), quote(c2), quote(c3), quote(c4), '|'
+    FROM t1 WHERE t1.c3 = 1;
+} {
+  QUERY PLAN
+  |--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (ANY(c4) AND c3=?)
+  `--USE TEMP B-TREE FOR DISTINCT
+}
 
 finish_test
