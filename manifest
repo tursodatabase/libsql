@@ -1,5 +1,5 @@
-C Improved\sfix\sfor\sticket\s[ced41c7c7d6b4d36]\sthat\skeeps\sskip-scan\senabled,\nbut\savoids\sidentifying\sa\sskip-scan\sas\sorder-distinct\s(because\sit\sis\snot)\nand\sthus\sforces\sa\sseparate\sb-tree\sto\simplement\sthe\sDISTINCT\sclause\sof\sa\nquery.\s\sThis\sundoes\scheck-in\s[a871d69c6de65038]\sand\ssubstitutes\sa\snew\sfix.
-D 2019-07-30T14:22:10.200
+C Fix\sthe\sbuild\sfor\swhen\s-DSQLITE_SMALL_STACK\sis\sused.
+D 2019-07-30T21:00:13.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -595,7 +595,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c aef606a78b85d042138a841babbc0f98471b19b9a340b962e8fae307bc8cf3da
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 8e9afa99c79cac271fac32ad8c4b758f8e1310df850fb6d6f63ed2babbab85db
+F src/vdbe.c 4d542e9fc51d4dd35c4c0c6e58d56bc168a6a221f71b065dfd52950bd567a8ca
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 889c52272a02cea8af6e21b493b08bc9a043e3372a77fdfe838d25e73a47ac92
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a871d69c6de65038360aa6142fbad22689fb347e526cca56bb83e695c1441fbe
-R 277630844b23a68da6a6e28edcb71a9f
+P 89bf0399e87be76e7b264e0a35e8a6d3af0f9e71123a929c20754882b636ca70
+R 7f40d3e7a173a03d17ea66296173b371
 U drh
-Z 6873f4d0939662a6f4dc4c5cfa6fb08a
+Z ea6e4405731827a0308cc422416a8eca

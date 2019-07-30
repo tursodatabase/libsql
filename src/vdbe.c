@@ -2984,37 +2984,37 @@ case OP_MakeRecord: {
     }else if( pRec->flags & (MEM_Int|MEM_IntReal) ){
       /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
       i64 i = pRec->u.i;
-      u64 u;
+      u64 uu;
       testcase( pRec->flags & MEM_Int );
       testcase( pRec->flags & MEM_IntReal );
       if( i<0 ){
-        u = ~i;
+        uu = ~i;
       }else{
-        u = i;
+        uu = i;
       }
       nHdr++;
-      testcase( u==127 );               testcase( u==128 );
-      testcase( u==32767 );             testcase( u==32768 );
-      testcase( u==8388607 );           testcase( u==8388608 );
-      testcase( u==2147483647 );        testcase( u==2147483648 );
-      testcase( u==140737488355327LL ); testcase( u==140737488355328LL );
-      if( u<=127 ){
+      testcase( uu==127 );               testcase( uu==128 );
+      testcase( uu==32767 );             testcase( uu==32768 );
+      testcase( uu==8388607 );           testcase( uu==8388608 );
+      testcase( uu==2147483647 );        testcase( uu==2147483648 );
+      testcase( uu==140737488355327LL ); testcase( uu==140737488355328LL );
+      if( uu<=127 ){
         if( (i&1)==i && file_format>=4 ){
-          pRec->uTemp = 8+(u32)u;
+          pRec->uTemp = 8+(u32)uu;
         }else{
           nData++;
           pRec->uTemp = 1;
         }
-      }else if( u<=32767 ){
+      }else if( uu<=32767 ){
         nData += 2;
         pRec->uTemp = 2;
-      }else if( u<=8388607 ){
+      }else if( uu<=8388607 ){
         nData += 3;
         pRec->uTemp = 3;
-      }else if( u<=2147483647 ){
+      }else if( uu<=2147483647 ){
         nData += 4;
         pRec->uTemp = 4;
-      }else if( u<=140737488355327LL ){
+      }else if( uu<=140737488355327LL ){
         nData += 6;
         pRec->uTemp = 5;
       }else{
