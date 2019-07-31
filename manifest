@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sfor\swhen\s-DSQLITE_SMALL_STACK\sis\sused.
-D 2019-07-30T21:00:13.643
+C Do\snot\sallow\sthe\sjson_set()\sfunction\sto\soverwrite\sthe\ssame\selement\smore\sthan\nonce.
+D 2019-07-31T12:13:58.411
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -293,7 +293,7 @@ F ext/misc/fileio.c 288e7230e0fe464d71b0694e2d8bdd3a353118ac2e31da3964b95f460f09
 F ext/misc/fossildelta.c 7708651072eb5620ab21bbfb518d184f27b2c29c0131b09b9a2d8852a8016430
 F ext/misc/fuzzer.c c4e27daf41433a64cad5265cd27dbcb891147e9994d0422200ce81ce9a54b625
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c c99b5f04fccba87c1c8c5ab5c0e53eef37c0144086e33911290a67dfba541d59
+F ext/misc/json1.c 71ce4e39793b743fc7e4790bc3bab15598e95cab57ad8da4326fa640ae5e5310
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 89bf0399e87be76e7b264e0a35e8a6d3af0f9e71123a929c20754882b636ca70
-R 7f40d3e7a173a03d17ea66296173b371
+P b9eda2249ab5cf523093e4849c317d9a4b1743f7e15d96bdd6bb6cc423302914
+R 93f7a4005fd45a64a133dc239fab4460
 U drh
-Z ea6e4405731827a0308cc422416a8eca
+Z a743559183e13ed7c5d31402bb32ffd5
