@@ -1,22 +1,42 @@
-
-# This file contains Configuration data used by "wapptest.tcl" and
-# "releasetest.tcl".
+# 2019 August 01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements a program that produces scripts (either shell scripts
+# or batch files) to implement a particular test that is part of the SQLite
+# release testing procedure. For example, to run veryquick.test with a 
+# specified set of -D compiler switches.
+#
+# A "configuration" is a set of options passed to [./configure] and [make]
+# to build the SQLite library in a particular fashion. A "platform" is a
+# list of tests; most platforms are named after the hardware/OS platform
+# that the tests will be run on as part of the release procedure. Each 
+# "test" is a combination of a configuration and a makefile target (e.g.
+# "fulltest"). The program may be invoked as follows:
 #
 set USAGE {
-$argv0 configurations
-    List available configurations.
+$argv0 platforms
+    List available platforms.
+
+$argv0 tests ?-nodebug? PLATFORM
+    List tests in a specified platform. If the -nodebug switch is 
+    specified, synthetic debug/ndebug configurations are omitted. Each
+    test is a combination of a configuration and a makefile target.
 
 $argv0 script ?-msvc? CONFIGURATION TARGET
     Given a configuration and make target, return a bash (or, if -msvc
     is specified, batch) script to execute the test. The first argument
     passed to the script must be a directory containing SQLite source code.
 
-$argv0 platforms
-    List available platforms.
-
-$argv0 tests ?-nodebug? PLATFORM
-    List tests in a specified platform. If the -nodebug switch is 
-    specified, synthetic debug/ndebug configurations are omitted.
+$argv0 configurations
+    List available configurations.
 }
 
 # Omit comments (text between # and \n) in a long multi-line string.
@@ -234,15 +254,24 @@ array set ::Configs [strip_comments {
     --enable-json1
   }
 
+  "Windows-Memdebug" {
+    MEMDEBUG=1
+    DEBUG=3
+  }
+  "Windows-Win32Heap" {
+    WIN32HEAP=1
+    DEBUG=4
+  }
+
   # The next group of configurations are used only by the
   # Failure-Detection platform.  They are all the same, but we need
   # different names for them all so that they results appear in separate
   # subdirectories.
   #
-  Fail0 {-O0}
-  Fail2 {-O0}
-  Fail3 {-O0}
-  Fail4 {-O0}
+  Fail0     {-O0}
+  Fail2     {-O0}
+  Fail3     {-O0}
+  Fail4     {-O0}
   FuzzFail1 {-O0}
   FuzzFail2 {-O0}
 }]
@@ -252,7 +281,7 @@ if {$tcl_platform(os)=="Darwin"} {
 
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
-    "Check-Symbols"           checksymbols
+    "Check-Symbols*"          checksymbols
     "Fast-One"                "fuzztest test"
     "Debug-One"               "mptest test"
     "Have-Not"                test
@@ -268,7 +297,7 @@ array set ::Platforms [strip_comments {
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
     "Device-One"              fulltest
     "Default"                 "threadtest fulltest"
-    "Valgrind"                valgrindtest
+    "Valgrind*"               valgrindtest
   }
   Linux-i686 {
     "Devkit"                  test
@@ -291,11 +320,15 @@ array set ::Platforms [strip_comments {
   "Windows NT-intel" {
     "Stdcall"                 test
     "Have-Not"                test
+    "Windows-Memdebug*"       test
+    "Windows-Win32Heap*"      test
     "Default"                 "mptest fulltestonly"
   }
   "Windows NT-amd64" {
     "Stdcall"                 test
     "Have-Not"                test
+    "Windows-Memdebug*"       test
+    "Windows-Win32Heap*"      test
     "Default"                 "mptest fulltestonly"
   }
 
@@ -304,13 +337,13 @@ array set ::Platforms [strip_comments {
   # correctly identifies failures.
   #
   Failure-Detection {
-    Fail0     "TEST_FAILURE=0 test"
-    Sanitize  "TEST_FAILURE=1 test"
-    Fail2     "TEST_FAILURE=2 valgrindtest"
-    Fail3     "TEST_FAILURE=3 valgrindtest"
-    Fail4     "TEST_FAILURE=4 test"
-    FuzzFail1 "TEST_FAILURE=5 test"
-    FuzzFail2 "TEST_FAILURE=5 valgrindtest"
+    Fail0*     "TEST_FAILURE=0 test"
+    Sanitize*  "TEST_FAILURE=1 test"
+    Fail2*     "TEST_FAILURE=2 valgrindtest"
+    Fail3*     "TEST_FAILURE=3 valgrindtest"
+    Fail4*     "TEST_FAILURE=4 test"
+    FuzzFail1* "TEST_FAILURE=5 test"
+    FuzzFail2* "TEST_FAILURE=5 valgrindtest"
   }
 }]
 
@@ -319,6 +352,9 @@ array set ::Platforms [strip_comments {
 #
 foreach {key value} [array get ::Platforms] {
   foreach {v t} $value {
+    if {[string range $v end end]=="*"} {
+      set v [string range $v 0 end-1]
+    }
     if {0==[info exists ::Configs($v)]} {
       puts stderr "No such configuration: \"$v\""
       exit -1
@@ -368,7 +404,7 @@ proc main_script {args} {
   set makeOpts   [list]                         ;# Extra args for [make]
   set configOpts [list]                         ;# Extra args for [configure]
 
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform)=="windows" || $bMsvc} {
     lappend opts -DSQLITE_OS_WIN=1
   } else {
     lappend opts -DSQLITE_OS_UNIX=1
@@ -398,22 +434,26 @@ proc main_script {args} {
   # $opts, $cflags, $makeOpts and $configOpts along the way. Rules are as
   # follows:
   #
-  #   1. If $bRemoveDebug is set and the parameter is -DSQLITE_DEBUG or
-  #      -DSQLITE_DEBUG=1, discard it.
+  #   1. If the parameter begins with a "*", discard it.
   #
-  #   2. If the parameter begins with "-D", add it to $opts.
+  #   2. If $bRemoveDebug is set and the parameter is -DSQLITE_DEBUG or
+  #      -DSQLITE_DEBUG=1, discard it
   #
-  #   3. If the parameter begins with "--" add it to $configOpts. Unless
+  #   3. If the parameter begins with "-D", add it to $opts.
+  #
+  #   4. If the parameter begins with "--" add it to $configOpts. Unless
   #      this command is preparing a script for MSVC - then add an 
   #      equivalent to $makeOpts or $opts.
   #
-  #   4. If the parameter begins with "-" add it to $cflags. If in MSVC
+  #   5. If the parameter begins with "-" add it to $cflags. If in MSVC
   #      mode and the parameter is an -O<integer> option, instead add
   #      an OPTIMIZATIONS=<integer> switch to $makeOpts.
   #
-  #   5. If none of the above apply, add the parameter to $makeOpts
+  #   6. If none of the above apply, add the parameter to $makeOpts
   #
   foreach param $::Configs($config) {
+    if {[string range $param 0 0]=="*"} continue
+
     if {$bRemoveDebug} {
       if {$param=="-DSQLITE_DEBUG" || $param=="-DSQLITE_DEBUG=1"
        || $param=="-DSQLITE_MEMDEBUG" || $param=="-DSQLITE_MEMDEBUG=1"
@@ -529,17 +569,18 @@ proc main_tests {args} {
   }
 
   foreach {config target} $::Platforms($p) {
+    set bNosynthetic 0
+    if {[string range $config end end]=="*"} {
+      set bNosynthetic 1
+      set config [string range $config 0 end-1]
+    }
     puts "$config \"$target\""
-    if {$bNodebug==0} {
-      if {$target!="checksymbols" && $target!="valgrindtest" 
-       && $target!="fuzzoomtest"
-      } {
-        set iHas [string first SQLITE_DEBUG $::Configs($config)]
-        if {$iHas>=0} {
-          puts "$config-ndebug \"test\""
-        } else {
-          puts "$config-debug \"test\""
-        }
+    if {$bNodebug==0 && $bNosynthetic==0} {
+      set iHas [string first SQLITE_DEBUG $::Configs($config)]
+      if {$iHas>=0} {
+        puts "$config-ndebug \"test\""
+      } else {
+        puts "$config-debug \"test\""
       }
     }
   }

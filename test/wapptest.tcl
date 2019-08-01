@@ -304,12 +304,8 @@ proc slave_fileevent {name} {
 }
 
 # Return the contents of the "slave script" - the script run by slave 
-# processes to actually perform the test. It does two things:
-#
-#   1. Reads and [exec]s the contents of file wapptest_configure.sh.
-#   2. Reads and [exec]s the contents of file wapptest_make.sh.
-#
-# Step 1 is omitted if the test uses MSVC (which does not use configure).
+# processes to actually perform the test. All it does is execute the
+# test script already written to disk (wapptest_cmd.sh or wapptest_cmd.bat).
 #
 proc wapptest_slave_script {} {
   global G
