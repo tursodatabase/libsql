@@ -1,5 +1,5 @@
-C Add\snew\srelease\stests\sfor\swindows\sto\sreleasetest_data.tcl.
-D 2019-08-01T15:18:51.658
+C The\ssqlite3_set_authorizer()\sinterface\sshould\sonly\sexpire\sprepared\sstatements\nwhen\sit\sis\ssetting\sa\snew\sauthorizer,\snot\swhen\sclearing\sthe\sauthorizer.\s\sAnd\nstatements\sthat\sare\srunning\swhen\ssqlite3_set_authorizer()\sis\sinvoked\sshould\sbe\nallowed\sto\scontinue\srunning\sto\scompletion.
+D 2019-08-01T22:48:45.195
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -460,7 +460,7 @@ F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c c1b5e5639b88dcc146db326315f2dea4f7f1c599e524eeb421d544927a0b1e86
 F src/analyze.c 58db66344a5c58dcabb57f26696f6f2993956c830446da40b444051d2fdaf644
 F src/attach.c 78e986baee90cb7b83fb9eafa79c22581a8ada14030fd633b0683c95cf11213c
-F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
+F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
@@ -1275,7 +1275,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test 874e35011779b07725a47dbf1dd6282b0ca04af7e028fb0b534ee544b571be42
-F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
+F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8168021f9ab5fb8b4888257963c9ec68fd1dfeedaf6bba4b8e07438001d0be0f
-R 068c68305578d308897576e75c286995
-U dan
-Z ce2f09d0b267a958fe715ae4d7635761
+P 1b330ec24c350c59f6d3779f6c0819fe95b89f4dfca5a1f2c22f22b5fe9cd087
+R 23b8e4dd44ae93c74678bbe4b9f9949a
+U drh
+Z ae2bdc1746bd01e035fa2c38a9fb31b7

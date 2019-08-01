@@ -78,7 +78,7 @@ int sqlite3_set_authorizer(
   sqlite3_mutex_enter(db->mutex);
   db->xAuth = (sqlite3_xauth)xAuth;
   db->pAuthArg = pArg;
-  sqlite3ExpirePreparedStatements(db, 0);
+  if( db->xAuth ) sqlite3ExpirePreparedStatements(db, 1);
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
