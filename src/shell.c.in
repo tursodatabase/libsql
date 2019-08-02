@@ -9150,9 +9150,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE, ""                 },
 #endif
       { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "           },
-      { "prng_reset",         SQLITE_TESTCTRL_PRNG_RESET,    ""                   },
       { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""                   },
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""                   },
+      { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED"               },
       { "reserve",            SQLITE_TESTCTRL_RESERVE,       "BYTES-OF-RESERVE"   },
     };
     int testctrl = -1;
@@ -9227,6 +9227,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         /* sqlite3_test_control(int, uint) */
         case SQLITE_TESTCTRL_PENDING_BYTE:
+        case SQLITE_TESTCTRL_PRNG_SEED:
           if( nArg==3 ){
             unsigned int opt = (unsigned int)integerValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);

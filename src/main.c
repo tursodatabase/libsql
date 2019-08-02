@@ -3824,13 +3824,13 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*
-    ** Reset the PRNG back to its uninitialized state.  The next call
-    ** to sqlite3_randomness() will reseed the PRNG using a single call
-    ** to the xRandomness method of the default VFS.
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, unsigned int);
+    **
+    ** Use the integer value as the seed for SQLite's internal PRNG.
+    ** rather than the VFS xRandomness() function.
     */
-    case SQLITE_TESTCTRL_PRNG_RESET: {
-      sqlite3_randomness(0,0);
+    case SQLITE_TESTCTRL_PRNG_SEED: {
+      sqlite3Config.iPrngSeed = va_arg(ap, unsigned int);
       break;
     }
 

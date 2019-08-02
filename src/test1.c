@@ -6373,7 +6373,28 @@ static int SQLITE_TCLAPI reset_prng_state(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_RESET);
+  sqlite3_randomness(0,0);
+  return TCL_OK;
+}
+/*
+** tclcmd:  prng_seed INT
+**
+** Establish TEXT as the seed for the PRNG
+*/
+static int SQLITE_TCLAPI prng_seed(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  unsigned int i;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PRNG-SEED-TEXT");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(objv[0],&i) ) return TCL_ERROR;
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, (unsigned int)i);
+  sqlite3_randomness(0,0);
   return TCL_OK;
 }
 
@@ -7923,6 +7944,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
+     { "prng_seed",                     prng_seed,          0 },
      { "database_never_corrupt",        database_never_corrupt, 0},
      { "database_may_be_corrupt",       database_may_be_corrupt, 0},
      { "optimization_control",          optimization_control,0},
