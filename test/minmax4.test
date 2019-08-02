@@ -19,6 +19,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix minmax4
 
 ifcapable !compound {
   finish_test
@@ -148,6 +149,33 @@ do_test minmax4-2.7 {
   }
 } {1 1 {} 2 2 2 3 3 5 5}
 
-
+#-------------------------------------------------------------------------
+foreach {tn sql} {
+  1 { CREATE INDEX i1 ON t1(a) }
+  2 { CREATE INDEX i1 ON t1(a DESC) }
+  3 { }
+} {
+  reset_db
+  do_execsql_test 3.$tn.0 {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(NULL, 1);
+  }
+  execsql $sql
+  do_execsql_test 3.$tn.1 {
+    SELECT min(a), b FROM t1;
+  } {{} 1}
+  do_execsql_test 3.$tn.2 {
+    SELECT min(a), b FROM t1 WHERE a<50;
+  } {{} {}}
+  do_execsql_test 3.$tn.3 {
+    INSERT INTO t1 VALUES(2, 2);
+  }
+  do_execsql_test 3.$tn.4 {
+    SELECT min(a), b FROM t1;
+  } {2 2}
+  do_execsql_test 3.$tn.5 {
+    SELECT min(a), b FROM t1 WHERE a<50;
+  } {2 2}
+}
 
 finish_test
