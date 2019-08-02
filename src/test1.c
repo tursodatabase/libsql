@@ -6392,7 +6392,7 @@ static int SQLITE_TCLAPI prng_seed(
     Tcl_WrongNumArgs(interp, 1, objv, "PRNG-SEED-TEXT");
     return TCL_ERROR;
   }
-  if( Tcl_GetIntFromObj(objv[0],&i) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp,objv[0],&i) ) return TCL_ERROR;
   sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, (unsigned int)i);
   sqlite3_randomness(0,0);
   return TCL_OK;
