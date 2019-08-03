@@ -1807,8 +1807,7 @@ int main(int argc, char **argv){
           }
 #endif
 #ifdef SQLITE_TESTCTRL_PRNG_SEED
-          sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 0);
-          sqlite3_randomness(0,0);
+          sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 1, db);
 #endif
           do{
             runSql(db, (char*)pSql->a, runFlags);

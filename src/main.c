@@ -3824,13 +3824,34 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, unsigned int);
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, int x, sqlite3 *db);
     **
-    ** Use the integer value as the seed for SQLite's internal PRNG.
-    ** rather than the VFS xRandomness() function.
+    ** Control the seed for the pseudo-random number generator (PRNG) that
+    ** is built into SQLite.  Cases:
+    **
+    **    x!=0 && db!=0       Seed the PRNG to the current value of the
+    **                        schema cookie in the main database for db, or
+    **                        x if the schema cookie is zero.  This case
+    **                        is convenient to use with database fuzzers
+    **                        as it allows the fuzzer some control over the
+    **                        the PRNG seed.
+    **
+    **    x!=0 && db==0       Seed the PRNG to the value of x.
+    **
+    **    x==0 && db==0       Revert to default behavior of using the
+    **                        xRandomness method on the primary VFS.
+    **
+    ** This test-control also resets the PRNG so that the new seed will
+    ** be used for the next call to sqlite3_randomness().
     */
     case SQLITE_TESTCTRL_PRNG_SEED: {
-      sqlite3Config.iPrngSeed = va_arg(ap, unsigned int);
+      int x = va_arg(ap, int);
+      int y;
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      assert( db==0 || db->aDb[0].pSchema!=0 );
+      if( db && (y = db->aDb[0].pSchema->schema_cookie)!=0 ){ x = y; }
+      sqlite3Config.iPrngSeed = x;
+      sqlite3_randomness(0,0);
       break;
     }
 

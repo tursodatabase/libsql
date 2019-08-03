@@ -6377,9 +6377,19 @@ static int SQLITE_TCLAPI reset_prng_state(
   return TCL_OK;
 }
 /*
-** tclcmd:  prng_seed INT
+** tclcmd:  prng_seed INT ?DB?
 **
-** Establish TEXT as the seed for the PRNG
+** Set up the SQLITE_TESTCTRL_PRNG_SEED pragma with parameter INT and DB.
+** INT is an integer.  DB is a database connection, or a NULL pointer if
+** omitted.
+**
+** When INT!=0 and DB!=0, set the PRNG seed to the value of the schema
+** cookie for DB, or to INT if the schema cookie happens to be zero.
+**
+** When INT!=0 and DB==0, set the PRNG seed to just INT.
+**
+** If INT==0 and DB==0 then use the default procedure of calling the
+** xRandomness method on the default VFS to get the PRNG seed.
 */
 static int SQLITE_TCLAPI prng_seed(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -6387,14 +6397,17 @@ static int SQLITE_TCLAPI prng_seed(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  unsigned int i;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "PRNG-SEED-TEXT");
+  int i = 0;
+  sqlite3 *db = 0;
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SEED ?DB?");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp,objv[0],&i) ) return TCL_ERROR;
-  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, (unsigned int)i);
-  sqlite3_randomness(0,0);
+  if( objc==3 && getDbPointer(interp, Tcl_GetString(objv[2]), &db) ){
+    return TCL_ERROR;
+  }
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, i, db);
   return TCL_OK;
 }
 

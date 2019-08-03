@@ -9152,7 +9152,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "           },
       { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""                   },
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""                   },
-      { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED"               },
+      { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"          },
       { "reserve",            SQLITE_TESTCTRL_RESERVE,       "BYTES-OF-RESERVE"   },
     };
     int testctrl = -1;
@@ -9227,10 +9227,26 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         /* sqlite3_test_control(int, uint) */
         case SQLITE_TESTCTRL_PENDING_BYTE:
-        case SQLITE_TESTCTRL_PRNG_SEED:
           if( nArg==3 ){
             unsigned int opt = (unsigned int)integerValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);
+            isOk = 3;
+          }
+          break;
+
+        /* sqlite3_test_control(int, int, sqlite3*) */
+        case SQLITE_TESTCTRL_PRNG_SEED:
+          if( nArg==3 || nArg==4 ){
+            int i = (int)integerValue(azArg[2]);
+            sqlite3 *db;
+            if( nArg==3 ){
+              db = 0;
+            }else{
+              db = p->db;
+              /* Make sure the schema has been loaded */
+              sqlite3_table_column_metadata(db, 0, "x", 0, 0, 0, 0, 0, 0);
+            }
+            rc2 = sqlite3_test_control(testctrl, i, db);
             isOk = 3;
           }
           break;
