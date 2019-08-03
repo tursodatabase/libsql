@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\squeries\sof\sthe\sform\s"SELECT\smin(<expr>)\s...\sWHERE\s<expr>=?"\swhere\sthere\sis\san\sindex\son\s<expr>.\sFix\sfor\s[71e183ca].
-D 2019-08-03T16:37:40.150
+C Stregthen\san\sassert()\sin\sthe\sWHERE\sclause\scode\sgenerator\sfor\sthe\smin/max\noptimization.
+D 2019-08-03T19:06:18.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -611,7 +611,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c dee31d6842a8f6acd54bc7a7c2505050cd0fa52228634187195bc0b64eb9c240
 F src/whereInt.h 2bb9632f90a1a32952d43a52587209cdd536c3548715d7859bf0c1f9a65a2efd
-F src/wherecode.c b45c98f260a9fa84787b0673d7053d55d60cb55900236376cac935f2ab6ce3ec
+F src/wherecode.c 5dd20651afc1f67bad35523514e87f017295f1cddfdf5d1ea31a8e299d7054a8
 F src/whereexpr.c 5e559bdd24b06e3bc2e68f258bf751302954dc1e432daf71fdd8098a71462326
 F src/window.c 7728ba7a3d44084a44eefb60464a88fb2ff035eb20cdeb1160ae65ac3c0be6b9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd598e475d353363e19adc27a671170f11ae9f6d8cad58cb2303fb2ad8ac6bec
-R cc89bfbc259b9b7136163b32cac7f905
-U dan
-Z 99d6ce70f917d34037e260832ba76b7f
+P d465c3eef458c851d97eea6e4117247d9c69386b276168080dbff7bb64070c93
+R 8f097cfa3ce30475d286df29d894ccc6
+U drh
+Z 75bab5a01b9371fe4c3ad256ed32bece
