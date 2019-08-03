@@ -176,13 +176,17 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
     sqlite3TreeViewPush(pView, 1);
   }
   do{
-    sqlite3TreeViewLine(pView,
-      "SELECT%s%s (%u/%p) selFlags=0x%x nSelectRow=%d",
-      ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
-      ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""),
-      p->selId, p, p->selFlags,
-      (int)p->nSelectRow
-    );
+    if( p->selFlags & SF_WhereBegin ){
+      sqlite3TreeViewLine(pView, "sqlite3WhereBegin()");
+    }else{
+      sqlite3TreeViewLine(pView,
+        "SELECT%s%s (%u/%p) selFlags=0x%x nSelectRow=%d",
+        ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
+        ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""),
+        p->selId, p, p->selFlags,
+        (int)p->nSelectRow
+      );
+    }
     if( cnt++ ) sqlite3TreeViewPop(pView);
     if( p->pPrior ){
       n = 1000;
@@ -199,7 +203,10 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       if( p->pWinDefn ) n++;
 #endif
     }
-    sqlite3TreeViewExprList(pView, p->pEList, (n--)>0, "result-set");
+    if( p->pEList ){
+      sqlite3TreeViewExprList(pView, p->pEList, n>0, "result-set");
+    }
+    n--;
 #ifndef SQLITE_OMIT_WINDOWFUNC
     if( p->pWin ){
       Window *pX;
