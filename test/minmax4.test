@@ -178,4 +178,27 @@ foreach {tn sql} {
   } {2 2}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t0 (c0, c1);
+  CREATE INDEX i0 ON t0(c1, c1 + 1 DESC);
+  INSERT INTO t0(c0) VALUES (1);
+}
+do_execsql_test 4.1 {
+  SELECT MIN(t0.c1), t0.c0 FROM t0 WHERE t0.c1 ISNULL; 
+} {{} 1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1 (a, b);
+  INSERT INTO t1 VALUES(123, NULL);
+  CREATE INDEX i1 ON t1(a, b DESC);
+}
+do_execsql_test 5.1 {
+  SELECT MIN(a) FROM t1 WHERE a=123;
+} {123}
+
 finish_test
+

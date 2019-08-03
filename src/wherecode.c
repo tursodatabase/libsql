@@ -1562,13 +1562,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** the first one after the nEq equality constraints in the index,
     ** this requires some special handling.
     */
-    assert( pWInfo->pOrderBy==0
-         || pWInfo->pOrderBy->nExpr==1
+    assert( (pWInfo->pOrderBy!=0 && pWInfo->pOrderBy->nExpr==1)
          || (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0 );
-    if( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0
-     && pWInfo->nOBSat>0
-     && (pIdx->nKeyCol>nEq)
-    ){
+    if( pLoop->wsFlags & WHERE_MIN_ORDERED ){
+      assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN) );
+      assert( pWInfo->nOBSat );
+      assert( pIdx->nColumn>nEq );
       assert( pLoop->nSkip==0 );
       bSeekPastNull = 1;
       nExtraReg = 1;

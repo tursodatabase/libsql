@@ -3862,6 +3862,9 @@ static i8 wherePathSatisfiesOrderBy(
             distinctColumns = 1;
           }
           obSat |= MASKBIT(i);
+          if( (wctrlFlags & WHERE_ORDERBY_MIN) && j==pLoop->u.btree.nEq ){
+            pLoop->wsFlags |= WHERE_MIN_ORDERED;
+          }
         }else{
           /* No match found */
           if( j==0 || j<nKeyCol ){
