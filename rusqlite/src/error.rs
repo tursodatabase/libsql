@@ -1,4 +1,5 @@
 use crate::types::Type;
+use crate::types::FromSqlError;
 use crate::{errmsg_to_string, ffi};
 use std::error;
 use std::fmt;
@@ -155,6 +156,31 @@ impl From<::std::ffi::NulError> for Error {
     }
 }
 
+const UNKNOWN_COLUMN: usize = std::usize::MAX;
+
+/// The conversion isn't precise, but it's convenient to have it
+/// to allow use of `get_raw(…).as_…()?` in callbacks that take `Error`.
+impl From<FromSqlError> for Error {
+    fn from(err: FromSqlError) -> Error {
+        // The error type requires index and type fields, but they aren't known in this context.
+        match err {
+            FromSqlError::OutOfRange(val) => Error::IntegralValueOutOfRange(UNKNOWN_COLUMN, val),
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(s) => {
+                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Blob, Box::new(err))
+            }
+            #[cfg(feature = "uuid")]
+            FromSqlError::InvalidUuidSize(s) => {
+                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Blob, Box::new(err))
+            }
+            FromSqlError::Other(source) => {
+                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Null, source)
+            }
+            _ => Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Null, Box::new(err)),
+        }
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
@@ -164,14 +190,20 @@ impl fmt::Display for Error {
                 f,
                 "SQLite was compiled or configured for single-threaded use only"
             ),
-            Error::FromSqlConversionFailure(i, ref t, ref err) => write!(
-                f,
-                "Conversion error from type {} at index: {}, {}",
-                t, i, err
-            ),
-            Error::IntegralValueOutOfRange(col, val) => {
+            Error::FromSqlConversionFailure(i, ref t, ref err) => if i != UNKNOWN_COLUMN {
+                write!(
+                    f,
+                    "Conversion error from type {} at index: {}, {}",
+                    t, i, err
+                )
+            } else {
+                err.fmt(f)
+            },
+            Error::IntegralValueOutOfRange(col, val) => if col != UNKNOWN_COLUMN {
                 write!(f, "Integer {} out of range at index {}", val, col)
-            }
+            } else {
+                write!(f, "Integer {} out of range", val)
+            },
             Error::Utf8Error(ref err) => err.fmt(f),
             Error::NulError(ref err) => err.fmt(f),
             Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
