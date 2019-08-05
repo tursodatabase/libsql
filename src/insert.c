@@ -88,18 +88,18 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
     }
     for(n=0; n<pIdx->nColumn; n++){
       i16 x = pIdx->aiColumn[n];
+      char aff;
       if( x>=0 ){
-        pIdx->zColAff[n] = pTab->aCol[x].affinity;
+        aff = pTab->aCol[x].affinity;
       }else if( x==XN_ROWID ){
-        pIdx->zColAff[n] = SQLITE_AFF_INTEGER;
+        aff = SQLITE_AFF_INTEGER;
       }else{
-        char aff;
         assert( x==XN_EXPR );
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
-        if( aff==0 ) aff = SQLITE_AFF_BLOB;
-        pIdx->zColAff[n] = aff;
       }
+      if( aff==0 ) aff = SQLITE_AFF_BLOB;
+      pIdx->zColAff[n] = aff;
     }
     pIdx->zColAff[n] = 0;
   }
