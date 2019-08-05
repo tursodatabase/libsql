@@ -402,12 +402,14 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     sqlite3TreeViewPop(pView);
     return;
   }
-  if( pExpr->flags ){
+  if( pExpr->flags || pExpr->affExpr ){
     if( ExprHasProperty(pExpr, EP_FromJoin) ){
-      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x iRJT=%d",
-                       pExpr->flags, pExpr->iRightJoinTable);
+      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  fg.af=%x.%c iRJT=%d",
+                       pExpr->flags, pExpr->affExpr ? pExpr->affExpr : 'n',
+                       pExpr->iRightJoinTable);
     }else{
-      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x",pExpr->flags);
+      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  fg.af=%x.%c",
+                       pExpr->flags, pExpr->affExpr ? pExpr->affExpr : 'n');
     }
   }else{
     zFlgs[0] = 0;
@@ -635,7 +637,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
 #ifndef SQLITE_OMIT_TRIGGER
     case TK_RAISE: {
       const char *zType = "unk";
-      switch( pExpr->affinity ){
+      switch( pExpr->affExpr ){
         case OE_Rollback:   zType = "rollback";  break;
         case OE_Abort:      zType = "abort";     break;
         case OE_Fail:       zType = "fail";      break;
@@ -676,7 +678,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
   }else if( zUniOp ){
     sqlite3TreeViewLine(pView, "%s%s", zUniOp, zFlgs);
-    sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+   sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
   }
   sqlite3TreeViewPop(pView);
 }

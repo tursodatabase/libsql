@@ -71,7 +71,7 @@ char sqlite3ExprAffinity(Expr *pExpr){
         pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
     );
   }
-  return pExpr->affinity;
+  return pExpr->affExpr;
 }
 
 /*
@@ -4099,27 +4099,27 @@ expr_code_doover:
     }
 #ifndef SQLITE_OMIT_TRIGGER
     case TK_RAISE: {
-      assert( pExpr->affinity==OE_Rollback 
-           || pExpr->affinity==OE_Abort
-           || pExpr->affinity==OE_Fail
-           || pExpr->affinity==OE_Ignore
+      assert( pExpr->affExpr==OE_Rollback 
+           || pExpr->affExpr==OE_Abort
+           || pExpr->affExpr==OE_Fail
+           || pExpr->affExpr==OE_Ignore
       );
       if( !pParse->pTriggerTab ){
         sqlite3ErrorMsg(pParse,
                        "RAISE() may only be used within a trigger-program");
         return 0;
       }
-      if( pExpr->affinity==OE_Abort ){
+      if( pExpr->affExpr==OE_Abort ){
         sqlite3MayAbort(pParse);
       }
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      if( pExpr->affinity==OE_Ignore ){
+      if( pExpr->affExpr==OE_Ignore ){
         sqlite3VdbeAddOp4(
             v, OP_Halt, SQLITE_OK, OE_Ignore, 0, pExpr->u.zToken,0);
         VdbeCoverage(v);
       }else{
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_TRIGGER,
-                              pExpr->affinity, pExpr->u.zToken, 0, 0);
+                              pExpr->affExpr, pExpr->u.zToken, 0, 0);
       }
 
       break;

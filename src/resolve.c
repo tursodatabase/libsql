@@ -381,7 +381,7 @@ static int lookupName(
           {
 #ifndef SQLITE_OMIT_TRIGGER
             if( iCol<0 ){
-              pExpr->affinity = SQLITE_AFF_INTEGER;
+              pExpr->affExpr = SQLITE_AFF_INTEGER;
             }else if( pExpr->iTable==0 ){
               testcase( iCol==31 );
               testcase( iCol==32 );
@@ -413,7 +413,7 @@ static int lookupName(
     ){
       cnt = 1;
       pExpr->iColumn = -1;
-      pExpr->affinity = SQLITE_AFF_INTEGER;
+      pExpr->affExpr = SQLITE_AFF_INTEGER;
     }
 
     /*

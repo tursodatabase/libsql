@@ -2447,7 +2447,7 @@ typedef int ynVar;
 */
 struct Expr {
   u8 op;                 /* Operation performed by this node */
-  char affinity;         /* The affinity of the column or 0 if not a column */
+  char affExpr;          /* affinity, or RAISE type */
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
