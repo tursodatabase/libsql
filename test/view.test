@@ -724,4 +724,41 @@ do_execsql_test view-26.1 {
   1 1 3 3
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test view-27.0 {
+  CREATE TABLE t0(c0 TEXT, c1);
+  INSERT INTO t0(c0, c1) VALUES (-1, 0);
+  CREATE VIEW v0(c0, c1) AS SELECT t0.c0, AVG(t0.c1) FROM t0;
+}
+
+do_execsql_test view-27.1 {
+  SELECT c0, typeof(c0), affinity(c0), c1, typeof(c1), affinity(c1) FROM v0;
+} {
+  -1   text text
+   0.0 real none
+}
+
+do_execsql_test view-27.2 { SELECT c0<c1 FROM v0 } 1
+do_execsql_test view-27.3 { SELECT c1<c0 FROM v0 } 0
+do_execsql_test view-27.4 {
+  SELECT 1 FROM v0 WHERE c1<c0
+} {}
+do_execsql_test view-27.5 {
+  SELECT 1 FROM v0 WHERE c0<c1
+} {1}
+
+do_execsql_test view-27.6 { 
+  SELECT c0<c1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
+} 1
+do_execsql_test view-27.7 { 
+  SELECT c1<c0 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
+} 0
+do_execsql_test view-27.8 {
+  SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c1<c0
+} {}
+do_execsql_test view-27.9 {
+  SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c0<c1
+} {1}
+
 finish_test
