@@ -178,6 +178,7 @@ struct Fts5Config {
   char *zContentExprlist;
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
+  int bLock;                      /* True when table is preparing statement */
 
   /* Values loaded from the %_config table */
   int iCookie;                    /* Incremented when %_config is modified */
