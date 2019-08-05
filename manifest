@@ -1,5 +1,5 @@
-C Refactor\sfield\sExpr.affinity\sinto\sExpr.affExpr\sto\savoid\sconfusion\swith\sother\nfields\sand\svariables\snamed\s"affinity"\sand\sdisplay\saffExpr\sit\sin\nsqlite3TreeViewExpr()\soutput.
-D 2019-08-05T18:01:42.394
+C The\ssecond\soption\sfor\s[61c853857f40da49]:\s\sIn\sthis\smode,\scolumns\sof\sVIEWs\nand\ssubqueries\sthat\sare\sformed\sby\sexpressions\shave\saffinity\sBLOB\srather\sthan\naffinity\snone,\sas\shas\susually\sbeen\sthe\scase\sfor\sa\swhile.\s\sBut\sthis\smode\sfixes\na\scouple\sof\scorner\scases\sinvolving\squery\sflattening\sand\sthe\spush-down\noptimization\swhere\sthat\srule\swas\sviolated.
+D 2019-08-05T19:34:44.779
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -521,14 +521,14 @@ F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 1fdf68a8add154bd1de978dde5a4819478e2576d5701b93db2c65d78c3daf1c8
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 3ed5a3de18b455366771a89241283fef16508a7f681af546296e95e81458efeb
+F src/resolve.c 38bce6ee2b735ab9b5c6012305a5cf72db55ae4b8056b45b7f355a03df5f191c
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 1b8b5afee76e7d662b34c61705a638f7a6a20d5109515ca973c12343c84fb2d6
+F src/select.c bee5951b330c6ddb07d30fb93a5d0cfecb627710947d3723288ceba6d9208e06
 F src/shell.c.in e5351f14716065d6e00a0437d3910cbb1a9d4fa96af61f59f18e5623679fe605
 F src/sqlite.h.in dfe86c132b5085e00cf0539c78510b75e60d740191804c9848e8bb7aa850fff5
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h 67de168774b2fcc8db9d4f30448ca57f2e569f4291e229819afd68e77b910bad
+F src/sqliteInt.h bd89ac7c55d282f6a098a234561e248bd694c5e3cb893f08f4546dd5fbe3bc61
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1838,7 +1838,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4b00799bdf107fce8a9dd84fd5bf6597e4f3373659b89aae4a1242be5964726f
-R dacf57e6b8446ef98d2c115e292d46f4
+P a29f2a7d07beff64e489e8f824babc6228c4a499fadc0ee701caa60a63baadcd
+R 114b73ab52deae08895f7dfcd34bc152
+T *branch * tkt-61c853-B
+T *sym-tkt-61c853-B *
+T -sym-trunk *
 U drh
-Z ee2588e2d826992a9f3fe3e7ef29d6ef
+Z 24f0d93ba4960f2be678259cef635444

@@ -3903,6 +3903,7 @@ static int flattenSubquery(
   ** in the outer query.
   */
   pSub = pSub1 = pSubitem->pSelect;
+  sqlite3ResolveSubqueryAffinity(pSub->pEList);
 
   /* Delete the transient table structure associated with the
   ** subquery
@@ -4367,6 +4368,7 @@ static int pushDownWhereTerms(
       x.iNewTable = iCursor;
       x.isLeftJoin = 0;
       x.pEList = pSubq->pEList;
+      sqlite3ResolveSubqueryAffinity(x.pEList);
       pNew = substExpr(&x, pNew);
       if( pSubq->selFlags & SF_Aggregate ){
         pSubq->pHaving = sqlite3ExprAnd(pParse, pSubq->pHaving, pNew);

@@ -1745,6 +1745,22 @@ int sqlite3ResolveExprListNames(
 }
 
 /*
+** Set the affinity of all expressions in the result set of a subquery
+** or view.
+*/
+void sqlite3ResolveSubqueryAffinity(ExprList *pList){
+  int i;
+  if( pList ){
+    for(i=0; i<pList->nExpr; i++){
+      Expr *p = pList->a[i].pExpr;
+      if( p==0 ) continue;
+      p->affExpr = sqlite3ExprAffinity(p);
+      if( p->affExpr==0 ) p->affExpr = SQLITE_AFF_BLOB;
+    }
+  }
+}
+
+/*
 ** Resolve all names in all expressions of a SELECT and in all
 ** decendents of the SELECT, including compounds off of p->pPrior,
 ** subqueries in expressions, and subqueries used as FROM clause
