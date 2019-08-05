@@ -5196,9 +5196,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       Select *pSel = pFrom->pSelect;
       if( pSel ){
         while( pSel->pPrior ) pSel = pSel->pPrior;
-        sqlite3SelectAddColumnTypeAndCollation(
-          pParse, pTab, pSel, SQLITE_AFF_BLOB
-        );
+        sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSel, 0);
       }
     }
   }

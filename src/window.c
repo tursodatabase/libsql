@@ -994,7 +994,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded;
-      pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_BLOB);
+      pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, 0);
       if( pTab2==0 ){
         rc = SQLITE_NOMEM;
       }else{
