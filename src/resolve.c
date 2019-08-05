@@ -934,8 +934,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             pExpr->op2++;
             pNC2 = pNC2->pNext;
           }
-          assert( pDef!=0 );
-          if( pNC2 ){
+          assert( pDef!=0 || IN_RENAME_OBJECT );
+          if( pNC2 && pDef ){
             assert( SQLITE_FUNC_MINMAX==NC_MinMaxAgg );
             testcase( (pDef->funcFlags & SQLITE_FUNC_MINMAX)!=0 );
             pNC2->ncFlags |= NC_HasAgg | (pDef->funcFlags & SQLITE_FUNC_MINMAX);
