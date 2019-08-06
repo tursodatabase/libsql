@@ -1,5 +1,5 @@
-C Use\s0x40\s(ASCII\s'@')\sinstead\sof\s0x00\sto\smean\s"no\saffinity"\sso\sthat\scolumns\nwith\sno\saffinity\scan\sappear\sin\sa\szero-terminated\sstring.\s\sUse\sthe\snew\nSQLITE_AFF_NONE\smacro\sfor\sthis\snew\smagic\snumber.
-D 2019-08-06T14:37:24.439
+C Performance\soptimization\sto\sthe\snew\saffinity\shandling\slogic.
+D 2019-08-06T15:18:15.358
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 0e6c36895aa4be921615095499fd9ba1cd83dcb81f2d46f85d49fe7f03480087
+F src/expr.c 338a6f564f58158d3fe0c6cc71e33f95380f13b3c5e3c03c9f144d6c920c2c81
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
 F src/func.c 905c0424900979fade3731b4a271592059425c988cb7d5b245032253712dd7c8
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e15a0977ddfad3d0f4c7654c5665ff10830c25b20ecf6ef500b1ba23fb89e31f
-R 6cb661c6ae5ac0ee443fa40f160ea1c9
+P e8234f6939ccff4c10f741cf66d1c537cfebcbd0d1d79a618a64c755a7f087b5
+R 10cb868e06c68a10cec1488a25566b47
 U drh
-Z b23b61942492fda7f82683e9e87934ba
+Z e5207bffd030ca72efc9eede26e261ef
