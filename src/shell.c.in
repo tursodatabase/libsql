@@ -3978,6 +3978,22 @@ static void shellInt32(
 }
 
 /*
+** Scalar function "shell_idquote(X)" returns string X quoted as an identifier,
+** using "..." with internal double-quote characters doubled.
+*/
+static void shellIdQuote(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const char *zName = (const char*)sqlite3_value_text(argv[0]);
+  if( zName ){
+    char *z = sqlite3_mprintf("\"%w\"", zName);
+    sqlite3_result_text(context, z, -1, sqlite3_free);
+  }
+}
+
+/*
 ** Scalar function "shell_escape_crnl" used by the .recover command.
 ** The argument passed to this function is the output of built-in
 ** function quote(). If the first character of the input is "'", 
@@ -4153,6 +4169,8 @@ static void open_db(ShellState *p, int openFlags){
                             shellEscapeCrnl, 0, 0);
     sqlite3_create_function(p->db, "shell_int32", 2, SQLITE_UTF8, 0,
                             shellInt32, 0, 0);
+    sqlite3_create_function(p->db, "shell_idquote", 1, SQLITE_UTF8, 0,
+                            shellIdQuote, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
@@ -6331,6 +6349,10 @@ static RecoverTable *recoverNewTable(
     
     rc = sqlite3_open("", &dbtmp);
     if( rc==SQLITE_OK ){
+      sqlite3_create_function(dbtmp, "shell_idquote", 1, SQLITE_UTF8, 0,
+                              shellIdQuote, 0, 0);
+    }
+    if( rc==SQLITE_OK ){
       rc = sqlite3_exec(dbtmp, "PRAGMA writable_schema = on", 0, 0, 0);
     }
     if( rc==SQLITE_OK ){
@@ -6386,18 +6408,18 @@ static RecoverTable *recoverNewTable(
         }
       }
 
-      pTab->zQuoted = shellMPrintf(&rc, "%Q", zName);
+      pTab->zQuoted = shellMPrintf(&rc, "\"%w\"", zName);
       pTab->azlCol = (char**)shellMalloc(&rc, sizeof(char*) * (nSqlCol+1));
       pTab->nCol = nSqlCol;
 
       if( bIntkey ){
-        pTab->azlCol[0] = shellMPrintf(&rc, "%Q", zPk);
+        pTab->azlCol[0] = shellMPrintf(&rc, "\"%w\"", zPk);
       }else{
         pTab->azlCol[0] = shellMPrintf(&rc, "");
       }
       i = 1;
       shellPreparePrintf(dbtmp, &rc, &pStmt, 
-          "SELECT %Q || group_concat(quote(name), ', ') "
+          "SELECT %Q || group_concat(shell_idquote(name), ', ') "
           "  FILTER (WHERE cid!=%d) OVER (ORDER BY %s cid) "
           "FROM pragma_table_info(%Q)", 
           bIntkey ? ", " : "", pTab->iPk, 
@@ -6511,7 +6533,7 @@ static RecoverTable *recoverOrphanTable(
 
     pTab = (RecoverTable*)shellMalloc(pRc, sizeof(RecoverTable));
     if( pTab ){
-      pTab->zQuoted = shellMPrintf(pRc, "%Q", zTab);
+      pTab->zQuoted = shellMPrintf(pRc, "\"%w\"", zTab);
       pTab->nCol = nCol;
       pTab->iPk = -2;
       if( nCol>0 ){
@@ -6775,7 +6797,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       if( pTab==0 ) break;
     }
 
-    if( 0==sqlite3_stricmp(pTab->zQuoted, "'sqlite_sequence'") ){
+    if( 0==sqlite3_stricmp(pTab->zQuoted, "\"sqlite_sequence\"") ){
       raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
     }
     sqlite3_bind_int(pPages, 1, iRoot);
