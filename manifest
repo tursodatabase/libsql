@@ -1,5 +1,5 @@
-C Enhance\sthe\s".recover"\soutput\sin\sthe\sshell\sto\suse\sdouble-quotes\saround\stable\nand\scolumn\sidentifiers.
-D 2019-08-06T20:26:17.504
+C Improved\sreuse\sof\sfile\sdescriptors\sfor\swhich\sclose()\sis\sdelayed\sto\sprevent\nclearly\sof\sposix\sadvisory\slocks.
+D 2019-08-06T20:55:06.592
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -507,7 +507,7 @@ F src/os.c 66948e071d5ba7ae9ca5839799fdf68159f059cb97cada8a07eaf95a56edce79
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 7a2e00cf63588096f356451b7405bf9c7316e1cd8543a7cfbe64e8ffed2e3f34
+F src/os_unix.c 4ec5b1305ced509ca52c4c0cb3aeabed2ed3972147b4090cf94eb31d48caeb53
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bfc29e62eff0ed00c153e18a27815f7e3ba316f46871e9645b84ab1e6709a392
-R 10086bf66980a741a6f6a6c27d24c72b
+P 846d2d2d2f7fd2e4178c70bc2b92f18941a7972fe88c0129035b7a253ed21785
+R febd0c95a539da02454221d993b8efa9
 U drh
-Z 2822779ed58d184aa4feb3102735adde
+Z 92c2dc406e9cbd99dca5df27c91ad236
