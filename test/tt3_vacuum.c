@@ -23,7 +23,7 @@
 static char *vacuum1_thread_writer(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   i64 i = 0;
 
   while( !timetostop(&err) ){
@@ -52,7 +52,7 @@ static char *vacuum1_thread_writer(int iTid, void *pArg){
 static char *vacuum1_thread_vacuumer(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
 
   do{
     sql_script(&err, &db, "VACUUM");
@@ -69,7 +69,7 @@ static void vacuum1(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
      "CREATE TABLE t1(x PRIMARY KEY, y BLOB);"
      "CREATE INDEX i1 ON t1(y);"

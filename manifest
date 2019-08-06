@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sthe\scode\son\sthis\sbranch.
-D 2019-08-06T11:45:33.654
+C Add\sa\smulti-threaded\stest\sto\sthreadtest3.c\sfor\sthe\sfeature\son\sthis\sbranch.
+D 2019-08-06T15:02:49.156
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1416,7 +1416,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 38a612ea62854349ed66372f330a40d73c5cf956
+F test/threadtest3.c 4de1edf7cddac6195acfaea56cccb8572df803854531251784f6b8ca46f256e3
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
@@ -1585,11 +1585,12 @@ F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test ede2e4bce4ba802337bd69d39447fa04a938e06d84a8bfc53c76850fc36ed86d
 F test/triggerF.test 5d76f0a8c428ff87a4d5ed52da06f6096a2c787a1e21b846111dfac4123de3ad
 F test/triggerG.test d5caeef6144ede2426dd13211fd72248241ff2ebc68e12a4c0bf30f5faa21499
-F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
-F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
-F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
-F test/tt3_stress.c c57d804716165811d979d4a719e05baccd79277f
-F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
+F test/tt3_checkpoint.c 9a7fe00e07700af027769d83ef67ab727927ae6c865ecdc71fe8011194200c53
+F test/tt3_index.c 95592839426dc85ce5a7a57b41be2cbf3c2ec3457b9cd841a06ed5877f712c7c
+F test/tt3_lookaside1.c 2ddd99bfffeef288f0786827ef68f912f6f47ce3d3184e62f05808d8e13b920e
+F test/tt3_reuseschema.c 4d52e141f89f009028d8ab0bd1f0697d0edffa94bafc1fff0f7ad4d9d9baa549
+F test/tt3_stress.c bbd430f23fa64f466ea8f212756f5f7135a2f8ff5accad85550c0ba73be76b16
+F test/tt3_vacuum.c ca42adcf8a671abbe34338b828464269e21758a6b4857b889dabfd39a3206d98
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
@@ -1846,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f1e4e4b99644f986aa68bd40afddc4886145972eae1106347185eeff52150d6
-R 74be422d8178d1a704e716c0180e63a4
+P fdd44bbb501c7252097e79685e916e760846e183bc9f022f9cf32f1d32f0089d
+R a9b8527bf0773b824fbecc1d333eb46b
 U dan
-Z 9c1ce67a75ce4b7fcc7df0d80c599066
+Z defc4aad4b110f20b71fb180d41dde27

@@ -38,7 +38,7 @@
 #define SEL(e) ((e)->iLine = ((e)->rc ? (e)->iLine : __LINE__))
 
 /* Database functions */
-#define opendb(w,x,y,z)         (SEL(w), opendb_x(w,x,y,z))
+#define opendb(w,x,y,z,f)       (SEL(w), opendb_x(w,x,y,z,f))
 #define closedb(y,z)            (SEL(y), closedb_x(y,z))
 
 /* Functions to execute SQL */
@@ -520,11 +520,14 @@ static void opendb_x(
   Error *pErr,                    /* IN/OUT: Error code */
   Sqlite *pDb,                    /* OUT: Database handle */
   const char *zFile,              /* Database file name */
-  int bDelete                     /* True to delete db file before opening */
+  int bDelete,                    /* True to delete db file before opening */
+  int flags
 ){
   if( pErr->rc==SQLITE_OK ){
     int rc;
-    int flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_URI;
+    if( flags==0 ){
+      flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_URI;
+    }
     if( bDelete ) unlink(zFile);
     rc = sqlite3_open_v2(zFile, &pDb->db, flags, 0);
     if( rc ){
@@ -926,7 +929,7 @@ static char *walthread1_thread(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
   int nIter = 0;                  /* Iterations so far */
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     const char *azSql[] = {
       "SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1)",
@@ -965,7 +968,7 @@ static char *walthread1_ckpt_thread(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
   int nCkpt = 0;                  /* Checkpoints so far */
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     usleep(500*1000);
     execsql(&err, &db, "PRAGMA wal_checkpoint");
@@ -984,7 +987,7 @@ static void walthread1(int nMs){
   Threadset threads = {0};        /* Test threads */
   int i;                          /* Iterator variable */
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db,
       "PRAGMA journal_mode = WAL;"
       "CREATE TABLE t1(x PRIMARY KEY);"
@@ -1017,7 +1020,7 @@ static char *walthread2_thread(int iTid, void *pArg){
     int journal_exists = 0;
     int wal_exists = 0;
 
-    opendb(&err, &db, "test.db", 0);
+    opendb(&err, &db, "test.db", 0, 0);
 
     sql_script(&err, &db, zJournal);
     clear_error(&err, SQLITE_BUSY);
@@ -1047,7 +1050,7 @@ static void walthread2(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, "CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE)");
   closedb(&err, &db);
 
@@ -1067,7 +1070,7 @@ static char *walthread3_thread(int iTid, void *pArg){
   i64 iNextWrite;                 /* Next value this thread will write */
   int iArg = PTR2INT(pArg);
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   sql_script(&err, &db, "PRAGMA wal_autocheckpoint = 10");
 
   iNextWrite = iArg+1;
@@ -1104,7 +1107,7 @@ static void walthread3(int nMs){
   Threadset threads = {0};
   int i;
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
       "PRAGMA journal_mode = WAL;"
       "CREATE TABLE t1(cnt PRIMARY KEY, sum1, sum2);"
@@ -1127,7 +1130,7 @@ static char *walthread4_reader_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     integrity_check(&err, &db);
   }
@@ -1142,7 +1145,7 @@ static char *walthread4_writer_thread(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
   i64 iRow = 1;
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   sql_script(&err, &db, "PRAGMA wal_autocheckpoint = 15;");
   while( !timetostop(&err) ){
     execsql_i64(
@@ -1162,7 +1165,7 @@ static void walthread4(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
       "PRAGMA journal_mode = WAL;"
       "CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);"
@@ -1182,7 +1185,7 @@ static char *walthread5_thread(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
   i64 nRow;
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   nRow = execsql_i64(&err, &db, "SELECT count(*) FROM t1");
   closedb(&err, &db);
 
@@ -1195,7 +1198,7 @@ static void walthread5(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
       "PRAGMA wal_autocheckpoint = 0;"
       "PRAGMA page_size = 1024;"
@@ -1286,7 +1289,7 @@ static void cgt_pager_1(int nMs){
   Error err = {0};
   Sqlite db = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db,
       "PRAGMA cache_size = 2000;"
       "PRAGMA page_size = 1024;"
@@ -1315,7 +1318,7 @@ static char *dynamic_triggers_1(int iTid, void *pArg){
   int nDrop = 0;
   int nCreate = 0;
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     int i;
 
@@ -1368,7 +1371,7 @@ static char *dynamic_triggers_2(int iTid, void *pArg){
   int nInsert = 0;
   int nDelete = 0;
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     do {
       iVal = (iVal+1)%100;
@@ -1393,7 +1396,7 @@ static void dynamic_triggers(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
       "PRAGMA page_size = 1024;"
       "PRAGMA journal_mode = WAL;"
@@ -1433,6 +1436,7 @@ static void dynamic_triggers(int nMs){
 #include "tt3_lookaside1.c"
 #include "tt3_vacuum.c"
 #include "tt3_stress.c"
+#include "tt3_reuseschema.c"
 
 int main(int argc, char **argv){
   struct ThreadTest {
@@ -1457,6 +1461,7 @@ int main(int argc, char **argv){
     { vacuum1,             "vacuum1", 10000 },
     { stress1,             "stress1", 10000 },
     { stress2,             "stress2", 60000 },
+    { reuse_schema_1,      "reuse_schema_1", 20000 },
   };
   static char *substArgv[] = { 0, "*", 0 };
   int i, iArg;

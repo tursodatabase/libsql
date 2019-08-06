@@ -21,7 +21,7 @@ static char *stress_thread_1(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     sql_script(&err, &db, "CREATE TABLE IF NOT EXISTS t1(a PRIMARY KEY, b)");
     clear_error(&err, SQLITE_LOCKED);
@@ -40,7 +40,7 @@ static char *stress_thread_2(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   while( !timetostop(&err) ){
-    opendb(&err, &db, "test.db", 0);
+    opendb(&err, &db, "test.db", 0, 0);
     sql_script(&err, &db, "SELECT * FROM sqlite_master;");
     clear_error(&err, SQLITE_LOCKED);
     closedb(&err, &db);
@@ -59,7 +59,7 @@ static char *stress_thread_3(int iTid, void *pArg){
   int i1 = 0;
   int i2 = 0;
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     sql_script(&err, &db, "SELECT * FROM t1 ORDER BY a;");
     i1++;
@@ -82,11 +82,11 @@ static char *stress_thread_4(int iTid, void *pArg){
   int i2 = 0;
   int iArg = PTR2INT(pArg);
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     if( iArg ){
       closedb(&err, &db);
-      opendb(&err, &db, "test.db", 0);
+      opendb(&err, &db, "test.db", 0, 0);
     }
     sql_script(&err, &db, 
         "WITH loop(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM loop LIMIT 200) "
@@ -113,12 +113,12 @@ static char *stress_thread_5(int iTid, void *pArg){
   int i1 = 0;
   int i2 = 0;
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     i64 i = (i1 % 4);
     if( iArg ){
       closedb(&err, &db);
-      opendb(&err, &db, "test.db", 0);
+      opendb(&err, &db, "test.db", 0, 0);
     }
     execsql(&err, &db, "DELETE FROM t1 WHERE (rowid % 4)==:i", &i);
     i1++;
@@ -265,7 +265,7 @@ static char *stress2_workload19(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
   const char *zDb = (const char*)pArg;
   while( !timetostop(&err) ){
-    opendb(&err, &db, zDb, 0);
+    opendb(&err, &db, zDb, 0, 0);
     sql_script(&err, &db, "SELECT * FROM sqlite_master;");
     clear_error(&err, SQLITE_LOCKED);
     closedb(&err, &db);
@@ -290,7 +290,7 @@ static char *stress2_thread_wrapper(int iTid, void *pArg){
 
   while( !timetostop(&err) ){
     int cnt;
-    opendb(&err, &db, pCtx->zDb, 0);
+    opendb(&err, &db, pCtx->zDb, 0, 0);
     for(cnt=0; err.rc==SQLITE_OK && cnt<STRESS2_TABCNT; cnt++){
       pCtx->xProc(&err, &db, i1);
       i2 += (err.rc==SQLITE_OK);
@@ -342,7 +342,7 @@ static void stress2(int nMs){
   Threadset threads = {0};
 
   /* To make sure the db file is empty before commencing */
-  opendb(&err, &db, zDb, 1);
+  opendb(&err, &db, zDb, 1, 0);
   sql_script(&err, &db, 
       "CREATE TABLE IF NOT EXISTS t0(x PRIMARY KEY, y, z);"
       "CREATE INDEX IF NOT EXISTS i0 ON t0(y);"
