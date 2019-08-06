@@ -98,7 +98,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
       }
-      if( aff==0 ) aff = SQLITE_AFF_BLOB;
+      if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
       pIdx->zColAff[n] = aff;
     }
     pIdx->zColAff[n] = 0;
@@ -139,11 +139,12 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     }
 
     for(i=0; i<pTab->nCol; i++){
+      assert( pTab->aCol[i].affinity!=0 );
       zColAff[i] = pTab->aCol[i].affinity;
     }
     do{
       zColAff[i--] = 0;
-    }while( i>=0 && zColAff[i]==SQLITE_AFF_BLOB );
+    }while( i>=0 && zColAff[i]<=SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
   assert( zColAff!=0 );
