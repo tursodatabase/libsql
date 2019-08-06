@@ -6708,6 +6708,11 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   ** CREATE TABLE statements that extracted from the existing schema.  */
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
+    /* ".recover" might output content in an order which causes immediate
+    ** foreign key constraints to be violated. So disable foreign-key
+    ** constraint enforcement to prevent problems when running the output
+    ** script. */
+    raw_printf(pState->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(pState->out, "BEGIN;\n");
     raw_printf(pState->out, "PRAGMA writable_schema = on;\n");
     shellPrepare(pState->db, &rc,

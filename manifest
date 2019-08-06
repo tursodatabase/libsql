@@ -1,5 +1,5 @@
-C Ensure\sthat\scolumns\sof\sviews\sand\ssub-queries\sthat\sare\sexpressions\swith\s\nno\saffinity\sare\scomparied\swithout\sany\stype\sconversions,\sas\srequired\sin\sthe\ndocumentation.\s\sTickets\s[61c853857f40da49]\sand\s[d52a29a9e6bc55c5].
-D 2019-08-06T15:32:42.960
+C Add\s"PRAGMA\sforeign_keys=OFF;"\sto\sthe\sstart\sof\sthe\sscript\soutput\sby\s".recover",\sjust\sas\sis\sdone\sfor\s".dump".
+D 2019-08-06T18:40:36.681
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -524,7 +524,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3ed5a3de18b455366771a89241283fef16508a7f681af546296e95e81458efeb
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c db06006136ec50868ce6f6fe17e8dfad21b58c089f9372d29c1a79283445907f
-F src/shell.c.in e5351f14716065d6e00a0437d3910cbb1a9d4fa96af61f59f18e5623679fe605
+F src/shell.c.in 486dbf00639caefff49157ff0fb495ece63b5d3446226530a4d12da4523a85d7
 F src/sqlite.h.in dfe86c132b5085e00cf0539c78510b75e60d740191804c9848e8bb7aa850fff5
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
@@ -1838,8 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a29f2a7d07beff64e489e8f824babc6228c4a499fadc0ee701caa60a63baadcd c9724e761bce7a4ae63ce3c1408795915865e8d3024dcb90690456f724f0df53
-R 10cb868e06c68a10cec1488a25566b47
-T +closed c9724e761bce7a4ae63ce3c1408795915865e8d3024dcb90690456f724f0df53
-U drh
-Z 12b7f7b98368f306c0b1bf9a2a6cf4b0
+P 9c8c1092a8ce80e114fcfe8ce780332a6f269b8c87df226242b582d2d825c393
+R 57f54a483ad45f70950f478d347477c2
+U dan
+Z 611328cc84a1359679c9e0fa05abc352
