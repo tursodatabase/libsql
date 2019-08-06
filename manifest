@@ -1,5 +1,5 @@
-C Merge\slatest\schanges\sfrom\strunk\sinto\sthis\sbranch.
-D 2019-07-26T20:54:05.018
+C Add\san\sassert()\sto\sthe\scode\son\sthis\sbranch.
+D 2019-08-06T11:45:33.654
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/btree.c 58d002f711c41a50a1183b5880b2e30fcd2363962df1ecf25731d011a796ee94
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 02ec8b22f67bfcd3fb43c704cecdbd3791ce09bc3f379179745e9225cb107d88
-F src/callback.c 5a9a83d7cecce452902da0a24bf51f6e4d232b5dc54b67418276ca9ad82c5bde
+F src/callback.c 2e6db109a37219464a3a5ed6f2f330af4a0500a1a224122f4be472e454efe2cf
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c dd608385f81e622e5fbeae4c1e502cb5a034730d077ed2da39b9c73f9af324ad
 F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 892ac94511a41dc4043ceb76aae267b1252d08fee41c475fb848c15519477adb 6bfa44da226fd758a2ee924d1e8e3a742b0635b6d3f922a4a7919cb14b2418e6
-R 8f7d6fa78727706a454ce7851cdc12e8
+P 7f1e4e4b99644f986aa68bd40afddc4886145972eae1106347185eeff52150d6
+R 74be422d8178d1a704e716c0180e63a4
 U dan
-Z 2a80e3936100fc42f6d872c5a729bcd8
+Z 9c1ce67a75ce4b7fcc7df0d80c599066

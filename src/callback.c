@@ -612,6 +612,7 @@ static void schemaRelease(sqlite3 *db, Db *pDb){
   Schema *pRelease = pDb->pSchema;
   SchemaPool *pSPool = pDb->pSPool;
 
+  assert( pDb->pSchema->iGeneration==pSPool->sSchema.iGeneration );
   pDb->pSchema = &pSPool->sSchema;
 
   assert( pDb->pSPool && pRelease );
