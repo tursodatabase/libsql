@@ -3476,6 +3476,9 @@ static Expr *substExpr(
           pNew->iRightJoinTable = pExpr->iRightJoinTable;
           ExprSetProperty(pNew, EP_FromJoin);
         }
+        if( pNew && ExprHasProperty(pExpr,EP_Generic) ){
+          ExprSetProperty(pNew, EP_Generic);
+        }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
       }
