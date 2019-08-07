@@ -546,6 +546,7 @@ proc main_script {args} {
     set makecmd    "nmake /f %SRCDIR%\\Makefile.msc TOP=%SRCDIR% $target "
     append makecmd "\"CFLAGS=$cflags\" \"OPTS=$opts\" $makeOpts"
 
+    puts "set TMP=%CD%"
     puts $makecmd
   }
 }
