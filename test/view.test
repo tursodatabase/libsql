@@ -733,10 +733,10 @@ do_execsql_test view-27.0 {
 }
 
 do_execsql_test view-27.1 {
-  SELECT c0, typeof(c0), affinity(c0), c1, typeof(c1), affinity(c1) FROM v0;
+  SELECT c0, typeof(c0), c1, typeof(c1) FROM v0;
 } {
-  -1   text text
-   0.0 real none
+  -1   text
+   0.0 real
 }
 
 do_execsql_test view-27.2 { SELECT c0<c1 FROM v0 } 1

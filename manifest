@@ -1,5 +1,5 @@
-C Add\s"set\sTMP=%CD%"\sto\sthe\sstart\sof\seach\smsvc\sscript\soutput\sby\sreleasetest_data.tcl.\sOtherwise,\ssince\sbinaries\scompiled\swith\sSQLITE_TEST\sall\schoose\sthe\ssame\ssequence\sof\spseudo-random\snumbers,\scollisions\sbetween\stemp\sfile\snames\scause\serrors\swhen\srunning\smultiple\stests\sin\sparallel.
-D 2019-08-07T18:34:21.690
+C Remove\suse\sof\sthe\saffinity()\sfunction\sfrom\sview.test,\sas\sit\sis\sonly\savailable\sin\sSQLITE_DEBUG\sbuilds.
+D 2019-08-07T19:57:21.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1611,7 +1611,7 @@ F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 3a4e64be30a51a5e3c63818febaf5c4b749a2563b539c30193121aa3966bd3c4
+F test/view.test c1e64ff5a860fdbb7b52add0996af2ee1af563ddf2e86b964d15d04d81a001be
 F test/vtab1.test fa6baded08fdadd6f416a9c54956c049ae327b9bdd05d25bf8163f65e65e849c
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8158d2aca68c5a253054376fdf1b8eaab2db874f4b93524742be7340e9c50dd5
-R 072ac875b97aeb49fe07427245b5d6d5
+P f5d0436d8dc650cadb61a5fe76fd1a0d68dabba54ff0c2a8c138f9dfbdab1c3f
+R 56eccd3e7dc59c44ac74cbf902104d89
 U dan
-Z dd0b32346d93ef63ee23b8e92d055597
+Z 6c3c61a860bfee993c6b3b37c84b4fae
