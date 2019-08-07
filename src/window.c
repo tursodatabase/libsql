@@ -934,11 +934,14 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** redundant, remove the ORDER BY from the parent SELECT.  */
     pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
     pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy, 1);
-    if( pSort && p->pOrderBy ){
+    if( pSort && p->pOrderBy && p->pOrderBy->nExpr<=pSort->nExpr ){
+      int nSave = pSort->nExpr;
+      pSort->nExpr = p->pOrderBy->nExpr;
       if( sqlite3ExprListCompare(pSort, p->pOrderBy, -1)==0 ){
         sqlite3ExprListDelete(db, p->pOrderBy);
         p->pOrderBy = 0;
       }
+      pSort->nExpr = nSave;
     }
 
     /* Assign a cursor number for the ephemeral table used to buffer rows.
