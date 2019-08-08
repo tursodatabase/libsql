@@ -3987,6 +3987,7 @@ static void shellIdQuote(
   sqlite3_value **argv
 ){
   const char *zName = (const char*)sqlite3_value_text(argv[0]);
+  UNUSED_PARAMETER(argc);
   if( zName ){
     char *z = sqlite3_mprintf("\"%w\"", zName);
     sqlite3_result_text(context, z, -1, sqlite3_free);
@@ -9261,7 +9262,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* sqlite3_test_control(int, int, sqlite3*) */
         case SQLITE_TESTCTRL_PRNG_SEED:
           if( nArg==3 || nArg==4 ){
-            int i = (int)integerValue(azArg[2]);
+            int ii = (int)integerValue(azArg[2]);
             sqlite3 *db;
             if( nArg==3 ){
               db = 0;
@@ -9270,7 +9271,7 @@ static int do_meta_command(char *zLine, ShellState *p){
               /* Make sure the schema has been loaded */
               sqlite3_table_column_metadata(db, 0, "x", 0, 0, 0, 0, 0, 0);
             }
-            rc2 = sqlite3_test_control(testctrl, i, db);
+            rc2 = sqlite3_test_control(testctrl, ii, db);
             isOk = 3;
           }
           break;

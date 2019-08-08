@@ -260,7 +260,7 @@ void sqlite3OsDlClose(sqlite3_vfs *pVfs, void *pHandle){
 int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   if( sqlite3Config.iPrngSeed ){
     memset(zBufOut, 0, nByte);
-    if( ALWAYS(nByte>sizeof(unsigned)) ) nByte = sizeof(unsigned int);
+    if( ALWAYS(nByte>(signed)sizeof(unsigned)) ) nByte = sizeof(unsigned int);
     memcpy(zBufOut, &sqlite3Config.iPrngSeed, nByte);
     return SQLITE_OK;
   }else{
