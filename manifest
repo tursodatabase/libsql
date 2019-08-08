@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\s"no\ssuch\stable"\sand\sother\ssimilar\ssqlite3_prepare*()\serrors\sto\sreturn\sSQLITE_SCHEMA\sinstead\sof\sSQLITE_ERROR\sin\sshared-schema\smode\swhen\sthere\sis\san\sattached\sdatabase\sfor\swhich\sthe\sschema\shas\snever\sbeen\sloaded.
-D 2019-08-08T11:44:57.781
+C Fix\sspurious\s"no\ssuch\stable:\sx1"\serrors\sin\sshared-schema\smode\sthat\scould\soccur\nwhen\sa\squery\sthat\sis\sa\sjoin\sacross\stwo\sor\smore\sdatabases\sneeds\sto\scall\sthe\sxConnect()\smethods\sof\sa\svirtual\stable.
+D 2019-08-08T15:47:32.871
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -529,7 +529,7 @@ F src/shell.c.in 8b51039f1eb9629595e1755ed4c6847571b97539cdf5074ef4f2be3db4e9c5f
 F src/sqlite.h.in e7bdb21e7c59cd6db0eeaabee1478db3dc348270dfb3ce1987541ba133bf531a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h 170fa79c877f9e45d9219f7825b7b77126d3f2dfe71afa84d776fc0884ee8bb4
+F src/sqliteInt.h 41365fb249e30f3c96608edee107df9bade2b71d9e3689ad9ffabf48eb5f1447
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c d9f7d66ae8bee9ffbe4cf7ae72a8d3d429a269336dee1e705ecb3dbea27fa5e2
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -589,7 +589,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
+F src/tokenize.c 3e08eadda7a23a58dd45976c68c600ca2b61a6015c2e61849b1e0cb62f9a9169
 F src/treeview.c cf03f9f6efb93288c7b9f17374ea48e4ce9111b0bc7e428d6850c3eee532b461
 F src/trigger.c b6a3541d07a6a174f19f617405a96abff3e96365f97ff2edca1e1e7d31393e10
 F src/update.c 3cb9150d2cf661d938e2f1b1749945f3faa767f88febdb739ab1793bbf895ff2
@@ -602,7 +602,7 @@ F src/vdbe.h 323218c4bfd64c719ba85d05fbc87cdd126991cadb39e73ccac7b59f30c3d53e
 F src/vdbeInt.h 889c52272a02cea8af6e21b493b08bc9a043e3372a77fdfe838d25e73a47ac92
 F src/vdbeapi.c f9161e5c77f512fbb80091ce8af621d19c9556bda5e734cffaac1198407400da
 F src/vdbeaux.c aa9950d1a49274aabaf80581c19080591a998ec745b15016480b2a3f7dc18df8
-F src/vdbeblob.c ffe8720d6c00f2bb253b4e00b161940eb2513100d7e9b1459cf980decd1fe1f9
+F src/vdbeblob.c 40028e015fe557a945c99edb6cbf844ea96d853c3e8ac4eb5c1e49bff59f154e
 F src/vdbemem.c f6f277d17d50972571d1394535d4c3d156fdea871d8f327f5b9479984054015a
 F src/vdbesort.c 3531ae3a431ad6b98b67bd891fb42ec9d66867157188a2b1a9e58c55da6151b2
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
@@ -1255,6 +1255,7 @@ F test/reuse2.test 5dd9c98579358f0d5a90d25e36dd6e678a03e23446b6c7f2630a8da22ae7c
 F test/reuse3.test ab116714c9dfbdf975716e9dee8409e045e4172dcd0a685275a37b96f370b3bb
 F test/reuse4.test adaad66253aea6cc748674328abe69b650c5c78b8676ed1162d3de09742519f9
 F test/reuse5.test bbe6cf7384ef90f134392edd93d626385ef0bf6f40eefc3d993535cd0861d83b
+F test/reuse6.test 3c7de2cd3c9246e848b33c644feff642e4da291dc3f21b268db2d4a1be9825b0
 F test/reusefault.test ef646a0fb51d50ddfb4b7cd872f88e7d36eaba64bde7797b3418c3774e1c8d14
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
@@ -1847,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62557fab0d21d47893e69d504ae2b4405c1837ccd6300a5a6743cb756eb28ad3
-R 7685a58cd0424b4f663be4b37d288774
+P 111e2c73cf430ae61e3f4cc34a1bee8ac7025b8a960fc3f3b7f493009b759ad7
+R e3122eb8e2ce7a95e67a718a488eda82
 U dan
-Z 1465b53bc3abab19ee3f0a331df543d1
+Z 300a034276e5262df11e18b77c4c7a70

@@ -131,6 +131,7 @@ int sqlite3_blob_open(
   char *zErr = 0;
   Table *pTab;
   Incrblob *pBlob = 0;
+  Parse *pParentParse = db->pParse;
   Parse sParse;
   int bUnlock;            /* True to unlock reusable schemas before returning */
 
@@ -148,7 +149,6 @@ int sqlite3_blob_open(
   wrFlag = !!wrFlag;                /* wrFlag = (wrFlag ? 1 : 0); */
 
   sqlite3_mutex_enter(db->mutex);
-  assert( db->pParse==0 );
 
   bUnlock = sqlite3LockReusableSchema(db);
   pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
@@ -335,7 +335,7 @@ int sqlite3_blob_open(
   } while( (++nAttempt)<SQLITE_MAX_SCHEMA_RETRY && rc==SQLITE_SCHEMA );
 
 blob_open_out:
-  db->pParse = 0;
+  db->pParse = pParentParse;
   sqlite3UnlockReusableSchema(db, bUnlock);
   if( rc==SQLITE_OK && db->mallocFailed==0 ){
     *ppBlob = (sqlite3_blob *)pBlob;

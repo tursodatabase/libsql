@@ -1,0 +1,123 @@
+# 2019 February 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix reuse6
+
+ifcapable !sharedschema {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE t2(a, b, c);
+  CREATE INDEX t1x ON t1(x);
+  CREATE INDEX t1y ON t1(y);
+  CREATE VIEW v1 AS SELECT * FROM t2;
+
+  INSERT INTO t1 VALUES(1, 2), (3, 4), (5, 6);
+  INSERT INTO t2 VALUES('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'h', 'i');
+
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE t3(i, ii);
+  INSERT INTO t3 VALUES(10, 20);
+}
+
+sqlite3 db1 test.db -shared-schema 1
+sqlite3 db2 test.db -shared-schema 1
+
+do_execsql_test -db db1 1.1 {
+  ATTACH 'test.db2' AS aux;
+}
+
+do_test 1.2 {
+  execsql {SELECT * FROM t3} db1
+} {10 20}
+
+do_execsql_test -db db2 1.3 {
+  ATTACH 'test.db2' AS aux;
+}
+
+do_test 1.3 {
+  execsql {SELECT * FROM t3} db1
+} {10 20}
+
+do_execsql_test -db db2 1.5 {
+  SELECT * FROM t3;
+} {10 20}
+
+do_test 1.6 {
+  execsql {SELECT * FROM t3} db1
+} {10 20}
+
+db1 close
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+forcedelete test.db3
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x, y);
+  ATTACH 'test.db2' AS aux2;
+  CREATE TABLE aux2.t2(x, y);
+  ATTACH 'test.db3' AS aux3;
+  CREATE TABLE aux3.t3(x, y);
+}
+
+sqlite3 db1 test.db -shared-schema 1
+do_execsql_test -db db1 2.1 {
+  ATTACH 'test.db2' AS aux2;
+  ATTACH 'test.db3' AS aux3;
+}
+
+do_test 2.2.1 {
+  catchsql { SELECT * FROM aux2.nosuchtable } db1
+} {1 {no such table: aux2.nosuchtable}}
+do_test 2.2.2 {
+  sqlite3_errcode db1
+} {SQLITE_ERROR}
+db1 close
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+ifcapable fts5 {
+  do_execsql_test 3.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a, b);
+    ATTACH 'test.db2' AS aux;
+    CREATE TABLE aux.t1(x, y, z);
+  }
+
+  sqlite3 db1 test.db -shared-schema 1
+  do_execsql_test -db db1 3.1 {
+    ATTACH 'test.db2' AS aux;
+  }
+
+breakpoint
+  do_execsql_test -db db1 3.2 {
+    SELECT * FROM main.ft, aux.t1;
+  }
+}
+
+
+
+
+
+
+
+
+finish_test
+
