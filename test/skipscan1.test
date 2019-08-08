@@ -234,7 +234,6 @@ do_execsql_test skipscan1-5.2 {
   ANALYZE;
   DELETE FROM sqlite_stat1;
   DROP TABLE IF EXISTS sqlite_stat4;
-  DROP TABLE IF EXISTS sqlite_stat3;
   INSERT INTO sqlite_stat1 VALUES('t5','t5i1','2702931 3 2 2 2 2');
   INSERT INTO sqlite_stat1 VALUES('t5','t5i2','2702931 686 2 2 2');
   ANALYZE sqlite_master;

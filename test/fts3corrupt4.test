@@ -5319,4 +5319,3 @@ do_catchsql_test 29.1 {
 } {1 {database disk image is malformed}}
 
 finish_test
-
