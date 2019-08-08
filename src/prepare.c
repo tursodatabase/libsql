@@ -543,6 +543,10 @@ static void schemaIsValid(Parse *pParse){
     Btree *pBt = db->aDb[iDb].pBt;     /* Btree database to read cookie from */
     if( pBt==0 ) continue;
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    if( IsSharedSchema(db) && iDb!=1 && db->aDb[iDb].pSPool==0 ) continue;
+#endif
+
     /* If there is not already a read-only (or read-write) transaction opened
     ** on the b-tree database, open one now. If a transaction is opened, it 
     ** will be closed immediately after reading the meta-value. */
