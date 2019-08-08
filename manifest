@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sthat\sis\sreachable\sfrom\sa\scorrupt\sdatabase.
-D 2019-08-08T01:39:07.548
+C Fix\sa\scase\sof\sthe\sExpr.affinity\sto\sExpr.affExpr\srefactor\sthat\swas\smissed\nin\sthe\s[a29f2a7d07beff64]\scheck-in.
+D 2019-08-08T18:49:16.058
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -521,7 +521,7 @@ F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
 F src/prepare.c 1fdf68a8add154bd1de978dde5a4819478e2576d5701b93db2c65d78c3daf1c8
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 3ed5a3de18b455366771a89241283fef16508a7f681af546296e95e81458efeb
+F src/resolve.c bf7cbb8e9d33a39af67af8fd2416a3769815b4478a7ab1051a7adaf84b269a14
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1c2c1d3ca6437349c5bceab29c9d3583f8fedb21ab3366d6f9d7381259af60cf
 F src/shell.c.in 97714cd5e177b6d53fac83c74becf4b19fe0aa8f1a4ed6a4fa1eede4bafb96f7
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f2246a17be9915b3492624a3d8deff56694bdc372f7627e3f16c1869415b1a3
-R 993358d1d5d49cd9c39a3b9f8a7f3cb8
+P 30e6ee27a9fb78291c324ac9b80db4579280140430804ecd4692e312f9938525
+R 512cee908b313724b2807c8a9eaa1da4
 U drh
-Z 096154c22e200783c49c846795c77c40
+Z 42b155863d11e880f0842b08a2882f92
