@@ -1,5 +1,5 @@
-C Remove\ssupport\sfor\sSTAT3.\s\sThe\ssqlite_stat3\stables\sare\signored,\sif\sthey\nexist.\s\sSTAT4\scontinues\sto\swork\sas\sit\salways\shas,\sand\sas\sit\sis\sa\ssuperset\sof\nSTAT3\sis\sthe\srecommended\sreplacement.
-D 2019-08-08T15:24:17.512
+C More\slegacy\sSTAT3\scode\sremoved.
+D 2019-08-08T16:23:12.537
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -458,7 +458,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c c1b5e5639b88dcc146db326315f2dea4f7f1c599e524eeb421d544927a0b1e86
-F src/analyze.c eed90d1d757cd0de0df037199660553d8cbd35dae7d8c7c1aa84b67508ccc7ad
+F src/analyze.c 0278dbf6dbc0be90dc5391cb020772b461d789af17c390f857a34308c7ac9858
 F src/attach.c 78e986baee90cb7b83fb9eafa79c22581a8ada14030fd633b0683c95cf11213c
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
@@ -528,12 +528,12 @@ F src/shell.c.in 3f2c64bf86bef3854bb4ee0a380a9fc05e9f92dafac2babbb929d5aad6f129a
 F src/sqlite.h.in c6bba28018378b6b43fcf4db7e9f1a3e84b0157ff54dc22ed3977acdac88e051
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h ffac9a2cb4944a09b589008106067fc40d3ad257facec76112f7d528561adefb
+F src/sqliteInt.h 9286c237c240e578eac0dac23d7a4cd030c8eb5ecb6d549ae211b288382c22fd
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c cfe7f93daf9d8787f65e099efb67d7cdfc2c35236dec5d3f6758520bd3519424
-F src/test1.c 42a527975c53d21bcf69a65bedff7b35f09a244b05ad096b7c3160ac0cd30253
+F src/test1.c 87059457fb90b73a74044b379fe2cb0aefbb53c010c646ecaff23179a423638c
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 405834f6a93ec395cc4c9bb8ecebf7c3d8079e7ca16ae65e82d01afd229694bb
@@ -609,10 +609,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c bda7162bee2283ae9571c8e1654b67e9e2755525eddd8bd6523c8c6291d60595
+F src/where.c 90cb93dc8eb9383e72f661b2074551d47ff21e5379f7167f7e078bed436989e9
 F src/whereInt.h 2082fc2bd1eb66cb236a1a3c4b250e33d2bad9e43a0486a2cf9e4e211c58f3eb
 F src/wherecode.c cf885ea2d439af9827c5cbab7d4c12be5c079439b7bd12e97151ccfe088c13c0
-F src/whereexpr.c 029222a0e267c682e6270832d2275b33a4447d397d2f7f147f07e408a6f54e9b
+F src/whereexpr.c 5cce1fd11876086890a27c05e0cb75ca97ba64ba6984f72154039f1cfd2e69cc
 F src/window.c 98b2571c66246bddadf42e76da45ed970fe7518a4c9c1ccc8cdace0711bfabba
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1835,10 +1835,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30e6ee27a9fb78291c324ac9b80db4579280140430804ecd4692e312f9938525
-R 08be8d4bfd5cad932cdfe93307e785c1
-T *branch * omit-stat3
-T *sym-omit-stat3 *
-T -sym-trunk *
+P 1e17ea2fd1df4ad49138c787c8fe3207dd0c25c93f9001d52a9b69f8c12e841c
+R 47ee4575144fd0a9a8df67d32ca1390a
 U drh
-Z f97a070727dd7ccae3c1e0f571407df0
+Z b905391cab37e9fb5f47472fde6dd23e

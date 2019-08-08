@@ -1573,8 +1573,8 @@ struct sqlite3 {
 #define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
 #define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
 #define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
-#define SQLITE_Stat34         0x0800   /* Use STAT4 data */
-   /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
+#define SQLITE_Stat4          0x0800   /* Use STAT4 data */
+   /* TH3 expects the Stat4   ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_PushDown       0x1000   /* The push-down optimization */
 #define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
 #define SQLITE_SkipScan       0x4000   /* Skip-scans */

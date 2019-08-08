@@ -1474,8 +1474,8 @@ static int whereRangeScanEst(
   Index *p = pLoop->u.btree.pIndex;
   int nEq = pLoop->u.btree.nEq;
 
-  if( p->nSample>0 && nEq<p->nSampleCol
-   && OptimizationEnabled(pParse->db, SQLITE_Stat34)
+  if( p->nSample>0 && ALWAYS(nEq<p->nSampleCol)
+   && OptimizationEnabled(pParse->db, SQLITE_Stat4)
   ){
     if( nEq==pBuilder->nRecValid ){
       UnpackedRecord *pRec = pBuilder->pRec;
@@ -2633,7 +2633,7 @@ static int whereLoopAddBtreeIndex(
          && pProbe->nSample 
          && pNew->u.btree.nEq<=pProbe->nSampleCol
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
-         && OptimizationEnabled(db, SQLITE_Stat34)
+         && OptimizationEnabled(db, SQLITE_Stat4)
         ){
           Expr *pExpr = pTerm->pExpr;
           if( (eOp & (WO_EQ|WO_ISNULL|WO_IS))!=0 ){

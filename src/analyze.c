@@ -1684,9 +1684,7 @@ static int loadStatTbl(
     nSample = sqlite3_column_int(pStmt, 1);
     pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     assert( pIdx==0 || pIdx->nSample==0 );
-    /* Index.nSample is non-zero at this point if data has already been
-    ** loaded from the stat4 table. */
-    if( pIdx==0 || pIdx->nSample ) continue;
+    if( pIdx==0 ) continue;
     assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
     if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
       nIdxCol = pIdx->nKeyCol;
