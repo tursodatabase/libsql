@@ -3433,7 +3433,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
 ** of SQLite will not understand those serial types.
 */
 
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#if 0 /* Inlined into the OP_MakeRecord opcode */
 /*
 ** Return the serial-type for the value stored in pMem.
 **
@@ -3442,7 +3442,8 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
 ** 2019-07-11:  The primary user of this subroutine was the OP_MakeRecord
 ** opcode in the byte-code engine.  But by moving this routine in-line, we
 ** can omit some redundant tests and make that opcode a lot faster.  So
-** this routine is now only used by the STAT3/4 logic.
+** this routine is now only used by the STAT3 logic and STAT3 support has
+** ended.  The code is kept here for historical reference only.
 */
 u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
@@ -3503,7 +3504,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   *pLen = n;
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
-#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#endif /* inlined into OP_MakeRecord */
 
 /*
 ** The sizes for serial types less than 128
@@ -4908,7 +4909,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** features such as 'now'.
 */
 int sqlite3NotPureFunc(sqlite3_context *pCtx){
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   if( pCtx->pVdbe==0 ) return 1;
 #endif
   if( pCtx->pVdbe->aOp[pCtx->iOp].opcode==OP_PureFunc ){

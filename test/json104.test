@@ -153,5 +153,3 @@ do_execsql_test 405 {
 
 
 finish_test
-
-

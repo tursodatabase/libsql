@@ -936,20 +936,6 @@ typedef INT16_TYPE LogEst;
 #endif
 
 /*
-** Only one of SQLITE_ENABLE_STAT3 or SQLITE_ENABLE_STAT4 can be defined.
-** Priority is given to SQLITE_ENABLE_STAT4.  If either are defined, also
-** define SQLITE_ENABLE_STAT3_OR_STAT4
-*/
-#ifdef SQLITE_ENABLE_STAT4
-# undef SQLITE_ENABLE_STAT3
-# define SQLITE_ENABLE_STAT3_OR_STAT4 1
-#elif SQLITE_ENABLE_STAT3
-# define SQLITE_ENABLE_STAT3_OR_STAT4 1
-#elif SQLITE_ENABLE_STAT3_OR_STAT4
-# undef SQLITE_ENABLE_STAT3_OR_STAT4
-#endif
-
-/*
 ** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
 ** the Select query generator tracing logic is turned on.
 */
@@ -1587,8 +1573,8 @@ struct sqlite3 {
 #define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
 #define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
 #define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
-#define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
-   /* TH3 expects the Stat34  ^^^^^^ value to be 0x0800.  Don't change it */
+#define SQLITE_Stat4          0x0800   /* Use STAT4 data */
+   /* TH3 expects the Stat4   ^^^^^^ value to be 0x0800.  Don't change it */
 #define SQLITE_PushDown       0x1000   /* The push-down optimization */
 #define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
 #define SQLITE_SkipScan       0x4000   /* Skip-scans */
@@ -2258,7 +2244,7 @@ struct Index {
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
   tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
@@ -2290,7 +2276,7 @@ struct Index {
 #define XN_EXPR      (-2)     /* Indexed column is an expression */
 
 /*
-** Each sample stored in the sqlite_stat3 table is represented in memory
+** Each sample stored in the sqlite_stat4 table is represented in memory
 ** using a structure of this type.  See documentation at the top of the
 ** analyze.c source file for additional information.
 */
@@ -4214,7 +4200,7 @@ LogEst sqlite3LogEstAdd(LogEst,LogEst);
 LogEst sqlite3LogEstFromDouble(double);
 #endif
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
-    defined(SQLITE_ENABLE_STAT3_OR_STAT4) || \
+    defined(SQLITE_ENABLE_STAT4) || \
     defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 u64 sqlite3LogEstToInt(LogEst);
 #endif
@@ -4401,8 +4387,7 @@ int sqlite3ExprCheckIN(Parse*, Expr*);
 # define sqlite3ExprCheckIN(x,y) SQLITE_OK
 #endif
 
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-void sqlite3AnalyzeFunctions(void);
+#ifdef SQLITE_ENABLE_STAT4
 int sqlite3Stat4ProbeSetValue(
     Parse*,Index*,UnpackedRecord**,Expr*,int,int,int*);
 int sqlite3Stat4ValueFromExpr(Parse*, Expr*, u8, sqlite3_value**);
