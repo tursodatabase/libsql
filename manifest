@@ -1,5 +1,5 @@
-C Remove\suse\sof\sthe\saffinity()\sfunction\sfrom\sview.test,\sas\sit\sis\sonly\savailable\sin\sSQLITE_DEBUG\sbuilds.
-D 2019-08-07T19:57:21.304
+C Remove\sa\sNEVER()\sthat\sis\sreachable\sfrom\sa\scorrupt\sdatabase.
+D 2019-08-08T01:39:07.548
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -464,7 +464,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 397b5075441d0bd7366e93f6f2ef908dd0610cd80c4e351f4a900b614e32ccf0
+F src/btree.c 781e4594098dca97db672e52ed17c7f063b5b65db144c0c1bf1e9818e7be1ad4
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 14906ec302406e7ba50f5adf07942d1f4af9a7134a2d042b3ccd992787b98e56
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f5d0436d8dc650cadb61a5fe76fd1a0d68dabba54ff0c2a8c138f9dfbdab1c3f
-R 56eccd3e7dc59c44ac74cbf902104d89
-U dan
-Z 6c3c61a860bfee993c6b3b37c84b4fae
+P 7f2246a17be9915b3492624a3d8deff56694bdc372f7627e3f16c1869415b1a3
+R 993358d1d5d49cd9c39a3b9f8a7f3cb8
+U drh
+Z 096154c22e200783c49c846795c77c40
