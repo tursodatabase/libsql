@@ -977,7 +977,7 @@ void sqlite3VdbeScanStatus(
 ** Change the value of the opcode, or P1, P2, P3, or P5 operands
 ** for a specific instruction.
 */
-void sqlite3VdbeChangeOpcode(Vdbe *p, u32 addr, u8 iNewOpcode){
+void sqlite3VdbeChangeOpcode(Vdbe *p, int addr, u8 iNewOpcode){
   sqlite3VdbeGetOp(p,addr)->opcode = iNewOpcode;
 }
 void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
