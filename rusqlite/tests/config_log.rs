@@ -4,9 +4,9 @@
 
 #[cfg(feature = "trace")]
 fn main() {
+    use lazy_static::lazy_static;
     use std::os::raw::c_int;
     use std::sync::Mutex;
-    use lazy_static::lazy_static;
 
     lazy_static! {
         static ref LOGS_RECEIVED: Mutex<Vec<(c_int, String)>> = Mutex::new(Vec::new());
