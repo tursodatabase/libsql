@@ -980,13 +980,13 @@ void sqlite3VdbeScanStatus(
 void sqlite3VdbeChangeOpcode(Vdbe *p, u32 addr, u8 iNewOpcode){
   sqlite3VdbeGetOp(p,addr)->opcode = iNewOpcode;
 }
-void sqlite3VdbeChangeP1(Vdbe *p, u32 addr, int val){
+void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p1 = val;
 }
-void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
+void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p2 = val;
 }
-void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
+void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
 void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){

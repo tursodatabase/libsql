@@ -1697,7 +1697,7 @@ static char *rbuObjIterGetIndexCols(
     int iCid = sqlite3_column_int(pXInfo, 1);
     int bDesc = sqlite3_column_int(pXInfo, 3);
     const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
-    const char *zCol;
+    const char *zCol = 0;
     const char *zType;
 
     if( iCid==-2 ){
