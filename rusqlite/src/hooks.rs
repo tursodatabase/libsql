@@ -237,6 +237,7 @@ mod test {
     use super::Action;
     use crate::Connection;
     use std::sync::atomic::{AtomicBool, Ordering};
+    use lazy_static::lazy_static;
 
     #[test]
     fn test_commit_hook() {

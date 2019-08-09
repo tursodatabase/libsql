@@ -124,6 +124,7 @@ impl Connection {
 mod test {
     use std::sync::Mutex;
     use std::time::Duration;
+    use lazy_static::lazy_static;
 
     use crate::Connection;
 
