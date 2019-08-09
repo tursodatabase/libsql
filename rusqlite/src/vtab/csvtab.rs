@@ -32,7 +32,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("csv", &CSV_MODULE, aux)
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref CSV_MODULE: Module<CSVTab> = read_only_module::<CSVTab>(1);
 }
 

@@ -234,7 +234,7 @@ pub trait CreateVTab: VTab {
     }
 }
 
-bitflags! {
+bitflags::bitflags! {
     #[doc = "Index constraint operator."]
     #[repr(C)]
     pub struct IndexConstraintOp: ::std::os::raw::c_uchar {

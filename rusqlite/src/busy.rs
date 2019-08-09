@@ -137,7 +137,7 @@ mod test {
     #[test]
     #[ignore] // FIXME: unstable
     fn test_busy_handler() {
-        lazy_static! {
+        lazy_static::lazy_static! {
             static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         fn busy_handler(_: i32) -> bool {
