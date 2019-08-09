@@ -1,5 +1,5 @@
-C Fix\sspurious\s"no\ssuch\stable:\sx1"\serrors\sin\sshared-schema\smode\sthat\scould\soccur\nwhen\sa\squery\sthat\sis\sa\sjoin\sacross\stwo\sor\smore\sdatabases\sneeds\sto\scall\sthe\sxConnect()\smethods\sof\sa\svirtual\stable.
-D 2019-08-08T15:47:32.871
+C In\sshared-schema\smode,\shandle\sthe\scase\swhere\sa\sconnection\shas\screated\sa\svirtual-table\sobject,\sbut\sis\slater\sassigned\sa\sdifferent\sshared-schema\sobject\sfor\swhich\sthe\svirtual-table\sschema\shas\snot\syet\sbeen\sinitialized.
+D 2019-08-09T14:54:44.609
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/vdbeblob.c 40028e015fe557a945c99edb6cbf844ea96d853c3e8ac4eb5c1e49bff59f154
 F src/vdbemem.c f6f277d17d50972571d1394535d4c3d156fdea871d8f327f5b9479984054015a
 F src/vdbesort.c 3531ae3a431ad6b98b67bd891fb42ec9d66867157188a2b1a9e58c55da6151b2
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vtab.c 4bb7440736c84abc5500ab0bf4946db4f5e48775513d58b28df212043ba5c2d1
+F src/vtab.c 9dd05ccba00bb8ce28c5fb86821c7ced3c1fe32b5312f9afde9910c7671346a4
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1255,7 +1255,7 @@ F test/reuse2.test 5dd9c98579358f0d5a90d25e36dd6e678a03e23446b6c7f2630a8da22ae7c
 F test/reuse3.test ab116714c9dfbdf975716e9dee8409e045e4172dcd0a685275a37b96f370b3bb
 F test/reuse4.test adaad66253aea6cc748674328abe69b650c5c78b8676ed1162d3de09742519f9
 F test/reuse5.test bbe6cf7384ef90f134392edd93d626385ef0bf6f40eefc3d993535cd0861d83b
-F test/reuse6.test 3c7de2cd3c9246e848b33c644feff642e4da291dc3f21b268db2d4a1be9825b0
+F test/reuse6.test 6e188f279a5b2f166fd129a0056285127f2b520add19e044c946bdc3510de9ca
 F test/reusefault.test ef646a0fb51d50ddfb4b7cd872f88e7d36eaba64bde7797b3418c3774e1c8d14
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test bc868d57899dc6972e2b4483faae0e03365a0556941474eec487ae21d8d38bb6
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 111e2c73cf430ae61e3f4cc34a1bee8ac7025b8a960fc3f3b7f493009b759ad7
-R e3122eb8e2ce7a95e67a718a488eda82
+P edf45cd7c6c1122db961ae66c21c7e974115e6048f1f5014015a5f693f1844bf
+R e60b072b74cdf6f11c2d6bc9bda4e900
 U dan
-Z 300a034276e5262df11e18b77c4c7a70
+Z 0614bf0eb1c31496ffc2d05bffbb6b39

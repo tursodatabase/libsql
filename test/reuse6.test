@@ -106,12 +106,32 @@ ifcapable fts5 {
     ATTACH 'test.db2' AS aux;
   }
 
-breakpoint
   do_execsql_test -db db1 3.2 {
     SELECT * FROM main.ft, aux.t1;
   }
 }
+db1 close
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+ifcapable fts5 {
+  do_execsql_test 4.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a, b);
+  }
+  forcecopy test.db test.db2
+
+  sqlite3 db1 test.db -shared-schema 1
+  do_execsql_test -db db1 4.1 {
+    ATTACH 'test.db2' AS aux;
+    SELECT * FROM main.ft;
+    SELECT * FROM aux.ft;
+  }
+
+  do_execsql_test -db db1 4.2 {
+    SELECT * FROM main.ft, aux.ft
+  }
+}
 
 
 

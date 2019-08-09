@@ -148,8 +148,15 @@ VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
   if( IsSharedSchema(db) ){
     int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     if( iDb!=1 ){
-      for(pVtab=db->aDb[iDb].pVTable; pVtab; pVtab=pVtab->pNext){
-        if( sqlite3StrICmp(pTab->zName, pVtab->zName)==0 ) break;
+      VTable **pp;
+      for(pp=&db->aDb[iDb].pVTable; *pp; pp=&(*pp)->pNext){
+        if( sqlite3StrICmp(pTab->zName, (*pp)->zName)==0 ) break;
+      }
+      pVtab = *pp;
+      if( pVtab && pTab->nCol<=0 ){
+        *pp = pVtab->pNext;
+        sqlite3VtabUnlock(pVtab);
+        pVtab = 0;
       }
       return pVtab;
     }
@@ -664,6 +671,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 
   assert( pTab );
   if( !IsVirtual(pTab) || sqlite3GetVTable(db, pTab) ){
+    assert( !IsVirtual(pTab) || pTab->nCol>0 );
     return SQLITE_OK;
   }
 
