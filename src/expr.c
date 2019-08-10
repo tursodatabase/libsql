@@ -4938,7 +4938,9 @@ static int exprImpliesNotNull(
 ){
   assert( p );
   assert( pNN );
-  if( sqlite3ExprCompare(pParse, p, pNN, iTab)==0 ) return 1;
+  if( sqlite3ExprCompare(pParse, p, pNN, iTab)==0 ){
+    return pNN->op!=TK_NULL;
+  }
   switch( p->op ){
     case TK_IN: {
       if( seenNot && ExprHasProperty(p, EP_xIsSelect) ) return 0;
