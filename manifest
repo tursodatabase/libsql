@@ -1,5 +1,5 @@
-C Remove\stwo\sincorrect\sassert()\sstatements\sfrom\sthe\slogic\sused\sto\sderive\ncolumn\snames\sand\stypes\sfrom\ssubqueries.
-D 2019-08-10T14:16:17.492
+C Add\sextra\stest\scases\srelated\sto\sthe\sprevious\scommit.
+D 2019-08-10T14:35:06.771
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1703,8 +1703,8 @@ F test/window2.tcl a44834af6267be6e14882311ef8790bf5047f1b9bc25685ee1762d48dc24f
 F test/window2.test 2f3ae63e171dce7f2ac29a41020f4da413b1d7bdaba48ee124fd336b152e34c5
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
 F test/window3.test e9959a993c8a71e96433be8daaa1827d78b8921e4f12debd7bdbeb3c856ef3cb
-F test/window4.tcl 5fbaab489677914ee5686b2008426e336daf88a2f58be7df92757f780a5ebf91
-F test/window4.test bf8f86586ce101bf98e2306e597fa24aadc96c58d70ba4d11f956cf8ca4e0be3
+F test/window4.tcl d732df0e81beedc0ba8a563ade68611d322d27303ad0c0c8e4444107c39e84ec
+F test/window4.test 807f3e6b15f9338e5b9742b87c5c7ca825b42b9657fde6096e890119370848e0
 F test/window5.test d328dd18221217c49c144181975eea17339eaeaf0e9aa558cee3afb84652821e
 F test/window6.test f8d674254b23289cc17c84d79dec7eda7caa1dfb7836c43122cfdf3640d1df32
 F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d76108f
@@ -1835,7 +1835,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eaf15d9bae6773058341d6219241f44ce728ad1cb9cf649f2efd4dddd81ec461
-R 0b7ad257f273d5f1351d21c4f8c4f975
-U drh
-Z 2cfb417ff7d2d592ac6c825a80f69aff
+P 712e47714863a8ed7ff73324d9fec569633e8b901c436c633b0220d16a7a9302
+R a0457a43e068ffbfda63ad720ecea4a8
+U dan
+Z d9221ce1b4f7e01428bffb0f7cc0c03e
