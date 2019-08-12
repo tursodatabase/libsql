@@ -34,7 +34,9 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
-#ifndef SQLITE_CORE
+#ifdef SQLITE_CORE
+#include "sqliteInt.h"
+#else
 typedef sqlite3_uint64 u64;
 #endif
 

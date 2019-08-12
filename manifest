@@ -1,5 +1,5 @@
-C Make\sthe\ssha3\sextension\spart\sof\sthe\samalgamation,\senabled\susing\nSQLITE_ENABLE_SHA3.
-D 2019-08-12T15:19:24.088
+C Fix\sthe\sbuild\sfor\scompilation\susing\sseparate\sfiles\srather\sthan\sthe\samalgamation.
+D 2019-08-12T15:37:28.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -308,7 +308,7 @@ F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8d
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
 F ext/misc/series.c 0c97f63378fddc9f425e82ba139b9aaf902211f24ced115c2b6ae12b425f7334
 F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
-F ext/misc/shathree.c 47f08717aceebe68bd9da7e3dca4e8ea6345bb32caa38a2b1506118f6e6574ff
+F ext/misc/shathree.c dd33d2a9c1538e545ecd6dcba620d0d783c5c4a232283e127c8478e649ad38bf
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c f88ecb2c0294453ce8b7704b211f5350c41b085b38c8e056852e3a08b0f5e484
 F ext/misc/sqlar.c 57d5bc45cd5492208e451f697404be88f8612527d64c9d42f96b325b64983d74
@@ -1836,10 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 48d9b48ab4ace234eb1a055cf33cb533a1c3aa82d0a6e086d96226bd9474ceca
-R 54466ea5aa988e0d485012b6fb04619b
-T *branch * sha3
-T *sym-sha3 *
-T -sym-trunk *
+P a48a7b78597c1551fd4e29b9a733ab8c8a60ad82721b90d7f645987ca65cee6e
+R 481098cdbdb61ecd23372285174699c1
 U drh
-Z 7b8a9dd8f3ea4495b42e1bfdf424b071
+Z 42b72f4a5851743cf6ab8f3acc563be4
