@@ -4063,6 +4063,17 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS, int);
+    **
+    ** Set or clear a flag that causes SQLite to verify that type, name,
+    ** and tbl_name fields of the sqlite_master table.  This is normally
+    ** on, but it is sometimes useful to turn it off for testing.
+    */
+    case SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS: {
+      sqlite3GlobalConfig.bExtraSchemaChecks = va_arg(ap, int);
+      break;
+    }
+
     /* Set the threshold at which OP_Once counters reset back to zero.
     ** By default this is 0x7ffffffe (over 2 billion), but that value is
     ** too big to test in a reasonable amount of time, so this control is

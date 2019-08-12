@@ -850,8 +850,10 @@ int sqlite3CheckObjectName(
      || sqlite3_stricmp(zName, db->init.azInit[1])
      || sqlite3_stricmp(zTblName, db->init.azInit[2])
     ){
-      sqlite3ErrorMsg(pParse, ""); /* corruptSchema() will supply the error */
-      return SQLITE_ERROR;
+      if( sqlite3Config.bExtraSchemaChecks ){
+        sqlite3ErrorMsg(pParse, ""); /* corruptSchema() will supply the error */
+        return SQLITE_ERROR;
+      }
     }
   }else{
     if( pParse->nested==0 

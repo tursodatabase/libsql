@@ -3397,11 +3397,12 @@ typedef struct {
 */
 struct Sqlite3Config {
   int bMemstat;                     /* True to enable memory status */
-  int bCoreMutex;                   /* True to enable core mutexing */
-  int bFullMutex;                   /* True to enable full mutexing */
-  int bOpenUri;                     /* True to interpret filenames as URIs */
-  int bUseCis;                      /* Use covering indices for full-scans */
-  int bSmallMalloc;                 /* Avoid large memory allocations if true */
+  u8 bCoreMutex;                    /* True to enable core mutexing */
+  u8 bFullMutex;                    /* True to enable full mutexing */
+  u8 bOpenUri;                      /* True to interpret filenames as URIs */
+  u8 bUseCis;                       /* Use covering indices for full-scans */
+  u8 bSmallMalloc;                  /* Avoid large memory allocations if true */
+  u8 bExtraSchemaChecks;            /* Verify type,name,tbl_name in schema */
   int mxStrlen;                     /* Maximum string length */
   int neverCorrupt;                 /* Database is always well-formed */
   int szLookaside;                  /* Default lookaside buffer size */

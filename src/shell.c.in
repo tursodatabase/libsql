@@ -9165,6 +9165,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     /*{ "benign_malloc_hooks",SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, ""          },*/
     /*{ "bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST,   ""                },*/
       { "byteorder",          SQLITE_TESTCTRL_BYTEORDER,     ""                   },
+      { "extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,"BOOLEAN"       },
     /*{ "fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, ""                }, */
       { "imposter",           SQLITE_TESTCTRL_IMPOSTER,   "SCHEMA ON/OFF ROOTPAGE"},
       { "internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, "BOOLEAN"       },
