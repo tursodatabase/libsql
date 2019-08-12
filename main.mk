@@ -70,7 +70,7 @@ LIBOBJ+= vdbe.o parse.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o \
-         select.o sqlite3rbu.o status.o stmt.o \
+         select.o shathree.o sqlite3rbu.o status.o stmt.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
          update.o upsert.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
@@ -242,6 +242,7 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h
 SRC += \
   $(TOP)/ext/misc/json1.c \
+  $(TOP)/ext/misc/shathree.c \
   $(TOP)/ext/misc/stmt.c
 
 
@@ -520,6 +521,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra compiler options for various shell tools
 #
 SHELL_OPT += -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+SHELL_OPT += -DSQLITE_ENABLE_SHA3
 SHELL_OPT += -DSQLITE_ENABLE_RTREE
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
@@ -528,8 +530,9 @@ SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
 SHELL_OPT += -DSQLITE_INTROSPECTION_PRAGMAS
-FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
+FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_SHA3
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_OPT += -DSQLITE_ENABLE_SHA3
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DESERIALIZE
@@ -813,6 +816,9 @@ fts5.o:	fts5.c
 
 json1.o:	$(TOP)/ext/misc/json1.c
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
+
+shathree.o:	$(TOP)/ext/misc/shathree.c
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/misc/shathree.c
 
 stmt.o:	$(TOP)/ext/misc/stmt.c
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c

@@ -26,12 +26,17 @@
 ** is used.  If SIZE is included it must be one of the integers 224, 256,
 ** 384, or 512, to determine SHA3 hash variant that is computed.
 */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_SHA3)
+#if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
+#endif
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
+#ifndef SQLITE_CORE
 typedef sqlite3_uint64 u64;
+#endif
 
 /******************************************************************************
 ** The Hash Engine
@@ -684,18 +689,12 @@ static void sha3QueryFunc(
   sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
 }
 
-
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_shathree_init(
-  sqlite3 *db,
-  char **pzErrMsg,
-  const sqlite3_api_routines *pApi
-){
+/*
+** Register the SHA3 functions on the database connection db.
+** Return any errors encountered.
+*/
+int sqlite3Sha3Init(sqlite3 *db){
   int rc = SQLITE_OK;
-  SQLITE_EXTENSION_INIT2(pApi);
-  (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_function(db, "sha3", 1, SQLITE_UTF8, 0,
                                sha3Func, 0, 0);
   if( rc==SQLITE_OK ){
@@ -712,3 +711,24 @@ int sqlite3_shathree_init(
   }
   return rc;
 }
+
+/*
+** Registration entry point for when this module is compiled as a shared
+** library.
+*/
+#ifndef SQLITE_CORE
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_shathree_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  return sqlite3Sha3Init(db);
+}
+#endif /* SQLITE_CORE */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_SHA3) */

@@ -226,6 +226,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "json1", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_SHA3
+  Tcl_SetVar2(interp, "sqlite_options", "sha3", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "sha3", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_HAS_CODEC
   Tcl_SetVar2(interp, "sqlite_options", "has_codec", "1", TCL_GLOBAL_ONLY);
 #else

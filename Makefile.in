@@ -186,7 +186,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
-         sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
+         sqlite3session.lo select.lo shathree.lo sqlite3rbu.lo status.lo stmt.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
@@ -364,6 +364,7 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
   $(TOP)/ext/misc/json1.c \
+  $(TOP)/ext/misc/shathree.c \
   $(TOP)/ext/misc/stmt.c
 
 # Generated source code files
@@ -600,6 +601,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra compiler options for various shell tools
 #
 SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4
+SHELL_OPT += -DSQLITE_ENABLE_SHA3
 #SHELL_OPT += -DSQLITE_ENABLE_FTS5
 SHELL_OPT += -DSQLITE_ENABLE_RTREE
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -610,8 +612,9 @@ SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
 SHELL_OPT += -DSQLITE_ENABLE_DESERIALIZE
 SHELL_OPT += -DSQLITE_INTROSPECTION_PRAGMAS
-FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
+FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_SHA3
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_OPT += -DSQLITE_ENABLE_SHA3
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DESERIALIZE
@@ -1155,6 +1158,9 @@ sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 
 json1.lo:	$(TOP)/ext/misc/json1.c
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
+
+shathree.lo:	$(TOP)/ext/misc/shathree.c
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/shathree.c
 
 stmt.lo:	$(TOP)/ext/misc/stmt.c
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c

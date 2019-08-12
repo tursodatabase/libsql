@@ -295,6 +295,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_SESSION
   "ENABLE_SESSION",
 #endif
+#if SQLITE_ENABLE_SHA3
+  "ENABLE_SHA3",
+#endif
 #if SQLITE_ENABLE_SNAPSHOT
   "ENABLE_SNAPSHOT",
 #endif

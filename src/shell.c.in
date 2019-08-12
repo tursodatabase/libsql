@@ -936,7 +936,6 @@ INCLUDE test_windirent.h
 INCLUDE test_windirent.c
 #define dirent DIRENT
 #endif
-INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
 INCLUDE ../ext/misc/appendvfs.c
@@ -4151,7 +4150,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_enable_load_extension(p->db, 1);
 #endif
     sqlite3_fileio_init(p->db, 0, 0);
-    sqlite3_shathree_init(p->db, 0, 0);
+    /* sqlite3_shathree_init(p->db, 0, 0); */
     sqlite3_completion_init(p->db, 0, 0);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
     sqlite3_dbdata_init(p->db, 0, 0);

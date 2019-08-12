@@ -28,6 +28,9 @@
 #ifdef SQLITE_ENABLE_JSON1
 int sqlite3Json1Init(sqlite3*);
 #endif
+#ifdef SQLITE_ENABLE_SHA3
+int sqlite3Sha3Init(sqlite3*);
+#endif
 #ifdef SQLITE_ENABLE_STMTVTAB
 int sqlite3StmtVtabInit(sqlite3*);
 #endif
@@ -3297,6 +3300,12 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_JSON1
   if( !db->mallocFailed && rc==SQLITE_OK){
     rc = sqlite3Json1Init(db);
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_SHA3
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3Sha3Init(db);
   }
 #endif
 
