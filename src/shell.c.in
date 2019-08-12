@@ -9265,6 +9265,10 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==3 || nArg==4 ){
             int ii = (int)integerValue(azArg[2]);
             sqlite3 *db;
+            if( ii==0 && strcmp(azArg[2],"random")==0 ){
+              sqlite3_randomness(sizeof(ii),&ii);
+              printf("-- random seed: %d\n", ii);
+            }
             if( nArg==3 ){
               db = 0;
             }else{
