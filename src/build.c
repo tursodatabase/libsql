@@ -1443,7 +1443,7 @@ void sqlite3AddPrimaryKey(
     pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );
     pTab->tabFlags |= autoInc*TF_Autoincrement;
-    if( pList ) pParse->iPkSortOrder = pList->a[0].sortOrder;
+    if( pList ) pParse->iPkSortOrder = pList->a[0].sortFlags;
   }else if( autoInc ){
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
@@ -1894,7 +1894,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenRemap(pParse, pList->a[0].pExpr, &pTab->iPKey);
     }
-    pList->a[0].sortOrder = pParse->iPkSortOrder;
+    pList->a[0].sortFlags = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
@@ -3368,7 +3368,7 @@ void sqlite3CreateIndex(
               sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;
     assert( pList->nExpr==1 );
-    sqlite3ExprListSetSortOrder(pList, sortOrder);
+    sqlite3ExprListSetSortOrder(pList, sortOrder, 0);
   }else{
     sqlite3ExprListCheckLength(pParse, pList, "index");
     if( pParse->nErr ) goto exit_create_index;
@@ -3486,7 +3486,7 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
-    requestedSortOrder = pListItem->sortOrder & sortOrderMask;
+    requestedSortOrder = pListItem->sortFlags & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
 
@@ -4704,7 +4704,8 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
                         sqlite3LocateCollSeq(pParse, zColl);
-      pKey->aSortOrder[i] = pIdx->aSortOrder[i];
+      pKey->aSortFlags[i] = pIdx->aSortOrder[i];
+      assert( 0==(pKey->aSortFlags[i] & KEYINFO_ORDER_BIGNULL) );
     }
     if( pParse->nErr ){
       assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );

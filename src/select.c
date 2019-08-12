@@ -664,7 +664,7 @@ static void pushOntoSorter(
     if( pParse->db->mallocFailed ) return;
     pOp->p2 = nKey + nData;
     pKI = pOp->p4.pKeyInfo;
-    memset(pKI->aSortOrder, 0, pKI->nKeyField); /* Makes OP_Jump testable */
+    memset(pKI->aSortFlags, 0, pKI->nKeyField); /* Makes OP_Jump testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
     testcase( pKI->nAllField > pKI->nKeyField+2 );
     pOp->p4.pKeyInfo = sqlite3KeyInfoFromExprList(pParse,pSort->pOrderBy,nOBSat,
@@ -1275,7 +1275,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   int nExtra = (N+X)*(sizeof(CollSeq*)+1) - sizeof(CollSeq*);
   KeyInfo *p = sqlite3DbMallocRawNN(db, sizeof(KeyInfo) + nExtra);
   if( p ){
-    p->aSortOrder = (u8*)&p->aColl[N+X];
+    p->aSortFlags = (u8*)&p->aColl[N+X];
     p->nKeyField = (u16)N;
     p->nAllField = (u16)(N+X);
     p->enc = ENC(db);
@@ -1352,7 +1352,7 @@ KeyInfo *sqlite3KeyInfoFromExprList(
     assert( sqlite3KeyInfoIsWriteable(pInfo) );
     for(i=iStart, pItem=pList->a+iStart; i<nExpr; i++, pItem++){
       pInfo->aColl[i-iStart] = sqlite3ExprNNCollSeq(pParse, pItem->pExpr);
-      pInfo->aSortOrder[i-iStart] = pItem->sortOrder;
+      pInfo->aSortFlags[i-iStart] = pItem->sortFlags;
     }
   }
   return pInfo;
@@ -2253,7 +2253,7 @@ static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
       }
       assert( sqlite3KeyInfoIsWriteable(pRet) );
       pRet->aColl[i] = pColl;
-      pRet->aSortOrder[i] = pOrderBy->a[i].sortOrder;
+      pRet->aSortFlags[i] = pOrderBy->a[i].sortFlags;
     }
   }
 
@@ -3228,7 +3228,7 @@ static int multiSelectOrderBy(
       assert( sqlite3KeyInfoIsWriteable(pKeyDup) );
       for(i=0; i<nExpr; i++){
         pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
-        pKeyDup->aSortOrder[i] = 0;
+        pKeyDup->aSortFlags[i] = 0;
       }
     }
   }
@@ -4425,7 +4425,7 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   }
   *ppMinMax = pOrderBy = sqlite3ExprListDup(db, pEList, 0);
   assert( pOrderBy!=0 || db->mallocFailed );
-  if( pOrderBy ) pOrderBy->a[0].sortOrder = sortOrder;
+  if( pOrderBy ) pOrderBy->a[0].sortFlags = sortOrder;
   return eRet;
 }
 

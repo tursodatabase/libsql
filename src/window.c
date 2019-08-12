@@ -888,7 +888,7 @@ static ExprList *exprListAppendList(
         pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
-      if( pList ) pList->a[nInit+i].sortOrder = pAppend->a[i].sortOrder;
+      if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;
     }
   }
   return pList;
@@ -1296,8 +1296,8 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
       pWin->regApp = pParse->nMem+1;
       pParse->nMem += 3;
       if( pKeyInfo && pWin->pFunc->zName[1]=='i' ){
-        assert( pKeyInfo->aSortOrder[0]==0 );
-        pKeyInfo->aSortOrder[0] = 1;
+        assert( pKeyInfo->aSortFlags[0]==0 );
+        pKeyInfo->aSortFlags[0] = KEYINFO_ORDER_DESC;
       }
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pWin->csrApp, 2);
       sqlite3VdbeAppendP4(v, pKeyInfo, P4_KEYINFO);
@@ -1860,7 +1860,7 @@ static void windowCodeRangeTest(
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( p->pMWin->pOrderBy && p->pMWin->pOrderBy->nExpr==1 );
-  if( p->pMWin->pOrderBy->a[0].sortOrder ){
+  if( p->pMWin->pOrderBy->a[0].sortFlags & KEYINFO_ORDER_DESC ){
     switch( op ){
       case OP_Ge: op = OP_Le; break;
       case OP_Gt: op = OP_Lt; break;
