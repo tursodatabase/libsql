@@ -1539,4 +1539,3 @@ do_catchsql_test where-25.5 {
 } {1 {corrupt database}}
 
 finish_test
-

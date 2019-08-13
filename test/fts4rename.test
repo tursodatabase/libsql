@@ -41,4 +41,3 @@ do_catchsql_test 1.3 {
 } {0 {}}
 
 finish_test
-

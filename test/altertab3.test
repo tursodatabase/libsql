@@ -345,5 +345,41 @@ do_catchsql_test 14.2 {
   ALTER TABLE t1 RENAME TO t1x;
 } {1 {error in trigger AFTER: no such column: a}}
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
 
+do_execsql_test 16.1 {
+  CREATE TABLE t1(x);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    SELECT (WITH t2 AS (WITH t3 AS (SELECT true)
+          SELECT * FROM t3 ORDER BY true COLLATE nocase)
+        SELECT 11);
+
+    WITH t4 AS (SELECT * FROM t1) SELECT 33;
+  END;
+}
+do_execsql_test 16.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.1 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TRIGGER AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+    SELECT a () FILTER (WHERE a>0) FROM t1;
+  END;
+}
+
+do_execsql_test 17.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+  ALTER TABLE t1x RENAME a TO aaa;
+  SELECT sql FROM sqlite_master WHERE type='trigger';
+} {
+{CREATE TRIGGER AFTER INSERT ON "t1x" WHEN new.aaa NOT NULL BEGIN
+    SELECT a () FILTER (WHERE aaa>0) FROM "t1x";
+  END}
+}
+
+
+finish_test

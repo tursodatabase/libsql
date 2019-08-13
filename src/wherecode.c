@@ -318,9 +318,9 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 ** Code an OP_Affinity opcode to apply the column affinity string zAff
 ** to the n registers starting at base. 
 **
-** As an optimization, SQLITE_AFF_BLOB entries (which are no-ops) at the
-** beginning and end of zAff are ignored.  If all entries in zAff are
-** SQLITE_AFF_BLOB, then no code gets generated.
+** As an optimization, SQLITE_AFF_BLOB and SQLITE_AFF_NONE entries (which
+** are no-ops) at the beginning and end of zAff are ignored.  If all entries
+** in zAff are SQLITE_AFF_BLOB or SQLITE_AFF_NONE, then no code gets generated.
 **
 ** This routine makes its own copy of zAff so that the caller is free
 ** to modify zAff after this routine returns.
@@ -333,15 +333,16 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   }
   assert( v!=0 );
 
-  /* Adjust base and n to skip over SQLITE_AFF_BLOB entries at the beginning
-  ** and end of the affinity string.
+  /* Adjust base and n to skip over SQLITE_AFF_BLOB and SQLITE_AFF_NONE
+  ** entries at the beginning and end of the affinity string.
   */
-  while( n>0 && zAff[0]==SQLITE_AFF_BLOB ){
+  assert( SQLITE_AFF_NONE<SQLITE_AFF_BLOB );
+  while( n>0 && zAff[0]<=SQLITE_AFF_BLOB ){
     n--;
     base++;
     zAff++;
   }
-  while( n>1 && zAff[n-1]==SQLITE_AFF_BLOB ){
+  while( n>1 && zAff[n-1]<=SQLITE_AFF_BLOB ){
     n--;
   }
 
@@ -1562,13 +1563,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** the first one after the nEq equality constraints in the index,
     ** this requires some special handling.
     */
-    assert( pWInfo->pOrderBy==0
-         || pWInfo->pOrderBy->nExpr==1
+    assert( (pWInfo->pOrderBy!=0 && pWInfo->pOrderBy->nExpr==1)
          || (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0 );
-    if( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0
-     && pWInfo->nOBSat>0
-     && (pIdx->nKeyCol>nEq)
-    ){
+    if( pLoop->wsFlags & WHERE_MIN_ORDERED ){
+      assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN) );
+      assert( pWInfo->nOBSat );
+      assert( pIdx->nColumn>nEq );
       assert( pLoop->nSkip==0 );
       bSeekPastNull = 1;
       nExtraReg = 1;
@@ -1694,6 +1694,25 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
       VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
       VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
+
+      if( bSeekPastNull && (pLoop->wsFlags & WHERE_TOP_LIMIT)==0 ){
+        /* If bSeekPastNull is set only to skip past the NULL values for
+        ** a query like "SELECT min(a), b FROM t1", then add code so that
+        ** if there are no rows with (a IS NOT NULL), then do the seek 
+        ** without jumping past NULLs instead. This allows the code in 
+        ** select.c to pick a value for "b" in the above query.  */
+        assert( startEq==0 && (op==OP_SeekGT || op==OP_SeekLT) );
+        assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0 && pWInfo->nOBSat>0 );
+        sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+
+        op = aStartOp[(start_constraints<<2) + (1<<1) + bRev];
+        assert( op==OP_SeekGE || op==OP_SeekLE );
+        sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+        VdbeCoverage(v);
+        VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
+        VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+      }
     }
 
     /* Load the value for the inequality constraint at the end of the

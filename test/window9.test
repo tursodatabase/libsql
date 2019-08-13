@@ -131,6 +131,46 @@ do_catchsql_test 3.4 {
       );
 } {1 {sub-select returns 3 columns - expected 1}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b TEXT);
+  INSERT INTO t1 VALUES('A', 1), ('A', 2), ('2', 1), ('2', 2);
+}
+
+do_execsql_test 4.1.1 {
+  SELECT b, b=count(*), '1,2'                   FROM t1 GROUP BY b;
+} {1 0 1,2 2 1 1,2}
+do_execsql_test 4.1.2 {
+  SELECT b, b=count(*), group_concat(b) OVER () FROM t1 GROUP BY b;
+} {1 0 1,2 2 1 1,2}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b, c, d, e);
+  CREATE INDEX i1 ON t1(a, b, c, d, e);
+}
+
+foreach {tn sql} {
+  1 {
+    SELECT 
+      sum(e) OVER (),
+      sum(e) OVER (ORDER BY a),
+      sum(e) OVER (PARTITION BY a ORDER BY b),
+      sum(e) OVER (PARTITION BY a, b ORDER BY c),
+      sum(e) OVER (PARTITION BY a, b, c ORDER BY d)
+    FROM t1;
+  }
+  2 {
+    SELECT sum(e) OVER (PARTITION BY a ORDER BY b) FROM t1 ORDER BY a;
+  }
+} {
+  do_test 5.1.$tn {
+    execsql "EXPLAIN QUERY PLAN $sql"
+  } {~/ORDER/}
+}
+
+
 
 finish_test
-

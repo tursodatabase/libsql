@@ -3985,6 +3985,23 @@ static void shellInt32(
 }
 
 /*
+** Scalar function "shell_idquote(X)" returns string X quoted as an identifier,
+** using "..." with internal double-quote characters doubled.
+*/
+static void shellIdQuote(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const char *zName = (const char*)sqlite3_value_text(argv[0]);
+  UNUSED_PARAMETER(argc);
+  if( zName ){
+    char *z = sqlite3_mprintf("\"%w\"", zName);
+    sqlite3_result_text(context, z, -1, sqlite3_free);
+  }
+}
+
+/*
 ** Scalar function "shell_escape_crnl" used by the .recover command.
 ** The argument passed to this function is the output of built-in
 ** function quote(). If the first character of the input is "'", 
@@ -4165,6 +4182,8 @@ static void open_db(ShellState *p, int openFlags){
                             shellEscapeCrnl, 0, 0);
     sqlite3_create_function(p->db, "shell_int32", 2, SQLITE_UTF8, 0,
                             shellInt32, 0, 0);
+    sqlite3_create_function(p->db, "shell_idquote", 1, SQLITE_UTF8, 0,
+                            shellIdQuote, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
@@ -6574,6 +6593,10 @@ static RecoverTable *recoverNewTable(
     
     rc = sqlite3_open("", &dbtmp);
     if( rc==SQLITE_OK ){
+      sqlite3_create_function(dbtmp, "shell_idquote", 1, SQLITE_UTF8, 0,
+                              shellIdQuote, 0, 0);
+    }
+    if( rc==SQLITE_OK ){
       rc = sqlite3_exec(dbtmp, "PRAGMA writable_schema = on", 0, 0, 0);
     }
     if( rc==SQLITE_OK ){
@@ -6629,18 +6652,18 @@ static RecoverTable *recoverNewTable(
         }
       }
 
-      pTab->zQuoted = shellMPrintf(&rc, "%Q", zName);
+      pTab->zQuoted = shellMPrintf(&rc, "\"%w\"", zName);
       pTab->azlCol = (char**)shellMalloc(&rc, sizeof(char*) * (nSqlCol+1));
       pTab->nCol = nSqlCol;
 
       if( bIntkey ){
-        pTab->azlCol[0] = shellMPrintf(&rc, "%Q", zPk);
+        pTab->azlCol[0] = shellMPrintf(&rc, "\"%w\"", zPk);
       }else{
         pTab->azlCol[0] = shellMPrintf(&rc, "");
       }
       i = 1;
       shellPreparePrintf(dbtmp, &rc, &pStmt, 
-          "SELECT %Q || group_concat(quote(name), ', ') "
+          "SELECT %Q || group_concat(shell_idquote(name), ', ') "
           "  FILTER (WHERE cid!=%d) OVER (ORDER BY %s cid) "
           "FROM pragma_table_info(%Q)", 
           bIntkey ? ", " : "", pTab->iPk, 
@@ -6754,7 +6777,7 @@ static RecoverTable *recoverOrphanTable(
 
     pTab = (RecoverTable*)shellMalloc(pRc, sizeof(RecoverTable));
     if( pTab ){
-      pTab->zQuoted = shellMPrintf(pRc, "%Q", zTab);
+      pTab->zQuoted = shellMPrintf(pRc, "\"%w\"", zTab);
       pTab->nCol = nCol;
       pTab->iPk = -2;
       if( nCol>0 ){
@@ -6951,6 +6974,11 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   ** CREATE TABLE statements that extracted from the existing schema.  */
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
+    /* ".recover" might output content in an order which causes immediate
+    ** foreign key constraints to be violated. So disable foreign-key
+    ** constraint enforcement to prevent problems when running the output
+    ** script. */
+    raw_printf(pState->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(pState->out, "BEGIN;\n");
     raw_printf(pState->out, "PRAGMA writable_schema = on;\n");
     shellPrepare(pState->db, &rc,
@@ -7013,7 +7041,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       if( pTab==0 ) break;
     }
 
-    if( 0==sqlite3_stricmp(pTab->zQuoted, "'sqlite_sequence'") ){
+    if( 0==sqlite3_stricmp(pTab->zQuoted, "\"sqlite_sequence\"") ){
       raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
     }
     sqlite3_bind_int(pPages, 1, iRoot);
@@ -7723,8 +7751,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
       shell_exec(&data, "SELECT * FROM sqlite_stat1", &zErrMsg);
-      data.zDestTable = "sqlite_stat3";
-      shell_exec(&data, "SELECT * FROM sqlite_stat3", &zErrMsg);
       data.zDestTable = "sqlite_stat4";
       shell_exec(&data, "SELECT * FROM sqlite_stat4", &zErrMsg);
       raw_printf(p->out, "ANALYZE sqlite_master;\n");
@@ -9148,8 +9174,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( strcmp(zTab, "sqlite_stat1")==0 ){
         appendText(&sQuery,"SELECT tbl,idx,stat FROM sqlite_stat1"
                            " ORDER BY tbl,idx;", 0);
-      }else if( strcmp(zTab, "sqlite_stat3")==0
-             || strcmp(zTab, "sqlite_stat4")==0 ){
+      }else if( strcmp(zTab, "sqlite_stat4")==0 ){
         appendText(&sQuery, "SELECT * FROM ", 0);
         appendText(&sQuery, zTab, 0);
         appendText(&sQuery, " ORDER BY tbl, idx, rowid;\n", 0);
@@ -9393,6 +9418,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     /*{ "benign_malloc_hooks",SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, ""          },*/
     /*{ "bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST,   ""                },*/
       { "byteorder",          SQLITE_TESTCTRL_BYTEORDER,     ""                   },
+      { "extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,"BOOLEAN"       },
     /*{ "fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, ""                }, */
       { "imposter",           SQLITE_TESTCTRL_IMPOSTER,   "SCHEMA ON/OFF ROOTPAGE"},
       { "internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, "BOOLEAN"       },
@@ -9403,9 +9429,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE, ""                 },
 #endif
       { "pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,  "OFFSET  "           },
-      { "prng_reset",         SQLITE_TESTCTRL_PRNG_RESET,    ""                   },
       { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""                   },
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""                   },
+      { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"          },
       { "reserve",            SQLITE_TESTCTRL_RESERVE,       "BYTES-OF-RESERVE"   },
     };
     int testctrl = -1;
@@ -9483,6 +9509,27 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==3 ){
             unsigned int opt = (unsigned int)integerValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, opt);
+            isOk = 3;
+          }
+          break;
+
+        /* sqlite3_test_control(int, int, sqlite3*) */
+        case SQLITE_TESTCTRL_PRNG_SEED:
+          if( nArg==3 || nArg==4 ){
+            int ii = (int)integerValue(azArg[2]);
+            sqlite3 *db;
+            if( ii==0 && strcmp(azArg[2],"random")==0 ){
+              sqlite3_randomness(sizeof(ii),&ii);
+              printf("-- random seed: %d\n", ii);
+            }
+            if( nArg==3 ){
+              db = 0;
+            }else{
+              db = p->db;
+              /* Make sure the schema has been loaded */
+              sqlite3_table_column_metadata(db, 0, "x", 0, 0, 0, 0, 0, 0);
+            }
+            rc2 = sqlite3_test_control(testctrl, ii, db);
             isOk = 3;
           }
           break;
