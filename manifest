@@ -1,5 +1,5 @@
-C Update\stest\scases\sso\sthat\sthey\swork\swith\sICU\senabled.
-D 2019-08-13T17:56:56.995
+C Add\ssome\sstatic\sto\sthe\s'regexp'\sextension.
+D 2019-08-13T20:34:35.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -302,7 +302,7 @@ F ext/misc/nextchar.c 279f80fe8ef5ba413242e2704e246503ac601f005eefb180d19e6c9203
 F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c 148dd07286b16e50f232bb638a47850085ad37d51f270429905bd865e595d1ca
 F ext/misc/prefixes.c 7be86d17525cfae6ed462fc3c519efc44488ac329890f77491c8f82871f57e17
-F ext/misc/regexp.c 79345bf03496155a640ee0300d3307296761cebb5e115b4e342cc2fb5861ec10
+F ext/misc/regexp.c 653b6ab5e89bcb5d45f9ebe0747d7f8f3f5706cac963fcbc9a3ddbe5fdc1efa2
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 927cd7b4c52fae665e57fb6039c6829e339cff5ad5c405800cac3ee149ef5be1
-R c967e09641613ccf8efee454c9ec6fe8
-U dan
-Z 9b0309a4ce7be165e70467c33152a3d5
+P 408144a1832569ced8e04840f0dd36a3867405f36b13631b0f13c0f7b8a0fb01
+R e1eff49797b82e19658f2ee082875e36
+U mistachkin
+Z ca11739ed6199651720067a09b5d23b0
