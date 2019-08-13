@@ -2147,6 +2147,7 @@ do_test 14.0 {
 }]} {}
 
 do_execsql_test 14.1 {
+  PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM c;
 }
@@ -3049,6 +3050,7 @@ do_test 19.0 {
 }]} {}
 
 do_catchsql_test 19.1 {
+  PRAGMA writable_schema = 1;
   SELECT rowid,a,c,snippet(t1,85101090932165,-1,10) FROM t1 WHERE a MATCH 'rtree';
 } {1 {database disk image is malformed}}
 
@@ -3250,6 +3252,7 @@ do_test 20.0 {
 }]} {}
 
 do_execsql_test 20.1 {
+  PRAGMA writable_schema = 1;
   BEGIN;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM c;
@@ -3472,8 +3475,8 @@ do_test 21.0 {
 | end crash-18cc014e42e828.db
 }]} {}
 
-breakpoint
 do_catchsql_test 21.1 {
+  PRAGMA writable_schema = 1;
   SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'R*';
 } {1 {database disk image is malformed}}
 
@@ -3694,6 +3697,7 @@ do_test 22.0 {
 }]} {}
 
 do_catchsql_test 22.1 {
+  PRAGMA writable_schema = 1;
   SELECT snippet(t1,'', '', '--',-1,01)==0
     FROM t1 WHERE a MATCH 'rtree OR json1rtree OR json1';
 } {0 {0 0 0 0 0 0 0}}
@@ -3913,6 +3917,7 @@ do_test 23.0 {
 }]} {}
 
 do_catchsql_test 23.1 {
+  PRAGMA writable_schema = 1;
   SELECT 'FyzLy'FROM t1 WHERE t1 MATCH 'j';
 } {1 {database disk image is malformed}}
 
@@ -4131,6 +4136,7 @@ do_test 24.0 {
 }]} {}
 
 do_catchsql_test 24.1 {
+  PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT '4hE'+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
 } {0 {}}
@@ -4374,6 +4380,7 @@ do_test 25.0 {
 }]} {}
 
 do_catchsql_test 25.1 {
+  PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x%1 FROM c WHERE x<599237)
     INSERT INTO t1( a ) SELECT randomblob(3000) FROM t2 ;
 } {0 {}}
@@ -4608,6 +4615,7 @@ do_test 26.0 {
 }]} {}
 
 do_execsql_test 26.1 {
+  PRAGMA writable_schema = 1;
   SELECT count(*) FROM (
     SELECT t1, (t1) FROM t1 WHERE b MATCH 'x'
   )
@@ -4826,6 +4834,7 @@ do_test 27.0 {
 }]} {}
 
 do_catchsql_test 27.2 {
+  PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x GLOB 2.16770 FROM x)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM t2 ;
 } {0 {}}
@@ -5058,6 +5067,7 @@ do_test 28.0 {
 }]} {}
 
 do_catchsql_test 28.1 {
+  PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
 } {0 {}}
@@ -5312,6 +5322,7 @@ do_test 29.0 {
 }]} {}
 
 do_catchsql_test 29.1 {
+  PRAGMA writable_schema = 1;
   INSERT INTO t1(a) SELECT X'819192E578DE3F';
   UPDATE t1 SET b=quote(zeroblob(current_date)) WHERE t1 MATCH 't*';
   INSERT INTO t1(b) VALUES(x'78');
