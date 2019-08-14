@@ -96,14 +96,9 @@ static int memjrnlRead(
   int iChunkOffset;
   FileChunk *pChunk;
 
-#if defined(SQLITE_ENABLE_ATOMIC_WRITE) \
- || defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
   if( (iAmt+iOfst)>p->endpoint.iOffset ){
     return SQLITE_IOERR_SHORT_READ;
   }
-#endif
-
-  assert( (iAmt+iOfst)<=p->endpoint.iOffset );
   assert( p->readpoint.iOffset==0 || p->readpoint.pChunk!=0 );
   if( p->readpoint.iOffset!=iOfst || iOfst==0 ){
     sqlite3_int64 iOff = 0;
