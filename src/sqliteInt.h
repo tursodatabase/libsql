@@ -3609,6 +3609,7 @@ void sqlite3WindowUnlinkFromSelect(Window*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
+void sqlite3WindowLink(Select *pSel, Window *pWin);
 int sqlite3WindowCompare(Parse*, Window*, Window*, int);
 void sqlite3WindowCodeInit(Parse*, Window*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);

@@ -908,16 +908,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           sqlite3WalkExprList(pWalker, pWin->pPartition);
           sqlite3WalkExprList(pWalker, pWin->pOrderBy);
           sqlite3WalkExpr(pWalker, pWin->pFilter);
-          if( 0==pSel->pWin 
-           || 0==sqlite3WindowCompare(pParse, pSel->pWin, pWin, 0)
-          ){
-            pWin->pNextWin = pSel->pWin;
-            if( pSel->pWin ){
-              pSel->pWin->ppThis = &pWin->pNextWin;
-            }
-            pSel->pWin = pWin;
-            pWin->ppThis = &pSel->pWin;
-          }
+          sqlite3WindowLink(pSel, pWin);
           pNC->ncFlags |= NC_HasWin;
         }else
 #endif /* SQLITE_OMIT_WINDOWFUNC */
