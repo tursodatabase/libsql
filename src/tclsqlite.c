@@ -2368,8 +2368,7 @@ static int SQLITE_TCLAPI DbObjCmd(
       pResult = Tcl_NewListObj(0,0);
       for(ii=0; ii<sizeof(aDbConfig)/sizeof(aDbConfig[0]); ii++){
         int v = 0;
-        int rc = sqlite3_db_config(pDb->db, aDbConfig[ii].op, -1, &v);
-        if( rc!=SQLITE_OK ) continue;
+        sqlite3_db_config(pDb->db, aDbConfig[ii].op, -1, &v);
         Tcl_ListObjAppendElement(interp, pResult,
            Tcl_NewStringObj(aDbConfig[ii].zName,-1));
         Tcl_ListObjAppendElement(interp, pResult,
@@ -2377,7 +2376,6 @@ static int SQLITE_TCLAPI DbObjCmd(
       }
     }else{
       const char *zOpt = Tcl_GetString(objv[2]);
-      int rc;
       int onoff = -1;
       int v = 0;
       if( zOpt[0]=='-' ) zOpt++;
@@ -2394,7 +2392,7 @@ static int SQLITE_TCLAPI DbObjCmd(
           return TCL_ERROR;
         }
       }
-      rc = sqlite3_db_config(pDb->db, aDbConfig[ii].op, onoff, &v);
+      sqlite3_db_config(pDb->db, aDbConfig[ii].op, onoff, &v);
       pResult = Tcl_NewIntObj(v);
     }
     Tcl_SetObjResult(interp, pResult);

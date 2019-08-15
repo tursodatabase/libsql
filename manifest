@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBCONFIG_ENABLE_VIEW\soption,\stogether\swith\sa\s"db\sconfig"\ncommand\sin\sthe\sTCL\sinterface\sthat\scan\saccess\sthat\soption\sas\swell\sas\sall\sthe\nother\ssqlite3_db_config()\sboolean\soptions.
-D 2019-08-15T21:27:20.669
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sTCL\sinterface.
+D 2019-08-15T23:11:42.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -532,7 +532,7 @@ F src/sqliteInt.h d8e878fa1cb949ee8943f51965cbb917acdb4cc1238af8481eb839d11bf34d
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 172792eb66e9a8985e8a246e689318cadbda50e10c13f0e51eea32215c6c9161
+F src/tclsqlite.c 2170b327318f888aa3ed861a6ef3e88c6906839f584ab2b01552c8b19db6f9e5
 F src/test1.c 87059457fb90b73a74044b379fe2cb0aefbb53c010c646ecaff23179a423638c
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 98357d8c1263920b33a3648ef9214a63c99728bafa7a8d3dd6a1241b2303fd42
-R 039c157cf6533868154794e96c549de4
+P 61b4bccd2984f4c2cf50f58ef08677588e57aa7e079af07473b2e188d9ce4f52
+R ad07753edbdb65bae98d204ed9a7c2cb
 U drh
-Z 9ba4f898522b0ea8e4f41f060393ee57
+Z f83b80ce99769ab61a563e51215a8c91
