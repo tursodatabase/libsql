@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\scell\soverwrite\soptimization\sdoes\snot\soverwrite\sthe\sheader\nof\sthe\sb-tree\spage.
-D 2019-08-15T13:17:49.826
+C Avoid\sdowngrading\sSQLITE_CORRUPT\serrors\sdetected\sby\sthe\sschema\sparser\sinto\nSQLITE_NOMEM\sor\sSQLITE_ERROR\serrors.
+D 2019-08-15T13:46:39.741
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,7 +518,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
 F src/pragma.c a42d4c6040893a59b69a0c987e5ed0402730c444ee451fde9bbe6203e7f73b1d
 F src/pragma.h 4a9fabff14db4487a734dfeeb4be984ce662bfdccfae16145b9c732327735e13
-F src/prepare.c 1dcd92a57f63f7ba02ece7997c0cd36647f6ea05c05726f02d7709b18bd368ac
+F src/prepare.c 132484635a30f873ee7eccd47f93ed1932503863b93b28423b42332d81adffaf
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d49679d55d3cf529bbdff8734c4ac02cedfb2fc785545b89815ddb79680b9198
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b517a52fa36df0a0854a75858b5e81861771d2e9032a5a0ad79aa76ae64130a2
-R 99504bb8346f69a0c987562da440ce64
+P 4cc5694cbd69749c146679c367860952fdf3f5356426ddfd1dce470569702bc1
+R 8d34b75339aca80871316bc3b34ad384
 U drh
-Z c6c5cb19819200b45c3cd69274447def
+Z 6594db806a9430ef05667df996896231

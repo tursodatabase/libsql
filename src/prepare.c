@@ -115,7 +115,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
       }else{
-        pData->rc = rc;
+        if( rc > pData->rc ) pData->rc = rc;
         if( rc==SQLITE_NOMEM ){
           sqlite3OomFault(db);
         }else if( rc!=SQLITE_INTERRUPT && (rc&0xFF)!=SQLITE_LOCKED ){
