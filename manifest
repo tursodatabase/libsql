@@ -1,5 +1,5 @@
-C Always\scheck\sfor\sreads\spast\sthe\send\sof\sthe\sfile\son\sthe\sin-memory\sjournal\ndriver.\s\sThis\sused\sto\sbe\san\sassert().
-D 2019-08-14T15:17:21.194
+C Early\sdetection\sout-of-bounds\spage\snumbers\son\sthe\sdirect-overflow-read\noptimization\sgives\sconsistent\serror\smessages\sregardless\sof\swhether\sor\snot\nthe\soptimization\sis\senabled.
+D 2019-08-15T00:04:44.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -464,7 +464,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 6061323b98cc794a1e3ad6907f683f1ad2b8c48d7c7d486072b21f18efe73761
+F src/btree.c a6b6f4730862a4c3b92c903ecebac309626788ac8a977394198d69cd613fbf2b
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 7fb6ad35d162517d6bfa196f4fb2a1d7c3a362531e84c59f3a0479e0de511556
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a21d1dde73f811244b5b43f9fed5877263a9c5061470221f417e501f5530edfa
-R ed8fa0e6bed90bb78f3894955acd52ae
+P 4d41ca7d6efbdac70890a8d4159488fc7f59bf78a550b00597b4df990c4fcaef
+R cbbc98ec5ac255f891702508ca882f04
 U drh
-Z 721554492d795644318a412d01d91bde
+Z 5ba220c2acba929340df86e7b8719d9b
