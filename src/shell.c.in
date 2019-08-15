@@ -7135,6 +7135,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     } aDbConfig[] = {
         { "enable_fkey",        SQLITE_DBCONFIG_ENABLE_FKEY           },
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
+        { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },

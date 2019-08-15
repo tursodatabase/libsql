@@ -836,6 +836,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       } aFlagOp[] = {
         { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
+        { SQLITE_DBCONFIG_ENABLE_VIEW,           SQLITE_EnableView     },
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
@@ -3075,6 +3076,7 @@ static int openDatabase(
   db->nMaxSorterMmap = 0x7FFFFFFF;
   db->flags |= SQLITE_ShortColNames
                  | SQLITE_EnableTrigger
+                 | SQLITE_EnableView
                  | SQLITE_CacheSpill
 
 /* The SQLITE_DQS compile-time option determines the default settings

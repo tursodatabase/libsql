@@ -1537,16 +1537,17 @@ struct sqlite3 {
 #define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
 #define SQLITE_DqsDDL         0x20000000  /* dbl-quoted strings allowed in DDL*/
 #define SQLITE_DqsDML         0x40000000  /* dbl-quoted strings allowed in DML*/
+#define SQLITE_EnableView     0x80000000  /* Enable the use of views */
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)
 #ifdef SQLITE_DEBUG
-#define SQLITE_SqlTrace       HI(0x0001)  /* Debug print SQL as it executes */
-#define SQLITE_VdbeListing    HI(0x0002)  /* Debug listings of VDBE progs */
-#define SQLITE_VdbeTrace      HI(0x0004)  /* True to trace VDBE execution */
-#define SQLITE_VdbeAddopTrace HI(0x0008)  /* Trace sqlite3VdbeAddOp() calls */
-#define SQLITE_VdbeEQP        HI(0x0010)  /* Debug EXPLAIN QUERY PLAN */
-#define SQLITE_ParserTrace    HI(0x0020)  /* PRAGMA parser_trace=ON */
+#define SQLITE_SqlTrace       HI(0x0100000) /* Debug print SQL as it executes */
+#define SQLITE_VdbeListing    HI(0x0200000) /* Debug listings of VDBE progs */
+#define SQLITE_VdbeTrace      HI(0x0400000) /* True to trace VDBE execution */
+#define SQLITE_VdbeAddopTrace HI(0x0800000) /* Trace sqlite3VdbeAddOp() calls */
+#define SQLITE_VdbeEQP        HI(0x1000000) /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_ParserTrace    HI(0x2000000) /* PRAGMA parser_trace=ON */
 #endif
 
 /*

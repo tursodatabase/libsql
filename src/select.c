@@ -4906,6 +4906,10 @@ static int selectExpander(Walker *pWalker, Select *p){
         u8 eCodeOrig = pWalker->eCode;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
+        if( pTab->pSelect && (db->flags & SQLITE_EnableView)==0 ){
+          sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
+              pTab->zName);
+        }
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         nCol = pTab->nCol;
         pTab->nCol = -1;
