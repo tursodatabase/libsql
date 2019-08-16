@@ -1549,30 +1549,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u8 bSeekPastNull = 0;        /* True to seek past initial nulls */
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
     int omitTable;               /* True if we use the index only */
-
+    int regBignull = 0;
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
     assert( nEq>=pLoop->nSkip );
-
-    /* If this loop satisfies a sort order (pOrderBy) request that 
-    ** was passed to this function to implement a "SELECT min(x) ..." 
-    ** query, then the caller will only allow the loop to run for
-    ** a single iteration. This means that the first row returned
-    ** should not have a NULL value stored in 'x'. If column 'x' is
-    ** the first one after the nEq equality constraints in the index,
-    ** this requires some special handling.
-    */
-    assert( (pWInfo->pOrderBy!=0 && pWInfo->pOrderBy->nExpr==1)
-         || (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0 );
-    if( pLoop->wsFlags & WHERE_MIN_ORDERED ){
-      assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN) );
-      assert( pWInfo->nOBSat );
-      assert( pIdx->nColumn>nEq );
-      assert( pLoop->nSkip==0 );
-      bSeekPastNull = 1;
-      nExtraReg = 1;
-    }
 
     /* Find any inequality constraint terms for the start and end 
     ** of the range. 
@@ -1614,6 +1595,26 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
 
+    /* If the WHERE_BIGNULL_SORT flag is set, then index column nEq uses
+    ** a non-default "big-null" sort (either ASC NULLS LAST or DESC NULLS 
+    ** FIRST). In both cases separate ordered scans are made of those
+    ** index entries for which the column is null and for those for which
+    ** it is not. For an ASC sort, the non-NULL entries are scanned first.
+    ** For DESC, NULL entries are scanned first.
+    */
+    addrNxt = pLevel->addrNxt;
+    if( (pLoop->wsFlags & (WHERE_TOP_LIMIT|WHERE_BTM_LIMIT))==0
+     && (pLoop->wsFlags & WHERE_BIGNULL_SORT)!=0
+    ){
+      assert( bSeekPastNull==0 && nExtraReg==0 && nBtm==0 && nTop==0 );
+      assert( pRangeEnd==0 && pRangeStart==0 );
+      assert( pLoop->nSkip==0 );
+      nExtraReg = 1;
+      bSeekPastNull = 1;
+      pLevel->regBignull = regBignull = ++pParse->nMem;
+      addrNxt = pLevel->addrBignull = sqlite3VdbeMakeLabel(pParse);
+    }
+
     /* If we are doing a reverse order scan on an ascending index, or
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
@@ -1636,7 +1637,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( zStartAff && nTop ){
       zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
     }
-    addrNxt = pLevel->addrNxt;
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
     testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
@@ -1674,6 +1674,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       nConstraint++;
       startEq = 0;
       start_constraints = 1;
+    }else if( regBignull ){
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+      start_constraints = 1;
+      nConstraint++;
     }
     codeApplyAffinity(pParse, regBase, nConstraint - bSeekPastNull, zStartAff);
     if( pLoop->nSkip>0 && nConstraint==pLoop->nSkip ){
@@ -1684,6 +1688,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
         sqlite3VdbeAddOp1(v, OP_SeekHit, iIdxCur);
       }
+      if( regBignull ){
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, regBignull);
+      }
+
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1695,23 +1703,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
       VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
 
-      if( bSeekPastNull && (pLoop->wsFlags & WHERE_TOP_LIMIT)==0 ){
-        /* If bSeekPastNull is set only to skip past the NULL values for
-        ** a query like "SELECT min(a), b FROM t1", then add code so that
-        ** if there are no rows with (a IS NOT NULL), then do the seek 
-        ** without jumping past NULLs instead. This allows the code in 
-        ** select.c to pick a value for "b" in the above query.  */
-        assert( startEq==0 && (op==OP_SeekGT || op==OP_SeekLT) );
-        assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0 && pWInfo->nOBSat>0 );
-        sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+      if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
-
-        op = aStartOp[(start_constraints<<2) + (1<<1) + bRev];
-        assert( op==OP_SeekGE || op==OP_SeekLE );
-        sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
-        VdbeCoverage(v);
-        VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
-        VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+        if( bStopAtNull ){
+          start_constraints = (nConstraint>1);
+          op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
+          sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint-1);
+        }else{
+          op = aStartOp[(start_constraints<<2) + ((!startEq)<<1) + bRev];
+          sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+        }
       }
     }
 
@@ -1744,8 +1745,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         endEq = 1;
       }
     }else if( bStopAtNull ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
-      endEq = 0;
+      if( regBignull==0 ){
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+        endEq = 0;
+      }
       nConstraint++;
     }
     sqlite3DbFree(db, zStartAff);
@@ -1756,12 +1759,25 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){
+      if( regBignull ){
+        sqlite3VdbeAddOp2(v, OP_If, regBignull, sqlite3VdbeCurrentAddr(v)+3);
+      }
       op = aEndOp[bRev*2 + endEq];
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       testcase( op==OP_IdxGT );  VdbeCoverageIf(v, op==OP_IdxGT );
       testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
       testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
+    }
+    if( regBignull ){
+      sqlite3VdbeAddOp2(v, OP_IfNot, regBignull, sqlite3VdbeCurrentAddr(v)+2);
+      if( bStopAtNull ){
+        op = aEndOp[bRev*2 + 0];
+        sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+      }else{
+        op = aEndOp[bRev*2 + endEq];
+        sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint+1);
+      }
     }
 
     if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){

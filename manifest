@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\sNULLS\sFIRST/LAST.\sThis\sbranch\sstill\shas\sproblems\s-\sthe\smost\ssignificant\sof\swhich\sis\sthat\sORDER\sBY\sclauses\swith\sa\snon-default\sNULLS\sFIRST/LAST\squalifier\scan\snever\suse\san\sindex.
-D 2019-08-12T16:36:38.041
+C Add\ssupport\sfor\susing\sindexes\sfor\ssome\sORDER\sBY\sclauses\sthat\suse\snon-default\sNULL\shandling.\sStill\ssome\sproblems\son\sthis\sbranch.
+D 2019-08-16T21:07:19.697
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,9 +609,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c 83fc2acadfbb1c86501fc0847fd068040ecd9a250a2fc0b81bab5698aa4bc72d
-F src/whereInt.h 2082fc2bd1eb66cb236a1a3c4b250e33d2bad9e43a0486a2cf9e4e211c58f3eb
-F src/wherecode.c cf885ea2d439af9827c5cbab7d4c12be5c079439b7bd12e97151ccfe088c13c0
+F src/where.c c4ec116264555c512edf49ef7244113cad5028bd1ea70f3500982b7c10f9a121
+F src/whereInt.h 807766a6a92893dbba8a887e5b13466d2257ce07a84cf1be0aae2c41aee3bf4f
+F src/wherecode.c 58889def15cb57375a5f4f83db6d2b28b372d87cf1b4f23e47928a4847a94ae4
 F src/whereexpr.c 5cce1fd11876086890a27c05e0cb75ca97ba64ba6984f72154039f1cfd2e69cc
 F src/window.c 4d56fc1e3dbd3a4fa0653b3f48a3ad7066d0da91d0273cff8bab13c3412ddaf5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1182,7 +1182,7 @@ F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
-F test/nulls1.test eac9f46d9bf7a3883700bbc063e8a64fa2f4677ea64f12e173d3052d635f6b23
+F test/nulls1.test 522f0da68881b6ac616b1361fbd5a9897bd366597809495143968af743e3318c
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
@@ -1837,11 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 636ca4472c9f41eb3989f28854d4968867837399a2092f389d1b814d98cccbae
-R 6d8a33d8edc53ea630705f876c1c3795
-T *branch * nulls-last
-T *sym-nulls-last *
-T +closed 8174b2ca587e87083950ab21a47b4b4fe4bf309a8e16a82d4dc26d2c471e28cc
-T -sym-trunk *
+P 07babb0f897fc8c9cb5b30481899c32fdd743f3f3ca508d8d957826252107dd5
+R 39b3bc3a5371ac212f22834b463e006c
 U dan
-Z 02a41ef53191d3d08ca3291791a40934
+Z d691c31e642275ddd26770c7946ed411
