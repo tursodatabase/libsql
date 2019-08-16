@@ -3649,6 +3649,9 @@ static const char *(azHelp[]) = {
   "    --row                   Trace each row (SQLITE_TRACE_ROW)",
   "    --close                 Trace connection close (SQLITE_TRACE_CLOSE)",
 #endif /* SQLITE_OMIT_TRACE */
+#ifdef SQLITE_DEBUG
+  ".unmodule NAME ...       Unregister virtual table modules",
+#endif
   ".vfsinfo ?AUX?           Information about the top-level VFS",
   ".vfslist                 List all available VFSes",
   ".vfsname ?AUX?           Print the name of the VFS stack",
@@ -9400,6 +9403,21 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 #endif /* !defined(SQLITE_OMIT_TRACE) */
+
+#ifdef SQLITE_DEBUG
+  if( c=='u' && strncmp(azArg[0], "unmodule", n)==0 ){
+    int ii;
+    if( nArg<2 ){
+      raw_printf(stderr, "Usage: .unmodule NAME ...\n");
+      rc = 1;
+      goto meta_command_exit;
+    }
+    open_db(p, 0);
+    for(ii=1; ii<nArg; ii++){
+      sqlite3_create_module(p->db, azArg[ii], 0, 0);
+    }
+  }else
+#endif
 
 #if SQLITE_USER_AUTHENTICATION
   if( c=='u' && strncmp(azArg[0], "user", n)==0 ){

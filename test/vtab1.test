@@ -1352,7 +1352,7 @@ foreach {tn sql res filter} {
 do_execsql_test 18.2.x {  PRAGMA case_sensitive_like = OFF }
 
 #-------------------------------------------------------------------------
-# Test that an existing module may not be overridden.
+# Test that it is ok to override and existing module.
 #
 do_test 19.1 {
   sqlite3 db2 test.db
@@ -1360,7 +1360,7 @@ do_test 19.1 {
 } SQLITE_OK
 do_test 19.2 {
   register_echo_module [sqlite3_connection_pointer db2]
-} SQLITE_MISUSE
+} SQLITE_OK
 do_test 19.3 {
   db2 close
 } {}
