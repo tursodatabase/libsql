@@ -2787,7 +2787,7 @@ void sqlite3CodeRhsOfIN(
     int i;
     ExprList *pList = pExpr->x.pList;
     struct ExprList_item *pItem;
-    int r1, r2, r3;
+    int r1, r2;
     affinity = sqlite3ExprAffinity(pLeft);
     if( affinity<=SQLITE_AFF_NONE ){
       affinity = SQLITE_AFF_BLOB;
@@ -2815,9 +2815,9 @@ void sqlite3CodeRhsOfIN(
       }
 
       /* Evaluate the expression and insert it into the temp table */
-      r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r2, r3, 1);
+      sqlite3ExprCode(pParse, pE2, r1);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
+      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r2, r1, 1);
     }
     sqlite3ReleaseTempReg(pParse, r1);
     sqlite3ReleaseTempReg(pParse, r2);

@@ -1,5 +1,5 @@
-C Ensure\sthe\sfunctions\sthat\sappear\sto\sbe\sconstant\sare\snot\sfactored\sout\sof\nexpression\sthat\soriginate\son\sthe\sright-hand\sside\sof\sa\sLEFT\sJOIN.\nTicket\s[6710d2f7a13a2997]
-D 2019-08-17T17:07:15.587
+C When\spopulating\san\sephemeral\sb-tree\sfor\sthe\sRHS\sof\san\sIN(...)\sclause,\savoid\sapplying\san\saffinity\sto\sa\svalue\sthat\smay\sbe\sused\slater\son\sfor\ssome\sother\spurpose.\sFix\sfor\s[c7a117190].
+D 2019-08-17T19:13:49.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c abb98379d53defc742ffbfb3f6260036fdeac775643b9d0c52490d717949327e
+F src/expr.c 66a844757e865624c51e3c23dedf7f650adf75f799947f202aacbb1c394c3cda
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
 F src/func.c 4ee36219698d50d672a28eca4adb0fd6b92e607a1883d318315e0d2fd5044467
@@ -1029,7 +1029,7 @@ F test/in.test 63e642e97bc22c8fd970752fb4f0b3992a957003ea87524fe69e5a700500c500
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
-F test/in5.test 7ae37fcd4a5e198291c6ab5f31a5bb3d15397efe8b75a6736d7a95a7b8dd9e08
+F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test 62d943a02f722948f4410ee0b53c3cb39acd7c41afb083df8d7004238fe90a20
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c4bca64fb5f635296a8d7d7c1bf2808e02ca734a9983e5cee9132f5352a9a6d
-R 522398ea68495c38ea0fcdb681aed94e
-U drh
-Z 11aed5fc406f7abcc5b902e904ad4203
+P 500c9152daaf11cf69d778aa8592175f6088337c6667c59af6df3a24cd81eb0e
+R bed36c864428d4b8c6d5512dcb77ee7b
+U dan
+Z a90573f564583a398fa8c41c8ec06335
