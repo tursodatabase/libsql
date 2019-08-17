@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2019-08-17T15:47:32.932
+C Fix\sproblem\swith\sDESC\sindexes\son\sthis\sbranch.
+D 2019-08-17T17:55:54.575
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -611,7 +611,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 52c433208eafdc7e1750ea4622cfffb5d14d906a0a9258e07bae4b6fee182fef
 F src/whereInt.h 807766a6a92893dbba8a887e5b13466d2257ce07a84cf1be0aae2c41aee3bf4f
-F src/wherecode.c 58889def15cb57375a5f4f83db6d2b28b372d87cf1b4f23e47928a4847a94ae4
+F src/wherecode.c 81c5d1eb909f8e1284df58367d25f748d126c475725665e7bb9b10a9bf702242
 F src/whereexpr.c 5cce1fd11876086890a27c05e0cb75ca97ba64ba6984f72154039f1cfd2e69cc
 F src/window.c 331cdac4992c7402da01c981861f3cc989bf7b4a97dd03eb122993e670f7a588
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 81069d7196857e909c94195d67388f71bc9f832eafd9156d8c5cdddb63513b4a de767376987f7668b0770c4920f1532e341b5a27f797d69c0f5e92b87d036170
-R f0ae3249555e7bff0d2d8fdff62897ad
+P db1e60800bc260cdcd604739daaba72c6b486158123fc62a3898aca4ead33cd3
+R a80a5d388fedda22f42c8717a7ac1c28
 U dan
-Z 9638aef683da83fd6b6a17e587485fa1
+Z 58eff66993c9d8fc329438790f4752fe

@@ -1602,7 +1602,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** it is not. For an ASC sort, the non-NULL entries are scanned first.
     ** For DESC, NULL entries are scanned first.
     */
-    addrNxt = pLevel->addrNxt;
     if( (pLoop->wsFlags & (WHERE_TOP_LIMIT|WHERE_BTM_LIMIT))==0
      && (pLoop->wsFlags & WHERE_BIGNULL_SORT)!=0
     ){
@@ -1612,7 +1611,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       nExtraReg = 1;
       bSeekPastNull = 1;
       pLevel->regBignull = regBignull = ++pParse->nMem;
-      addrNxt = pLevel->addrBignull = sqlite3VdbeMakeLabel(pParse);
+      pLevel->addrBignull = sqlite3VdbeMakeLabel(pParse);
     }
 
     /* If we are doing a reverse order scan on an ascending index, or
@@ -1637,6 +1636,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( zStartAff && nTop ){
       zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
     }
+    addrNxt = (regBignull ? pLevel->addrBignull : pLevel->addrNxt);
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
     testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
