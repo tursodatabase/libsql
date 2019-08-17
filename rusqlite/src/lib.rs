@@ -891,8 +891,8 @@ mod test {
             )
             .expect("create temp db");
 
-        let mut db1 = Connection::open(&path).unwrap();
-        let mut db2 = Connection::open(&path).unwrap();
+        let mut db1 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap();
+        let mut db2 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
 
         db1.busy_timeout(Duration::from_millis(0)).unwrap();
         db2.busy_timeout(Duration::from_millis(0)).unwrap();
