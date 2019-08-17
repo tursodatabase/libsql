@@ -1111,6 +1111,32 @@ static int SQLITE_TCLAPI test_create_function(
 }
 
 /*
+** Usage:  sqlite3_drop_modules_except DB ?NAME ...?
+**
+** Invoke the sqlite3_drop_modules_except(D,L) interface on database
+** connection DB, in order to drop all modules except those named in
+** the argument.
+*/
+static int SQLITE_TCLAPI test_drop_except(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int rc;
+  sqlite3 *db;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " DB\"", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  sqlite3_drop_modules_except(db, argc>2 ? (const char**)(argv+2) : 0);
+  return TCL_OK;
+}
+
+/*
 ** Routines to implement the x_count() aggregate function.
 **
 ** x_count() counts the number of non-null arguments.  But there are
@@ -7860,6 +7886,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_close_v2",              (Tcl_CmdProc*)sqlite_test_close_v2  },
      { "sqlite3_create_function",       (Tcl_CmdProc*)test_create_function  },
      { "sqlite3_create_aggregate",      (Tcl_CmdProc*)test_create_aggregate },
+     { "sqlite3_drop_modules_except",   (Tcl_CmdProc*)test_drop_except      },
      { "sqlite_register_test_function", (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                  (Tcl_CmdProc*)sqlite_abort          },
      { "sqlite_bind",                   (Tcl_CmdProc*)test_bind             },
