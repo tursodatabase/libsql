@@ -118,14 +118,14 @@ impl InnerConnection {
             }
 
             let callback: fn(&Connection, &str) -> Result<()> = mem::transmute(arg1);
-            if let Err(_) = catch_unwind(|| {
+            if catch_unwind(|| {
                 let conn = Connection::from_handle(arg2).unwrap();
                 let collation_name = {
                     let c_slice = CStr::from_ptr(arg3).to_bytes();
                     str::from_utf8_unchecked(c_slice)
                 };
                 callback(&conn, collation_name)
-            }) {
+            }).is_err() {
                 return; // FIXME How ?
             }
         }
