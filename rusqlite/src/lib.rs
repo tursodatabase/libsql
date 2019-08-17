@@ -850,13 +850,12 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod test {
-    use self::tempdir::TempDir;
-    pub use super::*;
+    use super::*;
     use crate::ffi;
     use fallible_iterator::FallibleIterator;
-    pub use std::error::Error as StdError;
-    pub use std::fmt;
-    use tempdir;
+    use std::error::Error as StdError;
+    use std::fmt;
+    use tempdir::TempDir;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -891,8 +890,8 @@ mod test {
             )
             .expect("create temp db");
 
-        let mut db1 = Connection::open(&path).unwrap();
-        let mut db2 = Connection::open(&path).unwrap();
+        let mut db1 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap();
+        let mut db2 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
 
         db1.busy_timeout(Duration::from_millis(0)).unwrap();
         db2.busy_timeout(Duration::from_millis(0)).unwrap();
