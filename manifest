@@ -1,5 +1,5 @@
-C Fix\sproblem\swith\sDESC\sindexes\son\sthis\sbranch.
-D 2019-08-17T17:55:54.575
+C Add\stests\sto\sensure\sthat\sthis\sbranch\sreally\sdoes\sfix\sticket\s[f8a7060ece].
+D 2019-08-17T18:16:59.747
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1150,7 +1150,7 @@ F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
 F test/minmax.test 6751e87b409fe11b02e70a306d846fa544e25a41
 F test/minmax2.test dae92964ac87c1d2ef978c582e81a95e11c00f1cbef68980bfb2abaf10315063
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
-F test/minmax4.test 838fe32b812dc50778be3799767cefb5ff59bb04cff81d4f12c0708642f65151
+F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc1.test 7ce84b25df9872e7d7878613a96815d2ba5bc974ac4e15a50118dde8f3917599
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db1e60800bc260cdcd604739daaba72c6b486158123fc62a3898aca4ead33cd3
-R a80a5d388fedda22f42c8717a7ac1c28
+P b49df1fe9b7174ebc60023179e8da628c926e59df3dc01b15d4a28e17807bb97
+R 45771ddb0f2c68cf3dbfa90b9e4149c6
 U dan
-Z 58eff66993c9d8fc329438790f4752fe
+Z 6452b2b9b9aca3f08bbef29f8e41e25a
