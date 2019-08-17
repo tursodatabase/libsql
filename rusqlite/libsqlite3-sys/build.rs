@@ -82,7 +82,7 @@ mod build_bundled {
         // There may be other platforms that don't support `isnan`, they should be
         // tested for here.
         if cfg!(target_env = "msvc") {
-            use self::cc::windows_registry::{find_vs_version, VsVers};
+            use cc::windows_registry::{find_vs_version, VsVers};
             let vs_has_nan = match find_vs_version() {
                 Ok(ver) => ver != VsVers::Vs12,
                 Err(_msg) => false,
@@ -298,8 +298,8 @@ mod bindings {
 mod bindings {
     use bindgen;
 
-    use self::bindgen::callbacks::{IntKind, ParseCallbacks};
     use super::HeaderLocation;
+    use bindgen::callbacks::{IntKind, ParseCallbacks};
 
     use std::fs::OpenOptions;
     use std::io::Write;

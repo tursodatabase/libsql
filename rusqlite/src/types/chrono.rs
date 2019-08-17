@@ -1,9 +1,8 @@
 //! Convert most of the [Time Strings](http://sqlite.org/lang_datefunc.html) to chrono types.
-use chrono;
 
 use std::borrow::Cow;
 
-use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
@@ -129,10 +128,8 @@ impl FromSql for DateTime<Local> {
 
 #[cfg(test)]
 mod test {
-    use super::chrono::{
-        DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
-    };
     use crate::{Connection, Result, NO_PARAMS};
+    use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();

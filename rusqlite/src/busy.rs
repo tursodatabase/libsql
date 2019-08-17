@@ -75,12 +75,11 @@ impl InnerConnection {
 
 #[cfg(test)]
 mod test {
-    use self::tempdir::TempDir;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time::Duration;
-    use tempdir;
+    use tempdir::TempDir;
 
     use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior, NO_PARAMS};
 

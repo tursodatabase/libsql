@@ -682,9 +682,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use regex;
-
-    use self::regex::Regex;
+    use regex::Regex;
     use std::f64::EPSILON;
     use std::os::raw::c_double;
 

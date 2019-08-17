@@ -850,13 +850,12 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod test {
-    use self::tempdir::TempDir;
-    pub use super::*;
+    use super::*;
     use crate::ffi;
     use fallible_iterator::FallibleIterator;
-    pub use std::error::Error as StdError;
-    pub use std::fmt;
-    use tempdir;
+    use std::error::Error as StdError;
+    use std::fmt;
+    use tempdir::TempDir;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
