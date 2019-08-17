@@ -823,6 +823,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** SQL is being compiled using sqlite3NestedParse() */
           no_such_func = 1;
           pDef = 0;
+        }else
+        if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
+         && ExprHasProperty(pExpr, EP_Indirect)
+         && !IN_RENAME_OBJECT
+        ){
+          /* Functions tagged with SQLITE_DIRECTONLY may not be used
+          ** inside of triggers and views */
+          sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
+                          pDef->zName);
         }
       }
 

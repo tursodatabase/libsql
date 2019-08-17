@@ -789,7 +789,7 @@ do_test 17.6.2 {
 
 do_test 17.6.3 {
   list [catch { db function xyz -n object ret } msg] $msg
-} {1 {bad option "-n": must be -argcount, -deterministic or -returntype}}
+} {1 {bad option "-n": must be -argcount, -deterministic, -directonly, or -returntype}}
 
 # 2019-02-28: The "bind_fallback" command.
 #

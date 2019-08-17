@@ -4860,6 +4860,9 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** function that is not deterministic.  The SQLite query planner is able to
 ** perform additional optimizations on deterministic functions, so use
 ** of the [SQLITE_DETERMINISTIC] flag is recommended where possible.
+** ^The fourth parameter may also optionally include the [SQLITE_DIRECTONLY]
+** flag, which if present prevents the function from being invoked from
+** within VIEWs or TRIGGERs.
 **
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
 ** function can gain access to this pointer using [sqlite3_user_data()].)^
@@ -4977,8 +4980,16 @@ int sqlite3_create_window_function(
 ** [SQLITE_UTF8 | preferred text encoding] as the fourth argument
 ** to [sqlite3_create_function()], [sqlite3_create_function16()], or
 ** [sqlite3_create_function_v2()].
+**
+** The SQLITE_DETERMINISTIC flag means that the new function will always
+** maps the same inputs into the same output.  The abs() function is
+** deterministic, for example, but randomblob() is not.
+**
+** The SQLITE_DIRECTONLY flag means that the function may only be invoked
+** from top-level SQL, and cannot be used in VIEWs or TRIGGERs.
 */
-#define SQLITE_DETERMINISTIC    0x800
+#define SQLITE_DETERMINISTIC    0x000000800
+#define SQLITE_DIRECTONLY       0x000080000
 
 /*
 ** CAPI3REF: Deprecated Functions

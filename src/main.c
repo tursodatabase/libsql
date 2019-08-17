@@ -1718,7 +1718,8 @@ int sqlite3CreateFunc(
   }
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
-  extraFlags = enc &  SQLITE_DETERMINISTIC;
+  assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
+  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
   
 #ifndef SQLITE_OMIT_UTF16
@@ -1781,6 +1782,7 @@ int sqlite3CreateFunc(
   p->u.pDestructor = pDestructor;
   p->funcFlags = (p->funcFlags & SQLITE_FUNC_ENCMASK) | extraFlags;
   testcase( p->funcFlags & SQLITE_DETERMINISTIC );
+  testcase( p->funcFlags & SQLITE_DIRECTONLY );
   p->xSFunc = xSFunc ? xSFunc : xStep;
   p->xFinalize = xFinal;
   p->xValue = xValue;

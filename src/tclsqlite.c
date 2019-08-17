@@ -2809,10 +2809,16 @@ deserialize_error:
   }
 
   /*
-  **     $db function NAME [-argcount N] [-deterministic] SCRIPT
+  **     $db function NAME [OPTIONS] SCRIPT
   **
   ** Create a new SQL function called NAME.  Whenever that function is
   ** called, invoke SCRIPT to evaluate the function.
+  **
+  ** Options:
+  **         --argcount N           Function has exactly N arguments
+  **         --deterministic        The function is pure
+  **         --directonly           Prohibit use inside triggers and views
+  **         --returntype TYPE      Specify the return type of the function
   */
   case DB_FUNCTION: {
     int flags = SQLITE_UTF8;
@@ -2845,6 +2851,9 @@ deserialize_error:
       if( n>1 && strncmp(z, "-deterministic",n)==0 ){
         flags |= SQLITE_DETERMINISTIC;
       }else
+      if( n>1 && strncmp(z, "-directonly",n)==0 ){
+        flags |= SQLITE_DIRECTONLY;
+      }else
       if( n>1 && strncmp(z, "-returntype", n)==0 ){
         const char *azType[] = {"integer", "real", "text", "blob", "any", 0};
         assert( SQLITE_INTEGER==1 && SQLITE_FLOAT==2 && SQLITE_TEXT==3 );
@@ -2860,7 +2869,8 @@ deserialize_error:
         eType++;
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
-            "\": must be -argcount, -deterministic or -returntype", (char*)0
+            "\": must be -argcount, -deterministic, -directonly,"
+            " or -returntype", (char*)0
         );
         return TCL_ERROR;
       }

@@ -560,6 +560,7 @@ int sqlite3FixExpr(
   Expr *pExpr        /* The expression to be fixed to one database */
 ){
   while( pExpr ){
+    ExprSetProperty(pExpr, EP_Indirect);
     if( pExpr->op==TK_VARIABLE ){
       if( pFix->pParse->db->init.busy ){
         pExpr->op = TK_NULL;
