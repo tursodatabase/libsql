@@ -1,5 +1,5 @@
-C Fix\sto\sthe\squery\splanner\sfor\sthe\sLSM1\sextension.
-D 2019-08-17T19:55:26.642
+C Add\ssome\sextra\stests\sfor\sthe\slsm\svirtual\stable\smodule.
+D 2019-08-17T19:58:26.438
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -229,7 +229,7 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt a295e91db742b153e8dce8f7efd31d28ad1eea4df31ef4daa3eedc85be2f5138
 F ext/icu/icu.c c2c7592574c08cd1270d909b8fb8797f6ea1f49e931e71dbcc25506b9b224580
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/lsm1/Makefile 98b0a24b45e248283d6bea4b6cb3e58d7b394edd8e96a0ac28c5fa5104813bad
+F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h cf58528ffe0cfe535e91b44584e2ec5fb1caacdabecef0d8dcf83bf83168bf28
@@ -272,7 +272,7 @@ F ext/lsm1/lsm_varint.c 43f954af668a66c7928b81597c14d6ad4be9fedbc276bbd80f52fa28
 F ext/lsm1/lsm_vtab.c 169bfe7ef8e6c9de9c77e17c4c50c9ae55fb0167d80be3d1be82c991184b6f35
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
 F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
-F ext/lsm1/test/lsm1_simple.test ca949efefa102f4644231dcd9291d8cda7699a4ce1006b26e0e3fcb72233f422
+F ext/lsm1/test/lsm1_simple.test a04d08e8661ae6fc53786c67f0bd102c6692f003e859dde03ed9ac3f12e066e5
 F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f6078e07335398b0
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c 50a9ef2d38dabfa371f8c1904097d493271e63d58ccb0e9b79a4fa4a94e66660
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d6f4dfeea75c7dcd8c511545accb9eb4b405a02db034332249ba54794e313d2
-R bd11da9af99d4a05979e56c686a272e3
-U drh
-Z e640ff9ea98c214eb3589753b7432e52
+P 7496e872a1a50ac65ad04709365a43038fb015ac9c690196de3cb02ce54c2e57
+R 7c52be13cef9eee33da71a3e3a70b980
+U dan
+Z 775a473efffe71d8a3fe393281372f17
