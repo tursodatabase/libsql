@@ -465,6 +465,7 @@ do_test rtreefuzz001-100 {
 | end c1b.db
   }]
   catchsql {
+     PRAGMA writable_schema = 1;
      SELECT rtreecheck('t1');
   }
 } {1 {SQL logic error}}
@@ -1040,6 +1041,7 @@ do_test rtreefuzz001-500 {
 |   2880: ff ff ff 06 00 00 00 0c 00 00 00 01 00 00 00 0b   ................
 |   2896: 00 00 00 00 00 00 00 02 40 00 00 00 00 00 00 00   ........@.......
 | end crash-2e81f5dce5cbd4.db}]
+  execsql { PRAGMA writable_schema = 1;}
   catchsql {UPDATE t1 SET ex= ex ISNULL}
 } {1 {database disk image is malformed}}
 

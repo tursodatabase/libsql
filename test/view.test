@@ -38,6 +38,18 @@ do_test view-1.1 {
     SELECT * FROM v1 ORDER BY a;
   }
 } {1 2 4 5 7 8}
+do_test view-1.1.100 {
+  db config enable_view off
+  catchsql {
+    SELECT * FROM v1 ORDER BY a;
+  }
+} {1 {access to view "v1" prohibited}}
+do_test view-1.1.110 {
+  db config enable_view on
+  catchsql {
+    SELECT * FROM v1 ORDER BY a;
+  }
+} {0 {1 2 4 5 7 8}}
 do_test view-1.2 {
   catchsql {
     ROLLBACK;

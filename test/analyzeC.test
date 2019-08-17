@@ -132,6 +132,20 @@ do_execsql_test 4.3 {
   SELECT count(a) FROM t1;
 } {/.*INDEX t1ca.*/}
 
+# 2019-08-15.
+# Ticket https://www.sqlite.org/src/tktview/e4598ecbdd18bd82945f602901
+# The sz=N parameter in the sqlite_stat1 table needs to have a value of
+# 2 or more to avoid a division by zero in the query planner.
+#
+do_execsql_test 4.4 {
+  DROP TABLE IF EXISTS t44;
+  CREATE TABLE t44(a PRIMARY KEY);
+  INSERT INTO sqlite_stat1 VALUES('t44',null,'sz=0');
+  ANALYZE sqlite_master;
+  SELECT 0 FROM t44 WHERE a IN(1,2,3);
+} {}
+
+
 
 # The sz=NNN parameter works even if there is other extraneous text
 # in the sqlite_stat1.stat column.

@@ -1325,12 +1325,7 @@ static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
     assert( pWin );
     assert( IsWindowFunc(pExpr) );
     assert( pWin->ppThis==0 );
-    if( pSelect->pWin ){
-      pSelect->pWin->ppThis = &pWin->pNextWin;
-    }
-    pWin->pNextWin = pSelect->pWin;
-    pWin->ppThis = &pSelect->pWin;
-    pSelect->pWin = pWin;
+    sqlite3WindowLink(pSelect, pWin);
   }
   return WRC_Continue;
 }

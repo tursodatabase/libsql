@@ -1230,6 +1230,25 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
 }
 
 /*
+** Possibly link window pWin into the list at pSel->pWin (window functions
+** to be processed as part of SELECT statement pSel). The window is linked
+** in if either (a) there are no other windows already linked to this
+** SELECT, or (b) the windows already linked use a compatible window frame.
+*/
+void sqlite3WindowLink(Select *pSel, Window *pWin){
+  if( 0==pSel->pWin 
+   || 0==sqlite3WindowCompare(0, pSel->pWin, pWin, 0)
+  ){
+    pWin->pNextWin = pSel->pWin;
+    if( pSel->pWin ){
+      pSel->pWin->ppThis = &pWin->pNextWin;
+    }
+    pSel->pWin = pWin;
+    pWin->ppThis = &pSel->pWin;
+  }
+}
+
+/*
 ** Return 0 if the two window objects are identical, or non-zero otherwise.
 ** Identical window objects can be processed in a single scan.
 */
@@ -1415,6 +1434,8 @@ static void windowAggStep(
     int regArg;
     int nArg = windowArgCount(pWin);
     int i;
+
+    assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
 
     for(i=0; i<nArg; i++){
       if( i!=1 || pFunc->zName!=nth_valueName ){

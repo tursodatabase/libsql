@@ -171,6 +171,29 @@ foreach {tn sql} {
   } {~/ORDER/}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (0);
+}
+
+do_execsql_test 6.1 {
+  SELECT * FROM t0 WHERE 
+  EXISTS (
+    SELECT MIN(c0) OVER (), CUME_DIST() OVER () FROM t0
+  ) >=1 AND 
+  EXISTS (
+    SELECT MIN(c0) OVER (), CUME_DIST() OVER () FROM t0
+  ) <=1;
+} {0}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t0 WHERE EXISTS (
+    SELECT MIN(c0) OVER (), CUME_DIST() OVER () FROM t0
+  ) 
+  BETWEEN 1 AND 1;
+} {0}
 
 
 finish_test

@@ -1537,16 +1537,17 @@ struct sqlite3 {
 #define SQLITE_Defensive      0x10000000  /* Input SQL is likely hostile */
 #define SQLITE_DqsDDL         0x20000000  /* dbl-quoted strings allowed in DDL*/
 #define SQLITE_DqsDML         0x40000000  /* dbl-quoted strings allowed in DML*/
+#define SQLITE_EnableView     0x80000000  /* Enable the use of views */
 
 /* Flags used only if debugging */
 #define HI(X)  ((u64)(X)<<32)
 #ifdef SQLITE_DEBUG
-#define SQLITE_SqlTrace       HI(0x0001)  /* Debug print SQL as it executes */
-#define SQLITE_VdbeListing    HI(0x0002)  /* Debug listings of VDBE progs */
-#define SQLITE_VdbeTrace      HI(0x0004)  /* True to trace VDBE execution */
-#define SQLITE_VdbeAddopTrace HI(0x0008)  /* Trace sqlite3VdbeAddOp() calls */
-#define SQLITE_VdbeEQP        HI(0x0010)  /* Debug EXPLAIN QUERY PLAN */
-#define SQLITE_ParserTrace    HI(0x0020)  /* PRAGMA parser_trace=ON */
+#define SQLITE_SqlTrace       HI(0x0100000) /* Debug print SQL as it executes */
+#define SQLITE_VdbeListing    HI(0x0200000) /* Debug listings of VDBE progs */
+#define SQLITE_VdbeTrace      HI(0x0400000) /* True to trace VDBE execution */
+#define SQLITE_VdbeAddopTrace HI(0x0800000) /* Trace sqlite3VdbeAddOp() calls */
+#define SQLITE_VdbeEQP        HI(0x1000000) /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_ParserTrace    HI(0x2000000) /* PRAGMA parser_trace=ON */
 #endif
 
 /*
@@ -1663,6 +1664,7 @@ struct FuncDestructor {
 **     SQLITE_FUNC_LENGTH    ==  OPFLAG_LENGTHARG
 **     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
 **     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
+**     SQLITE_FUNC_DIRECT    ==  SQLITE_DIRECTONLY from the API
 **     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
@@ -1683,6 +1685,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
+#define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1796,6 +1799,7 @@ struct Savepoint {
 struct Module {
   const sqlite3_module *pModule;       /* Callback pointers */
   const char *zName;                   /* Name passed to create_module() */
+  int nRefModule;                      /* Number of pointers to this object */
   void *pAux;                          /* pAux passed to create_module() */
   void (*xDestroy)(void *);            /* Module destructor function */
   Table *pEpoTab;                      /* Eponymous table for this module */
@@ -2497,36 +2501,37 @@ struct Expr {
 **          EP_Agg == NC_HasAgg == SF_HasAgg
 **          EP_Win == NC_HasWin
 */
-#define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
-#define EP_Distinct  0x000002 /* Aggregate function with DISTINCT keyword */
-#define EP_HasFunc   0x000004 /* Contains one or more functions of any kind */
-#define EP_FixedCol  0x000008 /* TK_Column with a known fixed value */
-#define EP_Agg       0x000010 /* Contains one or more aggregate functions */
-#define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
-#define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
-#define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
-#define EP_Collate   0x000100 /* Tree contains a TK_COLLATE operator */
-#define EP_Generic   0x000200 /* Ignore COLLATE or affinity on this tree */
-#define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
-#define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Skip      0x001000 /* Operator does not contribute to affinity */
-#define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
-#define EP_Win       0x008000 /* Contains window functions */
-#define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
-#define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
-#define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
-#define EP_ConstFunc 0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
-#define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
-#define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
-#define EP_Alias     0x400000 /* Is an alias for a result set column */
-#define EP_Leaf      0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
-#define EP_WinFunc  0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
-#define EP_Subrtn   0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
-#define EP_Quoted   0x4000000 /* TK_ID was originally quoted */
-#define EP_Static   0x8000000 /* Held in memory not obtained from malloc() */
-#define EP_IsTrue  0x10000000 /* Always has boolean value of TRUE */
-#define EP_IsFalse 0x20000000 /* Always has boolean value of FALSE */
+#define EP_FromJoin   0x000001 /* Originates in ON/USING clause of outer join */
+#define EP_Distinct   0x000002 /* Aggregate function with DISTINCT keyword */
+#define EP_HasFunc    0x000004 /* Contains one or more functions of any kind */
+#define EP_FixedCol   0x000008 /* TK_Column with a known fixed value */
+#define EP_Agg        0x000010 /* Contains one or more aggregate functions */
+#define EP_VarSelect  0x000020 /* pSelect is correlated, not constant */
+#define EP_DblQuoted  0x000040 /* token.z was originally in "..." */
+#define EP_InfixFunc  0x000080 /* True for an infix function: LIKE, GLOB, etc */
+#define EP_Collate    0x000100 /* Tree contains a TK_COLLATE operator */
+#define EP_Generic    0x000200 /* Ignore COLLATE or affinity on this tree */
+#define EP_IntValue   0x000400 /* Integer value contained in u.iValue */
+#define EP_xIsSelect  0x000800 /* x.pSelect is valid (otherwise x.pList is) */
+#define EP_Skip       0x001000 /* Operator does not contribute to affinity */
+#define EP_Reduced    0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly  0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
+#define EP_Win        0x008000 /* Contains window functions */
+#define EP_MemToken   0x010000 /* Need to sqlite3DbFree() Expr.zToken */
+#define EP_NoReduce   0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
+#define EP_Unlikely   0x040000 /* unlikely() or likelihood() function */
+#define EP_ConstFunc  0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
+#define EP_CanBeNull  0x100000 /* Can be null despite NOT NULL constraint */
+#define EP_Subquery   0x200000 /* Tree contains a TK_SELECT operator */
+#define EP_Alias      0x400000 /* Is an alias for a result set column */
+#define EP_Leaf       0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
+#define EP_WinFunc   0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
+#define EP_Subrtn    0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
+#define EP_Quoted    0x4000000 /* TK_ID was originally quoted */
+#define EP_Static    0x8000000 /* Held in memory not obtained from malloc() */
+#define EP_IsTrue   0x10000000 /* Always has boolean value of TRUE */
+#define EP_IsFalse  0x20000000 /* Always has boolean value of FALSE */
+#define EP_Indirect 0x40000000 /* Contained within a TRIGGER or a VIEW */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -3612,6 +3617,7 @@ void sqlite3WindowUnlinkFromSelect(Window*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
+void sqlite3WindowLink(Select *pSel, Window *pWin);
 int sqlite3WindowCompare(Parse*, Window*, Window*, int);
 void sqlite3WindowCodeInit(Parse*, Window*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
@@ -4439,6 +4445,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabInSync(db) 0
 #  define sqlite3VtabLock(X)
 #  define sqlite3VtabUnlock(X)
+#  define sqlite3VtabModuleUnref(D,X)
 #  define sqlite3VtabUnlockList(X)
 #  define sqlite3VtabSavepoint(X, Y, Z) SQLITE_OK
 #  define sqlite3GetVTable(X,Y)  ((VTable*)0)
@@ -4450,6 +4457,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    int sqlite3VtabCommit(sqlite3 *db);
    void sqlite3VtabLock(VTable *);
    void sqlite3VtabUnlock(VTable *);
+   void sqlite3VtabModuleUnref(sqlite3*,Module*);
    void sqlite3VtabUnlockList(sqlite3*);
    int sqlite3VtabSavepoint(sqlite3 *, int, int);
    void sqlite3VtabImportErrmsg(Vdbe*, sqlite3_vtab*);
