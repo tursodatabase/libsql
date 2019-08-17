@@ -72,6 +72,7 @@ Module *sqlite3VtabCreateModule(
       sqlite3DbFree(db, pDel);
       pMod = 0;
     }else{
+      sqlite3VtabEponymousTableClear(db, pDel);
       sqlite3VtabModuleUnref(db, pDel);
     }
   }

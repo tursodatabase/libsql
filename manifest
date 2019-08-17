@@ -1,5 +1,5 @@
-C When\spopulating\san\sephemeral\sb-tree\sfor\sthe\sRHS\sof\san\sIN(...)\sclause,\savoid\sapplying\san\saffinity\sto\sa\svalue\sthat\smay\sbe\sused\slater\son\sfor\ssome\sother\spurpose.\sFix\sfor\s[c7a117190].
-D 2019-08-17T19:13:49.573
+C Fix\sthe\snew\sability\sto\sunregister\svirtual\stable\smodules\sso\sthat\sit\sworks\nfor\sthe\sautomatic\sPRAGMA\svirtual\stables.
+D 2019-08-17T19:31:09.807
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b
 F src/vdbemem.c 920285c3b7f5c64369e02da437dab71e9e91862df9c486541c14633739f91d75
 F src/vdbesort.c 3531ae3a431ad6b98b67bd891fb42ec9d66867157188a2b1a9e58c55da6151b2
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vtab.c 4d833811e3784409627919899e1fd75ee08f0e5db6d9924eac9a0bfe0cb762dc
+F src/vtab.c 994a4686197c00cee75f4ade8645e7336d8bb612c80ed61f4b8b7ceecf0a32ea
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 500c9152daaf11cf69d778aa8592175f6088337c6667c59af6df3a24cd81eb0e
-R bed36c864428d4b8c6d5512dcb77ee7b
-U dan
-Z a90573f564583a398fa8c41c8ec06335
+P 43e8b14314d876178d487c3b519296ac1de065fdcaa70768e40d684015bceb9d
+R f1b8fe83962102831e60e3831104d937
+U drh
+Z 2bda6aa8d3d9e8159fe6c0f170b565ec
