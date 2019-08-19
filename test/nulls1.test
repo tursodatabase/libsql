@@ -83,5 +83,43 @@ do_execsql_test 2.2 {
   1 1 1
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b, c, d, UNIQUE (b));
+}
+foreach {tn sql err}  {
+  1 { CREATE INDEX i1 ON t1(a ASC NULLS LAST) }           LAST
+  2 { CREATE INDEX i1 ON t1(a ASC NULLS FIRST) }          FIRST
+  3 { CREATE INDEX i1 ON t1(a, b ASC NULLS LAST) }        LAST
+  4 { CREATE INDEX i1 ON t1(a, b ASC NULLS FIRST) }       FIRST
+  5 { CREATE INDEX i1 ON t1(a DESC NULLS LAST) }          LAST
+  6 { CREATE INDEX i1 ON t1(a DESC NULLS FIRST) }         FIRST
+  7 { CREATE INDEX i1 ON t1(a, b DESC NULLS LAST) }       LAST
+  8 { CREATE INDEX i1 ON t1(a, b DESC NULLS FIRST) }      FIRST
+  9  { CREATE TABLE t2(a, b, PRIMARY KEY(a DESC, b NULLS FIRST)) } FIRST
+  10 { CREATE TABLE t2(a, b, UNIQUE(a DESC NULLS FIRST, b)) }      FIRST
+  11 { INSERT INTO t1 VALUES(1, 2, 3, 4)
+          ON CONFLICT (b DESC NULLS LAST) DO UPDATE SET a = a+1 } LAST
+  12 {
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+      INSERT INTO t1 VALUES(1, 2, 3, 4)
+      ON CONFLICT (b DESC NULLS FIRST) DO UPDATE SET a = a+1;
+    END
+  } FIRST
+} {
+  do_catchsql_test 3.1.$tn $sql "1 {unsupported use of NULLS $err}"
+}
+
+do_execsql_test 3.2 {
+  CREATE TABLE first(nulls, last);
+  INSERT INTO first(last, nulls) VALUES(100,200), (300,400), (200,300);
+  SELECT * FROM first ORDER BY nulls;
+} {
+  200 100
+  300 200
+  400 300
+}
+
 
 finish_test

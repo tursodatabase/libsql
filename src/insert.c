@@ -833,6 +833,9 @@ void sqlite3Insert(
               pTab->zName);
       goto insert_cleanup;
     }
+    if( sqlite3HasExplicitNulls(pParse, pUpsert->pUpsertTarget) ){
+      goto insert_cleanup;
+    }
     pTabList->a[0].iCursor = iDataCur;
     pUpsert->pUpsertSrc = pTabList;
     pUpsert->regData = regData;

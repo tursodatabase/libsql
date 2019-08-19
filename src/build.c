@@ -3154,6 +3154,27 @@ Index *sqlite3AllocateIndexObject(
 }
 
 /*
+** If expression list pList contains an expression that was parsed with
+** an explicit "NULLS FIRST" or "NULLS LAST" clause, leave an error in
+** pParse and return non-zero. Otherwise, return zero.
+*/
+int sqlite3HasExplicitNulls(Parse *pParse, ExprList *pList){
+  if( pList ){
+    int i;
+    for(i=0; i<pList->nExpr; i++){
+      if( pList->a[i].bNulls ){
+        u8 sf = pList->a[i].sortFlags;
+        sqlite3ErrorMsg(pParse, "unsupported use of NULLS %s", 
+            (sf==0 || sf==3) ? "FIRST" : "LAST"
+        );
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
 ** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -3202,6 +3223,9 @@ void sqlite3CreateIndex(
     goto exit_create_index;
   }
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    goto exit_create_index;
+  }
+  if( sqlite3HasExplicitNulls(pParse, pList) ){
     goto exit_create_index;
   }
 

@@ -1653,6 +1653,7 @@ vector_append_error:
 ** Set the sort order for the last element on the given ExprList.
 */
 void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder, int eNulls){
+  struct ExprList_item *pItem;
   if( p==0 ) return;
   assert( p->nExpr>0 );
 
@@ -1666,10 +1667,18 @@ void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder, int eNulls){
        || eNulls==SQLITE_SO_DESC 
   );
 
-  if( iSortOrder==SQLITE_SO_UNDEFINED ) iSortOrder = SQLITE_SO_ASC;
-  p->a[p->nExpr-1].sortFlags = (u8)iSortOrder;
-  if( eNulls!=SQLITE_SO_UNDEFINED && iSortOrder!=eNulls ){
-    p->a[p->nExpr-1].sortFlags |= KEYINFO_ORDER_BIGNULL;
+  pItem = &p->a[p->nExpr-1];
+  assert( pItem->bNulls==0 );
+  if( iSortOrder==SQLITE_SO_UNDEFINED ){
+    iSortOrder = SQLITE_SO_ASC;
+  }
+  pItem->sortFlags = (u8)iSortOrder;
+
+  if( eNulls!=SQLITE_SO_UNDEFINED ){
+    pItem->bNulls = 1;
+    if( iSortOrder!=eNulls ){
+      pItem->sortFlags |= KEYINFO_ORDER_BIGNULL;
+    }
   }
 }
 
