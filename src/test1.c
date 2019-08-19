@@ -1111,13 +1111,13 @@ static int SQLITE_TCLAPI test_create_function(
 }
 
 /*
-** Usage:  sqlite3_drop_modules_except DB ?NAME ...?
+** Usage:  sqlite3_drop_modules DB ?NAME ...?
 **
-** Invoke the sqlite3_drop_modules_except(D,L) interface on database
+** Invoke the sqlite3_drop_modules(D,L) interface on database
 ** connection DB, in order to drop all modules except those named in
 ** the argument.
 */
-static int SQLITE_TCLAPI test_drop_except(
+static int SQLITE_TCLAPI test_drop_modules(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -1132,7 +1132,7 @@ static int SQLITE_TCLAPI test_drop_except(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_drop_modules_except(db, argc>2 ? (const char**)(argv+2) : 0);
+  sqlite3_drop_modules(db, argc>2 ? (const char**)(argv+2) : 0);
   return TCL_OK;
 }
 
@@ -7886,7 +7886,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_close_v2",              (Tcl_CmdProc*)sqlite_test_close_v2  },
      { "sqlite3_create_function",       (Tcl_CmdProc*)test_create_function  },
      { "sqlite3_create_aggregate",      (Tcl_CmdProc*)test_create_aggregate },
-     { "sqlite3_drop_modules_except",   (Tcl_CmdProc*)test_drop_except      },
+     { "sqlite3_drop_modules",          (Tcl_CmdProc*)test_drop_modules     },
      { "sqlite_register_test_function", (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                  (Tcl_CmdProc*)sqlite_abort          },
      { "sqlite_bind",                   (Tcl_CmdProc*)test_bind             },

@@ -9409,6 +9409,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef SQLITE_DEBUG
   if( c=='u' && strncmp(azArg[0], "unmodule", n)==0 ){
     int ii;
+    int lenOpt;
     char *zOpt;
     if( nArg<2 ){
       raw_printf(stderr, "Usage: .unmodule [--allexcept] NAME ...\n");
@@ -9418,9 +9419,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     zOpt = azArg[1];
     if( zOpt[0]=='-' && zOpt[1]=='-' && zOpt[2]!=0 ) zOpt++;
-    if( strcmp(zOpt, "-allexcept")==0 ){
+    lenOpt = (int)strlen(zOpt);
+    if( lenOpt>=3 && strncmp(zOpt, "-allexcept",lenOpt)==0 ){
       assert( azArg[nArg]==0 );
-      sqlite3_drop_modules_except(p->db, nArg>2 ? (const char**)(azArg+2) : 0);
+      sqlite3_drop_modules(p->db, nArg>2 ? (const char**)(azArg+2) : 0);
     }else{
       for(ii=1; ii<nArg; ii++){
         sqlite3_create_module(p->db, azArg[ii], 0, 0);

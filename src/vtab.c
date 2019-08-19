@@ -137,7 +137,7 @@ int sqlite3_create_module_v2(
 ** External API to drop all virtual-table modules, except those named
 ** on the azNames list.
 */
-int sqlite3_drop_modules_except(sqlite3 *db, const char** azNames){
+int sqlite3_drop_modules(sqlite3 *db, const char** azNames){
   HashElem *pThis, *pNext;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zName==0 ) return SQLITE_MISUSE_BKPT;
