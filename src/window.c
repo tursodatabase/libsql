@@ -1876,12 +1876,13 @@ static void windowCodeRangeTest(
   int reg2 = sqlite3GetTempReg(pParse);
   int arith = OP_Add;
   int addrGe;
+  ExprList *pOrderBy = p->pMWin->pOrderBy;
 
   int regString = ++pParse->nMem;
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
-  assert( p->pMWin->pOrderBy && p->pMWin->pOrderBy->nExpr==1 );
-  if( p->pMWin->pOrderBy->a[0].sortFlags & KEYINFO_ORDER_DESC ){
+  assert( pOrderBy && pOrderBy->nExpr==1 );
+  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_DESC ){
     switch( op ){
       case OP_Ge: op = OP_Le; break;
       case OP_Gt: op = OP_Lt; break;
@@ -1901,6 +1902,22 @@ static void windowCodeRangeTest(
   VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
   sqlite3VdbeJumpHere(v, addrGe);
+  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_BIGNULL ){
+    int addr;
+    addr = sqlite3VdbeAddOp1(v, OP_NotNull, reg1); VdbeCoverage(v);
+    switch( op ){
+      case OP_Ge: sqlite3VdbeAddOp2(v, OP_Goto, 0, lbl); break;
+      case OP_Gt: sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); break;
+      case OP_Le: sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); break;
+      default: assert( op==OP_Lt ); /* no-op */
+    }
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+    sqlite3VdbeJumpHere(v, addr);
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
+    if( op==OP_Gt || op==OP_Ge ){
+      sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+    }
+  }
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
   assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );

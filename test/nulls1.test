@@ -15,8 +15,6 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix nulls1
 
-if 1 {
-
 do_execsql_test 1.0 {
   DROP TABLE IF EXISTS t3;
   CREATE TABLE t3(a INTEGER);
@@ -55,8 +53,6 @@ for {set a 0} {$a < 3} {incr a} {
   }
 }
 
-}
-
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 2.0 {
@@ -84,6 +80,7 @@ do_execsql_test 2.2 {
 }
 
 #-------------------------------------------------------------------------
+#
 reset_db
 do_execsql_test 3.0 {
   CREATE TABLE t1(a, b, c, d, UNIQUE (b));
@@ -120,6 +117,5 @@ do_execsql_test 3.2 {
   300 200
   400 300
 }
-
 
 finish_test
