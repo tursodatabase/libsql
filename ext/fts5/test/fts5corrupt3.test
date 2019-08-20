@@ -767,7 +767,7 @@ SELECT * FROM t1 WHERE t1 MATCH 'abandon';
 
 do_catchsql_test 13.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'abandon'; 
-} {1 {vtable constructor failed: t1}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -958,7 +958,7 @@ do_test 15.0 {
 
 do_catchsql_test 15.1 {
   INSERT INTO t1(t1) VALUES('integrity-check');
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #---------------------------------------------------------------------------
 #
@@ -3903,19 +3903,19 @@ do_test 33.0 {
 | end crash-fed6e90021ba5d.db
 }]} {}
 
-do_execsql_test 33.1 {
+do_catchsql_test 33.1 {
   CREATE VIRTUAL TABLE t2 USING fts5vocab('t1','row');
   CREATE VIRTUAL TABLE t3 USING fts5vocab('t1','col');
   CREATE VIRTUAL TABLE t4 USING fts5vocab('t1','instance');
-}
+} {/*malformed database schema*/}
 
 do_catchsql_test 33.2 {
   SELECT * FROM t2;
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 do_catchsql_test 33.3 {
   SELECT * FROM t2, t3, t4 WHERE t2.term=t3.term AND t3.term=t4.term;
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -4637,17 +4637,17 @@ do_test 37.0 {
 
 do_catchsql_test 37.1 {
   SELECT * FROM t3;
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db 
-do_execsql_test 37.0 {
+do_execsql_test 37a.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(b, c);
   INSERT INTO t1 VALUES('a', 'b');
   SELECT quote(block) FROM t1_data WHERE rowid=10;
 } {X'000000000101010001010101'}
 
-do_execsql_test 37.1 {
+do_execsql_test 37a.1 {
   UPDATE t1_data SET block = X'FFFFFFFF0101010001010101' WHERE rowid = 10;
   SELECT rowid FROM t1('a');
 } {1}
@@ -4894,7 +4894,7 @@ do_test 38.0 {
 
 do_catchsql_test 38.1 {
   UPDATE t1 SET b=quote(zeroblob(200)) WHERE t1 MATCH 'thread*';
-} {0 {}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -5326,16 +5326,16 @@ do_test 40.0 {
 | end crash2.txt.db
 }]} {}
 
-do_execsql_test 40.1 {
+do_catchsql_test 40.1 {
   BEGIN;
   INSERT INTO t1(b) VALUES(X'819192e578de3fa24af3733ca8769291a0fee3669f9fddefc5cba913e4225d4b6ce2b04f26b87fad3ee6f9b7d90a1ea62a169bf41e5d32707a6ca5c3d05e4bde05c9d89eaaa8c50e74333d2e9fcd7dfe95528a3a016aac1102d825c5cd70cf99d8a88e0ea7f798d4334386518b7ad359beb168b93aba059a2a3bd93112d65b44c12b9904ea786b204d80531cdf0504bf9b203dbe927061974caf7b9f30cbc3397b61f802e732012a6663d41c3607d6f1c0dbcfd489adac05ca500c0b04439d894cd93a840159225ef73b627e178b9f84b3ffe66cf22a963a8368813ff7961fc47f573211ccec95e0220dcbb3bf429f4a50ba54d7a53784ac51bf');
   INSERT INTO t1(b) VALUES(X'c8ae0d0e7c3175946e62ba2b449511d4eb504079984a20f77969f62206c9f3d7ea25358ab705e6978627290b6d48db9032f815a06a79a4f4b809841a0942eed12954ed166f666111812a508abc3bec87958846edaec0a6fe14564bc0a4b78f1c35ebcacca6bae29cc37ae9b59d8a2d7593af1e47dda0ece2268a98d20febafad037964f139851f9a57f48b3706b01721769071991412044cd6006f1d72eb6eb4aa5ad77e378176db8c15575fbeee47165e38a7c6c5a557ac2dfe11813976eaf6741cf593a9e457053a3c34cddfbe605a6e25419f993de8374fafcd3636509d8416a51dc7bcc14cfca322ae343078f47e23522431c17d0da0c033');
   INSERT INTO t1(b) VALUES(X'dc29a94e873a45a4243fce9b912aaefbadf1d0423e0345793874b356eeb500b92fb05284c1601fe9bad3143f72162f10242cec27c44ebf764c8fc9fb0824e32c4161472a4f914f579e0e8274f08ca1a02e59b9d8eec1f31061f9ccb9ed97a6f06534e991f7992c761489e6a7724f6e9c2b581e77487ded3a986d53c4419bbd3e9747cee300e670dd7294874c77e2ed48da68eaa6c3ec954a09ac410493d98e34d6686e54fbbe80696705f10e040c66093efb40746b33600685c94c664c7942835a9e954866121d5dcfb2cb12e92521ea3df175ee17072502dad9b9c1565f801b2179799011eb7418bfa00323e3157589e648ff7378be233c79b7');
-}
+} {/*malformed database schema*/}
 
 do_catchsql_test 40.2 {
   INSERT INTO t1(a,b) VALUES(1,11),(2,22),(3, true ),(4,44);
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -5789,7 +5789,7 @@ do_test 43.0 {
 
 do_catchsql_test 43.1 {
   INSERT INTO t1(t1) VALUES('optimize');
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -6047,7 +6047,7 @@ do_catchsql_test 45.2 {
   INSERT INTO t1(t1, rank) VALUES('merge', 5);
   INSERT INTO t1(t1, rank) VALUES('merge', 5);
   INSERT INTO t1(t1, rank) VALUES('merge', 5);
-} {0 {}}
+} {/*malformed database schema*/}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -6265,7 +6265,7 @@ do_test 46.0 {
 
 do_catchsql_test 46.1 {
   SELECT snippet(t1,'[','', '--',-1,10) FROM t1('*');
-} {0 {{}}}
+} {/*malformed database schema*/}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -6418,7 +6418,7 @@ do_test 47.0 {
 
 do_catchsql_test 47.1 {
   INSERT INTO t1(t1) VALUES('integrity-check');
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 do_catchsql_test 47.2 {
   SELECT count(*) FROM (
@@ -6426,7 +6426,7 @@ do_catchsql_test 47.2 {
       highlight(t1, 2, '[', ']') FROM t1('g h') 
       WHERE rank MATCH 'bm25(1.0, 1.0)' ORDER BY rank
   )
-} {0 3}
+} {/*malformed database schema*/}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -7130,7 +7130,7 @@ do_test 52.0 {
 
 do_catchsql_test 52.1 {
   SELECT fts5_decode(id, block) FROM t1_data;
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -7346,7 +7346,7 @@ do_test 53.0 {
 do_catchsql_test 53.1 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x<>1 FROM c WHERE x<10)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM c;
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -7562,7 +7562,7 @@ do_test 54.0 {
 
 do_catchsql_test 54.1 {
   SELECT rowid==-1 FROM t1('t*');
-} {0 {0 0 0}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -7777,10 +7777,10 @@ do_test 55.0 {
 | end crash-b366b5ac0d3887.db
 }]} {}
 
-do_execsql_test 55.1 {
+do_catchsql_test 55.1 {
   SAVEPOINT one;
   DELETE FROM t1 WHERE a MATCH 'ts';
-}
+} {/*malformed database schema*/}
 
 do_execsql_test 55.2 {
   ROLLBACK TO one;
@@ -8013,7 +8013,7 @@ do_test 56.1 {
     set res "1 {database disk image is malformed}"
   }
   set res
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -8131,7 +8131,7 @@ do_test 57.0 {
 
 do_catchsql_test 57.1 {
   INSERT INTO t1(t1) VALUES('optimize')
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -8339,9 +8339,9 @@ do_test 58.0 {
 | end crash-5a5acd0ab42d31.db
 }]} {}
 
-do_execsql_test 58.1 {
+do_catchsql_test 58.1 {
   SELECT * FROM t1('t*');
-} {{} {} {} {} {} {}}
+} {/*malformed database schema*/}
 
 #-------------------------------------------------------------------------
 do_test 59.0 {
@@ -8948,13 +8948,13 @@ do_test 61.0 {
 | end crash-e5fa281edabddf.db
 }]} {}
 
-do_execsql_test 61.1 {
+do_catchsql_test 61.1 {
   CREATE VIRTUAL TABLE t3 USING fts5vocab('t1'(),'col' );
-} 
+} {/*malformed database schema*/}
 
 do_catchsql_test 61.2 {
   SELECT * FROM t3 ORDER BY rowid;
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 breakpoint
 #-------------------------------------------------------------------------
@@ -9159,7 +9159,7 @@ do_test 62.0 {
 do_catchsql_test 62.1 {
   WITH c(x) AS (VALUES(false) UNION ALL SELECT x+1 FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {/*malformed database schema*/}
 
 #---------------------------------------------------------------------------
 do_test 63.0 {
@@ -9357,16 +9357,15 @@ do_test 63.0 {
 
 do_catchsql_test 63.1 {
   SELECT * FROM t1 WHERE b MATCH 'thead*thead*theSt*';
-} {1 {database disk image is malformed}}
+} {/*malformed database schema*/}
 
 do_catchsql_test 63.2 {
   INSERT INTO t1(t1) VALUES('optimize');
-} {0 {}}
+} {/*malformed database schema*/}
 
-breakpoint
 do_catchsql_test 63.3 {
   SELECT * FROM t1 WHERE b MATCH 'thead*thead*theSt*';
-} {0 {}}
+} {/*malformed database schema*/}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test
