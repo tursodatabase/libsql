@@ -1,5 +1,5 @@
-C Add\stests\sfor\ssort-by-index\scases\sthat\suse\sIN()\sand\snon-default\sNULL\shandling.
-D 2019-08-20T17:51:13.442
+C Further\stests\sfor\sthe\sspecial\snull-handling\son\sthis\sbranch.
+D 2019-08-20T20:09:51.176
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1182,7 +1182,7 @@ F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
-F test/nulls1.test abf8ab564357136d0a1c9909ab068d4fcb0a5e94e168bed6b6c6f548a6f56d07
+F test/nulls1.test 5b978fbae9c73b497608c16f2636a2f71de6e2c914e4c78955cf022e39b7a0d5
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9a82ee88d2d12209a674bd19167277aa91a6912e7a8bbf3714f90d559307fee
-R 72239629606cb191b8fd5443e5ad57ff
+P 09d660ecde723fb30f3bb3684bbb7f95825d78da6a6f33ddf57846054cd563e0
+R fb0a3ff22d0818546ad42a3f60c048f9
 U dan
-Z 5d1aadbb6bb817df7ca002049c5a7d6e
+Z 9ee5e455d6aba2bd43615893c1e9314b
