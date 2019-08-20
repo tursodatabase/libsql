@@ -118,4 +118,33 @@ do_execsql_test 3.2 {
   400 300
 }
 
+#-------------------------------------------------------------------------
+ifcapable vtab {
+  register_echo_module db
+  do_execsql_test 4.0 {
+    CREATE TABLE tx(a INTEGER PRIMARY KEY, b, c);
+    CREATE INDEX i1 ON tx(b);
+    INSERT INTO tx VALUES(1, 1, 1);
+    INSERT INTO tx VALUES(2, NULL, 2);
+    INSERT INTO tx VALUES(3, 3, 3);
+    INSERT INTO tx VALUES(4, NULL, 4);
+    INSERT INTO tx VALUES(5, 5, 5);
+    CREATE VIRTUAL TABLE te USING echo(tx);
+  }
+
+  do_execsql_test 4.1 {
+    SELECT * FROM tx ORDER BY b NULLS FIRST;
+  } {2 {} 2  4 {} 4  1 1 1  3 3 3  5 5 5}
+  do_execsql_test 4.2 {
+    SELECT * FROM te ORDER BY b NULLS FIRST;
+  } {2 {} 2  4 {} 4  1 1 1  3 3 3  5 5 5}
+
+  do_execsql_test 4.3 {
+    SELECT * FROM tx ORDER BY b NULLS LAST;
+  } {1 1 1  3 3 3  5 5 5  2 {} 2  4 {} 4}
+  do_execsql_test 4.4 {
+    SELECT * FROM te ORDER BY b NULLS LAST;
+  } {1 1 1  3 3 3  5 5 5  2 {} 2  4 {} 4}
+}
+
 finish_test
