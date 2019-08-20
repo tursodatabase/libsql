@@ -1624,7 +1624,9 @@ int sqlite3session_diff(
       }
       sqlite3_free((char*)azCol);
       if( bMismatch ){
-        *pzErrMsg = sqlite3_mprintf("table schemas do not match");
+        if( pzErrMsg ){
+          *pzErrMsg = sqlite3_mprintf("table schemas do not match");
+        }
         rc = SQLITE_SCHEMA;
       }
       if( bHasPk==0 ){
@@ -1830,12 +1832,12 @@ int sqlite3session_attach(
 ** set *pRc to SQLITE_NOMEM and return non-zero.
 */
 static int sessionBufferGrow(SessionBuffer *p, size_t nByte, int *pRc){
-  if( *pRc==SQLITE_OK && p->nAlloc-p->nBuf<nByte ){
+  if( *pRc==SQLITE_OK && (size_t)(p->nAlloc-p->nBuf)<nByte ){
     u8 *aNew;
     i64 nNew = p->nAlloc ? p->nAlloc : 128;
     do {
       nNew = nNew*2;
-    }while( (nNew-p->nBuf)<nByte );
+    }while( (size_t)(nNew-p->nBuf)<nByte );
 
     aNew = (u8 *)sqlite3_realloc64(p->aBuf, nNew);
     if( 0==aNew ){

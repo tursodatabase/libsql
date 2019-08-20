@@ -209,6 +209,7 @@ proc tmpread_injectstop {} {
   return $ret
 }
 
+set L [db eval {SELECT 0.0 FROM t}]
 do_faultsim_test 9 -end 25 -faults tmpread -body {
   execsql {
     SELECT sum(y) OVER win FROM t
@@ -217,10 +218,32 @@ do_faultsim_test 9 -end 25 -faults tmpread -body {
     )
   }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result [list 0 $::L]
 }
 
 catch {db close}
 tvfs delete
+
+reset_db
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a, b, c, d);
+  CREATE TABLE t2(a, b, c, d);
+}
+
+do_faultsim_test 1 -faults oom* -prep {
+} -body {
+  execsql {
+    SELECT row_number() OVER win
+    FROM t1
+    WINDOW win AS (
+      ORDER BY (
+        SELECT percent_rank() OVER win2 FROM t2
+        WINDOW win2 AS (ORDER BY a)
+      )
+    )
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 finish_test

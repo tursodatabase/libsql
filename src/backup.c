@@ -274,7 +274,7 @@ static int backupOnePage(
   if( nSrcReserve!=nDestReserve ){
     u32 newPgsz = nSrcPgsz;
     rc = sqlite3PagerSetPagesize(pDestPager, &newPgsz, nSrcReserve);
-    if( rc==SQLITE_OK && newPgsz!=nSrcPgsz ) rc = SQLITE_READONLY;
+    if( rc==SQLITE_OK && newPgsz!=(u32)nSrcPgsz ) rc = SQLITE_READONLY;
   }
 #endif
 
@@ -619,8 +619,10 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   }
   if( p->isAttached ){
     pp = sqlite3PagerBackupPtr(sqlite3BtreePager(p->pSrc));
+    assert( pp!=0 );
     while( *pp!=p ){
       pp = &(*pp)->pNext;
+      assert( pp!=0 );
     }
     *pp = p->pNext;
   }

@@ -211,6 +211,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   if( mxCb>0 ){
     sqlite3_progress_handler(db, 10, progress_handler, 0);
   }
+#ifdef SQLITE_TESTCTRL_PRNG_SEED
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 1, db);
+#endif
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
     if( eVerbosity>=1 ){
       printf("%s\n", azSql[i]);
@@ -377,6 +380,7 @@ int main(int argc, char **argv){
       free(pIn);
     }
   }
+#ifdef RUSAGE_SELF
   if( eVerbosity>0 ){
     struct rusage x;
     printf("SQLite %s\n", sqlite3_sourceid());
@@ -385,6 +389,7 @@ int main(int argc, char **argv){
       printf("Maximum RSS = %ld KB\n", x.ru_maxrss);
     }
   }
+#endif
   return 0;
 }
 #endif /*STANDALONE*/

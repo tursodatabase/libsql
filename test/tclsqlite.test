@@ -42,7 +42,7 @@ do_test tcl-1.1.1 {
 do_test tcl-1.2 {
   set v [catch {db bogus} msg]
   lappend v $msg
-} {1 {bad option "bogus": must be authorizer, backup, bind_fallback, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, deserialize, enable_load_extension, errorcode, eval, exists, function, incrblob, interrupt, last_insert_rowid, nullvalue, onecolumn, preupdate, profile, progress, rekey, restore, rollback_hook, serialize, status, timeout, total_changes, trace, trace_v2, transaction, unlock_notify, update_hook, version, or wal_hook}}
+} {1 {bad option "bogus": must be authorizer, backup, bind_fallback, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, config, copy, deserialize, enable_load_extension, errorcode, eval, exists, function, incrblob, interrupt, last_insert_rowid, nullvalue, onecolumn, preupdate, profile, progress, rekey, restore, rollback_hook, serialize, status, timeout, total_changes, trace, trace_v2, transaction, unlock_notify, update_hook, version, or wal_hook}}
 do_test tcl-1.2.1 {
   set v [catch {db cache bogus} msg]
   lappend v $msg
@@ -789,7 +789,7 @@ do_test 17.6.2 {
 
 do_test 17.6.3 {
   list [catch { db function xyz -n object ret } msg] $msg
-} {1 {bad option "-n": must be -argcount, -deterministic or -returntype}}
+} {1 {bad option "-n": must be -argcount, -deterministic, -directonly, or -returntype}}
 
 # 2019-02-28: The "bind_fallback" command.
 #

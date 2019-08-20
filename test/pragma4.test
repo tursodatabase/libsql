@@ -249,4 +249,14 @@ do_catchsql_test 4.6.5 {
   pragma foreign_key_check('c2') 
 } {1 {no such table: c2}}
 
+do_execsql_test 5.0 {
+  CREATE TABLE t4(a DEFAULT 'abc' /* comment */, b DEFAULT -1 -- comment
+     , c DEFAULT +4.0 /* another comment */
+  );
+  PRAGMA table_info = t4;
+} {
+  0 a {} 0 'abc' 0 1 b {} 0 -1 0 2 c {} 0 +4.0 0
+}
+
+
 finish_test

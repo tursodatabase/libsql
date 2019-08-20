@@ -197,5 +197,35 @@ do_execsql_test 4.2 {
   INSERT OR REPLACE INTO t1 VALUES(20000, 20000);
 }
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA foreign_keys = true;
+  CREATE TABLE parent(
+    p TEXT PRIMARY KEY
+  );
+  CREATE TABLE child(
+    c INTEGER UNIQUE, 
+    FOREIGN KEY(c) REFERENCES parent(p) DEFERRABLE INITIALLY DEFERRED
+  );
+  BEGIN;
+    INSERT INTO child VALUES(123);
+    INSERT INTO parent VALUES('123');
+  COMMIT;
+}
+do_execsql_test 5.1 {
+  PRAGMA integrity_check;
+} {ok}
 
+do_execsql_test 5.2 {
+  INSERT INTO parent VALUES(1200);
+  BEGIN;
+    INSERT INTO child VALUES(456);
+    UPDATE parent SET p = '456' WHERE p=1200;
+  COMMIT;
+}
+do_execsql_test 5.3 {
+  PRAGMA integrity_check;
+} {ok}
+
+finish_test

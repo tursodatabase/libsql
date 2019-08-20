@@ -315,6 +315,9 @@ ifcapable floatingpoint {
   do_test func-4.38 {
     execsql {SELECT round(9999999999999.556,2);}
   } {9999999999999.56}
+  do_execsql_test func-4.39 {
+    SELECT round(1e500), round(-1e500);
+  } {Inf -Inf}
 }
 
 # Test the upper() and lower() functions
@@ -1416,7 +1419,45 @@ do_execsql_test func-32.150 {
   SELECT test_frombind(x.a,y.b,x.c,:123,y.e,x.f,$xyz+y.f) FROM t1 x, t1 y;
 } {8}
 
-
+# 2019-08-15
+# Direct-only functions.
+#
+proc testdirectonly {x} {return [expr {$x*2}]}
+do_test func-33.1 {
+  db func testdirectonly -directonly testdirectonly
+  db eval {SELECT testdirectonly(15)}
+} {30}
+do_catchsql_test func-33.2 {
+  CREATE VIEW v33(y) AS SELECT testdirectonly(15);
+  SELECT * FROM v33;
+} {1 {testdirectonly() prohibited in triggers and views}}
+do_execsql_test func-33.3 {
+  SELECT * FROM (SELECT testdirectonly(15)) AS v33;
+} {30}
+do_execsql_test func-33.4 {
+  WITH c(x) AS (SELECT testdirectonly(15))
+  SELECT * FROM c;
+} {30}
+do_catchsql_test func-33.5 {
+  WITH c(x) AS (SELECT * FROM v33)
+  SELECT * FROM c;
+} {1 {testdirectonly() prohibited in triggers and views}}
+do_execsql_test func-33.10 {
+  CREATE TABLE t33a(a,b);
+  CREATE TABLE t33b(x,y);
+  CREATE TRIGGER r1 AFTER INSERT ON t33a BEGIN
+    INSERT INTO t33b(x,y) VALUES(testdirectonly(new.a),new.b);
+  END;
+} {}
+do_catchsql_test func-33.11 {
+  INSERT INTO t33a VALUES(1,2);
+} {1 {testdirectonly() prohibited in triggers and views}}
+do_execsql_test func-33.20 {
+  ALTER TABLE t33a RENAME COLUMN a TO aaa;
+  SELECT sql FROM sqlite_master WHERE name='r1';
+} {{CREATE TRIGGER r1 AFTER INSERT ON t33a BEGIN
+    INSERT INTO t33b(x,y) VALUES(testdirectonly(new.aaa),new.b);
+  END}}
 
 
 finish_test

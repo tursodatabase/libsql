@@ -424,6 +424,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
 
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   if( pCache->pFree || (pCache->nPage==0 && pcache1InitBulk(pCache)) ){
+    assert( pCache->pFree!=0 );
     p = pCache->pFree;
     pCache->pFree = p->pNext;
     p->pNext = 0;
@@ -778,6 +779,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
     }else{
       pGroup = &pcache1.grp;
     }
+    pcache1EnterMutex(pGroup);
     if( pGroup->lru.isAnchor==0 ){
       pGroup->lru.isAnchor = 1;
       pGroup->lru.pLruPrev = pGroup->lru.pLruNext = &pGroup->lru;
@@ -787,7 +789,6 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
     pCache->szExtra = szExtra;
     pCache->szAlloc = szPage + szExtra + ROUND8(sizeof(PgHdr1));
     pCache->bPurgeable = (bPurgeable ? 1 : 0);
-    pcache1EnterMutex(pGroup);
     pcache1ResizeHash(pCache);
     if( bPurgeable ){
       pCache->nMin = 10;

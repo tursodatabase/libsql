@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix json104
 
 ifcapable !json1 {
   finish_test
@@ -125,6 +126,30 @@ do_execsql_test json104-314 {
   SELECT json_patch('{}','{"a":{"bb":{"ccc":null}}}');
 } {{{"a":{"bb":{}}}}}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 401 {
+  CREATE TABLE obj(x);
+  INSERT INTO obj VALUES('{"a":1,"b":2}');
+  SELECT * FROM obj;
+} {{{"a":1,"b":2}}}
+do_execsql_test 402 {
+  UPDATE obj SET x = json_insert(x, '$.c', 3);
+  SELECT * FROM obj;
+} {{{"a":1,"b":2,"c":3}}}
+do_execsql_test 403 {
+  SELECT json_extract(x, '$.b') FROM obj;
+  SELECT json_extract(x, '$."b"') FROM obj;
+} {2 2}
+do_execsql_test 404 {
+  UPDATE obj SET x = json_set(x, '$."b"', 555);
+  SELECT json_extract(x, '$.b') FROM obj;
+  SELECT json_extract(x, '$."b"') FROM obj;
+} {555 555}
+do_execsql_test 405 {
+  UPDATE obj SET x = json_set(x, '$."d"', 4);
+  SELECT json_extract(x, '$."d"') FROM obj;
+} {4}
 
 
 finish_test

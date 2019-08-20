@@ -264,19 +264,19 @@ set pragma_def {
   FLAG: Result0
   COLS: name builtin
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
-  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
 
   NAME: module_list
   FLAG: Result0
   COLS: name
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_VIRTUALTABLE)
-  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
 
   NAME: pragma_list
   FLAG: Result0
   COLS: name
-  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
 
   NAME: collation_list
   FLAG: Result0
@@ -301,6 +301,7 @@ set pragma_def {
 
   NAME: case_sensitive_like
   FLAG: NoColumns
+  IF:   !defined(SQLITE_OMIT_CASE_SENSITIVE_LIKE_PRAGMA)
 
   NAME: integrity_check
   FLAG: NeedSchema Result0 Result1
@@ -380,12 +381,12 @@ set pragma_def {
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexkey
-  TYPE: HEXKEY
+  TYPE: KEY
   ARG:  2
   IF:   defined(SQLITE_HAS_CODEC)
 
   NAME: hexrekey
-  TYPE: HEXKEY
+  TYPE: KEY
   ARG:  3
   IF:   defined(SQLITE_HAS_CODEC)
 

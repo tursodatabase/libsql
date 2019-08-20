@@ -17,9 +17,7 @@
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
-#if HAVE_ISNAN || SQLITE_HAVE_ISNAN
-# include <math.h>
-#endif
+#include <math.h>
 
 /*
 ** Routine needed to support the testcase() macro.
@@ -60,47 +58,11 @@ int sqlite3FaultSim(int iTest){
 #ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Return true if the floating point value is Not a Number (NaN).
-**
-** Use the math library isnan() function if compiled with SQLITE_HAVE_ISNAN.
-** Otherwise, we have our own implementation that works on most systems.
 */
 int sqlite3IsNaN(double x){
-  int rc;   /* The value return */
-#if !SQLITE_HAVE_ISNAN && !HAVE_ISNAN
-  /*
-  ** Systems that support the isnan() library function should probably
-  ** make use of it by compiling with -DSQLITE_HAVE_ISNAN.  But we have
-  ** found that many systems do not have a working isnan() function so
-  ** this implementation is provided as an alternative.
-  **
-  ** This NaN test sometimes fails if compiled on GCC with -ffast-math.
-  ** On the other hand, the use of -ffast-math comes with the following
-  ** warning:
-  **
-  **      This option [-ffast-math] should never be turned on by any
-  **      -O option since it can result in incorrect output for programs
-  **      which depend on an exact implementation of IEEE or ISO 
-  **      rules/specifications for math functions.
-  **
-  ** Under MSVC, this NaN test may fail if compiled with a floating-
-  ** point precision mode other than /fp:precise.  From the MSDN 
-  ** documentation:
-  **
-  **      The compiler [with /fp:precise] will properly handle comparisons 
-  **      involving NaN. For example, x != x evaluates to true if x is NaN 
-  **      ...
-  */
-#ifdef __FAST_MATH__
-# error SQLite will not work correctly with the -ffast-math option of GCC.
-#endif
-  volatile double y = x;
-  volatile double z = y;
-  rc = (y!=z);
-#else  /* if HAVE_ISNAN */
-  rc = isnan(x);
-#endif /* HAVE_ISNAN */
-  testcase( rc );
-  return rc;
+  u64 y;
+  memcpy(&y,&x,sizeof(y));
+  return IsNaN(y);
 }
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 
@@ -361,15 +323,15 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 #if defined(_MSC_VER)
   static const LONGDOUBLE_TYPE x[] = {
-    1.0e+001,
-    1.0e+002,
-    1.0e+004,
-    1.0e+008,
-    1.0e+016,
-    1.0e+032,
-    1.0e+064,
-    1.0e+128,
-    1.0e+256
+    1.0e+001L,
+    1.0e+002L,
+    1.0e+004L,
+    1.0e+008L,
+    1.0e+016L,
+    1.0e+032L,
+    1.0e+064L,
+    1.0e+128L,
+    1.0e+256L
   };
   LONGDOUBLE_TYPE r = 1.0;
   int i;
@@ -399,8 +361,15 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 ** uses the encoding enc.  The string is not necessarily zero-terminated.
 **
 ** Return TRUE if the result is a valid real number (or integer) and FALSE
-** if the string is empty or contains extraneous text.  Valid numbers
-** are in one of these formats:
+** if the string is empty or contains extraneous text.  More specifically
+** return
+**      1          =>  The input string is a pure integer
+**      2 or more  =>  The input has a decimal point or eNNN clause
+**      0 or less  =>  The input string is not a valid number
+**     -1          =>  Not a valid number, but has a valid prefix which 
+**                     includes a decimal point and/or an eNNN clause
+**
+** Valid numbers are in one of these formats:
 **
 **    [+-]digits[E[+-]digits]
 **    [+-]digits.[digits][E[+-]digits]
@@ -425,8 +394,8 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int e = 0;       /* exponent */
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
-  int nDigits = 0;
-  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
+  int nDigit = 0;  /* Number of digits processed */
+  int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -437,8 +406,10 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     int i;
     incr = 2;
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
+    testcase( enc==SQLITE_UTF16LE );
+    testcase( enc==SQLITE_UTF16BE );
     for(i=3-enc; i<length && z[i]==0; i+=2){}
-    nonNum = i<length;
+    if( i<length ) eType = -100;
     zEnd = &z[i^1];
     z += (enc&1);
   }
@@ -456,27 +427,30 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }
 
   /* copy max significant digits to significand */
-  while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
+  while( z<zEnd && sqlite3Isdigit(*z) ){
     s = s*10 + (*z - '0');
-    z+=incr; nDigits++;
+    z+=incr; nDigit++;
+    if( s>=((LARGEST_INT64-9)/10) ){
+      /* skip non-significant significand digits
+      ** (increase exponent by d to shift decimal left) */
+      while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; d++; }
+    }
   }
-
-  /* skip non-significant significand digits
-  ** (increase exponent by d to shift decimal left) */
-  while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; nDigits++; d++; }
   if( z>=zEnd ) goto do_atof_calc;
 
   /* if decimal point is present */
   if( *z=='.' ){
     z+=incr;
+    eType++;
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
     while( z<zEnd && sqlite3Isdigit(*z) ){
       if( s<((LARGEST_INT64-9)/10) ){
         s = s*10 + (*z - '0');
         d--;
+        nDigit++;
       }
-      z+=incr; nDigits++;
+      z+=incr;
     }
   }
   if( z>=zEnd ) goto do_atof_calc;
@@ -485,6 +459,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   if( *z=='e' || *z=='E' ){
     z+=incr;
     eValid = 0;
+    eType++;
 
     /* This branch is needed to avoid a (harmless) buffer overread.  The 
     ** special comment alerts the mutation tester that the correct answer
@@ -583,7 +558,13 @@ do_atof_calc:
   *pResult = result;
 
   /* return true if number and no extra non-whitespace chracters after */
-  return z==zEnd && nDigits>0 && eValid && nonNum==0;
+  if( z==zEnd && nDigit>0 && eValid && eType>0 ){
+    return eType;
+  }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
+    return -1;
+  }else{
+    return 0;
+  }
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
@@ -626,6 +607,7 @@ static int compare2pow63(const char *zNum, int incr){
 **
 ** Returns:
 **
+**    -1    Not even a prefix of the input text looks like an integer
 **     0    Successful transformation.  Fits in a 64-bit signed integer.
 **     1    Excess non-space text after the integer value
 **     2    Integer too large for a 64-bit signed integer or is malformed
@@ -685,9 +667,9 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     *pNum = (i64)u;
   }
   rc = 0;
-  if( (i==0 && zStart==zNum)     /* No digits */
-   || nonNum                     /* UTF16 with high-order bytes non-zero */
-  ){
+  if( i==0 && zStart==zNum ){    /* No digits */
+    rc = -1;
+  }else if( nonNum ){            /* UTF16 with high-order bytes non-zero */
     rc = 1;
   }else if( &zNum[i]<zEnd ){     /* Extra bytes at the end */
     int jj = i;
@@ -1516,7 +1498,7 @@ LogEst sqlite3LogEstFromDouble(double x){
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
-    defined(SQLITE_ENABLE_STAT3_OR_STAT4) || \
+    defined(SQLITE_ENABLE_STAT4) || \
     defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 /*
 ** Convert a LogEst into an integer.
@@ -1534,7 +1516,7 @@ u64 sqlite3LogEstToInt(LogEst x){
     defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
   if( x>60 ) return (u64)LARGEST_INT64;
 #else
-  /* If only SQLITE_ENABLE_STAT3_OR_STAT4 is on, then the largest input
+  /* If only SQLITE_ENABLE_STAT4 is on, then the largest input
   ** possible to this routine is 310, resulting in a maximum x of 31 */
   assert( x<=60 );
 #endif

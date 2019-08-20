@@ -1324,4 +1324,51 @@ do_execsql_test 11.4 {
   ) sub;
 } {0   1   2}
 
+do_execsql_test 12.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a INTEGER);
+  INSERT INTO t2 VALUES(1), (2), (3);
+} {}
+
+do_execsql_test 12.1 {
+  SELECT (SELECT min(a) OVER ()) FROM t2
+} {1   2   3}
+
+
+do_test 12.2 {
+  set myres {}
+  foreach r [db eval {SELECT (SELECT avg(a)) FROM t2 ORDER BY 1}] {
+    lappend myres [format %.4f [set r]]
+  }
+  set res2 {2.0000}
+  set i 0
+  foreach r [set myres] r2 [set res2] {
+    if {[set r]<([set r2]-0.0001) || [set r]>([set r2]+0.0001)} {
+      error "list element [set i] does not match: got=[set r] expected=[set r2]"
+    }
+    incr i
+  }
+  set {} {}
+} {}
+
+
+do_test 12.3 {
+  set myres {}
+  foreach r [db eval {SELECT 
+    (SELECT avg(a) UNION SELECT min(a) OVER ()) 
+  FROM t2 GROUP BY a
+  ORDER BY 1}] {
+    lappend myres [format %.4f [set r]]
+  }
+  set res2 {1.0000 2.0000 3.0000}
+  set i 0
+  foreach r [set myres] r2 [set res2] {
+    if {[set r]<([set r2]-0.0001) || [set r]>([set r2]+0.0001)} {
+      error "list element [set i] does not match: got=[set r] expected=[set r2]"
+    }
+    incr i
+  }
+  set {} {}
+} {}
+
 finish_test

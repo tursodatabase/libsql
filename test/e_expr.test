@@ -1013,13 +1013,18 @@ sqlite3 db test.db
 # EVIDENCE-OF: R-22868-25880 The LIKE operator can be made case
 # sensitive using the case_sensitive_like pragma.
 #
-do_execsql_test e_expr-16.1.1 { SELECT 'abcxyz' LIKE 'ABC%' } 1
-do_execsql_test e_expr-16.1.2 { PRAGMA case_sensitive_like = 1 } {}
-do_execsql_test e_expr-16.1.3 { SELECT 'abcxyz' LIKE 'ABC%' } 0
-do_execsql_test e_expr-16.1.4 { SELECT 'ABCxyz' LIKE 'ABC%' } 1
-do_execsql_test e_expr-16.1.5 { PRAGMA case_sensitive_like = 0 } {}
-do_execsql_test e_expr-16.1.6 { SELECT 'abcxyz' LIKE 'ABC%' } 1
-do_execsql_test e_expr-16.1.7 { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.1  { SELECT 'abcxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.1b { SELECT 'abc%xyz' LIKE 'ABC\%x%' ESCAPE '\' } 1
+do_execsql_test e_expr-16.1.2  { PRAGMA case_sensitive_like = 1 } {}
+do_execsql_test e_expr-16.1.3  { SELECT 'abcxyz' LIKE 'ABC%' } 0
+do_execsql_test e_expr-16.1.3b { SELECT 'abc%xyz' LIKE 'ABC\%X%' ESCAPE '\' } 0
+do_execsql_test e_expr-16.1.4  { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.4b { SELECT 'ABC%xyz' LIKE 'ABC\%x%' ESCAPE '\' } 1
+do_execsql_test e_expr-16.1.5  { PRAGMA case_sensitive_like = 0 } {}
+do_execsql_test e_expr-16.1.6  { SELECT 'abcxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.6b { SELECT 'abc%xyz' LIKE 'ABC\%X%' ESCAPE '\' } 1
+do_execsql_test e_expr-16.1.7  { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.7b { SELECT 'ABC%xyz' LIKE 'ABC\%X%' ESCAPE '\' } 1
 
 # EVIDENCE-OF: R-52087-12043 The GLOB operator is similar to LIKE but
 # uses the Unix file globbing syntax for its wildcards.
@@ -1639,16 +1644,40 @@ do_expr_test e_expr-31.2.4 {
 } integer 9223372036854775807
 
 
-# EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC
-# first does a forced conversion into REAL but then further converts the
-# result into INTEGER if and only if the conversion from REAL to INTEGER
-# is lossless and reversible.
+# EVIDENCE-OF: R-55084-10555 Casting a TEXT or BLOB value into NUMERIC
+# yields either an INTEGER or a REAL result.
+#
+# EVIDENCE-OF: R-48945-04866 If the input text looks like an integer
+# (there is no decimal point nor exponent) and the value is small enough
+# to fit in a 64-bit signed integer, then the result will be INTEGER.
+#
+# EVIDENCE-OF: R-47045-23194 Input text that looks like floating point
+# (there is a decimal point and/or an exponent) and the text describes a
+# value that can be losslessly converted back and forth between IEEE 754
+# 64-bit float and a 51-bit signed integer, then the result is INTEGER.
 #
 do_expr_test e_expr-32.1.1 { CAST('45'   AS NUMERIC)  } integer 45
 do_expr_test e_expr-32.1.2 { CAST('45.0' AS NUMERIC)  } integer 45
 do_expr_test e_expr-32.1.3 { CAST('45.2' AS NUMERIC)  } real 45.2
 do_expr_test e_expr-32.1.4 { CAST('11abc' AS NUMERIC) } integer 11
 do_expr_test e_expr-32.1.5 { CAST('11.1abc' AS NUMERIC) } real 11.1
+do_expr_test e_expr-32.1.6 {CAST( '9.223372036e14' AS NUMERIC)} integer  922337203600000
+do_expr_test e_expr-32.1.7 {CAST('-9.223372036e14' AS NUMERIC)} integer -922337203600000
+do_expr_test e_expr-32.1.8 {CAST( '9.223372036e15' AS NUMERIC)} real     9223372036000000.0
+do_expr_test e_expr-32.1.9 {CAST('-9.223372036e15' AS NUMERIC)} real    -9223372036000000.0
+
+
+# EVIDENCE-OF: R-50300-26941 Any text input that describes a value
+# outside the range of a 64-bit signed integer yields a REAL result.
+#
+do_expr_test e_expr-32.1.20 { CAST('9223372036854775807' AS numeric) } \
+   integer 9223372036854775807
+do_expr_test e_expr-32.1.21 { CAST('9223372036854775808' AS numeric) } \
+   real 9.22337203685478e+18
+do_expr_test e_expr-32.1.22 { CAST('-9223372036854775808' AS numeric) } \
+   integer -9223372036854775808
+do_expr_test e_expr-32.1.23 { CAST('-9223372036854775809' AS numeric) } \
+   real -9.22337203685478e+18
 
 # EVIDENCE-OF: R-30347-18702 Casting a REAL or INTEGER value to NUMERIC
 # is a no-op, even if a real value could be losslessly converted to an
@@ -1696,14 +1725,14 @@ do_execsql_test e_expr-32.2.8 {
  integer 9000000000000000001 \
  integer 9000000000000000001 \
  integer 9000000000000000001 \
- integer 9000000000000000001 \
+ real 9.0e+18 \
  integer 9223372036854775807 \
  integer 9223372036854775807 \
  integer 9223372036854775807 \
  real 9.22337203685478e+18 \
  real 9.22337203685478e+18 \
- integer 9223372036854775807 \
- integer 9223372036854775807 \
+ real 9.22337203685478e+18 \
+ real 9.22337203685478e+18 \
  integer -5 \
  integer -5 \
 ]

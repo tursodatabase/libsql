@@ -1728,13 +1728,16 @@ static int vdbeSorterFlushPMA(VdbeSorter *pSorter){
       rc = vdbeSorterListToPMA(&pSorter->aTask[nWorker], &pSorter->list);
     }else{
       /* Launch a background thread for this operation */
-      u8 *aMem = pTask->list.aMemory;
-      void *pCtx = (void*)pTask;
+      u8 *aMem;
+      void *pCtx;
 
+      assert( pTask!=0 );
       assert( pTask->pThread==0 && pTask->bDone==0 );
       assert( pTask->list.pList==0 );
       assert( pTask->list.aMemory==0 || pSorter->list.aMemory!=0 );
 
+      aMem = pTask->list.aMemory;
+      pCtx = (void*)pTask;
       pSorter->iPrev = (u8)(pTask - pSorter->aTask);
       pTask->list = pSorter->list;
       pSorter->list.pList = 0;

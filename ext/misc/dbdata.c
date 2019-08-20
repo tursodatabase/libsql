@@ -81,6 +81,8 @@ SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
 
+#define DBDATA_PADDING_BYTES 100 
+
 typedef struct DbdataTable DbdataTable;
 typedef struct DbdataCursor DbdataCursor;
 
@@ -278,6 +280,10 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
   pCsr->iCell = 0;
   pCsr->iField = 0;
   pCsr->bOnePage = 0;
+  sqlite3_free(pCsr->aPage);
+  sqlite3_free(pCsr->pRec);
+  pCsr->pRec = 0;
+  pCsr->aPage = 0;
 }
 
 /*
@@ -297,7 +303,10 @@ static unsigned int get_uint16(unsigned char *a){
   return (a[0]<<8)|a[1];
 }
 static unsigned int get_uint32(unsigned char *a){
-  return (a[0]<<24)|(a[1]<<16)|(a[2]<<8)|a[3];
+  return ((unsigned int)a[0]<<24)
+       | ((unsigned int)a[1]<<16)
+       | ((unsigned int)a[2]<<8)
+       | ((unsigned int)a[3]);
 }
 
 /*
@@ -327,12 +336,13 @@ static int dbdataLoadPage(
     int nCopy = sqlite3_column_bytes(pStmt, 0);
     if( nCopy>0 ){
       u8 *pPage;
-      pPage = (u8*)sqlite3_malloc64(nCopy);
+      pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
       if( pPage==0 ){
         rc = SQLITE_NOMEM;
       }else{
         const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
         memcpy(pPage, pCopy, nCopy);
+        memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
       }
       *ppPage = pPage;
       *pnPage = nCopy;
@@ -382,7 +392,10 @@ static int dbdataValueBytes(int eType){
     case 7:
       return 8;
     default:
-      return ((eType-12) / 2);
+      if( eType>0 ){
+        return ((eType-12) / 2);
+      }
+      return 0;
   }
 }
 
@@ -390,54 +403,60 @@ static int dbdataValueBytes(int eType){
 ** Load a value of type eType from buffer pData and use it to set the
 ** result of context object pCtx.
 */
-static void dbdataValue(sqlite3_context *pCtx, int eType, u8 *pData){
-  switch( eType ){
-    case 0: 
-    case 10: 
-    case 11: 
-      sqlite3_result_null(pCtx);
-      break;
-    
-    case 8: 
-      sqlite3_result_int(pCtx, 0);
-      break;
-    case 9:
-      sqlite3_result_int(pCtx, 1);
-      break;
-
-    case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
-      sqlite3_uint64 v = (signed char)pData[0];
-      pData++;
-      switch( eType ){
-        case 7:
-        case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-        case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-        case 4:  v = (v<<8) + pData[0];  pData++;
-        case 3:  v = (v<<8) + pData[0];  pData++;
-        case 2:  v = (v<<8) + pData[0];  pData++;
+static void dbdataValue(
+  sqlite3_context *pCtx, 
+  int eType, 
+  u8 *pData,
+  int nData
+){
+  if( eType>=0 && dbdataValueBytes(eType)<=nData ){
+    switch( eType ){
+      case 0: 
+      case 10: 
+      case 11: 
+        sqlite3_result_null(pCtx);
+        break;
+      
+      case 8: 
+        sqlite3_result_int(pCtx, 0);
+        break;
+      case 9:
+        sqlite3_result_int(pCtx, 1);
+        break;
+  
+      case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
+        sqlite3_uint64 v = (signed char)pData[0];
+        pData++;
+        switch( eType ){
+          case 7:
+          case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+          case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+          case 4:  v = (v<<8) + pData[0];  pData++;
+          case 3:  v = (v<<8) + pData[0];  pData++;
+          case 2:  v = (v<<8) + pData[0];  pData++;
+        }
+  
+        if( eType==7 ){
+          double r;
+          memcpy(&r, &v, sizeof(r));
+          sqlite3_result_double(pCtx, r);
+        }else{
+          sqlite3_result_int64(pCtx, (sqlite3_int64)v);
+        }
+        break;
       }
-
-      if( eType==7 ){
-        double r;
-        memcpy(&r, &v, sizeof(r));
-        sqlite3_result_double(pCtx, r);
-      }else{
-        sqlite3_result_int64(pCtx, (sqlite3_int64)v);
-      }
-      break;
-    }
-
-    default: {
-      int n = ((eType-12) / 2);
-      if( eType % 2 ){
-        sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
-      }else{
-        sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+  
+      default: {
+        int n = ((eType-12) / 2);
+        if( eType % 2 ){
+          sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
+        }else{
+          sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+        }
       }
     }
   }
 }
-
 
 /*
 ** Move an sqlite_dbdata or sqlite_dbptr cursor to the next entry.
@@ -450,6 +469,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
   while( 1 ){
     int rc;
     int iOff = (pCsr->iPgno==1 ? 100 : 0);
+    int bNextPage = 0;
 
     if( pCsr->aPage==0 ){
       while( 1 ){
@@ -503,100 +523,128 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         }
 
         if( pCsr->iCell>=pCsr->nCell ){
-          sqlite3_free(pCsr->aPage);
-          pCsr->aPage = 0;
-          if( pCsr->bOnePage ) return SQLITE_OK;
-          pCsr->iPgno++;
-          continue;
-        }
-  
-        iOff += 8 + nPointer + pCsr->iCell*2;
-        iOff = get_uint16(&pCsr->aPage[iOff]);
-  
-        /* For an interior node cell, skip past the child-page number */
-        iOff += nPointer;
-  
-        /* Load the "byte of payload including overflow" field */
-        iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
-  
-        /* If this is a leaf intkey cell, load the rowid */
-        if( bHasRowid ){
-          iOff += dbdataGetVarint(&pCsr->aPage[iOff], &pCsr->iIntkey);
-        }
-  
-        /* Allocate space for payload */
-        pCsr->pRec = (u8*)sqlite3_malloc64(nPayload);
-        if( pCsr->pRec==0 ) return SQLITE_NOMEM;
-        pCsr->nRec = nPayload;
-  
-        U = pCsr->nPage;
-        if( bHasRowid ){
-          X = U-35;
+          bNextPage = 1;
         }else{
-          X = ((U-12)*64/255)-23;
-        }
-        if( nPayload<=X ){
-          nLocal = nPayload;
-        }else{
-          int M, K;
-          M = ((U-12)*32/255)-23;
-          K = M+((nPayload-M)%(U-4));
-          if( K<=X ){
-            nLocal = K;
+  
+          iOff += 8 + nPointer + pCsr->iCell*2;
+          if( iOff>pCsr->nPage ){
+            bNextPage = 1;
           }else{
-            nLocal = M;
+            iOff = get_uint16(&pCsr->aPage[iOff]);
+          }
+    
+          /* For an interior node cell, skip past the child-page number */
+          iOff += nPointer;
+    
+          /* Load the "byte of payload including overflow" field */
+          if( bNextPage || iOff>pCsr->nPage ){
+            bNextPage = 1;
+          }else{
+            iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
+          }
+    
+          /* If this is a leaf intkey cell, load the rowid */
+          if( bHasRowid && !bNextPage && iOff<pCsr->nPage ){
+            iOff += dbdataGetVarint(&pCsr->aPage[iOff], &pCsr->iIntkey);
+          }
+    
+          /* Figure out how much data to read from the local page */
+          U = pCsr->nPage;
+          if( bHasRowid ){
+            X = U-35;
+          }else{
+            X = ((U-12)*64/255)-23;
+          }
+          if( nPayload<=X ){
+            nLocal = nPayload;
+          }else{
+            int M, K;
+            M = ((U-12)*32/255)-23;
+            K = M+((nPayload-M)%(U-4));
+            if( K<=X ){
+              nLocal = K;
+            }else{
+              nLocal = M;
+            }
+          }
+
+          if( bNextPage || nLocal+iOff>pCsr->nPage ){
+            bNextPage = 1;
+          }else{
+
+            /* Allocate space for payload. And a bit more to catch small buffer
+            ** overruns caused by attempting to read a varint or similar from 
+            ** near the end of a corrupt record.  */
+            pCsr->pRec = (u8*)sqlite3_malloc64(nPayload+DBDATA_PADDING_BYTES);
+            if( pCsr->pRec==0 ) return SQLITE_NOMEM;
+            memset(pCsr->pRec, 0, nPayload+DBDATA_PADDING_BYTES);
+            pCsr->nRec = nPayload;
+
+            /* Load the nLocal bytes of payload */
+            memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
+            iOff += nLocal;
+
+            /* Load content from overflow pages */
+            if( nPayload>nLocal ){
+              sqlite3_int64 nRem = nPayload - nLocal;
+              unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
+              while( nRem>0 ){
+                u8 *aOvfl = 0;
+                int nOvfl = 0;
+                int nCopy;
+                rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
+                assert( rc!=SQLITE_OK || aOvfl==0 || nOvfl==pCsr->nPage );
+                if( rc!=SQLITE_OK ) return rc;
+                if( aOvfl==0 ) break;
+
+                nCopy = U-4;
+                if( nCopy>nRem ) nCopy = nRem;
+                memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
+                nRem -= nCopy;
+
+                pgnoOvfl = get_uint32(aOvfl);
+                sqlite3_free(aOvfl);
+              }
+            }
+    
+            iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
+            pCsr->nHdr = nHdr;
+            pCsr->pHdrPtr = &pCsr->pRec[iHdr];
+            pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
+            pCsr->iField = (bHasRowid ? -1 : 0);
           }
         }
-  
-        /* Load the nLocal bytes of payload */
-        memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
-        iOff += nLocal;
-  
-        /* Load content from overflow pages */
-        if( nPayload>nLocal ){
-          sqlite3_int64 nRem = nPayload - nLocal;
-          unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
-          while( nRem>0 ){
-            u8 *aOvfl = 0;
-            int nOvfl = 0;
-            int nCopy;
-            rc = dbdataLoadPage(pCsr, pgnoOvfl, &aOvfl, &nOvfl);
-            assert( rc!=SQLITE_OK || nOvfl==pCsr->nPage );
-            if( rc!=SQLITE_OK ) return rc;
-  
-            nCopy = U-4;
-            if( nCopy>nRem ) nCopy = nRem;
-            memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
-            nRem -= nCopy;
-  
-            pgnoOvfl = get_uint32(aOvfl);
-            sqlite3_free(aOvfl);
-          }
-        }
-  
-        iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
-        pCsr->nHdr = nHdr;
-        pCsr->pHdrPtr = &pCsr->pRec[iHdr];
-        pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
-        pCsr->iField = (bHasRowid ? -1 : 0);
       }else{
         pCsr->iField++;
         if( pCsr->iField>0 ){
           sqlite3_int64 iType;
-          pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
-          pCsr->pPtr += dbdataValueBytes(iType);
+          if( pCsr->pHdrPtr>&pCsr->pRec[pCsr->nRec] ){
+            bNextPage = 1;
+          }else{
+            pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
+            pCsr->pPtr += dbdataValueBytes(iType);
+          }
         }
       }
 
-      if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->pRec[pCsr->nHdr] ){
-        return SQLITE_OK;
+      if( bNextPage ){
+        sqlite3_free(pCsr->aPage);
+        sqlite3_free(pCsr->pRec);
+        pCsr->aPage = 0;
+        pCsr->pRec = 0;
+        if( pCsr->bOnePage ) return SQLITE_OK;
+        pCsr->iPgno++;
+      }else{
+        if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->pRec[pCsr->nHdr] ){
+          return SQLITE_OK;
+        }
+
+        /* Advance to the next cell. The next iteration of the loop will load
+        ** the record and so on. */
+        sqlite3_free(pCsr->pRec);
+        pCsr->pRec = 0;
+        pCsr->iCell++;
       }
-  
-      /* Advance to the next cell. The next iteration of the loop will load
-      ** the record and so on. */
-      sqlite3_free(pCsr->pRec);
-      pCsr->pRec = 0;
-      pCsr->iCell++;
     }
   }
 
@@ -705,9 +753,12 @@ static int dbdataColumn(
           iOff += 8;
         }else{
           iOff += 12 + pCsr->iCell*2;
+          if( iOff>pCsr->nPage ) return SQLITE_OK;
           iOff = get_uint16(&pCsr->aPage[iOff]);
         }
-        sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
+        if( iOff<=pCsr->nPage ){
+          sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
+        }
         break;
       }
     }
@@ -728,7 +779,9 @@ static int dbdataColumn(
         }else{
           sqlite3_int64 iType;
           dbdataGetVarint(pCsr->pHdrPtr, &iType);
-          dbdataValue(ctx, iType, pCsr->pPtr);
+          dbdataValue(
+              ctx, iType, pCsr->pPtr, &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
+          );
         }
         break;
       }

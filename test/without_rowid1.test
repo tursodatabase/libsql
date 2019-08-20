@@ -31,6 +31,10 @@ do_execsql_test without_rowid1-1.0 {
 
 integrity_check without_rowid1-1.0ic
 
+do_execsql_test without_rowid1-1.0ixi {
+  SELECT name, key FROM pragma_index_xinfo('t1');
+} {c 1 a 1 b 0 d 0}
+
 do_execsql_test without_rowid1-1.1 {
   SELECT *, '|' FROM t1 ORDER BY +c, a;
 } {arctic sleep ammonia helena | journal sherman ammonia helena | dynamic juliet flipper command | journal sherman gamma patriot |}
@@ -98,11 +102,6 @@ do_execsql_test without_rowid1-1.50 {
   ANALYZE;
   SELECT * FROM sqlite_stat1 ORDER BY idx;
 } {t1 t1 {4 2 1} t1 t1bd {4 2 2}}
-ifcapable stat3 {
-  do_execsql_test without_rowid1-1.51 {
-    SELECT DISTINCT tbl, idx FROM sqlite_stat3 ORDER BY idx;
-  } {t1 t1 t1 t1bd}
-}
 ifcapable stat4 {
   do_execsql_test without_rowid1-1.52 {
     SELECT DISTINCT tbl, idx FROM sqlite_stat4 ORDER BY idx;
@@ -120,6 +119,9 @@ do_execsql_test 2.1.2 {
   UPDATE t4 SET a = 'ABC';
   SELECT * FROM t4;
 } {ABC def}
+do_execsql_test 2.1.3 {
+  SELECT name, coll, key FROM pragma_index_xinfo('t4');
+} {a nocase 1 b BINARY 0}
 
 do_execsql_test 2.2.1 {
   DROP TABLE t4;
@@ -133,11 +135,21 @@ do_execsql_test 2.2.2 {
   SELECT * FROM t4;
 } {xyz ABC}
 
+do_execsql_test 2.2.3 {
+  SELECT name, coll, key FROM pragma_index_xinfo('t4');
+} {a nocase 1 b BINARY 0}
+
+
 do_execsql_test 2.3.1 {
   CREATE TABLE t5 (a, b, PRIMARY KEY(b, a)) WITHOUT ROWID;
   INSERT INTO t5(a, b) VALUES('abc', 'def');
   UPDATE t5 SET a='abc', b='def';
 } {}
+
+do_execsql_test 2.3.2 {
+  SELECT name, coll, key FROM pragma_index_xinfo('t5');
+} {b BINARY 1 a BINARY 1}
+
 
 do_execsql_test 2.4.1 {
   CREATE TABLE t6 (
@@ -152,6 +164,11 @@ do_execsql_test 2.4.2 {
   SELECT * FROM t6 ORDER BY b, a;
   SELECT * FROM t6 ORDER BY c;
 } {ABC def ghi ABC def ghi}
+
+do_execsql_test 2.4.3 {
+  SELECT name, coll, key FROM pragma_index_xinfo('t6');
+} {b BINARY 1 a nocase 1 c BINARY 0}
+
 
 #-------------------------------------------------------------------------
 # Unless the destination table is completely empty, the xfer optimization 
@@ -399,5 +416,15 @@ do_execsql_test 11.1 {
   PRAGMA integrity_check;
   SELECT a FROM t11 ORDER BY a COLLATE binary;
 } {ok A a}
+
+# 2019-05-13 ticket https://www.sqlite.org/src/info/bba7b69f9849b5b
+do_execsql_test 12.1 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0 (c0 INTEGER PRIMARY KEY DESC, c1 UNIQUE DEFAULT NULL) WITHOUT ROWID;
+  INSERT INTO t0(c0) VALUES (1), (2), (3), (4), (5);
+  REINDEX;
+  PRAGMA integrity_check;
+} {ok}
+
   
 finish_test

@@ -38,6 +38,18 @@ do_test view-1.1 {
     SELECT * FROM v1 ORDER BY a;
   }
 } {1 2 4 5 7 8}
+do_test view-1.1.100 {
+  db config enable_view off
+  catchsql {
+    SELECT * FROM v1 ORDER BY a;
+  }
+} {1 {access to view "v1" prohibited}}
+do_test view-1.1.110 {
+  db config enable_view on
+  catchsql {
+    SELECT * FROM v1 ORDER BY a;
+  }
+} {0 {1 2 4 5 7 8}}
 do_test view-1.2 {
   catchsql {
     ROLLBACK;
@@ -700,5 +712,79 @@ do_test view-25.2 {
   db eval {DROP TABLE t25;}
   set log
 } $res
+
+#-------------------------------------------------------------------------
+do_execsql_test view-26.0 {
+  CREATE TABLE t16(a, b, c UNIQUE);
+  INSERT INTO t16 VALUES(1, 1, 1);
+  INSERT INTO t16 VALUES(2, 2, 2);
+  INSERT INTO t16 VALUES(3, 3, 3);
+  CREATE VIEW v16 AS SELECT max(a) AS mx, min(b) AS mn FROM t16 GROUP BY c;
+
+  SELECT * FROM v16 AS one, v16 AS two WHERE one.mx=1;
+} {
+  1 1 1 1 
+  1 1 2 2 
+  1 1 3 3
+}
+do_execsql_test view-26.1 {
+  WITH v17(x,y) AS (SELECT max(a), min(b) FROM t16 GROUP BY c)
+  SELECT * FROM v17 AS one, v17 AS two WHERE one.x=1;
+} {
+  1 1 1 1 
+  1 1 2 2 
+  1 1 3 3
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test view-27.0 {
+  CREATE TABLE t0(c0 TEXT, c1);
+  INSERT INTO t0(c0, c1) VALUES (-1, 0);
+  CREATE VIEW v0(c0, c1) AS SELECT t0.c0, AVG(t0.c1) FROM t0;
+}
+
+do_execsql_test view-27.1 {
+  SELECT c0, typeof(c0), c1, typeof(c1) FROM v0;
+} {
+  -1   text
+   0.0 real
+}
+
+do_execsql_test view-27.2 { SELECT c0<c1 FROM v0 } 1
+do_execsql_test view-27.3 { SELECT c1<c0 FROM v0 } 0
+do_execsql_test view-27.4 {
+  SELECT 1 FROM v0 WHERE c1<c0
+} {}
+do_execsql_test view-27.5 {
+  SELECT 1 FROM v0 WHERE c0<c1
+} {1}
+
+do_execsql_test view-27.6 { 
+  SELECT c0<c1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
+} 1
+do_execsql_test view-27.7 { 
+  SELECT c1<c0 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
+} 0
+do_execsql_test view-27.8 {
+  SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c1<c0
+} {}
+do_execsql_test view-27.9 {
+  SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c0<c1
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test view-28.0 {
+  CREATE TABLE t0(c0 TEXT);
+  CREATE VIEW v0(c0) AS SELECT t0.c0 FROM t0;
+  INSERT INTO t0(c0) VALUES ('0');
+}
+do_execsql_test view-28.1 {
+  SELECT 0 IN (c0) FROM t0;
+} {0}
+do_execsql_test view-28.2 {
+  SELECT 0 IN (c0) FROM (SELECT c0 FROM t0);
+} {0}
 
 finish_test

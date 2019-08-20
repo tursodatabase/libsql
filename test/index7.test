@@ -186,7 +186,7 @@ do_test index7-1.15 {
   }
 } {t1 {15 1} t1a {10 1} t1b {8 1} t1c {15 1} ok}
 
-# Queries use partial indices as appropriate times.
+# Queries use partial indices at appropriate times.
 #
 do_test index7-2.1 {
   execsql {
@@ -203,7 +203,7 @@ do_test index7-2.2 {
     SELECT * FROM t2 WHERE a=5;
   }
 } {/.* TABLE t2 USING COVERING INDEX t2a1 .*/}
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   do_test index7-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
@@ -326,6 +326,18 @@ do_eqp_test index7-6.4 {
 do_catchsql_test index7-6.5 {
   CREATE INDEX t5a ON t5(a) WHERE a=#1;
 } {1 {near "#1": syntax error}}
+
+do_execsql_test index7-7.0 {
+  CREATE TABLE t6(x, y);
+  INSERT INTO t6 VALUES(1, 1);
+  INSERT INTO t6 VALUES(0, 0);
+  SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
+} {1 1}
+
+do_execsql_test index7-7.1 {
+  CREATE INDEX i6 ON t6(x) WHERE y IS NOT TRUE;
+  SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
+} {1 1}
 
 
 finish_test

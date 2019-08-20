@@ -1806,6 +1806,9 @@ int main(int argc, char **argv){
                                      &vdbeLimitFlag);
           }
 #endif
+#ifdef SQLITE_TESTCTRL_PRNG_SEED
+          sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 1, db);
+#endif
           do{
             runSql(db, (char*)pSql->a, runFlags);
           }while( timeoutTest );

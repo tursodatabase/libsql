@@ -88,18 +88,18 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
     }
     for(n=0; n<pIdx->nColumn; n++){
       i16 x = pIdx->aiColumn[n];
+      char aff;
       if( x>=0 ){
-        pIdx->zColAff[n] = pTab->aCol[x].affinity;
+        aff = pTab->aCol[x].affinity;
       }else if( x==XN_ROWID ){
-        pIdx->zColAff[n] = SQLITE_AFF_INTEGER;
+        aff = SQLITE_AFF_INTEGER;
       }else{
-        char aff;
         assert( x==XN_EXPR );
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
-        if( aff==0 ) aff = SQLITE_AFF_BLOB;
-        pIdx->zColAff[n] = aff;
       }
+      if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
+      pIdx->zColAff[n] = aff;
     }
     pIdx->zColAff[n] = 0;
   }
@@ -139,11 +139,12 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     }
 
     for(i=0; i<pTab->nCol; i++){
+      assert( pTab->aCol[i].affinity!=0 );
       zColAff[i] = pTab->aCol[i].affinity;
     }
     do{
       zColAff[i--] = 0;
-    }while( i>=0 && zColAff[i]==SQLITE_AFF_BLOB );
+    }while( i>=0 && zColAff[i]<=SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
   assert( zColAff!=0 );
@@ -814,7 +815,7 @@ void sqlite3Insert(
     int nIdx;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, -1, 0,
                                       &iDataCur, &iIdxCur);
-    aRegIdx = sqlite3DbMallocRawNN(db, sizeof(int)*(nIdx+1));
+    aRegIdx = sqlite3DbMallocRawNN(db, sizeof(int)*(nIdx+2));
     if( aRegIdx==0 ){
       goto insert_cleanup;
     }
@@ -823,6 +824,7 @@ void sqlite3Insert(
       aRegIdx[i] = ++pParse->nMem;
       pParse->nMem += pIdx->nColumn;
     }
+    aRegIdx[i] = ++pParse->nMem;  /* Register to store the table record */
   }
 #ifndef SQLITE_OMIT_UPSERT
   if( pUpsert ){
@@ -1226,6 +1228,14 @@ int sqlite3ExprReferencesUpdatedColumn(
 ** the same as the order of indices on the linked list of indices
 ** at pTab->pIndex.
 **
+** (2019-05-07) The generated code also creates a new record for the
+** main table, if pTab is a rowid table, and stores that record in the
+** register identified by aRegIdx[nIdx] - in other words in the first
+** entry of aRegIdx[] past the last index.  It is important that the
+** record be generated during constraint checks to avoid affinity changes
+** to the register content that occur after constraint checks but before
+** the new record is inserted.
+**
 ** The caller must have already opened writeable cursors on the main
 ** table and all applicable indices (that is to say, all indices for which
 ** aRegIdx[] is not zero).  iDataCur is the cursor for the main table when
@@ -1416,7 +1426,7 @@ void sqlite3GenerateConstraintChecks(
       }else{
         char *zName = pCheck->a[i].zName;
         if( zName==0 ) zName = pTab->zName;
-        if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
+        if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-26383-51744 */
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_CHECK,
                               onError, zName, P4_TRANSIENT,
                               P5_ConstraintCheck);
@@ -1845,6 +1855,16 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeJumpHere(v, ipkBottom);
   }
 
+  /* Generate the table record */
+  if( HasRowid(pTab) ){
+    int regRec = aRegIdx[ix];
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regNewData+1, pTab->nCol, regRec);
+    sqlite3SetMakeRecordP5(v, pTab);
+    if( !bAffinityDone ){
+      sqlite3TableAffinity(v, pTab, 0);
+    }
+  }
+
   *pbMayReplace = seenReplace;
   VdbeModuleComment((v, "END: GenCnstCks(%d)", seenReplace));
 }
@@ -1894,10 +1914,7 @@ void sqlite3CompleteInsertion(
   Vdbe *v;            /* Prepared statements under construction */
   Index *pIdx;        /* An index being inserted or updated */
   u8 pik_flags;       /* flag values passed to the btree insert */
-  int regData;        /* Content registers (after the rowid) */
-  int regRec;         /* Register holding assembled record for the table */
   int i;              /* Loop counter */
-  u8 bAffinityDone = 0; /* True if OP_Affinity has been run already */
 
   assert( update_flags==0
        || update_flags==OPFLAG_ISUPDATE
@@ -1909,7 +1926,6 @@ void sqlite3CompleteInsertion(
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( aRegIdx[i]==0 ) continue;
-    bAffinityDone = 1;
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
@@ -1937,13 +1953,6 @@ void sqlite3CompleteInsertion(
     sqlite3VdbeChangeP5(v, pik_flags);
   }
   if( !HasRowid(pTab) ) return;
-  regData = regNewData + 1;
-  regRec = sqlite3GetTempReg(pParse);
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
-  sqlite3SetMakeRecordP5(v, pTab);
-  if( !bAffinityDone ){
-    sqlite3TableAffinity(v, pTab, 0);
-  }
   if( pParse->nested ){
     pik_flags = 0;
   }else{
@@ -1956,7 +1965,7 @@ void sqlite3CompleteInsertion(
   if( useSeekResult ){
     pik_flags |= OPFLAG_USESEEKRESULT;
   }
-  sqlite3VdbeAddOp3(v, OP_Insert, iDataCur, regRec, regNewData);
+  sqlite3VdbeAddOp3(v, OP_Insert, iDataCur, aRegIdx[i], regNewData);
   if( !pParse->nested ){
     sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
   }

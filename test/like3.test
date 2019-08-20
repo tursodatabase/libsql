@@ -179,7 +179,7 @@ do_eqp_test like3-5.211 {
 }
 
 # 2019-05-01
-# another case of the above reported on the mailing list by Manual Rigger.
+# another case of the above reported on the mailing list by Manuel Rigger.
 #
 do_execsql_test like3-5.300 {
   CREATE TABLE t5c (c0 REAL);
@@ -187,6 +187,26 @@ do_execsql_test like3-5.300 {
   INSERT INTO t5c(rowid, c0) VALUES (99,'+/');
   SELECT * FROM t5c WHERE (c0 LIKE '+/');
 } {+/}
+
+# 2019-05-08
+# Yet another case for the above from Manuel Rigger.
+#
+do_execsql_test like3-5.400 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INT UNIQUE COLLATE NOCASE);
+  INSERT INTO t0(c0) VALUES ('./');
+  SELECT * FROM t0 WHERE t0.c0 LIKE './';
+} {./}
+
+# 2019-06-14
+# Ticket https://www.sqlite.org/src/info/ce8717f0885af975
+do_execsql_test like3-5.410 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INT UNIQUE COLLATE NOCASE);
+  INSERT INTO t0(c0) VALUES ('.1%');
+  SELECT * FROM t0 WHERE t0.c0 LIKE '.1%';
+} {.1%}
+
 
 # 2019-02-27
 # Verify that the LIKE optimization works with an ESCAPE clause when

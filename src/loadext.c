@@ -462,7 +462,8 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.28.0 and later */
   sqlite3_stmt_isexplain,
   sqlite3_value_frombind,
-  /* Version 3.29.0 and later */
+  /* Version 3.30.0 and later */
+  sqlite3_drop_modules,
   sqlite3_hard_heap_limit64
 };
 

@@ -117,11 +117,13 @@ do_test check-1.17 {
 
 do_test check-2.1 {
   execsql {
+    PRAGMA writable_schema = 1;
     CREATE TABLE t2(
       x INTEGER CONSTRAINT one CHECK( typeof(coalesce(x,0))=="integer" ),
       y REAL CONSTRAINT two CHECK( typeof(coalesce(y,0.1))=='real' ),
       z TEXT CONSTRAINT three CHECK( typeof(coalesce(z,''))=='text' )
     );
+    PRAGMA writable_schema = 0;
   }
 } {}
 do_test check-2.2 {
@@ -492,5 +494,35 @@ do_execsql_test 10.1 {
   CREATE VIEW v1(y) AS SELECT x FROM t1;
   PRAGMA integrity_check;
 } {ok}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE t1 (Col0 CHECK(1 COLLATE BINARY BETWEEN 1 AND 1) ) ;
+}
+do_execsql_test 11.1 {
+  INSERT INTO t1 VALUES (NULL);
+}
+do_execsql_test 11.2 {
+  INSERT  INTO t1 VALUES (NULL);
+}
+
+do_execsql_test 11.3 {
+  CREATE TABLE t2(b, a CHECK(
+      CASE 'abc' COLLATE nocase WHEN a THEN 1 ELSE 0 END)
+  );
+}
+do_execsql_test 11.4 {
+  INSERT INTO t2(a) VALUES('abc');
+}
+do_execsql_test 11.5 {
+  INSERT INTO t2(b, a) VALUES(1, 'abc'||'');
+}
+do_execsql_test 11.6 {
+  INSERT INTO t2(b, a) VALUES(2, 'abc');
+}
+
+finish_test
+
 
 finish_test
