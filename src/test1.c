@@ -1123,7 +1123,6 @@ static int SQLITE_TCLAPI test_drop_modules(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  int rc;
   sqlite3 *db;
 
   if( argc!=2 ){
