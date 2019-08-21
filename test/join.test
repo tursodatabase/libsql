@@ -864,4 +864,19 @@ do_execsql_test join-16.100 {
    WHERE (b IS NOT NULL)=0;
 } {1 {}}
 
+# 2019-08-17 ticket https://sqlite.org/src/tktview/6710d2f7a13a299728ab
+# Ensure that constants that derive from the right-hand table of a LEFT JOIN
+# are never factored out, since they are not really constant.
+#
+do_execsql_test join-17.100 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1(x) VALUES(0),(1);
+  SELECT * FROM t1 LEFT JOIN (SELECT abs(1) AS y FROM t1) ON x WHERE NOT(y='a');
+} {1 1 1 1}
+do_execsql_test join-17.110 {
+  SELECT * FROM t1 LEFT JOIN (SELECT abs(1)+2 AS y FROM t1) ON x
+   WHERE NOT(y='a');
+} {1 3 1 3}
+
 finish_test

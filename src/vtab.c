@@ -72,6 +72,7 @@ Module *sqlite3VtabCreateModule(
       sqlite3DbFree(db, pDel);
       pMod = 0;
     }else{
+      sqlite3VtabEponymousTableClear(db, pDel);
       sqlite3VtabModuleUnref(db, pDel);
     }
   }
@@ -130,6 +131,28 @@ int sqlite3_create_module_v2(
   if( !sqlite3SafetyCheckOk(db) || zName==0 ) return SQLITE_MISUSE_BKPT;
 #endif
   return createModule(db, zName, pModule, pAux, xDestroy);
+}
+
+/*
+** External API to drop all virtual-table modules, except those named
+** on the azNames list.
+*/
+int sqlite3_drop_modules(sqlite3 *db, const char** azNames){
+  HashElem *pThis, *pNext;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  for(pThis=sqliteHashFirst(&db->aModule); pThis; pThis=pNext){
+    Module *pMod = (Module*)sqliteHashData(pThis);
+    pNext = sqliteHashNext(pThis);
+    if( azNames ){
+      int ii;
+      for(ii=0; azNames[ii]!=0 && strcmp(azNames[ii],pMod->zName)!=0; ii++){}
+      if( azNames[ii]!=0 ) continue;
+    }
+    createModule(db, pMod->zName, 0, 0, 0);
+  }
+  return SQLITE_OK;
 }
 
 /*

@@ -3651,6 +3651,7 @@ static const char *(azHelp[]) = {
 #endif /* SQLITE_OMIT_TRACE */
 #ifdef SQLITE_DEBUG
   ".unmodule NAME ...       Unregister virtual table modules",
+  "    --allexcept             Unregister everything except those named",
 #endif
   ".vfsinfo ?AUX?           Information about the top-level VFS",
   ".vfslist                 List all available VFSes",
@@ -6892,7 +6893,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   int nArg = 0;
   int n, c;
   int rc = 0;
-  char *azArg[50];
+  char *azArg[52];
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( p->expert.pExpert ){
@@ -6902,7 +6903,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   /* Parse the input line into tokens.
   */
-  while( zLine[h] && nArg<ArraySize(azArg) ){
+  while( zLine[h] && nArg<ArraySize(azArg)-1 ){
     while( IsSpace(zLine[h]) ){ h++; }
     if( zLine[h]==0 ) break;
     if( zLine[h]=='\'' || zLine[h]=='"' ){
@@ -6923,6 +6924,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       resolve_backslashes(azArg[nArg-1]);
     }
   }
+  azArg[nArg] = 0;
 
   /* Process the input line.
   */
@@ -8461,7 +8463,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sSelect, ".sqlite_master", 0);
       }
       sqlite3_finalize(pStmt);
-#ifdef SQLITE_INTROSPECTION_PRAGMAS
+#ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
       if( zName ){
         appendText(&sSelect,
            " UNION ALL SELECT shell_module_schema(name),"
@@ -9407,14 +9409,24 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef SQLITE_DEBUG
   if( c=='u' && strncmp(azArg[0], "unmodule", n)==0 ){
     int ii;
+    int lenOpt;
+    char *zOpt;
     if( nArg<2 ){
-      raw_printf(stderr, "Usage: .unmodule NAME ...\n");
+      raw_printf(stderr, "Usage: .unmodule [--allexcept] NAME ...\n");
       rc = 1;
       goto meta_command_exit;
     }
     open_db(p, 0);
-    for(ii=1; ii<nArg; ii++){
-      sqlite3_create_module(p->db, azArg[ii], 0, 0);
+    zOpt = azArg[1];
+    if( zOpt[0]=='-' && zOpt[1]=='-' && zOpt[2]!=0 ) zOpt++;
+    lenOpt = (int)strlen(zOpt);
+    if( lenOpt>=3 && strncmp(zOpt, "-allexcept",lenOpt)==0 ){
+      assert( azArg[nArg]==0 );
+      sqlite3_drop_modules(p->db, nArg>2 ? (const char**)(azArg+2) : 0);
+    }else{
+      for(ii=1; ii<nArg; ii++){
+        sqlite3_create_module(p->db, azArg[ii], 0, 0);
+      }
     }
   }else
 #endif

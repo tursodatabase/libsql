@@ -932,7 +932,7 @@ static int fts5CursorFirstSorted(
   **
   ** If SQLite a built-in statement cache, this wouldn't be a problem. */
   rc = fts5PrepareStatement(&pSorter->pStmt, pConfig,
-      "SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
+      "SELECT rowid, rank FROM %Q.%Q ORDER BY %s(\"%w\"%s%s) %s",
       pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
       (zRankArgs ? ", " : ""),
       (zRankArgs ? zRankArgs : ""),

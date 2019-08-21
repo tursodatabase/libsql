@@ -11,9 +11,9 @@
 # This file implements regression tests for SQLite library.
 #
 # This file implements tests for the PRAGMA command. Specifically,
-# those pragmas enabled at build time by setting:
+# those pragmas that are not disabled at build time by setting:
 #
-#   -DSQLITE_INTROSPECTION_PRAGMAS
+#   -DSQLITE_OMIT_INTROSPECTION_PRAGMAS
 #
 
 set testdir [file dirname $argv0]

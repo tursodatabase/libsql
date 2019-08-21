@@ -1512,7 +1512,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
 #ifndef SQLITE_OMIT_WINDOWFUNC
     pNew->pWin = 0;
     pNew->pWinDefn = sqlite3WindowListDup(db, p->pWinDefn);
-    if( p->pWin ) gatherSelectWindows(pNew);
+    if( p->pWin && db->mallocFailed==0 ) gatherSelectWindows(pNew);
 #endif
     pNew->selId = p->selId;
     *pp = pNew;
@@ -2807,7 +2807,7 @@ void sqlite3CodeRhsOfIN(
     int i;
     ExprList *pList = pExpr->x.pList;
     struct ExprList_item *pItem;
-    int r1, r2, r3;
+    int r1, r2;
     affinity = sqlite3ExprAffinity(pLeft);
     if( affinity<=SQLITE_AFF_NONE ){
       affinity = SQLITE_AFF_BLOB;
@@ -2835,9 +2835,9 @@ void sqlite3CodeRhsOfIN(
       }
 
       /* Evaluate the expression and insert it into the temp table */
-      r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r2, r3, 1);
+      sqlite3ExprCode(pParse, pE2, r1);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
+      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r2, r1, 1);
     }
     sqlite3ReleaseTempReg(pParse, r1);
     sqlite3ReleaseTempReg(pParse, r2);
@@ -4014,10 +4014,23 @@ expr_code_doover:
       break;
     }
 
+    /* TK_IF_NULL_ROW Expr nodes are inserted ahead of expressions
+    ** that derive from the right-hand table of a LEFT JOIN.  The
+    ** Expr.iTable value is the table number for the right-hand table.
+    ** The expression is only evaluated if that table is not currently
+    ** on a LEFT JOIN NULL row.
+    */
     case TK_IF_NULL_ROW: {
       int addrINR;
+      u8 okConstFactor = pParse->okConstFactor;
       addrINR = sqlite3VdbeAddOp1(v, OP_IfNullRow, pExpr->iTable);
+      /* Temporarily disable factoring of constant expressions, since
+      ** even though expressions may appear to be constant, they are not
+      ** really constant because they originate from the right-hand side
+      ** of a LEFT JOIN. */
+      pParse->okConstFactor = 0;
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      pParse->okConstFactor = okConstFactor;
       sqlite3VdbeJumpHere(v, addrINR);
       sqlite3VdbeChangeP3(v, addrINR, inReg);
       break;
