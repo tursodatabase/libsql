@@ -433,10 +433,10 @@ static void fts3SnippetDetails(
 
       while( iCsr<(iStart+pIter->nSnippet) && iCsr>=iStart ){
         int j;
-        u64 mPhrase = (u64)1 << i;
+        u64 mPhrase = (u64)1 << (i%64);
         u64 mPos = (u64)1 << (iCsr - iStart);
         assert( iCsr>=iStart && (iCsr - iStart)<=64 );
-        assert( i>=0 && i<=64 );
+        assert( i>=0 );
         if( (mCover|mCovered)&mPhrase ){
           iScore++;
         }else{
