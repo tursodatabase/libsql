@@ -1907,8 +1907,14 @@ static void windowCodeRangeTest(
     addr = sqlite3VdbeAddOp1(v, OP_NotNull, reg1); VdbeCoverage(v);
     switch( op ){
       case OP_Ge: sqlite3VdbeAddOp2(v, OP_Goto, 0, lbl); break;
-      case OP_Gt: sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); break;
-      case OP_Le: sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); break;
+      case OP_Gt: 
+        sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); 
+        VdbeCoverage(v); 
+        break;
+      case OP_Le: 
+        sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); 
+        VdbeCoverage(v); 
+        break;
       default: assert( op==OP_Lt ); /* no-op */
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
