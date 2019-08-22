@@ -84,7 +84,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   }else{
     pTerm->truthProb = 1;
   }
-  pTerm->pExpr = sqlite3ExprSkipCollate(p);
+  pTerm->pExpr = sqlite3ExprSkipCollateAndLikely(p);
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
   pTerm->iParent = -1;
@@ -1451,7 +1451,7 @@ static void exprAnalyze(
 ** all terms of the WHERE clause.
 */
 void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
-  Expr *pE2 = sqlite3ExprSkipCollate(pExpr);
+  Expr *pE2 = sqlite3ExprSkipCollateAndLikely(pExpr);
   pWC->op = op;
   if( pE2==0 ) return;
   if( pE2->op!=op ){

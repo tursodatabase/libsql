@@ -4278,6 +4278,7 @@ int sqlite3ExprCollSeqMatch(Parse*,Expr*,Expr*);
 Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*, int);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
+Expr *sqlite3ExprSkipCollateAndLikely(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3WritableSchema(sqlite3*);
 int sqlite3CheckObjectName(Parse*, const char*,const char*,const char*);
