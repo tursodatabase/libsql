@@ -85,4 +85,36 @@ do_execsql_test 440 {
   SELECT * FROM t3 WHERE c='0' ORDER BY a;
 } {2 1 0 4 1 0}
 
+# 2019-08-22 ticket https://sqlite.org/src/info/d99f1ffe836c591ac57f
+# False positive in sqlite3ExprNeedsNoAffinityChange()
+#
+do_execsql_test 500 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 TEXT UNIQUE, c1);
+  INSERT INTO t0(c0) VALUES (-1);
+  SELECT quote(- x'ce'), quote(t0.c0), quote(- x'ce' >= t0.c0) FROM t0;
+} {0 '-1' 1}
+do_execsql_test 501 {
+  SELECT * FROM t0 WHERE - x'ce' >= t0.c0;
+} {-1 {}}
+do_execsql_test 502 {
+  SELECT quote(+-+x'ce'), quote(t0.c0), quote(+-+x'ce' >= t0.c0) FROM t0;
+} {0 '-1' 1}
+do_execsql_test 503 {
+  SELECT * FROM t0 WHERE +-+x'ce' >= t0.c0;
+} {-1 {}}
+do_execsql_test 504 {
+  SELECT quote(- 'ce'), quote(t0.c0), quote(- 'ce' >= t0.c0) FROM t0;
+} {0 '-1' 1}
+do_execsql_test 505 {
+  SELECT * FROM t0 WHERE - 'ce' >= t0.c0;
+} {-1 {}}
+do_execsql_test 506 {
+  SELECT quote(+-+'ce'), quote(t0.c0), quote(+-+'ce' >= t0.c0) FROM t0;
+} {0 '-1' 1}
+do_execsql_test 507 {
+  SELECT * FROM t0 WHERE +-+'ce' >= t0.c0;
+} {-1 {}}
+ 
+
 finish_test
