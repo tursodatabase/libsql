@@ -92,6 +92,16 @@ impl<'stmt> Rows<'stmt> {
         self.stmt.map(Statement::column_count)
     }
 
+    /// Return the name of the column.
+    pub fn column_name(&self, col: usize) -> Option<&str> {
+        self.stmt.and_then(|x| x.column_name(col))
+    }
+
+    /// Return the index of the column.
+    pub fn column_index(&self, name: &str) -> Option<Result<usize>> {
+        self.stmt.map(|x| x.column_index(name))
+    }
+
     /// Returns a slice describing the columns of the Rows.
     pub fn columns(&self) -> Option<Vec<Column<'stmt>>> {
         self.stmt.map(Statement::columns)
@@ -99,11 +109,25 @@ impl<'stmt> Rows<'stmt> {
 }
 
 impl<'stmt> Row<'stmt> {
+    /// Get all the column names of the Row.
+    pub fn column_names(&self) -> Vec<&str> {
+        self.stmt.column_names()
+    }
+
     /// Return the number of columns in the current row.
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
+    /// Return the name of the column.
+    pub fn column_name(&self, col: usize) -> Option<&str> {
+        self.stmt.column_name(col)
+    }
+
+    /// Return the index of the column.
+    pub fn column_index(&self, name: &str) -> Result<usize> {
+        self.stmt.column_index(name)
+    }
     /// Returns a slice describing the columns of the Row.
     pub fn columns(&self) -> Vec<Column<'stmt>> {
         self.stmt.columns()
