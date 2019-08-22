@@ -27,7 +27,7 @@ impl Statement<'_> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let s = self.column_name(i);
+            let s = self.column_name(i).unwrap(); // safe to unwrap as we're using only verified indices
             cols.push(s);
         }
         cols
@@ -39,11 +39,10 @@ impl Statement<'_> {
         self.stmt.column_count()
     }
 
-    pub(crate) fn column_name(&self, col: usize) -> &str {
-        // Just panic if the bounds are wrong for now, we never call this
-        // without checking first.
-        let slice = self.stmt.column_name(col).expect("Column out of bounds");
-        str::from_utf8(slice.to_bytes()).unwrap()
+    /// Returns the name of the column by index or None on out of bounds access. Panics when column name is not valid UTF-8
+    pub fn column_name(&self, col: usize) -> Option<&str> {
+        self.stmt.column_name(col)
+           .map(|x| str::from_utf8(x.to_bytes()).expect("Invalid UTF-8 sequence in column name"))
     }
 
     /// Returns the column index in the result set for a given column name.
@@ -73,7 +72,7 @@ impl Statement<'_> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let name = self.column_name(i);
+            let name = self.column_name(i).unwrap(); // safe to unwrap as we're using only verified indices
             let slice = self.stmt.column_decltype(i);
             let decl_type = slice.map(|s| str::from_utf8(s.to_bytes()).expect("Invalid UTF-8 sequence in column declaration"));
             cols.push(Column { name, decl_type });

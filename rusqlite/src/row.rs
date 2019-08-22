@@ -224,7 +224,7 @@ impl<'stmt> Row<'stmt> {
         let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => {
-                Error::InvalidColumnType(idx, self.stmt.column_name(idx).into(), value.data_type())
+                Error::InvalidColumnType(idx, self.stmt.column_name(idx).unwrap().into(), value.data_type())
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
@@ -232,11 +232,11 @@ impl<'stmt> Row<'stmt> {
             }
             #[cfg(feature = "i128_blob")]
             FromSqlError::InvalidI128Size(_) => {
-                Error::InvalidColumnType(idx, self.stmt.column_name(idx).into(), value.data_type())
+                Error::InvalidColumnType(idx, self.stmt.column_name(idx).unwrap().into(), value.data_type())
             }
             #[cfg(feature = "uuid")]
             FromSqlError::InvalidUuidSize(_) => {
-                Error::InvalidColumnType(idx, self.stmt.column_name(idx).into(), value.data_type())
+                Error::InvalidColumnType(idx, self.stmt.column_name(idx).unwrap().into(), value.data_type())
             }
         })
     }
