@@ -75,7 +75,7 @@ impl Statement<'_> {
         for i in 0..n {
             let name = self.column_name(i);
             let slice = self.stmt.column_decltype(i);
-            let decl_type = slice.map(|s| str::from_utf8(s.to_bytes()).unwrap());
+            let decl_type = slice.map(|s| str::from_utf8(s.to_bytes()).expect("Invalid UTF-8 sequence in column declaration"));
             cols.push(Column { name, decl_type });
         }
         cols
