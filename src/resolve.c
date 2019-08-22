@@ -973,7 +973,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     }
     case TK_IS:
     case TK_ISNOT: {
-      Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
+      Expr *pRight = sqlite3ExprSkipCollateAndLikely(pExpr->pRight);
       assert( !ExprHasProperty(pExpr, EP_Reduced) );
       /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
       ** and "x IS NOT FALSE". */
@@ -1184,7 +1184,7 @@ static int resolveCompoundOrderBy(
       int iCol = -1;
       Expr *pE, *pDup;
       if( pItem->done ) continue;
-      pE = sqlite3ExprSkipCollate(pItem->pExpr);
+      pE = sqlite3ExprSkipCollateAndLikely(pItem->pExpr);
       if( sqlite3ExprIsInteger(pE, &iCol) ){
         if( iCol<=0 || iCol>pEList->nExpr ){
           resolveOutOfRangeError(pParse, "ORDER", i+1, pEList->nExpr);
@@ -1363,7 +1363,7 @@ static int resolveOrderGroupBy(
   pParse = pNC->pParse;
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     Expr *pE = pItem->pExpr;
-    Expr *pE2 = sqlite3ExprSkipCollate(pE);
+    Expr *pE2 = sqlite3ExprSkipCollateAndLikely(pE);
     if( zType[0]!='G' ){
       iCol = resolveAsName(pParse, pSelect->pEList, pE2);
       if( iCol>0 ){

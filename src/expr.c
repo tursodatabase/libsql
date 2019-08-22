@@ -106,10 +106,22 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 }
 
 /*
-** Skip over any TK_COLLATE operators and any unlikely()
-** or likelihood() function at the root of an expression.
+** Skip over any TK_COLLATE operators.
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
+  while( pExpr && ExprHasProperty(pExpr, EP_Skip) ){
+    assert( pExpr->op==TK_COLLATE );
+    pExpr = pExpr->pLeft;
+  }   
+  return pExpr;
+}
+
+/*
+** Skip over any TK_COLLATE operators and/or any unlikely()
+** or likelihood() or likely() functions at the root of an
+** expression.
+*/
+Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
   while( pExpr && ExprHasProperty(pExpr, EP_Skip|EP_Unlikely) ){
     if( ExprHasProperty(pExpr, EP_Unlikely) ){
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
@@ -3382,7 +3394,7 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 ** the correct value for the expression.
 */
 static void exprToRegister(Expr *pExpr, int iReg){
-  Expr *p = sqlite3ExprSkipCollate(pExpr);
+  Expr *p = sqlite3ExprSkipCollateAndLikely(pExpr);
   p->op2 = p->op;
   p->op = TK_REGISTER;
   p->iTable = iReg;
@@ -4190,7 +4202,7 @@ int sqlite3ExprCodeAtInit(
 */
 int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   int r2;
-  pExpr = sqlite3ExprSkipCollate(pExpr);
+  pExpr = sqlite3ExprSkipCollateAndLikely(pExpr);
   if( ConstFactorOk(pParse)
    && pExpr->op!=TK_REGISTER
    && sqlite3ExprIsConstantNotJoin(pExpr)
@@ -4933,8 +4945,8 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB, int iTab){
 */
 int sqlite3ExprCompareSkip(Expr *pA, Expr *pB, int iTab){
   return sqlite3ExprCompare(0,
-             sqlite3ExprSkipCollate(pA),
-             sqlite3ExprSkipCollate(pB),
+             sqlite3ExprSkipCollateAndLikely(pA),
+             sqlite3ExprSkipCollateAndLikely(pB),
              iTab);
 }
 
@@ -5142,7 +5154,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 */
 int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
   Walker w;
-  p = sqlite3ExprSkipCollate(p);
+  p = sqlite3ExprSkipCollateAndLikely(p);
   while( p ){
     if( p->op==TK_NOTNULL ){
       p = p->pLeft;
