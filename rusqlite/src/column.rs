@@ -9,14 +9,14 @@ pub struct Column<'stmt> {
     decl_type: Option<&'stmt str>,
 }
 
-impl Column<'_> {
+impl<'stmt> Column<'stmt> {
     /// Returns the name of the column.
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &'stmt str {
         self.name
     }
 
     /// Returns the type of the column (`None` for expression).
-    pub fn decl_type(&self) -> Option<&str> {
+    pub fn decl_type(&self) -> Option<&'stmt str> {
         self.decl_type
     }
 }
@@ -68,7 +68,7 @@ impl Statement<'_> {
     }
 
     /// Returns a slice describing the columns of the result of the query.
-    pub fn columns<'stmt>(&'stmt self) -> Vec<Column<'stmt>> {
+    pub fn columns(&self) -> Vec<Column> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
@@ -83,7 +83,7 @@ impl Statement<'_> {
 
 impl<'stmt> Rows<'stmt> {
     /// Get all the column names.
-    pub fn column_names(&self) -> Option<Vec<&str>> {
+    pub fn column_names(&self) -> Option<Vec<&'stmt str>> {
         self.stmt.map(Statement::column_names)
     }
 
@@ -93,7 +93,7 @@ impl<'stmt> Rows<'stmt> {
     }
 
     /// Return the name of the column.
-    pub fn column_name(&self, col: usize) -> Option<&str> {
+    pub fn column_name(&self, col: usize) -> Option<&'stmt str> {
         self.stmt.and_then(|x| x.column_name(col))
     }
 
@@ -110,7 +110,7 @@ impl<'stmt> Rows<'stmt> {
 
 impl<'stmt> Row<'stmt> {
     /// Get all the column names of the Row.
-    pub fn column_names(&self) -> Vec<&str> {
+    pub fn column_names(&self) -> Vec<&'stmt str> {
         self.stmt.column_names()
     }
 
@@ -120,7 +120,7 @@ impl<'stmt> Row<'stmt> {
     }
 
     /// Return the name of the column.
-    pub fn column_name(&self, col: usize) -> Option<&str> {
+    pub fn column_name(&self, col: usize) -> Option<&'stmt str> {
         self.stmt.column_name(col)
     }
 
