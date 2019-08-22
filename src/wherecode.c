@@ -1710,9 +1710,23 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           start_constraints = (nConstraint>1);
           op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
           sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint-1);
+          VdbeCoverage(v);
+          VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
+          VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
+          VdbeCoverageIf(v, op==OP_SeekGT);  testcase( op==OP_SeekGT );
+          VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
+          VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+          VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
         }else{
           op = aStartOp[(start_constraints<<2) + ((!startEq)<<1) + bRev];
           sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+          VdbeCoverage(v);
+          VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
+          VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
+          VdbeCoverageIf(v, op==OP_SeekGT);  testcase( op==OP_SeekGT );
+          VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
+          VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+          VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
         }
       }
     }
@@ -1762,6 +1776,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( nConstraint ){
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_If, regBignull, sqlite3VdbeCurrentAddr(v)+3);
+        VdbeCoverage(v);
       }
       op = aEndOp[bRev*2 + endEq];
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1772,12 +1787,20 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     if( regBignull ){
       sqlite3VdbeAddOp2(v, OP_IfNot, regBignull, sqlite3VdbeCurrentAddr(v)+2);
+      VdbeCoverage(v);
       if( bStopAtNull ){
         op = aEndOp[bRev*2 + 0];
+        assert( op==OP_IdxGE || op==OP_IdxLE );
         sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+        testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
+        testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
       }else{
         op = aEndOp[bRev*2 + endEq];
         sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint+1);
+        testcase( op==OP_IdxGT );  VdbeCoverageIf(v, op==OP_IdxGT );
+        testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
+        testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
+        testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
       }
     }
 
