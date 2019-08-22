@@ -1,5 +1,5 @@
-C Avoid\sassuming\sthat\s"column\sIS\s?",\swhere\scolumn\sis\sdeclared\sUNIQUE,\smatches\sonly\sa\ssingle\srow\s(as\s"?"\smight\sbe\sNULL).\sFix\sfor\s[b8689402].
-D 2019-08-21T14:54:50.917
+C Fix\sthe\sOP_SeekGE,\sOP_SeekGT,\sOP_SeekLE,\sand\sOP_SeekLT\sopcodes\sso\sthat\sthey\npreserve\sthe\sdatatype\sof\sthe\svalue\sin\sthe\sregister\sused\sas\sthe\skey.\nTicket\s[d9f584e936c7a8d0]
+D 2019-08-22T00:53:16.723
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -595,7 +595,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c fffdfa627be74d69ef425f92db124e7148af449bb8a3286e79577c42bca84061
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 1041610254502572bcc79ce6f61d9364fb93c154a4935fbaeaa7fd2e158e5205
+F src/vdbe.c 7cd09c6cc4d0e0053ced392ea4d04762e7ffd1470ff1b90ba3ebd2869c849ae8
 F src/vdbe.h 3f2b571e702e77e6bf031f0236e554aedfae643e991f69000320f481408455cf
 F src/vdbeInt.h e95de5129124d77f01439e6635012adfaf23c0017bff47296126143cf18bd0c6
 F src/vdbeapi.c 95001d0f84ee3cda344fed98ca0d7961deb4fc836b83495630d0af1f7cc4789e
@@ -1670,7 +1670,7 @@ F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2a
 F test/walvfs.test f1accd66c876e3a0f6b4bef5b18d13411062d0ff0a0016e32bb41570474e99fc
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
 F test/wapptest.tcl 3090239c59379d41e1a0644feb6683082fdb86edfab0c668973f8003f22c0e5d x
-F test/where.test d640c16d33ae671c7583fd575d1a64fd55194dcc4393b877b3028db9ddba5a3b
+F test/where.test 19c709c9f0f6ed12c23f909f6592aa55fba34269d5a2898537aa27a22b9ce650
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c01e0170e113ad052b6c3980beb4be9f1dc03fb3cf34132b90e8b82b23f654e
-R ba43ef9ffea471302d6253c6ac41d4d7
-U dan
-Z 050be14a9fe83dd49b34a7e227f313e7
+P d02490a2f0cae047087130b4ad8f55f265845c2ffb3bde3b7d507edb54acea6d
+R 9a1f89de468f638cf6272be3b894c4f7
+U drh
+Z 8cbd654fcd7e359876e90cf539c4f92a

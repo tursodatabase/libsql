@@ -4127,6 +4127,7 @@ case OP_SeekGT: {       /* jump, in3, group */
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
   if( pC->isTable ){
+    u16 flags3, newType;
     /* The BTREE_SEEK_EQ flag is only set on index cursors */
     assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0
               || CORRUPT_DB );
@@ -4135,16 +4136,19 @@ case OP_SeekGT: {       /* jump, in3, group */
     ** blob, or NULL.  But it needs to be an integer before we can do
     ** the seek, so convert it. */
     pIn3 = &aMem[pOp->p3];
-    if( (pIn3->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Str))==MEM_Str ){
+    flags3 = pIn3->flags;
+    if( (flags3 & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Str))==MEM_Str ){
       applyNumericAffinity(pIn3, 0);
     }
-    iKey = sqlite3VdbeIntValue(pIn3);
+    iKey = sqlite3VdbeIntValue(pIn3); /* Get the integer key value */
+    newType = pIn3->flags; /* Record the type after applying numeric affinity */
+    pIn3->flags = flags3;  /* But convert the type back to its original */
 
     /* If the P3 value could not be converted into an integer without
     ** loss of information, then special processing is required... */
-    if( (pIn3->flags & (MEM_Int|MEM_IntReal))==0 ){
-      if( (pIn3->flags & MEM_Real)==0 ){
-        if( (pIn3->flags & MEM_Null) || oc>=OP_SeekGE ){
+    if( (newType & (MEM_Int|MEM_IntReal))==0 ){
+      if( (newType & MEM_Real)==0 ){
+        if( (newType & MEM_Null) || oc>=OP_SeekGE ){
           VdbeBranchTaken(1,2);
           goto jump_to_p2;
         }else{
