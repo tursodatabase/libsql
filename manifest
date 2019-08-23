@@ -1,5 +1,5 @@
-C Revise\sthe\sVDBE\scomments\sfor\sNULL-scan\sso\sthat\sthey\salso\swork\smake\nsense\swhen\sreading\sa\sNULLS\sFIRST\splan.
-D 2019-08-23T17:09:02.374
+C Move\ssome\sthings\sin\sparse.y\sso\sthat\sTK_COLUMN\sand\sTK_AGG_COLUMN\sare\sassigned\sthe\ssame\svalues\sas\sthey\sare\son\strunk\sfor\sa\svery\ssmall\sspeedup.
+D 2019-08-23T20:33:01.837
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,7 +512,7 @@ F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 61e979ce7f860df902b21b16ed40504ddd58fe4546fb15908a51538b3062e8e0
+F src/parse.y d127bf3f79f9f5baccfdfa00c7898df3eafa027ac58c35fd673bf81b008b2374
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1383680d927d7d703933be7653c0019199845e7f7e82bcc76d9ca3808093e9d8
-R 26440ec11262a796737d9ceae9976115
-U drh
-Z 426e1e92ed37562d2a1263893c3aee0b
+P bfe793780fa6fc7a1e7d0ee60606dda272985de9573887dca118e9510fc609f2
+R 65f7f5b095c6143834951d2d50e30b05
+U dan
+Z 741541dbd05afd6dd401231ece81d5cb

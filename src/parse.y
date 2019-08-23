@@ -1773,12 +1773,12 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 ** are synthesized and do not actually appear in the grammar:
 */
 %token
-  TRUEFALSE       /* True or false keyword */
-  ISNOT           /* Combination of IS and NOT */
-  FUNCTION        /* A function invocation */
   COLUMN          /* Reference to a table column */
   AGG_FUNCTION    /* An aggregate function */
   AGG_COLUMN      /* An aggregated column */
+  TRUEFALSE       /* True or false keyword */
+  ISNOT           /* Combination of IS and NOT */
+  FUNCTION        /* A function invocation */
   UMINUS          /* Unary minus */
   UPLUS           /* Unary plus */
   TRUTH           /* IS TRUE or IS FALSE or IS NOT TRUE or IS NOT FALSE */
