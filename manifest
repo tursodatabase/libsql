@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\sWHERE\sloop\scode\sgenerator\sfor\sNULLS\sLAST\ssaves\sa\nfew\sCPU\scycles\sand\sabout\sa\shundred\sbytes\sof\scode\sspace.
-D 2019-08-23T16:12:20.533
+C Additional\ssimplifications\sof\sthe\sWHERE\sloop\scode\sgenerator\slogic\sfor\nNULLS\sLAST.
+D 2019-08-23T17:00:22.277
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -611,7 +611,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 10e21ac338582a4f87b2d09f09dd812c9bda0a0c4c456f54daeeee355afae733
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c f8ba85888b8a6843bce84e7e21f61d6c043c21c888871ad84fb911f45671e95d
+F src/wherecode.c 3bed0f377aacff188575bccc2f01d45ed5df353b52e8b2c39a22ff88ae3cfc25
 F src/whereexpr.c 2757afbd5cfdbb420f9d0392e1bd5f5c0e33dee50a8c692befc7e502308e449f
 F src/window.c 3ea716bb0dd5ffc8cdbaa48baffc525958b51bc61b2afd73a56baccfcd7ceb2f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf875e1a259a4167694e06349458452dc36c1d38aa6843518d9ae46ce74e5559
-R f34508d6bf0c4c450df67caf81b0a3ce
+P e3ed2f496f51234a8f81d90d47ba603b06dbed38b8bd8f1934294379cde74d3a
+R 1ab18b69b8d15ca4e03875cc0023fa2f
 U drh
-Z 77866c600215002b5dd6dd0eeafd861f
+Z e7fe19284bcd51997b007393da65f48c
