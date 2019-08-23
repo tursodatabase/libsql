@@ -1691,7 +1691,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_Integer, 1, regBignull);
-        VdbeComment((v, "NULL-scan needed flag"));
+        VdbeComment((v, "NULL-scan pass ctr"));
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
@@ -1769,7 +1769,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( regBignull ){
         /* Except, skip the end-of-range check while doing the NULL-scan */
         sqlite3VdbeAddOp2(v, OP_IfNot, regBignull, sqlite3VdbeCurrentAddr(v)+3);
-        VdbeComment((v, "If NULL-scan active"));
+        VdbeComment((v, "If NULL-scan 2nd pass"));
         VdbeCoverage(v);
       }
       op = aEndOp[bRev*2 + endEq];
@@ -1786,7 +1786,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       assert( bSeekPastNull+bStopAtNull==1 );
       assert( nConstraint+bSeekPastNull>0 );
       sqlite3VdbeAddOp2(v, OP_If, regBignull, sqlite3VdbeCurrentAddr(v)+2);
-      VdbeComment((v, "If NULL-scan pending"));
+      VdbeComment((v, "If NULL-scan 1st pass"));
       VdbeCoverage(v);
       op = aEndOp[bRev*2 + bSeekPastNull];
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase,
