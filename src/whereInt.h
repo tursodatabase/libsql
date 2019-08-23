@@ -71,7 +71,7 @@ struct WhereLevel {
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
-  int regBignull;       /* big-null flag reg. True if NULLs not yet scanned */
+  int regBignull;       /* big-null flag reg. True if a NULL-scan is needed */
   int addrBignull;      /* Jump here for next part of big-null scan */
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
