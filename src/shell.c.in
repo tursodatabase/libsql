@@ -1289,7 +1289,7 @@ static void editFunc(
   fseek(f, 0, SEEK_END);
   sz = ftell(f);
   rewind(f);
-  p = sqlite3_malloc64( sz+(bBin==0) );
+  p = sqlite3_malloc64( sz+1 );
   if( p==0 ){
     sqlite3_result_error_nomem(context);
     goto edit_func_end;

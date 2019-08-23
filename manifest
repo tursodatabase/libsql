@@ -1,5 +1,5 @@
-C Fix\sthe\slikely(),\sunlikely(),\sand\slikelihood()\sfunctions\sso\sthat\sthey\shave\nno\saffinity,\sjust\slike\sany\sother\sfunction.\nTicket\s[7e07a3dbf5a8cd26]
-D 2019-08-22T16:38:42.563
+C Fix\sthe\sbuilt-in\sedit()\sSQL\sfunction\sin\sthe\sCLI\sso\sthat\sit\sworks\swith\nzero-length\sblobs.
+D 2019-08-23T23:05:32.503
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -524,7 +524,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 9891cf5fd155bb199f8b1ff5d1429b9f70484487f4c455bba94348d4cb6f829f
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c d42f1f1435c5b85a3bd48fdb196bb499c00797691bbed0d0c2b153c8b13ab742
-F src/shell.c.in e0f0758b6ab506d8ab12502fd2b8c55546bb9e4bb772374344a5a1b73f5bc2b9
+F src/shell.c.in 9a0706cd539fb6f00948a6a41a84c51a893179f5338c94ea37177d5f239c7741
 F src/sqlite.h.in 50fc0914ccd347437db9a0278a47d7541df3a45eb6e641e9680750c6f98dad27
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e62eddbb048cbc2c15cb8eeb5b7a907e7cb08c21a27ebba96a069f62dbcb0f30
-R 1215bd20457039d9af85e446a05c94b4
+P 44578865fa7baf9760e355691ca9ce753295aaba7a4ee0bba29d4f85d9335bab
+R d576abe88102041dd107794a8906549d
 U drh
-Z a684ecbf66c59873a68e428c9a74f890
+Z e6a2c406773297981564bcc226b2bf48
