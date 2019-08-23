@@ -5219,9 +5219,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( pLevel->regBignull ){
         sqlite3VdbeResolveLabel(v, pLevel->addrBignull);
         addr = sqlite3VdbeAddOp1(v, OP_If, pLevel->regBignull);
+        VdbeComment((v, "If NULL-scan done"));
         VdbeCoverage(v);
         sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->regBignull);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->p2-1);
+        VdbeComment((v, "Do the NULL-scan"));
         sqlite3VdbeJumpHere(v, addr);
       }
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT

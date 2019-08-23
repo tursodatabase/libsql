@@ -1,5 +1,5 @@
-C Add\sadditional\sVDBE\scoverage\smarcros.
-D 2019-08-22T21:13:56.537
+C Extra\sVDBE\scomments\sin\sthe\sNULLS\sLAST\slogic\sprovide\slandmarks\sto\shelp\nunderstand\sthe\sEXPLAIN\soutput.
+D 2019-08-23T13:08:49.776
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,9 +609,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c e954bdbd248e755ddbe0ff54b743a7b99eeb2d852d034b2176004a905c4128bc
-F src/whereInt.h 807766a6a92893dbba8a887e5b13466d2257ce07a84cf1be0aae2c41aee3bf4f
-F src/wherecode.c f8005a06f78bd396216b444280a78688198e9b3aaed582c8e7fc608d111b1d93
+F src/where.c cba20474827dfb3e6bfe7835635e0f018a67d4b8faef4c90d4f28b81b81a8915
+F src/whereInt.h cce97c33db637c027bd6f3601a5ff845bd65c833b6465e3b091d48f6a7f51268
+F src/wherecode.c 1700806bb5bb507ff3614d0836893f35a5a5c438087ee6f373f2ecdf32156d71
 F src/whereexpr.c 2757afbd5cfdbb420f9d0392e1bd5f5c0e33dee50a8c692befc7e502308e449f
 F src/window.c 3ea716bb0dd5ffc8cdbaa48baffc525958b51bc61b2afd73a56baccfcd7ceb2f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1837,7 +1837,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63e625c8eb06720eef30573aa562e38c90d228a9cf493f8bb59f09e50f0e3168
-R 3b31af6d2e0a85acf1bc0e1de0094280
+P d3531f5be7d3769689e2cd8bdc9bab5608759de027d44cc123996f32a4a89583
+R ab23b496c06c535da116ba045bb5e66a
 U drh
-Z 763e56944768007815dc6fe6b985fbdb
+Z 115e4fb3e71b36cfad63bc3458a08668

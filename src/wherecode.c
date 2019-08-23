@@ -1550,7 +1550,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u8 bSeekPastNull = 0;        /* True to seek past initial nulls */
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
     int omitTable;               /* True if we use the index only */
-    int regBignull = 0;
+    int regBignull = 0;          /* big-null flag register */
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
@@ -1691,6 +1691,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_Integer, 0, regBignull);
+        VdbeComment((v, "NULL-scan flag"));
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
@@ -1776,6 +1777,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( nConstraint ){
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_If, regBignull, sqlite3VdbeCurrentAddr(v)+3);
+        VdbeComment((v, "If in NULL-scan"));
         VdbeCoverage(v);
       }
       op = aEndOp[bRev*2 + endEq];
@@ -1787,6 +1789,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     if( regBignull ){
       sqlite3VdbeAddOp2(v, OP_IfNot, regBignull, sqlite3VdbeCurrentAddr(v)+2);
+      VdbeComment((v, "If not in NULL-scan"));
       VdbeCoverage(v);
       if( bStopAtNull ){
         op = aEndOp[bRev*2 + 0];
