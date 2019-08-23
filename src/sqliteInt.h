@@ -1847,9 +1847,11 @@ struct CollSeq {
 /*
 ** A sort order can be either ASC or DESC.
 */
-#define SQLITE_SO_ASC       0  /* Sort in ascending order */
-#define SQLITE_SO_DESC      1  /* Sort in ascending order */
-#define SQLITE_SO_UNDEFINED -1 /* No sort order specified */
+#define SQLITE_SO_ASC       0  /* Sort in ascending order by default */
+#define SQLITE_SO_DESC      1  /* Sort in descending order */
+#define SQLITE_SO_BIGNULL   2  /* NULLs larger than all other values */
+#define SQLITE_SO_SMALLNULL 4  /* NULLs smaller, explicitly stated */
+#define SQLITE_SO_XASC      8  /* Actually holds the ASC keyword */
 
 /*
 ** Column affinity types.
@@ -2610,7 +2612,6 @@ struct ExprList {
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
-    unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
     union {
       struct {
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
@@ -3891,7 +3892,7 @@ void sqlite3ExprDelete(sqlite3*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
-void sqlite3ExprListSetSortOrder(ExprList*,int,int);
+void sqlite3ExprListSetSortOrder(ExprList*,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);

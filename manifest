@@ -1,5 +1,5 @@
-C Move\ssome\sthings\sin\sparse.y\sso\sthat\sTK_COLUMN\sand\sTK_AGG_COLUMN\sare\sassigned\sthe\ssame\svalues\sas\sthey\sare\son\strunk\sfor\sa\svery\ssmall\sspeedup.
-D 2019-08-23T20:33:01.837
+C Attempt\sto\sparse\sthe\sNULLS\sLAST\sclause\smore\sefficiently.\s\sA\sfew\scycles\swere\nsaved,\sbut\sat\sthe\sexpense\sof\smore\scode.\s\sAnd\sthere\sis\sa\sbug\swas\sintroduced\nsomewhere.\s\sNot\sworth\scontinuing\sdown\sthis\sline.
+D 2019-08-23T21:11:11.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -467,7 +467,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 5cf994516c1b74928b9d15971573a8bc8595e1afec129184099976da603402de
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c da5d5d82eb53cb004e9120277cfe93a9c3dd294871eae3d728ebd0faee84d969
+F src/build.c 86827bdbc275ade579e778e2d430c252659fffa25ea88f45884cbe5d32f36de2
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -475,7 +475,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c e5f0cf649eb1477c7a57c9e30516aeead9d9d3f8229f4bbf782365665eb0f556
+F src/expr.c 1ed0847f4842c56a2f18e9b096526297b85fdb7b7c058e59ac77dc4cec621b4a
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
 F src/func.c 4ee36219698d50d672a28eca4adb0fd6b92e607a1883d318315e0d2fd5044467
@@ -512,7 +512,7 @@ F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y d127bf3f79f9f5baccfdfa00c7898df3eafa027ac58c35fd673bf81b008b2374
+F src/parse.y 1e469e2b5164d38ae3356314616fb5dcde840732cae4250e83e56082904683c8
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
@@ -528,7 +528,7 @@ F src/shell.c.in e0f0758b6ab506d8ab12502fd2b8c55546bb9e4bb772374344a5a1b73f5bc2b
 F src/sqlite.h.in 50fc0914ccd347437db9a0278a47d7541df3a45eb6e641e9680750c6f98dad27
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
-F src/sqliteInt.h 6c5293a35a4377e3dcce476e86f6d023328d1e770d2943c4cf260131a3e0d175
+F src/sqliteInt.h f5a9c61f976a171654f429e4dac452b27a40a4250148d14a7ca3a918a4d9b31b
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1837,7 +1837,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bfe793780fa6fc7a1e7d0ee60606dda272985de9573887dca118e9510fc609f2
-R 65f7f5b095c6143834951d2d50e30b05
-U dan
-Z 741541dbd05afd6dd401231ece81d5cb
+P d26fdfa3bc5f8d9c4a6000462080b0dd508e5cae9a83e0d126be48195224da8c
+R e3fe5b60b5f6618296725ebf365cf8d1
+T *branch * dead-end
+T *sym-dead-end *
+T +closed *
+T -sym-nulls-last *
+U drh
+Z d85e52aacc1f69d8551de2fefb926b64

@@ -782,25 +782,26 @@ using_opt(U) ::= .                        {U = 0;}
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
-sortlist(A) ::= sortlist(A) COMMA expr(Y) sortorder(Z) nulls(X). {
+sortlist(A) ::= sortlist(A) COMMA expr(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,A,Y);
-  sqlite3ExprListSetSortOrder(A,Z,X);
+  sqlite3ExprListSetSortOrder(A,Z);
 }
-sortlist(A) ::= expr(Y) sortorder(Z) nulls(X). {
+sortlist(A) ::= expr(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,0,Y); /*A-overwrites-Y*/
-  sqlite3ExprListSetSortOrder(A,Z,X);
+  sqlite3ExprListSetSortOrder(A,Z);
 }
 
 %type sortorder {int}
 
-sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
-sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
-sortorder(A) ::= .              {A = SQLITE_SO_UNDEFINED;}
-
-%type nulls {int}
-nulls(A) ::= NULLS FIRST.       {A = SQLITE_SO_ASC;}
-nulls(A) ::= NULLS LAST.        {A = SQLITE_SO_DESC;}
-nulls(A) ::= .                  {A = SQLITE_SO_UNDEFINED;}
+sortorder(A) ::= ASC.               {A = SQLITE_SO_XASC;}
+sortorder(A) ::= ASC NULLS FIRST.   {A = SQLITE_SO_XASC|SQLITE_SO_SMALLNULL;}
+sortorder(A) ::= ASC NULLS LAST.    {A = SQLITE_SO_XASC|SQLITE_SO_BIGNULL;}
+sortorder(A) ::= DESC.              {A = SQLITE_SO_DESC;}
+sortorder(A) ::= DESC NULLS FIRST.  {A = SQLITE_SO_DESC|SQLITE_SO_BIGNULL;}
+sortorder(A) ::= DESC NULLS LAST.   {A = SQLITE_SO_DESC|SQLITE_SO_SMALLNULL;}
+sortorder(A) ::= .                  {A = SQLITE_SO_ASC;}
+sortorder(A) ::= NULLS FIRST.       {A = SQLITE_SO_XASC|SQLITE_SO_SMALLNULL;}
+sortorder(A) ::= NULLS LAST.        {A = SQLITE_SO_XASC|SQLITE_SO_BIGNULL;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1347,7 +1348,7 @@ uniqueflag(A) ::= .        {A = OE_None;}
     int sortOrder
   ){
     ExprList *p = sqlite3ExprListAppend(pParse, pPrior, 0);
-    if( (hasCollate || sortOrder!=SQLITE_SO_UNDEFINED)
+    if( (hasCollate || sortOrder!=SQLITE_SO_ASC)
         && pParse->db->init.busy==0
     ){
       sqlite3ErrorMsg(pParse, "syntax error after column name \"%.*s\"",

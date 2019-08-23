@@ -3162,10 +3162,11 @@ int sqlite3HasExplicitNulls(Parse *pParse, ExprList *pList){
   if( pList ){
     int i;
     for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].bNulls ){
-        u8 sf = pList->a[i].sortFlags;
+      u8 sf = pList->a[i].sortFlags;
+      if( sf & (SQLITE_SO_BIGNULL|SQLITE_SO_SMALLNULL) ){
         sqlite3ErrorMsg(pParse, "unsupported use of NULLS %s", 
-            (sf==0 || sf==3) ? "FIRST" : "LAST"
+            (sf & SQLITE_SO_BIGNULL)==(sf & SQLITE_SO_DESC) ?
+                "FIRST" : "LAST"
         );
         return 1;
       }
@@ -3392,7 +3393,7 @@ void sqlite3CreateIndex(
               sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;
     assert( pList->nExpr==1 );
-    sqlite3ExprListSetSortOrder(pList, sortOrder, SQLITE_SO_UNDEFINED);
+    sqlite3ExprListSetSortOrder(pList, sortOrder);
   }else{
     sqlite3ExprListCheckLength(pParse, pList, "index");
     if( pParse->nErr ) goto exit_create_index;
