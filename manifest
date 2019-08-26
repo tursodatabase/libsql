@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
-D 2019-08-26T13:45:49.721
+C Improved\sdetection\sof\snumber\sof\scolumn\smismatch\sfor\svector\sassignment\nin\sUPDATE\sstatements.\s\sTicket\s[78acc9d40f0786e8]
+D 2019-08-26T14:18:28.243
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 9962ab98d340c9d6815ce381e374ce928f7a7a2a04ca7779b10ffe93db563da0
+F src/expr.c 701e304da3f0ddf491ff6927eeafdd196b491e48c5290117dcb95e19dd3413ea
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
 F src/func.c 4ee36219698d50d672a28eca4adb0fd6b92e607a1883d318315e0d2fd5044467
@@ -528,7 +528,7 @@ F src/shell.c.in 596e4160b6418900edc0aff4dbb8e172d8ab6c5e80e846ed8ef027ecc8612be
 F src/sqlite.h.in 50fc0914ccd347437db9a0278a47d7541df3a45eb6e641e9680750c6f98dad27
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
-F src/sqliteInt.h 52594e495e35649c22f650b5249e515ac8eb108d97be304d14a0e89539ed1c59
+F src/sqliteInt.h 9a3e2cf34d375ea74ecb9a1a60651f8b22b2bca007742a393cc87f4a3a2db0c3
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1260,7 +1260,7 @@ F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 02e35f7762371c2f57ebd856aa056eac56cb27ef7715a0bb31eac1895a745356
 F test/rowvalue5.test c81c7d8cf36711ab37675ad7376084ae2a359cb6
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
-F test/rowvalue7.test 5d06ff19d9e6969e574a2e662a531dd0c67801a8
+F test/rowvalue7.test c1cbdbf407029db01f87764097c6ac02a1c5a37efd2776eff32a9cdfdf6f2dba
 F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
 F test/rowvalue9.test d8dd2c6ecac432dadaa79e41dc2434f007be1b6b
 F test/rowvaluefault.test 7cd9ccc6c2fbdd881672984087aad0491bb75504
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9690013a00d73a8047b25149ded50d20c74b5c62c0725eec50ed8477688e58a0
-R 2f001fd65969a9ca56fabaf8851a89b5
+P d0cc06d8a30444125e5655f6587a6355471c3447c08a2e5f7a046a4ed5cc5f09
+R c94e7f0fd8fde374ff7a64e52e862147
 U drh
-Z b2e7fed545219961a9764335cb571eba
+Z 704a1e95609dba9715f49ae5f6d53285
