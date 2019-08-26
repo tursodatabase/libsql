@@ -1,6 +1,6 @@
 use std::ffi::CString;
 use std::mem::MaybeUninit;
-use std::os::raw::c_int;
+use std::os::raw::{c_char, c_int};
 #[cfg(feature = "load_extension")]
 use std::path::Path;
 use std::ptr;
@@ -178,8 +178,6 @@ impl InnerConnection {
 
     #[cfg(feature = "load_extension")]
     pub fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
-        use std::os::raw::c_char;
-
         let dylib_str = super::path_to_cstring(dylib_path)?;
         unsafe {
             let mut errmsg = MaybeUninit::uninit();
@@ -217,7 +215,7 @@ impl InnerConnection {
     pub fn prepare<'a>(&mut self, conn: &'a Connection, sql: &str) -> Result<Statement<'a>> {
         let mut c_stmt = MaybeUninit::uninit();
         let (c_sql, len, _) = str_for_sqlite(sql.as_bytes())?;
-        let mut c_tail = ptr::null();
+        let mut c_tail = MaybeUninit::uninit();
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {
                 let mut rc;
@@ -227,7 +225,7 @@ impl InnerConnection {
                         c_sql,
                         len,
                         c_stmt.as_mut_ptr(),
-                        &mut c_tail,
+                        c_tail.as_mut_ptr(),
                     );
                     if !unlock_notify::is_locked(self.db, rc) {
                         break;
@@ -239,16 +237,22 @@ impl InnerConnection {
                 }
                 rc
             } else {
-                ffi::sqlite3_prepare_v2(self.db(), c_sql, len, c_stmt.as_mut_ptr(), &mut c_tail)
+                ffi::sqlite3_prepare_v2(
+                    self.db(),
+                    c_sql,
+                    len,
+                    c_stmt.as_mut_ptr(),
+                    c_tail.as_mut_ptr(),
+                )
             }
         };
+        self.decode_result(r)?;
+
         let c_stmt: *mut ffi::sqlite3_stmt = unsafe { c_stmt.assume_init() };
-        if !c_tail.is_null() && unsafe { *c_tail == 0 } {
-            // '\0' when there is no ';' at the end
-            c_tail = ptr::null(); // TODO ignore spaces, comments, ... at the end
-        }
-        self.decode_result(r)
-            .map(|_| Statement::new(conn, RawStatement::new(c_stmt, c_tail)))
+        let c_tail: *const c_char = unsafe { c_tail.assume_init() };
+        // TODO ignore spaces, comments, ... at the end
+        let tail = !c_tail.is_null() && unsafe { c_tail != c_sql.offset(len as isize) };
+        Ok(Statement::new(conn, RawStatement::new(c_stmt, tail)))
     }
 
     pub fn changes(&mut self) -> usize {

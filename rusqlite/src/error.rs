@@ -102,7 +102,8 @@ pub enum Error {
     GetAuxWrongType,
 
     /// Error when the SQL contains multiple statements.
-    MultipleStatement,}
+    MultipleStatement,
+}
 
 impl PartialEq for Error {
     fn eq(&self, other: &Error) -> bool {

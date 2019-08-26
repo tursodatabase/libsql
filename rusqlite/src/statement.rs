@@ -511,6 +511,7 @@ impl Statement<'_> {
     }
 
     fn execute_with_bound_parameters(&mut self) -> Result<usize> {
+        self.check_update()?;
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
@@ -527,7 +528,7 @@ impl Statement<'_> {
     }
 
     fn finalize_(&mut self) -> Result<()> {
-        let mut stmt = RawStatement::new(ptr::null_mut(), ptr::null());
+        let mut stmt = RawStatement::new(ptr::null_mut(), false);
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
     }
@@ -544,6 +545,30 @@ impl Statement<'_> {
         /*if !self.stmt.readonly() { does not work for PRAGMA
             return Err(Error::InvalidQuery);
         }*/
+        Ok(())
+    }
+
+    #[cfg(all(feature = "bundled", feature = "extra_check"))]
+    #[inline]
+    fn check_update(&self) -> Result<()> {
+        if self.column_count() > 0 || self.stmt.readonly() {
+            return Err(Error::ExecuteReturnedResults);
+        }
+        Ok(())
+    }
+
+    #[cfg(all(not(feature = "bundled"), feature = "extra_check"))]
+    #[inline]
+    fn check_update(&self) -> Result<()> {
+        if self.column_count() > 0 {
+            return Err(Error::ExecuteReturnedResults);
+        }
+        Ok(())
+    }
+
+    #[cfg(not(feature = "extra_check"))]
+    #[inline]
+    fn check_update(&self) -> Result<()> {
         Ok(())
     }
 
@@ -574,6 +599,7 @@ impl Statement<'_> {
         self.stmt.get_status(status, true)
     }
 
+    #[cfg(feature = "extra_check")]
     pub(crate) fn check_no_tail(&self) -> Result<()> {
         if self.stmt.has_tail() {
             Err(Error::MultipleStatement)
@@ -581,11 +607,17 @@ impl Statement<'_> {
             Ok(())
         }
     }
+
+    #[cfg(not(feature = "extra_check"))]
+    #[inline]
+    pub(crate) fn check_no_tail(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
 impl Into<RawStatement> for Statement<'_> {
     fn into(mut self) -> RawStatement {
-        let mut stmt = RawStatement::new(ptr::null_mut(), ptr::null());
+        let mut stmt = RawStatement::new(ptr::null_mut(), false);
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }

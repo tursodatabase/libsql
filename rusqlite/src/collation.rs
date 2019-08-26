@@ -125,7 +125,9 @@ impl InnerConnection {
                     str::from_utf8_unchecked(c_slice)
                 };
                 callback(&conn, collation_name)
-            }).is_err() {
+            })
+            .is_err()
+            {
                 return; // FIXME How ?
             }
         }

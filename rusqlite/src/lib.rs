@@ -896,7 +896,8 @@ mod test {
             )
             .expect("create temp db");
 
-        let mut db1 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap();
+        let mut db1 =
+            Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap();
         let mut db2 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
 
         db1.busy_timeout(Duration::from_millis(0)).unwrap();
@@ -1066,7 +1067,8 @@ mod test {
             .execute(
                 "CREATE TABLE foo(x INTEGER); CREATE TABLE foo(x INTEGER)",
                 NO_PARAMS,
-            ).unwrap_err();
+            )
+            .unwrap_err();
         match err {
             Error::MultipleStatement => (),
             _ => panic!("Unexpected error: {}", err),

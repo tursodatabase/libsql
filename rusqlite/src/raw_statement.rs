@@ -2,15 +2,15 @@ use super::ffi;
 use super::unlock_notify;
 use super::StatementStatus;
 use std::ffi::CStr;
-use std::os::raw::{c_char, c_int};
+use std::os::raw::c_int;
 use std::ptr;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
-pub struct RawStatement(*mut ffi::sqlite3_stmt, *const c_char);
+pub struct RawStatement(*mut ffi::sqlite3_stmt, bool);
 
 impl RawStatement {
-    pub fn new(stmt: *mut ffi::sqlite3_stmt, tail: *const c_char) -> RawStatement {
+    pub fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
         RawStatement(stmt, tail)
     }
 
@@ -131,7 +131,7 @@ impl RawStatement {
     }
 
     pub fn has_tail(&self) -> bool {
-        !self.1.is_null()
+        self.1
     }
 }
 
