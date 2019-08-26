@@ -2859,7 +2859,7 @@ void sqlite3CodeRhsOfIN(
 **
 ** The pExpr parameter is the SELECT or EXISTS operator to be coded.
 **
-** The register that holds the result.  For a multi-column SELECT, 
+** Return the register that holds the result.  For a multi-column SELECT, 
 ** the result is stored in a contiguous array of registers and the
 ** return value is the register of the left-most result column.
 ** Return 0 if an error occurs.
