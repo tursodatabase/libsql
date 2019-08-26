@@ -4,16 +4,40 @@ use std::path::Path;
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
-    build::main(&out_dir, &out_path);
+    if cfg!(feature = "sqlcipher") {
+        if cfg!(any(
+            feature = "bundled",
+            all(windows, feature = "bundled-windows")
+        )) {
+            println!(
+                "cargo:warning={}",
+                "Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
+                 This can lead to issues if your version of SQLCipher is not up to date!");
+        }
+        build_linked::main(&out_dir, &out_path)
+    } else {
+        // This can't be `cfg!` without always requiring our `mod build_bundled` (and
+        // thus `cc`)
+        #[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
+        {
+            build_bundled::main(&out_dir, &out_path)
+        }
+        #[cfg(not(any(feature = "bundled", all(windows, feature = "bundled-windows"))))]
+        {
+            build_linked::main(&out_dir, &out_path)
+        }
+    }
 }
 
-#[cfg(feature = "bundled")]
-mod build {
+#[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
+mod build_bundled {
     use cc;
+    use std::env;
     use std::path::Path;
 
     pub fn main(out_dir: &str, out_path: &Path) {
         if cfg!(feature = "sqlcipher") {
+            // This is just a sanity check, the top level `main` should ensure this.
             panic!("Builds with bundled SQLCipher are not supported");
         }
 
@@ -46,11 +70,29 @@ mod build {
             .flag("-DSQLITE_ENABLE_RTREE")
             .flag("-DSQLITE_ENABLE_STAT2")
             .flag("-DSQLITE_ENABLE_STAT4")
-            .flag("-DSQLITE_HAVE_ISNAN")
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
             .flag("-DHAVE_USLEEP=1");
+        // Older versions of visual studio don't support c99 (including isnan), which
+        // causes a build failure when the linker fails to find the `isnan`
+        // function. `sqlite` provides its own implmentation, using the fact
+        // that x != x when x is NaN.
+        //
+        // There may be other platforms that don't support `isnan`, they should be
+        // tested for here.
+        if cfg!(target_env = "msvc") {
+            use cc::windows_registry::{find_vs_version, VsVers};
+            let vs_has_nan = match find_vs_version() {
+                Ok(ver) => ver != VsVers::Vs12,
+                Err(_msg) => false,
+            };
+            if vs_has_nan {
+                cfg.flag("-DSQLITE_HAVE_ISNAN");
+            }
+        } else {
+            cfg.flag("-DSQLITE_HAVE_ISNAN");
+        }
         if cfg!(feature = "unlock_notify") {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
@@ -60,6 +102,17 @@ mod build {
         if cfg!(feature = "session") {
             cfg.flag("-DSQLITE_ENABLE_SESSION");
         }
+
+        if let Ok(limit) = env::var("SQLITE_MAX_VARIABLE_NUMBER") {
+            cfg.flag(&format!("-DSQLITE_MAX_VARIABLE_NUMBER={}", limit));
+        }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_VARIABLE_NUMBER");
+
+        if let Ok(limit) = env::var("SQLITE_MAX_EXPR_DEPTH") {
+            cfg.flag(&format!("-DSQLITE_MAX_EXPR_DEPTH={}", limit));
+        }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH");
+
         cfg.compile("libsqlite3.a");
 
         println!("cargo:lib_dir={}", out_dir);
@@ -98,8 +151,7 @@ impl From<HeaderLocation> for String {
     }
 }
 
-#[cfg(not(feature = "bundled"))]
-mod build {
+mod build_linked {
     use pkg_config;
 
     #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
@@ -111,7 +163,24 @@ mod build {
 
     pub fn main(_out_dir: &str, out_path: &Path) {
         let header = find_sqlite();
-        bindings::write_to_out_dir(header, out_path);
+        if cfg!(any(
+            feature = "bundled",
+            all(windows, feature = "bundled-windows")
+        )) && !cfg!(feature = "buildtime_bindgen")
+        {
+            // We can only get here if `bundled` and `sqlcipher` were both
+            // specified (and `builtime_bindgen` was not). In order to keep
+            // `rusqlite` relatively clean we hide the fact that `bundled` can
+            // be ignored in some cases, and just use the bundled bindings, even
+            // though the library we found might not match their version.
+            // Ideally we'd perform a version check here, but doing so is rather
+            // tricky, since we might not have access to executables (and
+            // moreover, we might be cross compiling).
+            std::fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
+                .expect("Could not copy bindings to output directory");
+        } else {
+            bindings::write_to_out_dir(header, out_path);
+        }
     }
 
     fn find_link_mode() -> &'static str {
@@ -132,10 +201,19 @@ mod build {
         if cfg!(target_os = "windows") {
             println!("cargo:rerun-if-env-changed=PATH");
         }
+        if cfg!(all(feature = "vcpkg", target_env = "msvc")) {
+            println!("cargo:rerun-if-env-changed=VCPKGRS_DYNAMIC");
+        }
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
-            println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
-            println!("cargo:rustc-link-search={}", dir);
+            // Try to use pkg-config to determine link commands
+            let pkgconfig_path = Path::new(&dir).join("pkgconfig");
+            env::set_var("PKG_CONFIG_PATH", pkgconfig_path);
+            if let Err(_) = pkg_config::Config::new().probe(link_lib) {
+                // Otherwise just emit the bare minimum link commands.
+                println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+                println!("cargo:rustc-link-search={}", dir);
+            }
             return HeaderLocation::FromEnvironment;
         }
 
@@ -193,7 +271,7 @@ mod build {
     }
 }
 
-#[cfg(all(not(feature = "buildtime_bindgen"), not(feature = "bundled")))]
+#[cfg(not(feature = "buildtime_bindgen"))]
 mod bindings {
     use super::HeaderLocation;
 
@@ -220,8 +298,8 @@ mod bindings {
 mod bindings {
     use bindgen;
 
-    use self::bindgen::callbacks::{IntKind, ParseCallbacks};
     use super::HeaderLocation;
+    use bindgen::callbacks::{IntKind, ParseCallbacks};
 
     use std::fs::OpenOptions;
     use std::io::Write;

@@ -167,7 +167,7 @@ pub struct Backup<'a, 'b> {
     b: *mut ffi::sqlite3_backup,
 }
 
-impl<'a, 'b> Backup<'a, 'b> {
+impl Backup<'_, '_> {
     /// Attempt to create a new handle that will allow backups from `from` to
     /// `to`. Note that `to` is a `&mut` - this is because SQLite forbids any
     /// API calls on the destination of a backup while the backup is taking
@@ -177,7 +177,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new(from: &'a Connection, to: &'b mut Connection) -> Result<Backup<'a, 'b>> {
+    pub fn new<'a, 'b>(from: &'a Connection, to: &'b mut Connection) -> Result<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
 
@@ -190,7 +190,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new_with_names(
+    pub fn new_with_names<'a, 'b>(
         from: &'a Connection,
         from_name: DatabaseName<'_>,
         to: &'b mut Connection,
@@ -294,7 +294,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Drop for Backup<'a, 'b> {
+impl Drop for Backup<'_, '_> {
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_backup_finish(self.b) };
     }

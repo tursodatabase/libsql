@@ -16,43 +16,40 @@
 //! ```rust
 //! use rusqlite::blob::ZeroBlob;
 //! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! use std::error::Error;
 //! use std::io::{Read, Seek, SeekFrom, Write};
 //!
-//! fn main() {
-//!     let db = Connection::open_in_memory().unwrap();
-//!     db.execute_batch("CREATE TABLE test (content BLOB);")
-//!         .unwrap();
+//! fn main() -> Result<(), Box<Error>> {
+//!     let db = Connection::open_in_memory()?;
+//!     db.execute_batch("CREATE TABLE test (content BLOB);")?;
 //!     db.execute(
 //!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
 //!         NO_PARAMS,
-//!     )
-//!     .unwrap();
+//!     )?;
 //!
 //!     let rowid = db.last_insert_rowid();
-//!     let mut blob = db
-//!         .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-//!         .unwrap();
+//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
 //!
 //!     // Make sure to test that the number of bytes written matches what you expect;
 //!     // if you try to write too much, the data will be truncated to the size of the
 //!     // BLOB.
-//!     let bytes_written = blob.write(b"01234567").unwrap();
+//!     let bytes_written = blob.write(b"01234567")?;
 //!     assert_eq!(bytes_written, 8);
 //!
 //!     // Same guidance - make sure you check the number of bytes read!
-//!     blob.seek(SeekFrom::Start(0)).unwrap();
+//!     blob.seek(SeekFrom::Start(0))?;
 //!     let mut buf = [0u8; 20];
-//!     let bytes_read = blob.read(&mut buf[..]).unwrap();
+//!     let bytes_read = blob.read(&mut buf[..])?;
 //!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
 //!
-//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])
-//!         .unwrap();
+//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])?;
 //!
 //!     // given a new row ID, we can reopen the blob on that row
 //!     let rowid = db.last_insert_rowid();
-//!     blob.reopen(rowid).unwrap();
+//!     blob.reopen(rowid)?;
 //!
 //!     assert_eq!(blob.size(), 64);
+//!     Ok(())
 //! }
 //! ```
 use std::cmp::min;
@@ -111,7 +108,7 @@ impl Connection {
     }
 }
 
-impl<'conn> Blob<'conn> {
+impl Blob<'_> {
     /// Move a BLOB handle to a new row.
     ///
     /// # Failure
@@ -151,7 +148,7 @@ impl<'conn> Blob<'conn> {
     }
 }
 
-impl<'conn> io::Read for Blob<'conn> {
+impl io::Read for Blob<'_> {
     /// Read data from a BLOB incrementally. Will return Ok(0) if the end of
     /// the blob has been reached.
     ///
@@ -175,7 +172,7 @@ impl<'conn> io::Read for Blob<'conn> {
     }
 }
 
-impl<'conn> io::Write for Blob<'conn> {
+impl io::Write for Blob<'_> {
     /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of
     /// the blob has been reached; consider using `Write::write_all(buf)`
     /// if you want to get an error if the entirety of the buffer cannot be
@@ -208,7 +205,7 @@ impl<'conn> io::Write for Blob<'conn> {
     }
 }
 
-impl<'conn> io::Seek for Blob<'conn> {
+impl io::Seek for Blob<'_> {
     /// Seek to an offset, in bytes, in BLOB.
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         let pos = match pos {
@@ -235,7 +232,7 @@ impl<'conn> io::Seek for Blob<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for Blob<'conn> {
+impl Drop for Blob<'_> {
     fn drop(&mut self) {
         self.close_();
     }

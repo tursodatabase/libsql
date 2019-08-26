@@ -7,7 +7,7 @@ use std::slice::from_raw_parts;
 use std::{convert, fmt, mem, ptr, result, str};
 
 use super::ffi;
-use super::str_to_cstring;
+use super::{len_as_c_int, str_for_sqlite, str_to_cstring};
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
@@ -18,48 +18,10 @@ use crate::vtab::array::{free_array, ARRAY_TYPE};
 /// A prepared statement.
 pub struct Statement<'conn> {
     conn: &'conn Connection,
-    stmt: RawStatement,
+    pub(crate) stmt: RawStatement,
 }
 
-impl<'conn> Statement<'conn> {
-    /// Get all the column names in the result set of the prepared statement.
-    pub fn column_names(&self) -> Vec<&str> {
-        let n = self.column_count();
-        let mut cols = Vec::with_capacity(n as usize);
-        for i in 0..n {
-            let slice = self.stmt.column_name(i);
-            let s = str::from_utf8(slice.to_bytes()).unwrap();
-            cols.push(s);
-        }
-        cols
-    }
-
-    /// Return the number of columns in the result set returned by the prepared
-    /// statement.
-    pub fn column_count(&self) -> usize {
-        self.stmt.column_count()
-    }
-
-    /// Returns the column index in the result set for a given column name.
-    ///
-    /// If there is no AS clause then the name of the column is unspecified and
-    /// may change from one release of SQLite to the next.
-    ///
-    /// # Failure
-    ///
-    /// Will return an `Error::InvalidColumnName` when there is no column with
-    /// the specified `name`.
-    pub fn column_index(&self, name: &str) -> Result<usize> {
-        let bytes = name.as_bytes();
-        let n = self.column_count();
-        for i in 0..n {
-            if bytes.eq_ignore_ascii_case(self.stmt.column_name(i).to_bytes()) {
-                return Ok(i);
-            }
-        }
-        Err(Error::InvalidColumnName(String::from(name)))
-    }
-
+impl Statement<'_> {
     /// Execute the prepared statement.
     ///
     /// On success, returns the number of rows that were changed or inserted or
@@ -174,9 +136,8 @@ impl<'conn> Statement<'conn> {
     ///     let mut rows = stmt.query(NO_PARAMS)?;
     ///
     ///     let mut names = Vec::new();
-    ///     while let Some(result_row) = rows.next() {
-    ///         let row = result_row?;
-    ///         names.push(row.get(0));
+    ///     while let Some(row) = rows.next()? {
+    ///         names.push(row.get(0)?);
     ///     }
     ///
     ///     Ok(names)
@@ -209,7 +170,7 @@ impl<'conn> Statement<'conn> {
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(&[(":name", &"one")])?;
-    ///     while let Some(row) = rows.next() {
+    ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -224,7 +185,7 @@ impl<'conn> Statement<'conn> {
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
     ///     let mut rows = stmt.query_named(named_params!{ ":name": "one" })?;
-    ///     while let Some(row) = rows.next() {
+    ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -234,7 +195,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_named<'a>(&'a mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'a>> {
+    pub fn query_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'_>> {
         self.check_readonly()?;
         self.bind_parameters_named(params)?;
         Ok(Rows::new(self))
@@ -267,7 +228,7 @@ impl<'conn> Statement<'conn> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnMut(&Row<'_, '_>) -> T,
+        F: FnMut(&Row<'_>) -> Result<T>,
     {
         let rows = self.query(params)?;
         Ok(MappedRows::new(rows, f))
@@ -300,13 +261,13 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_map_named<'a, T, F>(
-        &'a mut self,
+    pub fn query_map_named<T, F>(
+        &mut self,
         params: &[(&str, &dyn ToSql)],
         f: F,
-    ) -> Result<MappedRows<'a, F>>
+    ) -> Result<MappedRows<'_, F>>
     where
-        F: FnMut(&Row<'_, '_>) -> T,
+        F: FnMut(&Row<'_>) -> Result<T>,
     {
         let rows = self.query_named(params)?;
         Ok(MappedRows::new(rows, f))
@@ -324,7 +285,7 @@ impl<'conn> Statement<'conn> {
         P: IntoIterator,
         P::Item: ToSql,
         E: convert::From<Error>,
-        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -354,7 +315,7 @@ impl<'conn> Statement<'conn> {
     /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
     ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = :id")?;
     ///     let rows =
-    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)))?;
+    ///         stmt.query_and_then_named(&[(":id", &"one")], |row| name_to_person(row.get(0)?))?;
     ///
     ///     let mut persons = Vec::new();
     ///     for person_result in rows {
@@ -368,14 +329,14 @@ impl<'conn> Statement<'conn> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then_named<'a, T, E, F>(
-        &'a mut self,
+    pub fn query_and_then_named<T, E, F>(
+        &mut self,
         params: &[(&str, &dyn ToSql)],
         f: F,
-    ) -> Result<AndThenRows<'a, F>>
+    ) -> Result<AndThenRows<'_, F>>
     where
         E: convert::From<Error>,
-        F: FnMut(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -389,7 +350,7 @@ impl<'conn> Statement<'conn> {
         P::Item: ToSql,
     {
         let mut rows = self.query(params)?;
-        let exists = rows.next().is_some();
+        let exists = rows.next()?.is_some();
         Ok(exists)
     }
 
@@ -410,11 +371,34 @@ impl<'conn> Statement<'conn> {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut rows = self.query(params)?;
 
-        rows.get_expected_row().map(|r| f(&r))
+        rows.get_expected_row().and_then(|r| f(&r))
+    }
+
+    /// Convenience method to execute a query with named parameter(s) that is
+    /// expected to return a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are
+    /// ignored.
+    ///
+    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
+    /// query truly is optional, you can call `.optional()` on the result of
+    /// this to get a `Result<Option<T>>`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
+    pub fn query_row_named<T, F>(&mut self, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
+    where
+        F: FnOnce(&Row<'_>) -> Result<T>,
+    {
+        let mut rows = self.query_named(params)?;
+
+        rows.get_expected_row().and_then(|r| f(&r))
     }
 
     /// Consumes the statement.
@@ -506,37 +490,19 @@ impl<'conn> Statement<'conn> {
             ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col as c_int, i) },
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
             ValueRef::Text(s) => unsafe {
-                let length = s.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else {
-                    let c_str = str_to_cstring(s)?;
-                    let destructor = if length > 0 {
-                        ffi::SQLITE_TRANSIENT()
-                    } else {
-                        ffi::SQLITE_STATIC()
-                    };
-                    ffi::sqlite3_bind_text(
-                        ptr,
-                        col as c_int,
-                        c_str.as_ptr(),
-                        length as c_int,
-                        destructor,
-                    )
-                }
+                let (c_str, len, destructor) = str_for_sqlite(s)?;
+                ffi::sqlite3_bind_text(ptr, col as c_int, c_str, len, destructor)
             },
             ValueRef::Blob(b) => unsafe {
-                let length = b.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else if length == 0 {
+                let length = len_as_c_int(b.len())?;
+                if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
                     ffi::sqlite3_bind_blob(
                         ptr,
                         col as c_int,
                         b.as_ptr() as *const c_void,
-                        length as c_int,
+                        length,
                         ffi::SQLITE_TRANSIENT(),
                     )
                 }
@@ -584,11 +550,16 @@ impl<'conn> Statement<'conn> {
     /// Returns a string containing the SQL text of prepared statement with
     /// bound parameters expanded.
     #[cfg(feature = "bundled")]
-    pub fn expanded_sql(&self) -> Option<&str> {
+    pub fn expanded_sql(&self) -> Option<String> {
         unsafe {
-            self.stmt
-                .expanded_sql()
-                .map(|s| str::from_utf8_unchecked(s.to_bytes()))
+            match self.stmt.expanded_sql() {
+                Some(s) => {
+                    let sql = str::from_utf8_unchecked(s.to_bytes()).to_owned();
+                    ffi::sqlite3_free(s.as_ptr() as *mut _);
+                    Some(sql)
+                }
+                _ => None,
+            }
         }
     }
 
@@ -612,7 +583,7 @@ impl<'conn> Statement<'conn> {
     }
 }
 
-impl<'conn> Into<RawStatement> for Statement<'conn> {
+impl Into<RawStatement> for Statement<'_> {
     fn into(mut self) -> RawStatement {
         let mut stmt = RawStatement::new(ptr::null_mut(), ptr::null());
         mem::swap(&mut stmt, &mut self.stmt);
@@ -620,7 +591,7 @@ impl<'conn> Into<RawStatement> for Statement<'conn> {
     }
 }
 
-impl<'conn> fmt::Debug for Statement<'conn> {
+impl fmt::Debug for Statement<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sql = str::from_utf8(self.stmt.sql().to_bytes());
         f.debug_struct("Statement")
@@ -631,14 +602,14 @@ impl<'conn> fmt::Debug for Statement<'conn> {
     }
 }
 
-impl<'conn> Drop for Statement<'conn> {
+impl Drop for Statement<'_> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.finalize_();
     }
 }
 
-impl<'conn> Statement<'conn> {
+impl Statement<'_> {
     pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }
@@ -664,10 +635,7 @@ impl<'conn> Statement<'conn> {
                     CStr::from_ptr(text as *const c_char)
                 };
 
-                // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s
-                    .to_str()
-                    .expect("sqlite3_column_text returned invalid UTF-8");
+                let s = s.to_bytes();
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
@@ -781,14 +749,13 @@ mod test {
             .unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
+        let mut stmt = db
+            .prepare("SELECT COUNT(*) FROM test WHERE name = :name")
+            .unwrap();
         assert_eq!(
             1i32,
-            db.query_row_named::<i32, _>(
-                "SELECT COUNT(*) FROM test WHERE name = :name",
-                &[(":name", &"one")],
-                |r| r.get(0)
-            )
-            .unwrap()
+            stmt.query_row_named::<i32, _>(&[(":name", &"one")], |r| r.get(0))
+                .unwrap()
         );
     }
 
@@ -806,8 +773,8 @@ mod test {
             .unwrap();
         let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
 
-        let id: i32 = rows.next().unwrap().unwrap().get(0);
-        assert_eq!(1, id);
+        let id: Result<i32> = rows.next().unwrap().unwrap().get(0);
+        assert_eq!(Ok(1), id);
     }
 
     #[test]
@@ -824,8 +791,8 @@ mod test {
             .unwrap();
         let mut rows = stmt
             .query_map_named(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0);
-                2 * id
+                let id: Result<i32> = row.get(0);
+                id.map(|i| 2 * i)
             })
             .unwrap();
 
@@ -848,7 +815,7 @@ mod test {
             .unwrap();
         let mut rows = stmt
             .query_and_then_named(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0);
+                let id: i32 = row.get(0)?;
                 if id == 1 {
                     Ok(id)
                 } else {
@@ -1021,7 +988,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         let stmt = db.prepare("SELECT ?").unwrap();
         stmt.bind_parameter(&1, 1).unwrap();
-        assert_eq!(Some("SELECT 1"), stmt.expanded_sql());
+        assert_eq!(Some("SELECT 1".to_owned()), stmt.expanded_sql());
     }
 
     #[test]

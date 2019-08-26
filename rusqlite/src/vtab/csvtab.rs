@@ -32,7 +32,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("csv", &CSV_MODULE, aux)
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref CSV_MODULE: Module<CSVTab> = read_only_module::<CSVTab>(1);
 }
 
@@ -347,6 +347,7 @@ impl From<csv::Error> for Error {
 mod test {
     use crate::vtab::csvtab;
     use crate::{Connection, Result, NO_PARAMS};
+    use fallible_iterator::FallibleIterator;
 
     #[test]
     fn test_csv_module() {
@@ -363,8 +364,9 @@ mod test {
             }
 
             let ids: Result<Vec<i32>> = s
-                .query_map(NO_PARAMS, |row| row.get::<_, i32>(0))
+                .query(NO_PARAMS)
                 .unwrap()
+                .map(|row| row.get::<_, i32>(0))
                 .collect();
             let sum = ids.unwrap().iter().sum::<i32>();
             assert_eq!(sum, 15);
@@ -389,7 +391,7 @@ mod test {
 
             let mut rows = s.query(NO_PARAMS).unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<_, i32>(0), 2);
+            assert_eq!(row.get_unwrap::<_, i32>(0), 2);
         }
         db.execute_batch("DROP TABLE vtab").unwrap();
     }

@@ -35,7 +35,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("rarray", &ARRAY_MODULE, aux)
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref ARRAY_MODULE: Module<ArrayTab> = eponymous_only_module::<ArrayTab>(1);
 }
 

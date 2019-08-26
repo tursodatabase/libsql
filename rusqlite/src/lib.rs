@@ -3,7 +3,7 @@
 //!
 //! ```rust
 //! use rusqlite::types::ToSql;
-//! use rusqlite::{params, Connection};
+//! use rusqlite::{params, Connection, Result};
 //! use time::Timespec;
 //!
 //! #[derive(Debug)]
@@ -14,8 +14,8 @@
 //!     data: Option<Vec<u8>>,
 //! }
 //!
-//! fn main() {
-//!     let conn = Connection::open_in_memory().unwrap();
+//! fn main() -> Result<()> {
+//!     let conn = Connection::open_in_memory()?;
 //!
 //!     conn.execute(
 //!         "CREATE TABLE person (
@@ -25,8 +25,7 @@
 //!                   data            BLOB
 //!                   )",
 //!         params![],
-//!     )
-//!     .unwrap();
+//!     )?;
 //!     let me = Person {
 //!         id: 0,
 //!         name: "Steven".to_string(),
@@ -37,35 +36,27 @@
 //!         "INSERT INTO person (name, time_created, data)
 //!                   VALUES (?1, ?2, ?3)",
 //!         params![me.name, me.time_created, me.data],
-//!     )
-//!     .unwrap();
+//!     )?;
 //!
-//!     let mut stmt = conn
-//!         .prepare("SELECT id, name, time_created, data FROM person")
-//!         .unwrap();
-//!     let person_iter = stmt
-//!         .query_map(params![], |row| Person {
-//!             id: row.get(0),
-//!             name: row.get(1),
-//!             time_created: row.get(2),
-//!             data: row.get(3),
+//!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person")?;
+//!     let person_iter = stmt.query_map(params![], |row| {
+//!         Ok(Person {
+//!             id: row.get(0)?,
+//!             name: row.get(1)?,
+//!             time_created: row.get(2)?,
+//!             data: row.get(3)?,
 //!         })
-//!         .unwrap();
+//!     })?;
 //!
 //!     for person in person_iter {
 //!         println!("Found person {:?}", person.unwrap());
 //!     }
+//!     Ok(())
 //! }
 //! ```
 #![allow(unknown_lints)]
 
 pub use libsqlite3_sys as ffi;
-
-#[macro_use]
-extern crate bitflags;
-#[cfg(any(test, feature = "vtab"))]
-#[macro_use]
-extern crate lazy_static;
 
 use std::cell::RefCell;
 use std::convert;
@@ -86,10 +77,11 @@ use crate::raw_statement::RawStatement;
 use crate::types::ValueRef;
 
 pub use crate::cache::CachedStatement;
+pub use crate::column::Column;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
 #[cfg(feature = "hooks")]
-pub use crate::hooks::*;
+pub use crate::hooks::Action;
 #[cfg(feature = "load_extension")]
 pub use crate::load_extension_guard::LoadExtensionGuard;
 pub use crate::row::{AndThenRows, MappedRows, Row, RowIndex, Rows};
@@ -98,16 +90,21 @@ pub use crate::transaction::{DropBehavior, Savepoint, Transaction, TransactionBe
 pub use crate::types::ToSql;
 pub use crate::version::*;
 
+#[macro_use]
+mod error;
+
 #[cfg(feature = "backup")]
 pub mod backup;
 #[cfg(feature = "blob")]
 pub mod blob;
 mod busy;
 mod cache;
+#[cfg(feature = "collation")]
+mod collation;
+mod column;
+pub mod config;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;
-#[macro_use]
-mod error;
 #[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "hooks")]
@@ -117,6 +114,7 @@ mod inner_connection;
 pub mod limits;
 #[cfg(feature = "load_extension")]
 mod load_extension_guard;
+mod pragma;
 mod raw_statement;
 mod row;
 #[cfg(feature = "session")]
@@ -238,6 +236,42 @@ fn str_to_cstring(s: &str) -> Result<CString> {
     Ok(CString::new(s)?)
 }
 
+/// Returns `Ok((string ptr, len as c_int, SQLITE_STATIC | SQLITE_TRANSIENT))`
+/// normally.
+/// Returns errors if the string has embedded nuls or is too large for sqlite.
+/// The `sqlite3_destructor_type` item is always `SQLITE_TRANSIENT` unless
+/// the string was empty (in which case it's `SQLITE_STATIC`, and the ptr is
+/// static).
+fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int, ffi::sqlite3_destructor_type)> {
+    let len = len_as_c_int(s.len())?;
+    if memchr::memchr(0, s).is_none() {
+        let (ptr, dtor_info) = if len != 0 {
+            (s.as_ptr() as *const c_char, ffi::SQLITE_TRANSIENT())
+        } else {
+            // Return a pointer guaranteed to live forever
+            ("".as_ptr() as *const c_char, ffi::SQLITE_STATIC())
+        };
+        Ok((ptr, len, dtor_info))
+    } else {
+        // There's an embedded nul, so we fabricate a NulError.
+        let e = CString::new(s);
+        Err(Error::NulError(e.unwrap_err()))
+    }
+}
+
+// Helper to cast to c_int safely, returning the correct error type if the cast
+// failed.
+fn len_as_c_int(len: usize) -> Result<c_int> {
+    if len >= (c_int::max_value() as usize) {
+        Err(Error::SqliteFailure(
+            ffi::Error::new(ffi::SQLITE_TOOBIG),
+            None,
+        ))
+    } else {
+        Ok(len as c_int)
+    }
+}
+
 fn path_to_cstring(p: &Path) -> Result<CString> {
     let s = p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned()))?;
     str_to_cstring(s)
@@ -264,7 +298,7 @@ pub enum DatabaseName<'a> {
     feature = "session",
     feature = "bundled"
 ))]
-impl<'a> DatabaseName<'a> {
+impl DatabaseName<'_> {
     fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Attached, Main, Temp};
         match *self {
@@ -297,6 +331,16 @@ impl Connection {
     /// `Connection::open_with_flags(path,
     /// OpenFlags::SQLITE_OPEN_READ_WRITE |
     /// OpenFlags::SQLITE_OPEN_CREATE)`.
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn open_my_db() -> Result<()> {
+    ///     let path = "./my_db.db3";
+    ///     let db = Connection::open(&path)?;
+    ///     println!("{}", db.is_autocommit());
+    ///     Ok(())
+    /// }
+    /// ```
     ///
     /// # Failure
     ///
@@ -477,7 +521,7 @@ impl Connection {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
         stmt.check_no_tail()?;
@@ -500,13 +544,11 @@ impl Connection {
     /// or if the underlying SQLite call fails.
     pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
     where
-        F: FnOnce(&Row<'_, '_>) -> T,
+        F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
         stmt.check_no_tail()?;
-        let mut rows = stmt.query_named(params)?;
-
-        rows.get_expected_row().map(|r| f(&r))
+        stmt.query_row_named(params, f)
     }
 
     /// Convenience method to execute a query that is expected to return a
@@ -522,7 +564,7 @@ impl Connection {
     ///     conn.query_row_and_then(
     ///         "SELECT value FROM preferences WHERE name='locale'",
     ///         NO_PARAMS,
-    ///         |row| row.get_checked(0),
+    ///         |row| row.get(0),
     ///     )
     /// }
     /// ```
@@ -538,7 +580,7 @@ impl Connection {
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_, '_>) -> result::Result<T, E>,
+        F: FnOnce(&Row<'_>) -> result::Result<T, E>,
         E: convert::From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
@@ -694,7 +736,7 @@ impl Connection {
     /// Return the number of rows modified, inserted or deleted by the most
     /// recently completed INSERT, UPDATE or DELETE statement on the database
     /// connection.
-    pub fn changes(&self) -> usize {
+    fn changes(&self) -> usize {
         self.db.borrow_mut().changes()
     }
 
@@ -719,7 +761,7 @@ impl fmt::Debug for Connection {
     }
 }
 
-bitflags! {
+bitflags::bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
     #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
     #[repr(C)]
@@ -814,12 +856,12 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod test {
-    use self::tempdir::TempDir;
-    pub use super::*;
+    use super::*;
     use crate::ffi;
-    pub use std::error::Error as StdError;
-    pub use std::fmt;
-    use tempdir;
+    use fallible_iterator::FallibleIterator;
+    use std::error::Error as StdError;
+    use std::fmt;
+    use tempdir::TempDir;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -854,8 +896,8 @@ mod test {
             )
             .expect("create temp db");
 
-        let mut db1 = Connection::open(&path).unwrap();
-        let mut db2 = Connection::open(&path).unwrap();
+        let mut db1 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap();
+        let mut db2 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
 
         db1.busy_timeout(Duration::from_millis(0)).unwrap();
         db2.busy_timeout(Duration::from_millis(0)).unwrap();
@@ -865,9 +907,9 @@ mod test {
             let tx2 = db2.transaction().unwrap();
 
             // SELECT first makes sqlite lock with a shared lock
-            tx1.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
+            tx1.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| Ok(()))
                 .unwrap();
-            tx2.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| ())
+            tx2.query_row("SELECT x FROM foo LIMIT 1", NO_PARAMS, |_| Ok(()))
                 .unwrap();
 
             tx1.execute("INSERT INTO foo VALUES(?1)", &[1]).unwrap();
@@ -923,23 +965,24 @@ mod test {
         // statement first.
         let raw_stmt = {
             use super::str_to_cstring;
-            use std::mem;
+            use std::mem::MaybeUninit;
             use std::os::raw::c_int;
             use std::ptr;
 
             let raw_db = db.db.borrow_mut().db;
             let sql = "SELECT 1";
-            let mut raw_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
+            let mut raw_stmt = MaybeUninit::uninit();
             let rc = unsafe {
                 ffi::sqlite3_prepare_v2(
                     raw_db,
                     str_to_cstring(sql).unwrap().as_ptr(),
                     (sql.len() + 1) as c_int,
-                    &mut raw_stmt,
+                    raw_stmt.as_mut_ptr(),
                     ptr::null_mut(),
                 )
             };
             assert_eq!(rc, ffi::SQLITE_OK);
+            let raw_stmt: *mut ffi::sqlite3_stmt = unsafe { raw_stmt.assume_init() };
             raw_stmt
         };
 
@@ -1081,8 +1124,8 @@ mod test {
             let mut rows = query.query(&[4i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next() {
-                v.push(row.unwrap().get(0));
+            while let Some(row) = rows.next().unwrap() {
+                v.push(row.get(0).unwrap());
             }
 
             assert_eq!(v, [3i32, 2, 1]);
@@ -1092,8 +1135,8 @@ mod test {
             let mut rows = query.query(&[3i32]).unwrap();
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next() {
-                v.push(row.unwrap().get(0));
+            while let Some(row) = rows.next().unwrap() {
+                v.push(row.get(0).unwrap());
             }
 
             assert_eq!(v, [2i32, 1]);
@@ -1114,8 +1157,9 @@ mod test {
 
         let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
         let results: Result<Vec<String>> = query
-            .query_map(NO_PARAMS, |row| row.get(1))
+            .query(NO_PARAMS)
             .unwrap()
+            .map(|row| row.get(1))
             .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");
@@ -1146,7 +1190,7 @@ mod test {
             err => panic!("Unexpected error {}", err),
         }
 
-        let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", NO_PARAMS, |_| ());
+        let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", NO_PARAMS, |_| Ok(()));
 
         assert!(bad_query_result.is_err());
     }
@@ -1235,7 +1279,7 @@ mod test {
         {
             let mut rows = stmt.query(NO_PARAMS).unwrap();
             assert!(!db.is_busy());
-            let row = rows.next();
+            let row = rows.next().unwrap();
             assert!(db.is_busy());
             assert!(row.is_some());
         }
@@ -1304,12 +1348,11 @@ mod test {
             .prepare("SELECT interrupt() FROM (SELECT 1 UNION SELECT 2 UNION SELECT 3)")
             .unwrap();
 
-        let result: Result<Vec<i32>> = stmt.query_map(NO_PARAMS, |r| r.get(0)).unwrap().collect();
+        let result: Result<Vec<i32>> = stmt.query(NO_PARAMS).unwrap().map(|r| r.get(0)).collect();
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
                 assert_eq!(err.code, ErrorCode::OperationInterrupted);
-                return;
             }
             err => {
                 panic!("Unexpected error {}", err);
@@ -1347,8 +1390,7 @@ mod test {
         let mut query = db.prepare("SELECT i, x FROM foo").unwrap();
         let mut rows = query.query(NO_PARAMS).unwrap();
 
-        while let Some(res) = rows.next() {
-            let row = res.unwrap();
+        while let Some(row) = rows.next().unwrap() {
             let i = row.get_raw(0).as_i64().unwrap();
             let expect = vals[i as usize];
             let x = row.get_raw("x").as_str().unwrap();
@@ -1421,7 +1463,7 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let results: Result<Vec<String>> = query
-                .query_and_then(NO_PARAMS, |row| row.get_checked(1))
+                .query_and_then(NO_PARAMS, |row| row.get(1))
                 .unwrap()
                 .collect();
 
@@ -1442,17 +1484,17 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let bad_type: Result<Vec<f64>> = query
-                .query_and_then(NO_PARAMS, |row| row.get_checked(1))
+                .query_and_then(NO_PARAMS, |row| row.get(1))
                 .unwrap()
                 .collect();
 
             match bad_type.unwrap_err() {
-                Error::InvalidColumnType(_, _) => (),
+                Error::InvalidColumnType(_, _, _) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
             let bad_idx: Result<Vec<String>> = query
-                .query_and_then(NO_PARAMS, |row| row.get_checked(3))
+                .query_and_then(NO_PARAMS, |row| row.get(3))
                 .unwrap()
                 .collect();
 
@@ -1476,9 +1518,7 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let results: CustomResult<Vec<String>> = query
-                .query_and_then(NO_PARAMS, |row| {
-                    row.get_checked(1).map_err(CustomError::Sqlite)
-                })
+                .query_and_then(NO_PARAMS, |row| row.get(1).map_err(CustomError::Sqlite))
                 .unwrap()
                 .collect();
 
@@ -1499,21 +1539,17 @@ mod test {
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
             let bad_type: CustomResult<Vec<f64>> = query
-                .query_and_then(NO_PARAMS, |row| {
-                    row.get_checked(1).map_err(CustomError::Sqlite)
-                })
+                .query_and_then(NO_PARAMS, |row| row.get(1).map_err(CustomError::Sqlite))
                 .unwrap()
                 .collect();
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
             let bad_idx: CustomResult<Vec<String>> = query
-                .query_and_then(NO_PARAMS, |row| {
-                    row.get_checked(3).map_err(CustomError::Sqlite)
-                })
+                .query_and_then(NO_PARAMS, |row| row.get(3).map_err(CustomError::Sqlite))
                 .unwrap()
                 .collect();
 
@@ -1544,7 +1580,7 @@ mod test {
 
             let query = "SELECT x, y FROM foo ORDER BY x DESC";
             let results: CustomResult<String> = db.query_row_and_then(query, NO_PARAMS, |row| {
-                row.get_checked(1).map_err(CustomError::Sqlite)
+                row.get(1).map_err(CustomError::Sqlite)
             });
 
             assert_eq!(results.unwrap(), "hello");
@@ -1561,16 +1597,16 @@ mod test {
 
             let query = "SELECT x, y FROM foo ORDER BY x DESC";
             let bad_type: CustomResult<f64> = db.query_row_and_then(query, NO_PARAMS, |row| {
-                row.get_checked(1).map_err(CustomError::Sqlite)
+                row.get(1).map_err(CustomError::Sqlite)
             });
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
             let bad_idx: CustomResult<String> = db.query_row_and_then(query, NO_PARAMS, |row| {
-                row.get_checked(3).map_err(CustomError::Sqlite)
+                row.get(3).map_err(CustomError::Sqlite)
             });
 
             match bad_idx.unwrap_err() {
@@ -1597,7 +1633,20 @@ mod test {
             db.execute_batch(sql).unwrap();
 
             db.query_row("SELECT * FROM foo", params![], |r| {
-                assert_eq!(2, r.column_count())
+                assert_eq!(2, r.column_count());
+                Ok(())
+            })
+            .unwrap();
+        }
+        #[test]
+        fn test_dyn_box() {
+            let db = checked_memory_handle();
+            db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+            let b: Box<dyn ToSql> = Box::new(5);
+            db.execute("INSERT INTO foo VALUES(?)", &[b]).unwrap();
+            db.query_row("SELECT x FROM foo", params![], |r| {
+                assert_eq!(5, r.get_unwrap::<_, i32>(0));
+                Ok(())
             })
             .unwrap();
         }

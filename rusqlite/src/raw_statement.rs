@@ -26,8 +26,32 @@ impl RawStatement {
         unsafe { ffi::sqlite3_column_type(self.0, idx as c_int) }
     }
 
-    pub fn column_name(&self, idx: usize) -> &CStr {
-        unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx as c_int)) }
+    pub fn column_decltype(&self, idx: usize) -> Option<&CStr> {
+        unsafe {
+            let decltype = ffi::sqlite3_column_decltype(self.0, idx as c_int);
+            if decltype.is_null() {
+                None
+            } else {
+                Some(CStr::from_ptr(decltype))
+            }
+        }
+    }
+
+    pub fn column_name(&self, idx: usize) -> Option<&CStr> {
+        let idx = idx as c_int;
+        if idx < 0 || idx >= self.column_count() as c_int {
+            return None;
+        }
+        unsafe {
+            let ptr = ffi::sqlite3_column_name(self.0, idx);
+            // If ptr is null here, it's an OOM, so there's probably nothing
+            // meaningful we can do. Just assert instead of returning None.
+            assert!(
+                !ptr.is_null(),
+                "Null pointer from sqlite3_column_name: Out of memory?"
+            );
+            Some(CStr::from_ptr(ptr))
+        }
     }
 
     pub fn step(&self) -> c_int {
@@ -90,15 +114,14 @@ impl RawStatement {
         unsafe { ffi::sqlite3_stmt_readonly(self.0) != 0 }
     }
 
+    /// `CStr` must be freed
     #[cfg(feature = "bundled")]
-    pub fn expanded_sql(&self) -> Option<&CStr> {
-        unsafe {
-            let ptr = ffi::sqlite3_expanded_sql(self.0);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(CStr::from_ptr(ptr))
-            }
+    pub unsafe fn expanded_sql(&self) -> Option<&CStr> {
+        let ptr = ffi::sqlite3_expanded_sql(self.0);
+        if ptr.is_null() {
+            None
+        } else {
+            Some(CStr::from_ptr(ptr))
         }
     }
 

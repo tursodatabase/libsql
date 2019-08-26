@@ -40,7 +40,7 @@ where
 // be converted into Values.
 macro_rules! from_value(
     ($t:ty) => (
-        impl<'a> From<$t> for ToSqlOutput<'a> {
+        impl From<$t> for ToSqlOutput<'_> {
             fn from(t: $t) -> Self { ToSqlOutput::Owned(t.into())}
         }
     )
@@ -65,7 +65,10 @@ from_value!(Vec<u8>);
 #[cfg(feature = "i128_blob")]
 from_value!(i128);
 
-impl<'a> ToSql for ToSqlOutput<'a> {
+#[cfg(feature = "uuid")]
+from_value!(uuid::Uuid);
+
+impl ToSql for ToSqlOutput<'_> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(match *self {
             ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
@@ -82,6 +85,13 @@ impl<'a> ToSql for ToSqlOutput<'a> {
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>>;
+}
+
+impl ToSql for Box<dyn ToSql> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+        let derefed: &dyn ToSql = &**self;
+        derefed.to_sql()
+    }
 }
 
 // We should be able to use a generic impl like this:
@@ -121,7 +131,10 @@ to_sql_self!(f64);
 #[cfg(feature = "i128_blob")]
 to_sql_self!(i128);
 
-impl<'a, T: ?Sized> ToSql for &'a T
+#[cfg(feature = "uuid")]
+to_sql_self!(uuid::Uuid);
+
+impl<T: ?Sized> ToSql for &'_ T
 where
     T: ToSql,
 {
@@ -169,7 +182,7 @@ impl<T: ToSql> ToSql for Option<T> {
     }
 }
 
-impl<'a> ToSql for Cow<'a, str> {
+impl ToSql for Cow<'_, str> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.as_ref()))
     }
@@ -229,7 +242,7 @@ mod test {
 
         let res = stmt
             .query_map(NO_PARAMS, |row| {
-                (row.get::<_, i128>(0), row.get::<_, String>(1))
+                Ok((row.get::<_, i128>(0)?, row.get::<_, String>(1)?))
             })
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
@@ -247,5 +260,37 @@ mod test {
                 (i128::MAX, "max".to_owned()),
             ]
         );
+    }
+
+    #[cfg(feature = "uuid")]
+    #[test]
+    fn test_uuid() {
+        use crate::{params, Connection};
+        use uuid::Uuid;
+
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE foo (id BLOB CHECK(length(id) = 16), label TEXT);")
+            .unwrap();
+
+        let id = Uuid::new_v4();
+
+        db.execute(
+            "INSERT INTO foo (id, label) VALUES (?, ?)",
+            params![id, "target"],
+        )
+        .unwrap();
+
+        let mut stmt = db
+            .prepare("SELECT id, label FROM foo WHERE id = ?")
+            .unwrap();
+
+        let mut rows = stmt.query(params![id]).unwrap();
+        let row = rows.next().unwrap().unwrap();
+
+        let found_id: Uuid = row.get_unwrap(0);
+        let found_label: String = row.get_unwrap(1);
+
+        assert_eq!(found_id, id);
+        assert_eq!(found_label, "target");
     }
 }

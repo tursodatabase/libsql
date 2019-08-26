@@ -11,7 +11,7 @@ an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgre
 
 ```rust
 use rusqlite::types::ToSql;
-use rusqlite::{Connection, NO_PARAMS};
+use rusqlite::{Connection, Result, NO_PARAMS};
 use time::Timespec;
 
 #[derive(Debug)]
@@ -22,8 +22,8 @@ struct Person {
     data: Option<Vec<u8>>,
 }
 
-fn main() {
-    let conn = Connection::open_in_memory().unwrap();
+fn main() -> Result<()> {
+    let conn = Connection::open_in_memory()?;
 
     conn.execute(
         "CREATE TABLE person (
@@ -33,7 +33,7 @@ fn main() {
                   data            BLOB
                   )",
         NO_PARAMS,
-    ).unwrap();
+    )?;
     let me = Person {
         id: 0,
         name: "Steven".to_string(),
@@ -44,22 +44,22 @@ fn main() {
         "INSERT INTO person (name, time_created, data)
                   VALUES (?1, ?2, ?3)",
         &[&me.name as &ToSql, &me.time_created, &me.data],
-    ).unwrap();
+    )?;
 
     let mut stmt = conn
-        .prepare("SELECT id, name, time_created, data FROM person")
-        .unwrap();
+        .prepare("SELECT id, name, time_created, data FROM person")?;
     let person_iter = stmt
-        .query_map(NO_PARAMS, |row| Person {
-            id: row.get(0),
-            name: row.get(1),
-            time_created: row.get(2),
-            data: row.get(3),
-        }).unwrap();
+        .query_map(NO_PARAMS, |row| Ok(Person {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            time_created: row.get(2)?,
+            data: row.get(3)?,
+        }))?;
 
     for person in person_iter {
         println!("Found person {:?}", person.unwrap());
     }
+    Ok(())
 }
 ```
 
@@ -74,27 +74,30 @@ newer SQLite version; see details below.
 Rusqlite provides several features that are behind [Cargo
 features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section). They are:
 
-* [`load_extension`](https://docs.rs/rusqlite/0.16.0/rusqlite/struct.LoadExtensionGuard.html)
+* [`load_extension`](https://docs.rs/rusqlite/~0/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
-* [`backup`](https://docs.rs/rusqlite/0.16.0/rusqlite/backup/index.html)
+* [`backup`](https://docs.rs/rusqlite/~0/rusqlite/backup/index.html)
   allows use of SQLite's online backup API. Note: This feature requires SQLite 3.6.11 or later.
-* [`functions`](https://docs.rs/rusqlite/0.16.0/rusqlite/functions/index.html)
+* [`functions`](https://docs.rs/rusqlite/~0/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
   Note: This feature requires SQLite 3.7.3 or later.
-* [`trace`](https://docs.rs/rusqlite/0.16.0/rusqlite/trace/index.html)
+* [`trace`](https://docs.rs/rusqlite/~0/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs. Note: This feature
   requires SQLite 3.6.23 or later.
-* [`blob`](https://docs.rs/rusqlite/0.16.0/rusqlite/blob/index.html)
+* [`blob`](https://docs.rs/rusqlite/~0/rusqlite/blob/index.html)
   gives `std::io::{Read, Write, Seek}` access to SQL BLOBs. Note: This feature
   requires SQLite 3.7.4 or later.
-* [`limits`](https://docs.rs/rusqlite/0.16.0/rusqlite/struct.Connection.html#method.limit)
+* [`limits`](https://docs.rs/rusqlite/~0/rusqlite/struct.Connection.html#method.limit)
   allows you to set and retrieve SQLite's per connection limits.
-* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.ToSql.html) for various
+* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for various
   types from the [`chrono` crate](https://crates.io/crates/chrono).
-* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/0.16.0/rusqlite/types/trait.ToSql.html) for the
+* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
+* `url` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
+  `Url` type from the [`url` crate](https://crates.io/crates/url).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 * `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
@@ -103,6 +106,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust.
 * [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
 * `i128_blob` allows storing values of type `i128` type in SQLite databases. Internally, the data is stored as a 16 byte big-endian blob, with the most significant bit flipped, which allows ordering and comparison between different blobs storing i128s to work as expected.
+* `uuid` allows storing and retrieving `Uuid` values from the [`uuid`](https://docs.rs/uuid/) crate using blobs.
 * [`session`](https://sqlite.org/sessionintro.html), Session module extension.
 
 ## Notes on building rusqlite and libsqlite3-sys
@@ -116,11 +120,11 @@ You can adjust this behavior in a number of ways:
 * If you use the `bundled` feature, `libsqlite3-sys` will use the
   [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
   link against that. This source is embedded in the `libsqlite3-sys` crate and
-  is currently SQLite 3.26.0 (as of `rusqlite` 0.16.0 / `libsqlite3-sys`
-  0.11.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
+  is currently SQLite 3.29.0 (as of `rusqlite` 0.20.0 / `libsqlite3-sys`
+  0.16.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
   ```
   [dependencies.rusqlite]
-  version = "0.16.0"
+  version = "0.20.0"
   features = ["bundled"]
   ```
 * You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
@@ -128,8 +132,10 @@ You can adjust this behavior in a number of ways:
 * Installing the sqlite3 development packages will usually be all that is required, but
   the build helpers for [pkg-config](https://github.com/alexcrichton/pkg-config-rs)
   and [vcpkg](https://github.com/mcgoo/vcpkg-rs) have some additional configuration
-  options. The default when using vcpkg is to dynamically link. `vcpkg install sqlite3:x64-windows` will install the required library.
-
+  options. The default when using vcpkg is to dynamically link,
+  which must be enabled by setting `VCPKGRS_DYNAMIC=1` environment variable before build.
+  `vcpkg install sqlite3:x64-windows` will install the required library.
+  
 ### Binding generation
 
 We use [bindgen](https://crates.io/crates/bindgen) to generate the Rust

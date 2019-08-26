@@ -79,7 +79,7 @@ impl<'conn> DerefMut for CachedStatement<'conn> {
     }
 }
 
-impl<'conn> Drop for CachedStatement<'conn> {
+impl Drop for CachedStatement<'_> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
@@ -88,8 +88,8 @@ impl<'conn> Drop for CachedStatement<'conn> {
     }
 }
 
-impl<'conn> CachedStatement<'conn> {
-    fn new(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
+impl CachedStatement<'_> {
+    fn new<'conn>(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
         CachedStatement {
             stmt: Some(stmt),
             cache,
@@ -153,6 +153,7 @@ impl StatementCache {
 mod test {
     use super::StatementCache;
     use crate::{Connection, NO_PARAMS};
+    use fallible_iterator::FallibleIterator;
 
     impl StatementCache {
         fn clear(&self) {
@@ -277,12 +278,8 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
-                1i32,
-                stmt.query_map::<i32, _, _>(NO_PARAMS, |r| r.get(0))
-                    .unwrap()
-                    .next()
-                    .unwrap()
-                    .unwrap()
+                Ok(Some(1i32)),
+                stmt.query(NO_PARAMS).unwrap().map(|r| r.get(0)).next()
             );
         }
 
@@ -297,12 +294,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(
-                (1i32, 2i32),
-                stmt.query_map(NO_PARAMS, |r| (r.get(0), r.get(1)))
+                Ok(Some((1i32, 2i32))),
+                stmt.query(NO_PARAMS)
                     .unwrap()
+                    .map(|r| Ok((r.get(0)?, r.get(1)?)))
                     .next()
-                    .unwrap()
-                    .unwrap()
             );
         }
     }

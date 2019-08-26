@@ -122,6 +122,7 @@ impl Connection {
 
 #[cfg(test)]
 mod test {
+    use lazy_static::lazy_static;
     use std::sync::Mutex;
     use std::time::Duration;
 
@@ -140,13 +141,13 @@ mod test {
         let mut db = Connection::open_in_memory().unwrap();
         db.trace(Some(tracer));
         {
-            let _ = db.query_row("SELECT ?", &[1i32], |_| {});
-            let _ = db.query_row("SELECT ?", &["hello"], |_| {});
+            let _ = db.query_row("SELECT ?", &[1i32], |_| Ok(()));
+            let _ = db.query_row("SELECT ?", &["hello"], |_| Ok(()));
         }
         db.trace(None);
         {
-            let _ = db.query_row("SELECT ?", &[2i32], |_| {});
-            let _ = db.query_row("SELECT ?", &["goodbye"], |_| {});
+            let _ = db.query_row("SELECT ?", &[2i32], |_| Ok(()));
+            let _ = db.query_row("SELECT ?", &["goodbye"], |_| Ok(()));
         }
 
         let traced_stmts = TRACED_STMTS.lock().unwrap();

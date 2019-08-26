@@ -1,7 +1,6 @@
 //! `ToSql` and `FromSql` implementation for JSON `Value`.
-use serde_json;
 
-use self::serde_json::Value;
+use serde_json::Value;
 
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
@@ -17,7 +16,7 @@ impl ToSql for Value {
 impl FromSql for Value {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
-            ValueRef::Text(s) => serde_json::from_str(s),
+            ValueRef::Text(s) => serde_json::from_slice(s),
             ValueRef::Blob(b) => serde_json::from_slice(b),
             _ => return Err(FromSqlError::InvalidType),
         }
@@ -27,9 +26,9 @@ impl FromSql for Value {
 
 #[cfg(test)]
 mod test {
-    use super::serde_json;
     use crate::types::ToSql;
     use crate::{Connection, NO_PARAMS};
+    use serde_json;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
