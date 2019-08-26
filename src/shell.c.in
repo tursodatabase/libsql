@@ -6712,7 +6712,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     "    )"
     "    SELECT pgno FROM p WHERE (parent IS NULL OR pgno = orig)"
     ") "
-    "FROM pages WHERE maxlen > 0 AND i NOT IN freelist;"
+    "FROM pages WHERE maxlen IS NOT NULL AND i NOT IN freelist;"
     "UPDATE recovery.map AS o SET intkey = ("
     "  SELECT substr(data, 1, 1)==X'0D' FROM sqlite_dbpage WHERE pgno=o.pgno"
     ");"
