@@ -28,7 +28,7 @@ script:
   - cargo build --features sqlcipher
   - cargo build --features "bundled sqlcipher"
   - cargo test
-  - cargo test --features "backup blob"
+  - cargo test --features "backup blob extra_check"
   - cargo test --features "collation functions"
   - cargo test --features "hooks limits"
   - cargo test --features load_extension

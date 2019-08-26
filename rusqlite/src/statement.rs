@@ -511,6 +511,7 @@ impl Statement<'_> {
     }
 
     fn execute_with_bound_parameters(&mut self) -> Result<usize> {
+        self.check_update()?;
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
@@ -544,6 +545,30 @@ impl Statement<'_> {
         /*if !self.stmt.readonly() { does not work for PRAGMA
             return Err(Error::InvalidQuery);
         }*/
+        Ok(())
+    }
+
+    #[cfg(all(feature = "bundled", feature = "extra_check"))]
+    #[inline]
+    fn check_update(&self) -> Result<()> {
+        if self.column_count() > 0 || self.stmt.readonly() {
+            return Err(Error::ExecuteReturnedResults);
+        }
+        Ok(())
+    }
+
+    #[cfg(all(not(feature = "bundled"), feature = "extra_check"))]
+    #[inline]
+    fn check_update(&self) -> Result<()> {
+        if self.column_count() > 0 {
+            return Err(Error::ExecuteReturnedResults);
+        }
+        Ok(())
+    }
+
+    #[cfg(not(feature = "extra_check"))]
+    #[inline]
+    fn check_update(&self) -> Result<()> {
         Ok(())
     }
 
