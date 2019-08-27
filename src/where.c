@@ -802,7 +802,7 @@ static void constructAutomaticIndex(
         idxCols |= cMask;
         pIdx->aiColumn[n] = pTerm->u.leftColumn;
         pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-        pIdx->azColl[n] = pColl ? pColl->zName : sqlite3StrBINARY;
+        pIdx->azColl[n] = ALWAYS(pColl) ? pColl->zName : sqlite3StrBINARY;
         n++;
       }
     }

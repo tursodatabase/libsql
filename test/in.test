@@ -750,4 +750,14 @@ do_execsql_test in-17.4 {
   SELECT 1 IN (CAST('1' AS text) COLLATE nocase);
 } 0
 
+# 2019-08-27 ticket https://sqlite.org/src/info/dbaf8a6820be1ece
+# 
+do_execsql_test in-18.1 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INT UNIQUE);
+  INSERT INTO t0(c0) VALUES (1);
+  SELECT * FROM t0 WHERE '1' IN (t0.c0);
+} {}
+
+
 finish_test
