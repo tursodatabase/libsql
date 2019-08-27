@@ -1,5 +1,5 @@
-C Tweak\sthe\sshell\stool\s".recover"\scommand\sso\sthat\sit\scan\srecover\srows\sthat\sconsist\sof\sa\srowid\sand\sno\sfields.
-D 2019-08-26T14:57:58.620
+C If\sa\sTEMP\sTRIGGER\sreferences\san\sauxiliary\sschema,\sand\sthat\sauxiliary\sschema\nis\sdetached,\smove\sthe\strigger\sto\sreference\sthe\sTEMP\sschema\sbefore\scompleting\nthe\sdetach,\sso\sthat\sthe\strigger\sdoes\snot\shold\sa\sdangling\sschema\spointer.
+D 2019-08-27T10:05:45.169
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -459,7 +459,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 5c3031e45e80f79d7d54c2d32dd3c44926544d4f6a478858bfe4ee3191570190
 F src/analyze.c a3f4ea45cdb4e9df78d4ea7beb87ec8a7a46f494173b641cd28512a40a97bff2
-F src/attach.c a6f108eb7922fad920e8aba0cda56fb56d89d136d519be5177cd3bd3559f2566
+F src/attach.c 3ca19504849c2d9be10fc5899d6811f9d6e848665d1a41ffb53df0cd6e7c13ed
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -589,7 +589,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c fc8c6c0a8a26afb3a97e3f844d65403dd27cf1450baf4415034fa4ccf00c4d7e
-F src/trigger.c 2305271878e95addc1c01361e5e8e342e87cba5efefdd7d3032687e5d67e05d1
+F src/trigger.c f964d85935d0b9675b4aa2f74999cabee3ac1ac705f71b38a8b7e8ccd4ad474b
 F src/update.c 3cb9150d2cf661d938e2f1b1749945f3faa767f88febdb739ab1793bbf895ff2
 F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
@@ -1560,7 +1560,7 @@ F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test 293300f46916569f08875cdb2fe2134be2c27677
-F test/trigger1.test 17e4b43e656c4b354df2357634a6ba887990f510c43629f4feca30e3338d2a61
+F test/trigger1.test 6be279c9d48b25320eab68c30fd5268ab787955679f4c584128f71800247fb50
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1836,7 +1836,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd4bda73df3794eef424eb13e08fc7cc54347d1ac69febaeec41f6b6cb4a42bc
-R f61d543a07f97630767d799321746763
-U dan
-Z 653ee8815bcf440360f1ea49c2de4aca
+P 279ac7fdec0b1409cd400b7b093f89089d93c49f596f378c6a3032434a85bf83
+R 0805c7b844001f17510379fb60166cba
+U drh
+Z 87dfaef8c8e67d4b9cd50025b5165f6d
