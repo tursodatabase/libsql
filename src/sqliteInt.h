@@ -2138,9 +2138,12 @@ struct KeyInfo {
   u16 nKeyField;      /* Number of key columns in the index */
   u16 nAllField;      /* Total columns, including key plus others */
   sqlite3 *db;        /* The database connection */
-  u8 *aSortOrder;     /* Sort order for each column. */
+  u8 *aSortFlags;     /* Sort order for each column. */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
+
+#define KEYINFO_ORDER_DESC    0x01
+#define KEYINFO_ORDER_BIGNULL 0x02
 
 /*
 ** This object holds a record which has been parsed out into individual
@@ -2603,11 +2606,12 @@ struct ExprList {
     Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
     char *zSpan;            /* Original text of the expression */
-    u8 sortOrder;           /* 1 for DESC or 0 for ASC */
+    u8 sortFlags;           /* Mask of KEYINFO_ORDER_* flags */
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
+    unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
     union {
       struct {
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
@@ -3888,7 +3892,7 @@ void sqlite3ExprDelete(sqlite3*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
-void sqlite3ExprListSetSortOrder(ExprList*,int);
+void sqlite3ExprListSetSortOrder(ExprList*,int,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
@@ -4365,6 +4369,7 @@ void sqlite3KeyInfoUnref(KeyInfo*);
 KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
 KeyInfo *sqlite3KeyInfoOfIndex(Parse*, Index*);
 KeyInfo *sqlite3KeyInfoFromExprList(Parse*, ExprList*, int, int);
+int sqlite3HasExplicitNulls(Parse*, ExprList*);
 
 #ifdef SQLITE_DEBUG
 int sqlite3KeyInfoIsWriteable(KeyInfo*);

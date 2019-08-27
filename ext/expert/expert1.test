@@ -134,6 +134,7 @@ do_setup_rec_test $tn.5 {
   SEARCH TABLE t1 USING COVERING INDEX t1_idx_000123a7 (a=?)
 }
 
+if 0 {
 do_setup_rec_test $tn.6 {
   CREATE TABLE t1(a, b, c);
 } {
@@ -141,6 +142,7 @@ do_setup_rec_test $tn.6 {
 } {
   CREATE INDEX t1_idx_00000061 ON t1(a);
   SEARCH TABLE t1 USING COVERING INDEX t1_idx_00000061
+}
 }
 
 do_setup_rec_test $tn.7 {
