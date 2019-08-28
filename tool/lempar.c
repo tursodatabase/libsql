@@ -530,8 +530,9 @@ static YYACTIONTYPE yy_find_shift_action(
     if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
-      if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
-             && (iFallback = yyFallback[iLookAhead])!=0 ){
+      assert( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0]) );
+      iFallback = yyFallback[iLookAhead];
+      if( iFallback!=0 ){
 #ifndef NDEBUG
         if( yyTraceFILE ){
           fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
@@ -546,16 +547,8 @@ static YYACTIONTYPE yy_find_shift_action(
 #ifdef YYWILDCARD
       {
         int j = i - iLookAhead + YYWILDCARD;
-        if( 
-#if YY_SHIFT_MIN+YYWILDCARD<0
-          j>=0 &&
-#endif
-#if YY_SHIFT_MAX+YYWILDCARD>=YY_ACTTAB_COUNT
-          j<YY_ACTTAB_COUNT &&
-#endif
-          j<(int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])) &&
-          yy_lookahead[j]==YYWILDCARD && iLookAhead>0
-        ){
+        assert( j<(int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])) );
+        if( yy_lookahead[j]==YYWILDCARD && iLookAhead>0 ){
 #ifndef NDEBUG
           if( yyTraceFILE ){
             fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
