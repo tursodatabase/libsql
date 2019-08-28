@@ -521,11 +521,13 @@ static YYACTIONTYPE yy_find_shift_action(
   do{
     i = yy_shift_ofst[stateno];
     assert( i>=0 );
-    /* assert( i+YYNTOKEN<=(int)YY_NLOOKAHEAD ); */
+    assert( i<=YY_ACTTAB_COUNT );
+    assert( i+YYNTOKEN<=(int)YY_NLOOKAHEAD );
     assert( iLookAhead!=YYNOCODE );
     assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
-    if( i>=YY_NLOOKAHEAD || yy_lookahead[i]!=iLookAhead ){
+    assert( i<(int)YY_NLOOKAHEAD );
+    if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])

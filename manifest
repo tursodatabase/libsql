@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\s"ORDER\sBY\s...\sNULLS\sFIRST"\sand\s"ORDER\sBY\s...\sNULLS\sLAST".\sUse\sthis\sto\sfix\sticket\s[f8a7060e].
-D 2019-08-27T19:59:21.714
+C Increase\sthe\ssize\sof\sthe\syy_lookahead\stable\sso\sthat\sit\sis\snever\snecessary\sto\ndown\sbounds\schecking\son\sthe\sindex.
+D 2019-08-28T02:09:47.441
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1756,8 +1756,8 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 9ec344d29cbeb03fdc0fce668eedfb7495792170de933adf95cf8d6904a166ad
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c cc43148d2793ab93668e74a6a6319bb71c2e65c1ffcd6deeaa59e12be9362a43
-F tool/lempar.c 4b868d0a5eb9a67cd1b546274227c0d449dad073c663b331b686fa2253e1c86f
+F tool/lemon.c 3b40d248784ada53b1210fb389ebfc149f3043eebcfbe477646430137071798b
+F tool/lempar.c be669a41410f127485e7d52b0c50f5b449c745aa23e06940b9d1a9c9eda58633
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1837,8 +1837,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 336235db2b1167cdb2feb64b47eb6368c97c43ee9641b7bfccc5775a41dd0d0e ad816d01d4bd3908ff2c574d79d1a29b6d732df308f2f1b1cdf7c0bc7c1bd7cf
-R 5139358becb963924affc3638fcd0d5e
-T +closed ad816d01d4bd3908ff2c574d79d1a29b6d732df308f2f1b1cdf7c0bc7c1bd7cf
-U dan
-Z 534b1b1d3945585b80108a8c2d91a394
+P 94085fb3e756bc984237b74b6e29c68462ad860870c64dcb5124feaeec387660
+R 622629c7f73f36222c78d3454b5494fa
+T *branch * lemon-optimization
+T *sym-lemon-optimization *
+T -sym-trunk *
+U drh
+Z 2510adf038772aa7dc037a8992922686
