@@ -5014,14 +5014,16 @@ static int exprImpliesNotNull(
     case TK_GE:
     case TK_PLUS:
     case TK_MINUS:
+    case TK_BITOR:
+    case TK_LSHIFT:
+    case TK_RSHIFT: 
+    case TK_CONCAT: 
+      seenNot = 1;
+      /* Fall thru */
     case TK_STAR:
     case TK_REM:
     case TK_BITAND:
-    case TK_BITOR:
-    case TK_SLASH:
-    case TK_LSHIFT:
-    case TK_RSHIFT: 
-    case TK_CONCAT: {
+    case TK_SLASH: {
       if( exprImpliesNotNull(pParse, p->pRight, pNN, iTab, seenNot) ) return 1;
       /* Fall thru into the next case */
     }
@@ -5102,8 +5104,6 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
   switch( pExpr->op ){
     case TK_ISNOT:
-    case TK_NOT:
-    case TK_BITNOT:
     case TK_ISNULL:
     case TK_NOTNULL:
     case TK_IS:
@@ -5128,6 +5128,18 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       }
       return WRC_Prune;
 
+    case TK_AND:
+      if( sqlite3ExprImpliesNonNullRow(pExpr->pLeft, pWalker->u.iCur)
+       && sqlite3ExprImpliesNonNullRow(pExpr->pRight, pWalker->u.iCur)
+      ){
+        pWalker->eCode = 1;
+      }
+      return WRC_Prune;
+
+    case TK_BETWEEN:
+      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      return WRC_Prune;
+
     /* Virtual tables are allowed to use constraints like x=NULL.  So
     ** a term of the form x=y does not prove that y is not null if x
     ** is the column of a virtual table */
@@ -5148,6 +5160,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       ){
        return WRC_Prune;
       }
+
     default:
       return WRC_Continue;
   }
