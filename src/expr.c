@@ -5103,6 +5103,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
   switch( pExpr->op ){
     case TK_ISNOT:
     case TK_NOT:
+    case TK_BITNOT:
     case TK_ISNULL:
     case TK_NOTNULL:
     case TK_IS:
