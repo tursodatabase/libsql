@@ -1864,7 +1864,7 @@ static void windowIfNewPeer(
 */
 static void windowCodeRangeTest(
   WindowCodeArg *p, 
-  int op,                          /* OP_Ge or OP_Gt */
+  int op,                          /* OP_Ge, OP_Gt, or OP_Le */
   int csr1, 
   int regVal, 
   int csr2,
@@ -1908,14 +1908,12 @@ static void windowCodeRangeTest(
     switch( op ){
       case OP_Ge: sqlite3VdbeAddOp2(v, OP_Goto, 0, lbl); break;
       case OP_Gt: 
-        sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); 
-        VdbeCoverage(v); 
+        sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); VdbeCoverage(v); 
         break;
-      case OP_Le: 
-        sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); 
-        VdbeCoverage(v); 
+      default:
+        assert( op==OP_Le );
+        sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v); 
         break;
-      default: assert( op==OP_Lt ); /* no-op */
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
     sqlite3VdbeJumpHere(v, addr);
