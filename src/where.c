@@ -5217,6 +5217,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( pLevel->regBignull ){
         sqlite3VdbeResolveLabel(v, pLevel->addrBignull);
         sqlite3VdbeAddOp2(v, OP_IfNotZero, pLevel->regBignull, pLevel->p2-1);
+        VdbeCoverage(v);
       }
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
       if( addrSeek ) sqlite3VdbeJumpHere(v, addrSeek);
