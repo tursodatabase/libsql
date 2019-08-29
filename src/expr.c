@@ -5027,7 +5027,6 @@ static int exprImpliesNotNull(
     }
     case TK_SPAN:
     case TK_COLLATE:
-    case TK_BITNOT:
     case TK_UPLUS:
     case TK_UMINUS: {
       return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, seenNot);
@@ -5037,6 +5036,7 @@ static int exprImpliesNotNull(
       if( p->op2!=TK_IS ) return 0;
       return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, seenNot);
     }
+    case TK_BITNOT:
     case TK_NOT: {
       return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, 1);
     }

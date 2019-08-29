@@ -295,6 +295,23 @@ do_execsql_test 7.3 {
   REINDEX;
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0(c0);
+  CREATE INDEX i0 ON t0(c0) WHERE c0 NOT NULL;
+  INSERT INTO t0(c0) VALUES (NULL);
+}
+
+breakpoint
+do_execsql_test 8.1 {
+  SELECT * FROM t0 WHERE ~('' BETWEEN t0.c0 AND TRUE);
+} {{}}
+
+do_execsql_test 8.2 {
+  SELECT ~('' BETWEEN t0.c0 AND TRUE) FROM t0;
+} {-1}
+
 
 
 finish_test
