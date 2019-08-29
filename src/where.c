@@ -5216,7 +5216,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       VdbeCoverageIf(v, pLevel->op==OP_VNext);
       if( pLevel->regBignull ){
         sqlite3VdbeResolveLabel(v, pLevel->addrBignull);
-        sqlite3VdbeAddOp2(v, OP_IfNotZero, pLevel->regBignull, pLevel->p2-1);
+        sqlite3VdbeAddOp2(v, OP_DecrJumpZero, pLevel->regBignull, pLevel->p2-1);
         VdbeCoverage(v);
       }
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
