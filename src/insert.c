@@ -99,6 +99,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
       }
       if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
+      if( aff>SQLITE_AFF_NUMERIC) aff = SQLITE_AFF_NUMERIC;
       pIdx->zColAff[n] = aff;
     }
     pIdx->zColAff[n] = 0;
