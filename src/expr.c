@@ -5036,7 +5036,7 @@ static int exprImpliesNotNull(
     case TK_TRUTH: {
       if( seenNot ) return 0;
       if( p->op2!=TK_IS ) return 0;
-      return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, seenNot);
+      return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, 1);
     }
     case TK_BITNOT:
     case TK_NOT: {

@@ -437,4 +437,15 @@ do_execsql_test index6-14.2 {
   SELECT * FROM t0 WHERE CASE c0 WHEN 0 THEN 0 ELSE 1 END;
 } {{} row}
 
+# 2019-08-30
+# Ticket https://www.sqlite.org/src/info/a6408d42b9f44462
+#
+do_execsql_test index6-15.1 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (NULL);
+  CREATE INDEX i0 ON t0(1) WHERE c0 NOT NULL;
+  SELECT 1 FROM t0 WHERE (t0.c0 IS FALSE) IS FALSE;
+} {1}
+
 finish_test
