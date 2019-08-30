@@ -485,11 +485,12 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     *(zCsr++) = c;
     sqlite3_snprintf(100, zCsr, "%d[", pMem->n);
     zCsr += sqlite3Strlen30(zCsr);
-    for(i=0; i<16 && i<pMem->n; i++){
+    for(i=0; i<25 && i<pMem->n; i++){
       sqlite3_snprintf(100, zCsr, "%02X", ((int)pMem->z[i] & 0xFF));
       zCsr += sqlite3Strlen30(zCsr);
     }
-    for(i=0; i<16 && i<pMem->n; i++){
+    *zCsr++ = '|';
+    for(i=0; i<25 && i<pMem->n; i++){
       char z = pMem->z[i];
       if( z<32 || z>126 ) *zCsr++ = '.';
       else *zCsr++ = z;
@@ -519,7 +520,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     sqlite3_snprintf(100, &zBuf[k], "%d", pMem->n);
     k += sqlite3Strlen30(&zBuf[k]);
     zBuf[k++] = '[';
-    for(j=0; j<15 && j<pMem->n; j++){
+    for(j=0; j<25 && j<pMem->n; j++){
       u8 c = pMem->z[j];
       if( c>=0x20 && c<0x7f ){
         zBuf[k++] = c;
@@ -1832,6 +1833,7 @@ case OP_RealAffinity: {                  /* in1 */
     testcase( pIn1->flags & MEM_Int );
     testcase( pIn1->flags & MEM_IntReal );
     sqlite3VdbeMemRealify(pIn1);
+    REGISTER_TRACE(pOp->p1, pIn1);
   }
   break;
 }
