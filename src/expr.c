@@ -4974,13 +4974,16 @@ int sqlite3ExprCompareSkip(Expr *pA, Expr *pB, int iTab){
 
 /*
 ** Return non-zero if Expr p can only be true if pNN is not NULL.
+**
+** Or if seenNot is true, return non-zero if Expr p can only be
+** non-NULL if pNN is not NULL
 */
 static int exprImpliesNotNull(
   Parse *pParse,      /* Parsing context */
   Expr *p,            /* The expression to be checked */
   Expr *pNN,          /* The expression that is NOT NULL */
   int iTab,           /* Table being evaluated */
-  int seenNot         /* True if p is an operand of NOT */
+  int seenNot         /* Return true only if p can be any non-NULL value */
 ){
   assert( p );
   assert( pNN );
@@ -4999,12 +5002,12 @@ static int exprImpliesNotNull(
       assert( pList!=0 );
       assert( pList->nExpr==2 );
       if( seenNot ) return 0;
-      if( exprImpliesNotNull(pParse, pList->a[0].pExpr, pNN, iTab, seenNot)
-       || exprImpliesNotNull(pParse, pList->a[1].pExpr, pNN, iTab, seenNot)
+      if( exprImpliesNotNull(pParse, pList->a[0].pExpr, pNN, iTab, 1)
+       || exprImpliesNotNull(pParse, pList->a[1].pExpr, pNN, iTab, 1)
       ){
         return 1;
       }
-      return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, seenNot);
+      return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, 1);
     }
     case TK_EQ:
     case TK_NE:
