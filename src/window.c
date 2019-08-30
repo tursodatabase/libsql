@@ -1998,8 +1998,8 @@ static void windowCodeRangeTest(
   ** generated is equivalent to:
   **
   **   if( reg1 IS NULL ){
-  **     if( op==OP_Gt ) goto lbl;
-  **     if( op==OP_Ge && reg2 IS NOT NULL ) goto lbl;
+  **     if( op==OP_Ge ) goto lbl;
+  **     if( op==OP_Gt && reg2 IS NOT NULL ) goto lbl;
   **     if( op==OP_Le && reg2 IS NULL ) goto lbl;
   **   }else if( reg2 IS NULL ){
   **     if( op==OP_Le ) goto lbl;

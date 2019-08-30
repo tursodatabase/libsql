@@ -343,6 +343,22 @@ execsql_test 6.2 {
 
 ==========
 
+execsql_test 7.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a INTEGER, b INTEGER);
+
+  INSERT INTO t2 VALUES(1, 65);
+  INSERT INTO t2 VALUES(2, NULL);
+  INSERT INTO t2 VALUES(3, NULL);
+  INSERT INTO t2 VALUES(4, NULL);
+}
+
+execsql_test 7.1 {
+  SELECT sum(a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS LAST RANGE BETWEEN 6 FOLLOWING AND UNBOUNDED FOLLOWING
+  );
+}
 
 finish_test
 
