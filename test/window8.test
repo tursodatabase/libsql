@@ -3579,6 +3579,19 @@ do_execsql_test 4.4.4 {
   ) FROM t1 ORDER BY 1 NULLS LAST;
 } {5   6   8   9   10}
 
+do_execsql_test 4.5.1 {
+  SELECT sum(b) OVER (
+    ORDER BY a ASC  NULLS LAST RANGE BETWEEN UNBOUNDED PRECEDING AND 10 FOLLOWING
+  ) FROM t1 ORDER BY 1 NULLS LAST;
+} {9   9   15   15   15}
+
+do_execsql_test 4.5.2 {
+  SELECT sum(b) OVER (
+    ORDER BY a DESC NULLS FIRST RANGE 
+    BETWEEN UNBOUNDED PRECEDING AND 10 FOLLOWING
+  ) FROM t1 ORDER BY 1 NULLS LAST;
+} {6   6   6   15   15}
+
 #==========================================================================
 
 do_execsql_test 5.0 {
@@ -6189,5 +6202,7 @@ do_execsql_test 6.2 {
   )
   FROM t2
 } {{}   A.B   A.B}
+
+#==========================================================================
 
 finish_test

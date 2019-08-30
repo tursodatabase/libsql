@@ -247,6 +247,18 @@ execsql_test 4.4.4 {
   ) FROM t1 ORDER BY 1 NULLS LAST;
 }
 
+execsql_test 4.5.1 {
+  SELECT sum(b) OVER (
+    ORDER BY a ASC  NULLS LAST RANGE BETWEEN UNBOUNDED PRECEDING AND 10 FOLLOWING
+  ) FROM t1 ORDER BY 1 NULLS LAST;
+}
+execsql_test 4.5.2 {
+  SELECT sum(b) OVER (
+    ORDER BY a DESC NULLS FIRST RANGE 
+    BETWEEN UNBOUNDED PRECEDING AND 10 FOLLOWING
+  ) FROM t1 ORDER BY 1 NULLS LAST;
+}
+
 ==========
 
 execsql_test 5.0 {
@@ -329,6 +341,7 @@ execsql_test 6.2 {
   FROM t2
 }
 
+==========
 
 
 finish_test
