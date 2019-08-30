@@ -2016,11 +2016,14 @@ static void windowCodeRangeTest(
         sqlite3VdbeAddOp2(v, OP_Goto, 0, lbl); 
         break;
       case OP_Gt: 
-        sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); VdbeCoverage(v); 
+        sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); 
+        VdbeCoverage(v); 
         break;
-      default: assert( op==OP_Le );
-        sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v); 
+      case OP_Le: 
+        sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); 
+        VdbeCoverage(v); 
         break;
+      default: assert( op==OP_Lt ); /* no-op */ break;
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
 

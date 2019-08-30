@@ -289,4 +289,21 @@ do_execsql_test 3.4 {
   1 A   5.4 A        \
 ]
 
+do_execsql_test 4.0 {
+  SELECT a, b, quote(d), group_concat(b,'') OVER w1 FROM t1
+  WINDOW w1 AS 
+     (ORDER BY d DESC NULLS FIRST
+      RANGE BETWEEN 2.50 PRECEDING AND 0.5 PRECEDING)
+  ORDER BY +d DESC NULLS FIRST, +a;
+} [list \
+  6 N  NULL NN  \
+  7 N  NULL NN  \
+  5 E 10.26 {}  \
+  4 D 10.25 {}  \
+  3 C   8.0 ED  \
+  2 B  5.55 C   \
+  1 A   5.4 {}  \
+]
+
+
 finish_test
