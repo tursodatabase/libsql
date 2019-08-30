@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sRANGE\swindow\sfunctions\sthat\suse\s"ORDER\sBY\s<expr>\sDESC\sNULLS\sFIRST"\sas\sthe\swindow-frame\sORDER\sBY\sclause.
-D 2019-08-30T16:14:58.448
+C New\stest\scases\sfor\swindow\sfunctions\swith\sRANGE\sBETWEEN\sand\sDESC\sNULLS\sFIRST.
+D 2019-08-30T16:46:12.848
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1714,6 +1714,7 @@ F test/window7.test 1d31276961ae7801edc72173edaf7593e3cbc79c06d1f1f09e20d8418af4
 F test/window8.tcl 3b63931d608b6f00a9d26368207a7ffc9370c96e3e137ae2aff35284ade69d13
 F test/window8.test 4531204bfb5d833efbd8a5a1527c9871e62f8ae479386f42a7b55bdb5be39df3
 F test/window9.test 20a6b590be718b6bc98a5356d4396d6cdf19329c547da084fa225b92d68e1693
+F test/windowA.test 5cd7c8dc3b2fcdfc6ea122c81a35726106880ae75afd097f62061839aff13b71
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test a90b397837209f15e54afa62e8be39b2759a0101fae04e05a08bcc50e243a452
@@ -1837,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd66134817ecbda01c59a05ad0d6ac44bee700ab10cd2119c869dd69af293fe2
-R f9d7b459685c1da5bc61b772c0f2da65
-U dan
-Z 05bbd4877d54c35c485e8a33829586c4
+P 39b4cad4a51bb5116d62ffb16ac36d96a9280321b049eb2d008605392f52a459
+R 5b7566c6e8c614d220a50ba45c732f15
+U drh
+Z 7f59914616f53a7b55c42685c9ae4ee5
