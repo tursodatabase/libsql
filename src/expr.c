@@ -4995,7 +4995,7 @@ static int exprImpliesNotNull(
       if( seenNot && ExprHasProperty(p, EP_xIsSelect) ) return 0;
       assert( ExprHasProperty(p,EP_xIsSelect)
            || (p->x.pList!=0 && p->x.pList->nExpr>0) );
-      return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, seenNot);
+      return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, 1);
     }
     case TK_BETWEEN: {
       ExprList *pList = p->x.pList;
