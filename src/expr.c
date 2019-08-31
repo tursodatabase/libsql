@@ -5297,7 +5297,10 @@ static int exprSrcCount(Walker *pWalker, Expr *pExpr){
     }
     if( i<nSrc ){
       p->nThis++;
-    }else{
+    }else if( nSrc==0 || pExpr->iTable<pSrc->a[0].iCursor ){
+      /* In a well-formed parse tree (no name resolution errors),
+      /* TK_COLUMN nodes with smaller Expr.iTable values are in an
+      ** outer context.  Those are the only ones to count as "other" */
       p->nOther++;
     }
   }
@@ -5314,8 +5317,9 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
   Walker w;
   struct SrcCount cnt;
   assert( pExpr->op==TK_AGG_FUNCTION );
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = exprSrcCount;
-  w.xSelectCallback = 0;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
   w.u.pSrcCount = &cnt;
   cnt.pSrc = pSrcList;
   cnt.nThis = 0;
