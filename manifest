@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\salgorithm\sthat\sdetermines\swhich\sSELECT\sin\sa\ssequence\nof\snested\sSELECT\sstatements\sthat\san\saggregate\sfunction\sbelongs\sto.\s\sThis\nresolves\san\sissue\sidentified\sby\sdbsqlfuzz.
-D 2019-08-31T20:13:30.510
+C Mark\snew\sVDBE\sbranches\snever\staken.
+D 2019-08-31T20:26:06.446
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c fc8c6c0a8a26afb3a97e3f844d65403dd27cf1450baf4415034fa4ccf00c4d7e
 F src/trigger.c 845ccc08f60716c58aa28fe6470385c18ef8c4e1d88c93dcf449bc13d464eb2e
-F src/update.c ce478c8ad297833d1acc825891e35d82a99f5986cfce1e92f44c3b0d54670114
+F src/update.c 7f05fad5e145248a00048aeb0bac78b8fdb4ed17216e14a6eb24c55596e87ee7
 F src/upsert.c 710c91bb13e3c3fed5b6fe17cb13e09560bdd003ad8b8c51e6b16c80cfc48b10
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c fffdfa627be74d69ef425f92db124e7148af449bb8a3286e79577c42bca84061
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4145b3e05051ba6729105157a876793ad14a05d895fc10fe704f437eab16ea93
-R 30aae3120e96fb727d9d30a86d181e41
+P d768007473f4ed40abbdf2c7e501b580b1cc37c1620c7cb90af1f208a8c35145
+R 9655a2998ad4a94ca8d98590cef37323
 U drh
-Z e2cf69056f38cf2141131156d9461b54
+Z 4aa7a42c2ffc1c24ddf2d50e02e27484
