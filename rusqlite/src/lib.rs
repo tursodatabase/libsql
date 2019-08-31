@@ -1061,6 +1061,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "extra_check")]
     fn test_execute_multiple() {
         let db = checked_memory_handle();
         let err = db
