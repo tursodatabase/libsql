@@ -7,11 +7,11 @@ use std::ptr;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
-pub struct RawStatement(*mut ffi::sqlite3_stmt);
+pub struct RawStatement(*mut ffi::sqlite3_stmt, bool);
 
 impl RawStatement {
-    pub fn new(stmt: *mut ffi::sqlite3_stmt) -> RawStatement {
-        RawStatement(stmt)
+    pub fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
+        RawStatement(stmt, tail)
     }
 
     pub unsafe fn ptr(&self) -> *mut ffi::sqlite3_stmt {
@@ -128,6 +128,10 @@ impl RawStatement {
     pub fn get_status(&self, status: StatementStatus, reset: bool) -> i32 {
         assert!(!self.0.is_null());
         unsafe { ffi::sqlite3_stmt_status(self.0, status as i32, reset as i32) }
+    }
+
+    pub fn has_tail(&self) -> bool {
+        self.1
     }
 }
 

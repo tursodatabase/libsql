@@ -100,6 +100,9 @@ pub enum Error {
     /// of a different type than what had been stored using `Context::set_aux`.
     #[cfg(feature = "functions")]
     GetAuxWrongType,
+
+    /// Error when the SQL contains multiple statements.
+    MultipleStatement,
 }
 
 impl PartialEq for Error {
@@ -244,6 +247,7 @@ impl fmt::Display for Error {
             Error::UnwindingPanic => write!(f, "unwinding panic"),
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
+            Error::MultipleStatement => write!(f, "Multiple statements provided"),
         }
     }
 }
@@ -285,6 +289,7 @@ impl error::Error for Error {
             Error::UnwindingPanic => "unwinding panic",
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => "get_aux called with wrong type",
+            Error::MultipleStatement => "multiple statements provided",
         }
     }
 
@@ -304,7 +309,8 @@ impl error::Error for Error {
             | Error::InvalidColumnType(_, _, _)
             | Error::InvalidPath(_)
             | Error::StatementChangedRows(_)
-            | Error::InvalidQuery => None,
+            | Error::InvalidQuery
+            | Error::MultipleStatement => None,
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(_, _) => None,
