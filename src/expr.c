@@ -5299,7 +5299,7 @@ static int exprSrcCount(Walker *pWalker, Expr *pExpr){
       p->nThis++;
     }else if( nSrc==0 || pExpr->iTable<pSrc->a[0].iCursor ){
       /* In a well-formed parse tree (no name resolution errors),
-      /* TK_COLUMN nodes with smaller Expr.iTable values are in an
+      ** TK_COLUMN nodes with smaller Expr.iTable values are in an
       ** outer context.  Those are the only ones to count as "other" */
       p->nOther++;
     }
