@@ -528,7 +528,7 @@ impl Statement<'_> {
     }
 
     fn finalize_(&mut self) -> Result<()> {
-        let mut stmt = RawStatement::new(ptr::null_mut());
+        let mut stmt = RawStatement::new(ptr::null_mut(), false);
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
     }
@@ -598,11 +598,26 @@ impl Statement<'_> {
     pub fn reset_status(&self, status: StatementStatus) -> i32 {
         self.stmt.get_status(status, true)
     }
+
+    #[cfg(feature = "extra_check")]
+    pub(crate) fn check_no_tail(&self) -> Result<()> {
+        if self.stmt.has_tail() {
+            Err(Error::MultipleStatement)
+        } else {
+            Ok(())
+        }
+    }
+
+    #[cfg(not(feature = "extra_check"))]
+    #[inline]
+    pub(crate) fn check_no_tail(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
 impl Into<RawStatement> for Statement<'_> {
     fn into(mut self) -> RawStatement {
-        let mut stmt = RawStatement::new(ptr::null_mut());
+        let mut stmt = RawStatement::new(ptr::null_mut(), false);
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }

@@ -449,7 +449,8 @@ impl Connection {
         P: IntoIterator,
         P::Item: ToSql,
     {
-        self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
+        self.prepare(sql)
+            .and_then(|mut stmt| stmt.check_no_tail().and_then(|_| stmt.execute(params)))
     }
 
     /// Convenience method to prepare and execute a single SQL statement with
@@ -475,8 +476,10 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
     pub fn execute_named(&self, sql: &str, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
-        self.prepare(sql)
-            .and_then(|mut stmt| stmt.execute_named(params))
+        self.prepare(sql).and_then(|mut stmt| {
+            stmt.check_no_tail()
+                .and_then(|_| stmt.execute_named(params))
+        })
     }
 
     /// Get the SQLite rowid of the most recent successful INSERT.
@@ -521,6 +524,7 @@ impl Connection {
         F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
+        stmt.check_no_tail()?;
         stmt.query_row(params, f)
     }
 
@@ -543,6 +547,7 @@ impl Connection {
         F: FnOnce(&Row<'_>) -> Result<T>,
     {
         let mut stmt = self.prepare(sql)?;
+        stmt.check_no_tail()?;
         stmt.query_row_named(params, f)
     }
 
@@ -579,6 +584,7 @@ impl Connection {
         E: convert::From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
+        stmt.check_no_tail()?;
         let mut rows = stmt.query(params)?;
 
         rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
@@ -1051,6 +1057,22 @@ mod test {
         let err = db.execute("SELECT 1 WHERE 1 < ?", &[1i32]).unwrap_err();
         if err != Error::ExecuteReturnedResults {
             panic!("Unexpected error: {}", err);
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "extra_check")]
+    fn test_execute_multiple() {
+        let db = checked_memory_handle();
+        let err = db
+            .execute(
+                "CREATE TABLE foo(x INTEGER); CREATE TABLE foo(x INTEGER)",
+                NO_PARAMS,
+            )
+            .unwrap_err();
+        match err {
+            Error::MultipleStatement => (),
+            _ => panic!("Unexpected error: {}", err),
         }
     }
 
