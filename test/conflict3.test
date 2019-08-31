@@ -366,5 +366,73 @@ do_execsql_test 12.3 {
   SELECT * FROM t2;
 } {111 111B 112 112}
 
+#-------------------------------------------------------------------------
+ifcapable trigger {
+  reset_db
+  do_execsql_test 13.1.0 {
+    PRAGMA recursive_triggers = true;
+    CREATE TABLE t0 (c0 UNIQUE, c1 UNIQUE);
+    CREATE TRIGGER tr0 AFTER DELETE ON t0 BEGIN 
+      DELETE FROM t0; 
+    END;
+
+    INSERT INTO t0 VALUES(1, NULL);
+    INSERT INTO t0 VALUES(0, NULL);
+  }
+
+  do_execsql_test 13.1.1 {
+    UPDATE OR REPLACE t0 SET c1 = 1;
+  }
+
+  integrity_check 13.1.2
+
+  do_execsql_test 13.1.3 {
+    SELECT * FROM t0
+  } {}
+
+  do_execsql_test 13.2.0 {
+    CREATE TABLE t2 (a PRIMARY KEY, b UNIQUE, c UNIQUE) WITHOUT ROWID;
+    CREATE TRIGGER tr3 AFTER DELETE ON t2 BEGIN 
+      DELETE FROM t2; 
+    END;
+
+    INSERT INTO t2 VALUES(1, 1, 1);
+    INSERT INTO t2 VALUES(2, 2, 2);
+  }
+
+  do_execsql_test 13.2.1 {
+    UPDATE OR REPLACE t2 SET c = 0;
+  }
+
+  integrity_check 13.2.2
+
+  do_execsql_test 13.2.3 {
+    SELECT * FROM t2
+  } {}
+
+  do_execsql_test 13.3.0 {
+    CREATE TABLE t1(a, b);
+    CREATE TABLE log(x);
+    CREATE INDEX i1 ON t1(a);
+    INSERT INTO t1 VALUES(1, 2);
+
+    CREATE TRIGGER tb BEFORE UPDATE ON t1 BEGIN
+      DELETE FROM t1;
+    END;
+    CREATE TRIGGER ta AFTER UPDATE ON t1 BEGIN
+      INSERT INTO log VALUES('fired!');
+    END;
+
+    UPDATE t1 SET b=3;
+  }
+
+  do_execsql_test 13.3.1 {
+    SELECT * FROM t1;
+  } {}
+  do_execsql_test 13.3.2 {
+    SELECT * FROM log;
+  } {}
+}
 
 finish_test
+

@@ -1,5 +1,5 @@
-C Remove\ssome\saffinity\stests\sthat\sbecame\sunreachable\sdue\sto\sthe\sprior\schange.
-D 2019-08-31T01:33:19.183
+C If\sa\sDELETE\strigger\sfired\sby\san\sUPDATE\sOR\sREPLACE\sstatement\sdeletes\sthe\srow\sbeing\supdated,\sdo\snot\sattempt\sto\sproceed\swith\sthe\soriginal\sUPDATE\soperation.\sFix\sfor\s[d6a0fbc1].
+D 2019-08-31T17:14:35.569
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c fc8c6c0a8a26afb3a97e3f844d65403dd27cf1450baf4415034fa4ccf00c4d7e
 F src/trigger.c 845ccc08f60716c58aa28fe6470385c18ef8c4e1d88c93dcf449bc13d464eb2e
-F src/update.c 3cb9150d2cf661d938e2f1b1749945f3faa767f88febdb739ab1793bbf895ff2
+F src/update.c ce478c8ad297833d1acc825891e35d82a99f5986cfce1e92f44c3b0d54670114
 F src/upsert.c 710c91bb13e3c3fed5b6fe17cb13e09560bdd003ad8b8c51e6b16c80cfc48b10
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c fffdfa627be74d69ef425f92db124e7148af449bb8a3286e79577c42bca84061
@@ -745,7 +745,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 87ad5458bb8709312dac0d6755fd30e8e4ca83298d0a9ef6e5c24277a3c3390e
 F test/conflict.test c7cc007e2af151516ddf38f7412fe10d473a694f55e3df437e2c7b31c2590e8d
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
-F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
+F test/conflict3.test 56d18aedfa521a7ebffadb8254cfff10caf4e49cd8659cb54da39513aed478ba
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test d7cb0300e4a297147b6a05e92a1684bc8973635c3bcaa3d66e983c9cbdbf47a3
 F test/corrupt2.test bb50042cf9a1f1023d73af325d47eb02a6bb11e3c52f8812644b220c5d4bca35
@@ -1838,7 +1838,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0d909c740b774d8a46731696e33342be83206cc4a95d07f42fdb3d8cc2d7a8e
-R fb7480045131ad29a415b8e551946237
-U drh
-Z 73deec9d190744adeeaa8d20a010bc12
+P e2db1123faac26c0e0b6a1ebef1685ea7633bfcafd1ff743ba5380700f7745af
+R 1a919c61b513d8917573ee41d8ce4c15
+T +closed 2a0152c9f5f2ca56734189521b3b114ad6ba7ee7941d0f22d262081125436f72
+U dan
+Z 6965309018f410a0aa2e8d19660bb27e
