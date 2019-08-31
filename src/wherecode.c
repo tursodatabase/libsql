@@ -755,7 +755,6 @@ static int codeAllEqualityTerms(
         if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
           zAff[j] = SQLITE_AFF_BLOB;
         }
-        if( zAff[j]==SQLITE_AFF_REAL ) zAff[j] = SQLITE_AFF_NUMERIC;
       }
     }
   }

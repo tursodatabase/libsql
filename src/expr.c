@@ -2203,10 +2203,10 @@ int sqlite3ExprNeedsNoAffinityChange(const Expr *p, char aff){
   if( op==TK_REGISTER ) op = p->op2;
   switch( op ){
     case TK_INTEGER: {
-      return aff==SQLITE_AFF_INTEGER || aff==SQLITE_AFF_NUMERIC;
+      return aff>=SQLITE_AFF_NUMERIC;
     }
     case TK_FLOAT: {
-      return aff==SQLITE_AFF_REAL || aff==SQLITE_AFF_NUMERIC;
+      return aff>=SQLITE_AFF_NUMERIC;
     }
     case TK_STRING: {
       return !unaryMinus && aff==SQLITE_AFF_TEXT;
@@ -2216,8 +2216,7 @@ int sqlite3ExprNeedsNoAffinityChange(const Expr *p, char aff){
     }
     case TK_COLUMN: {
       assert( p->iTable>=0 );  /* p cannot be part of a CHECK constraint */
-      return p->iColumn<0
-          && (aff==SQLITE_AFF_INTEGER || aff==SQLITE_AFF_NUMERIC);
+      return aff>=SQLITE_AFF_NUMERIC && p->iColumn<0;
     }
     default: {
       return 0;

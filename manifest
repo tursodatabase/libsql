@@ -1,5 +1,5 @@
-C When\sthe\saffinity\sof\sa\stable\scolumn\sis\sINT\sor\sREAL,\smake\sthe\saffinity\sof\ncorresponding\sindex\scolumns\sNUMERIC.\s\sThis\sincreases\sthe\sprecision\sof\nindex\slookups\sfor\slarge\snumbers\sso\sthat\sit\smatches\sthe\sprecision\sof\nordinary\scomparison\soperators.\s\sTicket\s[40812aea1fde9594]
-D 2019-08-30T23:56:34.003
+C Remove\ssome\saffinity\stests\sthat\sbecame\sunreachable\sdue\sto\sthe\sprior\schange.
+D 2019-08-31T01:33:19.183
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c e1b74116375bb88c1b4b90b635d417dcd0643ac46bacf5a3caefef60c8e5e115
+F src/expr.c 60cf8c778c3291220487bea46667339160f15bbddaef57c1a703c56d5fc76c52
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
 F src/func.c 4ee36219698d50d672a28eca4adb0fd6b92e607a1883d318315e0d2fd5044467
@@ -611,7 +611,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c fb546afbdbedc77a6193a236db92f6f85bc8e17412ec596230dd8aee03a93716
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c b27b95cbd901c50ff4b26835eb249f57845193615861742bd1056e6d2e40b40c
+F src/wherecode.c 535c8e228478fd971b9a5b6cb6773995b0fbf7020d5989508a5094ce5b8cd95b
 F src/whereexpr.c 2757afbd5cfdbb420f9d0392e1bd5f5c0e33dee50a8c692befc7e502308e449f
 F src/window.c 96b0c033d33408f16ac8b177eac6362ee53a23d9b6d7a51a04289ab2f956bb77
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1838,7 +1838,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67381dadede98a55d8d9e085d021e6fa6473071978967b6302e03b28cf2245e1
-R 81c5159f885099a08c3a032048c494b3
+P e0d909c740b774d8a46731696e33342be83206cc4a95d07f42fdb3d8cc2d7a8e
+R fb7480045131ad29a415b8e551946237
 U drh
-Z df65619bddc85917641870cd10c4e180
+Z 73deec9d190744adeeaa8d20a010bc12
