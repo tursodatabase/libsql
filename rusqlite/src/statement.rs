@@ -45,7 +45,7 @@ impl Statement<'_> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
-    /// underling SQLite call fails.
+    /// underlying SQLite call fails.
     pub fn execute<P>(&mut self, params: P) -> Result<usize>
     where
         P: IntoIterator,
@@ -89,7 +89,7 @@ impl Statement<'_> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
-    /// underling SQLite call fails.
+    /// underlying SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
         self.bind_parameters_named(params)?;
         self.execute_with_bound_parameters()
