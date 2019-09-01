@@ -2527,11 +2527,6 @@ case OP_Offset: {          /* out3 */
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
 **
-** If the OPFLAG_CLEARCACHE bit is set on P5 and P1 is a pseudo-table cursor,
-** then the cache of the cursor is reset prior to extracting the column.
-** The first OP_Column against a pseudo-table after the value of the content
-** register has changed should have this bit set.
-**
 ** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 then
 ** the result is guaranteed to only be used as the argument of a length()
 ** or typeof() function, respectively.  The loading of large blobs can be
