@@ -763,6 +763,8 @@ do_execsql_test in-18.1 {
 # For the IN_INDEX_NOOP optimization, apply REAL affinity to the LHS
 # values prior to comparison if the RHS has REAL affinity.
 #
+# Also ticket https://sqlite.org/src/info/29f635e0af71234b
+#
 do_execsql_test in-19.1 {
   DROP TABLE IF EXISTS t0;
   CREATE TABLE t0(c0 REAL UNIQUE);
@@ -775,5 +777,12 @@ do_execsql_test in-19.2 {
 do_execsql_test in-19.3 {
   SELECT c0 IN ('2070934912552030444',2,3) FROM t0;
 } {1}
+do_execsql_test in-19.4 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 TEXT, c1 REAL, c2, PRIMARY KEY(c2, c0, c1));
+  CREATE INDEX i0 ON t0(c1 IN (c0));
+  INSERT INTO t0(c0, c2) VALUES (0, NULL) ON CONFLICT(c2, c1, c0) DO NOTHING;
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test
