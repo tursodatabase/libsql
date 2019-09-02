@@ -3532,7 +3532,19 @@ expr_code_doover:
       if( iTab<0 ){
         if( pParse->iSelfTab<0 ){
           /* Generating CHECK constraints or inserting into partial index */
-          return pExpr->iColumn - pParse->iSelfTab;
+          assert( pExpr->y.pTab!=0 );
+          assert( pExpr->iColumn>=XN_ROWID );
+          assert( pExpr->iColumn<pExpr->y.pTab->nCol );
+          if( pExpr->iColumn>=0
+            && pExpr->y.pTab->aCol[pExpr->iColumn].affinity==SQLITE_AFF_REAL
+          ){
+            sqlite3VdbeAddOp2(v, OP_SCopy, pExpr->iColumn - pParse->iSelfTab,
+                              target);
+            sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
+            return target;
+          }else{
+            return pExpr->iColumn - pParse->iSelfTab;
+          }
         }else{
           /* Coding an expression that is part of an index where column names
           ** in the index refer to the table to which the index belongs */
