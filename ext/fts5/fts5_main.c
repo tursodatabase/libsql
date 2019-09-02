@@ -988,10 +988,10 @@ static int fts5SpecialMatch(
   assert( pTab->p.base.zErrMsg==0 );
   pCsr->ePlan = FTS5_PLAN_SPECIAL;
 
-  if( 0==sqlite3_strnicmp("reads", z, n) ){
+  if( n==5 && 0==sqlite3_strnicmp("reads", z, n) ){
     pCsr->iSpecial = sqlite3Fts5IndexReads(pTab->p.pIndex);
   }
-  else if( 0==sqlite3_strnicmp("id", z, n) ){
+  else if( n==2 && 0==sqlite3_strnicmp("id", z, n) ){
     pCsr->iSpecial = pCsr->iCsrId;
   }
   else{
@@ -2239,7 +2239,7 @@ static void fts5ApiCallback(
   iCsrId = sqlite3_value_int64(argv[0]);
 
   pCsr = fts5CursorFromCsrid(pAux->pGlobal, iCsrId);
-  if( pCsr==0 ){
+  if( pCsr==0 || pCsr->ePlan==0 ){
     char *zErr = sqlite3_mprintf("no such cursor: %lld", iCsrId);
     sqlite3_result_error(context, zErr, -1);
     sqlite3_free(zErr);
