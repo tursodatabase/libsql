@@ -27,7 +27,7 @@ impl Statement<'_> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let s = self.column_name(i);
+            let s = self.column_name_unwrap(i);
             cols.push(s);
         }
         cols
@@ -39,11 +39,28 @@ impl Statement<'_> {
         self.stmt.column_count()
     }
 
-    pub(crate) fn column_name(&self, col: usize) -> &str {
+    pub(crate) fn column_name_unwrap(&self, col: usize) -> &str {
         // Just panic if the bounds are wrong for now, we never call this
         // without checking first.
-        let slice = self.stmt.column_name(col).expect("Column out of bounds");
-        str::from_utf8(slice.to_bytes()).unwrap()
+        self.column_name(col).expect("Column out of bounds")
+    }
+
+    /// Returns the name assigned to a particular column in the result set
+    /// returned by the prepared statement.
+    ///
+    /// ## Failure
+    ///
+    /// Returns an `Error::InvalidColumnIndex` if `idx` is outside the valid
+    /// column range for this row.
+    ///
+    /// Panics when column name is not valid UTF-8.
+    pub fn column_name(&self, col: usize) -> Result<&str> {
+        self.stmt
+            .column_name(col)
+            .ok_or(Error::InvalidColumnIndex(col))
+            .map(|slice| {
+                str::from_utf8(slice.to_bytes()).expect("Invalid UTF-8 sequence in column name")
+            })
     }
 
     /// Returns the column index in the result set for a given column name.
@@ -69,13 +86,15 @@ impl Statement<'_> {
     }
 
     /// Returns a slice describing the columns of the result of the query.
-    pub fn columns<'stmt>(&'stmt self) -> Vec<Column<'stmt>> {
+    pub fn columns(&self) -> Vec<Column> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let name = self.column_name(i);
+            let name = self.column_name_unwrap(i);
             let slice = self.stmt.column_decltype(i);
-            let decl_type = slice.map(|s| str::from_utf8(s.to_bytes()).unwrap());
+            let decl_type = slice.map(|s| {
+                str::from_utf8(s.to_bytes()).expect("Invalid UTF-8 sequence in column declaration")
+            });
             cols.push(Column { name, decl_type });
         }
         cols
@@ -93,20 +112,45 @@ impl<'stmt> Rows<'stmt> {
         self.stmt.map(Statement::column_count)
     }
 
+    /// Return the name of the column.
+    pub fn column_name(&self, col: usize) -> Option<Result<&str>> {
+        self.stmt.map(|stmt| stmt.column_name(col))
+    }
+
+    /// Return the index of the column.
+    pub fn column_index(&self, name: &str) -> Option<Result<usize>> {
+        self.stmt.map(|stmt| stmt.column_index(name))
+    }
+
     /// Returns a slice describing the columns of the Rows.
-    pub fn columns(&self) -> Option<Vec<Column<'stmt>>> {
+    pub fn columns(&self) -> Option<Vec<Column>> {
         self.stmt.map(Statement::columns)
     }
 }
 
 impl<'stmt> Row<'stmt> {
+    /// Get all the column names of the Row.
+    pub fn column_names(&self) -> Vec<&str> {
+        self.stmt.column_names()
+    }
+
     /// Return the number of columns in the current row.
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
+    /// Return the name of the column.
+    pub fn column_name(&self, col: usize) -> Result<&str> {
+        self.stmt.column_name(col)
+    }
+
+    /// Return the index of the column.
+    pub fn column_index(&self, name: &str) -> Result<usize> {
+        self.stmt.column_index(name)
+    }
+
     /// Returns a slice describing the columns of the Row.
-    pub fn columns(&self) -> Vec<Column<'stmt>> {
+    pub fn columns(&self) -> Vec<Column> {
         self.stmt.columns()
     }
 }
