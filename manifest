@@ -1,10 +1,10 @@
-C When\swe\splay\sgames\swith\sCOLLATE\sin\sorder\sto\scommute\san\soperator\sin\sthe\nWHERE\sclause\sprocessing,\sbe\ssure\snot\sto\suse\sthe\scommuted\soperator\sto\squalify\na\spartial\sindex,\sas\sinsufficient\sCOLLATE\sinformation\sis\spreserved\sto\sverify\nthat\sthe\sexpression\swill\scorrectly\squalify\sthe\sindex.\nTicket\s[767a8cbc6d20bd68]
-D 2019-09-03T14:27:25.935
+C Updates\sto\sthe\sdefault\ssettings\sin\sMakefile.linux-gcc.
+D 2019-09-03T16:23:41.278
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 578f123620087ea459aa08fa872810a25ca7c0aaf16331de985bfcddb5f1e747
-F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
+F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc a463dca3c50d8a36094fe5c8c39077907f530b54edfc5388c66c85e2cfc8dc04
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION 4c516d84c2a5f26c477ed34c09ac4136630f71c68139631f2eb591b22eea7cf1
@@ -1839,7 +1839,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e7b4527d32cc1be0294614b9d7363d4b59cf654a954b86515b3f6888975ce73
-R f93cc76f663e94933b1f2f65b53349fd
+P 5351e920f489562f959ab8a376ff720f845ea165e0cdc7c3a271aac53c2aa64a
+R 925cc947a7aaed39ac73d111ffc8ed4f
 U drh
-Z 391da90ad359183d92b0ba19729274a1
+Z 4a725e18713a18c2d331c90a708c61ac
