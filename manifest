@@ -1,5 +1,5 @@
-C Add\sextra\sdefenses\sagainst\sstrategically\scorrupt\sdatabases\sto\sfts3/4.
-D 2018-12-19T01:38:18.228
+C Disable\sthe\sundocumented\srtreenode()\sSQL\sfunction\sthat\sis\sonly\sused\sfor\stesting,\nexcept\swhen\sdoing\sa\sbuild\sthat\sis\sspecifically\sintended\sfor\stesting.
+D 2019-09-03T17:46:35.824
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -271,7 +271,7 @@ F ext/rbu/sqlite3rbu.c 2a89efba9eeba8e6c89a498dc195e8efbdde2694
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0acd285bfacc347579a5df9fe947212fb99e2775a40c43f027c3a16936c58e7e
+F ext/rtree/rtree.c ec7e8d76eeb29cb6d01767fb6569374b367f98aa2edb94136976f5964b81fec1
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1570,8 +1570,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8201f4e1c566f7223c71c07e6b703d1352801f1b2daa0fd00895a18e1944cb4d
-Q +d44318f59044162e229a444582692e9788f17b5c404b4eb702f4c2114b22fefe
-R f9b606b494915b85d296116cb554bff6
+P 4bb21d8205b3c72b94442018a0544ecc55e3320ef2593f0e3350142b7f2a7663
+Q +7b4583f932ff0933280aa73ee69294b488f96d4f2bdc8422cd0136d944d9fb60
+R 47a875971b982e4114bcb5499100f999
 U drh
-Z e69443cf57e9f97cbc9063032c431665
+Z 6ec6389d9f8787c98a516ede19c40183
