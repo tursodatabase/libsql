@@ -1,5 +1,5 @@
-C Add\sinterfaces\ssqlite3_bind_pointer(),\ssqlite3_result_pointer(),\sand\nsqlite3_value_pointer()\sused\sto\ssafely\smove\spointer\svalues\sthrough\sSQL\swithout\nexposing\sunderlying\smemory\saddress\sinformation.\sCherrypick\sfrom\scommit\n[8201f4e1]\son\sbranch-3.18.
-D 2018-12-19T16:03:56.772
+C Disable\sthe\sundocumented\srtreenode()\sSQL\sfunction\sthat\sis\sonly\sused\sfor\stesting,\nexcept\swhen\sdoing\sa\sbuild\sthat\sis\sspecifically\sintended\sfor\stesting.
+D 2019-09-03T17:39:12.827
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F ext/rbu/sqlite3rbu.c ea47de615e911b3a69a8e7fb3be3866298403a25
 F ext/rbu/sqlite3rbu.h 1d568cb33738d7900975cc5c72e6f68049f15914
 F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0f9b595bd0debcbedf1d7a63d0e0678d619e6c9c
+F ext/rtree/rtree.c 1877268d97f9c5ac78b2fd6ee92e7ffb74fc16a9e4797d4a4ea6012c34a9fba6
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 96a80c08440c932cd72aac50660e7af2612d2cda
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1391,8 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 882ef4e39b5a2aae3786caef492c77af67693b5123ce9c40d99c10c55dc02f98
-Q +72de49f204277191f62601cce70d5013ec30b564a01063f1e841019c78ae6c77
-R cf13503fc49cb85466747faa5df4b552
-U dan
-Z a7be1e512c71fcc72c6af46ee43923b0
+P 4cb67252d39fc537601f75532ec8271994aed8bae4d20ba48a3262b52ed004c0
+R 9b40bbf3adaaee06b251eda5917ef9fc
+U drh
+Z b82e2a6f018f357fb2c00b919cd5c5e0
