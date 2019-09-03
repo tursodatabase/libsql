@@ -3549,6 +3549,7 @@ static int rtreeInit(
 }
 
 
+#if defined(SQLITE_TEST)
 /*
 ** Implementation of a scalar function that decodes r-tree nodes to
 ** human readable strings. This can be used for debugging and analysis.
@@ -3610,6 +3611,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   
   sqlite3_result_text(ctx, zText, -1, sqlite3_free);
 }
+#endif
 
 /* This routine implements an SQL function that returns the "depth" parameter
 ** from the front of a blob that is an r-tree node.  For example:
@@ -3639,9 +3641,11 @@ static void rtreedepth(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
 */
 int sqlite3RtreeInit(sqlite3 *db){
   const int utf8 = SQLITE_UTF8;
-  int rc;
+  int rc = SQLITE_OK;
 
+#if defined(SQLITE_TEST)
   rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
+#endif
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
   }
