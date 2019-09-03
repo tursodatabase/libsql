@@ -462,5 +462,23 @@ do_execsql_test index6-15.5 {
   SELECT 1 FROM t0 WHERE (c0 IS FALSE) IN (FALSE);
 } {1}
 
+# 2019-09-03
+# Ticket https://sqlite.org/src/info/767a8cbc6d20bd68
+do_execsql_test index6-16.1 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 COLLATE NOCASE, c1);
+  CREATE INDEX i0 ON t0(0) WHERE c0 >= c1;
+  INSERT INTO t0 VALUES('a', 'B');
+  SELECT c1 <= c0, c0 >= c1 FROM t0;
+} {1 0}
+do_execsql_test index6-16.2 {
+  SELECT 2 FROM t0 WHERE c0 >= c1;
+} {}
+do_execsql_test index6-16.3 {
+  SELECT 3 FROM t0 WHERE c1 <= c0;
+} {3}
+
+
+
 
 finish_test

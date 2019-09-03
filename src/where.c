@@ -2800,7 +2800,9 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   }
   if( pParse->db->flags & SQLITE_EnableQPSG ) pParse = 0;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    Expr *pExpr = pTerm->pExpr;
+    Expr *pExpr;
+    if( pTerm->wtFlags & TERM_NOPARTIDX ) continue;
+    pExpr = pTerm->pExpr;
     if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
      && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab) 
     ){

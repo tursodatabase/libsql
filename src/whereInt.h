@@ -291,6 +291,7 @@ struct WhereTerm {
 #define TERM_LIKE       0x400  /* The original LIKE operator */
 #define TERM_IS         0x800  /* Term.pExpr is an IS operator */
 #define TERM_VARSELECT  0x1000 /* Term.pExpr contains a correlated sub-query */
+#define TERM_NOPARTIDX  0x2000 /* Not for use to enable a partial index */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
