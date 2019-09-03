@@ -591,7 +591,19 @@ do_execsql_test 22.1 {
   SELECT rowid FROM t9('a*')
 } {1}
 
+
+#-------------------------------------------------------------------------
+do_execsql_test 25.0 {
+  CREATE VIRTUAL TABLE t13 USING fts5(x, detail=%DETAIL%);
+}
+do_execsql_test 25.1 {
+  BEGIN;
+  INSERT INTO t13 VALUES('AAAA');
+SELECT * FROM t13('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB*');
+
+  END;
 }
 
+}
 
 finish_test
