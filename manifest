@@ -1,5 +1,5 @@
-C Disable\sthe\sundocumented\srtreenode()\sSQL\sfunction\sthat\sis\sonly\sused\sfor\stesting,\nexcept\swhen\sdoing\sa\sbuild\sthat\sis\sspecifically\sintended\sfor\stesting.
-D 2019-09-03T17:39:12.827
+C Fix\sa\sbuffer\soverread\sthat\scould\soccur\swhen\srunning\sfts5\sprefix\squeries\sinside\sa\stransaction.
+D 2019-09-03T19:29:38.481
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,7 +111,7 @@ F ext/fts5/fts5_aux.c b09aa27dcdaa3d50a30be433fddaa48a50aa827b
 F ext/fts5/fts5_buffer.c e99224a316cc5b2c574ccccdc7f2344bca54784d
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c bc31478fd04de55150031f6e6a652939d3e335ac
-F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
+F ext/fts5/fts5_hash.c bd1b79105ba8aa91b2b88df5208f516b7fdca0f41cd1d0a68f177fb5175c4695
 F ext/fts5/fts5_index.c f73968357818455039ecb79dcd4b082c3baaeaeb
 F ext/fts5/fts5_main.c bf43550b8e9a68514abd179500f1917a2256cd7a
 F ext/fts5/fts5_storage.c df061a5caf9e50fbbd43113009b5b248362f4995
@@ -124,7 +124,7 @@ F ext/fts5/fts5_vocab.c a05027ab6abb692ad27654c85137a4f1061a159e
 F ext/fts5/fts5parse.y e83dca6028e3309178d05b5bd920e372dc295d35
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl 51f7ef3af444b89c6f6ce3896a0ac349ff4e996d
-F ext/fts5/test/fts5aa.test 4804f237005bb4ba8ea4a76120d8011ebcb5d611
+F ext/fts5/test/fts5aa.test d5700987d4a86a9659c0472ac13f6e02ce1e0fe75b3aa879ef8231f024242074
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 9737992d08c56bfd4803e933744d2d764e23795c
 F ext/fts5/test/fts5ad.test e3dfb150fce971b4fd832498c29f56924d451b63
@@ -1391,7 +1391,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4cb67252d39fc537601f75532ec8271994aed8bae4d20ba48a3262b52ed004c0
-R 9b40bbf3adaaee06b251eda5917ef9fc
-U drh
-Z b82e2a6f018f357fb2c00b919cd5c5e0
+P 7b4583f932ff0933280aa73ee69294b488f96d4f2bdc8422cd0136d944d9fb60
+Q +b3fa58dd7403dbd4d2e9f3ae23d7d1337830d6fef2aa2f137ac5174de0d5828e
+R 8fba27de4cead3a680f11d2484caebab
+U dan
+Z fbe5406374ae32f9e24445989a7b5a8d
