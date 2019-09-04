@@ -2745,7 +2745,7 @@ void sqlite3WindowCodeStep(
     windowCheckValue(pParse, regEnd, 1 + (pMWin->eFrmType==TK_RANGE ? 3 : 0));
   }
 
-  if( pMWin->eStart==pMWin->eEnd && regStart ){
+  if( pMWin->eFrmType!=TK_RANGE && pMWin->eStart==pMWin->eEnd && regStart ){
     int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
     int addrGe = sqlite3VdbeAddOp3(v, op, regStart, 0, regEnd);
     VdbeCoverageNeverNullIf(v, op==OP_Ge); /* NeverNull because bound <expr> */

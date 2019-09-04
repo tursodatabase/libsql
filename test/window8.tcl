@@ -351,14 +351,74 @@ execsql_test 7.0 {
   INSERT INTO t2 VALUES(2, NULL);
   INSERT INTO t2 VALUES(3, NULL);
   INSERT INTO t2 VALUES(4, NULL);
+  INSERT INTO t2 VALUES(5, 66);
+  INSERT INTO t2 VALUES(6, 67);
 }
 
-execsql_test 7.1 {
-  SELECT sum(a) OVER win FROM t2
+foreach {tn f ex} {
+  1 sum ""
+  2 min ""
+  3 sum "EXCLUDE CURRENT ROW"
+  4 max "EXCLUDE CURRENT ROW"
+} {
+execsql_test 7.$tn.1 "
+  SELECT $f (a) OVER win FROM t2
   WINDOW win AS (
       ORDER BY b NULLS LAST RANGE BETWEEN 6 FOLLOWING AND UNBOUNDED FOLLOWING
   );
+"
+execsql_test 7.$tn.2 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS LAST RANGE BETWEEN 1 PRECEDING AND 2 PRECEDING
+  );
+"
+execsql_test 7.$tn.3 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS LAST RANGE BETWEEN 2 FOLLOWING AND 1 FOLLOWING
+  );
+"
+execsql_test 7.$tn.4 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS FIRST RANGE BETWEEN 1 PRECEDING AND 2 PRECEDING
+  );
+"
+execsql_test 7.$tn.5 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS FIRST RANGE BETWEEN 2 FOLLOWING AND 1 FOLLOWING
+  );
+"
+
+execsql_test 7.$tn.6 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS LAST RANGE BETWEEN 1000 PRECEDING AND 2 PRECEDING
+  );
+"
+execsql_test 7.$tn.7 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS LAST RANGE BETWEEN 2000 FOLLOWING AND 1000 FOLLOWING
+  );
+"
+execsql_test 7.$tn.8 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS FIRST RANGE BETWEEN 1000 PRECEDING AND 2000 PRECEDING
+  );
+"
+execsql_test 7.$tn.9 "
+  SELECT $f (a) OVER win FROM t2
+  WINDOW win AS (
+      ORDER BY b NULLS FIRST RANGE BETWEEN 2000 FOLLOWING AND 1000 FOLLOWING
+  );
+"
 }
+
+
 
 finish_test
 
