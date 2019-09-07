@@ -869,6 +869,32 @@ static void selectWindowRewriteEList(
 }
 
 /*
+** Return true if the top-level of list pList contains an SQL function 
+** with the SQLITE_FUNC_SUBTYPE flag set. Return false otherwise.
+*/
+int exprListContainsSubtype(Parse *pParse, ExprList *pList){
+  if( pList ){
+    sqlite3 *db = pParse->db;
+    int i;
+    for(i=0; i<pList->nExpr; i++){
+      Expr *p = pList->a[i].pExpr;
+      if( p->op==TK_FUNCTION ){
+        FuncDef *pDef;
+        int nArg = 0;
+        if( !ExprHasProperty(p, EP_TokenOnly) && p->x.pList ){
+          nArg = p->x.pList->nExpr;
+        }
+        pDef = sqlite3FindFunction(db, p->u.zToken, nArg, db->enc, 0);
+        if( pDef && (pDef->funcFlags & SQLITE_FUNC_SUBTYPE) ){
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+/*
 ** Append a copy of each expression in expression-list pAppend to
 ** expression list pList. Return a pointer to the result list.
 */
@@ -965,8 +991,15 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** window function - one for the accumulator, another for interim
     ** results.  */
     for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-      pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
-      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList, 0);
+      ExprList *pArgs = pWin->pOwner->x.pList;
+      if( exprListContainsSubtype(pParse, pArgs) ){
+        selectWindowRewriteEList(pParse, pMWin, pSrc, pArgs, pTab, &pSublist);
+        pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+        pWin->bExprArgs = 1;
+      }else{
+        pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+        pSublist = exprListAppendList(pParse, pSublist, pArgs, 0);
+      }
       if( pWin->pFilter ){
         Expr *pFilter = sqlite3ExprDup(db, pWin->pFilter, 0);
         pSublist = sqlite3ExprListAppend(pParse, pSublist, pFilter);
@@ -1432,7 +1465,7 @@ static void windowAggStep(
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *pFunc = pWin->pFunc;
     int regArg;
-    int nArg = windowArgCount(pWin);
+    int nArg = pWin->bExprArgs ? 0 : windowArgCount(pWin);
     int i;
 
     assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
@@ -1482,6 +1515,11 @@ static void windowAggStep(
         VdbeCoverage(v);
         sqlite3ReleaseTempReg(pParse, regTmp);
       }
+      if( pWin->bExprArgs ){
+        nArg = pWin->pOwner->x.pList->nExpr;
+        regArg = sqlite3GetTempRange(pParse, nArg);
+        sqlite3ExprCodeExprList(pParse, pWin->pOwner->x.pList, regArg, 0, 0);
+      }
       if( pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;
         assert( nArg>0 );
@@ -1492,6 +1530,9 @@ static void windowAggStep(
                         bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nArg);
+      if( pWin->bExprArgs ){
+        sqlite3ReleaseTempRange(pParse, regArg, nArg);
+      }
       if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
     }
   }

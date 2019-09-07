@@ -4987,9 +4987,14 @@ int sqlite3_create_window_function(
 **
 ** The SQLITE_DIRECTONLY flag means that the function may only be invoked
 ** from top-level SQL, and cannot be used in VIEWs or TRIGGERs.
+**
+** The SQLITE_SUBTYPE flag indicates to SQLite that the function may call
+** [sqlite3_result_subtype()] in order to configure its return value with
+** a sub-type.
 */
 #define SQLITE_DETERMINISTIC    0x000000800
 #define SQLITE_DIRECTONLY       0x000080000
+#define SQLITE_SUBTYPE          0x000100000
 
 /*
 ** CAPI3REF: Deprecated Functions

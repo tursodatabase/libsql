@@ -2504,9 +2504,9 @@ int sqlite3Json1Init(sqlite3 *db){
 #endif
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
-                                 SQLITE_UTF8 | SQLITE_DETERMINISTIC, 
-                                 (void*)&aFunc[i].flag,
-                                 aFunc[i].xFunc, 0, 0);
+                        SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_SUBTYPE, 
+                        (void*)&aFunc[i].flag,
+                        aFunc[i].xFunc, 0, 0);
   }
 #ifndef SQLITE_OMIT_WINDOWFUNC
   for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){

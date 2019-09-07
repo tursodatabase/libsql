@@ -1,0 +1,106 @@
+# 2019-08-30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# Test cases for RANGE BETWEEN and especially with NULLS LAST
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix windowB
+
+ifcapable !windowfunc {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(NULL, 1);
+  INSERT INTO t1 VALUES(NULL, 2);
+  INSERT INTO t1 VALUES(NULL, 3);
+} {}
+
+foreach {tn win} {
+  1 { ORDER BY a RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING }
+  2 { ORDER BY a NULLS LAST RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING }
+  3 { ORDER BY a DESC RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING }
+  4 { ORDER BY a DESC NULLS FIRST RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING }
+
+  5 { ORDER BY a      NULLS LAST  RANGE BETWEEN 1 FOLLOWING AND 2 FOLLOWING }
+  6 { ORDER BY a DESC NULLS FIRST RANGE BETWEEN 1 FOLLOWING AND 2 FOLLOWING }
+
+  7 { ORDER BY a      NULLS LAST  RANGE BETWEEN 2 PRECEDING AND 1 PRECEDING }
+  8 { ORDER BY a DESC NULLS FIRST RANGE BETWEEN 2 PRECEDING AND 1 PRECEDING }
+} {
+  do_execsql_test 1.$tn "
+    SELECT sum(b) OVER win FROM t1
+    WINDOW win AS ( $win )
+  " {6 6 6}
+}
+
+do_execsql_test 1.2 {
+  SELECT sum(b) OVER win FROM t1
+  WINDOW win AS (
+    ORDER BY a DESC NULLS FIRST RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  )
+} {6 6 6}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, NULL);
+  INSERT INTO t1 VALUES(2, 45);
+  INSERT INTO t1 VALUES(3, 66.2);
+  INSERT INTO t1 VALUES(4, 'hello world');
+  INSERT INTO t1 VALUES(5, 'hello world');
+  INSERT INTO t1 VALUES(6, X'1234');
+  INSERT INTO t1 VALUES(7, X'1234');
+  INSERT INTO t1 VALUES(8, NULL);
+}
+
+foreach {tn win} {
+  1 "ORDER BY b RANGE BETWEEN 1 PRECEDING AND 2 PRECEDING"
+  2 "ORDER BY b RANGE BETWEEN 2 FOLLOWING AND 2 FOLLOWING"
+  3 "ORDER BY b NULLS LAST RANGE BETWEEN 1 PRECEDING AND 2 PRECEDING"
+  4 "ORDER BY b NULLS LAST RANGE BETWEEN 2 FOLLOWING AND 2 FOLLOWING"
+} {
+  do_execsql_test 2.1.$tn "
+    SELECT a, sum(a) OVER win FROM t1
+    WINDOW win AS ( $win )
+    ORDER BY 1
+  " {1 9   2 {}  3 {}  4 9  5 9  6 13  7 13  8 9}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE testjson(id INTEGER PRIMARY KEY, j TEXT);
+  INSERT INTO testjson VALUES(1, '{"a":1}');
+  INSERT INTO testjson VALUES(2, '{"b":2}');
+}
+
+do_execsql_test 3.1 {
+  SELECT json_group_array(json(j)) FROM testjson;
+} {
+  {[{"a":1},{"b":2}]}
+}
+
+breakpoint
+do_execsql_test 3.2 {
+  SELECT json_group_array(json(j)) OVER (ORDER BY id) FROM testjson;
+} {
+  {[{"a":1}]}
+  {[{"a":1},{"b":2}]}
+}
+
+
+finish_test
+
