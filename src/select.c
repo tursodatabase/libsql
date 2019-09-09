@@ -3418,6 +3418,7 @@ typedef struct SubstContext {
   int iNewTable;            /* New table number */
   int isLeftJoin;           /* Add TK_IF_NULL_ROW opcodes on each replacement */
   ExprList *pEList;         /* Replacement expressions */
+  int bFlattener;           /* True for query-flattener, false otherwise */
 } SubstContext;
 
 /* Forward Declarations */
@@ -3478,6 +3479,18 @@ static Expr *substExpr(
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
+
+        /* If this call is part of query-flattening, ensure that the
+        ** new expression has an implicit collation sequence. */
+        if( pSubst->bFlattener && pExpr ){
+          if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE ){
+            CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
+            pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr, 
+                (pColl ? pColl->zName : "BINARY")
+            );
+          }
+          ExprClearProperty(pExpr, EP_Collate);
+        }
       }
     }
   }else{
@@ -4043,6 +4056,7 @@ static int flattenSubquery(
       x.iNewTable = iNewParent;
       x.isLeftJoin = isLeftJoin;
       x.pEList = pSub->pEList;
+      x.bFlattener = 1;
       substSelect(&x, pParent, 0);
     }
   
@@ -4368,6 +4382,7 @@ static int pushDownWhereTerms(
       x.iNewTable = iCursor;
       x.isLeftJoin = 0;
       x.pEList = pSubq->pEList;
+      x.bFlattener = 0;
       pNew = substExpr(&x, pNew);
       if( pSubq->selFlags & SF_Aggregate ){
         pSubq->pHaving = sqlite3ExprAnd(pParse, pSubq->pHaving, pNew);
