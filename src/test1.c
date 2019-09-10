@@ -7200,6 +7200,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "omit-noop-join",      SQLITE_OmitNoopJoin   },
     { "stat4",               SQLITE_Stat4          },
     { "skip-scan",           SQLITE_SkipScan       },
+    { "push-down",           SQLITE_PushDown       },
   };
 
   if( objc!=4 ){
