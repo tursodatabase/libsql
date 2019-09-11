@@ -4426,7 +4426,7 @@ void ReportTable(
     }
     i++;
   }
-  if( j>0 ) fprintf(out, "\n"); lineno++;
+  if( j>0 ){ fprintf(out, "\n"); lineno++; }
   fprintf(out, "};\n"); lineno++;
 
   /* Output the yy_shift_ofst[] table */
