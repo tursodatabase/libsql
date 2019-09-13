@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2019-09-13T16:19:53.303
+C Change\sthe\smeaning\sof\sthe\sSQLITE_SUBTYPE\sflag\sso\sthat\sit\sindicates\sthat\sthe\sfunction\smay\suse\ssqlite3_value_subtype()\son\sits\sarguments.
+D 2019-09-13T17:36:20.583
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1843,7 +1843,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6aa438ce41d460a6782ae63503128b9140c28ff59c2b2eed48b004acf83e0560 090cd07d37904da4610d6a6787a3cc825c9a8bdcc5f051267d4608bba9b49d03
+P 14ef7543465dd14d8fa141fcceb1950b5c2d265a3e862323969d747b39c0cd8c
 R fd375c2e1dff51c5d7012fa4142e0ead
+T +closed 14ef7543465dd14d8fa141fcceb1950b5c2d265a3e862323969d747b39c0cd8c
 U dan
-Z df1ac0a87aa9a51acfc9b062c58caddf
+Z 578e886c47f8dfdb7da1a4c6e0cdecd1
