@@ -695,6 +695,7 @@ int sqlite3Fts5ExprEof(Fts5Expr*);
 i64 sqlite3Fts5ExprRowid(Fts5Expr*);
 
 void sqlite3Fts5ExprFree(Fts5Expr*);
+int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2);
 
 /* Called during startup to register a UDF with SQLite */
 int sqlite3Fts5ExprInit(Fts5Global*, sqlite3*);
