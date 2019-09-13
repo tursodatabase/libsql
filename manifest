@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sidxStr\sfor\sFTS5\sis\salways\szero-terminated.\nFix\sfor\scheck-in\s[e6db945454a0dae2]
-D 2019-09-13T13:23:13.490
+C Fix\sa\stypo\sin\sthe\scarray\sextension\sheader\scomment\s-\sthe\scomment\sthat\sserves\nas\sthe\sdocumentation\sto\sthis\sextension.
+D 2019-09-13T17:30:24.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -282,7 +282,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/appendvfs.c 3777f22ec1057dc4e5fd89f2fbddcc7a29fbeef1ad038c736c54411bb1967af7
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c 4f0ebf278f46e68e6306c667917766cebc5550fd35d5de17847988e22892d4d2
-F ext/misc/carray.c ed96c218ea940b85c9a274c4d9c59fe9491c299147a38a8bba537687bd6c6005
+F ext/misc/carray.c 91e9a7f512fda934894bed30464552fffa7d3073b5be04189ae0bd0c59f26bfd
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c cec672d40604075bb341a7f11ac48393efdcd90a979269b8fe7977ea62d0547f
 F ext/misc/compress.c dd4f8a6d0baccff3c694757db5b430f3bbd821d8686d1fc24df55cf9f035b189
@@ -1842,7 +1842,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8927d14f88c44828e794787bab080455ab62705c93f65ce7d8db83478aa5a8e
-R 1b0d381d385e92afee32191d4d702401
+P 090cd07d37904da4610d6a6787a3cc825c9a8bdcc5f051267d4608bba9b49d03
+R a8c45dcd00465c1593cf4300db620ee6
 U drh
-Z bf931f65c31f45c41d3fdaadb23bca9e
+Z 17496dbdca5aeac5a2f3f36b6a26cda7
