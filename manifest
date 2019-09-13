@@ -1,5 +1,5 @@
-C Allow\sfts5\sto\sfilter\son\smultiple\sMATCH\sclauses\sin\sa\ssingle\sscan.
-D 2019-09-12T19:38:40.141
+C Fix\sharmless\scompiler\swarnings.
+D 2019-09-13T12:24:58.472
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -117,7 +117,7 @@ F ext/fts5/fts5_config.c 606a29f2962a8f4508923e6ad833974b32a3ab4093f63fd6de0fb33
 F ext/fts5/fts5_expr.c 5661fe64f4f5a499710df9561075de84b743f01e808af46df4130a9ec343a0fd
 F ext/fts5/fts5_hash.c 1cc0095646f5f3b46721aa112fb4f9bf29ae175cb5338f89dcec66ed97acfe75
 F ext/fts5/fts5_index.c b062bdb836e195656aac8d6684e943585cff4bf7d7c593c80cb67c3b6cfef7ee
-F ext/fts5/fts5_main.c e6db945454a0dae2dafcf29905d7d5272b64b00da34a43bd4ce732e2079a159d
+F ext/fts5/fts5_main.c c589c81760579fd5cc3ed6c5c31eb6059b4d61a89770b7003f749a30d10c36f2
 F ext/fts5/fts5_storage.c 801b4e3cd33786a60a07b6b01f86d0fbdf7e68325054e08d17176293a8081e99
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
@@ -1842,7 +1842,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 980be1730dc1239c63a107923bf2e32b4ec7d4bc31b9190e711cc35f18cc2bb4
-R f455101857a1853760c9098b8cd2af2d
-U dan
-Z 191c94e283a8422844a9aa5307aa3f27
+P 9d418a7a491761eeb38a70898677a493e2631e5d62e75ee88431f52d3dfd2344
+R 081d79e579f06000a847b33f6c7ba7a5
+U drh
+Z 573c86de16a248cef196a4da7e7449bd

@@ -1175,7 +1175,6 @@ static int fts5FilterMethod(
   int rc = SQLITE_OK;             /* Error code */
   int bDesc;                      /* True if ORDER BY [rank|rowid] DESC */
   int bOrderByRank;               /* True if ORDER BY rank */
-  sqlite3_value *pMatch = 0;      /* <tbl> MATCH ? expression (or NULL) */
   sqlite3_value *pRank = 0;       /* rank MATCH ? expression (or NULL) */
   sqlite3_value *pRowidEq = 0;    /* rowid = ? expression (or NULL) */
   sqlite3_value *pRowidLe = 0;    /* rowid <= ? expression (or NULL) */
@@ -1209,7 +1208,7 @@ static int fts5FilterMethod(
         pRank = apVal[i];
         break;
       case 'm': {
-        char *zText = sqlite3_value_text(apVal[i]);
+        const char *zText = (const char*)sqlite3_value_text(apVal[i]);
         if( zText==0 ) zText = "";
 
         if( idxStr[iIdxStr]>='0' && idxStr[iIdxStr]<='9' ){
@@ -1277,7 +1276,7 @@ static int fts5FilterMethod(
     ** (pCursor) is used to execute the query issued by function 
     ** fts5CursorFirstSorted() above.  */
     assert( pRowidEq==0 && pRowidLe==0 && pRowidGe==0 && pRank==0 );
-    assert( nVal==0 && pMatch==0 && bOrderByRank==0 && bDesc==0 );
+    assert( nVal==0 && bOrderByRank==0 && bDesc==0 );
     assert( pCsr->iLastRowid==LARGEST_INT64 );
     assert( pCsr->iFirstRowid==SMALLEST_INT64 );
     if( pTab->pSortCsr->bDesc ){
