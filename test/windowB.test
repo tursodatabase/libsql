@@ -87,20 +87,19 @@ do_execsql_test 3.0 {
   INSERT INTO testjson VALUES(2, '{"b":2}');
 }
 
-do_execsql_test 3.1 {
-  SELECT json_group_array(json(j)) FROM testjson;
-} {
-  {[{"a":1},{"b":2}]}
-}
+ifcapable json1 {
+  do_execsql_test 3.1 {
+    SELECT json_group_array(json(j)) FROM testjson;
+  } {
+    {[{"a":1},{"b":2}]}
+  }
 
-breakpoint
-do_execsql_test 3.2 {
-  SELECT json_group_array(json(j)) OVER (ORDER BY id) FROM testjson;
-} {
-  {[{"a":1}]}
-  {[{"a":1},{"b":2}]}
+  do_execsql_test 3.2 {
+    SELECT json_group_array(json(j)) OVER (ORDER BY id) FROM testjson;
+  } {
+    {[{"a":1}]}
+    {[{"a":1},{"b":2}]}
+  }
 }
-
 
 finish_test
-
