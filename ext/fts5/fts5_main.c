@@ -567,6 +567,8 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         /* As there exists an unusable MATCH constraint this is an 
         ** unusable plan. Set a prohibitively high cost. */
         pInfo->estimatedCost = 1e50;
+        assert( iIdxStr < pInfo->nConstraint*6 + 1 );
+        idxStr[iIdxStr] = 0;
         return SQLITE_OK;
       }else{
         if( iCol==nCol+1 ){
