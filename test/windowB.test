@@ -80,25 +80,94 @@ foreach {tn win} {
 }
 
 #-------------------------------------------------------------------------
-reset_db
-do_execsql_test 3.0 {
-  CREATE TABLE testjson(id INTEGER PRIMARY KEY, j TEXT);
-  INSERT INTO testjson VALUES(1, '{"a":1}');
-  INSERT INTO testjson VALUES(2, '{"b":2}');
-}
-
 ifcapable json1 {
+  reset_db
+  do_execsql_test 3.0 {
+    CREATE TABLE testjson(id INTEGER PRIMARY KEY, j TEXT);
+    INSERT INTO testjson VALUES(1, '{"a":1}');
+    INSERT INTO testjson VALUES(2, '{"b":2}');
+    INSERT INTO testjson VALUES(3, '{"c":3}');
+    INSERT INTO testjson VALUES(4, '{"d":4}');
+  }
+  
   do_execsql_test 3.1 {
     SELECT json_group_array(json(j)) FROM testjson;
   } {
-    {[{"a":1},{"b":2}]}
+    {[{"a":1},{"b":2},{"c":3},{"d":4}]}
   }
-
+  
   do_execsql_test 3.2 {
     SELECT json_group_array(json(j)) OVER (ORDER BY id) FROM testjson;
   } {
     {[{"a":1}]}
     {[{"a":1},{"b":2}]}
+    {[{"a":1},{"b":2},{"c":3}]}
+    {[{"a":1},{"b":2},{"c":3},{"d":4}]}
+  }
+  
+  do_execsql_test 3.3 {
+    SELECT json_group_array(json(j)) OVER (
+      ORDER BY id RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW EXCLUDE TIES
+    ) FROM testjson;
+  } {
+    {[{"a":1}]}
+    {[{"a":1},{"b":2}]}
+    {[{"a":1},{"b":2},{"c":3}]}
+    {[{"a":1},{"b":2},{"c":3},{"d":4}]}
+  }
+  
+  do_execsql_test 3.4 {
+    SELECT json_group_array(json(j)) OVER (
+      ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+    ) FROM testjson;
+  } {
+    {[{"a":1},{"b":2}]}
+    {[{"a":1},{"b":2},{"c":3}]}
+    {[{"b":2},{"c":3},{"d":4}]}
+    {[{"c":3},{"d":4}]}
+  }
+  
+  do_execsql_test 3.5 {
+    SELECT json_group_array(json(j)) OVER (
+      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+    ) FROM testjson;
+  } {
+    {[]}
+    {[{"a":1}]}
+    {[{"a":1},{"b":2}]}
+    {[{"b":2},{"c":3}]}
+  }
+  
+  if 0 {
+  
+  do_execsql_test 3.5 {
+    SELECT json_group_array(json(j)) OVER (
+      ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING
+    ) FROM testjson;
+  } {
+    {[]}
+    {[{"a":1}]}
+    {[{"a":1},{"b":2}]}
+    {[{"b":2},{"c":3}]}
+  }
+  
+  explain_i {
+    SELECT json_group_array(json(j)) FILTER (WHERE id!=2) OVER (
+      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+    ) FROM testjson;
+  }
+  do_execsql_test 3.7 {
+  PRAGMA vdbe_trace = 1;
+    SELECT json_group_array(json(j)) FILTER (WHERE id!=2) OVER (
+      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+    ) FROM testjson;
+  } {
+    {[]}
+    {[{"a":1}]}
+    {[{"a":1}]}
+    {[{"c":3}]}
+  }
+  
   }
 }
 

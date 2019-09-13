@@ -1481,8 +1481,8 @@ static void windowAggStep(
       int addrIf = 0;
       if( pWin->pFilter ){
         int regTmp;
-        assert( nArg==0 || nArg==pWin->pOwner->x.pList->nExpr );
-        assert( nArg || pWin->pOwner->x.pList==0 );
+        assert( pWin->bExprArgs || !nArg ||nArg==pWin->pOwner->x.pList->nExpr );
+        assert( pWin->bExprArgs || nArg  ||pWin->pOwner->x.pList==0 );
         regTmp = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+nArg,regTmp);
         addrIf = sqlite3VdbeAddOp3(v, OP_IfNot, regTmp, 0, 1);
@@ -1490,9 +1490,19 @@ static void windowAggStep(
         sqlite3ReleaseTempReg(pParse, regTmp);
       }
       if( pWin->bExprArgs ){
+        int iStart = sqlite3VdbeCurrentAddr(v);
+        VdbeOp *pOp, *pEnd;
+
         nArg = pWin->pOwner->x.pList->nExpr;
         regArg = sqlite3GetTempRange(pParse, nArg);
         sqlite3ExprCodeExprList(pParse, pWin->pOwner->x.pList, regArg, 0, 0);
+
+        pEnd = sqlite3VdbeGetOp(v, -1);
+        for(pOp=sqlite3VdbeGetOp(v, iStart); pOp<=pEnd; pOp++){
+          if( pOp->opcode==OP_Column && pOp->p1==pWin->iEphCsr ){
+            pOp->p1 = csr;
+          }
+        }
       }
       if( pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;

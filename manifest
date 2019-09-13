@@ -1,5 +1,5 @@
-C Fix\sthe\swindowB\stest\smodule\sso\sthat\sit\sworks\seven\sif\sSQLite\sis\sbuilt\swithout\nJSON\ssupport.
-D 2019-09-13T18:59:04.975
+C Fix\sa\sproblem\swith\susing\sjson1\swindow\sfunctions\swith\san\sEXCLUDE\sclause.
+D 2019-09-13T20:42:46.328
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/where.c 9685d5988b79b93ebbe46941fbdb60d14861bb0fe3f9126117ef1753acc69b64
 F src/whereInt.h 2c6bae136a7c0be6ff75dc36950d1968c67d005c8e51d7a9d77cb996bb4843d9
 F src/wherecode.c 535c8e228478fd971b9a5b6cb6773995b0fbf7020d5989508a5094ce5b8cd95b
 F src/whereexpr.c b3bbae199e7acd8d0fa822c9a29cbb822ef2b3d84d68de55a3d60b013f5d5da4
-F src/window.c a35ad309132c639d075344a7c12f3133a8a738da238a35d8338f5034bd94c0a0
+F src/window.c 2a10191a3ec7dd3422f8c77dac423d0e55019dee9efe319613ebd0f02b98991e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test da465d3d490ab24ef64f7715b5953343a4967762b9350b29eb1462879ff3fb9e
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1719,7 +1719,7 @@ F test/window8.tcl f2711aa3571e4e6b0dad98db8d95fd6cb8d9db0c92bbdf535f153b07606a1
 F test/window8.test c4331b27a6f66d69fa8f8bab10cc731db1a81d293ae108a68f7c3487fa94e65b
 F test/window9.test 20a6b590be718b6bc98a5356d4396d6cdf19329c547da084fa225b92d68e1693
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
-F test/windowB.test 3f0ae24a7860abaae9f092589f275a87787804b6d98ad6f23a0bc87fb4491d43
+F test/windowB.test fae072a311cea62715007b482afd40b1124fef56dcc9988bffb85b29ccabb5dd
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test a90b397837209f15e54afa62e8be39b2759a0101fae04e05a08bcc50e243a452
@@ -1843,7 +1843,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba2ebc3a348decc5cedaf14960e30e7ae26a26824cfa198727f2499162142ef3
-R bae0d8d6f0a49acfd1c53d207a1b5d08
-U drh
-Z 2837255703db522fd15af08765e39ee9
+P 807975c76b36347f02aa0ce9661d608adbffe1f7e77c15f8da677e47e1187153
+R 19b6534ebeb3a6a9bfaaa41ce75a9354
+U dan
+Z e45766b9d1c40d7379299659b41fb108
