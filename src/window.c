@@ -869,32 +869,6 @@ static void selectWindowRewriteEList(
 }
 
 /*
-** Return true if the top-level of list pList contains an SQL function 
-** with the SQLITE_FUNC_SUBTYPE flag set. Return false otherwise.
-*/
-int exprListContainsSubtype(Parse *pParse, ExprList *pList){
-  if( pList ){
-    sqlite3 *db = pParse->db;
-    int i;
-    for(i=0; i<pList->nExpr; i++){
-      Expr *p = pList->a[i].pExpr;
-      if( p->op==TK_FUNCTION ){
-        FuncDef *pDef;
-        int nArg = 0;
-        if( !ExprHasProperty(p, EP_TokenOnly) && p->x.pList ){
-          nArg = p->x.pList->nExpr;
-        }
-        pDef = sqlite3FindFunction(db, p->u.zToken, nArg, db->enc, 0);
-        if( pDef && (pDef->funcFlags & SQLITE_FUNC_SUBTYPE) ){
-          return 1;
-        }
-      }
-    }
-  }
-  return 0;
-}
-
-/*
 ** Append a copy of each expression in expression-list pAppend to
 ** expression list pList. Return a pointer to the result list.
 */
@@ -992,7 +966,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** results.  */
     for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
       ExprList *pArgs = pWin->pOwner->x.pList;
-      if( exprListContainsSubtype(pParse, pArgs) ){
+      if( pWin->pFunc->funcFlags & SQLITE_FUNC_SUBTYPE ){
         selectWindowRewriteEList(pParse, pMWin, pSrc, pArgs, pTab, &pSublist);
         pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
         pWin->bExprArgs = 1;
