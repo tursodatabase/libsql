@@ -965,8 +965,15 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** window function - one for the accumulator, another for interim
     ** results.  */
     for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-      pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
-      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList, 0);
+      ExprList *pArgs = pWin->pOwner->x.pList;
+      if( pWin->pFunc->funcFlags & SQLITE_FUNC_SUBTYPE ){
+        selectWindowRewriteEList(pParse, pMWin, pSrc, pArgs, pTab, &pSublist);
+        pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+        pWin->bExprArgs = 1;
+      }else{
+        pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+        pSublist = exprListAppendList(pParse, pSublist, pArgs, 0);
+      }
       if( pWin->pFilter ){
         Expr *pFilter = sqlite3ExprDup(db, pWin->pFilter, 0);
         pSublist = sqlite3ExprListAppend(pParse, pSublist, pFilter);
@@ -1432,7 +1439,7 @@ static void windowAggStep(
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *pFunc = pWin->pFunc;
     int regArg;
-    int nArg = windowArgCount(pWin);
+    int nArg = pWin->bExprArgs ? 0 : windowArgCount(pWin);
     int i;
 
     assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
@@ -1482,6 +1489,11 @@ static void windowAggStep(
         VdbeCoverage(v);
         sqlite3ReleaseTempReg(pParse, regTmp);
       }
+      if( pWin->bExprArgs ){
+        nArg = pWin->pOwner->x.pList->nExpr;
+        regArg = sqlite3GetTempRange(pParse, nArg);
+        sqlite3ExprCodeExprList(pParse, pWin->pOwner->x.pList, regArg, 0, 0);
+      }
       if( pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;
         assert( nArg>0 );
@@ -1492,6 +1504,9 @@ static void windowAggStep(
                         bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nArg);
+      if( pWin->bExprArgs ){
+        sqlite3ReleaseTempRange(pParse, regArg, nArg);
+      }
       if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
     }
   }
