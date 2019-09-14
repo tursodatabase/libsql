@@ -83,11 +83,11 @@ foreach {tn win} {
 ifcapable json1 {
   reset_db
   do_execsql_test 3.0 {
-    CREATE TABLE testjson(id INTEGER PRIMARY KEY, j TEXT);
-    INSERT INTO testjson VALUES(1, '{"a":1}');
-    INSERT INTO testjson VALUES(2, '{"b":2}');
-    INSERT INTO testjson VALUES(3, '{"c":3}');
-    INSERT INTO testjson VALUES(4, '{"d":4}');
+    CREATE TABLE testjson(id INTEGER PRIMARY KEY, j TEXT, x TEXT);
+    INSERT INTO testjson VALUES(1, '{"a":1}', 'a');
+    INSERT INTO testjson VALUES(2, '{"b":2}', 'b');
+    INSERT INTO testjson VALUES(3, '{"c":3}', 'c');
+    INSERT INTO testjson VALUES(4, '{"d":4}', 'd');
   }
   
   do_execsql_test 3.1 {
@@ -107,7 +107,8 @@ ifcapable json1 {
   
   do_execsql_test 3.3 {
     SELECT json_group_array(json(j)) OVER (
-      ORDER BY id RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW EXCLUDE TIES
+      ORDER BY id RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      EXCLUDE TIES
     ) FROM testjson;
   } {
     {[{"a":1}]}
@@ -138,36 +139,66 @@ ifcapable json1 {
     {[{"b":2},{"c":3}]}
   }
   
-  if 0 {
-  
-  do_execsql_test 3.5 {
+  do_execsql_test 3.5a {
+    UPDATE testjson SET j = replace(j,char(125),',"e":9'||char(125));
+    SELECT j FROM testjson;
+  } {
+    {{"a":1,"e":9}}
+    {{"b":2,"e":9}}
+    {{"c":3,"e":9}}
+    {{"d":4,"e":9}}
+  }
+  do_execsql_test 3.5b {
+    SELECT group_concat(x,'') OVER (
+      ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING
+    ) FROM testjson ORDER BY id;
+  } {bc cd d {}}
+  do_execsql_test 3.5c {
     SELECT json_group_array(json(j)) OVER (
       ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING
     ) FROM testjson;
   } {
+    {[{"b":2,"e":9},{"c":3,"e":9}]}
+    {[{"c":3,"e":9},{"d":4,"e":9}]}
+    {[{"d":4,"e":9}]}
     {[]}
-    {[{"a":1}]}
-    {[{"a":1},{"b":2}]}
-    {[{"b":2},{"c":3}]}
   }
-  
-  explain_i {
-    SELECT json_group_array(json(j)) FILTER (WHERE id!=2) OVER (
-      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
-    ) FROM testjson;
-  }
-  do_execsql_test 3.7 {
-  PRAGMA vdbe_trace = 1;
-    SELECT json_group_array(json(j)) FILTER (WHERE id!=2) OVER (
-      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+  do_execsql_test 3.5d {
+    SELECT json_group_object(x,json(j)) OVER (
+      ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING
     ) FROM testjson;
   } {
-    {[]}
-    {[{"a":1}]}
-    {[{"a":1}]}
-    {[{"c":3}]}
+    {{"b":{"b":2,"e":9},"c":{"c":3,"e":9}}}
+    {{"c":{"c":3,"e":9},"d":{"d":4,"e":9}}}
+    {{"d":{"d":4,"e":9}}}
+    {{}}
   }
   
+  do_execsql_test 3.7b {
+    SELECT group_concat(x,'') FILTER (WHERE id!=2) OVER (
+      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+    ) FROM testjson;
+  } {{} a a c}
+
+  do_execsql_test 3.7c {
+    SELECT json_group_array(json(j)) FILTER (WHERE id!=2) OVER (
+      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+    ) FROM testjson
+  } {
+    {[]}
+    {[{"a":1,"e":9}]}
+    {[{"a":1,"e":9}]}
+    {[{"c":3,"e":9}]}
+  }
+  do_execsql_test 3.7d {
+    SELECT json_group_object(x,json(j)) FILTER (WHERE id!=2) OVER (
+      ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+    ) FROM testjson
+  } {
+    {{}}
+    {{"a":{"a":1,"e":9}}}
+    {{"a":{"a":1,"e":9}}}
+    {{"c":{"c":3,"e":9}}}
   }
 }
 
