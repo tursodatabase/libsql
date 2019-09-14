@@ -3601,8 +3601,8 @@ struct Window {
   Expr *pFilter;          /* The FILTER expression */
   FuncDef *pFunc;         /* The function */
   int iEphCsr;            /* Partition buffer or Peer buffer */
-  int regAccum;
-  int regResult;
+  int regAccum;           /* Accumulator */
+  int regResult;          /* Interim result */
   int csrApp;             /* Function cursor (used by min/max) */
   int regApp;             /* Function register (also used by min/max) */
   int regPart;            /* Array of registers for PARTITION BY values */
@@ -3612,7 +3612,8 @@ struct Window {
   int regOne;             /* Register containing constant value 1 */
   int regStartRowid;
   int regEndRowid;
-  u8 bExprArgs;
+  u8 bExprArgs;           /* Defer evaluation of window function arguments
+                          ** due to the SQLITE_SUBTYPE flag */
 };
 
 #ifndef SQLITE_OMIT_WINDOWFUNC

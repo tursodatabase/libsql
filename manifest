@@ -1,5 +1,5 @@
-C Fix\sthe\swindows\sinverse\sfunction\son\sthe\sJSON\saggregates.
-D 2019-09-14T00:21:34.282
+C Extra\scomments\son\sfields\sof\sthe\sWindow\sobject.
+D 2019-09-14T16:21:02.133
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,7 +530,7 @@ F src/shell.c.in e5fb91505f29ae9458cabf1a63bbd1faf6b4b34eabca33d0f75a06aacecca21
 F src/sqlite.h.in 155fea14c0747f8842c4e592e04734f47ad8218d0f33c511849b15d410a7fb5c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
-F src/sqliteInt.h 34cc038470f74a961ce9c1155df4c3926c2c88d784631272943ae0b7e9bd2aa2
+F src/sqliteInt.h 4a478f7fa0937d7c3141393d8c30c49e242e5e696e6976e19281e4d933a8ab95
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1843,7 +1843,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a1978814da41608a16f6953bd575c97d587a34bd80b7ac0e619d62bfdc903d2
-R 476ca0efeffea95d421b220f4123feec
+P f464d847af490dd3ec45565dcc4c2e6ff4ed1ebb65036f30ca0b3ce2e73080e6
+R ecd7799055991f616443bfa6b30bbda4
 U drh
-Z 549cbff31496c774b10a02d54a853bdd
+Z 99d49b049fe9df8372384c89d49f686e
