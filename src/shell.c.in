@@ -3588,6 +3588,8 @@ static const char *(azHelp[]) = {
   "   --freelist-corrupt       Assume the freelist is corrupt",
   "   --recovery-db NAME       Store recovery metadata in database file NAME",
   "   --lost-and-found TABLE   Alternative name for the lost-and-found table",
+  "   --no-rowids              Do not attempt to recover rowid values",
+  "                            that are not also INTEGER PRIMARY KEYs",
 #endif
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
   ".save FILE               Write in-memory database into FILE",
@@ -6592,6 +6594,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   RecoverTable *pOrphan = 0;
 
   int bFreelist = 1;              /* 0 if --freelist-corrupt is specified */
+  int bRowids = 1;                /* 0 if --no-rowids */
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
     int n;
@@ -6607,6 +6610,9 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     if( n<=15 && memcmp("-lost-and-found", z, n)==0 && i<(nArg-1) ){
       i++;
       zLostAndFound = azArg[i];
+    }else
+    if( n<=10 && memcmp("-no-rowids", z, n)==0 ){
+      bRowids = 0;
     }
     else{
       utf8_printf(stderr, "unexpected option: %s\n", azArg[i]); 
@@ -6772,8 +6778,11 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   shellPrepare(pState->db, &rc,
       "SELECT pgno FROM recovery.map WHERE root=?", &pPages
   );
+
   shellPrepare(pState->db, &rc,
-      "SELECT max(field), group_concat(shell_escape_crnl(quote(value)), ', ')"
+      "SELECT max(field), group_concat(shell_escape_crnl(quote"
+      "(case when (? AND field<0) then NULL else value end)"
+      "), ', ')"
       ", min(field) "
       "FROM sqlite_dbdata WHERE pgno = ? AND field != ?"
       "GROUP BY cell", &pCells
@@ -6808,11 +6817,16 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       raw_printf(pState->out, "DELETE FROM sqlite_sequence;\n");
     }
     sqlite3_bind_int(pPages, 1, iRoot);
-    sqlite3_bind_int(pCells, 2, pTab->iPk);
+    if( bRowids==0 && pTab->iPk<0 ){
+      sqlite3_bind_int(pCells, 1, 1);
+    }else{
+      sqlite3_bind_int(pCells, 1, 0);
+    }
+    sqlite3_bind_int(pCells, 3, pTab->iPk);
 
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPages) ){
       int iPgno = sqlite3_column_int(pPages, 0);
-      sqlite3_bind_int(pCells, 1, iPgno);
+      sqlite3_bind_int(pCells, 2, iPgno);
       while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pCells) ){
         int nField = sqlite3_column_int(pCells, 0);
         int iMin = sqlite3_column_int(pCells, 2);

@@ -1,5 +1,5 @@
-C Extra\scomments\son\sfields\sof\sthe\sWindow\sobject.
-D 2019-09-14T16:21:02.133
+C Add\sthe\s--no-rowids\soption\sto\sthe\s".recover"\scommand.
+D 2019-09-14T16:44:51.726
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -526,7 +526,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 9891cf5fd155bb199f8b1ff5d1429b9f70484487f4c455bba94348d4cb6f829f
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c e2c870548541d33d090a066e89ab2e7943299006e2827c1abfae39561041fc0b
-F src/shell.c.in e5fb91505f29ae9458cabf1a63bbd1faf6b4b34eabca33d0f75a06aacecca21b
+F src/shell.c.in 68698630c21c5489fb3dc961a3ab3840e726c3c01e475dab96055788a7b6e5e6
 F src/sqlite.h.in 155fea14c0747f8842c4e592e04734f47ad8218d0f33c511849b15d410a7fb5c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
@@ -1843,7 +1843,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f464d847af490dd3ec45565dcc4c2e6ff4ed1ebb65036f30ca0b3ce2e73080e6
-R ecd7799055991f616443bfa6b30bbda4
-U drh
-Z 99d49b049fe9df8372384c89d49f686e
+P 3dbed162518a73213bbfb137c763064518fdc2daeae3952cfab39ce0e6813d3f
+R 893a8c502e7609a361861540de405b55
+U dan
+Z 284f9491bb2c84cd052f56239d66ee3a
