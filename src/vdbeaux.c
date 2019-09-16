@@ -977,16 +977,16 @@ void sqlite3VdbeScanStatus(
 ** Change the value of the opcode, or P1, P2, P3, or P5 operands
 ** for a specific instruction.
 */
-void sqlite3VdbeChangeOpcode(Vdbe *p, u32 addr, u8 iNewOpcode){
+void sqlite3VdbeChangeOpcode(Vdbe *p, int addr, u8 iNewOpcode){
   sqlite3VdbeGetOp(p,addr)->opcode = iNewOpcode;
 }
-void sqlite3VdbeChangeP1(Vdbe *p, u32 addr, int val){
+void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p1 = val;
 }
-void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
+void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p2 = val;
 }
-void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
+void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
 void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
@@ -1493,14 +1493,16 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     case P4_KEYINFO: {
       int j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
-      assert( pKeyInfo->aSortOrder!=0 );
+      assert( pKeyInfo->aSortFlags!=0 );
       sqlite3_str_appendf(&x, "k(%d", pKeyInfo->nKeyField);
       for(j=0; j<pKeyInfo->nKeyField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         const char *zColl = pColl ? pColl->zName : "";
         if( strcmp(zColl, "BINARY")==0 ) zColl = "B";
-        sqlite3_str_appendf(&x, ",%s%s", 
-               pKeyInfo->aSortOrder[j] ? "-" : "", zColl);
+        sqlite3_str_appendf(&x, ",%s%s%s", 
+               (pKeyInfo->aSortFlags[j] & KEYINFO_ORDER_DESC) ? "-" : "", 
+               (pKeyInfo->aSortFlags[j] & KEYINFO_ORDER_BIGNULL)? "N." : "", 
+               zColl);
       }
       sqlite3_str_append(&x, ")", 1);
       break;
@@ -1907,8 +1909,11 @@ int sqlite3VdbeList(
       ** pick up the appropriate opcode. */
       int j;
       i -= p->nOp;
+      assert( apSub!=0 );
+      assert( nSub>0 );
       for(j=0; i>=apSub[j]->nOp; j++){
         i -= apSub[j]->nOp;
+        assert( i<apSub[j]->nOp || j+1<nSub );
       }
       pOp = &apSub[j]->aOp[i];
     }
@@ -3430,10 +3435,17 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
 ** of SQLite will not understand those serial types.
 */
 
+#if 0 /* Inlined into the OP_MakeRecord opcode */
 /*
 ** Return the serial-type for the value stored in pMem.
 **
 ** This routine might convert a large MEM_IntReal value into MEM_Real.
+**
+** 2019-07-11:  The primary user of this subroutine was the OP_MakeRecord
+** opcode in the byte-code engine.  But by moving this routine in-line, we
+** can omit some redundant tests and make that opcode a lot faster.  So
+** this routine is now only used by the STAT3 logic and STAT3 support has
+** ended.  The code is kept here for historical reference only.
 */
 u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
@@ -3494,6 +3506,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   *pLen = n;
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
+#endif /* inlined into OP_MakeRecord */
 
 /*
 ** The sizes for serial types less than 128
@@ -3802,7 +3815,7 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;
   p->aMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
-  assert( pKeyInfo->aSortOrder!=0 );
+  assert( pKeyInfo->aSortFlags!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nKeyField + 1;
   return p;
@@ -3901,7 +3914,7 @@ static int vdbeRecordCompareDebug(
   if( szHdr1>98307 ) return SQLITE_CORRUPT;
   d1 = szHdr1;
   assert( pKeyInfo->nAllField>=pPKey2->nField || CORRUPT_DB );
-  assert( pKeyInfo->aSortOrder!=0 );
+  assert( pKeyInfo->aSortFlags!=0 );
   assert( pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
   do{
@@ -3932,7 +3945,12 @@ static int vdbeRecordCompareDebug(
                            pKeyInfo->nAllField>i ? pKeyInfo->aColl[i] : 0);
     if( rc!=0 ){
       assert( mem1.szMalloc==0 );  /* See comment below */
-      if( pKeyInfo->aSortOrder[i] ){
+      if( (pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_BIGNULL)
+       && ((mem1.flags & MEM_Null) || (pPKey2->aMem[i].flags & MEM_Null)) 
+      ){
+        rc = -rc;
+      }
+      if( pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_DESC ){
         rc = -rc;  /* Invert the result for DESC sort order. */
       }
       goto debugCompareEnd;
@@ -4308,7 +4326,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   VVA_ONLY( mem1.szMalloc = 0; ) /* Only needed by assert() statements */
   assert( pPKey2->pKeyInfo->nAllField>=pPKey2->nField 
        || CORRUPT_DB );
-  assert( pPKey2->pKeyInfo->aSortOrder!=0 );
+  assert( pPKey2->pKeyInfo->aSortFlags!=0 );
   assert( pPKey2->pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
   do{
@@ -4431,8 +4449,14 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     if( rc!=0 ){
-      if( pPKey2->pKeyInfo->aSortOrder[i] ){
-        rc = -rc;
+      int sortFlags = pPKey2->pKeyInfo->aSortFlags[i];
+      if( sortFlags ){
+        if( (sortFlags & KEYINFO_ORDER_BIGNULL)==0
+         || ((sortFlags & KEYINFO_ORDER_DESC)
+           !=(serial_type==0 || (pRhs->flags&MEM_Null)))
+        ){
+          rc = -rc;
+        }
       }
       assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, rc) );
       assert( mem1.szMalloc==0 );  /* See comment below */
@@ -4600,7 +4624,11 @@ static int vdbeRecordCompareString(
     nCmp = MIN( pPKey2->aMem[0].n, nStr );
     res = memcmp(&aKey1[szHdr], pPKey2->aMem[0].z, nCmp);
 
-    if( res==0 ){
+    if( res>0 ){
+      res = pPKey2->r2;
+    }else if( res<0 ){
+      res = pPKey2->r1;
+    }else{
       res = nStr - pPKey2->aMem[0].n;
       if( res==0 ){
         if( pPKey2->nField>1 ){
@@ -4614,10 +4642,6 @@ static int vdbeRecordCompareString(
       }else{
         res = pPKey2->r1;
       }
-    }else if( res>0 ){
-      res = pPKey2->r2;
-    }else{
-      res = pPKey2->r1;
     }
   }
 
@@ -4649,7 +4673,10 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
   ** header size is (12*5 + 1 + 1) bytes.  */
   if( p->pKeyInfo->nAllField<=13 ){
     int flags = p->aMem[0].flags;
-    if( p->pKeyInfo->aSortOrder[0] ){
+    if( p->pKeyInfo->aSortFlags[0] ){
+      if( p->pKeyInfo->aSortFlags[0] & KEYINFO_ORDER_BIGNULL ){
+        return sqlite3VdbeRecordCompare;
+      }
       p->r1 = 1;
       p->r2 = -1;
     }else{
@@ -4898,7 +4925,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** features such as 'now'.
 */
 int sqlite3NotPureFunc(sqlite3_context *pCtx){
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   if( pCtx->pVdbe==0 ) return 1;
 #endif
   if( pCtx->pVdbe->aOp[pCtx->iOp].opcode==OP_PureFunc ){
@@ -4995,7 +5022,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.keyinfo.db = db;
   preupdate.keyinfo.enc = ENC(db);
   preupdate.keyinfo.nKeyField = pTab->nCol;
-  preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
+  preupdate.keyinfo.aSortFlags = (u8*)&fakeSortOrder;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;

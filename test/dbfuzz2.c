@@ -211,6 +211,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *aData, size_t nByte){
   if( mxCb>0 ){
     sqlite3_progress_handler(db, 10, progress_handler, 0);
   }
+#ifdef SQLITE_TESTCTRL_PRNG_SEED
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 1, db);
+#endif
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
     if( eVerbosity>=1 ){
       printf("%s\n", azSql[i]);

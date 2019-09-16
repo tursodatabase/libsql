@@ -98,5 +98,102 @@ do_execsql_test 2.2.2 {
   SELECT b=='2', rank() OVER (ORDER BY a) FROM t1
 } {1 1   0 2}
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(a,b,c);
+}
 
+do_execsql_test 3.1 {
+  SELECT EXISTS(SELECT 1 FROM t1 ORDER BY sum(a) OVER ()) FROM t1;
+}
+
+do_execsql_test 3.2 {
+  SELECT sum(a) OVER () FROM t2
+   ORDER BY EXISTS(SELECT 1 FROM t2 ORDER BY sum(a) OVER ());
+}
+
+do_catchsql_test 3.3 {
+  SELECT a, sum(a) OVER (ORDER BY a DESC) FROM t2 
+  ORDER BY EXISTS(
+    SELECT 1 FROM t2 ORDER BY sum(a) OVER (ORDER BY a)
+  ) OVER (ORDER BY a);
+} {1 {near "OVER": syntax error}}
+
+do_catchsql_test 3.4 {
+  SELECT y, y+1, y+2 FROM (
+      SELECT c IN (
+        SELECT min(a) OVER (),
+        (abs(row_number() OVER())+22)/19,
+        max(a) OVER () FROM t1
+        ) AS y FROM t2
+      );
+} {1 {sub-select returns 3 columns - expected 1}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b TEXT);
+  INSERT INTO t1 VALUES('A', 1), ('A', 2), ('2', 1), ('2', 2);
+}
+
+do_execsql_test 4.1.1 {
+  SELECT b, b=count(*), '1,2'                   FROM t1 GROUP BY b;
+} {1 0 1,2 2 1 1,2}
+do_execsql_test 4.1.2 {
+  SELECT b, b=count(*), group_concat(b) OVER () FROM t1 GROUP BY b;
+} {1 0 1,2 2 1 1,2}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b, c, d, e);
+  CREATE INDEX i1 ON t1(a, b, c, d, e);
+}
+
+foreach {tn sql} {
+  1 {
+    SELECT 
+      sum(e) OVER (),
+      sum(e) OVER (ORDER BY a),
+      sum(e) OVER (PARTITION BY a ORDER BY b),
+      sum(e) OVER (PARTITION BY a, b ORDER BY c),
+      sum(e) OVER (PARTITION BY a, b, c ORDER BY d)
+    FROM t1;
+  }
+  2 {
+    SELECT sum(e) OVER (PARTITION BY a ORDER BY b) FROM t1 ORDER BY a;
+  }
+} {
+  do_test 5.1.$tn {
+    execsql "EXPLAIN QUERY PLAN $sql"
+  } {~/ORDER/}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (0);
+}
+
+do_execsql_test 6.1 {
+  SELECT * FROM t0 WHERE 
+  EXISTS (
+    SELECT MIN(c0) OVER (), CUME_DIST() OVER () FROM t0
+  ) >=1 AND 
+  EXISTS (
+    SELECT MIN(c0) OVER (), CUME_DIST() OVER () FROM t0
+  ) <=1;
+} {0}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t0 WHERE EXISTS (
+    SELECT MIN(c0) OVER (), CUME_DIST() OVER () FROM t0
+  ) 
+  BETWEEN 1 AND 1;
+} {0}
+
+
+finish_test

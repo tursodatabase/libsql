@@ -842,7 +842,7 @@ static int lsm1BestIndex(
 
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
-  for(i=0; i<pIdxInfo->nConstraint && idxNum<16; i++, pConstraint++){
+  for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
     if( pConstraint->usable==0 ) continue;
     if( pConstraint->iColumn!=0 ) continue;
     switch( pConstraint->op ){

@@ -4279,6 +4279,7 @@ int sqlite3WalFrames(
         if( rc ) return rc;
         iOffset += szFrame;
         nExtra++;
+        assert( pLast!=0 );
       }
     }
     if( bSync ){
@@ -4311,6 +4312,7 @@ int sqlite3WalFrames(
     iFrame++;
     rc = walIndexAppend(pWal, iApp, iFrame, p->pgno);
   }
+  assert( pLast!=0 || nExtra==0 );
   while( rc==SQLITE_OK && nExtra>0 ){
     iFrame++;
     nExtra--;

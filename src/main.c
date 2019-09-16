@@ -836,6 +836,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       } aFlagOp[] = {
         { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
+        { SQLITE_DBCONFIG_ENABLE_VIEW,           SQLITE_EnableView     },
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
@@ -1235,11 +1236,8 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   for(i=sqliteHashFirst(&db->aModule); i; i=sqliteHashNext(i)){
     Module *pMod = (Module *)sqliteHashData(i);
-    if( pMod->xDestroy ){
-      pMod->xDestroy(pMod->pAux);
-    }
     sqlite3VtabEponymousTableClear(db, pMod);
-    sqlite3DbFree(db, pMod);
+    sqlite3VtabModuleUnref(db, pMod);
   }
   sqlite3HashClear(&db->aModule);
 #endif
@@ -1720,7 +1718,8 @@ int sqlite3CreateFunc(
   }
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
-  extraFlags = enc &  SQLITE_DETERMINISTIC;
+  assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
+  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|SQLITE_SUBTYPE);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
   
 #ifndef SQLITE_OMIT_UTF16
@@ -1783,6 +1782,7 @@ int sqlite3CreateFunc(
   p->u.pDestructor = pDestructor;
   p->funcFlags = (p->funcFlags & SQLITE_FUNC_ENCMASK) | extraFlags;
   testcase( p->funcFlags & SQLITE_DETERMINISTIC );
+  testcase( p->funcFlags & SQLITE_DIRECTONLY );
   p->xSFunc = xSFunc ? xSFunc : xStep;
   p->xFinalize = xFinal;
   p->xValue = xValue;
@@ -3075,6 +3075,7 @@ static int openDatabase(
   db->nMaxSorterMmap = 0x7FFFFFFF;
   db->flags |= SQLITE_ShortColNames
                  | SQLITE_EnableTrigger
+                 | SQLITE_EnableView
                  | SQLITE_CacheSpill
 
 /* The SQLITE_DQS compile-time option determines the default settings
@@ -3824,12 +3825,33 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*
-    ** Reset the PRNG back to its uninitialized state.  The next call
-    ** to sqlite3_randomness() will reseed the PRNG using a single call
-    ** to the xRandomness method of the default VFS.
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, int x, sqlite3 *db);
+    **
+    ** Control the seed for the pseudo-random number generator (PRNG) that
+    ** is built into SQLite.  Cases:
+    **
+    **    x!=0 && db!=0       Seed the PRNG to the current value of the
+    **                        schema cookie in the main database for db, or
+    **                        x if the schema cookie is zero.  This case
+    **                        is convenient to use with database fuzzers
+    **                        as it allows the fuzzer some control over the
+    **                        the PRNG seed.
+    **
+    **    x!=0 && db==0       Seed the PRNG to the value of x.
+    **
+    **    x==0 && db==0       Revert to default behavior of using the
+    **                        xRandomness method on the primary VFS.
+    **
+    ** This test-control also resets the PRNG so that the new seed will
+    ** be used for the next call to sqlite3_randomness().
     */
-    case SQLITE_TESTCTRL_PRNG_RESET: {
+    case SQLITE_TESTCTRL_PRNG_SEED: {
+      int x = va_arg(ap, int);
+      int y;
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      assert( db==0 || db->aDb[0].pSchema!=0 );
+      if( db && (y = db->aDb[0].pSchema->schema_cookie)!=0 ){ x = y; }
+      sqlite3Config.iPrngSeed = x;
       sqlite3_randomness(0,0);
       break;
     }
@@ -4039,6 +4061,17 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_NEVER_CORRUPT: {
       sqlite3GlobalConfig.neverCorrupt = va_arg(ap, int);
+      break;
+    }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS, int);
+    **
+    ** Set or clear a flag that causes SQLite to verify that type, name,
+    ** and tbl_name fields of the sqlite_master table.  This is normally
+    ** on, but it is sometimes useful to turn it off for testing.
+    */
+    case SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS: {
+      sqlite3GlobalConfig.bExtraSchemaChecks = va_arg(ap, int);
       break;
     }
 

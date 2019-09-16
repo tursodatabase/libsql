@@ -875,6 +875,14 @@ do_test vtab1.7-13 {
   }
 } {}
 
+# PRAGMA index_info and index_xinfo are no-ops on a virtual table
+do_test vtab1.7-14 {
+  execsql {
+    PRAGMA index_info('echo_abc');
+    PRAGMA index_xinfo('echo_abc');
+  }
+} {}
+
 ifcapable attach {
   do_test vtab1.8-1 {
     set echo_module ""
@@ -1303,25 +1311,27 @@ do_execsql_test 18.1.0 {
   CREATE VIRTUAL TABLE e6 USING echo(t6);
 }
 
-foreach {tn sql res filter} {
-  1.1 "SELECT a FROM e6 WHERE b>'8James'" {4 2 6 1 5}
-    {xFilter {SELECT rowid, a, b FROM 't6' WHERE b > ?} 8James}
-
-  1.2 "SELECT a FROM e6 WHERE b>='8' AND b<'9'" {3 4}
-    {xFilter {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ?} 8 9}
-
-  1.3 "SELECT a FROM e6 WHERE b LIKE '8J%'" {3 4}
-    {xFilter {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b like ?} 8J 8k 8J%}
-
-  1.4 "SELECT a FROM e6 WHERE b LIKE '8j%'" {3 4}
-    {xFilter {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b like ?} 8J 8k 8j%}
-
-  1.5 "SELECT a FROM e6 WHERE b LIKE '8%'" {3 4}
-    {xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} 8%}
-} {
-  set echo_module {}
-  do_execsql_test 18.$tn.1 $sql $res
-  do_test         18.$tn.2 { lrange $::echo_module 2 end } $filter
+ifcapable !icu {
+  foreach {tn sql res filter} {
+    1.1 "SELECT a FROM e6 WHERE b>'8James'" {4 2 6 1 5}
+      {xFilter {SELECT rowid, a, b FROM 't6' WHERE b > ?} 8James}
+  
+    1.2 "SELECT a FROM e6 WHERE b>='8' AND b<'9'" {3 4}
+      {xFilter {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ?} 8 9}
+  
+    1.3 "SELECT a FROM e6 WHERE b LIKE '8J%'" {3 4}
+      {xFilter {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b like ?} 8J 8k 8J%}
+  
+    1.4 "SELECT a FROM e6 WHERE b LIKE '8j%'" {3 4}
+      {xFilter {SELECT rowid, a, b FROM 't6' WHERE b >= ? AND b < ? AND b like ?} 8J 8k 8j%}
+  
+    1.5 "SELECT a FROM e6 WHERE b LIKE '8%'" {3 4}
+      {xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} 8%}
+  } {
+    set echo_module {}
+    do_execsql_test 18.$tn.1 $sql $res
+    do_test         18.$tn.2 { lrange $::echo_module 2 end } $filter
+  }
 }
 
 do_execsql_test 18.2.0 {  PRAGMA case_sensitive_like = ON }
@@ -1342,7 +1352,7 @@ foreach {tn sql res filter} {
 do_execsql_test 18.2.x {  PRAGMA case_sensitive_like = OFF }
 
 #-------------------------------------------------------------------------
-# Test that an existing module may not be overridden.
+# Test that it is ok to override and existing module.
 #
 do_test 19.1 {
   sqlite3 db2 test.db
@@ -1350,7 +1360,7 @@ do_test 19.1 {
 } SQLITE_OK
 do_test 19.2 {
   register_echo_module [sqlite3_connection_pointer db2]
-} SQLITE_MISUSE
+} SQLITE_OK
 do_test 19.3 {
   db2 close
 } {}

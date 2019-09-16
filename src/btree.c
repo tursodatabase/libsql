@@ -1647,9 +1647,12 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   if( (data[hdr+2] || data[hdr+1]) && gap+2<=top ){
     u8 *pSpace = pageFindSlot(pPage, nByte, &rc);
     if( pSpace ){
-      assert( pSpace>=data && (pSpace - data)<65536 );
-      *pIdx = (int)(pSpace - data);
-      return SQLITE_OK;
+      assert( pSpace+nByte<=data+pPage->pBt->usableSize );
+      if( (*pIdx = (int)(pSpace-data))<=gap ){
+        return SQLITE_CORRUPT_PAGE(pPage);
+      }else{
+        return SQLITE_OK;
+      }
     }else if( rc ){
       return rc;
     }
@@ -4876,6 +4879,7 @@ static int accessPayload(
           assert( aWrite>=pBufStart );                         /* due to (6) */
           memcpy(aSave, aWrite, 4);
           rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
+          if( rc && nextPage>pBt->nPage ) rc = SQLITE_CORRUPT_BKPT;
           nextPage = get4byte(aWrite);
           memcpy(aWrite, aSave, 4);
         }else
@@ -6664,12 +6668,7 @@ static void insertCell(
   assert( pPage->nOverflow<=ArraySize(pPage->apOvfl) );
   assert( ArraySize(pPage->apOvfl)==ArraySize(pPage->aiOvfl) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  /* The cell should normally be sized correctly.  However, when moving a
-  ** malformed cell from a leaf page to an interior page, if the cell size
-  ** wanted to be less than 4 but got rounded up to 4 on the leaf, then size
-  ** might be less than 8 (leaf-size + pointer) on the interior node.  Hence
-  ** the term after the || in the following assert(). */
-  assert( sz==pPage->xCellSize(pPage, pCell) || (sz==8 && iChild>0) );
+  assert( sz==pPage->xCellSize(pPage, pCell) || CORRUPT_DB );
   assert( pPage->nFree>=0 );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
@@ -6901,7 +6900,7 @@ static int rebuildPage(
 
   assert( i<iEnd );
   j = get2byte(&aData[hdr+5]);
-  if( NEVER(j>(u32)usableSize) ){ j = 0; }
+  if( j>(u32)usableSize ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
   for(k=0; pCArray->ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
@@ -6993,7 +6992,8 @@ static int pageInsertArray(
   while( 1 /*Exit by break*/ ){
     int sz, rc;
     u8 *pSlot;
-    sz = cachedCellSize(pCArray, i);
+    assert( pCArray->szCell[i]!=0 );
+    sz = pCArray->szCell[i];
     if( (aData[1]==0 && aData[2]==0) || (pSlot = pageFindSlot(pPg,sz,&rc))==0 ){
       if( (pData - pBegin)<sz ) return 1;
       pData -= sz;
@@ -7154,6 +7154,7 @@ static int editPage(
         memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
       }
       nCell++;
+      cachedCellSize(pCArray, iCell+iNew);
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
             iCell+iNew, 1, pCArray
@@ -7676,7 +7677,7 @@ static int balance_nonroot(
     */
     memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*(limit+pOld->nOverflow));
     if( pOld->nOverflow>0 ){
-      if( limit<pOld->aiOvfl[0] ){
+      if( NEVER(limit<pOld->aiOvfl[0]) ){
         rc = SQLITE_CORRUPT_BKPT;
         goto balance_cleanup;
       }
@@ -7962,6 +7963,8 @@ static int balance_nonroot(
   ));
 
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
+  assert( nNew>=1 && nNew<=ArraySize(apNew) );
+  assert( apNew[nNew-1]!=0 );
   put4byte(pRight, apNew[nNew-1]->pgno);
 
   /* If the sibling pages are not leaves, ensure that the right-child pointer
@@ -8307,11 +8310,13 @@ static int balance(BtCursor *pCur){
   VVA_ONLY( int balance_deeper_called = 0 );
 
   do {
-    int iPage = pCur->iPage;
+    int iPage;
     MemPage *pPage = pCur->pPage;
 
     if( NEVER(pPage->nFree<0) && btreeComputeFreeSpace(pPage) ) break;
-    if( iPage==0 ){
+    if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
+      break;
+    }else if( (iPage = pCur->iPage)==0 ){
       if( pPage->nOverflow ){
         /* The root page of the b-tree is overfull. In this case call the
         ** balance_deeper() function to create a new child for the root-page
@@ -8332,8 +8337,6 @@ static int balance(BtCursor *pCur){
       }else{
         break;
       }
-    }else if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
-      break;
     }else{
       MemPage * const pParent = pCur->apPage[iPage-1];
       int const iIdx = pCur->aiIdx[iPage-1];
@@ -8475,7 +8478,9 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   Pgno ovflPgno;                      /* Next overflow page to write */
   u32 ovflPageSize;                   /* Size to write on overflow page */
 
-  if( pCur->info.pPayload + pCur->info.nLocal > pPage->aDataEnd ){
+  if( pCur->info.pPayload + pCur->info.nLocal > pPage->aDataEnd
+   || pCur->info.pPayload < pPage->aData + pPage->cellOffset
+  ){
     return SQLITE_CORRUPT_BKPT;
   }
   /* Overwrite the local portion first */
@@ -8716,6 +8721,8 @@ int sqlite3BtreeInsert(
       memcpy(newCell, oldCell, 4);
     }
     rc = clearCell(pPage, oldCell, &info);
+    testcase( pCur->curFlags & BTCF_ValidOvfl );
+    invalidateOverflowCache(pCur);
     if( info.nSize==szNew && info.nLocal==info.nPayload 
      && (!ISAUTOVACUUM || szNew<pPage->minLocal)
     ){
@@ -8729,7 +8736,12 @@ int sqlite3BtreeInsert(
       ** new entry uses overflow pages, as the insertCell() call below is
       ** necessary to add the PTRMAP_OVERFLOW1 pointer-map entry.  */
       assert( rc==SQLITE_OK ); /* clearCell never fails when nLocal==nPayload */
-      if( oldCell+szNew > pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
+      if( oldCell < pPage->aData+pPage->hdrOffset+10 ){
+        return SQLITE_CORRUPT_BKPT;
+      }
+      if( oldCell+szNew > pPage->aDataEnd ){
+        return SQLITE_CORRUPT_BKPT;
+      }
       memcpy(oldCell, newCell, szNew);
       return SQLITE_OK;
     }

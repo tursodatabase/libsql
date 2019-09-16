@@ -385,6 +385,26 @@ execsql_test 11.4 {
   ) sub;
 }
 
+execsql_test 12.0 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a INTEGER);
+  INSERT INTO t2 VALUES(1), (2), (3);
+}
+
+execsql_test 12.1 {
+  SELECT (SELECT min(a) OVER ()) FROM t2
+}
+
+execsql_float_test 12.2 {
+  SELECT (SELECT avg(a)) FROM t2 ORDER BY 1
+}
+
+execsql_float_test 12.3 {
+  SELECT 
+    (SELECT avg(a) UNION SELECT min(a) OVER ()) 
+  FROM t2 GROUP BY a
+  ORDER BY 1
+}
 
 finish_test
 

@@ -399,6 +399,12 @@ ifcapable vtab {
     SELECT name FROM pragma_table_info('t2');
   } {Bbb}
 }
+do_execsql_test colname-9.330 { -- added 2019-08-10 to invalidate
+  DROP TABLE IF EXISTS t1;      -- a couple assert()s that were
+  CREATE TABLE t1(a);           -- added by ticket 3b44500725
+  INSERT INTO t1 VALUES(17),(2),(99),(-3),(7);
+  SELECT (SELECT avg(a) UNION SELECT min(a) OVER()) FROM t1;
+} {17}
 
 # Issue detected by OSSFuzz on 2017-12-24 (Christmas Eve)
 # caused by check-in https://sqlite.org/src/info/6b2ff26c25

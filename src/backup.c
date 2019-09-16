@@ -619,8 +619,10 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   }
   if( p->isAttached ){
     pp = sqlite3PagerBackupPtr(sqlite3BtreePager(p->pSrc));
+    assert( pp!=0 );
     while( *pp!=p ){
       pp = &(*pp)->pNext;
+      assert( pp!=0 );
     }
     *pp = p->pNext;
   }

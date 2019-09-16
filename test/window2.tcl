@@ -424,6 +424,13 @@ execsql_float_test 4.9 {
   WINDOW win AS (ORDER BY 1);
 }
 
+execsql_test 4.10 {
+  SELECT count(*) OVER (ORDER BY b) FROM t1
+}
+
+execsql_test 4.11 {
+  SELECT count(distinct a) FILTER (WHERE b='odd') FROM t1
+}
 
 
 finish_test

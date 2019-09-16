@@ -228,6 +228,7 @@ do_test 2.0 {
 }]} {}
 
 do_execsql_test 2.1 {
+  PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   INSERT INTO t1(b) VALUES(X'a0fee3669f9fddefc5cba913e4225d4b6ce2b04f26b87fad3ee6f9b7d90a1ea62a169bf41e5d32707a6ca5c3d05e4bde05c9d89eaaa8c50e74333d2e9fcd7dfe95528a3a016aac1102d825c5cd70cf99d8a88e0ea7f798d4334386518b7ad359beb168b93aba059a2a3bd93112d65b44c12b9904ea786b204d80531cdf0504bf9b203dbe927061974caf7b9f30cbc3397b61f802e732012a6663d41c3607d6f1c0dbcfd489adac05ca500c0b04439d894cd93a840159225ef73b627e178b9f84b3ffe66cf22a963a8368813ff7961fc47f573211ccec95e0220dcbb3bf429f4a50ba54d7a53784ac51bfef346e6ac8ae0d0e7c3175946e62ba2b');
 }
 
@@ -377,6 +378,7 @@ do_test 4.0 {
 }]} {}
 
 do_catchsql_test 4.1 {
+  PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   INSERT INTO t3 SELECT * FROM t2;
 } {1 {database disk image is malformed}}
 
@@ -605,7 +607,7 @@ do_test 6.0 {
 |   3872: 75 65 6e 63 65 04 43 52 45 41 54 45 20 54 41 42   uence.CREATE TAB
 |   3888: 4c 45 20 73 71 6c 69 74 65 5f 73 65 71 75 65 6e   LE sqlite_sequen
 |   3904: 63 65 28 6e 61 6d 65 2c 73 65 71 29 81 04 01 07   ce(name,seq)....
-|   3920: 17 11 11 01 81 73 74 61 c2 6c 65 74 31 74 31 02   .....sta.let1t1.
+|   3920: 17 11 11 01 81 73 74 61 62 6c 65 74 31 74 31 02   .....stablet1t1.
 |   3936: 43 52 45 41 54 45 20 54 41 42 4c 45 20 74 31 28   CREATE TABLE t1(
 |   3952: 61 20 52 45 41 4c 20 4e 4f 54 20 4e 55 4c 4c 20   a REAL NOT NULL 
 |   3968: 44 45 46 41 55 4c 54 28 32 35 2b 33 32 29 2c 62   DEFAULT(25+32),b
@@ -835,6 +837,7 @@ do_test 8.0 {
 
 
 do_catchsql_test 8.1 {
+  PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   INSERT INTO t3 SELECT * FROM t2;
 } {1 {database disk image is malformed}}
 
@@ -1004,6 +1007,7 @@ do_test 10.0 {
 }]} {}
 
 do_catchsql_test 10.1 {
+  PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   SELECT * FROM t1 WHERE a<='2019-05-09' ORDER BY a DESC;
 } {1 {database disk image is malformed}}
 
@@ -1057,6 +1061,7 @@ do_test 11.0 {
 }]} {}
 
 do_catchsql_test 11.1 {
+  PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   DELETE FROM t3 WHERE x IN (SELECT x FROM t4);
 } {1 {database disk image is malformed}}
 

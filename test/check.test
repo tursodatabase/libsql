@@ -123,6 +123,11 @@ do_test check-2.1 {
       y REAL CONSTRAINT two CHECK( typeof(coalesce(y,0.1))=='real' ),
       z TEXT CONSTRAINT three CHECK( typeof(coalesce(z,''))=='text' )
     );
+    CREATE TABLE t2n(
+      x INTEGER CONSTRAINT one CHECK( typeof(coalesce(x,0))=="integer" ),
+      y NUMERIC CONSTRAINT two CHECK( typeof(coalesce(y,0.1))=='real' ),
+      z TEXT CONSTRAINT three CHECK( typeof(coalesce(z,''))=='text' )
+    );
     PRAGMA writable_schema = 0;
   }
 } {}
@@ -146,8 +151,16 @@ do_test check-2.4 {
   }
 } {1 {CHECK constraint failed: one}}
 do_test check-2.5 {
+  # The 5 gets automatically promoted to 5.0 because the column type is REAL
   catchsql {
     INSERT INTO t2 VALUES(NULL, 5, NULL);
+  }
+} {0 {}}
+do_test check-2.5b {
+  # This time the column type is NUMERIC, so not automatic promption to REAL
+  # occurs and the constraint fails.
+  catchsql {
+    INSERT INTO t2n VALUES(NULL, 5, NULL);
   }
 } {1 {CHECK constraint failed: two}}
 do_test check-2.6 {
@@ -195,6 +208,7 @@ do_test check-2.cleanup {
   execsql {
     DROP TABLE IF EXISTS t2b;
     DROP TABLE IF EXISTS t2c;
+    DROP TABLE IF EXISTS t2n;
   }
 } {}
 
@@ -494,5 +508,35 @@ do_execsql_test 10.1 {
   CREATE VIEW v1(y) AS SELECT x FROM t1;
   PRAGMA integrity_check;
 } {ok}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE t1 (Col0 CHECK(1 COLLATE BINARY BETWEEN 1 AND 1) ) ;
+}
+do_execsql_test 11.1 {
+  INSERT INTO t1 VALUES (NULL);
+}
+do_execsql_test 11.2 {
+  INSERT  INTO t1 VALUES (NULL);
+}
+
+do_execsql_test 11.3 {
+  CREATE TABLE t2(b, a CHECK(
+      CASE 'abc' COLLATE nocase WHEN a THEN 1 ELSE 0 END)
+  );
+}
+do_execsql_test 11.4 {
+  INSERT INTO t2(a) VALUES('abc');
+}
+do_execsql_test 11.5 {
+  INSERT INTO t2(b, a) VALUES(1, 'abc'||'');
+}
+do_execsql_test 11.6 {
+  INSERT INTO t2(b, a) VALUES(2, 'abc');
+}
+
+finish_test
+
 
 finish_test
