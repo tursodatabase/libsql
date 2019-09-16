@@ -594,4 +594,3 @@ do_execsql_test 18.2.2 {
 } {{CREATE TABLE t0 (c1 INTEGER, PRIMARY KEY(c1))}}
 
 finish_test
-

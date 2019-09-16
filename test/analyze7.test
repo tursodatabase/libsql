@@ -82,7 +82,7 @@ do_test analyze7-3.1 {
 do_test analyze7-3.2.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=?;}
 } {/*SEARCH TABLE t1 USING INDEX t1cd (c=?)*/}
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   # If ENABLE_STAT4 is defined, SQLite comes up with a different estimated
   # row count for (c=2) than it does for (c=?).
   do_test analyze7-3.2.2 {
@@ -99,7 +99,7 @@ do_test analyze7-3.3 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND b=123}
 } {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
 
-ifcapable {!stat4 && !stat3} {
+ifcapable {!stat4} {
   do_test analyze7-3.4 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND b=123}
   } {/*SEARCH TABLE t1 USING INDEX t1b (b=?)*/}

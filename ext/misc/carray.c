@@ -24,7 +24,7 @@
 **
 **    static int aX[] = { 53, 9, 17, 2231, 4, 99 };
 **    int i = sqlite3_bind_parameter_index(pStmt, "$ptr");
-**    sqlite3_bind_value(pStmt, i, aX, "carray", 0);
+**    sqlite3_bind_pointer(pStmt, i, aX, "carray", 0);
 **
 ** There is an optional third parameter to determine the datatype of
 ** the C-language array.  Allowed values of the third parameter are

@@ -64,6 +64,9 @@ errorsql_test 3.2 {
   WINDOW win AS (ROWS BETWEEN 10 PRECEDING AND x'ABCD' FOLLOWING)
 }
 
+errorsql_test 3.3 {
+  SELECT row_number(a) OVER () FROM t1;
+}
 
 finish_test
 

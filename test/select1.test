@@ -1100,4 +1100,69 @@ do_execsql_test select1-17.3 {
          UNION ALL SELECT * FROM t2 WHERE y=3 ORDER BY y,z LIMIT 4);
 } {1 2 3}
 
+# 2019-07-24 Ticket https://sqlite.org/src/tktview/c52b09c7f38903b1311
+#
+do_execsql_test select1-18.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(c);
+  CREATE TABLE t2(x PRIMARY KEY, y);
+  INSERT INTO t1(c) VALUES(123);
+  INSERT INTO t2(x) VALUES(123);
+  SELECT x FROM t2, t1 WHERE x BETWEEN c AND null OR x AND
+  x IN ((SELECT x FROM (SELECT x FROM t2, t1 
+  WHERE x BETWEEN (SELECT x FROM (SELECT x COLLATE rtrim 
+  FROM t2, t1 WHERE x BETWEEN c AND null
+  OR x AND x IN (c)), t1 WHERE x BETWEEN c AND null
+  OR x AND x IN (c)) AND null
+  OR NOT EXISTS(SELECT -4.81 FROM t1, t2 WHERE x BETWEEN c AND null
+  OR x AND x IN ((SELECT x FROM (SELECT x FROM t2, t1
+  WHERE x BETWEEN (SELECT x FROM (SELECT x BETWEEN c AND null
+  OR x AND x IN (c)), t1 WHERE x BETWEEN c AND null
+  OR x AND x IN (c)) AND null
+  OR x AND x IN (c)), t1 WHERE x BETWEEN c AND null
+  OR x AND x IN (c)))) AND x IN (c)
+  ), t1 WHERE x BETWEEN c AND null
+  OR x AND x IN (c)));
+} {}
+do_execsql_test select1-18.2 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(c);
+  CREATE TABLE t2(x PRIMARY KEY, y);
+  INSERT INTO t1(c) VALUES(123);
+  INSERT INTO t2(x) VALUES(123);
+  SELECT x FROM t2, t1 WHERE x BETWEEN c AND (c+1) OR x AND
+  x IN ((SELECT x FROM (SELECT x FROM t2, t1 
+  WHERE x BETWEEN (SELECT x FROM (SELECT x COLLATE rtrim 
+  FROM t2, t1 WHERE x BETWEEN c AND (c+1)
+  OR x AND x IN (c)), t1 WHERE x BETWEEN c AND (c+1)
+  OR x AND x IN (c)) AND (c+1)
+  OR NOT EXISTS(SELECT -4.81 FROM t1, t2 WHERE x BETWEEN c AND (c+1)
+  OR x AND x IN ((SELECT x FROM (SELECT x FROM t2, t1
+  WHERE x BETWEEN (SELECT x FROM (SELECT x BETWEEN c AND (c+1)
+  OR x AND x IN (c)), t1 WHERE x BETWEEN c AND (c+1)
+  OR x AND x IN (c)) AND (c+1)
+  OR x AND x IN (c)), t1 WHERE x BETWEEN c AND (c+1)
+  OR x AND x IN (c)))) AND x IN (c)
+  ), t1 WHERE x BETWEEN c AND (c+1)
+  OR x AND x IN (c)));
+} {123}
+do_execsql_test select1-18.3 {
+  SELECT 1 FROM t1 WHERE (
+    SELECT 2 FROM t2 WHERE (
+      SELECT 3 FROM (
+        SELECT x FROM t2 WHERE x=c OR x=(SELECT x FROM (VALUES(0)))
+      ) WHERE x>c OR x=c
+    )
+  );
+} {1}
+do_execsql_test select1-18.4 {
+  SELECT 1 FROM t1, t2 WHERE (
+    SELECT 3 FROM (
+      SELECT x FROM t2 WHERE x=c OR x=(SELECT x FROM (VALUES(0)))
+    ) WHERE x>c OR x=c
+  );
+} {1}
+
 finish_test

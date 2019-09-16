@@ -288,7 +288,7 @@ do_test analyze-4.3 {
 } {}
 
 # Verify that DROP TABLE and DROP INDEX remove entries from the 
-# sqlite_stat1, sqlite_stat3 and sqlite_stat4 tables.
+# sqlite_stat1 and sqlite_stat4 tables.
 #
 do_test analyze-5.0 {
   execsql {
@@ -306,13 +306,12 @@ do_test analyze-5.0 {
     SELECT DISTINCT tbl FROM sqlite_stat1 ORDER BY 1;
   }
 } {t3i1 t3i2 t3i3 t4i1 t4i2 t3 t4}
-ifcapable stat4||stat3 {
-  ifcapable stat4 {set stat sqlite_stat4} else {set stat sqlite_stat3}
+ifcapable stat4 {
   do_test analyze-5.1 {
-    execsql "
-      SELECT DISTINCT idx FROM $stat ORDER BY 1;
-      SELECT DISTINCT tbl FROM $stat ORDER BY 1;
-    "
+    execsql {
+      SELECT DISTINCT idx FROM sqlite_stat4 ORDER BY 1;
+      SELECT DISTINCT tbl FROM sqlite_stat4 ORDER BY 1;
+    }
   } {t3i1 t3i2 t3i3 t4i1 t4i2 t3 t4}
 }
 do_test analyze-5.2 {
@@ -322,12 +321,12 @@ do_test analyze-5.2 {
     SELECT DISTINCT tbl FROM sqlite_stat1 ORDER BY 1;
   }
 } {t3i1 t3i3 t4i1 t4i2 t3 t4}
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   do_test analyze-5.3 {
-    execsql "
-      SELECT DISTINCT idx FROM $stat ORDER BY 1;
-      SELECT DISTINCT tbl FROM $stat ORDER BY 1;
-    "
+    execsql {
+      SELECT DISTINCT idx FROM sqlite_stat4 ORDER BY 1;
+      SELECT DISTINCT tbl FROM sqlite_stat4 ORDER BY 1;
+    }
   } {t3i1 t3i3 t4i1 t4i2 t3 t4}
 }
 do_test analyze-5.4 {
@@ -337,12 +336,12 @@ do_test analyze-5.4 {
     SELECT DISTINCT tbl FROM sqlite_stat1 ORDER BY 1;
   }
 } {t4i1 t4i2 t4}
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   do_test analyze-5.5 {
-    execsql "
-      SELECT DISTINCT idx FROM $stat ORDER BY 1;
-      SELECT DISTINCT tbl FROM $stat ORDER BY 1;
-    "
+    execsql {
+      SELECT DISTINCT idx FROM sqlite_stat4 ORDER BY 1;
+      SELECT DISTINCT tbl FROM sqlite_stat4 ORDER BY 1;
+    }
   } {t4i1 t4i2 t4}
 }
 

@@ -159,7 +159,7 @@ do_test index6-2.2 {
     SELECT * FROM t2 WHERE a=5;
   }
 } {/.* TABLE t2 USING INDEX t2a1 .*/}
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   execsql ANALYZE
   do_test index6-2.3stat4 {
     execsql {
@@ -437,5 +437,48 @@ do_execsql_test index6-14.2 {
   SELECT * FROM t0 WHERE CASE c0 WHEN 0 THEN 0 ELSE 1 END;
 } {{} row}
 
-finish_test
+# 2019-08-30
+# Ticket https://www.sqlite.org/src/info/a6408d42b9f44462
+# Ticket https://www.sqlite.org/src/info/fba33c8b1df6a915
+# https://sqlite.org/src/info/bac716244fddac1fe841
+#
+do_execsql_test index6-15.1 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (NULL);
+  CREATE INDEX i0 ON t0(1) WHERE c0 NOT NULL;
+  SELECT 1 FROM t0 WHERE (t0.c0 IS FALSE) IS FALSE;
+} {1}
+do_execsql_test index6-15.2 {
+  SELECT 1 FROM t0 WHERE (t0.c0 IS FALSE) BETWEEN FALSE AND TRUE;
+} {1}
+do_execsql_test index6-15.3 {
+  SELECT 1 FROM t0 WHERE TRUE BETWEEN (t0.c0 IS FALSE) AND TRUE;
+} {1}
+do_execsql_test index6-15.4 {
+  SELECT 1 FROM t0 WHERE FALSE BETWEEN FALSE AND (t0.c0 IS FALSE);
+} {1}
+do_execsql_test index6-15.5 {
+  SELECT 1 FROM t0 WHERE (c0 IS FALSE) IN (FALSE);
+} {1}
 
+# 2019-09-03
+# Ticket https://sqlite.org/src/info/767a8cbc6d20bd68
+do_execsql_test index6-16.1 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 COLLATE NOCASE, c1);
+  CREATE INDEX i0 ON t0(0) WHERE c0 >= c1;
+  INSERT INTO t0 VALUES('a', 'B');
+  SELECT c1 <= c0, c0 >= c1 FROM t0;
+} {1 0}
+do_execsql_test index6-16.2 {
+  SELECT 2 FROM t0 WHERE c0 >= c1;
+} {}
+do_execsql_test index6-16.3 {
+  SELECT 3 FROM t0 WHERE c1 <= c0;
+} {3}
+
+
+
+
+finish_test

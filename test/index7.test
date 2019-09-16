@@ -203,7 +203,7 @@ do_test index7-2.2 {
     SELECT * FROM t2 WHERE a=5;
   }
 } {/.* TABLE t2 USING COVERING INDEX t2a1 .*/}
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   do_test index7-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
