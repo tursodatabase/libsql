@@ -262,6 +262,7 @@ int sqlite3PcacheInitialize(void){
     ** built-in default page cache is used instead of the application defined
     ** page cache. */
     sqlite3PCacheSetDefault();
+    assert( sqlite3GlobalConfig.pcache2.xInit!=0 );
   }
   return sqlite3GlobalConfig.pcache2.xInit(sqlite3GlobalConfig.pcache2.pArg);
 }

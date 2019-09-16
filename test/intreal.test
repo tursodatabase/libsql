@@ -82,5 +82,17 @@ do_execsql_test 2.6 {
   );
 } [list a $D]
 
+# 2019-07-29 ticket ba2f4585cf495231
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 3.0 {
+  CREATE TABLE t0 (c0 REAL, c1);
+  CREATE UNIQUE INDEX i0 ON t0(c1, 0 | c0);
+  INSERT INTO t0(c0) VALUES (4750228396194493326), (0);
+  UPDATE OR REPLACE t0 SET c0 = 'a', c1 = '';
+  SELECT * FROM t0 ORDER BY t0.c1;
+  PRAGMA integrity_check;
+} {a {} ok}
 
 finish_test

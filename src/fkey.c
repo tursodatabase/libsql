@@ -478,13 +478,13 @@ static Expr *exprTableRegister(
     if( iCol>=0 && iCol!=pTab->iPKey ){
       pCol = &pTab->aCol[iCol];
       pExpr->iTable = regBase + iCol + 1;
-      pExpr->affinity = pCol->affinity;
+      pExpr->affExpr = pCol->affinity;
       zColl = pCol->zColl;
       if( zColl==0 ) zColl = db->pDfltColl->zName;
       pExpr = sqlite3ExprAddCollateString(pParse, pExpr, zColl);
     }else{
       pExpr->iTable = regBase;
-      pExpr->affinity = SQLITE_AFF_INTEGER;
+      pExpr->affExpr = SQLITE_AFF_INTEGER;
     }
   }
   return pExpr;
@@ -1287,7 +1287,7 @@ static Trigger *fkActionTrigger(
       tFrom.n = nFrom;
       pRaise = sqlite3Expr(db, TK_RAISE, "FOREIGN KEY constraint failed");
       if( pRaise ){
-        pRaise->affinity = OE_Abort;
+        pRaise->affExpr = OE_Abort;
       }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),
@@ -1332,6 +1332,7 @@ static Trigger *fkActionTrigger(
       return 0;
     }
     assert( pStep!=0 );
+    assert( pTrigger!=0 );
 
     switch( action ){
       case OE_Restrict:

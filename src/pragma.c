@@ -1157,6 +1157,15 @@ void sqlite3Pragma(
     Index *pIdx;
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
+    if( pIdx==0 ){
+      /* If there is no index named zRight, check to see if there is a
+      ** WITHOUT ROWID table named zRight, and if there is, show the
+      ** structure of the PRIMARY KEY index for that table. */
+      pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
+      if( pTab && !HasRowid(pTab) ){
+        pIdx = sqlite3PrimaryKeyIndex(pTab);
+      }
+    }
     if( pIdx ){
       int iIdxDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
       int i;
@@ -1236,7 +1245,7 @@ void sqlite3Pragma(
   }
   break;
 
-#ifdef SQLITE_INTROSPECTION_PRAGMAS
+#ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
   case PragTyp_FUNCTION_LIST: {
     int i;
     HashElem *j;

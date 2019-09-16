@@ -162,4 +162,22 @@ do_execsql_test 5.1 {
   SELECT rowid FROM ttt('word') WHERE rowid BETWEEN 30 AND 40 ORDER BY rank;
 } {30 31 32 33 34 35 36 37 38 39 40}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE "My.Table" USING fts5(Text);
+
+  INSERT INTO "My.Table" VALUES ('hello this is a test');
+  INSERT INTO "My.Table" VALUES ('of trying to order by');
+  INSERT INTO "My.Table" VALUES ('rank on an fts5 table');
+  INSERT INTO "My.Table" VALUES ('that have periods in');
+  INSERT INTO "My.Table" VALUES ('the table names.');
+  INSERT INTO "My.Table" VALUES ('table table table');
+}
+do_execsql_test 6.1 {
+  SELECT * FROM "My.Table" WHERE Text MATCH 'table' ORDER BY rank;
+} {
+  {table table table} {the table names.} {rank on an fts5 table}
+}
+
 finish_test

@@ -209,17 +209,29 @@ ifcapable utf16 {
 
 #---------------------------------------------------------------------
 # Tests 8.1 and 8.2 check that prepared statements are invalidated when
-# the authorization function is set.
+# the authorization function is set to a non-null function.  Tests 8.11
+# and 8.12 verify that no invalidations occur when the authorizer is
+# cleared.
 #
 ifcapable auth {
+  proc noop_auth {args} {return SQLITE_OK}
   do_test schema-8.1 {
+    set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+    db auth noop_auth
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-8.2 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+  do_test schema-8.11 {
     set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
     db auth {}
     sqlite3_step $::STMT
-  } {SQLITE_ERROR}
-  do_test schema-8.3 {
+  } {SQLITE_ROW}
+  do_test schema-8.12 {
     sqlite3_finalize $::STMT
-  } {SQLITE_SCHEMA}
+  } {SQLITE_OK}
+
 }
 
 #---------------------------------------------------------------------

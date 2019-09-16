@@ -809,13 +809,14 @@ static struct unix_syscall {
 #if defined(__linux__) && defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
 # ifdef __ANDROID__
   { "ioctl", (sqlite3_syscall_ptr)(int(*)(int, int, ...))ioctl, 0 },
+#define osIoctl ((int(*)(int,int,...))aSyscall[28].pCurrent)
 # else
   { "ioctl",         (sqlite3_syscall_ptr)ioctl,          0 },
+#define osIoctl ((int(*)(int,unsigned long,...))aSyscall[28].pCurrent)
 # endif
 #else
   { "ioctl",         (sqlite3_syscall_ptr)0,              0 },
 #endif
-#define osIoctl ((int(*)(int,int,...))aSyscall[28].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -6932,6 +6933,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
       UnixUnusedFd **pp;
       assert( sqlite3_mutex_notheld(pInode->pLockMutex) );
       sqlite3_mutex_enter(pInode->pLockMutex);
+      flags &= (SQLITE_OPEN_READONLY|SQLITE_OPEN_READWRITE);
       for(pp=&pInode->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
       pUnused = *pp;
       if( pUnused ){
@@ -7241,7 +7243,8 @@ static int unixOpen(
 
   if( p->pPreallocatedUnused ){
     p->pPreallocatedUnused->fd = fd;
-    p->pPreallocatedUnused->flags = flags;
+    p->pPreallocatedUnused->flags = 
+                          flags & (SQLITE_OPEN_READONLY|SQLITE_OPEN_READWRITE);
   }
 
   if( isDelete ){
@@ -8841,7 +8844,7 @@ static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
       assert( 0 );  /* The call assures that only valid opcodes are sent */
     }
   }
-  /*NOTREACHED*/
+  /*NOTREACHED*/ assert(0);
   return SQLITE_ERROR;
 }
 

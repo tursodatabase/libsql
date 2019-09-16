@@ -768,4 +768,18 @@ do_execsql_test trigger1-19.1 {
   SELECT * FROM t19;
 } {1 2 2}
 
+# 2019-08-26 Chromium sqlite3_fts3_lpm_fuzzer find.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test trigger1-20.1 {
+  CREATE TABLE t20_1(x);
+  ATTACH ':memory:' AS aux;
+  CREATE TABLE aux.t20_2(y);
+  CREATE TABLE aux.t20_3(z);
+  CREATE TEMP TRIGGER r20_3 AFTER INSERT ON t20_2 BEGIN UPDATE t20_3 SET z=z+1; END;
+  DETACH aux;
+  DROP TRIGGER r20_3;
+} {}
+
 finish_test

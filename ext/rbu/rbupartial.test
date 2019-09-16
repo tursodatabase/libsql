@@ -40,6 +40,15 @@ foreach {tn without_rowid a b c d} {
     CREATE INDEX i1c3 ON t1(%C%) WHERE %C% IS NOT NULL;
 
     CREATE INDEX i1c4 ON t1(%C%) WHERE %D% < 'd';
+    CREATE INDEX i1c5 ON t1(
+        %C%                   -- for (c = ... expressions
+    ) WHERE %D% < 'd';
+    CREATE INDEX i1c6 ON t1(
+        %C% /* Again, for (c=... expr */, %D%
+    ) WHERE %D% < 'd';
+
+    CREATE INDEX i1c7 ON t1(
+        %C% /* As before, for (c=... "expr */) WHERE %D% < 'd';
   }
 
   do_execsql_test $tn.1.1 {

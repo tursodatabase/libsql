@@ -683,7 +683,7 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig){
     rc = sqlite3_declare_vtab(pConfig->db, zSql);
     sqlite3_free(zSql);
   }
-  
+ 
   return rc;
 }
 

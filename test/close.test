@@ -79,4 +79,11 @@ do_test 1.4.4 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
+do_test 1.5 {
+  set DB [sqlite3_open test.db]
+  sqlite3_blob_open $DB main t1 x 2 0 BLOB
+  sqlite3_close_v2 $DB
+  sqlite3_blob_close $BLOB
+} {}
+
 finish_test

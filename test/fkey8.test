@@ -229,4 +229,3 @@ do_execsql_test 5.3 {
 } {ok}
 
 finish_test
-

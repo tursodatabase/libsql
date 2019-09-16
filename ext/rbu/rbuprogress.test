@@ -414,5 +414,37 @@ foreach {bReopen} { 0 1 } {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test that sqlite3_bp_progress() works with an RBU vacuum if there
+# is an rbu_count table in the db being vacuumed.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX i1 ON t1(a);
+  CREATE INDEX i2 ON t1(b);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO t1 SELECT i, i, i FROM s;
+  CREATE TABLE rbu_count(tbl TEXT PRIMARY KEY, cnt INTEGER) WITHOUT ROWID;
+  INSERT INTO rbu_count VALUES('t1', (SELECT count(*) FROM t1));
+  INSERT INTO rbu_count VALUES('rbu_count', 2);
+}
+
+forcedelete state.db
+do_test 6.1 {
+  set maxA 0
+  set maxB 0
+  sqlite3rbu_vacuum rbu test.db state.db
+  while {[rbu step]=="SQLITE_OK"} {
+    foreach {a b} [rbu bp_progress] {
+      if {$a > $maxA} { set maxA $a }
+      if {$b > $maxB} { set maxB $b }
+    }
+  }
+  list [rbu close] $maxA $maxB
+} {SQLITE_DONE 10000 10000}
+
 
 finish_test
