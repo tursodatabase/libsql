@@ -1498,7 +1498,7 @@ void sqlite3AddPrimaryKey(
     pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );
     pTab->tabFlags |= autoInc*TF_Autoincrement;
-    if( pList ) pParse->iPkSortOrder = pList->a[0].sortOrder;
+    if( pList ) pParse->iPkSortOrder = pList->a[0].sortFlags;
   }else if( autoInc ){
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
@@ -1949,7 +1949,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenRemap(pParse, pList->a[0].pExpr, &pTab->iPKey);
     }
-    pList->a[0].sortOrder = pParse->iPkSortOrder;
+    pList->a[0].sortFlags = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
@@ -3210,6 +3210,27 @@ Index *sqlite3AllocateIndexObject(
 }
 
 /*
+** If expression list pList contains an expression that was parsed with
+** an explicit "NULLS FIRST" or "NULLS LAST" clause, leave an error in
+** pParse and return non-zero. Otherwise, return zero.
+*/
+int sqlite3HasExplicitNulls(Parse *pParse, ExprList *pList){
+  if( pList ){
+    int i;
+    for(i=0; i<pList->nExpr; i++){
+      if( pList->a[i].bNulls ){
+        u8 sf = pList->a[i].sortFlags;
+        sqlite3ErrorMsg(pParse, "unsupported use of NULLS %s", 
+            (sf==0 || sf==3) ? "FIRST" : "LAST"
+        );
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
 ** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -3258,6 +3279,9 @@ void sqlite3CreateIndex(
     goto exit_create_index;
   }
   if( !IsSharedSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    goto exit_create_index;
+  }
+  if( sqlite3HasExplicitNulls(pParse, pList) ){
     goto exit_create_index;
   }
 
@@ -3424,7 +3448,7 @@ void sqlite3CreateIndex(
               sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;
     assert( pList->nExpr==1 );
-    sqlite3ExprListSetSortOrder(pList, sortOrder);
+    sqlite3ExprListSetSortOrder(pList, sortOrder, SQLITE_SO_UNDEFINED);
   }else{
     sqlite3ExprListCheckLength(pParse, pList, "index");
     if( pParse->nErr ) goto exit_create_index;
@@ -3542,7 +3566,7 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
-    requestedSortOrder = pListItem->sortOrder & sortOrderMask;
+    requestedSortOrder = pListItem->sortFlags & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
 
@@ -4761,7 +4785,8 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
                         sqlite3LocateCollSeq(pParse, zColl);
-      pKey->aSortOrder[i] = pIdx->aSortOrder[i];
+      pKey->aSortFlags[i] = pIdx->aSortOrder[i];
+      assert( 0==(pKey->aSortFlags[i] & KEYINFO_ORDER_BIGNULL) );
     }
     if( pParse->nErr ){
       assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );

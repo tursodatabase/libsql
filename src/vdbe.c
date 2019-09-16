@@ -485,11 +485,12 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     *(zCsr++) = c;
     sqlite3_snprintf(100, zCsr, "%d[", pMem->n);
     zCsr += sqlite3Strlen30(zCsr);
-    for(i=0; i<16 && i<pMem->n; i++){
+    for(i=0; i<25 && i<pMem->n; i++){
       sqlite3_snprintf(100, zCsr, "%02X", ((int)pMem->z[i] & 0xFF));
       zCsr += sqlite3Strlen30(zCsr);
     }
-    for(i=0; i<16 && i<pMem->n; i++){
+    *zCsr++ = '|';
+    for(i=0; i<25 && i<pMem->n; i++){
       char z = pMem->z[i];
       if( z<32 || z>126 ) *zCsr++ = '.';
       else *zCsr++ = z;
@@ -519,7 +520,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     sqlite3_snprintf(100, &zBuf[k], "%d", pMem->n);
     k += sqlite3Strlen30(&zBuf[k]);
     zBuf[k++] = '[';
-    for(j=0; j<15 && j<pMem->n; j++){
+    for(j=0; j<25 && j<pMem->n; j++){
       u8 c = pMem->z[j];
       if( c>=0x20 && c<0x7f ){
         zBuf[k++] = c;
@@ -1832,6 +1833,7 @@ case OP_RealAffinity: {                  /* in1 */
     testcase( pIn1->flags & MEM_Int );
     testcase( pIn1->flags & MEM_IntReal );
     sqlite3VdbeMemRealify(pIn1);
+    REGISTER_TRACE(pOp->p1, pIn1);
   }
   break;
 }
@@ -2227,9 +2229,14 @@ case OP_Compare: {
     REGISTER_TRACE(p2+idx, &aMem[p2+idx]);
     assert( i<pKeyInfo->nKeyField );
     pColl = pKeyInfo->aColl[i];
-    bRev = pKeyInfo->aSortOrder[i];
+    bRev = (pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_DESC);
     iCompare = sqlite3MemCompare(&aMem[p1+idx], &aMem[p2+idx], pColl);
     if( iCompare ){
+      if( (pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_BIGNULL) 
+       && ((aMem[p1+idx].flags & MEM_Null) || (aMem[p2+idx].flags & MEM_Null))
+      ){
+        iCompare = -iCompare;
+      }
       if( bRev ) iCompare = -iCompare;
       break;
     }
@@ -2519,11 +2526,6 @@ case OP_Offset: {          /* out3 */
 ** If the record contains fewer than P2 fields, then extract a NULL.  Or,
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
-**
-** If the OPFLAG_CLEARCACHE bit is set on P5 and P1 is a pseudo-table cursor,
-** then the cache of the cursor is reset prior to extracting the column.
-** The first OP_Column against a pseudo-table after the value of the content
-** register has changed should have this bit set.
 **
 ** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 then
 ** the result is guaranteed to only be used as the argument of a length()
@@ -4127,6 +4129,7 @@ case OP_SeekGT: {       /* jump, in3, group */
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
   if( pC->isTable ){
+    u16 flags3, newType;
     /* The BTREE_SEEK_EQ flag is only set on index cursors */
     assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0
               || CORRUPT_DB );
@@ -4135,16 +4138,19 @@ case OP_SeekGT: {       /* jump, in3, group */
     ** blob, or NULL.  But it needs to be an integer before we can do
     ** the seek, so convert it. */
     pIn3 = &aMem[pOp->p3];
-    if( (pIn3->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Str))==MEM_Str ){
+    flags3 = pIn3->flags;
+    if( (flags3 & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Str))==MEM_Str ){
       applyNumericAffinity(pIn3, 0);
     }
-    iKey = sqlite3VdbeIntValue(pIn3);
+    iKey = sqlite3VdbeIntValue(pIn3); /* Get the integer key value */
+    newType = pIn3->flags; /* Record the type after applying numeric affinity */
+    pIn3->flags = flags3;  /* But convert the type back to its original */
 
     /* If the P3 value could not be converted into an integer without
     ** loss of information, then special processing is required... */
-    if( (pIn3->flags & (MEM_Int|MEM_IntReal))==0 ){
-      if( (pIn3->flags & MEM_Real)==0 ){
-        if( (pIn3->flags & MEM_Null) || oc>=OP_SeekGE ){
+    if( (newType & (MEM_Int|MEM_IntReal))==0 ){
+      if( (newType & MEM_Real)==0 ){
+        if( (newType & MEM_Null) || oc>=OP_SeekGE ){
           VdbeBranchTaken(1,2);
           goto jump_to_p2;
         }else{
@@ -5440,11 +5446,12 @@ case OP_Next:          /* jump */
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
   assert( pOp->opcode!=OP_Next
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
-       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found 
-       || pC->seekOp==OP_NullRow|| pC->seekOp==OP_SeekRowid);
+       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found
+       || pC->seekOp==OP_NullRow|| pC->seekOp==OP_SeekRowid
+       || pC->seekOp==OP_IfNoHope);
   assert( pOp->opcode!=OP_Prev
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
-       || pC->seekOp==OP_Last 
+       || pC->seekOp==OP_Last   || pC->seekOp==OP_IfNoHope
        || pC->seekOp==OP_NullRow);
 
   rc = pOp->p4.xAdvance(pC->uc.pCursor, pOp->p3);

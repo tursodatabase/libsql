@@ -84,7 +84,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   }else{
     pTerm->truthProb = 1;
   }
-  pTerm->pExpr = sqlite3ExprSkipCollate(p);
+  pTerm->pExpr = sqlite3ExprSkipCollateAndLikely(p);
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
   pTerm->iParent = -1;
@@ -117,10 +117,16 @@ static int allowedOp(int op){
 ** the left hand side of a comparison overrides any collation sequence 
 ** attached to the right. For the same reason the EP_Collate flag
 ** is not commuted.
+**
+** The return value is extra flags that are added to the WhereTerm object
+** after it is commuted.  The only extra flag ever added is TERM_NOPARTIDX
+** which prevents the term from being used to enable a partial index if
+** COLLATE changes have been made.
 */
-static void exprCommute(Parse *pParse, Expr *pExpr){
+static u16 exprCommute(Parse *pParse, Expr *pExpr){
   u16 expRight = (pExpr->pRight->flags & EP_Collate);
   u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
+  u16 wtFlags = 0;
   assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
   if( expRight==expLeft ){
     /* Either X and Y both have COLLATE operator or neither do */
@@ -128,11 +134,13 @@ static void exprCommute(Parse *pParse, Expr *pExpr){
       /* Both X and Y have COLLATE operators.  Make sure X is always
       ** used by clearing the EP_Collate flag from Y. */
       pExpr->pRight->flags &= ~EP_Collate;
+      wtFlags |= TERM_NOPARTIDX;
     }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
       /* Neither X nor Y have COLLATE operators, but X has a non-default
       ** collating sequence.  So add the EP_Collate marker on X to cause
       ** it to be searched first. */
       pExpr->pLeft->flags |= EP_Collate;
+      wtFlags |= TERM_NOPARTIDX;
     }
   }
   SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
@@ -144,6 +152,7 @@ static void exprCommute(Parse *pParse, Expr *pExpr){
     assert( pExpr->op>=TK_GT && pExpr->op<=TK_GE );
     pExpr->op = ((pExpr->op-TK_GT)^2)+TK_GT;
   }
+  return wtFlags;
 }
 
 /*
@@ -1140,7 +1149,7 @@ static void exprAnalyze(
         pDup = pExpr;
         pNew = pTerm;
       }
-      exprCommute(pParse, pDup);
+      pNew->wtFlags |= exprCommute(pParse, pDup);
       pNew->leftCursor = aiCurCol[0];
       pNew->u.leftColumn = aiCurCol[1];
       testcase( (prereqLeft | extraRight) != prereqLeft );
@@ -1451,7 +1460,7 @@ static void exprAnalyze(
 ** all terms of the WHERE clause.
 */
 void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
-  Expr *pE2 = sqlite3ExprSkipCollate(pExpr);
+  Expr *pE2 = sqlite3ExprSkipCollateAndLikely(pExpr);
   pWC->op = op;
   if( pE2==0 ) return;
   if( pE2->op!=op ){

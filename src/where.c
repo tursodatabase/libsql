@@ -253,7 +253,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
-           && (pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight))->op==TK_COLUMN
+           && (pX = sqlite3ExprSkipCollateAndLikely(pTerm->pExpr->pRight))->op
+               ==TK_COLUMN
           ){
             int j;
             for(j=0; j<pScan->nEquiv; j++){
@@ -449,7 +450,7 @@ static int findIndexCol(
   const char *zColl = pIdx->azColl[iCol];
 
   for(i=0; i<pList->nExpr; i++){
-    Expr *p = sqlite3ExprSkipCollate(pList->a[i].pExpr);
+    Expr *p = sqlite3ExprSkipCollateAndLikely(pList->a[i].pExpr);
     if( p->op==TK_COLUMN
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
@@ -513,7 +514,7 @@ static int isDistinctRedundant(
   ** current SELECT is a correlated sub-query.
   */
   for(i=0; i<pDistinct->nExpr; i++){
-    Expr *p = sqlite3ExprSkipCollate(pDistinct->a[i].pExpr);
+    Expr *p = sqlite3ExprSkipCollateAndLikely(pDistinct->a[i].pExpr);
     if( p->op==TK_COLUMN && p->iTable==iBase && p->iColumn<0 ) return 1;
   }
 
@@ -933,6 +934,7 @@ static sqlite3_index_info *allocateIndexInfo(
     for(i=0; i<n; i++){
       Expr *pExpr = pOrderBy->a[i].pExpr;
       if( pExpr->op!=TK_COLUMN || pExpr->iTable!=pSrc->iCursor ) break;
+      if( pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL ) break;
     }
     if( i==n){
       nOrderBy = n;
@@ -1031,7 +1033,7 @@ static sqlite3_index_info *allocateIndexInfo(
   for(i=0; i<nOrderBy; i++){
     Expr *pExpr = pOrderBy->a[i].pExpr;
     pIdxOrderBy[i].iColumn = pExpr->iColumn;
-    pIdxOrderBy[i].desc = pOrderBy->a[i].sortOrder;
+    pIdxOrderBy[i].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
   }
 
   *pmNoOmit = mNoOmit;
@@ -2516,8 +2518,6 @@ static int whereLoopAddBtreeIndex(
       }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
         /* "x IN (value, value, ...)" */
         nIn = sqlite3LogEst(pExpr->x.pList->nExpr);
-        assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
-                          ** changes "x IN (?)" into "x=?". */
       }
       if( pProbe->hasStat1 ){
         LogEst M, logK, safetyMargin;
@@ -2670,6 +2670,7 @@ static int whereLoopAddBtreeIndex(
     ** it to pNew->rRun, which is currently set to the cost of the index
     ** seek only. Then, if this is a non-covering index, add the cost of
     ** visiting the rows in the main table.  */
+    assert( pSrc->pTab->szTabRow>0 );
     rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
     pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
@@ -2768,7 +2769,7 @@ static int indexMightHelpWithOrderBy(
   if( pIndex->bUnordered ) return 0;
   if( (pOB = pBuilder->pWInfo->pOrderBy)==0 ) return 0;
   for(ii=0; ii<pOB->nExpr; ii++){
-    Expr *pExpr = sqlite3ExprSkipCollate(pOB->a[ii].pExpr);
+    Expr *pExpr = sqlite3ExprSkipCollateAndLikely(pOB->a[ii].pExpr);
     if( pExpr->op==TK_COLUMN && pExpr->iTable==iCursor ){
       if( pExpr->iColumn<0 ) return 1;
       for(jj=0; jj<pIndex->nKeyCol; jj++){
@@ -2799,7 +2800,9 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   }
   if( pParse->db->flags & SQLITE_EnableQPSG ) pParse = 0;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    Expr *pExpr = pTerm->pExpr;
+    Expr *pExpr;
+    if( pTerm->wtFlags & TERM_NOPARTIDX ) continue;
+    pExpr = pTerm->pExpr;
     if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
      && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab) 
     ){
@@ -3708,7 +3711,7 @@ static i8 wherePathSatisfiesOrderBy(
     */
     for(i=0; i<nOrderBy; i++){
       if( MASKBIT(i) & obSat ) continue;
-      pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
+      pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[i].pExpr);
       if( pOBExpr->op!=TK_COLUMN ) continue;
       if( pOBExpr->iTable!=iCur ) continue;
       pTerm = sqlite3WhereFindTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
@@ -3764,15 +3767,21 @@ static i8 wherePathSatisfiesOrderBy(
           u16 eOp = pLoop->aLTerm[j]->eOperator;
 
           /* Skip over == and IS and ISNULL terms.  (Also skip IN terms when
-          ** doing WHERE_ORDERBY_LIMIT processing). 
+          ** doing WHERE_ORDERBY_LIMIT processing).  Except, IS and ISNULL
+          ** terms imply that the index is not UNIQUE NOT NULL in which case
+          ** the loop need to be marked as not order-distinct because it can
+          ** have repeated NULL rows.
           **
           ** If the current term is a column of an ((?,?) IN (SELECT...)) 
           ** expression for which the SELECT returns more than one column,
           ** check that it is the only column used by this loop. Otherwise,
           ** if it is one of two or more, none of the columns can be
-          ** considered to match an ORDER BY term.  */
+          ** considered to match an ORDER BY term.
+          */
           if( (eOp & eqOpMask)!=0 ){
-            if( eOp & WO_ISNULL ){
+            if( eOp & (WO_ISNULL|WO_IS) ){
+              testcase( eOp & WO_ISNULL );
+              testcase( eOp & WO_IS );
               testcase( isOrderDistinct );
               isOrderDistinct = 0;
             }
@@ -3798,7 +3807,7 @@ static i8 wherePathSatisfiesOrderBy(
         */
         if( pIndex ){
           iColumn = pIndex->aiColumn[j];
-          revIdx = pIndex->aSortOrder[j];
+          revIdx = pIndex->aSortOrder[j] & KEYINFO_ORDER_DESC;
           if( iColumn==pIndex->pTable->iPKey ) iColumn = XN_ROWID;
         }else{
           iColumn = XN_ROWID;
@@ -3822,7 +3831,7 @@ static i8 wherePathSatisfiesOrderBy(
         isMatch = 0;
         for(i=0; bOnce && i<nOrderBy; i++){
           if( MASKBIT(i) & obSat ) continue;
-          pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
+          pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[i].pExpr);
           testcase( wctrlFlags & WHERE_GROUPBY );
           testcase( wctrlFlags & WHERE_DISTINCTBY );
           if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
@@ -3850,11 +3859,20 @@ static i8 wherePathSatisfiesOrderBy(
           /* Make sure the sort order is compatible in an ORDER BY clause.
           ** Sort order is irrelevant for a GROUP BY clause. */
           if( revSet ){
-            if( (rev ^ revIdx)!=pOrderBy->a[i].sortOrder ) isMatch = 0;
+            if( (rev ^ revIdx)!=(pOrderBy->a[i].sortFlags&KEYINFO_ORDER_DESC) ){
+              isMatch = 0;
+            }
           }else{
-            rev = revIdx ^ pOrderBy->a[i].sortOrder;
+            rev = revIdx ^ (pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC);
             if( rev ) *pRevMask |= MASKBIT(iLoop);
             revSet = 1;
+          }
+        }
+        if( isMatch && (pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL) ){
+          if( j==pLoop->u.btree.nEq ){
+            pLoop->wsFlags |= WHERE_BIGNULL_SORT;
+          }else{
+            isMatch = 0;
           }
         }
         if( isMatch ){
@@ -3863,9 +3881,6 @@ static i8 wherePathSatisfiesOrderBy(
             distinctColumns = 1;
           }
           obSat |= MASKBIT(i);
-          if( (wctrlFlags & WHERE_ORDERBY_MIN) && j==pLoop->u.btree.nEq ){
-            pLoop->wsFlags |= WHERE_MIN_ORDERED;
-          }
         }else{
           /* No match found */
           if( j==0 || j<nKeyCol ){
@@ -5059,6 +5074,7 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeSetP4KeyInfo(pParse, pIx);
         if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=0
          && (pLoop->wsFlags & (WHERE_COLUMN_RANGE|WHERE_SKIPSCAN))==0
+         && (pLoop->wsFlags & WHERE_BIGNULL_SORT)==0
          && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0
          && pWInfo->eDistinct!=WHERE_DISTINCT_ORDERED
         ){
@@ -5200,6 +5216,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       VdbeCoverageIf(v, pLevel->op==OP_Next);
       VdbeCoverageIf(v, pLevel->op==OP_Prev);
       VdbeCoverageIf(v, pLevel->op==OP_VNext);
+      if( pLevel->regBignull ){
+        sqlite3VdbeResolveLabel(v, pLevel->addrBignull);
+        sqlite3VdbeAddOp2(v, OP_DecrJumpZero, pLevel->regBignull, pLevel->p2-1);
+        VdbeCoverage(v);
+      }
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
       if( addrSeek ) sqlite3VdbeJumpHere(v, addrSeek);
 #endif

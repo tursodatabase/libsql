@@ -1917,33 +1917,33 @@ static int SQLITE_TCLAPI DbObjCmd(
     "authorizer",             "backup",                "bind_fallback",
     "busy",                   "cache",                 "changes",
     "close",                  "collate",               "collation_needed",
-    "commit_hook",            "complete",              "copy",
-    "deserialize",            "enable_load_extension", "errorcode",
-    "eval",                   "exists",                "function",
-    "incrblob",               "interrupt",             "last_insert_rowid",
-    "nullvalue",              "onecolumn",             "preupdate",
-    "profile",                "progress",              "rekey",
-    "restore",                "rollback_hook",         "serialize",
-    "status",                 "timeout",               "total_changes",
-    "trace",                  "trace_v2",              "transaction",
-    "unlock_notify",          "update_hook",           "version",
-    "wal_hook",               0                        
+    "commit_hook",            "complete",              "config",
+    "copy",                   "deserialize",           "enable_load_extension",
+    "errorcode",              "eval",                  "exists",
+    "function",               "incrblob",              "interrupt",
+    "last_insert_rowid",      "nullvalue",             "onecolumn",
+    "preupdate",              "profile",               "progress",
+    "rekey",                  "restore",               "rollback_hook",
+    "serialize",              "status",                "timeout",
+    "total_changes",          "trace",                 "trace_v2",
+    "transaction",            "unlock_notify",         "update_hook",
+    "version",                "wal_hook",              0
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
     DB_BUSY,                  DB_CACHE,                DB_CHANGES,
     DB_CLOSE,                 DB_COLLATE,              DB_COLLATION_NEEDED,
-    DB_COMMIT_HOOK,           DB_COMPLETE,             DB_COPY,
-    DB_DESERIALIZE,           DB_ENABLE_LOAD_EXTENSION,DB_ERRORCODE,
-    DB_EVAL,                  DB_EXISTS,               DB_FUNCTION,
-    DB_INCRBLOB,              DB_INTERRUPT,            DB_LAST_INSERT_ROWID,
-    DB_NULLVALUE,             DB_ONECOLUMN,            DB_PREUPDATE,
-    DB_PROFILE,               DB_PROGRESS,             DB_REKEY,
-    DB_RESTORE,               DB_ROLLBACK_HOOK,        DB_SERIALIZE,
-    DB_STATUS,                DB_TIMEOUT,              DB_TOTAL_CHANGES,
-    DB_TRACE,                 DB_TRACE_V2,             DB_TRANSACTION,
-    DB_UNLOCK_NOTIFY,         DB_UPDATE_HOOK,          DB_VERSION,
-    DB_WAL_HOOK             
+    DB_COMMIT_HOOK,           DB_COMPLETE,             DB_CONFIG,
+    DB_COPY,                  DB_DESERIALIZE,          DB_ENABLE_LOAD_EXTENSION,
+    DB_ERRORCODE,             DB_EVAL,                 DB_EXISTS,
+    DB_FUNCTION,              DB_INCRBLOB,             DB_INTERRUPT,
+    DB_LAST_INSERT_ROWID,     DB_NULLVALUE,            DB_ONECOLUMN,
+    DB_PREUPDATE,             DB_PROFILE,              DB_PROGRESS,
+    DB_REKEY,                 DB_RESTORE,              DB_ROLLBACK_HOOK,
+    DB_SERIALIZE,             DB_STATUS,               DB_TIMEOUT,
+    DB_TOTAL_CHANGES,         DB_TRACE,                DB_TRACE_V2,
+    DB_TRANSACTION,           DB_UNLOCK_NOTIFY,        DB_UPDATE_HOOK,
+    DB_VERSION,               DB_WAL_HOOK             
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2328,6 +2328,74 @@ static int SQLITE_TCLAPI DbObjCmd(
     pResult = Tcl_GetObjResult(interp);
     Tcl_SetBooleanObj(pResult, isComplete);
 #endif
+    break;
+  }
+
+  /*    $db config ?OPTION? ?BOOLEAN?
+  **
+  ** Configure the database connection using the sqlite3_db_config()
+  ** interface.
+  */
+  case DB_CONFIG: {
+    static const struct DbConfigChoices {
+      const char *zName;
+      int op;
+    } aDbConfig[] = {
+        { "enable_fkey",        SQLITE_DBCONFIG_ENABLE_FKEY           },
+        { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
+        { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
+        { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+        { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
+        { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
+        { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
+        { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
+        { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
+        { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
+        { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
+        { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
+        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
+        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
+    };
+    Tcl_Obj *pResult;
+    int ii;
+    if( objc>4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?OPTION? ?BOOLEAN?");
+      return TCL_ERROR;
+    }
+    if( objc==2 ){
+      /* With no arguments, list all configuration options and with the
+      ** current value */
+      pResult = Tcl_NewListObj(0,0);
+      for(ii=0; ii<sizeof(aDbConfig)/sizeof(aDbConfig[0]); ii++){
+        int v = 0;
+        sqlite3_db_config(pDb->db, aDbConfig[ii].op, -1, &v);
+        Tcl_ListObjAppendElement(interp, pResult,
+           Tcl_NewStringObj(aDbConfig[ii].zName,-1));
+        Tcl_ListObjAppendElement(interp, pResult,
+           Tcl_NewIntObj(v));
+      }
+    }else{
+      const char *zOpt = Tcl_GetString(objv[2]);
+      int onoff = -1;
+      int v = 0;
+      if( zOpt[0]=='-' ) zOpt++;
+      for(ii=0; ii<sizeof(aDbConfig)/sizeof(aDbConfig[0]); ii++){
+        if( strcmp(aDbConfig[ii].zName, zOpt)==0 ) break;
+      }
+      if( ii>=sizeof(aDbConfig)/sizeof(aDbConfig[0]) ){
+        Tcl_AppendResult(interp, "unknown config option: \"", zOpt,
+                                "\"", (void*)0);
+        return TCL_ERROR;
+      }
+      if( objc==4 ){
+        if( Tcl_GetBooleanFromObj(interp, objv[3], &onoff) ){
+          return TCL_ERROR;
+        }
+      }
+      sqlite3_db_config(pDb->db, aDbConfig[ii].op, onoff, &v);
+      pResult = Tcl_NewIntObj(v);
+    }
+    Tcl_SetObjResult(interp, pResult);
     break;
   }
 
@@ -2741,10 +2809,16 @@ deserialize_error:
   }
 
   /*
-  **     $db function NAME [-argcount N] [-deterministic] SCRIPT
+  **     $db function NAME [OPTIONS] SCRIPT
   **
   ** Create a new SQL function called NAME.  Whenever that function is
   ** called, invoke SCRIPT to evaluate the function.
+  **
+  ** Options:
+  **         --argcount N           Function has exactly N arguments
+  **         --deterministic        The function is pure
+  **         --directonly           Prohibit use inside triggers and views
+  **         --returntype TYPE      Specify the return type of the function
   */
   case DB_FUNCTION: {
     int flags = SQLITE_UTF8;
@@ -2777,6 +2851,9 @@ deserialize_error:
       if( n>1 && strncmp(z, "-deterministic",n)==0 ){
         flags |= SQLITE_DETERMINISTIC;
       }else
+      if( n>1 && strncmp(z, "-directonly",n)==0 ){
+        flags |= SQLITE_DIRECTONLY;
+      }else
       if( n>1 && strncmp(z, "-returntype", n)==0 ){
         const char *azType[] = {"integer", "real", "text", "blob", "any", 0};
         assert( SQLITE_INTEGER==1 && SQLITE_FLOAT==2 && SQLITE_TEXT==3 );
@@ -2792,7 +2869,8 @@ deserialize_error:
         eType++;
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
-            "\": must be -argcount, -deterministic or -returntype", (char*)0
+            "\": must be -argcount, -deterministic, -directonly,"
+            " or -returntype", (char*)0
         );
         return TCL_ERROR;
       }

@@ -99,6 +99,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
       }
       if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
+      if( aff>SQLITE_AFF_NUMERIC) aff = SQLITE_AFF_NUMERIC;
       pIdx->zColAff[n] = aff;
     }
     pIdx->zColAff[n] = 0;
@@ -831,6 +832,9 @@ void sqlite3Insert(
     if( IsVirtual(pTab) ){
       sqlite3ErrorMsg(pParse, "UPSERT not implemented for virtual table \"%s\"",
               pTab->zName);
+      goto insert_cleanup;
+    }
+    if( sqlite3HasExplicitNulls(pParse, pUpsert->pUpsertTarget) ){
       goto insert_cleanup;
     }
     pTabList->a[0].iCursor = iDataCur;

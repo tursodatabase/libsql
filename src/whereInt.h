@@ -71,13 +71,15 @@ struct WhereLevel {
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
+  int regBignull;       /* big-null flag reg. True if a NULL-scan is needed */
+  int addrBignull;      /* Jump here for next part of big-null scan */
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
   int addrLikeRep;      /* LIKE range processing address */
 #endif
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p3, p5;        /* Opcode, P3 & P5 of the opcode that ends the loop */
-  int p1, p2;           /* Operands of the opcode used to ends the loop */
+  int p1, p2;           /* Operands of the opcode used to end the loop */
   union {               /* Information that depends on pWLoop->wsFlags */
     struct {
       int nIn;              /* Number of entries in aInLoop[] */
@@ -289,6 +291,7 @@ struct WhereTerm {
 #define TERM_LIKE       0x400  /* The original LIKE operator */
 #define TERM_IS         0x800  /* Term.pExpr is an IS operator */
 #define TERM_VARSELECT  0x1000 /* Term.pExpr contains a correlated sub-query */
+#define TERM_NOPARTIDX  0x2000 /* Not for use to enable a partial index */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
@@ -586,6 +589,6 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
 #define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */
 #define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */
-#define WHERE_MIN_ORDERED  0x00080000  /* Column nEq of index is min() expr */
+#define WHERE_BIGNULL_SORT 0x00080000  /* Column nEq of index is BIGNULL */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

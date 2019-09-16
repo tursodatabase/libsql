@@ -561,7 +561,31 @@ do_test 4.3 {
   }]
 } {64}
 
+#-------------------------------------------------------------------------
+# Request a snippet from a query with more than 64 phrases.
+#
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t5 USING fts3(x);
+  INSERT INTO t5 VALUES('a1 a2 a3');
+  INSERT INTO t5 VALUES('a4 a5 a6');
+  INSERT INTO t5 VALUES('a70 a71 a72');
+}
 
+do_execsql_test 5.1 {
+  SELECT snippet(t5, '[', ']') FROM t5 WHERE t5 MATCH 
+  'a1 OR a2 OR a3 OR a4 OR a5 OR a6 OR a7 OR a8 OR a9 OR a10 OR ' ||
+  'a11 OR a12 OR a13 OR a14 OR a15 OR a16 OR a17 OR a18 OR a19 OR a10 OR ' ||
+  'a21 OR a22 OR a23 OR a24 OR a25 OR a26 OR a27 OR a28 OR a29 OR a20 OR ' ||
+  'a31 OR a32 OR a33 OR a34 OR a35 OR a36 OR a37 OR a38 OR a39 OR a30 OR ' ||
+  'a41 OR a42 OR a43 OR a44 OR a45 OR a46 OR a47 OR a48 OR a49 OR a40 OR ' ||
+  'a51 OR a52 OR a53 OR a54 OR a55 OR a56 OR a57 OR a58 OR a59 OR a50 OR ' ||
+  'a61 OR a62 OR a63 OR a64 OR a65 OR a66 OR a67 OR a68 OR a69 OR a60 OR ' ||
+  'a71 OR a72 OR a73 OR a74 OR a75 OR a76 OR a77 OR a78 OR a79 OR a70'
+} {
+  {[a1] [a2] [a3]}
+  {[a4] [a5] [a6]}
+  {[a70] [a71] [a72]}
+}
 
 set sqlite_fts3_enable_parentheses 0
 finish_test

@@ -536,7 +536,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 
     case TK_COLLATE: {
-      sqlite3TreeViewLine(pView, "COLLATE %Q", pExpr->u.zToken);
+      /* COLLATE operators without the EP_Collate flag are intended to
+      ** emulate collation associated with a table column.  Explicit
+      ** COLLATE operators that appear in the original SQL always have
+      ** the EP_Collate bit set */
+      sqlite3TreeViewLine(pView, "%sCOLLATE %Q%s",
+        !ExprHasProperty(pExpr, EP_Collate) ? "SOFT-" : "",
+        pExpr->u.zToken, zFlgs);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
     }
@@ -557,10 +563,10 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
 #endif 
       }
       if( pExpr->op==TK_AGG_FUNCTION ){
-        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q",
-                             pExpr->op2, pExpr->u.zToken);
+        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s",
+                             pExpr->op2, pExpr->u.zToken, zFlgs);
       }else{
-        sqlite3TreeViewLine(pView, "FUNCTION %Q", pExpr->u.zToken);
+        sqlite3TreeViewLine(pView, "FUNCTION %Q%s", pExpr->u.zToken, zFlgs);
       }
       if( pFarg ){
         sqlite3TreeViewExprList(pView, pFarg, pWin!=0, 0);
