@@ -787,7 +787,7 @@ do_test where9-6.8.2 {
 } {1 {no query solution}}
 
 set solution_possible 0
-ifcapable stat4||stat3 {
+ifcapable stat4 {
   if {[permutation] != "no_optimization"} { set solution_possible 1 }
 }
 if $solution_possible {
@@ -859,11 +859,6 @@ do_test where9-7.0 {
     CREATE TABLE t6(a, b, c, e, d, f, g, x, y);
     INSERT INTO t6 SELECT * FROM t5;
     ANALYZE t5;
-  }
-  ifcapable stat3 {
-    sqlite3 db2 test.db
-    db2 eval { DROP TABLE IF EXISTS sqlite_stat3 }
-    db2 close
   }
 } {}
 do_test where9-7.1.1 {

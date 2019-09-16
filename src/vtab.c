@@ -32,6 +32,9 @@ struct VtabCtx {
 ** Construct and install a Module object for a virtual table.  When this
 ** routine is called, it is guaranteed that all appropriate locks are held
 ** and the module is not already part of the connection.
+**
+** If there already exists a module with zName, replace it with the new one.
+** If pModule==0, then delete the module zName if it exists.
 */
 Module *sqlite3VtabCreateModule(
   sqlite3 *db,                    /* Database in which module is registered */
@@ -41,25 +44,36 @@ Module *sqlite3VtabCreateModule(
   void (*xDestroy)(void *)        /* Module destructor function */
 ){
   Module *pMod;
-  int nName = sqlite3Strlen30(zName);
-  pMod = (Module *)sqlite3Malloc(sizeof(Module) + nName + 1);
-  if( pMod==0 ){
-    sqlite3OomFault(db);
+  Module *pDel;
+  char *zCopy;
+  if( pModule==0 ){
+    zCopy = (char*)zName;
+    pMod = 0;
   }else{
-    Module *pDel;
-    char *zCopy = (char *)(&pMod[1]);
+    int nName = sqlite3Strlen30(zName);
+    pMod = (Module *)sqlite3Malloc(sizeof(Module) + nName + 1);
+    if( pMod==0 ){
+      sqlite3OomFault(db);
+      return 0;
+    }
+    zCopy = (char *)(&pMod[1]);
     memcpy(zCopy, zName, nName+1);
     pMod->zName = zCopy;
     pMod->pModule = pModule;
     pMod->pAux = pAux;
     pMod->xDestroy = xDestroy;
     pMod->pEpoTab = 0;
-    pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
-    assert( pDel==0 || pDel==pMod );
-    if( pDel ){
+    pMod->nRefModule = 1;
+  }
+  pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
+  if( pDel ){
+    if( pDel==pMod ){
       sqlite3OomFault(db);
       sqlite3DbFree(db, pDel);
       pMod = 0;
+    }else{
+      sqlite3VtabEponymousTableClear(db, pDel);
+      sqlite3VtabModuleUnref(db, pDel);
     }
   }
   return pMod;
@@ -80,11 +94,7 @@ static int createModule(
   int rc = SQLITE_OK;
 
   sqlite3_mutex_enter(db->mutex);
-  if( sqlite3HashFind(&db->aModule, zName) ){
-    rc = SQLITE_MISUSE_BKPT;
-  }else{
-    (void)sqlite3VtabCreateModule(db, zName, pModule, pAux, xDestroy);
-  }
+  (void)sqlite3VtabCreateModule(db, zName, pModule, pAux, xDestroy);
   rc = sqlite3ApiExit(db, rc);
   if( rc!=SQLITE_OK && xDestroy ) xDestroy(pAux);
   sqlite3_mutex_leave(db->mutex);
@@ -121,6 +131,44 @@ int sqlite3_create_module_v2(
   if( !sqlite3SafetyCheckOk(db) || zName==0 ) return SQLITE_MISUSE_BKPT;
 #endif
   return createModule(db, zName, pModule, pAux, xDestroy);
+}
+
+/*
+** External API to drop all virtual-table modules, except those named
+** on the azNames list.
+*/
+int sqlite3_drop_modules(sqlite3 *db, const char** azNames){
+  HashElem *pThis, *pNext;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  for(pThis=sqliteHashFirst(&db->aModule); pThis; pThis=pNext){
+    Module *pMod = (Module*)sqliteHashData(pThis);
+    pNext = sqliteHashNext(pThis);
+    if( azNames ){
+      int ii;
+      for(ii=0; azNames[ii]!=0 && strcmp(azNames[ii],pMod->zName)!=0; ii++){}
+      if( azNames[ii]!=0 ) continue;
+    }
+    createModule(db, pMod->zName, 0, 0, 0);
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Decrement the reference count on a Module object.  Destroy the
+** module when the reference count reaches zero.
+*/
+void sqlite3VtabModuleUnref(sqlite3 *db, Module *pMod){
+  assert( pMod->nRefModule>0 );
+  pMod->nRefModule--;
+  if( pMod->nRefModule==0 ){
+    if( pMod->xDestroy ){
+      pMod->xDestroy(pMod->pAux);
+    }
+    assert( pMod->pEpoTab==0 );
+    sqlite3DbFree(db, pMod);
+  }
 }
 
 /*
@@ -162,6 +210,7 @@ void sqlite3VtabUnlock(VTable *pVTab){
   pVTab->nRef--;
   if( pVTab->nRef==0 ){
     sqlite3_vtab *p = pVTab->pVtab;
+    sqlite3VtabModuleUnref(pVTab->db, pVTab->pMod);
     if( p ){
       p->pModule->xDisconnect(p);
     }
@@ -566,6 +615,7 @@ static int vtabCallConstructor(
     ** the sqlite3_vtab object if successful.  */
     memset(pVTable->pVtab, 0, sizeof(pVTable->pVtab[0]));
     pVTable->pVtab->pModule = pMod->pModule;
+    pMod->nRefModule++;
     pVTable->nRef = 1;
     if( sCtx.bDeclared==0 ){
       const char *zFormat = "vtable constructor did not declare schema: %s";

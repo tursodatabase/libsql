@@ -750,4 +750,39 @@ do_execsql_test in-17.4 {
   SELECT 1 IN (CAST('1' AS text) COLLATE nocase);
 } 0
 
+# 2019-08-27 ticket https://sqlite.org/src/info/dbaf8a6820be1ece
+# 
+do_execsql_test in-18.1 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INT UNIQUE);
+  INSERT INTO t0(c0) VALUES (1);
+  SELECT * FROM t0 WHERE '1' IN (t0.c0);
+} {}
+
+# 2019-09-02 ticket https://www.sqlite.org/src/info/2841e99d104c6436
+# For the IN_INDEX_NOOP optimization, apply REAL affinity to the LHS
+# values prior to comparison if the RHS has REAL affinity.
+#
+# Also ticket https://sqlite.org/src/info/29f635e0af71234b
+#
+do_execsql_test in-19.1 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 REAL UNIQUE);
+  INSERT INTO t0(c0) VALUES(2.07093491255203046E18);
+  SELECT 1 FROM t0 WHERE c0 IN ('2070934912552030444');
+} {1}
+do_execsql_test in-19.2 {
+  SELECT c0 IN ('2070934912552030444') FROM t0;
+} {1}
+do_execsql_test in-19.3 {
+  SELECT c0 IN ('2070934912552030444',2,3) FROM t0;
+} {1}
+do_execsql_test in-19.4 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 TEXT, c1 REAL, c2, PRIMARY KEY(c2, c0, c1));
+  CREATE INDEX i0 ON t0(c1 IN (c0));
+  INSERT INTO t0(c0, c2) VALUES (0, NULL) ON CONFLICT(c2, c1, c0) DO NOTHING;
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

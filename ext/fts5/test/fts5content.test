@@ -253,5 +253,20 @@ do_execsql_test 6.2 {
   SELECT name FROM sqlite_master;
 } {}
 
+#---------------------------------------------------------------------------
+# Check that an fts5 table cannot be its own content table.
+#
+reset_db
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, c=t1 );
+  INSERT INTO t1( a ) VALUES('abc');
+}
+do_catchsql_test 7.2 { 
+  SELECT * FROM t1; 
+} {1 {recursively defined fts5 content table}}
+do_catchsql_test 7.3 { 
+  SELECT * FROM t1('abc'); 
+} {1 {recursively defined fts5 content table}}
 
 finish_test
+

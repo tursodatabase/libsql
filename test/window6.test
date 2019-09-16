@@ -368,4 +368,3 @@ do_execsql_test 11.4.1 {
 }
 
 finish_test
-

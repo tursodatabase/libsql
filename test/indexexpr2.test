@@ -295,6 +295,82 @@ do_execsql_test 7.3 {
   REINDEX;
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0(c0);
+  CREATE INDEX i0 ON t0(c0) WHERE c0 NOT NULL;
+  INSERT INTO t0(c0) VALUES (NULL);
+}
 
+do_execsql_test 8.1.1 {
+  SELECT * FROM t0 WHERE ~('' BETWEEN t0.c0 AND TRUE);
+} {{}}
+do_execsql_test 8.1.2 {
+  SELECT ~('' BETWEEN t0.c0 AND TRUE) FROM t0;
+} {-1}
+
+foreach {tn expr} {
+  1 " 0  ==  (34 BETWEEN c0 AND 33)"
+  2 " 1  !=  (34 BETWEEN c0 AND 33)"
+  3 "-1   <  (34 BETWEEN c0 AND 33)"
+  4 "-1  <=  (34 BETWEEN c0 AND 33)"
+  5 " 1   >  (34 BETWEEN c0 AND 33)"
+  6 " 1  >=  (34 BETWEEN c0 AND 33)"
+  7 " 1   -  (34 BETWEEN c0 AND 33)"
+  8 "-1   +  (34 BETWEEN c0 AND 33)"
+  9 " 1   |  (34 BETWEEN c0 AND 33)"
+ 10 " 1  <<  (34 BETWEEN c0 AND 33)"
+ 11 " 1  >>  (34 BETWEEN c0 AND 33)"
+ 12 " 1  ||  (34 BETWEEN c0 AND 33)"
+} {
+  do_execsql_test 8.3.$tn.1 "SELECT * FROM t0 WHERE $expr ORDER BY c0" { {} }
+  do_execsql_test 8.3.$tn.2 "SELECT ($expr) IS TRUE FROM t0"           { 1 }
+}
+
+do_execsql_test 8.4 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+  CREATE TABLE t2(x, y);
+}
+
+foreach {tn expr} {
+  1 " 0  ==  (a=0 AND y=1)"
+  2 " 1  !=  (a=0 AND y=1)"
+  3 "-1  <   (a=0 AND y=1)"
+  4 "-1  <=  (a=0 AND y=1)"
+  5 " 1   >  (a=0 AND y=1)"
+  6 " 1  >=  (a=0 AND y=1)"
+  7 " 1   -  (a=0 AND y=1)"
+  8 "-1   +  (a=0 AND y=1)"
+  9 " 1   |  (a=0 AND y=1)"
+  10 "1  <<  (a=0 AND y=1)"
+  11 "1  >>  (a=0 AND y=1)"
+  12 "1  ||  (a=0 AND y=1)"
+
+  13 " 0  ==  (10 BETWEEN y AND b)"
+  14 " 1  !=  (10 BETWEEN y AND b)"
+  15 "-1  <   (10 BETWEEN y AND b)"
+  16 "-1  <=  (10 BETWEEN y AND b)"
+  17 " 1   >  (10 BETWEEN y AND b)"
+  18 " 1  >=  (10 BETWEEN y AND b)"
+  19 " 1   -  (10 BETWEEN y AND b)"
+  20 "-1   +  (10 BETWEEN y AND b)"
+  21 " 1   |  (10 BETWEEN y AND b)"
+  22 " 1  <<  (10 BETWEEN y AND b)"
+  23 " 1  >>  (10 BETWEEN y AND b)"
+  24 " 1  ||  (10 BETWEEN y AND b)"
+
+  25 " 1  ||  (10 BETWEEN y AND b)"
+} {
+  do_execsql_test 8.5.$tn.1 "
+    SELECT * FROM t1 LEFT JOIN t2 WHERE $expr
+  " {1 2 {} {} 3 4 {} {}}
+
+  do_execsql_test 8.5.$tn.2 "
+    SELECT ($expr) IS TRUE FROM t1 LEFT JOIN t2
+  " {1 1}
+}
 
 finish_test
+

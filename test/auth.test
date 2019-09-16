@@ -2450,11 +2450,7 @@ ifcapable compound&&subquery {
   ifcapable stat4 {
     set stat4 "sqlite_stat4 "
   } else {
-    ifcapable stat3 {
-      set stat4 "sqlite_stat3 "
-    } else {
-      set stat4 ""
-    }
+    set stat4 ""
   }
   do_test auth-5.2 {
     execsql {

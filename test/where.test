@@ -1538,5 +1538,37 @@ do_catchsql_test where-25.5 {
     ON CONFLICT(c) DO UPDATE SET b=NULL
 } {1 {corrupt database}}
 
-finish_test
+# 2019-08-21 Ticket https://www.sqlite.org/src/info/d9f584e936c7a8d0
+#
+db close
+sqlite3 db :memory:
+do_execsql_test where-26.1 {
+  CREATE TABLE t0(c0 INTEGER PRIMARY KEY, c1 TEXT);
+  INSERT INTO t0(c0, c1) VALUES (1, 'a');
+  CREATE TABLE t1(c0 INT PRIMARY KEY, c1 TEXT);
+  INSERT INTO t1(c0, c1) VALUES (1, 'a');
+  SELECT * FROM t0 WHERE '-1' BETWEEN 0 AND t0.c0;
+} {1 a}
+do_execsql_test where-26.2 {
+  SELECT * FROM t1 WHERE '-1' BETWEEN 0 AND t1.c0;
+} {1 a}
+do_execsql_test where-26.3 {
+  SELECT * FROM t0 WHERE '-1'>=0 AND '-1'<=t0.c0;
+} {1 a}
+do_execsql_test where-26.4 {
+  SELECT * FROM t1 WHERE '-1'>=0 AND '-1'<=t1.c0;
+} {1 a}
+do_execsql_test where-26.5 {
+  SELECT '-1' BETWEEN 0 AND t0.c0 FROM t0;
+} {1}
+do_execsql_test where-26.6 {
+  SELECT '-1' BETWEEN 0 AND t1.c0 FROM t1;
+} {1}
+do_execsql_test where-26.7 {
+  SELECT '-1'>=0 AND '-1'<=t0.c0 FROM t0;
+} {1}
+do_execsql_test where-26.8 {
+  SELECT '-1'>=0 AND '-1'<=t1.c0 FROM t1;
+} {1}
 
+finish_test

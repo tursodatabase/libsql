@@ -4215,6 +4215,7 @@ static int winShmMap(
     rc = winOpenSharedMemory(pDbFd);
     if( rc!=SQLITE_OK ) return rc;
     pShm = pDbFd->pShm;
+    assert( pShm!=0 );
   }
   pShmNode = pShm->pShmNode;
 
@@ -4517,6 +4518,7 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
       }
     }
     if( pFd->mmapSize >= iOff+nAmt ){
+      assert( pFd->pMapRegion!=0 );
       *pp = &((u8 *)pFd->pMapRegion)[iOff];
       pFd->nFetchOut++;
     }

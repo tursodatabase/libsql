@@ -355,11 +355,12 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
   sqlite3 *db;
 
   if( p ){
+    sqlite3_stmt *pStmt = p->pStmt;
     db = p->db;
     sqlite3_mutex_enter(db->mutex);
-    rc = sqlite3_finalize(p->pStmt);
     sqlite3DbFree(db, p);
     sqlite3_mutex_leave(db->mutex);
+    rc = sqlite3_finalize(pStmt);
   }else{
     rc = SQLITE_OK;
   }

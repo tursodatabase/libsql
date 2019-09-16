@@ -108,4 +108,9 @@ do_test 3.2 { catch { execsql {
   WINDOW win AS (ROWS BETWEEN 10 PRECEDING AND x'ABCD' FOLLOWING)
 } } } 1
 
+# PG says ERROR:  function row_number(integer) does not exist
+do_test 3.3 { catch { execsql {
+  SELECT row_number(a) OVER () FROM t1;
+} } } 1
+
 finish_test
