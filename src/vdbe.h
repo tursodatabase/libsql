@@ -222,10 +222,10 @@ VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 # define sqlite3ExplainBreakpoint(A,B) /*no-op*/
 #endif
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
-void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
-void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
-void sqlite3VdbeChangeP2(Vdbe*, u32 addr, int P2);
-void sqlite3VdbeChangeP3(Vdbe*, u32 addr, int P3);
+void sqlite3VdbeChangeOpcode(Vdbe*, int addr, u8);
+void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
+void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
+void sqlite3VdbeChangeP3(Vdbe*, int addr, int P3);
 void sqlite3VdbeChangeP5(Vdbe*, u16 P5);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);

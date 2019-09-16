@@ -97,4 +97,3 @@ do_execsql_test 2.2 {
 } "[int2str 1001][int2str 1001][int2str 1001]"
 
 finish_test
-

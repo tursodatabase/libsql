@@ -20,6 +20,7 @@ ifcapable !altertable {
   return
 }
 
+
 ifcapable windowfunc {
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
@@ -235,6 +236,149 @@ do_execsql_test 10.2 {
   {CREATE VIEW v1 AS SELECT * FROM t1 WHERE (
     SELECT t1.a FROM t1, t2
   ) IN () OR t1.a=5}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 11.1 {
+  CREATE TABLE t1(
+      a,b,c,d,e,f,g,h,j,jj,jjb,k,aa,bb,cc,dd,ee DEFAULT 3.14,
+      ff DEFAULT('hiccup'),Wg NOD NULL DEFAULT(false)
+  );
+
+  CREATE TRIGGER b AFTER INSERT ON t1 WHEN new.a BEGIN
+    SELECT a, sum() w3 FROM t1 
+    WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM abc));
+  END;
+}
+
+do_catchsql_test 11.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger b: no such table: abc}}
+
+do_execsql_test 11.3 {
+  DROP TRIGGER b;
+  CREATE TRIGGER b AFTER INSERT ON t1 WHEN new.a BEGIN
+    SELECT a, sum() w3 FROM t1 
+    WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM t1));
+  END;
+} {}
+
+do_execsql_test 11.4 {
+  ALTER TABLE t1 RENAME TO t1x;
+  SELECT sql FROM sqlite_master WHERE name = 'b';
+} {
+{CREATE TRIGGER b AFTER INSERT ON "t1x" WHEN new.a BEGIN
+    SELECT a, sum() w3 FROM "t1x" 
+    WINDOW b AS (ORDER BY NOT EXISTS(SELECT 1 FROM "t1x"));
+  END}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 12.1 {
+CREATE TABLE t1(a,b,c,d,e,f,g,h,j,jj,Zjj,k,aQ,bb,cc,dd,ee DEFAULT 3.14,
+ff DEFAULT('hiccup'),gg NOD NULL DEFAULT(false));
+CREATE TRIGGER AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+
+SELECT b () OVER , dense_rank() OVER d, d () OVER w1
+FROM t1
+WINDOW
+w1 AS
+( w1 ORDER BY d
+ROWS BETWEEN 2 NOT IN(SELECT a, sum(d) w2,max(d)OVER FROM t1
+WINDOW
+w1 AS
+(PARTITION BY d
+ROWS BETWEEN '' PRECEDING AND false FOLLOWING),
+d AS
+(PARTITION BY b ORDER BY d
+ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+) PRECEDING AND 1 FOLLOWING),
+w2 AS
+(PARTITION BY b ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+w3 AS
+(PARTITION BY b ORDER BY d
+ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+;
+SELECT a, sum(d) w2,max(d)OVER FROM t1
+WINDOW
+w1 AS
+(PARTITION BY d
+ROWS BETWEEN '' PRECEDING AND false FOLLOWING),
+d AS
+(PARTITION BY b ORDER BY d
+ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+;
+
+END;
+}
+
+do_execsql_test 12.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.1 {
+  CREATE TABLE t1(a);
+  CREATE TRIGGER r1 INSERT ON t1 BEGIN
+    SELECT a(*) OVER (ORDER BY (SELECT 1)) FROM t1;
+  END;
+}
+
+do_execsql_test 13.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 14.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    SELECT sum() FILTER (WHERE (SELECT sum() FILTER (WHERE 0)) AND a);
+  END;
+}
+
+do_catchsql_test 14.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger AFTER: no such column: a}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 16.1 {
+  CREATE TABLE t1(x);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    SELECT (WITH t2 AS (WITH t3 AS (SELECT true)
+          SELECT * FROM t3 ORDER BY true COLLATE nocase)
+        SELECT 11);
+
+    WITH t4 AS (SELECT * FROM t1) SELECT 33;
+  END;
+}
+do_execsql_test 16.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.1 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TRIGGER AFTER INSERT ON t1 WHEN new.a NOT NULL BEGIN
+    SELECT a () FILTER (WHERE a>0) FROM t1;
+  END;
+}
+
+do_execsql_test 17.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+  ALTER TABLE t1x RENAME a TO aaa;
+  SELECT sql FROM sqlite_master WHERE type='trigger';
+} {
+{CREATE TRIGGER AFTER INSERT ON "t1x" WHEN new.aaa NOT NULL BEGIN
+    SELECT a () FILTER (WHERE aaa>0) FROM "t1x";
+  END}
 }
 
 

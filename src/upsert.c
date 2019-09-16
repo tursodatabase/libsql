@@ -205,6 +205,7 @@ void sqlite3UpsertDoUpdate(
   sqlite3 *db = pParse->db;
   SrcList *pSrc;            /* FROM clause for the UPDATE */
   int iDataCur;
+  int i;
 
   assert( v!=0 );
   assert( pUpsert!=0 );
@@ -221,7 +222,6 @@ void sqlite3UpsertDoUpdate(
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       int nPk = pPk->nKeyCol;
       int iPk = pParse->nMem+1;
-      int i;
       pParse->nMem += nPk;
       for(i=0; i<nPk; i++){
         int k;
@@ -242,6 +242,12 @@ void sqlite3UpsertDoUpdate(
   /* pUpsert does not own pUpsertSrc - the outer INSERT statement does.  So
   ** we have to make a copy before passing it down into sqlite3Update() */
   pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
+  /* excluded.* columns of type REAL need to be converted to a hard real */
+  for(i=0; i<pTab->nCol; i++){
+    if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
+      sqlite3VdbeAddOp1(v, OP_RealAffinity, pUpsert->regData+i);
+    }
+  }
   sqlite3Update(pParse, pSrc, pUpsert->pUpsertSet,
       pUpsert->pUpsertWhere, OE_Abort, 0, 0, pUpsert);
   pUpsert->pUpsertSet = 0;    /* Will have been deleted by sqlite3Update() */

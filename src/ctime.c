@@ -306,8 +306,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #if defined(SQLITE_ENABLE_STAT4)
   "ENABLE_STAT4",
-#elif defined(SQLITE_ENABLE_STAT3)
-  "ENABLE_STAT3",
 #endif
 #if SQLITE_ENABLE_STMTVTAB
   "ENABLE_STMTVTAB",

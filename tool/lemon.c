@@ -4153,6 +4153,7 @@ void ReportTable(
   struct rule *rp;
   struct acttab *pActtab;
   int i, j, n, sz;
+  int nLookAhead;
   int szActionType;     /* sizeof(YYACTIONTYPE) */
   int szCodeType;       /* sizeof(YYCODETYPE)   */
   const char *name;
@@ -4403,13 +4404,29 @@ void ReportTable(
     if( la<0 ) la = lemp->nsymbol;
     if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", la);
-    if( j==9 || i==n-1 ){
+    if( j==9 ){
       fprintf(out, "\n"); lineno++;
       j = 0;
     }else{
       j++;
     }
   }
+  /* Add extra entries to the end of the yy_lookahead[] table so that
+  ** yy_shift_ofst[]+iToken will always be a valid index into the array,
+  ** even for the largest possible value of yy_shift_ofst[] and iToken. */
+  nLookAhead = lemp->nterminal + lemp->nactiontab;
+  while( i<nLookAhead ){
+    if( j==0 ) fprintf(out," /* %5d */ ", i);
+    fprintf(out, " %4d,", lemp->nterminal);
+    if( j==9 ){
+      fprintf(out, "\n"); lineno++;
+      j = 0;
+    }else{
+      j++;
+    }
+    i++;
+  }
+  if( j>0 ){ fprintf(out, "\n"); lineno++; }
   fprintf(out, "};\n"); lineno++;
 
   /* Output the yy_shift_ofst[] table */
@@ -4489,7 +4506,9 @@ void ReportTable(
   */
   if( lemp->has_fallback ){
     int mx = lemp->nterminal - 1;
-    while( mx>0 && lemp->symbols[mx]->fallback==0 ){ mx--; }
+    /* 2019-08-28:  Generate fallback entries for every token to avoid
+    ** having to do a range check on the index */
+    /* while( mx>0 && lemp->symbols[mx]->fallback==0 ){ mx--; } */
     lemp->tablesize += (mx+1)*szCodeType;
     for(i=0; i<=mx; i++){
       struct symbol *p = lemp->symbols[i];

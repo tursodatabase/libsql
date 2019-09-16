@@ -1,0 +1,104 @@
+# 2018 May 8
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix filter1
+
+ifcapable !windowfunc {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a);
+  CREATE INDEX i1 ON t1(a);
+  INSERT INTO t1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9);
+}
+
+do_execsql_test 1.1 { SELECT sum(a) FROM t1; } 45
+do_execsql_test 1.2 { SELECT sum(a) FILTER( WHERE a<5 ) FROM t1; } 10
+
+do_execsql_test 1.3 { 
+  SELECT sum(a) FILTER( WHERE a>9 ),
+         sum(a) FILTER( WHERE a>8 ),
+         sum(a) FILTER( WHERE a>7 ),
+         sum(a) FILTER( WHERE a>6 ),
+         sum(a) FILTER( WHERE a>5 ),
+         sum(a) FILTER( WHERE a>4 ),
+         sum(a) FILTER( WHERE a>3 ),
+         sum(a) FILTER( WHERE a>2 ),
+         sum(a) FILTER( WHERE a>1 ),
+         sum(a) FILTER( WHERE a>0 )
+  FROM t1;
+} {{} 9 17 24 30 35 39 42 44 45}
+
+do_execsql_test 1.4 {
+  SELECT max(a) FILTER (WHERE (a % 2)==0) FROM t1
+} {8}
+
+do_execsql_test 1.5 {
+  SELECT min(a) FILTER (WHERE a>4) FROM t1
+} {5}
+
+do_execsql_test 1.6 {
+  SELECT count(*) FILTER (WHERE a!=5) FROM t1
+} {8}
+
+do_execsql_test 1.7 {
+  SELECT min(a) FILTER (WHERE a>3) FROM t1 GROUP BY (a%2) ORDER BY 1;
+} {4 5}
+
+do_execsql_test 1.8 {
+  CREATE VIEW vv AS 
+  SELECT sum(a) FILTER( WHERE a>9 ),
+         sum(a) FILTER( WHERE a>8 ),
+         sum(a) FILTER( WHERE a>7 ),
+         sum(a) FILTER( WHERE a>6 ),
+         sum(a) FILTER( WHERE a>5 ),
+         sum(a) FILTER( WHERE a>4 ),
+         sum(a) FILTER( WHERE a>3 ),
+         sum(a) FILTER( WHERE a>2 ),
+         sum(a) FILTER( WHERE a>1 ),
+         sum(a) FILTER( WHERE a>0 )
+  FROM t1;
+  SELECT * FROM vv;
+} {{} 9 17 24 30 35 39 42 44 45}
+
+
+#-------------------------------------------------------------------------
+# Test some errors:
+#
+#   .1 FILTER on a non-aggregate function,
+#   .2 Window function in FILTER clause,
+#   .3 Aggregate function in FILTER clause,
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9);
+}
+
+do_catchsql_test 2.1 {
+  SELECT upper(a) FILTER (WHERE a=1) FROM t1
+} {1 {FILTER may not be used with non-aggregate upper()}}
+
+do_catchsql_test 2.2 {
+  SELECT sum(a) FILTER (WHERE 1 - max(a) OVER () > 0) FROM t1
+} {1 {misuse of window function max()}}
+
+do_catchsql_test 2.3 {
+  SELECT sum(a) FILTER (WHERE 1 - count(a)) FROM t1
+} {1 {misuse of aggregate function count()}}
+
+finish_test

@@ -27,13 +27,13 @@
 ** is between 3.6.18 and 3.7.8, inclusive, and unless SQLite is compiled
 ** with SQLITE_ENABLE_STAT2.  The sqlite_stat2 table is deprecated.
 ** The sqlite_stat2 table is superseded by sqlite_stat3, which is only
-** created and used by SQLite versions 3.7.9 and later and with
+** created and used by SQLite versions 3.7.9 through 3.29.0 when
 ** SQLITE_ENABLE_STAT3 defined.  The functionality of sqlite_stat3
-** is a superset of sqlite_stat2.  The sqlite_stat4 is an enhanced
-** version of sqlite_stat3 and is only available when compiled with
-** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.1 and later.  It is
-** not possible to enable both STAT3 and STAT4 at the same time.  If they
-** are both enabled, then STAT4 takes precedence.
+** is a superset of sqlite_stat2 and is also now deprecated.  The
+** sqlite_stat4 is an enhanced version of sqlite_stat3 and is only 
+** available when compiled with SQLITE_ENABLE_STAT4 and in SQLite
+** versions 3.8.1 and later.  STAT4 is the only variant that is still
+** supported.
 **
 ** For most applications, sqlite_stat1 provides all the statistics required
 ** for the query planner to make good choices.
@@ -144,17 +144,11 @@
 
 #if defined(SQLITE_ENABLE_STAT4)
 # define IsStat4     1
-# define IsStat3     0
-#elif defined(SQLITE_ENABLE_STAT3)
-# define IsStat4     0
-# define IsStat3     1
 #else
 # define IsStat4     0
-# define IsStat3     0
 # undef SQLITE_STAT4_SAMPLES
 # define SQLITE_STAT4_SAMPLES 1
 #endif
-#define IsStat34    (IsStat3+IsStat4)  /* 1 for STAT3 or STAT4. 0 otherwise */
 
 /*
 ** This routine generates code that opens the sqlite_statN tables.
@@ -183,14 +177,10 @@ static void openStatTable(
     { "sqlite_stat1", "tbl,idx,stat" },
 #if defined(SQLITE_ENABLE_STAT4)
     { "sqlite_stat4", "tbl,idx,neq,nlt,ndlt,sample" },
-    { "sqlite_stat3", 0 },
-#elif defined(SQLITE_ENABLE_STAT3)
-    { "sqlite_stat3", "tbl,idx,neq,nlt,ndlt,sample" },
-    { "sqlite_stat4", 0 },
 #else
-    { "sqlite_stat3", 0 },
     { "sqlite_stat4", 0 },
 #endif
+    { "sqlite_stat3", 0 },
   };
   int i;
   sqlite3 *db = pParse->db;
@@ -271,7 +261,7 @@ typedef struct Stat4Sample Stat4Sample;
 struct Stat4Sample {
   tRowcnt *anEq;                  /* sqlite_stat4.nEq */
   tRowcnt *anDLt;                 /* sqlite_stat4.nDLt */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   tRowcnt *anLt;                  /* sqlite_stat4.nLt */
   union {
     i64 iRowid;                     /* Rowid in main table of the key */
@@ -302,7 +292,7 @@ struct Stat4Accum {
 
 /* Reclaim memory used by a Stat4Sample
 */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
 static void sampleClear(sqlite3 *db, Stat4Sample *p){
   assert( db!=0 );
   if( p->nRowid ){
@@ -314,7 +304,7 @@ static void sampleClear(sqlite3 *db, Stat4Sample *p){
 
 /* Initialize the BLOB value of a ROWID
 */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
 static void sampleSetRowid(sqlite3 *db, Stat4Sample *p, int n, const u8 *pData){
   assert( db!=0 );
   if( p->nRowid ) sqlite3DbFree(db, p->u.aRowid);
@@ -330,7 +320,7 @@ static void sampleSetRowid(sqlite3 *db, Stat4Sample *p, int n, const u8 *pData){
 
 /* Initialize the INTEGER value of a ROWID.
 */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
 static void sampleSetRowidInt64(sqlite3 *db, Stat4Sample *p, i64 iRowid){
   assert( db!=0 );
   if( p->nRowid ) sqlite3DbFree(db, p->u.aRowid);
@@ -343,7 +333,7 @@ static void sampleSetRowidInt64(sqlite3 *db, Stat4Sample *p, i64 iRowid){
 /*
 ** Copy the contents of object (*pFrom) into (*pTo).
 */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
 static void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
   pTo->isPSample = pFrom->isPSample;
   pTo->iCol = pFrom->iCol;
@@ -364,7 +354,7 @@ static void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
 */
 static void stat4Destructor(void *pOld){
   Stat4Accum *p = (Stat4Accum*)pOld;
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   int i;
   for(i=0; i<p->nCol; i++) sampleClear(p->db, p->aBest+i);
   for(i=0; i<p->mxSample; i++) sampleClear(p->db, p->a+i);
@@ -384,7 +374,7 @@ static void stat4Destructor(void *pOld){
 ** WITHOUT ROWID table, N is the number of PRIMARY KEY columns, not the
 ** total number of columns in the table.
 **
-** Note 2:  C is only used for STAT3 and STAT4.
+** Note 2:  C is only used for STAT4.
 **
 ** For indexes on ordinary rowid tables, N==K+1.  But for indexes on
 ** WITHOUT ROWID tables, N=K+P where P is the number of columns in the
@@ -407,7 +397,7 @@ static void statInit(
   int nColUp;                     /* nCol rounded up for alignment */
   int n;                          /* Bytes of space to allocate */
   sqlite3 *db;                    /* Database connection */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   int mxSample = SQLITE_STAT4_SAMPLES;
 #endif
 
@@ -424,7 +414,7 @@ static void statInit(
   n = sizeof(*p) 
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anEq */
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anDLt */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anLt */
     + sizeof(Stat4Sample)*(nCol+mxSample)     /* Stat4Accum.aBest[], a[] */
     + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample)
@@ -444,7 +434,7 @@ static void statInit(
   p->current.anDLt = (tRowcnt*)&p[1];
   p->current.anEq = &p->current.anDLt[nColUp];
 
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   {
     u8 *pSpace;                     /* Allocated space not yet assigned */
     int i;                          /* Used to iterate through p->aSample[] */
@@ -479,7 +469,7 @@ static void statInit(
   sqlite3_result_blob(context, p, sizeof(*p), stat4Destructor);
 }
 static const FuncDef statInitFuncdef = {
-  2+IsStat34,      /* nArg */
+  2+IsStat4,       /* nArg */
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
@@ -519,7 +509,7 @@ static int sampleIsBetterPost(
 }
 #endif
 
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
 /*
 ** Return true if pNew is to be preferred over pOld.
 **
@@ -538,15 +528,11 @@ static int sampleIsBetter(
   assert( IsStat4 || (pNew->iCol==0 && pOld->iCol==0) );
 
   if( (nEqNew>nEqOld) ) return 1;
-#ifdef SQLITE_ENABLE_STAT4
   if( nEqNew==nEqOld ){
     if( pNew->iCol<pOld->iCol ) return 1;
     return (pNew->iCol==pOld->iCol && sampleIsBetterPost(pAccum, pNew, pOld));
   }
   return 0;
-#else
-  return (nEqNew==nEqOld && pNew->iHash>pOld->iHash);
-#endif
 }
 
 /*
@@ -559,7 +545,6 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
 
   assert( IsStat4 || nEqZero==0 );
 
-#ifdef SQLITE_ENABLE_STAT4
   /* Stat4Accum.nMaxEqZero is set to the maximum number of leading 0
   ** values in the anEq[] array of any sample in Stat4Accum.a[]. In
   ** other words, if nMaxEqZero is n, then it is guaranteed that there
@@ -593,7 +578,6 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
       goto find_new_min;
     }
   }
-#endif
 
   /* If necessary, remove sample iMin to make room for the new sample. */
   if( p->nSample>=p->mxSample ){
@@ -614,10 +598,8 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   /* The "rows less-than" for the rowid column must be greater than that
   ** for the last sample in the p->a[] array. Otherwise, the samples would
   ** be out of order. */
-#ifdef SQLITE_ENABLE_STAT4
   assert( p->nSample==0 
        || pNew->anLt[p->nCol-1] > p->a[p->nSample-1].anLt[p->nCol-1] );
-#endif
 
   /* Insert the new sample */
   pSample = &p->a[p->nSample];
@@ -627,9 +609,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   /* Zero the first nEqZero entries in the anEq[] array. */
   memset(pSample->anEq, 0, sizeof(tRowcnt)*nEqZero);
 
-#ifdef SQLITE_ENABLE_STAT4
- find_new_min:
-#endif
+find_new_min:
   if( p->nSample>=p->mxSample ){
     int iMin = -1;
     for(i=0; i<p->mxSample; i++){
@@ -642,7 +622,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     p->iMin = iMin;
   }
 }
-#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#endif /* SQLITE_ENABLE_STAT4 */
 
 /*
 ** Field iChng of the index being scanned has changed. So at this point
@@ -683,28 +663,7 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
   }
 #endif
 
-#if defined(SQLITE_ENABLE_STAT3) && !defined(SQLITE_ENABLE_STAT4)
-  if( iChng==0 ){
-    tRowcnt nLt = p->current.anLt[0];
-    tRowcnt nEq = p->current.anEq[0];
-
-    /* Check if this is to be a periodic sample. If so, add it. */
-    if( (nLt/p->nPSample)!=(nLt+nEq)/p->nPSample ){
-      p->current.isPSample = 1;
-      sampleInsert(p, &p->current, 0);
-      p->current.isPSample = 0;
-    }else 
-
-    /* Or if it is a non-periodic sample. Add it in this case too. */
-    if( p->nSample<p->mxSample 
-     || sampleIsBetter(p, &p->current, &p->a[p->iMin]) 
-    ){
-      sampleInsert(p, &p->current, 0);
-    }
-  }
-#endif
-
-#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifndef SQLITE_ENABLE_STAT4
   UNUSED_PARAMETER( p );
   UNUSED_PARAMETER( iChng );
 #endif
@@ -724,7 +683,7 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
 ** index being analyzed.  The stat_get() SQL function will later be used to
 ** extract relevant information for constructing the sqlite_statN tables.
 **
-** The R parameter is only used for STAT3 and STAT4
+** The R parameter is only used for STAT4
 */
 static void statPush(
   sqlite3_context *context,
@@ -756,14 +715,14 @@ static void statPush(
     }
     for(i=iChng; i<p->nCol; i++){
       p->current.anDLt[i]++;
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
       p->current.anLt[i] += p->current.anEq[i];
 #endif
       p->current.anEq[i] = 1;
     }
   }
   p->nRow++;
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   if( sqlite3_value_type(argv[2])==SQLITE_INTEGER ){
     sampleSetRowidInt64(p->db, &p->current, sqlite3_value_int64(argv[2]));
   }else{
@@ -796,7 +755,7 @@ static void statPush(
 #endif
 }
 static const FuncDef statPushFuncdef = {
-  2+IsStat34,      /* nArg */
+  2+IsStat4,       /* nArg */
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
@@ -827,7 +786,7 @@ static const FuncDef statPushFuncdef = {
 ** parameter will always be a poiner to a Stat4Accum object, never a
 ** NULL.
 **
-** If neither STAT3 nor STAT4 are enabled, then J is always
+** If STAT4 is not enabled, then J is always
 ** STAT_GET_STAT1 and is hence omitted and this routine becomes
 ** a one-parameter function, stat_get(P), that always returns the
 ** stat1 table entry information.
@@ -838,8 +797,8 @@ static void statGet(
   sqlite3_value **argv
 ){
   Stat4Accum *p = (Stat4Accum*)sqlite3_value_blob(argv[0]);
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  /* STAT3 and STAT4 have a parameter on this routine. */
+#ifdef SQLITE_ENABLE_STAT4
+  /* STAT4 has a parameter on this routine. */
   int eCall = sqlite3_value_int(argv[1]);
   assert( argc==2 );
   assert( eCall==STAT_GET_STAT1 || eCall==STAT_GET_NEQ 
@@ -894,7 +853,7 @@ static void statGet(
 
     sqlite3_result_text(context, zRet, -1, sqlite3_free);
   }
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   else if( eCall==STAT_GET_ROWID ){
     if( p->iGet<0 ){
       samplePushPrevious(p, 0);
@@ -923,9 +882,7 @@ static void statGet(
       }
     }
 
-    if( IsStat3 ){
-      sqlite3_result_int64(context, (i64)aCnt[0]);
-    }else{
+    {
       char *zRet = sqlite3MallocZero(p->nCol * 25);
       if( zRet==0 ){
         sqlite3_result_error_nomem(context);
@@ -942,13 +899,13 @@ static void statGet(
       }
     }
   }
-#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#endif /* SQLITE_ENABLE_STAT4 */
 #ifndef SQLITE_DEBUG
   UNUSED_PARAMETER( argc );
 #endif
 }
 static const FuncDef statGetFuncdef = {
-  1+IsStat34,      /* nArg */
+  1+IsStat4,       /* nArg */
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
@@ -961,7 +918,7 @@ static const FuncDef statGetFuncdef = {
 
 static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
   assert( regOut!=regStat4 && regOut!=regStat4+1 );
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   sqlite3VdbeAddOp2(v, OP_Integer, iParam, regStat4+1);
 #elif SQLITE_DEBUG
   assert( iParam==STAT_GET_STAT1 );
@@ -970,7 +927,7 @@ static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
 #endif
   sqlite3VdbeAddOp4(v, OP_Function0, 0, regStat4, regOut,
                     (char*)&statGetFuncdef, P4_FUNCDEF);
-  sqlite3VdbeChangeP5(v, 1 + IsStat34);
+  sqlite3VdbeChangeP5(v, 1 + IsStat4);
 }
 
 /*
@@ -997,7 +954,7 @@ static void analyzeOneTable(
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
   int regStat4 = iMem++;       /* Register to hold Stat4Accum object */
   int regChng = iMem++;        /* Index of changed index field */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   int regRowid = iMem++;       /* Rowid argument passed to stat_push() */
 #endif
   int regTemp = iMem++;        /* Temporary use register */
@@ -1131,16 +1088,16 @@ static void analyzeOneTable(
     **    (3) the number of rows in the index,
     **
     **
-    ** The third argument is only used for STAT3 and STAT4
+    ** The third argument is only used for STAT4
     */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
     sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regStat4+3);
 #endif
     sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat4+1);
     sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regStat4+2);
     sqlite3VdbeAddOp4(v, OP_Function0, 0, regStat4+1, regStat4,
                      (char*)&statInitFuncdef, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, 2+IsStat34);
+    sqlite3VdbeChangeP5(v, 2+IsStat4);
 
     /* Implementation of the following:
     **
@@ -1211,12 +1168,12 @@ static void analyzeOneTable(
   
     /*
     **  chng_addr_N:
-    **   regRowid = idx(rowid)            // STAT34 only
-    **   stat_push(P, regChng, regRowid)  // 3rd parameter STAT34 only
+    **   regRowid = idx(rowid)            // STAT4 only
+    **   stat_push(P, regChng, regRowid)  // 3rd parameter STAT4 only
     **   Next csr
     **   if !eof(csr) goto next_row;
     */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
     assert( regRowid==(regStat4+2) );
     if( HasRowid(pTab) ){
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, regRowid);
@@ -1237,7 +1194,7 @@ static void analyzeOneTable(
     assert( regChng==(regStat4+1) );
     sqlite3VdbeAddOp4(v, OP_Function0, 1, regStat4, regTemp,
                      (char*)&statPushFuncdef, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, 2+IsStat34);
+    sqlite3VdbeChangeP5(v, 2+IsStat4);
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
 
     /* Add the entry to the stat1 table. */
@@ -1251,8 +1208,8 @@ static void analyzeOneTable(
 #endif
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
 
-    /* Add the entries to the stat3 or stat4 table. */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    /* Add the entries to the stat4 table. */
+#ifdef SQLITE_ENABLE_STAT4
     {
       int regEq = regStat1;
       int regLt = regStat1+1;
@@ -1275,21 +1232,17 @@ static void analyzeOneTable(
       callStatGet(v, regStat4, STAT_GET_NDLT, regDLt);
       sqlite3VdbeAddOp4Int(v, seekOp, iTabCur, addrNext, regSampleRowid, 0);
       VdbeCoverage(v);
-#ifdef SQLITE_ENABLE_STAT3
-      sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, 0, regSample);
-#else
       for(i=0; i<nCol; i++){
         sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, i, regCol+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol, regSample);
-#endif
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regTabname, 6, regTemp);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regNewRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regTemp, regNewRowid);
       sqlite3VdbeAddOp2(v, OP_Goto, 1, addrNext); /* P1==1 for end-of-loop */
       sqlite3VdbeJumpHere(v, addrIsNull);
     }
-#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#endif /* SQLITE_ENABLE_STAT4 */
 
     /* End of analysis */
     sqlite3VdbeJumpHere(v, addrRewind);
@@ -1464,7 +1417,7 @@ static void decodeIntArray(
   int i;
   tRowcnt v;
 
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   if( z==0 ) z = "";
 #else
   assert( z!=0 );
@@ -1475,7 +1428,7 @@ static void decodeIntArray(
       v = v*10 + c - '0';
       z++;
     }
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
     if( aOut ) aOut[i] = v;
     if( aLog ) aLog[i] = sqlite3LogEst(v);
 #else
@@ -1486,7 +1439,7 @@ static void decodeIntArray(
 #endif
     if( *z==' ' ) z++;
   }
-#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifndef SQLITE_ENABLE_STAT4
   assert( pIndex!=0 ); {
 #else
   if( pIndex ){
@@ -1497,7 +1450,9 @@ static void decodeIntArray(
       if( sqlite3_strglob("unordered*", z)==0 ){
         pIndex->bUnordered = 1;
       }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
-        pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
+        int sz = sqlite3Atoi(z+3);
+        if( sz<2 ) sz = 2;
+        pIndex->szIdxRow = sqlite3LogEst(sz);
       }else if( sqlite3_strglob("noskipscan*", z)==0 ){
         pIndex->noSkipScan = 1;
       }
@@ -1551,7 +1506,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   if( pIndex ){
     tRowcnt *aiRowEst = 0;
     int nCol = pIndex->nKeyCol+1;
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
     /* Index.aiRowEst may already be set here if there are duplicate 
     ** sqlite_stat1 entries for this index. In that case just clobber
     ** the old data with the new instead of allocating a new array.  */
@@ -1587,7 +1542,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 ** and its contents.
 */
 void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   if( pIdx->aSample ){
     int j;
     for(j=0; j<pIdx->nSample; j++){
@@ -1603,10 +1558,10 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 #else
   UNUSED_PARAMETER(db);
   UNUSED_PARAMETER(pIdx);
-#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#endif /* SQLITE_ENABLE_STAT4 */
 }
 
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
 /*
 ** Populate the pIdx->aAvgEq[] array based on the samples currently
 ** stored in pIdx->aSample[]. 
@@ -1684,12 +1639,11 @@ static Index *findIndexOrPrimaryKey(
 }
 
 /*
-** Load the content from either the sqlite_stat4 or sqlite_stat3 table 
+** Load the content from either the sqlite_stat4
 ** into the relevant Index.aSample[] arrays.
 **
 ** Arguments zSql1 and zSql2 must point to SQL statements that return
-** data equivalent to the following (statements are different for stat3,
-** see the caller of this function for details):
+** data equivalent to the following:
 **
 **    zSql1: SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx
 **    zSql2: SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4
@@ -1698,7 +1652,6 @@ static Index *findIndexOrPrimaryKey(
 */
 static int loadStatTbl(
   sqlite3 *db,                  /* Database handle */
-  int bStat3,                   /* Assume single column records only */
   const char *zSql1,            /* SQL statement 1 (see above) */
   const char *zSql2,            /* SQL statement 2 (see above) */
   const char *zDb               /* Database name (e.g. "main") */
@@ -1732,17 +1685,13 @@ static int loadStatTbl(
     if( zIndex==0 ) continue;
     nSample = sqlite3_column_int(pStmt, 1);
     pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
-    assert( pIdx==0 || bStat3 || pIdx->nSample==0 );
-    /* Index.nSample is non-zero at this point if data has already been
-    ** loaded from the stat4 table. In this case ignore stat3 data.  */
-    if( pIdx==0 || pIdx->nSample ) continue;
-    if( bStat3==0 ){
-      assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
-      if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
-        nIdxCol = pIdx->nKeyCol;
-      }else{
-        nIdxCol = pIdx->nColumn;
-      }
+    assert( pIdx==0 || pIdx->nSample==0 );
+    if( pIdx==0 ) continue;
+    assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
+    if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
+      nIdxCol = pIdx->nKeyCol;
+    }else{
+      nIdxCol = pIdx->nColumn;
     }
     pIdx->nSampleCol = nIdxCol;
     nByte = sizeof(IndexSample) * nSample;
@@ -1784,9 +1733,8 @@ static int loadStatTbl(
     pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     if( pIdx==0 ) continue;
     /* This next condition is true if data has already been loaded from 
-    ** the sqlite_stat4 table. In this case ignore stat3 data.  */
+    ** the sqlite_stat4 table. */
     nCol = pIdx->nSampleCol;
-    if( bStat3 && nCol>1 ) continue;
     if( pIdx!=pPrevIdx ){
       initAvgEq(pPrevIdx);
       pPrevIdx = pIdx;
@@ -1819,7 +1767,7 @@ static int loadStatTbl(
 }
 
 /*
-** Load content from the sqlite_stat4 and sqlite_stat3 tables into 
+** Load content from the sqlite_stat4 table into 
 ** the Index.aSample[] arrays of all indices.
 */
 static int loadStat4(sqlite3 *db, const char *zDb){
@@ -1827,37 +1775,28 @@ static int loadStat4(sqlite3 *db, const char *zDb){
 
   assert( db->lookaside.bDisable );
   if( sqlite3FindTable(db, "sqlite_stat4", zDb) ){
-    rc = loadStatTbl(db, 0,
+    rc = loadStatTbl(db,
       "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
       zDb
     );
   }
-
-  if( rc==SQLITE_OK && sqlite3FindTable(db, "sqlite_stat3", zDb) ){
-    rc = loadStatTbl(db, 1,
-      "SELECT idx,count(*) FROM %Q.sqlite_stat3 GROUP BY idx", 
-      "SELECT idx,neq,nlt,ndlt,sqlite_record(sample) FROM %Q.sqlite_stat3",
-      zDb
-    );
-  }
-
   return rc;
 }
-#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#endif /* SQLITE_ENABLE_STAT4 */
 
 /*
-** Load the content of the sqlite_stat1 and sqlite_stat3/4 tables. The
+** Load the content of the sqlite_stat1 and sqlite_stat4 tables. The
 ** contents of sqlite_stat1 are used to populate the Index.aiRowEst[]
-** arrays. The contents of sqlite_stat3/4 are used to populate the
+** arrays. The contents of sqlite_stat4 are used to populate the
 ** Index.aSample[] arrays.
 **
 ** If the sqlite_stat1 table is not present in the database, SQLITE_ERROR
-** is returned. In this case, even if SQLITE_ENABLE_STAT3/4 was defined 
-** during compilation and the sqlite_stat3/4 table is present, no data is 
+** is returned. In this case, even if SQLITE_ENABLE_STAT4 was defined 
+** during compilation and the sqlite_stat4 table is present, no data is 
 ** read from it.
 **
-** If SQLITE_ENABLE_STAT3/4 was defined during compilation and the 
+** If SQLITE_ENABLE_STAT4 was defined during compilation and the 
 ** sqlite_stat4 table is not present in the database, SQLITE_ERROR is
 ** returned. However, in this case, data is read from the sqlite_stat1
 ** table (if it is present) before returning.
@@ -1885,7 +1824,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     pIdx->hasStat1 = 0;
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
     sqlite3DeleteIndexSamples(db, pIdx);
     pIdx->aSample = 0;
 #endif
@@ -1913,7 +1852,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   }
 
   /* Load the statistics from the sqlite_stat4 table. */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+#ifdef SQLITE_ENABLE_STAT4
   if( rc==SQLITE_OK ){
     db->lookaside.bDisable++;
     rc = loadStat4(db, sInfo.zDatabase);

@@ -748,6 +748,8 @@ struct WindowRewrite {
 static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
   struct WindowRewrite *p = pWalker->u.pRewrite;
   Parse *pParse = pWalker->pParse;
+  assert( p!=0 );
+  assert( p->pWin!=0 );
 
   /* If this function is being called from within a scalar sub-select
   ** that used by the SELECT statement being processed, only process
@@ -847,6 +849,7 @@ static void selectWindowRewriteEList(
   Walker sWalker;
   WindowRewrite sRewrite;
 
+  assert( pWin!=0 );
   memset(&sWalker, 0, sizeof(Walker));
   memset(&sRewrite, 0, sizeof(WindowRewrite));
 
@@ -885,7 +888,7 @@ static ExprList *exprListAppendList(
         pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
-      if( pList ) pList->a[nInit+i].sortOrder = pAppend->a[i].sortOrder;
+      if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;
     }
   }
   return pList;
@@ -931,11 +934,14 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** redundant, remove the ORDER BY from the parent SELECT.  */
     pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
     pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy, 1);
-    if( pSort && p->pOrderBy ){
+    if( pSort && p->pOrderBy && p->pOrderBy->nExpr<=pSort->nExpr ){
+      int nSave = pSort->nExpr;
+      pSort->nExpr = p->pOrderBy->nExpr;
       if( sqlite3ExprListCompare(pSort, p->pOrderBy, -1)==0 ){
         sqlite3ExprListDelete(db, p->pOrderBy);
         p->pOrderBy = 0;
       }
+      pSort->nExpr = nSave;
     }
 
     /* Assign a cursor number for the ephemeral table used to buffer rows.
@@ -959,8 +965,15 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** window function - one for the accumulator, another for interim
     ** results.  */
     for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
-      pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
-      pSublist = exprListAppendList(pParse, pSublist, pWin->pOwner->x.pList, 0);
+      ExprList *pArgs = pWin->pOwner->x.pList;
+      if( pWin->pFunc->funcFlags & SQLITE_FUNC_SUBTYPE ){
+        selectWindowRewriteEList(pParse, pMWin, pSrc, pArgs, pTab, &pSublist);
+        pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+        pWin->bExprArgs = 1;
+      }else{
+        pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
+        pSublist = exprListAppendList(pParse, pSublist, pArgs, 0);
+      }
       if( pWin->pFilter ){
         Expr *pFilter = sqlite3ExprDup(db, pWin->pFilter, 0);
         pSublist = sqlite3ExprListAppend(pParse, pSublist, pFilter);
@@ -991,7 +1004,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded;
-      pTab2 = sqlite3ResultSetOfSelect(pParse, pSub);
+      pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_NONE);
       if( pTab2==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -1015,10 +1028,23 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
 }
 
 /*
+** Unlink the Window object from the Select to which it is attached,
+** if it is attached.
+*/
+void sqlite3WindowUnlinkFromSelect(Window *p){
+  if( p->ppThis ){
+    *p->ppThis = p->pNextWin;
+    if( p->pNextWin ) p->pNextWin->ppThis = p->ppThis;
+    p->ppThis = 0;
+  }
+}
+
+/*
 ** Free the Window object passed as the second argument.
 */
 void sqlite3WindowDelete(sqlite3 *db, Window *p){
   if( p ){
+    sqlite3WindowUnlinkFromSelect(p);
     sqlite3ExprDelete(db, p->pFilter);
     sqlite3ExprListDelete(db, p->pPartition);
     sqlite3ExprListDelete(db, p->pOrderBy);
@@ -1196,17 +1222,14 @@ void sqlite3WindowChain(Parse *pParse, Window *pWin, Window *pList){
 void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
     assert( p->op==TK_FUNCTION );
-    /* This routine is only called for the parser.  If pWin was not
-    ** allocated due to an OOM, then the parser would fail before ever
-    ** invoking this routine */
-    if( ALWAYS(pWin) ){
-      p->y.pWin = pWin;
-      ExprSetProperty(p, EP_WinFunc);
-      pWin->pOwner = p;
-      if( p->flags & EP_Distinct ){
-        sqlite3ErrorMsg(pParse,
-           "DISTINCT is not supported for window functions");
-      }
+    assert( pWin );
+    p->y.pWin = pWin;
+    ExprSetProperty(p, EP_WinFunc);
+    pWin->pOwner = p;
+    if( (p->flags & EP_Distinct) && pWin->eFrmType!=TK_FILTER ){
+      sqlite3ErrorMsg(pParse,
+          "DISTINCT is not supported for window functions"
+      );
     }
   }else{
     sqlite3WindowDelete(pParse->db, pWin);
@@ -1214,10 +1237,29 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
 }
 
 /*
+** Possibly link window pWin into the list at pSel->pWin (window functions
+** to be processed as part of SELECT statement pSel). The window is linked
+** in if either (a) there are no other windows already linked to this
+** SELECT, or (b) the windows already linked use a compatible window frame.
+*/
+void sqlite3WindowLink(Select *pSel, Window *pWin){
+  if( 0==pSel->pWin 
+   || 0==sqlite3WindowCompare(0, pSel->pWin, pWin, 0)
+  ){
+    pWin->pNextWin = pSel->pWin;
+    if( pSel->pWin ){
+      pSel->pWin->ppThis = &pWin->pNextWin;
+    }
+    pSel->pWin = pWin;
+    pWin->ppThis = &pSel->pWin;
+  }
+}
+
+/*
 ** Return 0 if the two window objects are identical, or non-zero otherwise.
 ** Identical window objects can be processed in a single scan.
 */
-int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
+int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
   if( p1->eFrmType!=p2->eFrmType ) return 1;
   if( p1->eStart!=p2->eStart ) return 1;
   if( p1->eEnd!=p2->eEnd ) return 1;
@@ -1226,6 +1268,9 @@ int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2){
   if( sqlite3ExprCompare(pParse, p1->pEnd, p2->pEnd, -1) ) return 1;
   if( sqlite3ExprListCompare(p1->pPartition, p2->pPartition, -1) ) return 1;
   if( sqlite3ExprListCompare(p1->pOrderBy, p2->pOrderBy, -1) ) return 1;
+  if( bFilter ){
+    if( sqlite3ExprCompare(pParse, p1->pFilter, p2->pFilter, -1) ) return 1;
+  }
   return 0;
 }
 
@@ -1277,8 +1322,8 @@ void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
       pWin->regApp = pParse->nMem+1;
       pParse->nMem += 3;
       if( pKeyInfo && pWin->pFunc->zName[1]=='i' ){
-        assert( pKeyInfo->aSortOrder[0]==0 );
-        pKeyInfo->aSortOrder[0] = 1;
+        assert( pKeyInfo->aSortFlags[0]==0 );
+        pKeyInfo->aSortFlags[0] = KEYINFO_ORDER_DESC;
       }
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pWin->csrApp, 2);
       sqlite3VdbeAppendP4(v, pKeyInfo, P4_KEYINFO);
@@ -1394,8 +1439,10 @@ static void windowAggStep(
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *pFunc = pWin->pFunc;
     int regArg;
-    int nArg = windowArgCount(pWin);
+    int nArg = pWin->bExprArgs ? 0 : windowArgCount(pWin);
     int i;
+
+    assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
 
     for(i=0; i<nArg; i++){
       if( i!=1 || pFunc->zName!=nth_valueName ){
@@ -1434,13 +1481,28 @@ static void windowAggStep(
       int addrIf = 0;
       if( pWin->pFilter ){
         int regTmp;
-        assert( nArg==0 || nArg==pWin->pOwner->x.pList->nExpr );
-        assert( nArg || pWin->pOwner->x.pList==0 );
+        assert( pWin->bExprArgs || !nArg ||nArg==pWin->pOwner->x.pList->nExpr );
+        assert( pWin->bExprArgs || nArg  ||pWin->pOwner->x.pList==0 );
         regTmp = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+nArg,regTmp);
         addrIf = sqlite3VdbeAddOp3(v, OP_IfNot, regTmp, 0, 1);
         VdbeCoverage(v);
         sqlite3ReleaseTempReg(pParse, regTmp);
+      }
+      if( pWin->bExprArgs ){
+        int iStart = sqlite3VdbeCurrentAddr(v);
+        VdbeOp *pOp, *pEnd;
+
+        nArg = pWin->pOwner->x.pList->nExpr;
+        regArg = sqlite3GetTempRange(pParse, nArg);
+        sqlite3ExprCodeExprList(pParse, pWin->pOwner->x.pList, regArg, 0, 0);
+
+        pEnd = sqlite3VdbeGetOp(v, -1);
+        for(pOp=sqlite3VdbeGetOp(v, iStart); pOp<=pEnd; pOp++){
+          if( pOp->opcode==OP_Column && pOp->p1==pWin->iEphCsr ){
+            pOp->p1 = csr;
+          }
+        }
       }
       if( pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         CollSeq *pColl;
@@ -1452,6 +1514,9 @@ static void windowAggStep(
                         bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nArg);
+      if( pWin->bExprArgs ){
+        sqlite3ReleaseTempRange(pParse, regArg, nArg);
+      }
       if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
     }
   }
@@ -1459,19 +1524,78 @@ static void windowAggStep(
 
 typedef struct WindowCodeArg WindowCodeArg;
 typedef struct WindowCsrAndReg WindowCsrAndReg;
+
+/*
+** See comments above struct WindowCodeArg.
+*/
 struct WindowCsrAndReg {
-  int csr;
-  int reg;
+  int csr;                        /* Cursor number */
+  int reg;                        /* First in array of peer values */
 };
 
+/*
+** A single instance of this structure is allocated on the stack by 
+** sqlite3WindowCodeStep() and a pointer to it passed to the various helper
+** routines. This is to reduce the number of arguments required by each
+** helper function.
+**
+** regArg:
+**   Each window function requires an accumulator register (just as an
+**   ordinary aggregate function does). This variable is set to the first
+**   in an array of accumulator registers - one for each window function
+**   in the WindowCodeArg.pMWin list.
+**
+** eDelete:
+**   The window functions implementation sometimes caches the input rows
+**   that it processes in a temporary table. If it is not zero, this
+**   variable indicates when rows may be removed from the temp table (in
+**   order to reduce memory requirements - it would always be safe just
+**   to leave them there). Possible values for eDelete are:
+**
+**      WINDOW_RETURN_ROW:
+**        An input row can be discarded after it is returned to the caller.
+**
+**      WINDOW_AGGINVERSE:
+**        An input row can be discarded after the window functions xInverse()
+**        callbacks have been invoked in it.
+**
+**      WINDOW_AGGSTEP:
+**        An input row can be discarded after the window functions xStep()
+**        callbacks have been invoked in it.
+**
+** start,current,end
+**   Consider a window-frame similar to the following:
+**
+**     (ORDER BY a, b GROUPS BETWEEN 2 PRECEDING AND 2 FOLLOWING)
+**
+**   The windows functions implmentation caches the input rows in a temp
+**   table, sorted by "a, b" (it actually populates the cache lazily, and
+**   aggressively removes rows once they are no longer required, but that's
+**   a mere detail). It keeps three cursors open on the temp table. One
+**   (current) that points to the next row to return to the query engine
+**   once its window function values have been calculated. Another (end)
+**   points to the next row to call the xStep() method of each window function
+**   on (so that it is 2 groups ahead of current). And a third (start) that
+**   points to the next row to call the xInverse() method of each window
+**   function on.
+**
+**   Each cursor (start, current and end) consists of a VDBE cursor
+**   (WindowCsrAndReg.csr) and an array of registers (starting at
+**   WindowCodeArg.reg) that always contains a copy of the peer values 
+**   read from the corresponding cursor.
+**
+**   Depending on the window-frame in question, all three cursors may not
+**   be required. In this case both WindowCodeArg.csr and reg are set to
+**   0.
+*/
 struct WindowCodeArg {
-  Parse *pParse;
-  Window *pMWin;
-  Vdbe *pVdbe;
-  int regGosub;
-  int addrGosub;
-  int regArg;
-  int eDelete;
+  Parse *pParse;             /* Parse context */
+  Window *pMWin;             /* First in list of functions being processed */
+  Vdbe *pVdbe;               /* VDBE object */
+  int addrGosub;             /* OP_Gosub to this address to return one row */
+  int regGosub;              /* Register used with OP_Gosub(addrGosub) */
+  int regArg;                /* First in array of accumulator registers */
+  int eDelete;               /* See above */
 
   WindowCsrAndReg start;
   WindowCsrAndReg current;
@@ -1567,8 +1691,10 @@ static void windowFullScan(WindowCodeArg *p){
   int lblNext;
   int lblBrk;
   int addrNext;
-  int csr = pMWin->csrApp;
+  int csr;
 
+  assert( pMWin!=0 );
+  csr = pMWin->csrApp;
   nPeer = (pMWin->pOrderBy ? pMWin->pOrderBy->nExpr : 0);
 
   lblNext = sqlite3VdbeMakeLabel(pParse);
@@ -1812,34 +1938,46 @@ static void windowIfNewPeer(
 /*
 ** This function is called as part of generating VM programs for RANGE
 ** offset PRECEDING/FOLLOWING frame boundaries. Assuming "ASC" order for
-** the ORDER BY term in the window, it generates code equivalent to:
+** the ORDER BY term in the window, and that argument op is OP_Ge, it generates
+** code equivalent to:
 **
 **   if( csr1.peerVal + regVal >= csr2.peerVal ) goto lbl;
 **
-** A special type of arithmetic is used such that if csr.peerVal is not
-** a numeric type (real or integer), then the result of the addition is
-** a copy of csr1.peerVal.
+** The value of parameter op may also be OP_Gt or OP_Le. In these cases the
+** operator in the above pseudo-code is replaced with ">" or "<=", respectively.
+**
+** If the sort-order for the ORDER BY term in the window is DESC, then the
+** comparison is reversed. Instead of adding regVal to csr1.peerVal, it is
+** subtracted. And the comparison operator is inverted to - ">=" becomes "<=",
+** ">" becomes "<", and so on. So, with DESC sort order, if the argument op
+** is OP_Ge, the generated code is equivalent to:
+**
+**   if( csr1.peerVal - regVal <= csr2.peerVal ) goto lbl;
+**
+** A special type of arithmetic is used such that if csr1.peerVal is not
+** a numeric type (real or integer), then the result of the addition addition
+** or subtraction is a a copy of csr1.peerVal.
 */
 static void windowCodeRangeTest(
   WindowCodeArg *p, 
-  int op,                          /* OP_Ge or OP_Gt */
-  int csr1, 
-  int regVal, 
-  int csr2,
-  int lbl
+  int op,                         /* OP_Ge, OP_Gt, or OP_Le */
+  int csr1,                       /* Cursor number for cursor 1 */
+  int regVal,                     /* Register containing non-negative number */
+  int csr2,                       /* Cursor number for cursor 2 */
+  int lbl                         /* Jump destination if condition is true */
 ){
   Parse *pParse = p->pParse;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int reg1 = sqlite3GetTempReg(pParse);
-  int reg2 = sqlite3GetTempReg(pParse);
-  int arith = OP_Add;
-  int addrGe;
-
-  int regString = ++pParse->nMem;
+  ExprList *pOrderBy = p->pMWin->pOrderBy;  /* ORDER BY clause for window */
+  int reg1 = sqlite3GetTempReg(pParse);     /* Reg. for csr1.peerVal+regVal */
+  int reg2 = sqlite3GetTempReg(pParse);     /* Reg. for csr2.peerVal */
+  int regString = ++pParse->nMem;           /* Reg. for constant value '' */
+  int arith = OP_Add;                       /* OP_Add or OP_Subtract */
+  int addrGe;                               /* Jump destination */
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
-  assert( p->pMWin->pOrderBy && p->pMWin->pOrderBy->nExpr==1 );
-  if( p->pMWin->pOrderBy->a[0].sortOrder ){
+  assert( pOrderBy && pOrderBy->nExpr==1 );
+  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_DESC ){
     switch( op ){
       case OP_Ge: op = OP_Le; break;
       case OP_Gt: op = OP_Lt; break;
@@ -1848,27 +1986,95 @@ static void windowCodeRangeTest(
     arith = OP_Subtract;
   }
 
+  /* Read the peer-value from each cursor into a register */
   windowReadPeerValues(p, csr1, reg1);
   windowReadPeerValues(p, csr2, reg2);
 
-  /* Check if the peer value for csr1 value is a text or blob by comparing
-  ** it to the smallest possible string - ''. If it is, jump over the
-  ** OP_Add or OP_Subtract operation and proceed directly to the comparison. */
+  VdbeModuleComment((v, "CodeRangeTest: if( R%d %s R%d %s R%d ) goto lbl",
+      reg1, (arith==OP_Add ? "+" : "-"), regVal,
+      ((op==OP_Ge) ? ">=" : (op==OP_Le) ? "<=" : (op==OP_Gt) ? ">" : "<"), reg2
+  ));
+
+  /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
+  ** This block adds (or subtracts for DESC) the numeric value in regVal
+  ** from it. Or, if reg1 is not numeric (it is a NULL, a text value or a blob),
+  ** then leave reg1 as it is. In pseudo-code, this is implemented as:
+  **
+  **   if( reg1>='' ) goto addrGe;
+  **   reg1 = reg1 +/- regVal
+  **   addrGe:
+  **
+  ** Since all strings and blobs are greater-than-or-equal-to an empty string,
+  ** the add/subtract is skipped for these, as required. If reg1 is a NULL,
+  ** then the arithmetic is performed, but since adding or subtracting from
+  ** NULL is always NULL anyway, this case is handled as required too.  */
   sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
   addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
   VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
   sqlite3VdbeJumpHere(v, addrGe);
+
+  /* If the BIGNULL flag is set for the ORDER BY, then it is required to 
+  ** consider NULL values to be larger than all other values, instead of 
+  ** the usual smaller. The VDBE opcodes OP_Ge and so on do not handle this
+  ** (and adding that capability causes a performance regression), so
+  ** instead if the BIGNULL flag is set then cases where either reg1 or
+  ** reg2 are NULL are handled separately in the following block. The code
+  ** generated is equivalent to:
+  **
+  **   if( reg1 IS NULL ){
+  **     if( op==OP_Ge ) goto lbl;
+  **     if( op==OP_Gt && reg2 IS NOT NULL ) goto lbl;
+  **     if( op==OP_Le && reg2 IS NULL ) goto lbl;
+  **   }else if( reg2 IS NULL ){
+  **     if( op==OP_Le ) goto lbl;
+  **   }
+  **
+  ** Additionally, if either reg1 or reg2 are NULL but the jump to lbl is 
+  ** not taken, control jumps over the comparison operator coded below this
+  ** block.  */
+  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_BIGNULL ){
+    /* This block runs if reg1 contains a NULL. */
+    int addr = sqlite3VdbeAddOp1(v, OP_NotNull, reg1); VdbeCoverage(v);
+    switch( op ){
+      case OP_Ge: 
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, lbl); 
+        break;
+      case OP_Gt: 
+        sqlite3VdbeAddOp2(v, OP_NotNull, reg2, lbl); 
+        VdbeCoverage(v); 
+        break;
+      case OP_Le: 
+        sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); 
+        VdbeCoverage(v); 
+        break;
+      default: assert( op==OP_Lt ); /* no-op */ break;
+    }
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
+
+    /* This block runs if reg1 is not NULL, but reg2 is. */
+    sqlite3VdbeJumpHere(v, addr);
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
+    if( op==OP_Gt || op==OP_Ge ){
+      sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+    }
+  }
+
+  /* Compare registers reg2 and reg1, taking the jump if required. Note that
+  ** control skips over this test if the BIGNULL flag is set and either
+  ** reg1 or reg2 contain a NULL value.  */
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+
   assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );
   testcase(op==OP_Ge); VdbeCoverageIf(v, op==OP_Ge);
   testcase(op==OP_Lt); VdbeCoverageIf(v, op==OP_Lt);
   testcase(op==OP_Le); VdbeCoverageIf(v, op==OP_Le);
   testcase(op==OP_Gt); VdbeCoverageIf(v, op==OP_Gt);
-
   sqlite3ReleaseTempReg(pParse, reg1);
   sqlite3ReleaseTempReg(pParse, reg2);
+
+  VdbeModuleComment((v, "CodeRangeTest: end"));
 }
 
 /*
@@ -2009,6 +2215,7 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
     pNew = sqlite3DbMallocZero(db, sizeof(Window));
     if( pNew ){
       pNew->zName = sqlite3DbStrDup(db, p->zName);
+      pNew->zBase = sqlite3DbStrDup(db, p->zBase);
       pNew->pFilter = sqlite3ExprDup(db, p->pFilter, 0);
       pNew->pFunc = p->pFunc;
       pNew->pPartition = sqlite3ExprListDup(db, p->pPartition, 0);
@@ -2017,9 +2224,11 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
       pNew->eEnd = p->eEnd;
       pNew->eStart = p->eStart;
       pNew->eExclude = p->eExclude;
+      pNew->regResult = p->regResult;
       pNew->pStart = sqlite3ExprDup(db, p->pStart, 0);
       pNew->pEnd = sqlite3ExprDup(db, p->pEnd, 0);
       pNew->pOwner = pOwner;
+      pNew->bImplicitFrame = p->bImplicitFrame;
     }
   }
   return pNew;
@@ -2563,7 +2772,7 @@ void sqlite3WindowCodeStep(
     windowCheckValue(pParse, regEnd, 1 + (pMWin->eFrmType==TK_RANGE ? 3 : 0));
   }
 
-  if( pMWin->eStart==pMWin->eEnd && regStart ){
+  if( pMWin->eFrmType!=TK_RANGE && pMWin->eStart==pMWin->eEnd && regStart ){
     int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
     int addrGe = sqlite3VdbeAddOp3(v, op, regStart, 0, regEnd);
     VdbeCoverageNeverNullIf(v, op==OP_Ge); /* NeverNull because bound <expr> */

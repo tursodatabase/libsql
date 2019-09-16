@@ -856,7 +856,6 @@ do_test alter-14.2 {
 set system_table_list {1 sqlite_master}
 catchsql ANALYZE
 ifcapable analyze { lappend system_table_list 2 sqlite_stat1 }
-ifcapable stat3   { lappend system_table_list 3 sqlite_stat3 }
 ifcapable stat4   { lappend system_table_list 4 sqlite_stat4 }
 
 foreach {tn tbl} $system_table_list {

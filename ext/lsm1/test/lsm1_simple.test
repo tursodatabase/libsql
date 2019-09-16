@@ -88,6 +88,65 @@ do_execsql_test 210 {
 do_execsql_test 211 {
   SELECT quote(a), quote(lsm1_key), quote(lsm1_value), '|' FROM x1;
 } {'12' X'3132' X'05320000000000000A401FFB42ABE9DB' | '15' X'3135' X'4284C6' | '8' X'38' X'2162616E6A6F1633323105' |}
+do_execsql_test 212 {
+  SELECT quote(a), quote(lsm1_key), quote(lsm1_value) FROM x1 WHERE a='12';
+} {'12' X'3132' X'05320000000000000A401FFB42ABE9DB'}
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete testlsm.db
+load_lsm1_vtab db
+do_execsql_test 300 {
+  CREATE VIRTUAL TABLE x1 USING lsm1(testlsm.db,a,TEXT,b,c,d);
+}
+do_eqp_test 310 {
+  SELECT * FROM x1 WHERE a=?
+} {SCAN TABLE x1 VIRTUAL TABLE INDEX 0:}
+
+do_eqp_test 320 {
+  SELECT * FROM x1 WHERE a>?
+} {SCAN TABLE x1 VIRTUAL TABLE INDEX 2:}
+
+do_eqp_test 330 {
+  SELECT * FROM x1 WHERE a<?
+} {SCAN TABLE x1 VIRTUAL TABLE INDEX 3:}
+do_eqp_test 340 {
+  SELECT * FROM x1 WHERE a BETWEEN ? AND ?
+} {SCAN TABLE x1 VIRTUAL TABLE INDEX 1:}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete testlsm.db
+load_lsm1_vtab db
+do_execsql_test 400 {
+  CREATE VIRTUAL TABLE x1 USING lsm1(testlsm.db,a,TEXT,b);
+  INSERT INTO x1 VALUES('one', 1);
+  INSERT INTO x1 VALUES('two', 2);
+  INSERT INTO x1 VALUES('three', 3);
+  INSERT INTO x1 VALUES('four', 4);
+  INSERT INTO x1 VALUES('five', 5);
+}
+do_execsql_test 410 {
+  SELECT b FROM x1 WHERE a = 'two'
+} {2}
+do_execsql_test 411 {
+  SELECT b FROM x1 WHERE a = 'one'
+} {1}
+do_execsql_test 412 {
+  SELECT b FROM x1 WHERE a = 'five'
+} {5}
+
+do_execsql_test 420 {
+  SELECT b FROM x1 WHERE a BETWEEN 'one' AND 'three';
+} {1 3}
+do_execsql_test 421 {
+  SELECT b FROM x1 WHERE a BETWEEN 'five' AND 'two';
+} {5 4 1 3 2}
+do_execsql_test 421 {
+  SELECT b FROM x1 WHERE a > 'five';
+} {4 1 3 2}
+do_execsql_test 421 {
+  SELECT b FROM x1 WHERE a <= 'three';
+} {3 1 4 5}
 
 finish_test

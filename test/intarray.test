@@ -47,12 +47,12 @@ do_test intarray-1.1 {
   }
 } {table ia1 table ia2 table ia3 table ia4}
 
-# Verify the inability to DROP and recreate an intarray virtual table.
+# Verify the ability to DROP and recreate an intarray virtual table.
 do_test intarray-1.1b {
   db eval {DROP TABLE ia1}
-  set rc [catch {sqlite3_intarray_create db ia1} msg]
-  lappend rc $msg
-} {1 SQLITE_MISUSE}
+  set rc [catch {sqlite3_intarray_create db ia1} ia1]
+  lappend rc $ia1
+} {/0 [0-9A-Z]+/} 
 
 do_test intarray-1.2 {
   db eval {
