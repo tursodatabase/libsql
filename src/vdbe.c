@@ -483,6 +483,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       c = 's';
     }
     *(zCsr++) = c;
+    *(zCsr++) = 'x';
     sqlite3_snprintf(100, zCsr, "%d[", pMem->n);
     zCsr += sqlite3Strlen30(zCsr);
     for(i=0; i<25 && i<pMem->n; i++){
