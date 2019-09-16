@@ -202,4 +202,32 @@ ifcapable json1 {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE x(a);
+  INSERT INTO x VALUES(1);
+  INSERT INTO x VALUES(2);
+}
+
+do_execsql_test 4.1 {
+  WITH y AS (
+      SELECT Row_Number() OVER (win) FROM x WINDOW win AS (PARTITION BY a)
+  )
+  SELECT * FROM y;
+} {
+  1 1
+}
+
+do_catchsql_test 4.2 {
+  WITH y AS (
+    SELECT Row_Number() OVER (win) FROM x WINDOW win AS (PARTITION
+  BY fake_column))
+  SELECT * FROM y;
+} {1 {no such column: fake_column}}
+
+do_catchsql_test 4.3 {
+  SELECT 1 WINDOW win AS (PARTITION BY fake_column);
+} {0 1}
+
 finish_test
