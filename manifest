@@ -1,5 +1,5 @@
-C Fix\sthe\sinstr()\sSQL\sfunction\sso\sthat\sit\smakes\sa\scopy\sof\sits\sargument\nbefore\schanging\sthe\sdatatype,\ssince\sthe\sdatatype\saffects\sprocessing.\nAlso\sfix\sthe\ssqlite3_value_text()\sroutine\sso\sthat\sit\salways\sworks\seven\nfor\svalues\sobtained\sform\ssqlite3_value_dup().\s\sTicket\s[587791f92620090e]
-D 2019-09-17T03:16:29.557
+C Test\scases\sfor\sticket\s[587791f92620090e]
+D 2019-09-17T13:30:30.042
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1064,7 +1064,7 @@ F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 7802ada6ba8738661b9f6c0e26858d3375b40cc7180289fd350644cd7a08fec9
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/insertfault.test ac63d14ea3b49c573673a572f4014b9117383a03e497c58f308b5c776e4a7f74
-F test/instr.test 9a8802f28437d8ade53fedfc47b2ca599b4e48ba
+F test/instr.test 107df2b9b74a4b59315916b575590a08f2a714de0754abe541f10a0971d0a2a4
 F test/instrfault.test 0f870b218ea17cd477bb19ed330eecdb460dd53a
 F test/intarray.test bb976b0b3df0ebb6a2eddfb61768280440e672beba5460ed49679ea984ccf440
 F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
@@ -1843,7 +1843,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee83d8e30d6f9ca8f1cce653ee094ff151f633f4b6a21dd814ab07e8cfb901eb
-R 6e3381f871ce2b10dafa18243e3574b7
+P 3fb40f518086c1e8d11eb1f4134e965450dbedfa4277bce39ef1e969fc747d38
+R b1f1aee5d80a00b64f9bdcc5f690f233
 U drh
-Z 4f1601976647ddb4980916cd3d87db80
+Z 26d9bd3694444bebb0e9c4bcb8e628a0
