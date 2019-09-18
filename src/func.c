@@ -224,14 +224,15 @@ static void instrFunc(
     }else{
       pC1 = sqlite3_value_dup(argv[0]);
       zHaystack = sqlite3_value_text(pC1);
+      if( zHaystack==0 ) goto endInstrOOM;
+      nHaystack = sqlite3_value_bytes(pC1);
       pC2 = sqlite3_value_dup(argv[1]);
       zNeedle = sqlite3_value_text(pC2);
+      if( zNeedle==0 ) goto endInstrOOM;
+      nNeedle = sqlite3_value_bytes(pC2);
       isText = 1;
     }
-    if( zNeedle==0 || (nHaystack && zHaystack==0) ){
-      sqlite3_result_error_nomem(context);
-      goto endInstr;
-    }
+    if( zNeedle==0 || (nHaystack && zHaystack==0) ) goto endInstrOOM;
     firstChar = zNeedle[0];
     while( nNeedle<=nHaystack
        && (zHaystack[0]!=firstChar || memcmp(zHaystack, zNeedle, nNeedle)!=0)
@@ -248,6 +249,10 @@ static void instrFunc(
 endInstr:
   sqlite3_value_free(pC1);
   sqlite3_value_free(pC2);
+  return;
+endInstrOOM:
+  sqlite3_result_error_nomem(context);
+  goto endInstr;
 }
 
 /*

@@ -1,5 +1,5 @@
-C Do\snot\schange\sthe\sOP_String8\sopcode\sinto\sOP_String\suntil\s*after*\sany\snecessary\nencoding\sconversions\sare\saccomplished.\s\sOtherwise,\sa\srerun\sof\sthe\sprepared\nstatement\safter\san\sOOM\scan\sresult\sin\serrors.\s\sTest\scase\sin\sTH3.
-D 2019-09-17T21:28:54.299
+C Fix\san\sOOB\sread\sin\sthe\sINSTR()\sfunction\sintroduced\syesterday\sby\scheck-in\n[3fb40f518086c1e8]\sand\sdetected\sby\sOSSFuzz.\s\sThe\stest\scase\sis\sin\sTH3.
+D 2019-09-18T11:16:46.746
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -480,7 +480,7 @@ F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
 F src/expr.c 10d90c4676047a75276446779d18fb3f7d3a1f9debc8b322e3772d2bd51f52ff
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
-F src/func.c 6960ca6a27460a699326b95484cb7be4d4ab14869a13a356b98e6b379b4f02ed
+F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
 F src/global.c d7a7a45a78ffe01302d61c271ed50474ef1b9d2d23bf17a46a58c8a1926424ee
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -1843,7 +1843,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca0e3a83a1c015b346a791e6de03904d17a769c52dad0e3d71316c6e2e3f43c7
-R 866d8adbd61fc679f06fee72b3559073
+P 8efd62594eae725decb719aa7777c020f982b7cdc2c92bab3b91bf349a5bc298
+R 431408151c37d31940c066595410ddd1
 U drh
-Z db7f034917f5bb87fce10d35d987b391
+Z 5665dc98d3906b367de82046e4130f9d
