@@ -1,5 +1,5 @@
-C Fix\sa\s"jump\sdepends\son\sunititialized\svalue"\svalgrind\serror\sin\sfts5\striggered\sby\scorrupt\sdatabase\srecords.
-D 2019-09-18T11:46:34.693
+C Fix\sanother\spotential\s"jump\sdepends\son\suninitialized\svalue"\swarning.
+D 2019-09-18T12:49:34.640
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -611,7 +611,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c 9685d5988b79b93ebbe46941fbdb60d14861bb0fe3f9126117ef1753acc69b64
+F src/where.c 9f3f23efc45934e7b7ea6c0c1042420b73053e7c3264feef6faf9ce6fbd5df61
 F src/whereInt.h 2c6bae136a7c0be6ff75dc36950d1968c67d005c8e51d7a9d77cb996bb4843d9
 F src/wherecode.c 535c8e228478fd971b9a5b6cb6773995b0fbf7020d5989508a5094ce5b8cd95b
 F src/whereexpr.c 05c283d26aa9c3f5d1bf13a5f6a573b43295b9db280eff18e26f97d7d7f119b4
@@ -1843,7 +1843,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d49047c1b59bbfd05204af9973cdb0fab51b4d2661b550aec10d917fff94dc9b
-R 76d868b34d9dbceb50c1843094f8fdab
-U dan
-Z dddbdb390f85df0ea460f9032003892c
+P 6b6751cd90601a1e2744a7d233c973291ecb783801b9327c3b99734dd22bcd27
+R 39f4c49b1d971b37d5debc3cff8816be
+U drh
+Z 4e00b5b9f0887b14370b7b315536a388
