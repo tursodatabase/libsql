@@ -5343,7 +5343,6 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
   int i;
   int regHit = 0;
   int addrHitTest = 0;
-  int bFilterMinMax = 0;
   struct AggInfo_func *pF;
   struct AggInfo_col *pC;
 
@@ -5360,12 +5359,14 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
       if( pAggInfo->nAccumulator 
        && (pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL) 
       ){
-        bFilterMinMax = 1;
         if( regHit==0 ) regHit = ++pParse->nMem;
         /* If this is the first row of the group (regAcc==0), clear the
         ** "magnet" register regHit so that the accumulator registers
-        ** are populated even if the FILTER clause causes control to
-        ** skip over the invocation of min() or max() altogether */
+        ** are populated if the FILTER clause jumps over the the 
+        ** invocation of min() or max() altogether. Or, if this is not
+        ** the first row (regAcc==1), set the magnet register so that the
+        ** accumulators are not populated unless the min()/max() is invoked and
+        ** indicates that they should be.  */
         sqlite3VdbeAddOp2(v, OP_Copy, regAcc, regHit);
       }
       addrNext = sqlite3VdbeMakeLabel(pParse);
@@ -5417,12 +5418,6 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
-  }
-  if( bFilterMinMax ){
-    /* If there is a min() or max() with a FILTER clause, then ensure that
-    ** the "magnet" register is set to indicate "do not attract" after
-    ** loading column values into the accumulator registers */
-    sqlite3VdbeAddOp2(v, OP_Integer, 1, regHit);
   }
 
   pAggInfo->directMode = 0;
