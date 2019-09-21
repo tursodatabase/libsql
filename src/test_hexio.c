@@ -393,7 +393,6 @@ static int SQLITE_TCLAPI make_fts3record(
   int nOut = 0;
   int nAlloc = 0;
   int i;
-  int rc = TCL_OK;
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "LIST");

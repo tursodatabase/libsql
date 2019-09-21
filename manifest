@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2019-09-21T17:31:03.751
+C Fix\sa\sharmless\sunused\svariable\swarning\sin\sthe\stest\slogic.
+D 2019-09-21T18:49:12.118
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -556,7 +556,7 @@ F src/test_demovfs.c 86142ba864d4297d54c5b2e972e74f3141ae4b30f05b3a95824184ed2d3
 F src/test_devsym.c 6109b45c3db3ef7b002320947ed448c027356ab8b885156ff535fd8684d4a571
 F src/test_fs.c ba1e1dc18fd3159fdba0b9c4256f14032159785320dfbd6776eb9973cb75d480
 F src/test_func.c 181f992e5495644434c4f0e3cc72362a78c295eb2cf3ff4d02498b8bde7aa276
-F src/test_hexio.c 06db03d27d831e487423da0e9d52e6e53c714e52f53e20670aaf47fc6e70f49b
+F src/test_hexio.c d170d0e1a6431afdeac086a250d2595078288c2257615d37949355361399bcaa
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
 F src/test_intarray.c 39b4181662a0f33a427748d87218e7578d913e683dc27eab7098bb41617cac71
 F src/test_intarray.h d57ae92f420cda25e22790dac474d60961bd0c500cbaa3338a05152d4a669ef7
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20f7951bb238ddc0b8932a55145df426b6fdf7b8631e069345902c853c90f191
-R c52711fcaf249ac6e7fe9562189271f0
+P 8ea1dc727d391b15d0c4fa858ff68d5b8a63dde46408f24027dac8d28f044cbd
+R be5ce192806a9e963f455d9aef6bc0f5
 U drh
-Z b7e3cb6f50d76663f3ab01f529c279d9
+Z fafa17afd0f2222ef667d270811b7f4a
