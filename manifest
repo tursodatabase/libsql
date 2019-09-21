@@ -1,5 +1,5 @@
-C Simplify\sthe\sfix\sin\sthe\sprevious\scommit.
-D 2019-09-20T21:12:40.662
+C Add\s--multithread,\s--serialized,\sand\s--singlethread\soptions\sto\sthe\nspeed-check.sh\stest\sscript.
+D 2019-09-21T13:34:59.582
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1802,7 +1802,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 4bfd19aad7eb3ce0372ef0255f58035e0bba4ff5e9acfd763a10c6fb365c8dec
-F tool/speed-check.sh 27c7fe178d5b2f7c90a04a127907acda0bfe637fa85b13c43e03e5ed39b008b6
+F tool/speed-check.sh 2b042d703a9472f08c3b13be27afac658426f8e4fc87cd2d575953fda86f08d1
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1844,7 +1844,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1d7e104e034655fe41bc55c562d91e8074a2973d538b8b29301458db45afc57
-R 6590f6fec6e23fb5ea7f662e774ed7b7
-U dan
-Z ff79fbaa280a5e99ef8f013f25fe3a2b
+P 5ef64b0f55d952c7b0016055eaf6bbc1b5b7afc09a62ee8e5e694ffa9863ac7c
+R 581a9a60971067261d3e7b283ae719ab
+U drh
+Z bef25567208b87a6ea65789e474acc9d
