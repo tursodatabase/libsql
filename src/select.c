@@ -6233,15 +6233,15 @@ int sqlite3Select(
       ** ORDER BY and GROUP BY clauses are the same by setting the orderByGrp
       ** variable.  */
       if( sSort.pOrderBy && pGroupBy->nExpr==sSort.pOrderBy->nExpr ){
-        int i;
+        int ii;
         /* The GROUP BY processing doesn't care whether rows are delivered in
         ** ASC or DESC order - only that each group is returned contiguously.
         ** So set the ASC/DESC flags in the GROUP BY to match those in the 
         ** ORDER BY to maximize the chances of rows being delivered in an 
         ** order that makes the ORDER BY redundant.  */
-        for(i=0; i<pGroupBy->nExpr; i++){
-          u8 sortFlags = sSort.pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
-          pGroupBy->a[i].sortFlags = sortFlags;
+        for(ii=0; ii<pGroupBy->nExpr; ii++){
+          u8 sortFlags = sSort.pOrderBy->a[ii].sortFlags & KEYINFO_ORDER_DESC;
+          pGroupBy->a[ii].sortFlags = sortFlags;
         }
         if( sqlite3ExprListCompare(pGroupBy, sSort.pOrderBy, -1)==0 ){
           orderByGrp = 1;

@@ -1868,7 +1868,7 @@ static void jsonGroupInverse(
   int argc,
   sqlite3_value **argv
 ){
-  int i;
+  unsigned int i;
   int inStr = 0;
   int nNest = 0;
   char *z;
