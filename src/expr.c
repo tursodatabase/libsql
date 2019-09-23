@@ -2959,11 +2959,21 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iSDParm);
     VdbeComment((v, "Init EXISTS result"));
   }
-  pLimit = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[1], 0);
   if( pSel->pLimit ){
-    sqlite3ExprDelete(pParse->db, pSel->pLimit->pLeft);
+    /* The subquery already has a limit.  If the pre-existing limit is X
+    ** then make the new limit X<>0 so that the new limit is either 1 or 0 */
+    sqlite3 *db = pParse->db;
+    pLimit = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
+    if( pLimit ){
+      pLimit->affExpr = SQLITE_AFF_NUMERIC;
+      pLimit = sqlite3PExpr(pParse, TK_NE,
+                            sqlite3ExprDup(db, pSel->pLimit->pLeft, 0), pLimit);
+    }
+    sqlite3ExprDelete(db, pSel->pLimit->pLeft);
     pSel->pLimit->pLeft = pLimit;
   }else{
+    /* If there is no pre-existing limit add a limit of 1 */
+    pLimit = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &sqlite3IntTokens[1], 0);
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
   pSel->iLimit = 0;

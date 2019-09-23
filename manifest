@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sunused\svariable\swarning\sin\sthe\stest\slogic.
-D 2019-09-21T18:49:12.118
+C When\sa\sscalar\ssubquery\shas\sa\spre-existing\s"LIMIT\sX"\sthen\schange\sit\sto\n"LIMIT\sX<>0"\srather\sthan\sjust\s"LIMIT\s1"\sso\sthat\sif\sX\sis\s0\sthe\slimit\nwill\sstill\sbe\szero.\s\sTicket\s[99cd4807dc03f178]
+D 2019-09-23T11:55:22.905
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 012dec53bc11cb90dff297ee39cacc63b99ab6bfb41bf70c29fab7975fc64cfc
+F src/expr.c d7ed577f8eb8723475d5d48d574ed877f69db97a451effde7101b015404be33c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6b79f4c2447691aa9ac86e2a6a774b65f3b3dd053d4220a4893051a0de20f82e
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ea1dc727d391b15d0c4fa858ff68d5b8a63dde46408f24027dac8d28f044cbd
-R be5ce192806a9e963f455d9aef6bc0f5
+P d7673a445f4cde8f71153ce81efdc34fbed8b8625714d54afae1a83d548671ff
+R 9f514c28ca70fa750097b5d3da056c4a
 U drh
-Z fafa17afd0f2222ef667d270811b7f4a
+Z 1aba58b9f947eb2436ce9c19899f400f
