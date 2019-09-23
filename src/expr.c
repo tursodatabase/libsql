@@ -905,7 +905,7 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
   }else if( ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight) ){
     sqlite3ExprUnmapAndDelete(pParse, pLeft);
     sqlite3ExprUnmapAndDelete(pParse, pRight);
-    return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
+    return sqlite3Expr(db, TK_INTEGER, "0");
   }else{
     return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
   }
@@ -2963,7 +2963,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     /* The subquery already has a limit.  If the pre-existing limit is X
     ** then make the new limit X<>0 so that the new limit is either 1 or 0 */
     sqlite3 *db = pParse->db;
-    pLimit = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
+    pLimit = sqlite3Expr(db, TK_INTEGER, "0");
     if( pLimit ){
       pLimit->affExpr = SQLITE_AFF_NUMERIC;
       pLimit = sqlite3PExpr(pParse, TK_NE,
@@ -2973,7 +2973,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     pSel->pLimit->pLeft = pLimit;
   }else{
     /* If there is no pre-existing limit add a limit of 1 */
-    pLimit = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &sqlite3IntTokens[1], 0);
+    pLimit = sqlite3Expr(pParse->db, TK_INTEGER, "1");
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
   pSel->iLimit = 0;

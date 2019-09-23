@@ -5465,7 +5465,7 @@ static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
     Select *pS = pWalker->u.pSelect;
     if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, pS->pGroupBy) ){
       sqlite3 *db = pWalker->pParse->db;
-      Expr *pNew = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
+      Expr *pNew = sqlite3Expr(db, TK_INTEGER, "1");
       if( pNew ){
         Expr *pWhere = pS->pWhere;
         SWAP(Expr, *pNew, *pExpr);

@@ -271,14 +271,6 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 */
 FuncDefHash sqlite3BuiltinFunctions;
 
-/*
-** Constant tokens for values 0 and 1.
-*/
-const Token sqlite3IntTokens[] = {
-   { "0", 1 },
-   { "1", 1 }
-};
-
 #ifdef VDBE_PROFILE
 /*
 ** The following performance counter can be used in place of

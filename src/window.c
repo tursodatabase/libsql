@@ -991,7 +991,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     */
     if( pSublist==0 ){
       pSublist = sqlite3ExprListAppend(pParse, 0, 
-          sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0)
+        sqlite3Expr(db, TK_INTEGER, "0")
       );
     }
 
