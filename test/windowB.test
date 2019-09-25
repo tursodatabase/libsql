@@ -297,4 +297,43 @@ do_execsql_test 6.2 {
   ) FROM t1;
 } {7 {} 8 {} abc 1001} 
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a, c);
+  CREATE INDEX i1 ON t1(a);
+
+  INSERT INTO t1 VALUES(NULL, 46);
+  INSERT INTO t1 VALUES(NULL, 45);
+  INSERT INTO t1 VALUES(7,  997);
+  INSERT INTO t1 VALUES(7,  1000);
+  INSERT INTO t1 VALUES(8,  997);
+  INSERT INTO t1 VALUES(8,  1000);
+  INSERT INTO t1 VALUES('abc', 1001);
+  INSERT INTO t1 VALUES('abc', 1004);
+  INSERT INTO t1 VALUES('xyz', 3333);
+}
+
+do_execsql_test 7.1 {
+  SELECT a, max(c) OVER (
+    ORDER BY a RANGE BETWEEN 2 FOLLOWING AND 0 FOLLOWING
+  ) FROM t1;
+} {{} 46 {} 46  7 {} 7 {} 8 {} 8 {}  abc 1004 abc 1004 xyz 3333}
+do_execsql_test 7.2 {
+  SELECT a, min(c) OVER (
+    ORDER BY a RANGE BETWEEN 2 FOLLOWING AND 0 FOLLOWING
+  ) FROM t1;
+} {{} 45 {} 45  7 {} 7 {} 8 {} 8 {}  abc 1001 abc 1001 xyz 3333}
+
+do_execsql_test 7.3 {
+  SELECT a, max(c) OVER (
+    ORDER BY a RANGE BETWEEN 0 PRECEDING AND 2 PRECEDING
+  ) FROM t1;
+} {{} 46 {} 46  7 {} 7 {} 8 {} 8 {}  abc 1004 abc 1004 xyz 3333}
+do_execsql_test 7.4 {
+  SELECT a, min(c) OVER (
+    ORDER BY a RANGE BETWEEN 0 PRECEDING AND 2 PRECEDING
+  ) FROM t1;
+} {{} 45 {} 45  7 {} 7 {} 8 {} 8 {}  abc 1001 abc 1001 xyz 3333}
+
 finish_test
