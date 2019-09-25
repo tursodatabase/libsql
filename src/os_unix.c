@@ -6067,11 +6067,11 @@ static int unixOpen(
     ** behinds a journal/WAL that is owned by root and hence make the
     ** database inaccessible to unprivileged processes.
     **
-    ** If openFlags==0, then that means uid and gid are not set correctly
+    ** If openMode==0, then that means uid and gid are not set correctly
     ** (probably because SQLite is configured to use 8+3 filename mode) and
     ** in that case we do not want to attempt the chown().
     */
-    if( openFlags && (flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL))!=0 ){
+    if( openMode && (flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL))!=0 ){
       robustFchown(fd, uid, gid);
     }
   }
