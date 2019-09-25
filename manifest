@@ -1,5 +1,5 @@
-C Remove\san\sunused\svariable.
-D 2019-09-25T17:47:41.101
+C Add\sa\smissing\sVdbeCoverage()\smacro.
+D 2019-09-25T18:44:49.609
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/where.c 9f3f23efc45934e7b7ea6c0c1042420b73053e7c3264feef6faf9ce6fbd5df61
 F src/whereInt.h 2c6bae136a7c0be6ff75dc36950d1968c67d005c8e51d7a9d77cb996bb4843d9
 F src/wherecode.c 535c8e228478fd971b9a5b6cb6773995b0fbf7020d5989508a5094ce5b8cd95b
 F src/whereexpr.c 05c283d26aa9c3f5d1bf13a5f6a573b43295b9db280eff18e26f97d7d7f119b4
-F src/window.c a1edfb8ab69cf77c6cc7b5a269fd3ecb4d79a57fcace9ea3c7c0a2a42b915b8c
+F src/window.c 064f251451c8e2a1c76b6269229d911a651e119c6a5f522b6eaebf8dc8714041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test da465d3d490ab24ef64f7715b5953343a4967762b9350b29eb1462879ff3fb9e
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5fe15c1d8383989257e11d1806e6b035acacd1b504ae385ba58d20db10f26eee
-R f8257de46805b687fd4c80d469c0941d
+P a19884455b9bafcdc769362d61cfd02df1b5643263e004cb533698bbcfca752b
+R 19711e15e7722019f82536f601716d02
 U drh
-Z f66b8adc9c28a99df3f4d7bbacb1c29e
+Z 577559de451edfb4decadf2550348c8d

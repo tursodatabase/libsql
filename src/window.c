@@ -2158,6 +2158,7 @@ static int windowCodeOp(
     sqlite3VdbeAddOp2(v, OP_Rowid, p->start.csr, regRowid1);
     sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid2);
     sqlite3VdbeAddOp3(v, OP_Ge, regRowid2, lblDone, regRowid1);
+    VdbeCoverage(v);
     sqlite3ReleaseTempReg(pParse, regRowid1);
     sqlite3ReleaseTempReg(pParse, regRowid2);
     assert( pMWin->eStart==TK_PRECEDING || pMWin->eStart==TK_FOLLOWING );
