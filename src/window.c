@@ -1549,6 +1549,10 @@ static void windowAggStep(
 
     assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
 
+    /* All OVER clauses in the same window function aggregate step must
+    ** be the same. */
+    assert( pWin==pMWin || sqlite3WindowCompare(pParse,pWin,pMWin,0)==0 );
+
     for(i=0; i<nArg; i++){
       if( i!=1 || pFunc->zName!=nth_valueName ){
         sqlite3VdbeAddOp3(v, OP_Column, csr, pWin->iArgCol+i, reg+i);
@@ -1608,14 +1612,13 @@ static void windowAggStep(
        && pWin->eStart==pWin->eEnd 
        && pWin->eStart==TK_PRECEDING
       ){
-        int op = ((pMWin->eStart==TK_FOLLOWING) ? OP_Ge : OP_Le);
         int regPeer = sqlite3GetTempReg(pParse);
         int regString = sqlite3GetTempReg(pParse);
         int lbl = sqlite3VdbeMakeLabel(pParse);
         VdbeModuleComment((v, "windowAggStep \"peer is numeric?\" test"));
-        sqlite3VdbeAddOp3(v, op, p->regStart, lbl, p->regEnd);
-        VdbeCoverageNeverNullIf(v, op==OP_Ge); /* NeverNull because <expr> */
-        VdbeCoverageNeverNullIf(v, op==OP_Le); /*   values previously checked */
+        assert( pMWin->eStart==TK_PRECEDING ); /* because pWin same as pMWin */
+        sqlite3VdbeAddOp3(v, OP_Le, p->regStart, lbl, p->regEnd);
+        VdbeCoverageNeverNull(v); /* because <expr> values previously checked */
         windowReadPeerValues(p, csr, regPeer);
         sqlite3VdbeAddOp2(v, OP_IsNull, regPeer, lbl);
         sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
