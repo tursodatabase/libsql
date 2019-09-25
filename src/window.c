@@ -1586,7 +1586,6 @@ static void windowAggStep(
       sqlite3VdbeAddOp2(v, OP_AddImm, pWin->regApp+1-bInverse, 1);
     }else if( pFunc->xSFunc!=noopStepFunc ){
       int addrIf = 0;
-      int addrIf2 = 0;
       if( pWin->pFilter ){
         int regTmp;
         assert( pWin->bExprArgs || !nArg ||nArg==pWin->pOwner->x.pList->nExpr );
@@ -1627,7 +1626,6 @@ static void windowAggStep(
         sqlite3ReleaseTempRange(pParse, regArg, nArg);
       }
       if( addrIf ) sqlite3VdbeJumpHere(v, addrIf);
-      if( addrIf2 ) sqlite3VdbeJumpHere(v, addrIf2);
     }
   }
 }
