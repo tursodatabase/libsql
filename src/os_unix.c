@@ -5824,7 +5824,7 @@ static int getFileMode(
 ** If the SQLITE_ENABLE_8_3_NAMES option is enabled, then the
 ** original filename is unavailable.  But 8_3_NAMES is only used for
 ** FAT filesystems and permissions do not matter there, so just use
-** the default permissions.
+** the default permissions.  In 8_3_NAMES mode, leave *pMode set to zero.
 */
 static int findCreateFileMode(
   const char *zPath,              /* Path of file (possibly) being created */
@@ -6059,11 +6059,19 @@ static int unixOpen(
       goto open_finished;
     }
 
-    /* If this process is running as root and if creating a new rollback
-    ** journal or WAL file, set the ownership of the journal or WAL to be
-    ** the same as the original database.
+    /* The owner of the rollback journal or WAL file should always be the
+    ** same as the owner of the database file.  Try to ensure that this is
+    ** the case.  The chown() system call will be a no-op if the current
+    ** process lacks root privileges, be we should at least try.  Without
+    ** this step, if a root process opens a database file, it can leave
+    ** behinds a journal/WAL that is owned by root and hence make the
+    ** database inaccessible to unprivileged processes.
+    **
+    ** If openFlags==0, then that means uid and gid are not set correctly
+    ** (probably because SQLite is configured to use 8+3 filename mode) and
+    ** in that case we do not want to attempt the chown().
     */
-    if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
+    if( openFlags && (flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL))!=0 ){
       robustFchown(fd, uid, gid);
     }
   }
