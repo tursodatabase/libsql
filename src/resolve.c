@@ -97,7 +97,11 @@ static void resolveAlias(
       pExpr->flags |= EP_MemToken;
     }
     if( ExprHasProperty(pExpr, EP_WinFunc) ){
-      pExpr->y.pWin->pOwner = pExpr;
+      if( pExpr->y.pWin!=0 ){
+        pExpr->y.pWin->pOwner = pExpr;
+      }else{
+        assert( db->mallocFailed );
+      }
     }
     sqlite3DbFree(db, pDup);
   }

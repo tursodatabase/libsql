@@ -1,5 +1,5 @@
-C Fix\sa\swindow-functions\sproblem\sthat\scould\soccur\sif\san\sORDER\sBY\sclause\scontains\san\salias\sfor\sa\swindow-function\sthat\sis\snot\sa\stop-level\sexpression.
-D 2019-09-26T15:53:37.561
+C Test\sfor\san\sOOM\scondition\sin\sresolveAlias().
+D 2019-09-26T16:08:35.975
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -523,7 +523,7 @@ F src/pragma.h 40962d65b645bb3f08c1f4c456effd01c6e7f073f68ea25177e0c95e181cff75
 F src/prepare.c 132484635a30f873ee7eccd47f93ed1932503863b93b28423b42332d81adffaf
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 458fb2b024643e0b6393845386aca687de7a84264b8d709fb31df8a72709cbeb
+F src/resolve.c e021be0c1c4a2125fa38aabcd8dbb764bf5b2c889a948c30d3708430ec6ccd00
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c f509982c96bb24ccf57a0155fbe1e6184e0b8fb8866a04397dc41baa400e5240
 F src/shell.c.in 68698630c21c5489fb3dc961a3ab3840e726c3c01e475dab96055788a7b6e5e6
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36d35dbd5a80dc4a149ed7409cc4b43712622fc4c6a8915b4fbb62fd1d6b7763
-R 65ee3f533ee28e9e60f85f94c4e77594
-U dan
-Z ab678b06e2dc401b849d5e844b6637fe
+P 1cc6cf6407c6e25aeafeca379a93d0ad2614839c07fb3644e46926fce5f1cfab
+R 77dec82979c5a66f6dbaf181ef34998b
+U drh
+Z 7f0ba994029722fdb3792e0223e5516f
