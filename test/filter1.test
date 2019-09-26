@@ -134,4 +134,35 @@ do_execsql_test 3.5 {
   SELECT a, c, max(b) FILTER (WHERE c='x') FROM t2 GROUP BY a;
 } {1 x 5 2 6 {}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('a', 0, 5);
+  INSERT INTO t1 VALUES('a', 1, 10);
+  INSERT INTO t1 VALUES('a', 0, 15);
+
+  INSERT INTO t1 VALUES('b', 0, 5);
+  INSERT INTO t1 VALUES('b', 1, 1000);
+  INSERT INTO t1 VALUES('b', 0, 5);
+
+  INSERT INTO t1 VALUES('c', 0, 1);
+  INSERT INTO t1 VALUES('c', 1, 2);
+  INSERT INTO t1 VALUES('c', 0, 3);
+}
+
+do_execsql_test 4.1 {
+  SELECT avg(c) FILTER (WHERE b!=1) AS h FROM t1 GROUP BY a ORDER BY h;
+} {2.0 5.0 10.0}
+do_execsql_test 4.2 {
+  SELECT avg(c) FILTER (WHERE b!=1) AS h FROM t1 GROUP BY a ORDER BY (h+1.0);
+} {2.0 5.0 10.0}
+do_execsql_test 4.3 {
+  SELECT a, avg(c) FILTER (WHERE b!=1) AS h FROM t1 GROUP BY a ORDER BY avg(c);
+} {c 2.0 a 10.0 b 5.0}
+do_execsql_test 4.4 {
+  SELECT a, avg(c) FILTER (WHERE b!=1) FROM t1 GROUP BY a ORDER BY 2
+} {c 2.0 b 5.0 a 10.0}
+
 finish_test
+

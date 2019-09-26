@@ -901,4 +901,33 @@ do_execsql_test 4.11 {
   SELECT count(distinct a) FILTER (WHERE b='odd') FROM t1
 } {3}
 
+#==========================================================================
+
+do_execsql_test 5.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INTEGER, y INTEGER);
+  INSERT INTO t1 VALUES(10, 1);
+  INSERT INTO t1 VALUES(20, 2);
+  INSERT INTO t1 VALUES(3, 3);
+  INSERT INTO t1 VALUES(2, 4);
+  INSERT INTO t1 VALUES(1, 5);
+} {}
+
+
+do_test 5.1 {
+  set myres {}
+  foreach r [db eval {SELECT avg(x) OVER (ORDER BY y) AS z FROM t1 ORDER BY z;}] {
+    lappend myres [format %.4f [set r]]
+  }
+  set res2 {7.2000 8.7500 10.0000 11.0000 15.0000}
+  set i 0
+  foreach r [set myres] r2 [set res2] {
+    if {[set r]<([set r2]-0.0001) || [set r]>([set r2]+0.0001)} {
+      error "list element [set i] does not match: got=[set r] expected=[set r2]"
+    }
+    incr i
+  }
+  set {} {}
+} {}
+
 finish_test
