@@ -377,11 +377,14 @@ do_test 4.0 {
 | end crash-6b48ba69806134.db
 }]} {}
 
+set res {1 {database disk image is malformed}}
+ifcapable oversize_cell_check {
+  set res {1 {no such table: t3}}
+}
 do_catchsql_test 4.1 {
   PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   INSERT INTO t3 SELECT * FROM t2;
-} {1 {database disk image is malformed}}
-
+} $res
 
 #-------------------------------------------------------------------------
 reset_db
@@ -835,11 +838,14 @@ do_test 8.0 {
 | end a.db
 }]} {}
 
-
+set res {1 {database disk image is malformed}}
+ifcapable oversize_cell_check {
+  set res {1 {no such table: t3}}
+}
 do_catchsql_test 8.1 {
   PRAGMA writable_schema=ON; -- bypass improved sqlite_master consistency checking
   INSERT INTO t3 SELECT * FROM t2;
-} {1 {database disk image is malformed}}
+} $res
 
 #-------------------------------------------------------------------------
 reset_db
