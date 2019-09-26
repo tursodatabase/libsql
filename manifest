@@ -1,5 +1,5 @@
-C New\sdbsqlfuzz\scases\sadded\sto\stest/fuzzdata8.db.
-D 2019-09-26T16:57:42.681
+C Minor\sfix\sfor\stest\sfile\sindexexpr1.test.
+D 2019-09-26T19:53:26.838
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1055,7 +1055,7 @@ F test/index7.test 1d764c0cca45f5a76150b08e127ccc8d52492cfa788b5fafed4be784a351b
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
-F test/indexexpr1.test fb56f0b9a9d147b38979d154176f150b5e45fdd5d0162fab639a7f9478134fa3
+F test/indexexpr1.test c26c8b352311c1deb30642cd0379e5cb94e416c7e9e0885e92d9e01554df2db9
 F test/indexexpr2.test b580f378423bca443ffab47ada677203cfcf8a60f48a8aa20065f27c8f7739b5
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 322eca7f6ad2234059669015aabb773a790e8bc3da95431c9c851ff5342c969b
-R 57ec09eaa2ca8a45ad72a13ab625aa18
-U drh
-Z f977be867e7ece61ae0e7da14d6caa65
+P 49073b7003330027303c4c776e9f85112f8b99b89f848fec3f953eba501d7505
+R 284d7345ab849cbaf78fc96a04f57d64
+U dan
+Z 9914bcc6ba0d7bb942d117fc1a424c1f
