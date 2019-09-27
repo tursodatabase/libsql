@@ -1,5 +1,5 @@
-C Allow\scompile-time\soptions\s-DHAVE_GETHOSTUUID=0\sand\s-DHAVE_GETHOSTUUID=1.
-D 2019-09-27T16:33:27.006
+C Update\srequirement\smarks\sdue\sto\schanges\sin\sdocumentation\swording.
+D 2019-09-27T17:36:37.590
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1222,7 +1222,7 @@ F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4282fb00e5ac0f8c2cd1be62652f6da4ac03ce3c58b7d785fa17f4684492a0e0
 F test/pg_common.tcl 222a1bad1c41c308fa366313cd7b51b3be7e9b21c8736a421b974ac941693b54
-F test/pragma.test cf066fe0f7f5d49f4758de4986407b8676c61aaa7871599340d64f42a8edc352
+F test/pragma.test 59becdfd720b80d463ab750f69f7118fde10dfd556aa5d554f3bf6b7e5ea7533
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
 F test/pragma4.test 1cb4b32f1a304ed9e291d7c4d49c91c2c8dc1b9450e6d2c1198b2cc895d40d77
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 102ef64462cf0d78395ccc7ebb8e3bf6b7647c06b7657a037e051697bc08d6b7
-R 1ba73851625828b89e5d77a2045c4095
+P 3bcb9cc104e0265a600b03415ad955187fc6445ea8e46dc656412cba5bc1d621
+R bf33d1ae74eb7b45bdc44e5948224bd7
 U drh
-Z 48ada95eee3455ebd0a21fff552e9486
+Z 5c422efa861a37adb89a01abf7aa0d68
