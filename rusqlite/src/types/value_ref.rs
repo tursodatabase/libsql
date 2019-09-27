@@ -110,6 +110,16 @@ impl<'a> From<&'a Value> for ValueRef<'a> {
     }
 }
 
+impl<'a, T> From<Option<T>> for ValueRef<'a> 
+    where T: Into<ValueRef<'a>> {
+    fn from(s: Option<T>) -> ValueRef<'a> {
+        match s {
+            Some(x) => x.into(),
+            None => ValueRef::Null,
+        }
+    }
+}
+
 #[cfg(any(feature = "functions", feature = "session", feature = "vtab"))]
 impl<'a> ValueRef<'a> {
     pub(crate) unsafe fn from_value(value: *mut crate::ffi::sqlite3_value) -> ValueRef<'a> {

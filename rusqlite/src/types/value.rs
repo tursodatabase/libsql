@@ -96,6 +96,16 @@ impl From<Vec<u8>> for Value {
     }
 }
 
+impl <T> From<Option<T>> for Value
+    where T: Into<Value> {
+    fn from(v: Option<T>) -> Value {
+        match v {
+            Some(x) => x.into(),
+            None => Value::Null,
+        }
+    }
+}
+
 impl Value {
     pub fn data_type(&self) -> Type {
         match *self {
