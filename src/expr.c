@@ -4957,6 +4957,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->op2!=pB->op2 ) return 2;
       if( pA->iTable!=pB->iTable 
+       && pA->op!=TK_IN
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
   }
