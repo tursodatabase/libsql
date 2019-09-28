@@ -2143,8 +2143,11 @@ struct KeyInfo {
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
 
-#define KEYINFO_ORDER_DESC    0x01
-#define KEYINFO_ORDER_BIGNULL 0x02
+/*
+** Allowed bit values for entries in the KeyInfo.aSortFlags[] array.
+*/
+#define KEYINFO_ORDER_DESC    0x01    /* DESC sort order */
+#define KEYINFO_ORDER_BIGNULL 0x02    /* NULL is larger than any other value */
 
 /*
 ** This object holds a record which has been parsed out into individual
