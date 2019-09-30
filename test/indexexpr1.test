@@ -463,22 +463,24 @@ do_execsql_test indexexpr-1700 {
 # value, be sure to use the REAL value and not the INT value when
 # computing the expression.
 #
-do_execsql_test indexexpr-1800 {
-  DROP TABLE IF EXISTS t0;
-  CREATE TABLE t0(c0 REAL, c1 TEXT);
-  CREATE INDEX i0 ON t0(+c0, c0);
-  INSERT INTO t0(c0) VALUES(0);
-  SELECT CAST(+ t0.c0 AS BLOB) LIKE 0 FROM t0; 
-} {0}
-do_execsql_test indexexpr-1810 {
-  SELECT CAST(+ t0.c0 AS BLOB) LIKE '0.0' FROM t0; 
-} {1}
-do_execsql_test indexexpr-1820 {
-  DROP TABLE IF EXISTS t1;
-  CREATE TABLE t1(x REAL);
-  CREATE INDEX t1x ON t1(x, +x);
-  INSERT INTO t1(x) VALUES(2);
-  SELECT +x FROM t1 WHERE x=2;
-} {2.0}
+ifcapable like_match_blobs {
+  do_execsql_test indexexpr-1800 {
+    DROP TABLE IF EXISTS t0;
+    CREATE TABLE t0(c0 REAL, c1 TEXT);
+    CREATE INDEX i0 ON t0(+c0, c0);
+    INSERT INTO t0(c0) VALUES(0);
+    SELECT CAST(+ t0.c0 AS BLOB) LIKE 0 FROM t0; 
+  } {0}
+  do_execsql_test indexexpr-1810 {
+    SELECT CAST(+ t0.c0 AS BLOB) LIKE '0.0' FROM t0; 
+  } {1}
+  do_execsql_test indexexpr-1820 {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x REAL);
+    CREATE INDEX t1x ON t1(x, +x);
+    INSERT INTO t1(x) VALUES(2);
+    SELECT +x FROM t1 WHERE x=2;
+  } {2.0}
+}
 
 finish_test
