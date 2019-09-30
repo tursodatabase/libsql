@@ -537,9 +537,10 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
 
     case TK_COLLATE: {
       /* COLLATE operators without the EP_Collate flag are intended to
-      ** emulate collation associated with a table column.  Explicit
-      ** COLLATE operators that appear in the original SQL always have
-      ** the EP_Collate bit set */
+      ** emulate collation associated with a table column.  These show
+      ** up in the treeview output as "SOFT-COLLATE".  Explicit COLLATE
+      ** operators that appear in the original SQL always have the
+      ** EP_Collate bit set and appear in treeview output as just "COLLATE" */
       sqlite3TreeViewLine(pView, "%sCOLLATE %Q%s",
         !ExprHasProperty(pExpr, EP_Collate) ? "SOFT-" : "",
         pExpr->u.zToken, zFlgs);

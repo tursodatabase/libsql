@@ -905,7 +905,7 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
   }else if( ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight) ){
     sqlite3ExprUnmapAndDelete(pParse, pLeft);
     sqlite3ExprUnmapAndDelete(pParse, pRight);
-    return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
+    return sqlite3Expr(db, TK_INTEGER, "0");
   }else{
     return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
   }
@@ -2867,6 +2867,7 @@ void sqlite3CodeRhsOfIN(
     /* Subroutine return */
     sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
     sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+    sqlite3ClearTempRegCache(pParse);
   }
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
@@ -2958,11 +2959,21 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iSDParm);
     VdbeComment((v, "Init EXISTS result"));
   }
-  pLimit = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[1], 0);
   if( pSel->pLimit ){
-    sqlite3ExprDelete(pParse->db, pSel->pLimit->pLeft);
+    /* The subquery already has a limit.  If the pre-existing limit is X
+    ** then make the new limit X<>0 so that the new limit is either 1 or 0 */
+    sqlite3 *db = pParse->db;
+    pLimit = sqlite3Expr(db, TK_INTEGER, "0");
+    if( pLimit ){
+      pLimit->affExpr = SQLITE_AFF_NUMERIC;
+      pLimit = sqlite3PExpr(pParse, TK_NE,
+                            sqlite3ExprDup(db, pSel->pLimit->pLeft, 0), pLimit);
+    }
+    sqlite3ExprDelete(db, pSel->pLimit->pLeft);
     pSel->pLimit->pLeft = pLimit;
   }else{
+    /* If there is no pre-existing limit add a limit of 1 */
+    pLimit = sqlite3Expr(pParse->db, TK_INTEGER, "1");
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
   pSel->iLimit = 0;
@@ -2977,6 +2988,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     /* Subroutine return */
     sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
     sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+    sqlite3ClearTempRegCache(pParse);
   }
 
   return rReg;
@@ -4944,7 +4956,8 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->op2!=pB->op2 ) return 2;
-      if( pA->iTable!=pB->iTable 
+      if( pA->op!=TK_IN
+       && pA->iTable!=pB->iTable 
        && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
   }
@@ -5608,6 +5621,11 @@ void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
 
 /*
 ** Mark all temporary registers as being unavailable for reuse.
+**
+** Always invoke this procedure after coding a subroutine or co-routine
+** that might be invoked from other parts of the code, to ensure that
+** the sub/co-routine does not use registers in common with the code that
+** invokes the sub/co-routine.
 */
 void sqlite3ClearTempRegCache(Parse *pParse){
   pParse->nTempReg = 0;

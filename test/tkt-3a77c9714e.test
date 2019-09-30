@@ -1,4 +1,4 @@
-# 2011 December 06
+# 2011-12-06
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -68,5 +68,19 @@ do_execsql_test 2.2 {
     )
 } {FACTORING FACTOR SWIMMING SWIMM} 
 
+# Similar problem discovered by dbsqlfuzz on 2019-09-18
+#
+do_execsql_test 3.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(i INT PRIMARY KEY, a, b);
+  INSERT INTO t1 VALUES(NULL,'one','i');
+  CREATE INDEX i1a ON t1(a);
+  CREATE INDEX i1b ON t1(b);
+  SELECT (SELECT 1
+            FROM (SELECT 1 FROM t1 WHERE a=1 OR b='i')
+           WHERE a='o'
+              OR b IN (SELECT a=('b' IN (SELECT 'a'))))
+    FROM t1;
+} {{}}
 
 finish_test
