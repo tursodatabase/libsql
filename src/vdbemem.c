@@ -232,7 +232,13 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   assert( pMem->szMalloc==0
        || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
   if( pMem->szMalloc>0 && bPreserve && pMem->z==pMem->zMalloc ){
-    pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
+    if( pMem->db ){
+      pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
+    }else{
+      pMem->zMalloc = sqlite3Realloc(pMem->z, n);
+      if( pMem->zMalloc==0 ) sqlite3_free(pMem->z);
+      pMem->z = pMem->zMalloc;
+    }
     bPreserve = 0;
   }else{
     if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);

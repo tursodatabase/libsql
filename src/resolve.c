@@ -96,6 +96,13 @@ static void resolveAlias(
       pExpr->u.zToken = sqlite3DbStrDup(db, pExpr->u.zToken);
       pExpr->flags |= EP_MemToken;
     }
+    if( ExprHasProperty(pExpr, EP_WinFunc) ){
+      if( pExpr->y.pWin!=0 ){
+        pExpr->y.pWin->pOwner = pExpr;
+      }else{
+        assert( db->mallocFailed );
+      }
+    }
     sqlite3DbFree(db, pDup);
   }
   ExprSetProperty(pExpr, EP_Alias);
