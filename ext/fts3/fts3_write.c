@@ -3797,14 +3797,14 @@ static int nodeReaderInit(NodeReader *p, const char *aNode, int nNode){
   p->nNode = nNode;
 
   /* Figure out if this is a leaf or an internal node. */
-  if( p->aNode[0] ){
+  if( aNode && aNode[0] ){
     /* An internal node. */
     p->iOff = 1 + sqlite3Fts3GetVarint(&p->aNode[1], &p->iChild);
   }else{
     p->iOff = 1;
   }
 
-  return nodeReaderNext(p);
+  return aNode ? nodeReaderNext(p) : SQLITE_OK;
 }
 
 /*

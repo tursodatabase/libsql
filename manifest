@@ -1,5 +1,5 @@
-C Add\smissing\scomment\sto\sconstant\sdefinitions.
-D 2019-09-28T18:28:19.561
+C The\snodeReaderInit()\sfunction\sin\sFTS3\smay\snot\sassume\sthat\sthe\snode\sis\nnon-empty.
+D 2019-09-30T19:13:31.700
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 6efc4cd7dc554df06c35bfd3335503838645806a78fc33137a55eb97a8b2f3b2
+F ext/fts3/fts3_write.c 4c759137f345224751609b285a288025025b5079801f11b3b423465e950e5a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a3671c7003bfff817a8239424c2f945d9dfced97daadb5a5acab203b9bda69b
-R 8d37601209f5446839a179bd2e29b5ac
+P 661a3789eb329a2487855e49c31067a9dde4c91c1a3a65b65375d079f906b1da
+R 06ec45ec7d54c101d8ff7ff7cb00d848
 U drh
-Z 482b531154e1550f5727f5509af08b70
+Z 1fbc847b10993e4da76775650131493f
