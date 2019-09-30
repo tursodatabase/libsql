@@ -1181,7 +1181,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** regardless of the value of expr1.
       */
       sqlite3ExprUnmapAndDelete(pParse, A);
-      A = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[N],1);
+      A = sqlite3Expr(pParse->db, TK_INTEGER, N ? "1" : "0");
     }else{
       A = sqlite3PExpr(pParse, TK_IN, A, 0);
       if( A ){

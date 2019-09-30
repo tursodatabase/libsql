@@ -4861,9 +4861,12 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** function that is not deterministic.  The SQLite query planner is able to
 ** perform additional optimizations on deterministic functions, so use
 ** of the [SQLITE_DETERMINISTIC] flag is recommended where possible.
+**
 ** ^The fourth parameter may also optionally include the [SQLITE_DIRECTONLY]
 ** flag, which if present prevents the function from being invoked from
-** within VIEWs or TRIGGERs.
+** within VIEWs or TRIGGERs.  For security reasons, the [SQLITE_DIRECTONLY]
+** flag is recommended for any application-defined SQL function that has
+** side-effects.
 **
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
 ** function can gain access to this pointer using [sqlite3_user_data()].)^
@@ -4987,7 +4990,12 @@ int sqlite3_create_window_function(
 ** deterministic, for example, but randomblob() is not.
 **
 ** The SQLITE_DIRECTONLY flag means that the function may only be invoked
-** from top-level SQL, and cannot be used in VIEWs or TRIGGERs.
+** from top-level SQL, and cannot be used in VIEWs or TRIGGERs.  This is
+** a security feature which is recommended for all 
+** [application-defined SQL functions] that have side-effects.  This flag 
+** prevents an attacker from adding triggers and views to a schema then 
+** tricking a high-privilege application into causing unintended side-effects
+** while performing ordinary queries.
 **
 ** The SQLITE_SUBTYPE flag indicates to SQLite that a function may call
 ** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
