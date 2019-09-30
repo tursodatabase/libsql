@@ -284,6 +284,7 @@ static int isLikeOrGlob(
         **    2019-05-02 https://sqlite.org/src/info/b043a54c3de54b28
         **    2019-06-10 https://sqlite.org/src/info/fd76310a5e843e07
         **    2019-06-14 https://sqlite.org/src/info/ce8717f0885af975
+        **    2019-09-03 https://sqlite.org/src/info/0f0428096f17252a
         */
         if( pLeft->op!=TK_COLUMN 
          || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
@@ -293,9 +294,13 @@ static int isLikeOrGlob(
           double rDummy;
           isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
           if( isNum<=0 ){
-            zNew[iTo-1]++;
-            isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
-            zNew[iTo-1]--;
+            if( iTo==1 && zNew[0]=='-' ){
+              isNum = +1;
+            }else{
+              zNew[iTo-1]++;
+              isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+              zNew[iTo-1]--;
+            }
           }
           if( isNum>0 ){
             sqlite3ExprDelete(db, pPrefix);

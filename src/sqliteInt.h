@@ -2154,8 +2154,11 @@ struct KeyInfo {
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
 
-#define KEYINFO_ORDER_DESC    0x01
-#define KEYINFO_ORDER_BIGNULL 0x02
+/*
+** Allowed bit values for entries in the KeyInfo.aSortFlags[] array.
+*/
+#define KEYINFO_ORDER_DESC    0x01    /* DESC sort order */
+#define KEYINFO_ORDER_BIGNULL 0x02    /* NULL is larger than any other value */
 
 /*
 ** This object holds a record which has been parsed out into individual
@@ -2485,6 +2488,7 @@ struct Expr {
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
                          ** EP_Unlikely:  134217728 times likelihood
+                         ** TK_IN: ephemerial table holding RHS
                          ** TK_SELECT_COLUMN: Number of columns on the LHS
                          ** TK_SELECT: 1st register of result vector */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
@@ -4331,7 +4335,6 @@ extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
-extern const Token sqlite3IntTokens[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
 #ifndef SQLITE_OMIT_WSD
