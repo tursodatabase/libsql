@@ -1,5 +1,5 @@
-C The\snodeReaderInit()\sfunction\sin\sFTS3\smay\snot\sassume\sthat\sthe\snode\sis\nnon-empty.
-D 2019-09-30T19:13:31.700
+C Remove\sreferences\sto\stest\sscripts\sanalyzeA.test\sand\sanalyzeB.test\sfrom\npermutations.test,\ssince\sthose\stest\smodules\sno\slonger\sexist.
+D 2019-10-01T21:31:57.198
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1220,7 +1220,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 4282fb00e5ac0f8c2cd1be62652f6da4ac03ce3c58b7d785fa17f4684492a0e0
+F test/permutations.test ee633a9a72f8ce58d5b6909aacc6eb2ddf554400e2601471ab0a963fe55b7161
 F test/pg_common.tcl 222a1bad1c41c308fa366313cd7b51b3be7e9b21c8736a421b974ac941693b54
 F test/pragma.test 59becdfd720b80d463ab750f69f7118fde10dfd556aa5d554f3bf6b7e5ea7533
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1845,7 +1845,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 661a3789eb329a2487855e49c31067a9dde4c91c1a3a65b65375d079f906b1da
-R 06ec45ec7d54c101d8ff7ff7cb00d848
+P 361eb2f682a303bba72b39d322d9de630494ca044fe0508dcb23b6130d312d85
+R 79f4cd8007b6eb2ff56cba9bbf1f13f1
 U drh
-Z 1fbc847b10993e4da76775650131493f
+Z 1b640aff4d05dc808e04f7108a8ae8bf
