@@ -4296,8 +4296,8 @@ static int fts3IncrmergeLoad(
         NodeReader reader;
         pNode = &pWriter->aNodeWriter[i];
 
-        rc = nodeReaderInit(&reader, pNode->block.a, pNode->block.n);
-        if( reader.aNode ){
+        if( pNode->block.a){
+          rc = nodeReaderInit(&reader, pNode->block.a, pNode->block.n);
           while( reader.aNode && rc==SQLITE_OK ) rc = nodeReaderNext(&reader);
           blobGrowBuffer(&pNode->key, reader.term.n, &rc);
           if( rc==SQLITE_OK ){

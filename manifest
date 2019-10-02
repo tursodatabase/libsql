@@ -1,5 +1,5 @@
-C Disable\ssqlite3_drop_module()\stests\swhen\svirtual\stables\sare\somitted\sfrom\nthe\sbuild.
-D 2019-10-02T00:25:08.346
+C Fix\sa\slong-standing\sproblem\sin\sfts4\sincrmental\smerge.
+D 2019-10-02T19:33:34.820
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 4c759137f345224751609b285a288025025b5079801f11b3b423465e950e5a41
+F ext/fts3/fts3_write.c 13582783abedf905e6946ce95edff7103c07810fb03a9c3b40212d21a3efa09c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -985,6 +985,7 @@ F test/fts4merge.test 1096e30b58ad616bd502141bfe5bfe4c3a518df89e958d41a5ed1ce322
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test 8d9ccb4a3d41c4c617a149d6c4b13ad02de797d0
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
+F test/fts4merge5.test 69932d85cda8a1c4dcfb742865900ed8fbda51724b8cf9a45bbe226dfd06c596
 F test/fts4noti.test 5553d7bb2e20bf4a06b23e849352efc022ce6309
 F test/fts4onepass.test d69ddc4ee3415e40b0c5d1d0408488a87614d4f63ba9c44f3e52db541d6b7cc7
 F test/fts4opt.test 0fd0cc84000743ff2a883b9b84b4a5be07249f0ba790c8848a757164cdd46b2a
@@ -1220,7 +1221,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test ee633a9a72f8ce58d5b6909aacc6eb2ddf554400e2601471ab0a963fe55b7161
+F test/permutations.test 8587800fe1a0eb01456a3f4500b821e54e3347e78acf11dbf05f4990530f6cee
 F test/pg_common.tcl 222a1bad1c41c308fa366313cd7b51b3be7e9b21c8736a421b974ac941693b54
 F test/pragma.test 59becdfd720b80d463ab750f69f7118fde10dfd556aa5d554f3bf6b7e5ea7533
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1845,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2394879698107479270c9d899c704de3756ceae177a338b3c37844e2a31aa6dd
-R e575a5992db4cefd001fd79f1b425439
-U drh
-Z b25a5a377bbc6fe1cbeff142e9b61523
+P 9f4035f91a9f914797c67afbf19139b2cd25aea48595f7254fe5d18cd693d972
+R ecf43fec21823a32835595bc3d6e883d
+U dan
+Z 5ae170bea58b20654aba07c2eb8e0ce7
