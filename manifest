@@ -1,5 +1,5 @@
-C Fix\sa\slong-standing\sproblem\sin\sfts4\sincrmental\smerge.
-D 2019-10-02T19:33:34.820
+C Update\scorruptM.test\sto\saccount\sfor\sthe\sfact\sthat\sthe\sdatabase\sschema\smay\sbe\sloaded\sfrom\swithin\sthe\s"sqlite3"\scommand\sfor\ssome\stest\spermutations.
+D 2019-10-02T19:43:38.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -770,7 +770,7 @@ F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c0
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test dfad96373bf9264d73039315ea6013994b90bf6776847adc7ec06b6fad3c04b2
-F test/corruptM.test 04a4061b1979283851953217e411187be79e50f5e5e3ef340c3f8e564173aae1
+F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f4035f91a9f914797c67afbf19139b2cd25aea48595f7254fe5d18cd693d972
-R ecf43fec21823a32835595bc3d6e883d
+P 67da31e24ebb49c4cac81c9e7cfca37ca422555fd0fdb01d8f180890783c84ff
+R af61f483cecb17e85d55b46e8f6dcdd9
 U dan
-Z 5ae170bea58b20654aba07c2eb8e0ce7
+Z 55a2533bc51db158e8dea3afe120e7b9
