@@ -554,7 +554,7 @@ static void memTracePrint(Mem *p){
     printf(" i:%lld", p->u.i);
 #ifndef SQLITE_OMIT_FLOATING_POINT
   }else if( p->flags & MEM_Real ){
-    printf(" r:%g", p->u.r);
+    printf(" r:%.17g", p->u.r);
 #endif
   }else if( sqlite3VdbeMemIsRowSet(p) ){
     printf(" (rowset)");
