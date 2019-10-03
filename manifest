@@ -1,5 +1,5 @@
-C Increase\sthe\sprecision\sof\sfloating\spoint\svalue\sdisplay\sin\sVDBE\sdebugging\noutput.\s\sNo\schanges\sto\snormally\sdeployed\scode.
-D 2019-10-03T14:51:59.320
+C Avoid\srunning\sa\scouple\sof\stests\sin\saffinity2.test\sas\spart\sof\sthe\svalgrind\spermutations,\sas\sthe\sway\sfloating\spoint\scomputations\sare\ssimulated\sby\svalgrind\scauses\sthem\sto\sfail.
+D 2019-10-03T16:02:22.764
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/wherecode.c 535c8e228478fd971b9a5b6cb6773995b0fbf7020d5989508a5094ce5b8cd9
 F src/whereexpr.c 05c283d26aa9c3f5d1bf13a5f6a573b43295b9db280eff18e26f97d7d7f119b4
 F src/window.c 064f251451c8e2a1c76b6269229d911a651e119c6a5f522b6eaebf8dc8714041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
-F test/affinity2.test da465d3d490ab24ef64f7715b5953343a4967762b9350b29eb1462879ff3fb9e
+F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 12106f0748e8e9bfc1a8e6840e203e051eae06a26ed13fc9fd5db108a8d6db54
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3934d2d08ee14d644dc01f967c10f219b76b172c963c90a7a8141f2b08a7d5bf
-R 578efb1252061baf72e62a56d36f2f49
-U drh
-Z d7fdd14bec6b54681156d24a359a2c2d
+P a561a656ff50efc0103da3988626cea3ef05757403b83960f2aa6c0a48c2765e
+R f116075cb1c47b7928f41444f3803579
+U dan
+Z 6ea6658d1a0ebb4ff60eda04b46bac22
