@@ -1131,7 +1131,9 @@ static int SQLITE_TCLAPI test_drop_modules(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_drop_modules(db, argc>2 ? (const char**)(argv+2) : 0);
+#endif
   return TCL_OK;
 }
 
