@@ -16,6 +16,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+proc do_execsql_test_if_vtab {tn sql {res {}}} {
+  ifcapable vtab { uplevel [list do_execsql_test $tn $sql $res] }
+}
+
 do_execsql_test without_rowid6-100 {
   CREATE TABLE t1(a,b,c,d,e, PRIMARY KEY(a,b,c,a,b,c,d,a,b,c)) WITHOUT ROWID;
   CREATE INDEX t1a ON t1(b, b);
@@ -24,7 +28,7 @@ do_execsql_test without_rowid6-100 {
   INSERT INTO t1(a,b,c,d,e) SELECT i, i+1000, printf('x%dy',i), 0, 0 FROM c;
   ANALYZE;
 } {}
-do_execsql_test without_rowid6-101 {
+do_execsql_test_if_vtab without_rowid6-101 {
   SELECT name, key FROM pragma_index_xinfo('t1');
 } {a 1 b 1 c 1 d 1 e 0}
 do_execsql_test without_rowid6-110 {
@@ -54,7 +58,7 @@ do_execsql_test without_rowid6-200 {
   INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
   SELECT a FROM t1 WHERE b>3 ORDER BY b;
 } {4 1}
-do_execsql_test without_rowid6-201 {
+do_execsql_test_if_vtab without_rowid6-201 {
   SELECT name, key FROM pragma_index_xinfo('t1');
 } {b 1 a 0 c 0}
 do_execsql_test without_rowid6-210 {
@@ -111,7 +115,7 @@ do_execsql_test without_rowid6-500 {
   INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
   SELECT a FROM t1 WHERE b>3 ORDER BY b;
 } {4 1}
-do_execsql_test without_rowid6-501 {
+do_execsql_test_if_vtab without_rowid6-501 {
   SELECT name, key FROM pragma_index_xinfo('t1');
 } {b 1 c 1 a 0}
 do_execsql_test without_rowid6-510 {

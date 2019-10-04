@@ -412,6 +412,8 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
       # skip over "value is outside range" errors
       if {[regexp {value .* is outside the range of representable} $line]} {
          # noop
+      } elseif {[regexp {overflow: .* cannot be represented} $line]} {
+         # noop
       } else {
         incr ::NERRCASE
         if {$rc==0} {

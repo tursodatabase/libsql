@@ -9672,7 +9672,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif /* !defined(SQLITE_OMIT_TRACE) */
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_VIRTUALTABLE)
   if( c=='u' && strncmp(azArg[0], "unmodule", n)==0 ){
     int ii;
     int lenOpt;

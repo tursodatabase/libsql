@@ -15,6 +15,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix without_rowid7
 
+proc do_execsql_test_if_vtab {tn sql {res {}}} {
+  ifcapable vtab { uplevel [list do_execsql_test $tn $sql $res] }
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b COLLATE nocase, PRIMARY KEY(a, a, b)) WITHOUT ROWID;
 }
@@ -36,13 +40,13 @@ do_execsql_test 2.1 {
 do_execsql_test 2.2a {
   PRAGMA index_info(t2);
 } {0 0 a 1 0 a}
-do_execsql_test 2.2b {
+do_execsql_test_if_vtab 2.2b {
   SELECT *, '|' FROM pragma_index_info('t2');
 } {0 0 a | 1 0 a |}
 do_execsql_test 2.3a {
   PRAGMA index_xinfo(t2);
 } {0 0 a 0 nocase 1 1 0 a 0 BINARY 1 2 1 b 0 BINARY 0}
-do_execsql_test 2.3b {
+do_execsql_test_if_vtab 2.3b {
   SELECT *, '|' FROM pragma_index_xinfo('t2');
 } {0 0 a 0 nocase 1 | 1 0 a 0 BINARY 1 | 2 1 b 0 BINARY 0 |}
 
