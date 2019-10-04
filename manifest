@@ -1,5 +1,5 @@
-C Avoid\srunning\sa\scouple\sof\stests\sin\saffinity2.test\sas\spart\sof\sthe\svalgrind\spermutations,\sas\sthe\sway\sfloating\spoint\scomputations\sare\ssimulated\sby\svalgrind\scauses\sthem\sto\sfail.
-D 2019-10-03T16:02:22.764
+C Version\s3.30.0
+D 2019-10-04T15:03:17.190
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1846,7 +1846,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a561a656ff50efc0103da3988626cea3ef05757403b83960f2aa6c0a48c2765e
+P 7f9a4b6015ac332a04d3e394a6b3210fc95253d8786a261178a5639cb8d9d987
 R f116075cb1c47b7928f41444f3803579
-U dan
-Z 6ea6658d1a0ebb4ff60eda04b46bac22
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.30.0 *
+U drh
+Z edadfb0c72633ac9bcd13396063b6815
