@@ -126,6 +126,7 @@ set allquicktests [test_set $alltests -exclude {
   walcrash2.test e_fkey.test backup.test
 
   fts4merge.test fts4merge2.test fts4merge4.test fts4check.test
+  fts4merge5.test
   fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
   fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
 
@@ -455,8 +456,8 @@ test_suite "coverage-analyze" -description {
   Coverage tests for file analyze.c.
 } -files {
   analyze3.test analyze4.test analyze5.test analyze6.test
-  analyze7.test analyze8.test analyze9.test analyzeA.test
-  analyze.test analyzeB.test mallocA.test
+  analyze7.test analyze8.test analyze9.test
+  analyze.test mallocA.test
 } 
 
 test_suite "coverage-sorter" -description {
@@ -624,7 +625,7 @@ test_suite "utf16" -description {
 } -files {
     alter.test alter3.test
     analyze.test analyze3.test analyze4.test analyze5.test analyze6.test
-    analyze7.test analyze8.test analyze9.test analyzeA.test analyzeB.test
+    analyze7.test analyze8.test analyze9.test
     auth.test bind.test blob.test capi2.test capi3.test collate1.test
     collate2.test collate3.test collate4.test collate5.test collate6.test
     conflict.test date.test delete.test expr.test fkey1.test func.test
