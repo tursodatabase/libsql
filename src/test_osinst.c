@@ -62,6 +62,7 @@
 **       CREATE TABLE v(
 **         event    TEXT,             // "xOpen", "xRead" etc.
 **         file     TEXT,             // Name of file this call applies to
+**         time     INTEGER,          // Timestamp
 **         clicks   INTEGER,          // Time spent in call
 **         rc       INTEGER,          // Return value
 **         size     INTEGER,          // Bytes read or written
@@ -247,14 +248,15 @@ static sqlite3_uint64 vfslog_time(){
 }
 #endif
 
-static void vfslog_call(sqlite3_vfs *, int, int, sqlite3_int64, int, int, int);
+static void vfslog_call(
+sqlite3_vfs *, int, int, sqlite3_uint64, sqlite3_int64, int, int, int);
 static void vfslog_string(sqlite3_vfs *, const char *);
 
 /*
 ** Close an vfslog-file.
 */
 static int vfslogClose(sqlite3_file *pFile){
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   int rc = SQLITE_OK;
   VfslogFile *p = (VfslogFile *)pFile;
 
@@ -262,8 +264,8 @@ static int vfslogClose(sqlite3_file *pFile){
   if( p->pReal->pMethods ){
     rc = p->pReal->pMethods->xClose(p->pReal);
   }
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_CLOSE, p->iFileId, t, rc, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_CLOSE, p->iFileId, t, t2, rc, 0, 0);
   return rc;
 }
 
@@ -277,12 +279,12 @@ static int vfslogRead(
   sqlite_int64 iOfst
 ){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_READ, p->iFileId, t, rc, iAmt, (int)iOfst);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_READ, p->iFileId, t, t2, rc, iAmt, (int)iOfst);
   return rc;
 }
 
@@ -296,12 +298,12 @@ static int vfslogWrite(
   sqlite_int64 iOfst
 ){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xWrite(p->pReal, z, iAmt, iOfst);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_WRITE, p->iFileId, t, rc, iAmt, (int)iOfst);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_WRITE, p->iFileId, t, t2, rc, iAmt, (int)iOfst);
   return rc;
 }
 
@@ -310,12 +312,12 @@ static int vfslogWrite(
 */
 static int vfslogTruncate(sqlite3_file *pFile, sqlite_int64 size){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xTruncate(p->pReal, size);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_TRUNCATE, p->iFileId, t, rc, 0, (int)size);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_TRUNCATE, p->iFileId, t, t2, rc, 0, (int)size);
   return rc;
 }
 
@@ -324,12 +326,12 @@ static int vfslogTruncate(sqlite3_file *pFile, sqlite_int64 size){
 */
 static int vfslogSync(sqlite3_file *pFile, int flags){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xSync(p->pReal, flags);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SYNC, p->iFileId, t, rc, flags, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SYNC, p->iFileId, t, t2, rc, flags, 0);
   return rc;
 }
 
@@ -338,12 +340,12 @@ static int vfslogSync(sqlite3_file *pFile, int flags){
 */
 static int vfslogFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xFileSize(p->pReal, pSize);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_FILESIZE, p->iFileId, t, rc, 0, (int)*pSize);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_FILESIZE, p->iFileId, t, t2, rc, 0, (int)*pSize);
   return rc;
 }
 
@@ -352,12 +354,12 @@ static int vfslogFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 */
 static int vfslogLock(sqlite3_file *pFile, int eLock){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xLock(p->pReal, eLock);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_LOCK, p->iFileId, t, rc, eLock, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_LOCK, p->iFileId, t, t2, rc, eLock, 0);
   return rc;
 }
 
@@ -366,12 +368,12 @@ static int vfslogLock(sqlite3_file *pFile, int eLock){
 */
 static int vfslogUnlock(sqlite3_file *pFile, int eLock){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xUnlock(p->pReal, eLock);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_UNLOCK, p->iFileId, t, rc, eLock, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_UNLOCK, p->iFileId, t, t2, rc, eLock, 0);
   return rc;
 }
 
@@ -380,12 +382,12 @@ static int vfslogUnlock(sqlite3_file *pFile, int eLock){
 */
 static int vfslogCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xCheckReservedLock(p->pReal, pResOut);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_CHECKRESERVEDLOCK, p->iFileId, t, rc, *pResOut, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_CHECKRESERVEDLOCK, p->iFileId, t,t2,rc,*pResOut,0);
   return rc;
 }
 
@@ -406,12 +408,12 @@ static int vfslogFileControl(sqlite3_file *pFile, int op, void *pArg){
 */
 static int vfslogSectorSize(sqlite3_file *pFile){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xSectorSize(p->pReal);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SECTORSIZE, p->iFileId, t, rc, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SECTORSIZE, p->iFileId, t, t2, rc, 0, 0);
   return rc;
 }
 
@@ -420,23 +422,23 @@ static int vfslogSectorSize(sqlite3_file *pFile){
 */
 static int vfslogDeviceCharacteristics(sqlite3_file *pFile){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xDeviceCharacteristics(p->pReal);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_DEVCHAR, p->iFileId, t, rc, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_DEVCHAR, p->iFileId, t, t2, rc, 0, 0);
   return rc;
 }
 
 static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMLOCK, p->iFileId, t, rc, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMLOCK, p->iFileId, t, t2, rc, 0, 0);
   return rc;
 }
 static int vfslogShmMap(
@@ -447,30 +449,30 @@ static int vfslogShmMap(
   volatile void **pp
 ){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMMAP, p->iFileId, t, rc, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMMAP, p->iFileId, t, t2, rc, 0, 0);
   return rc;
 }
 static void vfslogShmBarrier(sqlite3_file *pFile){
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   p->pReal->pMethods->xShmBarrier(p->pReal);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMBARRIER, p->iFileId, t, SQLITE_OK, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMBARRIER, p->iFileId, t, t2, SQLITE_OK, 0, 0);
 }
 static int vfslogShmUnmap(sqlite3_file *pFile, int deleteFlag){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
   rc = p->pReal->pMethods->xShmUnmap(p->pReal, deleteFlag);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMUNMAP, p->iFileId, t, rc, 0, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMUNMAP, p->iFileId, t, t2, rc, 0, 0);
   return rc;
 }
 
@@ -486,7 +488,7 @@ static int vfslogOpen(
   int *pOutFlags
 ){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   VfslogFile *p = (VfslogFile *)pFile;
   VfslogVfs *pLog = (VfslogVfs *)pVfs;
 
@@ -497,9 +499,9 @@ static int vfslogOpen(
 
   t = vfslog_time();
   rc = REALVFS(pVfs)->xOpen(REALVFS(pVfs), zName, p->pReal, flags, pOutFlags);
-  t = vfslog_time() - t;
+  t2 = vfslog_time() - t;
 
-  vfslog_call(pVfs, OS_OPEN, p->iFileId, t, rc, 0, 0);
+  vfslog_call(pVfs, OS_OPEN, p->iFileId, t, t2, rc, 0, 0);
   vfslog_string(pVfs, zName);
   return rc;
 }
@@ -511,11 +513,11 @@ static int vfslogOpen(
 */
 static int vfslogDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   t = vfslog_time();
   rc = REALVFS(pVfs)->xDelete(REALVFS(pVfs), zPath, dirSync);
-  t = vfslog_time() - t;
-  vfslog_call(pVfs, OS_DELETE, 0, t, rc, dirSync, 0);
+  t2 = vfslog_time() - t;
+  vfslog_call(pVfs, OS_DELETE, 0, t, t2, rc, dirSync, 0);
   vfslog_string(pVfs, zPath);
   return rc;
 }
@@ -531,11 +533,11 @@ static int vfslogAccess(
   int *pResOut
 ){
   int rc;
-  sqlite3_uint64 t;
+  sqlite3_uint64 t, t2;
   t = vfslog_time();
   rc = REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags, pResOut);
-  t = vfslog_time() - t;
-  vfslog_call(pVfs, OS_ACCESS, 0, t, rc, flags, *pResOut);
+  t2 = vfslog_time() - t;
+  vfslog_call(pVfs, OS_ACCESS, 0, t, t2, rc, flags, *pResOut);
   vfslog_string(pVfs, zPath);
   return rc;
 }
@@ -653,6 +655,7 @@ static void vfslog_call(
   sqlite3_vfs *pVfs,
   int eEvent,
   int iFileid,
+  sqlite3_uint64 tStamp,
   sqlite3_int64 nClick,
   int return_code,
   int size,
@@ -660,17 +663,19 @@ static void vfslog_call(
 ){
   VfslogVfs *p = (VfslogVfs *)pVfs;
   unsigned char *zRec;
-  if( (24+p->nBuf)>sizeof(p->aBuf) ){
+  if( (32+p->nBuf)>sizeof(p->aBuf) ){
     vfslog_flush(p);
   }
   zRec = (unsigned char *)&p->aBuf[p->nBuf];
   vfslogPut32bits(&zRec[0], eEvent);
   vfslogPut32bits(&zRec[4], iFileid);
-  vfslogPut32bits(&zRec[8], (unsigned int)(nClick&0xffffffff));
-  vfslogPut32bits(&zRec[12], return_code);
-  vfslogPut32bits(&zRec[16], size);
-  vfslogPut32bits(&zRec[20], offset);
-  p->nBuf += 24;
+  vfslogPut32bits(&zRec[8], (unsigned int)((tStamp>>32)&0xffffffff));
+  vfslogPut32bits(&zRec[12], (unsigned int)(tStamp&0xffffffff));
+  vfslogPut32bits(&zRec[16], (unsigned int)(nClick&0xffffffff));
+  vfslogPut32bits(&zRec[20], return_code);
+  vfslogPut32bits(&zRec[24], size);
+  vfslogPut32bits(&zRec[28], offset);
+  p->nBuf += 32;
 }
 
 static void vfslog_string(sqlite3_vfs *pVfs, const char *zStr){
@@ -759,11 +764,12 @@ int sqlite3_vfslog_new(
 
 int sqlite3_vfslog_annotate(const char *zVfs, const char *zMsg){
   sqlite3_vfs *pVfs;
+  sqlite3_uint64 t = vfslog_time();
   pVfs = sqlite3_vfs_find(zVfs);
   if( !pVfs || pVfs->xOpen!=vfslogOpen ){
     return SQLITE_ERROR;
   } 
-  vfslog_call(pVfs, OS_ANNOTATE, 0, 0, 0, 0, 0);
+  vfslog_call(pVfs, OS_ANNOTATE, 0, t, 0, 0, 0, 0);
   vfslog_string(pVfs, zMsg);
   return SQLITE_OK;
 }
@@ -901,7 +907,7 @@ static int vlogConnect(
   if( rc==SQLITE_OK ){
     p->pFd->pMethods->xFileSize(p->pFd, &p->nByte);
     sqlite3_declare_vtab(db, 
-        "CREATE TABLE xxx(event, file, click, rc, size, offset)"
+        "CREATE TABLE xxx(event, file, time, click, rc, size, offset)"
     );
     *ppVtab = &p->base;
   }else{
@@ -973,7 +979,7 @@ static int vlogNext(sqlite3_vtab_cursor *pCursor){
   sqlite3_free(pCsr->zTransient);
   pCsr->zTransient = 0;
 
-  nRead = 24;
+  nRead = 32;
   if( pCsr->iOffset+nRead<=p->nByte ){
     int eEvent;
     rc = p->pFd->pMethods->xRead(p->pFd, pCsr->aBuf, nRead, pCsr->iOffset);
@@ -1037,18 +1043,18 @@ static int vlogColumn(
   sqlite3_context *ctx, 
   int i
 ){
-  unsigned int val;
   VfslogCsr *pCsr = (VfslogCsr *)pCursor;
 
   assert( i<7 );
-  val = get32bits(&pCsr->aBuf[4*i]);
 
   switch( i ){
     case 0: {
+      unsigned int val = get32bits(&pCsr->aBuf[0]);
       sqlite3_result_text(ctx, vfslog_eventname(val), -1, SQLITE_STATIC);
       break;
     }
     case 1: {
+      unsigned int val = get32bits(&pCsr->aBuf[4]);
       char *zStr = pCsr->zTransient;
       if( val!=0 && val<(unsigned)pCsr->nFile ){
         zStr = pCsr->azFile[val];
@@ -1056,9 +1062,17 @@ static int vlogColumn(
       sqlite3_result_text(ctx, zStr, -1, SQLITE_TRANSIENT);
       break;
     }
-    default:
+    case 2: {
+      unsigned int v1 = get32bits(&pCsr->aBuf[8]);
+      unsigned int v2 = get32bits(&pCsr->aBuf[12]);
+      sqlite3_result_int64(ctx,(((sqlite3_int64)v1) << 32) + (sqlite3_int64)v2);
+      break;
+    }
+    default: {
+      unsigned int val = get32bits(&pCsr->aBuf[4*(i+1)]);
       sqlite3_result_int(ctx, val);
       break;
+    }
   }
 
   return SQLITE_OK;

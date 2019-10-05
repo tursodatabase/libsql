@@ -1,5 +1,5 @@
-C Have\ssqlite3.c\sautomatically\sturn\son\sosinst\slogging\sfor\sall\sconnections.
-D 2019-10-05T17:29:52.699
+C Add\sa\stimestamp\sto\seach\sosinst\slog\sentry,\sto\sfacilitate\smerging\smultiple\slog\sfiles.
+D 2019-10-05T19:17:40.314
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c 7f4337ba23ee6b1d2ec81c189653608cb069926a
 F src/test_onefile.c f31e52e891c5fef6709b9fcef54ce660648a34172423a9cbdf4cbce3ba0049f4
-F src/test_osinst.c 192fbbafc7c92513efa238f1f3d0f5e64c49807f7328802fd37f508e022831c4
+F src/test_osinst.c 6c94ed7cf950d8af22c0380f91616647bb2a014536042a2e85d5e34fa1a8f52d
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
 F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
@@ -1791,6 +1791,7 @@ F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 27f9413c3343bac200a28d81e8234adb0f5e141c4771893cb19b40235a91f1e0
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
+F tool/osinst2sql.c 112ed2fb0175d1a341b87557c2f4dbc40f1d97d267533840124bec7df2dc72e2
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
@@ -1846,10 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c20a35336432025445f9f7e289d0cc3e4003fb17f45a4ce74c6269c407c6e09f
-R da26f1d5f4fd9d7b5a1d749e81c81be8
-T *branch * osinst
-T *sym-osinst *
-T -sym-trunk *
+P eea231f81b3ca6196949a84e8e0eb73a1ed03cb1ddd21f3b24787999caef8b1a
+R 9449485fb0843fcd1870f8be2c2fea3e
 U dan
-Z 090999d6315a1173b23966f6f90f5a7e
+Z ff2cfb2995d2d610b52cd1a91d9e0a5c
