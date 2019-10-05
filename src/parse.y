@@ -106,8 +106,9 @@ struct FrameBound     { int eType; Expr *pExpr; };
 ** shared across database connections.
 */
 static void disableLookaside(Parse *pParse){
+  sqlite3 *db = pParse->db;
   pParse->disableLookaside++;
-  pParse->db->lookaside.bDisable++;
+  DisableLookaside;
 }
 
 } // end %include

@@ -1271,10 +1271,17 @@ struct Schema {
 ** is shared by multiple database connections.  Therefore, while parsing
 ** schema information, the Lookaside.bEnabled flag is cleared so that
 ** lookaside allocations are not used to construct the schema objects.
+**
+** New lookaside allocations are only allowed if bDisable==0.  When
+** bDisable is greater than zero, sz is set to zero which effectively
+** disables lookaside without adding a new test for the bDisable flag
+** in a performance-critical path.  sz should be set by to szTrue whenever
+** bDisable changes back to zero.
 */
 struct Lookaside {
   u32 bDisable;           /* Only operate the lookaside when zero */
   u16 sz;                 /* Size of each buffer in bytes */
+  u16 szTrue;             /* True value of sz, even if disabled */
   u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   u32 nSlot;              /* Number of lookaside slots allocated */
   u32 anStat[3];          /* 0: hits.  1: size misses.  2: full misses */
@@ -1286,6 +1293,10 @@ struct Lookaside {
 struct LookasideSlot {
   LookasideSlot *pNext;    /* Next buffer in the list of free buffers */
 };
+
+#define DisableLookaside  db->lookaside.bDisable++;db->lookaside.sz=0
+#define EnableLookaside   db->lookaside.bDisable--;\
+   db->lookaside.sz=db->lookaside.bDisable?0:db->lookaside.szTrue
 
 /*
 ** A hash table for built-in function definitions.  (Application-defined

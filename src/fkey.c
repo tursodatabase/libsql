@@ -1299,7 +1299,7 @@ static Trigger *fkActionTrigger(
     }
 
     /* Disable lookaside memory allocation */
-    db->lookaside.bDisable++;
+    DisableLookaside;
 
     pTrigger = (Trigger *)sqlite3DbMallocZero(db, 
         sizeof(Trigger) +         /* struct Trigger */
@@ -1321,7 +1321,7 @@ static Trigger *fkActionTrigger(
     }
 
     /* Re-enable the lookaside buffer, if it was disabled earlier. */
-    db->lookaside.bDisable--;
+    EnableLookaside;
 
     sqlite3ExprDelete(db, pWhere);
     sqlite3ExprDelete(db, pWhen);

@@ -1854,9 +1854,9 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT4
   if( rc==SQLITE_OK ){
-    db->lookaside.bDisable++;
+    DisableLookaside;
     rc = loadStat4(db, sInfo.zDatabase);
-    db->lookaside.bDisable--;
+    EnableLookaside;
   }
   for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);

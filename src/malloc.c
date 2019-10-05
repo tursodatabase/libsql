@@ -298,7 +298,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
     return sqlite3GlobalConfig.m.xSize(p);
   }else{
     assert( sqlite3_mutex_held(db->mutex) );
-    return db->lookaside.sz;
+    return db->lookaside.szTrue;
   }
 }
 sqlite3_uint64 sqlite3_msize(void *p){
@@ -350,7 +350,7 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
       LookasideSlot *pBuf = (LookasideSlot*)p;
 #ifdef SQLITE_DEBUG
       /* Trash all content in the buffer being freed */
-      memset(p, 0xaa, db->lookaside.sz);
+      memset(p, 0xaa, db->lookaside.szTrue);
 #endif
       pBuf->pNext = db->lookaside.pFree;
       db->lookaside.pFree = pBuf;
@@ -510,23 +510,21 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( db->pnBytesFreed==0 );
-  if( db->lookaside.bDisable==0 ){
-    assert( db->mallocFailed==0 );
-    if( n>db->lookaside.sz ){
-      db->lookaside.anStat[1]++;
-    }else if( (pBuf = db->lookaside.pFree)!=0 ){
-      db->lookaside.pFree = pBuf->pNext;
-      db->lookaside.anStat[0]++;
-      return (void*)pBuf;
-    }else if( (pBuf = db->lookaside.pInit)!=0 ){
-      db->lookaside.pInit = pBuf->pNext;
-      db->lookaside.anStat[0]++;
-      return (void*)pBuf;
-    }else{
-      db->lookaside.anStat[2]++;
+  if( n>db->lookaside.sz ){
+    if( db->lookaside.bDisable ){
+      return db->mallocFailed ? 0 : dbMallocRawFinish(db, n);
     }
-  }else if( db->mallocFailed ){
-    return 0;
+    db->lookaside.anStat[1]++;
+  }else if( (pBuf = db->lookaside.pFree)!=0 ){
+    db->lookaside.pFree = pBuf->pNext;
+    db->lookaside.anStat[0]++;
+    return (void*)pBuf;
+  }else if( (pBuf = db->lookaside.pInit)!=0 ){
+    db->lookaside.pInit = pBuf->pNext;
+    db->lookaside.anStat[0]++;
+    return (void*)pBuf;
+  }else{
+    db->lookaside.anStat[2]++;
   }
 #else
   assert( db!=0 );
@@ -550,7 +548,7 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
   assert( db!=0 );
   if( p==0 ) return sqlite3DbMallocRawNN(db, n);
   assert( sqlite3_mutex_held(db->mutex) );
-  if( isLookaside(db,p) && n<=db->lookaside.sz ) return p;
+  if( isLookaside(db,p) && n<=db->lookaside.szTrue ) return p;
   return dbReallocFinish(db, p, n);
 }
 static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
@@ -561,7 +559,7 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
     if( isLookaside(db, p) ){
       pNew = sqlite3DbMallocRawNN(db, n);
       if( pNew ){
-        memcpy(pNew, p, db->lookaside.sz);
+        memcpy(pNew, p, db->lookaside.szTrue);
         sqlite3DbFree(db, p);
       }
     }else{
@@ -660,7 +658,7 @@ void sqlite3OomFault(sqlite3 *db){
     if( db->nVdbeExec>0 ){
       db->u1.isInterrupted = 1;
     }
-    db->lookaside.bDisable++;
+    DisableLookaside;
     if( db->pParse ){
       db->pParse->rc = SQLITE_NOMEM_BKPT;
     }
@@ -679,7 +677,7 @@ void sqlite3OomClear(sqlite3 *db){
     db->mallocFailed = 0;
     db->u1.isInterrupted = 0;
     assert( db->lookaside.bDisable>0 );
-    db->lookaside.bDisable--;
+    EnableLookaside;
   }
 }
 

@@ -527,6 +527,7 @@ void sqlite3ParserReset(Parse *pParse){
   if( db ){
     assert( db->lookaside.bDisable >= pParse->disableLookaside );
     db->lookaside.bDisable -= pParse->disableLookaside;
+    db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
   }
   pParse->disableLookaside = 0;
 }
@@ -560,7 +561,7 @@ static int sqlite3Prepare(
   */
   if( prepFlags & SQLITE_PREPARE_PERSISTENT ){
     sParse.disableLookaside++;
-    db->lookaside.bDisable++;
+    DisableLookaside;
   }
   sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
 

@@ -2447,7 +2447,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
-    db->lookaside.bDisable++;
+    DisableLookaside;
 #ifndef SQLITE_OMIT_AUTHORIZATION
     xAuth = db->xAuth;
     db->xAuth = 0;
@@ -2489,7 +2489,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     }
     sqlite3DeleteTable(db, pSelTab);
     sqlite3SelectDelete(db, pSel);
-    db->lookaside.bDisable--;
+    EnableLookaside;
 #ifndef SQLITE_OMIT_ALTERTABLE
     pParse->eParseMode = eParseMode;
 #endif
