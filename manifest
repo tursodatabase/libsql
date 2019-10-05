@@ -1,5 +1,5 @@
-C Reorder\stwo\scomparisons\sfor\sa\ssmall\sperformance\sgain\sin\sOP_Transaction.
-D 2019-10-05T15:28:24.829
+C Call\ssqlite3Prepare()\sdirectly,\srather\sthan\sgoing\sthrough\ssqlite3_prepare(),\nwhen\sprocessing\sthe\ssqlite_master.sql\scolumn\sfor\sa\sschema.
+D 2019-10-05T18:33:25.104
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
 F src/pragma.c b47bc7db02ab13d04c680aee424466b4e34f4ef5aa7b2e464876ec005806f98f
 F src/pragma.h 40962d65b645bb3f08c1f4c456effd01c6e7f073f68ea25177e0c95e181cff75
-F src/prepare.c c89734335c2bcd13c93afd08dd2961a92eda04fc1499f5505d7c730330bf5c20
+F src/prepare.c 53af23e89f42d3e5a489fc8af4449dee90fe81a1185bbb9c08567a0c814176d7
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e021be0c1c4a2125fa38aabcd8dbb764bf5b2c889a948c30d3708430ec6ccd00
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 17ce1c49cb0ed6fdd8c7c33431bc2afa217f1092c99b8dd608890a8e7aec7fb1
-R 96153477592d856a7ee9ca0882de8465
+P d7667f6560318272c8b35b478e29b0ed134105dfd119a2fd53ef0490442c60cc
+R 565d97aaa1d7e5deedf7835271150a85
 U drh
-Z 581c59c422f280ccd739f302a8c2cc14
+Z 0cd9235f242c7ffa50a8c935c0c588ef
