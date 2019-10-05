@@ -1,5 +1,5 @@
-C Call\ssqlite3Prepare()\sdirectly,\srather\sthan\sgoing\sthrough\ssqlite3_prepare(),\nwhen\sprocessing\sthe\ssqlite_master.sql\scolumn\sfor\sa\sschema.
-D 2019-10-05T18:33:25.104
+C Optimization\sto\ssqlite3VtabUnlockList()\sfor\sthe\scommon\scase\swhen\sthere\nis\sno\swork\sto\sdo.
+D 2019-10-05T19:24:52.240
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b
 F src/vdbemem.c d8e10d1773806105e62094c4ede0a4684f46caaf07667a45e6d461e94306b530
 F src/vdbesort.c da75f505aba230060ce6472605a4aa6494f73eeb1071e1cc2643c3d4035e671b
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vtab.c 5a0b7193d586991b3db30e343d6b59959906bfe8658a6a0a85709b20ca50bb49
+F src/vtab.c 27998d5d738069f2cee981620a1f224558494ce06799d14dcb5e6f34b4cdcdd1
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7667f6560318272c8b35b478e29b0ed134105dfd119a2fd53ef0490442c60cc
-R 565d97aaa1d7e5deedf7835271150a85
+P cc49380ea76a4a05843d3a0bdfb925464dc9d72c33cf5ab5243dd07d161ad038
+R 90d33cb7052902d978e92e7d394d1d19
 U drh
-Z 0cd9235f242c7ffa50a8c935c0c588ef
+Z f4e7052da6ef9e8655bcdb452b6237f4
