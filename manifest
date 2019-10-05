@@ -1,5 +1,5 @@
-C Performance\soptimization\sto\sthe\slookaside-memory\sdisabling\smechanism.
-D 2019-10-05T14:39:36.293
+C Reorder\stwo\scomparisons\sfor\sa\ssmall\sperformance\sgain\sin\sOP_Transaction.
+D 2019-10-05T15:28:24.829
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -597,7 +597,7 @@ F src/upsert.c 710c91bb13e3c3fed5b6fe17cb13e09560bdd003ad8b8c51e6b16c80cfc48b10
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c fffdfa627be74d69ef425f92db124e7148af449bb8a3286e79577c42bca84061
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 7f43ed8e055a4290535d2e4520d33f0ac6cc00ef76a0c099e4c6bd85be74a6b9
+F src/vdbe.c c988e4e237697232804c4e59408ebe8112c24620b5504bea3942c9280a9de588
 F src/vdbe.h 3f2b571e702e77e6bf031f0236e554aedfae643e991f69000320f481408455cf
 F src/vdbeInt.h e95de5129124d77f01439e6635012adfaf23c0017bff47296126143cf18bd0c6
 F src/vdbeapi.c 95001d0f84ee3cda344fed98ca0d7961deb4fc836b83495630d0af1f7cc4789e
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c20a35336432025445f9f7e289d0cc3e4003fb17f45a4ce74c6269c407c6e09f
-R 1bde973211db92f48ce6a8a5d375ada3
+P 17ce1c49cb0ed6fdd8c7c33431bc2afa217f1092c99b8dd608890a8e7aec7fb1
+R 96153477592d856a7ee9ca0882de8465
 U drh
-Z 45fc3168d771f200d11e6dc1ea8e3734
+Z 581c59c422f280ccd739f302a8c2cc14
