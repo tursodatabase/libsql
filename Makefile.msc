@@ -1346,7 +1346,8 @@ SRC01 = \
   $(TOP)\src\where.c \
   $(TOP)\src\wherecode.c \
   $(TOP)\src\whereexpr.c \
-  $(TOP)\src\window.c
+  $(TOP)\src\window.c \
+  $(TOP)\src\test_osinst.c
 
 # Core miscellaneous files.
 #
@@ -1470,7 +1471,7 @@ SRC12 =
 
 # All source code files.
 #
-SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11) $(TOP)\src\test_osinst.c
+SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11) 
 
 # Source code to the test files.
 #

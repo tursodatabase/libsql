@@ -1,11 +1,11 @@
-C Add\sa\stimestamp\sto\seach\sosinst\slog\sentry,\sto\sfacilitate\smerging\smultiple\slog\sfiles.
-D 2019-10-05T19:17:40.314
+C Fix\sa\sproblem\sin\sMakefile.msc\son\sthis\sbranch.
+D 2019-10-05T19:37:04.210
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in ee84c65aad5a4aa6f5f3a8e0b3f1d0becc326c2e8abff7d486e4effe69108918
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 9195217a8118b421967d50f1a7af106f1ee6c9b395f47cf2401c1e9be5e191c0
+F Makefile.msc 60547a4355cfde4ead5a35021cb9353a94d7ec34cdd21c153b7f18b55db54159
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION 4c516d84c2a5f26c477ed34c09ac4136630f71c68139631f2eb591b22eea7cf1
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eea231f81b3ca6196949a84e8e0eb73a1ed03cb1ddd21f3b24787999caef8b1a
-R 9449485fb0843fcd1870f8be2c2fea3e
+P c9519c0cec3f0eae3ec4abe39fabbcc59a38d3c2eba11e19cfec4b769ed7376e
+R 50521cd2cb2a43a71199778b2b607e03
 U dan
-Z ff2cfb2995d2d610b52cd1a91d9e0a5c
+Z 3d37686295c95e645e9fd4399b610f64
