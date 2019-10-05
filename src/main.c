@@ -1147,6 +1147,11 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
 int sqlite3_close(sqlite3 *db){ return sqlite3Close(db,0); }
 int sqlite3_close_v2(sqlite3 *db){ return sqlite3Close(db,1); }
 
+#ifdef SQLITE_ENABLE_OSINST
+int sqlite3_vfslog_new(const char*,const char*,const char*,sqlite3_vfs**);
+int sqlite3_vfslog_finalize(const char*);
+#endif
+
 
 /*
 ** Close the mutex on database connection db.
@@ -1251,6 +1256,13 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
 #endif
 
   db->magic = SQLITE_MAGIC_ERROR;
+
+#ifdef SQLITE_ENABLE_OSINST
+  if( db->pOsinstVfs ){
+    sqlite3_vfslog_finalize(db->pOsinstVfs->zName);
+    db->pOsinstVfs = 0;
+  }
+#endif
 
   /* The temp-database schema is allocated differently from the other schema
   ** objects (using sqliteMalloc() directly, instead of sqlite3BtreeSchema()).
@@ -3187,12 +3199,32 @@ static int openDatabase(
   }else{
     rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   }
+#ifdef SQLITE_ENABLE_OSINST
+  /* If this is not a temporary or ":memory:" database, create an osinst
+  ** VFS to use. */
+  assert( db->pVfs );
+  if( rc==SQLITE_OK && zOpen && zOpen[0] && strcmp(":memory:", zOpen) ){
+    u32 iVal = 0;
+    char *zLog = 0;
+    sqlite3_randomness(sizeof(iVal), (void*)&iVal);
+    zLog = sqlite3_mprintf("%s-osinst-%08x", zOpen, iVal);
+    if( zLog==0 ){
+      rc = SQLITE_NOMEM_BKPT;
+    }else{
+      sqlite3_vfs *pVfs = 0;
+      rc = sqlite3_vfslog_new(zLog, db->pVfs->zName, zLog, &pVfs);
+      sqlite3_free(zLog);
+      db->pOsinstVfs = db->pVfs = pVfs;
+    }
+  }
+#endif
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
     sqlite3ErrorWithMsg(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
     sqlite3_free(zErrMsg);
     goto opendb_out;
   }
+
 
   /* Open the backend database driver */
   rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, 0,

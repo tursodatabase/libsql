@@ -15,6 +15,8 @@
 #ifndef SQLITEINT_H
 #define SQLITEINT_H
 
+#define SQLITE_ENABLE_OSINST 1
+
 /* Special Comments:
 **
 ** Some comments have special meaning to the tools that measure test
@@ -1486,6 +1488,9 @@ struct sqlite3 {
 #endif
 #ifdef SQLITE_USER_AUTHENTICATION
   sqlite3_userauth auth;        /* User authentication information */
+#endif
+#ifdef SQLITE_ENABLE_OSINST
+  sqlite3_vfs *pOsinstVfs;      /* osinst VFS to finalize, if any */
 #endif
 };
 

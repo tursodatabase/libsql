@@ -378,6 +378,8 @@ SRC += \
   shell.c \
   sqlite3.h
 
+SRC += $(TOP)/src/test_osinst.c
+
 # Source code to the test files.
 #
 TESTSRC = \
@@ -681,6 +683,9 @@ sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
 
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
+
+osinst2sql$(TEXE):	$(TOP)/tool/osinst2sql.c sqlite3.c sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/tool/osinst2sql.c sqlite3.c $(TLIBS)
 
 DBFUZZ2_OPTS = \
   -DSQLITE_THREADSAFE=0 \

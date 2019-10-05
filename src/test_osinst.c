@@ -642,7 +642,7 @@ static void vfslog_flush(VfslogVfs *p){
 #endif
 }
 
-static void put32bits(unsigned char *p, unsigned int v){
+static void vfslogPut32bits(unsigned char *p, unsigned int v){
   p[0] = v>>24;
   p[1] = (unsigned char)(v>>16);
   p[2] = (unsigned char)(v>>8);
@@ -664,12 +664,12 @@ static void vfslog_call(
     vfslog_flush(p);
   }
   zRec = (unsigned char *)&p->aBuf[p->nBuf];
-  put32bits(&zRec[0], eEvent);
-  put32bits(&zRec[4], iFileid);
-  put32bits(&zRec[8], (unsigned int)(nClick&0xffff));
-  put32bits(&zRec[12], return_code);
-  put32bits(&zRec[16], size);
-  put32bits(&zRec[20], offset);
+  vfslogPut32bits(&zRec[0], eEvent);
+  vfslogPut32bits(&zRec[4], iFileid);
+  vfslogPut32bits(&zRec[8], (unsigned int)(nClick&0xffffffff));
+  vfslogPut32bits(&zRec[12], return_code);
+  vfslogPut32bits(&zRec[16], size);
+  vfslogPut32bits(&zRec[20], offset);
   p->nBuf += 24;
 }
 
@@ -681,7 +681,7 @@ static void vfslog_string(sqlite3_vfs *pVfs, const char *zStr){
     vfslog_flush(p);
   }
   zRec = (unsigned char *)&p->aBuf[p->nBuf];
-  put32bits(&zRec[0], nStr);
+  vfslogPut32bits(&zRec[0], nStr);
   if( zStr ){
     memcpy(&zRec[4], zStr, nStr);
   }
@@ -710,7 +710,8 @@ int sqlite3_vfslog_finalize(const char *zVfs){
 int sqlite3_vfslog_new(
   const char *zVfs,               /* New VFS name */
   const char *zParentVfs,         /* Parent VFS name (or NULL) */
-  const char *zLog                /* Log file name */
+  const char *zLog,               /* Log file name */
+  sqlite3_vfs **ppVfs             /* OUT: New VFS object */
 ){
   VfslogVfs *p;
   sqlite3_vfs *pParent;
@@ -747,7 +748,8 @@ int sqlite3_vfslog_new(
     memcpy(p->aBuf, "sqlite_ostrace1.....", 20);
     p->iOffset = 0;
     p->nBuf = 20;
-    rc = sqlite3_vfs_register((sqlite3_vfs *)p, 1);
+    rc = sqlite3_vfs_register((sqlite3_vfs *)p, 0);
+    if( ppVfs ) *ppVfs = (sqlite3_vfs*)p;
   }
   if( rc ){
     vfslog_finalize(p);
@@ -1180,11 +1182,12 @@ static int SQLITE_TCLAPI test_vfslog(
       zParent = Tcl_GetString(objv[3]);
       zLog = Tcl_GetString(objv[4]);
       if( *zParent=='\0' ) zParent = 0;
-      rc = sqlite3_vfslog_new(zVfs, zParent, zLog);
+      rc = sqlite3_vfslog_new(zVfs, zParent, zLog, 0);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "failed", 0);
         return TCL_ERROR;
       }
+      sqlite3_vfs_register(sqlite3_vfs_find(zVfs), 1);
       break;
     };
 

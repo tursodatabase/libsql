@@ -1470,7 +1470,7 @@ SRC12 =
 
 # All source code files.
 #
-SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
+SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11) $(TOP)\src\test_osinst.c
 
 # Source code to the test files.
 #
@@ -1771,6 +1771,9 @@ fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 
 dbfuzz.exe:	$(TOP)\test\dbfuzz.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(DBFUZZ_COMPILE_OPTS) $(TOP)\test\dbfuzz.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+osinst2sql.exe:	$(TOP)\tool\osinst2sql.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\osinst2sql.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)

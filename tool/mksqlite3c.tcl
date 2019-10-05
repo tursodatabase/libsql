@@ -403,6 +403,8 @@ foreach file {
    sqlite3session.c
    fts5.c
    stmt.c
+
+   test_osinst.c
 } {
   copy_file tsrc/$file
 }

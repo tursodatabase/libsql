@@ -297,6 +297,8 @@ SRC += \
   shell.c \
   sqlite3.h
 
+SRC += $(TOP)/src/test_osinst.c
+
 
 # Source code to the test files.
 #
@@ -578,6 +580,11 @@ fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 dbfuzz$(EXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(TCCX) -o dbfuzz$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 	  $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
+	  $(TLIBS) $(THREADLIB)
+
+osinst2sql$(EXE): $(TOP)/tool/osinst2sql.c sqlite3.c sqlite3.h
+	$(TCCX) -o osinst2sql$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+	  $(DBFUZZ_OPT) $(TOP)/tool/osinst2sql.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
 DBFUZZ2_OPTS = \
