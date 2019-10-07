@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srunning\sALTER\sTABLE\sADD\sCOLUMN\sstatements\swithin\sa\stransaction\sthat\swrites\sto\sone\sor\smore\svirtual\stables.
-D 2019-10-07T18:43:21.695
+C Omit\sa\spointless\smemory\sallocation\sin\svdbeSorterSort().
+D 2019-10-07T20:33:26.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/vdbeapi.c 95001d0f84ee3cda344fed98ca0d7961deb4fc836b83495630d0af1f7cc4789e
 F src/vdbeaux.c d17dfbf1e03ef706cad9e2076c7f2354882c191a84e73e00c69c50bb7823e5ce
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c d8e10d1773806105e62094c4ede0a4684f46caaf07667a45e6d461e94306b530
-F src/vdbesort.c da75f505aba230060ce6472605a4aa6494f73eeb1071e1cc2643c3d4035e671b
+F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 27998d5d738069f2cee981620a1f224558494ce06799d14dcb5e6f34b4cdcdd1
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32fba11ab72f6300391267eaad64e92fa767c289029e668e4bd6c9165acf1487
-R db964bd8afa744d576868ce0a446ba2a
-U dan
-Z 5a81872aeea20d6403e12d21521ec57b
+P 31e85fbbc4cfd09a98b4a6dc6624f863816f376c6a4eef1fafc657c8e1abbc36
+R b2acbbb32ce768006e1935135c4701f9
+U drh
+Z cb273b07f15ada61a167d906a6c04b2b
