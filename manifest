@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sassert()\sfix\sin\sthe\sprevious\scommit.
-D 2019-10-07T13:46:43.787
+C Fix\sa\sproblem\swith\srunning\sALTER\sTABLE\sADD\sCOLUMN\sstatements\swithin\sa\stransaction\sthat\swrites\sto\sone\sor\smore\svirtual\stables.
+D 2019-10-07T18:43:21.695
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -189,7 +189,7 @@ F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc27826807405
 F ext/fts5/test/fts5matchinfo.test 79129ff6c9a2d86943b287a5a8caa7ee639f6dcf004d8975d15c279374e82e35
 F ext/fts5/test/fts5merge.test e92a8db28b45931e7a9c7b1bbd36101692759d00274df74d83fd29d25d53b3a6
 F ext/fts5/test/fts5merge2.test 3ebad1a59d6ad3fb66eff6523a09e95dc6367cbefb3cd73196801dea0425c8e2
-F ext/fts5/test/fts5misc.test 5becd134b66f7370042968a2b127b92ea7748e249f16cb6a996f450812e89eec
+F ext/fts5/test/fts5misc.test 9a7263add42d55b8e22fc6ebbee2904390e923f4aa11d05fffaf617032f95db5
 F ext/fts5/test/fts5multi.test a15bc91cdb717492e6e1b66fec1c356cb57386b980c7ba5af1915f97fe878581
 F ext/fts5/test/fts5multiclient.test 5ff811c028d6108045ffef737f1e9f05028af2458e456c0937c1d1b8dea56d45
 F ext/fts5/test/fts5near.test 211477940142d733ac04fad97cb24095513ab2507073a99c2765c3ddd2ef58bd
@@ -459,7 +459,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 5c3031e45e80f79d7d54c2d32dd3c44926544d4f6a478858bfe4ee3191570190
+F src/alter.c 5773b28684a001dcab45adcefa3cbf5e846335c0c8fee0da8a3770cb0123bba8
 F src/analyze.c 481d9cf34a3c70631ef5c416be70033e8d4cd85eb5ad1b37286aed8b0e29e889
 F src/attach.c 3ca19504849c2d9be10fc5899d6811f9d6e848665d1a41ffb53df0cd6e7c13ed
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
@@ -601,7 +601,7 @@ F src/vdbe.c 6df0a99dfbdd9dec542a94f06dd9a8a575acc87047937b2b801ac9d68eb3c96f
 F src/vdbe.h 3f2b571e702e77e6bf031f0236e554aedfae643e991f69000320f481408455cf
 F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 95001d0f84ee3cda344fed98ca0d7961deb4fc836b83495630d0af1f7cc4789e
-F src/vdbeaux.c 7ccf418141df1c7f87b0d69510523ae522abbe47c769d1b2c15120e88fac3eb9
+F src/vdbeaux.c d17dfbf1e03ef706cad9e2076c7f2354882c191a84e73e00c69c50bb7823e5ce
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c d8e10d1773806105e62094c4ede0a4684f46caaf07667a45e6d461e94306b530
 F src/vdbesort.c da75f505aba230060ce6472605a4aa6494f73eeb1071e1cc2643c3d4035e671b
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69a26eade2f92029e722a5a654214b1e2a3fc7ed497ce9aa5a7dce944f90e502
-R fc0a42027c5e123c7e9c334ffeb0817d
+P 32fba11ab72f6300391267eaad64e92fa767c289029e668e4bd6c9165acf1487
+R db964bd8afa744d576868ce0a446ba2a
 U dan
-Z 3aa98325281de1e7b28033dd15b881b8
+Z 5a81872aeea20d6403e12d21521ec57b
