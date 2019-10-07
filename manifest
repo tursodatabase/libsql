@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_SeekRowid\sopcode\sso\sthat\sit\sworks\scorrectly\swith\sa\sReal\sargument\nwithout\sdamaging\sthe\svalue\sin\sthe\sregister\sthat\sis\sthe\sargument.\nTicket\s[b2d4edaffdc156cc].\s\sTest\scases\sin\sTH3.
-D 2019-10-07T01:05:57.547
+C Fix\sa\sfaulty\sassert()\sstatement\sin\sthe\ssqlite3VdbeMemExpandBlob()\sroutine.
+D 2019-10-07T13:26:58.759
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/util.c fffdfa627be74d69ef425f92db124e7148af449bb8a3286e79577c42bca84061
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
 F src/vdbe.c 6df0a99dfbdd9dec542a94f06dd9a8a575acc87047937b2b801ac9d68eb3c96f
 F src/vdbe.h 3f2b571e702e77e6bf031f0236e554aedfae643e991f69000320f481408455cf
-F src/vdbeInt.h e95de5129124d77f01439e6635012adfaf23c0017bff47296126143cf18bd0c6
+F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 95001d0f84ee3cda344fed98ca0d7961deb4fc836b83495630d0af1f7cc4789e
 F src/vdbeaux.c 7ccf418141df1c7f87b0d69510523ae522abbe47c769d1b2c15120e88fac3eb9
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b73a09270dfafb27f8d1762b547ef8178c9da66f45e7153ff0b76272dfa92f5
-R e6de42fa154e4ab1e333f543b12bcf01
+P 3cde82c86b963fa75192907d548febd3882c7d8fc7daf1903fadd5ca46623be1
+R 73df9511ada20723ed01dfaf44dc9280
 U drh
-Z cb13c52744b53be5d17143f1f2ff1518
+Z 8b3be29b1e469069a86d0b588261ad50
