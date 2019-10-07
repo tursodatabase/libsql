@@ -994,7 +994,9 @@ static int vlogNext(sqlite3_vtab_cursor *pCursor){
       if( rc==SQLITE_OK ){
         int nStr = get32bits((unsigned char *)buf);
         char *zStr = sqlite3_malloc(nStr+1);
-        rc = p->pFd->pMethods->xRead(p->pFd, zStr, nStr, pCsr->iOffset+nRead);
+        if( nStr>0 ){
+          rc = p->pFd->pMethods->xRead(p->pFd, zStr, nStr, pCsr->iOffset+nRead);
+        }
         zStr[nStr] = '\0';
         nRead += nStr;
 
