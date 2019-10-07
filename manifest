@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sstatement\sin\sthe\ssqlite3VdbeMemExpandBlob()\sroutine.
-D 2019-10-07T13:26:58.759
+C Add\sa\stest\scase\sfor\sthe\sassert()\sfix\sin\sthe\sprevious\scommit.
+D 2019-10-07T13:46:43.787
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -769,7 +769,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test dfad96373bf9264d73039315ea6013994b90bf6776847adc7ec06b6fad3c04b2
+F test/corruptL.test a22a7bbf8da7603960f0bfcc62a68d1c3c41963786bd832ff804ba5e2458fb9c
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3cde82c86b963fa75192907d548febd3882c7d8fc7daf1903fadd5ca46623be1
-R 73df9511ada20723ed01dfaf44dc9280
-U drh
-Z 8b3be29b1e469069a86d0b588261ad50
+P 69a26eade2f92029e722a5a654214b1e2a3fc7ed497ce9aa5a7dce944f90e502
+R fc0a42027c5e123c7e9c334ffeb0817d
+U dan
+Z 3aa98325281de1e7b28033dd15b881b8
