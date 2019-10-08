@@ -249,7 +249,7 @@ static sqlite3_uint64 vfslog_time(){
 #endif
 
 static void vfslog_call(
-sqlite3_vfs *, int, int, sqlite3_uint64, sqlite3_int64, int, int, int);
+sqlite3_vfs *, int, int, sqlite3_uint64, sqlite3_int64, int, int, sqlite_int64);
 static void vfslog_string(sqlite3_vfs *, const char *);
 
 /*
@@ -284,7 +284,7 @@ static int vfslogRead(
   t = vfslog_time();
   rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
   t2 = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_READ, p->iFileId, t, t2, rc, iAmt, (int)iOfst);
+  vfslog_call(p->pVfslog, OS_READ, p->iFileId, t, t2, rc, iAmt, iOfst);
   return rc;
 }
 
@@ -303,7 +303,7 @@ static int vfslogWrite(
   t = vfslog_time();
   rc = p->pReal->pMethods->xWrite(p->pReal, z, iAmt, iOfst);
   t2 = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_WRITE, p->iFileId, t, t2, rc, iAmt, (int)iOfst);
+  vfslog_call(p->pVfslog, OS_WRITE, p->iFileId, t, t2, rc, iAmt, iOfst);
   return rc;
 }
 
@@ -317,7 +317,7 @@ static int vfslogTruncate(sqlite3_file *pFile, sqlite_int64 size){
   t = vfslog_time();
   rc = p->pReal->pMethods->xTruncate(p->pReal, size);
   t2 = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_TRUNCATE, p->iFileId, t, t2, rc, 0, (int)size);
+  vfslog_call(p->pVfslog, OS_TRUNCATE, p->iFileId, t, t2, rc, 0, size);
   return rc;
 }
 
@@ -345,7 +345,7 @@ static int vfslogFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   t = vfslog_time();
   rc = p->pReal->pMethods->xFileSize(p->pReal, pSize);
   t2 = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_FILESIZE, p->iFileId, t, t2, rc, 0, (int)*pSize);
+  vfslog_call(p->pVfslog, OS_FILESIZE, p->iFileId, t, t2, rc, 0, *pSize);
   return rc;
 }
 
@@ -537,7 +537,7 @@ static int vfslogAccess(
   t = vfslog_time();
   rc = REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags, pResOut);
   t2 = vfslog_time() - t;
-  vfslog_call(pVfs, OS_ACCESS, 0, t, t2, rc, flags, *pResOut);
+  vfslog_call(pVfs, OS_ACCESS, 0, t, t2, rc, flags, (sqlite3_int64)*pResOut);
   vfslog_string(pVfs, zPath);
   return rc;
 }
@@ -651,6 +651,13 @@ static void vfslogPut32bits(unsigned char *p, unsigned int v){
   p[3] = (unsigned char)v;
 }
 
+static void vfslogPut64bits(unsigned char *p, sqlite3_int64 v){
+  vfslogPut32bits(p, (v >> 32) & 0xFFFFFFFF);
+  vfslogPut32bits(&p[4], v & 0xFFFFFFFF);
+}
+
+#define VFSLOG_RECORD_SIZE 36
+
 static void vfslog_call(
   sqlite3_vfs *pVfs,
   int eEvent,
@@ -659,23 +666,23 @@ static void vfslog_call(
   sqlite3_int64 nClick,
   int return_code,
   int size,
-  int offset
+  sqlite3_int64 offset
 ){
   VfslogVfs *p = (VfslogVfs *)pVfs;
   unsigned char *zRec;
-  if( (32+p->nBuf)>sizeof(p->aBuf) ){
+  if( (VFSLOG_RECORD_SIZE+p->nBuf)>sizeof(p->aBuf) ){
     vfslog_flush(p);
   }
   zRec = (unsigned char *)&p->aBuf[p->nBuf];
   vfslogPut32bits(&zRec[0], eEvent);
   vfslogPut32bits(&zRec[4], iFileid);
-  vfslogPut32bits(&zRec[8], (unsigned int)((tStamp>>32)&0xffffffff));
-  vfslogPut32bits(&zRec[12], (unsigned int)(tStamp&0xffffffff));
+  vfslogPut64bits(&zRec[8], (sqlite3_int64)tStamp);
   vfslogPut32bits(&zRec[16], (unsigned int)(nClick&0xffffffff));
   vfslogPut32bits(&zRec[20], return_code);
   vfslogPut32bits(&zRec[24], size);
-  vfslogPut32bits(&zRec[28], offset);
-  p->nBuf += 32;
+  vfslogPut64bits(&zRec[28], offset);
+
+  p->nBuf += VFSLOG_RECORD_SIZE;
 }
 
 static void vfslog_string(sqlite3_vfs *pVfs, const char *zStr){
@@ -979,7 +986,7 @@ static int vlogNext(sqlite3_vtab_cursor *pCursor){
   sqlite3_free(pCsr->zTransient);
   pCsr->zTransient = 0;
 
-  nRead = 32;
+  nRead = VFSLOG_RECORD_SIZE;
   if( pCsr->iOffset+nRead<=p->nByte ){
     int eEvent;
     rc = p->pFd->pMethods->xRead(p->pFd, pCsr->aBuf, nRead, pCsr->iOffset);
@@ -1067,7 +1074,17 @@ static int vlogColumn(
     case 2: {
       unsigned int v1 = get32bits(&pCsr->aBuf[8]);
       unsigned int v2 = get32bits(&pCsr->aBuf[12]);
-      sqlite3_result_int64(ctx,(((sqlite3_int64)v1) << 32) + (sqlite3_int64)v2);
+      sqlite3_result_int64(
+        ctx,(((sqlite3_int64)v1) << 32) + (sqlite3_int64)v2
+      );
+      break;
+    }
+    case 6: {
+      unsigned int v1 = get32bits(&pCsr->aBuf[28]);
+      unsigned int v2 = get32bits(&pCsr->aBuf[32]);
+      sqlite3_result_int64(
+        ctx,(((sqlite3_int64)v1) << 32) + (sqlite3_int64)v2
+      );
       break;
     }
     default: {

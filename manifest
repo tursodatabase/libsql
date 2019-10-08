@@ -1,5 +1,5 @@
-C Avoid\sattempting\sto\sread\s0\sbytes\sfrom\sa\sfile\sin\sthe\sosinst\svtab\scode.
-D 2019-10-07T10:29:18.641
+C Store\s64-bit\soffset\svalues\sin\sosinst\slog\sfiles.
+D 2019-10-08T19:45:17.191
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c 7f4337ba23ee6b1d2ec81c189653608cb069926a
 F src/test_onefile.c f31e52e891c5fef6709b9fcef54ce660648a34172423a9cbdf4cbce3ba0049f4
-F src/test_osinst.c 446494a025eb5ece24de6a9a1b97b1e390c27d59ccf42d1e5cddd61c16f811c4
+F src/test_osinst.c 0a58f8a4b03274c84c97a1060dd702004f8f2f6d9af2dba9b4daa93786bf697a
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
 F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed3499a1a5c0f860b940af0edc6a6184d834001a68d59b36b0e1b21d2e6579ca
-R 167c91f002f8b3259c9adc1d3ec59b39
+P 1fb76c3e7d904cd2754270997d3d0c86237b0a630d6b1417578a8191e6e1687f
+R 3cd7734ca3a0cffa4c22dd2b9933bced
 U dan
-Z 798e91aaa2dcc84e3d48ac174ec14d84
+Z 83be8f87e7b61aedcd3403b05fb69071
