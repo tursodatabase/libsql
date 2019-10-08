@@ -5235,6 +5235,7 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 int sqlite3Fts5IndexReinit(Fts5Index *p){
   Fts5Structure s;
   fts5StructureInvalidate(p);
+  fts5IndexDiscardData(p);
   memset(&s, 0, sizeof(Fts5Structure));
   fts5DataWrite(p, FTS5_AVERAGES_ROWID, (const u8*)"", 0);
   fts5StructureWrite(p, &s);

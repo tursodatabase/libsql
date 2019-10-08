@@ -560,6 +560,8 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
   Fts5Config *pConfig = p->pConfig;
   int rc;
 
+  p->bTotalsValid = 0;
+
   /* Delete the contents of the %_data and %_docsize tables. */
   rc = fts5ExecPrintf(pConfig->db, 0,
       "DELETE FROM %Q.'%q_data';" 

@@ -121,6 +121,35 @@ do_execsql_test 3.2 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0);
+  INSERT INTO vt0(c0) VALUES ('xyz');
+}
+
+do_execsql_test 4.1 {
+  BEGIN;
+    INSERT INTO vt0(c0) VALUES ('abc');
+    INSERT INTO vt0(vt0) VALUES('rebuild');
+  COMMIT;
+}
+
+do_execsql_test 4.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+do_execsql_test 4.3 {
+  BEGIN;
+    INSERT INTO vt0(vt0) VALUES('rebuild');
+    INSERT INTO vt0(vt0) VALUES('rebuild');
+  COMMIT;
+}
+
+do_execsql_test 4.4 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
 
 finish_test
 
