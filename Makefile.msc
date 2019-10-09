@@ -2413,7 +2413,7 @@ quicktest:	testfixture.exe sourcetest
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) sourcetest fastfuzztest
+test:	$(TESTPROGS) sourcetest fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
