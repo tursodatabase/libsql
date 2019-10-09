@@ -186,7 +186,10 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
         /* p->flags holds EP_Collate and p->pLeft->flags does not.  And
         ** p->x.pSelect cannot.  So if p->x.pLeft exists, it must hold at
         ** least one EP_Collate. Thus the following two ALWAYS. */
-        if( p->x.pList!=0 && ALWAYS(!ExprHasProperty(p, EP_xIsSelect)) ){
+        if( p->x.pList!=0 
+         && !db->mallocFailed
+         && ALWAYS(!ExprHasProperty(p, EP_xIsSelect))
+        ){
           int i;
           for(i=0; ALWAYS(i<p->x.pList->nExpr); i++){
             if( ExprHasProperty(p->x.pList->a[i].pExpr, EP_Collate) ){
@@ -1530,10 +1533,6 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNext = pNew;
   }
 
-  if( db->mallocFailed ){
-    sqlite3SelectDelete(db, pRet);
-    pRet = 0;
-  }
   return pRet;
 }
 #else

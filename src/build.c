@@ -4143,7 +4143,8 @@ SrcList *sqlite3SrcListAppend(
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
   struct SrcList_item *pItem;
-  if( ALWAYS(pList) ){
+  assert(pList || pParse->db->mallocFailed );
+  if( pList ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
       if( pItem->iCursor>=0 ) break;
       pItem->iCursor = pParse->nTab++;
