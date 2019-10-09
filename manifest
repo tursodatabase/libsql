@@ -1,5 +1,5 @@
-C Change\ssqlite3SelectDup()\sto\salways\sreturn\sNULL\sif\san\sOOM\shas\soccurred.
-D 2019-10-09T15:00:37.770
+C New\stest\scases\sadded\sto\stest/fuzzdata8.db.
+D 2019-10-09T15:03:45.629
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1015,7 +1015,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db e7a86fd83dda151d160445d542e32e5c6019c541b3a74c2a525b6ac640639711
-F test/fuzzdata8.db c75b0fd1d28c262f9c3a9428393ff9c420ea5bdbe0b33c557a971915a94bab71
+F test/fuzzdata8.db 57e6d5017998c7b96a1662e6437e25fdd9a38da7fdb1393213f929f8871b4c43
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ca5ef84506aac3e2f08baa36095b3befdeedf2a3443fcd9154a277b55cbf64b
-R fe27e0c870114c891c3ae0e47860d60b
+P 01ba4641ab436c6065c8725908fc0913f2abded4ea62e004b7534e0116b9451a
+R c3a19548fe0e1039731a2bf52b802dbd
 U drh
-Z f1a49373828661924f244cc19ce55da2
+Z 4ec1e6610a0d29b150eaeb9beffc2499
