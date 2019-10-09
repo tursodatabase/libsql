@@ -13,6 +13,7 @@
 ** Memory allocation functions used throughout sqlite.
 */
 #include "sqliteInt.h"
+#include "lookaside.h"
 #include <stdarg.h>
 
 /*
@@ -265,17 +266,6 @@ void *sqlite3_malloc64(sqlite3_uint64 n){
 }
 
 /*
-** TRUE if p is a lookaside memory allocation from db
-*/
-#ifndef SQLITE_OMIT_LOOKASIDE
-static int isLookaside(sqlite3 *db, void *p){
-  return SQLITE_WITHIN(p, db->lookaside.pStart, db->lookaside.pEnd);
-}
-#else
-#define isLookaside(A,B) 0
-#endif
-
-/*
 ** Return the size of a memory allocation previously obtained from
 ** sqlite3Malloc() or sqlite3_malloc().
 */
@@ -285,7 +275,7 @@ int sqlite3MallocSize(void *p){
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
   assert( p!=0 );
-  if( db==0 || !isLookaside(db,p) ){
+  if( db==0 || !sqlite3IsLookaside(&db->lookaside,p) ){
 #ifdef SQLITE_DEBUG
     if( db==0 ){
       assert( sqlite3MemdebugNoType(p, (u8)~MEMTYPE_HEAP) );
@@ -298,7 +288,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
     return sqlite3GlobalConfig.m.xSize(p);
   }else{
     assert( sqlite3_mutex_held(db->mutex) );
-    return db->lookaside.szTrue;
+    return sqlite3LookasideSize(&db->lookaside, p);
   }
 }
 sqlite3_uint64 sqlite3_msize(void *p){
@@ -346,14 +336,8 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
       measureAllocationSize(db, p);
       return;
     }
-    if( isLookaside(db, p) ){
-      LookasideSlot *pBuf = (LookasideSlot*)p;
-#ifdef SQLITE_DEBUG
-      /* Trash all content in the buffer being freed */
-      memset(p, 0xaa, db->lookaside.szTrue);
-#endif
-      pBuf->pNext = db->lookaside.pFree;
-      db->lookaside.pFree = pBuf;
+    if( sqlite3IsLookaside(&db->lookaside, p) ){
+      sqlite3LookasideFree(&db->lookaside, p);
       return;
     }
   }
@@ -468,10 +452,11 @@ void *sqlite3DbMallocZero(sqlite3 *db, u64 n){
 static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
   void *p;
   assert( db!=0 );
+  if( db->mallocFailed ){ return 0; }
   p = sqlite3Malloc(n);
   if( !p ) sqlite3OomFault(db);
   sqlite3MemdebugSetType(p, 
-         (db->lookaside.bDisable==0) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
+    sqlite3LookasideDisabled(&db->lookaside) ? MEMTYPE_HEAP : MEMTYPE_LOOKASIDE);
   return p;
 }
 
@@ -505,27 +490,11 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
   return p;
 }
 void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
-#ifndef SQLITE_OMIT_LOOKASIDE
-  LookasideSlot *pBuf;
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( db->pnBytesFreed==0 );
-  if( n>db->lookaside.sz ){
-    if( db->lookaside.bDisable ){
-      return db->mallocFailed ? 0 : dbMallocRawFinish(db, n);
-    }
-    db->lookaside.anStat[1]++;
-  }else if( (pBuf = db->lookaside.pFree)!=0 ){
-    db->lookaside.pFree = pBuf->pNext;
-    db->lookaside.anStat[0]++;
-    return (void*)pBuf;
-  }else if( (pBuf = db->lookaside.pInit)!=0 ){
-    db->lookaside.pInit = pBuf->pNext;
-    db->lookaside.anStat[0]++;
-    return (void*)pBuf;
-  }else{
-    db->lookaside.anStat[2]++;
-  }
+#ifndef SQLITE_OMIT_LOOKASIDE
+  return sqlite3LookasideAlloc(&db->lookaside, n) ?: dbMallocRawFinish(db, n);
 #else
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
@@ -533,8 +502,8 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
   if( db->mallocFailed ){
     return 0;
   }
-#endif
   return dbMallocRawFinish(db, n);
+#endif
 }
 
 /* Forward declaration */
@@ -548,7 +517,7 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
   assert( db!=0 );
   if( p==0 ) return sqlite3DbMallocRawNN(db, n);
   assert( sqlite3_mutex_held(db->mutex) );
-  if( isLookaside(db,p) && n<=db->lookaside.szTrue ) return p;
+  if( sqlite3IsLookaside(&db->lookaside,p) && n<=sqlite3LookasideSize(&db->lookaside, p) ) return p;
   return dbReallocFinish(db, p, n);
 }
 static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
@@ -556,10 +525,10 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
   assert( db!=0 );
   assert( p!=0 );
   if( db->mallocFailed==0 ){
-    if( isLookaside(db, p) ){
+    if( sqlite3IsLookaside(&db->lookaside,p) ){
       pNew = sqlite3DbMallocRawNN(db, n);
       if( pNew ){
-        memcpy(pNew, p, db->lookaside.szTrue);
+        memcpy(pNew, p, sqlite3LookasideSize(&db->lookaside, p));
         sqlite3DbFree(db, p);
       }
     }else{
@@ -570,8 +539,8 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
       if( !pNew ){
         sqlite3OomFault(db);
       }
-      sqlite3MemdebugSetType(pNew,
-            (db->lookaside.bDisable==0 ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
+      sqlite3MemdebugSetType(p,
+        sqlite3LookasideDisabled(&db->lookaside) ? MEMTYPE_HEAP : MEMTYPE_LOOKASIDE);
     }
   }
   return pNew;
@@ -648,8 +617,7 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){
 
 /*
 ** Call this routine to record the fact that an OOM (out-of-memory) error
-** has happened.  This routine will set db->mallocFailed, and also
-** temporarily disable the lookaside memory allocator and interrupt
+** has happened.  This routine will set db->mallocFailed and interrupt
 ** any running VDBEs.
 */
 void sqlite3OomFault(sqlite3 *db){
@@ -658,7 +626,7 @@ void sqlite3OomFault(sqlite3 *db){
     if( db->nVdbeExec>0 ){
       db->u1.isInterrupted = 1;
     }
-    DisableLookaside;
+    sqlite3LookasideDisable(&db->lookaside);;
     if( db->pParse ){
       db->pParse->rc = SQLITE_NOMEM_BKPT;
     }
@@ -676,7 +644,7 @@ void sqlite3OomClear(sqlite3 *db){
   if( db->mallocFailed && db->nVdbeExec==0 ){
     db->mallocFailed = 0;
     db->u1.isInterrupted = 0;
-    assert( db->lookaside.bDisable>0 );
+    assert( sqlite3LookasideDisabled(&db->lookaside) );
     EnableLookaside;
   }
 }

@@ -234,6 +234,8 @@ SRC = \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
+  $(TOP)/src/lookaside.c \
+  $(TOP)/src/lookaside.h \
   $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
   $(TOP)/src/mem0.c \
@@ -525,6 +527,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/lookaside.h \
    $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
@@ -868,6 +871,9 @@ legacy.lo:	$(TOP)/src/legacy.c $(HDR)
 
 loadext.lo:	$(TOP)/src/loadext.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/loadext.c
+
+lookaside.lo:  $(TOP)/src/lookaside.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/lookaside.c
 
 main.lo:	$(TOP)/src/main.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c

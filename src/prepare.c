@@ -14,6 +14,7 @@
 ** from disk.
 */
 #include "sqliteInt.h"
+#include "lookaside.h"
 
 /*
 ** Fill the InitData structure with an error message that indicates
@@ -538,9 +539,8 @@ void sqlite3ParserReset(Parse *pParse){
   sqlite3DbFree(db, pParse->aLabel);
   sqlite3ExprListDelete(db, pParse->pConstExpr);
   if( db ){
-    assert( db->lookaside.bDisable >= pParse->disableLookaside );
-    db->lookaside.bDisable -= pParse->disableLookaside;
-    db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
+    assert( sqlite3LookasideDisabled(&db->lookaside) >= pParse->disableLookaside );
+    sqlite3LookasideEnableCnt(&db->lookaside, pParse->disableLookaside);
   }
   pParse->disableLookaside = 0;
 }
@@ -574,7 +574,7 @@ static int sqlite3Prepare(
   */
   if( prepFlags & SQLITE_PREPARE_PERSISTENT ){
     sParse.disableLookaside++;
-    DisableLookaside;
+    sqlite3LookasideDisable(&db->lookaside);
   }
   sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
 

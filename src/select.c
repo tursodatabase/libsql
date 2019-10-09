@@ -13,6 +13,7 @@
 ** to handle SELECT statements in SQLite.
 */
 #include "sqliteInt.h"
+#include "lookaside.h"
 
 /*
 ** Trace output macros

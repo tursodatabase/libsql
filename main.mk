@@ -111,6 +111,8 @@ SRC = \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
+  $(TOP)/src/lookaside.c \
+  $(TOP)/src/lookaside.h \
   $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
   $(TOP)/src/mem0.c \
@@ -443,6 +445,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/lookaside.h \
    $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \

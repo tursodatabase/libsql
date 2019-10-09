@@ -51,6 +51,7 @@
 //
 %include {
 #include "sqliteInt.h"
+#include "lookaside.h"
 
 /*
 ** Disable all error recovery processing in the parser push-down
@@ -108,7 +109,7 @@ struct FrameBound     { int eType; Expr *pExpr; };
 static void disableLookaside(Parse *pParse){
   sqlite3 *db = pParse->db;
   pParse->disableLookaside++;
-  DisableLookaside;
+  sqlite3LookasideDisable(&db->lookaside);
 }
 
 } // end %include

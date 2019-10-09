@@ -12,6 +12,7 @@
 ** support to compiled SQL statements.
 */
 #include "sqliteInt.h"
+#include "lookaside.h"
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 #ifndef SQLITE_OMIT_TRIGGER
@@ -1299,7 +1300,7 @@ static Trigger *fkActionTrigger(
     }
 
     /* Disable lookaside memory allocation */
-    DisableLookaside;
+    sqlite3LookasideDisable(&db->lookaside);
 
     pTrigger = (Trigger *)sqlite3DbMallocZero(db, 
         sizeof(Trigger) +         /* struct Trigger */
@@ -1321,7 +1322,7 @@ static Trigger *fkActionTrigger(
     }
 
     /* Re-enable the lookaside buffer, if it was disabled earlier. */
-    EnableLookaside;
+    sqlite3LookasideEnable(&db->lookaside);
 
     sqlite3ExprDelete(db, pWhere);
     sqlite3ExprDelete(db, pWhen);

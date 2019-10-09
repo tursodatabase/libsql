@@ -1289,9 +1289,19 @@ struct Lookaside {
   LookasideSlot *pFree;   /* List of available buffers */
   void *pStart;           /* First byte of available memory space */
   void *pEnd;             /* First byte past end of available space */
+#ifndef SQLITE_OMIT_MINILOOKASIDE
+  LookasideSlot *pMini;   /* List of buffers used by mini allocator */
+  u16 szMini;             /* Size of each mini-allocator buffer in bytes */
+  u16 nMini;              /* Number of mini-allocator buffers per slot */
+#endif /* SQLITE_OMIT_MINILOOKASIDE */
 };
 struct LookasideSlot {
-  LookasideSlot *pNext;    /* Next buffer in the list of free buffers */
+  LookasideSlot *pNext;    /* Next buffer in the list of buffers */
+#ifndef SQLITE_OMIT_MINILOOKASIDE
+  /* The members below are only valid for slots inside the mini-allocator */
+  LookasideSlot *pPrev;    /* Previous partially-used buffer in the list */
+  int bMembership;         /* Bitfield tracking sub-allocations within slot */
+#endif /* SQLITE_OMIT_MINILOOKASIDE */
 };
 
 #define DisableLookaside  db->lookaside.bDisable++;db->lookaside.sz=0
@@ -3825,7 +3835,6 @@ sqlite3_int64 sqlite3StatusValue(int);
 void sqlite3StatusUp(int, int);
 void sqlite3StatusDown(int, int);
 void sqlite3StatusHighwater(int, int);
-int sqlite3LookasideUsed(sqlite3*,int*);
 
 /* Access to mutexes used by sqlite3_status() */
 sqlite3_mutex *sqlite3Pcache1Mutex(void);

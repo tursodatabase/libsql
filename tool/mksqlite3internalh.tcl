@@ -58,6 +58,7 @@ foreach hdr {
    hash.h
    hwtime.h
    keywordhash.h
+   lookaside.h
    msvc.h
    opcodes.h
    os_common.h

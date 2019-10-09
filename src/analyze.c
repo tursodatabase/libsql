@@ -141,6 +141,7 @@
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
+#include "lookaside.h"
 
 #if defined(SQLITE_ENABLE_STAT4)
 # define IsStat4     1
@@ -1662,7 +1663,7 @@ static int loadStatTbl(
   Index *pPrevIdx = 0;          /* Previous index in the loop */
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
 
-  assert( db->lookaside.bDisable );
+  assert( sqlite3LookasideDisabled(&db->lookaside) );
   zSql = sqlite3MPrintf(db, zSql1, zDb);
   if( !zSql ){
     return SQLITE_NOMEM_BKPT;
@@ -1773,7 +1774,7 @@ static int loadStatTbl(
 static int loadStat4(sqlite3 *db, const char *zDb){
   int rc = SQLITE_OK;             /* Result codes from subroutines */
 
-  assert( db->lookaside.bDisable );
+  assert( sqlite3LookasideDisabled(&db->lookaside) );
   if( sqlite3FindTable(db, "sqlite_stat4", zDb) ){
     rc = loadStatTbl(db,
       "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
@@ -1854,9 +1855,9 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT4
   if( rc==SQLITE_OK ){
-    DisableLookaside;
+    sqlite3LookasideDisable(&db->lookaside);
     rc = loadStat4(db, sInfo.zDatabase);
-    EnableLookaside;
+    sqlite3LookasideEnable(&db->lookaside);
   }
   for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);

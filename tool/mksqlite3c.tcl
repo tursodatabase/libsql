@@ -103,6 +103,7 @@ foreach hdr {
    hash.h
    hwtime.h
    keywordhash.h
+   lookaside.h
    msvc.h
    mutex.h
    opcodes.h
@@ -300,6 +301,7 @@ foreach file {
    os.c
 
    fault.c
+   lookaside.c
    mem0.c
    mem1.c
    mem2.c

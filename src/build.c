@@ -23,6 +23,7 @@
 **     ROLLBACK
 */
 #include "sqliteInt.h"
+#include "lookaside.h"
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
@@ -626,7 +627,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   ** that no lookaside memory is used in this case either. */
   int nLookaside = 0;
   if( db && !db->mallocFailed && (pTable->tabFlags & TF_Ephemeral)==0 ){
-    nLookaside = sqlite3LookasideUsed(db, 0);
+    nLookaside = sqlite3LookasideUsed(&db->lookaside, 0);
   }
 #endif
 
@@ -662,7 +663,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   sqlite3DbFree(db, pTable);
 
   /* Verify that no lookaside memory was used by schema tables */
-  assert( nLookaside==0 || nLookaside==sqlite3LookasideUsed(db,0) );
+  assert( nLookaside==0 || nLookaside==sqlite3LookasideUsed(&db->lookaside,0) );
 }
 void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Do not delete the table until the reference count reaches zero. */

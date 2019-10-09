@@ -1290,6 +1290,7 @@ SRC00 = \
   $(TOP)\src\insert.c \
   $(TOP)\src\legacy.c \
   $(TOP)\src\loadext.c \
+  $(TOP)\src\lookaside.c \
   $(TOP)\src\main.c \
   $(TOP)\src\malloc.c \
   $(TOP)\src\mem0.c \
@@ -1360,6 +1361,7 @@ SRC04 = \
   $(TOP)\src\btreeInt.h \
   $(TOP)\src\hash.h \
   $(TOP)\src\hwtime.h \
+  $(TOP)\src\lookaside.h \
   $(TOP)\src\msvc.h \
   $(TOP)\src\mutex.h \
   $(TOP)\src\os.h \
@@ -1580,6 +1582,7 @@ HDR = \
    $(TOP)\src\btreeInt.h \
    $(TOP)\src\hash.h \
    $(TOP)\src\hwtime.h \
+   $(TOP)\src\lookaside.h \
    keywordhash.h \
    $(TOP)\src\msvc.h \
    $(TOP)\src\mutex.h \
@@ -1960,6 +1963,9 @@ legacy.lo:	$(TOP)\src\legacy.c $(HDR)
 
 loadext.lo:	$(TOP)\src\loadext.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\loadext.c
+
+lookaside.lo:	$(TOP)\src\lookaside.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\lookaside.c
 
 main.lo:	$(TOP)\src\main.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\main.c
