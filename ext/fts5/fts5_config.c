@@ -881,6 +881,7 @@ int sqlite3Fts5ConfigSetValue(
       *pbBadkey = 1;
     }else{
       if( nCrisisMerge<=1 ) nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
+      if( nCrisisMerge>=FTS5_MAX_SEGMENT ) nCrisisMerge = FTS5_MAX_SEGMENT-1;
       pConfig->nCrisisMerge = nCrisisMerge;
     }
   }

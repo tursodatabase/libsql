@@ -175,5 +175,23 @@ do_catchsql_test 5.3 {
   INSERT INTO vt0(vt0, rank) VALUES('pgsz', '65537');
 } {1 {SQL logic error}}
 
+#-------------------------------------------------------------------------
+# Ticket [d392017c].
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+  )
+  INSERT INTO vt0(c0) SELECT '0' FROM s;
+  INSERT INTO vt0(vt0, rank) VALUES('crisismerge', 2000);
+  INSERT INTO vt0(vt0, rank) VALUES('automerge', 0);
+} {}
+
+do_execsql_test 6.1 {
+  INSERT INTO vt0(vt0) VALUES('rebuild');
+}
+
 finish_test
 
