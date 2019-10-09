@@ -23,7 +23,7 @@
 #define FTS5_DEFAULT_HASHSIZE    (1024*1024)
 
 /* Maximum allowed page size */
-#define FTS5_MAX_PAGE_SIZE (128*1024)
+#define FTS5_MAX_PAGE_SIZE (64*1024)
 
 static int fts5_iswhitespace(char x){
   return (x==' ');

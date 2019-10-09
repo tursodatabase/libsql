@@ -2410,9 +2410,6 @@ queryplantest:	testfixture.exe shell
 fuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe $(FUZZDATA)
 
-fastfuzztest:	fuzzcheck.exe
-	.\fuzzcheck.exe --limit-mem 100M $(FUZZDATA)
-
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
 quicktest:	testfixture.exe sourcetest
@@ -2422,7 +2419,7 @@ quicktest:	testfixture.exe sourcetest
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) sourcetest fastfuzztest
+test:	$(TESTPROGS) sourcetest fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 

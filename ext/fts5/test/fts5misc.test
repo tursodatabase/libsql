@@ -150,6 +150,30 @@ do_execsql_test 4.4 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+# Ticket [81a7f7b9].
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0, c1);
+  INSERT INTO vt0(vt0, rank) VALUES('pgsz', '65536');
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1236
+  )
+  INSERT INTO vt0(c0) SELECT '0' FROM s;
+} {}
+
+do_execsql_test 5.1 {
+  UPDATE vt0 SET c1 = 'T,D&p^y/7#3*v<b<4j7|f';
+}
+
+do_execsql_test 5.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+do_catchsql_test 5.3 {
+  INSERT INTO vt0(vt0, rank) VALUES('pgsz', '65537');
+} {1 {SQL logic error}}
 
 finish_test
 

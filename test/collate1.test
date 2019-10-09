@@ -417,4 +417,23 @@ do_execsql_test 8.2 {
   SELECT * FROM t0 WHERE c1 = 1;
 } {{ } 1}
 
+# 2019-10-09
+# ALWAYS() macro fails following OOM
+# Problem detected by dbsqlfuzz.
+#
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+}
+
+do_faultsim_test 9.1 -faults oom* -body {
+  execsql {
+    SELECT * FROM (
+        SELECT b COLLATE nocase IN (SELECT c FROM t2) FROM t1
+    );
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test
