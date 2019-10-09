@@ -5149,6 +5149,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_CASE:
     case TK_IN:
     case TK_FUNCTION:
+    case TK_TRUTH:
       testcase( pExpr->op==TK_ISNOT );
       testcase( pExpr->op==TK_ISNULL );
       testcase( pExpr->op==TK_NOTNULL );
@@ -5157,6 +5158,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_CASE );
       testcase( pExpr->op==TK_IN );
       testcase( pExpr->op==TK_FUNCTION );
+      testcase( pExpr->op==TK_TRUTH );
       return WRC_Prune;
     case TK_COLUMN:
       if( pWalker->u.iCur==pExpr->iTable ){
