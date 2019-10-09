@@ -643,48 +643,24 @@ static int sqlite3Prepare(
   }
   assert( 0==sParse.nQueryLoop );
 
-  if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
+  if( sParse.rc==SQLITE_DONE ){
+    sParse.rc = SQLITE_OK;
+  }
   if( sParse.checkSchema ){
     schemaIsValid(&sParse);
-  }
-  if( db->mallocFailed ){
-    sParse.rc = SQLITE_NOMEM_BKPT;
   }
   if( pzTail ){
     *pzTail = sParse.zTail;
   }
-  rc = sParse.rc;
-
-#ifndef SQLITE_OMIT_EXPLAIN
-  /* Justification for the ALWAYS(): The only way for rc to be SQLITE_OK and
-  ** sParse.pVdbe to be NULL is if the input SQL is an empty string, but in
-  ** that case, sParse.explain will be false. */
-  if( sParse.explain && rc==SQLITE_OK && ALWAYS(sParse.pVdbe) ){
-    static const char * const azColName[] = {
-       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "id", "parent", "notused", "detail"
-    };
-    int iFirst, mx;
-    if( sParse.explain==2 ){
-      sqlite3VdbeSetNumCols(sParse.pVdbe, 4);
-      iFirst = 8;
-      mx = 12;
-    }else{
-      sqlite3VdbeSetNumCols(sParse.pVdbe, 8);
-      iFirst = 0;
-      mx = 8;
-    }
-    for(i=iFirst; i<mx; i++){
-      sqlite3VdbeSetColName(sParse.pVdbe, i-iFirst, COLNAME_NAME,
-                            azColName[i], SQLITE_STATIC);
-    }
-  }
-#endif
 
   if( db->init.busy==0 ){
     sqlite3VdbeSetSql(sParse.pVdbe, zSql, (int)(sParse.zTail-zSql), prepFlags);
   }
-  if( rc!=SQLITE_OK || db->mallocFailed ){
+  if( db->mallocFailed ){
+    sParse.rc = SQLITE_NOMEM_BKPT;
+  }
+  rc = sParse.rc;
+  if( rc!=SQLITE_OK ){
     if( sParse.pVdbe ) sqlite3VdbeFinalize(sParse.pVdbe);
     assert(!(*ppStmt));
   }else{

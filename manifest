@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\susing\sthe\sfts5\s'rebuild'\scommand\sinside\sa\stransaction\sthat\scontains\sother\supdates\sof\sthe\ssame\stable.\sFix\sfor\s[e258f008].
-D 2019-10-08T13:34:24.536
+C Save\sCPU\scycles\sin\ssqlite3Prepare()\sby,\samong\sother\sthings,\sshifting\sthe\nEXPLAIN\scolumn\slabel\slogic\sover\sto\ssqlite3VdbeMakeReady().
+D 2019-10-09T01:19:07.523
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
 F src/pragma.c b47bc7db02ab13d04c680aee424466b4e34f4ef5aa7b2e464876ec005806f98f
 F src/pragma.h 40962d65b645bb3f08c1f4c456effd01c6e7f073f68ea25177e0c95e181cff75
-F src/prepare.c fc245d2049e5e9e76738cd403e63c9832ff61c706d19607d2b62a51f1747609c
+F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e021be0c1c4a2125fa38aabcd8dbb764bf5b2c889a948c30d3708430ec6ccd00
@@ -601,7 +601,7 @@ F src/vdbe.c 6df0a99dfbdd9dec542a94f06dd9a8a575acc87047937b2b801ac9d68eb3c96f
 F src/vdbe.h 3f2b571e702e77e6bf031f0236e554aedfae643e991f69000320f481408455cf
 F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 95001d0f84ee3cda344fed98ca0d7961deb4fc836b83495630d0af1f7cc4789e
-F src/vdbeaux.c d17dfbf1e03ef706cad9e2076c7f2354882c191a84e73e00c69c50bb7823e5ce
+F src/vdbeaux.c a35a1785f980c44838b636a6d55a46b25ad80f2a2065851f165ab143aa46f99c
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c d8e10d1773806105e62094c4ede0a4684f46caaf07667a45e6d461e94306b530
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ab0aebdb3c2d6fb3160b2c58ce6cc0495a6ddd960878a6395958c837f3d1b71
-R 74814f3b82ccc57c689e36d5b9ae7e28
-U dan
-Z 1ced3dbc55f7a754d800609f44681fb4
+P 238e0835714696aba0631f288fcc30ec5fddb43893d469c6bf017f386b3cddee
+R 9457b091a708e50c9171b591a3bb15db
+U drh
+Z 38eb7b49a4f6e211f706f20347aaa37c
