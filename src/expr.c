@@ -1530,6 +1530,10 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     pNext = pNew;
   }
 
+  if( db->mallocFailed ){
+    sqlite3SelectDelete(db, pRet);
+    pRet = 0;
+  }
   return pRet;
 }
 #else
