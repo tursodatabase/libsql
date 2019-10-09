@@ -934,10 +934,6 @@ fuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-
 	./fuzzcheck$(EXE) $(FUZZDATA)
 	./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
-fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
-	./fuzzcheck$(EXE) --limit-mem 100M $(FUZZDATA)
-	./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
-
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
 	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 	valgrind ./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db

@@ -1242,10 +1242,6 @@ fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessionfuz
 	./fuzzcheck$(TEXE) $(FUZZDATA)
 	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
 
-fastfuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessionfuzz-data1.db
-	./fuzzcheck$(TEXE) --limit-mem 100M $(FUZZDATA)
-	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
-
 valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessionfuzz-data1.db
 	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 	valgrind ./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
