@@ -1,5 +1,5 @@
-C Avoid\sassuming\sthat\san\sexpression\sthat\scontains\sthe\ssub-expression\s(?\sIS\sFALSE)\sor\s(?\sIS\sTRUE)\smay\sonly\sbe\strue\sif\s?\sis\snon-null.\sFix\sfor\s[a976c487].
-D 2019-10-10T16:21:57.122
+C Version\s3.30.1
+D 2019-10-10T20:19:45.339
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1846,8 +1846,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4974a0f957648afe93a1a2128d32188082e7df69fb65ac7f8f436098dcc69d1
-Q +eb7ed90b8a65748f0721aaf7bdddd2207f552be5015603fbfb7044d815ae2f36
+P c6cc2390e91097a32992d11c74af8e77a6a42862ec8a936b549e156250629407
 R 9b77b3da995b6a235a01d1e768df1101
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.30.1 *
 U drh
-Z 83470e842c390cfe80ed824fe3e13958
+Z 6b715002b9e76fa6c3cf0c09f9813287
