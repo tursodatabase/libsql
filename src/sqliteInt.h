@@ -2596,9 +2596,13 @@ struct Expr {
 ** True if the expression passed as an argument was a function with
 ** an OVER() clause (a window function).
 */
-#define IsWindowFunc(p) ( \
+#ifdef SQLITE_OMIT_WINDOWFUNC
+# define IsWindowFunc(p) 0
+#else
+# define IsWindowFunc(p) ( \
     ExprHasProperty((p), EP_WinFunc) && p->y.pWin->eFrmType!=TK_FILTER \
-)
+ )
+#endif
 
 /*
 ** A list of expressions.  Each expression may optionally have a

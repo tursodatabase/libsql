@@ -1190,4 +1190,48 @@ do_execsql_test 30.0 {
          win3 AS (win2 RANGE BETWEEN 5.2 PRECEDING AND true PRECEDING );
 } {1 1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 31.1 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  CREATE TABLE t3(e, f);
+
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t2 VALUES(1, 1);
+  INSERT INTO t3 VALUES(1, 1);
+}
+
+do_execsql_test 31.2 {
+  SELECT d IN (SELECT sum(c) OVER (ORDER BY e+c) FROM t3) FROM (
+    SELECT * FROM t2
+  );
+} {1}
+
+do_execsql_test 31.3 {
+  SELECT d IN (SELECT sum(c) OVER (PARTITION BY d ORDER BY e+c) FROM t3) FROM (
+    SELECT * FROM t2
+  );
+} {1}
+
+do_catchsql_test 31.3 {
+  SELECT d IN (
+    SELECT sum(c) OVER ( ROWS BETWEEN d FOLLOWING AND UNBOUNDED FOLLOWING) 
+    FROM t3
+  )
+  FROM (
+    SELECT * FROM t2
+  );
+} {1 {frame starting offset must be a non-negative integer}}
+
+do_catchsql_test 31.3 {
+  SELECT d IN (
+    SELECT sum(c) OVER ( ROWS BETWEEN CURRENT ROW AND c FOLLOWING) 
+    FROM t3
+  )
+  FROM (
+    SELECT * FROM t2
+  );
+} {1 {frame ending offset must be a non-negative integer}}
+
 finish_test
