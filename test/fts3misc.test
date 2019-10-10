@@ -226,5 +226,16 @@ do_execsql_test 6.1 {
   SELECT rowid FROM t6 WHERE t6 MATCH 'b OR "x a"'
 } {50001 50002 50003 50004}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts3(c0);
+  INSERT INTO vt0 VALUES (x'00');
+}
+do_execsql_test 7.1 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
 
 finish_test
