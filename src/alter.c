@@ -435,6 +435,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     goto exit_begin_add_column;
   }
 
+  sqlite3MayAbort(pParse);
   assert( pTab->addColOffset>0 );
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
