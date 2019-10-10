@@ -905,5 +905,35 @@ do_execsql_test join-18.4 {
   SELECT NOT(v0.a IS FALSE) FROM v0
 } {1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test join-19.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  INSERT INTO t1(a) VALUES(0);
+  CREATE VIEW v0(c) AS SELECT t2.b FROM t1 LEFT JOIN t2;
+}
+
+do_execsql_test join-19.1 {
+  SELECT * FROM v0 WHERE v0.c NOTNULL NOTNULL; 
+} {{}}
+
+do_execsql_test join-19.2 {
+  SELECT * FROM t1 LEFT JOIN t2
+} {0 {}}
+
+do_execsql_test join-19.3 {
+  SELECT * FROM t1 LEFT JOIN t2 WHERE (b IS NOT NULL) IS NOT NULL; 
+} {0 {}}
+
+do_execsql_test join-19.4 {
+  SELECT (b IS NOT NULL) IS NOT NULL FROM t1 LEFT JOIN t2
+} {1}
+
+do_execsql_test join-19.5 {
+  SELECT * FROM t1 LEFT JOIN t2 WHERE 
+    (b IS NOT NULL AND b IS NOT NULL) IS NOT NULL; 
+} {0 {}}
+
 finish_test
 

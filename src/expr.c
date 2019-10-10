@@ -5168,10 +5168,11 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
 
     case TK_AND:
-      if( sqlite3ExprImpliesNonNullRow(pExpr->pLeft, pWalker->u.iCur)
-       && sqlite3ExprImpliesNonNullRow(pExpr->pRight, pWalker->u.iCur)
-      ){
-        pWalker->eCode = 1;
+      assert( pWalker->eCode==0 );
+      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      if( pWalker->eCode ){
+        pWalker->eCode = 0;
+        sqlite3WalkExpr(pWalker, pExpr->pRight);
       }
       return WRC_Prune;
 
@@ -5230,15 +5231,8 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
   Walker w;
   p = sqlite3ExprSkipCollateAndLikely(p);
-  while( p ){
-    if( p->op==TK_NOTNULL ){
-      p = p->pLeft;
-    }else if( p->op==TK_AND ){
-      if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab) ) return 1;
-      p = p->pRight;
-    }else{
-      break;
-    }
+  if( p && p->op==TK_NOTNULL ){
+    p = p->pLeft;
   }
   w.xExprCallback = impliesNotNullRow;
   w.xSelectCallback = 0;
