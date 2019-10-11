@@ -5234,9 +5234,11 @@ int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
   if( p==0 ) return 0;
   if( p->op==TK_NOTNULL ){
     p = p->pLeft;
-  }else if( p->op==TK_AND ){
-    if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab) ) return 1;
-    p = p->pRight;
+  }else{
+    while( p->op==TK_AND ){
+      if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab) ) return 1;
+      p = p->pRight;
+    }
   }
   w.xExprCallback = impliesNotNullRow;
   w.xSelectCallback = 0;
