@@ -5231,8 +5231,12 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
   Walker w;
   p = sqlite3ExprSkipCollateAndLikely(p);
-  if( p && p->op==TK_NOTNULL ){
+  if( p==0 ) return 0;
+  if( p->op==TK_NOTNULL ){
     p = p->pLeft;
+  }else if( p->op==TK_AND ){
+    if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab) ) return 1;
+    p = p->pRight;
   }
   w.xExprCallback = impliesNotNullRow;
   w.xSelectCallback = 0;
