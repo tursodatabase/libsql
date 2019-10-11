@@ -5171,7 +5171,11 @@ static u64 fts3ChecksumIndex(
               pCsr += sqlite3Fts3GetVarint(pCsr, &iCol);
             }else{
               pCsr += sqlite3Fts3GetVarint(pCsr, &iVal);
-              iDocid += iVal;
+              if( p->bDescIdx ){
+                iDocid -= iVal;
+              }else{
+                iDocid += iVal;
+              }
             }
           }else{
             iPos += (iVal - 2);
