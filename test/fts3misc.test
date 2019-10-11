@@ -238,6 +238,7 @@ do_execsql_test 7.1 {
 }
 
 #-------------------------------------------------------------------------
+# Ticket [8a6fa2bb].
 #
 reset_db
 do_execsql_test 7.0.1 {
@@ -255,7 +256,6 @@ do_execsql_test 7.1.1 {
 do_execsql_test 7.1.2 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
-
 do_execsql_test 7.2.1 {
   CREATE VIRTUAL TABLE ft USING fts4(c0, c1, order=DESC, prefix=1);
   INSERT INTO ft VALUES('a b c d', 'hello world');
@@ -266,6 +266,21 @@ do_execsql_test 7.2.2 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
 
-
+#-------------------------------------------------------------------------
+# Ticket [745f1abc].
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE vt0 USING fts4(c0, prefix=1);
+}
+do_execsql_test 8.2 {
+  BEGIN;
+    INSERT INTO vt0 VALUES (0);
+    INSERT INTO vt0(vt0) VALUES('optimize');
+  COMMIT;
+}
+do_execsql_test 8.3 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
 
 finish_test

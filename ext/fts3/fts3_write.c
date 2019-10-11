@@ -3482,7 +3482,10 @@ static int fts3DoOptimize(Fts3Table *p, int bReturnDone){
   int rc;
   sqlite3_stmt *pAllLangid = 0;
 
-  rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
+  rc = sqlite3Fts3PendingTermsFlush(p);
+  if( rc==SQLITE_OK ){
+    rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
+  }
   if( rc==SQLITE_OK ){
     int rc2;
     sqlite3_bind_int(pAllLangid, 1, p->iPrevLangid);
@@ -3503,7 +3506,6 @@ static int fts3DoOptimize(Fts3Table *p, int bReturnDone){
   }
 
   sqlite3Fts3SegmentsClose(p);
-  sqlite3Fts3PendingTermsClear(p);
 
   return (rc==SQLITE_OK && bReturnDone && bSeenDone) ? SQLITE_DONE : rc;
 }
