@@ -1,5 +1,5 @@
-C Futher\simprovements\sto\sLEFT\sJOIN\sstrength\sreduction.
-D 2019-10-11T17:14:40.541
+C Update\sthe\szipfile\sextension\sto\suse\sdeflateBound(),\sinstead\sof\scompressBound(),\sto\slearn\sthe\smaximum\spossible\ssize\sof\sa\sdeflate()d\sbuffer.
+D 2019-10-11T18:55:10.084
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -323,7 +323,7 @@ F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c c1ca8f52330b4564207036b978edac8141c737bf612659bf6f7bee3ddd563a03
+F ext/misc/zipfile.c 7ad29133e304e40c8fe239bea10e101580ed56bc68c16d992af514cce19572d0
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 8681f6157db6adc82c34af24b14ea8a3be0146ad2a3b6c1d5da6cb8a5796c8ce
 F ext/rbu/rbu1.test 221d9c18a5e600ac9ac6b1810d99d9f99163a7909ba61597876ab6e4d4beb3d6
@@ -1846,7 +1846,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 548082dfab5d9484279ccc11cd2833ac131b54b7481372b576d7c28bbb3294ea
-R e92862a2f034c9f00bf2d8147c0c666e
-U drh
-Z e5d0b13ba33a14a9603b6e44d6857a13
+P 8a39167bd2d46496f7484cfec371e4bad22da882209b01da9459c4ed5877da25
+R eb06663b6457025b40a5a6ff154e9856
+U dan
+Z efc0771126277e0cc41b7707a438e0f8
