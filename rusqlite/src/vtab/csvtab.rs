@@ -235,7 +235,7 @@ impl VTab for CSVTab {
             schema = Some(sql);
         }
 
-        Ok((schema.unwrap().to_owned(), vtab))
+        Ok((schema.unwrap(), vtab))
     }
 
     // Only a forward full table scan is supported.
