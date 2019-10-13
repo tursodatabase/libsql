@@ -96,8 +96,10 @@ impl From<Vec<u8>> for Value {
     }
 }
 
-impl <T> From<Option<T>> for Value
-    where T: Into<Value> {
+impl<T> From<Option<T>> for Value
+where
+    T: Into<Value>,
+{
     fn from(v: Option<T>) -> Value {
         match v {
             Some(x) => x.into(),
