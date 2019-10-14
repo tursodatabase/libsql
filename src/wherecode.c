@@ -1307,7 +1307,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pTerm = pLoop->aLTerm[j];
       if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
         disableTerm(pLevel, pTerm);
-      }else if( (pTerm->eOperator & WO_IN)!=0 ){
+      }else if( (pTerm->eOperator & WO_IN)!=0 && 
+          sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1
+      ){
         Expr *pCompare;  /* The comparison operator */
         Expr *pRight;    /* RHS of the comparison */
         VdbeOp *pOp;     /* Opcode to access the value of the IN constraint */

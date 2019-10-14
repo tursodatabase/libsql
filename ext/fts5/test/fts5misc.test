@@ -193,5 +193,31 @@ do_execsql_test 6.1 {
   INSERT INTO vt0(vt0) VALUES('rebuild');
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(rowid, x) VALUES(1, 'hello world');
+  INSERT INTO t1(rowid, x) VALUES(2, 'well said');
+  INSERT INTO t1(rowid, x) VALUES(3, 'hello said');
+  INSERT INTO t1(rowid, x) VALUES(4, 'well world');
+
+  CREATE TABLE t2 (a, b);
+  INSERT INTO t2 VALUES(1, 'hello');
+  INSERT INTO t2 VALUES(2, 'world');
+  INSERT INTO t2 VALUES(3, 'said');
+  INSERT INTO t2 VALUES(4, 'hello');
+}
+
+do_execsql_test 7.1 {
+  SELECT rowid FROM t1 WHERE (rowid, x) IN (SELECT a, b FROM t2); 
+}
+
+do_execsql_test 7.2 {
+  SELECT rowid FROM t1 WHERE rowid=2 AND t1 = 'hello';
+}
+
+
 finish_test
 
