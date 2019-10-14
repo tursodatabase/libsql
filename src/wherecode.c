@@ -1305,6 +1305,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iIn = pLevel->u.in.nIn;
     for(j=nConstraint-1; j>=0; j--){
       pTerm = pLoop->aLTerm[j];
+      if( (pTerm->eOperator & WO_IN)!=0 ) iIn--;
       if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
         disableTerm(pLevel, pTerm);
       }else if( (pTerm->eOperator & WO_IN)!=0 && 
@@ -1320,8 +1321,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         ** encoding of the value in the register, so it *must* be reloaded. */
         assert( pLevel->u.in.aInLoop!=0 || db->mallocFailed );
         if( !db->mallocFailed ){
-          assert( iIn>0 );
-          pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[--iIn].addrInTop);
+          assert( iIn>=0 && iIn<pLevel->u.in.nIn );
+          pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[iIn].addrInTop);
           assert( pOp->opcode==OP_Column || pOp->opcode==OP_Rowid );
           assert( pOp->opcode!=OP_Column || pOp->p3==iReg+j+2 );
           assert( pOp->opcode!=OP_Rowid || pOp->p2==iReg+j+2 );
@@ -1345,6 +1346,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
       }
     }
+    assert( iIn==0 || db->mallocFailed );
     /* These registers need to be preserved in case there is an IN operator
     ** loop.  So we could deallocate the registers here (and potentially
     ** reuse them later) if (pLoop->wsFlags & WHERE_IN_ABLE)==0.  But it seems
