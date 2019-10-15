@@ -1,5 +1,5 @@
-C Futher\simprovements\sto\sthe\sIN\soperator\sfor\srow-values\son\svirtual\stables.
-D 2019-10-14T20:32:31.002
+C Formatting\schange\son\sa\smulti-line\sconditional,\sfor\simproved\sclarity.\nNo\slogic\schanges.
+D 2019-10-15T19:01:55.901
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 9f3f23efc45934e7b7ea6c0c1042420b73053e7c3264feef6faf9ce6fbd5df61
 F src/whereInt.h 2c6bae136a7c0be6ff75dc36950d1968c67d005c8e51d7a9d77cb996bb4843d9
-F src/wherecode.c e6173659b15105ab9cc62388ea83077587aec8b77622e6b1da7bac029334d411
+F src/wherecode.c 57d034a0dbca9f86e1a691f74e469ed09ff49d04712b838fb68596b76a9af7d2
 F src/whereexpr.c 05c283d26aa9c3f5d1bf13a5f6a573b43295b9db280eff18e26f97d7d7f119b4
 F src/window.c 064f251451c8e2a1c76b6269229d911a651e119c6a5f522b6eaebf8dc8714041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 344d9cb0c726078af6deb4a26bed3aded5b26914bb286d3446d3a4e9150840b7
-R 2718afa6f840036afeb5adff293ecb86
+P bc751fb64d5b08e5ca4c85cd1c6fbf09590fa9dad7e176ba373082ea373655b5
+R 3dc274e5f048c65fb3fe7dfe730dc64a
 U drh
-Z b3560113c59df505425231fe27d4299c
+Z a66229c65bafcb1e69be0fef5ecdca35

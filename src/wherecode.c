@@ -1308,8 +1308,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( (pTerm->eOperator & WO_IN)!=0 ) iIn--;
       if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
         disableTerm(pLevel, pTerm);
-      }else if( (pTerm->eOperator & WO_IN)!=0 && 
-          sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1
+      }else if( (pTerm->eOperator & WO_IN)!=0
+        && sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1
       ){
         Expr *pCompare;  /* The comparison operator */
         Expr *pRight;    /* RHS of the comparison */
