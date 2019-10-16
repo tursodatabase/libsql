@@ -3381,6 +3381,7 @@ void sqlite3ExprCodeGetColumnOfTable(
   int regOut      /* Extract the value into this register */
 ){
   Vdbe *v = pParse->pVdbe;
+  Column *pCol;
   assert( v!=0 );
   if( pTab==0 ){
     sqlite3VdbeAddOp3(v, OP_Column, iTabCur, iCol, regOut);
@@ -3395,11 +3396,17 @@ void sqlite3ExprCodeGetColumnOfTable(
       op = OP_VColumn;
       x = iCol;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    }else if( pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL ){
-      int savedSelfTab = pParse->iSelfTab;
-      pParse->iSelfTab = iTabCur+1;
-      sqlite3ExprCode(pParse, pTab->aCol[iCol].pDflt, regOut);
-      pParse->iSelfTab = savedSelfTab;
+    }else if( (pCol = &pTab->aCol[iCol])->colFlags & COLFLAG_VIRTUAL ){
+      if( pCol->colFlags & COLFLAG_BUSY ){
+        sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pCol->zName);
+      }else{
+        int savedSelfTab = pParse->iSelfTab;
+        pCol->colFlags |= COLFLAG_BUSY;
+        pParse->iSelfTab = iTabCur+1;
+        sqlite3ExprCode(pParse, pTab->aCol[iCol].pDflt, regOut);
+        pParse->iSelfTab = savedSelfTab;
+        pCol->colFlags &= ~COLFLAG_BUSY;
+      }
       return;
 #endif
     }else if( !HasRowid(pTab) ){

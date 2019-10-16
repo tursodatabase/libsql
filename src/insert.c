@@ -130,7 +130,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 **  'E'            REAL
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
-  int i;
+  int i, j;
   char *zColAff = pTab->zColAff;
   if( zColAff==0 ){
     sqlite3 *db = sqlite3VdbeDb(v);
@@ -140,13 +140,15 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
       return;
     }
 
-    for(i=0; i<pTab->nCol; i++){
+    for(i=j=0; i<pTab->nCol; i++){
       assert( pTab->aCol[i].affinity!=0 );
-      zColAff[i] = pTab->aCol[i].affinity;
+      if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
+        zColAff[j++] = pTab->aCol[i].affinity;
+      }
     }
     do{
-      zColAff[i--] = 0;
-    }while( i>=0 && zColAff[i]<=SQLITE_AFF_BLOB );
+      zColAff[j--] = 0;
+    }while( j>=0 && zColAff[j]<=SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
   assert( zColAff!=0 );
@@ -1006,6 +1008,9 @@ void sqlite3Insert(
     nHidden = 0;
     iRegStore = regRowid+1;
     for(i=0; i<pTab->nCol; i++, iRegStore++){
+      int k;
+      assert( i>=nHidden );
+      assert( iRegStore==sqlite3ColumnOfTable(pTab,i)+regRowid+1 );
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
         ** Whenever this column is read, the rowid will be substituted
@@ -1015,32 +1020,41 @@ void sqlite3Insert(
         sqlite3VdbeAddOp1(v, OP_SoftNull, iRegStore);
         continue;
       }
-      if( pColumn==0 ){
-        if( pTab->aCol[i].colFlags & COLFLAG_NOINSERT ){
-          j = -1;
-          nHidden++;
-          if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
-            iRegStore--;
-            continue;
-          }
+      if( pTab->aCol[i].colFlags & COLFLAG_NOINSERT ){
+        nHidden++;
+        if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+          /* Virtual columns are no stored */
+          iRegStore--;
         }else{
-          j = i - nHidden;
+          /* Hidden and stored columns get the default value */
+          sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
         }
-      }else{
-        for(j=0; j<pColumn->nId; j++){
-          if( pColumn->a[j].idx==i ) break;
-        }
+        continue;
       }
-      if( j<0 || nColumn==0 || (pColumn && j>=pColumn->nId) ){
+      if( pColumn ){
+        for(j=0; j<pColumn->nId && pColumn->a[j].idx!=i; j++){}
+        if( j>=pColumn->nId ){
+          /* A column not named in the insert column list gets its
+          ** default value */
+          sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+          continue;
+        }
+        k = j;
+      }else if( nColumn==0 ){
         sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
-      }else if( useTempTable ){
-        sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, iRegStore); 
+        continue;
+      }else{
+        k = i - nHidden;
+      }
+
+      if( useTempTable ){
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, k, iRegStore); 
       }else if( pSelect ){
         if( regFromSelect!=regData ){
-          sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+j, iRegStore);
+          sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+k, iRegStore);
         }
       }else{
-        sqlite3ExprCode(pParse, pList->a[j].pExpr, iRegStore);
+        sqlite3ExprCode(pParse, pList->a[k].pExpr, iRegStore);
       }
     }
 
