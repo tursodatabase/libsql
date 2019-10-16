@@ -532,6 +532,7 @@ void sqlite3Insert(
   u8 withoutRowid;      /* 0 for normal table.  1 for WITHOUT ROWID table */
   u8 bIdListInOrder;    /* True if IDLIST is in table order */
   ExprList *pList = 0;  /* List of VALUES() to be inserted  */
+  int iRegStore;        /* Register in which to store next column */
 
   /* Register allocations */
   int regFromSelect = 0;/* Base register for data coming from SELECT */
@@ -1003,8 +1004,8 @@ void sqlite3Insert(
     ** with the first column.
     */
     nHidden = 0;
-    for(i=0; i<pTab->nCol; i++){
-      int iRegStore = regRowid+1+i;
+    iRegStore = regRowid+1;
+    for(i=0; i<pTab->nCol; i++, iRegStore++){
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
         ** Whenever this column is read, the rowid will be substituted
@@ -1019,6 +1020,7 @@ void sqlite3Insert(
           j = -1;
           nHidden++;
           if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+            iRegStore--;
             continue;
           }
         }else{

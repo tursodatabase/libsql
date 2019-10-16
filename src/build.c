@@ -1570,7 +1570,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   goto generated_done;
 
 generated_error:
-  sqlite3ErrorMsg(pParse, "bad GENERATED ALWAYS AS clause on column \"%s\"",
+  sqlite3ErrorMsg(pParse, "incorrect GENERATED ALWAYS AS on column \"%s\"",
                   pCol->zName);
 generated_done:
   sqlite3ExprDelete(pParse->db, pExpr);

@@ -298,14 +298,6 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   }
 #endif
 
-  /* If the default value for the new column was specified with a 
-  ** literal NULL, then set pDflt to 0. This simplifies checking
-  ** for an SQL NULL default below.
-  */
-  assert( pDflt==0 || pDflt->op==TK_SPAN );
-  if( pDflt && pDflt->pLeft->op==TK_NULL ){
-    pDflt = 0;
-  }
 
   /* Check that the new column is not specified as PRIMARY KEY or UNIQUE.
   ** If there is a NOT NULL constraint, then the default value for the
@@ -319,35 +311,46 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     sqlite3ErrorMsg(pParse, "Cannot add a UNIQUE column");
     return;
   }
-  if( (db->flags&SQLITE_ForeignKeys) && pNew->pFKey && pDflt ){
-    sqlite3ErrorMsg(pParse, 
-        "Cannot add a REFERENCES column with non-NULL default value");
-    return;
-  }
-  if( pCol->notNull && !pDflt ){
-    sqlite3ErrorMsg(pParse, 
-        "Cannot add a NOT NULL column with default value NULL");
-    return;
+  if( (pCol->colFlags & COLFLAG_GENERATED)==0 ){
+    /* If the default value for the new column was specified with a 
+    ** literal NULL, then set pDflt to 0. This simplifies checking
+    ** for an SQL NULL default below.
+    */
+    assert( pDflt==0 || pDflt->op==TK_SPAN );
+    if( pDflt && pDflt->pLeft->op==TK_NULL ){
+      pDflt = 0;
+    }
+    if( (db->flags&SQLITE_ForeignKeys) && pNew->pFKey && pDflt ){
+      sqlite3ErrorMsg(pParse, 
+          "Cannot add a REFERENCES column with non-NULL default value");
+      return;
+    }
+    if( pCol->notNull && !pDflt ){
+      sqlite3ErrorMsg(pParse, 
+          "Cannot add a NOT NULL column with default value NULL");
+      return;
+    }
+
+    /* Ensure the default expression is something that sqlite3ValueFromExpr()
+    ** can handle (i.e. not CURRENT_TIME etc.)
+    */
+    if( pDflt ){
+      sqlite3_value *pVal = 0;
+      int rc;
+      rc = sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_BLOB, &pVal);
+      assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+      if( rc!=SQLITE_OK ){
+        assert( db->mallocFailed == 1 );
+        return;
+      }
+      if( !pVal ){
+        sqlite3ErrorMsg(pParse,"Cannot add a column with non-constant default");
+        return;
+      }
+      sqlite3ValueFree(pVal);
+    }
   }
 
-  /* Ensure the default expression is something that sqlite3ValueFromExpr()
-  ** can handle (i.e. not CURRENT_TIME etc.)
-  */
-  if( pDflt ){
-    sqlite3_value *pVal = 0;
-    int rc;
-    rc = sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_BLOB, &pVal);
-    assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
-    if( rc!=SQLITE_OK ){
-      assert( db->mallocFailed == 1 );
-      return;
-    }
-    if( !pVal ){
-      sqlite3ErrorMsg(pParse, "Cannot add a column with non-constant default");
-      return;
-    }
-    sqlite3ValueFree(pVal);
-  }
 
   /* Modify the CREATE TABLE statement. */
   zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
