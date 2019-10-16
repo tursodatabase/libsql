@@ -1,5 +1,5 @@
-C If\san\sAFTER\sDELETE\strigger\sfires\swhen\sa\sconflict\srow\sis\sdeleted\sby\sREPLACE\nconflict\sresolution,\smake\ssure\sthe\sconflict\sreally\shas\sbeen\sresolved\sand\sthat\nthe\strigger\sdid\snot\srecreate\sthe\srow\sbefore\scontinuing.\nTicket\s[a8a4847a2d96f5de]
-D 2019-10-16T14:56:03.686
+C Enhancements\sto\sSQL\squery\snormalization\sfor\sUPDATE\sstatements.
+D 2019-10-16T17:46:22.273
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -589,10 +589,10 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
+F src/tokenize.c 7b17f6e2f20f6cbcb0b215025a86b7457c38451fc7622f705e553d7a488c572d
 F src/treeview.c fddeb413159c3eeeaea3f496172f121cf3695606c461dc4e6dcee51417952df5
 F src/trigger.c 845ccc08f60716c58aa28fe6470385c18ef8c4e1d88c93dcf449bc13d464eb2e
-F src/update.c 7f05fad5e145248a00048aeb0bac78b8fdb4ed17216e14a6eb24c55596e87ee7
+F src/update.c 1487ee46b6ec36c59fe2c127b6f7daa88daaaf6e58eee8c441377f9b9fb5a684
 F src/upsert.c 710c91bb13e3c3fed5b6fe17cb13e09560bdd003ad8b8c51e6b16c80cfc48b10
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 10d910e04a4f3842042485e0df01a484f57f912c10b60b3a09ccddd5019bd138
@@ -1180,7 +1180,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
-F test/normalize.test 422027884ffb67ebba32bb78487c67cf67643496d19c077b07044bdba071a3f6
+F test/normalize.test f23b6c5926c59548635fcf39678ac613e726121e073dd902a3062fbb83903b72
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7248e3476511ecd317f54edcfe1e87443bfdcc1b10c89c7734eefcabafec6c0b
-R ba1e81530d1e44a95d6e773164db4f87
-U drh
-Z 2617114f912aef1c01f5243e59a012d0
+P eea1e7aa57e74c4329003f4550168e2aed9e33d2301a3ba84b10781a9cebbc1b
+R e1eefe483bc6d1fcca7df84837a3f1f8
+U mistachkin
+Z 9a870c611a385fdc7dbdc0a96b27ae55

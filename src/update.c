@@ -289,6 +289,10 @@ void sqlite3Update(
   sNC.uNC.pUpsert = pUpsert;
   sNC.ncFlags = NC_UUpsert;
 
+  /* Begin generating code. */
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) goto update_cleanup;
+
   /* Resolve the column names in all the expressions of the
   ** of the UPDATE statement.  Also find the column index
   ** for each column to be updated in the pChanges array.  For each
@@ -386,9 +390,6 @@ void sqlite3Update(
     memset(aToOpen, 1, nIdx+1);
   }
 
-  /* Begin generating code. */
-  v = sqlite3GetVdbe(pParse);
-  if( v==0 ) goto update_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, pTrigger || hasFK, iDb);
 
