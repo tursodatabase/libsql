@@ -1577,7 +1577,7 @@ void sqlite3Pragma(
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
         if( !isQuick ){
           /* Sanity check on record header decoding */
-          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
+          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-pTab->nVCol-1,3);
           sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
         }
         /* Verify that all NOT NULL columns really are NOT NULL */

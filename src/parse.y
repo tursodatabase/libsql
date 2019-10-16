@@ -349,10 +349,8 @@ ccons ::= defer_subclause(D).    {sqlite3DeferForeignKey(pParse,D);}
 ccons ::= COLLATE ids(C).        {sqlite3AddCollateType(pParse, &C);}
 ccons ::= GENERATED ALWAYS AS generated.
 ccons ::= AS generated.
-generated ::= LP expr(E) RP.
-     {sqlite3AddGenerated(pParse,E,0);}
-generated ::= LP expr(E) RP ID(TYPE).
-     {sqlite3AddGenerated(pParse,E,&TYPE);}
+generated ::= LP expr(E) RP.          {sqlite3AddGenerated(pParse,E,0);}
+generated ::= LP expr(E) RP ID(TYPE). {sqlite3AddGenerated(pParse,E,&TYPE);}
 
 // The optional AUTOINCREMENT keyword
 %type autoinc {int}

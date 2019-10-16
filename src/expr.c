@@ -3398,7 +3398,7 @@ void sqlite3ExprCodeGetColumnOfTable(
     }else if( pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL ){
       int savedSelfTab = pParse->iSelfTab;
       pParse->iSelfTab = iTabCur+1;
-      sqlite3ExprCode(pParse, pTab->aCol[iCol].pDflt, iCol);
+      sqlite3ExprCode(pParse, pTab->aCol[iCol].pDflt, regOut);
       pParse->iSelfTab = savedSelfTab;
       return;
 #endif
