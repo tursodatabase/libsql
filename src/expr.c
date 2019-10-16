@@ -3365,7 +3365,7 @@ void sqlite3ExprCodeLoadIndexColumn(
     sqlite3ExprCodeCopy(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
     pParse->iSelfTab = 0;
   }else{
-    sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
+    sqlite3ExprCodeGetColumnOfTable(pParse, pIdx->pTable, iTabCur,
                                     iTabCol, regOut);
   }
 }
@@ -3374,12 +3374,14 @@ void sqlite3ExprCodeLoadIndexColumn(
 ** Generate code to extract the value of the iCol-th column of a table.
 */
 void sqlite3ExprCodeGetColumnOfTable(
-  Vdbe *v,        /* The VDBE under construction */
+  Parse *pParse,  /* Parsing context */
   Table *pTab,    /* The table containing the value */
   int iTabCur,    /* The table cursor.  Or the PK cursor for WITHOUT ROWID */
   int iCol,       /* Index of the column to extract */
   int regOut      /* Extract the value into this register */
 ){
+  Vdbe *v = pParse->pVdbe;
+  assert( v!=0 );
   if( pTab==0 ){
     sqlite3VdbeAddOp3(v, OP_Column, iTabCur, iCol, regOut);
     return;
@@ -3387,10 +3389,25 @@ void sqlite3ExprCodeGetColumnOfTable(
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
   }else{
-    int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
-    int x = iCol;
-    if( !HasRowid(pTab) && !IsVirtual(pTab) ){
+    int op;
+    int x;
+    if( IsVirtual(pTab) ){
+      op = OP_VColumn;
+      x = iCol;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    }else if( pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL ){
+      int savedSelfTab = pParse->iSelfTab;
+      pParse->iSelfTab = iTabCur+1;
+      sqlite3ExprCode(pParse, pTab->aCol[iCol].pDflt, iCol);
+      pParse->iSelfTab = savedSelfTab;
+      return;
+#endif
+    }else if( !HasRowid(pTab) ){
       x = sqlite3ColumnOfIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
+      op = OP_Column;
+    }else{
+      x = sqlite3ColumnOfTable(pTab,iCol);
+      op = OP_Column;
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
   }
@@ -3414,11 +3431,10 @@ int sqlite3ExprCodeGetColumn(
   int iReg,        /* Store results here */
   u8 p5            /* P5 value for OP_Column + FLAGS */
 ){
-  Vdbe *v = pParse->pVdbe;
-  assert( v!=0 );
-  sqlite3ExprCodeGetColumnOfTable(v, pTab, iTable, iColumn, iReg);
+  assert( pParse->pVdbe!=0 );
+  sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iTable, iColumn, iReg);
   if( p5 ){
-    sqlite3VdbeChangeP5(v, p5);
+    sqlite3VdbeChangeP5(pParse->pVdbe, p5);
   }
   return iReg;
 }

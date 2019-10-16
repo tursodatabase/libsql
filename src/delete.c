@@ -475,13 +475,13 @@ void sqlite3DeleteFrom(
     if( pPk ){
       for(i=0; i<nPk; i++){
         assert( pPk->aiColumn[i]>=0 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iTabCur,
                                         pPk->aiColumn[i], iPk+i);
       }
       iKey = iPk;
     }else{
       iKey = ++pParse->nMem;
-      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, -1, iKey);
+      sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iTabCur, -1, iKey);
     }
   
     if( eOnePass!=ONEPASS_OFF ){
@@ -737,7 +737,8 @@ void sqlite3GenerateRowDelete(
       testcase( mask!=0xffffffff && iCol==31 );
       testcase( mask!=0xffffffff && iCol==32 );
       if( mask==0xffffffff || (iCol<=31 && (mask & MASKBIT32(iCol))!=0) ){
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, iCol, iOld+iCol+1);
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, iCol,
+                                        iOld+iCol+1);
       }
     }
 

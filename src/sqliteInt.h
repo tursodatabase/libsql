@@ -1823,7 +1823,7 @@ struct Module {
 */
 struct Column {
   char *zName;     /* Name of this column, \000, then the type */
-  Expr *pDflt;     /* Default value of this column */
+  Expr *pDflt;     /* Default value or GENERATED ALWAYS AS value */
   char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
@@ -1833,11 +1833,13 @@ struct Column {
 
 /* Allowed values for Column.colFlags:
 */
-#define COLFLAG_PRIMKEY  0x0001    /* Column is part of the primary key */
-#define COLFLAG_HIDDEN   0x0002    /* A hidden column in a virtual table */
-#define COLFLAG_HASTYPE  0x0004    /* Type name follows column name */
-#define COLFLAG_UNIQUE   0x0008    /* Column def contains "UNIQUE" or "PK" */
+#define COLFLAG_PRIMKEY   0x0001   /* Column is part of the primary key */
+#define COLFLAG_HIDDEN    0x0002   /* A hidden column in a virtual table */
+#define COLFLAG_HASTYPE   0x0004   /* Type name follows column name */
+#define COLFLAG_UNIQUE    0x0008   /* Column def contains "UNIQUE" or "PK" */
 #define COLFLAG_SORTERREF 0x0010   /* Use sorter-refs with this column */
+#define COLFLAG_VIRTUAL   0x0020   /* GENERATED ALWAYS AS ... VIRTUAL */
+#define COLFLAG_STORED    0x0040   /* GENERATED ALWAYS AS ... STORED */
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following
@@ -1977,6 +1979,7 @@ struct Table {
   u32 tabFlags;        /* Mask of TF_* values */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
+  i16 nVCol;           /* Number of virtual columns */
   LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
   LogEst szTabRow;     /* Estimated size of each table row in bytes */
 #ifdef SQLITE_ENABLE_COSTMULT
@@ -2808,21 +2811,22 @@ struct NameContext {
 **    NC_HasWin    == EP_Win
 **
 */
-#define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
-#define NC_PartIdx   0x0002  /* True if resolving a partial index WHERE */
-#define NC_IsCheck   0x0004  /* True if resolving names in a CHECK constraint */
-#define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
-#define NC_HasAgg    0x0010  /* One or more aggregate functions seen */
-#define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
-#define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
-#define NC_UEList    0x0080  /* True if uNC.pEList is used */
-#define NC_UAggInfo  0x0100  /* True if uNC.pAggInfo is used */
-#define NC_UUpsert   0x0200  /* True if uNC.pUpsert is used */
-#define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
-#define NC_Complex   0x2000  /* True if a function or subquery seen */
-#define NC_AllowWin  0x4000  /* Window functions are allowed here */
-#define NC_HasWin    0x8000  /* One or more window functions seen */
-#define NC_IsDDL    0x10000  /* Resolving names in a CREATE statement */
+#define NC_AllowAgg  0x00001  /* Aggregate functions are allowed here */
+#define NC_PartIdx   0x00002  /* True if resolving a partial index WHERE */
+#define NC_IsCheck   0x00004  /* True if resolving a CHECK constraint */
+#define NC_InAggFunc 0x00008  /* True if analyzing arguments to an agg func */
+#define NC_HasAgg    0x00010  /* One or more aggregate functions seen */
+#define NC_IdxExpr   0x00020  /* True if resolving columns of CREATE INDEX */
+#define NC_VarSelect 0x00040  /* A correlated subquery has been seen */
+#define NC_UEList    0x00080  /* True if uNC.pEList is used */
+#define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
+#define NC_UUpsert   0x00200  /* True if uNC.pUpsert is used */
+#define NC_MinMaxAgg 0x01000  /* min/max aggregates seen.  See note above */
+#define NC_Complex   0x02000  /* True if a function or subquery seen */
+#define NC_AllowWin  0x04000  /* Window functions are allowed here */
+#define NC_HasWin    0x08000  /* One or more window functions seen */
+#define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
+#define NC_GenCol    0x20000  /* True for a GENERATED ALWAYS AS clause */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3938,6 +3942,11 @@ Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
 void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
+#ifdef SQLITE_OMIT_GENERATED_COLUMNS
+# define sqlite3ColumnOfTable(T,X) (X)  /* No-op pass-through */
+#else
+  i16 sqlite3ColumnOfTable(Table*, i16);
+#endif
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #if SQLITE_ENABLE_HIDDEN_COLUMNS
   void sqlite3ColumnPropertiesFromName(Table*, Column*);
@@ -3950,6 +3959,7 @@ void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*);
 void sqlite3AddDefaultValue(Parse*,Expr*,const char*,const char*);
 void sqlite3AddCollateType(Parse*, Token*);
+void sqlite3AddGenerated(Parse*,Expr*,Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
@@ -4053,7 +4063,7 @@ int sqlite3WhereOkOnePass(WhereInfo*, int*);
 #define ONEPASS_MULTI    2        /* ONEPASS is valid for multiple rows */
 void sqlite3ExprCodeLoadIndexColumn(Parse*, Index*, int, int, int);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
-void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
+void sqlite3ExprCodeGetColumnOfTable(Parse*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);

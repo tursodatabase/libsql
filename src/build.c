@@ -888,6 +888,27 @@ i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
   return -1;
 }
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/*
+** Of the iCol-th column in table pTab, return the index of that column
+** as stored on disk.  Usually the return value is the same as the iCol
+** input, however the return value may be less there are prior VIRTUAL
+** columns.
+**
+** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro
+*/
+i16 sqlite3ColumnOfTable(Table *pTab, i16 iCol){
+  int i;
+  i16 n;
+  assert( iCol<pTab->nCol );
+  if( pTab->nVCol==0 ) return iCol;
+  for(i=0, n=0; i<iCol; i++){
+    if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) n++;
+  }
+  return n;    
+}
+#endif
+
 /*
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
@@ -1520,6 +1541,47 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   }
 }
 
+/* Change the most recently parsed column to be a GENERATED ALWAYS AS
+** column.
+*/
+void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  u8 eType = COLFLAG_VIRTUAL;
+  Table *pTab = pParse->pNewTable;
+  Column *pCol;
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameExprUnmap(pParse, pExpr);
+  }
+  if( pTab==0 ) goto generated_done;
+  pCol = &(pTab->aCol[pTab->nCol-1]);
+  if( pCol->pDflt ) goto generated_error;
+  if( pType ){
+    if( pType->n==7 && sqlite3StrNICmp("virtual",pType->z,7)==0 ){
+      /* no-op */
+    }else if( pType->n==6 && sqlite3StrNICmp("stored",pType->z,6)==0 ){
+      eType = COLFLAG_STORED;
+    }else{
+      goto generated_error;
+    }
+  }
+  pTab->nVCol++;
+  pCol->colFlags |= eType;
+  pCol->pDflt = sqlite3ExprDup(pParse->db, pExpr, 0);
+  goto generated_done;
+
+generated_error:
+  sqlite3ErrorMsg(pParse, "bad GENERATED ALWAYS AS clause on column \"%s\"",
+                  pCol->zName);
+generated_done:
+  sqlite3ExprDelete(pParse->db, pExpr);
+#else
+  /* Throw and error for the GENERATED ALWAYS AS clause if the
+  ** SQLITE_OMIT_GENERATED_COLUMNS compile-time option is used. */
+  sqlite3ErrorMsg(pParse, "GENERATED ALWAYS AS not supported");
+  sqlite3ExprDelete(pParse->db, pExpr);
+#endif
+}
+
 /*
 ** This function returns the collation sequence for database native text
 ** encoding identified by the string zName, length nName.
@@ -2114,6 +2176,17 @@ void sqlite3EndTable(
     sqlite3ResolveSelfReference(pParse, p, NC_IsCheck, 0, p->pCheck);
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( p->nVCol ){
+    int ii;
+    for(ii=0; ii<p->nCol; ii++){
+      if( (p->aCol[ii].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL))!=0 ){
+        sqlite3ResolveSelfReference(pParse, p, NC_GenCol, 
+                                    p->aCol[ii].pDflt, 0);
+      }
+    }
+  }
+#endif
 
   /* Estimate the average row size for the table and for all implied indices */
   estimateTableWidth(p);

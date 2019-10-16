@@ -542,7 +542,8 @@ void sqlite3Update(
     ** is not required) and leave the PK fields in the array of registers.  */
     for(i=0; i<nPk; i++){
       assert( pPk->aiColumn[i]>=0 );
-      sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur,pPk->aiColumn[i],iPk+i);
+      sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur,
+                                      pPk->aiColumn[i], iPk+i);
     }
     if( eOnePass ){
       if( addrOpen ) sqlite3VdbeChangeToNoop(v, addrOpen);
@@ -628,7 +629,7 @@ void sqlite3Update(
        || (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
       ){
         testcase(  oldmask!=0xffffffff && i==31 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regOld+i);
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, regOld+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
       }
@@ -669,7 +670,7 @@ void sqlite3Update(
         */
         testcase( i==31 );
         testcase( i==32 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regNew+i);
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, regNew+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
       }
@@ -709,7 +710,7 @@ void sqlite3Update(
     */
     for(i=0; i<pTab->nCol; i++){
       if( aXRef[i]<0 && i!=pTab->iPKey ){
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regNew+i);
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, regNew+i);
       }
     }
   }
