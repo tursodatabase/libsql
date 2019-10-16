@@ -1,5 +1,5 @@
-C Formatting\schange\son\sa\smulti-line\sconditional,\sfor\simproved\sclarity.\nNo\slogic\schanges.
-D 2019-10-15T19:01:55.901
+C If\san\sAFTER\sDELETE\strigger\sfires\swhen\sa\sconflict\srow\sis\sdeleted\sby\sREPLACE\nconflict\sresolution,\smake\ssure\sthe\sconflict\sreally\shas\sbeen\sresolved\sand\sthat\nthe\strigger\sdid\snot\srecreate\sthe\srow\sbefore\scontinuing.\nTicket\s[a8a4847a2d96f5de]
+D 2019-10-16T14:56:03.686
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 40557ebd69f4115e7a273f9304a8ab637a47ce44f3c6923396928f023967b5e8
+F src/insert.c d9cb78faa39180915ed940f0dcb3b168002f72e4f4926081a9553719fd12f6a1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 3e01f6a1c96643381b5f9d79e4ff7f2520bc5712197746fb0852283e78cccf66
@@ -1060,7 +1060,7 @@ F test/indexexpr1.test c26c8b352311c1deb30642cd0379e5cb94e416c7e9e0885e92d9e0155
 F test/indexexpr2.test b580f378423bca443ffab47ada677203cfcf8a60f48a8aa20065f27c8f7739b5
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
-F test/insert.test 72004f6a900a25bd3f1ce9a72e73d02749644666a8ce6d6d2dba061137e5aa63
+F test/insert.test c0e1b23f6359e06316b3a49f7747c5d65c0b6473619011e4fb86f6801edba6df
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 7802ada6ba8738661b9f6c0e26858d3375b40cc7180289fd350644cd7a08fec9
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc751fb64d5b08e5ca4c85cd1c6fbf09590fa9dad7e176ba373082ea373655b5
-R 3dc274e5f048c65fb3fe7dfe730dc64a
+P 7248e3476511ecd317f54edcfe1e87443bfdcc1b10c89c7734eefcabafec6c0b
+R ba1e81530d1e44a95d6e773164db4f87
 U drh
-Z a66229c65bafcb1e69be0fef5ecdca35
+Z 2617114f912aef1c01f5243e59a012d0

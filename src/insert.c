@@ -1582,6 +1582,8 @@ void sqlite3GenerateConstraintChecks(
           sqlite3MultiWrite(pParse);
           sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
                                    regNewData, 1, 0, OE_Replace, 1, -1);
+          sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
+          sqlite3RowidConstraint(pParse, OE_Abort, pTab);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
           assert( HasRowid(pTab) );
@@ -1829,16 +1831,23 @@ void sqlite3GenerateConstraintChecks(
       }
       default: {
         Trigger *pTrigger = 0;
+        int bRetryConstraintCheck = 0;
         assert( onError==OE_Replace );
         if( db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
+          bRetryConstraintCheck = 1;
         }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
             regR, nPkField, 0, OE_Replace,
             (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), iThisCur);
+        if( bRetryConstraintCheck ){
+          sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
+                               regIdx, pIdx->nKeyCol); VdbeCoverage(v);
+          sqlite3UniqueConstraint(pParse, OE_Abort, pIdx);
+        }
         seenReplace = 1;
         break;
       }
