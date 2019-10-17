@@ -1,5 +1,5 @@
-C INSERT\swith\snamed\scolumns\sfor\sa\stable\swith\sgenerated\scolumns.
-D 2019-10-16T22:01:56.225
+C Fix\sthe\stable_info\sand\stable_xinfo\spragmas\sso\sthat\sthey\swork\swith\svirtual\ncolumns.\s\sTable_info\somits\svirtual\scolumns.\s\sTable_xinfo\sgives\sthem\sa\n"hidden"\sflag\sof\s2,\sand\s3\sfor\sSTORED\scolumns.
+D 2019-10-17T13:15:40.320
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,7 +518,7 @@ F src/parse.y bc453ce808316facd191413bfa4ec6730a1d693b98fd8be5addef8fbfd62bb7b
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
-F src/pragma.c a9511633bc0ee6c67b9ed244d7b1c0770c71e5211d94c8c97d631974166d59b4
+F src/pragma.c 7b4c4040124572d3e477f30a5daf640f7a8ea2f019f7c0a4031633f36ae9935a
 F src/pragma.h 40962d65b645bb3f08c1f4c456effd01c6e7f073f68ea25177e0c95e181cff75
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 120c6b78cb51532f783014605f1107d40b2e4f54e3852fb1f8f167d0c0b78c69
-R 69bb3625e06cb31ab7b6bfff123323c6
+P 64db39f92d68d1b9f23e48af35e16b969c38b58041fbe900066eeb3ddb291cef
+R f385e86a0426e23d58beffa7242fb5ce
 U drh
-Z 504e145f33a96cfe775ae86c4e357f58
+Z 1c8932097c2a1d388102affd6e7e0105
