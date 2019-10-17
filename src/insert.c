@@ -2289,6 +2289,10 @@ static int xferOptimization(
       return 0;    /* Neither table may have __hidden__ columns */
     }
 #endif
+    if( (pDestCol->colFlags & COLFLAG_GENERATED) !=
+        (pSrcCol->colFlags & COLFLAG_GENERATED) ){
+      return 0;    /* Both columns have the same generated type */
+    }
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
@@ -2299,7 +2303,7 @@ static int xferOptimization(
       return 0;    /* tab2 must be NOT NULL if tab1 is */
     }
     /* Default values for second and subsequent columns need to match. */
-    if( i>0 ){
+    if( (pDestCol->colFlags & COLFLAG_GENERATED)==0 && i>0 ){
       assert( pDestCol->pDflt==0 || pDestCol->pDflt->op==TK_SPAN );
       assert( pSrcCol->pDflt==0 || pSrcCol->pDflt->op==TK_SPAN );
       if( (pDestCol->pDflt==0)!=(pSrcCol->pDflt==0) 
@@ -2307,6 +2311,12 @@ static int xferOptimization(
                                        pSrcCol->pDflt->u.zToken)!=0)
       ){
         return 0;    /* Default values must be the same for all columns */
+      }
+    }
+    /* Generator expressions for generated columns must match */
+    if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
+      if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
+         return 0;  /* Different generator expressions */
       }
     }
   }
