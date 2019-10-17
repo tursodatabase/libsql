@@ -2009,20 +2009,27 @@ struct Table {
 ** followed by non-hidden columns.  Example:  "CREATE VIRTUAL TABLE x USING
 ** vtab1(a HIDDEN, b);".  Since "b" is a non-hidden column but "a" is hidden,
 ** the TF_OOOHidden attribute would apply in this case.  Such tables require
-** special handling during INSERT processing.
+** special handling during INSERT processing. The "OOO" means "Out Of Order".
+**
+** Constraints:
+**
+**         TF_HasVirtual == COLFLAG_Virtual
+**         TF_HasStored  == COLFLAG_Stored
 */
 #define TF_Readonly        0x0001    /* Read-only system table */
 #define TF_Ephemeral       0x0002    /* An ephemeral table */
 #define TF_HasPrimaryKey   0x0004    /* Table has a primary key */
 #define TF_Autoincrement   0x0008    /* Integer primary key is autoincrement */
 #define TF_HasStat1        0x0010    /* nRowLogEst set from sqlite_stat1 */
-#define TF_WithoutRowid    0x0020    /* No rowid.  PRIMARY KEY is the key */
-#define TF_NoVisibleRowid  0x0040    /* No user-visible "rowid" column */
-#define TF_OOOHidden       0x0080    /* Out-of-Order hidden columns */
+#define TF_HasVirtual      0x0020    /* Has one or more VIRTUAL columns */
+#define TF_HasStored       0x0040    /* Has one or more STORED columns */
+#define TF_WithoutRowid    0x0080    /* No rowid.  PRIMARY KEY is the key */
 #define TF_StatsUsed       0x0100    /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
-#define TF_HasNotNull      0x0200    /* Contains NOT NULL constraints */
-#define TF_Shadow          0x0400    /* True for a shadow table */
+#define TF_NoVisibleRowid  0x0200    /* No user-visible "rowid" column */
+#define TF_OOOHidden       0x0400    /* Out-of-Order hidden columns */
+#define TF_HasNotNull      0x0800    /* Contains NOT NULL constraints */
+#define TF_Shadow          0x1000    /* True for a shadow table */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -4020,6 +4027,9 @@ void sqlite3FreeIndex(sqlite3*, Index*);
 # define sqlite3AutoincrementEnd(X)
 #endif
 void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int, Upsert*);
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  void sqlite3ComputeStoredColumns(Parse*, int, Table*);
+#endif
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(Parse*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);

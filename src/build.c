@@ -1564,8 +1564,11 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
       goto generated_error;
     }
   }
-  pTab->nVCol++;
+  if( eType==COLFLAG_VIRTUAL ) pTab->nVCol++;
   pCol->colFlags |= eType;
+  assert( TF_HasVirtual==COLFLAG_VIRTUAL );
+  assert( TF_HasStored==COLFLAG_STORED );
+  pTab->tabFlags |= eType;
   pCol->pDflt = sqlite3ExprDup(pParse->db, pExpr, 0);
   goto generated_done;
 
@@ -2177,7 +2180,7 @@ void sqlite3EndTable(
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  if( p->nVCol ){
+  if( p->tabFlags & (TF_HasVirtual|TF_HasStored) ){
     int ii;
     for(ii=0; ii<p->nCol; ii++){
       if( (p->aCol[ii].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL))!=0 ){

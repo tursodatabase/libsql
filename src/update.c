@@ -671,8 +671,8 @@ void sqlite3Update(
   for(i=0, k=regNew; i<pTab->nCol; i++, k++){
     if( i==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, k);
-    }else if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)!=0 ){
-      k--;
+    }else if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)!=0 ){
+      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) k--;
     }else{
       j = aXRef[i];
       if( j>=0 ){
@@ -691,6 +691,11 @@ void sqlite3Update(
       }
     }
   }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( pTab->tabFlags & TF_HasStored ){
+    sqlite3ComputeStoredColumns(pParse, regNew, pTab);
+  }
+#endif
 
   /* Fire any BEFORE UPDATE triggers. This happens before constraints are
   ** verified. One could argue that this is wrong.
@@ -724,12 +729,17 @@ void sqlite3Update(
     ** for an example.
     */
     for(i=0, k=regNew; i<pTab->nCol; i++, k++){
-      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
-        k--;
+      if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
+        if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) k--;
       }else if( aXRef[i]<0 && i!=pTab->iPKey ){
         sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
       }
     }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    if( pTab->tabFlags & TF_HasStored ){
+      sqlite3ComputeStoredColumns(pParse, regNew, pTab);
+    }
+#endif 
   }
 
   if( !isView ){

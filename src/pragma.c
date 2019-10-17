@@ -1108,9 +1108,9 @@ void sqlite3Pragma(
           }
           if( pCol->colFlags & COLFLAG_VIRTUAL ){
             isHidden = 2;  /* GENERATED ALWAYS AS ... VIRTUAL */
-          }else if( pCol->colFlags & COLFLAG_VIRTUAL ){
+          }else if( pCol->colFlags & COLFLAG_STORED ){
             isHidden = 3;  /* GENERATED ALWAYS AS ... STORED */
-          }else{
+          }else{ assert( pCol->colFlags & COLFLAG_HIDDEN );
             isHidden = 1;  /* HIDDEN */
           }
         }

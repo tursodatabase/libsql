@@ -624,7 +624,7 @@ static int vtabCallConstructor(
       rc = SQLITE_ERROR;
     }else{
       int iCol;
-      u8 oooHidden = 0;
+      u16 oooHidden = 0;
       /* If everything went according to plan, link the new VTable structure
       ** into the linked list headed by pTab->pVTable. Then loop through the 
       ** columns of the table to see if any of them contain the token "hidden".

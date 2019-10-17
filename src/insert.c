@@ -202,6 +202,36 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
   return 0;
 }
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/*
+** All regular columns for table pTab have been puts into registers
+** starting with iRegStore.  The registers that correspond to STORED
+** columns have not been initialized.  This routine goes back and computes
+** the values for STORED columns based on the previously computed normal
+** columns.
+*/
+void sqlite3ComputeStoredColumns(
+  Parse *pParse,    /* Parsing context */
+  int iRegStore,    /* Register holding the first column */
+  Table *pTab       /* The table */
+){
+  int i;
+  pParse->iSelfTab = -iRegStore;
+  for(i=0; i<pTab->nCol; i++, iRegStore++){
+    u32 colFlags = pTab->aCol[i].colFlags;
+    if( (colFlags & COLFLAG_VIRTUAL)!=0 ){
+      /* Virtual columns are no stored */
+      iRegStore--;
+    }else if( (colFlags & COLFLAG_STORED)!=0 ){
+      /* Stored columns are handled on the second pass */
+      sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iRegStore);
+    }
+  }
+  pParse->iSelfTab = 0;
+}
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+
+
 #ifndef SQLITE_OMIT_AUTOINCREMENT
 /*
 ** Locate or create an AutoincInfo structure associated with table pTab
@@ -1027,9 +1057,11 @@ void sqlite3Insert(
           /* Virtual columns are no stored */
           iRegStore--;
           continue;
-        }else if( (colFlags & COLFLAG_STORED)!=0 || pColumn==0 ){
-          /* Stored columns get the default value.  Also hidden columns
-          ** that are not explicitly named in the INSERT */
+        }else if( (colFlags & COLFLAG_STORED)!=0 ){
+          /* Stored columns are handled on the second pass */
+          continue;
+        }else if( pColumn==0 ){
+          /* Hidden columns that are not explicitly named in the INSERT */
           sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
           continue;
         }
@@ -1060,6 +1092,14 @@ void sqlite3Insert(
         sqlite3ExprCode(pParse, pList->a[k].pExpr, iRegStore);
       }
     }
+
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    /* Compute the new value for STORED columns after all other
+    ** columns have already been computed */
+    if( pTab->tabFlags & TF_HasStored ){
+      sqlite3ComputeStoredColumns(pParse, regRowid+1, pTab);
+    }
+#endif
 
     /* Generate code to check constraints and generate index keys and
     ** do the insertion.
