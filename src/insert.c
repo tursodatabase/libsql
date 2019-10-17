@@ -1009,6 +1009,7 @@ void sqlite3Insert(
     iRegStore = regRowid+1;
     for(i=0; i<pTab->nCol; i++, iRegStore++){
       int k;
+      u32 colFlags;
       assert( i>=nHidden );
       assert( iRegStore==sqlite3ColumnOfTable(pTab,i)+regRowid+1 );
       if( i==pTab->iPKey ){
@@ -1020,16 +1021,18 @@ void sqlite3Insert(
         sqlite3VdbeAddOp1(v, OP_SoftNull, iRegStore);
         continue;
       }
-      if( pTab->aCol[i].colFlags & COLFLAG_NOINSERT ){
+      if( ((colFlags = pTab->aCol[i].colFlags) & COLFLAG_NOINSERT)!=0 ){
         nHidden++;
-        if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+        if( (colFlags & COLFLAG_VIRTUAL)!=0 ){
           /* Virtual columns are no stored */
           iRegStore--;
-        }else{
-          /* Hidden and stored columns get the default value */
+          continue;
+        }else if( (colFlags & COLFLAG_STORED)!=0 || pColumn==0 ){
+          /* Stored columns get the default value.  Also hidden columns
+          ** that are not explicitly named in the INSERT */
           sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+          continue;
         }
-        continue;
       }
       if( pColumn ){
         for(j=0; j<pColumn->nId && pColumn->a[j].idx!=i; j++){}

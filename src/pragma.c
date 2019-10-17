@@ -1102,8 +1102,10 @@ void sqlite3Pragma(
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         int isHidden = 0;
         if( pCol->colFlags & COLFLAG_NOINSERT ){
-          nHidden++;
-          if( pPragma->iArg==0 ) continue;
+          if( pPragma->iArg==0 ){
+            nHidden++;
+            continue;
+          }
           if( pCol->colFlags & COLFLAG_VIRTUAL ){
             isHidden = 2;  /* GENERATED ALWAYS AS ... VIRTUAL */
           }else if( pCol->colFlags & COLFLAG_VIRTUAL ){

@@ -1,5 +1,5 @@
-C Fix\sthe\stable_info\sand\stable_xinfo\spragmas\sso\sthat\sthey\swork\swith\svirtual\ncolumns.\s\sTable_info\somits\svirtual\scolumns.\s\sTable_xinfo\sgives\sthem\sa\n"hidden"\sflag\sof\s2,\sand\s3\sfor\sSTORED\scolumns.
-D 2019-10-17T13:15:40.320
+C Bug\sfixes\sso\sthat\s"make\stest"\sonce\sagainst\sruns\swith\sno\serrors.
+D 2019-10-17T14:21:07.409
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 9dabd02b24946f4c38ae7ef566d65abc16476f9d26b3a630261f91e09c726722
+F src/insert.c 3cf6462f09ef50916e5e859b56cb7bbf3a7e0b8f25a9cac0c99c572ba08c0779
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 3e01f6a1c96643381b5f9d79e4ff7f2520bc5712197746fb0852283e78cccf66
@@ -518,7 +518,7 @@ F src/parse.y bc453ce808316facd191413bfa4ec6730a1d693b98fd8be5addef8fbfd62bb7b
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
-F src/pragma.c 7b4c4040124572d3e477f30a5daf640f7a8ea2f019f7c0a4031633f36ae9935a
+F src/pragma.c 61abcb6d9f80d06ed3b0d0843a7cef32e96a569a27b94ebfd764dc6c1ce1cd1d
 F src/pragma.h 40962d65b645bb3f08c1f4c456effd01c6e7f073f68ea25177e0c95e181cff75
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64db39f92d68d1b9f23e48af35e16b969c38b58041fbe900066eeb3ddb291cef
-R f385e86a0426e23d58beffa7242fb5ce
+P 069351b85f9a706f60d3e98fbc8aaf40c374356b967c0464aede30ead3d9d18b
+R a9daba7f86da0ab938b557a0a9cc8b96
 U drh
-Z 1c8932097c2a1d388102affd6e7e0105
+Z 1fb219ce2b5d60344f9b3644d927ae0d
