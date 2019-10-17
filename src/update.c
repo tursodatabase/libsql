@@ -147,7 +147,7 @@ void sqlite3Update(
   Expr *pLimit,          /* LIMIT clause. May be null */
   Upsert *pUpsert        /* ON CONFLICT clause, or null */
 ){
-  int i, j;              /* Loop counters */
+  int i, j, k;           /* Loop counters */
   Table *pTab;           /* The table to be updated */
   int addrTop = 0;       /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -308,6 +308,14 @@ void sqlite3Update(
         }else if( pPk && (pTab->aCol[j].colFlags & COLFLAG_PRIMKEY)!=0 ){
           chngPk = 1;
         }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+        else if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
+          sqlite3ErrorMsg(pParse, 
+             "cannot UPDATE generated column \"%s\"",
+             pTab->aCol[j].zName);
+          goto update_cleanup;
+        }
+#endif
         aXRef[j] = i;
         break;
       }
@@ -623,15 +631,20 @@ void sqlite3Update(
     oldmask |= sqlite3TriggerColmask(pParse, 
         pTrigger, pChanges, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onError
     );
-    for(i=0; i<pTab->nCol; i++){
+    for(i=0, k=regOld; i<pTab->nCol; i++, k++){
+      u32 colFlags = pTab->aCol[i].colFlags;
+      if( colFlags & COLFLAG_VIRTUAL ){
+        k--;
+        continue;
+      }
       if( oldmask==0xffffffff
        || (i<32 && (oldmask & MASKBIT32(i))!=0)
-       || (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
+       || (colFlags & COLFLAG_PRIMKEY)!=0
       ){
         testcase(  oldmask!=0xffffffff && i==31 );
-        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, regOld+i);
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
     }
     if( chngRowid==0 && pPk==0 ){
@@ -655,13 +668,15 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  for(i=0; i<pTab->nCol; i++){
+  for(i=0, k=regNew; i<pTab->nCol; i++, k++){
     if( i==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, k);
+    }else if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)!=0 ){
+      k--;
     }else{
       j = aXRef[i];
       if( j>=0 ){
-        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
+        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, k);
       }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i)) ){
         /* This branch loads the value of a column that will not be changed 
         ** into a register. This is done if there are no BEFORE triggers, or
@@ -670,9 +685,9 @@ void sqlite3Update(
         */
         testcase( i==31 );
         testcase( i==32 );
-        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, regNew+i);
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
     }
   }
@@ -708,9 +723,11 @@ void sqlite3Update(
     ** BEFORE trigger runs.  See test case trigger1-18.0 (added 2018-04-26)
     ** for an example.
     */
-    for(i=0; i<pTab->nCol; i++){
-      if( aXRef[i]<0 && i!=pTab->iPKey ){
-        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, regNew+i);
+    for(i=0, k=regNew; i<pTab->nCol; i++, k++){
+      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+        k--;
+      }else if( aXRef[i]<0 && i!=pTab->iPKey ){
+        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
       }
     }
   }

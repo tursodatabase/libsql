@@ -1,5 +1,5 @@
-C Bug\sfixes\sso\sthat\s"make\stest"\sonce\sagainst\sruns\swith\sno\serrors.
-D 2019-10-17T14:21:07.409
+C Basic\sUPDATE\sfunctionality\sworking\sfor\sVIRTUAL\stables.
+D 2019-10-17T15:59:03.864
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -592,7 +592,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c d3615f0cbe4db5949503bf5916f3cd4fa5de855d5b4ef560f3b6dd5629423a1e
 F src/treeview.c fddeb413159c3eeeaea3f496172f121cf3695606c461dc4e6dcee51417952df5
 F src/trigger.c 845ccc08f60716c58aa28fe6470385c18ef8c4e1d88c93dcf449bc13d464eb2e
-F src/update.c 1ad2eb4006a06b13f5eadbbdebe0c4dc7e987428dfdeef18429f533d2dae8618
+F src/update.c ef3e261b43cc417e4d7e59ccf4fdae1b86d9bc1879d83820253e4a2105a63278
 F src/upsert.c 710c91bb13e3c3fed5b6fe17cb13e09560bdd003ad8b8c51e6b16c80cfc48b10
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 10d910e04a4f3842042485e0df01a484f57f912c10b60b3a09ccddd5019bd138
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 069351b85f9a706f60d3e98fbc8aaf40c374356b967c0464aede30ead3d9d18b
-R a9daba7f86da0ab938b557a0a9cc8b96
+P 7bfe0f679d8951b3e925bdf549efa0f8d6b514eddeaca69cbfddbd9476cfff5f
+R d18b3efac452c2846ba92424700e5afb
 U drh
-Z 1fb219ce2b5d60344f9b3644d927ae0d
+Z f4544de40926466a5b3f8950ba10f06a
