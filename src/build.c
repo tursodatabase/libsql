@@ -901,7 +901,7 @@ i16 sqlite3ColumnOfTable(Table *pTab, i16 iCol){
   int i;
   i16 n;
   assert( iCol<pTab->nCol );
-  if( pTab->nVCol==0 ) return iCol;
+  if( (pTab->tabFlags & TF_HasVirtual)==0 ) return iCol;
   for(i=0, n=0; i<iCol; i++){
     if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) n++;
   }
@@ -1564,7 +1564,6 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
       goto generated_error;
     }
   }
-  if( eType==COLFLAG_VIRTUAL ) pTab->nVCol++;
   pCol->colFlags |= eType;
   assert( TF_HasVirtual==COLFLAG_VIRTUAL );
   assert( TF_HasStored==COLFLAG_STORED );
@@ -2127,6 +2126,7 @@ void sqlite3EndTable(
   assert( !db->mallocFailed );
   p = pParse->pNewTable;
   if( p==0 ) return;
+  p->nNVCol = p->nCol;
 
   if( pSelect==0 && isShadowTableName(db, p->zName) ){
     p->tabFlags |= TF_Shadow;
@@ -2183,7 +2183,12 @@ void sqlite3EndTable(
   if( p->tabFlags & (TF_HasVirtual|TF_HasStored) ){
     int ii;
     for(ii=0; ii<p->nCol; ii++){
-      if( (p->aCol[ii].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL))!=0 ){
+      u32 colFlags = p->aCol[ii].colFlags;
+      if( (colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL))!=0 ){
+        if( colFlags & COLFLAG_VIRTUAL ){
+          p->nNVCol--;
+          assert( p->nNVCol>=0 );
+        }
         sqlite3ResolveSelfReference(pParse, p, NC_GenCol, 
                                     p->aCol[ii].pDflt, 0);
       }

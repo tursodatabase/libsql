@@ -1982,7 +1982,7 @@ struct Table {
   u32 tabFlags;        /* Mask of TF_* values */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
-  i16 nVCol;           /* Number of virtual columns */
+  i16 nNVCol;          /* Number of columns that are not VIRTUAL */
   LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
   LogEst szTabRow;     /* Estimated size of each table row in bytes */
 #ifdef SQLITE_ENABLE_COSTMULT

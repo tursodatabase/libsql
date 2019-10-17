@@ -37,8 +37,7 @@ void sqlite3OpenTable(
   sqlite3TableLock(pParse, iDb, pTab->tnum, 
                    (opcode==OP_OpenWrite)?1:0, pTab->zName);
   if( HasRowid(pTab) ){
-    sqlite3VdbeAddOp4Int(v, opcode, iCur, pTab->tnum, iDb,
-                         pTab->nCol - pTab->nVCol);
+    sqlite3VdbeAddOp4Int(v, opcode, iCur, pTab->tnum, iDb, pTab->nNVCol);
     VdbeComment((v, "%s", pTab->zName));
   }else{
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
@@ -1933,8 +1932,7 @@ void sqlite3GenerateConstraintChecks(
   /* Generate the table record */
   if( HasRowid(pTab) ){
     int regRec = aRegIdx[ix];
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regNewData+1,
-                      pTab->nCol-pTab->nVCol, regRec);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regNewData+1, pTab->nNVCol, regRec);
     sqlite3SetMakeRecordP5(v, pTab);
     if( !bAffinityDone ){
       sqlite3TableAffinity(v, pTab, 0);

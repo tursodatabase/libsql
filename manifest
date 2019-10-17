@@ -1,5 +1,5 @@
-C Bug\sfix\swith\sINSERT\susing\san\sexplicit\scolumn\slist\son\sa\stable\swith\na\snon-final\sSTORED\scolumn.
-D 2019-10-17T18:07:22.142
+C In\sthe\sTable\sobject,\schange\sthe\snVCol\sfield\sto\snNVCol\s-\sthe\snumber\sof\nnon-virtual\scolumns,\sas\sthat\sis\sthe\squantity\sthat\swe\sneed\smost.
+D 2019-10-17T18:35:57.978
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c a8a9c2ce62bdf54c8cf9795143d7cb10b7473a1230a0572f702d061ffcceefe5
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c efbcb2e78a578bca138ea2d8a4b3ec44a6fef2630a1b79fb5ed619abd08068e5
+F src/build.c a6424bece3662d57b19f8ead1541c959036bc632ac57f7f6f7801833c8e544da
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -486,7 +486,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 603a076777fc517847c55bcb5e6ab96191c1727ef4bf353f7154f2770cd352c2
+F src/insert.c 96e3cd32ddc5cfc75b2a03ced36f49a31105cfbda3939f1e239109bdd12227e8
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 3e01f6a1c96643381b5f9d79e4ff7f2520bc5712197746fb0852283e78cccf66
@@ -518,7 +518,7 @@ F src/parse.y bc453ce808316facd191413bfa4ec6730a1d693b98fd8be5addef8fbfd62bb7b
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
-F src/pragma.c c04340e810dd5d6d094f7fffa9278e9183ffd052f91b2dc20f83aea471f8756a
+F src/pragma.c a2cee4630b456f1f4727f93e2813d1cd197965c2ba2105be30f4c6104343727f
 F src/pragma.h 40962d65b645bb3f08c1f4c456effd01c6e7f073f68ea25177e0c95e181cff75
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
@@ -530,7 +530,7 @@ F src/shell.c.in d70bcf630c4073eaa994fa74be98886c781918e794cb8b562be8df10f018e27
 F src/sqlite.h.in 5725a6b20190a1e8d662077a1c1c8ea889ad7be90dd803f914c2de226f5fe6ab
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
-F src/sqliteInt.h 8af46452e819f6304cc39922eb9f2153a53da44dcedae78cd59ae08e7ca7b164
+F src/sqliteInt.h 67d8d7f2d734823a978e50764563046759c23c6fa752c91e4f33b9815539e3e1
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe7517bf4d360597576ab9aba29627d7926d23f2bbbfb3e7bf4d32761617574c
-R 1758d4287c38e70ebe46598e4b662121
+P 61b4459ae6a6cc182c11abbc8b1dd629f77beb088d7ccad5e563d8d4769056df
+R 3d476f0303fa6cd5641db0923ba30a4b
 U drh
-Z d0910071efb9b72075e77f5cb05b8223
+Z 39ac0138a046fe5fcbf36ab2cfc09aa2
