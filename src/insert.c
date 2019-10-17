@@ -220,7 +220,7 @@ void sqlite3ComputeStoredColumns(
   for(i=0; i<pTab->nCol; i++, iRegStore++){
     u32 colFlags = pTab->aCol[i].colFlags;
     if( (colFlags & COLFLAG_VIRTUAL)!=0 ){
-      /* Virtual columns are no stored */
+      /* Virtual columns are not stored */
       iRegStore--;
     }else if( (colFlags & COLFLAG_STORED)!=0 ){
       /* Stored columns are handled on the second pass */
@@ -694,7 +694,7 @@ void sqlite3Insert(
   ** is appears in the original table.  (The index of the INTEGER
   ** PRIMARY KEY in the original table is pTab->iPKey.)
   */
-  bIdListInOrder = (pTab->tabFlags & TF_OOOHidden)==0;
+  bIdListInOrder = (pTab->tabFlags & (TF_OOOHidden|TF_HasStored))==0;
   if( pColumn ){
     for(i=0; i<pColumn->nId; i++){
       pColumn->a[i].idx = -1;
