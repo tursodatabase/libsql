@@ -1,5 +1,5 @@
-C Merge\strunk\senhancements\sinto\sthe\sgenerated-columns\sbranch.
-D 2019-10-18T17:47:47.787
+C Fixes\sfor\sWITHOUT\sROWID\stables\swith\sVIRTUAL\scolumns\sand\san\sINTEGER\sPRIMARY\sKEY.
+D 2019-10-18T18:33:25.975
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c a8a9c2ce62bdf54c8cf9795143d7cb10b7473a1230a0572f702d061ffcceefe5
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 1872ee2d0e09df69081ed25402b3e381d20df49981084d441e99e4dfe4d553fd
+F src/build.c c38f1b8942572cecf2b9e4abb6984be73ebb6c5c0fdd91c776734d73460fcaf8
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f409649ec4282a47f0a8b079b419f1922e0c24779b297f477ced168d5b7910d 9dc0d34586eebf6705d9bd81494c417ac76707b8625d1ff99eda18b4ca2d8a50
-R 8ebd80e22c07677946c96a01428911bf
+P 85bc4524d76999080faa4474e8880d2b6a2ac3a7f6a76239af4de1a42f8138c8
+R 0af80221f2d400634eaa464ec81f7f65
 U drh
-Z 73fa86e472de993d3352f53eb78454b7
+Z f141c57ae5a92a7a4189b1c5f348b449
