@@ -3954,9 +3954,11 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 #ifdef SQLITE_OMIT_GENERATED_COLUMNS
-# define sqlite3ColumnOfTable(T,X) (X)  /* No-op pass-through */
+# define sqlite3ColumnOfTable(T,X)   (X)  /* No-op pass-through */
+# define sqlite3ColumnOfStorage(T,X) (X)  /* No-op pass-through */
 #else
   i16 sqlite3ColumnOfTable(Table*, i16);
+  i16 sqlite3ColumnOfStorage(Table*, i16);
 #endif
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #if SQLITE_ENABLE_HIDDEN_COLUMNS

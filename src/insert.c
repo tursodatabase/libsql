@@ -1433,6 +1433,7 @@ void sqlite3GenerateConstraintChecks(
   /* Test all NOT NULL constraints.
   */
   for(i=0; i<nCol; i++){
+    int iReg;
     if( i==pTab->iPKey ){
       continue;        /* ROWID is never NULL */
     }
@@ -1453,14 +1454,26 @@ void sqlite3GenerateConstraintChecks(
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
         || onError==OE_Ignore || onError==OE_Replace );
     addr1 = 0;
+    if( (pTab->tabFlags & TF_HasVirtual)==0 ){
+      iReg = regNewData+1+i;
+    }else if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+      iReg = ++pParse->nMem;
+      assert( pParse->iSelfTab==0 );
+      pParse->iSelfTab = -regNewData;
+      sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iReg);
+      pParse->iSelfTab = 0;
+      if( onError==OE_Replace ) onError = OE_Abort;
+    }else{
+      iReg = sqlite3ColumnOfTable(pTab, i) + regNewData + 1;
+    }
     switch( onError ){
       case OE_Replace: {
         assert( onError==OE_Replace );
         addr1 = sqlite3VdbeMakeLabel(pParse);
-        sqlite3VdbeAddOp2(v, OP_NotNull, regNewData+1+i, addr1);
+        sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
           VdbeCoverage(v);
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
-        sqlite3VdbeAddOp2(v, OP_NotNull, regNewData+1+i, addr1);
+        sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
           VdbeCoverage(v);
         onError = OE_Abort;
         /* Fall through into the OE_Abort case to generate code that runs
@@ -1474,7 +1487,7 @@ void sqlite3GenerateConstraintChecks(
         char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
                                     pTab->aCol[i].zName);
         sqlite3VdbeAddOp3(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL, onError,
-                          regNewData+1+i);
+                          iReg);
         sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);
         sqlite3VdbeChangeP5(v, P5_ConstraintNotNull);
         VdbeCoverage(v);
@@ -1483,7 +1496,7 @@ void sqlite3GenerateConstraintChecks(
       }
       default: {
         assert( onError==OE_Ignore );
-        sqlite3VdbeAddOp2(v, OP_IsNull, regNewData+1+i, ignoreDest);
+        sqlite3VdbeAddOp2(v, OP_IsNull, iReg, ignoreDest);
         VdbeCoverage(v);
         break;
       }

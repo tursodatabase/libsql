@@ -5378,6 +5378,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             Index *pPk = sqlite3PrimaryKeyIndex(pTab);
             x = pPk->aiColumn[x];
             assert( x>=0 );
+          }else{
+            x = sqlite3ColumnOfStorage(pTab,x);
           }
           x = sqlite3ColumnOfIndex(pIdx, x);
           if( x>=0 ){

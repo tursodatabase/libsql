@@ -877,19 +877,11 @@ Index *sqlite3PrimaryKeyIndex(Table *pTab){
 }
 
 /*
-** Return the column of index pIdx that corresponds to table
-** column iCol.  Return -1 if not found.
+** Return the true column number of index pIdx that corresponds to table
+** true column iCol.  Return -1 if not found.
 */
 i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
   int i;
-#ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  Table *pTab = pIdx->pTable;
-  if( pTab->tabFlags & TF_HasVirtual ){
-    for(i=0; i<=iCol; i++){
-      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) iCol++;
-    }
-  }
-#endif
   for(i=0; i<pIdx->nColumn; i++){
     if( iCol==pIdx->aiColumn[i] ) return i;
   }
@@ -897,13 +889,40 @@ i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
 }
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-/*
-** Of the iCol-th column in table pTab, return the index of that column
-** as stored on disk.  Usually the return value is the same as the iCol
-** input, however the return value may be less there are prior VIRTUAL
-** columns.
+/* Convert a storage column number into a true column number.
 **
-** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro
+** The storage column number (0,1,2,....) is the index of the value
+** as it appears in the record on disk.  The true column number
+** is the index (0,1,2,...) of the column in the CREATE TABLE statement.
+**
+** The storage column number is less than the true column number if
+** and only there are virtual columns to the left.
+**
+** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
+**
+** This function is the inverse of sqlite3ColumnOfTable().
+*/
+i16 sqlite3ColumnOfStorage(Table *pTab, i16 iCol){
+  if( pTab->tabFlags & TF_HasVirtual ){
+    int i;
+    for(i=0; i<=iCol; i++){
+      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) iCol++;
+    }
+  }
+  return iCol;
+}
+#endif
+
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/* Convert a true column number into a storage column number.
+**
+** The storage column number (0,1,2,....) is the index of the value
+** as it appears in the record on disk.  The true column number
+** is the index (0,1,2,...) of the column in the CREATE TABLE statement.
+**
+** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
+**
+** This function is the inverse of sqlite3ColumnOfStorage().
 */
 i16 sqlite3ColumnOfTable(Table *pTab, i16 iCol){
   int i;
@@ -2050,11 +2069,14 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   nExtra = 0;
   for(i=0; i<pTab->nCol; i++){
-    if( !hasColumn(pPk->aiColumn, nPk, i) ) nExtra++;
+    if( !hasColumn(pPk->aiColumn, nPk, i)
+     && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) nExtra++;
   }
   if( resizeIndexObject(db, pPk, nPk+nExtra) ) return;
   for(i=0, j=nPk; i<pTab->nCol; i++){
-    if( !hasColumn(pPk->aiColumn, j, i) ){
+    if( !hasColumn(pPk->aiColumn, j, i)
+     && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0
+    ){
       assert( j<pPk->nColumn );
       pPk->aiColumn[j] = i;
       pPk->azColl[j] = sqlite3StrBINARY;
@@ -2062,7 +2084,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     }
   }
   assert( pPk->nColumn==j );
-  assert( pTab->nCol<=j );
+  assert( pTab->nNVCol<=j );
   recomputeColumnsNotIndexed(pPk);
 }
 
@@ -2172,13 +2194,10 @@ void sqlite3EndTable(
     }
     if( (p->tabFlags & TF_HasPrimaryKey)==0 ){
       sqlite3ErrorMsg(pParse, "PRIMARY KEY missing on table %s", p->zName);
-    }else{
-      p->tabFlags |= TF_WithoutRowid | TF_NoVisibleRowid;
-      convertToWithoutRowidTable(pParse, p);
+      return;
     }
+    p->tabFlags |= TF_WithoutRowid | TF_NoVisibleRowid;
   }
-
-  iDb = sqlite3SchemaToIndex(db, p->pSchema);
 
 #ifndef SQLITE_OMIT_CHECK
   /* Resolve names in all CHECK constraint expressions.
@@ -2203,6 +2222,14 @@ void sqlite3EndTable(
     }
   }
 #endif
+
+  /* Special processing for WITHOUT ROWID Tables */
+  if( (tabOpts & TF_WithoutRowid)!=0 ){
+    convertToWithoutRowidTable(pParse, p);
+  }
+
+  iDb = sqlite3SchemaToIndex(db, p->pSchema);
+
 
   /* Estimate the average row size for the table and for all implied indices */
   estimateTableWidth(p);
