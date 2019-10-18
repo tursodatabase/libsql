@@ -550,7 +550,7 @@ void sqlite3Update(
     ** is not required) and leave the PK fields in the array of registers.  */
     for(i=0; i<nPk; i++){
       assert( pPk->aiColumn[i]>=0 );
-      sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur,
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur,
                                       pPk->aiColumn[i], iPk+i);
     }
     if( eOnePass ){
@@ -642,7 +642,7 @@ void sqlite3Update(
        || (colFlags & COLFLAG_PRIMKEY)!=0
       ){
         testcase(  oldmask!=0xffffffff && i==31 );
-        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
@@ -685,7 +685,7 @@ void sqlite3Update(
         */
         testcase( i==31 );
         testcase( i==32 );
-        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
@@ -732,7 +732,7 @@ void sqlite3Update(
       if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
         if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) k--;
       }else if( aXRef[i]<0 && i!=pTab->iPKey ){
-        sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, i, k);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
       }
     }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS

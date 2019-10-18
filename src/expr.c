@@ -3365,7 +3365,7 @@ void sqlite3ExprCodeLoadIndexColumn(
     sqlite3ExprCodeCopy(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
     pParse->iSelfTab = 0;
   }else{
-    sqlite3ExprCodeGetColumnOfTable(pParse, pIdx->pTable, iTabCur,
+    sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
                                     iTabCol, regOut);
   }
 }
@@ -3374,13 +3374,12 @@ void sqlite3ExprCodeLoadIndexColumn(
 ** Generate code to extract the value of the iCol-th column of a table.
 */
 void sqlite3ExprCodeGetColumnOfTable(
-  Parse *pParse,  /* Parsing context */
+  Vdbe *v,        /* Parsing context */
   Table *pTab,    /* The table containing the value */
   int iTabCur,    /* The table cursor.  Or the PK cursor for WITHOUT ROWID */
   int iCol,       /* Index of the column to extract */
   int regOut      /* Extract the value into this register */
 ){
-  Vdbe *v = pParse->pVdbe;
   Column *pCol;
   assert( v!=0 );
   if( pTab==0 ){
@@ -3397,6 +3396,7 @@ void sqlite3ExprCodeGetColumnOfTable(
       x = iCol;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     }else if( (pCol = &pTab->aCol[iCol])->colFlags & COLFLAG_VIRTUAL ){
+      Parse *pParse = sqlite3VdbeParser(v);
       if( pCol->colFlags & COLFLAG_BUSY ){
         sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pCol->zName);
       }else{
@@ -3417,8 +3417,6 @@ void sqlite3ExprCodeGetColumnOfTable(
       op = OP_Column;
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
-  }
-  if( iCol>=0 ){
     sqlite3ColumnDefault(v, pTab, iCol, regOut);
   }
 }
@@ -3439,7 +3437,7 @@ int sqlite3ExprCodeGetColumn(
   u8 p5            /* P5 value for OP_Column + FLAGS */
 ){
   assert( pParse->pVdbe!=0 );
-  sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iTable, iColumn, iReg);
+  sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pTab, iTable, iColumn, iReg);
   if( p5 ){
     sqlite3VdbeChangeP5(pParse->pVdbe, p5);
   }

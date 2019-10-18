@@ -1407,7 +1407,7 @@ void sqlite3Pragma(
         ** this case. */
         for(j=0; j<pFK->nCol; j++){
           int iCol = aiCols ? aiCols[j] : pFK->aCol[j].iFrom;
-          sqlite3ExprCodeGetColumnOfTable(pParse, pTab, 0, iCol, regRow+j);
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);
           sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk); VdbeCoverage(v);
         }
 
@@ -1595,7 +1595,7 @@ void sqlite3Pragma(
           int jmp2;
           if( j==pTab->iPKey ) continue;
           if( pTab->aCol[j].notNull==0 ) continue;
-          sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iDataCur, j, 3);
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
           sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
           jmp2 = sqlite3VdbeAddOp1(v, OP_NotNull, 3); VdbeCoverage(v);
           zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,

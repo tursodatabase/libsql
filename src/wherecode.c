@@ -2072,7 +2072,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             if( HasRowid(pTab) ){
-              sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iCur, -1, regRowid);
+              sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, regRowid);
               jmp1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0,
                                           regRowid, iSet);
               VdbeCoverage(v);
@@ -2086,7 +2086,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                sqlite3ExprCodeGetColumnOfTable(pParse, pTab, iCur, iCol,r+iPk);
+                sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
               }
 
               /* Check if the temp table already contains this key. If so,
