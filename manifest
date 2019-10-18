@@ -1,5 +1,5 @@
-C STORED\scolumns\scan\snow\sreference\sother\sSTORED\scolumns,\sin\sany\sorder,\sas\slong\nas\sthere\sare\snot\sloops.
-D 2019-10-18T02:19:18.134
+C Get\sindexes\sworking\son\svirtual\scolumns.
+D 2019-10-18T10:05:06.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 3115663711fabc6a79b96f4c5f1a4cd64f79778c51a1f18b4180c2959785f636
+F src/insert.c 689b21b415d4bfe2a0ea2cf0066974d2a93899fa51af12453664214fa0d534e6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 3e01f6a1c96643381b5f9d79e4ff7f2520bc5712197746fb0852283e78cccf66
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ad66af04a654d92711d2d056ce8f35cd21eac4b99fb8d78be1a314620b6d29e
-R 9578e8b1b10efcdb33ad67045419d288
+P 0d236698e64b2a4b46f91a25279c406e0bf392fe66116678456f0a034c11d7b4
+R 8109a098652bad982748ade2c7597bbf
 U drh
-Z f6acd0d3a8cdd8b86a336efd8f5324bf
+Z 4e41794c6cc4f099bab016eb4fec67c3

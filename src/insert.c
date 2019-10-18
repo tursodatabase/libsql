@@ -1755,14 +1755,21 @@ void sqlite3GenerateConstraintChecks(
         sqlite3ExprCodeCopy(pParse, pIdx->aColExpr->a[i].pExpr, regIdx+i);
         pParse->iSelfTab = 0;
         VdbeComment((v, "%s column %d", pIdx->zName, i));
+      }else if( iField==XN_ROWID || iField==pTab->iPKey ){
+        x = regNewData;
+        sqlite3VdbeAddOp2(v, OP_IntCopy, x, regIdx+i);
+        VdbeComment((v, "rowid"));
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+      }else if( pTab->aCol[iField].colFlags & COLFLAG_VIRTUAL ){
+        pParse->iSelfTab = -(regNewData+1);
+        sqlite3ExprCodeCopy(pParse, pTab->aCol[iField].pDflt, regIdx+i);
+        pParse->iSelfTab = 0;
+        VdbeComment((v, "%s column %d", pIdx->zName, i));
+#endif
       }else{
-        if( iField==XN_ROWID || iField==pTab->iPKey ){
-          x = regNewData;
-        }else{
-          x = iField + regNewData + 1;
-        }
-        sqlite3VdbeAddOp2(v, iField<0 ? OP_IntCopy : OP_SCopy, x, regIdx+i);
-        VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
+        x = sqlite3ColumnOfTable(pTab, iField) + regNewData + 1;
+        sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
+        VdbeComment((v, "%s", pTab->aCol[iField].zName));
       }
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
