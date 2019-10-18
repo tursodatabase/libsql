@@ -882,6 +882,14 @@ Index *sqlite3PrimaryKeyIndex(Table *pTab){
 */
 i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
   int i;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  Table *pTab = pIdx->pTable;
+  if( pTab->tabFlags & TF_HasVirtual ){
+    for(i=0; i<=iCol; i++){
+      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) iCol++;
+    }
+  }
+#endif
   for(i=0; i<pIdx->nColumn; i++){
     if( iCol==pIdx->aiColumn[i] ) return i;
   }
