@@ -1828,7 +1828,7 @@ struct Column {
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
-  u8 colFlags;     /* Boolean properties.  See COLFLAG_ defines below */
+  u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
 
 /* Allowed values for Column.colFlags:
@@ -1840,7 +1840,8 @@ struct Column {
 #define COLFLAG_SORTERREF 0x0010   /* Use sorter-refs with this column */
 #define COLFLAG_VIRTUAL   0x0020   /* GENERATED ALWAYS AS ... VIRTUAL */
 #define COLFLAG_STORED    0x0040   /* GENERATED ALWAYS AS ... STORED */
-#define COLFLAG_BUSY      0x0080   /* Blocks recursion on VIRTUAL columns */
+#define COLFLAG_BUSY      0x0080   /* Blocks recursion on GENERATED columns */
+#define COLFLAG_NOTAVAIL  0x0100   /* STORED column not yet calculated */
 #define COLFLAG_GENERATED 0x0060   /* Combo: _STORED, _VIRTUAL */
 #define COLFLAG_NOINSERT  0x0062   /* Combo: _HIDDEN, _STORED, _VIRTUAL */
 

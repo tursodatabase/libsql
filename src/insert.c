@@ -215,15 +215,30 @@ void sqlite3ComputeStoredColumns(
   Table *pTab       /* The table */
 ){
   int i;
+  /* Because there can be multiple STORED columns that refer to one another,
+  ** either directly or through VIRTUAL columns, this is a two pass
+  ** algorithm.  On the first pass, mark all STORED columns as NOT-AVAILABLE.
+  */
+  for(i=0; i<pTab->nCol; i++){
+    if( pTab->aCol[i].colFlags & COLFLAG_STORED ){
+      pTab->aCol[i].colFlags |= COLFLAG_NOTAVAIL;
+    }
+  }
+  /* On the second pass, compute the value of each NOT-AVAILABLE column.
+  ** Companion code in the TK_COLUMN case of sqlite3ExprCodeTarget() will
+  ** compute dependencies and mark remove the COLSPAN_NOTAVAIL mark, as
+  ** they are needed.
+  */
   pParse->iSelfTab = -iRegStore;
   for(i=0; i<pTab->nCol; i++, iRegStore++){
     u32 colFlags = pTab->aCol[i].colFlags;
     if( (colFlags & COLFLAG_VIRTUAL)!=0 ){
       /* Virtual columns are not stored */
       iRegStore--;
-    }else if( (colFlags & COLFLAG_STORED)!=0 ){
+    }else if( (colFlags & COLFLAG_NOTAVAIL)!=0 ){
       /* Stored columns are handled on the second pass */
       sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iRegStore);
+      colFlags &= ~COLFLAG_NOTAVAIL;
     }
   }
   pParse->iSelfTab = 0;

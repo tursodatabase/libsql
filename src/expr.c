@@ -3577,19 +3577,49 @@ expr_code_doover:
       }
       if( iTab<0 ){
         if( pParse->iSelfTab<0 ){
-          /* Generating CHECK constraints or inserting into partial index */
-          assert( pExpr->y.pTab!=0 );
+          /* Other columns in the same row for CHECK constraints or
+          ** generated columns or for inserting into partial index.
+          ** The row is unpacked into registers beginning at
+          ** 0-(pParse->iSelfTab).  The rowid (if any) is in a register
+          ** immediately prior to the first column.
+          */
+          Column *pCol;
+          Table *pTab = pExpr->y.pTab;
+          int iSrc;
+          assert( pTab!=0 );
           assert( pExpr->iColumn>=XN_ROWID );
           assert( pExpr->iColumn<pExpr->y.pTab->nCol );
-          if( pExpr->iColumn>=0
-            && pExpr->y.pTab->aCol[pExpr->iColumn].affinity==SQLITE_AFF_REAL
-          ){
-            sqlite3VdbeAddOp2(v, OP_SCopy, pExpr->iColumn - pParse->iSelfTab,
-                              target);
+          if( pExpr->iColumn<0 ){
+            return -1-pParse->iSelfTab;
+          }
+          pCol = pTab->aCol + pExpr->iColumn;
+          iSrc = sqlite3ColumnOfTable(pTab, pExpr->iColumn) - pParse->iSelfTab;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+          if( pCol->colFlags & COLFLAG_GENERATED ){
+            if( pCol->colFlags & COLFLAG_BUSY ){
+              sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"",
+                              pCol->zName);
+              return 0;
+            }
+            pCol->colFlags |= COLFLAG_BUSY;
+            if( pCol->colFlags & COLFLAG_VIRTUAL ){
+              target = sqlite3ExprCodeTarget(pParse, pCol->pDflt, target);
+            }else{
+              target = iSrc;
+              if( pCol->colFlags & COLFLAG_NOTAVAIL ){
+                sqlite3ExprCode(pParse, pCol->pDflt, iSrc);
+              }
+            }
+            pCol->colFlags &= ~(COLFLAG_BUSY|COLFLAG_NOTAVAIL);
+            return target;
+          }else
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+          if( pCol->affinity==SQLITE_AFF_REAL ){
+            sqlite3VdbeAddOp2(v, OP_SCopy, iSrc, target);
             sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
             return target;
           }else{
-            return pExpr->iColumn - pParse->iSelfTab;
+            return iSrc;
           }
         }else{
           /* Coding an expression that is part of an index where column names
