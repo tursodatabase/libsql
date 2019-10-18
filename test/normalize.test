@@ -347,6 +347,36 @@ foreach {tnum sql flags norm} {
   {SELECT x FROM t1 WHERE x IN ([x] IS NOT NULL, NULL, 1, 'a', "b", x'00');}
   0x2
   {0 {SELECT x FROM t1 WHERE x IN(x IS NOT NULL,?,?,?,b,?);}}
+
+  800
+  {ATTACH "normalize800.db" AS somefile;}
+  0x2
+  {0 {ATTACH"normalize800.db"AS somefile;}}
+
+  810
+  {ATTACH DATABASE "normalize810.db" AS somefile;}
+  0x2
+  {0 {ATTACH DATABASE"normalize810.db"AS somefile;}}
+
+  900
+  {INSERT INTO t1 (x) VALUES("sl1"), (1), ("sl2"), ('i');}
+  0x2
+  {0 {INSERT INTO t1(x)VALUES(?),(?),(?),(?);}}
+
+  910
+  {UPDATE t1 SET x = "sl1" WHERE x IN (1, "sl2", 'i');}
+  0x2
+  {0 {UPDATE t1 SET x=?WHERE x IN(?,?,?);}}
+
+  920
+  {UPDATE t1 SET x = "y" WHERE x IN (1, "sl1", 'i');}
+  0x2
+  {0 {UPDATE t1 SET x=y WHERE x IN(?,?,?);}}
+
+  930
+  {DELETE FROM t1 WHERE x IN (1, "sl1", 'i');}
+  0x2
+  {0 {DELETE FROM t1 WHERE x IN(?,?,?);}}
 } {
   do_test $tnum {
     set code [catch {

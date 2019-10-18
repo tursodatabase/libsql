@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2001-09-15
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.31 2007/04/05 11:25:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -458,7 +457,7 @@ do_execsql_test insert-14.1 {
   SELECT x FROM t14;
 } {1}
 
-integrity_check insert-99.0
+integrity_check insert-14.2
 
 # 2019-08-12.
 #
@@ -475,5 +474,53 @@ do_execsql_test insert-15.1 {
   SELECT a, length(b) FROM t1;
 } {4 33000}
 
+# 2019-10-16
+# ticket https://www.sqlite.org/src/info/a8a4847a2d96f5de
+# On a REPLACE INTO, if an AFTER trigger adds back the conflicting
+# row, you can end up with the wrong number of rows in an index.
+#
+db close
+sqlite3 db :memory:
+do_catchsql_test insert-16.1 {
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t0(c0,c1);
+  CREATE UNIQUE INDEX i0 ON t0(c0);
+  INSERT INTO t0(c0,c1) VALUES(123,1);
+  CREATE TRIGGER tr0 AFTER DELETE ON t0
+  BEGIN
+    INSERT INTO t0 VALUES(123,2);
+  END;
+  REPLACE INTO t0(c0,c1) VALUES(123,3);
+} {1 {UNIQUE constraint failed: t0.c0}}
+do_execsql_test insert-16.2 {
+  SELECT * FROM t0;
+} {123 1}
+integrity_check insert-16.3
+do_catchsql_test insert-16.4 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE INDEX t1b ON t1(b);
+  INSERT INTO t1 VALUES(1, 'one');
+  CREATE TRIGGER tr3 AFTER DELETE ON t1 BEGIN
+    INSERT INTO t1 VALUES(1, 'three');
+  END;
+  REPLACE INTO t1 VALUES(1, 'two');
+} {1 {UNIQUE constraint failed: t1.a}}
+integrity_check insert-16.5
+do_catchsql_test insert-16.6 {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE p1(a, b UNIQUE);
+  CREATE TABLE c1(c, d REFERENCES p1(b) ON DELETE CASCADE);
+  CREATE TRIGGER tr6 AFTER DELETE ON c1 BEGIN
+    INSERT INTO p1 VALUES(4, 1);
+  END;
+  INSERT INTO p1 VALUES(1, 1);
+  INSERT INTO c1 VALUES(2, 1);
+  REPLACE INTO p1 VALUES(3, 1);
+} {1 {UNIQUE constraint failed: p1.b}}
+integrity_check insert-16.7
+
+
+
+  
 
 finish_test
