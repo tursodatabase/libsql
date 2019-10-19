@@ -901,8 +901,6 @@ i16 sqlite3TableColumnToIndex(Index *pIdx, i16 iCol){
 ** and only there are VIRTUAL columns to the left.
 **
 ** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
-**
-** This function is the inverse of sqlite3TableColumnToStorage().
 */
 i16 sqlite3StorageColumnToTable(Table *pTab, i16 iCol){
   if( pTab->tabFlags & TF_HasVirtual ){
@@ -919,12 +917,36 @@ i16 sqlite3StorageColumnToTable(Table *pTab, i16 iCol){
 /* Convert a table column number into a storage column number.
 **
 ** The storage column number (0,1,2,....) is the index of the value
-** as it appears in the record on disk.  The true column number
-** is the index (0,1,2,...) of the column in the CREATE TABLE statement.
+** as it appears in the record on disk.  Or, if the input column is
+** the N-th virtual column (zero-based) then the storage number is
+** the number of non-virtual columns in the table plus N.  
 **
-** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
+** The true column number is the index (0,1,2,...) of the column in
+** the CREATE TABLE statement.
 **
-** This function is the inverse of sqlite3StorageColumnToTable().
+** If the input column is a VIRTUAL column, then it should not appear
+** in storage.  But the value sometimes is cached in registers that
+** follow the range of registers used to construct storage.  This
+** avoids computing the same VIRTUAL column multiple times, and provides
+** values for use by OP_Param opcodes in triggers.  Hence, if the
+** input column is a VIRTUAL table, put it after all the other columns.
+**
+** In the following, N means "normal column", S means STORED, and
+** V means VIRTUAL.  Suppose the CREATE TABLE has columns like this:
+**
+**        CREATE TABLE ex(N,S,V,N,S,V,N,S,V);
+**                     -- 0 1 2 3 4 5 6 7 8
+**
+** Then the mapping from this function is as follows:
+**
+**    INPUTS:     0 1 2 3 4 5 6 7 8
+**    OUTPUTS:    0 1 6 2 3 7 4 5 8
+**
+** So, in other words, this routine shifts all the virtual columns to
+** the end.
+**
+** If SQLITE_OMIT_GENERATED_COLUMNS then there are no virtual columns and
+** this routine is a no-op macro.
 */
 i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
   int i;
@@ -934,7 +956,13 @@ i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
   for(i=0, n=0; i<iCol; i++){
     if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) n++;
   }
-  return n;    
+  if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+    /* iCol is a virtual column itself */
+    return pTab->nNVCol + i - n;
+  }else{
+    /* iCol is a normal or stored column */
+    return n;
+  }
 }
 #endif
 

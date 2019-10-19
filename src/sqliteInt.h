@@ -4044,7 +4044,7 @@ void sqlite3FreeIndex(sqlite3*, Index*);
 #endif
 void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int, Upsert*);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  void sqlite3ComputeStoredColumns(Parse*, int, Table*);
+  void sqlite3ComputeGeneratedColumns(Parse*, int, Table*);
 #endif
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(Parse*, IdList*, Token*);

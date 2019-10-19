@@ -3604,16 +3604,11 @@ expr_code_doover:
               return 0;
             }
             pCol->colFlags |= COLFLAG_BUSY;
-            if( pCol->colFlags & COLFLAG_VIRTUAL ){
-              target = sqlite3ExprCodeTarget(pParse, pCol->pDflt, target);
-            }else{
-              target = iSrc;
-              if( pCol->colFlags & COLFLAG_NOTAVAIL ){
-                sqlite3ExprCode(pParse, pCol->pDflt, iSrc);
-              }
+            if( pCol->colFlags & COLFLAG_NOTAVAIL ){
+              sqlite3ExprCode(pParse, pCol->pDflt, iSrc);
             }
             pCol->colFlags &= ~(COLFLAG_BUSY|COLFLAG_NOTAVAIL);
-            return target;
+            return iSrc;
           }else
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
           if( pCol->affinity==SQLITE_AFF_REAL ){
@@ -4088,17 +4083,19 @@ expr_code_doover:
       **   p1==2   ->    old.b         p1==5   ->    new.b       
       */
       Table *pTab = pExpr->y.pTab;
-      int p1 = pExpr->iTable * (pTab->nCol+1) + 1 + pExpr->iColumn;
+      int iCol = pExpr->iColumn;
+      int p1 = pExpr->iTable * (pTab->nCol+1) + 1 
+                     + (iCol>=0 ? sqlite3TableColumnToStorage(pTab, iCol) : -1);
 
       assert( pExpr->iTable==0 || pExpr->iTable==1 );
-      assert( pExpr->iColumn>=-1 && pExpr->iColumn<pTab->nCol );
-      assert( pTab->iPKey<0 || pExpr->iColumn!=pTab->iPKey );
+      assert( iCol>=-1 && iCol<pTab->nCol );
+      assert( pTab->iPKey<0 || iCol!=pTab->iPKey );
       assert( p1>=0 && p1<(pTab->nCol*2+2) );
 
       sqlite3VdbeAddOp2(v, OP_Param, p1, target);
       VdbeComment((v, "r[%d]=%s.%s", target,
         (pExpr->iTable ? "new" : "old"),
-        (pExpr->iColumn<0 ? "rowid" : pExpr->y.pTab->aCol[pExpr->iColumn].zName)
+        (pExpr->iColumn<0 ? "rowid" : pExpr->y.pTab->aCol[iCol].zName)
       ));
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -4107,9 +4104,7 @@ expr_code_doover:
       **
       ** EVIDENCE-OF: R-60985-57662 SQLite will convert the value back to
       ** floating point when extracting it from the record.  */
-      if( pExpr->iColumn>=0 
-       && pTab->aCol[pExpr->iColumn].affinity==SQLITE_AFF_REAL
-      ){
+      if( iCol>=0 && pTab->aCol[iCol].affinity==SQLITE_AFF_REAL ){
         sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
       }
 #endif

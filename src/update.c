@@ -693,8 +693,8 @@ void sqlite3Update(
     }
   }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  if( pTab->tabFlags & TF_HasStored ){
-    sqlite3ComputeStoredColumns(pParse, regNew, pTab);
+  if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+    sqlite3ComputeGeneratedColumns(pParse, regNew, pTab);
   }
 #endif
 
@@ -737,8 +737,8 @@ void sqlite3Update(
       }
     }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    if( pTab->tabFlags & TF_HasStored ){
-      sqlite3ComputeStoredColumns(pParse, regNew, pTab);
+    if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+      sqlite3ComputeGeneratedColumns(pParse, regNew, pTab);
     }
 #endif 
   }

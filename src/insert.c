@@ -205,22 +205,23 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
 /*
 ** All regular columns for table pTab have been puts into registers
 ** starting with iRegStore.  The registers that correspond to STORED
-** columns have not been initialized.  This routine goes back and computes
-** the values for STORED columns based on the previously computed normal
-** columns.
+** or VIRTUAL columns have not yet been initialized.  This routine goes
+** back and computes the values for those columns based on the previously
+** computed normal columns.
 */
-void sqlite3ComputeStoredColumns(
+void sqlite3ComputeGeneratedColumns(
   Parse *pParse,    /* Parsing context */
   int iRegStore,    /* Register holding the first column */
   Table *pTab       /* The table */
 ){
   int i;
-  /* Because there can be multiple STORED columns that refer to one another,
-  ** either directly or through VIRTUAL columns, this is a two pass
-  ** algorithm.  On the first pass, mark all STORED columns as NOT-AVAILABLE.
+  int nv;
+  /* Because there can be multiple generated columns that refer to one another,
+  ** this is a two-pass algorithm.  On the first pass, mark all generated
+  ** columns as "not available".
   */
   for(i=0; i<pTab->nCol; i++){
-    if( pTab->aCol[i].colFlags & COLFLAG_STORED ){
+    if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
       pTab->aCol[i].colFlags |= COLFLAG_NOTAVAIL;
     }
   }
@@ -230,16 +231,23 @@ void sqlite3ComputeStoredColumns(
   ** they are needed.
   */
   pParse->iSelfTab = -iRegStore;
-  for(i=0; i<pTab->nCol; i++, iRegStore++){
+  for(i=nv=0; i<pTab->nCol; i++){
     u32 colFlags = pTab->aCol[i].colFlags;
-    if( (colFlags & COLFLAG_VIRTUAL)!=0 ){
-      /* Virtual columns are not stored */
-      iRegStore--;
-    }else if( (colFlags & COLFLAG_NOTAVAIL)!=0 ){
-      /* Stored columns are handled on the second pass */
-      sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iRegStore);
+    if( (colFlags & COLFLAG_NOTAVAIL)!=0 ){
+      assert( colFlags & COLFLAG_GENERATED );
+      if( colFlags & COLFLAG_VIRTUAL ){
+        /* Virtual columns go at the end */
+        assert( pTab->nNVCol+nv == sqlite3TableColumnToStorage(pTab,i) );
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt,
+                        iRegStore+pTab->nNVCol+nv);
+      }else{
+        /* Stored columns go in column order */
+        assert( i-nv == sqlite3TableColumnToStorage(pTab,i) );
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iRegStore+i-nv);
+      }
       colFlags &= ~COLFLAG_NOTAVAIL;
     }
+    if( (colFlags & COLFLAG_VIRTUAL)!=0 ) nv++;
   }
   pParse->iSelfTab = 0;
 }
@@ -1055,7 +1063,6 @@ void sqlite3Insert(
       int k;
       u32 colFlags;
       assert( i>=nHidden );
-      assert( iRegStore==sqlite3TableColumnToStorage(pTab,i)+regRowid+1 );
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
         ** Whenever this column is read, the rowid will be substituted
@@ -1108,10 +1115,10 @@ void sqlite3Insert(
     }
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    /* Compute the new value for STORED columns after all other
+    /* Compute the new value for generated columns after all other
     ** columns have already been computed */
-    if( pTab->tabFlags & TF_HasStored ){
-      sqlite3ComputeStoredColumns(pParse, regRowid+1, pTab);
+    if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+      sqlite3ComputeGeneratedColumns(pParse, regRowid+1, pTab);
     }
 #endif
 
@@ -1454,19 +1461,11 @@ void sqlite3GenerateConstraintChecks(
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
         || onError==OE_Ignore || onError==OE_Replace );
     addr1 = 0;
-    if( (pTab->tabFlags & TF_HasVirtual)==0 ){
-      iReg = regNewData+1+i;
-    }else if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
-      iReg = ++pParse->nMem;
-      assert( pParse->iSelfTab==0 );
-      pParse->iSelfTab = -regNewData;
-      sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iReg);
-      pParse->iSelfTab = 0;
-      if( onError==OE_Replace ) onError = OE_Abort;
-    }else{
-      testcase( i!=sqlite3TableColumnToStorage(pTab, i) );
-      iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
-    }
+    testcase( i!=sqlite3TableColumnToStorage(pTab, i) );
+    testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
+    testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
+    testcase( pTab->aCol[i].colFlags & COLFLAG_GENERATED );
+    iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
     switch( onError ){
       case OE_Replace: {
         assert( onError==OE_Replace );
