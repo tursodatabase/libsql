@@ -1,5 +1,5 @@
-C Refactor\snames\sof\scolumn\sindex\stransformation\sfunctions,\sfor\sclarity.\nGet\sgenerated\scolumns\sworking\swith\sALTER\sTABLE\sRENAME\sCOLUMN.
-D 2019-10-19T13:29:10.933
+C Add\stestcase\smacros.
+D 2019-10-19T15:01:52.518
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 8caa6f07be582979dec421beda6b77033f9b50f97bb1844e189f920a41b781ee
+F src/expr.c 254252a94890f2493a5e214971342bfdf228857483ea7a263ae75048ff67f5b5
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 6271fda51794b569d736eba4097d28f13080cd0c9eb66d5fcecb4b77336fae50
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -486,7 +486,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 66662a52c4e205dbaeb318591bf2aaf1b957920003d1911c6a0dce6dfaad1eed
+F src/insert.c 2f1b93da19a9a65eab197534dcc3fb569708b1a7035da5b229063b7f13e71253
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 3e01f6a1c96643381b5f9d79e4ff7f2520bc5712197746fb0852283e78cccf66
@@ -611,7 +611,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c 7b2d928b70ac885fb63c871e97d3502f3e0fbe14ec605ba05675d03f20aa6c5e
+F src/where.c 9ab206102932b7fe0e05f8e9133b5c0a351c0fd6f01e5d65ae4d1cd116aa89e6
 F src/whereInt.h 2c6bae136a7c0be6ff75dc36950d1968c67d005c8e51d7a9d77cb996bb4843d9
 F src/wherecode.c d96190c0b536339375846048ad3c41758b4bd6baaf8f8f350da5911d42bc4a61
 F src/whereexpr.c 05c283d26aa9c3f5d1bf13a5f6a573b43295b9db280eff18e26f97d7d7f119b4
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86074da0fd2949e231898ef0bc672d90fd89cefa49fb0eb50ff398fbdd91d1ad
-R 72d8383f6985e8f8ce5ac07723f6738a
+P 27ab41c9102e7801ff829488fc123a8040da008bef373d6704efbe2f93e1da90
+R 72df5515bebd9dc031bf51cf11383344
 U drh
-Z 25261f5626aab97bfd8acba5a24fa871
+Z dca30fedc0b8883c88ac3723c3316cd7

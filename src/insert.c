@@ -1464,6 +1464,7 @@ void sqlite3GenerateConstraintChecks(
       pParse->iSelfTab = 0;
       if( onError==OE_Replace ) onError = OE_Abort;
     }else{
+      testcase( i!=sqlite3TableColumnToStorage(pTab, i) );
       iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
     }
     switch( onError ){
@@ -1782,6 +1783,7 @@ void sqlite3GenerateConstraintChecks(
         VdbeComment((v, "%s column %d", pIdx->zName, i));
 #endif
       }else{
+        testcase( sqlite3TableColumnToStorage(pTab, iField)!=iField );
         x = sqlite3TableColumnToStorage(pTab, iField) + regNewData + 1;
         sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
         VdbeComment((v, "%s", pTab->aCol[iField].zName));

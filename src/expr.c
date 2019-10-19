@@ -3410,10 +3410,12 @@ void sqlite3ExprCodeGetColumnOfTable(
       return;
 #endif
     }else if( !HasRowid(pTab) ){
+      testcase( iCol!=sqlite3TableColumnToStorage(pTab, iCol) );
       x = sqlite3TableColumnToIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
       op = OP_Column;
     }else{
       x = sqlite3TableColumnToStorage(pTab,iCol);
+      testcase( x!=iCol );
       op = OP_Column;
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
@@ -3584,15 +3586,16 @@ expr_code_doover:
           Column *pCol;
           Table *pTab = pExpr->y.pTab;
           int iSrc;
+          int iCol = pExpr->iColumn;
           assert( pTab!=0 );
-          assert( pExpr->iColumn>=XN_ROWID );
-          assert( pExpr->iColumn<pExpr->y.pTab->nCol );
-          if( pExpr->iColumn<0 ){
+          assert( iCol>=XN_ROWID );
+          assert( iCol<pExpr->y.pTab->nCol );
+          if( iCol<0 ){
             return -1-pParse->iSelfTab;
           }
-          pCol = pTab->aCol + pExpr->iColumn;
-          iSrc = sqlite3TableColumnToStorage(pTab, pExpr->iColumn)
-                      - pParse->iSelfTab;
+          pCol = pTab->aCol + iCol;
+          testcase( iCol!=sqlite3TableColumnToStorage(pTab,iCol) );
+          iSrc = sqlite3TableColumnToStorage(pTab, iCol) - pParse->iSelfTab;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
           if( pCol->colFlags & COLFLAG_GENERATED ){
             if( pCol->colFlags & COLFLAG_BUSY ){
