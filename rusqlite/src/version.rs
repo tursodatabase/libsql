@@ -1,7 +1,8 @@
-use ffi;
+use crate::ffi;
 use std::ffi::CStr;
 
-/// Returns the SQLite version as an integer; e.g., `3016002` for version 3.16.2.
+/// Returns the SQLite version as an integer; e.g., `3016002` for version
+/// 3.16.2.
 ///
 /// See [`sqlite3_libversion_number()`](https://www.sqlite.org/c3ref/libversion.html).
 pub fn version_number() -> i32 {

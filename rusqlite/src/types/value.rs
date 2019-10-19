@@ -4,7 +4,7 @@ use super::{Null, Type};
 /// dictated by SQLite (not by the caller).
 ///
 /// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.
     Null,
@@ -31,7 +31,28 @@ impl From<bool> for Value {
 }
 
 impl From<isize> for Value {
-    fn from(i: isize) -> Value { Value::Integer(i as i64) }
+    fn from(i: isize) -> Value {
+        Value::Integer(i as i64)
+    }
+}
+
+#[cfg(feature = "i128_blob")]
+impl From<i128> for Value {
+    fn from(i: i128) -> Value {
+        use byteorder::{BigEndian, ByteOrder};
+        let mut buf = vec![0u8; 16];
+        // We store these biased (e.g. with the most significant bit flipped)
+        // so that comparisons with negative numbers work properly.
+        BigEndian::write_i128(&mut buf, i ^ (1i128 << 127));
+        Value::Blob(buf)
+    }
+}
+
+#[cfg(feature = "uuid")]
+impl From<uuid::Uuid> for Value {
+    fn from(id: uuid::Uuid) -> Value {
+        Value::Blob(id.as_bytes().to_vec())
+    }
 }
 
 macro_rules! from_i64(
@@ -72,6 +93,18 @@ impl From<String> for Value {
 impl From<Vec<u8>> for Value {
     fn from(v: Vec<u8>) -> Value {
         Value::Blob(v)
+    }
+}
+
+impl<T> From<Option<T>> for Value
+where
+    T: Into<Value>,
+{
+    fn from(v: Option<T>) -> Value {
+        match v {
+            Some(x) => x.into(),
+            None => Value::Null,
+        }
     }
 }
 

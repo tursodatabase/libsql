@@ -1,61 +1,64 @@
 //! Incremental BLOB I/O.
 //!
-//! Note that SQLite does not provide API-level access to change the size of a BLOB; that must
-//! be performed through SQL statements.
+//! Note that SQLite does not provide API-level access to change the size of a
+//! BLOB; that must be performed through SQL statements.
 //!
-//! `Blob` conforms to `std::io::Read`, `std::io::Write`, and `std::io::Seek`, so it plays
-//! nicely with other types that build on these (such as `std::io::BufReader` and
-//! `std::io::BufWriter`). However, you must be careful with the size of the blob. For example,
-//! when using a `BufWriter`, the `BufWriter` will accept more data than the `Blob` will allow,
-//! so make sure to call `flush` and check for errors. (See the unit tests in this module for
-//! an example.)
+//! `Blob` conforms to `std::io::Read`, `std::io::Write`, and `std::io::Seek`,
+//! so it plays nicely with other types that build on these (such as
+//! `std::io::BufReader` and `std::io::BufWriter`). However, you must be
+//! careful with the size of the blob. For example, when using a `BufWriter`,
+//! the `BufWriter` will accept more data than the `Blob`
+//! will allow, so make sure to call `flush` and check for errors. (See the
+//! unit tests in this module for an example.)
 //!
 //! ## Example
 //!
 //! ```rust
-//! extern crate libsqlite3_sys;
-//! extern crate rusqlite;
-//!
-//! use rusqlite::{Connection, DatabaseName};
 //! use rusqlite::blob::ZeroBlob;
-//! use std::io::{Read, Write, Seek, SeekFrom};
+//! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! use std::error::Error;
+//! use std::io::{Read, Seek, SeekFrom, Write};
 //!
-//! fn main() {
-//!     let db = Connection::open_in_memory().unwrap();
-//!     db.execute_batch("CREATE TABLE test (content BLOB);").unwrap();
-//!     db.execute("INSERT INTO test (content) VALUES (ZEROBLOB(10))", &[]).unwrap();
+//! fn main() -> Result<(), Box<Error>> {
+//!     let db = Connection::open_in_memory()?;
+//!     db.execute_batch("CREATE TABLE test (content BLOB);")?;
+//!     db.execute(
+//!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
+//!         NO_PARAMS,
+//!     )?;
 //!
 //!     let rowid = db.last_insert_rowid();
-//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
 //!
 //!     // Make sure to test that the number of bytes written matches what you expect;
-//!     // if you try to write too much, the data will be truncated to the size of the BLOB.
-//!     let bytes_written = blob.write(b"01234567").unwrap();
+//!     // if you try to write too much, the data will be truncated to the size of the
+//!     // BLOB.
+//!     let bytes_written = blob.write(b"01234567")?;
 //!     assert_eq!(bytes_written, 8);
 //!
 //!     // Same guidance - make sure you check the number of bytes read!
-//!     blob.seek(SeekFrom::Start(0)).unwrap();
+//!     blob.seek(SeekFrom::Start(0))?;
 //!     let mut buf = [0u8; 20];
-//!     let bytes_read = blob.read(&mut buf[..]).unwrap();
+//!     let bytes_read = blob.read(&mut buf[..])?;
 //!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
 //!
-//!     db.execute("INSERT INTO test (content) VALUES (?)", &[&ZeroBlob(64)]).unwrap();
+//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])?;
 //!
 //!     // given a new row ID, we can reopen the blob on that row
 //!     let rowid = db.last_insert_rowid();
-//!     blob.reopen(rowid).unwrap();
+//!     blob.reopen(rowid)?;
 //!
 //!     assert_eq!(blob.size(), 64);
+//!     Ok(())
 //! }
 //! ```
-use std::io;
 use std::cmp::min;
-use std::mem;
+use std::io;
 use std::ptr;
 
 use super::ffi;
 use super::types::{ToSql, ToSqlOutput};
-use {Result, Connection, DatabaseName};
+use crate::{Connection, DatabaseName, Result};
 
 /// Handle to an open BLOB.
 pub struct Blob<'conn> {
@@ -65,45 +68,47 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db`.
+    /// Open a handle to the BLOB located in `row_id`, `column`, `table` in
+    /// database `db`.
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a C-compatible string
-    /// or if the underlying SQLite BLOB open call fails.
-    pub fn blob_open<'a>(&'a self,
-                         db: DatabaseName,
-                         table: &str,
-                         column: &str,
-                         row: i64,
-                         read_only: bool)
-                         -> Result<Blob<'a>> {
+    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a
+    /// C-compatible string or if the underlying SQLite BLOB open call
+    /// fails.
+    pub fn blob_open<'a>(
+        &'a self,
+        db: DatabaseName<'_>,
+        table: &str,
+        column: &str,
+        row_id: i64,
+        read_only: bool,
+    ) -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
-        let db = try!(db.to_cstring());
-        let table = try!(super::str_to_cstring(table));
-        let column = try!(super::str_to_cstring(column));
+        let db = db.to_cstring()?;
+        let table = super::str_to_cstring(table)?;
+        let column = super::str_to_cstring(column)?;
         let rc = unsafe {
-            ffi::sqlite3_blob_open(c.db(),
-                                   db.as_ptr(),
-                                   table.as_ptr(),
-                                   column.as_ptr(),
-                                   row,
-                                   if read_only { 0 } else { 1 },
-                                   &mut blob)
+            ffi::sqlite3_blob_open(
+                c.db(),
+                db.as_ptr(),
+                table.as_ptr(),
+                column.as_ptr(),
+                row_id,
+                if read_only { 0 } else { 1 },
+                &mut blob,
+            )
         };
-        c.decode_result(rc)
-            .map(|_| {
-                     Blob {
-                         conn: self,
-                         blob: blob,
-                         pos: 0,
-                     }
-                 })
+        c.decode_result(rc).map(|_| Blob {
+            conn: self,
+            blob,
+            pos: 0,
+        })
     }
 }
 
-impl<'conn> Blob<'conn> {
+impl Blob<'_> {
     /// Move a BLOB handle to a new row.
     ///
     /// # Failure
@@ -125,8 +130,9 @@ impl<'conn> Blob<'conn> {
 
     /// Close a BLOB handle.
     ///
-    /// Calling `close` explicitly is not required (the BLOB will be closed when the
-    /// `Blob` is dropped), but it is available so you can get any errors that occur.
+    /// Calling `close` explicitly is not required (the BLOB will be closed
+    /// when the `Blob` is dropped), but it is available so you can get any
+    /// errors that occur.
     ///
     /// # Failure
     ///
@@ -142,9 +148,9 @@ impl<'conn> Blob<'conn> {
     }
 }
 
-impl<'conn> io::Read for Blob<'conn> {
-    /// Read data from a BLOB incrementally. Will return Ok(0) if the end of the blob
-    /// has been reached.
+impl io::Read for Blob<'_> {
+    /// Read data from a BLOB incrementally. Will return Ok(0) if the end of
+    /// the blob has been reached.
     ///
     /// # Failure
     ///
@@ -155,25 +161,25 @@ impl<'conn> io::Read for Blob<'conn> {
         if n <= 0 {
             return Ok(0);
         }
-        let rc =
-            unsafe { ffi::sqlite3_blob_read(self.blob, mem::transmute(buf.as_ptr()), n, self.pos) };
+        let rc = unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_ptr() as *mut _, n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {
-                     self.pos += n;
-                     n as usize
-                 })
+                self.pos += n;
+                n as usize
+            })
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 }
 
-impl<'conn> io::Write for Blob<'conn> {
-    /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of the blob
-    /// has been reached; consider using `Write::write_all(buf)` if you want to get an
-    /// error if the entirety of the buffer cannot be written.
+impl io::Write for Blob<'_> {
+    /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of
+    /// the blob has been reached; consider using `Write::write_all(buf)`
+    /// if you want to get an error if the entirety of the buffer cannot be
+    /// written.
     ///
-    /// This function may only modify the contents of the BLOB; it is not possible to increase
-    /// the size of a BLOB using this API.
+    /// This function may only modify the contents of the BLOB; it is not
+    /// possible to increase the size of a BLOB using this API.
     ///
     /// # Failure
     ///
@@ -184,15 +190,13 @@ impl<'conn> io::Write for Blob<'conn> {
         if n <= 0 {
             return Ok(0);
         }
-        let rc = unsafe {
-            ffi::sqlite3_blob_write(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
-        };
+        let rc = unsafe { ffi::sqlite3_blob_write(self.blob, buf.as_ptr() as *mut _, n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {
-                     self.pos += n;
-                     n as usize
-                 })
+                self.pos += n;
+                n as usize
+            })
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
@@ -201,21 +205,25 @@ impl<'conn> io::Write for Blob<'conn> {
     }
 }
 
-impl<'conn> io::Seek for Blob<'conn> {
+impl io::Seek for Blob<'_> {
     /// Seek to an offset, in bytes, in BLOB.
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         let pos = match pos {
             io::SeekFrom::Start(offset) => offset as i64,
-            io::SeekFrom::Current(offset) => self.pos as i64 + offset,
-            io::SeekFrom::End(offset) => self.size() as i64 + offset,
+            io::SeekFrom::Current(offset) => i64::from(self.pos) + offset,
+            io::SeekFrom::End(offset) => i64::from(self.size()) + offset,
         };
 
         if pos < 0 {
-            Err(io::Error::new(io::ErrorKind::InvalidInput,
-                               "invalid seek to negative position"))
-        } else if pos > self.size() as i64 {
-            Err(io::Error::new(io::ErrorKind::InvalidInput,
-                               "invalid seek to position past end of blob"))
+            Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid seek to negative position",
+            ))
+        } else if pos > i64::from(self.size()) {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid seek to position past end of blob",
+            ))
         } else {
             self.pos = pos as i32;
             Ok(pos as u64)
@@ -224,7 +232,7 @@ impl<'conn> io::Seek for Blob<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for Blob<'conn> {
+impl Drop for Blob<'_> {
     fn drop(&mut self) {
         self.close_();
     }
@@ -232,15 +240,15 @@ impl<'conn> Drop for Blob<'conn> {
 
 /// BLOB of length N that is filled with zeroes.
 ///
-/// Zeroblobs are intended to serve as placeholders for BLOBs whose content is later written using
-/// incremental BLOB I/O routines.
+/// Zeroblobs are intended to serve as placeholders for BLOBs whose content is
+/// later written using incremental BLOB I/O routines.
 ///
 /// A negative value for the zeroblob results in a zero-length BLOB.
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub struct ZeroBlob(pub i32);
 
 impl ToSql for ZeroBlob {
-    fn to_sql(&self) -> Result<ToSqlOutput> {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let ZeroBlob(length) = *self;
         Ok(ToSqlOutput::ZeroBlob(length))
     }
@@ -248,17 +256,16 @@ impl ToSql for ZeroBlob {
 
 #[cfg(test)]
 mod test {
-    use std::io::{BufReader, BufRead, BufWriter, Read, Write, Seek, SeekFrom};
-    use {Connection, DatabaseName, Result};
+    use crate::{Connection, DatabaseName, Result};
+    use std::io::{BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn db_with_test_blob() -> Result<(Connection, i64)> {
-        let db = try!(Connection::open_in_memory());
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE test (content BLOB);
                    INSERT INTO test VALUES (ZEROBLOB(10));
                    END;";
-        try!(db.execute_batch(sql));
+        db.execute_batch(sql)?;
         let rowid = db.last_insert_rowid();
         Ok((db, rowid))
     }
@@ -267,7 +274,8 @@ mod test {
     fn test_blob() {
         let (db, rowid) = db_with_test_blob().unwrap();
 
-        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+        let mut blob = db
+            .blob_open(DatabaseName::Main, "test", "content", rowid, false)
             .unwrap();
         assert_eq!(4, blob.write(b"Clob").unwrap());
         assert_eq!(6, blob.write(b"567890xxxxxx").unwrap()); // cannot write past 10
@@ -276,7 +284,8 @@ mod test {
         blob.reopen(rowid).unwrap();
         blob.close().unwrap();
 
-        blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true)
+        blob = db
+            .blob_open(DatabaseName::Main, "test", "content", rowid, true)
             .unwrap();
         let mut bytes = [0u8; 5];
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
@@ -317,7 +326,8 @@ mod test {
     fn test_blob_in_bufreader() {
         let (db, rowid) = db_with_test_blob().unwrap();
 
-        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+        let mut blob = db
+            .blob_open(DatabaseName::Main, "test", "content", rowid, false)
             .unwrap();
         assert_eq!(8, blob.write(b"one\ntwo\n").unwrap());
 
@@ -342,7 +352,8 @@ mod test {
         let (db, rowid) = db_with_test_blob().unwrap();
 
         {
-            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+            let blob = db
+                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
                 .unwrap();
             let mut writer = BufWriter::new(blob);
 
@@ -354,7 +365,8 @@ mod test {
 
         {
             // ... but it should've written the first 10 bytes
-            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+            let mut blob = db
+                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
                 .unwrap();
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
@@ -362,7 +374,8 @@ mod test {
         }
 
         {
-            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+            let blob = db
+                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
                 .unwrap();
             let mut writer = BufWriter::new(blob);
 
@@ -373,7 +386,8 @@ mod test {
 
         {
             // ... but it should've written the first 10 bytes
-            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+            let mut blob = db
+                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
                 .unwrap();
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
