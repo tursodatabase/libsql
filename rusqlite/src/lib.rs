@@ -958,6 +958,21 @@ mod test {
     }
 
     #[test]
+    fn test_open_failure() {
+        let filename = "no_such_file.db";
+        let result = Connection::open_with_flags(filename, OpenFlags::SQLITE_OPEN_READ_ONLY);
+        assert!(!result.is_ok());
+        let err = result.err().unwrap();
+        if let Error::SqliteFailure(e, Some(msg)) = err {
+            assert_eq!(ErrorCode::CannotOpen, e.code);
+            assert_eq!(ffi::SQLITE_CANTOPEN, e.extended_code);
+            assert!(msg.contains(filename), "error message '{}' does not contain '{}'", msg, filename);
+        } else {
+            panic!("SqliteFailure expected");
+        }
+    }
+
+    #[test]
     fn test_close_retry() {
         let db = checked_memory_handle();
 
