@@ -17,6 +17,7 @@ struct UnlockNotification {
 }
 
 #[cfg(feature = "unlock_notify")]
+#[allow(clippy::mutex_atomic)]
 impl UnlockNotification {
     fn new() -> UnlockNotification {
         UnlockNotification {

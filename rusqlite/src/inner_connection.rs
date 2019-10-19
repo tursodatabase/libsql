@@ -37,6 +37,7 @@ pub struct InnerConnection {
 
 impl InnerConnection {
     #[cfg(not(feature = "hooks"))]
+    #[allow(clippy::mutex_atomic)]
     pub fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
         InnerConnection {
             db,
@@ -46,6 +47,7 @@ impl InnerConnection {
     }
 
     #[cfg(feature = "hooks")]
+    #[allow(clippy::mutex_atomic)]
     pub fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
         InnerConnection {
             db,
@@ -123,6 +125,7 @@ impl InnerConnection {
         }
     }
 
+    #[allow(clippy::mutex_atomic)]
     pub fn close(&mut self) -> Result<()> {
         if self.db.is_null() {
             return Ok(());
