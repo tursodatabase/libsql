@@ -1182,7 +1182,7 @@ static void analyzeOneTable(
       int j, k, regKey;
       regKey = sqlite3GetTempRange(pParse, pPk->nKeyCol);
       for(j=0; j<pPk->nKeyCol; j++){
-        k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
+        k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[j]);
         assert( k>=0 && k<pIdx->nColumn );
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, regKey+j);
         VdbeComment((v, "%s", pTab->aCol[pPk->aiColumn[j]].zName));

@@ -1055,7 +1055,7 @@ void sqlite3Insert(
       int k;
       u32 colFlags;
       assert( i>=nHidden );
-      assert( iRegStore==sqlite3ColumnOfTable(pTab,i)+regRowid+1 );
+      assert( iRegStore==sqlite3TableColumnToStorage(pTab,i)+regRowid+1 );
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
         ** Whenever this column is read, the rowid will be substituted
@@ -1464,7 +1464,7 @@ void sqlite3GenerateConstraintChecks(
       pParse->iSelfTab = 0;
       if( onError==OE_Replace ) onError = OE_Abort;
     }else{
-      iReg = sqlite3ColumnOfTable(pTab, i) + regNewData + 1;
+      iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
     }
     switch( onError ){
       case OE_Replace: {
@@ -1782,7 +1782,7 @@ void sqlite3GenerateConstraintChecks(
         VdbeComment((v, "%s column %d", pIdx->zName, i));
 #endif
       }else{
-        x = sqlite3ColumnOfTable(pTab, iField) + regNewData + 1;
+        x = sqlite3TableColumnToStorage(pTab, iField) + regNewData + 1;
         sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
         VdbeComment((v, "%s", pTab->aCol[iField].zName));
       }
@@ -1873,7 +1873,7 @@ void sqlite3GenerateConstraintChecks(
         if( pIdx!=pPk ){
           for(i=0; i<pPk->nKeyCol; i++){
             assert( pPk->aiColumn[i]>=0 );
-            x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
+            x = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[i]);
             sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
             VdbeComment((v, "%s.%s", pTab->zName,
                          pTab->aCol[pPk->aiColumn[i]].zName));

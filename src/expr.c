@@ -3410,10 +3410,10 @@ void sqlite3ExprCodeGetColumnOfTable(
       return;
 #endif
     }else if( !HasRowid(pTab) ){
-      x = sqlite3ColumnOfIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
+      x = sqlite3TableColumnToIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
       op = OP_Column;
     }else{
-      x = sqlite3ColumnOfTable(pTab,iCol);
+      x = sqlite3TableColumnToStorage(pTab,iCol);
       op = OP_Column;
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
@@ -3591,7 +3591,8 @@ expr_code_doover:
             return -1-pParse->iSelfTab;
           }
           pCol = pTab->aCol + pExpr->iColumn;
-          iSrc = sqlite3ColumnOfTable(pTab, pExpr->iColumn) - pParse->iSelfTab;
+          iSrc = sqlite3TableColumnToStorage(pTab, pExpr->iColumn)
+                      - pParse->iSelfTab;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
           if( pCol->colFlags & COLFLAG_GENERATED ){
             if( pCol->colFlags & COLFLAG_BUSY ){
@@ -5320,7 +5321,7 @@ struct IdxCover {
 static int exprIdxCover(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_COLUMN
    && pExpr->iTable==pWalker->u.pIdxCover->iCur
-   && sqlite3ColumnOfIndex(pWalker->u.pIdxCover->pIdx, pExpr->iColumn)<0
+   && sqlite3TableColumnToIndex(pWalker->u.pIdxCover->pIdx, pExpr->iColumn)<0
   ){
     pWalker->eCode = 1;
     return WRC_Abort;

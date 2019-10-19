@@ -877,10 +877,12 @@ Index *sqlite3PrimaryKeyIndex(Table *pTab){
 }
 
 /*
-** Return the true column number of index pIdx that corresponds to table
-** true column iCol.  Return -1 if not found.
+** Convert an table column number into a index column number.  That is,
+** for the column iCol in the table (as defined by the CREATE TABLE statement)
+** find the (first) offset of that column in index pIdx.  Or return -1
+** if column iCol is not used in index pIdx.
 */
-i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
+i16 sqlite3TableColumnToIndex(Index *pIdx, i16 iCol){
   int i;
   for(i=0; i<pIdx->nColumn; i++){
     if( iCol==pIdx->aiColumn[i] ) return i;
@@ -889,20 +891,20 @@ i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
 }
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-/* Convert a storage column number into a true column number.
+/* Convert a storage column number into a table column number.
 **
 ** The storage column number (0,1,2,....) is the index of the value
 ** as it appears in the record on disk.  The true column number
 ** is the index (0,1,2,...) of the column in the CREATE TABLE statement.
 **
-** The storage column number is less than the true column number if
-** and only there are virtual columns to the left.
+** The storage column number is less than the table column number if
+** and only there are VIRTUAL columns to the left.
 **
 ** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
 **
-** This function is the inverse of sqlite3ColumnOfTable().
+** This function is the inverse of sqlite3TableColumnToStorage().
 */
-i16 sqlite3ColumnOfStorage(Table *pTab, i16 iCol){
+i16 sqlite3StorageColumnToTable(Table *pTab, i16 iCol){
   if( pTab->tabFlags & TF_HasVirtual ){
     int i;
     for(i=0; i<=iCol; i++){
@@ -914,7 +916,7 @@ i16 sqlite3ColumnOfStorage(Table *pTab, i16 iCol){
 #endif
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-/* Convert a true column number into a storage column number.
+/* Convert a table column number into a storage column number.
 **
 ** The storage column number (0,1,2,....) is the index of the value
 ** as it appears in the record on disk.  The true column number
@@ -922,9 +924,9 @@ i16 sqlite3ColumnOfStorage(Table *pTab, i16 iCol){
 **
 ** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
 **
-** This function is the inverse of sqlite3ColumnOfStorage().
+** This function is the inverse of sqlite3StorageColumnToTable().
 */
-i16 sqlite3ColumnOfTable(Table *pTab, i16 iCol){
+i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
   int i;
   i16 n;
   assert( iCol<pTab->nCol );
@@ -1577,11 +1579,12 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   u8 eType = COLFLAG_VIRTUAL;
   Table *pTab = pParse->pNewTable;
   Column *pCol;
-  if( IN_RENAME_OBJECT ){
-    sqlite3RenameExprUnmap(pParse, pExpr);
-  }
   if( pTab==0 ) goto generated_done;
   pCol = &(pTab->aCol[pTab->nCol-1]);
+  if( IN_DECLARE_VTAB ){
+    sqlite3ErrorMsg(pParse, "virtual tables cannot use computed columns");
+    goto generated_done;
+  }
   if( pCol->pDflt ) goto generated_error;
   if( pType ){
     if( pType->n==7 && sqlite3StrNICmp("virtual",pType->z,7)==0 ){
@@ -1597,7 +1600,8 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   assert( TF_HasVirtual==COLFLAG_VIRTUAL );
   assert( TF_HasStored==COLFLAG_STORED );
   pTab->tabFlags |= eType;
-  pCol->pDflt = sqlite3ExprDup(pParse->db, pExpr, 0);
+  pCol->pDflt = pExpr;
+  pExpr = 0;
   goto generated_done;
 
 generated_error:
@@ -3651,13 +3655,13 @@ void sqlite3CreateIndex(
   /* If this index contains every column of its table, then mark
   ** it as a covering index */
   assert( HasRowid(pTab) 
-      || pTab->iPKey<0 || sqlite3ColumnOfIndex(pIndex, pTab->iPKey)>=0 );
+      || pTab->iPKey<0 || sqlite3TableColumnToIndex(pIndex, pTab->iPKey)>=0 );
   recomputeColumnsNotIndexed(pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){
       if( j==pTab->iPKey ) continue;
-      if( sqlite3ColumnOfIndex(pIndex,j)>=0 ) continue;
+      if( sqlite3TableColumnToIndex(pIndex,j)>=0 ) continue;
       pIndex->isCovering = 0;
       break;
     }

@@ -226,7 +226,7 @@ void sqlite3UpsertDoUpdate(
       for(i=0; i<nPk; i++){
         int k;
         assert( pPk->aiColumn[i]>=0 );
-        k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
+        k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iCur, k, iPk+i);
         VdbeComment((v, "%s.%s", pIdx->zName,
                     pTab->aCol[pPk->aiColumn[i]].zName));

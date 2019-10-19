@@ -5379,9 +5379,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             x = pPk->aiColumn[x];
             assert( x>=0 );
           }else{
-            x = sqlite3ColumnOfStorage(pTab,x);
+            x = sqlite3StorageColumnToTable(pTab,x);
           }
-          x = sqlite3ColumnOfIndex(pIdx, x);
+          x = sqlite3TableColumnToIndex(pIdx, x);
           if( x>=0 ){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;

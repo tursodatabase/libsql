@@ -823,7 +823,7 @@ static int codeCursorHintCheckExpr(Walker *pWalker, Expr *pExpr){
   assert( pHint->pIdx!=0 );
   if( pExpr->op==TK_COLUMN
    && pExpr->iTable==pHint->iTabCur
-   && sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn)<0
+   && sqlite3TableColumnToIndex(pHint->pIdx, pExpr->iColumn)<0
   ){
     pWalker->eCode = 1;
   }
@@ -891,7 +891,7 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
       pExpr->iTable = reg;
     }else if( pHint->pIdx!=0 ){
       pExpr->iTable = pHint->iIdxCur;
-      pExpr->iColumn = sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn);
+      pExpr->iColumn = sqlite3TableColumnToIndex(pHint->pIdx, pExpr->iColumn);
       assert( pExpr->iColumn>=0 );
     }
   }else if( pExpr->op==TK_AGG_FUNCTION ){
@@ -1826,7 +1826,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
       iRowidReg = sqlite3GetTempRange(pParse, pPk->nKeyCol);
       for(j=0; j<pPk->nKeyCol; j++){
-        k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
+        k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[j]);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, iRowidReg+j);
       }
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iCur, addrCont,
