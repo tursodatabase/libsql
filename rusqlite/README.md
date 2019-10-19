@@ -118,7 +118,7 @@ declarations for SQLite's C API. By default, `libsqlite3-sys` attempts to find a
 You can adjust this behavior in a number of ways:
 
 * If you use the `bundled` feature, `libsqlite3-sys` will use the
-  [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
+  [cc](https://crates.io/crates/cc) crate to compile SQLite from source and
   link against that. This source is embedded in the `libsqlite3-sys` crate and
   is currently SQLite 3.29.0 (as of `rusqlite` 0.20.0 / `libsqlite3-sys`
   0.16.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
