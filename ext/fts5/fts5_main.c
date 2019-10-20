@@ -744,6 +744,7 @@ static void fts5FreeCursorComponents(Fts5Cursor *pCsr){
     sqlite3_free(pCsr->zRankArgs);
   }
 
+  sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
   memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan - (u8*)pCsr));
 }
 

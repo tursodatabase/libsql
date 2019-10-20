@@ -423,6 +423,11 @@ int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 void sqlite3Fts5IterClose(Fts5IndexIter*);
 
 /*
+** Close the reader blob handle, if it is open.
+*/
+void sqlite3Fts5IndexCloseReader(Fts5Index*);
+
+/*
 ** This interface is used by the fts5vocab module.
 */
 const char *sqlite3Fts5IterTerm(Fts5IndexIter*, int*);

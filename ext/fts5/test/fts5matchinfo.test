@@ -491,4 +491,30 @@ do_catchsql_test 14.2 {
   SELECT matchinfo(x1, 'd') FROM x1('a b c');
 } {1 {unrecognized matchinfo flag: d}}
 
+#-------------------------------------------------------------------------
+# Test using matchinfo() and similar on a non-full-text query
+#
+do_execsql_test 15.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y);
+  INSERT INTO t1 VALUES('a', 'b');
+  INSERT INTO t1 VALUES('c', 'd');
+}
+
+do_execsql_test 15.1 {
+  SELECT quote(matchinfo(t1, 'n')) FROM t1 LIMIT 1;
+} {X'02000000'}
+
+do_execsql_test 15.2 {
+  DELETE FROM t1_content WHERE rowid=1;
+  SELECT quote(matchinfo(t1, 'n')) FROM t1 LIMIT 1;
+} {X'02000000'}
+
+fts5_aux_test_functions db
+do_execsql_test 15.3 {
+  SELECT fts5_test_all(t1) FROM t1 LIMIT 1;
+} {
+  {columnsize {0 0} columntext {c d} columntotalsize {2 2} poslist {} tokenize {c d} rowcount 2}
+}
+
 finish_test
+
