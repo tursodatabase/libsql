@@ -4337,14 +4337,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int inReg;
 
   assert( target>0 && target<=pParse->nMem );
-  if( pExpr && pExpr->op==TK_REGISTER ){
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_Copy, pExpr->iTable, target);
-  }else{
-    inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
-    assert( pParse->pVdbe!=0 || pParse->db->mallocFailed );
-    if( inReg!=target && pParse->pVdbe ){
-      sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
-    }
+  inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
+  assert( pParse->pVdbe!=0 || pParse->db->mallocFailed );
+  if( inReg!=target && pParse->pVdbe ){
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
   }
 }
 
@@ -4372,30 +4368,6 @@ void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
   }else{
     sqlite3ExprCode(pParse, pExpr, target);
   }
-}
-
-/*
-** Generate code that evaluates the given expression and puts the result
-** in register target.
-**
-** Also make a copy of the expression results into another "cache" register
-** and modify the expression so that the next time it is evaluated,
-** the result is a copy of the cache register.
-**
-** This routine is used for expressions that are used multiple 
-** times.  They are evaluated once and the results of the expression
-** are reused.
-*/
-void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
-  Vdbe *v = pParse->pVdbe;
-  int iMem;
-
-  assert( target>0 );
-  assert( pExpr->op!=TK_REGISTER );
-  sqlite3ExprCode(pParse, pExpr, target);
-  iMem = ++pParse->nMem;
-  sqlite3VdbeAddOp2(v, OP_Copy, target, iMem);
-  exprToRegister(pExpr, iMem);
 }
 
 /*

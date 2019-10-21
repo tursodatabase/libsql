@@ -2329,7 +2329,7 @@ void sqlite3EndTable(
       pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect, SQLITE_AFF_BLOB);
       if( pSelTab==0 ) return;
       assert( p->aCol==0 );
-      p->nCol = pSelTab->nCol;
+      p->nCol = p->nNVCol = pSelTab->nCol;
       p->aCol = pSelTab->aCol;
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
@@ -2617,7 +2617,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       ** the column names from the SELECT statement that defines the view.
       */
       assert( pTable->aCol==0 );
-      pTable->nCol = pSelTab->nCol;
+      pTable->nCol = pTable->nNVCol = pSelTab->nCol;
       pTable->aCol = pSelTab->aCol;
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
