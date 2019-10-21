@@ -1,5 +1,5 @@
-C Fix\sa\sresource\sleak\sin\sfts5\sthat\scould\soccur\sif\san\sauxiliary\sfunction\sis\scalled\sfrom\swithin\sa\squery\sthat\sdoes\snot\suse\sthe\sfull-text\sindex.
-D 2019-10-20T08:26:08.728
+C Try\sto\sfix\sa\sharmless\scompiler\swarning\sreported\sby\sICC.
+D 2019-10-21T16:15:57.553
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1767,7 +1767,7 @@ F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 9ec344d29cbeb03fdc0fce668eedfb7495792170de933adf95cf8d6904a166ad
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 61d5f0af1eff8f754b75ddca668c9897fd30759e389bfffb42ce9e4d38fd4746
-F tool/lempar.c eb2841e2a7fd484cf44b1f526b06e7ab0f216d2f41818bf9485e8f38e3d1db19
+F tool/lempar.c 34b136b281ae022277738d8b51061237fb330deaa317010d89375117e3a028aa
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9dc0d34586eebf6705d9bd81494c417ac76707b8625d1ff99eda18b4ca2d8a50
-R 1446fe5ff2305d447db9356138aa9638
-U dan
-Z 8eec37beaa1889d440099062804581d3
+P b528bdcd45db1b783ecd9739c3d3c890f04de7003f079668970eafaf8e23b2f3
+R 6092914249b2bab0f110a245cdadcc45
+U drh
+Z 6dcf0ab02e4e7edf064ddf88070a5fda

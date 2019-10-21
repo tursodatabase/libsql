@@ -1068,6 +1068,6 @@ int ParseFallback(int iToken){
   return yyFallback[iToken];
 #else
   (void)iToken;
-#endif
   return 0;
+#endif
 }
