@@ -240,14 +240,14 @@ void sqlite3ComputeGeneratedColumns(
       if( colFlags & COLFLAG_VIRTUAL ){
         /* Virtual columns go at the end */
         assert( pTab->nNVCol+nv == sqlite3TableColumnToStorage(pTab,i) );
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt,
-                        iRegStore+pTab->nNVCol+nv);
+        sqlite3ExprCodeGeneratedColumn(pParse, &pTab->aCol[i],
+                                       iRegStore+pTab->nNVCol+nv);
       }else{
         /* Stored columns go in column order */
         assert( i-nv == sqlite3TableColumnToStorage(pTab,i) );
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iRegStore+i-nv);
+        sqlite3ExprCodeGeneratedColumn(pParse, &pTab->aCol[i], iRegStore+i-nv);
       }
-      colFlags &= ~COLFLAG_NOTAVAIL;
+      pTab->aCol[i].colFlags &= ~COLFLAG_NOTAVAIL;
     }
     if( (colFlags & COLFLAG_VIRTUAL)!=0 ) nv++;
   }
