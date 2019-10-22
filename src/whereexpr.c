@@ -109,39 +109,11 @@ static int allowedOp(int op){
 /*
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
-**
-** If left/right precedence rules come into play when determining the
-** collating sequence, then COLLATE operators are adjusted to ensure
-** that the collating sequence does not change.  For example:
-** "Y collate NOCASE op X" becomes "X op Y" because any collation sequence on
-** the left hand side of a comparison overrides any collation sequence 
-** attached to the right. For the same reason the EP_Collate flag
-** is not commuted.
-**
-** The return value is extra flags that are added to the WhereTerm object
-** after it is commuted.  The only extra flag ever added is TERM_NOPARTIDX
-** which prevents the term from being used to enable a partial index if
-** COLLATE changes have been made.
 */
 static u16 exprCommute(Parse *pParse, Expr *pExpr){
-  u16 expRight = (pExpr->pRight->flags & EP_Collate);
-  u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
-  u16 wtFlags = 0;
-  assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
-  if( expRight==expLeft ){
-    /* Either X and Y both have COLLATE operator or neither do */
-    if( expRight ){
-      /* Both X and Y have COLLATE operators.  Make sure X is always
-      ** used by clearing the EP_Collate flag from Y. */
-      pExpr->pRight->flags &= ~EP_Collate;
-      wtFlags |= TERM_NOPARTIDX;
-    }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
-      /* Neither X nor Y have COLLATE operators, but X has a non-default
-      ** collating sequence.  So add the EP_Collate marker on X to cause
-      ** it to be searched first. */
-      pExpr->pLeft->flags |= EP_Collate;
-      wtFlags |= TERM_NOPARTIDX;
-    }
+  if( sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight) !=
+      sqlite3BinaryCompareCollSeq(pParse, pExpr->pRight, pExpr->pLeft) ){
+    pExpr->flags ^= EP_Commuted;
   }
   SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
   if( pExpr->op>=TK_GT ){
@@ -152,7 +124,7 @@ static u16 exprCommute(Parse *pParse, Expr *pExpr){
     assert( pExpr->op>=TK_GT && pExpr->op<=TK_GE );
     pExpr->op = ((pExpr->op-TK_GT)^2)+TK_GT;
   }
-  return wtFlags;
+  return 0;
 }
 
 /*
@@ -930,7 +902,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   ){
     return 0;
   }
-  pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
+  pColl = sqlite3ExprCompareCollSeq(pParse, pExpr);
   if( sqlite3IsBinary(pColl) ) return 1;
   return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
 }
