@@ -1,5 +1,5 @@
-C When\sflipping\s("commuting")\sa\scomparison\soperator,\sset\sthe\snew\sEP_Commuted\nbit\srather\sthan\sadding\sextra\sEP_Collate\sbits,\sto\ssingle\slater\sprocessing\sthat\nthe\sorder\sof\sprecedence\sfor\sCOLLATE\soperators\sis\sinverted.\nFix\sfor\sticket\s[b47e3627ecaadbde]
-D 2019-10-22T00:03:41.431
+C Move\sthe\ssqlite3LocateCollSeq(),\ssqlite3FindCollSeq(),\sand\nsqlite3GetCollSeq()\sroutines\sso\sthat\sthey\sare\sall\sbeside\sone\sanother\sin\nthe\scallback.c\ssource\sfile.\s\sNo\slogic\schanges.
+D 2019-10-22T01:00:16.928
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,8 +469,8 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c a8a9c2ce62bdf54c8cf9795143d7cb10b7473a1230a0572f702d061ffcceefe5
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 13de2fdabbabcf2e2aaf6443a049fb851d9d3170136c08345468e158ceea3dc6
-F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
+F src/build.c 0e558ef847ccc4b6aa38dee44cde9d9df46e953b0a66e4fa4376265824955fe3
+F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
 F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd2317d04c1c4bcf5fe63aa02a6051bdfae8f5566a098e3f45bf9ec1dd0c3ea6
-R 3a3c136ff4c96296b02b1f2633ff663b
+P 90f7c477354d67d22d5eb0da22dac579f384ab44743fdc19887220e32203ebc2
+R 3a6f62c10243ee61b28a93dbeca6af23
 U drh
-Z 20a6808e6237368aa12eb5e4f5b30bb2
+Z 533045e8c1f04d69c5fc59655d97ca67
