@@ -570,4 +570,20 @@ do_execsql_test 22.100 {
   SELECT (SELECT 5,6 UNION SELECT 3,4 ORDER BY 1 DESC) IN (SELECT 5,6);
 } {1 0 1 0 0 1 0 1}
 
+# 2019-10-21 Ticket b47e3627ecaadbde
+#
+do_execsql_test 23.100 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(aa COLLATE NOCASE, bb);
+  INSERT INTO t0 VALUES('a', 'A');
+  SELECT (+bb,1) >= (aa, 1), (aa,1)<=(+bb,1) FROM t0;
+  SELECT 2 FROM t0 WHERE (+bb,1) >= (aa,1);
+  SELECT 3 FROM t0 WHERE (aa,1) <= (+bb,1);
+} {0 1 3}
+do_execsql_test 23.110 {
+  SELECT (SELECT +bb,1) >= (aa, 1), (aa,1)<=(SELECT +bb,1) FROM t0;
+  SELECT 2 FROM t0 WHERE (SELECT +bb,1) >= (aa,1);
+  SELECT 3 FROM t0 WHERE (aa,1) <= (SELECT +bb,1);
+} {0 1 3}
+
 finish_test

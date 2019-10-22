@@ -111,8 +111,11 @@ static int allowedOp(int op){
 ** are converted into "Y op X".
 */
 static u16 exprCommute(Parse *pParse, Expr *pExpr){
-  if( sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight) !=
-      sqlite3BinaryCompareCollSeq(pParse, pExpr->pRight, pExpr->pLeft) ){
+  if( pExpr->pLeft->op==TK_VECTOR
+   || pExpr->pRight->op==TK_VECTOR
+   || sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight) !=
+      sqlite3BinaryCompareCollSeq(pParse, pExpr->pRight, pExpr->pLeft)
+  ){
     pExpr->flags ^= EP_Commuted;
   }
   SWAP(Expr*,pExpr->pRight,pExpr->pLeft);

@@ -1,5 +1,5 @@
-C Move\sthe\ssqlite3LocateCollSeq(),\ssqlite3FindCollSeq(),\sand\nsqlite3GetCollSeq()\sroutines\sso\sthat\sthey\sare\sall\sbeside\sone\sanother\sin\nthe\scallback.c\ssource\sfile.\s\sNo\slogic\schanges.
-D 2019-10-22T01:00:16.928
+C Previous\scheck-in\sto\sfix\s[b47e3627ecaadbde]\swas\sincomplete.\s\sThis\scheck-in\ncompletes\sthe\sfix\sand\sadds\sa\stest\scases.
+D 2019-10-22T11:29:22.330
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 148fa1ce9d6421a2c325291cae7681b3492cf1f219ff58f9ef38695a7f3c61ff
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c 57d034a0dbca9f86e1a691f74e469ed09ff49d04712b838fb68596b76a9af7d2
-F src/whereexpr.c ab3c687a33aa3ca75744a74e82c0eab703a88627131cf72707f5346f04cb8539
+F src/whereexpr.c 0705f608f6dbbd4e95d440528d6c760b91b6f402ba4eb8b8d964c110e2010780
 F src/window.c 064f251451c8e2a1c76b6269229d911a651e119c6a5f522b6eaebf8dc8714041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1260,7 +1260,7 @@ F test/round1.test 768018b04522ca420b1aba8a24bd76091d269f3bce3902af3ec6ebcee41ab
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test bfbd7b97d9267660be3c8f28507c4ed7f205196b8877c0db42df347c2e8845e3
-F test/rowvalue.test a3e729d5c1f32da03bba15af1e3128218d2ba3c40d4f4ed5fa0497a713df68ea
+F test/rowvalue.test e923271bc7448eb418e22af723e90223525d9c2a9d40acfc8124beac5dbb2bd6
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 02e35f7762371c2f57ebd856aa056eac56cb27ef7715a0bb31eac1895a745356
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90f7c477354d67d22d5eb0da22dac579f384ab44743fdc19887220e32203ebc2
-R 3a6f62c10243ee61b28a93dbeca6af23
+P 9ff80a9bf8fee776e2f282d0597215b77d48093ebc71d047ad1457da0582ddbc
+R afcf07bfa3aa997eb10b76d021564d31
 U drh
-Z 533045e8c1f04d69c5fc59655d97ca67
+Z 3c9d55fa5bc6fe09c146135efce06e8a
