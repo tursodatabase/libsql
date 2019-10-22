@@ -70,6 +70,9 @@ char sqlite3ExprAffinity(Expr *pExpr){
         pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
     );
   }
+  if( op==TK_VECTOR ){
+    return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+  }
   return pExpr->affExpr;
 }
 
