@@ -1703,6 +1703,7 @@ void sqlite3GenerateConstraintChecks(
           sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
                                    regNewData, 1, 0, OE_Replace, 1, -1);
           sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
+          VdbeCoverage(v);
           sqlite3RowidConstraint(pParse, OE_Abort, pTab);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK

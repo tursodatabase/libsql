@@ -4170,14 +4170,14 @@ static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   if( pRight->op==TK_COLUMN
    && !ExprHasProperty(pRight, EP_FixedCol)
    && sqlite3ExprIsConstant(pLeft)
-   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+   && sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr))
   ){
     constInsert(pConst, pRight, pLeft);
   }else
   if( pLeft->op==TK_COLUMN
    && !ExprHasProperty(pLeft, EP_FixedCol)
    && sqlite3ExprIsConstant(pRight)
-   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+   && sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr))
   ){
     constInsert(pConst, pLeft, pRight);
   }
