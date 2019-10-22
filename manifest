@@ -1,5 +1,5 @@
-C In\sUPDATE\sprocessing,\sinclude\sgenerated\scolumns\sin\sthe\sset\sof\scolumns\sbeing\nupdated\sif\sand\sonly\sif\stheir\sgenerator\sexpressions\sreference\ssome\sother\ncolumn\sthat\sis\sbeing\supdated.
-D 2019-10-22T13:59:23.530
+C Do\snot\sallow\sgenerated\scolumns\sin\sthe\sPRIMARY\sKEY.
+D 2019-10-22T15:45:03.587
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c a8a9c2ce62bdf54c8cf9795143d7cb10b7473a1230a0572f702d061ffcceefe5
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 27471914e516d7d0f21d16c74f9e84bdfda1160bfd11e33a74cbe1d5a08dbc9e
+F src/build.c 27c8224737b4649ea6d264e8433e66bc226a6859c8e11a2f9849516c211da4d9
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 412799fc5527aaca987e4e04b8a4f774dcdb70fb80e3a126dc3a26d48a66935c
-R d35fda238d05afc96b47f324f26c5dfe
+P d38176e93a628e03f1bd8b689fbc4152a1495388da917c2d89cefed04353d2d6
+R a71a1c09fd9122c7a52773b96d8fa320
 U drh
-Z 00de734fe264a9e4a103cd3816a6d374
+Z cf574256bc3dfd7405d0c5f301ba621a

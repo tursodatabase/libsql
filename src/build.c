@@ -1457,6 +1457,21 @@ static void sqlite3StringToId(Expr *p){
 }
 
 /*
+** Tag the given column as being part of the PRIMARY KEY
+*/
+static void makeColumnPartOfPrimaryKey(Parse *pParse, Column *pCol){
+  pCol->colFlags |= COLFLAG_PRIMKEY;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( pCol->colFlags & COLFLAG_GENERATED ){
+    testcase( pCol->colFlags & COLFLAG_VIRTUAL );
+    testcase( pCol->colFlags & COLFLAG_STORED );
+    sqlite3ErrorMsg(pParse,
+      "generated columns cannot be part of the PRIMARY KEY");
+  }
+#endif          
+}
+
+/*
 ** Designate the PRIMARY KEY for the table.  pList is a list of names 
 ** of columns that form the primary key.  If pList is NULL, then the
 ** most recently added column of the table is the primary key.
@@ -1495,7 +1510,7 @@ void sqlite3AddPrimaryKey(
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pCol = &pTab->aCol[iCol];
-    pCol->colFlags |= COLFLAG_PRIMKEY;
+    makeColumnPartOfPrimaryKey(pParse, pCol);
     nTerm = 1;
   }else{
     nTerm = pList->nExpr;
@@ -1508,7 +1523,7 @@ void sqlite3AddPrimaryKey(
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
             pCol = &pTab->aCol[iCol];
-            pCol->colFlags |= COLFLAG_PRIMKEY;
+            makeColumnPartOfPrimaryKey(pParse, pCol);
             break;
           }
         }
