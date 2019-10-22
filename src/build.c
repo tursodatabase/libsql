@@ -2207,11 +2207,15 @@ void sqlite3EndTable(
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  if( p->tabFlags & (TF_HasVirtual|TF_HasStored) ){
+  if( p->tabFlags & TF_HasGenerated ){
     int ii;
+    testcase( p->tabFlags & TF_HasVirtual );
+    testcase( p->tabFlags & TF_HasStored );
     for(ii=0; ii<p->nCol; ii++){
       u32 colFlags = p->aCol[ii].colFlags;
-      if( (colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL))!=0 ){
+      if( (colFlags & COLFLAG_GENERATED)!=0 ){
+        testcase( colFlags & COLFLAG_VIRTUAL );
+        testcase( colFlags & COLFLAG_STORED );
         sqlite3ResolveSelfReference(pParse, p, NC_GenCol, 
                                     p->aCol[ii].pDflt, 0);
       }

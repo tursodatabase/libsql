@@ -222,6 +222,8 @@ void sqlite3ComputeGeneratedColumns(
   */
   for(i=0; i<pTab->nCol; i++){
     if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
+      testcase( pTab->aCol[i].colflags & COLFLAG_VIRTUAL );
+      testcase( pTab->aCol[i].colflags & COLFLAG_STORED );
       pTab->aCol[i].colFlags |= COLFLAG_NOTAVAIL;
     }
   }
@@ -854,6 +856,19 @@ void sqlite3Insert(
   */
   if( pColumn==0 && nColumn>0 ){
     ipkColumn = pTab->iPKey;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    if( pTab->tabFlags & TF_HasGenerated ){
+      testcase( pTab->tabFlags & TF_HasVirtual );
+      testcase( pTab->tabFlags & TF_HasGenerated );
+      for(i=ipkColumn-1; i>=0; i--){
+        if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
+          testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
+          testcase( pTab->aCol[i].colFlags & COLFLAG_GENERATED );
+          ipkColumn--;
+        }
+      }
+    }
+#endif
   }
 
   /* Make sure the number of columns in the source data matches the number
@@ -1070,7 +1085,9 @@ void sqlite3Insert(
     ** columns have already been computed.  This must be done after
     ** computing the ROWID in case one of the generated columns
     ** refers to the ROWID. */
-    if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+    if( pTab->tabFlags & TF_HasGenerated ){
+      testcase( pTab->tabFlags & TF_HasVirtual );
+      testcase( pTab->tabFlags & TF_HasStored );
       sqlite3ComputeGeneratedColumns(pParse, regCols+1, pTab);
     }
 #endif
@@ -1139,7 +1156,9 @@ void sqlite3Insert(
     ** columns have already been computed.  This must be done after
     ** computing the ROWID in case one of the generated columns
     ** refers to the ROWID. */
-    if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+    if( pTab->tabFlags & TF_HasGenerated ){
+      testcase( pTab->tabFlags & TF_HasVirtual );
+      testcase( pTab->tabFlags & TF_HasStored );
       sqlite3ComputeGeneratedColumns(pParse, regRowid+1, pTab);
     }
 #endif
@@ -1486,7 +1505,6 @@ void sqlite3GenerateConstraintChecks(
     testcase( i!=sqlite3TableColumnToStorage(pTab, i) );
     testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
     testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
-    testcase( pTab->aCol[i].colFlags & COLFLAG_GENERATED );
     iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
     switch( onError ){
       case OE_Replace: {
@@ -2422,7 +2440,9 @@ static int xferOptimization(
     /* Generator expressions for generated columns must match */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
       if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
-         return 0;  /* Different generator expressions */
+        testcase( pDestCol->colflags & COLFLAG_VIRTUAL );
+        testcase( pDestCol->colflags & COLFLAG_STORED );
+        return 0;  /* Different generator expressions */
       }
     }
   }

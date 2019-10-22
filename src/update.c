@@ -313,7 +313,9 @@ void sqlite3Update(
           chngPk = 1;
         }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-        else if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
+        else if( pTab->aCol[j].colFlags & COLFLAG_GENERATED ){
+          testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
+          testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
           sqlite3ErrorMsg(pParse, 
              "cannot UPDATE generated column \"%s\"",
              pTab->aCol[j].zName);
@@ -693,7 +695,9 @@ void sqlite3Update(
     }
   }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+  if( pTab->tabFlags & TF_HasGenerated ){
+    testcase( pTab->tabFlags & TF_HasVirtual );
+    testcase( pTab->tabFlags & TF_HasStored );
     sqlite3ComputeGeneratedColumns(pParse, regNew, pTab);
   }
 #endif
@@ -737,7 +741,9 @@ void sqlite3Update(
       }
     }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    if( pTab->tabFlags & (TF_HasStored|TF_HasVirtual) ){
+    if( pTab->tabFlags & TF_HasGenerated ){
+      testcase( pTab->tabFlags & TF_HasVirtual );
+      testcase( pTab->tabFlags & TF_HasStored );
       sqlite3ComputeGeneratedColumns(pParse, regNew, pTab);
     }
 #endif 

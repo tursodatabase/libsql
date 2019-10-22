@@ -2037,6 +2037,7 @@ struct Table {
 #define TF_HasStat1        0x0010    /* nRowLogEst set from sqlite_stat1 */
 #define TF_HasVirtual      0x0020    /* Has one or more VIRTUAL columns */
 #define TF_HasStored       0x0040    /* Has one or more STORED columns */
+#define TF_HasGenerated    0x0060    /* Combo: HasVirtual + HasStored */
 #define TF_WithoutRowid    0x0080    /* No rowid.  PRIMARY KEY is the key */
 #define TF_StatsUsed       0x0100    /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
