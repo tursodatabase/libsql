@@ -1405,6 +1405,12 @@ void sqlite3AddDefaultValue(
     if( !sqlite3ExprIsConstantOrFunction(pExpr, db->init.busy) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    }else if( pCol->colFlags & COLFLAG_GENERATED ){
+      testcase( pCol->colflags & COLFLAG_VIRTUAL );
+      testcase( pCol->colflags & COLFLAG_STORED );
+      sqlite3ErrorMsg(pParse, "cannot use DEFAULT on a generated column");
+#endif
     }else{
       /* A copy of pExpr is used instead of the original, as pExpr contains
       ** tokens that point to volatile memory.
@@ -1633,14 +1639,14 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   goto generated_done;
 
 generated_error:
-  sqlite3ErrorMsg(pParse, "incorrect GENERATED ALWAYS AS on column \"%s\"",
+  sqlite3ErrorMsg(pParse, "error in generated column \"%s\"",
                   pCol->zName);
 generated_done:
   sqlite3ExprDelete(pParse->db, pExpr);
 #else
   /* Throw and error for the GENERATED ALWAYS AS clause if the
   ** SQLITE_OMIT_GENERATED_COLUMNS compile-time option is used. */
-  sqlite3ErrorMsg(pParse, "GENERATED ALWAYS AS not supported");
+  sqlite3ErrorMsg(pParse, "generated columns not supported");
   sqlite3ExprDelete(pParse->db, pExpr);
 #endif
 }

@@ -356,6 +356,33 @@ void sqlite3Update(
   assert( chngPk==0 || chngPk==1 );
   chngKey = chngRowid + chngPk;
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  /* Mark generated columns as changing if their generator expressions
+  ** reference any changing column.  The actual aXRef[] value for 
+  ** generated expressions is not used, other than to check to see that it
+  ** is non-negative, so the value of aXRef[] for generated columns can be
+  ** set to any non-negative number.  We use 99999 so that the value is
+  ** obvious when looking at aXRef[] in a symbolic debugger. 
+  */
+  if( pTab->tabFlags & TF_HasGenerated ){
+    int bProgress;
+    testcase( pTab->tabFlags & TF_HasVirtual );
+    testcase( pTab->tabFlags & TF_HasStored );
+    do{
+      bProgress = 0;
+      for(i=0; i<pTab->nCol; i++){
+        if( aXRef[i]>=0 ) continue;
+        if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 ) continue;
+        if( sqlite3ExprReferencesUpdatedColumn(pTab->aCol[i].pDflt,
+                                               aXRef, chngRowid) ){
+          aXRef[i] = 99999;
+          bProgress = 1;
+        }
+      }
+    }while( bProgress );
+  }
+#endif
+
   /* The SET expressions are not actually used inside the WHERE loop.  
   ** So reset the colUsed mask. Unless this is a virtual table. In that
   ** case, set all bits of the colUsed mask (to ensure that the virtual
@@ -952,6 +979,7 @@ static void updateVirtualTable(
 
   /* Populate the argument registers. */
   for(i=0; i<pTab->nCol; i++){
+    assert( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 );
     if( aXRef[i]>=0 ){
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
