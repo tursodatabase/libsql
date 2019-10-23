@@ -1803,6 +1803,88 @@ static void groupConcatValue(sqlite3_context *context){
 #endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
+** The uuid_blob() function. Interpret the argument as a RFC 4122 UUID string.
+** Return a blob representing the parsed UUID.
+*/
+static void uuidBlob(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int h, i, j = 0, rc = SQLITE_ERROR;
+  unsigned char parsed[16];
+  const char *zHex;
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  zHex = sqlite3_value_text(argv[0]);
+  if( sqlite3_value_bytes(argv[0])==36 ){
+    for (i=0, h = zHex[i]; i <= 36; i++, h=zHex[i]) {
+      if ((i == 8) || (i == 13) || (i == 18) || (i == 23)) {
+        if( h !='-' ){
+          break;
+        }
+      }else if (i==36 && h==0 ){
+          rc = SQLITE_OK;
+      }else{
+        if( (h<'0' || h>'9')&&(h<'a'||h>'f')&&(h<'A'||h>'F') ){
+          break;
+        }
+        if( j%2 ){
+          parsed[j++ / 2] |= sqlite3HexToInt(h);
+        }else{
+          parsed[j++ / 2] = sqlite3HexToInt(h) << 4; 
+        }
+      }
+    }
+  }
+  
+  if( rc ){
+    sqlite3_result_error(context, "parameter is not a valid UUID", -1);
+    return;
+  }else{
+    sqlite3_result_blob(context, parsed, sizeof(parsed), SQLITE_TRANSIENT);
+  }
+}
+
+/*
+** The uuid_string() function. Argument must be a 128-bit blob. Return a
+** RFC 4122 string representation of the blob.
+*/
+static void uuidString(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int i, n;
+  const unsigned char *pBlob;
+  char *zHex, *z;
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  pBlob = sqlite3_value_blob(argv[0]);
+  n = sqlite3_value_bytes(argv[0]);
+  if( n>16 ){
+    sqlite3_result_error_toobig(context);
+    return;
+  }
+  if( n<16 ){
+    sqlite3_result_error(context, "parameter too small to print as UUID", -1);
+    return;
+  }
+  z = zHex = contextMalloc(context, 36);
+  if( zHex ){
+    for(i=0; i<16; i++, pBlob++){
+      unsigned char c = *pBlob;
+      *(z++) = hexdigits[(c>>4)&0xf];
+      *(z++) = hexdigits[c&0xf];
+      if( i==3||i==5||i==7||i==9 ){
+        *(z++) = '-';
+      }
+    }
+    sqlite3_result_text(context, zHex, 36, sqlite3_free);
+  }
+}
+
+/*
 ** This routine does per-connection function registration.  Most
 ** of the built-in functions above are part of the global function set.
 ** This routine only deals with those that are not global.
@@ -1907,6 +1989,8 @@ void sqlite3RegisterBuiltinFunctions(void){
   ** For peak efficiency, put the most frequently used function last.
   */
   static FuncDef aBuiltinFunc[] = {
+    FUNCTION(uuid_str,           1, 0, 0, uuidString),
+    FUNCTION(uuid_blob,          1, 0, 0, uuidBlob),
 #ifdef SQLITE_SOUNDEX
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
 #endif
