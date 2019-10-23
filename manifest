@@ -1,5 +1,5 @@
-C Disqualify\srow-value\scomparisons\sfor\suse\sby\san\sindex\sif\sthe\sright-hand\sside\nhas\san\saffinity\sthat\sdoes\snot\smatch\sthe\sindex.\nFix\sfor\sticket\s[6ef984af8972c2eb]
-D 2019-10-22T19:51:29.935
+C Create\snew\sbranch\snamed\s"uuid-funcs"
+D 2019-10-23T18:01:41.243
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1847,7 +1847,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7da1c01f1f239e68c2173ac5748b8c5798271e43bdcee68f51f97cd0ca92bd5
+P 5c118617cf08e17a6edfdfba86e3fc49132a780990b68b52724c2aaeac85f506
 R 92e3bc21380d8b35cad891a2258f3a1e
-U drh
-Z d1b03389590fbac09e6d4dd5b27290df
+T *branch * uuid-funcs
+T *sym-uuid-funcs *
+T -sym-trunk *
+U numist
+Z 54f150bdc34592bc371755e5c09cc1d8
