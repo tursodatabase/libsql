@@ -1407,8 +1407,8 @@ void sqlite3AddDefaultValue(
           pCol->zName);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     }else if( pCol->colFlags & COLFLAG_GENERATED ){
-      testcase( pCol->colflags & COLFLAG_VIRTUAL );
-      testcase( pCol->colflags & COLFLAG_STORED );
+      testcase( pCol->colFlags & COLFLAG_VIRTUAL );
+      testcase( pCol->colFlags & COLFLAG_STORED );
       sqlite3ErrorMsg(pParse, "cannot use DEFAULT on a generated column");
 #endif
     }else{

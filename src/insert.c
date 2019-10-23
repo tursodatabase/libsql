@@ -222,8 +222,8 @@ void sqlite3ComputeGeneratedColumns(
   */
   for(i=0; i<pTab->nCol; i++){
     if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
-      testcase( pTab->aCol[i].colflags & COLFLAG_VIRTUAL );
-      testcase( pTab->aCol[i].colflags & COLFLAG_STORED );
+      testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
+      testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
       pTab->aCol[i].colFlags |= COLFLAG_NOTAVAIL;
     }
   }
@@ -2440,8 +2440,8 @@ static int xferOptimization(
     /* Generator expressions for generated columns must match */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
       if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
-        testcase( pDestCol->colflags & COLFLAG_VIRTUAL );
-        testcase( pDestCol->colflags & COLFLAG_STORED );
+        testcase( pDestCol->colFlags & COLFLAG_VIRTUAL );
+        testcase( pDestCol->colFlags & COLFLAG_STORED );
         return 0;  /* Different generator expressions */
       }
     }
