@@ -1,5 +1,5 @@
-C Take\sthe\sdeclared\scolumn\stime\sinto\saccount\swhen\scomputing\sthe\svalues\sfor\ngenerated\scolumns,\sand\sapply\sappropriate\saffinity.
-D 2019-10-22T21:01:34.082
+C Fix\sthe\sforeign\skey\slogic\sto\sbe\scompatible\swith\sgenerated\scolumns.
+D 2019-10-23T00:31:01.003
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
 F src/expr.c bf20202a8db15eda35f160df741805509be8c1e5e3258e4770e48db6e27d7994
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 6271fda51794b569d736eba4097d28f13080cd0c9eb66d5fcecb4b77336fae50
+F src/fkey.c ac56f02ffe7a3dff311654f86e3c2fd1ff2eb38862b0c07fd908d8cc0fb4a9a2
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
 F src/global.c a1a8d698762ddd9a1543aac26c1e0029b20fcc3fcb56bfa41ec8cea2368f2798
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1fbd7438611174aa594485241c8cc2f4ea6d09c57ef2fc16c8995e8061fdfdd6
-R fea3b2f358faeafe90a4680ffb2fd073
+P 9e04ba22dfce3998e61331ac229ff543ecccc590284c9dd5def21efbe594fba0
+R 4efaab9a7b4cdb038809c0556992ee41
 U drh
-Z e96baec64b302955260568266fc4d764
+Z 7c33f9873611248b66edeb0dcba63fe2
