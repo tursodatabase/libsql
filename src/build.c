@@ -1628,7 +1628,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   u8 eType = COLFLAG_VIRTUAL;
   Table *pTab = pParse->pNewTable;
   Column *pCol;
-  if( pTab==0 ) goto generated_done;
+  if( NEVER(pTab==0) ) goto generated_done;
   pCol = &(pTab->aCol[pTab->nCol-1]);
   if( IN_DECLARE_VTAB ){
     sqlite3ErrorMsg(pParse, "virtual tables cannot use computed columns");

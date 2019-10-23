@@ -633,7 +633,7 @@ static void notValid(
     else if( pNC->ncFlags & NC_IsCheck ) zIn = "CHECK constraints";
 #endif
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    else if( pNC->ncFlags & NC_GenCol ) zIn = "GENERATED ALWAYS AS columns";
+    else if( pNC->ncFlags & NC_GenCol ) zIn = "generated columns";
 #endif
     sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
   }

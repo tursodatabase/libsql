@@ -857,13 +857,13 @@ void sqlite3Insert(
   if( pColumn==0 && nColumn>0 ){
     ipkColumn = pTab->iPKey;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    if( pTab->tabFlags & TF_HasGenerated ){
+    if( ipkColumn>=0 && (pTab->tabFlags & TF_HasGenerated)!=0 ){
       testcase( pTab->tabFlags & TF_HasVirtual );
-      testcase( pTab->tabFlags & TF_HasGenerated );
+      testcase( pTab->tabFlags & TF_HasStored );
       for(i=ipkColumn-1; i>=0; i--){
         if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
           testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
-          testcase( pTab->aCol[i].colFlags & COLFLAG_GENERATED );
+          testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
           ipkColumn--;
         }
       }
@@ -2413,10 +2413,39 @@ static int xferOptimization(
       return 0;    /* Neither table may have __hidden__ columns */
     }
 #endif
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    /* Even if tables t1 and t2 have identical schemas, if they contain
+    ** generated columns, then this statement is semantically incorrect:
+    **
+    **     INSERT INTO t2 SELECT * FROM t1;
+    **
+    ** The reason is that generated column values are returned by the
+    ** the SELECT statement on the right but the INSERT statement on the
+    ** left wants them to be omitted.
+    **
+    ** Nevertheless, this is a useful notational shorthand to tell SQLite
+    ** to do a bulk transfer all of the content from t1 over to t2.
+    ** 
+    ** We could, in theory, disable this (except for internal use by the
+    ** VACUUM command where it is actually needed).  But why do that?  It
+    ** seems harmless enough, and provides a useful service.
+    */
     if( (pDestCol->colFlags & COLFLAG_GENERATED) !=
         (pSrcCol->colFlags & COLFLAG_GENERATED) ){
-      return 0;    /* Both columns have the same generated type */
+      return 0;    /* Both columns have the same generated-column type */
     }
+    /* But the transfer is only allowed if both the source and destination
+    ** tables have the exact same expressions for generated columns.
+    ** This requirement could be relaxed for VIRTUAL columns, I suppose.
+    */
+    if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
+      if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
+        testcase( pDestCol->colFlags & COLFLAG_VIRTUAL );
+        testcase( pDestCol->colFlags & COLFLAG_STORED );
+        return 0;  /* Different generator expressions */
+      }
+    }
+#endif
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
@@ -2435,14 +2464,6 @@ static int xferOptimization(
                                        pSrcCol->pDflt->u.zToken)!=0)
       ){
         return 0;    /* Default values must be the same for all columns */
-      }
-    }
-    /* Generator expressions for generated columns must match */
-    if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
-      if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
-        testcase( pDestCol->colFlags & COLFLAG_VIRTUAL );
-        testcase( pDestCol->colFlags & COLFLAG_STORED );
-        return 0;  /* Different generator expressions */
       }
     }
   }

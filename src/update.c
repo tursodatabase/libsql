@@ -314,8 +314,8 @@ void sqlite3Update(
         }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
         else if( pTab->aCol[j].colFlags & COLFLAG_GENERATED ){
-          testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
-          testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
+          testcase( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL );
+          testcase( pTab->aCol[j].colFlags & COLFLAG_STORED );
           sqlite3ErrorMsg(pParse, 
              "cannot UPDATE generated column \"%s\"",
              pTab->aCol[j].zName);
