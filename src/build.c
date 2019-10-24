@@ -1923,15 +1923,24 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 ** high-order bit of colNotIdxed is always 1.  All unindexed columns
 ** of the table have a 1.
 **
+** 2019-10-24:  For the purpose of this computation, virtual columns are
+** not considered to be covered by the index, even if they are in the
+** index, because we do not trust the logic in whereIndexExprTrans() to be
+** able to find all instances of a reference to the indexed table column
+** and convert them into references to the index.  Hence we always want
+** the actual table at hand in order to recompute the virtual column, if
+** necessary.
+**
 ** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
 ** to determine if the index is covering index.
 */
 static void recomputeColumnsNotIndexed(Index *pIdx){
   Bitmask m = 0;
   int j;
+  Table *pTab = pIdx->pTable;
   for(j=pIdx->nColumn-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
-    if( x>=0 ){
+    if( x>=0 && (pTab->aCol[x].colFlags & COLFLAG_VIRTUAL)==0 ){
       testcase( x==BMS-1 );
       testcase( x==BMS-2 );
       if( x<BMS-1 ) m |= MASKBIT(x);
@@ -3617,8 +3626,13 @@ void sqlite3CreateIndex(
       assert( j<=0x7fff );
       if( j<0 ){
         j = pTab->iPKey;
-      }else if( pTab->aCol[j].notNull==0 ){
-        pIndex->uniqNotNull = 0;
+      }else{
+        if( pTab->aCol[j].notNull==0 ){
+          pIndex->uniqNotNull = 0;
+        }
+        if( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL ){
+          pIndex->bHasVCol = 1;
+        }
       }
       pIndex->aiColumn[i] = (i16)j;
     }

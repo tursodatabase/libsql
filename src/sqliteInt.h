@@ -2295,6 +2295,7 @@ struct Index {
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
+  unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */
 #ifdef SQLITE_ENABLE_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */

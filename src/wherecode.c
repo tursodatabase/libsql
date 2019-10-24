@@ -1106,6 +1106,7 @@ typedef struct IdxExprTrans {
   int iTabCur;       /* The cursor of the corresponding table */
   int iIdxCur;       /* The cursor for the index */
   int iIdxCol;       /* The column for the index */
+  int iTabCol;       /* The column for the table */
 } IdxExprTrans;
 
 /* The walker node callback used to transform matching expressions into
@@ -1128,10 +1129,30 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
   }
 }
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/* A walker node callback that translates a column reference to a table
+** into a corresponding column reference of an index.
+*/
+static int whereIndexExprTransColumn(Walker *p, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN ){
+    IdxExprTrans *pX = p->u.pIdxTrans;
+    if( pExpr->iTable==pX->iTabCur && pExpr->iColumn==pX->iTabCol ){
+      pExpr->iTable = pX->iIdxCur;
+      pExpr->iColumn = pX->iIdxCol;
+    }
+  }
+  return WRC_Continue;
+}
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+
 /*
 ** For an indexes on expression X, locate every instance of expression X
 ** in pExpr and change that subexpression into a reference to the appropriate
 ** column of the index.
+**
+** 2019-10-24: Updated to also translate references to a VIRTUAL column in
+** the table into references to the corresponding (stored) column of the
+** index.
 */
 static void whereIndexExprTrans(
   Index *pIdx,      /* The Index */
@@ -1141,20 +1162,35 @@ static void whereIndexExprTrans(
 ){
   int iIdxCol;               /* Column number of the index */
   ExprList *aColExpr;        /* Expressions that are indexed */
+  Table *pTab;
   Walker w;
   IdxExprTrans x;
   aColExpr = pIdx->aColExpr;
-  if( aColExpr==0 ) return;  /* Not an index on expressions */
+  if( aColExpr==0 && !pIdx->bHasVCol ){
+    /* The index does not reference any expressions or virtual columns
+    ** so no translations are needed. */
+    return;
+  }
+  pTab = pIdx->pTable;
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = whereIndexExprTransNode;
   w.u.pIdxTrans = &x;
   x.iTabCur = iTabCur;
   x.iIdxCur = iIdxCur;
-  for(iIdxCol=0; iIdxCol<aColExpr->nExpr; iIdxCol++){
-    if( pIdx->aiColumn[iIdxCol]!=XN_EXPR ) continue;
-    assert( aColExpr->a[iIdxCol].pExpr!=0 );
+  for(iIdxCol=0; iIdxCol<pIdx->nColumn; iIdxCol++){
+    i16 iRef = pIdx->aiColumn[iIdxCol];
+    if( iRef==XN_EXPR ){
+      assert( aColExpr->a[iIdxCol].pExpr!=0 );
+      x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
+      w.xExprCallback = whereIndexExprTransNode;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    }else if( iRef>=0 && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0 ){
+      x.iTabCol = iRef;
+      w.xExprCallback = whereIndexExprTransColumn;
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+    }else{
+      continue;
+    }
     x.iIdxCol = iIdxCol;
-    x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
     sqlite3WalkExpr(&w, pWInfo->pWhere);
     sqlite3WalkExprList(&w, pWInfo->pOrderBy);
     sqlite3WalkExprList(&w, pWInfo->pResultSet);
@@ -1835,7 +1871,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
     /* If pIdx is an index on one or more expressions, then look through
     ** all the expressions in pWInfo and try to transform matching expressions
-    ** into reference to index columns.
+    ** into reference to index columns.  Also attempt to translate references
+    ** to virtual columns in the table into references to (stored) columns
+    ** of the index.
     **
     ** Do not do this for the RHS of a LEFT JOIN. This is because the 
     ** expression may be evaluated after OP_NullRow has been executed on
