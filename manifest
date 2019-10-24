@@ -1,5 +1,5 @@
-C Fix\shandling\sof\scovering\sindexes\sthat\suse\svirtual\scolumns.
-D 2019-10-24T20:29:25.035
+C The\sprevious\sfix\swas\sincomplete.\s\sIt\sis\salso\snecessary\sto\sdisable\sthe\nExpr.y.pTab\sfield\swhen\smaking\sthe\stranslation.
+D 2019-10-24T21:02:06.779
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 6ff3ef076485dd71efbbabcc7ddc0473c04a9bdcb524128939757b002466f2d1
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c c491ae0ce1de97bc4eea566350a2d1e7c2c5fcf97b9d4c89593c4f068e21a30d
+F src/wherecode.c 28a3f27b44165e05bac3031f9a9ee9901305647b6c9dfc0214544578066ab097
 F src/whereexpr.c 0705f608f6dbbd4e95d440528d6c760b91b6f402ba4eb8b8d964c110e2010780
 F src/window.c 064f251451c8e2a1c76b6269229d911a651e119c6a5f522b6eaebf8dc8714041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1847,7 +1847,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42fc08bc1528a34a603c2c085b515766a8d33ae7ea0350a52b0ca24b94ebcbc5
-R 6a9e8fc570824aa923ac6838bd994212
+P e0f7e321eca91c49102649f70728de69347cbd7b16599b854203c24cfdc348e6
+R fd3794f20216cf9a398f8319df03644c
 U drh
-Z b5f3ce7a354e5714077f87bfe3d7f12c
+Z 2a2696445dbabbaa1fdad14d659304f0
