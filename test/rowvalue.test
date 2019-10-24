@@ -595,4 +595,26 @@ do_execsql_test 24.100 {
   SELECT 2 FROM t0 WHERE (t0.c0, TRUE) > (CAST('' AS REAL), FALSE);
 } {1 2}
 
+# 2019-10-23 Ticket 135c9da7513e5a97
+do_execsql_test 25.10 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 UNIQUE);
+  INSERT INTO t0(c0) VALUES('a');
+  SELECT (t0.c0, 0) < ('B' COLLATE NOCASE, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0, 0) < ('B' COLLATE NOCASE, 0);
+} {1 2}
+do_execsql_test 25.20 {
+  SELECT ('B' COLLATE NOCASE, 0)> (t0.c0, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE ('B' COLLATE NOCASE, 0)> (t0.c0, 0);
+} {1 2}
+do_execsql_test 25.30 {
+  SELECT ('B', 0)> (t0.c0 COLLATE nocase, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE ('B', 0)> (t0.c0 COLLATE nocase, 0);
+} {1 2}
+do_execsql_test 25.40 {
+  SELECT (t0.c0 COLLATE nocase, 0) < ('B', 0) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0 COLLATE nocase, 0) < ('B', 0);
+} {1 2}
+
+
 finish_test

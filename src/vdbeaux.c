@@ -1106,6 +1106,13 @@ void sqlite3VdbeLinkSubProgram(Vdbe *pVdbe, SubProgram *p){
 }
 
 /*
+** Return true if the given Vdbe has any SubPrograms.
+*/
+int sqlite3VdbeHasSubProgram(Vdbe *pVdbe){
+  return pVdbe->pProgram!=0;
+}
+
+/*
 ** Change the opcode at addr into OP_Noop
 */
 int sqlite3VdbeChangeToNoop(Vdbe *p, int addr){

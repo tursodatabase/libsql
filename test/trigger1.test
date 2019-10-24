@@ -782,4 +782,20 @@ do_execsql_test trigger1-20.1 {
   DROP TRIGGER r20_3;
 } {}
 
+# 2019-10-24 ticket 50c09fc2cf0d91ce
+#
+db close
+sqlite3 db :memory:
+do_execsql_test trigger1-21.1 {
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t0(a, b, c UNIQUE);
+  CREATE UNIQUE INDEX i0 ON t0(b) WHERE a;
+  CREATE TRIGGER tr0 AFTER DELETE ON t0 BEGIN
+    DELETE FROM t0;
+  END;
+  INSERT INTO t0(a,b,c) VALUES(0,0,9),(1,1,1);
+  REPLACE INTO t0(a,b,c) VALUES(2,0,9);
+  SELECT * FROM t0;
+} {2 0 9}
+
 finish_test

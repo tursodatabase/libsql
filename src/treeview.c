@@ -661,7 +661,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_VECTOR: {
-      sqlite3TreeViewBareExprList(pView, pExpr->x.pList, "VECTOR");
+      char *z = sqlite3_mprintf("VECTOR%s",zFlgs);
+      sqlite3TreeViewBareExprList(pView, pExpr->x.pList, z);
+      sqlite3_free(z);
       break;
     }
     case TK_SELECT_COLUMN: {
