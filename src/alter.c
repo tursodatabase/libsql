@@ -349,6 +349,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       }
       sqlite3ValueFree(pVal);
     }
+  }else if( pCol->colFlags & COLFLAG_STORED ){
+    sqlite3ErrorMsg(pParse, "cannot add a STORED column");
+    return;
   }
 
 
