@@ -218,6 +218,19 @@ do_execsql_test 7.2 {
   SELECT rowid FROM t1 WHERE rowid=2 AND t1 = 'hello';
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0, tokenize = "ascii", prefix = 1);
+  INSERT INTO vt0(c0) VALUES (x'd1');
+}
+
+breakpoint
+do_execsql_test 8.1 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
 
 finish_test
 
