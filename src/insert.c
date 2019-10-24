@@ -1058,9 +1058,7 @@ void sqlite3Insert(
       ** cursor that is disturbed. And these instructions both clear the
       ** VdbeCursor.seekResult variable, disabling the OPFLAG_USESEEKRESULT
       ** functionality.  */
-      bUseSeek = (isReplace==0 || (pTrigger==0 &&
-          ((db->flags & SQLITE_ForeignKeys)==0 || sqlite3FkReferences(pTab)==0)
-      ));
+      bUseSeek = (isReplace==0 || !sqlite3VdbeHasSubProgram(v));
       sqlite3CompleteInsertion(pParse, pTab, iDataCur, iIdxCur,
           regIns, aRegIdx, 0, appendFlag, bUseSeek
       );
