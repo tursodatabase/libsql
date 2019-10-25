@@ -4379,9 +4379,13 @@ static int btreeCursor(
     allocateTempSpace(pBt);
     if( pBt->pTmpSpace==0 ) return SQLITE_NOMEM_BKPT;
   }
-  if( iTable==1 && btreePagecount(pBt)==0 ){
-    assert( wrFlag==0 );
-    iTable = 0;
+  if( iTable<=1 ){
+    if( iTable<1 ){
+      return SQLITE_CORRUPT_BKPT;
+    }else if( btreePagecount(pBt)==0 ){
+      assert( wrFlag==0 );
+      iTable = 0;
+    }
   }
 
   /* Now that no other errors can occur, finish filling in the BtCursor
@@ -4406,6 +4410,19 @@ static int btreeCursor(
   pCur->eState = CURSOR_INVALID;
   return SQLITE_OK;
 }
+static int btreeCursorWithLock(
+  Btree *p,                              /* The btree */
+  int iTable,                            /* Root page of table to open */
+  int wrFlag,                            /* 1 to write. 0 read-only */
+  struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
+  BtCursor *pCur                         /* Space for new cursor */
+){
+  int rc;
+  sqlite3BtreeEnter(p);
+  rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
+  sqlite3BtreeLeave(p);
+  return rc;
+}
 int sqlite3BtreeCursor(
   Btree *p,                                   /* The btree */
   int iTable,                                 /* Root page of table to open */
@@ -4413,15 +4430,11 @@ int sqlite3BtreeCursor(
   struct KeyInfo *pKeyInfo,                   /* First arg to xCompare() */
   BtCursor *pCur                              /* Write new cursor here */
 ){
-  int rc;
-  if( iTable<1 ){
-    rc = SQLITE_CORRUPT_BKPT;
+  if( p->sharable ){
+    return btreeCursorWithLock(p, iTable, wrFlag, pKeyInfo, pCur);
   }else{
-    sqlite3BtreeEnter(p);
-    rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
-    sqlite3BtreeLeave(p);
+    return btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
   }
-  return rc;
 }
 
 /*
