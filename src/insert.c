@@ -1497,8 +1497,6 @@ void sqlite3GenerateConstraintChecks(
         /* Don't bother checking for NOT NULL on columns that do not change */
         continue;
       }
-      onError = pTab->aCol[i].notNull;
-      if( onError==OE_None ) continue;  /* This column is allowed to be NULL */
       if( overrideError!=OE_Default ){
         onError = overrideError;
       }else if( onError==OE_Default ){
