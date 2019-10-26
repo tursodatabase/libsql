@@ -1889,8 +1889,6 @@ void sqlite3GenerateConstraintChecks(
             regR, nPkField, 0, OE_Replace,
             (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), iThisCur);
         if( regTrigCnt ){
-          VdbeOp *pOp;     /* Conflict check opcode to copy */
-          int p2;          /* New P2 value for copied conflict check opcode */
           int addrBypass;  /* Jump destination to bypass recheck logic */
 
           sqlite3VdbeAddOp2(v, OP_AddImm, regTrigCnt, 1); /* incr trigger cnt */
@@ -1911,21 +1909,25 @@ void sqlite3GenerateConstraintChecks(
           /* Copy the constraint check code from above, except change
           ** the constraint-ok jump destination to be the address of
           ** the next retest block */
-          pOp = sqlite3VdbeGetOp(v, addrConflictCk);
           while( nConflictCk>0 && !db->mallocFailed ){
-            if( sqlite3OpcodeProperty[pOp->opcode]&OPFLG_JUMP ){
-              p2 = lblRecheckOk;
-            }else{
-              p2 = pOp->p2;
-            }
-            if( pOp->opcode!=OP_IdxRowid ){
-              sqlite3VdbeAddOp4(v, pOp->opcode, pOp->p1, p2, pOp->p3,
-                                pOp->p4.z, pOp->p4type);
-              sqlite3VdbeChangeP5(v, pOp->p5);
-              VdbeCoverageIf(v, p2!=pOp->p2 );
+            VdbeOp x;    /* Conflict check opcode to copy */
+            /* The sqlite3VdbeAddOp4() call might reallocate the opcode array.
+            ** Hence, make a complete copy of the opcode, rather than using
+            ** a pointer to the opcode. */
+            x = *sqlite3VdbeGetOp(v, addrConflictCk);
+            if( x.opcode!=OP_IdxRowid ){
+              int p2;      /* New P2 value for copied conflict check opcode */
+              if( sqlite3OpcodeProperty[x.opcode]&OPFLG_JUMP ){
+                p2 = lblRecheckOk;
+              }else{
+                p2 = x.p2;
+              }
+              sqlite3VdbeAddOp4(v, x.opcode, x.p1, p2, x.p3, x.p4.z, x.p4type);
+              sqlite3VdbeChangeP5(v, x.p5);
+              VdbeCoverageIf(v, p2!=x.p2);
             }
             nConflictCk--;
-            pOp++;
+            addrConflictCk++;
           }
           /* If the retest fails, issue an abort */
           sqlite3UniqueConstraint(pParse, OE_Abort, pIdx);
