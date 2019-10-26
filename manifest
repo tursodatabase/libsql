@@ -1,5 +1,5 @@
-C Minor\schanges\sto\shelp\sensure\sthe\spointer\sreturned\sby\ssqlite3VdbeGetOp()\sis\nnot\sused\safter\sit\sbecomes\sinvalid.
-D 2019-10-26T15:40:17.027
+C Fix\sa\sproblem\sin\sthe\slegacy\s".explain\son"\sformatting\swhen\sit\sis\sused\son\na\squery\swith\smore\sthan\s8\soutput\scolumns.
+D 2019-10-26T16:02:34.898
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -527,7 +527,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e021be0c1c4a2125fa38aabcd8dbb764bf5b2c889a948c30d3708430ec6ccd00
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 3395765ea3749341deb4c25e8339c3d626a8ac641a52c216e9632e48e620ba68
-F src/shell.c.in 3093bdf5eedd91da08f0268f1442aa510a60798c9441868149ddbecdf8bcaa79
+F src/shell.c.in 01d14c1e0a4dc45b6029baf1aa560de92b6b12c05a87e2270c1e4fc41ca0fd1e
 F src/sqlite.h.in 5725a6b20190a1e8d662077a1c1c8ea889ad7be90dd803f914c2de226f5fe6ab
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c422afb507dc875751e6a72e4ba5f4f0793097c0de4533c1600311f689e76ed7
-R db228a05e58b529536c1de42c6c5fd0e
+P 346bdd49fb93aa58e8bd14250974d8c0c32cc7e8317c8b12da1fa44db10d8a3a
+R 93c72ffd5e28250381ddc75e7592ec49
 U drh
-Z a43bb1565ee5620721b3d2ce725b0a46
+Z ff4e0c1d87bc1e1e843d86b79db1d8fb

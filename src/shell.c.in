@@ -1855,19 +1855,22 @@ static int shell_callback(
       const int *colWidth;
       int showHdr;
       char *rowSep;
+      int nWidth;
       if( p->cMode==MODE_Column ){
         colWidth = p->colWidth;
+        nWidth = ArraySize(p->colWidth);
         showHdr = p->showHeader;
         rowSep = p->rowSeparator;
       }else{
         colWidth = aExplainWidths;
+        nWidth = ArraySize(aExplainWidths);
         showHdr = 1;
         rowSep = SEP_Row;
       }
       if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){
           int w, n;
-          if( i<ArraySize(p->colWidth) ){
+          if( i<nWidth ){
             w = colWidth[i];
           }else{
             w = 0;
