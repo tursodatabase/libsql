@@ -519,8 +519,29 @@ do_catchsql_test insert-16.6 {
 } {1 {UNIQUE constraint failed: p1.b}}
 integrity_check insert-16.7
 
+# 2019-10-25 ticket c1e19e12046d23fe
+do_catchsql_test insert-17.1 {
+  PRAGMA temp.recursive_triggers = true;
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(aa, bb);
+  CREATE UNIQUE INDEX t0bb ON t0(bb);
+  CREATE TRIGGER "r17.1" BEFORE DELETE ON t0
+    BEGIN INSERT INTO t0(aa,bb) VALUES(99,1);
+  END;
+  INSERT INTO t0(aa,bb) VALUES(10,20);
+  REPLACE INTO t0(aa,bb) VALUES(30,20);
+} {1 {UNIQUE constraint failed: t0.rowid}}
+integrity_check insert-17.2
+do_catchsql_test insert-17.3 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a, b UNIQUE, c UNIQUE);
+  INSERT INTO t1(a,b,c) VALUES(1,1,1),(2,2,2),(3,3,3),(4,4,4);
+  CREATE TRIGGER "r17.3" AFTER DELETE ON t1 WHEN OLD.c<>3 BEGIN
+    INSERT INTO t1(rowid,a,b,c) VALUES(100,100,100,3);
+  END;
+  REPLACE INTO t1(rowid,a,b,c) VALUES(200,1,2,3);
+} {1 {UNIQUE constraint failed: t1.c}}
+integrity_check insert-17.4
 
-
-  
 
 finish_test
