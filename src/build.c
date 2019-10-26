@@ -1836,6 +1836,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
         pTab->aCol[i].notNull = OE_Abort;
       }
     }
+    pTab->tabFlags |= TF_HasNotNull;
   }
 
   /* Convert the P3 operand of the OP_CreateBtree opcode from BTREE_INTKEY
