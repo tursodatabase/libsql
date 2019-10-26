@@ -669,6 +669,7 @@ static void pushOntoSorter(
     testcase( pKI->nAllField > pKI->nKeyField+2 );
     pOp->p4.pKeyInfo = sqlite3KeyInfoFromExprList(pParse,pSort->pOrderBy,nOBSat,
                                            pKI->nAllField-pKI->nKeyField-1);
+    pOp = 0; /* Ensure pOp not used after sqltie3VdbeAddOp3() */
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
     pSort->labelBkOut = sqlite3VdbeMakeLabel(pParse);
@@ -1031,6 +1032,7 @@ static void selectInnerLoop(
         pOp->opcode = OP_Null;
         pOp->p1 = 1;
         pOp->p2 = regPrev;
+        pOp = 0;  /* Ensure pOp is not used after sqlite3VdbeAddOp() */
 
         iJump = sqlite3VdbeCurrentAddr(v) + nResultCol;
         for(i=0; i<nResultCol; i++){
