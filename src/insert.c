@@ -1905,7 +1905,7 @@ void sqlite3GenerateConstraintChecks(
           if( pIdx->pPartIdxWhere ){
             /* Bypass the recheck if this partial index is not defined
             ** for the current row */
-            sqlite3VdbeAddOp2(v, OP_IsNull, regIdx, lblRecheckOk);
+            sqlite3VdbeAddOp2(v, OP_IsNull, regIdx-1, lblRecheckOk);
             VdbeCoverage(v);
           }
           /* Copy the constraint check code from above, except change
@@ -1922,6 +1922,7 @@ void sqlite3GenerateConstraintChecks(
               sqlite3VdbeAddOp4(v, pOp->opcode, pOp->p1, p2, pOp->p3,
                                 pOp->p4.z, pOp->p4type);
               sqlite3VdbeChangeP5(v, pOp->p5);
+              VdbeCoverageIf(v, p2!=pOp->p2 );
             }
             nConflictCk--;
             pOp++;
