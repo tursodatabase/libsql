@@ -1501,8 +1501,8 @@ void sqlite3GenerateConstraintChecks(
   **
   **   (1) Allocate register regTrigCnt and initialize it to zero.
   **       That register will count the number of replace triggers that
-  **       fire.  Constraint recheck only occurs if the number if positive.
-  **   (2) Initialize pTrigger to the set of all DELETE triggers.
+  **       fire.  Constraint recheck only occurs if the number is positive.
+  **   (2) Initialize pTrigger to the list of all DELETE triggers on pTab.
   **   (3) Initialize addrRecheck and lblRecheckOk
   **
   ** The uniqueness rechecking code will create a series of tests to run
@@ -1881,6 +1881,8 @@ void sqlite3GenerateConstraintChecks(
 
         assert( onError==OE_Replace );
         nConflictCk = sqlite3VdbeCurrentAddr(v) - addrConflictCk;
+        assert( nConflictCk>0 );
+        testcase( nConflictCk>1 );
         if( regTrigCnt ){
           sqlite3MultiWrite(pParse);
           nReplaceTrig++;
@@ -1909,7 +1911,7 @@ void sqlite3GenerateConstraintChecks(
           /* Copy the constraint check code from above, except change
           ** the constraint-ok jump destination to be the address of
           ** the next retest block */
-          while( nConflictCk>0 && !db->mallocFailed ){
+          while( nConflictCk>0 ){
             VdbeOp x;    /* Conflict check opcode to copy */
             /* The sqlite3VdbeAddOp4() call might reallocate the opcode array.
             ** Hence, make a complete copy of the opcode, rather than using
@@ -1956,6 +1958,7 @@ void sqlite3GenerateConstraintChecks(
 
   /* Recheck all uniqueness constraints after replace triggers have run */
   testcase( regTrigCnt!=0 && nReplaceTrig==0 );
+  assert( regTrigCnt!=0 || nReplaceTrig==0 );
   if( nReplaceTrig ){
     sqlite3VdbeAddOp2(v, OP_IfNot, regTrigCnt, lblRecheckOk);VdbeCoverage(v);
     if( !pPk ){

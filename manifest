@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\slegacy\s".explain\son"\sformatting\swhen\sit\sis\sused\son\na\squery\swith\smore\sthan\s8\soutput\scolumns.
-D 2019-10-26T16:02:34.898
+C Clarify\ssome\scomments\sand\sadd\sassert()\sand\stestcase()\smacros\sto\sthe\nreplace-trigger\srecheck\slogic\sfor\sticket\s[c1e19e12046d23fe]
+D 2019-10-26T16:38:49.916
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -487,7 +487,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 0ac7d3441ead03a3a457ed5c5c0f7f3cc20d7b7a6822c14c95d820fa9a091b9c
+F src/insert.c 52b5fae35661c3b723c4c51000bc071d7eca5cf803ceb63752527db62134ad5f
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 3e01f6a1c96643381b5f9d79e4ff7f2520bc5712197746fb0852283e78cccf66
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 346bdd49fb93aa58e8bd14250974d8c0c32cc7e8317c8b12da1fa44db10d8a3a
-R 93c72ffd5e28250381ddc75e7592ec49
+P 070b49825c5f87cce15be4b758f0dfdd65226ec379465ca527a18706a1f3b8f4
+R 1028cc5a00baf8569b464c2a7604c8c5
 U drh
-Z ff4e0c1d87bc1e1e843d86b79db1d8fb
+Z 8bf83f381e575a0d62d743fe518a1706
