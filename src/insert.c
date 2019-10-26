@@ -1862,13 +1862,6 @@ void sqlite3GenerateConstraintChecks(
         x = regNewData;
         sqlite3VdbeAddOp2(v, OP_IntCopy, x, regIdx+i);
         VdbeComment((v, "rowid"));
-#ifndef SQLITE_OMIT_GENERATED_COLUMNS
-      }else if( pTab->aCol[iField].colFlags & COLFLAG_VIRTUAL ){
-        pParse->iSelfTab = -(regNewData+1);
-        sqlite3ExprCodeCopy(pParse, pTab->aCol[iField].pDflt, regIdx+i);
-        pParse->iSelfTab = 0;
-        VdbeComment((v, "%s column %d", pIdx->zName, i));
-#endif
       }else{
         testcase( sqlite3TableColumnToStorage(pTab, iField)!=iField );
         x = sqlite3TableColumnToStorage(pTab, iField) + regNewData + 1;
