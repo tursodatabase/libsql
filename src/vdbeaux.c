@@ -43,6 +43,13 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
 }
 
 /*
+** Return the Parse object that owns a Vdbe object.
+*/
+Parse *sqlite3VdbeParser(Vdbe *p){
+  return p->pParse;
+}
+
+/*
 ** Change the error string stored in Vdbe.zErrMsg
 */
 void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){

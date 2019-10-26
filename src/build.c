@@ -877,16 +877,94 @@ Index *sqlite3PrimaryKeyIndex(Table *pTab){
 }
 
 /*
-** Return the column of index pIdx that corresponds to table
-** column iCol.  Return -1 if not found.
+** Convert an table column number into a index column number.  That is,
+** for the column iCol in the table (as defined by the CREATE TABLE statement)
+** find the (first) offset of that column in index pIdx.  Or return -1
+** if column iCol is not used in index pIdx.
 */
-i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
+i16 sqlite3TableColumnToIndex(Index *pIdx, i16 iCol){
   int i;
   for(i=0; i<pIdx->nColumn; i++){
     if( iCol==pIdx->aiColumn[i] ) return i;
   }
   return -1;
 }
+
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/* Convert a storage column number into a table column number.
+**
+** The storage column number (0,1,2,....) is the index of the value
+** as it appears in the record on disk.  The true column number
+** is the index (0,1,2,...) of the column in the CREATE TABLE statement.
+**
+** The storage column number is less than the table column number if
+** and only there are VIRTUAL columns to the left.
+**
+** If SQLITE_OMIT_GENERATED_COLUMNS, this routine is a no-op macro.
+*/
+i16 sqlite3StorageColumnToTable(Table *pTab, i16 iCol){
+  if( pTab->tabFlags & TF_HasVirtual ){
+    int i;
+    for(i=0; i<=iCol; i++){
+      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) iCol++;
+    }
+  }
+  return iCol;
+}
+#endif
+
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/* Convert a table column number into a storage column number.
+**
+** The storage column number (0,1,2,....) is the index of the value
+** as it appears in the record on disk.  Or, if the input column is
+** the N-th virtual column (zero-based) then the storage number is
+** the number of non-virtual columns in the table plus N.  
+**
+** The true column number is the index (0,1,2,...) of the column in
+** the CREATE TABLE statement.
+**
+** If the input column is a VIRTUAL column, then it should not appear
+** in storage.  But the value sometimes is cached in registers that
+** follow the range of registers used to construct storage.  This
+** avoids computing the same VIRTUAL column multiple times, and provides
+** values for use by OP_Param opcodes in triggers.  Hence, if the
+** input column is a VIRTUAL table, put it after all the other columns.
+**
+** In the following, N means "normal column", S means STORED, and
+** V means VIRTUAL.  Suppose the CREATE TABLE has columns like this:
+**
+**        CREATE TABLE ex(N,S,V,N,S,V,N,S,V);
+**                     -- 0 1 2 3 4 5 6 7 8
+**
+** Then the mapping from this function is as follows:
+**
+**    INPUTS:     0 1 2 3 4 5 6 7 8
+**    OUTPUTS:    0 1 6 2 3 7 4 5 8
+**
+** So, in other words, this routine shifts all the virtual columns to
+** the end.
+**
+** If SQLITE_OMIT_GENERATED_COLUMNS then there are no virtual columns and
+** this routine is a no-op macro.
+*/
+i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
+  int i;
+  i16 n;
+  assert( iCol<pTab->nCol );
+  if( (pTab->tabFlags & TF_HasVirtual)==0 ) return iCol;
+  for(i=0, n=0; i<iCol; i++){
+    if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) n++;
+  }
+  if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ){
+    /* iCol is a virtual column itself */
+    return pTab->nNVCol + i - n;
+  }else{
+    /* iCol is a normal or stored column */
+    return n;
+  }
+}
+#endif
 
 /*
 ** Begin constructing a new table representation in memory.  This is
@@ -1178,6 +1256,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
   p->nCol++;
+  p->nNVCol++;
   pParse->constraintName.n = 0;
 }
 
@@ -1326,6 +1405,12 @@ void sqlite3AddDefaultValue(
     if( !sqlite3ExprIsConstantOrFunction(pExpr, db->init.busy) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    }else if( pCol->colFlags & COLFLAG_GENERATED ){
+      testcase( pCol->colFlags & COLFLAG_VIRTUAL );
+      testcase( pCol->colFlags & COLFLAG_STORED );
+      sqlite3ErrorMsg(pParse, "cannot use DEFAULT on a generated column");
+#endif
     }else{
       /* A copy of pExpr is used instead of the original, as pExpr contains
       ** tokens that point to volatile memory.
@@ -1372,6 +1457,21 @@ static void sqlite3StringToId(Expr *p){
 }
 
 /*
+** Tag the given column as being part of the PRIMARY KEY
+*/
+static void makeColumnPartOfPrimaryKey(Parse *pParse, Column *pCol){
+  pCol->colFlags |= COLFLAG_PRIMKEY;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( pCol->colFlags & COLFLAG_GENERATED ){
+    testcase( pCol->colFlags & COLFLAG_VIRTUAL );
+    testcase( pCol->colFlags & COLFLAG_STORED );
+    sqlite3ErrorMsg(pParse,
+      "generated columns cannot be part of the PRIMARY KEY");
+  }
+#endif          
+}
+
+/*
 ** Designate the PRIMARY KEY for the table.  pList is a list of names 
 ** of columns that form the primary key.  If pList is NULL, then the
 ** most recently added column of the table is the primary key.
@@ -1410,7 +1510,7 @@ void sqlite3AddPrimaryKey(
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pCol = &pTab->aCol[iCol];
-    pCol->colFlags |= COLFLAG_PRIMKEY;
+    makeColumnPartOfPrimaryKey(pParse, pCol);
     nTerm = 1;
   }else{
     nTerm = pList->nExpr;
@@ -1423,7 +1523,7 @@ void sqlite3AddPrimaryKey(
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
             pCol = &pTab->aCol[iCol];
-            pCol->colFlags |= COLFLAG_PRIMKEY;
+            makeColumnPartOfPrimaryKey(pParse, pCol);
             break;
           }
         }
@@ -1518,6 +1618,52 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   }else{
     sqlite3DbFree(db, zColl);
   }
+}
+
+/* Change the most recently parsed column to be a GENERATED ALWAYS AS
+** column.
+*/
+void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  u8 eType = COLFLAG_VIRTUAL;
+  Table *pTab = pParse->pNewTable;
+  Column *pCol;
+  if( NEVER(pTab==0) ) goto generated_done;
+  pCol = &(pTab->aCol[pTab->nCol-1]);
+  if( IN_DECLARE_VTAB ){
+    sqlite3ErrorMsg(pParse, "virtual tables cannot use computed columns");
+    goto generated_done;
+  }
+  if( pCol->pDflt ) goto generated_error;
+  if( pType ){
+    if( pType->n==7 && sqlite3StrNICmp("virtual",pType->z,7)==0 ){
+      /* no-op */
+    }else if( pType->n==6 && sqlite3StrNICmp("stored",pType->z,6)==0 ){
+      eType = COLFLAG_STORED;
+    }else{
+      goto generated_error;
+    }
+  }
+  if( eType==COLFLAG_VIRTUAL ) pTab->nNVCol--;
+  pCol->colFlags |= eType;
+  assert( TF_HasVirtual==COLFLAG_VIRTUAL );
+  assert( TF_HasStored==COLFLAG_STORED );
+  pTab->tabFlags |= eType;
+  pCol->pDflt = pExpr;
+  pExpr = 0;
+  goto generated_done;
+
+generated_error:
+  sqlite3ErrorMsg(pParse, "error in generated column \"%s\"",
+                  pCol->zName);
+generated_done:
+  sqlite3ExprDelete(pParse->db, pExpr);
+#else
+  /* Throw and error for the GENERATED ALWAYS AS clause if the
+  ** SQLITE_OMIT_GENERATED_COLUMNS compile-time option is used. */
+  sqlite3ErrorMsg(pParse, "generated columns not supported");
+  sqlite3ExprDelete(pParse->db, pExpr);
+#endif
 }
 
 /*
@@ -1777,15 +1923,24 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 ** high-order bit of colNotIdxed is always 1.  All unindexed columns
 ** of the table have a 1.
 **
+** 2019-10-24:  For the purpose of this computation, virtual columns are
+** not considered to be covered by the index, even if they are in the
+** index, because we do not trust the logic in whereIndexExprTrans() to be
+** able to find all instances of a reference to the indexed table column
+** and convert them into references to the index.  Hence we always want
+** the actual table at hand in order to recompute the virtual column, if
+** necessary.
+**
 ** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
 ** to determine if the index is covering index.
 */
 static void recomputeColumnsNotIndexed(Index *pIdx){
   Bitmask m = 0;
   int j;
+  Table *pTab = pIdx->pTable;
   for(j=pIdx->nColumn-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
-    if( x>=0 ){
+    if( x>=0 && (pTab->aCol[x].colFlags & COLFLAG_VIRTUAL)==0 ){
       testcase( x==BMS-1 );
       testcase( x==BMS-2 );
       if( x<BMS-1 ) m |= MASKBIT(x);
@@ -1944,11 +2099,14 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   nExtra = 0;
   for(i=0; i<pTab->nCol; i++){
-    if( !hasColumn(pPk->aiColumn, nPk, i) ) nExtra++;
+    if( !hasColumn(pPk->aiColumn, nPk, i)
+     && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) nExtra++;
   }
   if( resizeIndexObject(db, pPk, nPk+nExtra) ) return;
   for(i=0, j=nPk; i<pTab->nCol; i++){
-    if( !hasColumn(pPk->aiColumn, j, i) ){
+    if( !hasColumn(pPk->aiColumn, j, i)
+     && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0
+    ){
       assert( j<pPk->nColumn );
       pPk->aiColumn[j] = i;
       pPk->azColl[j] = sqlite3StrBINARY;
@@ -1956,7 +2114,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     }
   }
   assert( pPk->nColumn==j );
-  assert( pTab->nCol<=j );
+  assert( pTab->nNVCol<=j );
   recomputeColumnsNotIndexed(pPk);
 }
 
@@ -2065,12 +2223,11 @@ void sqlite3EndTable(
     }
     if( (p->tabFlags & TF_HasPrimaryKey)==0 ){
       sqlite3ErrorMsg(pParse, "PRIMARY KEY missing on table %s", p->zName);
-    }else{
-      p->tabFlags |= TF_WithoutRowid | TF_NoVisibleRowid;
-      convertToWithoutRowidTable(pParse, p);
+      return;
     }
+    p->tabFlags |= TF_WithoutRowid | TF_NoVisibleRowid;
+    convertToWithoutRowidTable(pParse, p);
   }
-
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
 
 #ifndef SQLITE_OMIT_CHECK
@@ -2080,6 +2237,22 @@ void sqlite3EndTable(
     sqlite3ResolveSelfReference(pParse, p, NC_IsCheck, 0, p->pCheck);
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( p->tabFlags & TF_HasGenerated ){
+    int ii;
+    testcase( p->tabFlags & TF_HasVirtual );
+    testcase( p->tabFlags & TF_HasStored );
+    for(ii=0; ii<p->nCol; ii++){
+      u32 colFlags = p->aCol[ii].colFlags;
+      if( (colFlags & COLFLAG_GENERATED)!=0 ){
+        testcase( colFlags & COLFLAG_VIRTUAL );
+        testcase( colFlags & COLFLAG_STORED );
+        sqlite3ResolveSelfReference(pParse, p, NC_GenCol, 
+                                    p->aCol[ii].pDflt, 0);
+      }
+    }
+  }
+#endif
 
   /* Estimate the average row size for the table and for all implied indices */
   estimateTableWidth(p);
@@ -2156,7 +2329,7 @@ void sqlite3EndTable(
       pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect, SQLITE_AFF_BLOB);
       if( pSelTab==0 ) return;
       assert( p->aCol==0 );
-      p->nCol = pSelTab->nCol;
+      p->nCol = p->nNVCol = pSelTab->nCol;
       p->aCol = pSelTab->aCol;
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
@@ -2444,7 +2617,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       ** the column names from the SELECT statement that defines the view.
       */
       assert( pTable->aCol==0 );
-      pTable->nCol = pSelTab->nCol;
+      pTable->nCol = pTable->nNVCol = pSelTab->nCol;
       pTable->aCol = pSelTab->aCol;
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
@@ -3454,8 +3627,13 @@ void sqlite3CreateIndex(
       assert( j<=0x7fff );
       if( j<0 ){
         j = pTab->iPKey;
-      }else if( pTab->aCol[j].notNull==0 ){
-        pIndex->uniqNotNull = 0;
+      }else{
+        if( pTab->aCol[j].notNull==0 ){
+          pIndex->uniqNotNull = 0;
+        }
+        if( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL ){
+          pIndex->bHasVCol = 1;
+        }
       }
       pIndex->aiColumn[i] = (i16)j;
     }
@@ -3510,13 +3688,13 @@ void sqlite3CreateIndex(
   /* If this index contains every column of its table, then mark
   ** it as a covering index */
   assert( HasRowid(pTab) 
-      || pTab->iPKey<0 || sqlite3ColumnOfIndex(pIndex, pTab->iPKey)>=0 );
+      || pTab->iPKey<0 || sqlite3TableColumnToIndex(pIndex, pTab->iPKey)>=0 );
   recomputeColumnsNotIndexed(pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){
       if( j==pTab->iPKey ) continue;
-      if( sqlite3ColumnOfIndex(pIndex,j)>=0 ) continue;
+      if( sqlite3TableColumnToIndex(pIndex,j)>=0 ) continue;
       pIndex->isCovering = 0;
       break;
     }

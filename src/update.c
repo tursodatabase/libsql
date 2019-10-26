@@ -147,7 +147,7 @@ void sqlite3Update(
   Expr *pLimit,          /* LIMIT clause. May be null */
   Upsert *pUpsert        /* ON CONFLICT clause, or null */
 ){
-  int i, j;              /* Loop counters */
+  int i, j, k;           /* Loop counters */
   Table *pTab;           /* The table to be updated */
   int addrTop = 0;       /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -312,6 +312,16 @@ void sqlite3Update(
         }else if( pPk && (pTab->aCol[j].colFlags & COLFLAG_PRIMKEY)!=0 ){
           chngPk = 1;
         }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+        else if( pTab->aCol[j].colFlags & COLFLAG_GENERATED ){
+          testcase( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL );
+          testcase( pTab->aCol[j].colFlags & COLFLAG_STORED );
+          sqlite3ErrorMsg(pParse, 
+             "cannot UPDATE generated column \"%s\"",
+             pTab->aCol[j].zName);
+          goto update_cleanup;
+        }
+#endif
         aXRef[j] = i;
         break;
       }
@@ -345,6 +355,33 @@ void sqlite3Update(
   assert( chngRowid==0 || chngRowid==1 );
   assert( chngPk==0 || chngPk==1 );
   chngKey = chngRowid + chngPk;
+
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  /* Mark generated columns as changing if their generator expressions
+  ** reference any changing column.  The actual aXRef[] value for 
+  ** generated expressions is not used, other than to check to see that it
+  ** is non-negative, so the value of aXRef[] for generated columns can be
+  ** set to any non-negative number.  We use 99999 so that the value is
+  ** obvious when looking at aXRef[] in a symbolic debugger. 
+  */
+  if( pTab->tabFlags & TF_HasGenerated ){
+    int bProgress;
+    testcase( pTab->tabFlags & TF_HasVirtual );
+    testcase( pTab->tabFlags & TF_HasStored );
+    do{
+      bProgress = 0;
+      for(i=0; i<pTab->nCol; i++){
+        if( aXRef[i]>=0 ) continue;
+        if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 ) continue;
+        if( sqlite3ExprReferencesUpdatedColumn(pTab->aCol[i].pDflt,
+                                               aXRef, chngRowid) ){
+          aXRef[i] = 99999;
+          bProgress = 1;
+        }
+      }
+    }while( bProgress );
+  }
+#endif
 
   /* The SET expressions are not actually used inside the WHERE loop.  
   ** So reset the colUsed mask. Unless this is a virtual table. In that
@@ -543,7 +580,8 @@ void sqlite3Update(
     ** is not required) and leave the PK fields in the array of registers.  */
     for(i=0; i<nPk; i++){
       assert( pPk->aiColumn[i]>=0 );
-      sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur,pPk->aiColumn[i],iPk+i);
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur,
+                                      pPk->aiColumn[i], iPk+i);
     }
     if( eOnePass ){
       if( addrOpen ) sqlite3VdbeChangeToNoop(v, addrOpen);
@@ -623,15 +661,20 @@ void sqlite3Update(
     oldmask |= sqlite3TriggerColmask(pParse, 
         pTrigger, pChanges, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onError
     );
-    for(i=0; i<pTab->nCol; i++){
+    for(i=0, k=regOld; i<pTab->nCol; i++, k++){
+      u32 colFlags = pTab->aCol[i].colFlags;
+      if( colFlags & COLFLAG_VIRTUAL ){
+        k--;
+        continue;
+      }
       if( oldmask==0xffffffff
        || (i<32 && (oldmask & MASKBIT32(i))!=0)
-       || (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
+       || (colFlags & COLFLAG_PRIMKEY)!=0
       ){
         testcase(  oldmask!=0xffffffff && i==31 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regOld+i);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
     }
     if( chngRowid==0 && pPk==0 ){
@@ -655,13 +698,15 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  for(i=0; i<pTab->nCol; i++){
+  for(i=0, k=regNew; i<pTab->nCol; i++, k++){
     if( i==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, k);
+    }else if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)!=0 ){
+      if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) k--;
     }else{
       j = aXRef[i];
       if( j>=0 ){
-        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
+        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, k);
       }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i)) ){
         /* This branch loads the value of a column that will not be changed 
         ** into a register. This is done if there are no BEFORE triggers, or
@@ -670,12 +715,19 @@ void sqlite3Update(
         */
         testcase( i==31 );
         testcase( i==32 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regNew+i);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
     }
   }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( pTab->tabFlags & TF_HasGenerated ){
+    testcase( pTab->tabFlags & TF_HasVirtual );
+    testcase( pTab->tabFlags & TF_HasStored );
+    sqlite3ComputeGeneratedColumns(pParse, regNew, pTab);
+  }
+#endif
 
   /* Fire any BEFORE UPDATE triggers. This happens before constraints are
   ** verified. One could argue that this is wrong.
@@ -708,11 +760,20 @@ void sqlite3Update(
     ** BEFORE trigger runs.  See test case trigger1-18.0 (added 2018-04-26)
     ** for an example.
     */
-    for(i=0; i<pTab->nCol; i++){
-      if( aXRef[i]<0 && i!=pTab->iPKey ){
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regNew+i);
+    for(i=0, k=regNew; i<pTab->nCol; i++, k++){
+      if( pTab->aCol[i].colFlags & COLFLAG_GENERATED ){
+        if( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL ) k--;
+      }else if( aXRef[i]<0 && i!=pTab->iPKey ){
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
       }
     }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    if( pTab->tabFlags & TF_HasGenerated ){
+      testcase( pTab->tabFlags & TF_HasVirtual );
+      testcase( pTab->tabFlags & TF_HasStored );
+      sqlite3ComputeGeneratedColumns(pParse, regNew, pTab);
+    }
+#endif 
   }
 
   if( !isView ){
@@ -918,6 +979,7 @@ static void updateVirtualTable(
 
   /* Populate the argument registers. */
   for(i=0; i<pTab->nCol; i++){
+    assert( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 );
     if( aXRef[i]>=0 ){
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
