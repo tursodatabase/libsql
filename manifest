@@ -1,5 +1,5 @@
-C Remove\scode\sfrom\sthe\sconstraint\schecker\sthat\sgenerates\svirtual\scolumn\svalues\nwith\sthe\sincorrect\stime.\s\sTurns\sout\sthe\sthe\sregular\scode\sfor\sall\sother\ncolumns\sworks\scorrectly\sand\sso\sthe\sincorrect\sspecial-case\scode\sis\snot\nactually\sneeded.\s\sFix\sfor\sticket\s[3ea175512444b0d1].
-D 2019-10-26T23:51:44.685
+C Improved\sdetection\sof\sattempts\sto\suse\sa\sgenerated\scolumn\sas\spart\sof\sthe\nprimary\skey.\s\sTicket\s[91e86951016a6802]
+D 2019-10-27T22:22:24.363
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -470,7 +470,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 12e251f8c3eaad05e6d0db94772bf779b3a644e18d884025da6bcbc98cad1d22
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 3dea3b75107c83243b8b2244334c3c574865a12d33d0b86d345123f4dc1ca8d6
+F src/build.c 8563e54761426053e60eeeed524c0dfce18aec444788c281262289133d96d2ba
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 713fe86b8c9f3c9ef8af952019e99ba2f4741326226264de6a66baaeb1803d2a
-R 911d1cba6780e60660279f15cc5e6d6a
+P 5b4c0f2ddc6f324e23bbde0ee3d1ab672cfe8ab5044c9b693f4c33cdd75c211e
+R 98f02ccd3921e003a0a834d3e6082717
 U drh
-Z 9d034d9c80d0c7936d2ef22f3b68e349
+Z f57911151293bc6b4b4024d6f416e937

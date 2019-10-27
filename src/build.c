@@ -1649,6 +1649,9 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   assert( TF_HasVirtual==COLFLAG_VIRTUAL );
   assert( TF_HasStored==COLFLAG_STORED );
   pTab->tabFlags |= eType;
+  if( pCol->colFlags & COLFLAG_PRIMKEY ){
+    makeColumnPartOfPrimaryKey(pParse, pCol); /* For the error message */
+  }
   pCol->pDflt = pExpr;
   pExpr = 0;
   goto generated_done;
