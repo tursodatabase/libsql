@@ -1075,7 +1075,7 @@ expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   A = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
   if( A ){
     A->x.pList = pList;
-    if( pList->nExpr ){
+    if( ALWAYS(pList->nExpr) ){
       A->flags |= pList->a[0].pExpr->flags & EP_Propagate;
     }
   }else{
