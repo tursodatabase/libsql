@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\scomparison\sfrom\ssqlite3ExprCompare().
-D 2019-10-28T13:07:01.396
+C Fix\sa\sproblem\sin\sfts3\scausing\sit\sto\sreport\scorruption\sif\sa\sdoclist\scontains\sconsectutive\srowid\sentries\sthat\sdiffer\sby\smore\sthan\s2^63.
+D 2019-10-28T13:54:59.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c aef93982656ef63851470a86c8f145d54dd4ebd9341f7493aefe45ddff0ce600
+F ext/fts3/fts3_write.c bf724ff69dd497eb8399452ecd44e39d8eb420472bf555b826dede4b05e9accd
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -189,7 +189,7 @@ F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc27826807405
 F ext/fts5/test/fts5matchinfo.test 50d86da66ec5b27603dcd90ba0227f5d9deb10351cbc52974a88e24f6fc9b076
 F ext/fts5/test/fts5merge.test e92a8db28b45931e7a9c7b1bbd36101692759d00274df74d83fd29d25d53b3a6
 F ext/fts5/test/fts5merge2.test 3ebad1a59d6ad3fb66eff6523a09e95dc6367cbefb3cd73196801dea0425c8e2
-F ext/fts5/test/fts5misc.test 1aefd6607106659a87dbce9f4766616c91e790ea84b9fa42e65096b7c99a132e
+F ext/fts5/test/fts5misc.test a5b53328b5b79275915de8f67ae85905eb2133d8dbcc808411f67c094b1bd347
 F ext/fts5/test/fts5multi.test a15bc91cdb717492e6e1b66fec1c356cb57386b980c7ba5af1915f97fe878581
 F ext/fts5/test/fts5multiclient.test 5ff811c028d6108045ffef737f1e9f05028af2458e456c0937c1d1b8dea56d45
 F ext/fts5/test/fts5near.test 211477940142d733ac04fad97cb24095513ab2507073a99c2765c3ddd2ef58bd
@@ -636,7 +636,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test b2004ac589207fed7e19877bc3f1ad65142be482f269c176ee407e3b4a65f1a0
 F test/altertab2.test 8883693952f6d7fb5f754dbf1d694ed780aa883027bef04cb1fb99a3b88c9272
-F test/altertab3.test c755ef31f8a61911331b46d71e43f6f3ef94af05c56314b168e47520355fa18e
+F test/altertab3.test f40013d333e273da57e329fac6c2268a58aa09d17c3575936b343eeb2fa09180
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 547bb700f903107b38611b014ca645d6b5bb819f5210d7bf39c40802aafeb7d7
 F test/analyze3.test 01f0b122e3e54ad2544f14f7cc7dcb4c2cb8753cad5e88c6b8d49615b3fd6a2b
@@ -959,7 +959,7 @@ F test/fts3fuzz001.test e3c7b0ce9b04cc02281dcc96812a277f02df03cd7dc082055d87e11e
 F test/fts3join.test 949b4f5ae3ae9cc2423cb865d711e32476bdb205ab2be923fdf48246e4a44166
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test aa66cc50615578b30f6df9984819ae5b702511cf8a94251ec7c594096a703a4a
-F test/fts3misc.test a418198b2c3c56bddcaf657f41644715f6ad27ffa72a8ba8f542e93030517744
+F test/fts3misc.test c47d2c1ea1351c51c32c688545b02c8180a3f22156d1aedc206a8c09b9d95905
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
 F test/fts3offsets.test b85fd382abdc78ebce721d8117bd552dfb75094c
 F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1e1ba9145049491c593ac70d9e05149662d34770129c270d702f284cd19a481
-R 46f7afb441998f472c7c4a0add076940
-U drh
-Z c81acde55a3e6239d1de172d83220668
+P f4285297e1e7ebef90bfc0f71402a4e1726d31bc15b69fec13a1f0d98fed1f08
+R 8abceba5a0dfdc4677637a0d05950f72
+U dan
+Z a8a3e4a1d3565d1476bd7ac5bdf0dc35

@@ -226,9 +226,28 @@ do_execsql_test 8.0 {
   INSERT INTO vt0(c0) VALUES (x'd1');
 }
 
-breakpoint
 do_execsql_test 8.1 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE t1 using FTS5(mailcontent);
+  insert into t1(rowid, mailcontent) values
+      (-4764623217061966105, 'we are going to upgrade'),
+      (8324454597464624651, 'we are going to upgrade');
+}
+
+do_execsql_test 9.1 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM t1('upgrade');
+} {
+  -4764623217061966105 8324454597464624651
 }
 
 

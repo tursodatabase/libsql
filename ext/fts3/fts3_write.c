@@ -2966,14 +2966,12 @@ int sqlite3Fts3SegReaderStep(
           ** doclist. */
           sqlite3_int64 iDelta;
           if( p->bDescIdx && nDoclist>0 ){
+            if( iPrev<=iDocid ) return FTS_CORRUPT_VTAB;
             iDelta = iPrev - iDocid;
           }else{
+            if( nDoclist>0 && iPrev>=iDocid ) return FTS_CORRUPT_VTAB;
             iDelta = iDocid - iPrev;
           }
-          if( iDelta<=0 && (nDoclist>0 || iDelta!=iDocid) ){
-            return FTS_CORRUPT_VTAB;
-          }
-          assert( nDoclist>0 || iDelta==iDocid );
 
           nByte = sqlite3Fts3VarintLen(iDelta) + (isRequirePos?nList+1:0);
           if( nDoclist+nByte>pCsr->nBuffer ){
