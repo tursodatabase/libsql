@@ -1982,6 +1982,7 @@ void sqlite3GenerateConstraintChecks(
               addrJump = addrUniqueOk;
               op = OP_Eq;
             }
+            x = sqlite3TableColumnToStorage(pTab, x);
             sqlite3VdbeAddOp4(v, op, 
                 regOldData+1+x, addrJump, regCmp+i, p4, P4_COLLSEQ
             );
