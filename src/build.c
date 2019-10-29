@@ -2242,7 +2242,7 @@ void sqlite3EndTable(
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
   if( p->tabFlags & TF_HasGenerated ){
-    int ii;
+    int ii, nNV = 0;
     testcase( p->tabFlags & TF_HasVirtual );
     testcase( p->tabFlags & TF_HasStored );
     for(ii=0; ii<p->nCol; ii++){
@@ -2253,6 +2253,11 @@ void sqlite3EndTable(
         sqlite3ResolveSelfReference(pParse, p, NC_GenCol, 
                                     p->aCol[ii].pDflt, 0);
       }
+      if( (colFlags & COLFLAG_VIRTUAL)==0 ) nNV++;
+    }
+    if( nNV==0 ){
+      sqlite3ErrorMsg(pParse, "must have at least one non-VIRTUAL column");
+      return;
     }
   }
 #endif
@@ -2404,7 +2409,6 @@ void sqlite3EndTable(
     sqlite3VdbeAddParseSchemaOp(v, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName));
   }
-
 
   /* Add the table to the in-memory representation of the database.
   */

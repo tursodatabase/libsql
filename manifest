@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sfts3\scausing\sit\sto\sreport\scorruption\sif\sa\sdoclist\scontains\sconsectutive\srowid\sentries\sthat\sdiffer\sby\smore\sthan\s2^63.
-D 2019-10-28T13:54:59.510
+C Disallow\stables\sthat\shave\sonly\svirtual\scolumns.
+D 2019-10-29T01:26:24.071
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -470,7 +470,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 12e251f8c3eaad05e6d0db94772bf779b3a644e18d884025da6bcbc98cad1d22
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 8563e54761426053e60eeeed524c0dfce18aec444788c281262289133d96d2ba
+F src/build.c c0f279e9ef04cbd5f5b97628f7f8dd76cf30db36927fe566e82f2fc695ffc19c
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f4285297e1e7ebef90bfc0f71402a4e1726d31bc15b69fec13a1f0d98fed1f08
-R 8abceba5a0dfdc4677637a0d05950f72
-U dan
-Z a8a3e4a1d3565d1476bd7ac5bdf0dc35
+P 0b0a3048f9df88bbc8979f2ac5247bee7d7bc1e585faca252610d2fcbe36d51d
+R b4c27cbc6097f72a61ec6b82e9ea7ae9
+U drh
+Z 4276087abce170d1b1843b56d4d084ed
