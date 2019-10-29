@@ -625,7 +625,11 @@ impl Into<RawStatement> for Statement<'_> {
 
 impl fmt::Debug for Statement<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let sql = str::from_utf8(self.stmt.sql().to_bytes());
+        let sql = if self.stmt.is_null() {
+            Ok("")
+        } else {
+            str::from_utf8(self.stmt.sql().unwrap().to_bytes())
+        };
         f.debug_struct("Statement")
             .field("conn", self.conn)
             .field("stmt", &self.stmt)

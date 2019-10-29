@@ -90,9 +90,17 @@ impl InnerConnection {
                 } else {
                     let mut e = error_from_handle(db, r);
                     if let Error::SqliteFailure(
-                        ffi::Error{code: ffi::ErrorCode::CannotOpen, extended_code: _}, Some(msg)) = e {
+                        ffi::Error {
+                            code: ffi::ErrorCode::CannotOpen,
+                            extended_code: _,
+                        },
+                        Some(msg),
+                    ) = e
+                    {
                         e = Error::SqliteFailure(
-                            ffi::Error::new(r), Some(format!("{}: {}", msg, c_path.to_string_lossy())));
+                            ffi::Error::new(r),
+                            Some(format!("{}: {}", msg, c_path.to_string_lossy())),
+                        );
                     }
                     ffi::sqlite3_close(db);
                     e
