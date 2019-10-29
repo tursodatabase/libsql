@@ -7171,6 +7171,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
         { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
         { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
+        { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
     };
     int ii, v;
     open_db(p, 0);

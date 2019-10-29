@@ -185,4 +185,3 @@ do_execsql_test 5.3 {
 } {0 1}
 
 finish_test
-

@@ -20,8 +20,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 do_test tkt3292-1.1 {
+  sqlite3_db_config db LEGACY_FILE_FORMAT 0
   execsql {
-    PRAGMA legacy_file_format=OFF;
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
     INSERT INTO t1 VALUES(0, 1);
     INSERT INTO t1 VALUES(1, 1);

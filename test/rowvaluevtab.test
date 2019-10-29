@@ -88,4 +88,3 @@ do_vfilter4_test 1.4f {
 } {{SELECT rowid, a, b, c FROM 't1' WHERE b = ?}}
 
 finish_test
-

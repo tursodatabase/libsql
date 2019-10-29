@@ -7682,14 +7682,15 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "LEGACY_ALTER_TABLE", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE },
     { "DQS_DML",            SQLITE_DBCONFIG_DQS_DML },
     { "DQS_DDL",            SQLITE_DBCONFIG_DQS_DDL },
+    { "LEGACY_FILE_FORMAT", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT },
   };
   int i;
-  int v;
+  int v = 0;
   const char *zSetting;
   sqlite3 *db;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB SETTING VALUE");
+  if( objc!=4 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB SETTING [VALUE]");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -7705,7 +7706,11 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
       Tcl_NewStringObj("unknown sqlite3_db_config setting", -1));
     return TCL_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[3], &v) ) return TCL_ERROR;
+  if( objc==4 ){
+    if( Tcl_GetIntFromObj(interp, objv[3], &v) ) return TCL_ERROR;
+  }else{
+    v = -1;
+  }
   sqlite3_db_config(db, aSetting[i].eVal, v, &v);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(v));
   return TCL_OK;

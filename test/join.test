@@ -936,4 +936,3 @@ do_execsql_test join-19.5 {
 } {0 {}}
 
 finish_test
-

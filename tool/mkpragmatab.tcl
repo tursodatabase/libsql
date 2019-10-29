@@ -41,11 +41,6 @@ set pragma_def {
   ARG:  SQLITE_NullCallback
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
-  NAME: legacy_file_format
-  TYPE: FLAG
-  ARG:  SQLITE_LegacyFileFmt
-  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-
   NAME: fullfsync
   TYPE: FLAG
   ARG:  SQLITE_FullFSync
