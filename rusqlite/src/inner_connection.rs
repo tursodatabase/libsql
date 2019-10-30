@@ -264,7 +264,8 @@ impl InnerConnection {
         };
         // If there is an error, *ppStmt is set to NULL.
         self.decode_result(r)?;
-        // If the input text contains no SQL (if the input is an empty string or a comment) then *ppStmt is set to NULL.
+        // If the input text contains no SQL (if the input is an empty string or a
+        // comment) then *ppStmt is set to NULL.
         let c_stmt: *mut ffi::sqlite3_stmt = unsafe { c_stmt.assume_init() };
         let c_tail: *const c_char = unsafe { c_tail.assume_init() };
         // TODO ignore spaces, comments, ... at the end

@@ -1062,4 +1062,35 @@ mod test {
         db.query_row("SELECT ?1, ?2, ?3", data.iter(), |row| row.get::<_, u8>(0))
             .unwrap();
     }
+
+    #[test]
+    fn test_empty_stmt() {
+        let conn = Connection::open_in_memory().unwrap();
+        let mut stmt = conn.prepare("").unwrap();
+        assert_eq!(0, stmt.column_count());
+        assert!(stmt.parameter_index("test").is_ok());
+        assert!(stmt.step().is_err());
+        stmt.reset();
+        assert!(stmt.execute(NO_PARAMS).is_err());
+    }
+
+    #[test]
+    fn test_comment_stmt() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.prepare("/*SELECT 1;*/").unwrap();
+    }
+
+    #[test]
+    fn test_comment_and_sql_stmt() {
+        let conn = Connection::open_in_memory().unwrap();
+        let stmt = conn.prepare("/*...*/ SELECT 1;").unwrap();
+        assert_eq!(1, stmt.column_count());
+    }
+
+    #[test]
+    fn test_semi_colon_stmt() {
+        let conn = Connection::open_in_memory().unwrap();
+        let stmt = conn.prepare(";").unwrap();
+        assert_eq!(0, stmt.column_count());
+    }
 }
