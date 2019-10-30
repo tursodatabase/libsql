@@ -1,5 +1,5 @@
-C Remove\sthe\slegacy_file_format\sPRAGMA.\s\sIn\sits\splace,\sprovide\sthe\nSQLITE_DBCONFIG_LEGACY_FILE_FORMAT\soption\sto\ssqlite3_db_config().\nFix\sfor\sticket\s[6484e6ce678fffab]
-D 2019-10-29T16:18:45.173
+C New\stokens\sALWAYS,\sGENERATED,\sand\sSTORED\sused\sby\sgenerated\scolumns\sshould\nall\sbe\sfallback\stokens.
+D 2019-10-30T13:00:23.625
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 422fd8cfa59fb9173eff36a95878904a0eeb0dcc62ba49350acc8b1e51c4dc7b
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 5f09d382d55ae7832d4975d71d851ea0cffa89c3803ff59cc4802220a0e3a476
+F src/parse.y ea567d2ada3d5a8647bf55b3ebb8ede223bc15e69f349a6144348787b95895da
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4fba090e678ef184736277c9ec9a9374c8bd4df4d41f51a3dc6818e2efcc103b
-R 52efea3d4f86047597328a59c66d53fe
+P 4d424f3047b48fc441475137f30a719d2f079390c86fe2617710ddfb05c5e240
+R d27d4fff3c6fbce4f9267adc4b31de94
 U drh
-Z bd25b0a08ac9600a5f8efd599cb395b8
+Z c4c731d7baeb139e7fe1ba09d543039c
