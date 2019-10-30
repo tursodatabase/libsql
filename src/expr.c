@@ -4032,9 +4032,8 @@ expr_code_doover:
       }else
 #endif
       {
-        sqlite3VdbeAddOp4(v, pParse->iSelfTab ? OP_PureFunc0 : OP_Function0,
-                          constMask, r1, target, (char*)pDef, P4_FUNCDEF);
-        sqlite3VdbeChangeP5(v, (u8)nFarg);
+        sqlite3VdbeAddFunctionCall(pParse, constMask, r1, target, nFarg,
+                                   pDef, pParse->iSelfTab);
       }
       if( nFarg && constMask==0 ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);
