@@ -815,15 +815,18 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
           /* For the purposes of the EP_ConstFunc flag, date and time
           ** functions and other functions that change slowly are considered
-          ** constant because they are constant for the duration of one query */
+          ** constant because they are constant for the duration of one query.
+          ** This allows them to be factored out of inner loops. */
           ExprSetProperty(pExpr,EP_ConstFunc);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
           /* Date/time functions that use 'now', and other functions like
           ** sqlite_version() that might change over time cannot be used
           ** in an index. */
-          notValid(pParse, pNC, "non-deterministic functions",
-                   NC_IdxExpr|NC_PartIdx|NC_GenCol);
+          notValid(pParse, pNC, "non-deterministic functions", NC_SelfRef);
+        }else{
+          assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
+          pExpr->op2 = pNC->ncFlags & NC_SelfRef;
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
@@ -1789,11 +1792,13 @@ void sqlite3ResolveSelectNames(
 ** Resolve names in expressions that can only reference a single table
 ** or which cannot reference any tables at all.  Examples:
 **
-**    (1)   CHECK constraints
-**    (2)   WHERE clauses on partial indices
-**    (3)   Expressions in indexes on expressions
-**    (4)   Expression arguments to VACUUM INTO.
-**    (5)   GENERATED ALWAYS as expressions
+**                                                    "type" flag
+**                                                    ------------
+**    (1)   CHECK constraints                         NC_IsCheck
+**    (2)   WHERE clauses on partial indices          NC_PartIdx
+**    (3)   Expressions in indexes on expressions     NC_IdxExpr
+**    (4)   Expression arguments to VACUUM INTO.      0
+**    (5)   GENERATED ALWAYS as expressions           NC_GenCol
 **
 ** In all cases except (4), the Expr.iTable value for Expr.op==TK_COLUMN
 ** nodes of the expression is set to -1 and the Expr.iColumn value is

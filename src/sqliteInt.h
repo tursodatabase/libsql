@@ -2487,6 +2487,10 @@ typedef int ynVar;
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affExpr;          /* affinity, or RAISE type */
+  u8 op2;                /* TK_REGISTER/TK_TRUTH: original value of Expr.op
+                         ** TK_COLUMN: the value of p5 for OP_Column
+                         ** TK_AGG_FUNCTION: nesting depth
+                         ** TK_FUNCTION: NC_SelfRef flag if needs OP_PureFunc */
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
@@ -2525,9 +2529,6 @@ struct Expr {
                          ** TK_SELECT_COLUMN: column of the result vector */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
-  u8 op2;                /* TK_REGISTER/TK_TRUTH: original value of Expr.op
-                         ** TK_COLUMN: the value of p5 for OP_Column
-                         ** TK_AGG_FUNCTION: nesting depth */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   union {
     Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
@@ -2840,9 +2841,10 @@ struct NameContext {
 #define NC_AllowAgg  0x00001  /* Aggregate functions are allowed here */
 #define NC_PartIdx   0x00002  /* True if resolving a partial index WHERE */
 #define NC_IsCheck   0x00004  /* True if resolving a CHECK constraint */
-#define NC_InAggFunc 0x00008  /* True if analyzing arguments to an agg func */
+#define NC_GenCol    0x00008  /* True for a GENERATED ALWAYS AS clause */
 #define NC_HasAgg    0x00010  /* One or more aggregate functions seen */
 #define NC_IdxExpr   0x00020  /* True if resolving columns of CREATE INDEX */
+#define NC_SelfRef   0x0002e  /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
 #define NC_VarSelect 0x00040  /* A correlated subquery has been seen */
 #define NC_UEList    0x00080  /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
@@ -2852,7 +2854,7 @@ struct NameContext {
 #define NC_AllowWin  0x04000  /* Window functions are allowed here */
 #define NC_HasWin    0x08000  /* One or more window functions seen */
 #define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
-#define NC_GenCol    0x20000  /* True for a GENERATED ALWAYS AS clause */
+#define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT

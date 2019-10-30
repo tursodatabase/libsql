@@ -365,11 +365,12 @@ int sqlite3VdbeAddFunctionCall(
   }
   pCtx->pOut = 0;
   pCtx->pFunc = (FuncDef*)pFunc;
-  pCtx->pVdbe = v;
+  pCtx->pVdbe = 0;
   pCtx->isError = 0;
   pCtx->argc = nArg;
   addr = sqlite3VdbeAddOp4(v, eCallCtx ? OP_PureFunc : OP_Function,
                            p1, p2, p3, (char*)pCtx, P4_FUNCCTX);
+  sqlite3VdbeChangeP5(v, eCallCtx & NC_SelfRef);
   pCtx->iOp = addr;
   return addr;
 }
@@ -4999,21 +5000,25 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** features such as 'now'.
 */
 int sqlite3NotPureFunc(sqlite3_context *pCtx){
+  const VdbeOp *pOp;
 #ifdef SQLITE_ENABLE_STAT4
   if( pCtx->pVdbe==0 ) return 1;
 #endif
-  if( pCtx->pVdbe->aOp[pCtx->iOp].opcode==OP_PureFunc ){
-#if 0
-    char *zMsg = sqlite3_mprintf(
-       "non-deterministic use of %s() in an index, CHECK constraint, "
-       "or generated column", pCtx->pFunc->zName);
+  pOp = pCtx->pVdbe->aOp + pCtx->iOp;
+  if( pOp->opcode==OP_PureFunc ){
+    const char *zContext;
+    char *zMsg;
+    if( pOp->p5 & NC_IsCheck ){
+      zContext = "a CHECK constraint";
+    }else if( pOp->p5 & NC_GenCol ){
+      zContext = "a generated column";
+    }else{
+      zContext = "an index";
+    }
+    zMsg = sqlite3_mprintf("non-deterministic use of %s() in %s",
+                           pCtx->pFunc->zName, zContext);
     sqlite3_result_error(pCtx, zMsg, -1);
     sqlite3_free(zMsg);
-#else
-    sqlite3_result_error(pCtx, 
-       "non-deterministic function in index expression or CHECK constraint",
-       -1);
-#endif
     return 0;
   }
   return 1;

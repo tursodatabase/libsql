@@ -4033,7 +4033,7 @@ expr_code_doover:
 #endif
       {
         sqlite3VdbeAddFunctionCall(pParse, constMask, r1, target, nFarg,
-                                   pDef, pParse->iSelfTab);
+                                   pDef, pExpr->op2);
       }
       if( nFarg && constMask==0 ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);
@@ -5028,7 +5028,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
      && (combinedFlags & EP_Reduced)==0
     ){
       if( pA->iColumn!=pB->iColumn ) return 2;
-      if( pA->op2!=pB->op2 ) return 2;
+      if( pA->op2!=pB->op2 && (pA->op!=TK_FUNCTION || iTab<0) ) return 2;
       if( pA->op!=TK_IN && pA->iTable!=pB->iTable && pA->iTable!=iTab ){
         return 2;
       }

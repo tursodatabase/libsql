@@ -442,7 +442,7 @@ do_test check-6.15 {
 #
 reset_db
 proc myfunc {x} {expr $x < 10}
-db func myfunc myfunc
+db func myfunc -deterministic myfunc
 
 do_execsql_test  7.1 { CREATE TABLE t6(a CHECK (myfunc(a))) }
 do_execsql_test  7.2 { INSERT INTO t6 VALUES(9)  }
