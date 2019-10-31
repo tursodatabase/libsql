@@ -1,5 +1,5 @@
-C Always\sdisallow\sthe\suse\sof\snon-deterministic\sfunctions\sin\sCHECK\sconstraints,\neven\sdate/time\sfunctions\sthat\suse\sthe\s'now'\sor\ssimilar\skeywords.\s\sProvide\nimproved\serror\smessages\swhen\sthis\srequirement\sis\snot\smet.\nTicket\s[830277d9db6c3ba1]
-D 2019-10-30T18:50:08.069
+C Enhance\sthe\sTreeView\slogic\sto\sshow\sinformation\sabout\sExpr.op2\sfor\nFUNCTION\sand\sCOLUMN\snodes.
+D 2019-10-31T12:30:38.799
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -591,7 +591,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 7b17f6e2f20f6cbcb0b215025a86b7457c38451fc7622f705e553d7a488c572d
-F src/treeview.c 19e660b3a4ff8ae7dda426795020f0d2e1b349fa8cad19af9c9bf2a9063f2ef9
+F src/treeview.c 1de448df044dd9f011010b62966fb9b1bdde6e0a21173c686c9b2064227f6119
 F src/trigger.c 845ccc08f60716c58aa28fe6470385c18ef8c4e1d88c93dcf449bc13d464eb2e
 F src/update.c ae657f0db6a255011759ab9345ded7b54b828329a9dba04f94b4d4fa6e70e1ad
 F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
@@ -1848,7 +1848,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84e02d773d60cffe619104991d21d7f0c68616c0f6bb99686bf54f5306c756d0
-R a5809c36248fb2412cd83c239c6f50ff
+P 2978b65ebe25eeabe543b67cb266308cceb20082a4ae71565d6d083d7c08bc9f
+R 696f26c3d4df9f022744939ac820b098
 U drh
-Z 0ef46baeb11e85e5dfc62c1770da0b94
+Z 1444c17552814a38105629c0a0fc2502
