@@ -24,4 +24,125 @@ do_execsql_test gencol1-100 {
   SELECT * FROM t1;
 } {integer 0}
 
+foreach {tn schema} { 
+1 {
+   CREATE TABLE t1(
+     a INT,
+     b TEXT,
+     c ANY,
+     w INT GENERATED ALWAYS AS (a*10),
+     x TEXT AS (typeof(c)),
+     y TEXT AS (substr(b,a,a+2))
+   );
+  }
+2 {
+   CREATE TABLE t1(
+     w INT GENERATED ALWAYS AS (a*10),
+     x TEXT AS (typeof(c)),
+     y TEXT AS (substr(b,a,a+2)),
+     a INT,
+     b TEXT,
+     c ANY
+   );
+  }
+3 {
+   CREATE TABLE t1(
+     w INT GENERATED ALWAYS AS (a*10),
+     a INT,
+     x TEXT AS (typeof(c)) STORED,
+     b TEXT,
+     y TEXT AS (substr(b,a,a+2)),
+     c ANY
+   );
+  }
+4 {
+   CREATE TABLE t1(
+     a INTEGER PRIMARY KEY,
+     w INT GENERATED ALWAYS AS (a*10),
+     b TEXT,
+     x TEXT AS (typeof(c)),
+     y TEXT AS (substr(b,a,a+2)) STORED,
+     c ANY
+   );
+  }
+5 {
+   CREATE TABLE t1(
+     w INT GENERATED ALWAYS AS (a*10),
+     a INT,
+     x TEXT AS (typeof(c)),
+     b TEXT,
+     y TEXT AS (substr(b,a,a+2)) STORED,
+     c ANY,
+     PRIMARY KEY(a,b)
+   ) WITHOUT ROWID;
+  }
+6 {
+   CREATE TABLE t1(
+     w INT GENERATED ALWAYS AS (m*5),
+     m INT AS (a*2) STORED,
+     a INT,
+     x TEXT AS (typeof(c)),
+     b TEXT,
+     y TEXT AS (substr(b,m/2,m/2+2)) STORED,
+     c ANY,
+     PRIMARY KEY(a,b)
+   );
+  }
+7 {
+   CREATE TABLE t1(
+     w INT GENERATED ALWAYS AS (m*5),
+     m INT AS (a*2) NOT NULL,
+     a INT,
+     x TEXT AS (typeof(c)) CHECK (x<>'blank'),
+     b TEXT,
+     y TEXT AS (substr(b,m/2,m/2+2)) STORED,
+     c ANY,
+     PRIMARY KEY(b,a)
+   ) WITHOUT ROWID;
+  }
+} {
+  catch {db close}
+  sqlite3 db :memory:
+  db eval $schema
+  do_execsql_test gencol1-2.$tn.100 {
+    INSERT INTO t1(a,b,c) VALUES(1,'abcdef',5.5),(3,'cantaloupe',NULL);
+    SELECT w, x, y, '|' FROM t1 ORDER BY a;
+  } {10 real abc | 30 null ntalo |}
+  do_execsql_test gencol1-2.$tn.101 {
+    SELECT w, x, y, '|' FROM t1 ORDER BY w;
+  } {10 real abc | 30 null ntalo |}
+  do_execsql_test gencol1-2.$tn.102 {
+    SELECT a FROM t1 WHERE w=30;
+  } {3}
+  do_execsql_test gencol1-2.$tn.103 {
+    SELECT a FROM t1 WHERE x='real';
+  } {1}
+  do_execsql_test gencol1-2.$tn.104 {
+    SELECT a FROM t1 WHERE y LIKE '%tal%' OR x='real' ORDER BY b;
+  } {1 3}
+  do_execsql_test gencol1-2.$tn.110 {
+    CREATE INDEX t1w ON t1(w);
+    SELECT a FROM t1 WHERE w=10;
+  } {1}
+  do_execsql_test gencol1-2.$tn.120 {
+    CREATE INDEX t1x ON t1(x) WHERE w BETWEEN 20 AND 40;
+    SELECT a FROM t1 WHERE x='null' AND w BETWEEN 20 AND 40;
+  } {3}
+  do_execsql_test gencol1-2.$tn.121 {
+    SELECT a FROM t1 WHERE x='real';
+  } {1}
+  do_execsql_test gencol1-2.$tn.130 {
+    VACUUM;
+    PRAGMA integrity_check;
+  } {ok}
+  do_execsql_test gencol1-2.$tn.140 {
+    UPDATE t1 SET a=a+100 WHERE w<20;
+    SELECT a, w, '|' FROM t1 ORDER BY w;
+  } {3 30 | 101 1010 |}
+  do_execsql_test gencol1-2.$tn.150 {
+    INSERT INTO t1 VALUES(4,'jambalaya','Chef John'),(15,87719874135,0);
+    SELECT w, x, y, '|' FROM t1 ORDER BY w;
+  } {30 null ntalo | 40 text balaya | 150 integer {} | 1010 real {} |}
+}
+
 finish_test
