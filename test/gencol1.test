@@ -1,0 +1,27 @@
+# 2019-10-31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Test cases for generated columns.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# ticket 830277d9db6c3ba1 on 2019-10-31
+do_execsql_test gencol1-100 {
+  CREATE TABLE t0(c0 AS(TYPEOF(c1)), c1);
+  INSERT INTO t0(c1) VALUES(0);
+  CREATE TABLE t1(x AS (typeof(y)), y);
+  INSERT INTO t1 SELECT * FROM t0;
+  SELECT * FROM t1;
+} {integer 0}
+
+finish_test

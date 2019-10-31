@@ -1,5 +1,5 @@
-C Enhance\sthe\sTreeView\slogic\sto\sshow\sinformation\sabout\sExpr.op2\sfor\nFUNCTION\sand\sCOLUMN\snodes.
-D 2019-10-31T12:30:38.799
+C Ignore\sdifferences\sin\sExpr.op2\sin\ssqlite3ExprCompare()\sin\scases\swhere\sit\ndoes\smatter.\s\sTicket\s[1d2a8efc6c3a595a].
+D 2019-10-31T13:16:26.169
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c d08c9e01a2664afd12edcfa3a9c6578517e8ff8735f35509582693adbe0edeaf
-F src/expr.c 90c774b399e5df80e963fe23d18b36e0affe2949291a3ddf5555e14ef08e251e
+F src/expr.c a02db128337ca28c34fc3574a640f247881bc4d14c1debf5adc3ecf25dd74992
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c ac56f02ffe7a3dff311654f86e3c2fd1ff2eb38862b0c07fd908d8cc0fb4a9a2
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1021,6 +1021,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
+F test/gencol1.test 27f80efa9047c8db10794d689e086d2d3ecbb0e1dfe8b8293e8c250e6015add3
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1848,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2978b65ebe25eeabe543b67cb266308cceb20082a4ae71565d6d083d7c08bc9f
-R 696f26c3d4df9f022744939ac820b098
+P aceeaf9e28767a0880a16872867a1f57bff163acd0f10d19d5688068077590fa
+R 4e0fef27b2755ee02a88ef863369c111
 U drh
-Z 1444c17552814a38105629c0a0fc2502
+Z 4d89f413d1dc6ce2106075b4c9bb6a03
