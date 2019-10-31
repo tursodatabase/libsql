@@ -145,4 +145,18 @@ foreach {tn schema} {
   } {30 null ntalo | 40 text balaya | 150 integer {} | 1010 real {} |}
 }
 
+# 2019-10-31 ticket b9befa4b83a660cc
+db close
+sqlite3 db :memory:
+do_execsql_test gencol1-3.100 {
+  PRAGMA foreign_keys = true;
+  CREATE TABLE t0(c0 PRIMARY KEY, c1, c2 AS (c0+c1-c3) REFERENCES t0, c3);
+  INSERT INTO t0 VALUES (0, 0, 0), (11, 5, 5);
+  UPDATE t0 SET c1 = c0, c3 = c0;
+  SELECT *, '|' FROM t0 ORDER BY +c0;
+} {0 0 0 0 | 11 11 11 11 |}
+do_catchsql_test gencol1-3.110 {
+  UPDATE t0 SET c1 = c0, c3 = c0+1;
+} {1 {FOREIGN KEY constraint failed}}
+
 finish_test

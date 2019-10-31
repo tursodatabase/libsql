@@ -661,12 +661,9 @@ void sqlite3Update(
     oldmask |= sqlite3TriggerColmask(pParse, 
         pTrigger, pChanges, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onError
     );
-    for(i=0, k=regOld; i<pTab->nCol; i++, k++){
+    for(i=0; i<pTab->nCol; i++){
       u32 colFlags = pTab->aCol[i].colFlags;
-      if( colFlags & COLFLAG_VIRTUAL ){
-        k--;
-        continue;
-      }
+      k = sqlite3TableColumnToStorage(pTab, i) + regOld;
       if( oldmask==0xffffffff
        || (i<32 && (oldmask & MASKBIT32(i))!=0)
        || (colFlags & COLFLAG_PRIMKEY)!=0
