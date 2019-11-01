@@ -1,5 +1,5 @@
-C Fix\san\sfts3\sassert()\sthat\scould\sfail\swhen\soperating\son\sa\sdatabase\scontaining\scorrupt\srecords.
-D 2019-11-01T13:37:26.323
+C Omit\sthe\soptimization\sthat\sreduces\sthe\scolumn-count\son\srowid-table\scursors\nwhen\sthe\stable\shas\sgenerated\scolumns,\sbecause\swe\sdo\snot\sknow\swhat\scolumns\sthe\ngenerator\sexpressions\smight\stry\sto\saccess.
+D 2019-11-01T15:19:24.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -612,7 +612,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
-F src/where.c 6ff3ef076485dd71efbbabcc7ddc0473c04a9bdcb524128939757b002466f2d1
+F src/where.c 6e56bef94dc1e2d4461fca49604602312dc620333572aad9511e5ca2120aff31
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c 28a3f27b44165e05bac3031f9a9ee9901305647b6c9dfc0214544578066ab097
 F src/whereexpr.c 0705f608f6dbbd4e95d440528d6c760b91b6f402ba4eb8b8d964c110e2010780
@@ -1021,7 +1021,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test 987474537c4e871a7ca7bcdb7113005abe2577f29a7a204325a8cbb819cd3079
+F test/gencol1.test eb649c915fb1e6db28c61c59b0dcfd8e24186e6c02a20f9bac2bd92fa0ba2e87
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc6a43e7ee6353b9ef3dea4309c77e170a1c798eefcfaa7636bf5a93e51c47ee
-R 08bfd00a4a308a822d5c7274429702cd
-U dan
-Z 10a49602cb0df3dab591019d1c6a5499
+P 7c52f5478f9ecf5c078208759143ae9de43c1bf191dfcd74acb8bd169d4dc883
+R ff1afc2247f6244c5d8f4fed7821c04a
+U drh
+Z f38954f84a7e77d1295bd9b5032a5d87
