@@ -2,7 +2,6 @@
 //! expose an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 //!
 //! ```rust
-//! use rusqlite::types::ToSql;
 //! use rusqlite::{params, Connection, Result};
 //! use time::Timespec;
 //!
