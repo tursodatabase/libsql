@@ -48,7 +48,7 @@ csvtab = ["csv", "vtab"]
 # pointer passing interfaces: 3.20.0
 array = ["vtab"]
 # session extension: 3.13.0
-#session = ["libsqlite3-sys/session", "hooks"]
+session = ["libsqlite3-sys/session", "hooks"]
 # window functions: 3.25.0
 window = ["functions"]
 # 3.9.0
