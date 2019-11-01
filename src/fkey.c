@@ -483,7 +483,7 @@ static Expr *exprTableRegister(
   if( pExpr ){
     if( iCol>=0 && iCol!=pTab->iPKey ){
       pCol = &pTab->aCol[iCol];
-      pExpr->iTable = regBase + iCol + 1;
+      pExpr->iTable = regBase + sqlite3TableColumnToStorage(pTab,iCol) + 1;
       pExpr->affExpr = pCol->affinity;
       zColl = pCol->zColl;
       if( zColl==0 ) zColl = db->pDfltColl->zName;

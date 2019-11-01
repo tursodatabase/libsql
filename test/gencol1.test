@@ -159,4 +159,21 @@ do_catchsql_test gencol1-3.110 {
   UPDATE t0 SET c1 = c0, c3 = c0+1;
 } {1 {FOREIGN KEY constraint failed}}
 
+# 2019-11-01 ticket c28a01da72f8957c
+db close
+sqlite3 db :memory:
+do_execsql_test gencol1-4.100 {
+  CREATE TABLE t0 (
+    c0,
+    c1 a UNIQUE AS (1),
+    c2,
+    c3 REFERENCES t0(c1)
+  );
+  PRAGMA foreign_keys = true;
+  INSERT INTO t0(c0,c2,c3) VALUES(0,0,1);
+} {}
+do_catchsql_test gencol1-4.110 {
+  REPLACE INTO t0(c0,c2,c3) VALUES(0,0,0),(0,0,0);
+} {1 {FOREIGN KEY constraint failed}}
+
 finish_test

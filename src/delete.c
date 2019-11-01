@@ -737,7 +737,8 @@ void sqlite3GenerateRowDelete(
       testcase( mask!=0xffffffff && iCol==31 );
       testcase( mask!=0xffffffff && iCol==32 );
       if( mask==0xffffffff || (iCol<=31 && (mask & MASKBIT32(iCol))!=0) ){
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, iCol, iOld+iCol+1);
+        int kk = sqlite3TableColumnToStorage(pTab, iCol);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, iCol, iOld+kk+1);
       }
     }
 
