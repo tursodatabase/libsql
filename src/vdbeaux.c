@@ -368,10 +368,10 @@ int sqlite3VdbeAddFunctionCall(
   pCtx->pVdbe = 0;
   pCtx->isError = 0;
   pCtx->argc = nArg;
+  pCtx->iOp = sqlite3VdbeCurrentAddr(v);
   addr = sqlite3VdbeAddOp4(v, eCallCtx ? OP_PureFunc : OP_Function,
                            p1, p2, p3, (char*)pCtx, P4_FUNCCTX);
   sqlite3VdbeChangeP5(v, eCallCtx & NC_SelfRef);
-  pCtx->iOp = addr;
   return addr;
 }
 
