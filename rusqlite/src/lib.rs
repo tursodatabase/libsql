@@ -966,7 +966,12 @@ mod test {
         if let Error::SqliteFailure(e, Some(msg)) = err {
             assert_eq!(ErrorCode::CannotOpen, e.code);
             assert_eq!(ffi::SQLITE_CANTOPEN, e.extended_code);
-            assert!(msg.contains(filename), "error message '{}' does not contain '{}'", msg, filename);
+            assert!(
+                msg.contains(filename),
+                "error message '{}' does not contain '{}'",
+                msg,
+                filename
+            );
         } else {
             panic!("SqliteFailure expected");
         }

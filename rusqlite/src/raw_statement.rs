@@ -14,6 +14,10 @@ impl RawStatement {
         RawStatement(stmt, tail)
     }
 
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
+    }
+
     pub unsafe fn ptr(&self) -> *mut ffi::sqlite3_stmt {
         self.0
     }
@@ -95,8 +99,12 @@ impl RawStatement {
         unsafe { ffi::sqlite3_clear_bindings(self.0) }
     }
 
-    pub fn sql(&self) -> &CStr {
-        unsafe { CStr::from_ptr(ffi::sqlite3_sql(self.0)) }
+    pub fn sql(&self) -> Option<&CStr> {
+        if self.0.is_null() {
+            None
+        } else {
+            Some(unsafe { CStr::from_ptr(ffi::sqlite3_sql(self.0)) })
+        }
     }
 
     pub fn finalize(mut self) -> c_int {
