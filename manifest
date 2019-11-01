@@ -1,5 +1,5 @@
-C Slightly\sfaster\skeyword\shash\stable.
-D 2019-11-01T02:30:54.247
+C Fix\sa\spotential\sarray\sbounds\soverflow\sin\sthe\smkkeywordhash.c\scode\sgenerator.\nAlso\sadd\smarks\sto\somit\skeywords\sspecific\sto\sgenerated\scolumns\swhen\sbuilding\nwith\s-DSQLITE_OMIT_GENERATED_COLUMNS.
+D 2019-11-01T10:49:15.808
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1777,7 +1777,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c736fdeca5e
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
-F tool/mkkeywordhash.c 1d4626fecd48b32a84963b663b34f3a42ee77691a21614bdacdc71d9412d5da4
+F tool/mkkeywordhash.c 27ffc6f6e7e3ecbfc5bca1f1f11a09fc5badf6d67557a5fb2d3b069dbed90617
 F tool/mkmsvcmin.tcl cad0c7b54d7dd92bc87d59f36d4cc4f070eb2e625f14159dc2f5c4204e6a13ea
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40d3282ec285d9f724f6548283f48b601510cf5284da17485723fd650a68f436
-R c292184f9e256f8778bc51749362a73d
+P f12e743e19a04ecbf7eb69b675082f2e4dda05b38cd81f6588a1ce95dfc57ada
+R a19e7b395a0485b418d66f725ce1e9ee
 U drh
-Z f600eb4b341234df9d684e7b16c76669
+Z 60eb5202ef4aac4c6596aee0e04e6735

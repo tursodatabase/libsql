@@ -154,6 +154,11 @@ struct Keyword {
 #else
 #  define WINDOWFUNC 0x00100000
 #endif
+#ifdef SQLITE_OMIT_GENERATED_COLUMNS
+#  define GENCOL 0
+#else
+#  define GENCOL 0x00200000
+#endif
 
 /*
 ** These are the keywords
@@ -165,7 +170,7 @@ static Keyword aKeywordTable[] = {
   { "AFTER",            "TK_AFTER",        TRIGGER,          0      },
   { "ALL",              "TK_ALL",          ALWAYS,           0      },
   { "ALTER",            "TK_ALTER",        ALTER,            0      },
-  { "ALWAYS",           "TK_ALWAYS",       ALWAYS,           0      },
+  { "ALWAYS",           "TK_ALWAYS",       GENCOL,           0      },
   { "ANALYZE",          "TK_ANALYZE",      ANALYZE,          0      },
   { "AND",              "TK_AND",          ALWAYS,           10     },
   { "AS",               "TK_AS",           ALWAYS,           10     },
@@ -218,7 +223,7 @@ static Keyword aKeywordTable[] = {
   { "FOREIGN",          "TK_FOREIGN",      FKEY,             1      },
   { "FROM",             "TK_FROM",         ALWAYS,           10     },
   { "FULL",             "TK_JOIN_KW",      ALWAYS,           3      },
-  { "GENERATED",        "TK_GENERATED",    ALWAYS,           1      },
+  { "GENERATED",        "TK_GENERATED",    GENCOL,           1      },
   { "GLOB",             "TK_LIKE_KW",      ALWAYS,           3      },
   { "GROUP",            "TK_GROUP",        ALWAYS,           5      },
   { "GROUPS",           "TK_GROUPS",       WINDOWFUNC,       2      },
@@ -364,7 +369,9 @@ static Keyword *findById(int id){
 */
 static void reorder(int *pFrom){
   int i = *pFrom - 1;
-  int j = aKeywordTable[i].iNext;
+  int j;
+  if( i<0 ) return;
+  j = aKeywordTable[i].iNext;
   if( j==0 ) return;
   j--;
   if( aKeywordTable[i].priority >= aKeywordTable[j].priority ) return;
