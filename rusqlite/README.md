@@ -10,8 +10,7 @@ Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expo
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 
 ```rust
-use rusqlite::types::ToSql;
-use rusqlite::{Connection, Result, NO_PARAMS};
+use rusqlite::{params, Connection, Result};
 use time::Timespec;
 
 #[derive(Debug)]
@@ -32,7 +31,7 @@ fn main() -> Result<()> {
                   time_created    TEXT NOT NULL,
                   data            BLOB
                   )",
-        NO_PARAMS,
+        params![],
     )?;
     let me = Person {
         id: 0,
@@ -43,18 +42,18 @@ fn main() -> Result<()> {
     conn.execute(
         "INSERT INTO person (name, time_created, data)
                   VALUES (?1, ?2, ?3)",
-        &[&me.name as &ToSql, &me.time_created, &me.data],
+        params![me.name, me.time_created, me.data],
     )?;
 
-    let mut stmt = conn
-        .prepare("SELECT id, name, time_created, data FROM person")?;
-    let person_iter = stmt
-        .query_map(NO_PARAMS, |row| Ok(Person {
+    let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person")?;
+    let person_iter = stmt.query_map(params![], |row| {
+        Ok(Person {
             id: row.get(0)?,
             name: row.get(1)?,
             time_created: row.get(2)?,
             data: row.get(3)?,
-        }))?;
+        })
+    })?;
 
     for person in person_iter {
         println!("Found person {:?}", person.unwrap());
