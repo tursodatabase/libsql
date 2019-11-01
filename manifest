@@ -1,5 +1,5 @@
-C Omit\sthe\soptimization\sthat\sreduces\sthe\scolumn-count\son\srowid-table\scursors\nwhen\sthe\stable\shas\sgenerated\scolumns,\sbecause\swe\sdo\snot\sknow\swhat\scolumns\sthe\ngenerator\sexpressions\smight\stry\sto\saccess.
-D 2019-11-01T15:19:24.070
+C Add\sanother\smissing\scolumn\snumber\stranslation\sto\sthe\sforeign\skey\slogic.
+D 2019-11-01T16:08:20.952
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -480,7 +480,7 @@ F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c fbe8a2978a35201624ecaaabdaf83917c101e31cf451a7be0cf06d9049fad54e
 F src/expr.c a02db128337ca28c34fc3574a640f247881bc4d14c1debf5adc3ecf25dd74992
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 3c177deff52d6d62eac09700866293e193aa92e9866d00c6eb45a37bdae354a1
+F src/fkey.c 171e54112157be60ce75fa644a98a36088edd8ba9b2c6db7736268c738c45760
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
 F src/global.c a1a8d698762ddd9a1543aac26c1e0029b20fcc3fcb56bfa41ec8cea2368f2798
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c52f5478f9ecf5c078208759143ae9de43c1bf191dfcd74acb8bd169d4dc883
-R ff1afc2247f6244c5d8f4fed7821c04a
+P e6c96ed91e7a96d2bd30ea9df132644ac02d5a321a62f81f8f3984a8e49ed94b
+R 3ab52f0e710580b54aac492242a1edc3
 U drh
-Z f38954f84a7e77d1295bd9b5032a5d87
+Z 4e3a2664d2b976593cf31430f3790c9d
