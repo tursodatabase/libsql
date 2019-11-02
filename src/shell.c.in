@@ -3511,9 +3511,7 @@ static const char *(azHelp[]) = {
   ".excel                   Display the output of next command in spreadsheet",
   ".exit ?CODE?             Exit this program with return-code CODE",
   ".expert                  EXPERIMENTAL. Suggest indexes for queries",
-/* Because explain mode comes on automatically now, the ".explain" mode
-** is removed from the help screen. It is still supported for legacy, however */
-/*".explain ?on|off|auto?   Turn EXPLAIN output mode on or off",*/
+  ".explain ?on|off|auto?   Change the EXPLAIN formatting mode.  Default: auto",
   ".filectrl CMD ...        Run various sqlite3_file_control() operations",
   "                           Run \".filectrl\" with no arguments for details",
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
