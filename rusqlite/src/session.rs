@@ -743,6 +743,7 @@ unsafe extern "C" fn x_output(p_out: *mut c_void, data: *const c_void, len: c_in
 #[cfg(test)]
 mod test {
     use fallible_streaming_iterator::FallibleStreamingIterator;
+    use std::io::Cursor;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     use super::{Changeset, ChangesetIter, ConflictAction, ConflictType, Session};
@@ -808,7 +809,7 @@ mod test {
         assert!(!output.is_empty());
         assert_eq!(14, output.len());
 
-        let mut input = output.as_slice();
+        let mut input = Cursor::new(output);
         let mut iter = ChangesetIter::start_strm(&mut input).unwrap();
         let item = iter.next().unwrap();
         assert!(item.is_some());
@@ -867,8 +868,9 @@ mod test {
         db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
             .unwrap();
 
+        let mut input = Cursor::new(output);
         db.apply_strm(
-            &mut output.as_slice(),
+            &mut input,
             None::<fn(&str) -> bool>,
             |_conflict_type, _item| ConflictAction::SQLITE_CHANGESET_OMIT,
         )
