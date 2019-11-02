@@ -45,4 +45,4 @@ script:
   - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension serde_json trace url uuid vtab"
   - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension serde_json trace url uuid vtab buildtime_bindgen"
   - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension serde_json trace url uuid vtab bundled"
-  - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension serde_json trace url uuid vtab bundled buildtime_bindgen"
+  - cargo test --features "backup blob chrono collation csvtab functions hooks limits load_extension session serde_json trace url uuid vtab bundled buildtime_bindgen"
