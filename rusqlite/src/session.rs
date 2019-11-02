@@ -305,14 +305,13 @@ pub struct ChangesetIter<'changeset> {
 
 impl ChangesetIter<'_> {
     /// Create an iterator on `input`
-    pub fn start_strm<'input>(input: &'input mut dyn Read) -> Result<ChangesetIter<'input>> {
-        let input_ref = &input;
+    pub fn start_strm<'input>(input: &&'input mut dyn Read) -> Result<ChangesetIter<'input>> {
         let mut it = MaybeUninit::uninit();
         check!(unsafe {
             ffi::sqlite3changeset_start_strm(
                 it.as_mut_ptr(),
                 Some(x_input),
-                input_ref as *const &mut dyn Read as *mut c_void,
+                input as *const &mut dyn Read as *mut c_void,
             )
         });
         let it: *mut ffi::sqlite3_changeset_iter = unsafe { it.assume_init() };
@@ -743,7 +742,7 @@ unsafe extern "C" fn x_output(p_out: *mut c_void, data: *const c_void, len: c_in
 #[cfg(test)]
 mod test {
     use fallible_streaming_iterator::FallibleStreamingIterator;
-    use std::io::Cursor;
+    use std::io::Read;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     use super::{Changeset, ChangesetIter, ConflictAction, ConflictType, Session};
@@ -809,8 +808,8 @@ mod test {
         assert!(!output.is_empty());
         assert_eq!(14, output.len());
 
-        let mut input = Cursor::new(output);
-        let mut iter = ChangesetIter::start_strm(&mut input).unwrap();
+        let input: &mut dyn Read = &mut output.as_slice();
+        let mut iter = ChangesetIter::start_strm(&input).unwrap();
         let item = iter.next().unwrap();
         assert!(item.is_some());
     }
@@ -868,7 +867,7 @@ mod test {
         db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
             .unwrap();
 
-        let mut input = Cursor::new(output);
+        let mut input = output.as_slice();
         db.apply_strm(
             &mut input,
             None::<fn(&str) -> bool>,
