@@ -918,6 +918,8 @@ int sqlite3GenerateIndexKey(
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
       pParse->iSelfTab = 0;
+      pPrior = 0; /* Ticket a9efb42811fa41ee 2019-11-02;
+                  ** pPartIdxWhere may have corrupted regPrior registers */
     }else{
       *piPartIdxLabel = 0;
     }
