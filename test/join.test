@@ -935,4 +935,22 @@ do_execsql_test join-19.5 {
     (b IS NOT NULL AND b IS NOT NULL) IS NOT NULL; 
 } {0 {}}
 
+# 2019-11-02 ticket 623eff57e76d45f6
+# The optimization of exclusing the WHERE expression of a partial index
+# from the WHERE clause of the query if the index is used does not work
+# of the table of the index is the right-hand table of a LEFT JOIN.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test join-20.1 {
+  CREATE TABLE t1(c1);
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (0);
+  SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
+} {}
+do_execsql_test join-20.2 {
+  CREATE INDEX t1x ON t1(0) WHERE NULL IN (c1);
+  SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
+} {}
+
 finish_test
