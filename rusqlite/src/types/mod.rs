@@ -225,7 +225,7 @@ mod test {
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
-                Error::InvalidColumnType(_, _, _) => true,
+                Error::InvalidColumnType(..) => true,
                 _ => false,
             }
         }

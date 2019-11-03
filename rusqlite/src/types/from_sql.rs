@@ -36,7 +36,7 @@ impl PartialEq for FromSqlError {
             (FromSqlError::InvalidI128Size(s1), FromSqlError::InvalidI128Size(s2)) => s1 == s2,
             #[cfg(feature = "uuid")]
             (FromSqlError::InvalidUuidSize(s1), FromSqlError::InvalidUuidSize(s2)) => s1 == s2,
-            (_, _) => false,
+            (..) => false,
         }
     }
 }

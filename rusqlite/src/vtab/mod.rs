@@ -162,7 +162,11 @@ impl VTabConnection {
     ///
     /// You should not need to use this function. If you do need to, please
     /// [open an issue on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
-    /// your use case. This function is unsafe because it gives you raw access
+    /// your use case.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it gives you raw access
     /// to the SQLite connection, and what you do with it could impact the
     /// safety of this `Connection`.
     pub unsafe fn handle(&mut self) -> *mut ffi::sqlite3 {
