@@ -1051,7 +1051,7 @@ mod test {
         use std::collections::BTreeSet;
         let data: BTreeSet<String> = ["one", "two", "three"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect();
         db.query_row("SELECT ?1, ?2, ?3", &data, |row| row.get::<_, String>(0))
             .unwrap();

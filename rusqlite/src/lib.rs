@@ -701,7 +701,11 @@ impl Connection {
     ///
     /// You should not need to use this function. If you do need to, please
     /// [open an issue on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
-    /// your use case. This function is unsafe because it gives you raw access
+    /// your use case.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it gives you raw access
     /// to the SQLite connection, and what you do with it could impact the
     /// safety of this `Connection`.
     pub unsafe fn handle(&self) -> *mut ffi::sqlite3 {
@@ -797,8 +801,11 @@ impl Default for OpenFlags {
 /// If you are encountering that panic _and_ can ensure that SQLite has been
 /// initialized in either multi-thread or serialized mode, call this function
 /// prior to attempting to open a connection and rusqlite's initialization
-/// process will by skipped. This
-/// function is unsafe because if you call it and SQLite has actually been
+/// process will by skipped.
+///
+/// # Safety
+///
+/// This function is unsafe because if you call it and SQLite has actually been
 /// configured to run in single-thread mode,
 /// you may enounter memory errors or data corruption or any number of terrible
 /// things that should not be possible when you're using Rust.
@@ -809,11 +816,13 @@ pub unsafe fn bypass_sqlite_initialization() {
 /// rusqlite performs a one-time check that the runtime SQLite version is at
 /// least as new as the version of SQLite found when rusqlite was built.
 /// Bypassing this check may be dangerous; e.g., if you use features of SQLite
-/// that are not present in the runtime
-/// version. If you are sure the runtime version is compatible with the
+/// that are not present in the runtime version.
+///
+/// # Safety
+///
+/// If you are sure the runtime version is compatible with the
 /// build-time version for your usage, you can bypass the version check by
-/// calling this function before
-/// your first connection attempt.
+/// calling this function before your first connection attempt.
 pub unsafe fn bypass_sqlite_version_check() {
     #[cfg(not(feature = "bundled"))]
     inner_connection::BYPASS_VERSION_CHECK.store(true, Ordering::Relaxed);
@@ -992,10 +1001,11 @@ mod test {
             let raw_db = db.db.borrow_mut().db;
             let sql = "SELECT 1";
             let mut raw_stmt = MaybeUninit::uninit();
+            let cstring = str_to_cstring(sql).unwrap();
             let rc = unsafe {
                 ffi::sqlite3_prepare_v2(
                     raw_db,
-                    str_to_cstring(sql).unwrap().as_ptr(),
+                    cstring.as_ptr(),
                     (sql.len() + 1) as c_int,
                     raw_stmt.as_mut_ptr(),
                     ptr::null_mut(),
@@ -1511,7 +1521,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                Error::InvalidColumnType(_, _, _) => (),
+                Error::InvalidColumnType(..) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1566,7 +1576,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType(_, _, _)) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(..)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1623,7 +1633,7 @@ mod test {
             });
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType(_, _, _)) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(..)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 

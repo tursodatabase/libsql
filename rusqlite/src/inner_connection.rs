@@ -92,7 +92,7 @@ impl InnerConnection {
                     if let Error::SqliteFailure(
                         ffi::Error {
                             code: ffi::ErrorCode::CannotOpen,
-                            extended_code: _,
+                            ..
                         },
                         Some(msg),
                     ) = e

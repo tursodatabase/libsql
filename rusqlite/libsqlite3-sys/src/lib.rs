@@ -8,7 +8,7 @@ use std::mem;
 mod error;
 
 pub fn SQLITE_STATIC() -> sqlite3_destructor_type {
-    Some(unsafe { mem::transmute(0isize) })
+    None
 }
 
 pub fn SQLITE_TRANSIENT() -> sqlite3_destructor_type {

@@ -142,7 +142,7 @@ impl PartialEq for Error {
             (Error::UnwindingPanic, Error::UnwindingPanic) => true,
             #[cfg(feature = "functions")]
             (Error::GetAuxWrongType, Error::GetAuxWrongType) => true,
-            (_, _) => false,
+            (..) => false,
         }
     }
 }
@@ -261,7 +261,7 @@ impl error::Error for Error {
                 "SQLite was compiled or configured for single-threaded use only"
             }
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
-            Error::IntegralValueOutOfRange(_, _) => "integral value out of range of requested type",
+            Error::IntegralValueOutOfRange(..) => "integral value out of range of requested type",
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
@@ -272,13 +272,13 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
-            Error::InvalidColumnType(_, _, _) => "invalid column type",
+            Error::InvalidColumnType(..) => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
+            Error::InvalidFunctionParameterType(..) => "invalid function parameter type",
             #[cfg(feature = "vtab")]
-            Error::InvalidFilterParameterType(_, _) => "invalid filter parameter type",
+            Error::InvalidFilterParameterType(..) => "invalid filter parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
             Error::ToSqlConversionFailure(ref err) => err.description(),
@@ -299,23 +299,23 @@ impl error::Error for Error {
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
-            Error::IntegralValueOutOfRange(_, _)
+            Error::IntegralValueOutOfRange(..)
             | Error::SqliteSingleThreadedMode
             | Error::InvalidParameterName(_)
             | Error::ExecuteReturnedResults
             | Error::QueryReturnedNoRows
             | Error::InvalidColumnIndex(_)
             | Error::InvalidColumnName(_)
-            | Error::InvalidColumnType(_, _, _)
+            | Error::InvalidColumnType(..)
             | Error::InvalidPath(_)
             | Error::StatementChangedRows(_)
             | Error::InvalidQuery
             | Error::MultipleStatement => None,
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType(_, _) => None,
+            Error::InvalidFunctionParameterType(..) => None,
             #[cfg(feature = "vtab")]
-            Error::InvalidFilterParameterType(_, _) => None,
+            Error::InvalidFilterParameterType(..) => None,
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
