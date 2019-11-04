@@ -616,5 +616,27 @@ do_execsql_test 25.40 {
   SELECT 2 FROM t0 WHERE (t0.c0 COLLATE nocase, 0) < ('B', 0);
 } {1 2}
 
+# 2019-11-04 Ticket 02aa2bd02f97d0f2
+# The TK_VECTOR operator messes up sqlite3ExprImpliesNonNull() which
+# causes incorrect LEFT JOIN strength reduction.  TK_VECTOR should be
+# treated the same as TK_OR.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 26.10 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c1);
+  INSERT INTO t1(c1) VALUES (0);
+  SELECT (c0, x'') != (NULL, 0) FROM t1 LEFT JOIN t0;
+} {1}
+do_execsql_test 26.20 {
+  SELECT 2 FROM t1 LEFT JOIN t0 ON (c0, x'') != (NULL, 0);
+} {2}
+do_execsql_test 26.30 {
+  SELECT 3 FROM t1 LEFT JOIN t0 WHERE (c0, x'') != (NULL, 0);
+} {3}
+
+
+
 
 finish_test

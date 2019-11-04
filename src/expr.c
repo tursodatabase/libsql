@@ -5212,7 +5212,7 @@ int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
 }
 
 /*
-** This is the Expr node callback for sqlite3ExprImpliesNotNullRow().
+** This is the Expr node callback for sqlite3ExprImpliesNonNullRow().
 ** If the expression node requires that the table at pWalker->iCur
 ** have one or more non-NULL column, then set pWalker->eCode to 1 and abort.
 **
@@ -5230,6 +5230,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_NOTNULL:
     case TK_IS:
     case TK_OR:
+    case TK_VECTOR:
     case TK_CASE:
     case TK_IN:
     case TK_FUNCTION:
@@ -5239,6 +5240,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_NOTNULL );
       testcase( pExpr->op==TK_IS );
       testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_VECTOR );
       testcase( pExpr->op==TK_CASE );
       testcase( pExpr->op==TK_IN );
       testcase( pExpr->op==TK_FUNCTION );
