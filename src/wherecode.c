@@ -1903,8 +1903,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         whereApplyPartialIndexConstraints(pIdx->pPartIdxWhere, iCur, pWC);
       }
     }else{
-      testcase( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 );
       testcase( pIdx->pPartIdxWhere );
+      /* The following assert() is not a requirement, merely an observation:
+      ** The OR-optimization doesn't work for the right hand table of
+      ** a LEFT JOIN: */
+      assert( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 );
     }
   
     /* Record the instruction used to terminate the loop. */
