@@ -222,4 +222,16 @@ do_execsql_test gencol1-7.20 {
   SELECT 99 FROM t0 WHERE 0 = t0.c2 OR t0.c1 BETWEEN t0.c2 AND 1;  
 } {}
 
+# 2019-11-06 ticket 4fc08501f4e56692
+do_execsql_test gencol1-8.10 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(
+    c0 AS (('a', 9) < ('b', c1)),
+    c1 AS (1),
+    c2 CHECK (1 = c1)
+  );
+  INSERT INTO t0 VALUES (0),(99);
+  SELECT * FROM t0;
+} {1 1 0 1 1 99}
+
 finish_test

@@ -3645,16 +3645,7 @@ expr_code_doover:
           iSrc = sqlite3TableColumnToStorage(pTab, iCol) - pParse->iSelfTab;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
           if( pCol->colFlags & COLFLAG_GENERATED ){
-            if( pCol->colFlags & COLFLAG_BUSY ){
-              sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"",
-                              pCol->zName);
-              return 0;
-            }
-            pCol->colFlags |= COLFLAG_BUSY;
-            if( pCol->colFlags & COLFLAG_NOTAVAIL ){
-              sqlite3ExprCodeGeneratedColumn(pParse, pCol, iSrc);
-            }
-            pCol->colFlags &= ~(COLFLAG_BUSY|COLFLAG_NOTAVAIL);
+            sqlite3ExprCodeGeneratedColumn(pParse, pCol, iSrc);
             return iSrc;
           }else
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */

@@ -201,6 +201,16 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
   return 0;
 }
 
+/* This walker callback will compute the union of colFlags flags for all
+** references columns in a CHECK constraint or generated column expression.
+*/
+static int exprColumnFlagUnion(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN ){
+    pWalker->eCode |= pWalker->u.pTab->aCol[pExpr->iColumn].colFlags;
+  }
+  return WRC_Continue;
+}
+
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
 /*
 ** All regular columns for table pTab have been puts into registers
@@ -215,7 +225,10 @@ void sqlite3ComputeGeneratedColumns(
   Table *pTab       /* The table */
 ){
   int i;
-  int nv;
+  Walker w;
+  Column *pRedo;
+  int eProgress;
+
   /* Because there can be multiple generated columns that refer to one another,
   ** this is a two-pass algorithm.  On the first pass, mark all generated
   ** columns as "not available".
@@ -227,29 +240,43 @@ void sqlite3ComputeGeneratedColumns(
       pTab->aCol[i].colFlags |= COLFLAG_NOTAVAIL;
     }
   }
+
+  w.u.pTab = pTab;
+  w.xExprCallback = exprColumnFlagUnion;
+  w.xSelectCallback = 0;
+  w.xSelectCallback2 = 0;
+
   /* On the second pass, compute the value of each NOT-AVAILABLE column.
   ** Companion code in the TK_COLUMN case of sqlite3ExprCodeTarget() will
   ** compute dependencies and mark remove the COLSPAN_NOTAVAIL mark, as
   ** they are needed.
   */
   pParse->iSelfTab = -iRegStore;
-  for(i=nv=0; i<pTab->nCol; i++){
-    u32 colFlags = pTab->aCol[i].colFlags;
-    if( (colFlags & COLFLAG_NOTAVAIL)!=0 ){
-      assert( colFlags & COLFLAG_GENERATED );
-      if( colFlags & COLFLAG_VIRTUAL ){
-        /* Virtual columns go at the end */
-        assert( pTab->nNVCol+nv == sqlite3TableColumnToStorage(pTab,i) );
-        sqlite3ExprCodeGeneratedColumn(pParse, &pTab->aCol[i],
-                                       iRegStore+pTab->nNVCol+nv);
-      }else{
-        /* Stored columns go in column order */
-        assert( i-nv == sqlite3TableColumnToStorage(pTab,i) );
-        sqlite3ExprCodeGeneratedColumn(pParse, &pTab->aCol[i], iRegStore+i-nv);
+  do{
+    eProgress = 0;
+    pRedo = 0;
+    for(i=0; i<pTab->nCol; i++){
+      Column *pCol = pTab->aCol + i;
+      if( (pCol->colFlags & COLFLAG_NOTAVAIL)!=0 ){
+        int x;
+        pCol->colFlags |= COLFLAG_BUSY;
+        w.eCode = 0;
+        sqlite3WalkExpr(&w, pCol->pDflt);
+        pCol->colFlags &= ~COLFLAG_BUSY;
+        if( w.eCode & COLFLAG_NOTAVAIL ){
+          pRedo = pCol;
+          continue;
+        }
+        eProgress = 1;
+        assert( pCol->colFlags & COLFLAG_GENERATED );
+        x = sqlite3TableColumnToStorage(pTab, i) + iRegStore;
+        sqlite3ExprCodeGeneratedColumn(pParse, pCol, x);
+        pCol->colFlags &= ~COLFLAG_NOTAVAIL;
       }
-      pTab->aCol[i].colFlags &= ~COLFLAG_NOTAVAIL;
     }
-    if( (colFlags & COLFLAG_VIRTUAL)!=0 ) nv++;
+  }while( pRedo && eProgress );
+  if( pRedo ){
+    sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pRedo->zName);
   }
   pParse->iSelfTab = 0;
 }

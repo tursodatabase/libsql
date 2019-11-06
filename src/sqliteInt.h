@@ -3546,7 +3546,7 @@ struct Walker {
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   int walkerDepth;                          /* Number of subqueries */
-  u8 eCode;                                 /* A small processing code */
+  u16 eCode;                                /* A small processing code */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                         /* Naming context */
     int n;                                    /* A counter */
@@ -3562,6 +3562,7 @@ struct Walker {
     struct WindowRewrite *pRewrite;           /* Window rewrite context */
     struct WhereConst *pConst;                /* WHERE clause constants */
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
+    struct Table *pTab;                       /* Table of generated column */
   } u;
 };
 
