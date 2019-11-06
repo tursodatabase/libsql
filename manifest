@@ -1,5 +1,5 @@
-C Changes\san\sunreachable\stestcase()\sinto\san\sassert().
-D 2019-11-04T12:49:15.714
+C Fix\sthe\shandling\sof\sNOT\sNULL\sconstraint\sviolations\sfor\sgenerated\scolumns\sin\na\sREPLACE\sstatement.\s\sTicket\s[2399f5986134f79c]
+D 2019-11-06T14:49:43.545
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -487,7 +487,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c eb81303edba6d2e9cbead33260db01c6c6fcf3f21e6c83f454b6807254bf0186
+F src/insert.c 4da4e4f8a0e0ae8ff57a5e26bf04448649702a5ad123119afab80dfb9a5e06c0
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 20c6325c581123b8771ecb938f60d7e31c8152be01b4bf8e5eefbb74671ea86f
@@ -1021,7 +1021,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test eb649c915fb1e6db28c61c59b0dcfd8e24186e6c02a20f9bac2bd92fa0ba2e87
+F test/gencol1.test 1f7cd0500d29a05e2f60bae5eb1f01e4ed019d2088edccbd085daf73012c5c70
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea20068e6d97c9349ebcc7d0a01e99ebf08c6f44363f71a0218a1abea209adc5
-R 522274fac7018c4024e93ec3a1293bef
+P 5710845b6314f924b490434b4446169f4bb50576aaa940472af68150db16e127
+R 9d5a13a521cda561890c0d46d5d0c074
 U drh
-Z aee10eb2e9b1cf05ea78fe90a73aaf4a
+Z 7fe961ad8c3263abc2ab5dcf97eb34bb

@@ -1518,9 +1518,11 @@ void sqlite3GenerateConstraintChecks(
           addr1 = sqlite3VdbeMakeLabel(pParse);
           sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
             VdbeCoverage(v);
-          sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
-          sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
-            VdbeCoverage(v);
+          if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 ){
+            sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
+            sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
+              VdbeCoverage(v);
+          }
           onError = OE_Abort;
           /* Fall through into the OE_Abort case to generate code that runs
           ** if both the input and the default value are NULL */
