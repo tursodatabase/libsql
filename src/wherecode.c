@@ -1059,7 +1059,7 @@ static void codeDeferredSeek(
         x1 = pIdx->aiColumn[i];
         x2 = sqlite3TableColumnToStorage(pTab, x1);
         testcase( x1!=x2 );
-        if( pIdx->aiColumn[i]>=0 ) ai[x2+1] = i+1;
+        if( x1>=0 ) ai[x2+1] = i+1;
       }
       sqlite3VdbeChangeP4(v, -1, (char*)ai, P4_INTARRAY);
     }

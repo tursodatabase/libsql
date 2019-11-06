@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_DeferredSeek\sindex-to-table\scolumn\smap\sin\sP4\sso\sthat\sit\sworks\nwith\sgenerated\scolumns.\s\sTicket\s[ce22a07731530118]
-D 2019-11-06T17:31:18.390
+C Minor\ssimplification\sto\sthe\schanges\sfrom\scheck-in\s[36c11ad51f].
+D 2019-11-06T19:25:45.811
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 6e56bef94dc1e2d4461fca49604602312dc620333572aad9511e5ca2120aff31
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c d1b6cfac960357ba1f8be38b3c55c18749e7e45f110b92a19e1f70bc09e4d27d
+F src/wherecode.c 9b84737fd68134249a439813d27b1c61de17a01e121eb98949548d1e7f8e400a
 F src/whereexpr.c 0705f608f6dbbd4e95d440528d6c760b91b6f402ba4eb8b8d964c110e2010780
 F src/window.c 064f251451c8e2a1c76b6269229d911a651e119c6a5f522b6eaebf8dc8714041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77b1c90add514050fe62f22751362fecacd99f9775346cffc60e09c326e64e10
-R 7a18ae7215710ad0ad38860a85c99b1d
-U drh
-Z e05c3cf6f4094669a51e4d666c32e777
+P 36c11ad51fe9ab1bde0b98d0ea9b8588e07d168cd8027486749372894941ad93
+R 80e9f354c0a8ad398e848628e32a33df
+U mistachkin
+Z c30d3c02879affde565b3a131605c576
