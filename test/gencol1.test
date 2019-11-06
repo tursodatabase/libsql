@@ -211,4 +211,15 @@ do_catchsql_test gencol1-6.10 {
   REPLACE INTO t0(c1) VALUES(NULL);
 } {1 {NOT NULL constraint failed: t0.c0}}
 
+# 2019-11-06 ticket b13b7dce76e9352b34e7
+do_execsql_test gencol1-7.10 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0 (c0 GENERATED ALWAYS AS (1), c1 UNIQUE, c2 UNIQUE);
+  INSERT INTO t0(c1) VALUES (1);
+  SELECT quote(0 = t0.c2 OR t0.c1 BETWEEN t0.c2 AND 1) FROM t0;
+} {NULL}
+do_execsql_test gencol1-7.20 {
+  SELECT 99 FROM t0 WHERE 0 = t0.c2 OR t0.c1 BETWEEN t0.c2 AND 1;  
+} {}
+
 finish_test
