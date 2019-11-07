@@ -1,5 +1,5 @@
-C Restore\sgenerated\scolumn\sloop\sdetection\slogic\sthat\swas\sincorrectly\sremoved\nfrom\sthe\sprevious\scheck-in\s[9e07b48934e9a972].\s\sThis\sfixes\sticket\n[299b50ba812d8e54]
-D 2019-11-07T02:32:54.155
+C Fix\sthe\sxferCompatibleIndex()\sfunction\sso\sthat\sit\srecognizes\sthat\sa\sPRIMARY\sKEY\nindex\sfor\sa\sWITHOUT\sROWID\stable\sis\sdifferent\sfrom\sa\sUNIQUE\sconstraint\sindex\non\sthe\sprimary\skey.\s\sTicket\s[302027baf1374498]
+D 2019-11-07T14:51:24.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -487,7 +487,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 6e40e8aaa3840255614c7f39c061ab2d0f1f46095d5f8ce63650e9c17425a3e4
+F src/insert.c 8701d80b3cecd47f0375483c1ef35dfcdc777f3c67e2d3581dd7841b980910a3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4ddc65ae13c0d93db0ceedc8b14a28c8c260513448b0eb8c5a2ac375e3b6a85d
 F src/main.c 20c6325c581123b8771ecb938f60d7e31c8152be01b4bf8e5eefbb74671ea86f
@@ -1734,7 +1734,7 @@ F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1
 F test/with3.test b5f1372097690c6ef84db2f13fc7e64a88c7263c3f88493605f90597e8a68d45
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
-F test/without_rowid1.test 0abe18762b74714580c1d4d00a8e540e58966d3e46aae41ddb1a1d2c88c9277d
+F test/without_rowid1.test 9cfb83705c506e3849fa7efc88a3c9a15f9a50bf9b1516b41757a7cef9bba8c3
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test ea4b59dd1b0d7f5f5e4b7cca978cdb905752a9d7c57dc4344a591dba765a3691
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e07b48934e9a972dcf62e3538b3b21ffa044c553feba0441675ac0bbe13bcb2
-R 419dd03cd73a69d8a754bdd126fa0e44
+P 104a2beb57037f9353ffa77096aae0eb64e4682e667f31623bfd3d064dd8d881
+R c8b53b705fa0400a6763ef7952da070a
 U drh
-Z 8725622db40a81117b469b3688d6172b
+Z 1a2695a1ff301ea728b819cbcc928cab
