@@ -6327,6 +6327,7 @@ static int SQLITE_TCLAPI test_limit(
     { "SQLITE_LIMIT_VARIABLE_NUMBER",     SQLITE_LIMIT_VARIABLE_NUMBER      },
     { "SQLITE_LIMIT_TRIGGER_DEPTH",       SQLITE_LIMIT_TRIGGER_DEPTH        },
     { "SQLITE_LIMIT_WORKER_THREADS",      SQLITE_LIMIT_WORKER_THREADS       },
+    { "SQLITE_LIMIT_HEAP_K",              SQLITE_LIMIT_HEAP_K               },
     
     /* Out of range test cases */
     { "SQLITE_LIMIT_TOOSMALL",            -1,                               },

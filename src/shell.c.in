@@ -7895,6 +7895,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "variable_number",       SQLITE_LIMIT_VARIABLE_NUMBER           },
       { "trigger_depth",         SQLITE_LIMIT_TRIGGER_DEPTH             },
       { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
+      { "heap_k",                SQLITE_LIMIT_HEAP_K                    },
     };
     int i, n2;
     open_db(p, 0);

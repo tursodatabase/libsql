@@ -3705,6 +3705,10 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [[SQLITE_LIMIT_WORKER_THREADS]] ^(<dt>SQLITE_LIMIT_WORKER_THREADS</dt>
 ** <dd>The maximum number of auxiliary worker threads that a single
 ** [prepared statement] may start.</dd>)^
+**
+** [[SQLITE_LIMIT_HEAP_K]] ^(<dt>SQLITE_LIMIT_HEAP_K</dt>
+** <dd>The maximum number of kibibytes (one kibibyte is 1024 bytes) that
+** an individual [database connection] is allowed to allocate.)^
 ** </dl>
 */
 #define SQLITE_LIMIT_LENGTH                    0
@@ -3719,6 +3723,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_VARIABLE_NUMBER           9
 #define SQLITE_LIMIT_TRIGGER_DEPTH            10
 #define SQLITE_LIMIT_WORKER_THREADS           11
+#define SQLITE_LIMIT_HEAP_K                   12
 
 /*
 ** CAPI3REF: Prepare Flags

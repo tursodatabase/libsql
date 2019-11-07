@@ -333,6 +333,15 @@ static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
   *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
 }
 
+static SQLITE_NOINLINE void sqlite3DbFreeTail(sqlite3 *db, void *p){
+  db->nMemUsed -= sqlite3MallocSize(p);
+  assert( sqlite3MemdebugHasType(p, (MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
+  assert( sqlite3MemdebugNoType(p, (u8)~(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
+  assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
+  sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
+  sqlite3_free(p);
+}
+
 /*
 ** Free memory that might be associated with a particular database
 ** connection.  Calling sqlite3DbFree(D,X) for X==0 is a harmless no-op.
@@ -356,6 +365,8 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
       db->lookaside.pFree = pBuf;
       return;
     }
+    sqlite3DbFreeTail(db, p);
+    return;
   }
   assert( sqlite3MemdebugHasType(p, (MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
   assert( sqlite3MemdebugNoType(p, (u8)~(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
@@ -469,9 +480,18 @@ static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
   void *p;
   assert( db!=0 );
   p = sqlite3Malloc(n);
-  if( !p ) sqlite3OomFault(db);
-  sqlite3MemdebugSetType(p, 
+  if( p==0 ){
+    sqlite3OomFault(db);
+  }else{
+    sqlite3MemdebugSetType(p, 
          (db->lookaside.bDisable==0) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
+    db->nMemUsed += sqlite3MallocSize(p);
+    if( db->nMemUsed > 1024*(i64)db->aLimit[SQLITE_LIMIT_HEAP_K] ){
+      sqlite3DbFreeNN(db, p);
+      p = 0;
+      sqlite3OomFault(db);
+    }
+  }
   return p;
 }
 

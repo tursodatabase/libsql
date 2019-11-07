@@ -209,3 +209,14 @@
 #ifndef SQLITE_MAX_TRIGGER_DEPTH
 # define SQLITE_MAX_TRIGGER_DEPTH 1000
 #endif
+
+/*
+** Maximum number of kibibytes (1 kibibyte == 1024 bytes) that a single
+** database connection is allowed to allocate.  Memory allocations that
+** are percipitated by a database conection but are not directly attached
+** to a database connection (such as memory used for the page cache) are
+** not counted toward this limit.
+*/
+#ifndef SQLITE_MAX_HEAP_K
+# define SQLITE_MAX_HEAP_K 1048576
+#endif
