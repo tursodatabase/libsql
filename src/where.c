@@ -3696,7 +3696,9 @@ static i8 wherePathSatisfiesOrderBy(
       pLoop = pLast;
     }
     if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
-      if( pLoop->u.vtab.isOrdered ) obSat = obDone;
+      if( pLoop->u.vtab.isOrdered && (wctrlFlags & WHERE_DISTINCTBY)==0 ){
+        obSat = obDone;
+      }
       break;
     }else if( wctrlFlags & WHERE_DISTINCTBY ){
       pLoop->u.btree.nDistinctCol = 0;
