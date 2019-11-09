@@ -192,6 +192,7 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
     sqlite3DbFree(db, pParse->zErrMsg);
     pParse->zErrMsg = zMsg;
     pParse->rc = SQLITE_ERROR;
+    pParse->pWith = 0;
   }
 }
 

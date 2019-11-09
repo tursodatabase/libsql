@@ -4668,6 +4668,9 @@ static int withExpand(
   With *pWith;                    /* WITH clause that pCte belongs to */
 
   assert( pFrom->pTab==0 );
+  if( pParse->nErr ){
+    return SQLITE_ERROR;
+  }
 
   pCte = searchWith(pParse->pWith, pFrom, &pWith);
   if( pCte ){
