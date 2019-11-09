@@ -1,5 +1,5 @@
-C New\sdbsqlfuzz\stest\scases\sadded.
-D 2019-11-09T14:44:18.505
+C Change\sthe\sCOLFLAG_NOTAVAIL\sbitmask\sso\sthat\sit\sfits\sin\sthe\ssingle-byte\nWalker.eCode\sfield.
+D 2019-11-09T15:31:34.029
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -531,7 +531,7 @@ F src/shell.c.in c06961f202f3cc50b819744b7331d3caea3d79d958402f4900b066824855746
 F src/sqlite.h.in 5ba20664cede7f4e6861541fad1f17bac50f7bf576b40a8784c54f9126a9edd4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h cef696ce3293242c67b2339763608427bf72ee66f1f3a05389ac2a7b46001c31
-F src/sqliteInt.h a9afee1875df1784bf2fb5d02aece62a6a93dfd082b43bb4d5d2b5295a0042ae
+F src/sqliteInt.h 4edb543eea01329566c4050b238757b7ab70dc934ec4b26119aa20931eacc486
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de6e6d6846d6a41c4821454dfdc042096234df753be08c5567b79fe535d9b6ea
-R 76ecc95c7b41f7e7ebee60570e288157
+P 18c3a17dc8c07b12427e372ff86668d5bcb6b34d653c46c48561ed576acefa5b
+R c9b53d63533ff0e226c2576b2a9fe6e8
 U drh
-Z d1f94f6d48aa33cd22fa2fe07862f6e9
+Z 10a116f8fda26704cbc95112c3e19d89

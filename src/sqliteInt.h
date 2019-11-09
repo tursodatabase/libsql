@@ -1853,8 +1853,8 @@ struct Column {
 #define COLFLAG_SORTERREF 0x0010   /* Use sorter-refs with this column */
 #define COLFLAG_VIRTUAL   0x0020   /* GENERATED ALWAYS AS ... VIRTUAL */
 #define COLFLAG_STORED    0x0040   /* GENERATED ALWAYS AS ... STORED */
-#define COLFLAG_BUSY      0x0080   /* Blocks recursion on GENERATED columns */
-#define COLFLAG_NOTAVAIL  0x0100   /* STORED column not yet calculated */
+#define COLFLAG_NOTAVAIL  0x0080   /* STORED column not yet calculated */
+#define COLFLAG_BUSY      0x0100   /* Blocks recursion on GENERATED columns */
 #define COLFLAG_GENERATED 0x0060   /* Combo: _STORED, _VIRTUAL */
 #define COLFLAG_NOINSERT  0x0062   /* Combo: _HIDDEN, _STORED, _VIRTUAL */
 
