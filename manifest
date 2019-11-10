@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sALWAYS()\smacro.
-D 2019-11-10T10:08:03.079
+C Proper\ssurrogate\spair\sdecoding\sadded\sto\sJSON\sfunctions.\s\sSee\sthe\smailing\slist\nbug\sreport\sand\s[https://bugs.python.org/issue38749].\s\sMore\stest\scases\nneeded\shere,\sbut\sit\sseems\sto\swork\sso\sfar.
+D 2019-11-10T11:09:06.218
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -295,7 +295,7 @@ F ext/misc/fileio.c 288e7230e0fe464d71b0694e2d8bdd3a353118ac2e31da3964b95f460f09
 F ext/misc/fossildelta.c 7708651072eb5620ab21bbfb518d184f27b2c29c0131b09b9a2d8852a8016430
 F ext/misc/fuzzer.c c4e27daf41433a64cad5265cd27dbcb891147e9994d0422200ce81ce9a54b625
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 66ccdfa63283adb2c015019b431eeee1f5af40a78d9aad10afd22c2c6db0e3b0
+F ext/misc/json1.c b4a8074e5a126379dd3af81b8595118c9c472b06f3fd508bd2ea579a75e3a1b1
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
@@ -1095,7 +1095,7 @@ F test/journal3.test 939a3578396dffa0cdaa9b2685088c5a1a644db90d61aca08bd7e19d339
 F test/jrnlmode.test 9b5bc01dac22223cb60ec2d5f97acf568d73820794386de5634dcadbea9e1946
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test 8f8977b00ba02f9a26c1d1f52f29f540f6d5eb162cbd5eb78bb805366d4ab26d
+F test/json101.test bb71538005f2d9e18620bdd3b76839a93ca0be61903eb8d751a64e78cf99b8fb
 F test/json102.test eeb54efa221e50b74a2d6fb9259963b48d7414dca3ce2fdfdeed45cb28487bc1
 F test/json103.test aff6b7a4c17d5a20b487a7bc1a274bfdc63b829413bdfb83bedac42ec7f67e3b
 F test/json104.test 317f4ec4b2d87afbba4d2460cf5be297aea76f2285eb618d276dbcd40a50950f
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53847f5c28bdecfbc7b08685d4dcd0565526f6191491b4827c3c966a4b8d4a85
-R 32ff259c4c31eae195be4b193547ceca
+P f7a74f89dbd58b47bbcb58ea2af71fbe1eb5ec2dbe36d90685c39cb28ecf5250
+R 6fb2b1fad0ae8e685de462fe3c846bed
 U drh
-Z d4f922e0aea15d13aa4d8771cf77d1fd
+Z 7d3a83b9ad359923df321c8bbbecf807

@@ -523,6 +523,37 @@ static void jsonReturnJson(
 }
 
 /*
+** Translate a single byte of Hex into an integer.
+** This routine only works if h really is a valid hexadecimal
+** character:  0..9a..fA..F
+*/
+static u8 jsonHexToInt(int h){
+  assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
+#ifdef SQLITE_EBCDIC
+  h += 9*(1&~(h>>4));
+#else
+  h += 9*(1&(h>>6));
+#endif
+  return (u8)(h & 0xf);
+}
+
+/*
+** Convert a 4-byte hex string into an integer
+*/
+static u32 jsonHexToInt4(const char *z){
+  u32 v;
+  assert( safe_isxdigit(z[0]) );
+  assert( safe_isxdigit(z[1]) );
+  assert( safe_isxdigit(z[2]) );
+  assert( safe_isxdigit(z[3]) );
+  v = (jsonHexToInt(z[0])<<12)
+    + (jsonHexToInt(z[1])<<8)
+    + (jsonHexToInt(z[2])<<4)
+    + jsonHexToInt(z[3]);
+  return v;
+}
+
+/*
 ** Make the JsonNode the return value of the function.
 */
 static void jsonReturn(
@@ -615,15 +646,8 @@ static void jsonReturn(
           }else{
             c = z[++i];
             if( c=='u' ){
-              u32 v = 0, k;
-              for(k=0; k<4; i++, k++){
-                assert( i<n-2 );
-                c = z[i+1];
-                assert( safe_isxdigit(c) );
-                if( c<='9' ) v = v*16 + c - '0';
-                else if( c<='F' ) v = v*16 + c - 'A' + 10;
-                else v = v*16 + c - 'a' + 10;
-              }
+              u32 v = jsonHexToInt4(z+i+1);
+              i += 4;
               if( v==0 ) break;
               if( v<=0x7f ){
                 zOut[j++] = (char)v;
@@ -631,9 +655,25 @@ static void jsonReturn(
                 zOut[j++] = (char)(0xc0 | (v>>6));
                 zOut[j++] = 0x80 | (v&0x3f);
               }else{
-                zOut[j++] = (char)(0xe0 | (v>>12));
-                zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                zOut[j++] = 0x80 | (v&0x3f);
+                u32 vlo;
+                if( (v&0xfc00)==0xd800
+                  && i<n-6
+                  && z[i+1]=='\\'
+                  && z[i+2]=='u'
+                  && ((vlo = jsonHexToInt4(z+i+3))&0xfc00)==0xdc00
+                ){
+                  /* We have a surrogate pair */
+                  v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
+                  i += 6;
+                  zOut[j++] = 0xf0 | (v>>18);
+                  zOut[j++] = 0x80 | ((v>>12)&0x3f);
+                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
+                  zOut[j++] = 0x80 | (v&0x3f);
+                }else{
+                  zOut[j++] = 0xe0 | (v>>12);
+                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
+                  zOut[j++] = 0x80 | (v&0x3f);
+                }
               }
             }else{
               if( c=='b' ){
