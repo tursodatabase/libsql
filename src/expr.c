@@ -190,15 +190,12 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
         Expr *pNext  = p->pRight;
         /* The Expr.x union is never used at the same time as Expr.pRight */
         assert( p->x.pList==0 || p->pRight==0 );
-        /* p->flags holds EP_Collate and p->pLeft->flags does not.  And
-        ** p->x.pSelect cannot.  So if p->x.pLeft exists, it must hold at
-        ** least one EP_Collate. Thus the following two ALWAYS. */
         if( p->x.pList!=0 
          && !db->mallocFailed
          && ALWAYS(!ExprHasProperty(p, EP_xIsSelect))
         ){
           int i;
-          for(i=0; ALWAYS(i<p->x.pList->nExpr); i++){
+          for(i=0; i<p->x.pList->nExpr; i++){
             if( ExprHasProperty(p->x.pList->a[i].pExpr, EP_Collate) ){
               pNext = p->x.pList->a[i].pExpr;
               break;

@@ -1,5 +1,5 @@
-C Change\sthe\sCOLFLAG_NOTAVAIL\sbitmask\sso\sthat\sit\sfits\sin\sthe\ssingle-byte\nWalker.eCode\sfield.
-D 2019-11-09T15:31:34.029
+C Remove\san\sincorrect\sALWAYS()\smacro.
+D 2019-11-10T10:08:03.079
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c c12833de69cb655751487d2c5a59607e36be1c58ba1f4bd536609909ad47b319
 F src/delete.c c371a9f3517a4dd6a0b56ebab9588408eddf1eac0277b67b09e030bff99ee1fa
-F src/expr.c 254238a94328ab88b473dcce4b656afd488cb03fced627ad90fb4676c5fe417f
+F src/expr.c a138de8ae79628a73da2597617dbeafb0f083172be81d93ffa1cafa45161ee8c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18c3a17dc8c07b12427e372ff86668d5bcb6b34d653c46c48561ed576acefa5b
-R c9b53d63533ff0e226c2576b2a9fe6e8
+P 53847f5c28bdecfbc7b08685d4dcd0565526f6191491b4827c3c966a4b8d4a85
+R 32ff259c4c31eae195be4b193547ceca
 U drh
-Z 10a116f8fda26704cbc95112c3e19d89
+Z d4f922e0aea15d13aa4d8771cf77d1fd
