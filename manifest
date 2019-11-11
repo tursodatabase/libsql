@@ -1,5 +1,5 @@
-C Proper\ssurrogate\spair\sdecoding\sadded\sto\sJSON\sfunctions.\s\sSee\sthe\smailing\slist\nbug\sreport\sand\s[https://bugs.python.org/issue38749].\s\sMore\stest\scases\nneeded\shere,\sbut\sit\sseems\sto\swork\sso\sfar.
-D 2019-11-10T11:09:06.218
+C Remove\san\sasm()\sblock\sfrom\sbuild\stool\smksourceid.c,\sas\sit\scauses\sbuild\sfailures\son\ssome\ssystems\sand\sperformance\sis\snot\simportant\sat\sbuild-time.
+D 2019-11-11T15:13:11.385
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1784,7 +1784,7 @@ F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe9993
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl faf48e2962d820ffe4d793f5076dd64aa5179665e4e481188c0ba7f48ace3bbb
 F tool/mkshellc.tcl 70a9978e363b0f3280ca9ce1c46d72563ff479c1930a12a7375e3881b7325712
-F tool/mksourceid.c d458f9004c837bee87a6382228ac20d3eae3c49ea3b0a5aace936f8b60748d3b
+F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
 F tool/mksqlite3c.tcl 5fed3d75069d8f66f202d3b5200b0cea4aa7108481acd06732a06fdd42eb83a2
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7a74f89dbd58b47bbcb58ea2af71fbe1eb5ec2dbe36d90685c39cb28ecf5250
-R 6fb2b1fad0ae8e685de462fe3c846bed
-U drh
-Z 7d3a83b9ad359923df321c8bbbecf807
+P 51027f08c0478f1bf9d7545d9e268c772c0a5cd5dda4b03d78f16c7d94f2f50d
+R eab1ed7a93fa2cd9fa8dfa539b30b758
+U dan
+Z 9def5e764cd81c68b410948184cd40be
