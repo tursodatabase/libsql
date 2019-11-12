@@ -4187,6 +4187,25 @@ int sqlite3_test_control(int op, ...){
   return rc;
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** This routine appears inside assert() statements only.
+**
+** Return the number of URI parameters that follow the filename.
+*/
+int sqlite3UriCount(const char *z){
+  int n = 0;
+  if( z==0 ) return 0;
+  z += strlen(z)+1;
+  while( z[0] ){
+    z += strlen(z)+1;
+    z += strlen(z)+1;
+    n++;
+  }
+  return n;
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** This is a utility routine, useful to VFS implementations, that checks
 ** to see if a database file was a URI that contained a specific query 
