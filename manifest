@@ -1,5 +1,5 @@
-C Remove\san\sasm()\sblock\sfrom\sbuild\stool\smksourceid.c,\sas\sit\scauses\sbuild\sfailures\son\ssome\ssystems\sand\sperformance\sis\snot\simportant\sat\sbuild-time.
-D 2019-11-11T15:13:11.385
+C Remove\sa\sharmless\sunused\svariable.
+D 2019-11-12T03:45:23.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c 75fa4792b6bc327751018ecd1516c189184d7224b8f3dfeda20c09112ef31a68
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
-F src/vdbemem.c d8e10d1773806105e62094c4ede0a4684f46caaf07667a45e6d461e94306b530
+F src/vdbemem.c a17144a7a0d025de3e8433af1edaada7eea76dd157f73bab05c50b8f33ab777b
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 108f79166d4a232a8bfb9d46e2fbec191f83a87fe97f7b93fc4de976c3fa3434
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51027f08c0478f1bf9d7545d9e268c772c0a5cd5dda4b03d78f16c7d94f2f50d
-R eab1ed7a93fa2cd9fa8dfa539b30b758
-U dan
-Z 9def5e764cd81c68b410948184cd40be
+P 8e100e6c35c30e0d7e4014b9435f81f9f61ddab2386dfe9a4218d8190a6da3be
+R 025998a1c2a58ed56e4d9b964b304926
+U drh
+Z 3ed8d6a5cf92887ef89b728e90a08c3f
