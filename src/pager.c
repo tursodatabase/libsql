@@ -4761,9 +4761,7 @@ int sqlite3PagerOpen(
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
   const char *zUri = 0;    /* URI args to copy */
   int nUriByte = 1;        /* Number of bytes of URI args at *zUri */
-#ifdef SQLITE_DEBUG
   int nUri = 0;            /* Number of URI parameters */
-#endif
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal).  */
@@ -4802,9 +4800,7 @@ int sqlite3PagerOpen(
     while( *z ){
       z += strlen(z)+1;
       z += strlen(z)+1;
-#ifdef SQLITE_DEBUG
       nUri++;
-#endif
     }
     nUriByte = (int)(&z[2] - zUri);
     assert( nUriByte>=1 );
