@@ -131,7 +131,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     StrAccum x;
     char zLine[100];
     sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-    sqlite3_str_appendf(&x, "{%d,*}", pItem->iCursor);
+    sqlite3_str_appendf(&x, "{%d:*}", pItem->iCursor);
     if( pItem->zDatabase ){
       sqlite3_str_appendf(&x, " %s.%s", pItem->zDatabase, pItem->zName);
     }else if( pItem->zName ){
