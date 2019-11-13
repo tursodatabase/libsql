@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3TreeView()\soutput\sto\sconsistently\suse\sa\scolon\sand\snot\sa\ncomma\safter\sthe\stable\snumber\sin\sthe\sAST\sdumps.
-D 2019-11-13T16:50:06.637
+C Add\sheader\sguard\sto\sthe\sexpert\sextension.
+D 2019-11-13T18:50:36.270
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -49,7 +49,7 @@ F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633ca
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test e2afc53a27610e8251e44c7f961806607a5490ff204b3db342740d558e052662
 F ext/expert/sqlite3expert.c 3da865f2286433588260f41e796422c611bceaca3a0bbf9139a619cf7d062c19
-F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
+F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f84a15394c369cbdb6fba87c603a609722cf1f499626c7f20699060273ab5081
-R 3ac1026749502e7aa78a7c61f191a8fa
-U drh
-Z 8a5fb22e7eb772a21cf3517df8cfce7a
+P fa2416f623d83fe93253137302a74fcd6cdd041da337a0756df344d7d09a19f5
+R 71e615eaf7cbedece06ae5e725ee8ced
+U mistachkin
+Z 68d73206bf0b68f1bcc64ac4698faaf5
