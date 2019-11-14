@@ -468,6 +468,8 @@ static const sqlite3_api_routines sqlite3Apis = {
 #else
   0,
 #endif
+  /* Version 3.31.0 and later */
+  sqlite3_hard_heap_limit64,
 };
 
 /*

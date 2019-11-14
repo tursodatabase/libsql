@@ -388,6 +388,7 @@ proc print_help_and_quit {} {
   puts {Options:
   --pause                  Wait for user input before continuing
   --soft-heap-limit=N      Set the soft-heap-limit to N
+  --hard-heap-limit=N      Set the hard-heap-limit to N
   --maxerror=N             Quit after N errors
   --verbose=(0|1)          Control the amount of output.  Default '1'
   --output=FILE            set --verbose=2 and output to FILE.  Implies -q
@@ -408,6 +409,7 @@ if {[info exists cmdlinearg]==0} {
   #
   #   --pause
   #   --soft-heap-limit=NN
+  #   --hard-heap-limit=NN
   #   --maxerror=NN
   #   --malloctrace=N
   #   --backtrace=N
@@ -424,6 +426,7 @@ if {[info exists cmdlinearg]==0} {
   #   --help
   #
   set cmdlinearg(soft-heap-limit)    0
+  set cmdlinearg(hard-heap-limit)    0
   set cmdlinearg(maxerror)        1000
   set cmdlinearg(malloctrace)        0
   set cmdlinearg(backtrace)         10
@@ -449,6 +452,9 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+soft-heap-limit=.+$} {
         foreach {dummy cmdlinearg(soft-heap-limit)} [split $a =] break
+      }
+      {^-+hard-heap-limit=.+$} {
+        foreach {dummy cmdlinearg(hard-heap-limit)} [split $a =] break
       }
       {^-+maxerror=.+$} {
         foreach {dummy cmdlinearg(maxerror)} [split $a =] break
@@ -586,7 +592,8 @@ if {[info exists cmdlinearg]==0} {
 # way if an individual test file changes the soft-heap-limit, it
 # will be reset at the start of the next test file.
 #
-sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
+sqlite3_soft_heap_limit64 $cmdlinearg(soft-heap-limit)
+sqlite3_hard_heap_limit64 $cmdlinearg(hard-heap-limit)
 
 # Create a test database
 #
@@ -1207,7 +1214,8 @@ proc finalize_testing {} {
   db close
   sqlite3_reset_auto_extension
 
-  sqlite3_soft_heap_limit 0
+  sqlite3_soft_heap_limit64 0
+  sqlite3_hard_heap_limit64 0
   set nTest [incr_ntest]
   set nErr [set_test_counter errors]
 
