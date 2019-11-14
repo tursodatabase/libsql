@@ -33,18 +33,26 @@ int sqlite3_release_memory(int n){
 }
 
 /*
+** Default value of the hard heap limit.  0 means "no limit".
+*/
+#ifndef SQLITE_MAX_MEMORY
+# define SQLITE_MAX_MEMORY 0
+#endif
+
+/*
 ** State information local to the memory allocation subsystem.
 */
 static SQLITE_WSD struct Mem0Global {
   sqlite3_mutex *mutex;         /* Mutex to serialize access */
   sqlite3_int64 alarmThreshold; /* The soft heap limit */
+  sqlite3_int64 hardLimit;      /* The hard upper bound on memory */
 
   /*
   ** True if heap is nearly "full" where "full" is defined by the
   ** sqlite3_soft_heap_limit() setting.
   */
   int nearlyFull;
-} mem0 = { 0, 0, 0 };
+} mem0 = { 0, SQLITE_MAX_MEMORY, SQLITE_MAX_MEMORY, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
 
@@ -74,8 +82,15 @@ int sqlite3_memory_alarm(
 #endif
 
 /*
-** Set the soft heap-size limit for the library. Passing a zero or 
-** negative value indicates no limit.
+** Set the soft heap-size limit for the library.  An argument of
+** zero disables the limit.  A negative argument is a no-op used to
+** obtain the return value.
+**
+** The return value is the value of the heap limit just before this
+** interface was called.
+**
+** If the hard heap limit is enabled, then the soft heap limit cannot
+** be disabled nor raised above the hard heap limit.
 */
 sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
   sqlite3_int64 priorLimit;
@@ -91,6 +106,9 @@ sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
     sqlite3_mutex_leave(mem0.mutex);
     return priorLimit;
   }
+  if( mem0.hardLimit>0 && (n>mem0.hardLimit || n==0) ){
+    n = mem0.hardLimit;
+  }
   mem0.alarmThreshold = n;
   nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
   mem0.nearlyFull = (n>0 && n<=nUsed);
@@ -103,6 +121,37 @@ void sqlite3_soft_heap_limit(int n){
   if( n<0 ) n = 0;
   sqlite3_soft_heap_limit64(n);
 }
+
+/*
+** Set the hard heap-size limit for the library. An argument of zero
+** disables the hard heap limit.  A negative argument is a no-op used
+** to obtain the return value without affecting the hard heap limit.
+**
+** The return value is the value of the hard heap limit just prior to
+** calling this interface.
+**
+** Setting the hard heap limit will also activate the soft heap limit
+** and constrain the soft heap limit to be no more than the hard heap
+** limit.
+*/
+sqlite3_int64 sqlite3_hard_heap_limit64(sqlite3_int64 n){
+  sqlite3_int64 priorLimit;
+#ifndef SQLITE_OMIT_AUTOINIT
+  int rc = sqlite3_initialize();
+  if( rc ) return -1;
+#endif
+  sqlite3_mutex_enter(mem0.mutex);
+  priorLimit = mem0.hardLimit;
+  if( n>=0 ){
+    mem0.hardLimit = n;
+    if( n<mem0.alarmThreshold || mem0.alarmThreshold==0 ){
+      mem0.alarmThreshold = n;
+    }
+  }
+  sqlite3_mutex_leave(mem0.mutex);
+  return priorLimit;
+}
+
 
 /*
 ** Initialize the memory allocation subsystem.
@@ -190,19 +239,19 @@ static void mallocWithAlarm(int n, void **pp){
   ** following xRoundup() call. */
   nFull = sqlite3GlobalConfig.m.xRoundup(n);
 
-#ifdef SQLITE_MAX_MEMORY
-  if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)+nFull>SQLITE_MAX_MEMORY ){
-    *pp = 0;
-    return;
-  }
-#endif
-
   sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, n);
   if( mem0.alarmThreshold>0 ){
     sqlite3_int64 nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
     if( nUsed >= mem0.alarmThreshold - nFull ){
       mem0.nearlyFull = 1;
       sqlite3MallocAlarm(nFull);
+      if( mem0.hardLimit ){
+        nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+        if( nUsed >= mem0.hardLimit - nFull ){
+          *pp = 0;
+          return;
+        }
+      }
     }else{
       mem0.nearlyFull = 0;
     }

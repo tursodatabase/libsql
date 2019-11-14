@@ -5527,6 +5527,33 @@ static int SQLITE_TCLAPI test_soft_heap_limit(
 }
 
 /*
+** Usage:  sqlite3_hard_heap_limit ?N?
+**
+** Query or set the hard heap limit for the current thread.  The
+** limit is only changed if the N is present.  The previous limit
+** is returned.
+*/
+static int SQLITE_TCLAPI test_hard_heap_limit(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_int64 amt;
+  Tcl_WideInt N = -1;
+  if( objc!=1 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?N?");
+    return TCL_ERROR;
+  }
+  if( objc==2 ){
+    if( Tcl_GetWideIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
+  }
+  amt = sqlite3_hard_heap_limit64(N);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(amt));
+  return TCL_OK;
+}
+
+/*
 ** Usage:   sqlite3_thread_cleanup
 **
 ** Call the sqlite3_thread_cleanup API.
@@ -7978,6 +8005,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_db_filename",           test_db_filename,        0},
      { "sqlite3_db_readonly",           test_db_readonly,        0},
      { "sqlite3_soft_heap_limit",       test_soft_heap_limit,    0},
+     { "sqlite3_soft_heap_limit64",     test_soft_heap_limit,    0},
+     { "sqlite3_hard_heap_limit64",     test_hard_heap_limit,    0},
      { "sqlite3_thread_cleanup",        test_thread_cleanup,     0},
      { "sqlite3_pager_refcounts",       test_pager_refcounts,    0},
 
