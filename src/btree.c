@@ -4379,9 +4379,13 @@ static int btreeCursor(
     allocateTempSpace(pBt);
     if( pBt->pTmpSpace==0 ) return SQLITE_NOMEM_BKPT;
   }
-  if( iTable==1 && btreePagecount(pBt)==0 ){
-    assert( wrFlag==0 );
-    iTable = 0;
+  if( iTable<=1 ){
+    if( iTable<1 ){
+      return SQLITE_CORRUPT_BKPT;
+    }else if( btreePagecount(pBt)==0 ){
+      assert( wrFlag==0 );
+      iTable = 0;
+    }
   }
 
   /* Now that no other errors can occur, finish filling in the BtCursor
@@ -4406,6 +4410,19 @@ static int btreeCursor(
   pCur->eState = CURSOR_INVALID;
   return SQLITE_OK;
 }
+static int btreeCursorWithLock(
+  Btree *p,                              /* The btree */
+  int iTable,                            /* Root page of table to open */
+  int wrFlag,                            /* 1 to write. 0 read-only */
+  struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
+  BtCursor *pCur                         /* Space for new cursor */
+){
+  int rc;
+  sqlite3BtreeEnter(p);
+  rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
+  sqlite3BtreeLeave(p);
+  return rc;
+}
 int sqlite3BtreeCursor(
   Btree *p,                                   /* The btree */
   int iTable,                                 /* Root page of table to open */
@@ -4413,15 +4430,11 @@ int sqlite3BtreeCursor(
   struct KeyInfo *pKeyInfo,                   /* First arg to xCompare() */
   BtCursor *pCur                              /* Write new cursor here */
 ){
-  int rc;
-  if( iTable<1 ){
-    rc = SQLITE_CORRUPT_BKPT;
+  if( p->sharable ){
+    return btreeCursorWithLock(p, iTable, wrFlag, pKeyInfo, pCur);
   }else{
-    sqlite3BtreeEnter(p);
-    rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
-    sqlite3BtreeLeave(p);
+    return btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
   }
-  return rc;
 }
 
 /*
@@ -6992,7 +7005,8 @@ static int pageInsertArray(
   while( 1 /*Exit by break*/ ){
     int sz, rc;
     u8 *pSlot;
-    sz = cachedCellSize(pCArray, i);
+    assert( pCArray->szCell[i]!=0 );
+    sz = pCArray->szCell[i];
     if( (aData[1]==0 && aData[2]==0) || (pSlot = pageFindSlot(pPg,sz,&rc))==0 ){
       if( (pData - pBegin)<sz ) return 1;
       pData -= sz;
@@ -7153,6 +7167,7 @@ static int editPage(
         memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
       }
       nCell++;
+      cachedCellSize(pCArray, iCell+iNew);
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
             iCell+iNew, 1, pCArray
@@ -9457,7 +9472,7 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
 ** Otherwise, if an error is encountered (i.e. an IO error or database
 ** corruption) an SQLite error code is returned.
 */
-int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
+int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry){
   i64 nEntry = 0;                      /* Value to return in *pnEntry */
   int rc;                              /* Return code */
 
@@ -9470,7 +9485,7 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
   /* Unless an error occurs, the following loop runs one iteration for each
   ** page in the B-Tree structure (not including overflow pages). 
   */
-  while( rc==SQLITE_OK ){
+  while( rc==SQLITE_OK && !db->u1.isInterrupted ){
     int iIdx;                          /* Index of child node in parent */
     MemPage *pPage;                    /* Current page of the b-tree */
 
@@ -9596,6 +9611,7 @@ static int checkRef(IntegrityCk *pCheck, Pgno iPage){
     checkAppendMsg(pCheck, "2nd reference to page %d", iPage);
     return 1;
   }
+  if( pCheck->db->u1.isInterrupted ) return 1;
   setPageReferenced(pCheck, iPage);
   return 0;
 }
@@ -10039,6 +10055,7 @@ end_of_check:
 ** returned.  If a memory allocation error occurs, NULL is returned.
 */
 char *sqlite3BtreeIntegrityCheck(
+  sqlite3 *db,  /* Database connection that is running the check */
   Btree *p,     /* The btree to be checked */
   int *aRoot,   /* An array of root pages numbers for individual trees */
   int nRoot,    /* Number of entries in aRoot[] */
@@ -10056,6 +10073,7 @@ char *sqlite3BtreeIntegrityCheck(
   assert( p->inTrans>TRANS_NONE && pBt->inTransaction>TRANS_NONE );
   VVA_ONLY( nRef = sqlite3PagerRefcount(pBt->pPager) );
   assert( nRef>=0 );
+  sCheck.db = db;
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = btreePagecount(sCheck.pBt);

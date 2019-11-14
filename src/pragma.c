@@ -1100,10 +1100,19 @@ void sqlite3Pragma(
       sqlite3CodeVerifySchema(pParse, iTabDb);
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
-        int isHidden = IsHiddenColumn(pCol);
-        if( isHidden && pPragma->iArg==0 ){
-          nHidden++;
-          continue;
+        int isHidden = 0;
+        if( pCol->colFlags & COLFLAG_NOINSERT ){
+          if( pPragma->iArg==0 ){
+            nHidden++;
+            continue;
+          }
+          if( pCol->colFlags & COLFLAG_VIRTUAL ){
+            isHidden = 2;  /* GENERATED ALWAYS AS ... VIRTUAL */
+          }else if( pCol->colFlags & COLFLAG_STORED ){
+            isHidden = 3;  /* GENERATED ALWAYS AS ... STORED */
+          }else{ assert( pCol->colFlags & COLFLAG_HIDDEN );
+            isHidden = 1;  /* HIDDEN */
+          }
         }
         if( (pCol->colFlags & COLFLAG_PRIMKEY)==0 ){
           k = 0;
@@ -1112,13 +1121,13 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
-        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN );
+        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN || isHidden>=2 );
         sqlite3VdbeMultiLoad(v, 1, pPragma->iArg ? "issisii" : "issisi",
                i-nHidden,
                pCol->zName,
                sqlite3ColumnType(pCol,""),
                pCol->notNull ? 1 : 0,
-               pCol->pDflt ? pCol->pDflt->u.zToken : 0,
+               pCol->pDflt && isHidden<2 ? pCol->pDflt->u.zToken : 0,
                k,
                isHidden);
       }
@@ -1577,7 +1586,7 @@ void sqlite3Pragma(
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
         if( !isQuick ){
           /* Sanity check on record header decoding */
-          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nCol-1, 3);
+          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nNVCol-1,3);
           sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
         }
         /* Verify that all NOT NULL columns really are NOT NULL */

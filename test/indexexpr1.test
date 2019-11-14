@@ -186,7 +186,7 @@ do_catchsql_test indexexpr1-300 {
 } {1 {non-deterministic functions prohibited in index expressions}}
 do_catchsql_test indexexpr1-301 {
   CREATE INDEX t2x1 ON t2(julianday('now',a));
-} {1 {non-deterministic function in index expression or CHECK constraint}}
+} {1 {non-deterministic use of julianday() in an index}}
 do_catchsql_test indexexpr1-310 {
   CREATE INDEX t2x2 ON t2(a,b+(SELECT 15));
 } {1 {subqueries prohibited in index expressions}}
@@ -456,5 +456,31 @@ do_execsql_test indexexpr-1700 {
   CREATE INDEX i0 ON t0(NULL > c0) WHERE (NULL NOT NULL);
   SELECT * FROM t0 WHERE ((NULL IS FALSE) IS FALSE);
 } {0}
+
+# 2019-09-02 https://www.sqlite.org/src/tktview/57af00b6642ecd6848
+# When the expression of an an index-on-expression references a
+# table column of type REAL that is actually holding an MEM_IntReal
+# value, be sure to use the REAL value and not the INT value when
+# computing the expression.
+#
+ifcapable like_match_blobs {
+  do_execsql_test indexexpr-1800 {
+    DROP TABLE IF EXISTS t0;
+    CREATE TABLE t0(c0 REAL, c1 TEXT);
+    CREATE INDEX i0 ON t0(+c0, c0);
+    INSERT INTO t0(c0) VALUES(0);
+    SELECT CAST(+ t0.c0 AS BLOB) LIKE 0 FROM t0; 
+  } {0}
+  do_execsql_test indexexpr-1810 {
+    SELECT CAST(+ t0.c0 AS BLOB) LIKE '0.0' FROM t0; 
+  } {1}
+  do_execsql_test indexexpr-1820 {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x REAL);
+    CREATE INDEX t1x ON t1(x, +x);
+    INSERT INTO t1(x) VALUES(2);
+    SELECT +x FROM t1 WHERE x=2;
+  } {2.0}
+}
 
 finish_test

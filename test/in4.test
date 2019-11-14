@@ -226,10 +226,13 @@ do_execsql_test in4-3.42 {
 do_execsql_test in4-3.43 {
   SELECT * FROM t3 WHERE x IN (10);
 } {10 10 10}
-do_execsql_test in4-3.44 {
-  EXPLAIN
-  SELECT * FROM t3 WHERE x IN (10);
-} {~/OpenEphemeral/}
+
+# This test would verify that the "X IN (Y)" -> "X==Y" optimization
+# was working.  But we have now taken that optimization out.
+#do_execsql_test in4-3.44 {
+#  EXPLAIN
+#  SELECT * FROM t3 WHERE x IN (10);
+#} {~/OpenEphemeral/}
 do_execsql_test in4-3.45 {
   SELECT * FROM t3 WHERE x NOT IN (10,11,99999);
 } {1 1 1}
@@ -326,7 +329,7 @@ do_execsql_test in4-6.1 {
 do_execsql_test in4-6.1-eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM t6a, t6b WHERE a=3 AND b IN (c);
-} {~/SCAN/}
+} {~/SCAN TABLE t6a/}
 do_execsql_test in4-6.2 {
   SELECT * FROM t6a, t6b WHERE a=3 AND c IN (b);
 } {3 4 4 44}

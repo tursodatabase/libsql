@@ -757,7 +757,7 @@ char *sqlite3Normalize(
   int nParen;        /* Number of nested levels of parentheses */
   int iStartIN;      /* Start of RHS of IN operator in z[] */
   int nParenAtIN;    /* Value of nParent at start of RHS of IN operator */
-  int j;             /* Bytes of normalized SQL generated so far */
+  u32 j;             /* Bytes of normalized SQL generated so far */
   sqlite3_str *pStr; /* The normalized SQL string under construction */
 
   db = sqlite3VdbeDb(pVdbe);
@@ -801,7 +801,7 @@ char *sqlite3Normalize(
       }
       case TK_RP: {
         if( iStartIN>0 && nParen==nParenAtIN ){
-          assert( pStr->nChar>=iStartIN );
+          assert( pStr->nChar>=(u32)iStartIN );
           pStr->nChar = iStartIN+1;
           sqlite3_str_append(pStr, "?,?,?", 5);
           iStartIN = 0;

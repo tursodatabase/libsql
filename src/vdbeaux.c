@@ -15,6 +15,10 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+/* Forward references */
+static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef);
+static void vdbeFreeOpArray(sqlite3 *, Op *, int);
+
 /*
 ** Create a new virtual database engine.
 */
@@ -40,6 +44,13 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   assert( pParse->szOpAlloc==0 );
   sqlite3VdbeAddOp2(p, OP_Init, 0, 1);
   return p;
+}
+
+/*
+** Return the Parse object that owns a Vdbe object.
+*/
+Parse *sqlite3VdbeParser(Vdbe *p){
+  return p->pParse;
 }
 
 /*
@@ -318,6 +329,49 @@ int sqlite3VdbeAddOp4(
 ){
   int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
   sqlite3VdbeChangeP4(p, addr, zP4, p4type);
+  return addr;
+}
+
+/*
+** Add an OP_Function or OP_PureFunc opcode.
+**
+** The eCallCtx argument is information (typically taken from Expr.op2)
+** that describes the calling context of the function.  0 means a general
+** function call.  NC_IsCheck means called by a check constraint,
+** NC_IdxExpr means called as part of an index expression.  NC_PartIdx
+** means in the WHERE clause of a partial index.  NC_GenCol means called
+** while computing a generated column value.  0 is the usual case.
+*/
+int sqlite3VdbeAddFunctionCall(
+  Parse *pParse,        /* Parsing context */
+  int p1,               /* Constant argument mask */
+  int p2,               /* First argument register */
+  int p3,               /* Register into which results are written */
+  int nArg,             /* Number of argument */
+  const FuncDef *pFunc, /* The function to be invoked */
+  int eCallCtx          /* Calling context */
+){
+  Vdbe *v = pParse->pVdbe;
+  int nByte;
+  int addr;
+  sqlite3_context *pCtx;
+  assert( v );
+  nByte = sizeof(*pCtx) + (nArg-1)*sizeof(sqlite3_value*);
+  pCtx = sqlite3DbMallocRawNN(pParse->db, nByte);
+  if( pCtx==0 ){
+    assert( pParse->db->mallocFailed );
+    freeEphemeralFunction(pParse->db, (FuncDef*)pFunc);
+    return 0;
+  }
+  pCtx->pOut = 0;
+  pCtx->pFunc = (FuncDef*)pFunc;
+  pCtx->pVdbe = 0;
+  pCtx->isError = 0;
+  pCtx->argc = nArg;
+  pCtx->iOp = sqlite3VdbeCurrentAddr(v);
+  addr = sqlite3VdbeAddOp4(v, eCallCtx ? OP_PureFunc : OP_Function,
+                           p1, p2, p3, (char*)pCtx, P4_FUNCCTX);
+  sqlite3VdbeChangeP5(v, eCallCtx & NC_SelfRef);
   return addr;
 }
 
@@ -640,7 +694,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     int opcode = pOp->opcode;
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
      || opcode==OP_VDestroy
-     || (opcode==OP_Function0 && pOp->p4.pFunc->funcFlags&SQLITE_FUNC_INTERNAL)
+     || (opcode==OP_ParseSchema && pOp->p4.z==0)
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
     ){
@@ -1013,8 +1067,6 @@ static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
   }
 }
 
-static void vdbeFreeOpArray(sqlite3 *, Op *, int);
-
 /*
 ** Delete a P4 value if necessary.
 */
@@ -1024,7 +1076,7 @@ static SQLITE_NOINLINE void freeP4Mem(sqlite3 *db, Mem *p){
 }
 static SQLITE_NOINLINE void freeP4FuncCtx(sqlite3 *db, sqlite3_context *p){
   freeEphemeralFunction(db, p->pFunc);
- sqlite3DbFreeNN(db, p);
+  sqlite3DbFreeNN(db, p);
 }
 static void freeP4(sqlite3 *db, int p4type, void *p4){
   assert( db );
@@ -1096,6 +1148,13 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
 void sqlite3VdbeLinkSubProgram(Vdbe *pVdbe, SubProgram *p){
   p->pNext = pVdbe->pProgram;
   pVdbe->pProgram = p;
+}
+
+/*
+** Return true if the given Vdbe has any SubPrograms.
+*/
+int sqlite3VdbeHasSubProgram(Vdbe *pVdbe){
+  return pVdbe->pProgram!=0;
 }
 
 /*
@@ -1493,14 +1552,16 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     case P4_KEYINFO: {
       int j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
-      assert( pKeyInfo->aSortOrder!=0 );
+      assert( pKeyInfo->aSortFlags!=0 );
       sqlite3_str_appendf(&x, "k(%d", pKeyInfo->nKeyField);
       for(j=0; j<pKeyInfo->nKeyField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         const char *zColl = pColl ? pColl->zName : "";
         if( strcmp(zColl, "BINARY")==0 ) zColl = "B";
-        sqlite3_str_appendf(&x, ",%s%s", 
-               pKeyInfo->aSortOrder[j] ? "-" : "", zColl);
+        sqlite3_str_appendf(&x, ",%s%s%s", 
+               (pKeyInfo->aSortFlags[j] & KEYINFO_ORDER_DESC) ? "-" : "", 
+               (pKeyInfo->aSortFlags[j] & KEYINFO_ORDER_BIGNULL)? "N." : "", 
+               zColl);
       }
       sqlite3_str_append(&x, ")", 1);
       break;
@@ -1521,13 +1582,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3_str_appendf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
-#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
     case P4_FUNCCTX: {
       FuncDef *pDef = pOp->p4.pCtx->pFunc;
       sqlite3_str_appendf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
-#endif
     case P4_INT64: {
       sqlite3_str_appendf(&x, "%lld", *pOp->p4.pI64);
       break;
@@ -2221,8 +2280,26 @@ void sqlite3VdbeMakeReady(
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
-  if( pParse->explain && nMem<10 ){
-    nMem = 10;
+  if( pParse->explain ){
+    static const char * const azColName[] = {
+       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
+       "id", "parent", "notused", "detail"
+    };
+    int iFirst, mx, i;
+    if( nMem<10 ) nMem = 10;
+    if( pParse->explain==2 ){
+      sqlite3VdbeSetNumCols(p, 4);
+      iFirst = 8;
+      mx = 12;
+    }else{
+      sqlite3VdbeSetNumCols(p, 8);
+      iFirst = 0;
+      mx = 8;
+    }
+    for(i=iFirst; i<mx; i++){
+      sqlite3VdbeSetColName(p, i-iFirst, COLNAME_NAME,
+                            azColName[i], SQLITE_STATIC);
+    }
   }
   p->expired = 0;
 
@@ -3813,7 +3890,7 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;
   p->aMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
-  assert( pKeyInfo->aSortOrder!=0 );
+  assert( pKeyInfo->aSortFlags!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nKeyField + 1;
   return p;
@@ -3912,7 +3989,7 @@ static int vdbeRecordCompareDebug(
   if( szHdr1>98307 ) return SQLITE_CORRUPT;
   d1 = szHdr1;
   assert( pKeyInfo->nAllField>=pPKey2->nField || CORRUPT_DB );
-  assert( pKeyInfo->aSortOrder!=0 );
+  assert( pKeyInfo->aSortFlags!=0 );
   assert( pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
   do{
@@ -3943,7 +4020,12 @@ static int vdbeRecordCompareDebug(
                            pKeyInfo->nAllField>i ? pKeyInfo->aColl[i] : 0);
     if( rc!=0 ){
       assert( mem1.szMalloc==0 );  /* See comment below */
-      if( pKeyInfo->aSortOrder[i] ){
+      if( (pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_BIGNULL)
+       && ((mem1.flags & MEM_Null) || (pPKey2->aMem[i].flags & MEM_Null)) 
+      ){
+        rc = -rc;
+      }
+      if( pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_DESC ){
         rc = -rc;  /* Invert the result for DESC sort order. */
       }
       goto debugCompareEnd;
@@ -4319,7 +4401,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   VVA_ONLY( mem1.szMalloc = 0; ) /* Only needed by assert() statements */
   assert( pPKey2->pKeyInfo->nAllField>=pPKey2->nField 
        || CORRUPT_DB );
-  assert( pPKey2->pKeyInfo->aSortOrder!=0 );
+  assert( pPKey2->pKeyInfo->aSortFlags!=0 );
   assert( pPKey2->pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
   do{
@@ -4442,8 +4524,14 @@ int sqlite3VdbeRecordCompareWithSkip(
     }
 
     if( rc!=0 ){
-      if( pPKey2->pKeyInfo->aSortOrder[i] ){
-        rc = -rc;
+      int sortFlags = pPKey2->pKeyInfo->aSortFlags[i];
+      if( sortFlags ){
+        if( (sortFlags & KEYINFO_ORDER_BIGNULL)==0
+         || ((sortFlags & KEYINFO_ORDER_DESC)
+           !=(serial_type==0 || (pRhs->flags&MEM_Null)))
+        ){
+          rc = -rc;
+        }
       }
       assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, rc) );
       assert( mem1.szMalloc==0 );  /* See comment below */
@@ -4660,7 +4748,10 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
   ** header size is (12*5 + 1 + 1) bytes.  */
   if( p->pKeyInfo->nAllField<=13 ){
     int flags = p->aMem[0].flags;
-    if( p->pKeyInfo->aSortOrder[0] ){
+    if( p->pKeyInfo->aSortFlags[0] ){
+      if( p->pKeyInfo->aSortFlags[0] & KEYINFO_ORDER_BIGNULL ){
+        return sqlite3VdbeRecordCompare;
+      }
       p->r1 = 1;
       p->r2 = -1;
     }else{
@@ -4909,13 +5000,25 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** features such as 'now'.
 */
 int sqlite3NotPureFunc(sqlite3_context *pCtx){
+  const VdbeOp *pOp;
 #ifdef SQLITE_ENABLE_STAT4
   if( pCtx->pVdbe==0 ) return 1;
 #endif
-  if( pCtx->pVdbe->aOp[pCtx->iOp].opcode==OP_PureFunc ){
-    sqlite3_result_error(pCtx, 
-       "non-deterministic function in index expression or CHECK constraint",
-       -1);
+  pOp = pCtx->pVdbe->aOp + pCtx->iOp;
+  if( pOp->opcode==OP_PureFunc ){
+    const char *zContext;
+    char *zMsg;
+    if( pOp->p5 & NC_IsCheck ){
+      zContext = "a CHECK constraint";
+    }else if( pOp->p5 & NC_GenCol ){
+      zContext = "a generated column";
+    }else{
+      zContext = "an index";
+    }
+    zMsg = sqlite3_mprintf("non-deterministic use of %s() in %s",
+                           pCtx->pFunc->zName, zContext);
+    sqlite3_result_error(pCtx, zMsg, -1);
+    sqlite3_free(zMsg);
     return 0;
   }
   return 1;
@@ -5006,7 +5109,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.keyinfo.db = db;
   preupdate.keyinfo.enc = ENC(db);
   preupdate.keyinfo.nKeyField = pTab->nCol;
-  preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
+  preupdate.keyinfo.aSortFlags = (u8*)&fakeSortOrder;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;

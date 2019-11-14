@@ -578,10 +578,14 @@ proc main_tests {args} {
     puts "$config \"$target\""
     if {$bNodebug==0 && $bNosynthetic==0} {
       set iHas [string first SQLITE_DEBUG $::Configs($config)]
+      set dtarget test
+      if {$target=="tcltest"} {
+        set dtarget tcltest
+      }
       if {$iHas>=0} {
-        puts "$config-ndebug \"test\""
+        puts "$config-ndebug \"$dtarget\""
       } else {
-        puts "$config-debug \"test\""
+        puts "$config-debug \"$dtarget\""
       }
     }
   }

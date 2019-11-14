@@ -4760,7 +4760,8 @@ int sqlite3PagerOpen(
   int pcacheSize = sqlite3PcacheSize();       /* Bytes to allocate for PCache */
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
   const char *zUri = 0;    /* URI args to copy */
-  int nUri = 0;            /* Number of bytes of URI args at *zUri */
+  int nUriByte = 1;        /* Number of bytes of URI args at *zUri */
+  int nUri = 0;            /* Number of URI parameters */
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal).  */
@@ -4797,11 +4798,12 @@ int sqlite3PagerOpen(
     nPathname = sqlite3Strlen30(zPathname);
     z = zUri = &zFilename[sqlite3Strlen30(zFilename)+1];
     while( *z ){
-      z += sqlite3Strlen30(z)+1;
-      z += sqlite3Strlen30(z)+1;
+      z += strlen(z)+1;
+      z += strlen(z)+1;
+      nUri++;
     }
-    nUri = (int)(&z[1] - zUri);
-    assert( nUri>=0 );
+    nUriByte = (int)(&z[2] - zUri);
+    assert( nUriByte>=1 );
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by
       ** the database being opened will be more than pVfs->mxPathname
@@ -4834,7 +4836,7 @@ int sqlite3PagerOpen(
     ROUND8(pcacheSize) +           /* PCache object */
     ROUND8(pVfs->szOsFile) +       /* The main db file */
     journalFileSize * 2 +          /* The two journal files */ 
-    nPathname + 1 + nUri +         /* zFilename */
+    nPathname + 1 + nUriByte +     /* zFilename */
     nPathname + 8 + 2              /* zJournal */
 #ifndef SQLITE_OMIT_WAL
     + nPathname + 4 + 2            /* zWal */
@@ -4856,18 +4858,21 @@ int sqlite3PagerOpen(
   /* Fill in the Pager.zFilename and Pager.zJournal buffers, if required. */
   if( zPathname ){
     assert( nPathname>0 );
-    pPager->zJournal =   (char*)(pPtr += nPathname + 1 + nUri);
     memcpy(pPager->zFilename, zPathname, nPathname);
-    if( nUri ) memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
+    if( nUri ) memcpy(&pPager->zFilename[nPathname+1], zUri, nUriByte);
+    pPager->zJournal =   (char*)(pPtr += nPathname + 1 + nUriByte);
     memcpy(pPager->zJournal, zPathname, nPathname);
-    memcpy(&pPager->zJournal[nPathname], "-journal\000", 8+2);
+    memcpy(&pPager->zJournal[nPathname], "-journal", 8);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zJournal);
 #ifndef SQLITE_OMIT_WAL
-    pPager->zWal = &pPager->zJournal[nPathname+8+1];
+    pPager->zWal = (char*)(pPtr += nPathname + 8 + 2);
     memcpy(pPager->zWal, zPathname, nPathname);
-    memcpy(&pPager->zWal[nPathname], "-wal\000", 4+1);
+    memcpy(&pPager->zWal[nPathname], "-wal", 4);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zWal);
+    assert( sqlite3UriCount(pPager->zWal)==0 );
 #endif
+    assert( sqlite3UriCount(pPager->zFilename)==nUri );
+    assert( sqlite3UriCount(pPager->zJournal)==0 );
     sqlite3DbFree(0, zPathname);
   }
   pPager->pVfs = pVfs;

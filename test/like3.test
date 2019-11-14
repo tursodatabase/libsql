@@ -207,6 +207,19 @@ do_execsql_test like3-5.410 {
   SELECT * FROM t0 WHERE t0.c0 LIKE '.1%';
 } {.1%}
 
+# 2019-09-03
+# Ticket https://www.sqlite.org/src/info/0f0428096f
+do_execsql_test like3-5.420 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 UNIQUE);
+  INSERT INTO t0(c0) VALUES(-1);
+  SELECT * FROM t0 WHERE t0.c0 GLOB '-*';
+} {-1}
+do_execsql_test like3-5.421 {
+  SELECT t0.c0 GLOB '-*' FROM t0;
+} {1}
+
+
 
 # 2019-02-27
 # Verify that the LIKE optimization works with an ESCAPE clause when

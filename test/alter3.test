@@ -54,8 +54,8 @@ proc get_file_format {{fname test.db}} {
 }
 
 do_test alter3-1.1 {
+  sqlite3_db_config db LEGACY_FILE_FORMAT 1
   execsql {
-    PRAGMA legacy_file_format=ON;
     CREATE TABLE abc(a, b, c);
     SELECT sql FROM sqlite_master;
   }
@@ -198,8 +198,8 @@ do_test alter3-4.1 {
   db close
   forcedelete test.db
   set ::DB [sqlite3 db test.db]
+  sqlite3_db_config db LEGACY_FILE_FORMAT 1
   execsql {
-    PRAGMA legacy_file_format=ON;
     CREATE TABLE t1(a, b);
     INSERT INTO t1 VALUES(1, 100);
     INSERT INTO t1 VALUES(2, 300);

@@ -100,9 +100,9 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     if( OK_IF_ALWAYS_TRUE(p->pWinDefn) ){
       sqlite3WindowListDelete(db, p->pWinDefn);
     }
+    assert( p->pWin==0 );
 #endif
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
-    assert( p->pWin==0 );
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
     bFree = 1;
@@ -664,11 +664,12 @@ static void pushOntoSorter(
     if( pParse->db->mallocFailed ) return;
     pOp->p2 = nKey + nData;
     pKI = pOp->p4.pKeyInfo;
-    memset(pKI->aSortOrder, 0, pKI->nKeyField); /* Makes OP_Jump testable */
+    memset(pKI->aSortFlags, 0, pKI->nKeyField); /* Makes OP_Jump testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
     testcase( pKI->nAllField > pKI->nKeyField+2 );
     pOp->p4.pKeyInfo = sqlite3KeyInfoFromExprList(pParse,pSort->pOrderBy,nOBSat,
                                            pKI->nAllField-pKI->nKeyField-1);
+    pOp = 0; /* Ensure pOp not used after sqltie3VdbeAddOp3() */
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
     pSort->labelBkOut = sqlite3VdbeMakeLabel(pParse);
@@ -1031,6 +1032,7 @@ static void selectInnerLoop(
         pOp->opcode = OP_Null;
         pOp->p1 = 1;
         pOp->p2 = regPrev;
+        pOp = 0;  /* Ensure pOp is not used after sqlite3VdbeAddOp() */
 
         iJump = sqlite3VdbeCurrentAddr(v) + nResultCol;
         for(i=0; i<nResultCol; i++){
@@ -1275,7 +1277,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   int nExtra = (N+X)*(sizeof(CollSeq*)+1) - sizeof(CollSeq*);
   KeyInfo *p = sqlite3DbMallocRawNN(db, sizeof(KeyInfo) + nExtra);
   if( p ){
-    p->aSortOrder = (u8*)&p->aColl[N+X];
+    p->aSortFlags = (u8*)&p->aColl[N+X];
     p->nKeyField = (u16)N;
     p->nAllField = (u16)(N+X);
     p->enc = ENC(db);
@@ -1352,7 +1354,7 @@ KeyInfo *sqlite3KeyInfoFromExprList(
     assert( sqlite3KeyInfoIsWriteable(pInfo) );
     for(i=iStart, pItem=pList->a+iStart; i<nExpr; i++, pItem++){
       pInfo->aColl[i-iStart] = sqlite3ExprNNCollSeq(pParse, pItem->pExpr);
-      pInfo->aSortOrder[i-iStart] = pItem->sortOrder;
+      pInfo->aSortFlags[i-iStart] = pItem->sortFlags;
     }
   }
   return pInfo;
@@ -1960,7 +1962,7 @@ int sqlite3ColumnsFromExprList(
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
     }else{
-      Expr *pColExpr = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
+      Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pEList->a[i].pExpr);
       while( pColExpr->op==TK_DOT ){
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
@@ -2253,7 +2255,7 @@ static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
       }
       assert( sqlite3KeyInfoIsWriteable(pRet) );
       pRet->aColl[i] = pColl;
-      pRet->aSortOrder[i] = pOrderBy->a[i].sortOrder;
+      pRet->aSortFlags[i] = pOrderBy->a[i].sortFlags;
     }
   }
 
@@ -3228,7 +3230,7 @@ static int multiSelectOrderBy(
       assert( sqlite3KeyInfoIsWriteable(pKeyDup) );
       for(i=0; i<nExpr; i++){
         pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
-        pKeyDup->aSortOrder[i] = 0;
+        pKeyDup->aSortFlags[i] = 0;
       }
     }
   }
@@ -3476,11 +3478,20 @@ static Expr *substExpr(
           pNew->iRightJoinTable = pExpr->iRightJoinTable;
           ExprSetProperty(pNew, EP_FromJoin);
         }
-        if( pNew && ExprHasProperty(pExpr,EP_Generic) ){
-          ExprSetProperty(pNew, EP_Generic);
-        }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
+
+        /* Ensure that the expression now has an implicit collation sequence,
+        ** just as it did when it was a column of a view or sub-query. */
+        if( pExpr ){
+          if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE ){
+            CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
+            pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr, 
+                (pColl ? pColl->zName : "BINARY")
+            );
+          }
+          ExprClearProperty(pExpr, EP_Collate);
+        }
       }
     }
   }else{
@@ -3494,6 +3505,14 @@ static Expr *substExpr(
     }else{
       substExprList(pSubst, pExpr->x.pList);
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    if( ExprHasProperty(pExpr, EP_WinFunc) ){
+      Window *pWin = pExpr->y.pWin;
+      pWin->pFilter = substExpr(pSubst, pWin->pFilter);
+      substExprList(pSubst, pWin->pPartition);
+      substExprList(pSubst, pWin->pOrderBy);
+    }
+#endif
   }
   return pExpr;
 }
@@ -4153,14 +4172,14 @@ static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   if( pRight->op==TK_COLUMN
    && !ExprHasProperty(pRight, EP_FixedCol)
    && sqlite3ExprIsConstant(pLeft)
-   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+   && sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr))
   ){
     constInsert(pConst, pRight, pLeft);
   }else
   if( pLeft->op==TK_COLUMN
    && !ExprHasProperty(pLeft, EP_FixedCol)
    && sqlite3ExprIsConstant(pRight)
-   && sqlite3IsBinary(sqlite3BinaryCompareCollSeq(pConst->pParse,pLeft,pRight))
+   && sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr))
   ){
     constInsert(pConst, pLeft, pRight);
   }
@@ -4405,7 +4424,7 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   ExprList *pEList = pFunc->x.pList;    /* Arguments to agg function */
   const char *zFunc;                    /* Name of aggregate function pFunc */
   ExprList *pOrderBy;
-  u8 sortOrder;
+  u8 sortFlags;
 
   assert( *ppMinMax==0 );
   assert( pFunc->op==TK_AGG_FUNCTION );
@@ -4416,16 +4435,16 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   zFunc = pFunc->u.zToken;
   if( sqlite3StrICmp(zFunc, "min")==0 ){
     eRet = WHERE_ORDERBY_MIN;
-    sortOrder = SQLITE_SO_ASC;
+    sortFlags = KEYINFO_ORDER_BIGNULL;
   }else if( sqlite3StrICmp(zFunc, "max")==0 ){
     eRet = WHERE_ORDERBY_MAX;
-    sortOrder = SQLITE_SO_DESC;
+    sortFlags = KEYINFO_ORDER_DESC;
   }else{
     return eRet;
   }
   *ppMinMax = pOrderBy = sqlite3ExprListDup(db, pEList, 0);
   assert( pOrderBy!=0 || db->mallocFailed );
-  if( pOrderBy ) pOrderBy->a[0].sortOrder = sortOrder;
+  if( pOrderBy ) pOrderBy->a[0].sortFlags = sortFlags;
   return eRet;
 }
 
@@ -4649,6 +4668,9 @@ static int withExpand(
   With *pWith;                    /* WITH clause that pCte belongs to */
 
   assert( pFrom->pTab==0 );
+  if( pParse->nErr ){
+    return SQLITE_ERROR;
+  }
 
   pCte = searchWith(pParse->pWith, pFrom, &pWith);
   if( pCte ){
@@ -5347,6 +5369,19 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
     assert( !IsWindowFunc(pF->pExpr) );
     if( ExprHasProperty(pF->pExpr, EP_WinFunc) ){
       Expr *pFilter = pF->pExpr->y.pWin->pFilter;
+      if( pAggInfo->nAccumulator 
+       && (pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL) 
+      ){
+        if( regHit==0 ) regHit = ++pParse->nMem;
+        /* If this is the first row of the group (regAcc==0), clear the
+        ** "magnet" register regHit so that the accumulator registers
+        ** are populated if the FILTER clause jumps over the the 
+        ** invocation of min() or max() altogether. Or, if this is not
+        ** the first row (regAcc==1), set the magnet register so that the
+        ** accumulators are not populated unless the min()/max() is invoked and
+        ** indicates that they should be.  */
+        sqlite3VdbeAddOp2(v, OP_Copy, regAcc, regHit);
+      }
       addrNext = sqlite3VdbeMakeLabel(pParse);
       sqlite3ExprIfFalse(pParse, pFilter, addrNext, SQLITE_JUMPIFNULL);
     }
@@ -5397,6 +5432,7 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
   }
+
   pAggInfo->directMode = 0;
   if( addrHitTest ){
     sqlite3VdbeJumpHere(v, addrHitTest);
@@ -5442,7 +5478,7 @@ static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
     Select *pS = pWalker->u.pSelect;
     if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, pS->pGroupBy) ){
       sqlite3 *db = pWalker->pParse->db;
-      Expr *pNew = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
+      Expr *pNew = sqlite3Expr(db, TK_INTEGER, "1");
       if( pNew ){
         Expr *pWhere = pS->pWhere;
         SWAP(Expr, *pNew, *pExpr);
@@ -5696,7 +5732,7 @@ int sqlite3Select(
     goto select_end;
   }
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x108 ){
+  if( p->pWin && (sqlite3SelectTrace & 0x108)!=0 ){
     SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -6200,23 +6236,35 @@ int sqlite3Select(
       }
       assert( 66==sqlite3LogEst(100) );
       if( p->nSelectRow>66 ) p->nSelectRow = 66;
+
+      /* If there is both a GROUP BY and an ORDER BY clause and they are
+      ** identical, then it may be possible to disable the ORDER BY clause 
+      ** on the grounds that the GROUP BY will cause elements to come out 
+      ** in the correct order. It also may not - the GROUP BY might use a
+      ** database index that causes rows to be grouped together as required
+      ** but not actually sorted. Either way, record the fact that the
+      ** ORDER BY and GROUP BY clauses are the same by setting the orderByGrp
+      ** variable.  */
+      if( sSort.pOrderBy && pGroupBy->nExpr==sSort.pOrderBy->nExpr ){
+        int ii;
+        /* The GROUP BY processing doesn't care whether rows are delivered in
+        ** ASC or DESC order - only that each group is returned contiguously.
+        ** So set the ASC/DESC flags in the GROUP BY to match those in the 
+        ** ORDER BY to maximize the chances of rows being delivered in an 
+        ** order that makes the ORDER BY redundant.  */
+        for(ii=0; ii<pGroupBy->nExpr; ii++){
+          u8 sortFlags = sSort.pOrderBy->a[ii].sortFlags & KEYINFO_ORDER_DESC;
+          pGroupBy->a[ii].sortFlags = sortFlags;
+        }
+        if( sqlite3ExprListCompare(pGroupBy, sSort.pOrderBy, -1)==0 ){
+          orderByGrp = 1;
+        }
+      }
     }else{
       assert( 0==sqlite3LogEst(1) );
       p->nSelectRow = 0;
     }
 
-    /* If there is both a GROUP BY and an ORDER BY clause and they are
-    ** identical, then it may be possible to disable the ORDER BY clause 
-    ** on the grounds that the GROUP BY will cause elements to come out 
-    ** in the correct order. It also may not - the GROUP BY might use a
-    ** database index that causes rows to be grouped together as required
-    ** but not actually sorted. Either way, record the fact that the
-    ** ORDER BY and GROUP BY clauses are the same by setting the orderByGrp
-    ** variable.  */
-    if( sqlite3ExprListCompare(pGroupBy, sSort.pOrderBy, -1)==0 ){
-      orderByGrp = 1;
-    }
- 
     /* Create a label to jump to when we want to abort the query */
     addrEnd = sqlite3VdbeMakeLabel(pParse);
 
@@ -6572,13 +6620,18 @@ int sqlite3Select(
       {
         int regAcc = 0;           /* "populate accumulators" flag */
 
-        /* If there are accumulator registers but no min() or max() functions,
-        ** allocate register regAcc. Register regAcc will contain 0 the first
-        ** time the inner loop runs, and 1 thereafter. The code generated
-        ** by updateAccumulator() only updates the accumulator registers if
-        ** regAcc contains 0.  */
+        /* If there are accumulator registers but no min() or max() functions
+        ** without FILTER clauses, allocate register regAcc. Register regAcc
+        ** will contain 0 the first time the inner loop runs, and 1 thereafter.
+        ** The code generated by updateAccumulator() uses this to ensure
+        ** that the accumulator registers are (a) updated only once if
+        ** there are no min() or max functions or (b) always updated for the
+        ** first row visited by the aggregate, so that they are updated at
+        ** least once even if the FILTER clause means the min() or max() 
+        ** function visits zero rows.  */
         if( sAggInfo.nAccumulator ){
           for(i=0; i<sAggInfo.nFunc; i++){
+            if( ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_WinFunc) ) continue;
             if( sAggInfo.aFunc[i].pFunc->funcFlags&SQLITE_FUNC_NEEDCOLL ) break;
           }
           if( i==sAggInfo.nFunc ){

@@ -65,6 +65,15 @@ while test "$1" != ""; do
     --nomemstat)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS $1"
         ;;
+    --multithread)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS $1"
+        ;;
+    --singlethread)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS $1"
+        ;;
+    --serialized)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS $1"
+        ;;
     --temp)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --temp 6"
         ;;

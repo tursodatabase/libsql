@@ -274,6 +274,31 @@ do_execsql_test 2040 {
   two 1 1
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 3000 {
+  CREATE TABLE t0 (c0, c1 NOT NULL DEFAULT 1, c2, PRIMARY KEY (c0, c1));
+  INSERT INTO t0(c2) VALUES (NULL), (NULL), (NULL), (NULL), (NULL), (NULL), (NULL), (NULL), (NULL), (NULL), (NULL);
+  INSERT INTO t0(c2) VALUES('a');
+}
 
+do_execsql_test 3010 {
+  SELECT DISTINCT * FROM t0 WHERE NULL IS t0.c0;
+} {
+  {} 1 {}
+  {} 1 a
+}
+
+do_execsql_test 3020 {
+  ANALYZE;
+}
+
+do_execsql_test 3030 {
+  SELECT DISTINCT * FROM t0 WHERE NULL IS c0;
+} {
+  {} 1 {}
+  {} 1 a
+}
 
 finish_test

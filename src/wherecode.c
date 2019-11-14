@@ -823,7 +823,7 @@ static int codeCursorHintCheckExpr(Walker *pWalker, Expr *pExpr){
   assert( pHint->pIdx!=0 );
   if( pExpr->op==TK_COLUMN
    && pExpr->iTable==pHint->iTabCur
-   && sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn)<0
+   && sqlite3TableColumnToIndex(pHint->pIdx, pExpr->iColumn)<0
   ){
     pWalker->eCode = 1;
   }
@@ -891,7 +891,7 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
       pExpr->iTable = reg;
     }else if( pHint->pIdx!=0 ){
       pExpr->iTable = pHint->iIdxCur;
-      pExpr->iColumn = sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn);
+      pExpr->iColumn = sqlite3TableColumnToIndex(pHint->pIdx, pExpr->iColumn);
       assert( pExpr->iColumn>=0 );
     }
   }else if( pExpr->op==TK_AGG_FUNCTION ){
@@ -1054,8 +1054,12 @@ static void codeDeferredSeek(
     if( ai ){
       ai[0] = pTab->nCol;
       for(i=0; i<pIdx->nColumn-1; i++){
+        int x1, x2;
         assert( pIdx->aiColumn[i]<pTab->nCol );
-        if( pIdx->aiColumn[i]>=0 ) ai[pIdx->aiColumn[i]+1] = i+1;
+        x1 = pIdx->aiColumn[i];
+        x2 = sqlite3TableColumnToStorage(pTab, x1);
+        testcase( x1!=x2 );
+        if( x1>=0 ) ai[x2+1] = i+1;
       }
       sqlite3VdbeChangeP4(v, -1, (char*)ai, P4_INTARRAY);
     }
@@ -1106,6 +1110,7 @@ typedef struct IdxExprTrans {
   int iTabCur;       /* The cursor of the corresponding table */
   int iIdxCur;       /* The cursor for the index */
   int iIdxCol;       /* The column for the index */
+  int iTabCol;       /* The column for the table */
 } IdxExprTrans;
 
 /* The walker node callback used to transform matching expressions into
@@ -1128,10 +1133,31 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
   }
 }
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+/* A walker node callback that translates a column reference to a table
+** into a corresponding column reference of an index.
+*/
+static int whereIndexExprTransColumn(Walker *p, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN ){
+    IdxExprTrans *pX = p->u.pIdxTrans;
+    if( pExpr->iTable==pX->iTabCur && pExpr->iColumn==pX->iTabCol ){
+      pExpr->iTable = pX->iIdxCur;
+      pExpr->iColumn = pX->iIdxCol;
+      pExpr->y.pTab = 0;
+    }
+  }
+  return WRC_Continue;
+}
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+
 /*
 ** For an indexes on expression X, locate every instance of expression X
 ** in pExpr and change that subexpression into a reference to the appropriate
 ** column of the index.
+**
+** 2019-10-24: Updated to also translate references to a VIRTUAL column in
+** the table into references to the corresponding (stored) column of the
+** index.
 */
 static void whereIndexExprTrans(
   Index *pIdx,      /* The Index */
@@ -1141,20 +1167,35 @@ static void whereIndexExprTrans(
 ){
   int iIdxCol;               /* Column number of the index */
   ExprList *aColExpr;        /* Expressions that are indexed */
+  Table *pTab;
   Walker w;
   IdxExprTrans x;
   aColExpr = pIdx->aColExpr;
-  if( aColExpr==0 ) return;  /* Not an index on expressions */
+  if( aColExpr==0 && !pIdx->bHasVCol ){
+    /* The index does not reference any expressions or virtual columns
+    ** so no translations are needed. */
+    return;
+  }
+  pTab = pIdx->pTable;
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = whereIndexExprTransNode;
   w.u.pIdxTrans = &x;
   x.iTabCur = iTabCur;
   x.iIdxCur = iIdxCur;
-  for(iIdxCol=0; iIdxCol<aColExpr->nExpr; iIdxCol++){
-    if( pIdx->aiColumn[iIdxCol]!=XN_EXPR ) continue;
-    assert( aColExpr->a[iIdxCol].pExpr!=0 );
+  for(iIdxCol=0; iIdxCol<pIdx->nColumn; iIdxCol++){
+    i16 iRef = pIdx->aiColumn[iIdxCol];
+    if( iRef==XN_EXPR ){
+      assert( aColExpr->a[iIdxCol].pExpr!=0 );
+      x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
+      w.xExprCallback = whereIndexExprTransNode;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    }else if( iRef>=0 && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0 ){
+      x.iTabCol = iRef;
+      w.xExprCallback = whereIndexExprTransColumn;
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+    }else{
+      continue;
+    }
     x.iIdxCol = iIdxCol;
-    x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
     sqlite3WalkExpr(&w, pWInfo->pWhere);
     sqlite3WalkExprList(&w, pWInfo->pOrderBy);
     sqlite3WalkExprList(&w, pWInfo->pResultSet);
@@ -1305,9 +1346,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iIn = pLevel->u.in.nIn;
     for(j=nConstraint-1; j>=0; j--){
       pTerm = pLoop->aLTerm[j];
+      if( (pTerm->eOperator & WO_IN)!=0 ) iIn--;
       if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
         disableTerm(pLevel, pTerm);
-      }else if( (pTerm->eOperator & WO_IN)!=0 ){
+      }else if( (pTerm->eOperator & WO_IN)!=0
+        && sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1
+      ){
         Expr *pCompare;  /* The comparison operator */
         Expr *pRight;    /* RHS of the comparison */
         VdbeOp *pOp;     /* Opcode to access the value of the IN constraint */
@@ -1318,8 +1362,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         ** encoding of the value in the register, so it *must* be reloaded. */
         assert( pLevel->u.in.aInLoop!=0 || db->mallocFailed );
         if( !db->mallocFailed ){
-          assert( iIn>0 );
-          pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[--iIn].addrInTop);
+          assert( iIn>=0 && iIn<pLevel->u.in.nIn );
+          pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[iIn].addrInTop);
           assert( pOp->opcode==OP_Column || pOp->opcode==OP_Rowid );
           assert( pOp->opcode!=OP_Column || pOp->p3==iReg+j+2 );
           assert( pOp->opcode!=OP_Rowid || pOp->p2==iReg+j+2 );
@@ -1343,6 +1387,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
       }
     }
+    assert( iIn==0 || db->mallocFailed );
     /* These registers need to be preserved in case there is an IN operator
     ** loop.  So we could deallocate the registers here (and potentially
     ** reuse them later) if (pLoop->wsFlags & WHERE_IN_ABLE)==0.  But it seems
@@ -1550,30 +1595,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u8 bSeekPastNull = 0;        /* True to seek past initial nulls */
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
     int omitTable;               /* True if we use the index only */
-
+    int regBignull = 0;          /* big-null flag register */
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
     assert( nEq>=pLoop->nSkip );
-
-    /* If this loop satisfies a sort order (pOrderBy) request that 
-    ** was passed to this function to implement a "SELECT min(x) ..." 
-    ** query, then the caller will only allow the loop to run for
-    ** a single iteration. This means that the first row returned
-    ** should not have a NULL value stored in 'x'. If column 'x' is
-    ** the first one after the nEq equality constraints in the index,
-    ** this requires some special handling.
-    */
-    assert( (pWInfo->pOrderBy!=0 && pWInfo->pOrderBy->nExpr==1)
-         || (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0 );
-    if( pLoop->wsFlags & WHERE_MIN_ORDERED ){
-      assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN) );
-      assert( pWInfo->nOBSat );
-      assert( pIdx->nColumn>nEq );
-      assert( pLoop->nSkip==0 );
-      bSeekPastNull = 1;
-      nExtraReg = 1;
-    }
 
     /* Find any inequality constraint terms for the start and end 
     ** of the range. 
@@ -1615,6 +1641,25 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
 
+    /* If the WHERE_BIGNULL_SORT flag is set, then index column nEq uses
+    ** a non-default "big-null" sort (either ASC NULLS LAST or DESC NULLS 
+    ** FIRST). In both cases separate ordered scans are made of those
+    ** index entries for which the column is null and for those for which
+    ** it is not. For an ASC sort, the non-NULL entries are scanned first.
+    ** For DESC, NULL entries are scanned first.
+    */
+    if( (pLoop->wsFlags & (WHERE_TOP_LIMIT|WHERE_BTM_LIMIT))==0
+     && (pLoop->wsFlags & WHERE_BIGNULL_SORT)!=0
+    ){
+      assert( bSeekPastNull==0 && nExtraReg==0 && nBtm==0 && nTop==0 );
+      assert( pRangeEnd==0 && pRangeStart==0 );
+      assert( pLoop->nSkip==0 );
+      nExtraReg = 1;
+      bSeekPastNull = 1;
+      pLevel->regBignull = regBignull = ++pParse->nMem;
+      pLevel->addrBignull = sqlite3VdbeMakeLabel(pParse);
+    }
+
     /* If we are doing a reverse order scan on an ascending index, or
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
@@ -1637,7 +1682,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( zStartAff && nTop ){
       zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
     }
-    addrNxt = pLevel->addrNxt;
+    addrNxt = (regBignull ? pLevel->addrBignull : pLevel->addrNxt);
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
     testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
@@ -1671,10 +1716,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       bSeekPastNull = 0;
     }else if( bSeekPastNull ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
-      nConstraint++;
       startEq = 0;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
       start_constraints = 1;
+      nConstraint++;
+    }else if( regBignull ){
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+      start_constraints = 1;
+      nConstraint++;
     }
     codeApplyAffinity(pParse, regBase, nConstraint - bSeekPastNull, zStartAff);
     if( pLoop->nSkip>0 && nConstraint==pLoop->nSkip ){
@@ -1685,6 +1734,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
         sqlite3VdbeAddOp1(v, OP_SeekHit, iIdxCur);
       }
+      if( regBignull ){
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, regBignull);
+        VdbeComment((v, "NULL-scan pass ctr"));
+      }
+
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1696,23 +1750,21 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
       VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
 
-      if( bSeekPastNull && (pLoop->wsFlags & WHERE_TOP_LIMIT)==0 ){
-        /* If bSeekPastNull is set only to skip past the NULL values for
-        ** a query like "SELECT min(a), b FROM t1", then add code so that
-        ** if there are no rows with (a IS NOT NULL), then do the seek 
-        ** without jumping past NULLs instead. This allows the code in 
-        ** select.c to pick a value for "b" in the above query.  */
-        assert( startEq==0 && (op==OP_SeekGT || op==OP_SeekLT) );
-        assert( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0 && pWInfo->nOBSat>0 );
-        sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+      assert( bSeekPastNull==0 || bStopAtNull==0 );
+      if( regBignull ){
+        assert( bSeekPastNull==1 || bStopAtNull==1 );
+        assert( bSeekPastNull==!bStopAtNull );
+        assert( bStopAtNull==startEq );
         sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
-
-        op = aStartOp[(start_constraints<<2) + (1<<1) + bRev];
-        assert( op==OP_SeekGE || op==OP_SeekLE );
-        sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+        op = aStartOp[(nConstraint>1)*4 + 2 + bRev];
+        sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, 
+                             nConstraint-startEq);
         VdbeCoverage(v);
+        VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
+        VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
         VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
         VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+        assert( op==OP_Rewind || op==OP_Last || op==OP_SeekGE || op==OP_SeekLE);
       }
     }
 
@@ -1745,8 +1797,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         endEq = 1;
       }
     }else if( bStopAtNull ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
-      endEq = 0;
+      if( regBignull==0 ){
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+        endEq = 0;
+      }
       nConstraint++;
     }
     sqlite3DbFree(db, zStartAff);
@@ -1757,8 +1811,31 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){
+      if( regBignull ){
+        /* Except, skip the end-of-range check while doing the NULL-scan */
+        sqlite3VdbeAddOp2(v, OP_IfNot, regBignull, sqlite3VdbeCurrentAddr(v)+3);
+        VdbeComment((v, "If NULL-scan 2nd pass"));
+        VdbeCoverage(v);
+      }
       op = aEndOp[bRev*2 + endEq];
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+      testcase( op==OP_IdxGT );  VdbeCoverageIf(v, op==OP_IdxGT );
+      testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
+      testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
+      testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
+    }
+    if( regBignull ){
+      /* During a NULL-scan, check to see if we have reached the end of
+      ** the NULLs */
+      assert( bSeekPastNull==!bStopAtNull );
+      assert( bSeekPastNull+bStopAtNull==1 );
+      assert( nConstraint+bSeekPastNull>0 );
+      sqlite3VdbeAddOp2(v, OP_If, regBignull, sqlite3VdbeCurrentAddr(v)+2);
+      VdbeComment((v, "If NULL-scan 1st pass"));
+      VdbeCoverage(v);
+      op = aEndOp[bRev*2 + bSeekPastNull];
+      sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase,
+                           nConstraint+bSeekPastNull);
       testcase( op==OP_IdxGT );  VdbeCoverageIf(v, op==OP_IdxGT );
       testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
       testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
@@ -1790,40 +1867,53 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
       iRowidReg = sqlite3GetTempRange(pParse, pPk->nKeyCol);
       for(j=0; j<pPk->nKeyCol; j++){
-        k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
+        k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[j]);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, iRowidReg+j);
       }
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iCur, addrCont,
                            iRowidReg, pPk->nKeyCol); VdbeCoverage(v);
     }
 
-    /* If pIdx is an index on one or more expressions, then look through
-    ** all the expressions in pWInfo and try to transform matching expressions
-    ** into reference to index columns.
-    **
-    ** Do not do this for the RHS of a LEFT JOIN. This is because the 
-    ** expression may be evaluated after OP_NullRow has been executed on
-    ** the cursor. In this case it is important to do the full evaluation,
-    ** as the result of the expression may not be NULL, even if all table
-    ** column values are.  https://www.sqlite.org/src/info/7fa8049685b50b5a
-    **
-    ** Also, do not do this when processing one index an a multi-index
-    ** OR clause, since the transformation will become invalid once we
-    ** move forward to the next index.
-    ** https://sqlite.org/src/info/4e8e4857d32d401f
-    */
-    if( pLevel->iLeftJoin==0 && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 ){
-      whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
+    if( pLevel->iLeftJoin==0 ){
+      /* If pIdx is an index on one or more expressions, then look through
+      ** all the expressions in pWInfo and try to transform matching expressions
+      ** into reference to index columns.  Also attempt to translate references
+      ** to virtual columns in the table into references to (stored) columns
+      ** of the index.
+      **
+      ** Do not do this for the RHS of a LEFT JOIN. This is because the 
+      ** expression may be evaluated after OP_NullRow has been executed on
+      ** the cursor. In this case it is important to do the full evaluation,
+      ** as the result of the expression may not be NULL, even if all table
+      ** column values are.  https://www.sqlite.org/src/info/7fa8049685b50b5a
+      **
+      ** Also, do not do this when processing one index an a multi-index
+      ** OR clause, since the transformation will become invalid once we
+      ** move forward to the next index.
+      ** https://sqlite.org/src/info/4e8e4857d32d401f
+      */
+      if( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 ){
+        whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
+      }
+  
+      /* If a partial index is driving the loop, try to eliminate WHERE clause
+      ** terms from the query that must be true due to the WHERE clause of
+      ** the partial index.
+      **
+      ** 2019-11-02 ticket 623eff57e76d45f6: This optimization does not work
+      ** for a LEFT JOIN.
+      */
+      if( pIdx->pPartIdxWhere ){
+        whereApplyPartialIndexConstraints(pIdx->pPartIdxWhere, iCur, pWC);
+      }
+    }else{
+      testcase( pIdx->pPartIdxWhere );
+      /* The following assert() is not a requirement, merely an observation:
+      ** The OR-optimization doesn't work for the right hand table of
+      ** a LEFT JOIN: */
+      assert( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 );
     }
-
-    /* If a partial index is driving the loop, try to eliminate WHERE clause
-    ** terms from the query that must be true due to the WHERE clause of
-    ** the partial index
-    */
-    if( pIdx->pPartIdxWhere ){
-      whereApplyPartialIndexConstraints(pIdx->pPartIdxWhere, iCur, pWC);
-    }
-
+  
     /* Record the instruction used to terminate the loop. */
     if( pLoop->wsFlags & WHERE_ONEROW ){
       pLevel->op = OP_Noop;
@@ -2050,7 +2140,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol, r+iPk);
+                sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
               }
 
               /* Check if the temp table already contains this key. If so,

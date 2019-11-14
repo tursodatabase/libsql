@@ -402,11 +402,6 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_LegacyAlter },
- {/* zName:     */ "legacy_file_format",
-  /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
-  /* ColNames:  */ 0, 0,
-  /* iArg:      */ SQLITE_LegacyFileFmt },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
  {/* zName:     */ "lock_proxy_file",
@@ -674,4 +669,4 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ SQLITE_WriteSchema|SQLITE_NoSchemaError },
 #endif
 };
-/* Number of pragmas: 66 on by default, 82 total. */
+/* Number of pragmas: 65 on by default, 81 total. */

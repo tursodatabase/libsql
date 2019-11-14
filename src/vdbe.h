@@ -179,6 +179,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** for a description of what each of these routines does.
 */
 Vdbe *sqlite3VdbeCreate(Parse*);
+Parse *sqlite3VdbeParser(Vdbe*);
 int sqlite3VdbeAddOp0(Vdbe*,int);
 int sqlite3VdbeAddOp1(Vdbe*,int,int);
 int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
@@ -189,6 +190,7 @@ int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
 int sqlite3VdbeAddOp4Dup8(Vdbe*,int,int,int,int,const u8*,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
+int sqlite3VdbeAddFunctionCall(Parse*,int,int,int,int,const FuncDef*,int);
 void sqlite3VdbeEndCoroutine(Vdbe*,int);
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_TEST_REALLOC_STRESS)
   void sqlite3VdbeVerifyNoMallocRequired(Vdbe *p, int N);
@@ -278,9 +280,8 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo*);
 typedef int (*RecordCompare)(int,const void*,UnpackedRecord*);
 RecordCompare sqlite3VdbeFindCompare(UnpackedRecord*);
 
-#ifndef SQLITE_OMIT_TRIGGER
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
-#endif
+int sqlite3VdbeHasSubProgram(Vdbe*);
 
 int sqlite3NotPureFunc(sqlite3_context*);
 

@@ -829,7 +829,8 @@ static int vdbeSorterCompareText(
       );
     }
   }else{
-    if( pTask->pSorter->pKeyInfo->aSortOrder[0] ){
+    assert( !(pTask->pSorter->pKeyInfo->aSortFlags[0]&KEYINFO_ORDER_BIGNULL) );
+    if( pTask->pSorter->pKeyInfo->aSortFlags[0] ){
       res = res * -1;
     }
   }
@@ -897,7 +898,8 @@ static int vdbeSorterCompareInt(
           pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
       );
     }
-  }else if( pTask->pSorter->pKeyInfo->aSortOrder[0] ){
+  }else if( pTask->pSorter->pKeyInfo->aSortFlags[0] ){
+    assert( !(pTask->pSorter->pKeyInfo->aSortFlags[0]&KEYINFO_ORDER_BIGNULL) );
     res = res * -1;
   }
 
@@ -1012,6 +1014,7 @@ int sqlite3VdbeSorterInit(
 
     if( pKeyInfo->nAllField<13 
      && (pKeyInfo->aColl[0]==0 || pKeyInfo->aColl[0]==db->pDfltColl)
+     && (pKeyInfo->aSortFlags[0] & KEYINFO_ORDER_BIGNULL)==0
     ){
       pSorter->typeMask = SORTER_TYPE_INTEGER | SORTER_TYPE_TEXT;
     }
@@ -1393,20 +1396,16 @@ static SorterCompare vdbeSorterGetCompare(VdbeSorter *p){
 */
 static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
   int i;
-  SorterRecord **aSlot;
   SorterRecord *p;
   int rc;
+  SorterRecord *aSlot[64];
 
   rc = vdbeSortAllocUnpacked(pTask);
   if( rc!=SQLITE_OK ) return rc;
 
   p = pList->pList;
   pTask->xCompare = vdbeSorterGetCompare(pTask->pSorter);
-
-  aSlot = (SorterRecord **)sqlite3MallocZero(64 * sizeof(SorterRecord *));
-  if( !aSlot ){
-    return SQLITE_NOMEM_BKPT;
-  }
+  memset(aSlot, 0, sizeof(aSlot));
 
   while( p ){
     SorterRecord *pNext;
@@ -1431,13 +1430,12 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
   }
 
   p = 0;
-  for(i=0; i<64; i++){
+  for(i=0; i<ArraySize(aSlot); i++){
     if( aSlot[i]==0 ) continue;
     p = p ? vdbeSorterMerge(pTask, p, aSlot[i]) : aSlot[i];
   }
   pList->pList = p;
 
-  sqlite3_free(aSlot);
   assert( pTask->pUnpacked->errCode==SQLITE_OK 
        || pTask->pUnpacked->errCode==SQLITE_NOMEM 
   );

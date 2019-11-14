@@ -305,12 +305,12 @@ void sqlite3VtabDisconnect(sqlite3 *db, Table *p){
 */
 void sqlite3VtabUnlockList(sqlite3 *db){
   VTable *p = db->pDisconnect;
-  db->pDisconnect = 0;
 
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   assert( sqlite3_mutex_held(db->mutex) );
 
   if( p ){
+    db->pDisconnect = 0;
     sqlite3ExpirePreparedStatements(db, 0);
     do {
       VTable *pNext = p->pNext;
@@ -624,7 +624,7 @@ static int vtabCallConstructor(
       rc = SQLITE_ERROR;
     }else{
       int iCol;
-      u8 oooHidden = 0;
+      u16 oooHidden = 0;
       /* If everything went according to plan, link the new VTable structure
       ** into the linked list headed by pTab->pVTable. Then loop through the 
       ** columns of the table to see if any of them contain the token "hidden".

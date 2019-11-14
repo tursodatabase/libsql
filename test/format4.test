@@ -17,7 +17,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-db eval {PRAGMA legacy_file_format=OFF}
+#db eval {PRAGMA legacy_file_format=OFF}
+sqlite3_db_config db LEGACY_FILE_FORMAT 0
 
 # The size of the database depends on whether or not autovacuum
 # is enabled.

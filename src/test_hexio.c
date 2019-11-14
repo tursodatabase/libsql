@@ -337,6 +337,17 @@ static int getFts3Varint(const char *p, sqlite_int64 *v){
   return (int) (q - (unsigned char *)p);
 }
 
+static int putFts3Varint(char *p, sqlite_int64 v){
+  unsigned char *q = (unsigned char *) p;
+  sqlite_uint64 vu = v;
+  do{
+    *q++ = (unsigned char) ((vu & 0x7f) | 0x80);
+    vu >>= 7;
+  }while( vu!=0 );
+  q[-1] &= 0x7f;  /* turn off high bit in final byte */
+  assert( q - (unsigned char *)p <= 10 );
+  return (int) (q - (unsigned char *)p);
+}
 
 /*
 ** USAGE:  read_fts3varint BLOB VARNAME
@@ -367,6 +378,67 @@ static int SQLITE_TCLAPI read_fts3varint(
   return TCL_OK;
 }
 
+/*
+** USAGE:  make_fts3record ARGLIST
+*/
+static int SQLITE_TCLAPI make_fts3record(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_Obj **aArg = 0;
+  int nArg = 0;
+  unsigned char *aOut = 0;
+  int nOut = 0;
+  int nAlloc = 0;
+  int i;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "LIST");
+    return TCL_ERROR;
+  }
+  if( Tcl_ListObjGetElements(interp, objv[1], &nArg, &aArg) ){
+    return TCL_ERROR;
+  }
+
+  for(i=0; i<nArg; i++){
+    sqlite3_int64 iVal;
+    if( TCL_OK==Tcl_GetWideIntFromObj(0, aArg[i], &iVal) ){
+      if( nOut+10>nAlloc ){
+        int nNew = nAlloc?nAlloc*2:128;
+        unsigned char *aNew = sqlite3_realloc(aOut, nNew);
+        if( aNew==0 ){
+          sqlite3_free(aOut);
+          return TCL_ERROR;
+        }
+        aOut = aNew;
+        nAlloc = nNew;
+      }
+      nOut += putFts3Varint((char*)&aOut[nOut], iVal);
+    }else{
+      int nVal = 0;
+      char *zVal = Tcl_GetStringFromObj(aArg[i], &nVal);
+      while( (nOut + nVal)>nAlloc ){
+        int nNew = nAlloc?nAlloc*2:128;
+        unsigned char *aNew = sqlite3_realloc(aOut, nNew);
+        if( aNew==0 ){
+          sqlite3_free(aOut);
+          return TCL_ERROR;
+        }
+        aOut = aNew;
+        nAlloc = nNew;
+      }
+      memcpy(&aOut[nOut], zVal, nVal);
+      nOut += nVal;
+    }
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(aOut, nOut));
+  sqlite3_free(aOut);
+  return TCL_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -383,6 +455,7 @@ int Sqlitetest_hexio_Init(Tcl_Interp *interp){
      { "hexio_render_int32",           hexio_render_int32    },
      { "utf8_to_utf8",                 utf8_to_utf8          },
      { "read_fts3varint",              read_fts3varint       },
+     { "make_fts3record",              make_fts3record       },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

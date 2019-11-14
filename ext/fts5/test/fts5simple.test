@@ -467,4 +467,17 @@ do_execsql_test 21.3 {
   SELECT rowid FROM x1($doc);
 } {11112}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 22.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x) VALUES('a b c');
+  INSERT INTO x1(x) VALUES('x y z');
+  INSERT INTO x1(x) VALUES('c b a');
+  INSERT INTO x1(x) VALUES('z y x');
+}
+
+do_catchsql_test 22.1 {SELECT * FROM x1('')}   {1 {fts5: syntax error near ""}}
+do_catchsql_test 22.2 {SELECT * FROM x1(NULL)} {1 {fts5: syntax error near ""}}
+
 finish_test

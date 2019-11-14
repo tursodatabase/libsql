@@ -715,6 +715,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   db->lookaside.pInit = 0;
   db->lookaside.pFree = 0;
   db->lookaside.sz = (u16)sz;
+  db->lookaside.szTrue = (u16)sz;
   if( pStart ){
     int i;
     LookasideSlot *p;
@@ -733,6 +734,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.pStart = db;
     db->lookaside.pEnd = db;
     db->lookaside.bDisable = 1;
+    db->lookaside.sz = 0;
     db->lookaside.bMalloced = 0;
     db->lookaside.nSlot = 0;
   }
@@ -849,6 +851,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_LEGACY_ALTER_TABLE,    SQLITE_LegacyAlter    },
         { SQLITE_DBCONFIG_DQS_DDL,               SQLITE_DqsDDL         },
         { SQLITE_DBCONFIG_DQS_DML,               SQLITE_DqsDML         },
+        { SQLITE_DBCONFIG_LEGACY_FILE_FORMAT,    SQLITE_LegacyFileFmt  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1719,7 +1722,7 @@ int sqlite3CreateFunc(
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
-  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY);
+  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|SQLITE_SUBTYPE);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
   
 #ifndef SQLITE_OMIT_UTF16
@@ -3064,6 +3067,7 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;
   db->lookaside.bDisable = 1;
+  db->lookaside.sz = 0;
 
   assert( sizeof(db->aLimit)==sizeof(aHardLimit) );
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
@@ -4182,6 +4186,25 @@ int sqlite3_test_control(int op, ...){
 #endif /* SQLITE_UNTESTABLE */
   return rc;
 }
+
+#ifdef SQLITE_DEBUG
+/*
+** This routine appears inside assert() statements only.
+**
+** Return the number of URI parameters that follow the filename.
+*/
+int sqlite3UriCount(const char *z){
+  int n = 0;
+  if( z==0 ) return 0;
+  z += strlen(z)+1;
+  while( z[0] ){
+    z += strlen(z)+1;
+    z += strlen(z)+1;
+    n++;
+  }
+  return n;
+}
+#endif /* SQLITE_DEBUG */
 
 /*
 ** This is a utility routine, useful to VFS implementations, that checks

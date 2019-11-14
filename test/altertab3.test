@@ -20,7 +20,6 @@ ifcapable !altertable {
   return
 }
 
-
 ifcapable windowfunc {
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
@@ -380,6 +379,37 @@ do_execsql_test 17.2 {
     SELECT a () FILTER (WHERE aaa>0) FROM "t1x";
   END}
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 18.1 {
+  CREATE TABLE t1(a,b);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    SELECT a, b FROM t1
+    INTERSECT SELECT b,a FROM t1
+    ORDER BY b IN (
+        SELECT a UNION SELECT b
+        FROM t1
+        ORDER BY b COLLATE nocase
+        )
+    ;
+  END;
+}
+
+do_catchsql_test 18.2 {
+    SELECT a, b FROM t1
+    INTERSECT 
+    SELECT b,a FROM t1
+    ORDER BY b IN (
+        SELECT a UNION SELECT b
+        FROM t1
+        ORDER BY b COLLATE nocase
+        );
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+do_catchsql_test 18.3 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger r1: 1st ORDER BY term does not match any column in the result set}}
 
 
 finish_test

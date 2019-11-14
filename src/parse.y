@@ -106,8 +106,9 @@ struct FrameBound     { int eType; Expr *pExpr; };
 ** shared across database connections.
 */
 static void disableLookaside(Parse *pParse){
+  sqlite3 *db = pParse->db;
   pParse->disableLookaside++;
-  pParse->db->lookaside.bDisable++;
+  DisableLookaside;
 }
 
 } // end %include
@@ -211,6 +212,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
+  NULLS FIRST LAST
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif SQLITE_OMIT_COMPOUND_SELECT
@@ -218,6 +220,9 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
   CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
   EXCLUDE GROUPS OTHERS TIES
 %endif SQLITE_OMIT_WINDOWFUNC
+%ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  GENERATED ALWAYS
+%endif
   REINDEX RENAME CTIME_KW IF
   .
 %wildcard ANY.
@@ -345,6 +350,10 @@ ccons ::= REFERENCES nm(T) eidlist_opt(TA) refargs(R).
                                  {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).    {sqlite3DeferForeignKey(pParse,D);}
 ccons ::= COLLATE ids(C).        {sqlite3AddCollateType(pParse, &C);}
+ccons ::= GENERATED ALWAYS AS generated.
+ccons ::= AS generated.
+generated ::= LP expr(E) RP.          {sqlite3AddGenerated(pParse,E,0);}
+generated ::= LP expr(E) RP ID(TYPE). {sqlite3AddGenerated(pParse,E,&TYPE);}
 
 // The optional AUTOINCREMENT keyword
 %type autoinc {int}
@@ -781,13 +790,13 @@ using_opt(U) ::= .                        {U = 0;}
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
-sortlist(A) ::= sortlist(A) COMMA expr(Y) sortorder(Z). {
+sortlist(A) ::= sortlist(A) COMMA expr(Y) sortorder(Z) nulls(X). {
   A = sqlite3ExprListAppend(pParse,A,Y);
-  sqlite3ExprListSetSortOrder(A,Z);
+  sqlite3ExprListSetSortOrder(A,Z,X);
 }
-sortlist(A) ::= expr(Y) sortorder(Z). {
+sortlist(A) ::= expr(Y) sortorder(Z) nulls(X). {
   A = sqlite3ExprListAppend(pParse,0,Y); /*A-overwrites-Y*/
-  sqlite3ExprListSetSortOrder(A,Z);
+  sqlite3ExprListSetSortOrder(A,Z,X);
 }
 
 %type sortorder {int}
@@ -795,6 +804,11 @@ sortlist(A) ::= expr(Y) sortorder(Z). {
 sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
 sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
 sortorder(A) ::= .              {A = SQLITE_SO_UNDEFINED;}
+
+%type nulls {int}
+nulls(A) ::= NULLS FIRST.       {A = SQLITE_SO_ASC;}
+nulls(A) ::= NULLS LAST.        {A = SQLITE_SO_DESC;}
+nulls(A) ::= .                  {A = SQLITE_SO_UNDEFINED;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1064,6 +1078,9 @@ expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   A = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
   if( A ){
     A->x.pList = pList;
+    if( ALWAYS(pList->nExpr) ){
+      A->flags |= pList->a[0].pExpr->flags & EP_Propagate;
+    }
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   }
@@ -1175,34 +1192,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** regardless of the value of expr1.
       */
       sqlite3ExprUnmapAndDelete(pParse, A);
-      A = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[N],1);
-    }else if( Y->nExpr==1 ){
-      /* Expressions of the form:
-      **
-      **      expr1 IN (?1)
-      **      expr1 NOT IN (?2)
-      **
-      ** with exactly one value on the RHS can be simplified to something
-      ** like this:
-      **
-      **      expr1 == ?1
-      **      expr1 <> ?2
-      **
-      ** But, the RHS of the == or <> is marked with the EP_Generic flag
-      ** so that it may not contribute to the computation of comparison
-      ** affinity or the collating sequence to use for comparison.  Otherwise,
-      ** the semantics would be subtly different from IN or NOT IN.
-      */
-      Expr *pRHS = Y->a[0].pExpr;
-      Y->a[0].pExpr = 0;
-      sqlite3ExprListDelete(pParse->db, Y);
-      /* pRHS cannot be NULL because a malloc error would have been detected
-      ** before now and control would have never reached this point */
-      if( ALWAYS(pRHS) ){
-        pRHS->flags &= ~EP_Collate;
-        pRHS->flags |= EP_Generic;
-      }
-      A = sqlite3PExpr(pParse, N ? TK_NE : TK_EQ, A, pRHS);
+      A = sqlite3Expr(pParse->db, TK_INTEGER, N ? "1" : "0");
     }else{
       A = sqlite3PExpr(pParse, TK_IN, A, 0);
       if( A ){
@@ -1767,12 +1757,12 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 ** are synthesized and do not actually appear in the grammar:
 */
 %token
-  TRUEFALSE       /* True or false keyword */
-  ISNOT           /* Combination of IS and NOT */
-  FUNCTION        /* A function invocation */
   COLUMN          /* Reference to a table column */
   AGG_FUNCTION    /* An aggregate function */
   AGG_COLUMN      /* An aggregated column */
+  TRUEFALSE       /* True or false keyword */
+  ISNOT           /* Combination of IS and NOT */
+  FUNCTION        /* A function invocation */
   UMINUS          /* Unary minus */
   UPLUS           /* Unary plus */
   TRUTH           /* IS TRUE or IS FALSE or IS NOT TRUE or IS NOT FALSE */
