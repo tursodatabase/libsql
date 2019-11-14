@@ -1742,6 +1742,7 @@ struct sqlite3_mem_methods {
 ** memory allocation statistics. ^(When memory allocation statistics are
 ** disabled, the following SQLite interfaces become non-operational:
 **   <ul>
+**   <li> [sqlite3_hard_heap_limit64()]
 **   <li> [sqlite3_memory_used()]
 **   <li> [sqlite3_memory_highwater()]
 **   <li> [sqlite3_soft_heap_limit64()]
@@ -6139,7 +6140,7 @@ int sqlite3_db_release_memory(sqlite3*);
 ** hard heap limit is enabled makes the soft heap limit equal to the
 ** hard heap limit.
 **
-** The soft heap limits can also be adjusted using
+** The memory allocation limits can also be adjusted using
 ** [PRAGMA soft_heap_limit] and [PRAGMA hard_heap_limit].
 **
 ** ^(The heap limits are not enforced in the current implementation
