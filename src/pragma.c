@@ -2106,7 +2106,7 @@ void sqlite3Pragma(
       sqlite3_int64 iPrior = sqlite3_hard_heap_limit64(-1);
       if( N>0 && (iPrior==0 || iPrior>N) ) sqlite3_hard_heap_limit64(N);
     }
-    returnSingleInt(v, sqlite3_soft_heap_limit64(-1));
+    returnSingleInt(v, sqlite3_hard_heap_limit64(-1));
     break;
   }
 

@@ -33,6 +33,13 @@ int sqlite3_release_memory(int n){
 }
 
 /*
+** Default value of the hard heap limit.  0 means "no limit".
+*/
+#ifndef SQLITE_MAX_MEMORY
+# define SQLITE_MAX_MEMORY 0
+#endif
+
+/*
 ** State information local to the memory allocation subsystem.
 */
 static SQLITE_WSD struct Mem0Global {
@@ -45,7 +52,7 @@ static SQLITE_WSD struct Mem0Global {
   ** sqlite3_soft_heap_limit() setting.
   */
   int nearlyFull;
-} mem0 = { 0, 0, 0 };
+} mem0 = { 0, SQLITE_MAX_MEMORY, SQLITE_MAX_MEMORY, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
 
@@ -231,13 +238,6 @@ static void mallocWithAlarm(int n, void **pp){
   ** or else a crash results.  Hence, do not attempt to optimize out the
   ** following xRoundup() call. */
   nFull = sqlite3GlobalConfig.m.xRoundup(n);
-
-#ifdef SQLITE_MAX_MEMORY
-  if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)+nFull>SQLITE_MAX_MEMORY ){
-    *pp = 0;
-    return;
-  }
-#endif
 
   sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, n);
   if( mem0.alarmThreshold>0 ){
