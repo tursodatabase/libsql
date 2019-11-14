@@ -903,7 +903,7 @@ static ExprList *exprListAppendList(
 */
 int sqlite3WindowRewrite(Parse *pParse, Select *p){
   int rc = SQLITE_OK;
-  if( p->pWin && p->pPrior==0 ){
+  if( p->pWin && p->pPrior==0 && (p->selFlags & SF_WinRewrite)==0 ){
     Vdbe *v = sqlite3GetVdbe(pParse);
     sqlite3 *db = pParse->db;
     Select *pSub = 0;             /* The subquery */
@@ -928,6 +928,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pGroupBy = 0;
     p->pHaving = 0;
     p->selFlags &= ~SF_Aggregate;
+    p->selFlags |= SF_WinRewrite;
 
     /* Create the ORDER BY clause for the sub-select. This is the concatenation
     ** of the window PARTITION and ORDER BY clauses. Then, if this makes it
