@@ -1244,8 +1244,8 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
 ** SELECT, or (b) the windows already linked use a compatible window frame.
 */
 void sqlite3WindowLink(Select *pSel, Window *pWin){
-  if( 0==pSel->pWin 
-   || 0==sqlite3WindowCompare(0, pSel->pWin, pWin, 0)
+  if( pSel!=0
+   && (0==pSel->pWin || 0==sqlite3WindowCompare(0, pSel->pWin, pWin, 0))
   ){
     pWin->pNextWin = pSel->pWin;
     if( pSel->pWin ){
