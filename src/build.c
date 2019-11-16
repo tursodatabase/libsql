@@ -856,13 +856,14 @@ int sqlite3CheckObjectName(
       }
     }
   }else{
-    if( pParse->nested==0 
-     && 0==sqlite3StrNICmp(zName, "sqlite_", 7)
+    if( (pParse->nested==0 && 0==sqlite3StrNICmp(zName, "sqlite_", 7))
+     || (sqlite3ReadOnlyShadowTables(db) && sqlite3ShadowTableName(db, zName))
     ){
       sqlite3ErrorMsg(pParse, "object name reserved for internal use: %s",
                       zName);
       return SQLITE_ERROR;
     }
+
   }
   return SQLITE_OK;
 }
@@ -2129,7 +2130,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 ** zName is temporarily modified while this routine is running, but is
 ** restored to its original value prior to this routine returning.
 */
-static int isShadowTableName(sqlite3 *db, char *zName){
+int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
   Module *pMod;                 /* Module for the virtual table */
@@ -2147,8 +2148,6 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   if( pMod->pModule->xShadowName==0 ) return 0;
   return pMod->pModule->xShadowName(zTail+1);
 }
-#else
-# define isShadowTableName(x,y) 0
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
@@ -2190,7 +2189,7 @@ void sqlite3EndTable(
   p = pParse->pNewTable;
   if( p==0 ) return;
 
-  if( pSelect==0 && isShadowTableName(db, p->zName) ){
+  if( pSelect==0 && sqlite3ShadowTableName(db, p->zName) ){
     p->tabFlags |= TF_Shadow;
   }
 
