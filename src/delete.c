@@ -70,11 +70,7 @@ static int tabIsReadOnly(Parse *pParse, Table *pTab){
     return sqlite3WritableSchema(db)==0 && pParse->nested==0;
   }
   assert( pTab->tabFlags & TF_Shadow );
-  return (db->flags & SQLITE_Defensive)!=0 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-          && db->pVtabCtx==0
-#endif
-          && db->nVdbeExec==0;
+  return sqlite3ReadOnlyShadowTables(db);
 }
 
 /*

@@ -4547,6 +4547,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    );
 #  define sqlite3VtabInSync(db) ((db)->nVTrans>0 && (db)->aVTrans==0)
 #endif
+int sqlite3ReadOnlyShadowTables(sqlite3 *db);
 int sqlite3VtabEponymousTableInit(Parse*,Module*);
 void sqlite3VtabEponymousTableClear(sqlite3*,Module*);
 void sqlite3VtabMakeWritable(Parse*,Table*);
