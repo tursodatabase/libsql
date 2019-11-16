@@ -2747,6 +2747,22 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
 }
 
 /*
+** Return true if it is not allowed to drop the given table
+*/
+static int tableMayNotBeDropped(Parse *pParse, Table *pTab){
+  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
+    if( sqlite3StrNICmp(pTab->zName+7, "stat", 4)==0 ) return 0;
+    if( sqlite3StrNICmp(pTab->zName+7, "parameters", 10)==0 ) return 0;
+    return 1;
+  }
+  if( pTab->tabFlags & TF_Shadow ){
+    sqlite3 *db = pParse->db;
+    if( (db->flags & SQLITE_Defensive)!=0 && db->nVdbeExec==0 ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** This routine is called to do the work of a DROP TABLE statement.
 ** pName is the name of the table to be dropped.
 */
@@ -2815,9 +2831,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     }
   }
 #endif
-  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
-    && sqlite3StrNICmp(pTab->zName+7, "stat", 4)!=0
-    && sqlite3StrNICmp(pTab->zName+7, "parameters", 10)!=0 ){
+  if( tableMayNotBeDropped(pParse, pTab) ){
     sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
     goto exit_drop_table;
   }
