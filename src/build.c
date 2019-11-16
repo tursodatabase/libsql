@@ -856,13 +856,14 @@ int sqlite3CheckObjectName(
       }
     }
   }else{
-    if( pParse->nested==0 
-     && 0==sqlite3StrNICmp(zName, "sqlite_", 7)
+    if( (pParse->nested==0 && 0==sqlite3StrNICmp(zName, "sqlite_", 7))
+     || (sqlite3ReadOnlyShadowTables(db) && sqlite3ShadowTableName(db, zName))
     ){
       sqlite3ErrorMsg(pParse, "object name reserved for internal use: %s",
                       zName);
       return SQLITE_ERROR;
     }
+
   }
   return SQLITE_OK;
 }
@@ -2129,7 +2130,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 ** zName is temporarily modified while this routine is running, but is
 ** restored to its original value prior to this routine returning.
 */
-static int isShadowTableName(sqlite3 *db, char *zName){
+int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
   Module *pMod;                 /* Module for the virtual table */
@@ -2147,8 +2148,6 @@ static int isShadowTableName(sqlite3 *db, char *zName){
   if( pMod->pModule->xShadowName==0 ) return 0;
   return pMod->pModule->xShadowName(zTail+1);
 }
-#else
-# define isShadowTableName(x,y) 0
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
@@ -2190,7 +2189,7 @@ void sqlite3EndTable(
   p = pParse->pNewTable;
   if( p==0 ) return;
 
-  if( pSelect==0 && isShadowTableName(db, p->zName) ){
+  if( pSelect==0 && sqlite3ShadowTableName(db, p->zName) ){
     p->tabFlags |= TF_Shadow;
   }
 
@@ -2895,17 +2894,32 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
 }
 
 /*
+** Return TRUE if shadow tables should be read-only in the current
+** context.
+*/
+int sqlite3ReadOnlyShadowTables(sqlite3 *db){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( (db->flags & SQLITE_Defensive)!=0
+   && db->pVtabCtx==0
+   && db->nVdbeExec==0
+  ){
+    return 1;
+  }
+#endif
+  return 0;
+}
+
+/*
 ** Return true if it is not allowed to drop the given table
 */
-static int tableMayNotBeDropped(Parse *pParse, Table *pTab){
+static int tableMayNotBeDropped(sqlite3 *db, Table *pTab){
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
     if( sqlite3StrNICmp(pTab->zName+7, "stat", 4)==0 ) return 0;
     if( sqlite3StrNICmp(pTab->zName+7, "parameters", 10)==0 ) return 0;
     return 1;
   }
-  if( pTab->tabFlags & TF_Shadow ){
-    sqlite3 *db = pParse->db;
-    if( (db->flags & SQLITE_Defensive)!=0 && db->nVdbeExec==0 ) return 1;
+  if( (pTab->tabFlags & TF_Shadow)!=0 && sqlite3ReadOnlyShadowTables(db) ){
+    return 1;
   }
   return 0;
 }
@@ -2979,7 +2993,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     }
   }
 #endif
-  if( tableMayNotBeDropped(pParse, pTab) ){
+  if( tableMayNotBeDropped(db, pTab) ){
     sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
     goto exit_drop_table;
   }
