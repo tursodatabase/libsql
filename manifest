@@ -1,5 +1,5 @@
-C More\srestrictions\son\schanges\sto\sshadow\stables\swhen\sin\sdefensive\smode.
-D 2019-11-16T16:54:53.217
+C Improved\sdetection\sof\scorrupt\sshadow\stables\sin\sFTS3.\s\sEnable\sthe\sdebugging\nspecial-inserts\sfor\sFTS3\sfor\sboth\sSQLITE_DEBUG\sand\sSQLITE_TEST.
+D 2019-11-16T21:40:49.550
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -81,9 +81,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c75aa32b230bf4950d2a16a749eb893beab81abbdd2975383e19325715bf1e31
+F ext/fts3/fts3.c 6184d5748b51301f401eda0d3e5ad0caa19b4b95c0520cdd1f83a74e3a1c97dc
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 74384e28b778a057f1467529715668b98f3f12f52eeb564fd6ae1e894125c00c
+F ext/fts3/fts3Int.h b879664f543ce352815461cacd828f2606716e46e47323875eddfe100d8b7711
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
 F ext/fts3/fts3_expr.c b132af223e90e35b9f9efa9fe63d6ae737d34153a3b6066736086df8abc78a1f
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c bf724ff69dd497eb8399452ecd44e39d8eb420472bf555b826dede4b05e9accd
+F ext/fts3/fts3_write.c f7d443ebe2cdf0a8515edb7588c8aab77108cc28ede9ced8baa416c95aa810cb
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -1016,7 +1016,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db e7a86fd83dda151d160445d542e32e5c6019c541b3a74c2a525b6ac640639711
-F test/fuzzdata8.db 84471dfe9c85fc00a85bff47eb9876e4282964385587a62eb9711e4be8f4dd3f
+F test/fuzzdata8.db 053981588014b4e1e5bc8beaf7034671e133cee853a0f2dd9c8d444be1a97fe5
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1849,8 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 70390bbca49e706649ca5b7c031f0baf416fc38798c17e5f3b73746b3e66e3b5 6aef58b629d89955f85f65191ba2be67b2adfac4f0327fe9a7141cb2705dbc00
-R eb081275a7e8dd518362d4efeb289e7e
-T +closed 6aef58b629d89955f85f65191ba2be67b2adfac4f0327fe9a7141cb2705dbc00
+P bae76a5c40703871e5ce4cd23d6fae5a3836606f524a63b01ac828c7a602c5e9
+R b5d91364fca42dbea07f58830b5ec589
 U drh
-Z 2f2e9ad59bba00bd0c1df6acd6bb6363
+Z baf295687228d1300e4112b17540730f

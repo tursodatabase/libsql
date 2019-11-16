@@ -23,7 +23,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 #define FTS_MAX_APPENDABLE_HEIGHT 16
 
@@ -2030,6 +2030,11 @@ static int fts3NodeAddTerm(
     nPrefix = fts3PrefixCompress(pTree->zTerm, pTree->nTerm, zTerm, nTerm);
     nSuffix = nTerm-nPrefix;
 
+    /* If nSuffix is zero or less, then zTerm/nTerm must be a prefix of 
+    ** pWriter->zTerm/pWriter->nTerm. i.e. must be equal to or less than when
+    ** compared with BINARY collation. This indicates corruption.  */
+    if( nSuffix<=0 ) return FTS_CORRUPT_VTAB;
+
     nReq += sqlite3Fts3VarintLen(nPrefix)+sqlite3Fts3VarintLen(nSuffix)+nSuffix;
     if( nReq<=p->nNodeSize || !pTree->zTerm ){
 
@@ -2323,9 +2328,11 @@ static int fts3SegWriterAdd(
   /* Append the prefix-compressed term and doclist to the buffer. */
   nData += sqlite3Fts3PutVarint(&pWriter->aData[nData], nPrefix);
   nData += sqlite3Fts3PutVarint(&pWriter->aData[nData], nSuffix);
+  assert( nSuffix>0 );
   memcpy(&pWriter->aData[nData], &zTerm[nPrefix], nSuffix);
   nData += nSuffix;
   nData += sqlite3Fts3PutVarint(&pWriter->aData[nData], nDoclist);
+  assert( nDoclist>0 );
   memcpy(&pWriter->aData[nData], aDoclist, nDoclist);
   pWriter->nData = nData + nDoclist;
 
@@ -2345,6 +2352,7 @@ static int fts3SegWriterAdd(
       pWriter->zTerm = zNew;
     }
     assert( pWriter->zTerm==pWriter->zMalloc );
+    assert( nTerm>0 );
     memcpy(pWriter->zTerm, zTerm, nTerm);
   }else{
     pWriter->zTerm = (char *)zTerm;
@@ -2653,6 +2661,7 @@ static int fts3MsrBufferData(
     pMsr->aBuffer = pNew;
   }
 
+  assert( nList>0 );
   memcpy(pMsr->aBuffer, pList, nList);
   return SQLITE_OK;
 }
@@ -3841,6 +3850,7 @@ static int fts3IncrmergePush(
     ** be added to.  */
     nPrefix = fts3PrefixCompress(pNode->key.a, pNode->key.n, zTerm, nTerm);
     nSuffix = nTerm - nPrefix;
+    if( NEVER(nSuffix<=0) ) return FTS_CORRUPT_VTAB;
     nSpace  = sqlite3Fts3VarintLen(nPrefix);
     nSpace += sqlite3Fts3VarintLen(nSuffix) + nSuffix;
 
@@ -5344,7 +5354,7 @@ static int fts3DoIntegrityCheck(
 ** meaningful value to insert is the text 'optimize'.
 */
 static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
-  int rc;                         /* Return Code */
+  int rc = SQLITE_ERROR;           /* Return Code */
   const char *zVal = (const char *)sqlite3_value_text(pVal);
   int nVal = sqlite3_value_bytes(pVal);
 
@@ -5360,21 +5370,23 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     rc = fts3DoIncrmerge(p, &zVal[6]);
   }else if( nVal>10 && 0==sqlite3_strnicmp(zVal, "automerge=", 10) ){
     rc = fts3DoAutoincrmerge(p, &zVal[10]);
-#ifdef SQLITE_TEST
-  }else if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
-    p->nNodeSize = atoi(&zVal[9]);
-    rc = SQLITE_OK;
-  }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
-    p->nMaxPendingData = atoi(&zVal[11]);
-    rc = SQLITE_OK;
-  }else if( nVal>21 && 0==sqlite3_strnicmp(zVal, "test-no-incr-doclist=", 21) ){
-    p->bNoIncrDoclist = atoi(&zVal[21]);
-    rc = SQLITE_OK;
-#endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   }else{
-    rc = SQLITE_ERROR;
+    int v;
+    if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
+      v = atoi(&zVal[9]);
+      if( v>=24 && v<=p->nPgsz-35 ) p->nNodeSize = v;
+      rc = SQLITE_OK;
+    }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
+      v = atoi(&zVal[11]);
+      if( v>=64 && v<=FTS3_MAX_PENDING_DATA ) p->nMaxPendingData = v;
+      rc = SQLITE_OK;
+    }else if( nVal>21 && 0==sqlite3_strnicmp(zVal,"test-no-incr-doclist=",21) ){
+      p->bNoIncrDoclist = atoi(&zVal[21]);
+      rc = SQLITE_OK;
+    }
+#endif
   }
-
   return rc;
 }
 
