@@ -1486,6 +1486,10 @@ static int fts3InitVtab(
   fts3DatabasePageSize(&rc, p);
   p->nNodeSize = p->nPgsz-35;
 
+#if defined(SQLITE_DEBUG)||defined(SQLITE_TEST)
+  p->nMergeCount = FTS3_MERGE_COUNT;
+#endif
+
   /* Declare the table schema to SQLite. */
   fts3DeclareVtab(&rc, p);
 

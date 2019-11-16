@@ -1153,7 +1153,7 @@ static int fts3AllocateSegdirIdx(
     ** segment and allocate (newly freed) index 0 at level iLevel. Otherwise,
     ** if iNext is less than FTS3_MERGE_COUNT, allocate index iNext.
     */
-    if( iNext>=FTS3_MERGE_COUNT ){
+    if( iNext>=MergeCount(p) ){
       fts3LogMerge(16, getAbsoluteLevel(p, iLangid, iIndex, iLevel));
       rc = fts3SegmentMerge(p, iLangid, iIndex, iLevel);
       *piIdx = 0;
@@ -4280,6 +4280,10 @@ static int fts3IncrmergeLoad(
       int i;
       int nHeight = (int)aRoot[0];
       NodeWriter *pNode;
+      if( nHeight<1 || nHeight>FTS_MAX_APPENDABLE_HEIGHT ){
+        sqlite3_reset(pSelect);
+        return FTS_CORRUPT_VTAB;
+      }
 
       pWriter->nLeafEst = (int)((iEnd - iStart) + 1)/FTS_MAX_APPENDABLE_HEIGHT;
       pWriter->iStart = iStart;
@@ -5048,7 +5052,7 @@ static int fts3DoIncrmerge(
   const char *zParam              /* Nul-terminated string containing "A,B" */
 ){
   int rc;
-  int nMin = (FTS3_MERGE_COUNT / 2);
+  int nMin = (MergeCount(p) / 2);
   int nMerge = 0;
   const char *z = zParam;
 
@@ -5093,7 +5097,7 @@ static int fts3DoAutoincrmerge(
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt = 0;
   p->nAutoincrmerge = fts3Getint(&zParam);
-  if( p->nAutoincrmerge==1 || p->nAutoincrmerge>FTS3_MERGE_COUNT ){
+  if( p->nAutoincrmerge==1 || p->nAutoincrmerge>MergeCount(p) ){
     p->nAutoincrmerge = 8;
   }
   if( !p->bHasStat ){
@@ -5383,6 +5387,10 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
       rc = SQLITE_OK;
     }else if( nVal>21 && 0==sqlite3_strnicmp(zVal,"test-no-incr-doclist=",21) ){
       p->bNoIncrDoclist = atoi(&zVal[21]);
+      rc = SQLITE_OK;
+    }else if( nVal>11 && 0==sqlite3_strnicmp(zVal,"mergecount=",11) ){
+      v = atoi(&zVal[11]);
+      if( v>=4 && v<=FTS3_MERGE_COUNT && (v&1)==0 ) p->nMergeCount = v;
       rc = SQLITE_OK;
     }
 #endif

@@ -301,8 +301,18 @@ struct Fts3Table {
   /* True to disable the incremental doclist optimization. This is controled
   ** by special insert command 'test-no-incr-doclist'.  */
   int bNoIncrDoclist;
+
+  /* Number of segments in a level */
+  int nMergeCount;
 #endif
 };
+
+/* Macro to find the number of segments to merge */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
+# define MergeCount(P) ((P)->nMergeCount)
+#else
+# define MergeCount(P) FTS3_MERGE_COUNT
+#endif
 
 /*
 ** When the core wants to read from the virtual table, it creates a
