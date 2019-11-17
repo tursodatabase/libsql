@@ -1,5 +1,5 @@
-C Remove\sa\sreachable\sNEVER()\sin\sFTS3.
-D 2019-11-17T00:08:24.504
+C Better\sdetection\sof\scorruption\sin\sthe\s%_stat\sand\s%_docsize\sshadow\stables\nof\sFTS3.
+D 2019-11-17T02:41:06.494
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -81,16 +81,16 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ad760e49a68d13c11f611d7532d7f2277924df6d4a43cbaf8acf7693e1e83aab
+F ext/fts3/fts3.c 493e74700036b725287fe03c0c597c9d0b22708acedc2c86fb323a5d8f519ce7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 31f2ceee083d93254d84ab7a69eddb253e079bfe7e35c15413c0132f8947d6b6
+F ext/fts3/fts3Int.h 7201d419716896951044f980350f0ccb376fdc15932ff1a81f0d43f5e7051a45
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
 F ext/fts3/fts3_expr.c b132af223e90e35b9f9efa9fe63d6ae737d34153a3b6066736086df8abc78a1f
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c 7963dd25ec81013c31f3c61697d0a1f3d06be21af3565774645c08d3dedf1fa7
+F ext/fts3/fts3_snippet.c 70e8aa4a42a9e0338d0d73d0ec996db29ce5421404e29a86703cb8c39949b0cc
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
 F ext/fts3/fts3_test.c 73b16e229e517c1b1f0fb8e1046182a4e5dbc8dbe6eea8a5d4353fcce7dbbf39
 F ext/fts3/fts3_tokenize_vtab.c 1de9a61acfa2a0445ed989310c31839c57f6b6086dd9d5c97177ae734a17fd8b
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c f31351fc0405852d6ed32aa272e7770e55dffa33fc1d4c028aadef50a84213ab
+F ext/fts3/fts3_write.c a96fd13026e5109c54f2912d755aa14988140dd0673c92a606363f3c85c5cb64
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -973,7 +973,7 @@ F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test a663f4cac22a9505400bc22aacb818d7055240409c28729669ea7d4cc2120d15
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
 F test/fts3varint.test 0b84a3fd4eba8a39f3687523804d18f3b322e6d4539a55bf342079c3614f2ada
-F test/fts4aa.test 10aac8e9d62c7357590acfabe3fad01e9a9ce1cb
+F test/fts4aa.test 9a90721c2a36ef07783aa4b74f1425df4b8b5ab14749029026949c202c35fc4d
 F test/fts4check.test 6259f856604445d7b684c9b306b2efb6346834c3f50e8fc4a59a2ca6d5319ad0
 F test/fts4content.test 1518195a9f92b711d94419f76409a31cc78755854fb0abb1da2b74b9e0cf843e
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51525f9c3235967bc00a090e84c70a6400698c897aa4742e817121c725b8c99d
-R 53c3e5a5ab84e0cd96e357e129ba281f
+P 8bd75bf636f72f32d66c6c38e1918f27daf2f13290f00a001f41d50838bbda47
+R 8cd04f5b2ab31e4e6a20c98f6ee3e287
 U drh
-Z 4e9166f4f5d94dbdb240d614319c425c
+Z 4bb0986828ea646d1a8a470b5245a8a1

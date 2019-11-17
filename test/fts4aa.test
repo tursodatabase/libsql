@@ -191,4 +191,42 @@ foreach {q r} [array get fts4aa_res] {
   } $r
 }
 
+# 2019-11-16 https://bugs.chromium.org/p/chromium/issues/detail?id=1025472
+#
+db close
+sqlite3 db :memory:
+do_execsql_test fts4aa-5.10 {
+  CREATE VIRTUAL TABLE t1 USING fts4(a, b, c, d, e,f,g,h,i,j,k,l,m,n,o,p,q,r);
+  INSERT INTO t1 VALUES('X Y', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+                        'a','b','c','d','e','f','g','h');
+  UPDATE t1_docsize SET size=x'88' WHERE docid=1;
+} {}
+do_catchsql_test fts4aa-5.20 {
+  SELECT quote(matchinfo(t1, 'l')) FROM t1 WHERE t1 MATCH 'X Y';
+} {1 {database disk image is malformed}}
+do_execsql_test fts4aa-5.30 {
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING fts4(a,b,c,d);
+  INSERT INTO t1 VALUES('one two','three four','five six','seven eight');
+} {}
+do_catchsql_test fts4aa-5.40 {
+  UPDATE t1_stat SET value=x'01010101' WHERE id=0;
+  SELECT quote(matchinfo(t1,'a')) FROM t1 WHERE t1 MATCH 'one two';
+} {1 {database disk image is malformed}}
+do_catchsql_test fts4aa-5.50 {
+  UPDATE t1_stat SET value=x'010101' WHERE id=0;
+  SELECT quote(matchinfo(t1,'a')) FROM t1 WHERE t1 MATCH 'one two';
+} {1 {database disk image is malformed}}
+do_catchsql_test fts4aa-5.60 {
+  UPDATE t1_stat SET value=x'01' WHERE id=0;
+  SELECT quote(matchinfo(t1,'a')) FROM t1 WHERE t1 MATCH 'one two';
+} {1 {database disk image is malformed}}
+do_catchsql_test fts4aa-5.70 {
+  UPDATE t1_stat SET value=x'' WHERE id=0;
+  SELECT quote(matchinfo(t1,'a')) FROM t1 WHERE t1 MATCH 'one two';
+} {1 {database disk image is malformed}}
+
+
+
+
 finish_test
