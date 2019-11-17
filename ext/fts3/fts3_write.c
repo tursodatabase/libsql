@@ -3850,7 +3850,7 @@ static int fts3IncrmergePush(
     ** be added to.  */
     nPrefix = fts3PrefixCompress(pNode->key.a, pNode->key.n, zTerm, nTerm);
     nSuffix = nTerm - nPrefix;
-    if( NEVER(nSuffix<=0) ) return FTS_CORRUPT_VTAB;
+    if(nSuffix<=0 ) return FTS_CORRUPT_VTAB;
     nSpace  = sqlite3Fts3VarintLen(nPrefix);
     nSpace += sqlite3Fts3VarintLen(nSuffix) + nSuffix;
 
