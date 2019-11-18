@@ -6251,15 +6251,25 @@ static int unixAccess(
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
   assert( pResOut!=0 );
 
-  /* The spec says there are three possible values for flags.  But only
-  ** two of them are actually used */
-  assert( flags==SQLITE_ACCESS_EXISTS || flags==SQLITE_ACCESS_READWRITE );
+  /* The spec says there are four possible values for flags.  But the
+  ** SQLITE_ACCESS_READ flag is never used */
+  assert( flags==SQLITE_ACCESS_EXISTS
+       || flags==SQLITE_ACCESS_READWRITE
+       || flags==SQLITE_ACCESS_SYMLINK );
 
   if( flags==SQLITE_ACCESS_EXISTS ){
     struct stat buf;
     *pResOut = (0==osStat(zPath, &buf) && buf.st_size>0);
-  }else{
+  }else if( flags==SQLITE_ACCESS_READWRITE ){
     *pResOut = osAccess(zPath, W_OK|R_OK)==0;
+  }else{
+#if !defined(HAVE_LSTAT)
+    *pResOut = 0;
+#else
+    struct stat buf;
+    *pResOut = (0==osLstat(zPath, &buf) && S_ISLNK(buf.st_mode));
+#endif
+    assert( flags==SQLITE_ACCESS_SYMLINK );
   }
   return SQLITE_OK;
 }

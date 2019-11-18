@@ -5472,6 +5472,9 @@ static int winAccess(
       rc = attr!=INVALID_FILE_ATTRIBUTES &&
              (attr & FILE_ATTRIBUTE_READONLY)==0;
       break;
+    case SQLITE_ACCESS_SYMLINK:
+      rc = 0;  /* No symlinks on windows */
+      break;
     default:
       assert(!"Invalid flags argument");
   }

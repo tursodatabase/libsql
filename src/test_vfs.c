@@ -732,6 +732,7 @@ static int tvfsAccess(
     if( flags==SQLITE_ACCESS_EXISTS ) zArg = "SQLITE_ACCESS_EXISTS";
     if( flags==SQLITE_ACCESS_READWRITE ) zArg = "SQLITE_ACCESS_READWRITE";
     if( flags==SQLITE_ACCESS_READ ) zArg = "SQLITE_ACCESS_READ";
+    if( flags==SQLITE_ACCESS_SYMLINK ) zArg = "SQLITE_ACCESS_SYMLINK";
     tvfsExecTcl(p, "xAccess", 
         Tcl_NewStringObj(zPath, -1), Tcl_NewStringObj(zArg, -1), 0, 0
     );

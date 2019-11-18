@@ -3670,6 +3670,7 @@ static int sqliteCmdUsage(
 ){
   Tcl_WrongNumArgs(interp, 1, objv,
     "HANDLE ?FILENAME? ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+    " ?-nofollow BOOLEAN?"
     " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
     " ?-key CODECKEY?"
@@ -3681,6 +3682,7 @@ static int sqliteCmdUsage(
 /*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
 **                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
+**                           ?-nofollow BOOLEAN?
 **
 ** This is the main Tcl command.  When the "sqlite" Tcl command is
 ** invoked, this routine runs to process that command.
@@ -3778,6 +3780,14 @@ static int SQLITE_TCLAPI DbMain(
         flags |= SQLITE_OPEN_CREATE;
       }else{
         flags &= ~SQLITE_OPEN_CREATE;
+      }
+    }else if( strcmp(zArg, "-nofollow")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_NOFOLLOW;
+      }else{
+        flags &= ~SQLITE_OPEN_NOFOLLOW;
       }
     }else if( strcmp(zArg, "-nomutex")==0 ){
       int b;
