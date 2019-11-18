@@ -81,6 +81,14 @@
 #endif
 
 /*
+** This constant is needed by the winAccess function; therefore, define
+** it when it is missing from the SDK header files.
+*/
+#ifndef FILE_ATTRIBUTE_REPARSE_POINT
+#  define FILE_ATTRIBUTE_REPARSE_POINT      0x00000400
+#endif
+
+/*
 ** Check to see if the GetVersionEx[AW] functions are deprecated on the
 ** target system.  GetVersionEx was first deprecated in Win8.1.
 */
@@ -5473,7 +5481,8 @@ static int winAccess(
              (attr & FILE_ATTRIBUTE_READONLY)==0;
       break;
     case SQLITE_ACCESS_SYMLINK:
-      rc = 0;  /* No symlinks on windows */
+      rc = attr!=INVALID_FILE_ATTRIBUTES &&
+             (attr & FILE_ATTRIBUTE_REPARSE_POINT)!=0;
       break;
     default:
       assert(!"Invalid flags argument");
