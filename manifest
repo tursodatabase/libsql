@@ -1,5 +1,5 @@
-C In\sthe\sSQLITE_OPEN_NOFOLLOW\sprocessing,\sdistinguish\sbetween\san\sI/O\serror\non\sthe\sxAccess()\scall\sand\san\sactual\ssymlink\sencounter.
-D 2019-11-18T18:43:19.703
+C Ensure\sall\sfile\snames\spassed\sto\sthe\sVFS\slayer\sare\sdouble-zero\sterminated.
+D 2019-11-18T22:34:07.591
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c ca1cc9524cb3ae8d59529fb37944487bec89df2041da7c3890f96dae389c5719
 F src/os_win.c 48513ab173c3f107571c7d886e157ce32c65e6b2adce030469ce488cce8aaa90
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 29eed7c315a20c480673e24196f218579712b25967fca998a0b38f78f7958047
+F src/pager.c 49630bdba882b82537fc9fd93b126f566949ef913df99f4c303e5e371d2fb331
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y 17c1ae265e1b92cb1f3f1661b020e3eb31f2d8b9588322d2b6f2b22f25b674c9
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -602,7 +602,7 @@ F src/vdbe.c b67d6af853e03c3dd6d1116351567f62d8a2c10d3bd6db5f7f366e75d11c6653
 F src/vdbe.h fdbc0a11e5768a702b46ce63286f60e22e71351a29bd98b3666405e1fccc7802
 F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c 75fa4792b6bc327751018ecd1516c189184d7224b8f3dfeda20c09112ef31a68
+F src/vdbeaux.c 7f7331b8ccd50634c24ddcb881a50a53c13751556ac04a6d0989bae78d7ae5d5
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c a17144a7a0d025de3e8433af1edaada7eea76dd157f73bab05c50b8f33ab777b
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
@@ -1849,7 +1849,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb79c828496a703f1410f61458ebc1e15a92a63412b36f51945b2b5a32ec6e88
-R 443c019725182a17e713facfb01ae431
-U drh
-Z 59407263a2a6830b9a0d0ddece8d221e
+P 2e98b42fcb7bc38e22808a9dc1d7a4231ed08ffa97c9f08f33e6e8cd8726856c
+R 3cc9c5dab6b657ab3fce27b16e2a45d7
+U mistachkin
+Z 2d92c1a1e87a1733fa25d847d72de03a

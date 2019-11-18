@@ -1359,6 +1359,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, u32 nMaster){
     len = 0;
   }
   zMaster[len] = '\0';
+  zMaster[len+1] = '\0';
    
   return SQLITE_OK;
 }
@@ -2595,15 +2596,16 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   rc = sqlite3OsFileSize(pMaster, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   nMasterPtr = pVfs->mxPathname+1;
-  zMasterJournal = sqlite3Malloc(nMasterJournal + nMasterPtr + 1);
+  zMasterJournal = sqlite3Malloc(nMasterJournal + nMasterPtr + 2);
   if( !zMasterJournal ){
     rc = SQLITE_NOMEM_BKPT;
     goto delmaster_out;
   }
-  zMasterPtr = &zMasterJournal[nMasterJournal+1];
+  zMasterPtr = &zMasterJournal[nMasterJournal+2];
   rc = sqlite3OsRead(pMaster, zMasterJournal, (int)nMasterJournal, 0);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   zMasterJournal[nMasterJournal] = 0;
+  zMasterJournal[nMasterJournal+1] = 0;
 
   zJournal = zMasterJournal;
   while( (zJournal-zMasterJournal)<nMasterJournal ){
