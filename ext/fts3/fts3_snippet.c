@@ -1056,12 +1056,9 @@ static int fts3MatchinfoSelectDoctotal(
   assert( sqlite3_data_count(pStmt)==1 );
 
   n = sqlite3_column_bytes(pStmt, 0);
-  if( n==0 ){
-    return FTS_CORRUPT_VTAB;
-  }
   a = sqlite3_column_blob(pStmt, 0);
   if( a==0 ){
-    return SQLITE_NOMEM;
+    return FTS_CORRUPT_VTAB;
   }
   pEnd = a + n;
   a += sqlite3Fts3GetVarintBounded(a, pEnd, &nDoc);

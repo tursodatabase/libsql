@@ -4895,12 +4895,13 @@ static int fts3EvalAverageDocsize(Fts3Cursor *pCsr, int *pnPage){
     rc = sqlite3Fts3SelectDoctotal(p, &pStmt);
     if( rc!=SQLITE_OK ) return rc;
     a = sqlite3_column_blob(pStmt, 0);
-    assert( a );
-
-    pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
-    a += sqlite3Fts3GetVarint(a, &nDoc);
-    while( a<pEnd ){
-      a += sqlite3Fts3GetVarint(a, &nByte);
+    testcase( a==0 );  /* If %_stat.value set to X'' */
+    if( a ){
+      pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
+      a += sqlite3Fts3GetVarintBounded(a, pEnd, &nDoc);
+      while( a<pEnd ){
+        a += sqlite3Fts3GetVarintBounded(a, pEnd, &nByte);
+      }
     }
     if( nDoc==0 || nByte==0 ){
       sqlite3_reset(pStmt);
