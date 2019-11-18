@@ -4790,11 +4790,9 @@ int sqlite3PagerOpen(
     const char *z;
     if( (vfsFlags & SQLITE_OPEN_NOFOLLOW)!=0 ){
       int isLink = 0;
-      if( sqlite3OsAccess(pVfs, zFilename, SQLITE_ACCESS_SYMLINK, &isLink)==0
-       && isLink
-      ){
-        return SQLITE_CANTOPEN_SYMLINK;
-      }
+      int rc = sqlite3OsAccess(pVfs, zFilename, SQLITE_ACCESS_SYMLINK, &isLink);
+      if( rc==SQLITE_OK && isLink ) rc = SQLITE_CANTOPEN_SYMLINK;
+      if( rc ) return rc;
     }
     nPathname = pVfs->mxPathname+1;
     zPathname = sqlite3DbMallocRaw(0, nPathname*2);
