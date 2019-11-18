@@ -1065,10 +1065,10 @@ static int fts3MatchinfoSelectDoctotal(
   }
   pEnd = a + n;
   a += sqlite3Fts3GetVarintBounded(a, pEnd, &nDoc);
-  if( nDoc==0 || a>pEnd ){
+  if( nDoc<=0 || a>pEnd ){
     return FTS_CORRUPT_VTAB;
   }
-  *pnDoc = (u32)nDoc;
+  *pnDoc = nDoc;
 
   if( paLen ) *paLen = a;
   if( ppEnd ) *ppEnd = pEnd;
