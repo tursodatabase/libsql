@@ -56,21 +56,22 @@
 **
 **      '/1c2/000/'               // Left-most child of 451st child of root
 */
-#define VTAB_SCHEMA                                                          \
-  "CREATE TABLE xx( "                                                        \
-  "  name       TEXT,"          /*  0 Name of table or index */              \
-  "  path       TEXT,"          /*  1 Path to page from root */              \
-  "  pageno     INTEGER,"       /*  2 Page number */                         \
-  "  pagetype   TEXT,"          /*  3 'internal', 'leaf' or 'overflow' */    \
-  "  ncell      INTEGER,"       /*  4 Cells on page (0 for overflow) */      \
-  "  payload    INTEGER,"       /*  5 Bytes of payload on this page */       \
-  "  unused     INTEGER,"       /*  6 Bytes of unused space on this page */  \
-  "  mx_payload INTEGER,"       /*  7 Largest payload size of all cells */   \
-  "  pgoffset   INTEGER,"       /*  8 Offset of page in file */              \
-  "  pgsize     INTEGER,"       /*  9 Size of the page */                    \
-  "  schema     TEXT HIDDEN,"   /* 10 Database schema being analyzed */      \
-  "  aggregate  BOOLEAN HIDDEN" /* 11 aggregate info for each table */       \
-  ");"
+static const char zDbstatSchema[] = 
+  "CREATE TABLE x("
+  " name       TEXT,"          /*  0 Name of table or index */
+  " path       TEXT,"          /*  1 Path to page from root (NULL for agg) */
+  " pageno     INTEGER,"       /*  2 Page number (page count for aggregates) */
+  " pagetype   TEXT,"          /*  3 'internal', 'leaf', 'overflow', or NULL */
+  " ncell      INTEGER,"       /*  4 Cells on page (0 for overflow) */
+  " payload    INTEGER,"       /*  5 Bytes of payload on this page */
+  " unused     INTEGER,"       /*  6 Bytes of unused space on this page */
+  " mx_payload INTEGER,"       /*  7 Largest payload size of all cells */
+  " pgoffset   INTEGER,"       /*  8 Offset of page in file (NULL for agg) */
+  " pgsize     INTEGER,"       /*  9 Size of the page (sum for aggregate) */
+  " schema     TEXT HIDDEN,"   /* 10 Database schema being analyzed */
+  " aggregate  BOOLEAN HIDDEN" /* 11 aggregate info for each table */
+  ")"
+;
 
 /* Forward reference to data structured used in this module */
 typedef struct StatTable StatTable;
@@ -109,24 +110,25 @@ struct StatPage {
 struct StatCursor {
   sqlite3_vtab_cursor base;       /* base class.  MUST BE FIRST! */
   sqlite3_stmt *pStmt;            /* Iterates through set of root pages */
-  int isEof;                      /* After pStmt has returned SQLITE_DONE */
+  u8 isEof;                       /* After pStmt has returned SQLITE_DONE */
+  u8 isAgg;                       /* Aggregate results for each table */
   int iDb;                        /* Schema used for this query */
-  int isAgg;                      /* Aggregate results for each table */
 
   StatPage aPage[32];             /* Pages in path to current page */
   int iPage;                      /* Current entry in aPage[] */
 
   /* Values to return. */
+  u32 iPageno;                    /* Value of 'pageno' column */
   char *zName;                    /* Value of 'name' column */
   char *zPath;                    /* Value of 'path' column */
-  u32 iPageno;                    /* Value of 'pageno' column */
   char *zPagetype;                /* Value of 'pagetype' column */
+  int nPage;                      /* Number of pages in current btree */
   int nCell;                      /* Value of 'ncell' column */
-  int nPayload;                   /* Value of 'payload' column */
-  int nUnused;                    /* Value of 'unused' column */
   int nMxPayload;                 /* Value of 'mx_payload' column */
+  i64 nUnused;                    /* Value of 'unused' column */
+  i64 nPayload;                   /* Value of 'payload' column */
   i64 iOffset;                    /* Value of 'pgOffset' column */
-  int szPage;                     /* Value of 'pgSize' column */
+  i64 szPage;                     /* Value of 'pgSize' column */
 };
 
 /* An instance of the DBSTAT virtual table */
@@ -165,7 +167,7 @@ static int statConnect(
   }else{
     iDb = 0;
   }
-  rc = sqlite3_declare_vtab(db, VTAB_SCHEMA);
+  rc = sqlite3_declare_vtab(db, zDbstatSchema);
   if( rc==SQLITE_OK ){
     pTab = (StatTable *)sqlite3_malloc64(sizeof(StatTable));
     if( pTab==0 ) rc = SQLITE_NOMEM_BKPT;
@@ -273,7 +275,7 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** Open a new statvfs cursor.
+** Open a new DBSTAT cursor.
 */
 static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   StatTable *pTab = (StatTable *)pVTab;
@@ -323,8 +325,18 @@ static void statResetCsr(StatCursor *pCsr){
   pCsr->isEof = 0;
 }
 
+/* Resize the space-used counters inside of the cursor */
+static void statResetCounts(StatCursor *pCsr){
+  pCsr->nCell = 0;
+  pCsr->nMxPayload = 0;
+  pCsr->nUnused = 0;
+  pCsr->nPayload = 0;
+  pCsr->szPage = 0;
+  pCsr->nPage = 0;
+}
+
 /*
-** Close a statvfs cursor.
+** Close a DBSTAT cursor.
 */
 static int statClose(sqlite3_vtab_cursor *pCursor){
   StatCursor *pCsr = (StatCursor *)pCursor;
@@ -361,6 +373,9 @@ static int getLocalPayload(
   return nLocal;
 }
 
+/* Populate the StatPage object with information about the all
+** cells found on the page currently under analysis.
+*/
 static int statDecodePage(Btree *pBt, StatPage *p){
   int nUnused;
   int iOff;
@@ -481,23 +496,25 @@ static void statSizeAndOffset(StatCursor *pCsr){
   sqlite3_file *fd;
   sqlite3_int64 x[2];
 
-  /* The default page size and offset */
-  pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
-  pCsr->iOffset = (i64)pCsr->szPage * (pCsr->iPageno - 1);
-
-  /* If connected to a ZIPVFS backend, override the page size and
-  ** offset with actual values obtained from ZIPVFS.
+  /* If connected to a ZIPVFS backend, find the page size and
+  ** offset from ZIPVFS.
   */
   fd = sqlite3PagerFile(pPager);
   x[0] = pCsr->iPageno;
   if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
     pCsr->iOffset = x[0];
-    pCsr->szPage = (int)x[1];
+    pCsr->szPage += x[1];
+  }else{
+    /* Not ZIPVFS: The default page size and offset */
+    pCsr->szPage += sqlite3BtreeGetPageSize(pBt);
+    pCsr->iOffset = (i64)pCsr->szPage * (pCsr->iPageno - 1);
   }
 }
 
 /*
-** Move a statvfs cursor to the next entry in the file.
+** Move a DBSTAT cursor to the next entry.  Normally, the next
+** entry will be the next page, but in aggregated mode (pCsr->isAgg!=0),
+** the next entry is the next btree.
 */
 static int statNext(sqlite3_vtab_cursor *pCursor){
   int rc;
@@ -513,6 +530,8 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
 
 statNextRestart:
   if( pCsr->aPage[0].pPg==0 ){
+    /* Start measuring space on the next btree */
+    statResetCounts(pCsr);
     rc = sqlite3_step(pCsr->pStmt);
     if( rc==SQLITE_ROW ){
       int nPage;
@@ -525,44 +544,47 @@ statNextRestart:
       rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg, 0);
       pCsr->aPage[0].iPgno = iRoot;
       pCsr->aPage[0].iCell = 0;
-      pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
+      if( !pCsr->isAgg ){
+        pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
+        if( z==0 ) rc = SQLITE_NOMEM_BKPT;
+      }
       pCsr->iPage = 0;
-      if( z==0 ) rc = SQLITE_NOMEM_BKPT;
+      pCsr->nPage = 1;
     }else{
       pCsr->isEof = 1;
       return sqlite3_reset(pCsr->pStmt);
     }
   }else{
-
-    /* Page p itself has already been visited. */
+    /* Continue analyzing the btree previously started */
     StatPage *p = &pCsr->aPage[pCsr->iPage];
-
+    if( !pCsr->isAgg ) statResetCounts(pCsr);
     while( p->iCell<p->nCell ){
       StatCell *pCell = &p->aCell[p->iCell];
-      if( pCell->iOvfl<pCell->nOvfl ){
-        int nUsable;
+      while( pCell->iOvfl<pCell->nOvfl ){
+        int nUsable, iOvfl;
         sqlite3BtreeEnter(pBt);
         nUsable = sqlite3BtreeGetPageSize(pBt) - 
                         sqlite3BtreeGetReserveNoMutex(pBt);
         sqlite3BtreeLeave(pBt);
-        pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
-        pCsr->iPageno = pCell->aOvfl[pCell->iOvfl];
-        pCsr->zPagetype = "overflow";
-        pCsr->nCell = 0;
-        pCsr->nMxPayload = 0;
-        pCsr->zPath = z = sqlite3_mprintf(
-            "%s%.3x+%.6x", p->zPath, p->iCell, pCell->iOvfl
-        );
-        if( pCell->iOvfl<pCell->nOvfl-1 ){
-          pCsr->nUnused = 0;
-          pCsr->nPayload = nUsable - 4;
-        }else{
-          pCsr->nPayload = pCell->nLastOvfl;
-          pCsr->nUnused = nUsable - 4 - pCsr->nPayload;
-        }
-        pCell->iOvfl++;
+        pCsr->nPage++;
         statSizeAndOffset(pCsr);
-        return z==0 ? SQLITE_NOMEM_BKPT : SQLITE_OK;
+        if( pCell->iOvfl<pCell->nOvfl-1 ){
+          pCsr->nPayload += nUsable - 4;
+        }else{
+          pCsr->nPayload += pCell->nLastOvfl;
+          pCsr->nUnused += nUsable - 4 - pCell->nLastOvfl;
+        }
+        iOvfl = pCell->iOvfl;
+        pCell->iOvfl++;
+        if( !pCsr->isAgg ){
+          pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
+          pCsr->iPageno = pCell->aOvfl[iOvfl];
+          pCsr->zPagetype = "overflow";
+          pCsr->zPath = z = sqlite3_mprintf(
+              "%s%.3x+%.6x", p->zPath, p->iCell, iOvfl
+          );
+          return z==0 ? SQLITE_NOMEM_BKPT : SQLITE_OK;
+        }
       }
       if( p->iRightChildPg ) break;
       p->iCell++;
@@ -570,8 +592,13 @@ statNextRestart:
 
     if( !p->iRightChildPg || p->iCell>p->nCell ){
       statClearPage(p);
-      if( pCsr->iPage==0 ) return statNext(pCursor);
-      pCsr->iPage--;
+      if( pCsr->iPage>0 ){
+        pCsr->iPage--;
+      }else if( pCsr->isAgg ){
+        /* label-statNext-done:  When computing aggregate space usage over
+        ** an entire btree, this is the exit point from this function */
+        return SQLITE_OK;
+      }
       goto statNextRestart; /* Tail recursion */
     }
     pCsr->iPage++;
@@ -587,10 +614,13 @@ statNextRestart:
       p[1].iPgno = p->aCell[p->iCell].iChildPg;
     }
     rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg, 0);
+    pCsr->nPage++;
     p[1].iCell = 0;
-    p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
+    if( !pCsr->isAgg ){
+      p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
+      if( z==0 ) rc = SQLITE_NOMEM_BKPT;
+    }
     p->iCell++;
-    if( z==0 ) rc = SQLITE_NOMEM_BKPT;
   }
 
 
@@ -620,16 +650,23 @@ statNextRestart:
           pCsr->zPagetype = "corrupted";
           break;
       }
-      pCsr->nCell = p->nCell;
-      pCsr->nUnused = p->nUnused;
-      pCsr->nMxPayload = p->nMxPayload;
-      pCsr->zPath = z = sqlite3_mprintf("%s", p->zPath);
-      if( z==0 ) rc = SQLITE_NOMEM_BKPT;
+      pCsr->nCell += p->nCell;
+      pCsr->nUnused += p->nUnused;
+      if( p->nMxPayload>pCsr->nMxPayload ) pCsr->nMxPayload = p->nMxPayload;
+      if( !pCsr->isAgg ){
+        pCsr->zPath = z = sqlite3_mprintf("%s", p->zPath);
+        if( z==0 ) rc = SQLITE_NOMEM_BKPT;
+      }
       nPayload = 0;
       for(i=0; i<p->nCell; i++){
         nPayload += p->aCell[i].nLocal;
       }
-      pCsr->nPayload = nPayload;
+      pCsr->nPayload += nPayload;
+
+      /* If computing aggregate space usage by btree, continue with the
+      ** next page.  The loop will exit via the return at label-statNext-done
+      */
+      if( pCsr->isAgg ) goto statNextRestart;
     }
   }
 
@@ -722,13 +759,21 @@ static int statColumn(
       sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_TRANSIENT);
       break;
     case 1:            /* path */
-      sqlite3_result_text(ctx, pCsr->zPath, -1, SQLITE_TRANSIENT);
+      if( !pCsr->isAgg ){
+        sqlite3_result_text(ctx, pCsr->zPath, -1, SQLITE_TRANSIENT);
+      }
       break;
     case 2:            /* pageno */
-      sqlite3_result_int64(ctx, pCsr->iPageno);
+      if( pCsr->isAgg ){
+        sqlite3_result_int64(ctx, pCsr->nPage);
+      }else{
+        sqlite3_result_int64(ctx, pCsr->iPageno);
+      }
       break;
     case 3:            /* pagetype */
-      sqlite3_result_text(ctx, pCsr->zPagetype, -1, SQLITE_STATIC);
+      if( !pCsr->isAgg ){
+        sqlite3_result_text(ctx, pCsr->zPagetype, -1, SQLITE_STATIC);
+      }
       break;
     case 4:            /* ncell */
       sqlite3_result_int(ctx, pCsr->nCell);
@@ -743,7 +788,9 @@ static int statColumn(
       sqlite3_result_int(ctx, pCsr->nMxPayload);
       break;
     case 8:            /* pgoffset */
-      sqlite3_result_int64(ctx, pCsr->iOffset);
+      if( !pCsr->isAgg ){
+        sqlite3_result_int64(ctx, pCsr->iOffset);
+      }
       break;
     case 9:            /* pgsize */
       sqlite3_result_int(ctx, pCsr->szPage);

@@ -1,5 +1,5 @@
-C Begin\san\senhancement\seffort\sfor\sthe\sbuilt-in\sDBSTAT\svirtual\stable.
-D 2019-11-19T14:01:51.987
+C Get\sthe\saggregate=TRUE\sfeature\sworking\son\sthe\sDBSTAT\svirtual\s\stable.
+D 2019-11-19T18:48:11.254
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
 F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
-F src/dbstat.c 191351e68acfb71ad7adf0da464d462a4ead24284dfa81fd4f5911c6cb2e44d1
+F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
 F src/expr.c a138de8ae79628a73da2597617dbeafb0f083172be81d93ffa1cafa45161ee8c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
@@ -1373,7 +1373,7 @@ F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
 F test/sqllimits1.test 264f4b0f941800ba139d25e33ee919c5d95fea06dfbe8ac291d6811a30984ca5
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
-F test/stat.test a08fd3f87e809680824cf1940c362ee34ff83d0cda03121376dfacfebbb352e0
+F test/stat.test 05669008edc5ed950e817c24e8c4b66840fda64d8c76bae27e5fc1bd23d95675
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
@@ -1850,10 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4330f0795dbc2ab41dddd41d5979331fb9b78c477c66367c4be52f929531a45f
-R 3244f69d482823d13732c8928074f447
-T *branch * dbstat-enhancements
-T *sym-dbstat-enhancements *
-T -sym-trunk *
+P 9b5722f0fe666b99677e5f333dd8413aefb9ace7a461d74f6558f0ac53768719
+R 021ee7df1dd822f13f493e93c0d0159d
 U drh
-Z 6e47b17aa53d8cb9bfcbdbcbe411679c
+Z 75520593b5d5b7a30bf9bf33072d0e93
