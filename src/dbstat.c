@@ -12,7 +12,7 @@
 **
 ** This file contains an implementation of the "dbstat" virtual table.
 **
-** The dbstat virtual table is used to extract low-level formatting
+** The dbstat virtual table is used to extract low-level storage
 ** information from an SQLite database in order to implement the
 ** "sqlite3_analyzer" utility.  See the ../tool/spaceanal.tcl script
 ** for an example implementation.
@@ -56,27 +56,29 @@
 **
 **      '/1c2/000/'               // Left-most child of 451st child of root
 */
-#define VTAB_SCHEMA                                                         \
-  "CREATE TABLE xx( "                                                       \
-  "  name       TEXT,             /* Name of table or index */"             \
-  "  path       TEXT,             /* Path to page from root */"             \
-  "  pageno     INTEGER,          /* Page number */"                        \
-  "  pagetype   TEXT,             /* 'internal', 'leaf' or 'overflow' */"   \
-  "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"     \
-  "  payload    INTEGER,          /* Bytes of payload on this page */"      \
-  "  unused     INTEGER,          /* Bytes of unused space on this page */" \
-  "  mx_payload INTEGER,          /* Largest payload size of all cells */"  \
-  "  pgoffset   INTEGER,          /* Offset of page in file */"             \
-  "  pgsize     INTEGER,          /* Size of the page */"                   \
-  "  schema     TEXT HIDDEN       /* Database schema being analyzed */"     \
+#define VTAB_SCHEMA                                                          \
+  "CREATE TABLE xx( "                                                        \
+  "  name       TEXT,"          /*  0 Name of table or index */              \
+  "  path       TEXT,"          /*  1 Path to page from root */              \
+  "  pageno     INTEGER,"       /*  2 Page number */                         \
+  "  pagetype   TEXT,"          /*  3 'internal', 'leaf' or 'overflow' */    \
+  "  ncell      INTEGER,"       /*  4 Cells on page (0 for overflow) */      \
+  "  payload    INTEGER,"       /*  5 Bytes of payload on this page */       \
+  "  unused     INTEGER,"       /*  6 Bytes of unused space on this page */  \
+  "  mx_payload INTEGER,"       /*  7 Largest payload size of all cells */   \
+  "  pgoffset   INTEGER,"       /*  8 Offset of page in file */              \
+  "  pgsize     INTEGER,"       /*  9 Size of the page */                    \
+  "  schema     TEXT HIDDEN,"   /* 10 Database schema being analyzed */      \
+  "  aggregate  BOOLEAN HIDDEN" /* 11 aggregate info for each table */       \
   ");"
 
-
+/* Forward reference to data structured used in this module */
 typedef struct StatTable StatTable;
 typedef struct StatCursor StatCursor;
 typedef struct StatPage StatPage;
 typedef struct StatCell StatCell;
 
+/* Size information for a single cell within a btree page */
 struct StatCell {
   int nLocal;                     /* Bytes of local payload */
   u32 iChildPg;                   /* Child node (or 0 if this is a leaf) */
@@ -86,10 +88,11 @@ struct StatCell {
   int iOvfl;                      /* Iterates through aOvfl[] */
 };
 
+/* Size information for a single btree page */
 struct StatPage {
-  u32 iPgno;
-  DbPage *pPg;
-  int iCell;
+  u32 iPgno;                      /* Page number */
+  DbPage *pPg;                    /* Page content */
+  int iCell;                      /* Current cell */
 
   char *zPath;                    /* Path to this page */
 
@@ -99,16 +102,18 @@ struct StatPage {
   int nUnused;                    /* Number of unused bytes on page */
   StatCell *aCell;                /* Array of parsed cells */
   u32 iRightChildPg;              /* Right-child page number (or 0) */
-  int nMxPayload;                 /* Largest payload of any cell on this page */
+  int nMxPayload;                 /* Largest payload of any cell on the page */
 };
 
+/* The cursor for scanning the dbstat virtual table */
 struct StatCursor {
-  sqlite3_vtab_cursor base;
+  sqlite3_vtab_cursor base;       /* base class.  MUST BE FIRST! */
   sqlite3_stmt *pStmt;            /* Iterates through set of root pages */
   int isEof;                      /* After pStmt has returned SQLITE_DONE */
   int iDb;                        /* Schema used for this query */
+  int isAgg;                      /* Aggregate results for each table */
 
-  StatPage aPage[32];
+  StatPage aPage[32];             /* Pages in path to current page */
   int iPage;                      /* Current entry in aPage[] */
 
   /* Values to return. */
@@ -124,9 +129,10 @@ struct StatCursor {
   int szPage;                     /* Value of 'pgSize' column */
 };
 
+/* An instance of the DBSTAT virtual table */
 struct StatTable {
-  sqlite3_vtab base;
-  sqlite3 *db;
+  sqlite3_vtab base;              /* base class.  MUST BE FIRST! */
+  sqlite3 *db;                    /* Database connection that owns this vtab */
   int iDb;                        /* Index of database to analyze */
 };
 
@@ -135,7 +141,7 @@ struct StatTable {
 #endif
 
 /*
-** Connect to or create a statvfs virtual table.
+** Connect to or create a new DBSTAT virtual table.
 */
 static int statConnect(
   sqlite3 *db,
@@ -177,7 +183,7 @@ static int statConnect(
 }
 
 /*
-** Disconnect from or destroy a statvfs virtual table.
+** Disconnect from or destroy the DBSTAT virtual table.
 */
 static int statDisconnect(sqlite3_vtab *pVtab){
   sqlite3_free(pVtab);
@@ -185,14 +191,20 @@ static int statDisconnect(sqlite3_vtab *pVtab){
 }
 
 /*
-** There is no "best-index". This virtual table always does a linear
-** scan.  However, a schema=? constraint should cause this table to
-** operate on a different database schema, so check for it.
+** Compute the best query strategy and return the result in idxNum.
 **
-** idxNum is normally 0, but will be 1 if a schema=? constraint exists.
+**   idxNum-Bit        Meaning
+**   ----------        ----------------------------------------------
+**      0x01           There is a schema=? term in the WHERE clause
+**      0x02           There is a name=? term in the WHERE clause
+**      0x04           There is an aggregate=? term in the WHERE clause
+**      0x08           Output should be ordered by name and path
 */
 static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
+  int iSchema = -1;
+  int iName = -1;
+  int iAgg = -1;
 
   /* Look for a valid schema=? constraint.  If found, change the idxNum to
   ** 1 and request the value of that constraint be sent to xFilter.  And
@@ -200,16 +212,43 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   ** used.
   */
   for(i=0; i<pIdxInfo->nConstraint; i++){
-    if( pIdxInfo->aConstraint[i].iColumn!=10 ) continue;
-    if( pIdxInfo->aConstraint[i].usable==0 ) return SQLITE_CONSTRAINT;
     if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    pIdxInfo->idxNum = 1;
-    pIdxInfo->estimatedCost = 1.0;
-    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
-    pIdxInfo->aConstraintUsage[i].omit = 1;
-    break;
+    if( pIdxInfo->aConstraint[i].usable==0 ){
+      /* Force DBSTAT table should always be the right-most table in a join */
+      return SQLITE_CONSTRAINT;
+    }
+    switch( pIdxInfo->aConstraint[i].iColumn ){
+      case 0: {    /* name */
+        iName = i;
+        break;
+      }
+      case 10: {   /* schema */
+        iSchema = i;
+        break;
+      }
+      case 11: {   /* aggregate */
+        iAgg = i;
+        break;
+      }
+    }
   }
-
+  i = 0;
+  if( iSchema>=0 ){
+    pIdxInfo->aConstraintUsage[iSchema].argvIndex = ++i;
+    pIdxInfo->aConstraintUsage[iSchema].omit = 1;
+    pIdxInfo->idxNum |= 0x01;
+  }
+  if( iName>=0 ){
+    pIdxInfo->aConstraintUsage[iName].argvIndex = ++i;
+    pIdxInfo->aConstraintUsage[iName].omit = 1;
+    pIdxInfo->idxNum |= 0x02;
+  }
+  if( iAgg>=0 ){
+    pIdxInfo->aConstraintUsage[iAgg].argvIndex = ++i;
+    pIdxInfo->aConstraintUsage[iAgg].omit = 1;
+    pIdxInfo->idxNum |= 0x04;
+  }
+  pIdxInfo->estimatedCost = 1.0;
 
   /* Records are always returned in ascending order of (name, path). 
   ** If this will satisfy the client, set the orderByConsumed flag so that 
@@ -227,6 +266,7 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
      )
   ){
     pIdxInfo->orderByConsumed = 1;
+    pIdxInfo->idxNum |= 0x08;
   }
 
   return SQLITE_OK;
@@ -294,11 +334,15 @@ static int statClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
-static void getLocalPayload(
+/*
+** For a single cell on a btree page, compute the number of bytes of
+** content (payload) stored on that page.  That is to say, compute the
+** number of bytes of content not found on overflow pages.
+*/
+static int getLocalPayload(
   int nUsable,                    /* Usable bytes per page */
   u8 flags,                       /* Page flags */
-  int nTotal,                     /* Total record (payload) size */
-  int *pnLocal                    /* OUT: Bytes stored locally */
+  int nTotal                      /* Total record (payload) size */
 ){
   int nLocal;
   int nMinLocal;
@@ -314,7 +358,7 @@ static void getLocalPayload(
 
   nLocal = nMinLocal + (nTotal - nMinLocal) % (nUsable - 4);
   if( nLocal>nMaxLocal ) nLocal = nMinLocal;
-  *pnLocal = nLocal;
+  return nLocal;
 }
 
 static int statDecodePage(Btree *pBt, StatPage *p){
@@ -387,7 +431,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
           iOff += sqlite3GetVarint(&aData[iOff], &dummy);
         }
         if( nPayload>(u32)p->nMxPayload ) p->nMxPayload = nPayload;
-        getLocalPayload(nUsable, p->flags, nPayload, &nLocal);
+        nLocal = getLocalPayload(nUsable, p->flags, nPayload);
         if( nLocal<0 ) goto statPageIsCorrupt;
         pCell->nLocal = nLocal;
         assert( nPayload>=(u32)nLocal );
@@ -597,6 +641,10 @@ static int statEof(sqlite3_vtab_cursor *pCursor){
   return pCsr->isEof;
 }
 
+/* Initialize a cursor according to the query plan idxNum using the
+** arguments in argv[0].  See statBestIndex() for a description of the
+** meaning of the bits in idxNum.
+*/
 static int statFilter(
   sqlite3_vtab_cursor *pCursor, 
   int idxNum, const char *idxStr,
@@ -604,11 +652,18 @@ static int statFilter(
 ){
   StatCursor *pCsr = (StatCursor *)pCursor;
   StatTable *pTab = (StatTable*)(pCursor->pVtab);
-  char *zSql;
-  int rc = SQLITE_OK;
+  sqlite3_str *pSql;      /* Query of btrees to analyze */
+  char *zSql;             /* String value of pSql */
+  int iArg = 0;           /* Count of argv[] parameters used so far */
+  int rc = SQLITE_OK;     /* Result of this operation */
+  const char *zName = 0;  /* Only provide analysis of this table */
 
-  if( idxNum==1 ){
-    const char *zDbase = (const char*)sqlite3_value_text(argv[0]);
+  statResetCsr(pCsr);
+  sqlite3_finalize(pCsr->pStmt);
+  pCsr->pStmt = 0;
+  if( idxNum & 0x01 ){
+    /* schema=? constraint is present.  Get its value */
+    const char *zDbase = (const char*)sqlite3_value_text(argv[iArg++]);
     pCsr->iDb = sqlite3FindDbName(pTab->db, zDbase);
     if( pCsr->iDb<0 ){
       sqlite3_free(pCursor->pVtab->zErrMsg);
@@ -618,15 +673,31 @@ static int statFilter(
   }else{
     pCsr->iDb = pTab->iDb;
   }
-  statResetCsr(pCsr);
-  sqlite3_finalize(pCsr->pStmt);
-  pCsr->pStmt = 0;
-  zSql = sqlite3_mprintf(
-      "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
-      "  UNION ALL  "
-      "SELECT name, rootpage, type"
-      "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
-      "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zDbSName);
+  if( idxNum & 0x02 ){
+    /* name=? constraint is present */
+    zName = (const char*)sqlite3_value_text(argv[iArg++]);
+  }
+  if( idxNum & 0x04 ){
+    /* aggregate=? constraint is present */
+    pCsr->isAgg = sqlite3_value_double(argv[iArg++])!=0.0;
+  }else{
+    pCsr->isAgg = 0;
+  }
+  pSql = sqlite3_str_new(pTab->db);
+  sqlite3_str_appendf(pSql,
+      "SELECT * FROM ("
+        "SELECT 'sqlite_master' AS name,1 AS rootpage,'table' AS type"
+        " UNION ALL "
+        "SELECT name,rootpage,type"
+        " FROM \"%w\".sqlite_master WHERE rootpage!=0)",
+      pTab->db->aDb[pCsr->iDb].zDbSName);
+  if( zName ){
+    sqlite3_str_appendf(pSql, "WHERE name=%Q", zName);
+  }
+  if( idxNum & 0x08 ){
+    sqlite3_str_appendf(pSql, " ORDER BY name");
+  }
+  zSql = sqlite3_str_finish(pSql);
   if( zSql==0 ){
     return SQLITE_NOMEM_BKPT;
   }else{
@@ -677,10 +748,14 @@ static int statColumn(
     case 9:            /* pgsize */
       sqlite3_result_int(ctx, pCsr->szPage);
       break;
-    default: {          /* schema */
+    case 10: {         /* schema */
       sqlite3 *db = sqlite3_context_db_handle(ctx);
       int iDb = pCsr->iDb;
       sqlite3_result_text(ctx, db->aDb[iDb].zDbSName, -1, SQLITE_STATIC);
+      break;
+    }
+    default: {         /* aggregate */
+      sqlite3_result_int(ctx, pCsr->isAgg);
       break;
     }
   }

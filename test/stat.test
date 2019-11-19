@@ -108,7 +108,7 @@ do_execsql_test stat-2.1 {
   INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
    ORDER BY rowid;
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
-    FROM stat WHERE name != 'sqlite_master';
+    FROM stat WHERE name != 'sqlite_master' ORDER BY name;
 } [list \
   sqlite_autoindex_t3_1 / 3 internal 3 368 623 125       \
   sqlite_autoindex_t3_1 /000/ 8 leaf 8 946 46 123        \
@@ -150,7 +150,7 @@ do_execsql_test stat-3.1 {
   CREATE INDEX i4 ON t4(x);
   INSERT INTO t4(rowid, x) VALUES(2, a_string(7777));
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
-    FROM stat WHERE name != 'sqlite_master';
+    FROM stat WHERE name != 'sqlite_master' ORDER BY name;
 } [list \
   i4 / 3 leaf 1 103 905 7782                 \
   i4 /000+000000 4 overflow 0 1020 0 0       \
