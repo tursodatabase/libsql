@@ -1379,7 +1379,7 @@ static int fts3SegReaderNext(
   pNext += fts3GetVarint32(pNext, &nSuffix);
   if( nSuffix<=0 
    || (&pReader->aNode[pReader->nNode] - pNext)<nSuffix
-   || nPrefix>pReader->nTermAlloc
+   || nPrefix>pReader->nTerm
   ){
     return FTS_CORRUPT_VTAB;
   }
