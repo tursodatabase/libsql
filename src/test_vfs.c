@@ -1391,6 +1391,8 @@ static void SQLITE_TCLAPI testvfs_obj_del(ClientData cd){
   Testvfs *p = (Testvfs *)cd;
   if( p->pScript ) Tcl_DecrRefCount(p->pScript);
   sqlite3_vfs_unregister(p->pVfs);
+  memset(p->pVfs, 0, sizeof(sqlite3_vfs));
+  memset(p, 0, sizeof(Testvfs));
   ckfree((char *)p->pVfs);
   ckfree((char *)p);
 }
