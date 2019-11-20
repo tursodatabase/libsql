@@ -1,5 +1,5 @@
-C Enhancements\sto\sDBSTAT:\s\s(1)\sMake\sname=?\squeries\sefficient.\s\s(2)\sAdd\sthe\nability\sto\saggregate\sresults\sacross\seach\sindividual\sbtree\susing\sthe\naggregate=TRUE\sconstraint\sin\sthe\sWHERE\sclause.
-D 2019-11-19T21:22:16.359
+C Changes\sto\sextensions\sand\stest\slogic\sso\sthat\sthe\sbuild\sworks\swith\sgcc\nand\swith\s-std=iso9899:1999
+D 2019-11-20T12:07:40.508
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -309,7 +309,7 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
 F ext/misc/series.c 0c97f63378fddc9f425e82ba139b9aaf902211f24ced115c2b6ae12b425f7334
-F ext/misc/sha1.c df0a667211baa2c0612d8486acbf6331b9f8633fd4d605c17c7cccd26d59c6bd
+F ext/misc/sha1.c d8125a88ee9023bc17d6f87ea8850db33f906d5701b30d4fd9bddb57f231e60a
 F ext/misc/shathree.c 22ba7ca84a433d6466a7d05dcc876910b435a715da8cc462517db9351412b8c8
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c f88ecb2c0294453ce8b7704b211f5350c41b085b38c8e056852e3a08b0f5e484
@@ -485,7 +485,7 @@ F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
 F src/global.c a1a8d698762ddd9a1543aac26c1e0029b20fcc3fcb56bfa41ec8cea2368f2798
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
-F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
+F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8701d80b3cecd47f0375483c1ef35dfcdc777f3c67e2d3581dd7841b980910a3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
@@ -1756,7 +1756,7 @@ F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
-F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
+F tool/dbhash.c 19560c9a2aa2b269b6a5108259b93d26d12f8f0877c31fe9f8f61dfbd219ba63
 F tool/dbtotxt.c b2221864a20fb391c46bd31bc1fbdc4a96f5c8a89bef58f421eb9b9c36b1702c
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
@@ -1850,8 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4330f0795dbc2ab41dddd41d5979331fb9b78c477c66367c4be52f929531a45f 16fef3db063830884de46d53a289f637a7204fe84fcdee7ea81dbb8bca578952
-R 021ee7df1dd822f13f493e93c0d0159d
-T +closed 16fef3db063830884de46d53a289f637a7204fe84fcdee7ea81dbb8bca578952
+P a48f6e17599d7ec794cfcd60858d6a69cf05caaae9321048b111fedd86a3b5b2
+R 4365521ba36a2702d38b3f68e5e4744f
 U drh
-Z 0ac7770b122892497299e1307cf84ac5
+Z 7107861e2795dde308ab8213870561ee
