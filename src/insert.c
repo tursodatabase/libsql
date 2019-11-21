@@ -202,10 +202,11 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
 }
 
 /* This walker callback will compute the union of colFlags flags for all
-** references columns in a CHECK constraint or generated column expression.
+** referenced columns in a CHECK constraint or generated column expression.
 */
 static int exprColumnFlagUnion(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_COLUMN ){
+  if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 ){
+    assert( pExpr->iColumn < pWalker->u.pTab->nCol );
     pWalker->eCode |= pWalker->u.pTab->aCol[pExpr->iColumn].colFlags;
   }
   return WRC_Continue;

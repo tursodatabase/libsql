@@ -1,5 +1,5 @@
-C Whenever\sa\sgenerated\scolumn\sis\sused,\sassume\sthat\sall\scolumns\sare\sused.
-D 2019-11-21T19:37:00.986
+C Fix\san\sout-of-bounds\sarray\sreference\sin\sthe\sgenerated\scolumn\slogic.\nProblem\sdiscovered\sby\svalgrind.
+D 2019-11-21T20:10:31.886
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -487,7 +487,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 8701d80b3cecd47f0375483c1ef35dfcdc777f3c67e2d3581dd7841b980910a3
+F src/insert.c 1379db6e4330ad1463aa9269d2f23fa25e9f8086f891cb59125080a26fba33d6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
 F src/main.c 868ae7db7a54fe859bf2ca8b7a4f24e9fa03a6134abfb7c9801d08411ef5dacb
@@ -1850,7 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b12e95fec7ce6e0de82a04ca3dfcf1a8e62e233b7382aa28a8a9be6e862b1af
-R e99d34ba61fb6b297b18cc8c33e9b417
+P 6601da58032d18ae00b466c0f2077fb2b1ecd84225b56e1787724bea478eedc9
+R 482b83f5d5afc2f05f88db4667beb3f7
 U drh
-Z 29f405b4db68236e1fc771220e887d13
+Z c1f29503a008e06b19f225ef78890542
