@@ -246,6 +246,7 @@ do_catchsql_test gencol1-8.20 {
 # 2019-11-21 Problems in the new generated column logic
 # reported by Yongheng Chen and Rui Zhong
 do_execsql_test gencol1-9.10 {
+  PRAGMA foreign_keys=OFF;
   DROP TABLE t1;
   CREATE TABLE t1(aa , bb AS (17) UNIQUE);
   INSERT INTO t1 VALUES(17);
