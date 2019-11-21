@@ -246,14 +246,19 @@ do_catchsql_test gencol1-8.20 {
 # 2019-11-21 Problems in the new generated column logic
 # reported by Yongheng Chen and Rui Zhong
 do_execsql_test gencol1-9.10 {
-  DROP TABLE IF EXISTS t1;
-  DROP TABLE IF EXISTS t2;
+  DROP TABLE t1;
   CREATE TABLE t1(aa , bb AS (17) UNIQUE);
   INSERT INTO t1 VALUES(17);
   CREATE TABLE t2(cc);
   INSERT INTO t2 VALUES(41);
   SELECT * FROM t2 JOIN t1 WHERE t1.bb=t1.aa AND t1.bb=17;
 } {41 17 17}
-
+do_execsql_test gencol1-9.20 {
+  CREATE TABLE t3(aa INT PRIMARY KEY, bb UNIQUE AS(aa));
+  INSERT INTO t3 VALUES(1);
+  SELECT 100, * FROM t3;
+  DELETE FROM t3 WHERE (SELECT bb FROM t3);
+  SELECT 200, * FROM t3;
+} {100 1 1}
 
 finish_test
