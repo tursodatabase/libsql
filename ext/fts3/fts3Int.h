@@ -239,6 +239,7 @@ struct Fts3Table {
   char *zLanguageid;              /* languageid=xxx option, or NULL */
   int nAutoincrmerge;             /* Value configured by 'automerge' */
   u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
+  int bLock;                      /* Used to prevent recursive content= tbls */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 

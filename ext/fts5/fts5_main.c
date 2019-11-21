@@ -895,15 +895,24 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
         break;
       }
   
-      default:
+      default: {
+        Fts5Config *pConfig = ((Fts5Table*)pCursor->pVtab)->pConfig;
+        pConfig->bLock++;
         rc = sqlite3_step(pCsr->pStmt);
+        pConfig->bLock--;
         if( rc!=SQLITE_ROW ){
           CsrFlagSet(pCsr, FTS5CSR_EOF);
           rc = sqlite3_reset(pCsr->pStmt);
+          if( rc!=SQLITE_OK ){
+            pCursor->pVtab->zErrMsg = sqlite3_mprintf(
+                "%s", sqlite3_errmsg(pConfig->db)
+            );
+          }
         }else{
           rc = SQLITE_OK;
         }
         break;
+      }
     }
   }
   
@@ -1188,6 +1197,13 @@ static int fts5FilterMethod(
   int iIdxStr = 0;
   Fts5Expr *pExpr = 0;
 
+  if( pConfig->bLock ){
+    pTab->p.base.zErrMsg = sqlite3_mprintf(
+        "recursively defined fts5 content table"
+    );
+    return SQLITE_ERROR;
+  }
+
   if( pCsr->ePlan ){
     fts5FreeCursorComponents(pCsr);
     memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan-(u8*)pCsr));
@@ -1408,10 +1424,13 @@ static int fts5SeekCursor(Fts5Cursor *pCsr, int bErrormsg){
   }
 
   if( rc==SQLITE_OK && CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) ){
+    Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
     assert( pCsr->pExpr );
     sqlite3_reset(pCsr->pStmt);
     sqlite3_bind_int64(pCsr->pStmt, 1, fts5CursorRowid(pCsr));
+    pTab->pConfig->bLock++;
     rc = sqlite3_step(pCsr->pStmt);
+    pTab->pConfig->bLock--;
     if( rc==SQLITE_ROW ){
       rc = SQLITE_OK;
       CsrFlagClear(pCsr, FTS5CSR_REQUIRE_CONTENT);
@@ -1419,6 +1438,10 @@ static int fts5SeekCursor(Fts5Cursor *pCsr, int bErrormsg){
       rc = sqlite3_reset(pCsr->pStmt);
       if( rc==SQLITE_OK ){
         rc = FTS5_CORRUPT;
+      }else{
+        pTab->base.zErrMsg = sqlite3_mprintf(
+            "%s", sqlite3_errmsg(pTab->pConfig->db)
+        );
       }
     }
   }
