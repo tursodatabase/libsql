@@ -243,5 +243,17 @@ do_catchsql_test gencol1-8.20 {
   UPDATE t0 SET c0 = NULL;
 } {1 {generated column loop on "c2"}}
 
+# 2019-11-21 Problems in the new generated column logic
+# reported by Yongheng Chen and Rui Zhong
+do_execsql_test gencol1-9.10 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(aa , bb AS (17) UNIQUE);
+  INSERT INTO t1 VALUES(17);
+  CREATE TABLE t2(cc);
+  INSERT INTO t2 VALUES(41);
+  SELECT * FROM t2 JOIN t1 WHERE t1.bb=t1.aa AND t1.bb=17;
+} {41 17 17}
+
 
 finish_test

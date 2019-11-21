@@ -1,5 +1,5 @@
-C Fix\sa\srecently\sintroduced\smemory\sleak\sin\sthe\stest\scode\sin\stest_vfs.c.
-D 2019-11-21T17:14:55.938
+C Fix\sa\sproblem\sthat\scomes\sup\swhen\susing\sgenerated\scolumns\sthat\sevaluate\sto\sa\nconstant\sin\san\sindex\sand\sthen\smaking\suse\sof\sthat\sindex\sin\sa\sjoin.
+D 2019-11-21T18:28:44.463
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c a138de8ae79628a73da2597617dbeafb0f083172be81d93ffa1cafa45161ee8c
+F src/expr.c be8060167e2fcf9861b102602ca40386bf98446ef55e33e0bdee23ff88f16791
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -614,7 +614,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
 F src/where.c 874845fb5d93b3bc07123df8fee805e9650bd091e3ed62988273c7e2141ab8bd
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c 9b84737fd68134249a439813d27b1c61de17a01e121eb98949548d1e7f8e400a
+F src/wherecode.c 909325b98d5cb313f24e5c8cb304a3e3c73ca6631cdb19cfa1f580dde182fedb
 F src/whereexpr.c 39b6a538804c6e1248c22b33e09d00f89ae6a099c849c4d841ce3995562287b4
 F src/window.c b5bed964a04c23fa335d6b1d2d8011ed518b36b692c1a999ae1777a023a45e1d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1021,7 +1021,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test 82b8fc6953a6ff8560249c01f448a5fa8e8b633ec4dbdb3fc4f6632dc9ad9ea8
+F test/gencol1.test cb18ae911ed157058ea030988463bd1ec3315ba889b4aff4b8711551c393afae
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1850,7 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2eb997327c2c369c10b7835be80112d77cb2a7cfa9fe4d564042984c21d94698
-R aec5831ff7a5bde3ac00189bc22970c2
-U dan
-Z 1f033777cb6b83f60ef12910c2c3cbe7
+P 2d53a30cc23e53033af8e8666457654db5dcc453ed6cd176ce1d0bff4f528159
+R 916b27815e9b3d41c41616a867889cc0
+U drh
+Z 2f4253a7507c4c18153791477951e376
