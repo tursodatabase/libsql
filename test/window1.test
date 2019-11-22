@@ -1243,4 +1243,17 @@ do_catchsql_test 32.10 {
   ALTER TABLE a0 RENAME TO S;
 } {1 {error in view a: 1st ORDER BY term does not match any column in the result set}}
 
+reset_db
+do_execsql_test 33.1 {
+  CREATE TABLE t1(aa, bb);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(5, 6);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(1);
+}
+do_execsql_test 33.2 {
+  SELECT (SELECT DISTINCT sum(aa) OVER() FROM t1 ORDER BY 1), x FROM t2 
+  ORDER BY 1;
+} {6 1}
+
 finish_test

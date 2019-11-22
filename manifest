@@ -1,5 +1,5 @@
-C Revise\sthe\sSQLITE_OPEN_NOFOLLOW\sso\sthat\sit\sactually\suses\sO_NOFOLLOW\sin\sthe\nopen()\ssystem\scall.\s\sThis\sbacks\sout\sthe\sSQLITE_ACCESS_SYMLINK\svalue\sbut\sadds\nthe\snew\sSQLITE_OK_SYMLINK\sreturn\scode\sfrom\sthe\sxFullPathname\smethod\sof\s\nsqlite3_vfs\swhen\sthat\sroutine\sresolves\ssymbolic\slinks.\sO_NOFOLLOW\sis\salways\nincluded\sin\sopen()\ssystem\scalls\sfor\sjournal\sfiles.
-D 2019-11-22T00:42:01.486
+C Fix\sa\scrash\sthat\scould\soccur\sif\sa\ssub-select\sthat\suses\sboth\sDISTINCT\sand\swindow\sfunctions\salso\sused\san\sORDER\sBY\sthat\sis\sthe\ssame\sas\sits\sselect\slist.
+D 2019-11-22T10:14:01.691
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -526,7 +526,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 023397b50d09a3587a15169b713342e2d595ab29e14e54fd8f4a86b76c461d21
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 50ccaf5fc3566b897fd3090b63bd60605f2f3f38ac5709fda6c482510d71aa6c
+F src/select.c f403b7bd2304d4dfd5ad2614cc0ad3386a97af707922882bdabba4c14ce12975
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
 F src/sqlite.h.in 4fe42f27a7be44586bbd94f49f2b097ef8a1053c747d82f135456c7f5381c85a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1711,7 +1711,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test e88f674b5de9d3bd2787bc1ff22e8c04c10c7e9773212f3c3c3396cb8dccb096
+F test/window1.test 60ba11fb64122c57dfd423a5f9483fb446cc27ed5cf5526152a0decdc9a761fa
 F test/window2.tcl 66db96fd9fd202bc31ee7f8ce7904cb469564864cff3f74e009bfef8102333f4
 F test/window2.test af2a001ded703bb8f2474fb0edfef170d5aba00f5c1f2aa9f65935b5da13df90
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1850,7 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac080432b480062507452d3cdbe6c0f759e6f95b65d9862e0462017405ab2b8e
-R b32992f83d3fe313532417046634561a
-U drh
-Z 3c868f0a98a5c208f527ca2b91cdb564
+P 6a64fb6a2da6c98f1e87b55ad5689967e1db4eae2e08345471d95e28cd567e0f
+R 6a5d6072626d6501ea14c356f9dce16a
+U dan
+Z 0f63dd080b5a1fb6658b32eaaaf6aa19
