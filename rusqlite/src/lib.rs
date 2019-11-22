@@ -869,7 +869,7 @@ mod test {
     use fallible_iterator::FallibleIterator;
     use std::error::Error as StdError;
     use std::fmt;
-    use tempdir::TempDir;
+    use tempfile;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -892,7 +892,7 @@ mod test {
     #[test]
     fn test_concurrent_transactions_busy_commit() {
         use std::time::Duration;
-        let tmp = TempDir::new("locked").unwrap();
+        let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("transactions.db3");
 
         Connection::open(&path)
@@ -938,7 +938,7 @@ mod test {
 
     #[test]
     fn test_persistence() {
-        let temp_dir = TempDir::new("test_open_file").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         {

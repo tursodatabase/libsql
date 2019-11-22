@@ -79,13 +79,13 @@ mod test {
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time::Duration;
-    use tempdir::TempDir;
+    use tempfile;
 
     use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_default_busy() {
-        let temp_dir = TempDir::new("test_default_busy").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         let mut db1 = Connection::open(&path).unwrap();
@@ -106,7 +106,7 @@ mod test {
     #[test]
     #[ignore] // FIXME: unstable
     fn test_busy_timeout() {
-        let temp_dir = TempDir::new("test_busy_timeout").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         let db2 = Connection::open(&path).unwrap();
@@ -145,7 +145,7 @@ mod test {
             true
         }
 
-        let temp_dir = TempDir::new("test_busy_handler").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         let db2 = Connection::open(&path).unwrap();
