@@ -573,8 +573,8 @@ static int lookupName(
     assert( pExpr->y.pTab!=0 );
     assert( pMatch->iCursor==pExpr->iTable );
     if( pExpr->y.pTab->tabFlags & TF_HasGenerated ){
-      Column *pCol = pExpr->y.pTab->aCol + pExpr->iColumn;
-      if( pCol->colFlags & COLFLAG_GENERATED ) n = BMS-1;
+      Column *pColumn = pExpr->y.pTab->aCol + pExpr->iColumn;
+      if( pColumn->colFlags & COLFLAG_GENERATED ) n = BMS-1;
     }
     pMatch->colUsed |= ((Bitmask)1)<<n;
   }
