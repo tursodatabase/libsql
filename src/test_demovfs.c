@@ -508,14 +508,8 @@ static int demoAccess(
   assert( flags==SQLITE_ACCESS_EXISTS       /* access(zPath, F_OK) */
        || flags==SQLITE_ACCESS_READ         /* access(zPath, R_OK) */
        || flags==SQLITE_ACCESS_READWRITE    /* access(zPath, R_OK|W_OK) */
-       || flags==SQLITE_ACCESS_SYMLINK      /* Always false */
   );
 
-  if( flags==SQLITE_ACCESS_SYMLINK ){
-    /* For this demo implementation, assume that symlinks do not exist. */
-    *pResOut = 0;
-    return SQLITE_OK;
-  }
   if( flags==SQLITE_ACCESS_READWRITE ) eAccess = R_OK|W_OK;
   if( flags==SQLITE_ACCESS_READ )      eAccess = R_OK;
 

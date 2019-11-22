@@ -4790,12 +4790,6 @@ int sqlite3PagerOpen(
   */
   if( zFilename && zFilename[0] ){
     const char *z;
-    if( (vfsFlags & SQLITE_OPEN_NOFOLLOW)!=0 ){
-      int isLink = 0;
-      int rc = sqlite3OsAccess(pVfs, zFilename, SQLITE_ACCESS_SYMLINK, &isLink);
-      if( rc==SQLITE_OK && isLink ) rc = SQLITE_CANTOPEN_SYMLINK;
-      if( rc ) return rc;
-    }
     nPathname = pVfs->mxPathname+1;
     zPathname = sqlite3DbMallocRaw(0, nPathname*2);
     if( zPathname==0 ){
@@ -4803,6 +4797,15 @@ int sqlite3PagerOpen(
     }
     zPathname[0] = 0; /* Make sure initialized even if FullPathname() fails */
     rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
+    if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_OK_SYMLINK ){
+        if( vfsFlags & SQLITE_OPEN_NOFOLLOW ){
+          rc = SQLITE_CANTOPEN_SYMLINK;
+        }else{
+          rc = SQLITE_OK;
+        }
+      }
+    }
     nPathname = sqlite3Strlen30(zPathname);
     z = zUri = &zFilename[sqlite3Strlen30(zFilename)+1];
     while( *z ){

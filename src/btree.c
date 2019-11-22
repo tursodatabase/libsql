@@ -2403,9 +2403,13 @@ int sqlite3BtreeOpen(
         rc = sqlite3OsFullPathname(pVfs, zFilename,
                                    nFullPathname, zFullPathname);
         if( rc ){
-          sqlite3_free(zFullPathname);
-          sqlite3_free(p);
-          return rc;
+          if( rc==SQLITE_OK_SYMLINK ){
+            rc = SQLITE_OK;
+          }else{
+            sqlite3_free(zFullPathname);
+            sqlite3_free(p);
+            return rc;
+          }
         }
       }
 #if SQLITE_THREADSAFE
