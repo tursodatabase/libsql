@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scould\soccur\sif\sa\ssub-select\sthat\suses\sboth\sDISTINCT\sand\swindow\sfunctions\salso\sused\san\sORDER\sBY\sthat\sis\sthe\ssame\sas\sits\sselect\slist.
-D 2019-11-22T10:14:01.691
+C Add\smore\stest\scases\sfrom\sYongheng\sChen\sand\sRui\sZhong.
+D 2019-11-22T11:38:40.010
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1009,7 +1009,7 @@ F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb6
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
 F test/fuzzcheck.c e8cf694f71a1ee39a59f7c2a38c0f8660db0656ce47c8a334b6e9a11f1e66c6d
-F test/fuzzdata1.db 36e67e14aeb12ef15bf9bc7215694573244355be70a855b1a3d0e1009645a462
+F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
@@ -1850,7 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a64fb6a2da6c98f1e87b55ad5689967e1db4eae2e08345471d95e28cd567e0f
-R 6a5d6072626d6501ea14c356f9dce16a
-U dan
-Z 0f63dd080b5a1fb6658b32eaaaf6aa19
+P bcdd66c1691955c697f3d756c2b035acfe98f6aad72e90b0021bab6e9023b3ba
+R f1da4824caf80eae8ce8f07b9958fc70
+U drh
+Z 8c3d65cb0a9bf9ef3eea1a3d78549ecc
