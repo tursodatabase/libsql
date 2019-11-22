@@ -1,5 +1,5 @@
-C Add\smore\stest\scases\sfrom\sYongheng\sChen\sand\sRui\sZhong.
-D 2019-11-22T11:38:40.010
+C Fix\san\sindentation\serror\sand\simprove\sthe\splacement\sof\san\sassert()\sbased\non\sa\stweet\sfrom\sYuri\sKotov.
+D 2019-11-22T11:47:04.636
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -611,7 +611,7 @@ F src/vtab.c 108f79166d4a232a8bfb9d46e2fbec191f83a87fe97f7b93fc4de976c3fa3434
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
-F src/walker.c d5a94907dcac990e31976be9dc769d17f6a806782593d6aec9d760ee01ec22cd
+F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 874845fb5d93b3bc07123df8fee805e9650bd091e3ed62988273c7e2141ab8bd
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c 909325b98d5cb313f24e5c8cb304a3e3c73ca6631cdb19cfa1f580dde182fedb
@@ -1850,7 +1850,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcdd66c1691955c697f3d756c2b035acfe98f6aad72e90b0021bab6e9023b3ba
-R f1da4824caf80eae8ce8f07b9958fc70
+P f24e6ca4f23008212ec05cace9202dbeb37ee34530ead91fac2f5e3eac7f6347
+R b496786f77e7474dc904424f0795dc03
 U drh
-Z 8c3d65cb0a9bf9ef3eea1a3d78549ecc
+Z 459d5242a9c5f0c166013e392ffc0fee

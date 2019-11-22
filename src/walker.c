@@ -73,8 +73,8 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
     rc = pWalker->xExprCallback(pWalker, pExpr);
     if( rc ) return rc & WRC_Abort;
     if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+      assert( pExpr->x.pList==0 || pExpr->pRight==0 );
       if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
-       assert( pExpr->x.pList==0 || pExpr->pRight==0 );
       if( pExpr->pRight ){
         assert( !ExprHasProperty(pExpr, EP_WinFunc) );
         pExpr = pExpr->pRight;
