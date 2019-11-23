@@ -813,7 +813,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
         pExpr->iTable = p->pWin->iEphCsr;
         pExpr->y.pTab = p->pTab;
       }
-
+      if( pParse->db->mallocFailed ) return WRC_Abort;
       break;
     }
 
@@ -1273,6 +1273,7 @@ void sqlite3WindowLink(Select *pSel, Window *pWin){
 ** Identical window objects can be processed in a single scan.
 */
 int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
+  if( NEVER(p1==0) || NEVER(p2==0) ) return 1;
   if( p1->eFrmType!=p2->eFrmType ) return 1;
   if( p1->eStart!=p2->eStart ) return 1;
   if( p1->eEnd!=p2->eEnd ) return 1;
