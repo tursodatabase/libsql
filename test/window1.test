@@ -1256,4 +1256,20 @@ do_execsql_test 33.2 {
   ORDER BY 1;
 } {6 1}
 
+reset_db
+do_execsql_test 34.1 {
+  CREATE TABLE t1(a,b,c);
+}
+do_execsql_test 34.2 {
+  SELECT avg(a) OVER (
+      ORDER BY (SELECT sum(b) OVER ()
+        FROM t1 ORDER BY (
+          SELECT total(d) OVER (ORDER BY c)
+          FROM (SELECT 1 AS d) ORDER BY 1
+          )
+        )
+      )
+  FROM t1;
+}
+
 finish_test
