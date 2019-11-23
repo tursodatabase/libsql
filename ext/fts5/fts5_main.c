@@ -1438,8 +1438,8 @@ static int fts5SeekCursor(Fts5Cursor *pCsr, int bErrormsg){
       rc = sqlite3_reset(pCsr->pStmt);
       if( rc==SQLITE_OK ){
         rc = FTS5_CORRUPT;
-      }else{
-        pTab->base.zErrMsg = sqlite3_mprintf(
+      }else if( pTab->pConfig->pzErrmsg ){
+        *pTab->pConfig->pzErrmsg = sqlite3_mprintf(
             "%s", sqlite3_errmsg(pTab->pConfig->db)
         );
       }
@@ -2457,10 +2457,12 @@ static int fts5ColumnMethod(
       }
     }
   }else if( !fts5IsContentless(pTab) ){
+    pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
     rc = fts5SeekCursor(pCsr, 1);
     if( rc==SQLITE_OK ){
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
+    pConfig->pzErrmsg = 0;
   }
   return rc;
 }
