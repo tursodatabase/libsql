@@ -271,6 +271,77 @@ struct unixFile {
 #endif
 };
 
+
+/*
+** Object used to represent an shared memory buffer.  
+**
+** When multiple threads all reference the same wal-index, each thread
+** has its own unixShm object, but they all point to a single instance
+** of this unixShmNode object.  In other words, each wal-index is opened
+** only once per process.
+**
+** Each unixShmNode object is connected to a single unixInodeInfo object.
+** We could coalesce this object into unixInodeInfo, but that would mean
+** every open file that does not use shared memory (in other words, most
+** open files) would have to carry around this extra information.  So
+** the unixInodeInfo object contains a pointer to this unixShmNode object
+** and the unixShmNode object is created only when needed.
+**
+** unixMutexHeld() must be true when creating or destroying
+** this object or while reading or writing the following fields:
+**
+**      nRef
+**
+** The following fields are read-only after the object is created:
+** 
+**      hShm
+**      zFilename
+**
+** Either unixShmNode.pShmMutex must be held or unixShmNode.nRef==0 and
+** unixMutexHeld() is true when reading or writing any other field
+** in this structure.
+*/
+struct unixShmNode {
+  unixInodeInfo *pInode;     /* unixInodeInfo that owns this SHM node */
+  sqlite3_mutex *pShmMutex;  /* Mutex to access this object */
+  char *zFilename;           /* Name of the mmapped file */
+  int hShm;                  /* Open file descriptor */
+  int szRegion;              /* Size of shared-memory regions */
+  u16 nRegion;               /* Size of array apRegion */
+  u8 isReadonly;             /* True if read-only */
+  u8 isUnlocked;             /* True if no DMS lock held */
+  char **apRegion;           /* Array of mapped shared-memory regions */
+  int nRef;                  /* Number of unixShm objects pointing to this */
+  unixShm *pFirst;           /* All unixShm objects pointing to this */
+#ifdef SQLITE_DEBUG
+  u8 exclMask;               /* Mask of exclusive locks held */
+  u8 sharedMask;             /* Mask of shared locks held */
+  u8 nextShmId;              /* Next available unixShm.id value */
+#endif
+};
+
+/*
+** Structure used internally by this VFS to record the state of an
+** open shared memory connection.
+**
+** The following fields are initialized when this object is created and
+** are read-only thereafter:
+**
+**    unixShm.pShmNode
+**    unixShm.id
+**
+** All other fields are read/write.  The unixShm.pShmNode->pShmMutex must
+** be held while accessing any read/write fields.
+*/
+struct unixShm {
+  unixShmNode *pShmNode;     /* The underlying unixShmNode object */
+  unixShm *pNext;            /* Next unixShm with the same unixShmNode */
+  u8 hasMutex;               /* True if holding the unixShmNode->pShmMutex */
+  u8 id;                     /* Id of this connection within its unixShmNode */
+  u16 sharedMask;            /* Mask of shared locks held */
+  u16 exclMask;              /* Mask of exclusive locks held */
+};
+
 /* This variable holds the process id (pid) from when the xRandomness()
 ** method was called.  If xOpen() is called from a different process id,
 ** indicating that a fork() has occurred, the PRNG will be reset.
@@ -292,6 +363,7 @@ static pid_t randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
+#define UNIXFILE_REUSESHM   0x100     /* Reuse existing -shm file */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -4042,6 +4114,33 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return proxyFileControl(id,op,pArg);
     }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
+    case SQLITE_FCNTL_REUSE_SHM: {
+      /* Set the UNIXFILE_REUSESHM file.  If this flag is set before
+      ** the database file is first read, and the database is in WAL-mode,
+      ** and this is the first connection to connect to the database, and
+      ** there exists a -shm file from some prior connection that terminated
+      ** asynchronous, then this connection will attempt to reuse the existing
+      ** -shm file.  The default behavior (without this flag) is to scan
+      ** the entire -wal file and reconstruct the -shm file from scratch.
+      ** The default behavior is safer.  But some embedded systems want the
+      ** option to live dangerously. */
+      pFile->ctrlFlags |= UNIXFILE_REUSESHM;
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_SHM_HANDLE: {
+      /* If this database connection has a -shm file open, then set
+      ** *pArg to the file descriptor for that file.  If the -shm file is
+      ** not open for any reason (not opened yet, not in WAL mode, uses
+      ** an in-memory -shm file, etc) then set *pArg to -1. */
+      unixShm *pShm = pFile->pShm;
+      int h = -1;
+      if( pShm ){
+        unixShmNode *pNode = pShm->pShmNode;
+        if( pNode ) h = pNode->hShm;
+      }
+      *(int*)pArg = h;
+      return SQLITE_OK;
+    }
   }
   return SQLITE_NOTFOUND;
 }
@@ -4209,76 +4308,6 @@ static int unixGetpagesize(void){
 #endif /* !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0 */
 
 #ifndef SQLITE_OMIT_WAL
-
-/*
-** Object used to represent an shared memory buffer.  
-**
-** When multiple threads all reference the same wal-index, each thread
-** has its own unixShm object, but they all point to a single instance
-** of this unixShmNode object.  In other words, each wal-index is opened
-** only once per process.
-**
-** Each unixShmNode object is connected to a single unixInodeInfo object.
-** We could coalesce this object into unixInodeInfo, but that would mean
-** every open file that does not use shared memory (in other words, most
-** open files) would have to carry around this extra information.  So
-** the unixInodeInfo object contains a pointer to this unixShmNode object
-** and the unixShmNode object is created only when needed.
-**
-** unixMutexHeld() must be true when creating or destroying
-** this object or while reading or writing the following fields:
-**
-**      nRef
-**
-** The following fields are read-only after the object is created:
-** 
-**      hShm
-**      zFilename
-**
-** Either unixShmNode.pShmMutex must be held or unixShmNode.nRef==0 and
-** unixMutexHeld() is true when reading or writing any other field
-** in this structure.
-*/
-struct unixShmNode {
-  unixInodeInfo *pInode;     /* unixInodeInfo that owns this SHM node */
-  sqlite3_mutex *pShmMutex;  /* Mutex to access this object */
-  char *zFilename;           /* Name of the mmapped file */
-  int hShm;                  /* Open file descriptor */
-  int szRegion;              /* Size of shared-memory regions */
-  u16 nRegion;               /* Size of array apRegion */
-  u8 isReadonly;             /* True if read-only */
-  u8 isUnlocked;             /* True if no DMS lock held */
-  char **apRegion;           /* Array of mapped shared-memory regions */
-  int nRef;                  /* Number of unixShm objects pointing to this */
-  unixShm *pFirst;           /* All unixShm objects pointing to this */
-#ifdef SQLITE_DEBUG
-  u8 exclMask;               /* Mask of exclusive locks held */
-  u8 sharedMask;             /* Mask of shared locks held */
-  u8 nextShmId;              /* Next available unixShm.id value */
-#endif
-};
-
-/*
-** Structure used internally by this VFS to record the state of an
-** open shared memory connection.
-**
-** The following fields are initialized when this object is created and
-** are read-only thereafter:
-**
-**    unixShm.pShmNode
-**    unixShm.id
-**
-** All other fields are read/write.  The unixShm.pShmNode->pShmMutex must
-** be held while accessing any read/write fields.
-*/
-struct unixShm {
-  unixShmNode *pShmNode;     /* The underlying unixShmNode object */
-  unixShm *pNext;            /* Next unixShm with the same unixShmNode */
-  u8 hasMutex;               /* True if holding the unixShmNode->pShmMutex */
-  u8 id;                     /* Id of this connection within its unixShmNode */
-  u16 sharedMask;            /* Mask of shared locks held */
-  u16 exclMask;              /* Mask of exclusive locks held */
-};
 
 /*
 ** Constants used for locking
@@ -4457,8 +4486,12 @@ static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
       ** -shm header size) rather than 0 as a system debugging aid, to
       ** help detect if a -shm file truncation is legitimate or is the work
       ** or a rogue process. */
-      if( rc==SQLITE_OK && robust_ftruncate(pShmNode->hShm, 3) ){
-        rc = unixLogError(SQLITE_IOERR_SHMOPEN,"ftruncate",pShmNode->zFilename);
+      if( rc==SQLITE_OK
+       && (pDbFd->ctrlFlags & UNIXFILE_REUSESHM)==0
+       && robust_ftruncate(pShmNode->hShm, 3)
+      ){
+        rc = unixLogError(SQLITE_IOERR_SHMOPEN,"ftruncate",
+                          pShmNode->zFilename);
       }
     }
   }else if( lock.l_type==F_WRLCK ){

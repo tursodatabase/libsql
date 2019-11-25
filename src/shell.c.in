@@ -7386,6 +7386,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
       { "has_moved",      SQLITE_FCNTL_HAS_MOVED,       ""               },  
       { "lock_timeout",   SQLITE_FCNTL_LOCK_TIMEOUT,    "MILLISEC"       },
+      { "reuse_shm",      SQLITE_FCNTL_REUSE_SHM,       ""               },
+      { "shm_handle",     SQLITE_FCNTL_SHM_HANDLE,      ""               },
     };
     int filectrl = -1;
     int iCtrl = -1;
@@ -7478,6 +7480,18 @@ static int do_meta_command(char *zLine, ShellState *p){
             sqlite3_free(z);
           }
           isOk = 2;
+          break;
+        }
+        case SQLITE_FCNTL_REUSE_SHM: {
+          sqlite3_file_control(p->db, 0, filectrl, 0);
+          isOk = 2;
+          break;
+        }
+        case SQLITE_FCNTL_SHM_HANDLE: {
+          int h = -2;
+          sqlite3_file_control(p->db, 0, filectrl, &h);
+          isOk = 1;
+          iRes = h;
           break;
         }
       }

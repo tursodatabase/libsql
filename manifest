@@ -1,5 +1,5 @@
-C Abort\sthe\swindow\sfunction\stree\srewrite\searly\sfollowing\san\sOOM.
-D 2019-11-23T16:34:40.792
+C Experimental\sfile-controls\sfor\scontrolling\sthe\suse\sof\sthe\s-shm\sfile.
+D 2019-11-25T23:55:14.269
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -510,7 +510,7 @@ F src/os.c 669cc3839cc35d20f81faf0be1ab6d4581cea35e9d8f3a9d48a98d6571f7c285
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 3e0e519f27683083a465e948e056759a8340728c222b5c394a135e0c57c220bc
+F src/os_unix.c 112995da72acac11ad335489acbbf7df097df5b496602e6ae5e08b9ed20d06ed
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 30f20d2263d3717f41a0d9a40f7a3d0f48ce1cfab461b875c6187ead9d6ad1c7
@@ -527,8 +527,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 2f8fb48e61d0006031df27e53810b6767972526d768d3cc6888435dc350c4c7a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c f403b7bd2304d4dfd5ad2614cc0ad3386a97af707922882bdabba4c14ce12975
-F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
-F src/sqlite.h.in 4fe42f27a7be44586bbd94f49f2b097ef8a1053c747d82f135456c7f5381c85a
+F src/shell.c.in 6ecf8033fccb57b47a86e2bb87b1918f1aa5602f74bb72b1ae8c8ad1f44d2f27
+F src/sqlite.h.in d4fd966968f89426afa3924398896748a3cd82e07e0eef70e87b4aca5002b2c2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
 F src/sqliteInt.h 98bc9562acfc361e34182aa25b00e2c73095732ddd3ba4158f984b94f5601f96
@@ -1851,7 +1851,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 57070c68bbe15fc1d19a765182432e844c082909bdbc63b58fd86b96e2c521dd
-R 5ec4b862f5e315c01dbee90c995a71d6
+P d66f95a51530259ab48f78c9f91acc38055caf338b6fee846b99a8c077466e95
+R 7963d80c0fc4f8462d1ea33f7ebfda99
+T *branch * reuse-shm
+T *sym-reuse-shm *
+T -sym-trunk *
 U drh
-Z b069a61ef07a50420fc34a99d1dc8940
+Z 1fd8281bb0cf67f1ca29940be5022987
