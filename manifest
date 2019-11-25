@@ -1,5 +1,5 @@
-C Minor\senhancements\sto\sthe\sTclKit\sdownload\stool.
-D 2019-11-25T00:07:03.727
+C Modify\sjournal3.test\sso\sthat\sit\scan\shandle\sTcl\scommand\s"file\sattr\s<file>\s-perm"\sreturning\soctal\svalues\sin\seither\s"00755"\sor\s"0o755"\sformat.
+D 2019-11-25T04:15:33.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1091,7 +1091,7 @@ F test/join5.test 3a96dc62f0b45402d7207e22d1993fe0c2fce1c57644a11439891dd62b990e
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
-F test/journal3.test 939a3578396dffa0cdaa9b2685088c5a1a644db90d61aca08bd7e19d33932c00
+F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
 F test/jrnlmode.test 9b5bc01dac22223cb60ec2d5f97acf568d73820794386de5634dcadbea9e1946
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d66f95a51530259ab48f78c9f91acc38055caf338b6fee846b99a8c077466e95
-R d683a416a8082786a70e484e01bcd840
-U mistachkin
-Z b043cee0b36f72ca0ac332fc2e8f10e1
+P 75e31b1d56781fc4d28aea6c7f1393a18fd34870a5beb92df81c088d61351b4a
+R 2f6e5508d8b8d1ccc3ae7ea0b7136845
+U dan
+Z 42447dbf3d958aac62e5b66202f94036
