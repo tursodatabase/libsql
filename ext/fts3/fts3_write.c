@@ -1237,6 +1237,8 @@ int sqlite3Fts3ReadBlock(
       }
       *paBlob = aByte;
     }
+  }else if( rc==SQLITE_ERROR ){
+    rc = sqlite3Fts3Corrupt();
   }
 
   return rc;
