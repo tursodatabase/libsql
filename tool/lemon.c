@@ -218,7 +218,7 @@ void Plink_delete(struct plink *);
 /********** From the file "report.h" *************************************/
 void Reprint(struct lemon *);
 void ReportOutput(struct lemon *);
-void ReportTable(struct lemon *, int);
+void ReportTable(struct lemon *, int, int);
 void ReportHeader(struct lemon *);
 void CompressTables(struct lemon *);
 void ResortStates(struct lemon *);
@@ -1632,6 +1632,7 @@ int main(int argc, char **argv)
   static int mhflag = 0;
   static int nolinenosflag = 0;
   static int noResort = 0;
+  static int sqlFlag = 0;
   
   static struct s_options options[] = {
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
@@ -1650,6 +1651,8 @@ int main(int argc, char **argv)
     {OPT_FLAG, "r", (char*)&noResort, "Do not sort or renumber states"},
     {OPT_FLAG, "s", (char*)&statistics,
                                    "Print parser stats to standard output."},
+    {OPT_FLAG, "S", (char*)&sqlFlag,
+                    "Generate the *.sql file describing the parser tables."},
     {OPT_FLAG, "x", (char*)&version, "Print the version number."},
     {OPT_FSTR, "T", (char*)handle_T_option, "Specify a template file."},
     {OPT_FSTR, "W", 0, "Ignored.  (Placeholder for '-W' compiler options.)"},
@@ -1758,7 +1761,7 @@ int main(int argc, char **argv)
     if( !quiet ) ReportOutput(&lem);
 
     /* Generate the source code for the parser */
-    ReportTable(&lem, mhflag);
+    ReportTable(&lem, mhflag, sqlFlag);
 
     /* Produce a header file for use by the scanner.  (This step is
     ** omitted if the "-m" option is used because makeheaders will
@@ -4143,9 +4146,10 @@ static void writeRuleText(FILE *out, struct rule *rp){
 /* Generate C source code for the parser */
 void ReportTable(
   struct lemon *lemp,
-  int mhflag     /* Output in makeheaders format if true */
+  int mhflag,     /* Output in makeheaders format if true */
+  int sqlFlag     /* Generate the *.sql file too */
 ){
-  FILE *out, *in;
+  FILE *out, *in, *sql;
   char line[LINESIZE];
   int  lineno;
   struct state *stp;
@@ -4174,6 +4178,72 @@ void ReportTable(
   if( out==0 ){
     fclose(in);
     return;
+  }
+  if( sqlFlag==0 ){
+    sql = 0;
+  }else{
+    sql = file_open(lemp, ".sql", "wb");
+    if( sql==0 ){
+      fclose(in);
+      fclose(out);
+      return;
+    }
+    fprintf(sql,
+       "CREATE TABLE symbol(\n"
+       "  id INTEGER PRIMARY KEY,\n"
+       "  name TEXT NOT NULL,\n"
+       "  isTerminal BOOLEAN NOT NULL,\n"
+       "  fallback INTEGER REFERENCES symbol\n"
+       ");\n"
+    );
+    for(i=0; i<lemp->nsymbol; i++){
+      fprintf(sql,
+         "INSERT INTO symbol(id,name,isTerminal,fallback)"
+         "VALUES(%d,'%s',%s",
+         i, lemp->symbols[i]->name,
+         i<lemp->nterminal ? "TRUE" : "FALSE"
+      );
+      if( lemp->symbols[i]->fallback ){
+        fprintf(sql, ",%d);\n", lemp->symbols[i]->fallback->index);
+      }else{
+        fprintf(sql, ",NULL);\n");
+      }
+    }
+    fprintf(sql,
+      "CREATE TABLE rule(\n"
+      "  ruleid INTEGER PRIMARY KEY,\n"
+      "  lhs INTEGER REFERENCES symbol(id)\n"
+      ");\n"
+      "CREATE TABLE rulerhs(\n"
+      "  ruleid INTEGER REFERENCES rule(ruleid),\n"
+      "  pos INTEGER,\n"
+      "  sym INTEGER REFERENCES symbol(id)\n"
+      ");\n"
+    );
+    for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
+      assert( i==rp->iRule );
+      fprintf(sql,
+        "INSERT INTO rule(ruleid,lhs)VALUES(%d,%d);\n",
+        rp->iRule, rp->lhs->index
+      );
+      for(j=0; j<rp->nrhs; j++){
+        struct symbol *sp = rp->rhs[j];
+        if( sp->type!=MULTITERMINAL ){
+          fprintf(sql,
+            "INSERT INTO rulerhs(ruleid,pos,sym)VALUES(%d,%d,%d);\n",
+            i,j,sp->index
+          );
+        }else{
+          int k;
+          for(k=0; k<sp->nsubsym; k++){
+            fprintf(sql,
+              "INSERT INTO rulerhs(ruleid,pos,sym)VALUES(%d,%d,%d);\n",
+              i,j,sp->subsym[k]->index
+            );
+          }
+        }
+      }
+    }
   }
   lineno = 1;
   tplt_xfer(lemp->name,in,out,&lineno);
@@ -4697,6 +4767,7 @@ void ReportTable(
   acttab_free(pActtab);
   fclose(in);
   fclose(out);
+  if( sql ) fclose(sql);
   return;
 }
 

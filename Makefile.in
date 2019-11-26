@@ -1052,7 +1052,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
-	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
+	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
@@ -1180,7 +1180,7 @@ FTS5_SRC = \
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
-	./lemon$(BEXE) $(OPTS) fts5parse.y
+	./lemon$(BEXE) $(OPTS) -S fts5parse.y
 
 fts5parse.h: fts5parse.c
 

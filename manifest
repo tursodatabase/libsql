@@ -1,11 +1,11 @@
-C Fix\san\sassert()\sin\sfts3\sthat\scould\sfail\sdue\sto\scorrupt\sdatabase\srecords.
-D 2019-11-26T02:03:16.599
+C Add\sthe\snew\s-S\soption\sto\sthe\slemon\sparser\sgenerator\sto\scause\sit\sto\soutput\nSQL\sthat\sdescribes\sthe\sinput\sgrammar.
+D 2019-11-26T02:22:39.237
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in bf24a9abbb277afa2fbe6bac80a181f22be6c48de771cd260c9851ecf6165dc1
+F Makefile.in d3a862c9742f5a08230a3b295c0a47fd3067f19356dc39935280135f90474b04
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc c7e3548d5c9dc12bedf47366ca3f1438196f635d81f08fda44c6c1f290c4bcf8
+F Makefile.msc 0b0acbf34bb238170bdf1fd343a1fd37bc81c042ce029c1cc53fe15b5d4ed07b
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION 081500f0aeaadc989d85aafbc717af45512018aebc73d89e5c2368fe62a600ff
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1770,7 +1770,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 9ec344d29cbeb03fdc0fce668eedfb7495792170de933adf95cf8d6904a166ad
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 61d5f0af1eff8f754b75ddca668c9897fd30759e389bfffb42ce9e4d38fd4746
+F tool/lemon.c aff705f55b49fa539b84f6d0268b187fd13073fdea8974eb1e48f46f65ecd711
 F tool/lempar.c 34b136b281ae022277738d8b51061237fb330deaa317010d89375117e3a028aa
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0b655625cf491c832a259d29a67660b8d5943c201617900a83d0660b2673377
-R 6a3e9607b61fc3aebf23982510da9bef
-U dan
-Z 453598f27a16514babf1153abdc2edcc
+P 5d9a369301a65f320a0696fcf1f062ca5976ef34350590c07aecf5335c66d872
+R 56c7b11c47c4d5d638f60332aad4d82b
+U drh
+Z 3f689fa3f8b556a4e2fda3bc9d802efd
