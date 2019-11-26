@@ -1,5 +1,5 @@
-C Fix\sto\scheck-in\s[5d9a369301a65f32]\sso\sthat\sit\scompiles\swithout\sSQLITE_DEBUG.
-D 2019-11-26T11:10:59.831
+C Fix\svarious\sdocumentation\stypos\ssuggested\sby\sMark\sBenningfield.\nNo\schanges\sto\scode.
+D 2019-11-26T14:24:12.657
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -109,7 +109,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl bf7fcaa6d68e6d38223467983785d054f1cff4d9e3905dd51f6ed8801bb590d5
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h 7c9da96f2b9dcfa4dd94081fb2d87ec418d8cdb35b25df56756c334b6b558fd7
+F ext/fts5/fts5.h c132a9323f22a972c4c93a8d5a3d901113a6e612faf30ca8e695788438c5ca2a
 F ext/fts5/fts5Int.h d7cbc214ee167496f70905667e18f73ea0402f7ef09236ce305e117e0efc866a
 F ext/fts5/fts5_aux.c dcc627d8b6e3fc773db528ff67b39955dab7b51628f9dba8e15849e5bedfd7fa
 F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6dc8aaca70
@@ -440,7 +440,7 @@ F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 67b5ab91d4f93ce65ff1f58240ac5ddf73f8670facc1ffa49cef56293d52818d
 F ext/session/sqlite3session.c a4dfb372f270df93422b0dc7666fd46849e6979b62a152f11287c21eed4ac21b
-F ext/session/sqlite3session.h 919be6649d39d6413ce7a63fc3e3bca3270e18bc2d57ad4040a70007b9e54397
+F ext/session/sqlite3session.h a2db5b72b938d12c727b4b4ec632254ca493670a9c0de597af3271a7f774fc57
 F ext/session/test_session.c 98797aba475a799376c9a42214f2d1debf2d0c3cb657d9c8bbf4f70bf3fb4aec
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -528,7 +528,7 @@ F src/resolve.c 2f8fb48e61d0006031df27e53810b6767972526d768d3cc6888435dc350c4c7a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c f403b7bd2304d4dfd5ad2614cc0ad3386a97af707922882bdabba4c14ce12975
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
-F src/sqlite.h.in 4fe42f27a7be44586bbd94f49f2b097ef8a1053c747d82f135456c7f5381c85a
+F src/sqlite.h.in 1eb869c09c8f9cc364b0edf074ac240e90bb5c56aef07d07822c71ad4f41fc93
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
 F src/sqliteInt.h 98bc9562acfc361e34182aa25b00e2c73095732ddd3ba4158f984b94f5601f96
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4dbd398d640852d4a696d68c72ee039968023d402a8053b5e6b4ef1d75e982a8
-R c30d91ad566e8c3fd02ab81ce2924a94
+P fefe2d046725254367f9f82a8c8cb137e8b75dbbf4bc48debf0649479ff2f0c2
+R 2cbc86068e6280db02b2343a5ae4d180
 U drh
-Z 5a7fe38d50394448e46848d424b8b569
+Z bfb42d33cd846c85cfceaf8d7b65a29d
