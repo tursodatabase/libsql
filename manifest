@@ -1,5 +1,5 @@
-C Experimental\sfile-controls\sfor\scontrolling\sthe\suse\sof\sthe\s-shm\sfile.
-D 2019-11-25T23:55:14.269
+C Fix\sobsolete\scomment.\s\sNo\schanges\sto\scode.
+D 2019-11-27T12:03:24.078
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343b
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 108f79166d4a232a8bfb9d46e2fbec191f83a87fe97f7b93fc4de976c3fa3434
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c bbd6838bd79c0a32144d482fb0b6a9d2d1a252fb3b16d5005ec30f2f80413b0d
+F src/wal.c 8ed0ca18d8d2728ba70a7b032723ef551cfc7fd66662863982e0c2cbfe8ac49e
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 874845fb5d93b3bc07123df8fee805e9650bd091e3ed62988273c7e2141ab8bd
@@ -1851,10 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d66f95a51530259ab48f78c9f91acc38055caf338b6fee846b99a8c077466e95
-R 7963d80c0fc4f8462d1ea33f7ebfda99
-T *branch * reuse-shm
-T *sym-reuse-shm *
-T -sym-trunk *
+P 12b8fa233697f9f4026eb14fb7454c180f61aa639b1834ccdc8dcfde4420d3a4
+R a828043821ecae3894d05a23137b4c66
 U drh
-Z 1fd8281bb0cf67f1ca29940be5022987
+Z f102e313d0cbfb7ab84dcd298e39c778

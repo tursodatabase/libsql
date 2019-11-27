@@ -3412,8 +3412,10 @@ int sqlite3WalFrames(
 
     /* Check if this page has already been written into the wal file by
     ** the current transaction. If so, overwrite the existing frame and
-    ** set Wal.writeLock to WAL_WRITELOCK_RECKSUM - indicating that 
-    ** checksums must be recomputed when the transaction is committed.  */
+    ** make sure pWal->iReCksum is set to the frame being overwritten or
+    ** or some earlier frame, so that we will know that checksums must
+    ** be recomputed when the transaction commits, and where to start
+    ** recomputing the checksums. */
     if( iFirst && (p->pDirty || isCommit==0) ){
       u32 iWrite = 0;
       VVA_ONLY(rc =) sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
