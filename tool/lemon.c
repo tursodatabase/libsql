@@ -4224,6 +4224,9 @@ void ReportTable(
     );
     for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
       assert( i==rp->iRule );
+      fprintf(sql, "-- ");
+      writeRuleText(sql, rp);
+      fprintf(sql, "\n");
       fprintf(sql,
         "INSERT INTO rule(ruleid,lhs)VALUES(%d,%d);\n",
         rp->iRule, rp->lhs->index
