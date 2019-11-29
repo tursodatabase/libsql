@@ -4189,11 +4189,13 @@ void ReportTable(
       return;
     }
     fprintf(sql,
+       "BEGIN;\n"
        "CREATE TABLE symbol(\n"
        "  id INTEGER PRIMARY KEY,\n"
        "  name TEXT NOT NULL,\n"
        "  isTerminal BOOLEAN NOT NULL,\n"
-       "  fallback INTEGER REFERENCES symbol\n"
+       "  fallback INTEGER REFERENCES symbol"
+               " DEFERRABLE INITIALLY DEFERRED\n"
        ");\n"
     );
     for(i=0; i<lemp->nsymbol; i++){
@@ -4244,6 +4246,7 @@ void ReportTable(
         }
       }
     }
+    fprintf(sql, "COMMIT;\n");
   }
   lineno = 1;
   tplt_xfer(lemp->name,in,out,&lineno);
