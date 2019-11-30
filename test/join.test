@@ -953,4 +953,26 @@ do_execsql_test join-20.2 {
   SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
 } {}
 
+# 2019-11-30 ticket 7f39060a24b47353
+# Do not allow a WHERE clause term to qualify a partial index on the
+# right table of a LEFT JOIN.
+#
+do_execsql_test join-21.10 {
+  DROP TABLE t0;
+  DROP TABLE t1;
+  CREATE TABLE t0(aa);
+  CREATE TABLE t1(bb);
+  INSERT INTO t0(aa) VALUES (1);
+  INSERT INTO t1(bb) VALUES (1);
+  SELECT 11, * FROM t1 LEFT JOIN t0 WHERE aa ISNULL;
+  SELECT 12, * FROM t1 LEFT JOIN t0 WHERE +aa ISNULL;
+  SELECT 13, * FROM t1 LEFT JOIN t0 ON aa ISNULL;
+  SELECT 14, * FROM t1 LEFT JOIN t0 ON +aa ISNULL;
+  CREATE INDEX i0 ON t0(aa) WHERE aa ISNULL;
+  SELECT 21, * FROM t1 LEFT JOIN t0 WHERE aa ISNULL;
+  SELECT 22, * FROM t1 LEFT JOIN t0 WHERE +aa ISNULL;
+  SELECT 23, * FROM t1 LEFT JOIN t0 ON aa ISNULL;
+  SELECT 24, * FROM t1 LEFT JOIN t0 ON +aa ISNULL;
+} {13 1 {} 14 1 {} 23 1 {} 24 1 {}}
+
 finish_test

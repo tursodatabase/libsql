@@ -2790,12 +2790,17 @@ static int indexMightHelpWithOrderBy(
 /* Check to see if a partial index with pPartIndexWhere can be used
 ** in the current query.  Return true if it can be and false if not.
 */
-static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
+static int whereUsablePartialIndex(
+  int iTab,             /* The table for which we want an index */
+  int isLeft,           /* True if iTab is the right table of a LEFT JOIN */
+  WhereClause *pWC,     /* The WHERE clause of the query */
+  Expr *pWhere          /* The WHERE clause from the partial index */
+){
   int i;
   WhereTerm *pTerm;
   Parse *pParse = pWC->pWInfo->pParse;
   while( pWhere->op==TK_AND ){
-    if( !whereUsablePartialIndex(iTab,pWC,pWhere->pLeft) ) return 0;
+    if( !whereUsablePartialIndex(iTab,isLeft,pWC,pWhere->pLeft) ) return 0;
     pWhere = pWhere->pRight;
   }
   if( pParse->db->flags & SQLITE_EnableQPSG ) pParse = 0;
@@ -2803,6 +2808,7 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
     Expr *pExpr;
     pExpr = pTerm->pExpr;
     if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
+     && (isLeft==0 || ExprHasProperty(pExpr, EP_FromJoin))
      && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab) 
     ){
       return 1;
@@ -2965,8 +2971,11 @@ static int whereLoopAddBtree(
   for(; rc==SQLITE_OK && pProbe; 
       pProbe=(pSrc->pIBIndex ? 0 : pProbe->pNext), iSortIdx++
   ){
+    int isLeft = (pSrc->fg.jointype & JT_OUTER)!=0;
     if( pProbe->pPartIdxWhere!=0
-     && !whereUsablePartialIndex(pSrc->iCursor, pWC, pProbe->pPartIdxWhere) ){
+     && !whereUsablePartialIndex(pSrc->iCursor, isLeft, pWC,
+                                 pProbe->pPartIdxWhere)
+    ){
       testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
       continue;  /* Partial index inappropriate for this query */
     }
