@@ -1,5 +1,5 @@
-C Do\snot\sallow\sa\sterm\sin\sthe\sWHERE\sclause\sof\sthe\squery\sto\squalify\sa\spartial\nindex\son\sthe\sright\stable\sof\sa\sLEFT\sJOIN.\s\sTicket\s[7f39060a24b47353]
-D 2019-11-30T19:29:19.742
+C Avoid\scomputing\sa\szero\soffset\sof\sa\snull\spointer,\swhich\sthough\sthis\sis\ntechnically\sharmless,\sis\supsetting\sto\spedantic\srun-time\scheckers.
+D 2019-12-03T02:51:50.852
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c 0bbbdc70c573d5112b74a3d555dd51c76ee3f8b6d43cf07e5105ced6a3ec0d10
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
-F src/vdbemem.c a17144a7a0d025de3e8433af1edaada7eea76dd157f73bab05c50b8f33ab777b
+F src/vdbemem.c 2eb00a4d1a7d2c97510a4d1ccaf4e12c9143f2ced1c6b96b5eddc372183c9121
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 108f79166d4a232a8bfb9d46e2fbec191f83a87fe97f7b93fc4de976c3fa3434
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c4f714892327a1a9a303267b1f9685e310cca5dcea9c61287d95e26291b0506
-R d57d82e28b1d820fe0fa0d700752c88b
+P 4066a34da7bcdcece6c438c27f3a11bc49b8c8373b7e1603f30f6225e2bc800a
+R 2661a4c2f6176332a61fd46721ac725d
 U drh
-Z fd88fafab2d1693d4af494080aae55d5
+Z a95e50079ac4cd5335d3799e9ca0cccf
