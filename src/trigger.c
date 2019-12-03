@@ -662,8 +662,12 @@ void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
       Table *pTab = tableOfTrigger(pTrigger);
       if( pTab ){
         Trigger **pp;
-        for(pp=&pTab->pTrigger; *pp!=pTrigger; pp=&((*pp)->pNext));
-        *pp = (*pp)->pNext;
+        for(pp=&pTab->pTrigger; *pp; pp=&((*pp)->pNext)){
+          if( *pp==pTrigger ){
+            *pp = (*pp)->pNext;
+            break;
+          }
+        }
       }
     }
     sqlite3DeleteTrigger(db, pTrigger);

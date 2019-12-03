@@ -1,5 +1,5 @@
-C Avoid\sa\sharmless\szero\soffset\sof\sa\snull\spointer\sin\sFTS3,\sso\sas\sto\snot\sprovoke\nunnecessary\swarnings\sfrom\srun-time\scheckers.
-D 2019-12-03T03:31:11.188
+C Avoid\sa\scrash\sthat\scould\soccur\swhen\sa\sdatabase\scontaining\sa\stable\swith\sa\stemp\strigger\sthat\shas\sthe\ssame\sname\sas\sa\stemp\stable\sis\sdetached.
+D 2019-12-03T03:34:06.850
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -592,7 +592,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 7b17f6e2f20f6cbcb0b215025a86b7457c38451fc7622f705e553d7a488c572d
 F src/treeview.c 41d928f04d65931b15f629b4938e9f2c7dc259f02eef34cb2cc6e293f5af813f
-F src/trigger.c 845ccc08f60716c58aa28fe6470385c18ef8c4e1d88c93dcf449bc13d464eb2e
+F src/trigger.c 681ccdb910a87243940d63f99b26190d9c5d2534c2ded3c0825b7c0e315a342e
 F src/update.c 07a50767f7d3e26d4c887c31cd66448d700d3215caea6023acf7269336097df7
 F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
@@ -663,7 +663,7 @@ F test/atrc.c ec92d56d8fbed9eb3e11aaf1ab98cf7dd59e69dae31f128013f1d97e54e7dfed
 F test/attach.test 21bce8681f780a8d631a5ec7ecd0d849bfe84611257b038ae4ffeccc609d8a4e
 F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
-F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
+F test/attach4.test aa05b1d8218b24eba5a7cccf4f224f514ba57ba705c9267f09d2bb63fed0eea1
 F test/attachmalloc.test 12c4f028e570acf9e0a4b0b7fe6f536e21f3d5ebddcece423603d0569beaf438
 F test/auth.test 2154625c05bc79f0e0ea72cb2358395a8041243caa0fd7ce7617d50da4331794
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ce804e99bbef83d49ec309157448a7c1422725606516cef904e6122aadd3922
-R 05889beb26cd3caa945382d29d6d5af9
-U drh
-Z d4fee17868048f60e6b96d3f37c119e3
+P 85d95abec4a596eb3ffd2ea19b4067dc1a6970264222ed5d69e75764ac21597c
+R 7c5e7d0bd5891cf3f46e8b0c87e31ed2
+U dan
+Z afcae6998a8a6587f2d58eb6a06c0d6e
