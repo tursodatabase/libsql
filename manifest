@@ -1,5 +1,5 @@
-C Avoid\scomputing\sa\szero\soffset\sof\sa\snull\spointer,\swhich\sthough\sthis\sis\ntechnically\sharmless,\sis\supsetting\sto\spedantic\srun-time\scheckers.
-D 2019-12-03T02:51:50.852
+C Avoid\sa\sharmless\szero\soffset\sof\sa\snull\spointer\sin\sFTS3,\sso\sas\sto\snot\sprovoke\nunnecessary\swarnings\sfrom\srun-time\scheckers.
+D 2019-12-03T03:31:11.188
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -81,7 +81,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 3fd0b9c9840a5f02e4e1f8e1a3826394f068d0a9b02ae015de2d3366877236f4
+F ext/fts3/fts3.c 9a69143c94195d9342dd4a704021009fb9e45dff9bff775dae024d47e363bab8
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h ba4e5445a0daf4a251345d4704259268fd98a3e0282fedfcaedb9fc6da9f250c
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4066a34da7bcdcece6c438c27f3a11bc49b8c8373b7e1603f30f6225e2bc800a
-R 2661a4c2f6176332a61fd46721ac725d
+P 3ce804e99bbef83d49ec309157448a7c1422725606516cef904e6122aadd3922
+R 05889beb26cd3caa945382d29d6d5af9
 U drh
-Z a95e50079ac4cd5335d3799e9ca0cccf
+Z d4fee17868048f60e6b96d3f37c119e3

@@ -4538,15 +4538,16 @@ static void fts3EvalDlPhraseNext(
   u8 *pbEof
 ){
   char *pIter;                            /* Used to iterate through aAll */
-  char *pEnd = &pDL->aAll[pDL->nAll];     /* 1 byte past end of aAll */
+  char *pEnd;                             /* 1 byte past end of aAll */
  
   if( pDL->pNextDocid ){
     pIter = pDL->pNextDocid;
+    assert( pDL->aAll!=0 || pIter==0 );
   }else{
     pIter = pDL->aAll;
   }
 
-  if( pIter>=pEnd ){
+  if( pIter==0 || pIter>=(pEnd = pDL->aAll + pDL->nAll) ){
     /* We have already reached the end of this doclist. EOF. */
     *pbEof = 1;
   }else{
