@@ -262,4 +262,14 @@ do_execsql_test gencol1-9.20 {
   SELECT 200, * FROM t3;
 } {100 1 1}
 
+# 2019-12-04 Generated column in a CREATE TABLE IF NOT EXISTS that
+# does already exist.
+#
+sqlite3 db :memory:
+do_execsql_test gencol1-10.10 {
+  CREATE TABLE t1(aa,bb);
+  CREATE TABLE IF NOT EXISTS t1(aa, bb AS (aa+1));
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test
