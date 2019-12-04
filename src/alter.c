@@ -757,6 +757,7 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
 static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
+  if( pParse->nErr ) return WRC_Abort;
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){

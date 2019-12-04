@@ -465,5 +465,14 @@ foreach {tn v res} {
   } $res
 }
 
+# Verify that the "if( pParse->nErr ) return WRC_Abort" at the top of the
+# renameUnmapSelectCb() routine in alter.c (2019-12-04) is really required.
+#
+sqlite3 db :memory:
+do_catchsql_test 20.10 {
+  CREATE TABLE s(a, b, c);
+  CREATE INDEX k ON s( (WITH s AS( SELECT * ) VALUES(2) ) IN () );
+  ALTER TABLE s RENAME a TO a2;
+} {1 {error in index k: no tables specified}}
 
 finish_test
