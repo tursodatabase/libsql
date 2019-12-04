@@ -734,6 +734,24 @@ static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
 }
 
 /*
+** Iterate through the Select objects that are part of WITH clauses attached
+** to select statement pSelect.
+*/
+static void renameWalkWith(Walker *pWalker, Select *pSelect){
+  if( pSelect->pWith ){
+    int i;
+    for(i=0; i<pSelect->pWith->nCte; i++){
+      Select *p = pSelect->pWith->a[i].pSelect;
+      NameContext sNC;
+      memset(&sNC, 0, sizeof(sNC));
+      sNC.pParse = pWalker->pParse;
+      sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      sqlite3WalkSelect(pWalker, p);
+    }
+  }
+}
+
+/*
 ** Walker callback used by sqlite3RenameExprUnmap().
 */
 static int renameUnmapSelectCb(Walker *pWalker, Select *p){
@@ -753,6 +771,8 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
     }
   }
+
+  renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
 
@@ -815,24 +835,6 @@ static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
       pCtx->pList = pToken;
       pCtx->nList++;
       break;
-    }
-  }
-}
-
-/*
-** Iterate through the Select objects that are part of WITH clauses attached
-** to select statement pSelect.
-*/
-static void renameWalkWith(Walker *pWalker, Select *pSelect){
-  if( pSelect->pWith ){
-    int i;
-    for(i=0; i<pSelect->pWith->nCte; i++){
-      Select *p = pSelect->pWith->a[i].pSelect;
-      NameContext sNC;
-      memset(&sNC, 0, sizeof(sNC));
-      sNC.pParse = pWalker->pParse;
-      sqlite3SelectPrep(sNC.pParse, p, &sNC);
-      sqlite3WalkSelect(pWalker, p);
     }
   }
 }

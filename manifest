@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sthat\scould\soccur\sin\sfts3\swith\scorrupt\s%_stat\srecords.
-D 2019-12-04T03:46:50.817
+C Fix\san\sassert()\sfailure\sthat\scould\soccur\sin\sALTER\sTABLE\scode\swhen\sthe\sschema\scontains\sa\sview\sthat\suses\sa\sCTE.
+D 2019-12-04T14:26:38.017
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -460,7 +460,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 01730734ad46d7a72bdbe736e755ef23337c46f493d5ae117fb4875169113024
+F src/alter.c 3101da361810ab2904b39e3c824ffd0770c77262d72bf97a7baba7e8b89cc3fe
 F src/analyze.c b3ceec3fc052df8a96ca8a8c858d455dc5029ba681b4be98bb5c5a9162cfa58c
 F src/attach.c b30c44333d55a68c0a12920b5b9d40b254cbd3d4509bda77417209eeed8b3d80
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
@@ -636,7 +636,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altertab.test 4d8b79b0b88b62b90b710390df14fe99e0a3578345526886eaa550e28e3065dc
 F test/altertab2.test 8883693952f6d7fb5f754dbf1d694ed780aa883027bef04cb1fb99a3b88c9272
-F test/altertab3.test f40013d333e273da57e329fac6c2268a58aa09d17c3575936b343eeb2fa09180
+F test/altertab3.test 1456b08bd57b5cf978d5c275e08857e00d142cb7d2ba156c1fd360787d5fe06e
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 547bb700f903107b38611b014ca645d6b5bb819f5210d7bf39c40802aafeb7d7
 F test/analyze3.test 01f0b122e3e54ad2544f14f7cc7dcb4c2cb8753cad5e88c6b8d49615b3fd6a2b
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96b6a76da09a94182414ec1a56da91728c37329d2b55f889e433054ca21605ce
-R 021dc4e288313b735f102a5cfdb82a99
+P e01fdbf9f700e1bd9dd5283c65547d10d26ce4f4506d3cfef9e1087aecdc2305
+R 28fab4726d1d7a83fe0fc43935cfad37
 U dan
-Z 294099ece301ad8081d293396da7a9e9
+Z 9893a89ad8b51bef2a7f272ffbfd52e9
