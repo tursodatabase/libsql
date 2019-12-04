@@ -4850,13 +4850,17 @@ static int fts3IncrmergeHintPop(Blob *pHint, i64 *piAbsLevel, int *pnInput){
   const int nHint = pHint->n;
   int i;
 
-  i = pHint->n-2;
+  i = pHint->n-1;
+  if( (pHint->a[i] & 0x80) ) return FTS_CORRUPT_VTAB;
   while( i>0 && (pHint->a[i-1] & 0x80) ) i--;
+  if( i==0 ) return FTS_CORRUPT_VTAB;
+  i--;
   while( i>0 && (pHint->a[i-1] & 0x80) ) i--;
 
   pHint->n = i;
   i += sqlite3Fts3GetVarint(&pHint->a[i], piAbsLevel);
   i += fts3GetVarint32(&pHint->a[i], pnInput);
+  assert( i<=nHint );
   if( i!=nHint ) return FTS_CORRUPT_VTAB;
 
   return SQLITE_OK;
