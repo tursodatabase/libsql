@@ -1816,7 +1816,7 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
   }else{
     char *z;
     if( p->u.vtab.idxStr ){
-      z = sqlite3_mprintf("(%d,\"%s\",%x)",
+      z = sqlite3_mprintf("(%d,\"%s\",%#x)",
                 p->u.vtab.idxNum, p->u.vtab.idxStr, p->u.vtab.omitMask);
     }else{
       z = sqlite3_mprintf("(%d,%x)", p->u.vtab.idxNum, p->u.vtab.omitMask);
@@ -4810,6 +4810,7 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
+    sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
     sqlite3WhereClausePrint(sWLB.pWC);
   }
 #endif
@@ -4948,7 +4949,13 @@ WhereInfo *sqlite3WhereBegin(
       nTabList--;
     }
   }
+#if defined(WHERETRACE_ENABLED)
+  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
+    sqlite3DebugPrintf("---- WHERE clause at end of analysis:\n");
+    sqlite3WhereClausePrint(sWLB.pWC);
+  }
   WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
+#endif
   pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
