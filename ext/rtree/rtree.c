@@ -1817,7 +1817,15 @@ static int rtreeFilter(
     RtreeSearchPoint *p;     /* Search point for the leaf */
     i64 iRowid = sqlite3_value_int64(argv[0]);
     i64 iNode = 0;
-    rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
+    int eType = sqlite3_value_numeric_type(argv[0]);
+    if( eType==SQLITE_INTEGER
+     || (eType==SQLITE_FLOAT && sqlite3_value_double(argv[0])==iRowid)
+    ){
+      rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
+    }else{
+      rc = SQLITE_OK;
+      pLeaf = 0;
+    }
     if( rc==SQLITE_OK && pLeaf!=0 ){
       p = rtreeSearchPointNew(pCsr, RTREE_ZERO, 0);
       assert( p!=0 );  /* Always returns pCsr->sPoint */

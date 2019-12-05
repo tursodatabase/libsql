@@ -601,15 +601,29 @@ do_execsql_test 14.5 {
   1 0.0 0.0
   2 52.0 81.0
 }
+do_execsql_test 14.6 {
+  INSERT INTO t10 VALUES(0,10,20);
+  SELECT * FROM t10 WHERE ii=NULL;
+} {}
+do_execsql_test 14.7 {
+  SELECT * FROM t10 WHERE ii='xyz';
+} {}
+do_execsql_test 14.8 {
+  SELECT * FROM t10 WHERE ii='0.0';
+} {0 10.0 20.0}
+do_execsql_test 14.9 {
+  SELECT * FROM t10 WHERE ii=0.0;
+} {0 10.0 20.0}
 
-do_execsql_test 14.4 {
+
+do_execsql_test 14.104 {
   DROP TABLE t10;
   CREATE VIRTUAL TABLE t10 USING rtree_i32(ii, x1, x2);
   INSERT INTO t10 VALUES(1, 'one', 'two');
   INSERT INTO t10 VALUES(2, '52xyz', '81...');
   INSERT INTO t10 VALUES(3, 42.3, 49.9);
 }
-do_execsql_test 14.5 {
+do_execsql_test 14.105 {
   SELECT * FROM t10;
 } {
   1 0 0
