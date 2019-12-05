@@ -325,6 +325,12 @@ struct RtreeConstraint {
 #define RTREE_MATCH 0x46  /* F: Old-style sqlite3_rtree_geometry_callback() */
 #define RTREE_QUERY 0x47  /* G: New-style sqlite3_rtree_query_callback() */
 
+/* Special operators available only on cursors.  Needs to be consecutive
+** with the normal values above, but must be less than RTREE_MATCH.  These
+** are used in the cursor for contraints such as x=NULL (RTREE_FALSE) or
+** x<'xyz' (RTREE_TRUE) */
+#define RTREE_TRUE  0x3f  /* ? */
+#define RTREE_FALSE 0x40  /* @ */
 
 /* 
 ** An rtree structure node.
@@ -1244,9 +1250,12 @@ static void rtreeNonleafConstraint(
   pCellData += 8 + 4*(p->iCoord&0xfe);
 
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
-      || p->op==RTREE_GT || p->op==RTREE_EQ );
+      || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_TRUE
+      || p->op==RTREE_FALSE );
   assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   switch( p->op ){
+    case RTREE_TRUE:  return;   /* Always satisfied */
+    case RTREE_FALSE: break;    /* Never satisfied */
     case RTREE_LE:
     case RTREE_LT:
     case RTREE_EQ:
@@ -1284,16 +1293,19 @@ static void rtreeLeafConstraint(
   RtreeDValue xN;      /* Coordinate value converted to a double */
 
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
-      || p->op==RTREE_GT || p->op==RTREE_EQ );
+      || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_TRUE
+      || p->op==RTREE_FALSE );
   pCellData += 8 + p->iCoord*4;
   assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   RTREE_DECODE_COORD(eInt, pCellData, xN);
   switch( p->op ){
-    case RTREE_LE: if( xN <= p->u.rValue ) return;  break;
-    case RTREE_LT: if( xN <  p->u.rValue ) return;  break;
-    case RTREE_GE: if( xN >= p->u.rValue ) return;  break;
-    case RTREE_GT: if( xN >  p->u.rValue ) return;  break;
-    default:       if( xN == p->u.rValue ) return;  break;
+    case RTREE_TRUE:  return;   /* Always satisfied */
+    case RTREE_FALSE: break;    /* Never satisfied */
+    case RTREE_LE:    if( xN <= p->u.rValue ) return;  break;
+    case RTREE_LT:    if( xN <  p->u.rValue ) return;  break;
+    case RTREE_GE:    if( xN >= p->u.rValue ) return;  break;
+    case RTREE_GT:    if( xN >  p->u.rValue ) return;  break;
+    default:          if( xN == p->u.rValue ) return;  break;
   }
   *peWithin = NOT_WITHIN;
 }
@@ -1835,6 +1847,7 @@ static int rtreeFilter(
                 || (idxStr && (int)strlen(idxStr)==argc*2) );
         for(ii=0; ii<argc; ii++){
           RtreeConstraint *p = &pCsr->aConstraint[ii];
+          int eType = sqlite3_value_type(argv[ii]);
           p->op = idxStr[ii*2];
           p->iCoord = idxStr[ii*2+1]-'0';
           if( p->op>=RTREE_MATCH ){
@@ -1849,12 +1862,21 @@ static int rtreeFilter(
             p->pInfo->nCoord = pRtree->nDim2;
             p->pInfo->anQueue = pCsr->anQueue;
             p->pInfo->mxLevel = pRtree->iDepth + 1;
-          }else{
+          }else if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
 #ifdef SQLITE_RTREE_INT_ONLY
             p->u.rValue = sqlite3_value_int64(argv[ii]);
 #else
             p->u.rValue = sqlite3_value_double(argv[ii]);
 #endif
+          }else{
+            p->u.rValue = RTREE_ZERO;
+            if( eType==SQLITE_NULL ){
+              p->op = RTREE_FALSE;
+            }else if( p->op==RTREE_LT || p->op==RTREE_LE ){
+              p->op = RTREE_TRUE;
+            }else{
+              p->op = RTREE_FALSE;
+            }
           }
         }
       }
