@@ -3726,7 +3726,7 @@ static int rtreeInit(
   ** the r-tree table schema.
   */
   pSql = sqlite3_str_new(db);
-  sqlite3_str_appendf(pSql, "CREATE TABLE x(%s", argv[3]);
+  sqlite3_str_appendf(pSql, "CREATE TABLE x(%s INT", argv[3]);
   for(ii=4; ii<argc; ii++){
     if( argv[ii][0]=='+' ){
       pRtree->nAux++;
