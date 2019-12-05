@@ -1,5 +1,5 @@
-C Additional\sdebugging\sinformation\sprinted\swith\sthe\s".wheretrace\s0x100"\soption.\nNo\schanges\sto\snormally\sdelivered\scode.
-D 2019-12-05T17:31:58.970
+C Documentation\supdate:\s\sClarify\sthat\sthe\ssqlite3_index_info.aConstraintUsage.omit\nflag\sis\sa\shint\sonly\sand\sthat\sthe\scode\sgenerator\sis\snot\sobligated\sto\sfollow\nthe\shint.
+D 2019-12-05T18:29:52.613
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/resolve.c 2f8fb48e61d0006031df27e53810b6767972526d768d3cc6888435dc350c4c7a
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 048c0d650c35489c681ece0a3dac1ad9b8f6d23b94e55415b050055d621b9a89
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
-F src/sqlite.h.in 1eb869c09c8f9cc364b0edf074ac240e90bb5c56aef07d07822c71ad4f41fc93
+F src/sqlite.h.in 2a23e8161775253d9cf383c2c6aa559005dc787d350dcb0be67a6c4cc3bd1d19
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
 F src/sqliteInt.h daef6c0ec05fdb3dd8ed1b2da6fa2fdce98917dc463a6a65b001f3be5e24ce4c
@@ -1851,7 +1851,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ae8c0d52f6aa7f27537216f85456ef49dade040366cfb250c789206ecd4dc5a
-R 153b7d647eeb32013cd1c11710341ef1
+P fc72ec52c92ca6a953e765b48e21d52021fdb23a2cd84f737da4e43c642f6a5d
+R 282f2f8fa2fb687f52cca37cb2426a2f
 U drh
-Z b84a6a895890a94b59792736592969e7
+Z afebec44c23eba9ab329a398f7b23996

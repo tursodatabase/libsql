@@ -6549,7 +6549,13 @@ struct sqlite3_module {
 ** the right-hand side of the corresponding aConstraint[] is evaluated
 ** and becomes the argvIndex-th entry in argv.  ^(If aConstraintUsage[].omit
 ** is true, then the constraint is assumed to be fully handled by the
-** virtual table and is not checked again by SQLite.)^
+** virtual table and might not be checked again by the byte code.)^ ^(The
+** aConstraintUsage[].omit flag is an optimization hint. When the omit flag
+** is left in its default setting of false, the constraint will always be
+** checked separately in byte code.  If the omit flag is change to true, then
+** the constraint may or may not be checked in byte code.  In other words,
+** when the omit flag is true there is no guarantee that the constraint will
+** not be checked again using byte code.)^
 **
 ** ^The idxNum and idxPtr values are recorded and passed into the
 ** [xFilter] method.
