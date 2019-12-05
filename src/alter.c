@@ -697,12 +697,14 @@ void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   assert( pPtr || pParse->db->mallocFailed );
   renameTokenCheckAll(pParse, pPtr);
-  pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
-  if( pNew ){
-    pNew->p = pPtr;
-    pNew->t = *pToken;
-    pNew->pNext = pParse->pRename;
-    pParse->pRename = pNew;
+  if( pParse->eParseMode!=PARSE_MODE_UNMAP ){
+    pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
+    if( pNew ){
+      pNew->p = pPtr;
+      pNew->t = *pToken;
+      pNew->pNext = pParse->pRename;
+      pParse->pRename = pNew;
+    }
   }
 
   return pPtr;
@@ -781,12 +783,15 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
 ** Remove all nodes that are part of expression pExpr from the rename list.
 */
 void sqlite3RenameExprUnmap(Parse *pParse, Expr *pExpr){
+  u8 eMode = pParse->eParseMode;
   Walker sWalker;
   memset(&sWalker, 0, sizeof(Walker));
   sWalker.pParse = pParse;
   sWalker.xExprCallback = renameUnmapExprCb;
   sWalker.xSelectCallback = renameUnmapSelectCb;
+  pParse->eParseMode = PARSE_MODE_UNMAP;
   sqlite3WalkExpr(&sWalker, pExpr);
+  pParse->eParseMode = eMode;
 }
 
 /*
@@ -990,7 +995,7 @@ static int renameParseSql(
   ** occurs and the parse does not result in a new table, index or
   ** trigger object, the database must be corrupt. */
   memset(p, 0, sizeof(Parse));
-  p->eParseMode = (bTable ? PARSE_MODE_RENAME_TABLE : PARSE_MODE_RENAME_COLUMN);
+  p->eParseMode = PARSE_MODE_RENAME;
   p->db = db;
   p->nQueryLoop = 1;
   rc = sqlite3RunParser(p, zSql, &zErr);

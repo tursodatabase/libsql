@@ -475,4 +475,17 @@ do_catchsql_test 20.10 {
   ALTER TABLE s RENAME a TO a2;
 } {1 {error in index k: no tables specified}}
 
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 21.1 {
+  CREATE TABLE s(col);
+  CREATE VIEW v AS SELECT ( 
+    WITH x(a) AS(SELECT * FROM s) VALUES(RIGHT) 
+  ) IN() ; 
+  CREATE TABLE a(a);
+  ALTER TABLE a RENAME a TO b;
+}
+
+
 finish_test
