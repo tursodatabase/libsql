@@ -112,6 +112,9 @@ for {set nCol 1} {$nCol<[llength $cols]} {incr nCol} {
 
   catchsql { DROP TABLE t1 }
 }
+do_catchsql_test rtree-1.3.1000 {
+  CREATE VIRTUAL TABLE t1000 USING rtree;
+} {1 {Too few columns for an rtree table}}
 
 # Like execsql except display output as integer where that can be
 # done without loss of information.

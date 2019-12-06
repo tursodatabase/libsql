@@ -3706,8 +3706,8 @@ static int rtreeInit(
   };
 
   assert( RTREE_MAX_AUX_COLUMN<256 ); /* Aux columns counted by a u8 */
-  if( argc>RTREE_MAX_AUX_COLUMN+3 ){
-    *pzErr = sqlite3_mprintf("%s", aErrMsg[3]);
+  if( argc<6 || argc>RTREE_MAX_AUX_COLUMN+3 ){
+    *pzErr = sqlite3_mprintf("%s", aErrMsg[2 + (argc>=6)]);
     return SQLITE_ERROR;
   }
 
