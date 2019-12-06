@@ -33,12 +33,13 @@ if {[info exists G(isquick)] && $G(isquick)} {
 }
 
 foreach module {rtree_i32 rtree} {
+  if {$module=="rtree_i32"} {set etype INT} {set etype REAL}
   for {set nDim 1} {$nDim <= 5} {incr nDim} {
   
     do_test rtree2-$module.$nDim.1 {
       set cols [list]
       foreach c [list c0 c1 c2 c3 c4 c5 c6 c7 c8 c9] {
-        lappend cols "$c REAL"
+        lappend cols "$c $etype"
       }
       set cols [join [lrange $cols 0 [expr {$nDim*2-1}]] ", "]
       execsql " 

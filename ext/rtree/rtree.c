@@ -62,6 +62,7 @@
 #else
   #include "sqlite3.h"
 #endif
+int sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
 
 #ifndef SQLITE_AMALGAMATION
 #include "sqlite3rtree.h"
@@ -3661,6 +3662,14 @@ static int getNodeSize(
   return rc;
 }
 
+/*
+** Return the length of a token
+*/
+static int rtreeTokenLength(const char *z){
+  int dummy = 0;
+  return sqlite3GetToken((const unsigned char*)z,&dummy);
+}
+
 /* 
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the r-tree virtual table.
@@ -3726,16 +3735,18 @@ static int rtreeInit(
   ** the r-tree table schema.
   */
   pSql = sqlite3_str_new(db);
-  sqlite3_str_appendf(pSql, "CREATE TABLE x(%s INT", argv[3]);
+  sqlite3_str_appendf(pSql, "CREATE TABLE x(%.*s INT", 
+                      rtreeTokenLength(argv[3]), argv[3]);
   for(ii=4; ii<argc; ii++){
-    if( argv[ii][0]=='+' ){
+    const char *zArg = argv[ii];
+    if( zArg[0]=='+' ){
       pRtree->nAux++;
-      sqlite3_str_appendf(pSql, ",%s", argv[ii]+1);
+      sqlite3_str_appendf(pSql, ",%s", zArg+1);
     }else if( pRtree->nAux>0 ){
       break;
     }else{
       pRtree->nDim2++;
-      sqlite3_str_appendf(pSql, ",%s", argv[ii]);
+      sqlite3_str_appendf(pSql, ",%.*s NUM", rtreeTokenLength(zArg), zArg);
     }
   }
   sqlite3_str_appendf(pSql, ");");

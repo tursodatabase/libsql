@@ -1,5 +1,5 @@
-C The\scheck-in\s[b7810062ec2489e1]\swas\snot\squite\sright\sin\sthat\sit\sallowed\san\noversized\sshift\soperation\s(which\sis\sUB\sin\sC)\son\ssome\sobscure\sinputs.\s\sOSSFuzz\nfound\sthe\sproblem\sfor\sus\sovernight.
-D 2019-12-06T11:48:27.693
+C In\sthe\srtree\sextension,\sactively\ssuppress\sextra\stokens\son\sthe\scolumn\snames,\nand\sbe\spedantic\sabout\scolumn\saffinities.\s\sTicket\s[367a86e28859f1ff]
+D 2019-12-06T13:10:29.260
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -380,10 +380,10 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c c591164125808f8bba9659e92665b78412cd263e654b6f05294f3a8da7cdd9fb
-F ext/rtree/rtree.c 1f08e535c2e34b301fda49211cbf063f2dae7a31683f2fe261a48ef4f7d0378b
+F ext/rtree/rtree.c f1dace13854706121ec2369d5685d90e83dcfd1698585b0fd4a99f021a44da32
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test 891193aaf1009e2f50c45f5b855df6c8b1428a3b3d22803f3e30cca65cd9f283
-F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
+F ext/rtree/rtree1.test 686216b4181f64b1d27e786fbea053a9fb27cddb983d9bfe4bebb6e5f0d30d90
+F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 4ee5d7df86040efe3d8d84f141f2962a7745452200a7cba1db06f86d97050499
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
 F ext/rtree/rtree5.test 49c9041d713d54560b315c2c7ef7207ee287eba1b20f8266968a06f2e55d3142
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32772dfd50b602c049d8c30bc28cde60a18b7495a997d728081f689ff417c956
-R 1c03acd087c3699b97e3d620797db9c3
+P 62f2235adf796c72882b26313489cf49804ec3ec4972e0eee5034176cbb07f84
+R 1b112b7a4f0b3a3e64226b121a4ea4a7
 U drh
-Z ab13954c7c4fd96013e313a189fb6632
+Z e237feeb1e17ed643316e435de3125ba

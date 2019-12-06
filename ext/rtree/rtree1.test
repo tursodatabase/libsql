@@ -705,5 +705,14 @@ do_execsql_test 17.2 {
   REINDEX;
 } {}
 
+reset_db
+do_execsql_test 18.0 {
+  CREATE VIRTUAL TABLE rt0 USING rtree(c0, c1, c2);
+  INSERT INTO rt0(c0,c1,c2) VALUES(9,2,3);
+  SELECT c0 FROM rt0 WHERE rt0.c1 > '-1'; 
+  SELECT rt0.c1 > '-1' FROM rt0;
+} {9 1}
+
+
 expand_all_sql db
 finish_test
