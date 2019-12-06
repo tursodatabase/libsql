@@ -380,18 +380,24 @@ do_test rtree-8.1.4 { execsql { SELECT ii FROM t6 WHERE x1>4 } }   {}
 do_test rtree-8.1.5 { execsql { SELECT ii FROM t6 WHERE x1>5 } }   {}
 do_test rtree-8.1.6 { execsql { SELECT ii FROM t6 WHERE x1>''} }   {}
 do_test rtree-8.1.7 { execsql { SELECT ii FROM t6 WHERE x1>null}}  {}
+do_test rtree-8.1.8 { execsql { SELECT ii FROM t6 WHERE x1>'2'} }   {1 2}
+do_test rtree-8.1.9 { execsql { SELECT ii FROM t6 WHERE x1>'3'} }   {2}
 do_test rtree-8.2.2 { execsql { SELECT ii FROM t6 WHERE x1>=2 } }  {1 2}
 do_test rtree-8.2.3 { execsql { SELECT ii FROM t6 WHERE x1>=3 } }  {1 2}
 do_test rtree-8.2.4 { execsql { SELECT ii FROM t6 WHERE x1>=4 } }  {2}
 do_test rtree-8.2.5 { execsql { SELECT ii FROM t6 WHERE x1>=5 } }  {}
 do_test rtree-8.2.6 { execsql { SELECT ii FROM t6 WHERE x1>=''} }  {}
 do_test rtree-8.2.7 { execsql { SELECT ii FROM t6 WHERE x1>=null}} {}
+do_test rtree-8.2.8 { execsql { SELECT ii FROM t6 WHERE x1>='4'} } {2}
+do_test rtree-8.2.9 { execsql { SELECT ii FROM t6 WHERE x1>='5'} } {}
 do_test rtree-8.3.2 { execsql { SELECT ii FROM t6 WHERE x1<2 } }   {}
 do_test rtree-8.3.3 { execsql { SELECT ii FROM t6 WHERE x1<3 } }   {}
 do_test rtree-8.3.4 { execsql { SELECT ii FROM t6 WHERE x1<4 } }   {1}
 do_test rtree-8.3.5 { execsql { SELECT ii FROM t6 WHERE x1<5 } }   {1 2}
 do_test rtree-8.3.6 { execsql { SELECT ii FROM t6 WHERE x1<''} }   {1 2}
 do_test rtree-8.3.7 { execsql { SELECT ii FROM t6 WHERE x1<null}}  {}
+do_test rtree-8.3.8 { execsql { SELECT ii FROM t6 WHERE x1<'3'} }  {}
+do_test rtree-8.3.9 { execsql { SELECT ii FROM t6 WHERE x1<'4'} }  {1}
 do_test rtree-8.4.2 { execsql { SELECT ii FROM t6 WHERE x1<=2 } }  {}
 do_test rtree-8.4.3 { execsql { SELECT ii FROM t6 WHERE x1<=3 } }  {1}
 do_test rtree-8.4.4 { execsql { SELECT ii FROM t6 WHERE x1<=4 } }  {1 2}
@@ -404,6 +410,7 @@ do_test rtree-8.5.4 { execsql { SELECT ii FROM t6 WHERE x1=4 } }   {2}
 do_test rtree-8.5.5 { execsql { SELECT ii FROM t6 WHERE x1=5 } }   {}
 do_test rtree-8.5.6 { execsql { SELECT ii FROM t6 WHERE x1=''} }   {}
 do_test rtree-8.5.7 { execsql { SELECT ii FROM t6 WHERE x1=null}}  {}
+
 
 #----------------------------------------------------------------------------
 # Test cases rtree-9.*

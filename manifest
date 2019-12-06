@@ -1,5 +1,5 @@
-C Do\snot\sallow\sUPSERT\sof\sa\sview.
-D 2019-12-06T01:23:38.885
+C Further\senhancements\sto\sRTREE,\sfollowing\sup\sto\scheck-in\s[f898d04cf272ef01]\nso\sthat\sconstraints\sare\sallowed\sto\sbe\scompared\sto\sstrings\sthat\slook\slike\nnumbers.\s\sTicket\s[aa573a787b8f1fdf]
+D 2019-12-06T01:38:24.618
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -380,9 +380,9 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c c591164125808f8bba9659e92665b78412cd263e654b6f05294f3a8da7cdd9fb
-F ext/rtree/rtree.c a71937b3834ab5754ffe606ea19a1058ceb866b49b48fe83c9b9c33096e8a182
+F ext/rtree/rtree.c 1f08e535c2e34b301fda49211cbf063f2dae7a31683f2fe261a48ef4f7d0378b
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test 1b84301b1593eac1f1d52a11eb7bccabe6f40f6d3c77ef0d1f5a2b204a4823d4
+F ext/rtree/rtree1.test 891193aaf1009e2f50c45f5b855df6c8b1428a3b3d22803f3e30cca65cd9f283
 F ext/rtree/rtree2.test 5f25b01acd03470067a2d52783b2eb0a50bf836803d4342d20ca39e541220fe2
 F ext/rtree/rtree3.test 4ee5d7df86040efe3d8d84f141f2962a7745452200a7cba1db06f86d97050499
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7810062ec2489e1c5ca6638dbeb0892e4ce376c5c1834a31d1a332ebab8a871
-R ef70deeb84fca6e423b2832b2c399c76
+P ebf897e861c19e214c57f1e73841b505182202cc8d7d39e24d5a1e5625e26b4a
+R 0a09f01094f6dfbffde0be2b93b69759
 U drh
-Z 0beb6993cda04d36d00ba5278cacd512
+Z ab76657f541308941fa3ae62cffd947d
