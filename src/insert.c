@@ -949,6 +949,10 @@ void sqlite3Insert(
               pTab->zName);
       goto insert_cleanup;
     }
+    if( pTab->pSelect ){
+      sqlite3ErrorMsg(pParse, "cannot UPSERT a view");
+      goto insert_cleanup;
+    }
     if( sqlite3HasExplicitNulls(pParse, pUpsert->pUpsertTarget) ){
       goto insert_cleanup;
     }
