@@ -272,4 +272,60 @@ do_execsql_test gencol1-10.10 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2019-12-06 Found by mrigger
+#
+sqlite3 db :memory:
+do_execsql_test gencol1-11.10 {
+  PRAGMA foreign_keys = true;
+  CREATE TABLE t0(
+    c0,
+    c1 INTEGER PRIMARY KEY,
+    c2 BLOB UNIQUE DEFAULT x'00',
+    c3 BLOB GENERATED ALWAYS AS (1), 
+    FOREIGN KEY(c1) REFERENCES t0(c2)
+  );
+}
+do_catchsql_test gencol1-11.20 {
+  INSERT OR REPLACE INTO t0(c0, c1) VALUES (2, 1), (1, 0)
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test gencol1-11.30 {
+  DROP TABLE t0;
+  CREATE TABLE t0(
+    c0,
+    c1 INTEGER PRIMARY KEY,
+    c3 BLOB GENERATED ALWAYS AS (1), 
+    c2 BLOB UNIQUE DEFAULT x'00',
+    FOREIGN KEY(c1) REFERENCES t0(c2)
+  );
+}
+do_catchsql_test gencol1-11.40 {
+  INSERT OR REPLACE INTO t0(c0, c1) VALUES (2, 1), (1, 0)
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test gencol1-11.50 {
+  DROP TABLE t0;
+  CREATE TABLE t0(
+    c0,
+    c3 BLOB GENERATED ALWAYS AS (1), 
+    c1 INTEGER PRIMARY KEY,
+    c2 BLOB UNIQUE DEFAULT x'00',
+    FOREIGN KEY(c1) REFERENCES t0(c2)
+  );
+}
+do_catchsql_test gencol1-11.60 {
+  INSERT OR REPLACE INTO t0(c0, c1) VALUES (2, 1), (1, 0)
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test gencol1-11.70 {
+  DROP TABLE t0;
+  CREATE TABLE t0(
+    c3 BLOB GENERATED ALWAYS AS (1), 
+    c0,
+    c1 INTEGER PRIMARY KEY,
+    c2 BLOB UNIQUE DEFAULT x'00',
+    FOREIGN KEY(c1) REFERENCES t0(c2)
+  );
+}
+do_catchsql_test gencol1-11.80 {
+  INSERT OR REPLACE INTO t0(c0, c1) VALUES (2, 1), (1, 0)
+} {1 {FOREIGN KEY constraint failed}}
+
 finish_test

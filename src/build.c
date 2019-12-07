@@ -947,13 +947,15 @@ i16 sqlite3StorageColumnToTable(Table *pTab, i16 iCol){
 ** the end.
 **
 ** If SQLITE_OMIT_GENERATED_COLUMNS then there are no virtual columns and
-** this routine is a no-op macro.
+** this routine is a no-op macro.  If the pTab does not have any virtual
+** columns, then this routine is no-op that always return iCol.  If iCol
+** is negative (indicating the ROWID column) then this routine return iCol.
 */
 i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
   int i;
   i16 n;
   assert( iCol<pTab->nCol );
-  if( (pTab->tabFlags & TF_HasVirtual)==0 ) return iCol;
+  if( (pTab->tabFlags & TF_HasVirtual)==0 || iCol<0 ) return iCol;
   for(i=0, n=0; i<iCol; i++){
     if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) n++;
   }

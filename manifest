@@ -1,5 +1,5 @@
-C Early\sdetection\sand\sreporting\sof\stoo\sfew\scolumns\sin\san\srtree\sCREATE\sVIRTUAL\nTABLE\sstatement.
-D 2019-12-06T19:07:44.980
+C Fix\sa\sproblem\swith\sforeign\skeys\sand\sgenerated\scolumns\sdiscovered\sby\nManuel\sRigger.
+D 2019-12-07T00:22:18.329
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -471,7 +471,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c d22498af716953400e314d2d98d1dac3ea5c3b01e0fd243ef9e9b132c74114ec
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 66b148378024f568108d0d9b6ef9b447ebcc99e1f7ce837b78f19351e6729bbc
+F src/build.c ed6cc3e7e209d92b0ed2fa780c95b1a3aa7ecdd46a97671cfcca95079789bcc9
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -479,7 +479,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c 208f7345cf977ec3ca4804ecb9b22b24171d8da932ad2a658594052904e98b7c
+F src/expr.c 947911a1826673add2311e8650aeaf9c2809706dfaa45fc2445a5ff32f70693d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1022,7 +1022,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test 0efde3919b81a05491ad6f37e59d81901b6fa5723596b21accfe269df9b3cf06
+F test/gencol1.test 037c5c26dddd984ba7ea11bd16996377f72523a4126804b1bbecafc833fccb47
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97fb5a72f91a44d579466e67c33aa862384c4d1c95c2010cf4ae9dbd172bbcfb
-R a5df17bc4bd57a47c10dfaaa183b435c
+P ef73107f475e40e6bdd8b722e96992070f81fd2b7a3cb718ec8f251c89ca3e81
+R aaef2d23c9db8d375ded121b4d30b560
 U drh
-Z 9d3d6a264e3c59291c05378e70901570
+Z 7e4775d6900f8a2f69645687a14dafa0

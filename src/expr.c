@@ -4136,7 +4136,7 @@ expr_code_doover:
       Table *pTab = pExpr->y.pTab;
       int iCol = pExpr->iColumn;
       int p1 = pExpr->iTable * (pTab->nCol+1) + 1 
-                     + (iCol>=0 ? sqlite3TableColumnToStorage(pTab, iCol) : -1);
+                     + sqlite3TableColumnToStorage(pTab, iCol);
 
       assert( pExpr->iTable==0 || pExpr->iTable==1 );
       assert( iCol>=-1 && iCol<pTab->nCol );
