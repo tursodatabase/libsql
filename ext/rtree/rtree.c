@@ -3741,7 +3741,7 @@ static int rtreeInit(
     const char *zArg = argv[ii];
     if( zArg[0]=='+' ){
       pRtree->nAux++;
-      sqlite3_str_appendf(pSql, ",%s", zArg+1);
+      sqlite3_str_appendf(pSql, ",%.*s", rtreeTokenLength(zArg+1), zArg+1);
     }else if( pRtree->nAux>0 ){
       break;
     }else{
