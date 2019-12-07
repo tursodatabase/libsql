@@ -1299,4 +1299,20 @@ do_execsql_test 35.4 {
   SELECT sum(x) OVER f FROM t1 WINDOW f AS (ORDER BY x) ORDER BY 1;
 } {1 3 6}
 
+# 2019-12-07 gramfuzz find
+#
+do_execsql_test 36.10 {
+  VALUES(count(*)OVER());
+} {1}
+do_execsql_test 36.20 {
+  VALUES(count(*)OVER()),(2);
+} {1 2}
+do_execsql_test 36.30 {
+  VALUES(2),(count(*)OVER());
+} {2 1}
+do_execsql_test 36.40 {
+  VALUES(2),(3),(count(*)OVER()),(4),(5);
+} {2 3 1 4 5}
+
+
 finish_test
