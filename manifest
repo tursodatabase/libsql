@@ -1,5 +1,5 @@
-C Correctly\sdeal\swith\smulti-row\sVALUES\sclauses\sthat\scontain\swindow\sfunctions.
-D 2019-12-07T13:42:47.829
+C Fix\sincorrect\scolumn-usage\saccounting\sassociated\swith\sgenerated\scolumns\nand\sadded\sby\scheck-in\s[6601da58032d18ae].\s\sFix\sfor\sticket\s[b92e5e8ec2cdbaa1].
+D 2019-12-08T00:06:39.667
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -525,7 +525,7 @@ F src/pragma.h ec3b31eac9b1df040f1cc8cb3d89bc06605c3b4cb3d76f833de8d6d6c3f77f04
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 2f8fb48e61d0006031df27e53810b6767972526d768d3cc6888435dc350c4c7a
+F src/resolve.c 618bf4f57fa0617cd5295117fea5f25955b76d278303405a8551c4204593011e
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 0fe10579de20eb8dc04ec9ed29659fa782bee2bcc85a35734637f3e2cabc2762
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fa664ea0ea1e0283a9af50c9ff8dd360ee6042f9e491a136f53d9bcbbc9c7ef
-R 8acf566acd18f28ff5f44f794c86ea1a
+P 26d991f214db143976e2593d3564b5003eb3539a2728d1a0ccae2a2accece76f
+R bc0d73acbc8587ee6f73a8bcfcdc4572
 U drh
-Z 3f1e23bb9c947c2f94e584078a29cd8e
+Z 601ba4ee7feb7038f49e2c77dc276ebb

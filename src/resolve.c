@@ -551,30 +551,39 @@ static int lookupName(
 
   /* If a column from a table in pSrcList is referenced, then record
   ** this fact in the pSrcList.a[].colUsed bitmask.  Column 0 causes
-  ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.
+  ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.  Bit 63 is
+  ** set if the 63rd or any subsequent column is used.
   **
   ** The colUsed mask is an optimization used to help determine if an
   ** index is a covering index.  The correct answer is still obtained
-  ** if the mask contains extra bits.  But omitting bits from the mask
-  ** might result in an incorrect answer.
+  ** if the mask contains extra set bits.  However, it is important to
+  ** avoid setting bits beyond the maximum column number of the table.
+  ** (See ticket [b92e5e8ec2cdbaa1]).
   **
-  ** The high-order bit of the mask is a "we-use-them-all" bit.
-  ** If the column number is greater than the number of bits in the bitmask
-  ** then set the high-order bit of the bitmask.  Also set the high-order
-  ** bit if the column is a generated column, as that adds dependencies
-  ** that are difficult to track, so we assume that all columns are used.
+  ** If a generated column is referenced, set bits for every column
+  ** of the table.
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
     int n = pExpr->iColumn;
+    Table *pTab;
     testcase( n==BMS-1 );
     if( n>=BMS ){
       n = BMS-1;
     }
-    assert( pExpr->y.pTab!=0 );
+    pTab = pExpr->y.pTab;
+    assert( pTab!=0 );
     assert( pMatch->iCursor==pExpr->iTable );
-    if( pExpr->y.pTab->tabFlags & TF_HasGenerated ){
-      Column *pColumn = pExpr->y.pTab->aCol + pExpr->iColumn;
-      if( pColumn->colFlags & COLFLAG_GENERATED ) n = BMS-1;
+    if( pTab->tabFlags & TF_HasGenerated ){
+      Column *pColumn = pTab->aCol + pExpr->iColumn;
+      if( pColumn->colFlags & COLFLAG_GENERATED ){
+        testcase( pTab->nCol==63 );
+        testcase( pTab->nCol==64 );
+        if( pTab->nCol>=64 ){
+          pMatch->colUsed = ALLBITS;
+        }else{
+          pMatch->colUsed = MASKBIT(pTab->nCol)-1;
+        }
+      }
     }
     pMatch->colUsed |= ((Bitmask)1)<<n;
   }
