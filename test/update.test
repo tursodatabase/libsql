@@ -641,4 +641,21 @@ do_execsql_test update-16.1 {
   SELECT * FROM t16 ORDER BY +a;
 } {1 2 3 4 5 6}
 
+# 2019-12-09 gramfuzz find
+# If a partial index that does not reference any column of its table (which is you
+# must admit is a very strange index, but one that is allowed) is used by an UPDATE
+# statement, void the use of OP_DeferredSeek on the main loop, as the seek will not
+# be resolved prior to the OP_Delete.
+#
+do_execsql_test update-17.10 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x,y);
+  INSERT INTO t1(x) VALUES(1);
+  CREATE INDEX t1x1 ON t1(1) WHERE 3;
+  UPDATE t1 SET x=2, y=3 WHERE 3;
+  SELECT * FROM t1;
+} {2 3}
+
+
+
 finish_test
