@@ -487,5 +487,36 @@ do_execsql_test 21.1 {
   ALTER TABLE a RENAME a TO b;
 }
 
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 22.1 {
+  CREATE TABLE t1(a);
+  CREATE VIEW v2(b) AS SELECT * FROM v2;
+}
+
+do_catchsql_test 22.2 {
+  ALTER TABLE t1 RENAME TO t4;
+} {1 {error in view v2: view v2 is circularly defined}}
+
+do_execsql_test 22.3 {
+  DROP VIEW v2;
+  CREATE VIEW v2(b) AS WITH t3 AS (SELECT b FROM v2) SELECT * FROM t3;
+}
+
+breakpoint
+do_catchsql_test 22.4 {
+  ALTER TABLE t1 RENAME TO t4;
+} {1 {error in view v2: view v2 is circularly defined}}
+
+do_execsql_test 22.5 {
+  DROP VIEW v2;
+  CREATE VIEW v2(b) AS WITH t3 AS (SELECT b FROM v2) VALUES(1);
+}
+
+do_catchsql_test 22.6 {
+  ALTER TABLE t1 RENAME TO t4;
+} {0 {}}
+
 
 finish_test

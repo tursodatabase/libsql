@@ -2956,6 +2956,7 @@ struct Select {
 #define SF_ComplexResult 0x0040000 /* Result contains subquery or function */
 #define SF_WhereBegin    0x0080000 /* Really a WhereBegin() call.  Debug Only */
 #define SF_WinRewrite    0x0100000 /* Window function rewrite accomplished */
+#define SF_View          0x0200000 /* SELECT statement is a view */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined

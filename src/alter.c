@@ -760,6 +760,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
+  if( p->selFlags & SF_View ) return WRC_Prune;
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
@@ -851,6 +852,7 @@ static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
 ** descend into sub-select statements.
 */
 static int renameColumnSelectCb(Walker *pWalker, Select *p){
+  if( p->selFlags & SF_View ) return WRC_Prune;
   renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
@@ -1316,8 +1318,9 @@ static void renameColumnFunc(
   if( sParse.pNewTable ){
     Select *pSelect = sParse.pNewTable->pSelect;
     if( pSelect ){
+      pSelect->selFlags &= ~SF_View;
       sParse.rc = SQLITE_OK;
-      sqlite3SelectPrep(&sParse, sParse.pNewTable->pSelect, 0);
+      sqlite3SelectPrep(&sParse, pSelect, 0);
       rc = (db->mallocFailed ? SQLITE_NOMEM : sParse.rc);
       if( rc==SQLITE_OK ){
         sqlite3WalkSelect(&sWalker, pSelect);
@@ -1434,6 +1437,7 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   int i;
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
+  if( pSelect->selFlags & SF_View ) return WRC_Prune;
   if( pSrc==0 ){
     assert( pWalker->pParse->db->mallocFailed );
     return WRC_Abort;
@@ -1513,10 +1517,13 @@ static void renameTableFunc(
 
         if( pTab->pSelect ){
           if( isLegacy==0 ){
+            Select *pSelect = pTab->pSelect;
             NameContext sNC;
             memset(&sNC, 0, sizeof(sNC));
             sNC.pParse = &sParse;
 
+            assert( pSelect->selFlags & SF_View );
+            pSelect->selFlags &= ~SF_View;
             sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
             if( sParse.nErr ) rc = sParse.rc;
             sqlite3WalkSelect(&sWalker, pTab->pSelect);
