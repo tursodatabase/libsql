@@ -328,4 +328,18 @@ do_catchsql_test gencol1-11.80 {
   INSERT OR REPLACE INTO t0(c0, c1) VALUES (2, 1), (1, 0)
 } {1 {FOREIGN KEY constraint failed}}
 
+# 2019-12-09 ticket bd8c280671ba44a7
+# With generated columns, the sqlite3ExprGetColumnOfTable() routine might
+# generate a code sequence that does not end with OP_Column.  So check to
+# make sure that the last instruction generated is an OP_column prior to
+# applying the OPFLAG_TYPEOFARG optimization to NOT NULL checks in the
+# PRAGMA integrity_check code.
+#
+sqlite3 db :memory:
+do_execsql_test gencol1-12.10 {
+  CREATE TABLE t0 (c0, c1 NOT NULL AS (c0==0));
+  INSERT INTO t0(c0) VALUES (0);
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test
