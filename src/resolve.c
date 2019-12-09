@@ -565,16 +565,15 @@ static int lookupName(
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
     int n = pExpr->iColumn;
-    Table *pTab;
-    pTab = pExpr->y.pTab;
-    assert( pTab!=0 );
+    Table *pExTab = pExpr->y.pTab;
+    assert( pExTab!=0 );
     assert( pMatch->iCursor==pExpr->iTable );
-    if( (pTab->tabFlags & TF_HasGenerated)!=0
-     && (pTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
+    if( (pExTab->tabFlags & TF_HasGenerated)!=0
+     && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
     ){
-      testcase( pTab->nCol==BMS-1 );
-      testcase( pTab->nCol==BMS );
-      pMatch->colUsed = pTab->nCol>=BMS ? ALLBITS : MASKBIT(pTab->nCol)-1;
+      testcase( pExTab->nCol==BMS-1 );
+      testcase( pExTab->nCol==BMS );
+      pMatch->colUsed = pExTab->nCol>=BMS ? ALLBITS : MASKBIT(pExTab->nCol)-1;
     }else{
       testcase( n==BMS-1 );
       testcase( n==BMS );
