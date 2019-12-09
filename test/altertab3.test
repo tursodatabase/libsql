@@ -504,7 +504,6 @@ do_execsql_test 22.3 {
   CREATE VIEW v2(b) AS WITH t3 AS (SELECT b FROM v2) SELECT * FROM t3;
 }
 
-breakpoint
 do_catchsql_test 22.4 {
   ALTER TABLE t1 RENAME TO t4;
 } {1 {error in view v2: view v2 is circularly defined}}
