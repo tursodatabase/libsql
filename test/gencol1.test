@@ -342,4 +342,19 @@ do_execsql_test gencol1-12.10 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2019-12-09 but report from Yongheng Chen
+# Ensure that the SrcList_item.colUsed field is set correctly when a
+# generated column appears in the USING clause of a join.
+#
+do_execsql_test gencol1-13.10 {
+  CREATE TABLE t1(x, y AS(x+1));
+  INSERT INTO t1 VALUES(10);
+  SELECT y FROM t1 JOIN t1 USING (y,y);
+} {11}
+do_execsql_test gencol1-13.11 {
+  CREATE INDEX t1y ON t1(y);
+  SELECT y FROM t1 JOIN t1 USING (y,y);
+} {11}
+
+
 finish_test
