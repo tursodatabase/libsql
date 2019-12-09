@@ -566,26 +566,21 @@ static int lookupName(
   if( pExpr->iColumn>=0 && pMatch!=0 ){
     int n = pExpr->iColumn;
     Table *pTab;
-    testcase( n==BMS-1 );
-    if( n>=BMS ){
-      n = BMS-1;
-    }
     pTab = pExpr->y.pTab;
     assert( pTab!=0 );
     assert( pMatch->iCursor==pExpr->iTable );
-    if( pTab->tabFlags & TF_HasGenerated ){
-      Column *pColumn = pTab->aCol + pExpr->iColumn;
-      if( pColumn->colFlags & COLFLAG_GENERATED ){
-        testcase( pTab->nCol==63 );
-        testcase( pTab->nCol==64 );
-        if( pTab->nCol>=64 ){
-          pMatch->colUsed = ALLBITS;
-        }else{
-          pMatch->colUsed = MASKBIT(pTab->nCol)-1;
-        }
-      }
+    if( (pTab->tabFlags & TF_HasGenerated)!=0
+     && (pTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
+    ){
+      testcase( pTab->nCol==BMS-1 );
+      testcase( pTab->nCol==BMS );
+      pMatch->colUsed = pTab->nCol>=BMS ? ALLBITS : MASKBIT(pTab->nCol)-1;
+    }else{
+      testcase( n==BMS-1 );
+      testcase( n==BMS );
+      if( n>=BMS ) n = BMS-1;
+      pMatch->colUsed |= ((Bitmask)1)<<n;
     }
-    pMatch->colUsed |= ((Bitmask)1)<<n;
   }
 
   /* Clean up and return
@@ -630,17 +625,12 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
       p->iColumn = -1;
     }else{
       p->iColumn = (ynVar)iCol;
-      if( pTab->tabFlags & TF_HasGenerated ){
-        Column *pColumn = pTab->aCol + iCol;
-        if( pColumn->colFlags & COLFLAG_GENERATED ){
-          testcase( pTab->nCol==63 );
-          testcase( pTab->nCol==64 );
-          if( pTab->nCol>=64 ){
-            pItem->colUsed = ALLBITS;
-          }else{
-            pItem->colUsed = MASKBIT(pTab->nCol)-1;
-          }
-        }
+      if( (pTab->tabFlags & TF_HasGenerated)!=0
+       && (pTab->aCol[iCol].colFlags & COLFLAG_GENERATED)!=0
+      ){
+        testcase( pTab->nCol==63 );
+        testcase( pTab->nCol==64 );
+        pItem->colUsed = pTab->nCol>=64 ? ALLBITS : MASKBIT(pTab->nCol)-1;
       }else{
         testcase( iCol==BMS );
         testcase( iCol==BMS-1 );

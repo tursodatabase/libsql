@@ -352,9 +352,22 @@ do_execsql_test gencol1-13.10 {
   SELECT y FROM t1 JOIN t1 USING (y,y);
 } {11}
 do_execsql_test gencol1-13.11 {
+  SELECT 123 FROM t1 JOIN t1 USING (x);
+} {123}
+do_execsql_test gencol1-13.11 {
+  SELECT 456 FROM t1 JOIN t1 USING (x,x);
+} {456}
+do_execsql_test gencol1-13.20 {
   CREATE INDEX t1y ON t1(y);
   SELECT y FROM t1 JOIN t1 USING (y,y);
 } {11}
+do_execsql_test gencol1-13.21 {
+  CREATE INDEX t1x ON t1(x);
+  SELECT 123 FROM t1 JOIN t1 USING (x);
+} {123}
+do_execsql_test gencol1-13.22 {
+  SELECT 456 FROM t1 JOIN t1 USING (x,x);
+} {456}
 
 
 finish_test
