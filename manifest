@@ -1,5 +1,5 @@
-C Avoid\sa\sbuffer\soverread\sin\sfts5\sthat\scould\soccur\swhen\sparsing\scorrupt\sconfiguration\srecords.
-D 2019-12-10T03:40:11.895
+C Fix\sparser\sbugs:\srequire\sa\ssemicolon\safter\san\sEXPLAIN\scommand.
+D 2019-12-10T15:05:09.464
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -516,7 +516,7 @@ F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 30f20d2263d3717f41a0d9a40f7a3d0f48ce1cfab461b875c6187ead9d6ad1c7
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
-F src/parse.y 17c1ae265e1b92cb1f3f1661b020e3eb31f2d8b9588322d2b6f2b22f25b674c9
+F src/parse.y 33fbc05dea154f81f6e684f70f789dae2eae8e4466876a4aaff09315d61f8193
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d47d66e3d360d8aa6203a855228d2bc40d9a00d69c15f5066b7632d8fb1ed2cc
-R efc161540e729c979ff7beb44c6e2cdb
-U dan
-Z a89ac56282038be9a7a814f5f50981fa
+P 355afd77df21a2265871ca6d075f26b1fa121c7c2682cf512281944ff0c2186d
+R 2cc5b2ceb667c7487e5ddf7b5fe19ba9
+U drh
+Z 7e8d0f1af1e0f94899c96863397a522e
