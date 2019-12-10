@@ -150,7 +150,7 @@ static int fts5Dequote(char *z){
   assert( q=='[' || q=='\'' || q=='"' || q=='`' );
   if( q=='[' ) q = ']';  
 
-  while( ALWAYS(z[iIn]) ){
+  while( z[iIn] ){
     if( z[iIn]==q ){
       if( z[iIn+1]!=q ){
         /* Character iIn was the close quote. */

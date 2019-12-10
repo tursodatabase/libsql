@@ -75,6 +75,11 @@ do_catchsql_test 2.5 {
   SELECT fts5_expr(NULL, NULL)
 } {1 {parse error in ""}}
 
+for {set i 0} {$i < 255} {incr i} {
+  do_test 2.6.$i {
+    lindex [catchsql {sELECT fts5_expr(NULL, char($i));}] 0
+  } 1
+}
 
 do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE e1 USING fts5(text, tokenize = 'porter unicode61');
