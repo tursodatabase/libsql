@@ -229,6 +229,36 @@ void sqlite3ComputeGeneratedColumns(
   Walker w;
   Column *pRedo;
   int eProgress;
+  VdbeOp *pOp;
+
+  assert( pTab->tabFlags & TF_HasGenerated );
+  testcase( pTab->tabFlags & TF_HasVirtual );
+  testcase( pTab->tabFlags & TF_HasStored );
+
+  /* Before computing generated columns, first go through and make sure
+  ** that appropriate affinity has been applied to the regular columns
+  */
+  sqlite3TableAffinity(pParse->pVdbe, pTab, iRegStore);
+  if( (pTab->tabFlags & TF_HasStored)!=0
+   && (pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1))->opcode==OP_Affinity
+  ){
+    /* Change the OP_Affinity argument to '@' (NONE) for all stored
+    ** columns.  '@' is the no-op affinity and those columns have not
+    ** yet been computed. */
+    int ii, jj;
+    char *zP4 = pOp->p4.z;
+    assert( zP4!=0 );
+    assert( pOp->p4type==P4_DYNAMIC );
+    for(ii=jj=0; zP4[jj]; ii++){
+      if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
+        continue;
+      }
+      if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
+        zP4[jj] = SQLITE_AFF_NONE;
+      }
+      jj++;
+    }
+  }
 
   /* Because there can be multiple generated columns that refer to one another,
   ** this is a two-pass algorithm.  On the first pass, mark all generated
@@ -1187,10 +1217,8 @@ void sqlite3Insert(
     /* Compute the new value for generated columns after all other
     ** columns have already been computed.  This must be done after
     ** computing the ROWID in case one of the generated columns
-    ** refers to the ROWID. */
+    ** is derived from the INTEGER PRIMARY KEY. */
     if( pTab->tabFlags & TF_HasGenerated ){
-      testcase( pTab->tabFlags & TF_HasVirtual );
-      testcase( pTab->tabFlags & TF_HasStored );
       sqlite3ComputeGeneratedColumns(pParse, regRowid+1, pTab);
     }
 #endif
