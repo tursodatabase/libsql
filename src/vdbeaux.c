@@ -667,6 +667,7 @@ static Op *opIterNext(VdbeOpIter *p){
 **   *  OP_HaltIfNull with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
 **   *  OP_Destroy
 **   *  OP_VUpdate
+**   *  OP_VCreate
 **   *  OP_VRename
 **   *  OP_FkCounter with P2==0 (immediate foreign key constraint)
 **   *  OP_CreateBtree/BTREE_INTKEY and OP_InitCoroutine 
@@ -694,6 +695,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     int opcode = pOp->opcode;
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
      || opcode==OP_VDestroy
+     || opcode==OP_VCreate
      || (opcode==OP_ParseSchema && pOp->p4.z==0)
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))

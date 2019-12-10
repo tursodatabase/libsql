@@ -1,5 +1,5 @@
-C Fix\sparser\sbugs:\srequire\sa\ssemicolon\safter\san\sEXPLAIN\scommand.
-D 2019-12-10T15:05:09.464
+C Use\sa\sstatement\sjournal\son\sa\sCREATE\sVIRTUAL\sTABLE\sstatement\sin\scase\sthe\nVCreate\sopcode\sfails.
+D 2019-12-10T18:10:12.428
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,12 +603,12 @@ F src/vdbe.c 30fc70ea7f1a47f50cd6557d8073b57fcf2275b537b896ba7e8d602065bc5648
 F src/vdbe.h fdbc0a11e5768a702b46ce63286f60e22e71351a29bd98b3666405e1fccc7802
 F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c 0bbbdc70c573d5112b74a3d555dd51c76ee3f8b6d43cf07e5105ced6a3ec0d10
+F src/vdbeaux.c ede199fe272656338741dd831da86362a3b60e42fb12ef5389ea1325823e9686
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 2eb00a4d1a7d2c97510a4d1ccaf4e12c9143f2ced1c6b96b5eddc372183c9121
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vtab.c 108f79166d4a232a8bfb9d46e2fbec191f83a87fe97f7b93fc4de976c3fa3434
+F src/vtab.c 6ea921d0dbe24db2b0102210f8bd3996f32c6b54fe2ba1bc077661cec757aa99
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 355afd77df21a2265871ca6d075f26b1fa121c7c2682cf512281944ff0c2186d
-R 2cc5b2ceb667c7487e5ddf7b5fe19ba9
+P 707a058a22bd00ef14431cee0d02048cf1be745c0ef5254eda76c325435738ff
+R 23ee033913924b108d077e6224dfd82d
 U drh
-Z 7e8d0f1af1e0f94899c96863397a522e
+Z 2cb3de8b05248e16070eb6d2faf81d46

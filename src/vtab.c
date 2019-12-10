@@ -457,6 +457,8 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     int iReg;
     Vdbe *v;
 
+    sqlite3MayAbort(pParse);
+
     /* Compute the complete text of the CREATE VIRTUAL TABLE statement */
     if( pEnd ){
       pParse->sNameToken.n = (int)(pEnd->z - pParse->sNameToken.z) + pEnd->n;
