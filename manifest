@@ -1,5 +1,5 @@
-C The\sxDestroy\smethod\sof\sa\smodule\smight\sbe\sNULL\sif\sthe\sschema\sis\scorrupt.
-D 2019-12-11T14:25:11.823
+C When\strying\sto\sdrop\sa\svirtual\stable\sthat\shas\sno\sxDestroy\smethod,\sinvoke\nthe\sxDisconnect\smethod\srather\sthan\sdoing\snothing,\sto\savoid\sa\smemory\sleak.
+D 2019-12-11T15:07:09.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b
 F src/vdbemem.c 2eb00a4d1a7d2c97510a4d1ccaf4e12c9143f2ced1c6b96b5eddc372183c9121
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vtab.c eff1ab4add8b40a3b8e84badf1179fd63c418777f95c4af465ba2dcb60007654
+F src/vtab.c 2736f853a1bd270581f76bae8e5d2e840b6258f3d85c1fa382e9454b3c414d1d
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 136cdefb2f7b582ff1771ac7f9e733dc24c357605526cbfb1834937697c8a922
-R fa204f693ffe737e470c99c3e1a0f410
+P 0457e7d1961ab1f63e31d9028a9064a895f5c3fcfb56ba25e4f37e90197e3a9f
+R dfec9545ec065160dafed7d961680e93
 U drh
-Z cc7291fccdb9051418a6d5286979060e
+Z 42480cb067277792c63c10d88dc25575

@@ -892,8 +892,10 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
     }
     p = vtabDisconnectAll(db, pTab);
     xDestroy = p->pMod->pModule->xDestroy;
+    if( xDestroy==0 ) xDestroy = p->pMod->pModule->xDisconnect;
+    assert( xDestroy!=0 );
     pTab->nTabRef++;
-    rc = xDestroy ? xDestroy(p->pVtab) : SQLITE_OK;
+    rc = xDestroy(p->pVtab);
     /* Remove the sqlite3_vtab* from the aVTrans[] array, if applicable */
     if( rc==SQLITE_OK ){
       assert( pTab->pVTable==p && p->pNext==0 );
