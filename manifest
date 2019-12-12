@@ -1,5 +1,5 @@
-C Fix\san\sissue\swhere\smalloc\scould\sbe\sused\sto\sfulfill\sa\ssmall\sallocation\swhen\sa\slarge\slookaside\sslot\scould\shave\sbeeen\sused\sinstead.
-D 2019-12-12T20:39:47.705
+C Reduce\sthe\snumber\sof\scall\ssites\sto\sdbMallocRawFinish\sin\sthe\scase\swhere\sn\s>\slookaside.sz
+D 2019-12-12T20:58:32.965
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/insert.c 276463aa7a26ee73958b9f4bcbef4eaec516f22bf6b8d7d2428f39c8dea90840
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
 F src/main.c 94bf8b6a283914cc8fa8743b3db5350206a4be5cccfd9c84d53409ca5d8bd1c1
-F src/malloc.c cae32705aad5549e46687b48f8e5c6f8d045dfeec95b0ad30c295be4773b7c7c
+F src/malloc.c 02235d039c72102d4bddf203a493c2613164487c70ec84bab679fc30daa883f0
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d3783357f8fa76c42a86f12b214522f0388c37773c36ab8c5ce0623abbc4436a
-R 419a6defa175975b0c1f1ba26db0be60
+P 611020e3378f4c81c277cccd84807ae51a816bbab6c3d887c91c5e5af3b5225f
+R ad47704ebb6417a0219438b5b1af0ca2
 U numist
-Z c7e98609c62b97e8952867680421d71f
+Z 7cabc14d06c02da6aca77386b2ebbfdc
