@@ -582,8 +582,10 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
       return db->mallocFailed ? 0 : dbMallocRawFinish(db, n);
     }
     db->lookaside.anStat[1]++;
+    return dbMallocRawFinish(db, n);
+  }
 # ifndef SQLITE_OMIT_MINI_LOOKASIDE
-  }else if( n<=MINI_SZ ){
+  if( n<=MINI_SZ ){
     if( (pBuf = db->lookaside.pMiniFree)!=0 ){
       db->lookaside.pMiniFree = pBuf->pNext;
       db->lookaside.anStat[0]++;
@@ -593,8 +595,9 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
       db->lookaside.anStat[0]++;
       return (void*)pBuf;
     }
+  }
 # endif
-  }else if( (pBuf = db->lookaside.pFree)!=0 ){
+  if( (pBuf = db->lookaside.pFree)!=0 ){
     db->lookaside.pFree = pBuf->pNext;
     db->lookaside.anStat[0]++;
     return (void*)pBuf;
