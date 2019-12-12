@@ -448,7 +448,7 @@ static int lookupName(
       pEList = pNC->uNC.pEList;
       assert( pEList!=0 );
       for(j=0; j<pEList->nExpr; j++){
-        char *zAs = pEList->a[j].zName;
+        char *zAs = pEList->a[j].zEName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
           Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
@@ -1115,7 +1115,7 @@ static int resolveAsName(
   if( pE->op==TK_ID ){
     char *zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
-      char *zAs = pEList->a[i].zName;
+      char *zAs = pEList->a[i].zEName;
       if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
         return i+1;
       }

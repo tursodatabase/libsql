@@ -2662,7 +2662,7 @@ struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
-    char *zName;            /* Token associated with this expression */
+    char *zEName;           /* Token associated with this expression */
     char *zSpan;            /* Original text of the expression */
     u8 sortFlags;           /* Mask of KEYINFO_ORDER_* flags */
     unsigned done :1;       /* A flag to indicate when processing is finished */
