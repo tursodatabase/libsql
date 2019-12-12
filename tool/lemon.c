@@ -910,9 +910,9 @@ void FindStates(struct lemon *lemp)
     sp = Symbol_find(lemp->start);
     if( sp==0 ){
       ErrorMsg(lemp->filename,0,
-"The specified start symbol \"%s\" is not \
-in a nonterminal of the grammar.  \"%s\" will be used as the start \
-symbol instead.",lemp->start,lemp->startRule->lhs->name);
+        "The specified start symbol \"%s\" is not "
+        "in a nonterminal of the grammar.  \"%s\" will be used as the start "
+        "symbol instead.",lemp->start,lemp->startRule->lhs->name);
       lemp->errorcnt++;
       sp = lemp->startRule->lhs;
     }
@@ -928,9 +928,9 @@ symbol instead.",lemp->start,lemp->startRule->lhs->name);
     for(i=0; i<rp->nrhs; i++){
       if( rp->rhs[i]==sp ){   /* FIX ME:  Deal with multiterminals */
         ErrorMsg(lemp->filename,0,
-"The start symbol \"%s\" occurs on the \
-right-hand side of a rule. This will result in a parser which \
-does not work properly.",sp->name);
+          "The start symbol \"%s\" occurs on the "
+          "right-hand side of a rule. This will result in a parser which "
+          "does not work properly.",sp->name);
         lemp->errorcnt++;
       }
     }
@@ -2274,13 +2274,13 @@ static void parseonetoken(struct pstate *psp)
       }else if( x[0]=='{' ){
         if( psp->prevrule==0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
-"There is no prior rule upon which to attach the code \
-fragment which begins on this line.");
+            "There is no prior rule upon which to attach the code "
+            "fragment which begins on this line.");
           psp->errorcnt++;
         }else if( psp->prevrule->code!=0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
-"Code fragment beginning on this line is not the first \
-to follow the previous rule.");
+            "Code fragment beginning on this line is not the first "
+            "to follow the previous rule.");
           psp->errorcnt++;
         }else if( strcmp(x, "{NEVER-REDUCE")==0 ){
           psp->prevrule->neverReduce = 1;
@@ -2309,8 +2309,8 @@ to follow the previous rule.");
         psp->errorcnt++;
       }else if( psp->prevrule->precsym!=0 ){
         ErrorMsg(psp->filename,psp->tokenlineno,
-"Precedence mark on this line is not the first \
-to follow the previous rule.");
+          "Precedence mark on this line is not the first "
+          "to follow the previous rule.");
         psp->errorcnt++;
       }else{
         psp->prevrule->precsym = Symbol_new(x);
@@ -2913,7 +2913,8 @@ void Parse(struct lemon *gp)
       }
       if( c==0 ){
         ErrorMsg(ps.filename,startline,
-"String starting on this line is not terminated before the end of the file.");
+            "String starting on this line is not terminated before "
+            "the end of the file.");
         ps.errorcnt++;
         nextcp = cp;
       }else{
@@ -2952,7 +2953,8 @@ void Parse(struct lemon *gp)
       }
       if( c==0 ){
         ErrorMsg(ps.filename,ps.tokenlineno,
-"C code starting on this line is not terminated before the end of the file.");
+          "C code starting on this line is not terminated before "
+          "the end of the file.");
         ps.errorcnt++;
         nextcp = cp;
       }else{
