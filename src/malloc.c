@@ -334,7 +334,7 @@ int sqlite3MallocSize(void *p){
 }
 static int lookasideMallocSize(sqlite3 *db, void *p){
 #ifndef SQLITE_OMIT_MINI_LOOKASIDE    
-  return p<db->lookaside.pMiddle ? db->lookaside.szTrue : 128;
+  return p<db->lookaside.pMiddle ? db->lookaside.szTrue : MINI_SZ;
 #else
   return db->lookaside.szTrue;
 #endif  
@@ -408,7 +408,7 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
       if( p>=db->lookaside.pMiddle ){
 # ifdef SQLITE_DEBUG
         /* Trash all content in the buffer being freed */
-        memset(p, 0xaa, 128);
+        memset(p, 0xaa, MINI_SZ);
 # endif
         pBuf->pNext = db->lookaside.pMiniFree;
         db->lookaside.pMiniFree = pBuf;
@@ -583,7 +583,7 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
     }
     db->lookaside.anStat[1]++;
 # ifndef SQLITE_OMIT_MINI_LOOKASIDE
-  }else if( n<=128 ){
+  }else if( n<=MINI_SZ ){
     if( (pBuf = db->lookaside.pMiniFree)!=0 ){
       db->lookaside.pMiniFree = pBuf->pNext;
       db->lookaside.anStat[0]++;

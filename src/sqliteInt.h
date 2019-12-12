@@ -1303,6 +1303,9 @@ struct LookasideSlot {
 #define EnableLookaside   db->lookaside.bDisable--;\
    db->lookaside.sz=db->lookaside.bDisable?0:db->lookaside.szTrue
 
+/* Size of the MINI lookside allocation */
+#define MINI_SZ           128
+
 /*
 ** A hash table for built-in function definitions.  (Application-defined
 ** functions use a regular table table from hash.h.)
