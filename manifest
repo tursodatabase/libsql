@@ -1,5 +1,5 @@
-C Fix\sgoofy\sstring\sformatting\sin\slemon.c\sthat\sdates\sfrom\sthe\sK&amp;R-C\sdays.
-D 2019-12-12T00:20:40.700
+C More\sefficient\simplementation\sof\sa\slookaside\sallocator\sthat\ssupports\smini\s(in\sthis\scase,\sharcoded\sto\s128B)\sslots.
+D 2019-12-12T02:50:07.468
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,8 +491,8 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 5de3fd62bd1a692353c8f9c7bbde658f0b579f195620ca3cde1948a53015dddd
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
-F src/main.c 868ae7db7a54fe859bf2ca8b7a4f24e9fa03a6134abfb7c9801d08411ef5dacb
-F src/malloc.c 550021fcae36f0ffe9f8563d83e6385f9df307a854d55d7d0abb7241ee8dbcc6
+F src/main.c dc4fe09174ef0c11204ca90ed46323471c127c9d18266ec97ee1bca871200e99
+F src/malloc.c 350d345ab12aa089f3dbd30b4db9b57e486c9dd920d275d1775aa5b6899199ff
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -532,9 +532,9 @@ F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817de
 F src/sqlite.h.in 2a23e8161775253d9cf383c2c6aa559005dc787d350dcb0be67a6c4cc3bd1d19
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
-F src/sqliteInt.h 1ac4dfde728b9d5812d1223d668d5e1f43c6fe4f469d6a7a482f298a10a03210
+F src/sqliteInt.h 7965727cc420b5e9ab79f4ba8bda8e806ba315c6e9f489e83f0202f3397fb522
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
-F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
+F src/status.c 0fe55b92810509eac821ded2e177e1da944a78cdcdfec7813ad1d6b36d6d667e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 8cd2600e8de23dff6cdf84d39f46ca57139b061b28f6f80b166bace17d52ab1c
 F src/test1.c c654981c1d86ebc90dd23fcc0969e6c85e28112f0acc2e2224a97a2a33e7c42f
@@ -1852,7 +1852,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d6d2fc046d586a1e5989bbb2757f13d0371fbfad0acf45a0e2fd77dffd8d8f9
-R 5e026b3cfa5e818c2e50f705eaa7c6b6
-U drh
-Z d2668f11b5269bc264b434444e0b4796
+P 48ba5e5a2227257cebafacbb09e9dd91d9b89ab2d52a8b4e4113c1d017d95f41
+R 7ee7a134ba45ae790f475dbb2e983799
+T *branch * mini-lookaside-take-2
+T *sym-mini-lookaside-take-2 *
+T -sym-trunk *
+U numist
+Z aef044ee81b705b7df5a6b1d29e511a6

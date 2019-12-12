@@ -332,6 +332,13 @@ int sqlite3MallocSize(void *p){
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   return sqlite3GlobalConfig.m.xSize(p);
 }
+static int lookasideMallocSize(sqlite3 *db, void *p){
+#ifndef SQLITE_OMIT_MINI_LOOKASIDE    
+  return p<db->lookaside.pMiddle ? db->lookaside.szTrue : 128;
+#else
+  return db->lookaside.szTrue;
+#endif  
+}
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
   assert( p!=0 );
   if( db==0 || !isLookaside(db,p) ){
@@ -347,7 +354,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
     return sqlite3GlobalConfig.m.xSize(p);
   }else{
     assert( sqlite3_mutex_held(db->mutex) );
-    return db->lookaside.szTrue;
+    return lookasideMallocSize(db, p);
   }
 }
 sqlite3_uint64 sqlite3_msize(void *p){
@@ -397,6 +404,17 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
     }
     if( isLookaside(db, p) ){
       LookasideSlot *pBuf = (LookasideSlot*)p;
+#ifndef SQLITE_OMIT_MINI_LOOKASIDE
+      if( p>=db->lookaside.pMiddle ){
+# ifdef SQLITE_DEBUG
+        /* Trash all content in the buffer being freed */
+        memset(p, 0xaa, 128);
+# endif
+        pBuf->pNext = db->lookaside.pMiniFree;
+        db->lookaside.pMiniFree = pBuf;
+        return;
+      }
+#endif
 #ifdef SQLITE_DEBUG
       /* Trash all content in the buffer being freed */
       memset(p, 0xaa, db->lookaside.szTrue);
@@ -564,6 +582,18 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
       return db->mallocFailed ? 0 : dbMallocRawFinish(db, n);
     }
     db->lookaside.anStat[1]++;
+# ifndef SQLITE_OMIT_MINI_LOOKASIDE
+  }else if( n<=128 ){
+    if( (pBuf = db->lookaside.pMiniFree)!=0 ){
+      db->lookaside.pMiniFree = pBuf->pNext;
+      db->lookaside.anStat[0]++;
+      return (void*)pBuf;
+    }else if( (pBuf = db->lookaside.pMiniInit)!=0 ){
+      db->lookaside.pMiniInit = pBuf->pNext;
+      db->lookaside.anStat[0]++;
+      return (void*)pBuf;
+    }
+# endif
   }else if( (pBuf = db->lookaside.pFree)!=0 ){
     db->lookaside.pFree = pBuf->pNext;
     db->lookaside.anStat[0]++;
@@ -597,7 +627,7 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
   assert( db!=0 );
   if( p==0 ) return sqlite3DbMallocRawNN(db, n);
   assert( sqlite3_mutex_held(db->mutex) );
-  if( isLookaside(db,p) && n<=db->lookaside.szTrue ) return p;
+  if( isLookaside(db,p) && n<lookasideMallocSize(db, p) ) return p;
   return dbReallocFinish(db, p, n);
 }
 static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
@@ -608,7 +638,7 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
     if( isLookaside(db, p) ){
       pNew = sqlite3DbMallocRawNN(db, n);
       if( pNew ){
-        memcpy(pNew, p, db->lookaside.szTrue);
+        memcpy(pNew, p, lookasideMallocSize(db, p));
         sqlite3DbFree(db, p);
       }
     }else{

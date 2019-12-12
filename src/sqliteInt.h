@@ -1287,6 +1287,11 @@ struct Lookaside {
   u32 anStat[3];          /* 0: hits.  1: size misses.  2: full misses */
   LookasideSlot *pInit;   /* List of buffers not previously used */
   LookasideSlot *pFree;   /* List of available buffers */
+#ifndef SQLITE_OMIT_MINI_LOOKASIDE
+  LookasideSlot *pMiniInit; /* List of mini buffers not prediously used */
+  LookasideSlot *pMiniFree; /* List of available mini buffers */
+  void *pMiddle;          /* An address between the fullsize and mini buffers */
+#endif
   void *pStart;           /* First byte of available memory space */
   void *pEnd;             /* First byte past end of available space */
 };
