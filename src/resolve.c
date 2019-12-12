@@ -267,7 +267,7 @@ static int lookupName(
           int hit = 0;
           pEList = pItem->pSelect->pEList;
           for(j=0; j<pEList->nExpr; j++){
-            if( sqlite3MatchSpanName(pEList->a[j].zSpan, zCol, zTab, zDb) ){
+            if( sqlite3MatchSpanName(pEList->a[j].zEName, zCol, zTab, zDb) ){
               cnt++;
               cntTab = 2;
               pMatch = pItem;

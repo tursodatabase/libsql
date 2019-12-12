@@ -1437,11 +1437,10 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
       }
     }
     pItem->zEName = sqlite3DbStrDup(db, pOldItem->zEName);
-    pItem->zSpan = sqlite3DbStrDup(db, pOldItem->zSpan);
     pItem->sortFlags = pOldItem->sortFlags;
+    pItem->eEName = pOldItem->eEName;
     pItem->done = 0;
     pItem->bNulls = pOldItem->bNulls;
-    pItem->bSpanIsTab = pOldItem->bSpanIsTab;
     pItem->bSorterRef = pOldItem->bSorterRef;
     pItem->u = pOldItem->u;
   }
@@ -1773,8 +1772,10 @@ void sqlite3ExprListSetSpan(
   if( pList ){
     struct ExprList_item *pItem = &pList->a[pList->nExpr-1];
     assert( pList->nExpr>0 );
-    sqlite3DbFree(db, pItem->zSpan);
-    pItem->zSpan = sqlite3DbSpanDup(db, zStart, zEnd);
+    if( pItem->zEName==0 ){
+      pItem->zEName = sqlite3DbSpanDup(db, zStart, zEnd);
+      pItem->eEName = ENAME_SPAN;
+    }
   }
 }
 
@@ -1805,7 +1806,6 @@ static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
   do{
     sqlite3ExprDelete(db, pItem->pExpr);
     sqlite3DbFree(db, pItem->zEName);
-    sqlite3DbFree(db, pItem->zSpan);
     pItem++;
   }while( --i>0 );
   sqlite3DbFreeNN(db, pList);

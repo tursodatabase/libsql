@@ -1,5 +1,5 @@
-C Fix\san\sissue\swhere\smalloc\scould\sbe\sused\sto\sfulfill\sa\ssmall\sallocation\swhen\sa\slarge\slookaside\sslot\scould\shave\sbeeen\sused\sinstead.
-D 2019-12-12T20:39:47.705
+C Work\stoward\sreducing\sthe\sincremental\ssize\sof\san\sExprList\sobject\sto\s24-byte\nper\sentry,\sfrom\s32-bytes\s(on\sa\s64-bit\smachine).\s\sThis\shelps\sthe\snew\nmini-lookaside\sallocator\sto\srun\sbetter\sby\savoiding\sexcessive\sreallocs.\nThe\scurrent\schange\smostly\sworks,\sbut\sstill\shas\sa\sfew\sloose\sends\sto\stie\sup.\nThis\scheck-in\sis\smerely\sa\ssnapshot\sto\ssave\smy\swork.
+D 2019-12-12T22:11:33.445
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c eefc9abca2d8bb8b2cad063dd65c764e5264f1d80c83268a9debcfff2f7a32bb
+F src/expr.c 828bc6ae0c15e60a5b0a5fb17ddf98fb3f9a52752fb34cbbdc15ea4868afcf90
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -525,14 +525,14 @@ F src/pragma.h ec3b31eac9b1df040f1cc8cb3d89bc06605c3b4cb3d76f833de8d6d6c3f77f04
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c d703803412770e100be0d79adc4d0b52a99c49715ba8d4a736e503ee5526d473
+F src/resolve.c fc7bed8f23355db3af73859b4af42af4ee2f7cf3467aa5e242321575203e2896
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 39a9e180a2fdf738f3a02977684bc4cad3f5ff8d9f949f2aa48eef2ce5ff29aa
+F src/select.c b5702ca6b2f215bb8bee27f591d72dfd52250a680b5fa11871a1a7be69dff758
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
 F src/sqlite.h.in 2a23e8161775253d9cf383c2c6aa559005dc787d350dcb0be67a6c4cc3bd1d19
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
-F src/sqliteInt.h ebb8c7e6439dc4cd6abad9fed0d01751160115328c8670b733505d7c5c6b12a4
+F src/sqliteInt.h 5be56f6523e0980b4ab66d6420e11dbe66c060c7b2e20aa28344fd67457cbe32
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 0fe55b92810509eac821ded2e177e1da944a78cdcdfec7813ad1d6b36d6d667e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1852,7 +1852,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d3783357f8fa76c42a86f12b214522f0388c37773c36ab8c5ce0623abbc4436a
-R 419a6defa175975b0c1f1ba26db0be60
-U numist
-Z c7e98609c62b97e8952867680421d71f
+P 611020e3378f4c81c277cccd84807ae51a816bbab6c3d887c91c5e5af3b5225f
+R 162199bc809f1616aa82013813cc7e3c
+T *branch * exprlist-size-reduction
+T *sym-exprlist-size-reduction *
+T -sym-mini-lookaside-take-2 *
+U drh
+Z 2404f597cd0a4292958003b4ec4cbb04
