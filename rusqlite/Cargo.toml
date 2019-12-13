@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.20.0"
+version = "0.21.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 edition = "2018"
 description = "Ergonomic wrapper for SQLite"
