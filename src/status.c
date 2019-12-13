@@ -191,7 +191,7 @@ int sqlite3LookasideUsed(sqlite3 *db, int *pHighwater){
 #ifndef SQLITE_OMIT_MINI_LOOKASIDE
   nInit += countLookasideSlots(db->lookaside.pMiniInit);
   nFree += countLookasideSlots(db->lookaside.pMiniFree);
-#endif
+#endif /* SQLITE_OMIT_MINI_LOOKASIDE */
   if( pHighwater ) *pHighwater = db->lookaside.nSlot - nInit;
   return db->lookaside.nSlot - (nInit+nFree);
 }

@@ -1277,6 +1277,25 @@ struct Schema {
 ** disables lookaside without adding a new test for the bDisable flag
 ** in a performance-critical path.  sz should be set by to szTrue whenever
 ** bDisable changes back to zero.
+**
+** Lookaside buffers are initially held on the pInit list.  As they are
+** used and freed, they are added back to the pFree list.  New allocations
+** come off of pFree first, then pInit as a fallback.  This dual-list
+** allows use to compute a high-water mark - the maximum number of allocations
+** outstanding at any point in the past - by subtracting the number of
+** allocations on the pInit list from the total number of allocations.
+**
+** Enhancement on 2019-12-12:  Mini-lookaside
+** The default lookaside configuration is 100 slots of 1200 bytes each.
+** The larger slot sizes are important for performance, but they waste
+** a lot of space, as most lookaside allocations are less than 128 bytes.
+** The mini-lookaside enhancement breaks up the lookaside allocation into
+** two pools:  One of 128-byte slots and the other of the default size
+** (1200-byte) slots.   Allocations are filled from the mini-pool first,
+** failing over to the full-size pool if that does not work.  Thus more
+** lookaside slots are available while also using less memory.
+** This enhancement can be omitted by compiling with
+** SQLITE_OMIT_MINI_LOOKASIDE.
 */
 struct Lookaside {
   u32 bDisable;           /* Only operate the lookaside when zero */
@@ -1290,8 +1309,9 @@ struct Lookaside {
 #ifndef SQLITE_OMIT_MINI_LOOKASIDE
   LookasideSlot *pMiniInit; /* List of mini buffers not prediously used */
   LookasideSlot *pMiniFree; /* List of available mini buffers */
-  void *pMiddle;          /* An address between the fullsize and mini buffers */
-#endif
+  void *pMiddle;          /* First byte past end of full-size buffers and
+                          ** the first byte of mini-buffers */
+#endif /* SQLITE_OMIT_MINI_LOOKASIDE */
   void *pStart;           /* First byte of available memory space */
   void *pEnd;             /* First byte past end of available space */
 };
@@ -1304,7 +1324,11 @@ struct LookasideSlot {
    db->lookaside.sz=db->lookaside.bDisable?0:db->lookaside.szTrue
 
 /* Size of the MINI lookside allocation */
-#define MINI_SZ           128
+#ifdef SQLITE_OMIT_MINI_LOOKASIDE
+#  define MINI_SZ           0
+#else
+#  define MINI_SZ         128
+#endif
 
 /*
 ** A hash table for built-in function definitions.  (Application-defined
