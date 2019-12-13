@@ -967,7 +967,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           Select *pSel = pNC->pWinSelect;
           assert( pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
-            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pWin, pDef);
+            sqlite3WindowUpdate(pParse, pSel ? pSel->pWinDefn : 0, pWin, pDef);
           }
           sqlite3WalkExprList(pWalker, pWin->pPartition);
           sqlite3WalkExprList(pWalker, pWin->pOrderBy);
