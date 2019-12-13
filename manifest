@@ -1,5 +1,5 @@
-C Patch\sto\sthe\spage\scache\sto\savoid\sharmless\spointer\sarithmetic\sthat\sdue\sto\sbugs\nin\sthe\sSTD-C\sspec\sis\stechnically\sUB.\s\sThis\sis\sto\sfix\sa\sharmless\sUBSAN\ncomplaint\sthat\sOSSFuzz\sis\shitting.
-D 2019-12-13T21:24:46.081
+C Initial\sexploration\sof\sblocky\sAPIs,\sstarting\swith\sa\svariant\sof\ssqlite3_exec.
+D 2019-12-13T22:59:38.851
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,7 +489,7 @@ F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 5de3fd62bd1a692353c8f9c7bbde658f0b579f195620ca3cde1948a53015dddd
-F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
+F src/legacy.c 70ff0890930967fa02a792d3b2c48208eb6a1c4d9f55a465a664b2ddc8b044a4
 F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
 F src/main.c 868ae7db7a54fe859bf2ca8b7a4f24e9fa03a6134abfb7c9801d08411ef5dacb
 F src/malloc.c 550021fcae36f0ffe9f8563d83e6385f9df307a854d55d7d0abb7241ee8dbcc6
@@ -529,10 +529,10 @@ F src/resolve.c 86a7773d2892227ba9ad1721c41bb03c501830f1bf6de5f78dd0062b82e10c9d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 0fe10579de20eb8dc04ec9ed29659fa782bee2bcc85a35734637f3e2cabc2762
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
-F src/sqlite.h.in 2a23e8161775253d9cf383c2c6aa559005dc787d350dcb0be67a6c4cc3bd1d19
+F src/sqlite.h.in 44a53119d3fb6e2d855d8bfd4b94151338563a2fbe28638e3a24ee8d9e661ae1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
-F src/sqliteInt.h 60d92fad64da7c3e77bbc35ee306340814cdaa5df32892b0ec58d306d99b5733
+F src/sqliteInt.h 6326f05f5924e779f5c3ba422f85adfdef38dbf1012be7d5e40a2d78d4d1a648
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1852,7 +1852,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1014e80b26131200a115beb86929a8f0ded2dd65b075e47373346c0f170576a
-R b59b4afd4c4fcaeb80758977b1b63c0a
-U drh
-Z 4fa57844859159ee82f87f0f14b6814f
+P c29fc21288e37f81a1617c5e2961c575d3bca6a1d1b013b2e0a99774afb1dcdb
+R e55adf2fcddc384393004665528a6995
+T *branch * blocky-exec
+T *sym-blocky-exec *
+T -sym-trunk *
+U numist
+Z 7fe9b43d252eee701000e10996724092

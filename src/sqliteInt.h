@@ -167,6 +167,17 @@
 #include "sqlite3.h"
 
 /*
+** SQLITE_HAS_BLOCKS controls block API availability
+*/
+#ifndef SQLITE_HAS_BLOCKS
+# if __has_extension(blocks)
+#  define SQLITE_HAS_BLOCKS 1
+# else
+#  define SQLITE_HAS_BLOCKS 0
+# endif
+#endif
+
+/*
 ** Include the configuration header output by 'configure' if we're using the
 ** autoconf-based build
 */

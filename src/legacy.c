@@ -139,3 +139,81 @@ exec_out:
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
+
+#if SQLITE_HAS_BLOCKS
+int sqlite3_exec_b(
+  sqlite3 *db,
+  const char *zSql,
+  int (^xCallback)(sqlite3_stmt *)
+){
+  int rc = SQLITE_OK;         /* Return code */
+  const char *zLeftover;      /* Tail of unprocessed SQL */
+  sqlite3_stmt *pStmt = 0;    /* The current SQL statement */
+  const char **azCols = 0;          /* Names of result columns */
+
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+  if( zSql==0 ) zSql = "";
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecExec(db, zSql);
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  sqlite3Error(db, SQLITE_OK);
+  while( rc==SQLITE_OK && zSql[0] ){
+    int callbackIsInit = 0;
+
+    pStmt = 0;
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+    assert( rc==SQLITE_OK || pStmt==0 );
+    if( rc!=SQLITE_OK ){
+      continue;
+    }
+    if( !pStmt ){
+      /* this happens for a comment or white-space */
+      zSql = zLeftover;
+      continue;
+    }
+
+    while( 1 ){
+      rc = sqlite3_step(pStmt);
+
+      /* Invoke the callback function if required */
+      if( xCallback && (SQLITE_ROW==rc ||
+          (SQLITE_DONE==rc && !callbackIsInit
+                           && db->flags&SQLITE_NullCallback)) ){
+        if( xCallback(pStmt) ){
+          /* EVIDENCE-OF: R-38229-40159 If the callback function to
+          ** sqlite3_exec() returns non-zero, then sqlite3_exec() will
+          ** return SQLITE_ABORT. */
+          rc = SQLITE_ABORT;
+          (void)sqlite3VdbeFinalize((Vdbe *)pStmt);
+          pStmt = 0;
+          sqlite3Error(db, rc);
+          goto exec_out;
+        }
+      }
+
+      if( rc!=SQLITE_ROW ){
+        rc = sqlite3VdbeFinalize((Vdbe *)pStmt);
+        pStmt = 0;
+        zSql = zLeftover;
+        while( sqlite3Isspace(zSql[0]) ) zSql++;
+        break;
+      }
+    }
+  }
+
+exec_out:
+  if( pStmt ) sqlite3VdbeFinalize((Vdbe *)pStmt);
+  sqlite3DbFree(db, azCols);
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecExecEnd(db);
+#endif
+
+  rc = sqlite3ApiExit(db, rc);
+
+  assert( (rc&db->errMask)==rc );
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+
+}
+#endif
