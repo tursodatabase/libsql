@@ -1,5 +1,5 @@
-C Ensure\sthat\sthere\sis\sa\scontaining\sSELECT\sstatement\swhen\sprocessing\sa\nnormal\saggregate\sfunction\sas\sif\sit\swere\sa\swindow\sfunction.
-D 2019-12-13T11:42:56.220
+C Patch\sto\sthe\spage\scache\sto\savoid\sharmless\spointer\sarithmetic\sthat\sdue\sto\sbugs\nin\sthe\sSTD-C\sspec\sis\stechnically\sUB.\s\sThis\sis\sto\sfix\sa\sharmless\sUBSAN\ncomplaint\sthat\sOSSFuzz\sis\shitting.
+D 2019-12-13T21:24:46.081
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -519,7 +519,7 @@ F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c 62714cbd1b7299a6e6a27a587b66b4fd3a836a84e1181e7f96f5c34a50917848
+F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
 F src/pragma.c 26e9ee514138b9697d4be6d8f9ca84655053026390cf10de838862238aa4aba9
 F src/pragma.h ec3b31eac9b1df040f1cc8cb3d89bc06605c3b4cb3d76f833de8d6d6c3f77f04
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5dc2939d3e8694d648fc9b73b1174da5b1349e20fbb9cf1c91268939f308f89
-R e59b82d06383bd505b8273cd5ef0d82d
+P c1014e80b26131200a115beb86929a8f0ded2dd65b075e47373346c0f170576a
+R b59b4afd4c4fcaeb80758977b1b63c0a
 U drh
-Z 2895c09312f8773411c5f3c256e1384f
+Z 4fa57844859159ee82f87f0f14b6814f
