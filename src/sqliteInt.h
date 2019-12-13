@@ -2650,23 +2650,28 @@ struct Expr {
 ** also be used as the argument to a function, in which case the a.zName
 ** field is not used.
 **
-** By default the Expr.zSpan field holds a human-readable description of
-** the expression that is used in the generation of error messages and
-** column labels.  In this case, Expr.zSpan is typically the text of a
-** column expression as it exists in a SELECT statement.  However, if
-** the bSpanIsTab flag is set, then zSpan is overloaded to mean the name
-** of the result column in the form: DATABASE.TABLE.COLUMN.  This later
-** form is used for name resolution with nested FROM clauses.
+** In order to try to keep memory usage down, the Expr.a.zEName field
+** is used for multiple purposes:
+**
+**     eEName          Usage
+**    ----------       -------------------------
+**    ENAME_NAME       (1) the AS of result set column
+**                     (2) COLUMN= of an UPDATE
+**
+**    ENAME_TAB        DB.TABLE.NAME used to resolve names
+**                     of subqueries
+**
+**    ENAME_SPAN       Text of the original result set
+**                     expression.
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zEName;           /* Token associated with this expression */
-    char *zSpan;            /* Original text of the expression */
     u8 sortFlags;           /* Mask of KEYINFO_ORDER_* flags */
+    unsigned eEName :2;     /* Meaning of zEName */
     unsigned done :1;       /* A flag to indicate when processing is finished */
-    unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
@@ -2679,6 +2684,13 @@ struct ExprList {
     } u;
   } a[1];                  /* One slot for each expression in the list */
 };
+
+/*
+** Allowed values for Expr.a.eEName
+*/
+#define ENAME_NAME  0       /* The AS clause of a result set */
+#define ENAME_SPAN  1       /* Complete text of the result set expression */
+#define ENAME_TAB   2       /* "DB.TABLE.NAME" for the result set */
 
 /*
 ** An instance of this structure can hold a simple list of identifiers,
@@ -4418,7 +4430,12 @@ void sqlite3CodeRhsOfIN(Parse*, Expr*, int);
 int sqlite3CodeSubselect(Parse*, Expr*);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p);
-int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
+int sqlite3MatchEName(
+  const struct ExprList_item*,
+  const char*,
+  const char*,
+  const char*
+);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
