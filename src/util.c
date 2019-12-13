@@ -389,7 +389,7 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int incr;
-  const char *zEnd = z + length;
+  const char *zEnd;
   /* sign * significand * (10 ^ (esign * exponent)) */
   int sign = 1;    /* sign of significand */
   i64 s = 0;       /* significand */
@@ -403,9 +403,11 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
+  if( length==0 ) return 0;
 
   if( enc==SQLITE_UTF8 ){
     incr = 1;
+    zEnd = z + length;
   }else{
     int i;
     incr = 2;

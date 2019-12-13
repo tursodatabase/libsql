@@ -1,5 +1,5 @@
-C Patch\sto\sthe\spage\scache\sto\savoid\sharmless\spointer\sarithmetic\sthat\sdue\sto\sbugs\nin\sthe\sSTD-C\sspec\sis\stechnically\sUB.\s\sThis\sis\sto\sfix\sa\sharmless\sUBSAN\ncomplaint\sthat\sOSSFuzz\sis\shitting.
-D 2019-12-13T21:24:46.081
+C Fix\san\sutterly\sharmless\s"applying\szero\soffset\sto\snull\spointer"\sUB\swarning\nin\ssqlite3AtoF():
+D 2019-12-13T23:38:57.778
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -597,7 +597,7 @@ F src/trigger.c 681ccdb910a87243940d63f99b26190d9c5d2534c2ded3c0825b7c0e315a342e
 F src/update.c 07a50767f7d3e26d4c887c31cd66448d700d3215caea6023acf7269336097df7
 F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
-F src/util.c 66b22af7b359ce6493c34fef28c87d5c2d1765f212d6e4cd5e08d99ac30b89bb
+F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
 F src/vdbe.c 30fc70ea7f1a47f50cd6557d8073b57fcf2275b537b896ba7e8d602065bc5648
 F src/vdbe.h fdbc0a11e5768a702b46ce63286f60e22e71351a29bd98b3666405e1fccc7802
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1014e80b26131200a115beb86929a8f0ded2dd65b075e47373346c0f170576a
-R b59b4afd4c4fcaeb80758977b1b63c0a
+P c29fc21288e37f81a1617c5e2961c575d3bca6a1d1b013b2e0a99774afb1dcdb
+R 3d3d486575d8e4fc08b0a007870e491d
 U drh
-Z 4fa57844859159ee82f87f0f14b6814f
+Z 3aa16a4b7876299855c152aecef9a886
