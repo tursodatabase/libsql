@@ -5044,7 +5044,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 
             assert( zName );
             if( zTName && pSub
-             && sqlite3MatchSpanName(pSub->pEList->a[j].zEName, 0, zTName, 0)==0
+             && sqlite3MatchEName(&pSub->pEList->a[j], 0, zTName, 0)==0
             ){
               continue;
             }

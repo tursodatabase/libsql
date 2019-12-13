@@ -2653,16 +2653,16 @@ struct Expr {
 ** In order to try to keep memory usage down, the Expr.a.zEName field
 ** is used for multiple purposes:
 **
-**     bNameIsTab    bNameIsSpan        Usage
-**     ----------    -----------        -------------------------
-**       false          false           (1) the AS of result set column
-**                                      (2) COLUMN= of an UPDATE
+**     eEName          Usage
+**    ----------       -------------------------
+**    ENAME_NAME       (1) the AS of result set column
+**                     (2) COLUMN= of an UPDATE
 **
-**       true           false           DB.TABLE.NAME used to resolve names
-**                                      of subqueries
+**    ENAME_TAB        DB.TABLE.NAME used to resolve names
+**                     of subqueries
 **
-**       false          true            Text of the original result set
-**                                      expression.
+**    ENAME_SPAN       Text of the original result set
+**                     expression.
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
@@ -4430,7 +4430,12 @@ void sqlite3CodeRhsOfIN(Parse*, Expr*, int);
 int sqlite3CodeSubselect(Parse*, Expr*);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p);
-int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
+int sqlite3MatchEName(
+  const struct ExprList_item*,
+  const char*,
+  const char*,
+  const char*
+);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);

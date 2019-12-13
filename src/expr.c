@@ -1745,6 +1745,7 @@ void sqlite3ExprListSetName(
     assert( pList->nExpr>0 );
     pItem = &pList->a[pList->nExpr-1];
     assert( pItem->zEName==0 );
+    assert( pItem->eEName==ENAME_NAME );
     pItem->zEName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
     if( dequote ) sqlite3Dequote(pItem->zEName);
     if( IN_RENAME_OBJECT ){
