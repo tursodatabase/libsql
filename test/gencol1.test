@@ -342,7 +342,7 @@ do_execsql_test gencol1-12.10 {
   PRAGMA integrity_check;
 } {ok}
 
-# 2019-12-09 but report from Yongheng Chen
+# 2019-12-09 bug report from Yongheng Chen
 # Ensure that the SrcList_item.colUsed field is set correctly when a
 # generated column appears in the USING clause of a join.
 #
@@ -368,6 +368,20 @@ do_execsql_test gencol1-13.21 {
 do_execsql_test gencol1-13.22 {
   SELECT 456 FROM t1 JOIN t1 USING (x,x);
 } {456}
+
+# 2019-12-14 ticket b439bfcfb7deedc6
+#
+sqlite3 db :memory:
+do_execsql_test gencol1-14.10 {
+  CREATE TABLE t0(c0 AS(1 >= 1), c1 UNIQUE AS(TYPEOF(c0)), c2);
+  INSERT INTO t0 VALUES(0);
+  REINDEX;
+  SELECT * FROM t0;
+} {1 integer 0}
+do_catchsql_test gencol1-14.10 {
+  INSERT INTO t0 VALUES(2);
+} {1 {UNIQUE constraint failed: t0.c1}}
+
 
 
 finish_test
