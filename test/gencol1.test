@@ -382,6 +382,41 @@ do_catchsql_test gencol1-14.10 {
   INSERT INTO t0 VALUES(2);
 } {1 {UNIQUE constraint failed: t0.c1}}
 
-
+# 2019-12-14 gramfuzz1 find
+# The schema is malformed in that it has a subquery on a generated
+# column expression.  This will be loaded if writable_schema=ON.  SQLite
+# must not use such an expression during code generation as the code generator
+# will add bits of content to the expression tree that might be allocated
+# from lookaside.  But the schema is not tied to a particular database
+# connection, so the use of lookaside memory is prohibited.  The fix
+# is to change the generated column expression to NULL before adding it
+# to the schema.
+#
+reset_db
+do_test gencol1-15.10 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 8192 pagesize 4096 filename c27.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 01 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01   ................
+|     96: 00 2e 3f d8 0d 00 00 00 01 0f ba 00 0f ba 00 00   ..?.............
+|   4016: 00 00 00 00 00 00 00 00 00 00 44 01 06 17 11 11   ..........D.....
+|   4032: 01 75 74 61 62 6c 65 74 31 74 31 02 43 52 45 41   .utablet1t1.CREA
+|   4048: 54 45 20 54 41 42 4c 45 20 74 31 28 61 20 49 4e   TE TABLE t1(a IN
+|   4064: 54 2c 20 62 20 41 53 28 28 56 41 4c 55 45 53 28   T, b AS((VALUES(
+|   4080: 31 29 29 20 49 53 20 75 6e 6b 6e 6f 77 6e 29 29   1)) IS unknown))
+| page 2 offset 4096
+|      0: 0d 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00   ................
+| end c27.db
+}]} {}
+do_execsql_test gencol1-15.20 {
+  PRAGMA writable_schema=ON;
+  REPLACE INTO t1 VALUES(9);
+  SELECT a, quote(b) FROM t1
+} {9 NULL}
 
 finish_test
