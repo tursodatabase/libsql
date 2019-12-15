@@ -1,5 +1,5 @@
-C Abort\sthe\sOP_Savepoint\sopcode\searly\sif\sa\svirtual\stable\sxSync\smethod\sfails,\nperhaps\sdue\sto\san\sinterrupt.
-D 2019-12-15T00:36:33.807
+C Ensure\sthat\sall\sON\sCONFLICT\sREPLACE\sindexes\sare\ssorted\sto\sthe\send\sof\sthe\slist\nof\sindexes\sfor\sa\stable,\seven\sfor\sweird\scases\swhere\sthe\ssame\sUNIQUE\sconstraint\noccurs\stwice\swith\sthe\sON\sCONFLICT\sREPLACE\sclause\sonly\son\sthe\ssecond\sone.\s\sThis\navoids\san\sout-of-order\scontraint\sprocessing\sproblem\sthat\scan\sarise\sdue\nto\sthe\soptimization\sof\scheck-in\s[469a62ca33081854].
+D 2019-12-15T02:49:32.455
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -471,7 +471,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c d22498af716953400e314d2d98d1dac3ea5c3b01e0fd243ef9e9b132c74114ec
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 9a08209f438b5cbc9795ed34430553288944593aa1221325529e67e3c3449143
+F src/build.c 17f97c9917e84b978f9ec549518f8ec90151c659c3e37058276edb7659c36c44
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -488,7 +488,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 5de3fd62bd1a692353c8f9c7bbde658f0b579f195620ca3cde1948a53015dddd
+F src/insert.c 831408b14a146e93a4e02ddba54dcdfd8097463b9c00ca2ed9daed790c5d452a
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
 F src/main.c 868ae7db7a54fe859bf2ca8b7a4f24e9fa03a6134abfb7c9801d08411ef5dacb
@@ -747,7 +747,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151ecac0b95
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 87ad5458bb8709312dac0d6755fd30e8e4ca83298d0a9ef6e5c24277a3c3390e
-F test/conflict.test c7cc007e2af151516ddf38f7412fe10d473a694f55e3df437e2c7b31c2590e8d
+F test/conflict.test 58857e2533fb9f2e0358ea7cb191215657846be1dd9da3b3d6df3e750c02ae03
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test f62a2d0cad9162a60e6458fc913dff3a2208feca924120c21737cfee65a6a74a
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a89b38605661e36d192df1d074383b704b34a959fcbc169837c0d4f6848f3208
-R e301f47ec9c8eebaafac7a0537e37181
+P 672e749aef7351de3c69b365c1f80c756fda4e261b5d2ac1faa01d3a7d5a4c49
+R 5b4ddda083685148b74be75770b01033
 U drh
-Z 8f656184411b5cc9de90e32f691f0d2f
+Z d0a5e430475096c2441f59bd7d88b411

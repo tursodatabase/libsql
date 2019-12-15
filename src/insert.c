@@ -2250,6 +2250,10 @@ void sqlite3CompleteInsertion(
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+    /* All REPLACE indexes are at the end of the list */
+    assert( pIdx->onError!=OE_Replace
+         || pIdx->pNext==0
+         || pIdx->pNext->onError==OE_Replace );
     if( aRegIdx[i]==0 ) continue;
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
