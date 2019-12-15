@@ -1,5 +1,5 @@
-C When\sa\sgenerated\scolumn\sexpression\sis\sinitially\sparsed,\sif\sit\scontains\serrors\nconvert\sthe\sexpression\sto\sa\ssimple\sNULL.\s\sThis\sprevents\sadditional\spieces\sof\nthe\sexpression\stree\sthat\sare\sallocated\sfrom\slookaside\sfrom\sleaking\sinto\sthe\nschema,\swhere\slookaside\sallocations\sare\snot\sallowed.
-D 2019-12-14T19:55:31.349
+C Abort\sthe\sOP_Savepoint\sopcode\searly\sif\sa\svirtual\stable\sxSync\smethod\sfails,\nperhaps\sdue\sto\san\sinterrupt.
+D 2019-12-15T00:36:33.807
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 9195f2233d31c6ffca8f4a4cca67c8da0e70dab1d31a39a166bc61ecc27c18d9
+F src/vdbe.c ed52f3e6f41a0097c96171379f668f5de26dba2a0d096e48461d2b2742056a22
 F src/vdbe.h fdbc0a11e5768a702b46ce63286f60e22e71351a29bd98b3666405e1fccc7802
 F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5b4a88cd3b3a32b1242e0eb733cc0bc4becb830a887b8e6604a4c7452050e163
-R 2ce3068a1d1623c8a21d7c464aff2e08
+P a89b38605661e36d192df1d074383b704b34a959fcbc169837c0d4f6848f3208
+R e301f47ec9c8eebaafac7a0537e37181
 U drh
-Z ed637028b5830da71aa8a6716a5eba7f
+Z 8f656184411b5cc9de90e32f691f0d2f
