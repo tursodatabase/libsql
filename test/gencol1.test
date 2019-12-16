@@ -419,4 +419,28 @@ do_execsql_test gencol1-15.20 {
   SELECT a, quote(b) FROM t1
 } {9 NULL}
 
+# 2019-12-16 ticket 3b84b42943644d6f
+# When a table is the right table of a LEFT JOIN and the ON clause is
+# false, make sure any generated columns evaluate to NULL.
+reset_db
+do_execsql_test gencol1-16.10 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c1, c2 AS(1));
+  INSERT INTO t0 VALUES(0);
+  SELECT c0, c1, c2 FROM t0 LEFT JOIN t1;
+} {0 {} {}}
+do_execsql_test gencol1-16.20 {
+  DROP TABLE t1;
+  CREATE TABLE t1(c1, c2 AS (c1 ISNULL));
+  SELECT c0, c1, c2 FROM t0 LEFT JOIN t1;
+} {0 {} {}}
+do_execsql_test gencol1-16.30 {
+  INSERT INTO t1(c1) VALUES(1),(NULL);
+  SELECT * FROM t1;
+} {1 0 {} 1}
+do_execsql_test gencol1-16.40 {
+  SELECT c0, c1, c2 FROM t0 LEFT JOIN t1 ON c0=c1;
+} {0 {} {}}
+
+
 finish_test

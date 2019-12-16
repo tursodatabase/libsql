@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\sON\sCONFLICT\sREPLACE\sindexes\sare\ssorted\sto\sthe\send\sof\sthe\slist\nof\sindexes\sfor\sa\stable,\seven\sfor\sweird\scases\swhere\sthe\ssame\sUNIQUE\sconstraint\noccurs\stwice\swith\sthe\sON\sCONFLICT\sREPLACE\sclause\sonly\son\sthe\ssecond\sone.\s\sThis\navoids\san\sout-of-order\scontraint\sprocessing\sproblem\sthat\scan\sarise\sdue\nto\sthe\soptimization\sof\scheck-in\s[469a62ca33081854].
-D 2019-12-15T02:49:32.455
+C When\sa\stable\sis\spart\sof\sa\sLEFT\sJOIN\sand\sshould\sbe\sa\scompletely\sNULL\srow\sdue\sto\nthe\ssemantics\sof\sa\sLEFT\sJOIN,\smake\ssure\sany\sgenerated\scolumns\son\sthat\srow\nevaluate\sto\sNULL.\s\sTicket\s[3b84b42943644d6f]
+D 2019-12-16T16:52:22.748
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c 7c21a77ca00cc09f500c21cdae7fb3571490c2dec70b392d9e505e81069e45ee
+F src/expr.c 6346d23442ab7e26b1afdeb04badeb0ec49f3ce3d35dd4e3cf91a8e1e4efe22d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1022,7 +1022,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test 38d90883d0b22ffe8690ecbccf8e6227ece3e380fbbeb4aaed7015a1bd1d9fa4
+F test/gencol1.test 69008f45faa46b7293cc6ce1236f356a7aff6061b0547334786b54a49b2f98cb
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 672e749aef7351de3c69b365c1f80c756fda4e261b5d2ac1faa01d3a7d5a4c49
-R 5b4ddda083685148b74be75770b01033
+P 1e3918ca2f2c1cfcfa44249b1d7b847d52cbb8d302a8d4a335c090cfdf22d7a1
+R df5ecffdc3336d06465700e45e68356b
 U drh
-Z d0a5e430475096c2441f59bd7d88b411
+Z 5f2c97f622c6cd887eeeafb84f2795e9
