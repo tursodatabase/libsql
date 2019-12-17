@@ -740,15 +740,17 @@ static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
 ** to select statement pSelect.
 */
 static void renameWalkWith(Walker *pWalker, Select *pSelect){
-  if( pSelect->pWith ){
+  With *pWith = pSelect->pWith;
+  if( pWith ){
     int i;
-    for(i=0; i<pSelect->pWith->nCte; i++){
-      Select *p = pSelect->pWith->a[i].pSelect;
+    for(i=0; i<pWith->nCte; i++){
+      Select *p = pWith->a[i].pSelect;
       NameContext sNC;
       memset(&sNC, 0, sizeof(sNC));
       sNC.pParse = pWalker->pParse;
       sqlite3SelectPrep(sNC.pParse, p, &sNC);
       sqlite3WalkSelect(pWalker, p);
+      sqlite3RenameExprlistUnmap(pWalker->pParse, pWith->a[i].pCols);
     }
   }
 }
