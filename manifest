@@ -1,5 +1,5 @@
-C Correctly\sunwind\sthe\ssavepoint\sstack\sif\sthe\sdatabase\sgoes\sread-only\sin\nthe\smiddle\sof\sa\ssavepoint.
-D 2019-12-18T02:12:04.800
+C Add\sa\stest\scase\sfor\sfix\sin\scheck-in\s[1ca0bd982ab1183b]
+D 2019-12-18T09:17:55.360
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1713,7 +1713,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test b3567fde130dd65fedf56da66a3916cc992e61f910a56b7dac3f71608809faac
+F test/window1.test 6db2c38a0830af8554936a563df92e67962cc379253854cd10d0c3cf0a3120c4
 F test/window2.tcl 66db96fd9fd202bc31ee7f8ce7904cb469564864cff3f74e009bfef8102333f4
 F test/window2.test af2a001ded703bb8f2474fb0edfef170d5aba00f5c1f2aa9f65935b5da13df90
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9bdd57cb9ad8ac1f4a0f1a3942d94ca5193109eeb1975343c4f0c7abf7135946
-R b4dd25704860b1cef2883ea8b825990b
+P a96d02b4ab8c70cc20b322e4fa3a4b8814f05c51f5d8b071ec9d69e7379f3ea5
+R 627893d83616cc9edfdf2fa18820e055
 U drh
-Z 065de26ad77175bb3bbe46abfbcca490
+Z d0b2b65af4cd0456b98ef351e7111692
