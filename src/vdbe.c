@@ -3264,8 +3264,12 @@ case OP_Savepoint: {
           p->rc = rc = SQLITE_BUSY;
           goto vdbe_return;
         }
-        db->isTransactionSavepoint = 0;
         rc = p->rc;
+        if( rc ){
+          db->autoCommit = 0;
+        }else{
+          db->isTransactionSavepoint = 0;
+        }
       }else{
         int isSchemaChange;
         iSavepoint = db->nSavepoint - iSavepoint - 1;
