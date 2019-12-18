@@ -1320,6 +1320,7 @@ static void showHelp(void){
 "  --sqlid N            Use only SQL where sqlid=N\n"
 "  --timeout N          Abort if any single test needs more than N seconds\n"
 "  -v|--verbose         Increased output.  Repeat for more output.\n"
+"  --vdbe-debug         Activate VDBE debugging.\n"
   );
 }
 
@@ -1474,6 +1475,9 @@ int main(int argc, char **argv){
 #ifndef __unix__
         fatalError("timeout is not available on non-unix systems");
 #endif
+      }else
+      if( strcmp(z,"vdbe-debug")==0 ){
+        bVdbeDebug = 1;
       }else
       if( strcmp(z,"verbose")==0 ){
         quietFlag = 0;
@@ -1821,6 +1825,9 @@ int main(int argc, char **argv){
 #ifdef SQLITE_TESTCTRL_PRNG_SEED
           sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 1, db);
 #endif
+          if( bVdbeDebug ){
+            sqlite3_exec(db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
+          }
           do{
             runSql(db, (char*)pSql->a, runFlags);
           }while( timeoutTest );
