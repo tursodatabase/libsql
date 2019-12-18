@@ -134,6 +134,7 @@ struct Blob {
 */
 static struct GlobalVars {
   const char *zArgv0;              /* Name of program */
+  const char *zDbFile;             /* Name of database file */
   VFile aFile[MX_FILE];            /* The virtual filesystem */
   int nDb;                         /* Number of template databases */
   Blob *pFirstDb;                  /* Content of first template database */
@@ -148,11 +149,10 @@ static struct GlobalVars {
 */
 static void fatalError(const char *zFormat, ...){
   va_list ap;
-  if( g.zTestName[0] ){
-    fprintf(stderr, "%s (%s): ", g.zArgv0, g.zTestName);
-  }else{
-    fprintf(stderr, "%s: ", g.zArgv0);
-  }
+  fprintf(stderr, "%s", g.zArgv0);
+  if( g.zDbFile ) fprintf(stderr, " %s", g.zDbFile);
+  if( g.zTestName[0] ) fprintf(stderr, " (%s)", g.zTestName);
+  fprintf(stderr, ": ");
   va_start(ap, zFormat);
   vfprintf(stderr, zFormat, ap);
   va_end(ap);
@@ -161,12 +161,21 @@ static void fatalError(const char *zFormat, ...){
 }
 
 /*
-** Timeout handler
+** signal handler
 */
 #ifdef __unix__
-static void timeoutHandler(int NotUsed){
-  (void)NotUsed;
-  fatalError("timeout\n");
+static void signalHandler(int signum){
+  const char *zSig;
+  if( signum==SIGABRT ){
+    zSig = "abort";
+  }else if( signum==SIGALRM ){
+    zSig = "timeout";
+  }else if( signum==SIGSEGV ){
+    zSig = "segfault";
+  }else{
+    zSig = "signal";
+  }
+  fatalError(zSig);
 }
 #endif
 
@@ -1360,7 +1369,9 @@ int main(int argc, char **argv){
   sqlite3_initialize();
   iBegin = timeOfDay();
 #ifdef __unix__
-  signal(SIGALRM, timeoutHandler);
+  signal(SIGALRM, signalHandler);
+  signal(SIGSEGV, signalHandler);
+  signal(SIGABRT, signalHandler);
 #endif
   g.zArgv0 = argv[0];
   openFlags4Data = SQLITE_OPEN_READONLY;
@@ -1506,6 +1517,7 @@ int main(int argc, char **argv){
 
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
+    g.zDbFile = azSrcDb[iSrcDb];
     rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
                          openFlags4Data, pDfltVfs->zName);
     if( rc ){
