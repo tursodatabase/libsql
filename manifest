@@ -1,5 +1,5 @@
-C Continue\sto\sback\saway\sfrom\sthe\sLEFT\sJOIN\soptimization\sof\scheck-in\s[41c27bc0ff1d3135]\nby\sdisallowing\squery\sflattening\sif\sthe\souter\squery\sis\sDISTINCT.\s\sWithout\sthis\sfix,\nif\san\sindex\sscan\sis\srun\son\sthe\stable\swithin\sthe\sview\son\sthe\sright-hand\sside\sof\sthe\nLEFT\sJOIN,\sstale\sresult\sregisters\smight\sbe\saccessed\syielding\sincorrect\sresults,\nand/or\san\sOP_IfNullRow\sopcode\smight\sbe\sinvoked\son\sthe\sun-opened\stable,\sresulting\nin\sa\sNULL-pointer\sdereference.\s\sThis\sproblem\swas\sfound\sby\sthe\sYongheng\sand\sRui\sfuzzer.
-D 2019-12-18T20:51:58.702
+C Change\san\sunreachable\stestcase()\sinto\san\sassert()
+D 2019-12-18T21:22:40.803
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c a0330e4035f958bd5dd734fe8b05a5a9ac1c4c3a1eda4ef69b34bce6be1ce2ba
+F src/expr.c 8f873d6a411483a0ba14367aebf63c1f9f4346ef755739ec11feb14fa662002d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 289158aa24b066c453d2bce4bc2dead1c56fb0b23c3f7c4810b34b13627cef34
-R 9f20156b75204a3ebfd831615fb6a91c
+P 862974312edf00e9d1068115d1a39b7235b7db68b6d86b81d38a12f025a4748e
+R 32a38e4aaf6284494d646d127a601f97
 U drh
-Z bb78c6170ca7c38efc6081f3520d1341
+Z f00e4fb5b7f3ab87734a306c50a18bfb
