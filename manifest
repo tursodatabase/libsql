@@ -1,5 +1,5 @@
-C Add\sthe\s--vdbe-debug\soption\sto\sfuzzcheck.
-D 2019-12-18T13:42:04.200
+C Continue\sto\sback\saway\sfrom\sthe\sLEFT\sJOIN\soptimization\sof\scheck-in\s[41c27bc0ff1d3135]\nby\sdisallowing\squery\sflattening\sif\sthe\souter\squery\sis\sDISTINCT.\s\sWithout\sthis\sfix,\nif\san\sindex\sscan\sis\srun\son\sthe\stable\swithin\sthe\sview\son\sthe\sright-hand\sside\sof\sthe\nLEFT\sJOIN,\sstale\sresult\sregisters\smight\sbe\saccessed\syielding\sincorrect\sresults,\nand/or\san\sOP_IfNullRow\sopcode\smight\sbe\sinvoked\son\sthe\sun-opened\stable,\sresulting\nin\sa\sNULL-pointer\sdereference.\s\sThis\sproblem\swas\sfound\sby\sthe\sYongheng\sand\sRui\sfuzzer.
+D 2019-12-18T20:51:58.702
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -527,7 +527,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 86a7773d2892227ba9ad1721c41bb03c501830f1bf6de5f78dd0062b82e10c9d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 0fe10579de20eb8dc04ec9ed29659fa782bee2bcc85a35734637f3e2cabc2762
+F src/select.c dd7e40967760b28efe274ade35043d5bf5d72774208bb75d2cb4dd59cbd59ad1
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
 F src/sqlite.h.in 2a23e8161775253d9cf383c2c6aa559005dc787d350dcb0be67a6c4cc3bd1d19
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1084,7 +1084,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 75327829744e65cc8700e69340b8e6c192e10e39dfae7ccb0e970d3c4f49090a
-F test/join.test f787ee2716efe5beeb9888d10630f917b112c32b6b3e612e48a17ea8aed3a8eb
+F test/join.test 99e1d82fada7a1df9002a7b1160bd231c91077b9372492d5e18bfa1d1694d43c
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae7cbb246bff3717c283869ccf27ce83611422f3801176819465a8d96f6481bf
-R 698a2a75d4b0cd7521db241025664bfa
+P 289158aa24b066c453d2bce4bc2dead1c56fb0b23c3f7c4810b34b13627cef34
+R 9f20156b75204a3ebfd831615fb6a91c
 U drh
-Z 3b78f03b6dfb23a7688d2381f3d2f680
+Z bb78c6170ca7c38efc6081f3520d1341

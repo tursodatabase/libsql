@@ -975,4 +975,17 @@ do_execsql_test join-21.10 {
   SELECT 24, * FROM t1 LEFT JOIN t0 ON +aa ISNULL;
 } {13 1 {} 14 1 {} 23 1 {} 24 1 {}}
 
+# 2019-12-18 problem with a LEFT JOIN where the RHS is a view.
+# Detected by Yongheng and Rui.
+# Follows from the optimization attempt of check-in 41c27bc0ff1d3135
+# on 2017-04-18
+#
+reset_db
+do_execsql_test join-22.10 {
+  CREATE TABLE t0(a, b);
+  CREATE INDEX t0a ON t0(a);
+  INSERT INTO t0 VALUES(10,10),(10,11),(10,12);
+  SELECT DISTINCT c FROM t0 LEFT JOIN (SELECT a+1 AS c FROM t0) ORDER BY c ;
+} {11}
+
 finish_test

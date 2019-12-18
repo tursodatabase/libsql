@@ -3600,6 +3600,7 @@ static void substSelect(
 **        (3b) the FROM clause of the subquery may not contain a virtual
 **             table and
 **        (3c) the outer query may not be an aggregate.
+**        (3d) the outer query may not be DISTINCT.
 **
 **   (4)  The subquery can not be DISTINCT.
 **
@@ -3796,8 +3797,11 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
-    if( pSubSrc->nSrc>1 || isAgg || IsVirtual(pSubSrc->a[0].pTab) ){
-      /*  (3a)             (3c)     (3b) */
+    if( pSubSrc->nSrc>1                   /* (3a) */
+     || isAgg                             /* (3b) */
+     || IsVirtual(pSubSrc->a[0].pTab)     /* (3c) */
+     || (p->selFlags & SF_Distinct)!=0    /* (3d) */
+    ){
       return 0;
     }
   }
