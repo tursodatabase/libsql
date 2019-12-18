@@ -1,5 +1,5 @@
-C Clean\sup\sthe\sExprList\sthat\sholds\sthe\snames\sof\scolumns\sin\sa\sCTE\sbefore\schecking\nfor\sunused\sreferences\sin\sthe\sALTER\sTABLE\simplementation.
-D 2019-12-17T12:03:30.587
+C When\sprocessing\sconstant\sinteger\svalues\sin\sORDER\sBY\sclauses\sof\swindow\ndefinitions\s(see\scheck-in\s[7e4809eadfe99ebf])\sbe\ssure\sto\sfully\sdisable\nthe\sconstant\svalue\sto\savoid\san\sinvalid\spointer\sdereference\sif\sthe\sexpression\nis\sever\sduplicated.\sThis\sfixes\sa\scrash\sreport\sfrom\sYongheng\sand\sRui.
+D 2019-12-18T00:05:50.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/where.c c51ebd505c8417285ca1db8f94933a12224bf636ad93f27d821c07f93d59c035
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c 7efa97f4dc2f95548611deba68f0210ab357725899a9bae5391a525e48271875
 F src/whereexpr.c 39b6a538804c6e1248c22b33e09d00f89ae6a099c849c4d841ce3995562287b4
-F src/window.c a77f12078dd4b10e655d4ba5a73ca32dbe00e0206018305185c7e86445d3f429
+F src/window.c 913a10696f5197adae32738a7c7cabc03e1f1553240d6c9ce868ee57f5cee88e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0271491438ad2a985aeff355173a8d0f1e5813954c82147bc68cb26cca5804c8
-R c68dc3ba4d5d231b86e4d84e0586fee0
+P 8223e79f987feda5c8e51ec52cec6798cca16d070b10558939e2888ca1a25b8e
+R b2173cceb9c7cb44c37df84c9f42b08c
 U drh
-Z 71205fed544fdcd4f0e940dde5d4548f
+Z 156cc4a0e438e4b57215f0738876dab1
