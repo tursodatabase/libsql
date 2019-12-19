@@ -49,7 +49,11 @@ pub enum Limit {
     SQLITE_LIMIT_WORKER_THREADS = 11,
 }
 
-include!(concat!(env!("OUT_DIR"), "/bindgen.rs"));
+#[allow(clippy::all)]
+mod bindings {
+    include!(concat!(env!("OUT_DIR"), "/bindgen.rs"));
+}
+pub use bindings::*;
 
 pub type sqlite3_index_constraint = sqlite3_index_info_sqlite3_index_constraint;
 pub type sqlite3_index_constraint_usage = sqlite3_index_info_sqlite3_index_constraint_usage;

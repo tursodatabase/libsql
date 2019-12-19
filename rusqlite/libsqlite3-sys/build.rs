@@ -138,10 +138,12 @@ impl From<HeaderLocation> for String {
         match header {
             HeaderLocation::FromEnvironment => {
                 let prefix = env_prefix();
-                let mut header = env::var(format!("{}_INCLUDE_DIR", prefix)).expect(&format!(
-                    "{}_INCLUDE_DIR must be set if {}_LIB_DIR is set",
-                    prefix, prefix
-                ));
+                let mut header = env::var(format!("{}_INCLUDE_DIR", prefix)).unwrap_or_else(|_| {
+                    panic!(
+                        "{}_INCLUDE_DIR must be set if {}_LIB_DIR is set",
+                        prefix, prefix
+                    )
+                });
                 header.push_str("/sqlite3.h");
                 header
             }
@@ -209,7 +211,7 @@ mod build_linked {
             // Try to use pkg-config to determine link commands
             let pkgconfig_path = Path::new(&dir).join("pkgconfig");
             env::set_var("PKG_CONFIG_PATH", pkgconfig_path);
-            if let Err(_) = pkg_config::Config::new().probe(link_lib) {
+            if pkg_config::Config::new().probe(link_lib).is_err() {
                 // Otherwise just emit the bare minimum link commands.
                 println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
                 println!("cargo:rustc-link-search={}", dir);
@@ -338,7 +340,7 @@ mod bindings {
 
         bindings
             .generate()
-            .expect(&format!("could not run bindgen on header {}", header))
+            .unwrap_or_else(|_| panic!("could not run bindgen on header {}", header))
             .write(Box::new(&mut output))
             .expect("could not write output of bindgen");
         let mut output = String::from_utf8(output).expect("bindgen output was not UTF-8?!");
@@ -357,10 +359,10 @@ mod bindings {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(out_path.clone())
-            .expect(&format!("Could not write to {:?}", out_path));
+            .open(out_path)
+            .unwrap_or_else(|_| panic!("Could not write to {:?}", out_path));
 
         file.write_all(output.as_bytes())
-            .expect(&format!("Could not write to {:?}", out_path));
+            .unwrap_or_else(|_| panic!("Could not write to {:?}", out_path));
     }
 }
