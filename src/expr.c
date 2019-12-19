@@ -376,6 +376,7 @@ static int codeCompare(
   int addr;
   CollSeq *p4;
 
+  if( pParse->nErr ) return 0;
   if( isCommuted ){
     p4 = sqlite3BinaryCompareCollSeq(pParse, pRight, pLeft);
   }else{

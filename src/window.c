@@ -934,7 +934,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
 
     pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ){
-      return SQLITE_NOMEM;
+      return sqlite3ErrorToParser(db, SQLITE_NOMEM);
     }
 
     p->pSrc = 0;
@@ -1039,6 +1039,10 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     sqlite3DbFree(db, pTab);
   }
 
+  if( rc && pParse->nErr==0 ){
+    assert( pParse->db->mallocFailed );
+    return sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
+  }
   return rc;
 }
 
