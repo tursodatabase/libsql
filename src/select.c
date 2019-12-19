@@ -2809,6 +2809,7 @@ static int multiSelect(
     }
   #endif
   }
+  if( pParse->nErr ) goto multi_select_end;
   
   /* Compute collating sequences used by 
   ** temporary tables needed to implement the compound select.
