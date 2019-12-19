@@ -1,5 +1,5 @@
-C When\san\serror\soccurs\swhile\srewriting\sthe\sparser\stree\sfor\swindow\sfunctions\nin\sthe\ssqlite3WindowRewrite()\sroutine,\smake\ssure\sthat\spParse->nErr\sis\sset,\nand\smake\ssure\sthat\sthis\sshuts\sdown\sany\ssubsequent\scode\sgeneration\sthat\smight\ndepend\son\sthe\stransformations\sthat\swere\simplemented.\s\sThis\sfixes\sa\sproblem\ndiscovered\sby\sthe\sYongheng\sand\sRui\sfuzzer.
-D 2019-12-19T20:37:32.070
+C Fix\sthe\sregexp\sextension\sso\sthat\sit\scorrectly\stranslates\sall\sover-length\n3-byte\sUTF8\ssequences\sinto\s0xfffd.
+D 2019-12-19T21:11:48.622
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -304,7 +304,7 @@ F ext/misc/nextchar.c 279f80fe8ef5ba413242e2704e246503ac601f005eefb180d19e6c9203
 F ext/misc/normalize.c b4290464f542bae7a97b43f15bd197949b833ffd668b7c313631bd5d4610212c
 F ext/misc/percentile.c 148dd07286b16e50f232bb638a47850085ad37d51f270429905bd865e595d1ca
 F ext/misc/prefixes.c 7be86d17525cfae6ed462fc3c519efc44488ac329890f77491c8f82871f57e17
-F ext/misc/regexp.c 653b6ab5e89bcb5d45f9ebe0747d7f8f3f5706cac963fcbc9a3ddbe5fdc1efa2
+F ext/misc/regexp.c be064ad9478361e40c7b8ca460f78b3d3c9b96080d5f391126c95e14bd362fae
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 540a169cb0d74f15522a8930b0cccdcb37a4fd071d219a5a083a319fc6e8db77
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4417c5bf0aabb34ed174f01afd981c924ae965a42128719d8d6735536631d12f
-R f9500979ead80e4e63134871bf8fc127
+P e2bddcd4c55ba3cbe0130332679ff4b048630d0ced9a8899982edb5a3569ba7f
+R af9053af10312d4307bee0a49d732fcd
 U drh
-Z b61065dbf7c71aac52e79a354be5735d
+Z 117f0e64b781f6b402ee8f8a6b6c39a1
