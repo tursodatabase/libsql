@@ -795,4 +795,18 @@ if {$tcl_platform(platform)!="windows"} {
   } {. ./x1.txt ./x2.txt}
 }
 
+# 2019-12-18 Yongheng and Rui fuzzer
+#
+do_execsql_test 13.10 {
+  DROP TABLE IF EXISTS t0;
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t0(a,b,c,d,e,f,g);
+  REPLACE INTO t0(c,b,f) VALUES(10,10,10);
+  CREATE VIRTUAL TABLE t1 USING zipfile('h.zip');
+  REPLACE INTO t1 SELECT * FROM t0;
+  SELECT quote(name),quote(mode),quote(mtime),quote(sz),quote(rawdata),
+         quote(data),quote(method) FROM t1;
+} {'' 10 10 2 X'3130' X'3130' 0}
+
+
 finish_test

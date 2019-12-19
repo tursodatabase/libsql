@@ -1,5 +1,5 @@
-C Fix\sincorrect\sSQL\sgenerated\sby\sthe\sLemon\schange\sof\sthe\sprevious\scheck-in.
-D 2019-12-19T13:17:07.364
+C Fix\sthe\szipfile\sextension\sso\sthat\sINSERT\sworks\seven\sif\sthe\spathname\sof\nthe\sfile\sbeing\sinserted\sis\sa\sNULL.\s\sBug\sdiscovered\sby\sthe\nYongheng\sand\sRui\sfuzzer.
+D 2019-12-19T15:15:40.450
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -324,7 +324,7 @@ F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 7ad29133e304e40c8fe239bea10e101580ed56bc68c16d992af514cce19572d0
+F ext/misc/zipfile.c 8f965eb309da3ae8c30088f6c3ebdddcdbdf9e0ef24f3bc7ae0756deb93da503
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 8681f6157db6adc82c34af24b14ea8a3be0146ad2a3b6c1d5da6cb8a5796c8ce
 F ext/rbu/rbu1.test 221d9c18a5e600ac9ac6b1810d99d9f99163a7909ba61597876ab6e4d4beb3d6
@@ -1748,7 +1748,7 @@ F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912ade
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test b3b558639f7a103e095713ad0f57fec1fce1b7d60c8054df5789b98f7547a395
+F test/zipfile.test daab4c9be151934fd6bbc71a0d2520351efc61719eabbf545920f953883d172a
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 329cbb372d4d77f774f01a87d104c40ef42d713afbe76195b65f5ca205c5ea7b
-R d028a5f013795e21f082346da52e7329
+P fccfb8a9ed3c1df9f23762bb8df6fdf36a21118899e3fae41f451169a5f2c08e
+R 0fec610fab0a45c2e8f5600ef1cab28e
 U drh
-Z 50186217141264fb7bf8cc1df4e95908
+Z aed8df93d89c2e0fad2b3edf29a44f34
