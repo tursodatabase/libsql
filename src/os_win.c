@@ -3274,8 +3274,10 @@ static int winLock(sqlite3_file *id, int locktype){
   if( pFile->locktype==NO_LOCK
    || (locktype==EXCLUSIVE_LOCK && pFile->locktype<=RESERVED_LOCK)
   ){
+    DWORD dwFlags = SQLITE_LOCKFILE_FLAGS;
     int cnt = 3;
-    while( cnt-->0 && (res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
+    if( osIsNT() && locktype!=EXCLUSIVE_LOCK ) dwFlags=SQLITE_LOCKFILEEX_FLAGS;
+    while( cnt-->0 && (res = winLockFile(&pFile->h, dwFlags,
                                          PENDING_BYTE, 0, 1, 0))==0 ){
       /* Try 3 times to get the pending lock.  This is needed to work
       ** around problems caused by indexing and/or anti-virus software on
