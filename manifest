@@ -1,5 +1,5 @@
-C Change\san\sunreachable\stestcase()\sinto\san\sassert()
-D 2019-12-18T21:22:40.803
+C Modify\sthe\sparse.sql\soutput\sfile\sfrom\sLemon\sso\sthat\sthe\sRULE\stable\scontains\na\scolumn\swith\sthe\scomplete\stext\sof\sthe\srule.
+D 2019-12-19T12:29:31.617
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1771,7 +1771,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c 9ec344d29cbeb03fdc0fce668eedfb7495792170de933adf95cf8d6904a166ad
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 50f9d1896ba141bffca6929317f54f63709d00d3ac82bc5c189d9c9c0a83e832
+F tool/lemon.c ac63a7a2915c2556a855ba2d069cdfc897304cdf9d07a20e2ce470120829acfe
 F tool/lempar.c e8899b28488f060d0ff931539ea6311b16b22dce068c086c788a06d5e8d01ab7
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 862974312edf00e9d1068115d1a39b7235b7db68b6d86b81d38a12f025a4748e
-R 32a38e4aaf6284494d646d127a601f97
+P 062e00c4d7e30155299339eaefe6cbe01953894baebf0af6d7ab3295b7436eb7
+R 8d6cf8d0b9d8e79c2a551a0656e77e30
 U drh
-Z f00e4fb5b7f3ab87734a306c50a18bfb
+Z bb2d2b67b4a54af65815a14c2eb7c3ad

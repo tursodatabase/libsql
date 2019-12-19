@@ -4222,7 +4222,8 @@ void ReportTable(
     fprintf(sql,
       "CREATE TABLE rule(\n"
       "  ruleid INTEGER PRIMARY KEY,\n"
-      "  lhs INTEGER REFERENCES symbol(id)\n"
+      "  lhs INTEGER REFERENCES symbol(id),\n"
+      "  txt TEXT\n"
       ");\n"
       "CREATE TABLE rulerhs(\n"
       "  ruleid INTEGER REFERENCES rule(ruleid),\n"
@@ -4232,13 +4233,12 @@ void ReportTable(
     );
     for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
       assert( i==rp->iRule );
-      fprintf(sql, "-- ");
-      writeRuleText(sql, rp);
-      fprintf(sql, "\n");
       fprintf(sql,
-        "INSERT INTO rule(ruleid,lhs)VALUES(%d,%d);\n",
+        "INSERT INTO rule(ruleid,lhs)VALUES(%d,%d,'",
         rp->iRule, rp->lhs->index
       );
+      writeRuleText(sql, rp);
+      fprintf(sql,"');\n");
       for(j=0; j<rp->nrhs; j++){
         struct symbol *sp = rp->rhs[j];
         if( sp->type!=MULTITERMINAL ){
