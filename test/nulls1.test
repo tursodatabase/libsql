@@ -248,4 +248,11 @@ do_execsql_test 7.0 {
   SELECT * FROM t71 ORDER BY a DESC NULLS FIRST;
 }
 
+# 2019-12-18 gramfuzz1 find
+# NULLS LAST not allows on an INTEGER PRIMARY KEY.
+#
+do_catchsql_test 8.0 {
+  CREATE TABLE t80(a, b INTEGER, PRIMARY KEY(b NULLS LAST)) WITHOUT ROWID;
+} {1 {unsupported use of NULLS LAST}}
+
 finish_test

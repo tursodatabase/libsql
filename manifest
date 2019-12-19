@@ -1,5 +1,5 @@
-C Fix\sthe\szipfile\sextension\sso\sthat\sINSERT\sworks\seven\sif\sthe\spathname\sof\nthe\sfile\sbeing\sinserted\sis\sa\sNULL.\s\sBug\sdiscovered\sby\sthe\nYongheng\sand\sRui\sfuzzer.
-D 2019-12-19T15:15:40.450
+C Detect\sthe\sinvalid\suse\sof\sNULLS\sLAST\son\san\sINTEGER\sPRIMARY\sKEY\sdefinition\nof\sa\sWITHOUT\sROWID\stable.
+D 2019-12-19T17:42:27.314
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -471,7 +471,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c d22498af716953400e314d2d98d1dac3ea5c3b01e0fd243ef9e9b132c74114ec
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 17f97c9917e84b978f9ec549518f8ec90151c659c3e37058276edb7659c36c44
+F src/build.c 358e894867394839679982d2fe320fb44fd17c94a87feb898aa066c15a8066ea
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1190,7 +1190,7 @@ F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
-F test/nulls1.test a325e2f2148fb5c82cd5f734e7b60f5fa28f9394c318edf3140f36f57d39930a
+F test/nulls1.test c8fc1b223f06e60007e0cd3e498ccb10195cf75a18fc3312508b3cf679ecb806
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fccfb8a9ed3c1df9f23762bb8df6fdf36a21118899e3fae41f451169a5f2c08e
-R 0fec610fab0a45c2e8f5600ef1cab28e
+P a80f84b511231204658304226de3e075a55afc2e3f39ac063716f7a57f585c06
+R 7a95b86f1a40201b7706c8c6219ee188
 U drh
-Z aed8df93d89c2e0fad2b3edf29a44f34
+Z a9ed89712b19f96611f174486447a3a5

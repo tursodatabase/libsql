@@ -1547,6 +1547,7 @@ void sqlite3AddPrimaryKey(
     assert( autoInc==0 || autoInc==1 );
     pTab->tabFlags |= autoInc*TF_Autoincrement;
     if( pList ) pParse->iPkSortOrder = pList->a[0].sortFlags;
+    (void)sqlite3HasExplicitNulls(pParse, pList);
   }else if( autoInc ){
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
