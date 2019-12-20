@@ -738,7 +738,7 @@ int sqlite3Fts5StorageIndexInsert(
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
     ctx.szCol = 0;
     if( pConfig->abUnindexed[ctx.iCol]==0 ){
-      const char *zText = sqlite3_value_text(apVal[ctx.iCol+2]);
+      const char *zText = (const char*)sqlite3_value_text(apVal[ctx.iCol+2]);
       int nText = sqlite3_value_bytes(apVal[ctx.iCol+2]);
       rc = sqlite3Fts5Tokenize(pConfig, 
           FTS5_TOKENIZE_DOCUMENT,

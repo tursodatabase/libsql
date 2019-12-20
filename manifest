@@ -1,5 +1,5 @@
-C Ensure\sfts5\sconsistently\scalls\ssqlite3_value_text()\sbefore\ssqlite3_value_bytes().\sThis\smatters\swhen\sstoring\sblobs\sin\sfts5\stables\swithin\sutf-16\sdatabases.\sFix\sfor\s[cf36cb4e02].
-D 2019-12-20T13:24:11.254
+C Fix\sharmless\scompiler\swarnings.
+D 2019-12-20T14:08:34.492
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -81,7 +81,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c a05938725571651cc9bedc63a52ede4b39277fec17884c8ff6011dab2ff78c75
+F ext/fts3/fts3.c 41acb66ad7bf74c03578efb4441204acfc2dde50dbe008b778d57273fc00e3c6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h f091030b976045e7df91af2337935952b477cdbd9f48058c44c965684484cb50
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
@@ -118,7 +118,7 @@ F ext/fts5/fts5_expr.c 2be456484786333d559dc2987a00f2750981fab91d52db8452a804627
 F ext/fts5/fts5_hash.c 1cc0095646f5f3b46721aa112fb4f9bf29ae175cb5338f89dcec66ed97acfe75
 F ext/fts5/fts5_index.c 99b77ae1f503978ca76985bcfff7345c822aed8bbaa8edb3747f804f614685b5
 F ext/fts5/fts5_main.c 9db1f173d299466aeff89bd949fb1eb0a181265726fb56f11e07ea292dcc9a73
-F ext/fts5/fts5_storage.c 87cd8365614533537f237c2c12bc47333f6287cc3b4c14ce0cfec831f186180c
+F ext/fts5/fts5_storage.c 517aae1a606c33a5197dfda53bf9eef194e3636818a4cf52324bf91bf70dcd47
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c f96c6e193c466711d6d7828d5f190407fe7ab897062d371426dd3036f01258e7
@@ -461,7 +461,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c ca6d2329c9f7a099b3842d301847be462520d1d36ffeea7d8816d8975fe7e9e1
+F src/alter.c ed16ff55ca0dfe4c1157c0e19557015c48cfa00acfb65de90aea049df8ee2e5e
 F src/analyze.c b3ceec3fc052df8a96ca8a8c858d455dc5029ba681b4be98bb5c5a9162cfa58c
 F src/attach.c b30c44333d55a68c0a12920b5b9d40b254cbd3d4509bda77417209eeed8b3d80
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 01ca865f31c0c817ede7f357401ef76cf311ae662397908464f53e1c147f5b6b
-R 00fcb0f09947c903a1a870a5269ba6c2
-U dan
-Z 3880b4023bbe5b3af0421eab38686cc0
+P c16305eba0eb14368f2631b9a82b7eb4483c93f3b31257ee7c33f9b00c344379
+R 72d5aa86f1f7f18348aeb1b944e4ef0b
+U drh
+Z fe665bddd0655063a4499d0272db49cc
