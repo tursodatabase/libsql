@@ -218,12 +218,19 @@ do_execsql_test 7.0 {
   INSERT INTO vt0 VALUES (x'46f0');
   SELECT quote(c0) FROM vt0;
 } {X'46F0'}
-
 do_execsql_test 7.1 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+do_execsql_test 7.2 {
+  INSERT INTO vt0(vt0) VALUES('rebuild');
+}
+do_execsql_test 7.3 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+do_execsql_test 7.4 {
   UPDATE vt0 SET c0='';
 }
-
-do_execsql_test 7.2 {
+do_execsql_test 7.5 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
 
