@@ -1,5 +1,5 @@
-C Improved\sassert()\sstatements\son\sthe\sOP_Column\sopcode.
-D 2019-12-20T14:37:56.333
+C When\scomputing\sdependencies\son\sWHERE-clause\sterms,\sbe\ssure\sto\stake\sinto\naccount\sthe\sFILTER\sclause\sof\saggregate\sfunctions.\s\sProblem\sreported\sby\nManuel\sRigger.
+D 2019-12-20T15:35:56.928
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c c51ebd505c8417285ca1db8f94933a12224bf636ad93f27d821c07f93d59c035
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c 7efa97f4dc2f95548611deba68f0210ab357725899a9bae5391a525e48271875
-F src/whereexpr.c 39b6a538804c6e1248c22b33e09d00f89ae6a099c849c4d841ce3995562287b4
+F src/whereexpr.c 989235ee5fade9663a01d9443763a82ba5a72619bf3edda67ebd043936d33575
 F src/window.c da010455914c81037dcb5b0c6f4273f8a32c94567865c46a60060b937b018a96
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1713,7 +1713,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 6db2c38a0830af8554936a563df92e67962cc379253854cd10d0c3cf0a3120c4
+F test/window1.test 29efd3d6c18ea920ae6493f26cae3fc5724912ee049fd3d8eb61753660052f70
 F test/window2.tcl 66db96fd9fd202bc31ee7f8ce7904cb469564864cff3f74e009bfef8102333f4
 F test/window2.test af2a001ded703bb8f2474fb0edfef170d5aba00f5c1f2aa9f65935b5da13df90
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 01aeeb5c4c70a0f19651448e94ad5c6810cab3d6957b5bc7a9b4b8e0b887f3de
-R 8c8e8e6b8d389d9f08b357f1209875c4
+P c538601e4c979ee59f18d19e6eb6296cebfa580fb029a18d5a3f0dd9393acb75
+R 93922e08170562eb45b7f86f942f7f77
 U drh
-Z 5d106434f9ac2c247c34a9b8c32a6030
+Z da9c8af8c1fef7d6d29a0c0ec9b2e494
