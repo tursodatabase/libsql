@@ -442,5 +442,23 @@ do_execsql_test gencol1-16.40 {
   SELECT c0, c1, c2 FROM t0 LEFT JOIN t1 ON c0=c1;
 } {0 {} {}}
 
+# 2019-12-20 ticket e0a8120553f4b082
+# Generated columns with REAL affinity need to have an OP_RealAffinity
+# opcode applied, even when the column value is extracted from an index.
+#
+reset_db
+do_execsql_test gencol1-17.10 {
+  CREATE TABLE t0(c0 REAL AS(1) UNIQUE, c1 INT);
+  INSERT INTO t0 VALUES('');
+  SELECT quote(c0), quote(c1) from t0;
+} {1.0 ''}
+do_execsql_test gencol1-17.20 {
+  SELECT *, (1 BETWEEN CAST(t0.c0 AS TEXT) AND t0.c0) FROM t0;
+} {1.0 {} 0}
+do_execsql_test gencol1-17.30 {
+  SELECT * FROM t0 WHERE (1 BETWEEN CAST(t0.c0 AS TEXT) AND t0.c0);
+} {}
+
+
 
 finish_test

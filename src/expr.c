@@ -3609,6 +3609,7 @@ expr_code_doover:
     }
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
+      int iReg;
       if( ExprHasProperty(pExpr, EP_FixedCol) ){
         /* This COLUMN expression is really a constant due to WHERE clause
         ** constraints, and that constant is coded by the pExpr->pLeft
@@ -3616,8 +3617,8 @@ expr_code_doover:
         ** datatype by applying the Affinity of the table column to the
         ** constant.
         */
-        int iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
         int aff;
+        iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
         if( pExpr->y.pTab ){
           aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         }else{
@@ -3685,9 +3686,13 @@ expr_code_doover:
           iTab = pParse->iSelfTab - 1;
         }
       }
-      return sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
+      iReg = sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
                                pExpr->iColumn, iTab, target,
                                pExpr->op2);
+      if( pExpr->y.pTab==0 && pExpr->affExpr==SQLITE_AFF_REAL ){
+        sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
+      }
+      return iReg;
     }
     case TK_INTEGER: {
       codeInteger(pParse, pExpr, 0, target);
