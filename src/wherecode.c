@@ -1190,7 +1190,17 @@ static void whereIndexExprTrans(
       x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
       w.xExprCallback = whereIndexExprTransNode;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    }else if( iRef>=0 && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0 ){
+    }else if( iRef>=0
+       && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0
+       && (pTab->aCol[iRef].zColl==0
+           || sqlite3StrICmp(pTab->aCol[iRef].zColl, sqlite3StrBINARY)==0)
+    ){
+      /* Check to see if there are direct references to generated columns
+      ** that are contained in the index.  Pulling the generated column
+      ** out of the index is an optimization only - the main table is always
+      ** available if the index cannot be used.  To avoid unnecessary
+      ** complication, omit this optimization if the collating sequence for
+      ** the column is non-standard */
       x.iTabCol = iRef;
       w.xExprCallback = whereIndexExprTransColumn;
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
