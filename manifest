@@ -1,5 +1,5 @@
-C Fix\stwo\smore\scases\sin\sfts5\swhere\ssqlite3_value_bytes()\swas\sbeing\scalled\sbefore\ssqlite3_value_text().\sFix\sfor\se431c355.
-D 2019-12-20T19:41:01.504
+C Fix\sa\sbad\sinteraction\sbetween\sRBU\sand\s[df51ae19].
+D 2019-12-20T20:03:21.799
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -366,7 +366,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c f3a3e09f575157052813be667d6ab3b54f47fb02e6e1c9f767ad7bb8f1fb90b3
+F ext/rbu/sqlite3rbu.c 4e9a59aa80c03350a0ca5faa454dec894906537fbd98b3231604cc33baf174c8
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -514,7 +514,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 3e0e519f27683083a465e948e056759a8340728c222b5c394a135e0c57c220bc
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 30f20d2263d3717f41a0d9a40f7a3d0f48ce1cfab461b875c6187ead9d6ad1c7
+F src/pager.c d8909ace5b55a5bec49f1f1f1e67e7ac7370767507588462b723594350e2aac9
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -1852,7 +1852,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e62d1791f428b7a9bb14a59483f12d8ee08afbf4061a5e3be8f64787444301e7
-R 83476bba8ae2cf801d14b711beef14b7
+P a1ba9a37d7a68a6d31f8197c6350589ebe6a12f4e3c193a178dd7ead8bcd565a
+R de245bd90e2a11fcca5b93be06aab877
+T +closed 8394c626c45a2b915ae854408ff91a09a1315ee65a06c7dcad11f48fda317a6b
 U dan
-Z cc23e8046b671a0f1fdecd77a8b35986
+Z 51144caceb2c2758c3978f6b539555d7

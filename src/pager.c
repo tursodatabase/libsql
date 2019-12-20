@@ -4813,7 +4813,7 @@ int sqlite3PagerOpen(
       z += strlen(z)+1;
       nUri++;
     }
-    nUriByte = (int)(&z[2] - zUri);
+    nUriByte = (int)(&z[1] - zUri);
     assert( nUriByte>=1 );
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by

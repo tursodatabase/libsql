@@ -4959,7 +4959,7 @@ static const char *rbuMainToWal(const char *zName, int flags){
   }else{
     while( *z==0 ) z++;
   }
-  z += (n + 8 + 1);
+  z += (n + 8 + 2);
   return z;
 }
 
