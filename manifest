@@ -1,5 +1,5 @@
-C When\scomputing\sdependencies\son\sWHERE-clause\sterms,\sbe\ssure\sto\stake\sinto\naccount\sthe\sFILTER\sclause\sof\saggregate\sfunctions.\s\sProblem\sreported\sby\nManuel\sRigger.
-D 2019-12-20T15:35:56.928
+C Debugging\simprovement:\swhen\stracing\sthe\sVDBE,\soutput\sthe\sregister\svalue\sfor\nOP_Cast\safter\sthe\scast\sis\scompleted.
+D 2019-12-20T17:25:10.286
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c d25f832beebc6d6ff8b43cbf1bf4365956f093bf4d0d23b3d013fb9508651b53
+F src/vdbe.c c1e35ead7ef20b5cfedd30c45b9b7eceb7fa88145bf46c11c528775318e78950
 F src/vdbe.h fdbc0a11e5768a702b46ce63286f60e22e71351a29bd98b3666405e1fccc7802
 F src/vdbeInt.h bd589b8b7273286858950717e0e1ec5c88b18af45079a3366dc1371865cea704
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c538601e4c979ee59f18d19e6eb6296cebfa580fb029a18d5a3f0dd9393acb75
-R 93922e08170562eb45b7f86f942f7f77
+P 3cc2b5709e66ef605c3b85ed13ae6cc9c3090e864ebc18859db36284b8f715b6
+R 9e43484acafe6a0d962660ec9bb40f72
 U drh
-Z da9c8af8c1fef7d6d29a0c0ec9b2e494
+Z 4ad802d8ad13720d0d254b6c0f8e1806

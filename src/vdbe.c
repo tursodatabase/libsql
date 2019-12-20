@@ -1869,6 +1869,7 @@ case OP_Cast: {                  /* in1 */
   sqlite3VdbeMemCast(pIn1, pOp->p2, encoding);
   UPDATE_MAX_BLOBSIZE(pIn1);
   if( rc ) goto abort_due_to_error;
+  REGISTER_TRACE(pOp->p1, pIn1);
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
