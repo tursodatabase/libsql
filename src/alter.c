@@ -1527,8 +1527,11 @@ static void renameTableFunc(
             assert( pSelect->selFlags & SF_View );
             pSelect->selFlags &= ~SF_View;
             sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
-            if( sParse.nErr ) rc = sParse.rc;
-            sqlite3WalkSelect(&sWalker, pTab->pSelect);
+            if( sParse.nErr ){
+              rc = sParse.rc;
+            }else{
+              sqlite3WalkSelect(&sWalker, pTab->pSelect);
+            }
           }
         }else{
           /* Modify any FK definitions to point to the new table. */
