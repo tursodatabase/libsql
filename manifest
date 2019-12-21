@@ -1,5 +1,5 @@
-C When\screating\sa\snew\svirtual\stable,\sensure\sthat\sthe\sOP_ParseSchema\sopcode\nprocesses\sthe\scorrect\sentry\sin\sthe\ssqlite_master\stable\seven\sif\sthere\sis\na\ssecond\sentry\swith\sthe\ssame\sname\sand\stable\svalues\sdue\sto\sdatabase\scorruption\nand\sthe\suse\sof\swritable_schema=ON.\s\sDbsqlfuzz\sfind.
-D 2019-12-21T19:37:09.876
+C Fix\sa\sspurious\sreport\sof\scorruption\sfrom\sthe\sfts3/4\sintegrity-check\striggered\sby\susing\sthe\slanguageid\soption.
+D 2019-12-21T20:43:34.290
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -81,7 +81,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 41acb66ad7bf74c03578efb4441204acfc2dde50dbe008b778d57273fc00e3c6
+F ext/fts3/fts3.c 52c09f459364732b5df73eff0373f991fd6af8f0f60fcdbb4b649205e88a7568
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h f091030b976045e7df91af2337935952b477cdbd9f48058c44c965684484cb50
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
@@ -981,7 +981,7 @@ F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
 F test/fts4growth.test 289833c34ad45a5e6e6133b53b6a71647231fb89d36ddcb8d9c87211b6721d7f
 F test/fts4growth2.test 13ad4e76451af6e6906c95cdc725d01b00044269
 F test/fts4incr.test 4e353a0bd886ea984e56fce9e77724fc923b8d0d
-F test/fts4langid.test 2168ba330af34f8a1c8832de0aab4c4b6fa195a16419c9c0c8aad59ceb6ff714
+F test/fts4langid.test 89e623218935507bca69d076ca254a7a8969dfc681c282b6374feaea8c7de784
 F test/fts4lastrowid.test 185835895948d5325c7710649824042373b2203149abe8024a9319d25234dfd7
 F test/fts4merge.test e2b2ec21e287d54ec09824ccfb41e66896eeca568fc818ba0e0eb2efd94c35d2
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea721b34477ab8b49d182352c4bc198245933b850e9b6248b4f97600e80bb44b
-R 1ee05353a832e121d716fae7817e6737
-U drh
-Z c87c6f8bffb8cbc230edd05dbc19e5de
+P 4dbb6e1cb094f3428c74ea8bdd86ab63341fecce978a062968ca01423f382e90
+R b83529402a1382deba0ebd29b205e608
+U dan
+Z f272e387242ffee6d2c1dbe670e8f4ec
