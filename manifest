@@ -1,5 +1,5 @@
-C When\sa\scorrupt\sschema\sis\sloaded\susing\swritable_schema=ON,\sthe\sCHECK\sconstraints\n(or\sother\sexpressions\sin\sthe\stable\sdefinition)\smight\snot\sbe\sfully\sresolved.\nEnsure\sthat\sthe\scode\sgenerator\scan\sdeal\swith\sthis\sif\sthe\stable\sis\ssubsequently\nused\sin\sa\sDML\sstatement.\s\sdbsqlfuzz\sfind.
-D 2019-12-21T14:09:30.906
+C When\screating\sa\snew\svirtual\stable,\sensure\sthat\sthe\sOP_ParseSchema\sopcode\nprocesses\sthe\scorrect\sentry\sin\sthe\ssqlite_master\stable\seven\sif\sthere\sis\na\ssecond\sentry\swith\sthe\ssame\sname\sand\stable\svalues\sdue\sto\sdatabase\scorruption\nand\sthe\suse\sof\swritable_schema=ON.\s\sDbsqlfuzz\sfind.
+D 2019-12-21T19:37:09.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b
 F src/vdbemem.c 2eb00a4d1a7d2c97510a4d1ccaf4e12c9143f2ced1c6b96b5eddc372183c9121
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vtab.c 2736f853a1bd270581f76bae8e5d2e840b6258f3d85c1fa382e9454b3c414d1d
+F src/vtab.c a2fead3e97fca54fcf3f3db784e17c9ee2d39a0c5ad323e9d514855106300a86
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
@@ -1017,7 +1017,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db e7a86fd83dda151d160445d542e32e5c6019c541b3a74c2a525b6ac640639711
-F test/fuzzdata8.db 34eb781c21f70c47501167b184a48a3fa8ff05ce9bc41b93dc48721e553c3c5e
+F test/fuzzdata8.db 0e29cbd9b2a34aadd76fb5be963e810f61545487ccb44503e5335acb1634338e
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 056bb8dcbdc45989c5c6e86d2966200062e3c01c382ec52aae37c828104b4496
-R 3d66cf80146322364a240ad41d3a3004
+P ea721b34477ab8b49d182352c4bc198245933b850e9b6248b4f97600e80bb44b
+R 1ee05353a832e121d716fae7817e6737
 U drh
-Z d7946e0fe8abc0809f4706cc432866a0
+Z c87c6f8bffb8cbc230edd05dbc19e5de
