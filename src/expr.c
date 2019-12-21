@@ -3649,9 +3649,14 @@ expr_code_doover:
           Table *pTab = pExpr->y.pTab;
           int iSrc;
           int iCol = pExpr->iColumn;
+          if( pTab==0 ){
+            assert( CORRUPT_DB );
+            sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+            return target;
+          }
           assert( pTab!=0 );
           assert( iCol>=XN_ROWID );
-          assert( iCol<pExpr->y.pTab->nCol );
+          assert( iCol<pTab->nCol );
           if( iCol<0 ){
             return -1-pParse->iSelfTab;
           }
@@ -3717,9 +3722,10 @@ expr_code_doover:
     default: {
       /* Make NULL the default case so that if a bug causes an illegal
       ** Expr node to be passed into this function, it will be handled
-      ** sanely and not crash.  But keep an assert() to bring the problem
-      ** to the attention of the developers. */
-      assert( op==TK_NULL );
+      ** sanely and not crash.  This comes up, for example, if a corrupt
+      ** database schema is loaded using PRAGMA writable_schema=ON. */
+      assert( op==TK_NULL || CORRUPT_DB );
+      testcase( op!=TK_NULL );
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       return target;
     }
