@@ -1145,6 +1145,9 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
     pExpr->iTable = pX->iIdxCur;
     pExpr->iColumn = pX->iIdxCol;
     pExpr->y.pTab = 0;
+    testcase( ExprHasProperty(pExpr, EP_Skip) );
+    testcase( ExprHasProperty(pExpr, EP_Unlikely) );
+    ExprClearProperty(pExpr, EP_Skip|EP_Unlikely);
     return WRC_Prune;
   }else{
     return WRC_Continue;
