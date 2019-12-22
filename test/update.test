@@ -656,6 +656,20 @@ do_execsql_test update-17.10 {
   SELECT * FROM t1;
 } {2 3}
 
-
+# 2019-12-22 ticket 5ad2aa6921faa1ee
+# Make a hard-copy of values that need to be run through OP_RealAffinity
+# rather than a soft-copy.  This is not strictly necessary, but it avoids
+# a memory-accounting assert().
+#
+reset_db
+do_execsql_test update-18.10 {
+  PRAGMA encoding = 'UTF16';
+  CREATE TABLE t0(c0 REAL, c1);
+  INSERT INTO t0(c0,c1) VALUES('xyz',11),('uvw',22);
+  CREATE INDEX i0 ON t0(c1) WHERE c0 GLOB 3;
+  CREATE INDEX i1 ON t0(c0,c1) WHERE typeof(c0)='text' AND typeof(c1)='integer';
+  UPDATE t0 SET c1=345;
+  SELECT * FROM t0;
+} {xyz 345 uvw 345}
 
 finish_test

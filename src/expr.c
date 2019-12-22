@@ -3674,7 +3674,7 @@ expr_code_doover:
           }else
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
           if( pCol->affinity==SQLITE_AFF_REAL ){
-            sqlite3VdbeAddOp2(v, OP_SCopy, iSrc, target);
+            sqlite3VdbeAddOp2(v, OP_Copy, iSrc, target);
             sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
             return target;
           }else{
