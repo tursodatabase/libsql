@@ -415,7 +415,25 @@ static Expr *removeUnindexableInClauseTerms(
   Expr *pX              /* The IN expression to be reduced */
 ){
   sqlite3 *db = pParse->db;
-  Expr *pNew = sqlite3ExprDup(db, pX, 0);
+  Expr *pNew;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  /* The SELECT statement at pX->x.pSelect has already been resolved. This
+  ** means that its window functions have already been identified and 
+  ** linked into the Select.pWin list. However, if there are multiple 
+  ** window functions and they do not all use the same window frame, only
+  ** those that use the same window frame as the first resolved are listed
+  ** in Select.pWin. Any others are delegated to sub-selects created by the 
+  ** call to sqlite3WindowRewrite() made when coding the SELECT statement.
+  ** But - sqlite3WindowRewrite() is a no-op if Select.pWin==0. And if 
+  ** removing the unindexable terms happens to remove all window functions
+  ** in the Select.pWin list, then Select.pWin ends up set to NULL - meaning
+  ** that the other window functions are never processed. To work around
+  ** this, ensure that sqlite3WindowRewrite() has been called to create the
+  ** required sub-selects before the unindexable terms are removed. See
+  ** ticket #f00d096ca.  */
+  if( sqlite3WindowRewrite(pParse, pX->x.pSelect) ) return 0;
+#endif
+  pNew = sqlite3ExprDup(db, pX, 0);
   if( db->mallocFailed==0 ){
     ExprList *pOrigRhs = pNew->x.pSelect->pEList;  /* Original unmodified RHS */
     ExprList *pOrigLhs = pNew->pLeft->x.pList;     /* Original unmodified LHS */

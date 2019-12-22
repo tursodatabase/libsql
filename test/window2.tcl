@@ -448,6 +448,21 @@ execsql_float_test 5.1 {
   SELECT avg(x) OVER (ORDER BY y) AS z FROM t1 ORDER BY z;
 }
 
+==========
+
+execsql_test 6.0 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INTEGER UNIQUE);
+  INSERT INTO t0 VALUES(0);
+}
+execsql_test 6.1 {
+  SELECT DENSE_RANK() OVER(), LAG(0) OVER() FROM t0;
+}
+execsql_test 6.2 {
+  SELECT * FROM t0 WHERE 
+      (0, t0.c0) IN (SELECT DENSE_RANK() OVER(), LAG(0) OVER() FROM t0);
+} 
+
 finish_test
 
 

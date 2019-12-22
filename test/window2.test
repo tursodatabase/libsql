@@ -930,4 +930,21 @@ do_test 5.1 {
   set {} {}
 } {}
 
+#==========================================================================
+
+do_execsql_test 6.0 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INTEGER UNIQUE);
+  INSERT INTO t0 VALUES(0);
+} {}
+
+do_execsql_test 6.1 {
+  SELECT DENSE_RANK() OVER(), LAG(0) OVER() FROM t0;
+} {1 {}}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t0 WHERE 
+      (0, t0.c0) IN (SELECT DENSE_RANK() OVER(), LAG(0) OVER() FROM t0);
+} {}
+
 finish_test
