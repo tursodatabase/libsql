@@ -1,5 +1,5 @@
-C Fix\sa\sspurious\sreport\sof\scorruption\sfrom\sthe\sfts3/4\sintegrity-check\striggered\sby\susing\sthe\slanguageid\soption.
-D 2019-12-21T20:43:34.290
+C Fix\s"PRAGMA\sdata_version"\sso\sthat\sit\sworks\sthe\ssame\sway\swith\slocking_mode=PERSIST\sand\sjournal_mode=PERSIST\sconfigured.\sFix\sfor\s7a458c2a5f.
+D 2019-12-22T14:29:55.590
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -182,7 +182,7 @@ F ext/fts5/test/fts5first.test 3fcf2365c00a15fc9704233674789a3b95131d12de18a9b99
 F ext/fts5/test/fts5full.test e1701a112354e0ff9a1fdffb0c940c576530c33732ee20ac5e8361777070d717
 F ext/fts5/test/fts5fuzz1.test 238d8c45f3b81342aa384de3e581ff2fa330bf922a7b69e484bbc06051a1080e
 F ext/fts5/test/fts5hash.test a4cf51acad99bfc43c16fb74f9d22495dc221ae0701fc5e908ca963a9b26a02b
-F ext/fts5/test/fts5integrity.test 1bcd3c04c5ad6bc0370278281682be5d51a0f4522ef5b60b005fa1c0c7b1b433
+F ext/fts5/test/fts5integrity.test c354fd693d9fb14018b33113aa2331265d915d51f67067a2cfa7873894c9ecf0
 F ext/fts5/test/fts5interrupt.test 09613247b273a99889808ef852898177e671406fe71fdde7ea00e78ea283d227
 F ext/fts5/test/fts5lastrowid.test be98fe3e03235296585b72daad7aed5717ba0062bae5e5c18dd6e04e194c6b28
 F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc2782680740513c4d1fc114b43d4ad
@@ -514,7 +514,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 3e0e519f27683083a465e948e056759a8340728c222b5c394a135e0c57c220bc
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c d8909ace5b55a5bec49f1f1f1e67e7ac7370767507588462b723594350e2aac9
+F src/pager.c 7e371809d86b3f60d523396612b8fde4c8d3529bea90b04fad0f6be2703159a4
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -1229,7 +1229,7 @@ F test/permutations.test 8587800fe1a0eb01456a3f4500b821e54e3347e78acf11dbf05f499
 F test/pg_common.tcl 222a1bad1c41c308fa366313cd7b51b3be7e9b21c8736a421b974ac941693b54
 F test/pragma.test 59becdfd720b80d463ab750f69f7118fde10dfd556aa5d554f3bf6b7e5ea7533
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
-F test/pragma3.test 8300aa9c63cff1027006ca34bf413a148abbd6dcd471fa9a1ded322fe18c0df9
+F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
 F test/pragma4.test 10c624e45a83c0096a82a7579a5ff658542391d3b77355192da6572c8c17c00b
 F test/pragma5.test 2be6a44c91e8585ccb4c71c5f221ccebe0692a49557215a912916ed391188959
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4dbb6e1cb094f3428c74ea8bdd86ab63341fecce978a062968ca01423f382e90
-R b83529402a1382deba0ebd29b205e608
+P 70815e273f511481c310dc33b3b49079901d891078fad49b663fbce06c77ecc2
+R 254486cb7cd7eb5a4fcc43372628c39f
 U dan
-Z f272e387242ffee6d2c1dbe670e8f4ec
+Z 082036cd560f1b9b274ae0feb81ed118
