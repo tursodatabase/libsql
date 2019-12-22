@@ -1,5 +1,5 @@
-C Fix\sto\sthe\soptimization\sof\scheck-in\s[a47efb7c8520a011]\sthat\sreads\sthe\svalues\nof\sexpressions\sused\sin\san\sindex-on-expression\sdirectly\sfrom\sthe\sindex\srather\nthan\srecomputing\sthe\svalue.\s\sIf\sthe\sexpression\shas\sa\stop-level\sCOLLATE\sor\nunlikely()\soperator,\sbe\ssure\sto\sclear\sthe\scorresponding\sflags\sprior\sto\nconverting\sit\sinto\sa\sTK_COLUMN\sexpression.\s\sFailure\sto\sdo\sthis\sis\smost\slikely\nharmless\sin\sproduction,\sbut\smight\scause\san\sassertion\sfault\sin\sdebugging\sbuilds.\nTicket\s[b0cb8aff561a6dcd].\s\sTest\scases\sin\sTH3.
-D 2019-12-22T18:55:04.170
+C In\sthe\sWHERE\sclause\sdebugging\soutput\s(the\s.wheretrace\soutput)\sshow\sthe\nparent\sindex\sof\sany\sWhereTerm\sthat\sis\sa\schild.
+D 2019-12-22T19:41:12.776
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c c51ebd505c8417285ca1db8f94933a12224bf636ad93f27d821c07f93d59c035
+F src/where.c 25653002490b093b9b752f30ad92b307464b099ad081c4d2fb524719427403f2
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c c4cb79b7c93d0f4ec93d9d84d10deb61053c8563c12b244292c14f9ad1032093
 F src/whereexpr.c 989235ee5fade9663a01d9443763a82ba5a72619bf3edda67ebd043936d33575
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ddb17d92df194337a103c561ef46ced00db5e67e4551e82de7cb5ad7f457dd5f
-R 19b03f420b018ba3e702a8b1fc6e710f
+P 56539e1c132632c075efc217ad5951a35e4459605ac128914aec3a7be1e25718
+R 45007407428301c1a58df1c2c813a372
 U drh
-Z 7a13e581226b652e9598d2193dc4abae
+Z 0ac03f55dc296429a8d1ce916ad4c404
