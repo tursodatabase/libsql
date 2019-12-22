@@ -988,4 +988,18 @@ do_execsql_test join-22.10 {
   SELECT DISTINCT c FROM t0 LEFT JOIN (SELECT a+1 AS c FROM t0) ORDER BY c ;
 } {11}
 
+# 2019-12-22 ticket 7929c1efb2d67e98
+#
+reset_db
+do_execsql_test join-23.10 {
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES(123);
+  CREATE VIEW v0(c0) AS SELECT 0 GROUP BY 1;
+  SELECT t0.c0, v0.c0, vt0.name
+   FROM v0, t0 LEFT JOIN pragma_table_info('t0') AS vt0
+     ON vt0.name LIKE 'c0'
+   WHERE v0.c0 == 0;
+} {123 0 c0}
+
+
 finish_test

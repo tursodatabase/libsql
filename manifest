@@ -1,5 +1,5 @@
-C In\sthe\sWHERE\sclause\sdebugging\soutput\s(the\s.wheretrace\soutput)\sshow\sthe\nparent\sindex\sof\sany\sWhereTerm\sthat\sis\sa\schild.
-D 2019-12-22T19:41:12.776
+C When\sconstructing\sthe\svirtual\sMATCH\sterm\sof\sthe\sWHERE\sclause\sfor\sa\svirtual\ntable\sthat\sis\sin\sa\sLEFT\sJOIN,\sbe\ssure\sto\sset\sthe\scorrect\sExpr.iRightJoinTable\nvalue.\s\sThis\svalue\sdoes\snot\sappear\sto\sever\sbe\sused,\sexcept\sinside\sof\sa\ssingle\nassert().\s\sBut\sit\sis\sgood\sto\sset\sit\scorrectly,\snevertheless.\s\sThis\sfixes\nticket\s[7929c1efb2d67e98],\swhich\sas\sfar\sas\sI\scan\stell\sis\scompletely\sharmless.
+D 2019-12-22T20:03:29.348
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 25653002490b093b9b752f30ad92b307464b099ad081c4d2fb524719427403f2
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c c4cb79b7c93d0f4ec93d9d84d10deb61053c8563c12b244292c14f9ad1032093
-F src/whereexpr.c 989235ee5fade9663a01d9443763a82ba5a72619bf3edda67ebd043936d33575
+F src/whereexpr.c 3d0ff098154bbd96d8e0982b71b9ebae4017d01f409ff518c9417e9607b69689
 F src/window.c da010455914c81037dcb5b0c6f4273f8a32c94567865c46a60060b937b018a96
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1084,7 +1084,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 75327829744e65cc8700e69340b8e6c192e10e39dfae7ccb0e970d3c4f49090a
-F test/join.test 99e1d82fada7a1df9002a7b1160bd231c91077b9372492d5e18bfa1d1694d43c
+F test/join.test d7e315cd05f03d442c22bb5506edff2e688d27e6e10c91657daf48a08b8573fe
 F test/join2.test 10f7047e723ebd68b2f47189be8eed20451a6f665d8bf46f1774c640d1062417
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56539e1c132632c075efc217ad5951a35e4459605ac128914aec3a7be1e25718
-R 45007407428301c1a58df1c2c813a372
+P 7fc733328c5914c747e048c830522ec13e433c0a86388bae47b198a3e220c6c2
+R 35709e798d183e48c9968b7861e639d6
 U drh
-Z 0ac03f55dc296429a8d1ce916ad4c404
+Z 77efee16c8a9a17028736710581eb2ca
