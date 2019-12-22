@@ -2243,6 +2243,12 @@ void sqlite3EndTable(
   */
   if( p->pCheck ){
     sqlite3ResolveSelfReference(pParse, p, NC_IsCheck, 0, p->pCheck);
+    if( pParse->nErr ){
+      /* If errors are seen, delete the CHECK constraints now, else they might
+      ** actually be used if PRAGMA writable_schema=ON is set. */
+      sqlite3ExprListDelete(db, p->pCheck);
+      p->pCheck = 0;
+    }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS

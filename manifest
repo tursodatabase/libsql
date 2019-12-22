@@ -1,5 +1,5 @@
-C Ensure\ssqlite3WindowRewrite()\sis\scalled\son\sa\sSELECT\sstatement\sbefore\sany\sterms\saremoved\sfrom\sit\sas\spart\sof\sIN()\sclause\sprocessing.\sFix\sfor\s[f00d096ca].
-D 2019-12-22T17:32:25.133
+C When\sparsing\sa\sCREATE\sTABLE\sfrom\sthe\ssqlite_master\stable,\sdelete\sthe\sCHECK\nconstraints\sif\sthere\sare\sany\serrors,\ssince\sthere\smight\sotherwise\sbe\sattempts\nto\suse\sthose\sCHECK\sconstraints\sif\sPRAGMA\swritable_schema=ON\sis\sset.\nThis\sundoes\sthe\sfix\sin\scheck-in\s[ea721b34477ab8b4]\sfor\sa\smore\sgeneral\nsolution.
+D 2019-12-22T18:06:49.107
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -471,7 +471,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 716fc9bd12eb7d35e3d66c5c2c81c37df3fdae49cd25bceaff4e7d702d513d80
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 358e894867394839679982d2fe320fb44fd17c94a87feb898aa066c15a8066ea
+F src/build.c 1d999886fa656e6211e14d5402a6f92cadbdaa5d2f4f0597c797f7818d510e33
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -479,7 +479,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c d1031aaefc3d8697f30f418494ec491e729c2423af7f426041bb7525c41d3ad5
+F src/expr.c b7f3be57e7e6d2d93152cf9313e34f44fa74d3e1f16551c32dabb6be33365f41
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c ed33e38cd642058182a31a3f518f2e34f4bbe53aa483335705c153c4d3e50b12
@@ -1017,7 +1017,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db e7a86fd83dda151d160445d542e32e5c6019c541b3a74c2a525b6ac640639711
-F test/fuzzdata8.db 0e29cbd9b2a34aadd76fb5be963e810f61545487ccb44503e5335acb1634338e
+F test/fuzzdata8.db f8da99ea7e57a436e300e59b2d5ad0d0f765fcb0468b2c1b1f9b9f03d928e0ef
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45748e2db028ffbda5d3e747493721a5a89af3fbc06823081a2f27f570e40e73
-R da73e6a7c2e1e070e501423e7260ad93
-U dan
-Z 34811b059bbbc145cba165593b2e2e94
+P 8c856404b4e98d295449a4e89a41495dc007319a8e9c35c1a763718d7c5f67e8
+R 97d0a9b1a5feca02a10db862b5a0b13b
+U drh
+Z 7d30adc64d69bc3b030c80c2e1486537

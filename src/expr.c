@@ -3649,11 +3649,6 @@ expr_code_doover:
           Table *pTab = pExpr->y.pTab;
           int iSrc;
           int iCol = pExpr->iColumn;
-          if( pTab==0 ){
-            assert( CORRUPT_DB );
-            sqlite3VdbeAddOp2(v, OP_Null, 0, target);
-            return target;
-          }
           assert( pTab!=0 );
           assert( iCol>=XN_ROWID );
           assert( iCol<pTab->nCol );
@@ -3722,10 +3717,9 @@ expr_code_doover:
     default: {
       /* Make NULL the default case so that if a bug causes an illegal
       ** Expr node to be passed into this function, it will be handled
-      ** sanely and not crash.  This comes up, for example, if a corrupt
-      ** database schema is loaded using PRAGMA writable_schema=ON. */
-      assert( op==TK_NULL || CORRUPT_DB );
-      testcase( op!=TK_NULL );
+      ** sanely and not crash.  But keep the assert() to bring the problem
+      ** to the attention of the developers. */
+      assert( op==TK_NULL );
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       return target;
     }
@@ -3752,7 +3746,7 @@ expr_code_doover:
       sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
       if( pExpr->u.zToken[1]!=0 ){
         const char *z = sqlite3VListNumToName(pParse->pVList, pExpr->iColumn);
-        assert( pExpr->u.zToken[0]=='?' || strcmp(pExpr->u.zToken, z)==0 );
+        assert( pExpr->u.zToken[0]=='?' || (z && !strcmp(pExpr->u.zToken, z)) );
         pParse->pVList[0] = 0; /* Indicate VList may no longer be enlarged */
         sqlite3VdbeAppendP4(v, (char*)z, P4_STATIC);
       }
