@@ -1866,9 +1866,10 @@ case OP_Cast: {                  /* in1 */
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
   rc = ExpandBlob(pIn1);
-  sqlite3VdbeMemCast(pIn1, pOp->p2, encoding);
-  UPDATE_MAX_BLOBSIZE(pIn1);
   if( rc ) goto abort_due_to_error;
+  rc = sqlite3VdbeMemCast(pIn1, pOp->p2, encoding);
+  if( rc ) goto abort_due_to_error;
+  UPDATE_MAX_BLOBSIZE(pIn1);
   REGISTER_TRACE(pOp->p1, pIn1);
   break;
 }

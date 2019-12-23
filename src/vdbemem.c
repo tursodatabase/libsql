@@ -747,8 +747,8 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
 ** affinity even if that results in loss of data.  This routine is
 ** used (for example) to implement the SQL "cast()" operator.
 */
-void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
-  if( pMem->flags & MEM_Null ) return;
+int sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
+  if( pMem->flags & MEM_Null ) return SQLITE_OK;
   switch( aff ){
     case SQLITE_AFF_BLOB: {   /* Really a cast to BLOB */
       if( (pMem->flags & MEM_Blob)==0 ){
@@ -779,9 +779,10 @@ void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
       sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
       assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
       pMem->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal|MEM_Blob|MEM_Zero);
-      break;
+      return sqlite3VdbeChangeEncoding(pMem, encoding);
     }
   }
+  return SQLITE_OK;
 }
 
 /*
