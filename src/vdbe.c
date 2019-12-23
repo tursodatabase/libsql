@@ -2028,12 +2028,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
-          assert( flags3==pIn3->flags );
-          /* testcase( flags3!=pIn3->flags );
-          ** this used to be possible with pIn1==pIn3, but not since
-          ** the column cache was removed.  The following assignment
-          ** is essentially a no-op.  But, it provides defense-in-depth
-          ** in case our analysis is incorrect, so it is left in. */
+          testcase( flags3!=pIn3->flags );
           flags3 = pIn3->flags;
         }
         if( (flags3 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
