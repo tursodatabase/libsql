@@ -1,5 +1,5 @@
-C Remove\san\sextra\sdeflateInit2()\scall\saccidently\sleft\sin\ncheck-in\s[f5ee30426e8876e7]
-D 2019-12-23T20:07:28.883
+C Thoroughly\sreset\sthe\srtree\scursor\sat\sthe\sstart\sof\seach\sVFilter\soperation,\nincluding\sclearing\sits\scache.\s\sThis\sprevents\sleft\sover\spages\sin\sthe\scache\nwhich\scan\scause\sproblems\son\sshutdown\safter\sa\sLEFT\sJOIN.\nTicket\s[5eadca17c4dde90c]
+D 2019-12-23T20:41:39.904
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -379,8 +379,8 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c c591164125808f8bba9659e92665b78412cd263e654b6f05294f3a8da7cdd9fb
-F ext/rtree/rtree.c 26fcb3f7a92fda9afcf5eee684cc3188b7367da69bc9c374492d844fb8ed4e25
+F ext/rtree/geopoly.c 4f176fa4d954997e8880f8b75e15b578765b4f471e359b73020b3d4e1defe958
+F ext/rtree/rtree.c 84b939a9a558edd0461bb976b98f60012e3e574b3b17a0f44533d6f2a9aa2f2e
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 4092a8bd2b5eafc4fafe4fe9024249c12b13e4bab23c2c3eaff57412fdf805fa
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb95dac7f6482c36853a23234c5ce7af37c7beed8e3675d6a49c4d3a8307e076
-R e103f704be27c31cccf26fb6fcbf2a57
+P 953e6aa6d9ca09e549c88bc728c322fabdcef581f3b4a7763d95488dddbbd6a5
+R ca340be656fb975dcd1521355f675df7
 U drh
-Z 6dbcaeefdeee80cf0d01dc33e5e449fb
+Z 22698fecf79ba95f8e537178f371e71c
