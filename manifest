@@ -1,5 +1,5 @@
-C Fix\sthe\szipfile()\sfunction\sin\sthe\szipfile\sextension\sso\sthat\sit\sis\sable\sto\ndeal\swith\sgoofy\sfilenames\sthat\scontain\sembedded\szeros.
-D 2019-12-23T21:04:33.977
+C Test\scase\sfor\sthe\szipfile-extension\sbug\sfix\sof\sthe\sprevious\scheck-in.
+D 2019-12-23T21:11:15.463
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1748,7 +1748,7 @@ F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912ade
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test daab4c9be151934fd6bbc71a0d2520351efc61719eabbf545920f953883d172a
+F test/zipfile.test 330bec11cee9da4da1a48e648b6d445b9334044089da62e9521803566a36dde2
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c50afafce8416369f89477ba7fe7d9b047399a5ee5754c73d0e67bbea8d877c
-R 29d7c3cbcd5652a73d3305fec9c54b58
+P cc0fb00a128fd0773db5ff7891f7aa577a3671d570166d2cbb30df922344adcf
+R 01755885676b946174adbb226548e4c0
 U drh
-Z b32fa973d6865a272376759a8cfda3e5
+Z 9cbb5c3517ed7c9d1c8f71b1fd10d978

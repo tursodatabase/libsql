@@ -808,5 +808,17 @@ do_execsql_test 13.10 {
          quote(data),quote(method) FROM t1;
 } {'' 10 10 2 X'3130' X'3130' 0}
 
+# 2019-12-23 Yongheng and Rui fuzzer
+# Run using valgrind to see the problem.
+#
+do_execsql_test 14.10 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x char);
+  INSERT INTO t1(x) VALUES('1');
+  INSERT INTO t1(x) SELECT zipfile(x, 'xyz') FROM t1;
+  INSERT INTO t1(x) SELECT zipfile(x, 'uvw') FROM t1;
+  SELECT count(*) FROM t1;
+  PRAGMA integrity_check;
+} {3 ok}
 
 finish_test
