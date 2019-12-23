@@ -1,5 +1,5 @@
-C Do\san\searly\sclose\sof\svirtual\stable\scursors\sto\savoid\sunnecessary\scursor\ncontention\sin\sUPDATE\sfor\ssome\svirtual\stable\simplementations.\nTicket\s[56a74875be799b85]
-D 2019-12-23T19:28:34.435
+C Remove\san\sextra\sdeflateInit2()\scall\saccidently\sleft\sin\ncheck-in\s[f5ee30426e8876e7]
+D 2019-12-23T20:07:28.883
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -324,7 +324,7 @@ F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 8f965eb309da3ae8c30088f6c3ebdddcdbdf9e0ef24f3bc7ae0756deb93da503
+F ext/misc/zipfile.c dfec5589395fc2272a646fc309935ecb5164934a95757762afa120b72d1d0ba4
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 8681f6157db6adc82c34af24b14ea8a3be0146ad2a3b6c1d5da6cb8a5796c8ce
 F ext/rbu/rbu1.test 221d9c18a5e600ac9ac6b1810d99d9f99163a7909ba61597876ab6e4d4beb3d6
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61c2233654158e65a3d3baeea947903a919a569fcc4a5b342b2e9a68cec1b6f3
-R d87e55f8560ad2234e5e7557c4b3d18d
+P eb95dac7f6482c36853a23234c5ce7af37c7beed8e3675d6a49c4d3a8307e076
+R e103f704be27c31cccf26fb6fcbf2a57
 U drh
-Z 20bdde97f18017c70a3591a93bad8703
+Z 6dbcaeefdeee80cf0d01dc33e5e449fb

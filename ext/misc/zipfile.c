@@ -999,7 +999,6 @@ static int zipfileDeflate(
     int res;
     str.next_out = aOut;
     str.avail_out = nAlloc;
-    deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
     res = deflate(&str, Z_FINISH);
     if( res==Z_STREAM_END ){
       *ppOut = aOut;
