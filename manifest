@@ -1,5 +1,5 @@
-C Fix\sa\sshift-overflow\sproblem\sin\syesterday's\scheck-in\s[36fdeb4f0a66970a]\s\nthat\sOSSFuzz\shelpfully\sdiscovered\sovernight.\s\sThanks\sGoogle.
-D 2019-12-23T13:24:34.459
+C For\sexpressions\slike\s(x,\sy)\sIN\s(SELECT\s...)\swhere\sthe\sSELECT\suses\swindow-functions,\srequire\sthat\sall\scolumns\son\sthe\sLHS\sbe\sindexed\sbefore\san\sindex\scan\sbe\sused.\sFix\sfor\s[d9ed4ebe].
+D 2019-12-23T14:20:46.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 2efa3b390e921eb101bda51a485aff7b3bbfa61548999b29007e074a260a9767
+F src/vdbe.c 46695ae07f7b90de64bdfe099ed3c01f701dac3193d219bdb736e5eea11615b3
 F src/vdbe.h 3f068f00b23aebf392df142312ab5874588371c6d83e60d953f6d6b6453491c5
 F src/vdbeInt.h 1ccaf470287e2d153b16cf7b0274d436db2c2f74cdf14afd1a0ff4cb51548ae6
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -615,8 +615,8 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 25653002490b093b9b752f30ad92b307464b099ad081c4d2fb524719427403f2
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c c4cb79b7c93d0f4ec93d9d84d10deb61053c8563c12b244292c14f9ad1032093
-F src/whereexpr.c 3d0ff098154bbd96d8e0982b71b9ebae4017d01f409ff518c9417e9607b69689
+F src/wherecode.c bb58d5e6e7f583db5b74e0fd35f1d65fdee67d20553b55cd6098fc3f8148053a
+F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c da010455914c81037dcb5b0c6f4273f8a32c94567865c46a60060b937b018a96
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1713,7 +1713,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 29efd3d6c18ea920ae6493f26cae3fc5724912ee049fd3d8eb61753660052f70
+F test/window1.test 31b56e5330440565296d381f57fe5b821dec83102c52b00ed8b9f5af0fd288e0
 F test/window2.tcl 114b217d4ffff891142023cc5f3131b0dae3ad149ac4b45a6ed9e2ad943f8ce2
 F test/window2.test dea2ffecb7182a385143ea0eb368b6241ee43c5f971f4ad1c4337029cb1fc10a
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f347744e0d576f0250c29259cca755e57afded8956224114c01603c1bca5b3a4
-R 82c46a83331f8a14030c8919927050ce
-U drh
-Z 47df80ba61b143806cc77f81145903b9
+P bff38e2b5318ed032aaf1d350903c3494b4531f2dc59a6997144ec8e23defef4
+R 418198a4f3930033845edd9b39a82c39
+U dan
+Z 04f3211d7072bfd41ad4689f87a37f7f

@@ -1347,4 +1347,15 @@ do_execsql_test 38.30 {
   SELECT COUNT(*) FROM t0, t1 WHERE (SELECT AVG(1) FILTER(WHERE t1.c1));
 } {1}
 
+reset_db
+do_execsql_test 39.1 {
+  CREATE TABLE t0(c0 UNIQUE);
+}
+do_execsql_test 39.2 {
+  SELECT FIRST_VALUE(0) OVER();
+} {0}
+do_execsql_test 39.3 {
+  SELECT * FROM t0 WHERE(c0, 0) IN(SELECT FIRST_VALUE(0) OVER(), 0);
+}
+
 finish_test
