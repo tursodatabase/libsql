@@ -1,5 +1,5 @@
-C Early\sdetection\sof\sdatabase\scorruption\sin\sbalance_deeper().
-D 2019-12-23T18:02:15.079
+C Do\san\searly\sclose\sof\svirtual\stable\scursors\sto\savoid\sunnecessary\scursor\ncontention\sin\sUPDATE\sfor\ssome\svirtual\stable\simplementations.\nTicket\s[56a74875be799b85]
+D 2019-12-23T19:28:34.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c 25653002490b093b9b752f30ad92b307464b099ad081c4d2fb524719427403f2
+F src/where.c c82db883f6988742c416998b29228ea03788b97cc3d39dd5a6c8da553e278cd0
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c bb58d5e6e7f583db5b74e0fd35f1d65fdee67d20553b55cd6098fc3f8148053a
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f17974912ec5e99089dc0da803e7ff1bf033377a49762d2689a812c005f2641
-R 8b7584d5dce9cabfa7788fda2b2b4c7c
+P 61c2233654158e65a3d3baeea947903a919a569fcc4a5b342b2e9a68cec1b6f3
+R d87e55f8560ad2234e5e7557c4b3d18d
 U drh
-Z 20f6b4d0a1e07f848f9073291aeee414
+Z 20bdde97f18017c70a3591a93bad8703

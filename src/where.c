@@ -5340,13 +5340,16 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       continue;
     }
 
+    if( IsVirtual(pTab) ){
+      sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
+    }
 #ifdef SQLITE_ENABLE_EARLY_CURSOR_CLOSE
     /* Close all of the cursors that were opened by sqlite3WhereBegin.
     ** Except, do not close cursors that will be reused by the OR optimization
     ** (WHERE_OR_SUBCLAUSE).  And do not close the OP_OpenWrite cursors
     ** created for the ONEPASS optimization.
     */
-    if( (pTab->tabFlags & TF_Ephemeral)==0
+    else if( (pTab->tabFlags & TF_Ephemeral)==0
      && pTab->pSelect==0
      && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
     ){
