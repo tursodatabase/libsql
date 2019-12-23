@@ -1186,6 +1186,29 @@ int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
   }
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Generate an OP_ReleaseReg opcode to indicate that a range of
+** registers, except any identified by mask, are no longer in use.
+*/
+void sqlite3VdbeReleaseRegisters(Parse *pParse, int iFirst, int N, u32 mask){
+  assert( pParse->pVdbe );
+  while( N>0 && (mask&1)!=0 ){
+    mask >>= 1;
+    iFirst++;
+    N--;
+  }
+  while( N>0 && N<=32 && (mask & MASKBIT32(N-1))!=0 ){
+    mask &= ~MASKBIT32(N-1);
+    N--;
+  }
+  if( N>0 ){
+    sqlite3VdbeAddOp3(pParse->pVdbe, OP_ReleaseReg, iFirst, N, *(int*)&mask);
+  }
+}
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a

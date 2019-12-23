@@ -672,4 +672,16 @@ do_execsql_test update-18.10 {
   SELECT * FROM t0;
 } {xyz 345 uvw 345}
 
+# 2019-12-22 ticket c62c5e58524b204d
+# This is really the same underlying problem as 5ad2aa6921faa1ee
+#
+reset_db
+do_execsql_test update-18.20 {
+  PRAGMA encoding = 'utf16';
+  CREATE TABLE t0(c0 TEXT);
+  CREATE INDEX i0 ON t0(0 LIKE COALESCE(c0, 0));
+  INSERT INTO t0(c0) VALUES (0), (0);
+  SELECT * FROM t0;
+} {0 0}
+
 finish_test

@@ -3680,7 +3680,7 @@ expr_code_doover:
           }else
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
           if( pCol->affinity==SQLITE_AFF_REAL ){
-            sqlite3VdbeAddOp2(v, OP_Copy, iSrc, target);
+            sqlite3VdbeAddOp2(v, OP_SCopy, iSrc, target);
             sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
             return target;
           }else{
@@ -4065,8 +4065,12 @@ expr_code_doover:
         sqlite3VdbeAddFunctionCall(pParse, constMask, r1, target, nFarg,
                                    pDef, pExpr->op2);
       }
-      if( nFarg && constMask==0 ){
-        sqlite3ReleaseTempRange(pParse, r1, nFarg);
+      if( nFarg ){
+        if( constMask==0 ){
+          sqlite3ReleaseTempRange(pParse, r1, nFarg);
+        }else{
+          sqlite3VdbeReleaseRegisters(pParse, r1, nFarg, constMask);
+        }
       }
       return target;
     }
@@ -5707,8 +5711,11 @@ int sqlite3GetTempReg(Parse *pParse){
 ** purpose.
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
-  if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-    pParse->aTempReg[pParse->nTempReg++] = iReg;
+  if( iReg ){
+    sqlite3VdbeReleaseRegisters(pParse, iReg, 1, 0);
+    if( pParse->nTempReg<ArraySize(pParse->aTempReg) ){
+      pParse->aTempReg[pParse->nTempReg++] = iReg;
+    }
   }
 }
 
@@ -5734,6 +5741,7 @@ void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
     sqlite3ReleaseTempReg(pParse, iReg);
     return;
   }
+  sqlite3VdbeReleaseRegisters(pParse, iReg, nReg, 0);
   if( nReg>pParse->nRangeReg ){
     pParse->nRangeReg = nReg;
     pParse->iRangeReg = iReg;
