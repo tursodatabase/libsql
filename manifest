@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_Cast\soperator\sso\sthat\swhen\scasting\sto\sTEXT,\sit\salways\sleaves\nthe\sresult\sin\sthe\sencoding\sof\sthe\sdatabase.\s\sTicket\s[0911b5d161b039c6].\nTest\scases\sin\sTH3.
-D 2019-12-23T03:37:46.033
+C Fix\sa\sshift-overflow\sproblem\sin\syesterday's\scheck-in\s[36fdeb4f0a66970a]\s\nthat\sOSSFuzz\shelpfully\sdiscovered\sovernight.\s\sThanks\sGoogle.
+D 2019-12-23T13:24:34.459
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c f23ba176eb57bb3f9516a5021bd2ea1d7066623339556f391e68d99c06f9f877
+F src/vdbe.c 2efa3b390e921eb101bda51a485aff7b3bbfa61548999b29007e074a260a9767
 F src/vdbe.h 3f068f00b23aebf392df142312ab5874588371c6d83e60d953f6d6b6453491c5
 F src/vdbeInt.h 1ccaf470287e2d153b16cf7b0274d436db2c2f74cdf14afd1a0ff4cb51548ae6
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c44c73499154bc57634a54cb743642d0aacc93a1336fbb8bb3eb5dbbf616357
-R b6da56a8c5d74a2eb68d71835ddfe15f
+P f347744e0d576f0250c29259cca755e57afded8956224114c01603c1bca5b3a4
+R 82c46a83331f8a14030c8919927050ce
 U drh
-Z 5b15760d80bfee0d0e59d93bf584a88d
+Z 47df80ba61b143806cc77f81145903b9

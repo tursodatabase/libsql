@@ -7734,7 +7734,7 @@ case OP_ReleaseReg: {
   pMem = &aMem[pOp->p1];
   constMask = pOp->p3;
   for(i=0; i<pOp->p2; i++, pMem++){
-    if( (constMask & MASKBIT32(i))==0 ){
+    if( i>=32 || (constMask & MASKBIT32(i))==0 ){
       pMem->pScopyFrom = 0;
       /* MemSetTypeFlag(pMem, MEM_Undefined); // See the TODO */
     }
