@@ -5297,7 +5297,10 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
 
     case TK_BETWEEN:
-      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      if( sqlite3WalkExpr(pWalker, pExpr->pLeft)==WRC_Abort ){
+        assert( pWalker->eCode );
+        return WRC_Abort;
+      }
       return WRC_Prune;
 
     /* Virtual tables are allowed to use constraints like x=NULL.  So

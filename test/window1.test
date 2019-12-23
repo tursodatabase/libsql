@@ -1357,5 +1357,9 @@ do_execsql_test 39.2 {
 do_execsql_test 39.3 {
   SELECT * FROM t0 WHERE(c0, 0) IN(SELECT FIRST_VALUE(0) OVER(), 0);
 }
+do_execsql_test 39.4 {
+  SELECT * FROM t0 WHERE (t0.c0, 1) IN(SELECT NTILE(1) OVER(), 0 FROM t0);
+}
+
 
 finish_test
