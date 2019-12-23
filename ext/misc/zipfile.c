@@ -1632,7 +1632,7 @@ static int zipfileUpdate(
         zFree = sqlite3_mprintf("%s/", zPath);
         if( zFree==0 ){ rc = SQLITE_NOMEM; }
         zPath = (const char*)zFree;
-        nPath++;
+        nPath = (int)strlen(zPath);
       }
     }
 
@@ -2033,11 +2033,11 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   }else{
     if( zName[nName-1]!='/' ){
       zName = zFree = sqlite3_mprintf("%s/", zName);
-      nName++;
       if( zName==0 ){
         rc = SQLITE_NOMEM;
         goto zipfile_step_out;
       }
+      nName = (int)strlen(zName);
     }else{
       while( nName>1 && zName[nName-2]=='/' ) nName--;
     }
