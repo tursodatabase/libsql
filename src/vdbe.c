@@ -2052,9 +2052,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         sqlite3VdbeMemStringify(pIn1, encoding, 1);
         testcase( (flags1&MEM_Dyn) != (pIn1->flags&MEM_Dyn) );
         flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
-        assert( pIn1!=pIn3 );
       }
-      if( (flags3 & MEM_Str)==0 && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
+      if( (flags3 & MEM_Str)==0
+       && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0
+       && pIn1!=pIn3
+      ){
         testcase( pIn3->flags & MEM_Int );
         testcase( pIn3->flags & MEM_Real );
         testcase( pIn3->flags & MEM_IntReal );
