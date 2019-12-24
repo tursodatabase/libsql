@@ -1,5 +1,5 @@
-C Backout\sthe\searly\sVTable\scursor\sclose\schange\sfrom\syesterday,\sas\sYongheng\sand\nRui\shave\sfound\sa\stest\scase\sfor\swhich\sit\sfails.\s\sThe\snew\stest\scase\sis\sadded\nto\sfuzzcheck.
-D 2019-12-24T21:01:37.072
+C Fix\sa\sminor\sperformance\sregression\sfrom\scheck-in\s[401c9d30e06191d9]
+D 2019-12-24T21:42:22.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/upsert.c b445315c8958d8f17ec3297d06842e61dacaad0633ccaec1e4e160de7e562212
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 8691c41f61e27f2f36c3c6559ab5aa32a7d552c4fedf1d618f24dd7a58670a8b
+F src/vdbe.c 8b0f3445b75be6aa381a961a3206decf6e169c5b5625349fcb7e287e9deffa14
 F src/vdbe.h 3f068f00b23aebf392df142312ab5874588371c6d83e60d953f6d6b6453491c5
 F src/vdbeInt.h 1ccaf470287e2d153b16cf7b0274d436db2c2f74cdf14afd1a0ff4cb51548ae6
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1852,8 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bae060f382e4386c0793db4aa280fe9cd4893307d17a1801a17218ae4dc031c2
-Q -eb95dac7f6482c36853a23234c5ce7af37c7beed8e3675d6a49c4d3a8307e076
-R 056e130351576a95134652be2c0d73eb
+P ddb10f0374e66886d0681937b14cf0b4f100f03d3955b45b6c508dc6d9e36976
+R 5b1079c8a384ce37450b3fecba55c04d
 U drh
-Z 0627f3ed229bfb4c9422500dce5b2813
+Z b050346f80259aa216b8caa58ba47eb4
