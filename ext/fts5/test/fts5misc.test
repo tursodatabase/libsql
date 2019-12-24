@@ -250,6 +250,21 @@ do_execsql_test 9.2 {
   -4764623217061966105 8324454597464624651
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE vt1 USING fts5(c1, c2, prefix = 1, tokenize = "ascii");
+  INSERT INTO vt1 VALUES (x'e4', '䔬');
+}
+
+do_execsql_test 10.1 {
+  SELECT quote(CAST(c1 AS blob)), quote(CAST(c2 AS blob)) FROM vt1
+} {X'E4' X'E494AC'}
+
+do_execsql_test 10.2 {
+  INSERT INTO vt1(vt1) VALUES('integrity-check');
+}
 
 finish_test
 

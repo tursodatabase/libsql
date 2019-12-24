@@ -5723,6 +5723,37 @@ static int fts5QueryCksum(
   return rc;
 }
 
+/*
+** Check if buffer z[], size n bytes, contains as series of valid utf-8
+** encoded codepoints. If so, return 0. Otherwise, if the buffer does not
+** contain valid utf-8, return non-zero.
+*/
+static int fts5TestUtf8(const char *z, int n){
+  assert( n>0 );
+  int i = 0;
+  while( i<n ){
+    if( (z[i] & 0x80)==0x00 ){
+      i++;
+    }else
+    if( (z[i] & 0xE0)==0xC0 ){
+      if( i+1>=n || (z[i+1] & 0xC0)!=0x80 ) return 1;
+      i += 2;
+    }else
+    if( (z[i] & 0xF0)==0xE0 ){
+      if( i+2>=n || (z[i+1] & 0xC0)!=0x80 || (z[i+2] & 0xC0)!=0x80 ) return 1;
+      i += 3;
+    }else
+    if( (z[i] & 0xF8)==0xF0 ){
+      if( i+3>=n || (z[i+1] & 0xC0)!=0x80 || (z[i+2] & 0xC0)!=0x80 ) return 1;
+      if( (z[i+2] & 0xC0)!=0x80 ) return 1;
+      i += 3;
+    }else{
+      return 1;
+    }
+  }
+
+  return 0;
+}
 
 /*
 ** This function is also purely an internal test. It does not contribute to 
@@ -5763,8 +5794,14 @@ static void fts5TestTerm(
     ** This check may only be performed if the hash table is empty. This
     ** is because the hash table only supports a single scan query at
     ** a time, and the multi-iter loop from which this function is called
-    ** is already performing such a scan. */
-    if( p->nPendingData==0 ){
+    ** is already performing such a scan. 
+    **
+    ** Also only do this if buffer zTerm contains nTerm bytes of valid
+    ** utf-8. Otherwise, the last part of the buffer contents might contain
+    ** a non-utf-8 sequence that happens to be a prefix of a valid utf-8
+    ** character stored in the main fts index, which will cause the
+    ** test to fail.  */
+    if( p->nPendingData==0 && 0==fts5TestUtf8(zTerm, nTerm) ){
       if( iIdx>0 && rc==SQLITE_OK ){
         int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
         ck2 = 0;
