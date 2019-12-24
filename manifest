@@ -1,5 +1,5 @@
-C Allow\scomparison\soperators\sof\sa\sregister\sagainst\sitself.\nTicket\s[188f912b51cd802a],
-D 2019-12-24T01:53:05.662
+C Convert\san\sALWAYS()\sinto\san\sassert()\swith\san\sextra\serror\sterm.\nDbsqlfuzz\sfind,\swith\stest\scase\sin\sTH3.
+D 2019-12-24T13:41:33.515
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c c82db883f6988742c416998b29228ea03788b97cc3d39dd5a6c8da553e278cd0
+F src/where.c ac6704a7c5758d603ceaa0d6fcb9cd2d34b57cd3a6a7b598b3eddea558bc54ed
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c bb58d5e6e7f583db5b74e0fd35f1d65fdee67d20553b55cd6098fc3f8148053a
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc8bfc7fcdf33f6855584e10e9260073430517ff3268cf0c7988dcc4cd785391
-R 053d1dee3c90f1c568a1ca6324c56ed1
+P 401c9d30e06191d938503aae024bc453d960fa64dc812ed86c661f94533247fd
+R 7bfc5184e8e7362443b5d6dff6be172e
 U drh
-Z c118a2c355c191018c74d0b27b1f15e8
+Z 7327fcfaeb195a694e2119a9482b57cd
