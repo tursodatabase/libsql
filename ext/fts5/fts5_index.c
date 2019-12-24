@@ -5729,7 +5729,7 @@ static int fts5QueryCksum(
 ** contain valid utf-8, return non-zero.
 */
 static int fts5TestUtf8(const char *z, int n){
-  assert( n>0 );
+  assert_nc( n>0 );
   int i = 0;
   while( i<n ){
     if( (z[i] & 0x80)==0x00 ){
