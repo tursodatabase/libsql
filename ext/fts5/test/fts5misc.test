@@ -266,5 +266,22 @@ do_execsql_test 10.2 {
   INSERT INTO vt1(vt1) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts5(
+      c0, prefix = 71, tokenize = "porter ascii", prefix = 9
+  );
+} {}
+
+do_execsql_test 11.1 {
+  BEGIN;
+  INSERT INTO vt0(c0) VALUES (x'e8');
+}
+do_execsql_test 11.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
 finish_test
 
