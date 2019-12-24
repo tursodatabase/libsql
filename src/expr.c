@@ -2207,7 +2207,9 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_COLUMN:
       return ExprHasProperty(p, EP_CanBeNull) ||
              p->y.pTab==0 ||  /* Reference to column of index on expression */
-             (p->iColumn>=0 && p->y.pTab->aCol[p->iColumn].notNull==0);
+             (p->iColumn>=0
+              && ALWAYS(p->y.pTab->aCol!=0) /* Defense against OOM problems */
+              && p->y.pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
   }
@@ -3224,6 +3226,7 @@ static void sqlite3ExprCodeIN(
   }else{
     destStep2 = destStep6 = sqlite3VdbeMakeLabel(pParse);
   }
+  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
     if( sqlite3ExprCanBeNull(p) ){
