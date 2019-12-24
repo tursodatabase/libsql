@@ -5937,8 +5937,8 @@ static void fts5IndexIntegrityCheckSegment(
     i64 iRow;                     /* Rowid for this leaf */
     Fts5Data *pLeaf;              /* Data for this leaf */
 
+    const char *zIdxTerm = (const char*)sqlite3_column_blob(pStmt, 1);
     int nIdxTerm = sqlite3_column_bytes(pStmt, 1);
-    const char *zIdxTerm = (const char*)sqlite3_column_text(pStmt, 1);
     int iIdxLeaf = sqlite3_column_int(pStmt, 2);
     int bIdxDlidx = sqlite3_column_int(pStmt, 3);
 

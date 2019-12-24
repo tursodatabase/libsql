@@ -274,12 +274,25 @@ do_execsql_test 11.0 {
       c0, prefix = 71, tokenize = "porter ascii", prefix = 9
   );
 } {}
-
 do_execsql_test 11.1 {
   BEGIN;
   INSERT INTO vt0(c0) VALUES (x'e8');
 }
 do_execsql_test 11.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+# Ticket [752fdbf6] 
+#
+reset_db
+do_execsql_test 11.0 {
+  PRAGMA encoding = 'UTF-16';
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0, c1);
+  INSERT INTO vt0(vt0, rank) VALUES('pgsz', '37');
+  INSERT INTO vt0(c0, c1) VALUES (0.66077, 1957391816);
+}
+do_execsql_test 11.1 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
 
