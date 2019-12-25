@@ -1329,7 +1329,7 @@ do_execsql_test 37.20 {
   SELECT c FROM v0 WHERE c BETWEEN -10 AND 20;
 } {}
 
-# 2019-20-20 mrigger reported problem with a FILTER clause on an aggregate
+# 2019-12-20 mrigger reported problem with a FILTER clause on an aggregate
 # in a join.
 #
 reset_db
@@ -1360,6 +1360,15 @@ do_execsql_test 39.3 {
 do_execsql_test 39.4 {
   SELECT * FROM t0 WHERE (t0.c0, 1) IN(SELECT NTILE(1) OVER(), 0 FROM t0);
 }
+
+# 2019-12-25 ticket d87336c81c7d0873
+#
+reset_db
+do_catchsql_test 40.1 {
+  CREATE VIRTUAL TABLE t0 USING rtree(c0, c1, c2);
+  SELECT * FROM t0
+   WHERE ((0,0) IN (SELECT COUNT(*),LAG(5)OVER(PARTITION BY 0) FROM t0),0)<=(c1,0);
+} {1 {1st ORDER BY term out of range - should be between 1 and 3}}
 
 
 finish_test

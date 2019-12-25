@@ -1021,6 +1021,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       pSub->selFlags |= SF_Expanded;
       pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_NONE);
       if( pTab2==0 ){
+        /* Might actually be some other kind of error, but in that case
+        ** pParse->nErr will be set, so if SQLITE_NOMEM is set, we will get
+        ** the correct error message regardless. */
         rc = SQLITE_NOMEM;
       }else{
         memcpy(pTab, pTab2, sizeof(Table));
@@ -1039,9 +1042,12 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     sqlite3DbFree(db, pTab);
   }
 
-  if( rc && pParse->nErr==0 ){
-    assert( pParse->db->mallocFailed );
-    return sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
+  if( rc ){
+    if( pParse->nErr==0 ){
+      assert( pParse->db->mallocFailed );
+      sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
+    }
+    sqlite3SelectReset(pParse, p);
   }
   return rc;
 }

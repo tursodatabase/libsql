@@ -84,7 +84,10 @@ struct SortCtx {
 
 /*
 ** Delete all the content of a Select structure.  Deallocate the structure
-** itself only if bFree is true.
+** itself depending on the value of bFree
+**
+** If bFree==1, call sqlite3DbFree() on the p object.
+** If bFree==0, Leave the first Select object unfreed
 */
 static void clearSelect(sqlite3 *db, Select *p, int bFree){
   while( p ){
@@ -186,6 +189,20 @@ Select *sqlite3SelectNew(
 */
 void sqlite3SelectDelete(sqlite3 *db, Select *p){
   if( OK_IF_ALWAYS_TRUE(p) ) clearSelect(db, p, 1);
+}
+
+/*
+** Delete all the substructure for p, but keep p allocated.  Redefine
+** p to be a single SELECT where every column of the result set has a
+** value of NULL.
+*/
+void sqlite3SelectReset(Parse *pParse, Select *p){
+  if( ALWAYS(p) ){
+    clearSelect(pParse->db, p, 0);
+    memset(&p->iLimit, 0, sizeof(Select) - offsetof(Select,iLimit));
+    p->pEList = sqlite3ExprListAppend(pParse, 0,
+                     sqlite3ExprAlloc(pParse->db,TK_NULL,0,0));
+  }
 }
 
 /*
@@ -2711,9 +2728,9 @@ static int multiSelect(
         ** it is that we currently need.
         */
         assert( unionTab==dest.iSDParm || dest.eDest!=priorOp );
-        if( dest.eDest!=priorOp ){
+        assert( p->pEList || db->mallocFailed );
+        if( dest.eDest!=priorOp && db->mallocFailed==0 ){
           int iCont, iBreak, iStart;
-          assert( p->pEList );
           iBreak = sqlite3VdbeMakeLabel(pParse);
           iCont = sqlite3VdbeMakeLabel(pParse);
           computeLimitRegisters(pParse, p, iBreak);
@@ -5738,7 +5755,9 @@ int sqlite3Select(
   }
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  if( sqlite3WindowRewrite(pParse, p) ){
+  rc = sqlite3WindowRewrite(pParse, p);
+  if( rc ){
+    assert( pParse->nErr>0 );
     goto select_end;
   }
 #if SELECTTRACE_ENABLED
