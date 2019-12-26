@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert()\sadded\sby\scheck-in\s[fa58aad48a788802].\nProblem\sfound\sby\sdbsqlfuzz.
-D 2019-12-26T00:53:43.165
+C Fix\san\sFTS3\stest\scase\sthat\sdepends\son\sthe\sICU\sextension\sso\sthat\sit\sonly\nruns\sif\sSQLite\sis\scompiled\swith\sICU.
+D 2019-12-26T00:54:39.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -939,7 +939,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test ce7f7b5eaeee5f1804584d061b978d85e64abf2af9adaa7577589fac6f7eae01
 F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999fe3b0d25f3
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 00ecd7605d5b1478252a3b7c2465de2d427906b8cb73b7acb92628bab81f9903
+F test/fts3corrupt4.test 5ac8c0378dab68808f080d03d8525d2262879cb23db1bc5eb138e141a4f2010c
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5fd8b50500f9225e435ef5afee98e3c2cccd22785f99c718d7e6c9b5b653c56
-R e37ba228c630cd4605b508bda7f68f0a
+P a17b29f08c888301911c35096899f10d24192c8ecec467cddde5401b6bd1903f
+R a75701d36c619093c505c10a200bb09a
 U drh
-Z 8900acbd27e9c6ec95e7c332f76f4626
+Z 3b858163913ef79a9404892a8faf03a5
