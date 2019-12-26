@@ -1192,6 +1192,7 @@ static void whereIndexExprTrans(
     if( iRef==XN_EXPR ){
       assert( aColExpr->a[iIdxCol].pExpr!=0 );
       x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
+      if( sqlite3ExprIsConstant(x.pIdxExpr) ) continue;
       w.xExprCallback = whereIndexExprTransNode;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     }else if( iRef>=0

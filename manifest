@@ -1,5 +1,5 @@
-C When\sthe\ssqlite3WindowRewrite()\sroutine\sdetects\sand\serror,\shave\sit\sconvert\nthe\sSELECT\sstatement\sinto\sjust\s"SELECT\snull"\sso\sthat\sit\sdoes\snot\sleave\sthe\nparse\stree\sin\sa\sgoofy\sstate\sthat\scan\scause\sproblems\swith\ssubsequent\scode\nbefore\sthe\sstack\shas\sa\schance\sto\sunwind\sand\sreport\sthe\serror.\nTicket\s[d87336c81c7d0873]
-D 2019-12-25T23:54:21.640
+C Disables\sthe\soptimization\sthat\stries\sto\spull\sthe\svalue\sof\san\sexpression\nfrom\san\sindex\son\sthat\sexpression\sif\sthe\sexpression\sis\sa\sconstant.
+D 2019-12-26T00:20:56.165
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 58653781a4b31fa16b95b953591fdc1f1ed5ff77574e59b90a27da3819b60a46
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
-F src/wherecode.c bb58d5e6e7f583db5b74e0fd35f1d65fdee67d20553b55cd6098fc3f8148053a
+F src/wherecode.c d42d3e0fe93786621b84dec8065e1dc6b324d7c5934df52f141555843b6aef4e
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c a5b69ea3cd22555d390582771173a68c1b798a0847aef3bd9eb51792bc6fcacb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76f54ee86777cbf530654323c953388ef64d0608516722d2522be6c859fa1382
-R c46405001dbbf37c4a4da195980c58c5
+P fa58aad48a788802b13a819e49f9b8787f713bbe395c46c7295e821c52c81738
+R 23cede26d783f7f8444bfd01b22a435c
 U drh
-Z 7b421b0b8aa6e2e1e8fb7d8227a85505
+Z 433fcc770d9a07273e25c3f3a5f0cde4
