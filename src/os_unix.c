@@ -6259,7 +6259,8 @@ static int unixAccess(
 
   if( flags==SQLITE_ACCESS_EXISTS ){
     struct stat buf;
-    *pResOut = (0==osStat(zPath, &buf) && buf.st_size>0);
+    *pResOut = 0==osStat(zPath, &buf) &&
+                (S_ISDIR(buf.st_mode) || buf.st_size>0);
   }else{
     *pResOut = osAccess(zPath, W_OK|R_OK)==0;
   }

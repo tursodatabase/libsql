@@ -1,5 +1,5 @@
-C Fix\san\sFTS3\stest\scase\sthat\sdepends\son\sthe\sICU\sextension\sso\sthat\sit\sonly\nruns\sif\sSQLite\sis\scompiled\swith\sICU.
-D 2019-12-26T00:54:39.512
+C In\sthe\sxAccess()\smethod\sof\sthe\sunix\sVFS,\sreturn\strue\sif\sthe\snamed\sobject\nis\sa\sdirectory,\sregardless\sof\swhat\sstat()\sreports\sas\sthe\sst_size\sfor\sthe\nobject.\s\sDifferent\sfilesystems\sreport\sst_size\sdifferently\sfor\sdirectories.\nProblem\sreported\son\sthe\smailing\slist\sby\sStefan\sBrüns.
+D 2019-12-26T00:56:50.470
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,7 +511,7 @@ F src/os.c 669cc3839cc35d20f81faf0be1ab6d4581cea35e9d8f3a9d48a98d6571f7c285
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 3e0e519f27683083a465e948e056759a8340728c222b5c394a135e0c57c220bc
+F src/os_unix.c d403950128240f11da7588e30a3b4a4a34e69caf7c60937e970fb85b2860ca42
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 7e371809d86b3f60d523396612b8fde4c8d3529bea90b04fad0f6be2703159a4
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a17b29f08c888301911c35096899f10d24192c8ecec467cddde5401b6bd1903f
-R a75701d36c619093c505c10a200bb09a
+P 19c6240bdbb022b2af463e59d873280d0f2385bf30e22b9aad5fc9677a99f251
+R 8837e847635b56c67cd3f8e441421593
 U drh
-Z 3b858163913ef79a9404892a8faf03a5
+Z 3bdf5efde545225029d73b71afc615d9
