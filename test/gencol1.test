@@ -468,6 +468,20 @@ do_execsql_test gencol1-17.50 {
   SELECT a FROM t1 WHERE b='DEF' AND a='def';
 } {DEF}
 
+# 2019-12-26 ticket ec8abb025e78f40c
+# An index on a virtual column with a constant value (why would anybody
+# ever do such a thing?) can cause problems for a one-pass DELETE.
+#
+reset_db
+do_execsql_test gencol1-18.10 {
+  CREATE TABLE t0(c0 UNIQUE AS(0), c1, c2);
+  INSERT INTO t0(c1) VALUES(0);
+  SELECT * FROM t0;
+} {0 0 {}}
+do_execsql_test gencol1-18.20 {
+  UPDATE t0 SET c1=0, c2=0 WHERE c0>=0;
+  SELECT * FROM t0;
+} {0 0 0}
 
 
 

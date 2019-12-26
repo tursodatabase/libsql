@@ -800,6 +800,22 @@ void sqlite3Update(
     /* Delete the index entries associated with the current record.  */
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx, -1);
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+    /* If pTab contains one or more virtual columns, then it is possible
+    ** (though unlikely) that no OP_Column opcodes have been run against
+    ** the table since the OP_SeekDeferred, meaning that there has not been
+    ** a seek against the cursor yet.  The OP_Delete opcode and OP_Insert
+    ** opcodes that follow will be needing this seek, so code a bogus
+    ** OP_Column just to make sure the seek has been done.
+    ** See ticket ec8abb025e78f40c 2019-12-26
+    */
+    if( eOnePass!=ONEPASS_OFF && (pTab->tabFlags & TF_HasVirtual)!=0 ){
+      int r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_Column, iDataCur, 0, r1);
+      sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+    }
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+
     /* If changing the rowid value, or if there are foreign key constraints
     ** to process, delete the old record. Otherwise, add a noop OP_Delete
     ** to invoke the pre-update hook.
