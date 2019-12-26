@@ -1,9 +1,9 @@
-C Add\stwo\snew\sfuzzer\stest\scases\sfrom\sdbsqlfuzz.
-D 2019-12-26T01:02:02.907
+C Makefile.in\sfix\sso\sthat\sit\sworks\son\ssystems\sthat\srequire\sa\s.EXE\ssuffix\non\sexecutables.
+D 2019-12-26T01:10:17.023
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in d3a862c9742f5a08230a3b295c0a47fd3067f19356dc39935280135f90474b04
+F Makefile.in 9dfc7936f675785309b74d09202bb656732325e65df889e5aaa18cc8932e5b0c
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc fab23c6b10cb6f06a7e9c407fc2e35cb184a6d653f1b793bda87fcee2eafa4f6
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8c6dd0e6582ec9103d007b294c42bb1820be1fa7dab85d873b04e0b90571626
-R 6f423d5340ee156dec438c1b5bdc24e1
+P f8d5586a8ceca985dcb2d63d0fbad9e271e9e1664720ee698d4947acd5dcc543
+R 6af373fa92486883d456e9ecb1d65e03
 U drh
-Z 53045fa65cdb9a572496969d31562b16
+Z 626f0d7b9b28ef5ff11b6bda2814f398
