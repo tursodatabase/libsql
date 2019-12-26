@@ -5757,7 +5757,7 @@ int sqlite3Select(
 #ifndef SQLITE_OMIT_WINDOWFUNC
   rc = sqlite3WindowRewrite(pParse, p);
   if( rc ){
-    assert( pParse->nErr>0 );
+    assert( db->mallocFailed || pParse->nErr>0 );
     goto select_end;
   }
 #if SELECTTRACE_ENABLED

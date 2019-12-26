@@ -1,5 +1,5 @@
-C Disables\sthe\soptimization\sthat\stries\sto\spull\sthe\svalue\sof\san\sexpression\nfrom\san\sindex\son\sthat\sexpression\sif\sthe\sexpression\sis\sa\sconstant.
-D 2019-12-26T00:20:56.165
+C Fix\san\sincorrect\sassert()\sadded\sby\scheck-in\s[fa58aad48a788802].\nProblem\sfound\sby\sdbsqlfuzz.
+D 2019-12-26T00:53:43.165
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -527,7 +527,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 86a7773d2892227ba9ad1721c41bb03c501830f1bf6de5f78dd0062b82e10c9d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 338c1e7e2d88f1ecc47b3f0b1af73522baffe5b6461d86510bec80b70d9eb63f
+F src/select.c 83e3aba723cd50134b8af4b18433f46123c31889a39c8b4ac28cccedbdf070e8
 F src/shell.c.in 4a3a9e1c11847b1904f2b01d087af1c052f660902755abab457cab1756817ded
 F src/sqlite.h.in 2a23e8161775253d9cf383c2c6aa559005dc787d350dcb0be67a6c4cc3bd1d19
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1852,7 +1852,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa58aad48a788802b13a819e49f9b8787f713bbe395c46c7295e821c52c81738
-R 23cede26d783f7f8444bfd01b22a435c
+P e5fd8b50500f9225e435ef5afee98e3c2cccd22785f99c718d7e6c9b5b653c56
+R e37ba228c630cd4605b508bda7f68f0a
 U drh
-Z 433fcc770d9a07273e25c3f3a5f0cde4
+Z 8900acbd27e9c6ec95e7c332f76f4626
