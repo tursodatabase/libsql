@@ -289,7 +289,10 @@ static void fts5CheckTransactionState(Fts5FullTable *p, int op, int iSavepoint){
     case FTS5_ROLLBACKTO:
       assert( p->ts.eState==1 );
       assert( iSavepoint>=-1 );
-      assert( iSavepoint<=p->ts.iSavepoint );
+      /* The following assert() can fail if another vtab strikes an error
+      ** within an xSavepoint() call then SQLite calls xRollbackTo() - without
+      ** having called xSavepoint() on this vtab.  */
+      /* assert( iSavepoint<=p->ts.iSavepoint ); */
       p->ts.iSavepoint = iSavepoint;
       break;
   }
