@@ -821,4 +821,19 @@ do_execsql_test 14.10 {
   PRAGMA integrity_check;
 } {3 ok}
 
+# 2019-12-26 More problems in zipfile from the Yongheng and Rui fuzzer
+#
+do_execsql_test 15.10 {
+  DROP TABLE IF EXISTS t1;
+  CREATE VIRTUAL TABLE t1 USING zipfile(null);
+  REPLACE INTO t1 VALUES(null,null,0,null,null,null,null);
+} {}
+do_execsql_test 15.20 {
+  DROP TABLE IF EXISTS t2;
+  CREATE VIRTUAL TABLE t2 USING zipfile(null);
+  REPLACE INTO t2 values(null,null,null,null,null,10,null);
+} {}
+
+
+
 finish_test

@@ -1,5 +1,5 @@
-C If\san\sUPSERT\scan\scause\san\sAbort\sdue\sto\sa\sconstraint\sfailure,\smake\ssure\nthe\squery\splanner\sknows\sthis.\s\sTicket\s[7c13db5c3bf74001].
-D 2019-12-26T23:40:33.899
+C Fix\sbuffer\sunderflows\sin\sthe\szipfile\sextension\sassociated\swith\szero-length\nor\sNULL\sfilename\sin\sthe\sZIP\sarchive.\s\sBut\sreport\son\sthe\smailing\slist\sby\nYongheng\sand\sRui.
+D 2019-12-27T00:19:53.106
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -325,7 +325,7 @@ F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/misc/zipfile.c 010d67eeca123e3a89ab4144221bc4da66455fc964053602af5bb63584110bc7
+F ext/misc/zipfile.c 185d060a595c79ebbec904e9d73b97b400dca94d2f910d351d6a8b5fcfe2c3d0
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 8681f6157db6adc82c34af24b14ea8a3be0146ad2a3b6c1d5da6cb8a5796c8ce
 F ext/rbu/rbu1.test 221d9c18a5e600ac9ac6b1810d99d9f99163a7909ba61597876ab6e4d4beb3d6
@@ -1749,7 +1749,7 @@ F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912ade
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 330bec11cee9da4da1a48e648b6d445b9334044089da62e9521803566a36dde2
+F test/zipfile.test aab99dc488586842bed415a1ce1a2327948064aa660c00243e3f14a1ff1cf282
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e54560495926fbb8a2ce829c677a2dd0066e46b7a8d4ada9d8a34a3426959836
-R bdcea74dd1d013c76328f299bf920b0b
+P f14ce948662f3445a06d84d4f32d9b81143e0cffaf773d8aa4d3a609bfb9682b
+R 61cf5988b65ab0cab19990d9569b78eb
 U drh
-Z 2beb349752cd943aefda1d019be441ce
+Z 40ad65760fcadc9cbb252a4c9cb8855e
