@@ -894,9 +894,10 @@ static ExprList *exprListAppendList(
     int i;
     int nInit = pList ? pList->nExpr : 0;
     for(i=0; i<pAppend->nExpr; i++){
+      int iDummy;
       Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
       assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
-      if( bIntToNull && pDup && pDup->op==TK_INTEGER ){
+      if( bIntToNull && pDup && sqlite3ExprIsInteger(pDup, &iDummy) ){
         pDup->op = TK_NULL;
         pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
         pDup->u.zToken = 0;
@@ -947,7 +948,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     /* Create the ORDER BY clause for the sub-select. This is the concatenation
     ** of the window PARTITION and ORDER BY clauses. Then, if this makes it
     ** redundant, remove the ORDER BY from the parent SELECT.  */
-    pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
+    pSort = exprListAppendList(pParse, 0, pMWin->pPartition, 1);
     pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy, 1);
     if( pSort && p->pOrderBy && p->pOrderBy->nExpr<=pSort->nExpr ){
       int nSave = pSort->nExpr;

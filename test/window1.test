@@ -1363,12 +1363,43 @@ do_execsql_test 39.4 {
 
 # 2019-12-25 ticket d87336c81c7d0873
 #
-reset_db
-do_catchsql_test 40.1 {
-  CREATE VIRTUAL TABLE t0 USING rtree(c0, c1, c2);
-  SELECT * FROM t0
-   WHERE ((0,0) IN (SELECT COUNT(*),LAG(5)OVER(PARTITION BY 0) FROM t0),0)<=(c1,0);
-} {1 {1st ORDER BY term out of range - should be between 1 and 3}}
+#reset_db
+#do_catchsql_test 40.1 {
+#  CREATE VIRTUAL TABLE t0 USING rtree(c0, c1, c2);
+#  SELECT * FROM t0
+#   WHERE ((0,0) IN (SELECT COUNT(*),LAG(5)OVER(PARTITION BY 0) FROM t0),0)<=(c1,0);
+#} {1 {1st ORDER BY term out of range - should be between 1 and 3}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 41.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(NULL,'bb',355);
+  INSERT INTO t1 VALUES('CC','aa',158);
+  INSERT INTO t1 VALUES('GG','bb',929);
+  INSERT INTO t1 VALUES('FF','Rb',574);
+}
+
+do_execsql_test 41.2 {
+  SELECT min(c) OVER (
+    ORDER BY a RANGE BETWEEN 5.2 PRECEDING AND 0.1 PRECEDING
+  ) FROM t1
+} {355 158 574 929}
+
+do_execsql_test 41.2 {
+  SELECT min(c) OVER (
+    ORDER BY a RANGE BETWEEN 5.2 PRECEDING AND 0.1 PRECEDING
+  ) << 100 FROM t1
+} {0 0 0 0}
+
+do_execsql_test 41.3 {
+  SELECT
+    min(c) OVER win3 << first_value(c) OVER win3,
+    min(c) OVER win3 << first_value(c) OVER win3
+  FROM t1
+  WINDOW win3 AS (
+    PARTITION BY 6 ORDER BY a RANGE BETWEEN 5.2 PRECEDING AND 0.1 PRECEDING
+  );
+} {0 0  0 0  0 0  0 0}
 
 finish_test
