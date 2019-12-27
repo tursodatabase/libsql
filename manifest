@@ -1,5 +1,5 @@
-C Fix\sbuffer\sunderflows\sin\sthe\szipfile\sextension\sassociated\swith\szero-length\nor\sNULL\sfilename\sin\sthe\sZIP\sarchive.\s\sBut\sreport\son\sthe\smailing\slist\sby\nYongheng\sand\sRui.
-D 2019-12-27T00:19:53.106
+C Ensure\sthat\sthe\sPager.changeCountDone\sflag\sis\scleared\swhenever\sdropping\nthe\swrite\slock,\seven\swhen\stransitioning\sfrom\sEXCLUSIVE\slocking\smode\sinto\nNORMAL\slocking\smode\swhile\sin\sWAL\smode.\s\sTicket\s[fb3b3024ea238d5c].
+D 2019-12-27T01:50:46.455
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c d403950128240f11da7588e30a3b4a4a34e69caf7c60937e970fb85b2860ca42
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 7e371809d86b3f60d523396612b8fde4c8d3529bea90b04fad0f6be2703159a4
+F src/pager.c b08541016855b06956cb34c4cddd8c9fa97793f3bfdc4f7809f09fda24702435
 F src/pager.h 217921e81eb5fe455caa5cda96061959706bcdd29ddb57166198645ef7822ac3
 F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -851,7 +851,7 @@ F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 84879b63e3110552bf8ce648a3507dc3ceb72109ecec83c2aef0db37a27f6382
 F test/errmsg.test eae9f091eb39ce7e20305de45d8e5d115b68fa856fba4ea6757b6ca3705ff7f9
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
-F test/exclusive.test 1206b87e192497d78c7f35552e86a9d05421498da300fb1cce5ca5351ccde3c3
+F test/exclusive.test d6ccc6acc5d660544f8e0cacaec2c620f8ebb42a764d783ab53430e26057a185
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f14ce948662f3445a06d84d4f32d9b81143e0cffaf773d8aa4d3a609bfb9682b
-R 61cf5988b65ab0cab19990d9569b78eb
+P 465a15c5c2077011befa854a77f9d295bb751ef20b7d2937ac0ba47cc84587c9
+R e34584efe34ddbc0b2a2a75619a185e2
 U drh
-Z 40ad65760fcadc9cbb252a4c9cb8855e
+Z bd3a4faab409dc918cd96dcd50ae34d6
