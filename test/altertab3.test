@@ -531,4 +531,26 @@ do_catchsql_test 23.2 {
   ALTER TABLE t1 RENAME TO t1x;
 } {1 {error in trigger r1: no such table: main.t2}}
 
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 23.1 {
+  CREATE TABLE v0 (a);
+  CREATE VIEW v2 (v3) AS 
+    WITH x1 AS (SELECT * FROM v2) 
+    SELECT v3 AS x, v3 AS y FROM v2; 
+}
+
+do_catchsql_test 23.2 {
+  SELECT * FROM v2
+} {1 {view v2 is circularly defined}}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 23.3 {
+  ALTER TABLE v0 RENAME TO t3 ;
+} {1 {error in view v2: view v2 is circularly defined}}
+
 finish_test
+
