@@ -5492,6 +5492,11 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
   cnt.nThis = 0;
   cnt.nOther = 0;
   sqlite3WalkExprList(&w, pExpr->x.pList);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( ExprHasProperty(pExpr, EP_WinFunc) ){
+    sqlite3WalkExpr(&w, pExpr->y.pWin->pFilter);
+  }
+#endif
   return cnt.nThis>0 || cnt.nOther==0;
 }
 

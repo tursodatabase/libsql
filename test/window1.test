@@ -1333,19 +1333,19 @@ do_execsql_test 37.20 {
 # in a join.
 #
 reset_db
-do_execsql_test 38.10 {
+do_catchsql_test 38.10 {
   CREATE TABLE t0(c0);
   CREATE TABLE t1(c0, c1 UNIQUE);
   INSERT INTO t0(c0) VALUES(1);
   INSERT INTO t1(c0,c1) VALUES(2,3);
   SELECT COUNT(*) FROM t0, t1 WHERE (SELECT AVG(0) FILTER(WHERE t1.c1));
-} {0}
+} {1 {misuse of aggregate: AVG()}}
 do_execsql_test 38.20 {
   SELECT COUNT(*), AVG(1) FILTER(WHERE t1.c1) FROM t0, t1;
 } {1 1.0}
-do_execsql_test 38.30 {
+do_catchsql_test 38.30 {
   SELECT COUNT(*) FROM t0, t1 WHERE (SELECT AVG(1) FILTER(WHERE t1.c1));
-} {1}
+} {1 {misuse of aggregate: AVG()}}
 
 reset_db
 do_execsql_test 39.1 {
