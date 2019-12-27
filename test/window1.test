@@ -1491,4 +1491,29 @@ do_catchsql_test 43.2.6 {
   SELECT a, 1+sum(b) OVER (ORDER BY a) AS abc FROM t1 ORDER BY (SELECT abc)
 } {1 {misuse of aliased window function abc}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 44.1 {
+  CREATE TABLE t0(c0);
+}
+
+do_catchsql_test 44.2.1 {
+  SELECT ntile(0) OVER ();
+} {1 {argument of ntile must be a positive integer}}
+do_catchsql_test 44.2.2 {
+  SELECT (0, 0) IN(SELECT MIN(c0), NTILE(0) OVER()) FROM t0;
+} {1 {argument of ntile must be a positive integer}}
+
+do_execsql_test 44.3.1 {
+  SELECT ntile(1) OVER ();
+} {1}
+do_execsql_test 44.3.2 {
+  SELECT (0, 0) IN(SELECT MIN(c0), NTILE(1) OVER()) FROM t0;
+} {0}
+
+do_execsql_test 44.4.2 {
+  INSERT INTO t0 VALUES(2), (1), (0);
+  SELECT (0, 1) IN(SELECT MIN(c0), NTILE(1) OVER()) FROM t0;
+} {1}
+
 finish_test
