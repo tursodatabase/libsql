@@ -799,6 +799,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
       }
       if( iCol<0 ){
         Expr *pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
+        if( pDup && pDup->op==TK_AGG_FUNCTION ) pDup->op = TK_FUNCTION;
         p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
       }
       if( p->pSub ){
