@@ -1,5 +1,5 @@
-C When\sdetermining\sif\san\saggregate\swithin\sa\ssub-query\sshould\sbe\sprocessed\sas\spart\sof\sthe\ssub-query\sor\san\souter\squery,\sconsider\sany\sFILTER\sclause\sin\sthe\ssame\sway\sas\sthe\sarguments\sto\sthe\saggregate.
-D 2019-12-27T08:57:08.228
+C Follow-up\sto\scheck-in\s[c8c6dd0e6582ec91]\s-\schange\sthe\sxAccess()\smethod\sto\nreturn\strue\sif\sthe\sfile\sexists\sand\sit\sis\sanything\sother\sthan\sa\sregular\sfile,\nor\sif\sit\sis\sa\sregular\sfile\swith\sa\snon-zero\sfile\ssize.
+D 2019-12-27T13:30:46.798
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,7 +512,7 @@ F src/os.c 669cc3839cc35d20f81faf0be1ab6d4581cea35e9d8f3a9d48a98d6571f7c285
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c d403950128240f11da7588e30a3b4a4a34e69caf7c60937e970fb85b2860ca42
+F src/os_unix.c ad7640c04eed946052a3b12856362a773d0a717696707313037186df0e2b59f2
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08541016855b06956cb34c4cddd8c9fa97793f3bfdc4f7809f09fda24702435
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 846b1de6e5a9e418f225273dc033234c64c116fcd89c8261522b4902c248451f
-R a028f2ca6cbb3cdf8afd64108610da66
-U dan
-Z 229bcd629c79f0e2caa144fb8641d19d
+P 1ffc045d2bbeeda9c13a3a3585538ff6434fc852b0ae6679d3c8b9f606bf92e6
+R b54a424c126e1e000b0a94ae223fb870
+U drh
+Z 3439b330e9610c269373f686cac6131c
