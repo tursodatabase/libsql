@@ -1361,14 +1361,16 @@ do_execsql_test 39.4 {
   SELECT * FROM t0 WHERE (t0.c0, 1) IN(SELECT NTILE(1) OVER(), 0 FROM t0);
 }
 
-# 2019-12-25 ticket d87336c81c7d0873
-#
-reset_db
-do_catchsql_test 40.1 {
-  CREATE VIRTUAL TABLE t0 USING rtree(c0, c1, c2);
-  SELECT * FROM t0
-   WHERE ((0,0) IN (SELECT COUNT(*),LAG(5)OVER(PARTITION BY 0) FROM t0),0)<=(c1,0);
-} {0 {}}
+ifcapable rtree {
+  # 2019-12-25 ticket d87336c81c7d0873
+  #
+  reset_db
+  do_catchsql_test 40.1 {
+    CREATE VIRTUAL TABLE t0 USING rtree(c0, c1, c2);
+    SELECT * FROM t0
+     WHERE ((0,0) IN (SELECT COUNT(*),LAG(5)OVER(PARTITION BY 0) FROM t0),0)<=(c1,0);
+  } {0 {}}
+}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -1443,5 +1445,3 @@ do_execsql_test 42.7 {
 } {21 21}
 
 finish_test
-
-
