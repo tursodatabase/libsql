@@ -1286,8 +1286,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
 #if WHERETRACE_ENABLED /* 0x20800 */
   if( sqlite3WhereTrace & 0x800 ){
-    sqlite3DebugPrintf("Coding level %d of %d:  notReady=%llx\n",
-       iLevel, pWInfo->nLevel, (u64)notReady);
+    sqlite3DebugPrintf("Coding level %d of %d:  notReady=%llx  iFrom=%d\n",
+       iLevel, pWInfo->nLevel, (u64)notReady, pLevel->iFrom);
     sqlite3WhereLoopPrint(pLoop, pWC);
   }
   if( sqlite3WhereTrace & 0x20000 ){
@@ -2381,7 +2381,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
     if( (pTerm->eOperator & WO_EQUIV)==0 ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
-    if( pLevel->iLeftJoin ) continue;
+    if( pTabItem->fg.jointype & JT_LEFT ) continue;
     pE = pTerm->pExpr;
 #ifdef WHERETRACE_ENABLED /* 0x800 */
     if( sqlite3WhereTrace & 0x800 ){
