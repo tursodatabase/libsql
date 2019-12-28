@@ -1516,4 +1516,19 @@ do_execsql_test 44.4.2 {
   SELECT (0, 1) IN(SELECT MIN(c0), NTILE(1) OVER()) FROM t0;
 } {1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 45.1 {
+  CREATE TABLE t0(x);
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1000);
+  INSERT INTO t1 VALUES(1000);
+  INSERT INTO t0 VALUES(10000);
+}
+do_execsql_test 45.2 {
+  SELECT * FROM (
+      SELECT sum (a) OVER() FROM t1 UNION ALL SELECT x FROM t0
+  );
+} {2000 2000 10000}
+
 finish_test

@@ -3669,6 +3669,7 @@ static void substSelect(
 **              (17d1) aggregate, or
 **              (17d2) DISTINCT, or
 **              (17d3) a join.
+**        (17e) the subquery may not contain window functions
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -3853,6 +3854,7 @@ static int flattenSubquery(
       if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0    /* (17b) */
        || (pSub1->pPrior && pSub1->op!=TK_ALL)                 /* (17a) */
        || pSub1->pSrc->nSrc<1                                  /* (17c) */
+       || pSub1->pWin                                          /* (17d) */
       ){
         return 0;
       }
