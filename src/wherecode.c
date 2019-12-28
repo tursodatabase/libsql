@@ -1286,12 +1286,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
 #if WHERETRACE_ENABLED /* 0x20800 */
   if( sqlite3WhereTrace & 0x800 ){
-    sqlite3DebugPrintf("Coding level %d:  notReady=%llx\n",
-       iLevel, (u64)notReady);
+    sqlite3DebugPrintf("Coding level %d of %d:  notReady=%llx\n",
+       iLevel, pWInfo->nLevel, (u64)notReady);
     sqlite3WhereLoopPrint(pLoop, pWC);
   }
   if( sqlite3WhereTrace & 0x20000 ){
-    sqlite3DebugPrintf("Complete WHERE clause before coding:\n");
+    if( iLevel==0 ){
+      sqlite3DebugPrintf("WHERE clause being coded:\n");
+      sqlite3TreeViewExpr(0, pWInfo->pWhere, 0);
+    }
+    sqlite3DebugPrintf("All WHERE-clause terms before coding:\n");
     sqlite3WhereClausePrint(pWC);
   }
 #endif
@@ -2379,13 +2383,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pTerm->leftCursor!=iCur ) continue;
     if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
-    assert( !ExprHasProperty(pE, EP_FromJoin) );
 #ifdef WHERETRACE_ENABLED /* 0x800 */
     if( sqlite3WhereTrace & 0x800 ){
       sqlite3DebugPrintf("Coding transitive constraint:\n");
       sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
     }
 #endif
+    assert( !ExprHasProperty(pE, EP_FromJoin) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.leftColumn, notReady,
                     WO_EQ|WO_IN|WO_IS, 0);
@@ -2429,7 +2433,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
 #if WHERETRACE_ENABLED /* 0x20800 */
   if( sqlite3WhereTrace & 0x20000 ){
-    sqlite3DebugPrintf("Complete WHERE clause after coding level %d:\n",iLevel);
+    sqlite3DebugPrintf("All WHERE-clause terms after coding level %d:\n",
+                       iLevel);
     sqlite3WhereClausePrint(pWC);
   }
   if( sqlite3WhereTrace & 0x800 ){
