@@ -1001,5 +1001,27 @@ do_execsql_test join-23.10 {
    WHERE v0.c0 == 0;
 } {123 0 c0}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test join-24.1 {
+  CREATE TABLE t1(a PRIMARY KEY, x);
+  CREATE TABLE t2(b INT);
+  CREATE INDEX t1aa ON t1(a, a);
+
+  INSERT INTO t1 VALUES('abc', 'def');
+  INSERT INTO t2 VALUES(1);
+}
+
+do_execsql_test join-24.2 {
+  SELECT * FROM t2 JOIN t1 WHERE a='abc' AND x='def';
+} {1 abc def}
+do_execsql_test join-24.3 {
+  SELECT * FROM t2 JOIN t1 WHERE a='abc' AND x='abc';
+} {}
+
+do_execsql_test join-24.2 {
+  SELECT * FROM t2 LEFT JOIN t1 ON a=0 WHERE (x='x' OR x IS NULL);
+} {1 {} {}}
 
 finish_test
+
