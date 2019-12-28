@@ -1502,7 +1502,6 @@ void sqlite3GenerateConstraintChecks(
   int ix;              /* Index loop counter */
   int nCol;            /* Number of columns */
   int onError;         /* Conflict resolution strategy */
-  int addr1;           /* Address of jump instruction */
   int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int nPkField;        /* Number of fields in PRIMARY KEY. 1 for ROWID tables */
   Index *pUpIdx = 0;   /* Index to which to apply the upsert */
@@ -1546,71 +1545,100 @@ void sqlite3GenerateConstraintChecks(
   /* Test all NOT NULL constraints.
   */
   if( pTab->tabFlags & TF_HasNotNull ){
-    for(i=0; i<nCol; i++){
-      int iReg;
-      onError = pTab->aCol[i].notNull;
-      if( onError==OE_None ) continue; /* No NOT NULL on this column */
-      if( i==pTab->iPKey ){
-        continue;        /* ROWID is never NULL */
-      }
-      if( aiChng && aiChng[i]<0 ){
-        /* Don't bother checking for NOT NULL on columns that do not change */
-        continue;
-      }
-      if( overrideError!=OE_Default ){
-        onError = overrideError;
-      }else if( onError==OE_Default ){
-        onError = OE_Abort;
-      }
-      if( onError==OE_Replace && pTab->aCol[i].pDflt==0 ){
-        onError = OE_Abort;
-      }
-      assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
-          || onError==OE_Ignore || onError==OE_Replace );
-      addr1 = 0;
-      testcase( i!=sqlite3TableColumnToStorage(pTab, i) );
-      testcase( pTab->aCol[i].colFlags & COLFLAG_VIRTUAL );
-      testcase( pTab->aCol[i].colFlags & COLFLAG_STORED );
-      iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
-      switch( onError ){
-        case OE_Replace: {
-          assert( onError==OE_Replace );
-          addr1 = sqlite3VdbeMakeLabel(pParse);
-          sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
-            VdbeCoverage(v);
-          if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 ){
-            sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
-            sqlite3VdbeAddOp2(v, OP_NotNull, iReg, addr1);
-              VdbeCoverage(v);
-          }
+    int b2ndPass = 0;         /* True if currently running 2nd pass */
+    int nSeenReplace = 0;     /* Number of ON CONFLICT REPLACE operations */
+    int nGenerated = 0;       /* Number of generated columns with NOT NULL */
+    while(1){  /* Make 2 passes over columns. Exit loop via "break" */
+      for(i=0; i<nCol; i++){
+        int iReg;                        /* Register holding column value */
+        Column *pCol = &pTab->aCol[i];   /* The column to check for NOT NULL */
+        int isGenerated;                 /* non-zero if column is generated */
+        onError = pCol->notNull;
+        if( onError==OE_None ) continue; /* No NOT NULL on this column */
+        if( i==pTab->iPKey ){
+          continue;        /* ROWID is never NULL */
+        }
+        isGenerated = pCol->colFlags & COLFLAG_GENERATED;
+        if( isGenerated && !b2ndPass ){
+          nGenerated++;
+          continue;        /* Generated columns processed on 2nd pass */
+        }
+        if( aiChng && aiChng[i]<0 && !isGenerated ){
+          /* Do not check NOT NULL on columns that do not change */
+          continue;
+        }
+        if( overrideError!=OE_Default ){
+          onError = overrideError;
+        }else if( onError==OE_Default ){
           onError = OE_Abort;
-          /* Fall through into the OE_Abort case to generate code that runs
-          ** if both the input and the default value are NULL */
         }
-        case OE_Abort:
-          sqlite3MayAbort(pParse);
-          /* Fall through */
-        case OE_Rollback:
-        case OE_Fail: {
-          char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
-                                      pTab->aCol[i].zName);
-          sqlite3VdbeAddOp3(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL,
-                            onError, iReg);
-          sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);
-          sqlite3VdbeChangeP5(v, P5_ConstraintNotNull);
-          VdbeCoverage(v);
-          if( addr1 ) sqlite3VdbeResolveLabel(v, addr1);
-          break;
+        if( onError==OE_Replace ){
+          if( b2ndPass        /* REPLACE becomes ABORT on the 2nd pass */
+           || pCol->pDflt==0  /* REPLACE is ABORT if no DEFAULT value */
+          ){
+            testcase( pCol->colFlags & COLFLAG_VIRTUAL );
+            testcase( pCol->colFlags & COLFLAG_STORED );
+            testcase( pCol->colFlags & COLFLAG_GENERATED );
+            onError = OE_Abort;
+          }else{
+            assert( !isGenerated );
+          }
+        }else if( b2ndPass && !isGenerated ){
+          continue;
         }
-        default: {
-          assert( onError==OE_Ignore );
-          sqlite3VdbeAddOp2(v, OP_IsNull, iReg, ignoreDest);
-          VdbeCoverage(v);
-          break;
-        }
+        assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
+            || onError==OE_Ignore || onError==OE_Replace );
+        testcase( i!=sqlite3TableColumnToStorage(pTab, i) );
+        iReg = sqlite3TableColumnToStorage(pTab, i) + regNewData + 1;
+        switch( onError ){
+          case OE_Replace: {
+            int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, iReg);
+            VdbeCoverage(v);
+            assert( (pCol->colFlags & COLFLAG_GENERATED)==0 );
+            nSeenReplace++;
+            sqlite3ExprCode(pParse, pCol->pDflt, iReg);
+            sqlite3VdbeJumpHere(v, addr1);
+            break;
+          }
+          case OE_Abort:
+            sqlite3MayAbort(pParse);
+            /* Fall through */
+          case OE_Rollback:
+          case OE_Fail: {
+            char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
+                                        pCol->zName);
+            sqlite3VdbeAddOp3(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL,
+                              onError, iReg);
+            sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);
+            sqlite3VdbeChangeP5(v, P5_ConstraintNotNull);
+            VdbeCoverage(v);
+            break;
+          }
+          default: {
+            assert( onError==OE_Ignore );
+            sqlite3VdbeAddOp2(v, OP_IsNull, iReg, ignoreDest);
+            VdbeCoverage(v);
+            break;
+          }
+        } /* end switch(onError) */
+      } /* end loop i over columns */
+      if( nGenerated==0 && nSeenReplace==0 ){
+        /* If there are no generated columns with NOT NULL constraints
+        ** and no NOT NULL ON CONFLICT REPLACE constraints, then a single
+        ** pass is sufficient */
+        break;
       }
-    }
-  }
+      if( b2ndPass ) break;  /* Never need more than 2 passes */
+      b2ndPass = 1;
+      if( nSeenReplace>0 && (pTab->tabFlags & TF_HasGenerated)!=0 ){
+        /* If any NOT NULL ON CONFLICT REPLACE constraints fired on the
+        ** first pass, recomputed values for all generated columns, as
+        ** those values might depend on columns affected by the REPLACE.
+        */
+        sqlite3ComputeGeneratedColumns(pParse, regNewData+1, pTab);
+      }
+    } /* end of 2-pass loop */
+  } /* end if( has-not-null-constraints ) */
 
   /* Test all CHECK constraints
   */
