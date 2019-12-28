@@ -1,4 +1,5 @@
 ///! Busy handler (when the database is locked)
+use std::convert::TryInto;
 use std::mem;
 use std::os::raw::{c_int, c_void};
 use std::panic::catch_unwind;
@@ -21,12 +22,13 @@ impl Connection {
     /// (using `busy_handler`) prior to calling this routine, that other
     /// busy handler is cleared.
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
-        let ms = timeout
+        let ms: i32 = timeout
             .as_secs()
             .checked_mul(1000)
             .and_then(|t| t.checked_add(timeout.subsec_millis().into()))
+            .and_then(|t| t.try_into().ok())
             .expect("too big");
-        self.db.borrow_mut().busy_timeout(ms as i32)
+        self.db.borrow_mut().busy_timeout(ms)
     }
 
     /// Register a callback to handle `SQLITE_BUSY` errors.
