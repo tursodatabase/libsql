@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sunwind\sthe\sWITH\sstack\sin\sthe\sParse\sobject\sfollowing\san\serror.\sThis\sfixes\sa\sseparate\scase\sto\s[de6e6d68].
-D 2019-12-27T20:54:42.382
+C Fix\san\sassert()\sfailure\sin\saltertable3-22.4.
+D 2019-12-28T08:26:47.067
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 695bcbc62177cf70faaf6b34f89c22415e5581a13c57d67c862057636d3f09b9
 F src/btree.h f27a33c49280209a93385e218306c4ee5f46ba8d7649d2f81a7166b282232484
 F src/btreeInt.h 91806f01fd1145a9a86ba3042f25c38d8faf6002701bf5e780742cf88bcff437
-F src/build.c 1d999886fa656e6211e14d5402a6f92cadbdaa5d2f4f0597c797f7818d510e33
+F src/build.c 5aa8776d926954f13ddc37144c765ff8d80e49b74432c0f5a10f29433f0d69a8
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 597896ed0ae9e2960a8f39576bd7f77a11dccc1da84b6a44ebb5c38d90ebc330
-R e2fa6fb2e144752a1d4a9d45874c1bd9
+P d29edef93451cc67a5d69c1cce1b1832d9ca8fff1f600afdd51338b74d077b92
+R cba70c36e93dfffeaca2b813bf7688d4
 U dan
-Z e36f281614de7335dc6fbd6aa6abfc9f
+Z cffa8180beb2f61f82cbe2ab0339d09f
