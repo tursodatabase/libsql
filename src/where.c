@@ -1735,12 +1735,13 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
   if( pTerm==0 ){
     sqlite3DebugPrintf("TERM-%-3d NULL\n", iTerm);
   }else{
-    char zType[4];
+    char zType[8];
     char zLeft[50];
-    memcpy(zType, "...", 4);
+    memcpy(zType, "....", 5);
     if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
     if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+    if( pTerm->wtFlags & TERM_CODED  ) zType[3] = 'C';
     if( pTerm->eOperator & WO_SINGLE ){
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left={%d:%d}",
                        pTerm->leftCursor, pTerm->u.leftColumn);
@@ -1751,12 +1752,13 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left=%d", pTerm->leftCursor);
     }
     sqlite3DebugPrintf(
-       "TERM-%-3d %p %s %-12s prob=%-3d op=%03x wtFlags=%04x",
-       iTerm, pTerm, zType, zLeft, pTerm->truthProb,
-       pTerm->eOperator, pTerm->wtFlags);
+       "TERM-%-3d %p %s %-12s op=%03x wtFlags=%04x",
+       iTerm, pTerm, zType, zLeft, pTerm->eOperator, pTerm->wtFlags);
+    /* The 0x10000 .wheretrace flag causes extra information to be
+    ** shown about each Term */
     if( sqlite3WhereTrace & 0x10000 ){
-      sqlite3DebugPrintf(" prereq=%llx,%llx",
-        (u64)pTerm->prereqAll, (u64)pTerm->prereqRight);
+      sqlite3DebugPrintf(" prob=%-3d prereq=%llx,%llx",
+        pTerm->truthProb, (u64)pTerm->prereqAll, (u64)pTerm->prereqRight);
     }
     if( pTerm->iField ){
       sqlite3DebugPrintf(" iField=%d", pTerm->iField);

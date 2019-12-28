@@ -1284,6 +1284,17 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   pLevel->notReady = notReady & ~sqlite3WhereGetMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
   VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
+#if WHERETRACE_ENABLED /* 0x20800 */
+  if( sqlite3WhereTrace & 0x800 ){
+    sqlite3DebugPrintf("Coding level %d:  notReady=%llx\n",
+       iLevel, (u64)notReady);
+    sqlite3WhereLoopPrint(pLoop, pWC);
+  }
+  if( sqlite3WhereTrace & 0x20000 ){
+    sqlite3DebugPrintf("Complete WHERE clause before coding:\n");
+    sqlite3WhereClausePrint(pWC);
+  }
+#endif
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -2339,6 +2350,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeNoopComment((v, "WhereTerm[%d] (%p) priority=%d",
                          pWC->nTerm-j, pTerm, iLoop));
       }
+      if( sqlite3WhereTrace & 0x800 ){
+        sqlite3DebugPrintf("Coding auxiliary constraint:\n");
+        sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
+      }
 #endif
       sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
       if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
@@ -2365,6 +2380,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
     assert( !ExprHasProperty(pE, EP_FromJoin) );
+#ifdef WHERETRACE_ENABLED /* 0x800 */
+    if( sqlite3WhereTrace & 0x800 ){
+      sqlite3DebugPrintf("Coding transitive constraint:\n");
+      sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
+    }
+#endif
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.leftColumn, notReady,
                     WO_EQ|WO_IN|WO_IS, 0);
@@ -2406,5 +2427,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
   }
 
+#if WHERETRACE_ENABLED /* 0x20800 */
+  if( sqlite3WhereTrace & 0x20000 ){
+    sqlite3DebugPrintf("Complete WHERE clause after coding level %d:\n",iLevel);
+    sqlite3WhereClausePrint(pWC);
+  }
+  if( sqlite3WhereTrace & 0x800 ){
+    sqlite3DebugPrintf("End Coding level %d:  notReady=%llx\n",
+       iLevel, (u64)pLevel->notReady);
+  }
+#endif
   return pLevel->notReady;
 }

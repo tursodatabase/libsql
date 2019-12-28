@@ -1,5 +1,5 @@
-C Expose\ssome\sof\sthe\sWhere\sdata\sstructure\sdebug\sprinting\sroutines\sto\sthe\nentire\sWHERE-clause\sprocessing\smodule.
-D 2019-12-28T13:39:47.110
+C New\senhancements\sto\s.wheretrace.\s\sThe\s0x20000\sflag\sshows\sthe\sWHERE\sclause\nbefore\sand\safter\scoding\seach\sloop.\s\sThe\s0x800\sflag\sshows\sstatus\sat\sthe\sstart\nand\sat\sthe\send\sof\seach\sloop.\s\sAn\sextra\s"C"\stag\sis\sshown\son\scoded\sterms.
+D 2019-12-28T14:07:22.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,9 +614,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c d1d79673b64278bbdefe790c70cb01ee607f79c48163febdf8dee86f6a7e715e
+F src/where.c 97f19d664256aaf86e4aac1323992c6fda5deb44ed35320539fdb3faa31307b1
 F src/whereInt.h de1b77e416ad5a7cc60a71fc1317484f8d83ca1e52b805dc8c978785a92eeded
-F src/wherecode.c d42d3e0fe93786621b84dec8065e1dc6b324d7c5934df52f141555843b6aef4e
+F src/wherecode.c d074abccfbd4ef2becc34aea640d326ff76709c5867c2b049c719a4ce5b74c06
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c 87795bb8293179cb8a92529264d49bd66b5bcad5e91cfc17dd8d3e66a2a77f88
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 52ea0672d7494346c636cd7b05ca42161eb3b07d9378fa9959be9a11de87dbbb
-R 36aa1965ca07c18187e2cc17b34e3feb
+P 85e76887761b5d7e290fb2bac7f9121648f79d67fdd92f624d81632f28620518
+R 1054236a3bfbc2d93687a4e1f244d884
 U drh
-Z 9b3b04de4e9f091e2c9e4bbb9028222c
+Z 90307d93afa9b9f29e276d59812ee8ca
