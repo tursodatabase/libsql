@@ -3502,7 +3502,8 @@ static int whereLoopAddOr(
         if( rc==SQLITE_OK ){
           rc = whereLoopAddOr(&sSubBuild, mPrereq, mUnusable);
         }
-        assert( rc==SQLITE_OK || sCur.n==0 );
+        assert( rc==SQLITE_OK || rc==SQLITE_DONE || sCur.n==0 );
+        testcase( rc==SQLITE_DONE );
         if( sCur.n==0 ){
           sSum.n = 0;
           break;
