@@ -1,5 +1,5 @@
-C If\sthe\s".wheretrace\s0x10000"\sbit\sis\sset,\sprint\sWhereTerm.prereqAll\nand\s.prereqRight\sfields\sin\sthe\sWhereTerm\strace\soutput.
-D 2019-12-28T12:33:35.974
+C Simplifications\sto\sthe\sinitialization\sof\sthe\ssqlite3_index_info\sstructure\s\nthat\sis\sused\sto\scommunicate\swith\svirtual\stable\smodules.\s\sAvoid\sadding\nunused\sconstraints\sto\sthe\ssqlite3_index_info\sstructure.\s\sExtra\sconstraints\nare\sharmless,\sbut\smight\sbe\sconfusing\sto\speople\strying\sto\sunderstand\sthe\scode.
+D 2019-12-28T13:01:52.507
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c 476c0091eb27c99fb481730621838f646fba6d9ebc6e76a97e8caa9b7f08d933
+F src/where.c 230995f73eded5c3b46cdd6dd9b1862930df2bc402f5e8d2b4bfe64779411685
 F src/whereInt.h 4a296fd4fa79fdcbc2b5e8c1b898901617655811223e1082b899c23ecb092217
 F src/wherecode.c d42d3e0fe93786621b84dec8065e1dc6b324d7c5934df52f141555843b6aef4e
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1be2c18f4021e1d0b8412ecb68a599475c717dd97c7db209fc4203358957fd70
-R 1077f4eb4d5b48d5e8fb352c3adc1164
+P a4f330b133a36356681dce7d2a65d8ab792620494d6cd4ef4934a97cf3a8e6fc
+R 9d791d568d34e1fbcc680abee9092a25
 U drh
-Z 26ea5bdabbe48f1cef138e8164f2fb1d
+Z 381500a973c5168ce8cc649911e2754b
