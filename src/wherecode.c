@@ -1685,7 +1685,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ){
       assert( bSeekPastNull==0 && nExtraReg==0 && nBtm==0 && nTop==0 );
       assert( pRangeEnd==0 && pRangeStart==0 );
-      assert( pLoop->nSkip==0 );
+      testcase( pLoop->nSkip>0 );
       nExtraReg = 1;
       bSeekPastNull = 1;
       pLevel->regBignull = regBignull = ++pParse->nMem;

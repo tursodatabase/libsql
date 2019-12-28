@@ -1,5 +1,5 @@
-C Disable\searly\scoding\sof\stransitive\sconstraints\sat\sthe\send\sof\seach\sloop\sin\nthe\sWHERE\sclause\sprocessing\sif\sthe\sloop\sbeing\scoded\sis\sfor\sa\sLEFT\sJOIN,\neven\sif\sthe\sloop\sis\spart\sof\san\sOR-clause\soptimization\sfor\svirtual\stables.\nTest\scases\sin\sTH3.
-D 2019-12-28T16:20:23.018
+C Change\san\sassert()\sin\swhere.c\sto\sa\stestcase()\smacro,\ssince\sthe\scondition\smay\sbe\sfalse.\sThis\swas\sa\sproblem\swith\sthe\sassert()\sonly,\sthere\sis\sno\sbug\sin\srelease\sbuilds\sthat\somit\sassert().
+D 2019-12-28T18:08:39.531
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 7bb294fdada405412dfd76d351286e0dec3dda07a8e19b0f904b8e8fc0ced41f
 F src/whereInt.h de1b77e416ad5a7cc60a71fc1317484f8d83ca1e52b805dc8c978785a92eeded
-F src/wherecode.c 8f4b83ef410a5144bf65e2986d72df5b25c9dd6b0ef1676e9dc8efefdba011f8
+F src/wherecode.c 3c9b185cdb6950fa1043d324d3e8ef14b07cef4f5cfb475611b6f43480494fb2
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c 87795bb8293179cb8a92529264d49bd66b5bcad5e91cfc17dd8d3e66a2a77f88
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1191,7 +1191,7 @@ F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
-F test/nulls1.test c8fc1b223f06e60007e0cd3e498ccb10195cf75a18fc3312508b3cf679ecb806
+F test/nulls1.test fe4153fd59a3786b4b9f3663a3e65a3aa43a318c7b4d7dcb3f6c3ed5652c9095
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f4bed1d7af8a94c6facd567dec5afae8865a5ad76b8834493099e5e30bed1132
-R f70080212a74811cf1e55e61f62a66ab
-U drh
-Z 43a1d545f913b52be3ee48c625515a53
+P 9421b442cad9858ec21050c106aa935a1c0723ab08ef9a867a79638b040b6e68
+R e9385abc46897bbfbfbfbc6bfbcfd8c7
+U dan
+Z 8385698bc4652e7f942fce6214733907
