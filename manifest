@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sinitialization\sof\sthe\ssqlite3_index_info\sstructure\s\nthat\sis\sused\sto\scommunicate\swith\svirtual\stable\smodules.\s\sAvoid\sadding\nunused\sconstraints\sto\sthe\ssqlite3_index_info\sstructure.\s\sExtra\sconstraints\nare\sharmless,\sbut\smight\sbe\sconfusing\sto\speople\strying\sto\sunderstand\sthe\scode.
-D 2019-12-28T13:01:52.507
+C Add\sthe\s--enable-all\soption\sto\sthe\smain\sconfigure\sscript\sas\sa\sshort-hand\nto\senable\sFTS4,\sFTS5,\sGeopoly/Rtree,\sJSON,\sand\sSessions.\s\sIn\sthe\namalgamation-autoconf,\sthe\s--enable-rtree\soption\s(which\sis\senabled\sby\ndefault)\salso\snow\sactivates\sGeopoly.
+D 2019-12-28T13:17:11.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -18,7 +18,7 @@ F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a
 F autoconf/Makefile.msc 1d1e4af61289c62b94aa65a93afcd3dfa4b53e4195908980e0b138203e71e1c9
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 308de24343e76ecfbe9a67f8fcd4c5216b790d230c5d9ce10210b7d5965d6192
+F autoconf/configure.ac 3cd933b959fe514eebd1ca1717dfddbf2c9b825b6bc2c5f744deaf5d63af9288
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -34,8 +34,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure fdc9f8d53360170679349d8f72fb2e5c79f511424891b7bb8a2f48de41c7a6ef x
-F configure.ac 3552d3aecade98a9d4b64bceb48ffb7726cbc85902efde956812942f060fbd0a
+F configure aae28230005acf833d466c8a160bd4c70cf42984f5a6756fa327e15e7f473477 x
+F configure.ac 798a24cee2879325ca5b688a618199eb32cc77ed8136edbaa43d9137b470d54e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4f330b133a36356681dce7d2a65d8ab792620494d6cd4ef4934a97cf3a8e6fc
-R 9d791d568d34e1fbcc680abee9092a25
+P 5e6357fc953a955d8ebb5c1fcd72e04e4ae5e8bf5941810015c2fbc50de70535
+R 4c70033507aedd6523a441599c072e7a
 U drh
-Z 381500a973c5168ce8cc649911e2754b
+Z 972b6b0655b9fda609bd390c407e9fc7
