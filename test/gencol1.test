@@ -548,7 +548,16 @@ do_execsql_test gencol1-18.20 {
   SELECT * FROM t0;
 } {0 0 0}
 
-
-
+# 2019-12-27 ticket de4b04149b9fdeae
+#
+reset_db
+do_catchsql_test gencol1-19.10 {
+  CREATE TABLE t0(
+    c0 INT AS(2) UNIQUE,
+    c1 TEXT UNIQUE,
+    FOREIGN KEY(c0) REFERENCES t0(c1)
+  );
+  INSERT INTO t0(c1) VALUES(0.16334143182538696), (0);
+} {1 {UNIQUE constraint failed: t0.c0}}
 
 finish_test

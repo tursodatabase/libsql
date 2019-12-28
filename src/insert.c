@@ -1020,6 +1020,7 @@ void sqlite3Insert(
     **         goto C
     **      D: ...
     */
+    sqlite3VdbeReleaseRegisters(pParse, regData, pTab->nCol, 0);
     addrInsTop = addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
     VdbeCoverage(v);
     if( ipkColumn>=0 ){
@@ -1280,6 +1281,15 @@ void sqlite3Insert(
     sqlite3VdbeAddOp1(v, OP_Close, srcTab);
   }else if( pSelect ){
     sqlite3VdbeGoto(v, addrCont);
+#ifdef SQLITE_DEBUG
+    /* If we are jumping back to an OP_Yield that is preceded by an
+    ** OP_ReleaseReg, set the p5 flag on the OP_Goto so that the
+    ** OP_ReleaseReg will be included in the loop. */
+    if( sqlite3VdbeGetOp(v, addrCont-1)->opcode==OP_ReleaseReg ){
+      assert( sqlite3VdbeGetOp(v, addrCont)->opcode==OP_Yield );
+      sqlite3VdbeChangeP5(v, 1);
+    }
+#endif
     sqlite3VdbeJumpHere(v, addrInsTop);
   }
 
