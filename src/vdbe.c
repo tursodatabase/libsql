@@ -845,6 +845,20 @@ int sqlite3VdbeExec(
 ** to the current line should be indented for EXPLAIN output.
 */
 case OP_Goto: {             /* jump */
+
+#ifdef SQLITE_DEBUG
+  /* In debuggging mode, when the p5 flags is set on an OP_Goto, that
+  ** means we should really jump back to the preceeding OP_ReleaseReg
+  ** instruction. */
+  if( pOp->p5 ){
+    assert( pOp->p2 < (int)(pOp - aOp) );
+    assert( pOp->p2 > 1 );
+    pOp = &aOp[pOp->p2 - 2];
+    assert( pOp[1].opcode==OP_ReleaseReg );
+    goto check_for_interrupt;
+  }
+#endif
+
 jump_to_p2_and_check_for_interrupt:
   pOp = &aOp[pOp->p2 - 1];
 

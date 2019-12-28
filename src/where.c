@@ -870,8 +870,8 @@ static void constructAutomaticIndex(
     pTabItem->fg.viaCoroutine = 0;
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+    sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   }
-  sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
   
@@ -3502,7 +3502,8 @@ static int whereLoopAddOr(
         if( rc==SQLITE_OK ){
           rc = whereLoopAddOr(&sSubBuild, mPrereq, mUnusable);
         }
-        assert( rc==SQLITE_OK || sCur.n==0 );
+        assert( rc==SQLITE_OK || rc==SQLITE_DONE || sCur.n==0 );
+        testcase( rc==SQLITE_DONE );
         if( sCur.n==0 ){
           sSum.n = 0;
           break;

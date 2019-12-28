@@ -211,16 +211,81 @@ do_catchsql_test gencol1-6.10 {
   REPLACE INTO t0(c1) VALUES(NULL);
 } {1 {NOT NULL constraint failed: t0.c0}}
 
-# 2019-11-06 ticket b13b7dce76e9352b34e7
+# 2019-11-06 ticket https://www.sqlite.org/src/info/2399f5986134f79c
+# 2019-12-27 ticket https://www.sqlite.org/src/info/5fbc159eeb092130
+# 2019-12-27 ticket https://www.sqlite.org/src/info/37823501c68a09f9
+#
+# All of the above tickets deal with NOT NULL ON CONFLICT REPLACE
+# constraints on tables that have generated columns.
+#
+reset_db
 do_execsql_test gencol1-7.10 {
-  DROP TABLE IF EXISTS t0;
   CREATE TABLE t0 (c0 GENERATED ALWAYS AS (1), c1 UNIQUE, c2 UNIQUE);
   INSERT INTO t0(c1) VALUES (1);
   SELECT quote(0 = t0.c2 OR t0.c1 BETWEEN t0.c2 AND 1) FROM t0;
 } {NULL}
+do_execsql_test gencol1-7.11 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 NOT NULL DEFAULT 'xyz', c1 AS(c0) NOT NULL);
+  REPLACE INTO t0(c0) VALUES(NULL);
+  SELECT * FROM t0;
+} {xyz xyz}
+do_execsql_test gencol1-7.12 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 NOT NULL DEFAULT 'xyz', c1 AS(c0) STORED NOT NULL);
+  REPLACE INTO t0(c0) VALUES(NULL);
+  SELECT * FROM t0;
+} {xyz xyz}
 do_execsql_test gencol1-7.20 {
-  SELECT 99 FROM t0 WHERE 0 = t0.c2 OR t0.c1 BETWEEN t0.c2 AND 1;  
-} {}
+  CREATE TABLE t1(
+   a NOT NULL DEFAULT 'aaa',
+   b AS(c) NOT NULL,
+   c NOT NULL DEFAULT 'ccc');
+  REPLACE INTO t1(a,c) VALUES(NULL,NULL);
+  SELECT * FROM t1;
+} {aaa ccc ccc}
+do_execsql_test gencol1-7.21 {
+  DROP TABLE t1;
+  CREATE TABLE t1(
+   a NOT NULL DEFAULT 'aaa',
+   b AS(c) STORED NOT NULL,
+   c NOT NULL DEFAULT 'ccc');
+  REPLACE INTO t1(a,c) VALUES(NULL,NULL);
+  SELECT * FROM t1;
+} {aaa ccc ccc}
+do_execsql_test gencol1-7.30 {
+  CREATE TABLE t2(
+   a NOT NULL DEFAULT 'aaa',
+   b AS(a) NOT NULL,
+   c NOT NULL DEFAULT 'ccc');
+  REPLACE INTO t2(a,c) VALUES(NULL,NULL);
+  SELECT * FROM t2;
+} {aaa aaa ccc}
+do_execsql_test gencol1-7.31 {
+  DROP TABLE t2;
+  CREATE TABLE t2(
+   a NOT NULL DEFAULT 'aaa',
+   b AS(a) STORED NOT NULL,
+   c NOT NULL DEFAULT 'ccc');
+  REPLACE INTO t2(a,c) VALUES(NULL,NULL);
+  SELECT * FROM t2;
+} {aaa aaa ccc}
+do_execsql_test gencol1-7.40 {
+  CREATE TABLE t3(a NOT NULL DEFAULT 123, b AS(a) UNIQUE);
+  REPLACE INTO t3 VALUES(NULL);
+  SELECT * FROM t3;
+} {123 123}
+do_execsql_test gencol1-7.41 {
+  SELECT * FROM t3 WHERE b=123;
+} {123 123}
+do_execsql_test gencol1-7.50 {
+  CREATE TABLE t4(a NOT NULL DEFAULT 123, b AS(a*10+4) STORED UNIQUE);
+  REPLACE INTO t4 VALUES(NULL);
+  SELECT * FROM t4;
+} {123 1234}
+do_execsql_test gencol1-7.51 {
+  SELECT * FROM t4 WHERE b=1234;
+} {123 1234}
 
 # 2019-11-06 ticket 4fc08501f4e56692
 do_execsql_test gencol1-8.10 {
@@ -245,9 +310,9 @@ do_catchsql_test gencol1-8.20 {
 
 # 2019-11-21 Problems in the new generated column logic
 # reported by Yongheng Chen and Rui Zhong
+reset_db
 do_execsql_test gencol1-9.10 {
   PRAGMA foreign_keys=OFF;
-  DROP TABLE t1;
   CREATE TABLE t1(aa , bb AS (17) UNIQUE);
   INSERT INTO t1 VALUES(17);
   CREATE TABLE t2(cc);
@@ -483,7 +548,16 @@ do_execsql_test gencol1-18.20 {
   SELECT * FROM t0;
 } {0 0 0}
 
-
-
+# 2019-12-27 ticket de4b04149b9fdeae
+#
+reset_db
+do_catchsql_test gencol1-19.10 {
+  CREATE TABLE t0(
+    c0 INT AS(2) UNIQUE,
+    c1 TEXT UNIQUE,
+    FOREIGN KEY(c0) REFERENCES t0(c1)
+  );
+  INSERT INTO t0(c1) VALUES(0.16334143182538696), (0);
+} {1 {UNIQUE constraint failed: t0.c0}}
 
 finish_test
