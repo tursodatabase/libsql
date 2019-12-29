@@ -542,6 +542,7 @@ struct BtCursor {
 #define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
 #define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
 #define BTCF_Multiple     0x20   /* Maybe another cursor on the same btree */
+#define BTCF_Pinned       0x40   /* Cursor is busy and cannot be moved */
 
 /*
 ** Potential values for BtCursor.eState.

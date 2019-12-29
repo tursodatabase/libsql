@@ -701,4 +701,33 @@ do_execsql_test update-19.10 {
   SELECT * FROM t1;
 } {2 2}
 
+# 2019-12-29 ticket https://www.sqlite.org/src/info/314cc133e5ada126
+# REPLACE conflict resolution during an UPDATE causes a DELETE trigger 
+# to fire.  If that DELETE trigger subsequently modifies the row
+# being updated, bad things can happen.  Prevent this by prohibiting
+# triggers from making changes to the table being updated while doing
+# REPLACE conflict resolution on the UPDATE.
+#
+# See also tickets:
+#   https://www.sqlite.org/src/info/c1e19e12046d23fe 2019-10-25
+#   https://www.sqlite.org/src/info/a8a4847a2d96f5de 2019-10-16 
+#
+reset_db
+do_execsql_test update-20.10 {
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t1(a UNIQUE ON CONFLICT REPLACE, b);
+  INSERT INTO t1(a,b) VALUES(4,12),(9,13);
+  CREATE INDEX i0 ON t1(b);
+  CREATE TRIGGER tr0 DELETE ON t1 BEGIN
+    UPDATE t1 SET b = a;
+  END;
+  PRAGMA integrity_check;
+} {ok}
+do_catchsql_test update-20.20 {
+  UPDATE t1 SET a=0;
+} {1 {constraint failed}}
+do_execsql_test update-20.30 {
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

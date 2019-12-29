@@ -2129,9 +2129,15 @@ void sqlite3GenerateConstraintChecks(
           sqlite3MultiWrite(pParse);
           nReplaceTrig++;
         }
+        if( pTrigger && isUpdate ){
+          sqlite3VdbeAddOp1(v, OP_CursorLock, iDataCur);
+        }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
             regR, nPkField, 0, OE_Replace,
             (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), iThisCur);
+        if( pTrigger && isUpdate ){
+          sqlite3VdbeAddOp1(v, OP_CursorUnlock, iDataCur);
+        }
         if( regTrigCnt ){
           int addrBypass;  /* Jump destination to bypass recheck logic */
 
