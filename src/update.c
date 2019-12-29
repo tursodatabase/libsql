@@ -191,6 +191,7 @@ void sqlite3Update(
   int iPk = 0;           /* First of nPk cells holding PRIMARY KEY value */
   i16 nPk = 0;           /* Number of components of the PRIMARY KEY */
   int bReplace = 0;      /* True if REPLACE conflict resolution might happen */
+  int bFinishSeek = 1;   /* The OP_FinishSeek opcode is needed */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -524,6 +525,7 @@ void sqlite3Update(
     pWInfo = 0;
     eOnePass = ONEPASS_SINGLE;
     sqlite3ExprIfFalse(pParse, pWhere, labelBreak, SQLITE_JUMPIFNULL);
+    bFinishSeek = 0;
   }else{
     /* Begin the database scan. 
     **
@@ -550,6 +552,7 @@ void sqlite3Update(
     ** strategy that uses an index for which one or more columns are being
     ** updated.  */
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
+    bFinishSeek = sqlite3WhereUsesDeferredSeek(pWInfo);
     if( eOnePass!=ONEPASS_SINGLE ){
       sqlite3MultiWrite(pParse);
       if( eOnePass==ONEPASS_MULTI ){
@@ -713,6 +716,7 @@ void sqlite3Update(
         testcase( i==31 );
         testcase( i==32 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
+        bFinishSeek = 0;
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
@@ -800,21 +804,14 @@ void sqlite3Update(
     /* Delete the index entries associated with the current record.  */
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx, -1);
 
-#ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    /* If pTab contains one or more virtual columns, then it is possible
-    ** (though unlikely) that no OP_Column opcodes have been run against
-    ** the table since the OP_SeekDeferred, meaning that there has not been
-    ** a seek against the cursor yet.  The OP_Delete opcode and OP_Insert
-    ** opcodes that follow will be needing this seek, so code a bogus
-    ** OP_Column just to make sure the seek has been done.
-    ** See ticket ec8abb025e78f40c 2019-12-26
-    */
-    if( eOnePass!=ONEPASS_OFF && (pTab->tabFlags & TF_HasVirtual)!=0 ){
-      int r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_Column, iDataCur, 0, r1);
-      sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+    /* We must run the OP_FinishSeek opcode to resolve a prior
+    ** OP_DeferredSeek if there is any possibility that there have been
+    ** no OP_Column opcodes since the OP_DeferredSeek was issued.  But
+    ** we want to avoid the OP_FinishSeek if possible, as running it
+    ** costs CPU cycles. */
+    if( bFinishSeek ){
+      sqlite3VdbeAddOp1(v, OP_FinishSeek, iDataCur);
     }
-#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
 
     /* If changing the rowid value, or if there are foreign key constraints
     ** to process, delete the old record. Otherwise, add a noop OP_Delete

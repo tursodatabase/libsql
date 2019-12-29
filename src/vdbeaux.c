@@ -3414,7 +3414,7 @@ void sqlite3VdbeDelete(Vdbe *p){
 ** carried out.  Seek the cursor now.  If an error occurs, return
 ** the appropriate error code.
 */
-static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
+int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor *p){
   int res, rc;
 #ifdef SQLITE_TEST
   extern int sqlite3_search_count;
@@ -3486,7 +3486,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
       *piCol = iMap - 1;
       return SQLITE_OK;
     }
-    return handleDeferredMoveto(p);
+    return sqlite3VdbeFinishMoveto(p);
   }
   if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
     return handleMovedCursor(p);

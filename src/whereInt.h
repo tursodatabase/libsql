@@ -459,6 +459,7 @@ struct WhereInfo {
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
   u8 sorted;                /* True if really sorted (not just grouped) */
   u8 eOnePass;              /* ONEPASS_OFF, or _SINGLE, or _MULTI */
+  u8 bDeferredSeek;         /* Uses OP_DeferredSeek */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values */
   u8 bOrderedInnerLoop;     /* True if only the inner-most loop is ordered */

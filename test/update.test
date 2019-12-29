@@ -684,4 +684,21 @@ do_execsql_test update-18.20 {
   SELECT * FROM t0;
 } {0 0}
 
+# 2019-12-28 assertion fault reported by Yongheng
+# Similar to ticket ec8abb025e78f40c
+# An UPDATE was reaching the OP_Delete after running OP_DeferredSeek
+# without ever hitting an OP_Column. The enhanced solution is to
+# fix OP_Delete so that it can do the seek itself.
+#
+reset_db
+do_execsql_test update-19.10 {
+  CREATE TABLE t1(
+   a TEXT,
+   b INTEGER PRIMARY KEY UNIQUE
+  ); 
+  INSERT INTO t1 VALUES(1,2);
+  UPDATE t1 SET a = quote(b) WHERE b>=2;
+  SELECT * FROM t1;
+} {2 2}
+
 finish_test

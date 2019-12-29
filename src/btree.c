@@ -8658,7 +8658,6 @@ int sqlite3BtreeInsert(
     if( flags & BTREE_SAVEPOSITION ){
       assert( pCur->curFlags & BTCF_ValidNKey );
       assert( pX->nKey==pCur->info.nKey );
-      assert( pCur->info.nSize!=0 );
       assert( loc==0 );
     }
 #endif
