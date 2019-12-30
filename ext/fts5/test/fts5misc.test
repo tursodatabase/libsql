@@ -296,5 +296,32 @@ do_execsql_test 11.1 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+# Ticket [7c0e06b16] 
+#
+do_execsql_test 12.0 {
+  CREATE TABLE t1(a, b, rank);
+  INSERT INTO t1 VALUES('a', 'hello', '');
+  INSERT INTO t1 VALUES('b', 'world', '');
+
+  CREATE VIRTUAL TABLE ft USING fts5(a);
+  INSERT INTO ft VALUES('b');
+  INSERT INTO ft VALUES('y');
+
+  CREATE TABLE t2(x, y, ft);
+  INSERT INTO t2 VALUES(1, 2, 'x');
+  INSERT INTO t2 VALUES(3, 4, 'b');
+}
+
+do_execsql_test 12.1 {
+  SELECT * FROM t1 NATURAL JOIN ft WHERE ft MATCH('b')
+} {b world {}}
+do_execsql_test 12.2 {
+  SELECT * FROM ft NATURAL JOIN t1 WHERE ft MATCH('b')
+} {b world {}}
+do_execsql_test 12.3 {
+  SELECT * FROM t2 JOIN ft USING (ft)
+} {3 4 b b}
+
 finish_test
 

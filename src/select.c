@@ -313,7 +313,8 @@ static int tableAndColumnIndex(
   int N,               /* Number of tables in pSrc->a[] to search */
   const char *zCol,    /* Name of the column we are looking for */
   int *piTab,          /* Write index of pSrc->a[] here */
-  int *piCol           /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
+  int *piCol,          /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
+  int bIgnoreHidden    /* True to ignore hidden columns */
 ){
   int i;               /* For looping over tables in pSrc */
   int iCol;            /* Index of column matching zCol */
@@ -321,7 +322,9 @@ static int tableAndColumnIndex(
   assert( (piTab==0)==(piCol==0) );  /* Both or neither are NULL */
   for(i=0; i<N; i++){
     iCol = columnIndex(pSrc->a[i].pTab, zCol);
-    if( iCol>=0 ){
+    if( iCol>=0 
+     && (bIgnoreHidden==0 || IsHiddenColumn(&pSrc->a[i].pTab->aCol[iCol])==0)
+    ){
       if( piTab ){
         *piTab = i;
         *piCol = iCol;
@@ -486,10 +489,11 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         int iLeft;     /* Matching left table */
         int iLeftCol;  /* Matching column in the left table */
 
+        if( IsHiddenColumn(&pRightTab->aCol[j]) ) continue;
         zName = pRightTab->aCol[j].zName;
-        if( tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol) ){
+        if( tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 1) ){
           addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, j,
-                       isOuter, &p->pWhere);
+                isOuter, &p->pWhere);
         }
       }
     }
@@ -529,7 +533,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         zName = pList->a[j].zName;
         iRightCol = columnIndex(pRightTab, zName);
         if( iRightCol<0
-         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol)
+         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 0)
         ){
           sqlite3ErrorMsg(pParse, "cannot join using column %s - column "
             "not present in both tables", zName);
@@ -5087,7 +5091,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 
             if( i>0 && zTName==0 ){
               if( (pFrom->fg.jointype & JT_NATURAL)!=0
-                && tableAndColumnIndex(pTabList, i, zName, 0, 0)
+                && tableAndColumnIndex(pTabList, i, zName, 0, 0, 1)
               ){
                 /* In a NATURAL join, omit the join columns from the 
                 ** table to the right of the join */
