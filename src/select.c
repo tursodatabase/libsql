@@ -3858,7 +3858,7 @@ static int flattenSubquery(
       if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0    /* (17b) */
        || (pSub1->pPrior && pSub1->op!=TK_ALL)                 /* (17a) */
        || pSub1->pSrc->nSrc<1                                  /* (17c) */
-       || pSub1->pWin                                          /* (17d) */
+       || pSub1->pWin                                          /* (17e) */
       ){
         return 0;
       }
