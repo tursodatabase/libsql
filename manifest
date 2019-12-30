@@ -1,5 +1,5 @@
-C Put\sa\sNEVER()\son\sa\sdefensive\sbranch.
-D 2019-12-30T20:42:53.391
+C Add\san\sALWAYS()\sto\sa\sconditional\swhich\sis\sapparently\salways\strue.
+D 2019-12-30T23:41:59.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c f191aa4d99597a1ad77cb15a9473f1183f2a12a7f1650a7705eaac9085e493bb
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
-F src/build.c 5aa8776d926954f13ddc37144c765ff8d80e49b74432c0f5a10f29433f0d69a8
+F src/build.c e63db6c6ceee67aa2dc7fe1b515f013a579bdecae22057d24ba2ec225920ce63
 F src/callback.c 88615dfc0a82167b65b452b4b305dbf86be77200b3343c6ffc6d03e92a01d181
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4813a8d813f234e819f8ebefbd3ff96d3d69593cc7d716cf0ad6c1a126da827
-R 7c7e328613a2e7bad0a7dbaa467cbb02
+P 40d10e7aad5b899206e45d1f8606470a90a07049e15d94c3811cfe695f3a402e
+R aa5bb4045459c7f606ee53e4249654f3
 U drh
-Z 34edcc088b28c8be45bf2b31cacb6cd0
+Z 1a7ba8606ff1703aee99c8e566e0a179
