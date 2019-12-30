@@ -594,7 +594,7 @@ static void codeVectorCompare(
   int addrDone = sqlite3VdbeMakeLabel(pParse);
   int isCommuted = ExprHasProperty(pExpr,EP_Commuted);
 
-  if( NEVER(pParse->nErr) ) return;
+  if( pParse->nErr ) return;
   if( nLeft!=sqlite3ExprVectorSize(pRight) ){
     sqlite3ErrorMsg(pParse, "row value misused");
     return;

@@ -636,7 +636,12 @@ do_execsql_test 26.30 {
   SELECT 3 FROM t1 LEFT JOIN t0 WHERE (c0, x'') != (NULL, 0);
 } {3}
 
-
-
+# 2019-12-30 ticket 892575cdba4e1e36
+#
+reset_db
+do_catchsql_test 27.10 {
+  CREATE TABLE t0(c0 CHECK(((0, 0) > (0, c0))));
+  INSERT INTO t0(c0) VALUES(0) ON CONFLICT(c0) DO UPDATE SET c0 = 3;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
 
 finish_test
