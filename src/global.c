@@ -191,13 +191,13 @@ const unsigned char sqlite3CtypeMap[256] = {
 ** or at run-time for an individual database connection using
 ** sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE);
 **
-** With the mini-lookaside enhancement, must less lookaside is required.
-** The default configuration of 1200,40 actually proves 30 1200-byte slots
-** and 93 128-byte slots, which is more lookaside slots that are available
-** using the older 1200,100 configuration without mini-lookaside.
+** With the two-size-lookaside enhancement, less lookaside is required.
+** The default configuration of 1200,40 actually provides 30 1200-byte slots
+** and 93 128-byte slots, which is more lookaside than is available
+** using the older 1200,100 configuration without two-size-lookaside.
 */
 #ifndef SQLITE_DEFAULT_LOOKASIDE
-# ifdef SQLITE_OMIT_MINI_LOOKASIDE
+# ifdef SQLITE_OMIT_TWOSIZE_LOOKASIDE
 #   define SQLITE_DEFAULT_LOOKASIDE 1200,100  /* 120KB of memory */
 # else
 #   define SQLITE_DEFAULT_LOOKASIDE 1200,40   /* 48KB of memory */

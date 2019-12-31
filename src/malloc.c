@@ -333,8 +333,8 @@ int sqlite3MallocSize(void *p){
   return sqlite3GlobalConfig.m.xSize(p);
 }
 static int lookasideMallocSize(sqlite3 *db, void *p){
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE    
-  return p<db->lookaside.pMiddle ? db->lookaside.szTrue : MINI_SZ;
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE    
+  return p<db->lookaside.pMiddle ? db->lookaside.szTrue : LOOKASIDE_SMALL;
 #else
   return db->lookaside.szTrue;
 #endif  
@@ -354,10 +354,10 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
 #endif
   if( db ){
     if( ((uptr)p)<(uptr)(db->lookaside.pEnd) ){
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
       if( ((uptr)p)>=(uptr)(db->lookaside.pMiddle) ){
         assert( sqlite3_mutex_held(db->mutex) );
-        return MINI_SZ;
+        return LOOKASIDE_SMALL;
       }
 #endif
       if( ((uptr)p)>=(uptr)(db->lookaside.pStart) ){
@@ -414,17 +414,17 @@ void sqlite3DbFreeNN(sqlite3 *db, void *p){
       return;
     }
     if( ((uptr)p)<(uptr)(db->lookaside.pEnd) ){
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
       if( ((uptr)p)>=(uptr)(db->lookaside.pMiddle) ){
         LookasideSlot *pBuf = (LookasideSlot*)p;
 #ifdef SQLITE_DEBUG
-        memset(p, 0xaa, MINI_SZ);  /* Trash freed content */
+        memset(p, 0xaa, LOOKASIDE_SMALL);  /* Trash freed content */
 #endif
-        pBuf->pNext = db->lookaside.pMiniFree;
-        db->lookaside.pMiniFree = pBuf;
+        pBuf->pNext = db->lookaside.pSmallFree;
+        db->lookaside.pSmallFree = pBuf;
         return;
       }
-#endif /* SQLITE_OMIT_MINI_LOOKASIDE */
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
       if( ((uptr)p)>=(uptr)(db->lookaside.pStart) ){
         LookasideSlot *pBuf = (LookasideSlot*)p;
 #ifdef SQLITE_DEBUG
@@ -597,14 +597,14 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
     }
     return dbMallocRawFinish(db, n);
   }
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
-  if( n<=MINI_SZ ){
-    if( (pBuf = db->lookaside.pMiniFree)!=0 ){
-      db->lookaside.pMiniFree = pBuf->pNext;
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+  if( n<=LOOKASIDE_SMALL ){
+    if( (pBuf = db->lookaside.pSmallFree)!=0 ){
+      db->lookaside.pSmallFree = pBuf->pNext;
       db->lookaside.anStat[0]++;
       return (void*)pBuf;
-    }else if( (pBuf = db->lookaside.pMiniInit)!=0 ){
-      db->lookaside.pMiniInit = pBuf->pNext;
+    }else if( (pBuf = db->lookaside.pSmallInit)!=0 ){
+      db->lookaside.pSmallInit = pBuf->pNext;
       db->lookaside.anStat[0]++;
       return (void*)pBuf;
     }
@@ -644,9 +644,9 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
   if( p==0 ) return sqlite3DbMallocRawNN(db, n);
   assert( sqlite3_mutex_held(db->mutex) );
   if( ((uptr)p)<(uptr)db->lookaside.pEnd ){
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
     if( ((uptr)p)>=(uptr)db->lookaside.pMiddle ){
-      if( n<=MINI_SZ ) return p;
+      if( n<=LOOKASIDE_SMALL ) return p;
     }else
 #endif
     if( ((uptr)p)>=(uptr)db->lookaside.pStart ){

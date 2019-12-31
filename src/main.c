@@ -685,7 +685,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   void *pStart;
   sqlite3_int64 szAlloc = sz*(sqlite3_int64)cnt;
   int nBig;   /* Number of full-size slots */
-  int nSm;    /* Number smaller mini-slots */
+  int nSm;    /* Number smaller LOOKASIDE_SMALL-byte slots */
   
   if( sqlite3LookasideUsed(db,0)>0 ){
     return SQLITE_BUSY;
@@ -714,15 +714,15 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   }else{
     pStart = pBuf;
   }
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
-  if( sz>=MINI_SZ*3 ){
-    nBig = szAlloc/(3*MINI_SZ+sz);
-    nSm = (szAlloc - sz*nBig)/MINI_SZ;
-  }else if( sz>=MINI_SZ*2 ){
-    nBig = szAlloc/(MINI_SZ+sz);
-    nSm = (szAlloc - sz*nBig)/MINI_SZ;
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+  if( sz>=LOOKASIDE_SMALL*3 ){
+    nBig = szAlloc/(3*LOOKASIDE_SMALL+sz);
+    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+  }else if( sz>=LOOKASIDE_SMALL*2 ){
+    nBig = szAlloc/(LOOKASIDE_SMALL+sz);
+    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
   }else
-#endif /* SQLITE_OMIT_MINI_LOOKASIDE */
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
   if( sz>0 ){
     nBig = szAlloc/sz;
     nSm = 0;
@@ -744,16 +744,16 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
       db->lookaside.pInit = p;
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
-    db->lookaside.pMiniInit = 0;
-    db->lookaside.pMiniFree = 0;
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+    db->lookaside.pSmallInit = 0;
+    db->lookaside.pSmallFree = 0;
     db->lookaside.pMiddle = p;
     for(i=0; i<nSm; i++){
-      p->pNext = db->lookaside.pMiniInit;
-      db->lookaside.pMiniInit = p;
-      p = (LookasideSlot*)&((u8*)p)[MINI_SZ];
+      p->pNext = db->lookaside.pSmallInit;
+      db->lookaside.pSmallInit = p;
+      p = (LookasideSlot*)&((u8*)p)[LOOKASIDE_SMALL];
     }
-#endif /* SQLITE_OMIT_MINI_LOOKASIDE */
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
     assert( ((uptr)p)<=szAlloc + (uptr)pStart );
     db->lookaside.pEnd = p;
     db->lookaside.bDisable = 0;
@@ -761,11 +761,11 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.nSlot = nBig+nSm;
   }else{
     db->lookaside.pStart = db;
-#ifndef SQLITE_OMIT_MINI_LOOKASIDE
-    db->lookaside.pMiniInit = 0;
-    db->lookaside.pMiniFree = 0;
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+    db->lookaside.pSmallInit = 0;
+    db->lookaside.pSmallFree = 0;
     db->lookaside.pMiddle = db;
-#endif /* SQLITE_OMIT_MINI_LOOKASIDE */
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
     db->lookaside.pEnd = db;
     db->lookaside.bDisable = 1;
     db->lookaside.sz = 0;
