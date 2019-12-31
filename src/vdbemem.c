@@ -964,7 +964,9 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
       ** same. */
       u16 mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
       assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
-      assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r );
+      /* assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r ); */
+      /*                                          ^^           */
+      /*       Cannot reliably compare doubles for equality    */
       assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
       assert( (mFlags&MEM_Blob)==0  || sqlite3BlobCompare(pMem,pX)==0 );
       

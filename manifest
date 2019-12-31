@@ -1,5 +1,5 @@
-C Also\sset\sthe\sSQLITE_DIRECTONLY\sflag\son\sthe\sload_extension()\sfunction.
-D 2019-12-31T18:39:23.702
+C Remove\san\sincorrect\sassert()\sstatement.\s\sTicket\s[46fcd700b855e6d1]
+D 2019-12-31T23:17:35.723
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/vdbeInt.h e02ccac0334f7c71c952210657e6e18de1917605887c7bc6167a80a17f62da18
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c 0a9716e47012ef018038c2e1dab9f701a6fb4429bb3ee1d4d0f49497519ace74
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
-F src/vdbemem.c fa083086758379b52f8771d69424b273c7bd0f94413802404ee32cd5cc7cd870
+F src/vdbemem.c a5c16cfa5e8ec960cf1ae1226a0718b31bb93de8fba7804fb60217e1dbe28721
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c a2fead3e97fca54fcf3f3db784e17c9ee2d39a0c5ad323e9d514855106300a86
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3171dc22e4d3a40ca17fe609391d92fc6a997b775bfefa5947aec69c889aa73
-R 25bc6cfca86f50c6bebf64970cf717c5
+P 3bd095a53119c368fe30e539983588b27957203344cf427405b9a64784b8eba7
+R 9a290668b8247b93cd51ae150764a4e7
 U drh
-Z 6a954000d634738bb471999423aebba1
+Z 3a723a31e4b46687e83c27b7c95d8d29
