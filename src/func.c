@@ -1911,8 +1911,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
 #endif
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
-    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
+    SFUNCTION(load_extension,    1, 0, 0, loadExt          ),
+    SFUNCTION(load_extension,    2, 0, 0, loadExt          ),
 #endif
 #if SQLITE_USER_AUTHENTICATION
     FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
