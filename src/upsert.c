@@ -236,6 +236,7 @@ void sqlite3UpsertDoUpdate(
       VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CORRUPT, OE_Abort, 0, 
             "corrupt database", P4_STATIC);
+      sqlite3MayAbort(pParse);
       sqlite3VdbeJumpHere(v, i);
     }
   }

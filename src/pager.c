@@ -1172,6 +1172,7 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
     }
     IOTRACE(("UNLOCK %p %d\n", pPager, eLock))
   }
+  pPager->changeCountDone = pPager->tempFile; /* ticket fb3b3024ea238d5c */
   return rc;
 }
 
@@ -1893,7 +1894,6 @@ static void pager_unlock(Pager *pPager){
     ** code is cleared and the cache reset in the block below.
     */
     assert( pPager->errCode || pPager->eState!=PAGER_ERROR );
-    pPager->changeCountDone = 0;
     pPager->eState = PAGER_OPEN;
   }
 
@@ -2157,7 +2157,6 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
    && (!pagerUseWal(pPager) || sqlite3WalExclusiveMode(pPager->pWal, 0))
   ){
     rc2 = pagerUnlockDb(pPager, SHARED_LOCK);
-    pPager->changeCountDone = 0;
   }
   pPager->eState = PAGER_READER;
   pPager->setMaster = 0;
@@ -4813,7 +4812,7 @@ int sqlite3PagerOpen(
       z += strlen(z)+1;
       nUri++;
     }
-    nUriByte = (int)(&z[2] - zUri);
+    nUriByte = (int)(&z[1] - zUri);
     assert( nUriByte>=1 );
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by
@@ -6627,6 +6626,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   ** But if (due to a coding error elsewhere in the system) it does get
   ** called, just return the same error code without doing anything. */
   if( NEVER(pPager->errCode) ) return pPager->errCode;
+  pPager->iDataVersion++;
 
   assert( pPager->eState==PAGER_WRITER_LOCKED
        || pPager->eState==PAGER_WRITER_FINISHED
@@ -6655,7 +6655,6 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   }
 
   PAGERTRACE(("COMMIT %d\n", PAGERID(pPager)));
-  pPager->iDataVersion++;
   rc = pager_end_transaction(pPager, pPager->setMaster, 1);
   return pager_error(pPager, rc);
 }

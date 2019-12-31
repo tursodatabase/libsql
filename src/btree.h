@@ -306,6 +306,8 @@ int sqlite3BtreeNext(BtCursor*, int flags);
 int sqlite3BtreeEof(BtCursor*);
 int sqlite3BtreePrevious(BtCursor*, int flags);
 i64 sqlite3BtreeIntegerKey(BtCursor*);
+void sqlite3BtreeCursorPin(BtCursor*);
+void sqlite3BtreeCursorUnpin(BtCursor*);
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
 i64 sqlite3BtreeOffset(BtCursor*);
 #endif

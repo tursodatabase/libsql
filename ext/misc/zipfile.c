@@ -999,7 +999,6 @@ static int zipfileDeflate(
     int res;
     str.next_out = aOut;
     str.avail_out = nAlloc;
-    deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
     res = deflate(&str, Z_FINISH);
     if( res==Z_STREAM_END ){
       *ppOut = aOut;
@@ -1434,8 +1433,8 @@ static int zipfileGetMode(
 ** identical, ignoring any trailing '/' character in either path.  */
 static int zipfileComparePath(const char *zA, const char *zB, int nB){
   int nA = (int)strlen(zA);
-  if( zA[nA-1]=='/' ) nA--;
-  if( zB[nB-1]=='/' ) nB--;
+  if( nA>0 && zA[nA-1]=='/' ) nA--;
+  if( nB>0 && zB[nB-1]=='/' ) nB--;
   if( nA==nB && memcmp(zA, zB, nA)==0 ) return 0;
   return 1;
 }
@@ -1619,6 +1618,7 @@ static int zipfileUpdate(
 
     if( rc==SQLITE_OK ){
       zPath = (const char*)sqlite3_value_text(apVal[2]);
+      if( zPath==0 ) zPath = "";
       nPath = (int)strlen(zPath);
       mTime = zipfileGetTime(apVal[4]);
     }
@@ -1628,11 +1628,15 @@ static int zipfileUpdate(
       ** '/'. This appears to be required for compatibility with info-zip
       ** (the unzip command on unix). It does not create directories
       ** otherwise.  */
-      if( zPath[nPath-1]!='/' ){
+      if( nPath<=0 || zPath[nPath-1]!='/' ){
         zFree = sqlite3_mprintf("%s/", zPath);
-        if( zFree==0 ){ rc = SQLITE_NOMEM; }
         zPath = (const char*)zFree;
-        nPath++;
+        if( zFree==0 ){
+          rc = SQLITE_NOMEM;
+          nPath = 0;
+        }else{
+          nPath = (int)strlen(zPath);
+        }
       }
     }
 
@@ -2025,19 +2029,19 @@ void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   ** at the end of the path. Or, if this is not a directory and the path
   ** ends in '/' it is an error. */
   if( bIsDir==0 ){
-    if( zName[nName-1]=='/' ){
+    if( nName>0 && zName[nName-1]=='/' ){
       zErr = sqlite3_mprintf("non-directory name must not end with /");
       rc = SQLITE_ERROR;
       goto zipfile_step_out;
     }
   }else{
-    if( zName[nName-1]!='/' ){
+    if( nName==0 || zName[nName-1]!='/' ){
       zName = zFree = sqlite3_mprintf("%s/", zName);
-      nName++;
       if( zName==0 ){
         rc = SQLITE_NOMEM;
         goto zipfile_step_out;
       }
+      nName = (int)strlen(zName);
     }else{
       while( nName>1 && zName[nName-2]=='/' ) nName--;
     }

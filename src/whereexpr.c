@@ -1298,6 +1298,7 @@ static void exprAnalyze(
             0, sqlite3ExprDup(db, pRight, 0));
         if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
           ExprSetProperty(pNewExpr, EP_FromJoin);
+          pNewExpr->iRightJoinTable = pExpr->iRightJoinTable;
         }
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
@@ -1354,11 +1355,15 @@ static void exprAnalyze(
   ** expression). The WhereTerm.iField variable identifies the index within
   ** the vector on the LHS that the virtual term represents.
   **
-  ** This only works if the RHS is a simple SELECT, not a compound
+  ** This only works if the RHS is a simple SELECT (not a compound) that does
+  ** not use window functions.
   */
   if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->iField==0
    && pExpr->pLeft->op==TK_VECTOR
    && pExpr->x.pSelect->pPrior==0
+#ifndef SQLITE_OMIT_WINDOWFUNC
+   && pExpr->x.pSelect->pWin==0
+#endif
   ){
     int i;
     for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
@@ -1516,9 +1521,10 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
   }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  if( p->op==TK_FUNCTION && p->y.pWin ){
+  if( (p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION) && p->y.pWin ){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->y.pWin->pPartition);
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->y.pWin->pOrderBy);
+    mask |= sqlite3WhereExprUsage(pMaskSet, p->y.pWin->pFilter);
   }
 #endif
   return mask;

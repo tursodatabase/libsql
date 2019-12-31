@@ -484,13 +484,13 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       zStmt,
       pParse->regRowid
     );
-    sqlite3DbFree(db, zStmt);
     v = sqlite3GetVdbe(pParse);
     sqlite3ChangeCookie(pParse, iDb);
 
     sqlite3VdbeAddOp0(v, OP_Expire);
-    zWhere = sqlite3MPrintf(db, "name='%q' AND type='table'", pTab->zName);
+    zWhere = sqlite3MPrintf(db, "name=%Q AND sql=%Q", pTab->zName, zStmt);
     sqlite3VdbeAddParseSchemaOp(v, iDb, zWhere);
+    sqlite3DbFree(db, zStmt);
 
     iReg = ++pParse->nMem;
     sqlite3VdbeLoadString(v, iReg, pTab->zName);

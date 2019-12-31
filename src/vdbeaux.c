@@ -1186,6 +1186,29 @@ int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
   }
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Generate an OP_ReleaseReg opcode to indicate that a range of
+** registers, except any identified by mask, are no longer in use.
+*/
+void sqlite3VdbeReleaseRegisters(Parse *pParse, int iFirst, int N, u32 mask){
+  assert( pParse->pVdbe );
+  while( N>0 && (mask&1)!=0 ){
+    mask >>= 1;
+    iFirst++;
+    N--;
+  }
+  while( N>0 && N<=32 && (mask & MASKBIT32(N-1))!=0 ){
+    mask &= ~MASKBIT32(N-1);
+    N--;
+  }
+  if( N>0 ){
+    sqlite3VdbeAddOp3(pParse->pVdbe, OP_ReleaseReg, iFirst, N, *(int*)&mask);
+  }
+}
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -1303,7 +1326,8 @@ void sqlite3VdbeSetP4KeyInfo(Parse *pParse, Index *pIdx){
 */
 static void vdbeVComment(Vdbe *p, const char *zFormat, va_list ap){
   assert( p->nOp>0 || p->aOp==0 );
-  assert( p->aOp==0 || p->aOp[p->nOp-1].zComment==0 || p->db->mallocFailed );
+  assert( p->aOp==0 || p->aOp[p->nOp-1].zComment==0 || p->db->mallocFailed
+          || p->pParse->nErr>0 );
   if( p->nOp ){
     assert( p->aOp );
     sqlite3DbFree(p->db, p->aOp[p->nOp-1].zComment);
@@ -3390,7 +3414,7 @@ void sqlite3VdbeDelete(Vdbe *p){
 ** carried out.  Seek the cursor now.  If an error occurs, return
 ** the appropriate error code.
 */
-static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
+int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor *p){
   int res, rc;
 #ifdef SQLITE_TEST
   extern int sqlite3_search_count;
@@ -3462,7 +3486,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
       *piCol = iMap - 1;
       return SQLITE_OK;
     }
-    return handleDeferredMoveto(p);
+    return sqlite3VdbeFinishMoveto(p);
   }
   if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
     return handleMovedCursor(p);

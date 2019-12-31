@@ -161,7 +161,7 @@ AC_ARG_ENABLE(rtree, [AS_HELP_STRING(
   [--enable-rtree], [include rtree support [default=yes]])], 
   [], [enable_rtree=yes])
 if test x"$enable_rtree" = "xyes"; then
-  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_RTREE"
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_GEOPOLY"
 fi
 #-----------------------------------------------------------------------
 

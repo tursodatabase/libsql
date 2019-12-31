@@ -191,6 +191,7 @@ void sqlite3Update(
   int iPk = 0;           /* First of nPk cells holding PRIMARY KEY value */
   i16 nPk = 0;           /* Number of components of the PRIMARY KEY */
   int bReplace = 0;      /* True if REPLACE conflict resolution might happen */
+  int bFinishSeek = 1;   /* The OP_FinishSeek opcode is needed */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -524,6 +525,7 @@ void sqlite3Update(
     pWInfo = 0;
     eOnePass = ONEPASS_SINGLE;
     sqlite3ExprIfFalse(pParse, pWhere, labelBreak, SQLITE_JUMPIFNULL);
+    bFinishSeek = 0;
   }else{
     /* Begin the database scan. 
     **
@@ -550,6 +552,7 @@ void sqlite3Update(
     ** strategy that uses an index for which one or more columns are being
     ** updated.  */
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
+    bFinishSeek = sqlite3WhereUsesDeferredSeek(pWInfo);
     if( eOnePass!=ONEPASS_SINGLE ){
       sqlite3MultiWrite(pParse);
       if( eOnePass==ONEPASS_MULTI ){
@@ -713,6 +716,7 @@ void sqlite3Update(
         testcase( i==31 );
         testcase( i==32 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, k);
+        bFinishSeek = 0;
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, k);
       }
@@ -799,6 +803,15 @@ void sqlite3Update(
 
     /* Delete the index entries associated with the current record.  */
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx, -1);
+
+    /* We must run the OP_FinishSeek opcode to resolve a prior
+    ** OP_DeferredSeek if there is any possibility that there have been
+    ** no OP_Column opcodes since the OP_DeferredSeek was issued.  But
+    ** we want to avoid the OP_FinishSeek if possible, as running it
+    ** costs CPU cycles. */
+    if( bFinishSeek ){
+      sqlite3VdbeAddOp1(v, OP_FinishSeek, iDataCur);
+    }
 
     /* If changing the rowid value, or if there are foreign key constraints
     ** to process, delete the old record. Otherwise, add a noop OP_Delete

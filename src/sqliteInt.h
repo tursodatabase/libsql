@@ -447,6 +447,26 @@
 #endif
 
 /*
+** The harmless(X) macro indicates that expression X is usually false
+** but can be true without causing any problems, but we don't know of
+** any way to cause X to be true.
+**
+** In debugging and testing builds, this macro will abort if X is ever
+** true.  In this way, developers are alerted to a possible test case
+** that causes X to be true.  If a harmless macro ever fails, that is
+** an opportunity to change the macro into a testcase() and add a new
+** test case to the test suite.
+**
+** For normal production builds, harmless(X) is a no-op, since it does
+** not matter whether expression X is true or false.
+*/
+#ifdef SQLITE_DEBUG
+# define harmless(X)  assert(!(X));
+#else
+# define harmless(X)
+#endif
+
+/*
 ** Some conditionals are optimizations only.  In other words, if the
 ** conditionals are replaced with a constant 1 (true) or 0 (false) then
 ** the correct answer is still obtained, though perhaps not as quickly.
@@ -2942,13 +2962,13 @@ struct Upsert {
 ** sequences for the ORDER BY clause.
 */
 struct Select {
-  ExprList *pEList;      /* The fields of the result */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   LogEst nSelectRow;     /* Estimated number of result rows */
   u32 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
   u32 selId;             /* Unique identifier number for this SELECT */
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
+  ExprList *pEList;      /* The fields of the result */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
@@ -4116,6 +4136,7 @@ int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,u32,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
+void sqlite3SelectReset(Parse*, Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
@@ -4138,6 +4159,7 @@ int sqlite3WhereOkOnePass(WhereInfo*, int*);
 #define ONEPASS_OFF      0        /* Use of ONEPASS not allowed */
 #define ONEPASS_SINGLE   1        /* ONEPASS valid for a single row update */
 #define ONEPASS_MULTI    2        /* ONEPASS is valid for multiple rows */
+int sqlite3WhereUsesDeferredSeek(WhereInfo*);
 void sqlite3ExprCodeLoadIndexColumn(Parse*, Index*, int, int, int);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);

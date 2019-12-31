@@ -465,7 +465,9 @@ static int lookupName(
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
             return WRC_Abort;
           }
-          if( (pNC->ncFlags&NC_AllowWin)==0 && ExprHasProperty(pOrig, EP_Win) ){
+          if( ExprHasProperty(pOrig, EP_Win)
+           && ((pNC->ncFlags&NC_AllowWin)==0 || pNC!=pTopNC )
+          ){
             sqlite3ErrorMsg(pParse, "misuse of aliased window function %s",zAs);
             return WRC_Abort;
           }

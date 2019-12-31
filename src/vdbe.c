@@ -845,6 +845,20 @@ int sqlite3VdbeExec(
 ** to the current line should be indented for EXPLAIN output.
 */
 case OP_Goto: {             /* jump */
+
+#ifdef SQLITE_DEBUG
+  /* In debuggging mode, when the p5 flags is set on an OP_Goto, that
+  ** means we should really jump back to the preceeding OP_ReleaseReg
+  ** instruction. */
+  if( pOp->p5 ){
+    assert( pOp->p2 < (int)(pOp - aOp) );
+    assert( pOp->p2 > 1 );
+    pOp = &aOp[pOp->p2 - 2];
+    assert( pOp[1].opcode==OP_ReleaseReg );
+    goto check_for_interrupt;
+  }
+#endif
+
 jump_to_p2_and_check_for_interrupt:
   pOp = &aOp[pOp->p2 - 1];
 
@@ -1463,12 +1477,21 @@ case OP_ResultRow: {
             || (pMem[i].flags & (MEM_Str|MEM_Blob))==0 );
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     REGISTER_TRACE(pOp->p1+i, &pMem[i]);
+#ifdef SQLITE_DEBUG
+    /* The registers in the result will not be used again when the
+    ** prepared statement restarts.  This is because sqlite3_column()
+    ** APIs might have caused type conversions of made other changes to
+    ** the register values.  Therefore, we can go ahead and break any
+    ** OP_SCopy dependencies. */
+    pMem[i].pScopyFrom = 0;
+#endif
   }
   if( db->mallocFailed ) goto no_mem;
 
   if( db->mTrace & SQLITE_TRACE_ROW ){
     db->xTrace(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
   }
+
 
   /* Return SQLITE_ROW
   */
@@ -1866,9 +1889,11 @@ case OP_Cast: {                  /* in1 */
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
   rc = ExpandBlob(pIn1);
-  sqlite3VdbeMemCast(pIn1, pOp->p2, encoding);
-  UPDATE_MAX_BLOBSIZE(pIn1);
   if( rc ) goto abort_due_to_error;
+  rc = sqlite3VdbeMemCast(pIn1, pOp->p2, encoding);
+  if( rc ) goto abort_due_to_error;
+  UPDATE_MAX_BLOBSIZE(pIn1);
+  REGISTER_TRACE(pOp->p1, pIn1);
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
@@ -2027,12 +2052,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
-          assert( flags3==pIn3->flags );
-          /* testcase( flags3!=pIn3->flags );
-          ** this used to be possible with pIn1==pIn3, but not since
-          ** the column cache was removed.  The following assignment
-          ** is essentially a no-op.  But, it provides defense-in-depth
-          ** in case our analysis is incorrect, so it is left in. */
+          testcase( flags3!=pIn3->flags );
           flags3 = pIn3->flags;
         }
         if( (flags3 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
@@ -2055,7 +2075,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         sqlite3VdbeMemStringify(pIn1, encoding, 1);
         testcase( (flags1&MEM_Dyn) != (pIn1->flags&MEM_Dyn) );
         flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
-        assert( pIn1!=pIn3 );
+        if( pIn1==pIn3 ) flags3 = flags1 | MEM_Str;
       }
       if( (flags3 & MEM_Str)==0 && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
         testcase( pIn3->flags & MEM_Int );
@@ -2090,10 +2110,10 @@ compare_op:
   }
 
   /* Undo any changes made by applyAffinity() to the input registers. */
-  assert( (pIn1->flags & MEM_Dyn) == (flags1 & MEM_Dyn) );
-  pIn1->flags = flags1;
   assert( (pIn3->flags & MEM_Dyn) == (flags3 & MEM_Dyn) );
   pIn3->flags = flags3;
+  assert( (pIn1->flags & MEM_Dyn) == (flags1 & MEM_Dyn) );
+  pIn1->flags = flags1;
 
   if( pOp->p5 & SQLITE_STOREP2 ){
     pOut = &aMem[pOp->p2];
@@ -2129,16 +2149,31 @@ compare_op:
 
 /* Opcode: ElseNotEq * P2 * * *
 **
-** This opcode must immediately follow an OP_Lt or OP_Gt comparison operator.
-** If result of an OP_Eq comparison on the same two operands
-** would have be NULL or false (0), then then jump to P2. 
-** If the result of an OP_Eq comparison on the two previous operands
-** would have been true (1), then fall through.
+** This opcode must follow an OP_Lt or OP_Gt comparison operator.  There
+** can be zero or more OP_ReleaseReg opcodes intervening, but no other
+** opcodes are allowed to occur between this instruction and the previous
+** OP_Lt or OP_Gt.  Furthermore, the prior OP_Lt or OP_Gt must have the
+** SQLITE_STOREP2 bit set in the P5 field.
+**
+** If result of an OP_Eq comparison on the same two operands as the
+** prior OP_Lt or OP_Gt would have been NULL or false (0), then then
+** jump to P2.  If the result of an OP_Eq comparison on the two previous
+** operands would have been true (1), then fall through.
 */
 case OP_ElseNotEq: {       /* same as TK_ESCAPE, jump */
-  assert( pOp>aOp );
-  assert( pOp[-1].opcode==OP_Lt || pOp[-1].opcode==OP_Gt );
-  assert( pOp[-1].p5 & SQLITE_STOREP2 );
+
+#ifdef SQLITE_DEBUG
+  /* Verify the preconditions of this opcode - that it follows an OP_Lt or
+  ** OP_Gt with the SQLITE_STOREP2 flag set, with zero or more intervening
+  ** OP_ReleaseReg opcodes */
+  int iAddr;
+  for(iAddr = (int)(pOp - aOp) - 1; ALWAYS(iAddr>=0); iAddr--){
+    if( aOp[iAddr].opcode==OP_ReleaseReg ) continue;
+    assert( aOp[iAddr].opcode==OP_Lt || aOp[iAddr].opcode==OP_Gt );
+    assert( aOp[iAddr].p5 & SQLITE_STOREP2 );
+    break;
+  }
+#endif /* SQLITE_DEBUG */
   VdbeBranchTaken(iCompare!=0, 2);
   if( iCompare!=0 ) goto jump_to_p2;
   break;
@@ -2549,7 +2584,9 @@ case OP_Column: {
   u32 t;             /* A type code from the record header */
   Mem *pReg;         /* PseudoTable input register */
 
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
   p2 = pOp->p2;
 
   /* If the cursor cache is stale (meaning it is not currently point at
@@ -2561,7 +2598,6 @@ case OP_Column: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
-  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pC!=0 );
   assert( p2<pC->nField );
   aOffset = pC->aOffset;
@@ -3264,8 +3300,12 @@ case OP_Savepoint: {
           p->rc = rc = SQLITE_BUSY;
           goto vdbe_return;
         }
-        db->isTransactionSavepoint = 0;
         rc = p->rc;
+        if( rc ){
+          db->autoCommit = 0;
+        }else{
+          db->isTransactionSavepoint = 0;
+        }
       }else{
         int isSchemaChange;
         iSavepoint = db->nSavepoint - iSavepoint - 1;
@@ -3293,6 +3333,7 @@ case OP_Savepoint: {
           db->mDbFlags |= DBFLAG_SchemaChange;
         }
       }
+      if( rc ) goto abort_due_to_error;
   
       /* Regardless of whether this is a RELEASE or ROLLBACK, destroy all 
       ** savepoints nested inside of the savepoint being operated on. */
@@ -3788,6 +3829,7 @@ case OP_OpenDup: {
   VdbeCursor *pCx;      /* The new cursor */
 
   pOrig = p->apCsr[pOp->p2];
+  assert( pOrig );
   assert( pOrig->pBtx!=0 );  /* Only ephemeral cursors can be duplicated */
 
   pCx = allocateCursor(p, pOp->p1, pOrig->nField, -1, CURTYPE_BTREE);
@@ -4794,6 +4836,7 @@ case OP_Insert: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
+  assert( pC->deferredMoveto==0 );
   assert( pC->uc.pCursor!=0 );
   assert( (pOp->p5 & OPFLAG_ISNOOP) || pC->isTable );
   assert( pOp->p4type==P4_TABLE || pOp->p4type>=P4_STATIC );
@@ -5663,6 +5706,24 @@ case OP_IdxRowid: {           /* out2 */
   }else{
     assert( pOp->opcode==OP_IdxRowid );
     sqlite3VdbeMemSetNull(&aMem[pOp->p2]);
+  }
+  break;
+}
+
+/* Opcode: FinishSeek P1 * * * *
+** 
+** If cursor P1 was previously moved via OP_DeferredSeek, complete that
+** seek operation now, without further delay.  If the cursor seek has
+** already occurred, this instruction is a no-op.
+*/
+case OP_FinishSeek: {
+  VdbeCursor *pC;             /* The P1 index cursor */
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  if( pC->deferredMoveto ){
+    rc = sqlite3VdbeFinishMoveto(pC);
+    if( rc ) goto abort_due_to_error;
   }
   break;
 }
@@ -6973,6 +7034,36 @@ case OP_Expire: {
   break;
 }
 
+/* Opcode: CursorLock P1 * * * *
+**
+** Lock the btree to which cursor P1 is pointing so that the btree cannot be
+** written by an other cursor.
+*/
+case OP_CursorLock: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_BTREE );
+  sqlite3BtreeCursorPin(pC->uc.pCursor);
+  break;
+}
+
+/* Opcode: CursorUnlock P1 * * * *
+**
+** Unlock the btree to which cursor P1 is pointing so that it can be
+** written by other cursors.
+*/
+case OP_CursorUnlock: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_BTREE );
+  sqlite3BtreeCursorUnpin(pC->uc.pCursor);
+  break;
+}
+
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /* Opcode: TableLock P1 P2 P3 P4 *
 ** Synopsis: iDb=P1 root=P2 write=P3
@@ -7217,7 +7308,7 @@ case OP_VColumn: {
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
-  testcase( (pOp->p5 & OPFLAG_NOCHNG)==0 && pOp->p5!=0 );
+  assert( pOp->p5==OPFLAG_NOCHNG || pOp->p5==0 );
   if( pOp->p5 & OPFLAG_NOCHNG ){
     sqlite3VdbeMemSetNull(pDest);
     pDest->flags = MEM_Null|MEM_Zero;
@@ -7674,6 +7765,53 @@ case OP_CursorHint: {
 */
 case OP_Abortable: {
   sqlite3VdbeAssertAbortable(p);
+  break;
+}
+#endif
+
+#ifdef SQLITE_DEBUG
+/* Opcode:  ReleaseReg   P1 P2 P3 * *
+** Synopsis: release r[P1@P2] mask P3
+**
+** Release registers from service.  Any content that was in the
+** the registers is unreliable after this opcode completes.
+**
+** The registers released will be the P2 registers starting at P1,
+** except if bit ii of P3 set, then do not release register P1+ii.
+** In other words, P3 is a mask of registers to preserve.
+**
+** Releasing a register clears the Mem.pScopyFrom pointer.  That means
+** that if the content of the released register was set using OP_SCopy,
+** a change to the value of the source register for the OP_SCopy will no longer
+** generate an assertion fault in sqlite3VdbeMemAboutToChange().
+**
+** TODO: Released registers ought to also have their datatype set to
+** MEM_Undefined so that any subsequent attempt to read the released
+** register (before it is reinitialized) will generate an assertion fault.
+** However, there are places in the code generator which release registers
+** before their are used, under the (valid) assumption that the registers
+** will not be reallocated for some other purpose before they are used and
+** hence are safe to release.
+**
+** This opcode is only available in testing and debugging builds.  It is
+** not generated for release builds.  The purpose of this opcode is to help
+** validate the generated bytecode.  This opcode does not actually contribute
+** to computing an answer.
+*/
+case OP_ReleaseReg: {
+  Mem *pMem;
+  int i;
+  u32 constMask;
+  assert( pOp->p1>0 );
+  assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
+  pMem = &aMem[pOp->p1];
+  constMask = pOp->p3;
+  for(i=0; i<pOp->p2; i++, pMem++){
+    if( i>=32 || (constMask & MASKBIT32(i))==0 ){
+      pMem->pScopyFrom = 0;
+      /* MemSetTypeFlag(pMem, MEM_Undefined); // See the TODO */
+    }
+  }
   break;
 }
 #endif

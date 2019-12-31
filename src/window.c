@@ -799,6 +799,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
       }
       if( iCol<0 ){
         Expr *pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
+        if( pDup && pDup->op==TK_AGG_FUNCTION ) pDup->op = TK_FUNCTION;
         p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
       }
       if( p->pSub ){
@@ -894,10 +895,13 @@ static ExprList *exprListAppendList(
     int i;
     int nInit = pList ? pList->nExpr : 0;
     for(i=0; i<pAppend->nExpr; i++){
+      int iDummy;
       Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
-      if( bIntToNull && pDup && pDup->op==TK_INTEGER ){
+      assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
+      if( bIntToNull && pDup && sqlite3ExprIsInteger(pDup, &iDummy) ){
         pDup->op = TK_NULL;
         pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
+        pDup->u.zToken = 0;
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
       if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;
@@ -932,7 +936,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
 
     pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ){
-      return SQLITE_NOMEM;
+      return sqlite3ErrorToParser(db, SQLITE_NOMEM);
     }
 
     p->pSrc = 0;
@@ -945,7 +949,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     /* Create the ORDER BY clause for the sub-select. This is the concatenation
     ** of the window PARTITION and ORDER BY clauses. Then, if this makes it
     ** redundant, remove the ORDER BY from the parent SELECT.  */
-    pSort = sqlite3ExprListDup(db, pMWin->pPartition, 0);
+    pSort = exprListAppendList(pParse, 0, pMWin->pPartition, 1);
     pSort = exprListAppendList(pParse, pSort, pMWin->pOrderBy, 1);
     if( pSort && p->pOrderBy && p->pOrderBy->nExpr<=pSort->nExpr ){
       int nSave = pSort->nExpr;
@@ -1019,6 +1023,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       pSub->selFlags |= SF_Expanded;
       pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_NONE);
       if( pTab2==0 ){
+        /* Might actually be some other kind of error, but in that case
+        ** pParse->nErr will be set, so if SQLITE_NOMEM is set, we will get
+        ** the correct error message regardless. */
         rc = SQLITE_NOMEM;
       }else{
         memcpy(pTab, pTab2, sizeof(Table));
@@ -1037,6 +1044,13 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     sqlite3DbFree(db, pTab);
   }
 
+  if( rc ){
+    if( pParse->nErr==0 ){
+      assert( pParse->db->mallocFailed );
+      sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
+    }
+    sqlite3SelectReset(pParse, p);
+  }
   return rc;
 }
 

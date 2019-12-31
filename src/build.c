@@ -1547,6 +1547,7 @@ void sqlite3AddPrimaryKey(
     assert( autoInc==0 || autoInc==1 );
     pTab->tabFlags |= autoInc*TF_Autoincrement;
     if( pList ) pParse->iPkSortOrder = pList->a[0].sortFlags;
+    (void)sqlite3HasExplicitNulls(pParse, pList);
   }else if( autoInc ){
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
@@ -2242,6 +2243,12 @@ void sqlite3EndTable(
   */
   if( p->pCheck ){
     sqlite3ResolveSelfReference(pParse, p, NC_IsCheck, 0, p->pCheck);
+    if( pParse->nErr ){
+      /* If errors are seen, delete the CHECK constraints now, else they might
+      ** actually be used if PRAGMA writable_schema=ON is set. */
+      sqlite3ExprListDelete(db, p->pCheck);
+      p->pCheck = 0;
+    }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
@@ -2252,10 +2259,19 @@ void sqlite3EndTable(
     for(ii=0; ii<p->nCol; ii++){
       u32 colFlags = p->aCol[ii].colFlags;
       if( (colFlags & COLFLAG_GENERATED)!=0 ){
+        Expr *pX = p->aCol[ii].pDflt;
         testcase( colFlags & COLFLAG_VIRTUAL );
         testcase( colFlags & COLFLAG_STORED );
-        sqlite3ResolveSelfReference(pParse, p, NC_GenCol, 
-                                    p->aCol[ii].pDflt, 0);
+        if( sqlite3ResolveSelfReference(pParse, p, NC_GenCol, pX, 0) ){
+          /* If there are errors in resolving the expression, change the
+          ** expression to a NULL.  This prevents code generators that operate
+          ** on the expression from inserting extra parts into the expression
+          ** tree that have been allocated from lookaside memory, which is
+          ** illegal in a schema and will lead to errors heap corruption when
+          ** the database connection closes. */
+          sqlite3ExprDelete(db, pX);
+          p->aCol[ii].pDflt = sqlite3ExprAlloc(db, TK_NULL, 0, 0);
+        }
       }else{
         nNG++;
       }
@@ -2609,7 +2625,10 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     pSelTab = sqlite3ResultSetOfSelect(pParse, pSel, SQLITE_AFF_NONE);
 #endif
     pParse->nTab = n;
-    if( pTable->pCheck ){
+    if( pSelTab==0 ){
+      pTable->nCol = 0;
+      nErr++;
+    }else if( pTable->pCheck ){
       /* CREATE VIEW name(arglist) AS ...
       ** The names of the columns in the table are taken from
       ** arglist which is stored in pTable->pCheck.  The pCheck field
@@ -2619,13 +2638,13 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
                                  &pTable->nCol, &pTable->aCol);
       if( db->mallocFailed==0 
-       && pParse->nErr==0
+       && ALWAYS(pParse->nErr==0)
        && pTable->nCol==pSel->pEList->nExpr
       ){
         sqlite3SelectAddColumnTypeAndCollation(pParse, pTable, pSel,
                                                SQLITE_AFF_NONE);
       }
-    }else if( pSelTab ){
+    }else{
       /* CREATE VIEW name AS...  without an argument list.  Construct
       ** the column names from the SELECT statement that defines the view.
       */
@@ -2635,9 +2654,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
       assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
-    }else{
-      pTable->nCol = 0;
-      nErr++;
     }
     pTable->nNVCol = pTable->nCol;
     sqlite3DeleteTable(db, pSelTab);
@@ -3912,26 +3928,9 @@ void sqlite3CreateIndex(
       sqlite3VdbeJumpHere(v, pIndex->tnum);
     }
   }
-
-  /* When adding an index to the list of indices for a table, make
-  ** sure all indices labeled OE_Replace come after all those labeled
-  ** OE_Ignore.  This is necessary for the correct constraint check
-  ** processing (in sqlite3GenerateConstraintChecks()) as part of
-  ** UPDATE and INSERT statements.  
-  */
   if( db->init.busy || pTblName==0 ){
-    if( onError!=OE_Replace || pTab->pIndex==0
-         || pTab->pIndex->onError==OE_Replace){
-      pIndex->pNext = pTab->pIndex;
-      pTab->pIndex = pIndex;
-    }else{
-      Index *pOther = pTab->pIndex;
-      while( pOther->pNext && pOther->pNext->onError!=OE_Replace ){
-        pOther = pOther->pNext;
-      }
-      pIndex->pNext = pOther->pNext;
-      pOther->pNext = pIndex;
-    }
+    pIndex->pNext = pTab->pIndex;
+    pTab->pIndex = pIndex;
     pIndex = 0;
   }
   else if( IN_RENAME_OBJECT ){
@@ -3943,6 +3942,21 @@ void sqlite3CreateIndex(
   /* Clean up before exiting */
 exit_create_index:
   if( pIndex ) sqlite3FreeIndex(db, pIndex);
+  if( pTab ){  /* Ensure all REPLACE indexes are at the end of the list */
+    Index **ppFrom = &pTab->pIndex;
+    Index *pThis;
+    for(ppFrom=&pTab->pIndex; (pThis = *ppFrom)!=0; ppFrom=&pThis->pNext){
+      Index *pNext;
+      if( pThis->onError!=OE_Replace ) continue;
+      while( (pNext = pThis->pNext)!=0 && pNext->onError!=OE_Replace ){
+        *ppFrom = pNext;
+        pThis->pNext = pNext->pNext;
+        pNext->pNext = pThis;
+        ppFrom = &pNext->pNext;
+      }
+      break;
+    }
+  }
   sqlite3ExprDelete(db, pPIWhere);
   sqlite3ExprListDelete(db, pList);
   sqlite3SrcListDelete(db, pTblName);

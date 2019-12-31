@@ -5759,25 +5759,57 @@ do_test 32.0 {
 | end crash-74fdbc96edbc04.db
 }]} {}
 
-do_execsql_test 32.1 {
+do_catchsql_test 32.1 {
   UPDATE t1 SET b=quote(zeroblob(6.51158946e+5)) WHERE a MATCH '*t*';
-} {}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 32.2 {
-  UPDATE t1 SET b=((- '' )) WHERE a MATCH '0*t';
+#do_catchsql_test 32.2 {
+#  UPDATE t1 SET b=((- '' )) WHERE a MATCH '0*t';
+#} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+#
+ifcapable icu {
+  reset_db
+  do_catchsql_test 33.0 {
+    CREATE VIRTUAL TABLE f USING fts3(a,b,tokenize=icu);
+    CREATE TABLE 'f_docsize'(docid INTEGER PRIMARY KEY, size BLOB);
+    CREATE TABLE 'f_stat'(id INTEGER PRIMARY KEY, value BLOB);
+    INSERT INTO f VALUES (1, '1234');
+    INSERT INTO f_stat VALUES (1,x'0000000165656565db6569746565c5c52bc5c5c53e3a003bc502ffffffffc5c5c53e3a003bc502fffffffffb8b2afbfb6565f0740100650000000165656565db6569746565c5c52bc5c5c53e3a003bc502ffffffffc5c5c53e3a003b8b00c5c5c5c5c5bfc5');
+    INSERT INTO f(f) VALUES ('merge=198,49');
+  } {1 {database disk image is malformed}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 34.0 {
+  CREATE VIRTUAL TABLE f USING fts3(a,b);
+  INSERT INTO f VALUES (1, '1234');
+  INSERT INTO f_segdir VALUES (1,255,0,0,'1 255',x'00');
+  UPDATE f_segdir SET level = 0 WHERE level IN (
+    SELECT level FROM f_segdir LIMIT 1 OFFSET 1
+  );
+  INSERT INTO f_segdir VALUES (255,249,0,121,'0 0',x'00');
+  INSERT INTO f_content VALUES (255,0,x'ff');
+  INSERT INTO f_segdir VALUES (1,255,16,0,'1 255',x'00');
+}
+
+do_catchsql_test 34.1 {
+  UPDATE f SET b = x'00' WHERE b IN (SELECT b FROM f LIMIT 1 OFFSET 0);
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 #
 reset_db
-do_catchsql_test 32.0 {
-  CREATE VIRTUAL TABLE f USING fts3(a,b,tokenize=icu);
-  CREATE TABLE 'f_docsize'(docid INTEGER PRIMARY KEY, size BLOB);
-  CREATE TABLE 'f_stat'(id INTEGER PRIMARY KEY, value BLOB);
-  INSERT INTO f VALUES (1, '1234');
-  INSERT INTO f_stat VALUES (1,x'0000000165656565db6569746565c5c52bc5c5c53e3a003bc502ffffffffc5c5c53e3a003bc502fffffffffb8b2afbfb6565f0740100650000000165656565db6569746565c5c52bc5c5c53e3a003bc502ffffffffc5c5c53e3a003b8b00c5c5c5c5c5bfc5');
-  INSERT INTO f(f) VALUES ('merge=198,49');
-} {1 {database disk image is malformed}}
+do_execsql_test 35.0 {
+  CREATE VIRTUAL TABLE f USING fts3(a,b);
+  INSERT INTO f_segdir VALUES (1,255,0,0,'1 255',x'0001ff000001ff000001ff000001ff000001ff00c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5bec5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5');
+}
 
+do_catchsql_test 35.1 {
+  INSERT INTO f(f) VALUES ('integrity-check');
+} {1 {database disk image is malformed}}
 
 finish_test

@@ -740,15 +740,17 @@ static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
 ** to select statement pSelect.
 */
 static void renameWalkWith(Walker *pWalker, Select *pSelect){
-  if( pSelect->pWith ){
+  With *pWith = pSelect->pWith;
+  if( pWith ){
     int i;
-    for(i=0; i<pSelect->pWith->nCte; i++){
-      Select *p = pSelect->pWith->a[i].pSelect;
+    for(i=0; i<pWith->nCte; i++){
+      Select *p = pWith->a[i].pSelect;
       NameContext sNC;
       memset(&sNC, 0, sizeof(sNC));
       sNC.pParse = pWalker->pParse;
       sqlite3SelectPrep(sNC.pParse, p, &sNC);
       sqlite3WalkSelect(pWalker, p);
+      sqlite3RenameExprlistUnmap(pWalker->pParse, pWith->a[i].pCols);
     }
   }
 }
@@ -773,6 +775,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
     SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
+      if( sqlite3WalkExpr(pWalker, pSrc->a[i].pOn) ) return WRC_Abort;
     }
   }
 
@@ -987,7 +990,6 @@ static void renameColumnIdlistNames(
 static int renameParseSql(
   Parse *p,                       /* Memory to use for Parse object */
   const char *zDb,                /* Name of schema SQL belongs to */
-  int bTable,                     /* 1 -> RENAME TABLE, 0 -> RENAME COLUMN */
   sqlite3 *db,                    /* Database handle */
   const char *zSql,               /* SQL to parse */
   int bTemp                       /* True if SQL is from temp schema */
@@ -1308,7 +1310,7 @@ static void renameColumnFunc(
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = 0;
 #endif
-  rc = renameParseSql(&sParse, zDb, 0, db, zSql, bTemp);
+  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
 
   /* Find tokens that need to be replaced. */
   memset(&sWalker, 0, sizeof(Walker));
@@ -1512,7 +1514,7 @@ static void renameTableFunc(
     sWalker.xSelectCallback = renameTableSelectCb;
     sWalker.u.pRename = &sCtx;
 
-    rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
+    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
 
     if( rc==SQLITE_OK ){
       int isLegacy = (db->flags & SQLITE_LegacyAlter);
@@ -1529,8 +1531,11 @@ static void renameTableFunc(
             assert( pSelect->selFlags & SF_View );
             pSelect->selFlags &= ~SF_View;
             sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
-            if( sParse.nErr ) rc = sParse.rc;
-            sqlite3WalkSelect(&sWalker, pTab->pSelect);
+            if( sParse.nErr ){
+              rc = sParse.rc;
+            }else{
+              sqlite3WalkSelect(&sWalker, pTab->pSelect);
+            }
           }
         }else{
           /* Modify any FK definitions to point to the new table. */
@@ -1651,7 +1656,7 @@ static void renameTableTest(
   if( zDb && zInput ){
     int rc;
     Parse sParse;
-    rc = renameParseSql(&sParse, zDb, 1, db, zInput, bTemp);
+    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
     if( rc==SQLITE_OK ){
       if( isLegacy==0 && sParse.pNewTable && sParse.pNewTable->pSelect ){
         NameContext sNC;

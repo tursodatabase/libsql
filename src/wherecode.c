@@ -415,7 +415,8 @@ static Expr *removeUnindexableInClauseTerms(
   Expr *pX              /* The IN expression to be reduced */
 ){
   sqlite3 *db = pParse->db;
-  Expr *pNew = sqlite3ExprDup(db, pX, 0);
+  Expr *pNew;
+  pNew = sqlite3ExprDup(db, pX, 0);
   if( db->mallocFailed==0 ){
     ExprList *pOrigRhs = pNew->x.pSelect->pEList;  /* Original unmodified RHS */
     ExprList *pOrigLhs = pNew->pLeft->x.pList;     /* Original unmodified LHS */
@@ -1044,6 +1045,7 @@ static void codeDeferredSeek(
   assert( iIdxCur>0 );
   assert( pIdx->aiColumn[pIdx->nColumn-1]==-1 );
   
+  pWInfo->bDeferredSeek = 1;
   sqlite3VdbeAddOp3(v, OP_DeferredSeek, iIdxCur, 0, iCur);
   if( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)
    && DbMaskAllZero(sqlite3ParseToplevel(pParse)->writeMask)
@@ -1127,6 +1129,9 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
     pExpr->iTable = pX->iIdxCur;
     pExpr->iColumn = pX->iIdxCol;
     pExpr->y.pTab = 0;
+    testcase( ExprHasProperty(pExpr, EP_Skip) );
+    testcase( ExprHasProperty(pExpr, EP_Unlikely) );
+    ExprClearProperty(pExpr, EP_Skip|EP_Unlikely);
     return WRC_Prune;
   }else{
     return WRC_Continue;
@@ -1188,9 +1193,20 @@ static void whereIndexExprTrans(
     if( iRef==XN_EXPR ){
       assert( aColExpr->a[iIdxCol].pExpr!=0 );
       x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
+      if( sqlite3ExprIsConstant(x.pIdxExpr) ) continue;
       w.xExprCallback = whereIndexExprTransNode;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-    }else if( iRef>=0 && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0 ){
+    }else if( iRef>=0
+       && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0
+       && (pTab->aCol[iRef].zColl==0
+           || sqlite3StrICmp(pTab->aCol[iRef].zColl, sqlite3StrBINARY)==0)
+    ){
+      /* Check to see if there are direct references to generated columns
+      ** that are contained in the index.  Pulling the generated column
+      ** out of the index is an optimization only - the main table is always
+      ** available if the index cannot be used.  To avoid unnecessary
+      ** complication, omit this optimization if the collating sequence for
+      ** the column is non-standard */
       x.iTabCol = iRef;
       w.xExprCallback = whereIndexExprTransColumn;
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
@@ -1269,6 +1285,21 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   pLevel->notReady = notReady & ~sqlite3WhereGetMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
   VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
+#if WHERETRACE_ENABLED /* 0x20800 */
+  if( sqlite3WhereTrace & 0x800 ){
+    sqlite3DebugPrintf("Coding level %d of %d:  notReady=%llx  iFrom=%d\n",
+       iLevel, pWInfo->nLevel, (u64)notReady, pLevel->iFrom);
+    sqlite3WhereLoopPrint(pLoop, pWC);
+  }
+  if( sqlite3WhereTrace & 0x20000 ){
+    if( iLevel==0 ){
+      sqlite3DebugPrintf("WHERE clause being coded:\n");
+      sqlite3TreeViewExpr(0, pWInfo->pWhere, 0);
+    }
+    sqlite3DebugPrintf("All WHERE-clause terms before coding:\n");
+    sqlite3WhereClausePrint(pWC);
+  }
+#endif
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -1655,7 +1686,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ){
       assert( bSeekPastNull==0 && nExtraReg==0 && nBtm==0 && nTop==0 );
       assert( pRangeEnd==0 && pRangeStart==0 );
-      assert( pLoop->nSkip==0 );
+      testcase( pLoop->nSkip>0 );
       nExtraReg = 1;
       bSeekPastNull = 1;
       pLevel->regBignull = regBignull = ++pParse->nMem;
@@ -2324,6 +2355,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeNoopComment((v, "WhereTerm[%d] (%p) priority=%d",
                          pWC->nTerm-j, pTerm, iLoop));
       }
+      if( sqlite3WhereTrace & 0x800 ){
+        sqlite3DebugPrintf("Coding auxiliary constraint:\n");
+        sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
+      }
 #endif
       sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
       if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
@@ -2347,8 +2382,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
     if( (pTerm->eOperator & WO_EQUIV)==0 ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
-    if( pLevel->iLeftJoin ) continue;
+    if( pTabItem->fg.jointype & JT_LEFT ) continue;
     pE = pTerm->pExpr;
+#ifdef WHERETRACE_ENABLED /* 0x800 */
+    if( sqlite3WhereTrace & 0x800 ){
+      sqlite3DebugPrintf("Coding transitive constraint:\n");
+      sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
+    }
+#endif
     assert( !ExprHasProperty(pE, EP_FromJoin) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.leftColumn, notReady,
@@ -2391,5 +2432,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
   }
 
+#if WHERETRACE_ENABLED /* 0x20800 */
+  if( sqlite3WhereTrace & 0x20000 ){
+    sqlite3DebugPrintf("All WHERE-clause terms after coding level %d:\n",
+                       iLevel);
+    sqlite3WhereClausePrint(pWC);
+  }
+  if( sqlite3WhereTrace & 0x800 ){
+    sqlite3DebugPrintf("End Coding level %d:  notReady=%llx\n",
+       iLevel, (u64)pLevel->notReady);
+  }
+#endif
   return pLevel->notReady;
 }

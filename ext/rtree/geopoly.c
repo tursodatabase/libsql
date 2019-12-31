@@ -1345,17 +1345,11 @@ static int geopolyFilter(
   RtreeNode *pRoot = 0;
   int rc = SQLITE_OK;
   int iCell = 0;
-  sqlite3_stmt *pStmt;
 
   rtreeReference(pRtree);
 
   /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
-  freeCursorConstraints(pCsr);
-  sqlite3_free(pCsr->aPoint);
-  pStmt = pCsr->pReadAux;
-  memset(pCsr, 0, sizeof(RtreeCursor));
-  pCsr->base.pVtab = (sqlite3_vtab*)pRtree;
-  pCsr->pReadAux = pStmt;
+  resetCursor(pCsr);
 
   pCsr->iStrategy = idxNum;
   if( idxNum==1 ){

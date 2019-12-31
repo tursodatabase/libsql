@@ -376,6 +376,7 @@ static int codeCompare(
   int addr;
   CollSeq *p4;
 
+  if( pParse->nErr ) return 0;
   if( isCommuted ){
     p4 = sqlite3BinaryCompareCollSeq(pParse, pRight, pLeft);
   }else{
@@ -593,6 +594,7 @@ static void codeVectorCompare(
   int addrDone = sqlite3VdbeMakeLabel(pParse);
   int isCommuted = ExprHasProperty(pExpr,EP_Commuted);
 
+  if( pParse->nErr ) return;
   if( nLeft!=sqlite3ExprVectorSize(pRight) ){
     sqlite3ErrorMsg(pParse, "row value misused");
     return;
@@ -931,9 +933,11 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
     return pRight;
   }else if( pRight==0 ){
     return pLeft;
-  }else if( ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight) ){
-    sqlite3ExprUnmapAndDelete(pParse, pLeft);
-    sqlite3ExprUnmapAndDelete(pParse, pRight);
+  }else if( (ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight)) 
+         && !IN_RENAME_OBJECT
+  ){
+    sqlite3ExprDelete(db, pLeft);
+    sqlite3ExprDelete(db, pRight);
     return sqlite3Expr(db, TK_INTEGER, "0");
   }else{
     return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
@@ -2207,7 +2211,9 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_COLUMN:
       return ExprHasProperty(p, EP_CanBeNull) ||
              p->y.pTab==0 ||  /* Reference to column of index on expression */
-             (p->iColumn>=0 && p->y.pTab->aCol[p->iColumn].notNull==0);
+             (p->iColumn>=0
+              && ALWAYS(p->y.pTab->aCol!=0) /* Defense against OOM problems */
+              && p->y.pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
   }
@@ -2289,7 +2295,7 @@ static Select *isCandidateForInOpt(Expr *pX){
     testcase( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
     return 0; /* No DISTINCT keyword and no aggregate functions */
   }
-  assert( p->pGroupBy==0 );              /* Has no GROUP BY clause */
+  if( p->pGroupBy ) return 0;            /* Has no GROUP BY clause */
   if( p->pLimit ) return 0;              /* Has no LIMIT clause */
   if( p->pWhere ) return 0;              /* Has no WHERE clause */
   pSrc = p->pSrc;
@@ -2684,8 +2690,10 @@ static char *exprINAffinity(Parse *pParse, Expr *pExpr){
 **   "sub-select returns N columns - expected M"
 */   
 void sqlite3SubselectError(Parse *pParse, int nActual, int nExpect){
-  const char *zFmt = "sub-select returns %d columns - expected %d";
-  sqlite3ErrorMsg(pParse, zFmt, nActual, nExpect);
+  if( pParse->nErr==0 ){
+    const char *zFmt = "sub-select returns %d columns - expected %d";
+    sqlite3ErrorMsg(pParse, zFmt, nActual, nExpect);
+  }
 }
 #endif
 
@@ -3187,15 +3195,21 @@ static void sqlite3ExprCodeIN(
         sqlite3VdbeAddOp3(v, OP_BitAnd, regCkNull, r2, regCkNull);
       }
       if( ii<pList->nExpr-1 || destIfNull!=destIfFalse ){
-        sqlite3VdbeAddOp4(v, OP_Eq, rLhs, labelOk, r2,
+        int op = rLhs!=r2 ? OP_Eq : OP_NotNull;
+        sqlite3VdbeAddOp4(v, op, rLhs, labelOk, r2,
                           (void*)pColl, P4_COLLSEQ);
-        VdbeCoverageIf(v, ii<pList->nExpr-1);
-        VdbeCoverageIf(v, ii==pList->nExpr-1);
+        VdbeCoverageIf(v, ii<pList->nExpr-1 && op==OP_Eq);
+        VdbeCoverageIf(v, ii==pList->nExpr-1 && op==OP_Eq);
+        VdbeCoverageIf(v, ii<pList->nExpr-1 && op==OP_NotNull);
+        VdbeCoverageIf(v, ii==pList->nExpr-1 && op==OP_NotNull);
         sqlite3VdbeChangeP5(v, zAff[0]);
       }else{
+        int op = rLhs!=r2 ? OP_Ne : OP_IsNull;
         assert( destIfNull==destIfFalse );
-        sqlite3VdbeAddOp4(v, OP_Ne, rLhs, destIfFalse, r2,
-                          (void*)pColl, P4_COLLSEQ); VdbeCoverage(v);
+        sqlite3VdbeAddOp4(v, op, rLhs, destIfFalse, r2,
+                          (void*)pColl, P4_COLLSEQ);
+        VdbeCoverageIf(v, op==OP_Ne);
+        VdbeCoverageIf(v, op==OP_IsNull);
         sqlite3VdbeChangeP5(v, zAff[0] | SQLITE_JUMPIFNULL);
       }
       sqlite3ReleaseTempReg(pParse, regToFree);
@@ -3218,6 +3232,7 @@ static void sqlite3ExprCodeIN(
   }else{
     destStep2 = destStep6 = sqlite3VdbeMakeLabel(pParse);
   }
+  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
     if( sqlite3ExprCanBeNull(p) ){
@@ -3409,11 +3424,20 @@ void sqlite3ExprCodeGeneratedColumn(
   Column *pCol,
   int regOut
 ){
+  int iAddr;
+  Vdbe *v = pParse->pVdbe;
+  assert( v!=0 );
+  assert( pParse->iSelfTab!=0 );
+  if( pParse->iSelfTab>0 ){
+    iAddr = sqlite3VdbeAddOp3(v, OP_IfNullRow, pParse->iSelfTab-1, 0, regOut);
+  }else{
+    iAddr = 0;
+  }
   sqlite3ExprCode(pParse, pCol->pDflt, regOut);
   if( pCol->affinity>=SQLITE_AFF_TEXT ){
-    sqlite3VdbeAddOp4(pParse->pVdbe, OP_Affinity, regOut, 1, 0,
-                      &pCol->affinity, 1);
+    sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
+  if( iAddr ) sqlite3VdbeJumpHere(v, iAddr);
 }
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
 
@@ -3488,7 +3512,8 @@ int sqlite3ExprCodeGetColumn(
   assert( pParse->pVdbe!=0 );
   sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pTab, iTable, iColumn, iReg);
   if( p5 ){
-    sqlite3VdbeChangeP5(pParse->pVdbe, p5);
+    VdbeOp *pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1);
+    if( pOp->opcode==OP_Column ) pOp->p5 = p5;
   }
   return iReg;
 }
@@ -3498,7 +3523,6 @@ int sqlite3ExprCodeGetColumn(
 ** over to iTo..iTo+nReg-1.
 */
 void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
-  assert( iFrom>=iTo+nReg || iFrom+nReg<=iTo );
   sqlite3VdbeAddOp3(pParse->pVdbe, OP_Move, iFrom, iTo, nReg);
 }
 
@@ -3600,6 +3624,7 @@ expr_code_doover:
     }
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
+      int iReg;
       if( ExprHasProperty(pExpr, EP_FixedCol) ){
         /* This COLUMN expression is really a constant due to WHERE clause
         ** constraints, and that constant is coded by the pExpr->pLeft
@@ -3607,8 +3632,8 @@ expr_code_doover:
         ** datatype by applying the Affinity of the table column to the
         ** constant.
         */
-        int iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
         int aff;
+        iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
         if( pExpr->y.pTab ){
           aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         }else{
@@ -3641,7 +3666,7 @@ expr_code_doover:
           int iCol = pExpr->iColumn;
           assert( pTab!=0 );
           assert( iCol>=XN_ROWID );
-          assert( iCol<pExpr->y.pTab->nCol );
+          assert( iCol<pTab->nCol );
           if( iCol<0 ){
             return -1-pParse->iSelfTab;
           }
@@ -3676,9 +3701,13 @@ expr_code_doover:
           iTab = pParse->iSelfTab - 1;
         }
       }
-      return sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
+      iReg = sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
                                pExpr->iColumn, iTab, target,
                                pExpr->op2);
+      if( pExpr->y.pTab==0 && pExpr->affExpr==SQLITE_AFF_REAL ){
+        sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
+      }
+      return iReg;
     }
     case TK_INTEGER: {
       codeInteger(pParse, pExpr, 0, target);
@@ -3700,7 +3729,12 @@ expr_code_doover:
       sqlite3VdbeLoadString(v, target, pExpr->u.zToken);
       return target;
     }
-    case TK_NULL: {
+    default: {
+      /* Make NULL the default case so that if a bug causes an illegal
+      ** Expr node to be passed into this function, it will be handled
+      ** sanely and not crash.  But keep the assert() to bring the problem
+      ** to the attention of the developers. */
+      assert( op==TK_NULL );
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       return target;
     }
@@ -3727,7 +3761,7 @@ expr_code_doover:
       sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
       if( pExpr->u.zToken[1]!=0 ){
         const char *z = sqlite3VListNumToName(pParse->pVList, pExpr->iColumn);
-        assert( pExpr->u.zToken[0]=='?' || strcmp(pExpr->u.zToken, z)==0 );
+        assert( pExpr->u.zToken[0]=='?' || (z && !strcmp(pExpr->u.zToken, z)) );
         pParse->pVList[0] = 0; /* Indicate VList may no longer be enlarged */
         sqlite3VdbeAppendP4(v, (char*)z, P4_STATIC);
       }
@@ -4040,8 +4074,12 @@ expr_code_doover:
         sqlite3VdbeAddFunctionCall(pParse, constMask, r1, target, nFarg,
                                    pDef, pExpr->op2);
       }
-      if( nFarg && constMask==0 ){
-        sqlite3ReleaseTempRange(pParse, r1, nFarg);
+      if( nFarg ){
+        if( constMask==0 ){
+          sqlite3ReleaseTempRange(pParse, r1, nFarg);
+        }else{
+          sqlite3VdbeReleaseRegisters(pParse, r1, nFarg, constMask);
+        }
       }
       return target;
     }
@@ -4211,7 +4249,7 @@ expr_code_doover:
     ** or if there is no matching Ei, the ELSE term Y, or if there is
     ** no ELSE term, NULL.
     */
-    default: assert( op==TK_CASE ); {
+    case TK_CASE: {
       int endLabel;                     /* GOTO label for end of CASE stmt */
       int nextCase;                     /* GOTO label for next WHEN clause */
       int nExpr;                        /* 2x number of WHEN terms */
@@ -5268,7 +5306,10 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
 
     case TK_BETWEEN:
-      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      if( sqlite3WalkExpr(pWalker, pExpr->pLeft)==WRC_Abort ){
+        assert( pWalker->eCode );
+        return WRC_Abort;
+      }
       return WRC_Prune;
 
     /* Virtual tables are allowed to use constraints like x=NULL.  So
@@ -5411,12 +5452,13 @@ struct SrcCount {
 ** Count the number of references to columns.
 */
 static int exprSrcCount(Walker *pWalker, Expr *pExpr){
-  /* The NEVER() on the second term is because sqlite3FunctionUsesThisSrc()
-  ** is always called before sqlite3ExprAnalyzeAggregates() and so the
-  ** TK_COLUMNs have not yet been converted into TK_AGG_COLUMN.  If
-  ** sqlite3FunctionUsesThisSrc() is used differently in the future, the
-  ** NEVER() will need to be removed. */
-  if( pExpr->op==TK_COLUMN || NEVER(pExpr->op==TK_AGG_COLUMN) ){
+  /* There was once a NEVER() on the second term on the grounds that
+  ** sqlite3FunctionUsesThisSrc() was always called before 
+  ** sqlite3ExprAnalyzeAggregates() and so the TK_COLUMNs have not yet 
+  ** been converted into TK_AGG_COLUMN. But this is no longer true due
+  ** to window functions - sqlite3WindowRewrite() may now indirectly call
+  ** FunctionUsesThisSrc() when creating a new sub-select. */
+  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
     int i;
     struct SrcCount *p = pWalker->u.pSrcCount;
     SrcList *pSrc = p->pSrc;
@@ -5454,6 +5496,11 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
   cnt.nThis = 0;
   cnt.nOther = 0;
   sqlite3WalkExprList(&w, pExpr->x.pList);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( ExprHasProperty(pExpr, EP_WinFunc) ){
+    sqlite3WalkExpr(&w, pExpr->y.pWin->pFilter);
+  }
+#endif
   return cnt.nThis>0 || cnt.nOther==0;
 }
 
@@ -5682,8 +5729,11 @@ int sqlite3GetTempReg(Parse *pParse){
 ** purpose.
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
-  if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-    pParse->aTempReg[pParse->nTempReg++] = iReg;
+  if( iReg ){
+    sqlite3VdbeReleaseRegisters(pParse, iReg, 1, 0);
+    if( pParse->nTempReg<ArraySize(pParse->aTempReg) ){
+      pParse->aTempReg[pParse->nTempReg++] = iReg;
+    }
   }
 }
 
@@ -5709,6 +5759,7 @@ void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
     sqlite3ReleaseTempReg(pParse, iReg);
     return;
   }
+  sqlite3VdbeReleaseRegisters(pParse, iReg, nReg, 0);
   if( nReg>pParse->nRangeReg ){
     pParse->nRangeReg = nReg;
     pParse->iRangeReg = iReg;

@@ -196,6 +196,9 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 # define TESTONLY(X)
 #endif
 
+#define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
+#define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
+
 #endif /* SQLITE_AMALGAMATION */
 
 #ifdef SQLITE_DEBUG
@@ -578,6 +581,7 @@ int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 void sqlite3Fts3ErrMsg(char**,const char*,...);
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
+int sqlite3Fts3GetVarintU(const char *, sqlite_uint64 *);
 int sqlite3Fts3GetVarintBounded(const char*,const char*,sqlite3_int64*);
 int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);

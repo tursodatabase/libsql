@@ -699,6 +699,9 @@ static int saveCursorPosition(BtCursor *pCur){
   assert( 0==pCur->pKey );
   assert( cursorHoldsMutex(pCur) );
 
+  if( pCur->curFlags & BTCF_Pinned ){
+    return SQLITE_CONSTRAINT_PINNED;
+  }
   if( pCur->eState==CURSOR_SKIPNEXT ){
     pCur->eState = CURSOR_VALID;
   }else{
@@ -4562,6 +4565,18 @@ i64 sqlite3BtreeIntegerKey(BtCursor *pCur){
   return pCur->info.nKey;
 }
 
+/*
+** Pin or unpin a cursor.
+*/
+void sqlite3BtreeCursorPin(BtCursor *pCur){
+  assert( (pCur->curFlags & BTCF_Pinned)==0 );
+  pCur->curFlags |= BTCF_Pinned;
+}
+void sqlite3BtreeCursorUnpin(BtCursor *pCur){
+  assert( (pCur->curFlags & BTCF_Pinned)!=0 );
+  pCur->curFlags &= ~BTCF_Pinned;
+}
+
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
 /*
 ** Return the offset into the database file for the start of the
@@ -5718,8 +5733,11 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
   ** to be invalid here. This can only occur if a second cursor modifies
   ** the page while cursor pCur is holding a reference to it. Which can
   ** only happen if the database is corrupt in such a way as to link the
-  ** page into more than one b-tree structure. */
-  testcase( idx>pPage->nCell );
+  ** page into more than one b-tree structure.
+  **
+  ** Update 2019-12-23: appears to long longer be possible after the
+  ** addition of anotherValidCursor() condition on balance_deeper().  */
+  harmless( idx>pPage->nCell );
 
   if( idx>=pPage->nCell ){
     if( !pPage->leaf ){
@@ -8309,6 +8327,30 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
 }
 
 /*
+** Return SQLITE_CORRUPT if any cursor other than pCur is currently valid
+** on the same B-tree as pCur.
+**
+** This can if a database is corrupt with two or more SQL tables
+** pointing to the same b-tree.  If an insert occurs on one SQL table
+** and causes a BEFORE TRIGGER to do a secondary insert on the other SQL
+** table linked to the same b-tree.  If the secondary insert causes a
+** rebalance, that can change content out from under the cursor on the
+** first SQL table, violating invariants on the first insert.
+*/
+static int anotherValidCursor(BtCursor *pCur){
+  BtCursor *pOther;
+  for(pOther=pCur->pBt->pCursor; pOther; pOther=pOther->pNext){
+    if( pOther!=pCur
+     && pOther->eState==CURSOR_VALID
+     && pOther->pPage==pCur->pPage
+    ){
+      return SQLITE_CORRUPT_BKPT;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** The page that pCur currently points to has just been modified in
 ** some way. This function figures out if this modification means the
 ** tree needs to be balanced, and if so calls the appropriate balancing 
@@ -8335,7 +8377,7 @@ static int balance(BtCursor *pCur){
     if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
       break;
     }else if( (iPage = pCur->iPage)==0 ){
-      if( pPage->nOverflow ){
+      if( pPage->nOverflow && (rc = anotherValidCursor(pCur))==SQLITE_OK ){
         /* The root page of the b-tree is overfull. In this case call the
         ** balance_deeper() function to create a new child for the root-page
         ** and copy the current contents of the root-page to it. The
@@ -8631,7 +8673,6 @@ int sqlite3BtreeInsert(
     if( flags & BTREE_SAVEPOSITION ){
       assert( pCur->curFlags & BTCF_ValidNKey );
       assert( pX->nKey==pCur->info.nKey );
-      assert( pCur->info.nSize!=0 );
       assert( loc==0 );
     }
 #endif
@@ -8706,7 +8747,9 @@ int sqlite3BtreeInsert(
     }
 
   }
-  assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
+  assert( pCur->eState==CURSOR_VALID 
+       || (pCur->eState==CURSOR_INVALID && loc)
+       || CORRUPT_DB );
 
   pPage = pCur->pPage;
   assert( pPage->intKey || pX->nKey>=0 );
