@@ -2265,6 +2265,33 @@ struct sqlite3_mem_methods {
 ** compile-time option.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW]]
+** <dt>SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW</td>
+** <dd>The SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW option activates or deactivates
+** the ability to use SQL functions that have side-effects inside of
+** triggers and views.  For legacy compatibility, this setting defaults
+** to "on".  Applications that are operating on untrusted database files
+** are advised to change this setting to "off".  When this setting is on,
+** only functions that have no side effects are usable inside of views.
+** This prevents an attacker from modifying the schema of a database so
+** that views and/or triggers with undesirable side-effects are run when
+** the application innocently tries to access what it thinks is an ordinary
+** table.
+** </dd>
+**
+** [[SQLITE_DBCONFIG_VTAB_IN_VIEW]]
+** <dt>SQLITE_DBCONFIG_VTAB_IN_VIEW</td>
+** <dd>The SQLITE_DBCONFIG_VTAB_IN_VIEW option activates or deactivates
+** the ability to use [virtual tables] inside of triggers and views.
+** For legacy compatibility, this setting defaults
+** to "on".  Applications that are operating on untrusted database files
+** are advised to change this setting to "off".  Turning this setting off
+** prevents an attacker from modifying the schema of a database so
+** that views and/or triggers with undesirable side-effects are run when
+** the application innocently tries to access what it thinks is an ordinary
+** table.
+** </dd>
+**
 ** [[SQLITE_DBCONFIG_LEGACY_FILE_FORMAT]]
 ** <dt>SQLITE_DBCONFIG_LEGACY_FILE_FORMAT</td>
 ** <dd>The SQLITE_DBCONFIG_LEGACY_FILE_FORMAT option activates or deactivates
@@ -2305,7 +2332,9 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_DQS_DDL               1014 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1016 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW   1017 /* int int* */
+#define SQLITE_DBCONFIG_VTAB_IN_VIEW          1018 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1018 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

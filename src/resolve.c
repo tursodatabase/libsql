@@ -861,6 +861,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** constant because they are constant for the duration of one query.
           ** This allows them to be factored out of inner loops. */
           ExprSetProperty(pExpr,EP_ConstFunc);
+        }else{
+          if( ExprHasProperty(pExpr, EP_Indirect)
+           && !IN_RENAME_OBJECT
+           && (pParse->db->flags & SQLITE_UnsafeInView)==0
+          ){
+            /* If SQLITE_DBCONFIG_UNSAFE_IN_VIEW is off, then functions with
+            ** side effects are not allowed inside triggers and views. */
+            sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
+                            pDef->zName);
+          }
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
           /* Date/time functions that use 'now', and other functions like
