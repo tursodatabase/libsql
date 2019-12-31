@@ -1477,12 +1477,21 @@ case OP_ResultRow: {
             || (pMem[i].flags & (MEM_Str|MEM_Blob))==0 );
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     REGISTER_TRACE(pOp->p1+i, &pMem[i]);
+#ifdef SQLITE_DEBUG
+    /* The registers in the result will not be used again when the
+    ** prepared statement restarts.  This is because sqlite3_column()
+    ** APIs might have caused type conversions of made other changes to
+    ** the register values.  Therefore, we can go ahead and break any
+    ** OP_SCopy dependencies. */
+    pMem[i].pScopyFrom = 0;
+#endif
   }
   if( db->mallocFailed ) goto no_mem;
 
   if( db->mTrace & SQLITE_TRACE_ROW ){
     db->xTrace(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
   }
+
 
   /* Return SQLITE_ROW
   */
