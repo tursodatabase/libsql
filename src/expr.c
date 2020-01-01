@@ -2933,6 +2933,8 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   SelectDest dest;            /* How to deal with SELECT result */
   int nReg;                   /* Registers to allocate */
   Expr *pLimit;               /* New limit expression */
+  Select *pCopy;              /* Copy of pSel */
+  int rc;                     /* return value from subroutine call */
 
   Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
@@ -3016,9 +3018,16 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
   pSel->iLimit = 0;
-  if( sqlite3Select(pParse, pSel, &dest) ){
-    return 0;
-  }
+
+  /* pSel might be reused.  So generate code using a copy of pSel, so that
+  ** if the code generator modifies the underlying structure of the SELECT
+  ** (for example in whereIndexExprTrans()) the original in pSel will be
+  ** unchanged. */
+  pCopy = sqlite3SelectDup(pParse->db, pSel, 0);
+  rc = sqlite3Select(pParse, pCopy, &dest);
+  sqlite3SelectDelete(pParse->db, pCopy);
+  if( rc ) return 0;
+
   pExpr->iTable = rReg = dest.iSDParm;
   ExprSetVVAProperty(pExpr, EP_NoReduce);
   if( addrOnce ){
