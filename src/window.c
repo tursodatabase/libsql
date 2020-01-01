@@ -1033,10 +1033,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
         p->pSrc->a[0].pTab = pTab;
         pTab = pTab2;
       }
-      sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, pSublist->nExpr);
-      sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+1, pMWin->iEphCsr);
-      sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+2, pMWin->iEphCsr);
-      sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+3, pMWin->iEphCsr);
     }else{
       sqlite3SelectDelete(db, pSub);
     }
@@ -1308,9 +1304,16 @@ int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
 ** to begin iterating through the sub-query results. It is used to allocate
 ** and initialize registers and cursors used by sqlite3WindowCodeStep().
 */
-void sqlite3WindowCodeInit(Parse *pParse, Window *pMWin){
+void sqlite3WindowCodeInit(Parse *pParse, Select *pSelect){
+  int nEphExpr = pSelect->pSrc->a[0].pSelect->pEList->nExpr;
+  Window *pMWin = pSelect->pWin;
   Window *pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
+
+  sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, nEphExpr);
+  sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+1, pMWin->iEphCsr);
+  sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+2, pMWin->iEphCsr);
+  sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+3, pMWin->iEphCsr);
 
   /* Allocate registers to use for PARTITION BY values, if any. Initialize
   ** said registers to NULL.  */

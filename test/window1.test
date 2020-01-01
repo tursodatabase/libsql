@@ -1531,4 +1531,27 @@ do_execsql_test 45.2 {
   );
 } {2000 2000 10000}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 46.1 {
+  CREATE TABLE t1 (a);
+  CREATE INDEX i1 ON t1(a);
+
+  INSERT INTO t1 VALUES (10);
+}
+
+do_execsql_test 46.2 {
+  SELECT (SELECT sum(a) OVER(ORDER BY a)) FROM t1
+} 10
+
+do_execsql_test 46.3 {
+  SELECT * FROM t1 WHERE (SELECT sum(a) OVER(ORDER BY a));
+} 10
+
+do_execsql_test 46.4 {
+  SELECT * FROM t1 NATURAL JOIN t1
+    WHERE a=1
+    OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)
+} 10
+
 finish_test

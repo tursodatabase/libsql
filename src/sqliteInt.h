@@ -3727,7 +3727,7 @@ Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 void sqlite3WindowLink(Select *pSel, Window *pWin);
 int sqlite3WindowCompare(Parse*, Window*, Window*, int);
-void sqlite3WindowCodeInit(Parse*, Window*);
+void sqlite3WindowCodeInit(Parse*, Select*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 int sqlite3WindowRewrite(Parse*, Select*);
 int sqlite3ExpandSubquery(Parse*, struct SrcList_item*);
