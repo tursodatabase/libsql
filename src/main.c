@@ -3312,6 +3312,13 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_INTERNAL_FUNCTIONS
+  /* Testing use only!!! The -DSQLITE_ENABLE_INTERNAL_FUNCTIONS=1 compile-time
+  ** option gives access to internal functions by default.  
+  ** Testing use only!!! */
+  db->mDbFlags |= DBFLAG_InternalFunc;
+#endif
+
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
   ** mode.  Doing nothing at all also makes NORMAL the default.

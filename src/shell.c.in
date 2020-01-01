@@ -9355,6 +9355,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* sqlite3_test_control(sqlite3*) */
         case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
           rc2 = sqlite3_test_control(testctrl, p->db);
+          isOk = 3;
           break;
 
         case SQLITE_TESTCTRL_IMPOSTER:
