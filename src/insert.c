@@ -1976,6 +1976,7 @@ void sqlite3GenerateConstraintChecks(
       sqlite3SetMakeRecordP5(v, pIdx->pTable);
     }
 #endif
+    sqlite3VdbeReleaseRegisters(pParse, regIdx, pIdx->nColumn, 0);
 
     /* In an UPDATE operation, if this index is the PRIMARY KEY index 
     ** of a WITHOUT ROWID table and there has been no change the
