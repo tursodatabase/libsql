@@ -1907,6 +1907,14 @@ void sqlite3RegisterBuiltinFunctions(void){
   ** For peak efficiency, put the most frequently used function last.
   */
   static FuncDef aBuiltinFunc[] = {
+/***** Functions only available with SQLITE_TESTCTRL_INTERNAL_FUNCTIONS *****/
+    TEST_FUNC(implies_nonnull_row, 2, INLINEFUNC_implies_nonnull_row, 0),
+    TEST_FUNC(expr_compare,        2, INLINEFUNC_expr_compare,        0),
+    TEST_FUNC(expr_implies_expr,   2, INLINEFUNC_expr_implies_expr,   0),
+#ifdef SQLITE_DEBUG
+    TEST_FUNC(affinity,          1, INLINEFUNC_affinity, 0),
+#endif
+/***** Regular functions *****/
 #ifdef SQLITE_SOUNDEX
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
 #endif
@@ -1924,9 +1932,6 @@ void sqlite3RegisterBuiltinFunctions(void){
     INLINE_FUNC(unlikely,        1, INLINEFUNC_unlikely, SQLITE_FUNC_UNLIKELY),
     INLINE_FUNC(likelihood,      2, INLINEFUNC_unlikely, SQLITE_FUNC_UNLIKELY),
     INLINE_FUNC(likely,          1, INLINEFUNC_unlikely, SQLITE_FUNC_UNLIKELY),
-#ifdef SQLITE_DEBUG
-    TEST_FUNC(affinity,          1, INLINEFUNC_affinity, 0),
-#endif
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
     FUNCTION2(sqlite_offset,     1, 0, 0, noopFunc,  SQLITE_FUNC_OFFSET|
                                                      SQLITE_FUNC_TYPEOF),

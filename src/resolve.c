@@ -874,7 +874,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
-         && sqlite3Config.bInternalFunctions==0
+         && (pParse->db->mDbFlags & DBFLAG_InternalFunc)==0
         ){
           /* Internal-use-only functions are disallowed unless the
           ** SQL is being compiled using sqlite3NestedParse() */

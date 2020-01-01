@@ -1589,6 +1589,7 @@ struct sqlite3 {
 #define DBFLAG_Vacuum         0x0004  /* Currently in a VACUUM */
 #define DBFLAG_VacuumInto     0x0008  /* Currently running VACUUM INTO */
 #define DBFLAG_SchemaKnownOk  0x0010  /* Schema is known to be valid */
+#define DBFLAG_InternalFunc   0x0020  /* Allow use of internal functions */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -1721,9 +1722,12 @@ struct FuncDestructor {
 #define SQLITE_FUNC_INLINE   0x00200000 /* Functions implemented in-line */
 
 /* Identifier numbers for each in-line function */
-#define INLINEFUNC_unlikely       0      /* unlikely(EXPR) and friends */
-#define INLINEFUNC_coalesce       1      /* coalesce(EXPR,...) */
-#define INLINEFUNC_affinity       2      /* affinity(EXPR) */
+#define INLINEFUNC_coalesce             0
+#define INLINEFUNC_implies_nonnull_row  1
+#define INLINEFUNC_expr_implies_expr    2
+#define INLINEFUNC_expr_compare         3      
+#define INLINEFUNC_affinity             4
+#define INLINEFUNC_unlikely            99  /* Default case */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -3561,7 +3565,6 @@ struct Sqlite3Config {
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
 #endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
-  int bInternalFunctions;           /* Internal SQL functions are visible */
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */

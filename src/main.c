@@ -4044,15 +4044,14 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*   sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCS, int onoff);
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, sqlite3*);
     **
-    ** If parameter onoff is non-zero, internal-use-only SQL functions
-    ** are visible to ordinary SQL.  This is useful for testing but is
-    ** unsafe because invalid parameters to those internal-use-only functions
-    ** can result in crashes or segfaults.
+    ** Toggle the ability to use internal functions on or off for
+    ** the database connection given in the argument.
     */
     case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS: {
-      sqlite3GlobalConfig.bInternalFunctions = va_arg(ap, int);
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      db->mDbFlags ^= DBFLAG_InternalFunc;
       break;
     }
 
