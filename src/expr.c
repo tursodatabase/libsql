@@ -3573,6 +3573,69 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
   return iResult;
 }
 
+/*
+** Generate code to implement special SQL functions that are implemented
+** in-line rather than by using the usual callbacks.
+*/
+static int exprCodeInlineFunction(
+  Parse *pParse,        /* Parsing context */
+  ExprList *pFarg,      /* List of function arguments */
+  int iFuncId,          /* Function ID.  One of the INTFUNC_... values */
+  int target            /* Store function result in this register */
+){
+  int nFarg;
+  Vdbe *v = pParse->pVdbe;
+  assert( v!=0 );
+  assert( pFarg!=0 );
+  nFarg = pFarg->nExpr;
+  assert( nFarg>0 );  /* All in-line functions have at least one argument */
+  switch( iFuncId ){
+    case INLINEFUNC_coalesce: {
+      /* Attempt a direct implementation of the built-in COALESCE() and
+      ** IFNULL() functions.  This avoids unnecessary evaluation of
+      ** arguments past the first non-NULL argument.
+      */
+      int endCoalesce = sqlite3VdbeMakeLabel(pParse);
+      int i;
+      assert( nFarg>=2 );
+      sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
+      for(i=1; i<nFarg; i++){
+        sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
+        VdbeCoverage(v);
+        sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
+      }
+      sqlite3VdbeResolveLabel(v, endCoalesce);
+      break;
+    }
+
+    case INLINEFUNC_unlikely: {   
+      /* The UNLIKELY() function is a no-op.  The result is the value
+      ** of the first argument.
+      */
+      assert( nFarg>=1 );
+      target = sqlite3ExprCodeTarget(pParse, pFarg->a[0].pExpr, target);
+      break;
+    }
+
+#ifdef SQLITE_DEBUG
+    case INLINEFUNC_affinity: {
+      /* The AFFINITY() function evaluates to a string that describes
+      ** the type affinity of the argument.  This is used for testing of
+      ** the SQLite type logic.
+      */
+      const char *azAff[] = { "blob", "text", "numeric", "integer", "real" };
+      char aff;
+      assert( nFarg==1 );
+      aff = sqlite3ExprAffinity(pFarg->a[0].pExpr);
+      sqlite3VdbeLoadString(v, target, 
+              (aff<=SQLITE_AFF_NONE) ? "none" : azAff[aff-SQLITE_AFF_BLOB]);
+      break;
+    }
+#endif
+  }
+  return target;
+}
+
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
@@ -3953,47 +4016,10 @@ expr_code_doover:
         sqlite3ErrorMsg(pParse, "unknown function: %s()", zId);
         break;
       }
-
-      /* Attempt a direct implementation of the built-in COALESCE() and
-      ** IFNULL() functions.  This avoids unnecessary evaluation of
-      ** arguments past the first non-NULL argument.
-      */
-      if( pDef->funcFlags & SQLITE_FUNC_COALESCE ){
-        int endCoalesce = sqlite3VdbeMakeLabel(pParse);
-        assert( nFarg>=2 );
-        sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
-        for(i=1; i<nFarg; i++){
-          sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
-          VdbeCoverage(v);
-          sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
-        }
-        sqlite3VdbeResolveLabel(v, endCoalesce);
-        break;
+      if( pDef->funcFlags & SQLITE_FUNC_INLINE ){
+        return exprCodeInlineFunction(pParse, pFarg,
+             SQLITE_PTR_TO_INT(pDef->pUserData), target);
       }
-
-      /* The UNLIKELY() function is a no-op.  The result is the value
-      ** of the first argument.
-      */
-      if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
-        assert( nFarg>=1 );
-        return sqlite3ExprCodeTarget(pParse, pFarg->a[0].pExpr, target);
-      }
-
-#ifdef SQLITE_DEBUG
-      /* The AFFINITY() function evaluates to a string that describes
-      ** the type affinity of the argument.  This is used for testing of
-      ** the SQLite type logic.
-      */
-      if( pDef->funcFlags & SQLITE_FUNC_AFFINITY ){
-        const char *azAff[] = { "blob", "text", "numeric", "integer", "real" };
-        char aff;
-        assert( nFarg==1 );
-        aff = sqlite3ExprAffinity(pFarg->a[0].pExpr);
-        sqlite3VdbeLoadString(v, target, 
-                (aff<=SQLITE_AFF_NONE) ? "none" : azAff[aff-SQLITE_AFF_BLOB]);
-        return target;
-      }
-#endif
 
       for(i=0; i<nFarg; i++){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){

@@ -1712,12 +1712,18 @@ struct FuncDestructor {
 #define SQLITE_FUNC_MINMAX   0x1000 /* True for min() and max() aggregates */
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
-#define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
+#define SQLITE_FUNC_TEST     0x4000 /* Built-in testing functions */
 #define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 #define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
+#define SQLITE_FUNC_INLINE   0x00200000 /* Functions implemented in-line */
+
+/* Identifier numbers for each in-line function */
+#define INLINEFUNC_unlikely       0      /* unlikely(EXPR) and friends */
+#define INLINEFUNC_coalesce       1      /* coalesce(EXPR,...) */
+#define INLINEFUNC_affinity       2      /* affinity(EXPR) */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1736,6 +1742,18 @@ struct FuncDestructor {
 **   SFUNCTION(zName, nArg, iArg, bNC, xFunc)
 **     Like FUNCTION except it omits the SQLITE_FUNC_CONSTANT flag and
 **     adds the SQLITE_DIRECTONLY flag.
+**
+**   INLINE_FUNC(zName, nArg, iFuncId, mFlags)
+**     zName is the name of a function that is implemented by in-line
+**     byte code rather than by the usual callbacks. The iFuncId
+**     parameter determines the function id.  The mFlags parameter is
+**     optional SQLITE_FUNC_ flags for this function.
+**
+**   TEST_FUNC(zName, nArg, iFuncId, mFlags)
+**     zName is the name of a test-only function implemented by in-line
+**     byte code rather than by the usual callbacks. The iFuncId
+**     parameter determines the function id.  The mFlags parameter is
+**     optional SQLITE_FUNC_ flags for this function.
 **
 **   DFUNCTION(zName, nArg, iArg, bNC, xFunc)
 **     Like FUNCTION except it omits the SQLITE_FUNC_CONSTANT flag and
@@ -1779,6 +1797,13 @@ struct FuncDestructor {
 #define SFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8|SQLITE_DIRECTONLY, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
+#define INLINE_FUNC(zName, nArg, iArg, mFlags) \
+  {nArg, SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
+   SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
+#define TEST_FUNC(zName, nArg, iArg, mFlags) \
+  {nArg, SQLITE_UTF8|SQLITE_FUNC_INTERNAL|SQLITE_FUNC_TEST| \
+         SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
+   SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
    0, 0, xFunc, 0, 0, 0, #zName, {0} }
