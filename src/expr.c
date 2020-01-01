@@ -5359,11 +5359,12 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
 
     case TK_AND:
-      assert( pWalker->eCode==0 );
-      sqlite3WalkExpr(pWalker, pExpr->pLeft);
-      if( pWalker->eCode ){
-        pWalker->eCode = 0;
-        sqlite3WalkExpr(pWalker, pExpr->pRight);
+      if( pWalker->eCode==0 ){
+        sqlite3WalkExpr(pWalker, pExpr->pLeft);
+        if( pWalker->eCode ){
+          pWalker->eCode = 0;
+          sqlite3WalkExpr(pWalker, pExpr->pRight);
+        }
       }
       return WRC_Prune;
 
