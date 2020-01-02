@@ -1129,10 +1129,17 @@ int sqlite3VdbeMemSetStr(
 
   pMem->n = nByte;
   pMem->flags = flags;
-  pMem->enc = (enc==0 ? SQLITE_UTF8 : enc);
+  if( enc ){
+    pMem->enc = enc;
+  }else if( pMem->db ){
+    pMem->enc = ENC(pMem->db);
+  }else{
+    pMem->enc = SQLITE_UTF8;
+  }
+
 
 #ifndef SQLITE_OMIT_UTF16
-  if( pMem->enc!=SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
+  if( enc>SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
     return SQLITE_NOMEM_BKPT;
   }
 #endif

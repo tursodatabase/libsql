@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_Move\sopcode\sso\sthat\sit\scorrectly\smanages\sdependency\stracking.\nThis\schange\simpacts\sdebugging\sbuilds\sonly.
-D 2020-01-02T15:02:08.865
+C Handle\sblobs\sthat\sare\sthe\sreturn\svalues\sof\sfunctions\sbeing\scast\sto\stext\sin\sutf16\sdatabases\sin\sthe\ssame\sway\sas\sblobs\sread\sdirectly\sfrom\sthe\sdatabase.\sFix\sfor\s[771fe617].
+D 2020-01-02T16:24:22.013
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -182,7 +182,7 @@ F ext/fts5/test/fts5first.test 3fcf2365c00a15fc9704233674789a3b95131d12de18a9b99
 F ext/fts5/test/fts5full.test e1701a112354e0ff9a1fdffb0c940c576530c33732ee20ac5e8361777070d717
 F ext/fts5/test/fts5fuzz1.test 238d8c45f3b81342aa384de3e581ff2fa330bf922a7b69e484bbc06051a1080e
 F ext/fts5/test/fts5hash.test a4cf51acad99bfc43c16fb74f9d22495dc221ae0701fc5e908ca963a9b26a02b
-F ext/fts5/test/fts5integrity.test c354fd693d9fb14018b33113aa2331265d915d51f67067a2cfa7873894c9ecf0
+F ext/fts5/test/fts5integrity.test 8ffabcd91b058d812aba3e3e0a06f76ce165ba402a18cca20e34204a7feec92e
 F ext/fts5/test/fts5interrupt.test 09613247b273a99889808ef852898177e671406fe71fdde7ea00e78ea283d227
 F ext/fts5/test/fts5lastrowid.test be98fe3e03235296585b72daad7aed5717ba0062bae5e5c18dd6e04e194c6b28
 F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc2782680740513c4d1fc114b43d4ad
@@ -606,7 +606,7 @@ F src/vdbeInt.h e02ccac0334f7c71c952210657e6e18de1917605887c7bc6167a80a17f62da18
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c 83b666882a55bd2762cec9dc32cd71b71d053890253a3d7c9646d59abfcb3381
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
-F src/vdbemem.c 30c13916dd6516a52330540a3e4bf15ac9886940cf6c6a6a6c66273a1c6b5176
+F src/vdbemem.c d0e294c0f4fa1ac90d7f7f33b3ca4717db271d1550a870f5819cae384bec4610
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c a2fead3e97fca54fcf3f3db784e17c9ee2d39a0c5ad323e9d514855106300a86
@@ -727,7 +727,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
 F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
-F test/cast.test 3619f0c58c2e4b2a94aa86e75607e497d34ef40ab74418e71aef7b4ca5155895
+F test/cast.test 2906ccab6a3ebd147ffa63304b635be903ce58264110d0a0eb4fd9939422bb53
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test b21a76546c2115af2674280566a8eba577e72adfec330c3d9a8a466d41f8eb0d
 F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9886cb4b7987f720aa9d701222ab0987caa0ab8c5d216cb6e523c4a45366dfe5
-R 24a07003701b78db81971cb6840d91ff
-U drh
-Z 4a934f9df899c177f571c59121e59bde
+P 5377add4b8af8c52d0a32f5273835ac6bdc42cfb2a95ffcb335b987437a91aa6
+R 240c23e2f5654f0233016450faf6070c
+U dan
+Z 4d0f2df52a6bba7041a9460fa8e92429
