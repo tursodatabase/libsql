@@ -4140,7 +4140,7 @@ expr_code_doover:
         if( constMask==0 ){
           sqlite3ReleaseTempRange(pParse, r1, nFarg);
         }else{
-          sqlite3VdbeReleaseRegisters(pParse, r1, nFarg, constMask);
+          sqlite3VdbeReleaseRegisters(pParse, r1, nFarg, constMask, 1);
         }
       }
       return target;
@@ -5799,7 +5799,7 @@ int sqlite3GetTempReg(Parse *pParse){
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg ){
-    sqlite3VdbeReleaseRegisters(pParse, iReg, 1, 0);
+    sqlite3VdbeReleaseRegisters(pParse, iReg, 1, 0, 0);
     if( pParse->nTempReg<ArraySize(pParse->aTempReg) ){
       pParse->aTempReg[pParse->nTempReg++] = iReg;
     }
@@ -5828,7 +5828,7 @@ void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
     sqlite3ReleaseTempReg(pParse, iReg);
     return;
   }
-  sqlite3VdbeReleaseRegisters(pParse, iReg, nReg, 0);
+  sqlite3VdbeReleaseRegisters(pParse, iReg, nReg, 0, 0);
   if( nReg>pParse->nRangeReg ){
     pParse->nRangeReg = nReg;
     pParse->iRangeReg = iReg;

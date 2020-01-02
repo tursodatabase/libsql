@@ -7811,7 +7811,7 @@ case OP_Abortable: {
 #endif
 
 #ifdef SQLITE_DEBUG
-/* Opcode:  ReleaseReg   P1 P2 P3 * *
+/* Opcode:  ReleaseReg   P1 P2 P3 * P5
 ** Synopsis: release r[P1@P2] mask P3
 **
 ** Release registers from service.  Any content that was in the
@@ -7826,10 +7826,12 @@ case OP_Abortable: {
 ** a change to the value of the source register for the OP_SCopy will no longer
 ** generate an assertion fault in sqlite3VdbeMemAboutToChange().
 **
-** TODO: Released registers ought to also have their datatype set to
-** MEM_Undefined so that any subsequent attempt to read the released
+** If P5 is set, then all released registers have their type set
+** to MEM_Undefined so that any subsequent attempt to read the released
 ** register (before it is reinitialized) will generate an assertion fault.
-** However, there are places in the code generator which release registers
+**
+** P5 ought to be set on every call to this opcode.
+** However, there are places in the code generator will release registers
 ** before their are used, under the (valid) assumption that the registers
 ** will not be reallocated for some other purpose before they are used and
 ** hence are safe to release.
@@ -7850,7 +7852,7 @@ case OP_ReleaseReg: {
   for(i=0; i<pOp->p2; i++, pMem++){
     if( i>=32 || (constMask & MASKBIT32(i))==0 ){
       pMem->pScopyFrom = 0;
-      /* MemSetTypeFlag(pMem, MEM_Undefined); // See the TODO */
+      if( i<32 && pOp->p5 ) MemSetTypeFlag(pMem, MEM_Undefined);
     }
   }
   break;

@@ -1020,7 +1020,7 @@ void sqlite3Insert(
     **         goto C
     **      D: ...
     */
-    sqlite3VdbeReleaseRegisters(pParse, regData, pTab->nCol, 0);
+    sqlite3VdbeReleaseRegisters(pParse, regData, pTab->nCol, 0, 0);
     addrInsTop = addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
     VdbeCoverage(v);
     if( ipkColumn>=0 ){
@@ -1976,7 +1976,7 @@ void sqlite3GenerateConstraintChecks(
       sqlite3SetMakeRecordP5(v, pIdx->pTable);
     }
 #endif
-    sqlite3VdbeReleaseRegisters(pParse, regIdx, pIdx->nColumn, 0);
+    sqlite3VdbeReleaseRegisters(pParse, regIdx, pIdx->nColumn, 0, 0);
 
     /* In an UPDATE operation, if this index is the PRIMARY KEY index 
     ** of a WITHOUT ROWID table and there has been no change the
