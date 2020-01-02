@@ -4995,7 +4995,11 @@ case OP_Delete: {
   sqlite3VdbeIncrWriteCounter(p, pC);
 
 #ifdef SQLITE_DEBUG
-  if( pOp->p4type==P4_TABLE && HasRowid(pOp->p4.pTab) && pOp->p5==0 ){
+  if( pOp->p4type==P4_TABLE
+   && HasRowid(pOp->p4.pTab)
+   && pOp->p5==0
+   && sqlite3BtreeCursorIsValidNN(pC->uc.pCursor)
+  ){
     /* If p5 is zero, the seek operation that positioned the cursor prior to
     ** OP_Delete will have also set the pC->movetoTarget field to the rowid of
     ** the row that is being deleted */

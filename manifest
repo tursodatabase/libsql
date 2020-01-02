@@ -1,5 +1,5 @@
-C Ifdef-out\scode\sthat\sis\sonly\spossible\swith\sthe\ssessions\sextension.
-D 2020-01-02T18:37:04.704
+C Fix\ssome\stest\slogic\sin\sthe\sOP_Delete\sopcode\sso\sthat\sit\sworks\safter\sa\ncursor-trip.
+D 2020-01-02T19:50:50.203
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c a8c88ee06d3510d8dc9a5cee594ec46f2ef476bd0c9be834e7e664b76ca2c179
+F src/vdbe.c 459a233a60aba8b8b2462f42bd6e93623e13beafc5e0c40c6646e0527e444fd0
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h e02ccac0334f7c71c952210657e6e18de1917605887c7bc6167a80a17f62da18
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 937be22106f7e3f08712febd342d6cb81d129f2d5ab24ce80b3a5c3f9bbde54e
-R 3a024adb421e4e36e63a5af385fc2fb7
+P 4fcf07f79672d203efbc90ad21d97f6a131c3885306f8e0bab015d5ac44b8644
+R 23c2d910f0f8167283a76ba9540e77df
 U drh
-Z 3efc973945bc1da091c431612275c1f5
+Z 335647452bacbb554070cabfbe244c03
