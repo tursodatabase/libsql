@@ -1297,6 +1297,25 @@ struct Schema {
 ** disables lookaside without adding a new test for the bDisable flag
 ** in a performance-critical path.  sz should be set by to szTrue whenever
 ** bDisable changes back to zero.
+**
+** Lookaside buffers are initially held on the pInit list.  As they are
+** used and freed, they are added back to the pFree list.  New allocations
+** come off of pFree first, then pInit as a fallback.  This dual-list
+** allows use to compute a high-water mark - the maximum number of allocations
+** outstanding at any point in the past - by subtracting the number of
+** allocations on the pInit list from the total number of allocations.
+**
+** Enhancement on 2019-12-12:  Two-size-lookaside
+** The default lookaside configuration is 100 slots of 1200 bytes each.
+** The larger slot sizes are important for performance, but they waste
+** a lot of space, as most lookaside allocations are less than 128 bytes.
+** The two-size-lookaside enhancement breaks up the lookaside allocation
+** into two pools:  One of 128-byte slots and the other of the default size
+** (1200-byte) slots.   Allocations are filled from the small-pool first,
+** failing over to the full-size pool if that does not work.  Thus more
+** lookaside slots are available while also using less memory.
+** This enhancement can be omitted by compiling with
+** SQLITE_OMIT_TWOSIZE_LOOKASIDE.
 */
 struct Lookaside {
   u32 bDisable;           /* Only operate the lookaside when zero */
@@ -1307,6 +1326,12 @@ struct Lookaside {
   u32 anStat[3];          /* 0: hits.  1: size misses.  2: full misses */
   LookasideSlot *pInit;   /* List of buffers not previously used */
   LookasideSlot *pFree;   /* List of available buffers */
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+  LookasideSlot *pSmallInit; /* List of small buffers not prediously used */
+  LookasideSlot *pSmallFree; /* List of available small buffers */
+  void *pMiddle;          /* First byte past end of full-size buffers and
+                          ** the first byte of LOOKASIDE_SMALL buffers */
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
   void *pStart;           /* First byte of available memory space */
   void *pEnd;             /* First byte past end of available space */
 };
@@ -1317,6 +1342,13 @@ struct LookasideSlot {
 #define DisableLookaside  db->lookaside.bDisable++;db->lookaside.sz=0
 #define EnableLookaside   db->lookaside.bDisable--;\
    db->lookaside.sz=db->lookaside.bDisable?0:db->lookaside.szTrue
+
+/* Size of the smaller allocations in two-size lookside */
+#ifdef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+#  define LOOKASIDE_SMALL           0
+#else
+#  define LOOKASIDE_SMALL         128
+#endif
 
 /*
 ** A hash table for built-in function definitions.  (Application-defined
@@ -2692,23 +2724,28 @@ struct Expr {
 ** also be used as the argument to a function, in which case the a.zName
 ** field is not used.
 **
-** By default the Expr.zSpan field holds a human-readable description of
-** the expression that is used in the generation of error messages and
-** column labels.  In this case, Expr.zSpan is typically the text of a
-** column expression as it exists in a SELECT statement.  However, if
-** the bSpanIsTab flag is set, then zSpan is overloaded to mean the name
-** of the result column in the form: DATABASE.TABLE.COLUMN.  This later
-** form is used for name resolution with nested FROM clauses.
+** In order to try to keep memory usage down, the Expr.a.zEName field
+** is used for multiple purposes:
+**
+**     eEName          Usage
+**    ----------       -------------------------
+**    ENAME_NAME       (1) the AS of result set column
+**                     (2) COLUMN= of an UPDATE
+**
+**    ENAME_TAB        DB.TABLE.NAME used to resolve names
+**                     of subqueries
+**
+**    ENAME_SPAN       Text of the original result set
+**                     expression.
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
-    char *zName;            /* Token associated with this expression */
-    char *zSpan;            /* Original text of the expression */
+    char *zEName;           /* Token associated with this expression */
     u8 sortFlags;           /* Mask of KEYINFO_ORDER_* flags */
+    unsigned eEName :2;     /* Meaning of zEName */
     unsigned done :1;       /* A flag to indicate when processing is finished */
-    unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
@@ -2721,6 +2758,13 @@ struct ExprList {
     } u;
   } a[1];                  /* One slot for each expression in the list */
 };
+
+/*
+** Allowed values for Expr.a.eEName
+*/
+#define ENAME_NAME  0       /* The AS clause of a result set */
+#define ENAME_SPAN  1       /* Complete text of the result set expression */
+#define ENAME_TAB   2       /* "DB.TABLE.NAME" for the result set */
 
 /*
 ** An instance of this structure can hold a simple list of identifiers,
@@ -4461,7 +4505,12 @@ void sqlite3CodeRhsOfIN(Parse*, Expr*, int);
 int sqlite3CodeSubselect(Parse*, Expr*);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p);
-int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
+int sqlite3MatchEName(
+  const struct ExprList_item*,
+  const char*,
+  const char*,
+  const char*
+);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);

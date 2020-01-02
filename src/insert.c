@@ -1673,7 +1673,7 @@ void sqlite3GenerateConstraintChecks(
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
       }else{
-        char *zName = pCheck->a[i].zName;
+        char *zName = pCheck->a[i].zEName;
         if( zName==0 ) zName = pTab->zName;
         if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-26383-51744 */
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_CHECK,

@@ -1440,12 +1440,11 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
         pNewExpr->pLeft = pPriorSelectCol;
       }
     }
-    pItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
-    pItem->zSpan = sqlite3DbStrDup(db, pOldItem->zSpan);
+    pItem->zEName = sqlite3DbStrDup(db, pOldItem->zEName);
     pItem->sortFlags = pOldItem->sortFlags;
+    pItem->eEName = pOldItem->eEName;
     pItem->done = 0;
     pItem->bNulls = pOldItem->bNulls;
-    pItem->bSpanIsTab = pOldItem->bSpanIsTab;
     pItem->bSorterRef = pOldItem->bSorterRef;
     pItem->u = pOldItem->u;
   }
@@ -1612,9 +1611,9 @@ ExprList *sqlite3ExprListAppend(
     pList = pNew;
   }
   pItem = &pList->a[pList->nExpr++];
-  assert( offsetof(struct ExprList_item,zName)==sizeof(pItem->pExpr) );
+  assert( offsetof(struct ExprList_item,zEName)==sizeof(pItem->pExpr) );
   assert( offsetof(struct ExprList_item,pExpr)==0 );
-  memset(&pItem->zName,0,sizeof(*pItem)-offsetof(struct ExprList_item,zName));
+  memset(&pItem->zEName,0,sizeof(*pItem)-offsetof(struct ExprList_item,zEName));
   pItem->pExpr = pExpr;
   return pList;
 
@@ -1671,7 +1670,7 @@ ExprList *sqlite3ExprListAppendVector(
     pList = sqlite3ExprListAppend(pParse, pList, pSubExpr);
     if( pList ){
       assert( pList->nExpr==iFirst+i+1 );
-      pList->a[pList->nExpr-1].zName = pColumns->a[i].zName;
+      pList->a[pList->nExpr-1].zEName = pColumns->a[i].zName;
       pColumns->a[i].zName = 0;
     }
   }
@@ -1731,7 +1730,7 @@ void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder, int eNulls){
 }
 
 /*
-** Set the ExprList.a[].zName element of the most recently added item
+** Set the ExprList.a[].zEName element of the most recently added item
 ** on the expression list.
 **
 ** pList might be NULL following an OOM error.  But pName should never be
@@ -1749,11 +1748,12 @@ void sqlite3ExprListSetName(
     struct ExprList_item *pItem;
     assert( pList->nExpr>0 );
     pItem = &pList->a[pList->nExpr-1];
-    assert( pItem->zName==0 );
-    pItem->zName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
-    if( dequote ) sqlite3Dequote(pItem->zName);
+    assert( pItem->zEName==0 );
+    assert( pItem->eEName==ENAME_NAME );
+    pItem->zEName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
+    if( dequote ) sqlite3Dequote(pItem->zEName);
     if( IN_RENAME_OBJECT ){
-      sqlite3RenameTokenMap(pParse, (void*)pItem->zName, pName);
+      sqlite3RenameTokenMap(pParse, (void*)pItem->zEName, pName);
     }
   }
 }
@@ -1777,8 +1777,10 @@ void sqlite3ExprListSetSpan(
   if( pList ){
     struct ExprList_item *pItem = &pList->a[pList->nExpr-1];
     assert( pList->nExpr>0 );
-    sqlite3DbFree(db, pItem->zSpan);
-    pItem->zSpan = sqlite3DbSpanDup(db, zStart, zEnd);
+    if( pItem->zEName==0 ){
+      pItem->zEName = sqlite3DbSpanDup(db, zStart, zEnd);
+      pItem->eEName = ENAME_SPAN;
+    }
   }
 }
 
@@ -1808,8 +1810,7 @@ static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
   assert( pList->nExpr>0 );
   do{
     sqlite3ExprDelete(db, pItem->pExpr);
-    sqlite3DbFree(db, pItem->zName);
-    sqlite3DbFree(db, pItem->zSpan);
+    sqlite3DbFree(db, pItem->zEName);
     pItem++;
   }while( --i>0 );
   sqlite3DbFreeNN(db, pList);

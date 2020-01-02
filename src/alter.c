@@ -766,8 +766,8 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].zName ){
-        sqlite3RenameTokenRemap(pParse, 0, (void*)pList->a[i].zName);
+      if( pList->a[i].zEName && pList->a[i].eEName==ENAME_NAME ){
+        sqlite3RenameTokenRemap(pParse, 0, (void*)pList->a[i].zEName);
       }
     }
   }
@@ -811,7 +811,9 @@ void sqlite3RenameExprlistUnmap(Parse *pParse, ExprList *pEList){
     sWalker.xExprCallback = renameUnmapExprCb;
     sqlite3WalkExprList(&sWalker, pEList);
     for(i=0; i<pEList->nExpr; i++){
-      sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zName);
+      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME) ){
+        sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zEName);
+      }
     }
   }
 }
@@ -949,8 +951,11 @@ static void renameColumnElistNames(
   if( pEList ){
     int i;
     for(i=0; i<pEList->nExpr; i++){
-      char *zName = pEList->a[i].zName;
-      if( 0==sqlite3_stricmp(zName, zOld) ){
+      char *zName = pEList->a[i].zEName;
+      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME)
+       && ALWAYS(zName!=0)
+       && 0==sqlite3_stricmp(zName, zOld)
+      ){
         renameTokenFind(pParse, pCtx, (void*)zName);
       }
     }
