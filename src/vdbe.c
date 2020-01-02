@@ -131,7 +131,7 @@ int sqlite3_found_count = 0;
 **   sqlite3MisuseError(lineno)
 **   sqlite3CantopenError(lineno)
 */
-static void test_trace_breakpoint(int pc, Op *pOp){
+static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
   static int n = 0;
   n++;
 }
@@ -586,12 +586,27 @@ static void memTracePrint(Mem *p){
   if( p->flags & MEM_Subtype ) printf(" subtype=0x%02x", p->eSubtype);
 }
 static void registerTrace(int iReg, Mem *p){
-  printf("REG[%d] = ", iReg);
+  printf("R[%d] = ", iReg);
   memTracePrint(p);
+  if( p->pScopyFrom ){
+    printf(" <== R[%d]", (int)(p->pScopyFrom - &p[-iReg]));
+  }
   printf("\n");
   sqlite3VdbeCheckMemInvariants(p);
 }
 #endif
+
+#ifdef SQLITE_DEBUG
+/*
+** Show the values of all registers in the virtual machine.  Used for
+** interactive debugging.
+*/
+void sqlite3VdbeRegisterDump(Vdbe *v){
+  int i;
+  for(i=1; i<v->nMem; i++) registerTrace(i, v->aMem+i);
+}
+#endif /* SQLITE_DEBUG */
+
 
 #ifdef SQLITE_DEBUG
 #  define REGISTER_TRACE(R,M) if(db->flags&SQLITE_VdbeTrace)registerTrace(R,M)
@@ -758,7 +773,7 @@ int sqlite3VdbeExec(
 #ifdef SQLITE_DEBUG
     if( db->flags & SQLITE_VdbeTrace ){
       sqlite3VdbePrintOp(stdout, (int)(pOp - aOp), pOp);
-      test_trace_breakpoint((int)(pOp - aOp),pOp);
+      test_trace_breakpoint((int)(pOp - aOp),pOp,p);
     }
 #endif
       

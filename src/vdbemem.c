@@ -956,6 +956,10 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   Mem *pX;
   for(i=0, pX=pVdbe->aMem; i<pVdbe->nMem; i++, pX++){
     if( pX->pScopyFrom==pMem ){
+      if( pVdbe->db->flags & SQLITE_VdbeTrace ){
+        sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
+          (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
+      }
       /* If pX is marked as a shallow copy of pMem, then verify that
       ** no significant changes have been made to pX since the OP_SCopy.
       ** A significant change would indicated a missed call to this
@@ -979,7 +983,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   pMem->pScopyFrom = 0;
 }
 #endif /* SQLITE_DEBUG */
-
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
