@@ -4492,7 +4492,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   assert( pParse->pVdbe!=0 || pParse->db->mallocFailed );
   if( inReg!=target && pParse->pVdbe ){
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
+    u8 op;
+    if( ExprHasProperty(pExpr,EP_Subquery) ){
+      op = OP_Copy;
+    }else{
+      op = OP_SCopy;
+    }
+    sqlite3VdbeAddOp2(pParse->pVdbe, op, inReg, target);
   }
 }
 
