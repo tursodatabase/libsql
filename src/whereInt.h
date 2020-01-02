@@ -434,6 +434,20 @@ struct WhereLoopBuilder {
 #endif
 
 /*
+** Each instance of this object records a change to a single node
+** in an expression tree to cause that node to point to a column
+** of an index rather than an expression or a virtual column.  All
+** such transformations need to be undone at the end of WHERE clause
+** processing.
+*/
+typedef struct WhereExprMod WhereExprMod;
+struct WhereExprMod {
+  WhereExprMod *pNext;  /* Next translation on a list of them all */
+  Expr *pExpr;          /* The Expr node that was transformed */
+  Expr orig;            /* Original value of the Expr node */
+};
+
+/*
 ** The WHERE clause processing routine has two halves.  The
 ** first part does the start of the WHERE loop and the second
 ** half does the tail of the WHERE loop.  An instance of
@@ -449,24 +463,25 @@ struct WhereInfo {
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pResultSet;     /* Result set of the query */
   Expr *pWhere;             /* The complete WHERE clause */
-  LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
   int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
   u8 nLevel;                /* Number of nested loop */
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
-  u8 sorted;                /* True if really sorted (not just grouped) */
   u8 eOnePass;              /* ONEPASS_OFF, or _SINGLE, or _MULTI */
-  u8 bDeferredSeek;         /* Uses OP_DeferredSeek */
-  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values */
-  u8 bOrderedInnerLoop;     /* True if only the inner-most loop is ordered */
+  u8 bDeferredSeek : 1;     /* Uses OP_DeferredSeek */
+  u8 untestedTerms : 1;     /* Not all WHERE terms resolved by outer loop */
+  u8 bOrderedInnerLoop : 1; /* True if only the inner-most loop is ordered */
+  u8 sorted : 1;            /* True if really sorted (not just grouped) */
+  LogEst nRowOut;           /* Estimated number of output rows */
   int iTop;                 /* The very beginning of the WHERE loop */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
+  WhereExprMod *pExprMods;  /* Expression modifications */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
-  LogEst nRowOut;           /* Estimated number of output rows */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
