@@ -1131,12 +1131,14 @@ int sqlite3VdbeMemSetStr(
   pMem->flags = flags;
   if( enc ){
     pMem->enc = enc;
-  }else if( pMem->db ){
-    pMem->enc = ENC(pMem->db);
-  }else{
+#ifdef SQLITE_ENABLE_SESSION
+  }else if( pMem->db==0 ){
     pMem->enc = SQLITE_UTF8;
+#endif
+  }else{
+    assert( pMem->db!=0 );
+    pMem->enc = ENC(pMem->db);
   }
-
 
 #ifndef SQLITE_OMIT_UTF16
   if( enc>SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
