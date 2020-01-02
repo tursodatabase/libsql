@@ -6872,7 +6872,16 @@ static int SQLITE_TCLAPI test_test_control(
 
   iFlag = aVerb[iVerb].i;
   switch( iFlag ){
-    case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
+    case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS: {
+      sqlite3 *db = 0;
+      if( objc!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, db);
+      break;
+    }
     case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
       int val;
       if( objc!=3 ){

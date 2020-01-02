@@ -6177,7 +6177,7 @@ int sqlite3Select(
 #ifndef SQLITE_OMIT_WINDOWFUNC
     Window *pWin = p->pWin;      /* Master window object (or NULL) */
     if( pWin ){
-      sqlite3WindowCodeInit(pParse, pWin);
+      sqlite3WindowCodeInit(pParse, p);
     }
 #endif
     assert( WHERE_USE_LIMIT==SF_FixedLimit );

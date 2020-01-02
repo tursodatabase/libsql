@@ -255,4 +255,31 @@ do_execsql_test 8.1 {
   INSERT INTO vt0(vt0, rank) VALUES('usermerge', 2);
 }
 
+#-------------------------------------------------------------------------
+# Ticket [771fe617]
+#
+reset_db
+do_execsql_test 9.0 {
+  PRAGMA encoding = 'UTF16';
+  CREATE VIRTUAL TABLE vt0 USING fts5(c0);
+}
+
+#explain_i { SELECT quote(SUBSTR(x'37', 0)); }
+#execsql { PRAGMA vdbe_trace = 1 }
+do_execsql_test 9.1.1 {
+  SELECT quote(SUBSTR(x'37', 0));
+} {X'37'}
+do_execsql_test 9.1.2 {
+  SELECT quote(x'37');
+} {X'37'}
+
+breakpoint
+do_execsql_test 9.2 {
+  INSERT INTO vt0 VALUES (SUBSTR(x'37', 0));
+--  INSERT INTO vt0 VALUES (x'37');
+}
+do_execsql_test 9.3 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
 finish_test

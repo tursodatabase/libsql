@@ -240,13 +240,13 @@ ifcapable vtab {
     );
   } {}
   
-  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
   do_execsql_test 7.2 {
     SELECT 
     sqlite_rename_table(db, 0, 0, sql, zOld, zNew, bTemp)
     FROM ddd;
   } {{} {} {}}
-  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 }
 
 #-------------------------------------------------------------------------

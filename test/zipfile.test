@@ -834,6 +834,11 @@ do_execsql_test 15.20 {
   REPLACE INTO t2 values(null,null,null,null,null,10,null);
 } {}
 
+# 2020-01-02 Yongheng fuzzer discovery
+#
+do_catchsql_test 16.10 {
+  DELETE FROM zipfile;
+} {1 {zipfile() function requires an argument}}
 
 
 finish_test

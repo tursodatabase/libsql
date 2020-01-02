@@ -1942,6 +1942,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
     pWInfo->pLoops = p->pNextLoop;
     whereLoopDelete(db, p);
   }
+  assert( pWInfo->pExprMods==0 );
   sqlite3DbFreeNN(db, pWInfo);
 }
 
@@ -5438,6 +5439,14 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( db->flags & SQLITE_VdbeAddopTrace ) printf("TRANSLATE complete\n");
 #endif
     }
+  }
+
+  /* Undo all Expr node modifications */
+  while( pWInfo->pExprMods ){
+    WhereExprMod *p = pWInfo->pExprMods;
+    pWInfo->pExprMods = p->pNext;
+    memcpy(p->pExpr, &p->orig, sizeof(p->orig));
+    sqlite3DbFree(db, p);
   }
 
   /* Final cleanup
