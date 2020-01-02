@@ -117,6 +117,26 @@ int sqlite3_found_count = 0;
 # define UPDATE_MAX_BLOBSIZE(P)
 #endif
 
+#ifdef SQLITE_DEBUG
+/* This routine provides a convenient place to set a breakpoint during
+** tracing with PRAGMA vdbe_trace=on.  The breakpoint fires right after
+** each opcode is printed.  Variables "pc" (program counter) and pOp are
+** available to add conditionals to the breakpoint.  GDB example:
+**
+**         break test_trace_breakpoint if pc=22
+**
+** Other useful labels for breakpoints include:
+**   test_addop_breakpoint(pc,pOp)
+**   sqlite3CorruptError(lineno)
+**   sqlite3MisuseError(lineno)
+**   sqlite3CantopenError(lineno)
+*/
+static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
+  static int n = 0;
+  n++;
+}
+#endif
+
 /*
 ** Invoke the VDBE coverage callback, if that callback is defined.  This
 ** feature is used for test suite validation only and does not appear an
@@ -566,12 +586,27 @@ static void memTracePrint(Mem *p){
   if( p->flags & MEM_Subtype ) printf(" subtype=0x%02x", p->eSubtype);
 }
 static void registerTrace(int iReg, Mem *p){
-  printf("REG[%d] = ", iReg);
+  printf("R[%d] = ", iReg);
   memTracePrint(p);
+  if( p->pScopyFrom ){
+    printf(" <== R[%d]", (int)(p->pScopyFrom - &p[-iReg]));
+  }
   printf("\n");
   sqlite3VdbeCheckMemInvariants(p);
 }
 #endif
+
+#ifdef SQLITE_DEBUG
+/*
+** Show the values of all registers in the virtual machine.  Used for
+** interactive debugging.
+*/
+void sqlite3VdbeRegisterDump(Vdbe *v){
+  int i;
+  for(i=1; i<v->nMem; i++) registerTrace(i, v->aMem+i);
+}
+#endif /* SQLITE_DEBUG */
+
 
 #ifdef SQLITE_DEBUG
 #  define REGISTER_TRACE(R,M) if(db->flags&SQLITE_VdbeTrace)registerTrace(R,M)
@@ -738,6 +773,7 @@ int sqlite3VdbeExec(
 #ifdef SQLITE_DEBUG
     if( db->flags & SQLITE_VdbeTrace ){
       sqlite3VdbePrintOp(stdout, (int)(pOp - aOp), pOp);
+      test_trace_breakpoint((int)(pOp - aOp),pOp,p);
     }
 #endif
       
@@ -1335,8 +1371,13 @@ case OP_Move: {
     memAboutToChange(p, pOut);
     sqlite3VdbeMemMove(pOut, pIn1);
 #ifdef SQLITE_DEBUG
-    if( pOut->pScopyFrom>=&aMem[p1] && pOut->pScopyFrom<pOut ){
-      pOut->pScopyFrom += pOp->p2 - p1;
+    pIn1->pScopyFrom = 0;
+    { int i;
+      for(i=1; i<p->nMem; i++){
+        if( aMem[i].pScopyFrom==pIn1 ){
+          aMem[i].pScopyFrom = pOut;
+        }
+      }
     }
 #endif
     Deephemeralize(pOut);
@@ -4954,7 +4995,11 @@ case OP_Delete: {
   sqlite3VdbeIncrWriteCounter(p, pC);
 
 #ifdef SQLITE_DEBUG
-  if( pOp->p4type==P4_TABLE && HasRowid(pOp->p4.pTab) && pOp->p5==0 ){
+  if( pOp->p4type==P4_TABLE
+   && HasRowid(pOp->p4.pTab)
+   && pOp->p5==0
+   && sqlite3BtreeCursorIsValidNN(pC->uc.pCursor)
+  ){
     /* If p5 is zero, the seek operation that positioned the cursor prior to
     ** OP_Delete will have also set the pC->movetoTarget field to the rowid of
     ** the row that is being deleted */
@@ -7770,7 +7815,7 @@ case OP_Abortable: {
 #endif
 
 #ifdef SQLITE_DEBUG
-/* Opcode:  ReleaseReg   P1 P2 P3 * *
+/* Opcode:  ReleaseReg   P1 P2 P3 * P5
 ** Synopsis: release r[P1@P2] mask P3
 **
 ** Release registers from service.  Any content that was in the
@@ -7785,10 +7830,12 @@ case OP_Abortable: {
 ** a change to the value of the source register for the OP_SCopy will no longer
 ** generate an assertion fault in sqlite3VdbeMemAboutToChange().
 **
-** TODO: Released registers ought to also have their datatype set to
-** MEM_Undefined so that any subsequent attempt to read the released
+** If P5 is set, then all released registers have their type set
+** to MEM_Undefined so that any subsequent attempt to read the released
 ** register (before it is reinitialized) will generate an assertion fault.
-** However, there are places in the code generator which release registers
+**
+** P5 ought to be set on every call to this opcode.
+** However, there are places in the code generator will release registers
 ** before their are used, under the (valid) assumption that the registers
 ** will not be reallocated for some other purpose before they are used and
 ** hence are safe to release.
@@ -7809,7 +7856,7 @@ case OP_ReleaseReg: {
   for(i=0; i<pOp->p2; i++, pMem++){
     if( i>=32 || (constMask & MASKBIT32(i))==0 ){
       pMem->pScopyFrom = 0;
-      /* MemSetTypeFlag(pMem, MEM_Undefined); // See the TODO */
+      if( i<32 && pOp->p5 ) MemSetTypeFlag(pMem, MEM_Undefined);
     }
   }
   break;

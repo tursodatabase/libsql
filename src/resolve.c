@@ -132,13 +132,16 @@ static int nameInUsingClause(IdList *pUsing, const char *zCol){
 ** and zCol.  If any of zDb, zTab, and zCol are NULL then those fields will
 ** match anything.
 */
-int sqlite3MatchSpanName(
-  const char *zSpan,
+int sqlite3MatchEName(
+  const struct ExprList_item *pItem,
   const char *zCol,
   const char *zTab,
   const char *zDb
 ){
   int n;
+  const char *zSpan;
+  if( NEVER(pItem->eEName!=ENAME_TAB) ) return 0;
+  zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
     return 0;
@@ -267,7 +270,7 @@ static int lookupName(
           int hit = 0;
           pEList = pItem->pSelect->pEList;
           for(j=0; j<pEList->nExpr; j++){
-            if( sqlite3MatchSpanName(pEList->a[j].zSpan, zCol, zTab, zDb) ){
+            if( sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
               cnt++;
               cntTab = 2;
               pMatch = pItem;
@@ -448,8 +451,11 @@ static int lookupName(
       pEList = pNC->uNC.pEList;
       assert( pEList!=0 );
       for(j=0; j<pEList->nExpr; j++){
-        char *zAs = pEList->a[j].zName;
-        if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
+        char *zAs = pEList->a[j].zEName;
+        if( pEList->a[j].eEName==ENAME_NAME
+         && ALWAYS(zAs!=0)
+         && sqlite3StrICmp(zAs, zCol)==0
+        ){
           Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
           assert( pExpr->x.pList==0 );
@@ -884,7 +890,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
-         && sqlite3Config.bInternalFunctions==0
+         && (pParse->db->mDbFlags & DBFLAG_InternalFunc)==0
         ){
           /* Internal-use-only functions are disallowed unless the
           ** SQL is being compiled using sqlite3NestedParse() */
@@ -1127,8 +1133,11 @@ static int resolveAsName(
   if( pE->op==TK_ID ){
     char *zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
-      char *zAs = pEList->a[i].zName;
-      if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
+      char *zAs = pEList->a[i].zEName;
+      if( pEList->a[i].eEName==ENAME_NAME
+       && ALWAYS(zAs!=0)
+       && sqlite3StrICmp(zAs, zCol)==0
+      ){
         return i+1;
       }
     }

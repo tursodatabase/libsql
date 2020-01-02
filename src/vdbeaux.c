@@ -194,9 +194,16 @@ static int growOpArray(Vdbe *v, int nOp){
 #ifdef SQLITE_DEBUG
 /* This routine is just a convenient place to set a breakpoint that will
 ** fire after each opcode is inserted and displayed using
-** "PRAGMA vdbe_addoptrace=on".
+** "PRAGMA vdbe_addoptrace=on".  Parameters "pc" (program counter) and
+** pOp are available to make the breakpoint conditional.
+**
+** Other useful labels for breakpoints include:
+**   test_trace_breakpoint(pc,pOp)
+**   sqlite3CorruptError(lineno)
+**   sqlite3MisuseError(lineno)
+**   sqlite3CantopenError(lineno)
 */
-static void test_addop_breakpoint(void){
+static void test_addop_breakpoint(int pc, Op *pOp){
   static int n = 0;
   n++;
 }
@@ -249,7 +256,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
-    test_addop_breakpoint();
+    test_addop_breakpoint(i, &p->aOp[i]);
   }
 #endif
 #ifdef VDBE_PROFILE
@@ -1191,8 +1198,17 @@ int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
 ** Generate an OP_ReleaseReg opcode to indicate that a range of
 ** registers, except any identified by mask, are no longer in use.
 */
-void sqlite3VdbeReleaseRegisters(Parse *pParse, int iFirst, int N, u32 mask){
+void sqlite3VdbeReleaseRegisters(
+  Parse *pParse,       /* Parsing context */
+  int iFirst,          /* Index of first register to be released */
+  int N,               /* Number of registers to release */
+  u32 mask,            /* Mask of registers to NOT release */
+  int bUndefine        /* If true, mark registers as undefined */
+){
+  if( N==0 ) return;
   assert( pParse->pVdbe );
+  assert( iFirst>=1 );
+  assert( iFirst+N-1<=pParse->nMem );
   while( N>0 && (mask&1)!=0 ){
     mask >>= 1;
     iFirst++;
@@ -1204,6 +1220,7 @@ void sqlite3VdbeReleaseRegisters(Parse *pParse, int iFirst, int N, u32 mask){
   }
   if( N>0 ){
     sqlite3VdbeAddOp3(pParse->pVdbe, OP_ReleaseReg, iFirst, N, *(int*)&mask);
+    if( bUndefine ) sqlite3VdbeChangeP5(pParse->pVdbe, 1);
   }
 }
 #endif /* SQLITE_DEBUG */

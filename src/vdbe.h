@@ -233,9 +233,9 @@ void sqlite3VdbeJumpHere(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);
 int sqlite3VdbeDeletePriorOpcode(Vdbe*, u8 op);
 #ifdef SQLITE_DEBUG
-  void sqlite3VdbeReleaseRegisters(Parse*,int addr, int n, u32 mask);
+  void sqlite3VdbeReleaseRegisters(Parse*,int addr, int n, u32 mask, int);
 #else
-# define sqlite3VdbeReleaseRegisters(P,A,N,M)
+# define sqlite3VdbeReleaseRegisters(P,A,N,M,F)
 #endif
 void sqlite3VdbeChangeP4(Vdbe*, int addr, const char *zP4, int N);
 void sqlite3VdbeAppendP4(Vdbe*, void *pP4, int p4type);

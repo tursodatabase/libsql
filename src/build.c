@@ -3107,7 +3107,7 @@ void sqlite3CreateForeignKey(
   nByte = sizeof(*pFKey) + (nCol-1)*sizeof(pFKey->aCol[0]) + pTo->n + 1;
   if( pToCol ){
     for(i=0; i<pToCol->nExpr; i++){
-      nByte += sqlite3Strlen30(pToCol->a[i].zName) + 1;
+      nByte += sqlite3Strlen30(pToCol->a[i].zEName) + 1;
     }
   }
   pFKey = sqlite3DbMallocZero(db, nByte );
@@ -3132,7 +3132,7 @@ void sqlite3CreateForeignKey(
     for(i=0; i<nCol; i++){
       int j;
       for(j=0; j<p->nCol; j++){
-        if( sqlite3StrICmp(p->aCol[j].zName, pFromCol->a[i].zName)==0 ){
+        if( sqlite3StrICmp(p->aCol[j].zName, pFromCol->a[i].zEName)==0 ){
           pFKey->aCol[i].iFrom = j;
           break;
         }
@@ -3140,22 +3140,22 @@ void sqlite3CreateForeignKey(
       if( j>=p->nCol ){
         sqlite3ErrorMsg(pParse, 
           "unknown column \"%s\" in foreign key definition", 
-          pFromCol->a[i].zName);
+          pFromCol->a[i].zEName);
         goto fk_end;
       }
       if( IN_RENAME_OBJECT ){
-        sqlite3RenameTokenRemap(pParse, &pFKey->aCol[i], pFromCol->a[i].zName);
+        sqlite3RenameTokenRemap(pParse, &pFKey->aCol[i], pFromCol->a[i].zEName);
       }
     }
   }
   if( pToCol ){
     for(i=0; i<nCol; i++){
-      int n = sqlite3Strlen30(pToCol->a[i].zName);
+      int n = sqlite3Strlen30(pToCol->a[i].zEName);
       pFKey->aCol[i].zCol = z;
       if( IN_RENAME_OBJECT ){
-        sqlite3RenameTokenRemap(pParse, z, pToCol->a[i].zName);
+        sqlite3RenameTokenRemap(pParse, z, pToCol->a[i].zEName);
       }
-      memcpy(z, pToCol->a[i].zName, n);
+      memcpy(z, pToCol->a[i].zEName, n);
       z[n] = 0;
       z += n+1;
     }

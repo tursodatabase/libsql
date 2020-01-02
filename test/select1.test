@@ -1184,5 +1184,18 @@ do_catchsql_test select-19.21 {
     ORDER BY 1;
 } {1 {table t1 has 1 columns but 15 values were supplied}}
 
+# 2020-01-01 Found by Yongheng's fuzzer
+#
+reset_db
+do_execsql_test select-20.10 {
+  CREATE TABLE t1 (
+    a INTEGER PRIMARY KEY,
+    b AS('Y') UNIQUE
+  );
+  INSERT INTO t1(a) VALUES (10);
+  SELECT * FROM t1 JOIN t1 USING(a,b)
+   WHERE ((SELECT t1.a FROM t1 AS x GROUP BY b) AND b=0)
+      OR a = 10;
+} {10 Y}
 
 finish_test

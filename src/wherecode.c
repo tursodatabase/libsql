@@ -1113,7 +1113,22 @@ typedef struct IdxExprTrans {
   int iIdxCur;       /* The cursor for the index */
   int iIdxCol;       /* The column for the index */
   int iTabCol;       /* The column for the table */
+  WhereInfo *pWInfo; /* Complete WHERE clause information */
+  sqlite3 *db;       /* Database connection (for malloc()) */
 } IdxExprTrans;
+
+/*
+** Preserve pExpr on the WhereETrans list of the WhereInfo.
+*/
+static void preserveExpr(IdxExprTrans *pTrans, Expr *pExpr){
+  WhereExprMod *pNew;
+  pNew = sqlite3DbMallocRaw(pTrans->db, sizeof(*pNew));
+  if( pNew==0 ) return;
+  pNew->pNext = pTrans->pWInfo->pExprMods;
+  pTrans->pWInfo->pExprMods = pNew;
+  pNew->pExpr = pExpr;
+  memcpy(&pNew->orig, pExpr, sizeof(*pExpr));
+}
 
 /* The walker node callback used to transform matching expressions into
 ** a reference to an index column for an index on an expression.
@@ -1124,6 +1139,7 @@ typedef struct IdxExprTrans {
 static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
   IdxExprTrans *pX = p->u.pIdxTrans;
   if( sqlite3ExprCompare(0, pExpr, pX->pIdxExpr, pX->iTabCur)==0 ){
+    preserveExpr(pX, pExpr);
     pExpr->affExpr = sqlite3ExprAffinity(pExpr);
     pExpr->op = TK_COLUMN;
     pExpr->iTable = pX->iIdxCur;
@@ -1147,6 +1163,7 @@ static int whereIndexExprTransColumn(Walker *p, Expr *pExpr){
     IdxExprTrans *pX = p->u.pIdxTrans;
     if( pExpr->iTable==pX->iTabCur && pExpr->iColumn==pX->iTabCol ){
       assert( pExpr->y.pTab!=0 );
+      preserveExpr(pX, pExpr);
       pExpr->affExpr = sqlite3TableColumnAffinity(pExpr->y.pTab,pExpr->iColumn);
       pExpr->iTable = pX->iIdxCur;
       pExpr->iColumn = pX->iIdxCol;
@@ -1188,6 +1205,8 @@ static void whereIndexExprTrans(
   w.u.pIdxTrans = &x;
   x.iTabCur = iTabCur;
   x.iIdxCur = iIdxCur;
+  x.pWInfo = pWInfo;
+  x.db = pWInfo->pParse->db;
   for(iIdxCol=0; iIdxCol<pIdx->nColumn; iIdxCol++){
     i16 iRef = pIdx->aiColumn[iIdxCol];
     if( iRef==XN_EXPR ){
