@@ -811,7 +811,7 @@ void sqlite3RenameExprlistUnmap(Parse *pParse, ExprList *pEList){
     sWalker.xExprCallback = renameUnmapExprCb;
     sqlite3WalkExprList(&sWalker, pEList);
     for(i=0; i<pEList->nExpr; i++){
-      if( pEList->a[i].eEName==ENAME_NAME ){
+      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME) ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zEName);
       }
     }
@@ -952,7 +952,8 @@ static void renameColumnElistNames(
     int i;
     for(i=0; i<pEList->nExpr; i++){
       char *zName = pEList->a[i].zEName;
-      if( pEList->a[i].eEName==ENAME_NAME
+      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME)
+       && ALWAYS(zName!=0)
        && 0==sqlite3_stricmp(zName, zOld)
       ){
         renameTokenFind(pParse, pCtx, (void*)zName);

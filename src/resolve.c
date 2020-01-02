@@ -140,7 +140,7 @@ int sqlite3MatchEName(
 ){
   int n;
   const char *zSpan;
-  if( pItem->eEName!=ENAME_TAB ) return 0;
+  if( NEVER(pItem->eEName!=ENAME_TAB) ) return 0;
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
@@ -451,9 +451,9 @@ static int lookupName(
       pEList = pNC->uNC.pEList;
       assert( pEList!=0 );
       for(j=0; j<pEList->nExpr; j++){
-        char *zAs;
+        char *zAs = pEList->a[j].zEName;
         if( pEList->a[j].eEName==ENAME_NAME
-         && (zAs = pEList->a[j].zEName)!=0
+         && ALWAYS(zAs!=0)
          && sqlite3StrICmp(zAs, zCol)==0
         ){
           Expr *pOrig;
@@ -1125,7 +1125,7 @@ static int resolveAsName(
     for(i=0; i<pEList->nExpr; i++){
       char *zAs = pEList->a[i].zEName;
       if( pEList->a[i].eEName==ENAME_NAME
-       && (zAs = pEList->a[i].zEName)!=0
+       && ALWAYS(zAs!=0)
        && sqlite3StrICmp(zAs, zCol)==0
       ){
         return i+1;
