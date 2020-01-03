@@ -4139,7 +4139,7 @@ do_catchsql_test 24.1 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT '4hE'+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 24.2 {
   UPDATE t1 SET b=quote((true) ) WHERE t1 MATCH 'h';
@@ -4148,7 +4148,7 @@ do_catchsql_test 24.2 {
 do_catchsql_test 24.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 24.4 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT null<<x FROM c WHERE x<72)
@@ -4158,11 +4158,11 @@ do_catchsql_test 24.4 {
 do_catchsql_test 24.5 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 24.7 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
@@ -4837,24 +4837,24 @@ do_catchsql_test 27.2 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x GLOB 2.16770 FROM x)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM t2 ;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<2.653)
     INSERT INTO t1(a) SELECT randomblob(-current_time) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.4 {
   UPDATE t1 SET b=quote((true) ) WHERE t1 MATCH 'h*h*';
 } {0 {}}
 do_catchsql_test 27.5 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<2.653)
     INSERT INTO t1(a) SELECT randomblob(-current_time) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.5 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.6 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -5070,38 +5070,38 @@ do_catchsql_test 28.1 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.2 {
   UPDATE t1 SET b=quote((true) ) WHERE t1 MATCH 'h';
 } {0 {}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.4 {
   WITH c(x) AS (VALUES(1) UNION ALL SELECT 3<<x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
 } {0 {}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.5 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.6 {
   WITH c(x) AS (VALUES(1) UNION ALL SELECT 3<<x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
 } {0 {}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.7 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+3 FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.8 {
   INSERT INTO t1(t1) SELECT x FROM t2;
 } {0 {}}
 

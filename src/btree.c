@@ -1897,7 +1897,7 @@ static int btreeComputeFreeSpace(MemPage *pPage){
   nFree = data[hdr+7] + top;  /* Init nFree to non-freeblock free space */
   if( pc>0 ){
     u32 next, size;
-    if( pc<iCellFirst ){
+    if( pc<top ){
       /* EVIDENCE-OF: R-55530-52930 In a well-formed b-tree page, there will
       ** always be at least one cell before the first freeblock.
       */

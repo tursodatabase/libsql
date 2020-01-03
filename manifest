@@ -1,5 +1,5 @@
-C Remove\san\sover-zealous\sALWAYS()\smacro\sand\sadd\sa\stest\scase\sthat\sshows\sthat\nthe\sconditional\scan\ssometimes\sbe\sfalse.
-D 2020-01-03T14:34:04.183
+C Improve\sa\sspecific\scase\sof\searly\sdatabase\scorruption\sdectecion\sin\sthe\sb-tree\slayer.
+D 2020-01-03T15:51:23.987
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c f191aa4d99597a1ad77cb15a9473f1183f2a12a7f1650a7705eaac9085e493bb
+F src/btree.c 0eb5d02aac9a6f6029904060db1986550bc99b40c5f8d9374d9bbcca0543164d
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
 F src/build.c 67b1a8d3ac700747687dbdc49ded847a3c17fef450a8c919ac0399b44cbd4215
@@ -772,7 +772,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test a22a7bbf8da7603960f0bfcc62a68d1c3c41963786bd832ff804ba5e2458fb9c
+F test/corruptL.test 4f28fbef85a6f27489542bb915ab7938dcd68f896e8f62a7d23de02b32489e5d
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
@@ -940,7 +940,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test ce7f7b5eaeee5f1804584d061b978d85e64abf2af9adaa7577589fac6f7eae01
 F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999fe3b0d25f3
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 5ac8c0378dab68808f080d03d8525d2262879cb23db1bc5eb138e141a4f2010c
+F test/fts3corrupt4.test 50f8e119b688c8b8aa46c1543a022e0e1a931f5820c7da099b34e9acea7ece3b
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9d791116420f4e3f613775569e0a0cba2fc22da568b2fb2df920bcf9c9002938
-R 95579694e6c940cfce958a36249eabe6
-U drh
-Z 7a1e3b4d114838baf5b8097e8c4ad0d7
+P 536e9a9d1bd514056ecbc8172ed58f2656a86f791a15e526ae2e5f2c93687b6a
+R 5034281e9502ec9b8092694aa4b88875
+U dan
+Z 044fe5775f5fd5cc5d292b92cda36dc8
