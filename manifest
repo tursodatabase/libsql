@@ -1,5 +1,5 @@
-C When\sgenerating\sthe\sname\sof\sa\sview\s(or\scommon\stable\sexpression)\sbecause\sthe\nSQL\sdoes\snot\sspecify\sa\sname,\savoid\sthe\snames\s"true"\sand\s"false"\swhich\smight\nbe\sconfused\sfor\sthe\sboolean\sliterals\sof\sthe\ssame\sname,\sleading\sto\san\ninconsistent\sabstract\ssyntax\stree.
-D 2020-01-03T02:20:37.589
+C Ensure\sthat\swhen\sa\sSelect\sobject\sis\sreset\sa\snew,\sempty,\sSrcList\sis\sallocated.
+D 2020-01-03T13:55:14.564
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 938295261d556dc173e7c4b85c921b565b25c38656b924bdf03c3ff8f37e24ab
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 6a2d755e068b36678317654c953ffaafc4a6282ebb1f67b217a8e960d58992b7
+F src/select.c 64bf450dc0f2b37be8d2be6ff7d25a70de37ef6fb64527c68f767fe9fe47bc55
 F src/shell.c.in 90b002bf0054399cbbfac62dd752a9b05770427ba141bcba75eefbb0098f4280
 F src/sqlite.h.in 51f69c62ba3e980aca1e39badcaf9ad13f008774fe1bb8e7f57e3e456c656670
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1714,7 +1714,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 30f38038f2878a28befa66c288099e5da131ba673799d73d0864f08375d503e1
+F test/window1.test b61afc46bad183e19dcd46119d908ee79aecfd5929e61d332dba4ce9c2c0b7b9
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd56872afbb4edeff2e8c1cb1c8d47c7a9b333b3fc416c20183250807291fae8
-R 2d4c4407cbf30d2c83e3f90fdf5f6138
-U drh
-Z df9525e36468611f3a07620ddc0d95cd
+P ff9492d3ff733c222ea67f23d478df1547641b5e2e6dd870b0b29e25c13f3739
+R 6d6e6fecfce942a481e283b1c0c2a9e4
+U dan
+Z d65258fbc060b0ebe3f9befe743fe2c5
