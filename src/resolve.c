@@ -866,16 +866,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** constant because they are constant for the duration of one query.
           ** This allows them to be factored out of inner loops. */
           ExprSetProperty(pExpr,EP_ConstFunc);
-        }else{
-          if( ExprHasProperty(pExpr, EP_Indirect)
-           && !IN_RENAME_OBJECT
-           && (pParse->db->flags & SQLITE_UnsafeInView)==0
-          ){
-            /* If SQLITE_DBCONFIG_UNSAFE_IN_VIEW is off, then functions with
-            ** side effects are not allowed inside triggers and views. */
-            sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
-                            pDef->zName);
-          }
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
           /* Date/time functions that use 'now', and other functions like
@@ -896,14 +886,22 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           no_such_func = 1;
           pDef = 0;
         }else
-        if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
+        if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_SAFE))
+               != SQLITE_FUNC_SAFE
          && ExprHasProperty(pExpr, EP_Indirect)
          && !IN_RENAME_OBJECT
         ){
-          /* Functions tagged with SQLITE_DIRECTONLY may not be used
-          ** inside of triggers and views */
-          sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
-                          pDef->zName);
+          if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
+           || (pParse->db->flags & SQLITE_UnsafeInView)==0
+          ){
+            /* Functions prohibited in triggers and views if:
+            **     (1) tagged with SQLITE_DIRECTONLY
+            **     (2) not tagged with SQLITE_INNOCUOUS and 
+            **         SQLITE_DBCONFIG_UNSAFE_IN_VIEW is off
+            */
+            sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
+                            pDef->zName);
+          }
         }
       }
 
