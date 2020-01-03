@@ -3620,6 +3620,9 @@ static int exprCodeInlineFunction(
         VdbeCoverage(v);
         sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
       }
+      if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
+        sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
+      }
       sqlite3VdbeResolveLabel(v, endCoalesce);
       break;
     }
@@ -4607,6 +4610,7 @@ int sqlite3ExprCodeExprList(
          && (pOp=sqlite3VdbeGetOp(v, -1))->opcode==OP_Copy
          && pOp->p1+pOp->p3+1==inReg
          && pOp->p2+pOp->p3+1==target+i
+         && pOp->p5==0  /* The do-not-merge flag must be clear */
         ){
           pOp->p3++;
         }else{

@@ -1,5 +1,5 @@
-C Ensure\sthat\swhen\sa\sSelect\sobject\sis\sreset\sa\snew,\sempty,\sSrcList\sis\sallocated.
-D 2020-01-03T13:55:14.564
+C Fix\sthe\sOP_Copy-coalesce\soptimization\sso\sthat\sif\sthe\sprevious\srow\shappens\nto\send\swith\sOP_Copy\sbut\sis\snot\sa\scandidate\sfor\sthe\soptimization\sdue\sto\sjumps,\nthen\sthe\soptimization\sis\scorrectly\sbypassed.
+D 2020-01-03T14:16:43.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -480,7 +480,7 @@ F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
 F src/dbpage.c 135eb3b5e74f9ef74bde5cec2571192c90c86984fa534c88bf4a055076fa19b7
 F src/dbstat.c 6c407e549406c10fde9ac3987f6d734459205239ad370369bc5fcd683084a4fa
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c 53106d7ca6a00b8fc91d3ab5338561b02efc9d282525e8101423f9c933dd50f0
+F src/expr.c 70af050710e92b16dac5498005e77a8fd799eda31cac19f641da5b0531cccb03
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c 259496e4856bd0a3215d16804992f3339f3e8db29f129a5a7285c341488bbe9c
@@ -1295,7 +1295,7 @@ F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce
 F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972a5a2a51e
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/select1.test 0aaefed5e770232effeba2d19b8dde01b639d617b844cb2492a75961e4119549
+F test/select1.test 009a6d8eacd9684d046302b8d13b50846a87e39d6f08e92178aa13e95ea29a2d
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 3905450067c28766bc83ee397f6d87342de868baa60f2bcfd00f286dfbd62cb9
 F test/select4.test 5389d9895968d1196c457d59b3ee6515d771d328
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff9492d3ff733c222ea67f23d478df1547641b5e2e6dd870b0b29e25c13f3739
-R 6d6e6fecfce942a481e283b1c0c2a9e4
-U dan
-Z d65258fbc060b0ebe3f9befe743fe2c5
+P 4889cbf898d7ec54f061b21b6d3621b22fc482cbeaa7115d40995a4cc30e41db
+R 08e8e017bd785f9894e0fa9f6ebc60bd
+U drh
+Z c0b2c81a3a0405edc8e28815ea102073
