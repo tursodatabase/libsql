@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_Copy-coalesce\soptimization\sso\sthat\sif\sthe\sprevious\srow\shappens\nto\send\swith\sOP_Copy\sbut\sis\snot\sa\scandidate\sfor\sthe\soptimization\sdue\sto\sjumps,\nthen\sthe\soptimization\sis\scorrectly\sbypassed.
-D 2020-01-03T14:16:43.141
+C Fix\sa\spossible\sNULL\spointer\sdereference\scaused\sby\susing\sa\s"VALUES(...)"\sas\sa\scomponent\sof\sa\scompound\sSELECT\swith\snon-integer\sORDER\sBY\sclause\sterms.
+D 2020-01-03T14:27:08.910
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -526,7 +526,7 @@ F src/pragma.h ec3b31eac9b1df040f1cc8cb3d89bc06605c3b4cb3d76f833de8d6d6c3f77f04
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 938295261d556dc173e7c4b85c921b565b25c38656b924bdf03c3ff8f37e24ab
+F src/resolve.c 31dc20837034491e5a043f411425a507b306ceedf40d666af5fc87b13020ff3d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 64bf450dc0f2b37be8d2be6ff7d25a70de37ef6fb64527c68f767fe9fe47bc55
 F src/shell.c.in 90b002bf0054399cbbfac62dd752a9b05770427ba141bcba75eefbb0098f4280
@@ -1199,7 +1199,7 @@ F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/optfuzz-db01.c a0c256905c8ac79f9a5de2f374a3d9f757bef0dca2a238dc7c10cc8a38031834
 F test/optfuzz-db01.txt 21f6bdeadc701cf11528276e2a55c70bfcb846ba42df327f979bd9e7b6ce7041
 F test/optfuzz.c 50e330304eb1992e15ddd11f3daaad9bcc0d9aaad09cb2bcc77f9515df2e88b1
-F test/orderby1.test e4501f54721f804ca56922e253403ac6775f88e9f07569994ce99212b3ca5b10
+F test/orderby1.test 6bf0ce45cbfb1cf4779dd418ac5e8cf66abfa04de2c1d2edf1e0e85f1520d8f3
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4889cbf898d7ec54f061b21b6d3621b22fc482cbeaa7115d40995a4cc30e41db
-R 08e8e017bd785f9894e0fa9f6ebc60bd
-U drh
-Z c0b2c81a3a0405edc8e28815ea102073
+P b36126c1889e323c9a8f04b4f4884576993c845e7d393e5e73aaa6ab5158c1f9
+R 75718b3ecb40084b909fa43386a332aa
+U dan
+Z 2bca40ae05d6e85633d3e5915ae4749d
