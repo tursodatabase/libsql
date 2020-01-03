@@ -2638,7 +2638,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
                                  &pTable->nCol, &pTable->aCol);
       if( db->mallocFailed==0 
-       && ALWAYS(pParse->nErr==0)
+       && pParse->nErr==0
        && pTable->nCol==pSel->pEList->nExpr
       ){
         sqlite3SelectAddColumnTypeAndCollation(pParse, pTable, pSel,
