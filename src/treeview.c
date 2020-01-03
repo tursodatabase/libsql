@@ -730,6 +730,7 @@ void sqlite3TreeViewBareExprList(
       int j = pList->a[i].u.x.iOrderByCol;
       char *zName = pList->a[i].zEName;
       int moreToFollow = i<pList->nExpr - 1;
+      if( pList->a[i].eEName!=ENAME_NAME ) zName = 0;
       if( j || zName ){
         sqlite3TreeViewPush(pView, moreToFollow);
         moreToFollow = 0;

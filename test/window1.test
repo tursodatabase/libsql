@@ -1554,4 +1554,27 @@ do_execsql_test 46.4 {
     OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)
 } 10
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 47.0 {
+  CREATE TABLE t1(
+      a,
+      e,
+      f,
+      g UNIQUE,
+      h UNIQUE
+  );
+}
+
+do_execsql_test 47.1 {
+  CREATE VIEW t2(k) AS
+     SELECT e FROM t1 WHERE g = 'abc' OR h BETWEEN 10 AND f;
+}
+
+do_catchsql_test 47.2 {
+  SELECT 234 FROM t2
+    WHERE k=1
+    OR (SELECT k FROM t2 WHERE (SELECT sum(a) OVER() FROM t1 GROUP BY 1));
+} {1 {misuse of window function sum()}}
+
 finish_test

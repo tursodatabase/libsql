@@ -436,4 +436,16 @@ do_faultsim_test 9.1 -faults oom* -body {
   faultsim_test_result {0 {}}
 }
 
+# 2020-01-03 dbsqlfuzz find
+#
+reset_db
+do_catchsql_test 10.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t1 VALUES(0,NULL);
+  CREATE TABLE t2(x UNIQUE);
+  CREATE VIEW v1a(z,y) AS SELECT x COLLATE x FROM t2;
+  SELECT a,b,z,y,'' FROM t1 JOIN v1a ON b IS NOT FALSE;
+} {1 {no such collation sequence: x}}
+
+
 finish_test

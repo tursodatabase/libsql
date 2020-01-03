@@ -1849,18 +1849,33 @@ int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
 }
 
 /*
+** Check the input string to see if it is "true" or "false" (in any case).
+**
+**       If the string is....           Return
+**         "true"                         EP_IsTrue
+**         "false"                        EP_IsFalse
+**         anything else                  0
+*/
+u32 sqlite3IsTrueOrFalse(const char *zIn){
+  if( sqlite3StrICmp(zIn, "true")==0  ) return EP_IsTrue;
+  if( sqlite3StrICmp(zIn, "false")==0 ) return EP_IsFalse;
+  return 0;
+}
+
+
+/*
 ** If the input expression is an ID with the name "true" or "false"
 ** then convert it into an TK_TRUEFALSE term.  Return non-zero if
 ** the conversion happened, and zero if the expression is unaltered.
 */
 int sqlite3ExprIdToTrueFalse(Expr *pExpr){
+  u32 v;
   assert( pExpr->op==TK_ID || pExpr->op==TK_STRING );
   if( !ExprHasProperty(pExpr, EP_Quoted)
-   && (sqlite3StrICmp(pExpr->u.zToken, "true")==0
-       || sqlite3StrICmp(pExpr->u.zToken, "false")==0)
+   && (v = sqlite3IsTrueOrFalse(pExpr->u.zToken))!=0
   ){
     pExpr->op = TK_TRUEFALSE;
-    ExprSetProperty(pExpr, pExpr->u.zToken[4]==0 ? EP_IsTrue : EP_IsFalse);
+    ExprSetProperty(pExpr, v);
     return 1;
   }
   return 0;
@@ -3605,6 +3620,9 @@ static int exprCodeInlineFunction(
         VdbeCoverage(v);
         sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
       }
+      if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
+        sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
+      }
       sqlite3VdbeResolveLabel(v, endCoalesce);
       break;
     }
@@ -4592,6 +4610,7 @@ int sqlite3ExprCodeExprList(
          && (pOp=sqlite3VdbeGetOp(v, -1))->opcode==OP_Copy
          && pOp->p1+pOp->p3+1==inReg
          && pOp->p2+pOp->p3+1==target+i
+         && pOp->p5==0  /* The do-not-merge flag must be clear */
         ){
           pOp->p3++;
         }else{

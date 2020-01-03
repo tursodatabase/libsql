@@ -1197,5 +1197,8 @@ do_execsql_test select-20.10 {
    WHERE ((SELECT t1.a FROM t1 AS x GROUP BY b) AND b=0)
       OR a = 10;
 } {10 Y}
+do_execsql_test select-20.20 {
+  SELECT ifnull(a, max((SELECT 123))), count(a) FROM t1 ;
+} {10 1}
 
 finish_test

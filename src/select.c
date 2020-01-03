@@ -202,6 +202,7 @@ void sqlite3SelectReset(Parse *pParse, Select *p){
     memset(&p->iLimit, 0, sizeof(Select) - offsetof(Select,iLimit));
     p->pEList = sqlite3ExprListAppend(pParse, 0,
                      sqlite3ExprAlloc(pParse->db,TK_NULL,0,0));
+    p->pSrc = sqlite3DbMallocZero(pParse->db, sizeof(SrcList));
   }
 }
 
@@ -2003,7 +2004,7 @@ int sqlite3ColumnsFromExprList(
         zName = pEList->a[i].zEName;
       }
     }
-    if( zName ){
+    if( zName && !sqlite3IsTrueOrFalse(zName) ){
       zName = sqlite3DbStrDup(db, zName);
     }else{
       zName = sqlite3MPrintf(db,"column%d",i+1);
