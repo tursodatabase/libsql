@@ -1760,10 +1760,15 @@ int sqlite3CreateFunc(
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
-  assert( SQLITE_FUNC_SAFE==SQLITE_INNOCUOUS );
   extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|
                        SQLITE_SUBTYPE|SQLITE_INNOCUOUS);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
+
+  /* The SQLITE_INNOCUOUS flag is the same bit as SQLITE_FUNC_UNSAFE.  But
+  ** the meaning is inverted.  So flip the bit. */
+  assert( SQLITE_FUNC_UNSAFE==SQLITE_INNOCUOUS );
+  extraFlags ^= SQLITE_FUNC_UNSAFE;
+
   
 #ifndef SQLITE_OMIT_UTF16
   /* If SQLITE_UTF16 is specified as the encoding type, transform this

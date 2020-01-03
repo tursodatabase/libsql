@@ -886,8 +886,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           no_such_func = 1;
           pDef = 0;
         }else
-        if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_SAFE))
-               != SQLITE_FUNC_SAFE
+        if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
          && ExprHasProperty(pExpr, EP_Indirect)
          && !IN_RENAME_OBJECT
         ){
@@ -896,7 +895,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ){
             /* Functions prohibited in triggers and views if:
             **     (1) tagged with SQLITE_DIRECTONLY
-            **     (2) not tagged with SQLITE_INNOCUOUS and 
+            **     (2) not tagged with SQLITE_INNOCUOUS (which means it
+            **         is tagged with SQLITE_FUNC_UNSAFE) and 
             **         SQLITE_DBCONFIG_UNSAFE_IN_VIEW is off
             */
             sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
