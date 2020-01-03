@@ -1449,7 +1449,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
         int sz2 = 0;
         int sz = get2byte(&data[iFree+2]);
         int top = get2byte(&data[hdr+5]);
-        if( top>=iFree ){
+        if( NEVER(top>=iFree) ){
           return SQLITE_CORRUPT_PAGE(pPage);
         }
         if( iFree2 ){
@@ -1458,7 +1458,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
           if( iFree2+sz2 > usableSize ) return SQLITE_CORRUPT_PAGE(pPage);
           memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
           sz += sz2;
-        }else if( iFree+sz>usableSize ){
+        }else if( NEVER(iFree+sz>usableSize) ){
           return SQLITE_CORRUPT_PAGE(pPage);
         }
 
@@ -1650,8 +1650,10 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   if( (data[hdr+2] || data[hdr+1]) && gap+2<=top ){
     u8 *pSpace = pageFindSlot(pPage, nByte, &rc);
     if( pSpace ){
+      int g2;
       assert( pSpace+nByte<=data+pPage->pBt->usableSize );
-      if( (*pIdx = (int)(pSpace-data))<=gap ){
+      *pIdx = g2 = (int)(pSpace-data);
+      if( NEVER(g2<=gap) ){
         return SQLITE_CORRUPT_PAGE(pPage);
       }else{
         return SQLITE_OK;
@@ -1729,12 +1731,12 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   }else{
     while( (iFreeBlk = get2byte(&data[iPtr]))<iStart ){
       if( iFreeBlk<iPtr+4 ){
-        if( iFreeBlk==0 ) break;
+        if( ALWAYS(iFreeBlk==0) ) break;
         return SQLITE_CORRUPT_PAGE(pPage);
       }
       iPtr = iFreeBlk;
     }
-    if( iFreeBlk>pPage->pBt->usableSize-4 ){
+    if( NEVER(iFreeBlk>pPage->pBt->usableSize-4) ){
       return SQLITE_CORRUPT_PAGE(pPage);
     }
     assert( iFreeBlk>iPtr || iFreeBlk==0 );
@@ -1749,7 +1751,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
       nFrag = iFreeBlk - iEnd;
       if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_PAGE(pPage);
       iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
-      if( iEnd > pPage->pBt->usableSize ){
+      if( NEVER(iEnd > pPage->pBt->usableSize) ){
         return SQLITE_CORRUPT_PAGE(pPage);
       }
       iSize = iEnd - iStart;
@@ -1777,7 +1779,8 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     /* The new freeblock is at the beginning of the cell content area,
     ** so just extend the cell content area rather than create another
     ** freelist entry */
-    if( iStart<x || iPtr!=hdr+1 ) return SQLITE_CORRUPT_PAGE(pPage);
+    if( iStart<x ) return SQLITE_CORRUPT_PAGE(pPage);
+    if( NEVER(iPtr!=hdr+1) ) return SQLITE_CORRUPT_PAGE(pPage);
     put2byte(&data[hdr+1], iFreeBlk);
     put2byte(&data[hdr+5], iEnd);
   }else{
@@ -6936,7 +6939,7 @@ static int rebuildPage(
 
   assert( i<iEnd );
   j = get2byte(&aData[hdr+5]);
-  if( j>(u32)usableSize ){ j = 0; }
+  if( NEVER(j>(u32)usableSize) ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
   for(k=0; pCArray->ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
@@ -6948,7 +6951,7 @@ static int rebuildPage(
     u16 sz = pCArray->szCell[i];
     assert( sz>0 );
     if( SQLITE_WITHIN(pCell,aData,pEnd) ){
-      if( ((uptr)(pCell+sz))>(uptr)pEnd ) return SQLITE_CORRUPT_BKPT;
+      if( NEVER(((uptr)(pCell+sz))>(uptr)pEnd) ) return SQLITE_CORRUPT_BKPT;
       pCell = &pTmp[pCell - aData];
     }else if( (uptr)(pCell+sz)>(uptr)pSrcEnd
            && (uptr)(pCell)<(uptr)pSrcEnd
@@ -6959,10 +6962,9 @@ static int rebuildPage(
     pData -= sz;
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
-    if( pData < pCellptr ) return SQLITE_CORRUPT_BKPT;
+    if( NEVER(pData < pCellptr) ) return SQLITE_CORRUPT_BKPT;
     memcpy(pData, pCell, sz);
-    assert( sz==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
-    testcase( sz!=pPg->xCellSize(pPg,pCell) );
+    assert( sz==pPg->xCellSize(pPg, pCell) );
     i++;
     if( i>=iEnd ) break;
     if( pCArray->ixNx[k]<=i ){
@@ -7101,7 +7103,7 @@ static int pageFreeArray(
         }
         pFree = pCell;
         szFree = sz;
-        if( pFree+sz>pEnd ) return 0;
+        if( NEVER(pFree+sz>pEnd) ) return 0;
       }else{
         pFree = pCell;
         szFree += sz;
