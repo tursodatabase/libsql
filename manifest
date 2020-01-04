@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhere\sthe\sloop\sfor\sthe\sRHS\sof\sa\sLEFT\sJOIN\suses\svalues\sfrom\san\sIN()\sclause\sas\sthe\ssecond\sor\ssubsequent\sfield\sof\san\sindex.
-D 2020-01-04T16:55:57.635
+C New\stest\scases\sin\stest/in4.test\srequire\srtree,\sso\sdisable\sthose\stests\son\nbuilds\sthat\slack\sthe\srtree\sextension.
+D 2020-01-04T17:42:27.049
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1036,7 +1036,7 @@ F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 3e9bd58597a444123a40a9ac94cae0fec8897e17e9f519b02fc370bcf5ba5175
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test 0dbdbed68303443e769df42f1d0aa9411bd968254f44c77538e6a60547bc0268
+F test/in4.test 65460600d48933adba4283c6ebd089aae173d16136ab9d01f74c89089090c5a5
 F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test 62d943a02f722948f4410ee0b53c3cb39acd7c41afb083df8d7004238fe90a20
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9da48a5ca66dc67c8f7fb2d2471dac7ea696e35ecba5ddf65747d08d452436c1
-R e96127660ca8159860f3384d23839e06
-U dan
-Z 1ba10d632e5123673848baa09ec8907f
+P 95ef68966c50f311830cba8c9257a4085c93011d205e0e31867c2917fa62a48e
+R fcab88c144dc799dc447a7b169c3a584
+U drh
+Z f09a95387a590464d6b3dffd77efcbbf
