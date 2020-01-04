@@ -1,5 +1,5 @@
-C Remove\sanother\sNEVER\sadded\sby\scheck-in\s[7b62555e285f32d3].\nDbsqlfuzz\sfound\sanother\stest\scase.
-D 2020-01-04T17:55:01.532
+C Record\swhen\sthe\sOP_IfNotOpen\sbranch\sis\sand\sis\snot\staken.
+D 2020-01-04T18:33:20.975
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 204a59d9f678ac8a1479d7506ac85787834470a6db1bb799280878c24fea8af3
+F src/vdbe.c 8a1cf75fc4be7a7d49f8f22f72121c9840937bbe704024260a08cd9997189deb
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h e02ccac0334f7c71c952210657e6e18de1917605887c7bc6167a80a17f62da18
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5900914f7f34caf1a97c87233781d55467329b0ac4366354df13c6fd72a99c7
-R 37be8c9e75659556fe3b159112795493
+P 481f4956aff52797880930752693a8c0b10d7fdd71d86919fe8ee13c90ad5b81
+R f594eb9d0ec38ea8878d8a695e9205a6
 U drh
-Z c000e07130c634d2d097fd608a612cd1
+Z f7c2b4f08ecc73e3215818c3db84b227

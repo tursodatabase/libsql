@@ -4396,6 +4396,7 @@ case OP_SeekHit: {
 */
 case OP_IfNotOpen: {        /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  VdbeBranchTaken(p->apCsr[pOp->p1]==0, 2);
   if( !p->apCsr[pOp->p1] ){
     goto jump_to_p2_and_check_for_interrupt;
   }
