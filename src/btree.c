@@ -7104,7 +7104,7 @@ static int pageFreeArray(
         }
         pFree = pCell;
         szFree = sz;
-        if( NEVER(pFree+sz>pEnd) ) return 0;
+        if( pFree+sz>pEnd ) return 0;
       }else{
         pFree = pCell;
         szFree += sz;
