@@ -473,10 +473,10 @@ struct WhereInfo {
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
   u8 eOnePass;              /* ONEPASS_OFF, or _SINGLE, or _MULTI */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values */
-  u8 bDeferredSeek : 1;     /* Uses OP_DeferredSeek */
-  u8 untestedTerms : 1;     /* Not all WHERE terms resolved by outer loop */
-  u8 bOrderedInnerLoop : 1; /* True if only the inner-most loop is ordered */
-  u8 sorted : 1;            /* True if really sorted (not just grouped) */
+  unsigned bDeferredSeek :1;   /* Uses OP_DeferredSeek */
+  unsigned untestedTerms :1;   /* Not all WHERE terms resolved by outer loop */
+  unsigned bOrderedInnerLoop:1;/* True if only the inner-most loop is ordered */
+  unsigned sorted :1;          /* True if really sorted (not just grouped) */
   LogEst nRowOut;           /* Estimated number of output rows */
   int iTop;                 /* The very beginning of the WHERE loop */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */

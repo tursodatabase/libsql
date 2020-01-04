@@ -7928,6 +7928,12 @@ default: {          /* This is really OP_Noop, OP_Explain */
       if( opProperty & OPFLG_OUT3 ){
         registerTrace(pOrigOp->p3, &aMem[pOrigOp->p3]);
       }
+      if( opProperty==0xff ){
+        /* Never happens.  This code exists to avoid a harmless linkage
+        ** warning aboud sqlite3VdbeRegisterDump() being defined but not
+        ** used. */
+        sqlite3VdbeRegisterDump(p);
+      }
     }
 #endif  /* SQLITE_DEBUG */
 #endif  /* NDEBUG */
