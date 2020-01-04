@@ -1444,7 +1444,10 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
   int rc = SQLITE_OK;
 
   assert( pTab->pWriteFd==0 );
-  if( pTab->zFile==0 ) return SQLITE_OK;
+  if( pTab->zFile==0 || pTab->zFile[0]==0 ){
+    pTab->base.zErrMsg = sqlite3_mprintf("zipfile: missing filename");
+    return SQLITE_ERROR;
+  }
 
   /* Open a write fd on the file. Also load the entire central directory
   ** structure into memory. During the transaction any new file data is 

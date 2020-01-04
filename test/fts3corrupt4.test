@@ -4139,7 +4139,7 @@ do_catchsql_test 24.1 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT '4hE'+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 24.2 {
   UPDATE t1 SET b=quote((true) ) WHERE t1 MATCH 'h';
@@ -4148,7 +4148,7 @@ do_catchsql_test 24.2 {
 do_catchsql_test 24.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 24.4 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT null<<x FROM c WHERE x<72)
@@ -4158,11 +4158,11 @@ do_catchsql_test 24.4 {
 do_catchsql_test 24.5 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 24.7 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
@@ -4837,24 +4837,24 @@ do_catchsql_test 27.2 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x GLOB 2.16770 FROM x)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM t2 ;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<2.653)
     INSERT INTO t1(a) SELECT randomblob(-current_time) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.4 {
   UPDATE t1 SET b=quote((true) ) WHERE t1 MATCH 'h*h*';
 } {0 {}}
 do_catchsql_test 27.5 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<2.653)
     INSERT INTO t1(a) SELECT randomblob(-current_time) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.5 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 27.6 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -5070,38 +5070,38 @@ do_catchsql_test 28.1 {
   PRAGMA writable_schema = 1;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.2 {
   UPDATE t1 SET b=quote((true) ) WHERE t1 MATCH 'h';
 } {0 {}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.3 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.4 {
   WITH c(x) AS (VALUES(1) UNION ALL SELECT 3<<x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
 } {0 {}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.5 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT 3+x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.6 {
   WITH c(x) AS (VALUES(1) UNION ALL SELECT 3<<x FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
 } {0 {}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.7 {
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+3 FROM c WHERE x<72)
     INSERT INTO t1(a) SELECT randomblob(2829) FROM c;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
-do_catchsql_test 28.1 {
+do_catchsql_test 28.8 {
   INSERT INTO t1(t1) SELECT x FROM t2;
 } {0 {}}
 
@@ -5811,5 +5811,14 @@ do_execsql_test 35.0 {
 do_catchsql_test 35.1 {
   INSERT INTO f(f) VALUES ('integrity-check');
 } {1 {database disk image is malformed}}
+
+reset_db
+do_catchsql_test 36.0 {
+  CREATE VIRTUAL TABLE f USING fts3(a,tokenize=porter);
+  CREATE TABLE 'f_stat'(id INTEGER PRIMARY KEY, value BLOB);
+  INSERT INTO f VALUES (1);
+  INSERT INTO f_stat VALUES (1,x'00000000000101010119013d00ffff0400fa83717b71a69297979701f63d010101010101010101010101190000000000000000fa83717b71a601f63d01010101010101010101010119013d00ffffff0400fa83717b71a69297979701f63d010101010101010101010101190000000000000000fa83717b71a69201f63d010101f63d01010101010101010101010119013d00ffffff0400fa83717b71a6929797010101010101010101010119013d00ffff01f63d01010101010101010101010119013d00ffffff0400fa83717b71a69297979701f63d00fa03ffffffa69297979701f63d010101000000000101010101197e9797976567656565ffa63535354e');
+  INSERT INTO f(f) VALUES ('merge=53,216');
+} {0 {}}
 
 finish_test

@@ -838,7 +838,9 @@ do_execsql_test 15.20 {
 #
 do_catchsql_test 16.10 {
   DELETE FROM zipfile;
-} {1 {zipfile() function requires an argument}}
-
+} {1 {zipfile: missing filename}}
+do_catchsql_test 16.20 {
+  REPLACE INTO zipfile VALUES(null,null,null,null,null,123,null);
+} {1 {zipfile: missing filename}}
 
 finish_test
