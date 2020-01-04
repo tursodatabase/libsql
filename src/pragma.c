@@ -299,7 +299,12 @@ static const PragmaName *pragmaLocate(const char *zName){
 ** Create zero or more entries in the output for the SQL functions
 ** defined by FuncDef p.
 */
-static void pragmaFunclistLine(Vdbe *v, FuncDef *p, int isBuiltin){
+static void pragmaFunclistLine(
+  Vdbe *v,               /* The prepared statement being created */
+  FuncDef *p,            /* A particular function definition */
+  int isBuiltin,         /* True if this is a built-in function */
+  int showInternFuncs    /* True if showing internal functions */
+){
   for(; p; p=p->pNext){
     const char *zType;
     const char *zEnc;
@@ -307,10 +312,16 @@ static void pragmaFunclistLine(Vdbe *v, FuncDef *p, int isBuiltin){
         SQLITE_DETERMINISTIC |
         SQLITE_DIRECTONLY |
         SQLITE_SUBTYPE |
-        SQLITE_INNOCUOUS
+        SQLITE_INNOCUOUS |
+        SQLITE_FUNC_INTERNAL
     ;
-       
+
     if( p->xSFunc==0 ) continue;
+    if( (p->funcFlags & SQLITE_FUNC_INTERNAL)!=0
+     && showInternFuncs==0
+    ){
+      continue;
+    }    
     if( p->xValue!=0 ){
       zType = "w";
     }else if( p->xFinalize!=0 ){
@@ -1299,16 +1310,16 @@ void sqlite3Pragma(
     int i;
     HashElem *j;
     FuncDef *p;
+    int showInternFunc = (db->mDbFlags & DBFLAG_InternalFunc)!=0;
     pParse->nMem = 6;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
-        if( p->funcFlags & SQLITE_FUNC_INTERNAL ) continue;
-        pragmaFunclistLine(v, p, 1);
+        pragmaFunclistLine(v, p, 1, showInternFunc);
       }
     }
     for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
       p = (FuncDef*)sqliteHashData(j);
-      pragmaFunclistLine(v, p, 0);
+      pragmaFunclistLine(v, p, 0, showInternFunc);
     }
   }
   break;
