@@ -4374,7 +4374,7 @@ seek_not_found:
 ** Synopsis: seekHit=P2
 **
 ** Set the seekHit flag on cursor P1 to the value in P2.
-** The seekHit flag is used by the IfNoHope opcode.
+* The seekHit flag is used by the IfNoHope opcode.
 **
 ** P1 must be a valid b-tree cursor.  P2 must be a boolean value,
 ** either 0 or 1.
@@ -4386,6 +4386,20 @@ case OP_SeekHit: {
   assert( pC!=0 );
   assert( pOp->p2==0 || pOp->p2==1 );
   pC->seekHit = pOp->p2 & 1;
+  break;
+}
+
+/* Opcode: IfNotOpen P1 P2 * * *
+** Synopsis: if( !csr[P1] ) goto P2
+**
+** If cursor P1 is not open, jump to instruction P2. Otherwise, fall through.
+*/
+case OP_IfNotOpen: {        /* jump */
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  VdbeBranchTaken(p->apCsr[pOp->p1]==0, 2);
+  if( !p->apCsr[pOp->p1] ){
+    goto jump_to_p2_and_check_for_interrupt;
+  }
   break;
 }
 
@@ -7913,6 +7927,12 @@ default: {          /* This is really OP_Noop, OP_Explain */
       }
       if( opProperty & OPFLG_OUT3 ){
         registerTrace(pOrigOp->p3, &aMem[pOrigOp->p3]);
+      }
+      if( opProperty==0xff ){
+        /* Never happens.  This code exists to avoid a harmless linkage
+        ** warning aboud sqlite3VdbeRegisterDump() being defined but not
+        ** used. */
+        sqlite3VdbeRegisterDump(p);
       }
     }
 #endif  /* SQLITE_DEBUG */
