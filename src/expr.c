@@ -3209,6 +3209,7 @@ static void sqlite3ExprCodeIN(
       if( regCkNull && sqlite3ExprCanBeNull(pList->a[ii].pExpr) ){
         sqlite3VdbeAddOp3(v, OP_BitAnd, regCkNull, r2, regCkNull);
       }
+      sqlite3ReleaseTempReg(pParse, regToFree);
       if( ii<pList->nExpr-1 || destIfNull!=destIfFalse ){
         int op = rLhs!=r2 ? OP_Eq : OP_NotNull;
         sqlite3VdbeAddOp4(v, op, rLhs, labelOk, r2,
@@ -3227,7 +3228,6 @@ static void sqlite3ExprCodeIN(
         VdbeCoverageIf(v, op==OP_IsNull);
         sqlite3VdbeChangeP5(v, zAff[0] | SQLITE_JUMPIFNULL);
       }
-      sqlite3ReleaseTempReg(pParse, regToFree);
     }
     if( regCkNull ){
       sqlite3VdbeAddOp2(v, OP_IsNull, regCkNull, destIfNull); VdbeCoverage(v);
