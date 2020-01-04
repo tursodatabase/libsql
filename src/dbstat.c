@@ -247,7 +247,8 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   }
   if( iAgg>=0 ){
     pIdxInfo->aConstraintUsage[iAgg].argvIndex = ++i;
-    pIdxInfo->aConstraintUsage[iAgg].omit = 1;
+    /* As of ticket [727074e2], this constraint is not omitted. */
+    /* pIdxInfo->aConstraintUsage[iAgg].omit = 1; */
     pIdxInfo->idxNum |= 0x04;
   }
   pIdxInfo->estimatedCost = 1.0;
