@@ -296,6 +296,46 @@ static const PragmaName *pragmaLocate(const char *zName){
 }
 
 /*
+** Create zero or more entries in the output for the SQL functions
+** defined by FuncDef p.
+*/
+static void pragmaFunclistLine(Vdbe *v, FuncDef *p, int isBuiltin){
+  for(; p; p=p->pNext){
+    const char *zType;
+    const char *zEnc;
+    static const u32 mask = 
+        SQLITE_DETERMINISTIC |
+        SQLITE_DIRECTONLY |
+        SQLITE_SUBTYPE |
+        SQLITE_INNOCUOUS
+    ;
+       
+    if( p->xSFunc==0 ) continue;
+    if( p->xValue!=0 ){
+      zType = "w";
+    }else if( p->xFinalize!=0 ){
+      zType = "a";
+    }else{
+      zType = "s";
+    }
+    if( p->funcFlags & SQLITE_UTF8 ){
+      zEnc = "utf8";
+    }else if( p->funcFlags & SQLITE_UTF16BE ){
+      zEnc = "utf16be";
+    }else{
+      zEnc = "utf16le";
+    }
+    sqlite3VdbeMultiLoad(v, 1, "sissii",
+       p->zName, isBuiltin,
+       zType, zEnc,
+       p->nArg,
+       (p->funcFlags & mask) ^ SQLITE_INNOCUOUS
+    );
+  }
+}
+
+
+/*
 ** Helper subroutine for PRAGMA integrity_check:
 **
 ** Generate code to output a single-column result row with a value of the
@@ -1259,16 +1299,16 @@ void sqlite3Pragma(
     int i;
     HashElem *j;
     FuncDef *p;
-    pParse->nMem = 2;
+    pParse->nMem = 6;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
         if( p->funcFlags & SQLITE_FUNC_INTERNAL ) continue;
-        sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
+        pragmaFunclistLine(v, p, 1);
       }
     }
     for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
       p = (FuncDef*)sqliteHashData(j);
-      sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 0);
+      pragmaFunclistLine(v, p, 0);
     }
   }
   break;
