@@ -700,9 +700,9 @@ static int statFilter(
     const char *zDbase = (const char*)sqlite3_value_text(argv[iArg++]);
     pCsr->iDb = sqlite3FindDbName(pTab->db, zDbase);
     if( pCsr->iDb<0 ){
-      sqlite3_free(pCursor->pVtab->zErrMsg);
-      pCursor->pVtab->zErrMsg = sqlite3_mprintf("no such schema: %s", zDbase);
-      return pCursor->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM_BKPT;
+      pCsr->iDb = 0;
+      pCsr->isEof = 1;
+      return SQLITE_OK;
     }
   }else{
     pCsr->iDb = pTab->iDb;
