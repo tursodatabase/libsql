@@ -887,8 +887,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_DQS_DDL,               SQLITE_DqsDDL         },
         { SQLITE_DBCONFIG_DQS_DML,               SQLITE_DqsDML         },
         { SQLITE_DBCONFIG_LEGACY_FILE_FORMAT,    SQLITE_LegacyFileFmt  },
-        { SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW,   SQLITE_UnsafeInView   },
-        { SQLITE_DBCONFIG_VTAB_IN_VIEW,          SQLITE_VtabInView     },
+        { SQLITE_DBCONFIG_ENABLE_UNSAFE_DDL,     SQLITE_UnsafeDDL      },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -3128,8 +3127,7 @@ static int openDatabase(
                  | SQLITE_EnableTrigger
                  | SQLITE_EnableView
                  | SQLITE_CacheSpill
-                 | SQLITE_UnsafeInView
-                 | SQLITE_VtabInView
+                 | SQLITE_UnsafeDDL
 
 /* The SQLITE_DQS compile-time option determines the default settings
 ** for SQLITE_DBCONFIG_DQS_DDL and SQLITE_DBCONFIG_DQS_DML.

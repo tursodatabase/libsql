@@ -2265,31 +2265,19 @@ struct sqlite3_mem_methods {
 ** compile-time option.
 ** </dd>
 **
-** [[SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW]]
-** <dt>SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW</td>
-** <dd>The SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW option activates or deactivates
-** the ability to use SQL functions that have side-effects inside of
-** triggers and views.  For legacy compatibility, this setting defaults
-** to "on".  Applications that are operating on untrusted database files
-** are advised to change this setting to "off".  When this setting is on,
-** only functions that have no side effects are usable inside of views.
-** This prevents an attacker from modifying the schema of a database so
-** that views and/or triggers with undesirable side-effects are run when
-** the application innocently tries to access what it thinks is an ordinary
-** table.
-** </dd>
-**
-** [[SQLITE_DBCONFIG_VTAB_IN_VIEW]]
-** <dt>SQLITE_DBCONFIG_VTAB_IN_VIEW</td>
-** <dd>The SQLITE_DBCONFIG_VTAB_IN_VIEW option activates or deactivates
-** the ability to use [virtual tables] inside of triggers and views.
-** For legacy compatibility, this setting defaults
-** to "on".  Applications that are operating on untrusted database files
-** are advised to change this setting to "off".  Turning this setting off
-** prevents an attacker from modifying the schema of a database so
-** that views and/or triggers with undesirable side-effects are run when
-** the application innocently tries to access what it thinks is an ordinary
-** table.
+** [[SQLITE_DBCONFIG_INDIRECT_UNSAFE]]
+** <dt>SQLITE_DBCONFIG_INDIRECT_UNSAFE</td>
+** <dd>The SQLITE_DBCONFIG_INDIRECT_UNSAFE option activates or deactivates
+** the ability to use "unsafe" SQL functions and virtual tables in the
+** schema of the database.  Using an SQL function or virtual table "in the
+** schema" means using the rsource in a
+** trigger, view, CHECK constraint, INDEX definition, generated column,
+** default value, or in any other context that is part of the DDL for the
+** database file.  "Unsafe" SQL functions are SQL functions that are not
+** tagged with [SQLITE_INNOCUOUS]. 
+** <p>For legacy compatibility, the SQLITE_DBCONFIG_INDIRECT_UNSAFE setting
+** defaults to "on". Applications that are operating on untrusted database
+** files are advised to change this setting to "off".
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_LEGACY_FILE_FORMAT]]
@@ -2332,9 +2320,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_DQS_DDL               1014 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
-#define SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW   1017 /* int int* */
-#define SQLITE_DBCONFIG_VTAB_IN_VIEW          1018 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1018 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_ENABLE_UNSAFE_DDL     1017 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1017 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

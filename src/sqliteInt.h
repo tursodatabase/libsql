@@ -1581,10 +1581,10 @@ struct sqlite3 {
 #define SQLITE_CkptFullFSync  0x00000010  /* Use full fsync for checkpoint */
 #define SQLITE_CacheSpill     0x00000020  /* OK to spill pager cache */
 #define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
-#define SQLITE_UnsafeInView   0x00000080  /* Allow functions with side-effect
-                                          ** in triggers and views */
-#define SQLITE_VtabInView     0x00000100  /* Allow views and triggers to access
-                                          ** virtual tables */
+#define SQLITE_UnsafeDDL      0x00000080  /* Allow unsafe functions and vtabs
+                                          ** in the schema definition */
+#define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
+                                          /*   result set is empty */
 #define SQLITE_IgnoreChecks   0x00000200  /* Do not enforce check constraints */
 #define SQLITE_ReadUncommit   0x00000400  /* READ UNCOMMITTED in shared-cache */
 #define SQLITE_NoCkptOnClose  0x00000800  /* No checkpoint on close()/DETACH */
@@ -1611,8 +1611,6 @@ struct sqlite3 {
 #define SQLITE_CountRows      HI(0x00001) /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
-#define SQLITE_NullCallback   HI(0000002) /* Invoke the callback once if the */
-                                          /*   result set is empty */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
