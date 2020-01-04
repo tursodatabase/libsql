@@ -1,5 +1,5 @@
-C Fix\sa\sfalse-positive\sin\sthe\sregister\svalidity\stracking\slogic\sby\smoving\sthe\ntemporary\sregister\srelease\scall\sbefore\sthe\sjump\sthat\suses\sthat\stemporary\nregister.
-D 2020-01-04T15:21:47.201
+C Fix\sa\sproblem\swhere\sthe\sloop\sfor\sthe\sRHS\sof\sa\sLEFT\sJOIN\suses\svalues\sfrom\san\sIN()\sclause\sas\sthe\ssecond\sor\ssubsequent\sfield\sof\san\sindex.
+D 2020-01-04T16:55:57.635
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c 2c92bc706bbdb1c45a25180291e7e05a56e297aa5dd7b2bcd2b1c47e8bb05b17
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 459a233a60aba8b8b2462f42bd6e93623e13beafc5e0c40c6646e0527e444fd0
+F src/vdbe.c 204a59d9f678ac8a1479d7506ac85787834470a6db1bb799280878c24fea8af3
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h e02ccac0334f7c71c952210657e6e18de1917605887c7bc6167a80a17f62da18
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -614,9 +614,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c 9353093c2a444580857006fc959494edc40e2393ac08a1f7e1eefe455c079cdb
+F src/where.c 4ca6c066554247a69dc54616755f68c301c16e23ec36d40170f07763fd0737b3
 F src/whereInt.h d2b771335083070ff82991cc43603e2db27b7ba1313da72de092c50c68f2be9c
-F src/wherecode.c b8acf97f95de7398455e238036e96aeda8563d87c6b8108c967396431b6f2307
+F src/wherecode.c 75ad6cbb8dfe585ffe0fc71008750b5158fc4811c3a498327033920b18f0a4be
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c 659d613248f8bb8630f51409dc08235e4494c3c84162a535d9f88b38515f390a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1036,7 +1036,7 @@ F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 3e9bd58597a444123a40a9ac94cae0fec8897e17e9f519b02fc370bcf5ba5175
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test 0f77b0ff371549e6a119d0356be10bdba72258162e9701e83527a560482f5e98
+F test/in4.test 0dbdbed68303443e769df42f1d0aa9411bd968254f44c77538e6a60547bc0268
 F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test 62d943a02f722948f4410ee0b53c3cb39acd7c41afb083df8d7004238fe90a20
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 139aefe60097e06b43df35652e6b2183b7a4b03341d1bde23deada3fa3358fee
-R 11e5473b5143d7846f38adea04bf0957
-U drh
-Z a198852404260f5a9fb2ceb446a14f63
+P 9da48a5ca66dc67c8f7fb2d2471dac7ea696e35ecba5ddf65747d08d452436c1
+R e96127660ca8159860f3384d23839e06
+U dan
+Z 1ba10d632e5123673848baa09ec8907f
