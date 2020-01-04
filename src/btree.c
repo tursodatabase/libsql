@@ -6951,7 +6951,7 @@ static int rebuildPage(
     u16 sz = pCArray->szCell[i];
     assert( sz>0 );
     if( SQLITE_WITHIN(pCell,aData,pEnd) ){
-      if( NEVER(((uptr)(pCell+sz))>(uptr)pEnd) ) return SQLITE_CORRUPT_BKPT;
+      if( ((uptr)(pCell+sz))>(uptr)pEnd ) return SQLITE_CORRUPT_BKPT;
       pCell = &pTmp[pCell - aData];
     }else if( (uptr)(pCell+sz)>(uptr)pSrcEnd
            && (uptr)(pCell)<(uptr)pSrcEnd
