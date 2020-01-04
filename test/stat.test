@@ -298,6 +298,7 @@ do_catchsql_test 7.2.4 {
   SELECT * FROM x3;
 } {1 {unrecognized token: "123corp"}}
 
+
 do_execsql_test 8.1 {
   CREATE VIRTUAL TABLE st4 USING dbstat;
 }
@@ -307,5 +308,11 @@ do_execsql_test 8.2 {
 do_execsql_test 8.3 {
   SELECT aggregate=1 FROM st4 WHERE aggregate = 5
 }
+do_execsql_test 8.4 {
+  SELECT * FROM st4 WHERE name = NULL;
+}
+do_catchsql_test 8.5 {
+  SELECT * FROM st4 WHERE schema = NULL;
+} {1 {no such schema: }}
 
 finish_test
