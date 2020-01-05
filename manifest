@@ -1,5 +1,5 @@
-C Fix\sDBSTAT\sso\sthat\sit\sreturns\snow\srows,\srather\sthan\san\serror\swhen\sthe\nWHERE\sclause\sis\s"schema=NULL".
-D 2020-01-04T19:14:48.556
+C Remove\sa\sNEVER\sin\sbtree\sdue\sto\sa\snew\stest\scase\sfrom\sdbsqlfuzz.
+D 2020-01-05T21:53:15.234
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c c457b6a97835d44b326c6579cdb382bfb8e09651e6544915b7becf8b8e539191
+F src/btree.c ac383ca583c07a5cca21c0d1bb692451d048332d231dd0e0ac9f5c46315674b0
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
 F src/build.c 67b1a8d3ac700747687dbdc49ded847a3c17fef450a8c919ac0399b44cbd4215
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8452fe03430d34abecab618d6136b863630f91d68d69ebbc115f808bc81c3817
-R 9bbb5a6f7d16bf33483ed4a1fd18c9fb
+P 5b246b47aeadc25dbec0956e2d6edcd49fbe874a01734fdf15b770507648222d
+R cd6232af07f1adad959afd5ac5b044f4
 U drh
-Z 32947d987d272ea0b93a36e52a4c48c8
+Z 686843380d2012b807a886d6844cca38
