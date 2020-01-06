@@ -956,6 +956,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   Mem *pX;
   for(i=1, pX=pVdbe->aMem+1; i<pVdbe->nMem; i++, pX++){
     if( pX->pScopyFrom==pMem ){
+      u16 mFlags;
       if( pVdbe->db->flags & SQLITE_VdbeTrace ){
         sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
           (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
@@ -966,7 +967,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
       ** function for pX.  Minor changes, such as adding or removing a
       ** dual type, are allowed, as long as the underlying value is the
       ** same. */
-      u16 mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
+      mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
       assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
       /* assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r ); */
       /*                                          ^^           */
