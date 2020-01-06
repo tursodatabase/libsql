@@ -587,6 +587,7 @@ static int vtabCallConstructor(
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
+  pVTable->eVtabRisk = SQLITE_VTABRISK_Normal;
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   pTab->azModuleArg[1] = db->aDb[iDb].zDbSName;
@@ -1276,28 +1277,38 @@ int sqlite3_vtab_on_conflict(sqlite3 *db){
 int sqlite3_vtab_config(sqlite3 *db, int op, ...){
   va_list ap;
   int rc = SQLITE_OK;
+  VtabCtx *p;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   sqlite3_mutex_enter(db->mutex);
-  va_start(ap, op);
-  switch( op ){
-    case SQLITE_VTAB_CONSTRAINT_SUPPORT: {
-      VtabCtx *p = db->pVtabCtx;
-      if( !p ){
-        rc = SQLITE_MISUSE_BKPT;
-      }else{
-        assert( p->pTab==0 || IsVirtual(p->pTab) );
+  p = db->pVtabCtx;
+  if( !p ){
+    rc = SQLITE_MISUSE_BKPT;
+  }else{
+    assert( p->pTab==0 || IsVirtual(p->pTab) );
+    va_start(ap, op);
+    switch( op ){
+      case SQLITE_VTAB_CONSTRAINT_SUPPORT: {
         p->pVTable->bConstraint = (u8)va_arg(ap, int);
+        break;
       }
-      break;
+      case SQLITE_VTAB_INNOCUOUS: {
+        p->pVTable->eVtabRisk = SQLITE_VTABRISK_Low;
+        break;
+      }
+      case SQLITE_VTAB_DIRECTONLY: {
+        p->pVTable->eVtabRisk = SQLITE_VTABRISK_High;
+        break;
+      }
+      default: {
+        rc = SQLITE_MISUSE_BKPT;
+        break;
+      }
     }
-    default:
-      rc = SQLITE_MISUSE_BKPT;
-      break;
+    va_end(ap);
   }
-  va_end(ap);
 
   if( rc!=SQLITE_OK ) sqlite3Error(db, rc);
   sqlite3_mutex_leave(db->mutex);

@@ -7165,7 +7165,6 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "enable_fkey",        SQLITE_DBCONFIG_ENABLE_FKEY           },
         { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
-        { "enable_unsafe_ddl",  SQLITE_DBCONFIG_ENABLE_UNSAFE_DDL     },
         { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
@@ -7174,6 +7173,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
         { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
+        { "untrusted_schema",   SQLITE_DBCONFIG_UNTRUSTED_SCHEMA      },
         { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
     };
     int ii, v;
