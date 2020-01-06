@@ -2310,7 +2310,7 @@ static Select *isCandidateForInOpt(Expr *pX){
     testcase( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
     return 0; /* No DISTINCT keyword and no aggregate functions */
   }
-  if( p->pGroupBy ) return 0;            /* Has no GROUP BY clause */
+  assert( p->pGroupBy==0 );              /* Has no GROUP BY clause */
   if( p->pLimit ) return 0;              /* Has no LIMIT clause */
   if( p->pWhere ) return 0;              /* Has no WHERE clause */
   pSrc = p->pSrc;
