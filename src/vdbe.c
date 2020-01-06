@@ -2831,10 +2831,11 @@ case OP_Column: {
       **
       ** Although sqlite3VdbeSerialGet() may read at most 8 bytes from the
       ** buffer passed to it, debugging function VdbeMemPrettyPrint() may
-      ** read up to 16. So 16 bytes of bogus content is supplied.
+      ** read more.  Use the global constant sqlite3CtypeMap[] as the array,
+      ** as that array is 256 bytes long (plenty for VdbeMemPrettyPrint())
+      ** and it begins with a bunch of zeros.
       */
-      static u8 aZero[16];  /* This is the bogus content */
-      sqlite3VdbeSerialGet(aZero, t, pDest);
+      sqlite3VdbeSerialGet((u8*)sqlite3CtypeMap, t, pDest);
     }else{
       rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, aOffset[p2], len, pDest);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
