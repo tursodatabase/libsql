@@ -4995,13 +4995,17 @@ int sqlite3_create_window_function(
 ** to [sqlite3_create_function()], [sqlite3_create_function16()], or
 ** [sqlite3_create_function_v2()].
 **
+** <dl>
+** [[SQLITE_DETERMINISTIC]] <dt>SQLITE_DETERMINISTIC</dt><dd>
 ** The SQLITE_DETERMINISTIC flag means that the new function always gives
-** the same output when the input parameters are the same. The abs() function
-** is deterministic, for example, but randomblob() is not.  Functions must
+** the same output when the input parameters are the same. The [abs()] function
+** is deterministic, for example, but [randomblob()] is not.  Functions must
 ** be deterministic in order to be used in certain contexts such as
 ** [CHECK constraints] or [generated columns].  SQLite might also optimize
 ** deterministic functions by factoring them out of inner loops.
+** </dd>
 **
+** [[SQLITE_DIRECTONLY]] <dt>SQLITE_DIRECTONLY</dt><dd>
 ** The SQLITE_DIRECTONLY flag means that the function may only be invoked
 ** from top-level SQL, and cannot be used in VIEWs or TRIGGERs.  This is
 ** a security feature which is recommended for all 
@@ -5009,7 +5013,9 @@ int sqlite3_create_window_function(
 ** prevents an attacker from adding triggers and views to a schema then 
 ** tricking a high-privilege application into causing unintended side-effects
 ** while performing ordinary queries.
+** </dd>
 **
+** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
 ** The SQLITE_SUBTYPE flag indicates to SQLite that a function may call
 ** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
 ** Specifying this flag makes no difference for scalar or aggregate user
@@ -5017,8 +5023,20 @@ int sqlite3_create_window_function(
 ** function, then any sub-types belonging to arguments passed to the window
 ** function may be discarded before the window function is called (i.e.
 ** sqlite3_value_subtype() will always return 0).
+** </dd>
+**
+** [[SQLITE_TESTONLY]] <dt>SQLITE_TESTONLY</dt><dd>
+** The SQLITE_TESTONLY flag indicates that this function is intended for
+** testing purposes only.  The function will not be available to ordinary
+** applications.  A function tagged with SQLITE_TESTONLY is only accessible
+** on database connection D if the 
+** [sqlite3_test_control]([SQLITE_TESTCTRL_INTERNAL_FUNCTIONS],D) API call
+** has been invoked.
+** </dd>
+** </dl>
 */
 #define SQLITE_DETERMINISTIC    0x000000800
+#define SQLITE_TESTONLY         0x000040000
 #define SQLITE_DIRECTONLY       0x000080000
 #define SQLITE_SUBTYPE          0x000100000
 

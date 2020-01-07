@@ -4356,11 +4356,12 @@ static void rtreecheck(
 */
 int sqlite3RtreeInit(sqlite3 *db){
   const int utf8 = SQLITE_UTF8;
+  const int eTest = SQLITE_UTF8|SQLITE_TESTONLY;
   int rc;
 
-  rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
+  rc = sqlite3_create_function(db, "rtreenode", 2, eTest, 0, rtreenode, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
+    rc = sqlite3_create_function(db, "rtreedepth", 1, eTest, 0,rtreedepth, 0,0);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "rtreecheck", -1, utf8, 0,rtreecheck, 0,0);

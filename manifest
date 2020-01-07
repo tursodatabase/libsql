@@ -1,5 +1,5 @@
-C Add\san\s"||\sCORRUPT_DB"\sterm\sto\san\sassert()\sstatement\sinside\sof\sbtree.
-D 2020-01-07T13:32:15.559
+C Provide\sthe\sability\sto\stag\san\sapplication-defined\sfunction\sas\s"testonly".
+D 2020-01-07T14:51:54.485
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -381,7 +381,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 4f176fa4d954997e8880f8b75e15b578765b4f471e359b73020b3d4e1defe958
-F ext/rtree/rtree.c 84b939a9a558edd0461bb976b98f60012e3e574b3b17a0f44533d6f2a9aa2f2e
+F ext/rtree/rtree.c 1430dc665d88db7646f08c470e4f0792d93c66030f5a608e2dbdf2a750e76c82
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 4092a8bd2b5eafc4fafe4fe9024249c12b13e4bab23c2c3eaff57412fdf805fa
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -390,10 +390,10 @@ F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd
 F ext/rtree/rtree5.test 49c9041d713d54560b315c2c7ef7207ee287eba1b20f8266968a06f2e55d3142
 F ext/rtree/rtree6.test 1252a0439da01d2f1f5cbbdeeb80455a2d68b9bae2a9787937b167a5e3957828
 F ext/rtree/rtree7.test c8fb2e555b128dd0f0bdb520c61380014f497f8a23c40f2e820acc9f9e4fdce5
-F ext/rtree/rtree8.test 2d99006a1386663978c9e1df167554671e4f711c419175b39f332719deb1ce0e
+F ext/rtree/rtree8.test bca416eccaad61d35ff5e8b2d3e4583aed19e310d8b232828326a2828d8c858a
 F ext/rtree/rtree9.test c646f12c8c1c68ef015c6c043d86a0c42488e2e68ed1bb1b0771a7ca246cbabf
 F ext/rtree/rtreeA.test ed2f1be9c06dde0b1ab93a95dd9e87eeaa02db2d30bcb4b9179b69ee3dc3319b
-F ext/rtree/rtreeB.test 4cec297f8e5c588654bbf3c6ed0903f10612be8a2878055dd25faf8c71758bc9
+F ext/rtree/rtreeB.test cfa9b5f11324ffcbcb9ad105f42ebf520de1bfd446d70093735399892fd5a969
 F ext/rtree/rtreeC.test 6aa87eba4d9a3003b941a1ba77db259c5cabc3fd92fc5a6360f5369520eb9a4d
 F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c4a1100dc
 F ext/rtree/rtreeE.test e65d3fc625da1800b412fc8785817327d43ccfec5f5973912d8c9e471928caa9
@@ -492,7 +492,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 5ba8fd376f539240939ae76b5bc9fa7ad9a0d86e9914ecd11eb7002204138c11
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
-F src/main.c 07b5259e712bc479f0d7b51feaceab6ae3a4e08019a7ddad004562d56c317701
+F src/main.c 5e747e0ca41e909290656f4162b8acff7d2dfa3bbc733e8b77c20c1d96748682
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -530,7 +530,7 @@ F src/resolve.c 31dc20837034491e5a043f411425a507b306ceedf40d666af5fc87b13020ff3d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 80d1aac7017824b803c8e6bdb75f699e11aef22e02d29d206a523d8a3dcf2a13
 F src/shell.c.in 90b002bf0054399cbbfac62dd752a9b05770427ba141bcba75eefbb0098f4280
-F src/sqlite.h.in 51f69c62ba3e980aca1e39badcaf9ad13f008774fe1bb8e7f57e3e456c656670
+F src/sqlite.h.in 5cd0a9351c6ed001b5c3762c7da066dafdce981e6c117b49e1611fc2ee442796
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
 F src/sqliteInt.h a694b38db1748007390cbafcaba56d5379203c23ab5ae7d3a538f367e8638102
@@ -1853,7 +1853,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1f12978b53683114ab0ef0e84a14dd4fabc72750b214aac19cd9da22a582a27
-R 07b7096e26b431d07883fc9cbfc33796
+P 03c1d75ddc063469fc856114595bd12d21759fe0979ce1ba1cf52e48e6b0d4a1
+R 1201c35309900aa49e778692bb33d5b1
+T *branch * testonly-functions
+T *sym-testonly-functions *
+T -sym-trunk *
 U drh
-Z a639f54f6a0a3a7af89209b4839be8ff
+Z c692af5f6fb061589b3b56c48bda22f6

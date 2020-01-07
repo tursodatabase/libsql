@@ -1757,8 +1757,12 @@ int sqlite3CreateFunc(
   }
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
+  assert( SQLITE_FUNC_INTERNAL==SQLITE_TESTONLY );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
-  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|SQLITE_SUBTYPE);
+  extraFlags = enc &  (SQLITE_DETERMINISTIC|
+                       SQLITE_DIRECTONLY|
+                       SQLITE_TESTONLY|
+                       SQLITE_SUBTYPE);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
   
 #ifndef SQLITE_OMIT_UTF16

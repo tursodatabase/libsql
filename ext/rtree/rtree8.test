@@ -147,6 +147,7 @@ do_catchsql_test rtree8-3.1 {
 #-------------------------------------------------------------------------
 # Test a couple of invalid arguments to rtreedepth().
 #
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 do_catchsql_test rtree8-4.1 {
   SELECT rtreedepth('hello world')
 } {1 {Invalid argument to rtreedepth()}}

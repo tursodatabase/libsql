@@ -19,6 +19,7 @@ source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
 
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 ifcapable rtree_int_only {
   do_test rtreeB-1.1-intonly {
     db eval {
