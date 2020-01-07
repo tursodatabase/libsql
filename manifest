@@ -1,5 +1,5 @@
-C In\sthe\stypeof()\soptimization\sin\sOP_Column,\sexpand\sthe\ssize\sof\sthe\sbogus\sbuffer\nprovided\sfor\sdata\sso\sthat\sit\sis\sbig\senough\sto\scover\sthe\sincreased\snumber\sof\nbytes\sdisplayed\sduring\sregister\stracing\sfrom\scheck-in\s[54553bf16fabd72d].\nThis\sis\sthe\scorrect\sfix\sfor\sticket\s[bbd55a97e66ff50d],\sthough\sthe\searlier\sone\ndoes\snot\shurt\sand\sis\suseful\sto\sretain.
-D 2020-01-06T20:48:45.185
+C Fix\san\sinstance\sof\san\sundefined\sbehaviour\s(a\sleft-shift\sof\sa\s64-bit\sunsigned\sinteger\sby\sa\svalue\sgreater\sthan\s64)\sthat\scould\soccur\sin\sfts3.
+D 2020-01-07T09:06:43.774
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -90,7 +90,7 @@ F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c d62e40baa6a200586c3a425478109418f44926b1c318c870b59a4286afbe2795
+F ext/fts3/fts3_snippet.c 052b35ad746349ffb53820379bacdb23ff3ac60d3cc13d986e56d42822ef5a9a
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
 F ext/fts3/fts3_test.c 73b16e229e517c1b1f0fb8e1046182a4e5dbc8dbe6eea8a5d4353fcce7dbbf39
 F ext/fts3/fts3_tokenize_vtab.c 1de9a61acfa2a0445ed989310c31839c57f6b6086dd9d5c97177ae734a17fd8b
@@ -970,7 +970,7 @@ F test/fts3query.test ca033ff2ebcc22c69d89032fb0bc1850997d31e7e60ecd26440796ba16
 F test/fts3rank.test cd99bc83a3c923c8d52afd90d86979cf05fc41849f892faeac3988055ef37b99
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
-F test/fts3snippet.test 430bb5ace2b31ccd99de4d71775d956da832c114c4b3e39589748f114458647c
+F test/fts3snippet.test d9b9f4b717584040fb56df1dacab53acd474958e9c1d00b073d10726695cea0c
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test a663f4cac22a9505400bc22aacb818d7055240409c28729669ea7d4cc2120d15
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69f6a7e42f42116d29514239575ee1dc381b5b673da012cb5f3e8cf17922d493
-R 8a01d72e62ed5b6ad34904a406c3020b
-U drh
-Z bd814d1b53e200a1f1e9215f7d5122fb
+P e1154c39ba0f8caec70d330e6d5bec745c93ec9a7eafedb3e3730fadc8b8277c
+R ae7ece5100c9bad1eb3afea8cc48fa0a
+U dan
+Z c119ee3723dd037b7a23ed53e0fbca66
