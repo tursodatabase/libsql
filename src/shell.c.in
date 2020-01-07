@@ -7173,7 +7173,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
         { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
-        { "untrusted_schema",   SQLITE_DBCONFIG_UNTRUSTED_SCHEMA      },
+        { "trusted_schema",     SQLITE_DBCONFIG_TRUSTED_SCHEMA        },
         { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
     };
     int ii, v;

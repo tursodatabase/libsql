@@ -891,7 +891,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
          && !IN_RENAME_OBJECT
         ){
           if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
-           || (pParse->db->flags & SQLITE_UnsafeSchema)!=0
+           || (pParse->db->flags & SQLITE_TrustedSchema)==0
           ){
             /* Functions prohibited in triggers and views if:
             **     (1) tagged with SQLITE_DIRECTONLY

@@ -1581,7 +1581,7 @@ struct sqlite3 {
 #define SQLITE_CkptFullFSync  0x00000010  /* Use full fsync for checkpoint */
 #define SQLITE_CacheSpill     0x00000020  /* OK to spill pager cache */
 #define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
-#define SQLITE_UnsafeSchema   0x00000080  /* Disallow unsafe functions and
+#define SQLITE_TrustedSchema  0x00000080  /* Allow unsafe functions and
                                           ** vtabs in the schema definition */
 #define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */

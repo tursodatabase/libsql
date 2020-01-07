@@ -2265,14 +2265,13 @@ struct sqlite3_mem_methods {
 ** compile-time option.
 ** </dd>
 **
-** [[SQLITE_DBCONFIG_UNTRUSTED_SCHEMA]]
-** <dt>SQLITE_DBCONFIG_UNTRUSTED_SCHEMA</td>
-** <dd>The SQLITE_DBCONFIG_UNTRUSTED_SCHEMA option tells the SQLite 
-** database connection that the schemas of the database files it reads
-** might contain malicious corruption intended to harm the application.
-** When the SQLITE_DBCONFIG_UNTRUSTED_SCHEMA option is enabled, SQLite
-** takes additional defensive steps including, but not limited to, the
-** following:
+** [[SQLITE_DBCONFIG_TRUSTED_SCHEMA]]
+** <dt>SQLITE_DBCONFIG_TRUSTED_SCHEMA</td>
+** <dd>The SQLITE_DBCONFIG_TRUSTED_SCHEMA option tells the SQLite to
+** assume that database schemas are untainted by malicious content.
+** When the SQLITE_DBCONFIG_TRUSTED_SCHEMA option is disabled, SQLite
+** takes additional defensive steps to protect the application from harm
+** including, but not limited to, the following:
 ** <ul>
 ** <li> Prohibit the use of SQL functions inside triggers, views,
 ** CHECK constraints, DEFAULT VALUEs, index definitions, and/or
@@ -2281,8 +2280,8 @@ struct sqlite3_mem_methods {
 ** <li> Pohibit the use of virtual tables inside of triggers and/or views
 ** unless those virtual tables are tagged with [SQLITE_VTAB_INNOCUOUS].
 ** </ul>
-** This setting defaults to "off" for legacy compatibility, however
-** all applications are advised to turn it on if possible.
+** This setting defaults to "on" for legacy compatibility, however
+** all applications are advised to turn it off if possible.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_LEGACY_FILE_FORMAT]]
@@ -2325,7 +2324,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_DQS_DDL               1014 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
-#define SQLITE_DBCONFIG_UNTRUSTED_SCHEMA      1017 /* int int* */
+#define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
 #define SQLITE_DBCONFIG_MAX                   1017 /* Largest DBCONFIG */
 
 /*
