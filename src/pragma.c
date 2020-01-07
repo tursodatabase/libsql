@@ -1107,7 +1107,7 @@ void sqlite3Pragma(
 #endif
 
       if( sqlite3GetBoolean(zRight, 0) ){
-        db->flags |= mask;
+        db->flags |= (mask & ~(SQLITE_TrustedSchema));
       }else{
         db->flags &= ~mask;
         if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
