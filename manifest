@@ -1,5 +1,5 @@
-C Fix\san\sinstance\sof\san\sundefined\sbehaviour\s(a\sleft-shift\sof\sa\s64-bit\sunsigned\sinteger\sby\sa\svalue\sgreater\sthan\s64)\sthat\scould\soccur\sin\sfts3.
-D 2020-01-07T09:06:43.774
+C Add\san\s"||\sCORRUPT_DB"\sterm\sto\san\sassert()\sstatement\sinside\sof\sbtree.
+D 2020-01-07T13:32:15.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ac383ca583c07a5cca21c0d1bb692451d048332d231dd0e0ac9f5c46315674b0
+F src/btree.c 68dc49062f5ee261b971157e8db2ca4e290555c872c978eadc1b5441a9c58360
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
 F src/build.c 67b1a8d3ac700747687dbdc49ded847a3c17fef450a8c919ac0399b44cbd4215
@@ -1018,7 +1018,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db e7a86fd83dda151d160445d542e32e5c6019c541b3a74c2a525b6ac640639711
-F test/fuzzdata8.db f747246bddfff9ca89e59e5d3eda5490fabaccbf3cf2385cad47ee9f82f20e43
+F test/fuzzdata8.db 7816165a0e5d5deec593a519cd1f527a2a9efd0a3f7d00c232d8e9f29a2c0acd
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1154c39ba0f8caec70d330e6d5bec745c93ec9a7eafedb3e3730fadc8b8277c
-R ae7ece5100c9bad1eb3afea8cc48fa0a
-U dan
-Z c119ee3723dd037b7a23ed53e0fbca66
+P e1f12978b53683114ab0ef0e84a14dd4fabc72750b214aac19cd9da22a582a27
+R 07b7096e26b431d07883fc9cbfc33796
+U drh
+Z a639f54f6a0a3a7af89209b4839be8ff

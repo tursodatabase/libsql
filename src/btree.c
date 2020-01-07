@@ -2137,11 +2137,11 @@ static MemPage *btreePageLookup(BtShared *pBt, Pgno pgno){
 ** error, return ((unsigned int)-1).
 */
 static Pgno btreePagecount(BtShared *pBt){
-  return pBt->nPage;
+  assert( (pBt->nPage & 0x80000000)==0 || CORRUPT_DB );
+  return pBt->nPage & 0x7fffffff;
 }
 u32 sqlite3BtreeLastPage(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( ((p->pBt->nPage)&0x80000000)==0 );
   return btreePagecount(p->pBt);
 }
 
