@@ -560,7 +560,7 @@ static int fts3BestSnippet(
     /* Set the *pmSeen output variable. */
     for(i=0; i<nList; i++){
       if( sIter.aPhrase[i].pHead ){
-        *pmSeen |= (u64)1 << i;
+        *pmSeen |= (u64)1 << (i%64);
       }
     }
 

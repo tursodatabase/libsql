@@ -87,7 +87,6 @@ const unsigned char sqlite3UpperToLower[] = {
 ** non-ASCII UTF character. Hence the test for whether or not a character is
 ** part of an identifier is 0x46.
 */
-#ifdef SQLITE_ASCII
 const unsigned char sqlite3CtypeMap[256] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* 00..07    ........ */
   0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,  /* 08..0f    ........ */
@@ -125,7 +124,6 @@ const unsigned char sqlite3CtypeMap[256] = {
   0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,  /* f0..f7    ........ */
   0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40   /* f8..ff    ........ */
 };
-#endif
 
 /* EVIDENCE-OF: R-02982-34736 In order to maintain full backwards
 ** compatibility for legacy applications, the URI filename capability is
