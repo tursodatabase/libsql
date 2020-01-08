@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\slogic\sin\sthe\sconstant-propagation\soptimization.
-D 2020-01-08T04:36:01.255
+C Improvements\sto\sthe\sdocumentation\sof\ssqlite3_create_collation().
+D 2020-01-08T10:57:27.234
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,7 +530,7 @@ F src/resolve.c 31dc20837034491e5a043f411425a507b306ceedf40d666af5fc87b13020ff3d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c de96e8a24dd273c472a9b4d89ba06014e81a218533a8b82fb8bbe2b3a94f6824
 F src/shell.c.in 90b002bf0054399cbbfac62dd752a9b05770427ba141bcba75eefbb0098f4280
-F src/sqlite.h.in 51f69c62ba3e980aca1e39badcaf9ad13f008774fe1bb8e7f57e3e456c656670
+F src/sqlite.h.in 172a88e0d1e42f7d10cb8865d6f51c3b8fcc024ac9206806057da7a8b0c646b8
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
 F src/sqliteInt.h a694b38db1748007390cbafcaba56d5379203c23ab5ae7d3a538f367e8638102
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6db1c3498f6bfa01bb460e62b802b63ec4bf43577a17a94e1e2fa0ecc1e64960
-R 908e9b415e0afc1e46568c64091702de
+P 1c3e5c20a9e6f501befa2bf6241a1b5190872bd83b765dac67065d252d04ea4f
+R f8f6e015cbee0709d3024aa38c2bae8d
 U drh
-Z 5f7619ce8d00e18add0895da7f50a1e5
+Z 2e45dbcb0f64d56dfc8c6496a2fa9306
