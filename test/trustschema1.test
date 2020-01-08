@@ -41,4 +41,38 @@ do_catchsql_test 1.140 {
   SELECT a, b, c FROM t1;
 } {1 {unsafe use of f2()}}
 
+do_catchsql_test 1.200 {
+  CREATE TABLE t2(a,b,c,CHECK(f3(c)==c));
+} {1 {unsafe use of f3()}}
+do_catchsql_test 1.210 {
+  PRAGMA trusted_schema=Off;
+  CREATE TABLE t2(a,b,c,CHECK(f2(c)==c));
+} {1 {unsafe use of f2()}}
+do_catchsql_test 1.211 {
+  PRAGMA trusted_schema=On;
+  CREATE TABLE t2(a,b,c,CHECK(f2(c)==c));
+} {0 {}}
+do_catchsql_test 1.220 {
+  INSERT INTO t2 VALUES(1,2,3);
+  SELECT * FROM t2;
+} {0 {1 2 3}}
+do_catchsql_test 1.230 {
+  PRAGMA trusted_schema=off;
+  INSERT INTO t2 VALUES(4,5,6);
+} {1 {unsafe use of f2()}}
+do_execsql_test 1.231 {
+  SELECT * FROM t2;
+} {1 2 3}
+
+do_catchsql_test 1.300 {
+  CREATE TABLE t3(a,b DEFAULT(f2(25)));
+} {0 {}}
+do_catchsql_test 1.310 {
+  PRAGMA trusted_schema=Off;
+  INSERT INTO t3(a) VALUES(1);
+} {1 {unsafe use of f2()}}
+do_catchsql_test 1.311 {
+  INSERT INTO t3(a,b) VALUES(1,2);
+} {0 {}}
+
 finish_test

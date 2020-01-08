@@ -990,9 +990,8 @@ void sqlite3ExprFunctionUsable(
   FuncDef *pDef          /* The function being invoked */
 ){
   assert( !IN_RENAME_OBJECT );
-  if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
-   && ExprHasProperty(pExpr, EP_FromDDL)
-  ){
+  assert( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0 );
+  if( ExprHasProperty(pExpr, EP_FromDDL) ){
     if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
      || (pParse->db->flags & SQLITE_TrustedSchema)==0
     ){
@@ -4112,8 +4111,9 @@ expr_code_doover:
         assert( (pDef->funcFlags & SQLITE_FUNC_DIRECT)==0 );
         return exprCodeInlineFunction(pParse, pFarg,
              SQLITE_PTR_TO_INT(pDef->pUserData), target);
+      }else if( pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE) ){
+        sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
       }
-      sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
 
       for(i=0; i<nFarg; i++){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
@@ -5778,7 +5778,6 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             }else{
               pItem->iDistinct = -1;
             }
-            sqlite3ExprFunctionUsable(pParse, pExpr, pItem->pFunc);
           }
         }
         /* Make pExpr point to the appropriate pAggInfo->aFunc[] entry

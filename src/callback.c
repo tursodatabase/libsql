@@ -288,12 +288,13 @@ static int matchQuality(
   u8 enc          /* Desired text encoding */
 ){
   int match;
-
-  /* nArg of -2 is a special case */
-  if( nArg==(-2) ) return (p->xSFunc==0) ? 0 : FUNC_PERFECT_MATCH;
+  assert( p->nArg>=-1 );
 
   /* Wrong number of arguments means "no match" */
-  if( p->nArg!=nArg && p->nArg>=0 ) return 0;
+  if( p->nArg!=nArg ){
+    if( nArg==(-2) ) return (p->xSFunc==0) ? 0 : FUNC_PERFECT_MATCH;
+    if( p->nArg>=0 ) return 0;
+  }
 
   /* Give a better score to a function with a specific number of arguments
   ** than to function that accepts any number of arguments. */

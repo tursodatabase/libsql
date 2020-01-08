@@ -888,6 +888,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** used to activate internal functionsn for testing purposes */
           no_such_func = 1;
           pDef = 0;
+        }else
+        if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
+         && !IN_RENAME_OBJECT
+        ){
+          sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
         }
       }
 
