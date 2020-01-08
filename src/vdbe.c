@@ -499,7 +499,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
     }else{
       c = 's';
     }
-    sqlite3_str_appendf(pStr, "%cx", c);
+    sqlite3_str_appendf(pStr, "%cx[", c);
     for(i=0; i<25 && i<pMem->n; i++){
       sqlite3_str_appendf(pStr, "%02X", ((int)pMem->z[i] & 0xFF));
     }
