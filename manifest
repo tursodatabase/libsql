@@ -1,5 +1,5 @@
-C Fix\sthe\srot13.c\sextension\sto\sbe\sdeterministic.\s\sAdd\sthe\snoop.c\sextension.
-D 2020-01-08T15:43:29.452
+C Provide\sthe\s-innocuous\soption\sto\sthe\s"db\sfunc"\smethod\sin\sthe\sTCL\sinterface.
+D 2020-01-08T15:44:10.295
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/sqliteInt.h 8c1fcdad7418c87cd482d2868610ed299e0201091e247598495e92e9c5d8e8
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 8cd2600e8de23dff6cdf84d39f46ca57139b061b28f6f80b166bace17d52ab1c
+F src/tclsqlite.c f2dae14bfe7a35c94b6d515df88071014678ec39dafebdcf8e6bde91d62516c1
 F src/test1.c 4d0ab2f67053a4fff87d1d3586ecc0e5322a1fc45dd4119ab11dc96de44f17a1
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1854,7 +1854,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe7472fd2a70b4df6cb62041b72ed1638ba27ed1e6ceb8aaf56d1c8a82d91889
-R ac5937459d1f32e763d72ee868f7675e
+P a679122ca8ec95d5c8afba3a1a50170db9dd519a3810e56877b8f56e858d0175
+R 9fbba3111d220dbea3ef9c5770ac6cef
 U drh
-Z 35839f6156af9b997f99a45283c98dee
+Z fc531ff60387ab6488432d4541dd29bf
