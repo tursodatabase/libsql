@@ -411,6 +411,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }else{
     int i;
     incr = 2;
+    length &= ~1;
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     testcase( enc==SQLITE_UTF16LE );
     testcase( enc==SQLITE_UTF16BE );
