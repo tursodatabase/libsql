@@ -1430,7 +1430,7 @@ do_test func-33.1 {
 do_catchsql_test func-33.2 {
   CREATE VIEW v33(y) AS SELECT testdirectonly(15);
   SELECT * FROM v33;
-} {1 {testdirectonly() prohibited in triggers and views}}
+} {1 {unsafe use of testdirectonly()}}
 do_execsql_test func-33.3 {
   SELECT * FROM (SELECT testdirectonly(15)) AS v33;
 } {30}
@@ -1441,7 +1441,7 @@ do_execsql_test func-33.4 {
 do_catchsql_test func-33.5 {
   WITH c(x) AS (SELECT * FROM v33)
   SELECT * FROM c;
-} {1 {testdirectonly() prohibited in triggers and views}}
+} {1 {unsafe use of testdirectonly()}}
 do_execsql_test func-33.10 {
   CREATE TABLE t33a(a,b);
   CREATE TABLE t33b(x,y);
@@ -1451,7 +1451,7 @@ do_execsql_test func-33.10 {
 } {}
 do_catchsql_test func-33.11 {
   INSERT INTO t33a VALUES(1,2);
-} {1 {testdirectonly() prohibited in triggers and views}}
+} {1 {unsafe use of testdirectonly()}}
 do_execsql_test func-33.20 {
   ALTER TABLE t33a RENAME COLUMN a TO aaa;
   SELECT sql FROM sqlite_master WHERE name='r1';

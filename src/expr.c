@@ -974,6 +974,41 @@ Expr *sqlite3ExprFunction(
 }
 
 /*
+** Check to see if a function is usable according to current access
+** rules:
+**
+**    SQLITE_FUNC_DIRECT    -     Only usable from top-level SQL
+**
+**    SQLITE_FUNC_UNSAFE    -     Usable if TRUSTED_SCHEMA or from
+**                                top-level SQL
+**
+** If the function is not usable, create an error.
+*/
+void sqlite3ExprFunctionUsable(
+  Parse *pParse,         /* Parsing and code generating context */
+  Expr *pExpr,           /* The function invocation */
+  FuncDef *pDef          /* The function being invoked */
+){
+  assert( !IN_RENAME_OBJECT );
+  if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
+   && ExprHasProperty(pExpr, EP_FromDDL)
+  ){
+    if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
+     || (pParse->db->flags & SQLITE_TrustedSchema)==0
+    ){
+      /* Functions prohibited in triggers and views if:
+      **     (1) tagged with SQLITE_DIRECTONLY
+      **     (2) not tagged with SQLITE_INNOCUOUS (which means it
+      **         is tagged with SQLITE_FUNC_UNSAFE) and 
+      **         SQLITE_DBCONFIG_TRUSTED_SCHEMA is off (meaning
+      **         that the schema is possibly tainted).
+      */
+      sqlite3ErrorMsg(pParse, "unsafe use of %s()", pDef->zName);
+    }
+  }
+}
+
+/*
 ** Assign a variable number to an expression that encodes a wildcard
 ** in the original SQL statement.  
 **
@@ -4073,9 +4108,12 @@ expr_code_doover:
         break;
       }
       if( pDef->funcFlags & SQLITE_FUNC_INLINE ){
+        assert( (pDef->funcFlags & SQLITE_FUNC_UNSAFE)==0 );
+        assert( (pDef->funcFlags & SQLITE_FUNC_DIRECT)==0 );
         return exprCodeInlineFunction(pParse, pFarg,
              SQLITE_PTR_TO_INT(pDef->pUserData), target);
       }
+      sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
 
       for(i=0; i<nFarg; i++){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
@@ -5740,6 +5778,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             }else{
               pItem->iDistinct = -1;
             }
+            sqlite3ExprFunctionUsable(pParse, pExpr, pItem->pFunc);
           }
         }
         /* Make pExpr point to the appropriate pAggInfo->aFunc[] entry

@@ -1,0 +1,44 @@
+# 2020-01-08
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Test cases for managing execution of code snippets found in untrusted
+# schemas.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix trustschema1
+
+
+proc f1 {x} {return $x}
+do_test 1.100 {
+  db function f1 -innocuous -deterministic f1
+  db function f2 -deterministic f1
+  db function f3 -directonly -deterministic f1
+  db eval {
+    CREATE TABLE t1(a, b AS (f1(a+1)), c AS (f2(a+2)));
+    INSERT INTO t1 VALUES(100),(200);
+  }
+} {}
+do_catchsql_test 1.110 {
+  SELECT a, b, c FROM t1;
+} {0 {100 101 102 200 201 202}}
+do_execsql_test 1.120 {
+  PRAGMA trusted_schema=OFF;
+} {}
+do_catchsql_test 1.130 {
+  SELECT a, b FROM t1;
+} {0 {100 101 200 201}}
+do_catchsql_test 1.140 {
+  SELECT a, b, c FROM t1;
+} {1 {unsafe use of f2()}}
+
+finish_test
