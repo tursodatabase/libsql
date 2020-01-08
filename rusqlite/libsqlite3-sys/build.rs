@@ -206,6 +206,13 @@ mod build_linked {
         if cfg!(all(feature = "vcpkg", target_env = "msvc")) {
             println!("cargo:rerun-if-env-changed=VCPKGRS_DYNAMIC");
         }
+
+        // dependents can access `DEP_SQLITE3_LINK_TARGET` (`sqlite3` being the
+        // `links=` value in our Cargo.toml) to get this value. This might be
+        // useful if you need to ensure whatever crypto library sqlcipher relies
+        // on is available, for example.
+        println!("cargo:link-target={}", link_lib);
+
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
             // Try to use pkg-config to determine link commands
