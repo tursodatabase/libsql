@@ -56,5 +56,29 @@ for {set i 1} {$i<20000} {incr i} {
   } {1}
 }
 
+# 2020-01-08 ticket 9eda2697f5cc1aba
+# When running sqlite3AtoF() on a blob with an odd number of bytes using
+# UTF16, ignore the last byte so that the string has an integer number of
+# UTF16 code points.
+#
+reset_db
+do_execsql_test atof1-2.10 {
+  PRAGMA encoding = 'UTF16be';
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1(rowid,a) VALUES (1,x'00'),(2,3);
+  SELECT substr(a,',') is true FROM t1 ORDER BY rowid;
+} {0 1}
+do_execsql_test atof1-2.20 {
+  SELECT substr(a,',') is true FROM t1 ORDER BY rowid DESC;
+} {1 0}
+do_execsql_test atof1-2.30 {
+  CREATE INDEX i1 ON t1(a);
+  SELECT count(*) FROM t1 WHERE substr(a,',');
+} {1}
+
+
+
+
+
 
 finish_test
