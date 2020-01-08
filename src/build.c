@@ -1404,8 +1404,9 @@ void sqlite3AddDefaultValue(
   sqlite3 *db = pParse->db;
   p = pParse->pNewTable;
   if( p!=0 ){
+    int isInit = db->init.busy && db->init.iDb!=1;
     pCol = &(p->aCol[p->nCol-1]);
-    if( !sqlite3ExprIsConstantOrFunction(pExpr, db->init.busy) ){
+    if( !sqlite3ExprIsConstantOrFunction(pExpr, isInit) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
