@@ -1,5 +1,5 @@
-C Minor\sformatting\schanges\sin\sthe\strusted-schema.md\sdocument.
-D 2020-01-09T15:18:08.637
+C Fix\sminor\stypos\sin\sthe\strusted-schema.md\sdocument.
+D 2020-01-09T16:00:08.934
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -40,7 +40,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
-F doc/trusted-schema.md 85ce619aa1c7234931b7a9ee681ae1ebc781ade512a61ca03f0248f473c8dbaa
+F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
@@ -1856,7 +1856,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af7c1ed4f8a7293d0ecacca3cfbe9414e0de5ec40b418ce7831b8dc724feb747
-R b5a1b0709d80497117a6d5aa63bfc530
+P 55553b5e5ece8282f6a56a6f5c71024eaaef3c86ec42203af3da708b0de3643b
+R 36e30271b935c30d68186edc80f5a0f4
 U drh
-Z 1bcdfac76412383a4c9029e5fef7a395
+Z e885b154077129671d15d2a44722704d

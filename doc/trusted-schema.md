@@ -32,11 +32,11 @@ should only be used from top-level SQL, not from within triggers or views nor
 in elements of the schema such as CHECK constraint, DEFAULT values, 
 generated columns, index expressions, or in the WHERE clause of a 
 partial index that are potentially under the control of an attacker.
-Normal elements be have like Innocuous if TRUSTED\_SCHEMA=on
+Normal elements behave like Innocuous if TRUSTED\_SCHEMA=on
 and behave like direct-only if TRUSTED\_SCHEMA=off.
 
 Application-defined functions and virtual tables go in as Normal unless
-the application takes deliberate stesp to change the risk level.
+the application takes deliberate steps to change the risk level.
 
 For backwards compatibility, the default is TRUSTED\_SCHEMA=on.  Documentation
 will be updated to recommend applications turn TRUSTED\_SCHEMA to off.
