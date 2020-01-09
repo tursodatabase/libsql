@@ -1,5 +1,5 @@
-C Merge\sin\sthe\suntrusted-schema\senhancements.\nSee\s[/doc/87aea3ab1cdda453/doc/trusted-schema.md|doc/trusted-schema.md]\nfor\sdetails.
-D 2020-01-09T20:44:37.128
+C Fix\sthe\sfossildelta.c\sextension\sso\sthat\sit\swill\scompile\son\smingw.
+D 2020-01-09T23:07:21.060
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -294,7 +294,7 @@ F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
 F ext/misc/fileio.c bfa11a207da4eed8e5f84a1e3954608492f25f8850f9f00d0d2076f4648d7608
-F ext/misc/fossildelta.c 3761bc206e1d52b6c43fd86efbf94d9f800d32c8323cf2b5d51104262bdd4dc0
+F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c eaffd9b364d7c8371727e9c43fc8bec38cdacc4d11fc26beffaa3ca05a0ea9d6
 F ext/misc/json1.c 2d44e3fa37f958b42cbcd41651f9f0a0eaaf3bac3f1f4b8eb456431623cb3bd8
@@ -1856,8 +1856,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 966964af1021feebc56cfda7b08bc787be7f447d682299f7958463aca30a73af 318ff7720bc60c30c0826becce424226e9cec25c1d59cb2cdb75793739322760
-R ec8956333831ac4459fab3e97cbd448b
-T +closed 318ff7720bc60c30c0826becce424226e9cec25c1d59cb2cdb75793739322760
+P 5720924cb07766cd54fb042da58f4b4acf12b60029fba86a23a606ad0d0f7c68
+R 33ee21636a28eaedc16cd7f6edbd34d5
 U drh
-Z 4b9d0a450dea6d3979baa9a1ef60417a
+Z 155299afba314b1b1094f9a549545ab0

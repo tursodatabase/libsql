@@ -1071,7 +1071,7 @@ int sqlite3_fossildelta_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
-  static const enc = SQLITE_UTF8|SQLITE_INNOCUOUS;
+  static const int enc = SQLITE_UTF8|SQLITE_INNOCUOUS;
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
