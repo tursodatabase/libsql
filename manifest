@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2020-01-09T20:33:13.567
+C Only\sregister\sthe\sfts3_tokenizer()\sfunction\susing\sa\ssingle\stext\sencoding.
+D 2020-01-09T20:33:36.080
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -94,7 +94,7 @@ F ext/fts3/fts3_snippet.c 052b35ad746349ffb53820379bacdb23ff3ac60d3cc13d986e56d4
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
 F ext/fts3/fts3_test.c 73b16e229e517c1b1f0fb8e1046182a4e5dbc8dbe6eea8a5d4353fcce7dbbf39
 F ext/fts3/fts3_tokenize_vtab.c 1de9a61acfa2a0445ed989310c31839c57f6b6086dd9d5c97177ae734a17fd8b
-F ext/fts3/fts3_tokenizer.c 4a36573c36fae7654de6fc56bd87f39d82100bb6db2cfd23d6e04d2a9c28d51d
+F ext/fts3/fts3_tokenizer.c 6d8fc150c48238955d5182bf661498db0dd473c8a2a80e00c16994a646fa96e7
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 4b9af6151c29b35ed09574937083cece7c31e911f69615e168a39677569b684d
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83dc55679a91bf5d1d13706088ce58eed02b9aad1ad0ae237966e78e0d769663
-R 56422d577197ed3f4272fc68cfc1ce64
+P edbf911fdeda14bd63cd752f6237896400eb5a65ef486abe7b91433621d21b5c
+R 5de0c500f4348137cfdd6d83ca68c4d0
 U drh
-Z d432289797cbfb153a4bc9ba44c1dee6
+Z 5f03761b5ba3e6acc7ad4fa15e74a7e4

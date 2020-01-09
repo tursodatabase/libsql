@@ -481,7 +481,7 @@ int sqlite3Fts3InitHashTable(
 ){
   int rc = SQLITE_OK;
   void *p = (void *)pHash;
-  const int any = SQLITE_ANY|SQLITE_DIRECTONLY;
+  const int any = SQLITE_UTF8|SQLITE_DIRECTONLY;
 
 #ifdef SQLITE_TEST
   char *zTest = 0;
