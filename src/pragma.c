@@ -307,7 +307,6 @@ static void pragmaFunclistLine(
 ){
   for(; p; p=p->pNext){
     const char *zType;
-    const char *zEnc;
     static const u32 mask = 
         SQLITE_DETERMINISTIC |
         SQLITE_DIRECTONLY |
@@ -315,6 +314,12 @@ static void pragmaFunclistLine(
         SQLITE_INNOCUOUS |
         SQLITE_FUNC_INTERNAL
     ;
+    static const char *azEnc[] = { 0, "utf8", "utf16le", "utf16be" };
+
+    assert( SQLITE_FUNC_ENCMASK==0x3 );
+    assert( strcmp(azEnc[SQLITE_UTF8],"utf8")==0 );
+    assert( strcmp(azEnc[SQLITE_UTF16LE],"utf16le")==0 );
+    assert( strcmp(azEnc[SQLITE_UTF16BE],"utf16be")==0 );
 
     if( p->xSFunc==0 ) continue;
     if( (p->funcFlags & SQLITE_FUNC_INTERNAL)!=0
@@ -329,16 +334,9 @@ static void pragmaFunclistLine(
     }else{
       zType = "s";
     }
-    if( p->funcFlags & SQLITE_UTF8 ){
-      zEnc = "utf8";
-    }else if( p->funcFlags & SQLITE_UTF16BE ){
-      zEnc = "utf16be";
-    }else{
-      zEnc = "utf16le";
-    }
     sqlite3VdbeMultiLoad(v, 1, "sissii",
        p->zName, isBuiltin,
-       zType, zEnc,
+       zType, azEnc[p->funcFlags&SQLITE_FUNC_ENCMASK],
        p->nArg,
        (p->funcFlags & mask) ^ SQLITE_INNOCUOUS
     );
