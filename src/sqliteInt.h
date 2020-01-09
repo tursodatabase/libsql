@@ -2968,6 +2968,7 @@ struct NameContext {
 #define NC_HasWin    0x08000  /* One or more window functions seen */
 #define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
 #define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
+#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_master */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT

@@ -876,7 +876,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }else{
           assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;
-          if( pExpr->op2 ) ExprSetProperty(pExpr, EP_FromDDL);
+          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
@@ -1884,6 +1884,11 @@ int sqlite3ResolveSelfReference(
     sSrc.a[0].zName = pTab->zName;
     sSrc.a[0].pTab = pTab;
     sSrc.a[0].iCursor = -1;
+    if( pTab->pSchema!=pParse->db->aDb[1].pSchema ){
+      /* Cause EP_FromDDL to be set on TK_FUNCTION nodes of non-TEMP
+      ** schema elements */
+      type |= NC_FromDDL;
+    }
   }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;
