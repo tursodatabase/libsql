@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\swindow.c\sthat\scould\sfail\swith\ssome\sobscure\sSELECT\sstatements\sthat\suse\swindow\sfunctions.
-D 2020-01-09T20:11:29.695
+C Fix\sa\sharmless\scompiler\swarning.
+D 2020-01-09T20:33:13.567
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 31dc20837034491e5a043f411425a507b306ceedf40d666af5fc87b13020ff3d
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c de96e8a24dd273c472a9b4d89ba06014e81a218533a8b82fb8bbe2b3a94f6824
+F src/select.c c88a3597dac910ba647b9bf2777395df7efc2f90d928ce01ef6920a33df27b78
 F src/shell.c.in 90b002bf0054399cbbfac62dd752a9b05770427ba141bcba75eefbb0098f4280
 F src/sqlite.h.in 172a88e0d1e42f7d10cb8865d6f51c3b8fcc024ac9206806057da7a8b0c646b8
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1853,7 +1853,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c76f1d8ec0937a2d2e4ce75f98494c953e9621db31945d7e44f45d90d1c3892
-R ffac5b4965945b4f5228b33ed0d4412f
-U dan
-Z 15dde77566cf35e66ee6ee4f50dfa225
+P 83dc55679a91bf5d1d13706088ce58eed02b9aad1ad0ae237966e78e0d769663
+R 56422d577197ed3f4272fc68cfc1ce64
+U drh
+Z d432289797cbfb153a4bc9ba44c1dee6

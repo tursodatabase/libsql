@@ -4172,10 +4172,10 @@ static void constInsert(
   /* 2018-10-25 ticket [cf5ed20f]
   ** Make sure the same pColumn is not inserted more than once */
   for(i=0; i<pConst->nConst; i++){
-    const Expr *pExpr = pConst->apExpr[i*2];
-    assert( pExpr->op==TK_COLUMN );
-    if( pExpr->iTable==pColumn->iTable
-     && pExpr->iColumn==pColumn->iColumn
+    const Expr *pE2 = pConst->apExpr[i*2];
+    assert( pE2->op==TK_COLUMN );
+    if( pE2->iTable==pColumn->iTable
+     && pE2->iColumn==pColumn->iColumn
     ){
       return;  /* Already present.  Return without doing anything. */
     }
