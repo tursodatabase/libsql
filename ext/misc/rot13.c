@@ -105,8 +105,9 @@ int sqlite3_rot_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "rot13", 1, SQLITE_UTF8, 0,
-                               rot13func, 0, 0);
+  rc = sqlite3_create_function(db, "rot13", 1,
+                   SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
+                   0, rot13func, 0, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_collation(db, "rot13", SQLITE_UTF8, 0, rot13CollFunc);
   }

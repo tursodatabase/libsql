@@ -876,24 +876,23 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }else{
           assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;
+          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
          && (pParse->db->mDbFlags & DBFLAG_InternalFunc)==0
         ){
           /* Internal-use-only functions are disallowed unless the
-          ** SQL is being compiled using sqlite3NestedParse() */
+          ** SQL is being compiled using sqlite3NestedParse() or
+          ** the SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test-control has be
+          ** used to activate internal functionsn for testing purposes */
           no_such_func = 1;
           pDef = 0;
         }else
-        if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
-         && ExprHasProperty(pExpr, EP_Indirect)
+        if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
          && !IN_RENAME_OBJECT
         ){
-          /* Functions tagged with SQLITE_DIRECTONLY may not be used
-          ** inside of triggers and views */
-          sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
-                          pDef->zName);
+          sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
         }
       }
 
@@ -1885,6 +1884,11 @@ int sqlite3ResolveSelfReference(
     sSrc.a[0].zName = pTab->zName;
     sSrc.a[0].pTab = pTab;
     sSrc.a[0].iCursor = -1;
+    if( pTab->pSchema!=pParse->db->aDb[1].pSchema ){
+      /* Cause EP_FromDDL to be set on TK_FUNCTION nodes of non-TEMP
+      ** schema elements */
+      type |= NC_FromDDL;
+    }
   }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;

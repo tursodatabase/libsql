@@ -217,15 +217,17 @@ int sqlite3_uuid_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "uuid", 0, SQLITE_UTF8, 0,
+  rc = sqlite3_create_function(db, "uuid", 0, SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
                                sqlite3UuidFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "uuid_str", 1, SQLITE_UTF8, 0,
-                                 sqlite3UuidStrFunc, 0, 0);
+    rc = sqlite3_create_function(db, "uuid_str", 1, 
+                       SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
+                       0, sqlite3UuidStrFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "uuid_blob", 1, SQLITE_UTF8, 0,
-                                 sqlite3UuidBlobFunc, 0, 0);
+    rc = sqlite3_create_function(db, "uuid_blob", 1,
+                       SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
+                       0, sqlite3UuidBlobFunc, 0, 0);
   }
   return rc;
 }

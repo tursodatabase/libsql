@@ -1142,6 +1142,7 @@ typedef struct With With;
 ** A bit in a Bitmask
 */
 #define MASKBIT(n)   (((Bitmask)1)<<(n))
+#define MASKBIT64(n) (((u64)1)<<(n))
 #define MASKBIT32(n) (((unsigned int)1)<<(n))
 #define ALLBITS      ((Bitmask)-1)
 
@@ -1559,6 +1560,13 @@ struct sqlite3 {
 #define ENC(db)        ((db)->enc)
 
 /*
+** A u64 constant where the lower 32 bits are all zeros.  Only the
+** upper 32 bits are included in the argument.  Necessary because some
+** C-compilers still do not accept LL integer literals.
+*/
+#define HI(X)  ((u64)(X)<<32)
+
+/*
 ** Possible values for the sqlite3.flags.
 **
 ** Value constraints (enforced via assert()):
@@ -1573,9 +1581,8 @@ struct sqlite3 {
 #define SQLITE_CkptFullFSync  0x00000010  /* Use full fsync for checkpoint */
 #define SQLITE_CacheSpill     0x00000020  /* OK to spill pager cache */
 #define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
-#define SQLITE_CountRows      0x00000080  /* Count rows changed by INSERT, */
-                                          /*   DELETE, or UPDATE and return */
-                                          /*   the count using a callback. */
+#define SQLITE_TrustedSchema  0x00000080  /* Allow unsafe functions and
+                                          ** vtabs in the schema definition */
 #define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
 #define SQLITE_IgnoreChecks   0x00000200  /* Do not enforce check constraints */
@@ -1601,9 +1608,11 @@ struct sqlite3 {
 #define SQLITE_DqsDDL         0x20000000  /* dbl-quoted strings allowed in DDL*/
 #define SQLITE_DqsDML         0x40000000  /* dbl-quoted strings allowed in DML*/
 #define SQLITE_EnableView     0x80000000  /* Enable the use of views */
+#define SQLITE_CountRows      HI(0x00001) /* Count rows changed by INSERT, */
+                                          /*   DELETE, or UPDATE and return */
+                                          /*   the count using a callback. */
 
 /* Flags used only if debugging */
-#define HI(X)  ((u64)(X)<<32)
 #ifdef SQLITE_DEBUG
 #define SQLITE_SqlTrace       HI(0x0100000) /* Debug print SQL as it executes */
 #define SQLITE_VdbeListing    HI(0x0200000) /* Debug listings of VDBE progs */
@@ -1729,6 +1738,7 @@ struct FuncDestructor {
 **     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
 **     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
 **     SQLITE_FUNC_DIRECT    ==  SQLITE_DIRECTONLY from the API
+**     SQLITE_FUNC_UNSAFE    ==  SQLITE_INNOCUOUS
 **     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
@@ -1751,7 +1761,8 @@ struct FuncDestructor {
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 #define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
-#define SQLITE_FUNC_INLINE   0x00200000 /* Functions implemented in-line */
+#define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
+#define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
 
 /* Identifier numbers for each in-line function */
 #define INLINEFUNC_coalesce             0
@@ -1831,7 +1842,7 @@ struct FuncDestructor {
   {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define SFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8|SQLITE_DIRECTONLY, \
+  {nArg, SQLITE_UTF8|SQLITE_DIRECTONLY|SQLITE_FUNC_UNSAFE, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
   {nArg, SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
@@ -2056,9 +2067,16 @@ struct VTable {
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
   u8 bConstraint;           /* True if constraints are supported */
+  u8 eVtabRisk;             /* Riskiness of allowing hacker access */
   int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
 };
+
+/* Allowed values for VTable.eVtabRisk
+*/
+#define SQLITE_VTABRISK_Low          0
+#define SQLITE_VTABRISK_Normal       1
+#define SQLITE_VTABRISK_High         2
 
 /*
 ** The schema for each SQL table and view is represented in memory
@@ -2660,7 +2678,7 @@ struct Expr {
 #define EP_Static    0x8000000 /* Held in memory not obtained from malloc() */
 #define EP_IsTrue   0x10000000 /* Always has boolean value of TRUE */
 #define EP_IsFalse  0x20000000 /* Always has boolean value of FALSE */
-#define EP_Indirect 0x40000000 /* Contained within a TRIGGER or a VIEW */
+#define EP_FromDDL  0x40000000 /* Originates from sqlite_master */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2829,6 +2847,7 @@ struct SrcList {
       unsigned isCorrelated :1;  /* True if sub-query is correlated */
       unsigned viaCoroutine :1;  /* Implemented as a co-routine */
       unsigned isRecursive :1;   /* True for recursive reference in WITH */
+      unsigned fromDDL :1;       /* Comes from sqlite_master */
     } fg;
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
@@ -2949,6 +2968,7 @@ struct NameContext {
 #define NC_HasWin    0x08000  /* One or more window functions seen */
 #define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
 #define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
+#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_master */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3504,7 +3524,7 @@ typedef struct DbFixer DbFixer;
 struct DbFixer {
   Parse *pParse;      /* The parsing context.  Error messages written here */
   Schema *pSchema;    /* Fix items to this schema */
-  int bVarOnly;       /* Check for variable references only */
+  u8 bTemp;           /* True for TEMP schema entries */
   const char *zDb;    /* Make sure all objects are contained in this database */
   const char *zType;  /* Type of the container - used for error messages */
   const Token *pName; /* Name of the container - used for error messages */
@@ -4037,6 +4057,7 @@ void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
 Expr *sqlite3ExprAnd(Parse*,Expr*, Expr*);
 Expr *sqlite3ExprSimplifiedAndOr(Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
+void sqlite3ExprFunctionUsable(Parse*,Expr*,FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);

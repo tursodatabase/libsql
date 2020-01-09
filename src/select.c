@@ -4970,7 +4970,15 @@ static int selectExpander(Walker *pWalker, Select *p){
         assert( pFrom->pSelect==0 );
         if( pTab->pSelect && (db->flags & SQLITE_EnableView)==0 ){
           sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
-              pTab->zName);
+            pTab->zName);
+        }
+        if( IsVirtual(pTab)
+         && pFrom->fg.fromDDL
+         && ALWAYS(pTab->pVTable!=0)
+         && pTab->pVTable->eVtabRisk > ((db->flags & SQLITE_TrustedSchema)!=0)
+        ){
+          sqlite3ErrorMsg(pParse, "unsafe use of virtual table \"%s\"",
+                                  pTab->zName);
         }
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         nCol = pTab->nCol;

@@ -2818,6 +2818,7 @@ deserialize_error:
   **         --argcount N           Function has exactly N arguments
   **         --deterministic        The function is pure
   **         --directonly           Prohibit use inside triggers and views
+  **         --innocuous            Has no side effects or information leaks
   **         --returntype TYPE      Specify the return type of the function
   */
   case DB_FUNCTION: {
@@ -2854,6 +2855,9 @@ deserialize_error:
       if( n>1 && strncmp(z, "-directonly",n)==0 ){
         flags |= SQLITE_DIRECTONLY;
       }else
+      if( n>1 && strncmp(z, "-innocuous",n)==0 ){
+        flags |= SQLITE_INNOCUOUS;
+      }else
       if( n>1 && strncmp(z, "-returntype", n)==0 ){
         const char *azType[] = {"integer", "real", "text", "blob", "any", 0};
         assert( SQLITE_INTEGER==1 && SQLITE_FLOAT==2 && SQLITE_TEXT==3 );
@@ -2870,7 +2874,7 @@ deserialize_error:
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
             "\": must be -argcount, -deterministic, -directonly,"
-            " or -returntype", (char*)0
+            " -innocuous, or -returntype", (char*)0
         );
         return TCL_ERROR;
       }

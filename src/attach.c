@@ -477,7 +477,7 @@ void sqlite3FixInit(
   pFix->pSchema = db->aDb[iDb].pSchema;
   pFix->zType = zType;
   pFix->pName = pName;
-  pFix->bVarOnly = (iDb==1);
+  pFix->bTemp = (iDb==1);
 }
 
 /*
@@ -505,7 +505,7 @@ int sqlite3FixSrcList(
   if( NEVER(pList==0) ) return 0;
   zDb = pFix->zDb;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pFix->bVarOnly==0 ){
+    if( pFix->bTemp==0 ){
       if( pItem->zDatabase && sqlite3StrICmp(pItem->zDatabase, zDb) ){
         sqlite3ErrorMsg(pFix->pParse,
             "%s %T cannot reference objects in database %s",
@@ -515,6 +515,7 @@ int sqlite3FixSrcList(
       sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
       pItem->zDatabase = 0;
       pItem->pSchema = pFix->pSchema;
+      pItem->fg.fromDDL = 1;
     }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
     if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
@@ -570,7 +571,7 @@ int sqlite3FixExpr(
   Expr *pExpr        /* The expression to be fixed to one database */
 ){
   while( pExpr ){
-    ExprSetProperty(pExpr, EP_Indirect);
+    if( !pFix->bTemp ) ExprSetProperty(pExpr, EP_FromDDL);
     if( pExpr->op==TK_VARIABLE ){
       if( pFix->pParse->db->init.busy ){
         pExpr->op = TK_NULL;

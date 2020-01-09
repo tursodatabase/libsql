@@ -1786,14 +1786,20 @@ static int sqlite3_geopoly_init(sqlite3 *db){
   };
   int i;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
-    int enc = aFunc[i].bPure ? SQLITE_UTF8|SQLITE_DETERMINISTIC : SQLITE_UTF8;
+    int enc;
+    if( aFunc[i].bPure ){
+      enc = SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS;
+    }else{
+      enc = SQLITE_UTF8|SQLITE_DIRECTONLY;
+    }
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
                                  enc, 0,
                                  aFunc[i].xFunc, 0, 0);
   }
   for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aAgg[i].zName, 1, SQLITE_UTF8, 0,
-                                 0, aAgg[i].xStep, aAgg[i].xFinal);
+    rc = sqlite3_create_function(db, aAgg[i].zName, 1, 
+              SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS, 0,
+              0, aAgg[i].xStep, aAgg[i].xFinal);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_module_v2(db, "geopoly", &geopolyModule, 0, 0);

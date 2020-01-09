@@ -138,7 +138,7 @@ do_catchsql_test fts3atoken-1.10 {
 } {0 {}}
 do_catchsql_test fts3atoken-1.11 {
   SELECT * FROM v110;
-} {1 {fts3_tokenizer() prohibited in triggers and views}}
+} {1 {unsafe use of fts3_tokenizer()}}
 do_catchsql_test fts3atoken-1.12 {
   CREATE TABLE t110(a,b);
   CREATE TRIGGER r110 AFTER INSERT ON t110 BEGIN
@@ -147,7 +147,7 @@ do_catchsql_test fts3atoken-1.12 {
 } {0 {}}
 do_catchsql_test fts3atoken-1.13 {
   INSERT INTO t110(a,b) VALUES(1,2);
-} {1 {fts3_tokenizer() prohibited in triggers and views}}
+} {1 {unsafe use of fts3_tokenizer()}}
 do_catchsql_test fts3atoken-1.14 {
   SELECT * FROM t110;
 } {0 {}}

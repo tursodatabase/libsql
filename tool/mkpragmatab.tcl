@@ -128,6 +128,11 @@ set pragma_def {
   ARG:  SQLITE_RecTriggers
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
+  NAME: trusted_schema
+  TYPE: FLAG
+  ARG:  SQLITE_TrustedSchema
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+
   NAME: foreign_keys
   TYPE: FLAG
   ARG:  SQLITE_ForeignKeys
@@ -257,7 +262,7 @@ set pragma_def {
 
   NAME: function_list
   FLAG: Result0
-  COLS: name builtin
+  COLS: name builtin type enc narg flags
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
 

@@ -887,6 +887,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_DQS_DDL,               SQLITE_DqsDDL         },
         { SQLITE_DBCONFIG_DQS_DML,               SQLITE_DqsDML         },
         { SQLITE_DBCONFIG_LEGACY_FILE_FORMAT,    SQLITE_LegacyFileFmt  },
+        { SQLITE_DBCONFIG_TRUSTED_SCHEMA,        SQLITE_TrustedSchema  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1758,8 +1759,15 @@ int sqlite3CreateFunc(
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
-  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|SQLITE_SUBTYPE);
+  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|
+                       SQLITE_SUBTYPE|SQLITE_INNOCUOUS);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
+
+  /* The SQLITE_INNOCUOUS flag is the same bit as SQLITE_FUNC_UNSAFE.  But
+  ** the meaning is inverted.  So flip the bit. */
+  assert( SQLITE_FUNC_UNSAFE==SQLITE_INNOCUOUS );
+  extraFlags ^= SQLITE_FUNC_UNSAFE;
+
   
 #ifndef SQLITE_OMIT_UTF16
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
@@ -1773,11 +1781,13 @@ int sqlite3CreateFunc(
     enc = SQLITE_UTF16NATIVE;
   }else if( enc==SQLITE_ANY ){
     int rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8|extraFlags,
+    rc = sqlite3CreateFunc(db, zFunctionName, nArg,
+         (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
          pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
     if( rc==SQLITE_OK ){
-      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE|extraFlags,
-          pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
+      rc = sqlite3CreateFunc(db, zFunctionName, nArg,
+           (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+           pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
     }
     if( rc!=SQLITE_OK ){
       return rc;
@@ -3117,7 +3127,9 @@ static int openDatabase(
                  | SQLITE_EnableTrigger
                  | SQLITE_EnableView
                  | SQLITE_CacheSpill
-
+#if !defined(SQLITE_TRUSTED_SCHEMA) || SQLITE_TRUSTED_SCHEMA+0!=0
+                 | SQLITE_TrustedSchema
+#endif
 /* The SQLITE_DQS compile-time option determines the default settings
 ** for SQLITE_DBCONFIG_DQS_DDL and SQLITE_DBCONFIG_DQS_DML.
 **

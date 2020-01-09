@@ -369,6 +369,7 @@ static int zipfileConnect(
       zipfileDequote(pNew->zFile);
     }
   }
+  sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   *ppVtab = (sqlite3_vtab*)pNew;
   return rc;
 }

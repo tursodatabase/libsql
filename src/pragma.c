@@ -296,6 +296,55 @@ static const PragmaName *pragmaLocate(const char *zName){
 }
 
 /*
+** Create zero or more entries in the output for the SQL functions
+** defined by FuncDef p.
+*/
+static void pragmaFunclistLine(
+  Vdbe *v,               /* The prepared statement being created */
+  FuncDef *p,            /* A particular function definition */
+  int isBuiltin,         /* True if this is a built-in function */
+  int showInternFuncs    /* True if showing internal functions */
+){
+  for(; p; p=p->pNext){
+    const char *zType;
+    static const u32 mask = 
+        SQLITE_DETERMINISTIC |
+        SQLITE_DIRECTONLY |
+        SQLITE_SUBTYPE |
+        SQLITE_INNOCUOUS |
+        SQLITE_FUNC_INTERNAL
+    ;
+    static const char *azEnc[] = { 0, "utf8", "utf16le", "utf16be" };
+
+    assert( SQLITE_FUNC_ENCMASK==0x3 );
+    assert( strcmp(azEnc[SQLITE_UTF8],"utf8")==0 );
+    assert( strcmp(azEnc[SQLITE_UTF16LE],"utf16le")==0 );
+    assert( strcmp(azEnc[SQLITE_UTF16BE],"utf16be")==0 );
+
+    if( p->xSFunc==0 ) continue;
+    if( (p->funcFlags & SQLITE_FUNC_INTERNAL)!=0
+     && showInternFuncs==0
+    ){
+      continue;
+    }    
+    if( p->xValue!=0 ){
+      zType = "w";
+    }else if( p->xFinalize!=0 ){
+      zType = "a";
+    }else{
+      zType = "s";
+    }
+    sqlite3VdbeMultiLoad(v, 1, "sissii",
+       p->zName, isBuiltin,
+       zType, azEnc[p->funcFlags&SQLITE_FUNC_ENCMASK],
+       p->nArg,
+       (p->funcFlags & mask) ^ SQLITE_INNOCUOUS
+    );
+  }
+}
+
+
+/*
 ** Helper subroutine for PRAGMA integrity_check:
 **
 ** Generate code to output a single-column result row with a value of the
@@ -1259,16 +1308,16 @@ void sqlite3Pragma(
     int i;
     HashElem *j;
     FuncDef *p;
-    pParse->nMem = 2;
+    int showInternFunc = (db->mDbFlags & DBFLAG_InternalFunc)!=0;
+    pParse->nMem = 6;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
-        if( p->funcFlags & SQLITE_FUNC_INTERNAL ) continue;
-        sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 1);
+        pragmaFunclistLine(v, p, 1, showInternFunc);
       }
     }
     for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
       p = (FuncDef*)sqliteHashData(j);
-      sqlite3VdbeMultiLoad(v, 1, "si", p->zName, 0);
+      pragmaFunclistLine(v, p, 0, showInternFunc);
     }
   }
   break;

@@ -540,6 +540,8 @@ static int fuzzerConnect(
       if( rc!=SQLITE_OK ){
         fuzzerDisconnect((sqlite3_vtab *)pNew);
         pNew = 0;
+      }else{
+        sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
       }
     }
   }

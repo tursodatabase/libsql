@@ -2091,6 +2091,7 @@ static int jsonEachConnect(
     pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
+    sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
   }
   return rc;
 }
@@ -2581,16 +2582,19 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_tree",            &jsonTreeModule               },
   };
 #endif
+  static const int enc = 
+       SQLITE_UTF8 |
+       SQLITE_DETERMINISTIC |
+       SQLITE_INNOCUOUS;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
-                                 SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+    rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg, enc,
                                  (void*)&aFunc[i].flag,
                                  aFunc[i].xFunc, 0, 0);
   }
 #ifndef SQLITE_OMIT_WINDOWFUNC
   for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_window_function(db, aAgg[i].zName, aAgg[i].nArg,
-                SQLITE_SUBTYPE | SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+                                 SQLITE_SUBTYPE | enc, 0,
                                  aAgg[i].xStep, aAgg[i].xFinal,
                                  aAgg[i].xValue, jsonGroupInverse, 0);
   }
