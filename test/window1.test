@@ -1577,4 +1577,21 @@ do_catchsql_test 47.2 {
     OR (SELECT k FROM t2 WHERE (SELECT sum(a) OVER() FROM t1 GROUP BY 1));
 } {1 {misuse of window function sum()}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 48.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+  SELECT (SELECT max(x)OVER(ORDER BY x) + min(x)OVER(ORDER BY x))
+    FROM (SELECT (SELECT sum(a) FROM t1) AS x FROM t1);
+} {12 12 12}
+
+do_execsql_test 48.1 {
+  SELECT (SELECT max(x)OVER(ORDER BY x) + min(x)OVER(ORDER BY x))
+    FROM (SELECT (SELECT sum(a) FROM t1 GROUP BY a) AS x FROM t1);
+} {2 2 2}
+
+
 finish_test

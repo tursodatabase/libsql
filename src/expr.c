@@ -5183,8 +5183,9 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
 }
 
 /*
-** Compare two ExprList objects.  Return 0 if they are identical and 
-** non-zero if they differ in any way.
+** Compare two ExprList objects.  Return 0 if they are identical, 1
+** if they are certainly different, or 2 if it is not possible to 
+** determine if they are identical or not.
 **
 ** If any subelement of pB has Expr.iTable==(-1) then it is allowed
 ** to compare equal to an equivalent element in pA with Expr.iTable==iTab.
@@ -5203,10 +5204,11 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB, int iTab){
   if( pA==0 || pB==0 ) return 1;
   if( pA->nExpr!=pB->nExpr ) return 1;
   for(i=0; i<pA->nExpr; i++){
+    int res;
     Expr *pExprA = pA->a[i].pExpr;
     Expr *pExprB = pB->a[i].pExpr;
     if( pA->a[i].sortFlags!=pB->a[i].sortFlags ) return 1;
-    if( sqlite3ExprCompare(0, pExprA, pExprB, iTab) ) return 1;
+    if( (res = sqlite3ExprCompare(0, pExprA, pExprB, iTab)) ) return res;
   }
   return 0;
 }

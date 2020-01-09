@@ -1279,10 +1279,12 @@ void sqlite3WindowLink(Select *pSel, Window *pWin){
 }
 
 /*
-** Return 0 if the two window objects are identical, or non-zero otherwise.
-** Identical window objects can be processed in a single scan.
+** Return 0 if the two window objects are identical, 1 if they are
+** different, or 2 if it cannot be determined if the objects are identical
+** or not. Identical window objects can be processed in a single scan.
 */
 int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
+  int res;
   if( NEVER(p1==0) || NEVER(p2==0) ) return 1;
   if( p1->eFrmType!=p2->eFrmType ) return 1;
   if( p1->eStart!=p2->eStart ) return 1;
@@ -1290,10 +1292,16 @@ int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
   if( p1->eExclude!=p2->eExclude ) return 1;
   if( sqlite3ExprCompare(pParse, p1->pStart, p2->pStart, -1) ) return 1;
   if( sqlite3ExprCompare(pParse, p1->pEnd, p2->pEnd, -1) ) return 1;
-  if( sqlite3ExprListCompare(p1->pPartition, p2->pPartition, -1) ) return 1;
-  if( sqlite3ExprListCompare(p1->pOrderBy, p2->pOrderBy, -1) ) return 1;
+  if( (res = sqlite3ExprListCompare(p1->pPartition, p2->pPartition, -1)) ){
+    return res;
+  }
+  if( (res = sqlite3ExprListCompare(p1->pOrderBy, p2->pOrderBy, -1)) ){
+    return res;
+  }
   if( bFilter ){
-    if( sqlite3ExprCompare(pParse, p1->pFilter, p2->pFilter, -1) ) return 1;
+    if( (res = sqlite3ExprCompare(pParse, p1->pFilter, p2->pFilter, -1)) ){
+      return res;
+    }
   }
   return 0;
 }
@@ -1580,7 +1588,7 @@ static void windowAggStep(
 
     /* All OVER clauses in the same window function aggregate step must
     ** be the same. */
-    assert( pWin==pMWin || sqlite3WindowCompare(pParse,pWin,pMWin,0)==0 );
+    assert( pWin==pMWin || sqlite3WindowCompare(pParse,pWin,pMWin,0)!=1 );
 
     for(i=0; i<nArg; i++){
       if( i!=1 || pFunc->zName!=nth_valueName ){
