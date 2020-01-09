@@ -22,9 +22,9 @@ maliciously corrupted by an attacker.
 The basic idea is to tag every SQL function and virtual table with one
 of three risk levels:
 
-    1.  Innocuous
-    2.  Normal
-    3.  Direct-Only
+  1.  Innocuous
+  2.  Normal
+  3.  Direct-Only
 
 Innocuous functions/vtabs are safe and can be used at any time.
 Direct-only elements, in contrast, might have cause side-effects and
@@ -50,11 +50,11 @@ Direct-only elements that have side-effects that go outside the database file
 in which it lives, or return information from outside of the database file.
 Examples of direct-only elements include:
 
-    1.  The fts3_tokenizer() function
-    2.  The writefile() function
-    3.  The readfile() function
-    4.  The zipvfs virtual table
-    5.  The csv virtual table
+  1.  The fts3\_tokenizer() function
+  2.  The writefile() function
+  3.  The readfile() function
+  4.  The zipvfs virtual table
+  5.  The csv virtual table
 
 We do not want an attacker to be able to add these kinds of things to
 the database schema and possibly trick a high-privilege application 
