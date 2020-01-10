@@ -2274,10 +2274,10 @@ struct sqlite3_mem_methods {
 ** including, but not limited to, the following:
 ** <ul>
 ** <li> Prohibit the use of SQL functions inside triggers, views,
-** CHECK constraints, DEFAULT VALUEs, index definitions, and/or
-** generated columns unless those functions are tagged
-** with [SQLITE_INNOCUOUS].
-** <li> Pohibit the use of virtual tables inside of triggers and/or views
+** CHECK constraints, DEFAULT clauses, expression indexes, 
+** partial indexes, or generated columns
+** unless those functions are tagged with [SQLITE_INNOCUOUS].
+** <li> Pohibit the use of virtual tables inside of triggers or views
 ** unless those virtual tables are tagged with [SQLITE_VTAB_INNOCUOUS].
 ** </ul>
 ** This setting defaults to "on" for legacy compatibility, however
@@ -5015,6 +5015,8 @@ int sqlite3_create_window_function(
 ** to [sqlite3_create_function()], [sqlite3_create_function16()], or
 ** [sqlite3_create_function_v2()].
 **
+** <dl>
+** [[SQLITE_DETERMINISTIC]] <dt>SQLITE_DETERMINISTIC</dt><dd>
 ** The SQLITE_DETERMINISTIC flag means that the new function always gives
 ** the same output when the input parameters are the same.
 ** The [abs|abs() function] is deterministic, for example, but
@@ -5022,28 +5024,37 @@ int sqlite3_create_window_function(
 ** be deterministic in order to be used in certain contexts such as
 ** [CHECK constraints] or [generated columns].  SQLite might also optimize
 ** deterministic functions by factoring them out of inner loops.
+** </dd>
 **
+** [[SQLITE_INNOCUOUS]] <dt>SQLITE_INNOCUOUS</dt><dd>
 ** The SQLITE_INNOCUOUS flag means that the new function is unlikely
 ** to cause problems even if misused.  An innocuous function should have
 ** no side effects and consume few resources. The [abs|abs() function] 
 ** is an example of an innocuous function.
 ** The [load_extension() SQL function] is not innocuous because of its
 ** side effects.  Some heightened security settings
-** ([SQLITE_DBCONFIG_UNSAFE_FUNC_IN_VIEW])
-** disable the use of SQLlfunctions inside views and triggers unless
+** ([SQLITE_DBCONFIG_TRUSTED_SCHEMA] and [PRAGMA trusted_schema=OFF])
+** disable the use of SQL functions inside views and triggers and in
+** schema structures such as [CHECK constraints], [DEFAULT clauses],
+** [expression indexes], [partial indexes], and [generated columns] unless
 ** the function is tagged with SQLITE_INNOCUOUS.  Most built-in functions
 ** are innocuous.  Developers are advised to avoid using the
 ** SQLITE_INNOCUOUS flag for application-defined functions unless the
-** function is specifically intended for use inside of views and triggers.
-**
+** function has been carefully audited and found to be free of potentially
+** security-adverse side-effects and information-leaks.
+** </dd>
+** 
+** [[SQLITE_DIRECTONLY]] <dt>SQLITE_DIRECTONLY</dt><dd>
 ** The SQLITE_DIRECTONLY flag means that the function may only be invoked
-** from top-level SQL, and cannot be used in VIEWs or TRIGGERs.  This is
+** from top-level SQL, and cannot be used in VIEWs or TRIGGERs nor in 
+** schema structures such as [CHECK constraints], [DEFAULT clauses],
+** [expression indexes], [partial indexes], or [generated columns].  This is
 ** a security feature which is recommended for all 
-** [application-defined SQL functions] that have side-effects.  This flag 
-** prevents an attacker from adding triggers and views to a schema then 
-** tricking a high-privilege application into causing unintended side-effects
-** while performing ordinary queries.
+** [application-defined SQL functions] that have side-effects or that
+** could potentially leak sensitive information.
+** </dd>
 **
+** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
 ** The SQLITE_SUBTYPE flag indicates to SQLite that a function may call
 ** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
 ** Specifying this flag makes no difference for scalar or aggregate user
@@ -5051,6 +5062,8 @@ int sqlite3_create_window_function(
 ** function, then any sub-types belonging to arguments passed to the window
 ** function may be discarded before the window function is called (i.e.
 ** sqlite3_value_subtype() will always return 0).
+** </dd>
+** </dl>
 */
 #define SQLITE_DETERMINISTIC    0x000000800
 #define SQLITE_DIRECTONLY       0x000080000
