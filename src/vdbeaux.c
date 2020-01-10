@@ -1209,14 +1209,16 @@ void sqlite3VdbeReleaseRegisters(
   assert( pParse->pVdbe );
   assert( iFirst>=1 );
   assert( iFirst+N-1<=pParse->nMem );
-  while( N>0 && (mask&1)!=0 ){
-    mask >>= 1;
-    iFirst++;
-    N--;
-  }
-  while( N>0 && N<=32 && (mask & MASKBIT32(N-1))!=0 ){
-    mask &= ~MASKBIT32(N-1);
-    N--;
+  if( N<=31 && mask!=0 ){
+    while( N>0 && (mask&1)!=0 ){
+      mask >>= 1;
+      iFirst++;
+      N--;
+    }
+    while( N>0 && N<=32 && (mask & MASKBIT32(N-1))!=0 ){
+      mask &= ~MASKBIT32(N-1);
+      N--;
+    }
   }
   if( N>0 ){
     sqlite3VdbeAddOp3(pParse->pVdbe, OP_ReleaseReg, iFirst, N, *(int*)&mask);
