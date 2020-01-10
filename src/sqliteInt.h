@@ -4108,9 +4108,6 @@ void sqlite3AddDefaultValue(Parse*,Expr*,const char*,const char*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3AddGenerated(Parse*,Expr*,Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
-#ifdef SQLITE_DEBUG
-  int sqlite3UriCount(const char*);
-#endif
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
 #ifdef SQLITE_HAS_CODEC

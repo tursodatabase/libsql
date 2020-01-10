@@ -4272,13 +4272,17 @@ int sqlite3UriCount(const char *z){
 ** returns a NULL pointer.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
+  const Pager *pPager;
+  const char *z;
   if( zFilename==0 || zParam==0 ) return 0;
-  zFilename += sqlite3Strlen30(zFilename) + 1;
-  while( zFilename[0] ){
-    int x = strcmp(zFilename, zParam);
-    zFilename += sqlite3Strlen30(zFilename) + 1;
-    if( x==0 ) return zFilename;
-    zFilename += sqlite3Strlen30(zFilename) + 1;
+  pPager = sqlite3PagerFromFilename(zFilename);
+  assert( pPager!=0 );
+  z = sqlite3PagerQueryParameters(pPager);
+  while( z[0] ){
+    int x = strcmp(z, zParam);
+    z += sqlite3Strlen30(z) + 1;
+    if( x==0 ) return z;
+    z += sqlite3Strlen30(z) + 1;
   }
   return 0;
 }
@@ -4306,6 +4310,32 @@ sqlite3_int64 sqlite3_uri_int64(
     bDflt = v;
   }
   return bDflt;
+}
+
+/*
+** Translate a filename that was handed to a VFS routine into the corresponding
+** database, journal, or WAL file.
+**
+** It is an error to pass this routine a filename string that was not
+** passed into the VFS from the SQLite core.  Doing so is similar to
+** passing free() a pointer that was not obtained from malloc() - it is
+** an error that we cannot easily detect but that will likely cause memory
+** corruption.
+*/
+const char *sqlite3_filename_database(const char *zFilename){
+  const Pager *pPager = sqlite3PagerFromFilename(zFilename);
+  assert( pPager!=0 );
+  return sqlite3PagerFilename(pPager, 0);
+}
+const char *sqlite3_filename_journal(const char *zFilename){
+  const Pager *pPager = sqlite3PagerFromFilename(zFilename);
+  assert( pPager!=0 );
+  return sqlite3PagerJournalFilename(pPager);
+}
+const char *sqlite3_filename_wal(const char *zFilename){
+  const Pager *pPager = sqlite3PagerFromFilename(zFilename);
+  assert( pPager!=0 );
+  return sqlite3PagerWalFilename(pPager);
 }
 
 /*

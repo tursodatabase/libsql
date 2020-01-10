@@ -3536,6 +3536,33 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
 int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
 sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
 
+/*
+** CAPI3REF:  Translate filenames
+**
+** These routines are available to VFS implementations for translating
+** filenames between the main database file, the journal file, and the
+** WAL file.
+**
+** If F is the name of an sqlite database file, journal file, or WAL file
+** then sqlite3_filename_database(F) returns the name of the corresponding
+** database file.
+**
+** If F is the name of an sqlite database file, journal file, or WAL file
+** then sqlite3_filename_journal(F) returns the name of the corresponding
+** rollback journal file.
+**
+** If F is the name of an sqlite database file, journal file, or WAL file
+** then sqlite3_filename_wal(F) returns the name of the corresponding
+** WAL file.
+**
+** In all of the above, if F is not the name of a database, journal or WAL
+** filename passed into the VFS from the SQLite core, then the result is
+** undefined and is likely a memory access violation.
+*/
+const char *sqlite3_filename_database(const char*);
+const char *sqlite3_filename_journal(const char*);
+const char *sqlite3_filename_wal(const char*);
+
 
 /*
 ** CAPI3REF: Error Codes And Messages
