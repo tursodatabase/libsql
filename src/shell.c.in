@@ -4162,6 +4162,7 @@ static void open_db(ShellState *p, int openFlags){
       }
       exit(1);
     }
+    sqlite3_db_config(p->db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, 0);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
@@ -4848,6 +4849,7 @@ static void tryToClone(ShellState *p, const char *zNewDb){
             sqlite3_errmsg(newDb));
   }else{
     sqlite3_exec(p->db, "PRAGMA writable_schema=ON;", 0, 0, 0);
+    sqlite3_db_config(newDb, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, 0);
     sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
     tryToCloneSchema(p, newDb, "type='table'", tryToCloneData);
     tryToCloneSchema(p, newDb, "type!='table'", 0);
@@ -6171,6 +6173,7 @@ static int arDotCommand(
         );
         goto end_ar_command;
       }
+      sqlite3_db_config(cmd.db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, 0);
       sqlite3_fileio_init(cmd.db, 0, 0);
       sqlite3_sqlar_init(cmd.db, 0, 0);
       sqlite3_create_function(cmd.db, "shell_putsnl", 1, SQLITE_UTF8, cmd.p,
@@ -7023,6 +7026,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       close_db(pDest);
       return 1;
     }
+    sqlite3_db_config(pDest, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, 0);
     if( bAsync ){
       sqlite3_exec(pDest, "PRAGMA synchronous=OFF; PRAGMA journal_mode=OFF;",
                    0, 0, 0);
@@ -8390,6 +8394,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       return 1;
     }
     open_db(p, 0);
+    sqlite3_db_config(pSrc, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, 0);
     pBackup = sqlite3_backup_init(p->db, zDb, pSrc, "main");
     if( pBackup==0 ){
       utf8_printf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));

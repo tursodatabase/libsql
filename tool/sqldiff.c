@@ -1955,6 +1955,7 @@ int main(int argc, char **argv){
   if( rc ){
     cmdlineError("cannot open database file \"%s\"", zDb1);
   }
+  sqlite3_db_config(g.db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, 0, 0);
   rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_master", 0, 0, &zErrMsg);
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
