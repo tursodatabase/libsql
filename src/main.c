@@ -4241,25 +4241,6 @@ int sqlite3_test_control(int op, ...){
   return rc;
 }
 
-#ifdef SQLITE_DEBUG
-/*
-** This routine appears inside assert() statements only.
-**
-** Return the number of URI parameters that follow the filename.
-*/
-int sqlite3UriCount(const char *z){
-  int n = 0;
-  if( z==0 ) return 0;
-  z += strlen(z)+1;
-  while( z[0] ){
-    z += strlen(z)+1;
-    z += strlen(z)+1;
-    n++;
-  }
-  return n;
-}
-#endif /* SQLITE_DEBUG */
-
 /*
 ** This is a utility routine, useful to VFS implementations, that checks
 ** to see if a database file was a URI that contained a specific query 
@@ -4281,6 +4262,19 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
     zFilename += sqlite3Strlen30(zFilename) + 1;
   }
   return 0;
+}
+
+/*
+** Return a pointer to the name of Nth query parameter of the filename.
+*/
+const char *sqlite3_uri_key(const char *zFilename, int N){
+  if( zFilename==0 || N<0 ) return 0;
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] && (N--)>0 ){
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return zFilename[0] ? zFilename : 0;
 }
 
 /*
@@ -4306,6 +4300,46 @@ sqlite3_int64 sqlite3_uri_int64(
     bDflt = v;
   }
   return bDflt;
+}
+
+/*
+** The Pager stores the Journal filename, WAL filename, and Database filename
+** consecutively in memory, in that order, with prefixes \000\001\000,
+** \002\000, and \003\000, in that order.  Thus the three names look like query
+** parameters if you start at the first prefix.
+**
+** This routine backs up a filename to the start of the first prefix.
+**
+** This only works if the filenamed passed in was obtained from the Pager.
+*/
+static const char *startOfNameList(const char *zName){
+  while( zName[0]!='\001' || zName[1]!=0 ){
+    zName -= 3;
+    while( zName[0]!='\000' ){ zName--; }
+    zName++;
+  }
+  return zName-1;
+}
+
+/*
+** Translate a filename that was handed to a VFS routine into the corresponding
+** database, journal, or WAL file.
+**
+** It is an error to pass this routine a filename string that was not
+** passed into the VFS from the SQLite core.  Doing so is similar to
+** passing free() a pointer that was not obtained from malloc() - it is
+** an error that we cannot easily detect but that will likely cause memory
+** corruption.
+*/
+const char *sqlite3_filename_database(const char *zFilename){
+  return sqlite3_uri_parameter(zFilename - 3, "\003");
+}
+const char *sqlite3_filename_journal(const char *zFilename){
+  const char *z = sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
+  return ALWAYS(z) && z[0] ? z : 0;
+}
+const char *sqlite3_filename_wal(const char *zFilename){
+  return sqlite3_uri_parameter(startOfNameList(zFilename), "\002");
 }
 
 /*
