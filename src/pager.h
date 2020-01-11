@@ -204,10 +204,6 @@ u32 sqlite3PagerDataVersion(Pager*);
 #endif
 int sqlite3PagerMemUsed(Pager*);
 const char *sqlite3PagerFilename(const Pager*, int);
-const char *sqlite3PagerWalFilename(const Pager*);
-const char *sqlite3PagerJournalFilename(const Pager*);
-const char *sqlite3PagerQueryParameters(const Pager*);
-const Pager *sqlite3PagerFromFilename(const char*);
 sqlite3_vfs *sqlite3PagerVfs(Pager*);
 sqlite3_file *sqlite3PagerFile(Pager*);
 sqlite3_file *sqlite3PagerJrnlFile(Pager*);

@@ -696,7 +696,6 @@ struct Pager {
   Pgno mxPgno;                /* Maximum allowed size of the database */
   i64 journalSizeLimit;       /* Size limit for persistent journal files */
   char *zFilename;            /* Name of the database file */
-  char *zQueryParam;          /* URI query parameters on the filename */
   char *zJournal;             /* Name of the journal file */
   int (*xBusyHandler)(void*); /* Function to call when busy */
   void *pBusyHandlerArg;      /* Context argument for xBusyHandler */
@@ -4839,30 +4838,30 @@ int sqlite3PagerOpen(
   **     Database file handle            (pVfs->szOsFile bytes)
   **     Sub-journal file handle         (journalFileSize bytes)
   **     Main journal file handle        (journalFileSize bytes)
-  **     Pointer back to self            (sizeof(*Pager) bytes)
+  **     \0\1\0 journal prefix           (3 bytes)
+  **     Journal filename                (nPathname+8+1 bytes)
+  **     \2\0 WAL prefix                 (2 bytes)
+  **     WAL filename                    (nPathname+4+1 bytes)
+  **     \3\0 database prefix            (2 bytes)
   **     Database file name              (nPathname+1 bytes)
   **     URI query parameters            (nUriByte bytes)
-  **     padding for 8-byte alignment
-  **     Pointer back to self            (sizeof(*Pager) bytes)
-  **     WAL filename                    (nPathname+4+1 bytes)
-  **     padding for 8-byte alignment
-  **     Pointer back to self            (sizeof(*Pager) bytes)
-  **     Journal file name               (nPathname+8+1 bytes)
+  **     \0\0 terminator                 (2 bytes)
   */
   pPtr = (u8 *)sqlite3MallocZero(
     ROUND8(sizeof(*pPager)) +            /* Pager structure */
     ROUND8(pcacheSize) +                 /* PCache object */
     ROUND8(pVfs->szOsFile) +             /* The main db file */
     journalFileSize * 2 +                /* The two journal files */
-    sizeof(Pager*) +                     /* Self-pointer for database */
-    ROUND8(nPathname + 1 + nUriByte) +   /* database filename + query params */
-    sizeof(Pager*) +                     /* Self-pointer for journal */
-    ROUND8(nPathname + 8 + 2) +          /* zJournal */
+    3 +                                  /* Journal prefix */
+    nPathname + 8 + 1 +                  /* Journal filename */
 #ifndef SQLITE_OMIT_WAL
-    sizeof(Pager*) +                     /* Self-pointer for zWal */
-    ROUND8(nPathname + 4 + 2) +          /* zWal */
+    2 +                                  /* WAL prefix */
+    nPathname + 4 + 1 +                  /* WAL filename */
 #endif
-    0
+    2 +                                  /* Database prefix */
+    nPathname + 1 +                      /* database filename */
+    nUriByte +                           /* query parameters */
+    2                                    /* Terminator */
   );
   assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
   if( !pPtr ){
@@ -4876,33 +4875,47 @@ int sqlite3PagerOpen(
   pPager->jfd =  (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
 
-  /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
-  assert( EIGHT_BYTE_ALIGNMENT(pPtr) );
-  memcpy(pPtr, &pPager, sizeof(pPager));  pPtr += sizeof(pPager);
-  pPager->zFilename = (char*)pPtr;
-  if( nPathname==0 ) zPathname = "";
-  memcpy(pPtr, zPathname, nPathname);
-  pPager->zQueryParam = pPager->zFilename + nPathname + 1;
-  if( zUri ) memcpy(pPager->zQueryParam, zUri, nUriByte);
-  assert( nUriByte>=1 );
-  assert( nUriByte >= nUri*3 + 1 );
-  pPtr += ROUND8(nPathname + 1 + nUriByte);
+
+  /* Fill in Pager.zJournal */
+  pPtr[1] = '\001';                       pPtr += 3;
+  if( nPathname>0 ){
+    pPager->zJournal = (char*)pPtr;
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
+    memcpy(pPtr, "-journal",8);           pPtr += 8 + 1;
+#ifdef SQLITE_ENABLE_8_3_NAMES
+    sqlite3FileSuffix3(zFilename,pPager->zJournal);
+    pPtr = (u8*)(pPager->zJournal + sqlite3Strlen30(pPager->zJournal)+1);
+#endif
+  }else{
+    pPager->zJournal = 0;
+    pPtr++;
+  }
 
 #ifndef SQLITE_OMIT_WAL
   /* Fill in Pager.zWal */
-  assert( EIGHT_BYTE_ALIGNMENT(pPtr) );
-  memcpy(pPtr, &pPager, sizeof(pPager));  pPtr += sizeof(pPager);
-  pPager->zWal = (char*)pPtr;
-  memcpy(pPtr, zPathname, nPathname);
-  memcpy(pPtr+nPathname, "-wal", 4);      pPtr += ROUND8(nPathname + 4 + 2);
+  pPtr[0] = '\002'; pPtr[1] = 0;          pPtr += 2;
+  if( nPathname>0 ){
+    pPager->zWal = (char*)pPtr;
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
+    memcpy(pPtr, "-wal", 4);              pPtr += 4 + 1;
+#ifdef SQLITE_ENABLE_8_3_NAMES
+    sqlite3FileSuffix3(zFilename, pPager->zWal);
+    pPtr = (u8*)(pPager->zWal + sqlite3Strlen30(pPager->zWal)+1);
+#endif
+  }else{
+    pPager->zWal = 0;
+    pPtr++;
+  }
 #endif
 
-  /* Fill in Pager.zJournal */
-  assert( EIGHT_BYTE_ALIGNMENT(pPtr) );
-  memcpy(pPtr, &pPager, sizeof(pPager));  pPtr += sizeof(pPager);
-  pPager->zJournal = (char*)pPtr;
-  memcpy(pPtr, zPathname, nPathname);
-  memcpy(pPtr+nPathname, "-journal",8); /*pPtr += ROUND8(nPathname + 8 + 2);*/
+  /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
+  pPtr[0] = '\003'; pPtr[1] = 0;          pPtr += 2;
+  pPager->zFilename = (char*)pPtr;
+  memcpy(pPtr, zPathname, nPathname);     pPtr += nPathname + 1;
+  if( zUri ){
+    memcpy(pPtr, zUri, nUriByte);      /* pPtr += nUriByte; // not needed */
+  }
+  /* Double-zero terminator implied by the sqlite3MallocZero */
 
   if( nPathname ) sqlite3DbFree(0, zPathname);
   pPager->pVfs = pVfs;
@@ -7018,50 +7031,13 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 ** behavior.  But when the Btree needs to know the filename for matching to
 ** shared cache, it uses nullIfMemDb==0 so that in-memory databases can
 ** participate in shared-cache.
+**
+** The return value to this routine is always safe to use with
+** sqlite3_uri_parameter() and sqlite3_filename_database() and friends.
 */
 const char *sqlite3PagerFilename(const Pager *pPager, int nullIfMemDb){
-  return (nullIfMemDb && pPager->memDb) ? "" : pPager->zFilename;
-}
-
-/*
-** Return the name of the Journal file or WAL file of the given pager.
-*/
-const char *sqlite3PagerJournalFilename(const Pager *pPager){
-  assert( pPager!=0 );
-  return pPager->zJournal;
-}
-#ifndef SQLITE_OMIT_WAL
-const char *sqlite3PagerWalFilename(const Pager *pPager){
-  assert( pPager!=0 );
-  return pPager->zWal;
-}
-#endif /* SQLITE_OMIT_WAL */
-
-/* Return a pointer to the URI query parameters associated with the
-** pager.
-**
-** The query parameters are a sequence of strings pairs.  The first
-** string of each pair is the key and the second string is the value.
-** All strings are terminated by a single 0x00 byte.  The list is
-** terminated by the first empty-string key.
-*/
-const char *sqlite3PagerQueryParameters(const Pager *pPager){
-  assert( pPager!=0 );
-  return pPager->zQueryParam;
-}
-
-/* If zFilename is a filename passed to the xOpen method of the VFS - 
-** either the main database file, the WAL file, or the journal file - 
-** then this routine returns a pointer to the Pager object associated
-** with that file.
-*/
-const Pager *sqlite3PagerFromFilename(const char *zFilename){
-  const Pager **pp = (const Pager**)zFilename;
-  pp--;
-  assert( (*pp)->zFilename==zFilename
-       || (*pp)->zJournal==zFilename
-       || (*pp)->zWal==zFilename );
-  return *pp;
+  static const char zFake[] = { 0x01, 0x00, 0x00, 0x00 };
+  return (nullIfMemDb && pPager->memDb) ? &zFake[2] : pPager->zFilename;
 }
 
 /*

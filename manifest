@@ -1,5 +1,5 @@
-C Rearchitect\sthe\sway\sin\swhich\sfilenames\sare\sstored\sin\sthe\sPager\sobject\sso\sthat\nthe\ssqlite3_uri_parameter()\sinterface\swill\swork\sfrom\sjournal\sand\sWAL\sfilenames\ntoo.\s\sThis\scheck-in\simplements\sthe\scentral\sidea,\sand\scompile\sand\sruns\ssomewhat,\nbut\scrashes\son\san\sextended\stest.
-D 2020-01-10T18:05:55.320
+C Redesign\sfor\sbetter\slegacy\scompatibility.\s\sAdd\sthe\ssqlite3_uri_key()\sinterface.
+D 2020-01-11T16:08:31.366
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -321,6 +321,7 @@ F ext/misc/stmt.c 8a8dc4675042e4551e4afe99b8d0cc7a4a2fc1a8dacc0a9ce1b1bbff145da9
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
 F ext/misc/unionvtab.c 36237f0607ca954ac13a4a0e2d2ac40c33bc6e032a5f55f431713061ef1625f9
+F ext/misc/urifuncs.c a0b02a607b4170552deeff26812bb2f09eed1cc72d1056a4296ae6be0c19d100
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3b25c2f56ba60788db247287be6ab024b53c4afffd412b4876db563389be0d35
 F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057b1cdb
@@ -369,7 +370,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c 4e9a59aa80c03350a0ca5faa454dec894906537fbd98b3231604cc33baf174c8
+F ext/rbu/sqlite3rbu.c 77a47f3231f5f363b2c584dba3e310a7efdaf073ad8c18728ab846b38de2879c
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -493,8 +494,8 @@ F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 5ba8fd376f539240939ae76b5bc9fa7ad9a0d86e9914ecd11eb7002204138c11
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c d74f5e7bd51f3c9d283442473eb65aef359664efd6513591c03f01881c4ae2da
-F src/main.c abc034557685db2bead003e7d6b2bd74bf1a44c4d3bfe9ddcf35dc90524a8c21
+F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
+F src/main.c 347687f4d843cb1660ec4bafe17fd3a9444d1208900308fddf6b6a418f091171
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -517,8 +518,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c ad7640c04eed946052a3b12856362a773d0a717696707313037186df0e2b59f2
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 14ae8110bcb65a703d91131586848fe256c1a3cbbbc3eb1791090dbf925aa742
-F src/pager.h e541ff7e1931e6e2165c38c7ff38cd1af8df0e20472ee8596479fd53c6aa149d
+F src/pager.c 52a2923ebd6ca0e2ce917b5860ffe893a344481b5fa4c2a2568ad156168bc558
+F src/pager.h 71fe1d5016ec54d0cc5d344cd474e563450b438c59f535e8c1ec8a13b1373f14
 F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
@@ -532,9 +533,9 @@ F src/resolve.c 1139e3157c710c6e6f04fe726f4e0d8bdb1ae89a276d3b0ca4975af163141c9c
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 924b61cef57033a8ca1ed3dcffd02445a7dd0c837cc849b2e4117251cac831f5
 F src/shell.c.in 43d3cfbee97d78ca5782dc53e4c1e22d3cc15c91beff20889dc60551f47eab9f
-F src/sqlite.h.in 4022f00351aec1ad99b9dcadc4fbe70a1db0e306e84fee509daf97a82ef044a4
+F src/sqlite.h.in c4713ccfa76dda5a96176d315ef5861d47f8d4815cc192d893b282a7f35669e9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 72af51aa4e912e14cd495fb6e7fac65f0940db80ed950d90911aff292cc47ce2
+F src/sqlite3ext.h b0f776a0d042b23b6bcbb6b0943e8a3768c7f0b438a275e7168f0204e223a4db
 F src/sqliteInt.h 7a29ba700a51eeb925731749a570cf3859f6a58ed94797ecf47508875b0ba279
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
@@ -1856,10 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a500da6aa659a8e73206e6d22ddbf2da5e4f1d1d551eeb66433163a3e13109d
-R dd17ff42793e7be350eec0c77a1551ba
-T *branch * enhanced-uri
-T *sym-enhanced-uri *
-T -sym-trunk *
+P 2ae77bd2335708343bce4541b4d2cf16edfe3fd5bc2dfb93757238c926aa960b
+R 3c2b1115f362d773ce1134af1c5678e6
 U drh
-Z a098e9553bba752fd93040dc261a9c76
+Z d49a59ecf45703e7c01f38027d23c9e9
