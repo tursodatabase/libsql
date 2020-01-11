@@ -4335,7 +4335,8 @@ const char *sqlite3_filename_database(const char *zFilename){
   return sqlite3_uri_parameter(zFilename - 3, "\003");
 }
 const char *sqlite3_filename_journal(const char *zFilename){
-  return sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
+  const char *z = sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
+  return ALWAYS(z) && z[0] ? z : 0;
 }
 const char *sqlite3_filename_wal(const char *zFilename){
   return sqlite3_uri_parameter(startOfNameList(zFilename), "\002");
