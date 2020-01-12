@@ -2150,6 +2150,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         WhereInfo *pSubWInfo;           /* Info for single OR-term scan */
         Expr *pOrExpr = pOrTerm->pExpr; /* Current OR clause term */
         int jmp1 = 0;                   /* Address of jump operation */
+        testcase( (pTabItem[0].fg.jointype & JT_LEFT)!=0
+               && !ExprHasProperty(pOrExpr, EP_FromJoin)
+        ); /* See TH3 vtab25.400 and ticket 614b25314c766238 */
         if( pAndExpr ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;

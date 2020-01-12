@@ -1,5 +1,5 @@
-C Change\sthe\szipfile\svirtual\stable\sso\sthat\sthe\sxBestIndex\smethod\sgives\sa\nreasonable\scost\sestimate\seven\sif\sno\sfilename\sis\sspecified.\s\sThe\smissing\nfilename\serror\scontinues\sto\sbe\sraised\sin\sthe\sxFilter\smethod.\s\sMeanwhile,\nthe\smore\sreasonable\scost\sestimate\savoids\sunnecessary\swierdness\sin\sthe\squery\nplanner.
-D 2020-01-12T22:25:58.315
+C Better\sthan\sremoving\sthe\sincorrect\sassert()\sis\sto\schange\sit\sinto\sa\ntestcase()\stogether\swith\sa\scomment\sindicating\swhere\san\sappropriate\stest\scase\ncan\sbe\sfound,\sand\sthe\sticket\sthat\sprovoked\sthe\schange.\nTicket\s[614b25314c766238]
+D 2020-01-12T22:38:17.374
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c df2bea0e0122e853d9f1a8ec68920744166d2a524e338eba92e5470538ecd1f9
 F src/whereInt.h e1d1db6bbec0ba4f345acc338f956c8237a6f06413afa68c6414e82fb5b06745
-F src/wherecode.c 3f7b0f73a239842999ccac1f8210dc071cf9f3acd534fd119f500c9a91c7bb9f
+F src/wherecode.c ec8870d6fe79668dd12d7edc65ae9771828d6cdfe478348c8abd872a89fdbadd
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c f8ba2ee12a19b51d3ba42c16277c74185ee9215306bc0d5a03974ade8b5bc98f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a999c5aa0d1d5569a5bda50d27e3a15c13e93e69d00db97c5294901522064a3
-R 1a302def53bcc8a305d91bdb4d7b1aeb
+P 0e468aa6decc73be307596782a778a739ff1b5dc0eb10fc4bd6776e460f99f8b
+R 76358fd3663c08229f0e49e9d0a4f6fc
 U drh
-Z 5ff48559c68bb18b16bc5be830c2b338
+Z e551a6acb253e74cc6216b26e8d80c01
