@@ -1309,10 +1309,10 @@ static int zipfileBestIndex(
       idx = i;
     }
   }
+  pIdxInfo->estimatedCost = 1000.0;
   if( idx>=0 ){
     pIdxInfo->aConstraintUsage[idx].argvIndex = 1;
     pIdxInfo->aConstraintUsage[idx].omit = 1;
-    pIdxInfo->estimatedCost = 1000.0;
     pIdxInfo->idxNum = 1;
   }else if( unusable ){
     return SQLITE_CONSTRAINT;
