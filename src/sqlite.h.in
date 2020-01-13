@@ -2267,21 +2267,23 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_DBCONFIG_TRUSTED_SCHEMA]]
 ** <dt>SQLITE_DBCONFIG_TRUSTED_SCHEMA</td>
-** <dd>The SQLITE_DBCONFIG_TRUSTED_SCHEMA option tells the SQLite to
-** assume that database schemas are untainted by malicious content.
+** <dd>The SQLITE_DBCONFIG_TRUSTED_SCHEMA option tells SQLite to
+** assume that database schemas (the contents of the [sqlite_master] tables)
+** are untainted by malicious content.
 ** When the SQLITE_DBCONFIG_TRUSTED_SCHEMA option is disabled, SQLite
 ** takes additional defensive steps to protect the application from harm
-** including, but not limited to, the following:
+** including:
 ** <ul>
 ** <li> Prohibit the use of SQL functions inside triggers, views,
 ** CHECK constraints, DEFAULT clauses, expression indexes, 
 ** partial indexes, or generated columns
 ** unless those functions are tagged with [SQLITE_INNOCUOUS].
-** <li> Pohibit the use of virtual tables inside of triggers or views
+** <li> Prohibit the use of virtual tables inside of triggers or views
 ** unless those virtual tables are tagged with [SQLITE_VTAB_INNOCUOUS].
 ** </ul>
 ** This setting defaults to "on" for legacy compatibility, however
-** all applications are advised to turn it off if possible.
+** all applications are advised to turn it off if possible. This setting
+** can also be controlled using the [PRAGMA trusted_schema] statement.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_LEGACY_FILE_FORMAT]]
@@ -5071,24 +5073,6 @@ int sqlite3_create_window_function(
 ** [CHECK constraints] or [generated columns].  SQLite might also optimize
 ** deterministic functions by factoring them out of inner loops.
 ** </dd>
-**
-** [[SQLITE_INNOCUOUS]] <dt>SQLITE_INNOCUOUS</dt><dd>
-** The SQLITE_INNOCUOUS flag means that the new function is unlikely
-** to cause problems even if misused.  An innocuous function should have
-** no side effects and consume few resources. The [abs|abs() function] 
-** is an example of an innocuous function.
-** The [load_extension() SQL function] is not innocuous because of its
-** side effects.  Some heightened security settings
-** ([SQLITE_DBCONFIG_TRUSTED_SCHEMA] and [PRAGMA trusted_schema=OFF])
-** disable the use of SQL functions inside views and triggers and in
-** schema structures such as [CHECK constraints], [DEFAULT clauses],
-** [expression indexes], [partial indexes], and [generated columns] unless
-** the function is tagged with SQLITE_INNOCUOUS.  Most built-in functions
-** are innocuous.  Developers are advised to avoid using the
-** SQLITE_INNOCUOUS flag for application-defined functions unless the
-** function has been carefully audited and found to be free of potentially
-** security-adverse side-effects and information-leaks.
-** </dd>
 ** 
 ** [[SQLITE_DIRECTONLY]] <dt>SQLITE_DIRECTONLY</dt><dd>
 ** The SQLITE_DIRECTONLY flag means that the function may only be invoked
@@ -5098,6 +5082,29 @@ int sqlite3_create_window_function(
 ** a security feature which is recommended for all 
 ** [application-defined SQL functions] that have side-effects or that
 ** could potentially leak sensitive information.
+** </dd>
+**
+** [[SQLITE_INNOCUOUS]] <dt>SQLITE_INNOCUOUS</dt><dd>
+** The SQLITE_INNOCUOUS flag means that the function is unlikely
+** to cause problems even if misused.  An innocuous function should have
+** no side effects and should not depend on any values other than its
+** input parameters. The [abs|abs() function] is an example of an
+** innocuous function.
+** The [load_extension() SQL function] is not innocuous because of its
+** side effects.
+** <p> SQLITE_INNOCUOUS is similar to SQLITE_DETERMINISTIC, but is not
+** exactly the same.  The [random|random() function] is an example of a
+** function that is innocuous but not deterministic.
+** <p>Some heightened security settings
+** ([SQLITE_DBCONFIG_TRUSTED_SCHEMA] and [PRAGMA trusted_schema=OFF])
+** disable the use of SQL functions inside views and triggers and in
+** schema structures such as [CHECK constraints], [DEFAULT clauses],
+** [expression indexes], [partial indexes], and [generated columns] unless
+** the function is tagged with SQLITE_INNOCUOUS.  Most built-in functions
+** are innocuous.  Developers are advised to avoid using the
+** SQLITE_INNOCUOUS flag for application-defined functions unless the
+** function has been carefully audited and found to be free of potentially
+** security-adverse side-effects and information-leaks.
 ** </dd>
 **
 ** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
@@ -9005,6 +9012,14 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** constraint handling.
 ** </dd>
 **
+** [[SQLITE_VTAB_DIRECTONLY]]<dt>SQLITE_VTAB_DIRECTONLY</dt>
+** <dd>Calls of the form
+** [sqlite3_vtab_config](db,SQLITE_VTAB_DIRECTONLY) from within the
+** the [xConnect] or [xCreate] methods of a [virtual table] implmentation
+** prohibits that virtual table from being used from within triggers and
+** views.
+** </dd>
+**
 ** [[SQLITE_VTAB_INNOCUOUS]]<dt>SQLITE_VTAB_INNOCUOUS</dt>
 ** <dd>Calls of the form
 ** [sqlite3_vtab_config](db,SQLITE_VTAB_INNOCUOUS) from within the
@@ -9014,14 +9029,6 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** virtual table can do no serious harm even if it is controlled by a
 ** malicious hacker.  Developers should avoid setting the SQLITE_VTAB_INNOCUOUS
 ** flag unless absolutely necessary.
-** </dd>
-**
-** [[SQLITE_VTAB_DIRECTONLY]]<dt>SQLITE_VTAB_DIRECTONLY</dt>
-** <dd>Calls of the form
-** [sqlite3_vtab_config](db,SQLITE_VTAB_DIRECTONLY) from within the
-** the [xConnect] or [xCreate] methods of a [virtual table] implmentation
-** prohibits that virtual table from being used from within triggers and
-** views.
 ** </dd>
 ** </dl>
 */
