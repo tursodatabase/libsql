@@ -11,6 +11,13 @@
 ******************************************************************************
 **
 ** This SQLite extension implements a noop() function used for testing.
+**
+** Variants:
+**
+**    noop(X)           The default.  Deterministic.
+**    noop_i(X)         Deterministic and innocuous.
+**    noop_do(X)        Deterministic and direct-only.
+**    noop_nd(X)        Non-deterministic.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -52,6 +59,10 @@ int sqlite3_noop_init(
   if( rc ) return rc;
   rc = sqlite3_create_function(db, "noop_do", 1,
                      SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_DIRECTONLY,
+                     0, noopfunc, 0, 0);
+  if( rc ) return rc;
+  rc = sqlite3_create_function(db, "noop_nd", 1,
+                     SQLITE_UTF8,
                      0, noopfunc, 0, 0);
   return rc;
 }
