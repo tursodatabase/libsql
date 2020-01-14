@@ -1,5 +1,5 @@
-C Fix\sa\sminor\stypo\son\sa\scomment\sin\sthe\sCLI\simplementation.
-D 2020-01-14T13:13:19.291
+C For\sthe\sshowdb\sutility\sprogram,\smore\saccurate\sdetection\sof\swhen\sthe\sdatabase\nis\sin\sautovacuum\smode\sfor\sthe\s"pgidx"\ssubcommand.
+D 2020-01-14T13:24:14.758
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1807,7 +1807,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 97d14a1ce32d5edda84081a5c939bd8975abd89568a773b288940e67e4c7e3ad
+F tool/showdb.c 9b2dbb4b7a00afaf8fc1719f0d775775effa5b135ac1a2c23f1c3f5d670c4e15
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c4fd62a092b8db6398c64a92c9ff35915eedcce1079a77aeda81811d94096c4
-R b33633203bda8df3a38c38c3b197ef0b
+P db4fb3503c4e1e40d7bd140187014e8f0cc186c441a0c7462987c77e2c83136a
+R bd47075c72e6d7f4272abf291c06f0d8
 U drh
-Z 5fb9a211e1a604a87bf30307a2d3e966
+Z daac81cc3ba25859a5b76fea47da2fb6

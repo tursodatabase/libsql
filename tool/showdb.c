@@ -956,7 +956,7 @@ static void page_usage_freelist(int pgno){
 ** Determine pages used as PTRMAP pages
 */
 static void page_usage_ptrmap(unsigned char *a){
-  if( a[55] ){
+  if( decodeInt32(a+52) ){
     int usable = g.pagesize - a[20];
     int pgno = 2;
     int perPage = usable/5;
