@@ -166,6 +166,24 @@ impl FromSql for String {
     }
 }
 
+impl FromSql for Box<str> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        value.as_str().map(Into::into)
+    }
+}
+
+impl FromSql for std::rc::Rc<str> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        value.as_str().map(Into::into)
+    }
+}
+
+impl FromSql for std::sync::Arc<str> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        value.as_str().map(Into::into)
+    }
+}
+
 impl FromSql for Vec<u8> {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_blob().map(|b| b.to_vec())
