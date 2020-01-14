@@ -4922,7 +4922,7 @@ static unsigned int get4byteInt(unsigned char *a){
 }
 
 /*
-** Implementation of the ".info" command.
+** Implementation of the ".dbinfo" command.
 **
 ** Return 1 on error, 2 to exit, and 0 otherwise.
 */
