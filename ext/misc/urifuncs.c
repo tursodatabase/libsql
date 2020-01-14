@@ -23,6 +23,8 @@
 **         sqlite3_db_filename()
 **
 ** These SQL functions are for testing and demonstration purposes only.
+**
+**
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -134,7 +136,7 @@ static void func_filename_database(
   const char *zSchema = (const char*)sqlite3_value_text(argv[0]);
   sqlite3 *db = sqlite3_context_db_handle(context);
   const char *zFile = sqlite3_db_filename(db, zSchema);
-  const char *zRes = sqlite3_filename_database(zFile);
+  const char *zRes = zFile ? sqlite3_filename_database(zFile) : 0;
   sqlite3_result_text(context, zRes, -1, SQLITE_TRANSIENT);
 }
 
@@ -151,7 +153,7 @@ static void func_filename_journal(
   const char *zSchema = (const char*)sqlite3_value_text(argv[0]);
   sqlite3 *db = sqlite3_context_db_handle(context);
   const char *zFile = sqlite3_db_filename(db, zSchema);
-  const char *zRes = sqlite3_filename_journal(zFile);
+  const char *zRes = zFile ? sqlite3_filename_journal(zFile) : 0;
   sqlite3_result_text(context, zRes, -1, SQLITE_TRANSIENT);
 }
 
@@ -168,7 +170,7 @@ static void func_filename_wal(
   const char *zSchema = (const char*)sqlite3_value_text(argv[0]);
   sqlite3 *db = sqlite3_context_db_handle(context);
   const char *zFile = sqlite3_db_filename(db, zSchema);
-  const char *zRes = sqlite3_filename_wal(zFile);
+  const char *zRes = zFile ? sqlite3_filename_wal(zFile) : 0;
   sqlite3_result_text(context, zRes, -1, SQLITE_TRANSIENT);
 }
 

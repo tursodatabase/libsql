@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS\son\sa\sbranch\sfor\simproved\sdatabase\scorruption\sdetection\s\nin\sbtree.c:freeSpace().\s\sTest\scase\sfound\sby\sdbsqlfuzz.
-D 2020-01-14T16:39:54.639
+C Fix\sthe\surifuncs.c\sextension\s(used\sfor\stesting\sand\sdebugging\sonly)\sso\sthat\nthe\ssqlite3_filename_database()\sSQL\sfunction\sand\sits\ssiblings\scorrectly\shandle\nan\sinvalid\sschema\sname\spassed\sin\sas\sthe\sargument.
+D 2020-01-14T16:50:09.276
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -321,7 +321,7 @@ F ext/misc/stmt.c 8a8dc4675042e4551e4afe99b8d0cc7a4a2fc1a8dacc0a9ce1b1bbff145da9
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
 F ext/misc/unionvtab.c 36237f0607ca954ac13a4a0e2d2ac40c33bc6e032a5f55f431713061ef1625f9
-F ext/misc/urifuncs.c a0b02a607b4170552deeff26812bb2f09eed1cc72d1056a4296ae6be0c19d100
+F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3b25c2f56ba60788db247287be6ab024b53c4afffd412b4876db563389be0d35
 F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057b1cdb
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72911fb1b010ae093a161b9c0d21cbdedcbc1f924a55f12227fbe342bd978e08
-R 2396ea5cb54c667d853921c6ec996dd6
+P 54bf04811951db6c894f272f870e3e41f8f5e05a25c1115efbbdbd0d8bba54be
+R ef60df967e796bd9bfc273160d5104d4
 U drh
-Z 190afd1fe5730a422de834b7bdd5d831
+Z 6fa8f0dab0c264087d10e9adb2b33207
