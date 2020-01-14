@@ -81,11 +81,11 @@ unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
     // an explicit feature check for that, and this doesn't really warrant one.
     // We'll use the extended code if we're on the bundled version (since it's
     // at least 3.17.0) and the normal constraint error code if not.
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     fn constraint_error_code() -> i32 {
         ffi::SQLITE_CONSTRAINT_FUNCTION
     }
-    #[cfg(not(feature = "bundled"))]
+    #[cfg(not(feature = "modern_sqlite"))]
     fn constraint_error_code() -> i32 {
         ffi::SQLITE_CONSTRAINT
     }

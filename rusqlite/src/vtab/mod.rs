@@ -70,6 +70,14 @@ pub struct Module<T: VTab> {
 unsafe impl<T: VTab> Send for Module<T> {}
 unsafe impl<T: VTab> Sync for Module<T> {}
 
+// Used as a trailing initializer for sqlite3_module -- this way we avoid having
+// the build fail if buildtime_bindgen is on, our bindings have
+// `sqlite3_module::xShadowName`, but vtab_v3 wasn't specified.
+fn zeroed_module() -> ffi::sqlite3_module {
+    // This is safe, as bindgen-generated structs are allowed to be zeroed.
+    unsafe { std::mem::MaybeUninit::zeroed().assume_init() }
+}
+
 /// Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
@@ -100,8 +108,7 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
-        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
-        xShadowName: None,
+        .. zeroed_module()
     };
     Module {
         base: ffi_module,
@@ -140,8 +147,7 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
-        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
-        xShadowName: None,
+        .. zeroed_module()
     };
     Module {
         base: ffi_module,
@@ -309,8 +315,8 @@ impl IndexInfo {
         }
     }
 
-    /// Estimated number of rows returned
-    #[cfg(feature = "bundled")] // SQLite >= 3.8.2
+    /// Estimated number of rows returned.
+    #[cfg(feature = "modern_sqlite")] // SQLite >= 3.8.2
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
         unsafe {
             (*self.0).estimatedRows = estimated_rows;

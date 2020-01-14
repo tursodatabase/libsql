@@ -166,18 +166,17 @@ mod build_linked {
     pub fn main(_out_dir: &str, out_path: &Path) {
         let header = find_sqlite();
         if cfg!(any(
+            feature = "bundled_bindings",
             feature = "bundled",
             all(windows, feature = "bundled-windows")
         )) && !cfg!(feature = "buildtime_bindgen")
         {
-            // We can only get here if `bundled` and `sqlcipher` were both
-            // specified (and `builtime_bindgen` was not). In order to keep
-            // `rusqlite` relatively clean we hide the fact that `bundled` can
-            // be ignored in some cases, and just use the bundled bindings, even
-            // though the library we found might not match their version.
-            // Ideally we'd perform a version check here, but doing so is rather
-            // tricky, since we might not have access to executables (and
-            // moreover, we might be cross compiling).
+            // Generally means the `bundled_bindings` feature is enabled
+            // (there's also an edge case where we get here involving
+            // sqlcipher). In either case most users are better off with turning
+            // on buildtime_bindgen instead, but this is still supported as we
+            // have runtime version checks and there are good reasons to not
+            // want to run bindgen.
             std::fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
                 .expect("Could not copy bindings to output directory");
         } else {

@@ -117,13 +117,13 @@ impl RawStatement {
         r
     }
 
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")] // 3.7.4
     pub fn readonly(&self) -> bool {
         unsafe { ffi::sqlite3_stmt_readonly(self.0) != 0 }
     }
 
     /// `CStr` must be freed
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")] // 3.14.0
     pub unsafe fn expanded_sql(&self) -> Option<&CStr> {
         let ptr = ffi::sqlite3_expanded_sql(self.0);
         if ptr.is_null() {
