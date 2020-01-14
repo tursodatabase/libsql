@@ -13,14 +13,17 @@ categories = ["external-ffi-bindings"]
 
 [features]
 default = ["min_sqlite_version_3_6_8"]
-bundled = ["cc"]
-bundled-windows = ["cc"]
+bundled = ["cc", "bundled_bindings"]
+bundled-windows = ["cc", "bundled_bindings"]
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
 sqlcipher = []
 min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_6_23 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_7_7 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
+# Bundle only the bindings file. Note that this does nothing if
+# `buildtime_bindgen` is enabled.
+bundled_bindings = []
 # sqlite3_unlock_notify >= 3.6.12
 unlock_notify = []
 # 3.13.0

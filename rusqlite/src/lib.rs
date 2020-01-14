@@ -295,7 +295,7 @@ pub enum DatabaseName<'a> {
     feature = "backup",
     feature = "blob",
     feature = "session",
-    feature = "bundled"
+    feature = "modern_sqlite"
 ))]
 impl DatabaseName<'_> {
     fn to_cstring(&self) -> Result<CString> {
@@ -750,7 +750,7 @@ impl Connection {
     }
 
     /// Determine if all associated prepared statements have been reset.
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")] // 3.8.6
     pub fn is_busy(&self) -> bool {
         self.db.borrow().is_busy()
     }
@@ -847,7 +847,7 @@ impl InterruptHandle {
     }
 }
 
-#[cfg(feature = "bundled")] // 3.7.10
+#[cfg(feature = "modern_sqlite")] // 3.7.10
 unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
     let db_name = DatabaseName::Main.to_cstring().unwrap();
     let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
@@ -857,7 +857,7 @@ unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
         CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
     }
 }
-#[cfg(not(feature = "bundled"))]
+#[cfg(not(feature = "modern_sqlite"))]
 unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
     None
 }
@@ -1302,7 +1302,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     fn test_is_busy() {
         let db = checked_memory_handle();
         assert!(!db.is_busy());
@@ -1331,11 +1331,11 @@ mod test {
     fn test_notnull_constraint_error() {
         // extended error codes for constraints were added in SQLite 3.7.16; if we're
         // running on our bundled version, we know the extended error code exists.
-        #[cfg(feature = "bundled")]
+        #[cfg(feature = "modern_sqlite")]
         fn check_extended_code(extended_code: c_int) {
             assert_eq!(extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL);
         }
-        #[cfg(not(feature = "bundled"))]
+        #[cfg(not(feature = "modern_sqlite"))]
         fn check_extended_code(_extended_code: c_int) {}
 
         let db = checked_memory_handle();

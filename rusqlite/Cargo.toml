@@ -33,7 +33,7 @@ collation = []
 functions = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
 # sqlite3_log: 3.6.23 (2010-03-09)
 trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
-bundled = ["libsqlite3-sys/bundled"]
+bundled = ["libsqlite3-sys/bundled", "modern_sqlite"]
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
@@ -55,6 +55,7 @@ window = ["functions"]
 series = ["vtab"]
 # check for invalid query.
 extra_check = []
+modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
 
 [dependencies]
 time = "0.1.0"
@@ -93,7 +94,7 @@ name = "deny_single_threaded_sqlite_config"
 name = "vtab"
 
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab", "window" ]
+features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab", "window", "modern_sqlite" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"

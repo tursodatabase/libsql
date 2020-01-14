@@ -533,13 +533,13 @@ impl Statement<'_> {
         self.conn.decode_result(stmt.finalize())
     }
 
-    #[cfg(not(feature = "bundled"))]
+    #[cfg(not(feature = "modern_sqlite"))]
     #[inline]
     fn check_readonly(&self) -> Result<()> {
         Ok(())
     }
 
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     #[inline]
     fn check_readonly(&self) -> Result<()> {
         /*if !self.stmt.readonly() { does not work for PRAGMA
@@ -548,7 +548,7 @@ impl Statement<'_> {
         Ok(())
     }
 
-    #[cfg(all(feature = "bundled", feature = "extra_check"))]
+    #[cfg(all(feature = "modern_sqlite", feature = "extra_check"))]
     #[inline]
     fn check_update(&self) -> Result<()> {
         if self.column_count() > 0 || self.stmt.readonly() {
@@ -557,7 +557,7 @@ impl Statement<'_> {
         Ok(())
     }
 
-    #[cfg(all(not(feature = "bundled"), feature = "extra_check"))]
+    #[cfg(all(not(feature = "modern_sqlite"), feature = "extra_check"))]
     #[inline]
     fn check_update(&self) -> Result<()> {
         if self.column_count() > 0 {
@@ -574,7 +574,7 @@ impl Statement<'_> {
 
     /// Returns a string containing the SQL text of prepared statement with
     /// bound parameters expanded.
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     pub fn expanded_sql(&self) -> Option<String> {
         unsafe {
             match self.stmt.expanded_sql() {
@@ -1019,7 +1019,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     fn test_expanded_sql() {
         let db = Connection::open_in_memory().unwrap();
         let stmt = db.prepare("SELECT ?").unwrap();

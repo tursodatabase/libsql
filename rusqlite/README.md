@@ -165,6 +165,12 @@ bundled version of SQLite. If you need other specific pregenerated binding
 versions, please file an issue. If you want to run `bindgen` at buildtime to
 produce your own bindings, use the `buildtime_bindgen` Cargo feature.
 
+If you enable the `modern_sqlite` feature, we'll use the bindings we would have
+included with the bundled build. You generally should have `buildtime_bindgen`
+enabled if you turn this on, as otherwise you'll need to keep the version of
+SQLite you link with in sync with what rusqlite would have bundled, (usually the
+most recent release of sqlite). Failing to do this will cause a runtime error.
+
 ## Author
 
 John Gallagher, johnkgallagher@gmail.com
