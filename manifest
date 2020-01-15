@@ -1,5 +1,5 @@
-C Merge\sall\srecent\senhancements\sand\sfixes\sfrom\strunk.
-D 2020-01-15T14:26:58.112
+C Fix\sthe\sassert_schema_state_ok()\sroutine\sso\sthat\sit\scorrectly\signores\nATTACH-ed\sdatabase\sthat\sfailed\sto\sopen\sdue\sto\san\serror.
+D 2020-01-15T17:18:34.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/btree.c 7af5ff0f88ba856c2681f6eeb457590b24f787e994f18cbdb44c2de2d33f757e
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
 F src/build.c b22d3580d09eccb8779b6a08a20b79289d73058c16c779c54b8454eee6d5ef77
-F src/callback.c 63422679f285cf2252c57d8705f4f613a4ecd191d82c413ea57b0b15b35fc827
+F src/callback.c a3ed3fefacda1382f1ac4288a2fa15046f1e0d8418e3a281e501c9f0b52d5188
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 15d1010037db3577d2e90e793197c539e86860ab272d7a49e4e976425d0eba62
 F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
@@ -1867,7 +1867,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e09afecd6086211253b5f8eab718dde097f92a88100e54604a3f063c1a1fc98 3d7434a9d85dae9135473d1c58c22ac01a282e654807aa10be9b39f127291594
-R 15ca3da604b66877479d6d4906c92531
+P f783917800a5ce7c4bb31725b26d266cd4f133a0cc8414c6bf4789a8cd1e45c8
+R 1bde647fe757f77de20e17786fe10a5d
 U drh
-Z 80ccbe9cfd70e1dc3c5202c2d4d8869e
+Z 30567749446507a8d59fb6fb0f28e948

@@ -49,7 +49,8 @@ static void assert_schema_state_ok(sqlite3 *db){
       if( i!=1 ){
         Db *pDb = &db->aDb[i];
         Btree *pBt = pDb->pBt;
-        assert( pBt==0 || sqlite3BtreeSchema(pBt, 0, 0)==0 );
+        if( pBt==0 ) continue;
+        assert( sqlite3BtreeSchema(pBt, 0, 0)==0 );
         assert( pDb->pSchema );
         if( pDb->pSPool ){
           if( DbHasProperty(db, i, DB_SchemaLoaded)==0 ){
