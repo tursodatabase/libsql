@@ -558,5 +558,9 @@ do_execsql_test 10.0 {
   SELECT b, rowid, '^' FROM t10 ORDER BY b, a LIMIT 4;
 } {2 1 ^ 4 3 ^ 4 4 ^ 7 5 ^}
 
+do_catchsql_test 11.0 {
+  VALUES(2) EXCEPT SELECT '' ORDER BY abc
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
 
 finish_test

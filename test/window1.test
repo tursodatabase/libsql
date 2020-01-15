@@ -1190,4 +1190,408 @@ do_execsql_test 30.0 {
          win3 AS (win2 RANGE BETWEEN 5.2 PRECEDING AND true PRECEDING );
 } {1 1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 31.1 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  CREATE TABLE t3(e, f);
+
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t2 VALUES(1, 1);
+  INSERT INTO t3 VALUES(1, 1);
+}
+
+do_execsql_test 31.2 {
+  SELECT d IN (SELECT sum(c) OVER (ORDER BY e+c) FROM t3) FROM (
+    SELECT * FROM t2
+  );
+} {1}
+
+do_execsql_test 31.3 {
+  SELECT d IN (SELECT sum(c) OVER (PARTITION BY d ORDER BY e+c) FROM t3) FROM (
+    SELECT * FROM t2
+  );
+} {1}
+
+do_catchsql_test 31.3 {
+  SELECT d IN (
+    SELECT sum(c) OVER ( ROWS BETWEEN d FOLLOWING AND UNBOUNDED FOLLOWING) 
+    FROM t3
+  )
+  FROM (
+    SELECT * FROM t2
+  );
+} {1 {frame starting offset must be a non-negative integer}}
+
+do_catchsql_test 31.3 {
+  SELECT d IN (
+    SELECT sum(c) OVER ( ROWS BETWEEN CURRENT ROW AND c FOLLOWING) 
+    FROM t3
+  )
+  FROM (
+    SELECT * FROM t2
+  );
+} {1 {frame ending offset must be a non-negative integer}}
+
+# 2019-11-16 chromium issue 1025467
+db close
+sqlite3 db :memory:
+do_catchsql_test 32.10 {
+  CREATE VIEW a AS SELECT NULL INTERSECT SELECT NULL ORDER BY s() OVER R;
+  CREATE TABLE a0 AS SELECT 0;
+  ALTER TABLE a0 RENAME TO S;
+} {1 {error in view a: 1st ORDER BY term does not match any column in the result set}}
+
+reset_db
+do_execsql_test 33.1 {
+  CREATE TABLE t1(aa, bb);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(5, 6);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(1);
+}
+do_execsql_test 33.2 {
+  SELECT (SELECT DISTINCT sum(aa) OVER() FROM t1 ORDER BY 1), x FROM t2 
+  ORDER BY 1;
+} {6 1}
+
+reset_db
+do_execsql_test 34.1 {
+  CREATE TABLE t1(a,b,c);
+}
+do_execsql_test 34.2 {
+  SELECT avg(a) OVER (
+      ORDER BY (SELECT sum(b) OVER ()
+        FROM t1 ORDER BY (
+          SELECT total(d) OVER (ORDER BY c)
+          FROM (SELECT 1 AS d) ORDER BY 1
+          )
+        )
+      )
+  FROM t1;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_catchsql_test 35.0 {
+  SELECT * WINDOW f AS () ORDER BY name COLLATE nocase;
+} {1 {no tables specified}}
+
+do_catchsql_test 35.1 {
+  VALUES(1) INTERSECT SELECT * WINDOW f AS () ORDER BY x COLLATE nocase;
+} {1 {no tables specified}}
+
+do_execsql_test 35.2 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1), (2), (3);
+  VALUES(1) INTERSECT 
+  SELECT sum(x) OVER f FROM t1 WINDOW f AS (ORDER BY x) ORDER BY 1;
+} {1}
+
+do_execsql_test 35.3 {
+  VALUES(8) EXCEPT 
+  SELECT sum(x) OVER f FROM t1 WINDOW f AS (ORDER BY x) ORDER BY 1;
+} {8}
+
+do_execsql_test 35.4 {
+  VALUES(1) UNION 
+  SELECT sum(x) OVER f FROM t1 WINDOW f AS (ORDER BY x) ORDER BY 1;
+} {1 3 6}
+
+# 2019-12-07 gramfuzz find
+#
+do_execsql_test 36.10 {
+  VALUES(count(*)OVER());
+} {1}
+do_execsql_test 36.20 {
+  VALUES(count(*)OVER()),(2);
+} {1 2}
+do_execsql_test 36.30 {
+  VALUES(2),(count(*)OVER());
+} {2 1}
+do_execsql_test 36.40 {
+  VALUES(2),(3),(count(*)OVER()),(4),(5);
+} {2 3 1 4 5}
+
+# 2019-12-17 crash test case found by Yongheng and Rui
+# See check-in 1ca0bd982ab1183b
+#
+reset_db
+do_execsql_test 37.10 {
+  CREATE TABLE t0(a UNIQUE, b PRIMARY KEY);
+  CREATE VIEW v0(c) AS SELECT max((SELECT count(a)OVER(ORDER BY 1))) FROM t0;
+  SELECT c FROM v0 WHERE c BETWEEN 10 AND 20;
+} {}
+do_execsql_test 37.20 {
+  DROP VIEW v0;
+  CREATE VIEW v0(c) AS SELECT max((SELECT count(a)OVER(ORDER BY 1234))) FROM t0;
+  SELECT c FROM v0 WHERE c BETWEEN -10 AND 20;
+} {}
+
+# 2019-12-20 mrigger reported problem with a FILTER clause on an aggregate
+# in a join.
+#
+reset_db
+do_catchsql_test 38.10 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c0, c1 UNIQUE);
+  INSERT INTO t0(c0) VALUES(1);
+  INSERT INTO t1(c0,c1) VALUES(2,3);
+  SELECT COUNT(*) FROM t0, t1 WHERE (SELECT AVG(0) FILTER(WHERE t1.c1));
+} {1 {misuse of aggregate: AVG()}}
+do_execsql_test 38.20 {
+  SELECT COUNT(*), AVG(1) FILTER(WHERE t1.c1) FROM t0, t1;
+} {1 1.0}
+do_catchsql_test 38.30 {
+  SELECT COUNT(*) FROM t0, t1 WHERE (SELECT AVG(1) FILTER(WHERE t1.c1));
+} {1 {misuse of aggregate: AVG()}}
+
+reset_db
+do_execsql_test 39.1 {
+  CREATE TABLE t0(c0 UNIQUE);
+}
+do_execsql_test 39.2 {
+  SELECT FIRST_VALUE(0) OVER();
+} {0}
+do_execsql_test 39.3 {
+  SELECT * FROM t0 WHERE(c0, 0) IN(SELECT FIRST_VALUE(0) OVER(), 0);
+}
+do_execsql_test 39.4 {
+  SELECT * FROM t0 WHERE (t0.c0, 1) IN(SELECT NTILE(1) OVER(), 0 FROM t0);
+}
+
+ifcapable rtree {
+  # 2019-12-25 ticket d87336c81c7d0873
+  #
+  reset_db
+  do_catchsql_test 40.1 {
+    CREATE VIRTUAL TABLE t0 USING rtree(c0, c1, c2);
+    SELECT * FROM t0
+     WHERE ((0,0) IN (SELECT COUNT(*),LAG(5)OVER(PARTITION BY 0) FROM t0),0)<=(c1,0);
+  } {0 {}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 41.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(NULL,'bb',355);
+  INSERT INTO t1 VALUES('CC','aa',158);
+  INSERT INTO t1 VALUES('GG','bb',929);
+  INSERT INTO t1 VALUES('FF','Rb',574);
+}
+
+do_execsql_test 41.2 {
+  SELECT min(c) OVER (
+    ORDER BY a RANGE BETWEEN 5.2 PRECEDING AND 0.1 PRECEDING
+  ) FROM t1
+} {355 158 574 929}
+
+do_execsql_test 41.2 {
+  SELECT min(c) OVER (
+    ORDER BY a RANGE BETWEEN 5.2 PRECEDING AND 0.1 PRECEDING
+  ) << 100 FROM t1
+} {0 0 0 0}
+
+do_execsql_test 41.3 {
+  SELECT
+    min(c) OVER win3 << first_value(c) OVER win3,
+    min(c) OVER win3 << first_value(c) OVER win3
+  FROM t1
+  WINDOW win3 AS (
+    PARTITION BY 6 ORDER BY a RANGE BETWEEN 5.2 PRECEDING AND 0.1 PRECEDING
+  );
+} {0 0  0 0  0 0  0 0}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 42.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 1, 1);
+  INSERT INTO t1 VALUES(2, 2, 2);
+}
+do_execsql_test 42.2 {
+  SELECT * FROM t1 WHERE (0, 0) IN ( SELECT count(*), 0 FROM t1 )
+} {}
+do_execsql_test 42.3 {
+  SELECT * FROM t1 WHERE (2, 0) IN ( SELECT count(*), 0 FROM t1 )
+} {1 1 1 2 2 2}
+
+do_execsql_test 42.3 {
+  SELECT count(*), max(a) OVER () FROM t1 GROUP BY c; 
+} {1 2 1 2}
+
+do_execsql_test 42.4 {
+  SELECT sum(a), max(b) OVER () FROM t1;
+} {3 1}
+
+do_execsql_test 42.5 {
+  CREATE TABLE t2(a, b);
+  INSERT INTO t2 VALUES('a', 1);
+  INSERT INTO t2 VALUES('a', 2);
+  INSERT INTO t2 VALUES('a', 3);
+  INSERT INTO t2 VALUES('b', 4);
+  INSERT INTO t2 VALUES('b', 5);
+  INSERT INTO t2 VALUES('b', 6);
+}
+
+do_execsql_test 42.6 {
+  SELECT a, sum(b), sum( sum(b) ) OVER (ORDER BY a) FROM t2 GROUP BY a;
+} {a 6 6   b 15 21}
+
+do_execsql_test 42.7 {
+  SELECT sum(b), sum( sum(b) ) OVER (ORDER BY a) FROM t2;
+} {21 21}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 43.1.1 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES (10);
+}
+do_catchsql_test 43.1.2 {
+  SELECT count() OVER() AS m FROM t1 ORDER BY (SELECT m);
+} {1 {misuse of aliased window function m}}
+
+reset_db
+do_execsql_test 43.2.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INTEGER);
+  INSERT INTO t1(a, b) VALUES(1,  10); -- 10
+  INSERT INTO t1(a, b) VALUES(2,  15); -- 25
+  INSERT INTO t1(a, b) VALUES(3,  -5); -- 20
+  INSERT INTO t1(a, b) VALUES(4,  -5); -- 15
+  INSERT INTO t1(a, b) VALUES(5,  20); -- 35
+  INSERT INTO t1(a, b) VALUES(6, -11); -- 24
+}
+
+do_execsql_test 43.2.2 {
+  SELECT a, sum(b) OVER (ORDER BY a) AS abc FROM t1 ORDER BY 2
+} {
+  1 10   4 15   3 20   6 24   2 25   5 35
+}
+
+do_execsql_test 43.2.3 {
+  SELECT a, sum(b) OVER (ORDER BY a) AS abc FROM t1 ORDER BY abc
+} {
+  1 10   4 15   3 20   6 24   2 25   5 35
+}
+
+do_execsql_test 43.2.4 {
+  SELECT a, sum(b) OVER (ORDER BY a) AS abc FROM t1 ORDER BY abc+5
+} {
+  1 10   4 15   3 20   6 24   2 25   5 35
+}
+
+do_catchsql_test 43.2.5 {
+  SELECT a, sum(b) OVER (ORDER BY a) AS abc FROM t1 ORDER BY (SELECT abc)
+} {1 {misuse of aliased window function abc}}
+
+do_catchsql_test 43.2.6 {
+  SELECT a, 1+sum(b) OVER (ORDER BY a) AS abc FROM t1 ORDER BY (SELECT abc)
+} {1 {misuse of aliased window function abc}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 44.1 {
+  CREATE TABLE t0(c0);
+}
+
+do_catchsql_test 44.2.1 {
+  SELECT ntile(0) OVER ();
+} {1 {argument of ntile must be a positive integer}}
+do_catchsql_test 44.2.2 {
+  SELECT (0, 0) IN(SELECT MIN(c0), NTILE(0) OVER()) FROM t0;
+} {1 {argument of ntile must be a positive integer}}
+
+do_execsql_test 44.3.1 {
+  SELECT ntile(1) OVER ();
+} {1}
+do_execsql_test 44.3.2 {
+  SELECT (0, 0) IN(SELECT MIN(c0), NTILE(1) OVER()) FROM t0;
+} {0}
+
+do_execsql_test 44.4.2 {
+  INSERT INTO t0 VALUES(2), (1), (0);
+  SELECT (0, 1) IN(SELECT MIN(c0), NTILE(1) OVER()) FROM t0;
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 45.1 {
+  CREATE TABLE t0(x);
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1000);
+  INSERT INTO t1 VALUES(1000);
+  INSERT INTO t0 VALUES(10000);
+}
+do_execsql_test 45.2 {
+  SELECT * FROM (
+      SELECT sum (a) OVER() FROM t1 UNION ALL SELECT x FROM t0
+  );
+} {2000 2000 10000}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 46.1 {
+  CREATE TABLE t1 (a);
+  CREATE INDEX i1 ON t1(a);
+
+  INSERT INTO t1 VALUES (10);
+}
+
+do_execsql_test 46.2 {
+  SELECT (SELECT sum(a) OVER(ORDER BY a)) FROM t1
+} 10
+
+do_execsql_test 46.3 {
+  SELECT * FROM t1 WHERE (SELECT sum(a) OVER(ORDER BY a));
+} 10
+
+do_execsql_test 46.4 {
+  SELECT * FROM t1 NATURAL JOIN t1
+    WHERE a=1
+    OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)
+} 10
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 47.0 {
+  CREATE TABLE t1(
+      a,
+      e,
+      f,
+      g UNIQUE,
+      h UNIQUE
+  );
+}
+
+do_execsql_test 47.1 {
+  CREATE VIEW t2(k) AS
+     SELECT e FROM t1 WHERE g = 'abc' OR h BETWEEN 10 AND f;
+}
+
+do_catchsql_test 47.2 {
+  SELECT 234 FROM t2
+    WHERE k=1
+    OR (SELECT k FROM t2 WHERE (SELECT sum(a) OVER() FROM t1 GROUP BY 1));
+} {1 {misuse of window function sum()}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 48.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+  SELECT (SELECT max(x)OVER(ORDER BY x) + min(x)OVER(ORDER BY x))
+    FROM (SELECT (SELECT sum(a) FROM t1) AS x FROM t1);
+} {12 12 12}
+
+do_execsql_test 48.1 {
+  SELECT (SELECT max(x)OVER(ORDER BY x) + min(x)OVER(ORDER BY x))
+    FROM (SELECT (SELECT sum(a) FROM t1 GROUP BY a) AS x FROM t1);
+} {2 2 2}
+
+
 finish_test

@@ -315,9 +315,9 @@ ifcapable floatingpoint {
   do_test func-4.38 {
     execsql {SELECT round(9999999999999.556,2);}
   } {9999999999999.56}
-  do_execsql_test func-4.39 {
-    SELECT round(1e500), round(-1e500);
-  } {Inf -Inf}
+  do_test func-4.39 {
+    string tolower [db eval {SELECT round(1e500), round(-1e500);}]
+  } {inf -inf}
 }
 
 # Test the upper() and lower() functions
@@ -1430,7 +1430,7 @@ do_test func-33.1 {
 do_catchsql_test func-33.2 {
   CREATE VIEW v33(y) AS SELECT testdirectonly(15);
   SELECT * FROM v33;
-} {1 {testdirectonly() prohibited in triggers and views}}
+} {1 {unsafe use of testdirectonly()}}
 do_execsql_test func-33.3 {
   SELECT * FROM (SELECT testdirectonly(15)) AS v33;
 } {30}
@@ -1441,7 +1441,7 @@ do_execsql_test func-33.4 {
 do_catchsql_test func-33.5 {
   WITH c(x) AS (SELECT * FROM v33)
   SELECT * FROM c;
-} {1 {testdirectonly() prohibited in triggers and views}}
+} {1 {unsafe use of testdirectonly()}}
 do_execsql_test func-33.10 {
   CREATE TABLE t33a(a,b);
   CREATE TABLE t33b(x,y);
@@ -1451,7 +1451,7 @@ do_execsql_test func-33.10 {
 } {}
 do_catchsql_test func-33.11 {
   INSERT INTO t33a VALUES(1,2);
-} {1 {testdirectonly() prohibited in triggers and views}}
+} {1 {unsafe use of testdirectonly()}}
 do_execsql_test func-33.20 {
   ALTER TABLE t33a RENAME COLUMN a TO aaa;
   SELECT sql FROM sqlite_master WHERE name='r1';
@@ -1459,5 +1459,22 @@ do_execsql_test func-33.20 {
     INSERT INTO t33b(x,y) VALUES(testdirectonly(new.aaa),new.b);
   END}}
 
+# 2020-01-09 Yongheng fuzzer find
+# The bug is in the register-validity debug logic, not in the SQLite core
+# and as such it only impacts debug builds.  Release builds work fine.
+#
+reset_db
+do_execsql_test func-34.10 {
+  CREATE TABLE t1(a INT CHECK(
+     datetime( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+              10,11,12,13,14,15,16,17,18,19,
+              20,21,22,23,24,25,26,27,28,29,
+              30,31,32,33,34,35,36,37,38,39,
+              40,41,42,43,44,45,46,47,48,a)
+   )
+  );
+  INSERT INTO t1(a) VALUES(1),(2);
+  SELECT * FROM t1;
+} {1 2}
 
 finish_test

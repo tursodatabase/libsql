@@ -155,6 +155,9 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Set a limit on the maximum size of a prepared statement */
   sqlite3_limit(cx.db, SQLITE_LIMIT_VDBE_OP, 25000);
 
+  /* Limit total memory available to SQLite to 20MB */
+  sqlite3_hard_heap_limit64(20000000);
+
   /* Set a limit on the maximum length of a string or BLOB.  Without this
   ** limit, fuzzers will invoke randomblob(N) for a large N, and the process
   ** will timeout trying to generate the huge blob */

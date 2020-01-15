@@ -641,4 +641,93 @@ do_execsql_test update-16.1 {
   SELECT * FROM t16 ORDER BY +a;
 } {1 2 3 4 5 6}
 
+# 2019-12-09 gramfuzz find
+# If a partial index that does not reference any column of its table (which is you
+# must admit is a very strange index, but one that is allowed) is used by an UPDATE
+# statement, void the use of OP_DeferredSeek on the main loop, as the seek will not
+# be resolved prior to the OP_Delete.
+#
+do_execsql_test update-17.10 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x,y);
+  INSERT INTO t1(x) VALUES(1);
+  CREATE INDEX t1x1 ON t1(1) WHERE 3;
+  UPDATE t1 SET x=2, y=3 WHERE 3;
+  SELECT * FROM t1;
+} {2 3}
+
+# 2019-12-22 ticket 5ad2aa6921faa1ee
+# Make a hard-copy of values that need to be run through OP_RealAffinity
+# rather than a soft-copy.  This is not strictly necessary, but it avoids
+# a memory-accounting assert().
+#
+reset_db
+do_execsql_test update-18.10 {
+  PRAGMA encoding = 'UTF16';
+  CREATE TABLE t0(c0 REAL, c1);
+  INSERT INTO t0(c0,c1) VALUES('xyz',11),('uvw',22);
+  CREATE INDEX i0 ON t0(c1) WHERE c0 GLOB 3;
+  CREATE INDEX i1 ON t0(c0,c1) WHERE typeof(c0)='text' AND typeof(c1)='integer';
+  UPDATE t0 SET c1=345;
+  SELECT * FROM t0;
+} {xyz 345 uvw 345}
+
+# 2019-12-22 ticket c62c5e58524b204d
+# This is really the same underlying problem as 5ad2aa6921faa1ee
+#
+reset_db
+do_execsql_test update-18.20 {
+  PRAGMA encoding = 'utf16';
+  CREATE TABLE t0(c0 TEXT);
+  CREATE INDEX i0 ON t0(0 LIKE COALESCE(c0, 0));
+  INSERT INTO t0(c0) VALUES (0), (0);
+  SELECT * FROM t0;
+} {0 0}
+
+# 2019-12-28 assertion fault reported by Yongheng
+# Similar to ticket ec8abb025e78f40c
+# An UPDATE was reaching the OP_Delete after running OP_DeferredSeek
+# without ever hitting an OP_Column. The enhanced solution is to
+# fix OP_Delete so that it can do the seek itself.
+#
+reset_db
+do_execsql_test update-19.10 {
+  CREATE TABLE t1(
+   a TEXT,
+   b INTEGER PRIMARY KEY UNIQUE
+  ); 
+  INSERT INTO t1 VALUES(1,2);
+  UPDATE t1 SET a = quote(b) WHERE b>=2;
+  SELECT * FROM t1;
+} {2 2}
+
+# 2019-12-29 ticket https://www.sqlite.org/src/info/314cc133e5ada126
+# REPLACE conflict resolution during an UPDATE causes a DELETE trigger 
+# to fire.  If that DELETE trigger subsequently modifies the row
+# being updated, bad things can happen.  Prevent this by prohibiting
+# triggers from making changes to the table being updated while doing
+# REPLACE conflict resolution on the UPDATE.
+#
+# See also tickets:
+#   https://www.sqlite.org/src/info/c1e19e12046d23fe 2019-10-25
+#   https://www.sqlite.org/src/info/a8a4847a2d96f5de 2019-10-16 
+#
+reset_db
+do_execsql_test update-20.10 {
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t1(a UNIQUE ON CONFLICT REPLACE, b);
+  INSERT INTO t1(a,b) VALUES(4,12),(9,13);
+  CREATE INDEX i0 ON t1(b);
+  CREATE TRIGGER tr0 DELETE ON t1 BEGIN
+    UPDATE t1 SET b = a;
+  END;
+  PRAGMA integrity_check;
+} {ok}
+do_catchsql_test update-20.20 {
+  UPDATE t1 SET a=0;
+} {1 {constraint failed}}
+do_execsql_test update-20.30 {
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

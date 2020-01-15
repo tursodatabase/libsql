@@ -50,6 +50,7 @@ static int wholenumberConnect(
   pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   sqlite3_declare_vtab(db, "CREATE TABLE x(value)");
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
   memset(pNew, 0, sizeof(*pNew));
   return SQLITE_OK;
 }

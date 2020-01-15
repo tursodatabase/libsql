@@ -210,6 +210,12 @@ OPTIMIZATIONS = 2
 SESSION = 0
 !ENDIF
 
+# Set this to non-0 to enable support for the rbu extension.
+#
+!IFNDEF RBU
+RBU = 0
+!ENDIF
+
 # Set the source code file to be used by executables and libraries when
 # they need the amalgamation.
 #
@@ -282,7 +288,6 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_INTROSPECTION_PRAGMAS=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DESERIALIZE=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
@@ -294,6 +299,13 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 !IF $(SESSION)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
+!ENDIF
+
+# Should the rbu extension be enabled?  If so, add compilation options
+# to enable it.
+#
+!IF $(RBU)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -978,7 +990,7 @@ Replace.exe:
 sqlite3.def:	Replace.exe $(LIBOBJ)
 	echo EXPORTS > sqlite3.def
 	dumpbin /all $(LIBOBJ) \
-		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup|rebaser)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup|rebaser|rbu)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
 		| sort >> sqlite3.def
 
 $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)

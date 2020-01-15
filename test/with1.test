@@ -1140,4 +1140,28 @@ do_execsql_test 24.2 {
   3 1 1 3
 }
 
+# 2020-01-02 chromium ticket 1033461
+# Do not allow the generated name of a CTE be "true" or "false" as
+# such a label might be later confused for the boolean literals of
+# the same name, causing inconsistencies in the abstract syntax
+# tree.  This problem first arose in version 3.23.0 when SQLite
+# began recognizing "true" and "false" as boolean literals, but also
+# had to continue to recognize "true" and "false" as identifiers for
+# backwards compatibility.
+#
+reset_db
+do_execsql_test 25.1 {
+  CREATE TABLE dual(dummy);
+  INSERT INTO dual(dummy) VALUES('X');
+  WITH cte1 AS (
+    SELECT TRUE, (
+      WITH cte2 AS (SELECT avg(DISTINCT TRUE) FROM dual)
+      SELECT 2571 FROM cte2
+    ) AS subquery1
+    FROM dual
+    GROUP BY 1
+  )
+  SELECT (SELECT 1324 FROM cte1) FROM cte1;
+} {1324}
+
 finish_test

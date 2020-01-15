@@ -132,13 +132,16 @@ static int nameInUsingClause(IdList *pUsing, const char *zCol){
 ** and zCol.  If any of zDb, zTab, and zCol are NULL then those fields will
 ** match anything.
 */
-int sqlite3MatchSpanName(
-  const char *zSpan,
+int sqlite3MatchEName(
+  const struct ExprList_item *pItem,
   const char *zCol,
   const char *zTab,
   const char *zDb
 ){
   int n;
+  const char *zSpan;
+  if( NEVER(pItem->eEName!=ENAME_TAB) ) return 0;
+  zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
     return 0;
@@ -267,7 +270,7 @@ static int lookupName(
           int hit = 0;
           pEList = pItem->pSelect->pEList;
           for(j=0; j<pEList->nExpr; j++){
-            if( sqlite3MatchSpanName(pEList->a[j].zSpan, zCol, zTab, zDb) ){
+            if( sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
               cnt++;
               cntTab = 2;
               pMatch = pItem;
@@ -414,7 +417,7 @@ static int lookupName(
     if( cnt==0
      && cntTab==1
      && pMatch
-     && (pNC->ncFlags & NC_IdxExpr)==0
+     && (pNC->ncFlags & (NC_IdxExpr|NC_GenCol))==0
      && sqlite3IsRowid(zCol)
      && VisibleRowid(pMatch->pTab)
     ){
@@ -448,8 +451,10 @@ static int lookupName(
       pEList = pNC->uNC.pEList;
       assert( pEList!=0 );
       for(j=0; j<pEList->nExpr; j++){
-        char *zAs = pEList->a[j].zName;
-        if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
+        char *zAs = pEList->a[j].zEName;
+        if( pEList->a[j].eEName==ENAME_NAME
+         && sqlite3_stricmp(zAs, zCol)==0
+        ){
           Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
           assert( pExpr->x.pList==0 );
@@ -459,7 +464,9 @@ static int lookupName(
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
             return WRC_Abort;
           }
-          if( (pNC->ncFlags&NC_AllowWin)==0 && ExprHasProperty(pOrig, EP_Win) ){
+          if( ExprHasProperty(pOrig, EP_Win)
+           && ((pNC->ncFlags&NC_AllowWin)==0 || pNC!=pTopNC )
+          ){
             sqlite3ErrorMsg(pParse, "misuse of aliased window function %s",zAs);
             return WRC_Abort;
           }
@@ -551,18 +558,35 @@ static int lookupName(
 
   /* If a column from a table in pSrcList is referenced, then record
   ** this fact in the pSrcList.a[].colUsed bitmask.  Column 0 causes
-  ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.  If the
-  ** column number is greater than the number of bits in the bitmask
-  ** then set the high-order bit of the bitmask.
+  ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.  Bit 63 is
+  ** set if the 63rd or any subsequent column is used.
+  **
+  ** The colUsed mask is an optimization used to help determine if an
+  ** index is a covering index.  The correct answer is still obtained
+  ** if the mask contains extra set bits.  However, it is important to
+  ** avoid setting bits beyond the maximum column number of the table.
+  ** (See ticket [b92e5e8ec2cdbaa1]).
+  **
+  ** If a generated column is referenced, set bits for every column
+  ** of the table.
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
     int n = pExpr->iColumn;
-    testcase( n==BMS-1 );
-    if( n>=BMS ){
-      n = BMS-1;
-    }
+    Table *pExTab = pExpr->y.pTab;
+    assert( pExTab!=0 );
     assert( pMatch->iCursor==pExpr->iTable );
-    pMatch->colUsed |= ((Bitmask)1)<<n;
+    if( (pExTab->tabFlags & TF_HasGenerated)!=0
+     && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
+    ){
+      testcase( pExTab->nCol==BMS-1 );
+      testcase( pExTab->nCol==BMS );
+      pMatch->colUsed = pExTab->nCol>=BMS ? ALLBITS : MASKBIT(pExTab->nCol)-1;
+    }else{
+      testcase( n==BMS-1 );
+      testcase( n==BMS );
+      if( n>=BMS ) n = BMS-1;
+      pMatch->colUsed |= ((Bitmask)1)<<n;
+    }
   }
 
   /* Clean up and return
@@ -601,15 +625,23 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
   if( p ){
     struct SrcList_item *pItem = &pSrc->a[iSrc];
-    p->y.pTab = pItem->pTab;
+    Table *pTab = p->y.pTab = pItem->pTab;
     p->iTable = pItem->iCursor;
     if( p->y.pTab->iPKey==iCol ){
       p->iColumn = -1;
     }else{
       p->iColumn = (ynVar)iCol;
-      testcase( iCol==BMS );
-      testcase( iCol==BMS-1 );
-      pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
+      if( (pTab->tabFlags & TF_HasGenerated)!=0
+       && (pTab->aCol[iCol].colFlags & COLFLAG_GENERATED)!=0
+      ){
+        testcase( pTab->nCol==63 );
+        testcase( pTab->nCol==64 );
+        pItem->colUsed = pTab->nCol>=64 ? ALLBITS : MASKBIT(pTab->nCol)-1;
+      }else{
+        testcase( iCol==BMS );
+        testcase( iCol==BMS-1 );
+        pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
+      }
     }
   }
   return p;
@@ -618,23 +650,39 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
 /*
 ** Report an error that an expression is not valid for some set of
 ** pNC->ncFlags values determined by validMask.
+**
+** static void notValid(
+**   Parse *pParse,       // Leave error message here
+**   NameContext *pNC,    // The name context 
+**   const char *zMsg,    // Type of error
+**   int validMask,       // Set of contexts for which prohibited
+**   Expr *pExpr          // Invalidate this expression on error
+** ){...}
+**
+** As an optimization, since the conditional is almost always false
+** (because errors are rare), the conditional is moved outside of the
+** function call using a macro.
 */
-static void notValid(
-  Parse *pParse,       /* Leave error message here */
-  NameContext *pNC,    /* The name context */
-  const char *zMsg,    /* Type of error */
-  int validMask        /* Set of contexts for which prohibited */
+static void notValidImpl(
+   Parse *pParse,       /* Leave error message here */
+   NameContext *pNC,    /* The name context */
+   const char *zMsg,    /* Type of error */
+   Expr *pExpr          /* Invalidate this expression on error */
 ){
-  assert( (validMask&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr))==0 );
-  if( (pNC->ncFlags & validMask)!=0 ){
-    const char *zIn = "partial index WHERE clauses";
-    if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
+  const char *zIn = "partial index WHERE clauses";
+  if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
 #ifndef SQLITE_OMIT_CHECK
-    else if( pNC->ncFlags & NC_IsCheck ) zIn = "CHECK constraints";
+  else if( pNC->ncFlags & NC_IsCheck ) zIn = "CHECK constraints";
 #endif
-    sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
-  }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  else if( pNC->ncFlags & NC_GenCol ) zIn = "generated columns";
+#endif
+  sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
+  if( pExpr ) pExpr->op = TK_NULL;
 }
+#define sqlite3ResolveNotValid(P,N,M,X,E) \
+  assert( ((X)&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol))==0 ); \
+  if( ((N)->ncFlags & (X))!=0 ) notValidImpl(P,N,M,E);
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
@@ -723,7 +771,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zColumn = pExpr->u.zToken;
       }else{
         Expr *pLeft = pExpr->pLeft;
-        notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
+        testcase( pNC->ncFlags & NC_IdxExpr );
+        testcase( pNC->ncFlags & NC_GenCol );
+        sqlite3ResolveNotValid(pParse, pNC, "the \".\" operator",
+                               NC_IdxExpr|NC_GenCol, 0);
         pRight = pExpr->pRight;
         if( pRight->op==TK_ID ){
           zDb = 0;
@@ -812,33 +863,36 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
           /* For the purposes of the EP_ConstFunc flag, date and time
           ** functions and other functions that change slowly are considered
-          ** constant because they are constant for the duration of one query */
+          ** constant because they are constant for the duration of one query.
+          ** This allows them to be factored out of inner loops. */
           ExprSetProperty(pExpr,EP_ConstFunc);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
           /* Date/time functions that use 'now', and other functions like
           ** sqlite_version() that might change over time cannot be used
           ** in an index. */
-          notValid(pParse, pNC, "non-deterministic functions",
-                   NC_IdxExpr|NC_PartIdx);
+          sqlite3ResolveNotValid(pParse, pNC, "non-deterministic functions",
+                                 NC_SelfRef, 0);
+        }else{
+          assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
+          pExpr->op2 = pNC->ncFlags & NC_SelfRef;
+          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
-         && sqlite3Config.bInternalFunctions==0
+         && (pParse->db->mDbFlags & DBFLAG_InternalFunc)==0
         ){
           /* Internal-use-only functions are disallowed unless the
-          ** SQL is being compiled using sqlite3NestedParse() */
+          ** SQL is being compiled using sqlite3NestedParse() or
+          ** the SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test-control has be
+          ** used to activate internal functionsn for testing purposes */
           no_such_func = 1;
           pDef = 0;
         }else
-        if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
-         && ExprHasProperty(pExpr, EP_Indirect)
+        if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
          && !IN_RENAME_OBJECT
         ){
-          /* Functions tagged with SQLITE_DIRECTONLY may not be used
-          ** inside of triggers and views */
-          sqlite3ErrorMsg(pParse, "%s() prohibited in triggers and views",
-                          pDef->zName);
+          sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
         }
       }
 
@@ -919,7 +973,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           Select *pSel = pNC->pWinSelect;
           assert( pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
-            sqlite3WindowUpdate(pParse, pSel->pWinDefn, pWin, pDef);
+            sqlite3WindowUpdate(pParse, pSel ? pSel->pWinDefn : 0, pWin, pDef);
           }
           sqlite3WalkExprList(pWalker, pWin->pPartition);
           sqlite3WalkExprList(pWalker, pWin->pOrderBy);
@@ -964,7 +1018,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_IN );
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         int nRef = pNC->nRef;
-        notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
+        testcase( pNC->ncFlags & NC_IsCheck );
+        testcase( pNC->ncFlags & NC_PartIdx );
+        testcase( pNC->ncFlags & NC_IdxExpr );
+        testcase( pNC->ncFlags & NC_GenCol );
+        sqlite3ResolveNotValid(pParse, pNC, "subqueries",
+                 NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol, pExpr);
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
@@ -975,7 +1034,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
     case TK_VARIABLE: {
-      notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
+      testcase( pNC->ncFlags & NC_IsCheck );
+      testcase( pNC->ncFlags & NC_PartIdx );
+      testcase( pNC->ncFlags & NC_IdxExpr );
+      testcase( pNC->ncFlags & NC_GenCol );
+      sqlite3ResolveNotValid(pParse, pNC, "parameters",
+               NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol, pExpr);
       break;
     }
     case TK_IS:
@@ -1057,8 +1121,9 @@ static int resolveAsName(
   if( pE->op==TK_ID ){
     char *zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
-      char *zAs = pEList->a[i].zName;
-      if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
+      if( pEList->a[i].eEName==ENAME_NAME
+       && sqlite3_stricmp(pEList->a[i].zEName, zCol)==0
+      ){
         return i+1;
       }
     }
@@ -1784,10 +1849,13 @@ void sqlite3ResolveSelectNames(
 ** Resolve names in expressions that can only reference a single table
 ** or which cannot reference any tables at all.  Examples:
 **
-**    (1)   CHECK constraints
-**    (2)   WHERE clauses on partial indices
-**    (3)   Expressions in indexes on expressions
-**    (4)   Expression arguments to VACUUM INTO.
+**                                                    "type" flag
+**                                                    ------------
+**    (1)   CHECK constraints                         NC_IsCheck
+**    (2)   WHERE clauses on partial indices          NC_PartIdx
+**    (3)   Expressions in indexes on expressions     NC_IdxExpr
+**    (4)   Expression arguments to VACUUM INTO.      0
+**    (5)   GENERATED ALWAYS as expressions           NC_GenCol
 **
 ** In all cases except (4), the Expr.iTable value for Expr.op==TK_COLUMN
 ** nodes of the expression is set to -1 and the Expr.iColumn value is
@@ -1796,18 +1864,19 @@ void sqlite3ResolveSelectNames(
 ** Any errors cause an error message to be set in pParse.
 */
 int sqlite3ResolveSelfReference(
-  Parse *pParse,      /* Parsing context */
-  Table *pTab,        /* The table being referenced, or NULL */
-  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr, or 0 */
-  Expr *pExpr,        /* Expression to resolve.  May be NULL. */
-  ExprList *pList     /* Expression list to resolve.  May be NULL. */
+  Parse *pParse,   /* Parsing context */
+  Table *pTab,     /* The table being referenced, or NULL */
+  int type,        /* NC_IsCheck, NC_PartIdx, NC_IdxExpr, NC_GenCol, or 0 */
+  Expr *pExpr,     /* Expression to resolve.  May be NULL. */
+  ExprList *pList  /* Expression list to resolve.  May be NULL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
 
   assert( type==0 || pTab!=0 );
-  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr || pTab==0 );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
+          || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
   if( pTab ){
@@ -1815,6 +1884,11 @@ int sqlite3ResolveSelfReference(
     sSrc.a[0].zName = pTab->zName;
     sSrc.a[0].pTab = pTab;
     sSrc.a[0].iCursor = -1;
+    if( pTab->pSchema!=pParse->db->aDb[1].pSchema ){
+      /* Cause EP_FromDDL to be set on TK_FUNCTION nodes of non-TEMP
+      ** schema elements */
+      type |= NC_FromDDL;
+    }
   }
   sNC.pParse = pParse;
   sNC.pSrcList = &sSrc;

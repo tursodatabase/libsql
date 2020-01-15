@@ -41,11 +41,6 @@ set pragma_def {
   ARG:  SQLITE_NullCallback
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
-  NAME: legacy_file_format
-  TYPE: FLAG
-  ARG:  SQLITE_LegacyFileFmt
-  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
-
   NAME: fullfsync
   TYPE: FLAG
   ARG:  SQLITE_FullFSync
@@ -131,6 +126,11 @@ set pragma_def {
   NAME: recursive_triggers
   TYPE: FLAG
   ARG:  SQLITE_RecTriggers
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+
+  NAME: trusted_schema
+  TYPE: FLAG
+  ARG:  SQLITE_TrustedSchema
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: foreign_keys
@@ -262,7 +262,7 @@ set pragma_def {
 
   NAME: function_list
   FLAG: Result0
-  COLS: name builtin
+  COLS: name builtin type enc narg flags
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
 
@@ -404,6 +404,9 @@ set pragma_def {
   IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
 
   NAME: soft_heap_limit
+  FLAG: Result0
+
+  NAME: hard_heap_limit
   FLAG: Result0
 
   NAME: threads

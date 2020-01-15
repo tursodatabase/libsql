@@ -2818,6 +2818,7 @@ deserialize_error:
   **         --argcount N           Function has exactly N arguments
   **         --deterministic        The function is pure
   **         --directonly           Prohibit use inside triggers and views
+  **         --innocuous            Has no side effects or information leaks
   **         --returntype TYPE      Specify the return type of the function
   */
   case DB_FUNCTION: {
@@ -2854,6 +2855,9 @@ deserialize_error:
       if( n>1 && strncmp(z, "-directonly",n)==0 ){
         flags |= SQLITE_DIRECTONLY;
       }else
+      if( n>1 && strncmp(z, "-innocuous",n)==0 ){
+        flags |= SQLITE_INNOCUOUS;
+      }else
       if( n>1 && strncmp(z, "-returntype", n)==0 ){
         const char *azType[] = {"integer", "real", "text", "blob", "any", 0};
         assert( SQLITE_INTEGER==1 && SQLITE_FLOAT==2 && SQLITE_TEXT==3 );
@@ -2870,7 +2874,7 @@ deserialize_error:
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
             "\": must be -argcount, -deterministic, -directonly,"
-            " or -returntype", (char*)0
+            " -innocuous, or -returntype", (char*)0
         );
         return TCL_ERROR;
       }
@@ -3670,6 +3674,7 @@ static int sqliteCmdUsage(
 ){
   Tcl_WrongNumArgs(interp, 1, objv,
     "HANDLE ?FILENAME? ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+    " ?-nofollow BOOLEAN?"
     " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
     " ?-shared-schema BOOLEAN?"
@@ -3684,6 +3689,7 @@ static int sqliteCmdUsage(
 /*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
 **                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
+**                           ?-nofollow BOOLEAN?
 **
 ** This is the main Tcl command.  When the "sqlite" Tcl command is
 ** invoked, this routine runs to process that command.
@@ -3781,6 +3787,14 @@ static int SQLITE_TCLAPI DbMain(
         flags |= SQLITE_OPEN_CREATE;
       }else{
         flags &= ~SQLITE_OPEN_CREATE;
+      }
+    }else if( strcmp(zArg, "-nofollow")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_NOFOLLOW;
+      }else{
+        flags &= ~SQLITE_OPEN_NOFOLLOW;
       }
     }else if( strcmp(zArg, "-nomutex")==0 ){
       int b;

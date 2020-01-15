@@ -73,6 +73,7 @@ static int dbpageConnect(
   DbpageTable *pTab = 0;
   int rc = SQLITE_OK;
 
+  sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   rc = sqlite3_declare_vtab(db, 
           "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB, schema HIDDEN)");
   if( rc==SQLITE_OK ){

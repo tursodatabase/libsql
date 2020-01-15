@@ -255,4 +255,33 @@ if {[permutation]!="inmemory_journal"} {
 }
 }
 
+#-------------------------------------------------------------------------
+# Check that empty write transactions do not cause the return of "PRAGMA
+# data_version" to be decremented with journal_mode=PERSIST and
+# locking_mode=EXCLUSIVE
+#
+foreach {tn sql} {
+  A {
+  }
+  B {
+    PRAGMA journal_mode = PERSIST;
+    PRAGMA locking_mode = EXCLUSIVE;
+  }
+} {
+  reset_db
+  execsql $sql
+
+  do_execsql_test pragma3-510$tn {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+    PRAGMA data_version;
+  } {1}
+
+  do_execsql_test pragma3-520$tn {
+    BEGIN EXCLUSIVE;
+    COMMIT;
+    PRAGMA data_version;
+  } {1}
+}
+
 finish_test

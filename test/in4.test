@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix in4
 
 do_test in4-1.1 {
   execsql {
@@ -338,5 +339,30 @@ do_execsql_test in4-6.2-eqp {
   SELECT * FROM t6a, t6b WHERE a=3 AND c IN (b);
 } {~/SCAN/}
 
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(d, e);
+  CREATE INDEX t1bc ON t1(c, b);
+  INSERT INTO t2(e) VALUES(1);
+  INSERT INTO t1 VALUES(NULL, NULL, NULL);
+}
+
+do_execsql_test 7.1 {
+  SELECT * FROM t2 LEFT JOIN t1 ON c = d AND b IN (10,10,10);
+} {{} 1 {} {} {}}
+
+ifcapable rtree {
+  reset_db
+  do_execsql_test 7.2 {
+    CREATE VIRTUAL TABLE t1 USING rtree(a, b, c);
+    CREATE TABLE t2(d INTEGER, e INT);
+    INSERT INTO t2(e) VALUES(1);
+  }
+
+  do_execsql_test 7.3 {
+    SELECT * FROM t2 LEFT JOIN t1 ON c IN (d) AND b IN (10,10,10);
+  } {{} 1 {} {} {}}
+}
 
 finish_test

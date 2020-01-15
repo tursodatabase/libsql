@@ -122,4 +122,27 @@ do_execsql_test 400 {
   SELECT x.a FROM x JOIN y ON x.c = y.a WHERE x.b = 1 AND x.b = 1;
 } {}
 
+# 2020-01-07: ticket 82ac75ba0093e5dc
+# Incorrect join result due to mishandling of affinity in constant
+# propagation.
+#
+reset_db
+do_execsql_test 500 {
+  PRAGMA automatic_index=OFF;
+  CREATE TABLE t0(c0);
+  INSERT INTO t0 VALUES('0');
+  CREATE VIEW v0(c0) AS SELECT CAST(0 AS INT) FROM t0;
+  SELECT 200, * FROM t0, v0 WHERE 0 = t0.c0 AND t0.c0 = v0.c0;
+} {}
+do_execsql_test 510 {
+  SELECT 200, * FROM t0, v0 WHERE t0.c0 = 0 AND t0.c0 = v0.c0;
+} {}
+do_execsql_test 520 {
+  SELECT 200, * FROM t0, v0 WHERE 0 = t0.c0 AND v0.c0 = t0.c0;
+} {}
+do_execsql_test 530 {
+  SELECT 200, * FROM t0, v0 WHERE t0.c0 = 0 AND v0.c0 = t0.c0;
+} {}
+
+
 finish_test

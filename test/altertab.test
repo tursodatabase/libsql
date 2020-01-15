@@ -240,13 +240,13 @@ ifcapable vtab {
     );
   } {}
   
-  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
   do_execsql_test 7.2 {
     SELECT 
     sqlite_rename_table(db, 0, 0, sql, zOld, zNew, bTemp)
     FROM ddd;
   } {{} {} {}}
-  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
+  sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 }
 
 #-------------------------------------------------------------------------
@@ -542,19 +542,39 @@ ifcapable fts3 {
     CREATE VIRTUAL TABLE y1 USING fts3;
   }
 
-  do_catchsql_test 16.1 {
+  do_catchsql_test 16.10 {
     INSERT INTO y1_segments VALUES(1, X'1234567890');
   } {1 {table y1_segments may not be modified}}
 
-  do_catchsql_test 16.2 {
+  do_catchsql_test 16.20 {
+    DROP TABLE y1_segments;
+  } {1 {table y1_segments may not be dropped}}
+
+  do_catchsql_test 16.20 {
     ALTER TABLE y1_segments RENAME TO abc;
   } {1 {table y1_segments may not be altered}}
+  sqlite3_db_config db DEFENSIVE 0
+  do_catchsql_test 16.22 {
+    ALTER TABLE y1_segments RENAME TO abc;
+  } {0 {}}
+  sqlite3_db_config db DEFENSIVE 1
+  do_catchsql_test 16.23 {
+    CREATE TABLE y1_segments AS SELECT * FROM abc;
+  } {1 {object name reserved for internal use: y1_segments}}
+  do_catchsql_test 16.24 {
+    CREATE VIEW y1_segments AS SELECT * FROM abc;
+  } {1 {object name reserved for internal use: y1_segments}}
+  sqlite3_db_config db DEFENSIVE 0
+  do_catchsql_test 16.25 {
+    ALTER TABLE abc RENAME TO y1_segments;
+  } {0 {}}
+  sqlite3_db_config db DEFENSIVE 1
 
-  do_execsql_test 16.3 {
+  do_execsql_test 16.30 {
     ALTER TABLE y1 RENAME TO z1;
   }
 
-  do_execsql_test 16.4 {
+  do_execsql_test 16.40 {
     SELECT * FROM z1_segments;
   }
 }
