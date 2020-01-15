@@ -23,7 +23,8 @@ source $testdir/tester.tcl
 do_not_use_codec
 
 
-db eval {PRAGMA legacy_file_format=OFF}
+#db eval {PRAGMA legacy_file_format=OFF}
+sqlite3_db_config db LEGACY_FILE_FORMAT 0
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.

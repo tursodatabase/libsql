@@ -752,8 +752,23 @@ do_test trigger2-9.1 {
   }
 } {}
 
+integrity_check trigger2-9.99
+
+# 2019-11-02 Problem found by TH3, related to generated column support.
+db close
+sqlite3 db :memory:
+do_execsql_test trigger2-10.1 {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE VIEW v2(a,b,c,d) AS SELECT * FROM t1;
+  CREATE TRIGGER v2ins INSTEAD OF INSERT ON v2 BEGIN
+    INSERT INTO t1(a,b,c,d) VALUES(new.a, new.b, new.c, new.d);
+  END;
+  INSERT INTO v2(a,d) VALUES(11,14);
+  SELECT * FROM t1;
+} {11 {} {} 14}
+ 
 } ;# ifcapable view
 
-integrity_check trigger2-9.9
+integrity_check trigger2-999
 
 finish_test

@@ -302,4 +302,3 @@ do_execsql_test 3030 {
 }
 
 finish_test
-

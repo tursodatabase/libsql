@@ -115,4 +115,24 @@ do_test 1.8 {
 db close
 foreach {name f} $files { forcedelete $f }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  ATTACH DATABASE '' AS aux;
+  CREATE TABLE IF NOT EXISTS aux.t1(a, b);
+  CREATE TEMPORARY TRIGGER tr1 DELETE ON t1 BEGIN 
+    DELETE FROM t1; 
+  END;
+  CREATE TABLE temp.t1(a, b);
+}
+
+do_execsql_test 2.1 {
+  DETACH DATABASE aux;
+}
+
+do_execsql_test 2.2 {
+  DROP TRIGGER tr1;
+}
+
 finish_test
+

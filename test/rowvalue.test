@@ -570,4 +570,78 @@ do_execsql_test 22.100 {
   SELECT (SELECT 5,6 UNION SELECT 3,4 ORDER BY 1 DESC) IN (SELECT 5,6);
 } {1 0 1 0 0 1 0 1}
 
+# 2019-10-21 Ticket b47e3627ecaadbde
+#
+do_execsql_test 23.100 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(aa COLLATE NOCASE, bb);
+  INSERT INTO t0 VALUES('a', 'A');
+  SELECT (+bb,1) >= (aa, 1), (aa,1)<=(+bb,1) FROM t0;
+  SELECT 2 FROM t0 WHERE (+bb,1) >= (aa,1);
+  SELECT 3 FROM t0 WHERE (aa,1) <= (+bb,1);
+} {0 1 3}
+do_execsql_test 23.110 {
+  SELECT (SELECT +bb,1) >= (aa, 1), (aa,1)<=(SELECT +bb,1) FROM t0;
+  SELECT 2 FROM t0 WHERE (SELECT +bb,1) >= (aa,1);
+  SELECT 3 FROM t0 WHERE (aa,1) <= (SELECT +bb,1);
+} {0 1 3}
+
+# 2019-10-22 Ticket 6ef984af8972c2eb
+do_execsql_test 24.100 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 TEXT PRIMARY KEY);
+  INSERT INTO t0(c0) VALUES ('');
+  SELECT (t0.c0, TRUE) > (CAST(0 AS REAL), FALSE) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0, TRUE) > (CAST('' AS REAL), FALSE);
+} {1 2}
+
+# 2019-10-23 Ticket 135c9da7513e5a97
+do_execsql_test 25.10 {
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 UNIQUE);
+  INSERT INTO t0(c0) VALUES('a');
+  SELECT (t0.c0, 0) < ('B' COLLATE NOCASE, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0, 0) < ('B' COLLATE NOCASE, 0);
+} {1 2}
+do_execsql_test 25.20 {
+  SELECT ('B' COLLATE NOCASE, 0)> (t0.c0, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE ('B' COLLATE NOCASE, 0)> (t0.c0, 0);
+} {1 2}
+do_execsql_test 25.30 {
+  SELECT ('B', 0)> (t0.c0 COLLATE nocase, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE ('B', 0)> (t0.c0 COLLATE nocase, 0);
+} {1 2}
+do_execsql_test 25.40 {
+  SELECT (t0.c0 COLLATE nocase, 0) < ('B', 0) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0 COLLATE nocase, 0) < ('B', 0);
+} {1 2}
+
+# 2019-11-04 Ticket 02aa2bd02f97d0f2
+# The TK_VECTOR operator messes up sqlite3ExprImpliesNonNull() which
+# causes incorrect LEFT JOIN strength reduction.  TK_VECTOR should be
+# treated the same as TK_OR.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 26.10 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c1);
+  INSERT INTO t1(c1) VALUES (0);
+  SELECT (c0, x'') != (NULL, 0) FROM t1 LEFT JOIN t0;
+} {1}
+do_execsql_test 26.20 {
+  SELECT 2 FROM t1 LEFT JOIN t0 ON (c0, x'') != (NULL, 0);
+} {2}
+do_execsql_test 26.30 {
+  SELECT 3 FROM t1 LEFT JOIN t0 WHERE (c0, x'') != (NULL, 0);
+} {3}
+
+# 2019-12-30 ticket 892575cdba4e1e36
+#
+reset_db
+do_catchsql_test 27.10 {
+  CREATE TABLE t0(c0 CHECK(((0, 0) > (0, c0))));
+  INSERT INTO t0(c0) VALUES(0) ON CONFLICT(c0) DO UPDATE SET c0 = 3;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+
 finish_test

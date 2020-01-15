@@ -683,6 +683,9 @@ int sqlite3_config(int op, ...){
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
+  sqlite3_int64 szAlloc = sz*(sqlite3_int64)cnt;
+  int nBig;   /* Number of full-size slots */
+  int nSm;    /* Number smaller LOOKASIDE_SMALL-byte slots */
   
   if( sqlite3LookasideUsed(db,0)>0 ){
     return SQLITE_BUSY;
@@ -705,37 +708,71 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     pStart = 0;
   }else if( pBuf==0 ){
     sqlite3BeginBenignMalloc();
-    pStart = sqlite3Malloc( sz*(sqlite3_int64)cnt );  /* IMP: R-61949-35727 */
+    pStart = sqlite3Malloc( szAlloc );  /* IMP: R-61949-35727 */
     sqlite3EndBenignMalloc();
-    if( pStart ) cnt = sqlite3MallocSize(pStart)/sz;
+    if( pStart ) szAlloc = sqlite3MallocSize(pStart);
   }else{
     pStart = pBuf;
+  }
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+  if( sz>=LOOKASIDE_SMALL*3 ){
+    nBig = szAlloc/(3*LOOKASIDE_SMALL+sz);
+    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+  }else if( sz>=LOOKASIDE_SMALL*2 ){
+    nBig = szAlloc/(LOOKASIDE_SMALL+sz);
+    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+  }else
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
+  if( sz>0 ){
+    nBig = szAlloc/sz;
+    nSm = 0;
+  }else{
+    nBig = nSm = 0;
   }
   db->lookaside.pStart = pStart;
   db->lookaside.pInit = 0;
   db->lookaside.pFree = 0;
   db->lookaside.sz = (u16)sz;
+  db->lookaside.szTrue = (u16)sz;
   if( pStart ){
     int i;
     LookasideSlot *p;
     assert( sz > (int)sizeof(LookasideSlot*) );
-    db->lookaside.nSlot = cnt;
     p = (LookasideSlot*)pStart;
-    for(i=cnt-1; i>=0; i--){
+    for(i=0; i<nBig; i++){
       p->pNext = db->lookaside.pInit;
       db->lookaside.pInit = p;
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+    db->lookaside.pSmallInit = 0;
+    db->lookaside.pSmallFree = 0;
+    db->lookaside.pMiddle = p;
+    for(i=0; i<nSm; i++){
+      p->pNext = db->lookaside.pSmallInit;
+      db->lookaside.pSmallInit = p;
+      p = (LookasideSlot*)&((u8*)p)[LOOKASIDE_SMALL];
+    }
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
+    assert( ((uptr)p)<=szAlloc + (uptr)pStart );
     db->lookaside.pEnd = p;
     db->lookaside.bDisable = 0;
     db->lookaside.bMalloced = pBuf==0 ?1:0;
+    db->lookaside.nSlot = nBig+nSm;
   }else{
     db->lookaside.pStart = db;
+#ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
+    db->lookaside.pSmallInit = 0;
+    db->lookaside.pSmallFree = 0;
+    db->lookaside.pMiddle = db;
+#endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
     db->lookaside.pEnd = db;
     db->lookaside.bDisable = 1;
+    db->lookaside.sz = 0;
     db->lookaside.bMalloced = 0;
     db->lookaside.nSlot = 0;
   }
+  assert( sqlite3LookasideUsed(db,0)==0 );
 #endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
 }
@@ -849,6 +886,8 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_LEGACY_ALTER_TABLE,    SQLITE_LegacyAlter    },
         { SQLITE_DBCONFIG_DQS_DDL,               SQLITE_DqsDDL         },
         { SQLITE_DBCONFIG_DQS_DML,               SQLITE_DqsDML         },
+        { SQLITE_DBCONFIG_LEGACY_FILE_FORMAT,    SQLITE_LegacyFileFmt  },
+        { SQLITE_DBCONFIG_TRUSTED_SCHEMA,        SQLITE_TrustedSchema  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1387,6 +1426,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_CANTOPEN_ISDIR:     zName = "SQLITE_CANTOPEN_ISDIR";    break;
       case SQLITE_CANTOPEN_FULLPATH:  zName = "SQLITE_CANTOPEN_FULLPATH"; break;
       case SQLITE_CANTOPEN_CONVPATH:  zName = "SQLITE_CANTOPEN_CONVPATH"; break;
+      case SQLITE_CANTOPEN_SYMLINK:   zName = "SQLITE_CANTOPEN_SYMLINK";  break;
       case SQLITE_PROTOCOL:           zName = "SQLITE_PROTOCOL";          break;
       case SQLITE_EMPTY:              zName = "SQLITE_EMPTY";             break;
       case SQLITE_SCHEMA:             zName = "SQLITE_SCHEMA";            break;
@@ -1719,8 +1759,15 @@ int sqlite3CreateFunc(
 
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
-  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|SQLITE_SUBTYPE);
+  extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|
+                       SQLITE_SUBTYPE|SQLITE_INNOCUOUS);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
+
+  /* The SQLITE_INNOCUOUS flag is the same bit as SQLITE_FUNC_UNSAFE.  But
+  ** the meaning is inverted.  So flip the bit. */
+  assert( SQLITE_FUNC_UNSAFE==SQLITE_INNOCUOUS );
+  extraFlags ^= SQLITE_FUNC_UNSAFE;
+
   
 #ifndef SQLITE_OMIT_UTF16
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
@@ -1734,11 +1781,13 @@ int sqlite3CreateFunc(
     enc = SQLITE_UTF16NATIVE;
   }else if( enc==SQLITE_ANY ){
     int rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8|extraFlags,
+    rc = sqlite3CreateFunc(db, zFunctionName, nArg,
+         (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
          pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
     if( rc==SQLITE_OK ){
-      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE|extraFlags,
-          pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
+      rc = sqlite3CreateFunc(db, zFunctionName, nArg,
+           (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+           pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
     }
     if( rc!=SQLITE_OK ){
       return rc;
@@ -3064,6 +3113,7 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;
   db->lookaside.bDisable = 1;
+  db->lookaside.sz = 0;
   sqlite3FastPrngInit(&db->sPrng);
   assert( sizeof(db->aLimit)==sizeof(aHardLimit) );
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
@@ -3077,7 +3127,9 @@ static int openDatabase(
                  | SQLITE_EnableTrigger
                  | SQLITE_EnableView
                  | SQLITE_CacheSpill
-
+#if !defined(SQLITE_TRUSTED_SCHEMA) || SQLITE_TRUSTED_SCHEMA+0!=0
+                 | SQLITE_TrustedSchema
+#endif
 /* The SQLITE_DQS compile-time option determines the default settings
 ** for SQLITE_DBCONFIG_DQS_DDL and SQLITE_DBCONFIG_DQS_DML.
 **
@@ -3305,6 +3357,13 @@ static int openDatabase(
   if( !db->mallocFailed && rc==SQLITE_OK){
     rc = sqlite3StmtVtabInit(db);
   }
+#endif
+
+#ifdef SQLITE_ENABLE_INTERNAL_FUNCTIONS
+  /* Testing use only!!! The -DSQLITE_ENABLE_INTERNAL_FUNCTIONS=1 compile-time
+  ** option gives access to internal functions by default.  
+  ** Testing use only!!! */
+  db->mDbFlags |= DBFLAG_InternalFunc;
 #endif
 
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
@@ -4039,15 +4098,14 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*   sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCS, int onoff);
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, sqlite3*);
     **
-    ** If parameter onoff is non-zero, internal-use-only SQL functions
-    ** are visible to ordinary SQL.  This is useful for testing but is
-    ** unsafe because invalid parameters to those internal-use-only functions
-    ** can result in crashes or segfaults.
+    ** Toggle the ability to use internal functions on or off for
+    ** the database connection given in the argument.
     */
     case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS: {
-      sqlite3GlobalConfig.bInternalFunctions = va_arg(ap, int);
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      db->mDbFlags ^= DBFLAG_InternalFunc;
       break;
     }
 
@@ -4207,6 +4265,19 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
 }
 
 /*
+** Return a pointer to the name of Nth query parameter of the filename.
+*/
+const char *sqlite3_uri_key(const char *zFilename, int N){
+  if( zFilename==0 || N<0 ) return 0;
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] && (N--)>0 ){
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return zFilename[0] ? zFilename : 0;
+}
+
+/*
 ** Return a boolean value for a query parameter.
 */
 int sqlite3_uri_boolean(const char *zFilename, const char *zParam, int bDflt){
@@ -4229,6 +4300,46 @@ sqlite3_int64 sqlite3_uri_int64(
     bDflt = v;
   }
   return bDflt;
+}
+
+/*
+** The Pager stores the Journal filename, WAL filename, and Database filename
+** consecutively in memory, in that order, with prefixes \000\001\000,
+** \002\000, and \003\000, in that order.  Thus the three names look like query
+** parameters if you start at the first prefix.
+**
+** This routine backs up a filename to the start of the first prefix.
+**
+** This only works if the filenamed passed in was obtained from the Pager.
+*/
+static const char *startOfNameList(const char *zName){
+  while( zName[0]!='\001' || zName[1]!=0 ){
+    zName -= 3;
+    while( zName[0]!='\000' ){ zName--; }
+    zName++;
+  }
+  return zName-1;
+}
+
+/*
+** Translate a filename that was handed to a VFS routine into the corresponding
+** database, journal, or WAL file.
+**
+** It is an error to pass this routine a filename string that was not
+** passed into the VFS from the SQLite core.  Doing so is similar to
+** passing free() a pointer that was not obtained from malloc() - it is
+** an error that we cannot easily detect but that will likely cause memory
+** corruption.
+*/
+const char *sqlite3_filename_database(const char *zFilename){
+  return sqlite3_uri_parameter(zFilename - 3, "\003");
+}
+const char *sqlite3_filename_journal(const char *zFilename){
+  const char *z = sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
+  return ALWAYS(z) && z[0] ? z : 0;
+}
+const char *sqlite3_filename_wal(const char *zFilename){
+  return sqlite3_uri_parameter(startOfNameList(zFilename), "\002");
 }
 
 /*

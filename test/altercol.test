@@ -618,7 +618,7 @@ foreach {tn trigger error} {
 #-------------------------------------------------------------------------
 # Passing invalid parameters directly to sqlite_rename_column().
 #
-sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 do_execsql_test 14.1 {
   CREATE TABLE ddd(sql, type, object, db, tbl, icol, znew, bquote);
   INSERT INTO ddd VALUES(
@@ -641,7 +641,7 @@ do_execsql_test 14.2 {
   sqlite_rename_column(sql, type, object, db, tbl, icol, znew, bquote, 0)
   FROM ddd;
 } {{} {} {} {}}
-sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 
 # If the INTERNAL_FUNCTIONS test-control is disabled (which is the default)
 # then the sqlite_rename_table() SQL function is not accessible to

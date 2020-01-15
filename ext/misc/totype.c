@@ -502,11 +502,13 @@ int sqlite3_totype_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "tointeger", 1, SQLITE_UTF8, 0,
-                               tointegerFunc, 0, 0);
+  rc = sqlite3_create_function(db, "tointeger", 1,
+        SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_INNOCUOUS, 0,
+        tointegerFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "toreal", 1, SQLITE_UTF8, 0,
-                                 torealFunc, 0, 0);
+    rc = sqlite3_create_function(db, "toreal", 1,
+        SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_INNOCUOUS, 0,
+        torealFunc, 0, 0);
   }
   return rc;
 }
