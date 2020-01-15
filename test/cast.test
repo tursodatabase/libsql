@@ -461,6 +461,18 @@ do_execsql_test cast-7.43 {
   SELECT CAST('-1.0' AS numeric);
 } -1
 
+ifcapable utf16 {
+  reset_db
+  execsql { PRAGMA encoding='utf16' }
+
+  do_execsql_test cast-8.1 {
+    SELECT quote(X'310032003300')==quote(substr(X'310032003300', 1))
+  } 1
+  do_execsql_test cast-8.2 {
+    SELECT CAST(X'310032003300' AS TEXT)
+         ==CAST(substr(X'310032003300', 1) AS TEXT)
+  } 1
+}
 
 
 finish_test

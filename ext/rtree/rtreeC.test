@@ -177,7 +177,7 @@ do_execsql_test 4.3 {
 #
 reset_db
 do_execsql_test 5.1 {
-  CREATE TABLE t1(x PRIMARY KEY, y);
+  CREATE TABLE t1(x INT PRIMARY KEY, y);
   CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2, +d1);
 
   INSERT INTO t1(x) VALUES(1);

@@ -44,7 +44,6 @@ foreach {tn sql} {
  14 "PRAGMA full_column_names = 1"
  15 "PRAGMA fullfsync = 1"
  16 "PRAGMA ignore_check_constraints = 1"
- 17 "PRAGMA legacy_file_format = 1"
  18 "PRAGMA page_size = 511"
  19 "PRAGMA page_size = 512"
  20 "PRAGMA query_only = false"

@@ -795,4 +795,52 @@ if {$tcl_platform(platform)!="windows"} {
   } {. ./x1.txt ./x2.txt}
 }
 
+# 2019-12-18 Yongheng and Rui fuzzer
+#
+do_execsql_test 13.10 {
+  DROP TABLE IF EXISTS t0;
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t0(a,b,c,d,e,f,g);
+  REPLACE INTO t0(c,b,f) VALUES(10,10,10);
+  CREATE VIRTUAL TABLE t1 USING zipfile('h.zip');
+  REPLACE INTO t1 SELECT * FROM t0;
+  SELECT quote(name),quote(mode),quote(mtime),quote(sz),quote(rawdata),
+         quote(data),quote(method) FROM t1;
+} {'' 10 10 2 X'3130' X'3130' 0}
+
+# 2019-12-23 Yongheng and Rui fuzzer
+# Run using valgrind to see the problem.
+#
+do_execsql_test 14.10 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x char);
+  INSERT INTO t1(x) VALUES('1');
+  INSERT INTO t1(x) SELECT zipfile(x, 'xyz') FROM t1;
+  INSERT INTO t1(x) SELECT zipfile(x, 'uvw') FROM t1;
+  SELECT count(*) FROM t1;
+  PRAGMA integrity_check;
+} {3 ok}
+
+# 2019-12-26 More problems in zipfile from the Yongheng and Rui fuzzer
+#
+do_execsql_test 15.10 {
+  DROP TABLE IF EXISTS t1;
+  CREATE VIRTUAL TABLE t1 USING zipfile(null);
+  REPLACE INTO t1 VALUES(null,null,0,null,null,null,null);
+} {}
+do_execsql_test 15.20 {
+  DROP TABLE IF EXISTS t2;
+  CREATE VIRTUAL TABLE t2 USING zipfile(null);
+  REPLACE INTO t2 values(null,null,null,null,null,10,null);
+} {}
+
+# 2020-01-02 Yongheng fuzzer discovery
+#
+do_catchsql_test 16.10 {
+  DELETE FROM zipfile;
+} {1 {zipfile: missing filename}}
+do_catchsql_test 16.20 {
+  REPLACE INTO zipfile VALUES(null,null,null,null,null,123,null);
+} {1 {zipfile: missing filename}}
+
 finish_test

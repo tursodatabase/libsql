@@ -22,7 +22,8 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
-db eval {PRAGMA legacy_file_format=OFF}
+#db eval {PRAGMA legacy_file_format=OFF}
+sqlite3_db_config db LEGACY_FILE_FORMAT 0
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.
@@ -299,19 +300,19 @@ ifcapable legacyformat {
     db close
     forcedelete test.db test.db-journal
     sqlite3 db test.db
-    execsql {PRAGMA legacy_file_format}
+    sqlite3_db_config db LEGACY_FILE_FORMAT
   } {1}
 } else {
   do_test descidx1-6.1 {
     db close
     forcedelete test.db test.db-journal
     sqlite3 db test.db
-    execsql {PRAGMA legacy_file_format}
+    sqlite3_db_config db LEGACY_FILE_FORMAT
   } {0}
 }
 do_test descidx1-6.2 {
-  execsql {PRAGMA legacy_file_format=YES}
-  execsql {PRAGMA legacy_file_format}
+  sqlite3_db_config db LEGACY_FILE_FORMAT 1
+  sqlite3_db_config db LEGACY_FILE_FORMAT
 } {1}
 do_test descidx1-6.3 {
   execsql {
@@ -330,8 +331,8 @@ do_test descidx1-6.4 {
   db close
   forcedelete test.db test.db-journal
   sqlite3 db test.db
-  execsql {PRAGMA legacy_file_format=NO}
-  execsql {PRAGMA legacy_file_format}
+  sqlite3_db_config db LEGACY_FILE_FORMAT 0
+  sqlite3_db_config db LEGACY_FILE_FORMAT
 } {0}
 do_test descidx1-6.5 {
   execsql {
@@ -351,8 +352,8 @@ ifcapable vacuum {
     get_file_format
   } {4}
   do_test descidx1-6.7 {
+    sqlite3_db_config db LEGACY_FILE_FORMAT 1
     execsql {
-      PRAGMA legacy_file_format=ON;
       VACUUM;
     }
     get_file_format

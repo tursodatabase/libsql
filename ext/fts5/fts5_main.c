@@ -289,7 +289,10 @@ static void fts5CheckTransactionState(Fts5FullTable *p, int op, int iSavepoint){
     case FTS5_ROLLBACKTO:
       assert( p->ts.eState==1 );
       assert( iSavepoint>=-1 );
-      assert( iSavepoint<=p->ts.iSavepoint );
+      /* The following assert() can fail if another vtab strikes an error
+      ** within an xSavepoint() call then SQLite calls xRollbackTo() - without
+      ** having called xSavepoint() on this vtab.  */
+      /* assert( iSavepoint<=p->ts.iSavepoint ); */
       p->ts.iSavepoint = iSavepoint;
       break;
   }
@@ -744,6 +747,7 @@ static void fts5FreeCursorComponents(Fts5Cursor *pCsr){
     sqlite3_free(pCsr->zRankArgs);
   }
 
+  sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
   memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan - (u8*)pCsr));
 }
 
@@ -894,15 +898,24 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
         break;
       }
   
-      default:
+      default: {
+        Fts5Config *pConfig = ((Fts5Table*)pCursor->pVtab)->pConfig;
+        pConfig->bLock++;
         rc = sqlite3_step(pCsr->pStmt);
+        pConfig->bLock--;
         if( rc!=SQLITE_ROW ){
           CsrFlagSet(pCsr, FTS5CSR_EOF);
           rc = sqlite3_reset(pCsr->pStmt);
+          if( rc!=SQLITE_OK ){
+            pCursor->pVtab->zErrMsg = sqlite3_mprintf(
+                "%s", sqlite3_errmsg(pConfig->db)
+            );
+          }
         }else{
           rc = SQLITE_OK;
         }
         break;
+      }
     }
   }
   
@@ -1187,6 +1200,13 @@ static int fts5FilterMethod(
   int iIdxStr = 0;
   Fts5Expr *pExpr = 0;
 
+  if( pConfig->bLock ){
+    pTab->p.base.zErrMsg = sqlite3_mprintf(
+        "recursively defined fts5 content table"
+    );
+    return SQLITE_ERROR;
+  }
+
   if( pCsr->ePlan ){
     fts5FreeCursorComponents(pCsr);
     memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan-(u8*)pCsr));
@@ -1407,10 +1427,13 @@ static int fts5SeekCursor(Fts5Cursor *pCsr, int bErrormsg){
   }
 
   if( rc==SQLITE_OK && CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) ){
+    Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
     assert( pCsr->pExpr );
     sqlite3_reset(pCsr->pStmt);
     sqlite3_bind_int64(pCsr->pStmt, 1, fts5CursorRowid(pCsr));
+    pTab->pConfig->bLock++;
     rc = sqlite3_step(pCsr->pStmt);
+    pTab->pConfig->bLock--;
     if( rc==SQLITE_ROW ){
       rc = SQLITE_OK;
       CsrFlagClear(pCsr, FTS5CSR_REQUIRE_CONTENT);
@@ -1418,6 +1441,10 @@ static int fts5SeekCursor(Fts5Cursor *pCsr, int bErrormsg){
       rc = sqlite3_reset(pCsr->pStmt);
       if( rc==SQLITE_OK ){
         rc = FTS5_CORRUPT;
+      }else if( pTab->pConfig->pzErrmsg ){
+        *pTab->pConfig->pzErrmsg = sqlite3_mprintf(
+            "%s", sqlite3_errmsg(pTab->pConfig->db)
+        );
       }
     }
   }
@@ -2433,10 +2460,12 @@ static int fts5ColumnMethod(
       }
     }
   }else if( !fts5IsContentless(pTab) ){
+    pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
     rc = fts5SeekCursor(pCsr, 1);
     if( rc==SQLITE_OK ){
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
+    pConfig->pzErrmsg = 0;
   }
   return rc;
 }

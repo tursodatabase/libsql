@@ -725,12 +725,15 @@ static YYACTIONTYPE yy_reduce(
   if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfoNRhs[yyruleno];
     if( yysize ){
-      fprintf(yyTraceFILE, "%sReduce %d [%s], go to state %d.\n",
+      fprintf(yyTraceFILE, "%sReduce %d [%s]%s, pop back to state %d.\n",
         yyTracePrompt,
-        yyruleno, yyRuleName[yyruleno], yymsp[yysize].stateno);
+        yyruleno, yyRuleName[yyruleno],
+        yyruleno<YYNRULE_WITH_ACTION ? "" : " without external action",
+        yymsp[yysize].stateno);
     }else{
-      fprintf(yyTraceFILE, "%sReduce %d [%s].\n",
-        yyTracePrompt, yyruleno, yyRuleName[yyruleno]);
+      fprintf(yyTraceFILE, "%sReduce %d [%s]%s.\n",
+        yyTracePrompt, yyruleno, yyRuleName[yyruleno],
+        yyruleno<YYNRULE_WITH_ACTION ? "" : " without external action");
     }
   }
 #endif /* NDEBUG */
@@ -1068,6 +1071,6 @@ int ParseFallback(int iToken){
   return yyFallback[iToken];
 #else
   (void)iToken;
-#endif
   return 0;
+#endif
 }

@@ -221,4 +221,24 @@ do_execsql_test upsert1-800 {
   REINDEX;
 } {ok}
 
+# 2019-12-06 gramfuzz find
+sqlite3 db :memory:
+do_execsql_test upsert1-900 {
+  CREATE VIEW t1(a) AS SELECT 1;
+  CREATE TRIGGER t1r1 INSTEAD OF INSERT ON t1 BEGIN
+     SELECT 2;
+  END;
+}
+do_catchsql_test upsert1-910 {
+  INSERT INTO t1 VALUES(3) ON CONFLICT(x) DO NOTHING;
+} {1 {cannot UPSERT a view}}
+
+# 2019-12-26 ticket 7c13db5c3bf74001
+reset_db
+do_catchsql_test upsert1-1000 {
+  CREATE TABLE t0(c0 PRIMARY KEY, c1, c2 UNIQUE) WITHOUT ROWID;
+  INSERT OR FAIL INTO t0(c2) VALUES (0), (NULL)
+    ON CONFLICT(c2) DO UPDATE SET c1 = c0;
+} {1 {NOT NULL constraint failed: t0.c0}}
+
 finish_test

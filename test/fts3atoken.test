@@ -129,6 +129,29 @@ do_test fts3atoken-1.9 {
   }
 } {1 blob blob blob blob}
 
+# 2019-12-31:  The fts3_tokenizer() function can never be invoked from
+# within a trigger or view.
+#
+do_catchsql_test fts3atoken-1.10 {
+  CREATE VIEW v110(x) AS
+      SELECT fts3_tokenizer('tok110', fts3_tokenizer('simple')) IS NULL;
+} {0 {}}
+do_catchsql_test fts3atoken-1.11 {
+  SELECT * FROM v110;
+} {1 {unsafe use of fts3_tokenizer()}}
+do_catchsql_test fts3atoken-1.12 {
+  CREATE TABLE t110(a,b);
+  CREATE TRIGGER r110 AFTER INSERT ON t110 BEGIN
+      SELECT fts3_tokenizer('tok110', fts3_tokenizer('simple')) IS NULL;
+  END;
+} {0 {}}
+do_catchsql_test fts3atoken-1.13 {
+  INSERT INTO t110(a,b) VALUES(1,2);
+} {1 {unsafe use of fts3_tokenizer()}}
+do_catchsql_test fts3atoken-1.14 {
+  SELECT * FROM t110;
+} {0 {}}
+
 #--------------------------------------------------------------------------
 # Test cases fts3atoken-2.* test error cases in the scalar function based
 # API for getting and setting tokenizers.

@@ -36,7 +36,7 @@ do_test 1.1 {
       execsql { INSERT INTO x8 VALUES( rnddoc(5) ); }
     }
   } msg] $msg
-} {1 {database or disk is full}}
+} {0 {}}
 
 
 finish_test

@@ -326,7 +326,22 @@ foreach mod {fts3 fts4} {
     execsql { INSERT INTO t1(t1) VALUES('merge=200,10') }
     expr { ([db total_changes] - $x)>1 }
   } {0}
+}
 
+#-------------------------------------------------------------------------
+# Test cases 8.* - ticket [bf1aab89].
+#
+set testprefix fts4merge
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t1 USING fts4(a, order=DESC);
+  INSERT INTO t1(a) VALUES (0);
+  INSERT INTO t1(a) VALUES (0);
+  UPDATE t1 SET a = NULL;
+} 
+
+do_execsql_test 8.1 {
+  INSERT INTO t1(t1) VALUES('merge=1,4');
 }
 
 finish_test

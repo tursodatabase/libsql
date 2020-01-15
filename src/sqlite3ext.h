@@ -324,6 +324,12 @@ struct sqlite3_api_routines {
   int (*value_frombind)(sqlite3_value*);
   /* Version 3.30.0 and later */
   int (*drop_modules)(sqlite3*,const char**);
+  /* Version 3.31.0 and later */
+  sqlite3_int64 (*hard_heap_limit64)(sqlite3_int64);
+  const char *(*uri_key)(const char*,int);
+  const char *(*filename_database)(const char*);
+  const char *(*filename_journal)(const char*);
+  const char *(*filename_wal)(const char*);
 };
 
 /*
@@ -618,6 +624,12 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_value_frombind         sqlite3_api->frombind
 /* Version 3.30.0 and later */
 #define sqlite3_drop_modules           sqlite3_api->drop_modules
+/* Version 3.31.0 andn later */
+#define sqlite3_hard_heap_limit64      sqlite3_api->hard_heap_limit64
+#define sqlite3_uri_key                sqlite3_api->uri_key
+#define sqlite3_filename_database      sqlite3_api->filename_database
+#define sqlite3_filename_journal       sqlite3_api->filename_journal
+#define sqlite3_filename_wal           sqlite3_api->filename_wal
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

@@ -83,7 +83,7 @@ Replace.exe:
 sqlite3.def:	Replace.exe $(LIBOBJ)
 	echo EXPORTS > sqlite3.def
 	dumpbin /all $(LIBOBJ) \\
-		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup|rebaser)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \\
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset|changegroup|rebaser|rbu)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \\
 		| sort >> sqlite3.def
 }]]
 

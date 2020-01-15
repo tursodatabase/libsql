@@ -20,7 +20,6 @@ ifcapable !altertable {
   return
 }
 
-
 ifcapable windowfunc {
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
@@ -381,5 +380,211 @@ do_execsql_test 17.2 {
   END}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 18.1 {
+  CREATE TABLE t1(a,b);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    SELECT a, b FROM t1
+    INTERSECT SELECT b,a FROM t1
+    ORDER BY b IN (
+        SELECT a UNION SELECT b
+        FROM t1
+        ORDER BY b COLLATE nocase
+        )
+    ;
+  END;
+}
+
+do_catchsql_test 18.2 {
+    SELECT a, b FROM t1
+    INTERSECT 
+    SELECT b,a FROM t1
+    ORDER BY b IN (
+        SELECT a UNION SELECT b
+        FROM t1
+        ORDER BY b COLLATE nocase
+        );
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+do_catchsql_test 18.3 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger r1: 1st ORDER BY term does not match any column in the result set}}
+
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 19.0 {
+  CREATE TABLE a(a,h CONSTRAINT a UNIQUE ON CONFLICT FAIL,CONSTRAINT a);
+}
+
+foreach {tn v res} {
+  1 {
+    CREATE VIEW q AS SELECT 123
+    
+      WINDOW x AS (
+        RANGE BETWEEN UNBOUNDED PRECEDING AND INDEXED() OVER(
+          PARTITION BY ( WITH x AS(VALUES(col1)) VALUES(453) )
+        )
+      FOLLOWING
+    ) 
+  } {1 {error in view q: no such column: col1}}
+
+  2 {
+    CREATE VIEW q AS SELECT
+    CAST(CAST(CAST(CAST(CAST(CAST(CAST(CAST(CAST(CAST(CAST(RIGHT
+    AS)AS)AS)AS)AS)AS)AS)AS)AS)AS)AS)WINDOW x AS(RANGE BETWEEN UNBOUNDED
+    PRECEDING AND INDEXED(*)OVER(PARTITION BY
+    CROSS,CROSS,NATURAL,sqlite_master(*)OVER a,(WITH a AS(VALUES(LEFT)UNION
+    VALUES(LEFT)UNION VALUES(LEFT)UNION VALUES(LEFT)UNION VALUES(LEFT)UNION
+    VALUES(LEFT)UNION VALUES(LEFT))VALUES(LEFT))IN
+    STORED,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT)*LEFT FOLLOWING)ORDER BY
+    LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT LIMIT
+    LEFT,INDEXED(*)OVER(PARTITION BY
+    CROSS,CROSS,CROSS,LEFT,INDEXED(*)OVER(PARTITION BY
+    CROSS,CROSS,CROSS),INDEXED(*)OVER(PARTITION BY
+    LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT,LEFT),
+    LEFT,LEFT,INNER,CROSS,CROSS,CROSS,INNER,NATURAL ORDER BY
+    OUTER,NATURAL,NATURAL,NATURAL,NATURAL,NATURAL,NATURAL,NATURAL,INNER,
+    INNER,INNER NULLS LAST GROUPS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
+    FOLLOWING); 
+  } {1 {error in view q: no such column: LEFT}}
+
+  3 {
+    CREATE VIEW q AS SELECT 99 WINDOW x AS (RANGE BETWEEN UNBOUNDED PRECEDING
+    AND count(*)OVER(PARTITION BY (WITH a AS(VALUES(2),(x3))VALUES(0)))
+    FOLLOWING)ORDER BY x2,sum(1)OVER(PARTITION BY avg(5)OVER(PARTITION BY x1));
+  } {1 {error in view q: no such column: x3}}
+} {
+  do_execsql_test 19.$tn.1 "
+    DROP VIEW IF EXISTS q;
+    $v
+  " {}
+
+  do_catchsql_test 19.$tn.2 {
+    ALTER TABLE a RENAME TO g;
+  } $res
+}
+
+# Verify that the "if( pParse->nErr ) return WRC_Abort" at the top of the
+# renameUnmapSelectCb() routine in alter.c (2019-12-04) is really required.
+#
+sqlite3 db :memory:
+do_catchsql_test 20.10 {
+  CREATE TABLE s(a, b, c);
+  CREATE INDEX k ON s( (WITH s AS( SELECT * ) VALUES(2) ) IN () );
+  ALTER TABLE s RENAME a TO a2;
+} {1 {error in index k: no tables specified}}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 21.1 {
+  CREATE TABLE s(col);
+  CREATE VIEW v AS SELECT ( 
+    WITH x(a) AS(SELECT * FROM s) VALUES(RIGHT) 
+  ) IN() ; 
+  CREATE TABLE a(a);
+  ALTER TABLE a RENAME a TO b;
+}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 22.1 {
+  CREATE TABLE t1(a);
+  CREATE VIEW v2(b) AS SELECT * FROM v2;
+}
+
+do_catchsql_test 22.2 {
+  ALTER TABLE t1 RENAME TO t4;
+} {1 {error in view v2: view v2 is circularly defined}}
+
+do_execsql_test 22.3 {
+  DROP VIEW v2;
+  CREATE VIEW v2(b) AS WITH t3 AS (SELECT b FROM v2) SELECT * FROM t3;
+}
+
+do_catchsql_test 22.4 {
+  ALTER TABLE t1 RENAME TO t4;
+} {1 {error in view v2: view v2 is circularly defined}}
+
+do_execsql_test 22.5 {
+  DROP VIEW v2;
+  CREATE VIEW v2(b) AS WITH t3 AS (SELECT b FROM v2) VALUES(1);
+}
+
+do_catchsql_test 22.6 {
+  ALTER TABLE t1 RENAME TO t4;
+} {0 {}}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 23.1 {
+  CREATE TABLE t1(x);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    UPDATE t1 SET (c,d)=((SELECT 1 FROM t1 JOIN t2 ON b=x),1);
+  END;
+}
+
+do_catchsql_test 23.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+} {1 {error in trigger r1: no such table: main.t2}}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 23.1 {
+  CREATE TABLE v0 (a);
+  CREATE VIEW v2 (v3) AS 
+    WITH x1 AS (SELECT * FROM v2) 
+    SELECT v3 AS x, v3 AS y FROM v2; 
+}
+
+do_catchsql_test 23.2 {
+  SELECT * FROM v2
+} {1 {view v2 is circularly defined}}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 23.3 {
+  ALTER TABLE v0 RENAME TO t3 ;
+} {1 {error in view v2: view v2 is circularly defined}}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 24.1 {
+  CREATE TABLE v0 (v1); 
+  CREATE TABLE v2 (v3 INTEGER UNIQUE ON CONFLICT ABORT); 
+  CREATE TRIGGER x AFTER INSERT ON v2 WHEN ( 
+      ( SELECT v1 AS PROMO_REVENUE FROM v2 JOIN v0 USING ( VALUE ) ) AND 0 ) 
+  BEGIN 
+    DELETE FROM v2; 
+  END; 
+}
+do_catchsql_test 24.2 {
+  ALTER TABLE v0 RENAME TO x ;
+} {1 {error in trigger x: cannot join using column VALUE - column not present in both tables}}
+
+do_execsql_test 24.3 {
+  DROP TRIGGER x;
+  CREATE TRIGGER x AFTER INSERT ON v2 WHEN (
+    0 AND (SELECT rowid FROM v0)
+  ) BEGIN
+    DELETE FROM v2;
+  END;
+}
+
+do_execsql_test 24.4 {
+  ALTER TABLE v0 RENAME TO xyz;
+  SELECT sql FROM sqlite_master WHERE type='trigger'
+} {{CREATE TRIGGER x AFTER INSERT ON v2 WHEN (
+    0 AND (SELECT rowid FROM "xyz")
+  ) BEGIN
+    DELETE FROM v2;
+  END}}
 
 finish_test
+

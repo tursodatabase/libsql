@@ -248,6 +248,12 @@ OPTIMIZATIONS = 2
 SESSION = 0
 !ENDIF
 
+# Set this to non-0 to enable support for the rbu extension.
+#
+!IFNDEF RBU
+RBU = 0
+!ENDIF
+
 # Set the source code file to be used by executables and libraries when
 # they need the amalgamation.
 #
@@ -362,6 +368,13 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 !IF $(SESSION)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
+!ENDIF
+
+# Should the rbu extension be enabled?  If so, add compilation options
+# to enable it.
+#
+!IF $(RBU)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -1742,7 +1755,7 @@ $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 sqlite3.def:	libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup|rebaser)?_[^@]*)(?:@\d+)?$$" \1 \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup|rebaser|rbu)?_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
 # <</block2>>
 
@@ -2141,7 +2154,7 @@ parse.h:	parse.c
 parse.c:	$(TOP)\src\parse.y lemon.exe
 	del /Q parse.y parse.h parse.h.temp 2>NUL
 	copy $(TOP)\src\parse.y .
-	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
@@ -2301,7 +2314,7 @@ LSM1_SRC = \
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy $(TOP)\ext\fts5\fts5parse.y .
 	del /Q fts5parse.h 2>NUL
-	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) fts5parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S fts5parse.y
 
 fts5parse.h:	fts5parse.c
 
@@ -2404,9 +2417,6 @@ queryplantest:	testfixture.exe shell
 fuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe $(FUZZDATA)
 
-fastfuzztest:	fuzzcheck.exe
-	.\fuzzcheck.exe --limit-mem 100M $(FUZZDATA)
-
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
 quicktest:	testfixture.exe sourcetest
@@ -2416,7 +2426,7 @@ quicktest:	testfixture.exe sourcetest
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) sourcetest fastfuzztest
+test:	$(TESTPROGS) sourcetest fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 

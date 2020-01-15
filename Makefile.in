@@ -1052,7 +1052,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
-	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
+	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
@@ -1177,10 +1177,10 @@ FTS5_SRC = \
    $(TOP)/ext/fts5/fts5_varint.c \
    $(TOP)/ext/fts5/fts5_vocab.c  \
 
-fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(BEXE)
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
-	./lemon$(BEXE) $(OPTS) fts5parse.y
+	./lemon$(BEXE) $(OPTS) -S fts5parse.y
 
 fts5parse.h: fts5parse.c
 
@@ -1242,10 +1242,6 @@ fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessionfuz
 	./fuzzcheck$(TEXE) $(FUZZDATA)
 	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
 
-fastfuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessionfuzz-data1.db
-	./fuzzcheck$(TEXE) --limit-mem 100M $(FUZZDATA)
-	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
-
 valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessionfuzz-data1.db
 	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 	valgrind ./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
@@ -1263,7 +1259,7 @@ quicktest:	./testfixture$(TEXE)
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	fastfuzztest sourcetest $(TESTPROGS) tcltest
+test:	fuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
