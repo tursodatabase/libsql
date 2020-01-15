@@ -387,6 +387,7 @@ do_execsql_test 8.3 {
   PRAGMA wal_checkpoint;
   SELECT count(*) FROM t1 
 } {0 5 5 21}
+db close
 tvfs2 delete
 
 #-------------------------------------------------------------------------

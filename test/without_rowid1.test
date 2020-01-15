@@ -430,5 +430,27 @@ do_execsql_test 12.1 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2019-11-07 ticket https://www.sqlite.org/src/info/302027baf1374498
+# The xferCompatibleIndex() function confuses a PRIMARY KEY index
+# with a UNIQUE index.
+#
+do_execsql_test 13.10 {
+  DROP TABLE IF EXISTS t0;
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t0(
+    c0,
+    c1 UNIQUE,
+    PRIMARY KEY(c1, c1)
+  ) WITHOUT ROWID;
+  INSERT INTO t0(c0,c1) VALUES('abc','xyz');
+  CREATE TABLE t1(
+    c0,
+    c1 UNIQUE,
+    PRIMARY KEY(c1, c1)
+  ) WITHOUT ROWID;
+  INSERT INTO t1 SELECT * FROM t0;
+  PRAGMA integrity_check;
+  SELECT * FROM t0, t1;
+} {ok abc xyz abc xyz}
   
 finish_test

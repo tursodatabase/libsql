@@ -26,7 +26,8 @@ ifcapable !bloblit {
   finish_test
   return
 }
-db eval {PRAGMA legacy_file_format=OFF}
+#db eval {PRAGMA legacy_file_format=OFF}
+sqlite3_db_config db LEGACY_FILE_FORMAT 0
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.

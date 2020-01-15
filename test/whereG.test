@@ -306,7 +306,15 @@ do_execsql_test 8.10 {
   SELECT * FROM t0 WHERE likelihood(t0.rowid <= '0', 0.5);
 } {}
 
-
-
+# 2019-12-31: assertion fault discovered by Yongheng's fuzzer.
+# Harmless memIsValid() due to the code generators failure to
+# release the registers used by OP_ResultRow.
+#
+do_execsql_test 9.10 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a, b FLOAT);
+  INSERT INTO t1(a) VALUES(''),(NULL),('X'),(NULL);
+  SELECT coalesce(max(quote(a)),10) FROM t1 GROUP BY a;
+} {NULL '' 'X'}
 
 finish_test

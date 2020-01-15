@@ -36,6 +36,7 @@ struct Keyword {
   char *zName;         /* The keyword name */
   char *zTokenType;    /* Token value for this keyword */
   int mask;            /* Code this keyword if non-zero */
+  int priority;        /* Put higher priorities earlier in the hash chain */
   int id;              /* Unique ID for this record */
   int hash;            /* Hash on the keyword */
   int offset;          /* Offset to start of name string */
@@ -153,154 +154,161 @@ struct Keyword {
 #else
 #  define WINDOWFUNC 0x00100000
 #endif
+#ifdef SQLITE_OMIT_GENERATED_COLUMNS
+#  define GENCOL 0
+#else
+#  define GENCOL 0x00200000
+#endif
 
 /*
 ** These are the keywords
 */
 static Keyword aKeywordTable[] = {
-  { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER       },
-  { "ACTION",           "TK_ACTION",       FKEY                   },
-  { "ADD",              "TK_ADD",          ALTER                  },
-  { "AFTER",            "TK_AFTER",        TRIGGER                },
-  { "ALL",              "TK_ALL",          ALWAYS                 },
-  { "ALTER",            "TK_ALTER",        ALTER                  },
-  { "ANALYZE",          "TK_ANALYZE",      ANALYZE                },
-  { "AND",              "TK_AND",          ALWAYS                 },
-  { "AS",               "TK_AS",           ALWAYS                 },
-  { "ASC",              "TK_ASC",          ALWAYS                 },
-  { "ATTACH",           "TK_ATTACH",       ATTACH                 },
-  { "AUTOINCREMENT",    "TK_AUTOINCR",     AUTOINCR               },
-  { "BEFORE",           "TK_BEFORE",       TRIGGER                },
-  { "BEGIN",            "TK_BEGIN",        ALWAYS                 },
-  { "BETWEEN",          "TK_BETWEEN",      ALWAYS                 },
-  { "BY",               "TK_BY",           ALWAYS                 },
-  { "CASCADE",          "TK_CASCADE",      FKEY                   },
-  { "CASE",             "TK_CASE",         ALWAYS                 },
-  { "CAST",             "TK_CAST",         CAST                   },
-  { "CHECK",            "TK_CHECK",        ALWAYS                 },
-  { "COLLATE",          "TK_COLLATE",      ALWAYS                 },
-  { "COLUMN",           "TK_COLUMNKW",     ALTER                  },
-  { "COMMIT",           "TK_COMMIT",       ALWAYS                 },
-  { "CONFLICT",         "TK_CONFLICT",     CONFLICT               },
-  { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
-  { "CREATE",           "TK_CREATE",       ALWAYS                 },
-  { "CROSS",            "TK_JOIN_KW",      ALWAYS                 },
-  { "CURRENT",          "TK_CURRENT",      WINDOWFUNC             },
-  { "CURRENT_DATE",     "TK_CTIME_KW",     ALWAYS                 },
-  { "CURRENT_TIME",     "TK_CTIME_KW",     ALWAYS                 },
-  { "CURRENT_TIMESTAMP","TK_CTIME_KW",     ALWAYS                 },
-  { "DATABASE",         "TK_DATABASE",     ATTACH                 },
-  { "DEFAULT",          "TK_DEFAULT",      ALWAYS                 },
-  { "DEFERRED",         "TK_DEFERRED",     ALWAYS                 },
-  { "DEFERRABLE",       "TK_DEFERRABLE",   FKEY                   },
-  { "DELETE",           "TK_DELETE",       ALWAYS                 },
-  { "DESC",             "TK_DESC",         ALWAYS                 },
-  { "DETACH",           "TK_DETACH",       ATTACH                 },
-  { "DISTINCT",         "TK_DISTINCT",     ALWAYS                 },
-  { "DO",               "TK_DO",           UPSERT                 },
-  { "DROP",             "TK_DROP",         ALWAYS                 },
-  { "END",              "TK_END",          ALWAYS                 },
-  { "EACH",             "TK_EACH",         TRIGGER                },
-  { "ELSE",             "TK_ELSE",         ALWAYS                 },
-  { "ESCAPE",           "TK_ESCAPE",       ALWAYS                 },
-  { "EXCEPT",           "TK_EXCEPT",       COMPOUND               },
-  { "EXCLUSIVE",        "TK_EXCLUSIVE",    ALWAYS                 },
-  { "EXCLUDE",          "TK_EXCLUDE",      WINDOWFUNC             },
-  { "EXISTS",           "TK_EXISTS",       ALWAYS                 },
-  { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
-  { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
-  { "FILTER",           "TK_FILTER",       WINDOWFUNC             },
-  { "FIRST",            "TK_FIRST",        ALWAYS                 },
-  { "FOLLOWING",        "TK_FOLLOWING",    WINDOWFUNC             },
-  { "FOR",              "TK_FOR",          TRIGGER                },
-  { "FOREIGN",          "TK_FOREIGN",      FKEY                   },
-  { "FROM",             "TK_FROM",         ALWAYS                 },
-  { "FULL",             "TK_JOIN_KW",      ALWAYS                 },
-  { "GLOB",             "TK_LIKE_KW",      ALWAYS                 },
-  { "GROUP",            "TK_GROUP",        ALWAYS                 },
-  { "GROUPS",           "TK_GROUPS",       WINDOWFUNC             },
-  { "HAVING",           "TK_HAVING",       ALWAYS                 },
-  { "IF",               "TK_IF",           ALWAYS                 },
-  { "IGNORE",           "TK_IGNORE",       CONFLICT|TRIGGER       },
-  { "IMMEDIATE",        "TK_IMMEDIATE",    ALWAYS                 },
-  { "IN",               "TK_IN",           ALWAYS                 },
-  { "INDEX",            "TK_INDEX",        ALWAYS                 },
-  { "INDEXED",          "TK_INDEXED",      ALWAYS                 },
-  { "INITIALLY",        "TK_INITIALLY",    FKEY                   },
-  { "INNER",            "TK_JOIN_KW",      ALWAYS                 },
-  { "INSERT",           "TK_INSERT",       ALWAYS                 },
-  { "INSTEAD",          "TK_INSTEAD",      TRIGGER                },
-  { "INTERSECT",        "TK_INTERSECT",    COMPOUND               },
-  { "INTO",             "TK_INTO",         ALWAYS                 },
-  { "IS",               "TK_IS",           ALWAYS                 },
-  { "ISNULL",           "TK_ISNULL",       ALWAYS                 },
-  { "JOIN",             "TK_JOIN",         ALWAYS                 },
-  { "KEY",              "TK_KEY",          ALWAYS                 },
-  { "LAST",             "TK_LAST",         ALWAYS                 },
-  { "LEFT",             "TK_JOIN_KW",      ALWAYS                 },
-  { "LIKE",             "TK_LIKE_KW",      ALWAYS                 },
-  { "LIMIT",            "TK_LIMIT",        ALWAYS                 },
-  { "MATCH",            "TK_MATCH",        ALWAYS                 },
-  { "NATURAL",          "TK_JOIN_KW",      ALWAYS                 },
-  { "NO",               "TK_NO",           FKEY|WINDOWFUNC        },
-  { "NOT",              "TK_NOT",          ALWAYS                 },
-  { "NOTHING",          "TK_NOTHING",      UPSERT                 },
-  { "NOTNULL",          "TK_NOTNULL",      ALWAYS                 },
-  { "NULL",             "TK_NULL",         ALWAYS                 },
-  { "NULLS",            "TK_NULLS",        ALWAYS                 },
-  { "OF",               "TK_OF",           ALWAYS                 },
-  { "OFFSET",           "TK_OFFSET",       ALWAYS                 },
-  { "ON",               "TK_ON",           ALWAYS                 },
-  { "OR",               "TK_OR",           ALWAYS                 },
-  { "ORDER",            "TK_ORDER",        ALWAYS                 },
-  { "OTHERS",           "TK_OTHERS",       WINDOWFUNC             },
-  { "OUTER",            "TK_JOIN_KW",      ALWAYS                 },
-  { "OVER",             "TK_OVER",         WINDOWFUNC             },
-  { "PARTITION",        "TK_PARTITION",    WINDOWFUNC             },
-  { "PLAN",             "TK_PLAN",         EXPLAIN                },
-  { "PRAGMA",           "TK_PRAGMA",       PRAGMA                 },
-  { "PRECEDING",        "TK_PRECEDING",    WINDOWFUNC             },
-  { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
-  { "QUERY",            "TK_QUERY",        EXPLAIN                },
-  { "RAISE",            "TK_RAISE",        TRIGGER                },
-  { "RANGE",            "TK_RANGE",        WINDOWFUNC             },
-  { "RECURSIVE",        "TK_RECURSIVE",    CTE                    },
-  { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
-  { "REGEXP",           "TK_LIKE_KW",      ALWAYS                 },
-  { "REINDEX",          "TK_REINDEX",      REINDEX                },
-  { "RELEASE",          "TK_RELEASE",      ALWAYS                 },
-  { "RENAME",           "TK_RENAME",       ALTER                  },
-  { "REPLACE",          "TK_REPLACE",      CONFLICT               },
-  { "RESTRICT",         "TK_RESTRICT",     FKEY                   },
-  { "RIGHT",            "TK_JOIN_KW",      ALWAYS                 },
-  { "ROLLBACK",         "TK_ROLLBACK",     ALWAYS                 },
-  { "ROW",              "TK_ROW",          TRIGGER                },
-  { "ROWS",             "TK_ROWS",         ALWAYS                 },
-  { "SAVEPOINT",        "TK_SAVEPOINT",    ALWAYS                 },
-  { "SELECT",           "TK_SELECT",       ALWAYS                 },
-  { "SET",              "TK_SET",          ALWAYS                 },
-  { "TABLE",            "TK_TABLE",        ALWAYS                 },
-  { "TEMP",             "TK_TEMP",         ALWAYS                 },
-  { "TEMPORARY",        "TK_TEMP",         ALWAYS                 },
-  { "THEN",             "TK_THEN",         ALWAYS                 },
-  { "TIES",             "TK_TIES",         WINDOWFUNC             },
-  { "TO",               "TK_TO",           ALWAYS                 },
-  { "TRANSACTION",      "TK_TRANSACTION",  ALWAYS                 },
-  { "TRIGGER",          "TK_TRIGGER",      TRIGGER                },
-  { "UNBOUNDED",        "TK_UNBOUNDED",    WINDOWFUNC             },
-  { "UNION",            "TK_UNION",        COMPOUND               },
-  { "UNIQUE",           "TK_UNIQUE",       ALWAYS                 },
-  { "UPDATE",           "TK_UPDATE",       ALWAYS                 },
-  { "USING",            "TK_USING",        ALWAYS                 },
-  { "VACUUM",           "TK_VACUUM",       VACUUM                 },
-  { "VALUES",           "TK_VALUES",       ALWAYS                 },
-  { "VIEW",             "TK_VIEW",         VIEW                   },
-  { "VIRTUAL",          "TK_VIRTUAL",      VTAB                   },
-  { "WHEN",             "TK_WHEN",         ALWAYS                 },
-  { "WHERE",            "TK_WHERE",        ALWAYS                 },
-  { "WINDOW",           "TK_WINDOW",       WINDOWFUNC             },
-  { "WITH",             "TK_WITH",         CTE                    },
-  { "WITHOUT",          "TK_WITHOUT",      ALWAYS                 },
+  { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER, 0      },
+  { "ACTION",           "TK_ACTION",       FKEY,             0      },
+  { "ADD",              "TK_ADD",          ALTER,            1      },
+  { "AFTER",            "TK_AFTER",        TRIGGER,          0      },
+  { "ALL",              "TK_ALL",          ALWAYS,           0      },
+  { "ALTER",            "TK_ALTER",        ALTER,            0      },
+  { "ALWAYS",           "TK_ALWAYS",       GENCOL,           0      },
+  { "ANALYZE",          "TK_ANALYZE",      ANALYZE,          0      },
+  { "AND",              "TK_AND",          ALWAYS,           10     },
+  { "AS",               "TK_AS",           ALWAYS,           10     },
+  { "ASC",              "TK_ASC",          ALWAYS,           0      },
+  { "ATTACH",           "TK_ATTACH",       ATTACH,           1      },
+  { "AUTOINCREMENT",    "TK_AUTOINCR",     AUTOINCR,         0      },
+  { "BEFORE",           "TK_BEFORE",       TRIGGER,          0      },
+  { "BEGIN",            "TK_BEGIN",        ALWAYS,           1      },
+  { "BETWEEN",          "TK_BETWEEN",      ALWAYS,           5      },
+  { "BY",               "TK_BY",           ALWAYS,           10     },
+  { "CASCADE",          "TK_CASCADE",      FKEY,             1      },
+  { "CASE",             "TK_CASE",         ALWAYS,           5      },
+  { "CAST",             "TK_CAST",         CAST,             5      },
+  { "CHECK",            "TK_CHECK",        ALWAYS,           1      },
+  { "COLLATE",          "TK_COLLATE",      ALWAYS,           1      },
+  { "COLUMN",           "TK_COLUMNKW",     ALTER,            1      },
+  { "COMMIT",           "TK_COMMIT",       ALWAYS,           1      },
+  { "CONFLICT",         "TK_CONFLICT",     CONFLICT,         0      },
+  { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS,           1      },
+  { "CREATE",           "TK_CREATE",       ALWAYS,           2      },
+  { "CROSS",            "TK_JOIN_KW",      ALWAYS,           3      },
+  { "CURRENT",          "TK_CURRENT",      WINDOWFUNC,       1      },
+  { "CURRENT_DATE",     "TK_CTIME_KW",     ALWAYS,           1      },
+  { "CURRENT_TIME",     "TK_CTIME_KW",     ALWAYS,           1      },
+  { "CURRENT_TIMESTAMP","TK_CTIME_KW",     ALWAYS,           1      },
+  { "DATABASE",         "TK_DATABASE",     ATTACH,           0      },
+  { "DEFAULT",          "TK_DEFAULT",      ALWAYS,           1      },
+  { "DEFERRED",         "TK_DEFERRED",     ALWAYS,           1      },
+  { "DEFERRABLE",       "TK_DEFERRABLE",   FKEY,             1      },
+  { "DELETE",           "TK_DELETE",       ALWAYS,           10     },
+  { "DESC",             "TK_DESC",         ALWAYS,           3      },
+  { "DETACH",           "TK_DETACH",       ATTACH,           0      },
+  { "DISTINCT",         "TK_DISTINCT",     ALWAYS,           5      },
+  { "DO",               "TK_DO",           UPSERT,           2      },
+  { "DROP",             "TK_DROP",         ALWAYS,           1      },
+  { "END",              "TK_END",          ALWAYS,           1      },
+  { "EACH",             "TK_EACH",         TRIGGER,          1      },
+  { "ELSE",             "TK_ELSE",         ALWAYS,           2      },
+  { "ESCAPE",           "TK_ESCAPE",       ALWAYS,           4      },
+  { "EXCEPT",           "TK_EXCEPT",       COMPOUND,         4      },
+  { "EXCLUSIVE",        "TK_EXCLUSIVE",    ALWAYS,           1      },
+  { "EXCLUDE",          "TK_EXCLUDE",      WINDOWFUNC,       1      },
+  { "EXISTS",           "TK_EXISTS",       ALWAYS,           4      },
+  { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN,          1      },
+  { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER, 1      },
+  { "FILTER",           "TK_FILTER",       WINDOWFUNC,       4      },
+  { "FIRST",            "TK_FIRST",        ALWAYS,           4      },
+  { "FOLLOWING",        "TK_FOLLOWING",    WINDOWFUNC,       4      },
+  { "FOR",              "TK_FOR",          TRIGGER,          2      },
+  { "FOREIGN",          "TK_FOREIGN",      FKEY,             1      },
+  { "FROM",             "TK_FROM",         ALWAYS,           10     },
+  { "FULL",             "TK_JOIN_KW",      ALWAYS,           3      },
+  { "GENERATED",        "TK_GENERATED",    GENCOL,           1      },
+  { "GLOB",             "TK_LIKE_KW",      ALWAYS,           3      },
+  { "GROUP",            "TK_GROUP",        ALWAYS,           5      },
+  { "GROUPS",           "TK_GROUPS",       WINDOWFUNC,       2      },
+  { "HAVING",           "TK_HAVING",       ALWAYS,           5      },
+  { "IF",               "TK_IF",           ALWAYS,           2      },
+  { "IGNORE",           "TK_IGNORE",       CONFLICT|TRIGGER, 1      },
+  { "IMMEDIATE",        "TK_IMMEDIATE",    ALWAYS,           1      },
+  { "IN",               "TK_IN",           ALWAYS,           10     },
+  { "INDEX",            "TK_INDEX",        ALWAYS,           1      },
+  { "INDEXED",          "TK_INDEXED",      ALWAYS,           0      },
+  { "INITIALLY",        "TK_INITIALLY",    FKEY,             1      },
+  { "INNER",            "TK_JOIN_KW",      ALWAYS,           1      },
+  { "INSERT",           "TK_INSERT",       ALWAYS,           10     },
+  { "INSTEAD",          "TK_INSTEAD",      TRIGGER,          1      },
+  { "INTERSECT",        "TK_INTERSECT",    COMPOUND,         5      },
+  { "INTO",             "TK_INTO",         ALWAYS,           10     },
+  { "IS",               "TK_IS",           ALWAYS,           5      },
+  { "ISNULL",           "TK_ISNULL",       ALWAYS,           5      },
+  { "JOIN",             "TK_JOIN",         ALWAYS,           5      },
+  { "KEY",              "TK_KEY",          ALWAYS,           1      },
+  { "LAST",             "TK_LAST",         ALWAYS,           4      },
+  { "LEFT",             "TK_JOIN_KW",      ALWAYS,           5      },
+  { "LIKE",             "TK_LIKE_KW",      ALWAYS,           5      },
+  { "LIMIT",            "TK_LIMIT",        ALWAYS,           3      },
+  { "MATCH",            "TK_MATCH",        ALWAYS,           2      },
+  { "NATURAL",          "TK_JOIN_KW",      ALWAYS,           3      },
+  { "NO",               "TK_NO",           FKEY|WINDOWFUNC,  2      },
+  { "NOT",              "TK_NOT",          ALWAYS,           10     },
+  { "NOTHING",          "TK_NOTHING",      UPSERT,           1      },
+  { "NOTNULL",          "TK_NOTNULL",      ALWAYS,           3      },
+  { "NULL",             "TK_NULL",         ALWAYS,           10     },
+  { "NULLS",            "TK_NULLS",        ALWAYS,           3      },
+  { "OF",               "TK_OF",           ALWAYS,           3      },
+  { "OFFSET",           "TK_OFFSET",       ALWAYS,           1      },
+  { "ON",               "TK_ON",           ALWAYS,           1      },
+  { "OR",               "TK_OR",           ALWAYS,           9      },
+  { "ORDER",            "TK_ORDER",        ALWAYS,           10     },
+  { "OTHERS",           "TK_OTHERS",       WINDOWFUNC,       3      },
+  { "OUTER",            "TK_JOIN_KW",      ALWAYS,           5      },
+  { "OVER",             "TK_OVER",         WINDOWFUNC,       3      },
+  { "PARTITION",        "TK_PARTITION",    WINDOWFUNC,       3      },
+  { "PLAN",             "TK_PLAN",         EXPLAIN,          0      },
+  { "PRAGMA",           "TK_PRAGMA",       PRAGMA,           0      },
+  { "PRECEDING",        "TK_PRECEDING",    WINDOWFUNC,       3      },
+  { "PRIMARY",          "TK_PRIMARY",      ALWAYS,           1      },
+  { "QUERY",            "TK_QUERY",        EXPLAIN,          0      },
+  { "RAISE",            "TK_RAISE",        TRIGGER,          1      },
+  { "RANGE",            "TK_RANGE",        WINDOWFUNC,       3      },
+  { "RECURSIVE",        "TK_RECURSIVE",    CTE,              3      },
+  { "REFERENCES",       "TK_REFERENCES",   FKEY,             1      },
+  { "REGEXP",           "TK_LIKE_KW",      ALWAYS,           3      },
+  { "REINDEX",          "TK_REINDEX",      REINDEX,          1      },
+  { "RELEASE",          "TK_RELEASE",      ALWAYS,           1      },
+  { "RENAME",           "TK_RENAME",       ALTER,            1      },
+  { "REPLACE",          "TK_REPLACE",      CONFLICT,         10     },
+  { "RESTRICT",         "TK_RESTRICT",     FKEY,             1      },
+  { "RIGHT",            "TK_JOIN_KW",      ALWAYS,           0      },
+  { "ROLLBACK",         "TK_ROLLBACK",     ALWAYS,           1      },
+  { "ROW",              "TK_ROW",          TRIGGER,          1      },
+  { "ROWS",             "TK_ROWS",         ALWAYS,           1      },
+  { "SAVEPOINT",        "TK_SAVEPOINT",    ALWAYS,           1      },
+  { "SELECT",           "TK_SELECT",       ALWAYS,           10     },
+  { "SET",              "TK_SET",          ALWAYS,           10     },
+  { "TABLE",            "TK_TABLE",        ALWAYS,           1      },
+  { "TEMP",             "TK_TEMP",         ALWAYS,           1      },
+  { "TEMPORARY",        "TK_TEMP",         ALWAYS,           1      },
+  { "THEN",             "TK_THEN",         ALWAYS,           3      },
+  { "TIES",             "TK_TIES",         WINDOWFUNC,       3      },
+  { "TO",               "TK_TO",           ALWAYS,           3      },
+  { "TRANSACTION",      "TK_TRANSACTION",  ALWAYS,           1      },
+  { "TRIGGER",          "TK_TRIGGER",      TRIGGER,          1      },
+  { "UNBOUNDED",        "TK_UNBOUNDED",    WINDOWFUNC,       3      },
+  { "UNION",            "TK_UNION",        COMPOUND,         3      },
+  { "UNIQUE",           "TK_UNIQUE",       ALWAYS,           1      },
+  { "UPDATE",           "TK_UPDATE",       ALWAYS,           10     },
+  { "USING",            "TK_USING",        ALWAYS,           8      },
+  { "VACUUM",           "TK_VACUUM",       VACUUM,           1      },
+  { "VALUES",           "TK_VALUES",       ALWAYS,           10     },
+  { "VIEW",             "TK_VIEW",         VIEW,             1      },
+  { "VIRTUAL",          "TK_VIRTUAL",      VTAB,             1      },
+  { "WHEN",             "TK_WHEN",         ALWAYS,           1      },
+  { "WHERE",            "TK_WHERE",        ALWAYS,           10     },
+  { "WINDOW",           "TK_WINDOW",       WINDOWFUNC,       3      },
+  { "WITH",             "TK_WITH",         CTE,              4      },
+  { "WITHOUT",          "TK_WITHOUT",      ALWAYS,           1      },
 };
 
 /* Number of keywords */
@@ -353,6 +361,24 @@ static Keyword *findById(int id){
     if( aKeywordTable[i].id==id ) break;
   }
   return &aKeywordTable[i];
+}
+
+/*
+** If aKeyword[*pFrom-1].iNext has a higher priority that aKeyword[*pFrom-1]
+** itself, then swap them.
+*/
+static void reorder(int *pFrom){
+  int i = *pFrom - 1;
+  int j;
+  if( i<0 ) return;
+  j = aKeywordTable[i].iNext;
+  if( j==0 ) return;
+  j--;
+  if( aKeywordTable[i].priority >= aKeywordTable[j].priority ) return;
+  aKeywordTable[i].iNext = aKeywordTable[j].iNext;
+  aKeywordTable[j].iNext = i+1;
+  *pFrom = j+1;
+  reorder(&aKeywordTable[i].iNext);
 }
 
 /*
@@ -489,6 +515,7 @@ int main(int argc, char **argv){
     h = aKeywordTable[i].hash % bestSize;
     aKeywordTable[i].iNext = aKWHash[h];
     aKWHash[h] = i+1;
+    reorder(&aKWHash[h]);
   }
 
   /* Begin generating code */
@@ -603,6 +630,17 @@ int main(int argc, char **argv){
     }
   }
   printf("%s};\n", j==0 ? "" : "\n");
+  printf("/* Hash table decoded:\n");
+  for(i=0; i<bestSize; i++){
+    j = aKWHash[i];
+    printf("** %3d:", i);
+    while( j ){
+      printf(" %s", aKeywordTable[j-1].zOrigName);
+      j = aKeywordTable[j-1].iNext;
+    }
+    printf("\n");
+  }
+  printf("*/\n");
   printf("/* Check to see if z[0..n-1] is a keyword. If it is, write the\n");
   printf("** parser symbol code for that keyword into *pType.  Always\n");
   printf("** return the integer n (the length of the token). */\n");

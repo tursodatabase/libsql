@@ -226,5 +226,81 @@ do_execsql_test 6.1 {
   SELECT rowid FROM t6 WHERE t6 MATCH 'b OR "x a"'
 } {50001 50002 50003 50004}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts3(c0);
+  INSERT INTO vt0 VALUES (x'00');
+}
+do_execsql_test 7.1 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+# Ticket [8a6fa2bb].
+#
+reset_db
+do_execsql_test 7.0.1 {
+  CREATE VIRTUAL TABLE vt0 USING fts4(c0, order=DESC);
+  INSERT INTO vt0(c0) VALUES (0), (0);
+}
+do_execsql_test 7.0.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+reset_db
+do_execsql_test 7.1.1 {
+  CREATE VIRTUAL TABLE vt0 USING fts4(c0, order=ASC);
+  INSERT INTO vt0(c0) VALUES (0), (0);
+}
+do_execsql_test 7.1.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+do_execsql_test 7.2.1 {
+  CREATE VIRTUAL TABLE ft USING fts4(c0, c1, order=DESC, prefix=1);
+  INSERT INTO ft VALUES('a b c d', 'hello world');
+  INSERT INTO ft VALUES('negative', 'positive');
+  INSERT INTO ft VALUES('hello world', 'a b c d');
+}
+do_execsql_test 7.2.2 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+# Ticket [745f1abc].
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE vt0 USING fts4(c0, prefix=1);
+}
+do_execsql_test 8.2 {
+  BEGIN;
+    INSERT INTO vt0 VALUES (0);
+    INSERT INTO vt0(vt0) VALUES('optimize');
+  COMMIT;
+}
+do_execsql_test 8.3 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE t1 using fts4(mailcontent);
+  insert into t1(rowid, mailcontent) values
+      (-4764623217061966105, 'we are going to upgrade'),
+      (8324454597464624651, 'we are going to upgrade');
+}
+
+do_execsql_test 9.1 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'upgrade';
+} {
+  -4764623217061966105 8324454597464624651
+}
 
 finish_test

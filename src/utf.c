@@ -215,9 +215,11 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
 
 #if defined(TRANSLATE_TRACE) && defined(SQLITE_DEBUG)
   {
-    char zBuf[100];
-    sqlite3VdbeMemPrettyPrint(pMem, zBuf);
-    fprintf(stderr, "INPUT:  %s\n", zBuf);
+    StrAccum acc;
+    char zBuf[1000];
+    sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);  
+    sqlite3VdbeMemPrettyPrint(pMem, &acc);
+    fprintf(stderr, "INPUT:  %s\n", sqlite3StrAccumFinish(&acc));
   }
 #endif
 
@@ -325,9 +327,11 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
 translate_out:
 #if defined(TRANSLATE_TRACE) && defined(SQLITE_DEBUG)
   {
-    char zBuf[100];
-    sqlite3VdbeMemPrettyPrint(pMem, zBuf);
-    fprintf(stderr, "OUTPUT: %s\n", zBuf);
+    StrAccum acc;
+    char zBuf[1000];
+    sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);  
+    sqlite3VdbeMemPrettyPrint(pMem, &acc);
+    fprintf(stderr, "OUTPUT: %s\n", sqlite3StrAccumFinish(&acc));
   }
 #endif
   return SQLITE_OK;

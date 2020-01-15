@@ -37,11 +37,30 @@ do_test 1.1 {
   sqlite3_db_filename db2 main
 } [file join [pwd] test.db]
 
+# But not with the -nofollow flag
+#
+do_test 1.1.2 {
+  db2 close
+  set rc [catch {sqlite3 db2 test.db2 -nofollow 1} msg]
+  lappend rc $msg
+} {1 {unable to open database file}}
+
+# If the main database is successfully opened with -nofollow, then -nofollow
+# is also used for ATTACH.
+#
+do_test 1.1.3 {
+  catch {db2 close}
+  sqlite3 db2 test.db -nofollow 1
+} {}
+do_test 1.1.4 {
+  catchsql {ATTACH 'test.db2' AS aux1;} db2
+} {1 {unable to open database: test.db2}}
+
 # Test that if the symlink points to a file that does not exists, it is
 # created when it is opened.
 #
 do_test 1.2.1 {
-  db2 close
+  catch {db2 close}
   db close
   forcedelete test.db
   file exists test.db

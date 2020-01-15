@@ -905,5 +905,144 @@ do_execsql_test join-18.4 {
   SELECT NOT(v0.a IS FALSE) FROM v0
 } {1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test join-18.1 {
+  CREATE TABLE t0(a);
+  CREATE TABLE t1(b);
+  CREATE VIEW v0 AS SELECT a FROM t1 LEFT JOIN t0;
+  INSERT INTO t1 VALUES (1);
+} {}
+
+do_execsql_test join-18.2 {
+  SELECT * FROM v0 WHERE NOT(v0.a IS FALSE);
+} {{}}
+
+do_execsql_test join-18.3 {
+  SELECT * FROM t1 LEFT JOIN t0 WHERE NOT(a IS FALSE);
+} {1 {}}
+
+do_execsql_test join-18.4 {
+  SELECT NOT(v0.a IS FALSE) FROM v0
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test join-19.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  INSERT INTO t1(a) VALUES(0);
+  CREATE VIEW v0(c) AS SELECT t2.b FROM t1 LEFT JOIN t2;
+}
+
+do_execsql_test join-19.1 {
+  SELECT * FROM v0 WHERE v0.c NOTNULL NOTNULL; 
+} {{}}
+
+do_execsql_test join-19.2 {
+  SELECT * FROM t1 LEFT JOIN t2
+} {0 {}}
+
+do_execsql_test join-19.3 {
+  SELECT * FROM t1 LEFT JOIN t2 WHERE (b IS NOT NULL) IS NOT NULL; 
+} {0 {}}
+
+do_execsql_test join-19.4 {
+  SELECT (b IS NOT NULL) IS NOT NULL FROM t1 LEFT JOIN t2
+} {1}
+
+do_execsql_test join-19.5 {
+  SELECT * FROM t1 LEFT JOIN t2 WHERE 
+    (b IS NOT NULL AND b IS NOT NULL) IS NOT NULL; 
+} {0 {}}
+
+# 2019-11-02 ticket 623eff57e76d45f6
+# The optimization of exclusing the WHERE expression of a partial index
+# from the WHERE clause of the query if the index is used does not work
+# of the table of the index is the right-hand table of a LEFT JOIN.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test join-20.1 {
+  CREATE TABLE t1(c1);
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (0);
+  SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
+} {}
+do_execsql_test join-20.2 {
+  CREATE INDEX t1x ON t1(0) WHERE NULL IN (c1);
+  SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
+} {}
+
+# 2019-11-30 ticket 7f39060a24b47353
+# Do not allow a WHERE clause term to qualify a partial index on the
+# right table of a LEFT JOIN.
+#
+do_execsql_test join-21.10 {
+  DROP TABLE t0;
+  DROP TABLE t1;
+  CREATE TABLE t0(aa);
+  CREATE TABLE t1(bb);
+  INSERT INTO t0(aa) VALUES (1);
+  INSERT INTO t1(bb) VALUES (1);
+  SELECT 11, * FROM t1 LEFT JOIN t0 WHERE aa ISNULL;
+  SELECT 12, * FROM t1 LEFT JOIN t0 WHERE +aa ISNULL;
+  SELECT 13, * FROM t1 LEFT JOIN t0 ON aa ISNULL;
+  SELECT 14, * FROM t1 LEFT JOIN t0 ON +aa ISNULL;
+  CREATE INDEX i0 ON t0(aa) WHERE aa ISNULL;
+  SELECT 21, * FROM t1 LEFT JOIN t0 WHERE aa ISNULL;
+  SELECT 22, * FROM t1 LEFT JOIN t0 WHERE +aa ISNULL;
+  SELECT 23, * FROM t1 LEFT JOIN t0 ON aa ISNULL;
+  SELECT 24, * FROM t1 LEFT JOIN t0 ON +aa ISNULL;
+} {13 1 {} 14 1 {} 23 1 {} 24 1 {}}
+
+# 2019-12-18 problem with a LEFT JOIN where the RHS is a view.
+# Detected by Yongheng and Rui.
+# Follows from the optimization attempt of check-in 41c27bc0ff1d3135
+# on 2017-04-18
+#
+reset_db
+do_execsql_test join-22.10 {
+  CREATE TABLE t0(a, b);
+  CREATE INDEX t0a ON t0(a);
+  INSERT INTO t0 VALUES(10,10),(10,11),(10,12);
+  SELECT DISTINCT c FROM t0 LEFT JOIN (SELECT a+1 AS c FROM t0) ORDER BY c ;
+} {11}
+
+# 2019-12-22 ticket 7929c1efb2d67e98
+#
+reset_db
+do_execsql_test join-23.10 {
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES(123);
+  CREATE VIEW v0(c0) AS SELECT 0 GROUP BY 1;
+  SELECT t0.c0, v0.c0, vt0.name
+   FROM v0, t0 LEFT JOIN pragma_table_info('t0') AS vt0
+     ON vt0.name LIKE 'c0'
+   WHERE v0.c0 == 0;
+} {123 0 c0}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test join-24.1 {
+  CREATE TABLE t1(a PRIMARY KEY, x);
+  CREATE TABLE t2(b INT);
+  CREATE INDEX t1aa ON t1(a, a);
+
+  INSERT INTO t1 VALUES('abc', 'def');
+  INSERT INTO t2 VALUES(1);
+}
+
+do_execsql_test join-24.2 {
+  SELECT * FROM t2 JOIN t1 WHERE a='abc' AND x='def';
+} {1 abc def}
+do_execsql_test join-24.3 {
+  SELECT * FROM t2 JOIN t1 WHERE a='abc' AND x='abc';
+} {}
+
+do_execsql_test join-24.2 {
+  SELECT * FROM t2 LEFT JOIN t1 ON a=0 WHERE (x='x' OR x IS NULL);
+} {1 {} {}}
+
 finish_test
 

@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2001-09-15
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.31 2007/04/05 11:25:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -458,7 +457,7 @@ do_execsql_test insert-14.1 {
   SELECT x FROM t14;
 } {1}
 
-integrity_check insert-99.0
+integrity_check insert-14.2
 
 # 2019-08-12.
 #
@@ -474,6 +473,131 @@ do_execsql_test insert-15.1 {
   REPLACE INTO t1 SELECT a, b FROM t2;
   SELECT a, length(b) FROM t1;
 } {4 33000}
+
+# 2019-10-16
+# ticket https://www.sqlite.org/src/info/a8a4847a2d96f5de
+# On a REPLACE INTO, if an AFTER trigger adds back the conflicting
+# row, you can end up with the wrong number of rows in an index.
+#
+db close
+sqlite3 db :memory:
+do_catchsql_test insert-16.1 {
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t0(c0,c1);
+  CREATE UNIQUE INDEX i0 ON t0(c0);
+  INSERT INTO t0(c0,c1) VALUES(123,1);
+  CREATE TRIGGER tr0 AFTER DELETE ON t0
+  BEGIN
+    INSERT INTO t0 VALUES(123,2);
+  END;
+  REPLACE INTO t0(c0,c1) VALUES(123,3);
+} {1 {UNIQUE constraint failed: t0.c0}}
+do_execsql_test insert-16.2 {
+  SELECT * FROM t0;
+} {123 1}
+integrity_check insert-16.3
+do_catchsql_test insert-16.4 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE INDEX t1b ON t1(b);
+  INSERT INTO t1 VALUES(1, 'one');
+  CREATE TRIGGER tr3 AFTER DELETE ON t1 BEGIN
+    INSERT INTO t1 VALUES(1, 'three');
+  END;
+  REPLACE INTO t1 VALUES(1, 'two');
+} {1 {UNIQUE constraint failed: t1.a}}
+integrity_check insert-16.5
+do_catchsql_test insert-16.6 {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE p1(a, b UNIQUE);
+  CREATE TABLE c1(c, d REFERENCES p1(b) ON DELETE CASCADE);
+  CREATE TRIGGER tr6 AFTER DELETE ON c1 BEGIN
+    INSERT INTO p1 VALUES(4, 1);
+  END;
+  INSERT INTO p1 VALUES(1, 1);
+  INSERT INTO c1 VALUES(2, 1);
+  REPLACE INTO p1 VALUES(3, 1);2
+} {1 {UNIQUE constraint failed: p1.b}}
+integrity_check insert-16.7
+
+# 2019-10-25 ticket c1e19e12046d23fe
+do_catchsql_test insert-17.1 {
+  PRAGMA temp.recursive_triggers = true;
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(aa, bb);
+  CREATE UNIQUE INDEX t0bb ON t0(bb);
+  CREATE TRIGGER "r17.1" BEFORE DELETE ON t0
+    BEGIN INSERT INTO t0(aa,bb) VALUES(99,1);
+  END;
+  INSERT INTO t0(aa,bb) VALUES(10,20);
+  REPLACE INTO t0(aa,bb) VALUES(30,20);
+} {1 {UNIQUE constraint failed: t0.rowid}}
+integrity_check insert-17.2
+do_catchsql_test insert-17.3 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a, b UNIQUE, c UNIQUE);
+  INSERT INTO t1(a,b,c) VALUES(1,1,1),(2,2,2),(3,3,3),(4,4,4);
+  CREATE TRIGGER "r17.3" AFTER DELETE ON t1 WHEN OLD.c<>3 BEGIN
+    INSERT INTO t1(rowid,a,b,c) VALUES(100,100,100,3);
+  END;
+  REPLACE INTO t1(rowid,a,b,c) VALUES(200,1,2,3);
+} {1 {UNIQUE constraint failed: t1.c}}
+integrity_check insert-17.4
+do_execsql_test insert-17.5 {
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+  CREATE UNIQUE INDEX t2b ON t2(b);
+  INSERT INTO t2(a,b) VALUES(1,1),(2,2),(3,3),(4,4);
+  CREATE TABLE fire(x);
+  CREATE TRIGGER t2r1 AFTER DELETE ON t2 BEGIN
+    INSERT INTO fire VALUES(old.a);
+  END;
+  UPDATE OR REPLACE t2 SET a=4, b=3 WHERE a=1;
+  SELECT *, 'x' FROM t2 ORDER BY a;
+} {2 2 x 4 3 x}
+do_execsql_test insert-17.6 {
+  SELECT x FROM fire ORDER BY x;
+} {3 4}
+do_execsql_test insert-17.7 {
+  DELETE FROM t2;
+  DELETE FROM fire;
+  INSERT INTO t2(a,b) VALUES(1,1),(2,2),(3,3),(4,4);
+  UPDATE OR REPLACE t2 SET a=1, b=3 WHERE a=1;
+  SELECT *, 'x' FROM t2 ORDER BY a;
+} {1 3 x 2 2 x 4 4 x}
+do_execsql_test insert-17.8 {
+  SELECT x FROM fire ORDER BY x;
+} {3}
+do_execsql_test insert-17.10 {
+  CREATE TABLE t3(a INTEGER PRIMARY KEY, b INT, c INT, d INT);
+  CREATE UNIQUE INDEX t3bpi ON t3(b) WHERE c<=d;
+  CREATE UNIQUE INDEX t3d ON t3(d);
+  INSERT INTO t3(a,b,c,d) VALUES(1,1,1,1),(2,1,3,2),(3,4,5,6);
+  CREATE TRIGGER t3r1 AFTER DELETE ON t3 BEGIN
+    SELECT 'hi';
+  END;
+  REPLACE INTO t3(a,b,c,d) VALUES(4,4,8,9);
+} {}
+do_execsql_test insert-17.11 {
+  SELECT *, 'x' FROM t3 ORDER BY a;
+} {1 1 1 1 x 2 1 3 2 x 4 4 8 9 x}
+do_execsql_test insert-17.12 {
+  REPLACE INTO t3(a,b,c,d) VALUES(5,1,11,2);
+  SELECT *, 'x' FROM t3 ORDER BY a;
+} {1 1 1 1 x 4 4 8 9 x 5 1 11 2 x}
+
+do_execsql_test insert-17.13 {
+  DELETE FROM t3;
+  INSERT INTO t3(a,b,c,d) VALUES(1,1,1,1),(2,1,3,2),(3,4,5,6);
+  DROP TRIGGER t3r1;
+  CREATE TRIGGER t3r1 AFTER DELETE ON t3 BEGIN
+    INSERT INTO t3(b,c,d) VALUES(old.b,old.c,old.d);
+  END;
+} {}
+do_catchsql_test insert-17.14 {
+  REPLACE INTO t3(a,b,c,d) VALUES(4,4,8,9);
+} {1 {UNIQUE constraint failed: t3.b}}
+do_catchsql_test insert-17.15 {
+  REPLACE INTO t3(a,b,c,d) VALUES(5,1,11,2);
+} {1 {UNIQUE constraint failed: t3.d}}
 
 
 finish_test

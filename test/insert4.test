@@ -34,8 +34,8 @@ proc xferopt_test {testname N} {
 
 # Create tables used for testing.
 #
+sqlite3_db_config db LEGACY_FILE_FORMAT 0
 execsql {
-  PRAGMA legacy_file_format = 0;
   CREATE TABLE t1(a int, b int, check(b>a));
   CREATE TABLE t2(x int, y int);
   CREATE VIEW v2 AS SELECT y, x FROM t2;

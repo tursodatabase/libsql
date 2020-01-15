@@ -1916,9 +1916,6 @@ foreach {tn sql} {
 # EVIDENCE-OF: R-18318-14995 The value of a subquery expression is the
 # first row of the result from the enclosed SELECT statement.
 #
-# EVIDENCE-OF: R-15900-52156 In other words, an implied "LIMIT 1" is
-# added to the subquery, overriding an explicitly coded LIMIT.
-#
 do_execsql_test e_expr-36.3.1 {
   CREATE TABLE t4(x, y);
   INSERT INTO t4 VALUES(1, 'one');

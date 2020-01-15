@@ -30,7 +30,15 @@ do_catchsql_test 1.0 {
     SELECT 5 FROM t0 UNION SELECT 8 FROM m
   )
   SELECT * FROM i;
-} {1 {no such table: m}}
+} {1 {no such table: t0}}
+
+# 2019-11-09 dbfuzzcheck find
+do_catchsql_test 1.1 {
+  CREATE VIEW v1(x,y) AS
+    WITH t1(a,b) AS (VALUES(1,2))
+    SELECT * FROM nosuchtable JOIN t1;
+  SELECT * FROM v1;
+} {1 {no such table: main.nosuchtable}}
 
 # Additional test cases that came out of the work to
 # fix for Kostya's problem.

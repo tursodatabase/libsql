@@ -2516,10 +2516,12 @@ static void fts5ExprFunction(
   azConfig[1] = "main";
   azConfig[2] = "tbl";
   for(i=3; iArg<nArg; iArg++){
-    azConfig[i++] = (const char*)sqlite3_value_text(apVal[iArg]);
+    const char *z = (const char*)sqlite3_value_text(apVal[iArg]);
+    azConfig[i++] = (z ? z : "");
   }
 
   zExpr = (const char*)sqlite3_value_text(apVal[0]);
+  if( zExpr==0 ) zExpr = "";
 
   rc = sqlite3Fts5ConfigParse(pGlobal, db, nConfig, azConfig, &pConfig, &zErr);
   if( rc==SQLITE_OK ){

@@ -834,5 +834,27 @@ do_catchsql_test conflict-14.1 {
   REPLACE INTO t1 DEFAULT VALUES;
 } {1 {NOT NULL constraint failed: t1.x}}
 
+# 2019-12-15 gramfuzz1 find
+# Three UNIQUE constraints, where the third would is a duplicate except
+# that it adds ON CONFLICT REPLACE.  Verify that the indexes end up
+# sorted in the correct order (REPLACE last) so that constraint processing
+# works correctly.
+#
+reset_db
+do_execsql_test conflict-15.10 {
+  CREATE TABLE t1(
+    x PRIMARY KEY,
+    UNIQUE(x,x),
+    UNIQUE(x,x) ON CONFLICT REPLACE
+  );
+  INSERT INTO t1(x) VALUES(1);
+  SELECT * FROM t1;
+} {1}
+do_catchsql_test conflict-15.20 {
+  INSERT INTO t1(x) VALUES(1);
+} {1 {UNIQUE constraint failed: t1.x}}
+do_execsql_test conflict-15.30 {
+  SELECT * FROM t1;
+} {1}
 
 finish_test
