@@ -489,4 +489,19 @@ foreach lid [list 4 [expr 1<<30]] {
     SELECT count(*) FROM t6_segments;
   } {1 2}
 }
+
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE vt0 USING fts4(c0, languageid="lid");
+  INSERT INTO vt0 VALUES ('a'), ('b');
+  BEGIN;
+    UPDATE vt0 SET lid = 1 WHERE lid=0;
+}
+do_execsql_test 6.1 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
+do_execsql_test 6.2 {
+  COMMIT;
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+}
 finish_test

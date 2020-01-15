@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing CHECK constraints
 #
-# $Id: check.test,v 1.13 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -442,7 +441,7 @@ do_test check-6.15 {
 #
 reset_db
 proc myfunc {x} {expr $x < 10}
-db func myfunc myfunc
+db func myfunc -deterministic myfunc
 
 do_execsql_test  7.1 { CREATE TABLE t6(a CHECK (myfunc(a))) }
 do_execsql_test  7.2 { INSERT INTO t6 VALUES(9)  }
@@ -536,7 +535,71 @@ do_execsql_test 11.6 {
   INSERT INTO t2(b, a) VALUES(2, 'abc');
 }
 
-finish_test
-
+# 2019-12-24 ticket b383b90278186263
+#
+reset_db
+do_execsql_test 12.10 {
+  CREATE TABLE t1(a TEXT, CHECK(a=+a));
+  INSERT INTO t1(a) VALUES(NULL),('xyz'),(5),(x'303132'),(4.75);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+} {NULL 'xyz' '5' X'303132' '4.75'}
+do_execsql_test 12.20 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a<>+a));
+  INSERT INTO t1(a) VALUES(NULL);
+} {}
+do_catchsql_test 12.21 {
+  INSERT INTO t1(a) VALUES('xyz');
+} {1 {CHECK constraint failed: t1}}
+do_catchsql_test 12.22 {
+  INSERT INTO t1(a) VALUES(123);
+} {1 {CHECK constraint failed: t1}}
+do_execsql_test 12.30 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(NOT(a=+a)));
+  INSERT INTO t1(a) VALUES(NULL);
+} {}
+do_catchsql_test 12.31 {
+  INSERT INTO t1(a) VALUES('xyz');
+} {1 {CHECK constraint failed: t1}}
+do_catchsql_test 12.32 {
+  INSERT INTO t1(a) VALUES(123);
+} {1 {CHECK constraint failed: t1}}
+do_execsql_test 12.40 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(NOT(a<>+a)));
+  INSERT INTO t1(a) VALUES(NULL),('xyz'),(5),(x'303132'),(4.75);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+} {NULL 'xyz' '5' X'303132' '4.75'}
+do_execsql_test 12.50 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a BETWEEN 0 AND +a));
+  INSERT INTO t1(a) VALUES(NULL),('xyz'),(5),(x'303132'),(4.75);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+} {NULL 'xyz' '5' X'303132' '4.75'}
+do_execsql_test 12.60 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a NOT BETWEEN 0 AND +a));
+  INSERT INTO t1(a) VALUES(NULL);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+} {NULL}
+do_catchsql_test 12.61 {
+  INSERT INTO t1(a) VALUES(456);
+} {1 {CHECK constraint failed: t1}}
+do_execsql_test 12.70 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a BETWEEN +a AND 999999));
+  INSERT INTO t1(a) VALUES(NULL),(5);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+} {NULL '5'}
+do_execsql_test 12.80 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a NOT BETWEEN +a AND 999999));
+  INSERT INTO t1(a) VALUES(NULL);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+} {NULL}
+do_catchsql_test 12.81 {
+  INSERT INTO t1(a) VALUES(456);
+} {1 {CHECK constraint failed: t1}}
 
 finish_test

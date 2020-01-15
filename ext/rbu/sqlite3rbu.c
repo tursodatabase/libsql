@@ -4936,33 +4936,6 @@ static int rbuVfsShmUnmap(sqlite3_file *pFile, int delFlag){
   return rc;
 }
 
-/* 
-** A main database named zName has just been opened. The following 
-** function returns a pointer to a buffer owned by SQLite that contains
-** the name of the *-wal file this db connection will use. SQLite
-** happens to pass a pointer to this buffer when using xAccess()
-** or xOpen() to operate on the *-wal file.  
-*/
-static const char *rbuMainToWal(const char *zName, int flags){
-  int n = (int)strlen(zName);
-  const char *z = &zName[n];
-  if( flags & SQLITE_OPEN_URI ){
-    int odd = 0;
-    while( 1 ){
-      if( z[0]==0 ){
-        odd = 1 - odd;
-        if( odd && z[1]==0 ) break;
-      }
-      z++;
-    }
-    z += 2;
-  }else{
-    while( *z==0 ) z++;
-  }
-  z += (n + 8 + 1);
-  return z;
-}
-
 /*
 ** Open an rbu file handle.
 */
@@ -5011,7 +4984,7 @@ static int rbuVfsOpen(
       ** the name of the *-wal file this db connection will use. SQLite
       ** happens to pass a pointer to this buffer when using xAccess()
       ** or xOpen() to operate on the *-wal file.  */
-      pFd->zWal = rbuMainToWal(zName, flags);
+      pFd->zWal = sqlite3_filename_wal(zName);
     }
     else if( flags & SQLITE_OPEN_WAL ){
       rbu_file *pDb = rbuFindMaindb(pRbuVfs, zName, 0);
@@ -5026,7 +4999,7 @@ static int rbuVfsOpen(
           char *zCopy;
           if( rbuIsVacuum(pDb->pRbu) ){
             zBase = sqlite3_db_filename(pDb->pRbu->dbRbu, "main");
-            zBase = rbuMainToWal(zBase, SQLITE_OPEN_URI);
+            zBase = sqlite3_filename_wal(zBase);
           }
           nCopy = strlen(zBase);
           zCopy = sqlite3_malloc64(nCopy+2);

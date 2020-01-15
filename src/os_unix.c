@@ -3685,7 +3685,7 @@ static int openDirectory(const char *zFilename, int *pFd){
     if( zDirname[0]!='/' ) zDirname[0] = '.';
     zDirname[1] = 0;
   }
-  fd = robust_open(zDirname, O_RDONLY|O_BINARY, 0);
+  fd = robust_open(zDirname, O_RDONLY|O_BINARY|O_NOFOLLOW, 0);
   if( fd>=0 ){
     OSTRACE(("OPENDIR %-3d %s\n", fd, zDirname));
   }
@@ -4576,10 +4576,12 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
     if( pInode->bProcessLock==0 ){
       if( 0==sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
-        pShmNode->hShm = robust_open(zShm, O_RDWR|O_CREAT,(sStat.st_mode&0777));
+        pShmNode->hShm = robust_open(zShm, O_RDWR|O_CREAT|O_NOFOLLOW,
+                                     (sStat.st_mode&0777));
       }
       if( pShmNode->hShm<0 ){
-        pShmNode->hShm = robust_open(zShm, O_RDONLY, (sStat.st_mode&0777));
+        pShmNode->hShm = robust_open(zShm, O_RDONLY|O_NOFOLLOW,
+                                     (sStat.st_mode&0777));
         if( pShmNode->hShm<0 ){
           rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShm);
           goto shm_open_err;
@@ -5929,7 +5931,7 @@ static int unixOpen(
   unixFile *p = (unixFile *)pFile;
   int fd = -1;                   /* File descriptor returned by open() */
   int openFlags = 0;             /* Flags to pass to open() */
-  int eType = flags&0xFFFFFF00;  /* Type of file to open */
+  int eType = flags&0x0FFF00;  /* Type of file to open */
   int noLock;                    /* True to omit locking primitives */
   int rc = SQLITE_OK;            /* Function Return Code */
   int ctrlFlags = 0;             /* UNIXFILE_* flags */
@@ -6039,7 +6041,7 @@ static int unixOpen(
   if( isReadWrite ) openFlags |= O_RDWR;
   if( isCreate )    openFlags |= O_CREAT;
   if( isExclusive ) openFlags |= (O_EXCL|O_NOFOLLOW);
-  openFlags |= (O_LARGEFILE|O_BINARY);
+  openFlags |= (O_LARGEFILE|O_BINARY|O_NOFOLLOW);
 
   if( fd<0 ){
     mode_t openMode;              /* Permissions to create file with */
@@ -6257,7 +6259,8 @@ static int unixAccess(
 
   if( flags==SQLITE_ACCESS_EXISTS ){
     struct stat buf;
-    *pResOut = (0==osStat(zPath, &buf) && buf.st_size>0);
+    *pResOut = 0==osStat(zPath, &buf) &&
+                (!S_ISREG(buf.st_mode) || buf.st_size>0);
   }else{
     *pResOut = osAccess(zPath, W_OK|R_OK)==0;
   }
@@ -6311,7 +6314,7 @@ static int unixFullPathname(
 #else
   int rc = SQLITE_OK;
   int nByte;
-  int nLink = 1;                /* Number of symbolic links followed so far */
+  int nLink = 0;                /* Number of symbolic links followed so far */
   const char *zIn = zPath;      /* Input path for each iteration of loop */
   char *zDel = 0;
 
@@ -6340,10 +6343,11 @@ static int unixFullPathname(
     }
 
     if( bLink ){
+      nLink++;
       if( zDel==0 ){
         zDel = sqlite3_malloc(nOut);
         if( zDel==0 ) rc = SQLITE_NOMEM_BKPT;
-      }else if( ++nLink>SQLITE_MAX_SYMLINKS ){
+      }else if( nLink>=SQLITE_MAX_SYMLINKS ){
         rc = SQLITE_CANTOPEN_BKPT;
       }
 
@@ -6379,6 +6383,7 @@ static int unixFullPathname(
   }while( rc==SQLITE_OK );
 
   sqlite3_free(zDel);
+  if( rc==SQLITE_OK && nLink ) rc = SQLITE_OK_SYMLINK;
   return rc;
 #endif   /* HAVE_READLINK && HAVE_LSTAT */
 }
@@ -6864,7 +6869,7 @@ static int proxyCreateUnixFile(
   int fd = -1;
   unixFile *pNew;
   int rc = SQLITE_OK;
-  int openFlags = O_RDWR | O_CREAT;
+  int openFlags = O_RDWR | O_CREAT | O_NOFOLLOW;
   sqlite3_vfs dummyVfs;
   int terrno = 0;
   UnixUnusedFd *pUnused = NULL;
@@ -6894,7 +6899,7 @@ static int proxyCreateUnixFile(
     }
   }
   if( fd<0 ){
-    openFlags = O_RDONLY;
+    openFlags = O_RDONLY | O_NOFOLLOW;
     fd = robust_open(path, openFlags, 0);
     terrno = errno;
   }
@@ -7020,7 +7025,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     goto end_breaklock;
   }
   /* write it out to the temporary break file */
-  fd = robust_open(tPath, (O_RDWR|O_CREAT|O_EXCL), 0);
+  fd = robust_open(tPath, (O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW), 0);
   if( fd<0 ){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "create failed (%d)", errno);
     goto end_breaklock;

@@ -684,7 +684,7 @@ do_test alter-8.2 {
 # alter-9.X - Special test: Make sure the sqlite_rename_column() and
 # rename_table() functions do not crash when handed bad input.
 #
-sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 1
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 do_test alter-9.1 {
   execsql {SELECT SQLITE_RENAME_COLUMN(0,0,0,0,0,0,0,0,0)}
 } {{}}
@@ -697,7 +697,7 @@ foreach {tn sql} {
     catch { execsql $sql }
   } 1
 }
-sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS 0
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 
 # If the INTERNAL_FUNCTIONS test-control is disabled (which is the default),
 # then the sqlite_rename_table() SQL function is not accessible to ordinary SQL.

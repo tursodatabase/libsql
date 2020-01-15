@@ -186,7 +186,7 @@ do_catchsql_test indexexpr1-300 {
 } {1 {non-deterministic functions prohibited in index expressions}}
 do_catchsql_test indexexpr1-301 {
   CREATE INDEX t2x1 ON t2(julianday('now',a));
-} {1 {non-deterministic function in index expression or CHECK constraint}}
+} {1 {non-deterministic use of julianday() in an index}}
 do_catchsql_test indexexpr1-310 {
   CREATE INDEX t2x2 ON t2(a,b+(SELECT 15));
 } {1 {subqueries prohibited in index expressions}}

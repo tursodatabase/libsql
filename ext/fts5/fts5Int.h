@@ -61,6 +61,11 @@ typedef sqlite3_uint64 u64;
 */
 #define FTS5_MAX_PREFIX_INDEXES 31
 
+/*
+** Maximum segments permitted in a single index 
+*/
+#define FTS5_MAX_SEGMENT 2000
+
 #define FTS5_DEFAULT_NEARDIST 10
 #define FTS5_DEFAULT_RANK     "bm25"
 
@@ -416,6 +421,11 @@ int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
 */
 void sqlite3Fts5IterClose(Fts5IndexIter*);
+
+/*
+** Close the reader blob handle, if it is open.
+*/
+void sqlite3Fts5IndexCloseReader(Fts5Index*);
 
 /*
 ** This interface is used by the fts5vocab module.

@@ -279,5 +279,19 @@ do_execsql_test 7.0 {
   SELECT * FROM test;
 } {3 4 {} {} {} x 5 6 {} {} {} x}
 
+#-------------------------------------------------------------------------
+# Ticket [dfd66334].
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c0);
+}
+
+do_execsql_test 8.1 {
+  SELECT * FROM t0 LEFT JOIN t1 
+  WHERE (t1.c0 BETWEEN 0 AND 0) > ('' AND t0.c0);
+}
+
 
 finish_test

@@ -832,4 +832,19 @@ do_execsql_test json-15.130 {
   SELECT xyz.* FROM (JSON_EACH('{"a":1, "b":2}')) AS xyz;
 } {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
 
+# 2019-11-10
+# Mailing list bug report on the handling of surrogate pairs
+# in JSON.
+#
+do_execsql_test json-16.10 {
+  SELECT length(json_extract('"abc\uD834\uDD1Exyz"','$'));
+} {7}
+do_execsql_test json-16.20 {
+  SELECT length(json_extract('"\uD834\uDD1E"','$'));
+} {1}
+do_execsql_test json-16.30 {
+  SELECT unicode(json_extract('"\uD834\uDD1E"','$'));
+} {119070}
+
+
 finish_test

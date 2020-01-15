@@ -268,5 +268,30 @@ do_execsql_test 6.2 {
     FROM sqlite_master;
 } {mmm}
 
+#-------------------------------------------------------------------------
+# Ticket [9c944882]
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  CREATE TABLE t3(a INTEGER PRIMARY KEY);
+
+  CREATE TABLE t4(x);
+  CREATE TABLE t5(y);
+  
+  INSERT INTO t5 VALUES(1), (2), (2);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t3 VALUES(2);
+  INSERT INTO t4 VALUES(2);
+}
+
+do_execsql_test 7.1 {
+  WITH t2(b) AS (
+    SELECT DISTINCT y FROM t5 ORDER BY y
+  )
+  SELECT * FROM 
+    t4 CROSS JOIN t3 CROSS JOIN t1 
+  WHERE (t1.a=t3.a) AND (SELECT count(*) FROM t2 AS y WHERE t4.x!='abc')=t1.a
+} {2 2 2}
 
 finish_test

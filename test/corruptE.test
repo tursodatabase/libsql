@@ -36,9 +36,9 @@ ifcapable oversize_cell_check {
 # Construct a compact, dense database for testing.
 #
 do_test corruptE-1.1 {
+  sqlite3_db_config db LEGACY_FILE_FORMAT 1
   execsql {
     PRAGMA auto_vacuum = 0;
-    PRAGMA legacy_file_format=1;
     BEGIN;
     CREATE TABLE t1(x,y);
     INSERT INTO t1 VALUES(1,1);

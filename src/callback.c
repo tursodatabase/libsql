@@ -66,51 +66,6 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
 }
 
 /*
-** This function is responsible for invoking the collation factory callback
-** or substituting a collation sequence of a different encoding when the
-** requested collation sequence is not available in the desired encoding.
-** 
-** If it is not NULL, then pColl must point to the database native encoding 
-** collation sequence with name zName, length nName.
-**
-** The return value is either the collation sequence to be used in database
-** db for collation type name zName, length nName, or NULL, if no collation
-** sequence can be found.  If no collation is found, leave an error message.
-**
-** See also: sqlite3LocateCollSeq(), sqlite3FindCollSeq()
-*/
-CollSeq *sqlite3GetCollSeq(
-  Parse *pParse,        /* Parsing context */
-  u8 enc,               /* The desired encoding for the collating sequence */
-  CollSeq *pColl,       /* Collating sequence with native encoding, or NULL */
-  const char *zName     /* Collating sequence name */
-){
-  CollSeq *p;
-  sqlite3 *db = pParse->db;
-
-  p = pColl;
-  if( !p ){
-    p = sqlite3FindCollSeq(db, enc, zName, 0);
-  }
-  if( !p || !p->xCmp ){
-    /* No collation sequence of this type for this encoding is registered.
-    ** Call the collation factory to see if it can supply us with one.
-    */
-    callCollNeeded(db, enc, zName);
-    p = sqlite3FindCollSeq(db, enc, zName, 0);
-  }
-  if( p && !p->xCmp && synthCollSeq(db, p) ){
-    p = 0;
-  }
-  assert( !p || p->xCmp );
-  if( p==0 ){
-    sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
-    pParse->rc = SQLITE_ERROR_MISSING_COLLSEQ;
-  }
-  return p;
-}
-
-/*
 ** This routine is called on a collation sequence before it is used to
 ** check that it is defined. An undefined collation sequence exists when
 ** a database is loaded that contains references to collation sequences
@@ -202,10 +157,10 @@ static CollSeq *findCollSeqEntry(
 ** See also: sqlite3LocateCollSeq(), sqlite3GetCollSeq()
 */
 CollSeq *sqlite3FindCollSeq(
-  sqlite3 *db,
-  u8 enc,
-  const char *zName,
-  int create
+  sqlite3 *db,          /* Database connection to search */
+  u8 enc,               /* Desired text encoding */
+  const char *zName,    /* Name of the collating sequence.  Might be NULL */
+  int create            /* True to create CollSeq if doesn't already exist */
 ){
   CollSeq *pColl;
   if( zName ){
@@ -216,6 +171,85 @@ CollSeq *sqlite3FindCollSeq(
   assert( SQLITE_UTF8==1 && SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
   assert( enc>=SQLITE_UTF8 && enc<=SQLITE_UTF16BE );
   if( pColl ) pColl += enc-1;
+  return pColl;
+}
+
+/*
+** This function is responsible for invoking the collation factory callback
+** or substituting a collation sequence of a different encoding when the
+** requested collation sequence is not available in the desired encoding.
+** 
+** If it is not NULL, then pColl must point to the database native encoding 
+** collation sequence with name zName, length nName.
+**
+** The return value is either the collation sequence to be used in database
+** db for collation type name zName, length nName, or NULL, if no collation
+** sequence can be found.  If no collation is found, leave an error message.
+**
+** See also: sqlite3LocateCollSeq(), sqlite3FindCollSeq()
+*/
+CollSeq *sqlite3GetCollSeq(
+  Parse *pParse,        /* Parsing context */
+  u8 enc,               /* The desired encoding for the collating sequence */
+  CollSeq *pColl,       /* Collating sequence with native encoding, or NULL */
+  const char *zName     /* Collating sequence name */
+){
+  CollSeq *p;
+  sqlite3 *db = pParse->db;
+
+  p = pColl;
+  if( !p ){
+    p = sqlite3FindCollSeq(db, enc, zName, 0);
+  }
+  if( !p || !p->xCmp ){
+    /* No collation sequence of this type for this encoding is registered.
+    ** Call the collation factory to see if it can supply us with one.
+    */
+    callCollNeeded(db, enc, zName);
+    p = sqlite3FindCollSeq(db, enc, zName, 0);
+  }
+  if( p && !p->xCmp && synthCollSeq(db, p) ){
+    p = 0;
+  }
+  assert( !p || p->xCmp );
+  if( p==0 ){
+    sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
+    pParse->rc = SQLITE_ERROR_MISSING_COLLSEQ;
+  }
+  return p;
+}
+
+/*
+** This function returns the collation sequence for database native text
+** encoding identified by the string zName.
+**
+** If the requested collation sequence is not available, or not available
+** in the database native encoding, the collation factory is invoked to
+** request it. If the collation factory does not supply such a sequence,
+** and the sequence is available in another text encoding, then that is
+** returned instead.
+**
+** If no versions of the requested collations sequence are available, or
+** another error occurs, NULL is returned and an error message written into
+** pParse.
+**
+** This routine is a wrapper around sqlite3FindCollSeq().  This routine
+** invokes the collation factory if the named collation cannot be found
+** and generates an error message.
+**
+** See also: sqlite3FindCollSeq(), sqlite3GetCollSeq()
+*/
+CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName){
+  sqlite3 *db = pParse->db;
+  u8 enc = ENC(db);
+  u8 initbusy = db->init.busy;
+  CollSeq *pColl;
+
+  pColl = sqlite3FindCollSeq(db, enc, zName, initbusy);
+  if( !initbusy && (!pColl || !pColl->xCmp) ){
+    pColl = sqlite3GetCollSeq(pParse, enc, pColl, zName);
+  }
+
   return pColl;
 }
 
@@ -254,12 +288,13 @@ static int matchQuality(
   u8 enc          /* Desired text encoding */
 ){
   int match;
-
-  /* nArg of -2 is a special case */
-  if( nArg==(-2) ) return (p->xSFunc==0) ? 0 : FUNC_PERFECT_MATCH;
+  assert( p->nArg>=-1 );
 
   /* Wrong number of arguments means "no match" */
-  if( p->nArg!=nArg && p->nArg>=0 ) return 0;
+  if( p->nArg!=nArg ){
+    if( nArg==(-2) ) return (p->xSFunc==0) ? 0 : FUNC_PERFECT_MATCH;
+    if( p->nArg>=0 ) return 0;
+  }
 
   /* Give a better score to a function with a specific number of arguments
   ** than to function that accepts any number of arguments. */

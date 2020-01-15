@@ -478,7 +478,24 @@ do_execsql_test index6-16.3 {
   SELECT 3 FROM t0 WHERE c1 <= c0;
 } {3}
 
-
-
+# 2019-11-02
+# Ticket https://sqlite.org/src/tktview/a9efb42811fa41ee286e8
+db close
+sqlite3 db :memory:
+do_execsql_test index6-17.1 {
+  CREATE TABLE t0(c0);
+  CREATE INDEX i0 ON t0(0) WHERE c0 GLOB c0;
+  INSERT INTO t0 VALUES (0);
+  CREATE UNIQUE INDEX i1 ON t0(0);
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test index6-17.2 {
+  CREATE UNIQUE INDEX i2 ON t0(0);
+  REPLACE INTO t0 VALUES(0);
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test index6-17.3 {
+  SELECT COUNT(*) FROM t0 WHERE t0.c0 GLOB t0.c0;
+} {1}
 
 finish_test
