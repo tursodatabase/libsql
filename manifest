@@ -1,5 +1,5 @@
-C Fix\sthe\surifuncs.c\sextension\s(used\sfor\stesting\sand\sdebugging\sonly)\sso\sthat\nthe\ssqlite3_filename_database()\sSQL\sfunction\sand\sits\ssiblings\scorrectly\shandle\nan\sinvalid\sschema\sname\spassed\sin\sas\sthe\sargument.
-D 2020-01-14T16:50:09.276
+C Do\snot\sallow\sthe\s"PRAGMA\sencoding"\sstatement\sto\schange\sthe\sdatabase\nencoding\sif\sTEMP\scontent\sexists,\sor\scontent\sin\sany\sother\sattached\ndatabase.\s\sFormerly,\sencoding\schanges\swere\sallowed\sif\sjust\sthe\smain\ndatabase\sfile\swas\sempty.\s\sTicket\s[a08879a4a476eea9].
+D 2020-01-15T16:20:16.110
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -524,7 +524,7 @@ F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
-F src/pragma.c 9145cc0d7309b49d383fe15deca9ab592830b8b532e7fb25e9e36b6f470cbf66
+F src/pragma.c 0d49d43b22d66397aa026db505457f6683d8a66cd0a4f9db2e6776156bda716c
 F src/pragma.h 9f86a3a3a0099e651189521c8ad03768df598974e7bbdc21c7f9bb6125592fbd
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
@@ -848,7 +848,7 @@ F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
-F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
+F test/enc2.test 848bf05f15b011719f478dddb7b5e9aea35e39e457493cba4c4eef75d849a5ec
 F test/enc3.test 6807f7a7740a00361ca8d0ccd66bc60c8dc5f2b6
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 84879b63e3110552bf8ce648a3507dc3ceb72109ecec83c2aef0db37a27f6382
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54bf04811951db6c894f272f870e3e41f8f5e05a25c1115efbbdbd0d8bba54be
-R ef60df967e796bd9bfc273160d5104d4
+P 3d7434a9d85dae9135473d1c58c22ac01a282e654807aa10be9b39f127291594
+R 8a9a1a9f3b4869ab1515f6774449d079
 U drh
-Z 6fa8f0dab0c264087d10e9adb2b33207
+Z 4597b9944f2bad0f6e2f950727bac08b
