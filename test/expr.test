@@ -1036,4 +1036,24 @@ foreach {tn val} [list 1 NaN 2 -NaN 3 NaN0 4 -NaN0 5 Inf 6 -Inf] {
   } {0}
 }
 
+reset_db
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+do_execsql_test expr-16.1 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE dual(dummy);
+  INSERT INTO dual VALUES('X');
+} {}
+do_execsql_test expr-16.100 {
+  SELECT implies_nonnull_row( (b=1 AND 0)>(b=3 AND 0),a)
+  FROM dual LEFT JOIN t1;
+} {0}
+do_execsql_test expr-16.101 {
+  SELECT implies_nonnull_row( (b=1 AND 0)>(b=3 AND a=4),a)
+  FROM dual LEFT JOIN t1;
+} {1}
+do_execsql_test expr-16.102 {
+  SELECT implies_nonnull_row( (b=1 AND a=2)>(b=3 AND a=4),a)
+  FROM dual LEFT JOIN t1;
+} {1}
+
 finish_test

@@ -632,6 +632,15 @@ static int csvtabConnect(
   for(i=0; i<sizeof(azPValue)/sizeof(azPValue[0]); i++){
     sqlite3_free(azPValue[i]);
   }
+  /* Rationale for DIRECTONLY:
+  ** An attacker who controls a database schema could use this vtab
+  ** to exfiltrate sensitive data from other files in the filesystem.
+  ** And, recommended practice is to put all CSV virtual tables in the
+  ** TEMP namespace, so they should still be usable from within TEMP
+  ** views, so there shouldn't be a serious loss of functionality by
+  ** prohibiting the use of this vtab from persistent triggers and views.
+  */
+  sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   return SQLITE_OK;
 
 csvtab_connect_oom:

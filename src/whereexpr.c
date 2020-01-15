@@ -109,39 +109,14 @@ static int allowedOp(int op){
 /*
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
-**
-** If left/right precedence rules come into play when determining the
-** collating sequence, then COLLATE operators are adjusted to ensure
-** that the collating sequence does not change.  For example:
-** "Y collate NOCASE op X" becomes "X op Y" because any collation sequence on
-** the left hand side of a comparison overrides any collation sequence 
-** attached to the right. For the same reason the EP_Collate flag
-** is not commuted.
-**
-** The return value is extra flags that are added to the WhereTerm object
-** after it is commuted.  The only extra flag ever added is TERM_NOPARTIDX
-** which prevents the term from being used to enable a partial index if
-** COLLATE changes have been made.
 */
 static u16 exprCommute(Parse *pParse, Expr *pExpr){
-  u16 expRight = (pExpr->pRight->flags & EP_Collate);
-  u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
-  u16 wtFlags = 0;
-  assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
-  if( expRight==expLeft ){
-    /* Either X and Y both have COLLATE operator or neither do */
-    if( expRight ){
-      /* Both X and Y have COLLATE operators.  Make sure X is always
-      ** used by clearing the EP_Collate flag from Y. */
-      pExpr->pRight->flags &= ~EP_Collate;
-      wtFlags |= TERM_NOPARTIDX;
-    }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
-      /* Neither X nor Y have COLLATE operators, but X has a non-default
-      ** collating sequence.  So add the EP_Collate marker on X to cause
-      ** it to be searched first. */
-      pExpr->pLeft->flags |= EP_Collate;
-      wtFlags |= TERM_NOPARTIDX;
-    }
+  if( pExpr->pLeft->op==TK_VECTOR
+   || pExpr->pRight->op==TK_VECTOR
+   || sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight) !=
+      sqlite3BinaryCompareCollSeq(pParse, pExpr->pRight, pExpr->pLeft)
+  ){
+    pExpr->flags ^= EP_Commuted;
   }
   SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
   if( pExpr->op>=TK_GT ){
@@ -152,7 +127,7 @@ static u16 exprCommute(Parse *pParse, Expr *pExpr){
     assert( pExpr->op>=TK_GT && pExpr->op<=TK_GE );
     pExpr->op = ((pExpr->op-TK_GT)^2)+TK_GT;
   }
-  return wtFlags;
+  return 0;
 }
 
 /*
@@ -930,7 +905,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   ){
     return 0;
   }
-  pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
+  pColl = sqlite3ExprCompareCollSeq(pParse, pExpr);
   if( sqlite3IsBinary(pColl) ) return 1;
   return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
 }
@@ -1323,6 +1298,7 @@ static void exprAnalyze(
             0, sqlite3ExprDup(db, pRight, 0));
         if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
           ExprSetProperty(pNewExpr, EP_FromJoin);
+          pNewExpr->iRightJoinTable = pExpr->iRightJoinTable;
         }
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
@@ -1379,11 +1355,15 @@ static void exprAnalyze(
   ** expression). The WhereTerm.iField variable identifies the index within
   ** the vector on the LHS that the virtual term represents.
   **
-  ** This only works if the RHS is a simple SELECT, not a compound
+  ** This only works if the RHS is a simple SELECT (not a compound) that does
+  ** not use window functions.
   */
   if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->iField==0
    && pExpr->pLeft->op==TK_VECTOR
    && pExpr->x.pSelect->pPrior==0
+#ifndef SQLITE_OMIT_WINDOWFUNC
+   && pExpr->x.pSelect->pWin==0
+#endif
   ){
     int i;
     for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
@@ -1541,9 +1521,10 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
   }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  if( p->op==TK_FUNCTION && p->y.pWin ){
+  if( (p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION) && p->y.pWin ){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->y.pWin->pPartition);
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->y.pWin->pOrderBy);
+    mask |= sqlite3WhereExprUsage(pMaskSet, p->y.pWin->pFilter);
   }
 #endif
   return mask;
@@ -1619,6 +1600,9 @@ void sqlite3WhereTabFuncArgs(
     pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
+    if( pItem->fg.jointype & JT_LEFT ){
+      sqlite3SetJoinExpr(pTerm, pItem->iCursor);
+    }
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
   }
 }

@@ -448,13 +448,15 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     }
 #else
     pPg = pcache1Alloc(pCache->szAlloc);
-    p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
     if( benignMalloc ){ sqlite3EndBenignMalloc(); }
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     pcache1EnterMutex(pCache->pGroup);
 #endif
     if( pPg==0 ) return 0;
+#ifndef SQLITE_PCACHE_SEPARATE_HEADER
+    p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
+#endif
     p->page.pBuf = pPg;
     p->page.pExtra = &p[1];
     p->isBulkLocal = 0;

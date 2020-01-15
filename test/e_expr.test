@@ -1663,9 +1663,16 @@ do_expr_test e_expr-32.1.4 { CAST('11abc' AS NUMERIC) } integer 11
 do_expr_test e_expr-32.1.5 { CAST('11.1abc' AS NUMERIC) } real 11.1
 do_expr_test e_expr-32.1.6 {CAST( '9.223372036e14' AS NUMERIC)} integer  922337203600000
 do_expr_test e_expr-32.1.7 {CAST('-9.223372036e14' AS NUMERIC)} integer -922337203600000
-do_expr_test e_expr-32.1.8 {CAST( '9.223372036e15' AS NUMERIC)} real     9223372036000000.0
-do_expr_test e_expr-32.1.9 {CAST('-9.223372036e15' AS NUMERIC)} real    -9223372036000000.0
-
+do_test e_expr-32.1.8 {
+  set expr {CAST( '9.223372036e15' AS NUMERIC)}
+  db eval "SELECT typeof($expr) AS type, printf('%.5e',$expr) AS value"  break;
+  list $type $value
+} {real 9.22337e+15}
+do_test e_expr-32.1.9 {
+  set expr {CAST('-9.223372036e15' AS NUMERIC)}
+  db eval "SELECT typeof($expr) AS type, printf('%.5e',$expr) AS value"  break;
+  list $type $value
+} {real -9.22337e+15}
 
 # EVIDENCE-OF: R-50300-26941 Any text input that describes a value
 # outside the range of a 64-bit signed integer yields a REAL result.
@@ -1908,9 +1915,6 @@ foreach {tn sql} {
 
 # EVIDENCE-OF: R-18318-14995 The value of a subquery expression is the
 # first row of the result from the enclosed SELECT statement.
-#
-# EVIDENCE-OF: R-15900-52156 In other words, an implied "LIMIT 1" is
-# added to the subquery, overriding an explicitly coded LIMIT.
 #
 do_execsql_test e_expr-36.3.1 {
   CREATE TABLE t4(x, y);

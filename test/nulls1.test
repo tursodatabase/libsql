@@ -248,6 +248,54 @@ do_execsql_test 7.0 {
   SELECT * FROM t71 ORDER BY a DESC NULLS FIRST;
 }
 
+# 2019-12-18 gramfuzz1 find
+# NULLS LAST not allows on an INTEGER PRIMARY KEY.
+#
+do_catchsql_test 8.0 {
+  CREATE TABLE t80(a, b INTEGER, PRIMARY KEY(b NULLS LAST)) WITHOUT ROWID;
+} {1 {unsupported use of NULLS LAST}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE v0 (c1, c2, c3);
+  CREATE INDEX v3 ON v0 (c1, c2, c3);
+}
+do_execsql_test 9.1 {
+  ANALYZE sqlite_master;
+  INSERT INTO sqlite_stat1 VALUES('v0','v3','648 324 81');
+  ANALYZE sqlite_master;
+}
+
+do_execsql_test 9.2 {
+  INSERT INTO v0 VALUES
+      (1, 10, 'b'),
+      (1, 10, 'd'),
+      (1, 10, NULL),
+      (2, 10, 'a'),
+      (2, 10, NULL),
+      (1, 10, 'c'),
+      (2, 10, 'b'),
+      (1, 10, 'a'),
+      (1, 10, NULL),
+      (2, 10, NULL),
+      (2, 10, 'd'),
+      (2, 10, 'c');
+}
+
+do_execsql_test 9.3 {
+  SELECT c1, c2, ifnull(c3, 'NULL') FROM v0 
+  WHERE c2=10 ORDER BY c1, c3 NULLS LAST
+} {
+  1 10 a 1 10 b 1 10 c 1 10 d 1 10 NULL 1 10 NULL
+  2 10 a 2 10 b 2 10 c 2 10 d 2 10 NULL 2 10 NULL
+}
+
+do_eqp_test 9.4 {
+  SELECT c1, c2, ifnull(c3, 'NULL') FROM v0 
+  WHERE c2=10 ORDER BY c1, c3 NULLS LAST
+} {SEARCH TABLE v0 USING COVERING INDEX v3 (ANY(c1) AND c2=?)}
+
+
+
 finish_test
-
-

@@ -343,22 +343,21 @@ do_execsql_test 8.4 {
   CREATE VIEW v4 AS SELECT * FROM t4 WHERE (a=1 AND 0) OR b=2;
 }
 
-# Do not rename branches of an expression tree that is optimized out by
-# the AND optimization.
+# Branches of an expression tree that are optimized out by the AND 
+# optimization are renamed.
 #
 do_execsql_test 8.5 {
   ALTER TABLE t4 RENAME a TO c;
   SELECT sql FROM sqlite_master WHERE name = 'v4'
-} {{CREATE VIEW v4 AS SELECT * FROM t4 WHERE (a=1 AND 0) OR b=2}}
-#                "a" is not renamed to "c" ---^
+} {{CREATE VIEW v4 AS SELECT * FROM t4 WHERE (c=1 AND 0) OR b=2}}
 
 # 2019-06-10 https://www.sqlite.org/src/info/533010b8cacebe82
 reset_db
-do_execsql_test 8.6 {
+do_catchsql_test 8.6 {
   CREATE TABLE t0(c0);
   CREATE INDEX i0 ON t0(LIKELIHOOD(1,2) AND 0);
   ALTER TABLE t0 RENAME TO t1;
   SELECT sql FROM sqlite_master WHERE name='i0';
-} {{CREATE INDEX i0 ON "t1"(LIKELIHOOD(1,2) AND 0)}}
+} {1 {error in index i0: second argument to likelihood() must be a constant between 0.0 and 1.0}}
 
 finish_test

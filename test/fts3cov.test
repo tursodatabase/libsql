@@ -97,7 +97,7 @@ do_test fts3cov-2.2 {
 } {}
 do_error_test fts3cov-2.3 {
   SELECT * FROM t1 WHERE t1 MATCH 'c*'
-} {SQL logic error}
+} {database disk image is malformed}
 
 # Test the "replaced with NULL" case:
 do_test fts3cov-2.4 {
@@ -105,7 +105,7 @@ do_test fts3cov-2.4 {
 } {}
 do_error_test fts3cov-2.5 {
   SELECT * FROM t1 WHERE t1 MATCH 'cloud'
-} {SQL logic error}
+} {database disk image is malformed}
 
 #--------------------------------------------------------------------------
 # The following tests are to test the effects of OOM errors while storing

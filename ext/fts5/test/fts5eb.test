@@ -59,10 +59,27 @@ do_catchsql_test 2.1 {
   SELECT fts5_expr()
 } {1 {wrong number of arguments to function fts5_expr}}
 
-do_catchsql_test 2.1 {
+do_catchsql_test 2.2 {
   SELECT fts5_expr_tcl()
 } {1 {wrong number of arguments to function fts5_expr_tcl}}
 
+do_catchsql_test 2.3 {
+  SELECT fts5_expr('')
+} {1 {fts5: syntax error near ""}}
+
+do_catchsql_test 2.4 {
+  SELECT fts5_expr(NULL)
+} {1 {fts5: syntax error near ""}}
+
+do_catchsql_test 2.5 {
+  SELECT fts5_expr(NULL, NULL)
+} {1 {parse error in ""}}
+
+for {set i 0} {$i < 255} {incr i} {
+  do_test 2.6.$i {
+    lindex [catchsql {sELECT fts5_expr(NULL, char($i));}] 0
+  } 1
+}
 
 do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE e1 USING fts5(text, tokenize = 'porter unicode61');

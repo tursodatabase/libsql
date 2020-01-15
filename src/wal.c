@@ -1827,7 +1827,19 @@ static int walCheckpoint(
       ** not decreasing it. So assuming either that either the "old" or
       ** "new" version of the value is read, and not some arbitrary value
       ** that would never be written by a real client, things are still 
-      ** safe.  */
+      ** safe.
+      **
+      ** Astute readers have pointed out that the assumption stated in the
+      ** last sentence of the previous paragraph is not guaranteed to be
+      ** true for all conforming systems.  However, the assumption is true
+      ** for all compilers and architectures in common use today (circa
+      ** 2019-11-27) and the alternatives are both slow and complex, and
+      ** so we will continue to go with the current design for now.  If this
+      ** bothers you, or if you really are running on a system where aligned
+      ** 32-bit reads and writes are not atomic, then you can simply avoid
+      ** the use of WAL mode, or only use WAL mode together with
+      ** PRAGMA locking_mode=EXCLUSIVE and all will be well.
+      */
       u32 y = pInfo->aReadMark[i];
       if( mxSafeFrame>y ){
         assert( y<=pWal->hdr.mxFrame );

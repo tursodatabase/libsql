@@ -782,4 +782,49 @@ do_execsql_test trigger1-20.1 {
   DROP TRIGGER r20_3;
 } {}
 
+# 2019-10-24 ticket 50c09fc2cf0d91ce
+#
+db close
+sqlite3 db :memory:
+do_execsql_test trigger1-21.1 {
+  PRAGMA recursive_triggers = true;
+  CREATE TABLE t0(a, b, c UNIQUE);
+  CREATE UNIQUE INDEX i0 ON t0(b) WHERE a;
+  CREATE TRIGGER tr0 AFTER DELETE ON t0 BEGIN
+    DELETE FROM t0;
+  END;
+  INSERT INTO t0(a,b,c) VALUES(0,0,9),(1,1,1);
+  REPLACE INTO t0(a,b,c) VALUES(2,0,9);
+  SELECT * FROM t0;
+} {2 0 9}
+
+# 2020-01-04 From Yongheng
+# The test case below caused problems for the register validity
+# tracking logic.  There was no bug in the release build.  The
+# only problem was a false-positive in the register validity
+# tracking.
+#
+reset_db
+do_execsql_test trigger1-22.10 {
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b DOUBLE
+  );
+  CREATE TRIGGER x AFTER UPDATE ON t1 BEGIN
+   SELECT sum(b)OVER(ORDER BY (SELECT b FROM t1 AS x 
+                               WHERE b IN (t1.a,127,t1.b)
+                               GROUP BY b))
+     FROM t1
+     GROUP BY a;
+  END;
+  CREATE TEMP TRIGGER x BEFORE INSERT ON t1 BEGIN
+    UPDATE t1
+       SET b=randomblob(10)
+     WHERE b >= 'E'
+       AND a < (SELECT a FROM t1 WHERE a<22 GROUP BY b);
+  END;
+  INSERT INTO t1(b) VALUES('Y'),('X'),('Z');
+  SELECT a, CASE WHEN typeof(b)='text' THEN quote(b) ELSE '<blob>' END, '|' FROM t1;
+} {1 <blob> | 2 'X' | 3 'Z' |}
+
 finish_test

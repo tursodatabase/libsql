@@ -822,6 +822,7 @@ static int deltaparsevtabConnect(
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
+    sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
   }
   return rc;
 }
@@ -1070,17 +1071,18 @@ int sqlite3_fossildelta_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
+  static const int enc = SQLITE_UTF8|SQLITE_INNOCUOUS;
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "delta_create", 2, SQLITE_UTF8, 0,
+  rc = sqlite3_create_function(db, "delta_create", 2, enc, 0,
                                deltaCreateFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "delta_apply", 2, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "delta_apply", 2, enc, 0,
                                  deltaApplyFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "delta_output_size", 1, SQLITE_UTF8, 0,
+    rc = sqlite3_create_function(db, "delta_output_size", 1, enc, 0,
                                  deltaOutputSizeFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){

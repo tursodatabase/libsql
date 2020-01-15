@@ -192,6 +192,7 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
     sqlite3DbFree(db, pParse->zErrMsg);
     pParse->zErrMsg = zMsg;
     pParse->rc = SQLITE_ERROR;
+    pParse->pWith = 0;
   }
 }
 
@@ -382,10 +383,13 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 ** returns FALSE but it still converts the prefix and writes the result
 ** into *pResult.
 */
+#if defined(_MSC_VER)
+#pragma warning(disable : 4756)
+#endif
 int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int incr;
-  const char *zEnd = z + length;
+  const char *zEnd;
   /* sign * significand * (10 ^ (esign * exponent)) */
   int sign = 1;    /* sign of significand */
   i64 s = 0;       /* significand */
@@ -399,12 +403,15 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
+  if( length==0 ) return 0;
 
   if( enc==SQLITE_UTF8 ){
     incr = 1;
+    zEnd = z + length;
   }else{
     int i;
     incr = 2;
+    length &= ~1;
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     testcase( enc==SQLITE_UTF16LE );
     testcase( enc==SQLITE_UTF16BE );
@@ -569,6 +576,9 @@ do_atof_calc:
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
+#if defined(_MSC_VER)
+#pragma warning(default : 4756)
+#endif
 
 /*
 ** Compare the 19-character string zNum against the text representation

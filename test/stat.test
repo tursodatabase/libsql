@@ -108,7 +108,7 @@ do_execsql_test stat-2.1 {
   INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
    ORDER BY rowid;
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
-    FROM stat WHERE name != 'sqlite_master';
+    FROM stat WHERE name != 'sqlite_master' ORDER BY name;
 } [list \
   sqlite_autoindex_t3_1 / 3 internal 3 368 623 125       \
   sqlite_autoindex_t3_1 /000/ 8 leaf 8 946 46 123        \
@@ -134,6 +134,14 @@ do_execsql_test stat-2.1 {
   t3 /00f/ 23 leaf 2 738 268 370                         \
 ]
 
+do_execsql_test stat-2.1agg {
+  SELECT * FROM dbstat WHERE aggregate=TRUE ORDER BY name;
+} [list \
+  sqlite_autoindex_t3_1 {}  5 {} 32  3898 1065 132 {}  5120 \
+  sqlite_master         {}  1 {}  2    84  824  49 {}  1024 \
+  t3                    {} 17 {} 47 11188 5815 370 {} 17408 \
+]
+
 # With every index entry overflowing, make sure no pages are missed 
 # (other than the locking page which is 64 in this test build.)
 #
@@ -150,7 +158,7 @@ do_execsql_test stat-3.1 {
   CREATE INDEX i4 ON t4(x);
   INSERT INTO t4(rowid, x) VALUES(2, a_string(7777));
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
-    FROM stat WHERE name != 'sqlite_master';
+    FROM stat WHERE name != 'sqlite_master' ORDER BY name;
 } [list \
   i4 / 3 leaf 1 103 905 7782                 \
   i4 /000+000000 4 overflow 0 1020 0 0       \
@@ -170,6 +178,15 @@ do_execsql_test stat-3.1 {
   t4 /000+000005 17 overflow 0 1020 0 0      \
   t4 /000+000006 18 overflow 0 1020 0 0      \
 ]
+
+do_execsql_test stat-3.2 {
+  SELECT *, '|' FROM dbstat WHERE aggregate=TRUE ORDER BY name;
+} [list \
+  i4            {} 9 {} 1 7782 1386 7782 {} 9216 | \
+  sqlite_master {} 1 {} 2   74  834   40 {} 1024 | \
+  t4            {} 8 {} 1 7780  367 7780 {} 8192 | \
+]
+
 
 do_execsql_test stat-4.1 {
   CREATE TABLE t5(x);
@@ -200,6 +217,16 @@ do_execsql_test stat-5.1 {
   t1 /000+000000 3 overflow 0 1020 0 0    \
   t1 /001+000000 4 overflow 0 1020 0 0    \
 ]
+
+do_execsql_test stat-5.20 {
+  SELECT name, quote(path), pageno, quote(pagetype), ncell, payload,
+         unused, mx_payload, '|' FROM dbstat('main',1);
+} {sqlite_master NULL 1 NULL 1 34 878 34 | tx NULL 1 NULL 0 0 1016 0 |}
+do_execsql_test stat-5.21 {
+  SELECT name, quote(path), pageno, quote(pagetype), ncell, payload,
+         unused, mx_payload, '|' FROM dbstat('aux1',1);
+} {sqlite_master NULL 1 NULL 1 34 878 34 | t1 NULL 3 NULL 2 3033 5 1517 |}
+
 
 do_catchsql_test stat-6.1 {
   CREATE VIRTUAL TABLE temp.s2 USING dbstat(mainx);
@@ -270,5 +297,22 @@ do_catchsql_test 7.2.4 {
   CREATE VIRTUAL TABLE x3 USING dbstat(123corp);
   SELECT * FROM x3;
 } {1 {unrecognized token: "123corp"}}
+
+
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE st4 USING dbstat;
+}
+do_execsql_test 8.2 {
+  SELECT * FROM st4 WHERE st4.aggregate = NULL;
+}
+do_execsql_test 8.3 {
+  SELECT aggregate=1 FROM st4 WHERE aggregate = 5
+}
+do_execsql_test 8.4 {
+  SELECT * FROM st4 WHERE name = NULL;
+} {}
+do_execsql_test 8.5 {
+  SELECT * FROM st4 WHERE schema = NULL;
+} {}
 
 finish_test

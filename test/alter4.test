@@ -383,8 +383,8 @@ do_execsql_test alter4-9.3 {
 do_test alter4-10.1 {
   db close
   sqlite3 db :memory:
+  sqlite3_db_config db LEGACY_FILE_FORMAT 1
   db eval {
-    PRAGMA legacy_file_format=on;
     CREATE TABLE t1(a,b,c);
     CREATE INDEX t1a ON t1(a DESC);
     INSERT INTO t1 VALUES(1,2,3);
