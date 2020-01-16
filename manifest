@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\s"PRAGMA\sencoding"\sstatement\sto\schange\sthe\sdatabase\nencoding\sif\sTEMP\scontent\sexists,\sor\scontent\sin\sany\sother\sattached\ndatabase.\s\sFormerly,\sencoding\schanges\swere\sallowed\sif\sjust\sthe\smain\ndatabase\sfile\swas\sempty.\s\sTicket\s[a08879a4a476eea9].
-D 2020-01-15T16:20:16.110
+C Clean\sup\sthe\sdefinitions\sof\sthe\sTERM_\sconstants\sin\sthe\scode\sgenerator.\nFormatting\sonly\s-\sno\slogic\schanges.
+D 2020-01-16T11:51:09.331
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/wal.c 15a2845769f51ba132f9cf0b2c7a6887a91fc8437892dbcce9fcdc68b66d60a1
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c df2bea0e0122e853d9f1a8ec68920744166d2a524e338eba92e5470538ecd1f9
-F src/whereInt.h e1d1db6bbec0ba4f345acc338f956c8237a6f06413afa68c6414e82fb5b06745
+F src/whereInt.h 9157228db086f436a574589f8cc5749bd971e94017c552305ad9ec472ed2e098
 F src/wherecode.c ec8870d6fe79668dd12d7edc65ae9771828d6cdfe478348c8abd872a89fdbadd
 F src/whereexpr.c 4b34be1434183e7bb8a05d4bf42bd53ea53021b0b060936fbd12062b4ff6b396
 F src/window.c f8ba2ee12a19b51d3ba42c16277c74185ee9215306bc0d5a03974ade8b5bc98f
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d7434a9d85dae9135473d1c58c22ac01a282e654807aa10be9b39f127291594
-R 8a9a1a9f3b4869ab1515f6774449d079
+P 03b003c988d27f3aa1b1e44972ee5a3c7e44ad667ec7f2b8a31d0411c66583d3
+R d7ffc973c7d36b1e5540da71f4b7e63a
 U drh
-Z 4597b9944f2bad0f6e2f950727bac08b
+Z 2da9b3045dcf43023df4f4ed55be732d
