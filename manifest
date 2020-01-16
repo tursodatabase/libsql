@@ -1,5 +1,5 @@
-C Fix\san\sSQL\ssyntax\serror\sin\sthe\scomment\son\sthe\somit-left-join\soptimization.\nNo\schanges\sto\scode.
-D 2020-01-16T12:25:14.066
+C Do\snot\sallow\sthe\sconstant-propagation\soptimization\sto\sapple\sto\sON/USING\sclause\nterms\sas\sit\sdoes\snot\shelp\sand\sit\smight\scause\sdownstream\sproblems.
+D 2020-01-16T16:12:07.234
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -531,7 +531,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1139e3157c710c6e6f04fe726f4e0d8bdb1ae89a276d3b0ca4975af163141c9c
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 924b61cef57033a8ca1ed3dcffd02445a7dd0c837cc849b2e4117251cac831f5
+F src/select.c 3e3a7ba46c65db13cb44780cd56d359d5b61b2032fdd8ca5c74ce5be24efd86f
 F src/shell.c.in 1b2a636ba5b676f844a2af2a5f719b5c4ace7c6825d56270e2ae912b2a5fc840
 F src/sqlite.h.in cedb3737511a45ae35fba6e4d6c250ae36f6b82da0de38113efa1a3bc83ee105
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af06f80a590e20f64fa2f630e85fa728c266ea4696b975cc5f2ab72a3b914379
-R 9a8c9df7f9259d9aaa9715d05b9ca046
+P 86b5e5a20e967af7ac444ff0a40c2e8b93b7e5c505eebf6d3753a341b05503a8
+R cc8e50e04b84aeefee1ded906a1ade6f
 U drh
-Z c83be37898e2cd5899ddcac01ce6852d
+Z d1f8c00b81ee1b1195ac54f2ade425f3

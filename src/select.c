@@ -4233,7 +4233,7 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
   int i;
   WhereConst *pConst;
   if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
-  if( ExprHasProperty(pExpr, EP_FixedCol) ) return WRC_Continue;
+  if( ExprHasProperty(pExpr, EP_FixedCol|EP_FromJoin) ) return WRC_Continue;
   pConst = pWalker->u.pConst;
   for(i=0; i<pConst->nConst; i++){
     Expr *pColumn = pConst->apExpr[i*2];
