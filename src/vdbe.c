@@ -4053,8 +4053,10 @@ case OP_OpenPseudo: {
 */
 case OP_Close: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  sqlite3VdbeFreeCursor(p, p->apCsr[pOp->p1]);
-  p->apCsr[pOp->p1] = 0;
+  if( p->apCsr[pOp->p1] ){
+    sqlite3VdbeFreeCursor(p, p->apCsr[pOp->p1]);
+    p->apCsr[pOp->p1] = 0;
+  }
   break;
 }
 
