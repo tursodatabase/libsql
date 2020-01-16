@@ -1111,6 +1111,12 @@ struct sqlite3_io_methods {
 ** called.  This file control is the only mechanism to detect changes that
 ** happen either internally or externally and that are associated with
 ** a particular attached database.
+**
+** <li>[[SQLITE_FCNTL_CKPT_DONE]]
+** The [SQLITE_FCNTL_CKPT_DONE] opcode is invoked from within a checkpoint
+** in wal mode after the client has finished copying pages from the wal
+** file to the database file, but before the *-shm file is updated to
+** record the fact that the pages have been checkpointed.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1148,6 +1154,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_LOCK_TIMEOUT           34
 #define SQLITE_FCNTL_DATA_VERSION           35
 #define SQLITE_FCNTL_SIZE_LIMIT             36
+#define SQLITE_FCNTL_CKPT_DONE              37
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
