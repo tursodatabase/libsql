@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\s"fuzz.test"\sthat\scould\sfail,\sas\snon-deterministic\sfunctions\smay\sno\slonger\sappear\sin\sCHECK\sconstraints.
-D 2020-01-17T11:18:54.424
+C Update\stest\sscript\sinstrfault.test\sto\saccount\sfor\sthe\sfact\sthat\sbound\sblob\svalues\scast\sto\stext\svalues\sare\snow\sintepreted\susing\sthe\stext\sencoding\sof\sthe\sdatabase,\sinstead\sof\salways\sas\sutf-8.
+D 2020-01-17T15:45:59.670
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1074,7 +1074,7 @@ F test/insert4.test fb9e0f752c75f453555990250b449f6d123ae6a3ebf054d14e4470de4498
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/insertfault.test ac63d14ea3b49c573673a572f4014b9117383a03e497c58f308b5c776e4a7f74
 F test/instr.test 107df2b9b74a4b59315916b575590a08f2a714de0754abe541f10a0971d0a2a4
-F test/instrfault.test 0f870b218ea17cd477bb19ed330eecdb460dd53a
+F test/instrfault.test 95e28efade652e6d51ae11b377088fe523a581a07ec428009e152a4dd0e0f44c
 F test/intarray.test bb976b0b3df0ebb6a2eddfb61768280440e672beba5460ed49679ea984ccf440
 F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
 F test/interrupt2.test e4408ca770a6feafbadb0801e54a0dcd1a8d108d
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 52206488f315803df73f964774270ef4783923407a2567936f56b0a1a88b4400
-R 6a20818abd6126a5dc5d8ddd16c1fa8b
+P a370871e21bd1028ac968ca4f48e6b5f75e647ac40d4342aeb0504a848452908
+R 8a3578c77eeaaedd9218cc9c477d2616
 U dan
-Z 1e3c42c09e904809a1f34fee172e0379
+Z 3da4f38707b9e39ca3e9c04ff2b9d096
