@@ -1,5 +1,5 @@
-C The\scompress()\sfunction\sshould\snot\sbe\sdeterministic\ssince\sthe\ssame\sinput\scan\nhave\smultiple\spossible\scompressed\soutputs.\s\sThe\suncompress()\sfunction,\son\sthe\nother\shand,\sis\sdeterministic.
-D 2020-01-17T21:12:22.060
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
+D 2020-01-17T23:27:41.622
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 7af5ff0f88ba856c2681f6eeb457590b24f787e994f18cbdb44c2de2d33f757e
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
-F src/build.c bd2f382562b08f14748d54402220be1082c2f8ff8973fad47e45a381c438f9bf
+F src/build.c 2394d2c853088106dfc1cf485d609f20e6421d7c84892b795824e454f78e50ad
 F src/callback.c c547d00963ae28100117b4fb1f0f32242109b5804374ee3bfe01138a54da7f76
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7584e4b649d57767aac3906da6b06549d5b772aaa69f469c623ae5da834d54d5
-R 156cc8b54e50887352c1a93801b4222b
+P 84f314902c48336849081c7e9fe2a52caf171b8215a1c6e80cded0700c447eb1
+R 2fb32354b475f2376d5f16975a73a479
 U drh
-Z b5ea892b96b0c5b7230c6293f4f7e928
+Z fdbc0760a597e5c298156985f89293eb
