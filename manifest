@@ -1,5 +1,5 @@
-C Fix\s#ifdefs\sso\sit\scompiles\scleanly\swith\sall\sSQLITE_OMIT\scompile-time\soptions.\nUpdate\scompile-time\soption\stesting.
-D 2020-01-17T19:14:08.891
+C The\scompress()\sfunction\sshould\snot\sbe\sdeterministic\ssince\sthe\ssame\sinput\scan\nhave\smultiple\spossible\scompressed\soutputs.\s\sThe\suncompress()\sfunction,\son\sthe\nother\shand,\sis\sdeterministic.
+D 2020-01-17T21:12:22.060
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -287,7 +287,7 @@ F ext/misc/btreeinfo.c 4f0ebf278f46e68e6306c667917766cebc5550fd35d5de17847988e22
 F ext/misc/carray.c 91e9a7f512fda934894bed30464552fffa7d3073b5be04189ae0bd0c59f26bfd
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c a0efe03edfdc4f717c61e6c9b0bfe2708ff7878010dae3174980a68fdf76aabc
-F ext/misc/compress.c 3ed77691a3ce9e50921ae2b133dc176bb4d5587fdb57bde5872c4e5c348ce0bc
+F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
 F ext/misc/csv.c 3ed979c1eb35e35a98b30ef545a2facf62994594217681d9138b4b75faf6b0d7
 F ext/misc/dbdata.c e316fba936571584e55abd5b974a32a191727a6b746053a0c9d439bd2cf93940
 F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287c336
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9abf1bd2d2496ced9ef4619cd997933cd58452e6ab527ba70746c9975104b6a
-R 78ab34995171428871c77c466fa8b08a
+P 7584e4b649d57767aac3906da6b06549d5b772aaa69f469c623ae5da834d54d5
+R 156cc8b54e50887352c1a93801b4222b
 U drh
-Z 326389f638ab9279b86bd4c2cd08b041
+Z b5ea892b96b0c5b7230c6293f4f7e928
