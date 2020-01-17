@@ -1,5 +1,5 @@
-C Update\stest\sscript\sinstrfault.test\sto\saccount\sfor\sthe\sfact\sthat\sbound\sblob\svalues\scast\sto\stext\svalues\sare\snow\sintepreted\susing\sthe\stext\sencoding\sof\sthe\sdatabase,\sinstead\sof\salways\sas\sutf-8.
-D 2020-01-17T15:45:59.670
+C Improved\srounding\sin\sthe\s'unixepoch'\sfeature\sof\sthe\sdate\sand\stime\sfunctions.
+D 2020-01-17T16:47:07.892
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/build.c bd2f382562b08f14748d54402220be1082c2f8ff8973fad47e45a381c438f9bf
 F src/callback.c c547d00963ae28100117b4fb1f0f32242109b5804374ee3bfe01138a54da7f76
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 1b0724e66f95f33b160b1af85caaf9cceb325d22abf39bd24df4f54a73982251
-F src/date.c e1d8ac7102f3f283e63e13867acb0efa33861cf34f0faf4cdbaf9fa7a1eb7041
+F src/date.c 6c408fdd2e9ddf6e8431aba76315a2d061bea2cec8fbb75e25d7c1ba08274712
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 0f55297469d4244ab7df395849e1af98eb5e95816af7c661e7d2d8402dea23da
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a370871e21bd1028ac968ca4f48e6b5f75e647ac40d4342aeb0504a848452908
-R 8a3578c77eeaaedd9218cc9c477d2616
-U dan
-Z 3da4f38707b9e39ca3e9c04ff2b9d096
+P 4d6cb28811c01599e34c0394fe5ed17d47f14893c860590c9b4660bef68eb294
+R 8a133b71d0beb94bc5fe229d4942915c
+U drh
+Z 1fba68fad8f22ba34b83ab745c2e9833
