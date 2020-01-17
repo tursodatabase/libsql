@@ -1,5 +1,5 @@
-C New\stestcase()\smacros\sin\sselect.c,\sfor\scoverage\sof\sthe\schange\sfrom\stwo\ncheck-ins\sago.
-D 2020-01-16T17:53:24.598
+C Fix\sa\scase\sin\s"fuzz.test"\sthat\scould\sfail,\sas\snon-deterministic\sfunctions\smay\sno\slonger\sappear\sin\sCHECK\sconstraints.
+D 2020-01-17T11:18:54.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1011,7 +1011,7 @@ F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c31
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
-F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
+F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
 F test/fuzzcheck.c 0df68e0df3b93a8c8fc24c9873127c7d78024b51444193545f985dbc90ac024e
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3cc39e5069c8a6a32ecc49c571593615c0f347cadcd3e0325b7f9a11ddc1f546
-R d5c03b214a6317967c8cdbf225c787f4
-U drh
-Z e9b86b3d2b67c195211aeb33d5c3a16a
+P 52206488f315803df73f964774270ef4783923407a2567936f56b0a1a88b4400
+R 6a20818abd6126a5dc5d8ddd16c1fa8b
+U dan
+Z 1e3c42c09e904809a1f34fee172e0379

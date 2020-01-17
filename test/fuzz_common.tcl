@@ -363,6 +363,7 @@ proc do_fuzzy_test {testname args} {
   lappend ::fuzzyopts(-errorlist) {ORDER BY}
   lappend ::fuzzyopts(-errorlist) {GROUP BY}
   lappend ::fuzzyopts(-errorlist) {datatype mismatch}
+  lappend ::fuzzyopts(-errorlist) {non-deterministic functions prohibited}
 
   for {set ii 0} {$ii < $::fuzzyopts(-repeats)} {incr ii} {
     do_test ${testname}.$ii {
