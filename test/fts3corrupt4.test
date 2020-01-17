@@ -1946,7 +1946,8 @@ do_test 13.0 {
 
 do_catchsql_test 13.1 {
   SELECT quote(matchinfo(t1,'pcxybs'))==0 FROM t1 WHERE b MATCH 'e*';
-} {0 {0 0}}
+} {0 {}}
+# in 3.31.0: {0 {0 0}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -2826,7 +2827,8 @@ do_test 18.0 {
 
 do_catchsql_test 18.1 {
   SELECT quote(matchinfo(t1,'pcxybs'))==0 FROM t1 WHERE b MATCH 'e*';
-} {0 0}
+} {0 {}}
+# in 3.31.0:  {0 0}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -3916,4 +3918,3 @@ do_catchsql_test 23.1 {
 } {1 {database disk image is malformed}}
 
 finish_test
-
