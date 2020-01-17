@@ -95,6 +95,8 @@ SQLITE_EXTENSION_INIT3
 */
 #define FTS3_VARINT_MAX 10
 
+#define FTS3_BUFFER_PADDING 8
+
 /*
 ** FTS4 virtual tables may maintain multiple indexes - one index of all terms
 ** in the document set and zero or more prefix indexes. All indexes are stored
@@ -126,6 +128,18 @@ SQLITE_EXTENSION_INIT3
 */
 #define POS_COLUMN  (1)     /* Column-list terminator */
 #define POS_END     (0)     /* Position-list terminator */ 
+
+/*
+** The assert_fts3_nc() macro is similar to the assert() macro, except that it
+** is used for assert() conditions that are true only if it can be 
+** guranteed that the database is not corrupt.
+*/
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
+extern int sqlite3_fts3_may_be_corrupt;
+# define assert_fts3_nc(x) assert(sqlite3_fts3_may_be_corrupt || (x))
+#else
+# define assert_fts3_nc(x) assert(x)
+#endif
 
 /*
 ** This section provides definitions to allow the
@@ -182,6 +196,9 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 # define TESTONLY(X)
 #endif
 
+#define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
+#define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
+
 #endif /* SQLITE_AMALGAMATION */
 
 #ifdef SQLITE_DEBUG
@@ -225,6 +242,7 @@ struct Fts3Table {
   char *zLanguageid;              /* languageid=xxx option, or NULL */
   int nAutoincrmerge;             /* Value configured by 'automerge' */
   u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
+  int bLock;                      /* Used to prevent recursive content= tbls */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -283,12 +301,22 @@ struct Fts3Table {
   int mxSavepoint;       /* Largest valid xSavepoint integer */
 #endif
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /* True to disable the incremental doclist optimization. This is controled
   ** by special insert command 'test-no-incr-doclist'.  */
   int bNoIncrDoclist;
+
+  /* Number of segments in a level */
+  int nMergeCount;
 #endif
 };
+
+/* Macro to find the number of segments to merge */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
+# define MergeCount(P) ((P)->nMergeCount)
+#else
+# define MergeCount(P) FTS3_MERGE_COUNT
+#endif
 
 /*
 ** When the core wants to read from the virtual table, it creates a
@@ -553,6 +581,8 @@ int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 void sqlite3Fts3ErrMsg(char**,const char*,...);
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
+int sqlite3Fts3GetVarintU(const char *, sqlite_uint64 *);
+int sqlite3Fts3GetVarintBounded(const char*,const char*,sqlite3_int64*);
 int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
@@ -584,7 +614,7 @@ int sqlite3Fts3ExprParse(sqlite3_tokenizer *, int,
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
-int sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
+int sqlite3Fts3ExprInitTestInterface(sqlite3 *db, Fts3Hash*);
 int sqlite3Fts3InitTerm(sqlite3 *db);
 #endif
 

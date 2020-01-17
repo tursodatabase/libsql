@@ -42,6 +42,17 @@ static int fts3TokenizerEnabled(sqlite3_context *context){
 }
 
 /*
+** The real sqlite3_value_frombind() implementation was not added
+** until version 3.28.0 of the SQLite core.  This fake version facilitates
+** testing.
+*/
+static int bFrombindTrue = 0;
+static int sqlite3_value_frombind(sqlite3_value *NotUsed){
+  (void)NotUsed;
+  return bFrombindTrue;
+}
+
+/*
 ** Implementation of the SQL scalar function for accessing the underlying 
 ** hash table. This function may be called as follows:
 **
@@ -79,7 +90,7 @@ static void fts3TokenizerFunc(
   nName = sqlite3_value_bytes(argv[0])+1;
 
   if( argc==2 ){
-    if( fts3TokenizerEnabled(context) ){
+    if( fts3TokenizerEnabled(context) || sqlite3_value_frombind(argv[1]) ){
       void *pOld;
       int n = sqlite3_value_bytes(argv[1]);
       if( zName==0 || n!=sizeof(pPtr) ){
@@ -106,7 +117,9 @@ static void fts3TokenizerFunc(
       return;
     }
   }
-  sqlite3_result_blob(context, (void *)&pPtr, sizeof(pPtr), SQLITE_TRANSIENT);
+  if( fts3TokenizerEnabled(context) || sqlite3_value_frombind(argv[0]) ){
+    sqlite3_result_blob(context, (void *)&pPtr, sizeof(pPtr), SQLITE_TRANSIENT);
+  }
 }
 
 int sqlite3Fts3IsIdChar(char c){
@@ -194,8 +207,8 @@ int sqlite3Fts3InitTokenizer(
     int iArg = 0;
     z = &z[n+1];
     while( z<zEnd && (NULL!=(z = (char *)sqlite3Fts3NextToken(z, &n))) ){
-      int nNew = sizeof(char *)*(iArg+1);
-      char const **aNew = (const char **)sqlite3_realloc((void *)aArg, nNew);
+      sqlite3_int64 nNew = sizeof(char *)*(iArg+1);
+      char const **aNew = (const char **)sqlite3_realloc64((void *)aArg, nNew);
       if( !aNew ){
         sqlite3_free(zCopy);
         sqlite3_free((void *)aArg);
@@ -388,7 +401,9 @@ int queryTokenizer(
 
   sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
+    if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB
+     && sqlite3_column_bytes(pStmt, 0)==sizeof(*pp)
+    ){
       memcpy((void *)pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
     }
   }
@@ -430,6 +445,7 @@ static void intTestFunc(
   UNUSED_PARAMETER(argv);
 
   /* Test the query function */
+  bFrombindTrue = 1;
   sqlite3Fts3SimpleTokenizerModule(&p1);
   rc = queryTokenizer(db, "simple", &p2);
   assert( rc==SQLITE_OK );
@@ -447,6 +463,7 @@ static void intTestFunc(
     assert( rc==SQLITE_OK );
     assert( p2==p1 );
   }
+  bFrombindTrue = 0;
 
   sqlite3_result_text(context, "ok", -1, SQLITE_STATIC);
 }
@@ -477,7 +494,7 @@ int sqlite3Fts3InitHashTable(
 ){
   int rc = SQLITE_OK;
   void *p = (void *)pHash;
-  const int any = SQLITE_ANY;
+  const int any = SQLITE_UTF8|SQLITE_DIRECTONLY;
 
 #ifdef SQLITE_TEST
   char *zTest = 0;

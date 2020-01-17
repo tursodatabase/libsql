@@ -409,7 +409,7 @@ do_test fts3expr-5.1 {
 } {1 {Usage: fts3_exprtest(tokenizer, expr, col1, ...}}
 do_test fts3expr-5.2 {
   catchsql { SELECT fts3_exprtest('doesnotexist', 'a b', 'c') }
-} {1 {No such tokenizer module}}
+} {1 {unknown tokenizer: doesnotexist}}
 do_test fts3expr-5.3 {
   catchsql { SELECT fts3_exprtest('simple', 'a b OR', 'c') }
 } {1 {Error parsing expression}}

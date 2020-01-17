@@ -128,17 +128,19 @@ struct StrBuffer {
 /*
 ** Allocate a two-slot MatchinfoBuffer object.
 */
-static MatchinfoBuffer *fts3MIBufferNew(int nElem, const char *zMatchinfo){
+static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
-  int nByte = sizeof(u32) * (2*nElem + 1) + sizeof(MatchinfoBuffer);
-  int nStr = (int)strlen(zMatchinfo);
+  sqlite3_int64 nByte = sizeof(u32) * (2*(sqlite3_int64)nElem + 1)
+                           + sizeof(MatchinfoBuffer);
+  sqlite3_int64 nStr = strlen(zMatchinfo);
 
-  pRet = sqlite3_malloc(nByte + nStr+1);
+  pRet = sqlite3_malloc64(nByte + nStr+1);
   if( pRet ){
     memset(pRet, 0, nByte);
     pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;
-    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0] + sizeof(u32)*(nElem+1);
-    pRet->nElem = nElem;
+    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0]
+                                      + sizeof(u32)*((int)nElem+1);
+    pRet->nElem = (int)nElem;
     pRet->zMatchinfo = ((char*)pRet) + nByte;
     memcpy(pRet->zMatchinfo, zMatchinfo, nStr+1);
     pRet->aRef[0] = 1;
@@ -178,7 +180,7 @@ static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
     aOut = &p->aMatchinfo[p->nElem+2];
     xRet = fts3MIBufferFree;
   }else{
-    aOut = (u32*)sqlite3_malloc(p->nElem * sizeof(u32));
+    aOut = (u32*)sqlite3_malloc64(p->nElem * sizeof(u32));
     if( aOut ){
       xRet = sqlite3_free;
       if( p->bGlobal ) memcpy(aOut, &p->aMatchinfo[1], p->nElem*sizeof(u32));
@@ -429,11 +431,12 @@ static void fts3SnippetDetails(
       char *pCsr = pPhrase->pTail;
       int iCsr = pPhrase->iTail;
 
-      while( iCsr<(iStart+pIter->nSnippet) ){
+      while( iCsr<(iStart+pIter->nSnippet) && iCsr>=iStart ){
         int j;
-        u64 mPhrase = (u64)1 << i;
+        u64 mPhrase = (u64)1 << (i%64);
         u64 mPos = (u64)1 << (iCsr - iStart);
-        assert( iCsr>=iStart );
+        assert( iCsr>=iStart && (iCsr - iStart)<=64 );
+        assert( i>=0 );
         if( (mCover|mCovered)&mPhrase ){
           iScore++;
         }else{
@@ -475,11 +478,14 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
     int iFirst = 0;
     pPhrase->pList = pCsr;
     fts3GetDeltaPosition(&pCsr, &iFirst);
-    assert( iFirst>=0 );
-    pPhrase->pHead = pCsr;
-    pPhrase->pTail = pCsr;
-    pPhrase->iHead = iFirst;
-    pPhrase->iTail = iFirst;
+    if( iFirst<0 ){
+      rc = FTS_CORRUPT_VTAB;
+    }else{
+      pPhrase->pHead = pCsr;
+      pPhrase->pTail = pCsr;
+      pPhrase->iHead = iFirst;
+      pPhrase->iTail = iFirst;
+    }
   }else{
     assert( rc!=SQLITE_OK || (
        pPhrase->pList==0 && pPhrase->pHead==0 && pPhrase->pTail==0 
@@ -516,7 +522,7 @@ static int fts3BestSnippet(
   int rc;                         /* Return Code */
   int nList;                      /* Number of phrases in expression */
   SnippetIter sIter;              /* Iterates through snippet candidates */
-  int nByte;                      /* Number of bytes of space to allocate */
+  sqlite3_int64 nByte;            /* Number of bytes of space to allocate */
   int iBestScore = -1;            /* Best snippet score found so far */
   int i;                          /* Loop counter */
 
@@ -534,7 +540,7 @@ static int fts3BestSnippet(
   ** the required space using malloc().
   */
   nByte = sizeof(SnippetPhrase) * nList;
-  sIter.aPhrase = (SnippetPhrase *)sqlite3_malloc(nByte);
+  sIter.aPhrase = (SnippetPhrase *)sqlite3_malloc64(nByte);
   if( !sIter.aPhrase ){
     return SQLITE_NOMEM;
   }
@@ -554,7 +560,7 @@ static int fts3BestSnippet(
     /* Set the *pmSeen output variable. */
     for(i=0; i<nList; i++){
       if( sIter.aPhrase[i].pHead ){
-        *pmSeen |= (u64)1 << i;
+        *pmSeen |= (u64)1 << (i%64);
       }
     }
 
@@ -604,8 +610,8 @@ static int fts3StringAppend(
   ** appended data.
   */
   if( pStr->n+nAppend+1>=pStr->nAlloc ){
-    int nAlloc = pStr->nAlloc+nAppend+100;
-    char *zNew = sqlite3_realloc(pStr->z, nAlloc);
+    sqlite3_int64 nAlloc = pStr->nAlloc+(sqlite3_int64)nAppend+100;
+    char *zNew = sqlite3_realloc64(pStr->z, nAlloc);
     if( !zNew ){
       return SQLITE_NOMEM;
     }
@@ -660,6 +666,7 @@ static int fts3SnippetShift(
 
     for(nLeft=0; !(hlmask & ((u64)1 << nLeft)); nLeft++);
     for(nRight=0; !(hlmask & ((u64)1 << (nSnippet-1-nRight))); nRight++);
+    assert( (nSnippet-1-nRight)<=63 && (nSnippet-1-nRight)>=0 );
     nDesired = (nLeft-nRight)/2;
 
     /* Ideally, the start of the snippet should be pushed forward in the
@@ -852,7 +859,7 @@ static int fts3ColumnlistCount(char **ppCollist){
 /*
 ** This function gathers 'y' or 'b' data for a single phrase.
 */
-static void fts3ExprLHits(
+static int fts3ExprLHits(
   Fts3Expr *pExpr,                /* Phrase expression node */
   MatchInfo *p                    /* Matchinfo context */
 ){
@@ -882,25 +889,29 @@ static void fts3ExprLHits(
     if( *pIter!=0x01 ) break;
     pIter++;
     pIter += fts3GetVarint32(pIter, &iCol);
+    if( iCol>=p->nCol ) return FTS_CORRUPT_VTAB;
   }
+  return SQLITE_OK;
 }
 
 /*
 ** Gather the results for matchinfo directives 'y' and 'b'.
 */
-static void fts3ExprLHitGather(
+static int fts3ExprLHitGather(
   Fts3Expr *pExpr,
   MatchInfo *p
 ){
+  int rc = SQLITE_OK;
   assert( (pExpr->pLeft==0)==(pExpr->pRight==0) );
   if( pExpr->bEof==0 && pExpr->iDocid==p->pCursor->iPrevId ){
     if( pExpr->pLeft ){
-      fts3ExprLHitGather(pExpr->pLeft, p);
-      fts3ExprLHitGather(pExpr->pRight, p);
+      rc = fts3ExprLHitGather(pExpr->pLeft, p);
+      if( rc==SQLITE_OK ) rc = fts3ExprLHitGather(pExpr->pRight, p);
     }else{
-      fts3ExprLHits(pExpr, p);
+      rc = fts3ExprLHits(pExpr, p);
     }
   }
+  return rc;
 }
 
 /*
@@ -990,8 +1001,8 @@ static int fts3MatchinfoCheck(
   return SQLITE_ERROR;
 }
 
-static int fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
-  int nVal;                       /* Number of integers output by cArg */
+static size_t fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
+  size_t nVal;                      /* Number of integers output by cArg */
 
   switch( cArg ){
     case FTS3_MATCHINFO_NDOC:
@@ -1027,11 +1038,15 @@ static int fts3MatchinfoSelectDoctotal(
   Fts3Table *pTab,
   sqlite3_stmt **ppStmt,
   sqlite3_int64 *pnDoc,
-  const char **paLen
+  const char **paLen,
+  const char **ppEnd
 ){
   sqlite3_stmt *pStmt;
   const char *a;
+  const char *pEnd;
   sqlite3_int64 nDoc;
+  int n;
+
 
   if( !*ppStmt ){
     int rc = sqlite3Fts3SelectDoctotal(pTab, ppStmt);
@@ -1040,12 +1055,20 @@ static int fts3MatchinfoSelectDoctotal(
   pStmt = *ppStmt;
   assert( sqlite3_data_count(pStmt)==1 );
 
+  n = sqlite3_column_bytes(pStmt, 0);
   a = sqlite3_column_blob(pStmt, 0);
-  a += sqlite3Fts3GetVarint(a, &nDoc);
-  if( nDoc==0 ) return FTS_CORRUPT_VTAB;
-  *pnDoc = (u32)nDoc;
+  if( a==0 ){
+    return FTS_CORRUPT_VTAB;
+  }
+  pEnd = a + n;
+  a += sqlite3Fts3GetVarintBounded(a, pEnd, &nDoc);
+  if( nDoc<=0 || a>pEnd ){
+    return FTS_CORRUPT_VTAB;
+  }
+  *pnDoc = nDoc;
 
   if( paLen ) *paLen = a;
+  if( ppEnd ) *ppEnd = pEnd;
   return SQLITE_OK;
 }
 
@@ -1117,11 +1140,12 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   int i;
   int iCol;
   int nToken = 0;
+  int rc = SQLITE_OK;
 
   /* Allocate and populate the array of LcsIterator objects. The array
   ** contains one element for each matchable phrase in the query.
   **/
-  aIter = sqlite3_malloc(sizeof(LcsIterator) * pCsr->nPhrase);
+  aIter = sqlite3_malloc64(sizeof(LcsIterator) * pCsr->nPhrase);
   if( !aIter ) return SQLITE_NOMEM;
   memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
   (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
@@ -1137,13 +1161,16 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     int nLive = 0;                /* Number of iterators in aIter not at EOF */
 
     for(i=0; i<pInfo->nPhrase; i++){
-      int rc;
       LcsIterator *pIt = &aIter[i];
       rc = sqlite3Fts3EvalPhrasePoslist(pCsr, pIt->pExpr, iCol, &pIt->pRead);
-      if( rc!=SQLITE_OK ) return rc;
+      if( rc!=SQLITE_OK ) goto matchinfo_lcs_out;
       if( pIt->pRead ){
         pIt->iPos = pIt->iPosOffset;
-        fts3LcsIteratorAdvance(&aIter[i]);
+        fts3LcsIteratorAdvance(pIt);
+        if( pIt->pRead==0 ){
+          rc = FTS_CORRUPT_VTAB;
+          goto matchinfo_lcs_out;
+        }
         nLive++;
       }
     }
@@ -1175,8 +1202,9 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     pInfo->aMatchinfo[iCol] = nLcs;
   }
 
+ matchinfo_lcs_out:
   sqlite3_free(aIter);
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -1221,7 +1249,7 @@ static int fts3MatchinfoValues(
       case FTS3_MATCHINFO_NDOC:
         if( bGlobal ){
           sqlite3_int64 nDoc = 0;
-          rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, 0);
+          rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, 0, 0);
           pInfo->aMatchinfo[0] = (u32)nDoc;
         }
         break;
@@ -1230,14 +1258,19 @@ static int fts3MatchinfoValues(
         if( bGlobal ){
           sqlite3_int64 nDoc;     /* Number of rows in table */
           const char *a;          /* Aggregate column length array */
+          const char *pEnd;       /* First byte past end of length array */
 
-          rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, &a);
+          rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, &a, &pEnd);
           if( rc==SQLITE_OK ){
             int iCol;
             for(iCol=0; iCol<pInfo->nCol; iCol++){
               u32 iVal;
               sqlite3_int64 nToken;
               a += sqlite3Fts3GetVarint(a, &nToken);
+              if( a>pEnd ){
+                rc = SQLITE_CORRUPT_VTAB;
+                break;
+              }
               iVal = (u32)(((u32)(nToken&0xffffffff)+nDoc/2)/nDoc);
               pInfo->aMatchinfo[iCol] = iVal;
             }
@@ -1251,9 +1284,14 @@ static int fts3MatchinfoValues(
         if( rc==SQLITE_OK ){
           int iCol;
           const char *a = sqlite3_column_blob(pSelectDocsize, 0);
+          const char *pEnd = a + sqlite3_column_bytes(pSelectDocsize, 0);
           for(iCol=0; iCol<pInfo->nCol; iCol++){
             sqlite3_int64 nToken;
-            a += sqlite3Fts3GetVarint(a, &nToken);
+            a += sqlite3Fts3GetVarintBounded(a, pEnd, &nToken);
+            if( a>pEnd ){
+              rc = SQLITE_CORRUPT_VTAB;
+              break;
+            }
             pInfo->aMatchinfo[iCol] = (u32)nToken;
           }
         }
@@ -1270,9 +1308,9 @@ static int fts3MatchinfoValues(
 
       case FTS3_MATCHINFO_LHITS_BM:
       case FTS3_MATCHINFO_LHITS: {
-        int nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
+        size_t nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
         memset(pInfo->aMatchinfo, 0, nZero);
-        fts3ExprLHitGather(pCsr->pExpr, pInfo);
+        rc = fts3ExprLHitGather(pCsr->pExpr, pInfo);
         break;
       }
 
@@ -1284,7 +1322,7 @@ static int fts3MatchinfoValues(
         if( rc!=SQLITE_OK ) break;
         if( bGlobal ){
           if( pCsr->pDeferred ){
-            rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc, 0);
+            rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc,0,0);
             if( rc!=SQLITE_OK ) break;
           }
           rc = fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
@@ -1339,7 +1377,7 @@ static void fts3GetMatchinfo(
   ** initialize those elements that are constant for every row.
   */
   if( pCsr->pMIBuffer==0 ){
-    int nMatchinfo = 0;           /* Number of u32 elements in match-info */
+    size_t nMatchinfo = 0;        /* Number of u32 elements in match-info */
     int i;                        /* Used to iterate through zArg */
 
     /* Determine the number of phrases in the query */
@@ -1423,6 +1461,10 @@ void sqlite3Fts3Snippet(
     sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
     return;
   }
+
+  /* Limit the snippet length to 64 tokens. */
+  if( nToken<-64 ) nToken = -64;
+  if( nToken>+64 ) nToken = +64;
 
   for(nSnippet=1; 1; nSnippet++){
 
@@ -1525,7 +1567,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   nTerm = pExpr->pPhrase->nToken;
   if( pList ){
     fts3GetDeltaPosition(&pList, &iPos);
-    assert( iPos>=0 );
+    assert_fts3_nc( iPos>=0 );
   }
 
   for(iTerm=0; iTerm<nTerm; iTerm++){
@@ -1566,7 +1608,7 @@ void sqlite3Fts3Offsets(
   if( rc!=SQLITE_OK ) goto offsets_out;
 
   /* Allocate the array of TermOffset iterators. */
-  sCtx.aTerm = (TermOffset *)sqlite3_malloc(sizeof(TermOffset)*nToken);
+  sCtx.aTerm = (TermOffset *)sqlite3_malloc64(sizeof(TermOffset)*nToken);
   if( 0==sCtx.aTerm ){
     rc = SQLITE_NOMEM;
     goto offsets_out;
@@ -1635,7 +1677,7 @@ void sqlite3Fts3Offsets(
         /* All offsets for this column have been gathered. */
         rc = SQLITE_DONE;
       }else{
-        assert( iCurrent<=iMinPos );
+        assert_fts3_nc( iCurrent<=iMinPos );
         if( 0==(0xFE&*pTerm->pList) ){
           pTerm->pList = 0;
         }else{

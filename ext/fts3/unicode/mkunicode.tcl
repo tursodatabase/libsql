@@ -9,11 +9,12 @@ proc print_rd {map} {
   set nRange 1
   set iFirst  [lindex $map 0 0]
   set cPrev   [lindex $map 0 1]
+  set fPrev   [lindex $map 0 2]
 
   foreach m [lrange $map 1 end] {
-    foreach {i c} $m {}
+    foreach {i c f} $m {}
 
-    if {$cPrev == $c} {
+    if {$cPrev == $c && $fPrev==$f} {
       for {set j [expr $iFirst+$nRange]} {$j<$i} {incr j} {
         if {[info exists tl_lookup_table($j)]==0} break
       }
@@ -29,13 +30,16 @@ proc print_rd {map} {
 
     lappend lRange [list $iFirst $nRange]
     lappend aChar  $cPrev
+    lappend aFlag  $fPrev
 
     set iFirst $i
     set cPrev  $c
+    set fPrev  $f
     set nRange 1
   }
   lappend lRange [list $iFirst $nRange]
   lappend aChar $cPrev
+  lappend aFlag $fPrev
 
   puts "/*"
   puts "** If the argument is a codepoint corresponding to a lowercase letter"
@@ -45,7 +49,7 @@ proc print_rd {map} {
   puts "** E\"). The resuls of passing a codepoint that corresponds to an"
   puts "** uppercase letter are undefined."
   puts "*/"
-  puts "static int ${::remove_diacritic}(int c)\{"
+  puts "static int ${::remove_diacritic}(int c, int bComplex)\{"
   puts "  unsigned short aDia\[\] = \{"
   puts -nonewline "        0, "
   set i 1
@@ -59,14 +63,19 @@ proc print_rd {map} {
   }
   puts ""
   puts "  \};"
-  puts "  char aChar\[\] = \{"
-  puts -nonewline "    '\\0', "
+  puts "#define HIBIT ((unsigned char)0x80)"
+  puts "  unsigned char aChar\[\] = \{"
+  puts -nonewline "    '\\0',      "
   set i 1
-  foreach c $aChar {
-    set str "'$c',  "
-    if {$c == ""} { set str "'\\0', " }
+  foreach c $aChar f $aFlag {
+    if { $f } {
+      set str "'$c'|HIBIT, "
+    } else {
+      set str "'$c',       "
+    }
+    if {$c == ""} { set str "'\\0',      " }
 
-    if {($i % 12)==0} {puts "" ; puts -nonewline "    " }
+    if {($i % 6)==0} {puts "" ; puts -nonewline "    " }
     incr i
     puts -nonewline "$str"
   }
@@ -87,7 +96,8 @@ proc print_rd {map} {
     }
   }
   assert( key>=aDia[iRes] );
-  return ((c > (aDia[iRes]>>3) + (aDia[iRes]&0x07)) ? c : (int)aChar[iRes]);}
+  if( bComplex==0 && (aChar[iRes] & 0x80) ) return c;
+  return (c > (aDia[iRes]>>3) + (aDia[iRes]&0x07)) ? c : ((int)aChar[iRes] & 0x7F);}
   puts "\}"
 }
 
@@ -95,7 +105,8 @@ proc print_isdiacritic {zFunc map} {
 
   set lCode [list]
   foreach m $map {
-    foreach {code char} $m {}
+    foreach {code char flag} $m {}
+    if {$flag} continue
     if {$code && $char == ""} { lappend lCode $code }
   }
   set lCode [lsort -integer $lCode]
@@ -124,8 +135,8 @@ proc print_isdiacritic {zFunc map} {
 
   puts "  if( c<$iFirst || c>$iLast ) return 0;"
   puts "  return (c < $iFirst+32) ?"
-  puts "      (mask0 & (1 << (c-$iFirst))) :"
-  puts "      (mask1 & (1 << (c-$iFirst-32)));"
+  puts "      (mask0 & ((unsigned int)1 << (c-$iFirst))) :"
+  puts "      (mask1 & ((unsigned int)1 << (c-$iFirst-32)));"
   puts "\}"
 }
 
@@ -472,7 +483,7 @@ proc print_fold {zFunc} {
   puts "** The results are undefined if the value passed to this function"
   puts "** is less than zero."
   puts "*/"
-  puts "int ${zFunc}\(int c, int bRemoveDiacritic)\{"
+  puts "int ${zFunc}\(int c, int eRemoveDiacritic)\{"
 
   set liOff [tl_generate_ioff_table $lRecord]
   tl_print_table_header
@@ -516,7 +527,9 @@ proc print_fold {zFunc} {
       assert( ret>0 );
     }
 
-    if( bRemoveDiacritic ) ret = ${::remove_diacritic}(ret);
+    if( eRemoveDiacritic ){
+      ret = ${::remove_diacritic}(ret, eRemoveDiacritic==2);
+    }
   }
   }]
 
@@ -527,6 +540,259 @@ proc print_fold {zFunc} {
   puts ""
   puts "  return ret;"
   puts "\}"
+}
+
+proc code {txt} {
+  set txt [string trimright $txt]
+  set txt [string trimleft $txt "\n"]
+  set n [expr {[string length $txt] - [string length [string trim $txt]]}]
+  set ret ""
+  foreach L [split $txt "\n"] {
+    append ret "[string range $L $n end]\n"
+  }
+  return [uplevel "subst -nocommands {$ret}"]
+}
+
+proc intarray {lInt} {
+  set ret ""
+  set n [llength $lInt]
+  for {set i 0} {$i < $n} {incr i 10} {
+    append ret "\n    "
+    foreach int [lrange $lInt $i [expr $i+9]] {
+      append ret [format "%-7s" "$int, "]
+    }
+  }
+  append ret "\n  "
+  set ret
+}
+
+proc categories_switch {Cvar first lSecond} {
+  upvar $Cvar C
+  set ret ""
+  append ret "case '$first':\n"
+  append ret "          switch( zCat\[1\] ){\n"
+  foreach s $lSecond {
+    append ret "            case '$s': aArray\[$C($first$s)\] = 1; break;\n"
+  }
+  append ret "            case '*': \n"
+  foreach s $lSecond {
+    append ret "              aArray\[$C($first$s)\] = 1;\n"
+  }
+  append ret "              break;\n"
+  append ret "            default: return 1;"
+  append ret "          }\n"
+  append ret "          break;\n"
+}
+
+# Argument is a list. Each element of which is itself a list of two elements:
+#
+#   * the codepoint
+#   * the category
+#
+# List elements are sorted in order of codepoint.
+#
+proc print_categories {lMap} {
+  set categories {
+    Cc Cf Cn Cs
+    Ll Lm Lo Lt Lu
+    Mc Me Mn
+    Nd Nl No
+    Pc Pd Pe Pf Pi Po Ps
+    Sc Sk Sm So
+    Zl Zp Zs
+
+    LC Co
+  }
+
+  for {set i 0} {$i < [llength $categories]} {incr i} {
+    set C([lindex $categories $i]) [expr 1+$i]
+  }
+
+  set caseC [categories_switch C C {c f n s o}]
+  set caseL [categories_switch C L {l m o t u C}]
+  set caseM [categories_switch C M {c e n}]
+  set caseN [categories_switch C N {d l o}]
+  set caseP [categories_switch C P {c d e f i o s}]
+  set caseS [categories_switch C S {c k m o}]
+  set caseZ [categories_switch C Z {l p s}]
+
+  set nCat [expr [llength [array names C]] + 1]
+  puts [code {
+    int sqlite3Fts5UnicodeCatParse(const char *zCat, u8 *aArray){ 
+      aArray[0] = 1;
+      switch( zCat[0] ){
+        $caseC
+        $caseL
+        $caseM
+        $caseN
+        $caseP
+        $caseS
+        $caseZ
+      }
+      return 0;
+    }
+  }]
+
+  set nRepeat 0
+  set first   [lindex $lMap 0 0]
+  set class   [lindex $lMap 0 1]
+  set prev -1
+
+  set CASE(0) "Lu"
+  set CASE(1) "Ll"
+
+  foreach m $lMap {
+    foreach {codepoint cl} $m {}
+    set codepoint [expr "0x$codepoint"]
+    if {$codepoint>=(1<<20)} continue
+
+    set bNew 0
+    if {$codepoint!=($prev+1)} {
+      set bNew 1
+    } elseif {
+      $cl==$class || ($class=="LC" && $cl==$CASE([expr $nRepeat & 0x01]))
+    } {
+      incr nRepeat
+    } elseif {$class=="Lu" && $nRepeat==1 && $cl=="Ll"} {
+      set class LC
+      incr nRepeat
+    } else {
+      set bNew 1
+    }
+    if {$bNew} {
+      lappend lEntries [list $first $class $nRepeat]
+      set nRepeat 1
+      set first $codepoint
+      set class $cl
+    }
+    set prev $codepoint
+  }
+  if {$nRepeat>0} {
+    lappend lEntries [list $first $class $nRepeat]
+  }
+
+  set aBlock [list 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+  set aMap [list]
+  foreach e $lEntries {
+    foreach {cp class nRepeat} $e {}
+    set block [expr ($cp>>16)]
+    if {$block>0 && [lindex $aBlock $block]==0} {
+      for {set i 1} {$i<=$block} {incr i} {
+        if {[lindex $aBlock $i]==0} {
+          lset aBlock $i [llength $aMap]
+        }
+      }
+    }
+    lappend aMap [expr {$cp & 0xFFFF}]
+    lappend aData [expr {($nRepeat << 5) + $C($class)}]
+  }
+  for {set i 1} {$i<[llength $aBlock]} {incr i} {
+    if {[lindex $aBlock $i]==0} {
+      lset aBlock $i [llength $aMap]
+    }
+  }
+
+  set aBlockArray [intarray $aBlock]
+  set aMapArray [intarray $aMap]
+  set aDataArray [intarray $aData]
+  puts [code {
+    static u16 aFts5UnicodeBlock[] = {$aBlockArray};
+    static u16 aFts5UnicodeMap[] = {$aMapArray};
+    static u16 aFts5UnicodeData[] = {$aDataArray};
+
+    int sqlite3Fts5UnicodeCategory(u32 iCode) { 
+      int iRes = -1;
+      int iHi;
+      int iLo;
+      int ret;
+      u16 iKey;
+
+      if( iCode>=(1<<20) ){
+        return 0;
+      }
+      iLo = aFts5UnicodeBlock[(iCode>>16)];
+      iHi = aFts5UnicodeBlock[1+(iCode>>16)];
+      iKey = (iCode & 0xFFFF);
+      while( iHi>iLo ){
+        int iTest = (iHi + iLo) / 2;
+        assert( iTest>=iLo && iTest<iHi );
+        if( iKey>=aFts5UnicodeMap[iTest] ){
+          iRes = iTest;
+          iLo = iTest+1;
+        }else{
+          iHi = iTest;
+        }
+      }
+
+      if( iRes<0 ) return 0;
+      if( iKey>=(aFts5UnicodeMap[iRes]+(aFts5UnicodeData[iRes]>>5)) ) return 0;
+      ret = aFts5UnicodeData[iRes] & 0x1F;
+      if( ret!=$C(LC) ) return ret;
+      return ((iKey - aFts5UnicodeMap[iRes]) & 0x01) ? $C(Ll) : $C(Lu);
+    }
+
+    void sqlite3Fts5UnicodeAscii(u8 *aArray, u8 *aAscii){
+      int i = 0;
+      int iTbl = 0;
+      while( i<128 ){
+        int bToken = aArray[ aFts5UnicodeData[iTbl] & 0x1F ];
+        int n = (aFts5UnicodeData[iTbl] >> 5) + i;
+        for(; i<128 && i<n; i++){
+          aAscii[i] = (u8)bToken;
+        }
+        iTbl++;
+      }
+    }
+  }]
+}
+
+proc print_test_categories {lMap} {
+
+  set lCP [list]
+  foreach e $lMap {
+    foreach {cp cat} $e {}
+    if {[expr 0x$cp] < (1<<20)} {
+      lappend lCP "{0x$cp, \"$cat\"}, "
+    }
+  }
+
+  set aCP "\n"
+  for {set i 0} {$i < [llength $lCP]} {incr i 4} {
+    append aCP "    [join [lrange $lCP $i $i+3]]\n"
+  }
+
+
+  puts [code {
+    static int categories_test (int *piCode){
+      struct Codepoint {
+        int iCode;
+        const char *zCat;
+      } aCP[] = {$aCP};
+      int i;
+      int iCP = 0;
+
+      for(i=0; i<1000000; i++){
+        u8 aArray[40];
+        int cat = 0;
+        int c = 0;
+        memset(aArray, 0, sizeof(aArray));
+        if( aCP[iCP].iCode==i ){
+          sqlite3Fts5UnicodeCatParse(aCP[iCP].zCat, aArray);
+          iCP++;
+        }else{
+          aArray[0] = 1;
+        }
+
+        c = sqlite3Fts5UnicodeCategory((u32)i);
+        if( aArray[c]==0 ){
+          *piCode = i;
+          return 1;
+        }
+      }
+
+      return 0;
+    }
+  }]
 }
 
 proc print_fold_test {zFunc mappings} {
@@ -572,7 +838,7 @@ proc print_fold_test {zFunc mappings} {
 proc print_fileheader {} {
   puts [string trim {
 /*
-** 2012 May 25
+** 2012-05-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -605,15 +871,21 @@ proc print_test_main {} {
   puts "#include <stdio.h>"
   puts ""
   puts "int main(int argc, char **argv)\{"
-  puts "  int r1, r2;"
+  puts "  int r1, r2, r3;"
   puts "  int code;"
+  puts "  r3 = 0;"
   puts "  r1 = isalnum_test(&code);"
   puts "  if( r1 ) printf(\"isalnum(): Problem with code %d\\n\",code);"
   puts "  else printf(\"isalnum(): test passed\\n\");"
   puts "  r2 = fold_test(&code);"
   puts "  if( r2 ) printf(\"fold(): Problem with code %d\\n\",code);"
   puts "  else printf(\"fold(): test passed\\n\");"
-  puts "  return (r1 || r2);"
+  if {$::generate_fts5_code} {
+    puts "  r3 = categories_test(&code);"
+    puts "  if( r3 ) printf(\"categories(): Problem with code %d\\n\",code);"
+    puts "  else printf(\"categories(): test passed\\n\");"
+  }
+  puts "  return (r1 || r2 || r3);"
   puts "\}"
 }
 
@@ -651,10 +923,18 @@ for {set i 0} {$i < [llength $argv]-2} {incr i} {
 
 print_fileheader
 
+if {$::generate_test_code} {
+  puts "typedef unsigned short int u16;"
+  puts "typedef unsigned char u8;"
+  puts "#include <string.h>"
+}
+
 # Print the isalnum() function to stdout.
 #
 set lRange [an_load_separator_ranges]
-print_isalnum ${function_prefix}UnicodeIsalnum $lRange
+if {$generate_fts5_code==0} {
+  print_isalnum ${function_prefix}UnicodeIsalnum $lRange
+}
 
 # Leave a gap between the two generated C functions.
 #
@@ -677,12 +957,21 @@ puts ""
 #
 print_fold ${function_prefix}UnicodeFold
 
+if {$generate_fts5_code} {
+  puts ""
+  puts ""
+  print_categories [cc_load_unicodedata_text ${unicodedata.txt}]
+}
+
 # Print the test routines and main() function to stdout, if -test 
 # was specified.
 #
 if {$::generate_test_code} {
-  print_test_isalnum ${function_prefix}UnicodeIsalnum $lRange
+  if {$generate_fts5_code==0} {
+    print_test_isalnum ${function_prefix}UnicodeIsalnum $lRange
+  }
   print_fold_test ${function_prefix}UnicodeFold $mappings
+  print_test_categories [cc_load_unicodedata_text ${unicodedata.txt}]
   print_test_main 
 }
 
