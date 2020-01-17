@@ -1411,6 +1411,7 @@ struct sqlite3 {
     unsigned orphanTrigger : 1; /* Last statement is orphaned TEMP trigger */
     unsigned imposterTable : 1; /* Building an imposter table */
     unsigned reopenMemdb : 1;   /* ATTACH is really a reopen using MemDB */
+    char **azInit;              /* "type", "name", and "tbl_name" columns */
   } init;
   int nVdbeActive;              /* Number of VDBEs currently running */
   int nVdbeRead;                /* Number of active VDBEs that read or write */
@@ -4248,7 +4249,7 @@ Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3WritableSchema(sqlite3*);
-int sqlite3CheckObjectName(Parse *, const char *);
+int sqlite3CheckObjectName(Parse*, const char*,const char*,const char*);
 void sqlite3VdbeSetChanges(sqlite3 *, int);
 int sqlite3AddInt64(i64*,i64);
 int sqlite3SubInt64(i64*,i64);

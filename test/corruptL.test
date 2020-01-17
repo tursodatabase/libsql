@@ -228,6 +228,7 @@ do_test 2.0 {
 }]} {}
 
 do_execsql_test 2.1 {
+  PRAGMA writable_schema=on;
   INSERT INTO t1(b) VALUES(X'a0fee3669f9fddefc5cba913e4225d4b6ce2b04f26b87fad3ee6f9b7d90a1ea62a169bf41e5d32707a6ca5c3d05e4bde05c9d89eaaa8c50e74333d2e9fcd7dfe95528a3a016aac1102d825c5cd70cf99d8a88e0ea7f798d4334386518b7ad359beb168b93aba059a2a3bd93112d65b44c12b9904ea786b204d80531cdf0504bf9b203dbe927061974caf7b9f30cbc3397b61f802e732012a6663d41c3607d6f1c0dbcfd489adac05ca500c0b04439d894cd93a840159225ef73b627e178b9f84b3ffe66cf22a963a8368813ff7961fc47f573211ccec95e0220dcbb3bf429f4a50ba54d7a53784ac51bfef346e6ac8ae0d0e7c3175946e62ba2b');
 }
 
@@ -378,7 +379,7 @@ do_test 4.0 {
 
 do_catchsql_test 4.1 {
   INSERT INTO t3 SELECT * FROM t2;
-} {1 {database disk image is malformed}}
+} {1 {malformed database schema (t1)}}
 
 
 #-------------------------------------------------------------------------
@@ -632,7 +633,7 @@ do_catchsql_test 6.1 {
     INSERT INTO t1(b) VALUES(1);
     INSERT INTO t1(b) VALUES(2);
   COMMIT;
-} {1 {malformed database schema (t1b) - invalid rootpage}}
+} {1 {malformed database schema (t1)}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -836,6 +837,6 @@ do_test 8.0 {
 
 do_catchsql_test 8.1 {
   INSERT INTO t3 SELECT * FROM t2;
-} {1 {database disk image is malformed}}
+} {1 {malformed database schema (t1)}}
 
 finish_test

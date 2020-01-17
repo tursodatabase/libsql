@@ -2147,6 +2147,7 @@ do_test 14.0 {
 }]} {}
 
 do_execsql_test 14.1 {
+  PRAGMA writable_schema=on;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM c;
 }
@@ -3050,6 +3051,7 @@ do_test 19.0 {
 }]} {}
 
 do_catchsql_test 19.1 {
+  PRAGMA writable_schema=ON;
   SELECT rowid,a,c,snippet(t1,85101090932165,-1,10) FROM t1 WHERE a MATCH 'rtree';
 } {1 {database disk image is malformed}}
 
@@ -3251,6 +3253,7 @@ do_test 20.0 {
 }]} {}
 
 do_execsql_test 20.1 {
+  PRAGMA writable_schema=on;
   BEGIN;
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10)
     INSERT INTO t1(a) SELECT randomblob(3000) FROM c;
@@ -3473,8 +3476,8 @@ do_test 21.0 {
 | end crash-18cc014e42e828.db
 }]} {}
 
-breakpoint
 do_catchsql_test 21.1 {
+  PRAGMA writable_schema=ON;
   SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'R*';
 } {1 {database disk image is malformed}}
 
@@ -3695,6 +3698,7 @@ do_test 22.0 {
 }]} {}
 
 do_catchsql_test 22.1 {
+  PRAGMA writable_schema=on;
   SELECT snippet(t1,'', '', '--',-1,01)==0
     FROM t1 WHERE a MATCH 'rtree OR json1rtree OR json1';
 } {0 {0 0 0 0 0 0 0}}
@@ -3914,6 +3918,7 @@ do_test 23.0 {
 }]} {}
 
 do_catchsql_test 23.1 {
+  PRAGMA writable_schema=on;
   SELECT 'FyzLy'FROM t1 WHERE t1 MATCH 'j';
 } {1 {database disk image is malformed}}
 
