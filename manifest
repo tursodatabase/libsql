@@ -1,5 +1,5 @@
-C Import\sthe\s3.31.0-beta\sFTS3/4\scode\sdirectly\sinto\sthe\s3.28\sbranch,\sthus\nproviding\s3.28\swith\sall\sthe\slatest\s3.31\sfixes.\s\sFTS3\shas\snot\sbeen\senhanced\nto\suse\sany\score\sfunctionality\sthat\swas\snot\salready\savailable\sin\s3.23,\sso\nno\smodifications\swere\smade\sto\sFTS3\ssources\sfor\sthis\simport.
-D 2020-01-17T14:30:29.572
+C Do\snot\sallow\sshadow\stables\sto\sbe\sdropped\sin\sdefensive\smode.
+D 2020-01-17T14:56:11.132
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -462,7 +462,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 958939f608e351a36756e3749596472baa0e5aae54eebd14e6beffe7a68aafc7
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
-F src/build.c 61655dad911a967a69fb49df57268fd15ce8f1af3fe0a1bd90c128ef2cacfb7a
+F src/build.c 6a2e4b5b4b3aa714ceb6b6bf985c1d99fd16032184b721f302724024c5e6ee5b
 F src/callback.c 25dda5e1c2334a367b94a64077b1d06b2553369f616261ca6783c48bcb6bda73
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 109e58d00f62e8e71ee1eb5944ac18b90171c928ab2e082e058056e1137cc20b
@@ -626,7 +626,7 @@ F test/altercol.test 54374d2ba18af25bb24e23acf18a60270d4ec120b7ec0558078b59d5aa1
 F test/alterlegacy.test 82022721ce0de29cedc9a7af63bc9fcc078b0ee000f8283b4b6ea9c3eab2f44b
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
-F test/altertab.test 6e13f13d8c30708f16187908c31dadb1bfff9e3cb2a07a7392a7a5e076f58f4a
+F test/altertab.test d85205b033f897665a99395ac351acad2f1a2de8d683540c73bfb6023e026d40
 F test/altertab2.test 5d423a2d1006085b05cc1b788863d5a860ea2da21c4f892d15e2f2a34c78348a
 F test/altertab3.test 40f2ce9be675e354d3e55c72f8baf38813be975ff4dd9e6b3144493c3c5bc033
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1818,7 +1818,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f0a564f6ef148e4f63b11ccfc9d1e65cb2755cf923e22f2ffef83b1f176943b
-R 9b0430383fe67284c2b9098de5cc3243
+P be4269c624b30dd744f80448558b650b505e04c7748386bb461158f5b1823680
+Q +70390bbca49e706649ca5b7c031f0baf416fc38798c17e5f3b73746b3e66e3b5
+R add24c14dc00ee37846bfc57868ae717
 U drh
-Z 15aa2f5b230be651b0ec6e3b5a873ae4
+Z fd9f5bc320eec6288a9772fd21e90b8a
