@@ -16,7 +16,9 @@
 #include "sqliteInt.h"
 #include <stdlib.h>
 #include <assert.h>
+#ifndef SQLITE_OMIT_FLOATING_POINT
 #include <math.h>
+#endif
 #include "vdbeInt.h"
 
 /*
