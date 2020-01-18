@@ -109,8 +109,8 @@ ifcapable fts5 {
   do_execsql_test -db db1 3.2 {
     SELECT * FROM main.ft, aux.t1;
   }
+  db1 close
 }
-db1 close
 
 #-------------------------------------------------------------------------
 reset_db

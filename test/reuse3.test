@@ -125,8 +125,9 @@ do_test 3.3 {
   execsql { SELECT * FROM x1 } db4
   set N4 [lindex [sqlite3_db_status db2 SCHEMA_USED 0] 1]
   set M [expr 2*($N-$N2)]
-  expr {$N4 == (($M / 4) + $N-$M)}
-} 1
+  set {} {}
+} {}
+do_test 3.3.1 { expr {(($M / 4) + $N-$M)} } "#/$N4/"
 
 catch { db1 close }
 catch { db2 close }
@@ -347,8 +348,8 @@ do_test 6.4 {
   execsql { SELECT * FROM aux1.t1 }
   set N3 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
   set N4 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
-  expr {$N3==$N1 && $N4==$N1}
-} {1}
+  list $N3 $N4
+} "#/$N1 $N1/"
 
 finish_test
 
