@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2020-01-18T19:02:20.512
+C Disable\sa\sredundant\stest\scase\sthat\suses\sa\svery\slarge\sstack,\sand\shence\nis\sunable\sto\srun\swith\s-fsanitize=undefined,address.
+D 2020-01-18T19:07:00.937
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1404,7 +1404,7 @@ F test/tabfunc01.test 5ca6d004157a3e886a55a9387b960cc0db41acd88753eb597ff409ec6c
 F test/table.test eb3463b7add9f16a5bb836badf118cf391b809d09fdccd1f79684600d07ec132
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test 6f8705d09377e2f2ff482ab181a1388773953a280623fff2ccab0e87d2bc10a2
+F test/tclsqlite.test 79a473f5797e317c08f2c4f8192edb3eea6a67329b1087453328b66a7cb31070
 F test/tempdb.test 4cdaa23ddd8acb4d79cbb1b68ccdfd09b0537aaba909ca69a876157c2a2cbd08
 F test/tempdb2.test 353864e96fd3ae2f70773d0ffbf8b1fe48589b02c2ec05013b540879410c3440
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fee945671a19a93287f9bfadc346f9821fb1311c7fc75b95a6a48d1419c840e7
-R 7bbc575165e9b40bddc3ed0e01914017
-U mistachkin
-Z 29a5be4714ea18aa44a20b20a4026bdd
+P cd0437ba5b13593ebe4ec30d6236623183f8cfa30ca8a0612662eccb282a863e
+R 46d6fae77c45d0d0c7c9db97f81cc917
+U drh
+Z 52b7230249f9370da62df185e5b3adaf
