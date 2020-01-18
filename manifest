@@ -1,5 +1,5 @@
-C Do\snot\suse\smemcpy()\sof\szero\sbytes\swhen\sinitializing\sa\spager.\s\sThis\savoids\na\swarning.
-D 2020-01-18T19:46:42.954
+C Allow\snon-deterministic\sfunction\sin\sCHECK\sconstraints.\s\sIt\sturns\sout\sthat\nPostgreSQL,\sMySQL,\sand\sSQLServer\sall\sallow\sthis.\s\sWe\sshould\sbe\sthe\sthe\nexception.\s\sTicket\s[830277d9db6c3ba1]
+D 2020-01-18T21:34:31.513
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -529,7 +529,7 @@ F src/pragma.h 9f86a3a3a0099e651189521c8ad03768df598974e7bbdc21c7f9bb6125592fbd
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 1139e3157c710c6e6f04fe726f4e0d8bdb1ae89a276d3b0ca4975af163141c9c
+F src/resolve.c f0781c9e180028b279bc4ff079ad54f4727223d470c8d2343643fcaf79b67740
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1b787876c0f3052ccd27490a350ab181281e9833f455ee273bee0a0c8a94765d
 F src/shell.c.in 1b2a636ba5b676f844a2af2a5f719b5c4ace7c6825d56270e2ae912b2a5fc840
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c63f68e12af36e9fd9a3dd4daec9402e75e80bcd819d39c0215a427fd0d7803
-R 0fa85a9d25ff75c3f2a3977560ee15f3
+P cca437788e092b21ed1784dd94d4b1c7204ff1717538d276a10880d1345904bd
+R cfb97b89ceebcc77ca634e507b5bc335
 U drh
-Z 19c31381e7a9c501b7f49796334ab78f
+Z a2cb91ca17276dd4cb33a8149a6720ac
