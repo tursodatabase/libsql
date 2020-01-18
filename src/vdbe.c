@@ -514,7 +514,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
     }
   }else if( f & MEM_Str ){
     int j;
-    int c;
+    u8 c;
     if( f & MEM_Dyn ){
       c = 'z';
       assert( (f & (MEM_Static|MEM_Ephem))==0 );
@@ -529,7 +529,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
     }
     sqlite3_str_appendf(pStr, " %c%d[", c, pMem->n);
     for(j=0; j<25 && j<pMem->n; j++){
-      u8 c = pMem->z[j];
+      c = pMem->z[j];
       sqlite3_str_appendchar(pStr, 1, (c>=0x20&&c<=0x7f) ? c : '.');
     }
     sqlite3_str_appendf(pStr, "]%s", encnames[pMem->enc]);
