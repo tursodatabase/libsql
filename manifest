@@ -1,5 +1,5 @@
-C Allow\snon-deterministic\sfunction\sin\sCHECK\sconstraints.\s\sIt\sturns\sout\sthat\nPostgreSQL,\sMySQL,\sand\sSQLServer\sall\sallow\sthis.\s\sWe\sshould\sbe\sthe\sthe\nexception.\s\sTicket\s[830277d9db6c3ba1]
-D 2020-01-18T21:34:31.513
+C In\sthe\sTCL\sinterface,\sadd\sthe\sability\sto\schange\sthe\nSQLITE_DBCONFIG_TRUSTED_SCHEMA\ssetting\susing\sthe\s"db\sconfig"\smethod.
+D 2020-01-18T22:20:14.429
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/sqliteInt.h 7a29ba700a51eeb925731749a570cf3859f6a58ed94797ecf47508875b0ba2
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c f2dae14bfe7a35c94b6d515df88071014678ec39dafebdcf8e6bde91d62516c1
+F src/tclsqlite.c 97590069efaba5a4928ecffb606e3771dd93ee8e6bf248a62a6507c37a2b2e46
 F src/test1.c 4d0ab2f67053a4fff87d1d3586ecc0e5322a1fc45dd4119ab11dc96de44f17a1
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cca437788e092b21ed1784dd94d4b1c7204ff1717538d276a10880d1345904bd
-R cfb97b89ceebcc77ca634e507b5bc335
+P 8c8ce526adb60b8061e55151599ca8b11f1ec2e968d3bacc73a2a249e9e95ee1
+R ec478fb26dbc9dcbaf2d54caefd8db72
 U drh
-Z a2cb91ca17276dd4cb33a8149a6720ac
+Z 9d0667f67a9f685f4dfa2d4200f19001
