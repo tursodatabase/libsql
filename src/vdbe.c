@@ -3917,15 +3917,13 @@ case OP_OpenEphemeral: {
   assert( pOp->p1>=0 );
   assert( pOp->p2>=0 );
   pCx = p->apCsr[pOp->p1];
-  if( pCx ){
+  if( pCx && pCx->pBtx ){
     /* If the ephermeral table is already open, erase all existing content
     ** so that the table is empty again, rather than creating a new table. */
     assert( pCx->isEphemeral );
     pCx->seqCount = 0;
     pCx->cacheStatus = CACHE_STALE;
-    if( pCx->pBtx ){
-      rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
-    }
+    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
   }else{
     pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
