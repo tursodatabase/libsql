@@ -4911,11 +4911,13 @@ int sqlite3PagerOpen(
   /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
   pPtr[0] = '\003'; pPtr[1] = 0;          pPtr += 2;
   pPager->zFilename = (char*)pPtr;
-  memcpy(pPtr, zPathname, nPathname);     pPtr += nPathname + 1;
-  if( zUri ){
-    memcpy(pPtr, zUri, nUriByte);      /* pPtr += nUriByte; // not needed */
+  if( nPathname>0 ){
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname + 1;
+    if( zUri ){
+      memcpy(pPtr, zUri, nUriByte);    /* pPtr += nUriByte; // not needed */
+    }
+    /* Double-zero terminator implied by the sqlite3MallocZero */
   }
-  /* Double-zero terminator implied by the sqlite3MallocZero */
 
   if( nPathname ) sqlite3DbFree(0, zPathname);
   pPager->pVfs = pVfs;
