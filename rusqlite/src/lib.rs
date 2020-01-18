@@ -160,7 +160,7 @@ macro_rules! params {
         $crate::NO_PARAMS
     };
     ($($param:expr),+ $(,)?) => {
-        &[$(&$param as &dyn $crate::ToSql),+]
+        &[$(&$param as &dyn $crate::ToSql),+] as &[&dyn $crate::ToSql]
     };
 }
 
@@ -1680,6 +1680,29 @@ mod test {
                 assert_eq!(5, r.get_unwrap::<_, i32>(0));
                 Ok(())
             })
+            .unwrap();
+        }
+
+        #[test]
+        fn test_params() {
+            let db = checked_memory_handle();
+            db.query_row(
+                "SELECT
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?;",
+                params![
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1,
+                ],
+                |r| {
+                    assert_eq!(1, r.get_unwrap::<_, i32>(0));
+                    Ok(())
+                },
+            )
             .unwrap();
         }
     }
