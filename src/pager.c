@@ -7036,8 +7036,8 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 ** sqlite3_uri_parameter() and sqlite3_filename_database() and friends.
 */
 const char *sqlite3PagerFilename(const Pager *pPager, int nullIfMemDb){
-  static const char zFake[] = { 0x01, 0x00, 0x00, 0x00 };
-  return (nullIfMemDb && pPager->memDb) ? &zFake[2] : pPager->zFilename;
+  static const char zFake[] = { 0x00, 0x01, 0x00, 0x00, 0x00 };
+  return (nullIfMemDb && pPager->memDb) ? &zFake[3] : pPager->zFilename;
 }
 
 /*
