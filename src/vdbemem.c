@@ -1559,7 +1559,11 @@ static int valueFromExpr(
       if( pVal->flags & MEM_Real ){
         pVal->u.r = -pVal->u.r;
       }else if( pVal->u.i==SMALLEST_INT64 ){
+#ifndef SQLITE_OMIT_FLOATING_POINT
         pVal->u.r = -(double)SMALLEST_INT64;
+#else
+        pVal->u.r = LARGEST_INT64;
+#endif
         MemSetTypeFlag(pVal, MEM_Real);
       }else{
         pVal->u.i = -pVal->u.i;

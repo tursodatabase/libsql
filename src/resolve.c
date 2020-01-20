@@ -868,11 +868,14 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ExprSetProperty(pExpr,EP_ConstFunc);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
-          /* Date/time functions that use 'now', and other functions like
+          /* Clearly non-deterministic functions like random(), but also
+          ** date/time functions that use 'now', and other functions like
           ** sqlite_version() that might change over time cannot be used
-          ** in an index. */
+          ** in an index or generated column.  Curiously, they can be used
+          ** in a CHECK constraint.  SQLServer, MySQL, and PostgreSQL all
+          ** all this. */
           sqlite3ResolveNotValid(pParse, pNC, "non-deterministic functions",
-                                 NC_SelfRef, 0);
+                                 NC_IdxExpr|NC_PartIdx|NC_GenCol, 0);
         }else{
           assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;

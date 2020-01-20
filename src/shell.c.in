@@ -2762,6 +2762,9 @@ static void restore_debug_trace_modes(void){
 /* Create the TEMP table used to store parameter bindings */
 static void bind_table_init(ShellState *p){
   int wrSchema = 0;
+  int defensiveMode = 0;
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
   sqlite3_exec(p->db,
@@ -2771,6 +2774,7 @@ static void bind_table_init(ShellState *p){
     ") WITHOUT ROWID;",
     0, 0, 0);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
 }
 
 /*

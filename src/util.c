@@ -17,7 +17,9 @@
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
+#ifndef SQLITE_OMIT_FLOATING_POINT
 #include <math.h>
+#endif
 
 /*
 ** Routine needed to support the testcase() macro.

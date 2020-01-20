@@ -98,7 +98,7 @@ proc run_quick_test {dir omit_symbol_list} {
   }
 
   if {$::SKIP_RUN} {
-      puts "Skip testing $dir."
+    #  puts "Skip testing $dir."
   } else {
     # Run the test suite.
     puts -nonewline "Testing $dir..."
@@ -127,7 +127,7 @@ proc process_options {argv} {
   } else {
     set ::MAKEFILE ./Makefile.linux-gcc     ;# Default value
   }
-  set ::SKIP_RUN 0                          ;# Default to attempt test
+  set ::SKIP_RUN 1                          ;# Default to attempt test
   set ::TARGET testfixture                  ;# Default thing to build
 
   for {set i 0} {$i < [llength $argv]} {incr i} {
@@ -149,6 +149,9 @@ proc process_options {argv} {
 
       -{1,2}skip_run {
         set ::SKIP_RUN 1
+      }
+      -{1,2}run {
+        set ::SKIP_RUN 0
       }
 
       -{1,2}help {
@@ -192,6 +195,7 @@ proc main {argv} {
     SQLITE_OMIT_BETWEEN_OPTIMIZATION \
     SQLITE_OMIT_BLOB_LITERAL \
     SQLITE_OMIT_BTREECOUNT \
+    SQLITE_OMIT_CASE_SENSITIVE_LIKE_PRAGMA \
     SQLITE_OMIT_CAST \
     SQLITE_OMIT_CHECK \
     SQLITE_OMIT_COMPILEOPTION_DIAGS \
@@ -207,16 +211,17 @@ proc main {argv} {
     SQLITE_OMIT_FLAG_PRAGMAS \
     SQLITE_OMIT_FLOATING_POINT \
     SQLITE_OMIT_FOREIGN_KEY \
+    SQLITE_OMIT_GENERATED_COLUMNS \
     SQLITE_OMIT_GET_TABLE \
     SQLITE_OMIT_HEX_INTEGER \
     SQLITE_OMIT_INCRBLOB \
     SQLITE_OMIT_INTEGRITY_CHECK \
+    SQLITE_OMIT_INTROSPECTION_PRAGMAS \
     SQLITE_OMIT_LIKE_OPTIMIZATION \
     SQLITE_OMIT_LOAD_EXTENSION \
     SQLITE_OMIT_LOCALTIME \
     SQLITE_OMIT_LOOKASIDE \
     SQLITE_OMIT_MEMORYDB \
-    SQLITE_OMIT_MEMORY_ALLOCATION \
     SQLITE_OMIT_OR_OPTIMIZATION \
     SQLITE_OMIT_PAGER_PRAGMAS \
     SQLITE_OMIT_PARSER_TRACE \
