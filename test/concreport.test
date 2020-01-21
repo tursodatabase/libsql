@@ -1,0 +1,104 @@
+# 2020 Jan 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set ::testprefix concreport
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+proc do_concreport_test {tn sql res report} {
+  uplevel [list do_execsql_test $tn.1 "
+    BEGIN CONCURRENT;
+      $sql ;
+    COMMIT;
+  " $res]
+
+  uplevel [list do_test $tn.2 {
+    list {*}[sqlite3_begin_concurrent_report db]
+  } [list {*}$report]]
+}
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal;
+} {wal}
+
+do_execsql_test 1.1 {
+  CREATE TABLE t1(k INTEGER PRIMARY KEY, v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO t1 SELECT i, i FROM s;
+
+  BEGIN CONCURRENT;
+    SELECT * FROM t1 WHERE k = 5;
+    SELECT * FROM t1 WHERE k = 10;
+  COMMIT;
+} {5 5 10 10}
+do_test 1.1.1 {
+  list {*}[sqlite3_begin_concurrent_report db]
+} [list {2:[10..10]} {2:[5..5]}]
+
+breakpoint
+do_concreport_test 1.2 {
+  SELECT * FROM t1 WHERE k = 100;
+} {100 100} {
+  2:[100..100]
+}
+
+do_concreport_test 1.3 {
+  SELECT * FROM t1 WHERE k >= 10 AND k <= 13;
+} {10 10 11 11 12 12 13 13} {
+  2:[10..14]
+}
+
+do_concreport_test 1.4 {
+  SELECT max(k) FROM t1;
+} {100} {
+  2:[100..EOF)
+}
+do_concreport_test 1.5 {
+  SELECT min(k) FROM t1;
+} {1} {
+  2:(EOF..1]
+}
+
+do_concreport_test 1.6 {
+  SELECT * FROM t1 WHERE k IN (4, 6, 8)
+} {4 4 6 6 8 8} {
+  2:[8..8]
+  2:[6..6]
+  2:[4..4]
+}
+
+do_concreport_test 1.7 {
+  SELECT v FROM t1 WHERE k > 22 LIMIT 5
+} {23 24 25 26 27} {
+  2:(22..27]
+}
+
+do_concreport_test 1.8 {
+  SELECT v FROM t1 WHERE k > 22 ORDER BY k DESC LIMIT 5
+} {100 99 98 97 96} {
+  2:[96..EOF)
+}
+
+do_execsql_test 2.0 {
+  CREATE TABLE t2(k PRIMARY KEY, v);
+}
+#explain_i { SELECT * FROM t2 WHERE k>=10 AND k<='abcd' }
+
+finish_test

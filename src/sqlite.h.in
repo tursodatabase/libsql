@@ -9710,6 +9710,8 @@ int sqlite3_deserialize(
 #define SQLITE_DESERIALIZE_RESIZEABLE  2 /* Resize using sqlite3_realloc64() */
 #define SQLITE_DESERIALIZE_READONLY    4 /* Database is read-only */
 
+const char *sqlite3_begin_concurrent_report(sqlite3*);
+
 /*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.

@@ -7840,6 +7840,29 @@ static int SQLITE_TCLAPI test_mmap_warm(
 }
 
 /*
+** Usage:  sqlite3_begin_concurrent_report DB
+*/
+static int SQLITE_TCLAPI test_begin_concurrent_report(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zReport = 0;
+  sqlite3 *db;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zReport = sqlite3_begin_concurrent_report(db);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(zReport?zReport:"", -1));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  decode_hexdb TEXT
 **
 ** Example:   db deserialize [decode_hexdb $output_of_dbtotxt]
@@ -8203,6 +8226,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
      { "decode_hexdb",             test_decode_hexdb,       0 },
+     { "sqlite3_begin_concurrent_report", test_begin_concurrent_report, 0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

@@ -3448,6 +3448,10 @@ case OP_AutoCommit: {
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
+      if( desiredAutoCommit==0 ){
+        sqlite3BtreeScanDerefList(db->pCScanList);
+        db->pCScanList = 0;
+      }
       db->autoCommit = (u8)desiredAutoCommit;
     }
     hrc = sqlite3VdbeHalt(p);
@@ -4282,6 +4286,7 @@ case OP_SeekGT: {       /* jump, in3, group */
       }
     }
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, 0, (u64)iKey, 0, &res);
+    sqlite3BtreeScanStart(pC->uc.pCursor, 0, iKey, pOp->opcode);
     pC->movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -4681,6 +4686,7 @@ notExistsWithKey:
   assert( pCrsr!=0 );
   res = 0;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
+  sqlite3BtreeScanStart(pCrsr, 0, iKey, pOp->opcode);
   assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
@@ -5371,6 +5377,7 @@ case OP_Last: {        /* jump */
     }
   }
   rc = sqlite3BtreeLast(pCrsr, &res);
+  sqlite3BtreeScanStart(pCrsr, 0, 0, pOp->opcode);
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -5473,6 +5480,7 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->uc.pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
+    sqlite3BtreeScanStart(pCrsr, 0, 0, OP_Rewind);
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }

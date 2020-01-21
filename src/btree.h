@@ -391,4 +391,11 @@ void sqlite3BtreeCursorList(Btree*);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
+int sqlite3BtreeScanStart(
+  BtCursor *pCsr, 
+  UnpackedRecord *pKey, 
+  i64 iKey,
+  int opcode
+);
+
 #endif /* SQLITE_BTREE_H */

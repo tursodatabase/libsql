@@ -522,6 +522,7 @@ struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   void *pKey;               /* Saved key that was cursor last known position */
+  CursorScan *pCScan;
   /* All fields above are zeroed when the cursor is allocated.  See
   ** sqlite3BtreeCursorZero().  Fields that follow must be manually
   ** initialized. */

@@ -4923,6 +4923,15 @@ void sqlite3BtreeCursorZero(BtCursor *p){
   memset(p, 0, offsetof(BtCursor, BTCURSOR_FIRST_UNINIT));
 }
 
+void sqlite3BtreeScanDeref(CursorScan *pScan){
+  if( pScan ){
+    pScan->nRef--;
+    if( pScan->nRef==0 ){
+      sqlite3_free(pScan);
+    }
+  }
+}
+
 /*
 ** Close a cursor.  The read lock on the database file is released
 ** when the last cursor is closed.
@@ -4949,6 +4958,8 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     unlockBtreeIfUnused(pBt);
     sqlite3_free(pCur->aOverflow);
     sqlite3_free(pCur->pKey);
+    sqlite3BtreeScanDeref(pCur->pCScan);
+    pCur->pCScan = 0;
     sqlite3BtreeLeave(pBtree);
     pCur->pBtree = 0;
   }
@@ -5822,6 +5833,123 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+const char *sqlite3_begin_concurrent_report(sqlite3 *db){
+  sqlite3DbFree(db, db->zBCReport);
+  db->zBCReport = 0;
+  if( db->pCScanList ){
+    CursorScan *p;
+    StrAccum accum;
+    sqlite3StrAccumInit(&accum, db, 0, 0, 64*1024*1024);
+    for(p=db->pCScanList; p; p=p->pNext){
+      sqlite3_str_appendf(&accum, "%d:%s", p->tnum,
+          (p->flags & CURSORSCAN_MININCL) ? "[" : "("
+      );
+      if( p->flags & CURSORSCAN_MINVALID ){
+        sqlite3_str_appendf(&accum, "%lld..", p->iMin);
+      }else{
+        sqlite3_str_appendf(&accum, "EOF..");
+      }
+      if( p->flags & CURSORSCAN_MAXVALID ){
+        sqlite3_str_appendf(&accum, "%lld", p->iMax);
+      }else{
+        sqlite3_str_appendf(&accum, "EOF");
+      }
+      sqlite3_str_appendf(&accum, "%s\n", 
+          (p->flags & CURSORSCAN_MAXINCL) ? "]" : ")"
+      );
+    }
+    db->zBCReport = sqlite3StrAccumFinish(&accum);
+  }
+  return db->zBCReport;
+}
+
+void sqlite3BtreeScanDerefList(CursorScan *pList){
+  CursorScan *p;
+  CursorScan *pNext;
+  for(p=pList; p; p=pNext){
+    pNext = p->pNext;
+    sqlite3BtreeScanDeref(p);
+  }
+}
+
+static void btreeScanNext(BtCursor *pCsr, int bPrev){
+  if( pCsr->pCScan ){
+    if( bPrev ){
+      if( sqlite3BtreeEof(pCsr) ){
+        pCsr->pCScan->flags &= ~(CURSORSCAN_MINVALID|CURSORSCAN_MININCL);
+      }else{
+        pCsr->pCScan->iMin = sqlite3BtreeIntegerKey(pCsr);
+        pCsr->pCScan->flags |= CURSORSCAN_MINVALID|CURSORSCAN_MININCL;
+      }
+    }else{
+      if( sqlite3BtreeEof(pCsr) ){
+        pCsr->pCScan->flags &= ~(CURSORSCAN_MAXVALID|CURSORSCAN_MAXINCL);
+      }else{
+        pCsr->pCScan->iMax = sqlite3BtreeIntegerKey(pCsr);
+        pCsr->pCScan->flags |= CURSORSCAN_MAXVALID|CURSORSCAN_MAXINCL;
+      }
+    }
+  }
+}
+
+int sqlite3BtreeScanStart(
+  BtCursor *pCsr, 
+  UnpackedRecord *pKey, 
+  i64 iKey,
+  int opcode
+){
+  Btree *pBtree = pCsr->pBtree;
+  if( pKey==0 
+   && pBtree->db->bConcurrent 
+   && sqlite3PagerIsWal(pBtree->pBt->pPager) 
+  ){
+    sqlite3 *db = pCsr->pBtree->db;
+    CursorScan *pNew;
+    pNew = (CursorScan*)sqlite3MallocZero(sizeof(CursorScan));
+    if( pNew==0 ) return SQLITE_NOMEM;
+    pNew->tnum = (int)pCsr->pgnoRoot;
+    pNew->flags = CURSORSCAN_INTKEY;
+    pNew->iMin = pNew->iMax = iKey;
+
+    if( pCsr->pCScan ){
+      sqlite3BtreeScanDeref(pCsr->pCScan);
+    }
+    pCsr->pCScan = pNew;
+    pNew->pNext = db->pCScanList;
+    db->pCScanList = pNew;
+    pNew->nRef = 2;
+    switch( opcode ){
+      case OP_Rewind:
+        btreeScanNext(pCsr, 0);
+        break;
+
+      case OP_Last:
+        btreeScanNext(pCsr, 1);
+        break;
+
+      case OP_SeekLE:
+        pNew->flags |= CURSORSCAN_MAXINCL;
+      case OP_SeekLT:
+        pNew->flags |= CURSORSCAN_MAXVALID;
+        btreeScanNext(pCsr, 1);
+        break;
+
+      case OP_SeekGE:
+        pNew->flags |= CURSORSCAN_MININCL;
+      case OP_SeekGT:
+        pNew->flags |= CURSORSCAN_MINVALID;
+        btreeScanNext(pCsr, 0);
+        break;
+
+      case OP_SeekRowid:
+        pNew->flags |= (CURSORSCAN_MININCL|CURSORSCAN_MAXINCL);
+        pNew->flags |= CURSORSCAN_MINVALID|CURSORSCAN_MAXVALID;
+        break;
+    }
+  }
+  return SQLITE_OK;
+}
+
 /* Move the cursor so that it points to an entry near the key 
 ** specified by pIdxKey or intKey.   Return a success code.
 **
@@ -6227,23 +6355,29 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
   }
 }
 int sqlite3BtreeNext(BtCursor *pCur, int flags){
+  int rc;
   MemPage *pPage;
   UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
-  if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur);
-  pPage = pCur->pPage;
-  if( (++pCur->ix)>=pPage->nCell ){
-    pCur->ix--;
-    return btreeNext(pCur);
-  }
-  if( pPage->leaf ){
-    return SQLITE_OK;
+  if( pCur->eState!=CURSOR_VALID ){
+    rc = btreeNext(pCur);
   }else{
-    return moveToLeftmost(pCur);
+    pPage = pCur->pPage;
+    if( (++pCur->ix)>=pPage->nCell ){
+      pCur->ix--;
+      rc = btreeNext(pCur);
+    }else if( pPage->leaf ){
+      rc = SQLITE_OK;
+    }else{
+      rc = moveToLeftmost(pCur);
+    }
   }
+
+  btreeScanNext(pCur, 0);
+  return rc;
 }
 
 /*
@@ -6316,6 +6450,7 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
   return rc;
 }
 int sqlite3BtreePrevious(BtCursor *pCur, int flags){
+  int rc = SQLITE_OK;
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
   UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
@@ -6325,10 +6460,12 @@ int sqlite3BtreePrevious(BtCursor *pCur, int flags){
    || pCur->ix==0
    || pCur->pPage->leaf==0
   ){
-    return btreePrevious(pCur);
+    rc = btreePrevious(pCur);
   }
   pCur->ix--;
-  return SQLITE_OK;
+
+  btreeScanNext(pCur, 1);
+  return rc;
 }
 
 /*

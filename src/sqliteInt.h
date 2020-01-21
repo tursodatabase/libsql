@@ -1424,6 +1424,23 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 #endif /* SQLITE_OMIT_DEPRECATED */
 #define SQLITE_TRACE_NONLEGACY_MASK  0x0f     /* Normal flags */
 
+#define CURSORSCAN_INTKEY     0x0001
+#define CURSORSCAN_MINVALID   0x0002
+#define CURSORSCAN_MAXVALID   0x0004
+#define CURSORSCAN_REVERSE    0x0008
+#define CURSORSCAN_MININCL    0x0010
+#define CURSORSCAN_MAXINCL    0x0020
+
+typedef struct CursorScan CursorScan;
+struct CursorScan {
+  int tnum;                     /* Root page of scanned b-tree */
+  int flags;
+  i64 iMin;
+  i64 iMax;
+  int nRef;                     /* Number of pointers to this structure */
+  CursorScan *pNext;            /* Next CursorScan object in list */
+};
+
 
 /*
 ** Each database connection is an instance of the following structure.
@@ -1448,6 +1465,8 @@ struct sqlite3 {
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 bConcurrent;               /* Current transaction is "CONCURRENT" */
+  CursorScan *pCScanList;
+  char *zBCReport;
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
   u8 bBenignMalloc;             /* Do not require OOMs if true */
@@ -4923,5 +4942,7 @@ void sqlite3VectorErrorMsg(Parse*, Expr*);
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 const char **sqlite3CompileOptions(int *pnOpt);
 #endif
+
+void sqlite3BtreeScanDerefList(CursorScan*);
 
 #endif /* SQLITEINT_H */
