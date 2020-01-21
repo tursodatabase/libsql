@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\sfts3auto.test\sthat\sfails\sfor\sSQLITE_DISABLE_FTS4_DEFERRED\sbuilds.
-D 2020-01-21T15:01:14.246
+C Fix\sa\sproblem\swith\susing\sviews\sin\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.\sAlso\ssome\stest\scase\sfixes\srequired\sfor\sthe\ssame\sbuilds.
+D 2020-01-21T16:23:17.784
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -531,7 +531,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c f0781c9e180028b279bc4ff079ad54f4727223d470c8d2343643fcaf79b67740
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 5924f8df8f07fa045e90e41022fb18539a2dd6a9198d11889e9905103652c656
+F src/select.c 3f7aecf64b08b018b89e4fe16ea621cc9a0e3f3801e9e5638cfe1a6035fa1581
 F src/shell.c.in c2e20c43a44fb5588a6c27ce60589538fbf4794fd7686f5b2598eca22eaae1fa
 F src/sqlite.h.in 75d0304247a2154122d6d06f12219c1e29291d72304f0eeef4c1ec6b1409b443
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1088,7 +1088,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 75327829744e65cc8700e69340b8e6c192e10e39dfae7ccb0e970d3c4f49090a
-F test/join.test 0e8d3f4092897c717abcaf64e2e7b298e1cb143e2436010c57cfed5596bf6d30
+F test/join.test bca044589e94bb466e4c1e91fb6fecdc3f3326ca6b3f590f555f1958156eb321
 F test/join2.test 659bc6193f5c3fe20fa444dd2c91713db8c33e376b098b860644e175e87b8dbc
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1278,7 +1278,7 @@ F test/rowvalue7.test c1cbdbf407029db01f87764097c6ac02a1c5a37efd2776eff32a9cdfdf
 F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
 F test/rowvalue9.test d8dd2c6ecac432dadaa79e41dc2434f007be1b6b
 F test/rowvaluefault.test 7cd9ccc6c2fbdd881672984087aad0491bb75504
-F test/rowvaluevtab.test d166df5b666662de1ebf40d6f3849f8a76b34e17183a6cc7f81b420c462ce447
+F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
 F test/savepoint.test 1f8a6b1aea9a0d05837adc463d4bf47bd9d0f1c842f1c2a9caccd639baf34bf9
@@ -1593,7 +1593,7 @@ F test/triggerC.test 29f5a28d0fe39e6e2c01f6e1f53f08c0955170ae10a63ad023e33cb0a16
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test ede2e4bce4ba802337bd69d39447fa04a938e06d84a8bfc53c76850fc36ed86d
 F test/triggerF.test 5d76f0a8c428ff87a4d5ed52da06f6096a2c787a1e21b846111dfac4123de3ad
-F test/triggerG.test d5caeef6144ede2426dd13211fd72248241ff2ebc68e12a4c0bf30f5faa21499
+F test/triggerG.test 2b816093c91ba73c733cfa8aedcc210ad819d72a98b1da30768a3c56505233e9
 F test/trustschema1.test 4e970aef0bfe0cee139703cc7209d0e0f07725d999b180ba50770f49edef1494
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7e29458a73bbe73a1429477d0c01d5a7b870ab75d3cb08a703be21714e439b7
-R e1c2ef9a222166839d451e8e8b569689
+P d241055ead935f0e461a67f483788bcd59f7e8d65ade54b9c7c7c4fec9414102
+R f76ed78deea8ecda656692c47e3b99f8
 U dan
-Z e0020253221c64d53f32a20e335969a5
+Z f02cf9c138fa976fbef3a11edcb33089
