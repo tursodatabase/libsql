@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sautoconf\sTEA\sMakefile\sfor\sMSVC.
-D 2020-01-21T01:45:27.164
+C Fix\sthe\sseries.c\sand\sspellfix.c\sextensions\sto\suse\sSQLITE_VTAB_INNOCUOUS\ncorrectly.\s\sFix\sthe\sdocumentation\son\ssqlite3_vtab_config()\sto\stake\sinto\naccount\sSQLITE_VTAB_INNOCUOUS\sand\sSQLITE_VTAB_DIRECTONLY.
+D 2020-01-21T12:29:02.631
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -311,11 +311,11 @@ F ext/misc/regexp.c 246244c714267f303df76acf73dcf110cf2eaf076896aaaba8db6d6d21a1
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c db9fff56fed322ca587d73727c6021b11ae79ce3f31b389e1d82891d144f22ad
-F ext/misc/series.c a733a77d152983cc5d337c9df7b358ad17cfb44965476843cd03e2f571054914
+F ext/misc/series.c 4057dda3579b38ff88b2d3b13b4dd92dbd9d6f90dac2b55c19b0a8ed87ee4959
 F ext/misc/sha1.c 1190aec0d9d886d9f5ffdf891142a626812327d11472c0cade3489db3b7b140a
 F ext/misc/shathree.c 135b7c145db4a09b1650c3e7aff9cb538763a9a361e834c015dd1aaf8d5c9a00
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 5cb7e1876925508aeef0e5ecd5ec8dab6089e09fa44cbf4322d5cb7a821a53f9
+F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c c9e5d58544e1506135806a1e0f525f92d4bb6bb125348dce469d778fb334fbce
 F ext/misc/stmt.c 8a8dc4675042e4551e4afe99b8d0cc7a4a2fc1a8dacc0a9ce1b1bbff145da93d
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
@@ -533,7 +533,7 @@ F src/resolve.c f0781c9e180028b279bc4ff079ad54f4727223d470c8d2343643fcaf79b67740
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 1b787876c0f3052ccd27490a350ab181281e9833f455ee273bee0a0c8a94765d
 F src/shell.c.in c2e20c43a44fb5588a6c27ce60589538fbf4794fd7686f5b2598eca22eaae1fa
-F src/sqlite.h.in 71e469c466eccd7d76da5938f2e236b92d089b5acb930f1c8cb6ce2fa6b247b0
+F src/sqlite.h.in 75d0304247a2154122d6d06f12219c1e29291d72304f0eeef4c1ec6b1409b443
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h b0f776a0d042b23b6bcbb6b0943e8a3768c7f0b438a275e7168f0204e223a4db
 F src/sqliteInt.h 7a29ba700a51eeb925731749a570cf3859f6a58ed94797ecf47508875b0ba279
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63d886f4ce3c770498b8bdad45b04143a3f63197d81793bde107450aba4a9c87
-R 1a84dba822e408edb325a118d22b4de3
-U mistachkin
-Z 8e9a8733a67aea5cb8b7a007ac22bd6e
+P cffcf12f03906debeac6a974534b4439a4952cc72767e3bcb8e6d91da944d69f
+R 001bb5c955de0c6c88c2ac069af9f4e6
+U drh
+Z 64b8ca1480a3ca93149154c746b9a654
