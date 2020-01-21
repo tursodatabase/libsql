@@ -1,5 +1,5 @@
-C In\sthe\sfuzzcheck\stest\sprogram,\sreduce\sthe\sdefault\sexpression\sdepth\slimit\nfrom\s1000\sto\s500\sto\savoid\sstack-overflow\sproblems\swhen\srunning\sstress\stests\nusing\sclang\sASAN.
-D 2020-01-20T14:42:09.493
+C Improvements\sto\sthe\sautoconf\sTEA\sMakefile\sfor\sMSVC.
+D 2020-01-21T01:45:27.164
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -22,13 +22,13 @@ F autoconf/configure.ac 3cd933b959fe514eebd1ca1717dfddbf2c9b825b6bc2c5f744deaf5d
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 8aa16e3f0a5ca7959d4af198f46934ec187d395f
+F autoconf/tea/configure.ac 6f379dfd46ace5caa97791acae07675eff62cada9800fc7bb36c789ecb7f17ac
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
 F autoconf/tea/tclconfig/install-sh bdd5e293591621ae60d9824d86a4b1c5f22c3d00
 F autoconf/tea/tclconfig/tcl.m4 66ddf0a5d5e4b1d29bff472c0985fd7fa89d0fb5
-F autoconf/tea/win/makefile.vc f89d0184d0eee5f7e356ea407964dcd139939928
+F autoconf/tea/win/makefile.vc 71915591c07cd5137711dc40ba3e127deb3f4531b9aad220b724cf5b451362bd
 F autoconf/tea/win/nmakehlp.c 247538ad8e8c508f33c03ec1fbd67d3a07ef6291
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d46255096671ae7be33081e81bb25561304e069f459ffa7587f1f19381a1851
-R 763d19098498df493f3b146f30ba61d0
-U drh
-Z 3cfea19fe4fc4879265658e2adbc5ee0
+P 63d886f4ce3c770498b8bdad45b04143a3f63197d81793bde107450aba4a9c87
+R 1a84dba822e408edb325a118d22b4de3
+U mistachkin
+Z 8e9a8733a67aea5cb8b7a007ac22bd6e
