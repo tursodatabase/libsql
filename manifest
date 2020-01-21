@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\scould\sfail\sin\sSQLITE_MUTATION_TEST\sbuilds\sfollowing\san\serror\sin\sa\squery\sthat\suses\sCTEs.
-D 2020-01-21T14:42:48.803
+C Fix\sa\scase\sin\sfts3auto.test\sthat\sfails\sfor\sSQLITE_DISABLE_FTS4_DEFERRED\sbuilds.
+D 2020-01-21T15:01:14.246
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -933,7 +933,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test 266989148fec6d9f1bb6c5382f7aa3dcea0e9cd444576e28dd2b9287ac7dd220
 F test/fts3atoken.test dc2078ce464914efe3a8dfc545dd034a0fc14f2ab425c240471d5a5f1c721400
-F test/fts3auto.test bfe0857bd0b69d68dd685a931b58486411a69f5794a7f6d6fe808bfa31a99614
+F test/fts3auto.test 649aa4c198d7acc5cd6355e19ee073d051c40d9e88a43fc3d88af46bdf3e99d5
 F test/fts3aux1.test 7a170e172afdbceb67f5baa05941fd4fbf56af42f61daa3d140f4b4bf4cb68f6
 F test/fts3aux2.test 2459e7fa3e22734aed237d1e2ae192f5541c4d8b218956ad2d90754977bf907f
 F test/fts3b.test c15c4a9d04e210d0be67e54ce6a87b927168fbf9c1e3faec8c1a732c366fd491
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a62f64222ebd176c06e89b9fe5275b7b1f09df0afbae1c5c148a4e527e9d80b
-R fc7d96a2946474e179d498e2cb12c819
+P c7e29458a73bbe73a1429477d0c01d5a7b870ab75d3cb08a703be21714e439b7
+R e1c2ef9a222166839d451e8e8b569689
 U dan
-Z 774f7b55b9de89c79414a8c248167cc4
+Z e0020253221c64d53f32a20e335969a5
