@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\sviews\sin\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.\sAlso\ssome\stest\scase\sfixes\srequired\sfor\sthe\ssame\sbuilds.
-D 2020-01-21T16:23:17.784
+C Update\stest\sfile\sexclusive.test\sso\sthat\sit\sworks\swith\sthe\s"journaltest"\spermutation.
+D 2020-01-21T16:31:26.158
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -854,7 +854,7 @@ F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 84879b63e3110552bf8ce648a3507dc3ceb72109ecec83c2aef0db37a27f6382
 F test/errmsg.test eae9f091eb39ce7e20305de45d8e5d115b68fa856fba4ea6757b6ca3705ff7f9
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
-F test/exclusive.test d6ccc6acc5d660544f8e0cacaec2c620f8ebb42a764d783ab53430e26057a185
+F test/exclusive.test 7ff63be7503990921838d5c9f77f6e33e68e48ed1a9d48cd28745bf650bf0747
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d241055ead935f0e461a67f483788bcd59f7e8d65ade54b9c7c7c4fec9414102
-R f76ed78deea8ecda656692c47e3b99f8
+P 934ee8bdb481a5cbd3d9c5f53028073129d3bca4fee14fe4a49bbf9c0c9d74f7
+R 5a98666c879217368b8f21c26d062d92
 U dan
-Z f02cf9c138fa976fbef3a11edcb33089
+Z 3d15e2ce9b58e3608f870860fed31373
