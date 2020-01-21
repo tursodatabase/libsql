@@ -4839,7 +4839,7 @@ static void selectPopWith(Walker *pWalker, Select *p){
   if( OK_IF_ALWAYS_TRUE(pParse->pWith) && p->pPrior==0 ){
     With *pWith = findRightmost(p)->pWith;
     if( pWith!=0 ){
-      assert( pParse->pWith==pWith );
+      assert( pParse->pWith==pWith || pParse->nErr );
       pParse->pWith = pWith->pOuter;
     }
   }
