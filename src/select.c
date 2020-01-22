@@ -4839,7 +4839,7 @@ static void selectPopWith(Walker *pWalker, Select *p){
   if( OK_IF_ALWAYS_TRUE(pParse->pWith) && p->pPrior==0 ){
     With *pWith = findRightmost(p)->pWith;
     if( pWith!=0 ){
-      assert( pParse->pWith==pWith );
+      assert( pParse->pWith==pWith || pParse->nErr );
       pParse->pWith = pWith->pOuter;
     }
   }
@@ -4970,7 +4970,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( !IsVirtual(pTab) && cannotBeFunction(pParse, pFrom) ){
         return WRC_Abort;
       }
-#if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_VIRTUALTABLE)
+#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
       if( IsVirtual(pTab) || pTab->pSelect ){
         i16 nCol;
         u8 eCodeOrig = pWalker->eCode;
@@ -4980,6 +4980,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
             pTab->zName);
         }
+#ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pTab)
          && pFrom->fg.fromDDL
          && ALWAYS(pTab->pVTable!=0)
@@ -4988,6 +4989,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           sqlite3ErrorMsg(pParse, "unsafe use of virtual table \"%s\"",
                                   pTab->zName);
         }
+#endif
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         nCol = pTab->nCol;
         pTab->nCol = -1;

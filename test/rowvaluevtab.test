@@ -15,6 +15,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix rowvaluevtab
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 register_echo_module db
 
 do_execsql_test 1.0 {
