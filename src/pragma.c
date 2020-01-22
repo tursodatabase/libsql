@@ -1824,10 +1824,17 @@ void sqlite3Pragma(
       ** will be overwritten when the schema is next loaded. If it does not
       ** already exists, it will be created to use the new encoding value.
       */
-      if( 
-        !(DbHasProperty(db, 0, DB_SchemaLoaded)) || 
-        DbHasProperty(db, 0, DB_Empty) 
-      ){
+      int canChangeEnc = 1;  /* True if allowed to change the encoding */
+      int i;                 /* For looping over all attached databases */
+      for(i=0; i<db->nDb; i++){
+        if( db->aDb[i].pBt!=0
+         && DbHasProperty(db,i,DB_SchemaLoaded)
+         && !DbHasProperty(db,i,DB_Empty)
+        ){
+          canChangeEnc = 0;
+        }
+      }
+      if( canChangeEnc ){
         for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
           if( 0==sqlite3StrICmp(zRight, pEnc->zName) ){
             SCHEMA_ENC(db) = ENC(db) =

@@ -4908,14 +4908,14 @@ WhereInfo *sqlite3WhereBegin(
   ** then table t2 can be omitted from the following:
   **
   **     SELECT v1, v3 FROM t1 
-  **       LEFT JOIN t2 USING (t1.ipk=t2.ipk)
-  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  **       LEFT JOIN t2 ON (t1.ipk=t2.ipk)
+  **       LEFT JOIN t3 ON (t1.ipk=t3.ipk)
   **
   ** or from:
   **
   **     SELECT DISTINCT v1, v3 FROM t1 
   **       LEFT JOIN t2
-  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  **       LEFT JOIN t3 ON (t1.ipk=t3.ipk)
   */
   notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2

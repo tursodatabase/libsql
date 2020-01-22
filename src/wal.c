@@ -1919,6 +1919,10 @@ static int walCheckpoint(
           }
         }
         if( rc==SQLITE_OK ){
+          rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_DONE, 0);
+          if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
+        }
+        if( rc==SQLITE_OK ){
           pInfo->nBackfill = mxSafeFrame;
         }
       }

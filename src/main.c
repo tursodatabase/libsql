@@ -4033,6 +4033,7 @@ int sqlite3_test_control(int op, ...){
     ** This test-control also resets the PRNG so that the new seed will
     ** be used for the next call to sqlite3_randomness().
     */
+#ifndef SQLITE_OMIT_WSD
     case SQLITE_TESTCTRL_PRNG_SEED: {
       int x = va_arg(ap, int);
       int y;
@@ -4043,6 +4044,7 @@ int sqlite3_test_control(int op, ...){
       sqlite3_randomness(0,0);
       break;
     }
+#endif
 
     /*
     **  sqlite3_test_control(BITVEC_TEST, size, program)
