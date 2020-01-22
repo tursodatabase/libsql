@@ -153,7 +153,7 @@ Please `cd` to its location first.
 #
 #-------------------------------------------------------------------------
 
-PROJECT = sqlite3
+PROJECT = tclsqlite3
 !include "rules.vc"
 
 # nmakehelp -V <file> <tag> will search the file for tag, skips until a
@@ -162,17 +162,14 @@ PROJECT = sqlite3
 
 !if [echo REM = This file is generated from Makefile.vc > versions.vc]
 !endif
-# get project version from row "AC_INIT([sqlite], [3.7.14])"
+# get project version from row "AC_INIT([sqlite], [3.x.y])"
 !if [echo DOTVERSION = \>> versions.vc] \
-   && [nmakehlp -V ..\configure.in AC_INIT >> versions.vc]
+   && [nmakehlp -V ..\configure.ac AC_INIT >> versions.vc]
 !endif
 !include "versions.vc"
 
 VERSION         = $(DOTVERSION:.=)
 STUBPREFIX      = $(PROJECT)stub
-
-DLLOBJS = \
-	$(TMP_DIR)\tclsqlite3.obj
 
 #-------------------------------------------------------------------------
 # Target names and paths ( shouldn't need changing )
@@ -182,7 +179,7 @@ BINROOT		= .
 ROOT            = ..
 
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJLIBNAME	= $(PROJECT).$(EXT)
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -204,6 +201,17 @@ DOCDIR		= $(ROOT)\doc
 TOOLSDIR	= $(ROOT)\tools
 COMPATDIR	= $(ROOT)\compat
 
+### Figure out where the primary source code file(s) is/are.
+!if exist("$(ROOT)\..\..\sqlite3.c") && exist("$(ROOT)\..\..\src\tclsqlite.c")
+SQL_INCLUDES = -I"$(ROOT)\..\.."
+SQLITE_SRCDIR = $(ROOT)\..\..
+TCLSQLITE_SRCDIR = $(ROOT)\..\..\src
+DLLOBJS = $(TMP_DIR)\sqlite3.obj $(TMP_DIR)\tclsqlite.obj
+!else
+TCLSQLITE_SRCDIR = $(ROOT)\generic
+DLLOBJS = $(TMP_DIR)\tclsqlite3.obj
+!endif
+
 #---------------------------------------------------------------------
 # Compile flags
 #---------------------------------------------------------------------
@@ -223,7 +231,7 @@ cdebug	= -Z7 -WX -Od -GZ
 !endif
 
 ### Declarations common to all compiler options
-cflags = -nologo -c -W3 -YX -Fp$(TMP_DIR)^\
+cflags = -nologo -c -W3 -D_CRT_SECURE_NO_WARNINGS -YX -Fp$(TMP_DIR)^\
 
 !if $(MSVCRT)
 !if $(DEBUG)
@@ -239,8 +247,8 @@ crt = -MT
 !endif
 !endif
 
-INCLUDES	= $(TCL_INCLUDES) -I"$(WINDIR)" -I"$(GENERICDIR)" \
-                  -I"$(ROOT)\.."
+INCLUDES	= $(SQL_INCLUDES) $(TCL_INCLUDES) -I"$(WINDIR)" \
+                  -I"$(GENERICDIR)" -I"$(ROOT)\.."
 BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(INCLUDES) \
                   -DSQLITE_3_SUFFIX_ONLY=1 -DSQLITE_ENABLE_RTREE=1 \
                   -DSQLITE_ENABLE_FTS3=1 -DSQLITE_OMIT_DEPRECATED=1
@@ -341,20 +349,17 @@ $(PRJSTUBLIB): $(PRJSTUBOBJS)
 # Implicit rules
 #---------------------------------------------------------------------
 
-{$(WINDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
+$(TMP_DIR)\sqlite3.obj:		$(SQLITE_SRCDIR)\sqlite3.c
+	$(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ \
+		-c $(SQLITE_SRCDIR)\sqlite3.c
 
-{$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
+$(TMP_DIR)\tclsqlite.obj:	$(TCLSQLITE_SRCDIR)\tclsqlite.c
+	$(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ \
+		-c $(TCLSQLITE_SRCDIR)\tclsqlite.c
 
-{$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ @<<
-$<
-<<
+$(TMP_DIR)\tclsqlite3.obj:	$(TCLSQLITE_SRCDIR)\tclsqlite3.c
+	$(cc32) $(TCL_CFLAGS) -DBUILD_$(PROJECT) -Fo$(TMP_DIR)\ \
+		-c $(TCLSQLITE_SRCDIR)\tclsqlite3.c
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
 	$(rc32) -fo $@ -r -i "$(GENERICDIR)" -D__WIN32__ \

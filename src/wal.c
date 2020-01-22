@@ -2500,6 +2500,10 @@ static int walCheckpoint(
           rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
         }
         if( rc==SQLITE_OK ){
+          rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_DONE, 0);
+          if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
+        }
+        if( rc==SQLITE_OK ){
           rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
         }
       }

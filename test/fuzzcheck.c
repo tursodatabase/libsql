@@ -462,6 +462,9 @@ static unsigned int mxProgressCb = 2000;
 /* Maximum string length in SQLite */
 static int lengthLimit = 1000000;
 
+/* Maximum expression depth */
+static int depthLimit = 500;
+
 /* Limit on the amount of heap memory that can be used */
 static sqlite3_int64 heapLimit = 1000000000;
 
@@ -788,6 +791,9 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
   }
   if( lengthLimit>0 ){
     sqlite3_limit(cx.db, SQLITE_LIMIT_LENGTH, lengthLimit);
+  }
+  if( depthLimit>0 ){
+    sqlite3_limit(cx.db, SQLITE_LIMIT_EXPR_DEPTH, depthLimit);
   }
   sqlite3_hard_heap_limit64(heapLimit);
 
@@ -1304,6 +1310,7 @@ static void showHelp(void){
 "  --export-sql DIR     Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help               Show this help text\n"
 "  --info               Show information about SOURCE-DB w/o running tests\n"
+"  --limit-depth N      Limit expression depth to N\n"
 "  --limit-mem N        Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe         Panic if any test runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...   Load SQL scripts fron files into SOURCE-DB\n"
@@ -1405,6 +1412,10 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"info")==0 ){
         infoFlag = 1;
+      }else
+      if( strcmp(z,"limit-depth")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        depthLimit = integerValue(argv[++i]);
       }else
       if( strcmp(z,"limit-mem")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);

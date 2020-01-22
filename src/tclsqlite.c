@@ -2341,20 +2341,22 @@ static int SQLITE_TCLAPI DbObjCmd(
       const char *zName;
       int op;
     } aDbConfig[] = {
+        { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
+        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
+        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
         { "enable_fkey",        SQLITE_DBCONFIG_ENABLE_FKEY           },
+        { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
         { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+        { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
+        { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
-        { "enable_qpsg",        SQLITE_DBCONFIG_ENABLE_QPSG           },
-        { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
-        { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
+        { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
+        { "trusted_schema",     SQLITE_DBCONFIG_TRUSTED_SCHEMA        },
         { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
-        { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
-        { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },
-        { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
     };
     Tcl_Obj *pResult;
     int ii;
