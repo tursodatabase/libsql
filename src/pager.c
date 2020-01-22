@@ -4985,11 +4985,13 @@ int sqlite3PagerOpen(
   /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
   pPtr[0] = '\003'; pPtr[1] = 0;          pPtr += 2;
   pPager->zFilename = (char*)pPtr;
-  memcpy(pPtr, zPathname, nPathname);     pPtr += nPathname + 1;
-  if( zUri ){
-    memcpy(pPtr, zUri, nUriByte);      /* pPtr += nUriByte; // not needed */
+  if( nPathname>0 ){
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname + 1;
+    if( zUri ){
+      memcpy(pPtr, zUri, nUriByte);    /* pPtr += nUriByte; // not needed */
+    }
+    /* Double-zero terminator implied by the sqlite3MallocZero */
   }
-  /* Double-zero terminator implied by the sqlite3MallocZero */
 
   if( nPathname ) sqlite3DbFree(0, zPathname);
   pPager->pVfs = pVfs;
@@ -7197,8 +7199,8 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 ** sqlite3_uri_parameter() and sqlite3_filename_database() and friends.
 */
 const char *sqlite3PagerFilename(const Pager *pPager, int nullIfMemDb){
-  static const char zFake[] = { 0x01, 0x00, 0x00, 0x00 };
-  return (nullIfMemDb && pPager->memDb) ? &zFake[2] : pPager->zFilename;
+  static const char zFake[] = { 0x00, 0x01, 0x00, 0x00, 0x00 };
+  return (nullIfMemDb && pPager->memDb) ? &zFake[3] : pPager->zFilename;
 }
 
 /*

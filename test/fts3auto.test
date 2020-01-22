@@ -571,10 +571,12 @@ foreach {tn create} {
   do_fts3query_test 4.$tn.4.4 -deferred fi* t1 {on* NEAR/2 fi*}
   do_fts3query_test 4.$tn.4.5 -deferred fi* t1 {on* NEAR/3 fi*}
 
-  db eval {UPDATE t1_stat SET value=x'' WHERE id=0}
-  do_catchsql_test 4.$tn.4.6 {
-    SELECT docid FROM t1 WHERE t1 MATCH 'on* NEAR/3 fi*'
-  } {1 {database disk image is malformed}}
+  ifcapable fts4_deferred {
+    db eval {UPDATE t1_stat SET value=x'' WHERE id=0}
+    do_catchsql_test 4.$tn.4.6 {
+      SELECT docid FROM t1 WHERE t1 MATCH 'on* NEAR/3 fi*'
+    } {1 {database disk image is malformed}}
+  }
 }
 
 #--------------------------------------------------------------------------

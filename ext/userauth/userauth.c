@@ -40,7 +40,7 @@ static sqlite3_stmt *sqlite3UserAuthPrepare(
   char *zSql;
   int rc;
   va_list ap;
-  int savedFlags = db->flags;
+  u64 savedFlags = db->flags;
 
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);

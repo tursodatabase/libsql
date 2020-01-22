@@ -75,4 +75,20 @@ do_catchsql_test 310 {
   INSERT INTO t4 VALUES(1);
 } {1 {hex literal too big: 0x2147483648e0e0099}}
 
+#-------------------------------------------------------------------------
+# 
+do_execsql_test 400 {
+  CREATE VIEW v0(a) AS SELECT 1234;
+  CREATE TRIGGER t0001 INSTEAD OF DELETE ON v0 BEGIN
+    SELECT old.a;
+  END;
+}
+do_execsql_test 405 {
+  SELECT a FROM v0;
+} {1234}
+do_execsql_test 410 {
+  DELETE FROM v0;
+}
+
+
 finish_test

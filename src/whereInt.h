@@ -274,22 +274,22 @@ struct WhereTerm {
 /*
 ** Allowed values of WhereTerm.wtFlags
 */
-#define TERM_DYNAMIC    0x01   /* Need to call sqlite3ExprDelete(db, pExpr) */
-#define TERM_VIRTUAL    0x02   /* Added by the optimizer.  Do not code */
-#define TERM_CODED      0x04   /* This term is already coded */
-#define TERM_COPIED     0x08   /* Has a child */
-#define TERM_ORINFO     0x10   /* Need to free the WhereTerm.u.pOrInfo object */
-#define TERM_ANDINFO    0x20   /* Need to free the WhereTerm.u.pAndInfo obj */
-#define TERM_OR_OK      0x40   /* Used during OR-clause processing */
+#define TERM_DYNAMIC    0x0001 /* Need to call sqlite3ExprDelete(db, pExpr) */
+#define TERM_VIRTUAL    0x0002 /* Added by the optimizer.  Do not code */
+#define TERM_CODED      0x0004 /* This term is already coded */
+#define TERM_COPIED     0x0008 /* Has a child */
+#define TERM_ORINFO     0x0010 /* Need to free the WhereTerm.u.pOrInfo object */
+#define TERM_ANDINFO    0x0020 /* Need to free the WhereTerm.u.pAndInfo obj */
+#define TERM_OR_OK      0x0040 /* Used during OR-clause processing */
 #ifdef SQLITE_ENABLE_STAT4
-#  define TERM_VNULL    0x80   /* Manufactured x>NULL or x<=NULL term */
+#  define TERM_VNULL    0x0080 /* Manufactured x>NULL or x<=NULL term */
 #else
-#  define TERM_VNULL    0x00   /* Disabled if not using stat4 */
+#  define TERM_VNULL    0x0000 /* Disabled if not using stat4 */
 #endif
-#define TERM_LIKEOPT    0x100  /* Virtual terms from the LIKE optimization */
-#define TERM_LIKECOND   0x200  /* Conditionally this LIKE operator term */
-#define TERM_LIKE       0x400  /* The original LIKE operator */
-#define TERM_IS         0x800  /* Term.pExpr is an IS operator */
+#define TERM_LIKEOPT    0x0100 /* Virtual terms from the LIKE optimization */
+#define TERM_LIKECOND   0x0200 /* Conditionally this LIKE operator term */
+#define TERM_LIKE       0x0400 /* The original LIKE operator */
+#define TERM_IS         0x0800 /* Term.pExpr is an IS operator */
 #define TERM_VARSELECT  0x1000 /* Term.pExpr contains a correlated sub-query */
 
 /*

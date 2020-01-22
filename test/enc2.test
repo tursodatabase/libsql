@@ -13,7 +13,6 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.29 2007/10/09 08:29:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -551,5 +550,18 @@ do_test enc2-10.1 {
     SELECT name FROM sqlite_master
   }
 } {t1 t2}
+
+# 2020-01-15 ticket a08879a4a476eea9
+# Do not allow a database connection encoding change unless *all*
+# attached databases are empty.
+#
+reset_db
+do_execsql_test enc2-11.10 {
+  PRAGMA encoding=UTF8;
+  CREATE TEMP TABLE t1(x);
+  INSERT INTO t1 VALUES('this is a test');
+  PRAGMA encoding=UTF16;
+  SELECT * FROM t1;
+} {{this is a test}}
 
 finish_test
