@@ -2069,7 +2069,7 @@ static int spellfix1Init(
     if( pNew->zTableName==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      sqlite3_vtab_config(db, SQLITE_INNOCUOUS);
+      sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
       rc = sqlite3_declare_vtab(db, 
            "CREATE TABLE x(word,rank,distance,langid, "
            "score, matchlen, phonehash HIDDEN, "

@@ -1640,6 +1640,7 @@ void sqlite3GenerateConstraintChecks(
       }
       if( b2ndPass ) break;  /* Never need more than 2 passes */
       b2ndPass = 1;
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
       if( nSeenReplace>0 && (pTab->tabFlags & TF_HasGenerated)!=0 ){
         /* If any NOT NULL ON CONFLICT REPLACE constraints fired on the
         ** first pass, recomputed values for all generated columns, as
@@ -1647,6 +1648,7 @@ void sqlite3GenerateConstraintChecks(
         */
         sqlite3ComputeGeneratedColumns(pParse, regNewData+1, pTab);
       }
+#endif
     } /* end of 2-pass loop */
   } /* end if( has-not-null-constraints ) */
 

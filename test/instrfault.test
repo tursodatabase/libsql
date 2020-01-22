@@ -69,7 +69,7 @@ foreach {enc} {
   do_faultsim_test 1.$enc.4 -faults oom-t* -prep {
     set ::stmt [sqlite3_prepare_v2 db "SELECT instr(?, ?)" -1 dummy]
     sqlite3_bind_blob $::stmt 1 $::HAYSTACK [string length $::HAYSTACK]
-    sqlite3_bind_text $::stmt 2 $::NEEDLE [string length $::NEEDLE]
+    sqlite3_bind_blob $::stmt 2 $::NEEDLE [string length $::NEEDLE]
   } -body {
     set rc [sqlite3_step $::stmt]
     if {$rc=="SQLITE_NOMEM"} { error "out of memory" }

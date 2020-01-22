@@ -688,7 +688,7 @@ static int parseModifier(
         r = p->s*1000.0 + 210866760000000.0;
         if( r>=0.0 && r<464269060800000.0 ){
           clearYMD_HMS_TZ(p);
-          p->iJD = (sqlite3_int64)r;
+          p->iJD = (sqlite3_int64)(r + 0.5);
           p->validJD = 1;
           p->rawS = 0;
           rc = 0;
