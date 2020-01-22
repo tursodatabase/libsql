@@ -2270,8 +2270,8 @@ void sqlite3EndTable(
           ** expression to a NULL.  This prevents code generators that operate
           ** on the expression from inserting extra parts into the expression
           ** tree that have been allocated from lookaside memory, which is
-          ** illegal in a schema and will lead to errors heap corruption when
-          ** the database connection closes. */
+          ** illegal in a schema and will lead to errors or heap corruption
+          ** when the database connection closes. */
           sqlite3ExprDelete(db, pX);
           p->aCol[ii].pDflt = sqlite3ExprAlloc(db, TK_NULL, 0, 0);
         }
