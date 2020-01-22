@@ -1,5 +1,5 @@
-C Update\stest\sfile\sexclusive.test\sso\sthat\sit\sworks\swith\sthe\s"journaltest"\spermutation.
-D 2020-01-21T16:31:26.158
+C Version\s3.31.0
+D 2020-01-22T18:38:59.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1857,7 +1857,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 934ee8bdb481a5cbd3d9c5f53028073129d3bca4fee14fe4a49bbf9c0c9d74f7
+P 4daf94d83319231e42243625c804d5db2d14f10fa5ea1a1f358c3603c47b955b
 R 5a98666c879217368b8f21c26d062d92
-U dan
-Z 3d15e2ce9b58e3608f870860fed31373
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.31.0 *
+U drh
+Z 51c630793e0eec473e1274a795f77643
