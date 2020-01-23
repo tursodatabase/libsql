@@ -1,5 +1,5 @@
-C Fix\svariable\sdeclaration\sissue\sseen\swith\sMSVC.
-D 2020-01-23T00:08:25.098
+C Fix\stypos\sin\sthe\ssqlite3ext.h\sheader\sfile\sthat\sprevent\ssome\snewer\sAPIs\sfrom\nbeing\saccessed\sfrom\sloadable\sextensions.
+D 2020-01-23T15:00:18.610
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -535,7 +535,7 @@ F src/select.c 3f7aecf64b08b018b89e4fe16ea621cc9a0e3f3801e9e5638cfe1a6035fa1581
 F src/shell.c.in c2e20c43a44fb5588a6c27ce60589538fbf4794fd7686f5b2598eca22eaae1fa
 F src/sqlite.h.in 75d0304247a2154122d6d06f12219c1e29291d72304f0eeef4c1ec6b1409b443
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h b0f776a0d042b23b6bcbb6b0943e8a3768c7f0b438a275e7168f0204e223a4db
+F src/sqlite3ext.h 27951f294f29cd875c6027f2707d644ef99f469bd97514568b5a8581a114db8c
 F src/sqliteInt.h 7a29ba700a51eeb925731749a570cf3859f6a58ed94797ecf47508875b0ba279
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f0f5d593a383ec2bebb6513ad566813f5b3dc6f052c61bcd76e8ac557bbb062
-R 3dde6739b8fb39a6057cde90c0083ac8
-U mistachkin
-Z 8e124fb0ab2ddc3580e7fba92dfe424c
+P 8a6fe3066cf0599fcf2960e8fb3ae39e4e7a61ec81e8ec71d0b5910aee2c16f6
+R adbf99f7d511d2f7862e65bcc9604066
+U drh
+Z 72d824d23352153c482aa4a2ca7c7d22
