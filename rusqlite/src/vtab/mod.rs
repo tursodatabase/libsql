@@ -244,16 +244,55 @@ pub trait CreateVTab: VTab {
     }
 }
 
-bitflags::bitflags! {
-    #[doc = "Index constraint operator."]
-    #[repr(C)]
-    pub struct IndexConstraintOp: ::std::os::raw::c_uchar {
-        const SQLITE_INDEX_CONSTRAINT_EQ    = 2;
-        const SQLITE_INDEX_CONSTRAINT_GT    = 4;
-        const SQLITE_INDEX_CONSTRAINT_LE    = 8;
-        const SQLITE_INDEX_CONSTRAINT_LT    = 16;
-        const SQLITE_INDEX_CONSTRAINT_GE    = 32;
-        const SQLITE_INDEX_CONSTRAINT_MATCH = 64;
+///Index constraint operator.
+#[derive(Debug, PartialEq)]
+#[allow(non_snake_case, non_camel_case_types)]
+pub enum IndexConstraintOp {
+    SQLITE_INDEX_CONSTRAINT_EQ,
+    SQLITE_INDEX_CONSTRAINT_GT,
+    SQLITE_INDEX_CONSTRAINT_LE,
+    SQLITE_INDEX_CONSTRAINT_LT,
+    SQLITE_INDEX_CONSTRAINT_GE,
+    SQLITE_INDEX_CONSTRAINT_MATCH,
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_LIKE, // 3.10.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_GLOB, // 3.10.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_REGEXP, // 3.10.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_NE, // 3.21.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_ISNOT, // 3.21.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_ISNOTNULL, // 3.21.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_ISNULL, // 3.21.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_IS, // 3.21.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_INDEX_CONSTRAINT_FUNCTION(u8), // 3.25.0
+}
+
+impl From<u8> for IndexConstraintOp {
+    fn from(code: u8) -> IndexConstraintOp {
+        match code {
+            2 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ,
+            4 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_GT,
+            8 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LE,
+            16 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LT,
+            32 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_GE,
+            64 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_MATCH,
+            65 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LIKE,
+            66 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_GLOB,
+            67 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_REGEXP,
+            68 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_NE,
+            69 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNOT,
+            70 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNOTNULL,
+            71 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNULL,
+            72 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_IS,
+            v => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_FUNCTION(v),
+        }
     }
 }
 
@@ -356,7 +395,7 @@ impl IndexConstraint<'_> {
 
     /// Constraint operator
     pub fn operator(&self) -> IndexConstraintOp {
-        IndexConstraintOp::from_bits_truncate(self.0.op)
+        IndexConstraintOp::from(self.0.op)
     }
 
     /// True if this constraint is usable
