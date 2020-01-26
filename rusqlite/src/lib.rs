@@ -1370,10 +1370,15 @@ mod test {
 
         let interrupt_handle = db.get_interrupt_handle();
 
-        db.create_scalar_function("interrupt", 0, false, move |_| {
-            interrupt_handle.interrupt();
-            Ok(0)
-        })
+        db.create_scalar_function(
+            "interrupt",
+            0,
+            crate::functions::FunctionFlags::default(),
+            move |_| {
+                interrupt_handle.interrupt();
+                Ok(0)
+            },
+        )
         .unwrap();
 
         let mut stmt = db
