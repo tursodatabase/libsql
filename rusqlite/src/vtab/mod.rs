@@ -108,7 +108,7 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
-        .. zeroed_module()
+        ..zeroed_module()
     };
     Module {
         base: ffi_module,
@@ -147,7 +147,7 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
-        .. zeroed_module()
+        ..zeroed_module()
     };
     Module {
         base: ffi_module,
@@ -656,7 +656,6 @@ unsafe extern "C" fn rust_create<T>(
 where
     T: CreateVTab,
 {
-    use std::error::Error as StdError;
     use std::ffi::CStr;
 
     let mut conn = VTabConnection(db);
@@ -676,12 +675,12 @@ where
                     ffi::SQLITE_OK
                 } else {
                     let err = error_from_sqlite_code(rc, None);
-                    *err_msg = mprintf(err.description());
+                    *err_msg = mprintf(&err.to_string());
                     rc
                 }
             }
             Err(err) => {
-                *err_msg = mprintf(err.description());
+                *err_msg = mprintf(&err.to_string());
                 ffi::SQLITE_ERROR
             }
         },
@@ -692,7 +691,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            *err_msg = mprintf(err.description());
+            *err_msg = mprintf(&err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -709,7 +708,6 @@ unsafe extern "C" fn rust_connect<T>(
 where
     T: VTab,
 {
-    use std::error::Error as StdError;
     use std::ffi::CStr;
 
     let mut conn = VTabConnection(db);
@@ -729,12 +727,12 @@ where
                     ffi::SQLITE_OK
                 } else {
                     let err = error_from_sqlite_code(rc, None);
-                    *err_msg = mprintf(err.description());
+                    *err_msg = mprintf(&err.to_string());
                     rc
                 }
             }
             Err(err) => {
-                *err_msg = mprintf(err.description());
+                *err_msg = mprintf(&err.to_string());
                 ffi::SQLITE_ERROR
             }
         },
@@ -745,7 +743,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            *err_msg = mprintf(err.description());
+            *err_msg = mprintf(&err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -758,7 +756,6 @@ unsafe extern "C" fn rust_best_index<T>(
 where
     T: VTab,
 {
-    use std::error::Error as StdError;
     let vt = vtab as *mut T;
     let mut idx_info = IndexInfo(info);
     match (*vt).best_index(&mut idx_info) {
@@ -770,7 +767,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            set_err_msg(vtab, err.description());
+            set_err_msg(vtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -792,7 +789,6 @@ unsafe extern "C" fn rust_destroy<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
 where
     T: CreateVTab,
 {
-    use std::error::Error as StdError;
     if vtab.is_null() {
         return ffi::SQLITE_OK;
     }
@@ -809,7 +805,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            set_err_msg(vtab, err.description());
+            set_err_msg(vtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -822,7 +818,6 @@ unsafe extern "C" fn rust_open<T>(
 where
     T: VTab,
 {
-    use std::error::Error as StdError;
     let vt = vtab as *mut T;
     match (*vt).open() {
         Ok(cursor) => {
@@ -837,7 +832,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            set_err_msg(vtab, err.description());
+            set_err_msg(vtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -925,7 +920,6 @@ where
 /// Virtual table cursors can set an error message by assigning a string to
 /// `zErrMsg`.
 unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<T>) -> c_int {
-    use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
         Err(Error::SqliteFailure(err, s)) => {
@@ -935,7 +929,7 @@ unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<
             err.extended_code
         }
         Err(err) => {
-            set_err_msg((*cursor).pVtab, err.description());
+            set_err_msg((*cursor).pVtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -953,7 +947,6 @@ unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
 /// To raise an error, the `column` method should use this method to set the
 /// error message and return the error code.
 unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> c_int {
-    use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
         Err(Error::SqliteFailure(err, s)) => {
@@ -975,7 +968,7 @@ unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> 
         }
         Err(err) => {
             ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_ERROR);
-            if let Ok(cstr) = str_to_cstring(err.description()) {
+            if let Ok(cstr) = str_to_cstring(&err.to_string()) {
                 ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
             }
             ffi::SQLITE_ERROR

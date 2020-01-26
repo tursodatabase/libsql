@@ -253,6 +253,7 @@ impl fmt::Display for Error {
 }
 
 impl error::Error for Error {
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         match *self {
             Error::SqliteFailure(ref err, None) => err.description(),
