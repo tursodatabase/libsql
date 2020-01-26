@@ -1454,8 +1454,8 @@ mod test {
         impl fmt::Display for CustomError {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> ::std::result::Result<(), fmt::Error> {
                 match *self {
-                    CustomError::SomeError => write!(f, "{}", self.description()),
-                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
+                    CustomError::SomeError => write!(f, "my custom error"),
+                    CustomError::Sqlite(ref se) => write!(f, "my custom error: {}", se),
                 }
             }
         }
@@ -1693,10 +1693,8 @@ mod test {
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?;",
                 params![
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1,
                 ],
                 |r| {
                     assert_eq!(1, r.get_unwrap::<_, i32>(0));

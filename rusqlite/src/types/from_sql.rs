@@ -60,6 +60,7 @@ impl fmt::Display for FromSqlError {
 }
 
 impl Error for FromSqlError {
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         match *self {
             FromSqlError::InvalidType => "invalid type",

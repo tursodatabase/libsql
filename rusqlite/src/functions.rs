@@ -61,7 +61,6 @@
 //!     Ok(())
 //! }
 //! ```
-use std::error::Error as StdError;
 use std::os::raw::{c_int, c_void};
 use std::panic::{catch_unwind, RefUnwindSafe, UnwindSafe};
 use std::ptr;
@@ -99,7 +98,7 @@ unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
         }
         _ => {
             ffi::sqlite3_result_error_code(ctx, constraint_error_code());
-            if let Ok(cstr) = str_to_cstring(err.description()) {
+            if let Ok(cstr) = str_to_cstring(&err.to_string()) {
                 ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
             }
         }

@@ -338,8 +338,7 @@ impl VTabCursor for CSVTabCursor {
 
 impl From<csv::Error> for Error {
     fn from(err: csv::Error) -> Error {
-        use std::error::Error as StdError;
-        Error::ModuleError(String::from(err.description()))
+        Error::ModuleError(err.to_string())
     }
 }
 
