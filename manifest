@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\ssqlite3ext.h\sheader\sfile\sthat\sprevent\ssome\snewer\sAPIs\sfrom\nbeing\saccessed\sfrom\sloadable\sextensions.
-D 2020-01-23T15:00:18.610
+C Revise\sthe\slayout\sof\sfilenames\sin\sthe\sPager\sobject\sso\sthat\sit\sis\sunchanged\nfrom\sprior\sversions.\s\sIt\sturns\sout\sthat\ssome\simportant\s3rd-party\ssoftware\ndoes\squestionable\spointer\smanipulations\son\sthose\sfilenames\sthat\sdepend\son\nthat\slegacy\slayout.\s\sTechnical\sthis\sis\sa\smisuse\sof\sSQLite\sby\sthe\s3rd-party\nsoftware,\sbut\swe\swant\sto\savoid\sunnecessary\sbreakage.
+D 2020-01-27T14:40:44.978
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2fe4d7f67078a68650f16e4efe73207899e21702e6b9d2e8ad1894c76dcad352
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
-F src/main.c 430db07f140a2455784b504af1a56fe49134a79dd479a203370490031708d48f
+F src/main.c ffaa1308ee8ad7cf70bddc9a9fe2d2d66799e534b12ec876562d26a33a30d745
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -518,7 +518,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c ad7640c04eed946052a3b12856362a773d0a717696707313037186df0e2b59f2
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 302a18da8b247881808cd65009e1ac7c8b6e5cefb22ed9a1c330ed47b73e94ab
+F src/pager.c c0bca72aa3f7b1cf521a9f350fcf8e5975ebf98da7dbb03492be876b0f053781
 F src/pager.h 71fe1d5016ec54d0cc5d344cd474e563450b438c59f535e8c1ec8a13b1373f14
 F src/parse.y c8d2de64db469fd56e0fa24da46cd8ec8523eb98626567d2708df371b47fdc3f
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a6fe3066cf0599fcf2960e8fb3ae39e4e7a61ec81e8ec71d0b5910aee2c16f6
-R adbf99f7d511d2f7862e65bcc9604066
+P 14331989fcaf6591336290ed1548e9c90f0f153e27f456f4c30c966f9c23aa6e
+R 883ff2472492f888f089aeac00d37048
 U drh
-Z 72d824d23352153c482aa4a2ca7c7d22
+Z 470802efe5cd145ed0af48cfd87c7792
