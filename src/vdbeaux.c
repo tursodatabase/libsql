@@ -4726,7 +4726,10 @@ static int vdbeRecordCompareString(
 
   assert( pPKey2->aMem[0].flags & MEM_Str );
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
-  getVarint32(&aKey1[1], serial_type);
+  serial_type = (u8)(aKey1[1]);
+  if( serial_type >= 0x80 ){
+    sqlite3GetVarint32(&aKey1[1], (u32*)&serial_type);
+  }
   if( serial_type<12 ){
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
   }else if( !(serial_type & 0x01) ){ 

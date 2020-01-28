@@ -1,5 +1,5 @@
-C Reinstate\sthe\soptimization\sof\sconverting\s"a\sIN\s(C)"\sinto\s"a=C"\sbut\sonly\nif\sC\sis\sa\sconstant.\s\sIf\sthe\sRHS\sis\sa\stable\scolumn,\sthe\scomplications\sof\nmanaging\saffinity\sand\scollations\sbecome\stoo\sinvolved\sto\smess\swith.
-D 2020-01-28T18:09:53.557
+C Small\sperformance\simprovement\sto\sthe\skey-comparision\sroutine\sfor\sstrings.
+D 2020-01-28T20:09:39.679
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/vdbe.c e3dd230ece613409507523e68436764cc20638bb77ba2f416097de5b37235ce1
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h 30d3e8b991547cdf39025e416a0a737b0416d46747af70ae058f60e2e0466fe7
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c ff690e6c9314ef281de7c06f8c8c33393f0afca80aabb1fe69836dcf2d60b0bf
+F src/vdbeaux.c 6a4d2142ac75d155acb6ed42f8f3c4f562ed7a0a0c000eb459a1607d9f5ef999
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 6200af702c87105d5b00d8ac5f5fa2c6d8f796aa974dbe2d15dcd95379ba1fa7
 F src/vdbesort.c a3be032cc3fee0e3af31773af4a7a6f931b7230a34f53282ccf1d9a2a72343be
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 912148913c11d98e48119a2c1fa7a0e52f318af36e7e2491d968ffde286c949f
-R 99ef17928f7f30256c747cec3d49b4aa
+P 8ac26a23d7f0ef29c5eb007c7467181f8b96102c8600ea8a5b15cc7584af27bd
+R 52f964e8503b1d494cbf742908de4430
 U drh
-Z 321bb0b388d63502da00c0fc216615f8
+Z a9eecf8df9e8988accc8cc90d98d595e
