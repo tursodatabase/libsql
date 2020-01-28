@@ -1193,6 +1193,12 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       */
       sqlite3ExprUnmapAndDelete(pParse, A);
       A = sqlite3Expr(pParse->db, TK_INTEGER, N ? "1" : "0");
+    }else if( 0 && Y->nExpr==1 && sqlite3ExprIsConstant(Y->a[0].pExpr) ){
+      Expr *pRHS = Y->a[0].pExpr;
+      Y->a[0].pExpr = 0;
+      sqlite3ExprListDelete(pParse->db, Y);
+      A = sqlite3PExpr(pParse, TK_EQ, A, pRHS);
+      if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
     }else{
       A = sqlite3PExpr(pParse, TK_IN, A, 0);
       if( A ){
