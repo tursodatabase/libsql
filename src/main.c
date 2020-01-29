@@ -161,7 +161,10 @@ int sqlite3_initialize(void){
   ** must be complete.  So isInit must not be set until the very end
   ** of this routine.
   */
-  if( sqlite3GlobalConfig.isInit ) return SQLITE_OK;
+  if( sqlite3GlobalConfig.isInit ){
+    sqlite3MemoryBarrier();
+    return SQLITE_OK;
+  }
 
   /* Make sure the mutex subsystem is initialized.  If unable to 
   ** initialize the mutex subsystem, return early with the error.

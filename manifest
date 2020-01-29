@@ -1,5 +1,5 @@
-C Modify\sa\scouple\sof\sFTS\stest\scases\sso\sthat\sthey\swork\son\sbig-endian\splatforms.
-D 2020-01-29T12:37:59.446
+C Add\snew\smemory\sbarriers\sduring\sinitialization.
+D 2020-01-29T13:10:50.760
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2d130e0480cff4c20946c932fcf0cbf97e52b200c22c7f4f51b47b739994ffe5
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
-F src/main.c ffaa1308ee8ad7cf70bddc9a9fe2d2d66799e534b12ec876562d26a33a30d745
+F src/main.c b7234b706ef72c4aa99e8e379284450b57ff83006aa33c36c1cceec0a6488e6e
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -505,7 +505,7 @@ F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memdb.c 02a5fcec19b9d40dd449ca802dc1b2e8f93f255fbf2a886277a3c3800d8d35db
 F src/memjournal.c 7561c01c90958f3ba9bc6cb2d857123d932bdfa5539ea34427a0957b2e35154d
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
-F src/mutex.c bae36f8af32c22ad80bbf0ccebec63c252b6a2b86e4d3e42672ff287ebf4a604
+F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c aaf9ebc3f89df28483c52208497a99a02cc3650011422fc9d4c57e4392f7fe58
@@ -1371,7 +1371,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c f3bfe3c6a87cbd88e4c4e38005d972bcc1019d1b2fe9569425f86629b11f6c31
+F test/speedtest1.c d564e7689a731f691adfe2cf3f3f735d3e11f100eebb065e2a0a267fdc39fb26
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 59a31b16b54a0068c81ee65bc2fa905c2c826e98da3a7ffd8c3ea860a2827b4a
-R 0a915f03fa7bc6f07682ca044d0b1ce8
+P b20503aaf5b6595afafee6aa2bc6276354a62b0f583f6d94e31fedfdfc130347
+R 4edebb01c9db28e29d1a76ee97af4238
 U drh
-Z af9d0272cd165cddf4355dcdebb52660
+Z 5f0bc71b47ed585eee4e9d2ffd3217c7
