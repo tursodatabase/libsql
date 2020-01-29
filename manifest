@@ -1,5 +1,5 @@
-C Add\snew\smemory\sbarriers\sduring\sinitialization.
-D 2020-01-29T13:10:50.760
+C Remove\sa\sNEVER()\sthat\sis\sin\sfact\sreachable.\s\sTest\scases\sin\sdbsqlfuzz\sand\sTH3.
+D 2020-01-29T13:50:11.414
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c f70077d40c08b7787bfe934e4d1da8030cb0cc57d46b345fba2294b7d1be23ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 7af5ff0f88ba856c2681f6eeb457590b24f787e994f18cbdb44c2de2d33f757e
+F src/btree.c ff1af84ce7ddb2a38dc47c7a331a2d7b4603565e41ae0588c55aa7e3d43a6cd3
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h 6794084fad08c9750b45145743c0e3e5c27c94dee89f26dd8df7073314934fd2
 F src/build.c 2394d2c853088106dfc1cf485d609f20e6421d7c84892b795824e454f78e50ad
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b20503aaf5b6595afafee6aa2bc6276354a62b0f583f6d94e31fedfdfc130347
-R 4edebb01c9db28e29d1a76ee97af4238
+P a9b2adc5d61790abd86839d12e7ecb98a85d7e4cde5f94558530e32449d9e483
+R 30b931249832935aa356c4fa9e8e9cb6
 U drh
-Z 5f0bc71b47ed585eee4e9d2ffd3217c7
+Z d1bd1897de5ae079dd2e335d2dd8d984
