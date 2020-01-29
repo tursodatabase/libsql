@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sthat\sis\sin\sfact\sreachable.\s\sTest\scases\sin\sdbsqlfuzz\sand\sTH3.
-D 2020-01-29T13:50:11.414
+C Add\sa\stest\scase\sfor\scommit\s[ffd8bb93].
+D 2020-01-29T13:56:35.659
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -775,7 +775,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test 4f28fbef85a6f27489542bb915ab7938dcd68f896e8f62a7d23de02b32489e5d
+F test/corruptL.test 13ef74a93223af25015d223add0df4c2d375f0b958b546a2a72033f2fdab7a70
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
@@ -1857,7 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9b2adc5d61790abd86839d12e7ecb98a85d7e4cde5f94558530e32449d9e483
-R 30b931249832935aa356c4fa9e8e9cb6
-U drh
-Z d1bd1897de5ae079dd2e335d2dd8d984
+P ffd8bb9351fbd8c1285491d4e10734f6816689de6042d640c178a5ecda75a5ef
+R 90b37e5ac83797871218d7eebbfd6f6d
+U dan
+Z 42cbec335447156b04befe7b8d074e60
