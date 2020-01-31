@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sprocessing\sof\sIN(...)\sconstraints\shandled\sby\svirtual\stable\simplementations\sthat\sdo\snot\sset\sthe\s"omit"\sflag\swhen\sthe\svirtual\stable\scolumn\scontains\sat\sleast\sone\sNULL\svalue.
-D 2020-01-29T15:03:01.723
+C Fix\sa\sminor\stypo\sin\sa\scomment\sin\sthe\sbtreeinfo\sextension.
+D 2020-01-31T14:52:19.945
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -283,7 +283,7 @@ F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 3777f22ec1057dc4e5fd89f2fbddcc7a29fbeef1ad038c736c54411bb1967af7
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
-F ext/misc/btreeinfo.c 4f0ebf278f46e68e6306c667917766cebc5550fd35d5de17847988e22892d4d2
+F ext/misc/btreeinfo.c 26004b7a6be320ec08fc20ca8d0f01fccb00a98cbe0f3197446794ff2a506aa3
 F ext/misc/carray.c 91e9a7f512fda934894bed30464552fffa7d3073b5be04189ae0bd0c59f26bfd
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c a0efe03edfdc4f717c61e6c9b0bfe2708ff7878010dae3174980a68fdf76aabc
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcd5b37b8ebd67537f60c0061fcbc70b2aebebb88d6fb842ccf321a3e20c122c
-R ec0aa7783c7b24e0d1bf06229bec14b2
-U dan
-Z ec84231a235e534a8ba6c5373a6a3303
+P dcb4838757ca49cf149a6e883b3eb0ac8a075147387a078280dfabe39b1a3e8d
+R 850a1a50cf9a586330b7de9f65d86f73
+U drh
+Z d704c4cde3f1b18ca7293e6622846334
