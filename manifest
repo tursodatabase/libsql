@@ -1,5 +1,5 @@
-C Merge\sthe\ssqlite3CodecQueryParameters()\sfix\sinto\strunk.
-D 2020-02-01T14:20:35.510
+C Fix\sthe\scomment\sdisplay\sfor\sthe\sOP_Function\sopcode.\s\sAnd\sat\sthe\ssame\stime,\nimprove\sthe\scomment\sgenerating\slogic\sto\smake\suse\sof\sthe\snewer\nsqlite3_str_appendf()\sinterface.
+D 2020-02-01T17:38:24.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,11 +603,11 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 736ff76753236ffbc8b5b939f5e0607f28aeaa7c780b3a56b419228f0a81c87b
 F src/util.c d035b09df9cecbc0e8f07c34b815acbf0d43c8adc8d2c540e3dc92eecb27855a
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c e3dd230ece613409507523e68436764cc20638bb77ba2f416097de5b37235ce1
+F src/vdbe.c 9a3bf7470aab17c64a5470f16bbd989bfdd54861dc1ee2476fd069db91631b2a
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h 30d3e8b991547cdf39025e416a0a737b0416d46747af70ae058f60e2e0466fe7
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c 4c5788121f0818f33489dc81ebfd688311aa6388c3279e9373a941ada1b491d8
+F src/vdbeaux.c 72a47b6beca06811144ddf370e2327fc9628243eab69f09cc5ace4d19b39e208
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 6200af702c87105d5b00d8ac5f5fa2c6d8f796aa974dbe2d15dcd95379ba1fa7
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5a66d10f4bbaf10def7b50b9ed98b05b41bb2c2af5ab9a90f6cda61169ab123 cc65ca541265bd7061ed8f5ec9a54f3c384c41019c5ea1c68dcaabeff3495839
-R 38e4d50870b636b26dd03f2e2c8fedf3
+P a812f533693a3605f297199ae0320d663e872208675e86860c5c1803943943aa
+R 8e8f5a4f3995927880e2f9313ea17c79
 U drh
-Z 53e4c409bce656a6e52d30f174d1ac30
+Z f948c772d5a7abb99b2764402327f3c7

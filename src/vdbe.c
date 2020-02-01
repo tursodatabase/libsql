@@ -7574,7 +7574,7 @@ case OP_MaxPgcnt: {            /* out2 */
 #endif
 
 /* Opcode: Function P1 P2 P3 P4 *
-** Synopsis: r[P3]=func(r[P2@P5])
+** Synopsis: r[P3]=func(r[P2@NP])
 **
 ** Invoke a user function (P4 is a pointer to an sqlite3_context object that
 ** contains a pointer to the function to be run) with arguments taken
@@ -7593,7 +7593,7 @@ case OP_MaxPgcnt: {            /* out2 */
 ** See also: AggStep, AggFinal, PureFunc
 */
 /* Opcode: PureFunc P1 P2 P3 P4 *
-** Synopsis: r[P3]=func(r[P2@P5])
+** Synopsis: r[P3]=func(r[P2@NP])
 **
 ** Invoke a user function (P4 is a pointer to an sqlite3_context object that
 ** contains a pointer to the function to be run) with arguments taken

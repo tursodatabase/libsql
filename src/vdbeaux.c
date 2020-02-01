@@ -1445,8 +1445,11 @@ static int displayComment(
   const char *zOpName;
   const char *zSynopsis;
   int nOpName;
-  int ii, jj;
+  int ii;
   char zAlt[50];
+  StrAccum x;
+  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
+
   zOpName = sqlite3OpcodeName(pOp->opcode);
   nOpName = sqlite3Strlen30(zOpName);
   if( zOpName[nOpName+1] ){
@@ -1461,51 +1464,61 @@ static int displayComment(
       }
       zSynopsis = zAlt;
     }
-    for(ii=jj=0; jj<nTemp-1 && (c = zSynopsis[ii])!=0; ii++){
+    for(ii=0; (c = zSynopsis[ii])!=0; ii++){
       if( c=='P' ){
         c = zSynopsis[++ii];
         if( c=='4' ){
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", zP4);
+          sqlite3_str_appendall(&x, zP4);
         }else if( c=='X' ){
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", pOp->zComment);
+          sqlite3_str_appendall(&x, pOp->zComment);
           seenCom = 1;
         }else{
           int v1 = translateP(c, pOp);
           int v2;
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%d", v1);
           if( strncmp(zSynopsis+ii+1, "@P", 2)==0 ){
             ii += 3;
-            jj += sqlite3Strlen30(zTemp+jj);
             v2 = translateP(zSynopsis[ii], pOp);
             if( strncmp(zSynopsis+ii+1,"+1",2)==0 ){
               ii += 2;
               v2++;
             }
-            if( v2>1 ){
-              sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+            if( v2<2 ){
+              sqlite3_str_appendf(&x, "%d", v1);
+            }else{
+              sqlite3_str_appendf(&x, "%d..%d", v1, v1+v2-1);
             }
-          }else if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
-            ii += 4;
+          }else if( strncmp(zSynopsis+ii+1, "@NP", 3)==0 ){
+            sqlite3_context *pCtx = pOp->p4.pCtx;
+            assert( pOp->p4type==P4_FUNCCTX );
+            if( pCtx->argc==1 ){
+              sqlite3_str_appendf(&x, "%d", v1);
+            }else if( pCtx->argc>1 ){
+              sqlite3_str_appendf(&x, "%d..%d", v1, v1+pCtx->argc-1);
+            }else{
+              assert( x.nChar>2 );
+              x.nChar -= 2;
+              ii++;
+            }
+            ii += 3;
+          }else{
+            sqlite3_str_appendf(&x, "%d", v1);
+            if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
+              ii += 4;
+            }
           }
         }
-        jj += sqlite3Strlen30(zTemp+jj);
       }else{
-        zTemp[jj++] = c;
+        sqlite3_str_appendchar(&x, 1, c);
       }
     }
-    if( !seenCom && jj<nTemp-5 && pOp->zComment ){
-      sqlite3_snprintf(nTemp-jj, zTemp+jj, "; %s", pOp->zComment);
-      jj += sqlite3Strlen30(zTemp+jj);
+    if( !seenCom && pOp->zComment ){
+      sqlite3_str_appendf(&x, "; %s", pOp->zComment);
     }
-    if( jj<nTemp ) zTemp[jj] = 0;
   }else if( pOp->zComment ){
-    sqlite3_snprintf(nTemp, zTemp, "%s", pOp->zComment);
-    jj = sqlite3Strlen30(zTemp);
-  }else{
-    zTemp[0] = 0;
-    jj = 0;
+    sqlite3_str_appendall(&x, pOp->zComment);
   }
-  return jj;
+  sqlite3StrAccumFinish(&x);
+  return x.nChar;
 }
 #endif /* SQLITE_DEBUG */
 
