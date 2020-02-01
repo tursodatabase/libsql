@@ -1,5 +1,5 @@
-C Merge\sversion\s3.31.1
-D 2020-02-01T00:08:28.488
+C Fix\sa\sproblem\sin\ssqlite3CodecQueryParameters()\sthat\swas\sintroduced\sby\sthe\nquery\sparameter\sencoding\schanges\sfor\sthe\s3.31.1\srelease.
+D 2020-02-01T14:29:18.633
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -498,7 +498,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2fe4d7f67078a68650f16e4efe73207899e21702e6b9d2e8ad1894c76dcad352
 F src/legacy.c f69590f141eabd2dc787710264ccfa4374fac991ea1ca2120a2550c0ffe32afd
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
-F src/main.c 4adc083bab6d17086e11121341d981020d6ae14c078ad83882fe9a317e36c969
+F src/main.c eeb87fbe8d5e8b32f310ee94196537ba92af5a3ac6679c9fc1315c3d9aba4cfd
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1862,7 +1862,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0eae87ad11107f420b00958fa5a9b8037b775f0586e9fb1e2d5f6c04d7ae4afc 3bfa9cc97da10598521b342961df8f5f68c7388fa117345eeb516eaa837bb4d6
-R c2517ca13f1f9419d56182d6cc87f6b4
-U numist
-Z eba5af3ae194a88d3d29362000183ff6
+P d250d085fa4bd6509ab074d15f1c11fcc15d0cc150e5e429b191eb5a92e0ac1e
+Q +cc65ca541265bd7061ed8f5ec9a54f3c384c41019c5ea1c68dcaabeff3495839
+R b51b0d674235471fb79c7359edf6c278
+U drh
+Z 00bbc7b53b4a9a74b91ec6cadae32fc8

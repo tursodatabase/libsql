@@ -3087,6 +3087,21 @@ static void enableAutoLogging(
 }
 #endif
 
+/*
+** This routine does the core work of extracting URI parameters from a
+** database filename for the sqlite3_uri_parameter() interface.
+*/
+static const char *uriParameter(const char *zFilename, const char *zParam){
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] ){
+    int x = strcmp(zFilename, zParam);
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    if( x==0 ) return zFilename;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return 0;
+}
+
 #if defined(SQLITE_HAS_CODEC)
 /*
 ** Process URI filename query parameters relevant to the SQLite Encryption
@@ -3099,7 +3114,9 @@ int sqlite3CodecQueryParameters(
   const char *zUri       /* URI filename */
 ){
   const char *zKey;
-  if( (zKey = sqlite3_uri_parameter(zUri, "hexkey"))!=0 && zKey[0] ){
+  if( zUri==0 ){
+    return 0;
+  }else if( (zKey = uriParameter(zUri, "hexkey"))!=0 && zKey[0] ){
     u8 iByte;
     int i;
     char zDecoded[40];
@@ -3109,10 +3126,10 @@ int sqlite3CodecQueryParameters(
     }
     sqlite3_key_v2(db, zDb, zDecoded, i/2);
     return 1;
-  }else if( (zKey = sqlite3_uri_parameter(zUri, "key"))!=0 ){
+  }else if( (zKey = uriParameter(zUri, "key"))!=0 ){
     sqlite3_key_v2(db, zDb, zKey, sqlite3Strlen30(zKey));
     return 1;
-  }else if( (zKey = sqlite3_uri_parameter(zUri, "textkey"))!=0 ){
+  }else if( (zKey = uriParameter(zUri, "textkey"))!=0 ){
     sqlite3_key_v2(db, zDb, zKey, -1);
     return 1;
   }else{
@@ -4401,14 +4418,7 @@ static const char *databaseName(const char *zName){
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
   if( zFilename==0 || zParam==0 ) return 0;
   zFilename = databaseName(zFilename);
-  zFilename += sqlite3Strlen30(zFilename) + 1;
-  while( zFilename[0] ){
-    int x = strcmp(zFilename, zParam);
-    zFilename += sqlite3Strlen30(zFilename) + 1;
-    if( x==0 ) return zFilename;
-    zFilename += sqlite3Strlen30(zFilename) + 1;
-  }
-  return 0;
+  return uriParameter(zFilename, zParam);
 }
 
 /*
