@@ -4373,6 +4373,21 @@ int sqlite3_test_control(int op, ...){
 }
 
 /*
+** The Pager stores the Database filename, Journal filename, and WAL filename
+** consecutively in memory, in that order.  The database filename is prefixed
+** by four zero bytes.  Locate the start of the database filename by searching
+** backwards for the first byte following four consecutive zero bytes.
+**
+** This only works if the filename passed in was obtained from the Pager.
+*/
+static const char *databaseName(const char *zName){
+  while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
+    zName--;
+  }
+  return zName;
+}
+
+/*
 ** This is a utility routine, useful to VFS implementations, that checks
 ** to see if a database file was a URI that contained a specific query 
 ** parameter, and if so obtains the value of the query parameter.
@@ -4385,6 +4400,7 @@ int sqlite3_test_control(int op, ...){
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
   if( zFilename==0 || zParam==0 ) return 0;
+  zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] ){
     int x = strcmp(zFilename, zParam);
@@ -4400,6 +4416,7 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
 */
 const char *sqlite3_uri_key(const char *zFilename, int N){
   if( zFilename==0 || N<0 ) return 0;
+  zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] && (N--)>0 ){
     zFilename += sqlite3Strlen30(zFilename) + 1;
@@ -4434,25 +4451,6 @@ sqlite3_int64 sqlite3_uri_int64(
 }
 
 /*
-** The Pager stores the Journal filename, WAL filename, and Database filename
-** consecutively in memory, in that order, with prefixes \000\001\000,
-** \002\000, and \003\000, in that order.  Thus the three names look like query
-** parameters if you start at the first prefix.
-**
-** This routine backs up a filename to the start of the first prefix.
-**
-** This only works if the filenamed passed in was obtained from the Pager.
-*/
-static const char *startOfNameList(const char *zName){
-  while( zName[0]!='\001' || zName[1]!=0 ){
-    zName -= 3;
-    while( zName[0]!='\000' ){ zName--; }
-    zName++;
-  }
-  return zName-1;
-}
-
-/*
 ** Translate a filename that was handed to a VFS routine into the corresponding
 ** database, journal, or WAL file.
 **
@@ -4463,14 +4461,26 @@ static const char *startOfNameList(const char *zName){
 ** corruption.
 */
 const char *sqlite3_filename_database(const char *zFilename){
+  return databaseName(zFilename);
   return sqlite3_uri_parameter(zFilename - 3, "\003");
 }
 const char *sqlite3_filename_journal(const char *zFilename){
-  const char *z = sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
-  return ALWAYS(z) && z[0] ? z : 0;
+  zFilename = databaseName(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] ){
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return zFilename + 1;
 }
 const char *sqlite3_filename_wal(const char *zFilename){
-  return sqlite3_uri_parameter(startOfNameList(zFilename), "\002");
+#ifdef SQLITE_OMIT_WAL
+  return 0;
+#else
+  zFilename = sqlite3_filename_journal(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  return zFilename;
+#endif
 }
 
 /*
