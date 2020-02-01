@@ -1,5 +1,5 @@
-C Fix\sthe\scomment\sdisplay\sfor\sthe\sOP_Function\sopcode.\s\sAnd\sat\sthe\ssame\stime,\nimprove\sthe\scomment\sgenerating\slogic\sto\smake\suse\sof\sthe\snewer\nsqlite3_str_appendf()\sinterface.
-D 2020-02-01T17:38:24.757
+C On\san\sINSERT\sor\sUPDATE,\sperform\saffinity\sconversions\son\snew\sdata\sprior\sto\nrunning\sCHECK\sconstraints.\s\sTicket\s[86ba67afafded936].
+D 2020-02-01T21:03:27.411
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 2d130e0480cff4c20946c932fcf0cbf97e52b200c22c7f4f51b47b739994ffe5
+F src/insert.c cc023d71b6aac45d5f16d100c67fee562c09f5725c1176e1357dfc1254c18059
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
 F src/main.c 8f12ce22aee8b5dd8fbf74b5f5c4dfbbe7b2c05c61c18d6120e7b8c640ca8420
@@ -603,7 +603,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 736ff76753236ffbc8b5b939f5e0607f28aeaa7c780b3a56b419228f0a81c87b
 F src/util.c d035b09df9cecbc0e8f07c34b815acbf0d43c8adc8d2c540e3dc92eecb27855a
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 9a3bf7470aab17c64a5470f16bbd989bfdd54861dc1ee2476fd069db91631b2a
+F src/vdbe.c b34d430a44ebb9f4ccdaf590de641b8ef126480a64f1544b11146a5d8b672879
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h 30d3e8b991547cdf39025e416a0a737b0416d46747af70ae058f60e2e0466fe7
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -733,7 +733,7 @@ F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bc
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 2906ccab6a3ebd147ffa63304b635be903ce58264110d0a0eb4fd9939422bb53
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
-F test/check.test b21a76546c2115af2674280566a8eba577e72adfec330c3d9a8a466d41f8eb0d
+F test/check.test 9776af795bb5d0f197b7f8fe248052e3ca2ed35304d863efcdbf8b1316e11f65
 F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
 F test/chunksize.test 427d87791743486cbf0c3b8c625002f3255cb3a89c6eba655a98923b1387b760
 F test/close.test eccbad8ecd611d974cbf47278c3d4e5874faf02d811338d5d348af42d56d647c
@@ -1004,7 +1004,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test b7f1a706d1bb8de103a24bd0c30c9e3dc3eedf0df24aabc54b0a4f6e08742622
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 2bb0f31ab7baaed690b962a88544d7be6b34fa389364bc36a44e441ed3e3f1e6
-F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
+F test/func4.test a94858a8c1f10a408b0b3db439c990b59dbb2349411d503de011ac4e2b5f27a6
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/func6.test 90e42b64c4f9fb6f04f44cb8a1da586c8542502e926b19c76504fe74ff2a9b7c
 F test/fuzz-oss1.test e58330d01cbbd8215ee636b17a03fe220b37dbfa
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a812f533693a3605f297199ae0320d663e872208675e86860c5c1803943943aa
-R 8e8f5a4f3995927880e2f9313ea17c79
+P 4248980a356f659b10b12c778592996d53c91fae4ea50c8566678da176bdd152
+R b0d780e070ab044c7d43ff950ebfa0fd
 U drh
-Z f948c772d5a7abb99b2764402327f3c7
+Z 6be583ff2bdaaf9d6460d879050375d8

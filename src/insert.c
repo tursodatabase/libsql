@@ -1669,6 +1669,10 @@ void sqlite3GenerateConstraintChecks(
         ** updated so there is no point it verifying the check constraint */
         continue;
       }
+      if( bAffinityDone==0 ){
+        sqlite3TableAffinity(v, pTab, regNewData+1);
+        bAffinityDone = 1;
+      }
       allOk = sqlite3VdbeMakeLabel(pParse);
       sqlite3VdbeVerifyAbortable(v, onError);
       sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
