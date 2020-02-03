@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.32.0.
-D 2020-02-03T12:25:18.618
+C Cosmetic\schange\sto\sthe\sxfer-optimization\sto\sput\sthe\sOP_RowData\sopcode\scloser\nto\sthe\scorresponding\sOP_Insert\sopcode.\s\sThis\smakes\sit\sslightly\seasier\sto\sread\nand\sunderstand\sthe\scode.
+D 2020-02-03T19:56:51.827
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c cc023d71b6aac45d5f16d100c67fee562c09f5725c1176e1357dfc1254c18059
+F src/insert.c 2223cf26a924f9209fdc78c54d22561fc3aabf1ad0148f4f275d4059ca7abc08
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
 F src/main.c 8f12ce22aee8b5dd8fbf74b5f5c4dfbbe7b2c05c61c18d6120e7b8c640ca8420
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d4f86201dab9a22df9ef8175a7ebf3640e97cdb23a06fb454b4c69bfda3a9af
-R 928feb75b29771bd86189e52c9c07ff4
+P 8130bbb4217bd4a4db1f6bf97115a60bee8b29943bed0c7bdf54bba5edbed8fc
+R 15f176b48a8876aca49125fa65471b85
 U drh
-Z 75be6a1a1c1920e24712b4ecb551c566
+Z 9fbc5938f8c128c6355e34388855d5f0
