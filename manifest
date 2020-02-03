@@ -1,5 +1,5 @@
-C On\san\sINSERT\sor\sUPDATE,\sperform\saffinity\sconversions\son\snew\sdata\sprior\sto\nrunning\sCHECK\sconstraints.\s\sTicket\s[86ba67afafded936].
-D 2020-02-01T21:03:27.411
+C Increase\sthe\sversion\snumber\sto\s3.32.0.
+D 2020-02-03T12:25:18.618
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 9dfc7936f675785309b74d09202bb656732325e65df889e5aaa18cc8932e5b0c
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc fab23c6b10cb6f06a7e9c407fc2e35cb184a6d653f1b793bda87fcee2eafa4f6
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
-F VERSION c4deaf1a08bf7fa765deb3dbf70f38674f2311ad65fda971a726bfda1d9d5157
+F VERSION 980d78a2ce04a1fd0ebefbaabd665f7f9186563820629ee29c6e350e96f19b52
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -22,7 +22,7 @@ F autoconf/configure.ac 3cd933b959fe514eebd1ca1717dfddbf2c9b825b6bc2c5f744deaf5d
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 5884bade5d508561364fae18d99f73b7cc19551819856d8c04cbc90213c05b8e
+F autoconf/tea/configure.ac ea61e07340d97e4a79a081f0b8977198a6073edd060738dbb3ae5cb8d5e96f1c
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 59ff1469383901df09bda4ecd45deca09dbda63a91ce616669c1435b6b6b93e0 x
+F configure 4bbb5f13998f2faf929b9ae708aea9fbcb08a46cb6dd3150e36c3f09c0a05a75 x
 F configure.ac 798a24cee2879325ca5b688a618199eb32cc77ed8136edbaa43d9137b470d54e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4248980a356f659b10b12c778592996d53c91fae4ea50c8566678da176bdd152
-R b0d780e070ab044c7d43ff950ebfa0fd
+P 1d4f86201dab9a22df9ef8175a7ebf3640e97cdb23a06fb454b4c69bfda3a9af
+R 928feb75b29771bd86189e52c9c07ff4
 U drh
-Z 6be583ff2bdaaf9d6460d879050375d8
+Z 75be6a1a1c1920e24712b4ecb551c566
