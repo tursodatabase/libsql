@@ -2075,7 +2075,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
-          testcase( flags3!=pIn3->flags );
+          assert( flags3==pIn3->flags );
           flags3 = pIn3->flags;
         }
         if( (flags3 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
@@ -2098,7 +2098,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         sqlite3VdbeMemStringify(pIn1, encoding, 1);
         testcase( (flags1&MEM_Dyn) != (pIn1->flags&MEM_Dyn) );
         flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
-        if( pIn1==pIn3 ) flags3 = flags1 | MEM_Str;
+        if( NEVER(pIn1==pIn3) ) flags3 = flags1 | MEM_Str;
       }
       if( (flags3 & MEM_Str)==0 && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
         testcase( pIn3->flags & MEM_Int );
@@ -7625,7 +7625,7 @@ case OP_MaxPgcnt: {            /* out2 */
 #endif
 
 /* Opcode: Function P1 P2 P3 P4 *
-** Synopsis: r[P3]=func(r[P2@P5])
+** Synopsis: r[P3]=func(r[P2@NP])
 **
 ** Invoke a user function (P4 is a pointer to an sqlite3_context object that
 ** contains a pointer to the function to be run) with arguments taken
@@ -7644,7 +7644,7 @@ case OP_MaxPgcnt: {            /* out2 */
 ** See also: AggStep, AggFinal, PureFunc
 */
 /* Opcode: PureFunc P1 P2 P3 P4 *
-** Synopsis: r[P3]=func(r[P2@P5])
+** Synopsis: r[P3]=func(r[P2@NP])
 **
 ** Invoke a user function (P4 is a pointer to an sqlite3_context object that
 ** contains a pointer to the function to be run) with arguments taken

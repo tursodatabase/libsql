@@ -3638,6 +3638,16 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
 }
 
 /*
+** If the last opcode is a OP_Copy, then set the do-not-merge flag (p5)
+** so that a subsequent copy will not be merged into this one.
+*/
+static void setDoNotMergeFlagOnCopy(Vdbe *v){
+  if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
+    sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
+  }
+}
+
+/*
 ** Generate code to implement special SQL functions that are implemented
 ** in-line rather than by using the usual callbacks.
 */
@@ -3668,9 +3678,7 @@ static int exprCodeInlineFunction(
         VdbeCoverage(v);
         sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
       }
-      if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
-        sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
-      }
+      setDoNotMergeFlagOnCopy(v);
       sqlite3VdbeResolveLabel(v, endCoalesce);
       break;
     }
@@ -4441,6 +4449,7 @@ expr_code_doover:
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       }
       sqlite3ExprDelete(db, pDel);
+      setDoNotMergeFlagOnCopy(v);
       sqlite3VdbeResolveLabel(v, endLabel);
       break;
     }

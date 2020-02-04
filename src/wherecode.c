@@ -1432,7 +1432,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           pCompare->pRight = pRight = sqlite3Expr(db, TK_REGISTER, 0);
           if( pRight ){
             pRight->iTable = iReg+j+2;
-            sqlite3ExprIfFalse(pParse, pCompare, pLevel->addrCont, 0);
+            sqlite3ExprIfFalse(
+                pParse, pCompare, pLevel->addrCont, SQLITE_JUMPIFNULL
+            );
           }
           pCompare->pLeft = 0;
           sqlite3ExprDelete(db, pCompare);
