@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sbyte-code\sdecompiler\sthat\swas\sinserted\sby\sthe\nenhancements\sat\s[4248980a356f659b]
-D 2020-02-04T00:55:27.137
+C Extend\sthe\sOP_Copy-coalesce\soptimization\sfix\sof\scheck-in\s[b36126c1889e323c]\nso\sthat\sit\sis\salso\scorrectly\sdisabled\sby\sthe\sCASE\soperator.\nTicket\s[9d3666754ac37d5a].
+D 2020-02-04T01:41:44.382
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F src/date.c 6c408fdd2e9ddf6e8431aba76315a2d061bea2cec8fbb75e25d7c1ba08274712
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 0f55297469d4244ab7df395849e1af98eb5e95816af7c661e7d2d8402dea23da
 F src/delete.c a5c59b9c0251cf7682bc52af0d64f09b1aefc6781a63592c8f1136f7b73c66e4
-F src/expr.c 003c59158b33d7f3b198122cb0d1e13c06517cc3932e56b42283eb0e96696d66
+F src/expr.c 6617ca8d4cc808b82348ae0c2844000b665de86aacc60fa0524f1b29b1918921
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 92a248ec0fa4ed8ab60c98d9b188ce173aaf218f32e7737ba77deb2a684f9847
 F src/func.c 108577cebe8a50c86d849a93b99493a54e348dd0b846f00d13b52ca973d5baf4
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ea2dbfc9088561d62c3456803cb08d357e4e60f1d21f6ed37315564be4957d3
-R a14cfc41ee4ece6f232257046b936365
+P af63e95dcdd6e9741cdddc3698e857e3b8be40048d3036f939f3583e517c4eff
+R 38e3ff71fea898ad6724ce3564821643
 U drh
-Z 5e1934dfa02991667f95c2767a706795
+Z 0356372c288c0543cb385710a3405d49
