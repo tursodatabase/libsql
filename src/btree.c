@@ -2020,7 +2020,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     ** so just extend the cell content area rather than create another
     ** freelist entry */
     if( iStart<x ) return SQLITE_CORRUPT_PAGE(pPage);
-    if( NEVER(iPtr!=hdr+1) ) return SQLITE_CORRUPT_PAGE(pPage);
+    if( iPtr!=hdr+1 ) return SQLITE_CORRUPT_PAGE(pPage);
     put2byte(&data[hdr+1], iFreeBlk);
     put2byte(&data[hdr+5], iEnd);
   }else{
