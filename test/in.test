@@ -765,19 +765,25 @@ do_execsql_test in-18.1 {
 #
 # Also ticket https://sqlite.org/src/info/29f635e0af71234b
 #
-do_execsql_test in-19.1 {
+do_execsql_test in-19.10 {
   DROP TABLE IF EXISTS t0;
   CREATE TABLE t0(c0 REAL UNIQUE);
-  INSERT INTO t0(c0) VALUES(2.07093491255203046E18);
-  SELECT 1 FROM t0 WHERE c0 IN ('2070934912552030444');
+  INSERT INTO t0(c0) VALUES(2.0625E00);
+  SELECT 1 FROM t0 WHERE c0 IN ('2.0625');
 } {1}
-do_execsql_test in-19.2 {
-  SELECT c0 IN ('2070934912552030444') FROM t0;
+do_execsql_test in-19.20 {
+  SELECT c0 IN ('2.0625') FROM t0;
 } {1}
-do_execsql_test in-19.3 {
-  SELECT c0 IN ('2070934912552030444',2,3) FROM t0;
+do_execsql_test in-19.21 {
+  SELECT c0 = ('2.0625') FROM t0;
 } {1}
-do_execsql_test in-19.4 {
+do_execsql_test in-19.22 {
+  SELECT c0 = ('0.20625e+01') FROM t0;
+} {1}
+do_execsql_test in-19.30 {
+  SELECT c0 IN ('2.0625',2,3) FROM t0;
+} {1}
+do_execsql_test in-19.40 {
   DROP TABLE t0;
   CREATE TABLE t0(c0 TEXT, c1 REAL, c2, PRIMARY KEY(c2, c0, c1));
   CREATE INDEX i0 ON t0(c1 IN (c0));
