@@ -1489,8 +1489,7 @@ static int displayComment(
             }
           }else if( strncmp(zSynopsis+ii+1, "@NP", 3)==0 ){
             sqlite3_context *pCtx = pOp->p4.pCtx;
-            assert( pOp->p4type==P4_FUNCCTX );
-            if( pCtx->argc==1 ){
+            if( pOp->p4type!=P4_FUNCCTX || pCtx->argc==1 ){
               sqlite3_str_appendf(&x, "%d", v1);
             }else if( pCtx->argc>1 ){
               sqlite3_str_appendf(&x, "%d..%d", v1, v1+pCtx->argc-1);
