@@ -1169,7 +1169,7 @@ int sqlite3VdbeMemSetStr(
 ** If this routine fails for any reason (malloc returns NULL or unable
 ** to read from the disk) then the pMem is left in an inconsistent state.
 */
-static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
+int sqlite3VdbeMemFromBtree(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   u32 offset,       /* Offset from the start of data to return bytes from. */
   u32 amt,          /* Number of bytes to return. */
@@ -1192,13 +1192,11 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
   }
   return rc;
 }
-int sqlite3VdbeMemFromBtree(
+int sqlite3VdbeMemFromBtreeZeroOffset(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
-  u32 offset,       /* Offset from the start of data to return bytes from. */
   u32 amt,          /* Number of bytes to return. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
-  char *zData;        /* Data from the btree layer */
   u32 available = 0;  /* Number of bytes available on the local btree page */
   int rc = SQLITE_OK; /* Return code */
 
@@ -1208,15 +1206,14 @@ int sqlite3VdbeMemFromBtree(
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
-  zData = (char *)sqlite3BtreePayloadFetch(pCur, &available);
-  assert( zData!=0 );
+  pMem->z = (char *)sqlite3BtreePayloadFetch(pCur, &available);
+  assert( pMem->z!=0 );
 
-  if( offset+amt<=available ){
-    pMem->z = &zData[offset];
+  if( amt<=available ){
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
   }else{
-    rc = vdbeMemFromBtreeResize(pCur, offset, amt, pMem);
+    rc = sqlite3VdbeMemFromBtree(pCur, 0, amt, pMem);
   }
 
   return rc;

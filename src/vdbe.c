@@ -2713,7 +2713,7 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, 0, aOffset[0], &sMem);
+        rc = sqlite3VdbeMemFromBtreeZeroOffset(pC->uc.pCursor,aOffset[0],&sMem);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         zData = (u8*)sMem.z;
       }else{
@@ -5209,7 +5209,7 @@ case OP_RowData: {
     goto too_big;
   }
   testcase( n==0 );
-  rc = sqlite3VdbeMemFromBtree(pCrsr, 0, n, pOut);
+  rc = sqlite3VdbeMemFromBtreeZeroOffset(pCrsr, n, pOut);
   if( rc ) goto abort_due_to_error;
   if( !pOp->p3 ) Deephemeralize(pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
