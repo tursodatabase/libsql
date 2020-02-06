@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\ssqlite3CodecQueryParameters()\sthat\swas\sintroduced\sby\sthe\nquery\sparameter\sencoding\schanges\sfor\sthe\s3.31.1\srelease.
-D 2020-02-01T13:30:39.095
+C Fix\sa\s4\sbyte\sOOB\sread\sin\stest_multiplex.c.
+D 2020-02-06T11:02:30.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -570,7 +570,7 @@ F src/test_journal.c a0b9709b2f12b1ec819eea8a1176f283bca6d688a6d4a502bd6fd79786f
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c dec0aa821b230773aeb3dd11d652c1193f7cedb18a20b25659bc672288115242
 F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8c
-F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
+F src/test_multiplex.c e5fac104a0eebf935e6732cda6abce79ea0b4b10949518d5dac7b0293173a40f
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c 7f4337ba23ee6b1d2ec81c189653608cb069926a
 F src/test_onefile.c f31e52e891c5fef6709b9fcef54ce660648a34172423a9cbdf4cbce3ba0049f4
@@ -1857,10 +1857,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bfa9cc97da10598521b342961df8f5f68c7388fa117345eeb516eaa837bb4d6
-R 37dff97ea1827bf789931484e75996b9
-T *branch * branch-3.31
-T *sym-branch-3.31 *
-T -sym-trunk *
-U drh
-Z b11b538d7cc74f2de7b61f8de517a681
+P cc65ca541265bd7061ed8f5ec9a54f3c384c41019c5ea1c68dcaabeff3495839
+Q +912148913c11d98e48119a2c1fa7a0e52f318af36e7e2491d968ffde286c949f
+R 4f63168c5b28b45c4a84bbe9b50ae07a
+U dan
+Z 1241b79deb837ada6f862e300d1d8d5b
