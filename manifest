@@ -1,5 +1,5 @@
-C Remove\sdead\scode\sfrom\sthe\ssqlite3_filename_database()\sfunction.
-D 2020-02-06T13:09:56.663
+C Separate\sOP_IdxInsert\sand\sOP_SorterInsert\sinto\scompletely\sseparate\sopcodes,\nhelping\seach\sone\sto\srun\sa\slittle\sfaster.
+D 2020-02-06T13:57:08.833
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 736ff76753236ffbc8b5b939f5e0607f28aeaa7c780b3a56b419228f0a81c87b
 F src/util.c d035b09df9cecbc0e8f07c34b815acbf0d43c8adc8d2c540e3dc92eecb27855a
 F src/vacuum.c 82dcec9e7b1afa980288718ad11bc499651c722d7b9f32933c4d694d91cb6ebf
-F src/vdbe.c 0fdca82c67c68499d1dc3e310e39b7ee30cd262a535f848f3d0a3fee00b70662
+F src/vdbe.c 15cae95de3c1301747f7ee17a70046772741e7e630b6d5554c685b613798b8e8
 F src/vdbe.h defd693289c7bb8d325f109be9490c77138061211a116827da7244b6015a4934
 F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb7ccf61bed8d862986eda7096bec3df5947f1d1c88f27e7d9c8acf420f40c50
-R 47d7d1ecdb43ed69247a9e06037e9529
+P 1b6185550f2bcfa11513898984f1fc2029e0356e9acdc786c5c4a8006b1da2ba
+R 6c5034c183af00de058bb8ba30ad870b
 U drh
-Z a68a579de8fd2a79231a8dd086eae079
+Z 5ae5fcb755dbae0b5dc8eff20eb76a38
