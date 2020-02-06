@@ -2502,7 +2502,7 @@ static int fts3SegmentIsMaxLevel(Fts3Table *p, i64 iAbsLevel, int *pbMax){
   if( rc!=SQLITE_OK ) return rc;
   sqlite3_bind_int64(pStmt, 1, iAbsLevel+1);
   sqlite3_bind_int64(pStmt, 2, 
-      ((iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
+      (((u64)iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
   );
 
   *pbMax = 0;
