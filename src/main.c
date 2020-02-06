@@ -4348,7 +4348,6 @@ sqlite3_int64 sqlite3_uri_int64(
 */
 const char *sqlite3_filename_database(const char *zFilename){
   return databaseName(zFilename);
-  return sqlite3_uri_parameter(zFilename - 3, "\003");
 }
 const char *sqlite3_filename_journal(const char *zFilename){
   zFilename = databaseName(zFilename);

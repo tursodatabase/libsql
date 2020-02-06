@@ -1,5 +1,5 @@
-C Fix\ssome\sfts3\sproblems\sfound\sby\susan.
-D 2020-02-06T10:55:10.559
+C Remove\sdead\scode\sfrom\sthe\ssqlite3_filename_database()\sfunction.
+D 2020-02-06T13:09:56.663
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2223cf26a924f9209fdc78c54d22561fc3aabf1ad0148f4f275d4059ca7abc08
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
-F src/main.c d7f1fc6891ac97845381b343ce5fa767b10d0768aa307c6a8e0c5675d457c4b6
+F src/main.c 332de0873baf22addd6479df053aeeb6e143e40f8959686487318da432b0624f
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae6dd8d3e921670ee6450453b54245dd71bcfff3fd1bc7fdb7cf4cf9585c3375
-R 0487967de468b81b8b62d26c2e2b6661
-U dan
-Z 5a6dd2cfccba72f8d349f449c1f47679
+P fb7ccf61bed8d862986eda7096bec3df5947f1d1c88f27e7d9c8acf420f40c50
+R 47d7d1ecdb43ed69247a9e06037e9529
+U drh
+Z a68a579de8fd2a79231a8dd086eae079
