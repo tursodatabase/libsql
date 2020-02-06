@@ -1,5 +1,5 @@
-C Unroll\sthe\scomparison\sloop\sinside\skeywordCode()\sfor\sto\savoid\sunnecessary\ncomparisions\sand\sthus\shelp\sthat\sroutine\srun\sfaster.
-D 2020-02-06T15:38:43.416
+C There\sis\sno\sneed\sto\skeep\strack\sof\sthe\snumber\sof\schanged\srows\sor\sof\sthe\nlast-insert-rowid\swhile\srunning\sVACUUM.
+D 2020-02-06T20:46:08.792
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 2223cf26a924f9209fdc78c54d22561fc3aabf1ad0148f4f275d4059ca7abc08
+F src/insert.c 9b487eb4b756a2bab16fa5ba19d207375551f7d0b8da3f4dff769f3035dc6bab
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8cd803f1747c03a50b32fe87ebfb5851998d0cdafefe02737daa95e0616b42bb
 F src/main.c 332de0873baf22addd6479df053aeeb6e143e40f8959686487318da432b0624f
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 447d71f0867a11f789eba164ea77470b3ae4953927556304b0861cf690250776
-R ea5228ccf18ab13503d6bdce095d9bcb
+P cec5f920f5c2a963f88329a08a443fc04be2dd6f7f2d840be63c0ab1de898f0a
+R b51f3dfb362da39a5cd79beb6cd6234e
 U drh
-Z 1d0c980ba3c95578cb44a456472b3894
+Z 17a97c3ab44b587d0093a75b4dccf269
