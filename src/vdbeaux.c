@@ -1065,6 +1065,34 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
   sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
+/*
+** Change the P2 operand of the jump instruction at addr so that
+** the jump lands on the next opcode.  Or if the jump instruction was
+** the previous opcode (and is thus a no-op) then simply back up
+** the next instruction counter by one slot so that the jump is
+** overwritten by the next inserted opcode.
+**
+** This routine is an optimization of sqlite3VdbeJumpHere() that
+** strives to omit useless byte-code like this:
+**
+**        7   Once 0 8 0
+**        8   ...
+*/
+void sqlite3VdbeJumpHereOrPopInst(Vdbe *p, int addr){
+  if( addr==p->nOp-1 ){
+    assert( p->aOp[addr].opcode==OP_Once
+         || p->aOp[addr].opcode==OP_If
+         || p->aOp[addr].opcode==OP_FkIfZero );
+    assert( p->aOp[addr].p4type==0 );
+#ifdef SQLITE_VDBE_COVERAGE
+    sqlite3VdbeGetOp(v,-1)->iSrcLine = 0;  /* Erase VdbeCoverage() macros */
+#endif
+    p->nOp--;
+  }else{
+    sqlite3VdbeChangeP2(p, addr, p->nOp);
+  }
+}
+
 
 /*
 ** If the input FuncDef structure is ephemeral, then free it.  If

@@ -5493,7 +5493,7 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
 
   pAggInfo->directMode = 0;
   if( addrHitTest ){
-    sqlite3VdbeJumpHere(v, addrHitTest);
+    sqlite3VdbeJumpHereOrPopInst(v, addrHitTest);
   }
 }
 
