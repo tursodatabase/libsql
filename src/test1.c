@@ -655,20 +655,6 @@ static int SQLITE_TCLAPI test_key(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
-  sqlite3 *db;
-  const char *zKey;
-  int nKey;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME\"", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  zKey = argv[2];
-  nKey = strlen(zKey);
-  sqlite3_key(db, zKey, nKey);
-#endif
   return TCL_OK;
 }
 
@@ -683,20 +669,6 @@ static int SQLITE_TCLAPI test_rekey(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-#ifdef SQLITE_HAS_CODEC
-  sqlite3 *db;
-  const char *zKey;
-  int nKey;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME\"", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  zKey = argv[2];
-  nKey = strlen(zKey);
-  sqlite3_rekey(db, zKey, nKey);
-#endif
   return TCL_OK;
 }
 

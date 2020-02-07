@@ -235,17 +235,6 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   }
   nRes = sqlite3BtreeGetOptimalReserve(pMain);
 
-  /* A VACUUM cannot change the pagesize of an encrypted database. */
-#ifdef SQLITE_HAS_CODEC
-  if( db->nextPagesize ){
-    extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);
-    int nKey;
-    char *zKey;
-    sqlite3CodecGetKey(db, iDb, (void**)&zKey, &nKey);
-    if( nKey ) db->nextPagesize = 0;
-  }
-#endif
-
   sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));
   sqlite3BtreeSetPagerFlags(pTemp, PAGER_SYNCHRONOUS_OFF|PAGER_CACHESPILL);

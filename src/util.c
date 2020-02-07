@@ -1256,7 +1256,7 @@ u8 sqlite3HexToInt(int h){
   return (u8)(h & 0xf);
 }
 
-#if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC)
+#if !defined(SQLITE_OMIT_BLOB_LITERAL)
 /*
 ** Convert a BLOB literal of the form "x'hhhhhh'" into its binary
 ** value.  Return a pointer to its binary value.  Space to hold the
@@ -1277,7 +1277,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
   }
   return zBlob;
 }
-#endif /* !SQLITE_OMIT_BLOB_LITERAL || SQLITE_HAS_CODEC */
+#endif /* !SQLITE_OMIT_BLOB_LITERAL */
 
 /*
 ** Log an error that is an API call on a connection pointer that should

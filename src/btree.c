@@ -2859,9 +2859,6 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   BtShared *pBt = p->pBt;
   assert( nReserve>=-1 && nReserve<=255 );
   sqlite3BtreeEnter(p);
-#if SQLITE_HAS_CODEC
-  if( nReserve>pBt->optimalReserve ) pBt->optimalReserve = (u8)nReserve;
-#endif
   if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
     return SQLITE_READONLY;
@@ -2922,9 +2919,6 @@ int sqlite3BtreeGetOptimalReserve(Btree *p){
   int n;
   sqlite3BtreeEnter(p);
   n = sqlite3BtreeGetReserveNoMutex(p);
-#ifdef SQLITE_HAS_CODEC
-  if( n<p->pBt->optimalReserve ) n = p->pBt->optimalReserve;
-#endif
   sqlite3BtreeLeave(p);
   return n;
 }

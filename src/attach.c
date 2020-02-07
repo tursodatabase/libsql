@@ -187,42 +187,6 @@ static void attachFunc(
   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
-
-
-#ifdef SQLITE_HAS_CODEC
-  if( rc==SQLITE_OK ){
-    extern int sqlite3CodecAttach(sqlite3*, int, const void*, int);
-    extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);
-    int nKey;
-    char *zKey;
-    int t = sqlite3_value_type(argv[2]);
-    switch( t ){
-      case SQLITE_INTEGER:
-      case SQLITE_FLOAT:
-        zErrDyn = sqlite3DbStrDup(db, "Invalid key value");
-        rc = SQLITE_ERROR;
-        break;
-        
-      case SQLITE_TEXT:
-      case SQLITE_BLOB:
-        nKey = sqlite3_value_bytes(argv[2]);
-        zKey = (char *)sqlite3_value_blob(argv[2]);
-        rc = sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
-        break;
-
-      case SQLITE_NULL:
-        /* No key specified.  Use the key from URI filename, or if none,
-        ** use the key from the main database. */
-        if( sqlite3CodecQueryParameters(db, zName, zPath)==0 ){
-          sqlite3CodecGetKey(db, 0, (void**)&zKey, &nKey);
-          if( nKey || sqlite3BtreeGetOptimalReserve(db->aDb[0].pBt)>0 ){
-            rc = sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
-          }
-        }
-        break;
-    }
-  }
-#endif
   sqlite3_free( zPath );
 
   /* If the file was opened successfully, read the schema for the new database.

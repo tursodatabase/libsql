@@ -2215,59 +2215,11 @@ void sqlite3Pragma(
   }
 #endif
 
-#ifdef SQLITE_HAS_CODEC
-  /* Pragma        iArg
-  ** ----------   ------
-  **  key           0
-  **  rekey         1
-  **  hexkey        2
-  **  hexrekey      3
-  **  textkey       4
-  **  textrekey     5
-  */
-  case PragTyp_KEY: {
-    if( zRight ){
-      char zBuf[40];
-      const char *zKey = zRight;
-      int n;
-      if( pPragma->iArg==2 || pPragma->iArg==3 ){
-        u8 iByte;
-        int i;
-        for(i=0, iByte=0; i<sizeof(zBuf)*2 && sqlite3Isxdigit(zRight[i]); i++){
-          iByte = (iByte<<4) + sqlite3HexToInt(zRight[i]);
-          if( (i&1)!=0 ) zBuf[i/2] = iByte;
-        }
-        zKey = zBuf;
-        n = i/2;
-      }else{
-        n = pPragma->iArg<4 ? sqlite3Strlen30(zRight) : -1;
-      }
-      if( (pPragma->iArg & 1)==0 ){
-        rc = sqlite3_key_v2(db, zDb, zKey, n);
-      }else{
-        rc = sqlite3_rekey_v2(db, zDb, zKey, n);
-      }
-      if( rc==SQLITE_OK && n!=0 ){
-        sqlite3VdbeSetNumCols(v, 1);
-        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "ok", SQLITE_STATIC);
-        returnSingleText(v, "ok");
-      }
-    }
-    break;
-  }
-#endif
-#if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
+#if defined(SQLITE_ENABLE_CEROD)
   case PragTyp_ACTIVATE_EXTENSIONS: if( zRight ){
-#ifdef SQLITE_HAS_CODEC
-    if( sqlite3StrNICmp(zRight, "see-", 4)==0 ){
-      sqlite3_activate_see(&zRight[4]);
-    }
-#endif
-#ifdef SQLITE_ENABLE_CEROD
     if( sqlite3StrNICmp(zRight, "cerod-", 6)==0 ){
       sqlite3_activate_cerod(&zRight[6]);
     }
-#endif
   }
   break;
 #endif
