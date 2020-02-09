@@ -28,6 +28,12 @@ pub enum DbConfig {
     SQLITE_DBCONFIG_DQS_DML = 1013, // 3.29.0
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_DQS_DDL = 1014, // 3.29.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_DBCONFIG_ENABLE_VIEW = 1015, // 3.30.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_DBCONFIG_LEGACY_FILE_FORMAT = 1016, // 3.31.0
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_DBCONFIG_TRUSTED_SCHEMA = 1017, // 3.31.0
 }
 
 impl Connection {
