@@ -1,7 +1,6 @@
 //! CSV Virtual Table.
 //!
 //! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C extension.
-use csv;
 use std::fs::File;
 use std::os::raw::c_int;
 use std::path::Path;

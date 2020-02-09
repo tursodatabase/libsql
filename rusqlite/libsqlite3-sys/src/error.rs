@@ -125,6 +125,10 @@ const SQLITE_WARNING: c_int = 28;
 
 // Extended result codes.
 
+const SQLITE_ERROR_MISSING_COLLSEQ: c_int = (super::SQLITE_ERROR | (1 << 8));
+const SQLITE_ERROR_RETRY: c_int = (super::SQLITE_ERROR | (2 << 8));
+const SQLITE_ERROR_SNAPSHOT: c_int = (super::SQLITE_ERROR | (3 << 8));
+
 const SQLITE_IOERR_SHMOPEN: c_int = (super::SQLITE_IOERR | (18 << 8));
 const SQLITE_IOERR_SHMSIZE: c_int = (super::SQLITE_IOERR | (19 << 8));
 const SQLITE_IOERR_SHMLOCK: c_int = (super::SQLITE_IOERR | (20 << 8));
@@ -139,23 +143,31 @@ const SQLITE_IOERR_AUTH: c_int = (super::SQLITE_IOERR | (28 << 8));
 const SQLITE_IOERR_BEGIN_ATOMIC: c_int = (super::SQLITE_IOERR | (29 << 8));
 const SQLITE_IOERR_COMMIT_ATOMIC: c_int = (super::SQLITE_IOERR | (30 << 8));
 const SQLITE_IOERR_ROLLBACK_ATOMIC: c_int = (super::SQLITE_IOERR | (31 << 8));
+
 const SQLITE_LOCKED_SHAREDCACHE: c_int = (super::SQLITE_LOCKED | (1 << 8));
 const SQLITE_LOCKED_VTAB: c_int = (super::SQLITE_LOCKED | (2 << 8));
+
 const SQLITE_BUSY_RECOVERY: c_int = (super::SQLITE_BUSY | (1 << 8));
 const SQLITE_BUSY_SNAPSHOT: c_int = (super::SQLITE_BUSY | (2 << 8));
+
 const SQLITE_CANTOPEN_NOTEMPDIR: c_int = (super::SQLITE_CANTOPEN | (1 << 8));
 const SQLITE_CANTOPEN_ISDIR: c_int = (super::SQLITE_CANTOPEN | (2 << 8));
 const SQLITE_CANTOPEN_FULLPATH: c_int = (super::SQLITE_CANTOPEN | (3 << 8));
 const SQLITE_CANTOPEN_CONVPATH: c_int = (super::SQLITE_CANTOPEN | (4 << 8));
+const SQLITE_CANTOPEN_SYMLINK: c_int = (super::SQLITE_CANTOPEN | (6 << 8));
+
 const SQLITE_CORRUPT_VTAB: c_int = (super::SQLITE_CORRUPT | (1 << 8));
 const SQLITE_CORRUPT_SEQUENCE: c_int = (super::SQLITE_CORRUPT | (2 << 8));
+
 const SQLITE_READONLY_RECOVERY: c_int = (super::SQLITE_READONLY | (1 << 8));
 const SQLITE_READONLY_CANTLOCK: c_int = (super::SQLITE_READONLY | (2 << 8));
 const SQLITE_READONLY_ROLLBACK: c_int = (super::SQLITE_READONLY | (3 << 8));
 const SQLITE_READONLY_DBMOVED: c_int = (super::SQLITE_READONLY | (4 << 8));
 const SQLITE_READONLY_CANTINIT: c_int = (super::SQLITE_READONLY | (5 << 8));
 const SQLITE_READONLY_DIRECTORY: c_int = (super::SQLITE_READONLY | (6 << 8));
+
 const SQLITE_ABORT_ROLLBACK: c_int = (super::SQLITE_ABORT | (2 << 8));
+
 const SQLITE_CONSTRAINT_CHECK: c_int = (super::SQLITE_CONSTRAINT | (1 << 8));
 const SQLITE_CONSTRAINT_COMMITHOOK: c_int = (super::SQLITE_CONSTRAINT | (2 << 8));
 const SQLITE_CONSTRAINT_FOREIGNKEY: c_int = (super::SQLITE_CONSTRAINT | (3 << 8));
@@ -166,9 +178,13 @@ const SQLITE_CONSTRAINT_TRIGGER: c_int = (super::SQLITE_CONSTRAINT | (7 << 8));
 const SQLITE_CONSTRAINT_UNIQUE: c_int = (super::SQLITE_CONSTRAINT | (8 << 8));
 const SQLITE_CONSTRAINT_VTAB: c_int = (super::SQLITE_CONSTRAINT | (9 << 8));
 const SQLITE_CONSTRAINT_ROWID: c_int = (super::SQLITE_CONSTRAINT | (10 << 8));
+const SQLITE_CONSTRAINT_PINNED: c_int = (super::SQLITE_CONSTRAINT | (11 << 8));
+
 const SQLITE_NOTICE_RECOVER_WAL: c_int = (SQLITE_NOTICE | (1 << 8));
 const SQLITE_NOTICE_RECOVER_ROLLBACK: c_int = (SQLITE_NOTICE | (2 << 8));
+
 const SQLITE_WARNING_AUTOINDEX: c_int = (SQLITE_WARNING | (1 << 8));
+
 const SQLITE_AUTH_USER: c_int = (super::SQLITE_AUTH | (1 << 8));
 
 pub fn code_to_str(code: c_int) -> &'static str {
@@ -205,6 +221,10 @@ pub fn code_to_str(code: c_int) -> &'static str {
         super::SQLITE_ROW       => "sqlite3_step() has another row ready",
         super::SQLITE_DONE      => "sqlite3_step() has finished executing",
 
+        SQLITE_ERROR_MISSING_COLLSEQ   => "SQLITE_ERROR_MISSING_COLLSEQ",
+        SQLITE_ERROR_RETRY   => "SQLITE_ERROR_RETRY",
+        SQLITE_ERROR_SNAPSHOT   => "SQLITE_ERROR_SNAPSHOT",
+
         super::SQLITE_IOERR_READ              => "Error reading from disk",
         super::SQLITE_IOERR_SHORT_READ        => "Unable to obtain number of requested bytes (file truncated?)",
         super::SQLITE_IOERR_WRITE             => "Error writing to disk",
@@ -236,23 +256,31 @@ pub fn code_to_str(code: c_int) -> &'static str {
         SQLITE_IOERR_BEGIN_ATOMIC      => "SQLITE_IOERR_BEGIN_ATOMIC",
         SQLITE_IOERR_COMMIT_ATOMIC     => "SQLITE_IOERR_COMMIT_ATOMIC",
         SQLITE_IOERR_ROLLBACK_ATOMIC   => "SQLITE_IOERR_ROLLBACK_ATOMIC",
+
         SQLITE_LOCKED_SHAREDCACHE      => "Locking conflict due to another connection with a shared cache",
         SQLITE_LOCKED_VTAB             => "SQLITE_LOCKED_VTAB",
+
         SQLITE_BUSY_RECOVERY           => "Another process is recovering a WAL mode database file",
         SQLITE_BUSY_SNAPSHOT           => "Cannot promote read transaction to write transaction because of writes by another connection",
+
         SQLITE_CANTOPEN_NOTEMPDIR      => "SQLITE_CANTOPEN_NOTEMPDIR", // no longer used
         SQLITE_CANTOPEN_ISDIR          => "Attempted to open directory as file",
         SQLITE_CANTOPEN_FULLPATH       => "Unable to convert filename into full pathname",
         SQLITE_CANTOPEN_CONVPATH       => "cygwin_conv_path() system call failed",
+        SQLITE_CANTOPEN_SYMLINK       => "SQLITE_CANTOPEN_SYMLINK",
+
         SQLITE_CORRUPT_VTAB            => "Content in the virtual table is corrupt",
         SQLITE_CORRUPT_SEQUENCE        => "SQLITE_CORRUPT_SEQUENCE",
+
         SQLITE_READONLY_RECOVERY       => "WAL mode database file needs recovery (requires write access)",
         SQLITE_READONLY_CANTLOCK       => "Shared-memory file associated with WAL mode database is read-only",
         SQLITE_READONLY_ROLLBACK       => "Database has hot journal that must be rolled back (requires write access)",
         SQLITE_READONLY_DBMOVED        => "Database cannot be modified because database file has moved",
         SQLITE_READONLY_CANTINIT       => "SQLITE_READONLY_CANTINIT",
         SQLITE_READONLY_DIRECTORY      => "SQLITE_READONLY_DIRECTORY",
+
         SQLITE_ABORT_ROLLBACK          => "Transaction was rolled back",
+
         SQLITE_CONSTRAINT_CHECK        => "A CHECK constraint failed",
         SQLITE_CONSTRAINT_COMMITHOOK   => "Commit hook caused rollback",
         SQLITE_CONSTRAINT_FOREIGNKEY   => "Foreign key constraint failed",
@@ -263,9 +291,13 @@ pub fn code_to_str(code: c_int) -> &'static str {
         SQLITE_CONSTRAINT_UNIQUE       => "A UNIQUE constraint failed",
         SQLITE_CONSTRAINT_VTAB         => "An application-defined virtual table error occurred",
         SQLITE_CONSTRAINT_ROWID        => "A non-unique rowid occurred",
+        SQLITE_CONSTRAINT_PINNED        => "SQLITE_CONSTRAINT_PINNED",
+
         SQLITE_NOTICE_RECOVER_WAL      => "A WAL mode database file was recovered",
         SQLITE_NOTICE_RECOVER_ROLLBACK => "Hot journal was rolled back",
+
         SQLITE_WARNING_AUTOINDEX       => "Automatic indexing used - database might benefit from additional indexes",
+
         SQLITE_AUTH_USER               => "SQLITE_AUTH_USER", // not documented?
 
         _ => "Unknown error code",

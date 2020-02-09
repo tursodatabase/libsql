@@ -105,8 +105,6 @@ impl fmt::Display for Type {
 
 #[cfg(test)]
 mod test {
-    use time;
-
     use super::Value;
     use crate::{Connection, Error, NO_PARAMS};
     use std::f64::EPSILON;

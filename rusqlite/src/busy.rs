@@ -81,7 +81,6 @@ mod test {
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time::Duration;
-    use tempfile;
 
     use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior, NO_PARAMS};
 

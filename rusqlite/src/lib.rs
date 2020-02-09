@@ -778,6 +778,7 @@ bitflags::bitflags! {
         const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX;
         const SQLITE_OPEN_SHARED_CACHE  = 0x0002_0000;
         const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
+        const SQLITE_OPEN_NOFOLLOW = 0x0100_0000;
     }
 }
 
@@ -869,7 +870,6 @@ mod test {
     use fallible_iterator::FallibleIterator;
     use std::error::Error as StdError;
     use std::fmt;
-    use tempfile;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
