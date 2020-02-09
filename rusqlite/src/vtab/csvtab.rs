@@ -32,7 +32,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("csv", &CSV_MODULE, aux)
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref CSV_MODULE: Module<CSVTab> = read_only_module::<CSVTab>(1);
 }
 
@@ -235,7 +235,7 @@ impl VTab for CSVTab {
             schema = Some(sql);
         }
 
-        Ok((schema.unwrap().to_owned(), vtab))
+        Ok((schema.unwrap(), vtab))
     }
 
     // Only a forward full table scan is supported.
@@ -338,8 +338,7 @@ impl VTabCursor for CSVTabCursor {
 
 impl From<csv::Error> for Error {
     fn from(err: csv::Error) -> Error {
-        use std::error::Error as StdError;
-        Error::ModuleError(String::from(err.description()))
+        Error::ModuleError(err.to_string())
     }
 }
 

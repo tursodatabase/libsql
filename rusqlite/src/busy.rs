@@ -1,4 +1,5 @@
 ///! Busy handler (when the database is locked)
+use std::convert::TryInto;
 use std::mem;
 use std::os::raw::{c_int, c_void};
 use std::panic::catch_unwind;
@@ -21,12 +22,13 @@ impl Connection {
     /// (using `busy_handler`) prior to calling this routine, that other
     /// busy handler is cleared.
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
-        let ms = timeout
+        let ms: i32 = timeout
             .as_secs()
             .checked_mul(1000)
             .and_then(|t| t.checked_add(timeout.subsec_millis().into()))
+            .and_then(|t| t.try_into().ok())
             .expect("too big");
-        self.db.borrow_mut().busy_timeout(ms as i32)
+        self.db.borrow_mut().busy_timeout(ms)
     }
 
     /// Register a callback to handle `SQLITE_BUSY` errors.
@@ -75,18 +77,17 @@ impl InnerConnection {
 
 #[cfg(test)]
 mod test {
-    use self::tempdir::TempDir;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time::Duration;
-    use tempdir;
+    use tempfile;
 
     use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior, NO_PARAMS};
 
     #[test]
     fn test_default_busy() {
-        let temp_dir = TempDir::new("test_default_busy").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         let mut db1 = Connection::open(&path).unwrap();
@@ -107,7 +108,7 @@ mod test {
     #[test]
     #[ignore] // FIXME: unstable
     fn test_busy_timeout() {
-        let temp_dir = TempDir::new("test_busy_timeout").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         let db2 = Connection::open(&path).unwrap();
@@ -137,7 +138,7 @@ mod test {
     #[test]
     #[ignore] // FIXME: unstable
     fn test_busy_handler() {
-        lazy_static! {
+        lazy_static::lazy_static! {
             static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
         fn busy_handler(_: i32) -> bool {
@@ -146,7 +147,7 @@ mod test {
             true
         }
 
-        let temp_dir = TempDir::new("test_busy_handler").unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         let db2 = Connection::open(&path).unwrap();

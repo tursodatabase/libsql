@@ -12,6 +12,9 @@ use crate::error::error_from_sqlite_code;
 use crate::{Connection, Result};
 
 /// Set up the process-wide SQLite error logging callback.
+///
+/// # Safety
+///
 /// This function is marked unsafe for two reasons:
 ///
 /// * The function is not threadsafe. No other SQLite calls may be made while
@@ -122,6 +125,7 @@ impl Connection {
 
 #[cfg(test)]
 mod test {
+    use lazy_static::lazy_static;
     use std::sync::Mutex;
     use std::time::Duration;
 

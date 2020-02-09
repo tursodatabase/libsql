@@ -3,11 +3,8 @@
 //! #[test] in the library.
 
 #[cfg(feature = "trace")]
-#[macro_use]
-extern crate lazy_static;
-
-#[cfg(feature = "trace")]
 fn main() {
+    use lazy_static::lazy_static;
     use std::os::raw::c_int;
     use std::sync::Mutex;
 

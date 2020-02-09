@@ -5,7 +5,10 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
     if cfg!(feature = "sqlcipher") {
-        if cfg!(feature = "bundled") {
+        if cfg!(any(
+            feature = "bundled",
+            all(windows, feature = "bundled-windows")
+        )) {
             println!(
                 "cargo:warning={}",
                 "Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
@@ -13,21 +16,23 @@ fn main() {
         }
         build_linked::main(&out_dir, &out_path)
     } else {
-        // This can't be `cfg!` without always requiring our `mod build_bundled` (and thus `cc`)
-        #[cfg(feature = "bundled")]
+        // This can't be `cfg!` without always requiring our `mod build_bundled` (and
+        // thus `cc`)
+        #[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
         {
             build_bundled::main(&out_dir, &out_path)
         }
-        #[cfg(not(feature = "bundled"))]
+        #[cfg(not(any(feature = "bundled", all(windows, feature = "bundled-windows"))))]
         {
             build_linked::main(&out_dir, &out_path)
         }
     }
 }
 
-#[cfg(feature = "bundled")]
+#[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
 mod build_bundled {
     use cc;
+    use std::env;
     use std::path::Path;
 
     pub fn main(out_dir: &str, out_path: &Path) {
@@ -65,11 +70,29 @@ mod build_bundled {
             .flag("-DSQLITE_ENABLE_RTREE")
             .flag("-DSQLITE_ENABLE_STAT2")
             .flag("-DSQLITE_ENABLE_STAT4")
-            .flag("-DSQLITE_HAVE_ISNAN")
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
             .flag("-DHAVE_USLEEP=1");
+        // Older versions of visual studio don't support c99 (including isnan), which
+        // causes a build failure when the linker fails to find the `isnan`
+        // function. `sqlite` provides its own implmentation, using the fact
+        // that x != x when x is NaN.
+        //
+        // There may be other platforms that don't support `isnan`, they should be
+        // tested for here.
+        if cfg!(target_env = "msvc") {
+            use cc::windows_registry::{find_vs_version, VsVers};
+            let vs_has_nan = match find_vs_version() {
+                Ok(ver) => ver != VsVers::Vs12,
+                Err(_msg) => false,
+            };
+            if vs_has_nan {
+                cfg.flag("-DSQLITE_HAVE_ISNAN");
+            }
+        } else {
+            cfg.flag("-DSQLITE_HAVE_ISNAN");
+        }
         if cfg!(feature = "unlock_notify") {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
@@ -79,6 +102,17 @@ mod build_bundled {
         if cfg!(feature = "session") {
             cfg.flag("-DSQLITE_ENABLE_SESSION");
         }
+
+        if let Ok(limit) = env::var("SQLITE_MAX_VARIABLE_NUMBER") {
+            cfg.flag(&format!("-DSQLITE_MAX_VARIABLE_NUMBER={}", limit));
+        }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_VARIABLE_NUMBER");
+
+        if let Ok(limit) = env::var("SQLITE_MAX_EXPR_DEPTH") {
+            cfg.flag(&format!("-DSQLITE_MAX_EXPR_DEPTH={}", limit));
+        }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH");
+
         cfg.compile("libsqlite3.a");
 
         println!("cargo:lib_dir={}", out_dir);
@@ -104,10 +138,12 @@ impl From<HeaderLocation> for String {
         match header {
             HeaderLocation::FromEnvironment => {
                 let prefix = env_prefix();
-                let mut header = env::var(format!("{}_INCLUDE_DIR", prefix)).expect(&format!(
-                    "{}_INCLUDE_DIR must be set if {}_LIB_DIR is set",
-                    prefix, prefix
-                ));
+                let mut header = env::var(format!("{}_INCLUDE_DIR", prefix)).unwrap_or_else(|_| {
+                    panic!(
+                        "{}_INCLUDE_DIR must be set if {}_LIB_DIR is set",
+                        prefix, prefix
+                    )
+                });
                 header.push_str("/sqlite3.h");
                 header
             }
@@ -129,15 +165,18 @@ mod build_linked {
 
     pub fn main(_out_dir: &str, out_path: &Path) {
         let header = find_sqlite();
-        if cfg!(feature = "bundled") && !cfg!(feature = "buildtime_bindgen") {
-            // We can only get here if `bundled` and `sqlcipher` were both
-            // specified (and `builtime_bindgen` was not). In order to keep
-            // `rusqlite` relatively clean we hide the fact that `bundled` can
-            // be ignored in some cases, and just use the bundled bindings, even
-            // though the library we found might not match their version.
-            // Ideally we'd perform a version check here, but doing so is rather
-            // tricky, since we might not have access to executables (and
-            // moreover, we might be cross compiling).
+        if cfg!(any(
+            feature = "bundled_bindings",
+            feature = "bundled",
+            all(windows, feature = "bundled-windows")
+        )) && !cfg!(feature = "buildtime_bindgen")
+        {
+            // Generally means the `bundled_bindings` feature is enabled
+            // (there's also an edge case where we get here involving
+            // sqlcipher). In either case most users are better off with turning
+            // on buildtime_bindgen instead, but this is still supported as we
+            // have runtime version checks and there are good reasons to not
+            // want to run bindgen.
             std::fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
                 .expect("Could not copy bindings to output directory");
         } else {
@@ -160,18 +199,22 @@ mod build_linked {
         println!("cargo:rerun-if-env-changed={}_INCLUDE_DIR", env_prefix());
         println!("cargo:rerun-if-env-changed={}_LIB_DIR", env_prefix());
         println!("cargo:rerun-if-env-changed={}_STATIC", env_prefix());
-        if cfg!(target_os = "windows") {
-            println!("cargo:rerun-if-env-changed=PATH");
-        }
         if cfg!(all(feature = "vcpkg", target_env = "msvc")) {
             println!("cargo:rerun-if-env-changed=VCPKGRS_DYNAMIC");
         }
+
+        // dependents can access `DEP_SQLITE3_LINK_TARGET` (`sqlite3` being the
+        // `links=` value in our Cargo.toml) to get this value. This might be
+        // useful if you need to ensure whatever crypto library sqlcipher relies
+        // on is available, for example.
+        println!("cargo:link-target={}", link_lib);
+
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
             // Try to use pkg-config to determine link commands
             let pkgconfig_path = Path::new(&dir).join("pkgconfig");
             env::set_var("PKG_CONFIG_PATH", pkgconfig_path);
-            if let Err(_) = pkg_config::Config::new().probe(link_lib) {
+            if pkg_config::Config::new().probe(link_lib).is_err() {
                 // Otherwise just emit the bare minimum link commands.
                 println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
                 println!("cargo:rustc-link-search={}", dir);
@@ -260,8 +303,8 @@ mod bindings {
 mod bindings {
     use bindgen;
 
-    use self::bindgen::callbacks::{IntKind, ParseCallbacks};
     use super::HeaderLocation;
+    use bindgen::callbacks::{IntKind, ParseCallbacks};
 
     use std::fs::OpenOptions;
     use std::io::Write;
@@ -300,7 +343,7 @@ mod bindings {
 
         bindings
             .generate()
-            .expect(&format!("could not run bindgen on header {}", header))
+            .unwrap_or_else(|_| panic!("could not run bindgen on header {}", header))
             .write(Box::new(&mut output))
             .expect("could not write output of bindgen");
         let mut output = String::from_utf8(output).expect("bindgen output was not UTF-8?!");
@@ -319,10 +362,10 @@ mod bindings {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(out_path.clone())
-            .expect(&format!("Could not write to {:?}", out_path));
+            .open(out_path)
+            .unwrap_or_else(|_| panic!("Could not write to {:?}", out_path));
 
         file.write_all(output.as_bytes())
-            .expect(&format!("Could not write to {:?}", out_path));
+            .unwrap_or_else(|_| panic!("Could not write to {:?}", out_path));
     }
 }

@@ -1,3 +1,4 @@
+use crate::types::FromSqlError;
 use crate::types::Type;
 use crate::{errmsg_to_string, ffi};
 use std::error;
@@ -59,7 +60,7 @@ pub enum Error {
     /// Error when the value of a particular column is requested, but the type
     /// of the result in that column cannot be converted to the requested
     /// Rust type.
-    InvalidColumnType(usize, Type),
+    InvalidColumnType(usize, String, Type),
 
     /// Error when a query that was expected to insert one row did not insert
     /// any or insert many.
@@ -99,6 +100,9 @@ pub enum Error {
     /// of a different type than what had been stored using `Context::set_aux`.
     #[cfg(feature = "functions")]
     GetAuxWrongType,
+
+    /// Error when the SQL contains multiple statements.
+    MultipleStatement,
 }
 
 impl PartialEq for Error {
@@ -117,8 +121,8 @@ impl PartialEq for Error {
             (Error::QueryReturnedNoRows, Error::QueryReturnedNoRows) => true,
             (Error::InvalidColumnIndex(i1), Error::InvalidColumnIndex(i2)) => i1 == i2,
             (Error::InvalidColumnName(n1), Error::InvalidColumnName(n2)) => n1 == n2,
-            (Error::InvalidColumnType(i1, t1), Error::InvalidColumnType(i2, t2)) => {
-                i1 == i2 && t1 == t2
+            (Error::InvalidColumnType(i1, n1, t1), Error::InvalidColumnType(i2, n2, t2)) => {
+                i1 == i2 && t1 == t2 && n1 == n2
             }
             (Error::StatementChangedRows(n1), Error::StatementChangedRows(n2)) => n1 == n2,
             #[cfg(feature = "functions")]
@@ -138,7 +142,7 @@ impl PartialEq for Error {
             (Error::UnwindingPanic, Error::UnwindingPanic) => true,
             #[cfg(feature = "functions")]
             (Error::GetAuxWrongType, Error::GetAuxWrongType) => true,
-            (_, _) => false,
+            (..) => false,
         }
     }
 }
@@ -155,6 +159,32 @@ impl From<::std::ffi::NulError> for Error {
     }
 }
 
+const UNKNOWN_COLUMN: usize = std::usize::MAX;
+
+/// The conversion isn't precise, but it's convenient to have it
+/// to allow use of `get_raw(…).as_…()?` in callbacks that take `Error`.
+impl From<FromSqlError> for Error {
+    fn from(err: FromSqlError) -> Error {
+        // The error type requires index and type fields, but they aren't known in this
+        // context.
+        match err {
+            FromSqlError::OutOfRange(val) => Error::IntegralValueOutOfRange(UNKNOWN_COLUMN, val),
+            #[cfg(feature = "i128_blob")]
+            FromSqlError::InvalidI128Size(_) => {
+                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Blob, Box::new(err))
+            }
+            #[cfg(feature = "uuid")]
+            FromSqlError::InvalidUuidSize(_) => {
+                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Blob, Box::new(err))
+            }
+            FromSqlError::Other(source) => {
+                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Null, source)
+            }
+            _ => Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Null, Box::new(err)),
+        }
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
@@ -164,13 +194,23 @@ impl fmt::Display for Error {
                 f,
                 "SQLite was compiled or configured for single-threaded use only"
             ),
-            Error::FromSqlConversionFailure(i, ref t, ref err) => write!(
-                f,
-                "Conversion error from type {} at index: {}, {}",
-                t, i, err
-            ),
+            Error::FromSqlConversionFailure(i, ref t, ref err) => {
+                if i != UNKNOWN_COLUMN {
+                    write!(
+                        f,
+                        "Conversion error from type {} at index: {}, {}",
+                        t, i, err
+                    )
+                } else {
+                    err.fmt(f)
+                }
+            }
             Error::IntegralValueOutOfRange(col, val) => {
-                write!(f, "Integer {} out of range at index {}", val, col)
+                if col != UNKNOWN_COLUMN {
+                    write!(f, "Integer {} out of range at index {}", val, col)
+                } else {
+                    write!(f, "Integer {} out of range", val)
+                }
             }
             Error::Utf8Error(ref err) => err.fmt(f),
             Error::NulError(ref err) => err.fmt(f),
@@ -182,9 +222,11 @@ impl fmt::Display for Error {
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType(i, ref t) => {
-                write!(f, "Invalid column type {} at index: {}", t, i)
-            }
+            Error::InvalidColumnType(i, ref name, ref t) => write!(
+                f,
+                "Invalid column type {} at index: {}, name: {}",
+                t, i, name
+            ),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
 
             #[cfg(feature = "functions")]
@@ -205,11 +247,13 @@ impl fmt::Display for Error {
             Error::UnwindingPanic => write!(f, "unwinding panic"),
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
+            Error::MultipleStatement => write!(f, "Multiple statements provided"),
         }
     }
 }
 
 impl error::Error for Error {
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         match *self {
             Error::SqliteFailure(ref err, None) => err.description(),
@@ -218,7 +262,7 @@ impl error::Error for Error {
                 "SQLite was compiled or configured for single-threaded use only"
             }
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
-            Error::IntegralValueOutOfRange(_, _) => "integral value out of range of requested type",
+            Error::IntegralValueOutOfRange(..) => "integral value out of range of requested type",
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
@@ -229,13 +273,13 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
-            Error::InvalidColumnType(_, _) => "invalid column type",
+            Error::InvalidColumnType(..) => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
+            Error::InvalidFunctionParameterType(..) => "invalid function parameter type",
             #[cfg(feature = "vtab")]
-            Error::InvalidFilterParameterType(_, _) => "invalid filter parameter type",
+            Error::InvalidFilterParameterType(..) => "invalid filter parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
             Error::ToSqlConversionFailure(ref err) => err.description(),
@@ -246,6 +290,7 @@ impl error::Error for Error {
             Error::UnwindingPanic => "unwinding panic",
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => "get_aux called with wrong type",
+            Error::MultipleStatement => "multiple statements provided",
         }
     }
 
@@ -255,22 +300,23 @@ impl error::Error for Error {
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
-            Error::IntegralValueOutOfRange(_, _)
+            Error::IntegralValueOutOfRange(..)
             | Error::SqliteSingleThreadedMode
             | Error::InvalidParameterName(_)
             | Error::ExecuteReturnedResults
             | Error::QueryReturnedNoRows
             | Error::InvalidColumnIndex(_)
             | Error::InvalidColumnName(_)
-            | Error::InvalidColumnType(_, _)
+            | Error::InvalidColumnType(..)
             | Error::InvalidPath(_)
             | Error::StatementChangedRows(_)
-            | Error::InvalidQuery => None,
+            | Error::InvalidQuery
+            | Error::MultipleStatement => None,
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType(_, _) => None,
+            Error::InvalidFunctionParameterType(..) => None,
             #[cfg(feature = "vtab")]
-            Error::InvalidFilterParameterType(_, _) => None,
+            Error::InvalidFilterParameterType(..) => None,
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
@@ -309,7 +355,7 @@ macro_rules! check {
     ($funcall:expr) => {{
         let rc = $funcall;
         if rc != crate::ffi::SQLITE_OK {
-            Err(crate::error::error_from_sqlite_code(rc, None))?;
+            return Err(crate::error::error_from_sqlite_code(rc, None).into());
         }
     }};
 }

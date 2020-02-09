@@ -10,8 +10,7 @@ Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expo
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 
 ```rust
-use rusqlite::types::ToSql;
-use rusqlite::{Connection, Result, NO_PARAMS};
+use rusqlite::{params, Connection, Result};
 use time::Timespec;
 
 #[derive(Debug)]
@@ -32,7 +31,7 @@ fn main() -> Result<()> {
                   time_created    TEXT NOT NULL,
                   data            BLOB
                   )",
-        NO_PARAMS,
+        params![],
     )?;
     let me = Person {
         id: 0,
@@ -43,18 +42,18 @@ fn main() -> Result<()> {
     conn.execute(
         "INSERT INTO person (name, time_created, data)
                   VALUES (?1, ?2, ?3)",
-        &[&me.name as &ToSql, &me.time_created, &me.data],
+        params![me.name, me.time_created, me.data],
     )?;
 
-    let mut stmt = conn
-        .prepare("SELECT id, name, time_created, data FROM person")?;
-    let person_iter = stmt
-        .query_map(NO_PARAMS, |row| Ok(Person {
+    let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person")?;
+    let person_iter = stmt.query_map(params![], |row| {
+        Ok(Person {
             id: row.get(0)?,
             name: row.get(1)?,
             time_created: row.get(2)?,
             data: row.get(3)?,
-        }))?;
+        })
+    })?;
 
     for person in person_iter {
         println!("Found person {:?}", person.unwrap());
@@ -118,13 +117,13 @@ declarations for SQLite's C API. By default, `libsqlite3-sys` attempts to find a
 You can adjust this behavior in a number of ways:
 
 * If you use the `bundled` feature, `libsqlite3-sys` will use the
-  [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
+  [cc](https://crates.io/crates/cc) crate to compile SQLite from source and
   link against that. This source is embedded in the `libsqlite3-sys` crate and
-  is currently SQLite 3.27.2 (as of `rusqlite` 0.18.0 / `libsqlite3-sys`
-  0.14.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
+  is currently SQLite 3.30.1 (as of `rusqlite` 0.21.0 / `libsqlite3-sys`
+  0.17.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
   ```
   [dependencies.rusqlite]
-  version = "0.18.0"
+  version = "0.21.0"
   features = ["bundled"]
   ```
 * You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
@@ -165,6 +164,12 @@ If you use the `bundled` feature, you will get pregenerated bindings for the
 bundled version of SQLite. If you need other specific pregenerated binding
 versions, please file an issue. If you want to run `bindgen` at buildtime to
 produce your own bindings, use the `buildtime_bindgen` Cargo feature.
+
+If you enable the `modern_sqlite` feature, we'll use the bindings we would have
+included with the bundled build. You generally should have `buildtime_bindgen`
+enabled if you turn this on, as otherwise you'll need to keep the version of
+SQLite you link with in sync with what rusqlite would have bundled, (usually the
+most recent release of sqlite). Failing to do this will cause a runtime error.
 
 ## Author
 

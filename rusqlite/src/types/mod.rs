@@ -42,10 +42,6 @@
 //!         Ok(as_f64.into())
 //!     }
 //! }
-//!
-//! # // Prevent this doc test from being wrapped in a `fn main()` so that it
-//! # // will compile.
-//! # fn main() {}
 //! ```
 //!
 //! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T`
@@ -78,7 +74,7 @@ mod value_ref;
 /// ```rust,no_run
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
-/// fn main() {}
+///
 /// fn insert_null(conn: &Connection) -> Result<usize> {
 ///     conn.execute("INSERT INTO people (name) VALUES (?)", &[Null])
 /// }
@@ -229,7 +225,7 @@ mod test {
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
-                Error::InvalidColumnType(_, _) => true,
+                Error::InvalidColumnType(..) => true,
                 _ => false,
             }
         }

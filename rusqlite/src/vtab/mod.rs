@@ -67,7 +67,16 @@ pub struct Module<T: VTab> {
     phantom: PhantomData<T>,
 }
 
+unsafe impl<T: VTab> Send for Module<T> {}
 unsafe impl<T: VTab> Sync for Module<T> {}
+
+// Used as a trailing initializer for sqlite3_module -- this way we avoid having
+// the build fail if buildtime_bindgen is on, our bindings have
+// `sqlite3_module::xShadowName`, but vtab_v3 wasn't specified.
+fn zeroed_module() -> ffi::sqlite3_module {
+    // This is safe, as bindgen-generated structs are allowed to be zeroed.
+    unsafe { std::mem::MaybeUninit::zeroed().assume_init() }
+}
 
 /// Create a read-only virtual table implementation.
 ///
@@ -99,8 +108,7 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
-        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
-        xShadowName: None,
+        ..zeroed_module()
     };
     Module {
         base: ffi_module,
@@ -139,8 +147,7 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
         xSavepoint: None,
         xRelease: None,
         xRollbackTo: None,
-        #[cfg(any(feature = "bundled", feature = "vtab_v3"))]
-        xShadowName: None,
+        ..zeroed_module()
     };
     Module {
         base: ffi_module,
@@ -161,7 +168,11 @@ impl VTabConnection {
     ///
     /// You should not need to use this function. If you do need to, please
     /// [open an issue on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
-    /// your use case. This function is unsafe because it gives you raw access
+    /// your use case.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it gives you raw access
     /// to the SQLite connection, and what you do with it could impact the
     /// safety of this `Connection`.
     pub unsafe fn handle(&mut self) -> *mut ffi::sqlite3 {
@@ -233,16 +244,46 @@ pub trait CreateVTab: VTab {
     }
 }
 
-bitflags! {
-    #[doc = "Index constraint operator."]
-    #[repr(C)]
-    pub struct IndexConstraintOp: ::std::os::raw::c_uchar {
-        const SQLITE_INDEX_CONSTRAINT_EQ    = 2;
-        const SQLITE_INDEX_CONSTRAINT_GT    = 4;
-        const SQLITE_INDEX_CONSTRAINT_LE    = 8;
-        const SQLITE_INDEX_CONSTRAINT_LT    = 16;
-        const SQLITE_INDEX_CONSTRAINT_GE    = 32;
-        const SQLITE_INDEX_CONSTRAINT_MATCH = 64;
+///Index constraint operator.
+#[derive(Debug, PartialEq)]
+#[allow(non_snake_case, non_camel_case_types)]
+pub enum IndexConstraintOp {
+    SQLITE_INDEX_CONSTRAINT_EQ,
+    SQLITE_INDEX_CONSTRAINT_GT,
+    SQLITE_INDEX_CONSTRAINT_LE,
+    SQLITE_INDEX_CONSTRAINT_LT,
+    SQLITE_INDEX_CONSTRAINT_GE,
+    SQLITE_INDEX_CONSTRAINT_MATCH,
+    SQLITE_INDEX_CONSTRAINT_LIKE,         // 3.10.0
+    SQLITE_INDEX_CONSTRAINT_GLOB,         // 3.10.0
+    SQLITE_INDEX_CONSTRAINT_REGEXP,       // 3.10.0
+    SQLITE_INDEX_CONSTRAINT_NE,           // 3.21.0
+    SQLITE_INDEX_CONSTRAINT_ISNOT,        // 3.21.0
+    SQLITE_INDEX_CONSTRAINT_ISNOTNULL,    // 3.21.0
+    SQLITE_INDEX_CONSTRAINT_ISNULL,       // 3.21.0
+    SQLITE_INDEX_CONSTRAINT_IS,           // 3.21.0
+    SQLITE_INDEX_CONSTRAINT_FUNCTION(u8), // 3.25.0
+}
+
+impl From<u8> for IndexConstraintOp {
+    fn from(code: u8) -> IndexConstraintOp {
+        match code {
+            2 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_EQ,
+            4 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_GT,
+            8 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LE,
+            16 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LT,
+            32 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_GE,
+            64 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_MATCH,
+            65 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LIKE,
+            66 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_GLOB,
+            67 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_REGEXP,
+            68 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_NE,
+            69 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNOT,
+            70 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNOTNULL,
+            71 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNULL,
+            72 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_IS,
+            v => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_FUNCTION(v),
+        }
     }
 }
 
@@ -304,8 +345,8 @@ impl IndexInfo {
         }
     }
 
-    /// Estimated number of rows returned
-    #[cfg(feature = "bundled")] // SQLite >= 3.8.2
+    /// Estimated number of rows returned.
+    #[cfg(feature = "modern_sqlite")] // SQLite >= 3.8.2
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
         unsafe {
             (*self.0).estimatedRows = estimated_rows;
@@ -345,7 +386,7 @@ impl IndexConstraint<'_> {
 
     /// Constraint operator
     pub fn operator(&self) -> IndexConstraintOp {
-        IndexConstraintOp::from_bits_truncate(self.0.op)
+        IndexConstraintOp::from(self.0.op)
     }
 
     /// True if this constraint is usable
@@ -472,7 +513,9 @@ impl Values<'_> {
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::InvalidI128Size(_) => {
+                Error::InvalidColumnType(idx, idx.to_string(), value.data_type())
+            }
             #[cfg(feature = "uuid")]
             FromSqlError::InvalidUuidSize(_) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
@@ -643,9 +686,7 @@ unsafe extern "C" fn rust_create<T>(
 where
     T: CreateVTab,
 {
-    use std::error::Error as StdError;
     use std::ffi::CStr;
-    use std::slice;
 
     let mut conn = VTabConnection(db);
     let aux = aux as *mut T::Aux;
@@ -664,12 +705,12 @@ where
                     ffi::SQLITE_OK
                 } else {
                     let err = error_from_sqlite_code(rc, None);
-                    *err_msg = mprintf(err.description());
+                    *err_msg = mprintf(&err.to_string());
                     rc
                 }
             }
             Err(err) => {
-                *err_msg = mprintf(err.description());
+                *err_msg = mprintf(&err.to_string());
                 ffi::SQLITE_ERROR
             }
         },
@@ -680,7 +721,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            *err_msg = mprintf(err.description());
+            *err_msg = mprintf(&err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -697,9 +738,7 @@ unsafe extern "C" fn rust_connect<T>(
 where
     T: VTab,
 {
-    use std::error::Error as StdError;
     use std::ffi::CStr;
-    use std::slice;
 
     let mut conn = VTabConnection(db);
     let aux = aux as *mut T::Aux;
@@ -718,12 +757,12 @@ where
                     ffi::SQLITE_OK
                 } else {
                     let err = error_from_sqlite_code(rc, None);
-                    *err_msg = mprintf(err.description());
+                    *err_msg = mprintf(&err.to_string());
                     rc
                 }
             }
             Err(err) => {
-                *err_msg = mprintf(err.description());
+                *err_msg = mprintf(&err.to_string());
                 ffi::SQLITE_ERROR
             }
         },
@@ -734,7 +773,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            *err_msg = mprintf(err.description());
+            *err_msg = mprintf(&err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -747,7 +786,6 @@ unsafe extern "C" fn rust_best_index<T>(
 where
     T: VTab,
 {
-    use std::error::Error as StdError;
     let vt = vtab as *mut T;
     let mut idx_info = IndexInfo(info);
     match (*vt).best_index(&mut idx_info) {
@@ -759,7 +797,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            set_err_msg(vtab, err.description());
+            set_err_msg(vtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -781,7 +819,6 @@ unsafe extern "C" fn rust_destroy<T>(vtab: *mut ffi::sqlite3_vtab) -> c_int
 where
     T: CreateVTab,
 {
-    use std::error::Error as StdError;
     if vtab.is_null() {
         return ffi::SQLITE_OK;
     }
@@ -798,7 +835,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            set_err_msg(vtab, err.description());
+            set_err_msg(vtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -811,7 +848,6 @@ unsafe extern "C" fn rust_open<T>(
 where
     T: VTab,
 {
-    use std::error::Error as StdError;
     let vt = vtab as *mut T;
     match (*vt).open() {
         Ok(cursor) => {
@@ -826,7 +862,7 @@ where
             err.extended_code
         }
         Err(err) => {
-            set_err_msg(vtab, err.description());
+            set_err_msg(vtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -852,7 +888,6 @@ where
     C: VTabCursor,
 {
     use std::ffi::CStr;
-    use std::slice;
     use std::str;
     let idx_name = if idx_str.is_null() {
         None
@@ -915,7 +950,6 @@ where
 /// Virtual table cursors can set an error message by assigning a string to
 /// `zErrMsg`.
 unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<T>) -> c_int {
-    use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
         Err(Error::SqliteFailure(err, s)) => {
@@ -925,7 +959,7 @@ unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor, result: Result<
             err.extended_code
         }
         Err(err) => {
-            set_err_msg((*cursor).pVtab, err.description());
+            set_err_msg((*cursor).pVtab, &err.to_string());
             ffi::SQLITE_ERROR
         }
     }
@@ -943,7 +977,6 @@ unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
 /// To raise an error, the `column` method should use this method to set the
 /// error message and return the error code.
 unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> c_int {
-    use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
         Err(Error::SqliteFailure(err, s)) => {
@@ -965,7 +998,7 @@ unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> 
         }
         Err(err) => {
             ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_ERROR);
-            if let Ok(cstr) = str_to_cstring(err.description()) {
+            if let Ok(cstr) = str_to_cstring(&err.to_string()) {
                 ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
             }
             ffi::SQLITE_ERROR
@@ -985,7 +1018,7 @@ fn mprintf(err_msg: &str) -> *mut c_char {
 pub mod array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
-#[cfg(feature = "bundled")]
+#[cfg(feature = "series")]
 pub mod series; // SQLite >= 3.9.0
 
 #[cfg(test)]

@@ -36,7 +36,7 @@ impl PartialEq for FromSqlError {
             (FromSqlError::InvalidI128Size(s1), FromSqlError::InvalidI128Size(s2)) => s1 == s2,
             #[cfg(feature = "uuid")]
             (FromSqlError::InvalidUuidSize(s1), FromSqlError::InvalidUuidSize(s2)) => s1 == s2,
-            (_, _) => false,
+            (..) => false,
         }
     }
 }
@@ -60,6 +60,7 @@ impl fmt::Display for FromSqlError {
 }
 
 impl Error for FromSqlError {
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         match *self {
             FromSqlError::InvalidType => "invalid type",
@@ -163,6 +164,24 @@ impl FromSql for bool {
 impl FromSql for String {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().map(ToString::to_string)
+    }
+}
+
+impl FromSql for Box<str> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        value.as_str().map(Into::into)
+    }
+}
+
+impl FromSql for std::rc::Rc<str> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        value.as_str().map(Into::into)
+    }
+}
+
+impl FromSql for std::sync::Arc<str> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        value.as_str().map(Into::into)
     }
 }
 

@@ -135,9 +135,12 @@ impl StatementCache {
 
     // Return a statement to the cache.
     fn cache_stmt(&self, stmt: RawStatement) {
+        if stmt.is_null() {
+            return;
+        }
         let mut cache = self.0.borrow_mut();
         stmt.clear_bindings();
-        let sql = String::from_utf8_lossy(stmt.sql().to_bytes())
+        let sql = String::from_utf8_lossy(stmt.sql().unwrap().to_bytes())
             .trim()
             .to_string();
         cache.insert(sql, stmt);
@@ -338,5 +341,11 @@ mod test {
             );
         }
         assert_eq!(1, cache.len());
+    }
+
+    #[test]
+    fn test_empty_stmt() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.prepare_cached("").unwrap();
     }
 }

@@ -2,9 +2,9 @@ environment:
   matrix:
   - TARGET: x86_64-pc-windows-gnu
     MSYS2_BITS: 64
-  - TARGET: x86_64-pc-windows-msvc
-    VCPKG_DEFAULT_TRIPLET: x64-windows
-    VCPKGRS_DYNAMIC: 1
+#  - TARGET: x86_64-pc-windows-msvc
+#    VCPKG_DEFAULT_TRIPLET: x64-windows
+#    VCPKGRS_DYNAMIC: 1
 #  - TARGET: x86_64-pc-windows-msvc
 #    VCPKG_DEFAULT_TRIPLET: x64-windows-static
 #    RUSTFLAGS: -Ctarget-feature=+crt-static
@@ -33,7 +33,7 @@ build: false
 test_script:
   - cargo test --lib --verbose
   - cargo test --lib --verbose --features bundled
-  - cargo test --lib --features "backup blob chrono functions hooks limits load_extension serde_json trace"
+  - cargo test --lib --features "backup blob chrono collation functions hooks limits load_extension serde_json trace"
   - cargo test --lib --features "backup blob chrono functions hooks limits load_extension serde_json trace buildtime_bindgen"
   - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab bundled"
   - cargo test --lib --features "backup blob chrono csvtab functions hooks limits load_extension serde_json trace vtab bundled buildtime_bindgen"

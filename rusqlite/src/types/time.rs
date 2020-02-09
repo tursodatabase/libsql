@@ -36,8 +36,8 @@ impl FromSql for time::Timespec {
 
 #[cfg(test)]
 mod test {
-    use super::time;
     use crate::{Connection, Result, NO_PARAMS};
+    use time;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();

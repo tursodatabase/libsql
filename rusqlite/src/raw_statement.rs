@@ -7,11 +7,15 @@ use std::ptr;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
-pub struct RawStatement(*mut ffi::sqlite3_stmt);
+pub struct RawStatement(*mut ffi::sqlite3_stmt, bool);
 
 impl RawStatement {
-    pub fn new(stmt: *mut ffi::sqlite3_stmt) -> RawStatement {
-        RawStatement(stmt)
+    pub fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
+        RawStatement(stmt, tail)
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
     }
 
     pub unsafe fn ptr(&self) -> *mut ffi::sqlite3_stmt {
@@ -37,8 +41,21 @@ impl RawStatement {
         }
     }
 
-    pub fn column_name(&self, idx: usize) -> &CStr {
-        unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx as c_int)) }
+    pub fn column_name(&self, idx: usize) -> Option<&CStr> {
+        let idx = idx as c_int;
+        if idx < 0 || idx >= self.column_count() as c_int {
+            return None;
+        }
+        unsafe {
+            let ptr = ffi::sqlite3_column_name(self.0, idx);
+            // If ptr is null here, it's an OOM, so there's probably nothing
+            // meaningful we can do. Just assert instead of returning None.
+            assert!(
+                !ptr.is_null(),
+                "Null pointer from sqlite3_column_name: Out of memory?"
+            );
+            Some(CStr::from_ptr(ptr))
+        }
     }
 
     pub fn step(&self) -> c_int {
@@ -82,8 +99,12 @@ impl RawStatement {
         unsafe { ffi::sqlite3_clear_bindings(self.0) }
     }
 
-    pub fn sql(&self) -> &CStr {
-        unsafe { CStr::from_ptr(ffi::sqlite3_sql(self.0)) }
+    pub fn sql(&self) -> Option<&CStr> {
+        if self.0.is_null() {
+            None
+        } else {
+            Some(unsafe { CStr::from_ptr(ffi::sqlite3_sql(self.0)) })
+        }
     }
 
     pub fn finalize(mut self) -> c_int {
@@ -96,26 +117,29 @@ impl RawStatement {
         r
     }
 
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")] // 3.7.4
     pub fn readonly(&self) -> bool {
         unsafe { ffi::sqlite3_stmt_readonly(self.0) != 0 }
     }
 
-    #[cfg(feature = "bundled")]
-    pub fn expanded_sql(&self) -> Option<&CStr> {
-        unsafe {
-            let ptr = ffi::sqlite3_expanded_sql(self.0);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(CStr::from_ptr(ptr))
-            }
+    /// `CStr` must be freed
+    #[cfg(feature = "modern_sqlite")] // 3.14.0
+    pub unsafe fn expanded_sql(&self) -> Option<&CStr> {
+        let ptr = ffi::sqlite3_expanded_sql(self.0);
+        if ptr.is_null() {
+            None
+        } else {
+            Some(CStr::from_ptr(ptr))
         }
     }
 
     pub fn get_status(&self, status: StatementStatus, reset: bool) -> i32 {
         assert!(!self.0.is_null());
         unsafe { ffi::sqlite3_stmt_status(self.0, status as i32, reset as i32) }
+    }
+
+    pub fn has_tail(&self) -> bool {
+        self.1
     }
 }
 

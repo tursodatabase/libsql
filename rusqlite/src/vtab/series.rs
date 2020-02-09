@@ -18,7 +18,7 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("generate_series", &SERIES_MODULE, aux)
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref SERIES_MODULE: Module<SeriesTab> = eponymous_only_module::<SeriesTab>(1);
 }
 
@@ -28,7 +28,7 @@ const SERIES_COLUMN_START: c_int = 1;
 const SERIES_COLUMN_STOP: c_int = 2;
 const SERIES_COLUMN_STEP: c_int = 3;
 
-bitflags! {
+bitflags::bitflags! {
     #[repr(C)]
     struct QueryPlanFlags: ::std::os::raw::c_int {
         // start = $value  -- constraint exists

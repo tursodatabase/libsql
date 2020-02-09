@@ -86,6 +86,7 @@ impl Sql {
                 self.push_real(r);
             }
             ValueRef::Text(s) => {
+                let s = std::str::from_utf8(s)?;
                 self.push_string_literal(s);
             }
             _ => {
@@ -325,7 +326,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     fn pragma_func_query_value() {
         use crate::NO_PARAMS;
 
@@ -378,7 +379,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "bundled")]
+    #[cfg(feature = "modern_sqlite")]
     fn pragma_func() {
         let db = Connection::open_in_memory().unwrap();
         let mut table_info = db.prepare("SELECT * FROM pragma_table_info(?)").unwrap();

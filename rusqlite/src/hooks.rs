@@ -236,6 +236,7 @@ fn free_boxed_hook<F>(p: *mut c_void) {
 mod test {
     use super::Action;
     use crate::Connection;
+    use lazy_static::lazy_static;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
