@@ -870,7 +870,6 @@ mod test {
     use fallible_iterator::FallibleIterator;
     use std::error::Error as StdError;
     use std::fmt;
-    use tempfile;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require

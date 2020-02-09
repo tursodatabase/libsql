@@ -28,7 +28,6 @@ impl FromSql for Value {
 mod test {
     use crate::types::ToSql;
     use crate::{Connection, NO_PARAMS};
-    use serde_json;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
