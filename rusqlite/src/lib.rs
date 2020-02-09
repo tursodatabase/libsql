@@ -411,12 +411,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite open call fails.
     pub fn open_in_memory_with_flags(flags: OpenFlags) -> Result<Connection> {
-        let c_memory = str_to_cstring(":memory:")?;
-        InnerConnection::open_with_flags(&c_memory, flags, None).map(|db| Connection {
-            db: RefCell::new(db),
-            cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            path: None,
-        })
+        Connection::open_with_flags(":memory:", flags)
     }
 
     /// Open a new connection to an in-memory SQLite database using the specific
@@ -430,13 +425,7 @@ impl Connection {
     /// Will return `Err` if vfs` cannot be converted to a C-compatible
     /// string or if the underlying SQLite open call fails.
     pub fn open_in_memory_with_flags_and_vfs(flags: OpenFlags, vfs: &str) -> Result<Connection> {
-        let c_memory = str_to_cstring(":memory:")?;
-        let c_vfs = str_to_cstring(vfs)?;
-        InnerConnection::open_with_flags(&c_memory, flags, Some(&c_vfs)).map(|db| Connection {
-            db: RefCell::new(db),
-            cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            path: None,
-        })
+        Connection::open_with_flags_and_vfs(":memory:", flags, vfs)
     }
 
     /// Convenience method to run multiple SQL statements (that cannot take any
