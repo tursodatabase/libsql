@@ -76,7 +76,7 @@ Note that, in SQLite, if values are not explicitly supplied for an INTEGER
 PRIMARY KEY, as for example in:
 
 >
-     INSERT INTO t1(b) VALUES(&lt;blob-value>);
+     INSERT INTO t1(b) VALUES(<blob-value>);
 
 then monotonically increasing values are assigned automatically. This is
 terrible for concurrency, as it all but ensures that all new rows are 
@@ -104,4 +104,3 @@ can also cause problems (as concurrent transactions may assign similar
 timestamps that will be stored on the same db page to new records). In these
 cases the database schema may need to be rethought to increase the concurrency
 provided by page-level-locking.
-

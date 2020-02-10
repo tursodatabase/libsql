@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges,\sincluding\sthe\sSQLITE_ENABLE_CORRUPT_PGNO\spatch,\sinto\sthis\sbranch.
-D 2020-02-04T20:08:19.364
+C Fix\sa\stypo\sin\sthe\sin-tree\sbegin-concurrent\sdocumentation
+D 2020-02-10T19:37:20.516
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -38,7 +38,7 @@ F configure 4bbb5f13998f2faf929b9ae708aea9fbcb08a46cb6dd3150e36c3f09c0a05a75 x
 F configure.ac 798a24cee2879325ca5b688a618199eb32cc77ed8136edbaa43d9137b470d54e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/begin_concurrent.md 4bee2c3990d1eb800f1ce3726a911292a8e4b889300b2ffd4b08d357370db299
+F doc/begin_concurrent.md e694a2a1c623833e7de8b688e81ec30fd4439a78d6b74be61bce0b1e8f590470
 F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
@@ -1872,7 +1872,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bbbc2881b9e47988ca2b5fcab2b399823c64dac00071cfc7083636e9ee0d2f50 57c36a293e16bb4d9652874124ee1447bef278e08664bc8dd0070a0ee2ef1173
-R 3b6633b40650f463664ef120847ba75a
-U dan
-Z 9ea8ac62cab8b0445d57995f52fb8d66
+P f253618ac6b7d8dbc6f14c5c243b45c1e2542e51cc2c176c03ebb0979a36e5fd
+R c461fd2cb6ed2027deb9de75645cf1bd
+U drh
+Z f93767e4abaa57b2f64cc5d9c33d2bd4
