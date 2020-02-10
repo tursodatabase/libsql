@@ -1,5 +1,5 @@
-C During\sbyte-code\sgeneration,\sstrive\sto\savoid\sjumps\sthat\smerely\sjump\sto\sthe\nfollowing\sinstruction.
-D 2020-02-07T19:44:13.184
+C Fix\sthe\sbuild\sfor\swhen\sSQLITE_VDBE_COVERAGE\sis\sused.
+D 2020-02-10T13:29:10.675
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/vdbe.c 15cae95de3c1301747f7ee17a70046772741e7e630b6d5554c685b613798b8e8
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
 F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c c44f530a04e7a2461ac0c9e0e0d3dc91a4928ba4e027547ee0f5f7d8f3f65c3e
+F src/vdbeaux.c 4200161a1b249c33ac587c562e7dca155733694c6d4ad31914184294e4fa9e18
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c ff2a1fd86ea943efb7174bd74bc661815c449be6165e136e8849e1dc59e24353
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a877221ce90e7523059353a68650c5fdd28ed032807afc2f10afbfbf864bdfe
-R 0497976083176014d12d8c84100cdcac
+P bcf876e67e75f6709f2b25683a3952bbbb87c672bb9d7af456feebc0ab9f6c31
+R 0b016e07e5f1424f9916291ff59e054f
 U drh
-Z 2fd9d06239e0afdc15eacc0b2447af10
+Z 6f2686c0d85fb7d7b2f49c11ba326902

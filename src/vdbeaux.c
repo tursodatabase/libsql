@@ -1085,7 +1085,7 @@ void sqlite3VdbeJumpHereOrPopInst(Vdbe *p, int addr){
          || p->aOp[addr].opcode==OP_FkIfZero );
     assert( p->aOp[addr].p4type==0 );
 #ifdef SQLITE_VDBE_COVERAGE
-    sqlite3VdbeGetOp(v,-1)->iSrcLine = 0;  /* Erase VdbeCoverage() macros */
+    sqlite3VdbeGetOp(p,-1)->iSrcLine = 0;  /* Erase VdbeCoverage() macros */
 #endif
     p->nOp--;
   }else{
