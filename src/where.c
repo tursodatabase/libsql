@@ -3752,8 +3752,11 @@ static i8 wherePathSatisfiesOrderBy(
         if( j>=pLoop->nLTerm ) continue;
       }
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
-        if( sqlite3ExprCollSeqMatch(pWInfo->pParse, 
-                  pOrderBy->a[i].pExpr, pTerm->pExpr)==0 ){
+        Parse *pParse = pWInfo->pParse;
+        CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[i].pExpr);
+        CollSeq *pColl2 = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
+        assert( pColl1 && (pParse->nErr || pColl2) );
+        if( pColl2==0 || sqlite3StrICmp(pColl1->zName, pColl2->zName) ){
           continue;
         }
         testcase( pTerm->pExpr->op==TK_IS );
