@@ -2512,10 +2512,10 @@ struct AggInfo {
 ** it uses less memory in the Expr object, which is a big memory user
 ** in systems with lots of prepared statements.  And few applications
 ** need more than about 10 or 20 variables.  But some extreme users want
-** to have prepared statements with over 32767 variables, and for them
+** to have prepared statements with over 32766 variables, and for them
 ** the option is available (at compile-time).
 */
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
+#if SQLITE_MAX_VARIABLE_NUMBER<32767
 typedef i16 ynVar;
 #else
 typedef int ynVar;
