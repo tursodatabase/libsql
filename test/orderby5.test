@@ -173,4 +173,15 @@ do_catchsql_test 4.3.2 {
   SELECT a FROM t5 WHERE b='def' ORDER BY b;
 } {1 {no such collation sequence: hello}}
 
+# 2020-02-13 ticket 41c1456a6e61c0e7
+do_execsql_test 4.4.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a);
+  DROP TABLE t2;
+  CREATE TABLE t2(b INTEGER PRIMARY KEY, c INT);
+  SELECT DISTINCT *
+    FROM t1 LEFT JOIN t2 ON b=c AND b=(SELECT a FROM t1)
+   WHERE c>10;
+} {}
+
 finish_test

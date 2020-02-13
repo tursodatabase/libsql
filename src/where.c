@@ -3755,7 +3755,7 @@ static i8 wherePathSatisfiesOrderBy(
         Parse *pParse = pWInfo->pParse;
         CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[i].pExpr);
         CollSeq *pColl2 = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
-        assert( pColl1 && (pParse->nErr || pColl2) );
+        assert( pColl1 );
         if( pColl2==0 || sqlite3StrICmp(pColl1->zName, pColl2->zName) ){
           continue;
         }
