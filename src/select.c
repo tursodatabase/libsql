@@ -4166,9 +4166,8 @@ static void constInsert(
   assert( pColumn->op==TK_COLUMN );
   assert( sqlite3ExprIsConstant(pValue) );
 
-  if( !ExprHasProperty(pValue, EP_FixedCol) && sqlite3ExprAffinity(pValue)!=0 ){
-    return;
-  }
+  if( ExprHasProperty(pColumn, EP_FixedCol) ) return;
+  if( sqlite3ExprAffinity(pValue)!=0 ) return;
   if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr)) ){
     return;
   }
@@ -4191,9 +4190,6 @@ static void constInsert(
   if( pConst->apExpr==0 ){
     pConst->nConst = 0;
   }else{
-    if( ExprHasProperty(pValue, EP_FixedCol) ){
-      pValue = pValue->pLeft;
-    }
     pConst->apExpr[pConst->nConst*2-2] = pColumn;
     pConst->apExpr[pConst->nConst*2-1] = pValue;
   }
