@@ -542,5 +542,16 @@ do_execsql_test 10.7.3 {
   SELECT * FROM t2 WHERE term=?;
 }
 
-finish_test
+# 2020-02-16  Detect recursively define fts5vocab() tables.
+# Error found by dbsqlfuzz.
+#
+reset_db
+do_execsql_test 11.100 {
+  CREATE VIRTUAL TABLE t3 USING fts5vocab(rowid , 'col');
+  CREATE VIRTUAL TABLE rowid USING fts5vocab(rowid , 'instance');
+} {}
+do_catchsql_test 11.110 {
+  SELECT rowid+1,rowid, * FROM t3 WHERE null>rowid ;
+} {1 {SQL logic error}}
 
+finish_test

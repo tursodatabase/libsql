@@ -50,6 +50,7 @@ struct Fts5VocabTable {
   sqlite3 *db;                    /* Database handle */
   Fts5Global *pGlobal;            /* FTS5 global object for this database */
   int eType;                      /* FTS5_VOCAB_COL, ROW or INSTANCE */
+  unsigned bBusy;                 /* True if busy */
 };
 
 struct Fts5VocabCursor {
@@ -332,6 +333,12 @@ static int fts5VocabOpenMethod(
   sqlite3_stmt *pStmt = 0;
   char *zSql = 0;
 
+  if( pTab->bBusy ){
+    pVTab->zErrMsg = sqlite3_mprintf(
+       "recursive definition for %s.%s", pTab->zFts5Db, pTab->zFts5Tbl
+    );
+    return SQLITE_ERROR;
+  }
   zSql = sqlite3Fts5Mprintf(&rc,
       "SELECT t.%Q FROM %Q.%Q AS t WHERE t.%Q MATCH '*id'",
       pTab->zFts5Tbl, pTab->zFts5Db, pTab->zFts5Tbl, pTab->zFts5Tbl
@@ -343,10 +350,12 @@ static int fts5VocabOpenMethod(
   assert( rc==SQLITE_OK || pStmt==0 );
   if( rc==SQLITE_ERROR ) rc = SQLITE_OK;
 
+  pTab->bBusy = 1;
   if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
     i64 iId = sqlite3_column_int64(pStmt, 0);
     pFts5 = sqlite3Fts5TableFromCsrid(pTab->pGlobal, iId);
   }
+  pTab->bBusy = 0;
 
   if( rc==SQLITE_OK ){
     if( pFts5==0 ){
