@@ -4278,6 +4278,7 @@ int sqlite3ExprIsTableConstant(Expr*,int);
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
 int sqlite3ExprIsInteger(Expr*, int*);
+int sqlite3ExprIsVtabRef(Expr*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);

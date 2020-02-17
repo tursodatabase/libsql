@@ -2245,6 +2245,15 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
 }
 
 /*
+** Return true if p is a Column node that references a virtual table.
+*/
+int sqlite3ExprIsVtabRef(Expr *p){
+  if( p->op!=TK_COLUMN ) return 0;
+  if( p->y.pTab==0 ) return 0;
+  return IsVirtual(p->y.pTab);
+}
+
+/*
 ** Return FALSE if there is no chance that the expression can be NULL.
 **
 ** If the expression might be NULL or if the expression is too complex
@@ -5479,8 +5488,8 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_LE );
       testcase( pExpr->op==TK_GT );
       testcase( pExpr->op==TK_GE );
-      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->y.pTab))
-       || (pExpr->pRight->op==TK_COLUMN && IsVirtual(pExpr->pRight->y.pTab))
+      if( sqlite3ExprIsVtabRef(pExpr->pLeft)
+       || sqlite3ExprIsVtabRef(pExpr->pRight)
       ){
        return WRC_Prune;
       }
