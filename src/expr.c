@@ -2245,15 +2245,6 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
 }
 
 /*
-** Return true if p is a Column node that references a virtual table.
-*/
-int sqlite3ExprIsVtabRef(Expr *p){
-  if( p->op!=TK_COLUMN ) return 0;
-  if( p->y.pTab==0 ) return 0;
-  return IsVirtual(p->y.pTab);
-}
-
-/*
 ** Return FALSE if there is no chance that the expression can be NULL.
 **
 ** If the expression might be NULL or if the expression is too complex
@@ -5481,19 +5472,25 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_LT:
     case TK_LE:
     case TK_GT:
-    case TK_GE:
+    case TK_GE: {
+      Expr *pLeft = pExpr->pLeft;
+      Expr *pRight = pExpr->pRight;
       testcase( pExpr->op==TK_EQ );
       testcase( pExpr->op==TK_NE );
       testcase( pExpr->op==TK_LT );
       testcase( pExpr->op==TK_LE );
       testcase( pExpr->op==TK_GT );
       testcase( pExpr->op==TK_GE );
-      if( sqlite3ExprIsVtabRef(pExpr->pLeft)
-       || sqlite3ExprIsVtabRef(pExpr->pRight)
+      /* The y.pTab=0 assignment in wherecode.c always happens after the
+      ** impliesNotNullRow() test */
+      if( (pLeft->op==TK_COLUMN && ALWAYS(pLeft->y.pTab!=0)
+                               && IsVirtual(pLeft->y.pTab))
+       || (pRight->op==TK_COLUMN && ALWAYS(pRight->y.pTab!=0)
+                               && IsVirtual(pRight->y.pTab))
       ){
-       return WRC_Prune;
+        return WRC_Prune;
       }
-
+    }
     default:
       return WRC_Continue;
   }

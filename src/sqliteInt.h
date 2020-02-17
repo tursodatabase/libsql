@@ -2153,8 +2153,11 @@ struct Table {
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #  define IsVirtual(X)      ((X)->nModuleArg)
+#  define ExprIsVtab(X)  \
+              ((X)->op==TK_COLUMN && (X)->y.pTab!=0 && (X)->y.pTab->nModuleArg)
 #else
 #  define IsVirtual(X)      0
+#  define ExprIsVtab(X)     0
 #endif
 
 /*
@@ -4278,7 +4281,6 @@ int sqlite3ExprIsTableConstant(Expr*,int);
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
 int sqlite3ExprIsInteger(Expr*, int*);
-int sqlite3ExprIsVtabRef(Expr*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);

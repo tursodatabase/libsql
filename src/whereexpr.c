@@ -377,7 +377,8 @@ static int isAuxiliaryVtabOperator(
     **       MATCH(expression,vtab_column)
     */
     pCol = pList->a[1].pExpr;
-    if( sqlite3ExprIsVtabRef(pCol) ){
+    testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
+    if( ExprIsVtab(pCol) ){
       for(i=0; i<ArraySize(aOp); i++){
         if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
           *peOp2 = aOp[i].eOp2;
@@ -399,7 +400,8 @@ static int isAuxiliaryVtabOperator(
     ** with function names in an arbitrary case.
     */
     pCol = pList->a[0].pExpr;
-    if( sqlite3ExprIsVtabRef(pCol) ){
+    testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
+    if( ExprIsVtab(pCol) ){
       sqlite3_vtab *pVtab;
       sqlite3_module *pMod;
       void (*xNotUsed)(sqlite3_context*,int,sqlite3_value**);
@@ -422,10 +424,12 @@ static int isAuxiliaryVtabOperator(
     int res = 0;
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
-    if( sqlite3ExprIsVtabRef(pLeft) ){
+    testcase( pLeft->op==TK_COLUMN && pLeft->y.pTab==0 );
+    if( ExprIsVtab(pLeft) ){
       res++;
     }
-    if( pRight && sqlite3ExprIsVtabRef(pRight) ){
+    testcase( pRight && pRight->op==TK_COLUMN && pRight->y.pTab==0 );
+    if( pRight && ExprIsVtab(pRight) ){
       res++;
       SWAP(Expr*, pLeft, pRight);
     }
