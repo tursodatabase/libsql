@@ -33,5 +33,10 @@ jobs:
           toolchain: stable
           override: true
       - run: cargo build --features bundled
-      - run: RUSTFLAGS="-Ctarget-feature=+crt-static" cargo build --features bundled
       - run: cargo test --features bundled
+      - name: Static build
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          set RUSTFLAGS=-Ctarget-feature=+crt-static
+          cargo build --features bundled
