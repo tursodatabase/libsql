@@ -3617,6 +3617,59 @@ const char *sqlite3_filename_database(const char*);
 const char *sqlite3_filename_journal(const char*);
 const char *sqlite3_filename_wal(const char*);
 
+/*
+** CAPI3REF: Create and Destroy VFS Filenames
+**
+** These interfces are provided for use by [VFS shim] implementations and
+** are not useful outside of that context.
+**
+** The sqlite3_create_filename(D,J,W,N,P) allocates memory to hold a version of
+** database filename D with corresponding journal file J and WAL file W and
+** with N URI parameters key/values pairs in the array P.  The result from
+** sqlite3_create_filename(D,J,W,N,P) is a pointer to a database filename that
+** is safe to pass to routines like:
+** <ul>
+** <li> [sqlite3_uri_parameter()],
+** <li> [sqlite3_uri_boolean()],
+** <li> [sqlite3_uri_int64()],
+** <li> [sqlite3_uri_key()], 
+** <li> [sqlite3_filename_database()],
+** <li> [sqlite3_filename_journal()], or
+** <li> [sqlite3_filename_wal()].
+** </ul>
+** If a memory allocation error occurs, sqlite3_create_filename() might
+** return a NULL pointer.  The memory obtained from sqlite3_create_filename(X)
+** must be released by a corresponding call to sqlite3_free_filename(Y).
+**
+** The P parameter in sqlite3_create_filename(D,J,W,N,P) should be an array
+** of 2*N pointers to strings.  Each pair of pointers in this array corresponds
+** to a key and value for a query parameter.  The P parameter may be a NULL
+** pointer if N is zero.  None of the 2*N pointers in the P array may be
+** NULL pointers and key pointers should not be empty strings.
+** None of the D, J, or W parameters to sqlite3_create_filename(D,J,W,N,P) may
+** be NULL pointers, though they can be empty strings.
+**
+** The sqlite3_free_filename(Y) routine releases a memory allocation
+** previously obtained from sqlite3_create_filename().  Invoking
+** sqlite3_free_filename(Y) is a NULL pointer is a harmless no-op.
+**
+** If the Y parameter to sqlite3_free_filename(Y) is anything other
+** than a NULL pointer or a pointer previously acquired from
+** sqlite3_create_filename(), then bad things such as heap
+** corruption or segfaults may occur. The value Y should be 
+** used again after sqlite3_free_filename(Y) has been called.  This means
+** that if the [sqlite3_vfs.xOpen()] method of a VFS has been called using Y,
+** then the corresponding [sqlite3_module.xClose() method should also be
+** invoked prior to calling sqlite3_free_filename(Y).
+*/
+char *sqlite3_create_filename(
+  const char *zDatabase,
+  const char *zJournal,
+  const char *zWal,
+  int nParam,
+  const char **azParam
+);
+void sqlite3_free_filename(char*);
 
 /*
 ** CAPI3REF: Error Codes And Messages

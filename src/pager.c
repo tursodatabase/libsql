@@ -4770,6 +4770,11 @@ int sqlite3PagerOpen(
   **   - \0
   **   - WAL Path (zWALName)
   **   - \0
+  **
+  ** The sqlite3_create_filename() interface and the databaseFilename() utility
+  ** that is used by sqlite3_filename_database() and kin also depend on the
+  ** specific formatting and order of the various filenames, so if the format
+  ** changes here, be sure to change it there as well.
   */
   pPtr = (u8 *)sqlite3MallocZero(
     ROUND8(sizeof(*pPager)) +            /* Pager structure */
