@@ -1449,7 +1449,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
         int sz2 = 0;
         int sz = get2byte(&data[iFree+2]);
         int top = get2byte(&data[hdr+5]);
-        if( NEVER(top>=iFree) ){
+        if( top>=iFree ){
           return SQLITE_CORRUPT_PAGE(pPage);
         }
         if( iFree2 ){
