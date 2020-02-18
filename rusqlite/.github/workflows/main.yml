@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Test
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        platform:
+#          - { target: x86_64-pc-windows-gnu, os: windows-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+#          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
+
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v2
+        with:
+          target: ${{ matrix.platform.target }}
+          default: true
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: cargo build --features bundled
+      - run: cargo test --features bundled
