@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\smacro\sand\sadd\sa\stest\scase\sto\scause\sits\sargument\sto\sbe\strue.
-D 2020-02-18T23:58:58.305
+C Fix\sa\spotential\sNULL\spointer\sdereference\sfollowing\sOOM.\s\sProblem\sdiscovered\nby\sdbsqlfuzz.\s\sTest\scase\sin\sTH3.
+D 2020-02-19T15:39:46.936
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -529,7 +529,7 @@ F src/pragma.h 9473160d220416456b40f27323bb4b316d4e4e08ffbf8bf88c5f7045d49c38e5
 F src/prepare.c 6049beb71385f017af6fc320d2c75a4e50b75e280c54232442b785fbb83df057
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c f0781c9e180028b279bc4ff079ad54f4727223d470c8d2343643fcaf79b67740
+F src/resolve.c 38e3a5636f5bdc92e3683e4cafbba6418c0aa15e0d89ca5b28bd0b621dbb80bf
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c 9e5b357f1c0952ff699effe3640be58a7e16497be6b74a2637495f5ef13859f0
 F src/shell.c.in c2e20c43a44fb5588a6c27ce60589538fbf4794fd7686f5b2598eca22eaae1fa
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9469f36ac89e4b75d0ab25fefbeff25201992c53141da915dcaa017083cab6db
-R d0b79cc11814a6451908b085864d64b9
+P ee034fe916448e953ee7824e5c0db99a36a0ad138ebfb25f751bf84cb80a8fa7
+R 2a8847f9c82a11b506ee531f16ba829e
 U drh
-Z ef7cd4d2b1ba31f328f88505566c6b56
+Z 3d267f9a5c83ad9967ac22844ce82b39
