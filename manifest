@@ -1,5 +1,5 @@
-C Early-out\son\sthe\sINTERSECT\squery\sprocessing\sfollowing\san\serror.
-D 2020-02-20T14:08:51.305
+C Add\stest\scase\sfor\sprevious\scommit.
+D 2020-02-20T14:11:08.353
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1737,7 +1737,7 @@ F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af
 F test/windowB.test 7a983ea1cc1cf72be7f378e4b32f6cb2d73014c5cd8b25aaee825164cd4269e5
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
-F test/windowfault.test 8e3b69abe0eea9595ba3940afd9c63644e11966ed8815734b67f1479a8e9891a
+F test/windowfault.test 72375ae71031eabf96bc88d0af128c8628a091ddc99b5a394e848b3df5fc17ad
 F test/with1.test 584580a5ae79868a91873863f8cb2d00040006dc1e4c332ef1d8642f2815dc6e
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 13b3336739da648a9e4dfa11bb04e73a920c97620041007c5f75d5d14084c346
@@ -1858,7 +1858,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5aeb5a2d295e10d5fc1d456b3acaf8ac13c04cb5bb71a8c4571541d366e95887
-R e16a245c08b1d334873515473145c2a9
-U drh
-Z de8f43e65e8ffd2358ef87b9dc3ccd7d
+P a67cf5b7d37d5b1484be32092635faafd8f76e5881898cd9435517c4b287d663
+R ad63d3f6becd6d2d81908e2805dcc6e2
+U dan
+Z caf14f0cd239063090f3593a5e2021c6
