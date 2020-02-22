@@ -31,7 +31,6 @@ fn main() {
 
 #[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
 mod build_bundled {
-    use cc;
     use std::env;
     use std::path::Path;
 
@@ -154,8 +153,6 @@ impl From<HeaderLocation> for String {
 }
 
 mod build_linked {
-    use pkg_config;
-
     #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
     extern crate vcpkg;
 
@@ -301,8 +298,6 @@ mod bindings {
 
 #[cfg(feature = "buildtime_bindgen")]
 mod bindings {
-    use bindgen;
-
     use super::HeaderLocation;
     use bindgen::callbacks::{IntKind, ParseCallbacks};
 
