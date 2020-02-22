@@ -3540,7 +3540,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
   assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
   if( p->deferredMoveto ){
     int iMap;
-    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 ){
+    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;
       return SQLITE_OK;
