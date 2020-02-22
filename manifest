@@ -1,5 +1,5 @@
-C When\sstat4\sinformation\sis\savailable,\stry\sto\suse\sit\sto\simprove\sthe\struth\nprobability\sof\sWHERE\sclause\sterms\sthat\sdo\snot\sparticipate\sin\sthe\sindex.
-D 2020-02-22T16:58:49.287
+C Add\snew\stest\sfile\sanalyzeG.test,\scontaining\sa\stest\sfor\sthe\schange\son\sthis\sbranch.
+D 2020-02-22T17:32:00.691
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -655,6 +655,7 @@ F test/analyzeC.test 489fe2ea3be3f17548e8dd895f1b41c9669b52de1b0861f5bffe6eec46e
 F test/analyzeD.test e50cd0b3e6063216cc0c88a1776e8645dc0bd65a6bb275769cbee33b7fd8d90c
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 9e1a0537949eb5483642b1140a5c39e5b4025939024b935398471fa552f4dabb
+F test/analyzeG.test c42be77a06331f8677c94b44ba35e170f0771a07d869dffb6b0d78f18b562747
 F test/analyzer1.test 459fa02c445ddbf0101a3bad47b34290a35f2e49
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1858,10 +1859,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f02030b3403d67734bba471a91ad5bfdb03ddf6fdc3ef14808a04495e43b0470
-R 0b7e29ed07d82aa79f09869cc21d3459
-T *branch * stat4-truthprob
-T *sym-stat4-truthprob *
-T -sym-trunk *
-U drh
-Z b67db2665ec4d9de443f342c9e446178
+P 1babd6ec5d60e2c34aa1c0285ead768a88004218468e97262411973fe3487022
+R 2b88c80f8c57b2c7447cf9a6931d1437
+U dan
+Z e854d74d6063f88b5d388938dfbba4ed
