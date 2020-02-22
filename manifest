@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\sanalyzeG.test,\scontaining\sa\stest\sfor\sthe\schange\son\sthis\sbranch.
-D 2020-02-22T17:32:00.691
+C Do\snot\sactivate\sthe\struthProb\sadjustment\smechanism\sif\sthe\struth\sprobability\nis\sless\sthan\sthe\sheuristic\svalue,\sas\sthere\scould\sbe\scorrelations\sunknown\sto\nstat4.\s\sAlso\sadd\sadditional\stracing\soutput\sto\smake\struthProb\sadjustments\smore\nvisible.
+D 2020-02-22T18:27:48.175
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 697424314e40d99f93f548c7bfa526c10e87f4bdf64d5a76a96b999dd7133ebc
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c 74a2fc5a900eab9a2fdda2017a290f0eeaa9c5597fdb86322ea2ccbc3758c71d
+F src/where.c 44695e878a287d8c1d4976e2e85bea29994facec3972beb7ca22437d62cda6a5
 F src/whereInt.h 94e3aadcf43b4d16279182d147c9e4f8ef6ed5a5bd1ecc021639c29336b0a3eb
 F src/wherecode.c f5df56e395ade2240cabb2d39500c681bd29f8cc0636c3301c4996ad160df94d
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
@@ -1859,7 +1859,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1babd6ec5d60e2c34aa1c0285ead768a88004218468e97262411973fe3487022
-R 2b88c80f8c57b2c7447cf9a6931d1437
-U dan
-Z e854d74d6063f88b5d388938dfbba4ed
+P 243ab1852a2291595527ea1f26e78ad83eda285ae28f876bc1c703677f495cfa
+R 2719b1105cf4d47b954b372c20702e91
+U drh
+Z e3872ca3639b1687907dbcae881883fa

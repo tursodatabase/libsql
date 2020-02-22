@@ -2305,7 +2305,7 @@ static void whereLoopOutputAdjust(
           if( sqlite3ExprIsInteger(pRight, &k) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
-            k = 20;
+            k = 20;  /* Keep the "20" value in sync. See tag-20200222-1 */
           }
           if( iReduce<k ){
             pTerm->wtFlags |= TERM_HEURTRUTH;
@@ -2659,7 +2659,13 @@ static int whereLoopAddBtreeIndex(
           if( rc!=SQLITE_OK ) break;          /* Jump out of the pTerm loop */
           if( nOut ){
             pNew->nOut = sqlite3LogEst(nOut);
-            if( nEq==1 && pTerm->truthProb>0 ){
+            if( nEq==1
+             && pTerm->truthProb>0
+             /* TUNING: Adjust truthProb from the default heuristic only if the
+             ** probability is close to 1.0. The "20" constant is copied from
+             ** the heuristic at tag-20200222-1. Keep values in sync */
+             && pNew->nOut+20 > pProbe->aiRowLogEst[0]
+            ){
 #if WHERETRACE_ENABLED /* 0x01 */
               if( sqlite3WhereTrace & 0x01 ){
                 sqlite3DebugPrintf("Update truthProb from %d to %d:\n",
@@ -4555,6 +4561,28 @@ static int exprIsDeterministic(Expr *p){
   return w.eCode;
 }
 
+  
+#ifdef WHERETRACE_ENABLED
+/*
+** Display all WhereLoops in pWInfo
+*/
+static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
+  if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
+    WhereLoop *p;
+    int i;
+    static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
+                                           "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
+    for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
+      p->cId = zLabel[i%(sizeof(zLabel)-1)];
+      sqlite3WhereLoopPrint(p, pWC);
+    }
+  }
+}
+# define WHERETRACE_ALL_LOOPS(W,C) showAllWhereLoops(W,C)
+#else
+# define WHERETRACE_ALL_LOOPS(W,C)
+#endif
+
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
@@ -4864,6 +4892,7 @@ WhereInfo *sqlite3WhereBegin(
     ** then we need to rerun the whole loop building process so that all
     ** loops will be built using the revised truthProb values. */
     if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
+      WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
       WHERETRACE(0xffff, 
          ("**** Redo all loop computations due to truthProb changes ****\n"));
       while( pWInfo->pLoops ){
@@ -4875,19 +4904,7 @@ WhereInfo *sqlite3WhereBegin(
       if( rc ) goto whereBeginError;
     }
 #endif
-  
-#ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
-      WhereLoop *p;
-      int i;
-      static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
-                                             "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
-      for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
-        p->cId = zLabel[i%(sizeof(zLabel)-1)];
-        sqlite3WhereLoopPrint(p, sWLB.pWC);
-      }
-    }
-#endif
+    WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
   
     wherePathSolver(pWInfo, 0);
     if( db->mallocFailed ) goto whereBeginError;
