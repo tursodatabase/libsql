@@ -749,6 +749,10 @@ impl Connection {
     ///
     /// The underlying SQLite database connection handle will not be closed when
     /// the returned connection is dropped/closed.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because improper use may impact the Connection.
     pub unsafe fn from_handle(db: *mut ffi::sqlite3) -> Result<Connection> {
         let db_path = db_filename(db);
         let db = InnerConnection::new(db, false);
