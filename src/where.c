@@ -2298,7 +2298,9 @@ static void whereLoopOutputAdjust(
         /* In the absence of explicit truth probabilities, use heuristics to
         ** guess a reasonable truth probability. */
         pLoop->nOut--;
-        if( pTerm->eOperator&(WO_EQ|WO_IS) ){
+        if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0
+         && (pTerm->wtFlags & TERM_HIGHTRUTH)==0  /* tag-20200224-1 */
+        ){
           Expr *pRight = pTerm->pExpr->pRight;
           int k = 0;
           testcase( pTerm->pExpr->op==TK_IS );
@@ -2307,7 +2309,10 @@ static void whereLoopOutputAdjust(
           }else{
             k = 20;
           }
-          if( iReduce<k ) iReduce = k;
+          if( iReduce<k ){
+            pTerm->wtFlags |= TERM_HEURTRUTH;
+            iReduce = k;
+          }
         }
       }
     }
@@ -2489,9 +2494,9 @@ static int whereLoopAddBtreeIndex(
     }
 
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
-      pBuilder->bldFlags |= SQLITE_BLDF_UNIQUE;
+      pBuilder->bldFlags1 |= SQLITE_BLDF1_UNIQUE;
     }else{
-      pBuilder->bldFlags |= SQLITE_BLDF_INDEXED;
+      pBuilder->bldFlags1 |= SQLITE_BLDF1_INDEXED;
     }
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
@@ -2656,6 +2661,27 @@ static int whereLoopAddBtreeIndex(
           if( rc!=SQLITE_OK ) break;          /* Jump out of the pTerm loop */
           if( nOut ){
             pNew->nOut = sqlite3LogEst(nOut);
+            if( nEq==1
+             /* TUNING: Mark terms as "low selectivity" if they seem likely
+             ** to be true for half or more of the rows in the table.
+             ** See tag-202002240-1 */
+             && pNew->nOut+10 > pProbe->aiRowLogEst[0]
+            ){
+#if WHERETRACE_ENABLED /* 0x01 */
+              if( sqlite3WhereTrace & 0x01 ){
+                sqlite3DebugPrintf(
+                   "STAT4 determines term has low selectivity:\n");
+                sqlite3WhereTermPrint(pTerm, 999);
+              }
+#endif
+              pTerm->wtFlags |= TERM_HIGHTRUTH;
+              if( pTerm->wtFlags & TERM_HEURTRUTH ){
+                /* If the term has previously been used with an assumption of
+                ** higher selectivity, then set the flag to rerun the
+                ** loop computations. */
+                pBuilder->bldFlags2 |= SQLITE_BLDF2_2NDPASS;
+              }
+            }
             if( pNew->nOut>saved_nOut ) pNew->nOut = saved_nOut;
             pNew->nOut -= nIn;
           }
@@ -3080,9 +3106,9 @@ static int whereLoopAddBtree(
       }
     }
 
-    pBuilder->bldFlags = 0;
+    pBuilder->bldFlags1 = 0;
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
-    if( pBuilder->bldFlags==SQLITE_BLDF_INDEXED ){
+    if( pBuilder->bldFlags1==SQLITE_BLDF1_INDEXED ){
       /* If a non-unique index is used, or if a prefix of the key for
       ** unique index is used (making the index functionally non-unique)
       ** then the sqlite_stat1 data becomes important for scoring the
@@ -4537,6 +4563,28 @@ static int exprIsDeterministic(Expr *p){
   return w.eCode;
 }
 
+  
+#ifdef WHERETRACE_ENABLED
+/*
+** Display all WhereLoops in pWInfo
+*/
+static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
+  if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
+    WhereLoop *p;
+    int i;
+    static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
+                                           "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
+    for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
+      p->cId = zLabel[i%(sizeof(zLabel)-1)];
+      sqlite3WhereLoopPrint(p, pWC);
+    }
+  }
+}
+# define WHERETRACE_ALL_LOOPS(W,C) showAllWhereLoops(W,C)
+#else
+# define WHERETRACE_ALL_LOOPS(W,C)
+#endif
+
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
@@ -4838,19 +4886,28 @@ WhereInfo *sqlite3WhereBegin(
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
-  
-#ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
-      WhereLoop *p;
-      int i;
-      static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
-                                             "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
-      for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
-        p->cId = zLabel[i%(sizeof(zLabel)-1)];
-        sqlite3WhereLoopPrint(p, sWLB.pWC);
+
+#ifdef SQLITE_ENABLE_STAT4
+    /* If one or more WhereTerm.truthProb values were used in estimating
+    ** loop parameters, but then those truthProb values were subsequently
+    ** changed based on STAT4 information while computing subsequent loops,
+    ** then we need to rerun the whole loop building process so that all
+    ** loops will be built using the revised truthProb values. */
+    if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
+      WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
+      WHERETRACE(0xffff, 
+           ("**** Redo all loop computations due to"
+            " TERM_HIGHTRUTH changes ****\n"));
+      while( pWInfo->pLoops ){
+        WhereLoop *p = pWInfo->pLoops;
+        pWInfo->pLoops = p->pNextLoop;
+        whereLoopDelete(db, p);
       }
+      rc = whereLoopAddAll(&sWLB);
+      if( rc ) goto whereBeginError;
     }
 #endif
+    WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
   
     wherePathSolver(pWInfo, 0);
     if( db->mallocFailed ) goto whereBeginError;

@@ -291,6 +291,12 @@ struct WhereTerm {
 #define TERM_LIKE       0x0400 /* The original LIKE operator */
 #define TERM_IS         0x0800 /* Term.pExpr is an IS operator */
 #define TERM_VARSELECT  0x1000 /* Term.pExpr contains a correlated sub-query */
+#define TERM_HEURTRUTH  0x2000 /* Heuristic truthProb used */
+#ifdef SQLITE_ENABLE_STAT4
+#  define TERM_HIGHTRUTH  0x4000 /* Term excludes few rows */
+#else
+#  define TERM_HIGHTRUTH  0      /* Only used with STAT4 */
+#endif
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
@@ -405,13 +411,16 @@ struct WhereLoopBuilder {
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
-  unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
+  unsigned char bldFlags1;  /* First set of SQLITE_BLDF_* flags */
+  unsigned char bldFlags2;  /* Second set of SQLITE_BLDF_* flags */
   unsigned int iPlanLimit;  /* Search limiter */
 };
 
 /* Allowed values for WhereLoopBuider.bldFlags */
-#define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
-#define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
+#define SQLITE_BLDF1_INDEXED  0x0001   /* An index is used */
+#define SQLITE_BLDF1_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
+
+#define SQLITE_BLDF2_2NDPASS  0x0004   /* Second builder pass needed */
 
 /* The WhereLoopBuilder.iPlanLimit is used to limit the number of
 ** index+constraint combinations the query planner will consider for a

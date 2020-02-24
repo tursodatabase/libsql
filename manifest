@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sALTER\sTABLE\sfor\sviews\sthat\shave\sa\snested\sFROM\sclause.\nTicket\s[f50af3e8a565776b].
-D 2020-02-23T17:34:45.938
+C If\sSTAT4\sdetermines\sthat\sa\sWHERE\sclause\sterm\sthat\sis\snot\sused\sby\san\sindex\nhas\svery\shigh\sprobability\sof\sbeing\strue,\sthen\sdo\snot\suse\sthat\sterm\sto\sreduce\nthe\sestimated\soutput\srow\scount.
+D 2020-02-24T17:05:09.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,8 +617,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 697424314e40d99f93f548c7bfa526c10e87f4bdf64d5a76a96b999dd7133ebc
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c cbad14f1d8e11b9f052e937274315c7c17266a89eda408c86084ee894debb7d5
-F src/whereInt.h 9157228db086f436a574589f8cc5749bd971e94017c552305ad9ec472ed2e098
+F src/where.c 3b8c9bd013eb0736e16f60bdc109e83337ef99513a3aff5f16ddac036e6c277e
+F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
 F src/wherecode.c f5df56e395ade2240cabb2d39500c681bd29f8cc0636c3301c4996ad160df94d
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
 F src/window.c f8ba2ee12a19b51d3ba42c16277c74185ee9215306bc0d5a03974ade8b5bc98f
@@ -655,6 +655,7 @@ F test/analyzeC.test 489fe2ea3be3f17548e8dd895f1b41c9669b52de1b0861f5bffe6eec46e
 F test/analyzeD.test e50cd0b3e6063216cc0c88a1776e8645dc0bd65a6bb275769cbee33b7fd8d90c
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 9e1a0537949eb5483642b1140a5c39e5b4025939024b935398471fa552f4dabb
+F test/analyzeG.test a48c0f324dd14de9a40d52abe5ca2637f682b9a791d2523dd619f6efa14e345b
 F test/analyzer1.test 459fa02c445ddbf0101a3bad47b34290a35f2e49
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1858,7 +1859,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f02030b3403d67734bba471a91ad5bfdb03ddf6fdc3ef14808a04495e43b0470
-R 27f30806e168cf65f551539c0795adeb
+P c431b3fd8fd0f6a6974bba3e9366b0430ec003d570e7ce70ceefbcff5fe4b6fa 4558163b6a525990f0f1b6629dbb76daf49bcaf1ddbaf0c50fe05ce9ee480ff8
+R 2f59a601b560c09f0f628a3935395fd4
+T +closed 4558163b6a525990f0f1b6629dbb76daf49bcaf1ddbaf0c50fe05ce9ee480ff8
 U drh
-Z b1d396f928d83f91cde5e969c202f590
+Z 88585aca481f88c3f165f1a6e9b07ffb
