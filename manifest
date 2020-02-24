@@ -1,5 +1,5 @@
-C Disable\sthe\snew\sanalyzeG.test\smodule\sif\snot\sbuilding\swith\sSTAT4.
-D 2020-02-24T13:35:34.777
+C Rework\sthis\schanges\sso\sthat\sinstead\sof\ssetting\sthe\sWhereTerm.truthProb\swhen\na\sterm\sis\sseen\sto\sbe\sof\slow\sselectivity,\sit\smerely\ssets\sa\snew\sflag\n(the\sTERM_HIGHTRUTH\sflag)\swhich\scauses\swhereLoopOutputAdjust()\sto\signore\nthat\sterm.
+D 2020-02-24T16:46:08.182
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,8 +617,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 697424314e40d99f93f548c7bfa526c10e87f4bdf64d5a76a96b999dd7133ebc
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c 44695e878a287d8c1d4976e2e85bea29994facec3972beb7ca22437d62cda6a5
-F src/whereInt.h 94e3aadcf43b4d16279182d147c9e4f8ef6ed5a5bd1ecc021639c29336b0a3eb
+F src/where.c 3b8c9bd013eb0736e16f60bdc109e83337ef99513a3aff5f16ddac036e6c277e
+F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
 F src/wherecode.c f5df56e395ade2240cabb2d39500c681bd29f8cc0636c3301c4996ad160df94d
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
 F src/window.c f8ba2ee12a19b51d3ba42c16277c74185ee9215306bc0d5a03974ade8b5bc98f
@@ -1859,7 +1859,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b542dee9de843c19664c19df7435c6034d23d0d213804d588ec0ff599082d576
-R f29b5aa99c284afcd3f25a8fb29ee973
+P 4a9d3005769e0398183b03a3e132e3946b9d1c48073af2e0559d7beeac3245c0
+R 2f59a601b560c09f0f628a3935395fd4
 U drh
-Z 9cae8ff3aee64bed711ead2769a79514
+Z 144378d74bf58f80a9e1ca77433de7e1

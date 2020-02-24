@@ -2298,14 +2298,16 @@ static void whereLoopOutputAdjust(
         /* In the absence of explicit truth probabilities, use heuristics to
         ** guess a reasonable truth probability. */
         pLoop->nOut--;
-        if( pTerm->eOperator&(WO_EQ|WO_IS) ){
+        if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0
+         && (pTerm->wtFlags & TERM_HIGHTRUTH)==0  /* tag-20200224-1 */
+        ){
           Expr *pRight = pTerm->pExpr->pRight;
           int k = 0;
           testcase( pTerm->pExpr->op==TK_IS );
           if( sqlite3ExprIsInteger(pRight, &k) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
-            k = 20;  /* Keep the "20" value in sync. See tag-20200222-1 */
+            k = 20;
           }
           if( iReduce<k ){
             pTerm->wtFlags |= TERM_HEURTRUTH;
@@ -2660,23 +2662,23 @@ static int whereLoopAddBtreeIndex(
           if( nOut ){
             pNew->nOut = sqlite3LogEst(nOut);
             if( nEq==1
-             && pTerm->truthProb>0
-             /* TUNING: Adjust truthProb from the default heuristic only if the
-             ** probability is close to 1.0. The "20" constant is copied from
-             ** the heuristic at tag-20200222-1. Keep values in sync */
-             && pNew->nOut+20 > pProbe->aiRowLogEst[0]
+             /* TUNING: Mark terms as "low selectivity" if they seem likely
+             ** to be true for half or more of the rows in the table.
+             ** See tag-202002240-1 */
+             && pNew->nOut+10 > pProbe->aiRowLogEst[0]
             ){
 #if WHERETRACE_ENABLED /* 0x01 */
               if( sqlite3WhereTrace & 0x01 ){
-                sqlite3DebugPrintf("Update truthProb from %d to %d:\n",
-                       pTerm->truthProb, pNew->nOut - pProbe->aiRowLogEst[0]);
+                sqlite3DebugPrintf(
+                   "STAT4 determines term has low selectivity:\n");
                 sqlite3WhereTermPrint(pTerm, 999);
               }
 #endif
-              pTerm->truthProb = pNew->nOut - pProbe->aiRowLogEst[0];
+              pTerm->wtFlags |= TERM_HIGHTRUTH;
               if( pTerm->wtFlags & TERM_HEURTRUTH ){
-                /* If the old heuristic truthProb was previously used, signal
-                ** that all loops will need to be recomputed */
+                /* If the term has previously been used with an assumption of
+                ** higher selectivity, then set the flag to rerun the
+                ** loop computations. */
                 pBuilder->bldFlags2 |= SQLITE_BLDF2_2NDPASS;
               }
             }
@@ -4894,7 +4896,8 @@ WhereInfo *sqlite3WhereBegin(
     if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
       WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
       WHERETRACE(0xffff, 
-         ("**** Redo all loop computations due to truthProb changes ****\n"));
+           ("**** Redo all loop computations due to"
+            " TERM_HIGHTRUTH changes ****\n"));
       while( pWInfo->pLoops ){
         WhereLoop *p = pWInfo->pLoops;
         pWInfo->pLoops = p->pNextLoop;
