@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sfilename\spassed\sinto\sthe\sxFullPathname\smethod\sof\sthe\sVFS\sis\nacceptable\sas\san\sargument\sto\ssqlite3_uri_parameter().\s\sThe\sinterface\sspec\sdoes\nnot\sguarantee\sthis,\sbut\sit\shas\sbeen\sso\shistorically\sand\ssome\sapplications\nhave\scome\sto\sdepends\son\sit.
-D 2020-02-27T11:32:14.496
+C Extra\szero\sterminators\son\sthe\send\sof\sthe\sblank\sfilename\sreturned\sby\nsqlite3PagerFilename()\sfor\san\sin-memory\sdatabase.\s\sThis\shelps\sthe\sresult\nwork\sbetter\swith\ssqlite3_filename_journal()\sand\ssimilar\sfunctions.
+D 2020-02-27T13:54:18.189
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,7 +518,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 238ad16109b4160d0fba2597ef71459995ab5e304b3d8bbe290a8d5d6d6000e0
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c f1c92d05440f0f6826430b56e29addf453785f5c5651b8510d17d6310ba5df04
+F src/pager.c 5bae6544b2ee6d74ff4ffad6e52b5058d96ca4fd615f6af0041559bb29f3a837
 F src/pager.h 3b33619a90180e0874c7eca31d6f6ceb464d9322c6fb4e9a7bbb318c8a17bdb3
 F src/parse.y 61ae75b1764c86f56fdfe384d736e4ba9b0d54015a5ca61925d8cb6b94943d4c
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -1859,7 +1859,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47d4240c4a837e829f593bb2aad7563010838f55345e7a0d8e2ea79462aeeb3c
-R 2699148e97a51982a1cc661fb8022dcc
+P bfb09371d452d5d4dacab2ec476880bc729952f44ac0e5de90ea7ba203243c8c
+R 5ea099496e5d0aac03718d52a5e75d65
 U drh
-Z 98b0045957d1e0558a5ad636c29fbb50
+Z 3b819f0341c5afa503f11379a99ca43e
