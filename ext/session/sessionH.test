@@ -34,5 +34,51 @@ do_test 1.0 {
   compare_db db db2
 } {}
 
+#------------------------------------------------------------------------
+db2 close
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO main.t1 VALUES(1, 2, 3), (4, 5, 6), (7, 8, 9);
+}
+
+do_test 2.1 {
+  sqlite3session S db main
+  S attach *
+  db eval {
+    BEGIN;
+      INSERT INTO t1 VALUES(10, 11, 12);
+      DELETE FROM t1 WHERE a=1;
+      UPDATE t1 SET b='five', c='six' WHERE a=4;
+  }
+
+  set C [S changeset]
+  db eval ROLLBACK
+  S delete
+  set {} {}
+} {}
+
+do_execsql_test 2.2 {
+  CREATE TEMP TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO temp.t1 VALUES(1, 2, 3), (4, 5, 6), (7, 8, 9);
+}
+
+set ::conflict [list]
+proc xConflict {args} { lappend ::conflict $args ; return "" }
+do_test 2.3 {
+  sqlite3changeset_apply db $C xConflict
+  set ::conflict
+} {}
+do_execsql_test 2.4 {
+  SELECT * FROM main.t1;
+  SELECT '****';
+  SELECT * FROM temp.t1;
+} {
+  4 five six 7 8 9 10 11 12
+  ****
+  1 2 3 4 5 6 7 8 9
+}
+
 
 finish_test
