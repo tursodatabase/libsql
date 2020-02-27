@@ -4477,7 +4477,9 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   zFunc = pFunc->u.zToken;
   if( sqlite3StrICmp(zFunc, "min")==0 ){
     eRet = WHERE_ORDERBY_MIN;
-    sortFlags = KEYINFO_ORDER_BIGNULL;
+    if( sqlite3ExprCanBeNull(pEList->a[0].pExpr) ){
+      sortFlags = KEYINFO_ORDER_BIGNULL;
+    }
   }else if( sqlite3StrICmp(zFunc, "max")==0 ){
     eRet = WHERE_ORDERBY_MAX;
     sortFlags = KEYINFO_ORDER_DESC;
