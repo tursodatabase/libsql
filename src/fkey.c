@@ -658,7 +658,7 @@ static void fkScanChildren(
   /* Clean up the WHERE clause constructed above. */
   sqlite3ExprDelete(db, pWhere);
   if( iFkIfZero ){
-    sqlite3VdbeJumpHere(v, iFkIfZero);
+    sqlite3VdbeJumpHereOrPopInst(v, iFkIfZero);
   }
 }
 

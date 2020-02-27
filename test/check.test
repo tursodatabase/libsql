@@ -166,7 +166,7 @@ do_test check-2.6 {
   catchsql {
     INSERT INTO t2 VALUES(NULL, NULL, 3.14159);
   }
-} {1 {CHECK constraint failed: three}}
+} {0 {}}
 
 # Undocumented behavior:  The CONSTRAINT name clause can follow a constraint.
 # Such a clause is ignored.  But the parser must accept it for backwards

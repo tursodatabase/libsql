@@ -11,8 +11,7 @@
 *************************************************************************
 **
 ** This is a utility program designed to aid running regressions tests on
-** the SQLite library using data from an external fuzzer, such as American
-** Fuzzy Lop (AFL) (http://lcamtuf.coredump.cx/afl/).
+** the SQLite library using data from external fuzzers.
 **
 ** This program reads content from an SQLite database file with the following
 ** schema:
@@ -63,6 +62,21 @@
 ** If fuzzcheck does crash, it can be run in the debugger and the content
 ** of the global variable g.zTextName[] will identify the specific XSQL and
 ** DB values that were running when the crash occurred.
+**
+** DBSQLFUZZ:
+**
+** The dbsqlfuzz fuzzer includes both a database file and SQL to run against
+** that database in its input.  This utility can now process dbsqlfuzz
+** input files.  Load such files using the "--load-dbsql FILE ..." command-line
+** option.
+**
+** Dbsqlfuzz inputs are ordinary text.  The first part of the file is text
+** that describes the content of the database (using a lot of hexadecimal),
+** then there is a divider line followed by the SQL to run against the
+** database.  Because they are ordinary text, dbsqlfuzz inputs are stored
+** in the XSQL table, as if they were ordinary SQL inputs.  The isDbSql()
+** function can look at a text string and determine whether or not it is
+** a valid dbsqlfuzz input.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -323,6 +337,39 @@ static void readfileFunc(
 }
 
 /*
+** Implementation of the "readtextfile(X)" SQL function.  The text content
+** of the file named X through the end of the file or to the first \000
+** character, whichever comes first, is read and returned as TEXT.  NULL
+** is returned if the file does not exist or is unreadable.
+*/
+static void readtextfileFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zName;
+  FILE *in;
+  long nIn;
+  char *pBuf;
+
+  zName = (const char*)sqlite3_value_text(argv[0]);
+  if( zName==0 ) return;
+  in = fopen(zName, "rb");
+  if( in==0 ) return;
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = sqlite3_malloc64( nIn+1 );
+  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
+    pBuf[nIn] = 0;
+    sqlite3_result_text(context, pBuf, -1, sqlite3_free);
+  }else{
+    sqlite3_free(pBuf);
+  }
+  fclose(in);
+}
+
+/*
 ** Implementation of the "writefile(X,Y)" SQL function.  The argument Y
 ** is written into file X.  The number of bytes written is returned.  Or
 ** NULL is returned if something goes wrong, such as being unable to open
@@ -466,7 +513,7 @@ static int lengthLimit = 1000000;
 static int depthLimit = 500;
 
 /* Limit on the amount of heap memory that can be used */
-static sqlite3_int64 heapLimit = 1000000000;
+static sqlite3_int64 heapLimit = 100000000;
 
 /* Maximum byte-code program length in SQLite */
 static int vdbeOpLimit = 25000;
@@ -1425,7 +1472,8 @@ int main(int argc, char **argv){
         vdbeLimitFlag = 1;
       }else
       if( strcmp(z,"load-sql")==0 ){
-        zInsSql = "INSERT INTO xsql(sqltext)VALUES(CAST(readfile(?1) AS text))";
+        zInsSql = "INSERT INTO xsql(sqltext)"
+                  "VALUES(CAST(readtextfile(?1) AS text))";
         iFirstInsArg = i+1;
         openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         break;
@@ -1437,7 +1485,8 @@ int main(int argc, char **argv){
         break;
       }else
       if( strcmp(z,"load-dbsql")==0 ){
-        zInsSql = "INSERT INTO xsql(sqltext)VALUES(CAST(readfile(?1) AS text))";
+        zInsSql = "INSERT INTO xsql(sqltext)"
+                  "VALUES(CAST(readtextfile(?1) AS text))";
         iFirstInsArg = i+1;
         openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         dbSqlOnly = 1;
@@ -1623,6 +1672,8 @@ int main(int argc, char **argv){
     if( zInsSql ){
       sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
                               readfileFunc, 0, 0);
+      sqlite3_create_function(db, "readtextfile", 1, SQLITE_UTF8, 0,
+                              readtextfileFunc, 0, 0);
       sqlite3_create_function(db, "isdbsql", 1, SQLITE_UTF8, 0,
                               isDbSqlFunc, 0, 0);
       rc = sqlite3_prepare_v2(db, zInsSql, -1, &pStmt, 0);

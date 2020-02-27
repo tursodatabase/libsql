@@ -337,6 +337,22 @@ do_searchcount_test 6.6.4 {
   SELECT c FROM x1 WHERE b=6 OR c=11 OR a=1
 } {7 11 3 search 7}
 
+# 2020-02-22 ticket aa4378693018aa99
+# In the OP_Column opcode, if a cursor is marked with OP_NullRow
+# (because it is the right table of a LEFT JOIN that does not match)
+# then do not substitute index cursors, as the index cursors do not
+# have the VdbeCursor.nullRow flag set.
+#
+do_execsql_test 6.7 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a UNIQUE, b UNIQUE);
+  INSERT INTO t1(a,b) VALUES(null,2);
+  CREATE VIEW t2 AS SELECT * FROM t1 WHERE b<10 OR a<7 ORDER BY b;
+  SELECT t1.* FROM t1 LEFT JOIN t2 ON abs(t1.a)=abs(t2.b);
+} {{} 2}
+
+
 #-------------------------------------------------------------------------
 #
 do_execsql_test 7.0 {

@@ -3638,6 +3638,16 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
 }
 
 /*
+** If the last opcode is a OP_Copy, then set the do-not-merge flag (p5)
+** so that a subsequent copy will not be merged into this one.
+*/
+static void setDoNotMergeFlagOnCopy(Vdbe *v){
+  if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
+    sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
+  }
+}
+
+/*
 ** Generate code to implement special SQL functions that are implemented
 ** in-line rather than by using the usual callbacks.
 */
@@ -3668,9 +3678,7 @@ static int exprCodeInlineFunction(
         VdbeCoverage(v);
         sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
       }
-      if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
-        sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
-      }
+      setDoNotMergeFlagOnCopy(v);
       sqlite3VdbeResolveLabel(v, endCoalesce);
       break;
     }
@@ -4441,6 +4449,7 @@ expr_code_doover:
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       }
       sqlite3ExprDelete(db, pDel);
+      setDoNotMergeFlagOnCopy(v);
       sqlite3VdbeResolveLabel(v, endLabel);
       break;
     }
@@ -5463,19 +5472,25 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_LT:
     case TK_LE:
     case TK_GT:
-    case TK_GE:
+    case TK_GE: {
+      Expr *pLeft = pExpr->pLeft;
+      Expr *pRight = pExpr->pRight;
       testcase( pExpr->op==TK_EQ );
       testcase( pExpr->op==TK_NE );
       testcase( pExpr->op==TK_LT );
       testcase( pExpr->op==TK_LE );
       testcase( pExpr->op==TK_GT );
       testcase( pExpr->op==TK_GE );
-      if( (pExpr->pLeft->op==TK_COLUMN && IsVirtual(pExpr->pLeft->y.pTab))
-       || (pExpr->pRight->op==TK_COLUMN && IsVirtual(pExpr->pRight->y.pTab))
+      /* The y.pTab=0 assignment in wherecode.c always happens after the
+      ** impliesNotNullRow() test */
+      if( (pLeft->op==TK_COLUMN && ALWAYS(pLeft->y.pTab!=0)
+                               && IsVirtual(pLeft->y.pTab))
+       || (pRight->op==TK_COLUMN && ALWAYS(pRight->y.pTab!=0)
+                               && IsVirtual(pRight->y.pTab))
       ){
-       return WRC_Prune;
+        return WRC_Prune;
       }
-
+    }
     default:
       return WRC_Continue;
   }

@@ -267,11 +267,14 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
   if( pGroup->zName && pGroup->aReal[iChunk].z==0 ){
     char *z;
     int n = pGroup->nName;
-    pGroup->aReal[iChunk].z = z = sqlite3_malloc64( n+5 );
+    z = sqlite3_malloc64( n+5 );
     if( z==0 ){
       return SQLITE_NOMEM;
     }
     multiplexFilename(pGroup->zName, pGroup->nName, pGroup->flags, iChunk, z);
+    pGroup->aReal[iChunk].z = sqlite3_create_filename(z,"","",0,0);
+    sqlite3_free(z);
+    if( pGroup->aReal[iChunk].z==0 ) return SQLITE_NOMEM;
   }
   return SQLITE_OK;
 }
@@ -438,7 +441,7 @@ static void multiplexSubClose(
     }
     sqlite3_free(pGroup->aReal[iChunk].p);
   }
-  sqlite3_free(pGroup->aReal[iChunk].z);
+  sqlite3_free_filename(pGroup->aReal[iChunk].z);
   memset(&pGroup->aReal[iChunk], 0, sizeof(pGroup->aReal[iChunk]));
 }
 
@@ -530,7 +533,7 @@ static int multiplexOpen(
         pGroup->szChunk += 65536;
       }
     }
-    pGroup->flags = flags;
+    pGroup->flags = (flags & ~SQLITE_OPEN_URI);
     rc = multiplexSubFilename(pGroup, 1);
     if( rc==SQLITE_OK ){
       pSubOpen = multiplexSubOpen(pGroup, 0, &rc, pOutFlags, 0);

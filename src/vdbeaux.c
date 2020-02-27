@@ -1067,6 +1067,34 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
   sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
+/*
+** Change the P2 operand of the jump instruction at addr so that
+** the jump lands on the next opcode.  Or if the jump instruction was
+** the previous opcode (and is thus a no-op) then simply back up
+** the next instruction counter by one slot so that the jump is
+** overwritten by the next inserted opcode.
+**
+** This routine is an optimization of sqlite3VdbeJumpHere() that
+** strives to omit useless byte-code like this:
+**
+**        7   Once 0 8 0
+**        8   ...
+*/
+void sqlite3VdbeJumpHereOrPopInst(Vdbe *p, int addr){
+  if( addr==p->nOp-1 ){
+    assert( p->aOp[addr].opcode==OP_Once
+         || p->aOp[addr].opcode==OP_If
+         || p->aOp[addr].opcode==OP_FkIfZero );
+    assert( p->aOp[addr].p4type==0 );
+#ifdef SQLITE_VDBE_COVERAGE
+    sqlite3VdbeGetOp(p,-1)->iSrcLine = 0;  /* Erase VdbeCoverage() macros */
+#endif
+    p->nOp--;
+  }else{
+    sqlite3VdbeChangeP2(p, addr, p->nOp);
+  }
+}
+
 
 /*
 ** If the input FuncDef structure is ephemeral, then free it.  If
@@ -1447,8 +1475,11 @@ static int displayComment(
   const char *zOpName;
   const char *zSynopsis;
   int nOpName;
-  int ii, jj;
+  int ii;
   char zAlt[50];
+  StrAccum x;
+  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
+
   zOpName = sqlite3OpcodeName(pOp->opcode);
   nOpName = sqlite3Strlen30(zOpName);
   if( zOpName[nOpName+1] ){
@@ -1463,51 +1494,60 @@ static int displayComment(
       }
       zSynopsis = zAlt;
     }
-    for(ii=jj=0; jj<nTemp-1 && (c = zSynopsis[ii])!=0; ii++){
+    for(ii=0; (c = zSynopsis[ii])!=0; ii++){
       if( c=='P' ){
         c = zSynopsis[++ii];
         if( c=='4' ){
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", zP4);
+          sqlite3_str_appendall(&x, zP4);
         }else if( c=='X' ){
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", pOp->zComment);
+          sqlite3_str_appendall(&x, pOp->zComment);
           seenCom = 1;
         }else{
           int v1 = translateP(c, pOp);
           int v2;
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%d", v1);
           if( strncmp(zSynopsis+ii+1, "@P", 2)==0 ){
             ii += 3;
-            jj += sqlite3Strlen30(zTemp+jj);
             v2 = translateP(zSynopsis[ii], pOp);
             if( strncmp(zSynopsis+ii+1,"+1",2)==0 ){
               ii += 2;
               v2++;
             }
-            if( v2>1 ){
-              sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+            if( v2<2 ){
+              sqlite3_str_appendf(&x, "%d", v1);
+            }else{
+              sqlite3_str_appendf(&x, "%d..%d", v1, v1+v2-1);
             }
-          }else if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
-            ii += 4;
+          }else if( strncmp(zSynopsis+ii+1, "@NP", 3)==0 ){
+            sqlite3_context *pCtx = pOp->p4.pCtx;
+            if( pOp->p4type!=P4_FUNCCTX || pCtx->argc==1 ){
+              sqlite3_str_appendf(&x, "%d", v1);
+            }else if( pCtx->argc>1 ){
+              sqlite3_str_appendf(&x, "%d..%d", v1, v1+pCtx->argc-1);
+            }else{
+              assert( x.nChar>2 );
+              x.nChar -= 2;
+              ii++;
+            }
+            ii += 3;
+          }else{
+            sqlite3_str_appendf(&x, "%d", v1);
+            if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
+              ii += 4;
+            }
           }
         }
-        jj += sqlite3Strlen30(zTemp+jj);
       }else{
-        zTemp[jj++] = c;
+        sqlite3_str_appendchar(&x, 1, c);
       }
     }
-    if( !seenCom && jj<nTemp-5 && pOp->zComment ){
-      sqlite3_snprintf(nTemp-jj, zTemp+jj, "; %s", pOp->zComment);
-      jj += sqlite3Strlen30(zTemp+jj);
+    if( !seenCom && pOp->zComment ){
+      sqlite3_str_appendf(&x, "; %s", pOp->zComment);
     }
-    if( jj<nTemp ) zTemp[jj] = 0;
   }else if( pOp->zComment ){
-    sqlite3_snprintf(nTemp, zTemp, "%s", pOp->zComment);
-    jj = sqlite3Strlen30(zTemp);
-  }else{
-    zTemp[0] = 0;
-    jj = 0;
+    sqlite3_str_appendall(&x, pOp->zComment);
   }
-  return jj;
+  sqlite3StrAccumFinish(&x);
+  return x.nChar;
 }
 #endif /* SQLITE_DEBUG */
 
@@ -3502,7 +3542,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
   assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
   if( p->deferredMoveto ){
     int iMap;
-    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 ){
+    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;
       return SQLITE_OK;
@@ -4505,7 +4545,7 @@ int sqlite3VdbeRecordCompareWithSkip(
 
     /* RHS is a string */
     else if( pRhs->flags & MEM_Str ){
-      getVarint32(&aKey1[idx1], serial_type);
+      getVarint32NR(&aKey1[idx1], serial_type);
       testcase( serial_type==12 );
       if( serial_type<12 ){
         rc = -1;
@@ -4539,7 +4579,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     /* RHS is a blob */
     else if( pRhs->flags & MEM_Blob ){
       assert( (pRhs->flags & MEM_Zero)==0 || pRhs->n==0 );
-      getVarint32(&aKey1[idx1], serial_type);
+      getVarint32NR(&aKey1[idx1], serial_type);
       testcase( serial_type==12 );
       if( serial_type<12 || (serial_type & 0x01) ){
         rc = -1;
@@ -4728,7 +4768,10 @@ static int vdbeRecordCompareString(
 
   assert( pPKey2->aMem[0].flags & MEM_Str );
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
-  getVarint32(&aKey1[1], serial_type);
+  serial_type = (u8)(aKey1[1]);
+  if( serial_type >= 0x80 ){
+    sqlite3GetVarint32(&aKey1[1], (u32*)&serial_type);
+  }
   if( serial_type<12 ){
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
   }else if( !(serial_type & 0x01) ){ 
@@ -4849,13 +4892,13 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
 
   /* Read in the complete content of the index entry */
   sqlite3VdbeMemInit(&m, db, 0);
-  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, &m);
+  rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
   if( rc ){
     return rc;
   }
 
   /* The index entry must begin with a header size */
-  (void)getVarint32((u8*)m.z, szHdr);
+  getVarint32NR((u8*)m.z, szHdr);
   testcase( szHdr==3 );
   testcase( szHdr==m.n );
   testcase( szHdr>0x7fffffff );
@@ -4866,7 +4909,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
 
   /* The last field of the index should be an integer - the ROWID.
   ** Verify that the last entry really is an integer. */
-  (void)getVarint32((u8*)&m.z[szHdr-1], typeRowid);
+  getVarint32NR((u8*)&m.z[szHdr-1], typeRowid);
   testcase( typeRowid==1 );
   testcase( typeRowid==2 );
   testcase( typeRowid==3 );
@@ -4931,7 +4974,7 @@ int sqlite3VdbeIdxKeyCompare(
     return SQLITE_CORRUPT_BKPT;
   }
   sqlite3VdbeMemInit(&m, db, 0);
-  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, &m);
+  rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
   if( rc ){
     return rc;
   }

@@ -370,38 +370,8 @@ set pragma_def {
   COLS: database status
   IF:   defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 
-  NAME: key
-  TYPE: KEY
-  ARG:  0
-  IF:   defined(SQLITE_HAS_CODEC)
-
-  NAME: rekey
-  TYPE: KEY
-  ARG:  1
-  IF:   defined(SQLITE_HAS_CODEC)
-
-  NAME: hexkey
-  TYPE: KEY
-  ARG:  2
-  IF:   defined(SQLITE_HAS_CODEC)
-
-  NAME: hexrekey
-  TYPE: KEY
-  ARG:  3
-  IF:   defined(SQLITE_HAS_CODEC)
-
-  NAME: textkey
-  TYPE: KEY
-  ARG:  4
-  IF:   defined(SQLITE_HAS_CODEC)
-
-  NAME: textrekey
-  TYPE: KEY
-  ARG:  5
-  IF:   defined(SQLITE_HAS_CODEC)
-
   NAME: activate_extensions
-  IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
+  IF:   defined(SQLITE_ENABLE_CEROD)
 
   NAME: soft_heap_limit
   FLAG: Result0
@@ -496,7 +466,7 @@ record_one
 set allnames [lsort [array names allbyname]]
 
 # Generate #defines for all pragma type names.  Group the pragmas that are
-# omit in default builds (defined(SQLITE_DEBUG) and defined(SQLITE_HAS_CODEC))
+# omit in default builds (ex: defined(SQLITE_DEBUG))
 # at the end.
 #
 puts $fd "\n/* The various pragma types */"
