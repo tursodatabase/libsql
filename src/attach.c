@@ -187,7 +187,7 @@ static void attachFunc(
   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
-  sqlite3_free( zPath );
+  sqlite3_free_filename( zPath );
 
   /* If the file was opened successfully, read the schema for the new database.
   ** If this fails, or if opening the file failed, then close the file and 

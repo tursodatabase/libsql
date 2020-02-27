@@ -2753,9 +2753,11 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 **
 ** If successful, SQLITE_OK is returned. In this case *ppVfs is set to point to
 ** the VFS that should be used to open the database file. *pzFile is set to
-** point to a buffer containing the name of the file to open. It is the 
-** responsibility of the caller to eventually call sqlite3_free() to release
-** this buffer.
+** point to a buffer containing the name of the file to open.  The value
+** stored in *pzFile is a database name acceptable to sqlite3_uri_parameter()
+** and is in the same format as names created using sqlite3_create_filename().
+** The caller must invoke sqlite3_free_filename() (not sqlite3_free()!) on
+** the value returned in *pzFile to avoid a memory leak.
 **
 ** If an error occurs, then an SQLite error code is returned and *pzErrMsg
 ** may be set to point to a buffer containing an English language error 
@@ -2787,7 +2789,7 @@ int sqlite3ParseUri(
     int eState;                   /* Parser state when parsing URI */
     int iIn;                      /* Input character index */
     int iOut = 0;                 /* Output character index */
-    u64 nByte = nUri+2;           /* Bytes of space to allocate */
+    u64 nByte = nUri+8;           /* Bytes of space to allocate */
 
     /* Make sure the SQLITE_OPEN_URI flag is set to indicate to the VFS xOpen 
     ** method that there may be extra parameters following the file-name.  */
@@ -2796,6 +2798,9 @@ int sqlite3ParseUri(
     for(iIn=0; iIn<nUri; iIn++) nByte += (zUri[iIn]=='&');
     zFile = sqlite3_malloc64(nByte);
     if( !zFile ) return SQLITE_NOMEM_BKPT;
+
+    memset(zFile, 0, 4);  /* 4-byte of 0x00 is the start of DB name marker */
+    zFile += 4;
 
     iIn = 5;
 #ifdef SQLITE_ALLOW_URI_AUTHORITY
@@ -2886,8 +2891,7 @@ int sqlite3ParseUri(
       zFile[iOut++] = c;
     }
     if( eState==1 ) zFile[iOut++] = '\0';
-    zFile[iOut++] = '\0';
-    zFile[iOut++] = '\0';
+    memset(zFile+iOut, 0, 4); /* end-of-options + empty journal filenames */
 
     /* Check if there were any options specified that should be interpreted 
     ** here. Options that are interpreted here include "vfs" and those that
@@ -2967,13 +2971,14 @@ int sqlite3ParseUri(
     }
 
   }else{
-    zFile = sqlite3_malloc64(nUri+2);
+    zFile = sqlite3_malloc64(nUri+8);
     if( !zFile ) return SQLITE_NOMEM_BKPT;
+    memset(zFile, 0, 4);
+    zFile += 4;
     if( nUri ){
       memcpy(zFile, zUri, nUri);
     }
-    zFile[nUri] = '\0';
-    zFile[nUri+1] = '\0';
+    memset(zFile+nUri, 0, 4);
     flags &= ~SQLITE_OPEN_URI;
   }
 
@@ -2984,7 +2989,7 @@ int sqlite3ParseUri(
   }
  parse_uri_out:
   if( rc!=SQLITE_OK ){
-    sqlite3_free(zFile);
+    sqlite3_free_filename(zFile);
     zFile = 0;
   }
   *pFlags = flags;
@@ -3391,7 +3396,7 @@ opendb_out:
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
   }
 #endif
-  sqlite3_free(zOpen);
+  sqlite3_free_filename(zOpen);
   return rc & 0xff;
 }
 

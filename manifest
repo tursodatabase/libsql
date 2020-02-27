@@ -1,5 +1,5 @@
-C Update\sthe\sfuzzcheck\stest\smodule\sso\sthat\sit\savoids\sinserting\stext\svalues\nthat\scontain\sembedded\sNULs\sin\sthe\sXSQL\stable.\s\sFix\ssome\slegacy\sentries\sin\nthe\stest/fuzzdata8.db\sthat\shad\sembedded\sNULs.\s\sAdd\sin\snew\sdbsqlfuzz\scases\nthat\shave\saccumulated\sover\son\sthe\sdbsqlfuzz\sproject\sfor\sa\swhile.
-D 2020-02-25T20:05:58.963
+C Ensure\sthat\sthe\sfilename\spassed\sinto\sthe\sxFullPathname\smethod\sof\sthe\sVFS\sis\nacceptable\sas\san\sargument\sto\ssqlite3_uri_parameter().\s\sThe\sinterface\sspec\sdoes\nnot\sguarantee\sthis,\sbut\sit\shas\sbeen\sso\shistorically\sand\ssome\sapplications\nhave\scome\sto\sdepends\son\sit.
+D 2020-02-27T11:32:14.496
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -467,7 +467,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c f48a4423c8f198d7f1ae4940f74b606707d05384ac79fb219be8e3323af2a2de
 F src/analyze.c b3ceec3fc052df8a96ca8a8c858d455dc5029ba681b4be98bb5c5a9162cfa58c
-F src/attach.c fee2f4279474edad2df73f38ff17d8b6b250429c6e9b59a708fb48a090f3ad32
+F src/attach.c fa5addce233a2bb2dfdefeee3b37000e154c47214d3269cab1bb331416e330db
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -495,7 +495,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 9b487eb4b756a2bab16fa5ba19d207375551f7d0b8da3f4dff769f3035dc6bab
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c b179df50e6e8bb0c36c149e95d958d49bd8c6c7469e59c01b53d164360bc6c32
-F src/main.c 42577fa09d195dd0f09d4a3d95158ff7f4a677dc83ccb0d6d7e73ff86c2dc6f1
+F src/main.c 3dfcf24427d623a095df7fce0d92c3ddf7cfda82298016f2b6b11c93ff94a187
 F src/malloc.c eaa4dc9602ce28b077f7de2eb275db2be270c5cc56d7fec5466301bd9b80e2f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1859,7 +1859,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40739c793b0e98a3bae296d3a1f74944edcdd4cc33c26b417fde4eaf6f14d062
-R 02479c6654f151ff7effcb61dc46ff16
+P 47d4240c4a837e829f593bb2aad7563010838f55345e7a0d8e2ea79462aeeb3c
+R 2699148e97a51982a1cc661fb8022dcc
 U drh
-Z 417d1fe691d03d97f7ec8cbb9d1cf8da
+Z 98b0045957d1e0558a5ad636c29fbb50
