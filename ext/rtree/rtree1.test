@@ -716,6 +716,18 @@ do_execsql_test 18.0 {
   SELECT rt0.c1 > '-1' FROM rt0;
 } {9 1}
 
-
 expand_all_sql db
+
+# 2020-02-28 ticket e63b4d1a65546532
+reset_db
+do_execsql_test 19.0 {
+  CREATE VIRTUAL TABLE rt0 USING rtree(a,b,c);
+  INSERT INTO rt0(a,b,c) VALUES(0,0.0,0.0);
+  CREATE VIEW v0(x) AS SELECT DISTINCT rt0.b FROM rt0;
+  SELECT v0.x FROM v0, rt0;
+} {0.0}
+do_execsql_test 19.1 {
+  SELECT v0.x FROM v0, rt0 WHERE v0.x = rt0.b;
+} {0.0}
+
 finish_test
