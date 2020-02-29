@@ -1,5 +1,5 @@
-C The\sRTREE\sextension\sbehaves\shas\sif\sdata\scolumns\shave\stype\sREAL,\sso\swe\nshould\sactually\sdeclare\sthem\sas\sREAL\sso\sthat\sautomatic\sindexes\shandle\nthem\scorrectly.\s\sTicket\s[e63b4d1a65546532]
-D 2020-02-28T16:04:28.158
+C In\sthe\sCLI,\sadd\sthe\s".oom"\scommand\sfor\sdebugging\sbuilds.
+D 2020-02-29T15:53:48.614
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -532,7 +532,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 38e3a5636f5bdc92e3683e4cafbba6418c0aa15e0d89ca5b28bd0b621dbb80bf
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
 F src/select.c c94eec317c8ba929bc228392eb3cac8124f2d0fbe3fc1bddecb44dfc7057bc78
-F src/shell.c.in c2e20c43a44fb5588a6c27ce60589538fbf4794fd7686f5b2598eca22eaae1fa
+F src/shell.c.in 3897f3f7302914da1f6df3a2a09ac4aafa14a571d7d18c51500cfb2ff04f05eb
 F src/sqlite.h.in 802957feeb249ede54f8dfe99b72aa19e70a0b7737969c46e625dc2f9f2d42b0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9c5269260409eb3275324ccace6a13a96f4ad330c708415f70ca6097901ff4ee
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f71a13d072398c9fc3556f42d75159cc2d0edc2c42f6c47f64503a7fbbca6e37
-R e584e926a3f43231aaab0b4293c722be
+P 85a9b6a92fd5805d5936f02d555af395441607b9eb5f4dae63560b5e65663b00
+R 2cdefa0603e77b0eb4b0ccaa79df3caf
 U drh
-Z 64c3887bc4bd00b14ac4e9288ce5788a
+Z 076cff7e0a1612f30cfec18b6a7cf8ce
