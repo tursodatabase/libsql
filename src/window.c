@@ -1910,6 +1910,7 @@ static int windowInitAccum(Parse *pParse, Window *pMWin){
   Window *pWin;
   for(pWin=pMWin; pWin; pWin=pWin->pNextWin){
     FuncDef *pFunc = pWin->pFunc;
+    assert( pWin->regAccum );
     sqlite3VdbeAddOp2(v, OP_Null, 0, pWin->regAccum);
     nArg = MAX(nArg, windowArgCount(pWin));
     if( pMWin->regStartRowid==0 ){
@@ -2288,6 +2289,10 @@ Window *sqlite3WindowDup(sqlite3 *db, Expr *pOwner, Window *p){
       pNew->eStart = p->eStart;
       pNew->eExclude = p->eExclude;
       pNew->regResult = p->regResult;
+      pNew->regAccum = p->regAccum;
+      pNew->iArgCol = p->iArgCol;
+      pNew->iEphCsr = p->iEphCsr;
+      pNew->bExprArgs = p->bExprArgs;
       pNew->pStart = sqlite3ExprDup(db, p->pStart, 0);
       pNew->pEnd = sqlite3ExprDup(db, p->pEnd, 0);
       pNew->pOwner = pOwner;
