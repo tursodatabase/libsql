@@ -397,5 +397,11 @@ int sqlite3BtreeScanStart(
   i64 iKey,
   int opcode
 );
+int sqlite3BtreeScanLimit(
+  BtCursor *pCsr, 
+  UnpackedRecord *pKey, 
+  i64 iKey,
+  int opcode
+);
 
 #endif /* SQLITE_BTREE_H */

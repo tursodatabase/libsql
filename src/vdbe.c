@@ -2085,6 +2085,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       /* Handle the common case of integer comparison here, as an
       ** optimization, to avoid a call to sqlite3MemCompare() */
       if( (pIn1->flags & pIn3->flags & MEM_Int)!=0 ){
+        if( pOp->p4type==P4_INT32 ){
+          sqlite3BtreeScanLimit(
+              p->apCsr[pOp->p4.i]->uc.pCursor, 0, pIn1->u.i, pOp->opcode
+          );
+        }
         if( pIn3->u.i > pIn1->u.i ){ res = +1; goto compare_op; }
         if( pIn3->u.i < pIn1->u.i ){ res = -1; goto compare_op; }
         res = 0;
@@ -2109,8 +2114,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         flags3 = (pIn3->flags & ~MEM_TypeMask) | (flags3 & MEM_TypeMask);
       }
     }
-    assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
-    res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
+    /* assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 ); */
+    res = sqlite3MemCompare(pIn3,pIn1,pOp->p4type==P4_COLLSEQ?pOp->p4.pColl:0);
   }
 compare_op:
   /* At this point, res is negative, zero, or positive if reg[P1] is

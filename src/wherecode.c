@@ -1577,6 +1577,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       iRowidReg = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
+      sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(iCur), P4_INT32);
       VdbeCoverageIf(v, testOp==OP_Le);
       VdbeCoverageIf(v, testOp==OP_Lt);
       VdbeCoverageIf(v, testOp==OP_Ge);

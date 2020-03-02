@@ -5841,6 +5841,25 @@ const char *sqlite3_begin_concurrent_report(sqlite3 *db){
     StrAccum accum;
     sqlite3StrAccumInit(&accum, db, 0, 0, 64*1024*1024);
     for(p=db->pCScanList; p; p=p->pNext){
+
+      if( p->flags & CURSORSCAN_LIMITVALID ){
+        if( (p->flags & CURSORSCAN_LIMITMAX) 
+         && ((p->flags & CURSORSCAN_MAXVALID)==0 || p->iLimit<=p->iMax) ){
+          p->iMax = p->iLimit;
+          p->flags &= ~CURSORSCAN_MAXINCL;
+          p->flags |= (p->flags & CURSORSCAN_LIMITINCL)?CURSORSCAN_MAXINCL:0;
+          p->flags |= CURSORSCAN_MAXVALID;
+        }else
+        if( (p->flags & CURSORSCAN_LIMITMAX)==0 
+         && ((p->flags & CURSORSCAN_MINVALID)==0 || p->iLimit>=p->iMin) ){
+          p->iMin = p->iLimit;
+          p->flags &= ~CURSORSCAN_MININCL;
+          p->flags |= (p->flags & CURSORSCAN_LIMITINCL)?CURSORSCAN_MININCL:0;
+          p->flags |= CURSORSCAN_MINVALID;
+        }
+        p->flags &= ~CURSORSCAN_LIMITVALID;
+      }
+
       sqlite3_str_appendf(&accum, "%d:%s", p->tnum,
           (p->flags & CURSORSCAN_MININCL) ? "[" : "("
       );
@@ -5890,6 +5909,32 @@ static void btreeScanNext(BtCursor *pCsr, int bPrev){
       }
     }
   }
+}
+
+int sqlite3BtreeScanLimit(
+  BtCursor *pCsr, 
+  UnpackedRecord *pKey, 
+  i64 iKey, 
+  int opcode
+){
+  CursorScan *pScan = pCsr->pCScan;
+  if( pScan ){
+    pScan->iLimit = iKey;
+    pScan->flags |= CURSORSCAN_LIMITVALID;
+    switch( opcode ){
+      case OP_Lt:
+        pScan->flags |= CURSORSCAN_LIMITINCL;
+      case OP_Le:
+        break;
+
+      case OP_Gt:
+        pScan->flags |= CURSORSCAN_LIMITINCL;
+      case OP_Ge:
+        pScan->flags |= CURSORSCAN_LIMITMAX;
+        break;
+    }
+  }
+  return SQLITE_OK;
 }
 
 int sqlite3BtreeScanStart(
@@ -5942,6 +5987,7 @@ int sqlite3BtreeScanStart(
         break;
 
       case OP_SeekRowid:
+      case OP_DeferredSeek:
         pNew->flags |= (CURSORSCAN_MININCL|CURSORSCAN_MAXINCL);
         pNew->flags |= CURSORSCAN_MINVALID|CURSORSCAN_MAXVALID;
         break;
@@ -6461,8 +6507,9 @@ int sqlite3BtreePrevious(BtCursor *pCur, int flags){
    || pCur->pPage->leaf==0
   ){
     rc = btreePrevious(pCur);
+  }else{
+    pCur->ix--;
   }
-  pCur->ix--;
 
   btreeScanNext(pCur, 1);
   return rc;
