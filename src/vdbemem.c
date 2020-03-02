@@ -972,8 +972,8 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
       /* assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r ); */
       /*                                          ^^           */
       /*       Cannot reliably compare doubles for equality    */
-      assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
-      assert( (mFlags&MEM_Blob)==0  || sqlite3BlobCompare(pMem,pX)==0 );
+      assert( (mFlags&(MEM_Str|MEM_Blob))==0
+              || (pMem->n==pX->n && pMem->z==pX->z) );
       
       /* pMem is the register that is changing.  But also mark pX as
       ** undefined so that we can quickly detect the shallow-copy error */

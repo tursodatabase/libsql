@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sNULL-scan\spass\scounter\sis\sinitialized\swhen\sa\sORDER\sBY\sNULLS\sLAST\nis\sused\son\sthe\sright\stable\sof\sa\sLEFT\sJOIN.\s\sTicket\s[e12a0ae526bb51c7].
-D 2020-03-02T01:16:33.765
+C Fix\sa\sfaulty\sassert()\sstatement\sin\sthe\sstale-register\sdetection\slogic.\nTicket\s[da5a09be6dabbf42].
+D 2020-03-02T01:50:48.069
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c 2d8d863e6b85a5b4362a248c04d82f0df8df79be289b2fc75b488c3cd79ddb5f
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
-F src/vdbemem.c ff2a1fd86ea943efb7174bd74bc661815c449be6165e136e8849e1dc59e24353
+F src/vdbemem.c ddca442b006db5010c1cf799c708d3ca5e7644c20ba8a32ea6757d33c4ba3da2
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 7b704a90515a239c6cdba6a66b1bb3a385e62326cceb5ecb05ec7a091d6b8515
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e174ed0d29366eb56ad1a0cc8defcb440b426bfd9525aed2f93468248606efc
-R cdca29a15a163fde9b50954e8e025c9b
+P 704bb9a39acbee420c1d6ac9eb1466a02dd77d3334b938bfddf235973129b5fe
+R 37d60611a24e10e0f7c6d9ef2a03c1d5
 U drh
-Z ae0a3137d8c4f716cc59f194c604a9c0
+Z 35d89853f7c8d0bfbe3e5e9e3a91aee4
