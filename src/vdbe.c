@@ -514,7 +514,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
     }
   }else if( f & MEM_Str ){
     int j;
-    int c;
+    u8 c;
     if( f & MEM_Dyn ){
       c = 'z';
       assert( (f & (MEM_Static|MEM_Ephem))==0 );
@@ -529,7 +529,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
     }
     sqlite3_str_appendf(pStr, " %c%d[", c, pMem->n);
     for(j=0; j<25 && j<pMem->n; j++){
-      u8 c = pMem->z[j];
+      c = pMem->z[j];
       sqlite3_str_appendchar(pStr, 1, (c>=0x20&&c<=0x7f) ? c : '.');
     }
     sqlite3_str_appendf(pStr, "]%s", encnames[pMem->enc]);
@@ -2075,7 +2075,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
-          testcase( flags3!=pIn3->flags );
+          assert( flags3==pIn3->flags );
           flags3 = pIn3->flags;
         }
         if( (flags3 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
@@ -2098,7 +2098,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         sqlite3VdbeMemStringify(pIn1, encoding, 1);
         testcase( (flags1&MEM_Dyn) != (pIn1->flags&MEM_Dyn) );
         flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
-        if( pIn1==pIn3 ) flags3 = flags1 | MEM_Str;
+        if( NEVER(pIn1==pIn3) ) flags3 = flags1 | MEM_Str;
       }
       if( (flags3 & MEM_Str)==0 && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
         testcase( pIn3->flags & MEM_Int );
@@ -3952,15 +3952,13 @@ case OP_OpenEphemeral: {
   assert( pOp->p1>=0 );
   assert( pOp->p2>=0 );
   pCx = p->apCsr[pOp->p1];
-  if( pCx ){
+  if( pCx && pCx->pBtx ){
     /* If the ephermeral table is already open, erase all existing content
     ** so that the table is empty again, rather than creating a new table. */
     assert( pCx->isEphemeral );
     pCx->seqCount = 0;
     pCx->cacheStatus = CACHE_STALE;
-    if( pCx->pBtx ){
-      rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
-    }
+    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
   }else{
     pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
@@ -7623,7 +7621,7 @@ case OP_MaxPgcnt: {            /* out2 */
 #endif
 
 /* Opcode: Function P1 P2 P3 P4 *
-** Synopsis: r[P3]=func(r[P2@P5])
+** Synopsis: r[P3]=func(r[P2@NP])
 **
 ** Invoke a user function (P4 is a pointer to an sqlite3_context object that
 ** contains a pointer to the function to be run) with arguments taken
@@ -7642,7 +7640,7 @@ case OP_MaxPgcnt: {            /* out2 */
 ** See also: AggStep, AggFinal, PureFunc
 */
 /* Opcode: PureFunc P1 P2 P3 P4 *
-** Synopsis: r[P3]=func(r[P2@P5])
+** Synopsis: r[P3]=func(r[P2@NP])
 **
 ** Invoke a user function (P4 is a pointer to an sqlite3_context object that
 ** contains a pointer to the function to be run) with arguments taken

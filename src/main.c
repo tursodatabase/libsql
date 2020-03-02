@@ -161,7 +161,10 @@ int sqlite3_initialize(void){
   ** must be complete.  So isInit must not be set until the very end
   ** of this routine.
   */
-  if( sqlite3GlobalConfig.isInit ) return SQLITE_OK;
+  if( sqlite3GlobalConfig.isInit ){
+    sqlite3MemoryBarrier();
+    return SQLITE_OK;
+  }
 
   /* Make sure the mutex subsystem is initialized.  If unable to 
   ** initialize the mutex subsystem, return early with the error.
@@ -2993,6 +2996,21 @@ int sqlite3ParseUri(
   return rc;
 }
 
+/*
+** This routine does the core work of extracting URI parameters from a
+** database filename for the sqlite3_uri_parameter() interface.
+*/
+static const char *uriParameter(const char *zFilename, const char *zParam){
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] ){
+    int x = strcmp(zFilename, zParam);
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    if( x==0 ) return zFilename;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return 0;
+}
+
 #if defined(SQLITE_HAS_CODEC)
 /*
 ** Process URI filename query parameters relevant to the SQLite Encryption
@@ -3005,7 +3023,9 @@ int sqlite3CodecQueryParameters(
   const char *zUri       /* URI filename */
 ){
   const char *zKey;
-  if( (zKey = sqlite3_uri_parameter(zUri, "hexkey"))!=0 && zKey[0] ){
+  if( zUri==0 ){
+    return 0;
+  }else if( (zKey = uriParameter(zUri, "hexkey"))!=0 && zKey[0] ){
     u8 iByte;
     int i;
     char zDecoded[40];
@@ -3015,10 +3035,10 @@ int sqlite3CodecQueryParameters(
     }
     sqlite3_key_v2(db, zDb, zDecoded, i/2);
     return 1;
-  }else if( (zKey = sqlite3_uri_parameter(zUri, "key"))!=0 ){
+  }else if( (zKey = uriParameter(zUri, "key"))!=0 ){
     sqlite3_key_v2(db, zDb, zKey, sqlite3Strlen30(zKey));
     return 1;
-  }else if( (zKey = sqlite3_uri_parameter(zUri, "textkey"))!=0 ){
+  }else if( (zKey = uriParameter(zUri, "textkey"))!=0 ){
     sqlite3_key_v2(db, zDb, zKey, -1);
     return 1;
   }else{
@@ -3640,13 +3660,15 @@ int sqlite3CantopenError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
   return sqlite3ReportError(SQLITE_CANTOPEN, lineno, "cannot open file");
 }
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_CORRUPT_PGNO)
 int sqlite3CorruptPgnoError(int lineno, Pgno pgno){
   char zMsg[100];
   sqlite3_snprintf(sizeof(zMsg), zMsg, "database corruption page %d", pgno);
   testcase( sqlite3GlobalConfig.xLog!=0 );
   return sqlite3ReportError(SQLITE_CORRUPT, lineno, zMsg);
 }
+#endif
+#ifdef SQLITE_DEBUG
 int sqlite3NomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
   return sqlite3ReportError(SQLITE_NOMEM, lineno, "OOM");
@@ -3908,6 +3930,7 @@ int sqlite3_test_control(int op, ...){
     ** This test-control also resets the PRNG so that the new seed will
     ** be used for the next call to sqlite3_randomness().
     */
+#ifndef SQLITE_OMIT_WSD
     case SQLITE_TESTCTRL_PRNG_SEED: {
       int x = va_arg(ap, int);
       int y;
@@ -3918,6 +3941,7 @@ int sqlite3_test_control(int op, ...){
       sqlite3_randomness(0,0);
       break;
     }
+#endif
 
     /*
     **  sqlite3_test_control(BITVEC_TEST, size, program)
@@ -4246,6 +4270,21 @@ int sqlite3_test_control(int op, ...){
 }
 
 /*
+** The Pager stores the Database filename, Journal filename, and WAL filename
+** consecutively in memory, in that order.  The database filename is prefixed
+** by four zero bytes.  Locate the start of the database filename by searching
+** backwards for the first byte following four consecutive zero bytes.
+**
+** This only works if the filename passed in was obtained from the Pager.
+*/
+static const char *databaseName(const char *zName){
+  while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
+    zName--;
+  }
+  return zName;
+}
+
+/*
 ** This is a utility routine, useful to VFS implementations, that checks
 ** to see if a database file was a URI that contained a specific query 
 ** parameter, and if so obtains the value of the query parameter.
@@ -4258,14 +4297,8 @@ int sqlite3_test_control(int op, ...){
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
   if( zFilename==0 || zParam==0 ) return 0;
-  zFilename += sqlite3Strlen30(zFilename) + 1;
-  while( zFilename[0] ){
-    int x = strcmp(zFilename, zParam);
-    zFilename += sqlite3Strlen30(zFilename) + 1;
-    if( x==0 ) return zFilename;
-    zFilename += sqlite3Strlen30(zFilename) + 1;
-  }
-  return 0;
+  zFilename = databaseName(zFilename);
+  return uriParameter(zFilename, zParam);
 }
 
 /*
@@ -4273,6 +4306,7 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
 */
 const char *sqlite3_uri_key(const char *zFilename, int N){
   if( zFilename==0 || N<0 ) return 0;
+  zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] && (N--)>0 ){
     zFilename += sqlite3Strlen30(zFilename) + 1;
@@ -4307,25 +4341,6 @@ sqlite3_int64 sqlite3_uri_int64(
 }
 
 /*
-** The Pager stores the Journal filename, WAL filename, and Database filename
-** consecutively in memory, in that order, with prefixes \000\001\000,
-** \002\000, and \003\000, in that order.  Thus the three names look like query
-** parameters if you start at the first prefix.
-**
-** This routine backs up a filename to the start of the first prefix.
-**
-** This only works if the filenamed passed in was obtained from the Pager.
-*/
-static const char *startOfNameList(const char *zName){
-  while( zName[0]!='\001' || zName[1]!=0 ){
-    zName -= 3;
-    while( zName[0]!='\000' ){ zName--; }
-    zName++;
-  }
-  return zName-1;
-}
-
-/*
 ** Translate a filename that was handed to a VFS routine into the corresponding
 ** database, journal, or WAL file.
 **
@@ -4336,14 +4351,26 @@ static const char *startOfNameList(const char *zName){
 ** corruption.
 */
 const char *sqlite3_filename_database(const char *zFilename){
+  return databaseName(zFilename);
   return sqlite3_uri_parameter(zFilename - 3, "\003");
 }
 const char *sqlite3_filename_journal(const char *zFilename){
-  const char *z = sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
-  return ALWAYS(z) && z[0] ? z : 0;
+  zFilename = databaseName(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] ){
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return zFilename + 1;
 }
 const char *sqlite3_filename_wal(const char *zFilename){
-  return sqlite3_uri_parameter(startOfNameList(zFilename), "\002");
+#ifdef SQLITE_OMIT_WAL
+  return 0;
+#else
+  zFilename = sqlite3_filename_journal(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  return zFilename;
+#endif
 }
 
 /*

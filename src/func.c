@@ -16,7 +16,9 @@
 #include "sqliteInt.h"
 #include <stdlib.h>
 #include <assert.h>
+#ifndef SQLITE_OMIT_FLOATING_POINT
 #include <math.h>
+#endif
 #include "vdbeInt.h"
 
 /*
@@ -1864,6 +1866,9 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   nExpr = pExpr->x.pList->nExpr;
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  if( pDef==0 ) return 0;
+#endif
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }

@@ -620,11 +620,11 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.26.0 and later */
 #define sqlite3_normalized_sql         sqlite3_api->normalized_sql
 /* Version 3.28.0 and later */
-#define sqlite3_stmt_isexplain         sqlite3_api->isexplain
-#define sqlite3_value_frombind         sqlite3_api->frombind
+#define sqlite3_stmt_isexplain         sqlite3_api->stmt_isexplain
+#define sqlite3_value_frombind         sqlite3_api->value_frombind
 /* Version 3.30.0 and later */
 #define sqlite3_drop_modules           sqlite3_api->drop_modules
-/* Version 3.31.0 andn later */
+/* Version 3.31.0 and later */
 #define sqlite3_hard_heap_limit64      sqlite3_api->hard_heap_limit64
 #define sqlite3_uri_key                sqlite3_api->uri_key
 #define sqlite3_filename_database      sqlite3_api->filename_database
