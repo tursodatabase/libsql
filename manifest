@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\swindow\sfunctions\soccuring\swithin\ssub-selects\sthat\sare\spart\sof\san\sOR\sterm\sin\sa\sWHERE\sclause\sof\sthe\souter\sSELECT.
-D 2020-02-29T17:19:42.906
+C Ensure\sthat\sthe\sNULL-scan\spass\scounter\sis\sinitialized\swhen\sa\sORDER\sBY\sNULLS\sLAST\nis\sused\son\sthe\sright\stable\sof\sa\sLEFT\sJOIN.\s\sTicket\s[e12a0ae526bb51c7].
+D 2020-03-02T01:16:33.765
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
 F src/where.c 3b8c9bd013eb0736e16f60bdc109e83337ef99513a3aff5f16ddac036e6c277e
 F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
-F src/wherecode.c f5df56e395ade2240cabb2d39500c681bd29f8cc0636c3301c4996ad160df94d
+F src/wherecode.c 7b939de85d65cc4b4bfa197513136b9e0ae03167e3b82842ca5a0ba1055ba65d
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
 F src/window.c 0b824edbab94e473d0ade203645798ce80358d0c89ff6ac0ba0f7e2768543319
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1197,7 +1197,7 @@ F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
-F test/nulls1.test fe4153fd59a3786b4b9f3663a3e65a3aa43a318c7b4d7dcb3f6c3ed5652c9095
+F test/nulls1.test 82c5bc33148405f21205865abf13c786084438d573a4ac4e87e11b6091cde526
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c3136a722715952d155aae55cbc6d1fb921c6940d8e7d3e32fcba000f6ac1ed
-R cc83f16e5c11cb113e2fc90f743db35e
-U dan
-Z b36633fe9a2f3c01c4c4f90b64a11678
+P 1e174ed0d29366eb56ad1a0cc8defcb440b426bfd9525aed2f93468248606efc
+R cdca29a15a163fde9b50954e8e025c9b
+U drh
+Z ae0a3137d8c4f716cc59f194c604a9c0
