@@ -124,11 +124,41 @@ do_concreport_test 1.12 {
 do_concreport_test 1.13 {
   SELECT v FROM t1 WHERE k >= 101 AND k <= 200
 } {} {
-  2:[101..EOF]
+  2:[101..EOF)
 }
 
+do_concreport_test 1.14 {
+  SELECT v FROM t1 WHERE +v=5
+} {5} {
+  2:(EOF..EOF)
+}
+
+#--------------------------------------------------------------------------
+reset_db
 do_execsql_test 2.0 {
+  PRAGMA journal_mode = wal;
   CREATE TABLE t2(k PRIMARY KEY, v);
+  INSERT INTO t2 VALUES('a',  1);
+  INSERT INTO t2 VALUES('b',  2);
+  INSERT INTO t2 VALUES('c',  3);
+  INSERT INTO t2 VALUES('d',  4);
+  INSERT INTO t2 VALUES('e',  5);
+  INSERT INTO t2 VALUES('f',  6);
+  INSERT INTO t2 VALUES('g',  7);
+  INSERT INTO t2 VALUES('h',  8);
+  INSERT INTO t2 VALUES('i',  9);
+  INSERT INTO t2 VALUES('j', 10);
+  INSERT INTO t2 VALUES('k', 11);
+}
+
+explain_i {
+  SELECT * FROM t2 WHERE k = 'e'
+}
+breakpoint
+do_concreport_test 2.1 {
+  SELECT * FROM t2 WHERE k = 'e'
+} {e 5} {
+  2:
 }
 
 finish_test

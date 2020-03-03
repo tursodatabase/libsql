@@ -1435,6 +1435,8 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 #define CURSORSCAN_LIMITINCL  0x0080
 #define CURSORSCAN_LIMITMAX   0x0100
 
+#define CURSORSCAN_OOM        0x0200
+
 typedef struct CursorScan CursorScan;
 struct CursorScan {
   int tnum;                     /* Root page of scanned b-tree */
@@ -1442,6 +1444,9 @@ struct CursorScan {
   i64 iMin;
   i64 iMax;
   i64 iLimit;
+  u8 *aMin;
+  u8 *aMax;
+  u8 *aLimit;
   int nRef;                     /* Number of pointers to this structure */
   CursorScan *pNext;            /* Next CursorScan object in list */
 };

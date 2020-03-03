@@ -4927,6 +4927,9 @@ void sqlite3BtreeScanDeref(CursorScan *pScan){
   if( pScan ){
     pScan->nRef--;
     if( pScan->nRef==0 ){
+      sqlite3_free(pScan->aMax);
+      sqlite3_free(pScan->aMin);
+      sqlite3_free(pScan->aLimit);
       sqlite3_free(pScan);
     }
   }
@@ -5833,6 +5836,8 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+#include "vdbeInt.h"
+
 const char *sqlite3_begin_concurrent_report(sqlite3 *db){
   sqlite3DbFree(db, db->zBCReport);
   db->zBCReport = 0;
@@ -5882,30 +5887,107 @@ const char *sqlite3_begin_concurrent_report(sqlite3 *db){
   return db->zBCReport;
 }
 
-void sqlite3BtreeScanDerefList(CursorScan *pList){
-  CursorScan *p;
-  CursorScan *pNext;
-  for(p=pList; p; p=pNext){
-    pNext = p->pNext;
-    sqlite3BtreeScanDeref(p);
+static u32 btreeScanSerialType(Mem *pMem){
+  if( pMem->flags & MEM_Int ) return 6;
+  if( pMem->flags & MEM_Real ) return 7;
+  if( pMem->flags & MEM_Str ) return (pMem->n * 2)+12;
+  if( pMem->flags & MEM_Blob ) return (pMem->n * 2)+13;
+  return 0;
+}
+
+static void btreeScanSet(
+  CursorScan *pNew, 
+  UnpackedRecord *pKey, 
+  i64 iKey,
+  i64 *piKey,
+  u8 **paKey
+){
+  if( pKey==0 ){
+    assert( *paKey==0 );
+    *piKey = iKey;
+  }else{
+    /* Figure out how much space is required */
+    int ii;
+    u8 *aRec = 0;
+    int nByte = 0;
+    int nHdr = 0;
+    int nSize = 0;
+
+    sqlite3_free(*paKey);
+    *paKey = 0;
+
+    for(ii=0; ii<pKey->nField; ii++){
+      Mem *pMem = &pKey->aMem[ii];
+      u32 serial_type = btreeScanSerialType(pMem);
+      nByte += sqlite3VdbeSerialTypeLen(serial_type);
+      nHdr += sqlite3VarintLen(serial_type);
+    }
+
+    nSize = sqlite3VarintLen(nHdr);
+    if( sqlite3VarintLen(nSize+nHdr)>nSize ) nSize++;
+
+    aRec = (u8*)sqlite3_malloc(nSize+nHdr+nByte);
+    if( aRec==0 ){
+      pNew->flags |= CURSORSCAN_OOM;
+    }else{
+      int iOff = 0;
+      iOff += sqlite3PutVarint(&aRec[iOff], nSize);
+      for(ii=0; ii<pKey->nField; ii++){
+        u32 serial_type = btreeScanSerialType(&pKey->aMem[ii]);
+        iOff += sqlite3PutVarint(&aRec[iOff], serial_type);
+      }
+      for(ii=0; ii<pKey->nField; ii++){
+        Mem *pMem = &pKey->aMem[ii];
+        u32 serial_type = btreeScanSerialType(pMem);
+        iOff += sqlite3VdbeSerialPut(&aRec[iOff], pMem, serial_type);
+      }
+      assert( iOff==(nSize+nHdr+nByte) );
+      *paKey = aRec;
+      *piKey = iOff;
+    }
+
+  }
+}
+
+static void btreeScanSetKey(BtCursor *pCsr, i64 *piKey, u8 **paKey){
+  if( pCsr->curIntKey ){
+    *piKey = sqlite3BtreeIntegerKey(pCsr);
+  }else{
+    int rc;
+    u32 nKey = sqlite3BtreePayloadSize(pCsr);
+    u8 *aKey = sqlite3_malloc(nKey);
+    if( aKey==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3BtreePayload(pCsr, 0, nKey, aKey);
+    }
+    if( rc ){
+      sqlite3_free(aKey);
+      pCsr->pCScan->flags |= CURSORSCAN_OOM;
+    }else{
+      sqlite3_free(*paKey);
+      *piKey = nKey;
+      *paKey = aKey;
+    }
   }
 }
 
 static void btreeScanNext(BtCursor *pCsr, int bPrev){
-  if( pCsr->pCScan ){
+  CursorScan *pCScan = pCsr->pCScan;
+  if( pCScan ){
     if( bPrev ){
       if( sqlite3BtreeEof(pCsr) ){
-        pCsr->pCScan->flags &= ~(CURSORSCAN_MINVALID|CURSORSCAN_MININCL);
+        pCScan->flags &= ~(CURSORSCAN_MINVALID|CURSORSCAN_MININCL);
       }else{
-        pCsr->pCScan->iMin = sqlite3BtreeIntegerKey(pCsr);
-        pCsr->pCScan->flags |= CURSORSCAN_MINVALID|CURSORSCAN_MININCL;
+        pCScan->iMin = sqlite3BtreeIntegerKey(pCsr);
+        btreeScanSetKey(pCsr, &pCScan->iMin, &pCScan->aMin);
       }
     }else{
       if( sqlite3BtreeEof(pCsr) ){
-        pCsr->pCScan->flags &= ~(CURSORSCAN_MAXVALID|CURSORSCAN_MAXINCL);
+        pCScan->flags &= ~(CURSORSCAN_MAXVALID|CURSORSCAN_MAXINCL);
       }else{
-        pCsr->pCScan->iMax = sqlite3BtreeIntegerKey(pCsr);
-        pCsr->pCScan->flags |= CURSORSCAN_MAXVALID|CURSORSCAN_MAXINCL;
+        btreeScanSetKey(pCsr, &pCScan->iMax, &pCScan->aMax);
+        pCScan->flags |= CURSORSCAN_MAXVALID|CURSORSCAN_MAXINCL;
       }
     }
   }
@@ -5919,7 +6001,7 @@ int sqlite3BtreeScanLimit(
 ){
   CursorScan *pScan = pCsr->pCScan;
   if( pScan ){
-    pScan->iLimit = iKey;
+    btreeScanSet(pScan, pKey, iKey, &pScan->iLimit, &pScan->aLimit);
     pScan->flags |= CURSORSCAN_LIMITVALID;
     switch( opcode ){
       case OP_Lt:
@@ -5944,8 +6026,7 @@ int sqlite3BtreeScanStart(
   int opcode
 ){
   Btree *pBtree = pCsr->pBtree;
-  if( pKey==0 
-   && pBtree->db->bConcurrent 
+  if( pBtree->db->bConcurrent 
    && sqlite3PagerIsWal(pBtree->pBt->pPager) 
   ){
     sqlite3 *db = pCsr->pBtree->db;
@@ -5953,8 +6034,7 @@ int sqlite3BtreeScanStart(
     pNew = (CursorScan*)sqlite3MallocZero(sizeof(CursorScan));
     if( pNew==0 ) return SQLITE_NOMEM;
     pNew->tnum = (int)pCsr->pgnoRoot;
-    pNew->flags = CURSORSCAN_INTKEY;
-    pNew->iMin = pNew->iMax = iKey;
+    if( pKey==0 ) pNew->flags = CURSORSCAN_INTKEY;
 
     if( pCsr->pCScan ){
       sqlite3BtreeScanDeref(pCsr->pCScan);
@@ -5976,6 +6056,7 @@ int sqlite3BtreeScanStart(
         pNew->flags |= CURSORSCAN_MAXINCL;
       case OP_SeekLT:
         pNew->flags |= CURSORSCAN_MAXVALID;
+        pNew->iMax = iKey;
         btreeScanNext(pCsr, 1);
         break;
 
@@ -5983,11 +6064,13 @@ int sqlite3BtreeScanStart(
         pNew->flags |= CURSORSCAN_MININCL;
       case OP_SeekGT:
         pNew->flags |= CURSORSCAN_MINVALID;
+        btreeScanSet(pNew, pKey, iKey, &pNew->iMin, &pNew->aMin);
         btreeScanNext(pCsr, 0);
         break;
 
       case OP_SeekRowid:
       case OP_DeferredSeek:
+        pNew->iMin = pNew->iMax = iKey;
         pNew->flags |= (CURSORSCAN_MININCL|CURSORSCAN_MAXINCL);
         pNew->flags |= CURSORSCAN_MINVALID|CURSORSCAN_MAXVALID;
         break;
@@ -5995,6 +6078,16 @@ int sqlite3BtreeScanStart(
   }
   return SQLITE_OK;
 }
+
+void sqlite3BtreeScanDerefList(CursorScan *pList){
+  CursorScan *p;
+  CursorScan *pNext;
+  for(p=pList; p; p=pNext){
+    pNext = p->pNext;
+    sqlite3BtreeScanDeref(p);
+  }
+}
+
 
 /* Move the cursor so that it points to an entry near the key 
 ** specified by pIdxKey or intKey.   Return a success code.

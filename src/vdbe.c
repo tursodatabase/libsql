@@ -4334,6 +4334,7 @@ case OP_SeekGT: {       /* jump, in3, group */
 #endif
     r.eqSeen = 0;
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, &r, 0, 0, &res);
+    sqlite3BtreeScanStart(pC->uc.pCursor, &r, 0, pOp->opcode);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
