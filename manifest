@@ -1,5 +1,5 @@
-C Enhance\sthe\sfuzzcheck\stest\sprogram\sso\sthat\sit\sis\sable\sto\ssimulate\sOOM\serrors\nin\sthe\ssame\sway\sthat\sdbsqlfuzz\sdoes.
-D 2020-03-02T16:31:21.682
+C Improved\sdetection\sof\scorruption\sin\sthe\sinterior\snodes\sof\sa\ssegment\sbtree\nin\sFTS3/4.
+D 2020-03-03T01:16:04.083
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -82,7 +82,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 52c09f459364732b5df73eff0373f991fd6af8f0f60fcdbb4b649205e88a7568
+F ext/fts3/fts3.c 2a9dd452003a143248e68449302da80dd0c43df72195b56577e3562e43c408a0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h f091030b976045e7df91af2337935952b477cdbd9f48058c44c965684484cb50
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
@@ -942,7 +942,7 @@ F test/fts3b.test c15c4a9d04e210d0be67e54ce6a87b927168fbf9c1e3faec8c1a732c366fd4
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
 F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f5a76b
-F test/fts3corrupt.test ce7f7b5eaeee5f1804584d061b978d85e64abf2af9adaa7577589fac6f7eae01
+F test/fts3corrupt.test 79a32ffdcd5254e2f7fa121d9656e61949ad049c3c6554229911b7ceac37c9c6
 F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999fe3b0d25f3
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
 F test/fts3corrupt4.test e8ad49403179cbf714b6b669d2e0f9234ae95f4ca258a253b0f29ce28c1b027c
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 219c296cc8cab13fa12b64c297bc4a98d8e21491309d97a031edf89ae77fce75
-R 17d29216190d0b7754fc3170b52eb5e5
+P a65c8d4e26b2428ecb8232a4a6a44443aa1701319223397e61a823a5aa1827de
+R 47528955cb3606b0afdcad4fc80a64ba
 U drh
-Z 401be2bfffbe1801f75607da61f73c58
+Z 210b00ab6edc4a4aa29d4797eca25a55
