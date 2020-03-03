@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\scorruption\sin\sthe\sinterior\snodes\sof\sa\ssegment\sbtree\nin\sFTS3/4.
-D 2020-03-03T01:16:04.083
+C Remove\san\sinvalid\sassert()\son\sthe\sdebugging\slogic\sthat\schecks\sto\sensure\sthat\nregister\svalues\sare\snot\sused\safter\sthey\sgo\sstale.\s\sTicket\s[d165ad781b39d574].
+D 2020-03-03T20:04:29.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c 2d8d863e6b85a5b4362a248c04d82f0df8df79be289b2fc75b488c3cd79ddb5f
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
-F src/vdbemem.c ddca442b006db5010c1cf799c708d3ca5e7644c20ba8a32ea6757d33c4ba3da2
+F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vtab.c 7b704a90515a239c6cdba6a66b1bb3a385e62326cceb5ecb05ec7a091d6b8515
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a65c8d4e26b2428ecb8232a4a6a44443aa1701319223397e61a823a5aa1827de
-R 47528955cb3606b0afdcad4fc80a64ba
+P cc99447ac923166104e8a7c75088ed95279f4491b30cfa37dc3ee5e005dd9fac
+R 8f0f3c6d7f9f80265473494f8304b7c4
 U drh
-Z 210b00ab6edc4a4aa29d4797eca25a55
+Z c1b83b00436d3b4454df5dff5b6ce418
