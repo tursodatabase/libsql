@@ -6476,7 +6476,7 @@ case OP_Program: {        /* jump */
     int i;
     for(i=0; i<p->nMem; i++){
       aMem[i].pScopyFrom = 0;  /* Prevent false-positive AboutToChange() errs */
-      aMem[i].flags |= MEM_Undefined; /* Cause a fault if this reg is reused */
+      MemSetTypeFlag(&aMem[i], MEM_Undefined); /* Fault if this reg is reused */
     }
   }
 #endif

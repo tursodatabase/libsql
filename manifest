@@ -1,5 +1,5 @@
-C Remove\san\sinvalid\sassert()\son\sthe\sdebugging\slogic\sthat\schecks\sto\sensure\sthat\nregister\svalues\sare\snot\sused\safter\sthey\sgo\sstale.\s\sTicket\s[d165ad781b39d574].
-D 2020-03-03T20:04:29.120
+C Fix\sa\sfalse-positive\sin\sthe\sdebugging\slogic\sthat\sattempts\sto\sdetect\sthe\nuse\sof\suninitialized\sregisters\sinside\striggers.\nTicket\s[c4c56482ced89d90]
+D 2020-03-03T20:48:12.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 95fb6e03a5ca679045c5adccd05380f0addccabef5911abddcb06af069500ab7
 F src/util.c a285c1e026907b69fa2592bd05047a565a1d8a1aef2b73c924b6a8ffe772871a
 F src/vacuum.c 813b510ba887fee6492bcb11f2bf77d7eb58b232b83649136372e0a2fc17f4b9
-F src/vdbe.c 15cae95de3c1301747f7ee17a70046772741e7e630b6d5554c685b613798b8e8
+F src/vdbe.c 8ad7906cf9aca841b97064fbf62323f53aaf8e4f8251ffa5e152abc5bda806d3
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
 F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc99447ac923166104e8a7c75088ed95279f4491b30cfa37dc3ee5e005dd9fac
-R 8f0f3c6d7f9f80265473494f8304b7c4
+P bd94d7d052734460904c687756231f8aa243a2252f07f742dd1e437aa940f536
+R 0f71af2e8e80ccdf0b7d36f886e9acf8
 U drh
-Z c1b83b00436d3b4454df5dff5b6ce418
+Z ceca558695865cc74aa546ee62ecf8a0
