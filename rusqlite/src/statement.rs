@@ -515,13 +515,7 @@ impl Statement<'_> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
-            ffi::SQLITE_DONE => {
-                if self.column_count() == 0 {
-                    Ok(self.conn.changes())
-                } else {
-                    Err(Error::ExecuteReturnedResults)
-                }
-            }
+            ffi::SQLITE_DONE => Ok(self.conn.changes()),
             ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
             _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
@@ -551,6 +545,7 @@ impl Statement<'_> {
     #[cfg(all(feature = "modern_sqlite", feature = "extra_check"))]
     #[inline]
     fn check_update(&self) -> Result<()> {
+        // sqlite3_column_count works for DML but not for DDL (ie ALTER)
         if self.column_count() > 0 || self.stmt.readonly() {
             return Err(Error::ExecuteReturnedResults);
         }
@@ -560,6 +555,7 @@ impl Statement<'_> {
     #[cfg(all(not(feature = "modern_sqlite"), feature = "extra_check"))]
     #[inline]
     fn check_update(&self) -> Result<()> {
+        // sqlite3_column_count works for DML but not for DDL (ie ALTER)
         if self.column_count() > 0 {
             return Err(Error::ExecuteReturnedResults);
         }

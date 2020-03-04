@@ -1118,6 +1118,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "extra_check")]
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", &[1i32]).unwrap_err();
@@ -1744,6 +1745,15 @@ mod test {
                 },
             )
             .unwrap();
+        }
+
+        #[test]
+        #[cfg(not(feature = "extra_check"))]
+        fn test_alter_table() {
+            let db = checked_memory_handle();
+            db.execute_batch("CREATE TABLE x(t);").unwrap();
+            // `execute_batch` should be used but `execute` should also work
+            db.execute("ALTER TABLE x RENAME TO y;", params![]).unwrap();
         }
     }
 }
