@@ -4340,6 +4340,7 @@ case OP_SeekGT: {       /* jump, in3, group */
     }
     if( eqOnly && r.eqSeen==0 ){
       assert( res!=0 );
+      sqlite3BtreeScanLimit(pC->uc.pCursor, &r, 0, pOp[1].opcode);
       goto seek_not_found;
     }
   }
@@ -5905,7 +5906,10 @@ case OP_IdxGE:  {       /* jump */
   }
   VdbeBranchTaken(res>0,2);
   if( rc ) goto abort_due_to_error;
-  if( res>0 ) goto jump_to_p2;
+  if( res>0 ){
+    sqlite3BtreeScanLimit(pC->uc.pCursor, &r, 0, pOp->opcode);
+    goto jump_to_p2;
+  }
   break;
 }
 

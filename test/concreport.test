@@ -28,7 +28,7 @@ proc do_concreport_test {tn sql res report} {
   " $res]
 
   uplevel [list do_test $tn.2 {
-    list {*}[sqlite3_begin_concurrent_report db]
+    lrange [split [sqlite3_begin_concurrent_report db] "\n"] 0 end-1
   } [list {*}$report]]
 }
 
@@ -145,20 +145,96 @@ do_execsql_test 2.0 {
   INSERT INTO t2 VALUES('e',  5);
   INSERT INTO t2 VALUES('f',  6);
   INSERT INTO t2 VALUES('g',  7);
-  INSERT INTO t2 VALUES('h',  8);
   INSERT INTO t2 VALUES('i',  9);
   INSERT INTO t2 VALUES('j', 10);
   INSERT INTO t2 VALUES('k', 11);
-}
+} {wal}
 
-explain_i {
-  SELECT * FROM t2 WHERE k = 'e'
-}
-breakpoint
 do_concreport_test 2.1 {
   SELECT * FROM t2 WHERE k = 'e'
 } {e 5} {
-  2:
+  3:[{'e'}..{'e',5}]
+}
+
+do_concreport_test 2.2 {
+  SELECT * FROM t2 WHERE k = 'h'
+} {} {
+  3:[{'h'}..{'h'}]
+}
+
+do_concreport_test 2.3 {
+  SELECT * FROM t2 WHERE k >= 'c' AND k <= 'f';
+} {c 3 d 4 e 5 f 6} {
+  3:[{'c'}..{'f'}]
+}
+
+do_concreport_test 2.4 {
+  SELECT max(k) FROM t2;
+} {k} {
+  3:[{'k',10}..EOF)
+}
+do_concreport_test 2.5 {
+  SELECT min(k) FROM t2;
+} {a} {
+  3:({NULL}..{'a',1}]
+}
+
+do_concreport_test 2.6 {
+  SELECT * FROM t2 WHERE k IN ('c', 'e', 'g')
+} {c 3 e 5 g 7} {
+  3:[{'g'}..{'g'}]
+  3:[{'e'}..{'e'}]
+  3:[{'c'}..{'c'}]
+}
+
+do_concreport_test 2.7 {
+  SELECT v FROM t2 WHERE k > 'b' LIMIT 5
+} {3 4 5 6 7} {
+  3:({'b'}..{'g',7}]
+}
+
+do_concreport_test 2.8 {
+  SELECT v FROM t2 WHERE k > 'b' ORDER BY k DESC LIMIT 5
+} {11 10 9 7 6} {
+  3:[{'f',6}..EOF)
+}
+
+do_concreport_test 2.9 {
+  SELECT v FROM t2 WHERE k > 'b' AND k < 'f'
+} {3 4 5} {
+  3:({'b'}..{'f'})
+}
+do_concreport_test 2.10 {
+  SELECT v FROM t2 WHERE k > 'b' AND k < 'f' ORDER BY k DESC
+} {5 4 3} {
+  3:({'b'}..{'f'})
+}
+
+do_concreport_test 2.11 {
+  SELECT v FROM t2 WHERE k > 'j' AND k < 'q'
+} {11} {
+  3:({'j'}..{'q'})
+}
+
+do_concreport_test 2.12 {
+  SELECT v FROM t2 WHERE k >= 'j' AND k <= 'q'
+} {10 11} {
+  2:[{'j'}..{'q'}]
+}
+
+# This case does not work. The result should be [101..200], but as there
+# are no rows matching (k>=101) the system never sees the (k<=200) 
+# constraint. Hence "..EOF".
+do_concreport_test 1.13 {
+  SELECT v FROM t2 WHERE k >= 'q' AND k <= 's'
+} {} {
+  3:[{'q'}..EOF)
+}
+
+do_concreport_test 2.14 {
+  SELECT v FROM t2 WHERE +v=5 ORDER BY k
+} {5} {
+  3:(EOF..EOF)
 }
 
 finish_test
