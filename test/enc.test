@@ -169,4 +169,84 @@ do_test enc-11.2 {
   }
 } {2}
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+forcedelete test.db3
+
+do_execsql_test enc-12.0 {
+  PRAGMA encoding = 'utf-8';
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('a', 'b', 'c');
+  ATTACH 'test.db3' AS aux;
+  CREATE TABLE aux.t3(x, y, z);
+  INSERT INTO t3 VALUES('xxx', 'yyy', 'zzz');
+  PRAGMA encoding;
+} {UTF-8}
+
+do_test enc-12.1 {
+  sqlite3 db2 test.db2
+  db2 eval {
+    PRAGMA encoding = 'UTF-16le';
+    CREATE TABLE t2(d, e, f);
+    INSERT INTO t2 VALUES('d', 'e', 'f');
+    PRAGMA encoding;
+  }
+} {UTF-16le}
+
+do_test enc-12.2 {
+  db2 backup test.db
+  db2 close
+} {}
+
+do_catchsql_test enc-12.3 {
+  SELECT * FROM t2;
+} {1 {attached databases must use the same text encoding as main database}}
+
+db close
+sqlite3 db test.db3
+do_execsql_test enc-12.4 {
+  SELECT * FROM t3;
+  PRAGMA encoding = 'UTF-16le';
+  SELECT * FROM t3;
+} {xxx yyy zzz xxx yyy zzz}
+
+db close
+sqlite3 db test.db3
+breakpoint
+do_execsql_test enc-12.5 {
+  PRAGMA encoding = 'UTF-16le';
+  PRAGMA encoding;
+} {UTF-8}
+
+reset_db
+do_execsql_test enc-12.6 {
+  PRAGMA encoding = 'UTF-8';
+  CREATE TEMP TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('xxx', 'yyy', 'zzz');
+}
+do_test enc-12.7 {
+  sqlite3 db2 test.db2
+  db2 backup test.db
+  db2 close
+  db eval {
+    SELECT * FROM t1;
+  }
+} {xxx yyy zzz}
+do_catchsql_test enc-12.8 {
+  SELECT * FROM t2;
+  SELECT * FROM t1;
+} {1 {attached databases must use the same text encoding as main database}}
+
+db close
+sqlite3 db test.db
+do_execsql_test enc-12.9 {
+  CREATE TEMP TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('xxx', 'yyy', 'zzz');
+}
+do_execsql_test enc-12.10 {
+  SELECT * FROM t2;
+  SELECT * FROM t1;
+} {d e f xxx yyy zzz}
+
 finish_test
