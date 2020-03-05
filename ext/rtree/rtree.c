@@ -3746,8 +3746,10 @@ static int rtreeInit(
     }else if( pRtree->nAux>0 ){
       break;
     }else{
+      static const char *azFormat[] = {",%.*s REAL", ",%.*s INT"};
       pRtree->nDim2++;
-      sqlite3_str_appendf(pSql, ",%.*s NUM", rtreeTokenLength(zArg), zArg);
+      sqlite3_str_appendf(pSql, azFormat[eCoordType],
+                          rtreeTokenLength(zArg), zArg);
     }
   }
   sqlite3_str_appendf(pSql, ");");

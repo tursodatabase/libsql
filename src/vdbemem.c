@@ -961,7 +961,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
         sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
           (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
       }
-      /* If pX is marked as a shallow copy of pMem, then verify that
+      /* If pX is marked as a shallow copy of pMem, then try to verify that
       ** no significant changes have been made to pX since the OP_SCopy.
       ** A significant change would indicated a missed call to this
       ** function for pX.  Minor changes, such as adding or removing a
@@ -969,11 +969,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
       ** same. */
       mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
       assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
-      /* assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r ); */
-      /*                                          ^^           */
-      /*       Cannot reliably compare doubles for equality    */
-      assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
-      assert( (mFlags&MEM_Blob)==0  || sqlite3BlobCompare(pMem,pX)==0 );
       
       /* pMem is the register that is changing.  But also mark pX as
       ** undefined so that we can quickly detect the shallow-copy error */

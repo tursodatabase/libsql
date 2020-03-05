@@ -520,6 +520,57 @@ static int vdbeOpLimit = 25000;
 
 /* Maximum size of the in-memory database */
 static sqlite3_int64 maxDbSize = 104857600;
+/* OOM simulation parameters */
+static unsigned int oomCounter = 0;    /* Simulate OOM when equals 1 */
+static unsigned int oomRepeat = 0;     /* Number of OOMs in a row */
+static void*(*defaultMalloc)(int) = 0; /* The low-level malloc routine */
+
+/* This routine is called when a simulated OOM occurs.  It is broken
+** out as a separate routine to make it easy to set a breakpoint on
+** the OOM
+*/
+void oomFault(void){
+  if( eVerbosity ){
+    printf("Simulated OOM fault\n");
+  }
+  if( oomRepeat>0 ){
+    oomRepeat--;
+  }else{
+    oomCounter--;
+  }
+}
+
+/* This routine is a replacement malloc() that is used to simulate
+** Out-Of-Memory (OOM) errors for testing purposes.
+*/
+static void *oomMalloc(int nByte){
+  if( oomCounter ){
+    if( oomCounter==1 ){
+      oomFault();
+      return 0;
+    }else{
+      oomCounter--;
+    }
+  }
+  return defaultMalloc(nByte);
+}
+
+/* Register the OOM simulator.  This must occur before any memory
+** allocations */
+static void registerOomSimulator(void){
+  sqlite3_mem_methods mem;
+  sqlite3_shutdown();
+  sqlite3_config(SQLITE_CONFIG_GETMALLOC, &mem);
+  defaultMalloc = mem.xMalloc;
+  mem.xMalloc = oomMalloc;
+  sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
+}
+
+/* Turn off any pending OOM simulation */
+static void disableOom(void){
+  oomCounter = 0;
+  oomRepeat = 0;
+}
 
 /*
 ** Translate a single byte of Hex into an integer.
@@ -699,6 +750,9 @@ static int block_troublesome_sql(
      || sqlite3_stricmp("temp_store_directory", zArg1)==0
     ){
       return SQLITE_DENY;
+    }
+    if( sqlite3_stricmp("oom",zArg1)==0 && zArg2!=0 && zArg2[0]!=0 ){
+      oomCounter = atoi(zArg2);
     }
   }else if( (eCode==SQLITE_ATTACH || eCode==SQLITE_DETACH)
             && zArg1 && zArg1[0] ){
@@ -1421,6 +1475,7 @@ int main(int argc, char **argv){
   int openFlags4Data;          /* Flags for sqlite3_open_v2() */
   int nV;                      /* How much to increase verbosity with -vvvv */
 
+  registerOomSimulator();
   sqlite3_initialize();
   iBegin = timeOfDay();
 #ifdef __unix__
@@ -1792,6 +1847,7 @@ int main(int argc, char **argv){
 
     /* Limit available memory, if requested */
     sqlite3_shutdown();
+
     if( nMemThisDb>0 && nMem==0 ){
       if( !nativeMalloc ){
         pHeap = realloc(pHeap, nMemThisDb);
@@ -1836,6 +1892,7 @@ int main(int argc, char **argv){
         runCombinedDbSqlInput(pSql->a, pSql->sz);
         nTest++;
         g.zTestName[0] = 0;
+        disableOom();
         continue;
       }
       for(pDb=g.pFirstDb; pDb; pDb=pDb->pNext){

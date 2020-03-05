@@ -1593,5 +1593,66 @@ do_execsql_test 48.1 {
     FROM (SELECT (SELECT sum(a) FROM t1 GROUP BY a) AS x FROM t1);
 } {2 2 2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 49.1 {
+  CREATE TABLE t1 (a PRIMARY KEY);
+  INSERT INTO t1 VALUES(1);
+}
+
+do_execsql_test 49.2 {
+  SELECT b AS c FROM (
+    SELECT a AS b FROM (
+      SELECT a FROM t1 WHERE a=1 OR (SELECT sum(a) OVER ())
+    ) 
+    WHERE b=1 OR b<10
+  ) 
+  WHERE c=1 OR c>=10;
+} {1}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 50.0 {
+  CREATE TABLE t1 (a DOUBLE PRIMARY KEY);
+  INSERT INTO t1 VALUES(10.0);
+}
+
+do_execsql_test 50.1 {
+  SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+} {10.0}
+
+do_execsql_test 50.2 {
+  SELECT * FROM (
+    SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+  ) 
+  WHERE a=1 OR ( (SELECT sum(a) OVER (ORDER BY a%4)) AND a<=10 )
+} {10.0}
+
+do_execsql_test 50.3 {
+  SELECT a FROM (
+    SELECT * FROM (
+      SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+    ) 
+    WHERE a=1 OR ( (SELECT sum(a) OVER (ORDER BY a%4)) AND a<=10 )
+  ) 
+  WHERE a=1 OR a=10.0
+} {10.0}
+
+do_execsql_test 50.4 {
+  SELECT a FROM (
+    SELECT * FROM (
+      SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+    ) 
+    WHERE a=1 OR ( (SELECT sum(a) OVER (ORDER BY a%4)) AND a<=10 )
+  ) 
+  WHERE a=1 OR ((SELECT sum(a) OVER(ORDER BY a%8)) AND 10<=a)
+} {10.0}
+
+do_execsql_test 50.5 {
+SELECT * FROM (SELECT * FROM t1 NATURAL JOIN t1 WHERE a%1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)) NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum((SELECT * FROM (SELECT * FROM (SELECT * FROM t1 NATURAL JOIN t1 WHERE a%1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)) NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum((SELECT * FROM t1 NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)))OVER(ORDER BY a% 1 )) AND a<=10)) NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND 10<=a)))OVER(ORDER BY a%5)) AND a<=10);
+} {10.0}
 
 finish_test
+
+

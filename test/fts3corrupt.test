@@ -181,4 +181,16 @@ do_catchsql_test 6.10 {
   INSERT INTO f(f) VALUES ("merge=1");
 } {1 {database disk image is malformed}}
 
+# 2020-03-02 https://bugs.chromium.org/p/chromium/issues/detail?id=1057441
+# The ticket complains of use of an uninitialized value. That part is harmless.
+# The only reason to fix this is the failure to detect a subtly corrupt
+# inverted index.
+#
+reset_db
+do_catchsql_test 7.10 {
+  CREATE VIRTUAL TABLE f USING fts3(a,b);
+  INSERT INTO f_segdir VALUES (0,0,1,0,'0 0',x'01010101020101');
+  SELECT  matchinfo( f , 'pcx')  FROM f WHERE b MATCH x'c533';
+} {1 {database disk image is malformed}}
+
 finish_test
