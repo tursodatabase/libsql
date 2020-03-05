@@ -4289,7 +4289,7 @@ case OP_SeekGT: {       /* jump, in3, group */
       }
     }
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, 0, (u64)iKey, 0, &res);
-    sqlite3BtreeScanStart(pC->uc.pCursor, 0, iKey, pOp->opcode);
+    sqlite3BtreeScanStart(pC->uc.pCursor, 0, iKey, pOp->opcode, 0);
     pC->movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -4334,13 +4334,12 @@ case OP_SeekGT: {       /* jump, in3, group */
 #endif
     r.eqSeen = 0;
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, &r, 0, 0, &res);
-    sqlite3BtreeScanStart(pC->uc.pCursor, &r, 0, pOp->opcode);
+    sqlite3BtreeScanStart(pC->uc.pCursor, &r, 0, pOp->opcode, eqOnly);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
     if( eqOnly && r.eqSeen==0 ){
       assert( res!=0 );
-      sqlite3BtreeScanLimit(pC->uc.pCursor, &r, 0, pOp[1].opcode);
       goto seek_not_found;
     }
   }
@@ -4691,7 +4690,7 @@ notExistsWithKey:
   assert( pCrsr!=0 );
   res = 0;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
-  sqlite3BtreeScanStart(pCrsr, 0, iKey, pOp->opcode);
+  sqlite3BtreeScanStart(pCrsr, 0, iKey, pOp->opcode, 0);
   assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
@@ -5382,7 +5381,7 @@ case OP_Last: {        /* jump */
     }
   }
   rc = sqlite3BtreeLast(pCrsr, &res);
-  sqlite3BtreeScanStart(pCrsr, 0, 0, pOp->opcode);
+  sqlite3BtreeScanStart(pCrsr, 0, 0, pOp->opcode, 0);
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -5485,7 +5484,7 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->uc.pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
-    sqlite3BtreeScanStart(pCrsr, 0, 0, OP_Rewind);
+    sqlite3BtreeScanStart(pCrsr, 0, 0, OP_Rewind, 0);
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
@@ -5896,6 +5895,7 @@ case OP_IdxGE:  {       /* jump */
 #endif
   res = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
+  sqlite3BtreeScanLimit(pC->uc.pCursor, &r, 0, pOp->opcode);
   assert( (OP_IdxLE&1)==(OP_IdxLT&1) && (OP_IdxGE&1)==(OP_IdxGT&1) );
   if( (pOp->opcode&1)==(OP_IdxLT&1) ){
     assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxLT );
@@ -5907,7 +5907,6 @@ case OP_IdxGE:  {       /* jump */
   VdbeBranchTaken(res>0,2);
   if( rc ) goto abort_due_to_error;
   if( res>0 ){
-    sqlite3BtreeScanLimit(pC->uc.pCursor, &r, 0, pOp->opcode);
     goto jump_to_p2;
   }
   break;

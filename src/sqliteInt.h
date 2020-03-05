@@ -1448,6 +1448,7 @@ struct CursorScan {
   u8 *aMax;
   u8 *aLimit;
   int nRef;                     /* Number of pointers to this structure */
+  KeyInfo *pKeyInfo;
   CursorScan *pNext;            /* Next CursorScan object in list */
 };
 

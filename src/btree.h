@@ -395,7 +395,8 @@ int sqlite3BtreeScanStart(
   BtCursor *pCsr, 
   UnpackedRecord *pKey, 
   i64 iKey,
-  int opcode
+  int opcode,
+  int eqOnly
 );
 int sqlite3BtreeScanLimit(
   BtCursor *pCsr, 

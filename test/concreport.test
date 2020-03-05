@@ -153,7 +153,7 @@ do_execsql_test 2.0 {
 do_concreport_test 2.1 {
   SELECT * FROM t2 WHERE k = 'e'
 } {e 5} {
-  3:[{'e'}..{'e',5}]
+  3:[{'e'}..{'e'}]
 }
 
 do_concreport_test 2.2 {
@@ -219,19 +219,31 @@ do_concreport_test 2.11 {
 do_concreport_test 2.12 {
   SELECT v FROM t2 WHERE k >= 'j' AND k <= 'q'
 } {10 11} {
-  2:[{'j'}..{'q'}]
+  3:[{'j'}..{'q'}]
+}
+
+do_concreport_test 2.13 {
+  SELECT v FROM t2 WHERE k > 'j' AND k < 'q' ORDER BY k DESC
+} {11} {
+  3:({'j'}..{'q'})
+}
+
+do_concreport_test 2.14 {
+  SELECT v FROM t2 WHERE k >= 'j' AND k <= 'q' ORDER BY k DESC
+} {11 10} {
+  3:[{'j'}..{'q'}]
 }
 
 # This case does not work. The result should be [101..200], but as there
 # are no rows matching (k>=101) the system never sees the (k<=200) 
 # constraint. Hence "..EOF".
-do_concreport_test 1.13 {
+do_concreport_test 2.15 {
   SELECT v FROM t2 WHERE k >= 'q' AND k <= 's'
 } {} {
   3:[{'q'}..EOF)
 }
 
-do_concreport_test 2.14 {
+do_concreport_test 2.16 {
   SELECT v FROM t2 WHERE +v=5 ORDER BY k
 } {5} {
   3:(EOF..EOF)
