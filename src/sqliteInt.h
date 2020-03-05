@@ -1272,7 +1272,6 @@ struct Schema {
 */
 #define DB_SchemaLoaded    0x0001  /* The schema has been loaded */
 #define DB_UnresetViews    0x0002  /* Some views have defined column names */
-#define DB_Empty           0x0004  /* The file is empty (length 0 bytes) */
 #define DB_ResetWanted     0x0008  /* Reset the schema when nSchemaLock==0 */
 
 /*
@@ -1645,9 +1644,10 @@ struct sqlite3 {
 #define DBFLAG_VacuumInto     0x0008  /* Currently running VACUUM INTO */
 #define DBFLAG_SchemaKnownOk  0x0010  /* Schema is known to be valid */
 #define DBFLAG_InternalFunc   0x0020  /* Allow use of internal functions */
+#define DBFLAG_EncodingFixed  0x0040  /* No longer possible to change enc. */
 
-#define DBFLAG_SchemaInuse    0x0020  /* Do not release sharable schemas */
-#define DBFLAG_FreeSchema     0x0040  /* Free extra shared schemas on release */
+#define DBFLAG_SchemaInuse    0x0080  /* Do not release sharable schemas */
+#define DBFLAG_FreeSchema     0x0100  /* Free extra shared schemas on release */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
