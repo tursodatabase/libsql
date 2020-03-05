@@ -3199,11 +3199,6 @@ static int openDatabase(
   if( db->mallocFailed ){
     goto opendb_out;
   }
-  /* EVIDENCE-OF: R-08308-17224 The default collating function for all
-  ** strings is BINARY. 
-  */
-  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, sqlite3StrBINARY, 0);
-  assert( db->pDfltColl!=0 );
 
   /* Parse the filename/URI argument
   **
@@ -3248,7 +3243,9 @@ static int openDatabase(
   }
   sqlite3BtreeEnter(db->aDb[0].pBt);
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
-  if( !db->mallocFailed ) ENC(db) = SCHEMA_ENC(db);
+  if( !db->mallocFailed ){
+    sqlite3SetTextEncoding(db, SCHEMA_ENC(db));
+  }
   sqlite3BtreeLeave(db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(db, 0);
 
