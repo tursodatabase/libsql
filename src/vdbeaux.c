@@ -1658,8 +1658,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
 #endif
     case P4_COLLSEQ: {
+      static const char *const encnames[] = {"?", "8", "16LE", "16BE"};
       CollSeq *pColl = pOp->p4.pColl;
-      sqlite3_str_appendf(&x, "(%.20s)", pColl->zName);
+      assert( pColl->enc>=0 && pColl->enc<4 );
+      sqlite3_str_appendf(&x, "%.18s-%s", pColl->zName,
+                          encnames[pColl->enc]);
       break;
     }
     case P4_FUNCDEF: {
