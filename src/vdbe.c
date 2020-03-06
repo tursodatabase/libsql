@@ -91,7 +91,7 @@ static void updateMaxBlobsize(Mem *p){
 ** hook are enabled for database connect DB.
 */
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-# define HAS_UPDATE_HOOK(DB) ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback)
+# define HAS_UPDATE_HOOK(DB) ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback||(DB)->bConcurrent)
 #else
 # define HAS_UPDATE_HOOK(DB) ((DB)->xUpdateCallback)
 #endif
@@ -4941,8 +4941,14 @@ case OP_Insert: {
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
   if( pTab ){
-    if( db->xPreUpdateCallback && !(pOp->p5 & OPFLAG_ISUPDATE) ){
-      sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey,pOp->p2);
+    if( !(pOp->p5 & OPFLAG_ISUPDATE) ){
+      u8 *a = (u8*)pData->z;
+      sqlite3BtreeScanWrite(
+        pC->uc.pCursor, SQLITE_INSERT, pC->movetoTarget, a, pData->n
+      );
+      if( db->xPreUpdateCallback ){
+        sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT,zDb,pTab,x.nKey,pOp->p2);
+      }
     }
     if( db->xUpdateCallback==0 || pTab->aCol==0 ){
       /* Prevent post-update hook from running in cases when it should not */
@@ -5066,16 +5072,20 @@ case OP_Delete: {
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  if( db->xPreUpdateCallback && pOp->p4.pTab ){
-    assert( !(opflags & OPFLAG_ISUPDATE) 
-         || HasRowid(pTab)==0 
-         || (aMem[pOp->p3].flags & MEM_Int) 
-    );
-    sqlite3VdbePreUpdateHook(p, pC,
-        (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
-        zDb, pTab, pC->movetoTarget,
-        pOp->p3
-    );
+  if( pOp->p4.pTab ){
+    rc = sqlite3BtreeScanWrite(pC->uc.pCursor, 0, pC->movetoTarget, 0, 0);
+    if( rc ) goto abort_due_to_error;
+    if( db->xPreUpdateCallback ){
+      assert( !(opflags & OPFLAG_ISUPDATE) 
+           || HasRowid(pTab)==0 
+           || (aMem[pOp->p3].flags & MEM_Int) 
+      );
+      sqlite3VdbePreUpdateHook(p, pC,
+          (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
+          zDb, pTab, pC->movetoTarget,
+          pOp->p3
+      );
+    }
   }
   if( opflags & OPFLAG_ISNOOP ) break;
 #endif

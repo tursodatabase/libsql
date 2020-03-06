@@ -1424,7 +1424,7 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 #endif /* SQLITE_OMIT_DEPRECATED */
 #define SQLITE_TRACE_NONLEGACY_MASK  0x0f     /* Normal flags */
 
-#define CURSORSCAN_INTKEY     0x0001
+#define CURSORSCAN_WRITE      0x0001
 #define CURSORSCAN_MINVALID   0x0002
 #define CURSORSCAN_MAXVALID   0x0004
 #define CURSORSCAN_REVERSE    0x0008
@@ -1440,7 +1440,7 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 typedef struct CursorScan CursorScan;
 struct CursorScan {
   int tnum;                     /* Root page of scanned b-tree */
-  int flags;
+  int flags;                    /* Mask of CURSORSCAN_* flags */
   i64 iMin;
   i64 iMax;
   i64 iLimit;
@@ -1448,7 +1448,7 @@ struct CursorScan {
   u8 *aMax;
   u8 *aLimit;
   int nRef;                     /* Number of pointers to this structure */
-  KeyInfo *pKeyInfo;
+  KeyInfo *pKeyInfo;            /* KeyInfo structure for indexes */
   CursorScan *pNext;            /* Next CursorScan object in list */
 };
 

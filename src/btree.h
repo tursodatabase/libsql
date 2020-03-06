@@ -404,5 +404,7 @@ int sqlite3BtreeScanLimit(
   i64 iKey,
   int opcode
 );
+int sqlite3BtreeScanWrite(BtCursor *pCsr, int op, i64 id, const u8 *a, int n);
+
 
 #endif /* SQLITE_BTREE_H */

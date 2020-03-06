@@ -5931,52 +5931,58 @@ const char *sqlite3_begin_concurrent_report(sqlite3 *db){
     sqlite3StrAccumInit(&accum, db, 0, 0, 64*1024*1024);
     for(p=db->pCScanList; p; p=p->pNext){
 
-      if( p->flags & CURSORSCAN_LIMITVALID ){
-        if( p->flags & CURSORSCAN_LIMITMAX ){
-          if( (p->flags & CURSORSCAN_MAXVALID)==0 
-           || btreeScanCompare(db,p,p->aLimit,p->iLimit,p->aMax,p->iMax)<=0
-          ){
-            sqlite3_free(p->aMax);
-            p->iMax = p->iLimit;
-            p->aMax = p->aLimit;
-            p->aLimit = 0;
-            p->flags &= ~CURSORSCAN_MAXINCL;
-            p->flags |= (p->flags & CURSORSCAN_LIMITINCL)?CURSORSCAN_MAXINCL:0;
-            p->flags |= CURSORSCAN_MAXVALID;
+      if( p->flags & CURSORSCAN_WRITE ){
+        sqlite3_str_appendf(&accum, "%d<-(%lld)", p->tnum, p->iMin);
+        btreeScanFormatKey(db, &accum, p->aLimit, p->iLimit);
+        sqlite3_str_appendf(&accum, "\n");
+      }else{
+        if( p->flags & CURSORSCAN_LIMITVALID ){
+          if( p->flags & CURSORSCAN_LIMITMAX ){
+            if( (p->flags & CURSORSCAN_MAXVALID)==0 
+             || btreeScanCompare(db,p,p->aLimit,p->iLimit,p->aMax,p->iMax)<=0
+            ){
+              sqlite3_free(p->aMax);
+              p->iMax = p->iLimit;
+              p->aMax = p->aLimit;
+              p->aLimit = 0;
+              p->flags &= ~CURSORSCAN_MAXINCL;
+              p->flags |= (p->flags&CURSORSCAN_LIMITINCL)?CURSORSCAN_MAXINCL:0;
+              p->flags |= CURSORSCAN_MAXVALID;
+            }
+          }else{
+            if( (p->flags & CURSORSCAN_MINVALID)==0 
+             || btreeScanCompare(db,p,p->aLimit,p->iLimit,p->aMin,p->iMin)>=0
+            ){
+              sqlite3_free(p->aMin);
+              p->iMin = p->iLimit;
+              p->aMin = p->aLimit;
+              p->aLimit = 0;
+              p->flags &= ~CURSORSCAN_MININCL;
+              p->flags |= (p->flags&CURSORSCAN_LIMITINCL)?CURSORSCAN_MININCL:0;
+              p->flags |= CURSORSCAN_MINVALID;
+            }
           }
-        }else{
-          if( (p->flags & CURSORSCAN_MINVALID)==0 
-           || btreeScanCompare(db,p,p->aLimit,p->iLimit,p->aMin,p->iMin)>=0
-          ){
-            sqlite3_free(p->aMin);
-            p->iMin = p->iLimit;
-            p->aMin = p->aLimit;
-            p->aLimit = 0;
-            p->flags &= ~CURSORSCAN_MININCL;
-            p->flags |= (p->flags & CURSORSCAN_LIMITINCL)?CURSORSCAN_MININCL:0;
-            p->flags |= CURSORSCAN_MINVALID;
-          }
+          p->flags &= ~CURSORSCAN_LIMITVALID;
         }
-        p->flags &= ~CURSORSCAN_LIMITVALID;
-      }
 
-      sqlite3_str_appendf(&accum, "%d:%s", p->tnum,
-          (p->flags & CURSORSCAN_MININCL) ? "[" : "("
-      );
-      if( p->flags & CURSORSCAN_MINVALID ){
-        btreeScanFormatKey(db, &accum, p->aMin, p->iMin);
-      }else{
-        sqlite3_str_appendf(&accum, "EOF");
+        sqlite3_str_appendf(&accum, "%d:%s", p->tnum,
+            (p->flags & CURSORSCAN_MININCL) ? "[" : "("
+        );
+        if( p->flags & CURSORSCAN_MINVALID ){
+          btreeScanFormatKey(db, &accum, p->aMin, p->iMin);
+        }else{
+          sqlite3_str_appendf(&accum, "EOF");
+        }
+        sqlite3_str_appendf(&accum, "..");
+        if( p->flags & CURSORSCAN_MAXVALID ){
+          btreeScanFormatKey(db, &accum, p->aMax, p->iMax);
+        }else{
+          sqlite3_str_appendf(&accum, "EOF");
+        }
+        sqlite3_str_appendf(&accum, "%s\n", 
+            (p->flags & CURSORSCAN_MAXINCL) ? "]" : ")"
+        );
       }
-      sqlite3_str_appendf(&accum, "..");
-      if( p->flags & CURSORSCAN_MAXVALID ){
-        btreeScanFormatKey(db, &accum, p->aMax, p->iMax);
-      }else{
-        sqlite3_str_appendf(&accum, "EOF");
-      }
-      sqlite3_str_appendf(&accum, "%s\n", 
-          (p->flags & CURSORSCAN_MAXINCL) ? "]" : ")"
-      );
     }
     db->zBCReport = sqlite3StrAccumFinish(&accum);
   }
@@ -6151,7 +6157,6 @@ int sqlite3BtreeScanStart(
     if( pNew==0 ) return SQLITE_NOMEM;
     pNew->pKeyInfo = sqlite3KeyInfoRef(pCsr->pKeyInfo);
     pNew->tnum = (int)pCsr->pgnoRoot;
-    if( pKey==0 ) pNew->flags = CURSORSCAN_INTKEY;
 
     if( pCsr->pCScan ){
       sqlite3BtreeScanDeref(pCsr->pCScan);
@@ -6201,6 +6206,7 @@ int sqlite3BtreeScanStart(
         break;
 
       case OP_SeekRowid:
+      case OP_NotExists:
       case OP_DeferredSeek:
         assert( pKey==0 );
         pNew->iMin = pNew->iMax = iKey;
@@ -6219,6 +6225,54 @@ void sqlite3BtreeScanDerefList(CursorScan *pList){
     pNext = p->pNext;
     sqlite3BtreeScanDeref(p);
   }
+}
+
+int sqlite3BtreeScanWrite(
+  BtCursor *pCsr, 
+  int op, 
+  i64 rowid, 
+  const u8 *a, 
+  int n
+){
+  int rc = SQLITE_OK;
+  Btree *pBtree = pCsr->pBtree;
+  if( pBtree->db->bConcurrent 
+   && sqlite3PagerIsWal(pBtree->pBt->pPager) 
+  ){
+    sqlite3 *db = pCsr->pBtree->db;
+    CursorScan *pNew;
+    pNew = (CursorScan*)sqlite3MallocZero(sizeof(CursorScan));
+    if( pNew==0 ) return SQLITE_NOMEM;
+    pNew->tnum = (int)pCsr->pgnoRoot;
+    pNew->pNext = db->pCScanList;
+    db->pCScanList = pNew;
+    pNew->nRef = 1;
+    pNew->flags = CURSORSCAN_WRITE;
+    pNew->iMin = rowid;
+
+    if( a ){
+      pNew->aLimit = sqlite3_malloc(n);
+      if( pNew->aLimit==0 ){
+        pNew->flags |= CURSORSCAN_OOM;
+        rc = SQLITE_NOMEM;
+      }else{
+        memcpy(pNew->aLimit, a, n);
+        pNew->iLimit = n;
+      }
+    }else{
+      pNew->iLimit = sqlite3BtreePayloadSize(pCsr);
+      pNew->aLimit = sqlite3_malloc(pNew->iLimit);
+      if( pNew->aLimit==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        rc = sqlite3BtreePayload(pCsr, 0, pNew->iLimit, pNew->aLimit);
+      }
+      if( rc ){
+        pNew->flags |= CURSORSCAN_OOM;
+      }
+    }
+  }
+  return rc;
 }
 
 

@@ -1856,6 +1856,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       goto preupdate_old_out;
     }
     p->aRecord = aRec;
+    p->nRecord = nRec;
   }
 
   pMem = *ppValue = &p->pUnpacked->aMem[iIdx];

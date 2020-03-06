@@ -118,8 +118,8 @@ do_concreport_test 1.12 {
   2:[98..200]
 }
 
-# This case does not work. The result should be [101..200], but as there
-# are no rows matching (k>=101) the system never sees the (k<=200) 
+# BUG: This case does not work. The result should be [101..200], but as 
+# there are no rows matching (k>=101) the system never sees the (k<=200)
 # constraint. Hence "..EOF".
 do_concreport_test 1.13 {
   SELECT v FROM t1 WHERE k >= 101 AND k <= 200
@@ -234,9 +234,9 @@ do_concreport_test 2.14 {
   3:[{'j'}..{'q'}]
 }
 
-# This case does not work. The result should be [101..200], but as there
-# are no rows matching (k>=101) the system never sees the (k<=200) 
-# constraint. Hence "..EOF".
+# BUG: This case does not work. The result should be [101..200], but as there
+# are no rows matching (k>=101) the system never sees the (k<=200) constraint.
+# Hence "..EOF".
 do_concreport_test 2.15 {
   SELECT v FROM t2 WHERE k >= 'q' AND k <= 's'
 } {} {
@@ -249,5 +249,142 @@ do_concreport_test 2.16 {
   3:(EOF..EOF)
 }
 
-finish_test
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b)) WITHOUT ROWID;
+  CREATE INDEX t1c ON t1(c);
+  INSERT INTO t1 VALUES(1, 1, 'one');
+  INSERT INTO t1 VALUES(1, 2, 'one.two');
+  INSERT INTO t1 VALUES(2, 1, 'two');
+  INSERT INTO t1 VALUES(2, 2, 'two.two');
+  INSERT INTO t1 VALUES(3, 1, 'three');
+  INSERT INTO t1 VALUES(3, 2, 'three.two');
+  INSERT INTO t1 VALUES(4, 1, 'four');
+  INSERT INTO t1 VALUES(4, 2, 'four.two');
+} {wal}
 
+do_concreport_test 3.1 {
+  SELECT c FROM t1 WHERE a=1;
+} {one one.two} {
+  2:[{1}..{1}]
+}
+
+do_concreport_test 3.2 {
+  SELECT c FROM t1 WHERE (a, b) = (1, 2);
+} {one.two} {
+  2:[{1,2}..{1,2}]
+}
+
+do_concreport_test 3.3 {
+  SELECT c FROM t1 WHERE (a, b) >= (3, 2);
+} {three.two four four.two} {
+  2:[{3,2}..EOF)
+}
+
+# BUG: This is reported as if the query included rows with PK (3,2), even
+# though it does not (i.e. result should be "2:({3,2}..EOF)").
+do_concreport_test 3.4 {
+  SELECT c FROM t1 WHERE (a, b) > (3, 2);
+} {four four.two} {
+  2:[{3,2}..EOF)
+}
+
+do_concreport_test 3.5 {
+  SELECT c FROM t1 WHERE a > 3;
+} {four four.two} {
+  2:({3}..EOF)
+}
+
+do_concreport_test 3.6 {
+  SELECT c FROM t1 WHERE a>1 AND a<4;
+} {two two.two three three.two} {
+  2:({1}..{4})
+}
+
+do_concreport_test 3.7 {
+  SELECT c FROM t1 WHERE a>=2 AND a<=3;
+} {two two.two three three.two} {
+  2:[{2}..{3}]
+}
+
+do_concreport_test 3.8 {
+  SELECT a FROM t1 WHERE c IN('two', 'three', 'four');
+} {4 3 2} {
+  3:[{'two'}..{'two'}]
+  3:[{'three'}..{'three'}]
+  3:[{'four'}..{'four'}]
+}
+
+do_concreport_test 3.9 {
+  SELECT a FROM t1 ORDER BY c;
+} {4 4 1 1 3 3 2 2} {
+  3:(EOF..EOF)
+}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE yy(a INTEGER PRIMARY KEY, one, two);
+  CREATE INDEX yytwo ON yy(two);
+
+  CREATE TABLE xx(c INTEGER PRIMARY KEY, three, four);
+  CREATE INDEX xxthree ON xx(three);
+
+  INSERT INTO yy VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
+  INSERT INTO xx VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
+} {wal}
+
+do_concreport_test 4.1 {
+  SELECT count(one) FROM xx,yy
+} {16} {
+  5:(EOF..EOF)
+  5:(EOF..EOF)
+  5:(EOF..EOF)
+  5:(EOF..EOF)
+  2:(EOF..EOF)
+}
+
+do_concreport_test 4.2 {
+  SELECT count(one) FROM xx, yy WHERE two=three;
+} {4} {
+  5:[{4}..{4}]
+  5:[{3}..{3}]
+  5:[{2}..{2}]
+  5:[{1}..{1}]
+  2:(EOF..EOF)
+}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+} {wal}
+
+do_concreport_test 5.1 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+} {} {
+  2<-(1){NULL,2,3}
+  2:[1..1]
+}
+
+breakpoint
+do_concreport_test 5.1 {
+  UPDATE t1 SET c='three' WHERE rowid=1;
+} {} {
+  2<-(1){NULL,2,'three'}
+  2<-(1){NULL,2,3}
+  2:[1..1]
+}
+
+do_concreport_test 5.2 {
+  DELETE FROM t1 WHERE rowid=1
+} {} {
+  2<-(1){NULL,2,'three'}
+  2:[1..1]
+}
+
+finish_test
