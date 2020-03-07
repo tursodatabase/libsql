@@ -2318,13 +2318,13 @@ void sqlite3CompleteInsertion(
       pik_flags |= OPFLAG_NCHANGE;
       pik_flags |= (update_flags & OPFLAG_SAVEPOSITION);
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-      if( update_flags==0 ){
+      if( 1 || update_flags==0 ){
         int r = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_Integer, 0, r);
-        sqlite3VdbeAddOp4(v, OP_Insert, 
+        sqlite3VdbeAddOp4(v, OP_Insert,
             iIdxCur+i, aRegIdx[i], r, (char*)pTab, P4_TABLE
         );
-        sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP);
+        sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP|(update_flags&OPFLAG_ISUPDATE));
         sqlite3ReleaseTempReg(pParse, r);
       }
 #endif

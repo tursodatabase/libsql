@@ -6248,7 +6248,7 @@ int sqlite3BtreeScanWrite(
     db->pCScanList = pNew;
     pNew->nRef = 1;
     pNew->flags = CURSORSCAN_WRITE;
-    pNew->iMin = rowid;
+    pNew->iMin = (pCsr->curIntKey ? rowid : 0);
 
     if( a ){
       pNew->aLimit = sqlite3_malloc(n);

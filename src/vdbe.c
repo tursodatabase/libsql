@@ -4941,11 +4941,10 @@ case OP_Insert: {
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
   if( pTab ){
-    if( !(pOp->p5 & OPFLAG_ISUPDATE) ){
-      u8 *a = (u8*)pData->z;
-      sqlite3BtreeScanWrite(
-        pC->uc.pCursor, SQLITE_INSERT, pC->movetoTarget, a, pData->n
-      );
+    sqlite3BtreeScanWrite(
+        pC->uc.pCursor, SQLITE_INSERT, pC->movetoTarget, (u8*)pData->z, pData->n
+    );
+    if( !(pOp->p5 & OPFLAG_ISUPDATE) && db->xPreUpdateCallback ){
       if( db->xPreUpdateCallback ){
         sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT,zDb,pTab,x.nKey,pOp->p2);
       }
