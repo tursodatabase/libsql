@@ -900,6 +900,9 @@ unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
     None
 }
 
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 #[cfg(test)]
 mod test {
     use super::*;

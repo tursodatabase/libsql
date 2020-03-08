@@ -122,7 +122,7 @@ You can adjust this behavior in a number of ways:
   link against that. This source is embedded in the `libsqlite3-sys` crate and
   is currently SQLite 3.30.1 (as of `rusqlite` 0.21.0 / `libsqlite3-sys`
   0.17.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
-  ```
+  ```toml
   [dependencies.rusqlite]
   version = "0.21.0"
   features = ["bundled"]
