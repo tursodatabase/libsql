@@ -98,3 +98,7 @@ features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "lo
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
+
+[package.metadata.playground]
+features = ["array", "backup", "blob", "bundled", "chrono", "collation", "csvtab", "extra_check", "functions", "hooks", "i128_blob", "limits", "load_extension", "modern_sqlite", "serde_json", "series", "trace", "url", "vtab_v3", "vtab", "window"]
+all-features = false
