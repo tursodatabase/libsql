@@ -1,5 +1,5 @@
-C Report\san\serror\sif\sthe\smain,\sor\sany\sother,\sdatabase\sencoding\sis\smodified\sby\san\sexternal\sprocess\s(perhaps\susing\sthe\sbackup\sAPI)\safter\sthe\sdb\shas\sbeen\sopened.
-D 2020-03-05T18:04:09.456
+C Avoid\sa\sredundant\sNULL\scheck
+D 2020-03-08T13:33:58.464
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 4dfab5862184da86103795ee2a31a22d2bbf9d8cf183bd3e05f3e32267c0855f
+F src/btree.c 7271a120a66dfd12edcee942443fcd7b3860514a5621cb26a374781af1462117
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h dee1a1d0c621524e006bb260bd6b66d5d1867da6fe38cba9ad7b6a9bb9c0c175
 F src/build.c 2394d2c853088106dfc1cf485d609f20e6421d7c84892b795824e454f78e50ad
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a5851893c3d71cc823b6ab5df5e58a852cd322fff26290f1ea05b63d67f564a
-R 74e2a598b7c2d32d296c9fb5e4ea1cd7
-U dan
-Z 79597c4800c4e22dc765415fcd19e860
+P 895bd20b29e223496e1585483c6ce3335ae9050f2e5de4d6b69d0e40df396862
+R 9b9e9f3f550db78646d6369868fb6688
+U pdr
+Z b6c0130d3b40d3b8d77c93bf8f1759d5
