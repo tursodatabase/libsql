@@ -4438,7 +4438,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
       rc = btreeFixUnlocked(p);
     }
     if( rc==SQLITE_OK ){
-      rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, 0);
+      rc = sqlite3PagerCommitPhaseOne(pBt->pPager, p, zMaster, 0);
     }
     sqlite3BtreeLeave(p);
   }
@@ -5931,6 +5931,24 @@ const char *sqlite3_begin_concurrent_report(sqlite3 *db){
     sqlite3StrAccumInit(&accum, db, 0, 0, 64*1024*1024);
     for(p=db->pCScanList; p; p=p->pNext){
 
+      if( p->flags & CURSORSCAN_PGWRITE ){
+        u32 *aPg = (u32*)p->aMax;
+        int nPg = p->iMax;
+        int i;
+        sqlite3_str_appendf(&accum, "W:{%d", (int)aPg[0]);
+        for(i=1; i<nPg; i++){
+          sqlite3_str_appendf(&accum, " %d", (int)aPg[i]);
+        }
+        sqlite3_str_appendf(&accum, "}\n");
+
+        aPg = (u32*)p->aMin;
+        nPg = p->iMin;
+        sqlite3_str_appendf(&accum, "R:{%d", (int)aPg[0]);
+        for(i=1; i<nPg; i++){
+          sqlite3_str_appendf(&accum, " %d", (int)aPg[i]);
+        }
+        sqlite3_str_appendf(&accum, "}\n");
+      }else
       if( p->flags & CURSORSCAN_WRITE ){
         sqlite3_str_appendf(&accum, "%d<-(%lld)", p->tnum, p->iMin);
         btreeScanFormatKey(db, &accum, p->aLimit, p->iLimit);
@@ -6225,6 +6243,43 @@ void sqlite3BtreeScanDerefList(CursorScan *pList){
     pNext = p->pNext;
     sqlite3BtreeScanDeref(p);
   }
+}
+
+int sqlite3BtreeScanDirty(Btree *pBtree, Bitvec *pRead, PgHdr *pList){
+  int rc = SQLITE_OK;
+  if( pBtree->db->bConcurrent ){
+    CursorScan *pNew;
+    u32 *aPg;
+    PgHdr *p;
+    int nPg = 0;
+
+    assert( sqlite3PagerIsWal(pBtree->pBt->pPager) );
+
+    pNew = (CursorScan*)sqlite3MallocZero(sizeof(CursorScan));
+    if( pNew==0 ) return SQLITE_NOMEM;
+    for(p=pList; p; p=p->pDirty) nPg++;
+    aPg = sqlite3MallocZero(sizeof(u32*)*nPg);
+
+    if( aPg==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      int nMin;
+      nPg = 0;
+      for(p=pList; p; p=p->pDirty){
+        aPg[nPg++] = p->pgno;
+      }
+      pNew->iMax = nPg;
+      pNew->aMax = (u8*)aPg;
+
+      rc = sqlite3BitvecArray(pRead, (u32**)&pNew->aMin, &nMin);
+      pNew->iMin = (i64)nMin;
+    }
+
+    pNew->flags |= CURSORSCAN_PGWRITE;
+    pNew->pNext = pBtree->db->pCScanList;
+    pBtree->db->pCScanList = pNew;
+  }
+  return rc;
 }
 
 int sqlite3BtreeScanWrite(

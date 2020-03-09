@@ -405,6 +405,8 @@ int sqlite3BtreeScanLimit(
   int opcode
 );
 int sqlite3BtreeScanWrite(BtCursor *pCsr, int op, i64 id, const u8 *a, int n);
+typedef struct PgHdr PgHdr;
+int sqlite3BtreeScanDirty(Btree *pBtree, Bitvec *pRead, PgHdr *pList);
 
 
 #endif /* SQLITE_BTREE_H */

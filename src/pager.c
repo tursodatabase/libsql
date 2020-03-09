@@ -6602,6 +6602,7 @@ void sqlite3PagerDropExclusiveLock(Pager *pPager){
 */
 int sqlite3PagerCommitPhaseOne(
   Pager *pPager,                  /* Pager object */
+  Btree *pBtree,
   const char *zMaster,            /* If not NULL, the master journal name */
   int noSync                      /* True to omit the xSync on the db file */
 ){
@@ -6648,6 +6649,9 @@ int sqlite3PagerCommitPhaseOne(
       assert( rc==SQLITE_OK );
       if( ALWAYS(pList) ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1);
+      }
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeScanDirty(pBtree, pPager->pAllRead, pList);
       }
       sqlite3PagerUnref(pPageOne);
       if( rc==SQLITE_OK ){

@@ -1436,6 +1436,7 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 #define CURSORSCAN_LIMITMAX   0x0100
 
 #define CURSORSCAN_OOM        0x0200
+#define CURSORSCAN_PGWRITE    0x0400
 
 typedef struct CursorScan CursorScan;
 struct CursorScan {
@@ -4177,6 +4178,7 @@ int sqlite3BitvecSet(Bitvec*, u32);
 void sqlite3BitvecClear(Bitvec*, u32, void*);
 void sqlite3BitvecDestroy(Bitvec*);
 u32 sqlite3BitvecSize(Bitvec*);
+int sqlite3BitvecArray(Bitvec*, u32 **pa, int *pn);
 #ifndef SQLITE_UNTESTABLE
 int sqlite3BitvecBuiltinTest(int,int*);
 #endif
