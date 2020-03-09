@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\s".import"\scommand\sof\sthe\sCLI.
-D 2020-03-09T15:39:39.029
+C Cleaner\sseparation\sof\sthe\sSTAT4-specific\slogic\sin\sthe\simplementation\sof\nANALYZE.
+D 2020-03-09T18:26:11.821
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -466,7 +466,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c f48a4423c8f198d7f1ae4940f74b606707d05384ac79fb219be8e3323af2a2de
-F src/analyze.c b3ceec3fc052df8a96ca8a8c858d455dc5029ba681b4be98bb5c5a9162cfa58c
+F src/analyze.c 831bb090988477a00d3b4c000746e1b0454dcc93b10b793e6ebe1c47f25d193a
 F src/attach.c fa5addce233a2bb2dfdefeee3b37000e154c47214d3269cab1bb331416e330db
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86465c08f4d629a296332a7985937326ac43ea2822c5651bf03862cd79d370fc
-R 59ca84b4f9c863c565a73d91cc01fad5
+P cab1834cfc71f71bfed3c5170a0ba40a39385c3b2c50b7c6b6f09cc830dd1b1e
+R c62e646df7b5e5719c4a0602837bf1ef
 U drh
-Z ca4df02a4f4403d62ad30a31c55381b8
+Z 8147aa7ce1e35e16be35124cd1704d38
