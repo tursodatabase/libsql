@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sLemon\sdocumentation.
-D 2020-03-09T01:02:45.546
+C Fix\stypos\sin\sRowSet.
+D 2020-03-09T03:21:33.427
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,7 +530,7 @@ F src/prepare.c 8d4d6c8aa6afefc48027c54b41cdf134b4d6bc2fc4badbe483ad7fd9e1728a28
 F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 38e3a5636f5bdc92e3683e4cafbba6418c0aa15e0d89ca5b28bd0b621dbb80bf
-F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
+F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c94eec317c8ba929bc228392eb3cac8124f2d0fbe3fc1bddecb44dfc7057bc78
 F src/shell.c.in 3897f3f7302914da1f6df3a2a09ac4aafa14a571d7d18c51500cfb2ff04f05eb
 F src/sqlite.h.in 802957feeb249ede54f8dfe99b72aa19e70a0b7737969c46e625dc2f9f2d42b0
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25dc53f6608dd9b8b4e8d8ee22e194a6d41d15811781752797cb42fc22ee1317
-R 7bdd85c5e549845146cab9e816d7c278
-U drh
-Z 07ddcdd1ff64cc99853935a2ba202c77
+P 35f1f151ac478d6b46f3685d2565c35108ef74bd33ce96fb65300d3c303b289b
+R 3ad66a51f32de0dab569042c4aa4c3c6
+U pdr
+Z ab82beefd8209a83b9f274edf5605106
