@@ -1,5 +1,5 @@
-C Avoid\sa\sredundant\sNULL\scheck
-D 2020-03-08T13:33:58.464
+C Fix\stypos\sin\sthe\sLemon\sdocumentation.
+D 2020-03-09T01:02:45.546
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -38,7 +38,7 @@ F configure 4bbb5f13998f2faf929b9ae708aea9fbcb08a46cb6dd3150e36c3f09c0a05a75 x
 F configure.ac 798a24cee2879325ca5b688a618199eb32cc77ed8136edbaa43d9137b470d54e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/lemon.html 24956ab2995e55fe171e55bdd04f22b553957dc8bb43501dbb9311e30187e0d3
+F doc/lemon.html 857495c0ce060a4e2f2ad7111135ad7e28041a32c10612279ab398eddf678f58
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 895bd20b29e223496e1585483c6ce3335ae9050f2e5de4d6b69d0e40df396862
-R 9b9e9f3f550db78646d6369868fb6688
-U pdr
-Z b6c0130d3b40d3b8d77c93bf8f1759d5
+P 25dc53f6608dd9b8b4e8d8ee22e194a6d41d15811781752797cb42fc22ee1317
+R 7bdd85c5e549845146cab9e816d7c278
+U drh
+Z 07ddcdd1ff64cc99853935a2ba202c77
