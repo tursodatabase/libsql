@@ -3791,8 +3791,12 @@ expr_code_doover:
         assert( pCol->iMem>0 );
         return pCol->iMem;
       }else if( pAggInfo->useSortingIdx ){
+        Table *pTab = pCol->pTab;
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdxPTab,
                               pCol->iSorterColumn, target);
+        if( ALWAYS(pTab) && pCol->iColumn>=0 ){
+          sqlite3ColumnDefault(v, pTab, pCol->iColumn, target);
+        }
         return target;
       }
       /* Otherwise, fall thru into the TK_COLUMN case */
