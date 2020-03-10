@@ -341,14 +341,14 @@ static int bitvecArray(Bitvec *p, u32 *aElem, u32 iOff){
       for(i=0; i<BITVEC_NELEM; i++){
         BITVEC_TELEM x = p->u.aBitmap[i];
         assert( sizeof(x)==1 );
-        if( x & 0x80 ){ aElem[nRet++] = iOff + i*8 + 7; nRet++; }
-        if( x & 0x40 ){ aElem[nRet++] = iOff + i*8 + 6; nRet++; }
-        if( x & 0x20 ){ aElem[nRet++] = iOff + i*8 + 5; nRet++; }
-        if( x & 0x10 ){ aElem[nRet++] = iOff + i*8 + 4; nRet++; }
-        if( x & 0x08 ){ aElem[nRet++] = iOff + i*8 + 3; nRet++; }
-        if( x & 0x04 ){ aElem[nRet++] = iOff + i*8 + 2; nRet++; }
-        if( x & 0x02 ){ aElem[nRet++] = iOff + i*8 + 1; nRet++; }
-        if( x & 0x01 ){ aElem[nRet++] = iOff + i*8 + 0; nRet++; }
+        if( x & 0x01 ){ aElem[nRet++] = iOff + i*8 + 0; }
+        if( x & 0x02 ){ aElem[nRet++] = iOff + i*8 + 1; }
+        if( x & 0x04 ){ aElem[nRet++] = iOff + i*8 + 2; }
+        if( x & 0x08 ){ aElem[nRet++] = iOff + i*8 + 3; }
+        if( x & 0x10 ){ aElem[nRet++] = iOff + i*8 + 4; }
+        if( x & 0x20 ){ aElem[nRet++] = iOff + i*8 + 5; }
+        if( x & 0x40 ){ aElem[nRet++] = iOff + i*8 + 6; }
+        if( x & 0x80 ){ aElem[nRet++] = iOff + i*8 + 7; }
       }
     }else{
       int i;

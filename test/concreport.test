@@ -20,13 +20,14 @@ ifcapable !concurrent {
   return
 }
 
-proc filtered_report {db} {
+proc filtered_report {db {writes 0}} {
   set report [split [sqlite3_begin_concurrent_report $db] "\n"]
   set report [lrange $report 0 end-1]
   set res [list]
   foreach r $report {
     set c [string range $r 0 0]
-    if {$c=="R" || $c=="W"} continue
+    if {$writes==0 && ($c=="R" || $c=="W" || $c=="F")} continue
+    if {$writes==1 && $c!="R" && $c!="W" && $c!="F"} continue
     lappend res $r
   }
   set res
@@ -40,7 +41,19 @@ proc do_concreport_test {tn sql res report} {
   " $res]
 
   uplevel [list do_test $tn.2 {
-    filtered_report db
+    filtered_report db 0
+  } [list {*}$report]]
+}
+
+proc do_pagereport_test {tn sql res report} {
+  uplevel [list do_catchsql_test $tn.1 "
+    BEGIN CONCURRENT;
+      $sql ;
+    COMMIT;
+  " $res]
+
+  uplevel [list do_test $tn.2 {
+    filtered_report db 1
   } [list {*}$report]]
 }
 
@@ -369,6 +382,7 @@ do_concreport_test 4.2 {
   2:(EOF..EOF)
 }
 
+
 #--------------------------------------------------------------------------
 reset_db
 do_execsql_test 5.0 {
@@ -377,7 +391,6 @@ do_execsql_test 5.0 {
   CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID;
 } {wal}
 
-breakpoint
 do_concreport_test 5.1.1 {
   INSERT INTO t1 VALUES(1, 2, 3);
 } {} {
@@ -417,6 +430,47 @@ do_concreport_test 5.2.3 {
 } {} {
   3<-(0){1,2,'three'}
   3:[{1}..{1}]
+}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID;
+} {wal}
+
+do_pagereport_test 6.1 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+} {0 {}} {
+  W:{2} R:{2}
+}
+
+do_pagereport_test 6.2 {
+  INSERT INTO t2 VALUES(1, 2, 3);
+} {0 {}} {
+  W:{3} R:{3}
+}
+
+do_pagereport_test 6.3 {
+  SELECT * FROM t1;
+  INSERT INTO t2 VALUES(4, 5, 6);
+} {0 {1 2 3}} {
+  W:{3} {R:{2 3}}
+}
+
+sqlite3 db2 test.db
+proc write_t2 {a b c} {
+  db2 eval {INSERT INTO t2 VALUES($a, $b, $c)}
+}
+db func write_t2 write_t2
+
+do_pagereport_test 6.3 {
+  SELECT * FROM t1;
+  INSERT INTO t2 VALUES(7, 8, 9);
+  SELECT write_t2(7, 8, 9);
+} {1 {database is locked}} {
+  {F:{2 3}}
 }
 
 finish_test

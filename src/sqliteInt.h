@@ -1437,6 +1437,7 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 
 #define CURSORSCAN_OOM        0x0200
 #define CURSORSCAN_PGWRITE    0x0400
+#define CURSORSCAN_PGFAIL     0x0800
 
 typedef struct CursorScan CursorScan;
 struct CursorScan {

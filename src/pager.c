@@ -6529,6 +6529,10 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, Pgno *piConflict){
 }
 
 #ifndef SQLITE_OMIT_CONCURRENT
+void sqlite3PagerScanFailure(Btree *pBt, Pager *pPager){
+  sqlite3BtreeScanDirty(pBt, pPager->pAllRead, 0);
+}
+
 /*
 ** This function is called as part of committing an CONCURRENT transaction.
 ** At this point the wal WRITER lock is held, and all pages in the cache 
