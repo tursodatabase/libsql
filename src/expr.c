@@ -2850,6 +2850,7 @@ void sqlite3CodeRhsOfIN(
 
     /* Begin coding the subroutine */
     ExprSetProperty(pExpr, EP_Subrtn);
+    assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
     pExpr->y.sub.regReturn = ++pParse->nMem;
     pExpr->y.sub.iAddr =
       sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
@@ -3496,7 +3497,7 @@ void sqlite3ExprCodeGeneratedColumn(
   }else{
     iAddr = 0;
   }
-  sqlite3ExprCode(pParse, pCol->pDflt, regOut);
+  sqlite3ExprCodeCopy(pParse, pCol->pDflt, regOut);
   if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
@@ -4595,7 +4596,7 @@ void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
   if( pParse->okConstFactor && sqlite3ExprIsConstantNotJoin(pExpr) ){
     sqlite3ExprCodeAtInit(pParse, pExpr, target);
   }else{
-    sqlite3ExprCode(pParse, pExpr, target);
+    sqlite3ExprCodeCopy(pParse, pExpr, target);
   }
 }
 
