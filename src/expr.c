@@ -42,7 +42,7 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 ** SELECT a AS b FROM t1 WHERE b;
 ** SELECT * FROM t1 WHERE (select a from t1);
 */
-char sqlite3ExprAffinity(Expr *pExpr){
+char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
   while( ExprHasProperty(pExpr, EP_Skip) ){
     assert( pExpr->op==TK_COLLATE );
@@ -152,10 +152,10 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
 ** COLLATE operators take first precedence.  Left operands take
 ** precedence over right operands.
 */
-CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
+CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
   sqlite3 *db = pParse->db;
   CollSeq *pColl = 0;
-  Expr *p = pExpr;
+  const Expr *p = pExpr;
   while( p ){
     int op = p->op;
     if( op==TK_REGISTER ) op = p->op2;
@@ -224,7 +224,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
 ** The sqlite3ExprCollSeq() routine works the same except that it
 ** returns NULL if there is no defined collation.
 */
-CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr){
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, const Expr *pExpr){
   CollSeq *p = sqlite3ExprCollSeq(pParse, pExpr);
   if( p==0 ) p = pParse->db->pDfltColl;
   assert( p!=0 );
@@ -234,7 +234,7 @@ CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr){
 /*
 ** Return TRUE if the two expressions have equivalent collating sequences.
 */
-int sqlite3ExprCollSeqMatch(Parse *pParse, Expr *pE1, Expr *pE2){
+int sqlite3ExprCollSeqMatch(Parse *pParse, const Expr *pE1, const Expr *pE2){
   CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pE1);
   CollSeq *pColl2 = sqlite3ExprNNCollSeq(pParse, pE2);
   return sqlite3StrICmp(pColl1->zName, pColl2->zName)==0;
@@ -245,7 +245,7 @@ int sqlite3ExprCollSeqMatch(Parse *pParse, Expr *pE1, Expr *pE2){
 ** type affinity of the other operand.  This routine returns the
 ** type affinity that should be used for the comparison operator.
 */
-char sqlite3CompareAffinity(Expr *pExpr, char aff2){
+char sqlite3CompareAffinity(const Expr *pExpr, char aff2){
   char aff1 = sqlite3ExprAffinity(pExpr);
   if( aff1>SQLITE_AFF_NONE && aff2>SQLITE_AFF_NONE ){
     /* Both sides of the comparison are columns. If one has numeric
@@ -267,7 +267,7 @@ char sqlite3CompareAffinity(Expr *pExpr, char aff2){
 ** pExpr is a comparison operator.  Return the type affinity that should
 ** be applied to both operands prior to doing the comparison.
 */
-static char comparisonAffinity(Expr *pExpr){
+static char comparisonAffinity(const Expr *pExpr){
   char aff;
   assert( pExpr->op==TK_EQ || pExpr->op==TK_IN || pExpr->op==TK_LT ||
           pExpr->op==TK_GT || pExpr->op==TK_GE || pExpr->op==TK_LE ||
@@ -290,7 +290,7 @@ static char comparisonAffinity(Expr *pExpr){
 ** if the index with affinity idx_affinity may be used to implement
 ** the comparison in pExpr.
 */
-int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
+int sqlite3IndexAffinityOk(const Expr *pExpr, char idx_affinity){
   char aff = comparisonAffinity(pExpr);
   if( aff<SQLITE_AFF_TEXT ){
     return 1;
@@ -305,7 +305,11 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
 ** Return the P5 value that should be used for a binary comparison
 ** opcode (OP_Eq, OP_Ge etc.) used to compare pExpr1 and pExpr2.
 */
-static u8 binaryCompareP5(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
+static u8 binaryCompareP5(
+  const Expr *pExpr1,   /* Left operand */
+  const Expr *pExpr2,   /* Right operand */
+  int jumpIfNull        /* Extra flags added to P5 */
+){
   u8 aff = (char)sqlite3ExprAffinity(pExpr2);
   aff = (u8)sqlite3CompareAffinity(pExpr1, aff) | (u8)jumpIfNull;
   return aff;
@@ -325,8 +329,8 @@ static u8 binaryCompareP5(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
 */
 CollSeq *sqlite3BinaryCompareCollSeq(
   Parse *pParse, 
-  Expr *pLeft, 
-  Expr *pRight
+  const Expr *pLeft, 
+  const Expr *pRight
 ){
   CollSeq *pColl;
   assert( pLeft );
@@ -351,7 +355,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(
 ** is reversed in the sqlite3BinaryCompareCollSeq() call so that the
 ** correct collating sequence is found.
 */
-CollSeq *sqlite3ExprCompareCollSeq(Parse *pParse, Expr *p){
+CollSeq *sqlite3ExprCompareCollSeq(Parse *pParse, const Expr *p){
   if( ExprHasProperty(p, EP_Commuted) ){
     return sqlite3BinaryCompareCollSeq(pParse, p->pRight, p->pLeft);
   }else{
@@ -594,6 +598,7 @@ static void codeVectorCompare(
   int addrDone = sqlite3VdbeMakeLabel(pParse);
   int isCommuted = ExprHasProperty(pExpr,EP_Commuted);
 
+  assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
   if( pParse->nErr ) return;
   if( nLeft!=sqlite3ExprVectorSize(pRight) ){
     sqlite3ErrorMsg(pParse, "row value misused");
@@ -1206,7 +1211,7 @@ static int dupedExprStructSize(Expr *p, int flags){
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     assert( !ExprHasProperty(p, EP_FromJoin) ); 
     assert( !ExprHasProperty(p, EP_MemToken) );
-    assert( !ExprHasProperty(p, EP_NoReduce) );
+    assert( !ExprHasVVAProperty(p, EP_NoReduce) );
     if( p->pLeft || p->x.pList ){
       nSize = EXPR_REDUCEDSIZE | EP_Reduced;
     }else{
@@ -1311,6 +1316,10 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
     pNew->flags &= ~(EP_Reduced|EP_TokenOnly|EP_Static|EP_MemToken);
     pNew->flags |= nStructSize & (EP_Reduced|EP_TokenOnly);
     pNew->flags |= staticFlag;
+    ExprClearVVAProperties(pNew);
+    if( dupFlags ){
+      ExprSetVVAProperty(pNew, EP_Immutable);
+    }
 
     /* Copy the p->u.zToken string, if any. */
     if( nToken ){
@@ -3171,6 +3180,7 @@ static void sqlite3ExprCodeIN(
   int addrTop;          /* Top of the step-6 loop */ 
   int iTab = 0;         /* Index to use */
 
+  assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
   pLeft = pExpr->pLeft;
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
   zAff = exprINAffinity(pParse, pExpr);
@@ -3781,6 +3791,7 @@ expr_code_doover:
   if( pExpr==0 ){
     op = TK_NULL;
   }else{
+    assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
     op = pExpr->op;
   }
   switch( op ){
@@ -4039,6 +4050,7 @@ expr_code_doover:
         tempX.op = TK_INTEGER;
         tempX.flags = EP_IntValue|EP_TokenOnly;
         tempX.u.iValue = 0;
+        ExprClearVVAProperties(&tempX);
         r1 = sqlite3ExprCodeTemp(pParse, &tempX, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree2);
         sqlite3VdbeAddOp3(v, OP_Subtract, r2, r1, target);
@@ -4115,11 +4127,8 @@ expr_code_doover:
         return sqlite3ExprCodeAtInit(pParse, pExpr, -1);
       }
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      if( ExprHasProperty(pExpr, EP_TokenOnly) ){
-        pFarg = 0;
-      }else{
-        pFarg = pExpr->x.pList;
-      }
+      assert( !ExprHasProperty(pExpr, EP_TokenOnly) );
+      pFarg = pExpr->x.pList;
       nFarg = pFarg ? pFarg->nExpr : 0;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       zId = pExpr->u.zToken;
@@ -4573,6 +4582,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
 void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int inReg;
 
+  assert( pExpr==0 || !ExprHasVVAProperty(pExpr,EP_Immutable) );
   assert( target>0 && target<=pParse->nMem );
   inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   assert( pParse->pVdbe!=0 || pParse->db->mallocFailed );
@@ -4790,6 +4800,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   assert( jumpIfNull==SQLITE_JUMPIFNULL || jumpIfNull==0 );
   if( NEVER(v==0) )     return;  /* Existence of VDBE checked by caller */
   if( NEVER(pExpr==0) ) return;  /* No way this can happen */
+  assert( !ExprHasVVAProperty(pExpr, EP_Immutable) );
   op = pExpr->op;
   switch( op ){
     case TK_AND:
@@ -4931,6 +4942,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   assert( jumpIfNull==SQLITE_JUMPIFNULL || jumpIfNull==0 );
   if( NEVER(v==0) ) return; /* Existence of VDBE checked by caller */
   if( pExpr==0 )    return;
+  assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
 
   /* The value of pExpr->op and op are related as follows:
   **
@@ -5214,7 +5226,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
   }
   if( (pA->flags & (EP_Distinct|EP_Commuted))
      != (pB->flags & (EP_Distinct|EP_Commuted)) ) return 2;
-  if( (combinedFlags & EP_TokenOnly)==0 ){
+  if( ALWAYS((combinedFlags & EP_TokenOnly)==0) ){
     if( combinedFlags & EP_xIsSelect ) return 2;
     if( (combinedFlags & EP_FixedCol)==0
      && sqlite3ExprCompare(pParse, pA->pLeft, pB->pLeft, iTab) ) return 2;
@@ -5222,7 +5234,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
     if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
     if( pA->op!=TK_STRING
      && pA->op!=TK_TRUEFALSE
-     && (combinedFlags & EP_Reduced)==0
+     && ALWAYS((combinedFlags & EP_Reduced)==0)
     ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->op2!=pB->op2 ){

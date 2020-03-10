@@ -2157,6 +2157,32 @@ int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
+#ifdef SQLITE_DEBUG
+/*
+** Mark all nodes of an expression as EP_Immutable, indicating that
+** they should not be changed.  Expressions attached to a table or
+** index definition are tagged this way to help ensure that we do
+** not pass them into code generator routines by mistake.
+*/
+static int markImmutableExprStep(Walker *pWalker, Expr *pExpr){
+  ExprSetVVAProperty(pExpr, EP_Immutable);
+  return WRC_Continue;
+}
+static void markExprListImmutable(ExprList *pList){
+  if( pList ){
+    Walker w;
+    memset(&w, 0, sizeof(w));
+    w.xExprCallback = markImmutableExprStep;
+    w.xSelectCallback = sqlite3SelectWalkNoop;
+    w.xSelectCallback2 = 0;
+    sqlite3WalkExprList(&w, pList);
+  }
+}
+#else
+#define markExprListImmutable(X)  /* no-op */
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** This routine is called to report the final ")" that terminates
 ** a CREATE TABLE statement.
@@ -2249,6 +2275,8 @@ void sqlite3EndTable(
       ** actually be used if PRAGMA writable_schema=ON is set. */
       sqlite3ExprListDelete(db, p->pCheck);
       p->pCheck = 0;
+    }else{
+      markExprListImmutable(p->pCheck);
     }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */

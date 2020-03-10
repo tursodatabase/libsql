@@ -2594,6 +2594,9 @@ struct Expr {
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth
                          ** TK_FUNCTION: NC_SelfRef flag if needs OP_PureFunc */
+#ifdef SQLITE_DEBUG
+  u8 vvaFlags;           /* Verification flags. */
+#endif
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
@@ -2668,7 +2671,7 @@ struct Expr {
 #define EP_TokenOnly  0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
 #define EP_Win        0x008000 /* Contains window functions */
 #define EP_MemToken   0x010000 /* Need to sqlite3DbFree() Expr.zToken */
-#define EP_NoReduce   0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
+                  /*  0x020000 // available for reuse */
 #define EP_Unlikely   0x040000 /* unlikely() or likelihood() function */
 #define EP_ConstFunc  0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
 #define EP_CanBeNull  0x100000 /* Can be null despite NOT NULL constraint */
@@ -2682,6 +2685,7 @@ struct Expr {
 #define EP_IsTrue   0x10000000 /* Always has boolean value of TRUE */
 #define EP_IsFalse  0x20000000 /* Always has boolean value of FALSE */
 #define EP_FromDDL  0x40000000 /* Originates from sqlite_master */
+               /*   0x80000000 // Available */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2700,14 +2704,24 @@ struct Expr {
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
+
+/* Flags for use with Expr.vvaFlags
+*/
+#define EP_NoReduce   0x01  /* Cannot EXPRDUP_REDUCE this Expr */
+#define EP_Immutable  0x02  /* Do not change this Expr node */
+
 /* The ExprSetVVAProperty() macro is used for Verification, Validation,
 ** and Accreditation only.  It works like ExprSetProperty() during VVA
 ** processes but is a no-op for delivery.
 */
 #ifdef SQLITE_DEBUG
-# define ExprSetVVAProperty(E,P)  (E)->flags|=(P)
+# define ExprSetVVAProperty(E,P)   (E)->vvaFlags|=(P)
+# define ExprHasVVAProperty(E,P)   (((E)->vvaFlags&(P))!=0)
+# define ExprClearVVAProperties(E) (E)->vvaFlags = 0
 #else
 # define ExprSetVVAProperty(E,P)
+# define ExprHasVVAProperty(E,P)   0
+# define ExprClearVVAProperties(E)
 #endif
 
 /*
@@ -4439,10 +4453,10 @@ int sqlite3VarintLen(u64 v);
 
 const char *sqlite3IndexAffinityStr(sqlite3*, Index*);
 void sqlite3TableAffinity(Vdbe*, Table*, int);
-char sqlite3CompareAffinity(Expr *pExpr, char aff2);
-int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
+char sqlite3CompareAffinity(const Expr *pExpr, char aff2);
+int sqlite3IndexAffinityOk(const Expr *pExpr, char idx_affinity);
 char sqlite3TableColumnAffinity(Table*,int);
-char sqlite3ExprAffinity(Expr *pExpr);
+char sqlite3ExprAffinity(const Expr *pExpr);
 int sqlite3Atoi64(const char*, i64*, int, u8);
 int sqlite3DecOrHexToI64(const char*, i64*);
 void sqlite3ErrorWithMsg(sqlite3*, int, const char*,...);
@@ -4466,9 +4480,9 @@ CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 int sqlite3IsBinary(const CollSeq*);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 void sqlite3SetTextEncoding(sqlite3 *db, u8);
-CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
-CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr);
-int sqlite3ExprCollSeqMatch(Parse*,Expr*,Expr*);
+CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr);
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, const Expr *pExpr);
+int sqlite3ExprCollSeqMatch(Parse*,const Expr*,const Expr*);
 Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*, int);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
@@ -4699,8 +4713,8 @@ char *sqlite3Normalize(Vdbe*, const char*);
 #endif
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
-CollSeq *sqlite3ExprCompareCollSeq(Parse*,Expr*);
-CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
+CollSeq *sqlite3ExprCompareCollSeq(Parse*,const Expr*);
+CollSeq *sqlite3BinaryCompareCollSeq(Parse *, const Expr*, const Expr*);
 int sqlite3TempInMemory(const sqlite3*);
 const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_WAL

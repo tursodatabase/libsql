@@ -965,6 +965,7 @@ idlist(A) ::= nm(Y).
       p->op = (u8)op;
       p->affExpr = 0;
       p->flags = EP_Leaf;
+      ExprClearVVAProperties(p);
       p->iAgg = -1;
       p->pLeft = p->pRight = 0;
       p->x.pList = 0;
