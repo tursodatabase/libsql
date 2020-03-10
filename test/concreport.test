@@ -20,6 +20,18 @@ ifcapable !concurrent {
   return
 }
 
+proc filtered_report {db} {
+  set report [split [sqlite3_begin_concurrent_report $db] "\n"]
+  set report [lrange $report 0 end-1]
+  set res [list]
+  foreach r $report {
+    set c [string range $r 0 0]
+    if {$c=="R" || $c=="W"} continue
+    lappend res $r
+  }
+  set res
+}
+
 proc do_concreport_test {tn sql res report} {
   uplevel [list do_execsql_test $tn.1 "
     BEGIN CONCURRENT;
@@ -28,7 +40,7 @@ proc do_concreport_test {tn sql res report} {
   " $res]
 
   uplevel [list do_test $tn.2 {
-    lrange [split [sqlite3_begin_concurrent_report db] "\n"] 0 end-1
+    filtered_report db
   } [list {*}$report]]
 }
 
