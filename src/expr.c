@@ -3497,7 +3497,7 @@ void sqlite3ExprCodeGeneratedColumn(
   }else{
     iAddr = 0;
   }
-  sqlite3ExprCode(pParse, pCol->pDflt, regOut);
+  sqlite3ExprCodeCopy(pParse, pCol->pDflt, regOut);
   if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
