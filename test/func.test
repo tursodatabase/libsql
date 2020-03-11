@@ -1477,4 +1477,24 @@ do_execsql_test func-34.10 {
   SELECT * FROM t1;
 } {1 2}
 
+# 2020-03-11 COALESCE() should short-circuit
+# See also ticket 3c9eadd2a6ba0aa5
+# Both issues stem from the fact that functions that could
+# throw exceptions were being factored out into initialization
+# code.  The fix was to put those function calls inside of
+# OP_Once instead.
+#
+reset_db
+do_execsql_test func-35.100 {
+  CREATE TABLE t1(x);
+  SELECT coalesce(x, abs(-9223372036854775808)) FROM t1;
+} {}
+do_execsql_test func-35.110 {
+  SELECT coalesce(x, 'xyz' LIKE printf('%.1000000c','y')) FROM t1;
+} {}
+do_execsql_test func-35.200 {
+  CREATE TABLE t0(c0 CHECK(ABS(-9223372036854775808)));
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test
