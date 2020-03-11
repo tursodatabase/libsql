@@ -1113,7 +1113,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   int rc = 0;
 
   /* Check to see the left operand is a column in a virtual table */
-  if( pExpr==0 ) return pDef;
+  if( NEVER(pExpr==0) ) return pDef;
   if( pExpr->op!=TK_COLUMN ) return pDef;
   pTab = pExpr->y.pTab;
   if( pTab==0 ) return pDef;
