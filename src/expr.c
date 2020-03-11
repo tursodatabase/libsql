@@ -4532,15 +4532,29 @@ int sqlite3ExprCodeAtInit(
       }
     }
   }
+  if( regDest<0 ) regDest = ++pParse->nMem;
   pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
-  p = sqlite3ExprListAppend(pParse, p, pExpr);
-  if( p ){
-     struct ExprList_item *pItem = &p->a[p->nExpr-1];
-     pItem->reusable = regDest<0;
-     if( regDest<0 ) regDest = ++pParse->nMem;
-     pItem->u.iConstExprReg = regDest;
+  if( pExpr!=0 && ExprHasProperty(pExpr, EP_HasFunc) ){
+    Vdbe *v = pParse->pVdbe;
+    int addr;
+    assert( v );
+    addr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+    pParse->okConstFactor = 0;
+    if( !pParse->db->mallocFailed ){
+      sqlite3ExprCode(pParse, pExpr, regDest);
+    }
+    pParse->okConstFactor = 1;
+    sqlite3ExprDelete(pParse->db, pExpr);
+    sqlite3VdbeJumpHere(v, addr);
+  }else{
+    p = sqlite3ExprListAppend(pParse, p, pExpr);
+    if( p ){
+       struct ExprList_item *pItem = &p->a[p->nExpr-1];
+       pItem->reusable = regDest<0;
+       pItem->u.iConstExprReg = regDest;
+    }
+    pParse->pConstExpr = p;
   }
-  pParse->pConstExpr = p;
   return regDest;
 }
 

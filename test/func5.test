@@ -53,9 +53,10 @@ do_execsql_test func5-2.2 {
    WHERE x+counter1('hello')=counter1('hello')+x
    ORDER BY +x;
 } {}
+set cvalue [db one {SELECT counter2('hello')+1}]
 do_execsql_test func5-2.3 {
   SELECT x, y FROM t2
-   WHERE x+counter2('hello')=counter2('hello')+x
+   WHERE x+counter2('hello')=$cvalue+x
    ORDER BY +x;
 } {1 2 3 4 5 6 7 8}
 
