@@ -5879,7 +5879,12 @@ static void btreeScanFormatKey(
       if( pMem->flags & MEM_Str ){
         sqlite3_str_appendf(pAcc, "%.*Q", pMem->n, pMem->z);
       }else{
-        sqlite3_str_appendf(pAcc, "blob", pMem->z);
+        int jj;
+        sqlite3_str_appendf(pAcc, "X'");
+        for(jj=0; jj<pMem->n; jj++){
+          sqlite3_str_appendf(pAcc, "%.2X", (u8)pMem->z[jj]);
+        }
+        sqlite3_str_appendf(pAcc, "'");
       }
       if( ii!=rec.nField-1 ){
         sqlite3_str_appendf(pAcc, ",");

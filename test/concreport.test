@@ -432,6 +432,12 @@ do_concreport_test 5.2.3 {
   3:[{1}..{1}]
 }
 
+do_concreport_test 5.3 {
+  INSERT INTO t2 VALUES(44, x'abcdef', x'001100');
+} {} {
+  3<-(0){44,X'ABCDEF',X'001100'}
+}
+
 #--------------------------------------------------------------------------
 reset_db
 do_execsql_test 6.0 {
