@@ -2096,7 +2096,7 @@ int sqlite3ExprIsConstant(Expr *p){
 **
 ** When this routine returns true, it indicates that the expression
 ** can be added to the pParse->pConstExpr list and evaluated once when
-** the prepared statement starts up.  See sqlite3ExprCodeAtInit().
+** the prepared statement starts up.  See sqlite3ExprCodeRunJustOnce().
 */
 int sqlite3ExprIsConstantNotJoin(Expr *p){
   return exprIsConst(p, 2, 0);
@@ -3805,8 +3805,13 @@ expr_code_doover:
         Table *pTab = pCol->pTab;
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdxPTab,
                               pCol->iSorterColumn, target);
-        if( ALWAYS(pTab) && pCol->iColumn>=0 ){
-          sqlite3ColumnDefault(v, pTab, pCol->iColumn, target);
+        if( pCol->iColumn<0 ){
+          VdbeComment((v,"%s.rowid",pTab->zName));
+        }else{
+          VdbeComment((v,"%s.%s",pTab->zName,pTab->aCol[pCol->iColumn].zName));
+          if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){
+            sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
+          }
         }
         return target;
       }
@@ -4122,9 +4127,9 @@ expr_code_doover:
 #endif
 
       if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
-        /* SQL functions can be expensive. So try to move constant functions
-        ** out of the inner loop, even if that means an extra OP_Copy. */
-        return sqlite3ExprCodeAtInit(pParse, pExpr, -1);
+        /* SQL functions can be expensive. So try to avoid running them
+        ** multiple times if we know they always give the same result */
+        return sqlite3ExprCodeRunJustOnce(pParse, pExpr, -1);
       }
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       assert( !ExprHasProperty(pExpr, EP_TokenOnly) );
@@ -4502,15 +4507,23 @@ expr_code_doover:
 }
 
 /*
-** Factor out the code of the given expression to initialization time.
+** Generate code that will evaluate expression pExpr just one time
+** per prepared statement execution.
+**
+** If the expression uses functions (that might throw an exception) then
+** guard them with an OP_Once opcode to ensure that the code is only executed
+** once. If no functions are involved, then factor the code out and put it at
+** the end of the prepared statement in the initialization section.
 **
 ** If regDest>=0 then the result is always stored in that register and the
 ** result is not reusable.  If regDest<0 then this routine is free to 
 ** store the value whereever it wants.  The register where the expression 
-** is stored is returned.  When regDest<0, two identical expressions will
-** code to the same register.
+** is stored is returned.  When regDest<0, two identical expressions might
+** code to the same register, if they do not contain function calls and hence
+** are factored out into the initialization section at the end of the
+** prepared statement.
 */
-int sqlite3ExprCodeAtInit(
+int sqlite3ExprCodeRunJustOnce(
   Parse *pParse,    /* Parsing context */
   Expr *pExpr,      /* The expression to code when the VDBE initializes */
   int regDest       /* Store the value in this register */
@@ -4528,14 +4541,29 @@ int sqlite3ExprCodeAtInit(
     }
   }
   pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
-  p = sqlite3ExprListAppend(pParse, p, pExpr);
-  if( p ){
-     struct ExprList_item *pItem = &p->a[p->nExpr-1];
-     pItem->reusable = regDest<0;
-     if( regDest<0 ) regDest = ++pParse->nMem;
-     pItem->u.iConstExprReg = regDest;
+  if( pExpr!=0 && ExprHasProperty(pExpr, EP_HasFunc) ){
+    Vdbe *v = pParse->pVdbe;
+    int addr;
+    assert( v );
+    addr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+    pParse->okConstFactor = 0;
+    if( !pParse->db->mallocFailed ){
+      if( regDest<0 ) regDest = ++pParse->nMem;
+      sqlite3ExprCode(pParse, pExpr, regDest);
+    }
+    pParse->okConstFactor = 1;
+    sqlite3ExprDelete(pParse->db, pExpr);
+    sqlite3VdbeJumpHere(v, addr);
+  }else{
+    p = sqlite3ExprListAppend(pParse, p, pExpr);
+    if( p ){
+       struct ExprList_item *pItem = &p->a[p->nExpr-1];
+       pItem->reusable = regDest<0;
+       if( regDest<0 ) regDest = ++pParse->nMem;
+       pItem->u.iConstExprReg = regDest;
+    }
+    pParse->pConstExpr = p;
   }
-  pParse->pConstExpr = p;
   return regDest;
 }
 
@@ -4560,7 +4588,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){
     *pReg  = 0;
-    r2 = sqlite3ExprCodeAtInit(pParse, pExpr, -1);
+    r2 = sqlite3ExprCodeRunJustOnce(pParse, pExpr, -1);
   }else{
     int r1 = sqlite3GetTempReg(pParse);
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
@@ -4617,7 +4645,7 @@ void sqlite3ExprCodeCopy(Parse *pParse, Expr *pExpr, int target){
 */
 void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
   if( pParse->okConstFactor && sqlite3ExprIsConstantNotJoin(pExpr) ){
-    sqlite3ExprCodeAtInit(pParse, pExpr, target);
+    sqlite3ExprCodeRunJustOnce(pParse, pExpr, target);
   }else{
     sqlite3ExprCodeCopy(pParse, pExpr, target);
   }
@@ -4677,7 +4705,7 @@ int sqlite3ExprCodeExprList(
     }else if( (flags & SQLITE_ECEL_FACTOR)!=0
            && sqlite3ExprIsConstantNotJoin(pExpr)
     ){
-      sqlite3ExprCodeAtInit(pParse, pExpr, target+i);
+      sqlite3ExprCodeRunJustOnce(pParse, pExpr, target+i);
     }else{
       int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
       if( inReg!=target+i ){
@@ -5237,21 +5265,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
      && ALWAYS((combinedFlags & EP_Reduced)==0)
     ){
       if( pA->iColumn!=pB->iColumn ) return 2;
-      if( pA->op2!=pB->op2 ){
-        if( pA->op==TK_TRUTH ) return 2;
-        if( pA->op==TK_FUNCTION && iTab<0 ){
-          /* Ex: CREATE TABLE t1(a CHECK( a<julianday('now') ));
-          **     INSERT INTO t1(a) VALUES(julianday('now')+10);
-          ** Without this test, sqlite3ExprCodeAtInit() will run on the
-          ** the julianday() of INSERT first, and remember that expression.
-          ** Then sqlite3ExprCodeInit() will see the julianday() in the CHECK
-          ** constraint as redundant, reusing the one from the INSERT, even
-          ** though the julianday() in INSERT lacks the critical NC_IsCheck
-          ** flag.  See ticket [830277d9db6c3ba1] (2019-10-30)
-          */
-          return 2;
-        }
-      }
+      if( pA->op2!=pB->op2 && pA->op==TK_TRUTH ) return 2;
       if( pA->op!=TK_IN && pA->iTable!=pB->iTable && pA->iTable!=iTab ){
         return 2;
       }

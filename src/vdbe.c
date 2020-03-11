@@ -1544,7 +1544,6 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
   pOut = &aMem[pOp->p3];
-  testcase( pIn1==pIn2 );
   testcase( pOut==pIn2 );
   assert( pIn1!=pOut );
   flags1 = pIn1->flags;
