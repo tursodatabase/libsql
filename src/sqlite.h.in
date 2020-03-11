@@ -9737,6 +9737,7 @@ int sqlite3_deserialize(
 #define SQLITE_DESERIALIZE_READONLY    4 /* Database is read-only */
 
 const char *sqlite3_begin_concurrent_report(sqlite3*);
+void sqlite3_begin_concurrent_report_enable(sqlite3 *db, int bEnable);
 
 /*
 ** Undo the hack that converts floating point types to integer for

@@ -7863,6 +7863,30 @@ static int SQLITE_TCLAPI test_begin_concurrent_report(
 }
 
 /*
+** Usage:  sqlite3_begin_concurrent_report_enable DB ENABLE
+*/
+static int SQLITE_TCLAPI test_begin_concurrent_report_enable(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int iVal;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ENABLE");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
+  sqlite3_begin_concurrent_report_enable(db, iVal);
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  decode_hexdb TEXT
 **
 ** Example:   db deserialize [decode_hexdb $output_of_dbtotxt]
@@ -8227,6 +8251,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
      { "decode_hexdb",             test_decode_hexdb,       0 },
      { "sqlite3_begin_concurrent_report", test_begin_concurrent_report, 0 },
+     { "sqlite3_begin_concurrent_report_enable", test_begin_concurrent_report_enable, 0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

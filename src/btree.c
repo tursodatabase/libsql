@@ -5928,6 +5928,10 @@ static int btreeScanCompare(
   return res;
 }
 
+void sqlite3_begin_concurrent_report_enable(sqlite3 *db, int bEnable){
+  db->bConcurrentReport = bEnable;
+}
+
 const char *sqlite3_begin_concurrent_report(sqlite3 *db){
   sqlite3DbFree(db, db->zBCReport);
   db->zBCReport = 0;
@@ -6174,10 +6178,12 @@ int sqlite3BtreeScanStart(
   int eqOnly
 ){
   Btree *pBtree = pCsr->pBtree;
-  if( pBtree->db->bConcurrent 
+  sqlite3 *db = pBtree->db;
+  if( db->bConcurrentReport
+   && db->bConcurrent 
+   && db->aDb[0].pBt==pBtree
    && sqlite3PagerIsWal(pBtree->pBt->pPager) 
   ){
-    sqlite3 *db = pCsr->pBtree->db;
     CursorScan *pNew;
     pNew = (CursorScan*)sqlite3MallocZero(sizeof(CursorScan));
     if( pNew==0 ) return SQLITE_NOMEM;
@@ -6255,7 +6261,11 @@ void sqlite3BtreeScanDerefList(CursorScan *pList){
 
 int sqlite3BtreeScanDirty(Btree *pBtree, Bitvec *pRead, PgHdr *pList){
   int rc = SQLITE_OK;
-  if( pBtree->db->bConcurrent ){
+  sqlite3 *db = pBtree->db;
+  if( db->bConcurrentReport
+   && db->bConcurrent 
+   && db->aDb[0].pBt==pBtree
+  ){
     CursorScan *pNew;
     u32 *aPg = 0;
     PgHdr *p;
@@ -6302,7 +6312,10 @@ int sqlite3BtreeScanWrite(
 ){
   int rc = SQLITE_OK;
   Btree *pBtree = pCsr->pBtree;
-  if( pBtree->db->bConcurrent 
+  sqlite3 *db = pBtree->db;
+  if( db->bConcurrentReport
+   && db->bConcurrent 
+   && db->aDb[0].pBt==pBtree
    && sqlite3PagerIsWal(pBtree->pBt->pPager) 
   ){
     sqlite3 *db = pCsr->pBtree->db;

@@ -1478,6 +1478,7 @@ struct sqlite3 {
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 bConcurrent;               /* Current transaction is "CONCURRENT" */
+  u8 bConcurrentReport;         /* Concurrent transaction reports enabled */
   CursorScan *pCScanList;
   char *zBCReport;
   u8 temp_store;                /* 1: file 2: memory 0: default */
