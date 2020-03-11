@@ -3805,8 +3805,13 @@ expr_code_doover:
         Table *pTab = pCol->pTab;
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdxPTab,
                               pCol->iSorterColumn, target);
-        if( ALWAYS(pTab) && pCol->iColumn>=0 ){
-          sqlite3ColumnDefault(v, pTab, pCol->iColumn, target);
+        if( pCol->iColumn<0 ){
+          VdbeComment((v,"%s.rowid",pTab->zName));
+        }else{
+          VdbeComment((v,"%s.%s",pTab->zName,pTab->aCol[pCol->iColumn].zName));
+          if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){
+            sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
+          }
         }
         return target;
       }
