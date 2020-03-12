@@ -4,7 +4,8 @@ Begin Concurrent Report
 
 ## Overview
 
-This patch enhances the library so that it may provide a report on each
+<a href=../../../timeline?r=begin-concurrent-report>
+This patch</a> enhances the library so that it may provide a report on each
 transaction that uses "BEGIN CONCURRENT". The report includes the following
 details:
 
