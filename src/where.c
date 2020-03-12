@@ -5122,7 +5122,7 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
       }
-#ifdef SQLITE_ENABLE_CURSOR_HINTS*/
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
       if( pLoop->u.btree.pIndex!=0 ){
         sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ|bFordelete);
       }else
