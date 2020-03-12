@@ -1,5 +1,5 @@
-C Do\snot\sfactor\sout\sconstant\sfunctions\sinto\sthe\sinitialization\ssection\sof\sa\nprepared\sstatement,\sbecause\seven\sthough\sthey\sare\sconstant,\sthey\scan\sstill\nthrow\sexceptions.\s\sInstead,\sput\ssuch\sfunctions\sin\san\sOP_Once\sblock.\s\sThis\nfixes\sticket\s[3c9eadd2a6ba0aa5]\sand\scauses\sCOALESCE()\sand\sCASE...END\sto\nbe\sshort-circuit.
-D 2020-03-11T19:56:26.290
+C Fix\scomments\sand\sstrengthen\sassert()\sstatements\sassociated\swith\sthe\nOPFLAG_SEEKEQ\sand\sBTREE_SEEK_EQ\sflags.
+D 2020-03-12T17:28:27.168
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 95fb6e03a5ca679045c5adccd05380f0addccabef5911abddcb06af069500ab7
 F src/util.c a285c1e026907b69fa2592bd05047a565a1d8a1aef2b73c924b6a8ffe772871a
 F src/vacuum.c 813b510ba887fee6492bcb11f2bf77d7eb58b232b83649136372e0a2fc17f4b9
-F src/vdbe.c 6d0cf7ac2d54f78ff2fb55cbef970199695319c0a95bf862c6561d7d2c9f7134
+F src/vdbe.c c1c123c6248fa88940b932a00bcc75056921b6d046d45a82566cb97415d2299c
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
 F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
@@ -617,7 +617,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 697424314e40d99f93f548c7bfa526c10e87f4bdf64d5a76a96b999dd7133ebc
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c a137468bf36c92e64d2275caa80c83902e3a0fc59273591b96c6416d3253d05d
-F src/where.c 3b8c9bd013eb0736e16f60bdc109e83337ef99513a3aff5f16ddac036e6c277e
+F src/where.c 8e4283542574f7586d84673692d36c2d6f4bc323f7427c21d791946737842dbf
 F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
 F src/wherecode.c 7b939de85d65cc4b4bfa197513136b9e0ae03167e3b82842ca5a0ba1055ba65d
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
@@ -1860,8 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb5a8a9edd0a4f979d6c30278d4ddc73c651f56ae989b4e5983fca36887c5ceb d7f18489978fdbbe3ab317485518cac91a75416ccef55898301afdd76d3b415b
-R bb18f5b4c4c1d8067c8d33e0ad339acb
-T +closed d7f18489978fdbbe3ab317485518cac91a75416ccef55898301afdd76d3b415b
+P c5f96a085db9688a09793f52ce1ecf033c2e6e2e5873a19fe0fb374b242b317f
+R b4d34578c5e19c108e63249f3f407b58
 U drh
-Z 0612eee0f98137a25a8377c8a68a78fc
+Z 3512687e2725ca4d1f170ef6f945b212
