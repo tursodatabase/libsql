@@ -1,5 +1,5 @@
-C Add\slink\sfrom\sbegin_concurrent_report.md\sback\sto\sbranch\stimeline.
-D 2020-03-12T19:37:16.326
+C Merge\sSQLITE_NOOP_UPDATE\sfix\sinto\sthis\sbranch.
+D 2020-03-13T07:28:08.376
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 7b17f6e2f20f6cbcb0b215025a86b7457c38451fc7622f705e553d7a488c572d
 F src/treeview.c 438c1000587b33faba35e87596bebcf7f40638d98f33781cdd9e04711b18b09c
 F src/trigger.c a40d50e88bd3355f1d2a73f0a3b2d6b42eae26ca4219001b82ef0d064439badc
-F src/update.c feed9db366f68269f816ae4f331eaa1ee80d2f4b92946520ab4adda498d39776
+F src/update.c 1773820c20093142cca1aa3d2ff6641d615fb58d4436ccb73c87c2150aca58e3
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 736ff76753236ffbc8b5b939f5e0607f28aeaa7c780b3a56b419228f0a81c87b
 F src/util.c d035b09df9cecbc0e8f07c34b815acbf0d43c8adc8d2c540e3dc92eecb27855a
@@ -1874,7 +1874,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b288bbd1df227f9566792491945c603d3736f238ca8a6ac1803cc385e6c3b621
-R b442754ef0a8fd65db2e6a5c2cc85d8f
+P 61869f8b483a6bafa8fe321a9e9417da5ff13043795b8b676281c5f8ac3bf3f5 1e2109fd339cfb3b906673479672ed2e5a0dc17a94210f364c6fc1a657a62ae8
+R 7cd6fdbf65830072902233525a4e76f0
 U dan
-Z 7ab2090decf363a9f3340fbdd4592689
+Z 4f8b044739a3e45a32fef087543c77e9
