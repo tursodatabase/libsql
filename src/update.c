@@ -306,7 +306,7 @@ void sqlite3Update(
     if( db->flags & SQLITE_NoopUpdate ){
       Token x;
       sqlite3ExprDelete(db, pChanges->a[i].pExpr);
-      x.z = pChanges->a[i].zName;
+      x.z = pChanges->a[i].zEName;
       x.n = sqlite3Strlen30(x.z);
       pChanges->a[i].pExpr =
          sqlite3PExpr(pParse, TK_UPLUS, sqlite3ExprAlloc(db, TK_ID, &x, 0), 0);
