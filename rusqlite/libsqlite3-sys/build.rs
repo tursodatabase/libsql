@@ -10,8 +10,7 @@ fn main() {
             all(windows, feature = "bundled-windows")
         )) {
             println!(
-                "cargo:warning={}",
-                "Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
+                "cargo:warning=Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
                  This can lead to issues if your version of SQLCipher is not up to date!");
         }
         build_linked::main(&out_dir, &out_path)
@@ -280,7 +279,7 @@ mod bindings {
     use std::fs;
     use std::path::Path;
 
-    static PREBUILT_BINDGEN_PATHS: &'static [&'static str] = &[
+    static PREBUILT_BINDGEN_PATHS: &[&str] = &[
         "bindgen-bindings/bindgen_3.6.8.rs",
         #[cfg(feature = "min_sqlite_version_3_6_23")]
         "bindgen-bindings/bindgen_3.6.23.rs",
