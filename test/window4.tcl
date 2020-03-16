@@ -385,6 +385,20 @@ execsql_test 11.4 {
   ) sub;
 }
 
+execsql_test 11.5 {
+  SELECT sum( min(t) ) OVER () FROM t8 GROUP BY total;
+}
+execsql_test 11.5 {
+  SELECT sum( max(t) ) OVER () FROM t8 GROUP BY total;
+}
+
+execsql_test 11.7 {
+  SELECT sum( min(t) ) OVER () FROM t8;
+}
+execsql_test 11.8 {
+  SELECT sum( max(t) ) OVER () FROM t8;
+}
+
 execsql_test 12.0 {
   DROP TABLE IF EXISTS t2;
   CREATE TABLE t2(a INTEGER);

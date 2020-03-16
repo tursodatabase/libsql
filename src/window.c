@@ -933,6 +933,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     Window *pMWin = p->pWin;      /* Master window object */
     Window *pWin;                 /* Window object iterator */
     Table *pTab;
+    u32 selFlags = p->selFlags;
 
     pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ){
@@ -1022,6 +1023,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded;
       pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_NONE);
+      pSub->selFlags |= (selFlags & SF_Aggregate);
       if( pTab2==0 ){
         /* Might actually be some other kind of error, but in that case
         ** pParse->nErr will be set, so if SQLITE_NOMEM is set, we will get

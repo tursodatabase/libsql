@@ -1324,6 +1324,22 @@ do_execsql_test 11.4 {
   ) sub;
 } {0   1   2}
 
+do_execsql_test 11.5 {
+  SELECT sum( min(t) ) OVER () FROM t8 GROUP BY total;
+} {5   5}
+
+do_execsql_test 11.5 {
+  SELECT sum( max(t) ) OVER () FROM t8 GROUP BY total;
+} {10   10}
+
+do_execsql_test 11.7 {
+  SELECT sum( min(t) ) OVER () FROM t8;
+} {0}
+
+do_execsql_test 11.8 {
+  SELECT sum( max(t) ) OVER () FROM t8;
+} {10}
+
 do_execsql_test 12.0 {
   DROP TABLE IF EXISTS t2;
   CREATE TABLE t2(a INTEGER);
