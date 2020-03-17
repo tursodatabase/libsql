@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\strunk.
-D 2020-03-17T12:37:27.533
+C Improved\sbytecode\scomments\sfor\sthe\sANALYZE\scommand.
+D 2020-03-17T13:07:04.943
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -466,7 +466,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c f48a4423c8f198d7f1ae4940f74b606707d05384ac79fb219be8e3323af2a2de
-F src/analyze.c cc3401286f1ff97aba5f2d94a2e8f9108beeaa25fa67faee090c38e387db396f
+F src/analyze.c 5f09eb4e93a67653317de64823bda68220d4422efd2a3842baf831d084c9ce13
 F src/attach.c fa5addce233a2bb2dfdefeee3b37000e154c47214d3269cab1bb331416e330db
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4945a66237fa3861bc691d5fbef0d40286b596a0902b4f4c032d1d6528bb1a1b 38e3dd389d142e520c71139ec84aa3c7722992af28a5f93a7f16e0ea176b74bb
-R eadca1c0864a77f7553dbd5cd11ef9e9
+P 93d710262eb046e2370660b1096ac634373755f92a2e9b1220df3b2bda5f9eeb
+R daf5019076e9194243fd0d1204db1bb8
 U drh
-Z b90799a92dde3b33fc19c32a21522ba6
+Z 540c7862b6fb73b8ea6fa0b5312caee4

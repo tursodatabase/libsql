@@ -1148,6 +1148,7 @@ static void analyzeOneTable(
         char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
         sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regTemp);
+        VdbeComment((v, "%s.column(%d)", pIdx->zName, i));
         aGotoChng[i] = 
         sqlite3VdbeAddOp4(v, OP_Ne, regTemp, 0, regPrev+i, pColl, P4_COLLSEQ);
         sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
@@ -1168,6 +1169,7 @@ static void analyzeOneTable(
       for(i=0; i<nColTest; i++){
         sqlite3VdbeJumpHere(v, aGotoChng[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
+        VdbeComment((v, "%s.column(%d)", pIdx->zName, i));
       }
       sqlite3VdbeResolveLabel(v, endDistinctTest);
       sqlite3DbFree(db, aGotoChng);
@@ -1193,7 +1195,7 @@ static void analyzeOneTable(
           k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[j]);
           assert( k>=0 && k<pIdx->nColumn );
           sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, regKey+j);
-          VdbeComment((v, "%s", pTab->aCol[pPk->aiColumn[j]].zName));
+          VdbeComment((v, "%s.column(%d)", pIdx->zName, i));
         }
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regKey, pPk->nKeyCol, regRowid);
         sqlite3ReleaseTempRange(pParse, regKey, pPk->nKeyCol);
