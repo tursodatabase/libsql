@@ -280,7 +280,8 @@ struct StatSample {
 };                                                    
 struct StatAccum {
   sqlite3 *db;              /* Database connection, for malloc() */
-  tRowcnt nRow;             /* Number of rows in the entire table */
+  tRowcnt nEst;             /* Estimated number of rows */
+  tRowcnt nRow;             /* Number of rows visited so far */
   int nCol;                 /* Number of columns in index + pk/rowid */
   int nKeyCol;              /* Number of index columns w/o the pk/rowid */
   StatSample current;       /* Current row as a StatSample */
@@ -377,13 +378,11 @@ static void statAccumDestructor(void *pOld){
 ** are:
 **     N:    The number of columns in the index including the rowid/pk (note 1)
 **     K:    The number of columns in the index excluding the rowid/pk.
-**     C:    The number of rows in the index (note 2)
+**     C:    Estimated number of rows in the index
 **
 ** Note 1:  In the special case of the covering index that implements a
 ** WITHOUT ROWID table, N is the number of PRIMARY KEY columns, not the
 ** total number of columns in the table.
-**
-** Note 2:  C is only used for STAT4.
 **
 ** For indexes on ordinary rowid tables, N==K+1.  But for indexes on
 ** WITHOUT ROWID tables, N=K+P where P is the number of columns in the
@@ -439,6 +438,7 @@ static void statInit(
   }
 
   p->db = db;
+  p->nEst = sqlite3_value_int64(argv[2]);
   p->nRow = 0;
   p->nCol = nCol;
   p->nKeyCol = nKeyCol;
@@ -452,7 +452,7 @@ static void statInit(
 
     p->iGet = -1;
     p->mxSample = mxSample;
-    p->nPSample = (tRowcnt)(sqlite3_value_int64(argv[2])/(mxSample/3+1) + 1);
+    p->nPSample = (tRowcnt)(p->nEst/(mxSample/3+1) + 1);
     p->current.anLt = &p->current.anEq[nColUp];
     p->iPrn = 0x689e962d*(u32)nCol ^ 0xd0944565*(u32)sqlite3_value_int(argv[2]);
   
@@ -923,16 +923,16 @@ static const FuncDef statGetFuncdef = {
   {0}
 };
 
-static void callStatGet(Parse *pParse, int regStat4, int iParam, int regOut){
+static void callStatGet(Parse *pParse, int regStat, int iParam, int regOut){
 #ifdef SQLITE_ENABLE_STAT4
-  sqlite3VdbeAddOp2(pParse->pVdbe, OP_Integer, iParam, regStat4+1);
+  sqlite3VdbeAddOp2(pParse->pVdbe, OP_Integer, iParam, regStat+1);
 #elif SQLITE_DEBUG
   assert( iParam==STAT_GET_STAT1 );
 #else
   UNUSED_PARAMETER( iParam );
 #endif
-  assert( regOut!=regStat4 && regOut!=regStat4+1 );
-  sqlite3VdbeAddFunctionCall(pParse, 0, regStat4, regOut, 1+IsStat4,
+  assert( regOut!=regStat && regOut!=regStat+1 );
+  sqlite3VdbeAddFunctionCall(pParse, 0, regStat, regOut, 1+IsStat4,
                              &statGetFuncdef, 0);
 }
 
@@ -958,11 +958,9 @@ static void analyzeOneTable(
   int iDb;                     /* Index of database containing pTab */
   u8 needTableCnt = 1;         /* True to count the table */
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
-  int regStat4 = iMem++;       /* Register to hold StatAccum object */
+  int regStat = iMem++;        /* Register to hold StatAccum object */
   int regChng = iMem++;        /* Index of changed index field */
-#ifdef SQLITE_ENABLE_STAT4
   int regRowid = iMem++;       /* Rowid argument passed to stat_push() */
-#endif
   int regTemp = iMem++;        /* Temporary use register */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
@@ -1091,21 +1089,24 @@ static void analyzeOneTable(
     **    (1) the number of columns in the index including the rowid
     **        (or for a WITHOUT ROWID table, the number of PK columns),
     **    (2) the number of columns in the key without the rowid/pk
-    **    (3) the number of rows in the index,
-    **
-    **
-    ** The third argument is only used for STAT4
+    **    (3) estimated number of rows in the index,
     */
+    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat+1);
+    assert( regRowid==regStat+2 );
+    sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regRowid);
 #ifdef SQLITE_ENABLE_STAT4
     if( OptimizationEnabled(db, SQLITE_Stat4) ){
-      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regStat4+3);
-    }else{
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, regStat4+3);
-    }
+      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regTemp);
+      addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
+      VdbeCoverage(v);
+    }else
 #endif
-    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat4+1);
-    sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regStat4+2);
-    sqlite3VdbeAddFunctionCall(pParse, 0, regStat4+1, regStat4, 2+IsStat4,
+    {
+      addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp3(v, OP_Count, iIdxCur, regTemp, 1);
+    }
+    sqlite3VdbeAddFunctionCall(pParse, 0, regStat+1, regStat, 3,
                                &statInitFuncdef, 0);
 
     /* Implementation of the following:
@@ -1116,8 +1117,6 @@ static void analyzeOneTable(
     **   goto next_push_0;
     **
     */
-    addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
-    VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regChng);
     addrNextRow = sqlite3VdbeCurrentAddr(v);
 
@@ -1186,7 +1185,7 @@ static void analyzeOneTable(
     */
 #ifdef SQLITE_ENABLE_STAT4
     if( OptimizationEnabled(db, SQLITE_Stat4) ){
-      assert( regRowid==(regStat4+2) );
+      assert( regRowid==(regStat+2) );
       if( HasRowid(pTab) ){
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, regRowid);
       }else{
@@ -1204,13 +1203,13 @@ static void analyzeOneTable(
       }
     }
 #endif
-    assert( regChng==(regStat4+1) );
-    sqlite3VdbeAddFunctionCall(pParse, 1, regStat4, regTemp, 2+IsStat4,
+    assert( regChng==(regStat+1) );
+    sqlite3VdbeAddFunctionCall(pParse, 1, regStat, regTemp, 2+IsStat4,
                                &statPushFuncdef, 0);
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
 
     /* Add the entry to the stat1 table. */
-    callStatGet(pParse, regStat4, STAT_GET_STAT1, regStat1);
+    callStatGet(pParse, regStat, STAT_GET_STAT1, regStat1);
     assert( "BBB"[0]==SQLITE_AFF_TEXT );
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
@@ -1236,12 +1235,12 @@ static void analyzeOneTable(
       pParse->nMem = MAX(pParse->nMem, regCol+nCol);
 
       addrNext = sqlite3VdbeCurrentAddr(v);
-      callStatGet(pParse, regStat4, STAT_GET_ROWID, regSampleRowid);
+      callStatGet(pParse, regStat, STAT_GET_ROWID, regSampleRowid);
       addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, regSampleRowid);
       VdbeCoverage(v);
-      callStatGet(pParse, regStat4, STAT_GET_NEQ, regEq);
-      callStatGet(pParse, regStat4, STAT_GET_NLT, regLt);
-      callStatGet(pParse, regStat4, STAT_GET_NDLT, regDLt);
+      callStatGet(pParse, regStat, STAT_GET_NEQ, regEq);
+      callStatGet(pParse, regStat, STAT_GET_NLT, regLt);
+      callStatGet(pParse, regStat, STAT_GET_NDLT, regDLt);
       sqlite3VdbeAddOp4Int(v, seekOp, iTabCur, addrNext, regSampleRowid, 0);
       VdbeCoverage(v);
       for(i=0; i<nCol; i++){
