@@ -407,7 +407,8 @@ static void statInit(
   int n;                          /* Bytes of space to allocate */
   sqlite3 *db;                    /* Database connection */
 #ifdef SQLITE_ENABLE_STAT4
-  int mxSample = sqlite3_value_int(argv[2]) ? SQLITE_STAT4_SAMPLES : 0;
+  /* Maximum number of samples.  0 if STAT4 data is not collected */
+  int mxSample = sqlite3_value_int64(argv[2]) ? SQLITE_STAT4_SAMPLES : 0;
 #endif
 
   /* Decode the three function arguments */
@@ -422,13 +423,14 @@ static void statInit(
   /* Allocate the space required for the StatAccum object */
   n = sizeof(*p) 
     + sizeof(tRowcnt)*nColUp                  /* StatAccum.anEq */
-    + sizeof(tRowcnt)*nColUp                  /* StatAccum.anDLt */
+    + sizeof(tRowcnt)*nColUp;                 /* StatAccum.anDLt */
 #ifdef SQLITE_ENABLE_STAT4
-    + sizeof(tRowcnt)*nColUp                  /* StatAccum.anLt */
-    + sizeof(StatSample)*(nCol+mxSample)      /* StatAccum.aBest[], a[] */
-    + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample)
+  if( mxSample ){
+    n += sizeof(tRowcnt)*nColUp                  /* StatAccum.anLt */
+      + sizeof(StatSample)*(nCol+mxSample)       /* StatAccum.aBest[], a[] */
+      + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample);
+  }
 #endif
-  ;
   db = sqlite3_context_db_handle(context);
   p = sqlite3DbMallocZero(db, n);
   if( p==0 ){

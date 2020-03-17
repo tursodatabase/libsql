@@ -511,9 +511,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_OMIT_BLOB_LITERAL
   "OMIT_BLOB_LITERAL",
 #endif
-#if SQLITE_OMIT_BTREECOUNT
-  "OMIT_BTREECOUNT",
-#endif
 #if SQLITE_OMIT_CAST
   "OMIT_CAST",
 #endif
