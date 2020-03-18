@@ -779,6 +779,8 @@ static void statPush(
     p->nSkipAhead++;
     sqlite3_result_int(context, p->current.anDLt[0]>0);
   }
+#else
+  {}
 #endif
 }
 
