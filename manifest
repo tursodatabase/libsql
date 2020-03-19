@@ -1,5 +1,5 @@
-C Fix\san\sinteger\soverflow\sproblem\swith\sthe\sdbstat\svirtual\stable\sthat\scomes\sup\nwhen\strying\sto\sanalyze\sa\scorrupt\sdatabase.
-D 2020-03-19T17:27:52.087
+C Chagnes\sthe\sESCAPE\sclause\son\sthe\sLIKE\soperator\sto\soverwrite\swildcard\ncharacters,\sin\sorder\sot\smatch\sthe\sbehavior\sof\sPosgreSQL.
+D 2020-03-19T18:13:29.000
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -231,7 +231,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt a295e91db742b153e8dce8f7efd31d28ad1eea4df31ef4daa3eedc85be2f5138
-F ext/icu/icu.c 7adfe8a72dd4f54b47684dc9b88523399c6ef119d733b73e17371445f7428dd1
+F ext/icu/icu.c 91c021c7e3e8bbba286960810fa303295c622e323567b2e6def4ce58e4466e60
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
@@ -486,7 +486,7 @@ F src/delete.c 11000121c4281c0bce4e41db29addfaea0038eaa127ece02557c9207bc3e541d
 F src/expr.c ed718ee2206166c9c2fc4fe89eadb1f369318aeb8645e06033566b387970fb9a
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 4b575423b0a5d4898b1a7868ce985cf1a8ad91c741c9abbb108ff02536d20f41
-F src/func.c 108577cebe8a50c86d849a93b99493a54e348dd0b846f00d13b52ca973d5baf4
+F src/func.c f3dcdc0e95509864767c1f0991b19360f969e44177f4e058fd51da9a6154f47e
 F src/global.c 79a988b56b06ce2d08ebefe1d35da9aa25b3851faa47ea5233361c4827185a64
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -1036,7 +1036,7 @@ F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test 1604b3b2f5931430087540404555c1b6be3618600b81558657c66b533ed70b13
 F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
-F test/icu.test 41aa8847745a879b897a7febea0f8f9efc8e67fe8bf680589b6e07c7b0a1569a
+F test/icu.test 716a6b89fbabe5cc63e0cd4c260befb08fd7b9d761f04d43669233292f0753b1
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test ae4ba0fe3232fdd84ef1090a68c5cd6ccd93f1f8774d5c967dd0c1b301492eed
@@ -1113,9 +1113,9 @@ F test/kvtest.c 94da54bb66aae7a54e47cf7e4ea4acecc0f217560f79ad3abfcc0361d6d557ba
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d6767e11d7
-F test/like.test 3d702d79bf871fa32985b1ce334294c587e3948d3ab972001e811a58577e8b3c
+F test/like.test 47b81d5de2ff19d996d49a65d50ec9754246aacbe0e950b48d186d9d8171eaf0
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/like3.test 4f940ad275c006319950054a7a65661f476772171b82b6fdf795e4dda36f246f
+F test/like3.test 03d1bdf848483b78d2cfd1db283d75c4ec2e37c8b8eccc006813f3978d78fbbd
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/loadext.test faa4f6eed07a5aac35d57fdd7bc07f8fc82464cfd327567c10cf0ba3c86cde04
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a51919ac23ae7312d78905334dc97742b517a7476052a85aa07945d9c77697b
-R 11059e9f9145d47852beb0ef202844f6
+P 1d64f4a8af81fe1235fffa54884d8f842a48ff6a33d6172f0cd65bf42fe8b2a1
+R 199dfbc9c8ca72850da0099d6c1cde58
 U drh
-Z 6be6a8645f621862376d12081de1edc9
+Z 2c8ae1f04515bf2ea893e9cb3af9713c
