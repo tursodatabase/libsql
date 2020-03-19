@@ -1,5 +1,5 @@
-C Fix\shandling\sof\swindow\sfunctions\sin\saggregate\squeries\sthat\shave\sno\sGROUP\sBY\sclause.\sAlso\sremove\sa\sfaulty\sassert\scausing\sthe\serror\sreported\sin\s[618156e3].
-D 2020-03-16T18:52:53.584
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2020-03-19T15:57:03.116
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/vdbe.c c1c123c6248fa88940b932a00bcc75056921b6d046d45a82566cb97415d2299c
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
 F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c 1ca2d4b3f913ecc4759becfab72952f25493390d674714586ab356c9f06ac279
+F src/vdbeaux.c e8baf66528e36474f4071e3171b660a454606eb5b54459a729982c939ad7a5bb
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b437b47266ec2d80d85eafcfdd6949556d6c28d9d67d5f43d89799f0f5b7bd0
-R 83896a738442d3613c6ebca4ec841bd3
-U dan
-Z 2f006c28af39fb0df1c35af9d6bf5ad5
+P 38e3dd389d142e520c71139ec84aa3c7722992af28a5f93a7f16e0ea176b74bb
+R 4071bc4187fb5602ca32977f98f52f75
+U drh
+Z d2aaf73a647da547ab47de7a5b33c862

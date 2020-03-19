@@ -424,7 +424,7 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 #endif
 
 /*
-** Add a new OP_ opcode.
+** Add a new OP_Explain opcode.
 **
 ** If the bPush flag is true, then make this opcode the parent for
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
