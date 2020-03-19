@@ -94,11 +94,9 @@
 # include <unistd.h>
 #endif
 
-#ifdef SQLITE_OSS_FUZZ
-# include <stddef.h>
-# if !defined(_MSC_VER)
-#  include <stdint.h>
-# endif
+#include <stddef.h>
+#if !defined(_MSC_VER)
+# include <stdint.h>
 #endif
 
 #if defined(_MSC_VER)

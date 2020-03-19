@@ -452,7 +452,9 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         if( nPayload>(u32)nLocal ){
           int j;
           int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
-          if( iOff+nLocal>nUsable ) goto statPageIsCorrupt;
+          if( iOff+nLocal>nUsable || nPayload>0x7fffffff ){
+            goto statPageIsCorrupt;
+          }
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
           pCell->nOvfl = nOvfl;
           pCell->aOvfl = sqlite3_malloc64(sizeof(u32)*nOvfl);
