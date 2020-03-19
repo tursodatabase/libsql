@@ -126,7 +126,7 @@ int sqlite3WhereExplainOneScan(
 ){
   int ret = 0;
 #if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-  if( sqlite3ParseToplevel(pParse)->explain==2 )
+  if( sqlite3ParseToplevel(pParse)->explain==SQLITE_STMTMODE_EQP )
 #endif
   {
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];

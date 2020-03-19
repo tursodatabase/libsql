@@ -2388,6 +2388,7 @@ void sqlite3VdbeMakeReady(
       sqlite3VdbeSetColName(p, i-iFirst, COLNAME_NAME,
                             azColName[i], SQLITE_STATIC);
     }
+    p->explain = p->origExplain = pParse->explain;
   }
   p->expired = 0;
 
@@ -2425,7 +2426,6 @@ void sqlite3VdbeMakeReady(
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
-  p->explain = pParse->explain;
   if( db->mallocFailed ){
     p->nVar = 0;
     p->nCursor = 0;
@@ -2563,17 +2563,20 @@ static void closeAllCursors(Vdbe *p){
 ** be called on an SQL statement before sqlite3_step().
 */
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
-  int n;
   sqlite3 *db = p->db;
+  u32 n;
 
-  if( p->nResColumn ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  if( p->nColName ){
+    releaseMemArray(p->aColName, p->nColName);
     sqlite3DbFree(db, p->aColName);
   }
-  n = nResColumn*COLNAME_N;
   p->nResColumn = (u16)nResColumn;
+  n = p->nColName = (u32)nResColumn*COLNAME_N;
   p->aColName = (Mem*)sqlite3DbMallocRawNN(db, sizeof(Mem)*n );
-  if( p->aColName==0 ) return;
+  if( p->aColName==0 ){
+    p->nColName = 0;
+    return;
+  }
   initMemArray(p->aColName, n, db, MEM_Null);
 }
 
@@ -3412,7 +3415,7 @@ void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
 void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   assert( p->db==0 || p->db==db );
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  releaseMemArray(p->aColName, p->nColName);
   for(pSub=p->pProgram; pSub; pSub=pNext){
     pNext = pSub->pNext;
     vdbeFreeOpArray(db, pSub->aOp, pSub->nOp);

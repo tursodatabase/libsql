@@ -4132,13 +4132,87 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 ** CAPI3REF: Query The EXPLAIN Setting For A Prepared Statement
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_stmt_isexplain(S) interface returns 1 if the
-** prepared statement S is an EXPLAIN statement, or 2 if the
-** statement S is an EXPLAIN QUERY PLAN.
-** ^The sqlite3_stmt_isexplain(S) interface returns 0 if S is
-** an ordinary statement or a NULL pointer.
+** ^The sqlite3_stmt_isexplain(S) interface returns [SQLITE_STMTMODE_EXPLAIN]
+** if the prepared statement S is an EXPLAIN statement, or 
+** [SQLITE_STMTMODE_EQP] if the* statement S is an [EXPLAIN QUERY PLAN].
+** ^The sqlite3_stmt_isexplain(S) interface returns [SQLITE_STMTMODE_RUN]
+** if S is an ordinary statement or a NULL pointer.
+**
+** The sqlite3_stmt_isexplain(S) call is the same thing as
+** [sqlite3_stmt_mode](S, [SQLITE_STMTMODE_QUERY]).
 */
 int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
+
+/*
+** CAPI3REF: Set Or Query The Operating Mode For A Prepared Statement
+** METHOD: sqlite3_stmt
+**
+** The sqlite3_stmt_mode(S,M) attempts to change the "mode" of
+** statement S to value M, where M is one of the 
+** [SQLITE_STMTMODE_RUN|statement mode constants].  The value
+** of the statement mode (after the change) is returned.  The mode
+** change might be disallowed, for example if the statement is currently
+** in use or for other reasons listed below.  If the mode change is
+** disallowed, then the original mode is returned.  The only way to
+** determine if mode change was effective is to compare the return value
+** against the second parameter to see if they are the same.
+**
+** The mode cannot be changed to SQLITE_STMTMODE_RUN unless the prepared
+** statement was originally compiled without either the "EXPLAIN" or 
+** "EXPLAIN QUERY PLAN" prefix.
+**
+** The mode cannot be changed to SQLITE_STMTMODE_EQP unless the
+** statement was originally compiled using the "EXPLAIN QUERY PLAN"
+** prefix.
+**
+** If M is SQLITE_STMTMODE_QUERY, then the mode is not changed but the
+** current mode is still returned.  This can be used to query the mode
+** of a statement without changing it.
+*/
+int sqlite3_stmt_mode(sqlite3_stmt*,int);
+
+/* CAPI3REF: Prepared Statement Modes
+**
+** These integer constants are used as the second parameter and the
+** return value from the [sqlite3_stmt_mode()] interface and as the
+** return value from [sqlite3_stmt_isexplain()].
+**
+** <ul>
+** <li>[[SQLITE_STMTMODE_RUN]]
+** The [SQLITE_STMTMODE_RUN] value indicates that the statement will
+** run the SQL statement as normal.  This is the default and usual
+** mode for a prepared statement.
+**
+** <li>[[SQLITE_STMTMODE_EXPLAIN]]
+** The [SQLITE_STMTMODE_EXPLAIN] value indicates that the statement will
+** output the [bytecode] used to implement the SQL statement.  This is
+** the mode that a prepared statement is initialized to if the input
+** SQL begins with the "EXPLAIN" keyword.
+**
+** <li>[[SQLITE_STMTMODE_EQP]]
+** The [SQLITE_STMTMODE_EQP] value indicates that the statement is an
+** [EXPLAIN QUERY PLAN] statement.  In order for this mode to operate
+** correctly, it is necessary to prepare the statement using the
+** "EXPLAIN QUERY PLAN" keywords.  If a statement is converted into
+** this mode after having been prepared without the "EXPLAIN QUERY PLAN"
+** prefix, then it will probably not output the query plan.
+**
+** <li>[[SQLITE_STMTMODE_TABLELIST]]
+** The [SQLITE_STMTMODE_TABLELIST] value indicates that the statement
+** will output information about all (non-transient) tables and indexes that
+** are used by the prepared statement.
+**
+** <li>[[SQLITE_STMTMODE_QUERY]]
+** The [SQLITE_STMTMODE_QUERY] value is not an actual statement mode, but
+** this value can be used as the second parameter to [sqlite3_stmt_mode()]
+** in order to determine the statement mode without changing it.
+** </ul>
+*/
+#define SQLITE_STMTMODE_RUN        0
+#define SQLITE_STMTMODE_EXPLAIN    1
+#define SQLITE_STMTMODE_EQP        2
+#define SQLITE_STMTMODE_TABLELIST  3
+#define SQLITE_STMTMODE_QUERY      (-1)
 
 /*
 ** CAPI3REF: Determine If A Prepared Statement Has Been Reset

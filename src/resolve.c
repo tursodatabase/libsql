@@ -934,7 +934,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
         else if( no_such_func && pParse->db->init.busy==0
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-                  && pParse->explain==0
+                  && pParse->explain==SQLITE_STMTMODE_RUN
 #endif
         ){
           sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);

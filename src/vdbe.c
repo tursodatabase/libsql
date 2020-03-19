@@ -704,7 +704,7 @@ int sqlite3VdbeExec(
   assert( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_BUSY );
   assert( p->bIsReader || p->readOnly!=0 );
   p->iCurrentTime = 0;
-  assert( p->explain==0 );
+  assert( p->explain==SQLITE_STMTMODE_RUN );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;
   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;

@@ -420,6 +420,7 @@ struct Vdbe {
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
+  bft origExplain:2;      /* The original value of explain */
   bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
@@ -429,6 +430,7 @@ struct Vdbe {
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[7];        /* Counters used by sqlite3_stmt_status() */
+  u32 nColName;           /* Number of slots allocated to aColName[] above */
   char *zSql;             /* Text of the SQL statement that generated this */
 #ifdef SQLITE_ENABLE_NORMALIZE
   char *zNormSql;         /* Normalization of the associated SQL statement */

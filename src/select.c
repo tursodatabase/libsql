@@ -5505,7 +5505,7 @@ static void explainSimpleCount(
   Table *pTab,                    /* Table being queried */
   Index *pIdx                     /* Index used to optimize scan, or NULL */
 ){
-  if( pParse->explain==2 ){
+  if( pParse->explain==SQLITE_STMTMODE_EQP ){
     int bCover = (pIdx!=0 && (HasRowid(pTab) || !IsPrimaryKeyIndex(pIdx)));
     sqlite3VdbeExplain(pParse, 0, "SCAN TABLE %s%s%s",
         pTab->zName,

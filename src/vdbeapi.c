@@ -996,8 +996,17 @@ int sqlite3_aggregate_count(sqlite3_context *p){
 ** Return the number of columns in the result set for the statement pStmt.
 */
 int sqlite3_column_count(sqlite3_stmt *pStmt){
+  static const u8 anColumn[] = {
+    0,     /* SQLITE_STMTMODE_RUN  (Use pVm->nResColumn instead) */
+    8,     /* SQLITE_STMTMODE_EXPLAIN    */
+    4,     /* SQLITE_STMTMODE_EQP        */
+    6      /* SQLITE_STMTMODE_TABLELIST  */
+  };
   Vdbe *pVm = (Vdbe *)pStmt;
-  return pVm ? pVm->nResColumn : 0;
+  if( pVm==0 ) return 0;
+  assert( pVm->explain>=0 && pVm->explain<=3 );
+  if( pVm->explain==0 ) return pVm->nResColumn;
+  return (int)anColumn[pVm->explain];
 }
 
 /*
@@ -1211,6 +1220,7 @@ static const void *columnName(
     N += useType*n;
     sqlite3_mutex_enter(db->mutex);
     assert( db->mallocFailed==0 );
+    assert( N>=0 && N<p->nColName );
 #ifndef SQLITE_OMIT_UTF16
     if( useUtf16 ){
       ret = sqlite3_value_text16((sqlite3_value*)&p->aColName[N]);
@@ -1681,6 +1691,22 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
   return pStmt ? ((Vdbe*)pStmt)->explain : 0;
+}
+
+/*
+** Query or set the mode for a prepared statement.
+*/
+int sqlite3_stmt_mode(sqlite3_stmt *pStmt, int iNewMode){
+  Vdbe *v;
+  if( pStmt==0 ) return SQLITE_STMTMODE_RUN;
+  v = (Vdbe*)pStmt;
+  if( iNewMode==SQLITE_STMTMODE_EXPLAIN
+   || iNewMode==SQLITE_STMTMODE_TABLELIST
+   || iNewMode==v->origExplain
+  ){
+    v->explain = iNewMode;
+  }
+  return v->explain;
 }
 
 /*
