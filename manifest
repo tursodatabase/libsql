@@ -1,5 +1,5 @@
-C Initial\scode\sfor\sa\sproposed\snew\ssqlite3_stmt_mode()\sAPI.\nThis\sis\san\sincomplete\ssnapshot\sof\sa\swork-in-progress.
-D 2020-03-19T21:17:11.830
+C Revamp\sthe\sEXPLAIN\sinfrastructure\sto\sfacilitate\ssqlite3_stmt_mode().\s\sThe\ncurrently\scode\smostly\sworks,\sbut\sthere\sare\stest\sfailures.\s\sThis\sis\san\nincremental\scheck-in.
+D 2020-03-20T16:13:41.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,11 +603,11 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 95fb6e03a5ca679045c5adccd05380f0addccabef5911abddcb06af069500ab7
 F src/util.c a285c1e026907b69fa2592bd05047a565a1d8a1aef2b73c924b6a8ffe772871a
 F src/vacuum.c 813b510ba887fee6492bcb11f2bf77d7eb58b232b83649136372e0a2fc17f4b9
-F src/vdbe.c ca986d3f9961045256c1b077a6986cd2e9cfa86909adfd0acafb761e6656b5bb
+F src/vdbe.c b7b9ec1d604a12f4cafedf796027a297bc306f0d3afb340948898256cb4473b9
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
-F src/vdbeInt.h a341e6994ffd865531089f0c94d3910acc66d25d312259c4a45f422693deab9b
-F src/vdbeapi.c e8351c4f351e492e260fb8b0f9f57575772f583fbbe97dca4c31dcadd06760d6
-F src/vdbeaux.c ce2521d1979d6e081c21766523244891149df247092202db3a0e097f4eae40f2
+F src/vdbeInt.h 1a8807b7dfac4142f5b9047767295327be41f02c17f7bb6bd8ffef6219dac588
+F src/vdbeapi.c d840fb3b80bbbd25fd44e1bb2d4a209e297832f527d21ea718fa53502a2a2d97
+F src/vdbeaux.c 734cb197ffdf83322832f9c881e9841b43b27f43677b8c75ad444cd2ccee2802
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1860,10 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11e0844f71e8f2d27ce9363fb505e02fd7795c61dae0b3886cf0d8df4484dd97
-R bfd344317fdbc4dd2c74ef078364da12
-T *branch * sqlite3_stmt_mode
-T *sym-sqlite3_stmt_mode *
-T -sym-trunk *
+P 3cf7537b5e14e218218b18b3c0c668c950a71fcddc68a5faf0f197519718a6c2
+R 858f863db42629ad352a7a54d45b01f7
 U drh
-Z 4fdf6d3f28007c100776cbe88029096e
+Z acdb8ce72295d433409d053ae8da03ad

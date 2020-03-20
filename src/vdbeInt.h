@@ -27,6 +27,11 @@
 #endif
 
 /*
+** Maximum number of columns in any "EXPLAIN" output
+*/
+#define VDBE_EXPLAIN_COLS     9
+
+/*
 ** VDBE_DISPLAY_P4 is true or false depending on whether or not the
 ** "explain" P4 display logic is enabled.
 */
@@ -337,11 +342,6 @@ struct sqlite3_context {
   sqlite3_value *argv[1]; /* Argument set */
 };
 
-/* A bitfield type for use inside of structures.  Always follow with :N where
-** N is the number of bits.
-*/
-typedef unsigned bft;  /* Bit Field Type */
-
 /* The ScanStatus object holds a single value for the
 ** sqlite3_stmt_scanstatus() interface.
 */
@@ -414,19 +414,20 @@ struct Vdbe {
   int rcApp;              /* errcode set by sqlite3_result_error_code() */
   u32 nWrite;             /* Number of write operations that have occurred */
 #endif
-  u16 nResColumn;         /* Number of columns in one row of the result set */
+  u16 nResColumn;         /* Columns in one row of a normal result set */
+  u16 nRes;               /* Columns in the current actual result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
-  bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
-  bft explain:2;          /* True if EXPLAIN present on SQL command */
-  bft origExplain:2;      /* The original value of explain */
-  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
-  bft changeCntOn:1;      /* True to update the change-counter */
-  bft runOnlyOnce:1;      /* Automatically expire on reset */
-  bft usesStmtJournal:1;  /* True if uses a statement journal */
-  bft readOnly:1;         /* True for statements that do not write */
-  bft bIsReader:1;        /* True for statements that read */
+  u8 explain:2;           /* True if EXPLAIN present on SQL command */
+  u8 origExplain:2;       /* The original value of explain */
+  u8 expired:2;           /* 1: recompile VM immediately  2: when convenient */
+  u8 doingRerun:1;        /* True if rerunning after an auto-reprepare */
+  u8 changeCntOn:1;       /* True to update the change-counter */
+  u8 runOnlyOnce:1;       /* Automatically expire on reset */
+  u8 usesStmtJournal:1;   /* True if uses a statement journal */
+  u8 readOnly:1;          /* True for statements that do not write */
+  u8 bIsReader:1;         /* True for statements that read */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[7];        /* Counters used by sqlite3_stmt_status() */
@@ -499,6 +500,7 @@ int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);
 int sqlite3VdbeIdxRowid(sqlite3*, BtCursor*, i64*);
 int sqlite3VdbeExec(Vdbe*);
 #ifndef SQLITE_OMIT_EXPLAIN
+Mem *sqlite3VdbeSetExplainColumnNames(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 #endif
 int sqlite3VdbeHalt(Vdbe*);

@@ -539,9 +539,10 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
 
 #ifdef SQLITE_DEBUG
 /*
-** Print the value of a register for tracing purposes:
+** Print the value of a Mem object on standard output.
+** Used for tracing and for interactive debugging only.
 */
-static void memTracePrint(Mem *p){
+static void memPrint(Mem *p){
   if( p->flags & MEM_Undefined ){
     printf(" undefined");
   }else if( p->flags & MEM_Null ){
@@ -567,9 +568,19 @@ static void memTracePrint(Mem *p){
   }
   if( p->flags & MEM_Subtype ) printf(" subtype=0x%02x", p->eSubtype);
 }
+/* Print N Mem objects beginning with p.  Used for interactive debugging */
+void sqlite3MemPrint(Mem *p, int N){
+  int i;
+  for(i=0; i<N; i++){
+    if( N>1 ) printf("%3d:", i);
+    memPrint(p+i);
+    printf("\n");
+  }
+  fflush(stdout);
+}
 static void registerTrace(int iReg, Mem *p){
   printf("R[%d] = ", iReg);
-  memTracePrint(p);
+  memPrint(p);
   if( p->pScopyFrom ){
     printf(" <== R[%d]", (int)(p->pScopyFrom - &p[-iReg]));
   }
@@ -705,7 +716,7 @@ int sqlite3VdbeExec(
   assert( p->bIsReader || p->readOnly!=0 );
   p->iCurrentTime = 0;
   assert( p->explain==SQLITE_STMTMODE_RUN );
-  p->pResultSet = 0;
+  p->nRes = 0;
   db->busyHandler.nBusy = 0;
   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
@@ -1493,6 +1504,7 @@ case OP_ResultRow: {
   ** a side effect.
   */
   pMem = p->pResultSet = &aMem[pOp->p1];
+  p->nRes = pOp->p2;
   for(i=0; i<pOp->p2; i++){
     assert( memIsValid(&pMem[i]) );
     Deephemeralize(&pMem[i]);

@@ -1000,7 +1000,7 @@ int sqlite3_column_count(sqlite3_stmt *pStmt){
     0,     /* SQLITE_STMTMODE_RUN  (Use pVm->nResColumn instead) */
     8,     /* SQLITE_STMTMODE_EXPLAIN    */
     4,     /* SQLITE_STMTMODE_EQP        */
-    6      /* SQLITE_STMTMODE_TABLELIST  */
+    5      /* SQLITE_STMTMODE_TABLELIST  */
   };
   Vdbe *pVm = (Vdbe *)pStmt;
   if( pVm==0 ) return 0;
@@ -1015,8 +1015,8 @@ int sqlite3_column_count(sqlite3_stmt *pStmt){
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt){
   Vdbe *pVm = (Vdbe *)pStmt;
-  if( pVm==0 || pVm->pResultSet==0 ) return 0;
-  return pVm->nResColumn;
+  if( pVm==0 || pVm->nRes==0 ) return 0;
+  return sqlite3_column_count(pStmt);
 }
 
 /*
@@ -1070,7 +1070,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   if( pVm==0 ) return (Mem*)columnNullValue();
   assert( pVm->db );
   sqlite3_mutex_enter(pVm->db->mutex);
-  if( pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
+  if( i<pVm->nRes && i>=0 ){
     pOut = &pVm->pResultSet[i];
   }else{
     sqlite3Error(pVm->db, SQLITE_RANGE);
@@ -1704,7 +1704,9 @@ int sqlite3_stmt_mode(sqlite3_stmt *pStmt, int iNewMode){
    || iNewMode==SQLITE_STMTMODE_TABLELIST
    || iNewMode==v->origExplain
   ){
-    v->explain = iNewMode;
+    if( v->magic==VDBE_MAGIC_RUN && v->pc<0 ){
+      v->explain = iNewMode;
+    }
   }
   return v->explain;
 }

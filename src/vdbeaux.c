@@ -1872,7 +1872,11 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
 }
 
 /*
-** Release an array of N Mem elements
+** Release all content from an array of N Mem elements.  All elements
+** are left in a state of "MEM_Undefined".
+**
+** This routine does not free the array itself.  It just frees the
+** content held by the Mem elements in the array.
 */
 static void releaseMemArray(Mem *p, int N){
   if( p && N ){
@@ -1963,22 +1967,61 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
+** There should are VDBE_EXPLAIN_COLS*2 extra registers on the end of the
+** Vdbe.aColName array for statements that are in one of the
+** "explain" modes.  The first VDBE_EXPLAIN_COLS registers hold the names of
+** the columns, and the last VDBE_EXPLAIN_COLS registers are used for to store
+** result set values when running the explain.
+**
+** This routine makes sure those extra register exist and return
+** a pointer to the first of them.  If the extra registers do
+** not exist, then the are allocated.
+**
+** NULL is returned if there is a memory allocation error.
+*/
+Mem *sqlite3VdbeSetExplainColumnNames(Vdbe *p){
+  int n = p->nResColumn*COLNAME_N;
+  if( p->nColName<=n ){
+    static const char * const azColName[] = {
+       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
+       "id", "parent", "notused", "detail",
+       "schema", "type", "name", "rw", "rootpage"
+    };
+    int iFirst, cnt, i;
+    Mem *pNew = sqlite3DbRealloc(p->db, p->aColName,
+                                 (n+VDBE_EXPLAIN_COLS*2)*sizeof(Mem));
+    if( pNew==0 ){
+      return 0;
+    }
+    p->aColName = pNew;
+    p->nColName = n+VDBE_EXPLAIN_COLS*2;
+    initMemArray(p->aColName+n, VDBE_EXPLAIN_COLS*2, p->db, MEM_Null);
+    if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
+      iFirst = 0;
+      cnt = 8;
+    }else if( p->explain==SQLITE_STMTMODE_EQP ){
+      iFirst = 8;
+      cnt = 4;
+    }else{
+      iFirst = 12;
+      cnt = 5;
+    }
+    for(i=0; i<cnt; i++){
+      sqlite3VdbeMemSetStr(pNew+n+i, azColName[i+iFirst], -1,
+                                SQLITE_UTF8, SQLITE_STATIC);
+    }
+  }
+  return p->aColName + n;
+}
+#endif
+
+#ifndef SQLITE_OMIT_EXPLAIN
+/*
 ** Give a listing of the program in the virtual machine.
 **
 ** The interface is the same as sqlite3VdbeExec().  But instead of
-** running the code, it invokes the callback once for each instruction.
-** This feature is used to implement "EXPLAIN".
-**
-** When p->explain==1, each instruction is listed.  When
-** p->explain==2, only OP_Explain instructions are listed and these
-** are shown in a different format.  p->explain==2 is used to implement
-** EXPLAIN QUERY PLAN.
-** 2018-04-24:  In p->explain==2 mode, the OP_Init opcodes of triggers
-** are also shown, so that the boundaries between the main program and
-** each trigger are clear.
-**
-** When p->explain==1, first the main program is listed, then each of
-** the trigger subprograms are listed one by one.
+** running the code, it returns rows based on the bytecode content,
+** rather than on actually running the bytecode.
 */
 int sqlite3VdbeList(
   Vdbe *p                   /* The VDBE */
@@ -1990,11 +2033,13 @@ int sqlite3VdbeList(
   sqlite3 *db = p->db;                 /* The database connection */
   int i;                               /* Loop counter */
   int rc = SQLITE_OK;                  /* Return code */
-  Mem *pMem = &p->aMem[1];             /* First Mem of result set */
+  Mem *pMem;                           /* First Mem of result set */
   int bListSubprogs = (p->explain==1 || (db->flags & SQLITE_TriggerEQP)!=0);
   Op *pOp = 0;
 
-  assert( p->explain );
+  assert( p->explain==SQLITE_STMTMODE_EXPLAIN
+       || p->explain==SQLITE_STMTMODE_EQP
+       || p->explain==SQLITE_STMTMODE_TABLELIST );
   assert( p->magic==VDBE_MAGIC_RUN );
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY || p->rc==SQLITE_NOMEM );
 
@@ -2002,8 +2047,15 @@ int sqlite3VdbeList(
   ** the result, result columns may become dynamic if the user calls
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
-  releaseMemArray(pMem, 8);
-  p->pResultSet = 0;
+  pMem = sqlite3VdbeSetExplainColumnNames(p);
+  if( pMem==0 ){
+    p->rc = SQLITE_NOMEM;
+    return SQLITE_ERROR;
+  }
+  pMem += VDBE_EXPLAIN_COLS;
+  releaseMemArray(pMem, VDBE_EXPLAIN_COLS);
+  p->pResultSet = pMem;
+  p->nRes = 0;
 
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
@@ -2021,12 +2073,8 @@ int sqlite3VdbeList(
   */
   nRow = p->nOp;
   if( bListSubprogs ){
-    /* The first 8 memory cells are used for the result set.  So we will
-    ** commandeer the 9th cell to use as storage for an array of pointers
-    ** to trigger subprograms.  The VDBE is guaranteed to have at least 9
-    ** cells.  */
-    assert( p->nMem>9 );
-    pSub = &p->aMem[9];
+    pSub = pMem++;
+    p->pResultSet = pMem;
     if( pSub->flags&MEM_Blob ){
       /* On the first call to sqlite3_step(), pSub will hold a NULL.  It is
       ** initialized to a BLOB by the P4_SUBPROGRAM processing logic below */
@@ -2065,7 +2113,7 @@ int sqlite3VdbeList(
 
     /* When an OP_Program opcode is encounter (the only opcode that has
     ** a P4_SUBPROGRAM argument), expand the size of the array of subprograms
-    ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
+    ** to hold the new program - assuming this subprogram
     ** has not already been seen.
     */
     if( bListSubprogs && pOp->p4type==P4_SUBPROGRAM ){
@@ -2087,7 +2135,7 @@ int sqlite3VdbeList(
         nRow += pOp->p4.pProgram->nOp;
       }
     }
-    if( p->explain<2 ) break;
+    if( p->explain==SQLITE_STMTMODE_EXPLAIN ) break;
     if( pOp->opcode==OP_Explain ) break;
     if( pOp->opcode==OP_Init && p->pc>1 ) break;
   }
@@ -2099,7 +2147,7 @@ int sqlite3VdbeList(
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
     }else{
       char *zP4;
-      if( p->explain==1 ){
+      if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
         pMem->flags = MEM_Int;
         pMem->u.i = i;                                /* Program counter */
         pMem++;
@@ -2140,7 +2188,7 @@ int sqlite3VdbeList(
       }
       pMem++;
 
-      if( p->explain==1 ){
+      if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
         if( sqlite3VdbeMemClearAndResize(pMem, 4) ){
           assert( p->db->mallocFailed );
           return SQLITE_ERROR;
@@ -2162,10 +2210,11 @@ int sqlite3VdbeList(
 #else
         pMem->flags = MEM_Null;                       /* Comment */
 #endif
+        pMem++;
       }
 
-      p->nResColumn = 8 - 4*(p->explain-1);
-      p->pResultSet = &p->aMem[1];
+      p->nRes = (int)(pMem - p->pResultSet);
+      assert( p->nRes<=VDBE_EXPLAIN_COLS );
       p->rc = SQLITE_OK;
       rc = SQLITE_ROW;
     }
@@ -2369,25 +2418,6 @@ void sqlite3VdbeMakeReady(
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain ){
-    static const char * const azColName[] = {
-       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "id", "parent", "notused", "detail"
-    };
-    int iFirst, mx, i;
-    if( nMem<10 ) nMem = 10;
-    if( pParse->explain==2 ){
-      sqlite3VdbeSetNumCols(p, 4);
-      iFirst = 8;
-      mx = 12;
-    }else{
-      sqlite3VdbeSetNumCols(p, 8);
-      iFirst = 0;
-      mx = 8;
-    }
-    for(i=iFirst; i<mx; i++){
-      sqlite3VdbeSetColName(p, i-iFirst, COLNAME_NAME,
-                            azColName[i], SQLITE_STATIC);
-    }
     p->explain = p->origExplain = pParse->explain;
   }
   p->expired = 0;
@@ -3310,7 +3340,7 @@ int sqlite3VdbeReset(Vdbe *p){
 #endif
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = 0;
-  p->pResultSet = 0;
+  p->nRes = 0;
 #ifdef SQLITE_DEBUG
   p->nWrite = 0;
 #endif
