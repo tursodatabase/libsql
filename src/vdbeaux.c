@@ -2053,8 +2053,6 @@ int sqlite3VdbeList(
     return SQLITE_ERROR;
   }
   pMem += VDBE_EXPLAIN_COLS;
-  releaseMemArray(pMem, VDBE_EXPLAIN_COLS);
-  p->pResultSet = pMem;
   p->nRes = 0;
 
   if( p->rc==SQLITE_NOMEM ){
@@ -2074,7 +2072,6 @@ int sqlite3VdbeList(
   nRow = p->nOp;
   if( bListSubprogs ){
     pSub = pMem++;
-    p->pResultSet = pMem;
     if( pSub->flags&MEM_Blob ){
       /* On the first call to sqlite3_step(), pSub will hold a NULL.  It is
       ** initialized to a BLOB by the P4_SUBPROGRAM processing logic below */
@@ -2085,6 +2082,7 @@ int sqlite3VdbeList(
       nRow += apSub[i]->nOp;
     }
   }
+  p->pResultSet = pMem;
 
   while(1){  /* Loop exits via break */
     i = p->pc++;
@@ -2130,7 +2128,7 @@ int sqlite3VdbeList(
         }
         apSub = (SubProgram **)pSub->z;
         apSub[nSub++] = pOp->p4.pProgram;
-        pSub->flags |= MEM_Blob;
+        MemSetTypeFlag(pSub, MEM_Blob);
         pSub->n = nSub*sizeof(SubProgram*);
         nRow += pOp->p4.pProgram->nOp;
       }
@@ -2148,29 +2146,13 @@ int sqlite3VdbeList(
     }else{
       char *zP4;
       if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
-        pMem->flags = MEM_Int;
-        pMem->u.i = i;                                /* Program counter */
-        pMem++;
-    
-        pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-        pMem->z = (char*)sqlite3OpcodeName(pOp->opcode); /* Opcode */
-        assert( pMem->z!=0 );
-        pMem->n = sqlite3Strlen30(pMem->z);
-        pMem->enc = SQLITE_UTF8;
-        pMem++;
+        sqlite3VdbeMemSetInt64(pMem++, i);            /* Program counter */
+        sqlite3VdbeMemSetStr(pMem++, (char*)sqlite3OpcodeName(pOp->opcode),
+                             -1, SQLITE_UTF8, SQLITE_STATIC);    
       }
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p1;                          /* P1 */
-      pMem++;
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p2;                          /* P2 */
-      pMem++;
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p3;                          /* P3 */
-      pMem++;
+      sqlite3VdbeMemSetInt64(pMem++, pOp->p1);       /* P1 */
+      sqlite3VdbeMemSetInt64(pMem++, pOp->p2);       /* P2 */
+      sqlite3VdbeMemSetInt64(pMem++, pOp->p3);       /* P3 */
 
       if( sqlite3VdbeMemClearAndResize(pMem, 100) ){ /* P4 */
         assert( p->db->mallocFailed );
