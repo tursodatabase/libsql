@@ -119,7 +119,7 @@ static void attachFunc(
     for(i=0; i<db->nDb; i++){
       char *z = db->aDb[i].zDbSName;
       assert( z && zName );
-      if( sqlite3StrICmp(z, zName)==0 ){
+      if( sqlite3StrICmp(z, zName)==0 || sqlite3StrICmp("main", zName)==0 ){
         zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
         goto attach_error;
       }
@@ -272,7 +272,11 @@ static void detachFunc(
   for(i=0; i<db->nDb; i++){
     pDb = &db->aDb[i];
     if( pDb->pBt==0 ) continue;
-    if( sqlite3StrICmp(pDb->zDbSName, zName)==0 ) break;
+    if( sqlite3StrICmp(pDb->zDbSName, zName)==0 
+     || (i==0 && sqlite3StrICmp("main", zName)==0)
+    ){
+      break;
+    }
   }
 
   if( i>=db->nDb ){
@@ -465,12 +469,23 @@ int sqlite3FixSrcList(
   int i;
   const char *zDb;
   struct SrcList_item *pItem;
+  sqlite3 *db = pFix->pParse->db;
+  const char *zAlt = 0;
 
   if( NEVER(pList==0) ) return 0;
   zDb = pFix->zDb;
+  if( sqlite3StrICmp(db->aDb[0].zDbSName, zDb)==0 ){ 
+    zAlt = "main";
+  }else if( sqlite3StrICmp("main", zDb)==0 ){
+    zAlt = db->aDb[0].zDbSName;
+  }
+
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pFix->bTemp==0 ){
-      if( pItem->zDatabase && sqlite3StrICmp(pItem->zDatabase, zDb) ){
+      if( pItem->zDatabase 
+       && sqlite3StrICmp(pItem->zDatabase, zDb) 
+       && sqlite3_stricmp(pItem->zDatabase, zAlt)
+      ){
         sqlite3ErrorMsg(pFix->pParse,
             "%s %T cannot reference objects in database %s",
             pFix->zType, pFix->pName, pItem->zDatabase);

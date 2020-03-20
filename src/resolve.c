@@ -227,6 +227,9 @@ static int lookupName(
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
   assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
 
+static int nCall = 0;
+nCall++;
+
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
   ExprSetVVAProperty(pExpr, EP_NoReduce);
@@ -251,6 +254,12 @@ static int lookupName(
           pSchema = db->aDb[i].pSchema;
           break;
         }
+      }
+      if( i==db->nDb && sqlite3StrICmp("main", zDb)==0 ){
+        /* This branch is taken when the main database has been renamed
+        ** using SQLITE_DBCONFIG_MAINDBNAME. */
+        pSchema = db->aDb[0].pSchema;
+        zDb = db->aDb[0].zDbSName;
       }
     }
   }

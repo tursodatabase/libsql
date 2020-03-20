@@ -2952,7 +2952,7 @@ static int expertHandleSQL(
 ){
   assert( pState->expert.pExpert );
   assert( pzErr==0 || *pzErr==0 );
-  return sqlite3_expert_sql(pState->expert.pExpert, zSql, pzErr);
+    return sqlite3_expert_sql(pState->expert.pExpert, zSql, pzErr);
 }
 
 /*
