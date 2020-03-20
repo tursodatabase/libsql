@@ -120,9 +120,10 @@ cmdlist ::= ecmd.
 ecmd ::= SEMI.
 ecmd ::= cmdx SEMI.
 %ifndef SQLITE_OMIT_EXPLAIN
-ecmd ::= explain cmdx SEMI.       {NEVER-REDUCE}
-explain ::= EXPLAIN.              { pParse->explain = SQLITE_STMTMODE_EXPLAIN; }
-explain ::= EXPLAIN QUERY PLAN.   { pParse->explain = SQLITE_STMTMODE_EQP; }
+ecmd ::= explain cmdx SEMI.     {NEVER-REDUCE}
+explain ::= EXPLAIN.            { pParse->explain = SQLITE_STMTMODE_EXPLAIN; }
+explain ::= EXPLAIN QUERY PLAN. { pParse->explain = SQLITE_STMTMODE_EQP; }
+explain ::= EXPLAIN TABLES.     { pParse->explain = SQLITE_STMTMODE_TABLELIST; }
 %endif  SQLITE_OMIT_EXPLAIN
 cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 

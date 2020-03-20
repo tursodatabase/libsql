@@ -1,5 +1,5 @@
-C Further\ssimplification\sof\sthe\sEXPLAIN\slogic.\s\sFix\sthe\stest\serrors\sfrom\nthe\sprevious\scheck-in.
-D 2020-03-20T17:49:37.174
+C Add\sthe\sEXPLAIN\sTABLES\ssyntax\sthat\suses\sSQLITE_STMTMODE_TABLELIST.\s\sSeems\nto\swork,\sbut\snot\swell-tested.
+D 2020-03-20T20:00:10.751
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c a71ffd145f55e28cbdc1bdabb5e6bef063da428a6c0de3c3a36e9a0c41d4c8c0
 F src/pager.h 3b33619a90180e0874c7eca31d6f6ceb464d9322c6fb4e9a7bbb318c8a17bdb3
-F src/parse.y a6d7151326370346817560153c44dc73860c43e775fe43789981336910914dd2
+F src/parse.y dc4521689a9d91b9da0c74ec02ccc6529d4610eece436cdf21c53ca167fd2a93
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
@@ -607,7 +607,7 @@ F src/vdbe.c b7b9ec1d604a12f4cafedf796027a297bc306f0d3afb340948898256cb4473b9
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
 F src/vdbeInt.h 1a8807b7dfac4142f5b9047767295327be41f02c17f7bb6bd8ffef6219dac588
 F src/vdbeapi.c d840fb3b80bbbd25fd44e1bb2d4a209e297832f527d21ea718fa53502a2a2d97
-F src/vdbeaux.c 0ae1d7dbe395dcccbc749265988f39bc635d2a667abc5080618232ea71cb111a
+F src/vdbeaux.c 66dcae8b09af6c2213da7cfb4ca9ad6e8c4be5d4c1b8dd3eb8c5a1ada9e36ec0
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1788,7 +1788,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh 422fc365358a2e92876ffc62971a0ff28ed472fc8bcf9de0df921c736fdeca5e
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
-F tool/mkkeywordhash.c 11a3f3af8e787d0c5ca459ed66fe80fd09e661876506e7b978ec08c19477bdc2
+F tool/mkkeywordhash.c cb015b0376aea574f00b3b7f7b8e8a43cb52c8adffb2d292454d27aa2567a7b4
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 352a4319c0ad869eb26442bf7c3b015aa15594c21f1cce5a6420dbe999367c21
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e9e17e2125dbbafd5da4adb3bd2893735fa4d0aaa5f3daee75f866cb32231a8d
-R 362bcd5e9bfbbf8f55dfb0975381a17c
+P 5eaba9af1c35ea7b7c08cad7d0d9b5a4b63b11b3177bb84a570ce1cea44b9f57
+R b8dc18a0109dd1b6247089b6701d54e2
 U drh
-Z 6ca8b6a14af1a859b37a7675560dfe61
+Z 13571b2afccf3e4212df912e00f6dcfa

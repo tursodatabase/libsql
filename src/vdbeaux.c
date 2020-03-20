@@ -1967,13 +1967,15 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
-** There should are VDBE_EXPLAIN_COLS*2 extra registers on the end of the
+** There should are VDBE_EXPLAIN_COLS*2+1 extra registers on the end of the
 ** Vdbe.aColName array for statements that are in one of the
-** "explain" modes.  The first VDBE_EXPLAIN_COLS registers hold the names of
-** the columns, and the last VDBE_EXPLAIN_COLS registers are used for to store
-** result set values when running the explain.
+** "explain" modes.
 **
-** This routine makes sure those extra register exist and return
+**    *  VDBE_EXPLAIN_COLS registers for the column names
+**    *  1 register to keep track of subprograms
+**    *  VDBE_EXPLAIN_COLS registers to hold row output
+**
+** This routine makes sure those extra register exist and returns
 ** a pointer to the first of them.  If the extra registers do
 ** not exist, then the are allocated.
 **
@@ -1985,17 +1987,17 @@ Mem *sqlite3VdbeSetExplainColumnNames(Vdbe *p){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
        "id", "parent", "notused", "detail",
-       "schema", "type", "name", "rw", "rootpage"
+       "schema", "name", "type", "rw", "src"
     };
     int iFirst, cnt, i;
     Mem *pNew = sqlite3DbRealloc(p->db, p->aColName,
-                                 (n+VDBE_EXPLAIN_COLS*2)*sizeof(Mem));
+                                 (n+VDBE_EXPLAIN_COLS*2+1)*sizeof(Mem));
     if( pNew==0 ){
       return 0;
     }
     p->aColName = pNew;
-    p->nColName = n+VDBE_EXPLAIN_COLS*2;
-    initMemArray(p->aColName+n, VDBE_EXPLAIN_COLS*2, p->db, MEM_Null);
+    p->nColName = n+VDBE_EXPLAIN_COLS*2+1;
+    initMemArray(p->aColName+n, VDBE_EXPLAIN_COLS*2+1, p->db, MEM_Null);
     if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
       iFirst = 0;
       cnt = 8;
@@ -2006,6 +2008,7 @@ Mem *sqlite3VdbeSetExplainColumnNames(Vdbe *p){
       iFirst = 12;
       cnt = 5;
     }
+    assert( cnt<=VDBE_EXPLAIN_COLS );
     for(i=0; i<cnt; i++){
       sqlite3VdbeMemSetStr(pNew+n+i, azColName[i+iFirst], -1,
                                 SQLITE_UTF8, SQLITE_STATIC);
@@ -2034,7 +2037,7 @@ int sqlite3VdbeList(
   int i;                               /* Loop counter */
   int rc = SQLITE_OK;                  /* Return code */
   Mem *pMem;                           /* First Mem of result set */
-  int bListSubprogs = (p->explain==1 || (db->flags & SQLITE_TriggerEQP)!=0);
+  int bListSubprogs;                   /* Also show subprograms */
   Op *pOp = 0;
 
   assert( p->explain==SQLITE_STMTMODE_EXPLAIN
@@ -2070,6 +2073,8 @@ int sqlite3VdbeList(
   ** encountered, but p->pc will eventually catch up to nRow.
   */
   nRow = p->nOp;
+  bListSubprogs = p->explain!=SQLITE_STMTMODE_EQP
+                      || (db->flags & SQLITE_TriggerEQP)!=0;
   if( bListSubprogs ){
     pSub = pMem++;
     if( pSub->flags&MEM_Blob ){
@@ -2133,9 +2138,18 @@ int sqlite3VdbeList(
         nRow += pOp->p4.pProgram->nOp;
       }
     }
-    if( p->explain==SQLITE_STMTMODE_EXPLAIN ) break;
-    if( pOp->opcode==OP_Explain ) break;
-    if( pOp->opcode==OP_Init && p->pc>1 ) break;
+    if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
+      break;  /* Show every bytecode line for SQLITE_STMTMODE_EXPLAIN */
+    }else if( p->explain==SQLITE_STMTMODE_EQP ){
+      /* Only OP_Init and OP_Explain opcodes are significant for EQP */
+      if( pOp->opcode==OP_Explain ) break;
+      if( pOp->opcode==OP_Init && p->pc>1 ) break;
+    }else{
+      /* TABLELIST wants OP_Open opcodes only */
+      if( pOp->opcode==OP_OpenRead ) break;
+      if( pOp->opcode==OP_OpenWrite && (pOp->p5 & OPFLAG_P2ISREG)==0 ) break;
+      if( pOp->opcode==OP_ReopenIdx ) break;
+    }
   }
 
   if( rc==SQLITE_OK ){
@@ -2143,6 +2157,42 @@ int sqlite3VdbeList(
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
+    }else if( p->explain==SQLITE_STMTMODE_TABLELIST ){
+      Schema *pSchema;
+      HashElem *k;
+      int iDb = pOp->p3;
+      int iRoot = pOp->p2;
+      const char *zName = 0;
+      const char *zType = 0;
+      assert( iDb>=0 && iDb<db->nDb );
+      sqlite3VdbeMemSetStr(pMem++, db->aDb[iDb].zDbSName, -1,
+                           SQLITE_UTF8, SQLITE_STATIC);
+      pSchema = db->aDb[iDb].pSchema;
+      for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
+        Table *pTab = (Table*)sqliteHashData(k);
+        if( !IsVirtual(pTab) && pTab->tnum==iRoot ){
+          zName = pTab->zName;
+          zType = "table";
+          break;
+        }
+      }
+      if( zName==0 ){
+        for(k=sqliteHashFirst(&pSchema->idxHash); k; k=sqliteHashNext(k)){
+          Index *pIdx = (Index*)sqliteHashData(k);
+          if( pIdx->tnum==iRoot ){
+            zName = pIdx->zName;
+            zType = "index";
+            break;
+          }
+        }
+      }
+      sqlite3VdbeMemSetStr(pMem++, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
+      sqlite3VdbeMemSetStr(pMem++, zType, 5, SQLITE_UTF8, SQLITE_STATIC);
+      sqlite3VdbeMemSetInt64(pMem++, pOp->opcode==OP_OpenWrite);
+      sqlite3VdbeMemSetInt64(pMem++, i<p->pc-1);
+      p->nRes = 5;
+      p->rc = SQLITE_OK;
+      rc = SQLITE_ROW;
     }else{
       char *zP4;
       if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
