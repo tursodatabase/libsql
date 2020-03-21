@@ -3702,6 +3702,7 @@ struct Walker {
     struct WhereConst *pConst;                /* WHERE clause constants */
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
     struct Table *pTab;                       /* Table of generated column */
+    struct SrcList_item *pSrcItem;            /* A single FROM clause item */
   } u;
 };
 
