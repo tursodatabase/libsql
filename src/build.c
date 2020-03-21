@@ -315,7 +315,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   while(1){
     for(i=OMIT_TEMPDB; i<db->nDb; i++){
       int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
-      if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
+      if( zDatabase==0 || sqlite3DbIsNamed(db, j, zDatabase) ){
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
@@ -437,7 +437,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     Schema *pSchema = db->aDb[j].pSchema;
     assert( pSchema );
-    if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zDbSName) ) continue;
+    if( zDb && sqlite3DbIsNamed(db, j, zDb)==0 ) continue;
     assert( sqlite3SchemaMutexHeld(db, j, 0) );
     p = sqlite3HashFind(&pSchema->idxHash, zName);
     if( p ) break;

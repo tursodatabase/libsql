@@ -252,6 +252,12 @@ static int lookupName(
           break;
         }
       }
+      if( i==db->nDb && sqlite3StrICmp("main", zDb)==0 ){
+        /* This branch is taken when the main database has been renamed
+        ** using SQLITE_DBCONFIG_MAINDBNAME. */
+        pSchema = db->aDb[0].pSchema;
+        zDb = db->aDb[0].zDbSName;
+      }
     }
   }
 

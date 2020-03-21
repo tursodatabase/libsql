@@ -4395,6 +4395,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 # define sqlite3AuthContextPush(a,b,c)
 # define sqlite3AuthContextPop(a)  ((void)(a))
 #endif
+int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName);
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
 void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);

@@ -238,6 +238,7 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   i = 0;
   if( iSchema>=0 ){
     pIdxInfo->aConstraintUsage[iSchema].argvIndex = ++i;
+    pIdxInfo->aConstraintUsage[iSchema].omit = 1;
     pIdxInfo->idxNum |= 0x01;
   }
   if( iName>=0 ){
