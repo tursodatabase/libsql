@@ -3590,14 +3590,11 @@ static void substSelect(
 */
 static int recomputeColumnsUsedExpr(Walker *pWalker, Expr *pExpr){
   struct SrcList_item *pItem;
-  ynVar iCol;
   if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
   pItem = pWalker->u.pSrcItem;
   if( pItem->iCursor!=pExpr->iTable ) return WRC_Continue;
-  iCol = pExpr->iColumn;
-  if( iCol<0 ) return WRC_Continue;
-  if( iCol>=BMS ) iCol = BMS-1;
-  pItem->colUsed |= ((Bitmask)1)<<iCol;
+  if( pExpr->iColumn<0 ) return WRC_Continue;
+  pItem->colUsed |= sqlite3ExprColUsed(pExpr);
   return WRC_Continue;
 }
 static void recomputeColumnsUsed(

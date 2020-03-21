@@ -176,6 +176,31 @@ static int areDoubleQuotedStringsEnabled(sqlite3 *db, NameContext *pTopNC){
 }
 
 /*
+** The argument is guaranteed to be a non-NULL Expr node of type TK_COLUMN.
+** return the appropriate colUsed mask.
+*/
+Bitmask sqlite3ExprColUsed(Expr *pExpr){
+  int n;
+  Table *pExTab;
+
+  n = pExpr->iColumn;
+  pExTab = pExpr->y.pTab;
+  assert( pExTab!=0 );
+  if( (pExTab->tabFlags & TF_HasGenerated)!=0
+   && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
+  ){
+    testcase( pExTab->nCol==BMS-1 );
+    testcase( pExTab->nCol==BMS );
+    return pExTab->nCol>=BMS ? ALLBITS : MASKBIT(pExTab->nCol)-1;
+  }else{
+    testcase( n==BMS-1 );
+    testcase( n==BMS );
+    if( n>=BMS ) n = BMS-1;
+    return ((Bitmask)1)<<n;
+  }
+}
+
+/*
 ** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
 ** that name in the set of source tables in pSrcList and make the pExpr 
 ** expression node refer back to that source column.  The following changes
@@ -577,22 +602,7 @@ static int lookupName(
   ** of the table.
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
-    int n = pExpr->iColumn;
-    Table *pExTab = pExpr->y.pTab;
-    assert( pExTab!=0 );
-    assert( pMatch->iCursor==pExpr->iTable );
-    if( (pExTab->tabFlags & TF_HasGenerated)!=0
-     && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
-    ){
-      testcase( pExTab->nCol==BMS-1 );
-      testcase( pExTab->nCol==BMS );
-      pMatch->colUsed = pExTab->nCol>=BMS ? ALLBITS : MASKBIT(pExTab->nCol)-1;
-    }else{
-      testcase( n==BMS-1 );
-      testcase( n==BMS );
-      if( n>=BMS ) n = BMS-1;
-      pMatch->colUsed |= ((Bitmask)1)<<n;
-    }
+    pMatch->colUsed |= sqlite3ExprColUsed(pExpr);
   }
 
   /* Clean up and return

@@ -4551,6 +4551,7 @@ int sqlite3MatchEName(
   const char*,
   const char*
 );
+Bitmask sqlite3ExprColUsed(Expr*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
