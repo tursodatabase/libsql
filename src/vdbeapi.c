@@ -999,12 +999,11 @@ int sqlite3_column_count(sqlite3_stmt *pStmt){
   static const u8 anColumn[] = {
     0,     /* SQLITE_STMTMODE_RUN  (Use pVm->nResColumn instead) */
     8,     /* SQLITE_STMTMODE_EXPLAIN    */
-    4,     /* SQLITE_STMTMODE_EQP        */
-    5      /* SQLITE_STMTMODE_TABLELIST  */
+    4      /* SQLITE_STMTMODE_EQP        */
   };
   Vdbe *pVm = (Vdbe *)pStmt;
   if( pVm==0 ) return 0;
-  assert( pVm->explain>=0 && pVm->explain<=3 );
+  assert( pVm->explain>=0 && pVm->explain<=2 );
   if( pVm->explain==0 ) return pVm->nResColumn;
   return (int)anColumn[pVm->explain];
 }
@@ -1691,24 +1690,6 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
   return pStmt ? ((Vdbe*)pStmt)->explain : 0;
-}
-
-/*
-** Query or set the mode for a prepared statement.
-*/
-int sqlite3_stmt_mode(sqlite3_stmt *pStmt, int iNewMode){
-  Vdbe *v;
-  if( pStmt==0 ) return SQLITE_STMTMODE_RUN;
-  v = (Vdbe*)pStmt;
-  if( iNewMode==SQLITE_STMTMODE_EXPLAIN
-   || iNewMode==SQLITE_STMTMODE_TABLELIST
-   || iNewMode==v->origExplain
-  ){
-    if( v->magic==VDBE_MAGIC_RUN && v->pc<0 ){
-      v->explain = iNewMode;
-    }
-  }
-  return v->explain;
 }
 
 /*

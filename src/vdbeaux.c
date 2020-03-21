@@ -1986,8 +1986,7 @@ Mem *sqlite3VdbeSetExplainColumnNames(Vdbe *p){
   if( p->nColName<=n ){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "id", "parent", "notused", "detail",
-       "schema", "name", "type", "rw", "src"
+       "id", "parent", "notused", "detail"
     };
     int iFirst, cnt, i;
     Mem *pNew = sqlite3DbRealloc(p->db, p->aColName,
@@ -2001,12 +2000,9 @@ Mem *sqlite3VdbeSetExplainColumnNames(Vdbe *p){
     if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
       iFirst = 0;
       cnt = 8;
-    }else if( p->explain==SQLITE_STMTMODE_EQP ){
+    }else{
       iFirst = 8;
       cnt = 4;
-    }else{
-      iFirst = 12;
-      cnt = 5;
     }
     assert( cnt<=VDBE_EXPLAIN_COLS );
     for(i=0; i<cnt; i++){
@@ -2041,8 +2037,7 @@ int sqlite3VdbeList(
   Op *pOp = 0;
 
   assert( p->explain==SQLITE_STMTMODE_EXPLAIN
-       || p->explain==SQLITE_STMTMODE_EQP
-       || p->explain==SQLITE_STMTMODE_TABLELIST );
+       || p->explain==SQLITE_STMTMODE_EQP );
   assert( p->magic==VDBE_MAGIC_RUN );
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY || p->rc==SQLITE_NOMEM );
 
@@ -2140,15 +2135,10 @@ int sqlite3VdbeList(
     }
     if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
       break;  /* Show every bytecode line for SQLITE_STMTMODE_EXPLAIN */
-    }else if( p->explain==SQLITE_STMTMODE_EQP ){
+    }else{
       /* Only OP_Init and OP_Explain opcodes are significant for EQP */
       if( pOp->opcode==OP_Explain ) break;
       if( pOp->opcode==OP_Init && p->pc>1 ) break;
-    }else{
-      /* TABLELIST wants OP_Open opcodes only */
-      if( pOp->opcode==OP_OpenRead ) break;
-      if( pOp->opcode==OP_OpenWrite && (pOp->p5 & OPFLAG_P2ISREG)==0 ) break;
-      if( pOp->opcode==OP_ReopenIdx ) break;
     }
   }
 
@@ -2157,42 +2147,6 @@ int sqlite3VdbeList(
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
-    }else if( p->explain==SQLITE_STMTMODE_TABLELIST ){
-      Schema *pSchema;
-      HashElem *k;
-      int iDb = pOp->p3;
-      int iRoot = pOp->p2;
-      const char *zName = 0;
-      const char *zType = 0;
-      assert( iDb>=0 && iDb<db->nDb );
-      sqlite3VdbeMemSetStr(pMem++, db->aDb[iDb].zDbSName, -1,
-                           SQLITE_UTF8, SQLITE_STATIC);
-      pSchema = db->aDb[iDb].pSchema;
-      for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
-        Table *pTab = (Table*)sqliteHashData(k);
-        if( !IsVirtual(pTab) && pTab->tnum==iRoot ){
-          zName = pTab->zName;
-          zType = "table";
-          break;
-        }
-      }
-      if( zName==0 ){
-        for(k=sqliteHashFirst(&pSchema->idxHash); k; k=sqliteHashNext(k)){
-          Index *pIdx = (Index*)sqliteHashData(k);
-          if( pIdx->tnum==iRoot ){
-            zName = pIdx->zName;
-            zType = "index";
-            break;
-          }
-        }
-      }
-      sqlite3VdbeMemSetStr(pMem++, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
-      sqlite3VdbeMemSetStr(pMem++, zType, 5, SQLITE_UTF8, SQLITE_STATIC);
-      sqlite3VdbeMemSetInt64(pMem++, pOp->opcode==OP_OpenWrite);
-      sqlite3VdbeMemSetInt64(pMem++, i<p->pc-1);
-      p->nRes = 5;
-      p->rc = SQLITE_OK;
-      rc = SQLITE_ROW;
     }else{
       char *zP4;
       if( p->explain==SQLITE_STMTMODE_EXPLAIN ){
@@ -2450,7 +2404,7 @@ void sqlite3VdbeMakeReady(
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain ){
-    p->explain = p->origExplain = pParse->explain;
+    p->explain = pParse->explain;
   }
   p->expired = 0;
 

@@ -420,7 +420,6 @@ struct Vdbe {
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   u8 explain:2;           /* True if EXPLAIN present on SQL command */
-  u8 origExplain:2;       /* The original value of explain */
   u8 expired:2;           /* 1: recompile VM immediately  2: when convenient */
   u8 doingRerun:1;        /* True if rerunning after an auto-reprepare */
   u8 changeCntOn:1;       /* True to update the change-counter */
@@ -459,6 +458,13 @@ struct Vdbe {
 #define VDBE_MAGIC_HALT     0x319c2973    /* VDBE has completed execution */
 #define VDBE_MAGIC_RESET    0x48fa9f76    /* Reset and ready to run again */
 #define VDBE_MAGIC_DEAD     0x5606c3c8    /* The VDBE has been deallocated */
+
+/*
+** Values for Vdbe.explain
+*/
+#define SQLITE_STMTMODE_RUN        0
+#define SQLITE_STMTMODE_EXPLAIN    1
+#define SQLITE_STMTMODE_EQP        2
 
 /*
 ** Structure used to store the context required by the 

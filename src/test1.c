@@ -2697,10 +2697,9 @@ static int SQLITE_TCLAPI test_stmt_readonly(
 
 /*
 ** Usage:  sqlite3_stmt_isexplain  STMT
-** Usage:  sqlite3_stmt_mode STMT NEWMODE
 **
-** Return integers 0, 1, 2, or 3 depending on the mode of STMT.  If the
-** 2nd argument is provided, change the mode to the integer in that argument.
+** Return 1, 2, or 0 respectively if STMT is an EXPLAIN statement, an
+** EXPLAIN QUERY PLAN statement or an ordinary statement or NULL pointer.
 */
 static int SQLITE_TCLAPI test_stmt_isexplain(
   void * clientData,
@@ -2711,19 +2710,14 @@ static int SQLITE_TCLAPI test_stmt_isexplain(
   sqlite3_stmt *pStmt;
   int rc;
 
-  if( objc!=2 && objc!=3 ){
+  if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
         Tcl_GetStringFromObj(objv[0], 0), " STMT", 0);
     return TCL_ERROR;
   }
+
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( objc==3 ){
-    int iNewMode = SQLITE_STMTMODE_QUERY;
-    if( Tcl_GetIntFromObj(interp, objv[2], &iNewMode) ) return TCL_ERROR;
-    rc = sqlite3_stmt_mode(pStmt, iNewMode);
-  }else{
-    rc = sqlite3_stmt_isexplain(pStmt);
-  }
+  rc = sqlite3_stmt_isexplain(pStmt);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
 }
@@ -7982,7 +7976,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
      { "sqlite3_stmt_readonly",         test_stmt_readonly ,0 },
      { "sqlite3_stmt_isexplain",        test_stmt_isexplain,0 },
-     { "sqlite3_stmt_mode",             test_stmt_isexplain,0 },
      { "sqlite3_stmt_busy",             test_stmt_busy     ,0 },
      { "uses_stmt_journal",             uses_stmt_journal ,0 },
 

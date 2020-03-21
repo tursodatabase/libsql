@@ -3371,6 +3371,13 @@ struct Parse {
 #define PARSE_MODE_UNMAP         3
 
 /*
+** Allowed values for Vdbe.explain and Parse.explain
+*/
+#define SQLITE_STMTMODE_RUN        0
+#define SQLITE_STMTMODE_EXPLAIN    1
+#define SQLITE_STMTMODE_EQP        2
+
+/*
 ** Sizes and pointers of various parts of the Parse object.
 */
 #define PARSE_HDR_SZ offsetof(Parse,aTempReg) /* Recursive part w/o aColCache*/
