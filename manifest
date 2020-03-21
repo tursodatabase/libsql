@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\ssqlite3VdbeMakeReady().
-D 2020-03-21T14:22:27.419
+C Change\sa\sbitfield\sin\ssqlite3_stmt\sinto\san\sunsigned\scharacter,\sfor\sslightly\nsmaller\scode\sand\sbetter\sperformance.
+D 2020-03-21T15:07:27.669
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -605,7 +605,7 @@ F src/util.c a285c1e026907b69fa2592bd05047a565a1d8a1aef2b73c924b6a8ffe772871a
 F src/vacuum.c 813b510ba887fee6492bcb11f2bf77d7eb58b232b83649136372e0a2fc17f4b9
 F src/vdbe.c c1c123c6248fa88940b932a00bcc75056921b6d046d45a82566cb97415d2299c
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
-F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
+F src/vdbeInt.h 0b728ee662862a38b1912af741e2ac64f524de3c77aa86cf4306c42bdcd9de59
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
 F src/vdbeaux.c b78b4b71e04643f63820f074ece069834ffa658580546e9f248d5d85966daed2
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9bb71ba708ba72255ba8d18c9856e38ddf53eae2d61c8435149354fb2b2459e
-R 29572c40fdd6075a42f9a66fea3def8e
+P aa92f9b95f95d40cc58910da87168a5bd440f71deb072dc651bb15936315786c
+R b1a402197c3dd747d332863aba643c9a
 U drh
-Z a97a91f2e385c621a6f9b946e9cf6e0e
+Z 5b9ced2a7dd596cf0ffa6b2f623acefa

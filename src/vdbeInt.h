@@ -418,9 +418,9 @@ struct Vdbe {
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
+  u8 doingRerun;          /* True if rerunning after an auto-reprepare */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
-  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
