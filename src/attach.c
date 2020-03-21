@@ -46,6 +46,17 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
 }
 
 /*
+** Return true if zName points to a name that may be used to refer to
+** database iDb attached to handle db.
+*/
+int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
+  return (
+      sqlite3StrICmp(db->aDb[iDb].zDbSName, zName)==0
+   || (iDb==0 && sqlite3StrICmp("main", zName)==0)
+  );
+}
+
+/*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:
 **
@@ -117,9 +128,8 @@ static void attachFunc(
       goto attach_error;
     }
     for(i=0; i<db->nDb; i++){
-      char *z = db->aDb[i].zDbSName;
-      assert( z && zName );
-      if( sqlite3StrICmp(z, zName)==0 || sqlite3StrICmp("main", zName)==0 ){
+      assert( zName );
+      if( sqlite3DbIsNamed(db, i, zName) ){
         zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
         goto attach_error;
       }
@@ -272,11 +282,7 @@ static void detachFunc(
   for(i=0; i<db->nDb; i++){
     pDb = &db->aDb[i];
     if( pDb->pBt==0 ) continue;
-    if( sqlite3StrICmp(pDb->zDbSName, zName)==0 
-     || (i==0 && sqlite3StrICmp("main", zName)==0)
-    ){
-      break;
-    }
+    if( sqlite3DbIsNamed(db, i, zName) ) break;
   }
 
   if( i>=db->nDb ){
@@ -473,6 +479,12 @@ int sqlite3FixSrcList(
   const char *zAlt = 0;
 
   if( NEVER(pList==0) ) return 0;
+
+  /* If zDb refers to the main database and the main database has been
+  ** renamed using DBCONFIG_MAINDBNAME, then items in pList may be
+  ** qualified using "main" or the new name as the database name. Set
+  ** zAlt to point to the alternative (alternative to zDb) name in this 
+  ** case. */
   zDb = pFix->zDb;
   if( sqlite3StrICmp(db->aDb[0].zDbSName, zDb)==0 ){ 
     zAlt = "main";

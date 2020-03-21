@@ -227,9 +227,6 @@ static int lookupName(
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
   assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
 
-static int nCall = 0;
-nCall++;
-
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
   ExprSetVVAProperty(pExpr, EP_NoReduce);
