@@ -3582,6 +3582,41 @@ static void substSelect(
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
+** pSelect is a SELECT statement and pSrcItem is one item in the FROM
+** clause of that SELECT.
+**
+** This routine scans the entire SELECT statement and recomputes the
+** pSrcItem->colUsed mask.
+*/
+static int recomputeColumnsUsedExpr(Walker *pWalker, Expr *pExpr){
+  struct SrcList_item *pItem;
+  ynVar iCol;
+  if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
+  pItem = pWalker->u.pSrcItem;
+  if( pItem->iCursor!=pExpr->iTable ) return WRC_Continue;
+  iCol = pExpr->iColumn;
+  if( iCol<0 ) return WRC_Continue;
+  if( iCol>=BMS ) iCol = BMS-1;
+  pItem->colUsed |= ((Bitmask)1)<<iCol;
+  return WRC_Continue;
+}
+static void recomputeColumnsUsed(
+  Select *pSelect,                 /* The complete SELECT statement */
+  struct SrcList_item *pSrcItem    /* Which FROM clause item to recompute */
+){
+  Walker w;
+  if( NEVER(pSrcItem->pTab==0) ) return;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = recomputeColumnsUsedExpr;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
+  w.u.pSrcItem = pSrcItem;
+  pSrcItem->colUsed = 0;
+  sqlite3WalkSelect(&w, pSelect);
+}
+#endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+/*
 ** This routine attempts to flatten subqueries as a performance optimization.
 ** This routine returns 1 if it makes changes and 0 if no flattening occurs.
 **
@@ -4117,6 +4152,12 @@ static int flattenSubquery(
     if( pSub->pLimit ){
       pParent->pLimit = pSub->pLimit;
       pSub->pLimit = 0;
+    }
+
+    /* Recompute the SrcList_item.colUsed masks for the flattened
+    ** tables. */
+    for(i=0; i<nSubSrc; i++){
+      recomputeColumnsUsed(pParent, &pSrc->a[i+iFrom]);
     }
   }
 
