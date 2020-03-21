@@ -1,5 +1,5 @@
-C Ensure\sthat\s"main"\scan\salways\sbe\sused\sto\srefer\sto\sthe\smain\sdatabase,\seven\sif\sit\shas\sbeen\srenamed\susing\sSQLITE_DBCONFIG_MAINDBNAME.
-D 2020-03-21T15:41:55.795
+C Simplify\ssome\sof\sthe\scode\smodified\sby\sthe\sprevious\scommit.
+D 2020-03-21T20:58:05.148
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -467,7 +467,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c f48a4423c8f198d7f1ae4940f74b606707d05384ac79fb219be8e3323af2a2de
 F src/analyze.c 831bb090988477a00d3b4c000746e1b0454dcc93b10b793e6ebe1c47f25d193a
-F src/attach.c eb2835b8287ece726ac7962a42f82c5e6228c06f8f7a04968a59516767ed4da3
+F src/attach.c ff2daea0fe62080192e3f262670e4f61f5a86c1e7bea9cec34e960fe79852aa1
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1860,8 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d4d3c642494ad494b4ec937215eaf833158e62e5ae59ed981d6b546220c13b8 a85c63daa640e02fdfd891a05a1a09e848c9621a5dd6e112338451008623ecbb
-R 5b8a0ae99cc89cbebf501a334996a4cc
-T +closed a85c63daa640e02fdfd891a05a1a09e848c9621a5dd6e112338451008623ecbb
+P 682b426f5658254e63dff02c960b557fb33cb3e944fdd14faa0aa9988af7269a
+R 432c2dae919c4ac2b523ac4bd972b22c
 U dan
-Z 8b468ce05910eb5b50c49ff125dc587c
+Z 0c8aac1db094b4ebe66877c03599cbe9

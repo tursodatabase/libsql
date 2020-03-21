@@ -473,37 +473,21 @@ int sqlite3FixSrcList(
   SrcList *pList       /* The Source list to check and modify */
 ){
   int i;
-  const char *zDb;
   struct SrcList_item *pItem;
   sqlite3 *db = pFix->pParse->db;
-  const char *zAlt = 0;
+  int iDb = sqlite3FindDbName(db, pFix->zDb);
 
   if( NEVER(pList==0) ) return 0;
 
-  /* If zDb refers to the main database and the main database has been
-  ** renamed using DBCONFIG_MAINDBNAME, then items in pList may be
-  ** qualified using "main" or the new name as the database name. Set
-  ** zAlt to point to the alternative (alternative to zDb) name in this 
-  ** case. */
-  zDb = pFix->zDb;
-  if( sqlite3StrICmp(db->aDb[0].zDbSName, zDb)==0 ){ 
-    zAlt = "main";
-  }else if( sqlite3StrICmp("main", zDb)==0 ){
-    zAlt = db->aDb[0].zDbSName;
-  }
-
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pFix->bTemp==0 ){
-      if( pItem->zDatabase 
-       && sqlite3StrICmp(pItem->zDatabase, zDb) 
-       && sqlite3_stricmp(pItem->zDatabase, zAlt)
-      ){
+      if( pItem->zDatabase && iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
         sqlite3ErrorMsg(pFix->pParse,
             "%s %T cannot reference objects in database %s",
             pFix->zType, pFix->pName, pItem->zDatabase);
         return 1;
       }
-      sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
+      sqlite3DbFree(db, pItem->zDatabase);
       pItem->zDatabase = 0;
       pItem->pSchema = pFix->pSchema;
       pItem->fg.fromDDL = 1;
