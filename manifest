@@ -1,5 +1,5 @@
-C Simplify\ssome\sof\sthe\scode\smodified\sby\sthe\sprevious\scommit.
-D 2020-03-21T20:58:05.148
+C Enhance\sthe\streeview\ssystem\sto\sshow\sthe\sSrcList_item.colUsed\sfield\sfor\nFROM\sclause\selements.
+D 2020-03-21T22:03:32.371
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -596,7 +596,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 7b17f6e2f20f6cbcb0b215025a86b7457c38451fc7622f705e553d7a488c572d
-F src/treeview.c f78cd9cd79a889e70cd98bd6edd4a464c421452da833e65e987d97d8c41f71fe
+F src/treeview.c 82c6391a3ba76215d4185fd4719a56ec4caf186a40c8a7b6e6ba4ae4467c2742
 F src/trigger.c 4ada1037cc99777f647a882cdacbd1a4deb6567b69daf02946286401b88cdc04
 F src/update.c 3eb778c42155d944377a4ee5e440b04520f07094804ed6ce63d2528f619614d9
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 682b426f5658254e63dff02c960b557fb33cb3e944fdd14faa0aa9988af7269a
-R 432c2dae919c4ac2b523ac4bd972b22c
-U dan
-Z 0c8aac1db094b4ebe66877c03599cbe9
+P 04abadb545d1b34bdd74d62becb3bfd83aceee373fd6b4b708d5ad53f41d9464
+R 61d60499d8cd9e84a5c1a2d5f7fe15e7
+U drh
+Z 1b842e3d1dda494b2e3159b32640f374
