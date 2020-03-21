@@ -2375,6 +2375,7 @@ void sqlite3VdbeMakeReady(
     };
     int iFirst, mx, i;
     if( nMem<10 ) nMem = 10;
+    p->explain = pParse->explain;
     if( pParse->explain==2 ){
       sqlite3VdbeSetNumCols(p, 4);
       iFirst = 8;
@@ -2425,7 +2426,6 @@ void sqlite3VdbeMakeReady(
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
-  p->explain = pParse->explain;
   if( db->mallocFailed ){
     p->nVar = 0;
     p->nCursor = 0;

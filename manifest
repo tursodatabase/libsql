@@ -1,5 +1,5 @@
-C Recompute\sthe\sset\sof\scolumns\sused\sfor\seach\stable\swhen\sthe\stable\sis\ninvolved\sin\squery\sflattening.
-D 2020-03-21T00:05:53.338
+C Performance\soptimization\sin\ssqlite3VdbeMakeReady().
+D 2020-03-21T14:22:27.419
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/vdbe.c c1c123c6248fa88940b932a00bcc75056921b6d046d45a82566cb97415d2299c
 F src/vdbe.h 51282fbe819ee0e8eeeaab176240860d334c20a12b14f3b363e7f1a4e05d60b9
 F src/vdbeInt.h a17146053a1aa438474012998fe07e314f3df274a61491ad838ad85d848ac051
 F src/vdbeapi.c 1252d80c548711e47a6d84dae88ed4e95d3fbb4e7bd0eaa1347299af7efddf02
-F src/vdbeaux.c e8baf66528e36474f4071e3171b660a454606eb5b54459a729982c939ad7a5bb
+F src/vdbeaux.c b78b4b71e04643f63820f074ece069834ffa658580546e9f248d5d85966daed2
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86e98ddc19470410ccc6d2cf4ad56ef0bc5a23b7fbe6331b8cae374689f54529
-R ee0c3203501becfb0c0fab4a61c04589
+P a9bb71ba708ba72255ba8d18c9856e38ddf53eae2d61c8435149354fb2b2459e
+R 29572c40fdd6075a42f9a66fea3def8e
 U drh
-Z 54b4f622fc0ff39925380e9e68d902eb
+Z a97a91f2e385c621a6f9b946e9cf6e0e
