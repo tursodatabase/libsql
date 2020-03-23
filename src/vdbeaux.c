@@ -1464,7 +1464,7 @@ static int translateP(char c, const Op *pOp){
 **       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
 **       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
 */
-static char *displayComment(
+char *sqlite3VdbeDisplayComment(
   sqlite3 *db,       /* Optional - Oom error reporting only */
   const Op *pOp,     /* The opcode to be commented */
   const char *zP4    /* Previously obtained value for P4 */
@@ -1629,7 +1629,7 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
 ** Compute a string that describes the P4 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
 */
-static char *displayP4(sqlite3 *db, Op *pOp){
+char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
   char *zP4 = 0;
   StrAccum x;
 
@@ -1836,9 +1836,9 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zCom;
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-13s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
-  zP4 = displayP4(0, pOp);
+  zP4 = sqlite3VdbeDisplayP4(0, pOp);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-  zCom = displayComment(0, pOp, zP4);
+  zCom = sqlite3VdbeDisplayComment(0, pOp, zP4);
 #else
   zCom = 0;
 #endif
@@ -1942,6 +1942,7 @@ void sqlite3VdbeFrameMemDel(void *pArg){
   pFrame->v->pDelFrame = pFrame;
 }
 
+#if defined(SQLITE_ENABLE_BYTECODE_VTAB) || !defined(SQLITE_OMIT_EXPLAIN)
 /*
 ** Locate the next opcode to be displayed in EXPLAIN or EXPLAIN
 ** QUERY PLAN output.
@@ -2043,6 +2044,7 @@ int sqlite3VdbeNextOpcode(
   *paOp = aOp;
   return rc;
 }
+#endif /* SQLITE_ENABLE_BYTECODE_VTAB || !SQLITE_OMIT_EXPLAIN */
 
 
 /*
@@ -2132,7 +2134,7 @@ int sqlite3VdbeList(
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
     }else{
-      char *zP4 = displayP4(db, pOp);
+      char *zP4 = sqlite3VdbeDisplayP4(db, pOp);
       if( p->explain==2 ){
         sqlite3VdbeMemSetInt64(pMem, pOp->p1);
         sqlite3VdbeMemSetInt64(pMem+1, pOp->p2);
@@ -2150,7 +2152,7 @@ int sqlite3VdbeList(
         sqlite3VdbeMemSetInt64(pMem+6, pOp->p5);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
         {
-          char *zCom = displayComment(db, pOp, zP4);
+          char *zCom = sqlite3VdbeDisplayComment(db, pOp, zP4);
           sqlite3VdbeMemSetStr(pMem+7, zCom, -1, SQLITE_UTF8, sqlite3_free);
         }
 #else
