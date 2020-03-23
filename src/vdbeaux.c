@@ -1464,11 +1464,10 @@ static int translateP(char c, const Op *pOp){
 **       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
 **       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
 */
-static int displayComment(
+static char *displayComment(
+  sqlite3 *db,       /* Optional - Oom error reporting only */
   const Op *pOp,     /* The opcode to be commented */
-  const char *zP4,   /* Previously obtained value for P4 */
-  char *zTemp,       /* Write result here */
-  int nTemp          /* Space available in zTemp[] */
+  const char *zP4    /* Previously obtained value for P4 */
 ){
   const char *zOpName;
   const char *zSynopsis;
@@ -1476,8 +1475,8 @@ static int displayComment(
   int ii;
   char zAlt[50];
   StrAccum x;
-  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
 
+  sqlite3StrAccumInit(&x, 0, 0, 0, SQLITE_MAX_LENGTH);
   zOpName = sqlite3OpcodeName(pOp->opcode);
   nOpName = sqlite3Strlen30(zOpName);
   if( zOpName[nOpName+1] ){
@@ -1544,8 +1543,10 @@ static int displayComment(
   }else if( pOp->zComment ){
     sqlite3_str_appendall(&x, pOp->zComment);
   }
-  sqlite3StrAccumFinish(&x);
-  return x.nChar;
+  if( (x.accError & SQLITE_NOMEM)!=0 && db!=0 ){
+    sqlite3OomFault(db);
+  }
+  return sqlite3StrAccumFinish(&x);
 }
 #endif /* SQLITE_DEBUG */
 
@@ -1628,11 +1629,11 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
 ** Compute a string that describes the P4 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
 */
-static char *displayP4(Op *pOp, char *zTemp, int nTemp){
-  char *zP4 = zTemp;
+static char *displayP4(sqlite3 *db, Op *pOp){
+  char *zP4 = 0;
   StrAccum x;
-  assert( nTemp>=20 );
-  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
+
+  sqlite3StrAccumInit(&x, 0, 0, 0, SQLITE_MAX_LENGTH);
   switch( pOp->p4type ){
     case P4_KEYINFO: {
       int j;
@@ -1718,34 +1719,31 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       for(i=1; i<=n; i++){
         sqlite3_str_appendf(&x, ",%d", ai[i]);
       }
-      zTemp[0] = '[';
+      if( !x.accError ) x.zText[0] = '[';
       sqlite3_str_append(&x, "]", 1);
       break;
     }
     case P4_SUBPROGRAM: {
-      sqlite3_str_appendf(&x, "program");
+      zP4 = "program";
       break;
     }
     case P4_DYNBLOB:
     case P4_ADVANCE: {
-      zTemp[0] = 0;
       break;
     }
     case P4_TABLE: {
-      sqlite3_str_appendf(&x, "%s", pOp->p4.pTab->zName);
+      zP4 = pOp->p4.pTab->zName;
       break;
     }
     default: {
       zP4 = pOp->p4.z;
-      if( zP4==0 ){
-        zP4 = zTemp;
-        zTemp[0] = 0;
-      }
     }
   }
-  sqlite3StrAccumFinish(&x);
-  assert( zP4!=0 );
-  return zP4;
+  if( zP4 ) sqlite3_str_appendall(&x, zP4);
+  if( (x.accError & SQLITE_NOMEM)!=0 && db!=0 ){
+    sqlite3OomFault(db);
+  }
+  return sqlite3StrAccumFinish(&x);
 }
 #endif /* VDBE_DISPLAY_P4 */
 
@@ -1835,24 +1833,25 @@ void sqlite3VdbeLeave(Vdbe *p){
 */
 void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zP4;
-  char zPtr[50];
-  char zCom[100];
+  char *zCom;
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-13s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
-  zP4 = displayP4(pOp, zPtr, sizeof(zPtr));
+  zP4 = displayP4(0, pOp);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-  displayComment(pOp, zP4, zCom, sizeof(zCom));
+  zCom = displayComment(0, pOp, zP4);
 #else
-  zCom[0] = 0;
+  zCom = 0;
 #endif
   /* NB:  The sqlite3OpcodeName() function is implemented by code created
   ** by the mkopcodeh.awk and mkopcodec.awk scripts which extract the
   ** information from the vdbe.c source text */
   fprintf(pOut, zFormat1, pc, 
       sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, zP4, pOp->p5,
-      zCom
+      zCom ? zCom : ""
   );
   fflush(pOut);
+  sqlite3_free(zP4);
+  sqlite3_free(zCom);
 }
 #endif
 
@@ -2133,76 +2132,41 @@ int sqlite3VdbeList(
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
     }else{
-      char *zP4;
-      if( p->explain==1 ){
-        pMem->flags = MEM_Int;
-        pMem->u.i = i;                                /* Program counter */
-        pMem++;
-    
-        pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-        pMem->z = (char*)sqlite3OpcodeName(pOp->opcode); /* Opcode */
-        assert( pMem->z!=0 );
-        pMem->n = sqlite3Strlen30(pMem->z);
-        pMem->enc = SQLITE_UTF8;
-        pMem++;
-      }
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p1;                          /* P1 */
-      pMem++;
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p2;                          /* P2 */
-      pMem++;
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p3;                          /* P3 */
-      pMem++;
-
-      if( sqlite3VdbeMemClearAndResize(pMem, 100) ){ /* P4 */
-        assert( p->db->mallocFailed );
-        return SQLITE_ERROR;
-      }
-      pMem->flags = MEM_Str|MEM_Term;
-      zP4 = displayP4(pOp, pMem->z, pMem->szMalloc);
-      if( zP4!=pMem->z ){
-        pMem->n = 0;
-        sqlite3VdbeMemSetStr(pMem, zP4, -1, SQLITE_UTF8, 0);
+      char *zP4 = displayP4(db, pOp);
+      if( p->explain==2 ){
+        sqlite3VdbeMemSetInt64(pMem, pOp->p1);
+        sqlite3VdbeMemSetInt64(pMem+1, pOp->p2);
+        sqlite3VdbeMemSetInt64(pMem+2, pOp->p3);
+        sqlite3VdbeMemSetStr(pMem+3, zP4, -1, SQLITE_UTF8, sqlite3_free);     
+        p->nResColumn = 4;
       }else{
-        assert( pMem->z!=0 );
-        pMem->n = sqlite3Strlen30(pMem->z);
-        pMem->enc = SQLITE_UTF8;
-      }
-      pMem++;
-
-      if( p->explain==1 ){
-        if( sqlite3VdbeMemClearAndResize(pMem, 4) ){
-          assert( p->db->mallocFailed );
-          return SQLITE_ERROR;
-        }
-        pMem->flags = MEM_Str|MEM_Term;
-        pMem->n = 2;
-        sqlite3_snprintf(3, pMem->z, "%.2x", pOp->p5);   /* P5 */
-        pMem->enc = SQLITE_UTF8;
-        pMem++;
-    
+        sqlite3VdbeMemSetInt64(pMem+0, i);
+        sqlite3VdbeMemSetStr(pMem+1, (char*)sqlite3OpcodeName(pOp->opcode),
+                             -1, SQLITE_UTF8, SQLITE_STATIC);
+        sqlite3VdbeMemSetInt64(pMem+2, pOp->p1);
+        sqlite3VdbeMemSetInt64(pMem+3, pOp->p2);
+        sqlite3VdbeMemSetInt64(pMem+4, pOp->p3);
+        /* pMem+5 for p4 is done last */
+        sqlite3VdbeMemSetInt64(pMem+6, pOp->p5);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-        if( sqlite3VdbeMemClearAndResize(pMem, 500) ){
-          assert( p->db->mallocFailed );
-          return SQLITE_ERROR;
+        {
+          char *zCom = displayComment(db, pOp, zP4);
+          sqlite3VdbeMemSetStr(pMem+7, zCom, -1, SQLITE_UTF8, sqlite3_free);
         }
-        pMem->flags = MEM_Str|MEM_Term;
-        pMem->n = displayComment(pOp, zP4, pMem->z, 500);
-        pMem->enc = SQLITE_UTF8;
 #else
-        pMem->flags = MEM_Null;                       /* Comment */
+        sqlite3VdbeMemSetNull(pMem+7);
 #endif
+        sqlite3VdbeMemSetStr(pMem+5, zP4, -1, SQLITE_UTF8, sqlite3_free);
+        p->nResColumn = 8;
       }
-
-      p->nResColumn = 8 - 4*(p->explain-1);
-      p->pResultSet = &p->aMem[1];
-      p->rc = SQLITE_OK;
-      rc = SQLITE_ROW;
+      p->pResultSet = pMem;
+      if( db->mallocFailed ){
+        p->rc = SQLITE_NOMEM;
+        rc = SQLITE_ERROR;
+      }else{
+        p->rc = SQLITE_OK;
+        rc = SQLITE_ROW;
+      }
     }
   }
   return rc;
