@@ -1943,6 +1943,108 @@ void sqlite3VdbeFrameMemDel(void *pArg){
   pFrame->v->pDelFrame = pFrame;
 }
 
+/*
+** Locate the next opcode to be displayed in EXPLAIN or EXPLAIN
+** QUERY PLAN output.
+**
+** Return SQLITE_ROW on success.  Return SQLITE_DONE if there are no
+** more opcodes to be displayed.
+*/
+int sqlite3VdbeNextOpcode(
+  Vdbe *p,         /* The statement being explained */
+  Mem *pSub,       /* Storage for keeping track of subprogram nesting */
+  int bEqp,        /* True to return only OP_Explain opcodes */
+  int *piPc,       /* IN/OUT: Current rowid.  Overwritten with next rowid */
+  int *piAddr,     /* OUT: Write index into (*paOp)[] here */
+  Op **paOp        /* OUT: Write the opcode array here */
+){
+  int nRow;                            /* Stop when row count reaches this */
+  int nSub = 0;                        /* Number of sub-vdbes seen so far */
+  SubProgram **apSub = 0;              /* Array of sub-vdbes */
+  int i;                               /* Next instruction address */
+  int rc = SQLITE_OK;                  /* Result code */
+  Op *aOp;                             /* Opcode array */
+  int iPc;                             /* Rowid.  Copy of value in *piPc */
+
+  /* When the number of output rows reaches nRow, that means the
+  ** listing has finished and sqlite3_step() should return SQLITE_DONE.
+  ** nRow is the sum of the number of rows in the main program, plus
+  ** the sum of the number of rows in all trigger subprograms encountered
+  ** so far.  The nRow value will increase as new trigger subprograms are
+  ** encountered, but p->pc will eventually catch up to nRow.
+  */
+  nRow = p->nOp;
+  if( pSub!=0 ){
+    if( pSub->flags&MEM_Blob ){
+      /* pSub is initiallly NULL.  It is initialized to a BLOB by
+      ** the P4_SUBPROGRAM processing logic below */
+      nSub = pSub->n/sizeof(Vdbe*);
+      apSub = (SubProgram **)pSub->z;
+    }
+    for(i=0; i<nSub; i++){
+      nRow += apSub[i]->nOp;
+    }
+  }
+  iPc = *piPc;
+  while(1){  /* Loop exits via break */
+    i = iPc++;
+    if( i>=nRow ){
+      p->rc = SQLITE_OK;
+      rc = SQLITE_DONE;
+      break;
+    }
+    if( i<p->nOp ){
+      /* The rowid is small enough that we are still in the
+      ** main program. */
+      aOp = p->aOp;
+    }else{
+      /* We are currently listing subprograms.  Figure out which one and
+      ** pick up the appropriate opcode. */
+      int j;
+      i -= p->nOp;
+      assert( apSub!=0 );
+      assert( nSub>0 );
+      for(j=0; i>=apSub[j]->nOp; j++){
+        i -= apSub[j]->nOp;
+        assert( i<apSub[j]->nOp || j+1<nSub );
+      }
+      aOp = apSub[j]->aOp;
+    }
+
+    /* When an OP_Program opcode is encounter (the only opcode that has
+    ** a P4_SUBPROGRAM argument), expand the size of the array of subprograms
+    ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
+    ** has not already been seen.
+    */
+    if( pSub!=0 && aOp[i].p4type==P4_SUBPROGRAM ){
+      int nByte = (nSub+1)*sizeof(SubProgram*);
+      int j;
+      for(j=0; j<nSub; j++){
+        if( apSub[j]==aOp[i].p4.pProgram ) break;
+      }
+      if( j==nSub ){
+        p->rc = sqlite3VdbeMemGrow(pSub, nByte, nSub!=0);
+        if( p->rc!=SQLITE_OK ){
+          rc = SQLITE_ERROR;
+          break;
+        }
+        apSub = (SubProgram **)pSub->z;
+        apSub[nSub++] = aOp[i].p4.pProgram;
+        pSub->flags |= MEM_Blob;
+        pSub->n = nSub*sizeof(SubProgram*);
+        nRow += aOp[i].p4.pProgram->nOp;
+      }
+    }
+    if( !bEqp ) break;
+    if( aOp[i].opcode==OP_Explain ) break;
+    if( aOp[i].opcode==OP_Init && p->pc>1 ) break;
+  }
+  *piPc = iPc;
+  *piAddr = i;
+  *paOp = aOp;
+  return rc;
+}
+
 
 /*
 ** Delete a VdbeFrame object and its contents. VdbeFrame objects are
@@ -1983,16 +2085,14 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 int sqlite3VdbeList(
   Vdbe *p                   /* The VDBE */
 ){
-  int nRow;                            /* Stop when row count reaches this */
-  int nSub = 0;                        /* Number of sub-vdbes seen so far */
-  SubProgram **apSub = 0;              /* Array of sub-vdbes */
   Mem *pSub = 0;                       /* Memory cell hold array of subprogs */
   sqlite3 *db = p->db;                 /* The database connection */
   int i;                               /* Loop counter */
   int rc = SQLITE_OK;                  /* Return code */
   Mem *pMem = &p->aMem[1];             /* First Mem of result set */
   int bListSubprogs = (p->explain==1 || (db->flags & SQLITE_TriggerEQP)!=0);
-  Op *pOp = 0;
+  Op *aOp;                             /* Array of opcodes */
+  Op *pOp;                             /* Current opcode */
 
   assert( p->explain );
   assert( p->magic==VDBE_MAGIC_RUN );
@@ -2012,14 +2112,6 @@ int sqlite3VdbeList(
     return SQLITE_ERROR;
   }
 
-  /* When the number of output rows reaches nRow, that means the
-  ** listing has finished and sqlite3_step() should return SQLITE_DONE.
-  ** nRow is the sum of the number of rows in the main program, plus
-  ** the sum of the number of rows in all trigger subprograms encountered
-  ** so far.  The nRow value will increase as new trigger subprograms are
-  ** encountered, but p->pc will eventually catch up to nRow.
-  */
-  nRow = p->nOp;
   if( bListSubprogs ){
     /* The first 8 memory cells are used for the result set.  So we will
     ** commandeer the 9th cell to use as storage for an array of pointers
@@ -2027,72 +2119,15 @@ int sqlite3VdbeList(
     ** cells.  */
     assert( p->nMem>9 );
     pSub = &p->aMem[9];
-    if( pSub->flags&MEM_Blob ){
-      /* On the first call to sqlite3_step(), pSub will hold a NULL.  It is
-      ** initialized to a BLOB by the P4_SUBPROGRAM processing logic below */
-      nSub = pSub->n/sizeof(Vdbe*);
-      apSub = (SubProgram **)pSub->z;
-    }
-    for(i=0; i<nSub; i++){
-      nRow += apSub[i]->nOp;
-    }
+  }else{
+    pSub = 0;
   }
 
-  while(1){  /* Loop exits via break */
-    i = p->pc++;
-    if( i>=nRow ){
-      p->rc = SQLITE_OK;
-      rc = SQLITE_DONE;
-      break;
-    }
-    if( i<p->nOp ){
-      /* The output line number is small enough that we are still in the
-      ** main program. */
-      pOp = &p->aOp[i];
-    }else{
-      /* We are currently listing subprograms.  Figure out which one and
-      ** pick up the appropriate opcode. */
-      int j;
-      i -= p->nOp;
-      assert( apSub!=0 );
-      assert( nSub>0 );
-      for(j=0; i>=apSub[j]->nOp; j++){
-        i -= apSub[j]->nOp;
-        assert( i<apSub[j]->nOp || j+1<nSub );
-      }
-      pOp = &apSub[j]->aOp[i];
-    }
-
-    /* When an OP_Program opcode is encounter (the only opcode that has
-    ** a P4_SUBPROGRAM argument), expand the size of the array of subprograms
-    ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
-    ** has not already been seen.
-    */
-    if( bListSubprogs && pOp->p4type==P4_SUBPROGRAM ){
-      int nByte = (nSub+1)*sizeof(SubProgram*);
-      int j;
-      for(j=0; j<nSub; j++){
-        if( apSub[j]==pOp->p4.pProgram ) break;
-      }
-      if( j==nSub ){
-        p->rc = sqlite3VdbeMemGrow(pSub, nByte, nSub!=0);
-        if( p->rc!=SQLITE_OK ){
-          rc = SQLITE_ERROR;
-          break;
-        }
-        apSub = (SubProgram **)pSub->z;
-        apSub[nSub++] = pOp->p4.pProgram;
-        pSub->flags |= MEM_Blob;
-        pSub->n = nSub*sizeof(SubProgram*);
-        nRow += pOp->p4.pProgram->nOp;
-      }
-    }
-    if( p->explain<2 ) break;
-    if( pOp->opcode==OP_Explain ) break;
-    if( pOp->opcode==OP_Init && p->pc>1 ) break;
-  }
+  /* Figure out which opcode is next to display */
+  rc = sqlite3VdbeNextOpcode(p, pSub, p->explain==2, &p->pc, &i, &aOp);
 
   if( rc==SQLITE_OK ){
+    pOp = aOp + i;
     if( db->u1.isInterrupted ){
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;

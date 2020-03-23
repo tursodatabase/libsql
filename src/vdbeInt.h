@@ -497,6 +497,7 @@ int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);
 int sqlite3VdbeIdxRowid(sqlite3*, BtCursor*, i64*);
 int sqlite3VdbeExec(Vdbe*);
 #ifndef SQLITE_OMIT_EXPLAIN
+int sqlite3VdbeNextOpcode(Vdbe*,Mem*,int,int*,int*,Op**);
 int sqlite3VdbeList(Vdbe*);
 #endif
 int sqlite3VdbeHalt(Vdbe*);
