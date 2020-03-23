@@ -3346,6 +3346,12 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_BYTECODE_VTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3VdbeBytecodeVtabInit(db);
+  }
+#endif
+
 #ifdef SQLITE_ENABLE_INTERNAL_FUNCTIONS
   /* Testing use only!!! The -DSQLITE_ENABLE_INTERNAL_FUNCTIONS=1 compile-time
   ** option gives access to internal functions by default.  
