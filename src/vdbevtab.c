@@ -190,8 +190,10 @@ static int bytecodevtabColumn(
       if( i==5 ){
         sqlite3_result_text(ctx, pCur->zP4, -1, SQLITE_STATIC);
       }else{
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
         char *zCom = sqlite3VdbeDisplayComment(pVTab->db, pOp, pCur->zP4);
         sqlite3_result_text(ctx, zCom, -1, sqlite3_free);
+#endif
       }
       break;
     case 6:
