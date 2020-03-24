@@ -34,6 +34,7 @@ struct bytecodevtab_cursor {
   int iRowid;                /* The rowid of the output table */
   int iAddr;                 /* Address */
   int needFinalize;          /* Cursors owns pStmt and must finalize it */
+  int showSubprograms;       /* Provide a listing of subprograms */
   Op *aOp;                   /* Operand array */
   char *zP4;                 /* Rendered P4 value */
   Mem sub;                   /* Subprograms */
@@ -135,8 +136,13 @@ static int bytecodevtabNext(sqlite3_vtab_cursor *cur){
     sqlite3_free(pCur->zP4);
     pCur->zP4 = 0;
   }
-  rc = sqlite3VdbeNextOpcode((Vdbe*)pCur->pStmt, &pCur->sub, 0,
-                             &pCur->iRowid, &pCur->iAddr, &pCur->aOp);
+  rc = sqlite3VdbeNextOpcode(
+           (Vdbe*)pCur->pStmt, 
+           pCur->showSubprograms ? &pCur->sub : 0,
+           0,
+           &pCur->iRowid,
+           &pCur->iAddr,
+           &pCur->aOp);
   if( rc!=SQLITE_OK ){
     sqlite3VdbeMemSetNull(&pCur->sub);
     pCur->aOp = 0;
@@ -228,10 +234,10 @@ static int bytecodevtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 }
 
 /*
-** Initialize a cursor to use a new
-** to the first row of output.  This method is always called at least
-** once prior to any call to bytecodevtabColumn() or bytecodevtabRowid() or 
-** bytecodevtabEof().
+** Initialize a cursor.
+**
+**    idxNum==0     means show all subprograms
+**    idxNum==1     means show only the main bytecode and omit subprograms.
 */
 static int bytecodevtabFilter(
   sqlite3_vtab_cursor *pVtabCursor, 
@@ -245,6 +251,7 @@ static int bytecodevtabFilter(
   bytecodevtabCursorClear(pCur);
   pCur->iRowid = 0;
   pCur->iAddr = 0;
+  pCur->showSubprograms = idxNum==0;
   assert( argc==1 );
   if( sqlite3_value_type(argv[0])==SQLITE_TEXT ){
     const char *zSql = (const char*)sqlite3_value_text(argv[0]);
@@ -279,16 +286,21 @@ static int bytecodevtabBestIndex(
 ){
   int i;
   int rc = SQLITE_CONSTRAINT;
+  struct sqlite3_index_constraint *p;
   pIdxInfo->estimatedCost = (double)100;
   pIdxInfo->estimatedRows = 100;
-  for(i=0; i<pIdxInfo->nConstraint; i++){
-    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
-    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    if( pIdxInfo->aConstraint[i].iColumn!=9 ) continue;
-    rc = SQLITE_OK;
-    pIdxInfo->aConstraintUsage[i].omit = 1;
-    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
-    break;
+  pIdxInfo->idxNum = 0;
+  for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
+    if( p->usable==0 ) continue;
+    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==9 ){
+      rc = SQLITE_OK;
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+    }
+    if( p->op==SQLITE_INDEX_CONSTRAINT_ISNULL && p->iColumn==8 ){
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+      pIdxInfo->idxNum = 1;
+    }
   }
   return rc;
 }
