@@ -2030,7 +2030,7 @@ int sqlite3VdbeNextOpcode(
         }
         apSub = (SubProgram **)pSub->z;
         apSub[nSub++] = aOp[i].p4.pProgram;
-        pSub->flags |= MEM_Blob;
+        MemSetTypeFlag(pSub, MEM_Blob);
         pSub->n = nSub*sizeof(SubProgram*);
         nRow += aOp[i].p4.pProgram->nOp;
       }

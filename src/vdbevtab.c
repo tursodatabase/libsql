@@ -165,24 +165,24 @@ static int bytecodevtabColumn(
   bytecodevtab *pVTab;
   Op *pOp = pCur->aOp + pCur->iAddr;
   switch( i ){
-    case 0:
+    case 0:   /* addr */
       sqlite3_result_int(ctx, pCur->iAddr);
       break;
-    case 1:
+    case 1:   /* opcode */
       sqlite3_result_text(ctx, (char*)sqlite3OpcodeName(pOp->opcode),
                           -1, SQLITE_STATIC);
       break;
-    case 2:
+    case 2:   /* p1 */
       sqlite3_result_int(ctx, pOp->p1);
       break;
-    case 3:
+    case 3:   /* p2 */
       sqlite3_result_int(ctx, pOp->p2);
       break;
-    case 4:
+    case 4:   /* p3 */
       sqlite3_result_int(ctx, pOp->p3);
       break;
-    case 5:
-    case 7:
+    case 5:   /* p4 */
+    case 7:   /* comment */
       pVTab = (bytecodevtab*)cur->pVtab;
       if( pCur->zP4==0 ){
         pCur->zP4 = sqlite3VdbeDisplayP4(pVTab->db, pOp);
@@ -196,9 +196,22 @@ static int bytecodevtabColumn(
 #endif
       }
       break;
-    case 6:
+    case 6:     /* p5 */
       sqlite3_result_int(ctx, pOp->p5);
       break;
+    case 8: {   /* subprog */
+      Op *aOp = pCur->aOp;
+      if( pCur->iRowid==pCur->iAddr+1 ){
+        break;  /* Result is NULL for the main program */
+      }else if( aOp[0].p4type==P4_DYNAMIC
+       && aOp[0].p4.z!=0
+       && strncmp(aOp[0].p4.z,"-- ", 3)==0 ){
+         sqlite3_result_text(ctx, aOp[0].p4.z+3, -1, SQLITE_STATIC);
+      }else{
+         sqlite3_result_text(ctx, "(FK)", 4, SQLITE_STATIC);
+      }
+      break;
+    }
   }
   return SQLITE_OK;
 }
