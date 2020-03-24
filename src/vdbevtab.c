@@ -105,6 +105,7 @@ static int bytecodevtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 static void bytecodevtabCursorClear(bytecodevtab_cursor *pCur){
   sqlite3_free(pCur->zP4);
   pCur->zP4 = 0;
+  sqlite3VdbeMemRelease(&pCur->sub);
   sqlite3VdbeMemSetNull(&pCur->sub);
   if( pCur->needFinalize ){
     sqlite3_finalize(pCur->pStmt);
