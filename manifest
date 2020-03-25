@@ -1,5 +1,5 @@
-C Enhance\sthe\s".dump"\scommand\sin\sthe\sCLI\sso\sthat\sit\saccepts\smultiple\sLIKE\npattern\sarguments\sand\sshows\sthe\sunion\sof\sall\smatching\stables.
-D 2020-03-25T12:50:13.948
+C For\sthe\sLIKE\spattern\sin\sthe\s.dump\scommand\sof\sthe\sCLI,\saccept\sbackslash\sas\nan\sescape\scharacter.
+D 2020-03-25T20:31:45.467
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -532,7 +532,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 903a70c48d0f72fdd657b225d499cf99ec01d575cf3fbc8196b43562045319ac
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 6908c059e4289149f88bfd641305b96ee34e500855fcd580ff8df1bd0885191a
-F src/shell.c.in 10093b8f88cfdce124c99f382a26a922210315cc537ef0f8e2d811fc5aa7a3b2
+F src/shell.c.in 7bb9005bf876c4e1210257a63fa49b556f4eddf59f94b6eb310fcb5096bec0e9
 F src/sqlite.h.in 802957feeb249ede54f8dfe99b72aa19e70a0b7737969c46e625dc2f9f2d42b0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9c5269260409eb3275324ccace6a13a96f4ad330c708415f70ca6097901ff4ee
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d14a1c4f2fc17de98ad685ad1422cdfda89dfccb00afcaf32ee416b6f84f525
-R 3d4d5bc7aeb5d456d8c0a7166a26bb4e
+P 45fba3d7055f90f67005ca740687f060a2311db40c8f6a161bfea0424e6ebf6d
+R 0cb6c5ae4650de0954aa86cff220a90e
 U drh
-Z ff19b393b7175126a56d85ef88b57634
+Z 736254bd9dd4359a40d3e390ba1aa98f

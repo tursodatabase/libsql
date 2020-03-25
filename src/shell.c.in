@@ -7303,9 +7303,10 @@ static int do_meta_command(char *zLine, ShellState *p){
           goto meta_command_exit;
         }
       }else if( zLike ){
-        zLike = sqlite3_mprintf("%z OR name LIKE %Q", zLike, azArg[i]);
+        zLike = sqlite3_mprintf("%z OR name LIKE %Q ESCAPE '\\'",
+                zLike, azArg[i]);
       }else{
-        zLike = sqlite3_mprintf("name LIKE %Q", azArg[i]);
+        zLike = sqlite3_mprintf("name LIKE %Q ESCAPE '\\'", azArg[i]);
       }
     }
 
