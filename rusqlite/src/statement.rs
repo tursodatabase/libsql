@@ -1,6 +1,5 @@
-use std::ffi::CStr;
 use std::iter::IntoIterator;
-use std::os::raw::{c_char, c_int, c_void};
+use std::os::raw::{c_int, c_void};
 #[cfg(feature = "array")]
 use std::rc::Rc;
 use std::slice::from_raw_parts;
@@ -659,15 +658,18 @@ impl Statement<'_> {
             }
             ffi::SQLITE_TEXT => {
                 let s = unsafe {
+                    // Quoting from "Using SQLite" book:
+                    // To avoid problems, an application should first extract the desired type using a sqlite3_column_xxx() function,
+                    // and then call the appropriate sqlite3_column_bytes() function.
                     let text = ffi::sqlite3_column_text(raw, col as c_int);
+                    let len = ffi::sqlite3_column_bytes(raw, col as c_int);
                     assert!(
                         !text.is_null(),
                         "unexpected SQLITE_TEXT column type with NULL data"
                     );
-                    CStr::from_ptr(text as *const c_char)
+                    from_raw_parts(text as *const u8, len as usize)
                 };
 
-                let s = s.to_bytes();
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
@@ -1088,5 +1090,33 @@ mod test {
         let conn = Connection::open_in_memory().unwrap();
         let stmt = conn.prepare(";").unwrap();
         assert_eq!(0, stmt.column_count());
+    }
+
+    #[test]
+    fn test_utf16_conversion() {
+        let db = Connection::open_in_memory().unwrap();
+        db.pragma_update(None, "encoding", &"UTF-16le").unwrap();
+        let encoding: String = db
+            .pragma_query_value(None, "encoding", |row| row.get(0))
+            .unwrap();
+        assert_eq!("UTF-16le", encoding);
+        db.execute_batch("CREATE TABLE foo(x TEXT)").unwrap();
+        let expected = "テスト";
+        db.execute("INSERT INTO foo(x) VALUES (?)", &[&expected])
+            .unwrap();
+        let actual: String = db
+            .query_row("SELECT x FROM foo", NO_PARAMS, |row| row.get(0))
+            .unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_nul_byte() {
+        let db = Connection::open_in_memory().unwrap();
+        let expected = "a\x00b";
+        let actual: String = db
+            .query_row("SELECT ?", &[&expected], |row| row.get(0))
+            .unwrap();
+        assert_eq!(expected, actual);
     }
 }
