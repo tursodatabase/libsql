@@ -23,6 +23,7 @@ typedef struct bytecodevtab bytecodevtab;
 struct bytecodevtab {
   sqlite3_vtab base;     /* Base class - must be first */
   sqlite3 *db;           /* Database connection */
+  int bTablesUsed;       /* 2 for tables_used().  0 for bytecode(). */
 };
 
 /* A cursor for scanning through the bytecode
@@ -37,6 +38,9 @@ struct bytecodevtab_cursor {
   int showSubprograms;       /* Provide a listing of subprograms */
   Op *aOp;                   /* Operand array */
   char *zP4;                 /* Rendered P4 value */
+  const char *zType;         /* tables_used.type */
+  const char *zSchema;       /* tables_used.schema */
+  const char *zName;         /* tables_used.name */
   Mem sub;                   /* Subprograms */
 };
 
@@ -52,27 +56,41 @@ static int bytecodevtabConnect(
 ){
   bytecodevtab *pNew;
   int rc;
+  int isTabUsed = pAux!=0;
+  const char *azSchema[2] = {
+    /* bytecode() schema */
+    "CREATE TABLE x("
+      "addr INT,"
+      "opcode TEXT,"
+      "p1 INT,"
+      "p2 INT,"
+      "p3 INT,"
+      "p4 TEXT,"
+      "p5 INT,"
+      "comment TEXT,"
+      "subprog TEXT," 
+      "stmt HIDDEN"
+    ");",
 
-  rc = sqlite3_declare_vtab(db,
-         "CREATE TABLE x("
-           "addr INT,"
-           "opcode TEXT,"
-           "p1 INT,"
-           "p2 INT,"
-           "p3 INT,"
-           "p4 TEXT,"
-           "p5 INT,"
-           "comment TEXT,"
-           "subprog TEXT," 
-           "stmt HIDDEN"
-         ");"
-       );
+    /* Tables_used() schema */
+    "CREATE TABLE x("
+      "type TEXT,"
+      "schema TEXT,"
+      "name TEXT,"
+      "wr INT,"
+      "subprog TEXT," 
+      "stmt HIDDEN"
+   ");"
+  };
+
+  rc = sqlite3_declare_vtab(db, azSchema[isTabUsed]);
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
     pNew->db = db;
+    pNew->bTablesUsed = isTabUsed*2;
   }
   return rc;
 }
@@ -113,6 +131,9 @@ static void bytecodevtabCursorClear(bytecodevtab_cursor *pCur){
   }
   pCur->pStmt = 0;
   pCur->needFinalize = 0;
+  pCur->zType = 0;
+  pCur->zSchema = 0;
+  pCur->zName = 0;
 }
 
 /*
@@ -131,15 +152,21 @@ static int bytecodevtabClose(sqlite3_vtab_cursor *cur){
 */
 static int bytecodevtabNext(sqlite3_vtab_cursor *cur){
   bytecodevtab_cursor *pCur = (bytecodevtab_cursor*)cur;
+  bytecodevtab *pTab = (bytecodevtab*)cur->pVtab;
   int rc;
   if( pCur->zP4 ){
     sqlite3_free(pCur->zP4);
     pCur->zP4 = 0;
   }
+  if( pCur->zName ){
+    pCur->zName = 0;
+    pCur->zType = 0;
+    pCur->zSchema = 0;
+  }
   rc = sqlite3VdbeNextOpcode(
            (Vdbe*)pCur->pStmt, 
            pCur->showSubprograms ? &pCur->sub : 0,
-           0,
+           pTab->bTablesUsed,
            &pCur->iRowid,
            &pCur->iAddr,
            &pCur->aOp);
@@ -169,8 +196,42 @@ static int bytecodevtabColumn(
   int i                       /* Which column to return */
 ){
   bytecodevtab_cursor *pCur = (bytecodevtab_cursor*)cur;
-  bytecodevtab *pVTab;
+  bytecodevtab *pVTab = (bytecodevtab*)cur->pVtab;
   Op *pOp = pCur->aOp + pCur->iAddr;
+  if( pVTab->bTablesUsed ){
+    if( i==4 ){
+      i = 8;
+    }else{
+      if( i<=2 && pCur->zType==0 ){
+        Schema *pSchema;
+        HashElem *k;
+        int iDb = pOp->p3;
+        int iRoot = pOp->p2;
+        sqlite3 *db = pVTab->db;
+        pSchema = db->aDb[iDb].pSchema;
+        pCur->zSchema = db->aDb[iDb].zDbSName;
+        for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
+          Table *pTab = (Table*)sqliteHashData(k);
+          if( !IsVirtual(pTab) && pTab->tnum==iRoot ){
+            pCur->zName = pTab->zName;
+            pCur->zType = "table";
+            break;
+          }
+        }
+        if( pCur->zName==0 ){
+          for(k=sqliteHashFirst(&pSchema->idxHash); k; k=sqliteHashNext(k)){
+            Index *pIdx = (Index*)sqliteHashData(k);
+            if( pIdx->tnum==iRoot ){
+              pCur->zName = pIdx->zName;
+              pCur->zType = "index";
+              break;
+            }
+          }
+        }
+      }
+      i += 10;
+    }
+  }
   switch( i ){
     case 0:   /* addr */
       sqlite3_result_int(ctx, pCur->iAddr);
@@ -190,7 +251,6 @@ static int bytecodevtabColumn(
       break;
     case 5:   /* p4 */
     case 7:   /* comment */
-      pVTab = (bytecodevtab*)cur->pVtab;
       if( pCur->zP4==0 ){
         pCur->zP4 = sqlite3VdbeDisplayP4(pVTab->db, pOp);
       }
@@ -219,6 +279,18 @@ static int bytecodevtabColumn(
       }
       break;
     }
+    case 10:  /* tables_used.type */
+      sqlite3_result_text(ctx, pCur->zType, -1, SQLITE_STATIC);
+      break;
+    case 11:  /* tables_used.schema */
+      sqlite3_result_text(ctx, pCur->zSchema, -1, SQLITE_STATIC);
+      break;
+    case 12:  /* tables_used.name */
+      sqlite3_result_text(ctx, pCur->zName, -1, SQLITE_STATIC);
+      break;
+    case 13:  /* tables_used.wr */
+      sqlite3_result_int(ctx, pOp->opcode==OP_OpenWrite);
+      break;
   }
   return SQLITE_OK;
 }
@@ -266,7 +338,8 @@ static int bytecodevtabFilter(
   }
   if( pCur->pStmt==0 ){
     pVTab->base.zErrMsg = sqlite3_mprintf(
-       "argument to bytecode() is not a valid SQL statement"
+       "argument to %s() is not a valid SQL statement",
+       pVTab->bTablesUsed ? "tables_used" : "bytecode"
     );
     rc = SQLITE_ERROR;
   }else{
@@ -287,17 +360,19 @@ static int bytecodevtabBestIndex(
   int i;
   int rc = SQLITE_CONSTRAINT;
   struct sqlite3_index_constraint *p;
+  bytecodevtab *pVTab = (bytecodevtab*)tab;
+  int iBaseCol = pVTab->bTablesUsed ? 4 : 8;
   pIdxInfo->estimatedCost = (double)100;
   pIdxInfo->estimatedRows = 100;
   pIdxInfo->idxNum = 0;
   for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
     if( p->usable==0 ) continue;
-    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==9 ){
+    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==iBaseCol+1 ){
       rc = SQLITE_OK;
       pIdxInfo->aConstraintUsage[i].omit = 1;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
     }
-    if( p->op==SQLITE_INDEX_CONSTRAINT_ISNULL && p->iColumn==8 ){
+    if( p->op==SQLITE_INDEX_CONSTRAINT_ISNULL && p->iColumn==iBaseCol ){
       pIdxInfo->aConstraintUsage[i].omit = 1;
       pIdxInfo->idxNum = 1;
     }
@@ -340,6 +415,9 @@ static sqlite3_module bytecodevtabModule = {
 int sqlite3VdbeBytecodeVtabInit(sqlite3 *db){
   int rc;
   rc = sqlite3_create_module(db, "bytecode", &bytecodevtabModule, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "tables_used", &bytecodevtabModule, &db);
+  }
   return rc;
 }
 #endif /* SQLITE_ENABLE_BYTECODE_VTAB */

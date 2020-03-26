@@ -1953,7 +1953,7 @@ void sqlite3VdbeFrameMemDel(void *pArg){
 int sqlite3VdbeNextOpcode(
   Vdbe *p,         /* The statement being explained */
   Mem *pSub,       /* Storage for keeping track of subprogram nesting */
-  int bEqp,        /* True to return only OP_Explain opcodes */
+  int eMode,       /* 0: normal.  1: EQP.  2:  TablesUsed */
   int *piPc,       /* IN/OUT: Current rowid.  Overwritten with next rowid */
   int *piAddr,     /* OUT: Write index into (*paOp)[] here */
   Op **paOp        /* OUT: Write the opcode array here */
@@ -2035,9 +2035,20 @@ int sqlite3VdbeNextOpcode(
         nRow += aOp[i].p4.pProgram->nOp;
       }
     }
-    if( !bEqp ) break;
-    if( aOp[i].opcode==OP_Explain ) break;
-    if( aOp[i].opcode==OP_Init && p->pc>1 ) break;
+    if( eMode==0 ) break;
+#ifdef SQLITE_ENABLE_BYTECODE_VTAB
+    if( eMode==2 ){
+      Op *pOp = aOp + i;
+      if( pOp->opcode==OP_OpenRead ) break;
+      if( pOp->opcode==OP_OpenWrite && (pOp->p5 & OPFLAG_P2ISREG)==0 ) break;
+      if( pOp->opcode==OP_ReopenIdx ) break;      
+    }else
+#endif
+    {
+      assert( eMode==1 );
+      if( aOp[i].opcode==OP_Explain ) break;
+      if( aOp[i].opcode==OP_Init && p->pc>1 ) break;
+    }
   }
   *piPc = iPc;
   *piAddr = i;
