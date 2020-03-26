@@ -2941,6 +2941,8 @@ void sqlite3CodeRhsOfIN(
     affinity = sqlite3ExprAffinity(pLeft);
     if( affinity<=SQLITE_AFF_NONE ){
       affinity = SQLITE_AFF_BLOB;
+    }else if( affinity==SQLITE_AFF_REAL ){
+      affinity = SQLITE_AFF_NUMERIC;
     }
     if( pKeyInfo ){
       assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
@@ -3250,21 +3252,13 @@ static void sqlite3ExprCodeIN(
     int r2, regToFree;
     int regCkNull = 0;
     int ii;
-    int bLhsReal;  /* True if the LHS of the IN has REAL affinity */
     assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
     if( destIfNull!=destIfFalse ){
       regCkNull = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp3(v, OP_BitAnd, rLhs, rLhs, regCkNull);
     }
-    bLhsReal = sqlite3ExprAffinity(pExpr->pLeft)==SQLITE_AFF_REAL;
     for(ii=0; ii<pList->nExpr; ii++){
-      if( bLhsReal ){
-        r2 = regToFree = sqlite3GetTempReg(pParse);
-        sqlite3ExprCode(pParse, pList->a[ii].pExpr, r2);
-        sqlite3VdbeAddOp4(v, OP_Affinity, r2, 1, 0, "E", P4_STATIC);
-      }else{
-        r2 = sqlite3ExprCodeTemp(pParse, pList->a[ii].pExpr, &regToFree);
-      }
+      r2 = sqlite3ExprCodeTemp(pParse, pList->a[ii].pExpr, &regToFree);
       if( regCkNull && sqlite3ExprCanBeNull(pList->a[ii].pExpr) ){
         sqlite3VdbeAddOp3(v, OP_BitAnd, regCkNull, r2, regCkNull);
       }
