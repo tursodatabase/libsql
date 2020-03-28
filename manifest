@@ -1,5 +1,5 @@
-C Reinstate\sthe\soptimization\sthat\sconverts\s"x\sIN\s(y)"\sinto\s"x==y".
-D 2020-03-26T00:29:50.482
+C MSVC\sdoes\snot\sallow\sconstant\sexpressions\sas\sinitializers\sfor\nconstants\swith\s/fp:strict.
+D 2020-03-28T12:01:25.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/build.c 3d22f21c4701f62c1a191c6b6d17552fb1b593fe9a97c0613cca05ab104a9a51
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 6a77ec9e0eb87aea929e002c816298907e337094a7b556898ae2d1e6be209f90
-F src/date.c 6c408fdd2e9ddf6e8431aba76315a2d061bea2cec8fbb75e25d7c1ba08274712
+F src/date.c b29b349d277e3d579dcc295b24c0a2caed83fd8f090a9f7cbe6070c0fd662384
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 793deaf88a0904f88285d93d6713c636d55ede0ffd9f08d10f4ea825531d367f
 F src/delete.c 11000121c4281c0bce4e41db29addfaea0038eaa127ece02557c9207bc3e541d
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 029ceea612f5c7a1420939d8a772eefcc6f9550d24d57b52ae1729ea9d85fae9
-R 3705b23e9f0d2aa8bb1acee008cd53c5
+P 27936e6884e77093533719c7955a17f051cfb359872e51a6d1481152e6256443
+R 46546f10d10bf6eae2668583a26e4118
 U drh
-Z f21f043fe82b450709b51f4ab8aebfa6
+Z bff83d42b371b917e696cd55828e7b1b
