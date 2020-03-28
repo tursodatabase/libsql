@@ -1569,9 +1569,21 @@ static int sqliteDefaultBusyCallback(
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   if( sqlite3OsFileControl(pFile,SQLITE_FCNTL_LOCK_TIMEOUT,&tmout)==SQLITE_OK ){
     if( count ){
-      tmout = 0;
-      sqlite3OsFileControl(pFile, SQLITE_FCNTL_LOCK_TIMEOUT, &tmout);
-      return 0;
+      /* If this is the second or later invocation of the busy-handler,
+      ** but tmout==0, then code in wal.c must have disabled the blocking
+      ** lock before the SQLITE_BUSY error was hit. In this case, no delay
+      ** occurred while waiting for the lock, so fall through to the xSleep()
+      ** code below to delay a while before retrying the lock.  
+      **
+      ** Alternatively, if tmout!=0, then SQLite has already waited 
+      ** sqlite3.busyTimeout ms for a lock. In this case, return 0 to 
+      ** indicate that the lock should not be retried and the SQLITE_BUSY 
+      ** error returned to the application.  */
+      if( tmout ){
+        tmout = 0;
+        sqlite3OsFileControl(pFile, SQLITE_FCNTL_LOCK_TIMEOUT, &tmout);
+        return 0;
+      }
     }else{
       return 1;
     }
