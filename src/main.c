@@ -1733,7 +1733,7 @@ void sqlite3_interrupt(sqlite3 *db){
     return;
   }
 #endif
-  db->u1.isInterrupted = 1;
+  AtomicStore(&db->u1.isInterrupted, 1);
 }
 
 
@@ -2355,7 +2355,7 @@ int sqlite3_wal_checkpoint_v2(
   /* If there are no active statements, clear the interrupt flag at this
   ** point.  */
   if( db->nVdbeActive==0 ){
-    db->u1.isInterrupted = 0;
+    AtomicStore(&db->u1.isInterrupted, 0);
   }
 
   sqlite3_mutex_leave(db->mutex);

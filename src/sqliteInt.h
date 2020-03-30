@@ -187,6 +187,21 @@
 #endif
 
 /*
+** WAL mode depends on atomic aligned 32-bit loads and stores in a few
+** places.  The following macros try to make this explicit.
+*/
+#ifndef __has_feature
+# define __has_feature(x) 0       /* compatibility with non-clang compilers */
+#endif
+#if GCC_VERSION>=4007000 || __has_feature(c_atomic)
+# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
+# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
+#else
+# define AtomicLoad(PTR)       (*(PTR))
+# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
+#endif
+
+/*
 ** Include standard header files as necessary
 */
 #ifdef HAVE_STDINT_H

@@ -760,7 +760,7 @@ void sqlite3OomFault(sqlite3 *db){
   if( db->mallocFailed==0 && db->bBenignMalloc==0 ){
     db->mallocFailed = 1;
     if( db->nVdbeExec>0 ){
-      db->u1.isInterrupted = 1;
+      AtomicStore(&db->u1.isInterrupted, 1);
     }
     DisableLookaside;
     if( db->pParse ){
@@ -779,7 +779,7 @@ void sqlite3OomFault(sqlite3 *db){
 void sqlite3OomClear(sqlite3 *db){
   if( db->mallocFailed && db->nVdbeExec==0 ){
     db->mallocFailed = 0;
-    db->u1.isInterrupted = 0;
+    AtomicStore(&db->u1.isInterrupted, 0);
     assert( db->lookaside.bDisable>0 );
     EnableLookaside;
   }
