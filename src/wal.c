@@ -262,7 +262,7 @@ int sqlite3WalTrace = 0;
 ** WAL mode depends on atomic aligned 32-bit loads and stores in a few
 ** places.  The following macros try to make this explicit.
 */
-#if GCC_VESRION>=5004000
+#if GCC_VERSION>=5004000
 # define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
 # define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
 #else
@@ -2604,7 +2604,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     for(i=1; i<WAL_NREADER; i++){
       rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
       if( rc==SQLITE_OK ){
-        mxReadMark = AtomicStore(pInfo->aReadMark+i,mxFrame);
+        AtomicStore(pInfo->aReadMark+i,mxFrame);
+        mxReadMark = mxFrame;
         mxI = i;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
         break;
