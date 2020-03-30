@@ -1008,8 +1008,8 @@ static int natsortCollFunc(
     if( sqlite3Isdigit(zA[i]) ){
       int k;
       if( !sqlite3Isdigit(zB[j]) ) return x;
-      while( zA[i]=='0' && i<nKey1 ){ i++; }
-      while( zB[j]=='0' && j<nKey2 ){ j++; }
+      while( i<nKey1 && zA[i]=='0' ){ i++; }
+      while( j<nKey2 && zB[j]=='0' ){ j++; }
       k = 0;
       while( i+k<nKey1 && sqlite3Isdigit(zA[i+k])
              && j+k<nKey2 && sqlite3Isdigit(zB[j+k]) ){
