@@ -1,5 +1,5 @@
-C Use\s__atomic_load_n()\sand\s__atomic_store_n()\sfor\sa\sfew\smore\sthings\swhere\sthey\sare\savailable.
-D 2020-03-30T13:35:05.649
+C Add\sthe\sNATSORT\scollating\ssequence.\s\sNo\stest\scases\syet.
+D 2020-03-30T15:39:54.428
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c b179df50e6e8bb0c36c149e95d958d49bd8c6c7469e59c01b53d164360bc6c32
-F src/main.c 2e076b6dc1f8ab69c7fc604e8af88ab138a64c0616826361e254cee55bcba4e8
+F src/main.c 38e2f027c843ede6d0b2fb4fae4cd51b1146848ed2736c6461d6cd72a5b973a1
 F src/malloc.c cabfef0d725e04c8abfe0231a556ed8b78bf329dcc3fddbf903f6cdcd53cf4e6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1860,7 +1860,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbd9378727141848ba2f5a8eee3076ecbd315e4a87b264c6d890103d56b2e4bc
-R c8b295e5bd68ca95045f3500e6ef50d6
-U dan
-Z 1be00e3678658e7590a9c61fafe2f4aa
+P a49f8ec552bede7da731e0571ccf49de1a30e7be3a5673150436c8b411ba6ffc
+R cdcaab153b3d333e9ee56a4e8fe64b19
+T *branch * natsort
+T *sym-natsort *
+T -sym-trunk *
+U drh
+Z 52cc0ba312367dbd46a4cc87640d9522
