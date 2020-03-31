@@ -382,6 +382,9 @@ set pragma_def {
   NAME: threads
   FLAG: Result0
 
+  NAME: analysis_limit
+  FLAG: Result0
+
   NAME: optimize
   FLAG: Result1 NeedSchema
 

@@ -2176,6 +2176,25 @@ void sqlite3Pragma(
     break;
   }
 
+  /*
+  **   PRAGMA analysis_limit
+  **   PRAGMA analysis_limit = N
+  **
+  ** Configure the maximum number of rows that ANALYZE will examine
+  ** in each index that it looks at.  Return the new limit.
+  */
+  case PragTyp_ANALYSIS_LIMIT: {
+    sqlite3_int64 N;
+    if( zRight
+     && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK
+     && N>=0
+    ){
+      db->nAnalysisLimit = (int)(N&0x7fffffff);
+    }
+    returnSingleInt(v, db->nAnalysisLimit);
+    break;
+  }
+
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases

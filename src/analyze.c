@@ -282,6 +282,7 @@ struct StatAccum {
   sqlite3 *db;              /* Database connection, for malloc() */
   tRowcnt nEst;             /* Estimated number of rows */
   tRowcnt nRow;             /* Number of rows visited so far */
+  int nLimit;               /* Analysis row-scan limit */
   int nCol;                 /* Number of columns in index + pk/rowid */
   int nKeyCol;              /* Number of index columns w/o the pk/rowid */
   u8 nSkipAhead;            /* Number of times of skip-ahead */
@@ -375,11 +376,12 @@ static void statAccumDestructor(void *pOld){
 }
 
 /*
-** Implementation of the stat_init(N,K,C) SQL function. The three parameters
+** Implementation of the stat_init(N,K,C,L) SQL function. The four parameters
 ** are:
 **     N:    The number of columns in the index including the rowid/pk (note 1)
 **     K:    The number of columns in the index excluding the rowid/pk.
 **     C:    Estimated number of rows in the index
+**     L:    A limit on the number of rows to scan, or 0 for no-limit 
 **
 ** Note 1:  In the special case of the covering index that implements a
 ** WITHOUT ROWID table, N is the number of PRIMARY KEY columns, not the
@@ -441,6 +443,11 @@ static void statInit(
   p->db = db;
   p->nEst = sqlite3_value_int64(argv[2]);
   p->nRow = 0;
+  p->nLimit = sqlite3_value_int64(argv[3]);
+#ifdef SQLITE_ENABLE_STAT4
+  /* Disable STAT4 statistics gathering if there is a analysis_limit set */
+  if( p->nLimit>0 ) p->mxSample = 0;
+#endif
   p->nCol = nCol;
   p->nKeyCol = nKeyCol;
   p->nSkipAhead = 0;
@@ -678,15 +685,6 @@ static void samplePushPrevious(StatAccum *p, int iChng){
 #endif /* SQLITE_ENABLE_STAT4 */
 
 /*
-** A limit on the number of rows of an index that will be examined
-** by ANALYZE before it starts going with approximations.  Zero means
-** "no limit".
-*/
-#ifndef SQLITE_ANALYZE_LIMIT
-# define SQLITE_ANALYZE_LIMIT 0
-#endif
-
-/*
 ** Implementation of the stat_push SQL function:  stat_push(P,C,R)
 ** Arguments:
 **
@@ -774,14 +772,10 @@ static void statPush(
     }
   }else
 #endif
-#if SQLITE_ANALYZE_LIMIT
-  if( p->nRow>SQLITE_ANALYZE_LIMIT*(p->nSkipAhead+1) ){
+  if( p->nLimit && p->nRow>p->nLimit*(p->nSkipAhead+1) ){
     p->nSkipAhead++;
     sqlite3_result_int(context, p->current.anDLt[0]>0);
   }
-#else
-  {}
-#endif
 }
 
 static const FuncDef statPushFuncdef = {
@@ -987,6 +981,7 @@ static void analyzeOneTable(
   int regChng = iMem++;        /* Index of changed index field */
   int regRowid = iMem++;       /* Rowid argument passed to stat_push() */
   int regTemp = iMem++;        /* Temporary use register */
+  int regTemp2 = iMem++;       /* Second temporary use register */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
@@ -1131,7 +1126,9 @@ static void analyzeOneTable(
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_Count, iIdxCur, regTemp, 1);
     }
-    sqlite3VdbeAddFunctionCall(pParse, 0, regStat+1, regStat, 3,
+    assert( regTemp2==regStat+4 );
+    sqlite3VdbeAddOp2(v, OP_Integer, db->nAnalysisLimit, regTemp2);
+    sqlite3VdbeAddFunctionCall(pParse, 0, regStat+1, regStat, 4,
                                &statInitFuncdef, 0);
 
     /* Implementation of the following:
@@ -1230,16 +1227,20 @@ static void analyzeOneTable(
 #endif
     assert( regChng==(regStat+1) );
     {
-      int j1, j2, j3;
       sqlite3VdbeAddFunctionCall(pParse, 1, regStat, regTemp, 2+IsStat4,
                                  &statPushFuncdef, 0);
-      j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regTemp);
-      j2 = sqlite3VdbeAddOp1(v, OP_If, regTemp);
-      j3 = sqlite3VdbeAddOp4Int(v, OP_SeekGT, iIdxCur, 0, regPrev, 1);
-      sqlite3VdbeJumpHere(v, j1);
-      sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
-      sqlite3VdbeJumpHere(v, j2);
-      sqlite3VdbeJumpHere(v, j3);
+      if( db->nAnalysisLimit ){
+        int j1, j2, j3;
+        j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regTemp); VdbeCoverage(v);
+        j2 = sqlite3VdbeAddOp1(v, OP_If, regTemp); VdbeCoverage(v);
+        j3 = sqlite3VdbeAddOp4Int(v, OP_SeekGT, iIdxCur, 0, regPrev, 1);
+        sqlite3VdbeJumpHere(v, j1);
+        sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
+        sqlite3VdbeJumpHere(v, j2);
+        sqlite3VdbeJumpHere(v, j3);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
+      }
     }
 
     /* Add the entry to the stat1 table. */
