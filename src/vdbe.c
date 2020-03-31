@@ -707,7 +707,7 @@ int sqlite3VdbeExec(
   assert( p->explain==0 );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;
-  if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
+  if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
@@ -891,7 +891,7 @@ jump_to_p2_and_check_for_interrupt:
   ** checks on every opcode.  This helps sqlite3_step() to run about 1.5%
   ** faster according to "valgrind --tool=cachegrind" */
 check_for_interrupt:
-  if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
+  if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   /* Call the progress callback if it is configured and the required number
   ** of VDBE ops have been executed (either since this invocation of
@@ -8005,7 +8005,7 @@ no_mem:
   ** flag.
   */
 abort_due_to_interrupt:
-  assert( db->u1.isInterrupted );
+  assert( AtomicLoad(&db->u1.isInterrupted) );
   rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
   p->rc = rc;
   sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));

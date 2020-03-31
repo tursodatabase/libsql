@@ -853,6 +853,7 @@ static void likeFunc(
   int nPat;
   sqlite3 *db = sqlite3_context_db_handle(context);
   struct compareInfo *pInfo = sqlite3_user_data(context);
+  struct compareInfo backupInfo;
 
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   if( sqlite3_value_type(argv[0])==SQLITE_BLOB
@@ -888,6 +889,12 @@ static void likeFunc(
       return;
     }
     escape = sqlite3Utf8Read(&zEsc);
+    if( escape==pInfo->matchAll || escape==pInfo->matchOne ){
+      memcpy(&backupInfo, pInfo, sizeof(backupInfo));
+      pInfo = &backupInfo;
+      if( escape==pInfo->matchAll ) pInfo->matchAll = 0;
+      if( escape==pInfo->matchOne ) pInfo->matchOne = 0;
+    }
   }else{
     escape = pInfo->matchSet;
   }
@@ -1870,16 +1877,6 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
-  if( nExpr<3 ){
-    aWc[3] = 0;
-  }else{
-    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
-    char *zEscape;
-    if( pEscape->op!=TK_STRING ) return 0;
-    zEscape = pEscape->u.zToken;
-    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
-    aWc[3] = zEscape[0];
-  }
 
   /* The memcpy() statement assumes that the wildcard characters are
   ** the first three statements in the compareInfo structure.  The
@@ -1889,6 +1886,20 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   assert( (char*)&likeInfoAlt == (char*)&likeInfoAlt.matchAll );
   assert( &((char*)&likeInfoAlt)[1] == (char*)&likeInfoAlt.matchOne );
   assert( &((char*)&likeInfoAlt)[2] == (char*)&likeInfoAlt.matchSet );
+
+  if( nExpr<3 ){
+    aWc[3] = 0;
+  }else{
+    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
+    char *zEscape;
+    if( pEscape->op!=TK_STRING ) return 0;
+    zEscape = pEscape->u.zToken;
+    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
+    if( zEscape[0]==aWc[0] ) return 0;
+    if( zEscape[0]==aWc[1] ) return 0;
+    aWc[3] = zEscape[0];
+  }
+
   *pIsNocase = (pDef->funcFlags & SQLITE_FUNC_CASE)==0;
   return 1;
 }

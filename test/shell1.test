@@ -297,10 +297,11 @@ do_test shell1-3.4.2 {
   list [regexp {BEGIN TRANSACTION;} $res] \
        [regexp {COMMIT;} $res]
 } {1 1}
-do_test shell1-3.4.3 {
-  # too many arguments
-  catchcmd "test.db" ".dump FOO BAD"
-} {1 {Usage: .dump ?--preserve-rowids? ?--newlines? ?LIKE-PATTERN?}}
+# The .dump command now accepts multiple arguments
+#do_test shell1-3.4.3 {
+#  # too many arguments
+#  catchcmd "test.db" ".dump FOO BAD"
+#} {1 {Usage: .dump ?--preserve-rowids? ?--newlines? ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {

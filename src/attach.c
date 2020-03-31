@@ -46,6 +46,17 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
 }
 
 /*
+** Return true if zName points to a name that may be used to refer to
+** database iDb attached to handle db.
+*/
+int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
+  return (
+      sqlite3StrICmp(db->aDb[iDb].zDbSName, zName)==0
+   || (iDb==0 && sqlite3StrICmp("main", zName)==0)
+  );
+}
+
+/*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:
 **
@@ -117,9 +128,8 @@ static void attachFunc(
       goto attach_error;
     }
     for(i=0; i<db->nDb; i++){
-      char *z = db->aDb[i].zDbSName;
-      assert( z && zName );
-      if( sqlite3StrICmp(z, zName)==0 ){
+      assert( zName );
+      if( sqlite3DbIsNamed(db, i, zName) ){
         zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
         goto attach_error;
       }
@@ -272,7 +282,7 @@ static void detachFunc(
   for(i=0; i<db->nDb; i++){
     pDb = &db->aDb[i];
     if( pDb->pBt==0 ) continue;
-    if( sqlite3StrICmp(pDb->zDbSName, zName)==0 ) break;
+    if( sqlite3DbIsNamed(db, i, zName) ) break;
   }
 
   if( i>=db->nDb ){
@@ -463,20 +473,21 @@ int sqlite3FixSrcList(
   SrcList *pList       /* The Source list to check and modify */
 ){
   int i;
-  const char *zDb;
   struct SrcList_item *pItem;
+  sqlite3 *db = pFix->pParse->db;
+  int iDb = sqlite3FindDbName(db, pFix->zDb);
 
   if( NEVER(pList==0) ) return 0;
-  zDb = pFix->zDb;
+
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pFix->bTemp==0 ){
-      if( pItem->zDatabase && sqlite3StrICmp(pItem->zDatabase, zDb) ){
+      if( pItem->zDatabase && iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
         sqlite3ErrorMsg(pFix->pParse,
             "%s %T cannot reference objects in database %s",
             pFix->zType, pFix->pName, pItem->zDatabase);
         return 1;
       }
-      sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
+      sqlite3DbFree(db, pItem->zDatabase);
       pItem->zDatabase = 0;
       pItem->pSchema = pFix->pSchema;
       pItem->fg.fromDDL = 1;

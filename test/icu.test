@@ -146,4 +146,22 @@ ifcapable icu {
   }
 }
 
+# 2020-03-19
+# The ESCAPE clause on LIKE takes precedence over wildcards
+#
+do_execsql_test idu-6.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, x TEXT);
+  INSERT INTO t1 VALUES
+    (1,'abcde'),
+    (2,'abc_'),
+    (3,'abc__'),
+    (4,'abc%'),
+    (5,'abc%%');
+  SELECT id FROM t1 WHERE x LIKE 'abc%%' ESCAPE '%';
+} {4}
+do_execsql_test icu-6.1 {
+  SELECT id FROM t1 WHERE x LIKE 'abc__' ESCAPE '_';
+} {2}
+
 finish_test

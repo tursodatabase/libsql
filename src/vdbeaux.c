@@ -424,7 +424,7 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 #endif
 
 /*
-** Add a new OP_ opcode.
+** Add a new OP_Explain opcode.
 **
 ** If the bPush flag is true, then make this opcode the parent for
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
@@ -2093,7 +2093,7 @@ int sqlite3VdbeList(
   }
 
   if( rc==SQLITE_OK ){
-    if( db->u1.isInterrupted ){
+    if( AtomicLoad(&db->u1.isInterrupted) ){
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
@@ -2375,6 +2375,7 @@ void sqlite3VdbeMakeReady(
     };
     int iFirst, mx, i;
     if( nMem<10 ) nMem = 10;
+    p->explain = pParse->explain;
     if( pParse->explain==2 ){
       sqlite3VdbeSetNumCols(p, 4);
       iFirst = 8;
@@ -2425,7 +2426,6 @@ void sqlite3VdbeMakeReady(
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
-  p->explain = pParse->explain;
   if( db->mallocFailed ){
     p->nVar = 0;
     p->nCursor = 0;

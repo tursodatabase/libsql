@@ -187,6 +187,21 @@
 #endif
 
 /*
+** WAL mode depends on atomic aligned 32-bit loads and stores in a few
+** places.  The following macros try to make this explicit.
+*/
+#ifndef __has_feature
+# define __has_feature(x) 0       /* compatibility with non-clang compilers */
+#endif
+#if GCC_VERSION>=4007000 || __has_feature(c_atomic)
+# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
+# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
+#else
+# define AtomicLoad(PTR)       (*(PTR))
+# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
+#endif
+
+/*
 ** Include standard header files as necessary
 */
 #ifdef HAVE_STDINT_H
@@ -3695,6 +3710,7 @@ struct Walker {
     struct WhereConst *pConst;                /* WHERE clause constants */
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
     struct Table *pTab;                       /* Table of generated column */
+    struct SrcList_item *pSrcItem;            /* A single FROM clause item */
   } u;
 };
 
@@ -4394,6 +4410,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 # define sqlite3AuthContextPush(a,b,c)
 # define sqlite3AuthContextPop(a)  ((void)(a))
 #endif
+int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName);
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
 void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
@@ -4549,6 +4566,7 @@ int sqlite3MatchEName(
   const char*,
   const char*
 );
+Bitmask sqlite3ExprColUsed(Expr*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);

@@ -238,6 +238,7 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   i = 0;
   if( iSchema>=0 ){
     pIdxInfo->aConstraintUsage[iSchema].argvIndex = ++i;
+    pIdxInfo->aConstraintUsage[iSchema].omit = 1;
     pIdxInfo->idxNum |= 0x01;
   }
   if( iName>=0 ){
@@ -452,7 +453,9 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         if( nPayload>(u32)nLocal ){
           int j;
           int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
-          if( iOff+nLocal>nUsable ) goto statPageIsCorrupt;
+          if( iOff+nLocal>nUsable || nPayload>0x7fffffff ){
+            goto statPageIsCorrupt;
+          }
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
           pCell->nOvfl = nOvfl;
           pCell->aOvfl = sqlite3_malloc64(sizeof(u32)*nOvfl);

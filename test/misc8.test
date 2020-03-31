@@ -132,9 +132,9 @@ dbconfig_maindbname_icecube db
 do_execsql_test misc8-4.2 {
   SELECT name FROM icecube.sqlite_master;
 } {t1}
-do_execsql_test misc8-4.3 {
-  PRAGMA database_list;
-} {/0 icecube .* 2 aux2/}
+do_test misc8-4.3 {
+  regexp {0 icecube .* 2 aux2} [db eval {PRAGMA database_list}] 
+} 1
 
 
 

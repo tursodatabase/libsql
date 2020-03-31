@@ -3995,7 +3995,9 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     case SQLITE_FCNTL_LOCK_TIMEOUT: {
+      int iOld = pFile->iBusyTimeout;
       pFile->iBusyTimeout = *(int*)pArg;
+      *(int*)pArg = iOld;
       return SQLITE_OK;
     }
 #endif
@@ -4816,6 +4818,24 @@ static int unixShmLock(
   assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
   assert( pShmNode->hShm>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->hShm<0 || pDbFd->pInode->bProcessLock==0 );
+
+  /* Check that, if this to be a blocking lock, that locks have been
+  ** obtained in the following order.
+  **
+  **   1. Checkpointer lock (ofst==1).
+  **   2. Recover lock (ofst==2).
+  **   3. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
+  **   4. Write lock (ofst==0).
+  **
+  ** In other words, if this is a blocking lock, none of the locks that
+  ** occur later in the above list than the lock being obtained may be
+  ** held.  */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  assert( pDbFd->iBusyTimeout==0 
+       || (flags & SQLITE_SHM_UNLOCK) || ofst==0
+       || ((p->exclMask|p->sharedMask)&~((1<<ofst)-2))==0
+  );
+#endif
 
   mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );

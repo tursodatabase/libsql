@@ -126,37 +126,37 @@ do_execsql_test  3.1.0 { SELECT * FROM temp.v1 } {{a temp} {b temp}}
 do_execsql_test  3.1.1 { DROP VIEW temp.v1 } {}
 do_catchsql_test 3.1.2 { SELECT * FROM temp.v1 } {1 {no such table: temp.v1}}
 do_test          3.1.3 { list_all_views } {main.v1 main.v2 aux.v1 aux.v2 aux.v3}
-do_test          3.1.4 { list_all_data  } $databasedata
+do_test          3.1.4 { string compare [list_all_data] $databasedata } 0
 
 do_execsql_test  3.2.0 { SELECT * FROM v1 } {{a main} {b main}}
 do_execsql_test  3.2.1 { DROP VIEW v1 } {}
 do_catchsql_test 3.2.2 { SELECT * FROM main.v1 } {1 {no such table: main.v1}}
 do_test          3.2.3 { list_all_views } {main.v2 aux.v1 aux.v2 aux.v3}
-do_test          3.2.4 { list_all_data  } $databasedata
+do_test          3.2.4 { string compare [list_all_data] $databasedata } 0
 
 do_execsql_test  3.3.0 { SELECT * FROM v2 } {{a main} {b main}}
 do_execsql_test  3.3.1 { DROP VIEW v2 } {}
 do_catchsql_test 3.3.2 { SELECT * FROM main.v2 } {1 {no such table: main.v2}}
 do_test          3.3.3 { list_all_views } {aux.v1 aux.v2 aux.v3}
-do_test          3.3.4 { list_all_data  } $databasedata
+do_test          3.3.4 { string compare [list_all_data] $databasedata } 0
 
 do_execsql_test  3.4.0 { SELECT * FROM v1 } {{a aux} {b aux}}
 do_execsql_test  3.4.1 { DROP VIEW v1 } {}
 do_catchsql_test 3.4.2 { SELECT * FROM v1 } {1 {no such table: v1}}
 do_test          3.4.3 { list_all_views } {aux.v2 aux.v3}
-do_test          3.4.4 { list_all_data  } $databasedata
+do_test          3.4.4 { string compare [list_all_data] $databasedata } 0
 
-do_execsql_test  3.4.0 { SELECT * FROM aux.v2 } {{a aux} {b aux}}
-do_execsql_test  3.4.1 { DROP VIEW aux.v2 } {}
-do_catchsql_test 3.4.2 { SELECT * FROM aux.v2 } {1 {no such table: aux.v2}}
-do_test          3.4.3 { list_all_views } {aux.v3}
-do_test          3.4.4 { list_all_data  } $databasedata
+do_execsql_test  3.5.0 { SELECT * FROM aux.v2 } {{a aux} {b aux}}
+do_execsql_test  3.5.1 { DROP VIEW aux.v2 } {}
+do_catchsql_test 3.5.2 { SELECT * FROM aux.v2 } {1 {no such table: aux.v2}}
+do_test          3.5.3 { list_all_views } {aux.v3}
+do_test          3.5.4 { string compare [list_all_data] $databasedata } 0
 
-do_execsql_test  3.5.0 { SELECT * FROM v3 } {{a aux} {b aux}}
-do_execsql_test  3.5.1 { DROP VIEW v3 } {}
-do_catchsql_test 3.5.2 { SELECT * FROM v3 } {1 {no such table: v3}}
-do_test          3.5.3 { list_all_views } {}
-do_test          3.5.4 { list_all_data  } $databasedata
+do_execsql_test  3.6.0 { SELECT * FROM v3 } {{a aux} {b aux}}
+do_execsql_test  3.6.1 { DROP VIEW v3 } {}
+do_catchsql_test 3.6.2 { SELECT * FROM v3 } {1 {no such table: v3}}
+do_test          3.6.3 { list_all_views } {}
+do_test          3.6.4 { string compare [list_all_data] $databasedata } 0
 
 # EVIDENCE-OF: R-25558-37487 If the specified view cannot be found and
 # the IF EXISTS clause is not present, it is an error.
@@ -179,11 +179,11 @@ do_dropview_tests 5 -repair {
   dropview_reopen_db
 } -tclquery {
   list_all_views
-  expr {[list_all_views] == "main.v1 main.v2 temp.v1 aux.v1 aux.v2 aux.v3"}
+  #expr {[list_all_views] == "main.v1 main.v2 temp.v1 aux.v1 aux.v2 aux.v3"}
 } {
-  1    "DROP VIEW IF EXISTS xx"       1
-  2    "DROP VIEW IF EXISTS main.xx"  1
-  3    "DROP VIEW IF EXISTS temp.v2"  1
+  1    "DROP VIEW IF EXISTS xx" "main.v1 main.v2 temp.v1 aux.v1 aux.v2 aux.v3"
+  2    "DROP VIEW IF EXISTS main.xx" "main.v1 main.v2 temp.v1 aux.v1 aux.v2 aux.v3"
+  3    "DROP VIEW IF EXISTS temp.v2" "main.v1 main.v2 temp.v1 aux.v1 aux.v2 aux.v3"
 }
 
 
