@@ -444,10 +444,6 @@ static void statInit(
   p->nEst = sqlite3_value_int64(argv[2]);
   p->nRow = 0;
   p->nLimit = sqlite3_value_int64(argv[3]);
-#ifdef SQLITE_ENABLE_STAT4
-  /* Disable STAT4 statistics gathering if there is a analysis_limit set */
-  if( p->nLimit>0 ) p->mxSample = 0;
-#endif
   p->nCol = nCol;
   p->nKeyCol = nKeyCol;
   p->nSkipAhead = 0;
@@ -455,7 +451,7 @@ static void statInit(
   p->current.anEq = &p->current.anDLt[nColUp];
 
 #ifdef SQLITE_ENABLE_STAT4
-  p->mxSample = mxSample;
+  p->mxSample = p->nLimit==0 ? mxSample : 0;
   if( mxSample ){
     u8 *pSpace;                     /* Allocated space not yet assigned */
     int i;                          /* Used to iterate through p->aSample[] */
@@ -489,7 +485,7 @@ static void statInit(
   sqlite3_result_blob(context, p, sizeof(*p), statAccumDestructor);
 }
 static const FuncDef statInitFuncdef = {
-  2+IsStat4,       /* nArg */
+  4,               /* nArg */
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
@@ -1256,7 +1252,7 @@ static void analyzeOneTable(
 
     /* Add the entries to the stat4 table. */
 #ifdef SQLITE_ENABLE_STAT4
-    if( OptimizationEnabled(db, SQLITE_Stat4) ){
+    if( OptimizationEnabled(db, SQLITE_Stat4) && db->nAnalysisLimit==0 ){
       int regEq = regStat1;
       int regLt = regStat1+1;
       int regDLt = regStat1+2;
