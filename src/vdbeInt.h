@@ -500,6 +500,8 @@ int sqlite3VdbeExec(Vdbe*);
 #if !defined(SQLITE_OMIT_EXPLAIN) || defined(SQLITE_ENABLE_BYTECODE_VTAB)
 int sqlite3VdbeNextOpcode(Vdbe*,Mem*,int,int*,int*,Op**);
 char *sqlite3VdbeDisplayP4(sqlite3*,Op*);
+#endif
+#if defined(SQLITE_ENABLE_EXPLAIN_COMMENT)
 char *sqlite3VdbeDisplayComment(sqlite3*,const Op*,const char*);
 #endif
 #if !defined(SQLITE_OMIT_EXPLAIN)

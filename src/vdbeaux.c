@@ -1548,7 +1548,7 @@ char *sqlite3VdbeDisplayComment(
   }
   return sqlite3StrAccumFinish(&x);
 }
-#endif /* SQLITE_DEBUG */
+#endif /* SQLITE_ENABLE_EXPLAIN_COMMENTS */
 
 #if VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS)
 /*
