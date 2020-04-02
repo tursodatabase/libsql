@@ -1,5 +1,5 @@
-C Add\sa\smissing\s#ifdef\sto\savoid\sa\sharmless\scompiler\swarning.
-D 2020-04-02T12:53:17.013
+C Fix\sanother\sharmless\scompiler\swarning.
+D 2020-04-02T13:08:54.300
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -605,9 +605,9 @@ F src/util.c a285c1e026907b69fa2592bd05047a565a1d8a1aef2b73c924b6a8ffe772871a
 F src/vacuum.c 813b510ba887fee6492bcb11f2bf77d7eb58b232b83649136372e0a2fc17f4b9
 F src/vdbe.c 972999395eee88702091fb5d50cf4effd07889c371807d222a7f517388e6378e
 F src/vdbe.h 07b8c636a87df8b6e58f29d6badd7f10d5844353deff1d7c88ed1c2bfe3bbd35
-F src/vdbeInt.h 01250089f9a90e9342de1c4cc79cbfa86133c251fe94ecb09564fabe122d00b7
+F src/vdbeInt.h 571413068b5ac07e2ed8ca7a02fa529622fd5455ae6981498376e5e492d2e5ef
 F src/vdbeapi.c d176ee7251d5344de7bb2a0d2dd0fe536834e5843d9bc2389e0f5cdcd5374141
-F src/vdbeaux.c 892673818ed28961238907540021cb7035eca2757095aab160f866473201a84f
+F src/vdbeaux.c 2b47d2443f2bf6a26cac0872b39d0642a8b7ff86c207eea0aed37d39a7d379d7
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1731385c077f298b0cf654d6183ed40f7e5c07e4e2ab7f69109cf951ce99d9e
-R 7dc28ba8a275eed6b89f173889480939
+P cc54de354317ebc080d4d1ee25427b31a49c4a75e01cb5d9966f1aaeb2ad098d
+R 8fe319a58a23143f83b349fa4edfbc9a
 U drh
-Z ff4e168336800c29cfb3e03082888acf
+Z 7487d39d42c11bfb0d43c4ac88cff31d

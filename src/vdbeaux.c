@@ -1963,7 +1963,7 @@ int sqlite3VdbeNextOpcode(
   SubProgram **apSub = 0;              /* Array of sub-vdbes */
   int i;                               /* Next instruction address */
   int rc = SQLITE_OK;                  /* Result code */
-  Op *aOp;                             /* Opcode array */
+  Op *aOp = 0;                         /* Opcode array */
   int iPc;                             /* Rowid.  Copy of value in *piPc */
 
   /* When the number of output rows reaches nRow, that means the
