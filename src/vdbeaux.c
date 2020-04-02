@@ -2140,7 +2140,7 @@ int sqlite3VdbeList(
 
   if( rc==SQLITE_OK ){
     pOp = aOp + i;
-    if( db->u1.isInterrupted ){
+    if( AtomicLoad(&db->u1.isInterrupted) ){
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));

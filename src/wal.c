@@ -259,18 +259,6 @@ int sqlite3WalTrace = 0;
 #endif
 
 /*
-** WAL mode depends on atomic aligned 32-bit loads and stores in a few
-** places.  The following macros try to make this explicit.
-*/
-#if GCC_VESRION>=5004000
-# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
-# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
-#else
-# define AtomicLoad(PTR)       (*(PTR))
-# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
-#endif
-
-/*
 ** The maximum (and only) versions of the wal and wal-index formats
 ** that may be interpreted by this version of SQLite.
 **
@@ -1140,6 +1128,11 @@ static int walIndexRecover(Wal *pWal){
   u32 aFrameCksum[2] = {0, 0};
   int iLock;                      /* Lock offset to lock for checkpoint */
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int tmout = 0;
+  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+#endif
+
   /* Obtain an exclusive lock on all byte in the locking range not already
   ** locked by the caller. The caller is guaranteed to have locked the
   ** WAL_WRITE_LOCK byte, and may have also locked the WAL_CKPT_LOCK byte.
@@ -1886,7 +1879,7 @@ static int walCheckpoint(
       while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
         i64 iOffset;
         assert( walFramePgno(pWal, iFrame)==iDbpage );
-        if( db->u1.isInterrupted ){
+        if( AtomicLoad(&db->u1.isInterrupted) ){
           rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
           break;
         }
@@ -2599,7 +2592,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     for(i=1; i<WAL_NREADER; i++){
       rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
       if( rc==SQLITE_OK ){
-        mxReadMark = AtomicStore(pInfo->aReadMark+i,mxFrame);
+        AtomicStore(pInfo->aReadMark+i,mxFrame);
+        mxReadMark = mxFrame;
         mxI = i;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
         break;
@@ -2758,6 +2752,9 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int tmout = 0;
+#endif
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
   int bChanged = 0;
@@ -2767,6 +2764,12 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   }
 #endif
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  /* Disable blocking locks. They are not useful when trying to open a
+  ** read-transaction, and blocking may cause deadlock anyway. */
+  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+#endif
+
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
@@ -2774,6 +2777,16 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   testcase( (rc&0xff)==SQLITE_IOERR );
   testcase( rc==SQLITE_PROTOCOL );
   testcase( rc==SQLITE_OK );
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  /* If they were disabled earlier and the read-transaction has been
+  ** successfully opened, re-enable blocking locks. This is because the
+  ** connection may attempt to upgrade to a write-transaction, which does
+  ** benefit from using blocking locks.  */
+  if( rc==SQLITE_OK ){
+    sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+  }
+#endif
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
   if( rc==SQLITE_OK ){
