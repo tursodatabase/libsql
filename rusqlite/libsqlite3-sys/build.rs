@@ -4,6 +4,13 @@ use std::path::Path;
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
+    if cfg!(feature = "in_gecko") {
+        // When inside mozilla-central, we are included into the build with
+        // sqlite3.o directly, so we don't want to provide any linker arguments.
+        std::fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
+            .expect("Could not copy bindings to output directory");
+        return;
+    }
     if cfg!(feature = "sqlcipher") {
         if cfg!(any(
             feature = "bundled",
