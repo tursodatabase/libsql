@@ -1,5 +1,5 @@
-C Minor\schanges\sfor\sbetter\stest\scoverage.
-D 2020-04-02T17:21:51.663
+C Fix\sa\sminor\sproblem\swith\sEXPLAIN\sQUERY\sPLAN\sfor\striggers.
+D 2020-04-02T19:58:31.722
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/vdbe.c 972999395eee88702091fb5d50cf4effd07889c371807d222a7f517388e6378e
 F src/vdbe.h 07b8c636a87df8b6e58f29d6badd7f10d5844353deff1d7c88ed1c2bfe3bbd35
 F src/vdbeInt.h 571413068b5ac07e2ed8ca7a02fa529622fd5455ae6981498376e5e492d2e5ef
 F src/vdbeapi.c d176ee7251d5344de7bb2a0d2dd0fe536834e5843d9bc2389e0f5cdcd5374141
-F src/vdbeaux.c 5ed714712eed5cba379ec6d0fd26069565d57f4970722bfd9537b10845dc8091
+F src/vdbeaux.c d191d07906d284acb458c8ba3e24a5ea0ab7610c2800f97d683d0917bda0e66d
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 949eec2530bbe7f48daddfb3022d60ea5d7a43f0f5d120e71c682054feb721db
-R f1c38c95159bd2ae4b930179bb0c81bb
+P ae3ac297d2deee2a687ae2e9cf98aaf3e1b41196363238101a19d38092aebec6
+R 5ec3a6e097b97c43d39dad4e19b96595
 U drh
-Z 7c6fe0eb276ad7b15d9155e78411c897
+Z 9687d6d8f7e5c9ecbb821bb029981be4

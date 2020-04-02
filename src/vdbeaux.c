@@ -2048,7 +2048,7 @@ int sqlite3VdbeNextOpcode(
     {
       assert( eMode==1 );
       if( aOp[i].opcode==OP_Explain ) break;
-      if( aOp[i].opcode==OP_Init && p->pc>1 ) break;
+      if( aOp[i].opcode==OP_Init && iPc>1 ) break;
     }
   }
   *piPc = iPc;
