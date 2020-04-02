@@ -1717,9 +1717,8 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
       int n = ai[0];   /* The first element of an INTARRAY is always the
                        ** count of the number of elements to follow */
       for(i=1; i<=n; i++){
-        sqlite3_str_appendf(&x, ",%d", ai[i]);
+        sqlite3_str_appendf(&x, "%c%d", (i==1 ? '[' : ','), ai[i]);
       }
-      if( !x.accError ) x.zText[0] = '[';
       sqlite3_str_append(&x, "]", 1);
       break;
     }
@@ -1740,7 +1739,7 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     }
   }
   if( zP4 ) sqlite3_str_appendall(&x, zP4);
-  if( (x.accError & SQLITE_NOMEM)!=0 && db!=0 ){
+  if( (x.accError & SQLITE_NOMEM)!=0 ){
     sqlite3OomFault(db);
   }
   return sqlite3StrAccumFinish(&x);
@@ -1834,9 +1833,11 @@ void sqlite3VdbeLeave(Vdbe *p){
 void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zP4;
   char *zCom;
+  sqlite3 dummyDb;
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-13s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
-  zP4 = sqlite3VdbeDisplayP4(0, pOp);
+  dummyDb.mallocFailed = 1;
+  zP4 = sqlite3VdbeDisplayP4(&dummyDb, pOp);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   zCom = sqlite3VdbeDisplayComment(0, pOp, zP4);
 #else
