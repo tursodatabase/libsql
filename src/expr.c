@@ -3181,6 +3181,7 @@ static void sqlite3ExprCodeIN(
   int destNotNull;      /* Jump here if a comparison is not true in step 6 */
   int addrTop;          /* Top of the step-6 loop */ 
   int iTab = 0;         /* Index to use */
+  u8 okConstFactor = pParse->okConstFactor;
 
   assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
   pLeft = pExpr->pLeft;
@@ -3225,8 +3226,14 @@ static void sqlite3ExprCodeIN(
   ** so that the fields are in the same order as an existing index.   The
   ** aiMap[] array contains a mapping from the original LHS field order to
   ** the field order that matches the RHS index.
-  */
+  **
+  ** Avoid factoring the LHS of the IN(...) expression out of the loop,
+  ** even if it is constant, as OP_Affinity may be used on the register
+  ** by code generated below.  */
+  assert( pParse->okConstFactor==okConstFactor );
+  pParse->okConstFactor = 0;
   rLhsOrig = exprCodeVector(pParse, pLeft, &iDummy);
+  pParse->okConstFactor = okConstFactor;
   for(i=0; i<nVector && aiMap[i]==i; i++){} /* Are LHS fields reordered? */
   if( i==nVector ){
     /* LHS fields are not reordered */
