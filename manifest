@@ -1,5 +1,5 @@
-C In\sthe\sevent\sof\sa\ssemantic\serror\sin\san\saggregate\squery,\searly-out\sthe\nresetAccumulator()\sfunction\sto\sprevent\sproblems\sdue\sto\sincomplete\sor\nincorrect\sinitialization\sof\sthe\sAggInfo\sobject.\nFix\sfor\sticket\s[af4556bb5c285c08].
-D 2020-04-03T13:19:03.054
+C Add\sa\stest\scase\sto\sfuzzdata8.db\sfor\sthe\srecent\sHenry\sLiu\sbugs.
+D 2020-04-03T16:11:32.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1024,7 +1024,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 00cd360c354083d69572e82e1da9f582a2ed60760baf9c04558ebadd885d390b
+F test/fuzzdata8.db 1299a262ccd07fa6318e37ae54941eae794009c92384f68ee72a7675916a9f56
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 684293882c302600e112cf52553c19d84fdb31663d96e5dd7f8ac17dda00a026
-R dbb40938a904f2e39c11078dcedb87b0
+P 4a302b42c7bf5e11ddb5522ca999f74aba397d3a7eb91b1844bb02852f772441
+R 331f374d4a1fad71dab0165ef9442a28
 U drh
-Z 1c021fc7d9ac6b5d0e31d06cd9bb3304
+Z 539f8d9e86dbe33e71b5401cc47a6add
