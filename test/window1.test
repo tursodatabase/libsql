@@ -1594,4 +1594,14 @@ do_execsql_test 48.1 {
 } {2 2 2}
 
 
+# 2020-04-03 ticket af4556bb5c285c08
+#
+reset_db
+do_catchsql_test 51.1 {
+  CREATE TABLE a(b, c);
+  SELECT c FROM a GROUP BY c
+    HAVING(SELECT(sum(b) OVER(ORDER BY b),
+                  sum(b) OVER(PARTITION BY min(DISTINCT c), c ORDER BY b)));
+} {1 {row value misused}}
+
 finish_test
