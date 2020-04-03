@@ -613,4 +613,32 @@ do_execsql_test 18.2.2 {
   SELECT sql FROM sqlite_master;
 } {{CREATE TABLE t0 (c1 INTEGER, PRIMARY KEY(c1))}}
 
+# 2020-02-23 ticket f50af3e8a565776b
+reset_db
+do_execsql_test 19.100 {
+  CREATE TABLE t1(x);
+  CREATE VIEW t2 AS SELECT 1 FROM t1, (t1 AS a0, t1);
+  ALTER TABLE t1 RENAME TO t3;
+  SELECT sql FROM sqlite_master;
+} {{CREATE TABLE "t3"(x)} {CREATE VIEW t2 AS SELECT 1 FROM "t3", ("t3" AS a0, "t3")}}
+do_execsql_test 19.110 {
+  INSERT INTO t3(x) VALUES(123);
+  SELECT * FROM t2;
+} {1}
+do_execsql_test 19.120 {
+  INSERT INTO t3(x) VALUES('xyz');
+  SELECT * FROM t2;
+} {1 1 1 1 1 1 1 1}
+
+# Ticket 4722bdab08cb14
+reset_db
+do_execsql_test 20.0 {
+  CREATE TABLE a(a);
+  CREATE VIEW b AS SELECT(SELECT *FROM c JOIN a USING(d, a, a, a) JOIN a) IN();
+}
+
+do_execsql_test 20.1 {
+  ALTER TABLE a RENAME a TO e;
+} {}
+
 finish_test
