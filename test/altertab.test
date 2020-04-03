@@ -630,4 +630,15 @@ do_execsql_test 19.120 {
   SELECT * FROM t2;
 } {1 1 1 1 1 1 1 1}
 
+# Ticket 4722bdab08cb14
+reset_db
+do_execsql_test 20.0 {
+  CREATE TABLE a(a);
+  CREATE VIEW b AS SELECT(SELECT *FROM c JOIN a USING(d, a, a, a) JOIN a) IN();
+}
+
+do_execsql_test 20.1 {
+  ALTER TABLE a RENAME a TO e;
+} {}
+
 finish_test
