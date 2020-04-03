@@ -1193,7 +1193,7 @@ static int resolveOrderByTermToExprList(
   nc.nErr = 0;
   db = pParse->db;
   savedSuppErr = db->suppressErr;
-  db->suppressErr = 1;
+  if( IN_RENAME_OBJECT==0 ) db->suppressErr = 1;
   rc = sqlite3ResolveExprNames(&nc, pE);
   db->suppressErr = savedSuppErr;
   if( rc ) return 0;
