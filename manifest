@@ -1,5 +1,5 @@
-C Do\snot\ssuppress\serrors\swhen\sresolving\sreferences\sin\san\sORDER\sBY\sclause\nbelonging\sto\sa\scompound\sSELECT\swithin\sa\sview\sor\strigger\swithin\sALTER\nTABLE.\sFix\sfor\sticket\s[a10a14e9b4ba2].\nAlso,\sin\sthe\sevent\sof\sa\ssemantic\serror\sin\san\saggregate\squery,\searly-out\sthe\nresetAccumulator()\sfunction\sto\sprevent\sproblems\sdue\sto\sincomplete\sor\nincorrect\sinitialization\sof\sthe\sAggInfo\sobject.\nFix\sfor\sticket\s[af4556bb5c285c08].
-D 2020-04-03T13:39:03.498
+C Restore\san\s#if\sblock\sinadvertently\sremoved\svia\scheck-in\s[9c77bfe41e].
+D 2020-04-03T20:14:00.223
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/shell.c.in c2e20c43a44fb5588a6c27ce60589538fbf4794fd7686f5b2598eca22eaae1f
 F src/sqlite.h.in 75d0304247a2154122d6d06f12219c1e29291d72304f0eeef4c1ec6b1409b443
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 27951f294f29cd875c6027f2707d644ef99f469bd97514568b5a8581a114db8c
-F src/sqliteInt.h 05052adff23332837dc12076958a56a60d0f8932de57c003a977eb2b391406fb
+F src/sqliteInt.h 32d0ab6d0a3e7d8e5dbc6d4d81a7fbfe3adbdc3567c7c9630585a37b6861e967
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1857,9 +1857,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 52f800fa93dd2b2d1e52fed74bff8a1c7e68699edc3fb0e74a40dc0544a3a51e
-Q +4a302b42c7bf5e11ddb5522ca999f74aba397d3a7eb91b1844bb02852f772441
-Q +684293882c302600e112cf52553c19d84fdb31663d96e5dd7f8ac17dda00a026
-R efe55999ed2b10b96cd28c5ad747aa6c
-U drh
-Z a0838a79f72190aebb0c2f9ac5413e8f
+P b64674919f6736025b2066672a5cf5cb51a28bbac4c709b85a1a6163cc0d7971
+R 0f4836cc802cf94773ebc6ca2bdc2b12
+U mistachkin
+Z 9b52e77dbe1b1e3cb12b663248b6cfcc
