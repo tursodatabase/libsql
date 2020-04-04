@@ -140,7 +140,7 @@ int sqlite3MatchEName(
 ){
   int n;
   const char *zSpan;
-  if( NEVER(pItem->eEName!=ENAME_TAB) ) return 0;
+  if( pItem->eEName!=ENAME_TAB ) return 0;
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
