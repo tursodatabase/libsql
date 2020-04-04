@@ -1005,6 +1005,25 @@ do_catchsql_test select4-17.3 {
   ORDER BY +x;
 } {1 {LIMIT clause should come after UNION not before}}
 
+# 2020-04-03 ticket 51166be0159fd2ce from Yong Heng.
+# Adverse interaction between the constant propagation and push-down
+# optimizations.
+#
+reset_db
+do_execsql_test select4-18.1 {
+  CREATE VIEW v0(v0) AS WITH v0 AS(SELECT 0 v0) SELECT(SELECT min(v0) OVER()) FROM v0 GROUP BY v0;
+  SELECT *FROM v0 v1 JOIN v0 USING(v0) WHERE datetime(v0) = (v0.v0)AND v0 = 10;
+} {}
+do_execsql_test select4-18.2 {
+  CREATE VIEW t1(aa) AS
+     WITH t2(bb) AS (SELECT 123)
+     SELECT (SELECT min(bb) OVER()) FROM t2 GROUP BY bb;
+  SELECT * FROM t1;
+} {123}
+do_execsql_test select4-18.3 {
+  SELECT * FROM t1 AS z1 JOIN t1 AS z2 USING(aa)
+   WHERE abs(z1.aa)=z2.aa AND z1.aa=123;
+} {123}
 
 
 finish_test
