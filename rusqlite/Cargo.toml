@@ -57,6 +57,7 @@ series = ["vtab"]
 extra_check = []
 modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
 unstable = []
+in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
 
 [dependencies]
 time = "0.1.0"

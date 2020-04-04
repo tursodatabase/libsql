@@ -30,6 +30,7 @@ unlock_notify = []
 preupdate_hook = []
 # 3.13.0
 session = ["preupdate_hook"]
+in_gecko = []
 
 [build-dependencies]
 bindgen = { version = "0.53", optional = true, default-features = false, features = ["runtime"] }
