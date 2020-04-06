@@ -61,7 +61,7 @@ jobs:
           RUSTFLAGS: -D warnings
         with:
           command: clippy
-          args: --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window' -- -D warnings
+          args: --all-targets --all --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window' -- -D warnings
 
   # Ensure patch is formatted.
   fmt:
