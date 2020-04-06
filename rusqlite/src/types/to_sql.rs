@@ -7,6 +7,7 @@ use std::borrow::Cow;
 /// `ToSqlOutput` represents the possible output types for implementors of the
 /// `ToSql` trait.
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum ToSqlOutput<'a> {
     /// A borrowed SQLite-representable value.
     Borrowed(ValueRef<'a>),

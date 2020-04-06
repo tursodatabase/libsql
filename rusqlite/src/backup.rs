@@ -132,6 +132,7 @@ impl Connection {
 
 /// `feature = "backup"` Possible successful results of calling `Backup::step`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StepResult {
     /// The backup is complete.
     Done,

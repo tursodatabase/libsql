@@ -10,6 +10,7 @@ use std::str;
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
+#[non_exhaustive]
 pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),

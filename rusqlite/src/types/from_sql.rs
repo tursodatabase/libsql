@@ -4,6 +4,7 @@ use std::fmt;
 
 /// Enum listing possible errors from `FromSql` trait.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum FromSqlError {
     /// Error when an SQLite value is requested, but the type of the result
     /// cannot be converted to the requested Rust type.

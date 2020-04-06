@@ -8,6 +8,7 @@ use crate::{Connection, Result};
 /// Database Connection Configuration Options
 #[repr(i32)]
 #[allow(non_snake_case, non_camel_case_types)]
+#[non_exhaustive]
 pub enum DbConfig {
     //SQLITE_DBCONFIG_MAINDBNAME = 1000, /* const char* */
     //SQLITE_DBCONFIG_LOOKASIDE = 1001,  /* void* int int */

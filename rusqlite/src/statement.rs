@@ -822,6 +822,7 @@ impl Statement<'_> {
 /// may not be available.
 #[repr(i32)]
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StatementStatus {
     /// Equivalent to SQLITE_STMTSTATUS_FULLSCAN_STEP
     FullscanStep = 1,

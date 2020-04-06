@@ -638,6 +638,7 @@ impl Connection {
 /// `feature = "session"` Constants passed to the conflict handler
 #[repr(i32)]
 #[derive(Debug, PartialEq)]
+#[non_exhaustive]
 pub enum ConflictType {
     UNKNOWN = -1,
     SQLITE_CHANGESET_DATA = ffi::SQLITE_CHANGESET_DATA,
@@ -662,6 +663,7 @@ impl From<i32> for ConflictType {
 /// `feature = "session"` Constants returned by the conflict handler
 #[repr(i32)]
 #[derive(Debug, PartialEq)]
+#[non_exhaustive]
 pub enum ConflictAction {
     SQLITE_CHANGESET_OMIT = ffi::SQLITE_CHANGESET_OMIT,
     SQLITE_CHANGESET_REPLACE = ffi::SQLITE_CHANGESET_REPLACE,

@@ -4,6 +4,7 @@ use std::ops::Deref;
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
 #[derive(Copy, Clone)]
+#[non_exhaustive]
 pub enum TransactionBehavior {
     Deferred,
     Immediate,
@@ -12,6 +13,7 @@ pub enum TransactionBehavior {
 
 /// Options for how a Transaction or Savepoint should behave when it is dropped.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DropBehavior {
     /// Roll back the changes. This is the default.
     Rollback,

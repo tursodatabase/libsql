@@ -12,6 +12,7 @@ use crate::{Connection, InnerConnection};
 /// `feature = "hooks"` Action Codes
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(i32)]
+#[non_exhaustive]
 pub enum Action {
     UNKNOWN = -1,
     SQLITE_DELETE = ffi::SQLITE_DELETE,

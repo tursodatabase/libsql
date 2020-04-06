@@ -4,6 +4,7 @@ use std::os::raw::c_int;
 
 /// Error Codes
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum ErrorCode {
     /// Internal logic error in SQLite
     InternalMalfunction,
