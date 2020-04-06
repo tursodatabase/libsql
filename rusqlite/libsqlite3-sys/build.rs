@@ -78,7 +78,8 @@ mod build_bundled {
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
-            .flag("-DHAVE_USLEEP=1");
+            .flag("-DHAVE_USLEEP=1")
+            .warnings(false);
         // Older versions of visual studio don't support c99 (including isnan), which
         // causes a build failure when the linker fails to find the `isnan`
         // function. `sqlite` provides its own implmentation, using the fact

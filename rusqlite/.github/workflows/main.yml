@@ -19,7 +19,7 @@ jobs:
         platform:
 #          - { target: x86_64-pc-windows-gnu, os: windows-latest }
           - { target: x86_64-pc-windows-msvc, os: windows-latest }
-#          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
 
     runs-on: ${{ matrix.platform.os }}
 
@@ -35,9 +35,66 @@ jobs:
       - run: cargo build --features bundled --workspace --all-targets
       - run: cargo test --features bundled --workspace --all-targets
       - run: cargo test --features bundled --workspace --doc
+      # We can't use --all-features.
+      - run: cargo test --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window'
       - name: Static build
         if: matrix.platform.os == 'windows-latest'
         shell: cmd
         run: |
           set RUSTFLAGS=-Ctarget-feature=+crt-static
           cargo build --features bundled
+
+  # Ensure clippy doesn't complain.
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -D warnings
+        with:
+          command: clippy
+          args: --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window' -- -D warnings
+
+  # Ensure patch is formatted.
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  # Detect cases where documentation links don't resolve and such.
+  doc:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -D warnings
+        with:
+          command: doc
+          args: --no-deps --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window'
