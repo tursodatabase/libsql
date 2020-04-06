@@ -1794,9 +1794,14 @@ void sqlite3ExprListSetName(
     assert( pItem->zEName==0 );
     assert( pItem->eEName==ENAME_NAME );
     pItem->zEName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
-    if( dequote ) sqlite3Dequote(pItem->zEName);
-    if( IN_RENAME_OBJECT ){
-      sqlite3RenameTokenMap(pParse, (void*)pItem->zEName, pName);
+    if( dequote ){
+      /* If dequote==0, then pName->z does not point to part of a DDL
+      ** statement handled by the parser. And so no token need be added
+      ** to the token-map.  */
+      sqlite3Dequote(pItem->zEName);
+      if( IN_RENAME_OBJECT ){
+        sqlite3RenameTokenMap(pParse, (void*)pItem->zEName, pName);
+      }
     }
   }
 }
