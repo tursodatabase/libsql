@@ -1831,11 +1831,41 @@ int sqlite3ResolveExprListNames(
   ExprList *pList         /* The expression list to be analyzed. */
 ){
   int i;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-      if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
+  int savedHasAgg = 0;
+  Walker w;
+  if( pList==0 ) return WRC_Continue;
+  w.pParse = pNC->pParse;
+  w.xExprCallback = resolveExprStep;
+  w.xSelectCallback = resolveSelectStep;
+  w.xSelectCallback2 = 0;
+  w.u.pNC = pNC;
+  savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+  pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+  for(i=0; i<pList->nExpr; i++){
+    Expr *pExpr = pList->a[i].pExpr;
+    if( pExpr==0 ) continue;
+#if SQLITE_MAX_EXPR_DEPTH>0
+    w.pParse->nHeight += pExpr->nHeight;
+    if( sqlite3ExprCheckHeight(w.pParse, w.pParse->nHeight) ){
+      return WRC_Abort;
     }
+#endif
+    sqlite3WalkExpr(&w, pExpr);
+#if SQLITE_MAX_EXPR_DEPTH>0
+    w.pParse->nHeight -= pExpr->nHeight;
+#endif
+    assert( EP_Agg==NC_HasAgg );
+    assert( EP_Win==NC_HasWin );
+    testcase( pNC->ncFlags & NC_HasAgg );
+    testcase( pNC->ncFlags & NC_HasWin );
+    if( pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin) ){
+      ExprSetProperty(pExpr, pNC->ncFlags & (NC_HasAgg|NC_HasWin) );
+      savedHasAgg |= pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+      pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+    }
+    if( pNC->nErr>0 || w.pParse->nErr>0 ) return WRC_Abort;
   }
+  pNC->ncFlags |= savedHasAgg;
   return WRC_Continue;
 }
 
