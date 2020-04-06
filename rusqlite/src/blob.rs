@@ -1,4 +1,4 @@
-//! Incremental BLOB I/O.
+//! `feature = "blob"` Incremental BLOB I/O.
 //!
 //! Note that SQLite does not provide API-level access to change the size of a
 //! BLOB; that must be performed through SQL statements.
@@ -60,7 +60,7 @@ use super::ffi;
 use super::types::{ToSql, ToSqlOutput};
 use crate::{Connection, DatabaseName, Result};
 
-/// Handle to an open BLOB.
+/// `feature = "blob"` Handle to an open BLOB.
 pub struct Blob<'conn> {
     conn: &'conn Connection,
     blob: *mut ffi::sqlite3_blob,
@@ -68,8 +68,8 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// Open a handle to the BLOB located in `row_id`, `column`, `table` in
-    /// database `db`.
+    /// `feature = "blob"` Open a handle to the BLOB located in `row_id`, `column`,
+    /// `table` in database `db`.
     ///
     /// # Failure
     ///
@@ -238,7 +238,7 @@ impl Drop for Blob<'_> {
     }
 }
 
-/// BLOB of length N that is filled with zeroes.
+/// `feature = "blob"` BLOB of length N that is filled with zeroes.
 ///
 /// Zeroblobs are intended to serve as placeholders for BLOBs whose content is
 /// later written using incremental BLOB I/O routines.

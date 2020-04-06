@@ -1,6 +1,7 @@
 use crate::{Connection, Result};
 
-/// RAII guard temporarily enabling SQLite extensions to be loaded.
+/// `feature = "load_extension"` RAII guard temporarily enabling SQLite
+/// extensions to be loaded.
 ///
 /// ## Example
 ///

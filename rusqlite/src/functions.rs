@@ -1,4 +1,4 @@
-//! Create or redefine SQL functions.
+//! `feature = "functions"` Create or redefine SQL functions.
 //!
 //! # Example
 //!
@@ -115,7 +115,8 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     drop(Box::from_raw(p as *mut T));
 }
 
-/// Context is a wrapper for the SQLite function evaluation context.
+/// `feature = "functions"` Context is a wrapper for the SQLite function
+/// evaluation context.
 pub struct Context<'a> {
     ctx: *mut sqlite3_context,
     args: &'a [*mut sqlite3_value],
@@ -205,7 +206,8 @@ impl Context<'_> {
     }
 }
 
-/// Aggregate is the callback interface for user-defined aggregate function.
+/// `feature = "functions"` Aggregate is the callback interface for user-defined
+/// aggregate function.
 ///
 /// `A` is the type of the aggregation context and `T` is the type of the final
 /// result. Implementations should be stateless.
@@ -231,8 +233,8 @@ where
     fn finalize(&self, _: Option<A>) -> Result<T>;
 }
 
-/// WindowAggregate is the callback interface for user-defined aggregate window
-/// function.
+/// `feature = "window"` WindowAggregate is the callback interface for
+/// user-defined aggregate window function.
 #[cfg(feature = "window")]
 pub trait WindowAggregate<A, T>: Aggregate<A, T>
 where
@@ -270,7 +272,8 @@ impl Default for FunctionFlags {
 }
 
 impl Connection {
-    /// Attach a user-defined scalar function to this database connection.
+    /// `feature = "functions"` Attach a user-defined scalar function to
+    /// this database connection.
     ///
     /// `fn_name` is the name the function will be accessible from SQL.
     /// `n_arg` is the number of arguments to the function. Use `-1` for a
@@ -321,7 +324,8 @@ impl Connection {
             .create_scalar_function(fn_name, n_arg, flags, x_func)
     }
 
-    /// Attach a user-defined aggregate function to this database connection.
+    /// `feature = "functions"` Attach a user-defined aggregate function to this
+    /// database connection.
     ///
     /// # Failure
     ///
@@ -343,6 +347,11 @@ impl Connection {
             .create_aggregate_function(fn_name, n_arg, flags, aggr)
     }
 
+    /// `feature = "window"` Attach a user-defined aggregate window function to
+    /// this database connection.
+    ///
+    /// See https://sqlite.org/windowfunctions.html#udfwinfunc for more
+    /// information.
     #[cfg(feature = "window")]
     pub fn create_window_function<A, W, T>(
         &self,
@@ -361,7 +370,8 @@ impl Connection {
             .create_window_function(fn_name, n_arg, flags, aggr)
     }
 
-    /// Removes a user-defined function from this database connection.
+    /// `feature = "functions"` Removes a user-defined function from this
+    /// database connection.
     ///
     /// `fn_name` and `n_arg` should match the name and number of arguments
     /// given to `create_scalar_function` or `create_aggregate_function`.

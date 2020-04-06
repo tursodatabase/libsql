@@ -1,6 +1,30 @@
-//! Array Virtual Table.
+//! `feature = "array"` Array Virtual Table: https://www.sqlite.org/carray.html
+//!
+//! Note: `rarray`, not `carray` is the name of the table valued function we
+//! define.
 //!
 //! Port of [carray](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/carray.c) C extension.
+//!
+//! # Example
+//!
+//! ```rust,no_run
+//! # use rusqlite::{types::Value, Connection, Result, params};
+//! # use std::rc::Rc;
+//! fn example(db: &Connection) -> Result<()> {
+//!     // Note: This should be done once (usually when opening the DB).
+//!     rusqlite::vtab::array::load_module(&db)?;
+//!     let v = [1i64, 2, 3, 4];
+//!     // Note: A `Rc<Vec<Value>>` must be used as the parameter.
+//!     let values = Rc::new(v.iter().copied().map(Value::from).collect::<Vec<Value>>());
+//!     let mut stmt = db.prepare("SELECT value from rarray(?);")?;
+//!     let rows = stmt.query_map(params![values], |row| row.get::<_, i64>(0))?;
+//!     for value in rows {
+//!         println!("{}", value?);
+//!     }
+//!     Ok(())
+//! }
+//! ```
+
 use std::default::Default;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
@@ -29,7 +53,7 @@ impl ToSql for Array {
     }
 }
 
-/// Register the "rarray" module.
+/// `feature = "array"` Register the "rarray" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
     conn.create_module("rarray", &ARRAY_MODULE, aux)

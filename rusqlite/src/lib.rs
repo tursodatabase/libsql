@@ -653,8 +653,8 @@ impl Connection {
         r.map_err(move |err| (self, err))
     }
 
-    /// Enable loading of SQLite extensions. Strongly consider using
-    /// `LoadExtensionGuard` instead of this function.
+    /// `feature = "load_extension"` Enable loading of SQLite extensions.
+    /// Strongly consider using `LoadExtensionGuard` instead of this function.
     ///
     /// ## Example
     ///
@@ -676,7 +676,7 @@ impl Connection {
         self.db.borrow_mut().enable_load_extension(1)
     }
 
-    /// Disable loading of SQLite extensions.
+    /// `feature = "load_extension"` Disable loading of SQLite extensions.
     ///
     /// See `load_extension_enable` for an example.
     ///
@@ -688,9 +688,9 @@ impl Connection {
         self.db.borrow_mut().enable_load_extension(0)
     }
 
-    /// Load the SQLite extension at `dylib_path`. `dylib_path` is passed
-    /// through to `sqlite3_load_extension`, which may attempt OS-specific
-    /// modifications if the file cannot be loaded directly.
+    /// `feature = "load_extension"` Load the SQLite extension at `dylib_path`.
+    /// `dylib_path` is passed through to `sqlite3_load_extension`, which may
+    /// attempt OS-specific modifications if the file cannot be loaded directly.
     ///
     /// If `entry_point` is `None`, SQLite will attempt to find the entry
     /// point. If it is not `None`, the entry point will be passed through

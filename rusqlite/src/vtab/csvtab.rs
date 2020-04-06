@@ -1,6 +1,25 @@
-//! CSV Virtual Table.
+//! `feature = "csvtab"` CSV Virtual Table: https://www.sqlite.org/csv.html
 //!
 //! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C extension.
+//!
+//! # Example
+//!
+//! ```rust,no_run
+//! # use rusqlite::{Connection, Result};
+//! fn example() -> Result<()> {
+//!     // Note: This should be done once (usually when opening the DB).
+//!     let db = Connection::open_in_memory()?;
+//!     rusqlite::vtab::csvtab::load_module(&db)?;
+//!     // Assum3e my_csv.csv
+//!     let schema = "
+//!         CREATE VIRTUAL TABLE my_csv_data
+//!         USING csv(filename = 'my_csv.csv')
+//!     ";
+//!     db.execute_batch(schema)?;
+//!     // Now the `my_csv_data` (virtual) table can be queried as normal...
+//!     Ok(())
+//! }
+//! ```
 use std::fs::File;
 use std::os::raw::c_int;
 use std::path::Path;
@@ -15,7 +34,7 @@ use crate::vtab::{
 };
 use crate::{Connection, Error, Result};
 
-/// Register the "csv" module.
+/// `feature = "csvtab"` Register the "csv" module.
 /// ```sql
 /// CREATE VIRTUAL TABLE vtab USING csv(
 ///   filename=FILENAME -- Name of file containing CSV content

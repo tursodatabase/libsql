@@ -1,4 +1,4 @@
-//! Create virtual tables.
+//! `feature = "vtab"` Create virtual tables.
 //!
 //! Follow these steps to create your own virtual table:
 //! 1. Write implemenation of `VTab` and `VTabCursor` traits.
@@ -57,7 +57,7 @@ use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 // ffi::sqlite3_vtab => VTab
 // ffi::sqlite3_vtab_cursor => VTabCursor
 
-/// Virtual table module
+/// `feature = "vtab"` Virtual table module
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/module.html))
 #[repr(C)]
@@ -77,7 +77,7 @@ fn zeroed_module() -> ffi::sqlite3_module {
     unsafe { std::mem::MaybeUninit::zeroed().assume_init() }
 }
 
-/// Create a read-only virtual table implementation.
+/// `feature = "vtab"` Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
 pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
@@ -115,7 +115,7 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
     }
 }
 
-/// Create an eponymous only virtual table implementation.
+/// `feature = "vtab"` Create an eponymous only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
 pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
@@ -154,6 +154,7 @@ pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
     }
 }
 
+/// `feature = "vtab"`
 pub struct VTabConnection(*mut ffi::sqlite3);
 
 impl VTabConnection {
@@ -179,7 +180,7 @@ impl VTabConnection {
     }
 }
 
-/// Virtual table instance trait.
+/// `feature = "vtab"` Virtual table instance trait.
 ///
 /// Implementations must be like:
 /// ```rust,ignore
@@ -214,7 +215,7 @@ pub trait VTab: Sized {
     fn open(&self) -> Result<Self::Cursor>;
 }
 
-/// Non-eponymous virtual table instance trait.
+/// `feature = "vtab"` Non-eponymous virtual table instance trait.
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
 pub trait CreateVTab: VTab {
@@ -243,7 +244,7 @@ pub trait CreateVTab: VTab {
     }
 }
 
-///Index constraint operator.
+/// `feature = "vtab"` Index constraint operator.
 #[derive(Debug, PartialEq)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub enum IndexConstraintOp {
@@ -286,8 +287,8 @@ impl From<u8> for IndexConstraintOp {
     }
 }
 
-/// Pass information into and receive the reply from the `VTab.best_index`
-/// method.
+/// `feature = "vtab"` Pass information into and receive the reply from the
+/// `VTab.best_index` method.
 ///
 /// (See [SQLite doc](http://sqlite.org/c3ref/index_info.html))
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
@@ -358,6 +359,7 @@ impl IndexInfo {
     // TODO sqlite3_vtab_collation (http://sqlite.org/c3ref/vtab_collation.html)
 }
 
+/// `feature = "vtab"`
 pub struct IndexConstraintIter<'a> {
     iter: slice::Iter<'a, ffi::sqlite3_index_constraint>,
 }
@@ -374,7 +376,7 @@ impl<'a> Iterator for IndexConstraintIter<'a> {
     }
 }
 
-/// WHERE clause constraint
+/// `feature = "vtab"` WHERE clause constraint.
 pub struct IndexConstraint<'a>(&'a ffi::sqlite3_index_constraint);
 
 impl IndexConstraint<'_> {
@@ -394,7 +396,7 @@ impl IndexConstraint<'_> {
     }
 }
 
-/// Information about what parameters to pass to `VTabCursor.filter`.
+/// `feature = "vtab"` Information about what parameters to pass to `VTabCursor.filter`.
 pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
 impl IndexConstraintUsage<'_> {
@@ -409,6 +411,7 @@ impl IndexConstraintUsage<'_> {
     }
 }
 
+/// `feature = "vtab"`
 pub struct OrderByIter<'a> {
     iter: slice::Iter<'a, ffi::sqlite3_index_info_sqlite3_index_orderby>,
 }
@@ -425,7 +428,7 @@ impl<'a> Iterator for OrderByIter<'a> {
     }
 }
 
-/// A column of the ORDER BY clause.
+/// `feature = "vtab"` A column of the ORDER BY clause.
 pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
 
 impl OrderBy<'_> {
@@ -440,7 +443,7 @@ impl OrderBy<'_> {
     }
 }
 
-/// Virtual table cursor trait.
+/// `feature = "vtab"` Virtual table cursor trait.
 ///
 /// Implementations must be like:
 /// ```rust,ignore
@@ -474,7 +477,7 @@ pub trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-/// Context is used by `VTabCursor.column` to specify the cell value.
+/// `feature = "vtab"` Context is used by `VTabCursor.column` to specify the cell value.
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
@@ -487,8 +490,8 @@ impl Context {
     // TODO sqlite3_vtab_nochange (http://sqlite.org/c3ref/vtab_nochange.html)
 }
 
-/// Wrapper to `VTabCursor.filter` arguments, the values requested by
-/// `VTab.best_index`.
+/// `feature = "vtab"` Wrapper to `VTabCursor.filter` arguments, the values
+/// requested by `VTab.best_index`.
 pub struct Values<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
@@ -576,7 +579,7 @@ impl<'a> Iterator for ValueIter<'a> {
 }
 
 impl Connection {
-    /// Register a virtual table implementation.
+    /// `feature = "vtab"` Register a virtual table implementation.
     ///
     /// Step 3 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
     pub fn create_module<T: VTab>(
@@ -624,7 +627,8 @@ impl InnerConnection {
     }
 }
 
-/// Escape double-quote (`"`) character occurences by doubling them (`""`).
+/// `feature = "vtab"` Escape double-quote (`"`) character occurences by
+/// doubling them (`""`).
 pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {
         // escape quote by doubling them
@@ -633,7 +637,7 @@ pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
         Borrowed(identifier)
     }
 }
-/// Dequote string
+/// `feature = "vtab"` Dequote string
 pub fn dequote(s: &str) -> &str {
     if s.len() < 2 {
         return s;
@@ -646,7 +650,7 @@ pub fn dequote(s: &str) -> &str {
         _ => s,
     }
 }
-/// The boolean can be one of:
+/// `feature = "vtab"` The boolean can be one of:
 /// ```text
 /// 1 yes true on
 /// 0 no false off

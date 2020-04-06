@@ -1,4 +1,4 @@
-//! Commit, Data Change and Rollback Notification Callbacks
+//! `feature = "hooks"` Commit, Data Change and Rollback Notification Callbacks
 #![allow(non_camel_case_types)]
 
 use std::os::raw::{c_char, c_int, c_void};
@@ -9,7 +9,7 @@ use crate::ffi;
 
 use crate::{Connection, InnerConnection};
 
-/// Action Codes
+/// `feature = "hooks"` Action Codes
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(i32)]
 pub enum Action {
@@ -31,8 +31,8 @@ impl From<i32> for Action {
 }
 
 impl Connection {
-    /// Register a callback function to be invoked whenever a transaction is
-    /// committed.
+    /// `feature = "hooks"` Register a callback function to be invoked whenever
+    /// a transaction is committed.
     ///
     /// The callback returns `true` to rollback.
     pub fn commit_hook<F>(&self, hook: Option<F>)
@@ -42,8 +42,8 @@ impl Connection {
         self.db.borrow_mut().commit_hook(hook);
     }
 
-    /// Register a callback function to be invoked whenever a transaction is
-    /// committed.
+    /// `feature = "hooks"` Register a callback function to be invoked whenever
+    /// a transaction is committed.
     ///
     /// The callback returns `true` to rollback.
     pub fn rollback_hook<F>(&self, hook: Option<F>)
@@ -53,8 +53,8 @@ impl Connection {
         self.db.borrow_mut().rollback_hook(hook);
     }
 
-    /// Register a callback function to be invoked whenever a row is updated,
-    /// inserted or deleted in a rowid table.
+    /// `feature = "hooks"` Register a callback function to be invoked whenever
+    /// a row is updated, inserted or deleted in a rowid table.
     ///
     /// The callback parameters are:
     ///

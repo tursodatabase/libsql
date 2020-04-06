@@ -1,4 +1,4 @@
-//! Tracing and profiling functions. Error and warning log.
+//! `feature = "trace"` Tracing and profiling functions. Error and warning log.
 
 use std::ffi::{CStr, CString};
 use std::mem;
@@ -11,7 +11,7 @@ use super::ffi;
 use crate::error::error_from_sqlite_code;
 use crate::{Connection, Result};
 
-/// Set up the process-wide SQLite error logging callback.
+/// `feature = "trace"` Set up the process-wide SQLite error logging callback.
 ///
 /// # Safety
 ///
@@ -56,7 +56,8 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     }
 }
 
-/// Write a message into the error log established by `config_log`.
+/// `feature = "trace"` Write a message into the error log established by
+/// `config_log`.
 pub fn log(err_code: c_int, msg: &str) {
     let msg = CString::new(msg).expect("SQLite log messages cannot contain embedded zeroes");
     unsafe {
@@ -65,8 +66,8 @@ pub fn log(err_code: c_int, msg: &str) {
 }
 
 impl Connection {
-    /// Register or clear a callback function that can be used for tracing the
-    /// execution of SQL statements.
+    /// `feature = "trace"` Register or clear a callback function that can be
+    /// used for tracing the execution of SQL statements.
     ///
     /// Prepared statement placeholders are replaced/logged with their assigned
     /// values. There can only be a single tracer defined for each database
@@ -90,8 +91,8 @@ impl Connection {
         }
     }
 
-    /// Register or clear a callback function that can be used for profiling
-    /// the execution of SQL statements.
+    /// `feature = "trace"` Register or clear a callback function that can be
+    /// used for profiling the execution of SQL statements.
     ///
     /// There can only be a single profiler defined for each database
     /// connection. Setting a new profiler clears the old one.

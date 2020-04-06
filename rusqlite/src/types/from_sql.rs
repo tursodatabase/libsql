@@ -13,13 +13,14 @@ pub enum FromSqlError {
     /// requested type.
     OutOfRange(i64),
 
-    /// Error returned when reading an `i128` from a blob with a size
-    /// other than 16. Only available when the `i128_blob` feature is enabled.
+    /// `feature = "i128_blob"` Error returned when reading an `i128` from a
+    /// blob with a size other than 16. Only available when the `i128_blob`
+    /// feature is enabled.
     #[cfg(feature = "i128_blob")]
     InvalidI128Size(usize),
 
-    /// Error returned when reading a `uuid` from a blob with a size
-    /// other than 16. Only available when the `uuid` feature is enabled.
+    /// `feature = "uuid"` Error returned when reading a `uuid` from a blob with
+    /// a size other than 16. Only available when the `uuid` feature is enabled.
     #[cfg(feature = "uuid")]
     InvalidUuidSize(usize),
 

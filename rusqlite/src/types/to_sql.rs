@@ -14,10 +14,12 @@ pub enum ToSqlOutput<'a> {
     /// An owned SQLite-representable value.
     Owned(Value),
 
-    /// A BLOB of the given length that is filled with zeroes.
+    /// `feature = "blob"` A BLOB of the given length that is filled with
+    /// zeroes.
     #[cfg(feature = "blob")]
     ZeroBlob(i32),
 
+    /// `feature = "array"`
     #[cfg(feature = "array")]
     Array(Array),
 }
