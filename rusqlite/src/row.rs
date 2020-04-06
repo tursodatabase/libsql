@@ -41,6 +41,25 @@ impl<'stmt> Rows<'stmt> {
     {
         Map { rows: self, f }
     }
+
+    /// Map over this `Rows`, converting it to a [`MappedRows`], which
+    /// implements `Iterator`.
+    pub fn mapped<F, B>(self, f: F) -> MappedRows<'stmt, F>
+    where
+        F: FnMut(&Row<'_>) -> Result<B>,
+    {
+        MappedRows { rows: self, map: f }
+    }
+
+    /// Map over this `Rows` with a fallible function, converting it to a
+    /// [`AndThenRows`], which implements `Iterator` (instead of
+    /// `FallibleStreamingIterator`).
+    pub fn and_then<F, T, E>(self, f: F) -> AndThenRows<'stmt, F>
+    where
+        F: FnMut(&Row<'_>) -> result::Result<T, E>,
+    {
+        AndThenRows { rows: self, map: f }
+    }
 }
 
 impl<'stmt> Rows<'stmt> {
