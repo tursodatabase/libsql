@@ -3,7 +3,7 @@ use std::os::raw::{c_int, c_void};
 #[cfg(feature = "array")]
 use std::rc::Rc;
 use std::slice::from_raw_parts;
-use std::{convert, fmt, mem, ptr, result, str};
+use std::{convert, fmt, mem, ptr, str};
 
 use super::ffi;
 use super::{len_as_c_int, str_for_sqlite, str_to_cstring};
@@ -284,7 +284,7 @@ impl Statement<'_> {
         P: IntoIterator,
         P::Item: ToSql,
         E: convert::From<Error>,
-        F: FnMut(&Row<'_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         let rows = self.query(params)?;
         Ok(AndThenRows::new(rows, f))
@@ -335,7 +335,7 @@ impl Statement<'_> {
     ) -> Result<AndThenRows<'_, F>>
     where
         E: convert::From<Error>,
-        F: FnMut(&Row<'_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         let rows = self.query_named(params)?;
         Ok(AndThenRows::new(rows, f))

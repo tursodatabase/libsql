@@ -204,7 +204,7 @@ macro_rules! named_params {
 }
 
 /// A typedef of the result returned by many methods.
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T, E = Error> = result::Result<T, E>;
 
 /// See the [method documentation](#tymethod.optional).
 pub trait OptionalExtension<T> {
@@ -602,11 +602,11 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn query_row_and_then<T, E, P, F>(&self, sql: &str, params: P, f: F) -> result::Result<T, E>
+    pub fn query_row_and_then<T, E, P, F>(&self, sql: &str, params: P, f: F) -> Result<T, E>
     where
         P: IntoIterator,
         P::Item: ToSql,
-        F: FnOnce(&Row<'_>) -> result::Result<T, E>,
+        F: FnOnce(&Row<'_>) -> Result<T, E>,
         E: convert::From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
@@ -647,7 +647,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn close(self) -> std::result::Result<(), (Connection, Error)> {
+    pub fn close(self) -> Result<(), (Connection, Error)> {
         self.flush_prepared_statement_cache();
         let r = self.db.borrow_mut().close();
         r.map_err(move |err| (self, err))
@@ -1492,7 +1492,7 @@ mod test {
         }
 
         impl fmt::Display for CustomError {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> ::std::result::Result<(), fmt::Error> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
                 match *self {
                     CustomError::SomeError => write!(f, "my custom error"),
                     CustomError::Sqlite(ref se) => write!(f, "my custom error: {}", se),
@@ -1519,7 +1519,7 @@ mod test {
             }
         }
 
-        type CustomResult<T> = ::std::result::Result<T, CustomError>;
+        type CustomResult<T> = Result<T, CustomError>;
 
         #[test]
         fn test_query_and_then() {

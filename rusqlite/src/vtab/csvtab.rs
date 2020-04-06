@@ -24,7 +24,6 @@
 use std::fs::File;
 use std::os::raw::c_int;
 use std::path::Path;
-use std::result;
 use std::str;
 
 use crate::ffi;
@@ -70,7 +69,7 @@ struct CSVTab {
 }
 
 impl CSVTab {
-    fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
+    fn reader(&self) -> Result<csv::Reader<File>, csv::Error> {
         csv::ReaderBuilder::new()
             .has_headers(self.has_headers)
             .delimiter(self.delimiter)

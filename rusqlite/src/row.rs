@@ -1,6 +1,6 @@
 use fallible_iterator::FallibleIterator;
 use fallible_streaming_iterator::FallibleStreamingIterator;
-use std::{convert, result};
+use std::convert;
 
 use super::{Error, Result, Statement};
 use crate::types::{FromSql, FromSqlError, ValueRef};
@@ -56,7 +56,7 @@ impl<'stmt> Rows<'stmt> {
     /// `FallibleStreamingIterator`).
     pub fn and_then<F, T, E>(self, f: F) -> AndThenRows<'stmt, F>
     where
-        F: FnMut(&Row<'_>) -> result::Result<T, E>,
+        F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         AndThenRows { rows: self, map: f }
     }
@@ -143,7 +143,7 @@ pub struct AndThenRows<'stmt, F> {
 
 impl<'stmt, T, E, F> AndThenRows<'stmt, F>
 where
-    F: FnMut(&Row<'_>) -> result::Result<T, E>,
+    F: FnMut(&Row<'_>) -> Result<T, E>,
 {
     pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
         AndThenRows { rows, map: f }
@@ -153,9 +153,9 @@ where
 impl<T, E, F> Iterator for AndThenRows<'_, F>
 where
     E: convert::From<Error>,
-    F: FnMut(&Row<'_>) -> result::Result<T, E>,
+    F: FnMut(&Row<'_>) -> Result<T, E>,
 {
-    type Item = result::Result<T, E>;
+    type Item = Result<T, E>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let map = &mut self.map;
