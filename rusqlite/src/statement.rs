@@ -412,7 +412,20 @@ impl Statement<'_> {
         self.finalize_()
     }
 
-    /// Return the index of an SQL parameter given its name.
+    /// Return the (one-based) index of an SQL parameter given its name.
+    ///
+    /// Note that the initial ":" or "$" or "@" or "?" used to specify the
+    /// parameter is included as part of the name.
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn example(conn: &Connection) -> Result<()> {
+    ///     let stmt = conn.prepare("SELECT * FROM test WHERE name = :example")?;
+    ///     let index = stmt.parameter_index(":example")?;
+    ///     assert_eq!(index, Some(1));
+    ///     Ok(())
+    /// }
+    /// ```
     ///
     /// # Failure
     ///
@@ -455,6 +468,93 @@ impl Statement<'_> {
             }
         }
         Ok(())
+    }
+
+    /// Return the number of parameters that can be bound to this statement.
+    pub fn parameter_count(&self) -> usize {
+        self.stmt.bind_parameter_count()
+    }
+
+    /// Low level API to directly bind a parameter to a given index.
+    ///
+    /// Note that the index is one-based, that is, the first parameter index is
+    /// 1 and not 0. This is consistent with the SQLite API and the values given
+    /// to parameters bound as `?NNN`.
+    ///
+    /// The valid values for `one_based_col_index` begin at `1`, and end at
+    /// [`Statement::parameter_count`], inclusive.
+    ///
+    /// # Caveats
+    ///
+    /// This should not generally be used, but is available for special cases
+    /// such as:
+    ///
+    /// - binding parameters where a gap exists.
+    /// - binding named and positional parameters in the same query.
+    /// - separating parameter binding from query execution.
+    ///
+    /// Statements that have had their parameters bound this way should be
+    /// queried or executed by [`Statement::raw_query`] or
+    /// [`Statement::raw_execute`]. Other functions are not guaranteed to work.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn query(conn: &Connection) -> Result<()> {
+    ///     let mut stmt = conn.prepare("SELECT * FROM test WHERE name = :name AND value > ?2")?;
+    ///     let name_index = stmt.parameter_index(":name")?.expect("No such parameter");
+    ///     stmt.raw_bind_parameter(name_index, "foo")?;
+    ///     stmt.raw_bind_parameter(2, 100)?;
+    ///     let mut rows = stmt.raw_query();
+    ///     while let Some(row) = rows.next()? {
+    ///         // ...
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    pub fn raw_bind_parameter<T: ToSql>(
+        &mut self,
+        one_based_col_index: usize,
+        param: T,
+    ) -> Result<()> {
+        // This is the same as `bind_parameter` but slightly more ergonomic and
+        // correctly takes `&mut self`.
+        self.bind_parameter(&param, one_based_col_index)
+    }
+
+    /// Low level API to execute a statement given that all parameters were
+    /// bound explicitly with the [`Statement::raw_bind_parameter`] API.
+    ///
+    /// # Caveats
+    ///
+    /// Any unbound parameters will have `NULL` as their value.
+    ///
+    /// This should not generally be used outside of special cases, and
+    /// functions in the [`Statement::execute`] family should be preferred.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the executed statement returns rows (in which case
+    /// `query` should be used instead), or the underlying SQLite call fails.
+    pub fn raw_execute(&mut self) -> Result<usize> {
+        self.execute_with_bound_parameters()
+    }
+
+    /// Low level API to get `Rows` for this query given that all parameters
+    /// were bound explicitly with the [`Statement::raw_bind_parameter`] API.
+    ///
+    /// # Caveats
+    ///
+    /// Any unbound parameters will have `NULL` as their value.
+    ///
+    /// This should not generally be used outside of special cases, and
+    /// functions in the [`Statement::query`] family should be preferred.
+    ///
+    /// Note that if the SQL does not return results, [`Statement::raw_execute`]
+    /// should be used instead.
+    pub fn raw_query(&mut self) -> Rows<'_> {
+        Rows::new(self)
     }
 
     fn bind_parameter(&self, param: &dyn ToSql, col: usize) -> Result<()> {
@@ -888,6 +988,37 @@ mod test {
             })
             .unwrap();
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_raw_binding() -> Result<()> {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE test (name TEXT, value INTEGER)")?;
+        {
+            let mut stmt = db.prepare("INSERT INTO test (name, value) VALUES (:name, ?3)")?;
+
+            let name_idx = stmt.parameter_index(":name")?.unwrap();
+            stmt.raw_bind_parameter(name_idx, "example")?;
+            stmt.raw_bind_parameter(3, 50i32)?;
+            let n = stmt.raw_execute()?;
+            assert_eq!(n, 1);
+        }
+
+        {
+            let mut stmt = db.prepare("SELECT name, value FROM test WHERE value = ?2")?;
+            stmt.raw_bind_parameter(2, 50)?;
+            let mut rows = stmt.raw_query();
+            {
+                let row = rows.next()?.unwrap();
+                let name: String = row.get(0)?;
+                assert_eq!(name, "example");
+                let value: i32 = row.get(1)?;
+                assert_eq!(value, 50);
+            }
+            assert!(rows.next()?.is_none());
+        }
+
+        Ok(())
     }
 
     #[test]
