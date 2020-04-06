@@ -1,9 +1,10 @@
-//! `feature = "array"` Array Virtual Table: https://www.sqlite.org/carray.html
+//! `feature = "array"` Array Virtual Table.
 //!
 //! Note: `rarray`, not `carray` is the name of the table valued function we
 //! define.
 //!
-//! Port of [carray](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/carray.c) C extension.
+//! Port of [carray](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/carray.c)
+//! C extension: https://www.sqlite.org/carray.html
 //!
 //! # Example
 //!

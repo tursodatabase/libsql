@@ -1,6 +1,8 @@
-//! `feature = "series"` Generate series virtual table: https://www.sqlite.org/series.html
+//! `feature = "series"` Generate series virtual table.
 //!
-//! Port of C [generate series "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c).
+//! Port of C [generate series
+//! "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c):
+//! https://www.sqlite.org/series.html
 use std::default::Default;
 use std::os::raw::c_int;
 
