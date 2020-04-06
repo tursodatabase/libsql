@@ -294,6 +294,7 @@ static int lookupName(
 
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
+        u8 hCol;
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 );
@@ -327,8 +328,9 @@ static int lookupName(
         if( 0==(cntTab++) ){
           pMatch = pItem;
         }
+        hCol = sqlite3StrIHash(zCol);
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
-          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+          if( pCol->hName==hCol && sqlite3StrICmp(pCol->zName, zCol)==0 ){
             /* If there has been exactly one prior match and this match
             ** is for the right-hand table of a NATURAL JOIN or is in a 
             ** USING clause, then skip this match.
@@ -389,10 +391,11 @@ static int lookupName(
 
       if( pTab ){ 
         int iCol;
+        u8 hCol = sqlite3StrIHash(zCol);
         pSchema = pTab->pSchema;
         cntTab++;
         for(iCol=0, pCol=pTab->aCol; iCol<pTab->nCol; iCol++, pCol++){
-          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+          if( pCol->hName==hCol && sqlite3StrICmp(pCol->zName, zCol)==0 ){
             if( iCol==pTab->iPKey ){
               iCol = -1;
             }
