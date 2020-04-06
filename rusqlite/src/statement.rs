@@ -450,13 +450,11 @@ impl Statement<'_> {
             }
             self.bind_parameter(&p, index)?;
         }
-        assert_eq!(
-            index, expected,
-            "incorrect number of parameters: expected {}, got {}",
-            expected, index
-        );
-
-        Ok(())
+        if index != expected {
+            Err(Error::InvalidParameterCount(expected, index))
+        } else {
+            Ok(())
+        }
     }
 
     fn bind_parameters_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<()> {

@@ -104,6 +104,10 @@ pub enum Error {
 
     /// Error when the SQL contains multiple statements.
     MultipleStatement,
+    /// Error when the number of bound parameters does not match the number of
+    /// parameters in the query. The first `usize` is how many parameters were
+    /// given, the 2nd is how many were expected.
+    InvalidParameterCount(usize, usize),
 }
 
 impl PartialEq for Error {
@@ -143,6 +147,9 @@ impl PartialEq for Error {
             (Error::UnwindingPanic, Error::UnwindingPanic) => true,
             #[cfg(feature = "functions")]
             (Error::GetAuxWrongType, Error::GetAuxWrongType) => true,
+            (Error::InvalidParameterCount(i1, n1), Error::InvalidParameterCount(i2, n2)) => {
+                i1 == i2 && n1 == n2
+            }
             (..) => false,
         }
     }
@@ -228,6 +235,11 @@ impl fmt::Display for Error {
                 "Invalid column type {} at index: {}, name: {}",
                 t, i, name
             ),
+            Error::InvalidParameterCount(i1, n1) => write!(
+                f,
+                "Wrong number of parameters passed to query. Got {}, needed {}",
+                i1, n1
+            ),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
 
             #[cfg(feature = "functions")]
@@ -271,6 +283,7 @@ impl error::Error for Error {
             Error::ExecuteReturnedResults => {
                 "execute returned results - did you mean to call query?"
             }
+            Error::InvalidParameterCount(..) => "Wrong number of parameters passed to query.",
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
@@ -310,6 +323,7 @@ impl error::Error for Error {
             | Error::InvalidColumnName(_)
             | Error::InvalidColumnType(..)
             | Error::InvalidPath(_)
+            | Error::InvalidParameterCount(..)
             | Error::StatementChangedRows(_)
             | Error::InvalidQuery
             | Error::MultipleStatement => None,
