@@ -58,6 +58,7 @@ extra_check = []
 modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
 unstable = []
 in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
+bundled-windows = ["libsqlite3-sys/bundled-windows"]
 
 [dependencies]
 time = "0.1.0"
