@@ -1787,6 +1787,7 @@ void sqlite3ExprListSetName(
   int dequote             /* True to cause the name to be dequoted */
 ){
   assert( pList!=0 || pParse->db->mallocFailed!=0 );
+  assert( pParse->eParseMode!=PARSE_MODE_UNMAP || dequote==0 );
   if( pList ){
     struct ExprList_item *pItem;
     assert( pList->nExpr>0 );
