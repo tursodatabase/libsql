@@ -1,5 +1,5 @@
-C Add\sthe\s--spinner\soption\sto\sthe\sfuzzcheck\stest\sprogram.
-D 2020-04-07T13:08:56.300
+C Limit\sLIKE/GLOB\spattern\slength\sto\s100\sbytes\s(default\sis\s50K)\swhen\srunning\ndbsql\scases\sin\sthe\sfuzzcheck\sutility.
+D 2020-04-07T15:07:11.446
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1016,7 +1016,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c a738e69ba6c743c3ed24ecd27ed2867b7c339b2db07b259f341cc9d982113583
+F test/fuzzcheck.c 656ee850f331872a784e7d6a10649efe2af123bdaacb728b5a03e4faee8b959c
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 230556e859536bbadf0daf8133a9a01ef4f03148b3296723e37bad66e3fc3d82
-R 5a2a574f2e79b4a35d530f14a5558dbb
+P b1eae2686f03a6e20a49ca2b3a654b3019506d4941708ee3919c339cd093a57d
+R b12213b0df5dc8fc33fac9cdcf090d4e
 U drh
-Z 678df51ea1c8b8197462f0a5c962356f
+Z 6587ee9cfa3092e47e4718062b1b99b1

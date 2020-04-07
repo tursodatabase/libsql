@@ -894,6 +894,7 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
   if( depthLimit>0 ){
     sqlite3_limit(cx.db, SQLITE_LIMIT_EXPR_DEPTH, depthLimit);
   }
+  sqlite3_limit(cx.db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 100);
   sqlite3_hard_heap_limit64(heapLimit);
 
   if( nDb>=20 && aDb[18]==2 && aDb[19]==2 ){
