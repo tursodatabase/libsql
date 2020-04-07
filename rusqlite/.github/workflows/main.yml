@@ -75,14 +75,14 @@ jobs:
         with:
           command: clippy
           # clippy with just bundled
-          args: --all-targets --all --features bundled
+          args: --all-targets --workspace --features bundled
       - uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: -D warnings
         with:
           command: clippy
           # Clippy with bundled-full
-          args: --all-targets --all --features bundled-full
+          args: --all-targets --workspace --features bundled-full
 
   # Ensure patch is formatted.
   fmt:
