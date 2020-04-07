@@ -21,7 +21,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but it cannot
     /// be converted to the requested Rust type.
-    FromSqlConversionFailure(usize, Type, Box<dyn error::Error + Send + Sync>),
+    FromSqlConversionFailure(usize, Type, Box<dyn error::Error + Send + Sync + 'static>),
 
     /// Error when SQLite gives us an integral value outside the range of the
     /// requested type (e.g., trying to get the value 1000 into a `u8`).
@@ -80,10 +80,10 @@ pub enum Error {
     /// `create_scalar_function`).
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
-    UserFunctionError(Box<dyn error::Error + Send + Sync>),
+    UserFunctionError(Box<dyn error::Error + Send + Sync + 'static>),
 
     /// Error available for the implementors of the `ToSql` trait.
-    ToSqlConversionFailure(Box<dyn error::Error + Send + Sync>),
+    ToSqlConversionFailure(Box<dyn error::Error + Send + Sync + 'static>),
 
     /// Error when the SQL is not a `SELECT`, is not read-only.
     InvalidQuery,
@@ -308,7 +308,7 @@ impl error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
             Error::Utf8Error(ref err) => Some(err),
