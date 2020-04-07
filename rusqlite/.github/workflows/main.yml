@@ -43,7 +43,16 @@ jobs:
           command: test
           args: --features bundled --workspace --all-targets
 
-      - uses: actions-rs/cargo@v1
+      - name: "cargo test --features 'bundled-full session buildtime_bindgen'"
+        if: matrix.platform.os != 'windows-latest'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features 'bundled-full session buildtime_bindgen' --all-targets --workspace
+
+      - name: "cargo test --features bundled-full"
+        if: matrix.platform.os == 'windows-latest'
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --features bundled-full --all-targets --workspace
@@ -81,8 +90,8 @@ jobs:
           RUSTFLAGS: -D warnings
         with:
           command: clippy
-          # Clippy with bundled-full
-          args: --all-targets --workspace --features bundled-full
+          # Clippy with all non-conflicting features
+          args: --all-targets --workspace --features 'bundled-full session buildtime_bindgen'
 
   # Ensure patch is formatted.
   fmt:
@@ -118,4 +127,4 @@ jobs:
           RUSTFLAGS: -D warnings
         with:
           command: doc
-          args: --no-deps --features bundled-full
+          args: --no-deps --features 'bundled-full session buildtime_bindgen'

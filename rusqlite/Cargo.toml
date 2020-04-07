@@ -77,7 +77,6 @@ bundled-full = [
     "load_extension",
     "serde_json",
     "series",
-    "session",
     "trace",
     "unlock_notify",
     "url",
