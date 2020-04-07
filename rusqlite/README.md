@@ -101,7 +101,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
 * `i128_blob` allows storing values of type `i128` type in SQLite databases. Internally, the data is stored as a 16 byte big-endian blob, with the most significant bit flipped, which allows ordering and comparison between different blobs storing i128s to work as expected.
 * `uuid` allows storing and retrieving `Uuid` values from the [`uuid`](https://docs.rs/uuid/) crate using blobs.
-* [`session`](https://sqlite.org/sessionintro.html), Session module extension.
+* [`session`](https://sqlite.org/sessionintro.html), Session module extension. Requires `buildtime_bindgen` feature.
 
 ## Notes on building rusqlite and libsqlite3-sys
 
@@ -165,6 +165,26 @@ included with the bundled build. You generally should have `buildtime_bindgen`
 enabled if you turn this on, as otherwise you'll need to keep the version of
 SQLite you link with in sync with what rusqlite would have bundled, (usually the
 most recent release of sqlite). Failing to do this will cause a runtime error.
+
+## Contributing
+
+Rusqlite has many features, and many of them impact the build configuration in
+incompatible ways. This is unfortunate, and makes testing changes hard.
+
+To help here: you generally should ensure that you run tests/lint for
+`--features bundled`, and `--features bundled-full session buildtime_bindgen`.
+
+If running bindgen is problematic for you, `--features bundled-full` enables
+bundled and all features which don't require binding generation, and can be used
+instead.
+
+### Checklist
+
+- Run `cargo fmt` to ensure your Rust code is correctly formatted.
+- Ensure `cargo clippy --all-targets --workspace --features bundled` passes without warnings.
+- Ensure `cargo test --all-targets --workspace --features bundled-full session buildtime_bindgen` reports no failures.
+- Ensure `cargo test --all-targets --workspace --features bundled` reports no failures.
+- Ensure `cargo test --all-targets --workspace --features bundled-full session buildtime_bindgen` reports no failures.
 
 ## Author
 
