@@ -57,6 +57,35 @@ modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
 in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
 bundled-windows = ["libsqlite3-sys/bundled-windows"]
 
+# Helper feature for enabling both `bundled` and most non-build-related optional
+# features or dependencies. This is useful for running tests / clippy / etc. New
+# features and optional dependencies that don't conflict with anything else
+# should be added here.
+bundled-full = [
+    "array",
+    "backup",
+    "blob",
+    "bundled",
+    "chrono",
+    "collation",
+    "csvtab",
+    "extra_check",
+    "functions",
+    "hooks",
+    "i128_blob",
+    "limits",
+    "load_extension",
+    "serde_json",
+    "series",
+    "session",
+    "trace",
+    "unlock_notify",
+    "url",
+    "uuid",
+    "vtab",
+    "window",
+]
+
 [dependencies]
 time = "0.1.0"
 bitflags = "1.0"
@@ -108,5 +137,5 @@ no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
 
 [package.metadata.playground]
-features = ["array", "backup", "blob", "bundled", "chrono", "collation", "csvtab", "extra_check", "functions", "hooks", "i128_blob", "limits", "load_extension", "modern_sqlite", "serde_json", "series", "trace", "url", "vtab_v3", "vtab", "window"]
+features = ["bundled-full"]
 all-features = false
