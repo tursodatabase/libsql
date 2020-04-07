@@ -36,24 +36,16 @@ pub struct InnerConnection {
 }
 
 impl InnerConnection {
-    #[cfg(not(feature = "hooks"))]
     #[allow(clippy::mutex_atomic)]
     pub fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
         InnerConnection {
             db,
             interrupt_lock: Arc::new(Mutex::new(db)),
-            owned,
-        }
-    }
-
-    #[cfg(feature = "hooks")]
-    #[allow(clippy::mutex_atomic)]
-    pub fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
-        InnerConnection {
-            db,
-            interrupt_lock: Arc::new(Mutex::new(db)),
+            #[cfg(feature = "hooks")]
             free_commit_hook: None,
+            #[cfg(feature = "hooks")]
             free_rollback_hook: None,
+            #[cfg(feature = "hooks")]
             free_update_hook: None,
             owned,
         }
