@@ -619,7 +619,7 @@ impl Statement<'_> {
     }
 
     fn finalize_(&mut self) -> Result<()> {
-        let mut stmt = RawStatement::new(ptr::null_mut(), false);
+        let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), false) };
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
     }
@@ -710,7 +710,7 @@ impl Statement<'_> {
 
 impl Into<RawStatement> for Statement<'_> {
     fn into(mut self) -> RawStatement {
-        let mut stmt = RawStatement::new(ptr::null_mut(), false);
+        let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), false) };
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }

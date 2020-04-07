@@ -77,8 +77,8 @@ impl Connection {
 
         match r {
             Done => Ok(()),
-            Busy => Err(error_from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
-            Locked => Err(error_from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
+            Busy => Err(unsafe { error_from_handle(ptr::null_mut(), ffi::SQLITE_BUSY) }),
+            Locked => Err(unsafe { error_from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED) }),
             More => unreachable!(),
         }
     }
@@ -123,8 +123,8 @@ impl Connection {
 
         match r {
             Done => Ok(()),
-            Busy => Err(error_from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
-            Locked => Err(error_from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
+            Busy => Err(unsafe { error_from_handle(ptr::null_mut(), ffi::SQLITE_BUSY) }),
+            Locked => Err(unsafe { error_from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED) }),
             More => unreachable!(),
         }
     }

@@ -357,11 +357,11 @@ pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
 
-pub fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
+pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     let message = if db.is_null() {
         None
     } else {
-        Some(unsafe { errmsg_to_string(ffi::sqlite3_errmsg(db)) })
+        Some(errmsg_to_string(ffi::sqlite3_errmsg(db)))
     };
     error_from_sqlite_code(code, message)
 }

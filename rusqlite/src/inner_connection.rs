@@ -27,17 +27,17 @@ pub struct InnerConnection {
     // interrupt would only acquire the lock after the query's completion.
     interrupt_lock: Arc<Mutex<*mut ffi::sqlite3>>,
     #[cfg(feature = "hooks")]
-    pub free_commit_hook: Option<fn(*mut ::std::os::raw::c_void)>,
+    pub free_commit_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
-    pub free_rollback_hook: Option<fn(*mut ::std::os::raw::c_void)>,
+    pub free_rollback_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
-    pub free_update_hook: Option<fn(*mut ::std::os::raw::c_void)>,
+    pub free_update_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
     owned: bool,
 }
 
 impl InnerConnection {
     #[allow(clippy::mutex_atomic)]
-    pub fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
+    pub unsafe fn new(db: *mut ffi::sqlite3, owned: bool) -> InnerConnection {
         InnerConnection {
             db,
             interrupt_lock: Arc::new(Mutex::new(db)),
@@ -127,10 +127,10 @@ impl InnerConnection {
     }
 
     pub fn decode_result(&mut self, code: c_int) -> Result<()> {
-        InnerConnection::decode_result_raw(self.db(), code)
+        unsafe { InnerConnection::decode_result_raw(self.db(), code) }
     }
 
-    fn decode_result_raw(db: *mut ffi::sqlite3, code: c_int) -> Result<()> {
+    unsafe fn decode_result_raw(db: *mut ffi::sqlite3, code: c_int) -> Result<()> {
         if code == ffi::SQLITE_OK {
             Ok(())
         } else {
@@ -229,9 +229,9 @@ impl InnerConnection {
     }
 
     pub fn prepare<'a>(&mut self, conn: &'a Connection, sql: &str) -> Result<Statement<'a>> {
-        let mut c_stmt = MaybeUninit::uninit();
+        let mut c_stmt = ptr::null_mut();
         let (c_sql, len, _) = str_for_sqlite(sql.as_bytes())?;
-        let mut c_tail = MaybeUninit::uninit();
+        let mut c_tail = ptr::null();
         let r = unsafe {
             if cfg!(feature = "unlock_notify") {
                 let mut rc;
@@ -240,8 +240,8 @@ impl InnerConnection {
                         self.db(),
                         c_sql,
                         len,
-                        c_stmt.as_mut_ptr(),
-                        c_tail.as_mut_ptr(),
+                        &mut c_stmt as *mut *mut ffi::sqlite3_stmt,
+                        &mut c_tail as *mut *const c_char,
                     );
                     if !unlock_notify::is_locked(self.db, rc) {
                         break;
@@ -257,8 +257,8 @@ impl InnerConnection {
                     self.db(),
                     c_sql,
                     len,
-                    c_stmt.as_mut_ptr(),
-                    c_tail.as_mut_ptr(),
+                    &mut c_stmt as *mut *mut ffi::sqlite3_stmt,
+                    &mut c_tail as *mut *const c_char,
                 )
             }
         };
@@ -266,11 +266,13 @@ impl InnerConnection {
         self.decode_result(r)?;
         // If the input text contains no SQL (if the input is an empty string or a
         // comment) then *ppStmt is set to NULL.
-        let c_stmt: *mut ffi::sqlite3_stmt = unsafe { c_stmt.assume_init() };
-        let c_tail: *const c_char = unsafe { c_tail.assume_init() };
+        let c_stmt: *mut ffi::sqlite3_stmt = c_stmt;
+        let c_tail: *const c_char = c_tail;
         // TODO ignore spaces, comments, ... at the end
         let tail = !c_tail.is_null() && unsafe { c_tail != c_sql.offset(len as isize) };
-        Ok(Statement::new(conn, RawStatement::new(c_stmt, tail)))
+        Ok(Statement::new(conn, unsafe {
+            RawStatement::new(c_stmt, tail)
+        }))
     }
 
     pub fn changes(&mut self) -> usize {
