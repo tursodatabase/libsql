@@ -10,7 +10,7 @@ use std::ptr;
 pub struct RawStatement(*mut ffi::sqlite3_stmt, bool);
 
 impl RawStatement {
-    pub fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
+    pub unsafe fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
         RawStatement(stmt, tail)
     }
 
@@ -64,10 +64,10 @@ impl RawStatement {
             let mut rc;
             loop {
                 rc = unsafe { ffi::sqlite3_step(self.0) };
-                if !unlock_notify::is_locked(db, rc) {
+                if unsafe { !unlock_notify::is_locked(db, rc) } {
                     break;
                 }
-                rc = unlock_notify::wait_for_unlock_notify(db);
+                rc = unsafe { unlock_notify::wait_for_unlock_notify(db) };
                 if rc != ffi::SQLITE_OK {
                     break;
                 }

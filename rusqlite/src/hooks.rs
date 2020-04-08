@@ -102,7 +102,7 @@ impl InnerConnection {
         // `sqlite3_commit_hook`. so we keep the `xDestroy` function in
         // `InnerConnection.free_boxed_hook`.
         let free_commit_hook = if hook.is_some() {
-            Some(free_boxed_hook::<F> as fn(*mut c_void))
+            Some(free_boxed_hook::<F> as unsafe fn(*mut c_void))
         } else {
             None
         };
@@ -122,7 +122,7 @@ impl InnerConnection {
         };
         if !previous_hook.is_null() {
             if let Some(free_boxed_hook) = self.free_commit_hook {
-                free_boxed_hook(previous_hook);
+                unsafe { free_boxed_hook(previous_hook) };
             }
         }
         self.free_commit_hook = free_commit_hook;
@@ -143,7 +143,7 @@ impl InnerConnection {
         }
 
         let free_rollback_hook = if hook.is_some() {
-            Some(free_boxed_hook::<F> as fn(*mut c_void))
+            Some(free_boxed_hook::<F> as unsafe fn(*mut c_void))
         } else {
             None
         };
@@ -163,7 +163,7 @@ impl InnerConnection {
         };
         if !previous_hook.is_null() {
             if let Some(free_boxed_hook) = self.free_rollback_hook {
-                free_boxed_hook(previous_hook);
+                unsafe { free_boxed_hook(previous_hook) };
             }
         }
         self.free_rollback_hook = free_rollback_hook;
@@ -202,7 +202,7 @@ impl InnerConnection {
         }
 
         let free_update_hook = if hook.is_some() {
-            Some(free_boxed_hook::<F> as fn(*mut c_void))
+            Some(free_boxed_hook::<F> as unsafe fn(*mut c_void))
         } else {
             None
         };
@@ -222,15 +222,15 @@ impl InnerConnection {
         };
         if !previous_hook.is_null() {
             if let Some(free_boxed_hook) = self.free_update_hook {
-                free_boxed_hook(previous_hook);
+                unsafe { free_boxed_hook(previous_hook) };
             }
         }
         self.free_update_hook = free_update_hook;
     }
 }
 
-fn free_boxed_hook<F>(p: *mut c_void) {
-    drop(unsafe { Box::from_raw(p as *mut F) });
+unsafe fn free_boxed_hook<F>(p: *mut c_void) {
+    drop(Box::from_raw(p as *mut F));
 }
 
 #[cfg(test)]

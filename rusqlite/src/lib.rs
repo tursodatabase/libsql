@@ -1028,25 +1028,23 @@ mod test {
         // statement first.
         let raw_stmt = {
             use super::str_to_cstring;
-            use std::mem::MaybeUninit;
             use std::os::raw::c_int;
             use std::ptr;
 
             let raw_db = db.db.borrow_mut().db;
             let sql = "SELECT 1";
-            let mut raw_stmt = MaybeUninit::uninit();
+            let mut raw_stmt: *mut ffi::sqlite3_stmt = ptr::null_mut();
             let cstring = str_to_cstring(sql).unwrap();
             let rc = unsafe {
                 ffi::sqlite3_prepare_v2(
                     raw_db,
                     cstring.as_ptr(),
                     (sql.len() + 1) as c_int,
-                    raw_stmt.as_mut_ptr(),
+                    &mut raw_stmt,
                     ptr::null_mut(),
                 )
             };
             assert_eq!(rc, ffi::SQLITE_OK);
-            let raw_stmt: *mut ffi::sqlite3_stmt = unsafe { raw_stmt.assume_init() };
             raw_stmt
         };
 
