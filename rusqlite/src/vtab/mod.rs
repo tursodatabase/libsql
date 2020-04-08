@@ -70,8 +70,7 @@ unsafe impl<T: VTab> Send for Module<T> {}
 unsafe impl<T: VTab> Sync for Module<T> {}
 
 // Used as a trailing initializer for sqlite3_module -- this way we avoid having
-// the build fail if buildtime_bindgen is on, our bindings have
-// `sqlite3_module::xShadowName`, but vtab_v3 wasn't specified.
+// the build fail if buildtime_bindgen is on
 fn zeroed_module() -> ffi::sqlite3_module {
     // This is safe, as bindgen-generated structs are allowed to be zeroed.
     unsafe { std::mem::MaybeUninit::zeroed().assume_init() }

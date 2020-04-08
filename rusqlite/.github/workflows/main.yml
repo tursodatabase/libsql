@@ -32,11 +32,31 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - run: cargo build --features bundled --workspace --all-targets
-      - run: cargo test --features bundled --workspace --all-targets
-      - run: cargo test --features bundled --workspace --doc
-      # We can't use --all-features.
-      - run: cargo test --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window'
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --features bundled --workspace --all-targets
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features bundled --workspace --all-targets
+
+      - name: "cargo test --features 'bundled-full session buildtime_bindgen'"
+        if: matrix.platform.os != 'windows-latest'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features 'bundled-full session buildtime_bindgen' --all-targets --workspace
+
+      - name: "cargo test --features bundled-full"
+        if: matrix.platform.os == 'windows-latest'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features bundled-full --all-targets --workspace
+
       - name: Static build
         if: matrix.platform.os == 'windows-latest'
         shell: cmd
@@ -47,6 +67,8 @@ jobs:
   # Ensure clippy doesn't complain.
   clippy:
     name: Clippy
+    strategy:
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -61,7 +83,15 @@ jobs:
           RUSTFLAGS: -D warnings
         with:
           command: clippy
-          args: --all-targets --all --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window' -- -D warnings
+          # clippy with just bundled
+          args: --all-targets --workspace --features bundled
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -D warnings
+        with:
+          command: clippy
+          # Clippy with all non-conflicting features
+          args: --all-targets --workspace --features 'bundled-full session buildtime_bindgen'
 
   # Ensure patch is formatted.
   fmt:
@@ -97,4 +127,4 @@ jobs:
           RUSTFLAGS: -D warnings
         with:
           command: doc
-          args: --no-deps --features 'array backup blob bundled chrono collation csvtab extra_check functions hooks i128_blob limits load_extension serde_json series trace url vtab_v3 window'
+          args: --no-deps --features 'bundled-full session buildtime_bindgen'
