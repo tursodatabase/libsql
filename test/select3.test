@@ -306,4 +306,12 @@ foreach {id x} {
   } {{} 1.0 ok}
 }
 
+# 2020-03-10 ticket e0c2ad1aa8a9c691
+reset_db
+do_execsql_test select3-9.100 {
+  CREATE TABLE t0(c0 REAL, c1 REAL GENERATED ALWAYS AS (c0));
+  INSERT INTO t0(c0) VALUES (1);
+  SELECT * FROM t0 GROUP BY c0;
+} {1.0 1.0}
+
 finish_test

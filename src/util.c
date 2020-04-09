@@ -318,6 +318,19 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 }
 
 /*
+** Compute an 8-bit hash on a string that is insensitive to case differences
+*/
+u8 sqlite3StrIHash(const char *z){
+  u8 h = 0;
+  if( z==0 ) return 0;
+  while( z[0] ){
+    h += UpperToLower[(unsigned char)z[0]];
+    z++;
+  }
+  return h;
+}
+
+/*
 ** Compute 10 to the E-th power.  Examples:  E==1 results in 10.
 ** E==2 results in 100.  E==50 results in 1.0e50.
 **
@@ -1256,7 +1269,7 @@ u8 sqlite3HexToInt(int h){
   return (u8)(h & 0xf);
 }
 
-#if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC)
+#if !defined(SQLITE_OMIT_BLOB_LITERAL)
 /*
 ** Convert a BLOB literal of the form "x'hhhhhh'" into its binary
 ** value.  Return a pointer to its binary value.  Space to hold the
@@ -1277,7 +1290,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
   }
   return zBlob;
 }
-#endif /* !SQLITE_OMIT_BLOB_LITERAL || SQLITE_HAS_CODEC */
+#endif /* !SQLITE_OMIT_BLOB_LITERAL */
 
 /*
 ** Log an error that is an API call on a connection pointer that should

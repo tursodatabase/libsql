@@ -2298,7 +2298,9 @@ static void whereLoopOutputAdjust(
         /* In the absence of explicit truth probabilities, use heuristics to
         ** guess a reasonable truth probability. */
         pLoop->nOut--;
-        if( pTerm->eOperator&(WO_EQ|WO_IS) ){
+        if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0
+         && (pTerm->wtFlags & TERM_HIGHTRUTH)==0  /* tag-20200224-1 */
+        ){
           Expr *pRight = pTerm->pExpr->pRight;
           int k = 0;
           testcase( pTerm->pExpr->op==TK_IS );
@@ -2307,7 +2309,10 @@ static void whereLoopOutputAdjust(
           }else{
             k = 20;
           }
-          if( iReduce<k ) iReduce = k;
+          if( iReduce<k ){
+            pTerm->wtFlags |= TERM_HEURTRUTH;
+            iReduce = k;
+          }
         }
       }
     }
@@ -2489,9 +2494,9 @@ static int whereLoopAddBtreeIndex(
     }
 
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
-      pBuilder->bldFlags |= SQLITE_BLDF_UNIQUE;
+      pBuilder->bldFlags1 |= SQLITE_BLDF1_UNIQUE;
     }else{
-      pBuilder->bldFlags |= SQLITE_BLDF_INDEXED;
+      pBuilder->bldFlags1 |= SQLITE_BLDF1_INDEXED;
     }
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
@@ -2656,6 +2661,27 @@ static int whereLoopAddBtreeIndex(
           if( rc!=SQLITE_OK ) break;          /* Jump out of the pTerm loop */
           if( nOut ){
             pNew->nOut = sqlite3LogEst(nOut);
+            if( nEq==1
+             /* TUNING: Mark terms as "low selectivity" if they seem likely
+             ** to be true for half or more of the rows in the table.
+             ** See tag-202002240-1 */
+             && pNew->nOut+10 > pProbe->aiRowLogEst[0]
+            ){
+#if WHERETRACE_ENABLED /* 0x01 */
+              if( sqlite3WhereTrace & 0x01 ){
+                sqlite3DebugPrintf(
+                   "STAT4 determines term has low selectivity:\n");
+                sqlite3WhereTermPrint(pTerm, 999);
+              }
+#endif
+              pTerm->wtFlags |= TERM_HIGHTRUTH;
+              if( pTerm->wtFlags & TERM_HEURTRUTH ){
+                /* If the term has previously been used with an assumption of
+                ** higher selectivity, then set the flag to rerun the
+                ** loop computations. */
+                pBuilder->bldFlags2 |= SQLITE_BLDF2_2NDPASS;
+              }
+            }
             if( pNew->nOut>saved_nOut ) pNew->nOut = saved_nOut;
             pNew->nOut -= nIn;
           }
@@ -2732,6 +2758,7 @@ static int whereLoopAddBtreeIndex(
    && saved_nEq+1<pProbe->nKeyCol
    && saved_nEq==pNew->nLTerm
    && pProbe->noSkipScan==0
+   && pProbe->hasStat1!=0
    && OptimizationEnabled(db, SQLITE_SkipScan)
    && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
@@ -3079,9 +3106,9 @@ static int whereLoopAddBtree(
       }
     }
 
-    pBuilder->bldFlags = 0;
+    pBuilder->bldFlags1 = 0;
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
-    if( pBuilder->bldFlags==SQLITE_BLDF_INDEXED ){
+    if( pBuilder->bldFlags1==SQLITE_BLDF1_INDEXED ){
       /* If a non-unique index is used, or if a prefix of the key for
       ** unique index is used (making the index functionally non-unique)
       ** then the sqlite_stat1 data becomes important for scoring the
@@ -3752,8 +3779,11 @@ static i8 wherePathSatisfiesOrderBy(
         if( j>=pLoop->nLTerm ) continue;
       }
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
-        if( sqlite3ExprCollSeqMatch(pWInfo->pParse, 
-                  pOrderBy->a[i].pExpr, pTerm->pExpr)==0 ){
+        Parse *pParse = pWInfo->pParse;
+        CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[i].pExpr);
+        CollSeq *pColl2 = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
+        assert( pColl1 );
+        if( pColl2==0 || sqlite3StrICmp(pColl1->zName, pColl2->zName) ){
           continue;
         }
         testcase( pTerm->pExpr->op==TK_IS );
@@ -4533,6 +4563,28 @@ static int exprIsDeterministic(Expr *p){
   return w.eCode;
 }
 
+  
+#ifdef WHERETRACE_ENABLED
+/*
+** Display all WhereLoops in pWInfo
+*/
+static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
+  if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
+    WhereLoop *p;
+    int i;
+    static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
+                                           "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
+    for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
+      p->cId = zLabel[i%(sizeof(zLabel)-1)];
+      sqlite3WhereLoopPrint(p, pWC);
+    }
+  }
+}
+# define WHERETRACE_ALL_LOOPS(W,C) showAllWhereLoops(W,C)
+#else
+# define WHERETRACE_ALL_LOOPS(W,C)
+#endif
+
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
@@ -4834,19 +4886,28 @@ WhereInfo *sqlite3WhereBegin(
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
-  
-#ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
-      WhereLoop *p;
-      int i;
-      static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
-                                             "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
-      for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
-        p->cId = zLabel[i%(sizeof(zLabel)-1)];
-        sqlite3WhereLoopPrint(p, sWLB.pWC);
+
+#ifdef SQLITE_ENABLE_STAT4
+    /* If one or more WhereTerm.truthProb values were used in estimating
+    ** loop parameters, but then those truthProb values were subsequently
+    ** changed based on STAT4 information while computing subsequent loops,
+    ** then we need to rerun the whole loop building process so that all
+    ** loops will be built using the revised truthProb values. */
+    if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
+      WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
+      WHERETRACE(0xffff, 
+           ("**** Redo all loop computations due to"
+            " TERM_HIGHTRUTH changes ****\n"));
+      while( pWInfo->pLoops ){
+        WhereLoop *p = pWInfo->pLoops;
+        pWInfo->pLoops = p->pNextLoop;
+        whereLoopDelete(db, p);
       }
+      rc = whereLoopAddAll(&sWLB);
+      if( rc ) goto whereBeginError;
     }
 #endif
+    WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
   
     wherePathSolver(pWInfo, 0);
     if( db->mallocFailed ) goto whereBeginError;
@@ -5117,7 +5178,7 @@ WhereInfo *sqlite3WhereBegin(
          && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0
          && pWInfo->eDistinct!=WHERE_DISTINCT_ORDERED
         ){
-          sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ); /* Hint to COMDB2 */
+          sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ);
         }
         VdbeComment((v, "%s", pIx->zName));
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
@@ -5275,12 +5336,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         if( pIn->eEndLoopOp!=OP_Noop ){
           if( pIn->nPrefix ){
             assert( pLoop->wsFlags & WHERE_IN_EARLYOUT );
-            if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-              sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
-                  sqlite3VdbeCurrentAddr(v)+2+(pLevel->iLeftJoin!=0),
-                  pIn->iBase, pIn->nPrefix);
-              VdbeCoverage(v);
-            }
             if( pLevel->iLeftJoin ){
               /* For LEFT JOIN queries, cursor pIn->iCur may not have been
               ** opened yet. This occurs for WHERE clauses such as
@@ -5291,8 +5346,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
               ** jump over the OP_Next or OP_Prev instruction about to
               ** be coded.  */
               sqlite3VdbeAddOp2(v, OP_IfNotOpen, pIn->iCur, 
-                  sqlite3VdbeCurrentAddr(v) + 2
+                  sqlite3VdbeCurrentAddr(v) + 2 + 
+                     ((pLoop->wsFlags & WHERE_VIRTUALTABLE)==0)
               );
+              VdbeCoverage(v);
+            }
+            if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
+              sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
+                  sqlite3VdbeCurrentAddr(v)+2,
+                  pIn->iBase, pIn->nPrefix);
               VdbeCoverage(v);
             }
           }

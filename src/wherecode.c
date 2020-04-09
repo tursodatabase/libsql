@@ -1711,6 +1711,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       nExtraReg = 1;
       bSeekPastNull = 1;
       pLevel->regBignull = regBignull = ++pParse->nMem;
+      if( pLevel->iLeftJoin ){
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, regBignull);
+      }
       pLevel->addrBignull = sqlite3VdbeMakeLabel(pParse);
     }
 

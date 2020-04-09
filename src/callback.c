@@ -163,15 +163,28 @@ CollSeq *sqlite3FindCollSeq(
   int create            /* True to create CollSeq if doesn't already exist */
 ){
   CollSeq *pColl;
+  assert( SQLITE_UTF8==1 && SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
+  assert( enc>=SQLITE_UTF8 && enc<=SQLITE_UTF16BE );
   if( zName ){
     pColl = findCollSeqEntry(db, zName, create);
+    if( pColl ) pColl += enc-1;
   }else{
     pColl = db->pDfltColl;
   }
-  assert( SQLITE_UTF8==1 && SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
-  assert( enc>=SQLITE_UTF8 && enc<=SQLITE_UTF16BE );
-  if( pColl ) pColl += enc-1;
   return pColl;
+}
+
+/*
+** Change the text encoding for a database connection. This means that
+** the pDfltColl must change as well.
+*/
+void sqlite3SetTextEncoding(sqlite3 *db, u8 enc){
+  assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
+  db->enc = enc;
+  /* EVIDENCE-OF: R-08308-17224 The default collating function for all
+  ** strings is BINARY. 
+  */
+  db->pDfltColl = sqlite3FindCollSeq(db, enc, sqlite3StrBINARY, 0);
 }
 
 /*
