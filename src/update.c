@@ -616,7 +616,9 @@ void sqlite3Update(
       }
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur,
                                  aToOpen, 0, 0);
-      if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
+      if( addrOnce ){
+        sqlite3VdbeJumpHereOrPopInst(v, addrOnce);
+      }
     }
   
     /* Top of the update loop */

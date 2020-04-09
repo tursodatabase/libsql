@@ -663,7 +663,7 @@ static int sqlite3Step(Vdbe *p){
     ** from interrupting a statement that has not yet started.
     */
     if( db->nVdbeActive==0 ){
-      db->u1.isInterrupted = 0;
+      AtomicStore(&db->u1.isInterrupted, 0);
     }
 
     assert( db->nVdbeWrite>0 || db->autoCommit==0 
