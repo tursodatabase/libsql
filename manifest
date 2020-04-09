@@ -1,5 +1,5 @@
-C Limit\sLIKE/GLOB\spattern\slength\sto\s100\sbytes\s(default\sis\s50K)\swhen\srunning\ndbsql\scases\sin\sthe\sfuzzcheck\sutility.
-D 2020-04-07T15:07:11.446
+C When\scompiling\sthe\sshell\sfor\sWinRT,\savoid\susing\sWin32\sAPIs\sthat\sare\sunavailable.
+D 2020-04-09T15:31:22.553
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -293,7 +293,7 @@ F ext/misc/dbdata.c e316fba936571584e55abd5b974a32a191727a6b746053a0c9d439bd2cf9
 F ext/misc/dbdump.c baf6e37447c9d6968417b1cd34cbedb0b0ab3f91b5329501d8a8d5be3287c336
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c d5c12962d79913ef774b297006872af1fccda388f61a11d37758f9179a09551f
-F ext/misc/fileio.c bfa11a207da4eed8e5f84a1e3954608492f25f8850f9f00d0d2076f4648d7608
+F ext/misc/fileio.c 9b69e25da3b51d4a1d905a464ccb96709792ad627a742ba09215bc0d1447e7bd
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c eaffd9b364d7c8371727e9c43fc8bec38cdacc4d11fc26beffaa3ca05a0ea9d6
@@ -532,7 +532,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c ab4eb1aee1bd066feea5b6eff264220ae54459019654264e9f688368a7d0c0b5
-F src/shell.c.in 759bb4a283651955ff2ddb104541b1805b1fff915017083bdd39975cd4e223aa
+F src/shell.c.in cf7d6140c33859a86188aa52093dfa5d4e4d9ce32ecf1d588a127cb0a8f6f96f
 F src/sqlite.h.in cc7d0949ac32bb68ed97acdb3e7ae91cd413a24d32d6ff049ef8308d620a4367
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9c5269260409eb3275324ccace6a13a96f4ad330c708415f70ca6097901ff4ee
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1eae2686f03a6e20a49ca2b3a654b3019506d4941708ee3919c339cd093a57d
-R b12213b0df5dc8fc33fac9cdcf090d4e
-U drh
-Z 6587ee9cfa3092e47e4718062b1b99b1
+P 10306118e8591e727af477a1a15d136852d21170e645bd0e75f7c88346b037d7
+R 979d0103f7b3acef2369409e370d6fa7
+U mistachkin
+Z 484824f16820465db78cbfdb9a5d496b
