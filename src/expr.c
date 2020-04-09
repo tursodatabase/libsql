@@ -1787,6 +1787,7 @@ void sqlite3ExprListSetName(
   int dequote             /* True to cause the name to be dequoted */
 ){
   assert( pList!=0 || pParse->db->mallocFailed!=0 );
+  assert( pParse->eParseMode!=PARSE_MODE_UNMAP || dequote==0 );
   if( pList ){
     struct ExprList_item *pItem;
     assert( pList->nExpr>0 );
@@ -1794,9 +1795,14 @@ void sqlite3ExprListSetName(
     assert( pItem->zEName==0 );
     assert( pItem->eEName==ENAME_NAME );
     pItem->zEName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
-    if( dequote ) sqlite3Dequote(pItem->zEName);
-    if( IN_RENAME_OBJECT ){
-      sqlite3RenameTokenMap(pParse, (void*)pItem->zEName, pName);
+    if( dequote ){
+      /* If dequote==0, then pName->z does not point to part of a DDL
+      ** statement handled by the parser. And so no token need be added
+      ** to the token-map.  */
+      sqlite3Dequote(pItem->zEName);
+      if( IN_RENAME_OBJECT ){
+        sqlite3RenameTokenMap(pParse, (void*)pItem->zEName, pName);
+      }
     }
   }
 }
@@ -3181,6 +3187,7 @@ static void sqlite3ExprCodeIN(
   int destNotNull;      /* Jump here if a comparison is not true in step 6 */
   int addrTop;          /* Top of the step-6 loop */ 
   int iTab = 0;         /* Index to use */
+  u8 okConstFactor = pParse->okConstFactor;
 
   assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
   pLeft = pExpr->pLeft;
@@ -3225,8 +3232,14 @@ static void sqlite3ExprCodeIN(
   ** so that the fields are in the same order as an existing index.   The
   ** aiMap[] array contains a mapping from the original LHS field order to
   ** the field order that matches the RHS index.
-  */
+  **
+  ** Avoid factoring the LHS of the IN(...) expression out of the loop,
+  ** even if it is constant, as OP_Affinity may be used on the register
+  ** by code generated below.  */
+  assert( pParse->okConstFactor==okConstFactor );
+  pParse->okConstFactor = 0;
   rLhsOrig = exprCodeVector(pParse, pLeft, &iDummy);
+  pParse->okConstFactor = okConstFactor;
   for(i=0; i<nVector && aiMap[i]==i; i++){} /* Are LHS fields reordered? */
   if( i==nVector ){
     /* LHS fields are not reordered */
@@ -3832,10 +3845,6 @@ expr_code_doover:
           static const char zAff[] = "B\000C\000D\000E";
           assert( SQLITE_AFF_BLOB=='A' );
           assert( SQLITE_AFF_TEXT=='B' );
-          if( iReg!=target ){
-            sqlite3VdbeAddOp2(v, OP_SCopy, iReg, target);
-            iReg = target;
-          }
           sqlite3VdbeAddOp4(v, OP_Affinity, iReg, 1, 0,
                             &zAff[(aff-'B')*2], P4_STATIC);
         }

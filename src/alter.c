@@ -469,6 +469,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   for(i=0; i<pNew->nCol; i++){
     Column *pCol = &pNew->aCol[i];
     pCol->zName = sqlite3DbStrDup(db, pCol->zName);
+    pCol->hName = sqlite3StrIHash(pCol->zName);
     pCol->zColl = 0;
     pCol->pDflt = 0;
   }
@@ -697,7 +698,7 @@ void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   assert( pPtr || pParse->db->mallocFailed );
   renameTokenCheckAll(pParse, pPtr);
-  if( pParse->eParseMode!=PARSE_MODE_UNMAP ){
+  if( ALWAYS(pParse->eParseMode!=PARSE_MODE_UNMAP) ){
     pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
     if( pNew ){
       pNew->p = pPtr;

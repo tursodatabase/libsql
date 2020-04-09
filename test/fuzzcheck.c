@@ -894,6 +894,7 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
   if( depthLimit>0 ){
     sqlite3_limit(cx.db, SQLITE_LIMIT_EXPR_DEPTH, depthLimit);
   }
+  sqlite3_limit(cx.db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 100);
   sqlite3_hard_heap_limit64(heapLimit);
 
   if( nDb>=20 && aDb[18]==2 && aDb[19]==2 ){
@@ -1423,6 +1424,7 @@ static void showHelp(void){
 "  -q|--quiet           Reduced output\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
+"  --spinner            Use a spinner to show progress\n"
 "  --sqlid N            Use only SQL where sqlid=N\n"
 "  --timeout N          Abort if any single test needs more than N seconds\n"
 "  -v|--verbose         Increased output.  Repeat for more output.\n"
@@ -1449,6 +1451,7 @@ int main(int argc, char **argv){
   int rebuildFlag = 0;         /* --rebuild */
   int vdbeLimitFlag = 0;       /* --limit-vdbe */
   int infoFlag = 0;            /* --info */
+  int bSpinner = 0;            /* True for --spinner */
   int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
   char *zMsg = 0;              /* Add this message */
@@ -1574,6 +1577,9 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
+      }else
+      if( strcmp(z,"spinner")==0 ){
+        bSpinner = 1;
       }else
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
@@ -1870,11 +1876,16 @@ int main(int argc, char **argv){
     
     /* Run a test using each SQL script against each database.
     */
-    if( !verboseFlag && !quietFlag ) printf("%s:", zDbName);
+    if( !verboseFlag && !quietFlag && !bSpinner ) printf("%s:", zDbName);
     for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
       if( isDbSql(pSql->a, pSql->sz) ){
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d",pSql->id);
-        if( verboseFlag ){
+        if( bSpinner ){
+          int nTotal =g.nSql;
+          int idx = pSql->seq;
+          printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
+          fflush(stdout);
+        }else if( verboseFlag ){
           printf("%s\n", g.zTestName);
           fflush(stdout);
         }else if( !quietFlag ){
@@ -1898,7 +1909,12 @@ int main(int argc, char **argv){
         const char *zVfs = "inmem";
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
                          pSql->id, pDb->id);
-        if( verboseFlag ){
+        if( bSpinner ){
+          int nTotal = g.nDb*g.nSql;
+          int idx = pSql->seq*g.nDb + pDb->id - 1;
+          printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
+          fflush(stdout);
+        }else if( verboseFlag ){
           printf("%s\n", g.zTestName);
           fflush(stdout);
         }else if( !quietFlag ){
@@ -1977,7 +1993,9 @@ int main(int argc, char **argv){
         }
       }
     }
-    if( !quietFlag && !verboseFlag ){
+    if( bSpinner ){
+      printf("\n");
+    }else if( !quietFlag && !verboseFlag ){
       printf(" 100%% - %d tests\n", g.nDb*g.nSql);
     }
   

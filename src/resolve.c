@@ -140,7 +140,7 @@ int sqlite3MatchEName(
 ){
   int n;
   const char *zSpan;
-  if( NEVER(pItem->eEName!=ENAME_TAB) ) return 0;
+  if( pItem->eEName!=ENAME_TAB ) return 0;
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
@@ -294,6 +294,7 @@ static int lookupName(
 
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
+        u8 hCol;
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 );
@@ -327,8 +328,9 @@ static int lookupName(
         if( 0==(cntTab++) ){
           pMatch = pItem;
         }
+        hCol = sqlite3StrIHash(zCol);
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
-          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+          if( pCol->hName==hCol && sqlite3StrICmp(pCol->zName, zCol)==0 ){
             /* If there has been exactly one prior match and this match
             ** is for the right-hand table of a NATURAL JOIN or is in a 
             ** USING clause, then skip this match.
@@ -389,10 +391,11 @@ static int lookupName(
 
       if( pTab ){ 
         int iCol;
+        u8 hCol = sqlite3StrIHash(zCol);
         pSchema = pTab->pSchema;
         cntTab++;
         for(iCol=0, pCol=pTab->aCol; iCol<pTab->nCol; iCol++, pCol++){
-          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+          if( pCol->hName==hCol && sqlite3StrICmp(pCol->zName, zCol)==0 ){
             if( iCol==pTab->iPKey ){
               iCol = -1;
             }
@@ -1828,11 +1831,41 @@ int sqlite3ResolveExprListNames(
   ExprList *pList         /* The expression list to be analyzed. */
 ){
   int i;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-      if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
+  int savedHasAgg = 0;
+  Walker w;
+  if( pList==0 ) return WRC_Continue;
+  w.pParse = pNC->pParse;
+  w.xExprCallback = resolveExprStep;
+  w.xSelectCallback = resolveSelectStep;
+  w.xSelectCallback2 = 0;
+  w.u.pNC = pNC;
+  savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+  pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+  for(i=0; i<pList->nExpr; i++){
+    Expr *pExpr = pList->a[i].pExpr;
+    if( pExpr==0 ) continue;
+#if SQLITE_MAX_EXPR_DEPTH>0
+    w.pParse->nHeight += pExpr->nHeight;
+    if( sqlite3ExprCheckHeight(w.pParse, w.pParse->nHeight) ){
+      return WRC_Abort;
     }
+#endif
+    sqlite3WalkExpr(&w, pExpr);
+#if SQLITE_MAX_EXPR_DEPTH>0
+    w.pParse->nHeight -= pExpr->nHeight;
+#endif
+    assert( EP_Agg==NC_HasAgg );
+    assert( EP_Win==NC_HasWin );
+    testcase( pNC->ncFlags & NC_HasAgg );
+    testcase( pNC->ncFlags & NC_HasWin );
+    if( pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin) ){
+      ExprSetProperty(pExpr, pNC->ncFlags & (NC_HasAgg|NC_HasWin) );
+      savedHasAgg |= pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+      pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
+    }
+    if( pNC->nErr>0 || w.pParse->nErr>0 ) return WRC_Abort;
   }
+  pNC->ncFlags |= savedHasAgg;
   return WRC_Continue;
 }
 
