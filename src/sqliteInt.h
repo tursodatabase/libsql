@@ -1950,6 +1950,7 @@ struct Column {
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
+  u8 hName;        /* Column name hash for faster lookup */
   u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
 
@@ -4568,6 +4569,7 @@ int sqlite3MatchEName(
   const char*
 );
 Bitmask sqlite3ExprColUsed(Expr*);
+u8 sqlite3StrIHash(const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
