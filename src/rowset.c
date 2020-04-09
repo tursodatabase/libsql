@@ -177,7 +177,7 @@ void sqlite3RowSetDelete(void *pArg){
 /*
 ** Allocate a new RowSetEntry object that is associated with the
 ** given RowSet.  Return a pointer to the new and completely uninitialized
-** objected.
+** object.
 **
 ** In an OOM situation, the RowSet.db->mallocFailed flag is set and this
 ** routine returns NULL.
@@ -453,7 +453,7 @@ int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 iRowid){
     if( p ){
       struct RowSetEntry **ppPrevTree = &pRowSet->pForest;
       if( (pRowSet->rsFlags & ROWSET_SORTED)==0 ){ /*OPTIMIZATION-IF-FALSE*/
-        /* Only sort the current set of entiries if they need it */
+        /* Only sort the current set of entries if they need it */
         p = rowSetEntrySort(p);
       }
       for(pTree = pRowSet->pForest; pTree; pTree=pTree->pRight){

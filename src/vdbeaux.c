@@ -424,7 +424,7 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 #endif
 
 /*
-** Add a new OP_ opcode.
+** Add a new OP_Explain opcode.
 **
 ** If the bPush flag is true, then make this opcode the parent for
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
@@ -1065,6 +1065,34 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
   sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
+/*
+** Change the P2 operand of the jump instruction at addr so that
+** the jump lands on the next opcode.  Or if the jump instruction was
+** the previous opcode (and is thus a no-op) then simply back up
+** the next instruction counter by one slot so that the jump is
+** overwritten by the next inserted opcode.
+**
+** This routine is an optimization of sqlite3VdbeJumpHere() that
+** strives to omit useless byte-code like this:
+**
+**        7   Once 0 8 0
+**        8   ...
+*/
+void sqlite3VdbeJumpHereOrPopInst(Vdbe *p, int addr){
+  if( addr==p->nOp-1 ){
+    assert( p->aOp[addr].opcode==OP_Once
+         || p->aOp[addr].opcode==OP_If
+         || p->aOp[addr].opcode==OP_FkIfZero );
+    assert( p->aOp[addr].p4type==0 );
+#ifdef SQLITE_VDBE_COVERAGE
+    sqlite3VdbeGetOp(p,-1)->iSrcLine = 0;  /* Erase VdbeCoverage() macros */
+#endif
+    p->nOp--;
+  }else{
+    sqlite3VdbeChangeP2(p, addr, p->nOp);
+  }
+}
+
 
 /*
 ** If the input FuncDef structure is ephemeral, then free it.  If
@@ -1630,8 +1658,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
 #endif
     case P4_COLLSEQ: {
+      static const char *const encnames[] = {"?", "8", "16LE", "16BE"};
       CollSeq *pColl = pOp->p4.pColl;
-      sqlite3_str_appendf(&x, "(%.20s)", pColl->zName);
+      assert( pColl->enc>=0 && pColl->enc<4 );
+      sqlite3_str_appendf(&x, "%.18s-%s", pColl->zName,
+                          encnames[pColl->enc]);
       break;
     }
     case P4_FUNCDEF: {
@@ -2062,7 +2093,7 @@ int sqlite3VdbeList(
   }
 
   if( rc==SQLITE_OK ){
-    if( db->u1.isInterrupted ){
+    if( AtomicLoad(&db->u1.isInterrupted) ){
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
@@ -2344,6 +2375,7 @@ void sqlite3VdbeMakeReady(
     };
     int iFirst, mx, i;
     if( nMem<10 ) nMem = 10;
+    p->explain = pParse->explain;
     if( pParse->explain==2 ){
       sqlite3VdbeSetNumCols(p, 4);
       iFirst = 8;
@@ -2394,7 +2426,6 @@ void sqlite3VdbeMakeReady(
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
-  p->explain = pParse->explain;
   if( db->mallocFailed ){
     p->nVar = 0;
     p->nCursor = 0;
@@ -3512,7 +3543,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
   assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
   if( p->deferredMoveto ){
     int iMap;
-    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 ){
+    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;
       return SQLITE_OK;
@@ -4862,7 +4893,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
 
   /* Read in the complete content of the index entry */
   sqlite3VdbeMemInit(&m, db, 0);
-  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, &m);
+  rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
   if( rc ){
     return rc;
   }
@@ -4944,7 +4975,7 @@ int sqlite3VdbeIdxKeyCompare(
     return SQLITE_CORRUPT_BKPT;
   }
   sqlite3VdbeMemInit(&m, db, 0);
-  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, &m);
+  rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
   if( rc ){
     return rc;
   }

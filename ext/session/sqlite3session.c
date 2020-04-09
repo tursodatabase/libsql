@@ -3513,7 +3513,7 @@ static int sessionDeleteRow(
   SessionBuffer buf = {0, 0, 0};
   int nPk = 0;
 
-  sessionAppendStr(&buf, "DELETE FROM ", &rc);
+  sessionAppendStr(&buf, "DELETE FROM main.", &rc);
   sessionAppendIdent(&buf, zTab, &rc);
   sessionAppendStr(&buf, " WHERE ", &rc);
 
@@ -3596,7 +3596,7 @@ static int sessionUpdateRow(
   SessionBuffer buf = {0, 0, 0};
 
   /* Append "UPDATE tbl SET " */
-  sessionAppendStr(&buf, "UPDATE ", &rc);
+  sessionAppendStr(&buf, "UPDATE main.", &rc);
   sessionAppendIdent(&buf, zTab, &rc);
   sessionAppendStr(&buf, " SET ", &rc);
 

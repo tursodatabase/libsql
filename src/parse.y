@@ -965,6 +965,7 @@ idlist(A) ::= nm(Y).
       p->op = (u8)op;
       p->affExpr = 0;
       p->flags = EP_Leaf;
+      ExprClearVVAProperties(p);
       p->iAgg = -1;
       p->pLeft = p->pRight = 0;
       p->x.pList = 0;
@@ -1193,10 +1194,11 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       */
       sqlite3ExprUnmapAndDelete(pParse, A);
       A = sqlite3Expr(pParse->db, TK_INTEGER, N ? "1" : "0");
-    }else if( 0 && Y->nExpr==1 && sqlite3ExprIsConstant(Y->a[0].pExpr) ){
+    }else if( Y->nExpr==1 && sqlite3ExprIsConstant(Y->a[0].pExpr) ){
       Expr *pRHS = Y->a[0].pExpr;
       Y->a[0].pExpr = 0;
       sqlite3ExprListDelete(pParse->db, Y);
+      pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0);
       A = sqlite3PExpr(pParse, TK_EQ, A, pRHS);
       if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
     }else{

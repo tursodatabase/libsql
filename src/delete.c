@@ -533,7 +533,9 @@ void sqlite3DeleteFrom(
                                  iTabCur, aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
-      if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
+      if( eOnePass==ONEPASS_MULTI ){
+        sqlite3VdbeJumpHereOrPopInst(v, iAddrOnce);
+      }
     }
   
     /* Set up a loop over the rowids/primary-keys that were found in the
