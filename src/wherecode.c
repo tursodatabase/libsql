@@ -1432,7 +1432,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           pCompare->pRight = pRight = sqlite3Expr(db, TK_REGISTER, 0);
           if( pRight ){
             pRight->iTable = iReg+j+2;
-            sqlite3ExprIfFalse(pParse, pCompare, pLevel->addrCont, 0);
+            sqlite3ExprIfFalse(
+                pParse, pCompare, pLevel->addrCont, SQLITE_JUMPIFNULL
+            );
           }
           pCompare->pLeft = 0;
           sqlite3ExprDelete(db, pCompare);
@@ -1709,6 +1711,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       nExtraReg = 1;
       bSeekPastNull = 1;
       pLevel->regBignull = regBignull = ++pParse->nMem;
+      if( pLevel->iLeftJoin ){
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, regBignull);
+      }
       pLevel->addrBignull = sqlite3VdbeMakeLabel(pParse);
     }
 

@@ -315,7 +315,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   while(1){
     for(i=OMIT_TEMPDB; i<db->nDb; i++){
       int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
-      if( zDatabase==0 || sqlite3StrICmp(zDatabase, db->aDb[j].zDbSName)==0 ){
+      if( zDatabase==0 || sqlite3DbIsNamed(db, j, zDatabase) ){
         assert( sqlite3SchemaMutexHeld(db, j, 0) );
         p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
         if( p ) return p;
@@ -437,7 +437,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     Schema *pSchema = db->aDb[j].pSchema;
     assert( pSchema );
-    if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zDbSName) ) continue;
+    if( zDb && sqlite3DbIsNamed(db, j, zDb)==0 ) continue;
     assert( sqlite3SchemaMutexHeld(db, j, 0) );
     p = sqlite3HashFind(&pSchema->idxHash, zName);
     if( p ) break;
@@ -590,6 +590,7 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
   assert( pTable!=0 );
   if( (pCol = pTable->aCol)!=0 ){
     for(i=0; i<pTable->nCol; i++, pCol++){
+      assert( pCol->zName==0 || pCol->hName==sqlite3StrIHash(pCol->zName) );
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
       sqlite3DbFree(db, pCol->zColl);
@@ -1238,6 +1239,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
+  pCol->hName = sqlite3StrIHash(z);
   sqlite3ColumnPropertiesFromName(p, pCol);
  
   if( pType->n==0 ){
@@ -2157,6 +2159,32 @@ int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
+#ifdef SQLITE_DEBUG
+/*
+** Mark all nodes of an expression as EP_Immutable, indicating that
+** they should not be changed.  Expressions attached to a table or
+** index definition are tagged this way to help ensure that we do
+** not pass them into code generator routines by mistake.
+*/
+static int markImmutableExprStep(Walker *pWalker, Expr *pExpr){
+  ExprSetVVAProperty(pExpr, EP_Immutable);
+  return WRC_Continue;
+}
+static void markExprListImmutable(ExprList *pList){
+  if( pList ){
+    Walker w;
+    memset(&w, 0, sizeof(w));
+    w.xExprCallback = markImmutableExprStep;
+    w.xSelectCallback = sqlite3SelectWalkNoop;
+    w.xSelectCallback2 = 0;
+    sqlite3WalkExprList(&w, pList);
+  }
+}
+#else
+#define markExprListImmutable(X)  /* no-op */
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** This routine is called to report the final ")" that terminates
 ** a CREATE TABLE statement.
@@ -2249,6 +2277,8 @@ void sqlite3EndTable(
       ** actually be used if PRAGMA writable_schema=ON is set. */
       sqlite3ExprListDelete(db, p->pCheck);
       p->pCheck = 0;
+    }else{
+      markExprListImmutable(p->pCheck);
     }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */

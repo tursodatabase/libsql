@@ -500,14 +500,18 @@ do_execsql_test 15.0 {
   INSERT INTO t1 VALUES('c', 'd');
 }
 
+if {$tcl_platform(byteOrder)=="littleEndian"} {
+  set res {X'02000000'}
+} else {
+  set res {X'00000002'}
+}
 do_execsql_test 15.1 {
   SELECT quote(matchinfo(t1, 'n')) FROM t1 LIMIT 1;
-} {X'02000000'}
-
+} $res
 do_execsql_test 15.2 {
   DELETE FROM t1_content WHERE rowid=1;
   SELECT quote(matchinfo(t1, 'n')) FROM t1 LIMIT 1;
-} {X'02000000'}
+} $res
 
 fts5_aux_test_functions db
 do_execsql_test 15.3 {
@@ -517,4 +521,3 @@ do_execsql_test 15.3 {
 }
 
 finish_test
-

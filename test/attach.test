@@ -148,10 +148,8 @@ do_test attach-1.14 {
     ATTACH 'test.db' as db9;
   }
 } {1 {database db9 is already in use}}
-do_test attach-1.15 {
-  catchsql {
-    ATTACH 'test.db' as main;
-  }
+do_catchsql_test attach-1.15 {
+  ATTACH 'test.db' as main;
 } {1 {database main is already in use}}
 ifcapable tempdb {
   do_test attach-1.16 {
@@ -160,10 +158,8 @@ ifcapable tempdb {
     }
   } {1 {database temp is already in use}}
 }
-do_test attach-1.17 {
-  catchsql {
-    ATTACH 'test.db' as MAIN;
-  }
+do_catchsql_test attach-1.17 {
+  ATTACH 'test.db' as MAIN;
 } {1 {database MAIN is already in use}}
 do_test attach-1.18 {
   catchsql {
@@ -230,6 +226,7 @@ do_test attach-1.26 {
     DETACH main;
   }
 } {1 {cannot detach database main}}
+
 
 ifcapable tempdb {
   do_test attach-1.27 {

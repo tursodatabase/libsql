@@ -2502,7 +2502,7 @@ static int fts3SegmentIsMaxLevel(Fts3Table *p, i64 iAbsLevel, int *pbMax){
   if( rc!=SQLITE_OK ) return rc;
   sqlite3_bind_int64(pStmt, 1, iAbsLevel+1);
   sqlite3_bind_int64(pStmt, 2, 
-      ((iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
+      (((u64)iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
   );
 
   *pbMax = 0;
@@ -4952,6 +4952,12 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     ** nMin segments and no hint in the %_stat table. No work to do.
     ** Exit early in this case.  */
     if( nSeg<=0 ) break;
+
+    assert( nMod<=0x7FFFFFFF );
+    if( iAbsLevel<0 || iAbsLevel>(nMod<<32) ){
+      rc = FTS_CORRUPT_VTAB;
+      break;
+    }
 
     /* Open a cursor to iterate through the contents of the oldest nSeg 
     ** indexes of absolute level iAbsLevel. If this cursor is opened using 

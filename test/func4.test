@@ -451,7 +451,7 @@ ifcapable check {
     catchsql {
       INSERT INTO t1 (x) VALUES ('1234.00');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {0 {}}
   do_test func4-3.17 {
     catchsql {
       INSERT INTO t1 (x) VALUES (1234.00);
@@ -461,7 +461,7 @@ ifcapable check {
     catchsql {
       INSERT INTO t1 (x) VALUES ('-9223372036854775809');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {0 {}}
   if {$highPrecision(1)} {
     do_test func4-3.19 {
       catchsql {
@@ -470,8 +470,8 @@ ifcapable check {
     } {1 {CHECK constraint failed: t1}}
   }
   do_execsql_test func4-3.20 {
-    SELECT x FROM t1 ORDER BY x;
-  } {1234 1234 1234}
+    SELECT x FROM t1 WHERE x>0 ORDER BY x;
+  } {1234 1234 1234 1234}
 
   ifcapable floatingpoint {
     do_execsql_test func4-4.1 {

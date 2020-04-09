@@ -18,6 +18,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix cse
 
 do_test cse-1.1 {
   execsql {
@@ -156,5 +157,44 @@ for {set i 1} {$i<100} {incr i} {
     execsql $::sql
   } $answer
 }
+
+#-------------------------------------------------------------------------
+# Ticket fd1bda016d1a
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a TEXT, b);
+  INSERT INTO t1 VALUES('hello', 0);
+  INSERT INTO t1 VALUES('world', 0);
+
+  CREATE TABLE t2(x TEXT);
+  INSERT INTO t2 VALUES('hello');
+  INSERT INTO t2 VALUES('world');
+
+  CREATE TABLE t3(y);
+  INSERT INTO t3 VALUES(1000);
+} {}
+
+do_execsql_test 3.1 {
+  SELECT 1000 = y FROM t3
+} {1}
+
+do_execsql_test 3.2 {
+  SELECT 1000 IN (SELECT x FROM t2), 1000 = y FROM t3
+} {0 1}
+
+do_execsql_test 3.3 {
+  SELECT 0 IN (SELECT a), (SELECT a LIMIT 0) FROM t1 
+} {0 {} 0 {}}
+
+do_execsql_test 3.4 {
+  SELECT 0 IN (SELECT a) FROM t1 WHERE a = 'hello' OR (SELECT a LIMIT 0);
+} {0}
+
+do_execsql_test 3.5 {
+  CREATE TABLE v0(v1 VARCHAR0);
+  INSERT INTO v0 VALUES(2), (3);
+  SELECT 0 IN(SELECT v1) FROM v0 WHERE v1 = 2 OR(SELECT v1 LIMIT 0);
+} {0}
 
 finish_test
