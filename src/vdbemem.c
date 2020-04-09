@@ -961,7 +961,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
         sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
           (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
       }
-      /* If pX is marked as a shallow copy of pMem, then verify that
+      /* If pX is marked as a shallow copy of pMem, then try to verify that
       ** no significant changes have been made to pX since the OP_SCopy.
       ** A significant change would indicated a missed call to this
       ** function for pX.  Minor changes, such as adding or removing a
@@ -969,11 +969,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
       ** same. */
       mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
       assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
-      /* assert( (mFlags&MEM_Real)==0 || pMem->u.r==pX->u.r ); */
-      /*                                          ^^           */
-      /*       Cannot reliably compare doubles for equality    */
-      assert( (mFlags&MEM_Str)==0  || (pMem->n==pX->n && pMem->z==pX->z) );
-      assert( (mFlags&MEM_Blob)==0  || sqlite3BlobCompare(pMem,pX)==0 );
       
       /* pMem is the register that is changing.  But also mark pX as
       ** undefined so that we can quickly detect the shallow-copy error */
@@ -1169,7 +1164,7 @@ int sqlite3VdbeMemSetStr(
 ** If this routine fails for any reason (malloc returns NULL or unable
 ** to read from the disk) then the pMem is left in an inconsistent state.
 */
-static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
+int sqlite3VdbeMemFromBtree(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   u32 offset,       /* Offset from the start of data to return bytes from. */
   u32 amt,          /* Number of bytes to return. */
@@ -1192,13 +1187,11 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
   }
   return rc;
 }
-int sqlite3VdbeMemFromBtree(
+int sqlite3VdbeMemFromBtreeZeroOffset(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
-  u32 offset,       /* Offset from the start of data to return bytes from. */
   u32 amt,          /* Number of bytes to return. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
-  char *zData;        /* Data from the btree layer */
   u32 available = 0;  /* Number of bytes available on the local btree page */
   int rc = SQLITE_OK; /* Return code */
 
@@ -1208,15 +1201,14 @@ int sqlite3VdbeMemFromBtree(
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
-  zData = (char *)sqlite3BtreePayloadFetch(pCur, &available);
-  assert( zData!=0 );
+  pMem->z = (char *)sqlite3BtreePayloadFetch(pCur, &available);
+  assert( pMem->z!=0 );
 
-  if( offset+amt<=available ){
-    pMem->z = &zData[offset];
+  if( amt<=available ){
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
   }else{
-    rc = vdbeMemFromBtreeResize(pCur, offset, amt, pMem);
+    rc = sqlite3VdbeMemFromBtree(pCur, 0, amt, pMem);
   }
 
   return rc;

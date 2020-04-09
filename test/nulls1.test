@@ -297,5 +297,47 @@ do_eqp_test 9.4 {
 } {SEARCH TABLE v0 USING COVERING INDEX v3 (ANY(c1) AND c2=?)}
 
 
+# 2020-03-01 ticket e12a0ae526bb51c7
+# NULLS LAST on a LEFT JOIN
+#
+reset_db
+do_execsql_test 10.10 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1(x) VALUES('X');
+  CREATE TABLE t2(c, d);
+  CREATE INDEX t2dc ON t2(d, c);
+  SELECT c FROM t1 LEFT JOIN t2 ON d=NULL ORDER BY d, c NULLS LAST;
+} {{}}
+do_execsql_test 10.20 {
+  INSERT INTO t2(c,d) VALUES(5,'X'),(6,'Y'),(7,'Z'),(3,'A'),(4,'B');
+  SELECT c FROM t1 LEFT JOIN t2 ON d=x ORDER BY d, c NULLS LAST;
+} {5}
+do_execsql_test 10.30 {
+  UPDATE t2 SET d='X';
+  UPDATE t2 SET c=NULL WHERE c=6;
+  SELECT c FROM t1 LEFT JOIN t2 ON d=x ORDER BY d NULLS FIRST, c NULLS FIRST;
+} {{} 3 4 5 7}
+do_execsql_test 10.40 {
+  SELECT c FROM t1 LEFT JOIN t2 ON d=x ORDER BY d NULLS LAST, c NULLS LAST;
+} {3 4 5 7 {}}
+do_execsql_test 10.41 {
+  SELECT c FROM t1 LEFT JOIN t2 ON d=x ORDER BY c NULLS LAST;
+} {3 4 5 7 {}}
+do_execsql_test 10.42 {
+  SELECT c FROM t1 LEFT JOIN t2 ON d=x ORDER BY +d NULLS LAST, +c NULLS LAST;
+} {3 4 5 7 {}}
+do_execsql_test 10.50 {
+  INSERT INTO t1(x) VALUES(NULL),('Y');
+  SELECT x, c, d, '|' FROM t1 LEFT JOIN t2 ON d=x
+   ORDER BY d NULLS LAST, c NULLS LAST;
+} {X 3 X | X 4 X | X 5 X | X 7 X | X {} X | {} {} {} | Y {} {} |}
+do_execsql_test 10.51 {
+  SELECT x, c, d, '|' FROM t1 LEFT JOIN t2 ON d=x
+   ORDER BY +d NULLS LAST, +c NULLS LAST;
+} {X 3 X | X 4 X | X 5 X | X 7 X | X {} X | {} {} {} | Y {} {} |}
+
+
+
+
 
 finish_test

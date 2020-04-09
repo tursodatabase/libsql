@@ -444,18 +444,6 @@ int sqlite3WalTrace = 0;
 #endif
 
 /*
-** WAL mode depends on atomic aligned 32-bit loads and stores in a few
-** places.  The following macros try to make this explicit.
-*/
-#if GCC_VESRION>=5004000
-# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
-# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
-#else
-# define AtomicLoad(PTR)       (*(PTR))
-# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
-#endif
-
-/*
 ** Both the wal-file and the wal-index contain version fields 
 ** indicating the current version of the system. If a client
 ** reads the header of a wal file (as part of recovery), or the
@@ -1616,6 +1604,11 @@ static int walIndexRecover(Wal *pWal){
   int bZero = 0;
   WalIndexHdr hdr;
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int tmout = 0;
+  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+#endif
+
   /* Obtain an exclusive lock on all byte in the locking range not already
   ** locked by the caller. The caller is guaranteed to have locked the
   ** WAL_WRITE_LOCK byte, and may have also locked the WAL_CKPT_LOCK byte.
@@ -2470,7 +2463,7 @@ static int walCheckpoint(
         assert( bWal2==1 || walFramePgno(pWal, iFrame)==iDbpage );
         assert( bWal2==0 || walFramePgno2(pWal, iCkpt, iFrame)==iDbpage );
 
-        if( db->u1.isInterrupted ){
+        if( AtomicLoad(&db->u1.isInterrupted) ){
           rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
           break;
         }
@@ -3250,7 +3243,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
-          mxReadMark = AtomicStore(pInfo->aReadMark+i,mxFrame);
+          AtomicStore(pInfo->aReadMark+i,mxFrame);
+          mxReadMark = mxFrame;
           mxI = i;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           break;
@@ -3413,6 +3407,9 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int tmout = 0;
+#endif
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
   int bChanged = 0;
@@ -3421,6 +3418,12 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
     bChanged = 1;
   }
+#endif
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  /* Disable blocking locks. They are not useful when trying to open a
+  ** read-transaction, and blocking may cause deadlock anyway. */
+  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
 #endif
 
   do{
@@ -3434,6 +3437,16 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   if( rc==SQLITE_OK && pWal->hdr.iVersion==WAL_VERSION2 ){
     rc = walOpenWal2(pWal);
   }
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  /* If they were disabled earlier and the read-transaction has been
+  ** successfully opened, re-enable blocking locks. This is because the
+  ** connection may attempt to upgrade to a write-transaction, which does
+  ** benefit from using blocking locks.  */
+  if( rc==SQLITE_OK ){
+    sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+  }
+#endif
 
   pWal->nPriorFrame = pWal->hdr.mxFrame;
 #ifdef SQLITE_ENABLE_SNAPSHOT
@@ -4322,11 +4335,7 @@ static int walWriteOneFrame(
   }
 #endif
 
-#if defined(SQLITE_HAS_CODEC)
-  if( (pData = sqlite3PagerCodec(pPage))==0 ) return SQLITE_NOMEM_BKPT;
-#else
   pData = pPage->pData;
-#endif
   walEncodeFrame(p->pWal, pPage->pgno, nTruncate, pData, aFrame);
   rc = walWriteToLog(p, aFrame, sizeof(aFrame), iOffset);
   if( rc ) return rc;
@@ -4531,11 +4540,7 @@ int sqlite3WalFrames(
         if( pWal->iReCksum==0 || iWrite<pWal->iReCksum ){
           pWal->iReCksum = iWrite;
         }
-#if defined(SQLITE_HAS_CODEC)
-        if( (pData = sqlite3PagerCodec(p))==0 ) return SQLITE_NOMEM;
-#else
         pData = p->pData;
-#endif
         rc = sqlite3OsWrite(pWal->apWalFd[iApp], pData, szPage, iOff);
         if( rc ) return rc;
         p->flags &= ~PGHDR_WAL_APPEND;

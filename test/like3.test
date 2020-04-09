@@ -237,7 +237,7 @@ do_eqp_test like3-6.110 {
   `--SEARCH TABLE t1 USING PRIMARY KEY (path>? AND path<?)
 }
 do_eqp_test like3-6.120 {
-  SELECT * FROM t1 WHERE path LIKE 'a%' ESCAPE '_';
+  SELECT * FROM t1 WHERE path LIKE 'a%' ESCAPE 'x';
 } {
   QUERY PLAN
   `--SEARCH TABLE t1 USING PRIMARY KEY (path>? AND path<?)
@@ -255,7 +255,7 @@ do_eqp_test like3-6.210 {
   `--SEARCH TABLE t2 USING INDEX t2path (path>? AND path<?)
 }
 do_eqp_test like3-6.220 {
-  SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '_';
+  SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '\';
 } {
   QUERY PLAN
   `--SEARCH TABLE t2 USING INDEX t2path (path>? AND path<?)
@@ -268,7 +268,7 @@ do_eqp_test like3-6.230 {
   `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)
 }
 do_eqp_test like3-6.240 {
-  SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '_';
+  SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '\';
 } {
   QUERY PLAN
   `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)

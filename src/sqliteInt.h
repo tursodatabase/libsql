@@ -187,6 +187,21 @@
 #endif
 
 /*
+** WAL mode depends on atomic aligned 32-bit loads and stores in a few
+** places.  The following macros try to make this explicit.
+*/
+#ifndef __has_feature
+# define __has_feature(x) 0       /* compatibility with non-clang compilers */
+#endif
+#if GCC_VERSION>=4007000 || __has_feature(c_atomic)
+# define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
+# define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
+#else
+# define AtomicLoad(PTR)       (*(PTR))
+# define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
+#endif
+
+/*
 ** Include standard header files as necessary
 */
 #ifdef HAVE_STDINT_H
@@ -1273,7 +1288,6 @@ struct Schema {
 */
 #define DB_SchemaLoaded    0x0001  /* The schema has been loaded */
 #define DB_UnresetViews    0x0002  /* Some views have defined column names */
-#define DB_Empty           0x0004  /* The file is empty (length 0 bytes) */
 #define DB_ResetWanted     0x0008  /* Reset the schema when nSchemaLock==0 */
 
 /*
@@ -1431,7 +1445,7 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 struct sqlite3 {
   sqlite3_vfs *pVfs;            /* OS Interface */
   struct Vdbe *pVdbe;           /* List of active virtual machines */
-  CollSeq *pDfltColl;           /* The default collating sequence (BINARY) */
+  CollSeq *pDfltColl;           /* BINARY collseq for the database encoding */
   sqlite3_mutex *mutex;         /* Connection mutex */
   Db *aDb;                      /* All backends */
   int nDb;                      /* Number of backends currently in use */
@@ -1643,6 +1657,7 @@ struct sqlite3 {
 #define DBFLAG_VacuumInto     0x0008  /* Currently running VACUUM INTO */
 #define DBFLAG_SchemaKnownOk  0x0010  /* Schema is known to be valid */
 #define DBFLAG_InternalFunc   0x0020  /* Allow use of internal functions */
+#define DBFLAG_EncodingFixed  0x0040  /* No longer possible to change enc. */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -1946,6 +1961,7 @@ struct Column {
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
+  u8 hName;        /* Column name hash for faster lookup */
   u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
 
@@ -2165,8 +2181,11 @@ struct Table {
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #  define IsVirtual(X)      ((X)->nModuleArg)
+#  define ExprIsVtab(X)  \
+              ((X)->op==TK_COLUMN && (X)->y.pTab!=0 && (X)->y.pTab->nModuleArg)
 #else
 #  define IsVirtual(X)      0
+#  define ExprIsVtab(X)     0
 #endif
 
 /*
@@ -2524,10 +2543,10 @@ struct AggInfo {
 ** it uses less memory in the Expr object, which is a big memory user
 ** in systems with lots of prepared statements.  And few applications
 ** need more than about 10 or 20 variables.  But some extreme users want
-** to have prepared statements with over 32767 variables, and for them
+** to have prepared statements with over 32766 variables, and for them
 ** the option is available (at compile-time).
 */
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
+#if SQLITE_MAX_VARIABLE_NUMBER<32767
 typedef i16 ynVar;
 #else
 typedef int ynVar;
@@ -2603,6 +2622,9 @@ struct Expr {
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth
                          ** TK_FUNCTION: NC_SelfRef flag if needs OP_PureFunc */
+#ifdef SQLITE_DEBUG
+  u8 vvaFlags;           /* Verification flags. */
+#endif
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
@@ -2677,7 +2699,7 @@ struct Expr {
 #define EP_TokenOnly  0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
 #define EP_Win        0x008000 /* Contains window functions */
 #define EP_MemToken   0x010000 /* Need to sqlite3DbFree() Expr.zToken */
-#define EP_NoReduce   0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
+                  /*  0x020000 // available for reuse */
 #define EP_Unlikely   0x040000 /* unlikely() or likelihood() function */
 #define EP_ConstFunc  0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
 #define EP_CanBeNull  0x100000 /* Can be null despite NOT NULL constraint */
@@ -2691,6 +2713,7 @@ struct Expr {
 #define EP_IsTrue   0x10000000 /* Always has boolean value of TRUE */
 #define EP_IsFalse  0x20000000 /* Always has boolean value of FALSE */
 #define EP_FromDDL  0x40000000 /* Originates from sqlite_master */
+               /*   0x80000000 // Available */
 
 /*
 ** The EP_Propagate mask is a set of properties that automatically propagate
@@ -2709,14 +2732,24 @@ struct Expr {
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
+
+/* Flags for use with Expr.vvaFlags
+*/
+#define EP_NoReduce   0x01  /* Cannot EXPRDUP_REDUCE this Expr */
+#define EP_Immutable  0x02  /* Do not change this Expr node */
+
 /* The ExprSetVVAProperty() macro is used for Verification, Validation,
 ** and Accreditation only.  It works like ExprSetProperty() during VVA
 ** processes but is a no-op for delivery.
 */
 #ifdef SQLITE_DEBUG
-# define ExprSetVVAProperty(E,P)  (E)->flags|=(P)
+# define ExprSetVVAProperty(E,P)   (E)->vvaFlags|=(P)
+# define ExprHasVVAProperty(E,P)   (((E)->vvaFlags&(P))!=0)
+# define ExprClearVVAProperties(E) (E)->vvaFlags = 0
 #else
 # define ExprSetVVAProperty(E,P)
+# define ExprHasVVAProperty(E,P)   0
+# define ExprClearVVAProperties(E)
 #endif
 
 /*
@@ -3690,6 +3723,7 @@ struct Walker {
     struct WhereConst *pConst;                /* WHERE clause constants */
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
     struct Table *pTab;                       /* Table of generated column */
+    struct SrcList_item *pSrcItem;            /* A single FROM clause item */
   } u;
 };
 
@@ -4125,11 +4159,7 @@ void sqlite3AddGenerated(Parse*,Expr*,Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
-#ifdef SQLITE_HAS_CODEC
-  int sqlite3CodecQueryParameters(sqlite3*,const char*,const char*);
-#else
-# define sqlite3CodecQueryParameters(A,B,C) 0
-#endif
+#define sqlite3CodecQueryParameters(A,B,C) 0
 Btree *sqlite3DbNameToBtree(sqlite3*,const char*);
 
 #ifdef SQLITE_UNTESTABLE
@@ -4238,7 +4268,7 @@ void sqlite3ExprCodeGeneratedColumn(Parse*, Column*, int);
 #endif
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
-int sqlite3ExprCodeAtInit(Parse*, Expr*, int);
+int sqlite3ExprCodeRunJustOnce(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int, u8);
@@ -4395,6 +4425,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 # define sqlite3AuthContextPush(a,b,c)
 # define sqlite3AuthContextPop(a)  ((void)(a))
 #endif
+int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName);
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
 void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
@@ -4454,10 +4485,10 @@ int sqlite3VarintLen(u64 v);
 
 const char *sqlite3IndexAffinityStr(sqlite3*, Index*);
 void sqlite3TableAffinity(Vdbe*, Table*, int);
-char sqlite3CompareAffinity(Expr *pExpr, char aff2);
-int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
+char sqlite3CompareAffinity(const Expr *pExpr, char aff2);
+int sqlite3IndexAffinityOk(const Expr *pExpr, char idx_affinity);
 char sqlite3TableColumnAffinity(Table*,int);
-char sqlite3ExprAffinity(Expr *pExpr);
+char sqlite3ExprAffinity(const Expr *pExpr);
 int sqlite3Atoi64(const char*, i64*, int, u8);
 int sqlite3DecOrHexToI64(const char*, i64*);
 void sqlite3ErrorWithMsg(sqlite3*, int, const char*,...);
@@ -4480,9 +4511,10 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 int sqlite3IsBinary(const CollSeq*);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
-CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
-CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, Expr *pExpr);
-int sqlite3ExprCollSeqMatch(Parse*,Expr*,Expr*);
+void sqlite3SetTextEncoding(sqlite3 *db, u8);
+CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr);
+CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, const Expr *pExpr);
+int sqlite3ExprCollSeqMatch(Parse*,const Expr*,const Expr*);
 Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*, int);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
@@ -4549,6 +4581,8 @@ int sqlite3MatchEName(
   const char*,
   const char*
 );
+Bitmask sqlite3ExprColUsed(Expr*);
+u8 sqlite3StrIHash(const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
@@ -4713,8 +4747,8 @@ char *sqlite3Normalize(Vdbe*, const char*);
 #endif
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
-CollSeq *sqlite3ExprCompareCollSeq(Parse*,Expr*);
-CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
+CollSeq *sqlite3ExprCompareCollSeq(Parse*,const Expr*);
+CollSeq *sqlite3BinaryCompareCollSeq(Parse *, const Expr*, const Expr*);
 int sqlite3TempInMemory(const sqlite3*);
 const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_WAL

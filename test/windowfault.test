@@ -263,4 +263,15 @@ do_faultsim_test 11 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+do_faultsim_test 11 -faults oom* -prep {
+} -body {
+  execsql {
+    VALUES(false),(current_date collate binary) 
+    intersect 
+    values(count() not like group_concat(cast(cast(0e00 as text) as integer) <= NULL || 0.4e-0 || 0x8 & true ) over () collate rtrim);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test
