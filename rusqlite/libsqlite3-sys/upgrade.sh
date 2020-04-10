@@ -17,7 +17,7 @@ export SQLITE3_INCLUDE_DIR=$SQLITE3_LIB_DIR
 cargo update
 # Just to make sure there is only one bindgen.rs file in target dir
 find $SCRIPT_DIR/../target -type f -name bindgen.rs -exec rm {} \;
-cargo build --features "buildtime_bindgen" --no-default-features
+env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "buildtime_bindgen" --no-default-features
 find $SCRIPT_DIR/../target -type f -name bindgen.rs -exec cp {} $SQLITE3_LIB_DIR/bindgen_bundled_version.rs \;
 # Sanity check
 cd $SCRIPT_DIR/..

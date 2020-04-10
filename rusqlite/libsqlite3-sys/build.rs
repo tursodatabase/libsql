@@ -325,6 +325,18 @@ mod bindings {
         }
     }
 
+    // Are we generating the bundled bindings? Used to avoid emitting things
+    // that would be problematic in bundled builds. This env var is set by
+    // `upgrade.sh`.
+    fn generating_bundled_bindings() -> bool {
+        // Hacky way to know if we're generating the bundled bindings
+        println!("cargo:rerun-if-env-changed=LIBSQLITE3_SYS_BUNDLING");
+        match std::env::var("LIBSQLITE3_SYS_BUNDLING") {
+            Ok(v) if v != "0" => true,
+            _ => false,
+        }
+    }
+
     pub fn write_to_out_dir(header: HeaderLocation, out_path: &Path) {
         let header: String = header.into();
         let mut output = Vec::new();
@@ -341,6 +353,35 @@ mod bindings {
         }
         if cfg!(feature = "session") {
             bindings = bindings.clang_arg("-DSQLITE_ENABLE_SESSION");
+        }
+
+        // When cross compiling unless effort is taken to fix the issue, bindgen
+        // will find the wrong headers. There's only one header included by the
+        // amalgamated `sqlite.h`: `stdarg.h`.
+        //
+        // Thankfully, there's almost no case where rust code needs to use
+        // functions taking `va_list` (It's nearly impossible to get a `va_list`
+        // in Rust unless you get passed it by C code for some reason).
+        //
+        // Arguably, we should never be including these, but we include them for
+        // the cases where they aren't totally broken...
+        let target_arch = std::env::var("TARGET").unwrap();
+        let host_arch = std::env::var("HOST").unwrap();
+        let is_cross_compiling = target_arch != host_arch;
+
+        // Note that when generating the bundled file, we're essentially always
+        // cross compiling.
+        if generating_bundled_bindings() || is_cross_compiling {
+            // Get rid of va_list, as it's not
+            bindings = bindings
+                .blacklist_function("sqlite3_vmprintf")
+                .blacklist_function("sqlite3_vsnprintf")
+                .blacklist_function("sqlite3_str_vappendf")
+                .blacklist_type("va_list")
+                .blacklist_type("__builtin_va_list")
+                .blacklist_type("__gnuc_va_list")
+                .blacklist_type("__va_list_tag")
+                .blacklist_item("__GNUC_VA_LIST");
         }
 
         bindings
