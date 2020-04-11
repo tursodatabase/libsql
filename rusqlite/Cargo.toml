@@ -113,7 +113,7 @@ bencher = "0.1"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.17.3"
+version = "0.18.0"
 
 [[test]]
 name = "config_log"
