@@ -396,7 +396,8 @@ impl IndexConstraint<'_> {
     }
 }
 
-/// `feature = "vtab"` Information about what parameters to pass to `VTabCursor.filter`.
+/// `feature = "vtab"` Information about what parameters to pass to
+/// `VTabCursor.filter`.
 pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
 impl IndexConstraintUsage<'_> {
@@ -477,7 +478,8 @@ pub trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-/// `feature = "vtab"` Context is used by `VTabCursor.column` to specify the cell value.
+/// `feature = "vtab"` Context is used by `VTabCursor.column` to specify the
+/// cell value.
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {

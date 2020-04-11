@@ -757,8 +757,9 @@ impl Statement<'_> {
             ffi::SQLITE_TEXT => {
                 let s = unsafe {
                     // Quoting from "Using SQLite" book:
-                    // To avoid problems, an application should first extract the desired type using a sqlite3_column_xxx() function,
-                    // and then call the appropriate sqlite3_column_bytes() function.
+                    // To avoid problems, an application should first extract the desired type using
+                    // a sqlite3_column_xxx() function, and then call the
+                    // appropriate sqlite3_column_bytes() function.
                     let text = ffi::sqlite3_column_text(raw, col as c_int);
                     let len = ffi::sqlite3_column_bytes(raw, col as c_int);
                     assert!(

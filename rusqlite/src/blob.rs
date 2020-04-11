@@ -68,8 +68,8 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// `feature = "blob"` Open a handle to the BLOB located in `row_id`, `column`,
-    /// `table` in database `db`.
+    /// `feature = "blob"` Open a handle to the BLOB located in `row_id`,
+    /// `column`, `table` in database `db`.
     ///
     /// # Failure
     ///
