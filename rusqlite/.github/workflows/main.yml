@@ -77,19 +77,15 @@ jobs:
           override: true
       - run: rustup component add clippy
       - uses: actions-rs/cargo@v1
-        env:
-          RUSTFLAGS: -D warnings
         with:
           command: clippy
           # clippy with just bundled
-          args: --all-targets --workspace --features bundled
+          args: --all-targets --workspace --features bundled -- -D warnings
       - uses: actions-rs/cargo@v1
-        env:
-          RUSTFLAGS: -D warnings
         with:
           command: clippy
           # Clippy with all non-conflicting features
-          args: --all-targets --workspace --features 'bundled-full session buildtime_bindgen'
+          args: --all-targets --workspace --features 'bundled-full session buildtime_bindgen' -- -D warnings
 
   # Ensure patch is formatted.
   fmt:
