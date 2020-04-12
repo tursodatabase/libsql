@@ -45,6 +45,7 @@ jobs:
           args: --features bundled --workspace --all-targets
 
       - name: "cargo test --features 'bundled-full session buildtime_bindgen'"
+        # TODO: clang is installed on these -- but `bindgen` can't find it...
         if: matrix.platform.os != 'windows-latest'
         uses: actions-rs/cargo@v1
         with:
@@ -52,7 +53,6 @@ jobs:
           args: --features 'bundled-full session buildtime_bindgen' --all-targets --workspace
 
       - name: "cargo test --features bundled-full"
-        if: matrix.platform.os == 'windows-latest'
         uses: actions-rs/cargo@v1
         with:
           command: test
