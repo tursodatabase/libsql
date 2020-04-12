@@ -123,8 +123,8 @@ jobs:
           toolchain: nightly
           override: true
       - uses: actions-rs/cargo@v1
-        env:
-          RUSTFLAGS: -D warnings
         with:
-          command: doc
-          args: --no-deps --features 'bundled-full session buildtime_bindgen'
+          # Need to use `cargo rustdoc` to actually get it to respect -D
+          # warnings... Note: this also requires nightly.
+          command: rustdoc
+          args: --features 'bundled-full session buildtime_bindgen' -- -D warnings
