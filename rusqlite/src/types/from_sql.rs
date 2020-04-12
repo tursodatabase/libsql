@@ -62,19 +62,6 @@ impl fmt::Display for FromSqlError {
 }
 
 impl Error for FromSqlError {
-    #[allow(deprecated)]
-    fn description(&self) -> &str {
-        match *self {
-            FromSqlError::InvalidType => "invalid type",
-            FromSqlError::OutOfRange(_) => "value out of range",
-            #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => "unexpected blob size for 128bit value",
-            #[cfg(feature = "uuid")]
-            FromSqlError::InvalidUuidSize(_) => "unexpected blob size for UUID value",
-            FromSqlError::Other(ref err) => err.description(),
-        }
-    }
-
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         if let FromSqlError::Other(ref err) = self {
             Some(&**err)
