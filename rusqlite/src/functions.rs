@@ -67,6 +67,7 @@
 //!     Ok(())
 //! }
 //! ```
+use std::any::TypeId;
 use std::os::raw::{c_int, c_void};
 use std::panic::{catch_unwind, RefUnwindSafe, UnwindSafe};
 use std::ptr;
@@ -177,13 +178,16 @@ impl Context<'_> {
     /// https://www.sqlite.org/c3ref/get_auxdata.html for a discussion of
     /// this feature, or the unit tests of this module for an example.
     pub fn set_aux<T: 'static>(&self, arg: c_int, value: T) {
-        let boxed = Box::into_raw(Box::new((std::any::TypeId::of::<T>(), value)));
+        let boxed = Box::into_raw(Box::new(AuxData {
+            id: TypeId::of::<T>(),
+            value,
+        }));
         unsafe {
             ffi::sqlite3_set_auxdata(
                 self.ctx,
                 arg,
                 boxed as *mut c_void,
-                Some(free_boxed_value::<(std::any::TypeId, T)>),
+                Some(free_boxed_value::<AuxData<T>>),
             )
         };
     }
@@ -192,18 +196,24 @@ impl Context<'_> {
     /// via `set_aux`. Returns `Ok(None)` if no data has been associated,
     /// and .
     pub fn get_aux<T: 'static>(&self, arg: c_int) -> Result<Option<&T>> {
-        let p = unsafe { ffi::sqlite3_get_auxdata(self.ctx, arg) as *mut (std::any::TypeId, T) };
+        let p = unsafe { ffi::sqlite3_get_auxdata(self.ctx, arg) as *const AuxData<T> };
         if p.is_null() {
             Ok(None)
         } else {
-            let id_val = unsafe { &*p };
-            if std::any::TypeId::of::<T>() != id_val.0 {
+            let id = unsafe { (*p).id };
+            if TypeId::of::<T>() != id {
                 Err(Error::GetAuxWrongType)
             } else {
-                Ok(Some(&id_val.1))
+                Ok(Some(unsafe { &(*p).value }))
             }
         }
     }
+}
+
+#[repr(C)]
+struct AuxData<T: 'static> {
+    id: TypeId,
+    value: T,
 }
 
 /// `feature = "functions"` Aggregate is the callback interface for user-defined
