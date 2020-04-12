@@ -25,13 +25,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      # This has a matcher for test panics, so we use it even though elsewhere
+      # we use actions-rs/toolchain.
+      - uses: hecrj/setup-rust-action@v1
         with:
-          target: ${{ matrix.platform.target }}
-          default: true
-          profile: minimal
-          toolchain: stable
-          override: true
+          rust-version: stable
 
       - uses: actions-rs/cargo@v1
         with:
@@ -99,11 +97,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      # This has a matcher for rustfmt errors, so we use it even though
+      # elsewhere we use actions-rs/toolchain.
+      - uses: hecrj/setup-rust-action@v1
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
+          rust-version: stable
+          components: rustfmt
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:
