@@ -26,7 +26,7 @@ pub enum FromSqlError {
     InvalidUuidSize(usize),
 
     /// An error case available for implementors of the `FromSql` trait.
-    Other(Box<dyn Error + Send + Sync>),
+    Other(Box<dyn Error + Send + Sync + 'static>),
 }
 
 impl PartialEq for FromSqlError {
@@ -75,12 +75,11 @@ impl Error for FromSqlError {
         }
     }
 
-    #[allow(clippy::match_same_arms)]
-    #[allow(deprecated)]
-    fn cause(&self) -> Option<&dyn Error> {
-        match *self {
-            FromSqlError::Other(ref err) => err.cause(),
-            _ => None,
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        if let FromSqlError::Other(ref err) = self {
+            Some(&**err)
+        } else {
+            None
         }
     }
 }
