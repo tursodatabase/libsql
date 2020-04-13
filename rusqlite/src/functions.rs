@@ -109,7 +109,6 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 pub struct Context<'a> {
     ctx: *mut sqlite3_context,
     args: &'a [*mut sqlite3_value],
-    // conn: PhantomData<&'conn mut Connection>,
 }
 
 impl Context<'_> {
@@ -163,6 +162,12 @@ impl Context<'_> {
         unsafe { ValueRef::from_value(arg) }
     }
 
+    /// Fetch or insert the the auxilliary data associated with a particular
+    /// parameter. This is intended to be an easier-to-use way of fetching it
+    /// compared to calling `get_aux` and `set_aux` separately.
+    ///
+    /// See https://www.sqlite.org/c3ref/get_auxdata.html for a discussion of
+    /// this feature, or the unit tests of this module for an example.
     pub fn get_or_create_aux<T, E, F>(&self, arg: c_int, func: F) -> Result<Arc<T>>
     where
         T: Send + Sync + 'static,
