@@ -33,8 +33,8 @@ use std::rc::Rc;
 use crate::ffi;
 use crate::types::{ToSql, ToSqlOutput, Value};
 use crate::vtab::{
-    eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
-    VTabCursor, Values,
+    eponymous_only_module, Context, IndexConstraintOp, IndexInfo, VTab, VTabConnection, VTabCursor,
+    Values,
 };
 use crate::{Connection, Result};
 
@@ -57,11 +57,7 @@ impl ToSql for Array {
 /// `feature = "array"` Register the "rarray" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("rarray", &ARRAY_MODULE, aux)
-}
-
-lazy_static::lazy_static! {
-    static ref ARRAY_MODULE: Module<ArrayTab> = eponymous_only_module::<ArrayTab>(1);
+    conn.create_module("rarray", eponymous_only_module::<ArrayTab>(), aux)
 }
 
 // Column numbers

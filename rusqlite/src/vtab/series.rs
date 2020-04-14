@@ -9,19 +9,15 @@ use std::os::raw::c_int;
 use crate::ffi;
 use crate::types::Type;
 use crate::vtab::{
-    eponymous_only_module, Context, IndexConstraintOp, IndexInfo, Module, VTab, VTabConnection,
-    VTabCursor, Values,
+    eponymous_only_module, Context, IndexConstraintOp, IndexInfo, VTab, VTabConnection, VTabCursor,
+    Values,
 };
 use crate::{Connection, Result};
 
 /// `feature = "series"` Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
-    conn.create_module("generate_series", &SERIES_MODULE, aux)
-}
-
-lazy_static::lazy_static! {
-    static ref SERIES_MODULE: Module<SeriesTab> = eponymous_only_module::<SeriesTab>(1);
+    conn.create_module("generate_series", eponymous_only_module::<SeriesTab>(), aux)
 }
 
 // Column numbers

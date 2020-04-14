@@ -11,7 +11,7 @@ fn test_dummy_module() {
     use rusqlite::{version_number, Connection, Result};
     use std::os::raw::c_int;
 
-    let module = eponymous_only_module::<DummyTab>(1);
+    let module = eponymous_only_module::<DummyTab>();
 
     #[repr(C)]
     struct DummyTab {
@@ -19,7 +19,7 @@ fn test_dummy_module() {
         base: sqlite3_vtab,
     }
 
-    impl VTab for DummyTab {
+    unsafe impl VTab for DummyTab {
         type Aux = ();
         type Cursor = DummyTabCursor;
 
@@ -53,7 +53,7 @@ fn test_dummy_module() {
         row_id: i64,
     }
 
-    impl VTabCursor for DummyTabCursor {
+    unsafe impl VTabCursor for DummyTabCursor {
         fn filter(
             &mut self,
             _idx_num: c_int,
