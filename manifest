@@ -1,11 +1,11 @@
-C Add\sthe\sUINT\scollating\ssequence\sextension.\s\sThe\simplementation\sis\scopied\sout\nof\sthe\s"natsort"\sbranch.
-D 2020-04-14T15:48:55.103
+C Build\sthe\sUINT\scollating\ssequence\sextension\sinto\sthe\sCLI.
+D 2020-04-14T15:53:58.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 9dfc7936f675785309b74d09202bb656732325e65df889e5aaa18cc8932e5b0c
+F Makefile.in f6ab6e307d31e09d82aa4eca87ccb21ce66f486279e204b54b3149ff0d71616f
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc fab23c6b10cb6f06a7e9c407fc2e35cb184a6d653f1b793bda87fcee2eafa4f6
+F Makefile.msc 46c338b1151fbeed42c82416c6bc4da7ff9a10f851bf379f8592280fd53d6efa
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION 980d78a2ce04a1fd0ebefbaabd665f7f9186563820629ee29c6e350e96f19b52
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -454,7 +454,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7ce055f3df31a4f7d21e38f493f907c21db1f673863a573e231f55e2ab005023
+F main.mk f3a972451ed68fa1101d81606a2a1b0a2600b85547059fe89ccb2380b983e50c
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -533,7 +533,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c ab4eb1aee1bd066feea5b6eff264220ae54459019654264e9f688368a7d0c0b5
-F src/shell.c.in cf7d6140c33859a86188aa52093dfa5d4e4d9ce32ecf1d588a127cb0a8f6f96f
+F src/shell.c.in 792b901ae19c7cf8cbac06b3c58ef860328d0ca6d20149bdc469e5c4fc550a1d
 F src/sqlite.h.in cc7d0949ac32bb68ed97acdb3e7ae91cd413a24d32d6ff049ef8308d620a4367
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9c5269260409eb3275324ccace6a13a96f4ad330c708415f70ca6097901ff4ee
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85d3dc8c50d8dbb8eac1956e8976e861d3b671e03355ca9257060fa3dca51cc4
-R 90abc1adacfe98d7a7e36bcfbb02dfec
+P 6f46c6e3e3c471ca864d7596e0211ee90316b784c8fe22c7ae177c9d29731dc7
+R 55c0a7e7e6364ecba4d144377c4424a0
 U drh
-Z 3c9766781f32af8c6294daca79b779f0
+Z 63a1ce21bf796da3b1d1d32831983a3d
