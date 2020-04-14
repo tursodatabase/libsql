@@ -590,6 +590,7 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
   assert( pTable!=0 );
   if( (pCol = pTable->aCol)!=0 ){
     for(i=0; i<pTable->nCol; i++, pCol++){
+      assert( pCol->zName==0 || pCol->hName==sqlite3StrIHash(pCol->zName) );
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
       sqlite3DbFree(db, pCol->zColl);
@@ -1238,6 +1239,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
+  pCol->hName = sqlite3StrIHash(z);
   sqlite3ColumnPropertiesFromName(p, pCol);
  
   if( pType->n==0 ){
