@@ -129,6 +129,7 @@ mod version;
 pub mod vtab;
 
 pub(crate) mod util;
+pub(crate) use util::SmallCString;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
@@ -233,8 +234,8 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     String::from_utf8_lossy(c_slice).into_owned()
 }
 
-fn str_to_cstring(s: &str) -> Result<CString> {
-    Ok(CString::new(s)?)
+fn str_to_cstring(s: &str) -> Result<SmallCString> {
+    Ok(SmallCString::new(s)?)
 }
 
 /// Returns `Ok((string ptr, len as c_int, SQLITE_STATIC | SQLITE_TRANSIENT))`
@@ -301,7 +302,7 @@ pub enum DatabaseName<'a> {
     feature = "modern_sqlite"
 ))]
 impl DatabaseName<'_> {
-    fn to_cstring(&self) -> Result<CString> {
+    fn to_cstring(&self) -> Result<util::SmallCString> {
         use self::DatabaseName::{Attached, Main, Temp};
         match *self {
             Main => str_to_cstring("main"),

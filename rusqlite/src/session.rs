@@ -102,10 +102,11 @@ impl Session<'_> {
     /// Attach a table. `None` means all tables.
     pub fn attach(&mut self, table: Option<&str>) -> Result<()> {
         let table = if let Some(table) = table {
-            str_to_cstring(table)?.as_ptr()
+            Some(str_to_cstring(table)?)
         } else {
-            ptr::null()
+            None
         };
+        let table = table.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null());
         unsafe { check!(ffi::sqlite3session_attach(self.s, table)) };
         Ok(())
     }
@@ -156,7 +157,8 @@ impl Session<'_> {
     /// Load the difference between tables.
     pub fn diff(&mut self, from: DatabaseName<'_>, table: &str) -> Result<()> {
         let from = from.to_cstring()?;
-        let table = str_to_cstring(table)?.as_ptr();
+        let table = str_to_cstring(table)?;
+        let table = table.as_ptr();
         unsafe {
             let mut errmsg = ptr::null_mut();
             let r =

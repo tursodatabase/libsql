@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::CStr;
 use std::os::raw::{c_char, c_int};
 #[cfg(feature = "load_extension")]
 use std::path::Path;
@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use super::ffi;
-use super::{str_for_sqlite, str_to_cstring};
+use super::str_for_sqlite;
 use super::{Connection, InterruptHandle, OpenFlags, Result};
 use crate::error::{error_from_handle, error_from_sqlite_code, Error};
 use crate::raw_statement::RawStatement;
@@ -51,9 +51,9 @@ impl InnerConnection {
     }
 
     pub fn open_with_flags(
-        c_path: &CString,
+        c_path: &CStr,
         flags: OpenFlags,
-        vfs: Option<&CString>,
+        vfs: Option<&CStr>,
     ) -> Result<InnerConnection> {
         #[cfg(not(feature = "bundled"))]
         ensure_valid_sqlite_version();
@@ -171,7 +171,8 @@ impl InnerConnection {
     }
 
     pub fn execute_batch(&mut self, sql: &str) -> Result<()> {
-        let c_sql = str_to_cstring(sql)?;
+        // use CString instead of SmallCString because it's probably big.
+        let c_sql = std::ffi::CString::new(sql)?;
         unsafe {
             let r = ffi::sqlite3_exec(
                 self.db(),
@@ -196,7 +197,7 @@ impl InnerConnection {
         unsafe {
             let mut errmsg: *mut c_char = ptr::null_mut();
             let r = if let Some(entry_point) = entry_point {
-                let c_entry = str_to_cstring(entry_point)?;
+                let c_entry = crate::str_to_cstring(entry_point)?;
                 ffi::sqlite3_load_extension(
                     self.db,
                     dylib_str.as_ptr(),
