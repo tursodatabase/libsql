@@ -1,8 +1,11 @@
 use smallvec::{smallvec, SmallVec};
 use std::ffi::{CStr, CString, NulError};
 
+/// Similar to std::ffi::CString, but avoids heap allocating if the string is
+/// small enough. Also guarantees it's input is UTF-8 -- used for cases where we
+/// need to pass a NUL-terminated string to SQLite, and we have a `&str`.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SmallCString(smallvec::SmallVec<[u8; 16]>);
+pub(crate) struct SmallCString(smallvec::SmallVec<[u8; 16]>);
 
 impl SmallCString {
     #[inline]
@@ -13,20 +16,49 @@ impl SmallCString {
         let mut buf = SmallVec::with_capacity(s.len() + 1);
         buf.extend_from_slice(s.as_bytes());
         buf.push(0);
-        Ok(Self(buf))
+        let res = Self(buf);
+        res.debug_checks();
+        Ok(res)
     }
 
     #[inline]
     pub fn as_str(&self) -> &str {
-        debug_assert!(std::str::from_utf8(&self.as_bytes_without_nul()).is_ok());
+        self.debug_checks();
         // Constructor takes a &str so this is safe.
-        unsafe { std::str::from_utf8_unchecked(&self.as_bytes_without_nul()) }
+        unsafe { std::str::from_utf8_unchecked(self.as_bytes_without_nul()) }
+    }
+
+    /// Get the bytes not including the NUL terminator. E.g. the bytes which
+    /// make up our `str`:
+    /// - `SmallCString::new("foo").as_bytes_without_nul() == b"foo"`
+    /// - `SmallCString::new("foo").as_bytes_with_nul() == b"foo\0"
+    #[inline]
+    pub fn as_bytes_without_nul(&self) -> &[u8] {
+        self.debug_checks();
+        &self.0[..self.len()]
+    }
+
+    /// Get the bytes behind this str *including* the NUL terminator. This
+    /// should never return an empty slice.
+    #[inline]
+    pub fn as_bytes_with_nul(&self) -> &[u8] {
+        self.debug_checks();
+        &self.0
     }
 
     #[inline]
-    pub fn as_bytes_without_nul(&self) -> &[u8] {
-        &self.0[..self.0.len() - 1]
+    #[cfg(debug_assertions)]
+    fn debug_checks(&self) {
+        debug_assert_ne!(self.0.len(), 0);
+        debug_assert_eq!(self.0[self.0.len() - 1], 0);
+        let strbytes = &self.0[..(self.0.len() - 1)];
+        debug_assert!(!strbytes.contains(&0));
+        debug_assert!(std::str::from_utf8(strbytes).is_ok());
     }
+
+    #[inline]
+    #[cfg(not(debug_assertions))]
+    fn debug_checks(&self) {}
 
     #[inline]
     pub fn len(&self) -> usize {
@@ -35,14 +67,16 @@ impl SmallCString {
     }
 
     #[inline]
+    #[allow(unused)] // clippy wants this function.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     #[inline]
     pub fn as_cstr(&self) -> &CStr {
-        debug_assert!(CStr::from_bytes_with_nul(&self.0).is_ok());
-        unsafe { CStr::from_bytes_with_nul_unchecked(&self.0) }
+        let bytes = self.as_bytes_with_nul();
+        debug_assert!(CStr::from_bytes_with_nul(bytes).is_ok());
+        unsafe { CStr::from_bytes_with_nul_unchecked(bytes) }
     }
 
     #[cold]
@@ -103,7 +137,10 @@ mod test {
         // things work.
         assert_eq!(SmallCString::default().0, SmallCString::new("").unwrap().0);
         assert_eq!(SmallCString::new("foo").unwrap().len(), 3);
-        assert_eq!(SmallCString::new("foo").unwrap().0.as_slice(), b"foo\0");
+        assert_eq!(
+            SmallCString::new("foo").unwrap().as_bytes_with_nul(),
+            b"foo\0"
+        );
         assert_eq!(
             SmallCString::new("foo").unwrap().as_bytes_without_nul(),
             b"foo",
