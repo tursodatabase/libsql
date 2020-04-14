@@ -71,7 +71,7 @@ struct ArrayTab {
     base: ffi::sqlite3_vtab,
 }
 
-impl VTab for ArrayTab {
+unsafe impl VTab for ArrayTab {
     type Aux = ();
     type Cursor = ArrayTabCursor;
 
@@ -149,7 +149,7 @@ impl ArrayTabCursor {
         }
     }
 }
-impl VTabCursor for ArrayTabCursor {
+unsafe impl VTabCursor for ArrayTabCursor {
     fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         if idx_num > 0 {
             self.ptr = args.get_array(0)?;

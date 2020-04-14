@@ -95,7 +95,7 @@ impl CSVTab {
     }
 }
 
-impl VTab for CSVTab {
+unsafe impl VTab for CSVTab {
     type Aux = ();
     type Cursor = CSVTabCursor;
 
@@ -296,7 +296,7 @@ impl CSVTabCursor {
     }
 }
 
-impl VTabCursor for CSVTabCursor {
+unsafe impl VTabCursor for CSVTabCursor {
     // Only a full table scan is supported.  So `filter` simply rewinds to
     // the beginning.
     fn filter(

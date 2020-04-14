@@ -189,7 +189,11 @@ impl VTabConnection {
 
 /// `feature = "vtab"` Virtual table instance trait.
 ///
-/// Implementations must be like:
+/// # Safety
+///
+/// The first item in a struct implementing VTab must be
+/// `rusqlite::sqlite3_vtab`, and the struct must be `#[repr(C)]`.
+///
 /// ```rust,ignore
 /// #[repr(C)]
 /// struct MyTab {
@@ -200,7 +204,7 @@ impl VTabConnection {
 /// ```
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
-pub trait VTab: Sized {
+pub unsafe trait VTab: Sized {
     type Aux;
     type Cursor: VTabCursor;
 
@@ -465,7 +469,7 @@ impl OrderBy<'_> {
 /// ```
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab_cursor.html))
-pub trait VTabCursor: Sized {
+pub unsafe trait VTabCursor: Sized {
     /// Begin a search of a virtual table.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xfilter_method))
     fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values<'_>) -> Result<()>;

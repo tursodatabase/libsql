@@ -49,7 +49,7 @@ struct SeriesTab {
     base: ffi::sqlite3_vtab,
 }
 
-impl VTab for SeriesTab {
+unsafe impl VTab for SeriesTab {
     type Aux = ();
     type Cursor = SeriesTabCursor;
 
@@ -181,7 +181,7 @@ impl SeriesTabCursor {
         SeriesTabCursor::default()
     }
 }
-impl VTabCursor for SeriesTabCursor {
+unsafe impl VTabCursor for SeriesTabCursor {
     fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;
