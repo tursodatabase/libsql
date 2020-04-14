@@ -61,7 +61,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
 pub fn log(err_code: c_int, msg: &str) {
     let msg = CString::new(msg).expect("SQLite log messages cannot contain embedded zeroes");
     unsafe {
-        ffi::sqlite3_log(err_code, msg.as_ptr());
+        ffi::sqlite3_log(err_code, b"%s\0" as *const _ as *const c_char, msg.as_ptr());
     }
 }
 
