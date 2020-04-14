@@ -1,5 +1,5 @@
-C Merge\strunk\senhancements.
-D 2020-04-14T15:24:25.823
+C Change\sthe\sname\sfrom\sNATSORT\sto\sUINT.\s\sProvide\san\sOMIT\scompile-time\soption.
+D 2020-04-14T15:35:59.504
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c b179df50e6e8bb0c36c149e95d958d49bd8c6c7469e59c01b53d164360bc6c32
-F src/main.c ddaa99d6de6323a8f24c195f1fa4ff9fa2845744df122653df1af0f501c1a439
+F src/main.c 131196662881cc50cd768cd7a068a10be4d1dc38b4d6f8bef59ae8001ef543d0
 F src/malloc.c cabfef0d725e04c8abfe0231a556ed8b78bf329dcc3fddbf903f6cdcd53cf4e6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1803,7 +1803,7 @@ F tool/mksqlite3h.tcl 080873e3856eceb9d289a08a00c4b30f875ea3feadcbece796bd509b15
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
-F tool/omittest.tcl 6616fbf384f0f630113eab27d41d4530435dd94e2883307759988b45f0604a3b
+F tool/omittest.tcl 962b2255b2e7c8049f6ff166a209a328e16d67904b110b272ec7ade5f45049d1
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
@@ -1860,7 +1860,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a61be1092732e4298e8b601c150555cb8c6ff79fec666f1889bfc71ddb6d35e9 85d3dc8c50d8dbb8eac1956e8976e861d3b671e03355ca9257060fa3dca51cc4
-R 874e917329c44536fb1e78a77371e35c
+P f1c284dd1eee9ea2edc990ad5bff3412c6d7aa12e6c33151f71bc003732dbbf0
+R 7ebf819fc7eddd35cada2f83e0532261
 U drh
-Z 6d8f7c6d5f125ae0d49e4fa453ab7770
+Z bb1208865ab0874da52c0ad2a32f1333

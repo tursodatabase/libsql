@@ -991,11 +991,12 @@ static int nocaseCollatingFunc(
   return r;
 }
 
+#ifndef SQLITE_OMIT_UINT_COLLSEQ
 /*
 ** The UINT collating function that compares text byte-by-byte but compares
 ** digits in numeric order.
 */
-static int natsortCollFunc(
+static int uintCollFunc(
   void *notUsed,
   int nKey1, const void *pKey1,
   int nKey2, const void *pKey2
@@ -1034,6 +1035,7 @@ static int natsortCollFunc(
   }
   return (nKey1 - i) - (nKey2 - j);
 }
+#endif /* SQLITE_OMIT_UINT_COLLSEQ */
 
 /*
 ** Return the ROWID of the most recent insert
@@ -3252,7 +3254,9 @@ static int openDatabase(
   createCollation(db, sqlite3StrBINARY, SQLITE_UTF16LE, 0, binCollFunc, 0);
   createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
   createCollation(db, "RTRIM", SQLITE_UTF8, 0, rtrimCollFunc, 0);
-  createCollation(db, "NATSORT", SQLITE_UTF8, 0, natsortCollFunc, 0);
+#ifndef SQLITE_OMIT_UINT_COLLSEQ
+  createCollation(db, "UINT", SQLITE_UTF8, 0, uintCollFunc, 0);
+#endif
   if( db->mallocFailed ){
     goto opendb_out;
   }
