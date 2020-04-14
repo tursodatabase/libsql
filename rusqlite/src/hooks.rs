@@ -188,16 +188,21 @@ impl InnerConnection {
             let action = Action::from(action_code);
             let db_name = {
                 let c_slice = CStr::from_ptr(db_str).to_bytes();
-                str::from_utf8_unchecked(c_slice)
+                str::from_utf8(c_slice)
             };
             let tbl_name = {
                 let c_slice = CStr::from_ptr(tbl_str).to_bytes();
-                str::from_utf8_unchecked(c_slice)
+                str::from_utf8(c_slice)
             };
 
             let _ = catch_unwind(|| {
                 let boxed_hook: *mut F = p_arg as *mut F;
-                (*boxed_hook)(action, db_name, tbl_name, row_id);
+                (*boxed_hook)(
+                    action,
+                    db_name.expect("illegal db name"),
+                    tbl_name.expect("illegal table name"),
+                    row_id,
+                );
             });
         }
 

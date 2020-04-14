@@ -672,7 +672,7 @@ impl Statement<'_> {
         unsafe {
             match self.stmt.expanded_sql() {
                 Some(s) => {
-                    let sql = str::from_utf8_unchecked(s.to_bytes()).to_owned();
+                    let sql = String::from_utf8_lossy(s.to_bytes()).to_string();
                     ffi::sqlite3_free(s.as_ptr() as *mut _);
                     Some(sql)
                 }

@@ -53,20 +53,18 @@ impl InnerConnection {
         where
             C: Fn(&str, &str) -> Ordering,
         {
-            use std::str;
-
             let r = catch_unwind(|| {
                 let boxed_f: *mut C = arg1 as *mut C;
                 assert!(!boxed_f.is_null(), "Internal error - null function pointer");
                 let s1 = {
                     let c_slice = slice::from_raw_parts(arg3 as *const u8, arg2 as usize);
-                    str::from_utf8_unchecked(c_slice)
+                    String::from_utf8_lossy(c_slice)
                 };
                 let s2 = {
                     let c_slice = slice::from_raw_parts(arg5 as *const u8, arg4 as usize);
-                    str::from_utf8_unchecked(c_slice)
+                    String::from_utf8_lossy(c_slice)
                 };
-                (*boxed_f)(s1, s2)
+                (*boxed_f)(s1.as_ref(), s2.as_ref())
             });
             let t = match r {
                 Err(_) => {
@@ -122,7 +120,7 @@ impl InnerConnection {
                 let conn = Connection::from_handle(arg2).unwrap();
                 let collation_name = {
                     let c_slice = CStr::from_ptr(arg3).to_bytes();
-                    str::from_utf8_unchecked(c_slice)
+                    str::from_utf8(c_slice).expect("illegal coallation sequence name")
                 };
                 callback(&conn, collation_name)
             });
