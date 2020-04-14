@@ -128,6 +128,8 @@ mod version;
 #[cfg(feature = "vtab")]
 pub mod vtab;
 
+pub(crate) mod util;
+
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 /// To be used when your statement has no [parameter](https://sqlite.org/lang_expr.html#varparam).
@@ -274,7 +276,7 @@ fn path_to_cstring(p: &Path) -> Result<CString> {
 #[cfg(not(unix))]
 fn path_to_cstring(p: &Path) -> Result<CString> {
     let s = p.to_str().ok_or_else(|| Error::InvalidPath(p.to_owned()))?;
-    str_to_cstring(s)
+    Ok(CString::new(s)?)
 }
 
 /// Name for a database within a SQLite connection.

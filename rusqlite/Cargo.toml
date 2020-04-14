@@ -99,6 +99,7 @@ fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 memchr = "2.2.0"
 uuid = { version = "0.8", optional = true }
+smallvec = "1.3"
 
 [dev-dependencies]
 doc-comment = "0.3"

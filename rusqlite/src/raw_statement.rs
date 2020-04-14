@@ -7,11 +7,11 @@ use std::ptr;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
-pub struct RawStatement(*mut ffi::sqlite3_stmt, bool);
+pub struct RawStatement(*mut ffi::sqlite3_stmt, bool, crate::util::ParamIndexCache);
 
 impl RawStatement {
     pub unsafe fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
-        RawStatement(stmt, tail)
+        RawStatement(stmt, tail, Default::default())
     }
 
     pub fn is_null(&self) -> bool {
@@ -87,12 +87,14 @@ impl RawStatement {
         unsafe { ffi::sqlite3_bind_parameter_count(self.0) as usize }
     }
 
-    pub fn bind_parameter_index(&self, name: &CStr) -> Option<usize> {
-        let r = unsafe { ffi::sqlite3_bind_parameter_index(self.0, name.as_ptr()) };
-        match r {
-            0 => None,
-            i => Some(i as usize),
-        }
+    pub fn bind_parameter_index(&self, name: &str) -> Option<usize> {
+        self.2.get_or_insert_with(name, |param_cstr| {
+            let r = unsafe { ffi::sqlite3_bind_parameter_index(self.0, param_cstr.as_ptr()) };
+            match r {
+                0 => None,
+                i => Some(i as usize),
+            }
+        })
     }
 
     pub fn clear_bindings(&self) -> c_int {

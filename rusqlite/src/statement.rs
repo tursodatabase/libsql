@@ -6,7 +6,7 @@ use std::slice::from_raw_parts;
 use std::{convert, fmt, mem, ptr, str};
 
 use super::ffi;
-use super::{len_as_c_int, str_for_sqlite, str_to_cstring};
+use super::{len_as_c_int, str_for_sqlite};
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
@@ -432,8 +432,7 @@ impl Statement<'_> {
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
     pub fn parameter_index(&self, name: &str) -> Result<Option<usize>> {
-        let c_name = str_to_cstring(name)?;
-        Ok(self.stmt.bind_parameter_index(&c_name))
+        Ok(self.stmt.bind_parameter_index(name))
     }
 
     fn bind_parameters<P>(&mut self, params: P) -> Result<()>
