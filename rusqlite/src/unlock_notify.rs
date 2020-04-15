@@ -26,12 +26,13 @@ impl UnlockNotification {
         }
     }
 
-    fn fired(&mut self) {
-        *self.mutex.lock().unwrap() = true;
+    fn fired(&self) {
+        let mut flag = self.mutex.lock().unwrap();
+        *flag = true;
         self.cond.notify_one();
     }
 
-    fn wait(&mut self) {
+    fn wait(&self) {
         let mut fired = self.mutex.lock().unwrap();
         while !*fired {
             fired = self.cond.wait(fired).unwrap();
@@ -43,12 +44,9 @@ impl UnlockNotification {
 #[cfg(feature = "unlock_notify")]
 unsafe extern "C" fn unlock_notify_cb(ap_arg: *mut *mut c_void, n_arg: c_int) {
     use std::slice::from_raw_parts;
-    let args = from_raw_parts(ap_arg, n_arg as usize);
-    for arg in args {
-        let _ = catch_unwind(|| {
-            let un: &mut UnlockNotification = &mut *(*arg as *mut UnlockNotification);
-            un.fired()
-        });
+    let args = from_raw_parts(ap_arg as *const &UnlockNotification, n_arg as usize);
+    for un in args {
+        let _ = catch_unwind(std::panic::AssertUnwindSafe(|| un.fired()));
     }
 }
 
@@ -73,12 +71,12 @@ pub unsafe fn is_locked(db: *mut ffi::sqlite3, rc: c_int) -> bool {
 /// back the current transaction (if any).
 #[cfg(feature = "unlock_notify")]
 pub unsafe fn wait_for_unlock_notify(db: *mut ffi::sqlite3) -> c_int {
-    let mut un = UnlockNotification::new();
+    let un = UnlockNotification::new();
     /* Register for an unlock-notify callback. */
     let rc = ffi::sqlite3_unlock_notify(
         db,
         Some(unlock_notify_cb),
-        &mut un as *mut UnlockNotification as *mut c_void,
+        &un as *const UnlockNotification as *mut c_void,
     );
     debug_assert!(
         rc == ffi::SQLITE_LOCKED || rc == ffi::SQLITE_LOCKED_SHAREDCACHE || rc == ffi::SQLITE_OK
