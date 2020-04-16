@@ -84,6 +84,7 @@ jobs:
         env:
           RUSTFLAGS: -Zsanitizer=address
           RUSTDOCFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: 'detect_stack_use_after_return=1'
         run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen with-asan' --target x86_64-unknown-linux-gnu
 
   # Ensure clippy doesn't complain.
