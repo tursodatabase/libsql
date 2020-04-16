@@ -3,16 +3,32 @@ use super::unlock_notify;
 use super::StatementStatus;
 #[cfg(feature = "modern_sqlite")]
 use crate::util::SqliteMallocString;
+use std::cell::Cell;
 use std::ffi::CStr;
 use std::os::raw::c_int;
 use std::ptr;
+use std::sync::Arc;
 
 // Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
 #[derive(Debug)]
 pub struct RawStatement {
     ptr: *mut ffi::sqlite3_stmt,
     tail: bool,
+    // Cached indices of named parameters, computed on the fly.
     cache: crate::util::ParamIndexCache,
+    // Cached count of named parameters, computed on first use.
+    bind_parameter_count: Cell<Option<usize>>,
+    // Cached SQL (trimmed) that we use as the key when we're in the statement
+    // cache. This is None for statements which didn't come from the statement
+    // cache.
+    //
+    // This is probably the same as `self.sql()` in most cases, but we don't
+    // care either way -- It's a better cache key as it is anyway since it's the
+    // actual source we got from rust.
+    //
+    // One example of a case where the result of `sqlite_sql` and the value in
+    // `statement_cache_key` might differ is if the statement has a `tail`.
+    statement_cache_key: Option<Arc<str>>,
 }
 
 impl RawStatement {
@@ -20,7 +36,9 @@ impl RawStatement {
         RawStatement {
             ptr: stmt,
             tail,
+            bind_parameter_count: Cell::new(None),
             cache: Default::default(),
+            statement_cache_key: None,
         }
     }
 
@@ -28,11 +46,20 @@ impl RawStatement {
         self.ptr.is_null()
     }
 
+    pub(crate) fn set_statement_cache_key(&mut self, p: impl Into<Arc<str>>) {
+        self.statement_cache_key = Some(p.into());
+    }
+
+    pub(crate) fn statement_cache_key(&self) -> Option<Arc<str>> {
+        self.statement_cache_key.clone()
+    }
+
     pub unsafe fn ptr(&self) -> *mut ffi::sqlite3_stmt {
         self.ptr
     }
 
     pub fn column_count(&self) -> usize {
+        // Note: Can't cache this as it changes if the schema is altered.
         unsafe { ffi::sqlite3_column_count(self.ptr) as usize }
     }
 
@@ -94,7 +121,9 @@ impl RawStatement {
     }
 
     pub fn bind_parameter_count(&self) -> usize {
-        unsafe { ffi::sqlite3_bind_parameter_count(self.ptr) as usize }
+        crate::util::get_cached(&self.bind_parameter_count, || unsafe {
+            ffi::sqlite3_bind_parameter_count(self.ptr) as usize
+        })
     }
 
     pub fn bind_parameter_index(&self, name: &str) -> Option<usize> {

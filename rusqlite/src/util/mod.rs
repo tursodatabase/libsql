@@ -9,3 +9,18 @@ pub(crate) use small_cstr::SmallCString;
 mod sqlite_string;
 #[cfg(any(feature = "modern_sqlite", feature = "vtab"))]
 pub(crate) use sqlite_string::SqliteMallocString;
+
+#[inline]
+pub(crate) fn get_cached<T, F>(cache: &std::cell::Cell<Option<T>>, lookup: F) -> T
+where
+    T: Copy,
+    F: FnOnce() -> T,
+{
+    if let Some(v) = cache.get() {
+        v
+    } else {
+        let cb = lookup();
+        cache.set(Some(cb));
+        cb
+    }
+}
