@@ -68,6 +68,24 @@ jobs:
           set RUSTFLAGS=-Ctarget-feature=+crt-static
           cargo build --features bundled
 
+  sanitizer:
+    name: Address Sanitizer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Need nightly rust.
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rust-src
+      - name: Tests with asan
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          RUSTDOCFLAGS: -Zsanitizer=address
+        run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen with-asan' --target x86_64-unknown-linux-gnu
+
   # Ensure clippy doesn't complain.
   clippy:
     name: Clippy

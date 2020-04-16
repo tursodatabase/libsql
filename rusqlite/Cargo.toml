@@ -57,6 +57,8 @@ extra_check = []
 modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
 in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
 bundled-windows = ["libsqlite3-sys/bundled-windows"]
+# Build bundled sqlite with -fsanitize=address
+with-asan = ["libsqlite3-sys/with-asan"]
 
 # Helper feature for enabling both `bundled` and most non-build-related optional
 # features or dependencies. This is useful for running tests / clippy / etc. New
