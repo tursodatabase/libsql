@@ -20,10 +20,10 @@ jobs:
 
       matrix:
         platform:
-#          - { target: x86_64-pc-windows-gnu, os: windows-latest }
           - { target: x86_64-pc-windows-msvc, os: windows-latest }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
           - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-gnu, os: windows-latest, host: -x86_64-pc-windows-gnu }
 
     runs-on: ${{ matrix.platform.os }}
 
@@ -33,7 +33,7 @@ jobs:
       # we use actions-rs/toolchain.
       - uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: stable
+          rust-version: stable${{ matrix.platform.host }}
           targets: ${{ matrix.platform.target }}
 
       - uses: actions-rs/cargo@v1
@@ -61,7 +61,8 @@ jobs:
           args: --features bundled-full --all-targets --workspace
 
       - name: Static build
-        if: matrix.platform.os == 'windows-latest'
+        # Do we expect this to work / should we test with gnu toolchain?
+        if: matrix.platform.os == 'x86_64-pc-windows-msvc'
         shell: cmd
         run: |
           set RUSTFLAGS=-Ctarget-feature=+crt-static
