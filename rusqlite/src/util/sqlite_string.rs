@@ -1,3 +1,10 @@
+// This is used when either vtab or modern-sqlite is on. Different methods are
+// used in each feature. Avoid having to track this for each function. We will
+// still warn for anything that's not used by either, though.
+#![cfg_attr(
+    not(all(feature = "vtab", feature = "modern-sqlite")),
+    allow(dead_code)
+)]
 use crate::ffi;
 use std::marker::PhantomData;
 use std::os::raw::{c_char, c_int};
@@ -8,16 +15,16 @@ use std::ptr::NonNull;
 /// on it. If constructed from a rust string, `sqlite3_malloc` is used.
 ///
 /// It has identical representation to a nonnull `*mut c_char`, so you can use
-/// it transparently as one. It's nonnull, so Option<SqliteMallocString> is a
-/// nullable one.
+/// it transparently as one. It's nonnull, so Option<SqliteMallocString> can be
+/// used for nullable ones (it's still just one pointer).
 ///
-/// Note that this is for Strings we manage that are owned by SQLite, like
-/// `sqlite3_extended_sql` results, some error message pointers. Most strings
-/// are not this! Misuse is extremely dangerous!
+/// Most strings shouldn't use this! Only places where the string needs to be
+/// freed with `sqlite3_free`. This includes `sqlite3_extended_sql` results,
+/// some error message pointers... Note that misuse is extremely dangerous!
 ///
-/// Note that this is not a lossless interface. Incoming strings with internal
+/// Note that this is *not* a lossless interface. Incoming strings with internal
 /// NULs are modified, and outgoing strings which are non-UTF8 are modified.
-/// This seems unavoidable.
+/// This seems unavoidable -- it tries very hard to not panic.
 #[repr(transparent)]
 pub(crate) struct SqliteMallocString {
     ptr: NonNull<c_char>,
@@ -93,7 +100,7 @@ impl SqliteMallocString {
     /// call `handle_alloc_error` which aborts the program after calling a
     /// global hook.
     ///
-    /// This means it's safe to use in extern "C" functions outside of
+    /// This means it's safe to use in extern "C" functions even outside of
     /// catch_unwind.
     pub(crate) fn from_str(s: &str) -> Self {
         use std::convert::TryFrom;
