@@ -1026,23 +1026,8 @@ unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> 
 
 // Space to hold this string must be obtained
 // from an SQLite memory allocation function
-unsafe fn alloc<S: AsRef<[u8]>>(s: S) -> *mut c_char {
-    use std::convert::TryInto;
-    let s = s.as_ref();
-    if memchr::memchr(0, s).is_some() {
-        panic!("Null character found")
-    }
-    let len = s.len();
-    let total_len = len.checked_add(1).unwrap();
-
-    let dst = ffi::sqlite3_malloc(total_len.try_into().unwrap()) as *mut c_char;
-    if dst.is_null() {
-        panic!("Out of memory")
-    }
-    ptr::copy_nonoverlapping(s.as_ptr() as *const c_char, dst, len);
-    // null terminator
-    *dst.offset(len.try_into().unwrap()) = 0;
-    dst
+fn alloc(s: &str) -> *mut c_char {
+    crate::util::SqliteMallocString::from_str(s).into_raw()
 }
 
 #[cfg(feature = "array")]

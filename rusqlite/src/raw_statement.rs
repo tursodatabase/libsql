@@ -1,6 +1,8 @@
 use super::ffi;
 use super::unlock_notify;
 use super::StatementStatus;
+#[cfg(feature = "modern_sqlite")]
+use crate::util::SqliteMallocString;
 use std::ffi::CStr;
 use std::os::raw::c_int;
 use std::ptr;
@@ -124,15 +126,9 @@ impl RawStatement {
         unsafe { ffi::sqlite3_stmt_readonly(self.0) != 0 }
     }
 
-    /// `CStr` must be freed
     #[cfg(feature = "modern_sqlite")] // 3.14.0
-    pub unsafe fn expanded_sql(&self) -> Option<&CStr> {
-        let ptr = ffi::sqlite3_expanded_sql(self.0);
-        if ptr.is_null() {
-            None
-        } else {
-            Some(CStr::from_ptr(ptr))
-        }
+    pub(crate) fn expanded_sql(&self) -> Option<SqliteMallocString> {
+        unsafe { SqliteMallocString::from_raw(ffi::sqlite3_expanded_sql(self.0)) }
     }
 
     pub fn get_status(&self, status: StatementStatus, reset: bool) -> i32 {

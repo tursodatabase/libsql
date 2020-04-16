@@ -668,16 +668,9 @@ impl Statement<'_> {
     /// bound parameters expanded.
     #[cfg(feature = "modern_sqlite")]
     pub fn expanded_sql(&self) -> Option<String> {
-        unsafe {
-            match self.stmt.expanded_sql() {
-                Some(s) => {
-                    let sql = String::from_utf8_lossy(s.to_bytes()).to_string();
-                    ffi::sqlite3_free(s.as_ptr() as *mut _);
-                    Some(sql)
-                }
-                _ => None,
-            }
-        }
+        self.stmt
+            .expanded_sql()
+            .map(|s| s.to_string_lossy().to_string())
     }
 
     /// Get the value for one of the status counters for this statement.
