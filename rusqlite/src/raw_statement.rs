@@ -3,7 +3,6 @@ use super::unlock_notify;
 use super::StatementStatus;
 #[cfg(feature = "modern_sqlite")]
 use crate::util::SqliteMallocString;
-use std::cell::Cell;
 use std::ffi::CStr;
 use std::os::raw::c_int;
 use std::ptr;
@@ -16,8 +15,6 @@ pub struct RawStatement {
     tail: bool,
     // Cached indices of named parameters, computed on the fly.
     cache: crate::util::ParamIndexCache,
-    // Cached count of named parameters, computed on first use.
-    bind_parameter_count: Cell<Option<usize>>,
     // Cached SQL (trimmed) that we use as the key when we're in the statement
     // cache. This is None for statements which didn't come from the statement
     // cache.
@@ -36,7 +33,6 @@ impl RawStatement {
         RawStatement {
             ptr: stmt,
             tail,
-            bind_parameter_count: Cell::new(None),
             cache: Default::default(),
             statement_cache_key: None,
         }
@@ -121,9 +117,7 @@ impl RawStatement {
     }
 
     pub fn bind_parameter_count(&self) -> usize {
-        crate::util::get_cached(&self.bind_parameter_count, || unsafe {
-            ffi::sqlite3_bind_parameter_count(self.ptr) as usize
-        })
+        unsafe { ffi::sqlite3_bind_parameter_count(self.ptr) as usize }
     }
 
     pub fn bind_parameter_index(&self, name: &str) -> Option<usize> {
