@@ -1,0 +1,3 @@
+ignore:
+  - "libsqlite3-sys/bindgen-bindings"
+  - "libsqlite3-sys/sqlite3"
