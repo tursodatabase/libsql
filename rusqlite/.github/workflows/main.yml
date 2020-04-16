@@ -9,6 +9,8 @@ on:
       - master
   schedule:
     - cron: '00 01 * * *'
+env:
+  RUST_BACKTRACE: 1
 jobs:
   test:
     name: Test
@@ -126,3 +128,23 @@ jobs:
           # warnings... Note: this also requires nightly.
           command: rustdoc
           args: --features 'bundled-full session buildtime_bindgen' -- -D warnings
+
+  codecov:
+    name: Generate code coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: '--features "bundled-full session buildtime_bindgen"'
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
