@@ -188,7 +188,8 @@ instead.
 
 ## Author
 
-John Gallagher, johnkgallagher@gmail.com
+Rusqlite is the product of hard work by a number of people. A list is available
+here: https://github.com/rusqlite/rusqlite/graphs/contributors
 
 ## License
 

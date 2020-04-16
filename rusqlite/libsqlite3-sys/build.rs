@@ -247,7 +247,7 @@ mod build_linked {
                 // No env var set and pkg-config couldn't help; just output the link-lib
                 // request and hope that the library exists on the system paths. We used to
                 // output /usr/lib explicitly, but that can introduce other linking problems;
-                // see https://github.com/jgallagher/rusqlite/issues/207.
+                // see https://github.com/rusqlite/rusqlite/issues/207.
                 println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
                 HeaderLocation::Wrapper
             }

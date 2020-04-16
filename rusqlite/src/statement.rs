@@ -1065,7 +1065,7 @@ mod test {
 
     #[test]
     fn test_insert_different_tables() {
-        // Test for https://github.com/jgallagher/rusqlite/issues/171
+        // Test for https://github.com/rusqlite/rusqlite/issues/171
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch(
             r"

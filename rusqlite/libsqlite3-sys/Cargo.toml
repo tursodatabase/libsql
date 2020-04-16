@@ -1,9 +1,9 @@
 [package]
 name = "libsqlite3-sys"
 version = "0.18.0"
-authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
+authors = ["The rusqlite developers"]
 edition = "2018"
-repository = "https://github.com/jgallagher/rusqlite"
+repository = "https://github.com/rusqlite/rusqlite"
 description = "Native bindings to the libsqlite3 library"
 license = "MIT"
 links = "sqlite3"

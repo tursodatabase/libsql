@@ -1,4 +1,4 @@
-For version 0.15.0 and above, see [Releases](https://github.com/jgallagher/rusqlite/releases) page.
+For version 0.15.0 and above, see [Releases](https://github.com/rusqlite/rusqlite/releases) page.
 
 # Version 0.14.0 (2018-08-17)
 

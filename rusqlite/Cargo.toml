@@ -1,10 +1,10 @@
 [package]
 name = "rusqlite"
 version = "0.22.0"
-authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
+authors = ["The rusqlite developers"]
 edition = "2018"
 description = "Ergonomic wrapper for SQLite"
-repository = "https://github.com/jgallagher/rusqlite"
+repository = "https://github.com/rusqlite/rusqlite"
 documentation = "http://docs.rs/rusqlite/"
 readme = "README.md"
 keywords = ["sqlite", "database", "ffi"]
@@ -12,8 +12,8 @@ license = "MIT"
 categories = ["database"]
 
 [badges]
-travis-ci = { repository = "jgallagher/rusqlite" }
-appveyor = { repository = "jgallagher/rusqlite" }
+travis-ci = { repository = "rusqlite/rusqlite" }
+appveyor = { repository = "rusqlite/rusqlite" }
 maintenance = { status = "actively-developed" }
 
 [lib]

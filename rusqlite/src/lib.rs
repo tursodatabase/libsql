@@ -737,7 +737,7 @@ impl Connection {
     /// # Warning
     ///
     /// You should not need to use this function. If you do need to, please
-    /// [open an issue on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
+    /// [open an issue on the rusqlite repository](https://github.com/rusqlite/rusqlite/issues) and describe
     /// your use case.
     ///
     /// # Safety
