@@ -1,5 +1,5 @@
-C Fix\sthe\s".excel"\scommand\sand\sthe\s".open\s-x"\sand\s".open\s-e"\scommand\sso\sthat\nthey\swork\sbetter\swhen\srunning\sfrom\san\sin-memory\sdatabase\sand\son\sWindows\nand\swhen\srunning\sfrom\sa\sscript.
-D 2020-04-17T23:46:54.073
+C Add\sthe\s--bom\soption\sto\sthe\s".excel",\s".once",\sand\s".output"\scommands\nof\sthe\sCLI.\s\sAlso\sfix\sthe\s"--all"\soption\son\s".help"\sso\sthat\sit\sworks\swith\ntwo\sdashes\sin\saddition\sto\sjust\sone.
+D 2020-04-18T14:12:00.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -533,7 +533,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c ab4eb1aee1bd066feea5b6eff264220ae54459019654264e9f688368a7d0c0b5
-F src/shell.c.in d615184e9a5e24da419db6bb9e60905306f45a6ceed760bdbbe656c4a684a18b
+F src/shell.c.in d48577e0282bc71f0692c3585dfeb59acacf28f721520814b0229cb7ef8972cb
 F src/sqlite.h.in 4276f461ed8405630e3089b682dad77ae7a65c345d8daebcee52a13be8cd880c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9c5269260409eb3275324ccace6a13a96f4ad330c708415f70ca6097901ff4ee
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb772b7a8fb53694cb267e74c11f49d2b9fd6920821c4e232f90ec35739c8904
-R e921db661ca4e205b542b92ef8a31312
+P 07752164c2bf00b6885808533bbdb2cefbf1bf281a887b0b4f6316649a6cb810
+R f789048a883ae9edd5940e9d7edbaa7f
 U drh
-Z 880b12b2b5c0e130871dd9c9bbfa0760
+Z 993c0c14d705afacb01cbe8f69aff20c
