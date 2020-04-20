@@ -2910,10 +2910,6 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p){
 ** Return the number of bytes of space at the end of every page that
 ** are intentually left unused.  This is the "reserved" space that is
 ** sometimes used by extensions.
-**
-** If SQLITE_HAS_MUTEX is defined then the number returned is the
-** greater of the current reserved space and the maximum requested
-** reserve space.
 */
 int sqlite3BtreeGetOptimalReserve(Btree *p){
   int n;

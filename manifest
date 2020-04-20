@@ -1,5 +1,5 @@
-C Add\sthe\s--bom\soption\sto\sthe\s".excel",\s".once",\sand\s".output"\scommands\nof\sthe\sCLI.\s\sAlso\sfix\sthe\s"--all"\soption\son\s".help"\sso\sthat\sit\sworks\swith\ntwo\sdashes\sin\saddition\sto\sjust\sone.
-D 2020-04-18T14:12:00.030
+C Remove\san\sobsolete\scomment.\s\sNo\schanges\sto\scode.
+D 2020-04-20T14:05:54.955
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -473,7 +473,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 79ce96ab39fd2fc21ff00d03913587d5a08280a9eb081a08d0ffa9fa26f4f6fb
+F src/btree.c 671be07873797f106cf59a81471196523bb88dacc4fcd6030d1d415fff3f7b2e
 F src/btree.h 6111552f19ed7a40f029cf4b33badc6fef9880314fffd80a945f0b7f43ab7471
 F src/btreeInt.h dee1a1d0c621524e006bb260bd6b66d5d1867da6fe38cba9ad7b6a9bb9c0c175
 F src/build.c ec6c0bda1e43ef55e5f5121a77ba19fac51fc6585f95ce2da795bcedcf6e8f36
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07752164c2bf00b6885808533bbdb2cefbf1bf281a887b0b4f6316649a6cb810
-R f789048a883ae9edd5940e9d7edbaa7f
+P d5b0def96ba6d90f47bc96fab1ccf9c501d84885d086744035b16fd96f3e248c
+R 4a09aaf85f0fed3dd0723d494ffedd7d
 U drh
-Z 993c0c14d705afacb01cbe8f69aff20c
+Z 504e3b736c67f90426ab20d53647f809
