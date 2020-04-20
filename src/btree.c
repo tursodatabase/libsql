@@ -2857,8 +2857,11 @@ int sqlite3BtreeSetPagerFlags(
 int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   int rc = SQLITE_OK;
   BtShared *pBt = p->pBt;
-  assert( nReserve>=-1 && nReserve<=255 );
+  assert( nReserve>=-1 && nReserve<=254 );
   sqlite3BtreeEnter(p);
+  if( nReserve>=0 ){
+    pBt->nReserveWanted = nReserve + 1;
+  }
   if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
     return SQLITE_READONLY;
@@ -2911,10 +2914,11 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p){
 ** are intentually left unused.  This is the "reserved" space that is
 ** sometimes used by extensions.
 */
-int sqlite3BtreeGetOptimalReserve(Btree *p){
+int sqlite3BtreeGetRequestedReserve(Btree *p){
   int n;
   sqlite3BtreeEnter(p);
-  n = sqlite3BtreeGetReserveNoMutex(p);
+  n = ((int)p->pBt->nReserveWanted) - 1;
+  if( n<0 ) n = sqlite3BtreeGetReserveNoMutex(p);
   sqlite3BtreeLeave(p);
   return n;
 }

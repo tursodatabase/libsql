@@ -3843,6 +3843,13 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }else if( op==SQLITE_FCNTL_DATA_VERSION ){
       *(unsigned int*)pArg = sqlite3PagerDataVersion(pPager);
       rc = SQLITE_OK;
+    }else if( op==SQLITE_FCNTL_RESERVE_BYTES ){
+      int iNew = *(int*)pArg;
+      *(int*)pArg = sqlite3BtreeGetRequestedReserve(pBtree);
+      if( iNew>=0 && iNew<=254 ){
+        sqlite3BtreeSetPageSize(pBtree, 0, iNew, 0);
+      }
+      rc = SQLITE_OK;
     }else{
       rc = sqlite3OsFileControl(fd, op, pArg);
     }
@@ -4056,20 +4063,6 @@ int sqlite3_test_control(int op, ...){
     */ 
     case SQLITE_TESTCTRL_BYTEORDER: {
       rc = SQLITE_BYTEORDER*100 + SQLITE_LITTLEENDIAN*10 + SQLITE_BIGENDIAN;
-      break;
-    }
-
-    /*   sqlite3_test_control(SQLITE_TESTCTRL_RESERVE, sqlite3 *db, int N)
-    **
-    ** Set the nReserve size to N for the main database on the database
-    ** connection db.
-    */
-    case SQLITE_TESTCTRL_RESERVE: {
-      sqlite3 *db = va_arg(ap, sqlite3*);
-      int x = va_arg(ap,int);
-      sqlite3_mutex_enter(db->mutex);
-      sqlite3BtreeSetPageSize(db->aDb[0].pBt, 0, x, 0);
-      sqlite3_mutex_leave(db->mutex);
       break;
     }
 
