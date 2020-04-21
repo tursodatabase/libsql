@@ -1,5 +1,5 @@
-C Experimental\sAPI:\ssqlite3_database_file_object().
-D 2020-04-21T01:06:35.069
+C Add\sthe\ssqlite3_database_file_object()\sinterface\sto\ssqlite3ext.h.
+D 2020-04-21T19:27:08.207
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/select.c ab4eb1aee1bd066feea5b6eff264220ae54459019654264e9f688368a7d0c0b5
 F src/shell.c.in 5402d3a7281576c96d788569778483746859c5e47052facfc4a4ccfac025d5da
 F src/sqlite.h.in fd6fcfe173accab8d9cb9a843856d9e9fb475f893b60a455e01d8739b5076f0e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 224bd560533a3479bd38ece4af12799b684751c61d7762a54859efc2cf68c702
+F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
 F src/sqliteInt.h 0f3848c46310d197246003f052985b72d1cdbfc0b31e069db76cb5231062fa1d
 F src/sqliteLimit.h 95cb8479ca459496d9c1c6a9f76b38aee12203a56ce1092fe13e50ae2454c032
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
@@ -1861,10 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fc80ef16ce5878311ab88a0c64631813572ffbb71f75363b4619c9667e0926b
-R 179a1e5a1fd45f685d8f9f4125f02840
-T *branch * sqlite3_database_file_object
-T *sym-sqlite3_database_file_object *
-T -sym-trunk *
+P ae697b152d22737169892411a0c4d908895ff5fb249cce9bdb1ba0bbe32806f0
+R cc7f5aa23076777d96573db8bef15752
 U drh
-Z 4494bc3e04abebffc2e5f13976ff0914
+Z 0fbe741b842883ec4b35af5da437ce6d
