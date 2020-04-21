@@ -334,6 +334,7 @@ struct sqlite3_api_routines {
   char *(*create_filename)(const char*,const char*,const char*,
                            int,const char**);
   void (*free_filename)(char*);
+  sqlite3_file *(*database_file_object)(const char*);
 };
 
 /*
