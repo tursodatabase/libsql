@@ -3621,6 +3621,25 @@ const char *sqlite3_filename_journal(const char*);
 const char *sqlite3_filename_wal(const char*);
 
 /*
+** CAPI3REF:  Database File Corresponding To A Journal
+**
+** ^If X is the name of a rollback or WAL-mode journal file that is
+** passed into the xOpen method of [sqlite3_vfs], then 
+** sqlite3_database_file_object(X) returns a pointer to the [sqlite3_file]
+** object that represents the main database file.
+**
+** This routine is intended for use in custom [VFS] implementations
+** only.  It is not a general-purpose interface.
+** The argument sqlite3_file_object(X) must be a filename pointer that
+** has been passed into [sqlite3_vfs].xOpen method where the 
+** flags parameter to xOpen contains one of the bits
+** [SQLITE_OPEN_MAIN_JOURNAL] or [SQLITE_OPEN_WAL].  Any other use
+** of this routine results in undefined and probably undesirable
+** behavior.
+*/
+sqlite3_file *sqlite3_database_file_object(const char*);
+
+/*
 ** CAPI3REF: Create and Destroy VFS Filenames
 **
 ** These interfces are provided for use by [VFS shim] implementations and

@@ -477,6 +477,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.32.0 and later */
   sqlite3_create_filename,
   sqlite3_free_filename,
+  sqlite3_database_file_object,
 };
 
 /*

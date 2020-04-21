@@ -4742,6 +4742,7 @@ int sqlite3PagerOpen(
   **     Database file handle            (pVfs->szOsFile bytes)
   **     Sub-journal file handle         (journalFileSize bytes)
   **     Main journal file handle        (journalFileSize bytes)
+  **     Ptr back to the Pager           (sizeof(Pager*) bytes)
   **     \0\0\0\0 database prefix        (4 bytes)
   **     Database file name              (nPathname+1 bytes)
   **     URI query parameters            (nUriByte bytes)
@@ -4781,6 +4782,7 @@ int sqlite3PagerOpen(
     ROUND8(pcacheSize) +                 /* PCache object */
     ROUND8(pVfs->szOsFile) +             /* The main db file */
     journalFileSize * 2 +                /* The two journal files */
+    sizeof(pPager) +                     /* Space to hold a pointer */
     4 +                                  /* Database prefix */
     nPathname + 1 +                      /* database filename */
     nUriByte +                           /* query parameters */
@@ -4801,6 +4803,7 @@ int sqlite3PagerOpen(
   pPager->sjfd = (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   pPager->jfd =  (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
+  memcpy(pPtr, &pPager, sizeof(pPager));  pPtr += sizeof(pPager);
 
   /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
                                           pPtr += 4;  /* Skip zero prefix */
@@ -5001,6 +5004,19 @@ act_like_temp_file:
   return SQLITE_OK;
 }
 
+/*
+** Return the sqlite3_file for the main database given the name
+** of the corresonding WAL or Journal name as passed into
+** xOpen.
+*/
+sqlite3_file *sqlite3_database_file_object(const char *zName){
+  Pager *pPager;
+  while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
+    zName--;
+  }
+  pPager = *(Pager**)(zName - 4 - sizeof(Pager*));
+  return pPager->fd;
+}
 
 
 /*
