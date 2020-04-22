@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_database_file_object()\sinterface.
-D 2020-04-21T20:19:25.607
+C Clarify\sthe\scomment\son\sthe\ssqlite3BtreeGetRequestedReserve()\sroutine.\nNo\schanges\sto\scode.
+D 2020-04-22T00:50:21.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -473,7 +473,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 97673c54a3023845e7320cfa9e0de67fd6ca34b37a17a420981bb6e767601310
+F src/btree.c 02376eb7d49ccf31b53c2504f045ad74687c142a5c15ca837516e59e737867dc
 F src/btree.h 32672fa1aa74a7e9ab3aae822f94ffc8e732b1eb005988dc2283f91dc7573398
 F src/btreeInt.h 887cdd2ea7f4a65143074a8a7c8928b0546f8c18dda3c06a408ce7992cbab0c0
 F src/build.c ec6c0bda1e43ef55e5f5121a77ba19fac51fc6585f95ce2da795bcedcf6e8f36
@@ -1861,8 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fc80ef16ce5878311ab88a0c64631813572ffbb71f75363b4619c9667e0926b 3cabe06b6e9433cbfb4bf7bd72a425f43b54f57d84a205adbaa6a1147bbe46bf
-R cc7f5aa23076777d96573db8bef15752
-T +closed 3cabe06b6e9433cbfb4bf7bd72a425f43b54f57d84a205adbaa6a1147bbe46bf
+P f534ebeaaf34f825550138f09f9a40221dfa7cd5c6537ef9f86dce5249025ec3
+R 0b277ec515801445e56dff650ba9aa79
 U drh
-Z c90bcd212b5c6fecb7eed98428e07741
+Z 6f8537667ffe93f8434cdb592b03d84e
