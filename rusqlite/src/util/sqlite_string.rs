@@ -137,7 +137,7 @@ impl SqliteMallocString {
                     // Note: This call does not return.
                     handle_alloc_error(layout);
                 });
-            let buf: *mut i8 = res_ptr.as_ptr();
+            let buf: *mut c_char = res_ptr.as_ptr() as *mut c_char;
             src_ptr.copy_to_nonoverlapping(buf, src_len);
             buf.add(src_len).write(0);
             debug_assert_eq!(std::ffi::CStr::from_ptr(res_ptr.as_ptr()).to_bytes(), bytes);
