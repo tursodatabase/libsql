@@ -8346,7 +8346,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     int i;
     int eMode = 0;
     int bBOM = 0;
-    int bOnce;
+    int bOnce = 0;  /* 0: .output, 1: .once, 2: .excel */
 
     if( c=='e' ){
       eMode = 'x';
