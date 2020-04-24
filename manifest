@@ -1,5 +1,5 @@
-C New\stest\scase\sfor\sticket\s[1dcb4d44964846ad].
-D 2020-04-24T17:55:52.244
+C The\snew\ssqlite3_database_file_object()\sinterface\srequires\sthat\sthe\spager\nnever\sinvoke\sxOpen\swith\sSQLITE_OPEN_MAIN_JOURNAL\sunless\sit\sis\susing\na\spointer\sto\sthe\sjournal\sname\sfound\sin\sthe\sPager\sstructure\sitself.\s\s\sMake\nthis\sthe\scase\swhen\sprocessing\sa\smaster-journal.
+D 2020-04-24T18:20:30.239
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -519,7 +519,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 7ef8b60222558a373d89c18d0c3bc44365b45273a528183d40bec5bb76ce23fc
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 29ee0618daa1f49c24431a9f21b7ac15fa148eb63626c9e0ac145fffbe0b209d
+F src/pager.c 52cee2f72710be47b5b13ff66b339ca3855e5bc48e92a94114d2affedc70041f
 F src/pager.h 3b33619a90180e0874c7eca31d6f6ceb464d9322c6fb4e9a7bbb318c8a17bdb3
 F src/parse.y c8eff38606f443d5ba245263fa7abc05e4116d95656e050c4b78e9bfbf931add
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65c6c26bb48d5347ce53bb3607de3a03a5a03946b232d35e46a20533f86750f8
-R 9ce5e5b106a98ef938e13dec7c4ca6e7
+P 9e9f1e96c9aac60fcbbcda6923e01e350ca4dd88acefb9d400979419ba4e1e4d
+R cf6b32c8532bdb0b49d3f8cc9bb4c572
 U drh
-Z ae06a854a112a06df1f524333bda4911
+Z d6dc738e7c78a8bb07af2098cfd2f141
