@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sin\sthe\snewly\senhanced\s".output"\scommand\sof\nthe\sCLI.
-D 2020-04-23T20:45:46.822
+C New\stest\scase\sfor\sticket\s[1dcb4d44964846ad].
+D 2020-04-24T17:55:52.244
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1713,7 +1713,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test a2874062140ed4aba9ffae76e6190a3df6fc73d1373fdfa8fd632945082a5364
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/whereL.test d19499a39c9e3e5a74460778b009558d328c8a230c0e6825c9996c9adff89058
+F test/whereL.test e05cedc9389c6f09ad55bd5999a3fddccebec90672fb989433c145dcdaf26996
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8789368b91fb5b7477bdba3a953412fc3839b4894443b65186f7b8f79f6369c9
-R 94debbbab259c50b5d510b556b34bbe9
+P 65c6c26bb48d5347ce53bb3607de3a03a5a03946b232d35e46a20533f86750f8
+R 9ce5e5b106a98ef938e13dec7c4ca6e7
 U drh
-Z adea19ccf682c3a65d10a2e98fd48b5d
+Z ae06a854a112a06df1f524333bda4911
