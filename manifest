@@ -1,5 +1,5 @@
-C The\snew\ssqlite3_database_file_object()\sinterface\srequires\sthat\sthe\spager\nnever\sinvoke\sxOpen\swith\sSQLITE_OPEN_MAIN_JOURNAL\sunless\sit\sis\susing\na\spointer\sto\sthe\sjournal\sname\sfound\sin\sthe\sPager\sstructure\sitself.\s\s\sMake\nthis\sthe\scase\swhen\sprocessing\sa\smaster-journal.
-D 2020-04-24T18:20:30.239
+C Ensure\saffinity\sis\snot\sdiscarded\sfrom\sa\sview\scolumn\sif\sthe\sview\sappears\son\sthe\srhs\sof\sa\sLEFT\sJOIN.\sFix\sfor\s[45f4bf4e].
+D 2020-04-25T15:01:53.394
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -484,7 +484,7 @@ F src/date.c b29b349d277e3d579dcc295b24c0a2caed83fd8f090a9f7cbe6070c0fd662384
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 793deaf88a0904f88285d93d6713c636d55ede0ffd9f08d10f4ea825531d367f
 F src/delete.c 11000121c4281c0bce4e41db29addfaea0038eaa127ece02557c9207bc3e541d
-F src/expr.c b292bdecd64cd695109ceaa3c810f8b41f202368c75adb9ea680a875df5b0308
+F src/expr.c d1e1d42cbdec08bb867a1ab43a59b401d82ff2bc88bdcb4af20e479a5facb6d8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 4b575423b0a5d4898b1a7868ce985cf1a8ad91c741c9abbb108ff02536d20f41
 F src/func.c f3dcdc0e95509864767c1f0991b19360f969e44177f4e058fd51da9a6154f47e
@@ -532,7 +532,7 @@ F src/printf.c 9be6945837c839ba57837b4bc3af349eba630920fa5532aa518816defe42a7d4
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c ab4eb1aee1bd066feea5b6eff264220ae54459019654264e9f688368a7d0c0b5
+F src/select.c c310de94bf67315054587c18a16e7a3e3dc3a98dc79168f0c2b776548d43f6cd
 F src/shell.c.in 1fc834b80c72dd37587ea87a4f4167cf5e6d98d12d143184ed2e732f529c0950
 F src/sqlite.h.in fd6fcfe173accab8d9cb9a843856d9e9fb475f893b60a455e01d8739b5076f0e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1093,7 +1093,7 @@ F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test 75327829744e65cc8700e69340b8e6c192e10e39dfae7ccb0e970d3c4f49090a
 F test/join.test bca044589e94bb466e4c1e91fb6fecdc3f3326ca6b3f590f555f1958156eb321
-F test/join2.test 659bc6193f5c3fe20fa444dd2c91713db8c33e376b098b860644e175e87b8dbc
+F test/join2.test 7d24d095ab88d3910228d53a3b548b7baf2e0e7d8aac6731a273e300e1b34b61
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 3a96dc62f0b45402d7207e22d1993fe0c2fce1c57644a11439891dd62b990eb7
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e9f1e96c9aac60fcbbcda6923e01e350ca4dd88acefb9d400979419ba4e1e4d
-R cf6b32c8532bdb0b49d3f8cc9bb4c572
-U drh
-Z d6dc738e7c78a8bb07af2098cfd2f141
+P b4987a5ced0c0f2c606c040e0c1b8ee11175f40ae35a7446308a43e77b1f1db2
+R 71836ca611d61deceeaf6fb2607af00b
+U dan
+Z f46546e33cf07990942ccd1411251d86
