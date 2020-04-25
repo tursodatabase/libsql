@@ -581,7 +581,11 @@ static int sqlite3LoadExtension(
       return SQLITE_NOMEM_BKPT;
     }
     memcpy(zAltEntry, "sqlite3_", 8);
+#if SQLITE_OS_WIN
+    for(iFile=ncFile-1; iFile>=0 && ((c=zFile[iFile]!='/')||c=='\\'); iFile--){}
+#else
     for(iFile=ncFile-1; iFile>=0 && zFile[iFile]!='/'; iFile--){}
+#endif
     iFile++;
     if( sqlite3_strnicmp(zFile+iFile, "lib", 3)==0 ) iFile += 3;
     for(iEntry=8; (c = zFile[iFile])!=0 && c!='.'; iFile++){
