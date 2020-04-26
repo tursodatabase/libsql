@@ -582,7 +582,7 @@ static int sqlite3LoadExtension(
     }
     memcpy(zAltEntry, "sqlite3_", 8);
 #if SQLITE_OS_WIN
-    for(iFile=ncFile-1; iFile>=0 && ((c=zFile[iFile]!='/')||c=='\\'); iFile--){}
+    for(iFile=ncFile-1; iFile>=0 && ((c=zFile[iFile]!='/')&&c!='\\'); iFile--){}
 #else
     for(iFile=ncFile-1; iFile>=0 && zFile[iFile]!='/'; iFile--){}
 #endif

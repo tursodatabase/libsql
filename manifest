@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_load_extension()\sinterface\sso\sthat\sit\stolerates\sbackslashes\nin\splace\sof\sforward-slashes\sin\spathnames\son\sWindows.
-D 2020-04-25T21:05:51.928
+C Fix\san\sissue\swith\scheck-in\s[bc3bf7c6681a96bc]\swhen\scompiling\son\sWindows.
+D 2020-04-26T14:33:54.319
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c af284e30250a36af92bcf97de743bae57b215c7d3414e3b913b9d8f2e75c5214
+F src/loadext.c acefcfb00f58b5c9d5763812c40fed82f11ded617ae8cb80a7bab540b429d039
 F src/main.c 652a782cd7b6c6ddf7419fcaf06b8aa9440b7c815857241171c9bdf03ab6544c
 F src/malloc.c cabfef0d725e04c8abfe0231a556ed8b78bf329dcc3fddbf903f6cdcd53cf4e6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac31edd3eeafcef46164a4506bbc32c711bb7cd78378aeaa4c9bb12524ac5ea1
-R a6c62e244c55732737962b844b2337e6
+P bc3bf7c6681a96bc18a1ed02f0ccced4731d5dab45f60c347dd1841706e6b62a
+R a1bd7af663ac8f68011b39c502abe2a2
 U drh
-Z fbfd383a8d39b6b6bd4ef76163a1c79c
+Z dcff85cc0c5396a3824fe3ae621cc10a
