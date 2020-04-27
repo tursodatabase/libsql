@@ -3187,6 +3187,7 @@ struct Select {
 #define SRT_EphemTab    12  /* Create transient tab and store like SRT_Table */
 #define SRT_Coroutine   13  /* Generate a single row of result */
 #define SRT_Table       14  /* Store result as data with an automatic rowid */
+#define SRT_ISet        15  /* Store result as data with rowid */
 
 /*
 ** An instance of this object describes where to put of the results of
@@ -4204,6 +4205,7 @@ void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(Parse*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
+SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2);
 SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
                                       Token*, Select*, Expr*, IdList*);

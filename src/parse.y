@@ -637,7 +637,7 @@ as(X) ::= .            {X.n = 0; X.z = 0;}
 
 // A complete FROM clause.
 //
-from(A) ::= .                {A = sqlite3DbMallocZero(pParse->db, sizeof(*A));}
+from(A) ::= .                {A = 0;}
 from(A) ::= FROM seltablist(X). {
   A = X;
   sqlite3SrcListShiftJoinType(A);
@@ -867,18 +867,20 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
+  X = sqlite3SrcListAppendList(pParse, X, F);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   sqlite3Update(pParse,X,Y,W,R,O,L,0);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
         where_opt(W).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
+  X = sqlite3SrcListAppendList(pParse, X, F);
   sqlite3Update(pParse,X,Y,W,R,0,0,0);
 }
 %endif

@@ -4496,6 +4496,26 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 }
 
 /*
+** Append the contents of SrcList p2 to SrcList p1 and return the resulting
+** SrcList. Or, if an error occurs, return NULL. In all cases, p1 and p2
+** are deleted by this function.
+*/ 
+SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
+  if( p2 && p1 ){
+    assert( p1->nSrc==1 );
+    p1 = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, p1->nSrc);
+    if( p1 ){
+      assert( p1->nSrc==1+p2->nSrc );
+      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(struct SrcList_item));
+      sqlite3_free(p2);
+    }else{
+      sqlite3SrcListDelete(pParse->db, p2);
+    }
+  }
+  return p1;
+}
+
+/*
 ** Add the list of function arguments to the SrcList entry for a
 ** table-valued-function.
 */

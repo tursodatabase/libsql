@@ -1154,11 +1154,11 @@ static void selectInnerLoop(
       break;
     }
 
-#ifndef SQLITE_OMIT_SUBQUERY
     /* If we are creating a set for an "expr IN (SELECT ...)" construct,
     ** then there should be a single item on the stack.  Write this
     ** item into the set table with bogus data.
     */
+    case SRT_ISet:
     case SRT_Set: {
       if( pSort ){
         /* At first glance you would think we could optimize out the
@@ -1168,16 +1168,22 @@ static void selectInnerLoop(
         pushOntoSorter(
             pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
       }else{
+        int bITab = (eDest==SRT_ISet);
         int r1 = sqlite3GetTempReg(pParse);
-        assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, nResultCol, 
-            r1, pDest->zAffSdst, nResultCol);
-        sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, nResultCol);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult+bITab, nResultCol-bITab,
+            r1, pDest->zAffSdst, 0
+        );
+        if( bITab ){
+          sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regResult);
+        }else{
+          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1,regResult,nResultCol);
+        }
         sqlite3ReleaseTempReg(pParse, r1);
       }
       break;
     }
 
+#ifndef SQLITE_OMIT_SUBQUERY
     /* If any row exist in the result set, record that fact and abort.
     */
     case SRT_Exists: {
@@ -4981,8 +4987,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab;
     assert( pFrom->fg.isRecursive==0 || pFrom->pTab!=0 );
-    if( pFrom->fg.isRecursive ) continue;
-    assert( pFrom->pTab==0 );
+    if( pFrom->pTab ) continue;
+    assert( pFrom->fg.isRecursive==0 );
 #ifndef SQLITE_OMIT_CTE
     if( withExpand(pWalker, pFrom) ) return WRC_Abort;
     if( pFrom->pTab ) {} else
