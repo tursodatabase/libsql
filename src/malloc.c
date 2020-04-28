@@ -179,7 +179,7 @@ int sqlite3MallocInit(void){
 ** sqlite3_soft_heap_limit().
 */
 int sqlite3HeapNearlyFull(void){
-  return mem0.nearlyFull;
+  return AtomicLoad(&mem0.nearlyFull);
 }
 
 /*
