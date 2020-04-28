@@ -1,5 +1,5 @@
-C Add\sthe\scksumvfs\sextension.
-D 2020-04-28T20:47:40.963
+C Fix\sincorrect\serror\smessage\swhen\ssomething\sgoes\swrong\swith\sthe\nsqlite3_dbpage()\stable-valued\sfunction\sin\sthe\s.dbinfo\scommand\sof\sthe\sCLI.
+D 2020-04-28T23:09:56.084
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c310de94bf67315054587c18a16e7a3e3dc3a98dc79168f0c2b776548d43f6cd
-F src/shell.c.in 1fc834b80c72dd37587ea87a4f4167cf5e6d98d12d143184ed2e732f529c0950
+F src/shell.c.in 86cd0f0412b9739b769fafdfcad28f731882d522042a95c30ab033a5eba68b03
 F src/sqlite.h.in fd6fcfe173accab8d9cb9a843856d9e9fb475f893b60a455e01d8739b5076f0e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1862,7 +1862,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce980af65a9b528f112baa22a95020a98ac5340155a0b53b09c46f99aad9b12b
-R 04c0fbb7c237ebfacc8bf51983c12e78
+P 237c10f941cc6cb775693ae87513ff1b816f12b5e9c3d57b057421204d2d02cf
+R 176a5d897ae4a00cb2a086f8e4bc1304
 U drh
-Z d04720d0bf98441f3ea328cca7d97af5
+Z 9c42efa8d6d984bdc00c683cbdf1d894
