@@ -1,5 +1,5 @@
-C Use\san\sAtomicLoad()\smacro\sin\ssqlite3HeapNearlyFull().
-D 2020-04-28T11:45:41.489
+C Use\sAtomicStore()\swhen\ssetting\sthe\smem0.nearlyFull\sboolean\sto\savoid\nharmless\sTSAN\swarnings\sand\sto\sforestall\sdoubts\sabout\sthreadsafety.
+D 2020-04-28T14:01:31.572
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -497,7 +497,7 @@ F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 421310045bd78afefb772294a99e50f37d87ae578786a6169074e6291e30d969
 F src/main.c 652a782cd7b6c6ddf7419fcaf06b8aa9440b7c815857241171c9bdf03ab6544c
-F src/malloc.c 998984783063d4172bb11630ba586e6c6483ddfc8e24a9881a6f495128f23569
+F src/malloc.c a3e13b001f988ecec6bdb90c0ea8912c8c786e623724d7098da623d8d01d19b1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1861,7 +1861,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b73d9a7d6f7fec0ffc9640902a849289c305f8651e891388c01255c4da7a6c4b
-R 375d527c1770329817dc7ce201edba48
+P 7556bc632e271d8a1e4fd836ce91e28213768ac09c90857b91171e9cd1009884
+R 64df80a09bb93b99ef6e199142ecf936
 U drh
-Z 59f2a3e0f3e029b2d7560f165c376f3c
+Z 42d1735aadc2a550c1baa98e0c20e909
