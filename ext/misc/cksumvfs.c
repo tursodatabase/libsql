@@ -494,7 +494,7 @@ static int cksmFileControl(sqlite3_file *pFile, int op, void *pArg){
   if( op==SQLITE_FCNTL_PRAGMA ){
     char **azArg = (char**)pArg;
     assert( azArg[1]!=0 );
-    if( strcmp(azArg[1],"checksum_verification")==0 ){
+    if( sqlite3_stricmp(azArg[1],"checksum_verification")==0 ){
       char *zArg = azArg[2];
       if( zArg!=0 ){
         if( (zArg[0]>='1' && zArg[0]<='9')
@@ -508,6 +508,10 @@ static int cksmFileControl(sqlite3_file *pFile, int op, void *pArg){
         }
       }
       azArg[0] = sqlite3_mprintf("%d",p->verifyCksm);
+      return SQLITE_OK;
+    }else if( p->computeCksm && azArg[2]!=0
+           && sqlite3_stricmp(azArg[1], "page_size")==0 ){
+      /* Do not allow page size changes on a checksum database */
       return SQLITE_OK;
     }
   }
