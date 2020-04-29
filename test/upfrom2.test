@@ -1,0 +1,119 @@
+# 2020 April 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix upfrom2
+
+if 0 {
+do_execsql_test 0.0 {
+  CREATE TABLE t1 (a PRIMARY KEY, b, c) WITHOUT ROWID;
+}
+explain_i { REPLACE INTO t1 VALUES('one', 'two', 'three'); }
+breakpoint
+execsql {
+  REPLACE INTO t1 VALUES('one', 'two', 'three');
+  REPLACE INTO t1 VALUES('one', 'two', 'four');
+}
+do_execsql_test x {
+  SELECT * FROM t1
+} {one two four}
+exit
+}
+
+# Test cases:
+#
+#   1.*: Test that triggers are fired correctly for UPDATE FROM statements,
+#        and only once for each row.
+#
+
+foreach {tn wo} {
+  1 ""
+  2 "WITHOUT ROWID"
+} {
+  reset_db
+
+  eval [string map [list %WO% $wo %TN% $tn] {
+  do_execsql_test 1.%TN%.0 {
+    CREATE TABLE log(t TEXT);
+    CREATE TABLE t1(x PRIMARY KEY, y, z UNIQUE) %WO%;
+    CREATE INDEX t1y ON t1(y);
+
+    INSERT INTO t1 VALUES(1, 'i',   'one');
+    INSERT INTO t1 VALUES(2, 'ii',  'two');
+    INSERT INTO t1 VALUES(3, 'iii', 'three');
+    INSERT INTO t1 VALUES(4, 'iv',  'four');
+
+    CREATE TRIGGER tr1 BEFORE UPDATE ON t1 BEGIN
+      INSERT INTO log VALUES(old.z || '->' || new.z);
+    END;
+    CREATE TRIGGER tr2 AFTER UPDATE ON t1 BEGIN
+      INSERT INTO log VALUES(old.y || '->' || new.y);
+    END;
+  }
+
+  do_execsql_test 1.%TN%.1 {
+    WITH data(k, v) AS (
+      VALUES(3, 'thirty'), (1, 'ten')
+    )
+    UPDATE t1 SET z=v FROM data WHERE x=k;
+
+    SELECT * FROM t1;
+    SELECT * FROM log;
+  } {
+    1 i ten   2 ii two   3 iii thirty   4 iv four
+    one->ten        i->i
+    three->thirty   iii->iii
+  }
+
+  do_execsql_test 1.%TN%.2 {
+    CREATE TABLE t2(a, b);
+    CREATE TABLE t3(k, v);
+  
+    INSERT INTO t3 VALUES(5,   'v');
+    INSERT INTO t3 VALUES(12, 'xii');
+  
+    INSERT INTO t2 VALUES(2, 12);
+    INSERT INTO t2 VALUES(3, 5);
+  
+    DELETE FROM log;
+    UPDATE t1 SET y=v FROM t2, t3 WHERE t1.x=t2.a AND t3.k=t2.b;
+  
+    SELECT * FROM t1;
+    SELECT * FROM log;
+  } {
+    1 i ten   2 xii two   3 v thirty   4 iv four
+    two->two         ii->xii
+    thirty->thirty   iii->v
+  }
+
+  do_execsql_test 1.%TN%.3 {
+    DELETE FROM log;
+    WITH data(k, v) AS (
+      VALUES(1, 'seven'), (1, 'eight'), (2, 'eleven'), (2, 'twelve')
+    )
+    UPDATE t1 SET z=v FROM data WHERE x=k;
+  
+    SELECT * FROM t1;
+    SELECT * FROM log;
+  } {
+    1 i eight   2 xii twelve   3 v thirty   4 iv four
+    ten->eight        i->i
+    two->twelve       xii->xii
+  }
+}]
+}
+
+
+
+finish_test
+

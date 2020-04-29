@@ -3188,14 +3188,16 @@ struct Select {
 #define SRT_Coroutine   13  /* Generate a single row of result */
 #define SRT_Table       14  /* Store result as data with an automatic rowid */
 #define SRT_ISet        15  /* Store result as data with rowid */
+#define SRT_Upfrom      16  /* Store result as data with rowid */
 
 /*
 ** An instance of this object describes where to put of the results of
 ** a SELECT statement.
 */
 struct SelectDest {
-  u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
+  u8 eDest;            /* How to dispose of the results.  One of SRT_* above. */
   int iSDParm;         /* A parameter used by the eDest disposal method */
+  int iSDParm2;        /* A second parameter for the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
   char *zAffSdst;      /* Affinity used when eDest==SRT_Set */

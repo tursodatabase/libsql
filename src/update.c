@@ -190,7 +190,7 @@ static void updatePopulateEphTable(
             sqlite3Expr(db, TK_ID, pTab->aCol[pPk->aiColumn[i]].zName)
       ));
     }
-    eDest = SRT_Set;
+    eDest = SRT_Upfrom;
   }else if( pTab->pSelect ){
     pList = sqlite3ExprListAppend(pParse, pList, 
         sqlite3PExpr(pParse, TK_DOT,
@@ -204,7 +204,7 @@ static void updatePopulateEphTable(
           sqlite3Expr(db, TK_ID, pTab->zName),
           sqlite3Expr(db, TK_ID, "_rowid_")
     ));
-    eDest = IsVirtual(pTab) ? SRT_Table : SRT_ISet;
+    eDest = IsVirtual(pTab) ? SRT_Table : SRT_Upfrom;
   }
   for(i=0; i<pChanges->nExpr; i++){
     pList = sqlite3ExprListAppend(pParse, pList, 
@@ -213,6 +213,7 @@ static void updatePopulateEphTable(
   }
   pSelect = sqlite3SelectNew(pParse, pList, pSrc, pWhere2, 0, 0, 0, 0, 0);
   sqlite3SelectDestInit(&dest, eDest, iEph);
+  dest.iSDParm2 = (pPk ? pPk->nKeyCol : -1);
   sqlite3Select(pParse, pSelect, &dest);
   sqlite3SelectDelete(db, pSelect);
 }
@@ -878,7 +879,15 @@ void sqlite3Update(
       ** documentation.
       */
       if( pPk ){
-        sqlite3VdbeAddOp4Int(v, OP_NotFound,iDataCur,labelContinue,regKey,nKey);
+        int p3, p4;
+        if( nChangeFrom ){
+          p3 = iPk;
+          p4 = nPk;
+        }else{
+          p3 = regKey;
+          p4 = nKey;
+        }
+        sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, p3, p4);
         VdbeCoverage(v);
       }else{
         sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue,regOldRowid);
