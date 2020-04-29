@@ -14,26 +14,14 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix upfrom2
 
-if 0 {
-do_execsql_test 0.0 {
-  CREATE TABLE t1 (a PRIMARY KEY, b, c) WITHOUT ROWID;
-}
-explain_i { REPLACE INTO t1 VALUES('one', 'two', 'three'); }
-breakpoint
-execsql {
-  REPLACE INTO t1 VALUES('one', 'two', 'three');
-  REPLACE INTO t1 VALUES('one', 'two', 'four');
-}
-do_execsql_test x {
-  SELECT * FROM t1
-} {one two four}
-exit
-}
-
 # Test cases:
 #
 #   1.*: Test that triggers are fired correctly for UPDATE FROM statements,
-#        and only once for each row.
+#        and only once for each row. Except for INSTEAD OF triggers on 
+#        views - these are fired once for each row returned by the join, 
+#        including duplicates.
+#
+#   2.*: Test adding ORDER BY and LIMIT clauses with UPDATE FROM statements.
 #
 
 foreach {tn wo} {
@@ -110,9 +98,75 @@ foreach {tn wo} {
     ten->eight        i->i
     two->twelve       xii->xii
   }
+
+  do_test 1.%TN%.4 { db changes } {2}
+
+  do_execsql_test 1.%TN%.5 { 
+    CREATE VIEW v1 AS SELECT * FROM t1;
+    CREATE TRIGGER v1tr INSTEAD OF UPDATE ON v1 BEGIN
+      UPDATE t1 SET y=new.y, z=new.z WHERE x=new.x;
+    END;
+
+    DELETE FROM log;
+    WITH data(k, v) AS (
+      VALUES(3, 'thirteen'), (3, 'fourteen'), (4, 'fifteen'), (4, 'sixteen')
+    )
+    UPDATE v1 SET z=v FROM data WHERE x=k;
+  }
+
+  do_execsql_test 1.%TN%.6 {
+    SELECT * FROM v1;
+    SELECT * FROM log;
+  } {
+    1 i eight   2 xii twelve   3 v fourteen   4 iv sixteen
+    thirty->thirteen  v->v
+    thirteen->fourteen  v->v
+    four->fifteen  iv->iv
+    fifteen->sixteen  iv->iv
+  }
+
 }]
 }
 
+ifcapable update_delete_limit {
+foreach {tn wo} {
+  1 ""
+  2 "WITHOUT ROWID"
+} {
+  reset_db
+
+eval [string map [list %WO% $wo %TN% $tn] {
+  do_execsql_test 2.%TN%.1 {
+    CREATE TABLE x1(a INTEGER PRIMARY KEY, b) %WO%;
+    INSERT INTO x1 VALUES
+        (1, 'one'), (2, 'two'), (3, 'three'), (4, 'four'),
+        (5, 'five'), (6, 'six'), (7, 'seven'), (8, 'eight');
+  }
+
+  do_execsql_test 2.%TN%.2 {
+    CREATE TABLE data1(x, y);
+    INSERT INTO data1 VALUES
+    (1, 'eleven'), (1, 'twenty-one'), (2, 'twelve'), (2, 'twenty-two'),
+    (3, 'thirteen'), (3, 'twenty-three'), (4, 'fourteen'), (4, 'twenty-four');
+  }
+
+  do_execsql_test 2.%TN%.3 {
+    UPDATE x1 SET b=y FROM data1 WHERE a=x ORDER BY a LIMIT 3;
+    SELECT * FROM x1;
+  } {
+    1 eleven 2 twelve 3 thirteen 4 four 5 five 6 six 7 seven 8 eight
+  }
+
+  do_execsql_test 2.%TN%.4 {
+    UPDATE x1 SET b=b||y FROM data1 WHERE a=x ORDER BY b LIMIT 3;
+    SELECT * FROM x1;
+  } {
+    1 eleveneleven 2 twelve 3 thirteenthirteen 4 fourfourteen 
+    5 five 6 six 7 seven 8 eight
+  }
+
+}]
+}}
 
 
 finish_test

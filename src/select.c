@@ -1006,7 +1006,8 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Coroutine );
       testcase( eDest==SRT_Output );
       assert( eDest==SRT_Set || eDest==SRT_Mem 
-           || eDest==SRT_Coroutine || eDest==SRT_Output );
+           || eDest==SRT_Coroutine || eDest==SRT_Output
+           || eDest==SRT_Upfrom );
     }
     sRowLoadInfo.regResult = regResult;
     sRowLoadInfo.ecelFlags = ecelFlags;
@@ -1156,14 +1157,18 @@ static void selectInnerLoop(
     }
 
     case SRT_Upfrom: {
-      assert( pSort==0 );
-      int i2 = pDest->iSDParm2;
-      int r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_MakeRecord,regResult+(i2<0),nResultCol-(i2<0),r1);
-      if( i2<0 ){
-        sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regResult);
+      if( pSort ){
+        pushOntoSorter(
+            pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
       }else{
-        sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, i2);
+        int i2 = pDest->iSDParm2;
+        int r1 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord,regResult+(i2<0),nResultCol-(i2<0),r1);
+        if( i2<0 ){
+          sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regResult);
+        }else{
+          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, i2);
+        }
       }
       break;
     }
@@ -1600,6 +1605,17 @@ static void generateSortTail(
       break;
     }
 #endif
+    case SRT_Upfrom: {
+      int i2 = pDest->iSDParm2;
+      int r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord,regRow+(i2<0),nColumn-(i2<0),r1);
+      if( i2<0 ){
+        sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regRow);
+      }else{
+        sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regRow, i2);
+      }
+      break;
+    }
     default: {
       assert( eDest==SRT_Output || eDest==SRT_Coroutine ); 
       testcase( eDest==SRT_Output );

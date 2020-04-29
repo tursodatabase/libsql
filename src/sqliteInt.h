@@ -3187,8 +3187,7 @@ struct Select {
 #define SRT_EphemTab    12  /* Create transient tab and store like SRT_Table */
 #define SRT_Coroutine   13  /* Generate a single row of result */
 #define SRT_Table       14  /* Store result as data with an automatic rowid */
-#define SRT_ISet        15  /* Store result as data with rowid */
-#define SRT_Upfrom      16  /* Store result as data with rowid */
+#define SRT_Upfrom      15  /* Store result as data with rowid */
 
 /*
 ** An instance of this object describes where to put of the results of

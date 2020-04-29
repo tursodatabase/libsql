@@ -756,7 +756,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     case TK_ROW: {
       SrcList *pSrcList = pNC->pSrcList;
       struct SrcList_item *pItem;
-      assert( pSrcList && pSrcList->nSrc==1 );
+      assert( pSrcList && pSrcList->nSrc>=1 );
       pItem = pSrcList->a;
       assert( HasRowid(pItem->pTab) && pItem->pTab->pSelect==0 );
       pExpr->op = TK_COLUMN;
