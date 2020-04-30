@@ -169,17 +169,27 @@ static void updatePopulateEphTable(
   Expr *pLimit
 ){
   int i;
-  sqlite3 *db = pParse->db;
   SelectDest dest;
   Select *pSelect = 0;
   ExprList *pList = 0;
-  Table *pTab = pTabList->a[0].pTab;
-  SrcList *pSrc = sqlite3SrcListDup(db, pTabList, 0);
-  Expr *pWhere2 = sqlite3ExprDup(db, pWhere, 0);
-  Expr *pLimit2 = sqlite3ExprDup(db, pLimit, 0);
-  ExprList *pOrderBy2 = sqlite3ExprListDup(db, pOrderBy, 0);
   ExprList *pGroupBy = 0;
+  sqlite3 *db = pParse->db;
+  Table *pTab = pTabList->a[0].pTab;
+  SrcList *pSrc;
+  Expr *pWhere2;
+  Expr *pLimit2;
+  ExprList *pOrderBy2;
   int eDest;
+
+  if( pOrderBy && pLimit==0 ) {
+    sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on UPDATE");
+    return;
+  }
+
+  pSrc = sqlite3SrcListDup(db, pTabList, 0);
+  pWhere2 = sqlite3ExprDup(db, pWhere, 0);
+  pLimit2 = sqlite3ExprDup(db, pLimit, 0);
+  pOrderBy2 = sqlite3ExprListDup(db, pOrderBy, 0);
 
   assert( pTabList->nSrc>1 );
   if( pSrc ){
