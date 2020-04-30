@@ -229,10 +229,13 @@ static void updatePopulateEphTable(
       );
     }
   }
-  for(i=0; i<pChanges->nExpr; i++){
-    pList = sqlite3ExprListAppend(pParse, pList, 
-        sqlite3ExprDup(db, pChanges->a[i].pExpr, 0)
-    );
+  assert( pChanges || db->mallocFailed );
+  if( pChanges ){
+    for(i=0; i<pChanges->nExpr; i++){
+      pList = sqlite3ExprListAppend(pParse, pList, 
+          sqlite3ExprDup(db, pChanges->a[i].pExpr, 0)
+      );
+    }
   }
   pSelect = sqlite3SelectNew(
       pParse, pList, pSrc, pWhere2, pGroupBy, 0, pOrderBy2, 0, pLimit2

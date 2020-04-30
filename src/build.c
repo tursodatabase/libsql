@@ -4501,15 +4501,15 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** are deleted by this function.
 */ 
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
-  if( p2 && p1 ){
-    assert( p1->nSrc==1 );
-    p1 = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, p1->nSrc);
-    if( p1 ){
-      assert( p1->nSrc==1+p2->nSrc );
+  assert( p1 && p1->nSrc==1 );
+  if( p2 ){
+    SrcList *pNew = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, 1);
+    if( pNew==0 ){
+      sqlite3SrcListDelete(pParse->db, p2);
+    }else{
+      p1 = pNew;
       memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(struct SrcList_item));
       sqlite3_free(p2);
-    }else{
-      sqlite3SrcListDelete(pParse->db, p2);
     }
   }
   return p1;
