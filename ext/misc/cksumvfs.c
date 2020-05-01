@@ -69,7 +69,7 @@
 ** Open database connections using the sqlite3_open() or 
 ** sqlite3_open_v2() interfaces, as normal.  Ordinary database files
 ** (without a checksum) will operate normally.  Databases with 
-** checksums will return an SQLITE_CORRUPT error if a page is
+** checksums will return an SQLITE_IOERR_DATA error if a page is
 ** encountered that contains an invalid checksum.
 **
 ** Checksumming only works on databases that have a reserve-bytes
@@ -138,7 +138,7 @@
 ** The "checksum_verification" pragma will return "1" (true) or "0"
 ** (false) if checksum verification is enabled or disabled, respectively.
 ** "Verification" in this context means the feature that causes
-** SQLITE_CORRUPT errors if a checksum mismatch is detected while
+** SQLITE_IOERR_DATA errors if a checksum mismatch is detected while
 ** reading.  Checksums are always kept up-to-date as long as the
 ** reserve-bytes value of the database is 8, regardless of the setting
 ** of this pragma.  Checksum verification can be disabled (for example)
@@ -190,6 +190,7 @@ typedef struct CksmFile CksmFile;
 /* An open file */
 struct CksmFile {
   sqlite3_file base;    /* IO methods */
+  const char *zFName;   /* Original name of the file */
   char computeCksm;     /* True to compute checksums.
                         ** Always true if reserve size is 8. */
   char verifyCksm;      /* True to verify checksums */
@@ -398,7 +399,10 @@ static int cksmRead(
       u8 cksum[8];
       cksmCompute((u8*)zBuf, iAmt-8, cksum);
       if( memcmp(zBuf+iAmt-8, cksum, 8)!=0 ){
-        rc = SQLITE_CORRUPT;
+        sqlite3_log(SQLITE_IOERR_DATA,
+           "checksum fault offset %lld of \"%s\"",
+           iOfst, p->zFName);
+        rc = SQLITE_IOERR_DATA;
       }
     }
   }
@@ -625,6 +629,7 @@ static int cksmOpen(
     p->isWal = 0;
     p->computeCksm = 0;
   }
+  p->zFName = zName;
 cksm_open_done:
   if( rc ) pFile->pMethods = 0;
   return rc;
