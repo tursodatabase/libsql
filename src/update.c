@@ -285,6 +285,7 @@ void sqlite3Update(
   u8 chngRowid;          /* Rowid changed in a normal table */
   u8 chngKey;            /* Either chngPk or chngRowid */
   Expr *pRowidExpr = 0;  /* Expression defining the new record number */
+  int iRowidExpr = -1;
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
@@ -430,6 +431,7 @@ void sqlite3Update(
         if( j==pTab->iPKey ){
           chngRowid = 1;
           pRowidExpr = pChanges->a[i].pExpr;
+          iRowidExpr = i;
         }else if( pPk && (pTab->aCol[j].colFlags & COLFLAG_PRIMKEY)!=0 ){
           chngPk = 1;
         }
@@ -452,6 +454,7 @@ void sqlite3Update(
         j = -1;
         chngRowid = 1;
         pRowidExpr = pChanges->a[i].pExpr;
+        iRowidExpr = i;
       }else{
         sqlite3ErrorMsg(pParse, "no such column: %s", pChanges->a[i].zEName);
         pParse->checkSchema = 1;
@@ -649,6 +652,8 @@ void sqlite3Update(
   if( nChangeFrom ){
     sqlite3MultiWrite(pParse);
     eOnePass = ONEPASS_OFF;
+    nKey = nPk;
+    regKey = iPk;
   }else{
     if( pUpsert ){
       /* If this is an UPSERT, then all cursors have already been opened by
@@ -810,7 +815,12 @@ void sqlite3Update(
   ** already populated.  */
   assert( chngKey || pTrigger || hasFK || regOldRowid==regNewRowid );
   if( chngRowid ){
-    sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
+    assert( iRowidExpr>=0 );
+    if( nChangeFrom==0 ){
+      sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_Column, iEph, iRowidExpr, regNewRowid);
+    }
     sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid); VdbeCoverage(v);
   }
 
@@ -909,15 +919,7 @@ void sqlite3Update(
       ** documentation.
       */
       if( pPk ){
-        int p3, p4;
-        if( nChangeFrom ){
-          p3 = iPk;
-          p4 = nPk;
-        }else{
-          p3 = regKey;
-          p4 = nKey;
-        }
-        sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, p3, p4);
+        sqlite3VdbeAddOp4Int(v, OP_NotFound,iDataCur,labelContinue,regKey,nKey);
         VdbeCoverage(v);
       }else{
         sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue,regOldRowid);

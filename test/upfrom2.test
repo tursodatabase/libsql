@@ -315,5 +315,36 @@ do_execsql_test 3.1 {
   UPDATE t1 SET z=v FROM input WHERE x=k;
 }
 
+foreach {tn sql} {
+  2 { 
+    CREATE TABLE x1(a INT PRIMARY KEY, b, c) WITHOUT ROWID;
+  }
+  1 { 
+    CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c);
+  }
+  3 { 
+    CREATE TABLE x1(a INT PRIMARY KEY, b, c);
+  }
+} {
+
+  reset_db
+  execsql $sql
+
+  do_execsql_test 4.$tn.0 {
+    INSERT INTO x1 VALUES(1, 1, 1);
+    INSERT INTO x1 VALUES(2, 2, 2);
+    INSERT INTO x1 VALUES(3, 3, 3);
+    INSERT INTO x1 VALUES(4, 4, 4);
+    INSERT INTO x1 VALUES(5, 5, 5);
+    CREATE TABLE map(o, t);
+    INSERT INTO map VALUES(3, 30), (4, 40), (1, 10);
+  }
+
+  do_execsql_test 4.$tn.1 {
+    UPDATE x1 SET a=t FROM map WHERE a=o;
+    SELECT * FROM x1 ORDER BY a;
+  } {2 2 2   5 5 5   10 1 1  30 3 3  40 4 4}
+}
+
 finish_test
 
