@@ -3533,8 +3533,19 @@ int sqlite3_open_v2(
 ** that check if a database file was a URI that contained a specific query 
 ** parameter, and if so obtains the value of that query parameter.
 **
-** If F is the database filename pointer passed into the xOpen() method of 
-** a VFS implementation or it is the return value of [sqlite3_db_filename()]
+** The first parameter to these interfaces (hereafter referred to
+** as F) must be one of:
+** <ul>
+** <li> A database filename pointer created by the SQLite core and
+** passed into the xOpen() method of a VFS implemention, or
+** <li> A filename obtained from [sqlite3_db_filename()], or
+** <li> A new filename constructed using [sqlite3_create_filename()].
+** </ul>
+** If the F parameter is not one of the above, then the behavior is
+** undefined and probably undesirable.  Older versions of SQLite were
+** more tolerant of invalid F parameters than newer versions.
+**
+** If F is a suitable filename (as described in the previous paragraph)
 ** and if P is the name of the query parameter, then
 ** sqlite3_uri_parameter(F,P) returns the value of the P
 ** parameter if it exists or a NULL pointer if P does not appear as a 
@@ -3670,7 +3681,7 @@ sqlite3_file *sqlite3_database_file_object(const char*);
 **
 ** The sqlite3_free_filename(Y) routine releases a memory allocation
 ** previously obtained from sqlite3_create_filename().  Invoking
-** sqlite3_free_filename(Y) is a NULL pointer is a harmless no-op.
+** sqlite3_free_filename(Y) where Y is a NULL pointer is a harmless no-op.
 **
 ** If the Y parameter to sqlite3_free_filename(Y) is anything other
 ** than a NULL pointer or a pointer previously acquired from
