@@ -493,7 +493,14 @@ do_test shell1-3.15.2 {
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
-} {1 {Usage: .output [-e|-x|FILE]}}
+} {1 {ERROR: extra parameter: "BAD".  Usage:
+.output ?FILE?           Send output to FILE or stdout if FILE is omitted
+   If FILE begins with '|' then open it as a pipe.
+   Options:
+     --bom                 Prefix output with a UTF8 byte-order mark
+     -e                    Send output to the system text editor
+     -x                    Send output as CSV to a spreadsheet
+child process exited abnormally}}
 
 # .output stdout         Send output to the screen
 do_test shell1-3.16.1 {
@@ -502,7 +509,14 @@ do_test shell1-3.16.1 {
 do_test shell1-3.16.2 {
   # too many arguments
   catchcmd "test.db" ".output stdout BAD"
-} {1 {Usage: .output [-e|-x|FILE]}}
+} {1 {ERROR: extra parameter: "BAD".  Usage:
+.output ?FILE?           Send output to FILE or stdout if FILE is omitted
+   If FILE begins with '|' then open it as a pipe.
+   Options:
+     --bom                 Prefix output with a UTF8 byte-order mark
+     -e                    Send output to the system text editor
+     -x                    Send output as CSV to a spreadsheet
+child process exited abnormally}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
 do_test shell1-3.17.1 {

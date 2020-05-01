@@ -587,6 +587,9 @@ set free_percent2 [percent $free_pgcnt2 $file_pgcnt]
 
 set file_pgcnt2 [expr {$inuse_pgcnt+$free_pgcnt2+$av_pgcnt}]
 
+# Account for the lockbyte page
+if {$file_pgcnt2*$pageSize>1073742335} {incr file_pgcnt2}
+
 set ntable [db eval {SELECT count(*)+1 FROM sqlite_master WHERE type='table'}]
 set nindex [db eval {SELECT count(*) FROM sqlite_master WHERE type='index'}]
 set sql {SELECT count(*) FROM sqlite_master WHERE name LIKE 'sqlite_autoindex%'}

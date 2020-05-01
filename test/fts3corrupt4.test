@@ -5834,4 +5834,17 @@ do_catchsql_test 36.1 {
   INSERT INTO f(f) VALUES ('merge=59,59');
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 37.0 {
+  CREATE VIRTUAL TABLE f USING fts3(a,b);
+  INSERT INTO f_segdir VALUES (28,0,0,0,'0 0',x'00');
+  INSERT INTO f_segdir VALUES (0,241,0,0,'0 0',x'0001000030310000f1');
+}
+
+do_catchsql_test 37.1 {
+  INSERT INTO f VALUES (0,x'00');
+} {1 {database disk image is malformed}}
+
 finish_test

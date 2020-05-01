@@ -334,6 +334,7 @@ struct sqlite3_api_routines {
   char *(*create_filename)(const char*,const char*,const char*,
                            int,const char**);
   void (*free_filename)(char*);
+  sqlite3_file *(*database_file_object)(const char*);
 };
 
 /*
@@ -637,6 +638,7 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.32.0 and later */
 #define sqlite3_create_filename        sqlite3_api->create_filename
 #define sqlite3_free_filename          sqlite3_api->free_filename
+#define sqlite3_database_file_object   sqlite3_api->database_file_object
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

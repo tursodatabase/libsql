@@ -233,7 +233,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
     }
     db->mDbFlags |= DBFLAG_VacuumInto;
   }
-  nRes = sqlite3BtreeGetOptimalReserve(pMain);
+  nRes = sqlite3BtreeGetRequestedReserve(pMain);
 
   sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));
