@@ -111,7 +111,7 @@ sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
   }
   mem0.alarmThreshold = n;
   nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
-  mem0.nearlyFull = (n>0 && n<=nUsed);
+  AtomicStore(&mem0.nearlyFull, n>0 && n<=nUsed);
   sqlite3_mutex_leave(mem0.mutex);
   excess = sqlite3_memory_used() - n;
   if( excess>0 ) sqlite3_release_memory((int)(excess & 0x7fffffff));
@@ -179,7 +179,7 @@ int sqlite3MallocInit(void){
 ** sqlite3_soft_heap_limit().
 */
 int sqlite3HeapNearlyFull(void){
-  return mem0.nearlyFull;
+  return AtomicLoad(&mem0.nearlyFull);
 }
 
 /*
@@ -243,7 +243,7 @@ static void mallocWithAlarm(int n, void **pp){
   if( mem0.alarmThreshold>0 ){
     sqlite3_int64 nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
     if( nUsed >= mem0.alarmThreshold - nFull ){
-      mem0.nearlyFull = 1;
+      AtomicStore(&mem0.nearlyFull, 1);
       sqlite3MallocAlarm(nFull);
       if( mem0.hardLimit ){
         nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
@@ -253,7 +253,7 @@ static void mallocWithAlarm(int n, void **pp){
         }
       }
     }else{
-      mem0.nearlyFull = 0;
+      AtomicStore(&mem0.nearlyFull, 0);
     }
   }
   p = sqlite3GlobalConfig.m.xMalloc(nFull);
