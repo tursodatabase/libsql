@@ -1230,6 +1230,7 @@ static void analyzeOneTable(
         j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regTemp); VdbeCoverage(v);
         j2 = sqlite3VdbeAddOp1(v, OP_If, regTemp); VdbeCoverage(v);
         j3 = sqlite3VdbeAddOp4Int(v, OP_SeekGT, iIdxCur, 0, regPrev, 1);
+        VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, j1);
         sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, j2);
