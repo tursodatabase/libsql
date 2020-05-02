@@ -195,6 +195,7 @@ struct CksmFile {
                         ** Always true if reserve size is 8. */
   char verifyCksm;      /* True to verify checksums */
   char isWal;           /* True if processing a WAL file */
+  char inCkpt;          /* Currently doing a checkpoint */
   CksmFile *pPartner;   /* Ptr from WAL to main-db, or from main-db to WAL */
 };
 
@@ -367,6 +368,20 @@ static int cksmClose(sqlite3_file *pFile){
 }
 
 /*
+** Set the computeCkSm and verifyCksm flags, if they need to be
+** changed.
+*/
+static void cksmSetFlags(CksmFile *p, int hasCorrectReserveSize){
+  if( hasCorrectReserveSize!=p->computeCksm ){
+    p->computeCksm = p->verifyCksm = hasCorrectReserveSize;
+    if( p->pPartner ){
+      p->pPartner->verifyCksm = hasCorrectReserveSize;
+      p->pPartner->computeCksm = hasCorrectReserveSize;
+    }
+  }
+}
+
+/*
 ** Read data from a cksm-file.
 */
 static int cksmRead(
@@ -383,18 +398,17 @@ static int cksmRead(
     if( iOfst==0 && iAmt>=100 && memcmp(zBuf,"SQLite format 3",16)==0 ){
       u8 *d = (u8*)zBuf;
       char hasCorrectReserveSize = (d[20]==8);
-      if( hasCorrectReserveSize!=p->computeCksm ){
-        p->computeCksm = p->verifyCksm = hasCorrectReserveSize;
-      }
+      cksmSetFlags(p, hasCorrectReserveSize);
     }
-    /* Verify the checksum if (1) the size seems appropriate for a database
-    ** page, and if (2) checksum verification is enabled.  But (3) do not 
-    ** verify the checksums on a WAL page if the main database file
-    ** has subsequently turned off checksums.
+    /* Verify the checksum if
+    **    (1) the size indicates that we are dealing with a complete
+    **        database page
+    **    (2) checksum verification is enabled
+    **    (3) we are not in the middle of checkpoint
     */
     if( iAmt>=512           /* (1) */
      && p->verifyCksm       /* (2) */
-     && (!p->isWal || (p->pPartner!=0 && p->pPartner->verifyCksm))  /* (3) */
+     && !p->inCkpt          /* (3) */
     ){
       u8 cksum[8];
       cksmCompute((u8*)zBuf, iAmt-8, cksum);
@@ -423,9 +437,7 @@ static int cksmWrite(
   if( iOfst==0 && iAmt>=100 && memcmp(zBuf,"SQLite format 3",16)==0 ){
     u8 *d = (u8*)zBuf;
     char hasCorrectReserveSize = (d[20]==8);
-    if( hasCorrectReserveSize!=p->computeCksm ){
-      p->computeCksm = p->verifyCksm = hasCorrectReserveSize;
-    }
+    cksmSetFlags(p, hasCorrectReserveSize);
   }
   /* If the write size is appropriate for a database page and if
   ** checksums where ever enabled, then it will be safe to compute
@@ -433,7 +445,10 @@ static int cksmWrite(
   ** it will never decrease.  And because it cannot decrease, the
   ** checksum will not overwrite anything.
   */
-  if( iAmt>=512 && p->computeCksm ){
+  if( iAmt>=512
+   && p->computeCksm
+   && !p->inCkpt
+  ){
     cksmCompute((u8*)zBuf, iAmt-8, ((u8*)zBuf)+iAmt-8);
   }
   return pFile->pMethods->xWrite(pFile, zBuf, iAmt, iOfst);
@@ -510,6 +525,7 @@ static int cksmFileControl(sqlite3_file *pFile, int op, void *pArg){
         }else{
           p->verifyCksm = 0;
         }
+        if( p->pPartner ) p->pPartner->verifyCksm = p->verifyCksm;
       }
       azArg[0] = sqlite3_mprintf("%d",p->verifyCksm);
       return SQLITE_OK;
@@ -518,6 +534,9 @@ static int cksmFileControl(sqlite3_file *pFile, int op, void *pArg){
       /* Do not allow page size changes on a checksum database */
       return SQLITE_OK;
     }
+  }else if( op==SQLITE_FCNTL_CKPT_START || op==SQLITE_FCNTL_CKPT_DONE ){
+    p->inCkpt = op==SQLITE_FCNTL_CKPT_START;
+    if( p->pPartner ) p->pPartner->inCkpt = p->inCkpt;
   }
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){

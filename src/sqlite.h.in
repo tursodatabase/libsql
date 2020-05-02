@@ -1111,6 +1111,11 @@ struct sqlite3_io_methods {
 ** happen either internally or externally and that are associated with
 ** a particular attached database.
 **
+** <li>[[SQLITE_FCNTL_CKPT_START]]
+** The [SQLITE_FCNTL_CKPT_START] opcode is invoked from within a checkpoint
+** in wal mode before the client starts to copy pages from the wal
+** file to the database file.
+**
 ** <li>[[SQLITE_FCNTL_CKPT_DONE]]
 ** The [SQLITE_FCNTL_CKPT_DONE] opcode is invoked from within a checkpoint
 ** in wal mode after the client has finished copying pages from the wal
@@ -1155,6 +1160,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_SIZE_LIMIT             36
 #define SQLITE_FCNTL_CKPT_DONE              37
 #define SQLITE_FCNTL_RESERVE_BYTES          38
+#define SQLITE_FCNTL_CKPT_START             39
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
