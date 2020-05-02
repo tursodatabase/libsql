@@ -224,7 +224,6 @@ static int bytecodevtabColumn(
             if( pIdx->tnum==iRoot ){
               pCur->zName = pIdx->zName;
               pCur->zType = "index";
-              break;
             }
           }
         }
@@ -268,11 +267,11 @@ static int bytecodevtabColumn(
       break;
     case 8: {   /* subprog */
       Op *aOp = pCur->aOp;
+      assert( aOp[0].opcode==OP_Init );
+      assert( aOp[0].p4.z==0 || strncmp(aOp[0].p4.z,"-" "- ",3)==0 );
       if( pCur->iRowid==pCur->iAddr+1 ){
         break;  /* Result is NULL for the main program */
-      }else if( aOp[0].p4type==P4_DYNAMIC
-       && aOp[0].p4.z!=0
-       && strncmp(aOp[0].p4.z,"-- ", 3)==0 ){
+      }else if( aOp[0].p4.z!=0 ){
          sqlite3_result_text(ctx, aOp[0].p4.z+3, -1, SQLITE_STATIC);
       }else{
          sqlite3_result_text(ctx, "(FK)", 4, SQLITE_STATIC);

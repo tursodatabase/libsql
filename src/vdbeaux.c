@@ -1847,7 +1847,8 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   ** by the mkopcodeh.awk and mkopcodec.awk scripts which extract the
   ** information from the vdbe.c source text */
   fprintf(pOut, zFormat1, pc, 
-      sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, zP4, pOp->p5,
+      sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, 
+      zP4 ? zP4 : "", pOp->p5,
       zCom ? zCom : ""
   );
   fflush(pOut);
