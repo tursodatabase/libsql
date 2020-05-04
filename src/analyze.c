@@ -768,7 +768,7 @@ static void statPush(
     }
   }else
 #endif
-  if( p->nLimit && p->nRow>p->nLimit*(p->nSkipAhead+1) ){
+  if( p->nLimit && p->nRow>(tRowcnt)p->nLimit*(p->nSkipAhead+1) ){
     p->nSkipAhead++;
     sqlite3_result_int(context, p->current.anDLt[0]>0);
   }
