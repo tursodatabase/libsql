@@ -130,7 +130,7 @@ int sqlite3WalHeapMemory(Wal *pWal);
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
-void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);
+void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3*, sqlite3_snapshot *pSnapshot);
 int sqlite3WalSnapshotRecover(Wal *pWal);
 int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot);
 void sqlite3WalSnapshotUnlock(Wal *pWal);

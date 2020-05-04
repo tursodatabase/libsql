@@ -177,8 +177,8 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
   int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
 # ifdef SQLITE_ENABLE_SNAPSHOT
-  int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
-  int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
+  int sqlite3PagerSnapshotGet(Pager*, sqlite3_snapshot **ppSnapshot);
+  int sqlite3PagerSnapshotOpen(Pager*, sqlite3*, sqlite3_snapshot *pSnapshot);
   int sqlite3PagerSnapshotRecover(Pager *pPager);
   int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot);
   void sqlite3PagerSnapshotUnlock(Pager *pPager);
@@ -210,11 +210,6 @@ int sqlite3PagerIsMemdb(Pager*);
 void sqlite3PagerCacheStat(Pager *, int, int, int *);
 void sqlite3PagerClearCache(Pager*);
 int sqlite3SectorSize(sqlite3_file *);
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-void sqlite3PagerResetLockTimeout(Pager *pPager);
-#else
-# define sqlite3PagerResetLockTimeout(X)
-#endif
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);

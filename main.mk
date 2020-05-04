@@ -423,6 +423,7 @@ TESTSRC2 = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbevtab.c \
   $(TOP)/src/where.c \
   $(TOP)/src/wherecode.c \
   $(TOP)/src/whereexpr.c \

@@ -994,7 +994,6 @@ struct BusyHandler {
   int (*xBusyHandler)(void *,int);  /* The busy callback */
   void *pBusyArg;                   /* First arg to busy callback */
   int nBusy;                        /* Incremented with each busy call */
-  u8 bExtraFileArg;                 /* Include sqlite3_file as callback arg */
 };
 
 /*

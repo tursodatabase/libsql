@@ -1551,8 +1551,7 @@ const char *sqlite3ErrStr(int rc){
 */
 static int sqliteDefaultBusyCallback(
   void *ptr,               /* Database connection */
-  int count,               /* Number of times table has been busy */
-  sqlite3_file *pFile      /* The file on which the lock occurred */
+  int count                /* Number of times table has been busy */
 ){
 #if SQLITE_OS_WIN || HAVE_USLEEP
   /* This case is for systems that have support for sleeping for fractions of
@@ -1566,31 +1565,6 @@ static int sqliteDefaultBusyCallback(
   int tmout = db->busyTimeout;
   int delay, prior;
 
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  if( sqlite3OsFileControl(pFile,SQLITE_FCNTL_LOCK_TIMEOUT,&tmout)==SQLITE_OK ){
-    if( count ){
-      /* If this is the second or later invocation of the busy-handler,
-      ** but tmout==0, then code in wal.c must have disabled the blocking
-      ** lock before the SQLITE_BUSY error was hit. In this case, no delay
-      ** occurred while waiting for the lock, so fall through to the xSleep()
-      ** code below to delay a while before retrying the lock.  
-      **
-      ** Alternatively, if tmout!=0, then SQLite has already waited 
-      ** sqlite3.busyTimeout ms for a lock. In this case, return 0 to 
-      ** indicate that the lock should not be retried and the SQLITE_BUSY 
-      ** error returned to the application.  */
-      if( tmout ){
-        tmout = 0;
-        sqlite3OsFileControl(pFile, SQLITE_FCNTL_LOCK_TIMEOUT, &tmout);
-        return 0;
-      }
-    }else{
-      return 1;
-    }
-  }
-#else
-  UNUSED_PARAMETER(pFile);
-#endif
   assert( count>=0 );
   if( count < NDELAY ){
     delay = delays[count];
@@ -1610,7 +1584,6 @@ static int sqliteDefaultBusyCallback(
   ** must be done in increments of whole seconds */
   sqlite3 *db = (sqlite3 *)ptr;
   int tmout = ((sqlite3 *)ptr)->busyTimeout;
-  UNUSED_PARAMETER(pFile);
   if( (count+1)*1000 > tmout ){
     return 0;
   }
@@ -1631,16 +1604,7 @@ static int sqliteDefaultBusyCallback(
 int sqlite3InvokeBusyHandler(BusyHandler *p, sqlite3_file *pFile){
   int rc;
   if( p->xBusyHandler==0 || p->nBusy<0 ) return 0;
-  if( p->bExtraFileArg ){
-    /* Add an extra parameter with the pFile pointer to the end of the
-    ** callback argument list */
-    int (*xTra)(void*,int,sqlite3_file*);
-    xTra = (int(*)(void*,int,sqlite3_file*))p->xBusyHandler;
-    rc = xTra(p->pBusyArg, p->nBusy, pFile);
-  }else{
-    /* Legacy style busy handler callback */
-    rc = p->xBusyHandler(p->pBusyArg, p->nBusy);
-  }
+  rc = p->xBusyHandler(p->pBusyArg, p->nBusy);
   if( rc==0 ){
     p->nBusy = -1;
   }else{
@@ -1665,7 +1629,6 @@ int sqlite3_busy_handler(
   db->busyHandler.xBusyHandler = xBusy;
   db->busyHandler.pBusyArg = pArg;
   db->busyHandler.nBusy = 0;
-  db->busyHandler.bExtraFileArg = 0;
   db->busyTimeout = 0;
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
@@ -1716,7 +1679,6 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
     sqlite3_busy_handler(db, (int(*)(void*,int))sqliteDefaultBusyCallback,
                              (void*)db);
     db->busyTimeout = ms;
-    db->busyHandler.bExtraFileArg = 1;
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
@@ -3359,7 +3321,7 @@ static int openDatabase(
 #endif
 
 #ifdef SQLITE_ENABLE_BYTECODE_VTAB
-  if( !db->mallocFailed && rc==SQLITE_OK){
+  if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3VdbeBytecodeVtabInit(db);
   }
 #endif
@@ -4520,11 +4482,11 @@ int sqlite3_snapshot_open(
           rc = SQLITE_OK;
         }
         if( rc==SQLITE_OK ){
-          rc = sqlite3PagerSnapshotOpen(pPager, pSnapshot);
+          rc = sqlite3PagerSnapshotOpen(pPager, db, pSnapshot);
         }
         if( rc==SQLITE_OK ){
           rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
-          sqlite3PagerSnapshotOpen(pPager, 0);
+          sqlite3PagerSnapshotOpen(pPager, 0, 0);
         }
         if( bUnlock ){
           sqlite3PagerSnapshotUnlock(pPager);
