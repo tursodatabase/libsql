@@ -2751,8 +2751,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
     /* Select a master journal file name */
     nMainFile = sqlite3Strlen30(zMainFile);
-    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XXz%c%c", zMainFile, 0, 0);
+    zMaster = sqlite3MPrintf(db, "%.4c%s%.16c", 0,zMainFile,0);
     if( zMaster==0 ) return SQLITE_NOMEM_BKPT;
+    zMaster += 4;
     do {
       u32 iRandom;
       if( retryCount ){
@@ -2782,7 +2783,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       );
     }
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, zMaster);
+      sqlite3DbFree(db, zMaster-4);
       return rc;
     }
  
@@ -2805,7 +2806,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
         if( rc!=SQLITE_OK ){
           sqlite3OsCloseFree(pMaster);
           sqlite3OsDelete(pVfs, zMaster, 0);
-          sqlite3DbFree(db, zMaster);
+          sqlite3DbFree(db, zMaster-4);
           return rc;
         }
       }
@@ -2819,7 +2820,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     ){
       sqlite3OsCloseFree(pMaster);
       sqlite3OsDelete(pVfs, zMaster, 0);
-      sqlite3DbFree(db, zMaster);
+      sqlite3DbFree(db, zMaster-4);
       return rc;
     }
 
@@ -2842,7 +2843,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     sqlite3OsCloseFree(pMaster);
     assert( rc!=SQLITE_BUSY );
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, zMaster);
+      sqlite3DbFree(db, zMaster-4);
       return rc;
     }
 
@@ -2851,7 +2852,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     ** transaction files are deleted.
     */
     rc = sqlite3OsDelete(pVfs, zMaster, 1);
-    sqlite3DbFree(db, zMaster);
+    sqlite3DbFree(db, zMaster-4);
     zMaster = 0;
     if( rc ){
       return rc;
