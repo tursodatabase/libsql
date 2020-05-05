@@ -2731,6 +2731,65 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+/*
+** Attempt to enable blocking locks. Blocking locks are enabled only if (a)
+** they are supported by the VFS, and (b) the database handle is configured 
+** with a busy-timeout. Return 1 if blocking locks are successfully enabled, 
+** or 0 otherwise.
+*/
+static int walEnableBlocking(sqlite3 *db, Wal *pWal){
+  int res = 0;
+  if( db->busyTimeout ){
+    int rc;
+    int tmout = db->busyTimeout;
+    rc = sqlite3OsFileControl(
+        pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout
+    );
+    res = (rc==SQLITE_OK);
+  }
+  return res;
+}
+
+/*
+** Disable blocking locks.
+*/
+static void walDisableBlocking(Wal *pWal){
+  int tmout = 0;
+  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+}
+
+/*
+** If parameter bLock is true, attempt to enable blocking locks, take
+** the WRITER lock, and then disable blocking locks. If blocking locks
+** cannot be enabled, no attempt to obtain the WRITER lock is made. Return 
+** an SQLite error code if an error occurs, or SQLITE_OK otherwise. It is not
+** an error if blocking locks can not be enabled.
+**
+** If the bLock parameter is false and the WRITER lock is held, release it.
+*/
+int sqlite3WalWriteLock(sqlite3 *db, Wal *pWal, int bLock){
+  int rc = SQLITE_OK;
+  assert( pWal->readLock<0 || bLock==0 );
+  if( bLock ){
+    if( walEnableBlocking(db, pWal) ){
+      rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+      if( rc==SQLITE_OK ){
+        pWal->writeLock = 1;
+      }
+      walDisableBlocking(pWal);
+    }
+  }else if( pWal->writeLock ){
+    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    pWal->writeLock = 0;
+  }
+  return rc;
+}
+#else
+# define walEnableBlocking(x,y) 0
+# define walDisableBlocking(x)
+#endif   /* ifdef SQLITE_ENABLE_SETLK_TIMEOUT */
+
 /*
 ** Begin a read transaction on the database.
 **
@@ -2754,14 +2813,6 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int bChanged = 0;
   WalIndexHdr *pSnapshot = pWal->pSnapshot;
   if( pSnapshot ){
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    int busyTimeout = pWal->dbSnapshot->busyTimeout;
-    if( busyTimeout ){
-      int tmout = busyTimeout;
-      sqlite3OsFileControl(pWal->pDbFd,SQLITE_FCNTL_LOCK_TIMEOUT,(void*)&tmout);
-    }
-#endif
-
     if( memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
       bChanged = 1;
     }
@@ -2774,14 +2825,9 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
     ** its intent. To avoid the race condition this leads to, ensure that
     ** there is no checkpointer process by taking a shared CKPT lock 
     ** before checking pInfo->nBackfillAttempted.  */
+    walEnableBlocking(pWal->dbSnapshot, pWal);
     rc = walLockShared(pWal, WAL_CKPT_LOCK);
-
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    if( busyTimeout ){
-      int tmout = 0;
-      sqlite3OsFileControl(pWal->pDbFd,SQLITE_FCNTL_LOCK_TIMEOUT,(void*)&tmout);
-    }
-#endif
+    walDisableBlocking(pWal);
 
     if( rc!=SQLITE_OK ){
       return rc;
@@ -2861,8 +2907,8 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 ** read-lock.
 */
 void sqlite3WalEndReadTransaction(Wal *pWal){
-  sqlite3WalEndWriteTransaction(pWal);
   if( pWal->readLock>=0 ){
+    sqlite3WalEndWriteTransaction(pWal);
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->readLock = -1;
   }
@@ -3021,6 +3067,16 @@ Pgno sqlite3WalDbsize(Wal *pWal){
 */
 int sqlite3WalBeginWriteTransaction(Wal *pWal){
   int rc;
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  /* If the write-lock is already held, then it was obtained before the
+  ** read-transaction was even opened, making this call a no-op.
+  ** Return early. */
+  if( pWal->writeLock ){
+    assert( !memcmp(&pWal->hdr,(void *)walIndexHdr(pWal),sizeof(WalIndexHdr)) );
+    return SQLITE_OK;
+  }
+#endif
 
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
@@ -3587,9 +3643,6 @@ int sqlite3WalCheckpoint(
   int isChanged = 0;              /* True if a new wal-index header is loaded */
   int eMode2 = eMode;             /* Mode to pass to walCheckpoint() */
   int (*xBusy2)(void*) = xBusy;   /* Busy handler for eMode2 */
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  int bSetLk = 0;
-#endif
 
   assert( pWal->ckptLock==0 );
   assert( pWal->writeLock==0 );
@@ -3601,18 +3654,11 @@ int sqlite3WalCheckpoint(
   if( pWal->readOnly ) return SQLITE_READONLY;
   WALTRACE(("WAL%p: checkpoint begins\n", pWal));
 
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  if( db->busyTimeout ){
-    int tmout = db->busyTimeout;
-    sqlite3_file *fd = pWal->pDbFd;
-    if( SQLITE_OK==
-        sqlite3OsFileControl(fd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout) 
-    ){
-      xBusy2 = 0;
-      bSetLk = 1;
-    }
+  /* Enable blocking locks, if possible. If blocking locks are successfully
+  ** enabled, set xBusy2=0 so that the busy-handler is never invoked. */
+  if( walEnableBlocking(db, pWal) ){
+    xBusy2 = 0;
   }
-#endif
 
   /* IMPLEMENTATION-OF: R-62028-47212 All calls obtain an exclusive 
   ** "checkpoint" lock on the database file.
@@ -3684,13 +3730,7 @@ int sqlite3WalCheckpoint(
     memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
   }
 
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  if( bSetLk ){
-    int tmout = 0;
-    sqlite3_file *fd = pWal->pDbFd;
-    sqlite3OsFileControl(fd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
-  }
-#endif
+  walDisableBlocking(pWal);
 
   /* Release the locks. */
   sqlite3WalEndWriteTransaction(pWal);

@@ -4819,22 +4819,24 @@ static int unixShmLock(
   assert( pShmNode->hShm>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->hShm<0 || pDbFd->pInode->bProcessLock==0 );
 
-  /* Check that, if this to be a blocking lock, that locks have been
-  ** obtained in the following order.
+  /* Check that, if this to be a blocking lock, no locks that occur later
+  ** in the following list than the lock being obtained are already held:
   **
   **   1. Checkpointer lock (ofst==1).
-  **   2. Recover lock (ofst==2).
+  **   2. Write lock (ofst==0).
   **   3. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
-  **   4. Write lock (ofst==0).
   **
   ** In other words, if this is a blocking lock, none of the locks that
   ** occur later in the above list than the lock being obtained may be
   ** held.  */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  assert( pDbFd->iBusyTimeout==0 
-       || (flags & SQLITE_SHM_UNLOCK) || ofst==0
-       || ((p->exclMask|p->sharedMask)&~((1<<ofst)-2))==0
-  );
+  assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
+         (ofst!=2)                                   /* not RECOVER */
+      && (n==1)                                      /* Single lock only */
+      && (ofst!=1 || (p->exclMask|p->sharedMask)==0)
+      && (ofst!=0 || (p->exclMask|p->sharedMask)<3)
+      && (ofst<3  || (p->exclMask|p->sharedMask)<(1<<ofst))
+  ));
 #endif
 
   mask = (1<<(ofst+n)) - (1<<ofst);

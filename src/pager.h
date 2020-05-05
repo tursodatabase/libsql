@@ -185,6 +185,12 @@ int sqlite3PagerSharedLock(Pager *pPager);
 # endif
 #endif
 
+#if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+  int sqlite3PagerWalWriteLock(sqlite3*, Pager*, int);
+#else
+# define sqlite3PagerWalWriteLock(x,y,z) SQLITE_OK
+#endif
+
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
   int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno);
 #endif

@@ -7574,7 +7574,21 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
-
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+/*
+** If pager pPager is a wal-mode database not in exclusive locking mode,
+** invoke the sqlite3WalWriteLock() function on the associated Wal object 
+** with the same db and bLock parameters as were passed to this function.
+** Return an SQLite error code if an error occurs, or SQLITE_OK otherwise.
+*/
+int sqlite3PagerWalWriteLock(sqlite3 *db, Pager *pPager, int bLock){
+  int rc = SQLITE_OK;
+  if( pagerUseWal(pPager) && pPager->exclusiveMode==0 ){
+    rc = sqlite3WalWriteLock(db, pPager->pWal, bLock);
+  }
+  return rc;
+}
+#endif
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*

@@ -1,5 +1,5 @@
-C Changes\sto\savoid\sdeadlock\sin\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds.
-D 2020-05-04T19:42:35.009
+C Unless\supgrading\san\sexisting\sread\stransaction,\shave\sENABLE_SETLK_TIMEOUT\sbuilds\sattempt\sto\suse\sa\sblocking\slock\swhen\sopening\sa\swrite\stransaction\son\sa\swal\smode\sdatabase.
+D 2020-05-05T20:30:07.254
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 54d404ff88f1432fc056c638e4868fe66dac98cb0f89a6cae4bd6b636053af0f
+F src/btree.c 2a152165efcbde2a0df808705cb44b8d2588440f0a9ebcbe534ca95843c10355
 F src/btree.h 989ef3c33413549e3e148f3dcb46c030f317dac130dc86809ba6b9aa4b16c72a
 F src/btreeInt.h 887cdd2ea7f4a65143074a8a7c8928b0546f8c18dda3c06a408ce7992cbab0c0
 F src/build.c ec6c0bda1e43ef55e5f5121a77ba19fac51fc6585f95ce2da795bcedcf6e8f36
@@ -517,11 +517,11 @@ F src/os.c 669cc3839cc35d20f81faf0be1ab6d4581cea35e9d8f3a9d48a98d6571f7c285
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 7ef8b60222558a373d89c18d0c3bc44365b45273a528183d40bec5bb76ce23fc
+F src/os_unix.c daabdb3c33ef4a6b49ff6809968af2f8c0d3c5811bc654d74375f015180235aa
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 8b5a3b3d12706a8692bf9b36ef0fb94029d855730f51e4615afddb9c7cc4b301
-F src/pager.h eaf8bd9b78f5033a480f66d3a9b5426d04ee352586ee75b9bc7cd50670f6a5b1
+F src/pager.c be4d6d58df5c5d02b84547fd253a80f035ea2ee53931a5393d96af0ba3f04edb
+F src/pager.h 5e2c0e5bd32aa4ae6c25eda2722490bb3f671f24d2e5d665d33df13285c1d520
 F src/parse.y c8eff38606f443d5ba245263fa7abc05e4116d95656e050c4b78e9bfbf931add
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
@@ -617,8 +617,8 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c 8094dfc28dad82d60a1c832020a1b201a5381dc185c14638affc6d4e9d54c653
 F src/vtab.c 7b704a90515a239c6cdba6a66b1bb3a385e62326cceb5ecb05ec7a091d6b8515
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c b6c5fb152c9ed73017202b4ffda1ee97a8c6cc57a3596e29ab4b763207013d49
-F src/wal.h 642f7896526181a95dde213fe1a0a515899d8eb2fa7cb562f042b0637d11d3d7
+F src/wal.c 4099109dcf2b302e0d151e6fa0678d9bbc3eb923b8bd13a3cd07db0e7df5016b
+F src/wal.h 484890eaaefb89c0f2043ae34c20bf367383f201f63da631ecae424797a7f60d
 F src/walker.c 7c429c694abd12413a5c17aec9f47cfe9eba6807e6b0a32df883e8e3a14835ed
 F src/where.c 9546c82056e8cdb27291f98cf1adca5d271240b399bb97b32f77fc2bea6146c9
 F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
@@ -1658,7 +1658,7 @@ F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c37
 F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bda2b65
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
-F test/wal.test cdf0ca6cc0447520d19ef1c83287824ebeb3e82d75af856511ba96841a79fc9b
+F test/wal.test 16180bc4becda176428ad02eaea437b4b8f5ae099314de443a4e12b2dcc007a2
 F test/wal2.test 537f59e5c5932e3b45bf3591ae3e48a2601360c2e52821b633e222fe6ebd5b09
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1863,10 +1863,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1ba026d882f070b351280028e2fa88a3cca59b46d4683302e24c6677e0951b9
-R 7034fe62283804a1df8fc178d6719787
-T *branch * setlk-deadlock-changes
-T *sym-setlk-deadlock-changes *
-T -sym-trunk *
+P 553423c23142cf0ec219192315d57ce8a0e10c3d8678d28bc110a1a9a7c17cee
+R aa33971255c5eac84a2aa86cb20ae159
 U dan
-Z b3c62bfe3502546b0ce8fe477018d01b
+Z dc53b638850c8fa914d5b99111645e25
