@@ -1,5 +1,5 @@
-C Earlier\sdetection\sof\sindex\scorruption\scaused\sby\smissing\sindex\sentries.
-D 2020-05-05T18:42:49.954
+C The\sonly\sknown\spath\sto\sa\scorruption\sdetection\sbranch\swas\scut\soff\sby\sthe\nprevious\scommit\simplementing\searlier\sindex\scorruption.\s\sSo\smake\sthe\sbranch\nNEVER.\s\sMaybe\sa\sfuzzer\swill\sfind\sa\snew\spath.
+D 2020-05-05T19:54:02.670
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 5e617c087f1c2d6005c2ec694ce80d6e16bc68d906e1b1c556d7c7c2228b636b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 3383ad76753193c3529318ba30db41747663639428d2f6cb7cbcd8034d4a99cd
+F src/btree.c 079ae87477d0d6c9c072b7f1b326e18131d14d486dc3ab729bd9be0f40d31b63
 F src/btree.h 989ef3c33413549e3e148f3dcb46c030f317dac130dc86809ba6b9aa4b16c72a
 F src/btreeInt.h 887cdd2ea7f4a65143074a8a7c8928b0546f8c18dda3c06a408ce7992cbab0c0
 F src/build.c ec6c0bda1e43ef55e5f5121a77ba19fac51fc6585f95ce2da795bcedcf6e8f36
@@ -1863,7 +1863,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 68033bcade87e6046f4c0a49936d63ce531c680c1def98fae02afa0c79db2c7f
-R 734cddd2652c965c7a46f95471ccd83f
+P f339f31f9e9a856b576f99c5230fdf6d60fdc2873e48cb5aa0a4ab1d04e3c930
+R fb89f805264b8e2129b7b9be6c16f034
 U drh
-Z 25ffd105f0b4f1cd99e583fc05bf214f
+Z 05849c7dc6493e9e337f69ee2000aae8
