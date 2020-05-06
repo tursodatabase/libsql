@@ -843,7 +843,7 @@ static int walLockShared(Wal *pWal, int lockIdx){
                         SQLITE_SHM_LOCK | SQLITE_SHM_SHARED);
   WALTRACE(("WAL%p: acquire SHARED-%s %s\n", pWal,
             walLockName(lockIdx), rc ? "failed" : "ok"));
-  VVA_ONLY( pWal->lockError = (u8)(rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
+  VVA_ONLY( pWal->lockError = (u8)(rc!=SQLITE_OK && (rc&0xFF)!=SQLITE_BUSY); )
   return rc;
 }
 static void walUnlockShared(Wal *pWal, int lockIdx){
@@ -859,7 +859,7 @@ static int walLockExclusive(Wal *pWal, int lockIdx, int n){
                         SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
   WALTRACE(("WAL%p: acquire EXCLUSIVE-%s cnt=%d %s\n", pWal,
             walLockName(lockIdx), n, rc ? "failed" : "ok"));
-  VVA_ONLY( pWal->lockError = (u8)(rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
+  VVA_ONLY( pWal->lockError = (u8)(rc!=SQLITE_OK && (rc&0xFF)!=SQLITE_BUSY); )
   return rc;
 }
 static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
@@ -1679,6 +1679,89 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+/*
+** Attempt to enable blocking locks. Blocking locks are enabled only if (a)
+** they are supported by the VFS, and (b) the database handle is configured 
+** with a busy-timeout. Return 1 if blocking locks are successfully enabled, 
+** or 0 otherwise.
+*/
+static int walEnableBlocking(Wal *pWal){
+  int res = 0;
+  if( pWal->db ){
+    int tmout = pWal->db->busyTimeout;
+    if( tmout ){
+      int rc;
+      rc = sqlite3OsFileControl(
+          pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout
+      );
+      res = (rc==SQLITE_OK);
+    }
+  }
+  return res;
+}
+
+/*
+** Disable blocking locks.
+*/
+static void walDisableBlocking(Wal *pWal){
+  int tmout = 0;
+  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
+}
+
+/*
+** If parameter bLock is true, attempt to enable blocking locks, take
+** the WRITER lock, and then disable blocking locks. If blocking locks
+** cannot be enabled, no attempt to obtain the WRITER lock is made. Return 
+** an SQLite error code if an error occurs, or SQLITE_OK otherwise. It is not
+** an error if blocking locks can not be enabled.
+**
+** If the bLock parameter is false and the WRITER lock is held, release it.
+*/
+int sqlite3WalWriteLock(Wal *pWal, int bLock){
+  int rc = SQLITE_OK;
+  assert( pWal->readLock<0 || bLock==0 );
+  if( bLock ){
+    assert( pWal->db );
+    if( walEnableBlocking(pWal) ){
+      rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+      if( rc==SQLITE_OK ){
+        pWal->writeLock = 1;
+      }
+      walDisableBlocking(pWal);
+    }
+  }else if( pWal->writeLock ){
+    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    pWal->writeLock = 0;
+  }
+  return rc;
+}
+
+/*
+** Set the database handle used to determine if blocking locks are required.
+*/
+void sqlite3WalDb(Wal *pWal, sqlite3 *db){
+  pWal->db = db;
+}
+
+/*
+** Take an exclusive WRITE lock. Blocking if so configured.
+*/
+static int walLockWriter(Wal *pWal){
+  int rc;
+  walEnableBlocking(pWal);
+  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  walDisableBlocking(pWal);
+  return rc;
+}
+#else
+# define walEnableBlocking(x) 0
+# define walDisableBlocking(x)
+# define walLockWriter(pWal) walLockExclusive((pWal), WAL_WRITE_LOCK, 1)
+# define sqlite3WalDb(pWal, db)
+#endif   /* ifdef SQLITE_ENABLE_SETLK_TIMEOUT */
+
+
 /*
 ** Attempt to obtain the exclusive WAL lock defined by parameters lockIdx and
 ** n. If the attempt fails and parameter xBusy is not NULL, then it is a
@@ -1696,6 +1779,12 @@ static int walBusyLock(
   do {
     rc = walLockExclusive(pWal, lockIdx, n);
   }while( xBusy && rc==SQLITE_BUSY && xBusy(pBusyArg) );
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  if( rc==SQLITE_BUSY_TIMEOUT ){
+    walDisableBlocking(pWal);
+    rc = SQLITE_BUSY;
+  }
+#endif
   return rc;
 }
 
@@ -2117,88 +2206,6 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
 ** be retried.
 */
 #define WAL_RETRY  (-1)
-
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-/*
-** Attempt to enable blocking locks. Blocking locks are enabled only if (a)
-** they are supported by the VFS, and (b) the database handle is configured 
-** with a busy-timeout. Return 1 if blocking locks are successfully enabled, 
-** or 0 otherwise.
-*/
-static int walEnableBlocking(Wal *pWal){
-  int res = 0;
-  if( pWal->db ){
-    int tmout = pWal->db->busyTimeout;
-    if( tmout ){
-      int rc;
-      rc = sqlite3OsFileControl(
-          pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout
-          );
-      res = (rc==SQLITE_OK);
-    }
-  }
-  return res;
-}
-
-/*
-** Disable blocking locks.
-*/
-static void walDisableBlocking(Wal *pWal){
-  int tmout = 0;
-  sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout);
-}
-
-/*
-** If parameter bLock is true, attempt to enable blocking locks, take
-** the WRITER lock, and then disable blocking locks. If blocking locks
-** cannot be enabled, no attempt to obtain the WRITER lock is made. Return 
-** an SQLite error code if an error occurs, or SQLITE_OK otherwise. It is not
-** an error if blocking locks can not be enabled.
-**
-** If the bLock parameter is false and the WRITER lock is held, release it.
-*/
-int sqlite3WalWriteLock(Wal *pWal, int bLock){
-  int rc = SQLITE_OK;
-  assert( pWal->readLock<0 || bLock==0 );
-  if( bLock ){
-    assert( pWal->db );
-    if( walEnableBlocking(pWal) ){
-      rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-      if( rc==SQLITE_OK ){
-        pWal->writeLock = 1;
-      }
-      walDisableBlocking(pWal);
-    }
-  }else if( pWal->writeLock ){
-    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
-    pWal->writeLock = 0;
-  }
-  return rc;
-}
-
-/*
-** Set the database handle used to determine if blocking locks are required.
-*/
-void sqlite3WalDb(Wal *pWal, sqlite3 *db){
-  pWal->db = db;
-}
-
-/*
-** Take an exclusive WRITE lock. Blocking if so configured.
-*/
-static int walLockWriter(Wal *pWal){
-  int rc;
-  walEnableBlocking(pWal);
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-  walDisableBlocking(pWal);
-  return rc;
-}
-#else
-# define walEnableBlocking(x) 0
-# define walDisableBlocking(x)
-# define walLockWriter(pWal) walLockExclusive((pWal), WAL_WRITE_LOCK, 1)
-# define sqlite3WalDb(pWal, db)
-#endif   /* ifdef SQLITE_ENABLE_SETLK_TIMEOUT */
 
 /*
 ** Read the wal-index header from the wal-index and into pWal->hdr.
@@ -3688,9 +3695,7 @@ int sqlite3WalCheckpoint(
   /* Enable blocking locks, if possible. If blocking locks are successfully
   ** enabled, set xBusy2=0 so that the busy-handler is never invoked. */
   sqlite3WalDb(pWal, db);
-  if( walEnableBlocking(pWal) ){
-    xBusy2 = 0;
-  }
+  walEnableBlocking(pWal);
 
   /* IMPLEMENTATION-OF: R-62028-47212 All calls obtain an exclusive 
   ** "checkpoint" lock on the database file.
@@ -3774,6 +3779,9 @@ int sqlite3WalCheckpoint(
     pWal->ckptLock = 0;
   }
   WALTRACE(("WAL%p: checkpoint %s\n", pWal, rc ? "failed" : "ok"));
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  if( rc==SQLITE_BUSY_TIMEOUT ) rc = SQLITE_BUSY;
+#endif
   return (rc==SQLITE_OK && eMode!=eMode2 ? SQLITE_BUSY : rc);
 }
 

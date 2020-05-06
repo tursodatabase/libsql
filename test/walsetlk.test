@@ -12,6 +12,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/lock_common.tcl
 set testprefix walsetlk
 
 ifcapable !wal {finish_test ; return }
@@ -70,6 +71,114 @@ do_execsql_test -db db2 1.7 {
 do_test 1.8 {
   file size test.db-wal
 } 0
+
+db close
+db2 close
+#-------------------------------------------------------------------------
+
+do_multiclient_test tn {
+
+  do_test 2.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(s, v);
+      INSERT INTO t1 VALUES(1, 2);
+      INSERT INTO t1 VALUES(3, 4);
+      INSERT INTO t1 VALUES(5, 6);
+    }
+    code1 { db timeout 2000 }
+  } {}
+
+  do_test 2.$tn.2 {
+    sql2 {
+      BEGIN;
+        INSERT INTO t1 VALUES(7, 8);
+    }
+  } {}
+
+  do_test 2.$tn.3 {
+    set us [lindex [time { catch {db eval "BEGIN EXCLUSIVE"} }] 0]
+    expr $us>1000000 && $us<4000000
+  } {1}
+
+  do_test 2.$tn.4 {
+    sql2 { COMMIT }
+    sql1 { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8}
+
+  do_test 2.$tn.5 {
+    sql2 {
+      BEGIN;
+        INSERT INTO t1 VALUES(9, 10);
+    }
+  } {}
+
+  do_test 2.$tn.6 {
+    set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
+    expr $us>1000000 && $us<4000000
+  } {1}
+
+  do_test 2.$tn.7 {
+    sql2 {
+      COMMIT;
+      BEGIN;
+        SELECT * FROM t1;
+    }
+  } {1 2 3 4 5 6 7 8 9 10}
+
+  do_test 2.$tn.8 {
+    set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
+    expr $us>1000000 && $us<4000000
+  } {1}
+
+  do_test 2.$tn.9 {
+    sql3 {
+      INSERT INTO t1 VALUES(11, 12);
+    }
+    sql2 {
+      COMMIT;
+      BEGIN;
+        SELECT * FROM t1;
+    }
+    sql3 {
+      INSERT INTO t1 VALUES(13, 14);
+    }
+  } {}
+
+  do_test 2.$tn.10 {
+    set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
+    expr $us>1000000 && $us<4000000
+  } {1}
+
+  do_test 2.$tn.11 {
+    sql3 {
+      BEGIN;
+        SELECT * FROM t1;
+    }
+    sql1 { INSERT INTO t1 VALUES(15, 16); }
+  } {}
+
+  do_test 2.$tn.12 {
+    set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
+    expr $us>1000000 && $us<4000000
+  } {1}
+
+  do_test 2.$tn.13 {
+    sql2 {
+      COMMIT;
+      BEGIN;
+        SELECT * FROM t1;
+    }
+    sql1 { INSERT INTO t1 VALUES(17, 18); }
+  } {}
+
+  do_test 2.$tn.14 {
+    set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
+    puts $us
+    expr $us>1000000 && $us<4000000
+  } {1}
+  
+}
 
 finish_test
 

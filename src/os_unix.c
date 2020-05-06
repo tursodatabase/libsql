@@ -1565,8 +1565,9 @@ static int osSetPosixAdvisoryLock(
   struct flock *pLock,  /* The description of the lock */
   unixFile *pFile       /* Structure holding timeout value */
 ){
+  int tm = pFile->iBusyTimeout;
   int rc = osFcntl(h,F_SETLK,pLock);
-  while( rc<0 && pFile->iBusyTimeout>0 ){
+  while( rc<0 && tm>0 ){
     /* On systems that support some kind of blocking file lock with a timeout,
     ** make appropriate changes here to invoke that blocking file lock.  On
     ** generic posix, however, there is no such API.  So we simply try the
@@ -1574,7 +1575,7 @@ static int osSetPosixAdvisoryLock(
     ** the lock is obtained. */
     usleep(1000);
     rc = osFcntl(h,F_SETLK,pLock);
-    pFile->iBusyTimeout--;
+    tm--;
   }
   return rc;
 }
@@ -4316,13 +4317,16 @@ static int unixShmSystemLock(
   assert( n>=1 && n<=SQLITE_SHM_NLOCK );
 
   if( pShmNode->hShm>=0 ){
+    int res;
     /* Initialize the locking parameters */
     f.l_type = lockType;
     f.l_whence = SEEK_SET;
     f.l_start = ofst;
     f.l_len = n;
-    rc = osSetPosixAdvisoryLock(pShmNode->hShm, &f, pFile);
-    rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
+    res = osSetPosixAdvisoryLock(pShmNode->hShm, &f, pFile);
+    if( res==-1 ){
+      rc = (pFile->iBusyTimeout ? SQLITE_BUSY_TIMEOUT : SQLITE_BUSY);
+    }
   }
 
   /* Update the global lock state and do debug tracing */
