@@ -178,7 +178,7 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
 # ifdef SQLITE_ENABLE_SNAPSHOT
   int sqlite3PagerSnapshotGet(Pager*, sqlite3_snapshot **ppSnapshot);
-  int sqlite3PagerSnapshotOpen(Pager*, sqlite3*, sqlite3_snapshot *pSnapshot);
+  int sqlite3PagerSnapshotOpen(Pager*, sqlite3_snapshot *pSnapshot);
   int sqlite3PagerSnapshotRecover(Pager *pPager);
   int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot);
   void sqlite3PagerSnapshotUnlock(Pager *pPager);
@@ -186,9 +186,11 @@ int sqlite3PagerSharedLock(Pager *pPager);
 #endif
 
 #if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_ENABLE_SETLK_TIMEOUT)
-  int sqlite3PagerWalWriteLock(sqlite3*, Pager*, int);
+  int sqlite3PagerWalWriteLock(Pager*, int);
+  void sqlite3PagerWalDb(Pager*, sqlite3*);
 #else
-# define sqlite3PagerWalWriteLock(x,y,z) SQLITE_OK
+# define sqlite3PagerWalWriteLock(y,z) SQLITE_OK
+# define sqlite3PagerWalDb(x,y)
 #endif
 
 #ifdef SQLITE_DIRECT_OVERFLOW_READ

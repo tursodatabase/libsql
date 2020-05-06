@@ -3442,9 +3442,10 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     /* If transitioning from no transaction directly to a write transaction,
     ** block for the WRITER lock first if possible. */
+    sqlite3PagerWalDb(pPager, p->db);
     if( pBt->pPage1==0 && wrflag ){
       assert( pBt->inTransaction==TRANS_NONE );
-      rc = sqlite3PagerWalWriteLock(p->db, pPager, 1);
+      rc = sqlite3PagerWalWriteLock(pPager, 1);
       if( rc!=SQLITE_OK ) break;
     }
 #endif
@@ -3475,9 +3476,10 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     }
   
     if( rc!=SQLITE_OK ){
-      sqlite3PagerWalWriteLock(p->db, pPager, 0);
+      sqlite3PagerWalWriteLock(pPager, 0);
       unlockBtreeIfUnused(pBt);
     }
+    sqlite3PagerWalDb(pPager, 0);
   }while( (rc&0xFF)==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
           btreeInvokeBusyHandler(pBt) );
 

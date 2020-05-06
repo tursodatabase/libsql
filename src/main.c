@@ -4481,11 +4481,11 @@ int sqlite3_snapshot_open(
           rc = SQLITE_OK;
         }
         if( rc==SQLITE_OK ){
-          rc = sqlite3PagerSnapshotOpen(pPager, db, pSnapshot);
+          rc = sqlite3PagerSnapshotOpen(pPager, pSnapshot);
         }
         if( rc==SQLITE_OK ){
           rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
-          sqlite3PagerSnapshotOpen(pPager, 0, 0);
+          sqlite3PagerSnapshotOpen(pPager, 0);
         }
         if( bUnlock ){
           sqlite3PagerSnapshotUnlock(pPager);

@@ -7581,12 +7581,22 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
 ** with the same db and bLock parameters as were passed to this function.
 ** Return an SQLite error code if an error occurs, or SQLITE_OK otherwise.
 */
-int sqlite3PagerWalWriteLock(sqlite3 *db, Pager *pPager, int bLock){
+int sqlite3PagerWalWriteLock(Pager *pPager, int bLock){
   int rc = SQLITE_OK;
   if( pagerUseWal(pPager) && pPager->exclusiveMode==0 ){
-    rc = sqlite3WalWriteLock(db, pPager->pWal, bLock);
+    rc = sqlite3WalWriteLock(pPager->pWal, bLock);
   }
   return rc;
+}
+
+/*
+** Set the database handle used by the wal layer to determine if 
+** blocking locks are required.
+*/
+void sqlite3PagerWalDb(Pager *pPager, sqlite3 *db){
+  if( pagerUseWal(pPager) ){
+    sqlite3WalDb(pPager->pWal, db);
+  }
 }
 #endif
 
@@ -7610,12 +7620,11 @@ int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot){
 */
 int sqlite3PagerSnapshotOpen(
   Pager *pPager, 
-  sqlite3 *db, 
   sqlite3_snapshot *pSnapshot
 ){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    sqlite3WalSnapshotOpen(pPager->pWal, db, pSnapshot);
+    sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);
   }else{
     rc = SQLITE_ERROR;
   }

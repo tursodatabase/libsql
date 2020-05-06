@@ -130,7 +130,7 @@ int sqlite3WalHeapMemory(Wal *pWal);
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
-void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3*, sqlite3_snapshot *pSnapshot);
+void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);
 int sqlite3WalSnapshotRecover(Wal *pWal);
 int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot);
 void sqlite3WalSnapshotUnlock(Wal *pWal);
@@ -147,7 +147,8 @@ int sqlite3WalFramesize(Wal *pWal);
 sqlite3_file *sqlite3WalFile(Wal *pWal);
 
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-int sqlite3WalWriteLock(sqlite3 *db, Wal *pWal, int bLock);
+int sqlite3WalWriteLock(Wal *pWal, int bLock);
+void sqlite3WalDb(Wal *pWal, sqlite3 *db);
 #endif
 
 #endif /* ifndef SQLITE_OMIT_WAL */
