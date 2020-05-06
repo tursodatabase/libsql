@@ -1,5 +1,5 @@
-C More\srestrictions\son\schanges\sto\sshadow\stables\swhen\sin\sdefensive\smode.
-D 2020-01-17T15:33:47.016
+C Provide\sthe\sSQLITE_DEFAULT_LEGACY_ALTER_TABLE\scompile-time\soption.
+D 2020-05-06T18:46:38.246
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -482,7 +482,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c fc3cf5c371f9a400144e8c2f148ab29cd3f67f7da7eaf47e6a6959f8255fd92c
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 22afc33c3a61b4fd80a60a54f1882688371e6bc64685df2696b008fce65a999c
-F src/main.c 16eea1ab004331312da0538dafb497cc0ed82fd9bb2e67f7684b40bf2797b666
+F src/main.c 49657b103545c36b743d1384dbd03c26d49c69cba954a4abab320d5c1fe060b7
 F src/malloc.c 0f9da2a66b230a5785af94b9672126845099b57b70a32c987d04ac28c69da990
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1819,8 +1819,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d13fbf248e6bcb997c301530ee834c6f1fc21add7f46b673d0f63e986c60680
-Q +bae76a5c40703871e5ce4cd23d6fae5a3836606f524a63b01ac828c7a602c5e9
-R 7230baf225f211623f4374c603bd2984
+P b302b260ca9a4ca3d84771d9157fb1fc0b0e1ba175638f0c006cdf94f92a19c9
+Q +63e659d9a793227604aa95685a8d83cd08305f1d01e135407a3ffc6d54482ab8
+R 9665180e78afb4e67cd073a7cdd70a7b
 U drh
-Z e1f180b43db8438d3863baaa86946231
+Z 1251dedb90e7f5e3cb02ff7b6f6f74f6
