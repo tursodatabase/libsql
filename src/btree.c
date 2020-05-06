@@ -7167,7 +7167,7 @@ static int editPage(
   assert( nCell>=0 );
   if( iOld<iNew ){
     int nShift = pageFreeArray(pPg, iOld, iNew-iOld, pCArray);
-    if( nShift>nCell ) return SQLITE_CORRUPT_BKPT;
+    if( NEVER(nShift>nCell) ) return SQLITE_CORRUPT_BKPT;
     memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
     nCell -= nShift;
   }

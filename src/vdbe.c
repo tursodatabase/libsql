@@ -5652,12 +5652,19 @@ case OP_SorterInsert: {     /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 P3 * *
+/* Opcode: IdxDelete P1 P2 P3 * P5
 ** Synopsis: key=r[P2@P3]
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the 
 ** index opened by cursor P1.
+**
+** If P5 is not zero, then raise an SQLITE_CORRUPT_INDEX error
+** if no matching index entry is found.  This happens when running
+** an UPDATE or DELETE statement and the index entry to be updated
+** or deleted is not found.  For some uses of IdxDelete
+** (example:  the EXCEPT operator) it does not matter that no matching
+** entry is found.  For those cases, P5 is zero.
 */
 case OP_IdxDelete: {
   VdbeCursor *pC;
@@ -5674,7 +5681,6 @@ case OP_IdxDelete: {
   sqlite3VdbeIncrWriteCounter(p, pC);
   pCrsr = pC->uc.pCursor;
   assert( pCrsr!=0 );
-  assert( pOp->p5==0 );
   r.pKeyInfo = pC->pKeyInfo;
   r.nField = (u16)pOp->p3;
   r.default_rc = 0;
@@ -5684,6 +5690,9 @@ case OP_IdxDelete: {
   if( res==0 ){
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
     if( rc ) goto abort_due_to_error;
+  }else if( pOp->p5 ){
+    rc = SQLITE_CORRUPT_INDEX;
+    goto abort_due_to_error;
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;

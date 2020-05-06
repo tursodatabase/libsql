@@ -412,7 +412,7 @@ static int cksmRead(
     ){
       u8 cksum[8];
       cksmCompute((u8*)zBuf, iAmt-8, cksum);
-      if( memcmp(zBuf+iAmt-8, cksum, 8)!=0 ){
+      if( memcmp((u8*)zBuf+iAmt-8, cksum, 8)!=0 ){
         sqlite3_log(SQLITE_IOERR_DATA,
            "checksum fault offset %lld of \"%s\"",
            iOfst, p->zFName);

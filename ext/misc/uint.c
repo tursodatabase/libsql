@@ -45,6 +45,7 @@ static int uintCollFunc(
   const unsigned char *zA = (const unsigned char*)pKey1;
   const unsigned char *zB = (const unsigned char*)pKey2;
   int i=0, j=0, x;
+  (void)notUsed;
   while( i<nKey1 && j<nKey2 ){
     x = zA[i] - zB[j];
     if( isdigit(zA[i]) ){
