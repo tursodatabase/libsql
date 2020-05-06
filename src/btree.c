@@ -3476,7 +3476,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     }
   
     if( rc!=SQLITE_OK ){
-      sqlite3PagerWalWriteLock(pPager, 0);
+      (void)sqlite3PagerWalWriteLock(pPager, 0);
       unlockBtreeIfUnused(pBt);
     }
     sqlite3PagerWalDb(pPager, 0);

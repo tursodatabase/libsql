@@ -2197,7 +2197,7 @@ static int walLockWriter(Wal *pWal){
 # define walEnableBlocking(x) 0
 # define walDisableBlocking(x)
 # define walLockWriter(pWal) walLockExclusive((pWal), WAL_WRITE_LOCK, 1)
-# define sqlite3WalDb(pWal)
+# define sqlite3WalDb(pWal, db)
 #endif   /* ifdef SQLITE_ENABLE_SETLK_TIMEOUT */
 
 /*
@@ -2853,7 +2853,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
     ** its intent. To avoid the race condition this leads to, ensure that
     ** there is no checkpointer process by taking a shared CKPT lock 
     ** before checking pInfo->nBackfillAttempted.  */
-    walEnableBlocking(pWal);
+    (void)walEnableBlocking(pWal);
     rc = walLockShared(pWal, WAL_CKPT_LOCK);
     walDisableBlocking(pWal);
 
@@ -3732,7 +3732,7 @@ int sqlite3WalCheckpoint(
   if( rc==SQLITE_OK ){
     walDisableBlocking(pWal);
     rc = walIndexReadHdr(pWal, &isChanged);
-    walEnableBlocking(pWal);
+    (void)walEnableBlocking(pWal);
     if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
       sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
     }
