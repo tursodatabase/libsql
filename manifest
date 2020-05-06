@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sthat\scould\sfollow\san\sIO\serror.
-D 2020-05-06T21:24:29.750
+C Avoid\sleaking\sa\sfile-handle\sin\stest\sfile\swalsetlk.test.
+D 2020-05-06T21:25:39.157
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1689,7 +1689,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
-F test/walsetlk.test 5c8bd1832a828db71283c03dc4a74d648c5333a5b2e978f5bda4f0d81bae5490
+F test/walsetlk.test 1d5628abc149c2c9d1fc4f5830d2540f02d9efad0ed815407d54035d23cd5df9
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -1864,7 +1864,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92dc59132f8547635d73c61c21ea29b380c401ddc84a6d01412808e00386b9e8
-R 5643010523c06a5a3b834d328816f805
+P e89c864299024cdce395a15c19b000b976142b9eed267901a288adaa695f9e65
+R 3d441440eb789a6955c09c8d2e120384
 U dan
-Z 39ee58cca1df36ea8fc4467e7e30965f
+Z 6de8f7ead6c68a5c01aa4ce7d42c72c9
