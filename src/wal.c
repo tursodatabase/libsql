@@ -3695,7 +3695,7 @@ int sqlite3WalCheckpoint(
   /* Enable blocking locks, if possible. If blocking locks are successfully
   ** enabled, set xBusy2=0 so that the busy-handler is never invoked. */
   sqlite3WalDb(pWal, db);
-  walEnableBlocking(pWal);
+  (void)walEnableBlocking(pWal);
 
   /* IMPLEMENTATION-OF: R-62028-47212 All calls obtain an exclusive 
   ** "checkpoint" lock on the database file.
