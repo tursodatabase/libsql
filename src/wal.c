@@ -2175,28 +2175,34 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   /* If the first attempt failed, it might have been due to a race
   ** with a writer.  So get a WRITE lock and try again.
   */
-  assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr ){
     if( pWal->bShmUnreliable==0 && (pWal->readOnly & WAL_SHM_RDONLY) ){
       if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
       }
-    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
-      pWal->writeLock = 1;
-      if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
-        badHdr = walIndexTryHdr(pWal, pChanged);
-        if( badHdr ){
-          /* If the wal-index header is still malformed even while holding
-          ** a WRITE lock, it can only mean that the header is corrupted and
-          ** needs to be reconstructed.  So run recovery to do exactly that.
-          */
-          rc = walIndexRecover(pWal);
-          *pChanged = 1;
+    }else{
+      int bWriteLock = pWal->writeLock;
+      if( bWriteLock 
+       || SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) 
+      ){
+        pWal->writeLock = 1;
+        if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
+          badHdr = walIndexTryHdr(pWal, pChanged);
+          if( badHdr ){
+            /* If the wal-index header is still malformed even while holding
+            ** a WRITE lock, it can only mean that the header is corrupted and
+            ** needs to be reconstructed.  So run recovery to do exactly that.
+            */
+            rc = walIndexRecover(pWal);
+            *pChanged = 1;
+          }
+        }
+        if( bWriteLock==0 ){
+          pWal->writeLock = 0;
+          walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
         }
       }
-      pWal->writeLock = 0;
-      walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     }
   }
 
@@ -2808,6 +2814,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
 
+  assert( pWal->ckptLock==0 );
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
   int bChanged = 0;
@@ -2832,6 +2839,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
     if( rc!=SQLITE_OK ){
       return rc;
     }
+    pWal->ckptLock = 1;
   }
 #endif
 
@@ -2895,8 +2903,10 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   }
 
   /* Release the shared CKPT lock obtained above. */
-  if( pSnapshot ){
+  if( pWal->ckptLock ){
+    assert( pSnapshot );
     walUnlockShared(pWal, WAL_CKPT_LOCK);
+    pWal->ckptLock = 0;
   }
 #endif
   return rc;
@@ -3698,7 +3708,9 @@ int sqlite3WalCheckpoint(
 
   /* Read the wal-index header. */
   if( rc==SQLITE_OK ){
+    walDisableBlocking(pWal);
     rc = walIndexReadHdr(pWal, &isChanged);
+    walEnableBlocking(db, pWal);
     if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
       sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
     }

@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2020-05-06T15:07:25.513
+C Add\stests\sfor\srunning\srecovery\swhen\sopening\sa\swrite\stransaction\sor\sperforming\sa\scheckpoint\swith\sblocking\slocks\senabled.\sFix\ssome\sfailing\sassert()\sstatements.
+D 2020-05-06T17:18:57.298
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -517,7 +517,7 @@ F src/os.c 669cc3839cc35d20f81faf0be1ab6d4581cea35e9d8f3a9d48a98d6571f7c285
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c daabdb3c33ef4a6b49ff6809968af2f8c0d3c5811bc654d74375f015180235aa
+F src/os_unix.c 0e1acfbb8a75f2a4acede6078b072238df63981b172a9cd16f8b090d68291c15
 F src/os_win.c 035a813cbd17f355bdcad7ab894af214a9c13a1db8aeac902365350b98cd45a7
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c be4d6d58df5c5d02b84547fd253a80f035ea2ee53931a5393d96af0ba3f04edb
@@ -617,7 +617,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c 8094dfc28dad82d60a1c832020a1b201a5381dc185c14638affc6d4e9d54c653
 F src/vtab.c 7b704a90515a239c6cdba6a66b1bb3a385e62326cceb5ecb05ec7a091d6b8515
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 4099109dcf2b302e0d151e6fa0678d9bbc3eb923b8bd13a3cd07db0e7df5016b
+F src/wal.c 9cf3f288cd4e48b49725e03037b60246a154ca8775892c75c319db8f5652ae8a
 F src/wal.h 484890eaaefb89c0f2043ae34c20bf367383f201f63da631ecae424797a7f60d
 F src/walker.c 7c429c694abd12413a5c17aec9f47cfe9eba6807e6b0a32df883e8e3a14835ed
 F src/where.c 9546c82056e8cdb27291f98cf1adca5d271240b399bb97b32f77fc2bea6146c9
@@ -1689,6 +1689,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
+F test/walsetlk.test 9da1ee8a18b0416a5ce1914331c1303bcb6cb7bac905eb660f788f023718d8f4
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -1863,7 +1864,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6f819a9e6b35f3fd558bd93255a6a24ad690a0fa15a82b009ca9c641db983c6 9a84d8eb44b12ddea921baa73ac3bffa8c8d23a852605dc1dbde37907360bd79
-R de537778f79587f163af3363949d5ea7
+P a3727dba10b476f414f0a049b35f2a5c169a408eccefa6833821560684e07f8b
+R e1d7b36a881e7c026e918bb1e2d9268d
 U dan
-Z 87b208fa9f7bcdf2aaff63753ffc5546
+Z 92e7a8a964d43aa5533a6dd765b70a70

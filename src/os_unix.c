@@ -4832,7 +4832,6 @@ static int unixShmLock(
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
          (ofst!=2)                                   /* not RECOVER */
-      && (n==1)                                      /* Single lock only */
       && (ofst!=1 || (p->exclMask|p->sharedMask)==0)
       && (ofst!=0 || (p->exclMask|p->sharedMask)<3)
       && (ofst<3  || (p->exclMask|p->sharedMask)<(1<<ofst))
