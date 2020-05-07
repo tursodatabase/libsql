@@ -3434,8 +3434,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
 
   pBt->btsFlags &= ~BTS_INITIALLY_EMPTY;
   if( pBt->nPage==0 ) pBt->btsFlags |= BTS_INITIALLY_EMPTY;
-  sqlite3PagerWalDb(pPager, p->db);
   do {
+    sqlite3PagerWalDb(pPager, p->db);
 
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     /* If transitioning from no transaction directly to a write transaction,

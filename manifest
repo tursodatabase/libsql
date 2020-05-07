@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2020-05-07T14:05:08.190
+C Fix\san\serror\sthat\scould\soccur\sif\sthe\sfirst\stransaction\sexecuted\sby\sa\sconnection\sconfigured\sto\suse\sblocking\slocks\sis\sa\swrite-transaction\sfor\swhich\sthe\sWRITER\slock\scannot\sbe\sobtained.
+D 2020-05-07T14:26:40.925
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c b1c90cd4110248c8e1273ff4578d3a84c0c34725e1b96dacd4a6294a908702de
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c d78458bf4cc0e33a7faa1ab9904ebd66c8a8c820d802b53c9d273b45b3dac667
+F src/btree.c f14e415fcfd0b52b4e4ebd193ba5fadac5e8252c30f023389af682813af44025
 F src/btree.h 989ef3c33413549e3e148f3dcb46c030f317dac130dc86809ba6b9aa4b16c72a
 F src/btreeInt.h 5c8b8749805787313ecf49eb5be3ced1e94bbf8ef54bb01470ce6bd0d5185c67
 F src/build.c 5566b570435d3511a0fd57388c124491b1f74e59561f0c1679fabe74c4c54b7a
@@ -1689,7 +1689,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
-F test/walsetlk.test 1d5628abc149c2c9d1fc4f5830d2540f02d9efad0ed815407d54035d23cd5df9
+F test/walsetlk.test 11f7fe792fdce54cf09874dab824e0627f2eedecfb9f7983e325606ec5184e0c
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -1864,7 +1864,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3cfc675e2e917b69108feb3a75728b573abe8e44f0890a7d20d307b0b6784c0e 99749d4fd4930ccf15227f67c732266af9e09dd3cabdc0834fb450ef98196441
-R a2fb9be328819586780eac9a007a3fb6
+P ac4ee69664278a828e0a64c5be3b96fdb6eb6acc95646a9425c667aea328791c
+R 22b4478e3cf3c244a4ab3e6943ce3c12
 U dan
-Z 26b45dc1c0a43ede219cdbbfa3466d04
+Z e85493d3ac63dab3b3e9ea5cdd9d6a6e
