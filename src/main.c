@@ -3854,7 +3854,7 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }else if( op==SQLITE_FCNTL_RESERVE_BYTES ){
       int iNew = *(int*)pArg;
       *(int*)pArg = sqlite3BtreeGetRequestedReserve(pBtree);
-      if( iNew>=0 && iNew<=254 ){
+      if( iNew>=0 && iNew<=255 ){
         sqlite3BtreeSetPageSize(pBtree, 0, iNew, 0);
       }
       rc = SQLITE_OK;

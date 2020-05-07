@@ -2856,18 +2856,16 @@ int sqlite3BtreeSetPagerFlags(
 */
 int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   int rc = SQLITE_OK;
+  int x;
   BtShared *pBt = p->pBt;
-  assert( nReserve>=-1 && nReserve<=254 );
+  assert( nReserve>=0 && nReserve<=255 );
   sqlite3BtreeEnter(p);
-  if( nReserve>=0 ){
-    pBt->nReserveWanted = nReserve + 1;
-  }
+  pBt->nReserveWanted = nReserve;
+  x = pBt->pageSize - pBt->usableSize;
+  if( nReserve<x ) nReserve = x;
   if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
     return SQLITE_READONLY;
-  }
-  if( nReserve<0 ){
-    nReserve = pBt->pageSize - pBt->usableSize;
   }
   assert( nReserve>=0 && nReserve<=255 );
   if( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE &&
@@ -2919,12 +2917,12 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p){
 ** The amount of reserve can only grow - never shrink.
 */
 int sqlite3BtreeGetRequestedReserve(Btree *p){
-  int n;
+  int n1, n2;
   sqlite3BtreeEnter(p);
-  n = ((int)p->pBt->nReserveWanted) - 1;
-  if( n<0 ) n = sqlite3BtreeGetReserveNoMutex(p);
+  n1 = (int)p->pBt->nReserveWanted;
+  n2 = sqlite3BtreeGetReserveNoMutex(p);
   sqlite3BtreeLeave(p);
-  return n;
+  return n1>n2 ? n1 : n2;
 }
 
 
