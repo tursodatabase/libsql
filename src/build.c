@@ -4630,7 +4630,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
     }
     db->aDb[1].pBt = pBt;
     assert( db->aDb[1].pSchema );
-    if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
+    if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, 0, 0) ){
       sqlite3OomFault(db);
       return 1;
     }

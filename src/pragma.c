@@ -555,7 +555,7 @@ void sqlite3Pragma(
       ** buffer that the pager module resizes using sqlite3_realloc().
       */
       db->nextPagesize = sqlite3Atoi(zRight);
-      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,-1,0) ){
+      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,0,0) ){
         sqlite3OomFault(db);
       }
     }
