@@ -1,5 +1,5 @@
-C Fix\sa\sfailing\sassert()\sin\sfts3\striggered\sby\sa\scorrupt\sdatabase.
-D 2020-05-07T19:55:40.224
+C Do\snot\sretry\son\sa\sfailed\srealloc()\sunless\sSQLITE_ENABLE_MEMORY_MANAGEMENT\nis\savailable,\smeaning\sthat\sthe\sretry\shas\ssome\spossibility\sof\ssuccess.
+D 2020-05-08T10:44:23.243
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -498,7 +498,7 @@ F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 421310045bd78afefb772294a99e50f37d87ae578786a6169074e6291e30d969
 F src/main.c 266393c10ff58d0919941f3187b54c0144b27d2f3fab8ae849eefbb89c48c451
-F src/malloc.c a3e13b001f988ecec6bdb90c0ea8912c8c786e623724d7098da623d8d01d19b1
+F src/malloc.c 167e91665080a2a6f92d358419e0b7e6440f2bba0b55e764a4f0197c95c8a077
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1864,7 +1864,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 652e4b23fffbff128b177697d7217b7d5aad8baf2364df1646b268ce6774e0fb
-R 94aba76fc697261b26718fac307f4f4b
-U dan
-Z 782e0da5030df39cfcdf5f2c26f089cd
+P cb299a090c81cdc5c116c4e15ab38fce112916f8b0fad0c7f2ab127e79238a94
+R f27461d39a2a56a5cb4b1c6171bf79e9
+U drh
+Z f9c0db042a472e6e243e17937715aa3a

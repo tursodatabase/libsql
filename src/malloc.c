@@ -482,10 +482,12 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
       sqlite3MallocAlarm(nDiff);
     }
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     if( pNew==0 && mem0.alarmThreshold>0 ){
       sqlite3MallocAlarm((int)nBytes);
       pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     }
+#endif
     if( pNew ){
       nNew = sqlite3MallocSize(pNew);
       sqlite3StatusUp(SQLITE_STATUS_MEMORY_USED, nNew-nOld);
