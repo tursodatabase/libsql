@@ -840,6 +840,7 @@ do_test alter-13.3 {
 do_test alter-14.1 {
   catchsql {
     CREATE TABLE t3651(a UNIQUE);
+    INSERT INTO t3651 VALUES(5);
     ALTER TABLE t3651 ADD COLUMN b UNIQUE;
   }
 } {1 {Cannot add a UNIQUE column}}

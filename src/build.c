@@ -4741,7 +4741,7 @@ void sqlite3HaltConstraint(
   u8 p5Errmsg       /* P5_ErrMsg type */
 ){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  assert( (errCode&0xff)==SQLITE_CONSTRAINT );
+  assert( (errCode&0xff)==SQLITE_CONSTRAINT || pParse->nested );
   if( onError==OE_Abort ){
     sqlite3MayAbort(pParse);
   }
