@@ -1785,6 +1785,7 @@ struct FuncDestructor {
 #define INLINEFUNC_expr_implies_expr    2
 #define INLINEFUNC_expr_compare         3      
 #define INLINEFUNC_affinity             4
+#define INLINEFUNC_iif                  5
 #define INLINEFUNC_unlikely            99  /* Default case */
 
 /*

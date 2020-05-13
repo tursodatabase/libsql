@@ -3700,6 +3700,13 @@ static int exprCodeInlineFunction(
       sqlite3VdbeResolveLabel(v, endCoalesce);
       break;
     }
+    case INLINEFUNC_iif: {
+      Expr caseExpr;
+      memset(&caseExpr, 0, sizeof(caseExpr));
+      caseExpr.op = TK_CASE;
+      caseExpr.x.pList = pFarg;
+      return sqlite3ExprCodeTarget(pParse, &caseExpr, target);
+    }
 
     default: {   
       /* The UNLIKELY() function is a no-op.  The result is the value
