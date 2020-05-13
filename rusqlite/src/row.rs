@@ -334,3 +334,199 @@ impl RowIndex for &'_ str {
         stmt.column_index(*self)
     }
 }
+
+macro_rules! tuple_try_from_row {
+    ($($field:ident),*) => {
+        impl<'a, 'b, $($field,)*> convert::TryFrom<&'a Row<'b>> for ($($field,)*) where $($field: FromSql,)* {
+            type Error = crate::Error;
+
+            // we end with index += 1, which rustc warns about
+            // unused_variables and unused_mut are allowed for ()
+            #[allow(unused_assignments, unused_variables, unused_mut)]
+            fn try_from(row: &'a Row<'b>) -> Result<Self> {
+                let mut index = 0;
+                $(
+                    #[allow(non_snake_case)]
+                    let $field = row.get::<_, $field>(index)?;
+                    index += 1;
+                )*
+                Ok(($($field,)*))
+            }
+        }
+    }
+}
+
+macro_rules! tuples_try_from_row {
+    () => {
+        // not very useful, but maybe some other macro users will find this helpful
+        tuple_try_from_row!();
+    };
+    ($first:ident $(, $remaining:ident)*) => {
+        tuple_try_from_row!($first $(, $remaining)*);
+        tuples_try_from_row!($($remaining),*);
+    };
+}
+
+tuples_try_from_row!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_try_from_row_for_tuple_1() {
+        use crate::{Connection, ToSql};
+        use std::convert::TryFrom;
+
+        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
+        conn.execute(
+            "CREATE TABLE test (a INTEGER)",
+            std::iter::empty::<&dyn ToSql>(),
+        )
+        .expect("failed to create table");
+        conn.execute(
+            "INSERT INTO test VALUES (42)",
+            std::iter::empty::<&dyn ToSql>(),
+        )
+        .expect("failed to insert value");
+        let val = conn
+            .query_row(
+                "SELECT a FROM test",
+                std::iter::empty::<&dyn ToSql>(),
+                |row| <(u32,)>::try_from(row),
+            )
+            .expect("failed to query row");
+        assert_eq!(val, (42,));
+        let fail = conn.query_row(
+            "SELECT a FROM test",
+            std::iter::empty::<&dyn ToSql>(),
+            |row| <(u32, u32)>::try_from(row),
+        );
+        assert!(fail.is_err());
+    }
+
+    #[test]
+    fn test_try_from_row_for_tuple_2() {
+        use crate::{Connection, ToSql};
+        use std::convert::TryFrom;
+
+        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
+        conn.execute(
+            "CREATE TABLE test (a INTEGER, b INTEGER)",
+            std::iter::empty::<&dyn ToSql>(),
+        )
+        .expect("failed to create table");
+        conn.execute(
+            "INSERT INTO test VALUES (42, 47)",
+            std::iter::empty::<&dyn ToSql>(),
+        )
+        .expect("failed to insert value");
+        let val = conn
+            .query_row(
+                "SELECT a, b FROM test",
+                std::iter::empty::<&dyn ToSql>(),
+                |row| <(u32, u32)>::try_from(row),
+            )
+            .expect("failed to query row");
+        assert_eq!(val, (42, 47));
+        let fail = conn.query_row(
+            "SELECT a, b FROM test",
+            std::iter::empty::<&dyn ToSql>(),
+            |row| <(u32, u32, u32)>::try_from(row),
+        );
+        assert!(fail.is_err());
+    }
+
+    #[test]
+    fn test_try_from_row_for_tuple_16() {
+        use crate::{Connection, ToSql};
+        use std::convert::TryFrom;
+
+        let create_table = "CREATE TABLE test (
+            a INTEGER,
+            b INTEGER,
+            c INTEGER,
+            d INTEGER,
+            e INTEGER,
+            f INTEGER,
+            g INTEGER,
+            h INTEGER,
+            i INTEGER,
+            j INTEGER,
+            k INTEGER,
+            l INTEGER,
+            m INTEGER,
+            n INTEGER,
+            o INTEGER,
+            p INTEGER
+        )";
+
+        let insert_values = "INSERT INTO test VALUES (
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+        )";
+
+        type BigTuple = (
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+            u32,
+        );
+
+        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
+        conn.execute(create_table, std::iter::empty::<&dyn ToSql>())
+            .expect("failed to create table");
+        conn.execute(insert_values, std::iter::empty::<&dyn ToSql>())
+            .expect("failed to insert value");
+        let val = conn
+            .query_row(
+                "SELECT * FROM test",
+                std::iter::empty::<&dyn ToSql>(),
+                |row| BigTuple::try_from(row),
+            )
+            .expect("failed to query row");
+        // Debug is not implemented for tuples of 16
+        assert_eq!(val.0, 0);
+        assert_eq!(val.1, 1);
+        assert_eq!(val.2, 2);
+        assert_eq!(val.3, 3);
+        assert_eq!(val.4, 4);
+        assert_eq!(val.5, 5);
+        assert_eq!(val.6, 6);
+        assert_eq!(val.7, 7);
+        assert_eq!(val.8, 8);
+        assert_eq!(val.9, 9);
+        assert_eq!(val.10, 10);
+        assert_eq!(val.11, 11);
+        assert_eq!(val.12, 12);
+        assert_eq!(val.13, 13);
+        assert_eq!(val.14, 14);
+        assert_eq!(val.15, 15);
+
+        // We don't test one bigger because it's unimplemented
+    }
+}
