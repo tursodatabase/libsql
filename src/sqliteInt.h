@@ -1764,7 +1764,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_LENGTH   0x0040 /* Built-in length() function */
 #define SQLITE_FUNC_TYPEOF   0x0080 /* Built-in typeof() function */
 #define SQLITE_FUNC_COUNT    0x0100 /* Built-in count(*) aggregate */
-#define SQLITE_FUNC_COALESCE 0x0200 /* Built-in coalesce() or ifnull() */
+/*                           0x0200 -- available for reuse */
 #define SQLITE_FUNC_UNLIKELY 0x0400 /* Built-in unlikely() function */
 #define SQLITE_FUNC_CONSTANT 0x0800 /* Constant inputs give a constant output */
 #define SQLITE_FUNC_MINMAX   0x1000 /* True for min() and max() aggregates */
