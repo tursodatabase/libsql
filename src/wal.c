@@ -1822,7 +1822,7 @@ static void walRestartHdr(Wal *pWal, u32 salt1){
   sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
   memcpy(&pWal->hdr.aSalt[1], &salt1, 4);
   walIndexWriteHdr(pWal);
-  pInfo->nBackfill = 0;
+  AtomicStore(&pInfo->nBackfill, 0);
   pInfo->nBackfillAttempted = 0;
   pInfo->aReadMark[1] = 0;
   for(i=2; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
@@ -1996,7 +1996,7 @@ static int walCheckpoint(
           }
         }
         if( rc==SQLITE_OK ){
-          pInfo->nBackfill = mxSafeFrame;
+          AtomicStore(&pInfo->nBackfill, mxSafeFrame);
         }
       }
 
@@ -2619,7 +2619,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   assert( pWal->nWiData>0 );
   assert( pWal->apWiData[0]!=0 );
   pInfo = walCkptInfo(pWal);
-  if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame
+  if( !useWal && AtomicLoad(&pInfo->nBackfill)==pWal->hdr.mxFrame
 #ifdef SQLITE_ENABLE_SNAPSHOT
    && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0)
 #endif
@@ -2786,7 +2786,7 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
         rc = SQLITE_NOMEM;
       }else{
         u32 i = pInfo->nBackfillAttempted;
-        for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
+        for(i=pInfo->nBackfillAttempted; i>AtomicLoad(&pInfo->nBackfill); i--){
           WalHashLoc sLoc;          /* Hash table location */
           u32 pgno;                 /* Page number in db file */
           i64 iDbOff;               /* Offset of db file entry */
