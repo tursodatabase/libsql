@@ -2131,6 +2131,28 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   recomputeColumnsNotIndexed(pPk);
 }
 
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
+** Return true if pTab is a virtual table and zName is a shadow table name
+** for that virtual table.
+*/
+int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
+  int nName;                    /* Length of zName */
+  Module *pMod;                 /* Module for the virtual table */
+
+  if( !IsVirtual(pTab) ) return 0;
+  nName = sqlite3Strlen30(pTab->zName);
+  if( sqlite3_strnicmp(zName, pTab->zName, nName)!=0 ) return 0;
+  if( zName[nName]!='_' ) return 0;
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
+  if( pMod==0 ) return 0;
+  if( pMod->pModule->iVersion<3 ) return 0;
+  if( pMod->pModule->xShadowName==0 ) return 0;
+  return pMod->pModule->xShadowName(zName+nName+1);
+}
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Return true if zName is a shadow table name in the current database
@@ -2142,8 +2164,6 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
-  Module *pMod;                 /* Module for the virtual table */
-
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
@@ -2151,13 +2171,10 @@ int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   *zTail = '_';
   if( pTab==0 ) return 0;
   if( !IsVirtual(pTab) ) return 0;
-  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
-  if( pMod==0 ) return 0;
-  if( pMod->pModule->iVersion<3 ) return 0;
-  if( pMod->pModule->xShadowName==0 ) return 0;
-  return pMod->pModule->xShadowName(zTail+1);
+  return sqlite3IsShadowTableOf(db, pTab, zName);
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
 
 #ifdef SQLITE_DEBUG
 /*
