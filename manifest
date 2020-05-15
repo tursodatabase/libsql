@@ -1,9 +1,9 @@
-C Fix\sa\snull\spointer\sdeference\sthat\scan\soccur\son\sa\sstrange\smatchinfo()\nquery.
-D 2020-05-14T23:59:24.284
+C Add\sthe\sSQLITE_ENABLE_FTS3_PARENTHESIS\soption\sto\sfuzzcheck.\s\sAdd\sa\snew\ntest\scase\sthat\suses\sthat\soption.
+D 2020-05-15T01:02:00.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 280cf54350738dfd567bd97ae1bff1bf68c64658c4d5ff21be9cae117e92f063
+F Makefile.in 376f53999defeb32b7ad2626fd58aae8f3694c38ab7ee30c2289e0d0525a9238
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d9232f9339da7d2b82611cb148734d36be4cc90e17a968882e71d9bf75e512df
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
@@ -1028,7 +1028,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db c47e5445e331bd4a3ed66553d4c10673a285f86f37389436a6e145ebca4643ee
+F test/fuzzdata8.db 209623791b0ad72ab39110c867af2080a79004e493c4da14ad661e790b5d1ed8
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1865,7 +1865,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eca0ba2cf4c0fdf757bae19c6397a48245adb99e8017ddc28f01804072a30b2c
-R 93ec1508046ac4f2440810e7eae364a9
+P a4dd148928ea65bd4e1654dfacc3d8057d1f85b8c9939416991d50722e5a720e
+R 4101535aba6c5042c0d4f516e5579ecd
 U drh
-Z da65f05a0fff3a0cfb59242dba1c187f
+Z 949af4778c40886003cffdbf5f6e2f2a
