@@ -13,7 +13,7 @@
 ** This file implements virtual-tables for examining the bytecode content
 ** of a prepared statement.
 */
-#ifdef SQLITE_ENABLE_BYTECODE_VTAB
+#if defined(SQLITE_ENABLE_BYTECODE_VTAB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
@@ -419,4 +419,6 @@ int sqlite3VdbeBytecodeVtabInit(sqlite3 *db){
   }
   return rc;
 }
+#elif defined(SQLITE_ENABLE_BYTECODE_VTAB)
+int sqlite3VdbeBytecodeVtabInit(sqlite3 *db){ return SQLITE_OK; }
 #endif /* SQLITE_ENABLE_BYTECODE_VTAB */

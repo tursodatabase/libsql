@@ -1,5 +1,5 @@
-C Test\sscript\schanges\sto\saccount\sfor\sthe\sfact\sthat\sthe\s"p5"\scolumn\sin\sthe\sEXPLAIN\soutput\sis\snow\san\sinteger,\snot\sa\stext\svalues\scontaining\sa\s2-digit\shex\svalue.
-D 2020-05-15T11:26:31.871
+C Fix\sSQLITE_OMIT_VIRTUALTABLE\stestfixture\sbuilds.
+D 2020-05-15T11:36:16.858
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
 F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
-F src/vdbevtab.c 8094dfc28dad82d60a1c832020a1b201a5381dc185c14638affc6d4e9d54c653
+F src/vdbevtab.c 1abe8515dbcd5a6a34f862b10f9ce7ec24a8f844b0ff538a589116d977ca3590
 F src/vtab.c 7b704a90515a239c6cdba6a66b1bb3a385e62326cceb5ecb05ec7a091d6b8515
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3dc15756d3c859799e30460e1ec6cd304e660df7f680f5cb1b50537de1e6f678
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0119d96decd344ae711388ac8475b92464a6d018ecf73862170f137410036dac
-R d72e9e24ea3275e9f913caa9518ab6bd
+P 102126d80872fdb7469233611cab28100c8455aab4ce25702b83398394559185
+R b05244cfd1ff6a4eb143a24bbb82b72b
 U dan
-Z 51708100c83a40a3a5b69be047e25cde
+Z 43c364040ea40a63ecc6e8697e3a868b
