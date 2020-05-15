@@ -1,5 +1,5 @@
-C Fix\sSQLITE_OMIT_VIRTUALTABLE\stestfixture\sbuilds.
-D 2020-05-15T11:36:16.858
+C Update\stest\sfile\se_fkey.test\sto\saccount\sfor\sthe\sfact\sthat\snew\scolumns\swith\sREFERENCE\sclauses\sand\snon-NULL\sdefault\svalues\smay\snow\sbe\sadded\susing\sALTER\sTABLE\sif\sthe\stable\sis\sempty.
+D 2020-05-15T13:52:33.178
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -836,7 +836,7 @@ F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
 F test/e_expr.test 0d4e5bb50e60ee58aaf0c1184b4ee65cd3351e9aa54ca6568cef075288e58088
-F test/e_fkey.test 2febb2084aef9b0186782421c07bc9d377abf067c9cb4efd49d9647ae31f5afe
+F test/e_fkey.test b497feb7c436693e16a36cdaba8d81ffe12f23659d139ee71dfa57c0c52d1e5b
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2b0e29344497d9a8a999453a003cb476b6b1d2eef2d6c120f83c2d3a429f3164
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 102126d80872fdb7469233611cab28100c8455aab4ce25702b83398394559185
-R b05244cfd1ff6a4eb143a24bbb82b72b
+P 3d9780c5f6095ea35bc731a51eb34d7cf8bd5dcece825b686b94fd50131626e2
+R 1aa74fbbeea29e20ef0f665d7f17da85
 U dan
-Z 43c364040ea40a63ecc6e8697e3a868b
+Z 09f5476076724069e2aae07c067bea21
