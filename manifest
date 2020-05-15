@@ -1,5 +1,5 @@
-C Enhancements\sto\slong-path\ssupport\sin\sthe\sWin32\sVFS.
-D 2020-05-15T01:18:07.884
+C Test\sscript\schanges\sto\saccount\sfor\sthe\sfact\sthat\sthe\s"p5"\scolumn\sin\sthe\sEXPLAIN\soutput\sis\snow\san\sinteger,\snot\sa\stext\svalues\scontaining\sa\s2-digit\shex\svalue.
+D 2020-05-15T11:26:31.871
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -800,7 +800,7 @@ F test/createtab.test 85cdfdae5c3de331cd888d6c66e1aba575b47c2e3c3cc4a1d6f5414069
 F test/cse.test 00b3aea44b16828833c94fbe92475fd6977583fcb064ae0bc590986812b38d0c
 F test/csv01.test c9c3af0d58c34e9ac970c5875a77939edb958762c8aafb95409e19a3f088b6cd
 F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
-F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
+F test/cursorhint.test 0175e4404181ace3ceca8b114eb0a98eae600d565aa4e2705abbe6614c7fe201
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
@@ -883,7 +883,7 @@ F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d031
 F test/fkey8.test 48ef829d63f5f7b37aabd4df9363ac05f65539d1da8c4a44251631769d920579
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
-F test/fordelete.test eb93a2f34137bb87bdab88fcab06c0bd92719aff
+F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa203999944133941a38e5c858f1f66fc1ef4d2f33222ab81cbf4e3fc1539f1c
-R a0a34f2b0bd0aea5761e83ec8647144d
-U mistachkin
-Z fbe8c263b07eca107dc29f71e69a86ce
+P 0119d96decd344ae711388ac8475b92464a6d018ecf73862170f137410036dac
+R d72e9e24ea3275e9f913caa9518ab6bd
+U dan
+Z 51708100c83a40a3a5b69be047e25cde
