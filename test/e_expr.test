@@ -1139,7 +1139,7 @@ sqlite3 db test.db
 #-------------------------------------------------------------------------
 # Test cases for the testable statements related to the CASE expression.
 #
-# EVIDENCE-OF: R-15199-61389 There are two basic forms of the CASE
+# EVIDENCE-OF: R-57495-24088 There are two fundamental forms of the CASE
 # expression: those with a base expression and those without.
 #
 do_execsql_test e_expr-20.1 {

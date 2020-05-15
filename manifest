@@ -1,5 +1,5 @@
-C Update\stest\sfile\se_fkey.test\sto\saccount\sfor\sthe\sfact\sthat\snew\scolumns\swith\sREFERENCE\sclauses\sand\snon-NULL\sdefault\svalues\smay\snow\sbe\sadded\susing\sALTER\sTABLE\sif\sthe\stable\sis\sempty.
-D 2020-05-15T13:52:33.178
+C Adjust\ssome\srequirement\smarks.\s\sNo\schanges\sto\scode.
+D 2020-05-15T15:03:51.480
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -497,7 +497,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 421310045bd78afefb772294a99e50f37d87ae578786a6169074e6291e30d969
-F src/main.c 266393c10ff58d0919941f3187b54c0144b27d2f3fab8ae849eefbb89c48c451
+F src/main.c 7e38af6c454cf25d3f543e94647b3d1f5a56d43c4bdcb2d85b94c24392810d45
 F src/malloc.c 167e91665080a2a6f92d358419e0b7e6440f2bba0b55e764a4f0197c95c8a077
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -608,7 +608,7 @@ F src/vacuum.c de9780b89fa4ee74c3534f60b94820e3179aca759ffc1338ee53cb4ea7693dd3
 F src/vdbe.c e3dba0dee25bc92e871c13cac655260912b3be4abcc85b439259c9934b208da3
 F src/vdbe.h 07b8c636a87df8b6e58f29d6badd7f10d5844353deff1d7c88ed1c2bfe3bbd35
 F src/vdbeInt.h 571413068b5ac07e2ed8ca7a02fa529622fd5455ae6981498376e5e492d2e5ef
-F src/vdbeapi.c d176ee7251d5344de7bb2a0d2dd0fe536834e5843d9bc2389e0f5cdcd5374141
+F src/vdbeapi.c e467b75a710ea099f8d2d022abf601d2ccd05e28f63b44b12d93000b6a75f4a8
 F src/vdbeaux.c ee65c810ec97acce013e3024e5b8f3f767459b5d1499a8d379232059eb9aea03
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 39b942ecca179f4f30a32b54579a85d74ccaefa5af2a0ad2700abe5ef0768b22
@@ -835,7 +835,7 @@ F test/e_createtable.test ea27082d6f84df61e1d9e383f3fd79220418856a4a8afc41af75d4
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
-F test/e_expr.test 0d4e5bb50e60ee58aaf0c1184b4ee65cd3351e9aa54ca6568cef075288e58088
+F test/e_expr.test 62000e6675d5bcf4b09276fe011a27779629ff8f6678ba5937fb6f1b78d645ff
 F test/e_fkey.test b497feb7c436693e16a36cdaba8d81ffe12f23659d139ee71dfa57c0c52d1e5b
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d9780c5f6095ea35bc731a51eb34d7cf8bd5dcece825b686b94fd50131626e2
-R 1aa74fbbeea29e20ef0f665d7f17da85
-U dan
-Z 09f5476076724069e2aae07c067bea21
+P 4087fce97252beda2456164afe9508f952fc9fe4be68ad0e9b330569a78e42f2
+R 0e87e1d67d406d67252e12a2529c3979
+U drh
+Z 68b4e5e66d04a2c36db31d5c9314b859
