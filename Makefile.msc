@@ -234,6 +234,15 @@ OSTRACE = 0
 DEBUG = 0
 !ENDIF
 
+# <<mark>>
+# Disable use of the --linemacros argument to the mksqlite3c.tcl tool, which
+# is used to build the amalgamation.
+#
+!IFNDEF NO_LINEMACROS
+NO_LINEMACROS = 0
+!ENDIF
+# <</mark>>
+
 # Enable use of available compiler optimizations?  Normally, this should be
 # non-zero.  Setting this to zero, thus disabling all compiler optimizations,
 # can be useful for testing.
@@ -776,7 +785,7 @@ MKSQLITE3C_TOOL = $(TOP)\tool\mksqlite3c.tcl
 !ENDIF
 
 !IFNDEF MKSQLITE3C_ARGS
-!IF $(DEBUG)>1
+!IF $(DEBUG)>1 && $(NO_LINEMACROS)==0
 MKSQLITE3C_ARGS = --linemacros
 !ELSE
 MKSQLITE3C_ARGS =
