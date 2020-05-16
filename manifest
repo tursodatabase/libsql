@@ -1,5 +1,5 @@
-C The\sOP_RealAffinity\sopcode\sis\snot\snecessary\safter\sreading\svalues\sfrom\na\svirtual\stable\s(such\sas\srtree).\s\sIt\sis\sharmless,\sbut\sit\sdoes\suse\sCPU\ncycles.\s\sMight\sas\swell\sleave\sit\soff.
-D 2020-05-16T18:01:02.987
+C Performance\soptimization\sfor\sthe\ssqlite3FindTable()\ssubroutine.
+D 2020-05-16T21:01:00.138
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c f14e415fcfd0b52b4e4ebd193ba5fadac5e8252c30f023389af682813af44025
 F src/btree.h 989ef3c33413549e3e148f3dcb46c030f317dac130dc86809ba6b9aa4b16c72a
 F src/btreeInt.h 5c8b8749805787313ecf49eb5be3ced1e94bbf8ef54bb01470ce6bd0d5185c67
-F src/build.c 520d6d125288b7da745f8299840015f66c1d1b896a9308e24d7fde6fa5fafc9b
+F src/build.c ca9e7a33b74f1bf2eb3a5f37f9d07dfed335469f2d70c0bd350e0dd42a50183a
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d69f76f0865f9626078bee087a22fb826407279e78cf9d5382e1c985c9f64a9
-R 038aaeab4f18be62314e9be676a83d68
+P dc18d89354cffcb726722c234a0271ab628a71277b22887eea2bf118028193a6
+R 19171e788e643226a8c2486a995489b0
 U drh
-Z f53eca45dfc23be88eb50db1df821f15
+Z 994ffac4ccc32781ab809d359e7c6892
