@@ -313,6 +313,7 @@ int sqlite3_initialize(void){
     if( rc==SQLITE_OK ){
       sqlite3PCacheBufferSetup( sqlite3GlobalConfig.pPage, 
           sqlite3GlobalConfig.szPage, sqlite3GlobalConfig.nPage);
+      sqlite3MemoryBarrier();
       sqlite3GlobalConfig.isInit = 1;
 #ifdef SQLITE_EXTRA_INIT
       bRunExtraInit = 1;
