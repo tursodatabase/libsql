@@ -5317,6 +5317,7 @@ static void fts3EvalNextRow(
                 fts3EvalNextRow(pCsr, pLeft, pRc);
               }
             }
+            pRight->bEof = pLeft->bEof = 1;
           }
         }
         break;

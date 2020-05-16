@@ -43,5 +43,18 @@ do_execsql_test 2.0 {
   SELECT snippet(t0)  FROM t0 WHERE t0 MATCH x'0a4d4d4d4d320a4f52d70a310a310a4e4541520a0a31f6ce0a4f520a0a310a310a310a4f520a75fc2a242424' ;
 } {<b>1</b>}
 
+reset_db
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t0 USING fts3(
+      col0 INTEGER PRIMARY KEY,col1 VARCHAR(8),col2 BINARY,col3 BINARY
+  );
+  INSERT INTO t0 VALUES ('one', '1234','aaaa','bbbb');
+}
+do_execsql_test 2.2 {
+  SELECT snippet(t0)  FROM t0 WHERE t0 MATCH 
+  '(def AND (one NEAR abc)) OR one'
+} {<b>one</b>}
+
 set sqlite_fts3_enable_parentheses 0
 finish_test
+
