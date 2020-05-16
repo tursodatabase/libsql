@@ -1836,6 +1836,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   sqlite3 dummyDb;
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-13s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
+  sqlite3BeginBenignMalloc();
   dummyDb.mallocFailed = 1;
   zP4 = sqlite3VdbeDisplayP4(&dummyDb, pOp);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -1854,6 +1855,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   fflush(pOut);
   sqlite3_free(zP4);
   sqlite3_free(zCom);
+  sqlite3EndBenignMalloc();
 }
 #endif
 
