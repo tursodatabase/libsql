@@ -731,11 +731,11 @@ impl Drop for Statement<'_> {
 }
 
 impl Statement<'_> {
-    pub(crate) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
+    pub(super) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }
 
-    pub(crate) fn value_ref(&self, col: usize) -> ValueRef<'_> {
+    pub(super) fn value_ref(&self, col: usize) -> ValueRef<'_> {
         let raw = unsafe { self.stmt.ptr() };
 
         match self.stmt.column_type(col) {
@@ -791,7 +791,7 @@ impl Statement<'_> {
         }
     }
 
-    pub(crate) fn step(&self) -> Result<bool> {
+    pub(super) fn step(&self) -> Result<bool> {
         match self.stmt.step() {
             ffi::SQLITE_ROW => Ok(true),
             ffi::SQLITE_DONE => Ok(false),
@@ -799,7 +799,7 @@ impl Statement<'_> {
         }
     }
 
-    pub(crate) fn reset(&self) -> c_int {
+    pub(super) fn reset(&self) -> c_int {
         self.stmt.reset()
     }
 }
