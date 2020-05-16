@@ -106,15 +106,16 @@ impl InnerConnection {
 
                 return Err(e);
             }
+
+            // attempt to turn on extended results code; don't fail if we can't.
+            ffi::sqlite3_extended_result_codes(db, 1);
+
             let r = ffi::sqlite3_busy_timeout(db, 5000);
             if r != ffi::SQLITE_OK {
                 let e = error_from_handle(db, r);
                 ffi::sqlite3_close(db);
                 return Err(e);
             }
-
-            // attempt to turn on extended results code; don't fail if we can't.
-            ffi::sqlite3_extended_result_codes(db, 1);
 
             Ok(InnerConnection::new(db, true))
         }
