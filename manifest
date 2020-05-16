@@ -1,5 +1,5 @@
-C Fix\sa\suse-after-free\sbug\sin\sthe\sfts3\ssnippet()\sfunction.
-D 2020-05-16T17:26:58.154
+C The\sOP_RealAffinity\sopcode\sis\snot\snecessary\safter\sreading\svalues\sfrom\na\svirtual\stable\s(such\sas\srtree).\s\sIt\sis\sharmless,\sbut\sit\sdoes\suse\sCPU\ncycles.\s\sMight\sas\swell\sleave\sit\soff.
+D 2020-05-16T18:01:02.987
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c eee7bae3ec0bc4abee951554bf46a8ba567c0f7752ac90c820ed8afff4c612dc
 F src/treeview.c 82c6391a3ba76215d4185fd4719a56ec4caf186a40c8a7b6e6ba4ae4467c2742
 F src/trigger.c 4ada1037cc99777f647a882cdacbd1a4deb6567b69daf02946286401b88cdc04
-F src/update.c 3eb778c42155d944377a4ee5e440b04520f07094804ed6ce63d2528f619614d9
+F src/update.c 3199098455830fc2d8c8fc4ae3ec2ea513eef64339ae9a7048db62b21169bc7a
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c 95fb6e03a5ca679045c5adccd05380f0addccabef5911abddcb06af069500ab7
 F src/util.c 3b6cedf7a0c69bd6e1acce832873952d416212d6293b18d03064e07d7a9b5118
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 043a7e142dfc2b0da5fbc0b025d005ccad4886f0b0ff65426ba9155ca40394ca
-R bc8dceddadfbacb63dd62d4fb3d44931
-U dan
-Z 0667027f5cfff5899f95c896ef81c0ee
+P 0d69f76f0865f9626078bee087a22fb826407279e78cf9d5382e1c985c9f64a9
+R 038aaeab4f18be62314e9be676a83d68
+U drh
+Z f53eca45dfc23be88eb50db1df821f15
