@@ -5178,7 +5178,7 @@ WhereInfo *sqlite3WhereBegin(
          && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0
          && pWInfo->eDistinct!=WHERE_DISTINCT_ORDERED
         ){
-          sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ); /* Hint to COMDB2 */
+          sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ);
         }
         VdbeComment((v, "%s", pIx->zName));
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
@@ -5336,12 +5336,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         if( pIn->eEndLoopOp!=OP_Noop ){
           if( pIn->nPrefix ){
             assert( pLoop->wsFlags & WHERE_IN_EARLYOUT );
-            if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-              sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
-                  sqlite3VdbeCurrentAddr(v)+2+(pLevel->iLeftJoin!=0),
-                  pIn->iBase, pIn->nPrefix);
-              VdbeCoverage(v);
-            }
             if( pLevel->iLeftJoin ){
               /* For LEFT JOIN queries, cursor pIn->iCur may not have been
               ** opened yet. This occurs for WHERE clauses such as
@@ -5352,8 +5346,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
               ** jump over the OP_Next or OP_Prev instruction about to
               ** be coded.  */
               sqlite3VdbeAddOp2(v, OP_IfNotOpen, pIn->iCur, 
-                  sqlite3VdbeCurrentAddr(v) + 2
+                  sqlite3VdbeCurrentAddr(v) + 2 + 
+                     ((pLoop->wsFlags & WHERE_VIRTUALTABLE)==0)
               );
+              VdbeCoverage(v);
+            }
+            if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
+              sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
+                  sqlite3VdbeCurrentAddr(v)+2,
+                  pIn->iBase, pIn->nPrefix);
               VdbeCoverage(v);
             }
           }

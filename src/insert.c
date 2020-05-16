@@ -1606,7 +1606,7 @@ void sqlite3GenerateConstraintChecks(
             VdbeCoverage(v);
             assert( (pCol->colFlags & COLFLAG_GENERATED)==0 );
             nSeenReplace++;
-            sqlite3ExprCode(pParse, pCol->pDflt, iReg);
+            sqlite3ExprCodeCopy(pParse, pCol->pDflt, iReg);
             sqlite3VdbeJumpHere(v, addr1);
             break;
           }
@@ -1661,6 +1661,7 @@ void sqlite3GenerateConstraintChecks(
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk;
+      Expr *pCopy;
       Expr *pExpr = pCheck->a[i].pExpr;
       if( aiChng
        && !sqlite3ExprReferencesUpdatedColumn(pExpr, aiChng, pkChng)
@@ -1675,7 +1676,11 @@ void sqlite3GenerateConstraintChecks(
       }
       allOk = sqlite3VdbeMakeLabel(pParse);
       sqlite3VdbeVerifyAbortable(v, onError);
-      sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
+      pCopy = sqlite3ExprDup(db, pExpr, 0);
+      if( !db->mallocFailed ){
+        sqlite3ExprIfTrue(pParse, pCopy, allOk, SQLITE_JUMPIFNULL);
+      }
+      sqlite3ExprDelete(db, pCopy);
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
       }else{

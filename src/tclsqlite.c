@@ -3702,6 +3702,7 @@ static int SQLITE_TCLAPI DbMain(
   const char *zFile = 0;
   const char *zVfs = 0;
   int flags;
+  int bTranslateFileName = 1;
   Tcl_DString translatedFilename;
   int rc;
 
@@ -3809,6 +3810,10 @@ static int SQLITE_TCLAPI DbMain(
         flags &= ~SQLITE_OPEN_SHARED_SCHEMA;
       }
 #endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+    }else if( strcmp(zArg, "-translatefilename")==0 ){
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &bTranslateFileName) ){
+        return TCL_ERROR;
+      }
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
       return TCL_ERROR;
@@ -3818,9 +3823,13 @@ static int SQLITE_TCLAPI DbMain(
   p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
   memset(p, 0, sizeof(*p));
   if( zFile==0 ) zFile = "";
-  zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
+  if( bTranslateFileName ){
+    zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
+  }
   rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
-  Tcl_DStringFree(&translatedFilename);
+  if( bTranslateFileName ){
+    Tcl_DStringFree(&translatedFilename);
+  }
   if( p->db ){
     if( SQLITE_OK!=sqlite3_errcode(p->db) ){
       zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));

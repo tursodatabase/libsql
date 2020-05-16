@@ -31,7 +31,8 @@
 ** "explain" P4 display logic is enabled.
 */
 #if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
-     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
+     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG) \
+     || defined(SQLITE_ENABLE_BYTECODE_VTAB)
 # define VDBE_DISPLAY_P4 1
 #else
 # define VDBE_DISPLAY_P4 0
@@ -418,9 +419,9 @@ struct Vdbe {
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
+  u8 doingRerun;          /* True if rerunning after an auto-reprepare */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
-  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
@@ -496,7 +497,14 @@ int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);
 int sqlite3VdbeIdxRowid(sqlite3*, BtCursor*, i64*);
 int sqlite3VdbeExec(Vdbe*);
-#ifndef SQLITE_OMIT_EXPLAIN
+#if !defined(SQLITE_OMIT_EXPLAIN) || defined(SQLITE_ENABLE_BYTECODE_VTAB)
+int sqlite3VdbeNextOpcode(Vdbe*,Mem*,int,int*,int*,Op**);
+char *sqlite3VdbeDisplayP4(sqlite3*,Op*);
+#endif
+#if defined(SQLITE_ENABLE_EXPLAIN_COMMENTS)
+char *sqlite3VdbeDisplayComment(sqlite3*,const Op*,const char*);
+#endif
+#if !defined(SQLITE_OMIT_EXPLAIN)
 int sqlite3VdbeList(Vdbe*);
 #endif
 int sqlite3VdbeHalt(Vdbe*);
@@ -538,7 +546,7 @@ int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 #ifndef SQLITE_OMIT_WINDOWFUNC
 int sqlite3VdbeMemAggValue(Mem*, Mem*, FuncDef*);
 #endif
-#ifndef SQLITE_OMIT_EXPLAIN
+#if !defined(SQLITE_OMIT_EXPLAIN) || defined(SQLITE_ENABLE_BYTECODE_VTAB)
 const char *sqlite3OpcodeName(int);
 #endif
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);

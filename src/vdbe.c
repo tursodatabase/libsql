@@ -707,7 +707,7 @@ int sqlite3VdbeExec(
   assert( p->explain==0 );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;
-  if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
+  if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
@@ -891,7 +891,7 @@ jump_to_p2_and_check_for_interrupt:
   ** checks on every opcode.  This helps sqlite3_step() to run about 1.5%
   ** faster according to "valgrind --tool=cachegrind" */
 check_for_interrupt:
-  if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
+  if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   /* Call the progress callback if it is configured and the required number
   ** of VDBE ops have been executed (either since this invocation of
@@ -1544,7 +1544,6 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
   pOut = &aMem[pOp->p3];
-  testcase( pIn1==pIn2 );
   testcase( pOut==pIn2 );
   assert( pIn1!=pOut );
   flags1 = pIn1->flags;
@@ -3188,13 +3187,16 @@ case OP_MakeRecord: {
   break;
 }
 
-/* Opcode: Count P1 P2 * * *
+/* Opcode: Count P1 P2 p3 * *
 ** Synopsis: r[P2]=count()
 **
 ** Store the number of entries (an integer value) in the table or index 
-** opened by cursor P1 in register P2
+** opened by cursor P1 in register P2.
+**
+** If P3==0, then an exact count is obtained, which involves visiting
+** every btree page of the table.  But if P3 is non-zero, an estimate
+** is returned based on the current cursor position.  
 */
-#ifndef SQLITE_OMIT_BTREECOUNT
 case OP_Count: {         /* out2 */
   i64 nEntry;
   BtCursor *pCrsr;
@@ -3202,14 +3204,17 @@ case OP_Count: {         /* out2 */
   assert( p->apCsr[pOp->p1]->eCurType==CURTYPE_BTREE );
   pCrsr = p->apCsr[pOp->p1]->uc.pCursor;
   assert( pCrsr );
-  nEntry = 0;  /* Not needed.  Only used to silence a warning. */
-  rc = sqlite3BtreeCount(db, pCrsr, &nEntry);
-  if( rc ) goto abort_due_to_error;
+  if( pOp->p3 ){
+    nEntry = sqlite3BtreeRowCountEst(pCrsr);
+  }else{
+    nEntry = 0;  /* Not needed.  Only used to silence a warning. */
+    rc = sqlite3BtreeCount(db, pCrsr, &nEntry);
+    if( rc ) goto abort_due_to_error;
+  }
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = nEntry;
   goto check_for_interrupt;
 }
-#endif
 
 /* Opcode: Savepoint P1 * * P4 *
 **
@@ -3665,7 +3670,7 @@ case OP_SetCookie: {
 ** <ul>
 ** <li>  <b>0x02 OPFLAG_SEEKEQ</b>: This cursor will only be used for
 **       equality lookups (implemented as a pair of opcodes OP_SeekGE/OP_IdxGT
-**       of OP_SeekLE/OP_IdxGT)
+**       of OP_SeekLE/OP_IdxLT)
 ** </ul>
 **
 ** The P4 value may be either an integer (P4_INT32) or a pointer to
@@ -3695,7 +3700,7 @@ case OP_SetCookie: {
 ** <ul>
 ** <li>  <b>0x02 OPFLAG_SEEKEQ</b>: This cursor will only be used for
 **       equality lookups (implemented as a pair of opcodes OP_SeekGE/OP_IdxGT
-**       of OP_SeekLE/OP_IdxGT)
+**       of OP_SeekLE/OP_IdxLT)
 ** </ul>
 **
 ** See also: OP_OpenRead, OP_OpenWrite
@@ -3719,7 +3724,7 @@ case OP_SetCookie: {
 ** <ul>
 ** <li>  <b>0x02 OPFLAG_SEEKEQ</b>: This cursor will only be used for
 **       equality lookups (implemented as a pair of opcodes OP_SeekGE/OP_IdxGT
-**       of OP_SeekLE/OP_IdxGT)
+**       of OP_SeekLE/OP_IdxLT)
 ** <li>  <b>0x08 OPFLAG_FORDELETE</b>: This cursor is used only to seek
 **       and subsequently delete entries in an index btree.  This is a
 **       hint to the storage engine that the storage engine is allowed to
@@ -3831,9 +3836,7 @@ open_cursor_set_hints:
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   assert( OPFLAG_SEEKEQ==BTREE_SEEK_EQ );
   testcase( pOp->p5 & OPFLAG_BULKCSR );
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
   testcase( pOp->p2 & OPFLAG_SEEKEQ );
-#endif
   sqlite3BtreeCursorHintFlags(pCur->uc.pCursor,
                                (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
   if( rc ) goto abort_due_to_error;
@@ -4089,11 +4092,13 @@ case OP_ColumnsUsed: {
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
 ** If the cursor P1 was opened using the OPFLAG_SEEKEQ flag, then this
-** opcode will always land on a record that equally equals the key, or
-** else jump immediately to P2.  When the cursor is OPFLAG_SEEKEQ, this
-** opcode must be followed by an IdxLE opcode with the same arguments.
-** The IdxLE opcode will be skipped if this opcode succeeds, but the
-** IdxLE opcode will be used on subsequent loop iterations.
+** opcode will either land on a record that exactly matches the key, or
+** else it will cause a jump to P2.  When the cursor is OPFLAG_SEEKEQ,
+** this opcode must be followed by an IdxLE opcode with the same arguments.
+** The IdxGT opcode will be skipped if this opcode succeeds, but the
+** IdxGT opcode will be used on subsequent loop iterations.  The 
+** OPFLAG_SEEKEQ flags is a hint to the btree layer to say that this
+** is an equality search.
 **
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the beginning toward the end.  In other words, the cursor is
@@ -4109,7 +4114,7 @@ case OP_ColumnsUsed: {
 ** to an SQL index, then P3 is the first in an array of P4 registers 
 ** that are used as an unpacked index key. 
 **
-** Reposition cursor P1 so that  it points to the smallest entry that 
+** Reposition cursor P1 so that it points to the smallest entry that 
 ** is greater than the key value. If there are no records greater than 
 ** the key and P2 is not zero, then jump to P2.
 **
@@ -4154,11 +4159,13 @@ case OP_ColumnsUsed: {
 ** configured to use Prev, not Next.
 **
 ** If the cursor P1 was opened using the OPFLAG_SEEKEQ flag, then this
-** opcode will always land on a record that equally equals the key, or
-** else jump immediately to P2.  When the cursor is OPFLAG_SEEKEQ, this
-** opcode must be followed by an IdxGE opcode with the same arguments.
+** opcode will either land on a record that exactly matches the key, or
+** else it will cause a jump to P2.  When the cursor is OPFLAG_SEEKEQ,
+** this opcode must be followed by an IdxLE opcode with the same arguments.
 ** The IdxGE opcode will be skipped if this opcode succeeds, but the
-** IdxGE opcode will be used on subsequent loop iterations.
+** IdxGE opcode will be used on subsequent loop iterations.  The 
+** OPFLAG_SEEKEQ flags is a hint to the btree layer to say that this
+** is an equality search.
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
@@ -4195,7 +4202,7 @@ case OP_SeekGT: {       /* jump, in3, group */
   pC->cacheStatus = CACHE_STALE;
   if( pC->isTable ){
     u16 flags3, newType;
-    /* The BTREE_SEEK_EQ flag is only set on index cursors */
+    /* The OPFLAG_SEEKEQ/BTREE_SEEK_EQ flag is only set on index cursors */
     assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0
               || CORRUPT_DB );
 
@@ -4254,14 +4261,17 @@ case OP_SeekGT: {       /* jump, in3, group */
       goto abort_due_to_error;
     }
   }else{
-    /* For a cursor with the BTREE_SEEK_EQ hint, only the OP_SeekGE and
-    ** OP_SeekLE opcodes are allowed, and these must be immediately followed
-    ** by an OP_IdxGT or OP_IdxLT opcode, respectively, with the same key.
+    /* For a cursor with the OPFLAG_SEEKEQ/BTREE_SEEK_EQ hint, only the
+    ** OP_SeekGE and OP_SeekLE opcodes are allowed, and these must be
+    ** immediately followed by an OP_IdxGT or OP_IdxLT opcode, respectively,
+    ** with the same key.
     */
     if( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ) ){
       eqOnly = 1;
       assert( pOp->opcode==OP_SeekGE || pOp->opcode==OP_SeekLE );
       assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
+      assert( pOp->opcode==OP_SeekGE || pOp[1].opcode==OP_IdxLT );
+      assert( pOp->opcode==OP_SeekLE || pOp[1].opcode==OP_IdxGT );
       assert( pOp[1].p1==pOp[0].p1 );
       assert( pOp[1].p2==pOp[0].p2 );
       assert( pOp[1].p3==pOp[0].p3 );
@@ -5642,12 +5652,19 @@ case OP_SorterInsert: {     /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 P3 * *
+/* Opcode: IdxDelete P1 P2 P3 * P5
 ** Synopsis: key=r[P2@P3]
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the 
 ** index opened by cursor P1.
+**
+** If P5 is not zero, then raise an SQLITE_CORRUPT_INDEX error
+** if no matching index entry is found.  This happens when running
+** an UPDATE or DELETE statement and the index entry to be updated
+** or deleted is not found.  For some uses of IdxDelete
+** (example:  the EXCEPT operator) it does not matter that no matching
+** entry is found.  For those cases, P5 is zero.
 */
 case OP_IdxDelete: {
   VdbeCursor *pC;
@@ -5664,7 +5681,6 @@ case OP_IdxDelete: {
   sqlite3VdbeIncrWriteCounter(p, pC);
   pCrsr = pC->uc.pCursor;
   assert( pCrsr!=0 );
-  assert( pOp->p5==0 );
   r.pKeyInfo = pC->pKeyInfo;
   r.nField = (u16)pOp->p3;
   r.default_rc = 0;
@@ -5674,6 +5690,9 @@ case OP_IdxDelete: {
   if( res==0 ){
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
     if( rc ) goto abort_due_to_error;
+  }else if( pOp->p5 ){
+    rc = SQLITE_CORRUPT_INDEX;
+    goto abort_due_to_error;
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
@@ -7995,7 +8014,7 @@ no_mem:
   ** flag.
   */
 abort_due_to_interrupt:
-  assert( db->u1.isInterrupted );
+  assert( AtomicLoad(&db->u1.isInterrupted) );
   rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
   p->rc = rc;
   sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));

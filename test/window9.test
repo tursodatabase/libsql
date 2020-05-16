@@ -232,4 +232,37 @@ do_execsql_test 7.4 {
   7.2 8.75 10.0 11.0 15.0
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.1.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+  SELECT min( sum(a) ) OVER () FROM t1;
+} {4}
+
+do_execsql_test 8.1.2 {
+  SELECT min( sum(a) ) OVER () FROM t1 GROUP BY a;
+} {1 1}
+
+do_execsql_test 8.2 {
+  CREATE VIEW v1 AS 
+    SELECT 0 AS x
+      UNION 
+    SELECT count() OVER() FROM (SELECT 0) 
+    ORDER BY 1
+  ;
+}
+
+do_catchsql_test 8.3 {
+  SELECT min( max((SELECT x FROM v1)) ) OVER()
+} {1 {misuse of aggregate: max()}}
+
+do_execsql_test 8.4 {
+  SELECT(
+      SELECT x UNION 
+      SELECT sum( avg((SELECT x FROM v1)) ) OVER()
+  )
+  FROM v1;
+} {0.0}
+
 finish_test

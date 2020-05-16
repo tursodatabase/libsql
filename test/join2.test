@@ -293,5 +293,36 @@ do_execsql_test 8.1 {
   WHERE (t1.c0 BETWEEN 0 AND 0) > ('' AND t0.c0);
 }
 
+#-------------------------------------------------------------------------
+# Ticket [45f4bf4eb].
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t0(c0 INT);
+  CREATE VIEW v0(c0) AS SELECT CAST(t0.c0 AS INTEGER) FROM t0;
+  INSERT INTO t0(c0) VALUES (0);
+}
+
+do_execsql_test 9.1 {
+  SELECT typeof(c0), c0 FROM v0 WHERE c0>='0'
+} {integer 0}
+
+do_execsql_test 9.2 {
+  SELECT * FROM t0, v0 WHERE v0.c0 >= '0';
+} {0 0}
+
+do_execsql_test 9.3 {
+  SELECT * FROM t0 LEFT JOIN v0 WHERE v0.c0 >= '0';
+} {0 0}
+
+do_execsql_test 9.4 {
+  SELECT * FROM t0 LEFT JOIN v0 ON v0.c0 >= '0';
+} {0 0}
+
+do_execsql_test 9.5 {
+  SELECT * FROM t0 LEFT JOIN v0 ON v0.c0 >= '0' WHERE TRUE 
+  UNION SELECT 0,0 WHERE 0; 
+} {0 0}
+
 
 finish_test

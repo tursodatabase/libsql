@@ -193,6 +193,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_BATCH_ATOMIC_WRITE
   "ENABLE_BATCH_ATOMIC_WRITE",
 #endif
+#if SQLITE_ENABLE_BYTECODE_VTAB
+  "ENABLE_BYTECODE_VTAB",
+#endif
 #if SQLITE_ENABLE_CEROD
   "ENABLE_CEROD=" CTIMEOPT_VAL(SQLITE_ENABLE_CEROD),
 #endif
@@ -513,9 +516,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #if SQLITE_OMIT_BLOB_LITERAL
   "OMIT_BLOB_LITERAL",
-#endif
-#if SQLITE_OMIT_BTREECOUNT
-  "OMIT_BTREECOUNT",
 #endif
 #if SQLITE_OMIT_CAST
   "OMIT_CAST",

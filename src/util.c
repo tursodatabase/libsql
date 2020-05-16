@@ -318,6 +318,19 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 }
 
 /*
+** Compute an 8-bit hash on a string that is insensitive to case differences
+*/
+u8 sqlite3StrIHash(const char *z){
+  u8 h = 0;
+  if( z==0 ) return 0;
+  while( z[0] ){
+    h += UpperToLower[(unsigned char)z[0]];
+    z++;
+  }
+  return h;
+}
+
+/*
 ** Compute 10 to the E-th power.  Examples:  E==1 results in 10.
 ** E==2 results in 100.  E==50 results in 1.0e50.
 **

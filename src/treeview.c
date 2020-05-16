@@ -138,8 +138,8 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3_str_appendf(&x, " %s", pItem->zName);
     }
     if( pItem->pTab ){
-      sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p",
-           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab);
+      sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p used=%llx",
+           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab, pItem->colUsed);
     }
     if( pItem->zAlias ){
       sqlite3_str_appendf(&x, " (AS %s)", pItem->zAlias);
@@ -398,14 +398,14 @@ void sqlite3TreeViewWinFunc(TreeView *pView, const Window *pWin, u8 more){
 void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   const char *zBinOp = 0;   /* Binary operator */
   const char *zUniOp = 0;   /* Unary operator */
-  char zFlgs[60];
+  char zFlgs[200];
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( pExpr==0 ){
     sqlite3TreeViewLine(pView, "nil");
     sqlite3TreeViewPop(pView);
     return;
   }
-  if( pExpr->flags || pExpr->affExpr ){
+  if( pExpr->flags || pExpr->affExpr || pExpr->vvaFlags ){
     StrAccum x;
     sqlite3StrAccumInit(&x, 0, zFlgs, sizeof(zFlgs), 0);
     sqlite3_str_appendf(&x, " fg.af=%x.%c",
@@ -415,6 +415,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
     if( ExprHasProperty(pExpr, EP_FromDDL) ){
       sqlite3_str_appendf(&x, " DDL");
+    }
+    if( ExprHasVVAProperty(pExpr, EP_Immutable) ){
+      sqlite3_str_appendf(&x, " IMMUTABLE");
     }
     sqlite3StrAccumFinish(&x);
   }else{
@@ -522,6 +525,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_RSHIFT:  zBinOp = "RSHIFT"; break;
     case TK_CONCAT:  zBinOp = "CONCAT"; break;
     case TK_DOT:     zBinOp = "DOT";    break;
+    case TK_LIMIT:   zBinOp = "LIMIT";  break;
 
     case TK_UMINUS:  zUniOp = "UMINUS"; break;
     case TK_UPLUS:   zUniOp = "UPLUS";  break;

@@ -77,4 +77,24 @@ do_execsql_test in6-2.1 {
   ORDER BY +d;
 } {1 {} 2 {} 3 {} 4 {} 5 {} 8 {} 9 {}}
 
+# 2020-03-16 ticket 82b588d342d515d1
+# Ensure that the IN-early-out optimization works with LEFT JOINs
+#
+reset_db
+do_execsql_test in6-3.100 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(0);
+  CREATE TABLE t2(b, c, d);
+  INSERT INTO t2(b,c,d) VALUES(4,5,3),(4,5,4),(4,5,8);
+  CREATE INDEX t2bcd ON t2(b, c, d);
+  SELECT * FROM t1 LEFT JOIN t2 ON b=NULL AND c=5 AND d IN (2,3,4);
+} {0 {} {} {}}
+do_execsql_test in6-3.110 {
+  CREATE TABLE v0(v1);
+  CREATE TABLE v3(v5, v4);
+  INSERT INTO v0 VALUES(0);
+  CREATE INDEX v9 ON v3(v4, v4, v5);
+  SELECT quote(v5) FROM v0 LEFT JOIN v3 ON v4 = NULL AND v5 IN(0);
+} {NULL}
+
 finish_test

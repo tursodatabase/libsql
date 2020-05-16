@@ -123,7 +123,10 @@ void sqlite3AlterRenameTable(
   /* Check that a table or index named 'zName' does not already exist
   ** in database iDb. If so, this is an error.
   */
-  if( sqlite3FindTable(db, zName, zDb) || sqlite3FindIndex(db, zName, zDb) ){
+  if( sqlite3FindTable(db, zName, zDb)
+   || sqlite3FindIndex(db, zName, zDb)
+   || sqlite3IsShadowTableOf(db, pTab, zName)
+  ){
     sqlite3ErrorMsg(pParse, 
         "there is already another table or index with this name: %s", zName);
     goto exit_rename_table;
@@ -256,6 +259,22 @@ exit_rename_table:
 }
 
 /*
+** Write code that will raise an error if the table described by
+** zDb and zTab is not empty.
+*/
+static void sqlite3ErrorIfNotEmpty(
+  Parse *pParse,        /* Parsing context */
+  const char *zDb,      /* Schema holding the table */
+  const char *zTab,     /* Table to check for empty */
+  const char *zErr      /* Error message text */
+){
+  sqlite3NestedParse(pParse,
+     "SELECT raise(ABORT,%Q) FROM \"%w\".\"%w\"",
+     zErr, zDb, zTab
+  );
+}
+
+/*
 ** This function is called after an "ALTER TABLE ... ADD" statement
 ** has been parsed. Argument pColDef contains the text of the new
 ** column definition.
@@ -307,7 +326,8 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     return;
   }
   if( pNew->pIndex ){
-    sqlite3ErrorMsg(pParse, "Cannot add a UNIQUE column");
+    sqlite3ErrorMsg(pParse,
+         "Cannot add a UNIQUE column");
     return;
   }
   if( (pCol->colFlags & COLFLAG_GENERATED)==0 ){
@@ -320,15 +340,14 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       pDflt = 0;
     }
     if( (db->flags&SQLITE_ForeignKeys) && pNew->pFKey && pDflt ){
-      sqlite3ErrorMsg(pParse, 
+      sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
           "Cannot add a REFERENCES column with non-NULL default value");
-      return;
     }
     if( pCol->notNull && !pDflt ){
-      sqlite3ErrorMsg(pParse, 
+      sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
           "Cannot add a NOT NULL column with default value NULL");
-      return;
     }
+
 
     /* Ensure the default expression is something that sqlite3ValueFromExpr()
     ** can handle (i.e. not CURRENT_TIME etc.)
@@ -343,14 +362,13 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
         return;
       }
       if( !pVal ){
-        sqlite3ErrorMsg(pParse,"Cannot add a column with non-constant default");
-        return;
+        sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
+           "Cannot add a column with non-constant default");
       }
       sqlite3ValueFree(pVal);
     }
   }else if( pCol->colFlags & COLFLAG_STORED ){
-    sqlite3ErrorMsg(pParse, "cannot add a STORED column");
-    return;
+    sqlite3ErrorIfNotEmpty(pParse, zDb, zTab, "cannot add a STORED column");
   }
 
 
@@ -469,6 +487,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   for(i=0; i<pNew->nCol; i++){
     Column *pCol = &pNew->aCol[i];
     pCol->zName = sqlite3DbStrDup(db, pCol->zName);
+    pCol->hName = sqlite3StrIHash(pCol->zName);
     pCol->zColl = 0;
     pCol->pDflt = 0;
   }
@@ -697,7 +716,7 @@ void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
   RenameToken *pNew;
   assert( pPtr || pParse->db->mallocFailed );
   renameTokenCheckAll(pParse, pPtr);
-  if( pParse->eParseMode!=PARSE_MODE_UNMAP ){
+  if( ALWAYS(pParse->eParseMode!=PARSE_MODE_UNMAP) ){
     pNew = sqlite3DbMallocZero(pParse->db, sizeof(RenameToken));
     if( pNew ){
       pNew->p = pPtr;
@@ -756,6 +775,21 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
 }
 
 /*
+** Unmap all tokens in the IdList object passed as the second argument.
+*/
+static void unmapColumnIdlistNames(
+  Parse *pParse,
+  IdList *pIdList
+){
+  if( pIdList ){
+    int ii;
+    for(ii=0; ii<pIdList->nId; ii++){
+      sqlite3RenameTokenRemap(pParse, 0, (void*)pIdList->a[ii].zName);
+    }
+  }
+}
+
+/*
 ** Walker callback used by sqlite3RenameExprUnmap().
 */
 static int renameUnmapSelectCb(Walker *pWalker, Select *p){
@@ -776,6 +810,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
     for(i=0; i<pSrc->nSrc; i++){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
       if( sqlite3WalkExpr(pWalker, pSrc->a[i].pOn) ) return WRC_Abort;
+      unmapColumnIdlistNames(pParse, pSrc->a[i].pUsing);
     }
   }
 
@@ -983,6 +1018,7 @@ static void renameColumnIdlistNames(
     }
   }
 }
+
 
 /*
 ** Parse the SQL statement zSql using Parse object (*p). The Parse object

@@ -146,5 +146,10 @@ int sqlite3WalFramesize(Wal *pWal);
 /* Return the sqlite3_file object for the WAL file */
 sqlite3_file *sqlite3WalFile(Wal *pWal);
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+int sqlite3WalWriteLock(Wal *pWal, int bLock);
+void sqlite3WalDb(Wal *pWal, sqlite3 *db);
+#endif
+
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */

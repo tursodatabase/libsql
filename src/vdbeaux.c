@@ -424,7 +424,7 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 #endif
 
 /*
-** Add a new OP_ opcode.
+** Add a new OP_Explain opcode.
 **
 ** If the bPush flag is true, then make this opcode the parent for
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
@@ -1466,11 +1466,10 @@ static int translateP(char c, const Op *pOp){
 **       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
 **       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
 */
-static int displayComment(
+char *sqlite3VdbeDisplayComment(
+  sqlite3 *db,       /* Optional - Oom error reporting only */
   const Op *pOp,     /* The opcode to be commented */
-  const char *zP4,   /* Previously obtained value for P4 */
-  char *zTemp,       /* Write result here */
-  int nTemp          /* Space available in zTemp[] */
+  const char *zP4    /* Previously obtained value for P4 */
 ){
   const char *zOpName;
   const char *zSynopsis;
@@ -1478,8 +1477,8 @@ static int displayComment(
   int ii;
   char zAlt[50];
   StrAccum x;
-  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
 
+  sqlite3StrAccumInit(&x, 0, 0, 0, SQLITE_MAX_LENGTH);
   zOpName = sqlite3OpcodeName(pOp->opcode);
   nOpName = sqlite3Strlen30(zOpName);
   if( zOpName[nOpName+1] ){
@@ -1546,10 +1545,12 @@ static int displayComment(
   }else if( pOp->zComment ){
     sqlite3_str_appendall(&x, pOp->zComment);
   }
-  sqlite3StrAccumFinish(&x);
-  return x.nChar;
+  if( (x.accError & SQLITE_NOMEM)!=0 && db!=0 ){
+    sqlite3OomFault(db);
+  }
+  return sqlite3StrAccumFinish(&x);
 }
-#endif /* SQLITE_DEBUG */
+#endif /* SQLITE_ENABLE_EXPLAIN_COMMENTS */
 
 #if VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS)
 /*
@@ -1630,11 +1631,11 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
 ** Compute a string that describes the P4 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
 */
-static char *displayP4(Op *pOp, char *zTemp, int nTemp){
-  char *zP4 = zTemp;
+char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
+  char *zP4 = 0;
   StrAccum x;
-  assert( nTemp>=20 );
-  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
+
+  sqlite3StrAccumInit(&x, 0, 0, 0, SQLITE_MAX_LENGTH);
   switch( pOp->p4type ){
     case P4_KEYINFO: {
       int j;
@@ -1718,36 +1719,32 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       int n = ai[0];   /* The first element of an INTARRAY is always the
                        ** count of the number of elements to follow */
       for(i=1; i<=n; i++){
-        sqlite3_str_appendf(&x, ",%d", ai[i]);
+        sqlite3_str_appendf(&x, "%c%d", (i==1 ? '[' : ','), ai[i]);
       }
-      zTemp[0] = '[';
       sqlite3_str_append(&x, "]", 1);
       break;
     }
     case P4_SUBPROGRAM: {
-      sqlite3_str_appendf(&x, "program");
+      zP4 = "program";
       break;
     }
     case P4_DYNBLOB:
     case P4_ADVANCE: {
-      zTemp[0] = 0;
       break;
     }
     case P4_TABLE: {
-      sqlite3_str_appendf(&x, "%s", pOp->p4.pTab->zName);
+      zP4 = pOp->p4.pTab->zName;
       break;
     }
     default: {
       zP4 = pOp->p4.z;
-      if( zP4==0 ){
-        zP4 = zTemp;
-        zTemp[0] = 0;
-      }
     }
   }
-  sqlite3StrAccumFinish(&x);
-  assert( zP4!=0 );
-  return zP4;
+  if( zP4 ) sqlite3_str_appendall(&x, zP4);
+  if( (x.accError & SQLITE_NOMEM)!=0 ){
+    sqlite3OomFault(db);
+  }
+  return sqlite3StrAccumFinish(&x);
 }
 #endif /* VDBE_DISPLAY_P4 */
 
@@ -1837,24 +1834,30 @@ void sqlite3VdbeLeave(Vdbe *p){
 */
 void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
   char *zP4;
-  char zPtr[50];
-  char zCom[100];
+  char *zCom;
+  sqlite3 dummyDb;
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-13s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
-  zP4 = displayP4(pOp, zPtr, sizeof(zPtr));
+  sqlite3BeginBenignMalloc();
+  dummyDb.mallocFailed = 1;
+  zP4 = sqlite3VdbeDisplayP4(&dummyDb, pOp);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-  displayComment(pOp, zP4, zCom, sizeof(zCom));
+  zCom = sqlite3VdbeDisplayComment(0, pOp, zP4);
 #else
-  zCom[0] = 0;
+  zCom = 0;
 #endif
   /* NB:  The sqlite3OpcodeName() function is implemented by code created
   ** by the mkopcodeh.awk and mkopcodec.awk scripts which extract the
   ** information from the vdbe.c source text */
   fprintf(pOut, zFormat1, pc, 
-      sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, zP4, pOp->p5,
-      zCom
+      sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, 
+      zP4 ? zP4 : "", pOp->p5,
+      zCom ? zCom : ""
   );
   fflush(pOut);
+  sqlite3_free(zP4);
+  sqlite3_free(zCom);
+  sqlite3EndBenignMalloc();
 }
 #endif
 
@@ -1945,6 +1948,121 @@ void sqlite3VdbeFrameMemDel(void *pArg){
   pFrame->v->pDelFrame = pFrame;
 }
 
+#if defined(SQLITE_ENABLE_BYTECODE_VTAB) || !defined(SQLITE_OMIT_EXPLAIN)
+/*
+** Locate the next opcode to be displayed in EXPLAIN or EXPLAIN
+** QUERY PLAN output.
+**
+** Return SQLITE_ROW on success.  Return SQLITE_DONE if there are no
+** more opcodes to be displayed.
+*/
+int sqlite3VdbeNextOpcode(
+  Vdbe *p,         /* The statement being explained */
+  Mem *pSub,       /* Storage for keeping track of subprogram nesting */
+  int eMode,       /* 0: normal.  1: EQP.  2:  TablesUsed */
+  int *piPc,       /* IN/OUT: Current rowid.  Overwritten with next rowid */
+  int *piAddr,     /* OUT: Write index into (*paOp)[] here */
+  Op **paOp        /* OUT: Write the opcode array here */
+){
+  int nRow;                            /* Stop when row count reaches this */
+  int nSub = 0;                        /* Number of sub-vdbes seen so far */
+  SubProgram **apSub = 0;              /* Array of sub-vdbes */
+  int i;                               /* Next instruction address */
+  int rc = SQLITE_OK;                  /* Result code */
+  Op *aOp = 0;                         /* Opcode array */
+  int iPc;                             /* Rowid.  Copy of value in *piPc */
+
+  /* When the number of output rows reaches nRow, that means the
+  ** listing has finished and sqlite3_step() should return SQLITE_DONE.
+  ** nRow is the sum of the number of rows in the main program, plus
+  ** the sum of the number of rows in all trigger subprograms encountered
+  ** so far.  The nRow value will increase as new trigger subprograms are
+  ** encountered, but p->pc will eventually catch up to nRow.
+  */
+  nRow = p->nOp;
+  if( pSub!=0 ){
+    if( pSub->flags&MEM_Blob ){
+      /* pSub is initiallly NULL.  It is initialized to a BLOB by
+      ** the P4_SUBPROGRAM processing logic below */
+      nSub = pSub->n/sizeof(Vdbe*);
+      apSub = (SubProgram **)pSub->z;
+    }
+    for(i=0; i<nSub; i++){
+      nRow += apSub[i]->nOp;
+    }
+  }
+  iPc = *piPc;
+  while(1){  /* Loop exits via break */
+    i = iPc++;
+    if( i>=nRow ){
+      p->rc = SQLITE_OK;
+      rc = SQLITE_DONE;
+      break;
+    }
+    if( i<p->nOp ){
+      /* The rowid is small enough that we are still in the
+      ** main program. */
+      aOp = p->aOp;
+    }else{
+      /* We are currently listing subprograms.  Figure out which one and
+      ** pick up the appropriate opcode. */
+      int j;
+      i -= p->nOp;
+      assert( apSub!=0 );
+      assert( nSub>0 );
+      for(j=0; i>=apSub[j]->nOp; j++){
+        i -= apSub[j]->nOp;
+        assert( i<apSub[j]->nOp || j+1<nSub );
+      }
+      aOp = apSub[j]->aOp;
+    }
+
+    /* When an OP_Program opcode is encounter (the only opcode that has
+    ** a P4_SUBPROGRAM argument), expand the size of the array of subprograms
+    ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
+    ** has not already been seen.
+    */
+    if( pSub!=0 && aOp[i].p4type==P4_SUBPROGRAM ){
+      int nByte = (nSub+1)*sizeof(SubProgram*);
+      int j;
+      for(j=0; j<nSub; j++){
+        if( apSub[j]==aOp[i].p4.pProgram ) break;
+      }
+      if( j==nSub ){
+        p->rc = sqlite3VdbeMemGrow(pSub, nByte, nSub!=0);
+        if( p->rc!=SQLITE_OK ){
+          rc = SQLITE_ERROR;
+          break;
+        }
+        apSub = (SubProgram **)pSub->z;
+        apSub[nSub++] = aOp[i].p4.pProgram;
+        MemSetTypeFlag(pSub, MEM_Blob);
+        pSub->n = nSub*sizeof(SubProgram*);
+        nRow += aOp[i].p4.pProgram->nOp;
+      }
+    }
+    if( eMode==0 ) break;
+#ifdef SQLITE_ENABLE_BYTECODE_VTAB
+    if( eMode==2 ){
+      Op *pOp = aOp + i;
+      if( pOp->opcode==OP_OpenRead ) break;
+      if( pOp->opcode==OP_OpenWrite && (pOp->p5 & OPFLAG_P2ISREG)==0 ) break;
+      if( pOp->opcode==OP_ReopenIdx ) break;      
+    }else
+#endif
+    {
+      assert( eMode==1 );
+      if( aOp[i].opcode==OP_Explain ) break;
+      if( aOp[i].opcode==OP_Init && iPc>1 ) break;
+    }
+  }
+  *piPc = iPc;
+  *piAddr = i;
+  *paOp = aOp;
+  return rc;
+}
+#endif /* SQLITE_ENABLE_BYTECODE_VTAB || !SQLITE_OMIT_EXPLAIN */
+
 
 /*
 ** Delete a VdbeFrame object and its contents. VdbeFrame objects are
@@ -1985,16 +2103,14 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 int sqlite3VdbeList(
   Vdbe *p                   /* The VDBE */
 ){
-  int nRow;                            /* Stop when row count reaches this */
-  int nSub = 0;                        /* Number of sub-vdbes seen so far */
-  SubProgram **apSub = 0;              /* Array of sub-vdbes */
   Mem *pSub = 0;                       /* Memory cell hold array of subprogs */
   sqlite3 *db = p->db;                 /* The database connection */
   int i;                               /* Loop counter */
   int rc = SQLITE_OK;                  /* Return code */
   Mem *pMem = &p->aMem[1];             /* First Mem of result set */
   int bListSubprogs = (p->explain==1 || (db->flags & SQLITE_TriggerEQP)!=0);
-  Op *pOp = 0;
+  Op *aOp;                             /* Array of opcodes */
+  Op *pOp;                             /* Current opcode */
 
   assert( p->explain );
   assert( p->magic==VDBE_MAGIC_RUN );
@@ -2014,14 +2130,6 @@ int sqlite3VdbeList(
     return SQLITE_ERROR;
   }
 
-  /* When the number of output rows reaches nRow, that means the
-  ** listing has finished and sqlite3_step() should return SQLITE_DONE.
-  ** nRow is the sum of the number of rows in the main program, plus
-  ** the sum of the number of rows in all trigger subprograms encountered
-  ** so far.  The nRow value will increase as new trigger subprograms are
-  ** encountered, but p->pc will eventually catch up to nRow.
-  */
-  nRow = p->nOp;
   if( bListSubprogs ){
     /* The first 8 memory cells are used for the result set.  So we will
     ** commandeer the 9th cell to use as storage for an array of pointers
@@ -2029,147 +2137,55 @@ int sqlite3VdbeList(
     ** cells.  */
     assert( p->nMem>9 );
     pSub = &p->aMem[9];
-    if( pSub->flags&MEM_Blob ){
-      /* On the first call to sqlite3_step(), pSub will hold a NULL.  It is
-      ** initialized to a BLOB by the P4_SUBPROGRAM processing logic below */
-      nSub = pSub->n/sizeof(Vdbe*);
-      apSub = (SubProgram **)pSub->z;
-    }
-    for(i=0; i<nSub; i++){
-      nRow += apSub[i]->nOp;
-    }
+  }else{
+    pSub = 0;
   }
 
-  while(1){  /* Loop exits via break */
-    i = p->pc++;
-    if( i>=nRow ){
-      p->rc = SQLITE_OK;
-      rc = SQLITE_DONE;
-      break;
-    }
-    if( i<p->nOp ){
-      /* The output line number is small enough that we are still in the
-      ** main program. */
-      pOp = &p->aOp[i];
-    }else{
-      /* We are currently listing subprograms.  Figure out which one and
-      ** pick up the appropriate opcode. */
-      int j;
-      i -= p->nOp;
-      assert( apSub!=0 );
-      assert( nSub>0 );
-      for(j=0; i>=apSub[j]->nOp; j++){
-        i -= apSub[j]->nOp;
-        assert( i<apSub[j]->nOp || j+1<nSub );
-      }
-      pOp = &apSub[j]->aOp[i];
-    }
-
-    /* When an OP_Program opcode is encounter (the only opcode that has
-    ** a P4_SUBPROGRAM argument), expand the size of the array of subprograms
-    ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
-    ** has not already been seen.
-    */
-    if( bListSubprogs && pOp->p4type==P4_SUBPROGRAM ){
-      int nByte = (nSub+1)*sizeof(SubProgram*);
-      int j;
-      for(j=0; j<nSub; j++){
-        if( apSub[j]==pOp->p4.pProgram ) break;
-      }
-      if( j==nSub ){
-        p->rc = sqlite3VdbeMemGrow(pSub, nByte, nSub!=0);
-        if( p->rc!=SQLITE_OK ){
-          rc = SQLITE_ERROR;
-          break;
-        }
-        apSub = (SubProgram **)pSub->z;
-        apSub[nSub++] = pOp->p4.pProgram;
-        pSub->flags |= MEM_Blob;
-        pSub->n = nSub*sizeof(SubProgram*);
-        nRow += pOp->p4.pProgram->nOp;
-      }
-    }
-    if( p->explain<2 ) break;
-    if( pOp->opcode==OP_Explain ) break;
-    if( pOp->opcode==OP_Init && p->pc>1 ) break;
-  }
+  /* Figure out which opcode is next to display */
+  rc = sqlite3VdbeNextOpcode(p, pSub, p->explain==2, &p->pc, &i, &aOp);
 
   if( rc==SQLITE_OK ){
-    if( db->u1.isInterrupted ){
+    pOp = aOp + i;
+    if( AtomicLoad(&db->u1.isInterrupted) ){
       p->rc = SQLITE_INTERRUPT;
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
     }else{
-      char *zP4;
-      if( p->explain==1 ){
-        pMem->flags = MEM_Int;
-        pMem->u.i = i;                                /* Program counter */
-        pMem++;
-    
-        pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-        pMem->z = (char*)sqlite3OpcodeName(pOp->opcode); /* Opcode */
-        assert( pMem->z!=0 );
-        pMem->n = sqlite3Strlen30(pMem->z);
-        pMem->enc = SQLITE_UTF8;
-        pMem++;
-      }
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p1;                          /* P1 */
-      pMem++;
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p2;                          /* P2 */
-      pMem++;
-
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p3;                          /* P3 */
-      pMem++;
-
-      if( sqlite3VdbeMemClearAndResize(pMem, 100) ){ /* P4 */
-        assert( p->db->mallocFailed );
-        return SQLITE_ERROR;
-      }
-      pMem->flags = MEM_Str|MEM_Term;
-      zP4 = displayP4(pOp, pMem->z, pMem->szMalloc);
-      if( zP4!=pMem->z ){
-        pMem->n = 0;
-        sqlite3VdbeMemSetStr(pMem, zP4, -1, SQLITE_UTF8, 0);
+      char *zP4 = sqlite3VdbeDisplayP4(db, pOp);
+      if( p->explain==2 ){
+        sqlite3VdbeMemSetInt64(pMem, pOp->p1);
+        sqlite3VdbeMemSetInt64(pMem+1, pOp->p2);
+        sqlite3VdbeMemSetInt64(pMem+2, pOp->p3);
+        sqlite3VdbeMemSetStr(pMem+3, zP4, -1, SQLITE_UTF8, sqlite3_free);     
+        p->nResColumn = 4;
       }else{
-        assert( pMem->z!=0 );
-        pMem->n = sqlite3Strlen30(pMem->z);
-        pMem->enc = SQLITE_UTF8;
-      }
-      pMem++;
-
-      if( p->explain==1 ){
-        if( sqlite3VdbeMemClearAndResize(pMem, 4) ){
-          assert( p->db->mallocFailed );
-          return SQLITE_ERROR;
-        }
-        pMem->flags = MEM_Str|MEM_Term;
-        pMem->n = 2;
-        sqlite3_snprintf(3, pMem->z, "%.2x", pOp->p5);   /* P5 */
-        pMem->enc = SQLITE_UTF8;
-        pMem++;
-    
+        sqlite3VdbeMemSetInt64(pMem+0, i);
+        sqlite3VdbeMemSetStr(pMem+1, (char*)sqlite3OpcodeName(pOp->opcode),
+                             -1, SQLITE_UTF8, SQLITE_STATIC);
+        sqlite3VdbeMemSetInt64(pMem+2, pOp->p1);
+        sqlite3VdbeMemSetInt64(pMem+3, pOp->p2);
+        sqlite3VdbeMemSetInt64(pMem+4, pOp->p3);
+        /* pMem+5 for p4 is done last */
+        sqlite3VdbeMemSetInt64(pMem+6, pOp->p5);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-        if( sqlite3VdbeMemClearAndResize(pMem, 500) ){
-          assert( p->db->mallocFailed );
-          return SQLITE_ERROR;
+        {
+          char *zCom = sqlite3VdbeDisplayComment(db, pOp, zP4);
+          sqlite3VdbeMemSetStr(pMem+7, zCom, -1, SQLITE_UTF8, sqlite3_free);
         }
-        pMem->flags = MEM_Str|MEM_Term;
-        pMem->n = displayComment(pOp, zP4, pMem->z, 500);
-        pMem->enc = SQLITE_UTF8;
 #else
-        pMem->flags = MEM_Null;                       /* Comment */
+        sqlite3VdbeMemSetNull(pMem+7);
 #endif
+        sqlite3VdbeMemSetStr(pMem+5, zP4, -1, SQLITE_UTF8, sqlite3_free);
+        p->nResColumn = 8;
       }
-
-      p->nResColumn = 8 - 4*(p->explain-1);
-      p->pResultSet = &p->aMem[1];
-      p->rc = SQLITE_OK;
-      rc = SQLITE_ROW;
+      p->pResultSet = pMem;
+      if( db->mallocFailed ){
+        p->rc = SQLITE_NOMEM;
+        rc = SQLITE_ERROR;
+      }else{
+        p->rc = SQLITE_OK;
+        rc = SQLITE_ROW;
+      }
     }
   }
   return rc;
@@ -2377,6 +2393,7 @@ void sqlite3VdbeMakeReady(
     };
     int iFirst, mx, i;
     if( nMem<10 ) nMem = 10;
+    p->explain = pParse->explain;
     if( pParse->explain==2 ){
       sqlite3VdbeSetNumCols(p, 4);
       iFirst = 8;
@@ -2427,7 +2444,6 @@ void sqlite3VdbeMakeReady(
 
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
-  p->explain = pParse->explain;
   if( db->mallocFailed ){
     p->nVar = 0;
     p->nCursor = 0;
@@ -2739,8 +2755,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
     /* Select a master journal file name */
     nMainFile = sqlite3Strlen30(zMainFile);
-    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XXz%c%c", zMainFile, 0, 0);
+    zMaster = sqlite3MPrintf(db, "%.4c%s%.16c", 0,zMainFile,0);
     if( zMaster==0 ) return SQLITE_NOMEM_BKPT;
+    zMaster += 4;
     do {
       u32 iRandom;
       if( retryCount ){
@@ -2770,7 +2787,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       );
     }
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, zMaster);
+      sqlite3DbFree(db, zMaster-4);
       return rc;
     }
  
@@ -2793,7 +2810,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
         if( rc!=SQLITE_OK ){
           sqlite3OsCloseFree(pMaster);
           sqlite3OsDelete(pVfs, zMaster, 0);
-          sqlite3DbFree(db, zMaster);
+          sqlite3DbFree(db, zMaster-4);
           return rc;
         }
       }
@@ -2807,7 +2824,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     ){
       sqlite3OsCloseFree(pMaster);
       sqlite3OsDelete(pVfs, zMaster, 0);
-      sqlite3DbFree(db, zMaster);
+      sqlite3DbFree(db, zMaster-4);
       return rc;
     }
 
@@ -2830,7 +2847,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     sqlite3OsCloseFree(pMaster);
     assert( rc!=SQLITE_BUSY );
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, zMaster);
+      sqlite3DbFree(db, zMaster-4);
       return rc;
     }
 
@@ -2839,7 +2856,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     ** transaction files are deleted.
     */
     rc = sqlite3OsDelete(pVfs, zMaster, 1);
-    sqlite3DbFree(db, zMaster);
+    sqlite3DbFree(db, zMaster-4);
     zMaster = 0;
     if( rc ){
       return rc;

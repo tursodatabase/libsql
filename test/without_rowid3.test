@@ -921,6 +921,7 @@ ifcapable altertable {
     execsql { 
       CREATE TABLE t1(a PRIMARY KEY) WITHOUT rowid;
       CREATE TABLE t2(a, b);
+      INSERT INTO t2(a,b) VALUES(1,2);
     }
     catchsql { ALTER TABLE t2 ADD COLUMN c REFERENCES t1 }
   } {0 {}}
@@ -1015,6 +1016,7 @@ ifcapable altertable {
     execsql { 
       CREATE TEMP TABLE t1(a PRIMARY KEY) WITHOUT rowid;
       CREATE TEMP TABLE t2(a, b);
+      INSERT INTO temp.t2(a,b) VALUES(1,2);
     }
     catchsql { ALTER TABLE t2 ADD COLUMN c REFERENCES t1 }
   } {0 {}}
@@ -1102,6 +1104,7 @@ ifcapable altertable {
       ATTACH ':memory:' AS aux;
       CREATE TABLE aux.t1(a PRIMARY KEY) WITHOUT rowid;
       CREATE TABLE aux.t2(a, b);
+      INSERT INTO aux.t2(a,b) VALUES(1,2);
     }
     catchsql { ALTER TABLE t2 ADD COLUMN c REFERENCES t1 }
   } {0 {}}

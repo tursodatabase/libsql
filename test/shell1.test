@@ -297,10 +297,11 @@ do_test shell1-3.4.2 {
   list [regexp {BEGIN TRANSACTION;} $res] \
        [regexp {COMMIT;} $res]
 } {1 1}
-do_test shell1-3.4.3 {
-  # too many arguments
-  catchcmd "test.db" ".dump FOO BAD"
-} {1 {Usage: .dump ?--preserve-rowids? ?--newlines? ?LIKE-PATTERN?}}
+# The .dump command now accepts multiple arguments
+#do_test shell1-3.4.3 {
+#  # too many arguments
+#  catchcmd "test.db" ".dump FOO BAD"
+#} {1 {Usage: .dump ?--preserve-rowids? ?--newlines? ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
@@ -388,17 +389,14 @@ do_test shell1-3.10.2 {
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell1-3.11.1 {
   catchcmd "test.db" ".import"
-} {1 {Usage: .import FILE TABLE}}
+} {/1 .ERROR: missing FILE argument.*/}
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
-} {1 {Usage: .import FILE TABLE}}
-#do_test shell1-3.11.2 {
-#  catchcmd "test.db" ".import FOO BAR"
-#} {1 {Error: no such table: BAR}}
+} {/1 .ERROR: missing TABLE argument.*/}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {1 {Usage: .import FILE TABLE}}
+} {/1 .ERROR: extra argument: "BAD".*./}
 
 # .indexes ?TABLE?       Show names of all indexes
 #                          If TABLE specified, only show indexes for tables
@@ -495,7 +493,14 @@ do_test shell1-3.15.2 {
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
-} {1 {Usage: .output [-e|-x|FILE]}}
+} {1 {ERROR: extra parameter: "BAD".  Usage:
+.output ?FILE?           Send output to FILE or stdout if FILE is omitted
+   If FILE begins with '|' then open it as a pipe.
+   Options:
+     --bom                 Prefix output with a UTF8 byte-order mark
+     -e                    Send output to the system text editor
+     -x                    Send output as CSV to a spreadsheet
+child process exited abnormally}}
 
 # .output stdout         Send output to the screen
 do_test shell1-3.16.1 {
@@ -504,7 +509,14 @@ do_test shell1-3.16.1 {
 do_test shell1-3.16.2 {
   # too many arguments
   catchcmd "test.db" ".output stdout BAD"
-} {1 {Usage: .output [-e|-x|FILE]}}
+} {1 {ERROR: extra parameter: "BAD".  Usage:
+.output ?FILE?           Send output to FILE or stdout if FILE is omitted
+   If FILE begins with '|' then open it as a pipe.
+   Options:
+     --bom                 Prefix output with a UTF8 byte-order mark
+     -e                    Send output to the system text editor
+     -x                    Send output as CSV to a spreadsheet
+child process exited abnormally}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
 do_test shell1-3.17.1 {

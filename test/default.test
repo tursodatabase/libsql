@@ -128,4 +128,13 @@ do_catchsql_test default-4.4 {
   CREATE TABLE t2(a TEXT, b TEXT DEFAULT(98+coalesce(5,:xyz)));
 } {1 {default value of column [b] is not constant}}
 
+# 2020-03-09 out-of-bounds memory access discovered by "Eternal Sakura"
+# and reported to chromium.
+#
+reset_db
+do_catchsql_test default-5.1 {
+  CREATE TABLE t1 (a,b DEFAULT(random() NOTNULL IN (RAISE(IGNORE),2,3)));
+  INSERT INTO t1(a) VALUES(1);
+} {1 {RAISE() may only be used within a trigger-program}}
+
 finish_test
