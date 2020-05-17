@@ -1,5 +1,5 @@
-C Use\sthe\ssqlite3Realloc()\sinterface\sinternally,\srather\sthan\sthe\spublic\nsqlite3_realloc64()\sequivalent,\sto\savoid\sunnecessary\scalls\sto\nsqlite3_initialize().
-D 2020-05-17T00:26:44.076
+C Avoid\sharmless\sUB\sin\smemcpy()\sin\sthe\sJSON\sextension.
+D 2020-05-17T13:47:28.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -298,7 +298,7 @@ F ext/misc/fileio.c 9b69e25da3b51d4a1d905a464ccb96709792ad627a742ba09215bc0d1447
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c eaffd9b364d7c8371727e9c43fc8bec38cdacc4d11fc26beffaa3ca05a0ea9d6
-F ext/misc/json1.c 2d44e3fa37f958b42cbcd41651f9f0a0eaaf3bac3f1f4b8eb456431623cb3bd8
+F ext/misc/json1.c 3a42e3231d716516a8ae33b0a052d3ed5f52943e3d627b68744a427a6e552ae3
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55910b9a7287be92af9f95e0af54af822055d15b7eabbcc81d61410d0bf67726
-R c5e07dc7678cd93b85244f746fa56268
+P 1313557b512297e7b75ed748894379b2022aecf696d5a58318e46a668321c1ff
+R 0a3aaa0509481c9d6269f1e12c4b65a3
 U drh
-Z 57cf691f47068786612ca081f4bb8ca2
+Z c1782df13623caf985a15e6cbac97877

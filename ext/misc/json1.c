@@ -254,6 +254,7 @@ static int jsonGrow(JsonString *p, u32 N){
 /* Append N bytes from zIn onto the end of the JsonString string.
 */
 static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
+  if( N==0 ) return;
   if( (N+p->nUsed >= p->nAlloc) && jsonGrow(p,N)!=0 ) return;
   memcpy(p->zBuf+p->nUsed, zIn, N);
   p->nUsed += N;
