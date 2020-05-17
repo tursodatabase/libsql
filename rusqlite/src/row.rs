@@ -35,6 +35,8 @@ impl<'stmt> Rows<'stmt> {
         Ok((*self).get())
     }
 
+    /// Map over this `Rows`, converting it to a [`Map`], which
+    /// implements `FallibleIterator`.
     pub fn map<F, B>(self, f: F) -> Map<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<B>,

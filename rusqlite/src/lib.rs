@@ -53,7 +53,7 @@
 //!     Ok(())
 //! }
 //! ```
-#![allow(unknown_lints)]
+#![warn(missing_docs)]
 
 pub use libsqlite3_sys as ffi;
 
@@ -806,19 +806,32 @@ impl fmt::Debug for Connection {
 }
 
 bitflags::bitflags! {
-    #[doc = "Flags for opening SQLite database connections."]
-    #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
+    /// Flags for opening SQLite database connections.
+    /// See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
     #[repr(C)]
     pub struct OpenFlags: ::std::os::raw::c_int {
+        /// The database is opened in read-only mode.
+        /// If the database does not already exist, an error is returned.
         const SQLITE_OPEN_READ_ONLY     = ffi::SQLITE_OPEN_READONLY;
+        /// The database is opened for reading and writing if possible,
+        /// or reading only if the file is write protected by the operating system.
+        /// In either case the database must already exist, otherwise an error is returned.
         const SQLITE_OPEN_READ_WRITE    = ffi::SQLITE_OPEN_READWRITE;
+        /// The database is created if it does not already exist
         const SQLITE_OPEN_CREATE        = ffi::SQLITE_OPEN_CREATE;
+        /// The filename can be interpreted as a URI if this flag is set.
         const SQLITE_OPEN_URI           = 0x0000_0040;
+        /// The database will be opened as an in-memory database.
         const SQLITE_OPEN_MEMORY        = 0x0000_0080;
+        /// The new database connection will use the "multi-thread" threading mode.
         const SQLITE_OPEN_NO_MUTEX      = ffi::SQLITE_OPEN_NOMUTEX;
+        /// The new database connection will use the "serialized" threading mode.
         const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX;
+        /// The database is opened shared cache enabled.
         const SQLITE_OPEN_SHARED_CACHE  = 0x0002_0000;
+        /// The database is opened shared cache disabled.
         const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
+        /// The database filename is not allowed to be a symbolic link.
         const SQLITE_OPEN_NOFOLLOW = 0x0100_0000;
     }
 }

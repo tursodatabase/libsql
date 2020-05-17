@@ -87,6 +87,7 @@ impl ToSql for ToSqlOutput<'_> {
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
+    /// Converts Rust value to SQLite value
     fn to_sql(&self) -> Result<ToSqlOutput<'_>>;
 }
 

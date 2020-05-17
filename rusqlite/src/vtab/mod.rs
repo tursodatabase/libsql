@@ -205,7 +205,9 @@ impl VTabConnection {
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
 pub unsafe trait VTab: Sized {
+    /// Client data passed to `Connection::create_module`.
     type Aux;
+    /// Specific cursor implementation
     type Cursor: VTabCursor;
 
     /// Establish a new connection to an existing virtual table.
@@ -256,8 +258,9 @@ pub trait CreateVTab: VTab {
 }
 
 /// `feature = "vtab"` Index constraint operator.
+/// See [Virtual Table Constraint Operator Codes](https://sqlite.org/c3ref/c_index_constraint_eq.html) for details.
 #[derive(Debug, PartialEq)]
-#[allow(non_snake_case, non_camel_case_types)]
+#[allow(non_snake_case, non_camel_case_types, missing_docs)]
 #[non_exhaustive]
 pub enum IndexConstraintOp {
     SQLITE_INDEX_CONSTRAINT_EQ,
@@ -329,6 +332,7 @@ impl IndexInfo {
         unsafe { (*self.0).nOrderBy as usize }
     }
 
+    /// Information about what parameters to pass to `VTabCursor.filter`.
     pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage<'_> {
         let constraint_usages = unsafe {
             slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
@@ -495,6 +499,7 @@ pub unsafe trait VTabCursor: Sized {
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
+    /// Set current cell value
     pub fn set_result<T: ToSql>(&mut self, value: &T) -> Result<()> {
         let t = value.to_sql()?;
         unsafe { set_result(self.0, &t) };
@@ -511,14 +516,17 @@ pub struct Values<'a> {
 }
 
 impl Values<'_> {
+    /// Returns the number of values.
     pub fn len(&self) -> usize {
         self.args.len()
     }
 
+    /// Returns `true` if there is no value.
     pub fn is_empty(&self) -> bool {
         self.args.is_empty()
     }
 
+    /// Returns value at `idx`
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
@@ -558,6 +566,7 @@ impl Values<'_> {
         }
     }
 
+    /// Turns `Values` into an iterator.
     pub fn iter(&self) -> ValueIter<'_> {
         ValueIter {
             iter: self.args.iter(),
@@ -574,6 +583,7 @@ impl<'a> IntoIterator for &'a Values<'a> {
     }
 }
 
+/// `Values` iterator.
 pub struct ValueIter<'a> {
     iter: slice::Iter<'a, *mut ffi::sqlite3_value>,
 }

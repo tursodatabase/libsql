@@ -46,6 +46,7 @@ pub(crate) unsafe extern "C" fn free_array(p: *mut c_void) {
     let _: Array = Rc::from_raw(p as *const Vec<Value>);
 }
 
+/// Array parameter / pointer
 pub type Array = Rc<Vec<Value>>;
 
 impl ToSql for Array {

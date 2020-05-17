@@ -14,9 +14,13 @@ use crate::{Connection, InnerConnection};
 #[repr(i32)]
 #[non_exhaustive]
 pub enum Action {
+    /// Unsupported / unexpected action
     UNKNOWN = -1,
+    /// DELETE command
     SQLITE_DELETE = ffi::SQLITE_DELETE,
+    /// INSERT command
     SQLITE_INSERT = ffi::SQLITE_INSERT,
+    /// UPDATE command
     SQLITE_UPDATE = ffi::SQLITE_UPDATE,
 }
 

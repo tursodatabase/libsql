@@ -94,6 +94,7 @@ pub enum Error {
     #[allow(dead_code)]
     ModuleError(String),
 
+    /// An unwinding panic occurs in an UDF (user-defined function).
     #[cfg(feature = "functions")]
     UnwindingPanic,
 

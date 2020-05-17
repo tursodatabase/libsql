@@ -267,17 +267,26 @@ where
 }
 
 bitflags::bitflags! {
-    #[doc = "Function Flags."]
-    #[doc = "See [sqlite3_create_function](https://sqlite.org/c3ref/create_function.html) for details."]
+    /// Function Flags.
+    /// See [sqlite3_create_function](https://sqlite.org/c3ref/create_function.html)
+    /// and [Function Flags](https://sqlite.org/c3ref/c_deterministic.html) for details.
     #[repr(C)]
     pub struct FunctionFlags: ::std::os::raw::c_int {
+        /// Specifies UTF-8 as the text encoding this SQL function prefers for its parameters.
         const SQLITE_UTF8     = ffi::SQLITE_UTF8;
+        /// Specifies UTF-16 using little-endian byte order as the text encoding this SQL function prefers for its parameters.
         const SQLITE_UTF16LE  = ffi::SQLITE_UTF16LE;
+        /// Specifies UTF-16 using big-endian byte order as the text encoding this SQL function prefers for its parameters.
         const SQLITE_UTF16BE  = ffi::SQLITE_UTF16BE;
+        /// Specifies UTF-16 using native byte order as the text encoding this SQL function prefers for its parameters.
         const SQLITE_UTF16    = ffi::SQLITE_UTF16;
+        /// Means that the function always gives the same output when the input parameters are the same.
         const SQLITE_DETERMINISTIC = ffi::SQLITE_DETERMINISTIC;
+        /// Means that the function may only be invoked from top-level SQL.
         const SQLITE_DIRECTONLY    = 0x0000_0008_0000; // 3.30.0
+        /// Indicates to SQLite that a function may call `sqlite3_value_subtype()` to inspect the sub-types of its arguments.
         const SQLITE_SUBTYPE       = 0x0000_0010_0000; // 3.30.0
+        /// Means that the function is unlikely to cause problems even if misused.
         const SQLITE_INNOCUOUS     = 0x0000_0020_0000; // 3.31.0
     }
 }

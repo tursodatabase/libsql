@@ -20,6 +20,7 @@ pub enum ValueRef<'a> {
 }
 
 impl ValueRef<'_> {
+    /// Returns SQLite fundamental datatype.
     pub fn data_type(&self) -> Type {
         match *self {
             ValueRef::Null => Type::Null,

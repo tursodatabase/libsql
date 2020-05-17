@@ -6,8 +6,14 @@ use std::ops::Deref;
 #[derive(Copy, Clone)]
 #[non_exhaustive]
 pub enum TransactionBehavior {
+    /// DEFERRED means that the transaction does not actually start until the
+    /// database is first accessed.
     Deferred,
+    /// IMMEDIATE cause the database connection to start a new write
+    /// immediately, without waiting for a writes statement.
     Immediate,
+    /// EXCLUSIVE prevents other database connections from reading the database
+    /// while the transaction is underway.
     Exclusive,
 }
 

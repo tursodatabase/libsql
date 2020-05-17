@@ -82,12 +82,19 @@ mod value_ref;
 #[derive(Copy, Clone)]
 pub struct Null;
 
+/// SQLite data types.
+/// See [Fundamental Datatypes](https://sqlite.org/c3ref/c_blob.html).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Type {
+    /// NULL
     Null,
+    /// 64-bit signed integer
     Integer,
+    /// 64-bit IEEE floating point number
     Real,
+    /// String
     Text,
+    /// BLOB
     Blob,
 }
 
