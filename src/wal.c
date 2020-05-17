@@ -568,7 +568,7 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
   if( pWal->nWiData<=iPage ){
     sqlite3_int64 nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
-    apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
+    apNew = (volatile u32 **)sqlite3Realloc((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
       return SQLITE_NOMEM_BKPT;

@@ -1283,7 +1283,7 @@ static void replaceFunc(
           ** whose index is a power of two: 1, 2, 4, 8, 16, 32, ... */
           u8 *zOld;
           zOld = zOut;
-          zOut = sqlite3_realloc64(zOut, (int)nOut + (nOut - nStr - 1));
+          zOut = sqlite3Realloc(zOut, (int)nOut + (nOut - nStr - 1));
           if( zOut==0 ){
             sqlite3_result_error_nomem(context);
             sqlite3_free(zOld);
