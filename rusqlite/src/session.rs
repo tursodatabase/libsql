@@ -652,6 +652,8 @@ impl From<i32> for ConflictType {
 }
 
 /// `feature = "session"` Constants returned by the conflict handler
+/// See [here](https://sqlite.org/session.html#SQLITE_CHANGESET_ABORT) for details.
+#[allow(missing_docs)]
 #[repr(i32)]
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
