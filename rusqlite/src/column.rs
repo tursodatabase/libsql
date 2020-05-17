@@ -39,7 +39,7 @@ impl Statement<'_> {
         self.stmt.column_count()
     }
 
-    pub(crate) fn column_name_unwrap(&self, col: usize) -> &str {
+    pub(super) fn column_name_unwrap(&self, col: usize) -> &str {
         // Just panic if the bounds are wrong for now, we never call this
         // without checking first.
         self.column_name(col).expect("Column out of bounds")
