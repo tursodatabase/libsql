@@ -356,18 +356,22 @@ pub struct Operation<'item> {
 }
 
 impl Operation<'_> {
+    /// Returns the table name.
     pub fn table_name(&self) -> &str {
         self.table_name
     }
 
+    /// Returns the number of columns in table
     pub fn number_of_columns(&self) -> i32 {
         self.number_of_columns
     }
 
+    /// Returns the action code.
     pub fn code(&self) -> Action {
         self.code
     }
 
+    /// Returns `true` for an 'indirect' change.
     pub fn indirect(&self) -> bool {
         self.indirect
     }
@@ -488,6 +492,7 @@ pub struct Changegroup {
 }
 
 impl Changegroup {
+    /// Create a new change group.
     pub fn new() -> Result<Self> {
         let mut cg = ptr::null_mut();
         check!(unsafe { ffi::sqlite3changegroup_new(&mut cg) });
@@ -620,6 +625,8 @@ impl Connection {
 }
 
 /// `feature = "session"` Constants passed to the conflict handler
+/// See [here](https://sqlite.org/session.html#SQLITE_CHANGESET_CONFLICT) for details.
+#[allow(missing_docs)]
 #[repr(i32)]
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
