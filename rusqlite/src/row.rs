@@ -337,13 +337,13 @@ impl RowIndex for &'_ str {
 
 macro_rules! tuple_try_from_row {
     ($($field:ident),*) => {
-        impl<'a, 'b, $($field,)*> convert::TryFrom<&'a Row<'b>> for ($($field,)*) where $($field: FromSql,)* {
+        impl<'a, $($field,)*> convert::TryFrom<&'a Row<'a>> for ($($field,)*) where $($field: FromSql,)* {
             type Error = crate::Error;
 
             // we end with index += 1, which rustc warns about
             // unused_variables and unused_mut are allowed for ()
             #[allow(unused_assignments, unused_variables, unused_mut)]
-            fn try_from(row: &'a Row<'b>) -> Result<Self> {
+            fn try_from(row: &'a Row<'a>) -> Result<Self> {
                 let mut index = 0;
                 $(
                     #[allow(non_snake_case)]
@@ -371,6 +371,8 @@ tuples_try_from_row!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::redundant_closure)] // false positives due to lifetime issues; clippy issue #5594
+
     #[test]
     fn test_try_from_row_for_tuple_1() {
         use crate::{Connection, ToSql};
