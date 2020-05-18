@@ -1256,7 +1256,8 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         vdbetrace.lo vdbevtab.lo wal.lo walker.lo where.lo wherecode.lo \
+         whereexpr.lo \
          window.lo utf.lo vtab.lo
 # <</mark>>
 

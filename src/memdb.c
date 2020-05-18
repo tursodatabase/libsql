@@ -166,7 +166,7 @@ static int memdbEnlarge(MemFile *p, sqlite3_int64 newSz){
   }
   newSz *= 2;
   if( newSz>p->szMax ) newSz = p->szMax;
-  pNew = sqlite3_realloc64(p->aData, newSz);
+  pNew = sqlite3Realloc(p->aData, newSz);
   if( pNew==0 ) return SQLITE_NOMEM;
   p->aData = pNew;
   p->szAlloc = newSz;
