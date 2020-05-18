@@ -555,7 +555,7 @@ void sqlite3Pragma(
       ** buffer that the pager module resizes using sqlite3_realloc().
       */
       db->nextPagesize = sqlite3Atoi(zRight);
-      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,-1,0) ){
+      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,0,0) ){
         sqlite3OomFault(db);
       }
     }
@@ -1729,7 +1729,6 @@ void sqlite3Pragma(
         }
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);
-#ifndef SQLITE_OMIT_BTREECOUNT
         if( !isQuick ){
           sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
@@ -1743,7 +1742,6 @@ void sqlite3Pragma(
             sqlite3VdbeJumpHere(v, addr);
           }
         }
-#endif /* SQLITE_OMIT_BTREECOUNT */
       } 
     }
     {
@@ -2175,6 +2173,25 @@ void sqlite3Pragma(
       sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, (int)(N&0x7fffffff));
     }
     returnSingleInt(v, sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1));
+    break;
+  }
+
+  /*
+  **   PRAGMA analysis_limit
+  **   PRAGMA analysis_limit = N
+  **
+  ** Configure the maximum number of rows that ANALYZE will examine
+  ** in each index that it looks at.  Return the new limit.
+  */
+  case PragTyp_ANALYSIS_LIMIT: {
+    sqlite3_int64 N;
+    if( zRight
+     && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK
+     && N>=0
+    ){
+      db->nAnalysisLimit = (int)(N&0x7fffffff);
+    }
+    returnSingleInt(v, db->nAnalysisLimit);
     break;
   }
 

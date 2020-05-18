@@ -1010,6 +1010,7 @@ INCLUDE ../ext/misc/fileio.c
 INCLUDE ../ext/misc/completion.c
 INCLUDE ../ext/misc/appendvfs.c
 INCLUDE ../ext/misc/memtrace.c
+INCLUDE ../ext/misc/uint.c
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -1106,6 +1107,7 @@ struct ShellState {
   unsigned mxProgress;   /* Maximum progress callbacks before failing */
   unsigned flgProgress;  /* Flags for the progress callback */
   unsigned shellFlgs;    /* Various flags */
+  unsigned priorShFlgs;  /* Saved copy of flags */
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
@@ -1406,11 +1408,13 @@ edit_func_end:
 */
 static void outputModePush(ShellState *p){
   p->modePrior = p->mode;
+  p->priorShFlgs = p->shellFlgs;
   memcpy(p->colSepPrior, p->colSeparator, sizeof(p->colSeparator));
   memcpy(p->rowSepPrior, p->rowSeparator, sizeof(p->rowSeparator));
 }
 static void outputModePop(ShellState *p){
   p->mode = p->modePrior;
+  p->shellFlgs = p->priorShFlgs;
   memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
   memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
 }
@@ -3154,6 +3158,7 @@ static int shell_exec(
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
             int iEqpId = sqlite3_column_int(pExplain, 0);
             int iParentId = sqlite3_column_int(pExplain, 1);
+            if( zEQPLine==0 ) zEQPLine = "";
             if( zEQPLine[0]=='-' ) eqp_render(pArg);
             eqp_append(pArg, iEqpId, iParentId, zEQPLine);
           }
@@ -3579,11 +3584,13 @@ static const char *(azHelp[]) = {
 #endif
   "      trigger               Like \"full\" but also show trigger bytecode",
   ".excel                   Display the output of next command in spreadsheet",
+  "   --bom                   Put a UTF8 byte-order mark on intermediate file",
   ".exit ?CODE?             Exit this program with return-code CODE",
   ".expert                  EXPERIMENTAL. Suggest indexes for queries",
   ".explain ?on|off|auto?   Change the EXPLAIN formatting mode.  Default: auto",
   ".filectrl CMD ...        Run various sqlite3_file_control() operations",
-  "                           Run \".filectrl\" with no arguments for details",
+  "   --schema SCHEMA         Use SCHEMA instead of \"main\"",
+  "   --help                  Show CMD details",
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
   ".headers on|off          Turn display of headers on or off",
   ".help ?-all? ?PATTERN?   Show help text for PATTERN",
@@ -3630,11 +3637,11 @@ static const char *(azHelp[]) = {
   "     tabs     Tab-separated values",
   "     tcl      TCL list elements",
   ".nullvalue STRING        Use STRING in place of NULL values",
-  ".once (-e|-x|FILE)       Output for the next SQL command only to FILE",
+  ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
   "     If FILE begins with '|' then open as a pipe",
-  "     Other options:",
-  "       -e    Invoke system text editor",
-  "       -x    Open in a spreadsheet",
+  "       --bom  Put a UTF8 byte-order mark at the beginning",
+  "       -e     Send output to the system text editor",
+  "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
 #ifdef SQLITE_DEBUG
   ".oom [--repeat M] [N]    Simulate an OOM error on the N-th allocation",
 #endif 
@@ -3651,7 +3658,11 @@ static const char *(azHelp[]) = {
   "        --readonly      Open FILE readonly",
   "        --zip           FILE is a ZIP archive",
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
-  "     If FILE begins with '|' then open it as a pipe.",
+  "   If FILE begins with '|' then open it as a pipe.",
+  "   Options:",
+  "     --bom                 Prefix output with a UTF8 byte-order mark",
+  "     -e                    Send output to the system text editor",
+  "     -x                    Send output as CSV to a spreadsheet",
   ".parameter CMD ...       Manage SQL parameter bindings",
   "   clear                   Erase all bindings",
   "   init                    Initialize the TEMP table that holds bindings",
@@ -3771,6 +3782,7 @@ static int showHelp(FILE *out, const char *zPattern){
    || zPattern[0]=='0'
    || strcmp(zPattern,"-a")==0
    || strcmp(zPattern,"-all")==0
+   || strcmp(zPattern,"--all")==0
   ){
     /* Show all commands, but only one line per command */
     if( zPattern==0 ) zPattern = "";
@@ -4252,6 +4264,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
+    sqlite3_uint_init(p->db, 0, 0);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
@@ -4971,11 +4984,15 @@ static void output_reset(ShellState *p){
       zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
       if( system(zCmd) ){
         utf8_printf(stderr, "Failed: [%s]\n", zCmd);
+      }else{
+        /* Give the start/open/xdg-open command some time to get
+        ** going before we continue, and potential delete the
+        ** p->zTempFile data file out from under it */
+        sqlite3_sleep(2000);
       }
       sqlite3_free(zCmd);
       outputModePop(p);
       p->doXdgOpen = 0;
-      sqlite3_sleep(100);
     }
 #endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
   }
@@ -5051,12 +5068,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
              "SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
              -1, &pStmt, 0);
   if( rc ){
-    if( !sqlite3_compileoption_used("ENABLE_DBPAGE_VTAB") ){
-      utf8_printf(stderr, "the \".dbinfo\" command requires the "
-                          "-DSQLITE_ENABLE_DBPAGE_VTAB compile-time options\n");
-    }else{
-      utf8_printf(stderr, "error: %s\n", sqlite3_errmsg(p->db));
-    }
+    utf8_printf(stderr, "error: %s\n", sqlite3_errmsg(p->db));
     sqlite3_finalize(pStmt);
     return 1;
   }
@@ -5265,9 +5277,21 @@ static void newTempFile(ShellState *p, const char *zSuffix){
     sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
   }
   if( p->zTempFile==0 ){
+    /* If p->db is an in-memory database then the TEMPFILENAME file-control
+    ** will not work and we will need to fallback to guessing */
+    char *zTemp;
     sqlite3_uint64 r;
     sqlite3_randomness(sizeof(r), &r);
-    p->zTempFile = sqlite3_mprintf("temp%llx.%s", r, zSuffix);
+    zTemp = getenv("TEMP");
+    if( zTemp==0 ) zTemp = getenv("TMP");
+    if( zTemp==0 ){
+#ifdef _WIN32
+      zTemp = "\\tmp";
+#else
+      zTemp = "/tmp";
+#endif
+    }
+    p->zTempFile = sqlite3_mprintf("%s/temp%llx.%s", zTemp, r, zSuffix);
   }else{
     p->zTempFile = sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
   }
@@ -7462,6 +7486,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
       { "has_moved",      SQLITE_FCNTL_HAS_MOVED,       ""               },  
       { "lock_timeout",   SQLITE_FCNTL_LOCK_TIMEOUT,    "MILLISEC"       },
+      { "reserve_bytes",  SQLITE_FCNTL_RESERVE_BYTES,   "[N]"            },
     };
     int filectrl = -1;
     int iCtrl = -1;
@@ -7469,9 +7494,20 @@ static int do_meta_command(char *zLine, ShellState *p){
     int isOk = 0;            /* 0: usage  1: %lld  2: no-result */
     int n2, i;
     const char *zCmd = 0;
+    const char *zSchema = 0;
 
     open_db(p, 0);
     zCmd = nArg>=2 ? azArg[1] : "help";
+
+    if( zCmd[0]=='-' 
+     && (strcmp(zCmd,"--schema")==0 || strcmp(zCmd,"-schema")==0)
+     && nArg>=4
+    ){
+      zSchema = azArg[2];
+      for(i=3; i<nArg; i++) azArg[i-2] = azArg[i];
+      nArg -= 2;
+      zCmd = azArg[1];
+    }
 
     /* The argument can optionally begin with "-" or "--" */
     if( zCmd[0]=='-' && zCmd[1] ){
@@ -7514,7 +7550,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_SIZE_LIMIT: {
           if( nArg!=2 && nArg!=3 ) break;
           iRes = nArg==3 ? integerValue(azArg[2]) : -1;
-          sqlite3_file_control(p->db, 0, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
+          sqlite3_file_control(p->db, zSchema, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
           isOk = 1;
           break;
         }
@@ -7523,7 +7559,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg!=3 ) break;
           x = (int)integerValue(azArg[2]);
-          sqlite3_file_control(p->db, 0, filectrl, &x);
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
           isOk = 2;
           break;
         }
@@ -7532,7 +7568,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg!=2 && nArg!=3 ) break;
           x = nArg==3 ? booleanValue(azArg[2]) : -1;
-          sqlite3_file_control(p->db, 0, filectrl, &x);
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
           iRes = x;
           isOk = 1;
           break;
@@ -7540,7 +7576,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_HAS_MOVED: {
           int x;
           if( nArg!=2 ) break;
-          sqlite3_file_control(p->db, 0, filectrl, &x);
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
           iRes = x;
           isOk = 1;
           break;
@@ -7548,11 +7584,23 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_TEMPFILENAME: {
           char *z = 0;
           if( nArg!=2 ) break;
-          sqlite3_file_control(p->db, 0, filectrl, &z);
+          sqlite3_file_control(p->db, zSchema, filectrl, &z);
           if( z ){
             utf8_printf(p->out, "%s\n", z);
             sqlite3_free(z);
           }
+          isOk = 2;
+          break;
+        }
+        case SQLITE_FCNTL_RESERVE_BYTES: {
+          int x;
+          if( nArg>=3 ){
+            x = atoi(azArg[2]);
+            sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          }
+          x = -1;
+          sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          utf8_printf(p->out,"%d\n", x);
           isOk = 2;
           break;
         }
@@ -8289,42 +8337,66 @@ static int do_meta_command(char *zLine, ShellState *p){
         && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
    || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
-    const char *zFile = nArg>=2 ? azArg[1] : "stdout";
+    const char *zFile = 0;
     int bTxtMode = 0;
-    if( azArg[0][0]=='e' ){
-      /* Transform the ".excel" command into ".once -x" */
-      nArg = 2;
-      azArg[0] = "once";
-      zFile = azArg[1] = "-x";
-      n = 4;
+    int i;
+    int eMode = 0;
+    int bBOM = 0;
+    int bOnce = 0;  /* 0: .output, 1: .once, 2: .excel */
+
+    if( c=='e' ){
+      eMode = 'x';
+      bOnce = 2;
+    }else if( strncmp(azArg[0],"once",n)==0 ){
+      bOnce = 1;
     }
-    if( nArg>2 ){
-      utf8_printf(stderr, "Usage: .%s [-e|-x|FILE]\n", azArg[0]);
-      rc = 1;
-      goto meta_command_exit;
-    }
-    if( n>1 && strncmp(azArg[0], "once", n)==0 ){
-      if( nArg<2 ){
-        raw_printf(stderr, "Usage: .once (-e|-x|FILE)\n");
+    for(i=1; i<nArg; i++){
+      char *z = azArg[i];
+      if( z[0]=='-' ){
+        if( z[1]=='-' ) z++;
+        if( strcmp(z,"-bom")==0 ){
+          bBOM = 1;
+        }else if( c!='e' && strcmp(z,"-x")==0 ){
+          eMode = 'x';  /* spreadsheet */
+        }else if( c!='e' && strcmp(z,"-e")==0 ){
+          eMode = 'e';  /* text editor */
+        }else{
+          utf8_printf(p->out, "ERROR: unknown option: \"%s\".  Usage:\n",
+                      azArg[i]);
+          showHelp(p->out, azArg[0]);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( zFile==0 ){
+        zFile = z;
+      }else{
+        utf8_printf(p->out,"ERROR: extra parameter: \"%s\".  Usage:\n",
+                    azArg[i]);
+        showHelp(p->out, azArg[0]);
         rc = 1;
         goto meta_command_exit;
       }
+    }
+    if( zFile==0 ) zFile = "stdout";
+    if( bOnce ){
       p->outCount = 2;
     }else{
       p->outCount = 0;
     }
     output_reset(p);
-    if( zFile[0]=='-' && zFile[1]=='-' ) zFile++;
 #ifndef SQLITE_NOHAVE_SYSTEM
-    if( strcmp(zFile, "-e")==0 || strcmp(zFile, "-x")==0 ){
+    if( eMode=='e' || eMode=='x' ){
       p->doXdgOpen = 1;
       outputModePush(p);
-      if( zFile[1]=='x' ){
+      if( eMode=='x' ){
+        /* spreadsheet mode.  Output as CSV. */
         newTempFile(p, "csv");
+        ShellClearFlag(p, SHFLG_Echo);
         p->mode = MODE_Csv;
         sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
         sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
       }else{
+        /* text editor mode */
         newTempFile(p, "txt");
         bTxtMode = 1;
       }
@@ -8343,6 +8415,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->out = stdout;
         rc = 1;
       }else{
+        if( bBOM ) fprintf(p->out,"\357\273\277");
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
 #endif
@@ -8355,6 +8428,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->out = stdout;
         rc = 1;
       } else {
+        if( bBOM ) fprintf(p->out,"\357\273\277");
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
@@ -9418,7 +9492,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""               },
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""               },
       { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"      },
-      { "reserve",            SQLITE_TESTCTRL_RESERVE,      "BYTES-OF-RESERVE"},
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -9471,7 +9544,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         /* sqlite3_test_control(int, db, int) */
         case SQLITE_TESTCTRL_OPTIMIZATIONS:
-        case SQLITE_TESTCTRL_RESERVE:
           if( nArg==3 ){
             int opt = (int)strtol(azArg[2], 0, 0);
             rc2 = sqlite3_test_control(testctrl, p->db, opt);

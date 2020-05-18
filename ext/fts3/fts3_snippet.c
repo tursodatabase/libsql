@@ -876,7 +876,7 @@ static int fts3ExprLHits(
     iStart = pExpr->iPhrase * ((p->nCol + 31) / 32);
   }
 
-  while( 1 ){
+  if( pIter ) while( 1 ){
     int nHit = fts3ColumnlistCount(&pIter);
     if( (pPhrase->iColumn>=pTab->nColumn || pPhrase->iColumn==iCol) ){
       if( p->flag==FTS3_MATCHINFO_LHITS ){
