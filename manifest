@@ -1,11 +1,11 @@
-C Avoid\sharmless\sUB\sin\smemcpy()\sin\sthe\sJSON\sextension.
-D 2020-05-17T13:47:28.477
+C Add\svdbevtab.lo\sto\sbuild\sof\slibsqlite3.lib\sin\sMakefile.msc.
+D 2020-05-18T18:02:37.420
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 376f53999defeb32b7ad2626fd58aae8f3694c38ab7ee30c2289e0d0525a9238
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 14bbe230f81498ed1d5a4df79317c9abdbd2f950cb8030527acccf4e2eddfd34
+F Makefile.msc 8d00aeba2609bb498dded5eead2890126321f02e292573bf29bf2d18487d37bd
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION 980d78a2ce04a1fd0ebefbaabd665f7f9186563820629ee29c6e350e96f19b52
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1313557b512297e7b75ed748894379b2022aecf696d5a58318e46a668321c1ff
-R 0a3aaa0509481c9d6269f1e12c4b65a3
-U drh
-Z c1782df13623caf985a15e6cbac97877
+P 69e149f76853d196c8855fedfc98848b60fb116ac36bc08824b1a122469f8ece
+R 3630bc41d5bae3aeb507521e3969369e
+U dan
+Z ad12d06ec98773d9201d7cf643b16e9f
