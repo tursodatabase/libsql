@@ -2576,9 +2576,12 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
       /* One of the journals pointed to by the master journal exists.
       ** Open it and check if it points at the master journal. If
       ** so, return without deleting the master journal file.
+      ** NB:  zJournal is really a MAIN_JOURNAL.  But call it a 
+      ** MASTER_JOURNAL here so that the VFS will not send the zJournal
+      ** name into sqlite3_database_file_object().
       */
       int c;
-      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL);
+      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MASTER_JOURNAL);
       rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
       if( rc!=SQLITE_OK ){
         goto delmaster_out;
@@ -4810,6 +4813,7 @@ int sqlite3PagerOpen(
   **     Database file handle            (pVfs->szOsFile bytes)
   **     Sub-journal file handle         (journalFileSize bytes)
   **     Main journal file handle        (journalFileSize bytes)
+  **     Ptr back to the Pager           (sizeof(Pager*) bytes)
   **     \0\0\0\0 database prefix        (4 bytes)
   **     Database file name              (nPathname+1 bytes)
   **     URI query parameters            (nUriByte bytes)
@@ -4849,6 +4853,7 @@ int sqlite3PagerOpen(
     ROUND8(pcacheSize) +                 /* PCache object */
     ROUND8(pVfs->szOsFile) +             /* The main db file */
     journalFileSize * 2 +                /* The two journal files */
+    sizeof(pPager) +                     /* Space to hold a pointer */
     4 +                                  /* Database prefix */
     nPathname + 1 +                      /* database filename */
     nUriByte +                           /* query parameters */
@@ -4869,6 +4874,7 @@ int sqlite3PagerOpen(
   pPager->sjfd = (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   pPager->jfd =  (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
+  memcpy(pPtr, &pPager, sizeof(pPager));  pPtr += sizeof(pPager);
 
   /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
                                           pPtr += 4;  /* Skip zero prefix */
@@ -5069,6 +5075,19 @@ act_like_temp_file:
   return SQLITE_OK;
 }
 
+/*
+** Return the sqlite3_file for the main database given the name
+** of the corresonding WAL or Journal name as passed into
+** xOpen.
+*/
+sqlite3_file *sqlite3_database_file_object(const char *zName){
+  Pager *pPager;
+  while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
+    zName--;
+  }
+  pPager = *(Pager**)(zName - 4 - sizeof(Pager*));
+  return pPager->fd;
+}
 
 
 /*
@@ -5766,7 +5785,6 @@ void sqlite3PagerUnrefPageOne(DbPage *pPg){
   assert( pPg->pgno==1 );
   assert( (pPg->flags & PGHDR_MMAP)==0 ); /* Page1 is never memory mapped */
   pPager = pPg->pPager;
-  sqlite3PagerResetLockTimeout(pPager);
   sqlite3PcacheRelease(pPg);
   pagerUnlockIfUnused(pPager);
 }
@@ -7134,16 +7152,6 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
 }
 
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-/*
-** Reset the lock timeout for pager.
-*/
-void sqlite3PagerResetLockTimeout(Pager *pPager){
-  int x = 0;
-  sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCK_TIMEOUT, &x);
-}
-#endif
-
 /*
 ** Return the file handle for the journal file (if it exists).
 ** This will be either the rollback journal or the WAL file.
@@ -7561,7 +7569,6 @@ int sqlite3PagerCheckpoint(
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt
     );
-    sqlite3PagerResetLockTimeout(pPager);
   }
   return rc;
 }
@@ -7729,7 +7736,31 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+/*
+** If pager pPager is a wal-mode database not in exclusive locking mode,
+** invoke the sqlite3WalWriteLock() function on the associated Wal object 
+** with the same db and bLock parameters as were passed to this function.
+** Return an SQLite error code if an error occurs, or SQLITE_OK otherwise.
+*/
+int sqlite3PagerWalWriteLock(Pager *pPager, int bLock){
+  int rc = SQLITE_OK;
+  if( pagerUseWal(pPager) && pPager->exclusiveMode==0 ){
+    rc = sqlite3WalWriteLock(pPager->pWal, bLock);
+  }
+  return rc;
+}
 
+/*
+** Set the database handle used by the wal layer to determine if 
+** blocking locks are required.
+*/
+void sqlite3PagerWalDb(Pager *pPager, sqlite3 *db){
+  if( pagerUseWal(pPager) ){
+    sqlite3WalDb(pPager->pWal, db);
+  }
+}
+#endif
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
@@ -7749,7 +7780,10 @@ int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot){
 ** read transaction is opened, attempt to read from the snapshot it 
 ** identifies. If this is not a WAL database, return an error.
 */
-int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot){
+int sqlite3PagerSnapshotOpen(
+  Pager *pPager, 
+  sqlite3_snapshot *pSnapshot
+){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);

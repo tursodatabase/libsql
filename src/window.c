@@ -895,13 +895,19 @@ static ExprList *exprListAppendList(
     int i;
     int nInit = pList ? pList->nExpr : 0;
     for(i=0; i<pAppend->nExpr; i++){
-      int iDummy;
       Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
       assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
-      if( bIntToNull && pDup && sqlite3ExprIsInteger(pDup, &iDummy) ){
-        pDup->op = TK_NULL;
-        pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
-        pDup->u.zToken = 0;
+      if( bIntToNull && pDup ){
+        int iDummy;
+        Expr *pSub;
+        for(pSub=pDup; ExprHasProperty(pSub, EP_Skip); pSub=pSub->pLeft){
+          assert( pSub );
+        }
+        if( sqlite3ExprIsInteger(pSub, &iDummy) ){
+          pSub->op = TK_NULL;
+          pSub->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
+          pSub->u.zToken = 0;
+        }
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
       if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;

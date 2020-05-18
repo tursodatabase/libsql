@@ -196,4 +196,42 @@ do_catchsql_test count-6.1 {
   SELECT count(DISTINCT) FROM t6 GROUP BY x;
 } {1 {DISTINCT aggregates must have exactly one argument}}
 
+# 2020-05-08.
+# The count() optimization should honor the NOT INDEXED clause
+#
+reset_db
+do_execsql_test count-7.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c VARCHAR(1000));
+  CREATE INDEX t1b ON t1(b);
+  INSERT INTO t1(a,b,c) values(1,2,'count.test cases for NOT INDEXED');
+  ANALYZE;
+  UPDATE sqlite_stat1 SET stat='1000000 10' WHERE idx='t1b';
+  ANALYZE sqlite_master;
+}
+do_eqp_test count-7.2 {
+  SELECT count(1) FROM t1;
+} {
+  QUERY PLAN
+  `--SCAN TABLE t1 USING COVERING INDEX t1b
+}
+do_eqp_test count-7.3 {
+  SELECT count(1) FROM t1 NOT INDEXED
+} {
+  QUERY PLAN
+  `--SCAN TABLE t1
+}
+do_eqp_test count-7.3 {
+  SELECT count(*) FROM t1;
+} {
+  QUERY PLAN
+  `--SCAN TABLE t1 USING COVERING INDEX t1b
+}
+do_eqp_test count-7.4 {
+  SELECT count(*) FROM t1 NOT INDEXED
+} {
+  QUERY PLAN
+  `--SCAN TABLE t1
+}
+
+
 finish_test

@@ -51,8 +51,8 @@ proc do_temptables_test {tn sql temptables} {
     set ret ""
     db eval "EXPLAIN [set sql]" {
       if {$opcode == "OpenEphemeral" || $opcode == "SorterOpen"} { 
-        if {$p5 != "08" && $p5!="00"} { error "p5 = $p5" }
-        if {$p5 == "08"} {
+        if {$p5!=8 && $p5!=0} { error "p5 = $p5" }
+        if {$p5==8} {
           lappend ret hash
         } else {
           lappend ret btree

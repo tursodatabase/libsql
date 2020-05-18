@@ -69,7 +69,7 @@ do_test 1.2 {
   p5_of_opcode db OpenRead {
      SELECT * FROM t1 CROSS JOIN t2 WHERE a=x
   }
-} {00 00}
+} {0 0}
 
 # Do the same test the other way around.
 #
@@ -82,7 +82,7 @@ do_test 2.2 {
   p5_of_opcode db OpenRead {
      SELECT * FROM t2 CROSS JOIN t1 WHERE a=x
   }
-} {00 00}
+} {0 0}
 
 # Various expressions captured by CursorHint
 #
@@ -117,7 +117,7 @@ do_test 4.2 {
   p5_of_opcode db OpenRead {
     SELECT * FROM t1 WHERE b>11;
   }
-} {02 00}
+} {2 0}
 do_test 4.3asc {
   p4_of_opcode db CursorHint {
     SELECT c FROM t1 WHERE b<11 ORDER BY b ASC;
@@ -132,7 +132,7 @@ do_test 4.4 {
   p5_of_opcode db OpenRead {
     SELECT c FROM t1 WHERE b<11;
   }
-} {00}
+} {0}
 
 do_test 4.5asc {
   p4_of_opcode db CursorHint {

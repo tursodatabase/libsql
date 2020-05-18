@@ -963,6 +963,22 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
 }
 
 /*
+** Buffer z contains a positive integer value encoded as utf-8 text.
+** Decode this value and store it in *pnOut, returning the number of bytes
+** consumed. If an overflow error occurs return a negative value.
+*/
+int sqlite3Fts3ReadInt(const char *z, int *pnOut){
+  u64 iVal = 0;
+  int i;
+  for(i=0; z[i]>='0' && z[i]<='9'; i++){
+    iVal = iVal*10 + (z[i] - '0');
+    if( iVal>0x7FFFFFFF ) return -1;
+  }
+  *pnOut = (int)iVal;
+  return i;
+}
+
+/*
 ** This function interprets the string at (*pp) as a non-negative integer
 ** value. It reads the integer and sets *pnOut to the value read, then 
 ** sets *pp to point to the byte immediately following the last byte of
@@ -977,19 +993,17 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
 */
 static int fts3GobbleInt(const char **pp, int *pnOut){
   const int MAX_NPREFIX = 10000000;
-  const char *p;                  /* Iterator pointer */
   int nInt = 0;                   /* Output value */
-
-  for(p=*pp; p[0]>='0' && p[0]<='9'; p++){
-    nInt = nInt * 10 + (p[0] - '0');
-    if( nInt>MAX_NPREFIX ){
-      nInt = 0;
-      break;
-    }
+  int nByte;
+  nByte = sqlite3Fts3ReadInt(*pp, &nInt);
+  if( nInt>MAX_NPREFIX ){
+    nInt = 0;
   }
-  if( p==*pp ) return SQLITE_ERROR;
+  if( nByte==0 ){
+    return SQLITE_ERROR;
+  }
   *pnOut = nInt;
-  *pp = p;
+  *pp += nByte;
   return SQLITE_OK;
 }
 
@@ -2171,7 +2185,9 @@ static void fts3ReadNextPos(
   sqlite3_int64 *pi             /* IN/OUT: Value read from position-list */
 ){
   if( (**pp)&0xFE ){
-    fts3GetDeltaVarint(pp, pi);
+    int iVal;
+    *pp += fts3GetVarint32((*pp), &iVal);
+    *pi += iVal;
     *pi -= 2;
   }else{
     *pi = POSITION_LIST_END;
@@ -5301,6 +5317,7 @@ static void fts3EvalNextRow(
                 fts3EvalNextRow(pCsr, pLeft, pRc);
               }
             }
+            pRight->bEof = pLeft->bEof = 1;
           }
         }
         break;
