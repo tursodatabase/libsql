@@ -312,22 +312,39 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     return 0;
   }
 #endif
-  while(1){
-    for(i=OMIT_TEMPDB; i<db->nDb; i++){
-      int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
-      if( zDatabase==0 || sqlite3DbIsNamed(db, j, zDatabase) ){
-        assert( sqlite3SchemaMutexHeld(db, j, 0) );
-        p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
-        if( p ) return p;
+  if( zDatabase ){
+    for(i=0; i<db->nDb; i++){
+      if( sqlite3StrICmp(zDatabase, db->aDb[i].zDbSName)==0 ) break;
+    }
+    if( i>=db->nDb ){
+      /* No match against the official names.  But always match "main"
+      ** to schema 0 as a legacy fallback. */
+      if( sqlite3StrICmp(zDatabase,"main")==0 ){
+        i = 0;
+      }else{
+        return 0;
       }
     }
-    /* Not found.  If the name we were looking for was temp.sqlite_master
-    ** then change the name to sqlite_temp_master and try again. */
-    if( sqlite3StrICmp(zName, MASTER_NAME)!=0 ) break;
-    if( sqlite3_stricmp(zDatabase, db->aDb[1].zDbSName)!=0 ) break;
-    zName = TEMP_MASTER_NAME;
+    p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
+    if( p==0 && i==1 && sqlite3StrICmp(zName, MASTER_NAME)==0 ){
+      /* All temp.sqlite_master to be an alias for sqlite_temp_master */
+      p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, TEMP_MASTER_NAME);
+    }
+  }else{
+    /* Match against TEMP first */
+    p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, zName);
+    if( p ) return p;
+    /* The main database is second */
+    p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, zName);
+    if( p ) return p;
+    /* Attached databases are in order of attachment */
+    for(i=2; i<db->nDb; i++){
+      assert( sqlite3SchemaMutexHeld(db, i, 0) );
+      p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
+      if( p ) break;
+    }
   }
-  return 0;
+  return p;
 }
 
 /*
@@ -2131,6 +2148,28 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   recomputeColumnsNotIndexed(pPk);
 }
 
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
+** Return true if pTab is a virtual table and zName is a shadow table name
+** for that virtual table.
+*/
+int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
+  int nName;                    /* Length of zName */
+  Module *pMod;                 /* Module for the virtual table */
+
+  if( !IsVirtual(pTab) ) return 0;
+  nName = sqlite3Strlen30(pTab->zName);
+  if( sqlite3_strnicmp(zName, pTab->zName, nName)!=0 ) return 0;
+  if( zName[nName]!='_' ) return 0;
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
+  if( pMod==0 ) return 0;
+  if( pMod->pModule->iVersion<3 ) return 0;
+  if( pMod->pModule->xShadowName==0 ) return 0;
+  return pMod->pModule->xShadowName(zName+nName+1);
+}
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Return true if zName is a shadow table name in the current database
@@ -2142,8 +2181,6 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
-  Module *pMod;                 /* Module for the virtual table */
-
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
@@ -2151,13 +2188,10 @@ int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   *zTail = '_';
   if( pTab==0 ) return 0;
   if( !IsVirtual(pTab) ) return 0;
-  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
-  if( pMod==0 ) return 0;
-  if( pMod->pModule->iVersion<3 ) return 0;
-  if( pMod->pModule->xShadowName==0 ) return 0;
-  return pMod->pModule->xShadowName(zTail+1);
+  return sqlite3IsShadowTableOf(db, pTab, zName);
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
 
 #ifdef SQLITE_DEBUG
 /*
@@ -4630,7 +4664,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
     }
     db->aDb[1].pBt = pBt;
     assert( db->aDb[1].pSchema );
-    if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
+    if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, 0, 0) ){
       sqlite3OomFault(db);
       return 1;
     }
@@ -4741,7 +4775,7 @@ void sqlite3HaltConstraint(
   u8 p5Errmsg       /* P5_ErrMsg type */
 ){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  assert( (errCode&0xff)==SQLITE_CONSTRAINT );
+  assert( (errCode&0xff)==SQLITE_CONSTRAINT || pParse->nested );
   if( onError==OE_Abort ){
     sqlite3MayAbort(pParse);
   }

@@ -446,10 +446,7 @@ static int getNextNode(
       if( pKey->eType==FTSQUERY_NEAR ){
         assert( nKey==4 );
         if( zInput[4]=='/' && zInput[5]>='0' && zInput[5]<='9' ){
-          nNear = 0;
-          for(nKey=5; zInput[nKey]>='0' && zInput[nKey]<='9'; nKey++){
-            nNear = nNear * 10 + (zInput[nKey] - '0');
-          }
+          nKey += 1+sqlite3Fts3ReadInt(&zInput[nKey+1], &nNear);
         }
       }
 

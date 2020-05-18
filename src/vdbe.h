@@ -290,6 +290,9 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 int sqlite3VdbeHasSubProgram(Vdbe*);
 
 int sqlite3NotPureFunc(sqlite3_context*);
+#ifdef SQLITE_ENABLE_BYTECODE_VTAB
+int sqlite3VdbeBytecodeVtabInit(sqlite3*);
+#endif
 
 /* Use SQLITE_ENABLE_COMMENTS to enable generation of extra comments on
 ** each VDBE opcode.

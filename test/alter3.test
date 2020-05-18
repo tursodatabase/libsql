@@ -116,6 +116,7 @@ do_test alter3-1.99 {
 do_test alter3-2.1 {
   execsql {
     CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1,2);
   }
   catchsql {
     ALTER TABLE t1 ADD c PRIMARY KEY;

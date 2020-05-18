@@ -150,5 +150,10 @@ sqlite3_file *sqlite3WalFile(Wal *pWal);
 /* Return the journal mode (WAL or WAL2) used by this Wal object. */
 int sqlite3WalJournalMode(Wal *pWal);
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+int sqlite3WalWriteLock(Wal *pWal, int bLock);
+void sqlite3WalDb(Wal *pWal, sqlite3 *db);
+#endif
+
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */

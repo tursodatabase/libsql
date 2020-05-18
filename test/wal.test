@@ -43,6 +43,7 @@ proc sqlite3_wal {args} {
   [lindex $args 0] eval { PRAGMA journal_mode = wal }
   [lindex $args 0] eval { PRAGMA synchronous = normal }
   [lindex $args 0] function blob blob
+  db timeout 1000
 }
 
 proc log_deleted {logfile} {
