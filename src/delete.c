@@ -858,6 +858,7 @@ void sqlite3GenerateRowIndexDelete(
         &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
         pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+    sqlite3VdbeChangeP5(v, 1);  /* Cause IdxDelete to error if no entry found */
     sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }

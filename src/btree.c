@@ -2555,8 +2555,7 @@ static int btreeInvokeBusyHandler(void *pArg){
   BtShared *pBt = (BtShared*)pArg;
   assert( pBt->db );
   assert( sqlite3_mutex_held(pBt->db->mutex) );
-  return sqlite3InvokeBusyHandler(&pBt->db->busyHandler,
-                                  sqlite3PagerFile(pBt->pPager));
+  return sqlite3InvokeBusyHandler(&pBt->db->busyHandler);
 }
 
 /*
@@ -3107,15 +3106,16 @@ int sqlite3BtreeSetPagerFlags(
 */
 int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   int rc = SQLITE_OK;
+  int x;
   BtShared *pBt = p->pBt;
-  assert( nReserve>=-1 && nReserve<=255 );
+  assert( nReserve>=0 && nReserve<=255 );
   sqlite3BtreeEnter(p);
+  pBt->nReserveWanted = nReserve;
+  x = pBt->pageSize - pBt->usableSize;
+  if( nReserve<x ) nReserve = x;
   if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
     return SQLITE_READONLY;
-  }
-  if( nReserve<0 ){
-    nReserve = pBt->pageSize - pBt->usableSize;
   }
   assert( nReserve>=0 && nReserve<=255 );
   if( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE &&
@@ -3162,16 +3162,17 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p){
 ** are intentually left unused.  This is the "reserved" space that is
 ** sometimes used by extensions.
 **
-** If SQLITE_HAS_MUTEX is defined then the number returned is the
-** greater of the current reserved space and the maximum requested
-** reserve space.
+** The value returned is the larger of the current reserve size and
+** the latest reserve size requested by SQLITE_FILECTRL_RESERVE_BYTES.
+** The amount of reserve can only grow - never shrink.
 */
-int sqlite3BtreeGetOptimalReserve(Btree *p){
-  int n;
+int sqlite3BtreeGetRequestedReserve(Btree *p){
+  int n1, n2;
   sqlite3BtreeEnter(p);
-  n = sqlite3BtreeGetReserveNoMutex(p);
+  n1 = (int)p->pBt->nReserveWanted;
+  n2 = sqlite3BtreeGetReserveNoMutex(p);
   sqlite3BtreeLeave(p);
-  return n;
+  return n1>n2 ? n1 : n2;
 }
 
 
@@ -3621,6 +3622,7 @@ int sqlite3BtreeNewDb(Btree *p){
 */
 int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   BtShared *pBt = p->pBt;
+  Pager *pPager = pBt->pPager;
   int rc = SQLITE_OK;
   int bConcurrent = (p->db->bConcurrent && !ISAUTOVACUUM);
 
@@ -3637,7 +3639,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   assert( pBt->inTransaction==TRANS_WRITE || IfNotOmitAV(pBt->bDoTruncate)==0 );
 
   if( (p->db->flags & SQLITE_ResetDatabase) 
-   && sqlite3PagerIsreadonly(pBt->pPager)==0 
+   && sqlite3PagerIsreadonly(pPager)==0 
   ){
     pBt->btsFlags &= ~BTS_READ_ONLY;
   }
@@ -3685,6 +3687,18 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   pBt->btsFlags &= ~BTS_INITIALLY_EMPTY;
   if( pBt->nPage==0 ) pBt->btsFlags |= BTS_INITIALLY_EMPTY;
   do {
+    sqlite3PagerWalDb(pPager, p->db);
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    /* If transitioning from no transaction directly to a write transaction,
+    ** block for the WRITER lock first if possible. */
+    if( pBt->pPage1==0 && wrflag ){
+      assert( pBt->inTransaction==TRANS_NONE );
+      rc = sqlite3PagerWalWriteLock(pPager, 1);
+      if( rc!=SQLITE_BUSY && rc!=SQLITE_OK ) break;
+    }
+#endif
+
     /* Call lockBtree() until either pBt->pPage1 is populated or
     ** lockBtree() returns something other than SQLITE_OK. lockBtree()
     ** may return SQLITE_OK but leave pBt->pPage1 set to 0 if after
@@ -3699,7 +3713,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
         rc = SQLITE_READONLY;
       }else{
         int exFlag = bConcurrent ? -1 : (wrflag>1);
-        rc = sqlite3PagerBegin(pBt->pPager, exFlag, sqlite3TempInMemory(p->db));
+        rc = sqlite3PagerBegin(pPager, exFlag, sqlite3TempInMemory(p->db));
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }else if( rc==SQLITE_BUSY_SNAPSHOT && pBt->inTransaction==TRANS_NONE ){
@@ -3712,11 +3726,15 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     }
   
     if( rc!=SQLITE_OK ){
+      (void)sqlite3PagerWalWriteLock(pPager, 0);
       unlockBtreeIfUnused(pBt);
     }
   }while( (rc&0xFF)==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
           btreeInvokeBusyHandler(pBt) );
-  sqlite3PagerResetLockTimeout(pBt->pPager);
+  sqlite3PagerWalDb(pPager, 0);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  if( rc==SQLITE_BUSY_TIMEOUT ) rc = SQLITE_BUSY;
+#endif
 
   if( rc==SQLITE_OK ){
     if( p->inTrans==TRANS_NONE ){
@@ -3782,6 +3800,7 @@ trans_begun:
       if( rc==SQLITE_OK && nSavepoint ){
         rc = btreePtrmapBegin(pBt, nSavepoint);
       }
+      rc = sqlite3PagerOpenSavepoint(pPager, p->db->nSavepoint);
     }
   }
 
@@ -7617,7 +7636,7 @@ static int editPage(
   assert( nCell>=0 );
   if( iOld<iNew ){
     int nShift = pageFreeArray(pPg, iOld, iNew-iOld, pCArray);
-    if( nShift>nCell ) return SQLITE_CORRUPT_BKPT;
+    if( NEVER(nShift>nCell) ) return SQLITE_CORRUPT_BKPT;
     memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
     nCell -= nShift;
   }
@@ -9980,7 +9999,6 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
   return rc;
 }
 
-#ifndef SQLITE_OMIT_BTREECOUNT
 /*
 ** The first argument, pCur, is a cursor opened on some b-tree. Count the
 ** number of entries in the b-tree and write the result to *pnEntry.
@@ -10053,7 +10071,6 @@ int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry){
   /* An error has occurred. Return an error code. */
   return rc;
 }
-#endif
 
 /*
 ** Return the pager associated with a BTree.  This routine is used for

@@ -168,7 +168,8 @@ static int stmtColumn(
       sqlite3_result_int(ctx, sqlite3_stmt_busy(pCur->pStmt));
       break;
     }
-    case STMT_COLUMN_MEM: {
+    default: {
+      assert( i==STMT_COLUMN_MEM );
       i = SQLITE_STMTSTATUS_MEMUSED + 
             STMT_COLUMN_NSCAN - SQLITE_STMTSTATUS_FULLSCAN_STEP;
       /* Fall thru */

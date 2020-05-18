@@ -994,7 +994,6 @@ struct BusyHandler {
   int (*xBusyHandler)(void *,int);  /* The busy callback */
   void *pBusyArg;                   /* First arg to busy callback */
   int nBusy;                        /* Incremented with each busy call */
-  u8 bExtraFileArg;                 /* Include sqlite3_file as callback arg */
 };
 
 /*
@@ -1550,6 +1549,7 @@ struct sqlite3 {
   BusyHandler busyHandler;      /* Busy callback */
   Db aDbStatic[2];              /* Static space for the 2 default backends */
   Savepoint *pSavepoint;        /* List of active savepoints */
+  int nAnalysisLimit;           /* Number of index rows to ANALYZE */
   int busyTimeout;              /* Busy handler timeout, in msec */
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */
@@ -1778,7 +1778,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_LENGTH   0x0040 /* Built-in length() function */
 #define SQLITE_FUNC_TYPEOF   0x0080 /* Built-in typeof() function */
 #define SQLITE_FUNC_COUNT    0x0100 /* Built-in count(*) aggregate */
-#define SQLITE_FUNC_COALESCE 0x0200 /* Built-in coalesce() or ifnull() */
+/*                           0x0200 -- available for reuse */
 #define SQLITE_FUNC_UNLIKELY 0x0400 /* Built-in unlikely() function */
 #define SQLITE_FUNC_CONSTANT 0x0800 /* Constant inputs give a constant output */
 #define SQLITE_FUNC_MINMAX   0x1000 /* True for min() and max() aggregates */
@@ -1799,6 +1799,7 @@ struct FuncDestructor {
 #define INLINEFUNC_expr_implies_expr    2
 #define INLINEFUNC_expr_compare         3      
 #define INLINEFUNC_affinity             4
+#define INLINEFUNC_iif                  5
 #define INLINEFUNC_unlikely            99  /* Default case */
 
 /*
@@ -4600,7 +4601,7 @@ void sqlite3RenameExprlistUnmap(Parse*, ExprList*);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
 char sqlite3AffinityType(const char*, Column*);
 void sqlite3Analyze(Parse*, Token*, Token*);
-int sqlite3InvokeBusyHandler(BusyHandler*, sqlite3_file*);
+int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);
 int sqlite3FindDbName(sqlite3 *, const char *);
 int sqlite3AnalysisLoad(sqlite3*,int iDB);
@@ -4725,8 +4726,10 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 int sqlite3ReadOnlyShadowTables(sqlite3 *db);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int sqlite3ShadowTableName(sqlite3 *db, const char *zName);
+  int sqlite3IsShadowTableOf(sqlite3*,Table*,const char*);
 #else
 # define sqlite3ShadowTableName(A,B) 0
+# define sqlite3IsShadowTableOf(A,B,C) 0
 #endif
 int sqlite3VtabEponymousTableInit(Parse*,Module*);
 void sqlite3VtabEponymousTableClear(sqlite3*,Module*);

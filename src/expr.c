@@ -45,7 +45,7 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
   while( ExprHasProperty(pExpr, EP_Skip) ){
-    assert( pExpr->op==TK_COLLATE );
+    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
     pExpr = pExpr->pLeft;
     assert( pExpr!=0 );
   }
@@ -112,7 +112,7 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
   while( pExpr && ExprHasProperty(pExpr, EP_Skip) ){
-    assert( pExpr->op==TK_COLLATE );
+    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
     pExpr = pExpr->pLeft;
   }   
   return pExpr;
@@ -131,7 +131,7 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
     }else{
-      assert( pExpr->op==TK_COLLATE );
+      assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
       pExpr = pExpr->pLeft;
     }
   }   
@@ -3700,6 +3700,13 @@ static int exprCodeInlineFunction(
       sqlite3VdbeResolveLabel(v, endCoalesce);
       break;
     }
+    case INLINEFUNC_iif: {
+      Expr caseExpr;
+      memset(&caseExpr, 0, sizeof(caseExpr));
+      caseExpr.op = TK_CASE;
+      caseExpr.x.pList = pFarg;
+      return sqlite3ExprCodeTarget(pParse, &caseExpr, target);
+    }
 
     default: {   
       /* The UNLIKELY() function is a no-op.  The result is the value
@@ -4482,7 +4489,7 @@ expr_code_doover:
            || pExpr->affExpr==OE_Fail
            || pExpr->affExpr==OE_Ignore
       );
-      if( !pParse->pTriggerTab ){
+      if( !pParse->pTriggerTab && !pParse->nested ){
         sqlite3ErrorMsg(pParse,
                        "RAISE() may only be used within a trigger-program");
         return 0;
@@ -4496,8 +4503,9 @@ expr_code_doover:
             v, OP_Halt, SQLITE_OK, OE_Ignore, 0, pExpr->u.zToken,0);
         VdbeCoverage(v);
       }else{
-        sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_TRIGGER,
-                              pExpr->affExpr, pExpr->u.zToken, 0, 0);
+        sqlite3HaltConstraint(pParse,
+             pParse->pTriggerTab ? SQLITE_CONSTRAINT_TRIGGER : SQLITE_ERROR,
+             pExpr->affExpr, pExpr->u.zToken, 0, 0);
       }
 
       break;

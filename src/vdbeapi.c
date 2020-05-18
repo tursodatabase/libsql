@@ -1355,7 +1355,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   /* If the bit corresponding to this variable in Vdbe.expmask is set, then 
   ** binding a new value to this variable invalidates the current query plan.
   **
-  ** IMPLEMENTATION-OF: R-48440-37595 If the specific value bound to host
+  ** IMPLEMENTATION-OF: R-57496-20354 If the specific value bound to a host
   ** parameter in the WHERE clause might influence the choice of query plan
   ** for a statement, then the statement will be automatically recompiled,
   ** as if there had been a schema change, on the first sqlite3_step() call
