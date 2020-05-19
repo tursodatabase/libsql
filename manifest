@@ -1,5 +1,5 @@
-C In\swal.c,\simproved\scomments\son\sconcurrency\sissues.\s\sMore\suse\sof\nAtomicLoad()\sand\sAtomicStore().
-D 2020-05-19T12:27:29.008
+C User-suggested\simprovement\sto\sthe\sREADME.txt\sfor\sthe\sICU\sextension.
+D 2020-05-19T12:29:56.039
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -230,7 +230,7 @@ F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
-F ext/icu/README.txt a295e91db742b153e8dce8f7efd31d28ad1eea4df31ef4daa3eedc85be2f5138
+F ext/icu/README.txt 1c48ffaf7f255bd73d00a35f68f6de357c2a6594f16cb00506a151be23694706
 F ext/icu/icu.c 91c021c7e3e8bbba286960810fa303295c622e323567b2e6def4ce58e4466e60
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f64d054b799c0af8d582fd9aff9bcbfa380ef08026ba5db8c5f89f6f56dfdad9
-R 7f686b5b79d2dddadbc47e9d743b06cb
+P 4bf566feca3a8fbe5e386533aac30e0ac25836cfc820a3abd91e156bd6198b4a
+R 967365fc0f01aa59917c371276c2fe8f
 U drh
-Z 8798d48c38c827000797710a250a5723
+Z 6f8bf30a9a141e896db917f9dbf77f7a
