@@ -1,5 +1,5 @@
-C Add\svdbevtab.lo\sto\sbuild\sof\slibsqlite3.lib\sin\sMakefile.msc.
-D 2020-05-18T18:02:37.420
+C In\swal.c,\simproved\scomments\son\sconcurrency\sissues.\s\sMore\suse\sof\nAtomicLoad()\sand\sAtomicStore().
+D 2020-05-19T12:27:29.008
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c ee5b4c902fdda2230f9503ac7b84c6d614c91e8f6f4dc1633e2e8dfef8ffb144
 F src/vtab.c 7b452592ed2ee95dedb1f323d557cebede5a6f3b4558b21a5dca527e6ae9b12c
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c d0365581aed11a75e176f67cdbdc1bdfe685c5381a052360a00bbf58d3252fa0
+F src/wal.c fc763af2c20d1770e872378b28031c100b52061ec47599f38499cf4bd4977284
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7c429c694abd12413a5c17aec9f47cfe9eba6807e6b0a32df883e8e3a14835ed
 F src/where.c 9546c82056e8cdb27291f98cf1adca5d271240b399bb97b32f77fc2bea6146c9
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69e149f76853d196c8855fedfc98848b60fb116ac36bc08824b1a122469f8ece
-R 3630bc41d5bae3aeb507521e3969369e
-U dan
-Z ad12d06ec98773d9201d7cf643b16e9f
+P f64d054b799c0af8d582fd9aff9bcbfa380ef08026ba5db8c5f89f6f56dfdad9
+R 7f686b5b79d2dddadbc47e9d743b06cb
+U drh
+Z 8798d48c38c827000797710a250a5723
