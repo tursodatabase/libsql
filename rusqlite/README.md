@@ -192,6 +192,10 @@ instead.
 Rusqlite is the product of hard work by a number of people. A list is available
 here: https://github.com/rusqlite/rusqlite/graphs/contributors
 
+## Community
+
+Currently there's a gitter channel set up for rusqlite [here](https://gitter.im/rusqlite/community).
+
 ## License
 
 Rusqlite is available under the MIT license. See the LICENSE file for more info.
