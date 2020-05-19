@@ -700,11 +700,24 @@ static void walShmBarrier(Wal *pWal){
 }
 
 /*
+** Add the SQLITE_NO_TSAN as part of the return-type of a function
+** definition as a hint that the function contains constructs that
+** might give false-positive TSAN warnings.
+**
+** See tag-20200519-1.
+*/
+#if defined(__clang__) && !defined(SQLITE_NO_TSAN)
+# define SQLITE_NO_TSAN __attribute__((no_sanitize_thread))
+#else
+# define SQLITE_NO_TSAN
+#endif
+
+/*
 ** Write the header information in pWal->hdr into the wal-index.
 **
 ** The checksum on pWal->hdr is updated before it is written.
 */
-static void walIndexWriteHdr(Wal *pWal){
+static SQLITE_NO_TSAN void walIndexWriteHdr(Wal *pWal){
   volatile WalIndexHdr *aHdr = walIndexHdr(pWal);
   const int nCksum = offsetof(WalIndexHdr, aCksum);
 
@@ -2141,7 +2154,7 @@ int sqlite3WalClose(
 ** If the checksum cannot be verified return non-zero. If the header
 ** is read successfully and the checksum verified, return zero.
 */
-static int walIndexTryHdr(Wal *pWal, int *pChanged){
+static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2];                  /* Checksum on the header content */
   WalIndexHdr h1, h2;             /* Two copies of the header content */
   WalIndexHdr volatile *aHdr;     /* Header in shared memory */
