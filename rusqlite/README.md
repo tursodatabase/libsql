@@ -5,7 +5,7 @@
 [![Build Status](https://github.com/rusqlite/rusqlite/workflows/CI/badge.svg)](https://github.com/rusqlite/rusqlite/actions)
 [![dependency status](https://deps.rs/repo/github/rusqlite/rusqlite/status.svg)](https://deps.rs/repo/github/rusqlite/rusqlite)
 [![Latest Version](https://img.shields.io/crates/v/rusqlite.svg)](https://crates.io/crates/rusqlite)
-[![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/rusqlite/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Gitter](https://badges.gitter.im/rusqlite.svg)](https://gitter.im/rusqlite/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Docs](https://docs.rs/rusqlite/badge.svg)](https://docs.rs/rusqlite)
 [![codecov](https://codecov.io/gh/rusqlite/rusqlite/branch/master/graph/badge.svg)](https://codecov.io/gh/rusqlite/rusqlite)
 
