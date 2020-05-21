@@ -1,5 +1,5 @@
-C Back\sout\sthe\schange\sfrom\s[7fab1393c2b22b1f]\sthat\stries\sto\sconvert\sinvalid\nsurrogate\scharacters\sin\sUTF16\sinto\sthe\sreplacement\scharacter\s0xfffd,\sas\swe\nfind\sthat\sthis\sbreaks\ssome\ssoftware.
-D 2020-05-20T15:02:04.035
+C Avoid\sanother\spotential\sOOB\sread\sin\ssqlite3expert.c.
+D 2020-05-21T19:13:46.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -49,7 +49,7 @@ F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 2e10ff875c31c9e6fc5e324767624181273859771fe34c5daeeadf3f2974a4f7
-F ext/expert/sqlite3expert.c 6e59d97334648edd83ffa57b1dff92063022eb173cb7c8107fa9c76550ce2936
+F ext/expert/sqlite3expert.c ac008c72c00e6ded0f5116914d22ebd57f415fc0a7ea04738f4e9766dbdd3117
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3117c1b5a9e348fd8d16ba9d03fdafaad8514567fb3403f72b86d6162ad40bde
-R e941513d71fae9ce3b558d98a564d148
-U drh
-Z db42a456dee4143dc7c71c6203f4a854
+P 4218c7b71fb6b227dbe4b852718584c150164af2d84e067cb810aa602554a609
+R a34ce7e81c0a64aa29d603331470468c
+U dan
+Z d5344c700a7ec03fab9c05b6e6d6dc98
