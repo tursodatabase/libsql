@@ -1,5 +1,5 @@
-C Change\sa\sNEVER\smacro\sinto\sa\sNO_TEST\scomment,\sas\sthe\sconditional\sis\sreachable,\nbut\sonly\swhen\scompiling\sfor\sWindows\s32-bit.
-D 2020-05-21T20:38:39.168
+C Version\s3.32.0
+D 2020-05-22T17:46:16.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1866,7 +1866,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ccea80092f16e7f17f4c4de4f8be3fdef217199fcc08ace37e179c1b22c1294
+P ce36b6d1331edba5a921fef32553e2470a79bdb1f62d2cfd81190691c83d5b06
 R b5a877f3e2a7ab538bc565ffd2aae787
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.32.0 *
 U drh
-Z 2acfb479c943aedec5bae0c532948916
+Z 4af13806b6e302c99aeddae94a54c013
