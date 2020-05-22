@@ -284,6 +284,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
         c = *(zIn++);
         c += (*(zIn++))<<8;
         if( c>=0xd800 && c<0xe000 ){
+#ifdef SQLITE_REPLACE_INVALID_UTF
           if( c>=0xdc00 || zIn>=zTerm ){
             c = 0xfffd;
           }else{
@@ -296,6 +297,13 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
               c = ((c&0x3ff)<<10) + (c2&0x3ff) + 0x10000;
             }
           }
+#else
+          if( zIn<zTerm ){
+            int c2 = (*zIn++);
+            c2 += ((*zIn++)<<8);
+            c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);
+          }
+#endif
         }
         WRITE_UTF8(z, c);
       }
@@ -305,6 +313,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
         c = (*(zIn++))<<8;
         c += *(zIn++);
         if( c>=0xd800 && c<0xe000 ){
+#ifdef SQLITE_REPLACE_INVALID_UTF
           if( c>=0xdc00 || zIn>=zTerm ){
             c = 0xfffd;
           }else{
@@ -317,6 +326,13 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
               c = ((c&0x3ff)<<10) + (c2&0x3ff) + 0x10000;
             }
           }
+#else
+          if( zIn<zTerm ){
+            int c2 = ((*zIn++)<<8);
+            c2 += (*zIn++);
+            c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);
+          }
+#endif
         }
         WRITE_UTF8(z, c);
       }
