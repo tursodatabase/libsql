@@ -950,6 +950,10 @@ static void walChecksumBytes(
   aOut[1] = s2;
 }
 
+/*
+** If there is the possibility of concurrent access to the SHM file
+** from multiple threads and/or processes, then do a memory barrier.
+*/
 static void walShmBarrier(Wal *pWal){
   if( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE ){
     sqlite3OsShmBarrier(pWal->pDbFd);
@@ -957,11 +961,24 @@ static void walShmBarrier(Wal *pWal){
 }
 
 /*
+** Add the SQLITE_NO_TSAN as part of the return-type of a function
+** definition as a hint that the function contains constructs that
+** might give false-positive TSAN warnings.
+**
+** See tag-20200519-1.
+*/
+#if defined(__clang__) && !defined(SQLITE_NO_TSAN)
+# define SQLITE_NO_TSAN __attribute__((no_sanitize_thread))
+#else
+# define SQLITE_NO_TSAN
+#endif
+
+/*
 ** Write the header information in pWal->hdr into the wal-index.
 **
 ** The checksum on pWal->hdr is updated before it is written.
 */
-static void walIndexWriteHdr(Wal *pWal){
+static SQLITE_NO_TSAN void walIndexWriteHdr(Wal *pWal){
   volatile WalIndexHdr *aHdr = walIndexHdr(pWal);
   const int nCksum = offsetof(WalIndexHdr, aCksum);
 
@@ -969,6 +986,7 @@ static void walIndexWriteHdr(Wal *pWal){
   pWal->hdr.isInit = 1;
   assert( pWal->hdr.iVersion==WAL_VERSION1||pWal->hdr.iVersion==WAL_VERSION2 );
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
+  /* Possible TSAN false-positive.  See tag-20200519-1 */
   memcpy((void*)&aHdr[1], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
   walShmBarrier(pWal);
   memcpy((void*)&aHdr[0], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
@@ -2473,32 +2491,13 @@ static int walCheckpoint(
       mxSafeFrame = pWal->hdr.mxFrame;
       mxPage = pWal->hdr.nPage;
       for(i=1; i<WAL_NREADER; i++){
-        /* Thread-sanitizer reports that the following is an unsafe read,
-        ** as some other thread may be in the process of updating the value
-        ** of the aReadMark[] slot. The assumption here is that if that is
-        ** happening, the other client may only be increasing the value,
-        ** not decreasing it. So assuming either that either the "old" or
-        ** "new" version of the value is read, and not some arbitrary value
-        ** that would never be written by a real client, things are still 
-        ** safe.
-        **
-        ** Astute readers have pointed out that the assumption stated in the
-        ** last sentence of the previous paragraph is not guaranteed to be
-        ** true for all conforming systems.  However, the assumption is true
-        ** for all compilers and architectures in common use today (circa
-        ** 2019-11-27) and the alternatives are both slow and complex, and
-        ** so we will continue to go with the current design for now.  If this
-        ** bothers you, or if you really are running on a system where aligned
-        ** 32-bit reads and writes are not atomic, then you can simply avoid
-        ** the use of WAL mode, or only use WAL mode together with
-        ** PRAGMA locking_mode=EXCLUSIVE and all will be well.
-        */
-        u32 y = pInfo->aReadMark[i];
+        u32 y = AtomicLoad(pInfo->aReadMark+i);
         if( mxSafeFrame>y ){
           assert( y<=pWal->hdr.mxFrame );
           rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(i), 1);
           if( rc==SQLITE_OK ){
-            pInfo->aReadMark[i] = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
+            u32 iMark = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
+            AtomicStore(pInfo->aReadMark+i, iMark);
             walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           }else if( rc==SQLITE_BUSY ){
             mxSafeFrame = y;
@@ -2756,7 +2755,7 @@ int sqlite3WalClose(
 ** If the checksum cannot be verified return non-zero. If the header
 ** is read successfully and the checksum verified, return zero.
 */
-static int walIndexTryHdr(Wal *pWal, int *pChanged){
+static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2];                  /* Checksum on the header content */
   WalIndexHdr h1, h2;             /* Two copies of the header content */
   WalIndexHdr volatile *aHdr;     /* Header in shared memory */
@@ -2769,13 +2768,19 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.
   **
+  ** tag-20200519-1:
   ** There are two copies of the header at the beginning of the wal-index.
   ** When reading, read [0] first then [1].  Writes are in the reverse order.
   ** Memory barriers are used to prevent the compiler or the hardware from
-  ** reordering the reads and writes.
+  ** reordering the reads and writes.  TSAN and similar tools can sometimes
+  ** give false-positive warnings about these accesses because the tools do not
+  ** account for the double-read and the memory barrier. The use of mutexes
+  ** here would be problematic as the memory being accessed is potentially
+  ** shared among multiple processes and not all mutex implementions work
+  ** reliably in that environment.
   */
   aHdr = walIndexHdr(pWal);
-  memcpy(&h1, (void *)&aHdr[0], sizeof(h1));
+  memcpy(&h1, (void *)&aHdr[0], sizeof(h1)); /* Possible TSAN false-positive */
   walShmBarrier(pWal);
   memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
 
