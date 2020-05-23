@@ -1,5 +1,5 @@
-C Version\s3.32.0
-D 2020-05-22T17:46:16.912
+C Improved\sbytecode\scomment.
+D 2020-05-23T17:56:49.281
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 8e4211d04eb460c0694d486c6ba1c068d468c6f653c3f237869a802ad82854de
+F src/insert.c 92b07a7f7e682114948ce59fd6511ffec7672b508cc343a804ef6afee21b6c11
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 421310045bd78afefb772294a99e50f37d87ae578786a6169074e6291e30d969
 F src/main.c 97d962ab1f830540043042e41085c5b85636a60e6ed95002c1a56b64f7eb6a0b
@@ -1866,10 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce36b6d1331edba5a921fef32553e2470a79bdb1f62d2cfd81190691c83d5b06
-R b5a877f3e2a7ab538bc565ffd2aae787
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.32.0 *
+P 5998789c9c744bce92e4cff7636bba800a75574243d6977e1fc8281e360f8d5a
+R 46f8cad64628f73fad5fb35bbcf77d33
 U drh
-Z 4af13806b6e302c99aeddae94a54c013
+Z 4863066a6f020b85f58b052a58cecb44
