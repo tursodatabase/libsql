@@ -1,5 +1,5 @@
-C Improved\sbytecode\scomment.
-D 2020-05-23T17:56:49.281
+C Limit\sthe\s"precision"\sof\sfloating-point\sto\stext\sconversions\sin\sthe\sprintf()\nfunction\sto\s100,000,000.\s\sFix\sfor\sticket\s[23439ea582241138].
+D 2020-05-23T19:58:07.338
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -529,7 +529,7 @@ F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
 F src/pragma.c 1b0db48177e52b256c003b8dc6ac708b1079a82cded944a23820574586a4731f
 F src/pragma.h 8168e588536bffd95319451f34e9a754dc37d205ebe433031a7813c5b286beae
 F src/prepare.c 8d4d6c8aa6afefc48027c54b41cdf134b4d6bc2fc4badbe483ad7fd9e1728a28
-F src/printf.c ebf563cff3122f6a61149964b738b470196d3619df31d6a720d0ff72fcfd7c7b
+F src/printf.c c558075d06f0c83b0471499cebd30ef979e600709cde1e2b744abadcf52c7ba2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -1246,7 +1246,7 @@ F test/pragma4.test 10c624e45a83c0096a82a7579a5ff658542391d3b77355192da6572c8c17
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
-F test/printf.test 0300699733e53101b2ce48800518427249edd4053bb50fa0621c6607482f0fdb
+F test/printf.test 1e0e469f5f8a09afa8a182f34647e3d9b8c01978cbbe2313a194ccc3a8471506
 F test/printf2.test 30b5dd0b4b992dc5626496846ecce17ff592cacbcb11c3e589f3ac4d7e129dae
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5998789c9c744bce92e4cff7636bba800a75574243d6977e1fc8281e360f8d5a
-R 46f8cad64628f73fad5fb35bbcf77d33
+P 9224f1543b51a674ad6d7db8e90d97e1b0d1abe68bed3417820ebd09d27270f9
+R 6f18c0d227a8684c188f3f9391d707f5
 U drh
-Z 4863066a6f020b85f58b052a58cecb44
+Z 72d530f720119a1c4278481f4c5a947d
