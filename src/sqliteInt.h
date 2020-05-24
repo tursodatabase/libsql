@@ -3725,6 +3725,9 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 int sqlite3ExprWalkNoop(Walker*, Expr*);
 int sqlite3SelectWalkNoop(Walker*, Select*);
 int sqlite3SelectWalkFail(Walker*, Select*);
+int sqlite3WalkerDepthIncrease(Walker*,Select*);
+void sqlite3WalkerDepthDecrease(Walker*,Select*);
+
 #ifdef SQLITE_DEBUG
 void sqlite3SelectWalkAssert2(Walker*, Select*);
 #endif

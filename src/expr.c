@@ -5867,15 +5867,6 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   }
   return WRC_Continue;
 }
-static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pSelect);
-  pWalker->walkerDepth++;
-  return WRC_Continue;
-}
-static void analyzeAggregatesInSelectEnd(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pSelect);
-  pWalker->walkerDepth--;
-}
 
 /*
 ** Analyze the pExpr expression looking for aggregate functions and
@@ -5889,8 +5880,8 @@ static void analyzeAggregatesInSelectEnd(Walker *pWalker, Select *pSelect){
 void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   Walker w;
   w.xExprCallback = analyzeAggregate;
-  w.xSelectCallback = analyzeAggregatesInSelect;
-  w.xSelectCallback2 = analyzeAggregatesInSelectEnd;
+  w.xSelectCallback = sqlite3WalkerDepthIncrease;
+  w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
   w.walkerDepth = 0;
   w.u.pNC = pNC;
   w.pParse = 0;
