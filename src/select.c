@@ -6422,7 +6422,7 @@ int sqlite3Select(
 #if SELECTTRACE_ENABLED
     if( sqlite3SelectTrace & 0x400 ){
       int ii;
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis:\n"));
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", &sAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       for(ii=0; ii<sAggInfo.nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",

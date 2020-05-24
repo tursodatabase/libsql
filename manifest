@@ -1,5 +1,5 @@
-C Minor\sfix\sto\sa\scomment.\s\sNo\scode\schanges.
-D 2020-05-24T00:30:38.726
+C Improvements\sto\sparse-tree\stracing\slogic.\s\sNo\schanges\sin\sdeliverable\scode.
+D 2020-05-24T02:05:04.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -533,7 +533,7 @@ F src/printf.c c558075d06f0c83b0471499cebd30ef979e600709cde1e2b744abadcf52c7ba2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d36a2b1639e1c33d7b508abfd3452a63e7fd81737f6f3940bfef085fca6f21f4
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c ee4b02ad8047c35891b7a612091beec21ae7a0155290dcbefb0824aed20c46f3
+F src/select.c 7fe2902639a13d54f1a9ba140326804dca493c1c0c299005c2b48408fdcf0763
 F src/shell.c.in cf2d24f54412c06e5fb34af7fabc748651125e1dceac29b740e91f06d23447b6
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -598,7 +598,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c eee7bae3ec0bc4abee951554bf46a8ba567c0f7752ac90c820ed8afff4c612dc
-F src/treeview.c 82c6391a3ba76215d4185fd4719a56ec4caf186a40c8a7b6e6ba4ae4467c2742
+F src/treeview.c 9df54af6e5830fd527496e62ae0148e1ba33197205d8e232c2826537d42d4063
 F src/trigger.c 4ada1037cc99777f647a882cdacbd1a4deb6567b69daf02946286401b88cdc04
 F src/update.c 3199098455830fc2d8c8fc4ae3ec2ea513eef64339ae9a7048db62b21169bc7a
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d08d3405878d394e08e5d3af281246edfbd81ca74cc8d16458808591512fb93d
-R 6de336218c279399d0b1ec9bc6cc973c
+P efdbb2b499bda8ffcfe54f5d6ece08a2c58fe7a490d9550785d806bd404abb8c
+R 6dd20f3d976336460f5c02d76543f7db
 U drh
-Z 8cca70ea822ec140677c69f2076a66bc
+Z bccbcc790188c841772c26b7434cfbf8
