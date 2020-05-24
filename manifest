@@ -1,5 +1,5 @@
-C Limit\sthe\s"precision"\sof\sfloating-point\sto\stext\sconversions\sin\sthe\sprintf()\nfunction\sto\s100,000,000.\s\sFix\sfor\sticket\s[23439ea582241138].
-D 2020-05-23T19:58:07.338
+C Minor\sfix\sto\sa\scomment.\s\sNo\scode\schanges.
+D 2020-05-24T00:30:38.726
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/shell.c.in cf2d24f54412c06e5fb34af7fabc748651125e1dceac29b740e91f06d23447b
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
-F src/sqliteInt.h 8878a88c18a013d1843638001d7fc56a8f99740f151fc7597b1641b61accf58c
+F src/sqliteInt.h 9b05097d99ecbda6d5d5f6cad1a40a5113ef3534f0b4b78047ede65416f7c5b4
 F src/sqliteLimit.h 95cb8479ca459496d9c1c6a9f76b38aee12203a56ce1092fe13e50ae2454c032
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9224f1543b51a674ad6d7db8e90d97e1b0d1abe68bed3417820ebd09d27270f9
-R 6f18c0d227a8684c188f3f9391d707f5
+P d08d3405878d394e08e5d3af281246edfbd81ca74cc8d16458808591512fb93d
+R 6de336218c279399d0b1ec9bc6cc973c
 U drh
-Z 72d530f720119a1c4278481f4c5a947d
+Z 8cca70ea822ec140677c69f2076a66bc
