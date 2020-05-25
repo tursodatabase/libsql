@@ -37,6 +37,15 @@ impl<'stmt> Rows<'stmt> {
 
     /// Map over this `Rows`, converting it to a [`Map`], which
     /// implements `FallibleIterator`.
+    /// ```rust,no_run
+    /// use fallible_iterator::FallibleIterator;
+    /// # use rusqlite::{Result, Statement, NO_PARAMS};
+    /// fn query(stmt: &mut Statement) -> Result<Vec<i64>> {
+    ///     let rows = stmt.query(NO_PARAMS)?;
+    ///     rows.map(|r| r.get(0)).collect()
+    /// }
+    /// ```
+    // FIXME Hide FallibleStreamingIterator::map
     pub fn map<F, B>(self, f: F) -> Map<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<B>,
@@ -168,6 +177,24 @@ where
     }
 }
 
+/// `FallibleStreamingIterator` differs from the standard library's `Iterator`
+/// in two ways:
+/// * each call to `next` (sqlite3_step) can fail.
+/// * returned `Row` is valid until `next` is called again or `Statement` is
+///   reset or finalized.
+///
+/// While these iterators cannot be used with Rust `for` loops, `while let`
+/// loops offer a similar level of ergonomics:
+/// ```rust,no_run
+/// # use rusqlite::{Result, Statement, NO_PARAMS};
+/// fn query(stmt: &mut Statement) -> Result<()> {
+///     let mut rows = stmt.query(NO_PARAMS)?;
+///     while let Some(row) = rows.next()? {
+///         // scan columns value
+///     }
+///     Ok(())
+/// }
+/// ```
 impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
     type Error = Error;
     type Item = Row<'stmt>;
