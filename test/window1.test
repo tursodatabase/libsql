@@ -1727,5 +1727,21 @@ do_execsql_test 52.4 {
   4 938 938 4
 }
 
+# 2020-05-23
+# ticket 7a5279a25c57adf1
+#
+reset_db
+do_execsql_test 53.0 {
+  CREATE TABLE a(c UNIQUE);
+  INSERT INTO a VALUES(4),(0),(9),(-9);
+  SELECT a.c
+    FROM a
+    JOIN a AS b ON a.c=4
+    JOIN a AS e ON a.c=e.c
+   WHERE a.c=(SELECT (SELECT coalesce(lead(2) OVER(),0) + sum(d.c))
+                FROM a AS d
+               WHERE a.c);
+} {4 4 4 4}
+
 
 finish_test
