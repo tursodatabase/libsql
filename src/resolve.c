@@ -24,6 +24,8 @@
 **
 ** incrAggFunctionDepth(pExpr,n) is the main routine.  incrAggDepth(..)
 ** is a helper function - a callback for the tree walker.
+**
+** See also the sqlite3WindowExtraAggFuncDepth() routine in window.c
 */
 static int incrAggDepth(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.n;

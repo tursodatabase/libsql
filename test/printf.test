@@ -3777,4 +3777,11 @@ foreach ::iRepeat {0 1} {
   }
 }
 
+# 2020-05-23
+# ticket 23439ea582241138
+#
+do_execsql_test printf-16.1 {
+  SELECT printf('%.*g',2147483647,0.01);
+} {0.01}
+
 finish_test

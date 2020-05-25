@@ -917,6 +917,23 @@ static ExprList *exprListAppendList(
 }
 
 /*
+** When rewriting a query, if the new subquery in the FROM clause
+** contains TK_AGG_FUNCTION nodes that refer to an outer query,
+** then we have to increase the Expr->op2 values of those nodes
+** due to the extra subquery layer that was added.
+**
+** See also the incrAggDepth() routine in resolve.c
+*/
+static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION
+   && pExpr->op2>=pWalker->walkerDepth
+  ){
+    pExpr->op2++;
+  }
+  return WRC_Continue;
+}
+
+/*
 ** If the SELECT statement passed as the second argument does not invoke
 ** any SQL window functions, this function is a no-op. Otherwise, it 
 ** rewrites the SELECT statement so that window function xStep functions
@@ -1025,6 +1042,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       Table *pTab2;
+      Walker w;
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded;
@@ -1040,6 +1058,11 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
         pTab->tabFlags |= TF_Ephemeral;
         p->pSrc->a[0].pTab = pTab;
         pTab = pTab2;
+        memset(&w, 0, sizeof(w));
+        w.xExprCallback = sqlite3WindowExtraAggFuncDepth;
+        w.xSelectCallback = sqlite3WalkerDepthIncrease;
+        w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
+        sqlite3WalkSelect(&w, pSub);
       }
     }else{
       sqlite3SelectDelete(db, pSub);

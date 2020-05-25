@@ -3811,7 +3811,10 @@ expr_code_doover:
   switch( op ){
     case TK_AGG_COLUMN: {
       AggInfo *pAggInfo = pExpr->pAggInfo;
-      struct AggInfo_col *pCol = &pAggInfo->aCol[pExpr->iAgg];
+      struct AggInfo_col *pCol;
+      assert( pAggInfo!=0 );
+      assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
+      pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
         assert( pCol->iMem>0 );
         return pCol->iMem;
@@ -4111,7 +4114,10 @@ expr_code_doover:
     }
     case TK_AGG_FUNCTION: {
       AggInfo *pInfo = pExpr->pAggInfo;
-      if( pInfo==0 ){
+      if( pInfo==0
+       || NEVER(pExpr->iAgg<0)
+       || NEVER(pExpr->iAgg>=pInfo->nFunc)
+      ){
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %s()", pExpr->u.zToken);
       }else{
@@ -5867,15 +5873,6 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   }
   return WRC_Continue;
 }
-static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pSelect);
-  pWalker->walkerDepth++;
-  return WRC_Continue;
-}
-static void analyzeAggregatesInSelectEnd(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pSelect);
-  pWalker->walkerDepth--;
-}
 
 /*
 ** Analyze the pExpr expression looking for aggregate functions and
@@ -5889,8 +5886,8 @@ static void analyzeAggregatesInSelectEnd(Walker *pWalker, Select *pSelect){
 void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   Walker w;
   w.xExprCallback = analyzeAggregate;
-  w.xSelectCallback = analyzeAggregatesInSelect;
-  w.xSelectCallback2 = analyzeAggregatesInSelectEnd;
+  w.xSelectCallback = sqlite3WalkerDepthIncrease;
+  w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
   w.walkerDepth = 0;
   w.u.pNC = pNC;
   w.pParse = 0;
