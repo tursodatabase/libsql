@@ -811,7 +811,7 @@ int sqlite3_vfsstat_init(
   if( rc==SQLITE_OK ){
     rc = vstatRegister(db, pzErrMsg, pApi);
     if( rc==SQLITE_OK ){
-      rc = sqlite3_auto_extension(vstatRegister);
+      rc = sqlite3_auto_extension((void(*)(void))vstatRegister);
     }
   }
   if( rc==SQLITE_OK ) rc = SQLITE_OK_LOAD_PERMANENTLY;
