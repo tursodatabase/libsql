@@ -1,5 +1,5 @@
-C Make\ssure\svariable\sdeclarations\sare\sat\sstart\sof\sscope\seven\swhen\nSQLITE_ENABLE_SNAPSHOT\sis\sused.
-D 2020-05-25T12:02:12.498
+C Fix\sminor\scompile\sissues\swith\soptional\sextensions.
+D 2020-05-25T12:49:58.975
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -317,7 +317,7 @@ F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5
 F ext/misc/shathree.c 135b7c145db4a09b1650c3e7aff9cb538763a9a361e834c015dd1aaf8d5c9a00
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
-F ext/misc/sqlar.c c9e5d58544e1506135806a1e0f525f92d4bb6bb125348dce469d778fb334fbce
+F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
 F ext/misc/stmt.c 35063044a388ead95557e4b84b89c1b93accc2f1c6ddea3f9710e8486a7af94a
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
@@ -326,7 +326,7 @@ F ext/misc/unionvtab.c 36237f0607ca954ac13a4a0e2d2ac40c33bc6e032a5f55f431713061e
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3b25c2f56ba60788db247287be6ab024b53c4afffd412b4876db563389be0d35
-F ext/misc/vfsstat.c 77b5b4235c9f7f11eddf82487c0a422944ac2f132dafd5af3be7a68a057b1cdb
+F ext/misc/vfsstat.c 389ea13983d3af926504c314f06a83cc858d5adc24b40af74aaed1fece00c118
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 520f34c3099e5b7d546f13708607dc2fa173c46b68952eecf0d19cd675fec85e
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56e5063c326ffbfd3e3cb6f2b05718412aca2cb183274bfe11f5666effdd04b9
-R 01324a5a46d5370d11de237fae1d2b79
+P a77ceaf6ba934b1d73c90b8980191a65d02ad6ce1e11e6baf573b3a132685545
+R 4196412a957656021e354dac48b171f2
 U drh
-Z 4612882d193bb7431c4c9f4670ae6370
+Z 047ce2029fbbe737be54b5d1a4d5fdc1
