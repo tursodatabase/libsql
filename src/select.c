@@ -5229,29 +5229,6 @@ static int selectExpander(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
-/*
-** No-op routine for the parse-tree walker.
-**
-** When this routine is the Walker.xExprCallback then expression trees
-** are walked without any actions being taken at each node.  Presumably,
-** when this routine is used for Walker.xExprCallback then 
-** Walker.xSelectCallback is set to do something useful for every 
-** subquery in the parser tree.
-*/
-int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  return WRC_Continue;
-}
-
-/*
-** No-op routine for the parse-tree walker for SELECT statements.
-** subquery in the parser tree.
-*/
-int sqlite3SelectWalkNoop(Walker *NotUsed, Select *NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  return WRC_Continue;
-}
-
 #if SQLITE_DEBUG
 /*
 ** Always assert.  This xSelectCallback2 implementation proves that the
@@ -6422,7 +6399,7 @@ int sqlite3Select(
 #if SELECTTRACE_ENABLED
     if( sqlite3SelectTrace & 0x400 ){
       int ii;
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis:\n"));
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", &sAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       for(ii=0; ii<sAggInfo.nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",

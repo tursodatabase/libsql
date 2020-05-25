@@ -1944,7 +1944,7 @@ void sqlite3GenerateConstraintChecks(
       sqlite3TableAffinity(v, pTab, regNewData+1);
       bAffinityDone = 1;
     }
-    VdbeNoopComment((v, "uniqueness check for %s", pIdx->zName));
+    VdbeNoopComment((v, "prep index %s", pIdx->zName));
     iThisCur = iIdxCur+ix;
 
 

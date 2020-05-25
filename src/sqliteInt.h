@@ -2486,7 +2486,7 @@ struct Token {
 ** code for a SELECT that contains aggregate functions.
 **
 ** If Expr.op==TK_AGG_COLUMN or TK_AGG_FUNCTION then Expr.pAggInfo is a
-** pointer to this structure.  The Expr.iColumn field is the index in
+** pointer to this structure.  The Expr.iAgg field is the index in
 ** AggInfo.aCol[] or AggInfo.aFunc[] of information needed to generate
 ** code for that node.
 **
@@ -3725,6 +3725,9 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 int sqlite3ExprWalkNoop(Walker*, Expr*);
 int sqlite3SelectWalkNoop(Walker*, Select*);
 int sqlite3SelectWalkFail(Walker*, Select*);
+int sqlite3WalkerDepthIncrease(Walker*,Select*);
+void sqlite3WalkerDepthDecrease(Walker*,Select*);
+
 #ifdef SQLITE_DEBUG
 void sqlite3SelectWalkAssert2(Walker*, Select*);
 #endif
