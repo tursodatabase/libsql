@@ -2846,12 +2846,14 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  int bChanged = 0;
+  WalIndexHdr *pSnapshot = pWal->pSnapshot;
+#endif
 
   assert( pWal->ckptLock==0 );
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
-  int bChanged = 0;
-  WalIndexHdr *pSnapshot = pWal->pSnapshot;
   if( pSnapshot ){
     if( memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
       bChanged = 1;
