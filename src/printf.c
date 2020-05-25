@@ -401,6 +401,8 @@ void sqlite3_str_vappendf(
     **   xtype                       The class of the conversion.
     **   infop                       Pointer to the appropriate info struct.
     */
+    assert( width>=0 );
+    assert( precision>=(-1) );
     switch( xtype ){
       case etPOINTER:
         flag_long = sizeof(char*)==sizeof(i64) ? 2 :
@@ -809,7 +811,7 @@ void sqlite3_str_vappendf(
         }
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
-        /* For %q, %Q, and %w, the precision is the number of byte (or
+        /* For %q, %Q, and %w, the precision is the number of bytes (or
         ** characters if the ! flags is present) to use from the input.
         ** Because of the extra quoting characters inserted, the number
         ** of output characters may be larger than the precision.
