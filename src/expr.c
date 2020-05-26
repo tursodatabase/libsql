@@ -2563,6 +2563,7 @@ int sqlite3FindInIndex(
 
     /* Code an OP_Transaction and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    assert( iDb>=0 && iDb<SQLITE_MAX_ATTACHED );
     sqlite3CodeVerifySchema(pParse, iDb);
     sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
