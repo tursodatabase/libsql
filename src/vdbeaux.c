@@ -3302,7 +3302,11 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   if( p->pc>=0 ){
     vdbeInvokeSqllog(p);
-    sqlite3VdbeTransferError(p);
+    if( db->pErr || p->zErrMsg ){
+      sqlite3VdbeTransferError(p);
+    }else{
+      db->errCode = p->rc;
+    }
     if( p->runOnlyOnce ) p->expired = 1;
   }else if( p->rc && p->expired ){
     /* The expired flag was set on the VDBE before the first call
@@ -3322,8 +3326,10 @@ int sqlite3VdbeReset(Vdbe *p){
     for(i=0; i<p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
   }
 #endif
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = 0;
+  if( p->zErrMsg ){
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = 0;
+  }
   p->pResultSet = 0;
 #ifdef SQLITE_DEBUG
   p->nWrite = 0;
