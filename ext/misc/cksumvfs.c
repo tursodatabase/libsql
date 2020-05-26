@@ -743,7 +743,7 @@ static int cksmRegisterFunc(
 static int cksmRegisterVfs(void){
   int rc = SQLITE_OK;
   sqlite3_vfs *pOrig;
-  if( sqlite3_vfs_find("cksum")!=0 ) return SQLITE_OK;
+  if( sqlite3_vfs_find("cksmvfs")!=0 ) return SQLITE_OK;
   pOrig = sqlite3_vfs_find(0);
   cksm_vfs.iVersion = pOrig->iVersion;
   cksm_vfs.pAppData = pOrig;
