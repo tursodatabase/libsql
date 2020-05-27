@@ -2552,7 +2552,7 @@ int sqlite3FindInIndex(
   if( pParse->nErr==0 && (p = isCandidateForInOpt(pX))!=0 ){
     sqlite3 *db = pParse->db;              /* Database connection */
     Table *pTab;                           /* Table <table>. */
-    i16 iDb;                               /* Database idx for pTab */
+    int iDb;                               /* Database idx for pTab */
     ExprList *pEList = p->pEList;
     int nExpr = pEList->nExpr;
 
