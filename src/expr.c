@@ -3797,10 +3797,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   int p5 = 0;
 
   assert( target>0 && target<=pParse->nMem );
-  if( v==0 ){
-    assert( pParse->db->mallocFailed );
-    return 0;
-  }
+  assert( v!=0 );
 
 expr_code_doover:
   if( pExpr==0 ){
@@ -4630,9 +4627,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
 
   assert( pExpr==0 || !ExprHasVVAProperty(pExpr,EP_Immutable) );
   assert( target>0 && target<=pParse->nMem );
-  inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   assert( pParse->pVdbe!=0 || pParse->db->mallocFailed );
-  if( inReg!=target && pParse->pVdbe ){
+  if( pParse->pVdbe==0 ) return;
+  inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
+  if( inReg!=target ){
     u8 op;
     if( ExprHasProperty(pExpr,EP_Subquery) ){
       op = OP_Copy;
