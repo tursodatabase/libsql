@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sand\ssize\sreduction\sin\sthe\sexpression\ncode\sgenerator.
-D 2020-05-27T12:44:28.447
+C When\sthe\ssqlite_stat1\sdata\sis\smissing\sfor\ssome\sindexes\sof\sa\stable\sbut\sis\npresent\sfor\sthe\stable\sitself\sor\sfor\sother\sindexes\sin\sthe\ssame\stable,\sthen\sdo\nnot\slet\sthe\sestimated\snumber\sof\srows\sin\sthat\stable\sget\stoo\ssmall,\sas\ndoing\sso\scan\sdeceive\sthe\squery\splanner\sinto\signoring\sa\sperfectly\sgood\sindex.
+D 2020-05-28T00:45:16.053
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c f14e415fcfd0b52b4e4ebd193ba5fadac5e8252c30f023389af682813af44025
 F src/btree.h 989ef3c33413549e3e148f3dcb46c030f317dac130dc86809ba6b9aa4b16c72a
 F src/btreeInt.h 5c8b8749805787313ecf49eb5be3ced1e94bbf8ef54bb01470ce6bd0d5185c67
-F src/build.c ca9e7a33b74f1bf2eb3a5f37f9d07dfed335469f2d70c0bd350e0dd42a50183a
+F src/build.c 1c3dec6d36ddc697dbc1df04100687cdbbed65aacfda067d1e9632e4102e9999
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -782,7 +782,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test 13ef74a93223af25015d223add0df4c2d375f0b958b546a2a72033f2fdab7a70
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/cost.test 51f4fcaae6e78ad5a57096831259ed6c760e2ac6876836e91c00030fad385b34
+F test/cost.test 1d156ce9858780a966c062694687afe0343a0ed12d081d071fb57027e726bafc
 F test/count.test e0699a15712bc2a4679d60e408921c2cce7f6365a30340e790c98e0f334a9c77
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
 F test/coveridxscan.test 5ec98719a2e2914e8908dc75f7247d9b54a26df04625f846ac7900d5483f7296
@@ -1067,7 +1067,7 @@ F test/index3.test 51685f39345462b84fcf77eb8537af847fdf438cc96b05c45d6aaca4e473a
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test f172653b35b20233e59200e8b92a76db61bf7285437bf777b93b306ba26a47e7
-F test/index7.test 1d764c0cca45f5a76150b08e127ccc8d52492cfa788b5fafed4be784a351b020
+F test/index7.test b8a0ba2110fd517bb48c4e76d26d60f1ab2ed9e257b18d71f820d7e71e9f8570
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test a52c8c6abfae4fbfb51d99440de4ca1840dbacc606b05e29328a2a8ba7cd914e
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5b560ec49041d89c87ea3315d8fc17f7fb0e03a82091934be7373b290183f82e
-R 49a1e2497fcf7da09e39544b00e72660
+P eeb53e219551d8a05a87f1de9a7cd9af295d08a296f1f435a8509ea1252ccdcc
+R 3d5c5e3daaf0dbc29f6c7d64057e20af
 U drh
-Z 247f47fe4deb86e087e29547910405d2
+Z e68e2bba0e62e900331d67a29c0ab0bb

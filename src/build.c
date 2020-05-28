@@ -4047,9 +4047,10 @@ exit_create_index:
 ** are based on typical values found in actual indices.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
-  /*                10,  9,  8,  7,  6 */
-  LogEst aVal[] = { 33, 32, 30, 28, 26 };
+               /*                10,  9,  8,  7,  6 */
+  static const LogEst aVal[] = { 33, 32, 30, 28, 26 };
   LogEst *a = pIdx->aiRowLogEst;
+  LogEst x;
   int nCopy = MIN(ArraySize(aVal), pIdx->nKeyCol);
   int i;
 
@@ -4058,10 +4059,21 @@ void sqlite3DefaultRowEst(Index *pIdx){
 
   /* Set the first entry (number of rows in the index) to the estimated 
   ** number of rows in the table, or half the number of rows in the table
-  ** for a partial index.   But do not let the estimate drop below 10. */
-  a[0] = pIdx->pTable->nRowLogEst;
-  if( pIdx->pPartIdxWhere!=0 ) a[0] -= 10;  assert( 10==sqlite3LogEst(2) );
-  if( a[0]<33 ) a[0] = 33;                  assert( 33==sqlite3LogEst(10) );
+  ** for a partial index.
+  **
+  ** 2020-05-27:  If some of the stat data is coming from the sqlite_stat1
+  ** table but other parts we are having to guess at, then do not let the
+  ** estimated number of rows in the table be less than 1000 (LogEst 99).
+  ** Failure to do this can cause the indexes for which we do not have
+  ** stat1 data to be ignored by the query planner.  tag-20200527-1
+  */
+  x = pIdx->pTable->nRowLogEst;
+  assert( 99==sqlite3LogEst(1000) );
+  if( x<99 ){
+    pIdx->pTable->nRowLogEst = x = 99;
+  }
+  if( pIdx->pPartIdxWhere!=0 ) x -= 10;  assert( 10==sqlite3LogEst(2) );
+  a[0] = x;
 
   /* Estimate that a[1] is 10, a[2] is 9, a[3] is 8, a[4] is 7, a[5] is
   ** 6 and each subsequent value (if any) is 5.  */
