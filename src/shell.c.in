@@ -1035,18 +1035,6 @@ struct OpenSession {
 };
 #endif
 
-/*
-** Shell output mode information from before ".explain on",
-** saved so that it can be restored by ".explain off"
-*/
-typedef struct SavedModeInfo SavedModeInfo;
-struct SavedModeInfo {
-  int valid;          /* Is there legit data in here? */
-  int mode;           /* Mode prior to ".explain on" */
-  int showHeader;     /* The ".header" setting prior to ".explain on" */
-  int colWidth[100];  /* Column widths prior to ".explain on" */
-};
-
 typedef struct ExpertInfo ExpertInfo;
 struct ExpertInfo {
   sqlite3expert *pExpert;
@@ -1202,6 +1190,9 @@ struct ShellState {
 #define MODE_Ascii   10  /* Use ASCII unit and record separators (0x1F/0x1E) */
 #define MODE_Pretty  11  /* Pretty-print schemas */
 #define MODE_EQP     12  /* Converts EXPLAIN QUERY PLAN output into a graph */
+#define MODE_Json    13  /* Output JSON */
+#define MODE_Markdown 14 /* Markdown formatting */
+#define MODE_Table   15  /* MySQL-style table formatting */
 
 static const char *modeDescr[] = {
   "line",
@@ -1216,7 +1207,10 @@ static const char *modeDescr[] = {
   "explain",
   "ascii",
   "prettyprint",
-  "eqp"
+  "eqp",
+  "json",
+  "markdown",
+  "table"
 };
 
 /*
@@ -1894,6 +1888,43 @@ static int progress_handler(void *pClientData) {
 #endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
+** Print N dashes
+*/
+static void print_dashes(FILE *out, int N){
+  const char zDash[] = "--------------------------------------------------";
+  const int nDash = sizeof(zDash) - 1;
+  while( N>nDash ){
+    fputs(zDash, out);
+    N -= nDash;
+  }
+  raw_printf(out, "%.*s", N, zDash);
+}
+
+/*
+** Print a markdown or table-style row separator
+*/
+static void print_row_separator(
+  ShellState *p,
+  int nArg,
+  const char *zSep
+){
+  int i;
+  for(i=0; i<nArg; i++){
+    int w;
+    if( i<ArraySize(p->actualWidth) ){
+      w = p->actualWidth[i];
+      if( w<0 ) w = -w;
+    }else{
+       w = 10;
+    }
+    fputs(zSep, p->out);
+    print_dashes(p->out, w+2);
+  }
+  fputs(zSep, p->out);
+  fputs("\n", p->out);
+}
+
+/*
 ** This is the callback routine that the shell
 ** invokes for each row of a query result.
 */
@@ -1923,23 +1954,38 @@ static int shell_callback(
       }
       break;
     }
+    case MODE_Table:
+    case MODE_Markdown:
     case MODE_Explain:
     case MODE_Column: {
       static const int aExplainWidths[] = {4, 13, 4, 4, 4, 13, 2, 13};
       const int *colWidth;
       int showHdr;
       char *rowSep;
+      char *colSep;
+      char *rowStart;
       int nWidth;
       if( p->cMode==MODE_Column ){
         colWidth = p->colWidth;
         nWidth = ArraySize(p->colWidth);
         showHdr = p->showHeader;
         rowSep = p->rowSeparator;
-      }else{
+        colSep = "  ";
+        rowStart = "";
+      }else if( p->cMode==MODE_Explain ){
         colWidth = aExplainWidths;
         nWidth = ArraySize(aExplainWidths);
         showHdr = 1;
         rowSep = SEP_Row;
+        colSep = "  ";
+        rowStart = "";
+      }else{
+        colWidth = p->colWidth;
+        nWidth = ArraySize(p->colWidth);
+        showHdr = p->showHeader;
+        rowSep = " |\n";
+        colSep = " | ";
+        rowStart = "| ";
       }
       if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){
@@ -1958,12 +2004,12 @@ static int shell_callback(
           if( i<ArraySize(p->actualWidth) ){
             p->actualWidth[i] = w;
           }
-          if( showHdr ){
-            utf8_width_print(p->out, w, azCol[i]);
-            utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
-          }
         }
         if( showHdr ){
+          if( p->cMode==MODE_Table ){
+            print_row_separator(p, nArg, "+");
+          }
+          fputs(rowStart, p->out);
           for(i=0; i<nArg; i++){
             int w;
             if( i<ArraySize(p->actualWidth) ){
@@ -1972,14 +2018,34 @@ static int shell_callback(
             }else{
                w = 10;
             }
-            utf8_printf(p->out,"%-*.*s%s",w,w,
-                   "----------------------------------------------------------"
-                   "----------------------------------------------------------",
-                    i==nArg-1 ? rowSep : "  ");
+            utf8_width_print(p->out, w, azCol[i]);
+            fputs(i==nArg-1 ? rowSep : colSep, p->out);
+          }
+          for(i=0; i<nArg; i++){
+            int w;
+            if( i<ArraySize(p->actualWidth) ){
+               w = p->actualWidth[i];
+               if( w<0 ) w = -w;
+            }else{
+               w = 10;
+            }
+            if( p->cMode==MODE_Table || p->cMode==MODE_Markdown ){
+              char *zX = p->cMode==MODE_Markdown ? "|" : "+";
+              fputs(zX, p->out);
+              print_dashes(p->out, w+2);
+              if( i==nArg-1 ){
+                fputs(zX, p->out);
+                fputs("\n", p->out);
+              }
+            }else{
+              print_dashes(p->out, w);
+              fputs(i==nArg-1 ? rowSep : colSep, p->out);
+            }
           }
         }
       }
       if( azArg==0 ) break;
+      fputs(rowStart, p->out);
       for(i=0; i<nArg; i++){
         int w;
         if( i<ArraySize(p->actualWidth) ){
@@ -1997,7 +2063,7 @@ static int shell_callback(
           p->iIndent++;
         }
         utf8_width_print(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
-        utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
+        utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : colSep);
       }
       break;
     }
@@ -2199,6 +2265,50 @@ static int shell_callback(
         }
       }
       raw_printf(p->out,");\n");
+      break;
+    }
+    case MODE_Json: {
+      if( azArg==0 ) break;
+      if( p->cnt==0 ){
+        fputs("[{", p->out);
+      }else{
+        fputs(",\n{", p->out);
+      }
+      p->cnt++;
+      for(i=0; i<nArg; i++){
+        output_c_string(p->out, azCol[i]);
+        putc(':', p->out);
+        if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
+          fputs("null",p->out);
+        }else if( aiType && aiType[i]==SQLITE_FLOAT ){
+          char z[50];
+          double r = sqlite3_column_double(p->pStmt, i);
+          sqlite3_uint64 ur;
+          memcpy(&ur,&r,sizeof(r));
+          if( ur==0x7ff0000000000000LL ){
+            raw_printf(p->out, "1e999");
+          }else if( ur==0xfff0000000000000LL ){
+            raw_printf(p->out, "-1e999");
+          }else{
+            sqlite3_snprintf(50,z,"%!.20g", r);
+            raw_printf(p->out, "%s", z);
+          }
+        }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
+          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
+          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          putc('"', p->out);
+          output_hex_blob(p->out, pBlob, nBlob);
+          putc('"', p->out);
+        }else if( aiType && aiType[i]==SQLITE_TEXT ){
+          output_c_string(p->out, azArg[i]);
+        }else{
+          utf8_printf(p->out,"%s", azArg[i]);
+        }
+        if( i<nArg-1 ){
+          putc(',', p->out);
+        }
+      }
+      putc('}', p->out);
       break;
     }
     case MODE_Quote: {
@@ -2890,6 +3000,24 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   sqlite3_finalize(pQ);
 }
 
+#if 0
+/*
+** Run a prepared statement and output the result in one of the
+** table-oriented formats, either MODE_Markdown or MODE_Table.
+**
+** This is different from ordinary exec_prepared_stmt() in that
+** it has to run the entire query and gather the results into memory
+** first, in order to determine column widths, before providing
+** any output.
+*/
+static void exec_prepared_stmt_tablemode(
+  ShellState *pArg,                                /* Pointer to ShellState */
+  sqlite3_stmt *pStmt                              /* Statment to run */
+){
+
+}
+#endif
+
 /*
 ** Run a prepared statement
 */
@@ -2946,6 +3074,11 @@ static void exec_prepared_stmt(
         }
       } while( SQLITE_ROW == rc );
       sqlite3_free(pData);
+      if( pArg->cMode==MODE_Table ){
+        print_row_separator(pArg, nCol, "+");
+      }else if( pArg->cMode==MODE_Json ){
+        fputs("]\n", pArg->out);
+      }
     }
   }
 }
@@ -8224,11 +8357,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
+    }else if( c2=='m' && strncmp(azArg[1],"markdown",n2)==0 ){
+      p->mode = MODE_Markdown;
+    }else if( c2=='t' && strncmp(azArg[1],"table",n2)==0 ){
+      p->mode = MODE_Table;
+    }else if( c2=='j' && strncmp(azArg[1],"json",n2)==0 ){
+      p->mode = MODE_Json;
     }else if( nArg==1 ){
       raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
     }else{
       raw_printf(stderr, "Error: mode should be one of: "
-         "ascii column csv html insert line list quote tabs tcl\n");
+         "ascii column csv html insert json line list markdown "
+         "quote table tabs tcl\n");
       rc = 1;
     }
     p->cMode = p->mode;
@@ -10238,9 +10378,11 @@ static const char zOptions[] =
   "   -help                show this message\n"
   "   -html                set output mode to HTML\n"
   "   -interactive         force interactive I/O\n"
+  "   -json                set output mode to 'json'\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
   "   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory\n"
+  "   -markdown            set output mode to 'markdown'\n"
 #if defined(SQLITE_ENABLE_DESERIALIZE)
   "   -maxsize N           maximum size for a --deserialize database\n"
 #endif
@@ -10260,6 +10402,7 @@ static const char zOptions[] =
   "   -sorterref SIZE      sorter references threshold size\n"
 #endif
   "   -stats               print memory stats before each finalize\n"
+  "   -table               set output mode to 'table'\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
 #ifdef SQLITE_ENABLE_VFSTRACE
@@ -10661,6 +10804,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_Line;
     }else if( strcmp(z,"-column")==0 ){
       data.mode = MODE_Column;
+    }else if( strcmp(z,"-json")==0 ){
+      data.mode = MODE_Json;
+    }else if( strcmp(z,"-markdown")==0 ){
+      data.mode = MODE_Markdown;
+    }else if( strcmp(z,"-table")==0 ){
+      data.mode = MODE_Table;
     }else if( strcmp(z,"-csv")==0 ){
       data.mode = MODE_Csv;
       memcpy(data.colSeparator,",",2);
