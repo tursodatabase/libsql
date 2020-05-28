@@ -2205,14 +2205,14 @@ static int shell_callback(
       if( azArg==0 ) break;
       if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          if( i>0 ) raw_printf(p->out, ",");
+          if( i>0 ) fputs(p->colSeparator, p->out);
           output_quoted_string(p->out, azCol[i]);
         }
-        raw_printf(p->out,"\n");
+        fputs(p->rowSeparator, p->out);
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
-        if( i>0 ) raw_printf(p->out, ",");
+        if( i>0 ) fputs(p->colSeparator, p->out);
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           utf8_printf(p->out,"NULL");
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
@@ -2234,7 +2234,7 @@ static int shell_callback(
           output_quoted_string(p->out, azArg[i]);
         }
       }
-      raw_printf(p->out,"\n");
+      fputs(p->rowSeparator, p->out);
       break;
     }
     case MODE_Ascii: {
@@ -8218,6 +8218,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       set_table_name(p, nArg>=3 ? azArg[2] : "table");
     }else if( c2=='q' && strncmp(azArg[1],"quote",n2)==0 ){
       p->mode = MODE_Quote;
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='a' && strncmp(azArg[1],"ascii",n2)==0 ){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);

@@ -1,5 +1,5 @@
-C When\sthe\ssqlite_stat1\sdata\sis\smissing\sfor\ssome\sindexes\sof\sa\stable\sbut\sis\npresent\sfor\sthe\stable\sitself\sor\sfor\sother\sindexes\sin\sthe\ssame\stable,\sthen\sdo\nnot\slet\sthe\sestimated\snumber\sof\srows\sin\sthat\stable\sget\stoo\ssmall,\sas\ndoing\sso\scan\sdeceive\sthe\squery\splanner\sinto\signoring\sa\sperfectly\sgood\sindex.
-D 2020-05-28T00:45:16.053
+C Enhance\sthe\s".quote"\smode\sin\sthe\sshell\sso\sthat\sit\shonors\s.separator.
+D 2020-05-28T20:37:17.793
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 39a00a8bc89596dfb37c16afcbb1d33de5085b9963564b58aafe1566d08c0881
-F src/shell.c.in cf2d24f54412c06e5fb34af7fabc748651125e1dceac29b740e91f06d23447b6
+F src/shell.c.in 2bca5f1474b43e7c0c1bcd0537b854c2e8a0fac0de2bde473b8c1e919554dcc6
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eeb53e219551d8a05a87f1de9a7cd9af295d08a296f1f435a8509ea1252ccdcc
-R 3d5c5e3daaf0dbc29f6c7d64057e20af
+P 98d4262018a81a9a36dd8beb4b02ff0e75cdcbb8a121d143157ffb37b228d60d
+R 6e7a8027469df73da3225b0c75827874
 U drh
-Z e68e2bba0e62e900331d67a29c0ab0bb
+Z 824af62dceaa57c3d7f60896a599839b
