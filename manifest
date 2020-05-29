@@ -1,9 +1,9 @@
-C Improvements\sto\shelp\stext\sfor\sthe\sCLI.
-D 2020-05-29T19:17:20.081
+C Fix\sthe\s".import"\scommand\sof\sthe\sCLI\sto\sclean\sup\sbetter\safter\serrors.\nAdd\sthe\snew\s"shelltest"\smakefile\starget\son\sunix\splatforms.
+D 2020-05-29T19:39:35.710
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 376f53999defeb32b7ad2626fd58aae8f3694c38ab7ee30c2289e0d0525a9238
+F Makefile.in 8d79d12bae1b624d32cf9a698ecc797bfa908ab7eabac5d76faf130c4d362223
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 8d00aeba2609bb498dded5eead2890126321f02e292573bf29bf2d18487d37bd
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
@@ -455,7 +455,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk addd0a300e90ad090dc4a934df8a6f1b6c52c057a1aebb93682aed29fb68a345
+F main.mk 980ad4201300ca43e9db0f972c5f38776d1e78022252bf3a8c0fec7ddda540df
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -534,7 +534,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 39a00a8bc89596dfb37c16afcbb1d33de5085b9963564b58aafe1566d08c0881
-F src/shell.c.in ca45965c1eca515e4cdd78a495bbebe86b52826cce0fcbf007766dfbd29fa5a5
+F src/shell.c.in 5074277ad9469c281bc9dce86fd15aeffffffc2735ae2f912561dfcc5101d267
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1237,7 +1237,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test c83339862d72b6272f957905205f874e6eefdbad2823380452c4f0128fd3d906
+F test/permutations.test 94bfbc9d32449fb3ef7d31962f8cdcd57dc59490681db84bd72236d4af7b5815
 F test/pg_common.tcl 222a1bad1c41c308fa366313cd7b51b3be7e9b21c8736a421b974ac941693b54
 F test/pragma.test 59becdfd720b80d463ab750f69f7118fde10dfd556aa5d554f3bf6b7e5ea7533
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71bfbbcc1a8d0e02073a381a5b31a5ccd5477011b22904b9989b6129d81f02e7
-R bb1b7b61958145efdf723dd1c95331fe
+P 6a01e4c444b072e31a320121a6810d7c986c2c54ce45f9b11683233b1e7af8da
+R d5d44835676f1e6d2a436c688d30cb21
 U drh
-Z 88ceb48d848b297c551cf9009c2925f8
+Z e85f70a84a25681410e513d2a789e322

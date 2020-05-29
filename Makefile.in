@@ -1286,6 +1286,9 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
+shelltest: $(TESTPROGS)
+	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
+
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 

@@ -975,6 +975,9 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(EXE)
 	./testfixture$(EXE) $(TOP)/test/main.test $(TESTOPTS)
 
+shelltest: $(TESTPROGS)
+	./testfixture$(EXT) $(TOP)/test/permutations.test shell
+
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
