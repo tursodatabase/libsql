@@ -1104,8 +1104,9 @@ struct ShellState {
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
   char colSepPrior[20];  /* Saved column separator */
   char rowSepPrior[20];  /* Saved row separator */
-  int colWidth[100];     /* Requested width of each column when in column mode*/
-  int actualWidth[100];  /* Actual width of each column */
+  int *colWidth;         /* Requested width of each column in columnar modes */
+  int *actualWidth;      /* Actual width of each column */
+  int nWidth;            /* Number of slots in colWidth[] and actualWidth[] */
   char nullValue[20];    /* The text to print when a NULL comes back from
                          ** the database */
   char outfile[FILENAME_MAX]; /* Filename for *out */
@@ -2027,7 +2028,7 @@ static int shell_callback(
           nWidth = ArraySize(aExplainWidths);
         }else{
           colWidth = p->colWidth;
-          nWidth = ArraySize(p->colWidth);
+          nWidth = p->nWidth;
         }
         for(i=0; i<nArg; i++){
           int w, n;
@@ -9510,7 +9511,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "\n");
     utf8_printf(p->out, "%12.12s: %s\n","stats", azBool[p->statsOn!=0]);
     utf8_printf(p->out, "%12.12s: ", "width");
-    for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
+    for (i=0;i<p->nWidth;i++) {
       raw_printf(p->out, "%d ", p->colWidth[i]);
     }
     raw_printf(p->out, "\n");
@@ -10059,7 +10060,11 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
     int j;
     assert( nArg<=ArraySize(azArg) );
-    for(j=1; j<nArg && j<ArraySize(p->colWidth); j++){
+    p->nWidth = nArg-1;
+    p->colWidth = realloc(p->colWidth, p->nWidth*sizeof(int)*2);
+    if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
+    if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
+    for(j=1; j<nArg; j++){
       p->colWidth[j-1] = (int)integerValue(azArg[j]);
     }
   }else
@@ -11068,6 +11073,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   for(i=0; i<argcToFree; i++) free(argvToFree[i]);
   free(argvToFree);
 #endif
+  free(data.colWidth);
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));
