@@ -1,5 +1,5 @@
-C Progress\stoward\sadding\snew\soutput\smodes\sto\sthe\sCLI:\s\sjson,\stable,\sand\nmarkdown.
-D 2020-05-28T23:49:50.023
+C In\sthe\sjson\soutput\smode\sof\sthe\sCLI,\sdo\scorrect\squoting\sof\sescape\scharacters.\nAlso,\sshow\sBLOBs\sas\sJSON\sstrings,\spossibly\swith\sembedded\s\\u0000\sbytes.
+D 2020-05-29T00:21:43.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 39a00a8bc89596dfb37c16afcbb1d33de5085b9963564b58aafe1566d08c0881
-F src/shell.c.in d135e500f2c84808f86e8113fd22852af4c89f69305f122d3c529cd698ccb396
+F src/shell.c.in f545fcc628411490e986e9f4fb9418f1eb25c85fd349924e852f7aac5da4fd0b
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5e33ed537e7d7dcabc9f6dc91d6838e0d1657f323440e09e2e24ffa2ba6141a
-R 65dafea1aa0e6dfee5aa69ebe4f5d82f
+P 14f55fafec11491e87e6526c72cf85c689d74ba18418a1ae9646586ec206767a
+R 8c9c292833e7d437405039fbac69b62c
 U drh
-Z 8f810f781bfa2ede3701aac97fce45df
+Z 9c1cf56bec8bac52da07f5875b8a7be2

@@ -1579,6 +1579,40 @@ static void output_c_string(FILE *out, const char *z){
 }
 
 /*
+** Output the given string as a quoted according to JSON quoting rules.
+*/
+static void output_json_string(FILE *out, const char *z, int n){
+  unsigned int c;
+  if( n<0 ) n = (int)strlen(z);
+  fputc('"', out);
+  while( n-- ){
+    c = *(z++);
+    if( c=='\\' || c=='"' ){
+      fputc('\\', out);
+      fputc(c, out);
+    }else if( c<=0x1f ){
+      fputc('\\', out);
+      if( c=='\b' ){
+        fputc('b', out);
+      }else if( c=='\f' ){
+        fputc('f', out);
+      }else if( c=='\n' ){
+        fputc('n', out);
+      }else if( c=='\r' ){
+        fputc('r', out);
+      }else if( c=='\t' ){
+        fputc('t', out);
+      }else{
+         raw_printf(out, "u%04x",c);
+      }
+    }else{
+      fputc(c, out);
+    }
+  }
+  fputc('"', out);
+}
+
+/*
 ** Output the given string with characters that are special to
 ** HTML escaped.
 */
@@ -2276,7 +2310,7 @@ static int shell_callback(
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
-        output_c_string(p->out, azCol[i]);
+        output_json_string(p->out, azCol[i], -1);
         putc(':', p->out);
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           fputs("null",p->out);
@@ -2296,11 +2330,9 @@ static int shell_callback(
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
           int nBlob = sqlite3_column_bytes(p->pStmt, i);
-          putc('"', p->out);
-          output_hex_blob(p->out, pBlob, nBlob);
-          putc('"', p->out);
+          output_json_string(p->out, pBlob, nBlob);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
-          output_c_string(p->out, azArg[i]);
+          output_json_string(p->out, azArg[i], -1);
         }else{
           utf8_printf(p->out,"%s", azArg[i]);
         }
