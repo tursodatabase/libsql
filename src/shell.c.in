@@ -1945,15 +1945,8 @@ static void print_row_separator(
 ){
   int i;
   for(i=0; i<nArg; i++){
-    int w;
-    if( i<ArraySize(p->actualWidth) ){
-      w = p->actualWidth[i];
-      if( w<0 ) w = -w;
-    }else{
-       w = 10;
-    }
     fputs(zSep, p->out);
-    print_dashes(p->out, w+2);
+    print_dashes(p->out, p->actualWidth[i]+2);
   }
   fputs(zSep, p->out);
   fputs("\n", p->out);
@@ -1989,125 +1982,32 @@ static int shell_callback(
       }
       break;
     }
-    case MODE_Table:
-    case MODE_Markdown:
-    case MODE_Explain:
-    case MODE_Column: {
-      int showHdr;
-      char *rowSep;
-      char *colSep;
-      char *rowStart;
-      if( p->cMode==MODE_Column ){
-        showHdr = p->showHeader;
-        rowSep = p->rowSeparator;
-        colSep = "  ";
-        rowStart = "";
-      }else if( p->cMode==MODE_Explain ){
-        showHdr = 1;
-        rowSep = SEP_Row;
-        colSep = "  ";
-        rowStart = "";
-      }else{
-        showHdr = 1;
-        rowSep = " |\n";
-        colSep = " | ";
-        rowStart = "| ";
+    case MODE_Explain: {
+      static const int aExplainWidth[] = {4, 13, 4, 4, 4, 13, 2, 13};
+      if( nArg>ArraySize(aExplainWidth) ){
+        nArg = ArraySize(aExplainWidth);
       }
-
       if( p->cnt++==0 ){
-        /* Compute column widths in p->actualWidth[] when the first row
-        ** is seen.  The width of each column is either the defined
-        ** width in p->colWidth[], or if p->colWidth[i]==0, then the
-        ** width is the larger of the width of the first row and the
-        ** column name. */
-        static const int aExplainWidths[] = {4, 13, 4, 4, 4, 13, 2, 13};
-        const int *colWidth;
-        int nWidth;
-        if( p->cMode==MODE_Explain ){
-          colWidth = aExplainWidths;
-          nWidth = ArraySize(aExplainWidths);
-        }else{
-          colWidth = p->colWidth;
-          nWidth = p->nWidth;
-        }
         for(i=0; i<nArg; i++){
-          int w, n;
-          if( i<nWidth ){
-            w = colWidth[i];
-          }else{
-            w = 0;
-          }
-          if( w==0 ){
-            w = strlenChar(azCol[i] ? azCol[i] : "");
-            if( w<10 ) w = 10;
-            n = strlenChar(azArg && azArg[i] ? azArg[i] : p->nullValue);
-            if( w<n ) w = n;
-          }
-          if( i<ArraySize(p->actualWidth) ){
-            p->actualWidth[i] = w;
-          }
-        }
-        if( p->cMode==MODE_Table ){
-          print_row_separator(p, nArg, "+");
-        }
-        if( showHdr ){
-          fputs(rowStart, p->out);
-          for(i=0; i<nArg; i++){
-            int w;
-            if( i<ArraySize(p->actualWidth) ){
-               w = p->actualWidth[i];
-               if( w<0 ) w = -w;
-            }else{
-               w = 10;
-            }
-            utf8_width_print(p->out, w, azCol[i]);
-            fputs(i==nArg-1 ? rowSep : colSep, p->out);
-          }
-          for(i=0; i<nArg; i++){
-            int w;
-            if( i<ArraySize(p->actualWidth) ){
-               w = p->actualWidth[i];
-               if( w<0 ) w = -w;
-            }else{
-               w = 10;
-            }
-            if( p->cMode==MODE_Table || p->cMode==MODE_Markdown ){
-              char *zX = p->cMode==MODE_Markdown ? "|" : "+";
-              fputs(zX, p->out);
-              print_dashes(p->out, w+2);
-              if( i==nArg-1 ){
-                fputs(zX, p->out);
-                fputs("\n", p->out);
-              }
-            }else{
-              print_dashes(p->out, w);
-              fputs(i==nArg-1 ? rowSep : colSep, p->out);
-            }
-          }
+          int w = aExplainWidth[i];
+          utf8_width_print(p->out, w, azCol[i]);
+          fputs(i==nArg-1 ? "\n" : "  ", p->out);
         }
       }
       if( azArg==0 ) break;
-      fputs(rowStart, p->out);
       for(i=0; i<nArg; i++){
-        int w;
-        if( i<ArraySize(p->actualWidth) ){
-           w = p->actualWidth[i];
-        }else{
-           w = 10;
+        int w = aExplainWidth[i];
+        if( azArg[i] && strlenChar(azArg[i])>w ){
+          w = strlenChar(azArg[i]);
         }
-        if( p->cMode==MODE_Explain ){
-          if( azArg[i] && strlenChar(azArg[i])>w ){
-            w = strlenChar(azArg[i]);
+        if( i==1 && p->aiIndent && p->pStmt ){
+          if( p->iIndent<p->nIndent ){
+            utf8_printf(p->out, "%*.s", p->aiIndent[p->iIndent], "");
           }
-          if( i==1 && p->aiIndent && p->pStmt ){
-            if( p->iIndent<p->nIndent ){
-              utf8_printf(p->out, "%*.s", p->aiIndent[p->iIndent], "");
-            }
-            p->iIndent++;
-          }
+          p->iIndent++;
         }
         utf8_width_print(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
-        utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : colSep);
+        fputs(i==nArg-1 ? "\n" : "  ", p->out);
       }
       break;
     }
@@ -3042,23 +2942,105 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   sqlite3_finalize(pQ);
 }
 
-#if 0
 /*
 ** Run a prepared statement and output the result in one of the
-** table-oriented formats, either MODE_Markdown or MODE_Table.
+** table-oriented formats: MODE_Column, MODE_Markdown, or MODE_Table.
 **
 ** This is different from ordinary exec_prepared_stmt() in that
 ** it has to run the entire query and gather the results into memory
 ** first, in order to determine column widths, before providing
 ** any output.
 */
-static void exec_prepared_stmt_tablemode(
-  ShellState *pArg,                                /* Pointer to ShellState */
-  sqlite3_stmt *pStmt                              /* Statment to run */
+static void exec_prepared_stmt_columnar(
+  ShellState *p,                        /* Pointer to ShellState */
+  sqlite3_stmt *pStmt                   /* Statment to run */
 ){
+  int nRow = 0;
+  int nColumn = 0;
+  char **azData = 0;
+  char *zMsg = 0;
+  const char *z;
+  int rc;
+  int i, j, nTotal, w, n;
+  const char *colSep;
+  const char *rowSep;
 
+  rc = sqlite3_get_table(p->db, sqlite3_sql(pStmt),
+                         &azData, &nRow, &nColumn, &zMsg);
+  if( rc ){
+    utf8_printf(p->out, "ERROR: %s\n", zMsg);
+    sqlite3_free(zMsg);
+    sqlite3_free_table(azData);
+    return;
+  }
+  if( nColumn>p->nWidth ){
+    p->colWidth = realloc(p->colWidth, nColumn*2*sizeof(int));
+    if( p->colWidth==0 ) shell_out_of_memory();
+    for(i=p->nWidth; i<nColumn; i++) p->colWidth[i] = 0;
+    p->nWidth = nColumn;
+    p->actualWidth = &p->colWidth[nColumn];
+  }
+  memset(p->actualWidth, 0, nColumn*sizeof(int));
+  for(i=0; i<nColumn; i++){
+    w = p->colWidth[i];
+    if( w<0 ) w = -w;
+    p->actualWidth[i] = w;
+  }
+  nTotal = nColumn*(nRow+1);
+  for(i=0; i<nTotal; i++){
+    z = azData[i];
+    if( z==0 ) z = p->nullValue;
+    n = strlenChar(z);
+    j = i%nColumn;
+    if( n>p->actualWidth[j] ) p->actualWidth[j] = n;
+  }
+  if( p->cMode==MODE_Column ){
+    colSep = "  ";
+    rowSep = "\n";
+    if( p->showHeader ){
+      for(i=0; i<nColumn; i++){
+        w = p->actualWidth[i];
+        if( p->colWidth[i]<0 ) w = -w;
+        utf8_width_print(p->out, w, azData[i]);
+        fputs(i==nColumn-1?"\n":"  ", p->out);
+      }
+      for(i=0; i<nColumn; i++){
+        print_dashes(p->out, p->actualWidth[i]);
+        fputs(i==nColumn-1?"\n":"  ", p->out);
+      }
+    }
+  }else{
+    colSep = " | ";
+    rowSep = " |\n";
+    if( p->cMode==MODE_Table ) print_row_separator(p, nColumn, "+");
+    fputs("| ", p->out);
+    for(i=0; i<nColumn; i++){
+      w = p->actualWidth[i];
+      n = strlenChar(azData[i]);
+      utf8_printf(p->out, "%*s%s%*s", (w-n)/2, "", azData[i], (w-n+1)/2, "");
+      fputs(i==nColumn-1?" |\n":" | ", p->out);
+    }
+    print_row_separator(p, nColumn, p->cMode==MODE_Table ? "+" : "|");
+  }
+  for(i=nColumn, j=0; i<nTotal; i++, j++){
+    if( j==0 && p->cMode!=MODE_Column ) fputs("| ", p->out);
+    z = azData[i];
+    if( z==0 ) z = p->nullValue;
+    w = p->actualWidth[j];
+    if( p->colWidth[j]<0 ) w = -w;
+    utf8_width_print(p->out, w, z);
+    if( j==nColumn-1 ){
+      fputs(rowSep, p->out);
+      j = -1;
+    }else{
+      fputs(colSep, p->out);
+    }
+  }
+  if( p->cMode==MODE_Table ){
+    print_row_separator(p, nColumn, "+");
+  }
+  sqlite3_free_table(azData);
 }
-#endif
 
 /*
 ** Run a prepared statement
@@ -3068,6 +3050,14 @@ static void exec_prepared_stmt(
   sqlite3_stmt *pStmt                              /* Statment to run */
 ){
   int rc;
+
+  if( pArg->cMode==MODE_Column
+   || pArg->cMode==MODE_Table
+   || pArg->cMode==MODE_Markdown
+  ){
+    exec_prepared_stmt_columnar(pArg, pStmt);
+    return;
+  }
 
   /* perform the first step.  this will tell us if we
   ** have a result set or not and how wide it is.
