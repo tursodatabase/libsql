@@ -7495,6 +7495,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           raw_printf(stderr, "The --preserve-rowids option is not compatible"
                              " with SQLITE_OMIT_VIRTUALTABLE\n");
           rc = 1;
+          sqlite3_free(zLike);
           goto meta_command_exit;
 #else
           ShellSetFlag(p, SHFLG_PreserveRowid);
@@ -7506,6 +7507,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
           rc = 1;
+          sqlite3_free(zLike);
           goto meta_command_exit;
         }
       }else if( zLike ){
