@@ -4836,7 +4836,10 @@ static int unixShmLock(
   **
   ** In other words, if this is a blocking lock, none of the locks that
   ** occur later in the above list than the lock being obtained may be
-  ** held.  */
+  ** held.  
+  **
+  ** It is not permitted to block on the RECOVER lock.
+  */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
          (ofst!=2)                                   /* not RECOVER */

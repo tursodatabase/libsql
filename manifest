@@ -1,5 +1,5 @@
-C In\sthe\sjson\soutput\smode\sof\sthe\sCLI,\sdo\scorrect\squoting\sof\sescape\scharacters.\nAlso,\sshow\sBLOBs\sas\sJSON\sstrings,\spossibly\swith\sembedded\s\\u0000\sbytes.
-D 2020-05-29T00:21:43.757
+C Expand\supon\sa\scomment\sin\sos_unix.c.\sNo\schanges\sto\scode.
+D 2020-05-29T11:07:20.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -517,7 +517,7 @@ F src/os.c 669cc3839cc35d20f81faf0be1ab6d4581cea35e9d8f3a9d48a98d6571f7c285
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 13f983da988b6460ef3c4c22099c67ab0938291e543644ac4d99eccc8ba604f1
+F src/os_unix.c 03bad4eb1e13946cb967f3a6cc0a0d350df8ea4b8d2212d528024a5f9abc90ea
 F src/os_win.c e832e21e830c1f9409c9c54053939b6dcb14c1e92128b756204ce1e3e331d678
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 96436cb1920074d4ade120a1a8a9d0ae3f52df06651e21b7eccc5eae2f02b111
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14f55fafec11491e87e6526c72cf85c689d74ba18418a1ae9646586ec206767a
-R 8c9c292833e7d437405039fbac69b62c
-U drh
-Z 9c1cf56bec8bac52da07f5875b8a7be2
+P 0278147a7d2b50bed9f59ed3d3a04ecc6d46f072eb510e463f6707df1d829020
+R 6168b01ac7944b1dec923e20df70ebab
+U dan
+Z 464f9a3c62e750102957cbf88d682eca
