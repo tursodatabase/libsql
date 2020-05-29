@@ -4780,7 +4780,7 @@ struct ImportCtx {
 
 /* Clean up resourced used by an ImportCtx */
 static void import_cleanup(ImportCtx *p){
-  if( p->in!=0 &&& p->xCloser!=0 ){
+  if( p->in!=0 && p->xCloser!=0 ){
     p->xCloser(p->in);
     p->in = 0;
   }
