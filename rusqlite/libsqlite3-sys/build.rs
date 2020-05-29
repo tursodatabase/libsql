@@ -104,6 +104,9 @@ mod build_bundled {
         } else {
             cfg.flag("-DSQLITE_HAVE_ISNAN");
         }
+        if cfg!(not(target_os = "windows")) {
+            cfg.flag("-DHAVE_LOCALTIME_R");
+        }
         if cfg!(feature = "unlock_notify") {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
