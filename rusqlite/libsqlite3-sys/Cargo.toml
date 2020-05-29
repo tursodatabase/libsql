@@ -34,7 +34,7 @@ in_gecko = []
 with-asan = []
 
 [build-dependencies]
-bindgen = { version = "0.53", optional = true, default-features = false, features = ["runtime"] }
+bindgen = { version = "0.54", optional = true, default-features = false, features = ["runtime"] }
 pkg-config = { version = "0.3", optional = true }
 cc = { version = "1.0", optional = true }
 
