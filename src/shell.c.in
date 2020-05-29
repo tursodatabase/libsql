@@ -1967,7 +1967,7 @@ static int shell_callback(
   int nArg,        /* Number of result columns */
   char **azArg,    /* Text of each result column */
   char **azCol,    /* Column names */
-  int *aiType      /* Column types */
+  int *aiType      /* Column types.  Might be NULL */
 ){
   int i;
   ShellState *p = (ShellState*)pArg;
@@ -1992,36 +1992,43 @@ static int shell_callback(
     case MODE_Markdown:
     case MODE_Explain:
     case MODE_Column: {
-      static const int aExplainWidths[] = {4, 13, 4, 4, 4, 13, 2, 13};
-      const int *colWidth;
       int showHdr;
       char *rowSep;
       char *colSep;
       char *rowStart;
-      int nWidth;
       if( p->cMode==MODE_Column ){
-        colWidth = p->colWidth;
-        nWidth = ArraySize(p->colWidth);
         showHdr = p->showHeader;
         rowSep = p->rowSeparator;
         colSep = "  ";
         rowStart = "";
       }else if( p->cMode==MODE_Explain ){
-        colWidth = aExplainWidths;
-        nWidth = ArraySize(aExplainWidths);
         showHdr = 1;
         rowSep = SEP_Row;
         colSep = "  ";
         rowStart = "";
       }else{
-        colWidth = p->colWidth;
-        nWidth = ArraySize(p->colWidth);
-        showHdr = p->showHeader;
+        showHdr = 1;
         rowSep = " |\n";
         colSep = " | ";
         rowStart = "| ";
       }
+
       if( p->cnt++==0 ){
+        /* Compute column widths in p->actualWidth[] when the first row
+        ** is seen.  The width of each column is either the defined
+        ** width in p->colWidth[], or if p->colWidth[i]==0, then the
+        ** width is the larger of the width of the first row and the
+        ** column name. */
+        static const int aExplainWidths[] = {4, 13, 4, 4, 4, 13, 2, 13};
+        const int *colWidth;
+        int nWidth;
+        if( p->cMode==MODE_Explain ){
+          colWidth = aExplainWidths;
+          nWidth = ArraySize(aExplainWidths);
+        }else{
+          colWidth = p->colWidth;
+          nWidth = ArraySize(p->colWidth);
+        }
         for(i=0; i<nArg; i++){
           int w, n;
           if( i<nWidth ){
@@ -2039,10 +2046,10 @@ static int shell_callback(
             p->actualWidth[i] = w;
           }
         }
+        if( p->cMode==MODE_Table ){
+          print_row_separator(p, nArg, "+");
+        }
         if( showHdr ){
-          if( p->cMode==MODE_Table ){
-            print_row_separator(p, nArg, "+");
-          }
           fputs(rowStart, p->out);
           for(i=0; i<nArg; i++){
             int w;
@@ -2087,14 +2094,16 @@ static int shell_callback(
         }else{
            w = 10;
         }
-        if( p->cMode==MODE_Explain && azArg[i] && strlenChar(azArg[i])>w ){
-          w = strlenChar(azArg[i]);
-        }
-        if( i==1 && p->aiIndent && p->pStmt ){
-          if( p->iIndent<p->nIndent ){
-            utf8_printf(p->out, "%*.s", p->aiIndent[p->iIndent], "");
+        if( p->cMode==MODE_Explain ){
+          if( azArg[i] && strlenChar(azArg[i])>w ){
+            w = strlenChar(azArg[i]);
           }
-          p->iIndent++;
+          if( i==1 && p->aiIndent && p->pStmt ){
+            if( p->iIndent<p->nIndent ){
+              utf8_printf(p->out, "%*.s", p->aiIndent[p->iIndent], "");
+            }
+            p->iIndent++;
+          }
         }
         utf8_width_print(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
         utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : colSep);
