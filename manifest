@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sincremental\sbuild\ssupport\sfor\sMSVC.
-D 2020-05-29T21:06:52.599
+C Improved\sVDBE\scomments\son\sthe\sANALYZE\scode\sgenerator.\s\sThis\schange\nalso\sfixes\sa\sharmless\suse\sof\san\suninitialized\sinteger\svariable\sas\san\sinput\nto\sthe\s%d\sformat\son\sa\sVDBE\scomment.
+D 2020-05-30T00:30:08.761
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -468,7 +468,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 826bc4561456094cf758f095776026f25892a2bb3a7cd86742323267dc9bdb5f
-F src/analyze.c 953a6c43870ccaf080597244e1eeb4dc2ff6cb84f9501b24e46323de36970b61
+F src/analyze.c 2c77bcbb8651ccced4a8cdaf8d997663813b2967787070fa26d0360de2ee4367
 F src/attach.c ff2daea0fe62080192e3f262670e4f61f5a86c1e7bea9cec34e960fe79852aa1
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c b1c90cd4110248c8e1273ff4578d3a84c0c34725e1b96dacd4a6294a908702de
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5865d2f2d0333024366ecf1d919535fd4ec05c637feff16d75028ccdc8db4b50
-R ea1f39211518f41f5c2b12c4cd8c40f2
-U mistachkin
-Z 0c710e2dd8d54ec195365654b7322b90
+P 2e25d915bcb8d6f1747f9befdef64d2e0e495cc6c5948a8eff5d0097b6613d06
+R 2675b53bd7c59c171705e1753c06ddb1
+U drh
+Z 4e29343ffa9662765735989ac396bab3
