@@ -1993,6 +1993,11 @@ static int shell_callback(
           utf8_width_print(p->out, w, azCol[i]);
           fputs(i==nArg-1 ? "\n" : "  ", p->out);
         }
+        for(i=0; i<nArg; i++){
+          int w = aExplainWidth[i];
+          print_dashes(p->out, w);
+          fputs(i==nArg-1 ? "\n" : "  ", p->out);
+        }
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
