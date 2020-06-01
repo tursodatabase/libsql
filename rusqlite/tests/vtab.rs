@@ -9,6 +9,7 @@ fn test_dummy_module() {
         VTabConnection, VTabCursor, Values,
     };
     use rusqlite::{version_number, Connection, Result};
+    use std::marker::PhantomData;
     use std::os::raw::c_int;
 
     let module = eponymous_only_module::<DummyTab>();
@@ -19,9 +20,9 @@ fn test_dummy_module() {
         base: sqlite3_vtab,
     }
 
-    unsafe impl VTab for DummyTab {
+    unsafe impl<'vtab> VTab<'vtab> for DummyTab {
         type Aux = ();
-        type Cursor = DummyTabCursor;
+        type Cursor = DummyTabCursor<'vtab>;
 
         fn connect(
             _: &mut VTabConnection,
@@ -39,21 +40,22 @@ fn test_dummy_module() {
             Ok(())
         }
 
-        fn open(&self) -> Result<DummyTabCursor> {
+        fn open(&'vtab self) -> Result<DummyTabCursor<'vtab>> {
             Ok(DummyTabCursor::default())
         }
     }
 
     #[derive(Default)]
     #[repr(C)]
-    struct DummyTabCursor {
+    struct DummyTabCursor<'vtab> {
         /// Base class. Must be first
         base: sqlite3_vtab_cursor,
         /// The rowid
         row_id: i64,
+        phantom: PhantomData<&'vtab DummyTab>,
     }
 
-    unsafe impl VTabCursor for DummyTabCursor {
+    unsafe impl VTabCursor for DummyTabCursor<'_> {
         fn filter(
             &mut self,
             _idx_num: c_int,
