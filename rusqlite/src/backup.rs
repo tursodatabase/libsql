@@ -165,8 +165,8 @@ pub struct Progress {
 
 /// `feature = "backup"` A handle to an online backup.
 pub struct Backup<'a, 'b> {
-    phantom_from: PhantomData<&'a ()>,
-    phantom_to: PhantomData<&'b ()>,
+    phantom_from: PhantomData<&'a Connection>,
+    phantom_to: PhantomData<&'b Connection>,
     b: *mut ffi::sqlite3_backup,
 }
 

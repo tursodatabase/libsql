@@ -22,7 +22,7 @@ use crate::{errmsg_to_string, str_to_cstring, Connection, DatabaseName, Result};
 /// `feature = "session"` An instance of this object is a session that can be
 /// used to record changes to a database.
 pub struct Session<'conn> {
-    phantom: PhantomData<&'conn ()>,
+    phantom: PhantomData<&'conn Connection>,
     s: *mut ffi::sqlite3_session,
     filter: Option<Box<dyn Fn(&str) -> bool>>,
 }
@@ -299,7 +299,7 @@ impl Drop for Changeset {
 /// `feature = "session"` Cursor for iterating over the elements of a changeset
 /// or patchset.
 pub struct ChangesetIter<'changeset> {
-    phantom: PhantomData<&'changeset ()>,
+    phantom: PhantomData<&'changeset Changeset>,
     it: *mut ffi::sqlite3_changeset_iter,
     item: Option<ChangesetItem>,
 }
