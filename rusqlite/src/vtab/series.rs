@@ -4,6 +4,7 @@
 //! "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c):
 //! https://www.sqlite.org/series.html
 use std::default::Default;
+use std::marker::PhantomData;
 use std::os::raw::c_int;
 
 use crate::ffi;
@@ -49,9 +50,9 @@ struct SeriesTab {
     base: ffi::sqlite3_vtab,
 }
 
-unsafe impl VTab for SeriesTab {
+unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
     type Aux = ();
-    type Cursor = SeriesTabCursor;
+    type Cursor = SeriesTabCursor<'vtab>;
 
     fn connect(
         _: &mut VTabConnection,
@@ -151,15 +152,14 @@ unsafe impl VTab for SeriesTab {
         Ok(())
     }
 
-    fn open(&self) -> Result<SeriesTabCursor> {
+    fn open(&'vtab self) -> Result<SeriesTabCursor<'vtab>> {
         Ok(SeriesTabCursor::new())
     }
 }
 
 /// A cursor for the Series virtual table
-#[derive(Default)]
 #[repr(C)]
-struct SeriesTabCursor {
+struct SeriesTabCursor<'vtab> {
     /// Base class. Must be first
     base: ffi::sqlite3_vtab_cursor,
     /// True to count down rather than up
@@ -174,14 +174,24 @@ struct SeriesTabCursor {
     max_value: i64,
     /// Increment ("step")
     step: i64,
+    phantom: PhantomData<&'vtab SeriesTab>,
 }
 
-impl SeriesTabCursor {
-    fn new() -> SeriesTabCursor {
-        SeriesTabCursor::default()
+impl SeriesTabCursor<'_> {
+    fn new<'vtab>() -> SeriesTabCursor<'vtab> {
+        SeriesTabCursor {
+            base: ffi::sqlite3_vtab_cursor::default(),
+            is_desc: false,
+            row_id: 0,
+            value: 0,
+            min_value: 0,
+            max_value: 0,
+            step: 0,
+            phantom: PhantomData,
+        }
     }
 }
-unsafe impl VTabCursor for SeriesTabCursor {
+unsafe impl VTabCursor for SeriesTabCursor<'_> {
     fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         let idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
         let mut i = 0;
