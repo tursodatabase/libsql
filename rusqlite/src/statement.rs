@@ -219,6 +219,8 @@ impl Statement<'_> {
     ///     Ok(names)
     /// }
     /// ```
+    /// `f` is used to tranform the _streaming_ iterator into a _standard_
+    /// iterator.
     ///
     /// ## Failure
     ///
@@ -256,6 +258,8 @@ impl Statement<'_> {
     ///     Ok(names)
     /// }
     /// ```
+    /// `f` is used to tranform the _streaming_ iterator into a _standard_
+    /// iterator.
     ///
     /// ## Failure
     ///
