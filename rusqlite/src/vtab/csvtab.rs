@@ -259,7 +259,7 @@ unsafe impl<'vtab> VTab<'vtab> for CSVTab {
         Ok(())
     }
 
-    fn open(&'vtab self) -> Result<CSVTabCursor<'vtab>> {
+    fn open(&self) -> Result<CSVTabCursor<'_>> {
         Ok(CSVTabCursor::new(self.reader()?))
     }
 }
