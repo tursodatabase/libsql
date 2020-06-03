@@ -8015,8 +8015,6 @@ no_mem:
   */
 abort_due_to_interrupt:
   assert( AtomicLoad(&db->u1.isInterrupted) );
-  rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
-  p->rc = rc;
-  sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
+  rc = SQLITE_INTERRUPT;
   goto abort_due_to_error;
 }
