@@ -95,6 +95,7 @@ impl Drop for Rows<'_> {
     }
 }
 
+/// `F` is used to tranform the _streaming_ iterator into a _fallible_ iterator.
 pub struct Map<'stmt, F> {
     rows: Rows<'stmt>,
     f: F,
@@ -116,6 +117,8 @@ where
 }
 
 /// An iterator over the mapped resulting rows of a query.
+///
+/// `F` is used to tranform the _streaming_ iterator into a _standard_ iterator.
 pub struct MappedRows<'stmt, F> {
     rows: Rows<'stmt>,
     map: F,
