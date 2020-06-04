@@ -1,5 +1,5 @@
-C Work\saround\sa\sbug\sin\sclang-11.0.0.
-D 2020-06-04T02:50:47.244
+C Use\sAtomicStore()\sto\sset\svalues\sin\sthe\swal-index\shash\stable.
+D 2020-06-04T16:07:51.338
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c ee5b4c902fdda2230f9503ac7b84c6d614c91e8f6f4dc1633e2e8dfef8ffb144
 F src/vtab.c 7b452592ed2ee95dedb1f323d557cebede5a6f3b4558b21a5dca527e6ae9b12c
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 04c3d2a673192016a671eb051a1900945a8c7331f4378636a8bfb70e8e596c84
+F src/wal.c 231044ecf7d5d78bc705af9dcec6c10ec59e891366362b6be54bb6a0bc7c17db
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 7bcc07ff56d03d73308245135d96de46d2faeaee628bd4badf0bae60ae6a31fe
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 89af93d77fa7959a4ee7364bae6c02c40963a3cdf80b0a4a8af9c9764d5c7bb5
-R 015d7b0bbb01693da2e969fcd700008e
-U drh
-Z e60d8b817ea3e4ea751ceb5512848057
+P 3c2bf8042ec46195c67dfd91df084f5bc19162fd26389920e716b310c80deea6
+R abb5e2a6f69eedf6a5a3f76fdbc7fd1a
+U dan
+Z ec12bc606d4dba66db05b4caac700c1f

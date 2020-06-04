@@ -1096,7 +1096,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
       if( (nCollide--)==0 ) return SQLITE_CORRUPT_BKPT;
     }
     sLoc.aPgno[idx] = iPage;
-    sLoc.aHash[iKey] = (ht_slot)idx;
+    AtomicStore(&sLoc.aHash[iKey], (ht_slot)idx);
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
     /* Verify that the number of entries in the hash table exactly equals
