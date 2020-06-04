@@ -1,5 +1,5 @@
-C Use\s__has_extension(c_atomic)\sinstead\sof\s__has_feature(c_atomic)\sto\sdetect\ssupport\sfor\satomic\sload\sand\sstore\soperations\swith\sclang.
-D 2020-06-04T16:34:49.514
+C Improved\sdisplay\sof\s".mode\stable"\soutput\sfor\sempty\sresult\ssets.
+D 2020-06-04T16:54:10.263
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 39a00a8bc89596dfb37c16afcbb1d33de5085b9963564b58aafe1566d08c0881
-F src/shell.c.in 9c0e886561b9a9644a4134e29e4b7d08eb16690da47a9de6bea082183d527adf
+F src/shell.c.in b8fd54e80021c9aed59c4f8ef7d8a68167aea3b2c5f8cc80e6ca373fb146cdba
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ab30c75f2fe14d1ee77d0eace4e29ba8f805d63e2da0897b111ea1311f409aa
-R 2523b78414a8ebd8b46ab8adc56999f4
-U dan
-Z 865312b054fec1ad1eb5fd8a39501f1b
+P 362255791f8801e0d9869e36239b8b2cb29c38bf0b86894bd2d159ce46d8447e
+R e25e15e7d406e657ad2786c9bbcb9942
+U drh
+Z acf5bed5cb288b39151d44a020264134

@@ -2978,6 +2978,10 @@ static void exec_prepared_stmt_columnar(
     sqlite3_free_table(azData);
     return;
   }
+  if( nRow==0 || nColumn==0 ){
+    sqlite3_free_table(azData);
+    return;
+  }
   if( nColumn>p->nWidth ){
     p->colWidth = realloc(p->colWidth, nColumn*2*sizeof(int));
     if( p->colWidth==0 ) shell_out_of_memory();
