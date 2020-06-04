@@ -1194,6 +1194,7 @@ struct ShellState {
 #define MODE_Json    13  /* Output JSON */
 #define MODE_Markdown 14 /* Markdown formatting */
 #define MODE_Table   15  /* MySQL-style table formatting */
+#define MODE_Box     16  /* Unicode box-drawing characters */
 
 static const char *modeDescr[] = {
   "line",
@@ -1211,7 +1212,8 @@ static const char *modeDescr[] = {
   "eqp",
   "json",
   "markdown",
-  "table"
+  "table",
+  "box"
 };
 
 /*
@@ -1936,7 +1938,7 @@ static void print_dashes(FILE *out, int N){
 }
 
 /*
-** Print a markdown or table-style row separator
+** Print a markdown or table-style row separator using ascii-art
 */
 static void print_row_separator(
   ShellState *p,
@@ -1944,11 +1946,15 @@ static void print_row_separator(
   const char *zSep
 ){
   int i;
-  for(i=0; i<nArg; i++){
+  if( nArg>0 ){
     fputs(zSep, p->out);
-    print_dashes(p->out, p->actualWidth[i]+2);
+    print_dashes(p->out, p->actualWidth[0]+2);
+    for(i=1; i<nArg; i++){
+      fputs(zSep, p->out);
+      print_dashes(p->out, p->actualWidth[i]+2);
+    }
+    fputs(zSep, p->out);
   }
-  fputs(zSep, p->out);
   fputs("\n", p->out);
 }
 
@@ -2948,8 +2954,75 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
 }
 
 /*
+** UTF8 box-drawing characters.  Imagine box lines like this:
+**
+**           1
+**           |
+**       4 --+-- 2
+**           |
+**           3
+**
+** Each box characters has between 2 and 4 of the lines leading from
+** the center.  The characters are here identified by the numbers of
+** their corresponding lines.
+*/
+#define BOX_24   "\342\224\200"  /* U+2500 --- */
+#define BOX_13   "\342\224\202"  /* U+2502  |  */
+#define BOX_23   "\342\224\214"  /* U+250c  ,- */
+#define BOX_34   "\342\224\220"  /* U+2510 -,  */
+#define BOX_12   "\342\224\224"  /* U+2514  '- */
+#define BOX_14   "\342\224\230"  /* U+2518 -'  */
+#define BOX_123  "\342\224\234"  /* U+251c  |- */
+#define BOX_134  "\342\224\244"  /* U+2524 -|  */
+#define BOX_234  "\342\224\254"  /* U+252c -,- */
+#define BOX_124  "\342\224\264"  /* U+2534 -'- */
+#define BOX_1234 "\342\224\274"  /* U+253c -|- */
+
+/* Draw horizontal line N characters long using unicode box
+** characters
+*/
+static void print_box_line(FILE *out, int N){
+  const char zDash[] = 
+      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24
+      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24;
+  const int nDash = sizeof(zDash) - 1;
+  N *= 3;
+  while( N>nDash ){
+    utf8_printf(out, zDash);
+    N -= nDash;
+  }
+  utf8_printf(out, "%.*s", N, zDash);
+}
+
+/*
+** Draw a horizontal separator for a MODE_Box table.
+*/
+static void print_box_row_separator(
+  ShellState *p,
+  int nArg,
+  const char *zSep1,
+  const char *zSep2,
+  const char *zSep3
+){
+  int i;
+  if( nArg>0 ){
+    utf8_printf(p->out, "%s", zSep1);
+    print_box_line(p->out, p->actualWidth[0]+2);
+    for(i=1; i<nArg; i++){
+      utf8_printf(p->out, "%s", zSep2);
+      print_box_line(p->out, p->actualWidth[i]+2);
+    }
+    utf8_printf(p->out, "%s", zSep3);
+  }
+  fputs("\n", p->out);
+}
+
+
+
+/*
 ** Run a prepared statement and output the result in one of the
-** table-oriented formats: MODE_Column, MODE_Markdown, or MODE_Table.
+** table-oriented formats: MODE_Column, MODE_Markdown, MODE_Table,
+** or MODE_Box.
 **
 ** This is different from ordinary exec_prepared_stmt() in that
 ** it has to run the entire query and gather the results into memory
@@ -2967,8 +3040,8 @@ static void exec_prepared_stmt_columnar(
   const char *z;
   int rc;
   int i, j, nTotal, w, n;
-  const char *colSep;
-  const char *rowSep;
+  const char *colSep = 0;
+  const char *rowSep = 0;
 
   rc = sqlite3_get_table(p->db, sqlite3_sql(pStmt),
                          &azData, &nRow, &nColumn, &zMsg);
@@ -3003,50 +3076,87 @@ static void exec_prepared_stmt_columnar(
     j = i%nColumn;
     if( n>p->actualWidth[j] ) p->actualWidth[j] = n;
   }
-  if( p->cMode==MODE_Column ){
-    colSep = "  ";
-    rowSep = "\n";
-    if( p->showHeader ){
+  switch( p->cMode ){
+    case MODE_Column: {
+      colSep = "  ";
+      rowSep = "\n";
+      if( p->showHeader ){
+        for(i=0; i<nColumn; i++){
+          w = p->actualWidth[i];
+          if( p->colWidth[i]<0 ) w = -w;
+          utf8_width_print(p->out, w, azData[i]);
+          fputs(i==nColumn-1?"\n":"  ", p->out);
+        }
+        for(i=0; i<nColumn; i++){
+          print_dashes(p->out, p->actualWidth[i]);
+          fputs(i==nColumn-1?"\n":"  ", p->out);
+        }
+      }
+      break;
+    }
+    case MODE_Table: {
+      colSep = " | ";
+      rowSep = " |\n";
+      print_row_separator(p, nColumn, "+");
+      fputs("| ", p->out);
       for(i=0; i<nColumn; i++){
         w = p->actualWidth[i];
-        if( p->colWidth[i]<0 ) w = -w;
-        utf8_width_print(p->out, w, azData[i]);
-        fputs(i==nColumn-1?"\n":"  ", p->out);
+        n = strlenChar(azData[i]);
+        utf8_printf(p->out, "%*s%s%*s", (w-n)/2, "", azData[i], (w-n+1)/2, "");
+        fputs(i==nColumn-1?" |\n":" | ", p->out);
       }
+      print_row_separator(p, nColumn, "+");
+      break;
+    }
+    case MODE_Markdown: {
+      colSep = " | ";
+      rowSep = " |\n";
+      fputs("| ", p->out);
       for(i=0; i<nColumn; i++){
-        print_dashes(p->out, p->actualWidth[i]);
-        fputs(i==nColumn-1?"\n":"  ", p->out);
+        w = p->actualWidth[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(p->out, "%*s%s%*s", (w-n)/2, "", azData[i], (w-n+1)/2, "");
+        fputs(i==nColumn-1?" |\n":" | ", p->out);
       }
+      print_row_separator(p, nColumn, "|");
+      break;
     }
-  }else{
-    colSep = " | ";
-    rowSep = " |\n";
-    if( p->cMode==MODE_Table ) print_row_separator(p, nColumn, "+");
-    fputs("| ", p->out);
-    for(i=0; i<nColumn; i++){
-      w = p->actualWidth[i];
-      n = strlenChar(azData[i]);
-      utf8_printf(p->out, "%*s%s%*s", (w-n)/2, "", azData[i], (w-n+1)/2, "");
-      fputs(i==nColumn-1?" |\n":" | ", p->out);
+    case MODE_Box: {
+      colSep = " " BOX_13 " ";
+      rowSep = " " BOX_13 "\n";
+      print_box_row_separator(p, nColumn, BOX_23, BOX_234, BOX_34);
+      utf8_printf(p->out, BOX_13 " ");
+      for(i=0; i<nColumn; i++){
+        w = p->actualWidth[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(p->out, "%*s%s%*s%s",
+            (w-n)/2, "", azData[i], (w-n+1)/2, "",
+            i==nColumn-1?" "BOX_13"\n":" "BOX_13" ");
+      }
+      print_box_row_separator(p, nColumn, BOX_123, BOX_1234, BOX_134);
+      break;
     }
-    print_row_separator(p, nColumn, p->cMode==MODE_Table ? "+" : "|");
   }
   for(i=nColumn, j=0; i<nTotal; i++, j++){
-    if( j==0 && p->cMode!=MODE_Column ) fputs("| ", p->out);
+    if( j==0 && p->cMode!=MODE_Column ){
+      utf8_printf(p->out, "%s", p->cMode==MODE_Box?BOX_13" ":"| ");
+    }
     z = azData[i];
     if( z==0 ) z = p->nullValue;
     w = p->actualWidth[j];
     if( p->colWidth[j]<0 ) w = -w;
     utf8_width_print(p->out, w, z);
     if( j==nColumn-1 ){
-      fputs(rowSep, p->out);
+      utf8_printf(p->out, "%s", rowSep);
       j = -1;
     }else{
-      fputs(colSep, p->out);
+      utf8_printf(p->out, "%s", colSep);
     }
   }
   if( p->cMode==MODE_Table ){
     print_row_separator(p, nColumn, "+");
+  }else if( p->cMode==MODE_Box ){
+    print_box_row_separator(p, nColumn, BOX_12, BOX_124, BOX_14);
   }
   sqlite3_free_table(azData);
 }
@@ -3062,6 +3172,7 @@ static void exec_prepared_stmt(
 
   if( pArg->cMode==MODE_Column
    || pArg->cMode==MODE_Table
+   || pArg->cMode==MODE_Box
    || pArg->cMode==MODE_Markdown
   ){
     exec_prepared_stmt_columnar(pArg, pStmt);
@@ -3115,9 +3226,7 @@ static void exec_prepared_stmt(
         }
       } while( SQLITE_ROW == rc );
       sqlite3_free(pData);
-      if( pArg->cMode==MODE_Table ){
-        print_row_separator(pArg, nCol, "+");
-      }else if( pArg->cMode==MODE_Json ){
+      if( pArg->cMode==MODE_Json ){
         fputs("]\n", pArg->out);
       }
     }
@@ -3801,6 +3910,7 @@ static const char *(azHelp[]) = {
   ".mode MODE ?TABLE?       Set output mode",
   "   MODE is one of:",
   "     ascii     Columns/rows delimited by 0x1F and 0x1E",
+  "     box       Tables using unicode box-drawing characters",
   "     csv       Comma-separated values",
   "     column    Output in columns.  (See .width)",
   "     html      HTML <table> code",
@@ -8414,13 +8524,15 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->mode = MODE_Markdown;
     }else if( c2=='t' && strncmp(azArg[1],"table",n2)==0 ){
       p->mode = MODE_Table;
+    }else if( c2=='b' && strncmp(azArg[1],"box",n2)==0 ){
+      p->mode = MODE_Box;
     }else if( c2=='j' && strncmp(azArg[1],"json",n2)==0 ){
       p->mode = MODE_Json;
     }else if( nArg==1 ){
       raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
     }else{
       raw_printf(stderr, "Error: mode should be one of: "
-         "ascii column csv html insert json line list markdown "
+         "ascii box column csv html insert json line list markdown "
          "quote table tabs tcl\n");
       rc = 1;
     }
@@ -10420,6 +10532,7 @@ static const char zOptions[] =
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
+  "   -box                 set output mode to 'box'\n"
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
@@ -10867,6 +10980,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_Markdown;
     }else if( strcmp(z,"-table")==0 ){
       data.mode = MODE_Table;
+    }else if( strcmp(z,"-box")==0 ){
+      data.mode = MODE_Box;
     }else if( strcmp(z,"-csv")==0 ){
       data.mode = MODE_Csv;
       memcpy(data.colSeparator,",",2);
