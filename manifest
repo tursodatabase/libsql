@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s[810dc8038872e212].\s\sThank\sto\suser\s"Maxulite"\sfor\stracking\ndown\sthe\sproblem!
-D 2020-06-03T19:28:10.752
+C Work\saround\sa\sbug\sin\sclang-11.0.0.
+D 2020-06-04T02:50:47.244
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -602,7 +602,7 @@ F src/treeview.c 9df54af6e5830fd527496e62ae0148e1ba33197205d8e232c2826537d42d406
 F src/trigger.c 4ada1037cc99777f647a882cdacbd1a4deb6567b69daf02946286401b88cdc04
 F src/update.c 3199098455830fc2d8c8fc4ae3ec2ea513eef64339ae9a7048db62b21169bc7a
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
-F src/utf.c d7a61c1dfdac3eb091d43341a674032dca5a34e122f78ef0b5bd2d5a31967dde
+F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3b6cedf7a0c69bd6e1acce832873952d416212d6293b18d03064e07d7a9b5118
 F src/vacuum.c de9780b89fa4ee74c3534f60b94820e3179aca759ffc1338ee53cb4ea7693dd3
 F src/vdbe.c a154f2785fbe4a1205944c647026445552ca3fa04ed1f313b05e614be205c061
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43e0e59bd4e34c6e88c004ea951c0d76ff1cf0a034389f490495a5d12e239382
-R d117a58d0c795ef2086dc59d9f0ad01c
+P 89af93d77fa7959a4ee7364bae6c02c40963a3cdf80b0a4a8af9c9764d5c7bb5
+R 015d7b0bbb01693da2e969fcd700008e
 U drh
-Z 631114b7aaeb4e0342cd2238d03bd056
+Z e60d8b817ea3e4ea751ceb5512848057
