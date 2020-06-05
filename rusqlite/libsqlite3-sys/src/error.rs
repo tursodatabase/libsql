@@ -260,12 +260,14 @@ pub fn code_to_str(code: c_int) -> &'static str {
         SQLITE_IOERR_BEGIN_ATOMIC      => "SQLITE_IOERR_BEGIN_ATOMIC",
         SQLITE_IOERR_COMMIT_ATOMIC     => "SQLITE_IOERR_COMMIT_ATOMIC",
         SQLITE_IOERR_ROLLBACK_ATOMIC   => "SQLITE_IOERR_ROLLBACK_ATOMIC",
+        SQLITE_IOERR_DATA   => "SQLITE_IOERR_DATA",
 
         SQLITE_LOCKED_SHAREDCACHE      => "Locking conflict due to another connection with a shared cache",
         SQLITE_LOCKED_VTAB             => "SQLITE_LOCKED_VTAB",
 
         SQLITE_BUSY_RECOVERY           => "Another process is recovering a WAL mode database file",
         SQLITE_BUSY_SNAPSHOT           => "Cannot promote read transaction to write transaction because of writes by another connection",
+        SQLITE_BUSY_TIMEOUT           => "SQLITE_BUSY_TIMEOUT",
 
         SQLITE_CANTOPEN_NOTEMPDIR      => "SQLITE_CANTOPEN_NOTEMPDIR", // no longer used
         SQLITE_CANTOPEN_ISDIR          => "Attempted to open directory as file",
@@ -275,6 +277,7 @@ pub fn code_to_str(code: c_int) -> &'static str {
 
         SQLITE_CORRUPT_VTAB            => "Content in the virtual table is corrupt",
         SQLITE_CORRUPT_SEQUENCE        => "SQLITE_CORRUPT_SEQUENCE",
+        SQLITE_CORRUPT_INDEX        => "SQLITE_CORRUPT_INDEX",
 
         SQLITE_READONLY_RECOVERY       => "WAL mode database file needs recovery (requires write access)",
         SQLITE_READONLY_CANTLOCK       => "Shared-memory file associated with WAL mode database is read-only",
