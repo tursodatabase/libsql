@@ -1743,5 +1743,32 @@ do_execsql_test 53.0 {
                WHERE a.c);
 } {4 4 4 4}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 54.1 {
+  CREATE TABLE t1(a VARCHAR(20), b FLOAT);
+  INSERT INTO t1 VALUES('1',10.0);
+}
+
+do_execsql_test 54.2 {
+  SELECT * FROM ( 
+    SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+    SELECT b AS c FROM t1
+  ) WHERE c>10;
+}
+
+do_execsql_test 54.3 {
+  INSERT INTO t1 VALUES('2',5.0);
+  INSERT INTO t1 VALUES('3',15.0);
+}
+
+do_execsql_test 54.4 {
+  SELECT * FROM ( 
+    SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+    SELECT b AS c FROM t1
+  ) WHERE c>10;
+} {15.0 30.0}
 
 finish_test
