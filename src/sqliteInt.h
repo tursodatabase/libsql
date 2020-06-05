@@ -976,7 +976,12 @@ typedef INT16_TYPE LogEst;
 */
 #if defined(SQLITE_ENABLE_SELECTTRACE)
 # define SELECTTRACE_ENABLED 1
+# define SELECTTRACE(K,P,S,X)  \
+  if(sqlite3SelectTrace&(K))   \
+    sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
+    sqlite3DebugPrintf X
 #else
+# define SELECTTRACE(K,P,S,X)
 # define SELECTTRACE_ENABLED 0
 #endif
 
@@ -2523,7 +2528,22 @@ struct AggInfo {
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
+#ifdef SQLITE_DEBUG
+  u32 iAggMagic;          /* Sanity checking constant */
+#endif
 };
+
+/*
+** Allowed values for AggInfo.iAggMagic
+*/
+#define SQLITE_AGGMAGIC_VALID  0x05cadade
+
+/*
+** True if the AggInfo object is valid.  Used inside of assert() only.
+*/
+#ifdef SQLITE_DEBUG
+#  define AggInfoValid(P) ((P)->iAggMagic==SQLITE_AGGMAGIC_VALID)
+#endif
 
 /*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.
@@ -4546,10 +4566,11 @@ extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
+extern u32 sqlite3SelectTrace;
 #ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
 #endif
-#endif
+#endif /* !defined(SQLITE_AMALGAMATION) */
 #ifdef VDBE_PROFILE
 extern sqlite3_uint64 sqlite3NProfileCnt;
 #endif

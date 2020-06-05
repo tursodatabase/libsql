@@ -15,20 +15,6 @@
 #include "sqliteInt.h"
 
 /*
-** Trace output macros
-*/
-#if SELECTTRACE_ENABLED
-/***/ int sqlite3SelectTrace = 0;
-# define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
-    sqlite3DebugPrintf X
-#else
-# define SELECTTRACE(K,P,S,X)
-#endif
-
-
-/*
 ** An instance of the following object is used to record information about
 ** how to process the DISTINCT keyword, to simplify passing that information
 ** into the selectInnerLoop() routine.
@@ -5765,6 +5751,9 @@ int sqlite3Select(
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
+#ifdef SQLITE_DEBUG
+  sAggInfo.iAggMagic = SQLITE_AGGMAGIC_VALID;
+#endif
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
   if( sqlite3SelectTrace & 0x100 ){
@@ -5803,19 +5792,6 @@ int sqlite3Select(
     generateColumnNames(pParse, p);
   }
 
-#ifndef SQLITE_OMIT_WINDOWFUNC
-  rc = sqlite3WindowRewrite(pParse, p);
-  if( rc ){
-    assert( db->mallocFailed || pParse->nErr>0 );
-    goto select_end;
-  }
-#if SELECTTRACE_ENABLED
-  if( p->pWin && (sqlite3SelectTrace & 0x108)!=0 ){
-    SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
-    sqlite3TreeViewSelect(0, p, 0);
-  }
-#endif
-#endif /* SQLITE_OMIT_WINDOWFUNC */
   pTabList = p->pSrc;
   isAgg = (p->selFlags & SF_Aggregate)!=0;
   memset(&sSort, 0, sizeof(sSort));
@@ -6790,6 +6766,14 @@ int sqlite3Select(
 select_end:
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
   sqlite3DbFree(db, sAggInfo.aCol);
+#ifdef SQLITE_DEBUG
+  for(i=0; i<sAggInfo.nFunc; i++){
+    assert( sAggInfo.aFunc[i].pExpr!=0 );
+    assert( sAggInfo.aFunc[i].pExpr->pAggInfo==&sAggInfo );
+    sAggInfo.aFunc[i].pExpr->pAggInfo = 0;
+  }
+  sAggInfo.iAggMagic = 0;
+#endif
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED
   SELECTTRACE(0x1,pParse,p,("end processing\n"));
