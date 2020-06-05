@@ -144,12 +144,14 @@ const SQLITE_IOERR_AUTH: c_int = super::SQLITE_IOERR | (28 << 8);
 const SQLITE_IOERR_BEGIN_ATOMIC: c_int = super::SQLITE_IOERR | (29 << 8);
 const SQLITE_IOERR_COMMIT_ATOMIC: c_int = super::SQLITE_IOERR | (30 << 8);
 const SQLITE_IOERR_ROLLBACK_ATOMIC: c_int = super::SQLITE_IOERR | (31 << 8);
+const SQLITE_IOERR_DATA: c_int = super::SQLITE_IOERR | (32 << 8);
 
 const SQLITE_LOCKED_SHAREDCACHE: c_int = super::SQLITE_LOCKED | (1 << 8);
 const SQLITE_LOCKED_VTAB: c_int = super::SQLITE_LOCKED | (2 << 8);
 
 const SQLITE_BUSY_RECOVERY: c_int = super::SQLITE_BUSY | (1 << 8);
 const SQLITE_BUSY_SNAPSHOT: c_int = super::SQLITE_BUSY | (2 << 8);
+const SQLITE_BUSY_TIMEOUT: c_int = super::SQLITE_BUSY | (3 << 8);
 
 const SQLITE_CANTOPEN_NOTEMPDIR: c_int = super::SQLITE_CANTOPEN | (1 << 8);
 const SQLITE_CANTOPEN_ISDIR: c_int = super::SQLITE_CANTOPEN | (2 << 8);
@@ -159,6 +161,7 @@ const SQLITE_CANTOPEN_SYMLINK: c_int = super::SQLITE_CANTOPEN | (6 << 8);
 
 const SQLITE_CORRUPT_VTAB: c_int = super::SQLITE_CORRUPT | (1 << 8);
 const SQLITE_CORRUPT_SEQUENCE: c_int = super::SQLITE_CORRUPT | (2 << 8);
+const SQLITE_CORRUPT_INDEX: c_int = super::SQLITE_CORRUPT | (3 << 8);
 
 const SQLITE_READONLY_RECOVERY: c_int = super::SQLITE_READONLY | (1 << 8);
 const SQLITE_READONLY_CANTLOCK: c_int = super::SQLITE_READONLY | (2 << 8);
