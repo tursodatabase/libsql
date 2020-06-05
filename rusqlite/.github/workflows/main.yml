@@ -93,6 +93,11 @@ jobs:
           RUSTFLAGS: -Zsanitizer=address
           RUSTDOCFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: 'detect_stack_use_after_return=1'
+          # Work around https://github.com/rust-lang/rust/issues/59125 by
+          # disabling backtraces. In an ideal world we'd probably suppress the
+          # leak sanitization, but we don't care about backtraces here, so long
+          # as the other tests have them.
+          RUST_BACKTRACE: '0'
         run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen with-asan' --target x86_64-unknown-linux-gnu
 
   # Ensure clippy doesn't complain.
