@@ -5659,13 +5659,7 @@ struct SrcCount {
 ** Count the number of references to columns.
 */
 static int exprSrcCount(Walker *pWalker, Expr *pExpr){
-  /* There was once a NEVER() on the second term on the grounds that
-  ** sqlite3FunctionUsesThisSrc() was always called before 
-  ** sqlite3ExprAnalyzeAggregates() and so the TK_COLUMNs have not yet 
-  ** been converted into TK_AGG_COLUMN. But this is no longer true due
-  ** to window functions - sqlite3WindowRewrite() may now indirectly call
-  ** FunctionUsesThisSrc() when creating a new sub-select. */
-  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+  if( pExpr->op==TK_COLUMN || NEVER(pExpr->op==TK_AGG_COLUMN) ){
     int i;
     struct SrcCount *p = pWalker->u.pSrcCount;
     SrcList *pSrc = p->pSrc;

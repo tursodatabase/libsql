@@ -6119,7 +6119,7 @@ int sqlite3Select(
   if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct 
    && sqlite3ExprListCompare(sSort.pOrderBy, pEList, -1)==0
 #ifndef SQLITE_OMIT_WINDOWFUNC
-   && p->pWin==0
+   && ALWAYS(p->pWin==0)
 #endif
   ){
     p->selFlags &= ~SF_Distinct;

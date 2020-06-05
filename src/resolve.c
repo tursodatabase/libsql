@@ -1715,7 +1715,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
           return WRC_Abort;
         }
       }
-    }else if( p->pWin && (p->selFlags & SF_WinRewrite)==0 ){
+    }else if( p->pWin && ALWAYS( (p->selFlags & SF_WinRewrite)==0 ) ){
       sqlite3WindowRewrite(pParse, p);
 #if SELECTTRACE_ENABLED
       if( (sqlite3SelectTrace & 0x108)!=0 ){
