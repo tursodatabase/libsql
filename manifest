@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\s"box"\smode\sin\sthe\sCLI:\s\sLike\s"table"\sexcept\sthat\sit\suses\nunicode\sbox-drawing\scharacters\sinstead\sof\sascii-art.
-D 2020-06-04T18:05:39.066
+C Always\suse\s?...?\sto\sindicate\soptional\sarguments\sin\sthe\soutput\sof\s".help"\nin\sthe\sCLI.\s\sChange\s".mode\scolumn"\sso\sthat\sit\sautomatically\sactivates\n".headers\son"\sif\sheaders\shave\snot\sbeen\spreviously\sturned\son\sor\soff.
+D 2020-06-05T00:54:27.575
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 39a00a8bc89596dfb37c16afcbb1d33de5085b9963564b58aafe1566d08c0881
-F src/shell.c.in 6f7ea57d3f15e7e6a1f7049b6b7e39589dd5fe114e8de034ae9a68bf7722fd40
+F src/shell.c.in c6e26593f2738eefded08a39204bf6b48db135cdfaa458c26ffe57055b4fe365
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1338,7 +1338,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test fabf21eea2c6bb04dd86dfc7441c7c14841b25e2540c1fffeae815e718625bcc
+F test/shell1.test a1cf47c5e110560ff25a714570bfd53bfaceeb61db5cad3072a4064f17ebd10e
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 1c6aef11daaa2d6830acaba3ac9cbec93fbc1c3d5530743a637f39b3987d08ce
@@ -1866,7 +1866,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7efabd683b79743b407ad71dda56db00fb0d668828bdc342145816b4f1c3bf3a
-R 3dac6f750121e41150b03b7c089ed222
+P 6da784c9e174744d6deeb76c553b515b96c1fcb80c55a281e476959ec680fb72
+R 969ac1a40c6ff55758c13b258f83a246
 U drh
-Z e00f940b0330d0b11d881b13cbeefb56
+Z 0d6660a390bea97335acfad3a03d0eb7

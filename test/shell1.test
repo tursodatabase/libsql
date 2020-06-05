@@ -709,11 +709,11 @@ do_test shell1-3.26.4 {
   # this should be treated the same as a '1' width for col 1 and 2
 } {0 {}}
 do_test shell1-3.26.5 {
-  catchcmd "test.db" ".mode column\n.width 10 -10\nSELECT 'abcdefg', 123456;"
+  catchcmd "test.db" ".mode column\n.header off\n.width 10 -10\nSELECT 'abcdefg', 123456;"
   # this should be treated the same as a '1' width for col 1 and 2
 } {0 {abcdefg         123456}}
 do_test shell1-3.26.6 {
-  catchcmd "test.db" ".mode column\n.width -10 10\nSELECT 'abcdefg', 123456;"
+  catchcmd "test.db" ".mode column\n.header off\n.width -10 10\nSELECT 'abcdefg', 123456;"
   # this should be treated the same as a '1' width for col 1 and 2
 } {0 {   abcdefg  123456    }}
 

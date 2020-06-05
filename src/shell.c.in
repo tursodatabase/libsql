@@ -1167,6 +1167,7 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+#define SHFLG_HeaderSet      0x00000080 /* .header has been used */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -3930,7 +3931,7 @@ static const char *(azHelp[]) = {
   "       -e     Send output to the system text editor",
   "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
 #ifdef SQLITE_DEBUG
-  ".oom [--repeat M] [N]    Simulate an OOM error on the N-th allocation",
+  ".oom ?--repeat M? ?N?    Simulate an OOM error on the N-th allocation",
 #endif 
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
   "     Options:",
@@ -7969,6 +7970,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='h' && strncmp(azArg[0], "headers", n)==0 ){
     if( nArg==2 ){
       p->showHeader = booleanValue(azArg[1]);
+      p->shellFlgs |= SHFLG_HeaderSet;
     }else{
       raw_printf(stderr, "Usage: .headers on|off\n");
       rc = 1;
@@ -8491,6 +8493,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='c' && strncmp(azArg[1],"columns",n2)==0 ){
       p->mode = MODE_Column;
+      if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
+        p->showHeader = 1;
+      }
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='l' && n2>2 && strncmp(azArg[1],"list",n2)==0 ){
       p->mode = MODE_List;
