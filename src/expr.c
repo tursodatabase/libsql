@@ -52,7 +52,12 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
-    return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
+    if( ALWAYS(pExpr->x.pSelect)
+     && pExpr->x.pSelect->pEList
+     && ALWAYS(pExpr->x.pSelect->pEList->a[0].pExpr)
+    ){
+      return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
+    }
   }
   if( op==TK_REGISTER ) op = pExpr->op2;
 #ifndef SQLITE_OMIT_CAST
@@ -5723,16 +5728,15 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
 ** will not generate any code in the preamble.
 */
 static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
-  if( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced)
+  if( ALWAYS(!ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced))
    && pExpr->pAggInfo!=0
   ){
     AggInfo *pAggInfo = pExpr->pAggInfo;
     int iAgg = pExpr->iAgg;
     Parse *pParse = pWalker->pParse;
     sqlite3 *db = pParse->db;
-    assert( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN
-            || pExpr->op==TK_FUNCTION || pExpr->op==TK_AGG_FUNCTION );
-    if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+    assert( pExpr->op==TK_AGG_COLUMN || pExpr->op==TK_AGG_FUNCTION );
+    if( pExpr->op==TK_AGG_COLUMN ){
       assert( iAgg>=0 && iAgg<pAggInfo->nColumn );
       if( pAggInfo->aCol[iAgg].pExpr==pExpr ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
