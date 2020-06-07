@@ -84,7 +84,7 @@ impl Drop for CachedStatement<'_> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
-            self.cache.cache_stmt(stmt.into());
+            self.cache.cache_stmt(unsafe { stmt.into_raw() });
         }
     }
 }

@@ -702,11 +702,12 @@ impl Statement<'_> {
     pub(crate) fn check_no_tail(&self) -> Result<()> {
         Ok(())
     }
-}
 
-impl Into<RawStatement> for Statement<'_> {
-    fn into(mut self) -> RawStatement {
-        let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), false) };
+    /// Safety: This is unsafe, because using `sqlite3_stmt` after the
+    /// connection has closed is illegal, but `RawStatement` does not enforce
+    /// this, as it loses our protective `'conn` lifetime bound.
+    pub(crate) unsafe fn into_raw(mut self) -> RawStatement {
+        let mut stmt = RawStatement::new(ptr::null_mut(), false);
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }
