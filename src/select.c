@@ -3791,6 +3791,7 @@ static int flattenSubquery(
   Expr *pWhere;                    /* The WHERE clause */
   struct SrcList_item *pSubitem;   /* The subquery */
   sqlite3 *db = pParse->db;
+  Walker w;                        /* Walker to persist agginfo data */
 
   /* Check to see if flattening is permitted.  Return 0 if not.
   */
@@ -4165,6 +4166,8 @@ static int flattenSubquery(
   /* Finially, delete what is left of the subquery and return
   ** success.
   */
+  sqlite3AggInfoPersistWalkerInit(&w, pParse);
+  sqlite3WalkSelect(&w,pSub1);
   sqlite3SelectDelete(db, pSub1);
 
 #if SELECTTRACE_ENABLED
@@ -5765,6 +5768,9 @@ int sqlite3Select(
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
+#ifdef SQLITE_DEBUG
+  sAggInfo.iAggMagic = AggInfoMagic;
+#endif
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
   if( sqlite3SelectTrace & 0x100 ){
@@ -5917,6 +5923,7 @@ int sqlite3Select(
     }
 #endif
     if( p->pNext==0 ) ExplainQueryPlanPop(pParse);
+    assert( sAggInfo.nFunc==0 && sAggInfo.nColumn==0 );
     return rc;
   }
 #endif
@@ -6789,8 +6796,34 @@ int sqlite3Select(
   */
 select_end:
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
-  sqlite3DbFree(db, sAggInfo.aCol);
-  sqlite3DbFree(db, sAggInfo.aFunc);
+  if( sAggInfo.aCol ){
+#ifdef SQLITE_DEBUG
+    for(i=0; i<sAggInfo.nColumn; i++){
+      Expr *pExpr = sAggInfo.aCol[i].pExpr;
+      assert( pExpr!=0 || pParse->db->mallocFailed );
+      if( pExpr==0 ) continue;
+      assert( pExpr->pAggInfo==&sAggInfo );
+      assert( pExpr->iAgg==i );
+    }
+#endif
+    sqlite3DbFree(db, sAggInfo.aCol);
+  }
+  if( sAggInfo.aFunc ){
+#ifdef SQLITE_DEBUG
+    for(i=0; i<sAggInfo.nFunc; i++){
+      Expr *pExpr = sAggInfo.aFunc[i].pExpr;
+      assert( pExpr!=0 || pParse->db->mallocFailed );
+      if( pExpr==0 ) continue;
+      assert( pExpr->pAggInfo==&sAggInfo );
+      assert( pExpr->iAgg==i );
+    }
+#endif
+    sqlite3DbFree(db, sAggInfo.aFunc);
+  }
+#ifdef SQLITE_DEBUG
+  sAggInfo.iAggMagic = 0;
+#endif
+
 #if SELECTTRACE_ENABLED
   SELECTTRACE(0x1,pParse,p,("end processing\n"));
   if( (sqlite3SelectTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){

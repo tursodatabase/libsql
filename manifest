@@ -1,5 +1,5 @@
-C In\sthe\sdebugging\streeview\soutput,\schange\sthe\sname\sof\s"SELECT-expr"\sexpression\nnodes\sto\sbe\s"subquery-expr",\sso\sas\sto\snot\sconfuse\sthem\swith\sactual\sSELECT\nnodes.
-D 2020-06-05T04:01:50.831
+C Alternative\sfix\sto\sticket\s[c8d3b9f0a750a529]:\s\sPrior\sto\sdeleting\sor\smodifying\nan\sExpr\snot\sthat\sis\sreferenced\sby\san\sAggInfo,\smodify\sthe\sAggInfo\sto\sget\sits\nown\scopy\sof\sthe\soriginal\sExpr.
+D 2020-06-07T17:33:18.737
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c f14e415fcfd0b52b4e4ebd193ba5fadac5e8252c30f023389af682813af44025
 F src/btree.h 989ef3c33413549e3e148f3dcb46c030f317dac130dc86809ba6b9aa4b16c72a
 F src/btreeInt.h 5c8b8749805787313ecf49eb5be3ced1e94bbf8ef54bb01470ce6bd0d5185c67
-F src/build.c 1c3dec6d36ddc697dbc1df04100687cdbbed65aacfda067d1e9632e4102e9999
+F src/build.c 02cff9bb5b3eaf437cbad3f0e1b6c9612e4d4f355c9a766b8ebf121d95cee6d2
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -485,7 +485,7 @@ F src/date.c b29b349d277e3d579dcc295b24c0a2caed83fd8f090a9f7cbe6070c0fd662384
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 793deaf88a0904f88285d93d6713c636d55ede0ffd9f08d10f4ea825531d367f
 F src/delete.c 88047c8e59878c920fce14582bc1dde4d81157d1ca5ffdf36c2907e6d41996c4
-F src/expr.c 4750c6b63419eefb24c8a6158b9287dea2a9714b4e6e297e25805505c9f73b6c
+F src/expr.c 23434d32b9bf92638a61ea6a95845e163f388d6cfd4931b7774f8ad7561b7cfd
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 4b575423b0a5d4898b1a7868ce985cf1a8ad91c741c9abbb108ff02536d20f41
 F src/func.c 2333eb4277f55a5efdc12ef754e7d7ec9105d257b2fd00301d23ce1e8fa67dc0
@@ -533,12 +533,12 @@ F src/printf.c 94b5419ad0a17269f76a9e968ca19cf9fa37617abed2e246fc48844e511b6bc6
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 39a00a8bc89596dfb37c16afcbb1d33de5085b9963564b58aafe1566d08c0881
+F src/select.c 6eb5d0c524ed986107bbcb5b5c5d177c705155bc5284b3006bbec9af66361f47
 F src/shell.c.in c6e26593f2738eefded08a39204bf6b48db135cdfaa458c26ffe57055b4fe365
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
-F src/sqliteInt.h f5e422635c089adf60260e1947ecfaf68dd333bda20c2afdd60323357d8540a0
+F src/sqliteInt.h dda913aa727b7c01cae68259cafe6d26b5d8704c114d128585c1610d324d4d41
 F src/sqliteLimit.h 95cb8479ca459496d9c1c6a9f76b38aee12203a56ce1092fe13e50ae2454c032
 F src/status.c 9ff2210207c6c3b4d9631a8241a7d45ab1b26a0e9c84cb07a9b5ce2de9a3b278
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -624,7 +624,7 @@ F src/where.c 7bcc07ff56d03d73308245135d96de46d2faeaee628bd4badf0bae60ae6a31fe
 F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
 F src/wherecode.c 7b939de85d65cc4b4bfa197513136b9e0ae03167e3b82842ca5a0ba1055ba65d
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
-F src/window.c 66c5fd1e48af7581cf90b97700268294f4da4037f120f367715f912e1148d3f9
+F src/window.c 7d19c08b62b70d5dc2ef4c098cc5ba611fac246a111fa36ebb39505415124b90
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1029,7 +1029,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 209623791b0ad72ab39110c867af2080a79004e493c4da14ad661e790b5d1ed8
+F test/fuzzdata8.db 6acee588a3311994b57b226c9eac9e9e69f135cb8b000bd48fdb924e32041312
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1727,7 +1727,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 4baffc3acb2e5188a5e3a895b2b543ed09e62f7c72d713c1feebf76222fe9976
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 502a3e72fce895aaaa633bbe709f6de3c24eed3ecb8098ab9fb8b47584b4452c
+F test/window1.test 30ec5cc344f5ad07bd50742a5dda580d3c6954d60879a440fecaee2ded27700a
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1866,7 +1866,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2827c0a186596299e43eb3e7378eea462d2b060b2c3388ce5cb2bc8e0b43999e
-R ee30fc3f51275fe44c86656d5c06c7d7
+P c1c8937a30feff6aa4385b0c264fd8e70d54422a0629c2ce38082d85d3334a57
+R 3e4eafa96401be2af64b22062bf801bb
+T *branch * persist-agginfo
+T *sym-persist-agginfo *
+T -sym-trunk *
 U drh
-Z bb7b42e3c07b2ab8975730fed03b093c
+Z 6c6c52ade97d07f6efb7096e79fdc901

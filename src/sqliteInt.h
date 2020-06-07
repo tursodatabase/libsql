@@ -2506,11 +2506,11 @@ struct AggInfo {
   ExprList *pGroupBy;     /* The group by clause */
   struct AggInfo_col {    /* For each column used in source tables */
     Table *pTab;             /* Source table */
-    int iTable;              /* Cursor number of the source table */
-    int iColumn;             /* Column number within the source table */
-    int iSorterColumn;       /* Column number in the sorting index */
-    int iMem;                /* Memory location that acts as accumulator */
     Expr *pExpr;             /* The original expression */
+    int iTable;              /* Cursor number of the source table */
+    int iMem;                /* Memory location that acts as accumulator */
+    i16 iColumn;             /* Column number within the source table */
+    i16 iSorterColumn;       /* Column number in the sorting index */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
   int nAccumulator;       /* Number of columns that show through to the output.
@@ -2523,7 +2523,15 @@ struct AggInfo {
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
+#ifdef SQLITE_DEBUG
+  int iAggMagic;          /* Magic number when valid */
+#endif
 };
+
+/*
+** Value for AggInfo.iAggMagic when the structure is valid
+*/
+#define AggInfoMagic  0x2059e99e
 
 /*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.
@@ -4287,6 +4295,7 @@ int sqlite3ExprCompareSkip(Expr*, Expr*, int);
 int sqlite3ExprListCompare(ExprList*, ExprList*, int);
 int sqlite3ExprImpliesExpr(Parse*,Expr*, Expr*, int);
 int sqlite3ExprImpliesNonNullRow(Expr*,int);
+void sqlite3AggInfoPersistWalkerInit(Walker*,Parse*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 int sqlite3ExprCoveredByIndex(Expr*, int iCur, Index *pIdx);
