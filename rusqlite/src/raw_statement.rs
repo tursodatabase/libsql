@@ -153,7 +153,7 @@ impl RawStatement {
         r
     }
 
-    #[cfg(feature = "modern_sqlite")] // 3.7.4
+    #[cfg(all(feature = "extra_check", feature = "modern_sqlite"))] // 3.7.4
     pub fn readonly(&self) -> bool {
         unsafe { ffi::sqlite3_stmt_readonly(self.ptr) != 0 }
     }
@@ -168,6 +168,7 @@ impl RawStatement {
         unsafe { ffi::sqlite3_stmt_status(self.ptr, status as i32, reset as i32) }
     }
 
+    #[cfg(feature = "extra_check")]
     pub fn has_tail(&self) -> bool {
         self.tail
     }
