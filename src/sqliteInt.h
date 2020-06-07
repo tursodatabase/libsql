@@ -2526,6 +2526,7 @@ struct AggInfo {
 #ifdef SQLITE_DEBUG
   int iAggMagic;          /* Magic number when valid */
 #endif
+  AggInfo *pNext;         /* Next in list of them all */
 };
 
 /*
@@ -3329,6 +3330,7 @@ struct Parse {
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
   Parse *pParentParse; /* Parent parser if this parser is nested */
+  AggInfo *pAggList;   /* List of all AggInfo objects */
   int addrCrTab;       /* Address of OP_CreateBtree opcode on CREATE TABLE */
   u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */

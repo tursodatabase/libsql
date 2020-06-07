@@ -5730,7 +5730,6 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     int iAgg = pExpr->iAgg;
     Parse *pParse = pWalker->pParse;
     sqlite3 *db = pParse->db;
-    assert( pAggInfo->iAggMagic==AggInfoMagic );
     assert( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN
             || pExpr->op==TK_FUNCTION || pExpr->op==TK_AGG_FUNCTION );
     if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){

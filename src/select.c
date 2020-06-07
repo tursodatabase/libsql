@@ -5752,10 +5752,10 @@ int sqlite3Select(
   Expr *pWhere;          /* The WHERE clause.  May be NULL */
   ExprList *pGroupBy;    /* The GROUP BY clause.  May be NULL */
   Expr *pHaving;         /* The HAVING clause.  May be NULL */
+  AggInfo *pAggInfo = 0; /* Aggregate information */
   int rc = 1;            /* Value to return from this function */
   DistinctCtx sDistinct; /* Info on how to code the DISTINCT keyword */
   SortCtx sSort;         /* Info on how to code the ORDER BY clause */
-  AggInfo sAggInfo;      /* Information used by aggregate queries */
   int iEnd;              /* Address of the end of the query */
   sqlite3 *db;           /* The database connection */
   ExprList *pMinMaxOrderBy = 0;  /* Added ORDER BY for min/max queries */
@@ -5767,10 +5767,6 @@ int sqlite3Select(
     return 1;
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
-  memset(&sAggInfo, 0, sizeof(sAggInfo));
-#ifdef SQLITE_DEBUG
-  sAggInfo.iAggMagic = AggInfoMagic;
-#endif
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
   if( sqlite3SelectTrace & 0x100 ){
@@ -5923,7 +5919,6 @@ int sqlite3Select(
     }
 #endif
     if( p->pNext==0 ) ExplainQueryPlanPop(pParse);
-    assert( sAggInfo.nFunc==0 && sAggInfo.nColumn==0 );
     return rc;
   }
 #endif
@@ -6361,14 +6356,20 @@ int sqlite3Select(
     ** sAggInfo for all TK_AGG_FUNCTION nodes in expressions of the
     ** SELECT statement.
     */
+    pAggInfo = sqlite3DbMallocZero(db, sizeof(*pAggInfo) );
+    if( pAggInfo==0 ){
+      goto select_end;
+    }
+    pAggInfo->pNext = pParse->pAggList;
+    pParse->pAggList = pAggInfo;
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pSrcList = pTabList;
-    sNC.uNC.pAggInfo = &sAggInfo;
+    sNC.uNC.pAggInfo = pAggInfo;
     VVA_ONLY( sNC.ncFlags = NC_UAggInfo; )
-    sAggInfo.mnReg = pParse->nMem+1;
-    sAggInfo.nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
-    sAggInfo.pGroupBy = pGroupBy;
+    pAggInfo->mnReg = pParse->nMem+1;
+    pAggInfo->nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
+    pAggInfo->pGroupBy = pGroupBy;
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
     sqlite3ExprAnalyzeAggList(&sNC, sSort.pOrderBy);
     if( pHaving ){
@@ -6381,14 +6382,14 @@ int sqlite3Select(
       }
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
     }
-    sAggInfo.nAccumulator = sAggInfo.nColumn;
-    if( p->pGroupBy==0 && p->pHaving==0 && sAggInfo.nFunc==1 ){
-      minMaxFlag = minMaxQuery(db, sAggInfo.aFunc[0].pExpr, &pMinMaxOrderBy);
+    pAggInfo->nAccumulator = pAggInfo->nColumn;
+    if( p->pGroupBy==0 && p->pHaving==0 && pAggInfo->nFunc==1 ){
+      minMaxFlag = minMaxQuery(db, pAggInfo->aFunc[0].pExpr, &pMinMaxOrderBy);
     }else{
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
-    for(i=0; i<sAggInfo.nFunc; i++){
-      Expr *pExpr = sAggInfo.aFunc[i].pExpr;
+    for(i=0; i<pAggInfo->nFunc; i++){
+      Expr *pExpr = pAggInfo->aFunc[i].pExpr;
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       sNC.ncFlags |= NC_InAggFunc;
       sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
@@ -6400,22 +6401,22 @@ int sqlite3Select(
 #endif
       sNC.ncFlags &= ~NC_InAggFunc;
     }
-    sAggInfo.mxReg = pParse->nMem;
+    pAggInfo->mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
 #if SELECTTRACE_ENABLED
     if( sqlite3SelectTrace & 0x400 ){
       int ii;
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", &sAggInfo));
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
-      for(ii=0; ii<sAggInfo.nColumn; ii++){
+      for(ii=0; ii<pAggInfo->nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
-            ii, sAggInfo.aCol[ii].iMem);
-        sqlite3TreeViewExpr(0, sAggInfo.aCol[ii].pExpr, 0);
+            ii, pAggInfo->aCol[ii].iMem);
+        sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pExpr, 0);
       }
-      for(ii=0; ii<sAggInfo.nFunc; ii++){
+      for(ii=0; ii<pAggInfo->nFunc; ii++){
         sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-            ii, sAggInfo.aFunc[ii].iMem);
-        sqlite3TreeViewExpr(0, sAggInfo.aFunc[ii].pExpr, 0);
+            ii, pAggInfo->aFunc[ii].iMem);
+        sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pExpr, 0);
       }
     }
 #endif
@@ -6440,10 +6441,11 @@ int sqlite3Select(
       ** that we do not need it after all, the OP_SorterOpen instruction
       ** will be converted into a Noop.  
       */
-      sAggInfo.sortingIdx = pParse->nTab++;
-      pKeyInfo = sqlite3KeyInfoFromExprList(pParse,pGroupBy,0,sAggInfo.nColumn);
+      pAggInfo->sortingIdx = pParse->nTab++;
+      pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pGroupBy,
+                                            0, pAggInfo->nColumn);
       addrSortingIdx = sqlite3VdbeAddOp4(v, OP_SorterOpen, 
-          sAggInfo.sortingIdx, sAggInfo.nSortingColumn, 
+          pAggInfo->sortingIdx, pAggInfo->nSortingColumn, 
           0, (char*)pKeyInfo, P4_KEYINFO);
 
       /* Initialize memory locations used by GROUP BY aggregate processing
@@ -6498,8 +6500,8 @@ int sqlite3Select(
         nGroupBy = pGroupBy->nExpr;
         nCol = nGroupBy;
         j = nGroupBy;
-        for(i=0; i<sAggInfo.nColumn; i++){
-          if( sAggInfo.aCol[i].iSorterColumn>=j ){
+        for(i=0; i<pAggInfo->nColumn; i++){
+          if( pAggInfo->aCol[i].iSorterColumn>=j ){
             nCol++;
             j++;
           }
@@ -6507,8 +6509,8 @@ int sqlite3Select(
         regBase = sqlite3GetTempRange(pParse, nCol);
         sqlite3ExprCodeExprList(pParse, pGroupBy, regBase, 0, 0);
         j = nGroupBy;
-        for(i=0; i<sAggInfo.nColumn; i++){
-          struct AggInfo_col *pCol = &sAggInfo.aCol[i];
+        for(i=0; i<pAggInfo->nColumn; i++){
+          struct AggInfo_col *pCol = &pAggInfo->aCol[i];
           if( pCol->iSorterColumn>=j ){
             int r1 = j + regBase;
             sqlite3ExprCodeGetColumnOfTable(v,
@@ -6518,16 +6520,16 @@ int sqlite3Select(
         }
         regRecord = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regRecord);
-        sqlite3VdbeAddOp2(v, OP_SorterInsert, sAggInfo.sortingIdx, regRecord);
+        sqlite3VdbeAddOp2(v, OP_SorterInsert, pAggInfo->sortingIdx, regRecord);
         sqlite3ReleaseTempReg(pParse, regRecord);
         sqlite3ReleaseTempRange(pParse, regBase, nCol);
         sqlite3WhereEnd(pWInfo);
-        sAggInfo.sortingIdxPTab = sortPTab = pParse->nTab++;
+        pAggInfo->sortingIdxPTab = sortPTab = pParse->nTab++;
         sortOut = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_OpenPseudo, sortPTab, sortOut, nCol);
-        sqlite3VdbeAddOp2(v, OP_SorterSort, sAggInfo.sortingIdx, addrEnd);
+        sqlite3VdbeAddOp2(v, OP_SorterSort, pAggInfo->sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
-        sAggInfo.useSortingIdx = 1;
+        pAggInfo->useSortingIdx = 1;
       }
 
       /* If the index or temporary table used by the GROUP BY sort
@@ -6551,14 +6553,14 @@ int sqlite3Select(
       */
       addrTopOfLoop = sqlite3VdbeCurrentAddr(v);
       if( groupBySort ){
-        sqlite3VdbeAddOp3(v, OP_SorterData, sAggInfo.sortingIdx,
+        sqlite3VdbeAddOp3(v, OP_SorterData, pAggInfo->sortingIdx,
                           sortOut, sortPTab);
       }
       for(j=0; j<pGroupBy->nExpr; j++){
         if( groupBySort ){
           sqlite3VdbeAddOp3(v, OP_Column, sortPTab, j, iBMem+j);
         }else{
-          sAggInfo.directMode = 1;
+          pAggInfo->directMode = 1;
           sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, iBMem+j);
         }
       }
@@ -6588,14 +6590,14 @@ int sqlite3Select(
       ** the current row
       */
       sqlite3VdbeJumpHere(v, addr1);
-      updateAccumulator(pParse, iUseFlag, &sAggInfo);
+      updateAccumulator(pParse, iUseFlag, pAggInfo);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iUseFlag);
       VdbeComment((v, "indicate data in accumulator"));
 
       /* End of the loop
       */
       if( groupBySort ){
-        sqlite3VdbeAddOp2(v, OP_SorterNext, sAggInfo.sortingIdx, addrTopOfLoop);
+        sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx, addrTopOfLoop);
         VdbeCoverage(v);
       }else{
         sqlite3WhereEnd(pWInfo);
@@ -6628,7 +6630,7 @@ int sqlite3Select(
       VdbeCoverage(v);
       VdbeComment((v, "Groupby result generator entry point"));
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
-      finalizeAggFunctions(pParse, &sAggInfo);
+      finalizeAggFunctions(pParse, pAggInfo);
       sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
       selectInnerLoop(pParse, p, -1, &sSort,
                       &sDistinct, pDest,
@@ -6639,7 +6641,7 @@ int sqlite3Select(
       /* Generate a subroutine that will reset the group-by accumulator
       */
       sqlite3VdbeResolveLabel(v, addrReset);
-      resetAccumulator(pParse, &sAggInfo);
+      resetAccumulator(pParse, pAggInfo);
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
       VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp1(v, OP_Return, regReset);
@@ -6647,7 +6649,7 @@ int sqlite3Select(
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
       Table *pTab;
-      if( (pTab = isSimpleCount(p, &sAggInfo))!=0 ){
+      if( (pTab = isSimpleCount(p, pAggInfo))!=0 ){
         /* If isSimpleCount() returns a pointer to a Table structure, then
         ** the SQL statement is of the form:
         **
@@ -6702,7 +6704,7 @@ int sqlite3Select(
         if( pKeyInfo ){
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
-        sqlite3VdbeAddOp2(v, OP_Count, iCsr, sAggInfo.aFunc[0].iMem);
+        sqlite3VdbeAddOp2(v, OP_Count, iCsr, pAggInfo->aFunc[0].iMem);
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
       }else{
@@ -6717,12 +6719,16 @@ int sqlite3Select(
         ** first row visited by the aggregate, so that they are updated at
         ** least once even if the FILTER clause means the min() or max() 
         ** function visits zero rows.  */
-        if( sAggInfo.nAccumulator ){
-          for(i=0; i<sAggInfo.nFunc; i++){
-            if( ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_WinFunc) ) continue;
-            if( sAggInfo.aFunc[i].pFunc->funcFlags&SQLITE_FUNC_NEEDCOLL ) break;
+        if( pAggInfo->nAccumulator ){
+          for(i=0; i<pAggInfo->nFunc; i++){
+            if( ExprHasProperty(pAggInfo->aFunc[i].pExpr, EP_WinFunc) ){
+              continue;
+            }
+            if( pAggInfo->aFunc[i].pFunc->funcFlags&SQLITE_FUNC_NEEDCOLL ){
+              break;
+            }
           }
-          if( i==sAggInfo.nFunc ){
+          if( i==pAggInfo->nFunc ){
             regAcc = ++pParse->nMem;
             sqlite3VdbeAddOp2(v, OP_Integer, 0, regAcc);
           }
@@ -6733,7 +6739,7 @@ int sqlite3Select(
         ** of output.
         */
         assert( p->pGroupBy==0 );
-        resetAccumulator(pParse, &sAggInfo);
+        resetAccumulator(pParse, pAggInfo);
 
         /* If this query is a candidate for the min/max optimization, then
         ** minMaxFlag will have been previously set to either
@@ -6749,7 +6755,7 @@ int sqlite3Select(
         if( pWInfo==0 ){
           goto select_end;
         }
-        updateAccumulator(pParse, regAcc, &sAggInfo);
+        updateAccumulator(pParse, regAcc, pAggInfo);
         if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);
         if( sqlite3WhereIsOrdered(pWInfo)>0 ){
           sqlite3VdbeGoto(v, sqlite3WhereBreakLabel(pWInfo));
@@ -6757,7 +6763,7 @@ int sqlite3Select(
                 (minMaxFlag==WHERE_ORDERBY_MIN?"min":"max")));
         }
         sqlite3WhereEnd(pWInfo);
-        finalizeAggFunctions(pParse, &sAggInfo);
+        finalizeAggFunctions(pParse, pAggInfo);
       }
 
       sSort.pOrderBy = 0;
@@ -6796,32 +6802,23 @@ int sqlite3Select(
   */
 select_end:
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
-  if( sAggInfo.aCol ){
 #ifdef SQLITE_DEBUG
-    for(i=0; i<sAggInfo.nColumn; i++){
-      Expr *pExpr = sAggInfo.aCol[i].pExpr;
-      assert( pExpr!=0 || pParse->db->mallocFailed );
+  if( pAggInfo ){
+    for(i=0; i<pAggInfo->nColumn; i++){
+      Expr *pExpr = pAggInfo->aCol[i].pExpr;
+      assert( pExpr!=0 || db->mallocFailed );
       if( pExpr==0 ) continue;
-      assert( pExpr->pAggInfo==&sAggInfo );
+      assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }
-#endif
-    sqlite3DbFree(db, sAggInfo.aCol);
-  }
-  if( sAggInfo.aFunc ){
-#ifdef SQLITE_DEBUG
-    for(i=0; i<sAggInfo.nFunc; i++){
-      Expr *pExpr = sAggInfo.aFunc[i].pExpr;
-      assert( pExpr!=0 || pParse->db->mallocFailed );
+    for(i=0; i<pAggInfo->nFunc; i++){
+      Expr *pExpr = pAggInfo->aFunc[i].pExpr;
+      assert( pExpr!=0 || db->mallocFailed );
       if( pExpr==0 ) continue;
-      assert( pExpr->pAggInfo==&sAggInfo );
+      assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }
-#endif
-    sqlite3DbFree(db, sAggInfo.aFunc);
   }
-#ifdef SQLITE_DEBUG
-  sAggInfo.iAggMagic = 0;
 #endif
 
 #if SELECTTRACE_ENABLED
