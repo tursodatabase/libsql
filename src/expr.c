@@ -52,7 +52,12 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
-    return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
+    if( ALWAYS(pExpr->x.pSelect)
+     && pExpr->x.pSelect->pEList
+     && ALWAYS(pExpr->x.pSelect->pEList->a[0].pExpr)
+    ){
+      return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
+    }
   }
   if( op==TK_REGISTER ) op = pExpr->op2;
 #ifndef SQLITE_OMIT_CAST
@@ -5711,6 +5716,64 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
 }
 
 /*
+** This is a Walker expression node callback.
+**
+** For Expr nodes that contain pAggInfo pointers, make sure the AggInfo
+** object that is referenced does not refer directly to the Expr.  If
+** it does, make a copy.  This is done because the pExpr argument is
+** subject to change.
+**
+** The copy is stored on pParse->pConstExpr with a register number of 0.
+** This will cause the expression to be deleted automatically when the
+** Parse object is destroyed, but the zero register number means that it
+** will not generate any code in the preamble.
+*/
+static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
+  if( ALWAYS(!ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced))
+   && pExpr->pAggInfo!=0
+  ){
+    AggInfo *pAggInfo = pExpr->pAggInfo;
+    int iAgg = pExpr->iAgg;
+    Parse *pParse = pWalker->pParse;
+    sqlite3 *db = pParse->db;
+    assert( pExpr->op==TK_AGG_COLUMN || pExpr->op==TK_AGG_FUNCTION );
+    if( pExpr->op==TK_AGG_COLUMN ){
+      assert( iAgg>=0 && iAgg<pAggInfo->nColumn );
+      if( pAggInfo->aCol[iAgg].pExpr==pExpr ){
+        pExpr = sqlite3ExprDup(db, pExpr, 0);
+        if( pExpr ){
+          pAggInfo->aCol[iAgg].pExpr = pExpr;
+          pParse->pConstExpr = 
+             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+        }
+      }
+    }else{
+      assert( iAgg>=0 && iAgg<pAggInfo->nFunc );
+      if( pAggInfo->aFunc[iAgg].pExpr==pExpr ){
+        pExpr = sqlite3ExprDup(db, pExpr, 0);
+        if( pExpr ){
+          pAggInfo->aFunc[iAgg].pExpr = pExpr;
+          pParse->pConstExpr = 
+             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+        }
+      }
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** Initialize a Walker object so that will persist AggInfo entries referenced
+** by the tree that is walked.
+*/
+void sqlite3AggInfoPersistWalkerInit(Walker *pWalker, Parse *pParse){
+  memset(pWalker, 0, sizeof(*pWalker));
+  pWalker->pParse = pParse;
+  pWalker->xExprCallback = agginfoPersistExprCb;
+  pWalker->xSelectCallback = sqlite3SelectWalkNoop;
+}
+
+/*
 ** Add a new element to the pAggInfo->aCol[] array.  Return the index of
 ** the new element.  Return a negative number if malloc fails.
 */
@@ -5740,7 +5803,7 @@ static int addAggInfoFunc(sqlite3 *db, AggInfo *pInfo){
        &i
   );
   return i;
-}    
+}
 
 /*
 ** This is the xExprCallback for a tree walker.  It is used to

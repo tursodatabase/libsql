@@ -956,12 +956,16 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     Window *pMWin = p->pWin;      /* Master window object */
     Window *pWin;                 /* Window object iterator */
     Table *pTab;
+    Walker w;
+
     u32 selFlags = p->selFlags;
 
     pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ){
       return sqlite3ErrorToParser(db, SQLITE_NOMEM);
     }
+    sqlite3AggInfoPersistWalkerInit(&w, pParse);
+    sqlite3WalkSelect(&w, p);
 
     p->pSrc = 0;
     p->pWhere = 0;
@@ -1042,7 +1046,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       Table *pTab2;
-      Walker w;
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded;

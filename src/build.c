@@ -207,12 +207,21 @@ void sqlite3FinishCoding(Parse *pParse){
       */
       sqlite3AutoincrementBegin(pParse);
 
-      /* Code constant expressions that where factored out of inner loops */
+      /* Code constant expressions that where factored out of inner loops.
+      **
+      ** The pConstExpr list might also contain expressions that we simply
+      ** want to keep around until the Parse object is deleted.  Such
+      ** expressions have iConstExprReg==0.  Do not generate code for
+      ** those expressions, of course.
+      */
       if( pParse->pConstExpr ){
         ExprList *pEL = pParse->pConstExpr;
         pParse->okConstFactor = 0;
         for(i=0; i<pEL->nExpr; i++){
-          sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].u.iConstExprReg);
+          int iReg = pEL->a[i].u.iConstExprReg;
+          if( iReg>0 ){
+            sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
+          }
         }
       }
 
