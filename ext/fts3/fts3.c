@@ -5560,7 +5560,10 @@ static int fts3EvalTestExpr(
         }else
 #endif
         {
-          bHit = (pExpr->bEof==0 && pExpr->iDocid==pCsr->iPrevId);
+          bHit = ( 
+              pExpr->bEof==0 && pExpr->iDocid==pCsr->iPrevId
+           && pExpr->pPhrase->doclist.nList>0
+          );
         }
         break;
       }

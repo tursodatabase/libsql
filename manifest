@@ -1,5 +1,5 @@
-C When\san\sExpr\sobject\sis\schanged\sand\sthat\sExpr\sis\sreferenced\sby\san\sAggInfo,\sthen\nalso\supdate\sthe\sAggInfo.\s\sAlso,\spersist\sall\sAggInfo\sobjects\suntil\sthe\sParse\nobject\sis\sdestroyed.\s\sThis\sis\sa\snew\sfix\sfor\sticket\s[c8d3b9f0a750a529]\sthat\navoids\sthe\sfollow-on\sproblems\sidentified\sby\stickets\n[0899cf62f597d7e7],\s[1f6f353b684fc708],\s[e5504e987e419fb0],\sand\n[f7d890858f361402].
-D 2020-06-08T11:34:40.204
+C Fix\sa\scase\swhere\sa\scorrupted\sfts3\srecord\scould\scause\san\sassert()\sfailure,\sor\sspurious\sSQLITE_NOMEM\serror\sin\sbuilds\swith\sassert()\sdisabled.
+D 2020-06-08T14:43:41.880
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -82,7 +82,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 45f5774987a68d36355799503b6d02dbff5286ffb42bec14d928b295d2b93c1b
+F ext/fts3/fts3.c 7a12745b024dfb26c7b87f9a5e30241b1b8c8f049ecd5c228454757b500a0595
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 2c59cc46aefde134c1782e89a6a5384710ddcd4e783071337aa5d43d07269be3
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
@@ -950,6 +950,7 @@ F test/fts3corrupt2.test bf55c3fa0b0dc8ea1c0fe5543623bd27714585da6a129038fd6999f
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
 F test/fts3corrupt4.test fde292a4712753c7ef235a199273c5d196e18a56bd2c4d2db7ccaf59b7027a0a
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
+F test/fts3corrupt6.test b6c55218b704b0cef224b284c756f9c55d0afd0b3c3837618bffeaa8c31e0d8e
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -1866,8 +1867,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1c8937a30feff6aa4385b0c264fd8e70d54422a0629c2ce38082d85d3334a57 8b23d80271aab38abe42ee8b3ca4b746572ecef26c2a37b094b01560e6be9d45
-R 5a67d9ba1d91119ad620e46132adbad1
-T +closed 8b23d80271aab38abe42ee8b3ca4b746572ecef26c2a37b094b01560e6be9d45
-U drh
-Z 6f53567ca5c0a8bbc47fb39a7dc9415b
+P 6e6b3729e0549de028f6c5bf494b2d69d621c81b61a1dc0a329d3950039342fb
+R 501a6f582df48fcb778cb04d0dbc67e9
+U dan
+Z 59d7d89d08b1863cb68d3606c4f1b730
