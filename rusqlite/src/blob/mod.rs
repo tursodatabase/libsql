@@ -3,54 +3,188 @@
 //! Note that SQLite does not provide API-level access to change the size of a
 //! BLOB; that must be performed through SQL statements.
 //!
+//! There are two choices for how to perform IO on a [`Blob`].
+//!
+//! 1. The implementations it provides of the `std::io::Read`, `std::io::Write`,
+//!    and `std::io::Seek` traits.
+//!
+//! 2. A positional IO API, e.g. [`Blob::read_at`], [`Blob::write_at`] and
+//!    similar.
+//!
+//! Documenting these in order:
+//!
+//! ## 1. `std::io` trait implementations.
+//!
 //! `Blob` conforms to `std::io::Read`, `std::io::Write`, and `std::io::Seek`,
 //! so it plays nicely with other types that build on these (such as
-//! `std::io::BufReader` and `std::io::BufWriter`). However, you must be
-//! careful with the size of the blob. For example, when using a `BufWriter`,
-//! the `BufWriter` will accept more data than the `Blob`
-//! will allow, so make sure to call `flush` and check for errors. (See the
-//! unit tests in this module for an example.)
+//! `std::io::BufReader` and `std::io::BufWriter`). However, you must be careful
+//! with the size of the blob. For example, when using a `BufWriter`, the
+//! `BufWriter` will accept more data than the `Blob` will allow, so make sure
+//! to call `flush` and check for errors. (See the unit tests in this module for
+//! an example.)
 //!
-//! ## Example
+//! ## 2. Positional IO
+//!
+//! `Blob`s also offer a `pread` / `pwrite`-style positional IO api in the form
+//! of [`Blob::read_at`], [`Blob::write_at`], [`Blob::raw_read_at`],
+//! [`Blob::read_at_exact`], and [`Blob::raw_read_at_exact`].
+//!
+//! These APIs all take the position to read from or write to from as a
+//! parameter, instead of using an internal `pos` value.
+//!
+//! ### Positional IO Read Variants
+//!
+//! For the `read` functions, there are several functions provided:
+//!
+//! - [`Blob::read_at`]
+//! - [`Blob::raw_read_at`]
+//! - [`Blob::read_at_exact`]
+//! - [`Blob::raw_read_at_exact`]
+//!
+//! These can be divided along two axes: raw/not raw, and exact/inexact:
+//!
+//! 1. Raw/not raw refers to the type of the destination buffer. The raw
+//!    functions take a `&mut [MaybeUninit<u8>]` as the destination buffer,
+//!    where the "normal" functions take a `&mut [u8]`.
+//!
+//!    Using `MaybeUninit` here can be more efficient in some cases, but is
+//!    often inconvenient, so both are provided.
+//!
+//! 2. Exact/inexact refers to to whether or not the entire buffer must be
+//!    filled in order for the call to be considered a success.
+//!
+//!    The "exact" functions require the provided buffer be entirely filled, or
+//!    they return an error, wheras the "inexact" functions read as much out of
+//!    the blob as is available, and return how much they were able to read.
+//!
+//!    The inexact functions are preferrable if you do not know the size of the
+//!    blob already, and the exact functions are preferrable if you do.
+//!
+//! ### Comparison to using the `std::io` traits:
+//!
+//! In general, the positional methods offer the following Pro/Cons compared to
+//! using the implementation `std::io::{Read, Write, Seek}` we provide for
+//! `Blob`:
+//!
+//! 1. (Pro) There is no need to first seek to a position in order to perform IO
+//!    on it as the position is a parameter.
+//!
+//! 2. (Pro) `Blob`'s positional read functions don't mutate the blob in any
+//!    way, and take `&self`. No `&mut` access required.
+//!
+//! 3. (Pro) Positional IO functions return `Err(rusqlite::Error)` on failure,
+//!    rather than `Err(std::io::Error)`. Returning `rusqlite::Error` is more
+//!    accurate and convenient.
+//!
+//!    Note that for the `std::io` API, no data is lost however, and it can be
+//!    recovered with `io_err.downcast::<rusqlite::Error>()` (this can be easy
+//!    to forget, though).
+//!
+//! 4. (Pro, for now). A `raw` version of the read API exists which can allow
+//!    reading into a `&mut [MaybeUninit<u8>]` buffer, which avoids a potential
+//!    costly initialization step. (However, `std::io` traits will certainly
+//!    gain this someday, which is why this is only a "Pro, for now").
+//!
+//! 5. (Con) The set of functions is more bare-bones than what is offered in
+//!    `std::io`, which has a number of adapters, handy algorithms, further
+//!    traits.
+//!
+//! 6. (Con) No meaningful interoperability with other crates, so if you need
+//!    that you must use `std::io`.
+//!
+//! To generalize: the `std::io` traits are useful because they conform to a
+//! standard interface that a lot of code knows how to handle, however that
+//! interface is not a perfect fit for [`Blob`], so another small set of
+//! functions is provided as well.
+//!
+//! # Example (`std::io`)
 //!
 //! ```rust
-//! use rusqlite::blob::ZeroBlob;
-//! use rusqlite::{Connection, DatabaseName, NO_PARAMS};
-//! use std::error::Error;
-//! use std::io::{Read, Seek, SeekFrom, Write};
+//! # use rusqlite::blob::ZeroBlob;
+//! # use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! # use std::error::Error;
+//! # use std::io::{Read, Seek, SeekFrom, Write};
+//! # fn main() -> Result<(), Box<dyn Error>> {
+//! let db = Connection::open_in_memory()?;
+//! db.execute_batch("CREATE TABLE test_table (content BLOB);")?;
 //!
-//! fn main() -> Result<(), Box<Error>> {
-//!     let db = Connection::open_in_memory()?;
-//!     db.execute_batch("CREATE TABLE test (content BLOB);")?;
-//!     db.execute(
-//!         "INSERT INTO test (content) VALUES (ZEROBLOB(10))",
-//!         NO_PARAMS,
-//!     )?;
+//! // Insert a BLOB into the `content` column of `test_table`. Note that the Blob
+//! // I/O API provides no way of inserting or resizing BLOBs in the DB -- this
+//! // must be done via SQL.
+//! db.execute(
+//!     "INSERT INTO test_table (content) VALUES (ZEROBLOB(10))",
+//!     NO_PARAMS,
+//! )?;
 //!
-//!     let rowid = db.last_insert_rowid();
-//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
+//! // Get the row id off the BLOB we just inserted.
+//! let rowid = db.last_insert_rowid();
+//! // Open the BLOB we just inserted for IO.
+//! let mut blob = db.blob_open(DatabaseName::Main, "test_table", "content", rowid, false)?;
 //!
-//!     // Make sure to test that the number of bytes written matches what you expect;
-//!     // if you try to write too much, the data will be truncated to the size of the
-//!     // BLOB.
-//!     let bytes_written = blob.write(b"01234567")?;
-//!     assert_eq!(bytes_written, 8);
+//! // Write some data into the blob. Make sure to test that the number of bytes
+//! // written matches what you expect; if you try to write too much, the data
+//! // will be truncated to the size of the BLOB.
+//! let bytes_written = blob.write(b"01234567")?;
+//! assert_eq!(bytes_written, 8);
 //!
-//!     // Same guidance - make sure you check the number of bytes read!
-//!     blob.seek(SeekFrom::Start(0))?;
-//!     let mut buf = [0u8; 20];
-//!     let bytes_read = blob.read(&mut buf[..])?;
-//!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
+//! // Move back to the start and read into a local buffer.
+//! // Same guidance - make sure you check the number of bytes read!
+//! blob.seek(SeekFrom::Start(0))?;
+//! let mut buf = [0u8; 20];
+//! let bytes_read = blob.read(&mut buf[..])?;
+//! assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
 //!
-//!     db.execute("INSERT INTO test (content) VALUES (?)", &[ZeroBlob(64)])?;
+//! // Insert another BLOB, this time using a parameter passed in from
+//! // rust (potentially with a dynamic size).
+//! db.execute("INSERT INTO test_table (content) VALUES (?)", &[ZeroBlob(64)])?;
 //!
-//!     // given a new row ID, we can reopen the blob on that row
-//!     let rowid = db.last_insert_rowid();
-//!     blob.reopen(rowid)?;
+//! // given a new row ID, we can reopen the blob on that row
+//! let rowid = db.last_insert_rowid();
+//! blob.reopen(rowid)?;
+//! // Just check that the size is right.
+//! assert_eq!(blob.len(), 64);
+//! # Ok(())
+//! # }
+//! ```
 //!
-//!     assert_eq!(blob.size(), 64);
-//!     Ok(())
-//! }
+//! # Example (Positional)
+//!
+//! ```rust
+//! # use rusqlite::blob::ZeroBlob;
+//! # use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
+//! let db = Connection::open_in_memory()?;
+//! db.execute_batch("CREATE TABLE test_table (content BLOB);")?;
+//! // Insert a blob into the `content` column of `test_table`. Note that the Blob
+//! // I/O API provides no way of inserting or resizing blobs in the DB -- this
+//! // must be done via SQL.
+//! db.execute(
+//!     "INSERT INTO test_table (content) VALUES (ZEROBLOB(10))",
+//!     NO_PARAMS,
+//! )?;
+//! // Get the row id off the blob we just inserted.
+//! let rowid = db.last_insert_rowid();
+//! // Open the blob we just inserted for IO.
+//! let mut blob = db.blob_open(DatabaseName::Main, "test_table", "content", rowid, false)?;
+//! // Write some data into the blob.
+//! blob.write_at(b"ABCDEF", 2)?;
+//!
+//! // Read the whole blob into a local buffer.
+//! let mut buf = [0u8; 10];
+//! blob.read_at_exact(&mut buf, 0)?;
+//! assert_eq!(&buf, b"\0\0ABCDEF\0\0");
+//!
+//! // Insert another blob, this time using a parameter passed in from
+//! // rust (potentially with a dynamic size).
+//! db.execute("INSERT INTO test_table (content) VALUES (?)", &[ZeroBlob(64)])?;
+//!
+//! // given a new row ID, we can reopen the blob on that row
+//! let rowid = db.last_insert_rowid();
+//! blob.reopen(rowid)?;
+//! assert_eq!(blob.len(), 64);
+//! # Ok(())
+//! # }
 //! ```
 use std::cmp::min;
 use std::io;
@@ -60,10 +194,14 @@ use super::ffi;
 use super::types::{ToSql, ToSqlOutput};
 use crate::{Connection, DatabaseName, Result};
 
-/// `feature = "blob"` Handle to an open BLOB.
+mod pos_io;
+
+/// `feature = "blob"` Handle to an open BLOB. See [`rusqlite::blob`](crate::blob) documentation for
+/// in-depth discussion.
 pub struct Blob<'conn> {
     conn: &'conn Connection,
     blob: *mut ffi::sqlite3_blob,
+    // used by std::io implementations,
     pos: i32,
 }
 
@@ -128,6 +266,17 @@ impl Blob<'_> {
         unsafe { ffi::sqlite3_blob_bytes(self.blob) }
     }
 
+    /// Return the current size in bytes of the BLOB.
+    pub fn len(&self) -> usize {
+        use std::convert::TryInto;
+        self.size().try_into().unwrap()
+    }
+
+    /// Return true if the BLOB is empty.
+    pub fn is_empty(&self) -> bool {
+        self.size() == 0
+    }
+
     /// Close a BLOB handle.
     ///
     /// Calling `close` explicitly is not required (the BLOB will be closed
@@ -161,7 +310,8 @@ impl io::Read for Blob<'_> {
         if n <= 0 {
             return Ok(0);
         }
-        let rc = unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_ptr() as *mut _, n, self.pos) };
+        let rc =
+            unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_mut_ptr() as *mut _, n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {

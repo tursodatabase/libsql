@@ -109,6 +109,12 @@ pub enum Error {
     /// parameters in the query. The first `usize` is how many parameters were
     /// given, the 2nd is how many were expected.
     InvalidParameterCount(usize, usize),
+
+    /// Returned from various functions in the Blob IO positional API. For
+    /// example, [`Blob::raw_read_at_exact`](crate::blob::Blob::raw_read_at_exact)
+    /// will return it if the blob has insufficient data.
+    #[cfg(feature = "blob")]
+    BlobSizeError,
 }
 
 impl PartialEq for Error {
@@ -151,6 +157,8 @@ impl PartialEq for Error {
             (Error::InvalidParameterCount(i1, n1), Error::InvalidParameterCount(i2, n2)) => {
                 i1 == i2 && n1 == n2
             }
+            #[cfg(feature = "blob")]
+            (Error::BlobSizeError, Error::BlobSizeError) => true,
             (..) => false,
         }
     }
@@ -262,6 +270,9 @@ impl fmt::Display for Error {
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
             Error::MultipleStatement => write!(f, "Multiple statements provided"),
+
+            #[cfg(feature = "blob")]
+            Error::BlobSizeError => "Blob size is insufficient".fmt(f),
         }
     }
 }
@@ -306,6 +317,9 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => None,
+
+            #[cfg(feature = "blob")]
+            Error::BlobSizeError => None,
         }
     }
 }
