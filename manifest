@@ -1,5 +1,5 @@
-C Modify\sa\stest\sfile\sto\savoid\scausing\sTcl\sto\sallocate\stoo\smuch\smemory.
-D 2020-06-09T13:53:56.924
+C Ensure\sthat\saggregate\sfunctions\sthat\s(a)\sare\spart\sof\sSELECT\sstatements\swith\s\nno\sFROM\sclause\sand\s(b)\shave\sone\sor\smore\sscalar\ssub-selects\sas\sarguments\sare\nassigned\sto\sthe\scorrect\saggregate\scontext.\nFix\sfor\sticket\s[7c6d876f84e6e7e2]
+D 2020-06-09T23:50:13.182
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/date.c b29b349d277e3d579dcc295b24c0a2caed83fd8f090a9f7cbe6070c0fd662384
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 793deaf88a0904f88285d93d6713c636d55ede0ffd9f08d10f4ea825531d367f
 F src/delete.c 88047c8e59878c920fce14582bc1dde4d81157d1ca5ffdf36c2907e6d41996c4
-F src/expr.c 5afb8dd59d5617e0eb25f91143ed042b6cd99c006352bdbd441cb9638d2602d8
+F src/expr.c 54c0e48fdafb60c54efd786434a56eccbea7d887b7f84ed3568233de35ca81a8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 4b575423b0a5d4898b1a7868ce985cf1a8ad91c741c9abbb108ff02536d20f41
 F src/func.c 2333eb4277f55a5efdc12ef754e7d7ec9105d257b2fd00301d23ce1e8fa67dc0
@@ -629,7 +629,7 @@ F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/aggnested.test 12106f0748e8e9bfc1a8e6840e203e051eae06a26ed13fc9fd5db108a8d6db54
+F test/aggnested.test 2f65ec8132e0ca896de550b9908094d49ad65a99116a9d79deeb6017604ad4f6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
 F test/alter.test 25e109787dc5e631e117eb6e1c57f96a572bb51228db3b4f8b5f41d665e2ccaa
@@ -1741,7 +1741,7 @@ F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d761
 F test/window7.test 1d31276961ae7801edc72173edaf7593e3cbc79c06d1f1f09e20d8418af403cd
 F test/window8.tcl f2711aa3571e4e6b0dad98db8d95fd6cb8d9db0c92bbdf535f153b07606a1ce2
 F test/window8.test c4331b27a6f66d69fa8f8bab10cc731db1a81d293ae108a68f7c3487fa94e65b
-F test/window9.test c22c25377c820613e1842fe7ad4af7c03df625f6a7caee99e6fdb4fcd52e0a8b
+F test/window9.test 4d8c875b73febdbac9b8f2b52ec132b98f48261cdafd6b08db62bc6d8ff913fc
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
 F test/windowB.test 7a983ea1cc1cf72be7f378e4b32f6cb2d73014c5cd8b25aaee825164cd4269e5
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
@@ -1867,7 +1867,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a53bdd311c4154fd5e1131efbb9665362f79db5a35ce9f7b1547f74b8ee2d8ba
-R 8d5a1a9f2ed9a4fff418950bdfdce962
-U dan
-Z f464d78ab773b9580c31ba7ad2e586ff
+P 232431f32ef77a9dfc4eeb7765dca24af72051fd5460f648d0c5ba318c8a01fc 35a236841764a10cdcda63f34e1a8e7ffa43933bc89cb32f675454327834d7bf
+R c0708f727fdcc95b477a18221a965825
+T +closed 35a236841764a10cdcda63f34e1a8e7ffa43933bc89cb32f675454327834d7bf
+U drh
+Z ee07ca7203f666ac689e6e704d547cda

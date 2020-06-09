@@ -255,7 +255,7 @@ do_execsql_test 8.2 {
 
 do_catchsql_test 8.3 {
   SELECT min( max((SELECT x FROM v1)) ) OVER()
-} {1 {misuse of aggregate: max()}}
+} {0 0}
 
 do_execsql_test 8.4 {
   SELECT(
@@ -263,6 +263,6 @@ do_execsql_test 8.4 {
       SELECT sum( avg((SELECT x FROM v1)) ) OVER()
   )
   FROM v1;
-} {0.0}
+} {0.0 0.0}
 
 finish_test
