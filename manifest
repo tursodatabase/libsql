@@ -1,5 +1,5 @@
-C Give\sthe\sexpression\spointer\sfields\sof\sAggInfo\sdistinctive\snames\sin\sorder\sto\nsimplify\stracking\sof\sall\stheir\suses.
-D 2020-06-09T13:38:12.505
+C Modify\sa\stest\sfile\sto\savoid\scausing\sTcl\sto\sallocate\stoo\smuch\smemory.
+D 2020-06-09T13:53:56.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1247,7 +1247,7 @@ F test/pragma4.test 10c624e45a83c0096a82a7579a5ff658542391d3b77355192da6572c8c17
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
-F test/printf.test 1e0e469f5f8a09afa8a182f34647e3d9b8c01978cbbe2313a194ccc3a8471506
+F test/printf.test 390d0d7fcffc3c4ea3c1bb4cbb267444e32b33b048ae21895f23a291844fe1da
 F test/printf2.test 30b5dd0b4b992dc5626496846ecce17ff592cacbcb11c3e589f3ac4d7e129dae
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1867,7 +1867,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5711b4eead10ef4b0b61f2e2c54768d215a4105f6d47d2ea78991b6e53a6831
-R 45115571336eb976de1e3114a0d3911d
-U drh
-Z b9fb75855deff6080f9952a1c1c95794
+P a53bdd311c4154fd5e1131efbb9665362f79db5a35ce9f7b1547f74b8ee2d8ba
+R 8d5a1a9f2ed9a4fff418950bdfdce962
+U dan
+Z f464d78ab773b9580c31ba7ad2e586ff
