@@ -3090,12 +3090,15 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     /* The subquery already has a limit.  If the pre-existing limit is X
     ** then make the new limit X<>0 so that the new limit is either 1 or 0 */
     sqlite3 *db = pParse->db;
+    Walker w;
     pLimit = sqlite3Expr(db, TK_INTEGER, "0");
     if( pLimit ){
       pLimit->affExpr = SQLITE_AFF_NUMERIC;
       pLimit = sqlite3PExpr(pParse, TK_NE,
                             sqlite3ExprDup(db, pSel->pLimit->pLeft, 0), pLimit);
     }
+    sqlite3AggInfoPersistWalkerInit(&w, pParse);
+    sqlite3WalkExpr(&w,pSel->pLimit->pLeft);
     sqlite3ExprDelete(db, pSel->pLimit->pLeft);
     pSel->pLimit->pLeft = pLimit;
   }else{

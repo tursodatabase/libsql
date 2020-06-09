@@ -259,7 +259,23 @@ do_execsql_test aggnested-4.4 {
   SELECT max((SELECT a FROM (SELECT count(*) AS a FROM ty) AS s)) FROM tx;
 } {3}
 
-
+# 2020-06-09 ticket 7c6d876f84e6e7e2
+#
+reset_db
+do_execsql_test aggnested-5.1 {
+  CREATE TABLE a(b);
+  INSERT INTO a(b) VALUES(5),(NULL),('springtime');
+  SELECT
+    (SELECT
+        (SELECT sum(b)
+          LIMIT (SELECT AVG( (SELECT 0 FROM a ORDER BY b) ))
+        )
+       FROM a GROUP BY b
+    )
+    FROM a
+  EXCEPT
+  SELECT b FROM a ORDER BY b;
+} {}
  
 
 finish_test
