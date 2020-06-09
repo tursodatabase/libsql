@@ -5389,7 +5389,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mxReg);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
-      Expr *pE = pFunc->pExpr;
+      Expr *pE = pFunc->pFExpr;
       assert( !ExprHasProperty(pE, EP_xIsSelect) );
       if( pE->x.pList==0 || pE->x.pList->nExpr!=1 ){
         sqlite3ErrorMsg(pParse, "DISTINCT aggregates must have exactly one "
@@ -5413,8 +5413,8 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pF;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
-    ExprList *pList = pF->pExpr->x.pList;
-    assert( !ExprHasProperty(pF->pExpr, EP_xIsSelect) );
+    ExprList *pList = pF->pFExpr->x.pList;
+    assert( !ExprHasProperty(pF->pFExpr, EP_xIsSelect) );
     sqlite3VdbeAddOp2(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
@@ -5443,11 +5443,11 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
     int nArg;
     int addrNext = 0;
     int regAgg;
-    ExprList *pList = pF->pExpr->x.pList;
-    assert( !ExprHasProperty(pF->pExpr, EP_xIsSelect) );
-    assert( !IsWindowFunc(pF->pExpr) );
-    if( ExprHasProperty(pF->pExpr, EP_WinFunc) ){
-      Expr *pFilter = pF->pExpr->y.pWin->pFilter;
+    ExprList *pList = pF->pFExpr->x.pList;
+    assert( !ExprHasProperty(pF->pFExpr, EP_xIsSelect) );
+    assert( !IsWindowFunc(pF->pFExpr) );
+    if( ExprHasProperty(pF->pFExpr, EP_WinFunc) ){
+      Expr *pFilter = pF->pFExpr->y.pWin->pFilter;
       if( pAggInfo->nAccumulator 
        && (pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL) 
       ){
@@ -5509,7 +5509,7 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
     addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit); VdbeCoverage(v);
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
-    sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
+    sqlite3ExprCode(pParse, pC->pCExpr, pC->iMem);
   }
 
   pAggInfo->directMode = 0;
@@ -6385,12 +6385,12 @@ int sqlite3Select(
     }
     pAggInfo->nAccumulator = pAggInfo->nColumn;
     if( p->pGroupBy==0 && p->pHaving==0 && pAggInfo->nFunc==1 ){
-      minMaxFlag = minMaxQuery(db, pAggInfo->aFunc[0].pExpr, &pMinMaxOrderBy);
+      minMaxFlag = minMaxQuery(db, pAggInfo->aFunc[0].pFExpr, &pMinMaxOrderBy);
     }else{
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
     for(i=0; i<pAggInfo->nFunc; i++){
-      Expr *pExpr = pAggInfo->aFunc[i].pExpr;
+      Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       sNC.ncFlags |= NC_InAggFunc;
       sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
@@ -6412,12 +6412,12 @@ int sqlite3Select(
       for(ii=0; ii<pAggInfo->nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
             ii, pAggInfo->aCol[ii].iMem);
-        sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pExpr, 0);
+        sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
       }
       for(ii=0; ii<pAggInfo->nFunc; ii++){
         sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
             ii, pAggInfo->aFunc[ii].iMem);
-        sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pExpr, 0);
+        sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
       }
     }
 #endif
@@ -6722,7 +6722,7 @@ int sqlite3Select(
         ** function visits zero rows.  */
         if( pAggInfo->nAccumulator ){
           for(i=0; i<pAggInfo->nFunc; i++){
-            if( ExprHasProperty(pAggInfo->aFunc[i].pExpr, EP_WinFunc) ){
+            if( ExprHasProperty(pAggInfo->aFunc[i].pFExpr, EP_WinFunc) ){
               continue;
             }
             if( pAggInfo->aFunc[i].pFunc->funcFlags&SQLITE_FUNC_NEEDCOLL ){
@@ -6806,14 +6806,14 @@ select_end:
 #ifdef SQLITE_DEBUG
   if( pAggInfo ){
     for(i=0; i<pAggInfo->nColumn; i++){
-      Expr *pExpr = pAggInfo->aCol[i].pExpr;
+      Expr *pExpr = pAggInfo->aCol[i].pCExpr;
       assert( pExpr!=0 || db->mallocFailed );
       if( pExpr==0 ) continue;
       assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }
     for(i=0; i<pAggInfo->nFunc; i++){
-      Expr *pExpr = pAggInfo->aFunc[i].pExpr;
+      Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
       assert( pExpr!=0 || db->mallocFailed );
       if( pExpr==0 ) continue;
       assert( pExpr->pAggInfo==pAggInfo );

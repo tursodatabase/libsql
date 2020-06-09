@@ -5738,20 +5738,20 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     assert( pExpr->op==TK_AGG_COLUMN || pExpr->op==TK_AGG_FUNCTION );
     if( pExpr->op==TK_AGG_COLUMN ){
       assert( iAgg>=0 && iAgg<pAggInfo->nColumn );
-      if( pAggInfo->aCol[iAgg].pExpr==pExpr ){
+      if( pAggInfo->aCol[iAgg].pCExpr==pExpr ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
-          pAggInfo->aCol[iAgg].pExpr = pExpr;
+          pAggInfo->aCol[iAgg].pCExpr = pExpr;
           pParse->pConstExpr = 
              sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
         }
       }
     }else{
       assert( iAgg>=0 && iAgg<pAggInfo->nFunc );
-      if( pAggInfo->aFunc[iAgg].pExpr==pExpr ){
+      if( pAggInfo->aFunc[iAgg].pFExpr==pExpr ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
-          pAggInfo->aFunc[iAgg].pExpr = pExpr;
+          pAggInfo->aFunc[iAgg].pFExpr = pExpr;
           pParse->pConstExpr = 
              sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
         }
@@ -5853,7 +5853,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               pCol->iColumn = pExpr->iColumn;
               pCol->iMem = ++pParse->nMem;
               pCol->iSorterColumn = -1;
-              pCol->pExpr = pExpr;
+              pCol->pCExpr = pExpr;
               if( pAggInfo->pGroupBy ){
                 int j, n;
                 ExprList *pGB = pAggInfo->pGroupBy;
@@ -5896,7 +5896,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
-          if( sqlite3ExprCompare(0, pItem->pExpr, pExpr, -1)==0 ){
+          if( sqlite3ExprCompare(0, pItem->pFExpr, pExpr, -1)==0 ){
             break;
           }
         }
@@ -5908,7 +5908,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
           if( i>=0 ){
             assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
             pItem = &pAggInfo->aFunc[i];
-            pItem->pExpr = pExpr;
+            pItem->pFExpr = pExpr;
             pItem->iMem = ++pParse->nMem;
             assert( !ExprHasProperty(pExpr, EP_IntValue) );
             pItem->pFunc = sqlite3FindFunction(pParse->db,

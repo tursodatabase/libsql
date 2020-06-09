@@ -2506,7 +2506,7 @@ struct AggInfo {
   ExprList *pGroupBy;     /* The group by clause */
   struct AggInfo_col {    /* For each column used in source tables */
     Table *pTab;             /* Source table */
-    Expr *pExpr;             /* The original expression */
+    Expr *pCExpr;            /* The original expression */
     int iTable;              /* Cursor number of the source table */
     int iMem;                /* Memory location that acts as accumulator */
     i16 iColumn;             /* Column number within the source table */
@@ -2517,7 +2517,7 @@ struct AggInfo {
                           ** Additional columns are used only as parameters to
                           ** aggregate functions */
   struct AggInfo_func {   /* For each aggregate function */
-    Expr *pExpr;             /* Expression encoding the function */
+    Expr *pFExpr;            /* Expression encoding the function */
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iMem;                /* Memory location that acts as accumulator */
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
