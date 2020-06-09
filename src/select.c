@@ -3791,7 +3791,6 @@ static int flattenSubquery(
   Expr *pWhere;                    /* The WHERE clause */
   struct SrcList_item *pSubitem;   /* The subquery */
   sqlite3 *db = pParse->db;
-  Walker w;                        /* Walker to persist agginfo data */
 
   /* Check to see if flattening is permitted.  Return 0 if not.
   */
@@ -4166,8 +4165,6 @@ static int flattenSubquery(
   /* Finially, delete what is left of the subquery and return
   ** success.
   */
-  sqlite3AggInfoPersistWalkerInit(&w, pParse);
-  sqlite3WalkSelect(&w,pSub1);
   sqlite3SelectDelete(db, pSub1);
 
 #if SELECTTRACE_ENABLED
@@ -6360,8 +6357,7 @@ int sqlite3Select(
     if( pAggInfo==0 ){
       goto select_end;
     }
-    pAggInfo->pNext = pParse->pAggList;
-    pParse->pAggList = pAggInfo;
+    pAggInfo->nAggRef = 1;
     pAggInfo->selId = p->selId;
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
@@ -6598,7 +6594,7 @@ int sqlite3Select(
       /* End of the loop
       */
       if( groupBySort ){
-        sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx, addrTopOfLoop);
+        sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx,addrTopOfLoop);
         VdbeCoverage(v);
       }else{
         sqlite3WhereEnd(pWInfo);
@@ -6806,21 +6802,20 @@ select_end:
 #ifdef SQLITE_DEBUG
   if( pAggInfo ){
     for(i=0; i<pAggInfo->nColumn; i++){
-      Expr *pExpr = pAggInfo->aCol[i].pCExpr;
-      assert( pExpr!=0 || db->mallocFailed );
-      if( pExpr==0 ) continue;
-      assert( pExpr->pAggInfo==pAggInfo );
-      assert( pExpr->iAgg==i );
+      Expr *pE = pAggInfo->aCol[i].pCExpr;
+      assert( pE!=0 || db->mallocFailed );
+      if( pE==0  ) continue;
+      assert( pE->pAggInfo==0 || (pE->pAggInfo==pAggInfo && pE->iAgg==i) );
     }
     for(i=0; i<pAggInfo->nFunc; i++){
-      Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
-      assert( pExpr!=0 || db->mallocFailed );
-      if( pExpr==0 ) continue;
-      assert( pExpr->pAggInfo==pAggInfo );
-      assert( pExpr->iAgg==i );
+      Expr *pE = pAggInfo->aFunc[i].pFExpr;
+      assert( pE!=0 || db->mallocFailed );
+      if( pE==0  ) continue;
+      assert( pE->pAggInfo==0 || (pE->pAggInfo==pAggInfo && pE->iAgg==i) );
     }
   }
 #endif
+  sqlite3AggInfoUnref(db, pAggInfo, 0);
 
 #if SELECTTRACE_ENABLED
   SELECTTRACE(0x1,pParse,p,("end processing\n"));

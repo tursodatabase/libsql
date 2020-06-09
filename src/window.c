@@ -964,8 +964,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     if( pTab==0 ){
       return sqlite3ErrorToParser(db, SQLITE_NOMEM);
     }
-    sqlite3AggInfoPersistWalkerInit(&w, pParse);
-    sqlite3WalkSelect(&w, p);
 
     p->pSrc = 0;
     p->pWhere = 0;

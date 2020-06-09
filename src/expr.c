@@ -1135,8 +1135,17 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 #endif
     }
   }
-  if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
-  if( !ExprHasProperty(p, EP_Static) ){
+  if( ExprHasProperty(p, EP_MemToken|EP_AggInfo|EP_Static) ){
+    if( ExprHasProperty(p, EP_MemToken) ){
+      sqlite3DbFree(db, p->u.zToken);
+    }
+    if( ExprHasProperty(p, EP_AggInfo) ){
+      sqlite3AggInfoUnref(db, p->pAggInfo, p);
+    }
+    if( !ExprHasProperty(p, EP_Static) ){
+      sqlite3DbFreeNN(db, p);
+    }
+  }else{
     sqlite3DbFreeNN(db, p);
   }
 }
@@ -1370,6 +1379,11 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         }
         pNew->pRight = sqlite3ExprDup(db, p->pRight, 0);
       }
+    }
+    if( ExprHasProperty(p, EP_AggInfo) ){
+      p->pAggInfo->nAggRef++;
+//printf("AggInfo (%d/%p) up to %d on dup\n", p->pAggInfo->selId, p->pAggInfo, p->pAggInfo->nAggRef); fflush(stdout);
+
     }
   }
   return pNew;
@@ -5715,61 +5729,34 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
 }
 
 /*
-** This is a Walker expression node callback.
+** Decrement the reference count on pAggInfo.  Delete it when the
+** reference count reaches zero.
 **
-** For Expr nodes that contain pAggInfo pointers, make sure the AggInfo
-** object that is referenced does not refer directly to the Expr.  If
-** it does, make a copy.  This is done because the pExpr argument is
-** subject to change.
-**
-** The copy is stored on pParse->pConstExpr with a register number of 0.
-** This will cause the expression to be deleted automatically when the
-** Parse object is destroyed, but the zero register number means that it
-** will not generate any code in the preamble.
+** If pExpr is not NULL, that means that the reference count is being
+** decremented because pExpr is being deleted.  Break the reference
+** in pAggInfo to pExpr because pExpr is going away.
 */
-static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
-  if( ALWAYS(!ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced))
-   && pExpr->pAggInfo!=0
-  ){
-    AggInfo *pAggInfo = pExpr->pAggInfo;
-    int iAgg = pExpr->iAgg;
-    Parse *pParse = pWalker->pParse;
-    sqlite3 *db = pParse->db;
-    assert( pExpr->op==TK_AGG_COLUMN || pExpr->op==TK_AGG_FUNCTION );
-    if( pExpr->op==TK_AGG_COLUMN ){
-      assert( iAgg>=0 && iAgg<pAggInfo->nColumn );
-      if( pAggInfo->aCol[iAgg].pCExpr==pExpr ){
-        pExpr = sqlite3ExprDup(db, pExpr, 0);
-        if( pExpr ){
-          pAggInfo->aCol[iAgg].pCExpr = pExpr;
-          pParse->pConstExpr = 
-             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
-        }
-      }
-    }else{
-      assert( iAgg>=0 && iAgg<pAggInfo->nFunc );
-      if( pAggInfo->aFunc[iAgg].pFExpr==pExpr ){
-        pExpr = sqlite3ExprDup(db, pExpr, 0);
-        if( pExpr ){
-          pAggInfo->aFunc[iAgg].pFExpr = pExpr;
-          pParse->pConstExpr = 
-             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
-        }
-      }
-    }
+void sqlite3AggInfoUnref(sqlite3 *db, AggInfo *pAggInfo, Expr *pExpr){
+  int iAgg;
+  static Expr nullExpr = { TK_NULL };
+  if( pAggInfo==0 ) return;
+//printf("AggInfo (%d/%p) nRef down to %d\n", pAggInfo->selId, pAggInfo, pAggInfo->nAggRef-1); fflush(stdout);
+  if( pAggInfo->nAggRef==1 ){
+    sqlite3DbFree(db, pAggInfo->aCol);
+    sqlite3DbFree(db, pAggInfo->aFunc);
+    sqlite3DbFree(db, pAggInfo);
+    return;
   }
-  return WRC_Continue;
-}
-
-/*
-** Initialize a Walker object so that will persist AggInfo entries referenced
-** by the tree that is walked.
-*/
-void sqlite3AggInfoPersistWalkerInit(Walker *pWalker, Parse *pParse){
-  memset(pWalker, 0, sizeof(*pWalker));
-  pWalker->pParse = pParse;
-  pWalker->xExprCallback = agginfoPersistExprCb;
-  pWalker->xSelectCallback = sqlite3SelectWalkNoop;
+  pAggInfo->nAggRef--;
+  if( pExpr==0 ) return;
+  iAgg = pExpr->iAgg;
+  assert( iAgg>=0 );
+  if( iAgg<pAggInfo->nColumn && pAggInfo->aCol[iAgg].pCExpr==pExpr ){
+    pAggInfo->aCol[iAgg].pCExpr = &nullExpr;
+  }
+  if( iAgg<pAggInfo->nFunc && pAggInfo->aFunc[iAgg].pFExpr==pExpr ){
+    pAggInfo->aFunc[iAgg].pFExpr = &nullExpr;
+  }
 }
 
 /*
@@ -5879,8 +5866,12 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             */
             ExprSetVVAProperty(pExpr, EP_NoReduce);
             pExpr->pAggInfo = pAggInfo;
+            pAggInfo->nAggRef++;
+//printf("AggInfo (%d/%p) nRef up to %d on col %d\n", pAggInfo->selId, pAggInfo, pAggInfo->nAggRef, k); fflush(stdout);
+
             pExpr->op = TK_AGG_COLUMN;
             pExpr->iAgg = (i16)k;
+            ExprSetProperty(pExpr, EP_AggInfo);
             break;
           } /* endif pExpr->iTable==pItem->iCursor */
         } /* end loop over pSrcList */
@@ -5927,6 +5918,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         ExprSetVVAProperty(pExpr, EP_NoReduce);
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
+        pAggInfo->nAggRef++;
+//printf("AggInfo (%d/%p) nRef up to %d on func %d\n", pAggInfo->selId, pAggInfo, pAggInfo->nAggRef, i); fflush(stdout);
+
+        ExprSetProperty(pExpr, EP_AggInfo);
         return WRC_Prune;
       }else{
         return WRC_Continue;
