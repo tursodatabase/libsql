@@ -5667,7 +5667,7 @@ struct SrcCount {
 */
 static int selectSrcCount(Walker *pWalker, Select *pSel){
   struct SrcCount *p = pWalker->u.pSrcCount;
-  if( p->iSrcInner==0x7FFFFFFF && pSel->pSrc && pSel->pSrc->nSrc ){
+  if( p->iSrcInner==0x7FFFFFFF && ALWAYS(pSel->pSrc) && pSel->pSrc->nSrc ){
     pWalker->u.pSrcCount->iSrcInner = pSel->pSrc->a[0].iCursor;
   }
   return WRC_Continue;
