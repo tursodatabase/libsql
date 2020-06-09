@@ -6362,6 +6362,7 @@ int sqlite3Select(
     }
     pAggInfo->pNext = pParse->pAggList;
     pParse->pAggList = pAggInfo;
+    pAggInfo->selId = p->selId;
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pSrcList = pTabList;

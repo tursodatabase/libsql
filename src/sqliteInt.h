@@ -2523,9 +2523,7 @@ struct AggInfo {
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
-#ifdef SQLITE_DEBUG
-  int iAggMagic;          /* Magic number when valid */
-#endif
+  u32 selId;              /* Select to which this AggInfo belongs */
   AggInfo *pNext;         /* Next in list of them all */
 };
 
