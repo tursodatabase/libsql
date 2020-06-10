@@ -1756,7 +1756,7 @@ do_catchsql_test 54.2 {
       UNION
     SELECT b AS c FROM t1
   ) WHERE c>10;
-} {1 {misuse of window function sum()}}
+} {0 {}}
 
 do_execsql_test 54.3 {
   INSERT INTO t1 VALUES('2',5.0);
@@ -1769,7 +1769,7 @@ do_catchsql_test 54.4 {
       UNION
     SELECT b AS c FROM t1
   ) WHERE c>10;
-} {1 {misuse of window function sum()}}
+} {0 {15.0 30.0}}
 
 # 2020-06-05 ticket c8d3b9f0a750a529
 reset_db
@@ -1888,5 +1888,33 @@ CREATE TABLE t1(a);
 INSERT INTO t1 VALUES(5),(NULL),('seventeen');
 SELECT (SELECT max(x)OVER(ORDER BY x) % min(x)OVER(ORDER BY CASE x WHEN 889 THEN x WHEN x THEN x END)) FROM (SELECT (SELECT sum(CAST(a IN(SELECT (SELECT max(x)OVER(ORDER BY CASE x WHEN 889 THEN 299 WHEN 863 THEN 863 END)) FROM (SELECT (SELECT sum(CAST((SELECT (SELECT max(x)OVER(ORDER BY x) / min(x)OVER(ORDER BY CASE x WHEN 889 THEN 299 WHEN -true THEN 863 END)) FROM (SELECT (SELECT sum(CAST(a IN(SELECT (SELECT max(x) & sum ( a )OVER(ORDER BY CASE x WHEN -8 THEN 299 WHEN 863 THEN 863 END)) FROM (SELECT (SELECT sum(CAST(a AS )) FROM t1) AS x FROM t1)) AS t1 )) FROM t1) AS x FROM t1)) AS x )) FROM t1) AS x FROM t1)) AS real)) FROM t1) AS x FROM t1);
 } {{} {} {}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 62.1 {
+  CREATE TABLE t1(a VARCHAR(20), b FLOAT);
+  INSERT INTO t1 VALUES('1',10.0);
+}
+
+do_execsql_test 62.2 {
+  SELECT * FROM ( 
+      SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+      SELECT b AS c FROM t1
+      ) WHERE c>10;
+}
+
+do_execsql_test 62.3 {
+  INSERT INTO t1 VALUES('2',5.0);
+  INSERT INTO t1 VALUES('3',15.0);
+}
+
+do_execsql_test 62.4 {
+  SELECT * FROM ( 
+      SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+      SELECT b AS c FROM t1
+      ) WHERE c>10;
+} {15.0 30.0}
 
 finish_test
