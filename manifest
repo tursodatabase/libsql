@@ -1,5 +1,5 @@
-C Ensure\sthat\saggregate\sfunctions\sthat\s(a)\sare\spart\sof\sSELECT\sstatements\swith\s\nno\sFROM\sclause\sand\s(b)\shave\sone\sor\smore\sscalar\ssub-selects\sas\sarguments\sare\nassigned\sto\sthe\scorrect\saggregate\scontext.\nFix\sfor\sticket\s[7c6d876f84e6e7e2]
-D 2020-06-09T23:50:13.182
+C Disable\sAggInfo\sconsistency\schecks\swhen\sunwinding\safter\san\sOOM.
+D 2020-06-10T03:07:26.868
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -533,7 +533,7 @@ F src/printf.c 94b5419ad0a17269f76a9e968ca19cf9fa37617abed2e246fc48844e511b6bc6
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c2008519a0654f1e7490e9281ed0397d0f14bb840d81f0b96946248afcbdb25d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c a1f5efdbbfae1f73746242b43daedc974a4ae702d62c305219da650ec10fb08f
+F src/select.c 4daa7ac63367e88a970da434299463dac00ea59f68545e58f2c676c41c3df509
 F src/shell.c.in c6e26593f2738eefded08a39204bf6b48db135cdfaa458c26ffe57055b4fe365
 F src/sqlite.h.in 74342b41e9d68ff9e56b192009046f8dd0aa2bd76ce1a588f330de614ba61de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1867,8 +1867,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 232431f32ef77a9dfc4eeb7765dca24af72051fd5460f648d0c5ba318c8a01fc 35a236841764a10cdcda63f34e1a8e7ffa43933bc89cb32f675454327834d7bf
-R c0708f727fdcc95b477a18221a965825
-T +closed 35a236841764a10cdcda63f34e1a8e7ffa43933bc89cb32f675454327834d7bf
+P c29a9e484e1dd245962afbbf511b183462af5e86c511261ccf018345e773f940
+R 440ef9b1055344c4df3ee1e29cdb0f73
 U drh
-Z ee07ca7203f666ac689e6e704d547cda
+Z 72d82f473bff3f7dd22efa1accdf2ed0
