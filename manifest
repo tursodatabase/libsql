@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\s"push-down"\soptimization\sdoes\snot\spush\sconstraints\sdown\sinto\scompound\squeries\sif\sany\sof\sthe\scomponent\squeries\suses\swindow\sfunctions.
-D 2020-06-10T10:58:15.548
+C Make\ssure\sthe\sbbox\sobject\sis\sfully\sinitialized\sin\sgeopoly,\seven\sif\sreading\na\scorrupted\sdatabase.
+D 2020-06-10T14:30:15.355
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -385,7 +385,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c cac70b5502742bd0ba8877a1329a74e86a379c78567546a2a18cf5f9c3787f73
+F ext/rtree/geopoly.c f15cc6845d64a629035627d863cbe3eadc9cb30f9ca77bd823b0ca8a5a3f8b00
 F ext/rtree/rtree.c 0ee39cc787b95aa03a012e09e6090b0fa452154fa812af9a379898560fd6c00f
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 00792b030a4e188ff1b22e8530e8aa0452bb5dd81c2b18cb004afc7dc63e040e
@@ -1867,7 +1867,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65179814aa0ae5927bae97c10ef20f290535399b889d96d5b88931f62635f212
-R 9433b47fb24e72f9850aa4e3904d3746
-U dan
-Z 349135e37e95a5cec7419bf8785fcd64
+P 094dcfe779613301521e8bb990432df187b3686add75a3420b4a193f02f3467f
+R fe50fdd9252d03af57c53593afdee806
+U drh
+Z 9cfa3eb1061d3d10530f069bf73f5151
