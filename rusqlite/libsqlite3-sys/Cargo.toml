@@ -27,9 +27,9 @@ bundled_bindings = []
 # sqlite3_unlock_notify >= 3.6.12
 unlock_notify = []
 # 3.13.0
-preupdate_hook = []
+preupdate_hook = ["buildtime_bindgen"]
 # 3.13.0
-session = ["preupdate_hook"]
+session = ["preupdate_hook", "buildtime_bindgen"]
 in_gecko = []
 with-asan = []
 
