@@ -4429,11 +4429,14 @@ static int pushDownWhereTerms(
 ){
   Expr *pNew;
   int nChng = 0;
+  Select *pSel;
   if( pWhere==0 ) return 0;
   if( pSubq->selFlags & SF_Recursive ) return 0;  /* restriction (2) */
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  if( pSubq->pWin ) return 0;    /* restriction (6) */
+  for(pSel=pSubq; pSel; pSel=pSel->pPrior){
+    if( pSel->pWin ) return 0;    /* restriction (6) */
+  }
 #endif
 
 #ifdef SQLITE_DEBUG
