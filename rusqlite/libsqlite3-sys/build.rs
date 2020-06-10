@@ -99,10 +99,10 @@ mod build_bundled {
                 Err(_msg) => false,
             };
             if vs_has_nan {
-                cfg.flag("-DSQLITE_HAVE_ISNAN");
+                cfg.flag("-DHAVE_ISNAN");
             }
         } else {
-            cfg.flag("-DSQLITE_HAVE_ISNAN");
+            cfg.flag("-DHAVE_ISNAN");
         }
         if cfg!(not(target_os = "windows")) {
             cfg.flag("-DHAVE_LOCALTIME_R");
