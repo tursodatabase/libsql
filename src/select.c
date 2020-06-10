@@ -6804,7 +6804,7 @@ int sqlite3Select(
 select_end:
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
 #ifdef SQLITE_DEBUG
-  if( pAggInfo ){
+  if( pAggInfo && !db->mallocFailed ){
     for(i=0; i<pAggInfo->nColumn; i++){
       Expr *pExpr = pAggInfo->aCol[i].pExpr;
       assert( pExpr!=0 || db->mallocFailed );
