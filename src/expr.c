@@ -5655,9 +5655,24 @@ int sqlite3ExprCoveredByIndex(
 */
 struct SrcCount {
   SrcList *pSrc;   /* One particular FROM clause in a nested query */
+  int iSrcInner;   /* Smallest cursor number in this context */
   int nThis;       /* Number of references to columns in pSrcList */
   int nOther;      /* Number of references to columns in other FROM clauses */
 };
+
+/*
+** xSelect callback for sqlite3FunctionUsesThisSrc(). If this is the first
+** SELECT with a FROM clause encountered during this iteration, set
+** SrcCount.iSrcInner to the cursor number of the leftmost object in
+** the FROM cause.
+*/
+static int selectSrcCount(Walker *pWalker, Select *pSel){
+  struct SrcCount *p = pWalker->u.pSrcCount;
+  if( p->iSrcInner==0x7FFFFFFF && ALWAYS(pSel->pSrc) && pSel->pSrc->nSrc ){
+    pWalker->u.pSrcCount->iSrcInner = pSel->pSrc->a[0].iCursor;
+  }
+  return WRC_Continue;
+}
 
 /*
 ** Count the number of references to columns.
@@ -5679,7 +5694,7 @@ static int exprSrcCount(Walker *pWalker, Expr *pExpr){
     }
     if( i<nSrc ){
       p->nThis++;
-    }else if( nSrc==0 || pExpr->iTable<pSrc->a[0].iCursor ){
+    }else if( pExpr->iTable<p->iSrcInner ){
       /* In a well-formed parse tree (no name resolution errors),
       ** TK_COLUMN nodes with smaller Expr.iTable values are in an
       ** outer context.  Those are the only ones to count as "other" */
@@ -5701,9 +5716,10 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
   assert( pExpr->op==TK_AGG_FUNCTION );
   memset(&w, 0, sizeof(w));
   w.xExprCallback = exprSrcCount;
-  w.xSelectCallback = sqlite3SelectWalkNoop;
+  w.xSelectCallback = selectSrcCount;
   w.u.pSrcCount = &cnt;
   cnt.pSrc = pSrcList;
+  cnt.iSrcInner = (pSrcList&&pSrcList->nSrc)?pSrcList->a[0].iCursor:0x7FFFFFFF;
   cnt.nThis = 0;
   cnt.nOther = 0;
   sqlite3WalkExprList(&w, pExpr->x.pList);
