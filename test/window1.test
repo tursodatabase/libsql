@@ -1917,4 +1917,34 @@ do_execsql_test 62.4 {
       ) WHERE c>10;
 } {15.0 30.0}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 63.1 {
+  CREATE TABLE t1(b, x);
+  CREATE TABLE t2(c, d);
+  CREATE TABLE t3(e, f);
+}
+
+do_execsql_test 63.2 {
+  SELECT max(b) OVER(
+      ORDER BY SUM(
+        (SELECT c FROM t2 UNION SELECT x ORDER BY c)
+      )
+  ) FROM t1;
+} {{}}
+
+do_execsql_test 63.3 {
+  SELECT sum(b) over(
+      ORDER BY (
+        SELECT max(b) OVER(
+          ORDER BY sum(
+            (SELECT x AS c UNION SELECT 1234 ORDER BY c)
+          )
+        ) AS e
+        ORDER BY e
+      )
+    )
+  FROM t1;
+} {{}}
+
 finish_test
