@@ -5829,6 +5829,11 @@ int sqlite3Select(
     Select *pSub = pItem->pSelect;
     Table *pTab = pItem->pTab;
 
+    /* The expander should have already created transient Table objects
+    ** even for FROM clause elements such as subqueries that do not correspond
+    ** to a real table */
+    assert( pTab!=0 );
+
     /* Convert LEFT JOIN into JOIN if there are terms of the right table
     ** of the LEFT JOIN used in the WHERE clause.
     */
