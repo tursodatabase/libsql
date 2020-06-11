@@ -15,20 +15,6 @@
 #include "sqliteInt.h"
 
 /*
-** Trace output macros
-*/
-#if SELECTTRACE_ENABLED
-/***/ int sqlite3SelectTrace = 0;
-# define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
-    sqlite3DebugPrintf X
-#else
-# define SELECTTRACE(K,P,S,X)
-#endif
-
-
-/*
 ** An instance of the following object is used to record information about
 ** how to process the DISTINCT keyword, to simplify passing that information
 ** into the selectInnerLoop() routine.
@@ -5826,7 +5812,7 @@ int sqlite3Select(
   memset(&sSort, 0, sizeof(sSort));
   sSort.pOrderBy = p->pOrderBy;
 
-  /* Try to various optimizations (flattening subqueries, and strength
+  /* Try to do various optimizations (flattening subqueries, and strength
   ** reduction of join operators) in the FROM clause up into the main query
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)

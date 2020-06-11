@@ -8164,7 +8164,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #endif
 #if defined(SQLITE_ENABLE_SELECTTRACE)
-  extern int sqlite3SelectTrace;
+  extern u32 sqlite3SelectTrace;
 #endif
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

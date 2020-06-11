@@ -1043,6 +1043,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     pSub = sqlite3SelectNew(
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
     );
+    SELECTTRACE(1,pParse,pSub,
+       ("New window-function subquery in FROM clause of (%u/%p)\n",
+       p->selId, p));
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       Table *pTab2;
