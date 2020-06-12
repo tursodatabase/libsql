@@ -1,13 +1,15 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C Add\sa\snew\sassert()\sto\sthe\sSELECT\sprocessing.
-D 2020-06-11T16:04:10.746
+C Remove\sa\sNEVER()\sthat\sturns\sout\sto\sbe\sreachable.
+D 2020-06-12T00:31:52.711
+F src/btree.c fabc215bd1ebab0e48108e95e0f50531da9883156b95888f479f6c696db032ad
 F src/global.c 0409ae635839e0bef26a69b68be64126ab6cba62ac19bd7694f1652e591c4c17
 F src/select.c 929e1c0db3cb3d9f7d2304c6596868abcb6dfd7c2a0ac1bdf12a5a4432078ba4
 F src/sqliteInt.h fe320867c4f48eeeca523062c5668508b3f9b88d65690d42610bd138a5fdb5c4
 F src/test1.c e9f68f157f8fd027ee4c32c4b427f4eed274749bfb745427e2d954fa89d95ad3
 F src/window.c 88a63e6948ea924b3cf9ad8aff5ea1fa53bebdb2f13340867205fda16ed0f19c
+F test/fuzzdata8.db 9ce2e5f0d7e5e61d5f8f0817346b2a3db2aeebbaff20d04043521623ea0558be
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
-P 32a88bdd4be5acdc1b80856bf6e32724dc3a467d5050bec0fe1a3dfedcc06f34
-R 2b3df40625e1e1ca91eabc824248dfbb
+P 98cea4a32ba558c137d71a5e373a6803d764d34c5640907371dcf6468ffb2e64
+R fe941a98130365dcc5664681cdfda93a
 U drh
-Z 5781754b9c0a637aa77d00f970b7b71b
+Z a269c334c0d41dc18dbae6d92c570372
