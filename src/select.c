@@ -4115,7 +4115,13 @@ static int flattenSubquery(
     if( isLeftJoin>0 ){
       sqlite3SetJoinExpr(pWhere, iNewParent);
     }
-    pParent->pWhere = sqlite3ExprAnd(pParse, pWhere, pParent->pWhere);
+    if( pWhere ){
+      if( pParent->pWhere ){
+        pParent->pWhere = sqlite3PExpr(pParse, TK_AND, pWhere, pParent->pWhere);
+      }else{
+        pParent->pWhere = pWhere;
+      }
+    }
     if( db->mallocFailed==0 ){
       SubstContext x;
       x.pParse = pParse;
