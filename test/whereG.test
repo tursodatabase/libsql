@@ -317,4 +317,15 @@ do_execsql_test 9.10 {
   SELECT coalesce(max(quote(a)),10) FROM t1 GROUP BY a;
 } {NULL '' 'X'}
 
+# 2020-06-14: assert() changed back into testcase()
+# ticket 9fb26d37cefaba40
+#
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE a(b TEXT);  INSERT INTO a VALUES(0),(4),(9);
+  CREATE TABLE c(d NUM);
+  CREATE VIEW f(g, h) AS SELECT b, 0 FROM a UNION SELECT d, d FROM c;
+  SELECT g = g FROM f GROUP BY h;
+} {1}
+
 finish_test

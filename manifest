@@ -1,6 +1,6 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C Avoid\sdeleting\sexpression\snodes\sin\sthe\sflattener\scode,\sas\sthey\smay\sbe\sreferenced\sby\sAggInfo\sobjects\sfurther\sup\sthe\sstack.
-D 2020-06-13T21:24:40.551
+C Check-in\s[1d4f86201dab9a22]\schanged\sa\stestcase()\sto\san\sassert()\sbecause\swe\ndidn't\sknow\show\sto\sreach\sthat\scondition\sany\smore.\s\sBut\sYongHeng's\sfuzzer\nfound\sa\sway.\s\sSo\snow\swe\schange\sit\sback.\s\sTicket\s[9fb26d37cefaba40].
+D 2020-06-14T13:40:13.692
 F ext/fts3/fts3.c acc51e4378dd772251b31ead0ccd19070fc1774f6f6a55b11e00cb885e0f34bc
 F src/btree.c fabc215bd1ebab0e48108e95e0f50531da9883156b95888f479f6c696db032ad
 F src/expr.c 36bb737d2ca78ee9bd4fde46cf1e51a37e7e1b263e55fccfaef32922a19e9524
@@ -8,14 +8,16 @@ F src/global.c 0409ae635839e0bef26a69b68be64126ab6cba62ac19bd7694f1652e591c4c17
 F src/select.c 1a791ad41c35ec24217b8da877a4deb2a9e22a1dfae2bc46d68d9ad4e4bf8f40
 F src/sqliteInt.h fe320867c4f48eeeca523062c5668508b3f9b88d65690d42610bd138a5fdb5c4
 F src/test1.c e9f68f157f8fd027ee4c32c4b427f4eed274749bfb745427e2d954fa89d95ad3
+F src/vdbe.c 2f5cdcd66be9bc1d1c6ca23b4a4ae003a5a36cf9830d9fa160efce66d9161c9d
 F src/window.c 88a63e6948ea924b3cf9ad8aff5ea1fa53bebdb2f13340867205fda16ed0f19c
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt4.test e77b06926348eb45b71569f9dc45e5b19c984ca1b1ef6671367f4ca9d6eaa973
 F test/fuzzdata8.db b87ae726c84c3f80d457642d7650724a76eb3d7b76258959d712cc4d926ddfc7
 F test/istrue.test 06f92ea38750fa74df7dbbe6920205251c2310861fbbe23a3adfa918a2e2ba74
 F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
+F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
-P ad738286e2441b5e84d05366db3fcafabe66be766f21fe6c17f43a8fabab16fb
-R 5e5118679cf69aa40cdce2d30c720aca
-U dan
-Z 711c877ed46b56919faaa443580ab634
+P cc1fffdeddf422404170fa163ab80372ae58b444d7012b2c164021b221709b3e
+R 0ef6a213a076036833f157fe6b031b0b
+U drh
+Z 53f32837c1b7756aa8533c51e60a57b4
