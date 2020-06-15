@@ -11619,7 +11619,7 @@ if test "${enable_update_limit+set}" = set; then :
   enableval=$enable_update_limit;
 fi
 
-if test "${enable_udlimit}" = "yes" ; then
+if test "${enable_update_limit}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
 fi
 

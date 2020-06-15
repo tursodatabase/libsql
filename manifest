@@ -1,6 +1,8 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C Fix\sa\sdefect\sin\sthe\squery-flattener\soptimization\sidentified\sby\nticket\s[8f157e8010b22af0].
-D 2020-06-15T13:51:34.544
+C Fix\sthe\s--enable-update-limit\soption\sto\s./configure.
+D 2020-06-15T14:38:57.043
+F configure f594931bd7b23dad12db96b81e1dba43b41b30a4560d6eb008014e3d9f1617e8 x
+F configure.ac 13e4ecf89214c3aa0ba099a9e0178f13f03261ace627126737d8cee240ec5c1c
 F ext/fts3/fts3.c acc51e4378dd772251b31ead0ccd19070fc1774f6f6a55b11e00cb885e0f34bc
 F src/btree.c fabc215bd1ebab0e48108e95e0f50531da9883156b95888f479f6c696db032ad
 F src/expr.c 36bb737d2ca78ee9bd4fde46cf1e51a37e7e1b263e55fccfaef32922a19e9524
@@ -18,7 +20,7 @@ F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889a
 F test/selectA.test 68de52409e45a3313d00b8461b48bef4fb729faf36ade9067a994eae55cc86f4
 F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
-P 90b1169d1b200d35a3f9f0ad2ae35a1b336bdd9b1ad0494ba80a382354c8d8b8
-R 7b2f74d8f4cf58d33d2119b338a7cd5f
+P 10fa79d00f8091e5748c245f4cae5b5f499a5f8db20da741c130e05a21ede443
+R 53b85d8633b314f290bd62efdc804e58
 U drh
-Z 1c6c6f6f8bb99dca6da53b2db99f530c
+Z 8f731d1ee1a28a5f07dfda9349a595b2
