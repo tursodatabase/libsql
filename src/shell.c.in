@@ -3052,10 +3052,7 @@ static void exec_prepared_stmt_columnar(
     sqlite3_free_table(azData);
     return;
   }
-  if( nRow==0 || nColumn==0 ){
-    sqlite3_free_table(azData);
-    return;
-  }
+  if( nRow==0 || nColumn==0 ) goto columnar_end;
   if( nColumn>p->nWidth ){
     p->colWidth = realloc(p->colWidth, nColumn*2*sizeof(int));
     if( p->colWidth==0 ) shell_out_of_memory();
@@ -3077,6 +3074,7 @@ static void exec_prepared_stmt_columnar(
     j = i%nColumn;
     if( n>p->actualWidth[j] ) p->actualWidth[j] = n;
   }
+  if( seenInterrupt ) goto columnar_end;
   switch( p->cMode ){
     case MODE_Column: {
       colSep = "  ";
@@ -3139,6 +3137,7 @@ static void exec_prepared_stmt_columnar(
     }
   }
   for(i=nColumn, j=0; i<nTotal; i++, j++){
+    if( seenInterrupt ) goto columnar_end;
     if( j==0 && p->cMode!=MODE_Column ){
       utf8_printf(p->out, "%s", p->cMode==MODE_Box?BOX_13" ":"| ");
     }
@@ -3159,6 +3158,7 @@ static void exec_prepared_stmt_columnar(
   }else if( p->cMode==MODE_Box ){
     print_box_row_separator(p, nColumn, BOX_12, BOX_124, BOX_14);
   }
+columnar_end:
   sqlite3_free_table(azData);
 }
 
