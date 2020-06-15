@@ -1,12 +1,12 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C Check-in\s[1d4f86201dab9a22]\schanged\sa\stestcase()\sto\san\sassert()\sbecause\swe\ndidn't\sknow\show\sto\sreach\sthat\scondition\sany\smore.\s\sBut\sYongHeng's\sfuzzer\nfound\sa\sway.\s\sSo\snow\swe\schange\sit\sback.\s\sTicket\s[9fb26d37cefaba40].
-D 2020-06-14T13:40:13.692
+C Fix\sa\sdefect\sin\sthe\squery-flattener\soptimization\sidentified\sby\nticket\s[8f157e8010b22af0].
+D 2020-06-15T13:51:34.544
 F ext/fts3/fts3.c acc51e4378dd772251b31ead0ccd19070fc1774f6f6a55b11e00cb885e0f34bc
 F src/btree.c fabc215bd1ebab0e48108e95e0f50531da9883156b95888f479f6c696db032ad
 F src/expr.c 36bb737d2ca78ee9bd4fde46cf1e51a37e7e1b263e55fccfaef32922a19e9524
 F src/global.c 0409ae635839e0bef26a69b68be64126ab6cba62ac19bd7694f1652e591c4c17
-F src/select.c 1a791ad41c35ec24217b8da877a4deb2a9e22a1dfae2bc46d68d9ad4e4bf8f40
-F src/sqliteInt.h fe320867c4f48eeeca523062c5668508b3f9b88d65690d42610bd138a5fdb5c4
+F src/select.c 6ddd86a7272ff1f443bd9efcbb0f5ab590674d4c732e4cb8c3d5dd8e3a70cae6
+F src/sqliteInt.h abf448e9f839964086d5508ba795e948dbf36d773b6568cf4c830f6c7ad2110e
 F src/test1.c e9f68f157f8fd027ee4c32c4b427f4eed274749bfb745427e2d954fa89d95ad3
 F src/vdbe.c 2f5cdcd66be9bc1d1c6ca23b4a4ae003a5a36cf9830d9fa160efce66d9161c9d
 F src/window.c 88a63e6948ea924b3cf9ad8aff5ea1fa53bebdb2f13340867205fda16ed0f19c
@@ -15,9 +15,10 @@ F test/fts3corrupt4.test e77b06926348eb45b71569f9dc45e5b19c984ca1b1ef6671367f4ca
 F test/fuzzdata8.db b87ae726c84c3f80d457642d7650724a76eb3d7b76258959d712cc4d926ddfc7
 F test/istrue.test 06f92ea38750fa74df7dbbe6920205251c2310861fbbe23a3adfa918a2e2ba74
 F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
+F test/selectA.test 68de52409e45a3313d00b8461b48bef4fb729faf36ade9067a994eae55cc86f4
 F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
-P cc1fffdeddf422404170fa163ab80372ae58b444d7012b2c164021b221709b3e
-R 0ef6a213a076036833f157fe6b031b0b
+P 90b1169d1b200d35a3f9f0ad2ae35a1b336bdd9b1ad0494ba80a382354c8d8b8
+R 7b2f74d8f4cf58d33d2119b338a7cd5f
 U drh
-Z 53f32837c1b7756aa8533c51e60a57b4
+Z 1c6c6f6f8bb99dca6da53b2db99f530c
