@@ -9030,8 +9030,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( zName!=0 ){
-      int isMaster = sqlite3_strlike(zName, "sqlite_master", '\\')==0;
-      if( isMaster || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0 ){
+      int isMaster = sqlite3_strlike(zName, "sqlite_master", '\\')==0
+                  || sqlite3_strlike(zName, "sqlite_schema", '\\')==0
+                  || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0
+                  || sqlite3_strlike(zName,"sqlite_temp_schema", '\\')==0;
+      if( isMaster ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = sqlite3_mprintf(
                       "CREATE TABLE %s (\n"
@@ -9040,7 +9043,7 @@ static int do_meta_command(char *zLine, ShellState *p){
                       "  tbl_name text,\n"
                       "  rootpage integer,\n"
                       "  sql text\n"
-                      ")", isMaster ? "sqlite_master" : "sqlite_temp_master");
+                      ")", zName);
         new_argv[1] = 0;
         new_colv[0] = "sql";
         new_colv[1] = 0;

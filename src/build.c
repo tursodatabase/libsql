@@ -253,7 +253,7 @@ void sqlite3FinishCoding(Parse *pParse){
 ** outermost parser.
 **
 ** Not everything is nestable.  This facility is designed to permit
-** INSERT, UPDATE, and DELETE operations against SQLITE_MASTER.  Use
+** INSERT, UPDATE, and DELETE operations against the schema table.  Use
 ** care if you decide to try to use this routine for some other purposes.
 */
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
@@ -335,9 +335,21 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       }
     }
     p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
-    if( p==0 && i==1 && sqlite3StrICmp(zName, MASTER_NAME)==0 ){
-      /* All temp.sqlite_master to be an alias for sqlite_temp_master */
-      p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, TEMP_MASTER_NAME);
+    if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
+      if( i==1 ){
+        if( sqlite3StrICmp(zName+7, ALT_TEMP_SCHEMA_TABLE+7)==0
+         || sqlite3StrICmp(zName+7, ALT_SCHEMA_TABLE+7)==0
+         || sqlite3StrICmp(zName+7, DFLT_SCHEMA_TABLE+7)==0
+        ){
+          p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
+                              DFLT_TEMP_SCHEMA_TABLE);
+        }
+      }else{
+        if( sqlite3StrICmp(zName+7, ALT_SCHEMA_TABLE+7)==0 ){
+          p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash,
+                              DFLT_SCHEMA_TABLE);
+        }
+      }
     }
   }else{
     /* Match against TEMP first */
@@ -351,6 +363,14 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       assert( sqlite3SchemaMutexHeld(db, i, 0) );
       p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
       if( p ) break;
+    }
+    if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
+      if( sqlite3StrICmp(zName+7, ALT_SCHEMA_TABLE+7)==0 ){
+        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, DFLT_SCHEMA_TABLE);
+      }else if( sqlite3StrICmp(zName+7, ALT_TEMP_SCHEMA_TABLE+7)==0 ){
+        p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
+                            DFLT_TEMP_SCHEMA_TABLE);
+      }
     }
   }
   return p;
@@ -746,10 +766,10 @@ char *sqlite3NameFromToken(sqlite3 *db, Token *pName){
 ** Open the sqlite_master table stored in database number iDb for
 ** writing. The table is opened using cursor 0.
 */
-void sqlite3OpenMasterTable(Parse *p, int iDb){
+void sqlite3OpenSchemaTable(Parse *p, int iDb){
   Vdbe *v = sqlite3GetVdbe(p);
-  sqlite3TableLock(p, iDb, MASTER_ROOT, 1, MASTER_NAME);
-  sqlite3VdbeAddOp4Int(v, OP_OpenWrite, 0, MASTER_ROOT, iDb, 5);
+  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, DFLT_SCHEMA_TABLE);
+  sqlite3VdbeAddOp4Int(v, OP_OpenWrite, 0, SCHEMA_ROOT, iDb, 5);
   if( p->nTab==0 ){
     p->nTab = 1;
   }
@@ -1135,7 +1155,7 @@ void sqlite3StartTable(
 #endif
 
   /* Begin generating the code that will insert the table record into
-  ** the SQLITE_MASTER table.  Note in particular that we must go ahead
+  ** the schema table.  Note in particular that we must go ahead
   ** and allocate the record number for the table entry now.  Before any
   ** PRIMARY KEY or UNIQUE keywords are parsed.  Those keywords will cause
   ** indices to be created and the table record must come before the 
@@ -1189,7 +1209,7 @@ void sqlite3StartTable(
       pParse->addrCrTab =
          sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, reg2, BTREE_INTKEY);
     }
-    sqlite3OpenMasterTable(pParse, iDb);
+    sqlite3OpenSchemaTable(pParse, iDb);
     sqlite3VdbeAddOp2(v, OP_NewRowid, 0, reg1);
     sqlite3VdbeAddOp4(v, OP_Blob, 6, reg3, 0, nullRow, P4_STATIC);
     sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
@@ -2364,7 +2384,7 @@ void sqlite3EndTable(
   }
 
   /* If not initializing, then create a record for the new table
-  ** in the SQLITE_MASTER table of the database.
+  ** in the schema table of the database.
   **
   ** If this is a TEMPORARY table, write the entry into the auxiliary
   ** file instead of into the main database file.
@@ -2466,14 +2486,14 @@ void sqlite3EndTable(
     }
 
     /* A slot for the record has already been allocated in the 
-    ** SQLITE_MASTER table.  We just need to update that slot with all
+    ** schema table.  We just need to update that slot with all
     ** the information we've collected.
     */
     sqlite3NestedParse(pParse,
-      "UPDATE %Q.%s "
-         "SET type='%s', name=%Q, tbl_name=%Q, rootpage=#%d, sql=%Q "
-       "WHERE rowid=#%d",
-      db->aDb[iDb].zDbSName, MASTER_NAME,
+      "UPDATE %Q." DFLT_SCHEMA_TABLE
+      " SET type='%s', name=%Q, tbl_name=%Q, rootpage=#%d, sql=%Q"
+      " WHERE rowid=#%d",
+      db->aDb[iDb].zDbSName,
       zType,
       p->zName,
       p->zName,
@@ -2601,7 +2621,7 @@ void sqlite3CreateView(
   sEnd.z = &z[n-1];
   sEnd.n = 1;
 
-  /* Use sqlite3EndTable() to add the view to the SQLITE_MASTER table */
+  /* Use sqlite3EndTable() to add the view to the schema table */
   sqlite3EndTable(pParse, 0, &sEnd, 0, 0);
 
 create_view_fail:
@@ -2837,8 +2857,9 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** token for additional information.
   */
   sqlite3NestedParse(pParse, 
-     "UPDATE %Q.%s SET rootpage=%d WHERE #%d AND rootpage=#%d",
-     pParse->db->aDb[iDb].zDbSName, MASTER_NAME, iTable, r1, r1);
+     "UPDATE %Q." DFLT_SCHEMA_TABLE
+     " SET rootpage=%d WHERE #%d AND rootpage=#%d",
+     pParse->db->aDb[iDb].zDbSName, iTable, r1, r1);
 #endif
   sqlite3ReleaseTempReg(pParse, r1);
 }
@@ -2963,7 +2984,7 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
   }
 #endif
 
-  /* Drop all SQLITE_MASTER table and index entries that refer to the
+  /* Drop all entries in the schema table that refer to the
   ** table. The program name loops through the master table and deletes
   ** every row that refers to a table of the same name as the one being
   ** dropped. Triggers are handled separately because a trigger can be
@@ -2971,8 +2992,9 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
   ** database.
   */
   sqlite3NestedParse(pParse, 
-      "DELETE FROM %Q.%s WHERE tbl_name=%Q and type!='trigger'",
-      pDb->zDbSName, MASTER_NAME, pTab->zName);
+      "DELETE FROM %Q." DFLT_SCHEMA_TABLE
+      " WHERE tbl_name=%Q and type!='trigger'",
+      pDb->zDbSName, pTab->zName);
   if( !isView && !IsVirtual(pTab) ){
     destroyTable(pParse, pTab);
   }
@@ -3979,8 +4001,8 @@ void sqlite3CreateIndex(
       /* Add an entry in sqlite_master for this index
       */
       sqlite3NestedParse(pParse, 
-          "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#%d,%Q);",
-          db->aDb[iDb].zDbSName, MASTER_NAME,
+          "INSERT INTO %Q." DFLT_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
+          db->aDb[iDb].zDbSName,
           pIndex->zName,
           pTab->zName,
           iMem,
@@ -4150,8 +4172,8 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   if( v ){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3NestedParse(pParse,
-       "DELETE FROM %Q.%s WHERE name=%Q AND type='index'",
-       db->aDb[iDb].zDbSName, MASTER_NAME, pIndex->zName
+       "DELETE FROM %Q." DFLT_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
+       db->aDb[iDb].zDbSName, pIndex->zName
     );
     sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
     sqlite3ChangeCookie(pParse, iDb);

@@ -52,22 +52,22 @@ static int isAlterableTable(Parse *pParse, Table *pTab){
 static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
-      "FROM \"%w\".%s "
+      "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
       " AND sqlite_rename_test(%Q, sql, type, name, %d)=NULL ",
-      zDb, MASTER_NAME, 
+      zDb,
       zDb, bTemp
   );
 
   if( bTemp==0 ){
     sqlite3NestedParse(pParse, 
         "SELECT 1 "
-        "FROM temp.%s "
+        "FROM temp." DFLT_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
         " AND sqlite_rename_test(%Q, sql, type, name, 1)=NULL ",
-        MASTER_NAME, zDb 
+        zDb 
     );
   }
 }
@@ -185,17 +185,17 @@ void sqlite3AlterRenameTable(
   /* Rewrite all CREATE TABLE, INDEX, TRIGGER or VIEW statements in
   ** the schema to use the new table name.  */
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\".%s SET "
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) "
       "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
       "AND   name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
-      , zDb, MASTER_NAME, zDb, zTabName, zName, (iDb==1), zTabName
+      , zDb, zDb, zTabName, zName, (iDb==1), zTabName
   );
 
   /* Update the tbl_name and name columns of the sqlite_master table
   ** as required.  */
   sqlite3NestedParse(pParse,
-      "UPDATE %Q.%s SET "
+      "UPDATE %Q." DFLT_SCHEMA_TABLE " SET "
           "tbl_name = %Q, "
           "name = CASE "
             "WHEN type='table' THEN %Q "
@@ -205,7 +205,7 @@ void sqlite3AlterRenameTable(
             "ELSE name END "
       "WHERE tbl_name=%Q COLLATE nocase AND "
           "(type='table' OR type='index' OR type='trigger');", 
-      zDb, MASTER_NAME, 
+      zDb,
       zName, zName, zName, 
       nTabName, zTabName
   );
@@ -382,10 +382,10 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     }
     db->mDbFlags |= DBFLAG_PreferBuiltin;
     sqlite3NestedParse(pParse, 
-        "UPDATE \"%w\".%s SET "
+        "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
           "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
         "WHERE type = 'table' AND name = %Q", 
-      zDb, MASTER_NAME, pNew->addColOffset, zCol, pNew->addColOffset+1,
+      zDb, pNew->addColOffset, zCol, pNew->addColOffset+1,
       zTab
     );
     sqlite3DbFree(db, zCol);
@@ -595,21 +595,20 @@ void sqlite3AlterRenameColumn(
   assert( pNew->n>0 );
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\".%s SET "
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
       " AND (type != 'index' OR tbl_name = %Q)"
       " AND sql NOT LIKE 'create virtual%%'",
-      zDb, MASTER_NAME, 
+      zDb,
       zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
       pTab->zName
   );
 
   sqlite3NestedParse(pParse, 
-      "UPDATE temp.%s SET "
+      "UPDATE temp." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, 1) "
       "WHERE type IN ('trigger', 'view')",
-      MASTER_NAME, 
       zDb, pTab->zName, iCol, zNew, bQuote
   );
 

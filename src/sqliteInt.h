@@ -1011,18 +1011,24 @@ struct BusyHandler {
 ** is a special table that holds the names and attributes of all
 ** user tables and indices.
 */
-#define MASTER_NAME       "sqlite_master"
-#define TEMP_MASTER_NAME  "sqlite_temp_master"
+//#define MASTER_NAME       "sqlite_master"
+//#define TEMP_MASTER_NAME  "sqlite_temp_master"
+#define DFLT_SCHEMA_TABLE          "sqlite_master"
+#define DFLT_TEMP_SCHEMA_TABLE     "sqlite_temp_master"
+#define ALT_SCHEMA_TABLE           "sqlite_schema"
+#define ALT_TEMP_SCHEMA_TABLE      "sqlite_temp_schema"
+
 
 /*
-** The root-page of the master database table.
+** The root-page of the schema table.
 */
-#define MASTER_ROOT       1
+#define SCHEMA_ROOT    1
 
 /*
-** The name of the schema table.
+** The name of the schema table.  The name is different for TEMP.
 */
-#define SCHEMA_TABLE(x)  ((!OMIT_TEMPDB)&&(x==1)?TEMP_MASTER_NAME:MASTER_NAME)
+#define SCHEMA_TABLE(x) \
+    ((!OMIT_TEMPDB)&&(x==1)?DFLT_TEMP_SCHEMA_TABLE:DFLT_SCHEMA_TABLE)
 
 /*
 ** A convenience macro that returns the number of elements in
@@ -4144,7 +4150,7 @@ void sqlite3DeleteColumnNames(sqlite3*,Table*);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
 void sqlite3SelectAddColumnTypeAndCollation(Parse*,Table*,Select*,char);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
-void sqlite3OpenMasterTable(Parse *, int);
+void sqlite3OpenSchemaTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3TableColumnToIndex(Index*, i16);
 #ifdef SQLITE_OMIT_GENERATED_COLUMNS

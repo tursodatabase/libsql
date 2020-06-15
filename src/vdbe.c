@@ -3950,7 +3950,7 @@ case OP_OpenEphemeral: {
         rc = sqlite3BtreeCreateTable(pCx->pBtx, (int*)&pCx->pgnoRoot,
                                      BTREE_BLOBKEY | pOp->p5); 
         if( rc==SQLITE_OK ){
-          assert( pCx->pgnoRoot==MASTER_ROOT+1 );
+          assert( pCx->pgnoRoot==SCHEMA_ROOT+1 );
           assert( pKeyInfo->db==db );
           assert( pKeyInfo->enc==ENC(db) );
           rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
@@ -3958,8 +3958,8 @@ case OP_OpenEphemeral: {
         }
         pCx->isTable = 0;
       }else{
-        pCx->pgnoRoot = MASTER_ROOT;
-        rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
+        pCx->pgnoRoot = SCHEMA_ROOT;
+        rc = sqlite3BtreeCursor(pCx->pBtx, SCHEMA_ROOT, BTREE_WRCSR,
                                 0, pCx->uc.pCursor);
         pCx->isTable = 1;
       }
@@ -6066,7 +6066,7 @@ case OP_SqlExec: {
 
 /* Opcode: ParseSchema P1 * * P4 *
 **
-** Read and parse all entries from the SQLITE_MASTER table of database P1
+** Read and parse all entries from the schema table of database P1
 ** that match the WHERE clause P4.  If P4 is a NULL pointer, then the
 ** entire schema for P1 is reparsed.
 **
@@ -6103,7 +6103,7 @@ case OP_ParseSchema: {
   }else
 #endif
   {
-    zMaster = MASTER_NAME;
+    zMaster = DFLT_SCHEMA_TABLE;
     initData.db = db;
     initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;

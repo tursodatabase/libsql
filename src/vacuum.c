@@ -304,7 +304,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   /* Copy the triggers, views, and virtual tables from the main database
   ** over to the temporary database.  None of these objects has any
   ** associated storage, so all we have to do is copy their entries
-  ** from the SQLITE_MASTER table.
+  ** from the schema table.
   */
   rc = execSqlF(db, pzErrMsg,
       "INSERT INTO vacuum_db.sqlite_master"

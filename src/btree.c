@@ -3429,7 +3429,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   /* Any read-only or read-write transaction implies a read-lock on 
   ** page 1. So if some other shared-cache client already has a write-lock 
   ** on page 1, the transaction cannot be opened. */
-  rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK);
+  rc = querySharedCacheTableLock(p, SCHEMA_ROOT, READ_LOCK);
   if( SQLITE_OK!=rc ) goto trans_begun;
 
   pBt->btsFlags &= ~BTS_INITIALLY_EMPTY;
@@ -9477,7 +9477,7 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
 
   sqlite3BtreeEnter(p);
   assert( p->inTrans>TRANS_NONE );
-  assert( SQLITE_OK==querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK) );
+  assert( SQLITE_OK==querySharedCacheTableLock(p, SCHEMA_ROOT, READ_LOCK) );
   assert( pBt->pPage1 );
   assert( idx>=0 && idx<=15 );
 
@@ -10360,7 +10360,7 @@ int sqlite3BtreeSchemaLocked(Btree *p){
   int rc;
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
-  rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK);
+  rc = querySharedCacheTableLock(p, SCHEMA_ROOT, READ_LOCK);
   assert( rc==SQLITE_OK || rc==SQLITE_LOCKED_SHAREDCACHE );
   sqlite3BtreeLeave(p);
   return rc;

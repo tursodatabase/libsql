@@ -466,7 +466,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     zStmt = sqlite3MPrintf(db, "CREATE VIRTUAL TABLE %T", &pParse->sNameToken);
 
     /* A slot for the record has already been allocated in the 
-    ** SQLITE_MASTER table.  We just need to update that slot with all
+    ** schema table.  We just need to update that slot with all
     ** the information we've collected.  
     **
     ** The VM register number pParse->regRowid holds the rowid of an
@@ -475,10 +475,10 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     sqlite3NestedParse(pParse,
-      "UPDATE %Q.%s "
+      "UPDATE %Q." DFLT_SCHEMA_TABLE " "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
        "WHERE rowid=#%d",
-      db->aDb[iDb].zDbSName, MASTER_NAME,
+      db->aDb[iDb].zDbSName,
       pTab->zName,
       pTab->zName,
       zStmt,
