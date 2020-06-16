@@ -4523,7 +4523,7 @@ void sqlite3Fts3DoclistNext(
 
   assert( nDoclist>0 );
   assert( *pbEof==0 );
-  assert( p || *piDocid==0 );
+  assert_fts3_nc( p || *piDocid==0 );
   assert( !p || (p>=aDoclist && p<=&aDoclist[nDoclist]) );
 
   if( p==0 ){
