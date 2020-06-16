@@ -1,6 +1,6 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C Fix\san\sassert()\sin\sfts3\sthat\scan\sfail\swhen\sprocessing\sa\scorrupt\srecord.
-D 2020-06-16T14:06:20.912
+C Add\sa\stest\scase\scovering\sthe\sprevious\scheck-in\sto\sthe\stest/fuzzdata8.db\sfile.
+D 2020-06-16T14:12:43.417
 F configure f594931bd7b23dad12db96b81e1dba43b41b30a4560d6eb008014e3d9f1617e8 x
 F configure.ac 13e4ecf89214c3aa0ba099a9e0178f13f03261ace627126737d8cee240ec5c1c
 F ext/fts3/fts3.c ad3416827315a5bef8d0e23d8e90bf29940fbec23ee78aa0c5d3caed85072dec
@@ -20,7 +20,7 @@ F src/vtab.c 33ecf1d8b0fd1508fe23be9da40e48909c86a13db2725e273177eb47db2fc265
 F src/window.c 88a63e6948ea924b3cf9ad8aff5ea1fa53bebdb2f13340867205fda16ed0f19c
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt4.test 000cc36cf50f61e51a3ae35748ea883674a9d8b797880975e10866849eefb404
-F test/fuzzdata8.db b87ae726c84c3f80d457642d7650724a76eb3d7b76258959d712cc4d926ddfc7
+F test/fuzzdata8.db e7a6a1444adb7bd10dec870234979ddd63173314c7345e3def2d892dcf99d48f
 F test/istrue.test 06f92ea38750fa74df7dbbe6920205251c2310861fbbe23a3adfa918a2e2ba74
 F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
 F test/selectA.test 68de52409e45a3313d00b8461b48bef4fb729faf36ade9067a994eae55cc86f4
@@ -28,7 +28,7 @@ F test/where.test f5e62453537e5b335b69f3b09f8a02ce3328289fad5d866e25371284b837d7
 F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
 F test/without_rowid3.test 96426a6c9a2a5cf62bbe55ea1ad038eaaf4bf743f40a1ad517233b8e5a3d4339
-P 61782a7ae3c25cf59d7a676cb295eb024d17c46e532ae78c6fe871a91d712fa9
-R 14b01e4dd1603edf4df42d81f4ced7a5
-U dan
-Z 43e2585015a8d4d9f2bfa4334bc823ee
+P a58a6d6fb241a50c4c7c9af8a9c65bc4746e905b2ae12290c7182afa944053a2
+R 384b84d5739143259cb7eea7bb108567
+U drh
+Z 99099ae802c1c7d548d28a65968661d6
