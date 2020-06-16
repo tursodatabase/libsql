@@ -3137,7 +3137,6 @@ static void exec_prepared_stmt_columnar(
     }
   }
   for(i=nColumn, j=0; i<nTotal; i++, j++){
-    if( seenInterrupt ) goto columnar_end;
     if( j==0 && p->cMode!=MODE_Column ){
       utf8_printf(p->out, "%s", p->cMode==MODE_Box?BOX_13" ":"| ");
     }
@@ -3149,6 +3148,7 @@ static void exec_prepared_stmt_columnar(
     if( j==nColumn-1 ){
       utf8_printf(p->out, "%s", rowSep);
       j = -1;
+      if( seenInterrupt ) goto columnar_end;
     }else{
       utf8_printf(p->out, "%s", colSep);
     }
@@ -3159,6 +3159,9 @@ static void exec_prepared_stmt_columnar(
     print_box_row_separator(p, nColumn, BOX_12, BOX_124, BOX_14);
   }
 columnar_end:
+  if( seenInterrupt ){
+    utf8_printf(p->out, "Interrupt\n");
+  }
   sqlite3_free_table(azData);
 }
 

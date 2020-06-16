@@ -1,6 +1,6 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C Add\sa\stest\scase\scovering\sthe\sprevious\scheck-in\sto\sthe\stest/fuzzdata8.db\sfile.
-D 2020-06-16T14:12:43.417
+C In\sthe\sCLI,\sonly\sinterrupt\stabular\soutputs\sat\sthe\send\sof\sa\sline.\s\sAnd\sprint\n"Interrupt"\son\sa\sline\safter\sstopping\sthe\soutput.
+D 2020-06-16T17:34:40.898
 F configure f594931bd7b23dad12db96b81e1dba43b41b30a4560d6eb008014e3d9f1617e8 x
 F configure.ac 13e4ecf89214c3aa0ba099a9e0178f13f03261ace627126737d8cee240ec5c1c
 F ext/fts3/fts3.c ad3416827315a5bef8d0e23d8e90bf29940fbec23ee78aa0c5d3caed85072dec
@@ -10,7 +10,7 @@ F src/build.c 8245e69aa1a2f8b67e76203fdbaa9f88deccd89b5ed41f7097c202b920484fd0
 F src/expr.c 36bb737d2ca78ee9bd4fde46cf1e51a37e7e1b263e55fccfaef32922a19e9524
 F src/global.c 0409ae635839e0bef26a69b68be64126ab6cba62ac19bd7694f1652e591c4c17
 F src/select.c 6ddd86a7272ff1f443bd9efcbb0f5ab590674d4c732e4cb8c3d5dd8e3a70cae6
-F src/shell.c.in c27ee0cd27e17db69257597f927301532a9f019445e3526828c78d348b6f0786
+F src/shell.c.in ffd3de9cb7294919fe1b56c49f9d62fc4b049015c4727c934f3d1880128c56e3
 F src/sqliteInt.h 0a13c93b250270c5876da65c21963eaca60c5fc55271c313d5f6cf20547134af
 F src/test1.c e9f68f157f8fd027ee4c32c4b427f4eed274749bfb745427e2d954fa89d95ad3
 F src/trigger.c 6b1472e6b5bbca71e13f95c61ebcd0b255450352de8254a42c40222020b7ac43
@@ -28,7 +28,7 @@ F test/where.test f5e62453537e5b335b69f3b09f8a02ce3328289fad5d866e25371284b837d7
 F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
 F test/without_rowid3.test 96426a6c9a2a5cf62bbe55ea1ad038eaaf4bf743f40a1ad517233b8e5a3d4339
-P a58a6d6fb241a50c4c7c9af8a9c65bc4746e905b2ae12290c7182afa944053a2
-R 384b84d5739143259cb7eea7bb108567
+P 95379da0e1ad5110648a5b3af24e7caab66a6f1ad6efdf374c83ae4ef1fed515
+R 7e790a0cce062c1755f55b7e661415e2
 U drh
-Z 99099ae802c1c7d548d28a65968661d6
+Z 7c2c29d35a69f3e3cd4c13d57f6827c3
