@@ -1,8 +1,9 @@
 B fd5abb1a7b5a55127d5c0d5ff448020d8bccab44e4f5afe1eb88fc19578af735
-C In\sthe\sCLI,\sonly\sinterrupt\stabular\soutputs\sat\sthe\send\sof\sa\sline.\s\sAnd\sprint\n"Interrupt"\son\sa\sline\safter\sstopping\sthe\soutput.
-D 2020-06-16T17:34:40.898
+C Add\snew\sfile\sdoc/wal-lock.md,\scontaining\snotes\son\swal-mode\sblocking\slocks.
+D 2020-06-16T19:51:56.187
 F configure f594931bd7b23dad12db96b81e1dba43b41b30a4560d6eb008014e3d9f1617e8 x
 F configure.ac 13e4ecf89214c3aa0ba099a9e0178f13f03261ace627126737d8cee240ec5c1c
+F doc/wal-lock.md 781726aaba20bafeceb7ba9f91d5c98c6731691b30c954e37cf0b49a053d461d
 F ext/fts3/fts3.c ad3416827315a5bef8d0e23d8e90bf29940fbec23ee78aa0c5d3caed85072dec
 F src/alter.c b8ffe4acd48b4fe793d01901f28fd4f3b037854a0e99f0c977738556c31b9d2b
 F src/btree.c f3a4479b0dba3a59a1d156d973be41fc1ccb3dbdb69151c4c62a791d86c9ffe2
@@ -28,7 +29,7 @@ F test/where.test f5e62453537e5b335b69f3b09f8a02ce3328289fad5d866e25371284b837d7
 F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
 F test/window1.test 9d7f4990e5b36d95af93b189da4aa75216c6690ce95cced3c8b6d3234be51c2c
 F test/without_rowid3.test 96426a6c9a2a5cf62bbe55ea1ad038eaaf4bf743f40a1ad517233b8e5a3d4339
-P 95379da0e1ad5110648a5b3af24e7caab66a6f1ad6efdf374c83ae4ef1fed515
-R 7e790a0cce062c1755f55b7e661415e2
-U drh
-Z 7c2c29d35a69f3e3cd4c13d57f6827c3
+P f3bd689336fecaa1e2928b826c6aedb0178d322f4633ac429dd1ae6fbc08e7f1
+R 20b349aca00331020aae5b577df5847f
+U dan
+Z 109a0399a3983dd11a4da8f364e04d14
