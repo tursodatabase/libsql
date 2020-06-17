@@ -2338,7 +2338,7 @@ static int fts3PoslistPhraseMerge(
   /* Never set both isSaveLeft and isExact for the same invocation. */
   assert( isSaveLeft==0 || isExact==0 );
 
-  assert( p!=0 && *p1!=0 && *p2!=0 );
+  assert_fts3_nc( p!=0 && *p1!=0 && *p2!=0 );
   if( *p1==POS_COLUMN ){ 
     p1++;
     p1 += fts3GetVarint32(p1, &iCol1);
