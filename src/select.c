@@ -2717,9 +2717,7 @@ static int multiSelect(
                           selectOpName(p->op)));
         rc = sqlite3Select(pParse, p, &uniondest);
         testcase( rc!=SQLITE_OK );
-        /* Query flattening in sqlite3Select() might refill p->pOrderBy.
-        ** Be sure to delete p->pOrderBy, therefore, to avoid a memory leak. */
-        sqlite3ExprListDelete(db, p->pOrderBy);
+        assert( p->pOrderBy==0 );
         pDelete = p->pPrior;
         p->pPrior = pPrior;
         p->pOrderBy = 0;
@@ -4106,7 +4104,7 @@ static int flattenSubquery(
     ** We look at every expression in the outer query and every place we see
     ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
     */
-    if( pSub->pOrderBy ){
+    if( pSub->pOrderBy && (pParent->selFlags & SF_NoopOrderBy)==0 ){
       /* At this point, any non-zero iOrderByCol values indicate that the
       ** ORDER BY column expression is identical to the iOrderByCol'th
       ** expression returned by SELECT statement pSub. Since these values
@@ -4130,7 +4128,13 @@ static int flattenSubquery(
     if( isLeftJoin>0 ){
       sqlite3SetJoinExpr(pWhere, iNewParent);
     }
-    pParent->pWhere = sqlite3ExprAnd(pParse, pWhere, pParent->pWhere);
+    if( pWhere ){
+      if( pParent->pWhere ){
+        pParent->pWhere = sqlite3PExpr(pParse, TK_AND, pWhere, pParent->pWhere);
+      }else{
+        pParent->pWhere = pWhere;
+      }
+    }
     if( db->mallocFailed==0 ){
       SubstContext x;
       x.pParse = pParse;
@@ -4636,6 +4640,14 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   for(pX=p; pX && (pX->op==TK_ALL || pX->op==TK_SELECT); pX=pX->pPrior){}
   if( pX==0 ) return WRC_Continue;
   a = p->pOrderBy->a;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  /* If iOrderByCol is already non-zero, then it has already been matched
+  ** to a result column of the SELECT statement. This occurs when the
+  ** SELECT is rewritten for window-functions processing and then passed
+  ** to sqlite3SelectPrep() and similar a second time. The rewriting done
+  ** by this function is not required in this case. */
+  if( a[0].u.x.iOrderByCol ) return WRC_Continue;
+#endif
   for(i=p->pOrderBy->nExpr-1; i>=0; i--){
     if( a[i].pExpr->flags & EP_Collate ) break;
   }
@@ -5792,6 +5804,7 @@ int sqlite3Select(
     sqlite3ExprListDelete(db, p->pOrderBy);
     p->pOrderBy = 0;
     p->selFlags &= ~SF_Distinct;
+    p->selFlags |= SF_NoopOrderBy;
   }
   sqlite3SelectPrep(pParse, p, 0);
   if( pParse->nErr || db->mallocFailed ){

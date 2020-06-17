@@ -2267,6 +2267,9 @@ static int fts3PoslistMerge(
       */
       fts3GetDeltaVarint(&p1, &i1);
       fts3GetDeltaVarint(&p2, &i2);
+      if( i1<2 || i2<2 ){
+        break;
+      }
       do {
         fts3PutDeltaVarint(&p, &iPrev, (i1<i2) ? i1 : i2); 
         iPrev -= 2;
@@ -4520,7 +4523,7 @@ void sqlite3Fts3DoclistNext(
 
   assert( nDoclist>0 );
   assert( *pbEof==0 );
-  assert( p || *piDocid==0 );
+  assert_fts3_nc( p || *piDocid==0 );
   assert( !p || (p>=aDoclist && p<=&aDoclist[nDoclist]) );
 
   if( p==0 ){
@@ -5170,7 +5173,7 @@ static void fts3EvalInvalidatePoslist(Fts3Phrase *pPhrase){
 **
 ** Parameter nNear is passed the NEAR distance of the expression (5 in
 ** the example above). When this function is called, *paPoslist points to
-** the position list, and *pnToken is the number of phrase tokens in, the
+** the position list, and *pnToken is the number of phrase tokens in the
 ** phrase on the other side of the NEAR operator to pPhrase. For example,
 ** if pPhrase refers to the "def ghi" phrase, then *paPoslist points to
 ** the position list associated with phrase "abc".
