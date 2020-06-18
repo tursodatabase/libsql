@@ -200,16 +200,18 @@ static int hasSharedCacheTableLock(
   ** table.  */
   if( isIndex ){
     HashElem *p;
+    int bSeen = 0;
     for(p=sqliteHashFirst(&pSchema->idxHash); p; p=sqliteHashNext(p)){
       Index *pIdx = (Index *)sqliteHashData(p);
       if( pIdx->tnum==(int)iRoot ){
-        if( iTab ){
+        if( bSeen ){
           /* Two or more indexes share the same root page.  There must
           ** be imposter tables.  So just return true.  The assert is not
           ** useful in that case. */
           return 1;
         }
         iTab = pIdx->pTable->tnum;
+        bSeen = 1;
       }
     }
   }else{
