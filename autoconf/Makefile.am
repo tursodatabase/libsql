@@ -13,7 +13,7 @@ sqlite3_CFLAGS = $(AM_CFLAGS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS -DSQLITE_ENABLE_D
 
 include_HEADERS = sqlite3.h sqlite3ext.h
 
-EXTRA_DIST = sqlite3.1 tea Makefile.msc sqlite3.rc README.txt Replace.cs Makefile.fallback
+EXTRA_DIST = sqlite3.1 tea Makefile.msc sqlite3.rc sqlite3rc.h README.txt Replace.cs Makefile.fallback
 pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = sqlite3.pc
 
