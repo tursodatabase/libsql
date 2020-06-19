@@ -1007,12 +1007,8 @@ struct BusyHandler {
 };
 
 /*
-** Name of the master database table.  The master database table
-** is a special table that holds the names and attributes of all
-** user tables and indices.
+** Name of table that holds the database schema.
 */
-//#define MASTER_NAME       "sqlite_master"
-//#define TEMP_MASTER_NAME  "sqlite_temp_master"
 #define DFLT_SCHEMA_TABLE          "sqlite_master"
 #define DFLT_TEMP_SCHEMA_TABLE     "sqlite_temp_master"
 #define ALT_SCHEMA_TABLE           "sqlite_schema"
@@ -1562,7 +1558,7 @@ struct sqlite3 {
   i64 nDeferredImmCons;         /* Net deferred immediate constraints */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
-  /* The following variables are all protected by the STATIC_MASTER
+  /* The following variables are all protected by the STATIC_MAIN
   ** mutex, not by sqlite3.mutex. They are used by code in notify.c.
   **
   ** When X.pUnlockConnection==Y, that means that X is waiting for Y to
@@ -1604,7 +1600,7 @@ struct sqlite3 {
 **      SQLITE_CkptFullFSync == PAGER_CKPT_FULLFSYNC
 **      SQLITE_CacheSpill    == PAGER_CACHE_SPILL
 */
-#define SQLITE_WriteSchema    0x00000001  /* OK to update SQLITE_MASTER */
+#define SQLITE_WriteSchema    0x00000001  /* OK to update SQLITE_SCHEMA */
 #define SQLITE_LegacyFileFmt  0x00000002  /* Create new databases in format 1 */
 #define SQLITE_FullColNames   0x00000004  /* Show full column names on SELECT */
 #define SQLITE_FullFSync      0x00000008  /* Use full fsync on the backend */
@@ -2398,7 +2394,7 @@ struct UnpackedRecord {
 ** element.
 **
 ** While parsing a CREATE TABLE or CREATE INDEX statement in order to
-** generate VDBE code (as opposed to parsing one read from an sqlite_master
+** generate VDBE code (as opposed to parsing one read from an sqlite_schema
 ** table as part of parsing an existing database schema), transient instances
 ** of this structure may be created. In this case the Index.tnum variable is
 ** used to store the address of a VDBE instruction, not a database page
@@ -2724,7 +2720,7 @@ struct Expr {
 #define EP_Static    0x8000000 /* Held in memory not obtained from malloc() */
 #define EP_IsTrue   0x10000000 /* Always has boolean value of TRUE */
 #define EP_IsFalse  0x20000000 /* Always has boolean value of FALSE */
-#define EP_FromDDL  0x40000000 /* Originates from sqlite_master */
+#define EP_FromDDL  0x40000000 /* Originates from sqlite_schema */
                /*   0x80000000 // Available */
 
 /*
@@ -2904,7 +2900,7 @@ struct SrcList {
       unsigned isCorrelated :1;  /* True if sub-query is correlated */
       unsigned viaCoroutine :1;  /* Implemented as a co-routine */
       unsigned isRecursive :1;   /* True for recursive reference in WITH */
-      unsigned fromDDL :1;       /* Comes from sqlite_master */
+      unsigned fromDDL :1;       /* Comes from sqlite_schema */
     } fg;
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
@@ -3025,7 +3021,7 @@ struct NameContext {
 #define NC_HasWin    0x08000  /* One or more window functions seen */
 #define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
 #define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
-#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_master */
+#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_schema */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT

@@ -545,7 +545,7 @@ static int multiplexOpen(
       rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz64);
       if( rc==SQLITE_OK && zName ){
         int bExists;
-        if( flags & SQLITE_OPEN_MASTER_JOURNAL ){
+        if( flags & SQLITE_OPEN_SUPER_JOURNAL ){
           pGroup->bEnabled = 0;
         }else
         if( sz64==0 ){

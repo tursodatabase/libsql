@@ -1292,7 +1292,7 @@ int sqlite3_win32_reset_heap(){
   int rc;
   MUTEX_LOGIC( sqlite3_mutex *pMaster; ) /* The main static mutex */
   MUTEX_LOGIC( sqlite3_mutex *pMem; )    /* The memsys static mutex */
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
+  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
   MUTEX_LOGIC( pMem = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM); )
   sqlite3_mutex_enter(pMaster);
   sqlite3_mutex_enter(pMem);
@@ -5023,7 +5023,7 @@ static int winOpen(
 
 #ifndef NDEBUG
   int isOpenJournal = (isCreate && (
-        eType==SQLITE_OPEN_MASTER_JOURNAL
+        eType==SQLITE_OPEN_SUPER_JOURNAL
      || eType==SQLITE_OPEN_MAIN_JOURNAL
      || eType==SQLITE_OPEN_WAL
   ));
@@ -5048,13 +5048,13 @@ static int winOpen(
   ** automatically deleted. Nor are they ever temporary files.  */
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
-  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_SUPER_JOURNAL );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB
        || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL
-       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_SUPER_JOURNAL
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 

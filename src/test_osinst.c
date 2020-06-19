@@ -740,7 +740,7 @@ int sqlite3_vfslog_new(
   zFile = (char *)&p->base.zName[nVfs+1];
   pParent->xFullPathname(pParent, zLog, pParent->mxPathname, zFile);
 
-  flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MASTER_JOURNAL;
+  flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_SUPER_JOURNAL;
   pParent->xDelete(pParent, zFile, 0);
   rc = pParent->xOpen(pParent, zFile, p->pLog, flags, &flags);
   if( rc==SQLITE_OK ){
@@ -893,7 +893,7 @@ static int vlogConnect(
   pVfs->xFullPathname(pVfs, zFile, pVfs->mxPathname, p->zFile);
   sqlite3_free(zFile);
 
-  flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MASTER_JOURNAL;
+  flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_SUPER_JOURNAL;
   rc = pVfs->xOpen(pVfs, p->zFile, p->pFd, flags, &flags);
 
   if( rc==SQLITE_OK ){

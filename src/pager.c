@@ -2501,7 +2501,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   if( !pMaster ){
     rc = SQLITE_NOMEM_BKPT;
   }else{
-    const int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MASTER_JOURNAL);
+    const int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
     rc = sqlite3OsOpen(pVfs, zMaster, pMaster, flags, 0);
   }
   if( rc!=SQLITE_OK ) goto delmaster_out;
@@ -2537,11 +2537,11 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
       ** Open it and check if it points at the master journal. If
       ** so, return without deleting the master journal file.
       ** NB:  zJournal is really a MAIN_JOURNAL.  But call it a 
-      ** MASTER_JOURNAL here so that the VFS will not send the zJournal
+      ** SUPER_JOURNAL here so that the VFS will not send the zJournal
       ** name into sqlite3_database_file_object().
       */
       int c;
-      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MASTER_JOURNAL);
+      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
       rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
       if( rc!=SQLITE_OK ){
         goto delmaster_out;

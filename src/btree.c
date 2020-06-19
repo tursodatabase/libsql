@@ -69,7 +69,7 @@ int sqlite3BtreeTrace=1;  /* True to enable tracing */
 ** but the test harness needs to access it so we make it global for 
 ** test builds.
 **
-** Access to this variable is protected by SQLITE_MUTEX_STATIC_MASTER.
+** Access to this variable is protected by SQLITE_MUTEX_STATIC_MAIN.
 */
 #ifdef SQLITE_TEST
 BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
@@ -2422,7 +2422,7 @@ int sqlite3BtreeOpen(
 #if SQLITE_THREADSAFE
       mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
       sqlite3_mutex_enter(mutexOpen);
-      mutexShared = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+      mutexShared = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN);
       sqlite3_mutex_enter(mutexShared);
 #endif
       for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
@@ -2541,7 +2541,7 @@ int sqlite3BtreeOpen(
     pBt->nRef = 1;
     if( p->sharable ){
       MUTEX_LOGIC( sqlite3_mutex *mutexShared; )
-      MUTEX_LOGIC( mutexShared = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);)
+      MUTEX_LOGIC( mutexShared = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN);)
       if( SQLITE_THREADSAFE && sqlite3GlobalConfig.bCoreMutex ){
         pBt->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_FAST);
         if( pBt->mutex==0 ){
@@ -2635,7 +2635,7 @@ static int removeFromSharingList(BtShared *pBt){
   int removed = 0;
 
   assert( sqlite3_mutex_notheld(pBt->mutex) );
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
+  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
   sqlite3_mutex_enter(pMaster);
   pBt->nRef--;
   if( pBt->nRef<=0 ){

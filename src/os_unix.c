@@ -5985,7 +5985,7 @@ static int unixOpen(
   ** is called the directory file descriptor will be fsync()ed and close()d.
   */
   int isNewJrnl = (isCreate && (
-        eType==SQLITE_OPEN_MASTER_JOURNAL 
+        eType==SQLITE_OPEN_SUPER_JOURNAL 
      || eType==SQLITE_OPEN_MAIN_JOURNAL 
      || eType==SQLITE_OPEN_WAL
   ));
@@ -6012,13 +6012,13 @@ static int unixOpen(
   ** automatically deleted. Nor are they ever temporary files.  */
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
-  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_SUPER_JOURNAL );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
        || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
-       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_SUPER_JOURNAL 
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
@@ -6211,7 +6211,7 @@ static int unixOpen(
 #endif
   
   assert( zPath==0 || zPath[0]=='/' 
-      || eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL 
+      || eType==SQLITE_OPEN_SUPER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL 
   );
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 

@@ -241,12 +241,12 @@ int sqlite3_initialize(void){
   if( rc ) return rc;
 
   /* Initialize the malloc() system and the recursive pInitMutex mutex.
-  ** This operation is protected by the STATIC_MASTER mutex.  Note that
+  ** This operation is protected by the STATIC_MAIN mutex.  Note that
   ** MutexAlloc() is called for a static mutex prior to initializing the
   ** malloc subsystem - this implies that the allocation of a static
   ** mutex must not require support from the malloc subsystem.
   */
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
+  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
   sqlite3_mutex_enter(pMaster);
   sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
@@ -3112,7 +3112,7 @@ static int openDatabase(
                SQLITE_OPEN_MAIN_JOURNAL | 
                SQLITE_OPEN_TEMP_JOURNAL | 
                SQLITE_OPEN_SUBJOURNAL | 
-               SQLITE_OPEN_MASTER_JOURNAL |
+               SQLITE_OPEN_SUPER_JOURNAL |
                SQLITE_OPEN_NOMUTEX |
                SQLITE_OPEN_FULLMUTEX |
                SQLITE_OPEN_WAL
