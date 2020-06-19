@@ -73,7 +73,7 @@ echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
 echo "#else"                        >> tea/generic/tclsqlite3.c
 echo "#include \"sqlite3.c\""       >> tea/generic/tclsqlite3.c
 echo "#endif"                       >> tea/generic/tclsqlite3.c
-cat  $TOP/src/tclsqlite.c        >> tea/generic/tclsqlite3.c
+cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
 cat tea/configure.ac | 
   sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" > tmp
