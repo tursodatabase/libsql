@@ -4089,7 +4089,7 @@ int sqlite3_test_control(int op, ...){
     /*   sqlite3_test_control(SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS, int);
     **
     ** Set or clear a flag that causes SQLite to verify that type, name,
-    ** and tbl_name fields of the sqlite_master table.  This is normally
+    ** and tbl_name fields of the sqlite_schema table.  This is normally
     ** on, but it is sometimes useful to turn it off for testing.
     */
     case SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS: {

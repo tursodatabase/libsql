@@ -189,8 +189,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   db->init.busy = 1;
 
-  /* Construct the in-memory representation schema tables (sqlite_master or
-  ** sqlite_temp_master) by invoking the parser directly.  The appropriate
+  /* Construct the in-memory representation schema tables (sqlite_schema or
+  ** sqlite_temp_schema) by invoking the parser directly.  The appropriate
   ** table name will be inserted automatically by the parser so we can just
   ** use the abbreviation "x" here.  The parser will also automatically tag
   ** the schema table as read-only. */
@@ -363,7 +363,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     ** current sqlite3_prepare() operation will fail, but the following one
     ** will attempt to compile the supplied statement against whatever subset
     ** of the schema was loaded before the error occurred. The primary
-    ** purpose of this is to allow access to the sqlite_master table
+    ** purpose of this is to allow access to the sqlite_schema table
     ** even when its contents have been corrupted.
     */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
@@ -743,7 +743,7 @@ static int sqlite3LockAndPrepare(
 **
 ** If the statement is successfully recompiled, return SQLITE_OK. Otherwise,
 ** if the statement cannot be recompiled because another connection has
-** locked the sqlite3_master table, return SQLITE_LOCKED. If any other error
+** locked the sqlite3_schema table, return SQLITE_LOCKED. If any other error
 ** occurs, return SQLITE_SCHEMA.
 */
 int sqlite3Reprepare(Vdbe *p){

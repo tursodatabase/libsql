@@ -6124,7 +6124,7 @@ case OP_ParseSchema: {
       if( rc==SQLITE_OK && initData.nInitRow==0 ){
         /* The OP_ParseSchema opcode with a non-NULL P4 argument should parse
         ** at least one SQL statement. Any less than that indicates that
-        ** the sqlite_master table is corrupt. */
+        ** the sqlite_schema table is corrupt. */
         rc = SQLITE_CORRUPT_BKPT;
       }
       sqlite3DbFreeNN(db, zSql);

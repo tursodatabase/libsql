@@ -318,13 +318,13 @@ void sqlite3FinishTrigger(
 #endif
 
   /* if we are not initializing,
-  ** build the sqlite_master entry
+  ** build the sqlite_schema entry
   */
   if( !db->init.busy ){
     Vdbe *v;
     char *z;
 
-    /* Make an entry in the sqlite_master table */
+    /* Make an entry in the sqlite_schema table */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
     sqlite3BeginWriteOperation(pParse, 0, iDb);

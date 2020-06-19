@@ -46,7 +46,7 @@ static void updateVirtualTable(
 ** literal default values specified: a number, null or a string. (If a more
 ** complicated default expression value was provided, it is evaluated 
 ** when the ALTER TABLE is executed and one of the literal values written
-** into the sqlite_master table.)
+** into the sqlite_schema table.)
 **
 ** Therefore, the P4 parameter is only required if the default value for
 ** the column is a literal number, string or null. The sqlite3ValueFromExpr()

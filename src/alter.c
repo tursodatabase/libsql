@@ -192,7 +192,7 @@ void sqlite3AlterRenameTable(
       , zDb, zDb, zTabName, zName, (iDb==1), zTabName
   );
 
-  /* Update the tbl_name and name columns of the sqlite_master table
+  /* Update the tbl_name and name columns of the sqlite_schema table
   ** as required.  */
   sqlite3NestedParse(pParse,
       "UPDATE %Q." DFLT_SCHEMA_TABLE " SET "
@@ -226,7 +226,7 @@ void sqlite3AlterRenameTable(
   ** as required.  */
   if( iDb!=1 ){
     sqlite3NestedParse(pParse, 
-        "UPDATE sqlite_temp_master SET "
+        "UPDATE sqlite_temp_schema SET "
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase AND "
@@ -587,7 +587,7 @@ void sqlite3AlterRenameColumn(
 
   /* Do the rename operation using a recursive UPDATE statement that
   ** uses the sqlite_rename_column() SQL function to compute the new
-  ** CREATE statement text for the sqlite_master table.
+  ** CREATE statement text for the sqlite_schema table.
   */
   sqlite3MayAbort(pParse);
   zNew = sqlite3NameFromToken(db, pNew);

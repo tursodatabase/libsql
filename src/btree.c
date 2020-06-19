@@ -357,7 +357,7 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
 
   /* A connection with the read-uncommitted flag set will never try to
   ** obtain a read-lock using this function. The only read-lock obtained
-  ** by a connection in read-uncommitted mode is on the sqlite_master 
+  ** by a connection in read-uncommitted mode is on the sqlite_schema 
   ** table, and that lock is obtained in BtreeBeginTrans().  */
   assert( 0==(p->db->flags&SQLITE_ReadUncommit) || eLock==WRITE_LOCK );
 
@@ -10356,7 +10356,7 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
 /*
 ** Return SQLITE_LOCKED_SHAREDCACHE if another user of the same shared 
 ** btree as the argument handle holds an exclusive lock on the 
-** sqlite_master table. Otherwise SQLITE_OK.
+** sqlite_schema table. Otherwise SQLITE_OK.
 */
 int sqlite3BtreeSchemaLocked(Btree *p){
   int rc;

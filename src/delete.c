@@ -51,7 +51,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
 **   1) It is a virtual table and no implementation of the xUpdate method
 **      has been provided
 **
-**   2) It is a system table (i.e. sqlite_master), this call is not
+**   2) It is a system table (i.e. sqlite_schema), this call is not
 **      part of a nested parse and writable_schema pragma has not 
 **      been specified
 **
