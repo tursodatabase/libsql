@@ -344,7 +344,7 @@ static int memdbOpen(
   return SQLITE_OK;
 }
 
-#if 0 /* Only used to delete rollback journals, master journals, and WAL
+#if 0 /* Only used to delete rollback journals, super-journals, and WAL
       ** files, none of which exist in memdb.  So this routine is never used */
 /*
 ** Delete the file located at zPath. If the dirSync argument is true,

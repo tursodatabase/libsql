@@ -6075,7 +6075,7 @@ case OP_SqlExec: {
 */
 case OP_ParseSchema: {
   int iDb;
-  const char *zMaster;
+  const char *zSchema;
   char *zSql;
   InitData initData;
 
@@ -6103,14 +6103,14 @@ case OP_ParseSchema: {
   }else
 #endif
   {
-    zMaster = DFLT_SCHEMA_TABLE;
+    zSchema = DFLT_SCHEMA_TABLE;
     initData.db = db;
     initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;
     initData.mInitFlags = 0;
     zSql = sqlite3MPrintf(db,
        "SELECT*FROM\"%w\".%s WHERE %s ORDER BY rowid",
-       db->aDb[iDb].zDbSName, zMaster, pOp->p4.z);
+       db->aDb[iDb].zDbSName, zSchema, pOp->p4.z);
     if( zSql==0 ){
       rc = SQLITE_NOMEM_BKPT;
     }else{

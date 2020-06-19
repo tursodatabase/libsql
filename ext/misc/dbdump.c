@@ -395,7 +395,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   if( strcmp(zTable, "sqlite_sequence")==0 ){
     p->xCallback("DELETE FROM sqlite_sequence;\n", p->pArg);
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
-    p->xCallback("ANALYZE sqlite_master;\n", p->pArg);
+    p->xCallback("ANALYZE sqlite_schema;\n", p->pArg);
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
   }else if( strncmp(zSql, "CREATE VIRTUAL TABLE", 20)==0 ){
@@ -404,7 +404,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       p->writableSchema = 1;
     }
     output_formatted(p,
-       "INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
+       "INSERT INTO sqlite_schema(type,name,tbl_name,rootpage,sql)"
        "VALUES('table','%q','%q',0,'%q');",
        zTable, zTable, zSql);
     return 0;
@@ -646,27 +646,27 @@ int sqlite3_db_dump(
   xCallback("PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n", pArg);
   if( zTable==0 ){
     run_schema_dump_query(&x,
-      "SELECT name, type, sql FROM \"%w\".sqlite_master "
+      "SELECT name, type, sql FROM \"%w\".sqlite_schema "
       "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'",
       zSchema
     );
     run_schema_dump_query(&x,
-      "SELECT name, type, sql FROM \"%w\".sqlite_master "
+      "SELECT name, type, sql FROM \"%w\".sqlite_schema "
       "WHERE name=='sqlite_sequence'", zSchema
     );
     output_sql_from_query(&x,
-      "SELECT sql FROM sqlite_master "
+      "SELECT sql FROM sqlite_schema "
       "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
     );
   }else{
     run_schema_dump_query(&x,
-      "SELECT name, type, sql FROM \"%w\".sqlite_master "
+      "SELECT name, type, sql FROM \"%w\".sqlite_schema "
       "WHERE tbl_name=%Q COLLATE nocase AND type=='table'"
       "  AND sql NOT NULL",
       zSchema, zTable
     );
     output_sql_from_query(&x,
-      "SELECT sql FROM \"%w\".sqlite_master "
+      "SELECT sql FROM \"%w\".sqlite_schema "
       "WHERE sql NOT NULL"
       "  AND type IN ('index','trigger','view')"
       "  AND tbl_name=%Q COLLATE nocase",

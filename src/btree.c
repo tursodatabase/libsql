@@ -993,7 +993,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
   if( *pRC ) return;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  /* The master-journal page number must never be used as a pointer map page */
+  /* The super-journal page number must never be used as a pointer map page */
   assert( 0==PTRMAP_ISPAGE(pBt, PENDING_BYTE_PAGE(pBt)) );
 
   assert( pBt->autoVacuum );
@@ -2630,13 +2630,13 @@ btree_open_out:
 */
 static int removeFromSharingList(BtShared *pBt){
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  MUTEX_LOGIC( sqlite3_mutex *pMaster; )
+  MUTEX_LOGIC( sqlite3_mutex *pMainMtx; )
   BtShared *pList;
   int removed = 0;
 
   assert( sqlite3_mutex_notheld(pBt->mutex) );
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
-  sqlite3_mutex_enter(pMaster);
+  MUTEX_LOGIC( pMainMtx = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
+  sqlite3_mutex_enter(pMainMtx);
   pBt->nRef--;
   if( pBt->nRef<=0 ){
     if( GLOBAL(BtShared*,sqlite3SharedCacheList)==pBt ){
@@ -2655,7 +2655,7 @@ static int removeFromSharingList(BtShared *pBt){
     }
     removed = 1;
   }
-  sqlite3_mutex_leave(pMaster);
+  sqlite3_mutex_leave(pMainMtx);
   return removed;
 #else
   return 1;
@@ -3983,18 +3983,18 @@ static int autoVacuumCommit(BtShared *pBt){
 **
 ** This call is a no-op if no write-transaction is currently active on pBt.
 **
-** Otherwise, sync the database file for the btree pBt. zMaster points to
-** the name of a master journal file that should be written into the
-** individual journal file, or is NULL, indicating no master journal file 
+** Otherwise, sync the database file for the btree pBt. zSuperJrnl points to
+** the name of a super-journal file that should be written into the
+** individual journal file, or is NULL, indicating no super-journal file 
 ** (single database transaction).
 **
-** When this is called, the master journal should already have been
+** When this is called, the super-journal should already have been
 ** created, populated with this journal pointer and synced to disk.
 **
 ** Once this is routine has returned, the only thing required to commit
 ** the write-transaction for this database file is to delete the journal.
 */
-int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
+int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
   int rc = SQLITE_OK;
   if( p->inTrans==TRANS_WRITE ){
     BtShared *pBt = p->pBt;
@@ -4011,7 +4011,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
       sqlite3PagerTruncateImage(pBt->pPager, pBt->nPage);
     }
 #endif
-    rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, 0);
+    rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zSuperJrnl, 0);
     sqlite3BtreeLeave(p);
   }
   return rc;
@@ -4074,7 +4074,7 @@ static void btreeEndTransaction(Btree *p){
 ** the upper layer will attempt a rollback. However, if the second argument
 ** is non-zero then this b-tree transaction is part of a multi-file 
 ** transaction. In this case, the transaction has already been committed 
-** (by deleting a master journal file) and the caller will ignore this 
+** (by deleting a super-journal file) and the caller will ignore this 
 ** functions return code. So, even if an error occurs in the pager layer,
 ** reset the b-tree objects internal state to indicate that the write
 ** transaction has been closed. This is quite safe, as the pager will have

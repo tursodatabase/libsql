@@ -3340,7 +3340,7 @@ static int unixRead(
   assert( offset>=0 );
   assert( amt>0 );
 
-  /* If this is a database file (not a journal, master-journal or temp
+  /* If this is a database file (not a journal, super-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
   assert( pFile->pPreallocatedUnused==0
@@ -3453,7 +3453,7 @@ static int unixWrite(
   assert( id );
   assert( amt>0 );
 
-  /* If this is a database file (not a journal, master-journal or temp
+  /* If this is a database file (not a journal, super-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
   assert( pFile->pPreallocatedUnused==0
@@ -5773,7 +5773,7 @@ static int proxyTransformUnixFile(unixFile*, const char*);
 
 /*
 ** Search for an unused file descriptor that was opened on the database 
-** file (not a journal or master-journal file) identified by pathname
+** file (not a journal or super-journal file) identified by pathname
 ** zPath with SQLITE_OPEN_XXX flags matching those passed as the second
 ** argument to this function.
 **
@@ -5907,7 +5907,7 @@ static int findCreateFileMode(
     while( zPath[nDb]!='-' ){
       /* In normal operation, the journal file name will always contain
       ** a '-' character.  However in 8+3 filename mode, or if a corrupt
-      ** rollback journal specifies a master journal with a goofy name, then
+      ** rollback journal specifies a super-journal with a goofy name, then
       ** the '-' might be missing. */
       if( nDb==0 || zPath[nDb]=='.' ) return SQLITE_OK;
       nDb--;
@@ -5980,7 +5980,7 @@ static int unixOpen(
   struct statfs fsInfo;
 #endif
 
-  /* If creating a master or main-file journal, this function will open
+  /* If creating a super- or main-file journal, this function will open
   ** a file-descriptor on the directory too. The first time unixSync()
   ** is called the directory file descriptor will be fsync()ed and close()d.
   */
@@ -6008,7 +6008,7 @@ static int unixOpen(
   assert(isExclusive==0 || isCreate);
   assert(isDelete==0 || isCreate);
 
-  /* The main DB, main journal, WAL file and master journal are never 
+  /* The main DB, main journal, WAL file and super-journal are never 
   ** automatically deleted. Nor are they ever temporary files.  */
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );

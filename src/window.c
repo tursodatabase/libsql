@@ -953,7 +953,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ExprList *pSort = 0;
 
     ExprList *pSublist = 0;       /* Expression list for sub-query */
-    Window *pMWin = p->pWin;      /* Master window object */
+    Window *pMWin = p->pWin;      /* Main window object */
     Window *pWin;                 /* Window object iterator */
     Table *pTab;
     Walker w;

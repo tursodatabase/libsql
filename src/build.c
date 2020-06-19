@@ -2256,7 +2256,7 @@ static void markExprListImmutable(ExprList *pList){
 ** is added to the internal hash tables, assuming no errors have
 ** occurred.
 **
-** An entry for the table is made in the master table on disk, unless
+** An entry for the table is made in the schema table on disk, unless
 ** this is a temporary table or db->init.busy==1.  When db->init.busy==1
 ** it means we are reading the sqlite_schema table because we just
 ** connected to the database or because the sqlite_schema table has
@@ -2985,7 +2985,7 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
 #endif
 
   /* Drop all entries in the schema table that refer to the
-  ** table. The program name loops through the master table and deletes
+  ** table. The program name loops through the schema table and deletes
   ** every row that refers to a table of the same name as the one being
   ** dropped. Triggers are handled separately because a trigger can be
   ** created in the temp database that refers to a table in another
@@ -3130,7 +3130,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
 #endif
 
-  /* Generate code to remove the table from the master table
+  /* Generate code to remove the table from the schema table
   ** on disk.
   */
   v = sqlite3GetVdbe(pParse);
@@ -3584,10 +3584,7 @@ void sqlite3CreateIndex(
 #if SQLITE_USER_AUTHENTICATION
        && sqlite3UserAuthTable(pTab->zName)==0
 #endif
-#ifdef SQLITE_ALLOW_SQLITE_MASTER_INDEX
-       && sqlite3StrICmp(&pTab->zName[7],"master")!=0
-#endif
- ){
+  ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
   }
@@ -4167,7 +4164,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   }
 #endif
 
-  /* Generate code to remove the index and from the master table */
+  /* Generate code to remove the index and from the schema table */
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3BeginWriteOperation(pParse, 1, iDb);

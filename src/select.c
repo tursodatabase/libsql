@@ -6230,7 +6230,7 @@ int sqlite3Select(
     u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0)
                    | (p->selFlags & SF_FixedLimit);
 #ifndef SQLITE_OMIT_WINDOWFUNC
-    Window *pWin = p->pWin;      /* Master window object (or NULL) */
+    Window *pWin = p->pWin;      /* Main window object (or NULL) */
     if( pWin ){
       sqlite3WindowCodeInit(pParse, p);
     }

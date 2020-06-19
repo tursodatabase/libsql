@@ -2745,7 +2745,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     sqlite3_vfs *pVfs = db->pVfs;
     char *zSuper = 0;   /* File-name for the super-journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
-    sqlite3_file *pMaster = 0;
+    sqlite3_file *pSuperJrnl = 0;
     i64 offset = 0;
     int res;
     int retryCount = 0;
@@ -2779,9 +2779,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     }while( rc==SQLITE_OK && res );
     if( rc==SQLITE_OK ){
       /* Open the super-journal. */
-      rc = sqlite3OsOpenMalloc(pVfs, zSuper, &pMaster, 
+      rc = sqlite3OsOpenMalloc(pVfs, zSuper, &pSuperJrnl, 
           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
-          SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL, 0
+          SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_SUPER_JOURNAL, 0
       );
     }
     if( rc!=SQLITE_OK ){
@@ -2803,10 +2803,10 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
           continue;  /* Ignore TEMP and :memory: databases */
         }
         assert( zFile[0]!=0 );
-        rc = sqlite3OsWrite(pMaster, zFile, sqlite3Strlen30(zFile)+1, offset);
+        rc = sqlite3OsWrite(pSuperJrnl, zFile, sqlite3Strlen30(zFile)+1,offset);
         offset += sqlite3Strlen30(zFile)+1;
         if( rc!=SQLITE_OK ){
-          sqlite3OsCloseFree(pMaster);
+          sqlite3OsCloseFree(pSuperJrnl);
           sqlite3OsDelete(pVfs, zSuper, 0);
           sqlite3DbFree(db, zSuper-4);
           return rc;
@@ -2817,10 +2817,10 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     /* Sync the super-journal file. If the IOCAP_SEQUENTIAL device
     ** flag is set this is not required.
     */
-    if( 0==(sqlite3OsDeviceCharacteristics(pMaster)&SQLITE_IOCAP_SEQUENTIAL)
-     && SQLITE_OK!=(rc = sqlite3OsSync(pMaster, SQLITE_SYNC_NORMAL))
+    if( 0==(sqlite3OsDeviceCharacteristics(pSuperJrnl)&SQLITE_IOCAP_SEQUENTIAL)
+     && SQLITE_OK!=(rc = sqlite3OsSync(pSuperJrnl, SQLITE_SYNC_NORMAL))
     ){
-      sqlite3OsCloseFree(pMaster);
+      sqlite3OsCloseFree(pSuperJrnl);
       sqlite3OsDelete(pVfs, zSuper, 0);
       sqlite3DbFree(db, zSuper-4);
       return rc;
@@ -2842,7 +2842,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
         rc = sqlite3BtreeCommitPhaseOne(pBt, zSuper);
       }
     }
-    sqlite3OsCloseFree(pMaster);
+    sqlite3OsCloseFree(pSuperJrnl);
     assert( rc!=SQLITE_BUSY );
     if( rc!=SQLITE_OK ){
       sqlite3DbFree(db, zSuper-4);
