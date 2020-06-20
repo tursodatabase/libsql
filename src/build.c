@@ -337,15 +337,15 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
       if( i==1 ){
-        if( sqlite3StrICmp(zName+7, ALT_TEMP_SCHEMA_TABLE+7)==0
-         || sqlite3StrICmp(zName+7, ALT_SCHEMA_TABLE+7)==0
-         || sqlite3StrICmp(zName+7, DFLT_SCHEMA_TABLE+7)==0
+        if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &DFLT_SCHEMA_TABLE[7])==0
         ){
           p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
                               DFLT_TEMP_SCHEMA_TABLE);
         }
       }else{
-        if( sqlite3StrICmp(zName+7, ALT_SCHEMA_TABLE+7)==0 ){
+        if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
           p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash,
                               DFLT_SCHEMA_TABLE);
         }
@@ -365,9 +365,9 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( p ) break;
     }
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
-      if( sqlite3StrICmp(zName+7, ALT_SCHEMA_TABLE+7)==0 ){
+      if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
         p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, DFLT_SCHEMA_TABLE);
-      }else if( sqlite3StrICmp(zName+7, ALT_TEMP_SCHEMA_TABLE+7)==0 ){
+      }else if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0 ){
         p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
                             DFLT_TEMP_SCHEMA_TABLE);
       }

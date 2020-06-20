@@ -1,11 +1,12 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Reverse\sunintentional\sspacing\schange\sin\sthe\sprevious\scheck-in.
-D 2020-06-19T15:35:07.493
+C Work\saround\sa\sbug\s(an\sincorrect\swarning)\sin\sClang-8.
+D 2020-06-20T03:43:46.380
 F Makefile.in 50fc38e4f846af70c248542d2ad4e3bca3d80e3f1b9137ce79b047743d4b642c
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
 F main.mk f3c3de159abc51086a16a72d0b48077d2dda6a8dfb96963f8a010136bfd98108
+F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
-P 3df579ca32e8250725957d1982897a43281c73e8373af49abd6e7bd674f30e74
-R ef84abb134da431469eed4f69e2d9d27
-U mistachkin
-Z 582943c8f9d0f62858c028f182582380
+P c7b2ee1edb108430454578c1623ba6aee1e2a7bc30cb2f9884ea3e21c3b75635
+R dbb5c23fb1d24e3d86260a377e8d8a75
+U drh
+Z 257a429f7c220c505fe55670a2ea483e
