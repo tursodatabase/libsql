@@ -1011,6 +1011,7 @@ INCLUDE ../ext/misc/completion.c
 INCLUDE ../ext/misc/appendvfs.c
 INCLUDE ../ext/misc/memtrace.c
 INCLUDE ../ext/misc/uint.c
+INCLUDE ../ext/misc/decimal.c
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -4556,6 +4557,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
     sqlite3_uint_init(p->db, 0, 0);
+    sqlite3_decimal_init(p->db, 0, 0);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
