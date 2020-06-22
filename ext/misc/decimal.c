@@ -298,7 +298,8 @@ cmp_done:
 }
 
 /*
-** Remove leading zeros from the Decimal
+** Remove leading zeros from before the decimal and
+** trailing zeros after the decimal.
 */
 static void decimal_normalize(Decimal *p){
   int i;
@@ -309,6 +310,10 @@ static void decimal_normalize(Decimal *p){
   if( i ){
     memmove(p->a, p->a+i, p->nDigit - i);
     p->nDigit -= i;
+  }
+  while( p->nFrac && p->a[p->nDigit-1]==0 ){
+    p->nFrac--;
+    p->nDigit--;
   }
 }
 
@@ -523,7 +528,58 @@ static void decimalSumFinalize(sqlite3_context *context){
   decimal_result(context, p);
   decimal_clear(p);
 }
-  
+
+/*
+** SQL Function:   decimal_mul(X, Y)
+**
+** Return the product of X and Y.
+*/
+static void decimalMulFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *pA = decimal_new(context, argv[0], 0, 0);
+  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  signed char *acc = 0;
+  int i, j, k;
+  if( pA==0 || pA->oom || pA->isNull
+   || pB==0 || pB->oom || pB->isNull 
+  ){
+    goto mul_end;
+  }
+  acc = sqlite3_malloc64( pA->nDigit + pB->nDigit + 2 );
+  if( acc==0 ){
+    sqlite3_result_error_nomem(context);
+    goto mul_end;
+  }
+  memset(acc, 0, pA->nDigit + pB->nDigit + 2);
+  for(i=pA->nDigit-1; i>=0; i--){
+    signed char f = pA->a[i];
+    int carry = 0, x;
+    for(j=pB->nDigit-1, k=i+j+3; j>=0; j--, k--){
+      int x = acc[k] + f*pB->a[j] + carry;
+      acc[k] = x%10;
+      carry = x/10;
+    }
+    x = acc[k] + carry;
+    acc[k] = x%10;
+    acc[k-1] += x/10;
+  }
+  sqlite3_free(pA->a);
+  pA->a = acc;
+  acc = 0;
+  pA->nDigit += pB->nDigit + 2;
+  pA->nFrac += pB->nFrac;
+  pA->sign ^= pB->sign;
+  decimal_normalize(pA);
+  decimal_result(context, pA);
+
+mul_end:
+  sqlite3_free(acc);
+  decimal_free(pA);
+  decimal_free(pB);
+}
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -544,6 +600,7 @@ int sqlite3_decimal_init(
     { "decimal_cmp",   2,   decimalCmpFunc     },
     { "decimal_add",   2,   decimalAddFunc     },
     { "decimal_sub",   2,   decimalSubFunc     },
+    { "decimal_mul",   2,   decimalMulFunc     },
   };
   int i;
   (void)pzErrMsg;  /* Unused parameter */

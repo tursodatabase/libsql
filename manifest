@@ -1,20 +1,17 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C An\sextension\sfor\sdoing\sdecimal\sarithmetic\son\sstrings.
-D 2020-06-22T19:12:23.405
+C Add\sthe\sdecimal_mul()\sfunction.
+D 2020-06-22T21:25:37.690
 F Makefile.in 014ad669b4a5809752939c2dea83722992711b464aa56adebca80c5cc98cfdc2
 F Makefile.msc 08c8bbedfa51e21b57153370edbfee86d35bbefb53e3773a3e086fe654facccb
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
-F ext/misc/decimal.c ba7054d9719ceb034012e1744f6e9c1ca5fe2a00a2b83e34faf0c08a43204a64
+F ext/misc/decimal.c 334d8d34c124a8820d814dadbe1ac3daec63f504d5b322eb63671c317d3c6a3e
 F main.mk c99e452dd4edd0bea28547259421bd6cf24d41d928d24720737efc548958ca39
 F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F src/shell.c.in 7fe12fb6452de32f92bb26ee50524ec31c9d08a1c46376ca00a4ecd27472a14d
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
-F test/decimal.test 5c486a6baa87fe0cd1c119ffa190bcc70a23e2dd6617baa201eab9e0b0ef2efd
+F test/decimal.test c4af0264a0f30e896f617b489d69039932fe5127b02ac221d96f8af31db13826
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
-P 067291143a63db924ead4810defb4bc6f195557412f5d1c22299f30d2d9f2a79
-R 4df2ada42f27e695d7e98ee101d73989
-T *branch * decimal
-T *sym-decimal *
-T -sym-trunk *
+P 4c3b85607feb53462ccc8b89bea699fdb132c402eae597afa33cc40a85c32329
+R d79a1d72394e5a5f6c93e9466f2c9aa1
 U drh
-Z ac0625ef3228b5eb95c4972028cf8994
+Z 3092a9d89a34e083e375231f8e857b54
