@@ -372,6 +372,36 @@ void speedtest1_exec(const char *zFormat, ...){
   speedtest1_shrink_memory();
 }
 
+/* Run SQL and return the first column of the first row as a string.  The
+** returned string is obtained from sqlite_malloc() and must be freed by
+** the caller.
+*/
+char *speedtest1_once(const char *zFormat, ...){
+  va_list ap;
+  char *zSql;
+  sqlite3_stmt *pStmt;
+  char *zResult = 0;
+  va_start(ap, zFormat);
+  zSql = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  if( g.bSqlOnly ){
+    printSql(zSql);
+  }else{
+    int rc = sqlite3_prepare_v2(g.db, zSql, -1, &pStmt, 0);
+    if( rc ){
+      fatal_error("SQL error: %s\n", sqlite3_errmsg(g.db));
+    }
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *z = (const char*)sqlite3_column_text(pStmt, 0);
+      if( z ) zResult = sqlite3_mprintf("%s", z);
+    }
+    sqlite3_finalize(pStmt);
+  }
+  sqlite3_free(zSql);
+  speedtest1_shrink_memory();
+  return zResult;
+}
+
 /* Prepare an SQL statement */
 void speedtest1_prepare(const char *zFormat, ...){
   va_list ap;
@@ -1987,7 +2017,7 @@ int main(int argc, char **argv){
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
   int mmapSize = 0;             /* How big of a memory map to use */
-  const char *zTSet = "main";   /* Which --testset torun */
+  char *zTSet = "main";         /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
   const char *zDbName = 0;      /* Name of the test database */
@@ -2197,30 +2227,65 @@ int main(int argc, char **argv){
   }
 
   if( g.bExplain ) printf(".explain\n.echo on\n");
-  if( strcmp(zTSet,"main")==0 ){
-    testset_main();
-  }else if( strcmp(zTSet,"debug1")==0 ){
-    testset_debug1();
-  }else if( strcmp(zTSet,"orm")==0 ){
-    testset_orm();
-  }else if( strcmp(zTSet,"cte")==0 ){
-    testset_cte();
-  }else if( strcmp(zTSet,"fp")==0 ){
-    testset_fp();
-  }else if( strcmp(zTSet,"trigger")==0 ){
-    testset_trigger();
-  }else if( strcmp(zTSet,"rtree")==0 ){
+  do{
+    char *zThisTest = zTSet;
+    char *zComma = strchr(zThisTest,',');
+    if( zComma ){
+      *zComma = 0;
+      zTSet = zComma+1;
+    }else{
+      zTSet = "";
+    }
+    if( strcmp(zThisTest,"main")==0 ){
+      testset_main();
+    }else if( strcmp(zThisTest,"debug1")==0 ){
+      testset_debug1();
+    }else if( strcmp(zThisTest,"orm")==0 ){
+      testset_orm();
+    }else if( strcmp(zThisTest,"cte")==0 ){
+      testset_cte();
+    }else if( strcmp(zThisTest,"fp")==0 ){
+      testset_fp();
+    }else if( strcmp(zThisTest,"trigger")==0 ){
+      testset_trigger();
+    }else if( strcmp(zThisTest,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
-    testset_rtree(6, 147);
+      testset_rtree(6, 147);
 #else
-    fatal_error("compile with -DSQLITE_ENABLE_RTREE to enable "
-                "the R-Tree tests\n");
+      fatal_error("compile with -DSQLITE_ENABLE_RTREE to enable "
+                  "the R-Tree tests\n");
 #endif
-  }else{
-    fatal_error("unknown testset: \"%s\"\n"
-                "Choices: cte debug1 fp main orm rtree trigger\n",
-                 zTSet);
-  }
+    }else{
+      fatal_error("unknown testset: \"%s\"\n"
+                  "Choices: cte debug1 fp main orm rtree trigger\n",
+                   zThisTest);
+    }
+    if( zTSet[0] ){
+      char *zSql, *zObj;
+      speedtest1_begin_test(999, "Reset the database");
+      while( 1 ){
+        zObj = speedtest1_once(
+             "SELECT name FROM main.sqlite_master"
+             " WHERE sql LIKE 'CREATE %%TABLE%%'");
+        if( zObj==0 ) break;
+        zSql = sqlite3_mprintf("DROP TABLE main.\"%w\"", zObj);
+        speedtest1_exec(zSql);
+        sqlite3_free(zSql);
+        sqlite3_free(zObj);
+      }
+      while( 1 ){
+        zObj = speedtest1_once(
+             "SELECT name FROM temp.sqlite_master"
+             " WHERE sql LIKE 'CREATE %%TABLE%%'");
+        if( zObj==0 ) break;
+        zSql = sqlite3_mprintf("DROP TABLE main.\"%w\"", zObj);
+        speedtest1_exec(zSql);
+        sqlite3_free(zSql);
+        sqlite3_free(zObj);
+      }
+      speedtest1_end_test();
+    }
+  }while( zTSet[0] );
   speedtest1_final();
 
   if( showStats ){
