@@ -204,6 +204,10 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
     z[i++] = '0';
   }
   j = 0;
+  while( n>1 && p->a[j]==0 ){
+    j++;
+    n--;
+  }
   while( n>0  ){
     z[i++] = p->a[j] + '0';
     j++;
@@ -298,26 +302,6 @@ cmp_done:
 }
 
 /*
-** Remove leading zeros from before the decimal and
-** trailing zeros after the decimal.
-*/
-static void decimal_normalize(Decimal *p){
-  int i;
-  int nSig;
-  if( p==0 ) return;
-  nSig = p->nDigit - p->nFrac;
-  for(i=0; i<nSig && p->a[i]==0; i++){}
-  if( i ){
-    memmove(p->a, p->a+i, p->nDigit - i);
-    p->nDigit -= i;
-  }
-  while( p->nFrac && p->a[p->nDigit-1]==0 ){
-    p->nFrac--;
-    p->nDigit--;
-  }
-}
-
-/*
 ** Expand the Decimal so that it has a least nDigit digits and nFrac
 ** digits to the right of the decimal point.
 */
@@ -348,7 +332,7 @@ static void decimal_expand(Decimal *p, int nDigit, int nFrac){
 /*
 ** Add the value pB into pA.
 **
-** pB might become denormalized by this routine.
+** Both pA and pB might become denormalized by this routine.
 */
 static void decimal_add(Decimal *pA, Decimal *pB){
   int nSig, nFrac, nDigit;
@@ -365,7 +349,10 @@ static void decimal_add(Decimal *pA, Decimal *pB){
     return;
   }
   nSig = pA->nDigit - pA->nFrac;
-  if( nSig<pB->nDigit-pB->nFrac ) nSig = pB->nDigit - pB->nFrac;
+  if( nSig && pA->a[0]==0 ) nSig--;
+  if( nSig<pB->nDigit-pB->nFrac ){
+    nSig = pB->nDigit - pB->nFrac;
+  }
   nFrac = pA->nFrac;
   if( nFrac<pB->nFrac ) nFrac = pB->nFrac;
   nDigit = nSig + nFrac + 1;
@@ -410,7 +397,6 @@ static void decimal_add(Decimal *pA, Decimal *pB){
       }
     }
   }
-  decimal_normalize(pA);
 }
 
 /*
@@ -518,13 +504,11 @@ static void decimalSumInverse(
 static void decimalSumValue(sqlite3_context *context){
   Decimal *p = sqlite3_aggregate_context(context, 0);
   if( p==0 ) return;
-  decimal_normalize(p);
   decimal_result(context, p);
 }
 static void decimalSumFinalize(sqlite3_context *context){
   Decimal *p = sqlite3_aggregate_context(context, 0);
   if( p==0 ) return;
-  decimal_normalize(p);
   decimal_result(context, p);
   decimal_clear(p);
 }
@@ -533,6 +517,11 @@ static void decimalSumFinalize(sqlite3_context *context){
 ** SQL Function:   decimal_mul(X, Y)
 **
 ** Return the product of X and Y.
+**
+** All significant digits after the decimal point are retained.
+** Trailing zeros after the decimal point are omitted as long as
+** the number of digits after the decimal point is no less than
+** either the number of digits in either input.
 */
 static void decimalMulFunc(
   sqlite3_context *context,
@@ -543,6 +532,7 @@ static void decimalMulFunc(
   Decimal *pB = decimal_new(context, argv[1], 0, 0);
   signed char *acc = 0;
   int i, j, k;
+  int minFrac;
   if( pA==0 || pA->oom || pA->isNull
    || pB==0 || pB->oom || pB->isNull 
   ){
@@ -554,6 +544,8 @@ static void decimalMulFunc(
     goto mul_end;
   }
   memset(acc, 0, pA->nDigit + pB->nDigit + 2);
+  minFrac = pA->nFrac;
+  if( pB->nFrac<minFrac ) minFrac = pB->nFrac;
   for(i=pA->nDigit-1; i>=0; i--){
     signed char f = pA->a[i];
     int carry = 0, x;
@@ -572,7 +564,10 @@ static void decimalMulFunc(
   pA->nDigit += pB->nDigit + 2;
   pA->nFrac += pB->nFrac;
   pA->sign ^= pB->sign;
-  decimal_normalize(pA);
+  while( pA->nFrac>minFrac && pA->a[pA->nDigit-1]==0 ){
+    pA->nFrac--;
+    pA->nDigit--;
+  }
   decimal_result(context, pA);
 
 mul_end:

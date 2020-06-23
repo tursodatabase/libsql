@@ -125,4 +125,18 @@ do_execsql_test 5000 {
   SELECT count(*) FROM c WHERE decimal_mul(y,z)='1';
 } {33}
 
+do_execsql_test 5100 {
+  SELECT decimal_mul('1234.00','2.00');
+} {2468.00}
+do_execsql_test 5101 {
+  SELECT decimal_mul('1234.00','2.0000');
+} {2468.00}
+do_execsql_test 5102 {
+  SELECT decimal_mul('1234.0000','2.000');
+} {2468.000}
+do_execsql_test 5103 {
+  SELECT decimal_mul('1234.0000','2');
+} {2468}
+
+
 finish_test
