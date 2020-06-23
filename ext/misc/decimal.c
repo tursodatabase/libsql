@@ -550,7 +550,7 @@ static void decimalMulFunc(
     signed char f = pA->a[i];
     int carry = 0, x;
     for(j=pB->nDigit-1, k=i+j+3; j>=0; j--, k--){
-      int x = acc[k] + f*pB->a[j] + carry;
+      x = acc[k] + f*pB->a[j] + carry;
       acc[k] = x%10;
       carry = x/10;
     }
