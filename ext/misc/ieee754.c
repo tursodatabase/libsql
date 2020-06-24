@@ -77,7 +77,11 @@ static void ieee754func(
     }else{
       e = a>>52;
       m = a & ((((sqlite3_int64)1)<<52)-1);
-      m |= ((sqlite3_int64)1)<<52;
+      if( e==0 ){
+        m <<= 1;
+      }else{
+        m |= ((sqlite3_int64)1)<<52;
+      }
       while( e<1075 && m>0 && (m&1)==0 ){
         m >>= 1;
         e++;
