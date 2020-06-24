@@ -291,7 +291,8 @@ impl Savepoint<'_> {
     }
 
     fn commit_(&mut self) -> Result<()> {
-        self.conn.execute(&format!("RELEASE {}", self.name), NO_PARAMS)?;
+        self.conn
+            .execute(&format!("RELEASE {}", self.name), NO_PARAMS)?;
         self.committed = true;
         Ok(())
     }
