@@ -26,10 +26,59 @@
 **
 ** Examples:
 **
-**     ieee754(2.0)       ->     'ieee754(2,0)'
-**     ieee754(45.25)     ->     'ieee754(181,-2)'
-**     ieee754(2, 0)      ->     2.0
-**     ieee754(181, -2)   ->     45.25
+**     ieee754(2.0)             ->     'ieee754(2,0)'
+**     ieee754(45.25)           ->     'ieee754(181,-2)'
+**     ieee754(2, 0)            ->     2.0
+**     ieee754(181, -2)         ->     45.25
+**
+** Two additional functions break apart the one-argument ieee754()
+** result into separate integer values:
+**
+**     ieee754_mantissa(45.25)  ->     181
+**     ieee754_exponent(45.25)  ->     -2
+**
+** In all single-argument functions, if the argument is an 8-byte blob
+** then that blob is interpreted as a big-endian binary64 value.
+**
+**
+** EXACT DECIMAL REPRESENTATION OF BINARY64 VALUES
+** -----------------------------------------------
+**
+** This extension in combination with the separate 'decimal' extension
+** can be used to compute the exact decimal representation of binary64
+** values.  To begin, first compute a table of exponent values:
+**
+**    CREATE TABLE pow2(x INTEGER PRIMARY KEY, v TEXT);
+**    WITH RECURSIVE c(x,v) AS (
+**      VALUES(0,'1')
+**      UNION ALL
+**      SELECT x+1, decimal_mul(v,'2') FROM c WHERE x+1<=971
+**    ) INSERT INTO pow2(x,v) SELECT x, v FROM c;
+**    WITH RECURSIVE c(x,v) AS (
+**      VALUES(-1,'0.5')
+**      UNION ALL
+**      SELECT x-1, decimal_mul(v,'0.5') FROM c WHERE x-1>=-1075
+**    ) INSERT INTO pow2(x,v) SELECT x, v FROM c;
+**
+** Then, to compute the exact decimal representation of a floating
+** point value (the value 47.49 is used in the example) do:
+**
+**    WITH c(n) AS (VALUES(47.49))
+**          ---------------^^^^^---- Replace with whatever you want
+**    SELECT decimal_mul(ieee754_mantissa(c.n),pow2.v)
+**      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.n);
+**
+** Here is a query to show various boundry values for the binary64
+** number format:
+**
+**    WITH c(name,bin) AS (VALUES
+**       ('minimum positive value',        x'0000000000000001'),
+**       ('maximum subnormal value',       x'000fffffffffffff'),
+**       ('mininum positive nornal value', x'0010000000000000'),
+**       ('maximum value',                 x'7fefffffffffffff'))
+**    SELECT c.name, decimal_mul(ieee754_mantissa(c.bin),pow2.v)
+**      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.bin);
+**
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -88,10 +137,20 @@ static void ieee754func(
       }
       if( isNeg ) m = -m;
     }
-    sqlite3_snprintf(sizeof(zResult), zResult, "ieee754(%lld,%d)",
-                     m, e-1075);
-    sqlite3_result_text(context, zResult, -1, SQLITE_TRANSIENT);
-  }else if( argc==2 ){
+    switch( *(int*)sqlite3_user_data(context) ){
+      case 0:
+        sqlite3_snprintf(sizeof(zResult), zResult, "ieee754(%lld,%d)",
+                         m, e-1075);
+        sqlite3_result_text(context, zResult, -1, SQLITE_TRANSIENT);
+        break;
+      case 1:
+        sqlite3_result_int64(context, m);
+        break;
+      case 2:
+        sqlite3_result_int(context, e-1075);
+        break;
+    }
+  }else{
     sqlite3_int64 m, e, a;
     double r;
     int isNeg = 0;
@@ -133,16 +192,25 @@ int sqlite3_ieee_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
+  static const struct {
+    char *zFName;
+    int nArg;
+    int iAux;
+  } aFunc[] = {
+    { "ieee754",          1,   0 },
+    { "ieee754",          2,   0 },
+    { "ieee754_mantissa", 1,   1 },
+    { "ieee754_exponent", 1,   2 },
+  };
+  int i;
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "ieee754", 1, 
-                               SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
+  for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
+    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,	
+                               SQLITE_UTF8|SQLITE_INNOCUOUS,
+                               (void*)&aFunc[i].iAux,
                                ieee754func, 0, 0);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "ieee754", 2,
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 ieee754func, 0, 0);
   }
   return rc;
 }
