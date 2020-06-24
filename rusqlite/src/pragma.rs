@@ -256,7 +256,8 @@ impl Connection {
         // The two syntaxes yield identical results.
         sql.push_equal_sign();
         sql.push_value(pragma_value)?;
-        self.execute_batch(&sql)
+        self.execute(&sql, NO_PARAMS)?;
+        Ok(())
     }
 
     /// Set a new value to `pragma_name` and return the updated value.

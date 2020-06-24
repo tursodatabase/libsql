@@ -646,7 +646,7 @@ impl Statement<'_> {
     #[inline]
     fn check_update(&self) -> Result<()> {
         // sqlite3_column_count works for DML but not for DDL (ie ALTER)
-        if self.column_count() > 0 || self.stmt.readonly() {
+        if self.column_count() > 0 && self.stmt.readonly() {
             return Err(Error::ExecuteReturnedResults);
         }
         Ok(())
