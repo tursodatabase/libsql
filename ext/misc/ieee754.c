@@ -51,8 +51,19 @@ static void ieee754func(
     int isNeg;
     char zResult[100];
     assert( sizeof(m)==sizeof(r) );
-    if( sqlite3_value_type(argv[0])!=SQLITE_FLOAT ) return;
-    r = sqlite3_value_double(argv[0]);
+    if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+     && sqlite3_value_bytes(argv[0])==sizeof(r)
+    ){
+      const unsigned char *x = sqlite3_value_blob(argv[0]);
+      int i;
+      sqlite3_uint64 v = 0;
+      for(i=0; i<sizeof(r); i++){
+        v = (v<<8) | x[i];
+      }
+      memcpy(&r, &v, sizeof(r));
+    }else{
+      r = sqlite3_value_double(argv[0]);
+    }
     if( r<0.0 ){
       isNeg = 1;
       r = -r;
