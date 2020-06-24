@@ -363,6 +363,7 @@ TESTSRC += \
   $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
+  $(TOP)/ext/misc/decimal.c \
   $(TOP)/ext/misc/eval.c \
   $(TOP)/ext/misc/explain.c \
   $(TOP)/ext/misc/fileio.c \
@@ -742,6 +743,7 @@ SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
         $(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/shathree.c \
+        $(TOP)/ext/misc/decimal.c \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \
 	$(TOP)/ext/misc/sqlar.c \
