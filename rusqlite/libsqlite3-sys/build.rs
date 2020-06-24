@@ -197,7 +197,7 @@ mod build_linked {
     }
 
     fn find_link_mode() -> &'static str {
-        // If the user specifies SQLITE_STATIC (or SQLCIPHER_STATIC), do static
+        // If the user specifies SQLITE3_STATIC (or SQLCIPHER_STATIC), do static
         // linking, unless it's explicitly set to 0.
         match &env::var(format!("{}_STATIC", env_prefix())) {
             Ok(v) if v != "0" => "static",
