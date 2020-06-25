@@ -41,7 +41,6 @@ static const char zHelp[] =
   "  --without-rowid     Use WITHOUT ROWID where appropriate\n"
 ;
 
-
 #include "sqlite3.h"
 #include <assert.h>
 #include <stdio.h>
@@ -60,6 +59,87 @@ static const char zHelp[] =
 #if SQLITE_VERSION_NUMBER<3005000
 # define sqlite3_int64 sqlite_int64
 #endif
+
+typedef sqlite3_uint64 u64;
+
+#ifndef SPEEDTEST_OMIT_HASH
+/****************************************************************************
+** Hash algorithm used to verify that compilation is not miscompiled
+** in such a was as to generate an incorrect result.
+*/
+/*
+** State structure for a Hash hash in progress
+*/
+typedef struct HashContext HashContext;
+struct HashContext {
+  unsigned char isInit;          /* True if initialized */
+  unsigned char i, j;            /* State variables */
+  unsigned char s[256];          /* State variables */
+  unsigned char r[32];           /* Result */
+};
+
+/*
+** Initialize a new hash.  iSize determines the size of the hash
+** in bits and should be one of 224, 256, 384, or 512.  Or iSize
+** can be zero to use the default hash size of 256 bits.
+*/
+static void HashInit(HashContext *p){
+  unsigned int k;
+  p->i = 0;
+  p->j = 0;
+  for(k=0; k<256; k++) p->s[k] = k;
+}
+
+/*
+** Make consecutive calls to the HashUpdate function to add new content
+** to the hash
+*/
+static void HashUpdate(
+  HashContext *p,
+  const unsigned char *aData,
+  unsigned int nData
+){
+  unsigned char t;
+  unsigned char i = p->i;
+  unsigned char j = p->j;
+  unsigned int k;
+  for(k=0; k<nData; k++){
+    j += p->s[i] + aData[k];
+    t = p->s[j];
+    p->s[j] = p->s[i];
+    p->s[i] = t;
+    i++;
+  }
+  p->i = i;
+  p->j = j;
+}
+
+/*
+** After all content has been added, invoke HashFinal() to compute
+** the final hash.  The function returns a pointer to the binary
+** hash value.
+*/
+static unsigned char *HashFinal(HashContext *p){
+  unsigned int k;
+  unsigned char t, i, j;
+  i = p->i;
+  j = p->j;
+  for(k=0; k<32; k++){
+    i++;
+    t = p->s[i];
+    j += t;
+    p->s[i] = p->s[j];
+    p->s[j] = t;
+    t += p->s[i];
+    p->r[k] = p->s[t];
+  }
+  return p->r;
+}
+
+/* End of the Hash hashing logic
+*****************************************************************************/
+#endif /* SPEEDTEST_OMIT_HASH */
+
 
 /* All global state is held in this structure */
 static struct Global {
@@ -80,8 +160,12 @@ static struct Global {
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
   unsigned int x, y;         /* Pseudo-random number generator state */
+  u64 nResByte;              /* Total number of result bytes */
   int nResult;               /* Size of the current result */
   char zResult[3000];        /* Text of the current result */
+#ifndef SPEEDTEST_OMIT_HASH
+  HashContext hash;          /* Hash of all output */
+#endif
 } g;
 
 /* Return " TEMP" or "", as appropriate for creating a table.
@@ -89,6 +173,8 @@ static struct Global {
 static const char *isTemp(int N){
   return g.eTemp>=N ? " TEMP" : "";
 }
+
+
 
 
 /* Print an error message and exit */
@@ -324,6 +410,21 @@ void speedtest1_final(void){
     printf("       TOTAL%.*s %4d.%03ds\n", NAMEWIDTH-5, zDots,
            (int)(g.iTotal/1000), (int)(g.iTotal%1000));
   }
+  if( g.bVerify ){
+#ifndef SPEEDTEST_OMIT_HASH
+    int i;
+    unsigned char *aHash = HashFinal(&g.hash);
+#endif
+    printf("SQL Output Verification:\n");
+    printf("  size: %llu\n", g.nResByte);
+#ifndef SPEEDTEST_OMIT_HASH
+    printf("  hash: ");
+    for(i=0; i<32; i++){
+      printf("%02x", aHash[i]);
+    }
+    printf("\n");
+#endif
+  }
 }
 
 /* Print an SQL statement to standard output */
@@ -434,6 +535,12 @@ void speedtest1_run(void){
       const char *z = (const char*)sqlite3_column_text(g.pStmt, i);
       if( z==0 ) z = "nil";
       len = (int)strlen(z);
+#ifndef SPEEDTEST_OMIT_HASH
+      if( g.bVerify ){
+        HashUpdate(&g.hash, (unsigned char*)z, len);
+        g.nResByte += len;
+      }
+#endif
       if( g.nResult+len<sizeof(g.zResult)-2 ){
         if( g.nResult>0 ) g.zResult[g.nResult++] = ' ';
         memcpy(g.zResult + g.nResult, z, len+1);
@@ -2140,6 +2247,9 @@ int main(int argc, char **argv){
         zEncoding = "utf16be";
       }else if( strcmp(z,"verify")==0 ){
         g.bVerify = 1;
+#ifndef SPEEDTEST_OMIT_HASH
+        HashInit(&g.hash);
+#endif
       }else if( strcmp(z,"without-rowid")==0 ){
         g.zWR = "WITHOUT ROWID";
         g.zPK = "PRIMARY KEY";

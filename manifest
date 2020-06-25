@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Add\sthe\sieee754_mantissa()\sand\sieee754_exponent()\sfunctions\sto\sthe\siee754\nextension.\s\sBuild\sthe\sieee754\sextension\sinto\sthe\sCLI.
-D 2020-06-24T15:06:29.041
+C Enhance\sthe\s--verify\soption\sto\sspeedtest1.c\sso\sthat\sit\scomputes\sand\sdisplays\na\shash\sof\sthe\sresult\sfrom\sall\sSQL\squeries,\sfor\sverification\spurposes.
+D 2020-06-25T20:28:13.760
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -12,11 +12,14 @@ F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F src/shell.c.in d663152487d4bfddea0f6d21ebc2ed51575d22657a02c6828afd344bbd4651af
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F test/decimal.test 12739a01bdba4c4d79f95b323e6b67b9fad1ab6ffb56116bd2b9c81a5b19e1d9
-F test/speedtest1.c ea201573f9b27542ea1e74a68e74f121e0eb04c89e67039f40ed68f1b833339f
+F test/speedtest1.c 62a22866f2f1bf3bfd81ded4473314d5508209e7758e122746ace56c138a0f66
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfae0e84c
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
-P 838817b680f02b3845d6d56f85d5d36fa5ae7453afef7a1a5a24624255f2dc3e
-R 6e286f8b0cf2dcbbb10b38a65d995df9
+P db2f0836b64cd2e119684f1cf75fa3b19a84ca6aca1a239f7e2b9298016e2c95
+R 612c27b420c2073a1256c7d89a8eeaa4
+T *branch * speedtest-hash
+T *sym-speedtest-hash *
+T -sym-trunk *
 U drh
-Z 549c83ceeab0b10ef9bb12772423a56c
+Z 5bfc672238a7ff5aba5dfa178b2aded4
