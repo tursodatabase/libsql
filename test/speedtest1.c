@@ -7,7 +7,7 @@ static const char zHelp[] =
   "Usage: %s [--options] DATABASE\n"
   "Options:\n"
   "  --autovacuum        Enable AUTOVACUUM mode\n"
-  "  --cachesize N       Set the cache size to N\n" 
+  "  --cachesize N       Set the cache size to N\n"
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
@@ -15,11 +15,13 @@ static const char zHelp[] =
   "  --journal M         Set the journal_mode to M\n"
   "  --key KEY           Set the encryption key to KEY\n"
   "  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
+  "  --memdb             Use an in-memory database\n"
   "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
   "  --nomemstat         Disable memory statistics\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
   "  --notnull           Add NOT NULL constraints to table columns\n"
+  "  --output FILE       Store SQL output in FILE\n"
   "  --pagesize N        Set the page size to N\n"
   "  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
@@ -62,11 +64,6 @@ static const char zHelp[] =
 
 typedef sqlite3_uint64 u64;
 
-#ifndef SPEEDTEST_OMIT_HASH
-/****************************************************************************
-** Hash algorithm used to verify that compilation is not miscompiled
-** in such a was as to generate an incorrect result.
-*/
 /*
 ** State structure for a Hash hash in progress
 */
@@ -77,68 +74,6 @@ struct HashContext {
   unsigned char s[256];          /* State variables */
   unsigned char r[32];           /* Result */
 };
-
-/*
-** Initialize a new hash.  iSize determines the size of the hash
-** in bits and should be one of 224, 256, 384, or 512.  Or iSize
-** can be zero to use the default hash size of 256 bits.
-*/
-static void HashInit(HashContext *p){
-  unsigned int k;
-  p->i = 0;
-  p->j = 0;
-  for(k=0; k<256; k++) p->s[k] = k;
-}
-
-/*
-** Make consecutive calls to the HashUpdate function to add new content
-** to the hash
-*/
-static void HashUpdate(
-  HashContext *p,
-  const unsigned char *aData,
-  unsigned int nData
-){
-  unsigned char t;
-  unsigned char i = p->i;
-  unsigned char j = p->j;
-  unsigned int k;
-  for(k=0; k<nData; k++){
-    j += p->s[i] + aData[k];
-    t = p->s[j];
-    p->s[j] = p->s[i];
-    p->s[i] = t;
-    i++;
-  }
-  p->i = i;
-  p->j = j;
-}
-
-/*
-** After all content has been added, invoke HashFinal() to compute
-** the final hash.  The function returns a pointer to the binary
-** hash value.
-*/
-static unsigned char *HashFinal(HashContext *p){
-  unsigned int k;
-  unsigned char t, i, j;
-  i = p->i;
-  j = p->j;
-  for(k=0; k<32; k++){
-    i++;
-    t = p->s[i];
-    j += t;
-    p->s[i] = p->s[j];
-    p->s[j] = t;
-    t += p->s[i];
-    p->r[k] = p->s[t];
-  }
-  return p->r;
-}
-
-/* End of the Hash hashing logic
-*****************************************************************************/
-#endif /* SPEEDTEST_OMIT_HASH */
 
 
 /* All global state is held in this structure */
@@ -164,6 +99,7 @@ static struct Global {
   int nResult;               /* Size of the current result */
   char zResult[3000];        /* Text of the current result */
 #ifndef SPEEDTEST_OMIT_HASH
+  FILE *hashFile;            /* Store all hash results in this file */
   HashContext hash;          /* Hash of all output */
 #endif
 } g;
@@ -174,9 +110,6 @@ static const char *isTemp(int N){
   return g.eTemp>=N ? " TEMP" : "";
 }
 
-
-
-
 /* Print an error message and exit */
 static void fatal_error(const char *zMsg, ...){
   va_list ap;
@@ -185,6 +118,72 @@ static void fatal_error(const char *zMsg, ...){
   va_end(ap);
   exit(1);
 }
+
+#ifndef SPEEDTEST_OMIT_HASH
+/****************************************************************************
+** Hash algorithm used to verify that compilation is not miscompiled
+** in such a was as to generate an incorrect result.
+*/
+
+/*
+** Initialize a new hash.  iSize determines the size of the hash
+** in bits and should be one of 224, 256, 384, or 512.  Or iSize
+** can be zero to use the default hash size of 256 bits.
+*/
+static void HashInit(void){
+  unsigned int k;
+  g.hash.i = 0;
+  g.hash.j = 0;
+  for(k=0; k<256; k++) g.hash.s[k] = k;
+}
+
+/*
+** Make consecutive calls to the HashUpdate function to add new content
+** to the hash
+*/
+static void HashUpdate(
+  const unsigned char *aData,
+  unsigned int nData
+){
+  unsigned char t;
+  unsigned char i = g.hash.i;
+  unsigned char j = g.hash.j;
+  unsigned int k;
+  if( g.hashFile ) fwrite(aData, 1, nData, g.hashFile);
+  for(k=0; k<nData; k++){
+    j += g.hash.s[i] + aData[k];
+    t = g.hash.s[j];
+    g.hash.s[j] = g.hash.s[i];
+    g.hash.s[i] = t;
+    i++;
+  }
+  g.hash.i = i;
+  g.hash.j = j;
+}
+
+/*
+** After all content has been added, invoke HashFinal() to compute
+** the final hash.  The hash result is stored in g.hash.r[].
+*/
+static void HashFinal(void){
+  unsigned int k;
+  unsigned char t, i, j;
+  i = g.hash.i;
+  j = g.hash.j;
+  for(k=0; k<32; k++){
+    i++;
+    t = g.hash.s[i];
+    j += t;
+    g.hash.s[i] = g.hash.s[j];
+    g.hash.s[j] = t;
+    t += g.hash.s[i];
+    g.hash.r[k] = g.hash.s[t];
+  }
+}
+
+/* End of the Hash hashing logic
+*****************************************************************************/
+#endif /* SPEEDTEST_OMIT_HASH */
 
 /*
 ** Return the value of a hexadecimal digit.  Return -1 if the input
@@ -413,17 +412,17 @@ void speedtest1_final(void){
   if( g.bVerify ){
 #ifndef SPEEDTEST_OMIT_HASH
     int i;
-    unsigned char *aHash = HashFinal(&g.hash);
 #endif
-    printf("SQL Output Verification:\n");
-    printf("  size: %llu\n", g.nResByte);
+    printf("Verification Hash: %llu ", g.nResByte);
 #ifndef SPEEDTEST_OMIT_HASH
-    printf("  hash: ");
-    for(i=0; i<32; i++){
-      printf("%02x", aHash[i]);
+    HashUpdate((const unsigned char*)"\n", 1);
+    HashFinal();
+    for(i=0; i<24; i++){
+      printf("%02x", g.hash.r[i]);
     }
-    printf("\n");
+    if( g.hashFile && g.hashFile!=stdout ) fclose(g.hashFile);
 #endif
+    printf("\n");
   }
 }
 
@@ -537,8 +536,24 @@ void speedtest1_run(void){
       len = (int)strlen(z);
 #ifndef SPEEDTEST_OMIT_HASH
       if( g.bVerify ){
-        HashUpdate(&g.hash, (unsigned char*)z, len);
-        g.nResByte += len;
+        int eType = sqlite3_column_type(g.pStmt, i);
+        unsigned char zPrefix[2];
+        zPrefix[0] = '\n';
+        zPrefix[1] = "-IFTBN"[eType];
+        if( g.nResByte ){
+          HashUpdate(zPrefix, 2);
+        }else{
+          HashUpdate(zPrefix+1, 1);
+        }
+        if( eType==SQLITE_BLOB ){
+          int nBlob = sqlite3_column_bytes(g.pStmt, i);
+          const unsigned char *aBlob = sqlite3_column_blob(g.pStmt, i);
+          HashUpdate(aBlob, nBlob);
+          g.nResByte += nBlob + 2;
+        }else{
+          HashUpdate((unsigned char*)z, len);
+          g.nResByte += len + 2;
+        }
       }
 #endif
       if( g.nResult+len<sizeof(g.zResult)-2 ){
@@ -2124,6 +2139,7 @@ int main(int argc, char **argv){
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
   int mmapSize = 0;             /* How big of a memory map to use */
+  int memDb = 0;                /* --memdb.  Use an in-memory database */
   char *zTSet = "main";         /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
@@ -2137,7 +2153,7 @@ int main(int argc, char **argv){
   int rc;                       /* API return code */
 
   /* Display the version of SQLite being tested */
-  printf("-- Speedtest1 for SQLite %s %.50s\n",
+  printf("-- Speedtest1 for SQLite %s %.48s\n",
          sqlite3_libversion(), sqlite3_sourceid());
 
   /* Process command-line arguments */
@@ -2179,6 +2195,8 @@ int main(int argc, char **argv){
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
+      }else if( strcmp(z,"memdb")==0 ){
+        memDb = 1;
 #if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"multithread")==0 ){
         sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
@@ -2194,6 +2212,22 @@ int main(int argc, char **argv){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
         g.zNN = "NOT NULL";
+      }else if( strcmp(z,"output")==0 ){
+#ifdef SPEEDTEST_OMIT_HASH
+        fatal_error("The --output option is not supported with"
+                    " -DSPEEDTEST_OMIT_HASH\n");
+#else
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        i++;
+        if( strcmp(argv[i],"-")==0 ){
+          g.hashFile = stdout;
+        }else{
+          g.hashFile = fopen(argv[i], "wb");
+          if( g.hashFile==0 ){
+            fatal_error("cannot open \"%s\" for writing\n", argv[i]);
+          }
+        }
+#endif
       }else if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         pageSize = integerValue(argv[++i]);
@@ -2248,7 +2282,7 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"verify")==0 ){
         g.bVerify = 1;
 #ifndef SPEEDTEST_OMIT_HASH
-        HashInit(&g.hash);
+        HashInit();
 #endif
       }else if( strcmp(z,"without-rowid")==0 ){
         g.zWR = "WITHOUT ROWID";
@@ -2291,13 +2325,13 @@ int main(int argc, char **argv){
   sqlite3_initialize();
 
   /* Open the database and the input file */
-  if( sqlite3_open(zDbName, &g.db) ){
+  if( sqlite3_open(memDb ? ":memory:" : zDbName, &g.db) ){
     fatal_error("Cannot open database file: %s\n", zDbName);
   }
 #if SQLITE_VERSION_NUMBER>=3006001
   if( nLook>0 && szLook>0 ){
     pLook = malloc( nLook*szLook );
-    rc = sqlite3_db_config(g.db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook,nLook);
+    rc = sqlite3_db_config(g.db, SQLITE_DBCONFIG_LOOKASIDE,pLook,szLook,nLook);
     if( rc ) fatal_error("lookaside configuration failed: %d\n", rc);
   }
 #endif
@@ -2307,6 +2341,9 @@ int main(int argc, char **argv){
 #ifndef SQLITE_OMIT_DEPRECATED
   if( doTrace ) sqlite3_trace(g.db, traceCallback, 0);
 #endif
+  if( memDb>0 ){
+    speedtest1_exec("PRAGMA temp_store=memory");
+  }
   if( mmapSize>0 ){
     speedtest1_exec("PRAGMA mmap_size=%d", mmapSize);
   }
@@ -2345,6 +2382,9 @@ int main(int argc, char **argv){
       zTSet = zComma+1;
     }else{
       zTSet = "";
+    }
+    if( g.iTotal>0 || zComma!=0 ){
+      printf("       Begin testset \"%s\"\n", zThisTest);
     }
     if( strcmp(zThisTest,"main")==0 ){
       testset_main();

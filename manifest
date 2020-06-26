@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Enhance\sthe\s--verify\soption\sto\sspeedtest1.c\sso\sthat\sit\scomputes\sand\sdisplays\na\shash\sof\sthe\sresult\sfrom\sall\sSQL\squeries,\sfor\sverification\spurposes.
-D 2020-06-25T20:28:13.760
+C Add\s--verify\sto\sspeed-check.sh\sand\sadd\s--memdb\sand\s--output\sto\sspeedtest1.c.\nOther\simprovements\sto\sspeedtest1.c.
+D 2020-06-26T14:05:58.668
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -12,14 +12,12 @@ F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F src/shell.c.in d663152487d4bfddea0f6d21ebc2ed51575d22657a02c6828afd344bbd4651af
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F test/decimal.test 12739a01bdba4c4d79f95b323e6b67b9fad1ab6ffb56116bd2b9c81a5b19e1d9
-F test/speedtest1.c 62a22866f2f1bf3bfd81ded4473314d5508209e7758e122746ace56c138a0f66
+F test/speedtest1.c 18c3a29fba651788a3dc423277d4aa1245860f03fa115f5cad1bebdfbf92bc02
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfae0e84c
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
-P db2f0836b64cd2e119684f1cf75fa3b19a84ca6aca1a239f7e2b9298016e2c95
-R 612c27b420c2073a1256c7d89a8eeaa4
-T *branch * speedtest-hash
-T *sym-speedtest-hash *
-T -sym-trunk *
+F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
+P 60d1e46c8c8a3c853034fd79f204bcb5d50d1c366eb246849c333a2d0abc2648
+R d502ce56ec4f409f68ad0bf60c478eac
 U drh
-Z 5bfc672238a7ff5aba5dfa178b2aded4
+Z 9ade6808e0b03cd3693ddfa12386f5e0
