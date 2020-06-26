@@ -532,6 +532,7 @@ void speedtest1_run(void){
     n = sqlite3_column_count(g.pStmt);
     for(i=0; i<n; i++){
       const char *z = (const char*)sqlite3_column_text(g.pStmt, i);
+      char zBuf[50];
       if( z==0 ) z = "nil";
       len = (int)strlen(z);
 #ifndef SPEEDTEST_OMIT_HASH
@@ -545,11 +546,24 @@ void speedtest1_run(void){
         }else{
           HashUpdate(zPrefix+1, 1);
         }
-        if( eType==SQLITE_BLOB ){
+        if( eType==SQLITE_FLOAT ){
+          double r = sqlite3_column_double(g.pStmt, i);
+          sqlite3_snprintf(sizeof(zBuf), zBuf, "%g", r);
+          z = zBuf;
+          len = (int)strlen(z);
+          HashUpdate((unsigned char*)z, len);
+          g.nResByte += len + 2;
+        }else if( eType==SQLITE_BLOB ){
           int nBlob = sqlite3_column_bytes(g.pStmt, i);
+          int iBlob;
+          unsigned char zChar[2];
           const unsigned char *aBlob = sqlite3_column_blob(g.pStmt, i);
-          HashUpdate(aBlob, nBlob);
-          g.nResByte += nBlob + 2;
+          for(iBlob=0; iBlob<nBlob; iBlob++){
+            zChar[0] = "0123456789abcdef"[aBlob[iBlob]>>4];
+            zChar[1] = "0123456789abcdef"[aBlob[iBlob]&15];
+            HashUpdate(zChar,2);
+          }
+          g.nResByte += nBlob*2 + 2;
         }else{
           HashUpdate((unsigned char*)z, len);
           g.nResByte += len + 2;

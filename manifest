@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Improvements\sto\sspeedtest1.\s\sAdded\sthe\s--memdb\sand\s--output\soptions.\s\sThe\n--verify\soption\snow\soutputs\sa\shash\sof\sSQL\soutputs.\s\sThe\sspeed-check.sh\sscript\ndisables\sthe\shashing\sfeature\swith\s--legacy\sand\sadds\sthe\s--verify\soption.
-D 2020-06-26T15:42:55.300
+C Improvements\sto\sspeedtest1.c\sfor\smore\sconsistent\sverification\shashes.
+D 2020-06-26T16:17:27.803
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -15,14 +15,13 @@ F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F test/decimal.test 12739a01bdba4c4d79f95b323e6b67b9fad1ab6ffb56116bd2b9c81a5b19e1d9
 F test/fuzzdata8.db 0ae860b36b79fd41cafddc9e6602358b2d5c331cf200283221e659f86e196c0c
 F test/ieee754.test b0945d12be7d255f3dfa18e2511b17ca37e0edd2b803231c52d05b86c04ab26e
-F test/speedtest1.c 18c3a29fba651788a3dc423277d4aa1245860f03fa115f5cad1bebdfbf92bc02
+F test/speedtest1.c 01ae6222bef0611bcdafaff2b76aa8ec12348522d6aaf6619e1a8abd986f99b6
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfae0e84c
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P c78cbf2e86850cc6882d3f0bd5415f6e731c3c675ffe77bb343682c619cb8cd9 89a11120ab2ce13f8a539cb05a9d0628a1f83b4790910b2023c21d60aabc43ee
-R a961dfa6c547c0e352a2b23d7aadd325
-T +closed 89a11120ab2ce13f8a539cb05a9d0628a1f83b4790910b2023c21d60aabc43ee
+P f3455cecf22ea98f9ad48e92d620c8e2ec94877e4581731afff0f2bd32014a1d
+R 32ec1322522afe4192abd5165d828296
 U drh
-Z 238e33700b7e820c72970002a0f9bd64
+Z 5225590eae0cc2fddc9724fb182454b7
