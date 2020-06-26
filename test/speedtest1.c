@@ -532,7 +532,6 @@ void speedtest1_run(void){
     n = sqlite3_column_count(g.pStmt);
     for(i=0; i<n; i++){
       const char *z = (const char*)sqlite3_column_text(g.pStmt, i);
-      char zBuf[50];
       if( z==0 ) z = "nil";
       len = (int)strlen(z);
 #ifndef SPEEDTEST_OMIT_HASH
@@ -547,12 +546,10 @@ void speedtest1_run(void){
           HashUpdate(zPrefix+1, 1);
         }
         if( eType==SQLITE_FLOAT ){
-          double r = sqlite3_column_double(g.pStmt, i);
-          sqlite3_snprintf(sizeof(zBuf), zBuf, "%g", r);
-          z = zBuf;
-          len = (int)strlen(z);
-          HashUpdate((unsigned char*)z, len);
-          g.nResByte += len + 2;
+          /* Omit the value of floating-point results from the verification
+          ** hash.  The only thing we record is the fact that the result was
+          ** a floating-point value. */
+          g.nResByte += 2;
         }else if( eType==SQLITE_BLOB ){
           int nBlob = sqlite3_column_bytes(g.pStmt, i);
           int iBlob;
