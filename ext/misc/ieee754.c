@@ -37,6 +37,11 @@
 **     ieee754_mantissa(45.25)  ->     181
 **     ieee754_exponent(45.25)  ->     -2
 **
+** These functions convert binary64 numbers into blobs and back again.
+**
+**     ieee754_from_blob(x'3ff0000000000000')  ->  1.0
+**     ieee754_to_blob(1.0)                    ->  x'3ff0000000000000'
+**
 ** In all single-argument functions, if the argument is an 8-byte blob
 ** then that blob is interpreted as a big-endian binary64 value.
 **
@@ -160,7 +165,7 @@ static void ieee754func(
       isNeg = 1;
       m = -m;
       if( m<0 ) return;
-    }else if( m==0 && e>1000 && e<1000 ){
+    }else if( m==0 && e>-1000 && e<1000 ){
       sqlite3_result_double(context, 0.0);
       return;
     }
@@ -173,13 +178,61 @@ static void ieee754func(
       e--;
     }
     e += 1075;
-    if( e<0 ) e = m = 0;
-    if( e>0x7ff ) e = 0x7ff;
+    if( e<=0 ){
+      /* Subnormal */
+      m >>= 1-e;
+      e = 0;
+    }else if( e>0x7ff ){
+      e = 0x7ff;
+    }
     a = m & ((((sqlite3_int64)1)<<52)-1);
     a |= e<<52;
     if( isNeg ) a |= ((sqlite3_uint64)1)<<63;
     memcpy(&r, &a, sizeof(r));
     sqlite3_result_double(context, r);
+  }
+}
+
+/*
+** Functions to convert between blobs and floats.
+*/
+static void ieee754func_from_blob(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+   && sqlite3_value_bytes(argv[0])==sizeof(double)
+  ){
+    double r;
+    const unsigned char *x = sqlite3_value_blob(argv[0]);
+    int i;
+    sqlite3_uint64 v = 0;
+    for(i=0; i<sizeof(r); i++){
+      v = (v<<8) | x[i];
+    }
+    memcpy(&r, &v, sizeof(r));
+    sqlite3_result_double(context, r);
+  }
+}
+static void ieee754func_to_blob(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  if( sqlite3_value_type(argv[0])==SQLITE_FLOAT
+   || sqlite3_value_type(argv[0])==SQLITE_INTEGER
+  ){
+    double r = sqlite3_value_double(argv[0]);
+    sqlite3_uint64 v;
+    unsigned char a[sizeof(r)];
+    int i;
+    memcpy(&v, &r, sizeof(r));
+    for(i=1; i<=sizeof(r); i++){
+      a[sizeof(r)-i] = v&0xff;
+      v >>= 8;
+    }
+    sqlite3_result_blob(context, a, sizeof(r), SQLITE_TRANSIENT);
   }
 }
 
@@ -196,11 +249,15 @@ int sqlite3_ieee_init(
     char *zFName;
     int nArg;
     int iAux;
+    void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
-    { "ieee754",          1,   0 },
-    { "ieee754",          2,   0 },
-    { "ieee754_mantissa", 1,   1 },
-    { "ieee754_exponent", 1,   2 },
+    { "ieee754",           1,   0, ieee754func },
+    { "ieee754",           2,   0, ieee754func },
+    { "ieee754_mantissa",  1,   1, ieee754func },
+    { "ieee754_exponent",  1,   2, ieee754func },
+    { "ieee754_to_blob",   1,   0, ieee754func_to_blob },
+    { "ieee754_from_blob", 1,   0, ieee754func_from_blob },
+
   };
   int i;
   int rc = SQLITE_OK;
@@ -210,7 +267,7 @@ int sqlite3_ieee_init(
     rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,	
                                SQLITE_UTF8|SQLITE_INNOCUOUS,
                                (void*)&aFunc[i].iAux,
-                               ieee754func, 0, 0);
+                               aFunc[i].xFunc, 0, 0);
   }
   return rc;
 }
