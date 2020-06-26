@@ -435,8 +435,6 @@ impl Connection {
     /// Convenience method to run multiple SQL statements (that cannot take any
     /// parameters).
     ///
-    /// Uses [sqlite3_exec](http://www.sqlite.org/c3ref/exec.html) under the hood.
-    ///
     /// ## Example
     ///
     /// ```rust,no_run
@@ -456,7 +454,19 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
     pub fn execute_batch(&self, sql: &str) -> Result<()> {
-        self.db.borrow_mut().execute_batch(sql)
+        let mut sql = sql;
+        while !sql.is_empty() {
+            let stmt = self.prepare(sql)?;
+            if !stmt.stmt.is_null() && stmt.step()? {
+                return Err(Error::ExecuteReturnedResults);
+            }
+            let tail = stmt.stmt.tail();
+            if tail == 0 || tail >= sql.len() {
+                break;
+            }
+            sql = &sql[tail..];
+        }
+        Ok(())
     }
 
     /// Convenience method to prepare and execute a single SQL statement.

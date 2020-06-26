@@ -1,4 +1,4 @@
-use crate::{Connection, Result, NO_PARAMS};
+use crate::{Connection, Result};
 use std::ops::Deref;
 
 /// Options for transaction behavior. See [BEGIN
@@ -120,7 +120,7 @@ impl Transaction<'_> {
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
         };
-        conn.execute(query, NO_PARAMS).map(move |_| Transaction {
+        conn.execute_batch(query).map(move |_| Transaction {
             conn,
             drop_behavior: DropBehavior::Rollback,
         })
@@ -180,7 +180,7 @@ impl Transaction<'_> {
     }
 
     fn commit_(&mut self) -> Result<()> {
-        self.conn.execute("COMMIT", NO_PARAMS)?;
+        self.conn.execute_batch("COMMIT")?;
         Ok(())
     }
 
@@ -190,7 +190,7 @@ impl Transaction<'_> {
     }
 
     fn rollback_(&mut self) -> Result<()> {
-        self.conn.execute("ROLLBACK", NO_PARAMS)?;
+        self.conn.execute_batch("ROLLBACK")?;
         Ok(())
     }
 
@@ -238,7 +238,7 @@ impl Savepoint<'_> {
         name: T,
     ) -> Result<Savepoint<'_>> {
         let name = name.into();
-        conn.execute(&format!("SAVEPOINT {}", name), NO_PARAMS)
+        conn.execute_batch(&format!("SAVEPOINT {}", name))
             .map(|_| Savepoint {
                 conn,
                 name,
@@ -291,8 +291,7 @@ impl Savepoint<'_> {
     }
 
     fn commit_(&mut self) -> Result<()> {
-        self.conn
-            .execute(&format!("RELEASE {}", self.name), NO_PARAMS)?;
+        self.conn.execute_batch(&format!("RELEASE {}", self.name))?;
         self.committed = true;
         Ok(())
     }
@@ -305,8 +304,7 @@ impl Savepoint<'_> {
     /// rolled back, and can be rolled back again or committed.
     pub fn rollback(&mut self) -> Result<()> {
         self.conn
-            .execute(&format!("ROLLBACK TO {}", self.name), NO_PARAMS)?;
-        Ok(())
+            .execute_batch(&format!("ROLLBACK TO {}", self.name))
     }
 
     /// Consumes the savepoint, committing or rolling back according to the
