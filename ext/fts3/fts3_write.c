@@ -341,7 +341,9 @@ static int fts3SqlStmt(
 ** created by merging the oldest :2 segments from absolute level :1. See 
 ** function sqlite3Fts3Incrmerge() for details.  */
 /* 29 */ "SELECT 2 * total(1 + leaves_end_block - start_block) "
-         "  FROM %Q.'%q_segdir' WHERE level = ? AND idx < ?",
+         "  FROM (SELECT * FROM %Q.'%q_segdir' "
+         "        WHERE level = ? ORDER BY idx ASC LIMIT ?"
+         "  )",
 
 /* SQL_DELETE_SEGDIR_ENTRY
 **   Delete the %_segdir entry on absolute level :1 with index :2.  */

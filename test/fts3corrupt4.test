@@ -6123,4 +6123,16 @@ do_execsql_test 41.2 {
   SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'rtree ner "json1^enable"';
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 42.1 {
+  CREATE VIRTUAL TABLE f USING fts3(a, b);
+}
+do_execsql_test 42.2 {
+  INSERT INTO f_segdir VALUES(0,2,1111,0,0,X'00');
+  INSERT INTO f_segdir VALUES(0,3,0   ,0,0,X'00013003010200');
+}
+do_execsql_test 42.3 {
+  INSERT INTO f(f) VALUES ('merge=107,2');
+}
+
 finish_test
