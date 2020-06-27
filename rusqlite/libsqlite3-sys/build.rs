@@ -79,6 +79,7 @@ mod build_bundled {
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
             .flag("-DHAVE_USLEEP=1")
+            .flag("-D_POSIX_THREAD_SAFE_FUNCTIONS") // cross compile with MinGW
             .warnings(false);
 
         if cfg!(feature = "with-asan") {
