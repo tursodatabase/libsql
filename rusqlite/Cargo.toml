@@ -135,6 +135,10 @@ name = "vtab"
 name = "cache"
 harness = false
 
+[[bench]]
+name = "exec"
+harness = false
+
 [package.metadata.docs.rs]
 features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab", "window", "modern_sqlite", "column_decltype" ]
 all-features = false
