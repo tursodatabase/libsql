@@ -12,7 +12,7 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct RawStatement {
     ptr: *mut ffi::sqlite3_stmt,
-    tail: bool,
+    tail: usize,
     // Cached indices of named parameters, computed on the fly.
     cache: crate::util::ParamIndexCache,
     // Cached SQL (trimmed) that we use as the key when we're in the statement
@@ -29,7 +29,7 @@ pub struct RawStatement {
 }
 
 impl RawStatement {
-    pub unsafe fn new(stmt: *mut ffi::sqlite3_stmt, tail: bool) -> RawStatement {
+    pub unsafe fn new(stmt: *mut ffi::sqlite3_stmt, tail: usize) -> RawStatement {
         RawStatement {
             ptr: stmt,
             tail,
@@ -170,6 +170,10 @@ impl RawStatement {
 
     #[cfg(feature = "extra_check")]
     pub fn has_tail(&self) -> bool {
+        self.tail != 0
+    }
+
+    pub fn tail(&self) -> usize {
         self.tail
     }
 }

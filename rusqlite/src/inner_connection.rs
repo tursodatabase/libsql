@@ -171,21 +171,6 @@ impl InnerConnection {
         }
     }
 
-    pub fn execute_batch(&mut self, sql: &str) -> Result<()> {
-        // use CString instead of SmallCString because it's probably big.
-        let c_sql = std::ffi::CString::new(sql)?;
-        unsafe {
-            let r = ffi::sqlite3_exec(
-                self.db(),
-                c_sql.as_ptr(),
-                None,
-                ptr::null_mut(),
-                ptr::null_mut(),
-            );
-            self.decode_result(r)
-        }
-    }
-
     #[cfg(feature = "load_extension")]
     pub fn enable_load_extension(&mut self, onoff: c_int) -> Result<()> {
         let r = unsafe { ffi::sqlite3_enable_load_extension(self.db, onoff) };
@@ -262,8 +247,17 @@ impl InnerConnection {
         // comment) then *ppStmt is set to NULL.
         let c_stmt: *mut ffi::sqlite3_stmt = c_stmt;
         let c_tail: *const c_char = c_tail;
-        // TODO ignore spaces, comments, ... at the end
-        let tail = !c_tail.is_null() && unsafe { c_tail != c_sql.offset(len as isize) };
+        let tail = if c_tail.is_null() {
+            0
+        } else {
+            // TODO nightly feature ptr_offset_from #41079
+            let n = (c_tail as isize) - (c_sql as isize);
+            if n <= 0 || n >= len as isize {
+                0
+            } else {
+                n as usize
+            }
+        };
         Ok(Statement::new(conn, unsafe {
             RawStatement::new(c_stmt, tail)
         }))
