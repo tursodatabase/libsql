@@ -17,6 +17,11 @@
 #include "sqliteInt.h"
 
 /*
+** Magic table number to mean the EXCLUDED table in an UPSERT statement.
+*/
+#define EXCLUDED_TABLE_NUMBER  2
+
+/*
 ** Walk the expression tree pExpr and increase the aggregate function
 ** depth (the Expr.op2 field) by N on every TK_AGG_FUNCTION node.
 ** This needs to occur when copying a TK_AGG_FUNCTION node from an
@@ -386,7 +391,7 @@ static int lookupName(
         Upsert *pUpsert = pNC->uNC.pUpsert;
         if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
           pTab = pUpsert->pUpsertSrc->a[0].pTab;
-          pExpr->iTable = 2;
+          pExpr->iTable = EXCLUDED_TABLE_NUMBER;
         }
       }
 #endif /* SQLITE_OMIT_UPSERT */
@@ -411,7 +416,7 @@ static int lookupName(
         if( iCol<pTab->nCol ){
           cnt++;
 #ifndef SQLITE_OMIT_UPSERT
-          if( pExpr->iTable==2 ){
+          if( pExpr->iTable==EXCLUDED_TABLE_NUMBER ){
             testcase( iCol==(-1) );
             if( IN_RENAME_OBJECT ){
               pExpr->iColumn = iCol;

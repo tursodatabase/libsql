@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Document\sthe\sdual-use\sof\sthe\sP5\soperand\sto\sthe\sOP_MakeRecord\sopcode.
-D 2020-06-29T20:09:04.926
+C Change\sthe\smagic\snumber\sused\sto\sidentify\sthe\s"excluded"\spseudo-table\sin\nan\sUPSERT\sstatement\sinto\sa\s#define\sconstant.
+D 2020-06-29T20:20:40.011
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -14,6 +14,7 @@ F src/btree.c e8e4a7e4727f0ead6433fdafeff347bf078fec39bee55a24441c3481e5b85164
 F src/btreeInt.h 19267385aa3bc00067d48e0e4ba83ae82dc08b0c15a3b3df20ea653cb462b5bf
 F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F src/expr.c a3ab84399b3415f66d2d0c25f5bcd98ef465c0c07ea1f19bf2a418b1c8fcad74
+F src/resolve.c a74360811b69721764d470349ba474127ee0112d2f67cb369e7f8484e7223621
 F src/select.c bc25f48e49eca122c16c247e7d4697241156e7c32c735b219be667657aa017ef
 F src/shell.c.in d663152487d4bfddea0f6d21ebc2ed51575d22657a02c6828afd344bbd4651af
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
@@ -31,7 +32,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 87c7d962581f4bb1224086701352850ede9847dc76235b33c7c2a35ef594d382
-R b3437ef9a1ae4f8daf3306b732aab045
+P a73f80f22a585d1a2f55650d5cda4ece6c4ef039ef5eae2c02c3e5c269d4c30a
+R 003533f2c08a789ddd7b9a99e156c3e4
 U drh
-Z 2bc72e4aacf2bc1633ea007a3cca16c5
+Z 4982175da6ddd63c49a51251c6a169d2
