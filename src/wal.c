@@ -3701,10 +3701,9 @@ int sqlite3WalCheckpoint(
   if( pWal->readOnly ) return SQLITE_READONLY;
   WALTRACE(("WAL%p: checkpoint begins\n", pWal));
 
-  /* Enable blocking locks, if possible. If blocking locks are successfully
-  ** enabled, set xBusy2=0 so that the busy-handler is never invoked. */
+  /* Enable blocking locks, if possible. */
   sqlite3WalDb(pWal, db);
-  (void)walEnableBlocking(pWal);
+  if( xBusy2 ) (void)walEnableBlocking(pWal);
 
   /* IMPLEMENTATION-OF: R-62028-47212 All calls obtain an exclusive 
   ** "checkpoint" lock on the database file.
@@ -3746,7 +3745,7 @@ int sqlite3WalCheckpoint(
   if( rc==SQLITE_OK ){
     walDisableBlocking(pWal);
     rc = walIndexReadHdr(pWal, &isChanged);
-    (void)walEnableBlocking(pWal);
+    if( xBusy2 ) (void)walEnableBlocking(pWal);
     if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
       sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
     }
