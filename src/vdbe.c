@@ -2922,6 +2922,17 @@ case OP_Affinity: {
 ** macros defined in sqliteInt.h.
 **
 ** If P4 is NULL then all index fields have the affinity BLOB.
+**
+** The meaning of P5 depends on whether or not the SQLITE_ENABLE_NULL_TRIM
+** compile-time option is enabled:
+**
+**   * If SQLITE_ENABLE_NULL_TRIM is enabled, then the P5 is the index
+**     of the right-most table that can be null-trimmed.
+**
+**   * If SQLITE_ENABLE_NULL_TRIM is omitted, then P5 has the value
+**     OPFLAG_NOCHNG_MAGIC if the OP_MakeRecord opcode is allowed to
+**     accept no-change records with serial_type 10.  This value is
+**     only used inside an assert() and does not affect the end result.
 */
 case OP_MakeRecord: {
   Mem *pRec;             /* The new record */
@@ -3040,7 +3051,9 @@ case OP_MakeRecord: {
         ** Give such values a special internal-use-only serial-type of 10
         ** so that they can be passed through to xUpdate and have
         ** a true sqlite3_value_nochange(). */
+#ifndef SQLITE_ENABLE_NULL_TRIM
         assert( pOp->p5==OPFLAG_NOCHNG_MAGIC || CORRUPT_DB );
+#endif
         pRec->uTemp = 10;
       }else{
         pRec->uTemp = 0;

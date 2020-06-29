@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Change\sthe\sname\sof\sIntegrityCk.mallocFailed\sto\sIntegrityCk.bOomFault\sto\navoid\sconfusion\swith\sthe\ssqlite3\sobject\sfield\swith\sthe\ssame\sname.
-D 2020-06-29T18:30:49.786
+C Document\sthe\sdual-use\sof\sthe\sP5\soperand\sto\sthe\sOP_MakeRecord\sopcode.
+D 2020-06-29T20:09:04.926
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -17,6 +17,8 @@ F src/expr.c a3ab84399b3415f66d2d0c25f5bcd98ef465c0c07ea1f19bf2a418b1c8fcad74
 F src/select.c bc25f48e49eca122c16c247e7d4697241156e7c32c735b219be667657aa017ef
 F src/shell.c.in d663152487d4bfddea0f6d21ebc2ed51575d22657a02c6828afd344bbd4651af
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
+F src/update.c 6a0484134635f167594d597a33d186051125d3ef41803a90b246cea6cf7f11f9
+F src/vdbe.c b9ff68008f3d9d1f38525414bdcf8f62a73f458079245c17a63b2b4763d645fd
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
 F test/busy2.test 5a449cd1bd7616c6ce709484d3e2a419a151b75e87ec5d2c7cb26e05a15dbd7b
 F test/decimal.test 12739a01bdba4c4d79f95b323e6b67b9fad1ab6ffb56116bd2b9c81a5b19e1d9
@@ -29,7 +31,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P ada43e7c490bf72a50ee84e1db994e149744b2a943260449076b83d1874813b2
-R ad5c3efe8067f76e71e83d254e1b38a0
+P 87c7d962581f4bb1224086701352850ede9847dc76235b33c7c2a35ef594d382
+R b3437ef9a1ae4f8daf3306b732aab045
 U drh
-Z 4f978aff4a80dc385d65b8fa6dc71ff1
+Z 2bc72e4aacf2bc1633ea007a3cca16c5

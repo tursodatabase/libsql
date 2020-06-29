@@ -1032,7 +1032,7 @@ static void updateVirtualTable(
     ** the ephemeral table. */
     sqlite3MultiWrite(pParse);
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_NULL_TRIM)
     /* Signal an assert() within OP_MakeRecord that it is allowed to
     ** accept no-change records with serial_type 10 */
     sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
