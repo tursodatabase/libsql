@@ -5208,10 +5208,12 @@ static int fts3EvalNearTrim(
   );
   if( res ){
     nNew = (int)(pOut - pPhrase->doclist.pList) - 1;
-    assert( pPhrase->doclist.pList[nNew]=='\0' );
-    assert( nNew<=pPhrase->doclist.nList && nNew>0 );
-    memset(&pPhrase->doclist.pList[nNew], 0, pPhrase->doclist.nList - nNew);
-    pPhrase->doclist.nList = nNew;
+    if( nNew>=0 ){
+      assert( pPhrase->doclist.pList[nNew]=='\0' );
+      assert( nNew<=pPhrase->doclist.nList && nNew>0 );
+      memset(&pPhrase->doclist.pList[nNew], 0, pPhrase->doclist.nList - nNew);
+      pPhrase->doclist.nList = nNew;
+    }
     *paPoslist = pPhrase->doclist.pList;
     *pnToken = pPhrase->nToken;
   }

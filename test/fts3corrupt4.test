@@ -6135,4 +6135,19 @@ do_execsql_test 42.3 {
   INSERT INTO f(f) VALUES ('merge=107,2');
 }
 
+#-------------------------------------------------------------------------
+reset_db
+set saved $sqlite_fts3_enable_parentheses
+set sqlite_fts3_enable_parentheses 1
+do_execsql_test 43.1 {
+  CREATE VIRTUAL TABLE def USING fts3(xyz);
+  INSERT INTO def_segdir VALUES(0,0,0,0,0, X'0001310301c9000103323334050d81');
+} {}
+
+do_execsql_test 43.2 {
+  SELECT rowid FROM def WHERE def MATCH '1 NEAR 1'
+} {1}
+
+set sqlite_fts3_enable_parentheses $saved
+
 finish_test
