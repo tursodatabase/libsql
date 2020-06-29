@@ -1,0 +1,54 @@
+# 2020 June 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file test the busy handler
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set testprefix busy2
+
+do_multiclient_test tn {
+  do_test 1.$tn.0 {
+    sql2 {
+      CREATE TABLE t1(a, b);
+      PRAGMA journal_mode = wal;
+      INSERT INTO t1 VALUES('A', 'B');
+    }
+  } {wal}
+
+  do_test 1.$tn.1 {
+    code1 { db timeout 1000 }
+    sql1 { SELECT * FROM t1 }
+  } {A B}
+
+  do_test 1.$tn.2 {
+    sql2 {
+      BEGIN;
+        INSERT INTO t1 VALUES('C', 'D');
+    }
+  } {}
+
+  do_test 1.$tn.3 {
+    set us [lindex [time { catch { sql1 { BEGIN EXCLUSIVE } } }] 0]
+    expr {$us>950000 && $us<1500000}
+  } {1}
+
+  do_test 1.$tn.4 {
+    sql2 {
+      COMMIT
+    }
+  } {}
+}
+
+finish_test
+

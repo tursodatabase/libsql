@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Do\snot\srun\sresetAccumulator()\safter\sa\smalloc\sfailure.
-D 2020-06-29T16:30:10.567
+C Add\stest\sscript\sto\sverify\sbusy-timeouts\sare\sworking\sfor\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds.
+D 2020-06-29T17:52:53.862
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -16,6 +16,7 @@ F src/select.c bc25f48e49eca122c16c247e7d4697241156e7c32c735b219be667657aa017ef
 F src/shell.c.in d663152487d4bfddea0f6d21ebc2ed51575d22657a02c6828afd344bbd4651af
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
+F test/busy2.test 5a449cd1bd7616c6ce709484d3e2a419a151b75e87ec5d2c7cb26e05a15dbd7b
 F test/decimal.test 12739a01bdba4c4d79f95b323e6b67b9fad1ab6ffb56116bd2b9c81a5b19e1d9
 F test/fts3corrupt4.test 99a3017da1f43c8dbecd1b053029ade08dfa51b94ca043abffe5d32f21cc5736
 F test/fuzzdata8.db 0ae860b36b79fd41cafddc9e6602358b2d5c331cf200283221e659f86e196c0c
@@ -26,7 +27,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 6e0ffa205312416830340ea6e621dfb1a529e5603d569941ed6263930dc28c45
-R c714b16aae086541380bc1d9a1e44703
-U drh
-Z 43829bf0d717a497b21888e2cfe1ff4a
+P 1b426603f05033bcee0331c6f664cd5ed2ebf8f5d4cde8c6673c7a699ff53bb1
+R 6c7789a7098efb29eff36caf8aa4c6fc
+U dan
+Z 112b18c988addaa054b3697edfd4eb11
