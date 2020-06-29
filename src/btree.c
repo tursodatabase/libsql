@@ -9632,7 +9632,7 @@ static void checkAppendMsg(
   sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
   if( pCheck->errMsg.accError==SQLITE_NOMEM ){
-    pCheck->mallocFailed = 1;
+    pCheck->bOomFault = 1;
   }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -9697,7 +9697,7 @@ static void checkPtrmap(
 
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) pCheck->mallocFailed = 1;
+    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) pCheck->bOomFault = 1;
     checkAppendMsg(pCheck, "Failed to read ptrmap key=%d", iChild);
     return;
   }
@@ -10142,7 +10142,7 @@ char *sqlite3BtreeIntegrityCheck(
   sCheck.nPage = btreePagecount(sCheck.pBt);
   sCheck.mxErr = mxErr;
   sCheck.nErr = 0;
-  sCheck.mallocFailed = 0;
+  sCheck.bOomFault = 0;
   sCheck.zPfx = 0;
   sCheck.v1 = 0;
   sCheck.v2 = 0;
@@ -10156,12 +10156,12 @@ char *sqlite3BtreeIntegrityCheck(
 
   sCheck.aPgRef = sqlite3MallocZero((sCheck.nPage / 8)+ 1);
   if( !sCheck.aPgRef ){
-    sCheck.mallocFailed = 1;
+    sCheck.bOomFault = 1;
     goto integrity_ck_cleanup;
   }
   sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
   if( sCheck.heap==0 ){
-    sCheck.mallocFailed = 1;
+    sCheck.bOomFault = 1;
     goto integrity_ck_cleanup;
   }
 
@@ -10236,7 +10236,7 @@ char *sqlite3BtreeIntegrityCheck(
 integrity_ck_cleanup:
   sqlite3PageFree(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
-  if( sCheck.mallocFailed ){
+  if( sCheck.bOomFault ){
     sqlite3_str_reset(&sCheck.errMsg);
     sCheck.nErr++;
   }

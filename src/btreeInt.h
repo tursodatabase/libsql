@@ -679,7 +679,7 @@ struct IntegrityCk {
   Pgno nPage;       /* Number of pages in the database */
   int mxErr;        /* Stop accumulating errors when this reaches zero */
   int nErr;         /* Number of messages written to zErrMsg so far */
-  int mallocFailed; /* A memory allocation error has occurred */
+  int bOomFault;    /* A memory allocation error has occurred */
   const char *zPfx; /* Error message prefix */
   int v1, v2;       /* Values for up to two %d fields in zPfx */
   StrAccum errMsg;  /* Accumulate the error message text here */
