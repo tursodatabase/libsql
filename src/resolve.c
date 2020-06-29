@@ -423,7 +423,8 @@ static int lookupName(
               pExpr->y.pTab = pTab;
               eNewExprOp = TK_COLUMN;
             }else{
-              pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
+              pExpr->iTable = pNC->uNC.pUpsert->regData +
+                 sqlite3TableColumnToStorage(pTab, iCol);
               eNewExprOp = TK_REGISTER;
               ExprSetProperty(pExpr, EP_Alias);
             }
