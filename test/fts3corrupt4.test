@@ -6150,4 +6150,17 @@ do_execsql_test 43.2 {
 
 set sqlite_fts3_enable_parentheses $saved
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 44.1 {
+  CREATE VIRTUAL TABLE t0 USING fts3(col0 INTEGER PRIMARY KEY,col1 VARCHAR(8),col2 BINARY,col3 BINARY);
+  INSERT INTO t0_content VALUES(0,NULL,NULL,NULL,NULL);
+  INSERT INTO t0_segdir VALUES(0,0,0,0,'0 42',X'00013103010200010332333405010201ba00000461616161050101020200000462626262050101030200');
+}
+
+do_execsql_test 44.2 {
+  SELECT matchinfo(t0, t0) IS NULL FROM t0 WHERE t0 MATCH '1*'
+} {0}
+
+
 finish_test

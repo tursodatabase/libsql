@@ -2855,6 +2855,19 @@ int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr){
   return SQLITE_OK;
 }
 
+static int fts3GrowSegReaderBuffer(Fts3MultiSegReader *pCsr, int nReq){
+  if( nReq>pCsr->nBuffer ){
+    char *aNew;
+    pCsr->nBuffer = nReq*2;
+    aNew = sqlite3_realloc(pCsr->aBuffer, pCsr->nBuffer);
+    if( !aNew ){
+      return SQLITE_NOMEM;
+    }
+    pCsr->aBuffer = aNew;
+  }
+  return SQLITE_OK;
+}
+
 
 int sqlite3Fts3SegReaderStep(
   Fts3Table *p,                   /* Virtual table handle */
@@ -2989,15 +3002,9 @@ int sqlite3Fts3SegReaderStep(
           }
 
           nByte = sqlite3Fts3VarintLen(iDelta) + (isRequirePos?nList+1:0);
-          if( nDoclist+nByte>pCsr->nBuffer ){
-            char *aNew;
-            pCsr->nBuffer = (nDoclist+nByte)*2;
-            aNew = sqlite3_realloc(pCsr->aBuffer, pCsr->nBuffer);
-            if( !aNew ){
-              return SQLITE_NOMEM;
-            }
-            pCsr->aBuffer = aNew;
-          }
+
+          rc = fts3GrowSegReaderBuffer(pCsr, nByte+nDoclist);
+          if( rc ) return rc;
 
           if( isFirst ){
             char *a = &pCsr->aBuffer[nDoclist];
@@ -3022,6 +3029,9 @@ int sqlite3Fts3SegReaderStep(
         fts3SegReaderSort(apSegment, nMerge, j, xCmp);
       }
       if( nDoclist>0 ){
+        rc = fts3GrowSegReaderBuffer(pCsr, nDoclist+FTS3_NODE_PADDING);
+        if( rc ) return rc;
+        memset(&pCsr->aBuffer[nDoclist], 0, FTS3_NODE_PADDING);
         pCsr->aDoclist = pCsr->aBuffer;
         pCsr->nDoclist = nDoclist;
         rc = SQLITE_ROW;
