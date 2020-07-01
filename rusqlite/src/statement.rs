@@ -454,7 +454,7 @@ impl Statement<'_> {
             self.bind_parameter(&p, index)?;
         }
         if index != expected {
-            Err(Error::InvalidParameterCount(expected, index))
+            Err(Error::InvalidParameterCount(index, expected))
         } else {
             Ok(())
         }
