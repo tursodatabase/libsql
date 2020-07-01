@@ -3629,7 +3629,7 @@ case OP_ReadCookie: {               /* out2 */
   break;
 }
 
-/* Opcode: SetCookie P1 P2 P3 * *
+/* Opcode: SetCookie P1 P2 P3 * P5
 **
 ** Write the integer value P3 into cookie number P2 of database P1.
 ** P2==1 is the schema version.  P2==2 is the database format.
@@ -3638,6 +3638,11 @@ case OP_ReadCookie: {               /* out2 */
 ** database file used to store temporary tables.
 **
 ** A transaction must be started before executing this opcode.
+**
+** If P2 is the SCHEMA_VERSION cookie (cookie number 1) then the internal
+** schema version is set to P3-P5.  The "PRAGMA schema_version=N" statement
+** has P5 set to 1, so that the internal schema version will be different
+** from the database schema version, resulting in a schema reset.
 */
 case OP_SetCookie: {
   Db *pDb;
@@ -3654,7 +3659,7 @@ case OP_SetCookie: {
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, pOp->p3);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
     /* When the schema cookie changes, record the new cookie internally */
-    pDb->pSchema->schema_cookie = pOp->p3;
+    pDb->pSchema->schema_cookie = pOp->p3 - pOp->p5;
     db->mDbFlags |= DBFLAG_SchemaChange;
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */

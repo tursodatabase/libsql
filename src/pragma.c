@@ -1890,6 +1890,7 @@ void sqlite3Pragma(
       aOp[1].p1 = iDb;
       aOp[1].p2 = iCookie;
       aOp[1].p3 = sqlite3Atoi(zRight);
+      aOp[1].p5 = 1;
     }else{
       /* Read the specified cookie value */
       static const VdbeOpList readCookie[] = {
