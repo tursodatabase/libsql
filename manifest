@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Add\sa\stest\sto\sensure\sthat\s"PRAGMA\swal_checkpoint\s=\sFULL"\sinvokes\sthe\sbusy-handler\sto\swait\son\sread-locks.
-D 2020-06-30T18:21:45.061
+C Fix\sa\sproblem\swith\sVM\scode\sgenerated\sfor\ssome\saggregate\sSELECT\sstatements\sthat\sfeature\smin()/max()\saggregates\sboth\swith\sand\swithout\sFILTER\sclauses.
+D 2020-07-01T14:07:45.398
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -15,7 +15,7 @@ F src/btreeInt.h 19267385aa3bc00067d48e0e4ba83ae82dc08b0c15a3b3df20ea653cb462b5b
 F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F src/expr.c a3ab84399b3415f66d2d0c25f5bcd98ef465c0c07ea1f19bf2a418b1c8fcad74
 F src/resolve.c 79cee37182fea66703f90365b8b0a646ed7e9bfa9238b91fa90dfc74258b940e
-F src/select.c bc25f48e49eca122c16c247e7d4697241156e7c32c735b219be667657aa017ef
+F src/select.c 860daa05592ed1b38f6266f067fa020b539548ab929aa60fa59e7681e7f3f8cb
 F src/shell.c.in d663152487d4bfddea0f6d21ebc2ed51575d22657a02c6828afd344bbd4651af
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F src/update.c 6a0484134635f167594d597a33d186051125d3ef41803a90b246cea6cf7f11f9
@@ -23,6 +23,7 @@ F src/vdbe.c b9ff68008f3d9d1f38525414bdcf8f62a73f458079245c17a63b2b4763d645fd
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
 F test/busy2.test 415364312743992641f9bf679c84918327296067f85a5d00012b339dc35acbd7
 F test/decimal.test 12739a01bdba4c4d79f95b323e6b67b9fad1ab6ffb56116bd2b9c81a5b19e1d9
+F test/filter1.test 6c483ecf7886c8843a8612c021aa23f33c581f584151f251842b3a3592c95ac8
 F test/fts3corrupt4.test 35e88f7708868a67598f1f6d3666774f6c7b34c91e3b74bd2965030fc70fb928
 F test/fuzzdata8.db 0ae860b36b79fd41cafddc9e6602358b2d5c331cf200283221e659f86e196c0c
 F test/gencol1.test b05e6c5edb9b10d48efb634ed07342441bddc89d225043e17095c36e567521a0
@@ -33,7 +34,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 4d0cfb1236884349168f8e2ec5e18c0232965148af78615e0d5c9b0e13a35422
-R 1a2b9cd08dc9e49bf73c8725e57b84f3
+P f068fb116286b1dbdee9c168900348cfcab84e6d8413f3456e4e492f650d11b0
+R 8b21ceb686d4d5f9c6580e467d4cb411
 U dan
-Z e10d9d47313abf369e15b6b18c29458c
+Z 46b832ad1b2fc184b95c974e9f57ad71

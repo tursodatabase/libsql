@@ -5451,15 +5451,19 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
       Expr *pFilter = pF->pFExpr->y.pWin->pFilter;
       if( pAggInfo->nAccumulator 
        && (pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL) 
+       && regAcc
       ){
+        /* If regAcc==0, there there exists some min() or max() function
+        ** without a FILTER clause that will ensure the magnet registers
+        ** are populated. */
         if( regHit==0 ) regHit = ++pParse->nMem;
-        /* If this is the first row of the group (regAcc==0), clear the
+        /* If this is the first row of the group (regAcc contains 0), clear the
         ** "magnet" register regHit so that the accumulator registers
         ** are populated if the FILTER clause jumps over the the 
         ** invocation of min() or max() altogether. Or, if this is not
-        ** the first row (regAcc==1), set the magnet register so that the
-        ** accumulators are not populated unless the min()/max() is invoked and
-        ** indicates that they should be.  */
+        ** the first row (regAcc contains 1), set the magnet register so that
+        ** the accumulators are not populated unless the min()/max() is invoked
+        ** and indicates that they should be.  */
         sqlite3VdbeAddOp2(v, OP_Copy, regAcc, regHit);
       }
       addrNext = sqlite3VdbeMakeLabel(pParse);
