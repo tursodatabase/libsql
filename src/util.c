@@ -1141,8 +1141,7 @@ u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
     u64 v64;
     u8 n;
 
-    p -= 2;
-    n = sqlite3GetVarint(p, &v64);
+    n = sqlite3GetVarint(p-2, &v64);
     assert( n>3 && n<=9 );
     if( (v64 & SQLITE_MAX_U32)!=v64 ){
       *v = 0xffffffff;
