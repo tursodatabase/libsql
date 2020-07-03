@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Fix\sthe\spragma_foreign_key_check\svirtual\stable\sso\sthat\sit\saccepts\sarguments.
-D 2020-07-03T12:32:04.573
+C In\slemon,\sadd\s"%if"\sand\s"%else"\sand\sallow\sboolean\sexpressions\sas\sthe\nargument\sto\s"%if",\s"%ifdef",\sand\s"%ifndef".
+D 2020-07-03T15:41:08.646
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -34,13 +34,14 @@ F test/fuzzdata8.db 0ae860b36b79fd41cafddc9e6602358b2d5c331cf200283221e659f86e19
 F test/gencol1.test b05e6c5edb9b10d48efb634ed07342441bddc89d225043e17095c36e567521a0
 F test/ieee754.test b0945d12be7d255f3dfa18e2511b17ca37e0edd2b803231c52d05b86c04ab26e
 F test/speedtest1.c a8b5afe72d78ff365012aba48d3f0c579e957facb7630f765f58a6ae4656d20d
+F tool/lemon.c 600a58b9d1b8ec5419373982428e927ca208826edacb91ca42ab94514d006039
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mkpragmatab.tcl ae5585ae76ca26e4d6ccd5ea9cdebaf5efefb318bf989497a0e846cd711d9ab1
 F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfae0e84c
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 81bc4b65ae2a68128b0be75a7a3d4f47f05cc588ff130ba56366ab9b16289228
-R 959518f214ac8fa04f9479823db88ae3
+P 07f849dee3d245ecf80ba3c3ce8dfc630e71ddb1e9c0bcc1f08cee22001fcb07
+R ab4092566c985aba1362a3a393cab635
 U drh
-Z df6c0f239cac29280d3b9659da8bad1e
+Z abad44d232bcc4ccdddfa3cd71995651
