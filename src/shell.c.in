@@ -8136,7 +8136,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     while( (nSkip--)>0 ){
       while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
-      sCtx.nLine++;
     }
     zSql = sqlite3_mprintf("SELECT * FROM %s", zTable);
     if( zSql==0 ){
