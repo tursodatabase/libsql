@@ -111,7 +111,8 @@ static void disableLookaside(Parse *pParse){
   DisableLookaside;
 }
 
-#ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+#if !defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) \
+ && defined(SQLITE_UDL_CAPABLE_PARSER)
 /*
 ** Issue an error message if an ORDER BY or LIMIT clause occurs on an
 ** UPDATE or DELETE statement.
