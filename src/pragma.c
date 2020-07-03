@@ -1403,7 +1403,6 @@ void sqlite3Pragma(
     regRow = ++pParse->nMem;
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
-      int iTabDb;
       if( zRight ){
         pTab = sqlite3LocateTable(pParse, 0, zRight, zDb);
         k = 0;
@@ -1412,23 +1411,24 @@ void sqlite3Pragma(
         k = sqliteHashNext(k);
       }
       if( pTab==0 || pTab->pFKey==0 ) continue;
-      iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-      sqlite3CodeVerifySchema(pParse, iTabDb);
-      sqlite3TableLock(pParse, iTabDb, pTab->tnum, 0, pTab->zName);
+      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+      zDb = db->aDb[iDb].zDbSName;
+      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
       if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
-      sqlite3OpenTable(pParse, 0, iTabDb, pTab, OP_OpenRead);
+      sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         if( pParent==0 ) continue;
         pIdx = 0;
-        sqlite3TableLock(pParse, iTabDb, pParent->tnum, 0, pParent->zName);
+        sqlite3TableLock(pParse, iDb, pParent->tnum, 0, pParent->zName);
         x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, 0);
         if( x==0 ){
           if( pIdx==0 ){
-            sqlite3OpenTable(pParse, i, iTabDb, pParent, OP_OpenRead);
+            sqlite3OpenTable(pParse, i, iDb, pParent, OP_OpenRead);
           }else{
-            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iTabDb);
+            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iDb);
             sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           }
         }else{
