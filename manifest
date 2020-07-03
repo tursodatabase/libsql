@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C In\slemon,\sadd\s"%if"\sand\s"%else"\sand\sallow\sboolean\sexpressions\sas\sthe\nargument\sto\s"%if",\s"%ifdef",\sand\s"%ifndef".
-D 2020-07-03T15:41:08.646
+C If\sthe\samalgamation\sis\sbuilt\susing\sOPT_FEATURE_FLAGS\s=\s\n-DSQLITE_UDL_CAPABLE_PARSER\sthen\sit\scan\sbe\scompiled\swith\sor\swithout\nthe\s-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT\soption\sand\sit\sworks\seither\sway.
+D 2020-07-03T17:24:35.418
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -14,6 +14,7 @@ F src/btree.c e8e4a7e4727f0ead6433fdafeff347bf078fec39bee55a24441c3481e5b85164
 F src/btreeInt.h 19267385aa3bc00067d48e0e4ba83ae82dc08b0c15a3b3df20ea653cb462b5bf
 F src/build.c ba1bbe563a3dc02d5fed20537603181e5289c13ea30ae5e775f552e7557adbfa
 F src/expr.c a3ab84399b3415f66d2d0c25f5bcd98ef465c0c07ea1f19bf2a418b1c8fcad74
+F src/parse.y 9ea710b51b86441380edbde170f1a8cca1de3c7777d8887444265f2d2c37d5e3
 F src/pragma.c 1c6a435c92e913a65be9875c14bd2976fa1bf05b76a54785378c32b04fa34a00
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/resolve.c 79cee37182fea66703f90365b8b0a646ed7e9bfa9238b91fa90dfc74258b940e
@@ -41,7 +42,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 07f849dee3d245ecf80ba3c3ce8dfc630e71ddb1e9c0bcc1f08cee22001fcb07
-R ab4092566c985aba1362a3a393cab635
+P 951d22b72f80de9e23df645abcc3d88ca1a275b46ea23b84152ef48716922b37
+R d9d05305347b9302aaa0f35e8a659f07
 U drh
-Z abad44d232bcc4ccdddfa3cd71995651
+Z d4f97e7ba76a75a88b5069bbca131775

@@ -111,6 +111,26 @@ static void disableLookaside(Parse *pParse){
   DisableLookaside;
 }
 
+#ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+/*
+** Issue an error message if an ORDER BY or LIMIT clause occurs on an
+** UPDATE or DELETE statement.
+*/
+static void updateDeleteLimitError(
+  Parse *pParse,
+  ExprList *pOrderBy,
+  Expr *pLimit
+){
+  if( pOrderBy ){
+    sqlite3ErrorMsg(pParse, "syntax error near \"ORDER BY\"");
+  }else{
+    sqlite3ErrorMsg(pParse, "syntax error near \"LIMIT\"");
+  }
+  sqlite3ExprListDelete(pParse->db, pOrderBy);
+  sqlite3ExprDelete(pParse->db, pLimit);
+}
+#endif /* SQLITE_ENABLE_UPDATE_DELETE_LIMIT */
+
 } // end %include
 
 // Input is a single SQL command
@@ -840,18 +860,20 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //
-%ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+%if SQLITE_ENABLE_UPDATE_DELETE_LIMIT || SQLITE_UDL_CAPABLE_PARSER
 cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
 #ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-  sqlite3ExprListDelete(pParse->db, O); O = 0;
-  sqlite3ExprDelete(pParse->db, L); L = 0;
+  if( O || L ){
+    updateDeleteLimitError(pParse,O,L);
+    O = 0;
+    L = 0;
+  }
 #endif
   sqlite3DeleteFrom(pParse,X,W,O,L);
 }
-%endif
-%ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+%else
 cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,0,0);
@@ -866,22 +888,30 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-%ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+%if SQLITE_ENABLE_UPDATE_DELETE_LIMIT || SQLITE_UDL_CAPABLE_PARSER
 cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
+#ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+  if( O || L ){
+    updateDeleteLimitError(pParse,O,L);
+    O = 0;
+    L = 0;
+  }
+#endif
   sqlite3Update(pParse,X,Y,W,R,O,L,0);
 }
-%endif
-%ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+%else
 cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y)
-        where_opt(W).  {
+        where_opt(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   sqlite3Update(pParse,X,Y,W,R,0,0,0);
 }
 %endif
+
+
 
 %type setlist {ExprList*}
 %destructor setlist {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1370,16 +1400,14 @@ cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //
-%ifndef SQLITE_OMIT_VACUUM
-%ifndef SQLITE_OMIT_ATTACH
+%if !SQLITE_OMIT_VACUUM && !SQLITE_OMIT_ATTACH
 %type vinto {Expr*}
 %destructor vinto {sqlite3ExprDelete(pParse->db, $$);}
 cmd ::= VACUUM vinto(Y).                {sqlite3Vacuum(pParse,0,Y);}
 cmd ::= VACUUM nm(X) vinto(Y).          {sqlite3Vacuum(pParse,&X,Y);}
 vinto(A) ::= INTO expr(X).              {A = X;}
 vinto(A) ::= .                          {A = 0;}
-%endif  SQLITE_OMIT_ATTACH
-%endif  SQLITE_OMIT_VACUUM
+%endif
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
