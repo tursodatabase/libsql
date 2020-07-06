@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Fix\sthe\stable_info\spragma\sso\sthat\sit\salways\schecks\sthe\sschema\sversion\sand\nreprepares,\seven\sif\sit\sis\sa\sno-op.
-D 2020-07-04T20:29:56.015
+C Increase\sthe\sresolution\sof\sthe\svdbe\sopcode\scounters\sto\s64\sbits,\sas\napparently\ssome\susers\srun\ssingle\sprepared\sstatements\sthat\sgo\sfor\nlonger\sthan\s4\sbillion\sinstructions.\s\sSee\sforum\spost\s\n"[https://sqlite.org/forum/forumpost/d07949dc94|Possible\sfreeze\sin\sthe\sprogress\sloop]"
+D 2020-07-06T12:13:05.862
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -21,10 +21,11 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/resolve.c 79cee37182fea66703f90365b8b0a646ed7e9bfa9238b91fa90dfc74258b940e
 F src/select.c 860daa05592ed1b38f6266f067fa020b539548ab929aa60fa59e7681e7f3f8cb
 F src/shell.c.in 81fa23ac1a3d6ac9ed13e9ae711a3d8806396ca7cc12c5d6a2e2536f70b0c7ad
+F src/sqliteInt.h f89ed824bc55b6bd90ca692518f85eeb22f8962d46e0e12cad989d4aee1e7b8c
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F src/update.c 6a0484134635f167594d597a33d186051125d3ef41803a90b246cea6cf7f11f9
 F src/util.c c0bacc165f46169d2b720c37c8719165e383211698fad1de39dd16a8c161815a
-F src/vdbe.c 1208cbeecb7a6293d97819c1308630421bd461ff4006785746b07467cc8ebd26
+F src/vdbe.c b48b332a89580b69df79c75eb31f14ff251cd26c0b5b2c47cb15ac2293e7d43c
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
 F test/altertab.test b8b2104212e8ea87c75c3cbe3cb78ed7236a6c828ee2e59ed09d3dbe9812d002
 F test/busy2.test 415364312743992641f9bf679c84918327296067f85a5d00012b339dc35acbd7
@@ -43,7 +44,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P e0a8b11dfd6b3ab89ae5032d60cf3c1bba7198a1a2debe5c691b5d1f2e1befee
-R cb5f54709308b35a9f476c3b77f8d5e6
+P 6da77973abc325ae8baf64615267a614a0b8bb8dfd0a01a9f7d6c3a8f359564f
+R 5a350fef2ffedc24328b381dc830966c
 U drh
-Z 33f477ab518aaa9913eb2bfe5c1ccb78
+Z 48fc9bc0549b58537a1215b353d1e05e

@@ -902,6 +902,7 @@ typedef INT16_TYPE LogEst;
 ** compilers.
 */
 #define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
+#define LARGEST_UINT64 (0xffffffff|(((u64)0xffffffff)<<32))
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
 /*

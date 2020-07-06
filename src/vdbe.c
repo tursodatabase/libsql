@@ -671,9 +671,9 @@ int sqlite3VdbeExec(
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
   u8 encoding = ENC(db);     /* The database encoding */
   int iCompare = 0;          /* Result of last comparison */
-  unsigned nVmStep = 0;      /* Number of virtual machine steps */
+  u64 nVmStep = 0;           /* Number of virtual machine steps */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  unsigned nProgressLimit;   /* Invoke xProgress() when nVmStep reaches this */
+  u64 nProgressLimit;        /* Invoke xProgress() when nVmStep reaches this */
 #endif
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
@@ -693,7 +693,7 @@ int sqlite3VdbeExec(
     assert( 0 < db->nProgressOps );
     nProgressLimit = db->nProgressOps - (iPrior % db->nProgressOps);
   }else{
-    nProgressLimit = 0xffffffff;
+    nProgressLimit = LARGEST_UINT64;
   }
 #endif
   if( p->rc==SQLITE_NOMEM ){
@@ -905,7 +905,7 @@ check_for_interrupt:
     assert( db->nProgressOps!=0 );
     nProgressLimit += db->nProgressOps;
     if( db->xProgress(db->pProgressArg) ){
-      nProgressLimit = 0xffffffff;
+      nProgressLimit = LARGEST_UINT64;
       rc = SQLITE_INTERRUPT;
       goto abort_due_to_error;
     }
@@ -8001,7 +8001,7 @@ vdbe_return:
   while( nVmStep>=nProgressLimit && db->xProgress!=0 ){
     nProgressLimit += db->nProgressOps;
     if( db->xProgress(db->pProgressArg) ){
-      nProgressLimit = 0xffffffff;
+      nProgressLimit = LARGEST_UINT64;
       rc = SQLITE_INTERRUPT;
       goto abort_due_to_error;
     }
