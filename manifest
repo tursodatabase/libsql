@@ -1,9 +1,11 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Increase\sthe\sresolution\sof\sthe\svdbe\sopcode\scounters\sto\s64\sbits,\sas\napparently\ssome\susers\srun\ssingle\sprepared\sstatements\sthat\sgo\sfor\nlonger\sthan\s4\sbillion\sinstructions.\s\sSee\sforum\spost\s\n"[https://sqlite.org/forum/forumpost/d07949dc94|Possible\sfreeze\sin\sthe\sprogress\sloop]"
-D 2020-07-06T12:13:05.862
+C Remove\sbashism\sfrom\sconfigure\sscript.
+D 2020-07-07T19:24:34.002
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
+F configure a97f98dfff699495aef66ae3d9c424345778a663f583e0d6e7522670518f87c1 x
+F configure.ac 40d01e89cb325c28b33f5957e61fede0bd17da2b5e37d9b223a90c8a318e88d4
 F doc/lemon.html 1edc0f916e771212792d4d077aedc05168bf13fd65d64d41b2c13e46ac0063a8
 F ext/fts3/fts3.c 5ffabd0d13210fb9cfe1c08184201282722adfeea49cd9e8e2ae29d1fefd7fcb
 F ext/fts3/fts3_write.c d1258a4ec15465304421ba6c1f0937bf9c0bd71af85fae49a8d7b68c2af97d4f
@@ -44,7 +46,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 6da77973abc325ae8baf64615267a614a0b8bb8dfd0a01a9f7d6c3a8f359564f
-R 5a350fef2ffedc24328b381dc830966c
-U drh
-Z 48fc9bc0549b58537a1215b353d1e05e
+P 612eb590ea44fd402e630f2d62558beb7ce57d7d0ba113c8b72ea60a895c5a43
+R 06e620729e53217d75eda31941b8e707
+U dan
+Z df001da8d0f5d0074105ffb822c7e682

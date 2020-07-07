@@ -11268,7 +11268,7 @@ if test "${enable_amalgamation+set}" = set; then :
   enableval=$enable_amalgamation;
 fi
 
-if test "${enable_amalgamation}" == "no" ; then
+if test "${enable_amalgamation}" = "no" ; then
   USE_AMALGAMATION=0
 fi
 

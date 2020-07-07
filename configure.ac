@@ -569,7 +569,7 @@ AC_SUBST(TARGET_DEBUG)
 # See whether we should use the amalgamation to build
 AC_ARG_ENABLE(amalgamation, AC_HELP_STRING([--disable-amalgamation],
       [Disable the amalgamation and instead build all files separately]))
-if test "${enable_amalgamation}" == "no" ; then
+if test "${enable_amalgamation}" = "no" ; then
   USE_AMALGAMATION=0
 fi
 AC_SUBST(USE_AMALGAMATION)
