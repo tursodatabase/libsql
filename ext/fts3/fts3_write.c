@@ -4300,7 +4300,7 @@ static int fts3IncrmergeLoad(
       int i;
       int nHeight = (int)aRoot[0];
       NodeWriter *pNode;
-      if( nHeight<1 || nHeight>FTS_MAX_APPENDABLE_HEIGHT ){
+      if( nHeight<1 || nHeight>=FTS_MAX_APPENDABLE_HEIGHT ){
         sqlite3_reset(pSelect);
         return FTS_CORRUPT_VTAB;
       }
