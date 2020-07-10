@@ -52,12 +52,10 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
-    if( ALWAYS(pExpr->x.pSelect)
-     && pExpr->x.pSelect->pEList
-     && ALWAYS(pExpr->x.pSelect->pEList->a[0].pExpr)
-    ){
-      return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
-    }
+    assert( pExpr->x.pSelect!=0 );
+    assert( pExpr->x.pSelect->pEList!=0 );
+    assert( pExpr->x.pSelect->pEList->a[0].pExpr!=0 );
+    return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
   }
   if( op==TK_REGISTER ) op = pExpr->op2;
 #ifndef SQLITE_OMIT_CAST

@@ -1082,7 +1082,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       assert( pParse->db->mallocFailed );
       sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
     }
-    sqlite3SelectReset(pParse, p);
   }
   return rc;
 }
