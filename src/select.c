@@ -6769,11 +6769,6 @@ int sqlite3Select(
         }
         updateAccumulator(pParse, regAcc, pAggInfo);
         if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);
-        if( sqlite3WhereIsOrdered(pWInfo)>0 ){
-          sqlite3VdbeGoto(v, sqlite3WhereBreakLabel(pWInfo));
-          VdbeComment((v, "%s() by index",
-                (minMaxFlag==WHERE_ORDERBY_MIN?"min":"max")));
-        }
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, pAggInfo);
       }
