@@ -1266,5 +1266,30 @@ do_test 15.0 {
 do_execsql_test 15.1 {
   UPDATE c1 SET c= NOT EXISTS(SELECT 1 FROM c1 ORDER BY (SELECT 1 FROM c1 ORDER BY a)) +10 WHERE d BETWEEN 4 AND 7;
 } {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(w, x, y, z, UNIQUE(w, x), UNIQUE(y, z));
+  INSERT INTO t1 VALUES(1, 1, 1, 1);
+
+  CREATE TABLE t1idx(x, y, i INTEGER, PRIMARY KEY(x)) WITHOUT ROWID;
+  INSERT INTO t1idx VALUES(10, NULL, 5);
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET rootpage = (
+    SELECT rootpage FROM sqlite_master WHERE name='t1idx'
+  ) WHERE type = 'index';
+}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 16.1 {
+  PRAGMA writable_schema = ON;
+  INSERT INTO t1(rowid, w, x, y, z) VALUES(5, 10, 11, 10, NULL);
+} {1 {database disk image is malformed}}
+
 finish_test
+
 
