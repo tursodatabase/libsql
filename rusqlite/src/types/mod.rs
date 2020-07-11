@@ -10,40 +10,39 @@
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
 //!
-//! Additionally, because it is such a common data type, implementations are
-//! provided for `time::Timespec` that use the RFC 3339 date/time format,
+//! Additionally, if the `time` feature is enabled, implementations are
+//! provided for `time::OffsetDateTime` that use the RFC 3339 date/time format,
 //! `"%Y-%m-%dT%H:%M:%S.%fZ"`, to store time values as strings.  These values
 //! can be parsed by SQLite's builtin
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) functions.  If you
-//! want different storage for timespecs, you can use a newtype. For example, to
-//! store timespecs as `f64`s:
+//! want different storage for datetimes, you can use a newtype.
 //!
-//! ```rust
-//! use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
-//! use rusqlite::Result;
-//!
-//! pub struct TimespecSql(pub time::Timespec);
-//!
-//! impl FromSql for TimespecSql {
-//!     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-//!         f64::column_result(value).map(|as_f64| {
-//!             TimespecSql(time::Timespec {
-//!                 sec: as_f64.trunc() as i64,
-//!                 nsec: (as_f64.fract() * 1.0e9) as i32,
-//!             })
-//!         })
-//!     }
-//! }
-//!
-//! impl ToSql for TimespecSql {
-//!     fn to_sql(&self) -> Result<ToSqlOutput> {
-//!         let TimespecSql(ts) = *self;
-//!         let as_f64 = ts.sec as f64 + (ts.nsec as f64) / 1.0e9;
-//!         Ok(as_f64.into())
-//!     }
-//! }
-//! ```
-//!
+#![cfg_attr(feature = "time", doc = r##"
+For example, to store datetimes as `i64`s counting the number of seconds since
+the Unix epoch:
+
+```
+use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use rusqlite::Result;
+
+pub struct DateTimeSql(pub time::OffsetDateTime);
+
+impl FromSql for DateTimeSql {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        i64::column_result(value).map(|as_i64| {
+            DateTimeSql(time::OffsetDateTime::from_unix_timestamp(as_i64))
+        })
+    }
+}
+
+impl ToSql for DateTimeSql {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(self.0.timestamp().into())
+    }
+}
+```
+
+"##)]
 //! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T`
 //! implements `ToSql` or `FromSql` for the cases where you want to know if a
 //! value was NULL (which gets translated to `None`).
@@ -60,6 +59,7 @@ mod chrono;
 mod from_sql;
 #[cfg(feature = "serde_json")]
 mod serde_json;
+#[cfg(feature = "time")]
 mod time;
 mod to_sql;
 #[cfg(feature = "url")]
@@ -273,8 +273,9 @@ mod test {
         assert!(is_invalid_column_type(
             row.get::<_, String>(0).err().unwrap()
         ));
+        #[cfg(feature = "time")]
         assert!(is_invalid_column_type(
-            row.get::<_, time::Timespec>(0).err().unwrap()
+            row.get::<_, time::OffsetDateTime>(0).err().unwrap()
         ));
         assert!(is_invalid_column_type(
             row.get::<_, Option<c_int>>(0).err().unwrap()
@@ -335,8 +336,9 @@ mod test {
         assert!(is_invalid_column_type(
             row.get::<_, Vec<u8>>(4).err().unwrap()
         ));
+        #[cfg(feature = "time")]
         assert!(is_invalid_column_type(
-            row.get::<_, time::Timespec>(4).err().unwrap()
+            row.get::<_, time::OffsetDateTime>(4).err().unwrap()
         ));
     }
 

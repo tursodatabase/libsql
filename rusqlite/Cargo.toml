@@ -83,6 +83,9 @@ bundled-full = [
     "load_extension",
     "serde_json",
     "series",
+    # time v0.2 does not work with tarpaulin v0.14.0. See time-rs/time#265.
+    # Re-enable when time v0.3 is released with the fix.
+    # "time",
     "trace",
     "unlock_notify",
     "url",
@@ -92,7 +95,7 @@ bundled-full = [
 ]
 
 [dependencies]
-time = "0.1.0"
+time = { version = "0.2", optional = true }
 bitflags = "1.0"
 lru-cache = "0.1"
 chrono = { version = "0.4", optional = true }
@@ -141,7 +144,7 @@ name = "exec"
 harness = false
 
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "trace", "url", "vtab", "window", "modern_sqlite", "column_decltype" ]
+features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "time", "trace", "url", "vtab", "window", "modern_sqlite", "column_decltype" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
