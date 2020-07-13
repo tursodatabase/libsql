@@ -25,6 +25,7 @@ ifcapable !fts3 {
 }
 
 foreach {tn create_table} {
+  0 { CREATE VIRTUAL TABLE ft USING fts5(a, b, c) }
   1 { CREATE VIRTUAL TABLE ft USING fts3(a, b, c) }
   2 { CREATE TABLE ft(a, b, c) }
   3 { 
@@ -40,6 +41,7 @@ foreach {tn create_table} {
     END;
   }
 } {
+  if {$tn==0} { ifcapable !fts5 { continue } }
   catchsql { DROP VIEW IF EXISTS changes }
   catchsql { DROP TABLE IF EXISTS ft }
   catchsql { DROP VIEW IF EXISTS ft }
@@ -92,12 +94,45 @@ foreach {tn create_table} {
   }
 
   do_execsql_test 1.$tn.7 {
-    SELECT a, b, c FROM ft ORDER BY rowid;
+    SELECT rowid, a, b, c FROM ft ORDER BY rowid;
   } {
-    a {} apricot
-    b apple blueberry
-    c banana clementine
-    d cherry dewberry
+    1 a {} apricot
+    2 b apple blueberry
+    3 c banana clementine
+    4 d cherry dewberry
+  }
+
+  do_execsql_test 1.$tn.8 "
+    WITH x1(o, n) AS (
+        VALUES(1, 11) UNION ALL
+        VALUES(2, 12) UNION ALL
+        VALUES(3, 13) UNION ALL
+        VALUES(4, 14)
+    )
+    SELECT ft.rowid, a, b, c, o, n FROM ft, x1 WHERE ft.rowid = o;
+  " {
+    1 a {} apricot 1 11
+    2 b apple blueberry 2 12
+    3 c banana clementine 3 13
+    4 d cherry dewberry 4 14
+  }
+
+  set ROWID rowid
+  if {$tn==1} { set ROWID docid }
+  do_execsql_test 1.$tn.9 "
+    WITH x1(o, n) AS (
+        VALUES(1, 11) UNION ALL
+        VALUES(2, 12) UNION ALL
+        VALUES(3, 13) UNION ALL
+        VALUES(4, 14)
+    )
+    UPDATE ft SET $ROWID = n FROM x1 WHERE ft.rowid = o;
+    SELECT rowid, a, b, c FROM ft ORDER BY rowid;
+  " {
+    11 a {} apricot
+    12 b apple blueberry
+    13 c banana clementine
+    14 d cherry dewberry
   }
 }
 

@@ -637,7 +637,13 @@ void sqlite3Update(
       iEph = pParse->nTab++;
       if( pPk ) sqlite3VdbeAddOp3(v, OP_Null, 0, iPk, iPk+nPk-1);
       addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nEphCol);
-      if( pPk ) sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+      if( pPk ){
+        KeyInfo *pKeyInfo = sqlite3KeyInfoOfIndex(pParse, pPk);
+        if( pKeyInfo ){
+          pKeyInfo->nAllField = nEphCol;
+          sqlite3VdbeAppendP4(v, pKeyInfo, P4_KEYINFO);
+        }
+      }
       if( nChangeFrom ){
         updatePopulateEphTable(
             pParse, iEph, pPk, pChanges, pTabList, pWhere, pOrderBy, pLimit
