@@ -1,11 +1,13 @@
 B 5ee3c27e20d12a126fb773b428bb864102b949a5b26a8d5c523753dcedf4be10
-C Add\stest\scases\sand\sfixes\sfor\sUPDATE...FROM\sstatements\sthat\smodify\sprimary\skey\scolumns.
-D 2020-07-13T20:10:29.676
+C Add\stest\sfor\sLEFT\sJOIN\sin\sUPDATE...FROM\sstatement.
+D 2020-07-13T20:43:13.733
 F src/resolve.c 04f4710d3ab0070073b60b5b963158dadfbd049db55d10742d9fbd3f28a3f4b8
 F src/update.c ab137d08171e2bb18a4c6af815bbd6dbe8bfb483ddd7a2b97dfbfb4d95906ee0
 F test/fts4upfrom.test 8df5acb6e10ad73f393d1add082b042ab1db72567888847d098152121e507b34
+F test/upfrom1.tcl df984cb88010af1555812af55e9db44c4df50677395b45d1f30b69b1b6c07b73
+F test/upfrom1.test 2ba1ed45b4a2161fc79f234b9ce4300b0d3deba545e3f23b938fb3ebdbf8758d
 F test/upfrom3.test 8f107ed4dc863e75694867fa38c4f3fccd77a35939f65137ead8a55b6ee45152
-P 5ee3c27e20d12a126fb773b428bb864102b949a5b26a8d5c523753dcedf4be10
-R 2d0f465cbbb27a9a22406ae4b2f12478
+P 47c87af3e52bce10fbcc2cbe832d659b0c204bfb3368d9314fa1b01120129254
+R 65a8d9c8ed218ad0d5909deb2fd7a990
 U dan
-Z cd52a3446e6f9caf8f163180b9da21b7
+Z 74476aad6c58b82c53e5aec1a3d47ff5
