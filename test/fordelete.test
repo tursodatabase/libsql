@@ -48,7 +48,7 @@ proc analyze_delete_program {sql} {
 
       set obj $T($root)
       set O($obj) ""
-      if {"0x$R(p5)" & 0x08} { 
+      if {$R(p5) & 0x08} { 
         set O($obj) *
       } else {
         set O($obj) ""

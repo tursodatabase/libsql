@@ -51,7 +51,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
 **   1) It is a virtual table and no implementation of the xUpdate method
 **      has been provided
 **
-**   2) It is a system table (i.e. sqlite_master), this call is not
+**   2) It is a system table (i.e. sqlite_schema), this call is not
 **      part of a nested parse and writable_schema pragma has not 
 **      been specified
 **
@@ -858,6 +858,7 @@ void sqlite3GenerateRowIndexDelete(
         &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
         pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+    sqlite3VdbeChangeP5(v, 1);  /* Cause IdxDelete to error if no entry found */
     sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }

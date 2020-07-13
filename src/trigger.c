@@ -128,7 +128,7 @@ void sqlite3BeginTrigger(
   **                                                 ^^^^^^^^
   **
   ** To maintain backwards compatibility, ignore the database
-  ** name on pTableName if we are reparsing out of SQLITE_MASTER.
+  ** name on pTableName if we are reparsing out of the schema table
   */
   if( db->init.busy && iDb!=1 ){
     sqlite3DbFree(db, pTableName->a[0].zDatabase);
@@ -318,21 +318,22 @@ void sqlite3FinishTrigger(
 #endif
 
   /* if we are not initializing,
-  ** build the sqlite_master entry
+  ** build the sqlite_schema entry
   */
   if( !db->init.busy ){
     Vdbe *v;
     char *z;
 
-    /* Make an entry in the sqlite_master table */
+    /* Make an entry in the sqlite_schema table */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     z = sqlite3DbStrNDup(db, (char*)pAll->z, pAll->n);
     testcase( z==0 );
     sqlite3NestedParse(pParse,
-       "INSERT INTO %Q.%s VALUES('trigger',%Q,%Q,0,'CREATE TRIGGER %q')",
-       db->aDb[iDb].zDbSName, MASTER_NAME, zName,
+       "INSERT INTO %Q." DFLT_SCHEMA_TABLE
+       " VALUES('trigger',%Q,%Q,0,'CREATE TRIGGER %q')",
+       db->aDb[iDb].zDbSName, zName,
        pTrig->table, z);
     sqlite3DbFree(db, z);
     sqlite3ChangeCookie(pParse, iDb);
@@ -639,8 +640,8 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   */
   if( (v = sqlite3GetVdbe(pParse))!=0 ){
     sqlite3NestedParse(pParse,
-       "DELETE FROM %Q.%s WHERE name=%Q AND type='trigger'",
-       db->aDb[iDb].zDbSName, MASTER_NAME, pTrigger->zName
+       "DELETE FROM %Q." DFLT_SCHEMA_TABLE " WHERE name=%Q AND type='trigger'",
+       db->aDb[iDb].zDbSName, pTrigger->zName
     );
     sqlite3ChangeCookie(pParse, iDb);
     sqlite3VdbeAddOp4(v, OP_DropTrigger, iDb, 0, 0, pTrigger->zName, 0);

@@ -183,7 +183,7 @@ proc copy_file {filename} {
   }
   set declpattern ^$declpattern\$
   while {![eof $in]} {
-    set line [gets $in]
+    set line [string trimright [gets $in]]
     incr ln
     if {[regexp {^\s*#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
       if {[info exists available_hdr($hdr)]} {
@@ -341,6 +341,7 @@ foreach file {
    vdbe.c
    vdbeblob.c
    vdbesort.c
+   vdbevtab.c
    memjournal.c
 
    walker.c

@@ -999,7 +999,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
   page_usage_freelist(decodeInt32(a+32));
   page_usage_ptrmap(a);
   sqlite3_free(a);
-  page_usage_btree(1, 0, 0, "sqlite_master");
+  page_usage_btree(1, 0, 0, "sqlite_schema");
   sqlite3_exec(db, "PRAGMA writable_schema=ON", 0, 0, 0);
   for(j=0; j<2; j++){
     sqlite3_snprintf(sizeof(zQuery), zQuery,
@@ -1055,7 +1055,7 @@ static void ptrmap_coverage_report(const char *zDbName){
   usable = g.pagesize - aHdr[20];
   perPage = usable/5;
   sqlite3_free(aHdr);
-  printf("%5d: root of sqlite_master\n", 1);
+  printf("%5d: root of sqlite_schema\n", 1);
   for(pgno=2; pgno<=g.mxPage; pgno += perPage+1){
     printf("%5d: PTRMAP page covering %d..%d\n", pgno,
            pgno+1, pgno+perPage);

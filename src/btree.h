@@ -79,7 +79,7 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p);
 int sqlite3BtreeSetAutoVacuum(Btree *, int);
 int sqlite3BtreeGetAutoVacuum(Btree *);
 int sqlite3BtreeBeginTrans(Btree*,int,int*);
-int sqlite3BtreeCommitPhaseOne(Btree*, const char *zMaster);
+int sqlite3BtreeCommitPhaseOne(Btree*, const char*);
 int sqlite3BtreeCommitPhaseTwo(Btree*, int);
 int sqlite3BtreeCommit(Btree*);
 int sqlite3BtreeRollback(Btree*,int,int);
@@ -336,9 +336,7 @@ int sqlite3BtreeCursorIsValid(BtCursor*);
 #endif
 int sqlite3BtreeCursorIsValidNN(BtCursor*);
 
-#ifndef SQLITE_OMIT_BTREECOUNT
 int sqlite3BtreeCount(sqlite3*, BtCursor*, i64*);
-#endif
 
 #ifdef SQLITE_TEST
 int sqlite3BtreeCursorInfo(BtCursor*, int*, int);

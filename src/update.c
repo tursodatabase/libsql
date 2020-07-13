@@ -46,17 +46,17 @@ static void updateVirtualTable(
 ** literal default values specified: a number, null or a string. (If a more
 ** complicated default expression value was provided, it is evaluated 
 ** when the ALTER TABLE is executed and one of the literal values written
-** into the sqlite_master table.)
+** into the sqlite_schema table.)
 **
 ** Therefore, the P4 parameter is only required if the default value for
 ** the column is a literal number, string or null. The sqlite3ValueFromExpr()
 ** function is capable of transforming these types of expressions into
 ** sqlite3_value objects.
 **
-** If parameter iReg is not negative, code an OP_RealAffinity instruction
-** on register iReg. This is used when an equivalent integer value is 
-** stored in place of an 8-byte floating point value in order to save 
-** space.
+** If column as REAL affinity and the table is an ordinary b-tree table
+** (not a virtual table) then the value might have been stored as an
+** integer.  In that case, add an OP_RealAffinity opcode to make sure
+** it has been converted into REAL.
 */
 void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
   assert( pTab!=0 );
@@ -73,7 +73,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
     }
   }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
+  if( pTab->aCol[i].affinity==SQLITE_AFF_REAL && !IsVirtual(pTab) ){
     sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
   }
 #endif
@@ -1234,7 +1234,7 @@ static void updateVirtualTable(
       ** the ephemeral table. */
       sqlite3MultiWrite(pParse);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_NULL_TRIM)
       /* Signal an assert() within OP_MakeRecord that it is allowed to
       ** accept no-change records with serial_type 10 */
       sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);

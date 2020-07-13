@@ -95,7 +95,7 @@ do_test indexedby-2.4 {
 # an error.
 do_test indexedby-2.4.1 {
   catchsql { SELECT b FROM t1 INDEXED BY i1 WHERE b = 'two' }
-} {1 {no query solution}}
+} {0 {}}
 
 do_test indexedby-2.5 {
   catchsql { SELECT * FROM t1 INDEXED BY i5 WHERE a = 'one' AND b = 'two'}
@@ -135,10 +135,10 @@ do_eqp_test indexedby-3.3 {
 } {SEARCH TABLE t1 USING INDEX i2 (b=?)}
 do_test indexedby-3.4 {
   catchsql { SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' }
-} {1 {no query solution}}
+} {0 {}}
 do_test indexedby-3.5 {
   catchsql { SELECT * FROM t1 INDEXED BY i2 ORDER BY a }
-} {1 {no query solution}}
+} {0 {}}
 do_test indexedby-3.6 {
   catchsql { SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' }
 } {0 {}}
@@ -154,7 +154,7 @@ do_eqp_test indexedby-3.9 {
 } {SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (e=?)}
 do_test indexedby-3.10 {
   catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE f = 10 }
-} {1 {no query solution}}
+} {0 {}}
 do_test indexedby-3.11 {
   catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_2 WHERE f = 10 }
 } {1 {no such index: sqlite_autoindex_t3_2}}
@@ -172,19 +172,19 @@ do_eqp_test indexedby-4.2 {
   SELECT * FROM t1 INDEXED BY i1, t2 WHERE a = c 
 } {
   QUERY PLAN
-  |--SCAN TABLE t2
-  `--SEARCH TABLE t1 USING INDEX i1 (a=?)
+  |--SCAN TABLE t1 USING INDEX i1
+  `--SEARCH TABLE t2 USING INDEX i3 (c=?)
 }
 do_test indexedby-4.3 {
   catchsql {
     SELECT * FROM t1 INDEXED BY i1, t2 INDEXED BY i3 WHERE a=c
   }
-} {1 {no query solution}}
+} {0 {}}
 do_test indexedby-4.4 {
   catchsql {
     SELECT * FROM t2 INDEXED BY i3, t1 INDEXED BY i1 WHERE a=c
   }
-} {1 {no query solution}}
+} {0 {}}
 
 # Test embedding an INDEXED BY in a CREATE VIEW statement. This block
 # also tests that nothing bad happens if an index refered to by
@@ -205,7 +205,7 @@ do_test indexedby-5.4 {
   # Recreate index i1 in such a way as it cannot be used by the view query.
   execsql { CREATE INDEX i1 ON t1(b) }
   catchsql { SELECT * FROM v2 }
-} {1 {no query solution}}
+} {0 {}}
 do_test indexedby-5.5 {
   # Drop and recreate index i1 again. This time, create it so that it can
   # be used by the query.
@@ -245,7 +245,7 @@ do_eqp_test indexedby-7.5 {
 } {SEARCH TABLE t1 USING INDEX i2 (b=?)}
 do_test indexedby-7.6 {
   catchsql { DELETE FROM t1 INDEXED BY i2 WHERE a = 5}
-} {1 {no query solution}}
+} {0 {}}
 
 # Test that "INDEXED BY" can be used in an UPDATE statement.
 # 
@@ -266,7 +266,7 @@ do_eqp_test indexedby-8.5 {
 } {SEARCH TABLE t1 USING INDEX i2 (b=?)}
 do_test indexedby-8.6 {
   catchsql { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5}
-} {1 {no query solution}}
+} {0 {}}
 
 # Test that bug #3560 is fixed.
 #
@@ -284,10 +284,10 @@ do_test indexedby-9.2 {
     joinme as j indexed by joinme_id_text_idx
     on ( m.id  = j.id_int)
   }
-} {1 {no query solution}}
+} {0 {}}
 do_test indexedby-9.3 {
   catchsql { select * from maintable, joinme INDEXED by joinme_id_text_idx }
-} {1 {no query solution}}
+} {0 {}}
 
 # Make sure we can still create tables, indices, and columns whose name
 # is "indexed".

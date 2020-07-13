@@ -538,9 +538,11 @@ do_test printf-2.1.2.8 {
 do_test printf-2.1.2.9 {
   sqlite3_mprintf_double {abc: %d %d (%1.1g) :xyz} 1 1 1.0e-20
 } {abc: 1 1 (1e-20) :xyz}
-do_test printf-2.1.2.10 {
-  sqlite3_mprintf_double {abc: %*.*f}  2000000000 1000000000 1.0e-20
-} {}
+if {$SQLITE_MAX_LENGTH<=[expr 1000*1000*1000]} {
+  do_test printf-2.1.2.10 {
+    sqlite3_mprintf_double {abc: %*.*f}  2000000000 1000000000 1.0e-20
+  } {}
+}
 do_test printf-2.1.3.1 {
   sqlite3_mprintf_double {abc: (%*.*f) :xyz} 1 1 1.0
 } {abc: (1.0) :xyz}
@@ -3776,5 +3778,12 @@ foreach ::iRepeat {0 1} {
     incr nTestNum
   }
 }
+
+# 2020-05-23
+# ticket 23439ea582241138
+#
+do_execsql_test printf-16.1 {
+  SELECT printf('%.*g',2147483647,0.01);
+} {0.01}
 
 finish_test

@@ -803,6 +803,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
         p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
       }
       if( p->pSub ){
+        int f = pExpr->flags & EP_Collate;
         assert( ExprHasProperty(pExpr, EP_Static)==0 );
         ExprSetProperty(pExpr, EP_Static);
         sqlite3ExprDelete(pParse->db, pExpr);
@@ -813,6 +814,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
         pExpr->iColumn = (iCol<0 ? p->pSub->nExpr-1: iCol);
         pExpr->iTable = p->pWin->iEphCsr;
         pExpr->y.pTab = p->pTab;
+        pExpr->flags = f;
       }
       if( pParse->db->mallocFailed ) return WRC_Abort;
       break;
@@ -895,19 +897,42 @@ static ExprList *exprListAppendList(
     int i;
     int nInit = pList ? pList->nExpr : 0;
     for(i=0; i<pAppend->nExpr; i++){
-      int iDummy;
       Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
       assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
-      if( bIntToNull && pDup && sqlite3ExprIsInteger(pDup, &iDummy) ){
-        pDup->op = TK_NULL;
-        pDup->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
-        pDup->u.zToken = 0;
+      if( bIntToNull && pDup ){
+        int iDummy;
+        Expr *pSub;
+        for(pSub=pDup; ExprHasProperty(pSub, EP_Skip); pSub=pSub->pLeft){
+          assert( pSub );
+        }
+        if( sqlite3ExprIsInteger(pSub, &iDummy) ){
+          pSub->op = TK_NULL;
+          pSub->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
+          pSub->u.zToken = 0;
+        }
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
       if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;
     }
   }
   return pList;
+}
+
+/*
+** When rewriting a query, if the new subquery in the FROM clause
+** contains TK_AGG_FUNCTION nodes that refer to an outer query,
+** then we have to increase the Expr->op2 values of those nodes
+** due to the extra subquery layer that was added.
+**
+** See also the incrAggDepth() routine in resolve.c
+*/
+static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION
+   && pExpr->op2>=pWalker->walkerDepth
+  ){
+    pExpr->op2++;
+  }
+  return WRC_Continue;
 }
 
 /*
@@ -930,15 +955,19 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ExprList *pSort = 0;
 
     ExprList *pSublist = 0;       /* Expression list for sub-query */
-    Window *pMWin = p->pWin;      /* Master window object */
+    Window *pMWin = p->pWin;      /* Main window object */
     Window *pWin;                 /* Window object iterator */
     Table *pTab;
+    Walker w;
+
     u32 selFlags = p->selFlags;
 
     pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ){
       return sqlite3ErrorToParser(db, SQLITE_NOMEM);
     }
+    sqlite3AggInfoPersistWalkerInit(&w, pParse);
+    sqlite3WalkSelect(&w, p);
 
     p->pSrc = 0;
     p->pWhere = 0;
@@ -1016,6 +1045,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     pSub = sqlite3SelectNew(
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
     );
+    SELECTTRACE(1,pParse,pSub,
+       ("New window-function subquery in FROM clause of (%u/%p)\n",
+       p->selId, p));
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       Table *pTab2;
@@ -1034,6 +1066,11 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
         pTab->tabFlags |= TF_Ephemeral;
         p->pSrc->a[0].pTab = pTab;
         pTab = pTab2;
+        memset(&w, 0, sizeof(w));
+        w.xExprCallback = sqlite3WindowExtraAggFuncDepth;
+        w.xSelectCallback = sqlite3WalkerDepthIncrease;
+        w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
+        sqlite3WalkSelect(&w, pSub);
       }
     }else{
       sqlite3SelectDelete(db, pSub);
@@ -1047,7 +1084,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       assert( pParse->db->mallocFailed );
       sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
     }
-    sqlite3SelectReset(pParse, p);
   }
   return rc;
 }

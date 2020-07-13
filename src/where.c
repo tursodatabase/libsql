@@ -3028,6 +3028,7 @@ static int whereLoopAddBtree(
     pNew->nOut = rSize;
     pNew->u.btree.pIndex = pProbe;
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
+
     /* The ONEPASS_DESIRED flags never occurs together with ORDER BY */
     assert( (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || b==0 );
     if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
@@ -3057,6 +3058,7 @@ static int whereLoopAddBtree(
       if( b
        || !HasRowid(pTab)
        || pProbe->pPartIdxWhere!=0
+       || pSrc->fg.isIndexedBy
        || ( m==0
          && pProbe->bUnordered==0
          && (pProbe->szIdxRow<pTab->szTabRow)

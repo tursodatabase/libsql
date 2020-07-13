@@ -204,4 +204,22 @@ do_execsql_test 6.3 {
   SELECT (SELECT COUNT(a) FROM t2) FROM t1;
 } {2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(321, 100000);
+  INSERT INTO t1 VALUES(111, 110000);
+  INSERT INTO t1 VALUES(444, 120000);
+  INSERT INTO t1 VALUES(222, 130000);
+}
+
+do_execsql_test 7.1 {
+  SELECT max(a), max(a) FILTER (WHERE b<12345), b FROM t1;
+} {
+  444 {} 120000
+}
+
+
+
 finish_test

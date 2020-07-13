@@ -4630,7 +4630,7 @@ static int SQLITE_TCLAPI test_open_v2(
       { "SQLITE_OPEN_MAIN_JOURNAL", SQLITE_OPEN_MAIN_JOURNAL },
       { "SQLITE_OPEN_TEMP_JOURNAL", SQLITE_OPEN_TEMP_JOURNAL },
       { "SQLITE_OPEN_SUBJOURNAL", SQLITE_OPEN_SUBJOURNAL },
-      { "SQLITE_OPEN_MASTER_JOURNAL", SQLITE_OPEN_MASTER_JOURNAL },
+      { "SQLITE_OPEN_SUPER_JOURNAL", SQLITE_OPEN_SUPER_JOURNAL },
       { "SQLITE_OPEN_NOMUTEX", SQLITE_OPEN_NOMUTEX },
       { "SQLITE_OPEN_FULLMUTEX", SQLITE_OPEN_FULLMUTEX },
       { "SQLITE_OPEN_SHAREDCACHE", SQLITE_OPEN_SHAREDCACHE },
@@ -7257,6 +7257,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_explain_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_decimal_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7282,6 +7283,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
+    { "decimal",               sqlite3_decimal_init              },
     { "eval",                  sqlite3_eval_init                 },
     { "explain",               sqlite3_explain_init              },
     { "fileio",                sqlite3_fileio_init               },
@@ -8164,7 +8166,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #endif
 #if defined(SQLITE_ENABLE_SELECTTRACE)
-  extern int sqlite3SelectTrace;
+  extern u32 sqlite3SelectTrace;
 #endif
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

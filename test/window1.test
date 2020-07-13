@@ -1663,4 +1663,342 @@ do_catchsql_test 51.1 {
                   sum(b) OVER(PARTITION BY min(DISTINCT c), c ORDER BY b)));
 } {1 {row value misused}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 52.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('AA','bb',356);
+  INSERT INTO t1 VALUES('CC','aa',158);
+  INSERT INTO t1 VALUES('BB','aa',399);
+  INSERT INTO t1 VALUES('FF','bb',938);
+}
+
+do_execsql_test 52.2 {
+  SELECT
+    count() OVER win1,
+    sum(c) OVER win2, 
+    first_value(c) OVER win2,
+    count(a) OVER (ORDER BY b)
+      FROM t1
+      WINDOW
+      win1 AS (ORDER BY a),
+    win2 AS (PARTITION BY 6 ORDER BY a
+        RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING );
+} {
+  1 356 356 4 
+  2 399 399 2 
+  3 158 158 2 
+  4 938 938 4
+}
+
+do_execsql_test 52.3 {
+SELECT
+  count() OVER (),
+  sum(c) OVER win2, 
+  first_value(c) OVER win2,
+  count(a) OVER (ORDER BY b)
+FROM t1
+WINDOW
+  win1 AS (ORDER BY a),
+  win2 AS (PARTITION BY 6 COLLATE binary ORDER BY a
+           RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING );
+} {
+  4 356 356 4 
+  4 399 399 2 
+  4 158 158 2 
+  4 938 938 4
+}
+
+do_execsql_test 52.4 {
+  SELECT
+    count() OVER win1,
+    sum(c) OVER win2, 
+    first_value(c) OVER win2,
+    count(a) OVER (ORDER BY b)
+  FROM t1
+  WINDOW
+    win1 AS (ORDER BY a),
+    win2 AS (PARTITION BY 6 COLLATE binary ORDER BY a
+             RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING );
+} {
+  1 356 356 4 
+  2 399 399 2 
+  3 158 158 2 
+  4 938 938 4
+}
+
+# 2020-05-23
+# ticket 7a5279a25c57adf1
+#
+reset_db
+do_execsql_test 53.0 {
+  CREATE TABLE a(c UNIQUE);
+  INSERT INTO a VALUES(4),(0),(9),(-9);
+  SELECT a.c
+    FROM a
+    JOIN a AS b ON a.c=4
+    JOIN a AS e ON a.c=e.c
+   WHERE a.c=(SELECT (SELECT coalesce(lead(2) OVER(),0) + sum(d.c))
+                FROM a AS d
+               WHERE a.c);
+} {4 4 4 4}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 54.1 {
+  CREATE TABLE t1(a VARCHAR(20), b FLOAT);
+  INSERT INTO t1 VALUES('1',10.0);
+}
+
+do_catchsql_test 54.2 {
+  SELECT * FROM ( 
+    SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+    SELECT b AS c FROM t1
+  ) WHERE c>10;
+} {0 {}}
+
+do_execsql_test 54.3 {
+  INSERT INTO t1 VALUES('2',5.0);
+  INSERT INTO t1 VALUES('3',15.0);
+}
+
+do_catchsql_test 54.4 {
+  SELECT * FROM ( 
+    SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+    SELECT b AS c FROM t1
+  ) WHERE c>10;
+} {0 {15.0 30.0}}
+
+# 2020-06-05 ticket c8d3b9f0a750a529
+reset_db
+do_execsql_test 55.1 {
+   CREATE TABLE a(b);
+   SELECT
+      (SELECT b FROM a
+        GROUP BY b
+        HAVING (SELECT COUNT()OVER() + lead(b)OVER(ORDER BY SUM(DISTINCT b) + b))
+      ) 
+    FROM a
+  UNION
+   SELECT 99
+    ORDER BY 1;
+} {99}
+
+#------------------------------------------------------------------------
+reset_db
+do_execsql_test 56.1 {
+  CREATE TABLE t1(a, b INTEGER); 
+  CREATE TABLE t2(c, d); 
+}
+do_catchsql_test 56.2 {
+  SELECT avg(b) FROM t1 
+    UNION ALL 
+  SELECT min(c) OVER () FROM t2 
+  ORDER BY nosuchcolumn;
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+reset_db
+do_execsql_test 57.1 {
+  CREATE TABLE t4(a, b, c, d, e);
+}
+
+do_catchsql_test 57.2  {
+  SELECT b FROM t4
+  UNION
+  SELECT a FROM t4
+  ORDER BY (
+    SELECT sum(x) OVER() FROM (
+      SELECT c AS x FROM t4
+      UNION
+      SELECT d FROM t4
+      ORDER BY (SELECT e FROM t4)
+    )
+  );
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+# 2020-06-06 various dbsqlfuzz finds and
+# ticket 0899cf62f597d7e7
+#
+reset_db
+do_execsql_test 57.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(NULL,NULL,NULL);
+  SELECT 
+    sum(a),
+    min(b) OVER (),
+    count(c) OVER (ORDER BY b)
+  FROM t1;
+} {{} {} 0}
+do_execsql_test 57.2 {
+  CREATE TABLE v0 ( v1 INTEGER PRIMARY KEY ) ; 
+  INSERT INTO v0 VALUES ( 10 ) ; 
+  SELECT DISTINCT v1, lead(v1) OVER() FROM v0 GROUP BY v1 ORDER BY 2;
+} {10 {}}
+do_catchsql_test 57.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a);
+  INSERT INTO t1(a) VALUES(22);
+  CREATE TABLE t3(y);
+  INSERT INTO t3(y) VALUES(5),(11),(-9);
+  SELECT (
+    SELECT max(y) OVER( ORDER BY (SELECT x FROM (SELECT sum(y) AS x FROM t1)))
+  )
+  FROM t3;
+} {1 {misuse of aggregate: sum()}}
+
+# 2020-06-06 ticket 1f6f353b684fc708
+reset_db
+do_execsql_test 58.1 {
+  CREATE TABLE a(a, b, c);
+  INSERT INTO a VALUES(1, 2, 3);
+  INSERT INTO a VALUES(4, 5, 6);
+  SELECT sum(345+b)      OVER (ORDER BY b),
+         sum(avg(678)) OVER (ORDER BY c) FROM a;
+} {347 678.0}
+
+# 2020-06-06 ticket e5504e987e419fb0
+do_catchsql_test 59.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES (123);
+  SELECT
+     ntile( (SELECT sum(x)) ) OVER(ORDER BY x),
+     min(x) OVER(ORDER BY x)
+    FROM t1; 
+} {1 {misuse of aggregate: sum()}}
+
+# 2020-06-07 ticket f7d890858f361402
+do_execsql_test 60.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1 (x INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES (99);
+  SELECT EXISTS(SELECT count(*) OVER() FROM t1 ORDER BY sum(x) OVER());
+} {1}
+
+# 2020-06-07 test case generated by dbsqlfuzz showing how an AggInfo
+# object might be referenced after the sqlite3Select() call that created
+# it returns.  This proves the need to persist all AggInfo objects until
+# the Parse object is destroyed.
+#
+reset_db
+do_execsql_test 61.1 {
+CREATE TABLE t1(a);
+INSERT INTO t1 VALUES(5),(NULL),('seventeen');
+SELECT (SELECT max(x)OVER(ORDER BY x) % min(x)OVER(ORDER BY CASE x WHEN 889 THEN x WHEN x THEN x END)) FROM (SELECT (SELECT sum(CAST(a IN(SELECT (SELECT max(x)OVER(ORDER BY CASE x WHEN 889 THEN 299 WHEN 863 THEN 863 END)) FROM (SELECT (SELECT sum(CAST((SELECT (SELECT max(x)OVER(ORDER BY x) / min(x)OVER(ORDER BY CASE x WHEN 889 THEN 299 WHEN -true THEN 863 END)) FROM (SELECT (SELECT sum(CAST(a IN(SELECT (SELECT max(x) & sum ( a )OVER(ORDER BY CASE x WHEN -8 THEN 299 WHEN 863 THEN 863 END)) FROM (SELECT (SELECT sum(CAST(a AS )) FROM t1) AS x FROM t1)) AS t1 )) FROM t1) AS x FROM t1)) AS x )) FROM t1) AS x FROM t1)) AS real)) FROM t1) AS x FROM t1);
+} {{} {} {}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 62.1 {
+  CREATE TABLE t1(a VARCHAR(20), b FLOAT);
+  INSERT INTO t1 VALUES('1',10.0);
+}
+
+do_execsql_test 62.2 {
+  SELECT * FROM ( 
+      SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+      SELECT b AS c FROM t1
+      ) WHERE c>10;
+}
+
+do_execsql_test 62.3 {
+  INSERT INTO t1 VALUES('2',5.0);
+  INSERT INTO t1 VALUES('3',15.0);
+}
+
+do_execsql_test 62.4 {
+  SELECT * FROM ( 
+      SELECT sum(b) OVER() AS c FROM t1 
+      UNION
+      SELECT b AS c FROM t1
+      ) WHERE c>10;
+} {15.0 30.0}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 63.1 {
+  CREATE TABLE t1(b, x);
+  CREATE TABLE t2(c, d);
+  CREATE TABLE t3(e, f);
+}
+
+do_execsql_test 63.2 {
+  SELECT max(b) OVER(
+      ORDER BY SUM(
+        (SELECT c FROM t2 UNION SELECT x ORDER BY c)
+      )
+  ) FROM t1;
+} {{}}
+
+do_execsql_test 63.3 {
+  SELECT sum(b) over(
+      ORDER BY (
+        SELECT max(b) OVER(
+          ORDER BY sum(
+            (SELECT x AS c UNION SELECT 1234 ORDER BY c)
+          )
+        ) AS e
+        ORDER BY e
+      )
+    )
+  FROM t1;
+} {{}}
+
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 64.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'abcd');
+  INSERT INTO t1 VALUES(2, 'BCDE');
+  INSERT INTO t1 VALUES(3, 'cdef');
+  INSERT INTO t1 VALUES(4, 'DEFG');
+}
+
+do_execsql_test 64.2 {
+  SELECT rowid, max(b COLLATE nocase)||'' 
+  FROM t1 
+  GROUP BY rowid
+  ORDER BY max(b COLLATE nocase)||'';
+} {1 abcd 2 BCDE 3 cdef 4 DEFG}
+
+do_execsql_test 64.3 {
+  SELECT count() OVER (), rowid, max(b COLLATE nocase)||'' 
+  FROM t1 
+  GROUP BY rowid
+  ORDER BY max(b COLLATE nocase)||'';
+} {4 1 abcd   4 2 BCDE   4 3 cdef   4 4 DEFG}
+
+do_execsql_test 64.4 {
+  SELECT count() OVER (), rowid, max(b COLLATE nocase)
+  FROM t1 
+  GROUP BY rowid
+  ORDER BY max(b COLLATE nocase);
+} {4 1 abcd   4 2 BCDE   4 3 cdef   4 4 DEFG}
+
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 65.1 {
+  CREATE TABLE t1(c1);
+  INSERT INTO t1 VALUES('abcd');
+}
+do_execsql_test 65.2 {
+  SELECT max(c1 COLLATE nocase) IN (SELECT 'aBCd') FROM t1;
+} {1}
+
+do_execsql_test 65.3 {
+  SELECT 
+     count() OVER (), 
+     group_concat(c1 COLLATE nocase) IN (SELECT 'aBCd') FROM t1;
+} {1 1}
+
+do_execsql_test 65.4 {
+  SELECT COUNT() OVER () LIKE lead(102030) OVER(
+      ORDER BY sum('abcdef' COLLATE nocase) IN (SELECT 54321) 
+  )
+  FROM t1;
+} {{}}
+
 finish_test

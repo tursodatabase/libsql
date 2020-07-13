@@ -1290,17 +1290,17 @@ int sqlite3_win32_compact_heap(LPUINT pnLargest){
 */
 int sqlite3_win32_reset_heap(){
   int rc;
-  MUTEX_LOGIC( sqlite3_mutex *pMaster; ) /* The main static mutex */
+  MUTEX_LOGIC( sqlite3_mutex *pMainMtx; ) /* The main static mutex */
   MUTEX_LOGIC( sqlite3_mutex *pMem; )    /* The memsys static mutex */
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
+  MUTEX_LOGIC( pMainMtx = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
   MUTEX_LOGIC( pMem = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM); )
-  sqlite3_mutex_enter(pMaster);
+  sqlite3_mutex_enter(pMainMtx);
   sqlite3_mutex_enter(pMem);
   winMemAssertMagic();
   if( winMemGetHeap()!=NULL && winMemGetOwned() && sqlite3_memory_used()==0 ){
     /*
     ** At this point, there should be no outstanding memory allocations on
-    ** the heap.  Also, since both the master and memsys locks are currently
+    ** the heap.  Also, since both the main and memsys locks are currently
     ** being held by us, no other function (i.e. from another thread) should
     ** be able to even access the heap.  Attempt to destroy and recreate our
     ** isolated Win32 native heap now.
@@ -1323,7 +1323,7 @@ int sqlite3_win32_reset_heap(){
     rc = SQLITE_BUSY;
   }
   sqlite3_mutex_leave(pMem);
-  sqlite3_mutex_leave(pMaster);
+  sqlite3_mutex_leave(pMainMtx);
   return rc;
 }
 #endif /* SQLITE_WIN32_MALLOC */
@@ -3502,6 +3502,7 @@ static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
 /* Forward references to VFS helper methods used for temporary files */
 static int winGetTempname(sqlite3_vfs *, char **);
 static int winIsDir(const void *);
+static BOOL winIsLongPathPrefix(const char *);
 static BOOL winIsDriveLetterAndColon(const char *);
 
 /*
@@ -5022,7 +5023,7 @@ static int winOpen(
 
 #ifndef NDEBUG
   int isOpenJournal = (isCreate && (
-        eType==SQLITE_OPEN_MASTER_JOURNAL
+        eType==SQLITE_OPEN_SUPER_JOURNAL
      || eType==SQLITE_OPEN_MAIN_JOURNAL
      || eType==SQLITE_OPEN_WAL
   ));
@@ -5043,17 +5044,17 @@ static int winOpen(
   assert(isExclusive==0 || isCreate);
   assert(isDelete==0 || isCreate);
 
-  /* The main DB, main journal, WAL file and master journal are never
+  /* The main DB, main journal, WAL file and super-journal are never
   ** automatically deleted. Nor are they ever temporary files.  */
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
-  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_SUPER_JOURNAL );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB
        || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL
-       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_SUPER_JOURNAL
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
@@ -5271,7 +5272,9 @@ static int winOpen(
   if( isReadonly ){
     pFile->ctrlFlags |= WINFILE_RDONLY;
   }
-  if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+  if( (flags & SQLITE_OPEN_MAIN_DB)
+   && sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) 
+  ){
     pFile->ctrlFlags |= WINFILE_PSOW;
   }
   pFile->lastErrno = NO_ERROR;
@@ -5482,6 +5485,17 @@ static int winAccess(
 }
 
 /*
+** Returns non-zero if the specified path name starts with the "long path"
+** prefix.
+*/
+static BOOL winIsLongPathPrefix(
+  const char *zPathname
+){
+  return ( zPathname[0]=='\\' && zPathname[1]=='\\'
+        && zPathname[2]=='?'  && zPathname[3]=='\\' );
+}
+
+/*
 ** Returns non-zero if the specified path name starts with a drive letter
 ** followed by a colon character.
 */
@@ -5545,10 +5559,11 @@ static int winFullPathname(
   char *zOut;
 #endif
 
-  /* If this path name begins with "/X:", where "X" is any alphabetic
-  ** character, discard the initial "/" from the pathname.
+  /* If this path name begins with "/X:" or "\\?\", where "X" is any
+  ** alphabetic character, discard the initial "/" from the pathname.
   */
-  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
+  if( zRelative[0]=='/' && (winIsDriveLetterAndColon(zRelative+1)
+       || winIsLongPathPrefix(zRelative+1)) ){
     zRelative++;
   }
 

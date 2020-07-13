@@ -195,6 +195,13 @@ static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
 #define etBUFSIZE SQLITE_PRINT_BUF_SIZE  /* Size of the output buffer */
 
 /*
+** Hard limit on the precision of floating-point conversions.
+*/
+#ifndef SQLITE_PRINTF_PRECISION_LIMIT
+# define SQLITE_FP_PRECISION_LIMIT 100000000
+#endif
+
+/*
 ** Render a string given by "fmt" into the StrAccum object.
 */
 void sqlite3_str_vappendf(
@@ -394,6 +401,8 @@ void sqlite3_str_vappendf(
     **   xtype                       The class of the conversion.
     **   infop                       Pointer to the appropriate info struct.
     */
+    assert( width>=0 );
+    assert( precision>=(-1) );
     switch( xtype ){
       case etPOINTER:
         flag_long = sizeof(char*)==sizeof(i64) ? 2 :
@@ -515,6 +524,11 @@ void sqlite3_str_vappendf(
         length = 0;
 #else
         if( precision<0 ) precision = 6;         /* Set default precision */
+#ifdef SQLITE_FP_PRECISION_LIMIT
+        if( precision>SQLITE_FP_PRECISION_LIMIT ){
+          precision = SQLITE_FP_PRECISION_LIMIT;
+        }
+#endif
         if( realvalue<0.0 ){
           realvalue = -realvalue;
           prefix = '-';
@@ -797,7 +811,7 @@ void sqlite3_str_vappendf(
         }
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
-        /* For %q, %Q, and %w, the precision is the number of byte (or
+        /* For %q, %Q, and %w, the precision is the number of bytes (or
         ** characters if the ! flags is present) to use from the input.
         ** Because of the extra quoting characters inserted, the number
         ** of output characters may be larger than the precision.
@@ -924,7 +938,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     if( p->db ){
       zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
     }else{
-      zNew = sqlite3_realloc64(zOld, p->nAlloc);
+      zNew = sqlite3Realloc(zOld, p->nAlloc);
     }
     if( zNew ){
       assert( p->zText!=0 || p->nChar==0 );
@@ -1266,7 +1280,7 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...){
 void sqlite3DebugPrintf(const char *zFormat, ...){
   va_list ap;
   StrAccum acc;
-  char zBuf[500];
+  char zBuf[SQLITE_PRINT_BUF_SIZE*10];
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   va_start(ap,zFormat);
   sqlite3_str_vappendf(&acc, zFormat, ap);

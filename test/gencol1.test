@@ -560,4 +560,30 @@ do_catchsql_test gencol1-19.10 {
   INSERT INTO t0(c1) VALUES(0.16334143182538696), (0);
 } {1 {UNIQUE constraint failed: t0.c0}}
 
+# 2020-06-29 forum bug report.
+# https://sqlite.org/forum/forumpost/73b9a8ccfb
+#
+do_execsql_test gencol1-20.1 {
+  CREATE TEMPORARY TABLE tab (
+    prim DATE PRIMARY KEY,
+    a INTEGER,
+    comp INTEGER AS (a),
+    b INTEGER,
+    x INTEGER
+  );
+  -- Add some data
+  INSERT INTO tab (prim, a, b) VALUES ('2001-01-01', 0, 0);
+  -- Check that each column is 0 like I expect
+  SELECT * FROM tab;
+} {2001-01-01 0 0 0 {}}
+do_execsql_test gencol1-20.2 {
+  -- Do an UPSERT on the b column
+  INSERT INTO tab (prim, b)
+  VALUES ('2001-01-01',5)
+      ON CONFLICT(prim) DO UPDATE SET  b=excluded.b;
+  -- Now b is NULL rather than 5
+  SELECT * FROM tab;
+} {2001-01-01 0 0 5 {}}
+
+
 finish_test

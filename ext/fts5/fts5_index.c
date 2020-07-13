@@ -2321,11 +2321,11 @@ static void fts5LeafSeek(
   }
 
  search_success:
-  pIter->iLeafOffset = iOff + nNew;
-  if( pIter->iLeafOffset>n || nNew<1 ){
+  if( (i64)iOff+nNew>n || nNew<1 ){
     p->rc = FTS5_CORRUPT;
     return;
   }
+  pIter->iLeafOffset = iOff + nNew;
   pIter->iTermLeafOffset = pIter->iLeafOffset;
   pIter->iTermLeafPgno = pIter->iLeafPgno;
 

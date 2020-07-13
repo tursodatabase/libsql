@@ -1565,8 +1565,9 @@ static int osSetPosixAdvisoryLock(
   struct flock *pLock,  /* The description of the lock */
   unixFile *pFile       /* Structure holding timeout value */
 ){
+  int tm = pFile->iBusyTimeout;
   int rc = osFcntl(h,F_SETLK,pLock);
-  while( rc<0 && pFile->iBusyTimeout>0 ){
+  while( rc<0 && tm>0 ){
     /* On systems that support some kind of blocking file lock with a timeout,
     ** make appropriate changes here to invoke that blocking file lock.  On
     ** generic posix, however, there is no such API.  So we simply try the
@@ -1574,7 +1575,7 @@ static int osSetPosixAdvisoryLock(
     ** the lock is obtained. */
     usleep(1000);
     rc = osFcntl(h,F_SETLK,pLock);
-    pFile->iBusyTimeout--;
+    tm--;
   }
   return rc;
 }
@@ -3339,7 +3340,7 @@ static int unixRead(
   assert( offset>=0 );
   assert( amt>0 );
 
-  /* If this is a database file (not a journal, master-journal or temp
+  /* If this is a database file (not a journal, super-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
   assert( pFile->pPreallocatedUnused==0
@@ -3452,7 +3453,7 @@ static int unixWrite(
   assert( id );
   assert( amt>0 );
 
-  /* If this is a database file (not a journal, master-journal or temp
+  /* If this is a database file (not a journal, super-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
   assert( pFile->pPreallocatedUnused==0
@@ -4316,13 +4317,20 @@ static int unixShmSystemLock(
   assert( n>=1 && n<=SQLITE_SHM_NLOCK );
 
   if( pShmNode->hShm>=0 ){
+    int res;
     /* Initialize the locking parameters */
     f.l_type = lockType;
     f.l_whence = SEEK_SET;
     f.l_start = ofst;
     f.l_len = n;
-    rc = osSetPosixAdvisoryLock(pShmNode->hShm, &f, pFile);
-    rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
+    res = osSetPosixAdvisoryLock(pShmNode->hShm, &f, pFile);
+    if( res==-1 ){
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+      rc = (pFile->iBusyTimeout ? SQLITE_BUSY_TIMEOUT : SQLITE_BUSY);
+#else
+      rc = SQLITE_BUSY;
+#endif
+    }
   }
 
   /* Update the global lock state and do debug tracing */
@@ -4819,22 +4827,26 @@ static int unixShmLock(
   assert( pShmNode->hShm>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->hShm<0 || pDbFd->pInode->bProcessLock==0 );
 
-  /* Check that, if this to be a blocking lock, that locks have been
-  ** obtained in the following order.
+  /* Check that, if this to be a blocking lock, no locks that occur later
+  ** in the following list than the lock being obtained are already held:
   **
   **   1. Checkpointer lock (ofst==1).
-  **   2. Recover lock (ofst==2).
+  **   2. Write lock (ofst==0).
   **   3. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
-  **   4. Write lock (ofst==0).
   **
   ** In other words, if this is a blocking lock, none of the locks that
   ** occur later in the above list than the lock being obtained may be
-  ** held.  */
+  ** held.  
+  **
+  ** It is not permitted to block on the RECOVER lock.
+  */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  assert( pDbFd->iBusyTimeout==0 
-       || (flags & SQLITE_SHM_UNLOCK) || ofst==0
-       || ((p->exclMask|p->sharedMask)&~((1<<ofst)-2))==0
-  );
+  assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
+         (ofst!=2)                                   /* not RECOVER */
+      && (ofst!=1 || (p->exclMask|p->sharedMask)==0)
+      && (ofst!=0 || (p->exclMask|p->sharedMask)<3)
+      && (ofst<3  || (p->exclMask|p->sharedMask)<(1<<ofst))
+  ));
 #endif
 
   mask = (1<<(ofst+n)) - (1<<ofst);
@@ -5761,7 +5773,7 @@ static int proxyTransformUnixFile(unixFile*, const char*);
 
 /*
 ** Search for an unused file descriptor that was opened on the database 
-** file (not a journal or master-journal file) identified by pathname
+** file (not a journal or super-journal file) identified by pathname
 ** zPath with SQLITE_OPEN_XXX flags matching those passed as the second
 ** argument to this function.
 **
@@ -5895,7 +5907,7 @@ static int findCreateFileMode(
     while( zPath[nDb]!='-' ){
       /* In normal operation, the journal file name will always contain
       ** a '-' character.  However in 8+3 filename mode, or if a corrupt
-      ** rollback journal specifies a master journal with a goofy name, then
+      ** rollback journal specifies a super-journal with a goofy name, then
       ** the '-' might be missing. */
       if( nDb==0 || zPath[nDb]=='.' ) return SQLITE_OK;
       nDb--;
@@ -5968,12 +5980,12 @@ static int unixOpen(
   struct statfs fsInfo;
 #endif
 
-  /* If creating a master or main-file journal, this function will open
+  /* If creating a super- or main-file journal, this function will open
   ** a file-descriptor on the directory too. The first time unixSync()
   ** is called the directory file descriptor will be fsync()ed and close()d.
   */
   int isNewJrnl = (isCreate && (
-        eType==SQLITE_OPEN_MASTER_JOURNAL 
+        eType==SQLITE_OPEN_SUPER_JOURNAL 
      || eType==SQLITE_OPEN_MAIN_JOURNAL 
      || eType==SQLITE_OPEN_WAL
   ));
@@ -5996,17 +6008,17 @@ static int unixOpen(
   assert(isExclusive==0 || isCreate);
   assert(isDelete==0 || isCreate);
 
-  /* The main DB, main journal, WAL file and master journal are never 
+  /* The main DB, main journal, WAL file and super-journal are never 
   ** automatically deleted. Nor are they ever temporary files.  */
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
-  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_SUPER_JOURNAL );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
        || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
-       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_SUPER_JOURNAL 
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
@@ -6199,7 +6211,7 @@ static int unixOpen(
 #endif
   
   assert( zPath==0 || zPath[0]=='/' 
-      || eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL 
+      || eType==SQLITE_OPEN_SUPER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL 
   );
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 
