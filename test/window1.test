@@ -1947,4 +1947,58 @@ do_execsql_test 63.3 {
   FROM t1;
 } {{}}
 
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 64.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'abcd');
+  INSERT INTO t1 VALUES(2, 'BCDE');
+  INSERT INTO t1 VALUES(3, 'cdef');
+  INSERT INTO t1 VALUES(4, 'DEFG');
+}
+
+do_execsql_test 64.2 {
+  SELECT rowid, max(b COLLATE nocase)||'' 
+  FROM t1 
+  GROUP BY rowid
+  ORDER BY max(b COLLATE nocase)||'';
+} {1 abcd 2 BCDE 3 cdef 4 DEFG}
+
+do_execsql_test 64.3 {
+  SELECT count() OVER (), rowid, max(b COLLATE nocase)||'' 
+  FROM t1 
+  GROUP BY rowid
+  ORDER BY max(b COLLATE nocase)||'';
+} {4 1 abcd   4 2 BCDE   4 3 cdef   4 4 DEFG}
+
+do_execsql_test 64.4 {
+  SELECT count() OVER (), rowid, max(b COLLATE nocase)
+  FROM t1 
+  GROUP BY rowid
+  ORDER BY max(b COLLATE nocase);
+} {4 1 abcd   4 2 BCDE   4 3 cdef   4 4 DEFG}
+
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 65.1 {
+  CREATE TABLE t1(c1);
+  INSERT INTO t1 VALUES('abcd');
+}
+do_execsql_test 65.2 {
+  SELECT max(c1 COLLATE nocase) IN (SELECT 'aBCd') FROM t1;
+} {1}
+
+do_execsql_test 65.3 {
+  SELECT 
+     count() OVER (), 
+     group_concat(c1 COLLATE nocase) IN (SELECT 'aBCd') FROM t1;
+} {1 1}
+
+do_execsql_test 65.4 {
+  SELECT COUNT() OVER () LIKE lead(102030) OVER(
+      ORDER BY sum('abcdef' COLLATE nocase) IN (SELECT 54321) 
+  )
+  FROM t1;
+} {{}}
+
 finish_test
