@@ -4427,7 +4427,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             }
           }
         }
-      }else if( pWInfo->nOBSat==1
+      }else if( nLoop
+            && pWInfo->nOBSat==1
             && (pWInfo->wctrlFlags & (WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX))!=0
             ){
         pFrom->aLoop[nLoop-1]->wsFlags |= WHERE_ONEROW;
