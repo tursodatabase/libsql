@@ -59,8 +59,12 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if the WHERE clause returns rows in ORDER BY order.
-** Return FALSE if the output needs to be sorted.
+** Return the number of ORDER BY terms that are satisfied by the
+** WHERE clause.  A return of 0 means that the output must be
+** completely sorted.  A return equal to the number of ORDER BY
+** terms means that no sorting is needed at all.  A return that
+** is positive but less than the number of ORDER BY terms means that
+** block sorting is required.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
   return pWInfo->nOBSat;
