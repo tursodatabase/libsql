@@ -3778,7 +3778,8 @@ static i8 wherePathSatisfiesOrderBy(
         /* IN terms are only valid for sorting in the ORDER BY LIMIT 
         ** optimization, and then only if they are actually used
         ** by the query plan */
-        assert( wctrlFlags & WHERE_ORDERBY_LIMIT );
+        assert( wctrlFlags & 
+               (WHERE_ORDERBY_LIMIT|WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX) );
         for(j=0; j<pLoop->nLTerm && pTerm!=pLoop->aLTerm[j]; j++){}
         if( j>=pLoop->nLTerm ) continue;
       }
