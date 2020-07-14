@@ -14,6 +14,15 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix upfrom3
 
+# Test plan:
+#
+#   1.*: Test UPDATE ... FROM statements that modify IPK fields. And that
+#        modify "INTEGER PRIMARY KEY" fields on WITHOUT ROWID tables.
+#
+#   2.*: Test UPDATE ... FROM statements that modify PK fields of WITHOUT
+#        ROWID tables.
+#
+
 foreach {tn wo} {
   1 ""
   2 "WITHOUT ROWID"
