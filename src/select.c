@@ -103,6 +103,7 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->eDest = (u8)eDest;
   pDest->iSDParm = iParm;
+  pDest->iSDParm2 = 0;
   pDest->zAffSdst = 0;
   pDest->iSdst = 0;
   pDest->nSdst = 0;
@@ -975,7 +976,8 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Coroutine );
       testcase( eDest==SRT_Output );
       assert( eDest==SRT_Set || eDest==SRT_Mem 
-           || eDest==SRT_Coroutine || eDest==SRT_Output );
+           || eDest==SRT_Coroutine || eDest==SRT_Output
+           || eDest==SRT_Upfrom );
     }
     sRowLoadInfo.regResult = regResult;
     sRowLoadInfo.ecelFlags = ecelFlags;
@@ -1124,6 +1126,23 @@ static void selectInnerLoop(
       break;
     }
 
+    case SRT_Upfrom: {
+      if( pSort ){
+        pushOntoSorter(
+            pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
+      }else{
+        int i2 = pDest->iSDParm2;
+        int r1 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord,regResult+(i2<0),nResultCol-(i2<0),r1);
+        if( i2<0 ){
+          sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regResult);
+        }else{
+          sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, i2);
+        }
+      }
+      break;
+    }
+
 #ifndef SQLITE_OMIT_SUBQUERY
     /* If we are creating a set for an "expr IN (SELECT ...)" construct,
     ** then there should be a single item on the stack.  Write this
@@ -1147,6 +1166,7 @@ static void selectInnerLoop(
       }
       break;
     }
+
 
     /* If any row exist in the result set, record that fact and abort.
     */
@@ -1555,6 +1575,17 @@ static void generateSortTail(
       break;
     }
 #endif
+    case SRT_Upfrom: {
+      int i2 = pDest->iSDParm2;
+      int r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord,regRow+(i2<0),nColumn-(i2<0),r1);
+      if( i2<0 ){
+        sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regRow);
+      }else{
+        sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regRow, i2);
+      }
+      break;
+    }
     default: {
       assert( eDest==SRT_Output || eDest==SRT_Coroutine ); 
       testcase( eDest==SRT_Output );
@@ -4969,8 +5000,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab;
     assert( pFrom->fg.isRecursive==0 || pFrom->pTab!=0 );
-    if( pFrom->fg.isRecursive ) continue;
-    assert( pFrom->pTab==0 );
+    if( pFrom->pTab ) continue;
+    assert( pFrom->fg.isRecursive==0 );
 #ifndef SQLITE_OMIT_CTE
     if( withExpand(pWalker, pFrom) ) return WRC_Abort;
     if( pFrom->pTab ) {} else
