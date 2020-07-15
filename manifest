@@ -1,6 +1,6 @@
 B 5ee3c27e20d12a126fb773b428bb864102b949a5b26a8d5c523753dcedf4be10
-C Fix\sproblems\sthat\scould\soccur\sif\sa\stable\swith\sthe\ssame\sname\sas\sthe\stable\sbeing\supdated\sappeared\sin\sthe\sFROM\sclause\sof\san\sUPDATE\sstatement.
-D 2020-07-15T18:30:01.625
+C Add\stests\sfor\sUPDATE...FROM\sand\sforeign\skeys.
+D 2020-07-15T19:38:49.186
 F src/alter.c c63fb72ae0ca39175996fcf7008d44022a7ea99e03c0af3e1d968505ceff7120
 F src/attach.c 0b11e00c166b622c84ec176773b1d691c61ad07d247809e3e1635d4e99e71d30
 F src/btree.c b8b0e80c8bbe4e1fb35ae559e9e9aa009799c20cf12f159ebb503b05be1fab9b
@@ -18,8 +18,8 @@ F test/fuzzdata8.db 281cbc8166a8bc5843f4a913e803ba76e27905eb02fb9d5cfd581c2429f2
 F test/triggerupfrom.test d25961fa70a99b6736193da7b49a36d8c1d28d56188f0be6406d4366315cd6e4
 F test/upfrom1.tcl df984cb88010af1555812af55e9db44c4df50677395b45d1f30b69b1b6c07b73
 F test/upfrom1.test 2ba1ed45b4a2161fc79f234b9ce4300b0d3deba545e3f23b938fb3ebdbf8758d
-F test/upfrom3.test 3890e1fc372aaf70ca88ec2650f4574b169368a5a63770245a45a28f1524b1b9
-P 5176cb7a6a4e8cfa1973aaae46fcd7d39baedb70ae20bfacc82d62ca39fb0aa3
-R 5994321bbabb2542296f6db00df19961
+F test/upfrom3.test f47fe3249927af1f912610840597948817f89d8d9d903f4b0a0857b062492758
+P 13224cbd75990615088f3e30ccba05d31b3099fae4300c9ab8f7663bc5f0eb6f
+R 951f7375cdb1b317e0c85e964bd78974
 U dan
-Z 41a21fcf4a769b492a5346939daeca22
+Z 51ee7aa4a4964c7d09979adeefa9f96b

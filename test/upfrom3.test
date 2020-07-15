@@ -25,6 +25,8 @@ set testprefix upfrom3
 #   3.*: Test that UPDATE ... FROM statements are not confused if there
 #        are multiple tables of the same name in attached databases.
 #
+#   4.*: Tests for UPDATE ... FROM statements and foreign keys.
+#
 
 foreach {tn wo} {
   1 ""
@@ -206,6 +208,53 @@ foreach {tn wo} {
     do_execsql_test 3.$tn.5 {
       SELECT * FROM g1;
     } {1 1 101}
+  }]
+}
+
+#-------------------------------------------------------------------------
+reset_db
+foreach {tn wo} {
+  1 ""
+  2 "WITHOUT ROWID"
+} {
+  reset_db
+  forcedelete test.db2
+  eval [string map [list %WO% $wo %TN% $tn] {
+
+    do_execsql_test 4.$tn.1 {
+      CREATE TABLE p1(a INTEGER PRIMARY KEY, b) %WO%;
+      CREATE TABLE c1(x PRIMARY KEY, y REFERENCES p1 ON UPDATE CASCADE) %WO%;
+      PRAGMA foreign_keys = 1;
+
+      INSERT INTO p1 VALUES(1, 'one');
+      INSERT INTO p1 VALUES(11, 'eleven');
+      INSERT INTO p1 VALUES(111, 'eleventyone');
+
+      INSERT INTO c1 VALUES('a', 1);
+      INSERT INTO c1 VALUES('b', 11);
+      INSERT INTO c1 VALUES('c', 111);
+    }
+
+    do_execsql_test 4.$tn.2 {
+      CREATE TABLE map(f, t);
+      INSERT INTO map VALUES('a', 111);
+      INSERT INTO map VALUES('c', 112);
+    }
+
+    do_catchsql_test 4.$tn.3 {
+      UPDATE c1 SET y=t FROM map WHERE x=f;
+    } {1 {FOREIGN KEY constraint failed}}
+
+    do_execsql_test 4.$tn.4 {
+      INSERT INTO map VALUES('eleven', 12);
+      INSERT INTO map VALUES('eleventyone', 112);
+      UPDATE p1 SET a=t FROM map WHERE b=f;
+    }
+
+    do_execsql_test 4.$tn.5 {
+      SELECT * FROM c1
+    } {a 1  b 12  c 112}
+
   }]
 }
 
