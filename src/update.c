@@ -237,8 +237,8 @@ static void updatePopulateEphTable(
       );
     }
   }
-  pSelect = sqlite3SelectNew(
-      pParse, pList, pSrc, pWhere2, pGroupBy, 0, pOrderBy2, 0, pLimit2
+  pSelect = sqlite3SelectNew(pParse, pList, 
+      pSrc, pWhere2, pGroupBy, 0, pOrderBy2, SF_IncludeHidden, pLimit2
   );
   sqlite3SelectDestInit(&dest, eDest, iEph);
   dest.iSDParm2 = (pPk ? pPk->nKeyCol : -1);
@@ -249,9 +249,11 @@ static void updatePopulateEphTable(
 /*
 ** Process an UPDATE statement.
 **
-**   UPDATE OR IGNORE table_wxyz SET a=b, c=d WHERE e<5 AND f NOT NULL;
-**          \_______/ \________/     \______/       \________________/
-*            onError   pTabList      pChanges             pWhere
+**   UPDATE OR IGNORE tbl SET a=b, c=d FROM tbl2... WHERE e<5 AND f NOT NULL;
+**          \_______/ \_/     \______/      \_____/       \________________/
+**           onError   |      pChanges         |                pWhere
+**                     \_______________________/
+**                               pTabList
 */
 void sqlite3Update(
   Parse *pParse,         /* The parser context */
@@ -285,7 +287,7 @@ void sqlite3Update(
   u8 chngRowid;          /* Rowid changed in a normal table */
   u8 chngKey;            /* Either chngPk or chngRowid */
   Expr *pRowidExpr = 0;  /* Expression defining the new record number */
-  int iRowidExpr = -1;
+  int iRowidExpr = -1;   /* Index of "rowid=" (or IPK) assignment in pChanges */
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
@@ -309,7 +311,7 @@ void sqlite3Update(
   i16 nPk = 0;           /* Number of components of the PRIMARY KEY */
   int bReplace = 0;      /* True if REPLACE conflict resolution might happen */
   int bFinishSeek = 1;   /* The OP_FinishSeek opcode is needed */
-  int nChangeFrom = 0;
+  int nChangeFrom = 0;   /* If there is a FROM, pChanges->nExpr, else 0 */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -348,6 +350,11 @@ void sqlite3Update(
 # undef isView
 # define isView 0
 #endif
+
+  /* If there was a FROM clause, set nChangeFrom to the number of expressions
+  ** in the change-list. Otherwise, set it to 0. There cannot be a FROM
+  ** clause if this function is being called to generate code for part of
+  ** an UPSERT statement.  */
   nChangeFrom = (pTabList->nSrc>1) ? pChanges->nExpr : 0;
   assert( nChangeFrom==0 || pUpsert==0 );
 

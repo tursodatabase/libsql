@@ -115,6 +115,60 @@ do_execsql_test 3.0 {
   SELECT * FROM t1;
 } {2 TWO}
 
+#-------------------------------------------------------------------------
+# Test that INSTEAD OF UPDATE triggers on views work with UPDATE...FROM
+# statements. Including, if the library is built with ENABLE_HIDDEN_COLUMNS, 
+# that they work correctly on views with hidden columns.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(k, a, b);
+  INSERT INTO t1 VALUES('a', 1, 'one');
+  INSERT INTO t1 VALUES('b', 2, 'two');
+  INSERT INTO t1 VALUES('c', 3, 'three');
+  INSERT INTO t1 VALUES('d', 4, 'four');
+
+  CREATE TABLE log(x);
+  CREATE VIEW v1 AS SELECT k, a, b AS __hidden__b FROM t1;
+  CREATE TRIGGER tr1 INSTEAD OF UPDATE ON v1 BEGIN
+    INSERT INTO log VALUES(
+      '('||old.a||','||old.__hidden__b||')->('||new.a||','||new.__hidden__b||')'
+    );
+  END;
+}
+
+ifcapable hiddencolumns {
+  do_execsql_test 4.1-hc-enabled {
+    SELECT * FROM v1
+  } {a 1 b 2 c 3 d 4}
+} else {
+  do_execsql_test 4.1-hc-disabled {
+    SELECT * FROM v1
+  } {a 1 one b 2 two c 3 three d 4 four}
+}
+
+do_execsql_test 4.2 {
+  UPDATE v1 SET a='xyz' WHERE k IN ('a', 'c');
+  SELECT * FROM log;
+  DELETE FROM log;
+} {
+  (1,one)->(xyz,one)
+  (3,three)->(xyz,three)
+}
+
+do_execsql_test 4.3 {
+  CREATE TABLE map(k, v);
+  INSERT INTO map VALUES('b', 'twelve');
+  INSERT INTO map VALUES('d', 'fourteen');
+  UPDATE v1 SET a=map.v FROM map WHERE v1.k=map.k;
+  SELECT * FROM log;
+  DELETE FROM log;
+} {
+  (2,two)->(twelve,two)
+  (4,four)->(fourteen,four)
+}
+
+
 
 finish_test
 
