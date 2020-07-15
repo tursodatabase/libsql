@@ -131,13 +131,35 @@ static int indexWhereClauseMightChange(
 }
 
 /*
-** This function generates VM code to run the query:
+** Allocate and return a pointer to an expression of type TK_ROW with
+** Expr.iColumn set to value (iCol+1). The resolver will modify the
+** expression to be a TK_COLUMN reading column iCol of the first
+** table in the source-list (pSrc->a[0]).
+*/
+static Expr *exprRowColumn(Parse *pParse, int iCol){
+  Expr *pRet = sqlite3PExpr(pParse, TK_ROW, 0, 0);
+  if( pRet ) pRet->iColumn = iCol+1;
+  return pRet;
+}
+
+/*
+** Assuming both the pLimit and pOrderBy parameters are NULL, this function
+** generates VM code to run the query:
 **
-**   SELECT <other-columns>, pChanges FROM pTabList WHERE pWhere
+**   SELECT <other-columns>, pChanges FROM pTabList WHERE pWhere 
 **
 ** and write the results to the ephemeral table already opened as cursor 
 ** iEph. None of pChanges, pTabList or pWhere are modified or consumed by 
 ** this function, they must be deleted by the caller.
+**
+** Or, if pLimit and pOrderBy are not NULL, and pTab is not a view:
+**
+**   SELECT <other-columns>, pChanges FROM pTabList 
+**   WHERE pWhere
+**   GROUP BY <other-columns> 
+**   ORDER BY pOrderBy LIMIT pLimit
+**
+** If pTab is a view, the GROUP BY clause is omitted.
 **
 ** Exactly how results are written to table iEph, and exactly what
 ** the <other-columns> in the query above are is determined by the type
@@ -158,7 +180,7 @@ static int indexWhereClauseMightChange(
 ** rowid value in <other-columns> is used as the integer key, and the 
 ** remaining fields make up the table record. 
 */
-static void updatePopulateEphTable(
+static void updateFromSelect(
   Parse *pParse,                  /* Parse context */
   int iEph,                       /* Cursor for open eph. table */
   Index *pPk,                     /* PK if table 0 is WITHOUT ROWID */
@@ -172,7 +194,7 @@ static void updatePopulateEphTable(
   SelectDest dest;
   Select *pSelect = 0;
   ExprList *pList = 0;
-  ExprList *pGroupBy = 0;
+  ExprList *pGrp = 0;
   sqlite3 *db = pParse->db;
   Table *pTab = pTabList->a[0].pTab;
   SrcList *pSrc;
@@ -199,34 +221,23 @@ static void updatePopulateEphTable(
   }
   if( pPk ){
     for(i=0; i<pPk->nKeyCol; i++){
-      Expr *pNew = sqlite3PExpr(pParse, TK_DOT,
-          sqlite3Expr(db, TK_ID, pTab->zName),
-          sqlite3Expr(db, TK_ID, pTab->aCol[pPk->aiColumn[i]].zName)
-      );
+      Expr *pNew = exprRowColumn(pParse, pPk->aiColumn[i]);
       if( pLimit ){
-        pGroupBy = sqlite3ExprListAppend(pParse, pGroupBy, 
-            sqlite3ExprDup(db, pNew, 0)
-        );
+        pGrp = sqlite3ExprListAppend(pParse, pGrp, sqlite3ExprDup(db, pNew, 0));
       }
       pList = sqlite3ExprListAppend(pParse, pList, pNew);
     }
     eDest = SRT_Upfrom;
   }else if( pTab->pSelect ){
-    pList = sqlite3ExprListAppend(pParse, pList, 
-        sqlite3PExpr(pParse, TK_DOT,
-          sqlite3Expr(db, TK_ID, pTab->zName),
-          sqlite3PExpr(pParse, TK_ASTERISK, 0, 0)
-    ));
+    for(i=0; i<pTab->nCol; i++){
+      pList = sqlite3ExprListAppend(pParse, pList, exprRowColumn(pParse, i));
+    }
     eDest = SRT_Table;
   }else{
     eDest = IsVirtual(pTab) ? SRT_Table : SRT_Upfrom;
-    pList = sqlite3ExprListAppend(pParse, pList, 
-        sqlite3PExpr(pParse, TK_ROW, 0, 0)
-    );
+    pList = sqlite3ExprListAppend(pParse, 0, sqlite3PExpr(pParse,TK_ROW,0,0));
     if( pLimit ){
-      pGroupBy = sqlite3ExprListAppend(pParse, pGroupBy, 
-          sqlite3PExpr(pParse, TK_ROW, 0, 0)
-      );
+      pGrp = sqlite3ExprListAppend(pParse, 0, sqlite3PExpr(pParse,TK_ROW,0,0));
     }
   }
   assert( pChanges || db->mallocFailed );
@@ -238,7 +249,7 @@ static void updatePopulateEphTable(
     }
   }
   pSelect = sqlite3SelectNew(pParse, pList, 
-      pSrc, pWhere2, pGroupBy, 0, pOrderBy2, SF_IncludeHidden, pLimit2
+      pSrc, pWhere2, pGrp, 0, pOrderBy2, SF_IncludeHidden, pLimit2
   );
   sqlite3SelectDestInit(&dest, eDest, iEph);
   dest.iSDParm2 = (pPk ? pPk->nKeyCol : -1);
@@ -652,7 +663,7 @@ void sqlite3Update(
         }
       }
       if( nChangeFrom ){
-        updatePopulateEphTable(
+        updateFromSelect(
             pParse, iEph, pPk, pChanges, pTabList, pWhere, pOrderBy, pLimit
         );
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -1169,31 +1180,26 @@ static void updateVirtualTable(
   regArg = pParse->nMem + 1;
   pParse->nMem += nArg;
   if( pSrc->nSrc>1 ){
-    ExprList *pList = 0;
+    Expr *pRow;
+    ExprList *pList;
     if( pRowid ){
-      pList = sqlite3ExprListAppend(pParse, pList, sqlite3ExprDup(db,pRowid,0));
+      pRow = sqlite3ExprDup(db, pRowid, 0);
     }else{
-      pList = sqlite3ExprListAppend(pParse, pList, 
-          sqlite3PExpr(pParse, TK_DOT,
-            sqlite3Expr(db, TK_ID, pTab->zName),
-            sqlite3Expr(db, TK_ID, "_rowid_")
-      ));
+      pRow = sqlite3PExpr(pParse, TK_ROW, 0, 0);
     }
+    pList = sqlite3ExprListAppend(pParse, 0, pRow);
+
     for(i=0; i<pTab->nCol; i++){
       if( aXRef[i]>=0 ){
         pList = sqlite3ExprListAppend(pParse, pList,
           sqlite3ExprDup(db, pChanges->a[aXRef[i]].pExpr, 0)
         );
       }else{
-        pList = sqlite3ExprListAppend(pParse, pList, 
-            sqlite3PExpr(pParse, TK_DOT,
-              sqlite3Expr(db, TK_ID, pTab->zName),
-              sqlite3Expr(db, TK_ID, pTab->aCol[i].zName)
-        ));
+        pList = sqlite3ExprListAppend(pParse, pList, exprRowColumn(pParse, i));
       }
     }
 
-    updatePopulateEphTable(pParse, ephemTab, 0, pList, pSrc, pWhere, 0, 0);
+    updateFromSelect(pParse, ephemTab, 0, pList, pSrc, pWhere, 0, 0);
     sqlite3ExprListDelete(db, pList);
     eOnePass = ONEPASS_OFF;
   }else{

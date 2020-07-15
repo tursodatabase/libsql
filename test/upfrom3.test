@@ -22,6 +22,9 @@ set testprefix upfrom3
 #   2.*: Test UPDATE ... FROM statements that modify PK fields of WITHOUT
 #        ROWID tables.
 #
+#   3.*: Test that UPDATE ... FROM statements are not confused if there
+#        are multiple tables of the same name in attached databases.
+#
 
 foreach {tn wo} {
   1 ""
@@ -169,6 +172,41 @@ do_execsql_test 2.1.4 {
   1 50 60
   2 60 50
   3 60 60
+}
+
+#-------------------------------------------------------------------------
+foreach {tn wo} {
+  1 ""
+  2 "WITHOUT ROWID"
+} {
+  reset_db
+  forcedelete test.db2
+  eval [string map [list %WO% $wo %TN% $tn] {
+    do_execsql_test 3.$tn.1 {
+      CREATE TABLE g1(a, b, c, PRIMARY KEY(a, b)) %WO%;
+      INSERT INTO g1 VALUES(1, 1, 1);
+
+      ATTACH 'test.db2' AS aux;
+      CREATE TABLE aux.g1(a, b, c, PRIMARY KEY(a, b)) %WO%;
+      INSERT INTO aux.g1 VALUES(10, 1, 10);
+      INSERT INTO aux.g1 VALUES(20, 2, 20);
+      INSERT INTO aux.g1 VALUES(30, 3, 30);
+    }
+
+    do_execsql_test 3.$tn.2 {
+      UPDATE aux.g1 SET c=101 FROM main.g1;
+    }
+    do_execsql_test 3.$tn.3 {
+      SELECT * FROM aux.g1;
+    } {10 1 101  20 2 101  30 3 101}
+
+    do_execsql_test 3.$tn.4 {
+      UPDATE g1 SET c=101 FROM g1;
+    }
+    do_execsql_test 3.$tn.5 {
+      SELECT * FROM g1;
+    } {1 1 101}
+  }]
 }
 
 finish_test
