@@ -59,8 +59,12 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if the WHERE clause returns rows in ORDER BY order.
-** Return FALSE if the output needs to be sorted.
+** Return the number of ORDER BY terms that are satisfied by the
+** WHERE clause.  A return of 0 means that the output must be
+** completely sorted.  A return equal to the number of ORDER BY
+** terms means that no sorting is needed at all.  A return that
+** is positive but less than the number of ORDER BY terms means that
+** block sorting is required.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
   return pWInfo->nOBSat;
@@ -3740,7 +3744,9 @@ static i8 wherePathSatisfiesOrderBy(
   orderDistinctMask = 0;
   ready = 0;
   eqOpMask = WO_EQ | WO_IS | WO_ISNULL;
-  if( wctrlFlags & WHERE_ORDERBY_LIMIT ) eqOpMask |= WO_IN;
+  if( wctrlFlags & (WHERE_ORDERBY_LIMIT|WHERE_ORDERBY_MAX|WHERE_ORDERBY_MIN) ){
+    eqOpMask |= WO_IN;
+  }
   for(iLoop=0; isOrderDistinct && obSat<obDone && iLoop<=nLoop; iLoop++){
     if( iLoop>0 ) ready |= pLoop->maskSelf;
     if( iLoop<nLoop ){
@@ -3776,7 +3782,8 @@ static i8 wherePathSatisfiesOrderBy(
         /* IN terms are only valid for sorting in the ORDER BY LIMIT 
         ** optimization, and then only if they are actually used
         ** by the query plan */
-        assert( wctrlFlags & WHERE_ORDERBY_LIMIT );
+        assert( wctrlFlags & 
+               (WHERE_ORDERBY_LIMIT|WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX) );
         for(j=0; j<pLoop->nLTerm && pTerm!=pLoop->aLTerm[j]; j++){}
         if( j>=pLoop->nLTerm ) continue;
       }
@@ -4424,6 +4431,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             }
           }
         }
+      }else if( nLoop
+            && pWInfo->nOBSat==1
+            && (pWInfo->wctrlFlags & (WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX))!=0
+            ){
+        pWInfo->bOrderedInnerLoop = 1;
       }
     }
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
