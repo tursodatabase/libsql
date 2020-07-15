@@ -4583,7 +4583,7 @@ SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
     }else{
       p1 = pNew;
       memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(struct SrcList_item));
-      sqlite3_free(p2);
+      sqlite3DbFree(pParse->db, p2);
     }
   }
   return p1;

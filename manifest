@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Support\sa\sFROM\sclause\sin\sUPDATE\sstatements,\sas\spostgres\sdoes.
-D 2020-07-15T20:01:07.316
+C Fix\sa\sproblem\sin\sUPDATE\sFROM\sin\swhich\sit\stries\sto\sfree\susing\ssqlite3_free()\ninstead\sof\ssqlite3DbFree().
+D 2020-07-15T21:53:53.438
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -19,7 +19,7 @@ F src/alter.c c63fb72ae0ca39175996fcf7008d44022a7ea99e03c0af3e1d968505ceff7120
 F src/attach.c 0b11e00c166b622c84ec176773b1d691c61ad07d247809e3e1635d4e99e71d30
 F src/btree.c b8b0e80c8bbe4e1fb35ae559e9e9aa009799c20cf12f159ebb503b05be1fab9b
 F src/btreeInt.h 19267385aa3bc00067d48e0e4ba83ae82dc08b0c15a3b3df20ea653cb462b5bf
-F src/build.c 0d340ea2a0ed8b6d2448c76b84e4d8b6e7ddfa1542b4e876aed989ce1eb248d9
+F src/build.c 45d912640987426442eb9eeec695c4dd45dd440b4cd27e8c13a42eed2fa87dcd
 F src/delete.c 410c771c25afc113c273d9efad6ab6881bda28c75a1838b9d2c52ba20d1dc704
 F src/expr.c 90039a043658ce78c3237ba5064c0934b7294120f6adc387f8d0fba306028154
 F src/parse.y ecb9abdd79ec86c8dca7cb126bbdcf322c0e282f87a6d0d734ea5f2c57ced516
@@ -65,8 +65,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 73d62f82f94347c60e026bc9cb859fec2d8b5f0c756df0c4941f11817234bff8 6c3668f9ed898337e664bec95865f15688a6bba43f095358dda5d08abef2bbaa
-R 951f7375cdb1b317e0c85e964bd78974
-T +closed 6c3668f9ed898337e664bec95865f15688a6bba43f095358dda5d08abef2bbaa
-U dan
-Z 1c7ac67ca1568b35fe2f7f0141f9c112
+P 7d7d5ecbd70cc39ab7a641ae26af0d3b69d5cb02e626b620102a6e19e7d8a577
+R 7404e046a56f99addced7ff0c78abfe5
+U drh
+Z ab6a5aacd52d5e72d7f3e431f8b5f6fb
