@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Small\sperformance\simprovement\sand\ssize\sreduction\sin\ssqlite3DbStrNDup().
-D 2020-07-16T14:19:57.140
+C Relax\spointless\srestrictions\son\sallowing\stables\sin\sthe\sFROM\sclause\sfrom\ncrossing\sover\sLEFT\sJOINs,\sas\slong\sas\sthe\stable\sbeing\smoved\sis\snot\sthe\nright\stable\sof\sthe\sLEFT\sJOIN.
+D 2020-07-16T18:55:58.182
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -32,7 +32,7 @@ F src/update.c 6a0484134635f167594d597a33d186051125d3ef41803a90b246cea6cf7f11f9
 F src/util.c c0bacc165f46169d2b720c37c8719165e383211698fad1de39dd16a8c161815a
 F src/vdbe.c 981666c49d33039df6dc9fccd40191575586ac4866255b2f57819cc5eb99f572
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
-F src/where.c 35cb38d45294118e484fd3a8011aaee8ebe96b28855a6913575a7fe3722d7af5
+F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
 F src/window.c 0dec178bfa541c757d15a2be78f34aea36393a0966600366810e5f8739ccf370
 F test/altertab.test b8b2104212e8ea87c75c3cbe3cb78ed7236a6c828ee2e59ed09d3dbe9812d002
 F test/busy2.test 415364312743992641f9bf679c84918327296067f85a5d00012b339dc35acbd7
@@ -53,7 +53,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 73d62f82f94347c60e026bc9cb859fec2d8b5f0c756df0c4941f11817234bff8
-R f09333fed65b681a6fbe59d83c290bad
+P 35cd87063d1933b87bc2176f957ecd758d7d167e9473fa615e33caec3be14783
+R 746d9475007e84ed494c6df8218f252e
 U drh
-Z 6c54c89f5e7635548f965099a9cbdebe
+Z e8621449358c788389d3aef6e8aa26e8
