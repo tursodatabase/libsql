@@ -1,0 +1,109 @@
+# 2020 July 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix concurrent8
+
+source $testdir/lock_common.tcl
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+do_multiclient_test tn {
+
+  do_test 1.$tn.0 {
+    sql1 {
+      CREATE TABLE t1(x, y);
+      PRAGMA journal_mode = wal;
+    }
+  } {wal}
+
+  do_test 1.$tn.1 {
+    sql1 {
+      BEGIN CONCURRENT;
+        INSERT INTO t1 VALUES(1, 1);
+    }
+  } {}
+
+  do_test 1.$tn.2 {
+    sql2 {
+      CREATE TABLE t2(a, b);
+    }
+  } {}
+
+  do_test 1.$tn.3 {
+    list [catch { sql1 { COMMIT } } msg] $msg
+  } {1 {database is locked}}
+
+  do_test 1.$tn.4 {
+    code1 { db errorcode }
+  } {517}  ;# SQLITE_BUSY_SNAPSHOT
+
+  do_test 1.$tn.5 {
+    sql1 {
+      ROLLBACK;
+      BEGIN CONCURRENT;
+        CREATE TABLE t3(a, b);
+      COMMIT;
+    }
+  } {}
+
+  do_test 1.$tn.6 {
+    set nPg [sql1 {PRAGMA page_count}]
+    sql1 "BEGIN CONCURRENT"
+    for {set i 0} {$i<250} {incr i} {
+      sql1 "CREATE TABLE z$i (a, b, c)"
+    }
+    sql1 "COMMIT"
+    set nPg2 [sql1 {PRAGMA page_count}]
+    expr $nPg2>$nPg
+  } {1}
+
+  do_test 1.$tn.7 {
+    sql2 { PRAGMA integrity_check }
+  } {ok}
+
+  do_test 1.$tn.8 {
+    sql1 {
+      BEGIN CONCURRENT;
+        CREATE TABLE t4(a, b);
+    }
+    sql2 {
+      INSERT INTO t1 VALUES(2, 2);
+    }
+    list [catch { sql1 COMMIT } msg] $msg
+  } {1 {database is locked}}
+  sql1 ROLLBACK
+
+  do_test 1.$tn.9 {
+    sql1 {
+      BEGIN CONCURRENT;
+        CREATE TEMP TABLE t5(a, b);
+        INSERT INTO t2 VALUES('x', 'x');
+    }
+    sql2 {
+      INSERT INTO t1 VALUES(3, 3);
+      CREATE TEMP TABLE t1(x, y);
+    }
+    sql1 COMMIT 
+  } {}
+}
+
+
+
+finish_test
+
+

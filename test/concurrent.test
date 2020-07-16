@@ -107,6 +107,7 @@ foreach {tn trans commit_ok} {
 #-------------------------------------------------------------------------
 # CONCURRENT transactions may not modify the db schema.
 #
+sqlite3 db2 test.db
 foreach {tn sql} {
   1 { CREATE TABLE xx(a, b) }
   2 { DROP TABLE t1 }
@@ -116,14 +117,22 @@ foreach {tn sql} {
   do_catchsql_test 1.7.0.$tn.1 "
     BEGIN CONCURRENT;
     $sql
-  " {1 {cannot modify database schema within CONCURRENT transaction}}
+  " {0 {}}
 
-  do_execsql_test 1.7.0.$tn.2 {
+  db2 eval {INSERT INTO t1 DEFAULT VALUES}
+
+  do_catchsql_test 1.7.0.$tn.2 {
+    COMMIT
+  } {1 {database is locked}}
+
+  do_execsql_test 1.7.0.$tn.2 ROLLBACK
+
+  do_execsql_test 1.7.0.$tn.3 {
     SELECT sql FROM sqlite_master;
     SELECT sql FROM sqlite_temp_master;
   } {{CREATE TABLE t1(a, b)}}
 
-  do_execsql_test 1.7.0.$tn.3 COMMIT
+  #do_execsql_test 1.7.0.$tn.3 COMMIT
 }
 
 # Except the temp db schema.

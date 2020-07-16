@@ -3239,11 +3239,10 @@ static int walUpgradeReadlock(Wal *pWal){
 */
 int sqlite3WalLockForCommit(
   Wal *pWal, 
-  PgHdr *pPage1, 
+  PgHdr *pPg1, 
   Bitvec *pAllRead, 
   Pgno *piConflict
 ){
-  Pager *pPager = pPage1->pPager;
   int rc = walWriteLock(pWal);
 
   /* If the database has been modified since this transaction was started,
@@ -3267,13 +3266,19 @@ int sqlite3WalLockForCommit(
       rc = SQLITE_BUSY_SNAPSHOT;
     }else if( memcmp(&pWal->hdr, (void*)&head, sizeof(WalIndexHdr))!=0 ){
       int iHash;
-      int iLastHash = walFramePage(head.mxFrame);
+      int iLast = walFramePage(head.mxFrame);
       u32 iFirst = pWal->hdr.mxFrame+1;     /* First wal frame to check */
       if( memcmp(pWal->hdr.aSalt, (u32*)head.aSalt, sizeof(u32)*2) ){
         assert( pWal->readLock==0 );
         iFirst = 1;
       }
-      for(iHash=walFramePage(iFirst); iHash<=iLastHash; iHash++){
+      if( pPg1==0 ){
+        /* If pPg1==0, then the current transaction modified the database
+        ** schema. This means it conflicts with all other transactions. */
+        *piConflict = 1;
+        rc = SQLITE_BUSY_SNAPSHOT;
+      }
+      for(iHash=walFramePage(iFirst); rc==SQLITE_OK && iHash<=iLast; iHash++){
         WalHashLoc sLoc;
 
         rc = walHashGet(pWal, iHash, &sLoc);
@@ -3289,7 +3294,7 @@ int sqlite3WalLockForCommit(
               /* Check that the schema cookie has not been modified. If
               ** it has not, the commit can proceed. */
               u8 aNew[4];
-              u8 *aOld = &((u8*)pPage1->pData)[40];
+              u8 *aOld = &((u8*)pPg1->pData)[40];
               int sz;
               i64 iOffset;
               sz = pWal->hdr.szPage;
@@ -3302,7 +3307,7 @@ int sqlite3WalLockForCommit(
             }else if( sqlite3BitvecTestNotNull(pAllRead, sLoc.aPgno[i]) ){
               *piConflict = sLoc.aPgno[i];
               rc = SQLITE_BUSY_SNAPSHOT;
-            }else if( (pPg = sqlite3PagerLookup(pPager, sLoc.aPgno[i])) ){
+            }else if( (pPg = sqlite3PagerLookup(pPg1->pPager, sLoc.aPgno[i])) ){
               /* Page aPgno[i], which is present in the pager cache, has been
               ** modified since the current CONCURRENT transaction was started.
               ** However it was not read by the current transaction, so is not
@@ -3326,7 +3331,6 @@ int sqlite3WalLockForCommit(
             }
           }
         }
-        if( rc!=SQLITE_OK ) break;
       }
     }
   }
