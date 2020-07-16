@@ -89,6 +89,52 @@ if {$tn<5} continue
   }
 }
 
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(x, y, z);
+}
+faultsim_save_and_close
+do_faultsim_test 2.1 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+      UPDATE t2 SET x=a FROM t1 WHERE c=z;
+    END;
+  }
+} -test {
+    faultsim_test_result {0 {}}
+}
+
+faultsim_restore_and_reopen
+do_execsql_test 2.2 {
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    UPDATE t1 SET a=x FROM t2 WHERE c=z;
+  END;
+
+  INSERT INTO t2 VALUES(1, 1, 1);
+  INSERT INTO t2 VALUES(2, 2, 2);
+  INSERT INTO t2 VALUES(3, 3, 3);
+} 
+faultsim_save_and_close
+
+do_faultsim_test 2.3 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    INSERT INTO t1 VALUES(NULL, NULL, 1), (NULL, NULL, 3);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  if {$testrc==0} {
+    set res [execsql { SELECT * FROM t1 }]
+    if {$res!="1 {} 1 3 {} 3"} {
+      error "unexpected result: $res"
+    }
+  }
+}
+
 
 finish_test
 
