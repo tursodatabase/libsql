@@ -387,7 +387,7 @@ end_of_vacuum:
   ** is closed by the DETACH.
   */
   db->autoCommit = 1;
-  assert( db->bConcurrent==0 );
+  assert( db->eConcurrent==0 );
 
   if( pDb ){
     sqlite3BtreeClose(pDb->pBt);

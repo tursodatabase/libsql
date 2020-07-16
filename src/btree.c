@@ -3624,7 +3624,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   BtShared *pBt = p->pBt;
   Pager *pPager = pBt->pPager;
   int rc = SQLITE_OK;
-  int bConcurrent = (p->db->bConcurrent && !ISAUTOVACUUM);
+  int bConcurrent = (p->db->eConcurrent && !ISAUTOVACUUM);
 
   sqlite3BtreeEnter(p);
   btreeIntegrity(p);
@@ -4446,7 +4446,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
       sqlite3PagerTruncateImage(pBt->pPager, pBt->nPage);
     }
 #endif
-    if( rc==SQLITE_OK && ISCONCURRENT ){
+    if( rc==SQLITE_OK && ISCONCURRENT && p->db->eConcurrent==CONCURRENT_OPEN ){
       rc = btreeFixUnlocked(p);
     }
     if( rc==SQLITE_OK ){
@@ -11010,7 +11010,10 @@ int sqlite3BtreeExclusiveLock(Btree *p){
   BtShared *pBt = p->pBt;
   assert( p->inTrans==TRANS_WRITE && pBt->pPage1 );
   sqlite3BtreeEnter(p);
-  rc = sqlite3PagerExclusiveLock(pBt->pPager, pBt->pPage1->pDbPage, &pgno);
+  rc = sqlite3PagerExclusiveLock(pBt->pPager, 
+    (p->db->eConcurrent==CONCURRENT_SCHEMA) ? 0 : pBt->pPage1->pDbPage,
+    &pgno
+  );
 #ifdef SQLITE_OMIT_CONCURRENT
   assert( pgno==0 );
 #else

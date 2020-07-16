@@ -3318,7 +3318,7 @@ case OP_Savepoint: {
       ** is committed. 
       */
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
-      assert( db->bConcurrent==0 || db->isTransactionSavepoint==0 );
+      assert( db->eConcurrent==0 || db->isTransactionSavepoint==0 );
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
         if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
           goto vdbe_return;
@@ -3426,7 +3426,7 @@ case OP_AutoCommit: {
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
   assert( desiredAutoCommit==0 || bConcurrent==0 );
-  assert( db->autoCommit==0 || db->bConcurrent==0 );
+  assert( db->autoCommit==0 || db->eConcurrent==CONCURRENT_NONE );
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
@@ -3435,9 +3435,9 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
-      db->bConcurrent = 0;
+      db->eConcurrent = CONCURRENT_NONE;
     }else if( desiredAutoCommit
-            && (db->nVdbeWrite>0 || (db->bConcurrent && db->nVdbeActive>1)) ){
+            && (db->nVdbeWrite>0 || (db->eConcurrent && db->nVdbeActive>1)) ){
       /* A transaction may only be committed if there are no other active
       ** writer VMs. If the transaction is CONCURRENT, then it may only be
       ** committed if there are no active VMs at all (readers or writers).
@@ -3463,7 +3463,8 @@ case OP_AutoCommit: {
       rc = SQLITE_BUSY;
       goto vdbe_return;
     }
-    db->bConcurrent = (u8)bConcurrent;
+    assert( bConcurrent==CONCURRENT_NONE || bConcurrent==CONCURRENT_OPEN );
+    db->eConcurrent = (u8)bConcurrent;
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
       rc = SQLITE_DONE;
@@ -3655,7 +3656,7 @@ case OP_SetCookie: {
   assert( pDb->pBt!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
 #ifndef SQLITE_OMIT_CONCURRENT
-  if( db->bConcurrent 
+  if( db->eConcurrent 
    && (pOp->p2==BTREE_USER_VERSION || pOp->p2==BTREE_APPLICATION_ID)
   ){
     rc = SQLITE_ERROR;
@@ -3669,7 +3670,6 @@ case OP_SetCookie: {
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, pOp->p3);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
     /* When the schema cookie changes, record the new cookie internally */
-    assert( pOp->p1==1 || db->bConcurrent==0 );
     pDb->pSchema->schema_cookie = pOp->p3;
     db->mDbFlags |= DBFLAG_SchemaChange;
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
@@ -3812,6 +3812,11 @@ case OP_OpenWrite:
   pX = pDb->pBt;
   assert( pX!=0 );
   if( pOp->opcode==OP_OpenWrite ){
+#ifndef SQLITE_OMIT_CONCURRENT
+    if( db->eConcurrent==CONCURRENT_OPEN && p2==1 && iDb!=1 ){
+      db->eConcurrent = CONCURRENT_SCHEMA;
+    }
+#endif
     assert( OPFLAG_FORDELETE==BTREE_FORDELETE );
     wrFlag = BTREE_WRCSR | (pOp->p5 & OPFLAG_FORDELETE);
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
@@ -7198,11 +7203,8 @@ case OP_CursorUnlock: {
 case OP_TableLock: {
   u8 isWriteLock = (u8)pOp->p3;
 #ifndef SQLITE_OMIT_CONCURRENT
-  if( isWriteLock && db->bConcurrent && pOp->p2==1 && pOp->p1!=1 ){
-    rc = SQLITE_ERROR;
-    sqlite3VdbeError(p, 
-        "cannot modify database schema within CONCURRENT transaction");
-    goto abort_due_to_error;
+  if( isWriteLock && db->eConcurrent && pOp->p2==1 && pOp->p1!=1 ){
+    db->eConcurrent = CONCURRENT_SCHEMA;
   }
 #endif
   if( isWriteLock || 0==(db->flags&SQLITE_ReadUncommit) ){

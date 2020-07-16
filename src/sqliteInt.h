@@ -1460,7 +1460,7 @@ struct sqlite3 {
   u16 dbOptFlags;               /* Flags to enable/disable optimizations */
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
-  u8 bConcurrent;               /* Current transaction is "CONCURRENT" */
+  u8 eConcurrent;               /* CONCURRENT_* value */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
   u8 bBenignMalloc;             /* Do not require OOMs if true */
@@ -1577,6 +1577,13 @@ struct sqlite3 {
   sqlite3_userauth auth;        /* User authentication information */
 #endif
 };
+
+/*
+** Candidate values for sqlite3.eConcurrent
+*/
+#define CONCURRENT_NONE   0
+#define CONCURRENT_OPEN   1
+#define CONCURRENT_SCHEMA 2
 
 /*
 ** A macro to discover the encoding of a database.

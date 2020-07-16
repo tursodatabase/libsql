@@ -3973,11 +3973,10 @@ static int walUpgradeReadlock(Wal *pWal){
 */
 int sqlite3WalLockForCommit(
   Wal *pWal, 
-  PgHdr *pPage1, 
+  PgHdr *pPg1, 
   Bitvec *pAllRead, 
   Pgno *piConflict
 ){
-  Pager *pPager = pPage1->pPager;
   int rc = walWriteLock(pWal);
 
   /* If the database has been modified since this transaction was started,
@@ -4004,7 +4003,13 @@ int sqlite3WalLockForCommit(
       int iHash;
       int nLoop = 1+(bWal2 && walidxGetFile(&head)!=walidxGetFile(&pWal->hdr));
       int iLoop;
-      
+
+      if( pPg1==0 ){
+        /* If pPg1==0, then the current transaction modified the database
+        ** schema. This means it conflicts with all other transactions. */
+        *piConflict = 1;
+        rc = SQLITE_BUSY_SNAPSHOT;
+      }
 
       assert( nLoop==1 || nLoop==2 );
       for(iLoop=0; rc==SQLITE_OK && iLoop<nLoop; iLoop++){
@@ -4057,7 +4062,7 @@ int sqlite3WalLockForCommit(
                 /* Check that the schema cookie has not been modified. If
                 ** it has not, the commit can proceed. */
                 u8 aNew[4];
-                u8 *aOld = &((u8*)pPage1->pData)[40];
+                u8 *aOld = &((u8*)pPg1->pData)[40];
                 int sz;
                 i64 iOff;
                 u32 iFrame = sLoc.iZero + i;
@@ -4075,7 +4080,7 @@ int sqlite3WalLockForCommit(
               }else if( sqlite3BitvecTestNotNull(pAllRead, sLoc.aPgno[i]) ){
                 *piConflict = sLoc.aPgno[i];
                 rc = SQLITE_BUSY_SNAPSHOT;
-              }else if( (pPg = sqlite3PagerLookup(pPager, sLoc.aPgno[i])) ){
+              }else if( (pPg = sqlite3PagerLookup(pPg1->pPager, sLoc.aPgno[i])) ){
                 /* Page aPgno[i], which is present in the pager cache, has been
                 ** modified since the current CONCURRENT transaction was
                 ** started.  However it was not read by the current
