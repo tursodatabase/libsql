@@ -810,15 +810,14 @@ void sqlite3Update(
             }
             sqlite3VdbeAddOp4Int(
                 v, OP_NotFound, iDataCur, labelContinue, iPk, nPk
-            );
+            ); VdbeCoverage(v);
           }else{
             sqlite3VdbeAddOp2(v, OP_Rowid, iEph, regOldRowid);
             sqlite3VdbeAddOp3(
                 v, OP_NotExists, iDataCur, labelContinue, regOldRowid
-            );
+            ); VdbeCoverage(v);
           }
         }
-        VdbeCoverage(v);
       }else{
         sqlite3VdbeAddOp2(v, OP_RowData, iEph, regKey);
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey,0);
