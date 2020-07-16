@@ -512,8 +512,6 @@ TriggerStep *sqlite3TriggerUpdateStep(
       pTriggerStep->pFrom = sqlite3SrcListDup(db, pFrom, EXPRDUP_REDUCE);
     }
     pTriggerStep->orconf = orconf;
-  }else{
-    sqlite3SrcListDelete(db, pFrom);
   }
   sqlite3ExprListDelete(db, pEList);
   sqlite3ExprDelete(db, pWhere);
