@@ -103,6 +103,13 @@ execsql_test 2.2 {
   SELECT * FROM t5 ORDER BY a;
 }
 
+errorsql_test 2.3.1 {
+  UPDATE t5 SET b=1 FROM t5;
+}
+errorsql_test 2.3.2 {
+  UPDATE t5 AS apples SET b=1 FROM t5 AS apples;
+}
+
 
 finish_test
 

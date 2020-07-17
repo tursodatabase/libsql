@@ -154,4 +154,14 @@ do_execsql_test 2.2 {
   SELECT * FROM t5 ORDER BY a;
 } {1 i I   2 ii {}   3 iii II   4 four FOUR}
 
+# PG says ERROR:  table name "t5" specified more than once
+do_test 2.3.1 { catch { execsql {
+  UPDATE t5 SET b=1 FROM t5;
+} } } 1
+
+# PG says ERROR:  table name "apples" specified more than once
+do_test 2.3.2 { catch { execsql {
+  UPDATE t5 AS apples SET b=1 FROM t5 AS apples;
+} } } 1
+
 finish_test

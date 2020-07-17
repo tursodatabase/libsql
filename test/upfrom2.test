@@ -23,6 +23,9 @@ set testprefix upfrom2
 #
 #   2.*: Test adding ORDER BY and LIMIT clauses with UPDATE FROM statements.
 #
+#   5.*: Test that specifying the target table name or alias in the FROM
+#        clause of an UPDATE statement is an error.
+#
 
 foreach {tn wo} {
   1 ""
@@ -346,5 +349,23 @@ foreach {tn sql} {
   } {2 2 2   5 5 5   10 1 1  30 3 3  40 4 4}
 }
 
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE TABLE x2(a, b, c);
+}
+
+foreach {tn update nm} {
+  1 "UPDATE x1 SET a=5 FROM x1" x1
+  2 "UPDATE x1 AS grapes SET a=5 FROM x1 AS grapes" grapes
+  3 "UPDATE x1 SET a=5 FROM x2, x1" x1
+  4 "UPDATE x1 AS grapes SET a=5 FROM x2, x1 AS grapes" grapes
+} {
+  do_catchsql_test 5.$tn $update \
+    "1 {target object/alias may not appear in FROM clause: $nm}"
+}
+
+
 finish_test
+
 

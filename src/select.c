@@ -5823,6 +5823,24 @@ int sqlite3Select(
   }
 #endif
 
+  /* If the SF_UpdateFrom flag is set, then this function is being called
+  ** as part of populating the temp table for an UPDATE...FROM statement.
+  ** In this case, it is an error if the target object (pSrc->a[0]) name 
+  ** or alias is duplicated within FROM clause (pSrc->a[1..n]).  */
+  if( p->selFlags & SF_UpdateFrom ){
+    struct SrcList_item *p0 = &p->pSrc->a[0];
+    for(i=1; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *p1 = &p->pSrc->a[i];
+      if( p0->pTab==p1->pTab && 0==sqlite3_stricmp(p0->zAlias, p1->zAlias) ){
+        sqlite3ErrorMsg(pParse, 
+            "target object/alias may not appear in FROM clause: %s", 
+            p0->zAlias ? p0->zAlias : p0->pTab->zName
+        );
+        goto select_end;
+      }
+    }
+  }
+
   if( pDest->eDest==SRT_Output ){
     generateColumnNames(pParse, p);
   }

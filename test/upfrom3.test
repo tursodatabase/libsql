@@ -203,7 +203,7 @@ foreach {tn wo} {
     } {10 1 101  20 2 101  30 3 101}
 
     do_execsql_test 3.$tn.4 {
-      UPDATE g1 SET c=101 FROM g1;
+      UPDATE g1 SET c=101 FROM g1 AS g2;
     }
     do_execsql_test 3.$tn.5 {
       SELECT * FROM g1;

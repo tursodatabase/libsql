@@ -255,7 +255,7 @@ static void updateFromSelect(
     }
   }
   pSelect = sqlite3SelectNew(pParse, pList, 
-      pSrc, pWhere2, pGrp, 0, pOrderBy2, SF_IncludeHidden, pLimit2
+      pSrc, pWhere2, pGrp, 0, pOrderBy2, SF_UpdateFrom|SF_IncludeHidden, pLimit2
   );
   sqlite3SelectDestInit(&dest, eDest, iEph);
   dest.iSDParm2 = (pPk ? pPk->nKeyCol : -1);

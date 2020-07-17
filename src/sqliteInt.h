@@ -3126,6 +3126,7 @@ struct Select {
 #define SF_WinRewrite    0x0100000 /* Window function rewrite accomplished */
 #define SF_View          0x0200000 /* SELECT statement is a view */
 #define SF_NoopOrderBy   0x0400000 /* ORDER BY is ignored for this query */
+#define SF_UpdateFrom    0x0800000 /* Statement is an UPDATE...FROM */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
