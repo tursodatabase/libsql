@@ -303,4 +303,24 @@ do_execsql_test 9.2 {
   -4764623217061966105 8324454597464624651
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE f USING fts3(a,b);
+  CREATE TABLE 'f_stat'(id INTEGER PRIMARY KEY, value BLOB);
+  INSERT INTO f_stat VALUES (1,x'3b3b3b3b3b3b3b28ffffffffffffffffff1807f9073481f1d43bc93b3b3b3b3b3b3b3b3b3b18073b3b3b3b3b3b3b9b003b');
+} {}
+
+do_catchsql_test 10.1 {
+  INSERT INTO f(f) VALUES ('merge=69,59');
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE xyz USING fts3();
+}
+do_execsql_test 11.1 {
+  SELECT * FROM xyz WHERE xyz MATCH 'a NEAR/4294836224 a';
+}
+
 finish_test

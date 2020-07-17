@@ -1075,6 +1075,16 @@ test_suite "sorterref" -prefix "" -description {
   autoinstall_test_functions
 }
 
+test_suite "maindbname" -prefix "" -description {
+  Run the "veryquick" test suite with SQLITE_DBCONFIG_MAINDBNAME used to
+  set the name of database 0 to "icecube".
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj*
+] -dbconfig {
+  dbconfig_maindbname_icecube $::dbhandle
+}
+
 # End of tests
 #############################################################################
 

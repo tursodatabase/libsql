@@ -1415,6 +1415,7 @@ static int fts3SegReaderNext(
   */
   if( pReader->nDoclist > pReader->nNode-(pReader->aDoclist-pReader->aNode)
    || (pReader->nPopulate==0 && pReader->aDoclist[pReader->nDoclist-1])
+   || pReader->nDoclist==0
   ){
     return FTS_CORRUPT_VTAB;
   }
@@ -2502,7 +2503,7 @@ static int fts3SegmentIsMaxLevel(Fts3Table *p, i64 iAbsLevel, int *pbMax){
   if( rc!=SQLITE_OK ) return rc;
   sqlite3_bind_int64(pStmt, 1, iAbsLevel+1);
   sqlite3_bind_int64(pStmt, 2, 
-      ((iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
+      (((u64)iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
   );
 
   *pbMax = 0;
@@ -3068,11 +3069,11 @@ static void fts3ReadEndBlockField(
   if( zText ){
     int i;
     int iMul = 1;
-    i64 iVal = 0;
+    u64 iVal = 0;
     for(i=0; zText[i]>='0' && zText[i]<='9'; i++){
       iVal = iVal*10 + (zText[i] - '0');
     }
-    *piEndBlock = iVal;
+    *piEndBlock = (i64)iVal;
     while( zText[i]==' ' ) i++;
     iVal = 0;
     if( zText[i]=='-' ){
@@ -3082,7 +3083,7 @@ static void fts3ReadEndBlockField(
     for(/* no-op */; zText[i]>='0' && zText[i]<='9'; i++){
       iVal = iVal*10 + (zText[i] - '0');
     }
-    *pnByte = (iVal * (i64)iMul);
+    *pnByte = ((i64)iVal * (i64)iMul);
   }
 }
 
@@ -4952,6 +4953,12 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     ** nMin segments and no hint in the %_stat table. No work to do.
     ** Exit early in this case.  */
     if( nSeg<=0 ) break;
+
+    assert( nMod<=0x7FFFFFFF );
+    if( iAbsLevel<0 || iAbsLevel>(nMod<<32) ){
+      rc = FTS_CORRUPT_VTAB;
+      break;
+    }
 
     /* Open a cursor to iterate through the contents of the oldest nSeg 
     ** indexes of absolute level iAbsLevel. If this cursor is opened using 

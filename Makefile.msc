@@ -234,6 +234,15 @@ OSTRACE = 0
 DEBUG = 0
 !ENDIF
 
+# <<mark>>
+# Disable use of the --linemacros argument to the mksqlite3c.tcl tool, which
+# is used to build the amalgamation.
+#
+!IFNDEF NO_LINEMACROS
+NO_LINEMACROS = 0
+!ENDIF
+# <</mark>>
+
 # Enable use of available compiler optimizations?  Normally, this should be
 # non-zero.  Setting this to zero, thus disabling all compiler optimizations,
 # can be useful for testing.
@@ -357,6 +366,7 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DESERIALIZE=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
@@ -775,7 +785,7 @@ MKSQLITE3C_TOOL = $(TOP)\tool\mksqlite3c.tcl
 !ENDIF
 
 !IFNDEF MKSQLITE3C_ARGS
-!IF $(DEBUG)>1
+!IF $(DEBUG)>1 && $(NO_LINEMACROS)==0
 MKSQLITE3C_ARGS = --linemacros
 !ELSE
 MKSQLITE3C_ARGS =
@@ -1246,7 +1256,8 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo upsert.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         vdbetrace.lo vdbevtab.lo wal.lo walker.lo where.lo wherecode.lo \
+         whereexpr.lo \
          window.lo utf.lo vtab.lo
 # <</mark>>
 
@@ -1353,6 +1364,7 @@ SRC01 = \
   $(TOP)\src\vdbemem.c \
   $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
+  $(TOP)\src\vdbevtab.c \
   $(TOP)\src\vtab.c \
   $(TOP)\src\wal.c \
   $(TOP)\src\walker.c \
@@ -1684,6 +1696,7 @@ FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS4
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DBSTAT_VTAB
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_BYTECODE_VTAB
 
 FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
@@ -2109,6 +2122,9 @@ vdbesort.lo:	$(TOP)\src\vdbesort.c $(HDR)
 vdbetrace.lo:	$(TOP)\src\vdbetrace.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\vdbetrace.c
 
+vdbevtab.lo:	$(TOP)\src\vdbevtab.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\vdbevtab.c
+
 vtab.lo:	$(TOP)\src\vtab.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\vtab.c
 
@@ -2182,6 +2198,7 @@ SHELL_SRC = \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\completion.c \
+        $(TOP)\ext\misc\uint.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
@@ -2352,6 +2369,7 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DESERIALIZE=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)

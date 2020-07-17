@@ -123,6 +123,7 @@ do_test alter4-1.99 {
 do_test alter4-2.1 {
   execsql {
     CREATE TABLE temp.t1(a, b);
+    INSERT INTO t1 VALUES(1,2);
   }
   catchsql {
     ALTER TABLE t1 ADD c PRIMARY KEY;
@@ -397,6 +398,7 @@ do_test alter4-10.1 {
 reset_db
 do_execsql_test alter4-11.0 {
   CREATE TABLE t1(c INTEGER PRIMARY KEY, d);
+  INSERT INTO t1(c,d) VALUES(1,2);
   PRAGMA foreign_keys = on;
   ALTER TABLE t1 ADD COLUMN e;
 }

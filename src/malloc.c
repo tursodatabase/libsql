@@ -111,7 +111,7 @@ sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
   }
   mem0.alarmThreshold = n;
   nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
-  mem0.nearlyFull = (n>0 && n<=nUsed);
+  AtomicStore(&mem0.nearlyFull, n>0 && n<=nUsed);
   sqlite3_mutex_leave(mem0.mutex);
   excess = sqlite3_memory_used() - n;
   if( excess>0 ) sqlite3_release_memory((int)(excess & 0x7fffffff));
@@ -179,7 +179,7 @@ int sqlite3MallocInit(void){
 ** sqlite3_soft_heap_limit().
 */
 int sqlite3HeapNearlyFull(void){
-  return mem0.nearlyFull;
+  return AtomicLoad(&mem0.nearlyFull);
 }
 
 /*
@@ -243,7 +243,7 @@ static void mallocWithAlarm(int n, void **pp){
   if( mem0.alarmThreshold>0 ){
     sqlite3_int64 nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
     if( nUsed >= mem0.alarmThreshold - nFull ){
-      mem0.nearlyFull = 1;
+      AtomicStore(&mem0.nearlyFull, 1);
       sqlite3MallocAlarm(nFull);
       if( mem0.hardLimit ){
         nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
@@ -253,7 +253,7 @@ static void mallocWithAlarm(int n, void **pp){
         }
       }
     }else{
-      mem0.nearlyFull = 0;
+      AtomicStore(&mem0.nearlyFull, 0);
     }
   }
   p = sqlite3GlobalConfig.m.xMalloc(nFull);
@@ -482,10 +482,12 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
       sqlite3MallocAlarm(nDiff);
     }
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     if( pNew==0 && mem0.alarmThreshold>0 ){
       sqlite3MallocAlarm((int)nBytes);
       pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     }
+#endif
     if( pNew ){
       nNew = sqlite3MallocSize(pNew);
       sqlite3StatusUp(SQLITE_STATUS_MEMORY_USED, nNew-nOld);
@@ -670,7 +672,7 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
       assert( sqlite3MemdebugHasType(p, (MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
       assert( sqlite3MemdebugNoType(p, (u8)~(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-      pNew = sqlite3_realloc64(p, n);
+      pNew = sqlite3Realloc(p, n);
       if( !pNew ){
         sqlite3OomFault(db);
       }
@@ -760,7 +762,7 @@ void sqlite3OomFault(sqlite3 *db){
   if( db->mallocFailed==0 && db->bBenignMalloc==0 ){
     db->mallocFailed = 1;
     if( db->nVdbeExec>0 ){
-      db->u1.isInterrupted = 1;
+      AtomicStore(&db->u1.isInterrupted, 1);
     }
     DisableLookaside;
     if( db->pParse ){
@@ -779,7 +781,7 @@ void sqlite3OomFault(sqlite3 *db){
 void sqlite3OomClear(sqlite3 *db){
   if( db->mallocFailed && db->nVdbeExec==0 ){
     db->mallocFailed = 0;
-    db->u1.isInterrupted = 0;
+    AtomicStore(&db->u1.isInterrupted, 0);
     assert( db->lookaside.bDisable>0 );
     EnableLookaside;
   }

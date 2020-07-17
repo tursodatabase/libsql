@@ -782,6 +782,9 @@ proc do_test {name cmd expected} {
       output2 "\nError: $result"
       fail_test $name
     } else {
+      if {[permutation]=="maindbname"} {
+        set result [string map [list [string tolower ICECUBE] main] $result]
+      }
       if {[regexp {^[~#]?/.*/$} $expected]} {
         # "expected" is of the form "/PATTERN/" then the result if correct if
         # regular expression PATTERN matches the result.  "~/PATTERN/" means

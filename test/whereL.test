@@ -144,5 +144,51 @@ do_execsql_test 530 {
   SELECT 200, * FROM t0, v0 WHERE t0.c0 = 0 AND v0.c0 = t0.c0;
 } {}
 
+# 2020-02-13: ticket 1dcb4d44964846ad
+# A problem introduced while making optimizations on the fixes above.
+#
+reset_db
+do_execsql_test 600 {
+  CREATE TABLE t1(x TEXT);
+  CREATE TABLE t2(y TEXT);
+  INSERT INTO t1 VALUES('good'),('bad');
+  INSERT INTO t2 VALUES('good'),('bad');
+  SELECT * FROM t1 JOIN t2 ON x=y
+   WHERE x='good' AND y='good';
+} {good good}
+
+# 2020-04-24: Another test case for the previous (1dcb4d44964846ad)
+# ticket.  The test case comes from 
+# https://stackoverflow.com/questions/61399253/sqlite3-different-result-in-console-compared-to-python-script/
+# Output verified against postgresql.
+#
+do_execsql_test 610 {
+  CREATE TABLE tableA(
+    ID           int,
+    RunYearMonth int
+  );
+  INSERT INTO tableA VALUES(1,202003),(2,202003),(3,202003),(4,202004),
+    (5,202004),(6,202004),(7,202004),(8,202004);
+  CREATE TABLE tableB (
+    ID           int,
+    RunYearMonth int
+  );
+  INSERT INTO tableB VALUES(1,202004),(2,202004),(3,202004),(4,202004),
+  (5,202004);
+  SELECT *
+   FROM (
+        SELECT *
+        FROM tableA
+        WHERE RunYearMonth = 202004
+    ) AS A
+    INNER JOIN (
+        SELECT *
+        FROM tableB
+        WHERE RunYearMonth = 202004
+    ) AS B
+    ON A.ID = B.ID
+    AND A.RunYearMonth = B.RunYearMonth;
+} {4 202004 4 202004 5 202004 5 202004}
+
 
 finish_test

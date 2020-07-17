@@ -103,7 +103,6 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     if( OK_IF_ALWAYS_TRUE(p->pWinDefn) ){
       sqlite3WindowListDelete(db, p->pWinDefn);
     }
-    assert( p->pWin==0 );
 #endif
     if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFreeNN(db, p);
@@ -2024,6 +2023,7 @@ int sqlite3ColumnsFromExprList(
       if( cnt>3 ) sqlite3FastRandomness(&db->sPrng, sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
+    pCol->hName = sqlite3StrIHash(zName);
     sqlite3ColumnPropertiesFromName(0, pCol);
     if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
       sqlite3OomFault(db);
@@ -2806,6 +2806,7 @@ static int multiSelect(
         /* Generate code to take the intersection of the two temporary
         ** tables.
         */
+        if( rc ) break;
         assert( p->pEList );
         iBreak = sqlite3VdbeMakeLabel(pParse);
         iCont = sqlite3VdbeMakeLabel(pParse);
@@ -3476,7 +3477,10 @@ static Expr *substExpr(
   ){
     pExpr->iRightJoinTable = pSubst->iNewTable;
   }
-  if( pExpr->op==TK_COLUMN && pExpr->iTable==pSubst->iTable ){
+  if( pExpr->op==TK_COLUMN
+   && pExpr->iTable==pSubst->iTable
+   && !ExprHasProperty(pExpr, EP_FixedCol)
+  ){
     if( pExpr->iColumn<0 ){
       pExpr->op = TK_NULL;
     }else{
@@ -3494,6 +3498,7 @@ static Expr *substExpr(
           ifNullRow.op = TK_IF_NULL_ROW;
           ifNullRow.pLeft = pCopy;
           ifNullRow.iTable = pSubst->iNewTable;
+          ifNullRow.flags = EP_Skip;
           pCopy = &ifNullRow;
         }
         testcase( ExprHasProperty(pCopy, EP_Subquery) );
@@ -3577,6 +3582,38 @@ static void substSelect(
       }
     }
   }while( doPrior && (p = p->pPrior)!=0 );
+}
+#endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+/*
+** pSelect is a SELECT statement and pSrcItem is one item in the FROM
+** clause of that SELECT.
+**
+** This routine scans the entire SELECT statement and recomputes the
+** pSrcItem->colUsed mask.
+*/
+static int recomputeColumnsUsedExpr(Walker *pWalker, Expr *pExpr){
+  struct SrcList_item *pItem;
+  if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
+  pItem = pWalker->u.pSrcItem;
+  if( pItem->iCursor!=pExpr->iTable ) return WRC_Continue;
+  if( pExpr->iColumn<0 ) return WRC_Continue;
+  pItem->colUsed |= sqlite3ExprColUsed(pExpr);
+  return WRC_Continue;
+}
+static void recomputeColumnsUsed(
+  Select *pSelect,                 /* The complete SELECT statement */
+  struct SrcList_item *pSrcItem    /* Which FROM clause item to recompute */
+){
+  Walker w;
+  if( NEVER(pSrcItem->pTab==0) ) return;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = recomputeColumnsUsedExpr;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
+  w.u.pSrcItem = pSrcItem;
+  pSrcItem->colUsed = 0;
+  sqlite3WalkSelect(&w, pSelect);
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
@@ -4118,6 +4155,12 @@ static int flattenSubquery(
       pParent->pLimit = pSub->pLimit;
       pSub->pLimit = 0;
     }
+
+    /* Recompute the SrcList_item.colUsed masks for the flattened
+    ** tables. */
+    for(i=0; i<nSubSrc; i++){
+      recomputeColumnsUsed(pParent, &pSrc->a[i+iFrom]);
+    }
   }
 
   /* Finially, delete what is left of the subquery and return
@@ -4166,9 +4209,8 @@ static void constInsert(
   assert( pColumn->op==TK_COLUMN );
   assert( sqlite3ExprIsConstant(pValue) );
 
-  if( !ExprHasProperty(pValue, EP_FixedCol) && sqlite3ExprAffinity(pValue)!=0 ){
-    return;
-  }
+  if( ExprHasProperty(pColumn, EP_FixedCol) ) return;
+  if( sqlite3ExprAffinity(pValue)!=0 ) return;
   if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr)) ){
     return;
   }
@@ -4191,9 +4233,6 @@ static void constInsert(
   if( pConst->apExpr==0 ){
     pConst->nConst = 0;
   }else{
-    if( ExprHasProperty(pValue, EP_FixedCol) ){
-      pValue = pValue->pLeft;
-    }
     pConst->apExpr[pConst->nConst*2-2] = pColumn;
     pConst->apExpr[pConst->nConst*2-1] = pValue;
   }
@@ -4469,7 +4508,7 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   ExprList *pEList = pFunc->x.pList;    /* Arguments to agg function */
   const char *zFunc;                    /* Name of aggregate function pFunc */
   ExprList *pOrderBy;
-  u8 sortFlags;
+  u8 sortFlags = 0;
 
   assert( *ppMinMax==0 );
   assert( pFunc->op==TK_AGG_FUNCTION );
@@ -4480,7 +4519,9 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   zFunc = pFunc->u.zToken;
   if( sqlite3StrICmp(zFunc, "min")==0 ){
     eRet = WHERE_ORDERBY_MIN;
-    sortFlags = KEYINFO_ORDER_BIGNULL;
+    if( sqlite3ExprCanBeNull(pEList->a[0].pExpr) ){
+      sortFlags = KEYINFO_ORDER_BIGNULL;
+    }
   }else if( sqlite3StrICmp(zFunc, "max")==0 ){
     eRet = WHERE_ORDERBY_MAX;
     sortFlags = KEYINFO_ORDER_DESC;
@@ -5148,7 +5189,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             pNew = sqlite3ExprListAppend(pParse, pNew, pExpr);
             sqlite3TokenInit(&sColname, zColname);
             sqlite3ExprListSetName(pParse, pNew, &sColname, 0);
-            if( pNew && (p->selFlags & SF_NestedFrom)!=0 ){
+            if( pNew && (p->selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
               struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
               sqlite3DbFree(db, pX->zEName);
               if( pSub ){
@@ -5185,29 +5226,6 @@ static int selectExpander(Walker *pWalker, Select *p){
       p->selFlags |= SF_ComplexResult;
     }
   }
-  return WRC_Continue;
-}
-
-/*
-** No-op routine for the parse-tree walker.
-**
-** When this routine is the Walker.xExprCallback then expression trees
-** are walked without any actions being taken at each node.  Presumably,
-** when this routine is used for Walker.xExprCallback then 
-** Walker.xSelectCallback is set to do something useful for every 
-** subquery in the parser tree.
-*/
-int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  return WRC_Continue;
-}
-
-/*
-** No-op routine for the parse-tree walker for SELECT statements.
-** subquery in the parser tree.
-*/
-int sqlite3SelectWalkNoop(Walker *NotUsed, Select *NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return WRC_Continue;
 }
 
@@ -5352,6 +5370,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
   if( nReg==0 ) return;
+  if( pParse->nErr ) return;
 #ifdef SQLITE_DEBUG
   /* Verify that all AggInfo registers are within the range specified by
   ** AggInfo.mnReg..AggInfo.mxReg */
@@ -5493,7 +5512,7 @@ static void updateAccumulator(Parse *pParse, int regAcc, AggInfo *pAggInfo){
 
   pAggInfo->directMode = 0;
   if( addrHitTest ){
-    sqlite3VdbeJumpHere(v, addrHitTest);
+    sqlite3VdbeJumpHereOrPopInst(v, addrHitTest);
   }
 }
 
@@ -6380,7 +6399,7 @@ int sqlite3Select(
 #if SELECTTRACE_ENABLED
     if( sqlite3SelectTrace & 0x400 ){
       int ii;
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis:\n"));
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", &sAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       for(ii=0; ii<sAggInfo.nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
@@ -6621,7 +6640,6 @@ int sqlite3Select(
      
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
-#ifndef SQLITE_OMIT_BTREECOUNT
       Table *pTab;
       if( (pTab = isSimpleCount(p, &sAggInfo))!=0 ){
         /* If isSimpleCount() returns a pointer to a Table structure, then
@@ -6657,13 +6675,15 @@ int sqlite3Select(
         ** passed to keep OP_OpenRead happy.
         */
         if( !HasRowid(pTab) ) pBest = sqlite3PrimaryKeyIndex(pTab);
-        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( pIdx->bUnordered==0
-           && pIdx->szIdxRow<pTab->szTabRow
-           && pIdx->pPartIdxWhere==0
-           && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
-          ){
-            pBest = pIdx;
+        if( !p->pSrc->a[0].fg.notIndexed ){
+          for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+            if( pIdx->bUnordered==0
+             && pIdx->szIdxRow<pTab->szTabRow
+             && pIdx->pPartIdxWhere==0
+             && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
+            ){
+              pBest = pIdx;
+            }
           }
         }
         if( pBest ){
@@ -6679,9 +6699,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_Count, iCsr, sAggInfo.aFunc[0].iMem);
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
-      }else
-#endif /* SQLITE_OMIT_BTREECOUNT */
-      {
+      }else{
         int regAcc = 0;           /* "populate accumulators" flag */
 
         /* If there are accumulator registers but no min() or max() functions

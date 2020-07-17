@@ -855,6 +855,7 @@ static void likeFunc(
   int nPat;
   sqlite3 *db = sqlite3_context_db_handle(context);
   struct compareInfo *pInfo = sqlite3_user_data(context);
+  struct compareInfo backupInfo;
 
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   if( sqlite3_value_type(argv[0])==SQLITE_BLOB
@@ -890,6 +891,12 @@ static void likeFunc(
       return;
     }
     escape = sqlite3Utf8Read(&zEsc);
+    if( escape==pInfo->matchAll || escape==pInfo->matchOne ){
+      memcpy(&backupInfo, pInfo, sizeof(backupInfo));
+      pInfo = &backupInfo;
+      if( escape==pInfo->matchAll ) pInfo->matchAll = 0;
+      if( escape==pInfo->matchOne ) pInfo->matchOne = 0;
+    }
   }else{
     escape = pInfo->matchSet;
   }
@@ -1278,7 +1285,7 @@ static void replaceFunc(
           ** whose index is a power of two: 1, 2, 4, 8, 16, 32, ... */
           u8 *zOld;
           zOld = zOut;
-          zOut = sqlite3_realloc64(zOut, (int)nOut + (nOut - nStr - 1));
+          zOut = sqlite3Realloc(zOut, (int)nOut + (nOut - nStr - 1));
           if( zOut==0 ){
             sqlite3_result_error_nomem(context);
             sqlite3_free(zOld);
@@ -1872,16 +1879,6 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
-  if( nExpr<3 ){
-    aWc[3] = 0;
-  }else{
-    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
-    char *zEscape;
-    if( pEscape->op!=TK_STRING ) return 0;
-    zEscape = pEscape->u.zToken;
-    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
-    aWc[3] = zEscape[0];
-  }
 
   /* The memcpy() statement assumes that the wildcard characters are
   ** the first three statements in the compareInfo structure.  The
@@ -1891,6 +1888,20 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   assert( (char*)&likeInfoAlt == (char*)&likeInfoAlt.matchAll );
   assert( &((char*)&likeInfoAlt)[1] == (char*)&likeInfoAlt.matchOne );
   assert( &((char*)&likeInfoAlt)[2] == (char*)&likeInfoAlt.matchSet );
+
+  if( nExpr<3 ){
+    aWc[3] = 0;
+  }else{
+    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
+    char *zEscape;
+    if( pEscape->op!=TK_STRING ) return 0;
+    zEscape = pEscape->u.zToken;
+    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
+    if( zEscape[0]==aWc[0] ) return 0;
+    if( zEscape[0]==aWc[1] ) return 0;
+    aWc[3] = zEscape[0];
+  }
+
   *pIsNocase = (pDef->funcFlags & SQLITE_FUNC_CASE)==0;
   return 1;
 }
@@ -1971,7 +1982,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
-    INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, SQLITE_FUNC_COALESCE),
+    INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
@@ -2011,7 +2022,8 @@ void sqlite3RegisterBuiltinFunctions(void){
 #endif
     FUNCTION(coalesce,           1, 0, 0, 0                ),
     FUNCTION(coalesce,           0, 0, 0, 0                ),
-    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, SQLITE_FUNC_COALESCE),
+    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
+    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();

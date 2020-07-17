@@ -166,7 +166,7 @@ static int memdbEnlarge(MemFile *p, sqlite3_int64 newSz){
   }
   newSz *= 2;
   if( newSz>p->szMax ) newSz = p->szMax;
-  pNew = sqlite3_realloc64(p->aData, newSz);
+  pNew = sqlite3Realloc(p->aData, newSz);
   if( pNew==0 ) return SQLITE_NOMEM;
   p->aData = pNew;
   p->szAlloc = newSz;
@@ -613,10 +613,11 @@ int sqlite3MemdbInit(void){
   sqlite3_vfs *pLower = sqlite3_vfs_find(0);
   int sz = pLower->szOsFile;
   memdb_vfs.pAppData = pLower;
-  /* In all known configurations of SQLite, the size of a default
-  ** sqlite3_file is greater than the size of a memdb sqlite3_file.
-  ** Should that ever change, remove the following NEVER() */
-  if( NEVER(sz<sizeof(MemFile)) ) sz = sizeof(MemFile);
+  /* The following conditional can only be true when compiled for
+  ** Windows x86 and SQLITE_MAX_MMAP_SIZE=0.  We always leave
+  ** it in, to be safe, but it is marked as NO_TEST since there
+  ** is no way to reach it under most builds. */
+  if( sz<sizeof(MemFile) ) sz = sizeof(MemFile); /*NO_TEST*/
   memdb_vfs.szOsFile = sz;
   return sqlite3_vfs_register(&memdb_vfs, 0);
 }

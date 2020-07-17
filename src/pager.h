@@ -128,9 +128,6 @@ int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 /* Functions used to configure a Pager object. */
 void sqlite3PagerSetBusyHandler(Pager*, int(*)(void *), void *);
 int sqlite3PagerSetPagesize(Pager*, u32*, int);
-#ifdef SQLITE_HAS_CODEC
-void sqlite3PagerAlignReserve(Pager*,Pager*);
-#endif
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
 int sqlite3PagerSetSpillsize(Pager*, int);
@@ -181,12 +178,20 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
   int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
 # ifdef SQLITE_ENABLE_SNAPSHOT
-  int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
-  int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
+  int sqlite3PagerSnapshotGet(Pager*, sqlite3_snapshot **ppSnapshot);
+  int sqlite3PagerSnapshotOpen(Pager*, sqlite3_snapshot *pSnapshot);
   int sqlite3PagerSnapshotRecover(Pager *pPager);
   int sqlite3PagerSnapshotCheck(Pager *pPager, sqlite3_snapshot *pSnapshot);
   void sqlite3PagerSnapshotUnlock(Pager *pPager);
 # endif
+#endif
+
+#if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+  int sqlite3PagerWalWriteLock(Pager*, int);
+  void sqlite3PagerWalDb(Pager*, sqlite3*);
+#else
+# define sqlite3PagerWalWriteLock(y,z) SQLITE_OK
+# define sqlite3PagerWalDb(x,y)
 #endif
 
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
@@ -214,11 +219,6 @@ int sqlite3PagerIsMemdb(Pager*);
 void sqlite3PagerCacheStat(Pager *, int, int, int *);
 void sqlite3PagerClearCache(Pager*);
 int sqlite3SectorSize(sqlite3_file *);
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-void sqlite3PagerResetLockTimeout(Pager *pPager);
-#else
-# define sqlite3PagerResetLockTimeout(X)
-#endif
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);
@@ -242,10 +242,6 @@ int sqlite3PagerIswriteable(DbPage*);
 #endif
 
 int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
-
-#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
-void *sqlite3PagerCodec(DbPage *);
-#endif
 
 /* Functions to support testing and debugging. */
 #if !defined(NDEBUG) || defined(SQLITE_TEST)

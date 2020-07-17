@@ -474,7 +474,19 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_filename_database,
   sqlite3_filename_journal,
   sqlite3_filename_wal,
+  /* Version 3.32.0 and later */
+  sqlite3_create_filename,
+  sqlite3_free_filename,
+  sqlite3_database_file_object,
 };
+
+/* True if x is the directory separator character
+*/
+#if SQLITE_OS_WIN
+# define DirSep(X)  ((X)=='/'||(X)=='\\')
+#else
+# define DirSep(X)  ((X)=='/')
+#endif
 
 /*
 ** Attempt to load an SQLite extension library contained in the file
@@ -577,7 +589,7 @@ static int sqlite3LoadExtension(
       return SQLITE_NOMEM_BKPT;
     }
     memcpy(zAltEntry, "sqlite3_", 8);
-    for(iFile=ncFile-1; iFile>=0 && zFile[iFile]!='/'; iFile--){}
+    for(iFile=ncFile-1; iFile>=0 && !DirSep(zFile[iFile]); iFile--){}
     iFile++;
     if( sqlite3_strnicmp(zFile+iFile, "lib", 3)==0 ) iFile += 3;
     for(iEntry=8; (c = zFile[iFile])!=0 && c!='.'; iFile++){

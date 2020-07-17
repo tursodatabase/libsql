@@ -533,7 +533,9 @@ void sqlite3DeleteFrom(
                                  iTabCur, aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
-      if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
+      if( eOnePass==ONEPASS_MULTI ){
+        sqlite3VdbeJumpHereOrPopInst(v, iAddrOnce);
+      }
     }
   
     /* Set up a loop over the rowids/primary-keys that were found in the
@@ -856,6 +858,7 @@ void sqlite3GenerateRowIndexDelete(
         &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
         pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+    sqlite3VdbeChangeP5(v, 1);  /* Cause IdxDelete to error if no entry found */
     sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }

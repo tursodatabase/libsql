@@ -3502,6 +3502,7 @@ static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
 /* Forward references to VFS helper methods used for temporary files */
 static int winGetTempname(sqlite3_vfs *, char **);
 static int winIsDir(const void *);
+static BOOL winIsLongPathPrefix(const char *);
 static BOOL winIsDriveLetterAndColon(const char *);
 
 /*
@@ -5271,7 +5272,9 @@ static int winOpen(
   if( isReadonly ){
     pFile->ctrlFlags |= WINFILE_RDONLY;
   }
-  if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+  if( (flags & SQLITE_OPEN_MAIN_DB)
+   && sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) 
+  ){
     pFile->ctrlFlags |= WINFILE_PSOW;
   }
   pFile->lastErrno = NO_ERROR;
@@ -5482,6 +5485,17 @@ static int winAccess(
 }
 
 /*
+** Returns non-zero if the specified path name starts with the "long path"
+** prefix.
+*/
+static BOOL winIsLongPathPrefix(
+  const char *zPathname
+){
+  return ( zPathname[0]=='\\' && zPathname[1]=='\\'
+        && zPathname[2]=='?'  && zPathname[3]=='\\' );
+}
+
+/*
 ** Returns non-zero if the specified path name starts with a drive letter
 ** followed by a colon character.
 */
@@ -5545,10 +5559,11 @@ static int winFullPathname(
   char *zOut;
 #endif
 
-  /* If this path name begins with "/X:", where "X" is any alphabetic
-  ** character, discard the initial "/" from the pathname.
+  /* If this path name begins with "/X:" or "\\?\", where "X" is any
+  ** alphabetic character, discard the initial "/" from the pathname.
   */
-  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
+  if( zRelative[0]=='/' && (winIsDriveLetterAndColon(zRelative+1)
+       || winIsLongPathPrefix(zRelative+1)) ){
     zRelative++;
   }
 

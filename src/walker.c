@@ -156,15 +156,16 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   struct SrcList_item *pItem;
 
   pSrc = p->pSrc;
-  assert( pSrc!=0 );
-  for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-    if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
-      return WRC_Abort;
-    }
-    if( pItem->fg.isTabFunc
-     && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
-    ){
-      return WRC_Abort;
+  if( pSrc ){
+    for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
+      if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
+        return WRC_Abort;
+      }
+      if( pItem->fg.isTabFunc
+       && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
+      ){
+        return WRC_Abort;
+      }
     }
   }
   return WRC_Continue;
@@ -204,5 +205,42 @@ int sqlite3WalkSelect(Walker *pWalker, Select *p){
     }
     p = p->pPrior;
   }while( p!=0 );
+  return WRC_Continue;
+}
+
+/* Increase the walkerDepth when entering a subquery, and
+** descrease when leaving the subquery.
+*/
+int sqlite3WalkerDepthIncrease(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pSelect);
+  pWalker->walkerDepth++;
+  return WRC_Continue;
+}
+void sqlite3WalkerDepthDecrease(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pSelect);
+  pWalker->walkerDepth--;
+}
+
+
+/*
+** No-op routine for the parse-tree walker.
+**
+** When this routine is the Walker.xExprCallback then expression trees
+** are walked without any actions being taken at each node.  Presumably,
+** when this routine is used for Walker.xExprCallback then 
+** Walker.xSelectCallback is set to do something useful for every 
+** subquery in the parser tree.
+*/
+int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  return WRC_Continue;
+}
+
+/*
+** No-op routine for the parse-tree walker for SELECT statements.
+** subquery in the parser tree.
+*/
+int sqlite3SelectWalkNoop(Walker *NotUsed, Select *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return WRC_Continue;
 }

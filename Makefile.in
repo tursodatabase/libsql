@@ -190,7 +190,8 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         vdbetrace.lo vdbevtab.lo \
+         wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
          window.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
@@ -296,6 +297,7 @@ SRC = \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbesort.c \
   $(TOP)/src/vdbetrace.c \
+  $(TOP)/src/vdbevtab.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
   $(TOP)/src/vxworks.h \
@@ -502,6 +504,7 @@ TESTSRC2 = \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbetrace.c \
+  $(TOP)/src/vdbevtab.c \
   $(TOP)/src/where.c \
   $(TOP)/src/wherecode.c \
   $(TOP)/src/whereexpr.c \
@@ -607,6 +610,7 @@ SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
 SHELL_OPT += -DSQLITE_ENABLE_DESERIALIZE
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
@@ -615,10 +619,12 @@ FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DESERIALIZE
 FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS4
+FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS3_PARENTHESIS
 #FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS5
 FUZZCHECK_OPT += -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPT += -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
+FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c
 DBFUZZ_OPT =
 
@@ -688,6 +694,7 @@ DBFUZZ2_OPTS = \
   -DSQLITE_ENABLE_DESERIALIZE \
   -DSQLITE_DEBUG \
   -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_FTS4 \
   -DSQLITE_ENABLE_FTS5
@@ -1004,6 +1011,9 @@ vdbesort.lo:	$(TOP)/src/vdbesort.c $(HDR)
 vdbetrace.lo:	$(TOP)/src/vdbetrace.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbetrace.c
 
+vdbevtab.lo:	$(TOP)/src/vdbevtab.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbevtab.c
+
 vtab.lo:	$(TOP)/src/vtab.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c
 
@@ -1069,6 +1079,7 @@ SHELL_SRC = \
 	$(TOP)/ext/misc/fileio.c \
 	$(TOP)/ext/misc/completion.c \
 	$(TOP)/ext/misc/sqlar.c \
+        $(TOP)/ext/misc/uint.c \
 	$(TOP)/ext/expert/sqlite3expert.c \
 	$(TOP)/ext/expert/sqlite3expert.h \
 	$(TOP)/ext/misc/zipfile.c \
@@ -1210,6 +1221,7 @@ TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DESERIALIZE
 
 TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.la

@@ -1593,5 +1593,155 @@ do_execsql_test 48.1 {
     FROM (SELECT (SELECT sum(a) FROM t1 GROUP BY a) AS x FROM t1);
 } {2 2 2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 49.1 {
+  CREATE TABLE t1 (a PRIMARY KEY);
+  INSERT INTO t1 VALUES(1);
+}
+
+do_execsql_test 49.2 {
+  SELECT b AS c FROM (
+    SELECT a AS b FROM (
+      SELECT a FROM t1 WHERE a=1 OR (SELECT sum(a) OVER ())
+    ) 
+    WHERE b=1 OR b<10
+  ) 
+  WHERE c=1 OR c>=10;
+} {1}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 50.0 {
+  CREATE TABLE t1 (a DOUBLE PRIMARY KEY);
+  INSERT INTO t1 VALUES(10.0);
+}
+
+do_execsql_test 50.1 {
+  SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+} {10.0}
+
+do_execsql_test 50.2 {
+  SELECT * FROM (
+    SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+  ) 
+  WHERE a=1 OR ( (SELECT sum(a) OVER (ORDER BY a%4)) AND a<=10 )
+} {10.0}
+
+do_execsql_test 50.3 {
+  SELECT a FROM (
+    SELECT * FROM (
+      SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+    ) 
+    WHERE a=1 OR ( (SELECT sum(a) OVER (ORDER BY a%4)) AND a<=10 )
+  ) 
+  WHERE a=1 OR a=10.0
+} {10.0}
+
+do_execsql_test 50.4 {
+  SELECT a FROM (
+    SELECT * FROM (
+      SELECT * FROM t1 WHERE a%1 OR (SELECT sum(a) OVER (ORDER BY a%2))
+    ) 
+    WHERE a=1 OR ( (SELECT sum(a) OVER (ORDER BY a%4)) AND a<=10 )
+  ) 
+  WHERE a=1 OR ((SELECT sum(a) OVER(ORDER BY a%8)) AND 10<=a)
+} {10.0}
+
+do_execsql_test 50.5 {
+SELECT * FROM (SELECT * FROM t1 NATURAL JOIN t1 WHERE a%1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)) NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum((SELECT * FROM (SELECT * FROM (SELECT * FROM t1 NATURAL JOIN t1 WHERE a%1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)) NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum((SELECT * FROM t1 NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND a<=10)))OVER(ORDER BY a% 1 )) AND a<=10)) NATURAL JOIN t1 WHERE a=1 OR ((SELECT sum(a)OVER(ORDER BY a)) AND 10<=a)))OVER(ORDER BY a%5)) AND a<=10);
+} {10.0}
+
+# 2020-04-03 ticket af4556bb5c285c08
+#
+reset_db
+do_catchsql_test 51.1 {
+  CREATE TABLE a(b, c);
+  SELECT c FROM a GROUP BY c
+    HAVING(SELECT(sum(b) OVER(ORDER BY b),
+                  sum(b) OVER(PARTITION BY min(DISTINCT c), c ORDER BY b)));
+} {1 {row value misused}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 52.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('AA','bb',356);
+  INSERT INTO t1 VALUES('CC','aa',158);
+  INSERT INTO t1 VALUES('BB','aa',399);
+  INSERT INTO t1 VALUES('FF','bb',938);
+}
+
+do_execsql_test 52.2 {
+  SELECT
+    count() OVER win1,
+    sum(c) OVER win2, 
+    first_value(c) OVER win2,
+    count(a) OVER (ORDER BY b)
+      FROM t1
+      WINDOW
+      win1 AS (ORDER BY a),
+    win2 AS (PARTITION BY 6 ORDER BY a
+        RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING );
+} {
+  1 356 356 4 
+  2 399 399 2 
+  3 158 158 2 
+  4 938 938 4
+}
+
+do_execsql_test 52.3 {
+SELECT
+  count() OVER (),
+  sum(c) OVER win2, 
+  first_value(c) OVER win2,
+  count(a) OVER (ORDER BY b)
+FROM t1
+WINDOW
+  win1 AS (ORDER BY a),
+  win2 AS (PARTITION BY 6 COLLATE binary ORDER BY a
+           RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING );
+} {
+  4 356 356 4 
+  4 399 399 2 
+  4 158 158 2 
+  4 938 938 4
+}
+
+do_execsql_test 52.4 {
+  SELECT
+    count() OVER win1,
+    sum(c) OVER win2, 
+    first_value(c) OVER win2,
+    count(a) OVER (ORDER BY b)
+  FROM t1
+  WINDOW
+    win1 AS (ORDER BY a),
+    win2 AS (PARTITION BY 6 COLLATE binary ORDER BY a
+             RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING );
+} {
+  1 356 356 4 
+  2 399 399 2 
+  3 158 158 2 
+  4 938 938 4
+}
+
+# 2020-05-23
+# ticket 7a5279a25c57adf1
+#
+reset_db
+do_execsql_test 53.0 {
+  CREATE TABLE a(c UNIQUE);
+  INSERT INTO a VALUES(4),(0),(9),(-9);
+  SELECT a.c
+    FROM a
+    JOIN a AS b ON a.c=4
+    JOIN a AS e ON a.c=e.c
+   WHERE a.c=(SELECT (SELECT coalesce(lead(2) OVER(),0) + sum(d.c))
+                FROM a AS d
+               WHERE a.c);
+} {4 4 4 4}
+
 
 finish_test

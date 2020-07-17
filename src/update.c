@@ -53,10 +53,10 @@ static void updateVirtualTable(
 ** function is capable of transforming these types of expressions into
 ** sqlite3_value objects.
 **
-** If parameter iReg is not negative, code an OP_RealAffinity instruction
-** on register iReg. This is used when an equivalent integer value is 
-** stored in place of an 8-byte floating point value in order to save 
-** space.
+** If column as REAL affinity and the table is an ordinary b-tree table
+** (not a virtual table) then the value might have been stored as an
+** integer.  In that case, add an OP_RealAffinity opcode to make sure
+** it has been converted into REAL.
 */
 void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
   assert( pTab!=0 );
@@ -73,7 +73,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
     }
   }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
+  if( pTab->aCol[i].affinity==SQLITE_AFF_REAL && !IsVirtual(pTab) ){
     sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
   }
 #endif
@@ -627,7 +627,9 @@ void sqlite3Update(
       }
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur,
                                  aToOpen, 0, 0);
-      if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
+      if( addrOnce ){
+        sqlite3VdbeJumpHereOrPopInst(v, addrOnce);
+      }
     }
   
     /* Top of the update loop */
