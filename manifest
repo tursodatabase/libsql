@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Modifications\sto\stest\scode\sso\sthat\sthe\ssqlite3MemdebugHastype()\sassert()\sstatements\sare\senabled\sfor\sTcl\stests.
-D 2020-07-16T14:52:24.119
+C Add\sa\scouple\sof\s"#ifdef\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT"\sblocks\smissing\sfrom\snew\scode\son\sthis\sbranch.
+D 2020-07-17T15:34:54.434
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -33,7 +33,7 @@ F src/sqliteInt.h e2684c4ba7ee9c0a0529ae2eb847cc5bf923e4104a9d0944bf3d9d151856b6
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
 F src/test_malloc.c 21121ea85b49ec0bdb69995847cef9036ef9beca3ce63bbb776e4ea2ecc44b97
 F src/trigger.c ef67bde309a831515dc3c2173d792574309f2f42d45f8c078743fae9f7f98c75
-F src/update.c 9cfa2f840c69c28c5767b68cf38b4e7847e06ac0610978814f913d469d863900
+F src/update.c 21cb7bd83ee895cce68811c99dae0fcf62575d8b9d48ba69b52c2c9495dfbd31
 F src/util.c c0bacc165f46169d2b720c37c8719165e383211698fad1de39dd16a8c161815a
 F src/vdbe.c 981666c49d33039df6dc9fccd40191575586ac4866255b2f57819cc5eb99f572
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
@@ -68,7 +68,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 917a479b0d11fb59abf41d0317ffc541eb4b83928df9382b4782953c0035fa3e
-R fb6a1ab4975d53e851234a62b38830da
+P e3c423cb1407c06a3806ae6304e4713c37cd446f4cc399731884e3d009938e57
+R d2ce899840893b7cd528048345c54e26
 U dan
-Z 68e4ffd4fa7d2c07c4b216bcc8c920df
+Z 07c0b529dfa24232d5016aa5a9d718ca

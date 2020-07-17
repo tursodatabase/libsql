@@ -195,23 +195,25 @@ static void updateFromSelect(
   Select *pSelect = 0;
   ExprList *pList = 0;
   ExprList *pGrp = 0;
+  Expr *pLimit2 = 0;
+  ExprList *pOrderBy2 = 0;
   sqlite3 *db = pParse->db;
   Table *pTab = pTabList->a[0].pTab;
   SrcList *pSrc;
   Expr *pWhere2;
-  Expr *pLimit2;
-  ExprList *pOrderBy2;
   int eDest;
 
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
   if( pOrderBy && pLimit==0 ) {
     sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on UPDATE");
     return;
   }
+  pOrderBy2 = sqlite3ExprListDup(db, pOrderBy, 0);
+  pLimit2 = sqlite3ExprDup(db, pLimit, 0);
+#endif
 
   pSrc = sqlite3SrcListDup(db, pTabList, 0);
   pWhere2 = sqlite3ExprDup(db, pWhere, 0);
-  pLimit2 = sqlite3ExprDup(db, pLimit, 0);
-  pOrderBy2 = sqlite3ExprListDup(db, pOrderBy, 0);
 
   assert( pTabList->nSrc>1 );
   if( pSrc ){
@@ -222,9 +224,11 @@ static void updateFromSelect(
   if( pPk ){
     for(i=0; i<pPk->nKeyCol; i++){
       Expr *pNew = exprRowColumn(pParse, pPk->aiColumn[i]);
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
       if( pLimit ){
         pGrp = sqlite3ExprListAppend(pParse, pGrp, sqlite3ExprDup(db, pNew, 0));
       }
+#endif
       pList = sqlite3ExprListAppend(pParse, pList, pNew);
     }
     eDest = SRT_Upfrom;
@@ -236,9 +240,11 @@ static void updateFromSelect(
   }else{
     eDest = IsVirtual(pTab) ? SRT_Table : SRT_Upfrom;
     pList = sqlite3ExprListAppend(pParse, 0, sqlite3PExpr(pParse,TK_ROW,0,0));
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
     if( pLimit ){
       pGrp = sqlite3ExprListAppend(pParse, 0, sqlite3PExpr(pParse,TK_ROW,0,0));
     }
+#endif
   }
   assert( pChanges || db->mallocFailed );
   if( pChanges ){
