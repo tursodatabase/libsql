@@ -1127,10 +1127,13 @@ static void selectInnerLoop(
     }
 
     case SRT_Upfrom: {
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
       if( pSort ){
         pushOntoSorter(
             pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
-      }else{
+      }else
+#endif
+      {
         int i2 = pDest->iSDParm2;
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_MakeRecord,regResult+(i2<0),nResultCol-(i2<0),r1);
@@ -1575,6 +1578,7 @@ static void generateSortTail(
       break;
     }
 #endif
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
     case SRT_Upfrom: {
       int i2 = pDest->iSDParm2;
       int r1 = sqlite3GetTempReg(pParse);
@@ -1586,6 +1590,7 @@ static void generateSortTail(
       }
       break;
     }
+#endif
     default: {
       assert( eDest==SRT_Output || eDest==SRT_Coroutine ); 
       testcase( eDest==SRT_Output );
