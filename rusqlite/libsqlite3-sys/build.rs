@@ -58,7 +58,8 @@ mod build_bundled {
             fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
                 .expect("Could not copy bindings to output directory");
         }
-
+        println!("cargo:rerun-if-changed=sqlite3/sqlite3.c");
+        println!("cargo:rerun-if-changed=sqlite3/wasm32-wasi-vfs.c");
         let mut cfg = cc::Build::new();
         cfg.file("sqlite3/sqlite3.c")
             .flag("-DSQLITE_CORE")
@@ -107,6 +108,13 @@ mod build_bundled {
         }
         if cfg!(not(target_os = "windows")) {
             cfg.flag("-DHAVE_LOCALTIME_R");
+        }
+        // Target wasm32-wasi can't compile the default VFS
+        if env::var("TARGET") == Ok("wasm32-wasi".to_string()) {
+            cfg.file("sqlite3/wasm32-wasi-vfs.c")
+                .flag("-DSQLITE_OS_OTHER")
+                // https://github.com/rust-lang/rust/issues/74393
+                .flag("-DLONGDOUBLE_TYPE=double");
         }
         if cfg!(feature = "unlock_notify") {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
