@@ -246,8 +246,7 @@ static void updateFromSelect(
     }
 #endif
   }
-  assert( pChanges || db->mallocFailed );
-  if( pChanges ){
+  if( ALWAYS(pChanges) ){
     for(i=0; i<pChanges->nExpr; i++){
       pList = sqlite3ExprListAppend(pParse, pList, 
           sqlite3ExprDup(db, pChanges->a[i].pExpr, 0)
