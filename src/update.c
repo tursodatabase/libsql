@@ -187,8 +187,8 @@ static void updateFromSelect(
   ExprList *pChanges,             /* List of expressions to return */
   SrcList *pTabList,              /* List of tables to select from */
   Expr *pWhere,                   /* WHERE clause for query */
-  ExprList *pOrderBy,
-  Expr *pLimit
+  ExprList *pOrderBy,             /* ORDER BY clause */
+  Expr *pLimit                    /* LIMIT clause */
 ){
   int i;
   SelectDest dest;
@@ -210,6 +210,9 @@ static void updateFromSelect(
   }
   pOrderBy2 = sqlite3ExprListDup(db, pOrderBy, 0);
   pLimit2 = sqlite3ExprDup(db, pLimit, 0);
+#else
+  UNUSED_PARAMETER(pOrderBy);
+  UNUSED_PARAMETER(pLimit);
 #endif
 
   pSrc = sqlite3SrcListDup(db, pTabList, 0);
@@ -902,8 +905,8 @@ void sqlite3Update(
       j = aXRef[i];
       if( j>=0 ){
         if( nChangeFrom ){
-          assert( eOnePass==ONEPASS_OFF );
           int nOff = (isView ? pTab->nCol : nPk);
+          assert( eOnePass==ONEPASS_OFF );
           sqlite3VdbeAddOp3(v, OP_Column, iEph, nOff+j, k);
         }else{
           sqlite3ExprCode(pParse, pChanges->a[j].pExpr, k);
@@ -1165,7 +1168,7 @@ static void updateVirtualTable(
   int i;                    /* Loop counter */
   sqlite3 *db = pParse->db; /* Database connection */
   const char *pVTab = (const char*)sqlite3GetVTable(db, pTab);
-  WhereInfo *pWInfo;
+  WhereInfo *pWInfo = 0;
   int nArg = 2 + pTab->nCol;      /* Number of arguments to VUpdate */
   int regArg;                     /* First register in VUpdate arg array */
   int regRec;                     /* Register in which to assemble record */

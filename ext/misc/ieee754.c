@@ -90,6 +90,12 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAMETER
+# define UNUSED_PARAMETER(X)  (void)(X)
+#endif
+
 /*
 ** Implementation of the ieee754() function
 */
@@ -109,7 +115,7 @@ static void ieee754func(
      && sqlite3_value_bytes(argv[0])==sizeof(r)
     ){
       const unsigned char *x = sqlite3_value_blob(argv[0]);
-      int i;
+      unsigned int i;
       sqlite3_uint64 v = 0;
       for(i=0; i<sizeof(r); i++){
         v = (v<<8) | x[i];
@@ -201,12 +207,13 @@ static void ieee754func_from_blob(
   int argc,
   sqlite3_value **argv
 ){
+  UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_BLOB
    && sqlite3_value_bytes(argv[0])==sizeof(double)
   ){
     double r;
     const unsigned char *x = sqlite3_value_blob(argv[0]);
-    int i;
+    unsigned int i;
     sqlite3_uint64 v = 0;
     for(i=0; i<sizeof(r); i++){
       v = (v<<8) | x[i];
@@ -220,13 +227,14 @@ static void ieee754func_to_blob(
   int argc,
   sqlite3_value **argv
 ){
+  UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_FLOAT
    || sqlite3_value_type(argv[0])==SQLITE_INTEGER
   ){
     double r = sqlite3_value_double(argv[0]);
     sqlite3_uint64 v;
     unsigned char a[sizeof(r)];
-    int i;
+    unsigned int i;
     memcpy(&v, &r, sizeof(r));
     for(i=1; i<=sizeof(r); i++){
       a[sizeof(r)-i] = v&0xff;
@@ -259,7 +267,7 @@ int sqlite3_ieee_init(
     { "ieee754_from_blob", 1,   0, ieee754func_from_blob },
 
   };
-  int i;
+  unsigned int i;
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */

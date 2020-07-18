@@ -1160,7 +1160,7 @@ static int renameEditSql(
 ** successful. Otherwise, return an SQLite error code and leave an error
 ** message in the Parse object.
 */
-static int renameResolveTrigger(Parse *pParse, const char *zDb){
+static int renameResolveTrigger(Parse *pParse){
   sqlite3 *db = pParse->db;
   Trigger *pNew = pParse->pNewTrigger;
   TriggerStep *pStep;
@@ -1422,7 +1422,7 @@ static void renameColumnFunc(
   }else{
     /* A trigger */
     TriggerStep *pStep;
-    rc = renameResolveTrigger(&sParse, (bTemp ? 0 : zDb));
+    rc = renameResolveTrigger(&sParse);
     if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
 
     for(pStep=sParse.pNewTrigger->step_list; pStep; pStep=pStep->pNext){
@@ -1625,7 +1625,7 @@ static void renameTableFunc(
         }
 
         if( isLegacy==0 ){
-          rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+          rc = renameResolveTrigger(&sParse);
           if( rc==SQLITE_OK ){
             renameWalkTrigger(&sWalker, pTrigger);
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
@@ -1712,7 +1712,7 @@ static void renameTableTest(
 
       else if( sParse.pNewTrigger ){
         if( isLegacy==0 ){
-          rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+          rc = renameResolveTrigger(&sParse);
         }
         if( rc==SQLITE_OK ){
           int i1 = sqlite3SchemaToIndex(db, sParse.pNewTrigger->pTabSchema);

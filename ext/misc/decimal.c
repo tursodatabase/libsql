@@ -21,6 +21,12 @@ SQLITE_EXTENSION_INIT1
 #include <ctype.h>
 #include <stdlib.h>
 
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAMETER
+# define UNUSED_PARAMETER(X)  (void)(X)
+#endif
+
 
 /* A decimal object */
 typedef struct Decimal Decimal;
@@ -235,6 +241,7 @@ static void decimalFunc(
   sqlite3_value **argv
 ){
   Decimal *p = decimal_new(context, argv[0], 0, 0);
+  UNUSED_PARAMETER(argc);
   decimal_result(context, p);
   decimal_free(p);
 }
@@ -288,6 +295,7 @@ static void decimalCmpFunc(
   Decimal *pA = 0, *pB = 0;
   int rc;
 
+  UNUSED_PARAMETER(argc);
   pA = decimal_new(context, argv[0], 0, 0);
   if( pA==0 || pA->isNull ) goto cmp_done;
   pB = decimal_new(context, argv[1], 0, 0);
@@ -412,6 +420,7 @@ static int decimalCollFunc(
   Decimal *pA = decimal_new(0, 0, nKey1, zA);
   Decimal *pB = decimal_new(0, 0, nKey2, zB);
   int rc;
+  UNUSED_PARAMETER(notUsed);
   if( pA==0 || pB==0 ){
     rc = 0;
   }else{
@@ -436,6 +445,7 @@ static void decimalAddFunc(
 ){
   Decimal *pA = decimal_new(context, argv[0], 0, 0);
   Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  UNUSED_PARAMETER(argc);
   decimal_add(pA, pB);
   decimal_result(context, pA);
   decimal_free(pA);
@@ -448,6 +458,7 @@ static void decimalSubFunc(
 ){
   Decimal *pA = decimal_new(context, argv[0], 0, 0);
   Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  UNUSED_PARAMETER(argc);
   if( pB==0 ) return;
   pB->sign = !pB->sign;
   decimal_add(pA, pB);
@@ -468,6 +479,7 @@ static void decimalSumStep(
 ){
   Decimal *p;
   Decimal *pArg;
+  UNUSED_PARAMETER(argc);
   p = sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
   if( !p->isInit ){
@@ -493,6 +505,7 @@ static void decimalSumInverse(
 ){
   Decimal *p;
   Decimal *pArg;
+  UNUSED_PARAMETER(argc);
   p = sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
@@ -533,6 +546,7 @@ static void decimalMulFunc(
   signed char *acc = 0;
   int i, j, k;
   int minFrac;
+  UNUSED_PARAMETER(argc);
   if( pA==0 || pA->oom || pA->isNull
    || pB==0 || pB->oom || pB->isNull 
   ){
@@ -597,7 +611,7 @@ int sqlite3_decimal_init(
     { "decimal_sub",   2,   decimalSubFunc     },
     { "decimal_mul",   2,   decimalMulFunc     },
   };
-  int i;
+  unsigned int i;
   (void)pzErrMsg;  /* Unused parameter */
 
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
