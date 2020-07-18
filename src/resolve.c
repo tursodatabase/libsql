@@ -756,26 +756,23 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
   switch( pExpr->op ){
 
-#if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY)
     /* The special operator TK_ROW means use the rowid for the first
     ** column in the FROM clause.  This is used by the LIMIT and ORDER BY
-    ** clause processing on UPDATE and DELETE statements.
+    ** clause processing on UPDATE and DELETE statements, and by 
+    ** UPDATE ... FROM statement processing.
     */
     case TK_ROW: {
       SrcList *pSrcList = pNC->pSrcList;
       struct SrcList_item *pItem;
-      assert( pSrcList && pSrcList->nSrc==1 );
+      assert( pSrcList && pSrcList->nSrc>=1 );
       pItem = pSrcList->a;
-      assert( HasRowid(pItem->pTab) && pItem->pTab->pSelect==0 );
       pExpr->op = TK_COLUMN;
       pExpr->y.pTab = pItem->pTab;
       pExpr->iTable = pItem->iCursor;
-      pExpr->iColumn = -1;
+      pExpr->iColumn--;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
       break;
     }
-#endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT)
-          && !defined(SQLITE_OMIT_SUBQUERY) */
 
     /* A column name:                    ID
     ** Or table name and column name:    ID.ID

@@ -3126,6 +3126,7 @@ struct Select {
 #define SF_WinRewrite    0x0100000 /* Window function rewrite accomplished */
 #define SF_View          0x0200000 /* SELECT statement is a view */
 #define SF_NoopOrderBy   0x0400000 /* ORDER BY is ignored for this query */
+#define SF_UpdateFrom    0x0800000 /* Statement is an UPDATE...FROM */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -3190,6 +3191,14 @@ struct Select {
 **     SRT_DistQueue   Store results in priority queue pDest->iSDParm only if
 **                     the same record has never been stored before.  The
 **                     index at pDest->iSDParm+1 hold all prior stores.
+**
+**     SRT_Upfrom      Store results in the temporary table already opened by
+**                     pDest->iSDParm. If (pDest->iSDParm<0), then the temp
+**                     table is an intkey table - in this case the first
+**                     column returned by the SELECT is used as the integer
+**                     key. If (pDest->iSDParm>0), then the table is an index
+**                     table. (pDest->iSDParm) is the number of key columns in
+**                     each index record in this case.
 */
 #define SRT_Union        1  /* Store result as keys in an index */
 #define SRT_Except       2  /* Remove result from a UNION index */
@@ -3209,14 +3218,16 @@ struct Select {
 #define SRT_EphemTab    12  /* Create transient tab and store like SRT_Table */
 #define SRT_Coroutine   13  /* Generate a single row of result */
 #define SRT_Table       14  /* Store result as data with an automatic rowid */
+#define SRT_Upfrom      15  /* Store result as data with rowid */
 
 /*
 ** An instance of this object describes where to put of the results of
 ** a SELECT statement.
 */
 struct SelectDest {
-  u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
+  u8 eDest;            /* How to dispose of the results.  One of SRT_* above. */
   int iSDParm;         /* A parameter used by the eDest disposal method */
+  int iSDParm2;        /* A second parameter for the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
   char *zAffSdst;      /* Affinity used when eDest==SRT_Set */
@@ -3562,6 +3573,7 @@ struct TriggerStep {
   Trigger *pTrig;      /* The trigger that this step is a part of */
   Select *pSelect;     /* SELECT statement or RHS of INSERT INTO SELECT ... */
   char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
+  SrcList *pFrom;      /* FROM clause for UPDATE statement (if any) */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
   ExprList *pExprList; /* SET clause for UPDATE */
   IdList *pIdList;     /* Column names for INSERT */
@@ -4230,6 +4242,7 @@ void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(Parse*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
+SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2);
 SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
                                       Token*, Select*, Expr*, IdList*);
@@ -4399,13 +4412,14 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   TriggerStep *sqlite3TriggerInsertStep(Parse*,Token*, IdList*,
                                         Select*,u8,Upsert*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerUpdateStep(Parse*,Token*,ExprList*, Expr*, u8,
-                                        const char*,const char*);
+  TriggerStep *sqlite3TriggerUpdateStep(Parse*,Token*,SrcList*,ExprList*,
+                                        Expr*, u8, const char*,const char*);
   TriggerStep *sqlite3TriggerDeleteStep(Parse*,Token*, Expr*,
                                         const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
   u32 sqlite3TriggerColmask(Parse*,Trigger*,ExprList*,int,int,Table*,int);
+  SrcList *sqlite3TriggerStepSrc(Parse*, TriggerStep*);
 # define sqlite3ParseToplevel(p) ((p)->pToplevel ? (p)->pToplevel : (p))
 # define sqlite3IsToplevel(p) ((p)->pToplevel==0)
 #else
@@ -4419,6 +4433,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 # define sqlite3ParseToplevel(p) p
 # define sqlite3IsToplevel(p) 1
 # define sqlite3TriggerColmask(A,B,C,D,E,F,G) 0
+# define sqlite3TriggerStepSrc(A,B) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

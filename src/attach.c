@@ -599,6 +599,9 @@ int sqlite3FixTriggerStep(
     if( sqlite3FixExprList(pFix, pStep->pExprList) ){
       return 1;
     }
+    if( pStep->pFrom && sqlite3FixSrcList(pFix, pStep->pFrom) ){
+      return 1;
+    }
 #ifndef SQLITE_OMIT_UPSERT
     if( pStep->pUpsert ){
       Upsert *pUp = pStep->pUpsert;
