@@ -284,7 +284,7 @@ void sqlite3Update(
   int i, j, k;           /* Loop counters */
   Table *pTab;           /* The table to be updated */
   int addrTop = 0;       /* VDBE instruction address of the start of the loop */
-  WhereInfo *pWInfo;     /* Information about the WHERE clause */
+  WhereInfo *pWInfo = 0; /* Information about the WHERE clause */
   Vdbe *v;               /* The virtual database engine */
   Index *pIdx;           /* For looping over indices */
   Index *pPk;            /* The PRIMARY KEY index for WITHOUT ROWID tables */
