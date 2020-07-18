@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C More\sharmless\scompiler\swarning\sfixes.
-D 2020-07-18T18:44:59.284
+C Fix\stest\scase\sresult\son\sa\sDELETE\swith\san\sINDEXED\sBY\sclause\sdue\sto\nimprovements\sin\sthe\squery\splanner\sat\s[d901837fea1ed54d]
+D 2020-07-18T18:59:11.167
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -61,6 +61,7 @@ F test/upfrom1.test c0a99a3f44b42beaca37c62e05332d64768c326c75b4edf976533a2d1ef7
 F test/upfrom2.test 6ebd3be8c3fac984e89a177d823686f04605b512fc167392bce6d8ba2ba63325
 F test/upfrom3.test 7dab379d128e8dd7beb2055b295fb113c7ba93e8c2038f5ddb7a4a10f0ebb348
 F test/upfromfault.test 70ecf8eb85559727a487283f69374e3ae39879e994d8a2437c49d7c05ecb70c9
+F test/wherelimit2.test 657a3f24aadee62d058c5091ea682dc4af4b95ffe32f137155be49799a58e721
 F test/window1.test e52b81fff0c3cb122a1240f336688eb81bea2967a99c4ddb78969adec7aadc2a
 F tool/lemon.c 600a58b9d1b8ec5419373982428e927ca208826edacb91ca42ab94514d006039
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
@@ -69,7 +70,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 5a0b0c6e11146e200c3417903232e6932102b02d7bf128bac4b7cd74c257acd1
-R 5a9b588af23863437947680d0e2f2be1
+P 4c0d208c455abb983217a6dfea7634f677f8360fb57857e1421334fe7a5a23e2
+R 61a02552087d7d7a36de6e291a7a443b
 U drh
-Z ff1e0bb73d37ac11ce380a72047e91dc
+Z bcc70f031a6dba86e55b60ee851e59f9

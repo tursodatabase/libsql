@@ -218,18 +218,22 @@ do_execsql_test 4.1 {
   ROLLBACK;
 } {3 4 5 6}
 
-do_catchsql_test 4.2 {
-  DELETE FROM x1 INDEXED BY x1bc WHERE d=3 LIMIT 1;
-} {1 {no query solution}}
+# 2020-06-03: Query planner improved so that a solution is possible.
+#
+#do_catchsql_test 4.2 {
+#  DELETE FROM x1 INDEXED BY x1bc WHERE d=3 LIMIT 1;
+#} {1 {no query solution}}
 
 do_execsql_test 4.3 {
   DELETE FROM x1 INDEXED BY x1bc WHERE b=3 LIMIT 1;
   SELECT a FROM x1;
 } {1 2 3 4 6}
 
-do_catchsql_test 4.4 {
-  UPDATE x1 INDEXED BY x1bc SET d=5 WHERE d=3 LIMIT 1;
-} {1 {no query solution}}
+# 2020-06-03: Query planner improved so that a solution is possible.
+#
+#do_catchsql_test 4.4 {
+#  UPDATE x1 INDEXED BY x1bc SET d=5 WHERE d=3 LIMIT 1;
+#} {1 {no query solution}}
 
 do_execsql_test 4.5 {
   UPDATE x1 INDEXED BY x1bc SET d=5 WHERE b=2 LIMIT 1;
