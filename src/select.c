@@ -1138,7 +1138,14 @@ static void selectInnerLoop(
       {
         int i2 = pDest->iSDParm2;
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_MakeRecord,regResult+(i2<0),nResultCol-(i2<0),r1);
+
+        /* If the UPDATE FROM join is an aggregate that matches no rows, it
+        ** might still be trying to return one row, because that is what
+        ** aggregates do.  Don't record that empty row in the output table. */
+        sqlite3VdbeAddOp2(v, OP_IsNull, regResult, iBreak); VdbeCoverage(v);
+
+        sqlite3VdbeAddOp3(v, OP_MakeRecord,
+                          regResult+(i2<0), nResultCol-(i2<0), r1);
         if( i2<0 ){
           sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regResult);
         }else{
