@@ -2932,8 +2932,8 @@ int sqlite3BtreeGetRequestedReserve(Btree *p){
 ** No changes are made if mxPage is 0 or negative.
 ** Regardless of the value of mxPage, return the maximum page count.
 */
-int sqlite3BtreeMaxPageCount(Btree *p, int mxPage){
-  int n;
+Pgno sqlite3BtreeMaxPageCount(Btree *p, Pgno mxPage){
+  Pgno n;
   sqlite3BtreeEnter(p);
   n = sqlite3PagerMaxPageCount(p->pBt->pPager, mxPage);
   sqlite3BtreeLeave(p);
