@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Fix\stest\scase\sresult\son\sa\sDELETE\swith\san\sINDEXED\sBY\sclause\sdue\sto\nimprovements\sin\sthe\squery\splanner\sat\s[d901837fea1ed54d]
-D 2020-07-18T18:59:11.167
+C Faster\scolumn\sname\slookup\sin\sthe\scolumnIndex()\sroutine\susing\shashing.
+D 2020-07-20T13:11:19.877
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -28,7 +28,7 @@ F src/parse.y 5bdb760a29c0b25caf7e80e82210b81cd2ea3066d5199ca29e6eac40b34bc184
 F src/pragma.c ae499b5ab8f4e833f67e28bf2322500e9aa612aadf12581d1324333f848d8b51
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/resolve.c 2dd6821aac2cd27de9fcf6aa6d1f8c41b4b5841c9bc58bf1c9109008009a3a2e
-F src/select.c ee84981a346ddddf5669db441a68fac763f4266fe83a9cb27e43c67fbcf1b215
+F src/select.c 835a86f1064b5b744c22166ef10a9f598be266feccef3128122ad5f8e9bd9dbc
 F src/shell.c.in 81fa23ac1a3d6ac9ed13e9ae711a3d8806396ca7cc12c5d6a2e2536f70b0c7ad
 F src/sqliteInt.h 9682c3ce6b970b3a997d65c140bdb5b286a04188e4e1c8489b64a525161ecb30
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
@@ -70,7 +70,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 4c0d208c455abb983217a6dfea7634f677f8360fb57857e1421334fe7a5a23e2
-R 61a02552087d7d7a36de6e291a7a443b
+P 020dbfa2aef20e5872cc3e785d99f45903843401292114b5092b9c8aa829b9c3
+R dd7292537766c9a2f1a52ad731c64848
 U drh
-Z bcc70f031a6dba86e55b60ee851e59f9
+Z b4e9384168d028fbccb483cf5527f35f
