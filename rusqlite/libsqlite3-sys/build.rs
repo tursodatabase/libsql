@@ -111,10 +111,12 @@ mod build_bundled {
         }
         // Target wasm32-wasi can't compile the default VFS
         if env::var("TARGET") == Ok("wasm32-wasi".to_string()) {
-            cfg.file("sqlite3/wasm32-wasi-vfs.c")
-                .flag("-DSQLITE_OS_OTHER")
+            cfg.flag("-DSQLITE_OS_OTHER")
                 // https://github.com/rust-lang/rust/issues/74393
                 .flag("-DLONGDOUBLE_TYPE=double");
+            if cfg!(feature = "wasm32-wasi-vfs") {
+                cfg.file("sqlite3/wasm32-wasi-vfs.c");
+            }
         }
         if cfg!(feature = "unlock_notify") {
             cfg.flag("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
