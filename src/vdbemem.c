@@ -104,16 +104,16 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
 static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
   StrAccum acc;
   assert( p->flags & (MEM_Int|MEM_Real|MEM_IntReal) );
-  sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
+  assert( sz>22 );
   if( p->flags & MEM_Int ){
-    sqlite3_str_appendf(&acc, "%lld", p->u.i);
-  }else if( p->flags & MEM_IntReal ){
-    sqlite3_str_appendf(&acc, "%!.15g", (double)p->u.i);
+    sqlite3Int64ToText(p->u.i, zBuf);
   }else{
-    sqlite3_str_appendf(&acc, "%!.15g", p->u.r);
+    sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
+    sqlite3_str_appendf(&acc, "%!.15g", 
+         (p->flags & MEM_IntReal)!=0 ? (double)p->u.i : p->u.r);
+    assert( acc.zText==zBuf && acc.mxAlloc<=0 );
+    zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
   }
-  assert( acc.zText==zBuf && acc.mxAlloc<=0 );
-  zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
 }
 
 #ifdef SQLITE_DEBUG

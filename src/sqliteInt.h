@@ -4462,6 +4462,7 @@ int sqlite3FixExpr(DbFixer*, Expr*);
 int sqlite3FixExprList(DbFixer*, ExprList*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 int sqlite3RealSameAsInt(double,sqlite3_int64);
+void sqlite3Int64ToText(i64,char*);
 int sqlite3AtoF(const char *z, double*, int, u8);
 int sqlite3GetInt32(const char *, int*);
 int sqlite3Atoi(const char*);
