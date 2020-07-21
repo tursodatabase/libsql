@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Add\sthe\ssqlite3Int64ToText()\sroutine\sand\suse\sit\sto\sconvert\sintegers\sto\stext,\nas\sit\sis\smuch\sfaster\sthan\sthe\sgeneric\stext\sformatter.
-D 2020-07-21T18:25:19.943
+C Work-around\sfor\s[https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96270|GCC\sbug\s96270].
+D 2020-07-21T18:36:06.197
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -39,7 +39,7 @@ F src/update.c fb15bec5b54fd098f4b84f6abc83c7103b45ba8484011fff8edf5ae31656eab6
 F src/util.c 98ae6ee20504a963c9073154eb80ceded7f595a6435b6f866cd69e92a214951c
 F src/vdbe.c 981666c49d33039df6dc9fccd40191575586ac4866255b2f57819cc5eb99f572
 F src/vdbeapi.c c1a9004ac554d8d48794d2ce5f80397f8e419fd28643a543cc1e004c7713c3ef
-F src/vdbemem.c 26b6393cf4f0d9b16913b8759ed99f311dab7887d2ae1866580e12b7a90bf372
+F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
 F src/window.c 0dec178bfa541c757d15a2be78f34aea36393a0966600366810e5f8739ccf370
 F test/altertab.test b8b2104212e8ea87c75c3cbe3cb78ed7236a6c828ee2e59ed09d3dbe9812d002
@@ -72,7 +72,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 6d258c3c7ecafa1114e4a63739971ff527580868659c2f2c47d2c0adb92c1453
-R c6088ea0c8431e235c910d4f8e65c23f
+P 14eed318aa9e6e16d1aa13a9f34e3822aa135c39ba06c77df7743509fed6c95e
+R 7d68dfef8f54ff612340b00b3b6644f1
 U drh
-Z 7f0d2c84e154f159195756859765e9e4
+Z a26de3a893be447e4c173c68496f3e02

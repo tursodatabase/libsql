@@ -106,7 +106,16 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
   assert( p->flags & (MEM_Int|MEM_Real|MEM_IntReal) );
   assert( sz>22 );
   if( p->flags & MEM_Int ){
+#if GCC_VERSION>=7000000
+    /* Work-around for GCC bug
+    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96270 */
+    i64 x;
+    assert( (p->flags&MEM_Int)*2==sizeof(x) );
+    memcpy(&x, (char*)&p->u, (p->flags&MEM_Int)*2);
+    sqlite3Int64ToText(x, zBuf);
+#else
     sqlite3Int64ToText(p->u.i, zBuf);
+#endif
   }else{
     sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
     sqlite3_str_appendf(&acc, "%!.15g", 
