@@ -164,4 +164,15 @@ do_test 2.3.2 { catch { execsql {
   UPDATE t5 AS apples SET b=1 FROM t5 AS apples;
 } } } 1
 
+# Problem found by OSSFuzz on 2020-07-20
+# https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=24282
+#
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE t0(a);
+  CREATE TABLE t1(b);
+  UPDATE t1 SET b=sum(a) FROM t0;
+  SELECT * FROM t0, t1;
+} {}
+
 finish_test

@@ -1112,8 +1112,8 @@ static void strftimeFunc(
         case 'm':  sqlite3_snprintf(3, &z[j],"%02d",x.M); j+=2; break;
         case 'M':  sqlite3_snprintf(3, &z[j],"%02d",x.m); j+=2; break;
         case 's': {
-          sqlite3_snprintf(30,&z[j],"%lld",
-                           (i64)(x.iJD/1000 - 21086676*(i64)10000));
+          i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
+          sqlite3Int64ToText(iS, &z[j]);
           j += sqlite3Strlen30(&z[j]);
           break;
         }

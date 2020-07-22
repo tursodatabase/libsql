@@ -264,8 +264,10 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
 */
 static int columnIndex(Table *pTab, const char *zCol){
   int i;
-  for(i=0; i<pTab->nCol; i++){
-    if( sqlite3StrICmp(pTab->aCol[i].zName, zCol)==0 ) return i;
+  u8 h = sqlite3StrIHash(zCol);
+  Column *pCol;
+  for(pCol=pTab->aCol, i=0; i<pTab->nCol; pCol++, i++){
+    if( pCol->hName==h && sqlite3StrICmp(pCol->zName, zCol)==0 ) return i;
   }
   return -1;
 }
@@ -1136,7 +1138,14 @@ static void selectInnerLoop(
       {
         int i2 = pDest->iSDParm2;
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_MakeRecord,regResult+(i2<0),nResultCol-(i2<0),r1);
+
+        /* If the UPDATE FROM join is an aggregate that matches no rows, it
+        ** might still be trying to return one row, because that is what
+        ** aggregates do.  Don't record that empty row in the output table. */
+        sqlite3VdbeAddOp2(v, OP_IsNull, regResult, iBreak); VdbeCoverage(v);
+
+        sqlite3VdbeAddOp3(v, OP_MakeRecord,
+                          regResult+(i2<0), nResultCol-(i2<0), r1);
         if( i2<0 ){
           sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, regResult);
         }else{
