@@ -27,6 +27,7 @@ ifcapable !fts3 {
 
 sqlite3_fts3_may_be_corrupt 1
 database_may_be_corrupt
+extra_schema_checks 0
 
 do_execsql_test 1.0 {
   BEGIN;
@@ -6281,5 +6282,6 @@ do_catchsql_test 46.2 {
 } {1 {database disk image is malformed}}
 
 set sqlite_fts3_enable_parentheses $saved
+extra_schema_checks 1
 
 finish_test

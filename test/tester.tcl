@@ -2479,6 +2479,7 @@ set sqlite_fts3_enable_parentheses 0
 # this setting by invoking "database_can_be_corrupt"
 #
 database_never_corrupt
+extra_schema_checks 1
 
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl

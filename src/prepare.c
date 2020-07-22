@@ -118,7 +118,9 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     if( sqlite3GetUInt32(argv[3], &db->init.newTnum)==0
      || (db->init.newTnum>pData->mxPage && pData->mxPage>0)
     ){
-      corruptSchema(pData, argv[1], "invalid rootpage");
+      if( sqlite3Config.bExtraSchemaChecks ){
+        corruptSchema(pData, argv[1], "invalid rootpage");
+      }
     }
     db->init.orphanTrigger = 0;
     db->init.azInit = argv;
@@ -160,7 +162,9 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
      || (pIndex->tnum>pData->mxPage && pData->mxPage!=0)
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
-      corruptSchema(pData, argv[1], "invalid roopage");
+      if( sqlite3Config.bExtraSchemaChecks ){
+        corruptSchema(pData, argv[1], "invalid roopage");
+      }
     }
   }
   return 0;
