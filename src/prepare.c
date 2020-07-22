@@ -115,10 +115,10 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 
     assert( db->init.busy );
     db->init.iDb = iDb;
-    sqlite3GetUInt32(argv[3], &db->init.newTnum);
-    if( db->init.newTnum>pData->mxPage && pData->mxPage!=0 ){
+    if( sqlite3GetUInt32(argv[3], &db->init.newTnum)==0
+     || (db->init.newTnum>pData->mxPage && pData->mxPage>0)
+    ){
       corruptSchema(pData, argv[1], "invalid rootpage");
-      return 0;
     }
     db->init.orphanTrigger = 0;
     db->init.azInit = argv;
@@ -152,13 +152,15 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     */
     Index *pIndex;
     pIndex = sqlite3FindIndex(db, argv[1], db->aDb[iDb].zDbSName);
-    if( pIndex==0
-     || sqlite3GetUInt32(argv[3],&pIndex->tnum)==0
+    if( pIndex==0 ){
+      corruptSchema(pData, argv[1], "orphan index");
+    }else
+    if( sqlite3GetUInt32(argv[3],&pIndex->tnum)==0
      || pIndex->tnum<2
      || (pIndex->tnum>pData->mxPage && pData->mxPage!=0)
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
-      corruptSchema(pData, argv[1], pIndex?"invalid rootpage":"orphan index");
+      corruptSchema(pData, argv[1], "invalid roopage");
     }
   }
   return 0;

@@ -1,16 +1,16 @@
 B d2aac001204621062e6cb3230ce2ac1b4545cb83b3ebb6bfebccee4d51162e97
-C When\sparsing\sthe\sschema,\sdetect\sout-of-bounds\srootpage\svalues\sand\sthrow\san\nerror.
-D 2020-07-22T18:03:56.431
+C Improvements\sto\srootpage\sbounds\schecking\sduring\sschema\sparse.
+D 2020-07-22T20:12:10.870
 F src/analyze.c 5cffff3d355858cd22bfc6e20ac7203510d2e1cc935086eb06f4abb2f579f628
 F src/btree.c a4720f51945a86379ecd962a715d6fe9de08651a67d1e6f7b4884612da83ceb5
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
 F src/build.c f2b73fbb2197fb6e6a35ff2e1750085f023dc50542185f1a2dfccd632223eb14
 F src/pager.c a5f65ff2cd73b8d381cc7b338cac382ca6978d578fa0b84fdaa11d3cdc3c3e18
-F src/prepare.c 752643468bab27081bee439a7a727b616db2997e2ecdae132e8c786f8e44bcec
+F src/prepare.c 8e7300f91270fd2dca9852419eb0a0d282220b0faddb04890131738f7fcd5c56
 F src/select.c 0e75d64091200a2a8fdc02abafe176a0c2e9b2654c4cc34564f25f0b408e91de
 F src/sqliteInt.h ec260b2441d94ef0b5be424c323cf255ae30d23e2fb2bd1c42a3a59c2fbafedb
-F src/util.c 58bf59fb0923017619c9c53957a676ff2322314b2547f6a223e0707e7ba505de
+F src/util.c 9ae0b629657ca10abde2f27f5dc3e545cb66d298d111bac062b236a099f8df2d
 F src/vdbe.c 120fdb1add80309cf1b4d6cc88b7f4e0580e816ded743a8f495fff9ef35a4e0a
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 762abffb7709f19c2cb74af1bba73a900f762e64f80d69c31c9ae89ed1066b60
@@ -18,10 +18,7 @@ F src/vdbeaux.c 1cbbbffdb874c6f3e7aab40f3deb48abac4a71df1043cd95bb0d652d4e053871
 F src/wherecode.c 8064fe5c042824853a9b1fda670054a51a49033a6c79059988c97751ccf8088e
 F test/corrupt3.test 2520432b1fbf99994841e69804a3c59fb828183f4d09b85a1631bc7adca17e31
 F tool/showdb.c 49e810f5c414c792b5bf38cd5557ca9639713ebfef32aaff32faf7cb7ccce513
-P 4c5f3c6cacf84a36d0347790d98d82d1f584cd1537a13a2736348405c4d20367
-R ccc7b0ae4ada19d710420f989f7c9313
-T *branch * rootpage-bounds-check
-T *sym-rootpage-bounds-check *
-T -sym-larger-databases *
+P 6c3a2727dc912ed800146e07db5d15d0f3468d13701165ba763c4b114c3e18e8
+R 8ead1dc407d0990e3de43a2746002935
 U drh
-Z c08f65e2e744a2c088ae7728fbcd5c94
+Z 6533392daf1a1cab3900f2468d6a420b
