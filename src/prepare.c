@@ -115,7 +115,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 
     assert( db->init.busy );
     db->init.iDb = iDb;
-    db->init.newTnum = sqlite3Atoi(argv[3]);
+    sqlite3GetUInt32(argv[3], &db->init.newTnum);
     db->init.orphanTrigger = 0;
     db->init.azInit = argv;
     pStmt = 0;
