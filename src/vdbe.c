@@ -6122,6 +6122,7 @@ case OP_ParseSchema: {
     initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;
     initData.mInitFlags = 0;
+    initData.mxPage = sqlite3BtreeLastPage(db->aDb[iDb].pBt);
     zSql = sqlite3MPrintf(db,
        "SELECT*FROM\"%w\".%s WHERE %s ORDER BY rowid",
        db->aDb[iDb].zDbSName, zSchema, pOp->p4.z);
