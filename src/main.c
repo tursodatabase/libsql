@@ -4091,6 +4091,12 @@ int sqlite3_test_control(int op, ...){
     ** Set or clear a flag that causes SQLite to verify that type, name,
     ** and tbl_name fields of the sqlite_schema table.  This is normally
     ** on, but it is sometimes useful to turn it off for testing.
+    **
+    ** 2020-07-22:  Disabling EXTRA_SCHEMA_CHECKS also disables the
+    ** verification of rootpage numbers when parsing the schema.  This
+    ** is useful to make it easier to reach strange internal error states
+    ** during testing.  The EXTRA_SCHEMA_CHECKS settting is always enabled
+    ** in production.
     */
     case SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS: {
       sqlite3GlobalConfig.bExtraSchemaChecks = va_arg(ap, int);

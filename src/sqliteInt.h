@@ -3629,6 +3629,7 @@ typedef struct {
   int rc;             /* Result code stored here */
   u32 mInitFlags;     /* Flags controlling error messages */
   u32 nInitRow;       /* Number of rows processed */
+  Pgno mxPage;        /* Maximum page number.  0 for no limit. */
 } InitData;
 
 /*

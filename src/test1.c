@@ -6438,6 +6438,30 @@ static int SQLITE_TCLAPI prng_seed(
 }
 
 /*
+** tclcmd:  extra_schema_checks BOOLEAN
+**
+** Enable or disable schema checks when parsing the sqlite_schema file.
+** This is always enabled in production, but it is sometimes useful to
+** disable the checks in order to make some internal error states reachable
+** for testing.
+*/
+static int SQLITE_TCLAPI extra_schema_checks(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int i = 0;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetBooleanFromObj(interp,objv[1],&i) ) return TCL_ERROR;
+  sqlite3_test_control(SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS, i);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  database_may_be_corrupt
 **
 ** Indicate that database files might be corrupt. In other words, set the normal
@@ -8003,6 +8027,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
      { "prng_seed",                     prng_seed,          0 },
+     { "extra_schema_checks",           extra_schema_checks,    0},
      { "database_never_corrupt",        database_never_corrupt, 0},
      { "database_may_be_corrupt",       database_may_be_corrupt, 0},
      { "optimization_control",          optimization_control,0},

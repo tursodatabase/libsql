@@ -1174,6 +1174,7 @@ do_test 14.0 {
 | end clusterfuzz-testcase-minimized-sqlite3_dbfuzz2_fuzzer-4806406219825152
 }]} {}
 
+extra_schema_checks 0
 do_catchsql_test 14.1 {
   PRAGMA integrity_check;
 } {1 {database disk image is malformed}}
@@ -1181,6 +1182,7 @@ do_catchsql_test 14.1 {
 do_catchsql_test 14.2 {
   ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s; 
 } {1 {database disk image is malformed}}
+extra_schema_checks 1
 
 #-------------------------------------------------------------------------
 reset_db
@@ -1263,9 +1265,11 @@ do_test 15.0 {
 | end crash-3afa1ca9e9c1bd.db
 }]} {}
 
+extra_schema_checks 0
 do_execsql_test 15.1 {
   UPDATE c1 SET c= NOT EXISTS(SELECT 1 FROM c1 ORDER BY (SELECT 1 FROM c1 ORDER BY a)) +10 WHERE d BETWEEN 4 AND 7;
 } {}
+extra_schema_checks 1
 
 #-------------------------------------------------------------------------
 reset_db
@@ -1291,5 +1295,3 @@ do_catchsql_test 16.1 {
 } {1 {database disk image is malformed}}
 
 finish_test
-
-
