@@ -2139,12 +2139,11 @@ static MemPage *btreePageLookup(BtShared *pBt, Pgno pgno){
 ** error, return ((unsigned int)-1).
 */
 static Pgno btreePagecount(BtShared *pBt){
-  assert( (pBt->nPage & 0x80000000)==0 || CORRUPT_DB );
   return pBt->nPage;
 }
-u32 sqlite3BtreeLastPage(Btree *p){
+Pgno sqlite3BtreeLastPage(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  return btreePagecount(p->pBt) & 0x7fffffff;
+  return btreePagecount(p->pBt);
 }
 
 /*
@@ -4836,7 +4835,7 @@ static int accessPayload(
     Pgno nextPage;
 
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
-
+ 
     /* If the BtCursor.aOverflow[] has not been allocated, allocate it now.
     **
     ** The aOverflow[] array is sized at one entry for each overflow page
@@ -4875,6 +4874,7 @@ static int accessPayload(
     assert( rc==SQLITE_OK && amt>0 );
     while( nextPage ){
       /* If required, populate the overflow page-list cache. */
+      if( nextPage > pBt->nPage ) return SQLITE_CORRUPT_BKPT;
       assert( pCur->aOverflow[iIdx]==0
               || pCur->aOverflow[iIdx]==nextPage
               || CORRUPT_DB );

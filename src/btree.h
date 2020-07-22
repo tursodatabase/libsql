@@ -72,7 +72,7 @@ int sqlite3BtreeSetPagerFlags(Btree*,unsigned);
 int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
 int sqlite3BtreeGetPageSize(Btree*);
 Pgno sqlite3BtreeMaxPageCount(Btree*,Pgno);
-u32 sqlite3BtreeLastPage(Btree*);
+Pgno sqlite3BtreeLastPage(Btree*);
 int sqlite3BtreeSecureDelete(Btree*,int);
 int sqlite3BtreeGetRequestedReserve(Btree*);
 int sqlite3BtreeGetReserveNoMutex(Btree *p);
