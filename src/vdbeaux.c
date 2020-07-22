@@ -1712,12 +1712,12 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     }
 #endif
     case P4_INTARRAY: {
-      int i;
-      int *ai = pOp->p4.ai;
-      int n = ai[0];   /* The first element of an INTARRAY is always the
+      u32 i;
+      u32 *ai = pOp->p4.ai;
+      u32 n = ai[0];   /* The first element of an INTARRAY is always the
                        ** count of the number of elements to follow */
       for(i=1; i<=n; i++){
-        sqlite3_str_appendf(&x, "%c%d", (i==1 ? '[' : ','), ai[i]);
+        sqlite3_str_appendf(&x, "%c%u", (i==1 ? '[' : ','), ai[i]);
       }
       sqlite3_str_append(&x, "]", 1);
       break;
@@ -3561,11 +3561,11 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** If the cursor is already pointing to the correct row and that row has
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
-int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
+int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
   VdbeCursor *p = *pp;
   assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
   if( p->deferredMoveto ){
-    int iMap;
+    u32 iMap;
     if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;

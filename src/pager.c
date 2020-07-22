@@ -787,11 +787,6 @@ static const unsigned char aJournalMagic[] = {
 #endif
 
 /*
-** The maximum legal page number is (2^31 - 1).
-*/
-#define PAGER_MAX_PGNO 2147483647
-
-/*
 ** The argument to this macro is a file descriptor (type sqlite3_file*).
 ** Return 0 if it is not open, or non-zero (but not 1) if it is.
 **
@@ -5490,7 +5485,7 @@ static int getPageNormal(
   if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
-    assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
+    assert( pgno!=PAGER_MJ_PGNO(pPager) );
     pPager->aStat[PAGER_STAT_HIT]++;
     return SQLITE_OK;
 
@@ -5498,10 +5493,10 @@ static int getPageNormal(
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized. But first some error checks:
     **
-    ** (1) The maximum page number is 2^31
+    ** (*) obsolete.  Was: maximum page number is 2^31
     ** (2) Never try to fetch the locking page
     */
-    if( pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
+    if( pgno==PAGER_MJ_PGNO(pPager) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }

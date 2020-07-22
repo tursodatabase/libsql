@@ -149,7 +149,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     Index *pIndex;
     pIndex = sqlite3FindIndex(db, argv[1], db->aDb[iDb].zDbSName);
     if( pIndex==0
-     || sqlite3GetInt32(argv[3],&pIndex->tnum)==0
+     || sqlite3GetUInt32(argv[3],&pIndex->tnum)==0
      || pIndex->tnum<2
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){

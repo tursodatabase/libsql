@@ -864,6 +864,24 @@ int sqlite3Atoi(const char *z){
 }
 
 /*
+** Try to convert z into an unsigned 32-bit integer.  Return true on
+** success and false if there is an error.
+**
+** Only decimal notation is accepted.
+*/
+int sqlite3GetUInt32(const char *z, u32 *pI){
+  u64 v = 0;
+  int i;
+  for(i=0; sqlite3Isdigit(z[i]); i++){
+    v = v*10 + z[i] - '0';
+    if( v>4294967296LL ) return 0;
+  }
+  if( i==0 || z[i]!=0 ) return 0;
+  *pI = (u32)v;
+  return 1;
+}
+
+/*
 ** The variable-length integer encoding is as follows:
 **
 ** KEY:
