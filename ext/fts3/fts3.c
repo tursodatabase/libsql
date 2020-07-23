@@ -5831,7 +5831,8 @@ static int fts3EvalGatherStats(
       fts3EvalRestart(pCsr, pRoot, &rc);
       do {
         fts3EvalNextRow(pCsr, pRoot, &rc);
-        assert( pRoot->bEof==0 );
+        assert_fts3_nc( pRoot->bEof==0 );
+        if( pRoot->bEof ) rc = FTS_CORRUPT_VTAB;
       }while( pRoot->iDocid!=iDocid && rc==SQLITE_OK );
     }
   }
