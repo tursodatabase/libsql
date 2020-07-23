@@ -1,6 +1,6 @@
 B 7a876209a678a34c198b54ceef9e3c041f128a14dc73357f6a57cadadaa6cf7b
-C Fix\sanother\scase\swhere\sa\scorrupt\srecord\scould\scause\san\sassert()\sto\sfail\sin\sfts3.
-D 2020-07-23T13:45:47.044
+C An\sORDER\sBY\sclause\scan\sslip\sinto\san\sSRT_Upfrom\squery\svia\sthe\squery\nflattener,\seven\swithout\sthe\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT\scompile-time\noption.\s\sSo\salways\senable\sthe\scode\sto\sdeal\swith\sthat\scase.
+D 2020-07-23T14:12:47.461
 F Makefile.in 19374a5db06c3199ec1bab71ab74a103d8abf21053c05e9389255dc58083f806
 F Makefile.msc 48f5a3fc32672c09ad73795749f6253e406a31526935fbbffd8f021108d54574
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
@@ -29,7 +29,7 @@ F src/parse.y 5bdb760a29c0b25caf7e80e82210b81cd2ea3066d5199ca29e6eac40b34bc184
 F src/pragma.c d96ce48697d6a1d9b4fe9b1d624a62745488ecceaab702941d1c7b9f85ced8d5
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/resolve.c 2dd6821aac2cd27de9fcf6aa6d1f8c41b4b5841c9bc58bf1c9109008009a3a2e
-F src/select.c 39c6b63d996f9a24b34d2ccf38f67a7283355056011c2bb1b135daed7a715cf5
+F src/select.c 860ee5f1a72e8d4bfa76f5115eb9ae6862be77561130192b7ec6a7e0d72aa3a8
 F src/shell.c.in 352a0a6399ccae40a30f72ea06f52f3791a062bde9b8929a97f345e1584ba310
 F src/sqliteInt.h e07f073568a07e6b96c99a08ec650e2dd88a3a3229dbaeb0ed09a5f1b215e405
 F src/test1.c fe56c4bcaa2685ca9aa25d817a0ee9345e189aff4a5a71a3d8ba946c7776feb8
@@ -73,7 +73,7 @@ F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfa
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
-P 65dd321432e8f80bc1cb11be8ca06656b41ac997a74a5eb271c797cf0fbb764e
-R f9a13ea428ee03cdd1b9a50a26aa3366
-U dan
-Z 5e6e488fc0c7fab53624bbe30255a98f
+P 28515bbbae4fbc260457dea7a0f7414be1837d6db27fec5514f8da358bfc1f0c
+R 796f4eb68aea986a8f73e6e51252aacd
+U drh
+Z c1de31883a1f8f457abd5c3040dd5d2f
