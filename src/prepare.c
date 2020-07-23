@@ -163,7 +163,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
       if( sqlite3Config.bExtraSchemaChecks ){
-        corruptSchema(pData, argv[1], "invalid roopage");
+        corruptSchema(pData, argv[1], "invalid rootpage");
       }
     }
   }
