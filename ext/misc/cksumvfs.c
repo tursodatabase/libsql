@@ -634,7 +634,7 @@ static int cksmOpen(
   p = (CksmFile*)pFile;
   memset(p, 0, sizeof(*p));
   pSubFile = ORIGFILE(pFile);
-  p->base.pMethods = &cksm_io_methods;
+  pFile->pMethods = &cksm_io_methods;
   rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
   if( rc ) goto cksm_open_done;
   if( flags & SQLITE_OPEN_WAL ){

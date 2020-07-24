@@ -5266,7 +5266,7 @@ static int winOpen(
   }
 
   sqlite3_free(zTmpname);
-  pFile->pMethod = pAppData ? pAppData->pMethod : &winIoMethod;
+  id->pMethods = pAppData ? pAppData->pMethod : &winIoMethod;
   pFile->pVfs = pVfs;
   pFile->h = h;
   if( isReadonly ){

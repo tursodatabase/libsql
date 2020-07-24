@@ -100,7 +100,7 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
 
 #ifndef SQLITE_AMALGAMATION
 /* IMPLEMENTATION-OF: R-46656-45156 The sqlite3_version[] string constant
-** contains the text of SQLITE_VERSION macro. 
+** contains the text of SQLITE_VERSION macro.
 */
 const char sqlite3_version[] = SQLITE_VERSION;
 #endif

@@ -5692,7 +5692,7 @@ static int fillInUnixFile(
   if( rc!=SQLITE_OK ){
     if( h>=0 ) robust_close(pNew, h, __LINE__);
   }else{
-    pNew->pMethod = pLockingStyle;
+    pId->pMethods = pLockingStyle;
     OpenCounter(+1);
     verifyDbFile(pNew);
   }
