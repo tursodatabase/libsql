@@ -366,7 +366,7 @@ int sqlite3JournalOpen(
     assert( MEMJOURNAL_DFLT_FILECHUNKSIZE==fileChunkSize(p->nChunkSize) );
   }
 
-  p->pMethod = (const sqlite3_io_methods*)&MemJournalMethods;
+  pJfd->pMethods = (const sqlite3_io_methods*)&MemJournalMethods;
   p->nSpill = nSpill;
   p->flags = flags;
   p->zJournal = zName;
@@ -392,7 +392,7 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
 int sqlite3JournalCreate(sqlite3_file *pJfd){
   int rc = SQLITE_OK;
   MemJournal *p = (MemJournal*)pJfd;
-  if( p->pMethod==&MemJournalMethods && (
+  if( pJfd->pMethods==&MemJournalMethods && (
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
      p->nSpill>0
 #else
