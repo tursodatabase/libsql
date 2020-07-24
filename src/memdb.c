@@ -339,7 +339,7 @@ static int memdbOpen(
   p->mFlags = SQLITE_DESERIALIZE_RESIZEABLE | SQLITE_DESERIALIZE_FREEONCLOSE;
   assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
   *pOutFlags = flags | SQLITE_OPEN_MEMORY;
-  p->base.pMethods = &memdb_io_methods;
+  pFile->pMethods = &memdb_io_methods;
   p->szMax = sqlite3GlobalConfig.mxMemdbSize;
   return SQLITE_OK;
 }
