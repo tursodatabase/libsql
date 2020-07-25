@@ -2138,6 +2138,19 @@ int sqlite3WalClose(
 }
 
 /*
+** Return true if the wal-index header seems valid based on the
+** checksum.
+*/
+static int walIndexHdrValid(WalIndexHdr *p){
+  u32 aCksum[2];
+  if( p->isInit==0 ) return 0;
+  walChecksumBytes(1, (u8*)p, sizeof(*p)-sizeof(p->aCksum), 0, aCksum);
+  if( aCksum[0]!=p->aCksum[0] ) return 0;
+  if( aCksum[1]!=p->aCksum[1] ) return 0;
+  return 1;
+}
+
+/*
 ** Try to read the wal-index header.  Return 0 on success and 1 if
 ** there is a problem.
 **
@@ -2154,7 +2167,7 @@ int sqlite3WalClose(
 ** If the checksum cannot be verified return non-zero. If the header
 ** is read successfully and the checksum verified, return zero.
 */
-static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
+static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged, int cnt){
   u32 aCksum[2];                  /* Checksum on the header content */
   WalIndexHdr h1, h2;             /* Two copies of the header content */
   WalIndexHdr volatile *aHdr;     /* Header in shared memory */
@@ -2179,20 +2192,17 @@ static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** reliably in that environment.
   */
   aHdr = walIndexHdr(pWal);
-  memcpy(&h1, (void *)&aHdr[0], sizeof(h1)); /* Possible TSAN false-positive */
+  memcpy(&h1, (void *)&aHdr[0], sizeof(h1));
   walShmBarrier(pWal);
   memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
 
   if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
-    return 1;   /* Dirty read */
-  }  
-  if( h1.isInit==0 ){
-    return 1;   /* Malformed header - probably all zeros */
+    if( cnt<15 ) return 1;
+    if( !walIndexHdrValid(&h1) ){
+      memcpy(&h1, &h2, sizeof(h1));
+    }
   }
-  walChecksumBytes(1, (u8*)&h1, sizeof(h1)-sizeof(h1.aCksum), 0, aCksum);
-  if( aCksum[0]!=h1.aCksum[0] || aCksum[1]!=h1.aCksum[1] ){
-    return 1;   /* Checksum does not match */
-  }
+  if( !walIndexHdrValid(&h1) ) return 1;
 
   if( memcmp(&pWal->hdr, &h1, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
@@ -2224,7 +2234,7 @@ static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
 ** If the wal-index header is successfully read, return SQLITE_OK. 
 ** Otherwise an SQLite error code.
 */
-static int walIndexReadHdr(Wal *pWal, int *pChanged){
+static int walIndexReadHdr(Wal *pWal, int *pChanged, int cnt){
   int rc;                         /* Return code */
   int badHdr;                     /* True if a header read failed */
   volatile u32 *page0;            /* Chunk of wal-index containing header */
@@ -2264,7 +2274,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** works, but may fail if the wal-index header is corrupt or currently 
   ** being modified by another thread or process.
   */
-  badHdr = (page0 ? walIndexTryHdr(pWal, pChanged) : 1);
+  badHdr = (page0 ? walIndexTryHdr(pWal, pChanged, 0) : 1);
 
   /* If the first attempt failed, it might have been due to a race
   ** with a writer.  So get a WRITE lock and try again.
@@ -2280,7 +2290,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       if( bWriteLock || SQLITE_OK==(rc = walLockWriter(pWal)) ){
         pWal->writeLock = 1;
         if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
-          badHdr = walIndexTryHdr(pWal, pChanged);
+          badHdr = walIndexTryHdr(pWal, pChanged, cnt);
           if( badHdr ){
             /* If the wal-index header is still malformed even while holding
             ** a WRITE lock, it can only mean that the header is corrupted and
@@ -2586,7 +2596,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   if( !useWal ){
     assert( rc==SQLITE_OK );
     if( pWal->bShmUnreliable==0 ){
-      rc = walIndexReadHdr(pWal, pChanged);
+      rc = walIndexReadHdr(pWal, pChanged, cnt);
     }
     if( rc==SQLITE_BUSY ){
       /* If there is not a recovery running in another thread or process
@@ -3745,7 +3755,7 @@ int sqlite3WalCheckpoint(
   /* Read the wal-index header. */
   if( rc==SQLITE_OK ){
     walDisableBlocking(pWal);
-    rc = walIndexReadHdr(pWal, &isChanged);
+    rc = walIndexReadHdr(pWal, &isChanged, 0);
     (void)walEnableBlocking(pWal);
     if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
       sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
