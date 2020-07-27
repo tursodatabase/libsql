@@ -1,5 +1,5 @@
-C Allow\sa\swal\smode\srecovery\sto\sproceed\seven\sif\sthere\sare\sreaders.
-D 2020-07-25T20:16:27.306
+C Improved\serror\sreporting\sif\swalLockExclusive()\sfails.
+D 2020-07-27T15:01:10.732
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c ee5b4c902fdda2230f9503ac7b84c6d614c91e8f6f4dc1633e2e8dfef8ffb144
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 477491b1996746fb197ac44cb7e5e2bdc14645e0663c6422445534254bee37fe
+F src/wal.c e409134fb951703a39be98b338c619d51f3e07762fa82e588f1fa0c7c5d862e9
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
@@ -1878,10 +1878,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73fecc688ab5c459245c9bb89432139a083ef378404b4dae3397a7f4e253f72a
-R 7245f53be8944a8b99a3f69058418f3e
-T *branch * unlocked-recovery
-T *sym-unlocked-recovery *
-T -sym-trunk *
-U dan
-Z c489f8aaf2222395682cc1ddd5e61e86
+P 74374aebf9abf3d6b6a3920967a079ceaa4c6276dc6c177682742c2be405b7b7
+R ad70c7dd934fbc2e01f89cff69e39467
+U drh
+Z 0c4694f1a9773fd8d0ef5779e92d6e66

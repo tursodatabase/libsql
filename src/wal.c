@@ -1315,6 +1315,8 @@ finished:
           pInfo->aReadMark[i] = READMARK_NOT_USED;
         }
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
+      }else if( rc!=SQLITE_BUSY ){
+        goto recovery_error;
       }
     }
 
