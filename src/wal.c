@@ -1062,7 +1062,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   /* Assuming the wal-index file was successfully mapped, populate the
   ** page number array and hash table entry.
   */
-  if( rc==SQLITE_OK ){
+  if( ALWAYS(rc==SQLITE_OK) ){
     int iKey;                     /* Hash table key */
     int idx;                      /* Value to write to hash-table slot */
     int nCollide;                 /* Number of hash collisions */
@@ -1247,6 +1247,7 @@ static int walIndexRecover(Wal *pWal){
       int iFrame;                 /* Index of last frame read */
       int iLast = MIN(iLastFrame, HASHTABLE_NPAGE_ONE+iPg*HASHTABLE_NPAGE);
       int iFirst = 1 + (iPg==0?0:HASHTABLE_NPAGE_ONE+(iPg-1)*HASHTABLE_NPAGE);
+      int nHdr, nHdr32;
       rc = walIndexPage(pWal, iPg, (volatile u32**)&aShare);
       if( rc ) break;
       pWal->apWiData[iPg] = aPrivate;
@@ -1262,7 +1263,7 @@ static int walIndexRecover(Wal *pWal){
         isValid = walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame);
         if( !isValid ) break;
         rc = walIndexAppend(pWal, iFrame, pgno);
-        if( rc!=SQLITE_OK ) break;
+        if( NEVER(rc!=SQLITE_OK) ) break;
 
         /* If nTruncate is non-zero, this is a commit record. */
         if( nTruncate ){
@@ -1276,14 +1277,9 @@ static int walIndexRecover(Wal *pWal){
         }
       }
       pWal->apWiData[iPg] = aShare;
-
-      {
-        int nHdr = (iPg==0 ? WALINDEX_HDR_SIZE : 0);
-        int nHdr32 = nHdr / sizeof(u32);
-        if( memcpy(&aShare[nHdr32], &aPrivate[nHdr32], WALINDEX_PGSZ-nHdr) ){
-          memcpy(&aShare[nHdr32], &aPrivate[nHdr32], WALINDEX_PGSZ-nHdr);
-        }
-      }
+      nHdr = (iPg==0 ? WALINDEX_HDR_SIZE : 0);
+      nHdr32 = nHdr / sizeof(u32);
+      memcpy(&aShare[nHdr32], &aPrivate[nHdr32], WALINDEX_PGSZ-nHdr);
       if( iFrame<=iLast ) break;
     }
 

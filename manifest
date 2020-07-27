@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stest\sscripts\sto\smatch\sthe\snew\swal\srecovery\sbehaviour\son\sthis\sbranch.
-D 2020-07-27T15:05:20.842
+C On\srecovery,\salways\soverwrite\sthe\sold\swith\sthe\snew,\seven\sif\sthey\sare\sthe\ssame.\nAdd\sALWAYS()\smacros\son\sbranches\scurrently\sthought\sto\sbe\sunreachable,\spending\nadditional\stesting.
+D 2020-07-27T20:16:37.459
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c ee5b4c902fdda2230f9503ac7b84c6d614c91e8f6f4dc1633e2e8dfef8ffb144
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c e409134fb951703a39be98b338c619d51f3e07762fa82e588f1fa0c7c5d862e9
+F src/wal.c 5d62c14b7865586cf012ba9e2cafc92313a61cbb1824106a3ac49f2ef957e8bc
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
@@ -1878,7 +1878,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf962d213abe1b55ebbcfecf1de9d5d61709509d1ce3cbd56d8cf4c9ad65e5a9
-R ebe6827bc20f72ccd734ec811c796054
-U dan
-Z 36a51a01bccca5b769bdcaf4fbb60dd7
+P 3af61e83532f76f0f3252a28663415d37b096ddf05a9c58fa79303933c09abce
+R 90cfb5314d321e24c6c38b0cec33d99b
+U drh
+Z 7af3dd79e9571635c50343a91786c8f5
