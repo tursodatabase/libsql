@@ -52,18 +52,28 @@ do_test 1.1 {
   set ::locks [list]
   sqlite3 db test.db -vfs T
   execsql { SELECT * FROM x }
-  lrange $::locks 0 5
-} [list {0 1 lock exclusive} {1 2 lock exclusive} {4 4 lock exclusive} \
-        {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}  \
+  lrange $::locks 0 11
+} [list {0 1 lock exclusive} {1 2 lock exclusive}     \
+        {4 1 lock exclusive} {4 1 unlock exclusive}   \
+        {5 1 lock exclusive} {5 1 unlock exclusive}   \
+        {6 1 lock exclusive} {6 1 unlock exclusive}   \
+        {7 1 lock exclusive} {7 1 unlock exclusive}   \
+        {1 2 unlock exclusive}   \
+        {0 1 unlock exclusive}  \
 ]
 do_test 1.2 {
   db close
   set ::locks [list]
   sqlite3 db test.db -vfs T
   execsql { SELECT * FROM x }
-  lrange $::locks 0 5
-} [list {0 1 lock exclusive} {1 2 lock exclusive} {4 4 lock exclusive} \
-        {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}  \
+  lrange $::locks 0 11
+} [list {0 1 lock exclusive} {1 2 lock exclusive}     \
+        {4 1 lock exclusive} {4 1 unlock exclusive}   \
+        {5 1 lock exclusive} {5 1 unlock exclusive}   \
+        {6 1 lock exclusive} {6 1 unlock exclusive}   \
+        {7 1 lock exclusive} {7 1 unlock exclusive}   \
+        {1 2 unlock exclusive}   \
+        {0 1 unlock exclusive}  \
 ]
 proc lock_callback {method filename handle lock} {
   if {$lock == "1 2 lock exclusive"} { return SQLITE_BUSY }
@@ -101,7 +111,7 @@ do_test 1.5 {
   set ::locks [list]
   sqlite3 db test.db -vfs T
   catchsql { SELECT * FROM x }
-} {1 {locking protocol}}
+} {0 z}
 db close
 T delete
 
@@ -160,7 +170,7 @@ do_test 2.5 {
 } {Tehran Qom Markazi Qazvin Gilan Ardabil}
 do_test 2.6 {
   set ::r
-} {1 {locking protocol}}
+} {0 {Tehran Qom Markazi Qazvin Gilan Ardabil}}
 
 db close
 db2 close
@@ -182,7 +192,7 @@ do_test 2.7 {
 } {Tehran Qom Markazi Qazvin Gilan Ardabil}
 do_test 2.8 {
   set ::r
-} {1 {locking protocol}}
+} {0 {Tehran Qom Markazi Qazvin Gilan Ardabil}}
 
 db close
 db2 close
