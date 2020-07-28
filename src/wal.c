@@ -590,7 +590,9 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
     );
     assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
     testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
-    if( (rc&0xff)==SQLITE_READONLY ){
+    if( rc==SQLITE_OK ){
+      if( iPage>0 && sqlite3FaultSim(600) ) rc = SQLITE_NOMEM;
+    }else if( (rc&0xff)==SQLITE_READONLY ){
       pWal->readOnly |= WAL_SHM_RDONLY;
       if( rc==SQLITE_READONLY ){
         rc = SQLITE_OK;
@@ -1062,7 +1064,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   /* Assuming the wal-index file was successfully mapped, populate the
   ** page number array and hash table entry.
   */
-  if( ALWAYS(rc==SQLITE_OK) ){
+  if( rc==SQLITE_OK ){
     int iKey;                     /* Hash table key */
     int idx;                      /* Value to write to hash-table slot */
     int nCollide;                 /* Number of hash collisions */
