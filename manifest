@@ -1,5 +1,5 @@
-C Remove\sa\ssurplus\sspace\sfrom\sa\scomment
-D 2020-07-24T11:01:29.118
+C If\sa\swriter\scrashes\sin\sWAL\smode\sand\sleave\sthe\sSHM\sfile\sin\san\sinconsistent\sstate,\nsubsequent\stransactions\sare\snow\sable\sto\srecover\sthe\sSHM\sfile\seven\sif\sthere\sare\nactive\sread\stransactions.
+D 2020-07-28T17:29:13.292
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c ee5b4c902fdda2230f9503ac7b84c6d614c91e8f6f4dc1633e2e8dfef8ffb144
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 231044ecf7d5d78bc705af9dcec6c10ec59e891366362b6be54bb6a0bc7c17db
+F src/wal.c 788fc787c608ea9e29a4438f61348b02230dfd538bb0d4ceed704086dc4aec09
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
@@ -1673,7 +1673,7 @@ F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bd
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
 F test/wal.test 16180bc4becda176428ad02eaea437b4b8f5ae099314de443a4e12b2dcc007a2
-F test/wal2.test 537f59e5c5932e3b45bf3591ae3e48a2601360c2e52821b633e222fe6ebd5b09
+F test/wal2.test 31f6e2c404b9f2cdf9ca19b105a1742fdc19653c2c936da39e3658c617524046
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -1698,7 +1698,7 @@ F test/walmode.test cd6e7cff618eaaa5910ce57c3657aa50110397f86213886a2400afb9bfec
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
-F test/walprotocol.test a112aba0b79e3adeaa485fed09484b32c654e97df58e454aa8489ac2cd57bf84
+F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99cac1ecf878
 F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
@@ -1878,7 +1878,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 270ac1a0f232d75537be40abae559004e950b992cb2c7e94cd6de66e96ae17bd
-R 0212ebf857b7a36fab6e1708725a20d6
+P 73fecc688ab5c459245c9bb89432139a083ef378404b4dae3397a7f4e253f72a 2a251af84ff1f5ca281aa69c5410d6ae7aa5a85ef47149909a297525e1651e9d
+R 69a29ce092f5af857bcf59873f5056ae
+T +closed 2a251af84ff1f5ca281aa69c5410d6ae7aa5a85ef47149909a297525e1651e9d
 U drh
-Z 7c8911d20a18c22808c4eb3363f6ff12
+Z f0509e0a6ac22a3eb269a4a65f129fe3
