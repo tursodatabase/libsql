@@ -6290,6 +6290,10 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     u32 nLeaf;                /* Initial number of leaf cells on trunk page */
 
     iTrunk = get4byte(&pPage1->aData[32]);
+    if( iTrunk>btreePagecount(pBt) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto freepage_out;
+    }
     rc = btreeGetPage(pBt, iTrunk, &pTrunk, 0);
     if( rc!=SQLITE_OK ){
       goto freepage_out;
@@ -9127,6 +9131,9 @@ static int btreeCreateTable(Btree *p, Pgno *piTable, int createTabFlags){
     ** created so far, so the new root-page is (meta[3]+1).
     */
     sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &pgnoRoot);
+    if( pgnoRoot>btreePagecount(pBt) ){
+      return SQLITE_CORRUPT_BKPT;
+    }
     pgnoRoot++;
 
     /* The new root-page may not be allocated on a pointer-map page, or the
