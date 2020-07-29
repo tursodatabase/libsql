@@ -101,7 +101,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 * `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
 * `unlock_notify` for [Unlock](https://sqlite.org/unlock_notify.html) notification.
-* `vtab` for [virtual table](https://sqlite.org/vtab.html) support (allows you to write virtual table implemntations in Rust). Currently, only read-only virtual tables are supported.
+* `vtab` for [virtual table](https://sqlite.org/vtab.html) support (allows you to write virtual table implementations in Rust). Currently, only read-only virtual tables are supported.
 * [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust.
 * [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
 * `i128_blob` allows storing values of type `i128` type in SQLite databases. Internally, the data is stored as a 16 byte big-endian blob, with the most significant bit flipped, which allows ordering and comparison between different blobs storing i128s to work as expected.
