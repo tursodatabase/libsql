@@ -10150,9 +10150,9 @@ char *sqlite3BtreeIntegrityCheck(
   BtShared *pBt = p->pBt;
   u64 savedDbFlags = pBt->db->flags;
   char zErr[100];
-  VVA_ONLY( int nRef );
   int bPartial = 0;            /* True if not checking all btrees */
   int bCkFreelist = 1;         /* True to scan the freelist */
+  VVA_ONLY( int nRef );
   assert( nRoot>0 );
 
   /* aRoot[0]==0 means this is a partial check */

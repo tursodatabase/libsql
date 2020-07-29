@@ -508,7 +508,7 @@ typedef u16 ht_slot;
 ** This functionality is used by the checkpoint code (see walCheckpoint()).
 */
 struct WalIterator {
-  int iPrior;                     /* Last result returned from the iterator */
+  u32 iPrior;                     /* Last result returned from the iterator */
   int nSegment;                   /* Number of entries in aSegment[] */
   struct WalSegment {
     int iNext;                    /* Next slot in aIndex[] not yet returned */
@@ -967,6 +967,7 @@ static int walFramePage(u32 iFrame){
        && (iHash>=2 || iFrame<=HASHTABLE_NPAGE_ONE+HASHTABLE_NPAGE)
        && (iHash<=2 || iFrame>(HASHTABLE_NPAGE_ONE+2*HASHTABLE_NPAGE))
   );
+  assert( iHash>=0 );
   return iHash;
 }
 
@@ -1186,8 +1187,8 @@ static int walIndexRecover(Wal *pWal){
     u32 magic;                    /* Magic value read from WAL header */
     u32 version;                  /* Magic value read from WAL header */
     int isValid;                  /* True if this frame is valid */
-    int iPg;                      /* Current 32KB wal-index page */
-    int iLastFrame;               /* Last frame in wal, based on nSize alone */
+    u32 iPg;                      /* Current 32KB wal-index page */
+    u32 iLastFrame;               /* Last frame in wal, based on nSize alone */
 
     /* Read in the WAL header. */
     rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
@@ -1244,12 +1245,12 @@ static int walIndexRecover(Wal *pWal){
 
     /* Read all frames from the log file. */
     iLastFrame = (nSize - WAL_HDRSIZE) / szFrame;
-    for(iPg=0; iPg<=walFramePage(iLastFrame); iPg++){
+    for(iPg=0; iPg<=(u32)walFramePage(iLastFrame); iPg++){
       u32 *aShare;
-      int iFrame;                 /* Index of last frame read */
-      int iLast = MIN(iLastFrame, HASHTABLE_NPAGE_ONE+iPg*HASHTABLE_NPAGE);
-      int iFirst = 1 + (iPg==0?0:HASHTABLE_NPAGE_ONE+(iPg-1)*HASHTABLE_NPAGE);
-      int nHdr, nHdr32;
+      u32 iFrame;                 /* Index of last frame read */
+      u32 iLast = MIN(iLastFrame, HASHTABLE_NPAGE_ONE+iPg*HASHTABLE_NPAGE);
+      u32 iFirst = 1 + (iPg==0?0:HASHTABLE_NPAGE_ONE+(iPg-1)*HASHTABLE_NPAGE);
+      u32 nHdr, nHdr32;
       rc = walIndexPage(pWal, iPg, (volatile u32**)&aShare);
       if( rc ) break;
       pWal->apWiData[iPg] = aPrivate;

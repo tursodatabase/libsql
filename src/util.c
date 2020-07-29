@@ -605,7 +605,7 @@ void sqlite3Int64ToText(i64 v, char *zOut){
   u64 x;
   char zTemp[22];
   if( v<0 ){
-    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : -v;
+    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : (u64)-v;
   }else{
     x = v;
   }

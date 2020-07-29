@@ -2889,11 +2889,11 @@ static void destroyTable(Parse *pParse, Table *pTab){
   ** a free-list page.
   */
   Pgno iTab = pTab->tnum;
-  int iDestroyed = 0;
+  Pgno iDestroyed = 0;
 
   while( 1 ){
     Index *pIdx;
-    int iLargest = 0;
+    Pgno iLargest = 0;
 
     if( iDestroyed==0 || iTab<iDestroyed ){
       iLargest = iTab;
