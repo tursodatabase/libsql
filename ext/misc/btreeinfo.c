@@ -49,7 +49,7 @@
 ** USAGE EXAMPLES:
 **
 ** Show the table btrees in a schema order with the tables with the most
-** rows occuring first:
+** rows occurring first:
 **
 **      SELECT name, nEntry
 **        FROM sqlite_btreeinfo
@@ -101,7 +101,7 @@ struct BinfoCursor {
 /* The sqlite_btreeinfo table */
 struct BinfoTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
-  sqlite3 *db;                    /* The databse connection */
+  sqlite3 *db;                    /* The database connection */
 };
 
 /*

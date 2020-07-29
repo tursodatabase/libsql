@@ -1084,7 +1084,7 @@ loadfts: $(TOP)/tool/loadfts.c libsqlite3.a
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 
-# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# Build the amalgamation-autoconf package.  The amalagmation-tarball target builds
 # a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
 # The snapshot-tarball target builds a tarball named by the SHA1 hash
 #

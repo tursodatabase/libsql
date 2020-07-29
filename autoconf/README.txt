@@ -4,7 +4,7 @@ This package contains:
  * the sqlite3.h and sqlite3ext.h header files that define the C-language
    interface to the sqlite3.c library file
  * the shell.c file used to build the sqlite3 command-line shell program
- * autoconf/automake installation infrastucture for building on POSIX
+ * autoconf/automake installation infrastructure for building on POSIX
    compliant systems
  * a Makefile.msc, sqlite3.rc, and Replace.cs for building with Microsoft
    Visual C++ on Windows

@@ -2732,7 +2732,7 @@ static int winRead(
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this read request as possible by transfering
+  /* Deal with as much of this read request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -2810,7 +2810,7 @@ static int winWrite(
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if defined(SQLITE_MMAP_READWRITE) && SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this write request as possible by transfering
+  /* Deal with as much of this write request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -2920,7 +2920,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
     ** all references to memory-mapped content are closed.  That is doable,
     ** but involves adding a few branches in the common write code path which
     ** could slow down normal operations slightly.  Hence, we have decided for
-    ** now to simply make trancations a no-op if there are pending reads.  We
+    ** now to simply make truncations a no-op if there are pending reads.  We
     ** can maybe revisit this decision in the future.
     */
     return SQLITE_OK;
@@ -2979,7 +2979,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
 #ifdef SQLITE_TEST
 /*
 ** Count the number of fullsyncs and normal syncs.  This is used to test
-** that syncs and fullsyncs are occuring at the right times.
+** that syncs and fullsyncs are occurring at the right times.
 */
 int sqlite3_sync_count = 0;
 int sqlite3_fullsync_count = 0;

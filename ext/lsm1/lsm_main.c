@@ -771,7 +771,7 @@ int lsm_csr_open(lsm_db *pDb, lsm_cursor **ppCsr){
     rc = lsmMCursorNew(pDb, &pCsr);
   }
 
-  /* If an error has occured, set the output to NULL and delete any partially
+  /* If an error has occurred, set the output to NULL and delete any partially
   ** allocated cursor. If this means there are no open cursors, release the
   ** client snapshot.  */
   if( rc!=LSM_OK ){

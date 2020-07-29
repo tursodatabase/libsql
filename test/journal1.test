@@ -20,7 +20,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # These tests will not work on windows because windows uses
-# manditory file locking which breaks the copy_file command.
+# mandatory file locking which breaks the copy_file command.
 #
 # Or with atomic_batch_write systems, as journal files are
 # not created.

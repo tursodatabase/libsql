@@ -1445,7 +1445,7 @@ void sqlite3AddDefaultValue(
   Parse *pParse,           /* Parsing context */
   Expr *pExpr,             /* The parsed expression of the default value */
   const char *zStart,      /* Start of the default value text */
-  const char *zEnd         /* First character past end of defaut value text */
+  const char *zEnd         /* First character past end of default value text */
 ){
   Table *p;
   Column *pCol;
@@ -3541,7 +3541,7 @@ void sqlite3CreateIndex(
 #ifndef SQLITE_OMIT_TEMPDB
     /* If the index name was unqualified, check if the table
     ** is a temp table. If so, set the database to 1. Do not do this
-    ** if initialising a database schema.
+    ** if initialiing a database schema.
     */
     if( !db->init.busy ){
       pTab = sqlite3SrcListLookup(pParse, pTblName);

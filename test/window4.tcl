@@ -421,4 +421,3 @@ execsql_float_test 12.3 {
 }
 
 finish_test
-

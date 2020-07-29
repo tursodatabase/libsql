@@ -34,7 +34,7 @@ void sqlite3Coverage(int x){
 /*
 ** Calls to sqlite3FaultSim() are used to simulate a failure during testing,
 ** or to bypass normal error detection during testing in order to let 
-** execute proceed futher downstream.
+** execute proceed further downstream.
 **
 ** In deployment, sqlite3FaultSim() *always* return SQLITE_OK (0).  The
 ** sqlite3FaultSim() function only returns non-zero during testing.
@@ -579,7 +579,7 @@ do_atof_calc:
   /* store the result */
   *pResult = result;
 
-  /* return true if number and no extra non-whitespace chracters after */
+  /* return true if number and no extra non-whitespace characters after */
   if( z==zEnd && nDigit>0 && eValid && eType>0 ){
     return eType;
   }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
@@ -605,7 +605,7 @@ void sqlite3Int64ToText(i64 v, char *zOut){
   u64 x;
   char zTemp[22];
   if( v<0 ){
-    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : -v;
+    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : (u64)-v;
   }else{
     x = v;
   }

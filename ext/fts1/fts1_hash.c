@@ -123,7 +123,7 @@ static int binCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 /*
 ** Return a pointer to the appropriate hash function given the key class.
 **
-** The C syntax in this function definition may be unfamilar to some 
+** The C syntax in this function definition may be unfamiliar to some 
 ** programmers, so we provide the following additional explanation:
 **
 ** The name of the function is "hashFunction".  The function takes a
@@ -182,7 +182,7 @@ static void insertElement(
 }
 
 
-/* Resize the hash table so that it cantains "new_size" buckets.
+/* Resize the hash table so that it contains "new_size" buckets.
 ** "new_size" must be a power of 2.  The hash table might fail 
 ** to resize if sqliteMalloc() fails.
 */

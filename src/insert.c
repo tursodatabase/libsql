@@ -1345,7 +1345,7 @@ insert_cleanup:
 /* This is the Walker callback from sqlite3ExprReferencesUpdatedColumn().
 *  Set bit 0x01 of pWalker->eCode if pWalker->eCode to 0 and if this
 ** expression node references any of the
-** columns that are being modifed by an UPDATE statement.
+** columns that are being modified by an UPDATE statement.
 */
 static int checkConstraintExprNode(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_COLUMN ){
@@ -1504,7 +1504,7 @@ void sqlite3GenerateConstraintChecks(
   int *aiChng,         /* column i is unchanged if aiChng[i]<0 */
   Upsert *pUpsert      /* ON CONFLICT clauses, if any.  NULL otherwise */
 ){
-  Vdbe *v;             /* VDBE under constrution */
+  Vdbe *v;             /* VDBE under construction */
   Index *pIdx;         /* Pointer to one of the indices */
   Index *pPk = 0;      /* The PRIMARY KEY index */
   sqlite3 *db;         /* Database connection */
@@ -1814,7 +1814,7 @@ void sqlite3GenerateConstraintChecks(
     ** the UNIQUE constraints have run.
     */
     if( onError==OE_Replace      /* IPK rule is REPLACE */
-     && onError!=overrideError   /* Rules for other contraints are different */
+     && onError!=overrideError   /* Rules for other constraints are different */
      && pTab->pIndex             /* There exist other constraints */
     ){
       ipkTop = sqlite3VdbeAddOp0(v, OP_Goto)+1;
@@ -1925,7 +1925,7 @@ void sqlite3GenerateConstraintChecks(
   ** WITHOUT ROWID table.
   */
   for(ix=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, ix++){
-    int regIdx;          /* Range of registers hold conent for pIdx */
+    int regIdx;          /* Range of registers hold content for pIdx */
     int regR;            /* Range of registers holding conflicting PK */
     int iThisCur;        /* Cursor for this UNIQUE index */
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
@@ -2718,7 +2718,7 @@ static int xferOptimization(
   }
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  /* Disallow the transfer optimization if the destination table constains
+  /* Disallow the transfer optimization if the destination table contains
   ** any foreign key constraints.  This is more restrictive than necessary.
   ** But the main beneficiary of the transfer optimization is the VACUUM 
   ** command, and the VACUUM command disables foreign key constraints.  So

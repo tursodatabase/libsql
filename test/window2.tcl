@@ -490,5 +490,3 @@ execsql_test 7.3 {
 }
 
 finish_test
-
-

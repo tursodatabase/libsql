@@ -213,7 +213,7 @@ if {![file readable $root_filename]} {
 }
 
 if {[catch {sqlite3 db $file_to_analyze} res]} {
-  puts stderr "Cannot open datababase $root_filename: $res"
+  puts stderr "Cannot open database $root_filename: $res"
   exit 1
 }
 

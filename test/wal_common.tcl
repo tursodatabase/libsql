@@ -89,5 +89,3 @@ proc wal_fix_walindex_cksum {hdrvar} {
   lset hdr 10 $c1
   lset hdr 11 $c2
 }
-
-

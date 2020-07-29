@@ -63,4 +63,3 @@ foreach {tn schema sql} {
 
 
 finish_test
-

@@ -2009,7 +2009,7 @@ static void fts5MergeColset(Fts5Colset *pColset, Fts5Colset *pMerge){
 
 /*
 ** Recursively apply colset pColset to expression node pNode and all of
-** its decendents. If (*ppFree) is not NULL, it contains a spare copy
+** its descendents. If (*ppFree) is not NULL, it contains a spare copy
 ** of pColset. This function may use the spare copy and set (*ppFree) to
 ** zero, or it may create copies of pColset using fts5CloneColset().
 */

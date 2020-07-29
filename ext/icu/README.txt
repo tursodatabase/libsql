@@ -91,7 +91,7 @@ SQLite. Documentation follows.
   1.4 SQL REGEXP Operator
 
     This extension provides an implementation of the SQL binary
-    comparision operator "REGEXP", based on the regular expression functions
+    comparison operator "REGEXP", based on the regular expression functions
     provided by the ICU library. The syntax of the operator is as described
     in SQLite documentation:
 

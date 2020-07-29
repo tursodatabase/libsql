@@ -653,7 +653,7 @@ static int fts3ExprParse(
 
           /* The isRequirePhrase variable is set to true if a phrase or
           ** an expression contained in parenthesis is required. If a
-          ** binary operator (AND, OR, NOT or NEAR) is encounted when
+          ** binary operator (AND, OR, NOT or NEAR) is encountered when
           ** isRequirePhrase is set, this is a syntax error.
           */
           if( !isPhrase && isRequirePhrase ){

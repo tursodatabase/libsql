@@ -13,7 +13,7 @@ If -skip_run option is given then only the compile part is attempted.
 
 This script builds the testfixture program and runs the SQLite test suite
 once with each SQLITE_OMIT_ option defined and then once with all options
-defined together. Each run is performed in a seperate directory created
+defined together. Each run is performed in a separate directory created
 as a sub-directory of the current directory by the script. The output
 of the build is saved in <sub-directory>/build.log. The output of the
 test-suite is saved in <sub-directory>/test.log.

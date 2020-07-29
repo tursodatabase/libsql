@@ -10326,4 +10326,3 @@ do_catchsql_test 69.2 {
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test
-

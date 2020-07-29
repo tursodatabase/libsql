@@ -387,7 +387,7 @@ static void fts5MatchinfoFunc(
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pCtx, rc);
   }else{
-    /* No errors has occured, so return a copy of the array of integers. */
+    /* No errors has occurred, so return a copy of the array of integers. */
     int nByte = p->nRet * sizeof(u32);
     sqlite3_result_blob(pCtx, (void*)p->aRet, nByte, SQLITE_TRANSIENT);
   }

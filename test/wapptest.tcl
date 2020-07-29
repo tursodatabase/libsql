@@ -894,4 +894,3 @@ if {$G(noui)==0} {
   do_some_stuff
   vwait forever
 }
-

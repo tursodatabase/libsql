@@ -2652,7 +2652,7 @@ int lsmSortedLoadFreelist(
   void **ppVal,                   /* OUT: Blob containing LSM free-list */
   int *pnVal                      /* OUT: Size of *ppVal blob in bytes */
 ){
-  MultiCursor *pCsr;              /* Cursor used to retreive free-list */
+  MultiCursor *pCsr;              /* Cursor used to retrieve free-list */
   int rc = LSM_OK;                /* Return Code */
 
   assert( pDb->pWorker );
@@ -3584,7 +3584,7 @@ static int mergeWorkerBtreeWrite(
   Hierarchy *p = &pMW->hier;
   lsm_db *pDb = pMW->pDb;         /* Database handle */
   int rc = LSM_OK;                /* Return Code */
-  int iLevel;                     /* Level of b-tree hierachy to write to */
+  int iLevel;                     /* Level of b-tree hierarchy to write to */
   int nData;                      /* Size of aData[] in bytes */
   u8 *aData;                      /* Page data for level iLevel */
   int iOff;                       /* Offset on b-tree page to write record to */
@@ -3984,7 +3984,7 @@ static int mergeWorkerWrite(
      
   /* Figure out how much space is required by the new record. The space
   ** required is divided into two sections: the header and the body. The
-  ** header consists of the intial varint fields. The body are the blobs 
+  ** header consists of the initial varint fields. The body are the blobs 
   ** of data that correspond to the key and value data. The entire header 
   ** must be stored on the page. The body may overflow onto the next and
   ** subsequent pages.

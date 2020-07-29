@@ -156,7 +156,7 @@ int sqlite3FtsUnicodeIsalnum(int c){
 ** in the ASCII range with a diacritic added, return the codepoint
 ** of the ASCII letter only. For example, if passed 235 - "LATIN
 ** SMALL LETTER E WITH DIAERESIS" - return 65 ("LATIN SMALL LETTER
-** E"). The resuls of passing a codepoint that corresponds to an
+** E"). The results of passing a codepoint that corresponds to an
 ** uppercase letter are undefined.
 */
 static int remove_diacritic(int c, int bComplex){

@@ -281,7 +281,7 @@ int sqlite3WalTrace = 0;
 **
 ** Technically, the various VFSes are free to implement these locks however
 ** they see fit.  However, compatibility is encouraged so that VFSes can
-** interoperate.  The standard implemention used on both unix and windows
+** interoperate.  The standard implementation used on both unix and windows
 ** is for the index number to indicate a byte offset into the
 ** WalCkptInfo.aLock[] array in the wal-index header.  In other words, all
 ** locks are on the shm file.  The WALINDEX_LOCK_OFFSET constant (which
@@ -343,7 +343,7 @@ struct WalIndexHdr {
 ** mxFrame back to zero when the WAL is reset.
 **
 ** nBackfillAttempted is the largest value of nBackfill that a checkpoint
-** has attempted to achieve.  Normally nBackfill==nBackfillAtempted, however
+** has attempted to achieve.  Normally nBackfill==nBackfillAttempted, however
 ** the nBackfillAttempted is set before any backfilling is done and the
 ** nBackfill is only set after all backfilling completes.  So if a checkpoint
 ** crashes, nBackfillAttempted might be larger than nBackfill.  The
@@ -796,7 +796,7 @@ static int walDecodeFrame(
     return 0;
   }
 
-  /* A frame is only valid if the page number is creater than zero.
+  /* A frame is only valid if the page number is greater than zero.
   */
   pgno = sqlite3Get4byte(&aFrame[0]);
   if( pgno==0 ){
@@ -804,7 +804,7 @@ static int walDecodeFrame(
   }
 
   /* A frame is only valid if a checksum of the WAL header,
-  ** all prior frams, the first 16 bytes of this frame-header, 
+  ** all prior frames, the first 16 bytes of this frame-header, 
   ** and the frame-data matches the checksum in the last 8 
   ** bytes of this frame-header.
   */
@@ -1440,7 +1440,7 @@ int sqlite3WalOpen(
 }
 
 /*
-** Change the size to which the WAL file is trucated on each reset.
+** Change the size to which the WAL file is truncated on each reset.
 */
 void sqlite3WalLimit(Wal *pWal, i64 iLimit){
   if( pWal ) pWal->mxWalSize = iLimit;
@@ -1634,12 +1634,12 @@ static void walIteratorFree(WalIterator *p){
 }
 
 /*
-** Construct a WalInterator object that can be used to loop over all 
+** Construct a WalIterator object that can be used to loop over all 
 ** pages in the WAL following frame nBackfill in ascending order. Frames
 ** nBackfill or earlier may be included - excluding them is an optimization
 ** only. The caller must hold the checkpoint lock.
 **
-** On success, make *pp point to the newly allocated WalInterator object
+** On success, make *pp point to the newly allocated WalIterator object
 ** return SQLITE_OK. Otherwise, return an error code. If this routine
 ** returns an error, the value of *pp is undefined.
 **
@@ -2199,7 +2199,7 @@ static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** give false-positive warnings about these accesses because the tools do not
   ** account for the double-read and the memory barrier. The use of mutexes
   ** here would be problematic as the memory being accessed is potentially
-  ** shared among multiple processes and not all mutex implementions work
+  ** shared among multiple processes and not all mutex implementations work
   ** reliably in that environment.
   */
   aHdr = walIndexHdr(pWal);

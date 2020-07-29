@@ -36,7 +36,7 @@ struct testpcacheGlobalType {
   int nInstance;            /* Number of current instances */
   unsigned discardChance;   /* Chance of discarding on an unpin (0-100) */
   unsigned prngSeed;        /* Seed for the PRNG */
-  unsigned highStress;      /* Call xStress agressively */
+  unsigned highStress;      /* Call xStress aggressively */
 };
 static testpcacheGlobalType testpcacheGlobal;
 
@@ -428,7 +428,7 @@ void installTestPCache(
   int installFlag,            /* True to install.  False to uninstall. */
   unsigned discardChance,     /* 0-100.  Chance to discard on unpin */
   unsigned prngSeed,          /* Seed for the PRNG */
-  unsigned highStress         /* Call xStress agressively */
+  unsigned highStress         /* Call xStress aggressively */
 ){
   static const sqlite3_pcache_methods2 testPcache = {
     1,

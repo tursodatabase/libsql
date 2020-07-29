@@ -467,7 +467,7 @@ static void decimalSubFunc(
   decimal_free(pB);
 }
 
-/* Aggregate funcion:   decimal_sum(X)
+/* Aggregate function:   decimal_sum(X)
 **
 ** Works like sum() except that it uses decimal arithmetic for unlimited
 ** precision.

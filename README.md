@@ -15,7 +15,7 @@ The [Fossil repository](https://sqlite.org/src/timeline) contains the urtext.
 If you are reading this on GitHub or some other Git repository or service,
 then you are looking at a mirror.  The names of check-ins and
 other artifacts in a Git mirror are different from the official
-names for those objects.  The offical names for check-ins are
+names for those objects.  The official names for check-ins are
 found in a footer on the check-in comment for authorized mirrors.
 The official check-in name can also be seen in the `manifest.uuid` file
 in the root of the tree.  Always use the official name, not  the
@@ -136,7 +136,7 @@ the "tclsqlite.c" file which implements the
 extension and only later escaped to the wild as an independent library.)
 
 Test scripts and programs are found in the **test/** subdirectory.
-Addtional test code is found in other source repositories.
+Additional test code is found in other source repositories.
 See [How SQLite Is Tested](http://www.sqlite.org/testing.html) for
 additional information.
 
@@ -237,7 +237,7 @@ prepared statements, the description of
 [how transactions work](http://www.sqlite.org/atomiccommit.html), and
 the [overview of the query planner](http://www.sqlite.org/optoverview.html).
 
-Years of effort have gone into optimizating SQLite, both
+Years of effort have gone into optimizing SQLite, both
 for small size and high performance.  And optimizations tend to result in
 complex code.  So there is a lot of complexity in the current SQLite
 implementation.  It will not be the easiest library in the world to hack.

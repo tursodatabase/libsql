@@ -601,4 +601,3 @@ do_execsql_test 25.1 {
 #}
 
 finish_test
-

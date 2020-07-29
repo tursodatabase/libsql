@@ -111,7 +111,7 @@ static void showHelp(const char *zArgv0){
     " ^NUM    Interpret NUM as a LogEst and push onto stack\n"
     "  x      Multiple the top two elements of the stack\n"
     "  +      Add the top two elements of the stack\n"
-    "  dup    Dupliate the top element on the stack\n"
+    "  dup    Duplicate the top element on the stack\n"
     "  inv    Take the reciprocal of the top of stack.  N = 1/N.\n"
     "  log    Find the LogEst of the number on top of stack\n"
     "  nlogn  Compute NlogN where N is the top of stack\n"

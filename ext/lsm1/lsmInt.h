@@ -568,7 +568,7 @@ struct FreelistEntry {
 /*
 ** A snapshot of a database. A snapshot contains all the information required
 ** to read or write a database file on disk. See the description of struct
-** Database below for futher details.
+** Database below for further details.
 */
 struct Snapshot {
   Database *pDatabase;            /* Database this snapshot belongs to */

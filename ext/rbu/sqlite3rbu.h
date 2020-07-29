@@ -442,7 +442,7 @@ SQLITE_API int sqlite3rbu_savestate(sqlite3rbu *pRbu);
 **
 ** If the RBU update has been completely applied, mark the RBU database
 ** as fully applied. Otherwise, assuming no error has occurred, save the
-** current state of the RBU update appliation to the RBU database.
+** current state of the RBU update application to the RBU database.
 **
 ** If an error has already occurred as part of an sqlite3rbu_step()
 ** or sqlite3rbu_open() call, or if one occurs within this function, an

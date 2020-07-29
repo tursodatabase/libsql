@@ -245,8 +245,3 @@ proc main {data} {
 main $data
 
 set ::fts5_docs_output
-
-
-
-
-

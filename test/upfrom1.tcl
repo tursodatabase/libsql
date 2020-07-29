@@ -112,4 +112,3 @@ errorsql_test 2.3.2 {
 
 
 finish_test
-

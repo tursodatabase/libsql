@@ -455,7 +455,7 @@ tvfs delete
 #
 #   wal2-6.5.*: 
 #
-#   wal2-6.6.*: Check that if the xShmLock() to reaquire a WAL read-lock when
+#   wal2-6.6.*: Check that if the xShmLock() to reacquire a WAL read-lock when
 #               exiting exclusive mode fails (i.e. SQLITE_IOERR), then the
 #               connection silently remains in exclusive mode.
 #

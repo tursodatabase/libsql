@@ -156,7 +156,7 @@ static void *sqlite3MemMalloc(int nByte){
 ** or sqlite3MemRealloc().
 **
 ** For this low-level routine, we already know that pPrior!=0 since
-** cases where pPrior==0 will have been intecepted and dealt with
+** cases where pPrior==0 will have been intercepted and dealt with
 ** by higher-level routines.
 */
 static void sqlite3MemFree(void *pPrior){
@@ -244,7 +244,7 @@ static int sqlite3MemInit(void *NotUsed){
     return SQLITE_OK;
   }
   len = sizeof(cpuCount);
-  /* One usually wants to use hw.acctivecpu for MT decisions, but not here */
+  /* One usually wants to use hw.activecpu for MT decisions, but not here */
   sysctlbyname("hw.ncpu", &cpuCount, &len, NULL, 0);
   if( cpuCount>1 ){
     /* defer MT decisions to system malloc */

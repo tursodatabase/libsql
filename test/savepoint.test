@@ -18,7 +18,7 @@ source $testdir/malloc_common.tcl
 
 #----------------------------------------------------------------------
 # The following tests - savepoint-1.* - test that the SAVEPOINT, RELEASE
-# and ROLLBACK TO comands are correctly parsed, and that the auto-commit
+# and ROLLBACK TO commands are correctly parsed, and that the auto-commit
 # flag is correctly set and unset as a result.
 #
 do_test savepoint-1.1 {

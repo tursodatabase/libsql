@@ -371,7 +371,7 @@ proc do_one_faultsim_test {testname args} {
     set nfail [eval $O(-injectstop)]
 
     # Run the -test script. If it throws no error, consider this trial
-    # sucessful. If it does throw an error, cause a [do_test] test to
+    # successful. If it does throw an error, cause a [do_test] test to
     # fail (and print out the unexpected exception thrown by the -test
     # script at the same time).
     #

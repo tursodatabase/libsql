@@ -723,7 +723,7 @@ do_execsql_test json-11.3 {
 } {0}
 
 # 2017-10-27.  Demonstrate the ability to access an element from
-# a json structure even though the element name constains a "."
+# a json structure even though the element name contains a "."
 # character, by quoting the element name in the path.
 #
 do_execsql_test json-12.100 {

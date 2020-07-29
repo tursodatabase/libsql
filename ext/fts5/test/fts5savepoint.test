@@ -82,4 +82,3 @@ ifcapable fts3 {
 }
 
 finish_test
-

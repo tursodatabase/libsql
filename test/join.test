@@ -1026,4 +1026,3 @@ do_execsql_test join-24.2 {
 } {1 {} {}}
 
 finish_test
-

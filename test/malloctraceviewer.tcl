@@ -250,4 +250,3 @@ open_database
 bind $O(tree) <<TreeviewSelect>> [list populate_text_widget mddb]
 
 populate_tree_widget mddb [mddb one {SELECT zTest FROM malloc LIMIT 1}]
-

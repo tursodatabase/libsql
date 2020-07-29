@@ -129,4 +129,3 @@ do_multiclient_test tn {
 }
 
 finish_test
-

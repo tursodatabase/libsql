@@ -876,7 +876,7 @@ static int codeCursorHintIsOrFunction(Walker *pWalker, Expr *pExpr){
 **   2) transform the expression node to a TK_REGISTER node that reads 
 **      from the newly populated register.
 **
-** Also, if the node is a TK_COLUMN that does access the table idenified
+** Also, if the node is a TK_COLUMN that does access the table identified
 ** by pCCurHint.iTabCur, and an index is being used (which we will
 ** know because CCurHint.pIdx!=0) then transform the TK_COLUMN into
 ** an access of the index rather than the original table.
@@ -1512,7 +1512,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       };
       assert( TK_LE==TK_GT+1 );      /* Make sure the ordering.. */
       assert( TK_LT==TK_GT+2 );      /*  ... of the TK_xx values... */
-      assert( TK_GE==TK_GT+3 );      /*  ... is correcct. */
+      assert( TK_GE==TK_GT+3 );      /*  ... is correct. */
 
       assert( (pStart->wtFlags & TERM_VNULL)==0 );
       testcase( pStart->wtFlags & TERM_VIRTUAL );

@@ -38,7 +38,7 @@
 **
 **     CREATE VIRTUAL TABLE <name> USING unionvtab(<sql-statement>);
 **
-**   The implementation evalutes <sql statement> whenever a unionvtab virtual
+**   The implementation evaluates <sql statement> whenever a unionvtab virtual
 **   table is created or opened. It should return one row for each source
 **   database table. The four columns required of each row are:
 **

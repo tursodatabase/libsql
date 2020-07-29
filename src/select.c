@@ -611,7 +611,7 @@ static void pushOntoSorter(
   **   (3) Some output columns are omitted from the sort record due to
   **       the SQLITE_ENABLE_SORTER_REFERENCE optimization, or due to the
   **       SQLITE_ECEL_OMITREF optimization, or due to the 
-  **       SortCtx.pDeferredRowLoad optimiation.  In any of these cases
+  **       SortCtx.pDeferredRowLoad optimization.  In any of these cases
   **       regOrigData is 0 to prevent this routine from trying to copy
   **       values that might not yet exist.
   */
@@ -2347,7 +2347,7 @@ static void generateWithRecursiveQuery(
   int iQueue;                   /* The Queue table */
   int iDistinct = 0;            /* To ensure unique results if UNION */
   int eDest = SRT_Fifo;         /* How to write to Queue */
-  SelectDest destQueue;         /* SelectDest targetting the Queue table */
+  SelectDest destQueue;         /* SelectDest targeting the Queue table */
   int i;                        /* Loop counter */
   int rc;                       /* Result code */
   ExprList *pOrderBy;           /* The ORDER BY clause */
@@ -2491,7 +2491,7 @@ static int multiSelectOrderBy(
 ** The "LIMIT of exactly 1" case of condition (1) comes about when a VALUES
 ** clause occurs within scalar expression (ex: "SELECT (VALUES(1),(2),(3))").
 ** The sqlite3CodeSubselect will have added the LIMIT 1 clause in tht case.
-** Since the limit is exactly 1, we only need to evalutes the left-most VALUES.
+** Since the limit is exactly 1, we only need to evaluate the left-most VALUES.
 */
 static int multiSelectValues(
   Parse *pParse,        /* Parsing context */
@@ -2915,7 +2915,7 @@ void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
 
 /*
 ** Code an output subroutine for a coroutine implementation of a
-** SELECT statment.
+** SELECT statement.
 **
 ** The data to be output is contained in pIn->iSdst.  There are
 ** pIn->nSdst columns to be output.  pDest is where the output should
@@ -4119,7 +4119,7 @@ static int flattenSubquery(
       ** ORDER BY column expression is identical to the iOrderByCol'th
       ** expression returned by SELECT statement pSub. Since these values
       ** do not necessarily correspond to columns in SELECT statement pParent,
-      ** zero them before transfering the ORDER BY clause.
+      ** zero them before transferring the ORDER BY clause.
       **
       ** Not doing this may cause an error if a subsequent call to this
       ** function attempts to flatten a compound sub-query into pParent
@@ -4178,7 +4178,7 @@ static int flattenSubquery(
     }
   }
 
-  /* Finially, delete what is left of the subquery and return
+  /* Finally, delete what is left of the subquery and return
   ** success.
   */
   sqlite3AggInfoPersistWalkerInit(&w, pParse);
@@ -5899,7 +5899,7 @@ int sqlite3Select(
       unsetJoinExpr(p->pWhere, pItem->iCursor);
     }
 
-    /* No futher action if this term of the FROM clause is no a subquery */
+    /* No further action if this term of the FROM clause is no a subquery */
     if( pSub==0 ) continue;
 
     /* Catch mismatch in the declared columns of a view and the number of
@@ -6482,7 +6482,7 @@ int sqlite3Select(
     */
     if( pGroupBy ){
       KeyInfo *pKeyInfo;  /* Keying information for the group by clause */
-      int addr1;          /* A-vs-B comparision jump */
+      int addr1;          /* A-vs-B comparison jump */
       int addrOutputRow;  /* Start of subroutine that outputs a result row */
       int regOutputRow;   /* Return address register for output subroutine */
       int addrSetAbort;   /* Set the abort flag and return */

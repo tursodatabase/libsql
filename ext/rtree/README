@@ -106,13 +106,13 @@ and query r-tree structures using ordinary SQL statements.
 
   You may need to add "-I" flags so that gcc can find sqlite3ext.h
   and sqlite3.h. The resulting shared lib, libSqliteRtree.so, may be
-  loaded into sqlite in the same way as any other dynamicly loadable
+  loaded into sqlite in the same way as any other dynamically loadable
   extension.
 
 
 3. REFERENCES
 
-  [1]  Atonin Guttman, "R-trees - A Dynamic Index Structure For Spatial 
+  [1]  Antonin Guttman, "R-trees - A Dynamic Index Structure For Spatial 
        Searching", University of California Berkeley, 1984.
 
   [2]  Norbert Beckmann, Hans-Peter Kriegel, Ralf Schneider, Bernhard Seeger,

@@ -169,7 +169,7 @@
 ** The argument to this macro must be of type u32. On a little-endian
 ** architecture, it returns the u32 value that results from interpreting
 ** the 4 bytes as a big-endian value. On a big-endian architecture, it
-** returns the value that would be produced by intepreting the 4 bytes
+** returns the value that would be produced by interpreting the 4 bytes
 ** of the input value as a little-endian integer.
 */
 #define BYTESWAP32(x) ( \

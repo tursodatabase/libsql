@@ -16,7 +16,7 @@
 ** of digits compare in numeric order.
 **
 **     *   Leading zeros are handled properly, in the sense that
-**         they do not mess of the maginitude comparison of embedded
+**         they do not mess of the magnitude comparison of embedded
 **         strings of digits.  "x00123y" is equal to "x123y".
 **
 **     *   Only unsigned integers are recognized.  Plus and minus

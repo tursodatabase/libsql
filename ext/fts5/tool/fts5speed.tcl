@@ -60,5 +60,3 @@ if {[regexp matchinfo $sql]} {
 for {set i 1} {$i < $nRepeat} {incr i} {
   db eval $sql
 }
-
-

@@ -321,7 +321,7 @@ int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 ** The VdbeCoverage macros are used to set a coverage testing point
 ** for VDBE branch instructions.  The coverage testing points are line
 ** numbers in the sqlite3.c source file.  VDBE branch coverage testing
-** only works with an amalagmation build.  That's ok since a VDBE branch
+** only works with an amalgamation build.  That's ok since a VDBE branch
 ** coverage build designed for testing the test suite only.  No application
 ** should ever ship with VDBE branch coverage measuring turned on.
 **
@@ -339,7 +339,7 @@ int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 **                                     // NULL option is not possible
 **
 **    VdbeCoverageEqNe(v)              // Previous OP_Jump is only interested
-**                                     // in distingishing equal and not-equal.
+**                                     // in distinguishing equal and not-equal.
 **
 ** Every VDBE branch operation must be tagged with one of the macros above.
 ** If not, then when "make test" is run with -DSQLITE_VDBE_COVERAGE and

@@ -2640,7 +2640,7 @@ static int SQLITE_TCLAPI test_atomic_batch_write(
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
-** Return the next statment in sequence after STMT.
+** Return the next statement in sequence after STMT.
 */
 static int SQLITE_TCLAPI test_next_stmt(
   void * clientData,
@@ -5648,7 +5648,7 @@ static int SQLITE_TCLAPI vfs_unlink_test(
   assert( sqlite3_vfs_find("__two")==&two );
 
   /* Calling sqlite_vfs_register with non-zero second parameter changes the
-  ** default VFS, even if the 1st parameter is an existig VFS that is
+  ** default VFS, even if the 1st parameter is an existing VFS that is
   ** previously registered as the non-default.
   */
   sqlite3_vfs_register(&one, 1);
@@ -6974,7 +6974,7 @@ static void SQLITE_CDECL win32_file_locker(void *pAppData){
 /*
 **      lock_win32_file FILENAME DELAY1 DELAY2
 **
-** Get an exclusive manditory lock on file for DELAY2 milliseconds.
+** Get an exclusive mandatory lock on file for DELAY2 milliseconds.
 ** Wait DELAY1 milliseconds before acquiring the lock.
 */
 static int SQLITE_TCLAPI win32_file_lock(

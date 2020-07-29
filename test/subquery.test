@@ -224,7 +224,7 @@ do_test subquery-2.5.2 {
   # In the expr "x IN (SELECT a FROM t3)" the RHS of the IN operator
   # has text affinity and the LHS has integer affinity.  The rule is
   # that we try to convert both sides to an integer before doing the
-  # comparision.  Hence, the integer value 10 in t3 will compare equal
+  # comparison.  Hence, the integer value 10 in t3 will compare equal
   # to the string value '10.0' in t4 because the t4 value will be
   # converted into an integer.
   execsql {

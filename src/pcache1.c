@@ -99,8 +99,8 @@ typedef struct PGroup PGroup;
 ** in memory directly after the associated page data, if the database is
 ** corrupt, code at the b-tree layer may overread the page buffer and 
 ** read part of this structure before the corruption is detected. This
-** can cause a valgrind error if the unitialized gap is accessed. Using u16
-** ensures there is no such gap, and therefore no bytes of unitialized memory
+** can cause a valgrind error if the uninitialized gap is accessed. Using u16
+** ensures there is no such gap, and therefore no bytes of uninitialized memory
 ** in the structure.
 */
 struct PgHdr1 {

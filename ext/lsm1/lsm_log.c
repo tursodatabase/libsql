@@ -758,7 +758,7 @@ void lsmLogTell(
 }
 
 /*
-** Seek (rewind) back to the log file offset stored by an ealier call to
+** Seek (rewind) back to the log file offset stored by an earlier call to
 ** lsmLogTell() in *pMark.
 */
 void lsmLogSeek(

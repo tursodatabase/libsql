@@ -688,7 +688,7 @@ do_createtable_tests 2.2 -tclquery {
 #
 #   The following tests create tables based on SELECT statements that read
 #   from tables that have primary keys, constraints and explicit default 
-#   collation sequences. None of this is transfered to the definition of
+#   collation sequences. None of this is transferred to the definition of
 #   the new table as stored in the sqlite_master table.
 #
 #   Tests 2.3.2.* show that the default value of each column is NULL.

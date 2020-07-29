@@ -360,4 +360,3 @@ foreach {tn window} {
 }
 
 finish_test
-

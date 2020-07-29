@@ -85,7 +85,7 @@
 ** The threshold for the amount of main memory to use before flushing 
 ** records to a PMA is roughly the same as the limit configured for the
 ** page-cache of the main database. Specifically, the threshold is set to 
-** the value returned by "PRAGMA main.page_size" multipled by 
+** the value returned by "PRAGMA main.page_size" multiplied by 
 ** that returned by "PRAGMA main.cache_size", in bytes.
 **
 ** If the sorter is running in single-threaded mode, then all PMAs generated
@@ -108,7 +108,7 @@
 **
 ** If there are fewer than SORTER_MAX_MERGE_COUNT PMAs in total and the
 ** sorter is running in single-threaded mode, then these PMAs are merged
-** incrementally as keys are retreived from the sorter by the VDBE.  The
+** incrementally as keys are retrieved from the sorter by the VDBE.  The
 ** MergeEngine object, described in further detail below, performs this
 ** merge.
 **
@@ -271,7 +271,7 @@ struct MergeEngine {
 **
 ** Essentially, this structure contains all those fields of the VdbeSorter
 ** structure for which each thread requires a separate instance. For example,
-** each thread requries its own UnpackedRecord object to unpack records in
+** each thread requires its own UnpackedRecord object to unpack records in
 ** as part of comparison operations.
 **
 ** Before a background thread is launched, variable bDone is set to 0. Then, 
@@ -2192,7 +2192,7 @@ static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
 
   rc = vdbeMergeEngineInit(pTask, pIncr->pMerger, eMode);
 
-  /* Set up the required files for pIncr. A multi-theaded IncrMerge object
+  /* Set up the required files for pIncr. A multi-threaded IncrMerge object
   ** requires two temp files to itself, whereas a single-threaded object
   ** only requires a region of pTask->file2. */
   if( rc==SQLITE_OK ){

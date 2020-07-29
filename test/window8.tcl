@@ -421,5 +421,3 @@ execsql_test 7.$tn.9 "
 
 
 finish_test
-
-

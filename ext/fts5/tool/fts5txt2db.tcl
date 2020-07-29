@@ -224,6 +224,3 @@ if {$A(trans)} { db eval BEGIN }
     db eval $sql
   }
 if {$A(trans)} { db eval COMMIT }
-
-
-

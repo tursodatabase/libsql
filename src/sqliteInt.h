@@ -665,7 +665,7 @@
 ** number of pages.  A negative number N translations means that a buffer
 ** of -1024*N bytes is allocated and used for as many pages as it will hold.
 **
-** The default value of "20" was choosen to minimize the run-time of the
+** The default value of "20" was chosen to minimize the run-time of the
 ** speedtest1 test program with options: --shrink-memory --reprepare
 */
 #ifndef SQLITE_DEFAULT_PCACHE_INITSZ
@@ -1243,7 +1243,7 @@ struct Db {
 ** An instance of the following structure stores a database schema.
 **
 ** Most Schema objects are associated with a Btree.  The exception is
-** the Schema for the TEMP databaes (sqlite3.aDb[1]) which is free-standing.
+** the Schema for the TEMP database (sqlite3.aDb[1]) which is free-standing.
 ** In shared cache mode, a single Schema object can be shared by multiple
 ** Btrees that refer to the same underlying BtShared object.
 **
@@ -1354,7 +1354,7 @@ struct Lookaside {
   LookasideSlot *pInit;   /* List of buffers not previously used */
   LookasideSlot *pFree;   /* List of available buffers */
 #ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
-  LookasideSlot *pSmallInit; /* List of small buffers not prediously used */
+  LookasideSlot *pSmallInit; /* List of small buffers not previously used */
   LookasideSlot *pSmallFree; /* List of available small buffers */
   void *pMiddle;          /* First byte past end of full-size buffers and
                           ** the first byte of LOOKASIDE_SMALL buffers */
@@ -2664,7 +2664,7 @@ struct Expr {
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
                          ** EP_Unlikely:  134217728 times likelihood
-                         ** TK_IN: ephemerial table holding RHS
+                         ** TK_IN: ephemeral table holding RHS
                          ** TK_SELECT_COLUMN: Number of columns on the LHS
                          ** TK_SELECT: 1st register of result vector */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.

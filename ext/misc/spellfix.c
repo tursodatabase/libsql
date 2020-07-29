@@ -336,7 +336,7 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
     /* Convert from one consonant to another, but in a different class */
     return 75;
   }
-  /* Any other subsitution */
+  /* Any other substitution */
   return 100;
 }
 
@@ -862,7 +862,7 @@ static int matchFrom(EditDist3Cost *p, const char *z, int n){
 static int matchFromTo(
   EditDist3FromString *pStr,  /* Left hand string */
   int n1,                     /* Index of comparison character on the left */
-  const char *z2,             /* Right-handl comparison character */
+  const char *z2,             /* Right-hand comparison character */
   int n2                      /* Bytes remaining in z2[] */
 ){
   int b1 = pStr->a[n1].nByte;
@@ -874,7 +874,7 @@ static int matchFromTo(
 }
 
 /*
-** Delete an EditDist3FromString objecct
+** Delete an EditDist3FromString object
 */
 static void editDist3FromStringDelete(EditDist3FromString *p){
   int i;
@@ -2365,7 +2365,7 @@ static int SQLITE_CDECL spellfix1RowCompare(const void *A, const void *B){
 */
 typedef struct MatchQuery {
   spellfix1_cursor *pCur;          /* The cursor being queried */
-  sqlite3_stmt *pStmt;             /* shadow table query statment */
+  sqlite3_stmt *pStmt;             /* shadow table query statement */
   char zHash[SPELLFIX_MX_HASH];    /* The current phonehash for zPattern */
   const char *zPattern;            /* Transliterated input string */
   int nPattern;                    /* Length of zPattern */

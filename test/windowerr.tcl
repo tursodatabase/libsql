@@ -69,4 +69,3 @@ errorsql_test 3.3 {
 }
 
 finish_test
-

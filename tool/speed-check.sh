@@ -5,7 +5,7 @@
 #
 #     sh run-speed-test.sh trunk  #  Baseline measurement of trunk
 #     sh run-speed-test.sh x1     # Measure some experimental change
-#     fossil test-diff --tk cout-trunk.txt cout-x1.txt   # View chanages
+#     fossil test-diff --tk cout-trunk.txt cout-x1.txt   # View changes
 #
 # There are multiple output files, all with a base name given by
 # the first argument:

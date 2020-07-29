@@ -70,7 +70,7 @@ proc rd_load_unicodedata_text {zName} {
     if {[info exists tl_lookup_table($iCode)]} continue
 
     # Check if this is an indirect mapping. If so, set bIndirect to true
-    # and change $iAscii to the indirectly mappped ASCII character.
+    # and change $iAscii to the indirectly mapped ASCII character.
     set bIndirect 0
     if {[info exists dia($iDia)] && [info exists mapping($iAscii)]} {
       set iAscii $mapping($iAscii)
@@ -201,5 +201,3 @@ proc cc_load_unicodedata_text {zName} {
   close $fd
   set lRet
 }
-
-

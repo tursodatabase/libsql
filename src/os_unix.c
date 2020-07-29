@@ -1097,7 +1097,7 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** not posix compliant.  Under LinuxThreads, a lock created by thread
 ** A cannot be modified or overridden by a different thread B.
 ** Only thread A can modify the lock.  Locking behavior is correct
-** if the appliation uses the newer Native Posix Thread Library (NPTL)
+** if the application uses the newer Native Posix Thread Library (NPTL)
 ** on linux - with NPTL a lock created by thread A can override locks
 ** in thread B.  But there is no way to know at compile-time which
 ** threading library is being used.  So there is no way to know at
@@ -1659,7 +1659,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** slightly in order to be compatible with Windows95 systems simultaneously
   ** accessing the same database file, in case that is ever required.
   **
-  ** Symbols defined in os.h indentify the 'pending byte' and the 'reserved
+  ** Symbols defined in os.h identify the 'pending byte' and the 'reserved
   ** byte', each single bytes at well known offsets, and the 'shared byte
   ** range', a range of 510 bytes at a well known offset.
   **
@@ -1667,7 +1667,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** byte'.  If this is successful, 'shared byte range' is read-locked
   ** and the lock on the 'pending byte' released.  (Legacy note:  When
   ** SQLite was first developed, Windows95 systems were still very common,
-  ** and Widnows95 lacks a shared-lock capability.  So on Windows95, a
+  ** and Windows95 lacks a shared-lock capability.  So on Windows95, a
   ** single randomly selected by from the 'shared byte range' is locked.
   ** Windows95 is now pretty much extinct, but this work-around for the
   ** lack of shared-locks on Windows95 lives on, for backwards
@@ -1715,7 +1715,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
 
   /* Make sure the locking sequence is correct.
   **  (1) We never move from unlocked to anything higher than shared lock.
-  **  (2) SQLite never explicitly requests a pendig lock.
+  **  (2) SQLite never explicitly requests a pending lock.
   **  (3) A shared lock is always held when a reserve lock is requested.
   */
   assert( pFile->eFileLock!=NO_LOCK || eFileLock==SHARED_LOCK );
@@ -2933,7 +2933,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
 
   /* Make sure the locking sequence is correct
   **  (1) We never move from unlocked to anything higher than shared lock.
-  **  (2) SQLite never explicitly requests a pendig lock.
+  **  (2) SQLite never explicitly requests a pending lock.
   **  (3) A shared lock is always held when a reserve lock is requested.
   */
   assert( pFile->eFileLock!=NO_LOCK || eFileLock==SHARED_LOCK );
@@ -3049,7 +3049,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
       if( !(failed = afpSetLock(context->dbPath, pFile, SHARED_FIRST +
                          pInode->sharedByte, 1, 0)) ){
         int failed2 = SQLITE_OK;
-        /* now attemmpt to get the exclusive lock range */
+        /* now attempt to get the exclusive lock range */
         failed = afpSetLock(context->dbPath, pFile, SHARED_FIRST, 
                                SHARED_SIZE, 1);
         if( failed && (failed2 = afpSetLock(context->dbPath, pFile, 
@@ -3350,7 +3350,7 @@ static int unixRead(
 #endif
 
 #if SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this read request as possible by transfering
+  /* Deal with as much of this read request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -3485,7 +3485,7 @@ static int unixWrite(
 #endif
 
 #if defined(SQLITE_MMAP_READWRITE) && SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this write request as possible by transfering
+  /* Deal with as much of this write request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -3607,7 +3607,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
   ** no-op.  But go ahead and call fstat() to validate the file
   ** descriptor as we need a method to provoke a failure during
-  ** coverate testing.
+  ** coverage testing.
   */
 #ifdef SQLITE_NO_SYNC
   {
@@ -7316,7 +7316,7 @@ static int proxyTakeConch(unixFile *pFile){
               fprintf(stderr, "fchmod %o FAILED with %d %s\n",
                       cmode, code, strerror(code));
             } else {
-              fprintf(stderr, "fchmod %o SUCCEDED\n",cmode);
+              fprintf(stderr, "fchmod %o SUCCEEDED\n",cmode);
             }
           }else{
             int code = errno;

@@ -25,7 +25,7 @@ set testprefix fts3cov
 # When it first needs to read a block from the %_segments table, the FTS3 
 # module compiles an SQL statement for that purpose. The statement is 
 # stored and reused each subsequent time a block is read. This test case 
-# tests the effects of an OOM error occuring while compiling the statement.
+# tests the effects of an OOM error occurring while compiling the statement.
 #
 # Similarly, when FTS3 first needs to scan through a set of segment leaves
 # to find a set of documents that matches a term, it allocates a string
@@ -277,7 +277,7 @@ do_test fts3cov-7.2 {
 # pending-terms table must be flushed each time a document with a docid
 # less than or equal to the previous docid is modified. 
 #
-# This test checks the effects of an OOM error occuring when the 
+# This test checks the effects of an OOM error occurring when the 
 # pending-terms table is flushed for this reason as part of a DELETE 
 # statement.
 #

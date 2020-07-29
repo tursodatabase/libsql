@@ -314,7 +314,7 @@ typedef struct CsvTable {
 } CsvTable;
 
 /* Allowed values for tstFlags */
-#define CSVTEST_FIDX  0x0001      /* Pretend that constrained searchs cost less*/
+#define CSVTEST_FIDX  0x0001      /* Pretend that constrained searches cost less*/
 
 /* A cursor for the CSV virtual table */
 typedef struct CsvCursor {
@@ -393,7 +393,7 @@ static const char *csv_parameter(const char *zTag, int nTag, const char *z){
 static int csv_string_parameter(
   CsvReader *p,            /* Leave the error message here, if there is one */
   const char *zParam,      /* Parameter we are checking for */
-  const char *zArg,        /* Raw text of the virtual table argment */
+  const char *zArg,        /* Raw text of the virtual table argument */
   char **pzVal             /* Write the dequoted string value here */
 ){
   const char *zValue;
@@ -839,7 +839,7 @@ static int csvtabBestIndex(
   if( (((CsvTable*)tab)->tstFlags & CSVTEST_FIDX)!=0 ){
     /* The usual (and sensible) case is to always do a full table scan.
     ** The code in this branch only runs when testflags=1.  This code
-    ** generates an artifical and unrealistic plan which is useful
+    ** generates an artificial and unrealistic plan which is useful
     ** for testing virtual table logic but is not helpful to real applications.
     **
     ** Any ==, LIKE, or GLOB constraint is marked as usable by the virtual

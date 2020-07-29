@@ -345,7 +345,7 @@ do_test misc1-11.2 {
 
 # Make sure string comparisons really do compare strings in format4+.
 # Similar tests in the format3.test file show that for format3 and earlier
-# all comparisions where numeric if either operand looked like a number.
+# all comparisons where numeric if either operand looked like a number.
 #
 do_test misc1-12.1 {
   execsql {SELECT '0'=='0.0'}

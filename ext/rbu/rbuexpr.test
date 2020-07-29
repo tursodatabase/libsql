@@ -90,4 +90,3 @@ sqlite3 db test.db
 integrity_check 2.3
 
 finish_test
-

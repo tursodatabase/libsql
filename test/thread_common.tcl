@@ -107,4 +107,3 @@ proc run_thread_tests {{print_warning 0}} {
 }
 
 return 0
-

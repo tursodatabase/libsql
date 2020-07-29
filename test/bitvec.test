@@ -149,7 +149,7 @@ do_test bitvec-2.7 {
   }
 } 0
 
-# This procedure runs sqlite3BitvecBuiltinTest with argments "n" and
+# This procedure runs sqlite3BitvecBuiltinTest with arguments "n" and
 # "program".  But it also causes a malloc error to occur after the
 # "failcnt"-th malloc.  The result should be "0" if no malloc failure
 # occurs or "-1" if there is a malloc failure.

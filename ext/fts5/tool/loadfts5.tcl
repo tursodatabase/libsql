@@ -10,11 +10,11 @@ proc loadfile {f} {
 set ::nRow 0
 set ::nRowPerDot 1000
 
-proc load_hierachy {dir} {
+proc load_hierarchy {dir} {
   foreach f [glob -nocomplain -dir $dir *] {
     if {$::O(limit) && $::nRow>=$::O(limit)} break
     if {[file isdir $f]} {
-      load_hierachy $f
+      load_hierarchy $f
     } else {
       db eval { INSERT INTO t1 VALUES($f, loadfile($f)) }
       incr ::nRow
@@ -164,9 +164,6 @@ db eval BEGIN
     } else {
     }
   }
-  load_hierachy [lindex $argv end]
+  load_hierarchy [lindex $argv end]
 db eval COMMIT
 puts ""
-
-
-

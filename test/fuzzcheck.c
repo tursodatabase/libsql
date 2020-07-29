@@ -1161,7 +1161,7 @@ static int inmemDelete(
   return SQLITE_IOERR_DELETE;
 }
 
-/* Check for the existance of a file
+/* Check for the existence of a file
 */
 static int inmemAccess(
   sqlite3_vfs *pVfs,
@@ -1459,7 +1459,7 @@ int main(int argc, char **argv){
   char **azSrcDb = 0;          /* Array of source database names */
   int iSrcDb;                  /* Loop over all source databases */
   int nTest = 0;               /* Total number of tests performed */
-  char *zDbName = "";          /* Appreviated name of a source database */
+  char *zDbName = "";          /* Abbreviated name of a source database */
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE env variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
   int sqlFuzz = 0;             /* True for SQL fuzz. False for DB fuzz */

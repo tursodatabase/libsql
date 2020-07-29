@@ -552,7 +552,7 @@ static u32 zipfileGetU32(const u8 *aBuf){
 }
 
 /*
-** Write a 16-bit little endiate integer into buffer aBuf.
+** Write a 16-bit little endian integer into buffer aBuf.
 */
 static void zipfilePutU16(u8 *aBuf, u16 val){
   aBuf[0] = val & 0xFF;
@@ -560,7 +560,7 @@ static void zipfilePutU16(u8 *aBuf, u16 val){
 }
 
 /*
-** Write a 32-bit little endiate integer into buffer aBuf.
+** Write a 32-bit little endian integer into buffer aBuf.
 */
 static void zipfilePutU32(u8 *aBuf, u32 val){
   aBuf[0] = val & 0xFF;

@@ -351,7 +351,7 @@ static sqlite3_file *multiplexSubOpen(
 
 /*
 ** Return the size, in bytes, of chunk number iChunk.  If that chunk
-** does not exist, then return 0.  This function does not distingish between
+** does not exist, then return 0.  This function does not distinguish between
 ** non-existant files and zero-length files.
 */
 static sqlite3_int64 multiplexSubSize(
@@ -574,7 +574,7 @@ static int multiplexOpen(
           ** Or, if the first overflow file does not exist and the main file is
           ** larger than the chunk size, that means the chunk size is too small.
           ** But we have no way of determining the intended chunk size, so 
-          ** just disable the multiplexor all togethre.
+          ** just disable the multiplexor all together.
           */
           rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
               SQLITE_ACCESS_EXISTS, &bExists);

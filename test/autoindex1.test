@@ -209,7 +209,7 @@ do_eqp_test autoindex1-502 {
 
 # The following code checks a performance regression reported on the
 # mailing list on 2010-10-19.  The problem is that the nRowEst field
-# of ephermeral tables was not being initialized correctly and so no
+# of ephemeral tables was not being initialized correctly and so no
 # automatic index was being created for the emphemeral table when it was
 # used as part of a join.
 #

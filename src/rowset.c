@@ -42,7 +42,7 @@
 ** The TEST primitive includes a "batch" number.  The TEST primitive
 ** will only see elements that were inserted before the last change
 ** in the batch number.  In other words, if an INSERT occurs between
-** two TESTs where the TESTs have the same batch nubmer, then the
+** two TESTs where the TESTs have the same batch number, then the
 ** value added by the INSERT will not be visible to the second TEST.
 ** The initial batch number is zero, so if the very first TEST contains
 ** a non-zero batch number, it will see all prior INSERTs.

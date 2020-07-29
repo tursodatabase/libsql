@@ -107,4 +107,3 @@ proc do_rbu_vacuum_test {tn step {statedb state.db}} {
     PRAGMA integrity_check
   } ok]
 }
-

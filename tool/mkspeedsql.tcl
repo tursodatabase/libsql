@@ -16,7 +16,7 @@
 # Set a uniform random seed
 expr srand(0)
 
-# The number_name procedure below converts its argment (an integer)
+# The number_name procedure below converts its argument (an integer)
 # into a string which is the English-language name for that number.
 #
 # Example:

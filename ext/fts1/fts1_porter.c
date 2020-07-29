@@ -143,7 +143,7 @@ static const char cType[] = {
 **
 ** In these routine, the letters are in reverse order.  So the 'y' rule
 ** is that 'y' is a consonant unless it is followed by another
-** consonent.
+** consonant.
 */
 static int isVowel(const char*);
 static int isConsonant(const char *z){
@@ -239,7 +239,7 @@ static int doubleConsonant(const char *z){
 
 /*
 ** Return TRUE if the word ends with three letters which
-** are consonant-vowel-consonent and where the final consonant
+** are consonant-vowel-consonant and where the final consonant
 ** is not 'w', 'x', or 'y'.
 **
 ** The word is reversed here.  So we are really checking the
@@ -255,7 +255,7 @@ static int star_oh(const char *z){
 
 /*
 ** If the word ends with zFrom and xCond() is true for the stem
-** of the word that preceeds the zFrom ending, then change the 
+** of the word that precedes the zFrom ending, then change the 
 ** ending to zTo.
 **
 ** The input word *pz and zFrom are both in reverse order.  zTo

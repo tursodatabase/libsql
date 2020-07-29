@@ -220,7 +220,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
 /*
 ** Return the collation sequence for the expression pExpr. If
 ** there is no defined collating sequence, return a pointer to the
-** defautl collation sequence.
+** default collation sequence.
 **
 ** See also: sqlite3ExprCollSeq()
 **
@@ -2455,7 +2455,7 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 **   IN_INDEX_INDEX_ASC  - The cursor was opened on an ascending index.
 **   IN_INDEX_INDEX_DESC - The cursor was opened on a descending index.
 **   IN_INDEX_EPH        - The cursor was opened on a specially created and
-**                         populated epheremal table.
+**                         populated ephemeral table.
 **   IN_INDEX_NOOP       - No cursor was allocated.  The IN operator must be
 **                         implemented as a sequence of comparisons.
 **
@@ -2477,12 +2477,12 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 **
 ** When IN_INDEX_LOOP is used (and the b-tree will be used to iterate
 ** through the set members) then the b-tree must not contain duplicates.
-** An epheremal table will be created unless the selected columns are guaranteed
+** An ephemeral table will be created unless the selected columns are guaranteed
 ** to be unique - either because it is an INTEGER PRIMARY KEY or due to
 ** a UNIQUE constraint or index.
 **
 ** When IN_INDEX_MEMBERSHIP is used (and the b-tree will be used 
-** for fast set membership tests) then an epheremal table must 
+** for fast set membership tests) then an ephemeral table must 
 ** be used unless <columns> is a single INTEGER PRIMARY KEY column or an 
 ** index can be found with the specified <columns> as its left-most.
 **
@@ -2813,7 +2813,7 @@ void sqlite3VectorErrorMsg(Parse *pParse, Expr *pExpr){
 **     x IN (SELECT a FROM b)     -- IN operator with subquery on the right
 **
 ** The pExpr parameter is the IN operator.  The cursor number for the
-** constructed ephermeral table is returned.  The first time the ephemeral
+** constructed ephemeral table is returned.  The first time the ephemeral
 ** table is computed, the cursor number is also stored in pExpr->iTable,
 ** however the cursor number returned might not be the same, as it might
 ** have been duplicated using OP_OpenDup.
@@ -3628,7 +3628,7 @@ static void exprToRegister(Expr *pExpr, int iReg){
 
 /*
 ** Evaluate an expression (either a vector or a scalar expression) and store
-** the result in continguous temporary registers.  Return the index of
+** the result in contiguous temporary registers.  Return the index of
 ** the first register used to store the result.
 **
 ** If the returned result register is a temporary scalar, then also write
@@ -3843,7 +3843,7 @@ expr_code_doover:
       if( ExprHasProperty(pExpr, EP_FixedCol) ){
         /* This COLUMN expression is really a constant due to WHERE clause
         ** constraints, and that constant is coded by the pExpr->pLeft
-        ** expresssion.  However, make sure the constant has the correct
+        ** expression.  However, make sure the constant has the correct
         ** datatype by applying the Affinity of the table column to the
         ** constant.
         */
@@ -5427,7 +5427,7 @@ static int exprImpliesNotNull(
 **     pE1: x!=123     pE2: x IS NOT NULL    Result: true
 **     pE1: x!=?1      pE2: x IS NOT NULL    Result: true
 **     pE1: x IS NULL  pE2: x IS NOT NULL    Result: false
-**     pE1: x IS ?2    pE2: x IS NOT NULL    Reuslt: false
+**     pE1: x IS ?2    pE2: x IS NOT NULL    Result: false
 **
 ** When comparing TK_COLUMN nodes between pE1 and pE2, if pE2 has
 ** Expr.iTable<0 then assume a table number given by iTab.

@@ -62,7 +62,7 @@ struct Fts5VocabCursor {
   Fts5IndexIter *pIter;           /* Term/rowid iterator object */
 
   int nLeTerm;                    /* Size of zLeTerm in bytes */
-  char *zLeTerm;                  /* (term <= $zLeTerm) paramater, or NULL */
+  char *zLeTerm;                  /* (term <= $zLeTerm) parameter, or NULL */
 
   /* These are used by 'col' tables only */
   int iCol;

@@ -663,7 +663,7 @@ static int fts5PorterGobbleVC(char *zStem, int nStem, int bPrevCons){
     if( 0==(bCons = !fts5PorterIsVowel(zStem[i], bCons)) ) break;
   }
 
-  /* Scan for a consonent */
+  /* Scan for a consonant */
   for(i++; i<nStem; i++){
     if( (bCons = !fts5PorterIsVowel(zStem[i], bCons)) ) return i+1;
   }

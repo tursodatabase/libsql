@@ -204,13 +204,13 @@ CheckForCompilerFeature(
     sa.bInheritHandle = FALSE;
 
     /*
-     * Create a non-inheritible pipe.
+     * Create a non-inheritable pipe.
      */
 
     CreatePipe(&Out.pipe, &h, &sa, 0);
 
     /*
-     * Dupe the write side, make it inheritible, and close the original.
+     * Dupe the write side, make it inheritable, and close the original.
      */
 
     DuplicateHandle(hProcess, h, hProcess, &si.hStdOutput, 0, TRUE,
@@ -338,13 +338,13 @@ CheckForLinkerFeature(
     sa.bInheritHandle = TRUE;
 
     /*
-     * Create a non-inheritible pipe.
+     * Create a non-inheritable pipe.
      */
 
     CreatePipe(&Out.pipe, &h, &sa, 0);
 
     /*
-     * Dupe the write side, make it inheritible, and close the original.
+     * Dupe the write side, make it inheritable, and close the original.
      */
 
     DuplicateHandle(hProcess, h, hProcess, &si.hStdOutput, 0, TRUE,

@@ -605,5 +605,3 @@ if {[string match ${cmd}* configurations] && $n==0} {
 } else {
   usage
 }
-
-

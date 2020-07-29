@@ -19,7 +19,7 @@
 ** The sha1(X) function computes the SHA1 hash of the input X, or NULL if
 ** X is NULL.
 **
-** The sha1_query(Y) function evalutes all queries in the SQL statements of Y
+** The sha1_query(Y) function evaluates all queries in the SQL statements of Y
 ** and returns a hash of their results.
 */
 #include "sqlite3ext.h"

@@ -696,7 +696,7 @@ on Parse().
 <h4>The <tt>%extra_context</tt> directive</h4>
 
 The <tt>%extra_context</tt> directive instructs Lemon to add a 2nd parameter
-to the parameter list of the ParseAlloc() and ParseInif() functions.  Lemon
+to the parameter list of the ParseAlloc() and ParseInit() functions.  Lemon
 doesn't do anything itself with these extra argument, but it does
 store the value make it available to C-code action routines, destructors,
 and so forth.  For example, if the grammar file contains:</p>
@@ -755,7 +755,7 @@ is allowed between the "%" and the directive name.</p>
 <p>Grammar text in between "<tt>%ifdef MACRO</tt>" and the next nested
 "<tt>%endif</tt>" is
 ignored unless the "-DMACRO" command-line option is used.  Grammar text
-betwen "<tt>%ifndef MACRO</tt>" and the next nested "<tt>%endif</tt>" is
+between "<tt>%ifndef MACRO</tt>" and the next nested "<tt>%endif</tt>" is
 included except when the "-DMACRO" command-line option is used.<p>
 
 <p>The text in between "<tt>%if</tt> <i>CONDITIONAL</i>" and its

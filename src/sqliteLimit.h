@@ -76,7 +76,7 @@
 ** level of recursion for each term.  A stack overflow can result
 ** if the number of terms is too large.  In practice, most SQL
 ** never has more than 3 or 4 terms.  Use a value of 0 to disable
-** any limit on the number of terms in a compount SELECT.
+** any limit on the number of terms in a compound SELECT.
 */
 #ifndef SQLITE_MAX_COMPOUND_SELECT
 # define SQLITE_MAX_COMPOUND_SELECT 500

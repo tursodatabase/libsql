@@ -1963,7 +1963,7 @@ int lsm_checkpoint(lsm_db *pDb, int *pnKB){
   rc = lsmCheckpointWrite(pDb, &nWrite);
 
   /* If required, calculate the output variable (KB of data checkpointed). 
-  ** Set it to zero if an error occured.  */
+  ** Set it to zero if an error occurred.  */
   if( pnKB ){
     int nKB = 0;
     if( rc==LSM_OK && nWrite ){

@@ -28,7 +28,7 @@ source $testdir/lock_common.tcl
 # lock2-1.5: Try to upgrade the first process to EXCLUSIVE, this fails so
 #            it gets PENDING.
 # lock2-1.6: Release the SHARED lock held by the second process. 
-# lock2-1.7: Attempt to reaquire a SHARED lock with the second process.
+# lock2-1.7: Attempt to reacquire a SHARED lock with the second process.
 #            this fails due to the PENDING lock.
 # lock2-1.8: Ensure the first process can now upgrade to EXCLUSIVE.
 #

@@ -86,7 +86,7 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
 
 TCC += $(OPT_FEATURE_FLAGS)
 
-# Add in any optional parameters specified on the make commane line
+# Add in any optional parameters specified on the make command line
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC += $(OPTS)
 

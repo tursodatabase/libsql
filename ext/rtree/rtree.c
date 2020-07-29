@@ -328,7 +328,7 @@ struct RtreeConstraint {
 
 /* Special operators available only on cursors.  Needs to be consecutive
 ** with the normal values above, but must be less than RTREE_MATCH.  These
-** are used in the cursor for contraints such as x=NULL (RTREE_FALSE) or
+** are used in the cursor for constraints such as x=NULL (RTREE_FALSE) or
 ** x<'xyz' (RTREE_TRUE) */
 #define RTREE_TRUE  0x3f  /* ? */
 #define RTREE_FALSE 0x40  /* @ */
@@ -2032,7 +2032,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** Return the N-dimensional volumn of the cell stored in *p.
+** Return the N-dimensional volume of the cell stored in *p.
 */
 static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
   RtreeDValue area = (RtreeDValue)1;
@@ -4392,7 +4392,7 @@ int sqlite3RtreeInit(sqlite3 *db){
 ** This routine deletes the RtreeGeomCallback object that was attached
 ** one of the SQL functions create by sqlite3_rtree_geometry_callback()
 ** or sqlite3_rtree_query_callback().  In other words, this routine is the
-** destructor for an RtreeGeomCallback objecct.  This routine is called when
+** destructor for an RtreeGeomCallback object.  This routine is called when
 ** the corresponding SQL function is deleted.
 */
 static void rtreeFreeCallback(void *p){

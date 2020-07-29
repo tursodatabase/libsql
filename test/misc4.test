@@ -220,7 +220,7 @@ do_catchsql_test misc4-7.1 {
   VACUUM;
 } {1 {unrecognized token: "[M%s%s%s%s%s%s%s%s%s%s%s%s%s"}}
 
-# 2015-05-18.  Use of ephermeral Mem content after the cursor that holds
+# 2015-05-18.  Use of ephemeral Mem content after the cursor that holds
 # the canonical content has moved on.
 #
 do_execsql_test misc4-7.2 {

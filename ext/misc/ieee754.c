@@ -73,13 +73,13 @@
 **    SELECT decimal_mul(ieee754_mantissa(c.n),pow2.v)
 **      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.n);
 **
-** Here is a query to show various boundry values for the binary64
+** Here is a query to show various boundary values for the binary64
 ** number format:
 **
 **    WITH c(name,bin) AS (VALUES
 **       ('minimum positive value',        x'0000000000000001'),
 **       ('maximum subnormal value',       x'000fffffffffffff'),
-**       ('mininum positive nornal value', x'0010000000000000'),
+**       ('minimum positive normal value', x'0010000000000000'),
 **       ('maximum value',                 x'7fefffffffffffff'))
 **    SELECT c.name, decimal_mul(ieee754_mantissa(c.bin),pow2.v)
 **      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.bin);

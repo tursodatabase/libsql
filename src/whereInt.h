@@ -416,7 +416,7 @@ struct WhereLoopBuilder {
   unsigned int iPlanLimit;  /* Search limiter */
 };
 
-/* Allowed values for WhereLoopBuider.bldFlags */
+/* Allowed values for WhereLoopBuilder.bldFlags */
 #define SQLITE_BLDF1_INDEXED  0x0001   /* An index is used */
 #define SQLITE_BLDF1_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
 

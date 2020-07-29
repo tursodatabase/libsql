@@ -263,7 +263,7 @@ typedef struct CellInfo CellInfo;
 ** page that has been loaded into memory.  The information in this object
 ** is derived from the raw on-disk page content.
 **
-** As each database page is loaded into memory, the pager allocats an
+** As each database page is loaded into memory, the pager allocates an
 ** instance of this object and zeros the first 8 bytes.  (This is the
 ** "extra" information associated with each page of the pager.)
 **

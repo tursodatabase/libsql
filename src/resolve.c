@@ -912,7 +912,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           /* Internal-use-only functions are disallowed unless the
           ** SQL is being compiled using sqlite3NestedParse() or
           ** the SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test-control has be
-          ** used to activate internal functionsn for testing purposes */
+          ** used to activate internal functions for testing purposes */
           no_such_func = 1;
           pDef = 0;
         }else
@@ -1304,7 +1304,7 @@ static int resolveCompoundOrderBy(
           ** And, if one of the comparisons is successful, leave the expression
           ** as is instead of transforming it to an integer as in the usual
           ** case. This allows the code in alter.c to modify column
-          ** refererences within the ORDER BY expression as required.  */
+          ** references within the ORDER BY expression as required.  */
           if( IN_RENAME_OBJECT ){
             pDup = pE;
           }else{
@@ -1493,7 +1493,7 @@ static int resolveOrderGroupBy(
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
       if( sqlite3ExprCompare(0, pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
-        /* Since this expresion is being changed into a reference
+        /* Since this expression is being changed into a reference
         ** to an identical expression in the result set, remove all Window
         ** objects belonging to the expression from the Select.pWin list. */
         windowRemoveExprFromSelect(pSelect, pE);
@@ -1876,7 +1876,7 @@ int sqlite3ResolveExprListNames(
 
 /*
 ** Resolve all names in all expressions of a SELECT and in all
-** decendents of the SELECT, including compounds off of p->pPrior,
+** descendents of the SELECT, including compounds off of p->pPrior,
 ** subqueries in expressions, and subqueries used as FROM clause
 ** terms.
 **

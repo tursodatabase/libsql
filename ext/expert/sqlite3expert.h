@@ -136,7 +136,7 @@ int sqlite3_expert_count(sqlite3expert*);
 **
 ** EXPERT_REPORT_INDEXES:
 **   Return a buffer containing the CREATE INDEX statements for all recommended
-**   indexes for statement iStmt. If there are no new recommeded indexes, NULL 
+**   indexes for statement iStmt. If there are no new recommended indexes, NULL 
 **   is returned.
 **
 ** EXPERT_REPORT_PLAN:

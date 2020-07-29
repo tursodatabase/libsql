@@ -97,7 +97,7 @@
 **    LIMIT 20
 **
 ** The query above gives the 20 closest words to the $word being tested.
-** (Note that for good performance, the vocubulary.w column should be
+** (Note that for good performance, the vocabulary.w column should be
 ** indexed.)
 **
 ** A similar query can be used to find all words in the dictionary that

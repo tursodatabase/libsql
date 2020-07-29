@@ -24,7 +24,7 @@ SQLITE_EXTENSION_INIT1
 ** To use this module, first compile it as a loadable extension.  See
 ** https://www.sqlite.org/loadext.html#build for compilations instructions.
 **
-** After compliing, load this extension, then open database connections to be
+** After compiling, load this extension, then open database connections to be
 ** measured.  Query usages status using the vfsstat virtual table:
 **
 **         SELECT * FROM vfsstat;

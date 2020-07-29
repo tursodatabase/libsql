@@ -3171,7 +3171,7 @@ static int openDatabase(
 **         0                  off                         off
 **
 ** Legacy behavior is 3 (double-quoted string literals are allowed anywhere)
-** and so that is the default.  But developers are encouranged to use
+** and so that is the default.  But developers are encouraged to use
 ** -DSQLITE_DQS=0 (best) or -DSQLITE_DQS=1 (second choice) if possible.
 */
 #if !defined(SQLITE_DQS)
@@ -3684,7 +3684,7 @@ int sqlite3_table_column_metadata(
 
   /* Find the column for which info is requested */
   if( zColumnName==0 ){
-    /* Query for existance of table only */
+    /* Query for existence of table only */
   }else{
     for(iCol=0; iCol<pTab->nCol; iCol++){
       pCol = &pTab->aCol[iCol];
@@ -4449,7 +4449,7 @@ int sqlite3_snapshot_get(
 }
 
 /*
-** Open a read-transaction on the snapshot idendified by pSnapshot.
+** Open a read-transaction on the snapshot identified by pSnapshot.
 */
 int sqlite3_snapshot_open(
   sqlite3 *db, 

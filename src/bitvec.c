@@ -188,7 +188,7 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
   h = BITVEC_HASH(i++);
   /* if there wasn't a hash collision, and this doesn't */
   /* completely fill the hash, then just add it without */
-  /* worring about sub-dividing and re-hashing. */
+  /* worrying about sub-dividing and re-hashing. */
   if( !p->u.aHash[h] ){
     if (p->nSet<(BITVEC_NINT-1)) {
       goto bitvec_set_end;

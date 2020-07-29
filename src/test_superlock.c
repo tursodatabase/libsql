@@ -91,7 +91,7 @@ static int superlockIsWal(Superlock *pLock){
 static int superlockShmLock(
   sqlite3_file *fd,               /* Database file handle */
   int idx,                        /* Offset of shm-lock to obtain */
-  int nByte,                      /* Number of consective bytes to lock */
+  int nByte,                      /* Number of consecutive bytes to lock */
   SuperlockBusy *pBusy            /* Busy-handler wrapper object */
 ){
   int rc;

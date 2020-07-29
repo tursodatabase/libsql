@@ -171,7 +171,7 @@ ifcapable memorymanage {
 #        file (and written into the temporary b-tree), sqlite3_release_memory()
 #        is called to free as much memory as possible. This causes the temp
 #        b-tree to be flushed to disk. So that before its contents can be 
-#        transfered to a PMA they must be read back from disk - creating extra
+#        transferred to a PMA they must be read back from disk - creating extra
 #        opportunities for IO errors.
 #
 install_custom_faultsim
@@ -269,7 +269,7 @@ uninstall_custom_faultsim
 # Test 4: After a certain amount of data has been read from the main database
 # file (and written into the temporary b-tree), sqlite3_release_memory() is
 # called to free as much memory as possible. This causes the temp b-tree to be
-# flushed to disk. So that before its contents can be transfered to a PMA they
+# flushed to disk. So that before its contents can be transferred to a PMA they
 # must be read back from disk - creating extra opportunities for IO errors.
 # 
 install_custom_faultsim

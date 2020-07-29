@@ -96,4 +96,3 @@ do_catchsql_test 2.1.2 {
 } {1 {fts5: syntax error near "NOT"}}
 
 finish_test
-

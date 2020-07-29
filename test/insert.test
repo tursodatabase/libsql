@@ -329,7 +329,7 @@ ifcapable conflict {
 
 # Test that the special optimization for queries of the form 
 # "SELECT max(x) FROM tbl" where there is an index on tbl(x) works with 
-# INSERT statments.
+# INSERT statements.
 do_test insert-7.1 {
   execsql {
     CREATE TABLE t1(a);

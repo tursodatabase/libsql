@@ -13,4 +13,3 @@ do
   echo -ne "$f: "
   gcov -b $f | grep Taken | sed 's/Taken at least once://'
 done
-

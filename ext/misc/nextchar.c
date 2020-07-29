@@ -20,7 +20,7 @@
 ** 
 ** Only the first three arguments are required.  If the C parameter is 
 ** omitted or is NULL or is an empty string, then the default collating 
-** sequence of T.F is used for comparision.  If the W parameter is omitted
+** sequence of T.F is used for comparison.  If the W parameter is omitted
 ** or is NULL or is an empty string, then no filtering of the output is
 ** done.
 **

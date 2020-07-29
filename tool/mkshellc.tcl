@@ -20,7 +20,7 @@ puts $out {/* DO NOT EDIT!
 ** Most of the code found below comes from the "src/shell.c.in" file in
 ** the canonical SQLite source tree.  That main file contains "INCLUDE"
 ** lines that specify other files in the canonical source tree that are
-** inserted to getnerate this complete program source file.
+** inserted to generate this complete program source file.
 **
 ** The code from multiple files is combined into this single "shell.c"
 ** source file to help make the command-line program easier to compile.

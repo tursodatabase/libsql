@@ -641,7 +641,7 @@ do_test in-13.X {
 } {}
 
 # At one point the following was causing valgrind to report a "jump
-# depends on unitialized location" problem.
+# depends on uninitialized location" problem.
 #
 do_execsql_test in-14.0 {
   CREATE TABLE c1(a);

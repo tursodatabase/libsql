@@ -841,7 +841,7 @@ void sqlite3Pragma(
   **
   ** The first form reports the current local setting for the
   ** page cache spill size. The second form turns cache spill on
-  ** or off.  When turnning cache spill on, the size is set to the
+  ** or off.  When turning cache spill on, the size is set to the
   ** current cache_size.  The third form sets a spill size that
   ** may be different form the cache size.
   ** If N is positive then that is the
@@ -1519,9 +1519,9 @@ void sqlite3Pragma(
   ** The "quick_check" is reduced version of 
   ** integrity_check designed to detect most database corruption
   ** without the overhead of cross-checking indexes.  Quick_check
-  ** is linear time wherease integrity_check is O(NlogN).
+  ** is linear time whereas integrity_check is O(NlogN).
   **
-  ** The maximum nubmer of errors is 100 by default.  A different default
+  ** The maximum number of errors is 100 by default.  A different default
   ** can be specified using a numeric parameter N.
   **
   ** Or, the parameter N can be the name of a table.  In that case, only

@@ -608,7 +608,7 @@ static int fts5Bm25GetData(
         ** under consideration.
         **
         ** The problem with this is that if (N < 2*nHit), the IDF is 
-        ** negative. Which is undesirable. So the mimimum allowable IDF is
+        ** negative. Which is undesirable. So the minimum allowable IDF is
         ** (1e-6) - roughly the same as a term that appears in just over
         ** half of set of 5,000,000 documents.  */
         double idf = log( (nRow - nHit + 0.5) / (nHit + 0.5) );

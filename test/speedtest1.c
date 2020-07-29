@@ -11,7 +11,7 @@ static const char zHelp[] =
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
-  "  --incrvacuum        Enable incremenatal vacuum mode\n"
+  "  --incrvacuum        Enable incremental vacuum mode\n"
   "  --journal M         Set the journal_mode to M\n"
   "  --key KEY           Set the encryption key to KEY\n"
   "  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
@@ -279,7 +279,7 @@ unsigned int speedtest1_random(void){
 }
 
 /* Map the value in within the range of 1...limit into another
-** number in a way that is chatic and invertable.
+** number in a way that is chaotic and invertable.
 */
 unsigned swizzle(unsigned in, unsigned limit){
   unsigned out = 0;
@@ -299,7 +299,7 @@ unsigned roundup_allones(unsigned limit){
   return m;
 }
 
-/* The speedtest1_numbername procedure below converts its argment (an integer)
+/* The speedtest1_numbername procedure below converts its argument (an integer)
 ** into a string which is the English-language name for that number.
 ** The returned string should be freed with sqlite3_free().
 **

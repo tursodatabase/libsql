@@ -84,5 +84,3 @@ from having to handle SQLITE\_BUSY errors and facilitate appropriate transfer
 of priorities between competing clients.
 
 Clients that lock multiple databases simultaneously must be wary of deadlock.
-
-

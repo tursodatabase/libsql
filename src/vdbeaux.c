@@ -294,7 +294,7 @@ int sqlite3VdbeLoadString(Vdbe *p, int iDest, const char *zStr){
 /*
 ** Generate code that initializes multiple registers to string or integer
 ** constants.  The registers begin with iDest and increase consecutively.
-** One register is initialized for each characgter in zTypes[].  For each
+** One register is initialized for each character in zTypes[].  For each
 ** "s" character in zTypes[], the register is a string if the argument is
 ** not NULL, or OP_Null if the value is a null pointer.  For each "i" character
 ** in zTypes[], the register is initialized to an integer.
@@ -1096,7 +1096,7 @@ void sqlite3VdbeJumpHereOrPopInst(Vdbe *p, int addr){
 
 /*
 ** If the input FuncDef structure is ephemeral, then free it.  If
-** the FuncDef is not ephermal, then do nothing.
+** the FuncDef is not ephemeral, then do nothing.
 */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
   if( (pDef->funcFlags & SQLITE_FUNC_EPHEM)!=0 ){
@@ -1980,7 +1980,7 @@ int sqlite3VdbeNextOpcode(
   nRow = p->nOp;
   if( pSub!=0 ){
     if( pSub->flags&MEM_Blob ){
-      /* pSub is initiallly NULL.  It is initialized to a BLOB by
+      /* pSub is initially NULL.  It is initialized to a BLOB by
       ** the P4_SUBPROGRAM processing logic below */
       nSub = pSub->n/sizeof(Vdbe*);
       apSub = (SubProgram **)pSub->z;
@@ -4549,7 +4549,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         /* Serial types 12 or greater are strings and blobs (greater than
         ** numbers). Types 10 and 11 are currently "reserved for future 
         ** use", so it doesn't really matter what the results of comparing
-        ** them to numberic values are.  */
+        ** them to numeric values are.  */
         rc = +1;
       }else if( serial_type==0 ){
         rc = -1;
@@ -5018,7 +5018,7 @@ void sqlite3VdbeSetChanges(sqlite3 *db, int nChange){
 }
 
 /*
-** Set a flag in the vdbe to update the change counter when it is finalised
+** Set a flag in the vdbe to update the change counter when it is finalized
 ** or reset.
 */
 void sqlite3VdbeCountChanges(Vdbe *v){

@@ -945,7 +945,7 @@ static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
 }
 
 /*
-** An error occured while parsing or otherwise processing a database
+** An error occurred while parsing or otherwise processing a database
 ** object (either pParse->pNewTable, pNewIndex or pNewTrigger) as part of an
 ** ALTER TABLE RENAME COLUMN program. The error message emitted by the
 ** sub-routine is currently stored in pParse->zErrMsg. This function

@@ -149,7 +149,7 @@
 ** each thread.  These memory counts can become confused if memory
 ** is allocated by one thread and then freed by another.  For that
 ** reason, when SQLITE_ENABLE_MEMORY_MANAGEMENT is used, all operations
-** that might allocate or free memory should be performanced in the same
+** that might allocate or free memory should be performed in the same
 ** thread that originally created the database connection.  In that case,
 ** many of the operations that are listed above as safe to be performed
 ** in separate threads would need to be sent over to the server to be
@@ -459,7 +459,7 @@ void *sqlite3_server(void *NotUsed){
 
 /*
 ** Start a server thread if one is not already running.  If there
-** is aleady a server thread running, the new thread will quickly
+** is already a server thread running, the new thread will quickly
 ** die and this routine is effectively a no-op.
 */
 void sqlite3_server_start(void){

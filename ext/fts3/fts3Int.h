@@ -27,7 +27,7 @@
 /*
 ** FTS4 is really an extension for FTS3.  It is enabled using the
 ** SQLITE_ENABLE_FTS3 macro.  But to avoid confusion we also all
-** the SQLITE_ENABLE_FTS4 macro to serve as an alisse for SQLITE_ENABLE_FTS3.
+** the SQLITE_ENABLE_FTS4 macro to serve as an alias for SQLITE_ENABLE_FTS3.
 */
 #if defined(SQLITE_ENABLE_FTS4) && !defined(SQLITE_ENABLE_FTS3)
 # define SQLITE_ENABLE_FTS3
@@ -132,7 +132,7 @@ SQLITE_EXTENSION_INIT3
 /*
 ** The assert_fts3_nc() macro is similar to the assert() macro, except that it
 ** is used for assert() conditions that are true only if it can be 
-** guranteed that the database is not corrupt.
+** guaranteed that the database is not corrupt.
 */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 extern int sqlite3_fts3_may_be_corrupt;
@@ -354,7 +354,7 @@ struct Fts3Cursor {
 
 /*
 ** The Fts3Cursor.eSearch member is always set to one of the following.
-** Actualy, Fts3Cursor.eSearch can be greater than or equal to
+** Actually, Fts3Cursor.eSearch can be greater than or equal to
 ** FTS3_FULLTEXT_SEARCH.  If so, then Fts3Cursor.eSearch - 2 is the index
 ** of the column to be searched.  For example, in
 **

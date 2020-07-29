@@ -177,7 +177,7 @@ do_test lock-2.2 {
 
 # If the other thread (the one that does not hold the transaction with
 # a RESERVED lock) tries to get a RESERVED lock, we do get a busy callback
-# as long as we were not orginally holding a READ lock.
+# as long as we were not originally holding a READ lock.
 #
 do_test lock-2.3.1 {
   proc callback {count} {

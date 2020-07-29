@@ -867,7 +867,7 @@ int sqlite3VdbeExec(
 case OP_Goto: {             /* jump */
 
 #ifdef SQLITE_DEBUG
-  /* In debuggging mode, when the p5 flags is set on an OP_Goto, that
+  /* In debugging mode, when the p5 flags is set on an OP_Goto, that
   ** means we should really jump back to the preceeding OP_ReleaseReg
   ** instruction. */
   if( pOp->p5 ){
@@ -1053,7 +1053,7 @@ case OP_HaltIfNull: {      /* in3 */
 ** P5 is a value between 0 and 4, inclusive, that modifies the P4 string.
 **
 **    0:  (no change)
-**    1:  NOT NULL contraint failed: P4
+**    1:  NOT NULL constraint failed: P4
 **    2:  UNIQUE constraint failed: P4
 **    3:  CHECK constraint failed: P4
 **    4:  FOREIGN KEY constraint failed: P4
@@ -3941,7 +3941,7 @@ case OP_OpenEphemeral: {
   assert( pOp->p2>=0 );
   pCx = p->apCsr[pOp->p1];
   if( pCx && pCx->pBtx ){
-    /* If the ephermeral table is already open, erase all existing content
+    /* If the ephemeral table is already open, erase all existing content
     ** so that the table is empty again, rather than creating a new table. */
     assert( pCx->isEphemeral );
     pCx->seqCount = 0;
@@ -5067,7 +5067,7 @@ case OP_Delete: {
   if( opflags & OPFLAG_ISNOOP ) break;
 #endif
  
-  /* Only flags that can be set are SAVEPOISTION and AUXDELETE */ 
+  /* Only flags that can be set are SAVEPOSITION and AUXDELETE */ 
   assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_AUXDELETE))==0 );
   assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
   assert( OPFLAG_AUXDELETE==BTREE_AUXDELETE );
@@ -6812,7 +6812,7 @@ case OP_AggStep1: {
   /* If this function is inside of a trigger, the register array in aMem[]
   ** might change from one evaluation to the next.  The next block of code
   ** checks to see if the register array has changed, and if so it
-  ** reinitializes the relavant parts of the sqlite3_context object */
+  ** reinitializes the relevant parts of the sqlite3_context object */
   if( pCtx->pMem != pMem ){
     pCtx->pMem = pMem;
     for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
@@ -7664,7 +7664,7 @@ case OP_MaxPgcnt: {            /* out2 */
 ** This opcode works exactly like OP_Function.  The only difference is in
 ** its name.  This opcode is used in places where the function must be
 ** purely non-deterministic.  Some built-in date/time functions can be
-** either determinitic of non-deterministic, depending on their arguments.
+** either deterministic or non-deterministic, depending on their arguments.
 ** When those function are used in a non-deterministic way, they will check
 ** to see if they were called using OP_PureFunc instead of OP_Function, and
 ** if they were, they throw an error.
@@ -7682,7 +7682,7 @@ case OP_Function: {            /* group */
   /* If this function is inside of a trigger, the register array in aMem[]
   ** might change from one evaluation to the next.  The next block of code
   ** checks to see if the register array has changed, and if so it
-  ** reinitializes the relavant parts of the sqlite3_context object */
+  ** reinitializes the relevant parts of the sqlite3_context object */
   pOut = &aMem[pOp->p3];
   if( pCtx->pOut != pOut ){
     pCtx->pVdbe = p;
@@ -7963,7 +7963,7 @@ default: {          /* This is really OP_Noop, OP_Explain */
       }
       if( opProperty==0xff ){
         /* Never happens.  This code exists to avoid a harmless linkage
-        ** warning aboud sqlite3VdbeRegisterDump() being defined but not
+        ** warning about sqlite3VdbeRegisterDump() being defined but not
         ** used. */
         sqlite3VdbeRegisterDump(p);
       }

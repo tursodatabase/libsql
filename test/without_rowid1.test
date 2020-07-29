@@ -363,7 +363,7 @@ do_execsql_test 8.1 {
 } {table t1 | index t1x |}
 
 # 2018-04-05: OSSFuzz found that the following was accessing an 
-# unintialized memory cell. Which was not actually causing a 
+# uninitialized memory cell. Which was not actually causing a 
 # malfunction, but does cause an assert() to fail.
 #
 do_execsql_test 9.0 {

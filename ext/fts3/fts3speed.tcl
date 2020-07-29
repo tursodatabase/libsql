@@ -119,4 +119,3 @@ puts "  fts3speed_insert.sql"
 puts "  fts3speed_select.sql"
 puts "  fts3speed_select2.sql"
 puts "  fts3speed_optimize.sql"
-

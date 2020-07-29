@@ -128,5 +128,3 @@ execsql_test 1.15 {
 }
 
 finish_test
-
-

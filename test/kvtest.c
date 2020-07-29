@@ -24,7 +24,7 @@
 **
 **          kvtest.c       >--- this file
 **          sqlite3.c      \___ SQLite
-**          sqlite3.h      /    amlagamation & header
+**          sqlite3.h      /    amalagmation & header
 **
 ** (2) Run you compiler against the two C source code files.
 **

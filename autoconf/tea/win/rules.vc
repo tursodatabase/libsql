@@ -708,4 +708,3 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !message *** Link options '$(LINKERFLAGS)'
 
 !endif
-

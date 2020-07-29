@@ -31,7 +31,7 @@ proc tracesql {sql} {
 }
 #db trace tracesql
 
-# The number_name procedure below converts its argment (an integer)
+# The number_name procedure below converts its argument (an integer)
 # into a string which is the English-language name for that number.
 #
 # Example:

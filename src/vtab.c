@@ -1194,7 +1194,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
 **
 ** An eponymous virtual table instance is one that is named after its
 ** module, and more importantly, does not require a CREATE VIRTUAL TABLE
-** statement in order to come into existance.  Eponymous virtual table
+** statement in order to come into existence.  Eponymous virtual table
 ** instances always exist.  They cannot be DROP-ed.
 **
 ** Any virtual table module for which xConnect and xCreate are the same

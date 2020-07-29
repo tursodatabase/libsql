@@ -90,8 +90,3 @@ if {$O(segments)} {
     puts $d
   }
 }
-
-
-
-
-

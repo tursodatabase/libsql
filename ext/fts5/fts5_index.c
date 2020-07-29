@@ -4138,7 +4138,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
     if( pSeg->pSeg==0 ){
       /* no-op */
     }else if( pSeg->pLeaf==0 ){
-      /* All keys from this input segment have been transfered to the output.
+      /* All keys from this input segment have been transferred to the output.
       ** Set both the first and last page-numbers to 0 to indicate that the
       ** segment is now empty. */
       pSeg->pSeg->pgnoLast = 0;
@@ -4209,7 +4209,7 @@ static void fts5MergeChunkCallback(
 */
 static void fts5IndexMergeLevel(
   Fts5Index *p,                   /* FTS5 backend object */
-  Fts5Structure **ppStruct,       /* IN/OUT: Stucture of index */
+  Fts5Structure **ppStruct,       /* IN/OUT: Structure of index */
   int iLvl,                       /* Level to read input from */
   int *pnRem                      /* Write up to this many output leaves */
 ){
@@ -6170,7 +6170,7 @@ static void fts5DecodeRowid(
 }
 
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
-  int iSegid, iHeight, iPgno, bDlidx;       /* Rowid compenents */
+  int iSegid, iHeight, iPgno, bDlidx;       /* Rowid components */
   fts5DecodeRowid(iKey, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   if( iSegid==0 ){

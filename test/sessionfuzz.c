@@ -17,7 +17,7 @@
 **
 **      sessionfuzz setup         -- Generate starter test cases
 **      sessionfuzz run FILE ...  -- Run a test fuzz on FILE
-**      sesssiofuzz run SQLAR ... -- Run all test cases in the SQL Archive
+**      sessionfuzz run SQLAR ... -- Run all test cases in the SQL Archive
 **
 ** Compiling:
 **

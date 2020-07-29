@@ -1065,7 +1065,7 @@ static int sessionTableInfo(
 /*
 ** This function is only called from within a pre-update handler for a
 ** write to table pTab, part of session pSession. If this is the first
-** write to this table, initalize the SessionTable.nCol, azCol[] and
+** write to this table, initialize the SessionTable.nCol, azCol[] and
 ** abPK[] arrays accordingly.
 **
 ** If an error occurs, an error code is stored in sqlite3_session.rc and
@@ -1986,7 +1986,7 @@ static void sessionAppendIdent(
 
 /*
 ** This function is a no-op if *pRc is other than SQLITE_OK when it is
-** called. Otherwse, it appends the serialized version of the value stored
+** called. Otherwise, it appends the serialized version of the value stored
 ** in column iCol of the row that SQL statement pStmt currently points
 ** to to the buffer.
 */
@@ -2367,7 +2367,7 @@ static int sessionGenerateChangeset(
 ){
   sqlite3 *db = pSession->db;     /* Source database handle */
   SessionTable *pTab;             /* Used to iterate through attached tables */
-  SessionBuffer buf = {0,0,0};    /* Buffer in which to accumlate changeset */
+  SessionBuffer buf = {0,0,0};    /* Buffer in which to accumulate changeset */
   int rc;                         /* Return code */
 
   assert( xOutput==0 || (pnChangeset==0 && ppChangeset==0 ) );
@@ -3783,7 +3783,7 @@ static int sessionBindValue(
 **
 ** New.* value $i from the iterator is bound to variable ($i+1) of 
 ** statement pStmt. If parameter abPK is NULL, all values from 0 to (nCol-1)
-** are transfered to the statement. Otherwise, if abPK is not NULL, it points
+** are transferred to the statement. Otherwise, if abPK is not NULL, it points
 ** to an array nCol elements in size. In this case only those values for 
 ** which abPK[$i] is true are read from the iterator and bound to the 
 ** statement.
@@ -3828,7 +3828,7 @@ static int sessionBindRow(
 ** iterator pIter points to to the SELECT and attempts to seek to the table
 ** entry. If a row is found, the SELECT statement left pointing at the row 
 ** and SQLITE_ROW is returned. Otherwise, if no row is found and no error
-** has occured, the statement is reset and SQLITE_OK is returned. If an
+** has occurred, the statement is reset and SQLITE_OK is returned. If an
 ** error occurs, the statement is reset and an SQLite error code is returned.
 **
 ** If this function returns SQLITE_ROW, the caller must eventually reset() 
@@ -3847,7 +3847,7 @@ static int sessionSeekToRow(
 ){
   int rc;                         /* Return code */
   int nCol;                       /* Number of columns in table */
-  int op;                         /* Changset operation (SQLITE_UPDATE etc.) */
+  int op;                         /* Changeset operation (SQLITE_UPDATE etc.) */
   const char *zDummy;             /* Unused */
 
   sqlite3changeset_op(pIter, &zDummy, &nCol, &op, 0);

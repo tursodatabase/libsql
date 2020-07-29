@@ -164,7 +164,7 @@ static u16 operatorMask(int op){
 ** can be optimized using inequality constraints.  Return TRUE if it is
 ** so and false if not.
 **
-** In order for the operator to be optimizible, the RHS must be a string
+** In order for the operator to be optimizable, the RHS must be a string
 ** literal that does not begin with a wildcard.  The LHS must be a column
 ** that may only be NULL, a string, or a BLOB, never a number. (This means
 ** that virtual tables cannot participate in the LIKE optimization.)  The
@@ -791,7 +791,7 @@ static void exprAnalyzeOrTerm(
                                             pOrTerm->leftCursor))==0 ){
           /* This term must be of the form t1.a==t2.b where t2 is in the
           ** chngToIN set but t1 is not.  This term will be either preceded
-          ** or follwed by an inverted copy (t2.b==t1.a).  Skip this term 
+          ** or followed by an inverted copy (t2.b==t1.a).  Skip this term 
           ** and use its inversion. */
           testcase( pOrTerm->wtFlags & TERM_COPIED );
           testcase( pOrTerm->wtFlags & TERM_VIRTUAL );

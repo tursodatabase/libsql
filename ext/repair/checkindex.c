@@ -110,7 +110,7 @@ static int cidxConnect(
       " current_key TEXT,"       /* SQLite quote() text of key values */
       " index_name HIDDEN,"      /* IN: name of the index being scanned */
       " after_key HIDDEN,"       /* IN: Start scanning after this key */
-      " scanner_sql HIDDEN"      /* debuggingn info: SQL used for scanner */
+      " scanner_sql HIDDEN"      /* debugging info: SQL used for scanner */
       ")"
   );
   pRet = cidxMalloc(&rc, sizeof(CidxTable));

@@ -647,7 +647,7 @@ int lsmFsOpen(
     memcpy(&pFS->zLog[nDb], "-log", 5);
 
     /* Allocate the hash-table here. At some point, it should be changed
-    ** so that it can grow dynamicly. */
+    ** so that it can grow dynamically. */
     pFS->nCacheMax = 2048*1024 / pFS->nPagesize;
     pFS->nHash = 4096;
     pFS->apHash = lsmMallocZeroRc(pDb->pEnv, sizeof(Page *) * pFS->nHash, &rc);
@@ -793,7 +793,7 @@ void lsmFsClose(FileSystem *pFS){
 **
 ** This function returns a pointer to an object that can be linked into
 ** the list described above. The returned object now 'owns' the database
-** file descriptr, so that when the FileSystem object is destroyed, it
+** file descriptor, so that when the FileSystem object is destroyed, it
 ** will not be closed. 
 **
 ** This function may be called at most once in the life-time of a 

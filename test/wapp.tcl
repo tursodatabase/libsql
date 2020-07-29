@@ -342,7 +342,7 @@ proc wapp-safety-check {} {
   return $res
 }
 
-# Return a string that descripts the current environment.  Applications
+# Return a string that describes the current environment.  Applications
 # might find this useful for debugging.
 #
 proc wapp-debug-env {} {

@@ -1324,7 +1324,7 @@ char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
 ** Value pLoop->nOut is currently set to the estimated number of rows 
 ** visited for scanning (a=? AND b=?). This function reduces that estimate 
 ** by some factor to account for the (c BETWEEN ? AND ?) expression based
-** on the stat4 data for the index. this scan will be peformed multiple 
+** on the stat4 data for the index. this scan will be performed multiple 
 ** times (once for each (a,b) combination that matches a=?) is dealt with 
 ** by the caller.
 **
@@ -2069,7 +2069,7 @@ static WhereLoop **whereLoopFindLesser(
     ** rSetup. Call this SETUP-INVARIANT */
     assert( p->rSetup>=pTemplate->rSetup );
 
-    /* Any loop using an appliation-defined index (or PRIMARY KEY or
+    /* Any loop using an application-defined index (or PRIMARY KEY or
     ** UNIQUE constraint) with one or more == constraints is better
     ** than an automatic index. Unless it is a skip-scan. */
     if( (p->wsFlags & WHERE_AUTO_INDEX)!=0
@@ -2214,7 +2214,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   }else{
     /* We will be overwriting WhereLoop p[].  But before we do, first
     ** go through the rest of the list and delete any other entries besides
-    ** p[] that are also supplated by pTemplate */
+    ** p[] that are also to be replaced by pTemplate */
     WhereLoop **ppTail = &p->pNextLoop;
     WhereLoop *pToDel;
     while( *ppTail ){
@@ -2391,7 +2391,7 @@ static int whereRangeVectorLen(
 }
 
 /*
-** Adjust the cost C by the costMult facter T.  This only occurs if
+** Adjust the cost C by the costMult factor T.  This only occurs if
 ** compiled with -DSQLITE_ENABLE_COSTMULT
 */
 #ifdef SQLITE_ENABLE_COSTMULT
@@ -2599,7 +2599,7 @@ static int whereLoopAddBtreeIndex(
       pBtm = pTerm;
       pTop = 0;
       if( pTerm->wtFlags & TERM_LIKEOPT ){
-        /* Range contraints that come from the LIKE optimization are
+        /* Range constraints that come from the LIKE optimization are
         ** always used in pairs. */
         pTop = &pTerm[1];
         assert( (pTop-(pTerm->pWC->a))<pTerm->pWC->nTerm );
@@ -2895,7 +2895,7 @@ static int whereUsablePartialIndex(
 */
 static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
-  Bitmask mPrereq             /* Extra prerequesites for using this table */
+  Bitmask mPrereq             /* Extra prerequisites for using this table */
 ){
   WhereInfo *pWInfo;          /* WHERE analysis context */
   Index *pProbe;              /* An index we are evaluating */
@@ -4211,7 +4211,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             );
           }
           /* TUNING:  Add a small extra penalty (5) to sorting as an
-          ** extra encouragment to the query planner to select a plan
+          ** extra encouragement to the query planner to select a plan
           ** where the rows emerge in the correct order without any sorting
           ** required. */
           rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 5;
@@ -4657,7 +4657,7 @@ static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
 **
 ** OUTER JOINS
 **
-** An outer join of tables t1 and t2 is conceptally coded as follows:
+** An outer join of tables t1 and t2 is conceptually coded as follows:
 **
 **    foreach row1 in t1 do
 **      flag = 0
@@ -4810,7 +4810,7 @@ WhereInfo *sqlite3WhereBegin(
     **
     ** The N-th term of the FROM clause is assigned a bitmask of 1<<N.
     **
-    ** The rule of the previous sentence ensures thta if X is the bitmask for
+    ** The rule of the previous sentence ensures that if X is the bitmask for
     ** a table T, then X-1 is the bitmask for all other tables to the left of T.
     ** Knowing the bitmask for all tables to the left of a left join is
     ** important.  Ticket #3015.

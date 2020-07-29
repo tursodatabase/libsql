@@ -324,4 +324,3 @@ do_execsql_test 12.3 {
 } {3 4 b b}
 
 finish_test
-

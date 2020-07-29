@@ -81,7 +81,7 @@ do_execsql_test 3.0 {
 }
 
 #-------------------------------------------------------------------------
-# Test that a crash occuring when the second or subsequent tokens in a
+# Test that a crash occurring when the second or subsequent tokens in a
 # phrase matched zero rows has been fixed.
 #
 do_execsql_test 4.0 {

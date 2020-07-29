@@ -484,7 +484,7 @@ static int cursorHoldsMutex(BtCursor *p){
 }
 
 /* Verify that the cursor and the BtShared agree about what is the current
-** database connetion. This is important in shared-cache mode. If the database 
+** database connection. This is important in shared-cache mode. If the database 
 ** connection pointers get out-of-sync, it is possible for routines like
 ** btreeInitPage() to reference an stale connection pointer that references a
 ** a connection that has already closed.  This routine is used inside assert()
@@ -904,7 +904,7 @@ BtCursor *sqlite3BtreeFakeValidCursor(void){
 ** a row having been deleted out from under the cursor).  
 **
 ** On success, the *pDifferentRow parameter is false if the cursor is left
-** pointing at exactly the same row.  *pDifferntRow is the row the cursor
+** pointing at exactly the same row.  *pDifferentRow is the row the cursor
 ** was pointing to has been deleted, forcing the cursor to point to some
 ** nearby row.
 **
@@ -1701,7 +1701,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
 **
 ** Even though the freeblock list was checked by btreeComputeFreeSpace(),
 ** that routine will not detect overlap between cells or freeblocks.  Nor
-** does it detect cells or freeblocks that encrouch into the reserved bytes
+** does it detect cells or freeblocks that encroach into the reserved bytes
 ** at the end of the page.  So do additional corruption checks inside this
 ** routine and return SQLITE_CORRUPT if any problems are found.
 */
@@ -2248,7 +2248,7 @@ static void releasePageOne(MemPage *pPage){
 ** This works just like btreeGetPage() with the addition:
 **
 **   *  If the page is already in use for some other purpose, immediately
-**      release it and return an SQLITE_CURRUPT error.
+**      release it and return an SQLITE_CORRUPT error.
 **   *  Make sure the isInit flag is clear
 */
 static int btreeGetUnusedPage(
@@ -2678,7 +2678,7 @@ static void allocateTempSpace(BtShared *pBt){
     ** can mean that fillInCell() only initializes the first 2 or 3
     ** bytes of pTmpSpace, but that the first 4 bytes are copied from
     ** it into a database page. This is not actually a problem, but it
-    ** does cause a valgrind error when the 1 or 2 bytes of unitialized 
+    ** does cause a valgrind error when the 1 or 2 bytes of uninitialized 
     ** data is passed to system call write(). So to avoid this error,
     ** zero the first 4 bytes of temp space here.
     **
@@ -2910,7 +2910,7 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p){
 
 /*
 ** Return the number of bytes of space at the end of every page that
-** are intentually left unused.  This is the "reserved" space that is
+** are intentionally left unused.  This is the "reserved" space that is
 ** sometimes used by extensions.
 **
 ** The value returned is the larger of the current reserve size and
@@ -4632,7 +4632,7 @@ u32 sqlite3BtreePayloadSize(BtCursor *pCur){
 ** routine always returns 2147483647 (which is the largest record
 ** that SQLite can handle) or more.  But returning a smaller value might
 ** prevent large memory allocations when trying to interpret a
-** corrupt datrabase.
+** corrupt database.
 **
 ** The current implementation merely returns the size of the underlying
 ** database file.
@@ -5441,7 +5441,7 @@ int sqlite3BtreeMovetoUnpacked(
       /* If the requested key is one more than the previous key, then
       ** try to get there using sqlite3BtreeNext() rather than a full
       ** binary search.  This is an optimization only.  The correct answer
-      ** is still obtained without this case, only a little more slowely */
+      ** is still obtained without this case, only a little more slowly */
       if( pCur->info.nKey+1==intKey ){
         *pRes = 0;
         rc = sqlite3BtreeNext(pCur, 0);
@@ -7321,7 +7321,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     ** with entries for the new page, and any pointer from the 
     ** cell on the page to an overflow page. If either of these
     ** operations fails, the return code is set, but the contents
-    ** of the parent page are still manipulated by thh code below.
+    ** of the parent page are still manipulated by the code below.
     ** That is Ok, at this point the parent page is guaranteed to
     ** be marked as dirty. Returning an error code will cause a
     ** rollback, undoing any changes made to the parent page.
@@ -7912,7 +7912,7 @@ static int balance_nonroot(
     }
   }
 
-  /* Sanity check:  For a non-corrupt database file one of the follwing
+  /* Sanity check:  For a non-corrupt database file one of the following
   ** must be true:
   **    (1) We found one or more cells (cntNew[0])>0), or
   **    (2) pPage is a virtual root page.  A virtual root page is when
@@ -8512,7 +8512,7 @@ static int btreeOverwriteContent(
 ){
   int nData = pX->nData - iOffset;
   if( nData<=0 ){
-    /* Overwritting with zeros */
+    /* Overwriting with zeros */
     int i;
     for(i=0; i<iAmt && pDest[i]==0; i++){}
     if( i<iAmt ){

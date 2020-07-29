@@ -23,7 +23,7 @@
 ** database.  A unique suffix is added to avoid name collisions.  
 ** Separate log files are used so that concurrent processes do not
 ** try to write log operations to the same file at the same instant, 
-** resulting in overwritten or comingled log text.
+** resulting in overwritten or commingled log text.
 **
 ** Each individual log file records operations by a single database
 ** connection on both the original database and its associated rollback

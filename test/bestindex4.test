@@ -29,7 +29,7 @@ ifcapable !vtab {
 #      "CREATE TABLE t1 (id, host, class)"
 #
 # The virtual table supports == operators on a subset of its columns. The
-# exact subset depends on the value of bitmask paramater $param.
+# exact subset depends on the value of bitmask parameter $param.
 #
 #   0x01 - == on "id" supported
 #   0x02 - == on "host" supported

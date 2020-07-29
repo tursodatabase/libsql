@@ -62,7 +62,7 @@ do_execsql_test collateB-1.17 {
 } {1 11 1 11 |}
 
 #-------------------------------------------------------------------------
-# Test an assert() failure that was occuring if an index were created
+# Test an assert() failure that was occurring if an index were created
 # on a column explicitly declared "COLLATE binary".
 reset_db
 do_execsql_test 2.1 {

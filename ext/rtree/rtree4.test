@@ -148,7 +148,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
-    # Do a contained-in query with surplus contraints at the beginning.
+    # Do a contained-in query with surplus constraints at the beginning.
     # This should force a full-table scan on the rtree.
     #
     set where {}
@@ -165,7 +165,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
-    # Do an overlaps query with surplus contraints at the beginning.
+    # Do an overlaps query with surplus constraints at the beginning.
     # This should force a full-table scan on the rtree.
     #
     set where {}
@@ -182,7 +182,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
-    # Do a contained-in query with surplus contraints at the end
+    # Do a contained-in query with surplus constraints at the end
     #
     set where {}
     for {set j 0} {$j<$nDim} {incr j} {
@@ -198,7 +198,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
-    # Do an overlaps query with surplus contraints at the end
+    # Do an overlaps query with surplus constraints at the end
     #
     set where {}
     for {set j [expr {$nDim-1}]} {$j>=0} {incr j -1} {
@@ -214,7 +214,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
-    # Do a contained-in query with surplus contraints where the 
+    # Do a contained-in query with surplus constraints where the 
     # constraints appear in a random order.
     #
     set where {}
@@ -230,7 +230,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
-    # Do an overlaps query with surplus contraints where the
+    # Do an overlaps query with surplus constraints where the
     # constraints appear in a random order.
     #
     set where {}

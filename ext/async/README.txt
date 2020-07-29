@@ -47,7 +47,7 @@ the database, eliminating the bottleneck.
 
   You lose Durability with asynchronous I/O, but you still retain the
   other parts of ACID:  Atomic,  Consistent, and Isolated.  Many
-  appliations get along fine without the Durablity.
+  applications get along fine without the Durability.
 
   1.1 How it Works
 

@@ -19,7 +19,7 @@
 ** The sha3(X) function computes the SHA3 hash of the input X, or NULL if
 ** X is NULL.
 **
-** The sha3_query(Y) function evalutes all queries in the SQL statements of Y
+** The sha3_query(Y) function evaluates all queries in the SQL statements of Y
 ** and returns a hash of their results.
 **
 ** The SIZE argument is optional.  If omitted, the SHA3-256 hash algorithm
@@ -571,7 +571,7 @@ static void hash_step_vformat(
 ** For each SQL statement in the X input, there is one S segment.  Each
 ** S segment is followed by zero or more R segments, one for each row in the
 ** result set.  After each R, there are one or more N, I, F, B, or T segments,
-** one for each column in the result set.  Segments are concatentated directly
+** one for each column in the result set.  Segments are concatenated directly
 ** with no delimiters of any kind.
 */
 static void sha3QueryFunc(

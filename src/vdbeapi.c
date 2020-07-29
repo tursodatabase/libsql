@@ -1085,7 +1085,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 **     sqlite3_column_real()
 **     sqlite3_column_bytes()
 **     sqlite3_column_bytes16()
-**     sqiite3_column_blob()
+**     sqlite3_column_blob()
 */
 static void columnMallocFailure(sqlite3_stmt *pStmt)
 {
@@ -1319,7 +1319,7 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt *pStmt, int N){
 /*
 ** Unbind the value bound to variable i in virtual machine p. This is the 
 ** the same as binding a NULL value to the column. If the "i" parameter is
-** out of range, then SQLITE_RANGE is returned. Othewise SQLITE_OK.
+** out of range, then SQLITE_RANGE is returned. Otherwise SQLITE_OK.
 **
 ** A successful evaluation of this routine acquires the mutex on p.
 ** the mutex is released if any kind of error occurs.

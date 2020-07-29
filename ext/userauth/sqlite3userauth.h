@@ -35,7 +35,7 @@ extern "C" {
 ** combination is incorrect or unknown.
 **
 ** If the SQLITE_USER table is not present in the database file, then
-** this interface is a harmless no-op returnning SQLITE_OK.
+** this interface is a harmless no-op returning SQLITE_OK.
 */
 int sqlite3_user_authenticate(
   sqlite3 *db,           /* The database connection */

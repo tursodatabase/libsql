@@ -35,7 +35,7 @@
 #      capable                EXPR
 #      ifcapable              EXPR
 #
-# Calulate checksums based on database contents:
+# Calculate checksums based on database contents:
 #
 #      dbcksum                DB DBNAME
 #      allcksum               ?DB?
@@ -89,7 +89,7 @@
 #      verbose
 #
 
-# Set the precision of FP arithmatic used by the interpreter. And
+# Set the precision of FP arithmetic used by the interpreter. And
 # configure SQLite to take database file locks on the page that begins
 # 64KB into the database file instead of the one 1GB in. This means
 # the code that handles that special case can be tested without creating
@@ -1635,7 +1635,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
   return -code $c $r
 }
 
-# This proc execs a seperate process that crashes midway through executing
+# This proc execs a separate process that crashes midway through executing
 # the SQL script $sql on database test.db.
 #
 # The crash occurs during a sync() of file $crashfile. When the crash
@@ -2332,7 +2332,7 @@ proc slave_test_file {zFile} {
 }
 
 # Open a new connection on database test.db and execute the SQL script
-# supplied as an argument. Before returning, close the new conection and
+# supplied as an argument. Before returning, close the new connection and
 # restore the 4 byte fields starting at header offsets 28, 92 and 96
 # to the values they held before the SQL was executed. This simulates
 # a write by a pre-3.7.0 client.

@@ -42,7 +42,7 @@ do_execsql_test 1.1 {
 #   -select     SELECT to execute after -setup script
 #   -result     Expected result of -select statement
 #   -rollback   Use this SQL command ("ROLLBACK" or "ROLLBACK TO ...") to
-#               rollback the transaction in the middle of the -select statment
+#               rollback the transaction in the middle of the -select statement
 #               execution.
 #
 proc do_rollback_test {tn args} {

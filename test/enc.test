@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The focus of
 # this file is testing the SQLite routines used for converting between the
-# various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
+# various supported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
 # $Id: enc.test,v 1.7 2007/05/23 16:23:09 danielk1977 Exp $

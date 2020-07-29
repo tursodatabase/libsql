@@ -1277,7 +1277,7 @@ static void updateVirtualTable(
       sqlite3WhereEnd(pWInfo);
     }
 
-    /* Begin scannning through the ephemeral table. */
+    /* Begin scanning through the ephemeral table. */
     addr = sqlite3VdbeAddOp1(v, OP_Rewind, ephemTab); VdbeCoverage(v);
 
     /* Extract arguments from the current row of the ephemeral table and 

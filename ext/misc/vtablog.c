@@ -103,7 +103,7 @@ static const char *vtablog_parameter(const char *zTag, int nTag, const char *z){
 static int vtablog_string_parameter(
   char **pzErr,            /* Leave the error message here, if there is one */
   const char *zParam,      /* Parameter we are checking for */
-  const char *zArg,        /* Raw text of the virtual table argment */
+  const char *zArg,        /* Raw text of the virtual table argument */
   char **pzVal             /* Write the dequoted string value here */
 ){
   const char *zValue;

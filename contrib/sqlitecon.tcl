@@ -446,7 +446,7 @@ proc sqlitecon::Button1 {w x y} {
   focus $w
 }
 
-# Find the boundry between characters that is nearest
+# Find the boundary between characters that is nearest
 # to $x,$y
 #
 proc sqlitecon::nearestBoundry {w x y} {
@@ -567,7 +567,7 @@ proc sqlitecon::Cut w {
   }
 }
 
-# Do a paste opeation.
+# Do a paste operation.
 #
 proc sqlitecon::Paste w {
   if {[sqlitecon::canCut $w]==1} {

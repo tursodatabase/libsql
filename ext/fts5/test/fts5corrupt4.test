@@ -58,4 +58,3 @@ for {set j 1000} {$j <= 5000} {incr j 1000} {
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test
-

@@ -23,7 +23,7 @@
 **
 **     SELECT * FROM table WHERE x IN (?,?,?,...,?);
 **
-** And then binding indivdual integers to each of ? slots, a C-language
+** And then binding individual integers to each of ? slots, a C-language
 ** application can create an intarray object (named "ex1" in the following
 ** example), prepare a statement like this:
 **

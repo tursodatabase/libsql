@@ -740,7 +740,7 @@ proc add_test_suite {listvar name testtarget config} {
       $title $dir $configOpts $testtarget $makeOpts $cflags $opts]
 }
 
-# The following procedure returns the "configure" command to be exectued for
+# The following procedure returns the "configure" command to be executed for
 # the current platform, which may be Windows (via MinGW, etc).
 #
 proc configureCommand {opts} {

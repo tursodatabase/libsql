@@ -86,7 +86,7 @@ TEA_ADD_TCL_SOURCES([])
 # the system shared library for SQLite rather than statically linking
 # against its own private copy.  This is dangerous and leads to
 # undersirable dependences and is not recommended.
-# Patchs from rmax.
+# Patches from rmax.
 #--------------------------------------------------------------------
 AC_ARG_WITH([system-sqlite],
  [AC_HELP_STRING([--with-system-sqlite],

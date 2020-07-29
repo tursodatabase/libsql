@@ -1329,10 +1329,10 @@ static sqlite3_vfs async_vfs = {
 ** the write queue is empty.
 **
 ** If both of the above variables are false, this procedure runs
-** indefinately, waiting for operations to be added to the write queue
+** indefinitely, waiting for operations to be added to the write queue
 ** and processing them in the order in which they arrive.
 **
-** An artifical delay of async.ioDelay milliseconds is inserted before
+** An artificial delay of async.ioDelay milliseconds is inserted before
 ** each write operation in order to simulate the effect of a slow disk.
 **
 ** Only one instance of this procedure may be running at a time.
@@ -1378,7 +1378,7 @@ static void asyncWriterThread(void){
     **     * An ASYNC_CLOSE operation.
     **     * An ASYNC_OPENEXCLUSIVE operation. For this one, we relinquish 
     **       the mutex, call the underlying xOpenExclusive() function, then
-    **       re-aquire the mutex before seting the AsyncFile.pBaseRead 
+    **       re-acquire the mutex before setting the AsyncFile.pBaseRead 
     **       variable.
     **     * ASYNC_SYNC and ASYNC_WRITE operations, if 
     **       SQLITE_ASYNC_TWO_FILEHANDLES was set at compile time and two

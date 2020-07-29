@@ -46,7 +46,7 @@ proc print_rd {map} {
   puts "** in the ASCII range with a diacritic added, return the codepoint"
   puts "** of the ASCII letter only. For example, if passed 235 - \"LATIN"
   puts "** SMALL LETTER E WITH DIAERESIS\" - return 65 (\"LATIN SMALL LETTER"
-  puts "** E\"). The resuls of passing a codepoint that corresponds to an"
+  puts "** E\"). The results of passing a codepoint that corresponds to an"
   puts "** uppercase letter are undefined."
   puts "*/"
   puts "static int ${::remove_diacritic}(int c, int bComplex)\{"
@@ -889,7 +889,7 @@ proc print_test_main {} {
   puts "\}"
 }
 
-# Proces the command line arguments. Exit early if they are not to
+# Process the command line arguments. Exit early if they are not to
 # our liking.
 #
 proc usage {} {

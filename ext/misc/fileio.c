@@ -501,7 +501,7 @@ static void writefileFunc(
 /*
 ** SQL function:   lsmode(MODE)
 **
-** Given a numberic st_mode from stat(), convert it into a human-readable
+** Given a numeric st_mode from stat(), convert it into a human-readable
 ** text string in the style of "ls -l".
 */
 static void lsModeFunc(

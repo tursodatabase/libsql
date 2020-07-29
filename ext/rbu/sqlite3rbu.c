@@ -1020,7 +1020,7 @@ static char *rbuMPrintf(sqlite3rbu *p, const char *zFmt, ...){
 
 /*
 ** Argument zFmt is a sqlite3_mprintf() style format string. The trailing
-** arguments are the usual subsitution values. This function performs
+** arguments are the usual substitution values. This function performs
 ** the printf() style substitutions and executes the result as an SQL
 ** statement on the RBU handles database.
 **
@@ -1552,7 +1552,7 @@ static char *rbuVacuumTableStart(
 **
 ** If the expression cannot be created, NULL is returned. In this case,
 ** the caller has to use an OFFSET clause to extract only the required 
-** rows from the sourct table, just as it does for an RBU update operation.
+** rows from the source table, just as it does for an RBU update operation.
 */
 char *rbuVacuumIndexStart(
   sqlite3rbu *p,                  /* RBU handle */
@@ -3849,7 +3849,7 @@ static void rbuDeleteVfs(sqlite3rbu *p){
 /*
 ** This user-defined SQL function is invoked with a single argument - the
 ** name of a table expected to appear in the target database. It returns
-** the number of auxilliary indexes on the table.
+** the number of auxiliary indexes on the table.
 */
 static void rbuIndexCntFunc(
   sqlite3_context *pCtx, 
@@ -4694,7 +4694,7 @@ static int rbuVfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 
   /* If this is an RBU vacuum operation and this is the target database,
   ** pretend that it has at least one page. Otherwise, SQLite will not
-  ** check for the existance of a *-wal file. rbuVfsRead() contains 
+  ** check for the existence of a *-wal file. rbuVfsRead() contains 
   ** similar logic.  */
   if( rc==SQLITE_OK && *pSize==0 
    && p->pRbu && rbuIsVacuum(p->pRbu) 
@@ -4990,7 +4990,7 @@ static int rbuVfsOpen(
       rbu_file *pDb = rbuFindMaindb(pRbuVfs, zName, 0);
       if( pDb ){
         if( pDb->pRbu && pDb->pRbu->eStage==RBU_STAGE_OAL ){
-          /* This call is to open a *-wal file. Intead, open the *-oal. This
+          /* This call is to open a *-wal file. Instead, open the *-oal. This
           ** code ensures that the string passed to xOpen() is terminated by a
           ** pair of '\0' bytes in case the VFS attempts to extract a URI 
           ** parameter from it.  */

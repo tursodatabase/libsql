@@ -1531,7 +1531,7 @@ static void putValue(FILE *out, sqlite3_stmt *pStmt, int k){
 ** Generate a CHANGESET for all differences from main.zTab to aux.zTab.
 */
 static void changeset_one_table(const char *zTab, FILE *out){
-  sqlite3_stmt *pStmt;          /* SQL statment */
+  sqlite3_stmt *pStmt;          /* SQL statement */
   char *zId = safeId(zTab);     /* Escaped name of the table */
   char **azCol = 0;             /* List of escaped column names */
   int nCol = 0;                 /* Number of columns */

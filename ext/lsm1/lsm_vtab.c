@@ -82,7 +82,7 @@
 ** There is no content for NULL or type-0 integers.  For BLOB and TEXT
 ** values, the content is the blob data or the UTF-8 text data.  For
 ** non-negative integers X, the content is a variable-length integer X*2.
-** For negative integers Y, the content is varaible-length integer (1-Y)*2+1.
+** For negative integers Y, the content is variable-length integer (1-Y)*2+1.
 ** For FLOAT values, the content is the IEEE754 floating point value in
 ** native byte-order.  This means that FLOAT values will be corrupted when
 ** database file is moved between big-endian and little-endian machines.

@@ -1543,7 +1543,7 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
 ** sqlite3IsIdChar[X] must be 1.
 **
 ** Ticket #1066.  the SQL standard does not allow '$' in the
-** middle of identfiers.  But many SQL implementations do. 
+** middle of identifiers.  But many SQL implementations do. 
 ** SQLite will allow '$' in identifiers for compatibility.
 ** But the feature is undocumented.
 */
@@ -1712,8 +1712,8 @@ static void dequoteString(char *z){
 **
 ** Example:
 **
-**     input:      tokenize chinese ( 'simplifed' , 'mixed' )
-**     output:     chinese simplifed mixed
+**     input:      tokenize chinese ( 'simplified' , 'mixed' )
+**     output:     chinese simplified mixed
 **
 ** Another example:
 **
@@ -2586,7 +2586,7 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
 */
 static int docListOfTerm(
   fulltext_vtab *v,     /* The full text index */
-  int iColumn,          /* column to restrict to.  No restrition if >=nColumn */
+  int iColumn,          /* column to restrict to.  No restriction if >=nColumn */
   QueryTerm *pQTerm,    /* Term we are looking for, or 1st term of a phrase */
   DocList **ppResult    /* Write the result here */
 ){
@@ -2660,7 +2660,7 @@ static int checkColumnSpecifier(
 
 /*
 ** Parse the text at pSegment[0..nSegment-1].  Add additional terms
-** to the query being assemblied in pQuery.
+** to the query being assembled in pQuery.
 **
 ** inPhrase is true if pSegment[0..nSegement-1] is contained within
 ** double-quotes.  If inPhrase is true, then the first term
@@ -2954,7 +2954,7 @@ static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
 }
 
 /* This is the xRowid method.  The SQLite core calls this routine to
-** retrive the rowid for the current row of the result set.  The
+** retrieve the rowid for the current row of the result set.  The
 ** rowid should be written to *pRowid.
 */
 static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){

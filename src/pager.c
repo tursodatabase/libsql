@@ -34,7 +34,7 @@
 ** Otherwise, the page is not synced until the xSync method of the VFS
 ** is called successfully on the file containing the page.
 **
-** Definition:  A page of the database file is said to be "overwriteable" if
+** Definition:  A page of the database file is said to be "overwritable" if
 ** one or more of the following are true about the page:
 ** 
 **     (a)  The original content of the page as it was at the beginning of
@@ -49,7 +49,7 @@
 ** (1) A page of the database file is never overwritten unless one of the
 **     following are true:
 ** 
-**     (a) The page and all other pages on the same sector are overwriteable.
+**     (a) The page and all other pages on the same sector are overwritable.
 ** 
 **     (b) The atomic page write optimization is enabled, and the entire
 **         transaction other than the update of the transaction sequence
@@ -301,7 +301,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    outstanding transactions have been abandoned, the pager is able to
 **    transition back to OPEN state, discarding the contents of the 
 **    page-cache and any other in-memory state at the same time. Everything
-**    is reloaded from disk (and, if necessary, hot-journal rollback peformed)
+**    is reloaded from disk (and, if necessary, hot-journal rollback performed)
 **    when a read-transaction is next opened on the pager (transitioning
 **    the pager into READER state). At that point the system has recovered 
 **    from the error.
@@ -1726,7 +1726,7 @@ static int writeSuperJournal(Pager *pPager, const char *zSuper){
   }
   pPager->journalOff += (nSuper+20);
 
-  /* If the pager is in peristent-journal mode, then the physical 
+  /* If the pager is in persistent-journal mode, then the physical 
   ** journal-file may extend past the end of the super-journal name
   ** and 8 bytes of magic data just written to the file. This is 
   ** dangerous because the code to rollback a hot-journal file
@@ -1896,7 +1896,7 @@ static void pager_unlock(Pager *pPager){
 
 /*
 ** This function is called whenever an IOERR or FULL error that requires
-** the pager to transition into the ERROR state may ahve occurred.
+** the pager to transition into the ERROR state may have occurred.
 ** The first argument is a pointer to the pager structure, the second 
 ** the error-code about to be returned by a pager API function. The 
 ** value returned is a copy of the second argument to this function. 
@@ -3120,7 +3120,7 @@ static int pagerWalFrames(
   assert( pPager->pWal );
   assert( pList );
 #ifdef SQLITE_DEBUG
-  /* Verify that the page list is in accending order */
+  /* Verify that the page list is in ascending order */
   for(p=pList; p && p->pDirty; p=p->pDirty){
     assert( p->pgno < p->pDirty->pgno );
   }
@@ -3503,7 +3503,7 @@ void sqlite3PagerShrink(Pager *pPager){
 **    NORMAL    The journal is synced once before writes begin on the
 **              database.  This is normally adequate protection, but
 **              it is theoretically possible, though very unlikely,
-**              that an inopertune power failure could leave the journal
+**              that an inopportune power failure could leave the journal
 **              in a state which would cause damage to the database
 **              when it is rolled back.
 **
@@ -5009,7 +5009,7 @@ act_like_temp_file:
 
 /*
 ** Return the sqlite3_file for the main database given the name
-** of the corresonding WAL or Journal name as passed into
+** of the corresponding WAL or Journal name as passed into
 ** xOpen.
 */
 sqlite3_file *sqlite3_database_file_object(const char *zName){
@@ -7278,7 +7278,7 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
     assert( pPager->eState!=PAGER_ERROR );
     pPager->journalMode = (u8)eMode;
 
-    /* When transistioning from TRUNCATE or PERSIST to any other journal
+    /* When transitioning from TRUNCATE or PERSIST to any other journal
     ** mode except WAL, unless the pager is in locking_mode=exclusive mode,
     ** delete the journal file.
     */

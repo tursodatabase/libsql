@@ -62,4 +62,3 @@ foreach {tn q res1 res2} {
 }
 
 finish_test
-

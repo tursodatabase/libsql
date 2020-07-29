@@ -81,7 +81,3 @@ Assumptions:
    before the posix advisory lock is automatically dropped - there is
    no chance that another client will be able to read the file in a
    half-committed state before the rollback operation occurs.
-
-
-
-

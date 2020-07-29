@@ -203,4 +203,3 @@ proc write_main_loop {} {
   close $fd
   set main_loop_written 1
 }
-

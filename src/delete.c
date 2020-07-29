@@ -149,7 +149,7 @@ Expr *sqlite3LimitWhere(
   sqlite3 *db = pParse->db;
   Expr *pLhs = NULL;           /* LHS of IN(SELECT...) operator */
   Expr *pInClause = NULL;      /* WHERE rowid IN ( select ) */
-  ExprList *pEList = NULL;     /* Expression list contaning only pSelectRowid */
+  ExprList *pEList = NULL;     /* Expressions containing only pSelectRowid */
   SrcList *pSelectSrc = NULL;  /* SELECT rowid FROM x ... (dup of pSrc) */
   Select *pSelect = NULL;      /* Complete SELECT tree */
   Table *pTab;

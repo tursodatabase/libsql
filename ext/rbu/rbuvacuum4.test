@@ -113,4 +113,3 @@ do_execsql_test 5.0 {
 do_rbu_vacuum_test 5.1 1
 
 finish_test
-

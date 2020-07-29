@@ -1631,7 +1631,7 @@ static int fts5UpdateMethod(
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
     /* Filter out attempts to run UPDATE or DELETE on contentless tables.
-    ** This is not suported.  */
+    ** This is not supported.  */
     if( eType0==SQLITE_INTEGER && fts5IsContentless(pTab) ){
       pTab->p.base.zErrMsg = sqlite3_mprintf(
           "cannot %s contentless fts5 table: %s", 

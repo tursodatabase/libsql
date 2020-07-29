@@ -61,7 +61,7 @@ extern "C" {
 ** objects within this function), then SQLITE_ERROR is also returned.
 ** Finally, if the call to sqlite3_vfs_register() returns an error, then 
 ** the error code is returned to the user by this function. In all three
-** of these cases, intialization has failed and the asynchronous IO VFS
+** of these cases, initialization has failed and the asynchronous IO VFS
 ** is not registered with SQLite.
 **
 ** Otherwise, if no error occurs, SQLITE_OK is returned.

@@ -314,7 +314,7 @@ do_test shared-$av.4.1.3 {
 } {2}
 
 # Sanity check: Create a table in ./test.db via handle db, and test that handle
-# db2 can "see" the new table immediately. A handle using a seperate pager
+# db2 can "see" the new table immediately. A handle using a separate pager
 # cache would have to reload the database schema before this were possible.
 #
 do_test shared-$av.4.2.1 {

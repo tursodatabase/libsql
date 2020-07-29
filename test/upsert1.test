@@ -130,7 +130,7 @@ do_execsql_test upsert1-610 {
 
 # 2018-08-14
 # Ticket https://www.sqlite.org/src/info/908f001483982c43
-# If there are multiple uniqueness contraints, the UPSERT should fire
+# If there are multiple uniqueness constraints, the UPSERT should fire
 # if the one constraint it targets fails, regardless of whether or not
 # the other constraints pass or fail.  In other words, the UPSERT constraint
 # should be tested first.

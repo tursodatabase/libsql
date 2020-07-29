@@ -307,5 +307,3 @@ foreach v $value_options {
 foreach o [lsort [array names options]] {
   puts [string trim $options($o)]
 }
-
-

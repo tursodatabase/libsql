@@ -484,7 +484,7 @@ struct amatch_rule {
   amatch_cost rCost;       /* Cost of this transformation */
   amatch_langid iLang;     /* The langauge to which this rule belongs */
   amatch_len nFrom, nTo;   /* Length of the zFrom and zTo strings */
-  char zTo[4];             /* Tranform to V.W value (extra space appended) */
+  char zTo[4];             /* Transform to V.W value (extra space appended) */
 };
 
 /* 

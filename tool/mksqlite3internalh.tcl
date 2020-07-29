@@ -92,7 +92,7 @@ proc section_comment {text} {
 
 # Read the source file named $filename and write it into the
 # sqlite3.c output file.  If any #include statements are seen,
-# process them approprately.
+# process them appropriately.
 #
 proc copy_file {filename} {
   global seen_hdr available_hdr out

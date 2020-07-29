@@ -557,7 +557,7 @@ static void mt1Main(ThreadSet *pThreadSet, int iThread, void *pCtx){
   }
   testClose(&pDb);
 
-  /* If an error has occured, set the thread error code and the threadset 
+  /* If an error has occurred, set the thread error code and the threadset 
   ** halt flag to tell the other test threads to halt. Otherwise, set the
   ** thread error code to 0 and post a message with the number of read
   ** and write operations completed.  */

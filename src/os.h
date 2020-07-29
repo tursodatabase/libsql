@@ -127,7 +127,7 @@
 ** windows and unix.  I'm guessing that isn't likely to happen, but by
 ** using the same locking range we are at least open to the possibility.
 **
-** Locking in windows is manditory.  For this reason, we cannot store
+** Locking in windows is mandatory.  For this reason, we cannot store
 ** actual data in the bytes used for locking.  The pager never allocates
 ** the pages involved in locking therefore.  SHARED_SIZE is selected so
 ** that all locks will fit on a single page even at the minimum page size.
