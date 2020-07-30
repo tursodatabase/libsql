@@ -339,12 +339,12 @@ static int memdbOpen(
   p->mFlags = SQLITE_DESERIALIZE_RESIZEABLE | SQLITE_DESERIALIZE_FREEONCLOSE;
   assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
   *pOutFlags = flags | SQLITE_OPEN_MEMORY;
-  p->base.pMethods = &memdb_io_methods;
+  pFile->pMethods = &memdb_io_methods;
   p->szMax = sqlite3GlobalConfig.mxMemdbSize;
   return SQLITE_OK;
 }
 
-#if 0 /* Only used to delete rollback journals, master journals, and WAL
+#if 0 /* Only used to delete rollback journals, super-journals, and WAL
       ** files, none of which exist in memdb.  So this routine is never used */
 /*
 ** Delete the file located at zPath. If the dirSync argument is true,

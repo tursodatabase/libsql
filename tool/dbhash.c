@@ -440,7 +440,7 @@ int main(int argc, char **argv){
       fprintf(stderr, "cannot open database file '%s'\n", zDb);
       continue;
     }
-    rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_master", 0, 0, &zErrMsg);
+    rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_schema", 0, 0, &zErrMsg);
     if( rc || zErrMsg ){
       sqlite3_close(g.db);
       g.db = 0;
@@ -454,7 +454,7 @@ int main(int argc, char **argv){
     /* Hash table content */
     if( !omitContent ){
       pStmt = db_prepare(
-        "SELECT name FROM sqlite_master\n"
+        "SELECT name FROM sqlite_schema\n"
         " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
         "   AND name NOT LIKE 'sqlite_%%'\n"
         "   AND name LIKE '%q'\n"
@@ -476,7 +476,7 @@ int main(int argc, char **argv){
     /* Hash the database schema */
     if( !omitSchema ){
       hash_one_query(
-         "SELECT type, name, tbl_name, sql FROM sqlite_master\n"
+         "SELECT type, name, tbl_name, sql FROM sqlite_schema\n"
          " WHERE tbl_name LIKE '%q'\n"
          " ORDER BY name COLLATE nocase;\n",
          zLike

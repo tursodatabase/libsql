@@ -32,7 +32,7 @@ extern const char *sqlite3ErrName(int);
 */
 typedef struct Thread Thread;
 struct Thread {
-  /* The first group of fields are writable by the master and read-only
+  /* The first group of fields are writable by the leader and read-only
   ** to the thread. */
   char *zFilename;       /* Name of database file */
   void (*xOp)(Thread*);  /* next operation to do */
@@ -41,7 +41,7 @@ struct Thread {
   int busy;              /* True if this thread is in use */
 
   /* The next group of fields are writable by the thread but read-only to the
-  ** master. */
+  ** leader. */
   int completed;        /* Number of operations completed */
   sqlite3 *db;           /* Open database */
   sqlite3_stmt *pStmt;     /* Pending operation */

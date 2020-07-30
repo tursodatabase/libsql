@@ -174,5 +174,3 @@ EXTERNAL CONTENT FTS4 TABLES
   only be useful if the full-text index has somehow become corrupt. It is an
   error to attempt to rebuild the full-text index maintained by a contentless
   FTS4 table.
-
-

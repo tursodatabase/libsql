@@ -281,7 +281,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
  {/* zName:     */ "foreign_key_check",
   /* ePragTyp:  */ PragTyp_FOREIGN_KEY_CHECK,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_Result1|PragFlg_SchemaOpt,
   /* ColNames:  */ 37, 4,
   /* iArg:      */ 0 },
 #endif

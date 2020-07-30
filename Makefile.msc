@@ -1495,7 +1495,7 @@ SRC12 =
 
 # All source code files.
 #
-SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
+SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11) $(SRC12)
 
 # Source code to the test files.
 #
@@ -1560,6 +1560,7 @@ TESTEXT = \
   $(TOP)\ext\misc\carray.c \
   $(TOP)\ext\misc\closure.c \
   $(TOP)\ext\misc\csv.c \
+  $(TOP)\ext\misc\decimal.c \
   $(TOP)\ext\misc\eval.c \
   $(TOP)\ext\misc\explain.c \
   $(TOP)\ext\misc\fileio.c \
@@ -1846,15 +1847,16 @@ mptest:	mptester.exe
 	for %i in ($(SRC11)) do copy /Y %i tsrc
 	for %i in ($(SRC12)) do copy /Y %i tsrc
 	copy /Y fts5.c tsrc
+	copy /B tsrc\fts5.c +,,
 	copy /Y fts5.h tsrc
+	copy /B tsrc\fts5.h +,,
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
 	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
-sqlite3.c:	.target_source sqlite3ext.h $(MKSQLITE3C_TOOL)
+sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL)
 	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
-	copy $(TOP)\ext\session\sqlite3session.h .
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
@@ -1869,7 +1871,8 @@ sqlite3.lo:	$(SQLITE3C)
 # Rules to build the LEMON compiler generator
 #
 lempar.c:	$(TOP)\tool\lempar.c
-	copy $(TOP)\tool\lempar.c .
+	copy /Y $(TOP)\tool\lempar.c .
+	copy /B lempar.c +,,
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
@@ -2169,7 +2172,8 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)\src\parse.y lemon.exe
 	del /Q parse.y parse.h parse.h.temp 2>NUL
-	copy $(TOP)\src\parse.y .
+	copy /Y $(TOP)\src\parse.y .
+	copy /B parse.y +,,
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
@@ -2182,7 +2186,12 @@ sqlite3ext.h:	.target_source
 	copy /Y sqlite3ext.h tsrc\sqlite3ext.h
 !ELSE
 	copy /Y tsrc\sqlite3ext.h sqlite3ext.h
+	copy /B sqlite3ext.h +,,
 !ENDIF
+
+sqlite3session.h:	$(TOP)\ext\session\sqlite3session.h
+	copy /Y $(TOP)\ext\session\sqlite3session.h .
+	copy /B sqlite3session.h +,,
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) \
@@ -2195,10 +2204,12 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\appendvfs.c \
-	$(TOP)\ext\misc\shathree.c \
-	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\completion.c \
-        $(TOP)\ext\misc\uint.c \
+        $(TOP)\ext\misc\decimal.c \
+	$(TOP)\ext\misc\fileio.c \
+        $(TOP)\ext\misc\ieee754.c \
+	$(TOP)\ext\misc\shathree.c \
+	$(TOP)\ext\misc\uint.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
@@ -2329,7 +2340,8 @@ LSM1_SRC = \
    $(TOP)\ext\lsm1\lsm_win32.c
 
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
-	copy $(TOP)\ext\fts5\fts5parse.y .
+	copy /Y $(TOP)\ext\fts5\fts5parse.y .
+	copy /B fts5parse.y +,,
 	del /Q fts5parse.h 2>NUL
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S fts5parse.y
 
@@ -2337,11 +2349,13 @@ fts5parse.h:	fts5parse.c
 
 fts5.c:	$(FTS5_SRC)
 	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
-	copy $(TOP)\ext\fts5\fts5.h .
+	copy /Y $(TOP)\ext\fts5\fts5.h .
+	copy /B fts5.h +,,
 
 lsm1.c:	$(LSM1_SRC)
 	$(TCLSH_CMD) $(TOP)\ext\lsm1\tool\mklsm1c.tcl
-	copy $(TOP)\ext\lsm1\lsm.h .
+	copy /Y $(TOP)\ext\lsm1\lsm.h .
+	copy /B lsm.h +,,
 
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
@@ -2451,6 +2465,9 @@ test:	$(TESTPROGS) sourcetest fuzztest
 smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
+
+shelltest: $(TESTPROGS)
+	.\testfixture.exe $(TOP)\test\permutations.test shell
 
 sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@

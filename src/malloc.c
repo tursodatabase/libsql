@@ -719,11 +719,9 @@ char *sqlite3DbStrDup(sqlite3 *db, const char *z){
 char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
   char *zNew;
   assert( db!=0 );
-  if( z==0 ){
-    return 0;
-  }
+  assert( z!=0 || n==0 );
   assert( (n&0x7fffffff)==n );
-  zNew = sqlite3DbMallocRawNN(db, n+1);
+  zNew = z ? sqlite3DbMallocRawNN(db, n+1) : 0;
   if( zNew ){
     memcpy(zNew, z, (size_t)n);
     zNew[n] = 0;

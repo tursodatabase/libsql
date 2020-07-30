@@ -361,6 +361,7 @@ do_test dbfuzz001-310 {
   }]
 } {}
 
+extra_schema_checks 0
 do_catchsql_test dbfuzz001-320 {
   PRAGMA integrity_check;
 } {1 {database disk image is malformed}}
@@ -368,5 +369,6 @@ do_catchsql_test dbfuzz001-320 {
 do_catchsql_test dbfuzz001-330 {
   DELETE FROM t3 WHERE x IN (SELECT x FROM t4);
 } {1 {database disk image is malformed}}
+extra_schema_checks 1
 
 finish_test

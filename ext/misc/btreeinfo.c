@@ -21,7 +21,7 @@
 **    name TEXT,                   -- Name of table or index for this btree.
 **    tbl_name TEXT,               -- Associated table
 **    rootpage INT,                -- The root page of the btree
-**    sql TEXT,                    -- SQL for this btree - from sqlite_master
+**    sql TEXT,                    -- SQL for this btree - from sqlite_schema
 **    hasRowid BOOLEAN,            -- True if the btree has a rowid
 **    nEntry INT,                  -- Estimated number of entries
 **    nPage INT,                   -- Estimated number of pages
@@ -30,9 +30,9 @@
 **    zSchema TEXT HIDDEN          -- The schema to which this btree belongs
 ** );
 **
-** The first 5 fields are taken directly from the sqlite_master table.
+** The first 5 fields are taken directly from the sqlite_schema table.
 ** Considering only the first 5 fields, the only difference between 
-** this virtual table and the sqlite_master table is that this virtual
+** this virtual table and the sqlite_schema table is that this virtual
 ** table omits all entries that have a 0 or NULL rowid - in other words
 ** it omits triggers and views.
 **
@@ -88,7 +88,7 @@ typedef struct BinfoCursor BinfoCursor;
 /* A cursor for the sqlite_btreeinfo table */
 struct BinfoCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
-  sqlite3_stmt *pStmt;            /* Query against sqlite_master */
+  sqlite3_stmt *pStmt;            /* Query against sqlite_schema */
   int rc;                         /* Result of previous sqlite_step() call */
   int hasRowid;                   /* hasRowid value.  Negative if unknown. */
   sqlite3_int64 nEntry;           /* nEntry value */
@@ -242,10 +242,10 @@ static int binfoFilter(
     pCsr->zSchema = sqlite3_mprintf("main");
   }
   zSql = sqlite3_mprintf(
-      "SELECT 0, 'table','sqlite_master','sqlite_master',1,NULL "
+      "SELECT 0, 'table','sqlite_schema','sqlite_schema',1,NULL "
       "UNION ALL "
       "SELECT rowid, type, name, tbl_name, rootpage, sql"
-      " FROM \"%w\".sqlite_master WHERE rootpage>=1",
+      " FROM \"%w\".sqlite_schema WHERE rootpage>=1",
        pCsr->zSchema);
   sqlite3_finalize(pCsr->pStmt);
   pCsr->pStmt = 0;

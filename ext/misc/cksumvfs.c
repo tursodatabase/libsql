@@ -634,7 +634,7 @@ static int cksmOpen(
   p = (CksmFile*)pFile;
   memset(p, 0, sizeof(*p));
   pSubFile = ORIGFILE(pFile);
-  p->base.pMethods = &cksm_io_methods;
+  pFile->pMethods = &cksm_io_methods;
   rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
   if( rc ) goto cksm_open_done;
   if( flags & SQLITE_OPEN_WAL ){
@@ -743,7 +743,7 @@ static int cksmRegisterFunc(
 static int cksmRegisterVfs(void){
   int rc = SQLITE_OK;
   sqlite3_vfs *pOrig;
-  if( sqlite3_vfs_find("cksum")!=0 ) return SQLITE_OK;
+  if( sqlite3_vfs_find("cksmvfs")!=0 ) return SQLITE_OK;
   pOrig = sqlite3_vfs_find(0);
   cksm_vfs.iVersion = pOrig->iVersion;
   cksm_vfs.pAppData = pOrig;

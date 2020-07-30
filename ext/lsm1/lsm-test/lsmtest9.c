@@ -138,6 +138,3 @@ void test_data_4(
     testFree(zName);
   }
 }
-
-
-

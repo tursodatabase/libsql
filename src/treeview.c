@@ -582,8 +582,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
 #endif 
       }
       if( pExpr->op==TK_AGG_FUNCTION ){
-        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s iAgg=%d agg=%p",
+        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s agg=%d[%d]/%p",
                              pExpr->op2, pExpr->u.zToken, zFlgs,
+                             pExpr->pAggInfo ? pExpr->pAggInfo->selId : 0,
                              pExpr->iAgg, pExpr->pAggInfo);
       }else if( pExpr->op2!=0 ){
         const char *zOp2;
@@ -616,7 +617,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_SELECT: {
-      sqlite3TreeViewLine(pView, "SELECT-expr flags=0x%x", pExpr->flags);
+      sqlite3TreeViewLine(pView, "subquery-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
