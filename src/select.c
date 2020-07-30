@@ -6723,7 +6723,7 @@ int sqlite3Select(
         Index *pIdx;                         /* Iterator variable */
         KeyInfo *pKeyInfo = 0;               /* Keyinfo for scanned index */
         Index *pBest = 0;                    /* Best index found so far */
-        int iRoot = pTab->tnum;              /* Root page of scanned b-tree */
+        Pgno iRoot = pTab->tnum;             /* Root page of scanned b-tree */
 
         sqlite3CodeVerifySchema(pParse, iDb);
         sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
@@ -6755,7 +6755,7 @@ int sqlite3Select(
         }
 
         /* Open a read-only cursor, execute the OP_Count, close the cursor. */
-        sqlite3VdbeAddOp4Int(v, OP_OpenRead, iCsr, iRoot, iDb, 1);
+        sqlite3VdbeAddOp4Int(v, OP_OpenRead, iCsr, (int)iRoot, iDb, 1);
         if( pKeyInfo ){
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
