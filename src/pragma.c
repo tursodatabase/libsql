@@ -611,13 +611,19 @@ void sqlite3Pragma(
   */
   case PragTyp_PAGE_COUNT: {
     int iReg;
+    i64 x = 0;
     sqlite3CodeVerifySchema(pParse, iDb);
     iReg = ++pParse->nMem;
     if( sqlite3Tolower(zLeft[0])=='p' ){
       sqlite3VdbeAddOp2(v, OP_Pagecount, iDb, iReg);
     }else{
-      sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, 
-                        sqlite3AbsInt32(sqlite3Atoi(zRight)));
+      if( zRight && sqlite3DecOrHexToI64(zRight,&x)==0 ){
+        if( x<0 ) x = 0;
+        else if( x>0xfffffffe ) x = 0xfffffffe;
+      }else{
+        x = 0;
+      }
+      sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, (int)x);
     }
     sqlite3VdbeAddOp2(v, OP_ResultRow, iReg, 1);
     break;

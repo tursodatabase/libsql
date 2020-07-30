@@ -2139,12 +2139,11 @@ static MemPage *btreePageLookup(BtShared *pBt, Pgno pgno){
 ** error, return ((unsigned int)-1).
 */
 static Pgno btreePagecount(BtShared *pBt){
-  assert( (pBt->nPage & 0x80000000)==0 || CORRUPT_DB );
   return pBt->nPage;
 }
-u32 sqlite3BtreeLastPage(Btree *p){
+Pgno sqlite3BtreeLastPage(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  return btreePagecount(p->pBt) & 0x7fffffff;
+  return btreePagecount(p->pBt);
 }
 
 /*
@@ -2932,8 +2931,8 @@ int sqlite3BtreeGetRequestedReserve(Btree *p){
 ** No changes are made if mxPage is 0 or negative.
 ** Regardless of the value of mxPage, return the maximum page count.
 */
-int sqlite3BtreeMaxPageCount(Btree *p, int mxPage){
-  int n;
+Pgno sqlite3BtreeMaxPageCount(Btree *p, Pgno mxPage){
+  Pgno n;
   sqlite3BtreeEnter(p);
   n = sqlite3PagerMaxPageCount(p->pBt->pPager, mxPage);
   sqlite3BtreeLeave(p);
@@ -4372,7 +4371,7 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
 */
 static int btreeCursor(
   Btree *p,                              /* The btree */
-  int iTable,                            /* Root page of table to open */
+  Pgno iTable,                           /* Root page of table to open */
   int wrFlag,                            /* 1 to write. 0 read-only */
   struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
   BtCursor *pCur                         /* Space for new cursor */
@@ -4415,7 +4414,7 @@ static int btreeCursor(
 
   /* Now that no other errors can occur, finish filling in the BtCursor
   ** variables and link the cursor into the BtShared list.  */
-  pCur->pgnoRoot = (Pgno)iTable;
+  pCur->pgnoRoot = iTable;
   pCur->iPage = -1;
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
@@ -4425,7 +4424,7 @@ static int btreeCursor(
   /* If there are two or more cursors on the same btree, then all such
   ** cursors *must* have the BTCF_Multiple flag set. */
   for(pX=pBt->pCursor; pX; pX=pX->pNext){
-    if( pX->pgnoRoot==(Pgno)iTable ){
+    if( pX->pgnoRoot==iTable ){
       pX->curFlags |= BTCF_Multiple;
       pCur->curFlags |= BTCF_Multiple;
     }
@@ -4437,7 +4436,7 @@ static int btreeCursor(
 }
 static int btreeCursorWithLock(
   Btree *p,                              /* The btree */
-  int iTable,                            /* Root page of table to open */
+  Pgno iTable,                           /* Root page of table to open */
   int wrFlag,                            /* 1 to write. 0 read-only */
   struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
   BtCursor *pCur                         /* Space for new cursor */
@@ -4450,7 +4449,7 @@ static int btreeCursorWithLock(
 }
 int sqlite3BtreeCursor(
   Btree *p,                                   /* The btree */
-  int iTable,                                 /* Root page of table to open */
+  Pgno iTable,                                /* Root page of table to open */
   int wrFlag,                                 /* 1 to write. 0 read-only */
   struct KeyInfo *pKeyInfo,                   /* First arg to xCompare() */
   BtCursor *pCur                              /* Write new cursor here */
@@ -4836,7 +4835,7 @@ static int accessPayload(
     Pgno nextPage;
 
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
-
+ 
     /* If the BtCursor.aOverflow[] has not been allocated, allocate it now.
     **
     ** The aOverflow[] array is sized at one entry for each overflow page
@@ -4875,6 +4874,7 @@ static int accessPayload(
     assert( rc==SQLITE_OK && amt>0 );
     while( nextPage ){
       /* If required, populate the overflow page-list cache. */
+      if( nextPage > pBt->nPage ) return SQLITE_CORRUPT_BKPT;
       assert( pCur->aOverflow[iIdx]==0
               || pCur->aOverflow[iIdx]==nextPage
               || CORRUPT_DB );
@@ -5947,7 +5947,7 @@ static int allocateBtreePage(
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( eMode==BTALLOC_EXACT ){
-      if( nearby<=mxPage ){
+      if( ALWAYS(nearby<=mxPage) ){
         u8 eType;
         assert( nearby>0 );
         assert( pBt->autoVacuum );
@@ -6243,7 +6243,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( iPage<2 || iPage>pBt->nPage ){
+  if( iPage<2 || NEVER(iPage>pBt->nPage) ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -6290,6 +6290,10 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     u32 nLeaf;                /* Initial number of leaf cells on trunk page */
 
     iTrunk = get4byte(&pPage1->aData[32]);
+    if( iTrunk>btreePagecount(pBt) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto freepage_out;
+    }
     rc = btreeGetPage(pBt, iTrunk, &pTrunk, 0);
     if( rc!=SQLITE_OK ){
       goto freepage_out;
@@ -9094,7 +9098,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
 **     BTREE_INTKEY|BTREE_LEAFDATA     Used for SQL tables with rowid keys
 **     BTREE_ZERODATA                  Used for SQL indices
 */
-static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
+static int btreeCreateTable(Btree *p, Pgno *piTable, int createTabFlags){
   BtShared *pBt = p->pBt;
   MemPage *pRoot;
   Pgno pgnoRoot;
@@ -9127,6 +9131,9 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
     ** created so far, so the new root-page is (meta[3]+1).
     */
     sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &pgnoRoot);
+    if( pgnoRoot>btreePagecount(pBt) ){
+      return SQLITE_CORRUPT_BKPT;
+    }
     pgnoRoot++;
 
     /* The new root-page may not be allocated on a pointer-map page, or the
@@ -9136,8 +9143,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
         pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
-    assert( pgnoRoot>=3 || CORRUPT_DB );
-    testcase( pgnoRoot<3 );
+    assert( pgnoRoot>=3 );
 
     /* Allocate a page. The page that currently resides at pgnoRoot will
     ** be moved to the allocated page (unless the allocated page happens
@@ -9234,10 +9240,10 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
   zeroPage(pRoot, ptfFlags);
   sqlite3PagerUnref(pRoot->pDbPage);
   assert( (pBt->openFlags & BTREE_SINGLE)==0 || pgnoRoot==2 );
-  *piTable = (int)pgnoRoot;
+  *piTable = pgnoRoot;
   return SQLITE_OK;
 }
-int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
+int sqlite3BtreeCreateTable(Btree *p, Pgno *piTable, int flags){
   int rc;
   sqlite3BtreeEnter(p);
   rc = btreeCreateTable(p, piTable, flags);
@@ -9721,7 +9727,7 @@ static void checkPtrmap(
 static void checkList(
   IntegrityCk *pCheck,  /* Integrity checking context */
   int isFreeList,       /* True for a freelist.  False for overflow page list */
-  int iPage,            /* Page number for first page in the list */
+  Pgno iPage,           /* Page number for first page in the list */
   u32 N                 /* Expected number of pages in the list */
 ){
   int i;
@@ -9853,7 +9859,7 @@ static int btreeHeapPull(u32 *aHeap, u32 *pOut){
 */
 static int checkTreePage(
   IntegrityCk *pCheck,  /* Context for the sanity check */
-  int iPage,            /* Page number of the page to check */
+  Pgno iPage,           /* Page number of the page to check */
   i64 *piMinKey,        /* Write minimum integer primary key here */
   i64 maxKey            /* Error if integer primary key greater than this */
 ){
@@ -9889,9 +9895,9 @@ static int checkTreePage(
   usableSize = pBt->usableSize;
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage) ) return 0;
-  pCheck->zPfx = "Page %d: ";
+  pCheck->zPfx = "Page %u: ";
   pCheck->v1 = iPage;
-  if( (rc = btreeGetPage(pBt, (Pgno)iPage, &pPage, 0))!=0 ){
+  if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
     goto end_of_check;
@@ -9916,7 +9922,7 @@ static int checkTreePage(
   hdr = pPage->hdrOffset;
 
   /* Set up for cell analysis */
-  pCheck->zPfx = "On tree page %d cell %d: ";
+  pCheck->zPfx = "On tree page %u cell %d: ";
   contentOffset = get2byteNotZero(&data[hdr+5]);
   assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
 
@@ -9936,7 +9942,7 @@ static int checkTreePage(
     pgno = get4byte(&data[hdr+8]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      pCheck->zPfx = "On page %d at right child: ";
+      pCheck->zPfx = "On page %u at right child: ";
       checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
     }
 #endif
@@ -10077,7 +10083,7 @@ static int checkTreePage(
     while( btreeHeapPull(heap,&x) ){
       if( (prev&0xffff)>=(x>>16) ){
         checkAppendMsg(pCheck,
-          "Multiple uses for byte %u of page %d", x>>16, iPage);
+          "Multiple uses for byte %u of page %u", x>>16, iPage);
         break;
       }else{
         nFrag += (x>>16) - (prev&0xffff) - 1;
@@ -10092,7 +10098,7 @@ static int checkTreePage(
     */
     if( heap[0]==0 && nFrag!=data[hdr+7] ){
       checkAppendMsg(pCheck,
-          "Fragmentation of %d bytes reported as %d on page %d",
+          "Fragmentation of %d bytes reported as %d on page %u",
           nFrag, data[hdr+7], iPage);
     }
   }
@@ -10133,7 +10139,7 @@ end_of_check:
 char *sqlite3BtreeIntegrityCheck(
   sqlite3 *db,  /* Database connection that is running the check */
   Btree *p,     /* The btree to be checked */
-  int *aRoot,   /* An array of root pages numbers for individual trees */
+  Pgno *aRoot,  /* An array of root pages numbers for individual trees */
   int nRoot,    /* Number of entries in aRoot[] */
   int mxErr,    /* Stop reporting errors after this many */
   int *pnErr    /* Write number of errors seen to this variable */
@@ -10143,9 +10149,9 @@ char *sqlite3BtreeIntegrityCheck(
   BtShared *pBt = p->pBt;
   u64 savedDbFlags = pBt->db->flags;
   char zErr[100];
-  VVA_ONLY( int nRef );
   int bPartial = 0;            /* True if not checking all btrees */
   int bCkFreelist = 1;         /* True to scan the freelist */
+  VVA_ONLY( int nRef );
   assert( nRoot>0 );
 
   /* aRoot[0]==0 means this is a partial check */
@@ -10205,8 +10211,8 @@ char *sqlite3BtreeIntegrityCheck(
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( !bPartial ){
     if( pBt->autoVacuum ){
-      int mx = 0;
-      int mxInHdr;
+      Pgno mx = 0;
+      Pgno mxInHdr;
       for(i=0; (int)i<nRoot; i++) if( mx<aRoot[i] ) mx = aRoot[i];
       mxInHdr = get4byte(&pBt->pPage1->aData[52]);
       if( mx!=mxInHdr ){

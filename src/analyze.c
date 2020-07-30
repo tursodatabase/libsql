@@ -186,7 +186,7 @@ static void openStatTable(
   sqlite3 *db = pParse->db;
   Db *pDb;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int aRoot[ArraySize(aTable)];
+  u32 aRoot[ArraySize(aTable)];
   u8 aCreateTbl[ArraySize(aTable)];
 #ifdef SQLITE_ENABLE_STAT4
   const int nToOpen = OptimizationEnabled(db,SQLITE_Stat4) ? 2 : 1;
@@ -215,7 +215,7 @@ static void openStatTable(
         sqlite3NestedParse(pParse,
             "CREATE TABLE %Q.%s(%s)", pDb->zDbSName, zTab, aTable[i].zCols
         );
-        aRoot[i] = pParse->regRoot;
+        aRoot[i] = (u32)pParse->regRoot;
         aCreateTbl[i] = OPFLAG_P2ISREG;
       }
     }else{
@@ -235,7 +235,7 @@ static void openStatTable(
 #endif
       }else{
         /* The sqlite_stat[134] table already exists.  Delete all rows. */
-        sqlite3VdbeAddOp2(v, OP_Clear, aRoot[i], iDb);
+        sqlite3VdbeAddOp2(v, OP_Clear, (int)aRoot[i], iDb);
       }
     }
   }
@@ -243,7 +243,7 @@ static void openStatTable(
   /* Open the sqlite_stat[134] tables for writing. */
   for(i=0; i<nToOpen; i++){
     assert( i<ArraySize(aTable) );
-    sqlite3VdbeAddOp4Int(v, OP_OpenWrite, iStatCur+i, aRoot[i], iDb, 3);
+    sqlite3VdbeAddOp4Int(v, OP_OpenWrite, iStatCur+i, (int)aRoot[i], iDb, 3);
     sqlite3VdbeChangeP5(v, aCreateTbl[i]);
     VdbeComment((v, aTable[i].zName));
   }

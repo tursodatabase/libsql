@@ -31,7 +31,7 @@
 */
 struct TableLock {
   int iDb;               /* The database containing the table to be locked */
-  int iTab;              /* The root page of the table to be locked */
+  Pgno iTab;             /* The root page of the table to be locked */
   u8 isWriteLock;        /* True for write lock.  False for a read lock */
   const char *zLockName; /* Name of the table */
 };
@@ -49,7 +49,7 @@ struct TableLock {
 void sqlite3TableLock(
   Parse *pParse,     /* Parsing context */
   int iDb,           /* Index of the database containing the table to lock */
-  int iTab,          /* Root page number of the table to be locked */
+  Pgno iTab,         /* Root page number of the table to be locked */
   u8 isWriteLock,    /* True for a write lock */
   const char *zName  /* Name of the table to be locked */
 ){
@@ -888,7 +888,10 @@ int sqlite3CheckObjectName(
   const char *zTblName      /* Parent table name for triggers and indexes */
 ){
   sqlite3 *db = pParse->db;
-  if( sqlite3WritableSchema(db) || db->init.imposterTable ){
+  if( sqlite3WritableSchema(db)
+   || db->init.imposterTable
+   || !sqlite3Config.bExtraSchemaChecks
+  ){
     /* Skip these error checks for writable_schema=ON */
     return SQLITE_OK;
   }
@@ -897,10 +900,8 @@ int sqlite3CheckObjectName(
      || sqlite3_stricmp(zName, db->init.azInit[1])
      || sqlite3_stricmp(zTblName, db->init.azInit[2])
     ){
-      if( sqlite3Config.bExtraSchemaChecks ){
-        sqlite3ErrorMsg(pParse, ""); /* corruptSchema() will supply the error */
-        return SQLITE_ERROR;
-      }
+      sqlite3ErrorMsg(pParse, ""); /* corruptSchema() will supply the error */
+      return SQLITE_ERROR;
     }
   }else{
     if( (pParse->nested==0 && 0==sqlite3StrNICmp(zName, "sqlite_", 7))
@@ -2114,7 +2115,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   ** a database schema).  */
   if( v && pPk->tnum>0 ){
     assert( db->init.busy==0 );
-    sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
+    sqlite3VdbeChangeOpcode(v, (int)pPk->tnum, OP_Goto);
   }
 
   /* The root page of the PRIMARY KEY is the table root page */
@@ -2810,7 +2811,7 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
 ** in order to be certain that we got the right one.
 */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-void sqlite3RootPageMoved(sqlite3 *db, int iDb, int iFrom, int iTo){
+void sqlite3RootPageMoved(sqlite3 *db, int iDb, Pgno iFrom, Pgno iTo){
   HashElem *pElem;
   Hash *pHash;
   Db *pDb;
@@ -2843,7 +2844,7 @@ void sqlite3RootPageMoved(sqlite3 *db, int iDb, int iFrom, int iTo){
 static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int r1 = sqlite3GetTempReg(pParse);
-  if( iTable<2 ) sqlite3ErrorMsg(pParse, "corrupt schema");
+  if( NEVER(iTable<2) ) return;
   sqlite3VdbeAddOp3(v, OP_Destroy, iTable, r1, iDb);
   sqlite3MayAbort(pParse);
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -2887,18 +2888,18 @@ static void destroyTable(Parse *pParse, Table *pTab){
   ** "OP_Destroy 4 0" opcode. The subsequent "OP_Destroy 5 0" would hit
   ** a free-list page.
   */
-  int iTab = pTab->tnum;
-  int iDestroyed = 0;
+  Pgno iTab = pTab->tnum;
+  Pgno iDestroyed = 0;
 
   while( 1 ){
     Index *pIdx;
-    int iLargest = 0;
+    Pgno iLargest = 0;
 
     if( iDestroyed==0 || iTab<iDestroyed ){
       iLargest = iTab;
     }
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      int iIdx = pIdx->tnum;
+      Pgno iIdx = pIdx->tnum;
       assert( pIdx->pSchema==pTab->pSchema );
       if( (iDestroyed==0 || (iIdx<iDestroyed)) && iIdx>iLargest ){
         iLargest = iIdx;
@@ -3321,7 +3322,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int iSorter;                   /* Cursor opened by OpenSorter (if in use) */
   int addr1;                     /* Address of top of loop */
   int addr2;                     /* Address to jump to for next iteration */
-  int tnum;                      /* Root page of index */
+  Pgno tnum;                     /* Root page of index */
   int iPartIdxLabel;             /* Jump to this label to skip a row */
   Vdbe *v;                       /* Generate code into this virtual machine */
   KeyInfo *pKey;                 /* KeyInfo for index */
@@ -3342,7 +3343,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   if( memRootPage>=0 ){
-    tnum = memRootPage;
+    tnum = (Pgno)memRootPage;
   }else{
     tnum = pIndex->tnum;
   }
@@ -3367,7 +3368,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1); VdbeCoverage(v);
   sqlite3VdbeJumpHere(v, addr1);
   if( memRootPage<0 ) sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
-  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
+  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, (int)tnum, iDb, 
                     (char *)pKey, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
@@ -3976,7 +3977,7 @@ void sqlite3CreateIndex(
       ** PRIMARY KEY and the table is actually a WITHOUT ROWID table. In 
       ** that case the convertToWithoutRowidTable() routine will replace
       ** the Noop with a Goto to jump over the VDBE code generated below. */
-      pIndex->tnum = sqlite3VdbeAddOp0(v, OP_Noop);
+      pIndex->tnum = (Pgno)sqlite3VdbeAddOp0(v, OP_Noop);
       sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, iMem, BTREE_BLOBKEY);
 
       /* Gather the complete text of the CREATE INDEX statement into
@@ -4018,7 +4019,7 @@ void sqlite3CreateIndex(
         sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
       }
 
-      sqlite3VdbeJumpHere(v, pIndex->tnum);
+      sqlite3VdbeJumpHere(v, (int)pIndex->tnum);
     }
   }
   if( db->init.busy || pTblName==0 ){

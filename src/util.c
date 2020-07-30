@@ -605,7 +605,7 @@ void sqlite3Int64ToText(i64 v, char *zOut){
   u64 x;
   char zTemp[22];
   if( v<0 ){
-    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : -v;
+    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : (u64)-v;
   }else{
     x = v;
   }
@@ -859,8 +859,26 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
 */
 int sqlite3Atoi(const char *z){
   int x = 0;
-  if( z ) sqlite3GetInt32(z, &x);
+  sqlite3GetInt32(z, &x);
   return x;
+}
+
+/*
+** Try to convert z into an unsigned 32-bit integer.  Return true on
+** success and false if there is an error.
+**
+** Only decimal notation is accepted.
+*/
+int sqlite3GetUInt32(const char *z, u32 *pI){
+  u64 v = 0;
+  int i;
+  for(i=0; sqlite3Isdigit(z[i]); i++){
+    v = v*10 + z[i] - '0';
+    if( v>4294967296LL ){ *pI = 0; return 0; }
+  }
+  if( i==0 || z[i]!=0 ){ *pI = 0; return 0; }
+  *pI = (u32)v;
+  return 1;
 }
 
 /*
