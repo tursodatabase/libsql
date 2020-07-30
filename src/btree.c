@@ -5947,7 +5947,7 @@ static int allocateBtreePage(
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( eMode==BTALLOC_EXACT ){
-      if( nearby<=mxPage ){
+      if( ALWAYS(nearby<=mxPage) ){
         u8 eType;
         assert( nearby>0 );
         assert( pBt->autoVacuum );
@@ -6243,7 +6243,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( iPage<2 || iPage>pBt->nPage ){
+  if( iPage<2 || NEVER(iPage>pBt->nPage) ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -9143,8 +9143,7 @@ static int btreeCreateTable(Btree *p, Pgno *piTable, int createTabFlags){
         pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
-    assert( pgnoRoot>=3 || CORRUPT_DB );
-    testcase( pgnoRoot<3 );
+    assert( pgnoRoot>=3 );
 
     /* Allocate a page. The page that currently resides at pgnoRoot will
     ** be moved to the allocated page (unless the allocated page happens

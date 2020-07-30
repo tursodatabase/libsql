@@ -859,7 +859,7 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
 */
 int sqlite3Atoi(const char *z){
   int x = 0;
-  if( z ) sqlite3GetInt32(z, &x);
+  sqlite3GetInt32(z, &x);
   return x;
 }
 

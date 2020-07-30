@@ -159,7 +159,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     }else
     if( sqlite3GetUInt32(argv[3],&pIndex->tnum)==0
      || pIndex->tnum<2
-     || (pIndex->tnum>pData->mxPage && pData->mxPage!=0)
+     || pIndex->tnum>pData->mxPage
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
       if( sqlite3Config.bExtraSchemaChecks ){
