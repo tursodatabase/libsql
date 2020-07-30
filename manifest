@@ -1,5 +1,5 @@
-C Provide\san\salternative\s"guaranteed-safe"\smethod\sfor\soverwriting\sthe\sWAL\sindex\non\srecovery,\sin\scase\ssome\splatform\sis\sfound\sfor\swhich\smemcpy()\scannot\sdo\sthis\nsafely.
-D 2020-07-30T22:33:36.214
+C Test\sfor\sschema\scorruption\sis\sreachable\safter\sall.
+D 2020-07-30T23:47:00.018
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 56ec47e80dbde686efb4079b6a8efda8ffd22795267b640dbdeb6c70d91dcacf
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
-F src/build.c c2e1390b8bff21daf9da03d097e4f824cdf4c15cd823ba072a7820694c8728eb
+F src/build.c e3e29c7791a408f7f616f4ea1b2808596014d688094cc048c7c7a93d588a603f
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96e3dba2ed3ab0c5b2ecf65a3408633e0767c884d48c270e9ef10ab9fa3ec051
-R 91259b30616b0ffd7a9557e53f6c300d
+P 168cccbabbd4807bdb04953f395cd1a245c46e9d4816a09c9d024ecd5432759d
+R 3c334bf805471fee983da3b841d05d3b
 U drh
-Z 5474c4e54268b05a6f800bd41ad114a7
+Z 963f3ecc744df60f6730efd14dad9c99
