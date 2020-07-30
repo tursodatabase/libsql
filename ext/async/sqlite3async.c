@@ -1704,4 +1704,3 @@ int sqlite3async_control(int op, ...){
 }
 
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ASYNCIO) */
-

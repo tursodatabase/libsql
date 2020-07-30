@@ -473,7 +473,7 @@ static int cidxLookupIndex(
     
   /* Find the table for this index. */
   pFindTab = cidxPrepare(&rc, pCsr, 
-      "SELECT tbl_name, sql FROM sqlite_master WHERE name=%Q AND type='index'",
+      "SELECT tbl_name, sql FROM sqlite_schema WHERE name=%Q AND type='index'",
       zIdx
   );
   if( rc==SQLITE_OK && sqlite3_step(pFindTab)==SQLITE_ROW ){

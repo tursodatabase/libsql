@@ -118,16 +118,16 @@ static SQLITE_WSD struct Mem3Global {
   /*
   ** The minimum amount of free space that we have seen.
   */
-  u32 mnMaster;
+  u32 mnKeyBlk;
 
   /*
-  ** iMaster is the index of the master chunk.  Most new allocations
-  ** occur off of this chunk.  szMaster is the size (in Mem3Blocks)
-  ** of the current master.  iMaster is 0 if there is not master chunk.
-  ** The master chunk is not in either the aiHash[] or aiSmall[].
+  ** iKeyBlk is the index of the key chunk.  Most new allocations
+  ** occur off of this chunk.  szKeyBlk is the size (in Mem3Blocks)
+  ** of the current key chunk.  iKeyBlk is 0 if there is no key chunk.
+  ** The key chunk is not in either the aiHash[] or aiSmall[].
   */
-  u32 iMaster;
-  u32 szMaster;
+  u32 iKeyBlk;
+  u32 szKeyBlk;
 
   /*
   ** Array of lists of free blocks according to the block size 
@@ -263,34 +263,34 @@ static void *memsys3Checkout(u32 i, u32 nBlock){
 }
 
 /*
-** Carve a piece off of the end of the mem3.iMaster free chunk.
-** Return a pointer to the new allocation.  Or, if the master chunk
+** Carve a piece off of the end of the mem3.iKeyBlk free chunk.
+** Return a pointer to the new allocation.  Or, if the key chunk
 ** is not large enough, return 0.
 */
-static void *memsys3FromMaster(u32 nBlock){
+static void *memsys3FromKeyBlk(u32 nBlock){
   assert( sqlite3_mutex_held(mem3.mutex) );
-  assert( mem3.szMaster>=nBlock );
-  if( nBlock>=mem3.szMaster-1 ){
-    /* Use the entire master */
-    void *p = memsys3Checkout(mem3.iMaster, mem3.szMaster);
-    mem3.iMaster = 0;
-    mem3.szMaster = 0;
-    mem3.mnMaster = 0;
+  assert( mem3.szKeyBlk>=nBlock );
+  if( nBlock>=mem3.szKeyBlk-1 ){
+    /* Use the entire key chunk */
+    void *p = memsys3Checkout(mem3.iKeyBlk, mem3.szKeyBlk);
+    mem3.iKeyBlk = 0;
+    mem3.szKeyBlk = 0;
+    mem3.mnKeyBlk = 0;
     return p;
   }else{
-    /* Split the master block.  Return the tail. */
+    /* Split the key block.  Return the tail. */
     u32 newi, x;
-    newi = mem3.iMaster + mem3.szMaster - nBlock;
-    assert( newi > mem3.iMaster+1 );
-    mem3.aPool[mem3.iMaster+mem3.szMaster-1].u.hdr.prevSize = nBlock;
-    mem3.aPool[mem3.iMaster+mem3.szMaster-1].u.hdr.size4x |= 2;
+    newi = mem3.iKeyBlk + mem3.szKeyBlk - nBlock;
+    assert( newi > mem3.iKeyBlk+1 );
+    mem3.aPool[mem3.iKeyBlk+mem3.szKeyBlk-1].u.hdr.prevSize = nBlock;
+    mem3.aPool[mem3.iKeyBlk+mem3.szKeyBlk-1].u.hdr.size4x |= 2;
     mem3.aPool[newi-1].u.hdr.size4x = nBlock*4 + 1;
-    mem3.szMaster -= nBlock;
-    mem3.aPool[newi-1].u.hdr.prevSize = mem3.szMaster;
-    x = mem3.aPool[mem3.iMaster-1].u.hdr.size4x & 2;
-    mem3.aPool[mem3.iMaster-1].u.hdr.size4x = mem3.szMaster*4 | x;
-    if( mem3.szMaster < mem3.mnMaster ){
-      mem3.mnMaster = mem3.szMaster;
+    mem3.szKeyBlk -= nBlock;
+    mem3.aPool[newi-1].u.hdr.prevSize = mem3.szKeyBlk;
+    x = mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x & 2;
+    mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x = mem3.szKeyBlk*4 | x;
+    if( mem3.szKeyBlk < mem3.mnKeyBlk ){
+      mem3.mnKeyBlk = mem3.szKeyBlk;
     }
     return (void*)&mem3.aPool[newi];
   }
@@ -304,13 +304,13 @@ static void *memsys3FromMaster(u32 nBlock){
 ** This routine examines all entries on the given list and tries
 ** to coalesce each entries with adjacent free chunks.  
 **
-** If it sees a chunk that is larger than mem3.iMaster, it replaces 
-** the current mem3.iMaster with the new larger chunk.  In order for
-** this mem3.iMaster replacement to work, the master chunk must be
+** If it sees a chunk that is larger than mem3.iKeyBlk, it replaces 
+** the current mem3.iKeyBlk with the new larger chunk.  In order for
+** this mem3.iKeyBlk replacement to work, the key chunk must be
 ** linked into the hash tables.  That is not the normal state of
-** affairs, of course.  The calling routine must link the master
+** affairs, of course.  The calling routine must link the key
 ** chunk before invoking this routine, then must unlink the (possibly
-** changed) master chunk once this routine has finished.
+** changed) key chunk once this routine has finished.
 */
 static void memsys3Merge(u32 *pRoot){
   u32 iNext, prev, size, i, x;
@@ -337,9 +337,9 @@ static void memsys3Merge(u32 *pRoot){
     }else{
       size /= 4;
     }
-    if( size>mem3.szMaster ){
-      mem3.iMaster = i;
-      mem3.szMaster = size;
+    if( size>mem3.szKeyBlk ){
+      mem3.iKeyBlk = i;
+      mem3.szKeyBlk = size;
     }
   }
 }
@@ -388,26 +388,26 @@ static void *memsys3MallocUnsafe(int nByte){
 
   /* STEP 2:
   ** Try to satisfy the allocation by carving a piece off of the end
-  ** of the master chunk.  This step usually works if step 1 fails.
+  ** of the key chunk.  This step usually works if step 1 fails.
   */
-  if( mem3.szMaster>=nBlock ){
-    return memsys3FromMaster(nBlock);
+  if( mem3.szKeyBlk>=nBlock ){
+    return memsys3FromKeyBlk(nBlock);
   }
 
 
   /* STEP 3:  
   ** Loop through the entire memory pool.  Coalesce adjacent free
-  ** chunks.  Recompute the master chunk as the largest free chunk.
+  ** chunks.  Recompute the key chunk as the largest free chunk.
   ** Then try again to satisfy the allocation by carving a piece off
-  ** of the end of the master chunk.  This step happens very
+  ** of the end of the key chunk.  This step happens very
   ** rarely (we hope!)
   */
   for(toFree=nBlock*16; toFree<(mem3.nPool*16); toFree *= 2){
     memsys3OutOfMemory(toFree);
-    if( mem3.iMaster ){
-      memsys3Link(mem3.iMaster);
-      mem3.iMaster = 0;
-      mem3.szMaster = 0;
+    if( mem3.iKeyBlk ){
+      memsys3Link(mem3.iKeyBlk);
+      mem3.iKeyBlk = 0;
+      mem3.szKeyBlk = 0;
     }
     for(i=0; i<N_HASH; i++){
       memsys3Merge(&mem3.aiHash[i]);
@@ -415,10 +415,10 @@ static void *memsys3MallocUnsafe(int nByte){
     for(i=0; i<MX_SMALL-1; i++){
       memsys3Merge(&mem3.aiSmall[i]);
     }
-    if( mem3.szMaster ){
-      memsys3Unlink(mem3.iMaster);
-      if( mem3.szMaster>=nBlock ){
-        return memsys3FromMaster(nBlock);
+    if( mem3.szKeyBlk ){
+      memsys3Unlink(mem3.iKeyBlk);
+      if( mem3.szKeyBlk>=nBlock ){
+        return memsys3FromKeyBlk(nBlock);
       }
     }
   }
@@ -448,23 +448,23 @@ static void memsys3FreeUnsafe(void *pOld){
   mem3.aPool[i+size-1].u.hdr.size4x &= ~2;
   memsys3Link(i);
 
-  /* Try to expand the master using the newly freed chunk */
-  if( mem3.iMaster ){
-    while( (mem3.aPool[mem3.iMaster-1].u.hdr.size4x&2)==0 ){
-      size = mem3.aPool[mem3.iMaster-1].u.hdr.prevSize;
-      mem3.iMaster -= size;
-      mem3.szMaster += size;
-      memsys3Unlink(mem3.iMaster);
-      x = mem3.aPool[mem3.iMaster-1].u.hdr.size4x & 2;
-      mem3.aPool[mem3.iMaster-1].u.hdr.size4x = mem3.szMaster*4 | x;
-      mem3.aPool[mem3.iMaster+mem3.szMaster-1].u.hdr.prevSize = mem3.szMaster;
+  /* Try to expand the key using the newly freed chunk */
+  if( mem3.iKeyBlk ){
+    while( (mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x&2)==0 ){
+      size = mem3.aPool[mem3.iKeyBlk-1].u.hdr.prevSize;
+      mem3.iKeyBlk -= size;
+      mem3.szKeyBlk += size;
+      memsys3Unlink(mem3.iKeyBlk);
+      x = mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x & 2;
+      mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x = mem3.szKeyBlk*4 | x;
+      mem3.aPool[mem3.iKeyBlk+mem3.szKeyBlk-1].u.hdr.prevSize = mem3.szKeyBlk;
     }
-    x = mem3.aPool[mem3.iMaster-1].u.hdr.size4x & 2;
-    while( (mem3.aPool[mem3.iMaster+mem3.szMaster-1].u.hdr.size4x&1)==0 ){
-      memsys3Unlink(mem3.iMaster+mem3.szMaster);
-      mem3.szMaster += mem3.aPool[mem3.iMaster+mem3.szMaster-1].u.hdr.size4x/4;
-      mem3.aPool[mem3.iMaster-1].u.hdr.size4x = mem3.szMaster*4 | x;
-      mem3.aPool[mem3.iMaster+mem3.szMaster-1].u.hdr.prevSize = mem3.szMaster;
+    x = mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x & 2;
+    while( (mem3.aPool[mem3.iKeyBlk+mem3.szKeyBlk-1].u.hdr.size4x&1)==0 ){
+      memsys3Unlink(mem3.iKeyBlk+mem3.szKeyBlk);
+      mem3.szKeyBlk += mem3.aPool[mem3.iKeyBlk+mem3.szKeyBlk-1].u.hdr.size4x/4;
+      mem3.aPool[mem3.iKeyBlk-1].u.hdr.size4x = mem3.szKeyBlk*4 | x;
+      mem3.aPool[mem3.iKeyBlk+mem3.szKeyBlk-1].u.hdr.prevSize = mem3.szKeyBlk;
     }
   }
 }
@@ -560,11 +560,11 @@ static int memsys3Init(void *NotUsed){
   mem3.aPool = (Mem3Block *)sqlite3GlobalConfig.pHeap;
   mem3.nPool = (sqlite3GlobalConfig.nHeap / sizeof(Mem3Block)) - 2;
 
-  /* Initialize the master block. */
-  mem3.szMaster = mem3.nPool;
-  mem3.mnMaster = mem3.szMaster;
-  mem3.iMaster = 1;
-  mem3.aPool[0].u.hdr.size4x = (mem3.szMaster<<2) + 2;
+  /* Initialize the key block. */
+  mem3.szKeyBlk = mem3.nPool;
+  mem3.mnKeyBlk = mem3.szKeyBlk;
+  mem3.iKeyBlk = 1;
+  mem3.aPool[0].u.hdr.size4x = (mem3.szKeyBlk<<2) + 2;
   mem3.aPool[mem3.nPool].u.hdr.prevSize = mem3.nPool;
   mem3.aPool[mem3.nPool].u.hdr.size4x = 1;
 
@@ -624,7 +624,7 @@ void sqlite3Memsys3Dump(const char *zFilename){
       fprintf(out, "%p %6d bytes checked out\n", &mem3.aPool[i], (size/4)*8-8);
     }else{
       fprintf(out, "%p %6d bytes free%s\n", &mem3.aPool[i], (size/4)*8-8,
-                  i==mem3.iMaster ? " **master**" : "");
+                  i==mem3.iKeyBlk ? " **key**" : "");
     }
   }
   for(i=0; i<MX_SMALL-1; i++){
@@ -645,9 +645,9 @@ void sqlite3Memsys3Dump(const char *zFilename){
     }
     fprintf(out, "\n"); 
   }
-  fprintf(out, "master=%d\n", mem3.iMaster);
-  fprintf(out, "nowUsed=%d\n", mem3.nPool*8 - mem3.szMaster*8);
-  fprintf(out, "mxUsed=%d\n", mem3.nPool*8 - mem3.mnMaster*8);
+  fprintf(out, "key=%d\n", mem3.iKeyBlk);
+  fprintf(out, "nowUsed=%d\n", mem3.nPool*8 - mem3.szKeyBlk*8);
+  fprintf(out, "mxUsed=%d\n", mem3.nPool*8 - mem3.mnKeyBlk*8);
   sqlite3_mutex_leave(mem3.mutex);
   if( out==stdout ){
     fflush(stdout);

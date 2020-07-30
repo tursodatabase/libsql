@@ -75,7 +75,7 @@ int rename_all_tables(
   int cnt = 0;
 
   rc = sqlite3_prepare_v2(db,
-         "SELECT name FROM sqlite_master WHERE type='table'"
+         "SELECT name FROM sqlite_schema WHERE type='table'"
          " AND name NOT LIKE 'sqlite_%';",
          -1, &pStmt, 0);
   if( rc ) return rc;

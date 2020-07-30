@@ -43,7 +43,7 @@ int sqlite3_mmap_warm(sqlite3 *db, const char *zDb){
   if( 0==sqlite3_get_autocommit(db) ) return SQLITE_MISUSE;
 
   /* Open a read-only transaction on the file in question */
-  zSql = sqlite3_mprintf("BEGIN; SELECT * FROM %s%q%ssqlite_master", 
+  zSql = sqlite3_mprintf("BEGIN; SELECT * FROM %s%q%ssqlite_schema", 
       (zDb ? "'" : ""), (zDb ? zDb : ""), (zDb ? "'." : "")
   );
   if( zSql==0 ) return SQLITE_NOMEM;

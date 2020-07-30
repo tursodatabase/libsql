@@ -186,7 +186,7 @@ static void openStatTable(
   sqlite3 *db = pParse->db;
   Db *pDb;
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int aRoot[ArraySize(aTable)];
+  u32 aRoot[ArraySize(aTable)];
   u8 aCreateTbl[ArraySize(aTable)];
 #ifdef SQLITE_ENABLE_STAT4
   const int nToOpen = OptimizationEnabled(db,SQLITE_Stat4) ? 2 : 1;
@@ -215,7 +215,7 @@ static void openStatTable(
         sqlite3NestedParse(pParse,
             "CREATE TABLE %Q.%s(%s)", pDb->zDbSName, zTab, aTable[i].zCols
         );
-        aRoot[i] = pParse->regRoot;
+        aRoot[i] = (u32)pParse->regRoot;
         aCreateTbl[i] = OPFLAG_P2ISREG;
       }
     }else{
@@ -235,7 +235,7 @@ static void openStatTable(
 #endif
       }else{
         /* The sqlite_stat[134] table already exists.  Delete all rows. */
-        sqlite3VdbeAddOp2(v, OP_Clear, aRoot[i], iDb);
+        sqlite3VdbeAddOp2(v, OP_Clear, (int)aRoot[i], iDb);
       }
     }
   }
@@ -243,7 +243,7 @@ static void openStatTable(
   /* Open the sqlite_stat[134] tables for writing. */
   for(i=0; i<nToOpen; i++){
     assert( i<ArraySize(aTable) );
-    sqlite3VdbeAddOp4Int(v, OP_OpenWrite, iStatCur+i, aRoot[i], iDb, 3);
+    sqlite3VdbeAddOp4Int(v, OP_OpenWrite, iStatCur+i, (int)aRoot[i], iDb, 3);
     sqlite3VdbeChangeP5(v, aCreateTbl[i]);
     VdbeComment((v, aTable[i].zName));
   }
@@ -951,6 +951,30 @@ static void callStatGet(Parse *pParse, int regStat, int iParam, int regOut){
                              &statGetFuncdef, 0);
 }
 
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+/* Add a comment to the most recent VDBE opcode that is the name
+** of the k-th column of the pIdx index.
+*/
+static void analyzeVdbeCommentIndexWithColumnName(
+  Vdbe *v,         /* Prepared statement under construction */
+  Index *pIdx,     /* Index whose column is being loaded */
+  int k            /* Which column index */
+){
+  int i;           /* Index of column in the table */
+  assert( k>=0 && k<pIdx->nColumn );
+  i = pIdx->aiColumn[k];
+  if( NEVER(i==XN_ROWID) ){
+    VdbeComment((v,"%s.rowid",pIdx->zName));
+  }else if( i==XN_EXPR ){
+    VdbeComment((v,"%s.expr(%d)",pIdx->zName, k));
+  }else{
+    VdbeComment((v,"%s.%s", pIdx->zName, pIdx->pTable->aCol[i].zName));
+  }
+}
+#else
+# define analyzeVdbeCommentIndexWithColumnName(a,b,c)
+#endif /* SQLITE_DEBUG */
+
 /*
 ** Generate code to do an analysis of all indices associated with
 ** a single table.
@@ -1167,7 +1191,7 @@ static void analyzeOneTable(
         char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
         sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regTemp);
-        VdbeComment((v, "%s.column(%d)", pIdx->zName, i));
+        analyzeVdbeCommentIndexWithColumnName(v,pIdx,i);
         aGotoChng[i] = 
         sqlite3VdbeAddOp4(v, OP_Ne, regTemp, 0, regPrev+i, pColl, P4_COLLSEQ);
         sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
@@ -1188,7 +1212,7 @@ static void analyzeOneTable(
       for(i=0; i<nColTest; i++){
         sqlite3VdbeJumpHere(v, aGotoChng[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
-        VdbeComment((v, "%s.column(%d)", pIdx->zName, i));
+        analyzeVdbeCommentIndexWithColumnName(v,pIdx,i);
       }
       sqlite3VdbeResolveLabel(v, endDistinctTest);
       sqlite3DbFree(db, aGotoChng);
@@ -1214,7 +1238,7 @@ static void analyzeOneTable(
           k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[j]);
           assert( k>=0 && k<pIdx->nColumn );
           sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, regKey+j);
-          VdbeComment((v, "%s.column(%d)", pIdx->zName, i));
+          analyzeVdbeCommentIndexWithColumnName(v,pIdx,k);
         }
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regKey, pPk->nKeyCol, regRowid);
         sqlite3ReleaseTempRange(pParse, regKey, pPk->nKeyCol);

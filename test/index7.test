@@ -339,5 +339,17 @@ do_execsql_test index7-7.1 {
   SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
 } {1 1}
 
+# 2020-05-27.  tag-20200527-1.
+# Incomplete stat1 information on a table with few rows should still use the
+# index.
+reset_db
+do_execsql_test index7-8.1 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX t1y ON t1(y) WHERE y IS NOT NULL;
+  INSERT INTO t1(x) VALUES(1),(2);
+  ANALYZE;
+  EXPLAIN QUERY PLAN SELECT 1 FROM t1 WHERE y=5;
+} {/SEARCH TABLE t1 USING COVERING INDEX t1y/}
+
 
 finish_test

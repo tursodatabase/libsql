@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix aggnested
 
 do_test aggnested-1.1 {
   db eval {
@@ -258,6 +259,52 @@ do_execsql_test aggnested-4.3 {
 do_execsql_test aggnested-4.4 {
   SELECT max((SELECT a FROM (SELECT count(*) AS a FROM ty) AS s)) FROM tx;
 } {3}
+
+#--------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE x1(a, b);
+  INSERT INTO x1 VALUES(1, 2);
+  CREATE TABLE x2(x);
+  INSERT INTO x2 VALUES(NULL), (NULL), (NULL);
+}
+
+# At one point, aggregate "total()" in the query below was being processed
+# as part of the outer SELECT, not as part of the sub-select with no FROM
+# clause.
+do_execsql_test 5.1 {
+  SELECT ( SELECT total( (SELECT b FROM x1) ) ) FROM x2;
+} {2.0 2.0 2.0}
+
+do_execsql_test 5.2 {
+  SELECT ( SELECT total( (SELECT 2 FROM x1) ) ) FROM x2;
+} {2.0 2.0 2.0}
+
+do_execsql_test 5.3 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+}
+
+do_execsql_test 5.4 {
+  SELECT(
+    SELECT max(b) LIMIT (
+      SELECT total( (SELECT a FROM t1) )
+    )
+  )
+  FROM t2;
+} {{}}
+
+do_execsql_test 5.5 {
+  CREATE TABLE a(b);
+  WITH c AS(SELECT a)
+    SELECT(SELECT(SELECT group_concat(b, b)
+          LIMIT(SELECT 0.100000 *
+            AVG(DISTINCT(SELECT 0 FROM a ORDER BY b, b, b))))
+        FROM a GROUP BY b,
+        b, b) FROM a EXCEPT SELECT b FROM a ORDER BY b,
+    b, b;
+}
 
 
  

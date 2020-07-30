@@ -118,7 +118,7 @@ struct SLConn {
 /* This object is a singleton that keeps track of all data loggers.
 */
 static struct SLGlobal {
-  /* Protected by MUTEX_STATIC_MASTER */
+  /* Protected by MUTEX_STATIC_MAIN */
   sqlite3_mutex *mutex;           /* Recursive mutex */
   int nConn;                      /* Size of aConn[] array */
 
@@ -467,28 +467,28 @@ static int sqllogTraceDb(sqlite3 *db){
 */
 static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
   struct SLConn *p = 0;
-  sqlite3_mutex *master = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex *mainmtx = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN);
 
   assert( eType==0 || eType==1 || eType==2 );
   assert( (eType==2)==(zSql==0) );
 
   /* This is a database open command. */
   if( eType==0 ){
-    sqlite3_mutex_enter(master);
+    sqlite3_mutex_enter(mainmtx);
     if( sqllogglobal.mutex==0 ){
       sqllogglobal.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
     }
-    sqlite3_mutex_leave(master);
+    sqlite3_mutex_leave(mainmtx);
 
     sqlite3_mutex_enter(sqllogglobal.mutex);
     if( sqllogglobal.bRec==0 && sqllogTraceDb(db) ){
 
-      sqlite3_mutex_enter(master);
+      sqlite3_mutex_enter(mainmtx);
       p = &sqllogglobal.aConn[sqllogglobal.nConn++];
       p->fd = 0;
       p->db = db;
       p->iLog = sqllogglobal.iNextLog++;
-      sqlite3_mutex_leave(master);
+      sqlite3_mutex_leave(mainmtx);
 
       /* Open the log and take a copy of the main database file */
       sqllogOpenlog(p);
@@ -507,7 +507,7 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
 
     /* A database handle close command */
     if( eType==2 ){
-      sqlite3_mutex_enter(master);
+      sqlite3_mutex_enter(mainmtx);
       if( i<sqllogglobal.nConn ){
         if( p->fd ) fclose(p->fd);
         p->db = 0;
@@ -524,7 +524,7 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
           memmove(p, &p[1], nShift*sizeof(struct SLConn));
         }
       }
-      sqlite3_mutex_leave(master);
+      sqlite3_mutex_leave(mainmtx);
 
     /* An ordinary SQL command. */
     }else if( i<sqllogglobal.nConn && p->fd ){

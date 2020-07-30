@@ -586,5 +586,19 @@ do_execsql_test 24.4 {
     DELETE FROM v2;
   END}}
 
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 25.1 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(a, b, c);
+  CREATE TRIGGER ttt AFTER INSERT ON t1 BEGIN
+    UPDATE t1 SET a=t2.a FROM t2 WHERE t1.a=t2.a; 
+  END;
+}
+#do_execsql_test 25.2 {
+#  ALTER TABLE t2 RENAME COLUMN a TO aaa;
+#}
+
 finish_test
 
