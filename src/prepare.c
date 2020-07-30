@@ -115,7 +115,13 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 
     assert( db->init.busy );
     db->init.iDb = iDb;
-    db->init.newTnum = sqlite3Atoi(argv[3]);
+    if( sqlite3GetUInt32(argv[3], &db->init.newTnum)==0
+     || (db->init.newTnum>pData->mxPage && pData->mxPage>0)
+    ){
+      if( sqlite3Config.bExtraSchemaChecks ){
+        corruptSchema(pData, argv[1], "invalid rootpage");
+      }
+    }
     db->init.orphanTrigger = 0;
     db->init.azInit = argv;
     pStmt = 0;
@@ -148,12 +154,17 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     */
     Index *pIndex;
     pIndex = sqlite3FindIndex(db, argv[1], db->aDb[iDb].zDbSName);
-    if( pIndex==0
-     || sqlite3GetInt32(argv[3],&pIndex->tnum)==0
+    if( pIndex==0 ){
+      corruptSchema(pData, argv[1], "orphan index");
+    }else
+    if( sqlite3GetUInt32(argv[3],&pIndex->tnum)==0
      || pIndex->tnum<2
+     || pIndex->tnum>pData->mxPage
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
-      corruptSchema(pData, argv[1], pIndex?"invalid rootpage":"orphan index");
+      if( sqlite3Config.bExtraSchemaChecks ){
+        corruptSchema(pData, argv[1], "invalid rootpage");
+      }
     }
   }
   return 0;
@@ -177,7 +188,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   char const *azArg[6];
   int meta[5];
   InitData initData;
-  const char *zMasterName;
+  const char *zSchemaTabName;
   int openedTransaction = 0;
   int mask = ((db->mDbFlags & DBFLAG_EncodingFixed) | ~DBFLAG_EncodingFixed);
 
@@ -189,13 +200,13 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   db->init.busy = 1;
 
-  /* Construct the in-memory representation schema tables (sqlite_master or
-  ** sqlite_temp_master) by invoking the parser directly.  The appropriate
+  /* Construct the in-memory representation schema tables (sqlite_schema or
+  ** sqlite_temp_schema) by invoking the parser directly.  The appropriate
   ** table name will be inserted automatically by the parser so we can just
   ** use the abbreviation "x" here.  The parser will also automatically tag
   ** the schema table as read-only. */
   azArg[0] = "table";
-  azArg[1] = zMasterName = SCHEMA_TABLE(iDb);
+  azArg[1] = zSchemaTabName = SCHEMA_TABLE(iDb);
   azArg[2] = azArg[1];
   azArg[3] = "1";
   azArg[4] = "CREATE TABLE x(type text,name text,tbl_name text,"
@@ -207,6 +218,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   initData.pzErrMsg = pzErrMsg;
   initData.mInitFlags = mFlags;
   initData.nInitRow = 0;
+  initData.mxPage = 0;
   sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
   db->mDbFlags &= mask;
   if( initData.rc ){
@@ -329,11 +341,12 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   /* Read the schema information out of the schema tables
   */
   assert( db->init.busy );
+  initData.mxPage = sqlite3BtreeLastPage(pDb->pBt);
   {
     char *zSql;
     zSql = sqlite3MPrintf(db, 
         "SELECT*FROM\"%w\".%s ORDER BY rowid",
-        db->aDb[iDb].zDbSName, zMasterName);
+        db->aDb[iDb].zDbSName, zSchemaTabName);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
       sqlite3_xauth xAuth;
@@ -363,7 +376,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     ** current sqlite3_prepare() operation will fail, but the following one
     ** will attempt to compile the supplied statement against whatever subset
     ** of the schema was loaded before the error occurred. The primary
-    ** purpose of this is to allow access to the sqlite_master table
+    ** purpose of this is to allow access to the sqlite_schema table
     ** even when its contents have been corrupted.
     */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
@@ -504,17 +517,18 @@ static void schemaIsValid(Parse *pParse){
 ** attached database is returned.
 */
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
-  int i = -1000000;
+  int i = -32768;
 
-  /* If pSchema is NULL, then return -1000000. This happens when code in 
+  /* If pSchema is NULL, then return -32768. This happens when code in 
   ** expr.c is trying to resolve a reference to a transient table (i.e. one
   ** created by a sub-select). In this case the return value of this 
   ** function should never be used.
   **
-  ** We return -1000000 instead of the more usual -1 simply because using
-  ** -1000000 as the incorrect index into db->aDb[] is much 
+  ** We return -32768 instead of the more usual -1 simply because using
+  ** -32768 as the incorrect index into db->aDb[] is much 
   ** more likely to cause a segfault than -1 (of course there are assert()
-  ** statements too, but it never hurts to play the odds).
+  ** statements too, but it never hurts to play the odds) and
+  ** -32768 will still fit into a 16-bit signed integer.
   */
   assert( sqlite3_mutex_held(db->mutex) );
   if( pSchema ){
@@ -530,10 +544,25 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 }
 
 /*
+** Deallocate a single AggInfo object
+*/
+static void agginfoFree(sqlite3 *db, AggInfo *p){
+  sqlite3DbFree(db, p->aCol);
+  sqlite3DbFree(db, p->aFunc);
+  sqlite3DbFree(db, p);
+}
+
+/*
 ** Free all memory allocations in the pParse object
 */
 void sqlite3ParserReset(Parse *pParse){
   sqlite3 *db = pParse->db;
+  AggInfo *pThis = pParse->pAggList;
+  while( pThis ){
+    AggInfo *pNext = pThis->pNext;
+    agginfoFree(db, pThis);
+    pThis = pNext;
+  }
   sqlite3DbFree(db, pParse->aLabel);
   sqlite3ExprListDelete(db, pParse->pConstExpr);
   if( db ){
@@ -727,7 +756,7 @@ static int sqlite3LockAndPrepare(
 **
 ** If the statement is successfully recompiled, return SQLITE_OK. Otherwise,
 ** if the statement cannot be recompiled because another connection has
-** locked the sqlite3_master table, return SQLITE_LOCKED. If any other error
+** locked the sqlite3_schema table, return SQLITE_LOCKED. If any other error
 ** occurs, return SQLITE_SCHEMA.
 */
 int sqlite3Reprepare(Vdbe *p){

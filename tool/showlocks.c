@@ -24,23 +24,58 @@
 static int showLocksInRange(int fd, off_t lwr, off_t upr){
   int cnt = 0;
   struct flock x;
+  struct lockRange {
+    off_t lwr;
+    off_t upr;
+  } *aPending = 0;
+  int nAlloc = 1;
+  int nPending = 0;
+  int nDone = 0;
 
-  x.l_type = F_WRLCK;
-  x.l_whence = SEEK_SET;
-  x.l_start = lwr;
-  x.l_len = upr-lwr;
-  fcntl(fd, F_GETLK, &x);
-  if( x.l_type==F_UNLCK ) return 0;
-  printf("start: %-12d len: %-5d pid: %-5d type: %s\n",
-       (int)x.l_start, (int)x.l_len,
-       x.l_pid, x.l_type==F_WRLCK ? "WRLCK" : "RDLCK");
-  cnt++;
-  if( x.l_start>lwr ){
-    cnt += showLocksInRange(fd, lwr, x.l_start-1);
+  nPending = 1;
+  aPending = malloc( sizeof(aPending[0]) );
+  if( aPending==0 ){
+    fprintf(stderr, "out of memory\n");
+    exit(1);
   }
-  if( x.l_start+x.l_len<upr ){
-    cnt += showLocksInRange(fd, x.l_start+x.l_len+1, upr);
+  aPending[0].lwr = lwr;
+  aPending[0].upr = upr;
+
+  for(nDone=0; nDone<nPending; nDone++){
+    lwr = aPending[nDone].lwr;
+    upr = aPending[nDone].upr;
+    if( lwr>=upr ) continue;
+    x.l_type = F_WRLCK;
+    x.l_whence = SEEK_SET;
+    x.l_start = lwr;
+    x.l_len = upr - lwr;
+    fcntl(fd, F_GETLK, &x);
+    if( x.l_type==F_UNLCK ) continue;
+    printf("start: %-12d len: %-5d pid: %-5d type: %s\n",
+         (int)x.l_start, (int)x.l_len,
+         x.l_pid, x.l_type==F_WRLCK ? "WRLCK" : "RDLCK");
+    cnt++;
+    if( nPending+2 > nAlloc ){
+      nAlloc = nAlloc*2 + 2;
+      aPending = realloc(aPending, sizeof(aPending[0])*nAlloc );
+    }
+    if( aPending==0 ){
+      fprintf(stderr, "unable to realloc for %d bytes\n",
+                      (int)sizeof(aPending[0])*(nPending+2));
+      exit(1);
+    }
+    if( lwr<x.l_start ){
+      aPending[nPending].lwr = lwr;
+      aPending[nPending].upr = x.l_start;
+      nPending++;
+    }
+    if( x.l_start+x.l_len<=upr ){
+      aPending[nPending].lwr = x.l_start + x.l_len;
+      aPending[nPending].upr = upr;
+      nPending++;
+    }
   }
+  free(aPending);
   return cnt;
 }
 

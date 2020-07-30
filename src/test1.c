@@ -4630,7 +4630,7 @@ static int SQLITE_TCLAPI test_open_v2(
       { "SQLITE_OPEN_MAIN_JOURNAL", SQLITE_OPEN_MAIN_JOURNAL },
       { "SQLITE_OPEN_TEMP_JOURNAL", SQLITE_OPEN_TEMP_JOURNAL },
       { "SQLITE_OPEN_SUBJOURNAL", SQLITE_OPEN_SUBJOURNAL },
-      { "SQLITE_OPEN_MASTER_JOURNAL", SQLITE_OPEN_MASTER_JOURNAL },
+      { "SQLITE_OPEN_SUPER_JOURNAL", SQLITE_OPEN_SUPER_JOURNAL },
       { "SQLITE_OPEN_NOMUTEX", SQLITE_OPEN_NOMUTEX },
       { "SQLITE_OPEN_FULLMUTEX", SQLITE_OPEN_FULLMUTEX },
       { "SQLITE_OPEN_SHAREDCACHE", SQLITE_OPEN_SHAREDCACHE },
@@ -6438,6 +6438,30 @@ static int SQLITE_TCLAPI prng_seed(
 }
 
 /*
+** tclcmd:  extra_schema_checks BOOLEAN
+**
+** Enable or disable schema checks when parsing the sqlite_schema file.
+** This is always enabled in production, but it is sometimes useful to
+** disable the checks in order to make some internal error states reachable
+** for testing.
+*/
+static int SQLITE_TCLAPI extra_schema_checks(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int i = 0;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetBooleanFromObj(interp,objv[1],&i) ) return TCL_ERROR;
+  sqlite3_test_control(SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS, i);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  database_may_be_corrupt
 **
 ** Indicate that database files might be corrupt. In other words, set the normal
@@ -7257,6 +7281,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_explain_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_decimal_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7282,6 +7307,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
+    { "decimal",               sqlite3_decimal_init              },
     { "eval",                  sqlite3_eval_init                 },
     { "explain",               sqlite3_explain_init              },
     { "fileio",                sqlite3_fileio_init               },
@@ -8083,6 +8109,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
      { "prng_seed",                     prng_seed,          0 },
+     { "extra_schema_checks",           extra_schema_checks,    0},
      { "database_never_corrupt",        database_never_corrupt, 0},
      { "database_may_be_corrupt",       database_may_be_corrupt, 0},
      { "optimization_control",          optimization_control,0},
@@ -8249,7 +8276,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #endif
 #if defined(SQLITE_ENABLE_SELECTTRACE)
-  extern int sqlite3SelectTrace;
+  extern u32 sqlite3SelectTrace;
 #endif
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

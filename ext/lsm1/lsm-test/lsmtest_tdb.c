@@ -553,7 +553,7 @@ static int sql_begin(TestDb *pTestDb, int iLevel){
   /* If there are no transactions at all open, open a read transaction. */
   if( pDb->nOpenTrans==0 ){
     int rc = sqlite3_exec(pDb->db, 
-        "BEGIN; SELECT * FROM sqlite_master LIMIT 1;" , 0, 0, 0
+        "BEGIN; SELECT * FROM sqlite_schema LIMIT 1;" , 0, 0, 0
     );
     if( rc!=0 ) return rc;
     pDb->nOpenTrans = 1;

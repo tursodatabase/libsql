@@ -16,7 +16,7 @@
 ** Usage example:
 **
 **     .load ./explain
-**     SELECT p2 FROM explain('SELECT * FROM sqlite_master')
+**     SELECT p2 FROM explain('SELECT * FROM sqlite_schema')
 **      WHERE opcode='OpenRead';
 **
 ** This module was originally written to help simplify SQLite testing,

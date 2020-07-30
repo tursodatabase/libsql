@@ -658,5 +658,23 @@ do_catchsql_test 21.3 {
   ALTER TABLE a RENAME TO e;
 } {1 {error in view c: 1st ORDER BY term does not match any column in the result set}}
 
+# After forum thread https://sqlite.org/forum/forumpost/ddbe1c7efa
+# Ensure that PRAGMA schema_version=N causes a full schema reload.
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE TABLE t1(a INT, b TEXT NOT NULL);
+  INSERT INTO t1 VALUES(1,2),('a','b');
+  BEGIN;
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema SET sql='CREATE TABLE t1(a INT, b TEXT)' WHERE name LIKE 't1';
+  PRAGMA schema_version=1234;
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 22.1 {
+  ALTER TABLE t1 ADD COLUMN c INT DEFAULT 78;
+  SELECT * FROM t1;
+} {1 2 78 a b 78}
 
 finish_test

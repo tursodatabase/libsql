@@ -515,7 +515,7 @@ static int osLocaltime(time_t *t, struct tm *pTm){
 #if !HAVE_LOCALTIME_R && !HAVE_LOCALTIME_S
   struct tm *pX;
 #if SQLITE_THREADSAFE>0
-  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN);
 #endif
   sqlite3_mutex_enter(mutex);
   pX = localtime(t);
@@ -1112,8 +1112,8 @@ static void strftimeFunc(
         case 'm':  sqlite3_snprintf(3, &z[j],"%02d",x.M); j+=2; break;
         case 'M':  sqlite3_snprintf(3, &z[j],"%02d",x.m); j+=2; break;
         case 's': {
-          sqlite3_snprintf(30,&z[j],"%lld",
-                           (i64)(x.iJD/1000 - 21086676*(i64)10000));
+          i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
+          sqlite3Int64ToText(iS, &z[j]);
           j += sqlite3Strlen30(&z[j]);
           break;
         }
@@ -1211,10 +1211,10 @@ static void currentTimeFunc(
 #if HAVE_GMTIME_R
   pTm = gmtime_r(&t, &sNow);
 #else
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN));
   pTm = gmtime(&t);
   if( pTm ) memcpy(&sNow, pTm, sizeof(sNow));
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN));
 #endif
   if( pTm ){
     strftime(zBuf, 20, zFormat, &sNow);

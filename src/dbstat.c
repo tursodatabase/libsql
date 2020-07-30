@@ -724,10 +724,10 @@ static int statFilter(
   pSql = sqlite3_str_new(pTab->db);
   sqlite3_str_appendf(pSql,
       "SELECT * FROM ("
-        "SELECT 'sqlite_master' AS name,1 AS rootpage,'table' AS type"
+        "SELECT 'sqlite_schema' AS name,1 AS rootpage,'table' AS type"
         " UNION ALL "
         "SELECT name,rootpage,type"
-        " FROM \"%w\".sqlite_master WHERE rootpage!=0)",
+        " FROM \"%w\".sqlite_schema WHERE rootpage!=0)",
       pTab->db->aDb[pCsr->iDb].zDbSName);
   if( zName ){
     sqlite3_str_appendf(pSql, "WHERE name=%Q", zName);

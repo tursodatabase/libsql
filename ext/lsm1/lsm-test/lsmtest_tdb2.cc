@@ -367,4 +367,3 @@ int test_mdb_scan(
 }
 
 #endif /* HAVE_MDB */
-
