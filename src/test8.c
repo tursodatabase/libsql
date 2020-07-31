@@ -341,7 +341,7 @@ static int echoDeclareVtab(
   if( pVtab->zTableName ){
     sqlite3_stmt *pStmt = 0;
     rc = sqlite3_prepare(db, 
-        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
+        "SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?",
         -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_text(pStmt, 1, pVtab->zTableName, -1, 0);

@@ -314,4 +314,13 @@ do_execsql_test select3-9.100 {
   SELECT * FROM t0 GROUP BY c0;
 } {1.0 1.0}
 
+reset_db
+do_execsql_test select3.10.100 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  SELECT max(t1.a), 
+         (SELECT 'xyz' FROM (SELECT * FROM t2 WHERE 0) WHERE t1.b=1) 
+  FROM t1;
+} {{} {}}
+
 finish_test

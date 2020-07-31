@@ -41,7 +41,7 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
     assert( sqlite3_strnicmp(zSql,"SELECT",6)==0 );
     /* The secondary SQL must be one of CREATE TABLE, CREATE INDEX,
     ** or INSERT.  Historically there have been attacks that first
-    ** corrupt the sqlite_master.sql field with other kinds of statements
+    ** corrupt the sqlite_schema.sql field with other kinds of statements
     ** then run VACUUM to get those statements to execute at inappropriate
     ** times. */
     if( zSubSql
@@ -272,14 +272,14 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   */
   db->init.iDb = nDb; /* force new CREATE statements into vacuum_db */
   rc = execSqlF(db, pzErrMsg,
-      "SELECT sql FROM \"%w\".sqlite_master"
+      "SELECT sql FROM \"%w\".sqlite_schema"
       " WHERE type='table'AND name<>'sqlite_sequence'"
       " AND coalesce(rootpage,1)>0",
       zDbMain
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = execSqlF(db, pzErrMsg,
-      "SELECT sql FROM \"%w\".sqlite_master"
+      "SELECT sql FROM \"%w\".sqlite_schema"
       " WHERE type='index'",
       zDbMain
   );
@@ -293,7 +293,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   rc = execSqlF(db, pzErrMsg,
       "SELECT'INSERT INTO vacuum_db.'||quote(name)"
       "||' SELECT*FROM\"%w\".'||quote(name)"
-      "FROM vacuum_db.sqlite_master "
+      "FROM vacuum_db.sqlite_schema "
       "WHERE type='table'AND coalesce(rootpage,1)>0",
       zDbMain
   );
@@ -304,11 +304,11 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   /* Copy the triggers, views, and virtual tables from the main database
   ** over to the temporary database.  None of these objects has any
   ** associated storage, so all we have to do is copy their entries
-  ** from the SQLITE_MASTER table.
+  ** from the schema table.
   */
   rc = execSqlF(db, pzErrMsg,
-      "INSERT INTO vacuum_db.sqlite_master"
-      " SELECT*FROM \"%w\".sqlite_master"
+      "INSERT INTO vacuum_db.sqlite_schema"
+      " SELECT*FROM \"%w\".sqlite_schema"
       " WHERE type IN('view','trigger')"
       " OR(type='table'AND rootpage=0)",
       zDbMain

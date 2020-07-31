@@ -1496,8 +1496,8 @@ do_execsql_test where-25.0 {
   INSERT INTO t2 VALUES(3, 'three', 'iii');
 
   PRAGMA writable_schema = 1;
-  UPDATE sqlite_master SET rootpage = (
-    SELECT rootpage FROM sqlite_master WHERE name = 'i2'
+  UPDATE sqlite_schema SET rootpage = (
+    SELECT rootpage FROM sqlite_schema WHERE name = 'i2'
   ) WHERE name = 'i1';
 }
 db close
@@ -1524,8 +1524,8 @@ do_execsql_test where-25.3 {
   INSERT INTO t2 VALUES(3, 'three', 'iii');
 
   PRAGMA writable_schema = 1;
-  UPDATE sqlite_master SET rootpage = (
-    SELECT rootpage FROM sqlite_master WHERE name = 'i2'
+  UPDATE sqlite_schema SET rootpage = (
+    SELECT rootpage FROM sqlite_schema WHERE name = 'i2'
   ) WHERE name = 'i1';
 }
 db close

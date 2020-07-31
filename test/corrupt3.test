@@ -94,7 +94,7 @@ do_test corrupt3-1.9 {
   catchsql {
     SELECT substr(x,1,10) FROM t1
   }
-} [list 0 0123456789]
+} [list 1 {database disk image is malformed}]
 do_test corrupt3-1.10 {
   catchsql {
     PRAGMA integrity_check
