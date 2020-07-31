@@ -20,20 +20,21 @@
 #include <assert.h>
 #include "sqlite3.h"
 
+typedef unsigned char u8;         /* unsigned 8-bit */
+typedef unsigned int u32;         /* unsigned 32-bit */
+typedef sqlite3_int64 i64;        /* signed 64-bit */
+typedef sqlite3_uint64 u64;       /* unsigned 64-bit */
+
 
 static struct GlobalData {
-  int pagesize;                   /* Size of a database page */
+  u32 pagesize;                   /* Size of a database page */
   int dbfd;                       /* File descriptor for reading the DB */
-  int mxPage;                     /* Last page number */
+  u32 mxPage;                     /* Last page number */
   int perLine;                    /* HEX elements to print per line */
   int bRaw;                       /* True to access db file via OS APIs */
   sqlite3_file *pFd;              /* File descriptor for non-raw mode */
   sqlite3 *pDb;                   /* Database handle that owns pFd */
 } g = {1024, -1, 0, 16,   0, 0, 0};
-
-
-typedef long long int i64;      /* Datatype for 64-bit integers */
-
 
 /*
 ** Convert the var-int format into i64.  Return the number of bytes
@@ -54,7 +55,7 @@ static int decodeVarint(const unsigned char *z, i64 *pVal){
 /*
 ** Extract a big-endian 32-bit integer
 */
-static unsigned int decodeInt32(const unsigned char *z){
+static u32 decodeInt32(const u8 *z){
   return (z[0]<<24) + (z[1]<<16) + (z[2]<<8) + z[3];
 }
 
@@ -141,7 +142,7 @@ static void fileClose(){
 static unsigned char *fileRead(sqlite3_int64 ofst, int nByte){
   unsigned char *aData;
   int got;
-  aData = sqlite3_malloc(nByte+32);
+  aData = sqlite3_malloc64(32+(i64)nByte);
   if( aData==0 ) out_of_memory();
   memset(aData, 0, nByte+32);
   if( g.bRaw==0 ){
@@ -161,8 +162,8 @@ static unsigned char *fileRead(sqlite3_int64 ofst, int nByte){
 /*
 ** Return the size of the file in byte.
 */
-static sqlite3_int64 fileGetsize(void){
-  sqlite3_int64 res = 0;
+static i64 fileGetsize(void){
+  i64 res = 0;
   if( g.bRaw==0 ){
     int rc = g.pFd->pMethods->xFileSize(g.pFd, &res);
     if( rc!=SQLITE_OK ){
@@ -185,9 +186,9 @@ static sqlite3_int64 fileGetsize(void){
 ** Print a range of bytes as hex and as ascii.
 */
 static unsigned char *print_byte_range(
-  int ofst,          /* First byte in the range of bytes to print */
-  int nByte,         /* Number of bytes to print */
-  int printOfst      /* Add this amount to the index on the left column */
+  sqlite3_int64 ofst,  /* First byte in the range of bytes to print */
+  int nByte,           /* Number of bytes to print */
+  int printOfst        /* Add this amount to the index on the left column */
 ){
   unsigned char *aData;
   int i, j;
@@ -207,6 +208,12 @@ static unsigned char *print_byte_range(
 
   aData = fileRead(ofst, nByte);
   for(i=0; i<nByte; i += g.perLine){
+    int go = 0;
+    for(j=0; j<g.perLine; j++){
+      if( i+j>nByte ){ break; }
+      if( aData[i+j] ){ go = 1; break; }
+    }
+    if( !go && i>0 && i+g.perLine<nByte ) continue;
     fprintf(stdout, zOfstFmt, i+printOfst);
     for(j=0; j<g.perLine; j++){
       if( i+j>nByte ){
@@ -230,18 +237,18 @@ static unsigned char *print_byte_range(
 /*
 ** Print an entire page of content as hex
 */
-static void print_page(int iPg){
-  int iStart;
+static void print_page(u32 iPg){
+  i64 iStart;
   unsigned char *aData;
-  iStart = (iPg-1)*g.pagesize;
-  fprintf(stdout, "Page %d:   (offsets 0x%x..0x%x)\n",
+  iStart = ((i64)(iPg-1))*g.pagesize;
+  fprintf(stdout, "Page %u:   (offsets 0x%llx..0x%llx)\n",
           iPg, iStart, iStart+g.pagesize-1);
   aData = print_byte_range(iStart, g.pagesize, 0);
   sqlite3_free(aData);
 }
 
 
-/* Print a line of decode output showing a 4-byte integer.
+/* Print a line of decoded output showing a 4-byte unsigned integer.
 */
 static void print_decode_line(
   unsigned char *aData,      /* Content being decoded */
@@ -249,7 +256,7 @@ static void print_decode_line(
   const char *zMsg           /* Message to append */
 ){
   int i, j;
-  int val = aData[ofst];
+  u32 val = aData[ofst];
   char zBuf[100];
   sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
   i = (int)strlen(zBuf);
@@ -262,7 +269,7 @@ static void print_decode_line(
     }
     i += (int)strlen(&zBuf[i]);
   }
-  sprintf(&zBuf[i], "   %9d", val);
+  sprintf(&zBuf[i], "   %10u", val);
   printf("%s  %s\n", zBuf, zMsg);
 }
 
@@ -296,6 +303,7 @@ static void print_db_header(void){
   print_decode_line(aData, 88, 4, "meta[12]");
   print_decode_line(aData, 92, 4, "Change counter for version number");
   print_decode_line(aData, 96, 4, "SQLite version number");
+  sqlite3_free(aData);
 }
 
 /*
@@ -408,7 +416,7 @@ static i64 describeCell(
   int i;
   i64 nDesc = 0;
   int n = 0;
-  int leftChild;
+  u32 leftChild;
   i64 nPayload;
   i64 rowid;
   i64 nLocal;
@@ -418,7 +426,7 @@ static i64 describeCell(
     leftChild = ((a[0]*256 + a[1])*256 + a[2])*256 + a[3];
     a += 4;
     n += 4;
-    sprintf(zDesc, "lx: %d ", leftChild);
+    sprintf(zDesc, "lx: %u ", leftChild);
     nDesc = strlen(zDesc);
   }
   if( cType!=5 ){
@@ -439,10 +447,10 @@ static i64 describeCell(
     nDesc += strlen(&zDesc[nDesc]);
   }
   if( nLocal<nPayload ){
-    int ovfl;
+    u32 ovfl;
     unsigned char *b = &a[nLocal];
     ovfl = ((b[0]*256 + b[1])*256 + b[2])*256 + b[3];
-    sprintf(&zDesc[nDesc], "ov: %d ", ovfl);
+    sprintf(&zDesc[nDesc], "ov: %u ", ovfl);
     nDesc += strlen(&zDesc[nDesc]);
     n += 4;
   }
@@ -485,7 +493,7 @@ static void decodeCell(
   int ofst                /* Cell begins at a[ofst] */
 ){
   int i, j = 0;
-  int leftChild;
+  u32 leftChild;
   i64 k;
   i64 nPayload;
   i64 rowid;
@@ -504,7 +512,7 @@ static void decodeCell(
   if( cType<=5 ){
     leftChild = ((x[0]*256 + x[1])*256 + x[2])*256 + x[3];
     printBytes(a, x, 4);
-    printf("left child page:: %d\n", leftChild);
+    printf("left child page:: %u\n", leftChild);
     x += 4;
   }
   if( cType!=5 ){
@@ -622,7 +630,7 @@ static void decodeCell(
   }
   if( nLocal<nPayload ){
     printBytes(a, x+nLocal, 4);
-    printf("overflow-page: %d\n", decodeInt32(x+nLocal));
+    printf("overflow-page: %u\n", decodeInt32(x+nLocal));
   }
 }
 
@@ -729,11 +737,12 @@ static void decode_btree_page(
 ** Decode a freelist trunk page.
 */
 static void decode_trunk_page(
-  int pgno,             /* The page number */
+  u32 pgno,             /* The page number */
   int detail,           /* Show leaf pages if true */
   int recursive         /* Follow the trunk change if true */
 ){
-  int n, i;
+  u32 i;
+  u32 n;
   unsigned char *a;
   while( pgno>0 ){
     a = fileRead((pgno-1)*g.pagesize, g.pagesize);
@@ -741,9 +750,9 @@ static void decode_trunk_page(
     print_decode_line(a, 0, 4, "Next freelist trunk page");
     print_decode_line(a, 4, 4, "Number of entries on this page");
     if( detail ){
-      n = (int)decodeInt32(&a[4]);
-      for(i=0; i<n; i++){
-        unsigned int x = decodeInt32(&a[8+4*i]);
+      n = decodeInt32(&a[4]);
+      for(i=0; i<n && i<g.pagesize/4; i++){
+        u32 x = decodeInt32(&a[8+4*i]);
         char zIdx[10];
         sprintf(zIdx, "[%d]", i);
         printf("  %5s %7u", zIdx, x);
@@ -754,7 +763,7 @@ static void decode_trunk_page(
     if( !recursive ){
       pgno = 0;
     }else{
-      pgno = (int)decodeInt32(&a[0]);
+      pgno = decodeInt32(&a[0]);
     }
     sqlite3_free(a);
   }
@@ -768,7 +777,7 @@ static char **zPageUse;
 /*
 ** Add a comment on the use of a page.
 */
-static void page_usage_msg(int pgno, const char *zFormat, ...){
+static void page_usage_msg(u32 pgno, const char *zFormat, ...){
   va_list ap;
   char *zMsg;
 
@@ -776,7 +785,7 @@ static void page_usage_msg(int pgno, const char *zFormat, ...){
   zMsg = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( pgno<=0 || pgno>g.mxPage ){
-    printf("ERROR: page %d out of range 1..%d: %s\n",
+    printf("ERROR: page %d out of range 1..%u: %s\n",
             pgno, g.mxPage, zMsg);
     sqlite3_free(zMsg);
     return;
@@ -796,7 +805,7 @@ static void page_usage_msg(int pgno, const char *zFormat, ...){
 static void page_usage_cell(
   unsigned char cType,    /* Page type */
   unsigned char *a,       /* Cell content */
-  int pgno,               /* page containing the cell */
+  u32 pgno,               /* page containing the cell */
   int cellno              /* Index of the cell on the page */
 ){
   int i;
@@ -823,10 +832,10 @@ static void page_usage_cell(
     n += i;
   }
   if( nLocal<nPayload ){
-    int ovfl = decodeInt32(a+nLocal);
-    int cnt = 0;
+    u32 ovfl = decodeInt32(a+nLocal);
+    u32 cnt = 0;
     while( ovfl && (cnt++)<g.mxPage ){
-      page_usage_msg(ovfl, "overflow %d from cell %d of page %d",
+      page_usage_msg(ovfl, "overflow %d from cell %d of page %u",
                      cnt, cellno, pgno);
       a = fileRead((ovfl-1)*(sqlite3_int64)g.pagesize, 4);
       ovfl = decodeInt32(a);
@@ -851,8 +860,8 @@ static int allZero(unsigned char *a, int n){
 ** this is an orphan page.
 */
 static void page_usage_btree(
-  int pgno,             /* Page to describe */
-  int parent,           /* Parent of this page.  0 for root pages */
+  u32 pgno,             /* Page to describe */
+  u32 parent,           /* Parent of this page.  0 for root pages */
   int idx,              /* Which child of the parent */
   const char *zName     /* Name of the table */
 ){
@@ -901,9 +910,9 @@ static void page_usage_btree(
   }
   if( a[hdr]==2 || a[hdr]==5 ){
     int cellstart = hdr+12;
-    unsigned int child;
+    u32 child;
     for(i=0; i<nCell; i++){
-      int ofst;
+      u32 ofst;
 
       ofst = cellstart + i*2;
       ofst = a[ofst]*256 + a[ofst+1];
@@ -928,7 +937,7 @@ static void page_usage_btree(
 /*
 ** Determine page usage by the freelist
 */
-static void page_usage_freelist(int pgno){
+static void page_usage_freelist(u32 pgno){
   unsigned char *a;
   int cnt = 0;
   int i;
@@ -955,13 +964,13 @@ static void page_usage_freelist(int pgno){
 /*
 ** Determine pages used as PTRMAP pages
 */
-static void page_usage_ptrmap(unsigned char *a){
+static void page_usage_ptrmap(u8 *a){
   if( decodeInt32(a+52) ){
     int usable = g.pagesize - a[20];
-    int pgno = 2;
+    u64 pgno = 2;
     int perPage = usable/5;
     while( pgno<=g.mxPage ){
-      page_usage_msg(pgno, "PTRMAP page covering %d..%d",
+      page_usage_msg((u32)pgno, "PTRMAP page covering %llu..%llu",
                            pgno+1, pgno+perPage);
       pgno += perPage + 1;
     }
@@ -972,7 +981,7 @@ static void page_usage_ptrmap(unsigned char *a){
 ** Try to figure out how every page in the database file is being used.
 */
 static void page_usage_report(const char *zPrg, const char *zDbName){
-  int i, j;
+  u32 i, j;
   int rc;
   sqlite3 *db;
   sqlite3_stmt *pStmt;
@@ -990,7 +999,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
 
   /* Set up global variables zPageUse[] and g.mxPage to record page
   ** usages */
-  zPageUse = sqlite3_malloc( sizeof(zPageUse[0])*(g.mxPage+1) );
+  zPageUse = sqlite3_malloc64( sizeof(zPageUse[0])*(g.mxPage+1) );
   if( zPageUse==0 ) out_of_memory();
   memset(zPageUse, 0, sizeof(zPageUse[0])*(g.mxPage+1));
 
@@ -999,7 +1008,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
   page_usage_freelist(decodeInt32(a+32));
   page_usage_ptrmap(a);
   sqlite3_free(a);
-  page_usage_btree(1, 0, 0, "sqlite_master");
+  page_usage_btree(1, 0, 0, "sqlite_schema");
   sqlite3_exec(db, "PRAGMA writable_schema=ON", 0, 0, 0);
   for(j=0; j<2; j++){
     sqlite3_snprintf(sizeof(zQuery), zQuery,
@@ -1008,7 +1017,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
     rc = sqlite3_prepare_v2(db, zQuery, -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        int pgno = sqlite3_column_int(pStmt, 2);
+        u32 pgno = (u32)sqlite3_column_int64(pStmt, 2);
         page_usage_btree(pgno, 0, 0, (const char*)sqlite3_column_text(pStmt,1));
       }
     }else{
@@ -1022,7 +1031,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
   /* Print the report and free memory used */
   for(i=1; i<=g.mxPage; i++){
     if( zPageUse[i]==0 ) page_usage_btree(i, -1, 0, 0);
-    printf("%5d: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
+    printf("%5u: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
     sqlite3_free(zPageUse[i]);
   }
   sqlite3_free(zPageUse);
@@ -1033,7 +1042,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
 ** Try to figure out how every page in the database file is being used.
 */
 static void ptrmap_coverage_report(const char *zDbName){
-  int pgno;
+  u64 pgno;
   unsigned char *aHdr;
   unsigned char *a;
   int usable;
@@ -1055,14 +1064,14 @@ static void ptrmap_coverage_report(const char *zDbName){
   usable = g.pagesize - aHdr[20];
   perPage = usable/5;
   sqlite3_free(aHdr);
-  printf("%5d: root of sqlite_master\n", 1);
+  printf("%5d: root of sqlite_schema\n", 1);
   for(pgno=2; pgno<=g.mxPage; pgno += perPage+1){
-    printf("%5d: PTRMAP page covering %d..%d\n", pgno,
+    printf("%5llu: PTRMAP page covering %llu..%llu\n", pgno,
            pgno+1, pgno+perPage);
     a = fileRead((pgno-1)*g.pagesize, usable);
     for(i=0; i+5<=usable && pgno+1+i/5<=g.mxPage; i+=5){
       const char *zType = "???";
-      unsigned int iFrom = decodeInt32(&a[i+1]);
+      u32 iFrom = decodeInt32(&a[i+1]);
       switch( a[i] ){
         case 1:  zType = "b-tree root page";        break;
         case 2:  zType = "freelist page";           break;
@@ -1070,7 +1079,7 @@ static void ptrmap_coverage_report(const char *zDbName){
         case 4:  zType = "later page of overflow";  break;
         case 5:  zType = "b-tree non-root page";    break;
       }
-      printf("%5d: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
+      printf("%5llu: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
     }
     sqlite3_free(a);
   }
@@ -1132,16 +1141,16 @@ int main(int argc, char **argv){
   sqlite3_free(zPgSz);
 
   printf("Pagesize: %d\n", g.pagesize);
-  g.mxPage = (int)((szFile+g.pagesize-1)/g.pagesize);
+  g.mxPage = (u32)((szFile+g.pagesize-1)/g.pagesize);
 
-  printf("Available pages: 1..%d\n", g.mxPage);
+  printf("Available pages: 1..%u\n", g.mxPage);
   if( nArg==2 ){
-    int i;
+    u32 i;
     for(i=1; i<=g.mxPage; i++) print_page(i);
   }else{
     int i;
     for(i=2; i<nArg; i++){
-      int iStart, iEnd;
+      u32 iStart, iEnd;
       char *zLeft;
       if( strcmp(azArg[i], "dbheader")==0 ){
         print_db_header();
@@ -1163,7 +1172,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "%s: unknown option: [%s]\n", zPrg, azArg[i]);
         continue;
       }
-      iStart = strtol(azArg[i], &zLeft, 0);
+      iStart = strtoul(azArg[i], &zLeft, 0);
       if( zLeft && strcmp(zLeft,"..end")==0 ){
         iEnd = g.mxPage;
       }else if( zLeft && zLeft[0]=='.' && zLeft[1]=='.' ){

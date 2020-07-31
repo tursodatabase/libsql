@@ -41,7 +41,7 @@ static char *stress_thread_2(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
   while( !timetostop(&err) ){
     opendb(&err, &db, "test.db", 0);
-    sql_script(&err, &db, "SELECT * FROM sqlite_master;");
+    sql_script(&err, &db, "SELECT * FROM sqlite_schema;");
     clear_error(&err, SQLITE_LOCKED);
     closedb(&err, &db);
   }
@@ -266,7 +266,7 @@ static char *stress2_workload19(int iTid, void *pArg){
   const char *zDb = (const char*)pArg;
   while( !timetostop(&err) ){
     opendb(&err, &db, zDb, 0);
-    sql_script(&err, &db, "SELECT * FROM sqlite_master;");
+    sql_script(&err, &db, "SELECT * FROM sqlite_schema;");
     clear_error(&err, SQLITE_LOCKED);
     closedb(&err, &db);
   }
@@ -362,7 +362,3 @@ static void stress2(int nMs){
   sqlite3_enable_shared_cache(0);
   print_and_free_err(&err);
 }
-
-
-
-

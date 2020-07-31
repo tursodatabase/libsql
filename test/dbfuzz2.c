@@ -54,7 +54,7 @@
 */
 static const char *azSql[] = {
   "PRAGMA integrity_check;",
-  "SELECT * FROM sqlite_master;",
+  "SELECT * FROM sqlite_schema;",
   "SELECT sum(length(name)) FROM dbstat;",
   "UPDATE t1 SET b=a, a=b WHERE a<b;",
   "ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s;",

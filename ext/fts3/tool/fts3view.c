@@ -93,7 +93,7 @@ static int runSql(sqlite3 *db, const char *zFormat, ...){
 static void showSchema(sqlite3 *db, const char *zTab){
   sqlite3_stmt *pStmt;
   pStmt = prepare(db,
-            "SELECT sql FROM sqlite_master"
+            "SELECT sql FROM sqlite_schema"
             " WHERE name LIKE '%q%%'"
             " ORDER BY 1",
             zTab);
@@ -831,7 +831,7 @@ int main(int argc, char **argv){
     sqlite3_stmt *pStmt;
     int cnt = 0;
     pStmt = prepare(db, "SELECT b.sql"
-                        "  FROM sqlite_master a, sqlite_master b"
+                        "  FROM sqlite_schema a, sqlite_schema b"
                         " WHERE a.name GLOB '*_segdir'"
                         "   AND b.name=substr(a.name,1,length(a.name)-7)"
                         " ORDER BY 1");

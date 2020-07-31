@@ -206,7 +206,7 @@ static int bytecodevtabColumn(
         Schema *pSchema;
         HashElem *k;
         int iDb = pOp->p3;
-        int iRoot = pOp->p2;
+        Pgno iRoot = (Pgno)pOp->p2;
         sqlite3 *db = pVTab->db;
         pSchema = db->aDb[iDb].pSchema;
         pCur->zSchema = db->aDb[iDb].zDbSName;

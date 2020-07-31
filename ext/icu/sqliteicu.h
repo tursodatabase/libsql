@@ -24,4 +24,3 @@ int sqlite3IcuInit(sqlite3 *db);
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif  /* __cplusplus */
-

@@ -150,7 +150,7 @@ int main(int argc, char **argv){
   */
 
   /* The vacuum will occur inside of a transaction.  Set writable_schema
-  ** to ON so that we can directly update the sqlite_master table in the
+  ** to ON so that we can directly update the sqlite_schema table in the
   ** zTempDb database.
   */
   execSql(db, "PRAGMA writable_schema=ON");
@@ -162,16 +162,16 @@ int main(int argc, char **argv){
   */
   execExecSql(db, 
       "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14) "
-      "  FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence'"
+      "  FROM sqlite_schema WHERE type='table' AND name!='sqlite_sequence'"
       "   AND rootpage>0"
   );
   execExecSql(db,
       "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14)"
-      "  FROM sqlite_master WHERE sql LIKE 'CREATE INDEX %'"
+      "  FROM sqlite_schema WHERE sql LIKE 'CREATE INDEX %'"
   );
   execExecSql(db,
       "SELECT 'CREATE UNIQUE INDEX vacuum_db.' || substr(sql,21) "
-      "  FROM sqlite_master WHERE sql LIKE 'CREATE UNIQUE INDEX %'"
+      "  FROM sqlite_schema WHERE sql LIKE 'CREATE UNIQUE INDEX %'"
   );
 
   /* Loop through the tables in the main database. For each, do
@@ -181,7 +181,7 @@ int main(int argc, char **argv){
   execExecSql(db,
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
       "|| ' SELECT * FROM main.' || quote(name) "
-      "FROM main.sqlite_master "
+      "FROM main.sqlite_schema "
       "WHERE type = 'table' AND name!='sqlite_sequence' "
       "  AND rootpage>0"
   );
@@ -190,12 +190,12 @@ int main(int argc, char **argv){
   */
   execExecSql(db,
       "SELECT 'DELETE FROM vacuum_db.' || quote(name) "
-      "FROM vacuum_db.sqlite_master WHERE name='sqlite_sequence'"
+      "FROM vacuum_db.sqlite_schema WHERE name='sqlite_sequence'"
   );
   execExecSql(db,
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
       "|| ' SELECT * FROM main.' || quote(name) "
-      "FROM vacuum_db.sqlite_master WHERE name=='sqlite_sequence'"
+      "FROM vacuum_db.sqlite_schema WHERE name=='sqlite_sequence'"
   );
 
   /* Copy the triggers, views, and virtual tables from the main database
@@ -204,9 +204,9 @@ int main(int argc, char **argv){
   ** from the SQLITE_MASTER table.
   */
   execSql(db,
-      "INSERT INTO vacuum_db.sqlite_master "
+      "INSERT INTO vacuum_db.sqlite_schema "
       "  SELECT type, name, tbl_name, rootpage, sql"
-      "    FROM main.sqlite_master"
+      "    FROM main.sqlite_schema"
       "   WHERE type='view' OR type='trigger'"
       "      OR (type='table' AND rootpage=0)"
   );

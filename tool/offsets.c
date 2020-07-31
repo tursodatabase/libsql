@@ -75,7 +75,7 @@ static void ofstRootAndColumn(
     ofstError(p, "cannot open database file \"%s\"", zFile);
     goto rootAndColumn_exit;
   }
-  zSql = sqlite3_mprintf("SELECT rootpage FROM sqlite_master WHERE name=%Q",
+  zSql = sqlite3_mprintf("SELECT rootpage FROM sqlite_schema WHERE name=%Q",
                          zTable);
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc ) ofstError(p, "%s: [%s]", sqlite3_errmsg(db), zSql);

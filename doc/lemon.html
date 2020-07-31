@@ -104,9 +104,13 @@ Write all output files into <i>directory</i>.  Normally, output files
 are written into the directory that contains the input grammar file.
 <li><b>-D<i>name</i></b>
 Define C preprocessor macro <i>name</i>.  This macro is usable by
-"<tt><a href='#pifdef'>%ifdef</a></tt>" and
-"<tt><a href='#pifdef'>%ifndef</a></tt>" lines
+"<tt><a href='#pifdef'>%ifdef</a></tt>",
+"<tt><a href='#pifdef'>%ifndef</a></tt>", and
+"<tt><a href="#pifdef">%if</a></tt> lines
 in the grammar file.
+<li><b>-E</b>
+Run the "%if" preprocessor step only and print the revised grammar
+file.
 <li><b>-g</b>
 Do not generate a parser.  Instead write the input grammar to standard
 output with all comments, actions, and other extraneous text removed.
@@ -555,9 +559,11 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 <li><tt><a href='#default_destructor'>%default_destructor</a></tt>
 <li><tt><a href='#default_type'>%default_type</a></tt>
 <li><tt><a href='#destructor'>%destructor</a></tt>
+<li><tt><a href='#pifdef'>%else</a></tt>
 <li><tt><a href='#pifdef'>%endif</a></tt>
 <li><tt><a href='#extraarg'>%extra_argument</a></tt>
 <li><tt><a href='#pfallback'>%fallback</a></tt>
+<li><tt><a href='#pifdef'>%if</a></tt>
 <li><tt><a href='#pifdef'>%ifdef</a></tt>
 <li><tt><a href='#pifdef'>%ifndef</a></tt>
 <li><tt><a href='#pinclude'>%include</a></tt>
@@ -737,10 +743,11 @@ arguments are tokens which fall back to the token identified by the first
 argument.</p>
 
 <a name='pifdef'></a>
-<h4>The <tt>%ifdef</tt>, <tt>%ifndef</tt>, and <tt>%endif</tt> directives</h4>
+<h4>The <tt>%if</tt> directive and its friends</h4>
 
-<p>The <tt>%ifdef</tt>, <tt>%ifndef</tt>, and <tt>%endif</tt> directives
-are similar to #ifdef, #ifndef, and #endif in the C-preprocessor,
+<p>The <tt>%if</tt>, <tt>%ifdef</tt>, <tt>%ifndef</tt>, <tt>%else</tt>,
+and <tt>%endif</tt> directives
+are similar to #if, #ifdef, #ifndef, #else, and #endif in the C-preprocessor,
 just not as general.
 Each of these directives must begin at the left margin.  No whitespace
 is allowed between the "%" and the directive name.</p>
@@ -749,12 +756,22 @@ is allowed between the "%" and the directive name.</p>
 "<tt>%endif</tt>" is
 ignored unless the "-DMACRO" command-line option is used.  Grammar text
 betwen "<tt>%ifndef MACRO</tt>" and the next nested "<tt>%endif</tt>" is
-included except when the "-DMACRO" command-line option is used.</p>
+included except when the "-DMACRO" command-line option is used.<p>
 
-<p>Note that the argument to <tt>%ifdef</tt> and <tt>%ifndef</tt> must
-be a single preprocessor symbol name, not a general expression.
-There is no "<tt>%else</tt>" directive.</p>
+<p>The text in between "<tt>%if</tt> <i>CONDITIONAL</i>" and its
+corresponding <tt>%endif</tt> is included only if <i>CONDITIONAL</i>
+is true.  The CONDITION is one or more macro names, optionally connected
+using the "||" and "&amp;&amp;" binary operators, the "!" unary operator,
+and grouped using balanced parentheses.  Each term is true if the
+corresponding macro exists, and false if it does not exist.</p>
 
+<p>An optional "<tt>%else</tt>" directive can occur anywhere in between a 
+<tt>%ifdef</tt>, <tt>%ifndef</tt>, or <tt>%if</tt> directive and
+its corresponding <tt>%endif</tt>.</p>
+
+<p>Note that the argument to <tt>%ifdef</tt> and <tt>%ifndef</tt> is
+intended to be a single preprocessor symbol name, not a general expression.
+Use the "<tt>%if</tt>" directive for general expressions.</p>
 
 <a name='pinclude'></a>
 <h4>The <tt>%include</tt> directive</h4>

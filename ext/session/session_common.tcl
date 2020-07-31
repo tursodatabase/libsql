@@ -172,8 +172,8 @@ proc compare_db {db1 db2} {
     set data1 [$db1 eval $sql]
     set data2 [$db2 eval $sql]
     if {$data1 != $data2} { 
-      puts "$data1"
-      puts "$data2"
+      puts "$db1: $data1"
+      puts "$db2: $data2"
       error "table $tbl data mismatch" 
     }
   }

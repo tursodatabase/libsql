@@ -942,7 +942,7 @@ ifcapable altertable {
       PRAGMA foreign_keys = off;
       ALTER TABLE t2 ADD COLUMN h DEFAULT 'text' REFERENCES t1;
       PRAGMA foreign_keys = on;
-      SELECT sql FROM sqlite_master WHERE name='t2';
+      SELECT sql FROM sqlite_schema WHERE name='t2';
     }
   } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
   
@@ -976,7 +976,7 @@ ifcapable altertable {
             WITHOUT rowid;
       CREATE TABLE t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1);
     }
-    execsql { SELECT sql FROM sqlite_master WHERE type = 'table'}
+    execsql { SELECT sql FROM sqlite_schema WHERE type = 'table'}
   } [list \
     {CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1) WITHOUT rowid}       \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2)
@@ -985,7 +985,7 @@ ifcapable altertable {
   ]
   do_test without_rowid3-14.2.2.2 {
     execsql { ALTER TABLE t1 RENAME TO t4 }
-    execsql { SELECT sql FROM sqlite_master WHERE type = 'table'}
+    execsql { SELECT sql FROM sqlite_schema WHERE type = 'table'}
   } [list \
     {CREATE TABLE "t4"(a PRIMARY KEY, b REFERENCES "t4") WITHOUT rowid}      \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES "t4", c REFERENCES t2)
@@ -1037,7 +1037,7 @@ ifcapable altertable {
       PRAGMA foreign_keys = off;
       ALTER TABLE t2 ADD COLUMN h DEFAULT 'text' REFERENCES t1;
       PRAGMA foreign_keys = on;
-      SELECT sql FROM temp.sqlite_master WHERE name='t2';
+      SELECT sql FROM temp.sqlite_schema WHERE name='t2';
     }
   } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
 
@@ -1063,7 +1063,7 @@ ifcapable altertable {
             WITHOUT rowid;
       CREATE TEMP TABLE t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1);
     }
-    execsql { SELECT sql FROM sqlite_temp_master WHERE type = 'table'}
+    execsql { SELECT sql FROM sqlite_temp_schema WHERE type = 'table'}
   } [list \
     {CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1) WITHOUT rowid}       \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2)
@@ -1072,7 +1072,7 @@ ifcapable altertable {
   ]
   do_test without_rowid3-14.2tmp.2.2 {
     execsql { ALTER TABLE t1 RENAME TO t4 }
-    execsql { SELECT sql FROM temp.sqlite_master WHERE type = 'table'}
+    execsql { SELECT sql FROM temp.sqlite_schema WHERE type = 'table'}
   } [list \
     {CREATE TABLE "t4"(a PRIMARY KEY, b REFERENCES "t4") WITHOUT rowid}      \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES "t4", c REFERENCES t2)
@@ -1125,7 +1125,7 @@ ifcapable altertable {
       PRAGMA foreign_keys = off;
       ALTER TABLE t2 ADD COLUMN h DEFAULT 'text' REFERENCES t1;
       PRAGMA foreign_keys = on;
-      SELECT sql FROM aux.sqlite_master WHERE name='t2';
+      SELECT sql FROM aux.sqlite_schema WHERE name='t2';
     }
   } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
 
@@ -1151,7 +1151,7 @@ ifcapable altertable {
             WITHOUT rowid;
       CREATE TABLE aux.t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1);
     }
-    execsql { SELECT sql FROM aux.sqlite_master WHERE type = 'table'}
+    execsql { SELECT sql FROM aux.sqlite_schema WHERE type = 'table'}
   } [list \
     {CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1) WITHOUT rowid}       \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2)
@@ -1160,7 +1160,7 @@ ifcapable altertable {
   ]
   do_test without_rowid3-14.2aux.2.2 {
     execsql { ALTER TABLE t1 RENAME TO t4 }
-    execsql { SELECT sql FROM aux.sqlite_master WHERE type = 'table'}
+    execsql { SELECT sql FROM aux.sqlite_schema WHERE type = 'table'}
   } [list \
     {CREATE TABLE "t4"(a PRIMARY KEY, b REFERENCES "t4") WITHOUT rowid}      \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES "t4", c REFERENCES t2)

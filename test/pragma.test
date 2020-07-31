@@ -387,11 +387,15 @@ ifcapable attach {
         PRAGMA integrity_check=4
       }
     } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2}}
-    do_test pragma-3.6 {
-      execsql {
-        PRAGMA integrity_check=xyz
-      }
-    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    do_catchsql_test pragma-3.6 {
+      PRAGMA integrity_check=xyz
+    } {1 {no such table: xyz}}
+    do_catchsql_test pragma-3.6b {
+      PRAGMA integrity_check=t2
+    } {0 {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}}
+    do_catchsql_test pragma-3.6c {
+      PRAGMA integrity_check=sqlite_schema
+    } {0 ok}
     do_test pragma-3.7 {
       execsql {
         PRAGMA integrity_check=0
@@ -423,7 +427,7 @@ ifcapable attach {
     do_test pragma-3.8.2 {
       execsql {PRAGMA QUICK_CHECK}
     } {ok}
-    do_test pragma-3.9 {
+    do_test pragma-3.9a {
       execsql {
         ATTACH 'testerr.db' AS t2;
         PRAGMA integrity_check
@@ -432,6 +436,12 @@ ifcapable attach {
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    do_execsql_test pragma-3.9b {
+      PRAGMA t2.integrity_check=t2;
+    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+    do_execsql_test pragma-3.9c {
+      PRAGMA t2.integrity_check=sqlite_schema;
+    } {ok}
     do_test pragma-3.10 {
       execsql {
         PRAGMA integrity_check=1

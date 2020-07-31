@@ -38,7 +38,7 @@ proc mutex_counters {varname} {
 #-------------------------------------------------------------------------
 # Tests mutex1-1.* test that sqlite3_config() returns SQLITE_MISUSE if
 # is called at the wrong time. And that the first time sqlite3_initialize
-# is called it obtains the 'static_master' mutex 3 times and a recursive
+# is called it obtains the 'static_main' mutex 3 times and a recursive
 # mutex (sqlite3Config.pInitMutex) twice. Subsequent calls are no-ops
 # that do not require any mutexes.
 #
@@ -75,7 +75,7 @@ do_test mutex1-1.6 {
 
 do_test mutex1-1.7 {
   mutex_counters counters
-  # list $counters(total) $counters(static_master)
+  # list $counters(total) $counters(static_main)
   expr {$counters(total)>0}
 } {1}
 
@@ -86,7 +86,7 @@ do_test mutex1-1.8 {
 
 do_test mutex1-1.9 {
   mutex_counters counters
-  list $counters(total) $counters(static_master)
+  list $counters(total) $counters(static_main)
 } {0 0}
 
 #-------------------------------------------------------------------------
@@ -103,13 +103,13 @@ ifcapable threadsafe1&&shared_cache {
     singlethread {}
     multithread  {
       fast static_app1 static_app2 static_app3
-      static_lru static_master static_mem static_open
+      static_lru static_main static_mem static_open
       static_prng static_pmem static_vfs1 static_vfs2
       static_vfs3
     }
     serialized  {
       fast recursive static_app1 static_app2
-      static_app3 static_lru static_master static_mem
+      static_app3 static_lru static_main static_mem
       static_open static_prng static_pmem static_vfs1
       static_vfs2 static_vfs3
     }
