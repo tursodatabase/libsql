@@ -1230,7 +1230,7 @@ typedef int VList;
 ** pseudo-random number generators.
 */
 struct FastPrng {
-  unsigned int x, y;
+  sqlite3_uint64 x, y;
 };
 
 /*
