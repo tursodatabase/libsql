@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sthat\sturns\sout\sto\sbe\sreachable.
-D 2020-07-31T02:07:16.696
+C Back\sout\sa\sNEVER()\sthat\sturns\sout\sto\sbe\sreachable.
+D 2020-07-31T23:34:53.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c b1c90cd4110248c8e1273ff4578d3a84c0c34725e1b96dacd4a6294a908702de
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 08f951b4b00da34d40b3ca1053e7d85513e8ba48967deeca67ac94ca4d16d5b7
+F src/btree.c 9950163f542844babfbfd968e16400d393ff4730a0bcbc4be3e25a407b792570
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
 F src/build.c e3e29c7791a408f7f616f4ea1b2808596014d688094cc048c7c7a93d588a603f
@@ -1035,7 +1035,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 281cbc8166a8bc5843f4a913e803ba76e27905eb02fb9d5cfd581c2429f29855
+F test/fuzzdata8.db 99f99201280962430f3287e879e050ba88fe458d05cbf28e37ecab369ffe2e86
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2032236cce2ea040dec4cb1c03284bf4882efc1e0158703ab93d8a3451c805a5
-R e88e92ac90e5eca64bf384c5c0406969
+P 12bb75d9edc4c11de58d8b1105b95366c58ac4daaa9ad659499dded89a0d7cb5
+R ec32fd21b67eba4dfa0bc1bd617b932c
 U drh
-Z c3f8bb18db11e8ceb5c42ba568da1d09
+Z b679f04324fcd77ac82962da751a9b3c
