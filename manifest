@@ -1,5 +1,5 @@
-C Test\sfor\sschema\scorruption\sis\sreachable\safter\sall.
-D 2020-07-30T23:47:00.018
+C Remove\san\sALWAYS()\sthat\sturns\sout\sto\sbe\sreachable.
+D 2020-07-31T02:07:16.696
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c b1c90cd4110248c8e1273ff4578d3a84c0c34725e1b96dacd4a6294a908702de
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 56ec47e80dbde686efb4079b6a8efda8ffd22795267b640dbdeb6c70d91dcacf
+F src/btree.c 08f951b4b00da34d40b3ca1053e7d85513e8ba48967deeca67ac94ca4d16d5b7
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
 F src/build.c e3e29c7791a408f7f616f4ea1b2808596014d688094cc048c7c7a93d588a603f
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 168cccbabbd4807bdb04953f395cd1a245c46e9d4816a09c9d024ecd5432759d
-R 3c334bf805471fee983da3b841d05d3b
+P 2032236cce2ea040dec4cb1c03284bf4882efc1e0158703ab93d8a3451c805a5
+R e88e92ac90e5eca64bf384c5c0406969
 U drh
-Z 963f3ecc744df60f6730efd14dad9c99
+Z c3f8bb18db11e8ceb5c42ba568da1d09

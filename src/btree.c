@@ -5947,7 +5947,7 @@ static int allocateBtreePage(
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( eMode==BTALLOC_EXACT ){
-      if( ALWAYS(nearby<=mxPage) ){
+      if( nearby<=mxPage ){
         u8 eType;
         assert( nearby>0 );
         assert( pBt->autoVacuum );
