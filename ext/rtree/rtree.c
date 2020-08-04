@@ -82,6 +82,7 @@ typedef unsigned int u32;
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 /*  The following macro is used to suppress compiler warnings.
 */
@@ -417,6 +418,23 @@ struct RtreeMatchArg {
 */
 #ifndef SQLITE_AMALGAMATION
 # define testcase(X)
+#endif
+
+/*
+** Make sure that the compiler intrinsics we desire are enabled when
+** compiling with an appropriate version of MSVC unless prevented by
+** the SQLITE_DISABLE_INTRINSIC define.
+*/
+#if !defined(SQLITE_DISABLE_INTRINSIC)
+#  if defined(_MSC_VER) && _MSC_VER>=1400
+#    if !defined(_WIN32_WCE)
+#      include <intrin.h>
+#      pragma intrinsic(_byteswap_ulong)
+#      pragma intrinsic(_byteswap_uint64)
+#    else
+#      include <cmnintrin.h>
+#    endif
+#  endif
 #endif
 
 /*
