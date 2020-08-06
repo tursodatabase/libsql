@@ -1,5 +1,5 @@
-C Back\sout\sa\sNEVER()\sthat\sturns\sout\sto\sbe\sreachable.
-D 2020-07-31T23:34:53.477
+C Fix\sthe\scolumnar\soutput\smodes\sin\sthe\sCLI\sso\sthat\sthey\swork\swith\sparameters.\nSee\s[https://sqlite.org/forum/forumpost/17ba6aac24]\sfor\sdetails\sof\sthe\nproblem\sfixed.
+D 2020-08-06T16:45:22.355
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 2dd6821aac2cd27de9fcf6aa6d1f8c41b4b5841c9bc58bf1c9109008009a3a2e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d977d463bdeb9be4bec16829c7c2c6193330bf0962bfdf23113e8f6ba548cd86
-F src/shell.c.in 352a0a6399ccae40a30f72ea06f52f3791a062bde9b8929a97f345e1584ba310
+F src/shell.c.in 889c7235f1a7a9139ee3a069d4db7e5499958df04fb2048c86b816c3ab94d46e
 F src/sqlite.h.in d2c03414a8ee5d4a6855c04dd7cd5998e45139b0fe66b65bae86d4223edd091f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12bb75d9edc4c11de58d8b1105b95366c58ac4daaa9ad659499dded89a0d7cb5
-R ec32fd21b67eba4dfa0bc1bd617b932c
+P 8cf342d4e5eb67b17aee595d9d75f7798eccaebc1ec88e646d344d8d4ab64977
+R aa3df3bdbe9cc494e95acc400ec796e1
 U drh
-Z b679f04324fcd77ac82962da751a9b3c
+Z 3ebb4b63c036480a822fc2485a6f6aae
