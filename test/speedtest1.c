@@ -8,6 +8,7 @@ static const char zHelp[] =
   "Options:\n"
   "  --autovacuum        Enable AUTOVACUUM mode\n"
   "  --cachesize N       Set the cache size to N\n"
+  "  --checkpoint        Run PRAGMA wal_checkpoint after each test case\n"
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
@@ -91,6 +92,7 @@ static struct Global {
   int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
   int nRepeat;               /* Repeat selects this many times */
+  int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -390,9 +392,13 @@ void speedtest1_begin_test(int iTestNum, const char *zTestName, ...){
   g.y = 0x44f9eac8;
 }
 
+/* Forward reference */
+void speedtest1_exec(const char*,...);
+
 /* Complete a test case */
 void speedtest1_end_test(void){
   sqlite3_int64 iElapseTime = speedtest1_timestamp() - g.iStart;
+  if( g.doCheckpoint ) speedtest1_exec("PRAGMA wal_checkpoint;");
   if( !g.bSqlOnly ){
     g.iTotal += iElapseTime;
     printf("%4d.%03ds\n", (int)(iElapseTime/1000), (int)(iElapseTime%1000));
@@ -2185,6 +2191,8 @@ int main(int argc, char **argv){
         cacheSize = integerValue(argv[i]);
       }else if( strcmp(z,"exclusive")==0 ){
         doExclusive = 1;
+      }else if( strcmp(z,"checkpoint")==0 ){
+        g.doCheckpoint = 1;
       }else if( strcmp(z,"explain")==0 ){
         g.bSqlOnly = 1;
         g.bExplain = 1;

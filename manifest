@@ -1,5 +1,5 @@
-C Fix\scompilation\sissues\swith\sMSVC.
-D 2020-08-07T14:22:56.576
+C Add\sthe\s--checkpoint\soption\sto\sspeedtest1.
+D 2020-08-07T14:47:55.620
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1385,7 +1385,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c a8b5afe72d78ff365012aba48d3f0c579e957facb7630f765f58a6ae4656d20d
+F test/speedtest1.c ac0e6ebadb97b54b7ac45288d1beea633a219d5fb98aa3395cb8364c31c985cb
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1837,7 +1837,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl a95036b36622e25cffd65a55b22d6af53dfbbff0de02d45dd0059bb3c9978609
-F tool/speed-check.sh 615cbdf50f1409ef3bbf9f682e396df80f49d97ed93ed3e61c8e91fae6afde58
+F tool/speed-check.sh 8ba7c7c0dba37e664679974f5954f2282275271a5b92f890756e282df0bfc458
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1879,8 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d573aa9b1299bc25e46fc8a4b4f7c665263490db86c66f11e2d903dcd7071995 af07d8458ae5e2933134b706f80f9538f011970221904bf9f50ed6e47d306e14
-R 667384e4a67eb18251a3146eb7fc244e
-T +closed af07d8458ae5e2933134b706f80f9538f011970221904bf9f50ed6e47d306e14
+P c5a7e6d2c203ebe5f22ab5c676d33759b542ac57c8bad85d8f561a53bd26917c
+R b258852f2fc2965239571e96ce229ca1
 U drh
-Z 366ea8c8fa75b68ab0d3534ed25cd09e
+Z 3de880104f1f483b54fe99e8e9766633
