@@ -1295,6 +1295,11 @@ do_catchsql_test 16.1 {
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
+# Test that corruption is reported from within a checkpoint if the 
+# expected final size of the database (according to the last commit
+# frame in the wal file) is greater than the combined initial sizes 
+# of the database and wal file.
+#
 reset_db
 do_execsql_test 17.0 {
   CREATE TABLE t1(o INTEGER PRIMARY KEY, t UNIQUE);
@@ -1316,10 +1321,13 @@ do_test 17.1 {
   file size test.db
 } {2048}
 
-breakpoint
-do_catchsql_test 17.1 {
+do_catchsql_test 17.2 {
   PRAGMA wal_checkpoint
 } {1 {database disk image is malformed}}
+
+do_test 17.3 {
+  close $fd
+} {}
 
 
 finish_test
