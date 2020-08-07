@@ -2009,15 +2009,16 @@ static int walCheckpoint(
         sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_START, 0);
         rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
         if( rc==SQLITE_OK && nSize<nReq ){
-          sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+          if( (nSize+(i64)pWal->hdr.mxFrame*szPage)<nReq ){
+            /* If the size of the final database is larger than the current
+            ** database plus the amount of data in the wal file, then there
+            ** must be corruption somewhere.  */
+            rc = SQLITE_CORRUPT_BKPT;
+          }else{
+            sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT,&nReq);
+          }
         }
 
-        /* If the size of the final database is larger than the current
-        ** database plus the amount of data in the wal file, then there
-        ** must be corruption somewhere.  */
-        if( rc==SQLITE_OK && (nSize+(i64)pWal->hdr.mxFrame*szPage)<nReq ){
-          rc = SQLITE_CORRUPT_BKPT;
-        }
       }
 
       /* Iterate through the contents of the WAL, copying data to the db file */

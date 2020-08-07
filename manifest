@@ -1,5 +1,5 @@
-C Fix\sa\sfile-descriptor\sleak\sin\stest\sscript\scorruptL.test.
-D 2020-08-07T18:52:03.495
+C Do\sthe\soversize-WAL\scorruption\stest\sbefore\sthe\ssize\shint\sis\sissued.
+D 2020-08-07T19:52:01.570
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c b23eed38501a9d26101997c5e4f8fa927585ca66d213d419c178b0aa26dd6ec3
+F src/wal.c 7a05a519a02ffb7f2a458838a25853c7300c9e6d9ef546ee48469378ac0404f9
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e2799563c8a97f617c6d932719b312e3d5bff051a9a397492df8d88e8bb4260a
-R 65a12f21cdfb44bf0e71fb1b5d1ff4e4
-U dan
-Z 9fe4a565eac614ec216cb99d3a46f95e
+P ec2c340c39bc78e4bce0eb01ea408c95ba121103cc77f300f29f3001fc345c20
+R 3314ca98629f8ff292abd5c699dbffdb
+U drh
+Z df0951c2b2acd95a5b883e0481a2c61c
