@@ -2273,7 +2273,7 @@ case OP_Compare: {
 #ifdef SQLITE_DEBUG
   if( aPermute ){
     int k, mx = 0;
-    for(k=0; k<n; k++) if( aPermute[k]>mx ) mx = aPermute[k];
+    for(k=0; k<n; k++) if( aPermute[k]>(u32)mx ) mx = aPermute[k];
     assert( p1>0 && p1+mx<=(p->nMem+1 - p->nCursor)+1 );
     assert( p2>0 && p2+mx<=(p->nMem+1 - p->nCursor)+1 );
   }else{
@@ -2623,7 +2623,7 @@ case OP_Column: {
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   assert( pC!=0 );
-  assert( p2<pC->nField );
+  assert( p2<(u32)pC->nField );
   aOffset = pC->aOffset;
   assert( pC->eCurType!=CURTYPE_VTAB );
   assert( pC->eCurType!=CURTYPE_PSEUDO || pC->nullRow );
@@ -3812,7 +3812,7 @@ case OP_OpenWrite:
   }
   if( pOp->p5 & OPFLAG_P2ISREG ){
     assert( p2>0 );
-    assert( p2<=(p->nMem+1 - p->nCursor) );
+    assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
     assert( pOp->opcode==OP_OpenWrite );
     pIn2 = &aMem[p2];
     assert( memIsValid(pIn2) );
@@ -6245,7 +6245,7 @@ case OP_IntegrityCk: {
   nRoot = pOp->p2;
   aRoot = pOp->p4.ai;
   assert( nRoot>0 );
-  assert( aRoot[0]==nRoot );
+  assert( aRoot[0]==(Pgno)nRoot );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pnErr = &aMem[pOp->p3];
   assert( (pnErr->flags & MEM_Int)!=0 );
