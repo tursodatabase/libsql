@@ -2011,8 +2011,14 @@ static int walCheckpoint(
         if( rc==SQLITE_OK && nSize<nReq ){
           sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
         }
-      }
 
+        /* If the size of the final database is larger than the current
+        ** database plus the amount of data in the wal file, then there
+        ** must be corruption somewhere.  */
+        if( rc==SQLITE_OK && (nSize+(i64)pWal->hdr.mxFrame*szPage)<nReq ){
+          rc = SQLITE_CORRUPT_BKPT;
+        }
+      }
 
       /* Iterate through the contents of the WAL, copying data to the db file */
       while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){

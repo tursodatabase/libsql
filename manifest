@@ -1,5 +1,5 @@
-C Add\sthe\s--checkpoint\soption\sto\sspeedtest1.
-D 2020-08-07T14:47:55.620
+C Return\san\sSQLITE_CORRUPT\serror\sif\sthe\sfinal\sexpected\ssize\sof\sthe\sdatabase\swhen\scheckpointing\sis\snot\sreasonable\s-\swhere\sreasonable\sis\sdefined\s(basically)\sas\sthe\ssum\sof\sthe\ssizes\sof\sthe\sdatabase\sand\swal\sfiles.
+D 2020-08-07T16:28:02.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -619,7 +619,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 7482e90927fe3f59c8741bede5fa4f7d75edc967ce8a73175ade9126593f26e8
+F src/wal.c b23eed38501a9d26101997c5e4f8fa927585ca66d213d419c178b0aa26dd6ec3
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
@@ -783,7 +783,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test ddd255069ec87976587956c7afc1932005d7ee5eaf4fe426a8994d945b883770
+F test/corruptL.test e32d0bea4292393cb4f756796e1c244d5f58a094efb4d8b4562bf054deba4e89
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 1d156ce9858780a966c062694687afe0343a0ed12d081d071fb57027e726bafc
 F test/count.test e0699a15712bc2a4679d60e408921c2cce7f6365a30340e790c98e0f334a9c77
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c5a7e6d2c203ebe5f22ab5c676d33759b542ac57c8bad85d8f561a53bd26917c
-R b258852f2fc2965239571e96ce229ca1
-U drh
-Z 3de880104f1f483b54fe99e8e9766633
+P 4cffa9bb44d6f0bdb23cae913adfb224f0814e65a2abb9120179f0b288e70f77
+R ef8f7de6d7c8f341172764fb53b9c16f
+U dan
+Z d788ae4d9c746ea7a66e040d2a4caab4

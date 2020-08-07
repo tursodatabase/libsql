@@ -1294,4 +1294,32 @@ do_catchsql_test 16.1 {
   INSERT INTO t1(rowid, w, x, y, z) VALUES(5, 10, 11, 10, NULL);
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.0 {
+  CREATE TABLE t1(o INTEGER PRIMARY KEY, t UNIQUE);
+  INSERT INTO t1(t) VALUES(randomblob(123));
+  INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+  INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+  INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+  INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+  INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+  INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+
+  PRAGMA journal_mode = wal;
+  INSERT INTO t1 VALUES(-1, 'b');
+} {wal}
+
+do_test 17.1 {
+  set fd [open test.db r+]
+  chan truncate $fd 2048
+  file size test.db
+} {2048}
+
+breakpoint
+do_catchsql_test 17.1 {
+  PRAGMA wal_checkpoint
+} {1 {database disk image is malformed}}
+
+
 finish_test
