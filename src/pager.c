@@ -2497,9 +2497,9 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   }else{
     const int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
     rc = sqlite3OsOpen(pVfs, zSuper, pSuper, flags, 0);
+    pJournal = (sqlite3_file *)(((u8 *)pSuper) + pVfs->szOsFile);
   }
   if( rc!=SQLITE_OK ) goto delsuper_out;
-  pJournal = (sqlite3_file *)(((u8 *)pSuper) + pVfs->szOsFile);
 
   /* Load the entire super-journal file into space obtained from
   ** sqlite3_malloc() and pointed to by zSuperJournal.   Also obtain
