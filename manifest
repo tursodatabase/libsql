@@ -1,5 +1,5 @@
-C Do\sthe\soversize-WAL\scorruption\stest\sbefore\sthe\ssize\shint\sis\sissued.
-D 2020-08-07T19:52:01.570
+C Reorder\sdeclarations\sin\sthe\sdecimal\sextension\sfor\sC89.
+D 2020-08-08T00:44:45.179
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -293,7 +293,7 @@ F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61ee
 F ext/misc/csv.c 3ed979c1eb35e35a98b30ef545a2facf62994594217681d9138b4b75faf6b0d7
 F ext/misc/dbdata.c e316fba936571584e55abd5b974a32a191727a6b746053a0c9d439bd2cf93940
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
-F ext/misc/decimal.c adeac2c22722ec19b8c1fb9d5c56f7a80747bbc0a5d54b4514abb6c76a34eaa3
+F ext/misc/decimal.c 3ddbf8162015be4d5ec2395dee4538f1e638bb517174bb148274b132df6e1d08
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 0086fab288d4352ea638cf40ac382aad3b0dc5e845a1ea829a694c015fd970fe
 F ext/misc/fileio.c 9b69e25da3b51d4a1d905a464ccb96709792ad627a742ba09215bc0d1447e7bd
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec2c340c39bc78e4bce0eb01ea408c95ba121103cc77f300f29f3001fc345c20
-R 3314ca98629f8ff292abd5c699dbffdb
+P fdc5fb902d7f2d10f73e64fe30c67153b59b26c5d707fc9c354e90967dbcc214
+R d47d26d1966362a3d504d50075b14da8
 U drh
-Z df0951c2b2acd95a5b883e0481a2c61c
+Z 2bb254612b1e4ca132c49857fbe3c84b
