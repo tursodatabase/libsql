@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\scausing\san\serror\sfor\sSQLITE_ENABLE_OVERSIZE_CELL_CHECK\sbuilds\sin\scorruptL.test.
-D 2020-08-08T19:52:53.042
+C Changes\sto\sbusy2.test,\scorruptL.test\sand\sfkey5.test\sso\sthat\snew\stest\scases\spass\swith\sall\stest\spermutations.
+D 2020-08-08T20:03:12.538
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -728,7 +728,7 @@ F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
 F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1d6cc
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
-F test/busy2.test 415364312743992641f9bf679c84918327296067f85a5d00012b339dc35acbd7
+F test/busy2.test d9b2e9548a839b70da2e58ee6f72b816444f764ed7a778a5dc606692a1ac2652
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
@@ -783,7 +783,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test 0b968228ba7647974544518534699825b076b791e0a85d1c7c99a534491a420e
+F test/corruptL.test 40d78fdfa5f3827e4ca6dc0db6956ca634d4ad48d8ffd2c817d2710fcf79bd99
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 1d156ce9858780a966c062694687afe0343a0ed12d081d071fb57027e726bafc
 F test/count.test e0699a15712bc2a4679d60e408921c2cce7f6365a30340e790c98e0f334a9c77
@@ -882,7 +882,7 @@ F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f7
 F test/fkey2.test b1b6a8c5556dc0ccf31291b1fed8aa57e404b38f3236110e19ab4dc6aa93edf2
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
-F test/fkey5.test 7309d9a42b8fefb9bb9197d0d3f0acbfd15b74767c4640305310adafe97e51c8
+F test/fkey5.test 6727452e163a427147e84e739da18713da553d79f9783559b04fdcd36d5c7421
 F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d031
 F test/fkey8.test 48ef829d63f5f7b37aabd4df9363ac05f65539d1da8c4a44251631769d920579
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41474548ef3f7454e44fbf648429730b3f5ba1ff0086fd2f2d0e59b8f51d85e6
-R 58508823ad9b0df104425db9a508f537
+P a85520e0074d574cb4ac5239bb225f8f0b0b3ea1d782cd1cbc79797b4c583fb0
+R 211abeed314e97c0c272d3a023b2a330
 U dan
-Z 99aa34708ee9f0a8283e329595fbd6b4
+Z b8b57186e94948de87cb22a6a4950892

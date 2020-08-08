@@ -1287,8 +1287,10 @@ do_execsql_test 16.0 {
   ) WHERE type = 'index';
 }
 
+extra_schema_checks 0
 db close
 sqlite3 db test.db
+extra_schema_checks 1
 
 do_catchsql_test 16.1 {
   PRAGMA writable_schema = ON;
