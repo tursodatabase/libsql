@@ -983,7 +983,7 @@ typedef INT16_TYPE LogEst;
 #if defined(SQLITE_ENABLE_SELECTTRACE)
 # define SELECTTRACE_ENABLED 1
 # define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3SelectTrace&(K))   \
+  if(sqlite3_unsupported_selecttrace&(K))   \
     sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
@@ -4586,7 +4586,7 @@ extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
-extern u32 sqlite3SelectTrace;
+extern u32 sqlite3_unsupported_selecttrace;
 #ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
 #endif

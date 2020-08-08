@@ -303,7 +303,7 @@ int sqlite3PendingByte = 0x40000000;
 /*
 ** Flags for select tracing and the ".selecttrace" macro of the CLI
 */
-/**/ u32 sqlite3SelectTrace = 0;
+u32 sqlite3_unsupported_selecttrace = 0;
 
 #include "opcodes.h"
 /*
