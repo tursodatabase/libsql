@@ -15,10 +15,10 @@
 # EVIDENCE-OF: R-15402-03103 PRAGMA schema.foreign_key_check; PRAGMA
 # schema.foreign_key_check(table-name);
 #
-# EVIDENCE-OF: R-23918-17301 The foreign_key_check pragma checks the
+# EVIDENCE-OF: R-41653-15278 The foreign_key_check pragma checks the
 # database, or the table called "table-name", for foreign key
-# constraints that are violated and returns one row of output for each
-# violation.
+# constraints that are violated. The foreign_key_check pragma returns
+# one row output for each foreign key violation.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
