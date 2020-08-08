@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\ssqlite3SelectTrace\sto\ssqlite3_unsupported_selecttrace.
-D 2020-08-08T17:02:39.986
+C Move\sa\spointer\scomputation\suntil\safter\sOOM\schecks\sto\savoid\sa\snuisance\sUSAN\nwarning.
+D 2020-08-08T17:55:39.034
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -522,7 +522,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 9b1b860163fd2d4d7679b5260d384d1a9f88ef917a90f28963eca8acd472d8c8
 F src/os_win.c a2149ff0a85c1c3f9cc102a46c673ce87e992396ba3411bfb53db66813b32f1d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c a5f65ff2cd73b8d381cc7b338cac382ca6978d578fa0b84fdaa11d3cdc3c3e18
+F src/pager.c 8c337c6210e75ac118200e3641424f61635e221c8d8e34be36dc8f5fffcaec8b
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 5bdb760a29c0b25caf7e80e82210b81cd2ea3066d5199ca29e6eac40b34bc184
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf875a1c7fcb2b41a4d3bd741bb358a635b869d0b6fc9d24385cd5779686d78c
-R b86a367acf8379c71a0f44201c70b5fb
-U dan
-Z 4bfb2589e33ab6d308e5634f4c9d8e53
+P 5ecd03a27b81637ec92af654451a8fff46f1768ddb7c7a443d2a4a933b4475c1
+R 172c5463e1f903ec57b529e8781e6cdd
+U drh
+Z 59b208845b4b4676d14e870ba9395399
