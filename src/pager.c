@@ -2494,6 +2494,7 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   pSuper = (sqlite3_file *)sqlite3MallocZero(pVfs->szOsFile * 2);
   if( !pSuper ){
     rc = SQLITE_NOMEM_BKPT;
+    pJournal = 0;
   }else{
     const int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
     rc = sqlite3OsOpen(pVfs, zSuper, pSuper, flags, 0);
