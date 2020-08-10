@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\stest\sfailures\sin\scorruptL.test\sfor\ssome\spermutations.
-D 2020-08-10T19:35:01.778
+C Simplify\s#ifdefs\sassociated\swith\sParse.eParseMode.\s\sFix\san\s#ifdef\serror\nassociated\swith\sSQLITE_OMIT_AUTOVACUUM.
+D 2020-08-10T21:01:32.620
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,10 +476,10 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c b1c90cd4110248c8e1273ff4578d3a84c0c34725e1b96dacd4a6294a908702de
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 9950163f542844babfbfd968e16400d393ff4730a0bcbc4be3e25a407b792570
+F src/btree.c 1439fd9b45d4d1883c53752daef42af489adaa1a1508fa39dedbc9c80ea21a2f
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
-F src/build.c e3e29c7791a408f7f616f4ea1b2808596014d688094cc048c7c7a93d588a603f
+F src/build.c dde514651cf3cf3a3a64a6e5c62384c01486c6faeabd165b3fe6dec6d2a0e113
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -540,7 +540,7 @@ F src/shell.c.in b9b819feede7b85585ab0826490a352e04e2ee46e8132c92597d29972b2be1d
 F src/sqlite.h.in d2c03414a8ee5d4a6855c04dd7cd5998e45139b0fe66b65bae86d4223edd091f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
-F src/sqliteInt.h 4952e11e2ad76ee0f1ce9e260a1a6dbe1a079238294b83cecacb227bc53773d0
+F src/sqliteInt.h a938ad036cc25fd1a9c7ab1586cbd651ac9c99c1ae57f539f88f9a7271f12ac8
 F src/sqliteLimit.h 95cb8479ca459496d9c1c6a9f76b38aee12203a56ce1092fe13e50ae2454c032
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a167cfbb2abd76e1b33116b671e58a767fc972dd79bee0004aad09a1dd2b487
-R 2aa7df3c326197a82a54dd73bec73971
-U dan
-Z b9b84cd72c3380ef62c9f20170b0badf
+P 680bdc6524ad6af0e74401e96e3a576145042fb865c1582bfaffc11d4ff76a4f
+R b720a86de77c44208b3db65976426d46
+U drh
+Z 737e0d499b7474145d7a36af76d98f48

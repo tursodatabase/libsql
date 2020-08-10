@@ -10262,8 +10262,8 @@ char *sqlite3BtreeIntegrityCheck(
          (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
         checkAppendMsg(&sCheck, "Pointer map page %d is referenced", i);
       }
-    }
 #endif
+    }
   }
 
   /* Clean  up and report errors.
