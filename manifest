@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sthat\ssurface\sin\snewer\sversions\sof\sGCC.
-D 2020-08-10T14:18:00.692
+C Fix\sa\sshell\stool\sbuild\serror\scaused\sby\ssome\scombinations\sof\soptions.
+D 2020-08-10T14:34:36.193
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d74715aceed2a8f493ba244d535646fa93132042a4400a29dfd26ec841514048
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 510fdf819f218be3dac2683d3eaaf64e5080f548061a4dd12205590beda976bb
-F src/shell.c.in 6c1b07ee630b6d2bf4f89f667ec43dcc9df733e24f55b3227dc87d80f039f8db
+F src/shell.c.in b9b819feede7b85585ab0826490a352e04e2ee46e8132c92597d29972b2be1d7
 F src/sqlite.h.in d2c03414a8ee5d4a6855c04dd7cd5998e45139b0fe66b65bae86d4223edd091f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b89d3931e368a66be5075bdf49eedd3839591ee268e3ac293040b5bf7639746
-R dacbab3fbb502c96f9bb56dece2c04cf
-U drh
-Z 62f35aa94464db0922c0e32915927235
+P 9d670a318381f219b467653f5f9539097808b887ae37291ce13be462dedfb18d
+R 33ee0f4b14db4453a74b68bd5718a027
+U dan
+Z ed113acf62e27d76d5ec5ff2ab6cd933
