@@ -783,7 +783,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
           }
         }
       }
-      /* Fall through.  */
+      /* no break */ deliberate_fall_through
 
     case TK_AGG_FUNCTION:
     case TK_COLUMN: {

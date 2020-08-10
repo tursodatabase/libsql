@@ -129,6 +129,15 @@
 #endif
 
 /*
+** Macro to disable warnings about missing "break" at the end of a "case".
+*/
+#if GCC_VERSION>=7000000
+# define deliberate_fall_through __attribute__((fallthrough));
+#else
+# define deliberate_fall_through
+#endif
+
+/*
 ** For MinGW, check to see if we can include the header file containing its
 ** version information, among other things.  Normally, this internal MinGW
 ** header file would [only] be included automatically by other MinGW header
@@ -1046,7 +1055,7 @@ struct BusyHandler {
 ** pointer will work here as long as it is distinct from SQLITE_STATIC
 ** and SQLITE_TRANSIENT.
 */
-#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3MallocSize)
+#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3OomFault)
 
 /*
 ** When SQLITE_OMIT_WSD is defined, it means that the target platform does
@@ -1497,7 +1506,10 @@ struct sqlite3 {
   int nVDestroy;                /* Number of active OP_VDestroy operations */
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
-  int (*xTrace)(u32,void*,void*,void*);     /* Trace function */
+  union {
+    void (*xLegacy)(void*,const char*);     /* Legacy trace function */
+    int (*xV2)(u32,void*,void*,void*);      /* V2 Trace function */
+  } trace;
   void *pTraceArg;                          /* Argument to the trace function */
 #ifndef SQLITE_OMIT_DEPRECATED
   void (*xProfile)(void*,const char*,u64);  /* Profiling function */
