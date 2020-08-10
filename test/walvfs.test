@@ -145,7 +145,7 @@ proc xWrite {method file args} {
   if {[file tail $file]=="test.db"} {
     incr ::cnt -1
     if {$::cnt==0} {
-      sqlite3_memdebug_fail 5 -repeat 0
+      sqlite3_memdebug_fail 1 -repeat 0
       catchsql { SELECT 'a big long string!' }
       sqlite3_interrupt db
     }

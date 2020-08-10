@@ -3479,7 +3479,7 @@ static int fts3ColumnMethod(
         break;
       }else{
         iCol = p->nColumn;
-        /* fall-through */
+        /* no break */ deliberate_fall_through
       }
 
     default:
@@ -3722,9 +3722,13 @@ static void fts3SnippetFunc(
 
   switch( nVal ){
     case 6: nToken = sqlite3_value_int(apVal[5]);
+            /* no break */ deliberate_fall_through
     case 5: iCol = sqlite3_value_int(apVal[4]);
+            /* no break */ deliberate_fall_through
     case 4: zEllipsis = (const char*)sqlite3_value_text(apVal[3]);
+            /* no break */ deliberate_fall_through
     case 3: zEnd = (const char*)sqlite3_value_text(apVal[2]);
+            /* no break */ deliberate_fall_through
     case 2: zStart = (const char*)sqlite3_value_text(apVal[1]);
   }
   if( !zEllipsis || !zEnd || !zStart ){

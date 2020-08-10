@@ -286,6 +286,13 @@ static const unsigned char sqlite3CtypeMap[256] = {
 #define TK_VARIABLE TK_LITERAL
 #define TK_BLOB     TK_LITERAL
 
+/* Disable nuisence warnings about case fall-through */
+#if !defined(deliberate_fall_through) && defined(__GCC__) && __GCC__>=7
+# define deliberate_fall_through __attribute__((fallthrough));
+#else
+# define deliberate_fall_through
+#endif
+
 /*
 ** Return the length (in bytes) of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
@@ -436,6 +443,7 @@ static int sqlite3GetToken(const unsigned char *z, int *tokenType){
       }
       /* If the next character is a digit, this is a floating point
       ** number that begins with ".".  Fall thru into the next case */
+      /* no break */ deliberate_fall_through
     }
     case CC_DIGIT: {
       *tokenType = TK_INTEGER;
@@ -528,6 +536,7 @@ static int sqlite3GetToken(const unsigned char *z, int *tokenType){
       }
       /* If it is not a BLOB literal, then it must be an ID, since no
       ** SQL keywords start with the letter 'x'.  Fall through */
+      /* no break */ deliberate_fall_through
     }
     case CC_ID: {
       i = 1;

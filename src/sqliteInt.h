@@ -129,6 +129,15 @@
 #endif
 
 /*
+** Macro to disable warnings about missing "break" at the end of a "case".
+*/
+#if GCC_VERSION>=7000000
+# define deliberate_fall_through __attribute__((fallthrough));
+#else
+# define deliberate_fall_through
+#endif
+
+/*
 ** For MinGW, check to see if we can include the header file containing its
 ** version information, among other things.  Normally, this internal MinGW
 ** header file would [only] be included automatically by other MinGW header
@@ -983,7 +992,7 @@ typedef INT16_TYPE LogEst;
 #if defined(SQLITE_ENABLE_SELECTTRACE)
 # define SELECTTRACE_ENABLED 1
 # define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3SelectTrace&(K))   \
+  if(sqlite3_unsupported_selecttrace&(K))   \
     sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
@@ -1046,7 +1055,7 @@ struct BusyHandler {
 ** pointer will work here as long as it is distinct from SQLITE_STATIC
 ** and SQLITE_TRANSIENT.
 */
-#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3MallocSize)
+#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3OomFault)
 
 /*
 ** When SQLITE_OMIT_WSD is defined, it means that the target platform does
@@ -1508,7 +1517,10 @@ struct sqlite3 {
   int nVDestroy;                /* Number of active OP_VDestroy operations */
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
-  int (*xTrace)(u32,void*,void*,void*);     /* Trace function */
+  union {
+    void (*xLegacy)(void*,const char*);     /* Legacy trace function */
+    int (*xV2)(u32,void*,void*,void*);      /* V2 Trace function */
+  } trace;
   void *pTraceArg;                          /* Argument to the trace function */
 #ifndef SQLITE_OMIT_DEPRECATED
   void (*xProfile)(void*,const char*,u64);  /* Profiling function */
@@ -3401,9 +3413,7 @@ struct Parse {
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
-#if !(defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_OMIT_ALTERTABLE))
   u8 eParseMode;            /* PARSE_MODE_XXX constant */
-#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int nVtabLock;            /* Number of virtual tables to lock */
 #endif
@@ -4606,7 +4616,7 @@ extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
-extern u32 sqlite3SelectTrace;
+extern u32 sqlite3_unsupported_selecttrace;
 #ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
 #endif

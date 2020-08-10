@@ -2029,7 +2029,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       if( sqlite3ExprIdToTrueFalse(pExpr) ){
         return WRC_Prune;
       }
-      /* Fall thru */
+      /* no break */ deliberate_fall_through
     case TK_COLUMN:
     case TK_AGG_FUNCTION:
     case TK_AGG_COLUMN:
@@ -2043,7 +2043,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       if( pWalker->eCode==3 && pExpr->iTable==pWalker->u.iCur ){
         return WRC_Continue;
       }
-      /* Fall through */
+      /* no break */ deliberate_fall_through
     case TK_IF_NULL_ROW:
     case TK_REGISTER:
     case TK_DOT:
@@ -2064,7 +2064,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
         pWalker->eCode = 0;
         return WRC_Abort;
       }
-      /* Fall through */
+      /* no break */ deliberate_fall_through
     default:
       testcase( pExpr->op==TK_SELECT ); /* sqlite3SelectWalkFail() disallows */
       testcase( pExpr->op==TK_EXISTS ); /* sqlite3SelectWalkFail() disallows */
@@ -3836,6 +3836,7 @@ expr_code_doover:
         return target;
       }
       /* Otherwise, fall thru into the TK_COLUMN case */
+      /* no break */ deliberate_fall_through
     }
     case TK_COLUMN: {
       int iTab = pExpr->iTable;
@@ -4901,7 +4902,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       testcase( op==TK_ISNOT );
       op = (op==TK_IS) ? TK_EQ : TK_NE;
       jumpIfNull = SQLITE_NULLEQ;
-      /* Fall thru */
+      /* no break */ deliberate_fall_through
     case TK_LT:
     case TK_LE:
     case TK_GT:
@@ -5077,7 +5078,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       testcase( pExpr->op==TK_ISNOT );
       op = (pExpr->op==TK_IS) ? TK_NE : TK_EQ;
       jumpIfNull = SQLITE_NULLEQ;
-      /* Fall thru */
+      /* no break */ deliberate_fall_through
     case TK_LT:
     case TK_LE:
     case TK_GT:
@@ -5389,13 +5390,13 @@ static int exprImpliesNotNull(
     case TK_RSHIFT: 
     case TK_CONCAT: 
       seenNot = 1;
-      /* Fall thru */
+      /* no break */ deliberate_fall_through
     case TK_STAR:
     case TK_REM:
     case TK_BITAND:
     case TK_SLASH: {
       if( exprImpliesNotNull(pParse, p->pRight, pNN, iTab, seenNot) ) return 1;
-      /* Fall thru into the next case */
+      /* no break */ deliberate_fall_through
     }
     case TK_SPAN:
     case TK_COLLATE:
@@ -5544,6 +5545,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       ){
         return WRC_Prune;
       }
+      /* no break */ deliberate_fall_through
     }
     default:
       return WRC_Continue;
