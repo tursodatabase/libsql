@@ -407,11 +407,11 @@ void sqlite3_str_vappendf(
       case etPOINTER:
         flag_long = sizeof(char*)==sizeof(i64) ? 2 :
                      sizeof(char*)==sizeof(long int) ? 1 : 0;
-        /* Fall through into the next case */
+        /* no break */ deliberate_fall_through
       case etORDINAL:
       case etRADIX:      
         cThousand = 0;
-        /* Fall through into the next case */
+        /* no break */ deliberate_fall_through
       case etDECIMAL:
         if( infop->flags & FLAG_SIGNED ){
           i64 v;

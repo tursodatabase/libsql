@@ -1033,6 +1033,7 @@ case OP_HaltIfNull: {      /* in3 */
 #endif
   if( (pIn3->flags & MEM_Null)==0 ) break;
   /* Fall through into OP_Halt */
+  /* no break */ deliberate_fall_through
 }
 
 /* Opcode:  Halt P1 P2 * P4 P5
@@ -1203,6 +1204,7 @@ case OP_String8: {         /* same as TK_STRING, out2 */
   pOp->opcode = OP_String;
   assert( rc==SQLITE_OK );
   /* Fall through to the next case, OP_String */
+  /* no break */ deliberate_fall_through
 }
   
 /* Opcode: String P1 P2 P3 P4 P5
@@ -1514,7 +1516,7 @@ case OP_ResultRow: {
   if( db->mallocFailed ) goto no_mem;
 
   if( db->mTrace & SQLITE_TRACE_ROW ){
-    db->xTrace(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
+    db->trace.xV2(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
   }
 
 
@@ -2273,7 +2275,7 @@ case OP_Compare: {
 #ifdef SQLITE_DEBUG
   if( aPermute ){
     int k, mx = 0;
-    for(k=0; k<n; k++) if( aPermute[k]>mx ) mx = aPermute[k];
+    for(k=0; k<n; k++) if( aPermute[k]>(u32)mx ) mx = aPermute[k];
     assert( p1>0 && p1+mx<=(p->nMem+1 - p->nCursor)+1 );
     assert( p2>0 && p2+mx<=(p->nMem+1 - p->nCursor)+1 );
   }else{
@@ -2623,7 +2625,7 @@ case OP_Column: {
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   assert( pC!=0 );
-  assert( p2<pC->nField );
+  assert( p2<(u32)pC->nField );
   aOffset = pC->aOffset;
   assert( pC->eCurType!=CURTYPE_VTAB );
   assert( pC->eCurType!=CURTYPE_PSEUDO || pC->nullRow );
@@ -3848,7 +3850,7 @@ case OP_OpenWrite:
   }
   if( pOp->p5 & OPFLAG_P2ISREG ){
     assert( p2>0 );
-    assert( p2<=(p->nMem+1 - p->nCursor) );
+    assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
     assert( pOp->opcode==OP_OpenWrite );
     pIn2 = &aMem[p2];
     assert( memIsValid(pIn2) );
@@ -4543,6 +4545,7 @@ case OP_IfNoHope: {     /* jump, in3 */
   assert( pC!=0 );
   if( pC->seekHit ) break;
   /* Fall through into OP_NotFound */
+  /* no break */ deliberate_fall_through
 }
 case OP_NoConflict:     /* jump, in3 */
 case OP_NotFound:       /* jump, in3 */
@@ -4697,6 +4700,7 @@ case OP_SeekRowid: {        /* jump, in3 */
     goto notExistsWithKey;
   }
   /* Fall through into OP_NotExists */
+  /* no break */ deliberate_fall_through
 case OP_NotExists:          /* jump, in3 */
   pIn3 = &aMem[pOp->p3];
   assert( (pIn3->flags & MEM_Int)!=0 || pOp->opcode==OP_SeekRowid );
@@ -5468,6 +5472,7 @@ case OP_Sort: {        /* jump */
 #endif
   p->aCounter[SQLITE_STMTSTATUS_SORT]++;
   /* Fall through into OP_Rewind */
+  /* no break */ deliberate_fall_through
 }
 /* Opcode: Rewind P1 P2 * * *
 **
@@ -6281,7 +6286,7 @@ case OP_IntegrityCk: {
   nRoot = pOp->p2;
   aRoot = pOp->p4.ai;
   assert( nRoot>0 );
-  assert( aRoot[0]==nRoot );
+  assert( aRoot[0]==(Pgno)nRoot );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pnErr = &aMem[pOp->p3];
   assert( (pnErr->flags & MEM_Int)!=0 );
@@ -6821,6 +6826,7 @@ case OP_AggStep: {
 
   pOp->opcode = OP_AggStep1;
   /* Fall through into OP_AggStep */
+  /* no break */ deliberate_fall_through
 }
 case OP_AggStep1: {
   int i;
@@ -7815,18 +7821,17 @@ case OP_Init: {          /* jump */
   ){
 #ifndef SQLITE_OMIT_DEPRECATED
     if( db->mTrace & SQLITE_TRACE_LEGACY ){
-      void (*x)(void*,const char*) = (void(*)(void*,const char*))db->xTrace;
       char *z = sqlite3VdbeExpandSql(p, zTrace);
-      x(db->pTraceArg, z);
+      db->trace.xLegacy(db->pTraceArg, z);
       sqlite3_free(z);
     }else
 #endif
     if( db->nVdbeExec>1 ){
       char *z = sqlite3MPrintf(db, "-- %s", zTrace);
-      (void)db->xTrace(SQLITE_TRACE_STMT, db->pTraceArg, p, z);
+      (void)db->trace.xV2(SQLITE_TRACE_STMT, db->pTraceArg, p, z);
       sqlite3DbFree(db, z);
     }else{
-      (void)db->xTrace(SQLITE_TRACE_STMT, db->pTraceArg, p, zTrace);
+      (void)db->trace.xV2(SQLITE_TRACE_STMT, db->pTraceArg, p, zTrace);
     }
   }
 #ifdef SQLITE_USE_FCNTL_TRACE

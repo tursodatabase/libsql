@@ -352,7 +352,7 @@ int sqlite3_db_status(
     */
     case SQLITE_DBSTATUS_CACHE_SPILL:
       op = SQLITE_DBSTATUS_CACHE_WRITE+1;
-      /* Fall through into the next case */
+      /* no break */ deliberate_fall_through
     case SQLITE_DBSTATUS_CACHE_HIT:
     case SQLITE_DBSTATUS_CACHE_MISS:
     case SQLITE_DBSTATUS_CACHE_WRITE:{

@@ -2528,8 +2528,8 @@ test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
 #
 # Test that these adjustments are visible in the sqlite_master table.
 #
-# EVIDENCE-OF: R-63827-54774 The text of the child CREATE TABLE
-# statement or statements stored in the sqlite_master table are modified
+# EVIDENCE-OF: R-43040-62530 The text of the child CREATE TABLE
+# statement or statements stored in the sqlite_schema table are modified
 # to reflect the new parent table name.
 #
 do_test e_fkey-56.1 {

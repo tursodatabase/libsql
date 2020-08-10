@@ -599,7 +599,6 @@ int sqlite3_decimal_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
-  SQLITE_EXTENSION_INIT2(pApi);
   static const struct {
     const char *zFuncName;
     int nArg;
@@ -613,6 +612,8 @@ int sqlite3_decimal_init(
   };
   unsigned int i;
   (void)pzErrMsg;  /* Unused parameter */
+
+  SQLITE_EXTENSION_INIT2(pApi);
 
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zFuncName, aFunc[i].nArg,
