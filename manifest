@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sthe\suse\sof\sthe\sieee754\sand\sdecimal\sextensions\sin\sthe\sCLI.
-D 2020-08-11T18:17:04.070
+C Fix\sharmless\sUSAN\swarnings\sfrom\sgcc9.
+D 2020-08-11T21:53:42.164
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -95,7 +95,7 @@ F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
 F ext/fts3/fts3_snippet.c 86e7e947a176f0f005720b3ca17631aca2fd2f9daa6729d4adbf2d16ab1b9613
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
 F ext/fts3/fts3_test.c 73b16e229e517c1b1f0fb8e1046182a4e5dbc8dbe6eea8a5d4353fcce7dbbf39
-F ext/fts3/fts3_tokenize_vtab.c cb792f59212f7799bf2891c7d4579bbf568f124ce8fbb0a9902aa5bd577e8b75
+F ext/fts3/fts3_tokenize_vtab.c 8d15b148e7d88a4280389a200b26e8d52abda4c4ec2e9a35e9d7a1fa50e5aa03
 F ext/fts3/fts3_tokenizer.c 6d8fc150c48238955d5182bf661498db0dd473c8a2a80e00c16994a646fa96e7
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
@@ -448,7 +448,7 @@ F ext/session/sessioninvert.test 04075517a9497a80d39c495ba6b44f3982c7371129b89e2
 F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2f05e82363b9142810
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 67b5ab91d4f93ce65ff1f58240ac5ddf73f8670facc1ffa49cef56293d52818d
-F ext/session/sqlite3session.c fc8c6c13dc0456943ff24abf574ced10418eec66a548c97d3eafbebe9fc5e908
+F ext/session/sqlite3session.c 2c76b8c3a5d6dab736686f8a48833b8bdac0871ecc6f447f9839d28bd4a63d6c
 F ext/session/sqlite3session.h a2db5b72b938d12c727b4b4ec632254ca493670a9c0de597af3271a7f774fc57
 F ext/session/test_session.c 98797aba475a799376c9a42214f2d1debf2d0c3cb657d9c8bbf4f70bf3fb4aec
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1709,7 +1709,7 @@ F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/walvfs.test a2913001a83b19c1d20220e556cee14d87d47ecb6949b5e0a2e9e2590abecf1e
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
-F test/wapptest.tcl 3cca775aede0591756a1fc0da55bbb3715d8c363873fd2cfdd4d555b0a4af57d x
+F test/wapptest.tcl 899594e25684861d5b0c0880fb012364def50ef8097041b8ddf74be5ba7fa270 x
 F test/where.test f5e62453537e5b335b69f3b09f8a02ce3328289fad5d866e25371284b837d78d
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7dfb74c37e678dde347d9d85846672f82ad282e300e32676330b764be2e4d580
-R d77236f2dcbaef13d110aee9e5d1b519
+P bc1590f32fc4e2696b4126bd0302cb6405031dd4f55b86f3f1611f7f39299f85
+R 90593965634151fdd7567fd15751e825
 U drh
-Z 511e843c2e305b6831df80109b36fe79
+Z ecda5fdf34d5afa6fe0822154bd98e39

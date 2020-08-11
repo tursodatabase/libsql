@@ -164,7 +164,7 @@ proc count_tests_and_errors {name logfile} {
     }
     if {[regexp {runtime error: +(.*)} $line all msg]} {
       # skip over "value is outside range" errors
-      if {[regexp {value .* is outside the range of representable} $line]} {
+      if {[regexp {.* is outside the range of representable} $line]} {
          # noop
       } else {
         incr G(test.$name.nError)
@@ -894,4 +894,3 @@ if {$G(noui)==0} {
   do_some_stuff
   vwait forever
 }
-
