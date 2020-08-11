@@ -975,7 +975,7 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
     sqlite3_mprintf(
       "SELECT rbu_target_name(name, type='view') AS target, name "
-      "FROM sqlite_master "
+      "FROM sqlite_schema "
       "WHERE type IN ('table', 'view') AND target IS NOT NULL "
       " %s "
       "ORDER BY name"
@@ -984,7 +984,7 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   if( rc==SQLITE_OK ){
     rc = prepareAndCollectError(p->dbMain, &pIter->pIdxIter, &p->zErrmsg,
         "SELECT name, rootpage, sql IS NULL OR substr(8, 6)=='UNIQUE' "
-        "  FROM main.sqlite_master "
+        "  FROM main.sqlite_schema "
         "  WHERE type='index' AND tbl_name = ?"
     );
   }
@@ -1156,12 +1156,12 @@ static void rbuFinalize(sqlite3rbu *p, sqlite3_stmt *pStmt){
 **
 ** ALGORITHM:
 **
-**   if( no entry exists in sqlite_master ){
+**   if( no entry exists in sqlite_schema ){
 **     return RBU_PK_NOTABLE
 **   }else if( sql for the entry starts with "CREATE VIRTUAL" ){
 **     return RBU_PK_VTAB
 **   }else if( "PRAGMA index_list()" for the table contains a "pk" index ){
-**     if( the index that is the pk exists in sqlite_master ){
+**     if( the index that is the pk exists in sqlite_schema ){
 **       *piPK = rootpage of that index.
 **       return RBU_PK_EXTERNAL
 **     }else{
@@ -1181,9 +1181,9 @@ static void rbuTableType(
   int *piPk
 ){
   /*
-  ** 0) SELECT count(*) FROM sqlite_master where name=%Q AND IsVirtual(%Q)
+  ** 0) SELECT count(*) FROM sqlite_schema where name=%Q AND IsVirtual(%Q)
   ** 1) PRAGMA index_list = ?
-  ** 2) SELECT count(*) FROM sqlite_master where name=%Q 
+  ** 2) SELECT count(*) FROM sqlite_schema where name=%Q 
   ** 3) PRAGMA table_info = ?
   */
   sqlite3_stmt *aStmt[4] = {0, 0, 0, 0};
@@ -1195,7 +1195,7 @@ static void rbuTableType(
   p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[0], &p->zErrmsg, 
     sqlite3_mprintf(
           "SELECT (sql LIKE 'create virtual%%'), rootpage"
-          "  FROM sqlite_master"
+          "  FROM sqlite_schema"
           " WHERE name=%Q", zTab
   ));
   if( p->rc!=SQLITE_OK || sqlite3_step(aStmt[0])!=SQLITE_ROW ){
@@ -1218,7 +1218,7 @@ static void rbuTableType(
     if( zOrig && zIdx && zOrig[0]=='p' ){
       p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[2], &p->zErrmsg, 
           sqlite3_mprintf(
-            "SELECT rootpage FROM sqlite_master WHERE name = %Q", zIdx
+            "SELECT rootpage FROM sqlite_schema WHERE name = %Q", zIdx
       ));
       if( p->rc==SQLITE_OK ){
         if( sqlite3_step(aStmt[2])==SQLITE_ROW ){
@@ -2038,7 +2038,7 @@ static void rbuCreateImposterTable2(sqlite3rbu *p, RbuObjIter *pIter){
     ** This is needed for the argument to "PRAGMA index_xinfo". Set
     ** zIdx to point to a nul-terminated string containing this name. */
     p->rc = prepareAndCollectError(p->dbMain, &pQuery, &p->zErrmsg, 
-        "SELECT name FROM sqlite_master WHERE rootpage = ?"
+        "SELECT name FROM sqlite_schema WHERE rootpage = ?"
     );
     if( p->rc==SQLITE_OK ){
       sqlite3_bind_int(pQuery, 1, tnum);
@@ -2211,7 +2211,7 @@ static char *rbuObjIterGetIndexWhere(sqlite3rbu *p, RbuObjIter *pIter){
 
   if( rc==SQLITE_OK ){
     rc = prepareAndCollectError(p->dbMain, &pStmt, &p->zErrmsg,
-        "SELECT trim(sql) FROM sqlite_master WHERE type='index' AND name=?"
+        "SELECT trim(sql) FROM sqlite_schema WHERE type='index' AND name=?"
     );
   }
   if( rc==SQLITE_OK ){
@@ -2793,7 +2793,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, int *pbRetry){
       int bOk = 0;
       sqlite3_stmt *pCnt = 0;
       p->rc = prepareAndCollectError(p->dbRbu, &pCnt, &p->zErrmsg,
-          "SELECT count(*) FROM stat.sqlite_master"
+          "SELECT count(*) FROM stat.sqlite_schema"
       );
       if( p->rc==SQLITE_OK 
        && sqlite3_step(pCnt)==SQLITE_ROW
@@ -2897,7 +2897,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, int *pbRetry){
   if( p->rc==SQLITE_OK ){
     p->rc = sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_RBU, (void*)p);
   }
-  rbuMPrintfExec(p, p->dbMain, "SELECT * FROM sqlite_master");
+  rbuMPrintfExec(p, p->dbMain, "SELECT * FROM sqlite_schema");
 
   /* Mark the database file just opened as an RBU target database. If 
   ** this call returns SQLITE_NOTFOUND, then the RBU vfs is not in use.
@@ -2990,7 +2990,7 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
   if( pState==0 ){
     p->eStage = 0;
     if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3_exec(p->dbMain, "SELECT * FROM sqlite_master", 0, 0, 0);
+      p->rc = sqlite3_exec(p->dbMain, "SELECT * FROM sqlite_schema", 0, 0, 0);
     }
   }
 
@@ -3581,7 +3581,7 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
   p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=1", 0,0, &p->zErrmsg);
   if( p->rc==SQLITE_OK ){
     p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
-      "SELECT sql FROM sqlite_master WHERE sql!='' AND rootpage!=0"
+      "SELECT sql FROM sqlite_schema WHERE sql!='' AND rootpage!=0"
       " AND name!='sqlite_sequence' "
       " ORDER BY type DESC"
     );
@@ -3596,13 +3596,13 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
 
   if( p->rc==SQLITE_OK ){
     p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
-        "SELECT * FROM sqlite_master WHERE rootpage=0 OR rootpage IS NULL" 
+        "SELECT * FROM sqlite_schema WHERE rootpage=0 OR rootpage IS NULL" 
     );
   }
 
   if( p->rc==SQLITE_OK ){
     p->rc = prepareAndCollectError(p->dbMain, &pInsert, &p->zErrmsg, 
-        "INSERT INTO sqlite_master VALUES(?,?,?,?,?)"
+        "INSERT INTO sqlite_schema VALUES(?,?,?,?,?)"
     );
   }
 
@@ -3865,7 +3865,7 @@ static void rbuIndexCntFunc(
   assert( nVal==1 );
   
   rc = prepareFreeAndCollectError(db, &pStmt, &zErrmsg, 
-      sqlite3_mprintf("SELECT count(*) FROM sqlite_master "
+      sqlite3_mprintf("SELECT count(*) FROM sqlite_schema "
         "WHERE type='index' AND tbl_name = %Q", sqlite3_value_text(apVal[0]))
   );
   if( rc!=SQLITE_OK ){
@@ -3916,7 +3916,7 @@ static void rbuInitPhaseOneSteps(sqlite3rbu *p){
     ** occurs, nPhaseOneStep will be left set to -1. */
     if( p->rc==SQLITE_OK ){
       p->rc = prepareAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg,
-          "SELECT 1 FROM sqlite_master WHERE tbl_name = 'rbu_count'"
+          "SELECT 1 FROM sqlite_schema WHERE tbl_name = 'rbu_count'"
       );
     }
     if( p->rc==SQLITE_OK ){

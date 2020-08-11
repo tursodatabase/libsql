@@ -52,22 +52,22 @@ static int isAlterableTable(Parse *pParse, Table *pTab){
 static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
-      "FROM \"%w\".%s "
+      "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
       " AND sqlite_rename_test(%Q, sql, type, name, %d)=NULL ",
-      zDb, MASTER_NAME, 
+      zDb,
       zDb, bTemp
   );
 
   if( bTemp==0 ){
     sqlite3NestedParse(pParse, 
         "SELECT 1 "
-        "FROM temp.%s "
+        "FROM temp." DFLT_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
         " AND sqlite_rename_test(%Q, sql, type, name, 1)=NULL ",
-        MASTER_NAME, zDb 
+        zDb 
     );
   }
 }
@@ -185,17 +185,17 @@ void sqlite3AlterRenameTable(
   /* Rewrite all CREATE TABLE, INDEX, TRIGGER or VIEW statements in
   ** the schema to use the new table name.  */
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\".%s SET "
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) "
       "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
       "AND   name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
-      , zDb, MASTER_NAME, zDb, zTabName, zName, (iDb==1), zTabName
+      , zDb, zDb, zTabName, zName, (iDb==1), zTabName
   );
 
-  /* Update the tbl_name and name columns of the sqlite_master table
+  /* Update the tbl_name and name columns of the sqlite_schema table
   ** as required.  */
   sqlite3NestedParse(pParse,
-      "UPDATE %Q.%s SET "
+      "UPDATE %Q." DFLT_SCHEMA_TABLE " SET "
           "tbl_name = %Q, "
           "name = CASE "
             "WHEN type='table' THEN %Q "
@@ -205,7 +205,7 @@ void sqlite3AlterRenameTable(
             "ELSE name END "
       "WHERE tbl_name=%Q COLLATE nocase AND "
           "(type='table' OR type='index' OR type='trigger');", 
-      zDb, MASTER_NAME, 
+      zDb,
       zName, zName, zName, 
       nTabName, zTabName
   );
@@ -226,7 +226,7 @@ void sqlite3AlterRenameTable(
   ** as required.  */
   if( iDb!=1 ){
     sqlite3NestedParse(pParse, 
-        "UPDATE sqlite_temp_master SET "
+        "UPDATE sqlite_temp_schema SET "
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase AND "
@@ -382,10 +382,10 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     }
     db->mDbFlags |= DBFLAG_PreferBuiltin;
     sqlite3NestedParse(pParse, 
-        "UPDATE \"%w\".%s SET "
+        "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
           "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
         "WHERE type = 'table' AND name = %Q", 
-      zDb, MASTER_NAME, pNew->addColOffset, zCol, pNew->addColOffset+1,
+      zDb, pNew->addColOffset, zCol, pNew->addColOffset+1,
       zTab
     );
     sqlite3DbFree(db, zCol);
@@ -587,7 +587,7 @@ void sqlite3AlterRenameColumn(
 
   /* Do the rename operation using a recursive UPDATE statement that
   ** uses the sqlite_rename_column() SQL function to compute the new
-  ** CREATE statement text for the sqlite_master table.
+  ** CREATE statement text for the sqlite_schema table.
   */
   sqlite3MayAbort(pParse);
   zNew = sqlite3NameFromToken(db, pNew);
@@ -595,21 +595,20 @@ void sqlite3AlterRenameColumn(
   assert( pNew->n>0 );
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\".%s SET "
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
       " AND (type != 'index' OR tbl_name = %Q)"
       " AND sql NOT LIKE 'create virtual%%'",
-      zDb, MASTER_NAME, 
+      zDb,
       zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
       pTab->zName
   );
 
   sqlite3NestedParse(pParse, 
-      "UPDATE temp.%s SET "
+      "UPDATE temp." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, 1) "
       "WHERE type IN ('trigger', 'view')",
-      MASTER_NAME, 
       zDb, pTab->zName, iCol, zNew, bQuote
   );
 
@@ -1161,7 +1160,7 @@ static int renameEditSql(
 ** successful. Otherwise, return an SQLite error code and leave an error
 ** message in the Parse object.
 */
-static int renameResolveTrigger(Parse *pParse, const char *zDb){
+static int renameResolveTrigger(Parse *pParse){
   sqlite3 *db = pParse->db;
   Trigger *pNew = pParse->pNewTrigger;
   TriggerStep *pStep;
@@ -1192,17 +1191,22 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
       if( pParse->nErr ) rc = pParse->rc;
     }
     if( rc==SQLITE_OK && pStep->zTarget ){
-      Table *pTarget = sqlite3LocateTable(pParse, 0, pStep->zTarget, zDb);
-      if( pTarget==0 ){
-        rc = SQLITE_ERROR;
-      }else if( SQLITE_OK==(rc = sqlite3ViewGetColumnNames(pParse, pTarget)) ){
-        SrcList sSrc;
-        memset(&sSrc, 0, sizeof(sSrc));
-        sSrc.nSrc = 1;
-        sSrc.a[0].zName = pStep->zTarget;
-        sSrc.a[0].pTab = pTarget;
-        sNC.pSrcList = &sSrc;
-        if( pStep->pWhere ){
+      SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
+      if( pSrc ){
+        int i;
+        for(i=0; i<pSrc->nSrc; i++){
+          struct SrcList_item *p = &pSrc->a[i];
+          p->pTab = sqlite3LocateTableItem(pParse, 0, p);
+          p->iCursor = pParse->nTab++;
+          if( p->pTab==0 ){
+            rc = SQLITE_ERROR;
+          }else{
+            p->pTab->nTabRef++;
+            rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
+          }
+        }
+        sNC.pSrcList = pSrc;
+        if( rc==SQLITE_OK && pStep->pWhere ){
           rc = sqlite3ResolveExprNames(&sNC, pStep->pWhere);
         }
         if( rc==SQLITE_OK ){
@@ -1212,7 +1216,7 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
         if( pStep->pUpsert ){
           Upsert *pUpsert = pStep->pUpsert;
           assert( rc==SQLITE_OK );
-          pUpsert->pUpsertSrc = &sSrc;
+          pUpsert->pUpsertSrc = pSrc;
           sNC.uNC.pUpsert = pUpsert;
           sNC.ncFlags = NC_UUpsert;
           rc = sqlite3ResolveExprListNames(&sNC, pUpsert->pUpsertTarget);
@@ -1229,6 +1233,9 @@ static int renameResolveTrigger(Parse *pParse, const char *zDb){
           sNC.ncFlags = 0;
         }
         sNC.pSrcList = 0;
+        sqlite3SrcListDelete(db, pSrc);
+      }else{
+        rc = SQLITE_NOMEM;
       }
     }
   }
@@ -1415,7 +1422,7 @@ static void renameColumnFunc(
   }else{
     /* A trigger */
     TriggerStep *pStep;
-    rc = renameResolveTrigger(&sParse, (bTemp ? 0 : zDb));
+    rc = renameResolveTrigger(&sParse);
     if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
 
     for(pStep=sParse.pNewTrigger->step_list; pStep; pStep=pStep->pNext){
@@ -1618,7 +1625,7 @@ static void renameTableFunc(
         }
 
         if( isLegacy==0 ){
-          rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+          rc = renameResolveTrigger(&sParse);
           if( rc==SQLITE_OK ){
             renameWalkTrigger(&sWalker, pTrigger);
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
@@ -1705,7 +1712,7 @@ static void renameTableTest(
 
       else if( sParse.pNewTrigger ){
         if( isLegacy==0 ){
-          rc = renameResolveTrigger(&sParse, bTemp ? 0 : zDb);
+          rc = renameResolveTrigger(&sParse);
         }
         if( rc==SQLITE_OK ){
           int i1 = sqlite3SchemaToIndex(db, sParse.pNewTrigger->pTabSchema);

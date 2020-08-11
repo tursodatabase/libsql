@@ -1930,6 +1930,7 @@ do_test pager1-18.4 {
   catchsql { SELECT length(x||'') FROM t2 } db2
 } {1 {database disk image is malformed}}
 db2 close
+extra_schema_checks 0
 do_test pager1-18.5 {
   sqlite3 db ""
   sqlite3_db_config db DEFENSIVE 0
@@ -1944,6 +1945,7 @@ do_test pager1-18.5 {
   catchsql { SELECT * FROM x1 }
 } {1 {database disk image is malformed}}
 db close
+extra_schema_checks 1
 
 do_test pager1-18.6 {
   faultsim_delete_and_reopen

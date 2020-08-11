@@ -300,6 +300,11 @@ sqlite3_uint64 sqlite3NProfileCnt = 0;
 int sqlite3PendingByte = 0x40000000;
 #endif
 
+/*
+** Flags for select tracing and the ".selecttrace" macro of the CLI
+*/
+u32 sqlite3_unsupported_selecttrace = 0;
+
 #include "opcodes.h"
 /*
 ** Properties of opcodes.  The OPFLG_INITIALIZER macro is

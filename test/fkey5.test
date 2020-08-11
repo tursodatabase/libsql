@@ -15,10 +15,10 @@
 # EVIDENCE-OF: R-15402-03103 PRAGMA schema.foreign_key_check; PRAGMA
 # schema.foreign_key_check(table-name);
 #
-# EVIDENCE-OF: R-23918-17301 The foreign_key_check pragma checks the
+# EVIDENCE-OF: R-41653-15278 The foreign_key_check pragma checks the
 # database, or the table called "table-name", for foreign key
-# constraints that are violated and returns one row of output for each
-# violation.
+# constraints that are violated. The foreign_key_check pragma returns
+# one row output for each foreign key violation.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -429,5 +429,64 @@ do_execsql_test 11.0 {
 do_catchsql_test 11.1 {
   PRAGMA foreign_key_check;
 } {1 {foreign key mismatch - "c11" referencing "tt"}}
+
+# 2020-07-03 Bug in foreign_key_check discovered while working on the
+# forum reports that pragma_foreign_key_check does not accept an argument:
+# If two separate schemas seem to reference one another, that causes
+# problems for foreign_key_check.
+#
+reset_db
+do_execsql_test 12.0 {
+  ATTACH ':memory:' as aux;
+  CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b TEXT REFERENCES t2);
+  CREATE TABLE main.t2(x TEXT PRIMARY KEY, y INT);
+  INSERT INTO main.t2 VALUES('abc',11),('def',22),('xyz',99);
+  INSERT INTO aux.t1 VALUES(5,'abc'),(7,'xyz'),(9,'oops');
+  PRAGMA foreign_key_check=t1;
+} {t1 5 t2 0 t1 7 t2 0 t1 9 t2 0}
+do_execsql_test 12.1 {
+  CREATE TABLE aux.t2(x TEXT PRIMARY KEY, y INT);
+  INSERT INTO aux.t2 VALUES('abc',11),('def',22),('xyz',99);
+  PRAGMA foreign_key_check=t1;
+} {t1 9 t2 0}
+
+# 2020-07-03: the pragma_foreign_key_check virtual table should
+# accept arguments for the table name and/or schema name.
+#
+ifcapable vtab {
+  do_execsql_test 13.0 {
+    SELECT *, 'x' FROM pragma_foreign_key_check('t1');
+  } {t1 9 t2 0 x}
+  do_catchsql_test 13.1 {
+    SELECT *, 'x' FROM pragma_foreign_key_check('t1','main');
+  } {1 {no such table: main.t1}}
+  do_execsql_test 13.2 {
+    SELECT *, 'x' FROM pragma_foreign_key_check('t1','aux');
+  } {t1 9 t2 0 x}
+}
+
+ifcapable vtab {
+  reset_db
+    do_execsql_test 13.10 {
+      PRAGMA foreign_keys=OFF;
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT REFERENCES t2);
+      CREATE TABLE t2(x TEXT PRIMARY KEY, y INT);
+      CREATE TABLE t3(w TEXT, z INT REFERENCES t1);
+      INSERT INTO t2 VALUES('abc',11),('def',22),('xyz',99);
+      INSERT INTO t1 VALUES(5,'abc'),(7,'xyz'),(9,'oops');
+      INSERT INTO t3 VALUES(11,7),(22,19);
+    } {}
+  do_execsql_test 13.11 {
+    SELECT x.*, '|'
+      FROM sqlite_schema, pragma_foreign_key_check(name) AS x
+      WHERE type='table'
+      ORDER BY x."table";
+  } {t1 9 t2 0 | t3 2 t1 0 |}
+  do_execsql_test 13.12 {
+    SELECT *, '|'
+      FROM pragma_foreign_key_check AS x
+      ORDER BY x."table";
+  } {t1 9 t2 0 | t3 2 t1 0 |}
+}
 
 finish_test

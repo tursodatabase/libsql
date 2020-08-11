@@ -73,7 +73,7 @@ static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   }
 #endif
   if( db->mTrace & SQLITE_TRACE_PROFILE ){
-    db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
+    db->trace.xV2(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
   }
   p->startTime = 0;
 }
@@ -655,6 +655,13 @@ static int sqlite3Step(Vdbe *p){
   if( p->pc<0 && p->expired ){
     p->rc = SQLITE_SCHEMA;
     rc = SQLITE_ERROR;
+    if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 ){
+      /* If this statement was prepared using saved SQL and an 
+      ** error has occurred, then return the error code in p->rc to the
+      ** caller. Set the error code in the database handle to the same value.
+      */ 
+      rc = sqlite3VdbeTransferError(p);
+    }
     goto end_of_step;
   }
   if( p->pc<0 ){
@@ -710,35 +717,27 @@ static int sqlite3Step(Vdbe *p){
       if( p->rc!=SQLITE_OK ){
         rc = SQLITE_ERROR;
       }
+    }else if( rc!=SQLITE_DONE && (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 ){
+      /* If this statement was prepared using saved SQL and an 
+      ** error has occurred, then return the error code in p->rc to the
+      ** caller. Set the error code in the database handle to the same value.
+      */ 
+      rc = sqlite3VdbeTransferError(p);
     }
   }
 
   db->errCode = rc;
   if( SQLITE_NOMEM==sqlite3ApiExit(p->db, p->rc) ){
     p->rc = SQLITE_NOMEM_BKPT;
+    if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 ) rc = p->rc;
   }
 end_of_step:
-  /* At this point local variable rc holds the value that should be 
-  ** returned if this statement was compiled using the legacy 
-  ** sqlite3_prepare() interface. According to the docs, this can only
-  ** be one of the values in the first assert() below. Variable p->rc 
-  ** contains the value that would be returned if sqlite3_finalize() 
-  ** were called on statement p.
-  */
-  assert( rc==SQLITE_ROW  || rc==SQLITE_DONE   || rc==SQLITE_ERROR 
+  /* There are only a limited number of result codes allowed from the
+  ** statements prepared using the legacy sqlite3_prepare() interface */
+  assert( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0
+       || rc==SQLITE_ROW  || rc==SQLITE_DONE   || rc==SQLITE_ERROR 
        || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
-  assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
-  if( rc!=SQLITE_ROW 
-   && rc!=SQLITE_DONE
-   && (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0
-  ){
-    /* If this statement was prepared using saved SQL and an 
-    ** error has occurred, then return the error code in p->rc to the
-    ** caller. Set the error code in the database handle to the same value.
-    */ 
-    rc = sqlite3VdbeTransferError(p);
-  }
   return (rc&db->errMask);
 }
 

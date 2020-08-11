@@ -166,7 +166,7 @@ static void scrubBackupOpenSrc(ScrubState *p){
                       sqlite3_errmsg(p->dbSrc));
     return;
   }
-  p->rcErr = sqlite3_exec(p->dbSrc, "SELECT 1 FROM sqlite_master; BEGIN;",
+  p->rcErr = sqlite3_exec(p->dbSrc, "SELECT 1 FROM sqlite_schema; BEGIN;",
                           0, 0, 0);
   if( p->rcErr ){
     scrubBackupErr(p,
@@ -535,7 +535,7 @@ int sqlite3_scrub_backup(
   /* Copy all of the btrees */
   scrubBackupBtree(&s, 1, 0);
   pStmt = scrubBackupPrepare(&s, s.dbSrc,
-       "SELECT rootpage FROM sqlite_master WHERE coalesce(rootpage,0)>0");
+       "SELECT rootpage FROM sqlite_schema WHERE coalesce(rootpage,0)>0");
   if( pStmt==0 ) goto scrub_abort;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     i = (u32)sqlite3_column_int(pStmt, 0);

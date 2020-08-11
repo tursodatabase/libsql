@@ -100,7 +100,7 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
 
 #ifndef SQLITE_AMALGAMATION
 /* IMPLEMENTATION-OF: R-46656-45156 The sqlite3_version[] string constant
-** contains the text of SQLITE_VERSION macro. 
+** contains the text of SQLITE_VERSION macro.
 */
 const char sqlite3_version[] = SQLITE_VERSION;
 #endif
@@ -201,7 +201,7 @@ char *sqlite3_data_directory = 0;
 **       without blocking.
 */
 int sqlite3_initialize(void){
-  MUTEX_LOGIC( sqlite3_mutex *pMaster; )       /* The main static mutex */
+  MUTEX_LOGIC( sqlite3_mutex *pMainMtx; )      /* The main static mutex */
   int rc;                                      /* Result code */
 #ifdef SQLITE_EXTRA_INIT
   int bRunExtraInit = 0;                       /* Extra initialization needed */
@@ -241,13 +241,13 @@ int sqlite3_initialize(void){
   if( rc ) return rc;
 
   /* Initialize the malloc() system and the recursive pInitMutex mutex.
-  ** This operation is protected by the STATIC_MASTER mutex.  Note that
+  ** This operation is protected by the STATIC_MAIN mutex.  Note that
   ** MutexAlloc() is called for a static mutex prior to initializing the
   ** malloc subsystem - this implies that the allocation of a static
   ** mutex must not require support from the malloc subsystem.
   */
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
-  sqlite3_mutex_enter(pMaster);
+  MUTEX_LOGIC( pMainMtx = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN); )
+  sqlite3_mutex_enter(pMainMtx);
   sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
     rc = sqlite3MallocInit();
@@ -265,7 +265,7 @@ int sqlite3_initialize(void){
   if( rc==SQLITE_OK ){
     sqlite3GlobalConfig.nRefInitMutex++;
   }
-  sqlite3_mutex_leave(pMaster);
+  sqlite3_mutex_leave(pMainMtx);
 
   /* If rc is not SQLITE_OK at this point, then either the malloc
   ** subsystem could not be initialized or the system failed to allocate
@@ -326,14 +326,14 @@ int sqlite3_initialize(void){
   /* Go back under the static mutex and clean up the recursive
   ** mutex to prevent a resource leak.
   */
-  sqlite3_mutex_enter(pMaster);
+  sqlite3_mutex_enter(pMainMtx);
   sqlite3GlobalConfig.nRefInitMutex--;
   if( sqlite3GlobalConfig.nRefInitMutex<=0 ){
     assert( sqlite3GlobalConfig.nRefInitMutex==0 );
     sqlite3_mutex_free(sqlite3GlobalConfig.pInitMutex);
     sqlite3GlobalConfig.pInitMutex = 0;
   }
-  sqlite3_mutex_leave(pMaster);
+  sqlite3_mutex_leave(pMainMtx);
 
   /* The following is just a sanity check to make sure SQLite has
   ** been compiled correctly.  It is important to run this code, but
@@ -1213,7 +1213,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   }
   sqlite3_mutex_enter(db->mutex);
   if( db->mTrace & SQLITE_TRACE_CLOSE ){
-    db->xTrace(SQLITE_TRACE_CLOSE, db->pTraceArg, db, 0);
+    db->trace.xV2(SQLITE_TRACE_CLOSE, db->pTraceArg, db, 0);
   }
 
   /* Force xDisconnect calls on all virtual tables */
@@ -2103,7 +2103,7 @@ void *sqlite3_trace(sqlite3 *db, void(*xTrace)(void*,const char*), void *pArg){
   sqlite3_mutex_enter(db->mutex);
   pOld = db->pTraceArg;
   db->mTrace = xTrace ? SQLITE_TRACE_LEGACY : 0;
-  db->xTrace = (int(*)(u32,void*,void*,void*))xTrace;
+  db->trace.xLegacy = xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return pOld;
@@ -2127,7 +2127,7 @@ int sqlite3_trace_v2(
   if( mTrace==0 ) xTrace = 0;
   if( xTrace==0 ) mTrace = 0;
   db->mTrace = mTrace;
-  db->xTrace = xTrace;
+  db->trace.xV2 = xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
@@ -3124,7 +3124,7 @@ static int openDatabase(
                SQLITE_OPEN_MAIN_JOURNAL | 
                SQLITE_OPEN_TEMP_JOURNAL | 
                SQLITE_OPEN_SUBJOURNAL | 
-               SQLITE_OPEN_MASTER_JOURNAL |
+               SQLITE_OPEN_SUPER_JOURNAL |
                SQLITE_OPEN_NOMUTEX |
                SQLITE_OPEN_FULLMUTEX |
                SQLITE_OPEN_WAL
@@ -4117,8 +4117,14 @@ int sqlite3_test_control(int op, ...){
     /*   sqlite3_test_control(SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS, int);
     **
     ** Set or clear a flag that causes SQLite to verify that type, name,
-    ** and tbl_name fields of the sqlite_master table.  This is normally
+    ** and tbl_name fields of the sqlite_schema table.  This is normally
     ** on, but it is sometimes useful to turn it off for testing.
+    **
+    ** 2020-07-22:  Disabling EXTRA_SCHEMA_CHECKS also disables the
+    ** verification of rootpage numbers when parsing the schema.  This
+    ** is useful to make it easier to reach strange internal error states
+    ** during testing.  The EXTRA_SCHEMA_CHECKS settting is always enabled
+    ** in production.
     */
     case SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS: {
       sqlite3GlobalConfig.bExtraSchemaChecks = va_arg(ap, int);

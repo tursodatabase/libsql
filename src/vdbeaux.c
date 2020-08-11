@@ -810,7 +810,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       switch( pOp->opcode ){
         case OP_Transaction: {
           if( pOp->p2!=0 ) p->readOnly = 0;
-          /* fall thru */
+          /* no break */ deliberate_fall_through
         }
         case OP_AutoCommit:
         case OP_Savepoint: {
@@ -857,6 +857,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           n = pOp[-1].p1;
           if( n>nMaxArgs ) nMaxArgs = n;
           /* Fall through into the default case */
+          /* no break */ deliberate_fall_through
         }
 #endif
         default: {
@@ -1714,12 +1715,12 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     }
 #endif
     case P4_INTARRAY: {
-      int i;
-      int *ai = pOp->p4.ai;
-      int n = ai[0];   /* The first element of an INTARRAY is always the
+      u32 i;
+      u32 *ai = pOp->p4.ai;
+      u32 n = ai[0];   /* The first element of an INTARRAY is always the
                        ** count of the number of elements to follow */
       for(i=1; i<=n; i++){
-        sqlite3_str_appendf(&x, "%c%d", (i==1 ? '[' : ','), ai[i]);
+        sqlite3_str_appendf(&x, "%c%u", (i==1 ? '[' : ','), ai[i]);
       }
       sqlite3_str_append(&x, "]", 1);
       break;
@@ -2631,13 +2632,13 @@ int sqlite3VdbeSetColName(
 ** A read or write transaction may or may not be active on database handle
 ** db. If a transaction is active, commit it. If there is a
 ** write-transaction spanning more than one database file, this routine
-** takes care of the master journal trickery.
+** takes care of the super-journal trickery.
 */
 static int vdbeCommit(sqlite3 *db, Vdbe *p){
   int i;
   int nTrans = 0;  /* Number of databases with an active write-transaction
                    ** that are candidates for a two-phase commit using a
-                   ** master-journal */
+                   ** super-journal */
   int rc = SQLITE_OK;
   int needXcommit = 0;
 
@@ -2650,7 +2651,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
   /* Before doing anything else, call the xSync() callback for any
   ** virtual module tables written in this transaction. This has to
-  ** be done before determining whether a master journal file is 
+  ** be done before determining whether a super-journal file is 
   ** required, as an xSync() callback may add an attached database
   ** to the transaction.
   */
@@ -2659,15 +2660,15 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   /* This loop determines (a) if the commit hook should be invoked and
   ** (b) how many database files have open write transactions, not 
   ** including the temp database. (b) is important because if more than 
-  ** one database file has an open write transaction, a master journal
+  ** one database file has an open write transaction, a super-journal
   ** file is required for an atomic commit.
   */ 
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
     if( sqlite3BtreeIsInTrans(pBt) ){
-      /* Whether or not a database might need a master journal depends upon
+      /* Whether or not a database might need a super-journal depends upon
       ** its journal mode (among other things).  This matrix determines which
-      ** journal modes use a master journal and which do not */
+      ** journal modes use a super-journal and which do not */
       static const u8 aMJNeeded[] = {
         /* DELETE   */  1,
         /* PERSIST   */ 1,
@@ -2705,7 +2706,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
   /* The simple case - no more than one database file (not counting the
   ** TEMP database) has a transaction active.   There is no need for the
-  ** master-journal.
+  ** super-journal.
   **
   ** If the return value of sqlite3BtreeGetFilename() is a zero length
   ** string, it means the main database is :memory: or a temp file.  In 
@@ -2739,62 +2740,62 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   }
 
   /* The complex case - There is a multi-file write-transaction active.
-  ** This requires a master journal file to ensure the transaction is
+  ** This requires a super-journal file to ensure the transaction is
   ** committed atomically.
   */
 #ifndef SQLITE_OMIT_DISKIO
   else{
     sqlite3_vfs *pVfs = db->pVfs;
-    char *zMaster = 0;   /* File-name for the master journal */
+    char *zSuper = 0;   /* File-name for the super-journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
-    sqlite3_file *pMaster = 0;
+    sqlite3_file *pSuperJrnl = 0;
     i64 offset = 0;
     int res;
     int retryCount = 0;
     int nMainFile;
 
-    /* Select a master journal file name */
+    /* Select a super-journal file name */
     nMainFile = sqlite3Strlen30(zMainFile);
-    zMaster = sqlite3MPrintf(db, "%.4c%s%.16c", 0,zMainFile,0);
-    if( zMaster==0 ) return SQLITE_NOMEM_BKPT;
-    zMaster += 4;
+    zSuper = sqlite3MPrintf(db, "%.4c%s%.16c", 0,zMainFile,0);
+    if( zSuper==0 ) return SQLITE_NOMEM_BKPT;
+    zSuper += 4;
     do {
       u32 iRandom;
       if( retryCount ){
         if( retryCount>100 ){
-          sqlite3_log(SQLITE_FULL, "MJ delete: %s", zMaster);
-          sqlite3OsDelete(pVfs, zMaster, 0);
+          sqlite3_log(SQLITE_FULL, "MJ delete: %s", zSuper);
+          sqlite3OsDelete(pVfs, zSuper, 0);
           break;
         }else if( retryCount==1 ){
-          sqlite3_log(SQLITE_FULL, "MJ collide: %s", zMaster);
+          sqlite3_log(SQLITE_FULL, "MJ collide: %s", zSuper);
         }
       }
       retryCount++;
       sqlite3_randomness(sizeof(iRandom), &iRandom);
-      sqlite3_snprintf(13, &zMaster[nMainFile], "-mj%06X9%02X",
+      sqlite3_snprintf(13, &zSuper[nMainFile], "-mj%06X9%02X",
                                (iRandom>>8)&0xffffff, iRandom&0xff);
-      /* The antipenultimate character of the master journal name must
+      /* The antipenultimate character of the super-journal name must
       ** be "9" to avoid name collisions when using 8+3 filenames. */
-      assert( zMaster[sqlite3Strlen30(zMaster)-3]=='9' );
-      sqlite3FileSuffix3(zMainFile, zMaster);
-      rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
+      assert( zSuper[sqlite3Strlen30(zSuper)-3]=='9' );
+      sqlite3FileSuffix3(zMainFile, zSuper);
+      rc = sqlite3OsAccess(pVfs, zSuper, SQLITE_ACCESS_EXISTS, &res);
     }while( rc==SQLITE_OK && res );
     if( rc==SQLITE_OK ){
-      /* Open the master journal. */
-      rc = sqlite3OsOpenMalloc(pVfs, zMaster, &pMaster, 
+      /* Open the super-journal. */
+      rc = sqlite3OsOpenMalloc(pVfs, zSuper, &pSuperJrnl, 
           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
-          SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL, 0
+          SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_SUPER_JOURNAL, 0
       );
     }
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, zMaster-4);
+      sqlite3DbFree(db, zSuper-4);
       return rc;
     }
  
     /* Write the name of each database file in the transaction into the new
-    ** master journal file. If an error occurs at this point close
-    ** and delete the master journal file. All the individual journal files
-    ** still have 'null' as the master journal pointer, so they will roll
+    ** super-journal file. If an error occurs at this point close
+    ** and delete the super-journal file. All the individual journal files
+    ** still have 'null' as the super-journal pointer, so they will roll
     ** back independently if a failure occurs.
     */
     for(i=0; i<db->nDb; i++){
@@ -2805,59 +2806,59 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
           continue;  /* Ignore TEMP and :memory: databases */
         }
         assert( zFile[0]!=0 );
-        rc = sqlite3OsWrite(pMaster, zFile, sqlite3Strlen30(zFile)+1, offset);
+        rc = sqlite3OsWrite(pSuperJrnl, zFile, sqlite3Strlen30(zFile)+1,offset);
         offset += sqlite3Strlen30(zFile)+1;
         if( rc!=SQLITE_OK ){
-          sqlite3OsCloseFree(pMaster);
-          sqlite3OsDelete(pVfs, zMaster, 0);
-          sqlite3DbFree(db, zMaster-4);
+          sqlite3OsCloseFree(pSuperJrnl);
+          sqlite3OsDelete(pVfs, zSuper, 0);
+          sqlite3DbFree(db, zSuper-4);
           return rc;
         }
       }
     }
 
-    /* Sync the master journal file. If the IOCAP_SEQUENTIAL device
+    /* Sync the super-journal file. If the IOCAP_SEQUENTIAL device
     ** flag is set this is not required.
     */
-    if( 0==(sqlite3OsDeviceCharacteristics(pMaster)&SQLITE_IOCAP_SEQUENTIAL)
-     && SQLITE_OK!=(rc = sqlite3OsSync(pMaster, SQLITE_SYNC_NORMAL))
+    if( 0==(sqlite3OsDeviceCharacteristics(pSuperJrnl)&SQLITE_IOCAP_SEQUENTIAL)
+     && SQLITE_OK!=(rc = sqlite3OsSync(pSuperJrnl, SQLITE_SYNC_NORMAL))
     ){
-      sqlite3OsCloseFree(pMaster);
-      sqlite3OsDelete(pVfs, zMaster, 0);
-      sqlite3DbFree(db, zMaster-4);
+      sqlite3OsCloseFree(pSuperJrnl);
+      sqlite3OsDelete(pVfs, zSuper, 0);
+      sqlite3DbFree(db, zSuper-4);
       return rc;
     }
 
     /* Sync all the db files involved in the transaction. The same call
-    ** sets the master journal pointer in each individual journal. If
-    ** an error occurs here, do not delete the master journal file.
+    ** sets the super-journal pointer in each individual journal. If
+    ** an error occurs here, do not delete the super-journal file.
     **
     ** If the error occurs during the first call to
     ** sqlite3BtreeCommitPhaseOne(), then there is a chance that the
-    ** master journal file will be orphaned. But we cannot delete it,
-    ** in case the master journal file name was written into the journal
+    ** super-journal file will be orphaned. But we cannot delete it,
+    ** in case the super-journal file name was written into the journal
     ** file before the failure occurred.
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        rc = sqlite3BtreeCommitPhaseOne(pBt, zMaster);
+        rc = sqlite3BtreeCommitPhaseOne(pBt, zSuper);
       }
     }
-    sqlite3OsCloseFree(pMaster);
+    sqlite3OsCloseFree(pSuperJrnl);
     assert( rc!=SQLITE_BUSY );
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, zMaster-4);
+      sqlite3DbFree(db, zSuper-4);
       return rc;
     }
 
-    /* Delete the master journal file. This commits the transaction. After
+    /* Delete the super-journal file. This commits the transaction. After
     ** doing this the directory is synced again before any individual
     ** transaction files are deleted.
     */
-    rc = sqlite3OsDelete(pVfs, zMaster, 1);
-    sqlite3DbFree(db, zMaster-4);
-    zMaster = 0;
+    rc = sqlite3OsDelete(pVfs, zSuper, 1);
+    sqlite3DbFree(db, zSuper-4);
+    zSuper = 0;
     if( rc ){
       return rc;
     }
@@ -3304,7 +3305,11 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   if( p->pc>=0 ){
     vdbeInvokeSqllog(p);
-    sqlite3VdbeTransferError(p);
+    if( db->pErr || p->zErrMsg ){
+      sqlite3VdbeTransferError(p);
+    }else{
+      db->errCode = p->rc;
+    }
     if( p->runOnlyOnce ) p->expired = 1;
   }else if( p->rc && p->expired ){
     /* The expired flag was set on the VDBE before the first call
@@ -3324,8 +3329,10 @@ int sqlite3VdbeReset(Vdbe *p){
     for(i=0; i<p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
   }
 #endif
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = 0;
+  if( p->zErrMsg ){
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = 0;
+  }
   p->pResultSet = 0;
 #ifdef SQLITE_DEBUG
   p->nWrite = 0;
@@ -3557,11 +3564,11 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** If the cursor is already pointing to the correct row and that row has
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
-int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
+int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
   VdbeCursor *p = *pp;
   assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
   if( p->deferredMoveto ){
-    int iMap;
+    u32 iMap;
     if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;

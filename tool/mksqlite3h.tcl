@@ -107,7 +107,7 @@ foreach file $filelist {
   }
   while {![eof $in]} {
 
-    set line [gets $in]
+    set line [string trimright [gets $in]]
 
     # File sqlite3rtree.h contains a line "#include <sqlite3.h>". Omit this
     # line when copying sqlite3rtree.h into sqlite3.h.

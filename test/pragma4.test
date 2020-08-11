@@ -120,8 +120,15 @@ do_test 4.1.4 {
   sqlite3 db2 test.db2
   execsql { DROP TABLE t1 } db3
   execsql { DROP TABLE t2 } db2
-} {}
-do_execsql_test 4.1.5 { PRAGMA table_info(t1) }
+} {}  
+if {[permutation]=="prepare"} {
+  do_catchsql_test 4.1.5a { 
+    PRAGMA table_info(t1) 
+  } {1 {database schema has changed}}
+}
+do_execsql_test 4.1.5 { 
+  PRAGMA table_info(t1) 
+}
 do_execsql_test 4.1.6 { PRAGMA table_info(t2) }
 
 db2 close

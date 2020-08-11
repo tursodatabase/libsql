@@ -17,6 +17,11 @@
 #include "sqliteInt.h"
 
 /*
+** Magic table number to mean the EXCLUDED table in an UPSERT statement.
+*/
+#define EXCLUDED_TABLE_NUMBER  2
+
+/*
 ** Walk the expression tree pExpr and increase the aggregate function
 ** depth (the Expr.op2 field) by N on every TK_AGG_FUNCTION node.
 ** This needs to occur when copying a TK_AGG_FUNCTION node from an
@@ -386,7 +391,7 @@ static int lookupName(
         Upsert *pUpsert = pNC->uNC.pUpsert;
         if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
           pTab = pUpsert->pUpsertSrc->a[0].pTab;
-          pExpr->iTable = 2;
+          pExpr->iTable = EXCLUDED_TABLE_NUMBER;
         }
       }
 #endif /* SQLITE_OMIT_UPSERT */
@@ -411,14 +416,15 @@ static int lookupName(
         if( iCol<pTab->nCol ){
           cnt++;
 #ifndef SQLITE_OMIT_UPSERT
-          if( pExpr->iTable==2 ){
+          if( pExpr->iTable==EXCLUDED_TABLE_NUMBER ){
             testcase( iCol==(-1) );
             if( IN_RENAME_OBJECT ){
               pExpr->iColumn = iCol;
               pExpr->y.pTab = pTab;
               eNewExprOp = TK_COLUMN;
             }else{
-              pExpr->iTable = pNC->uNC.pUpsert->regData + iCol;
+              pExpr->iTable = pNC->uNC.pUpsert->regData +
+                 sqlite3TableColumnToStorage(pTab, iCol);
               eNewExprOp = TK_REGISTER;
               ExprSetProperty(pExpr, EP_Alias);
             }
@@ -750,26 +756,23 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
   switch( pExpr->op ){
 
-#if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY)
     /* The special operator TK_ROW means use the rowid for the first
     ** column in the FROM clause.  This is used by the LIMIT and ORDER BY
-    ** clause processing on UPDATE and DELETE statements.
+    ** clause processing on UPDATE and DELETE statements, and by 
+    ** UPDATE ... FROM statement processing.
     */
     case TK_ROW: {
       SrcList *pSrcList = pNC->pSrcList;
       struct SrcList_item *pItem;
-      assert( pSrcList && pSrcList->nSrc==1 );
+      assert( pSrcList && pSrcList->nSrc>=1 );
       pItem = pSrcList->a;
-      assert( HasRowid(pItem->pTab) && pItem->pTab->pSelect==0 );
       pExpr->op = TK_COLUMN;
       pExpr->y.pTab = pItem->pTab;
       pExpr->iTable = pItem->iCursor;
-      pExpr->iColumn = -1;
+      pExpr->iColumn--;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
       break;
     }
-#endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT)
-          && !defined(SQLITE_OMIT_SUBQUERY) */
 
     /* A column name:                    ID
     ** Or table name and column name:    ID.ID
@@ -1081,7 +1084,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Continue;
         }
       }
-      /* Fall thru */
+      /* no break */ deliberate_fall_through
     }
     case TK_BETWEEN:
     case TK_EQ:

@@ -155,5 +155,29 @@ do_test 3.2 {
   compare_db db db2
 } {}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+}
+
+do_invert_test 4.1 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1, 'two');
+  INSERT INTO t1 VALUES(2, 'five');
+  INSERT INTO t1 VALUES(3, 'one');
+  INSERT INTO t1 VALUES(4, 'three');
+} {
+  {UPDATE t1 0 X. {i 1 t two} {{} {} t one}}
+  {UPDATE t1 0 X. {i 2 t five} {{} {} t two}}
+  {UPDATE t1 0 X. {i 3 t one} {{} {} t three}} 
+  {UPDATE t1 0 X. {i 4 t three} {{} {} t four}}
+}
+
 
 finish_test

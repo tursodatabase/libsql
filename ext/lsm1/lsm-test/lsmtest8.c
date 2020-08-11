@@ -322,5 +322,3 @@ void do_writer_crash_test(const char *zPattern, int *pRc){
   }
 
 }
-
-

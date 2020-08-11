@@ -69,7 +69,3 @@ int do_bt(int nArg, char **azArg){
   sqlite4_buffer_clear(&buf.output);
   return 0;
 }
-
-
-
-

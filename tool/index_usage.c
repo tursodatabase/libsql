@@ -104,7 +104,7 @@ int main(int argc, char **argv){
     printf("Cannot open \"%s\" for reading: %s\n", argv[1], sqlite3_errmsg(db));
     goto errorOut;
   }
-  rc = sqlite3_prepare_v2(db, "SELECT * FROM sqlite_master", -1, &pStmt, 0);
+  rc = sqlite3_prepare_v2(db, "SELECT * FROM sqlite_schema", -1, &pStmt, 0);
   if( rc ){
     printf("Cannot read the schema from \"%s\" - %s\n", argv[1],
            sqlite3_errmsg(db));
@@ -126,7 +126,7 @@ int main(int argc, char **argv){
   }
   rc = sqlite3_exec(db,
      "INSERT INTO temp.idxu(tbl,idx,cnt)"
-     " SELECT tbl_name, name, 0 FROM sqlite_master"
+     " SELECT tbl_name, name, 0 FROM sqlite_schema"
      " WHERE type='index' AND sql IS NOT NULL", 0, 0, 0);
 
   /* Open the LOG database */
@@ -205,9 +205,9 @@ int main(int argc, char **argv){
   rc = sqlite3_prepare_v2(db,
      "SELECT tbl, idx, cnt, "
      "   (SELECT group_concat(name,',') FROM pragma_index_info(idx))"
-     " FROM temp.idxu, main.sqlite_master"
-     " WHERE temp.idxu.tbl=main.sqlite_master.tbl_name"
-     "   AND temp.idxu.idx=main.sqlite_master.name"
+     " FROM temp.idxu, main.sqlite_schema"
+     " WHERE temp.idxu.tbl=main.sqlite_schema.tbl_name"
+     "   AND temp.idxu.idx=main.sqlite_schema.name"
      " ORDER BY cnt DESC, tbl, idx",
      -1, &pStmt, 0);
   if( rc ){

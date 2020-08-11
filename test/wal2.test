@@ -122,8 +122,12 @@ do_test wal2-1.1 {
 } {4 10}
 
 set RECOVER [list                                      \
-  {0 1 lock exclusive}   {1 2 lock exclusive} {4 4 lock exclusive} \
-  {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}  \
+  {0 1 lock exclusive}   {1 2 lock exclusive}          \
+  {4 1 lock exclusive}   {4 1 unlock exclusive}        \
+  {5 1 lock exclusive}   {5 1 unlock exclusive}        \
+  {6 1 lock exclusive}   {6 1 unlock exclusive}        \
+  {7 1 lock exclusive}   {7 1 unlock exclusive}        \
+  {1 2 unlock exclusive} {0 1 unlock exclusive}        \
 ]
 set READ [list                                         \
   {4 1 lock shared}    {4 1 unlock shared}             \
@@ -394,9 +398,17 @@ set expected_locks [list]
 lappend expected_locks {1 1 lock exclusive}   ;# Lock checkpoint
 lappend expected_locks {0 1 lock exclusive}   ;# Lock writer
 lappend expected_locks {2 1 lock exclusive}   ;# Lock recovery
-lappend expected_locks {4 4 lock exclusive}   ;# Lock all aReadMark[]
+# lappend expected_locks {4 4 lock exclusive}   ;# Lock all aReadMark[]
+lappend expected_locks {4 1 lock exclusive}   ;# Lock aReadMark[1]
+lappend expected_locks {4 1 unlock exclusive} ;# Unlock aReadMark[1]
+lappend expected_locks {5 1 lock exclusive}  
+lappend expected_locks {5 1 unlock exclusive}
+lappend expected_locks {6 1 lock exclusive} 
+lappend expected_locks {6 1 unlock exclusive}
+lappend expected_locks {7 1 lock exclusive} 
+lappend expected_locks {7 1 unlock exclusive}
 lappend expected_locks {2 1 unlock exclusive} ;# Unlock recovery 
-lappend expected_locks {4 4 unlock exclusive} ;# Unlock all aReadMark[] 
+# lappend expected_locks {4 4 unlock exclusive} ;# Unlock all aReadMark[] 
 lappend expected_locks {0 1 unlock exclusive} ;# Unlock writer
 lappend expected_locks {3 1 lock exclusive}   ;# Lock aReadMark[0]
 lappend expected_locks {3 1 unlock exclusive} ;# Unlock aReadMark[0]
@@ -625,8 +637,12 @@ do_test wal2-6.4.1 {
 } {}
 
 set RECOVERY {
-  {0 1 lock exclusive} {1 2 lock exclusive} {4 4 lock exclusive}
-  {1 2 unlock exclusive} {4 4 unlock exclusive} {0 1 unlock exclusive}
+  {0 1 lock exclusive}   {1 2 lock exclusive}
+  {4 1 lock exclusive}   {4 1 unlock exclusive}
+  {5 1 lock exclusive}   {5 1 unlock exclusive}
+  {6 1 lock exclusive}   {6 1 unlock exclusive}
+  {7 1 lock exclusive}   {7 1 unlock exclusive}
+  {1 2 unlock exclusive} {0 1 unlock exclusive}
 }
 set READMARK0_READ {
   {3 1 lock shared} {3 1 unlock shared}

@@ -1359,6 +1359,7 @@ static Trigger *fkActionTrigger(
           pStep->op = TK_DELETE; 
           break; 
         }
+        /* no break */ deliberate_fall_through
       default:
         pStep->op = TK_UPDATE;
     }

@@ -171,6 +171,12 @@ test_suite "veryquick" -prefix "" -description {
       *fts5corrupt* *fts5big* *fts5aj*
 ]
 
+test_suite "shell" -prefix "" -description {
+  Run tests of the command-line shell
+} -files [
+  test_set [glob $testdir/shell*.test]
+]
+
 test_suite "extraquick" -prefix "" -description {
   "Extra" quick test suite. Runs in a few minutes on a workstation.
   This test suite is the same as the "veryquick" tests, except that
@@ -968,6 +974,7 @@ test_suite "journaltest" -description {
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
   delete_db.test shmlock.test chunksize.test
+  busy2.test
 }]
 
 if {[info commands register_demovfs] != ""} {

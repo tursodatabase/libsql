@@ -30,7 +30,7 @@
 extern const char *sqlite3ErrName(int);
 
 static const char *aName[MAX_MUTEXES+1] = {
-  "fast",        "recursive",   "static_master", "static_mem",
+  "fast",        "recursive",   "static_main",   "static_mem",
   "static_open", "static_prng", "static_lru",    "static_pmem",
   "static_app1", "static_app2", "static_app3",   "static_vfs1",
   "static_vfs2", "static_vfs3", 0
