@@ -390,6 +390,7 @@ do_test 7.3.4 {
 #
 db close
 db2 close
+breakpoint
 sqlite3 db test.db
 sqlite3 db2 test.db
 do_test 7.4.1 {

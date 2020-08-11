@@ -142,9 +142,8 @@ do_test hook-4.1.1a {
   set ::update_hook {}
   db update_hook [list lappend ::update_hook]
   #
-  # EVIDENCE-OF: R-52223-27275 The update hook is not invoked when
-  # internal system tables are modified (i.e. sqlite_master and
-  # sqlite_sequence).
+  # EVIDENCE-OF: R-24531-54682 The update hook is not invoked when
+  # internal system tables are modified (i.e. sqlite_sequence).
   #
   execsql {
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
