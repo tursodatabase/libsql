@@ -15,7 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set ::testprefix concreport
 
-ifcapable !concurrent {
+ifcapable !concurrent||!preupdate {
   finish_test
   return
 }
