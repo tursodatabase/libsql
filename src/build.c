@@ -4090,7 +4090,7 @@ void sqlite3DefaultRowEst(Index *pIdx){
   ** table but other parts we are having to guess at, then do not let the
   ** estimated number of rows in the table be less than 1000 (LogEst 99).
   ** Failure to do this can cause the indexes for which we do not have
-  ** stat1 data to be ignored by the query planner.  tag-20200527-1
+  ** stat1 data to be ignored by the query planner.
   */
   x = pIdx->pTable->nRowLogEst;
   assert( 99==sqlite3LogEst(1000) );
