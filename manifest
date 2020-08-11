@@ -1,5 +1,5 @@
-C Minor\scomment\sfixes.\s\sNo\schanges\sto\scode.
-D 2020-08-11T17:20:02.711
+C Modify\sa\stest\sfor\scorruption\swithin\sthe\swal\scheckpoint\scode\sto\saccount\sfor\sthe\spending-byte\spage.\sAnd\sfor\sthe\sfact\sthat\stest\sconfigurations\smight\smove\sthe\spending-byte\spage.
+D 2020-08-11T18:00:10.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/sqliteLimit.h 95cb8479ca459496d9c1c6a9f76b38aee12203a56ce1092fe13e50ae2454
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c 77d0bf0140d92e5e8234dd3e158a985fc905e5bd9d94254370d4e9421f7c2224
+F src/test1.c 24b9cd0863ecc4d3920f4999c40e876c2bd92f3cc5879c48b99abe02c546ed18
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -619,7 +619,7 @@ F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 7a05a519a02ffb7f2a458838a25853c7300c9e6d9ef546ee48469378ac0404f9
+F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
@@ -783,7 +783,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test e1a85214e2448ed0baa1810af86ff94d6c359d2677e4867780786d0c61546484
+F test/corruptL.test 22589f503602cc5984e80f27f46c4de2134f24f1515ba2440513c377cb692258
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/cost.test 1d156ce9858780a966c062694687afe0343a0ed12d081d071fb57027e726bafc
 F test/count.test e0699a15712bc2a4679d60e408921c2cce7f6365a30340e790c98e0f334a9c77
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d5b254f94c1ce6f0f26024d0b9c80e610f7cc891360bc4c2cb116e9eda2874b3
-R df927782b8411ddf7d3d371ea015b43c
-U drh
-Z 03fa51f515ce3c4ab5e735dd4415ee00
+P 533aeb90085d989078073067172135db98e37e00be84f99757255858126196e4
+R 2c637809b649b47bb6f5ba118bc14d49
+U dan
+Z be5abcf06cbc6df3ec62ac1d3464aae6

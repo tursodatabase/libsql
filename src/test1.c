@@ -7803,6 +7803,41 @@ static int SQLITE_TCLAPI test_mmap_warm(
 }
 
 /*
+** Usage:  test_write_db DB OFFSET DATA
+**
+** Obtain the sqlite3_file* object for the database file for the "main" db
+** of handle DB. Then invoke its xWrite method to write data DATA to offset
+** OFFSET.
+*/
+static int SQLITE_TCLAPI test_write_db(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+  Tcl_WideInt iOff = 0;
+  const unsigned char *aData = 0;
+  int nData = 0;
+  sqlite3_file *pFile = 0;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB OFFSET DATA");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[2], &iOff) ) return TCL_ERROR;
+  aData = Tcl_GetByteArrayFromObj(objv[3], &nData);
+
+  sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFile);
+  rc = pFile->pMethods->xWrite(pFile, aData, nData, iOff);
+
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  decode_hexdb TEXT
 **
 ** Example:   db deserialize [decode_hexdb $output_of_dbtotxt]
@@ -8166,6 +8201,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
      { "decode_hexdb",             test_decode_hexdb,       0 },
+     { "test_write_db",            test_write_db,           0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
