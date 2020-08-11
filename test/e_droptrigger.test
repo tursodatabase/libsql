@@ -127,8 +127,8 @@ foreach {tn tbl droptrigger before after} {
   } $after
 }
 
-# EVIDENCE-OF: R-50239-29811 Once removed, the trigger definition is no
-# longer present in the sqlite_master (or sqlite_temp_master) table and
+# EVIDENCE-OF: R-04950-25529 Once removed, the trigger definition is no
+# longer present in the sqlite_schema (or sqlite_temp_schema) table and
 # is not fired by any subsequent INSERT, UPDATE or DELETE statements.
 #
 #   Test cases e_droptrigger-1.* test the first part of this statement

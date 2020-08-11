@@ -5947,7 +5947,7 @@ static int allocateBtreePage(
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( eMode==BTALLOC_EXACT ){
-      if( ALWAYS(nearby<=mxPage) ){
+      if( nearby<=mxPage ){
         u8 eType;
         assert( nearby>0 );
         assert( pBt->autoVacuum );
@@ -6243,7 +6243,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( iPage<2 || NEVER(iPage>pBt->nPage) ){
+  if( iPage<2 || iPage>pBt->nPage ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -10262,8 +10262,8 @@ char *sqlite3BtreeIntegrityCheck(
          (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
         checkAppendMsg(&sCheck, "Pointer map page %d is referenced", i);
       }
-    }
 #endif
+    }
   }
 
   /* Clean  up and report errors.

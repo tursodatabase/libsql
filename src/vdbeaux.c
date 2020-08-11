@@ -808,7 +808,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       switch( pOp->opcode ){
         case OP_Transaction: {
           if( pOp->p2!=0 ) p->readOnly = 0;
-          /* fall thru */
+          /* no break */ deliberate_fall_through
         }
         case OP_AutoCommit:
         case OP_Savepoint: {
@@ -855,6 +855,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           n = pOp[-1].p1;
           if( n>nMaxArgs ) nMaxArgs = n;
           /* Fall through into the default case */
+          /* no break */ deliberate_fall_through
         }
 #endif
         default: {

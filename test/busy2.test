@@ -60,7 +60,11 @@ do_multiclient_test tn {
   # Configure all connections to use a 1000 ms timeout.
   #
   do_test 2.$tn.0 {
+    code1 {
+      sqlite3 db1.2 test.db
+    }
     sql1 {
+      PRAGMA auto_vacuum = off;
       PRAGMA journal_mode = wal;
       CREATE TABLE t1(a, b);
       INSERT INTO t1 VALUES(1, 2);
@@ -69,7 +73,6 @@ do_multiclient_test tn {
       db2 timeout 1000
     }
     code1 {
-      sqlite3 db1.2 test.db
       db1.2 timeout 1000
       db    timeout 1000
       db1.2 eval {SELECT * FROM t1}

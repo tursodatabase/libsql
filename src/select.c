@@ -4186,7 +4186,7 @@ static int flattenSubquery(
   sqlite3SelectDelete(db, pSub1);
 
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x100 ){
+  if( sqlite3_unsupported_selecttrace & 0x100 ){
     SELECTTRACE(0x100,pParse,p,("After flattening:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -5624,7 +5624,7 @@ static void havingToWhere(Parse *pParse, Select *p){
   sWalker.u.pSelect = p;
   sqlite3WalkExpr(&sWalker, p->pHaving);
 #if SELECTTRACE_ENABLED
-  if( sWalker.eCode && (sqlite3SelectTrace & 0x100)!=0 ){
+  if( sWalker.eCode && (sqlite3_unsupported_selecttrace & 0x100)!=0 ){
     SELECTTRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -5746,7 +5746,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   p->selFlags &= ~SF_Aggregate;
 
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x400 ){
+  if( sqlite3_unsupported_selecttrace & 0x400 ){
     SELECTTRACE(0x400,pParse,p,("After count-of-view optimization:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -5799,7 +5799,7 @@ int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
-  if( sqlite3SelectTrace & 0x100 ){
+  if( sqlite3_unsupported_selecttrace & 0x100 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -5826,7 +5826,7 @@ int sqlite3Select(
   }
   assert( p->pEList!=0 );
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x104 ){
+  if( sqlite3_unsupported_selecttrace & 0x104 ){
     SELECTTRACE(0x104,pParse,p, ("after name resolution:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -5861,7 +5861,7 @@ int sqlite3Select(
     goto select_end;
   }
 #if SELECTTRACE_ENABLED
-  if( p->pWin && (sqlite3SelectTrace & 0x108)!=0 ){
+  if( p->pWin && (sqlite3_unsupported_selecttrace & 0x108)!=0 ){
     SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -5968,7 +5968,7 @@ int sqlite3Select(
     rc = multiSelect(pParse, p, pDest);
 #if SELECTTRACE_ENABLED
     SELECTTRACE(0x1,pParse,p,("end compound-select processing\n"));
-    if( (sqlite3SelectTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
+    if( (sqlite3_unsupported_selecttrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
@@ -5987,7 +5987,7 @@ int sqlite3Select(
    && propagateConstants(pParse, p)
   ){
 #if SELECTTRACE_ENABLED
-    if( sqlite3SelectTrace & 0x100 ){
+    if( sqlite3_unsupported_selecttrace & 0x100 ){
       SELECTTRACE(0x100,pParse,p,("After constant propagation:\n"));
       sqlite3TreeViewSelect(0, p, 0);
     }
@@ -6075,7 +6075,7 @@ int sqlite3Select(
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){
 #if SELECTTRACE_ENABLED
-      if( sqlite3SelectTrace & 0x100 ){
+      if( sqlite3_unsupported_selecttrace & 0x100 ){
         SELECTTRACE(0x100,pParse,p,
             ("After WHERE-clause push-down into subquery %d:\n", pSub->selId));
         sqlite3TreeViewSelect(0, p, 0);
@@ -6175,7 +6175,7 @@ int sqlite3Select(
   sDistinct.isTnct = (p->selFlags & SF_Distinct)!=0;
 
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x400 ){
+  if( sqlite3_unsupported_selecttrace & 0x400 ){
     SELECTTRACE(0x400,pParse,p,("After all FROM-clause analysis:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
@@ -6211,7 +6211,7 @@ int sqlite3Select(
     assert( sDistinct.isTnct );
 
 #if SELECTTRACE_ENABLED
-    if( sqlite3SelectTrace & 0x400 ){
+    if( sqlite3_unsupported_selecttrace & 0x400 ){
       SELECTTRACE(0x400,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
       sqlite3TreeViewSelect(0, p, 0);
     }
@@ -6459,7 +6459,7 @@ int sqlite3Select(
     pAggInfo->mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
 #if SELECTTRACE_ENABLED
-    if( sqlite3SelectTrace & 0x400 ){
+    if( sqlite3_unsupported_selecttrace & 0x400 ){
       int ii;
       SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
@@ -6878,7 +6878,7 @@ select_end:
 
 #if SELECTTRACE_ENABLED
   SELECTTRACE(0x1,pParse,p,("end processing\n"));
-  if( (sqlite3SelectTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
+  if( (sqlite3_unsupported_selecttrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif

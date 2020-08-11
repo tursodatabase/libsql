@@ -1084,7 +1084,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Continue;
         }
       }
-      /* Fall thru */
+      /* no break */ deliberate_fall_through
     }
     case TK_BETWEEN:
     case TK_EQ:

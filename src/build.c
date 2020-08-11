@@ -2703,10 +2703,8 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable->pSelect );
   pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
   if( pSel ){
-#ifndef SQLITE_OMIT_ALTERTABLE
     u8 eParseMode = pParse->eParseMode;
     pParse->eParseMode = PARSE_MODE_NORMAL;
-#endif
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
@@ -2754,9 +2752,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     sqlite3DeleteTable(db, pSelTab);
     sqlite3SelectDelete(db, pSel);
     EnableLookaside;
-#ifndef SQLITE_OMIT_ALTERTABLE
     pParse->eParseMode = eParseMode;
-#endif
   } else {
     nErr++;
   }
@@ -2844,7 +2840,7 @@ void sqlite3RootPageMoved(sqlite3 *db, int iDb, Pgno iFrom, Pgno iTo){
 static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int r1 = sqlite3GetTempReg(pParse);
-  if( NEVER(iTable<2) ) return;
+  if( iTable<2 ) sqlite3ErrorMsg(pParse, "corrupt schema");
   sqlite3VdbeAddOp3(v, OP_Destroy, iTable, r1, iDb);
   sqlite3MayAbort(pParse);
 #ifndef SQLITE_OMIT_AUTOVACUUM
