@@ -1267,6 +1267,7 @@ do_test 15.0 {
 
 extra_schema_checks 0
 do_execsql_test 15.1 {
+  PRAGMA cell_size_check = 0;
   UPDATE c1 SET c= NOT EXISTS(SELECT 1 FROM c1 ORDER BY (SELECT 1 FROM c1 ORDER BY a)) +10 WHERE d BETWEEN 4 AND 7;
 } {}
 extra_schema_checks 1
@@ -1286,12 +1287,52 @@ do_execsql_test 16.0 {
   ) WHERE type = 'index';
 }
 
+extra_schema_checks 0
 db close
 sqlite3 db test.db
+extra_schema_checks 1
 
 do_catchsql_test 16.1 {
   PRAGMA writable_schema = ON;
   INSERT INTO t1(rowid, w, x, y, z) VALUES(5, 10, 11, 10, NULL);
 } {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+# Test that corruption is reported from within a checkpoint if the 
+# expected final size of the database (according to the last commit
+# frame in the wal file) is greater than the combined initial sizes 
+# of the database and wal file.
+#
+if {[wal_is_capable]} {
+  reset_db
+  do_execsql_test 17.0 {
+    CREATE TABLE t1(o INTEGER PRIMARY KEY, t UNIQUE);
+    INSERT INTO t1(t) VALUES(randomblob(123));
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+  
+    PRAGMA journal_mode = wal;
+    INSERT INTO t1 VALUES(-1, 'b');
+  } {wal}
+  
+  do_test 17.1 {
+    set fd [open test.db r+]
+    chan truncate $fd 2048
+    file size test.db
+  } {2048}
+  
+  do_catchsql_test 17.2 {
+    PRAGMA wal_checkpoint
+  } {1 {database disk image is malformed}}
+  
+  do_test 17.3 {
+    close $fd
+  } {}
+}
+
 
 finish_test

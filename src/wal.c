@@ -1284,7 +1284,34 @@ static int walIndexRecover(Wal *pWal){
       pWal->apWiData[iPg] = aShare;
       nHdr = (iPg==0 ? WALINDEX_HDR_SIZE : 0);
       nHdr32 = nHdr / sizeof(u32);
+#ifndef SQLITE_SAFER_WALINDEX_RECOVERY
+      /* Memcpy() should work fine here, on all reasonable implementations.
+      ** Technically, memcpy() might change the destination to some
+      ** intermediate value before setting to the final value, and that might
+      ** cause a concurrent reader to malfunction.  Memcpy() is allowed to
+      ** do that, according to the spec, but no memcpy() implementation that
+      ** we know of actually does that, which is why we say that memcpy()
+      ** is safe for this.  Memcpy() is certainly a lot faster.
+      */
       memcpy(&aShare[nHdr32], &aPrivate[nHdr32], WALINDEX_PGSZ-nHdr);
+#else
+      /* In the event that some platform is found for which memcpy()
+      ** changes the destination to some intermediate value before
+      ** setting the final value, this alternative copy routine is
+      ** provided.
+      */
+      {
+        int i;
+        for(i=nHdr32; i<WALINDEX_PGSZ/sizeof(u32); i++){
+          if( aShare[i]!=aPrivate[i] ){
+            /* Atomic memory operations are not required here because if
+            ** the value needs to be changed, that means it is not being
+            ** accessed concurrently. */
+            aShare[i] = aPrivate[i];
+          }
+        }
+      }
+#endif
       if( iFrame<=iLast ) break;
     }
 
@@ -1985,10 +2012,17 @@ static int walCheckpoint(
         sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_START, 0);
         rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
         if( rc==SQLITE_OK && nSize<nReq ){
-          sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+          if( (nSize+(i64)pWal->hdr.mxFrame*szPage)<nReq ){
+            /* If the size of the final database is larger than the current
+            ** database plus the amount of data in the wal file, then there
+            ** must be corruption somewhere.  */
+            rc = SQLITE_CORRUPT_BKPT;
+          }else{
+            sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT,&nReq);
+          }
         }
-      }
 
+      }
 
       /* Iterate through the contents of the WAL, copying data to the db file */
       while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){

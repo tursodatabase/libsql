@@ -1612,7 +1612,7 @@ void sqlite3GenerateConstraintChecks(
           }
           case OE_Abort:
             sqlite3MayAbort(pParse);
-            /* Fall through */
+            /* no break */ deliberate_fall_through
           case OE_Rollback:
           case OE_Fail: {
             char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
@@ -1840,7 +1840,7 @@ void sqlite3GenerateConstraintChecks(
     switch( onError ){
       default: {
         onError = OE_Abort;
-        /* Fall thru into the next case */
+        /* no break */ deliberate_fall_through
       }
       case OE_Rollback:
       case OE_Abort:
@@ -1901,7 +1901,7 @@ void sqlite3GenerateConstraintChecks(
 #ifndef SQLITE_OMIT_UPSERT
       case OE_Update: {
         sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, 0, iDataCur);
-        /* Fall through */
+        /* no break */ deliberate_fall_through
       }
 #endif
       case OE_Ignore: {
@@ -2122,7 +2122,7 @@ void sqlite3GenerateConstraintChecks(
 #ifndef SQLITE_OMIT_UPSERT
       case OE_Update: {
         sqlite3UpsertDoUpdate(pParse, pUpsert, pTab, pIdx, iIdxCur+ix);
-        /* Fall through */
+        /* no break */ deliberate_fall_through
       }
 #endif
       case OE_Ignore: {

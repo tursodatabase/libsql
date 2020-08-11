@@ -93,6 +93,9 @@ while test "$1" != ""; do
     --cachesize)
         shift; SPEEDTEST_OPTS="$SPEEDTEST_OPTS --cachesize $1"
         ;;
+    --checkpoint)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --checkpoint"
+        ;;
     --explain)
         doExplain=1
         ;;

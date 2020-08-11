@@ -455,12 +455,13 @@ if {$tcl_platform(platform)!="windows"} {
       catchsql {
         SELECT count(*) FROM t3;
       } 
-    } {1 {database disk image is malformed}}
+    } {1 {malformed database schema (t3) - invalid rootpage}}
   }
 }
 
 # Ticket #2470
 #
+reset_db
 do_test misc7-18.1 {
   execsql {
     CREATE TABLE table_1 (col_10);

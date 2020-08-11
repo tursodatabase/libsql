@@ -73,7 +73,7 @@ static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   }
 #endif
   if( db->mTrace & SQLITE_TRACE_PROFILE ){
-    db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
+    db->trace.xV2(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
   }
   p->startTime = 0;
 }
