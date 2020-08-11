@@ -1,5 +1,5 @@
-C Modify\sa\stest\sfor\scorruption\swithin\sthe\swal\scheckpoint\scode\sto\saccount\sfor\sthe\spending-byte\spage.\sAnd\sfor\sthe\sfact\sthat\stest\sconfigurations\smight\smove\sthe\spending-byte\spage.
-D 2020-08-11T18:00:10.927
+C New\stest\scases\sfor\sthe\suse\sof\sthe\sieee754\sand\sdecimal\sextensions\sin\sthe\sCLI.
+D 2020-08-11T18:17:04.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1344,7 +1344,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test a1cf47c5e110560ff25a714570bfd53bfaceeb61db5cad3072a4064f17ebd10e
+F test/shell1.test 1305efc92f132a1fcf97c00ac02b1b192865b4d33d44cab499e0bdcff71ce045
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 1c6aef11daaa2d6830acaba3ac9cbec93fbc1c3d5530743a637f39b3987d08ce
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 533aeb90085d989078073067172135db98e37e00be84f99757255858126196e4
-R 2c637809b649b47bb6f5ba118bc14d49
-U dan
-Z be5abcf06cbc6df3ec62ac1d3464aae6
+P 7dfb74c37e678dde347d9d85846672f82ad282e300e32676330b764be2e4d580
+R d77236f2dcbaef13d110aee9e5d1b519
+U drh
+Z 511e843c2e305b6831df80109b36fe79
