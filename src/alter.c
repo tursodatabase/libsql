@@ -1200,6 +1200,7 @@ static int renameResolveTrigger(Parse *pParse){
           p->iCursor = pParse->nTab++;
           if( p->pTab==0 ){
             rc = SQLITE_ERROR;
+            break;
           }else{
             p->pTab->nTabRef++;
             rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
