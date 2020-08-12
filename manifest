@@ -1,5 +1,5 @@
-C Fix\san\sassertion()\sfault\sin\sALTER\sTABLE\sfound\sby\sOSSFuzz.\s\sTest\scase\sin\sTH3.
-D 2020-08-12T15:39:43.871
+C Improvement\son\sthe\sprevious\sfix.
+D 2020-08-12T16:19:12.499
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -469,7 +469,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c d220ddd24b8990c210d243882cf5114eb599a649718149603d7cd1619094d2e2
+F src/alter.c 805de23ddca536181f8f0439df989fdd4a2f76c40bc305ec9fe2f211f68c89e8
 F src/analyze.c 5cffff3d355858cd22bfc6e20ac7203510d2e1cc935086eb06f4abb2f579f628
 F src/attach.c 0b11e00c166b622c84ec176773b1d691c61ad07d247809e3e1635d4e99e71d30
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72c4c69fea13f5e24df25645e6941ce3ff896f0a3c73cd63329f819cc907ab40
-R dbb767fdb5a237fc185a964d86a23acf
+P 41de742c5713ab1a0c0c15c44af3ffac40bbc527ae2dc11d829ba9773eb4c84a
+R e3db7df2c22d39b25a91e89bd22527e7
 U drh
-Z f11bc9f93fa54b4ee489a090aeb5fabf
+Z faca665711427ec5fbd1c65de6bd3b9c

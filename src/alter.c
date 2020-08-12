@@ -1194,13 +1194,12 @@ static int renameResolveTrigger(Parse *pParse){
       SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
       if( pSrc ){
         int i;
-        for(i=0; i<pSrc->nSrc; i++){
+        for(i=0; i<pSrc->nSrc && rc==SQLITE_OK; i++){
           struct SrcList_item *p = &pSrc->a[i];
           p->pTab = sqlite3LocateTableItem(pParse, 0, p);
           p->iCursor = pParse->nTab++;
           if( p->pTab==0 ){
             rc = SQLITE_ERROR;
-            break;
           }else{
             p->pTab->nTabRef++;
             rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
