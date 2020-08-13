@@ -1,5 +1,5 @@
-C Improvement\son\sthe\sprevious\sfix.
-D 2020-08-12T16:19:12.499
+C Fix\s"make\stest"\shandling\sof\senvironment\svariable\sQUICKTEST_OMIT\sso\sthat\sit\scan\sbe\sused\sto\sexclude\stest\sfiles\sin\sother\sthan\sthe\smain\stest\sdirectory.
+D 2020-08-13T17:27:57.029
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1243,7 +1243,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 4d174cfc92e31aff96a383dac767a94d649566b73857875afb7511e3e430d5f5
+F test/permutations.test 661a4325a5717957a77836910ee164ba26594a502d7a3df0e1ae7b9cba829c5d
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 50b91bedea9324d3ab48e793f908ee7d2c7dcf84bfa2281e792838be59641ec8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41de742c5713ab1a0c0c15c44af3ffac40bbc527ae2dc11d829ba9773eb4c84a
-R e3db7df2c22d39b25a91e89bd22527e7
-U drh
-Z faca665711427ec5fbd1c65de6bd3b9c
+P f6cffa2d50bfebe5b025f412b7a49b7fdafb798aaf1ddc80e6656ccd1f012a7f
+R 799818c17104aa7af945cf9f5cad3762
+U dan
+Z eb3d2da01b8eb995a9db8afa1f477ec2
