@@ -1,5 +1,5 @@
-C Version\s3.33.0
-D 2020-08-14T13:23:32.827
+C Fix\san\sinconsequential\smemory\sleak\sin\ssqldiff.\sUpdate\sthe\s"Sanitize"\scase\sin\swapptest.tcl\sto\suse\s-fsanitize=address,undefined,\sand\sto\srun\smore\stests.
+D 2020-08-14T16:14:40.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1272,7 +1272,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
 F test/releasetest.tcl fb76d8fcc95ac29d6356cd9e52b726ab9e43a24082897618dfbcb7c2b0049153 x
-F test/releasetest_data.tcl 9919fc6ac5bc92f8878fecfd1840db15999f660a6c9f609240b41aa62b885c88
+F test/releasetest_data.tcl 9fbb722e2a7c4c8377533f63a66c2de64b0dba982b6dfa6fb434da12518a03a7
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
@@ -1844,7 +1844,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
-F tool/sqldiff.c 5046b8e227213ad016b336eb5a933e252e1f0fd1e07060c5755e259a30891287
+F tool/sqldiff.c a3362140091b6d8a0771a589aaff147c114b13eb915927390587f0fa78c2040d
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -1879,10 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b050976079ba4a22d4dfeadb81f40cf71da6588c95bf2b634d88b416de5accd7
-R 799818c17104aa7af945cf9f5cad3762
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.33.0 *
-U drh
-Z 652aa26f564c1138ae3a9226a8f034b3
+P fca8dc8b578f215a969cd899336378966156154710873e68b3d9ac5881b0ff3f
+R abf6184f2760dd711de23a24f5d6d111
+U dan
+Z 195eaf8a6ab487ff406d08339798a869

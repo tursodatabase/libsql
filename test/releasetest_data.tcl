@@ -54,9 +54,10 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_DESERIALIZE
   }
   "Sanitize" {
-    CC=clang -fsanitize=undefined
+    CC=clang -fsanitize=address,undefined
     -DSQLITE_ENABLE_STAT4
-    --enable-session
+    --enable-debug
+    --enable-all
   }
   "Stdcall" {
     -DUSE_STDCALL=1
@@ -294,7 +295,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Apple"                   test
-    "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
+    "Sanitize"                {QUICKTEST_OMIT=crash*,shell*,sqldiff*,sessionB.test test}
     "Device-One"              fulltest
     "Default"                 "threadtest fulltest"
     "Valgrind*"               valgrindtest
