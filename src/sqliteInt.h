@@ -2953,9 +2953,9 @@ struct SrcList {
 #define WHERE_DISTINCTBY       0x0080 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0100 /* All output needs to be distinct */
 #define WHERE_SORTBYGROUP      0x0200 /* Support sqlite3WhereIsSorted() */
-#define WHERE_SEEK_TABLE       0x0400 /* Do not defer seeks on main table */
+                        /*     0x0400    not currently used */
 #define WHERE_ORDERBY_LIMIT    0x0800 /* ORDERBY+LIMIT on the inner loop */
-#define WHERE_SEEK_UNIQ_TABLE  0x1000 /* Do not defer seeks if unique */
+                        /*     0x1000    not currently used */
                         /*     0x2000    not currently used */
 #define WHERE_USE_LIMIT        0x4000 /* Use the LIMIT in cost estimates */
                         /*     0x8000    not currently used */
