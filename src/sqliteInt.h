@@ -2573,11 +2573,6 @@ struct AggInfo {
 };
 
 /*
-** Value for AggInfo.iAggMagic when the structure is valid
-*/
-#define AggInfoMagic  0x2059e99e
-
-/*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.
 ** Usually it is 16-bits.  But if SQLITE_MAX_VARIABLE_NUMBER is greater
 ** than 32767 we have to make it 32-bit.  16-bit is preferred because
