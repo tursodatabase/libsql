@@ -1,5 +1,5 @@
-C Version\s3.33.0
-D 2020-08-14T13:23:32.827
+C Experimental\schange\sto\stry\sto\sget\ssome\sDELETE\soperations\sto\saccess\svalues\nusing\sthe\sindex\srather\sthan\sthe\smain\stable,\sso\sas\sto\savoid\sunnecessary\nmain\stable\sseeks.
+D 2020-08-14T17:39:31.333
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,8 +622,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 2ea911238674e9baaeddf105dddabed92692a01996073c4d4983f9a7efe481f9
-F src/whereInt.h 6b874aa15f94e43a2cec1080be64d955b04deeafeac90ffb5d6975c0d511be3c
+F src/where.c 50fe9fc0b929b6c3c7b71a6b7601a942e76512e38a220de948f1c79af237ad9b
+F src/whereInt.h eb8c2847fb464728533777efec1682b3c074224293b2da73513c61a609efbeab
 F src/wherecode.c 8064fe5c042824853a9b1fda670054a51a49033a6c79059988c97751ccf8088e
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
@@ -1879,10 +1879,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b050976079ba4a22d4dfeadb81f40cf71da6588c95bf2b634d88b416de5accd7
-R 799818c17104aa7af945cf9f5cad3762
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.33.0 *
+P fca8dc8b578f215a969cd899336378966156154710873e68b3d9ac5881b0ff3f
+R 90cb3c0f751fa2f3ee092ca1f77cf5d7
+T *branch * delete-bytecode-optimization
+T *sym-delete-bytecode-optimization *
+T -sym-trunk *
 U drh
-Z 652aa26f564c1138ae3a9226a8f034b3
+Z b9254e6f44cc1c24322dcc5d82dd0b50
