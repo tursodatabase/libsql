@@ -1,5 +1,5 @@
-C For\sUPDATE\sand\sDELETE,\suse\sOP_DeferredSeek\salways.\s\sIf\sthe\sseek\smust\slater\nbe\sresolved,\sadd\sthe\sOP_FinishSeek\sopcode\safter\sall\sWHERE\sclause\sterms\shave\nbeen\sprocessed.\s\sThis\sobviates\sthe\sneed\sfor\sthe\sWHERE_SEEK_TABLE\sand\nWHERE_SEEK_UNIQ_TABLE\sflags\sto\ssqlite3WhereBegin()\sand\sthe\sensuing\ncomplication,\sand\sit\sallows\sthe\scovering\sindex\soptimization\sto\sbe\sused\nfurther\sinto\sWHERE\sclause\sprocessing.
-D 2020-08-14T20:04:26.522
+C Optimizations\sto\sthe\slogic\sthat\sconverts\smain\stable\saccesses\sinto\sequivalent\nindex\saccesses.\s\sCode\sis\snow\sslightly\ssmaller\sand\sfaster\sthan\strunk.
+D 2020-08-14T21:32:16.882
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 50fe9fc0b929b6c3c7b71a6b7601a942e76512e38a220de948f1c79af237ad9b
+F src/where.c 396ba2c62defd56283ef54a4b221f698f4733fe8fbfca4aa8b1cc4f8c58d12ee
 F src/whereInt.h eb8c2847fb464728533777efec1682b3c074224293b2da73513c61a609efbeab
 F src/wherecode.c cb9bc7cef99578c99baceafeea9c9bcc738d5be37f56dbfe3a1c61ea52483fd0
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f7cb6ab39e54fd6eb3a280d3022c3d4f4ed92e83af7226e63e0199a96397a6b
-R 02225c94aba95601035e446dd1dfb037
+P a495f60d315e34b1a1bc5fb1336e05047add52c8fb2710b577c97b10a5e734f6
+R 54b8b0b6f00b6cfab28e2e5a52014ff6
 U drh
-Z 6927cf3647c698c9871735d62c2df08c
+Z a854ac35ef1e1fa9d5bc731176f5cbf6
