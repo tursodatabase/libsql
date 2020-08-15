@@ -1531,7 +1531,7 @@ void sqlite3GenerateConstraintChecks(
 
   isUpdate = regOldData!=0;
   db = pParse->db;
-  v = sqlite3GetVdbe(pParse);
+  v = pParse->pVdbe;
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   nCol = pTab->nCol;
@@ -2304,7 +2304,7 @@ void sqlite3CompleteInsertion(
        || update_flags==(OPFLAG_ISUPDATE|OPFLAG_SAVEPOSITION)
   );
 
-  v = sqlite3GetVdbe(pParse);
+  v = pParse->pVdbe;
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
@@ -2405,7 +2405,7 @@ int sqlite3OpenTableAndIndices(
     return 0;
   }
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-  v = sqlite3GetVdbe(pParse);
+  v = pParse->pVdbe;
   assert( v!=0 );
   if( iBase<0 ) iBase = pParse->nTab;
   iDataCur = iBase++;

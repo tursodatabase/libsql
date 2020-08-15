@@ -90,9 +90,7 @@ void sqlite3TableLock(
 */
 static void codeTableLocks(Parse *pParse){
   int i;
-  Vdbe *pVdbe; 
-
-  pVdbe = sqlite3GetVdbe(pParse);
+  Vdbe *pVdbe = pParse->pVdbe; 
   assert( pVdbe!=0 ); /* sqlite3GetVdbe cannot fail: VDBE already allocated */
 
   for(i=0; i<pParse->nTableLock; i++){
