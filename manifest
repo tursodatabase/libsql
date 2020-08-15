@@ -1,5 +1,5 @@
-C When\sdoing\san\sUPDATE\sor\sDELETE\susing\sa\smulti-column\sindex\swhere\sonly\sa\sfew\nof\sthe\searlier\scolumns\sof\sthe\sindex\sare\suseful\sfor\sthe\sindex\slookup,\npostpone\sdoing\sthe\smain\stable\sseek\suntil\safter\sall\sWHERE\sclause\sconstraints\nhave\sbeen\sevaluated,\sin\scase\sthose\sconstraints\scan\sbe\scovered\sby\sunused\nlater\sterms\sof\sthe\sindex,\sthus\savoiding\sunnecessary\smain\stable\sseeks.
-D 2020-08-14T21:51:02.627
+C Omit\sthe\sunnecessary\snot-NULL\scheck\son\sthe\supper\sbound\sof\sa\sforward\sindex\nrange\sscan.\s\sThe\ssubsequent\sOP_IdxGT\swill\salways\scatch\sthe\sNULL.\s\sSimilarly,\nomit\sthe\snot-NULL\scheck\son\sthe\slower\sbound\sof\sa\sreverse\sindex\srange\sscan,\nas\sthe\sSeekLE\sopcode\swill\sdisallow\sthe\sNULL.
+D 2020-08-15T19:58:59.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 396ba2c62defd56283ef54a4b221f698f4733fe8fbfca4aa8b1cc4f8c58d12ee
 F src/whereInt.h eb8c2847fb464728533777efec1682b3c074224293b2da73513c61a609efbeab
-F src/wherecode.c cb9bc7cef99578c99baceafeea9c9bcc738d5be37f56dbfe3a1c61ea52483fd0
+F src/wherecode.c 110fa357bf453e0d30bf5ebb2cc86ea34a3631c39b857f30c228fd325cb53ae7
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1879,8 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 70f34f3df5358d36c8578afbc05756450c46da36b8dce339ed87fc0b9d4057cb 611b640442025e57b8e161f8ddac1f19bd3be9a3d5266f4cef287595c3ed9257
-R fd23b928eb9c7a62b3f6e9653824ff24
-T +closed 611b640442025e57b8e161f8ddac1f19bd3be9a3d5266f4cef287595c3ed9257
+P 7fee0b1075d622835dc6828c061be516102da9e2809f52d9ab7c4bbef7dfb871
+R 4ca85f2291e05990c70f5c4c2f0f7c45
 U drh
-Z 5d0dae315c2c275d1ce9160adcb43cdc
+Z c2f4d1de0fc44fa1e0f3e0d1d11812a8
