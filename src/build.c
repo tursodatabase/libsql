@@ -4464,15 +4464,15 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   struct SrcList_item *pItem;
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
-    sqlite3DbFree(db, pItem->zDatabase);
+    if( pItem->zDatabase ) sqlite3DbFreeNN(db, pItem->zDatabase);
     sqlite3DbFree(db, pItem->zName);
-    sqlite3DbFree(db, pItem->zAlias);
+    if( pItem->zAlias ) sqlite3DbFreeNN(db, pItem->zAlias);
     if( pItem->fg.isIndexedBy ) sqlite3DbFree(db, pItem->u1.zIndexedBy);
     if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
     sqlite3DeleteTable(db, pItem->pTab);
-    sqlite3SelectDelete(db, pItem->pSelect);
-    sqlite3ExprDelete(db, pItem->pOn);
-    sqlite3IdListDelete(db, pItem->pUsing);
+    if( pItem->pSelect ) sqlite3SelectDelete(db, pItem->pSelect);
+    if( pItem->pOn ) sqlite3ExprDelete(db, pItem->pOn);
+    if( pItem->pUsing ) sqlite3IdListDelete(db, pItem->pUsing);
   }
   sqlite3DbFreeNN(db, pList);
 }
