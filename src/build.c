@@ -91,7 +91,7 @@ void sqlite3TableLock(
 static void codeTableLocks(Parse *pParse){
   int i;
   Vdbe *pVdbe = pParse->pVdbe; 
-  assert( pVdbe!=0 ); /* sqlite3GetVdbe cannot fail: VDBE already allocated */
+  assert( pVdbe!=0 );
 
   for(i=0; i<pParse->nTableLock; i++){
     TableLock *p = &pParse->aTableLock[i];
@@ -4829,7 +4829,9 @@ void sqlite3HaltConstraint(
   i8 p4type,        /* P4_STATIC or P4_TRANSIENT */
   u8 p5Errmsg       /* P5_ErrMsg type */
 ){
-  Vdbe *v = sqlite3GetVdbe(pParse);
+  Vdbe *v;
+  assert( pParse->pVdbe!=0 );
+  v = sqlite3GetVdbe(pParse);
   assert( (errCode&0xff)==SQLITE_CONSTRAINT || pParse->nested );
   if( onError==OE_Abort ){
     sqlite3MayAbort(pParse);

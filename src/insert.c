@@ -32,7 +32,8 @@ void sqlite3OpenTable(
 ){
   Vdbe *v;
   assert( !IsVirtual(pTab) );
-  v = sqlite3GetVdbe(pParse);
+  assert( pParse->pVdbe!=0 );
+  v = pParse->pVdbe;
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(pParse, iDb, pTab->tnum, 
                    (opcode==OP_OpenWrite)?1:0, pTab->zName);
