@@ -53,7 +53,7 @@ void sqlite3TableLock(
   u8 isWriteLock,    /* True for a write lock */
   const char *zName  /* Name of the table to be locked */
 ){
-  Parse *pToplevel = sqlite3ParseToplevel(pParse);
+  Parse *pToplevel;
   int i;
   int nBytes;
   TableLock *p;
@@ -61,6 +61,7 @@ void sqlite3TableLock(
 
   if( iDb==1 ) return;
   if( !sqlite3BtreeSharable(pParse->db->aDb[iDb].pBt) ) return;
+  pToplevel = sqlite3ParseToplevel(pParse);
   for(i=0; i<pToplevel->nTableLock; i++){
     p = &pToplevel->aTableLock[i];
     if( p->iDb==iDb && p->iTab==iTab ){
@@ -4733,13 +4734,11 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 ** will occur at the end of the top-level VDBE and will be generated
 ** later, by sqlite3FinishCoding().
 */
-void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
-  Parse *pToplevel = sqlite3ParseToplevel(pParse);
-
-  assert( iDb>=0 && iDb<pParse->db->nDb );
-  assert( pParse->db->aDb[iDb].pBt!=0 || iDb==1 );
+static void sqlite3CodeVerifySchemaAtToplevel(Parse *pToplevel, int iDb){
+  assert( iDb>=0 && iDb<pToplevel->db->nDb );
+  assert( pToplevel->db->aDb[iDb].pBt!=0 || iDb==1 );
   assert( iDb<SQLITE_MAX_ATTACHED+2 );
-  assert( sqlite3SchemaMutexHeld(pParse->db, iDb, 0) );
+  assert( sqlite3SchemaMutexHeld(pToplevel->db, iDb, 0) );
   if( DbMaskTest(pToplevel->cookieMask, iDb)==0 ){
     DbMaskSet(pToplevel->cookieMask, iDb);
     if( !OMIT_TEMPDB && iDb==1 ){
@@ -4747,6 +4746,10 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
     }
   }
 }
+void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
+  sqlite3CodeVerifySchemaAtToplevel(sqlite3ParseToplevel(pParse), iDb);
+}
+
 
 /*
 ** If argument zDb is NULL, then call sqlite3CodeVerifySchema() for each 
@@ -4778,7 +4781,7 @@ void sqlite3CodeVerifyNamedSchema(Parse *pParse, const char *zDb){
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
-  sqlite3CodeVerifySchema(pParse, iDb);
+  sqlite3CodeVerifySchemaAtToplevel(pToplevel, iDb);
   DbMaskSet(pToplevel->writeMask, iDb);
   pToplevel->isMultiWrite |= setStatement;
 }

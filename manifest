@@ -1,5 +1,5 @@
-C Optimization\sof\sthe\ssqlite3SrcListDelete()\sroutine.
-D 2020-08-15T23:48:22.883
+C Optimization\sto\ssqlite3BeginWriteOperation().
+D 2020-08-16T00:30:44.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 1439fd9b45d4d1883c53752daef42af489adaa1a1508fa39dedbc9c80ea21a2f
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
-F src/build.c a1aa0478c86a05b5bd7e3faa4aad6beeb2660be91261e479891a13ce1389bd7e
+F src/build.c a80bc79f0be20185e2005b74e9a23f8abb8fbb3cc54ed769a21865f79d507d90
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7dc932197665f0ebde3ffb8f0785c22da07ce307cfd5f0eab69e86e4b38fcde
-R d589aa20ebd35240a2738ae9990fa667
+P 1b4acd1ac4a8d24f8804c6d0770f5b0022f569d51742b6954b26e525f04d38ca
+R eb7d2eb9837b02d692f86ab11127e1d5
 U drh
-Z 740ca2f6298d249a7d9d96f5ff6338d0
+Z 4f2f05a1f836926720a2c2ef3cbb9300
