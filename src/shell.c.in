@@ -11015,6 +11015,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_List;
     }else if( strcmp(z,"-quote")==0 ){
       data.mode = MODE_Quote;
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Comma);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
     }else if( strcmp(z,"-line")==0 ){
       data.mode = MODE_Line;
     }else if( strcmp(z,"-column")==0 ){
