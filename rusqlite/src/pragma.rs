@@ -430,4 +430,15 @@ mod test {
         sql.push_string_literal("value'; --");
         assert_eq!("'value''; --'", sql.as_str());
     }
+
+    #[test]
+    fn locking_mode() {
+        let db = Connection::open_in_memory().unwrap();
+        let r = db.pragma_update(None, "locking_mode", &"exclusive");
+        if cfg!(feature = "extra_check") {
+            r.unwrap_err();
+        } else {
+            r.unwrap();
+        }
+    }
 }
