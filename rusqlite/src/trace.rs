@@ -35,14 +35,11 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     }
 
     let rc = match callback {
-        Some(f) => {
-            let p_arg: *mut c_void = mem::transmute(f);
-            ffi::sqlite3_config(
-                ffi::SQLITE_CONFIG_LOG,
-                log_callback as extern "C" fn(_, _, _),
-                p_arg,
-            )
-        }
+        Some(f) => ffi::sqlite3_config(
+            ffi::SQLITE_CONFIG_LOG,
+            log_callback as extern "C" fn(_, _, _),
+            f as *mut c_void,
+        ),
         None => {
             let nullptr: *mut c_void = ptr::null_mut();
             ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG, nullptr, nullptr)
@@ -83,7 +80,7 @@ impl Connection {
         let c = self.db.borrow_mut();
         match trace_fn {
             Some(f) => unsafe {
-                ffi::sqlite3_trace(c.db(), Some(trace_callback), mem::transmute(f));
+                ffi::sqlite3_trace(c.db(), Some(trace_callback), f as *mut c_void);
             },
             None => unsafe {
                 ffi::sqlite3_trace(c.db(), None, ptr::null_mut());
@@ -117,7 +114,7 @@ impl Connection {
         let c = self.db.borrow_mut();
         match profile_fn {
             Some(f) => unsafe {
-                ffi::sqlite3_profile(c.db(), Some(profile_callback), mem::transmute(f))
+                ffi::sqlite3_profile(c.db(), Some(profile_callback), f as *mut c_void)
             },
             None => unsafe { ffi::sqlite3_profile(c.db(), None, ptr::null_mut()) },
         };
