@@ -467,7 +467,7 @@ do_test rtreefuzz001-100 {
   catchsql {
      SELECT rtreecheck('t1');
   }
-} {1 {SQL logic error}}
+} {1 {database disk image is malformed}}
 
 do_test rtreefuzz001-200 {
   sqlite3 db {}

@@ -5480,6 +5480,24 @@ case OP_IdxRowid: {           /* out2 */
   break;
 }
 
+/* Opcode: FinishSeek P1 * * * *
+**
+** If cursor P1 was previously moved via OP_DeferredSeek, complete that
+** seek operation now, without further delay.  If the cursor seek has
+** already occurred, this instruction is a no-op.
+*/
+case OP_FinishSeek: {
+  VdbeCursor *pC;             /* The P1 index cursor */
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  if( pC->deferredMoveto ){
+    rc = sqlite3VdbeFinishMoveto(pC);
+    if( rc ) goto abort_due_to_error;
+  }
+  break;
+}
+
 /* Opcode: IdxGE P1 P2 P3 P4 P5
 ** Synopsis: key=r[P3@P4]
 **

@@ -486,7 +486,7 @@ void sqlite3Update(
     ** be deleted as a result of REPLACE conflict handling. Any of these
     ** things might disturb a cursor being used to scan through the table
     ** or index, causing a single-pass approach to malfunction.  */
-    flags = WHERE_ONEPASS_DESIRED|WHERE_SEEK_UNIQ_TABLE;
+    flags = WHERE_ONEPASS_DESIRED;
     if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
       flags |= WHERE_ONEPASS_MULTIROW;
     }
@@ -728,6 +728,8 @@ void sqlite3Update(
       VdbeCoverageNeverTaken(v);
     }
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx, -1);
+
+    sqlite3VdbeAddOp1(v, OP_FinishSeek, iDataCur);
 
     /* If changing the rowid value, or if there are foreign key constraints
     ** to process, delete the old record. Otherwise, add a noop OP_Delete
