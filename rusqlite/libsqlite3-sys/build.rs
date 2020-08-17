@@ -245,6 +245,11 @@ mod build_linked {
         // on is available, for example.
         println!("cargo:link-target={}", link_lib);
 
+        if cfg!(all(windows, feature = "winsqlite3")) {
+            println!("cargo:rustc-link-lib=dylib={}", link_lib);
+            return HeaderLocation::Wrapper;
+        }
+
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var(format!("{}_LIB_DIR", env_prefix())) {
             // Try to use pkg-config to determine link commands
@@ -306,6 +311,8 @@ mod build_linked {
     fn link_lib() -> &'static str {
         if cfg!(feature = "sqlcipher") {
             "sqlcipher"
+        } else if cfg!(all(windows, feature = "winsqlite3")) {
+            "winsqlite3"
         } else {
             "sqlite3"
         }
@@ -385,6 +392,36 @@ mod bindings {
         }
         if cfg!(feature = "session") {
             bindings = bindings.clang_arg("-DSQLITE_ENABLE_SESSION");
+        }
+        if cfg!(all(windows, feature = "winsqlite3")) {
+            bindings = bindings
+                .clang_arg("-DBINDGEN_USE_WINSQLITE3")
+                .blacklist_item("NTDDI_.+")
+                .blacklist_item("WINAPI_FAMILY.*")
+                .blacklist_item("_WIN32_.+")
+                .blacklist_item("_VCRT_COMPILER_PREPROCESSOR")
+                .blacklist_item("_SAL_VERSION")
+                .blacklist_item("__SAL_H_VERSION")
+                .blacklist_item("_USE_DECLSPECS_FOR_SAL")
+                .blacklist_item("_USE_ATTRIBUTES_FOR_SAL")
+                .blacklist_item("_CRT_PACKING")
+                .blacklist_item("_HAS_EXCEPTIONS")
+                .blacklist_item("_STL_LANG")
+                .blacklist_item("_HAS_CXX17")
+                .blacklist_item("_HAS_CXX20")
+                .blacklist_item("_HAS_NODISCARD")
+                .blacklist_item("WDK_NTDDI_VERSION")
+                .blacklist_item("OSVERSION_MASK")
+                .blacklist_item("SPVERSION_MASK")
+                .blacklist_item("SUBVERSION_MASK")
+                .blacklist_item("WINVER")
+                .blacklist_item("__security_cookie")
+                .blacklist_type("size_t")
+                .blacklist_type("__vcrt_bool")
+                .blacklist_type("wchar_t")
+                .blacklist_function("__security_init_cookie")
+                .blacklist_function("__report_gsfailure")
+                .blacklist_function("__va_start");
         }
 
         // When cross compiling unless effort is taken to fix the issue, bindgen

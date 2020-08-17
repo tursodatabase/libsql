@@ -33,6 +33,8 @@ session = ["preupdate_hook", "buildtime_bindgen"]
 in_gecko = []
 with-asan = []
 wasm32-wasi-vfs = []
+# lowest version shipped with Windows 10.0.10586 was 3.8.8.3
+winsqlite3 = ["min_sqlite_version_3_7_16"]
 
 [build-dependencies]
 bindgen = { version = "0.55", optional = true, default-features = false, features = ["runtime"] }
