@@ -451,7 +451,8 @@ impl Connection {
         let mut sql = sql;
         while !sql.is_empty() {
             let stmt = self.prepare(sql)?;
-            if !stmt.stmt.is_null() && stmt.step()? {
+            if !stmt.stmt.is_null() && stmt.step()? && cfg!(feature = "extra_check") {
+                // Some PRAGMA may return rows
                 return Err(Error::ExecuteReturnedResults);
             }
             let tail = stmt.stmt.tail();
