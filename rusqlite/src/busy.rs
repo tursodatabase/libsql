@@ -60,7 +60,7 @@ impl Connection {
         let mut c = self.db.borrow_mut();
         let r = match callback {
             Some(f) => unsafe {
-                ffi::sqlite3_busy_handler(c.db(), Some(busy_handler_callback), mem::transmute(f))
+                ffi::sqlite3_busy_handler(c.db(), Some(busy_handler_callback), f as *mut c_void)
             },
             None => unsafe { ffi::sqlite3_busy_handler(c.db(), None, ptr::null_mut()) },
         };
