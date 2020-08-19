@@ -122,7 +122,8 @@
 # if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
                             (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
 #    if (!defined(TARGET_OS_EMBEDDED) || (TARGET_OS_EMBEDDED==0)) \
-         && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))
+        && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))\
+        && (!defined(TARGET_OS_MACCATALYST) || (TARGET_OS_MACCATALYST==0))
 #      undef HAVE_GETHOSTUUID
 #      define HAVE_GETHOSTUUID 1
 #    else
