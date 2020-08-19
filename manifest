@@ -1,5 +1,5 @@
-C Fix\sthe\s-quote\soption\son\sthe\sCLI\sto\sset\sthe\scorrect\scolumn\sseparator.
-D 2020-08-17T09:11:21.359
+C Fix\sa\sproblem\sin\stest\sfile\sbigmmap.test.
+D 2020-08-19T15:21:52.251
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F test/bestindex7.test f36ada201973d3022cf7afffffe08de9e58341996020e7a2df9a1d2f2
 F test/between.test 68137a6e941c221417c15b6fe2d55f27bb1b6ab48bdf9e2aa51efdd85bc53802
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
-F test/bigmmap.test 31dad31573638bd32de866cdefd11843f75685be4ba6aec1a47918f098f1899b
+F test/bigmmap.test e906cf9729d7c362270ffe9fa6471f4c39c28ba83f0f77fb795e1b4d38a22ba0
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2173d4c6e3addc75964508f2fc8e42755376b3bc285286fa90df4831a6fa280b
-R 442f1dbe4ea4377ad5ec4785729f8731
-U drh
-Z 385eef9b5efbc0b41b1aec1e03dd9010
+P c778f8295c3c9b6cd6107b33fd7664ae75c97840fc974c9f971755a523f185c4
+R 49f56307e7f17223c2b06ac52ce2a1fc
+U dan
+Z e95c058045a0ba4e119e5f1f2eb81bf1
