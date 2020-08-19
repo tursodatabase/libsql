@@ -143,6 +143,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_RBU
     -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_MAX_MMAP_SIZE=12884901888
     -DLONGDOUBLE_TYPE=double
     --enable-session
   }

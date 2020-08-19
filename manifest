@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sfile\sbigmmap.test.
-D 2020-08-19T15:21:52.251
+C Update\sreleasetest_data.tcl\sso\sthat\sthe\s"Fast-One"\sconfiguration\sruns\sbigmmap.test\sas\spart\sof\srelease\stesting.
+D 2020-08-19T15:24:19.261
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1272,7 +1272,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
 F test/releasetest.tcl fb76d8fcc95ac29d6356cd9e52b726ab9e43a24082897618dfbcb7c2b0049153 x
-F test/releasetest_data.tcl 9fbb722e2a7c4c8377533f63a66c2de64b0dba982b6dfa6fb434da12518a03a7
+F test/releasetest_data.tcl 4d251c430b67fa0d9422fa8214df54546d3aff55dfcc9124503f9e26a576c8fe
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c778f8295c3c9b6cd6107b33fd7664ae75c97840fc974c9f971755a523f185c4
-R 49f56307e7f17223c2b06ac52ce2a1fc
+P d8e47382160e98be646ce3ba568578493088d1bb11d513ded3e00b576fb07f06
+R ea1afde48f0d02557391a4047adf2310
 U dan
-Z e95c058045a0ba4e119e5f1f2eb81bf1
+Z d5829a9d86564dfb4bfa4de08f611888
