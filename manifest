@@ -1,5 +1,5 @@
-C Try\sto\smake\sSQLite\seasier\sto\scompiler\sfor\sMac\sCatalyst.\sSee\s\n[https://sqlite.org/forum/forumpost/803387a1c5|forum\spost\s803387a1c5].
-D 2020-08-19T23:51:54.209
+C Avoid\sa\sbuffer\soverrun\sin\stest\scode\sthat\scould\soccur\sif\scertain\stest\sfunctions\swere\spassed\sa\shex-string\scontaining\san\sodd\snumber\sof\sdigits.
+D 2020-08-20T11:03:33.797
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -566,7 +566,7 @@ F src/test_demovfs.c 86142ba864d4297d54c5b2e972e74f3141ae4b30f05b3a95824184ed2d3
 F src/test_devsym.c 6109b45c3db3ef7b002320947ed448c027356ab8b885156ff535fd8684d4a571
 F src/test_fs.c ba1e1dc18fd3159fdba0b9c4256f14032159785320dfbd6776eb9973cb75d480
 F src/test_func.c 181f992e5495644434c4f0e3cc72362a78c295eb2cf3ff4d02498b8bde7aa276
-F src/test_hexio.c d170d0e1a6431afdeac086a250d2595078288c2257615d37949355361399bcaa
+F src/test_hexio.c 9478e56a0f08e07841a014a93b20e4ba2709ab56d039d1ca8020e26846aa19bd
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
 F src/test_intarray.c 39b4181662a0f33a427748d87218e7578d913e683dc27eab7098bb41617cac71
 F src/test_intarray.h d57ae92f420cda25e22790dac474d60961bd0c500cbaa3338a05152d4a669ef7
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 871f2ddcfbb9196dbd851a350e3471ee6d242d86bbd755201f7e2406fce3ac55
-R da5d9aff2fd6b1f37ad37120104d1d1b
-U drh
-Z f2253a790427c20b66ccdbd6a8f3418a
+P e1595a20d71e61957944cc2b634578968cda8fba08a1f1e75edba20dc9c6080b
+R 6913aaf82b6ea309e44c16e0d51aa7e8
+U dan
+Z ea10fc98bd455a7905a78ecc0625e60d
