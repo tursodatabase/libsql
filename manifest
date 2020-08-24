@@ -1,5 +1,5 @@
-C Correctly\shandle\sexpressions\slike\s"x\sIS\s(not)\strue/false"\swithin\sthe\srhs\sof\sIN()\sexpressions.\sFix\sfor\s[f3ff1472].
-D 2020-08-24T10:52:52.642
+C Reduce\sthe\sN\sin\sthe\slogN\sterm\sfor\sthe\ssorting\scost\sassociated\swith\scomputing\nDISTINCT\sby\sB-Tree\sby\shalf,\sunder\sthe\sassumption\sthat\sthe\sDISTINCT\swill\neliminate\sabout\shalf\sthe\srows\sof\soutput.\s\sThis\sis\sreally\sa\swild\sguess.\s\sBut\nwe\sdo\snot\shave\sany\sbetter\sway\sof\sestimating\swhat\sthe\srow-count\sreduction\sdue\nto\sDISTINCT\swill\sactually\sbe.
+D 2020-08-24T23:44:27.235
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 396ba2c62defd56283ef54a4b221f698f4733fe8fbfca4aa8b1cc4f8c58d12ee
+F src/where.c 23f47e845e304a41d0b221bf67bd170014ae08b673076813fcd945dda1a3d4af
 F src/whereInt.h eb8c2847fb464728533777efec1682b3c074224293b2da73513c61a609efbeab
 F src/wherecode.c 110fa357bf453e0d30bf5ebb2cc86ea34a3631c39b857f30c228fd325cb53ae7
 F src/whereexpr.c 264d58971eaf8256eb5b0917bcd7fc7a1f1109fdda183a8382308a1b18a2dce7
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f58dd3a19605b6f49b4364fa29892502eff35f12a7693a8694100e1844711ea
-R e7a4532d833ea3a282e0c879ce028741
-U dan
-Z b8cdd5c782cc19b36092e011278ca641
+P 493a25949b9a6d0be82169b597133e491d8be4f4147b6eae135b06c1d810abd3
+R ddd62187ac7223d5e6ce61819bf672f8
+U drh
+Z 3f2dc6629d15095497f0f8f6b9a935ba
