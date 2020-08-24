@@ -791,4 +791,10 @@ do_execsql_test in-19.40 {
   PRAGMA integrity_check;
 } {ok}
 
+# Ticket f3ff1472887
+#
+do_execsql_test in-20.1 {
+  SELECT (1 IN (2 IS TRUE));
+} {1}
+
 finish_test
