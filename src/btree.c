@@ -10310,11 +10310,12 @@ const char *sqlite3BtreeGetJournalname(Btree *p){
 }
 
 /*
-** Return non-zero if a transaction is active.
+** Return one of SQLITE_TXN_NONE, SQLITE_TXN_READ, or SQLITE_TXN_WRITE
+** to describe the current transaction state of Btree p.
 */
-int sqlite3BtreeIsInTrans(Btree *p){
+int sqlite3BtreeTxnState(Btree *p){
   assert( p==0 || sqlite3_mutex_held(p->db->mutex) );
-  return (p && (p->inTrans==TRANS_WRITE));
+  return p ? p->inTrans : 0;
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -10343,14 +10344,8 @@ int sqlite3BtreeCheckpoint(Btree *p, int eMode, int *pnLog, int *pnCkpt){
 #endif
 
 /*
-** Return non-zero if a read (or write) transaction is active.
+** Return true if there is currently a backup running on Btree p.
 */
-int sqlite3BtreeIsInReadTrans(Btree *p){
-  assert( p );
-  assert( sqlite3_mutex_held(p->db->mutex) );
-  return p->inTrans!=TRANS_NONE;
-}
-
 int sqlite3BtreeIsInBackup(Btree *p){
   assert( p );
   assert( sqlite3_mutex_held(p->db->mutex) );

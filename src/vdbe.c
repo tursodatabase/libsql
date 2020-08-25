@@ -3546,7 +3546,7 @@ case OP_Transaction: {
      && pOp->p2
      && (db->autoCommit==0 || db->nVdbeRead>1) 
     ){
-      assert( sqlite3BtreeIsInTrans(pBt) );
+      assert( sqlite3BtreeTxnState(pBt)==SQLITE_TXN_WRITE );
       if( p->iStatement==0 ){
         assert( db->nStatement>=0 && db->nSavepoint>=0 );
         db->nStatement++; 
@@ -7038,7 +7038,7 @@ case OP_JournalMode: {    /* out2 */
       /* Open a transaction on the database file. Regardless of the journal
       ** mode, this transaction always uses a rollback journal.
       */
-      assert( sqlite3BtreeIsInTrans(pBt)==0 );
+      assert( sqlite3BtreeTxnState(pBt)!=SQLITE_TXN_WRITE );
       if( rc==SQLITE_OK ){
         rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
       }

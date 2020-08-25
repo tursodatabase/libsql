@@ -2663,7 +2663,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   */ 
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
-    if( sqlite3BtreeIsInTrans(pBt) ){
+    if( sqlite3BtreeTxnState(pBt)==SQLITE_TXN_WRITE ){
       /* Whether or not a database might need a super-journal depends upon
       ** its journal mode (among other things).  This matrix determines which
       ** journal modes use a super-journal and which do not */
@@ -2798,7 +2798,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     */
     for(i=0; i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
-      if( sqlite3BtreeIsInTrans(pBt) ){
+      if( sqlite3BtreeTxnState(pBt)==SQLITE_TXN_WRITE ){
         char const *zFile = sqlite3BtreeGetJournalname(pBt);
         if( zFile==0 ){
           continue;  /* Ignore TEMP and :memory: databases */

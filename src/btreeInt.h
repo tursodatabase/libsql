@@ -364,10 +364,24 @@ struct Btree {
 ** If the shared-data extension is enabled, there may be multiple users
 ** of the Btree structure. At most one of these may open a write transaction,
 ** but any number may have active read transactions.
+**
+** These values must match SQLITE_TXN_NONE, SQLITE_TXN_READ, and
+** SQLITE_TXN_WRITE
 */
 #define TRANS_NONE  0
 #define TRANS_READ  1
 #define TRANS_WRITE 2
+
+#if TRANS_NONE!=SQLITE_TXN_NONE
+# error wrong numeric code for no-transaction
+#endif
+#if TRANS_READ!=SQLITE_TXN_READ
+# error wrong numeric code for read-transaction
+#endif
+#if TRANS_WRITE!=SQLITE_TXN_WRITE
+# error wrong numeric code for write-transaction
+#endif
+
 
 /*
 ** An instance of this object represents a single database file.

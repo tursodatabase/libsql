@@ -131,7 +131,9 @@ static int getTempStore(const char *z){
 static int invalidateTempStorage(Parse *pParse){
   sqlite3 *db = pParse->db;
   if( db->aDb[1].pBt!=0 ){
-    if( !db->autoCommit || sqlite3BtreeIsInReadTrans(db->aDb[1].pBt) ){
+    if( !db->autoCommit
+     || sqlite3BtreeTxnState(db->aDb[1].pBt)!=SQLITE_TXN_NONE
+    ){
       sqlite3ErrorMsg(pParse, "temporary storage cannot be changed "
         "from within a transaction");
       return SQLITE_ERROR;
