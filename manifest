@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\ssqlite3_txn_state()\sinterface.
-D 2020-08-25T19:09:07.606
+C If\sthe\sargument\sto\sthe\s".read"\scommand\sin\sthe\sCLI\sbegins\swith\s"|"\sthen\nrun\sthe\sremainder\sof\sthe\sargument\sas\sa\scommand\sand\sread\sinput\sfrom\sthe\noutput\sof\sthat\scommand.
+D 2020-08-26T10:50:48.952
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 233e884d7da6601486c7b93aedb97fd29302ae5c03742d0e0eccb4790638bb77
-F src/shell.c.in b6d5d6ebeb8903e4946f23f0886f24133e0a9b6ecbc4cf90ede422ba297e73d5
+F src/shell.c.in 13b9ba4db8aa968de52921b86a0404683369577916a8e784d063725a1e1be502
 F src/sqlite.h.in b91e4a5b9b25eb95260be0bf9716d2bdba0da06b72eb439f41592b226f58881d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8787417ec1da8071d84c6ff0d7a90b5fd458ab6baba871327f36bc4e1bceca61
-R 722b615829cb4461022a7ec168b6d94f
+P ad195e3dd89d0f33b50070c18fb8f43c4eb24162515dfdd7c04d9e7d96b902a2
+R 2ccdd1b757645c61965446903a6a0fca
 U drh
-Z af427d9ac0f51142694fe72fc2db903f
+Z 4c5d539d1c5c3691ef762ff2f3c4571e

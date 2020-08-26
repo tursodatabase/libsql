@@ -8962,9 +8962,16 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    if( notNormalFile(azArg[1])
-     || (p->in = fopen(azArg[1], "rb"))==0
-    ){
+    if( azArg[1][0]=='|' ){
+      p->in = popen(azArg[1]+1, "r");
+      if( p->in==0 ){
+        utf8_printf(stderr, "Error: cannot open \"%s\"\n", azArg[1]);
+        rc = 1;
+      }else{
+        rc = process_input(p);
+        pclose(p->in);
+      }
+    }else if( notNormalFile(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
       utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
