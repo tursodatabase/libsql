@@ -7583,21 +7583,42 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 ){
-    ShellState data;
-    char *zErrMsg = 0;
+    char **azName = 0;
+    int nName = 0;
+    sqlite3_stmt *pStmt;
+    int rc;
+    int i;
     open_db(p, 0);
-    memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.cMode = data.mode = MODE_List;
-    sqlite3_snprintf(sizeof(data.colSeparator),data.colSeparator,": ");
-    data.cnt = 0;
-    sqlite3_exec(p->db, "SELECT name, file FROM pragma_database_list",
-                 callback, &data, &zErrMsg);
-    if( zErrMsg ){
-      utf8_printf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
+    rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
+    if( rc ){
+      utf8_printf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
       rc = 1;
+    }else{
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        const char *zSchema = (const char *)sqlite3_column_text(pStmt,1);
+        const char *zFile = (const char*)sqlite3_column_text(pStmt,2);
+        azName = sqlite3_realloc(azName, (nName+1)*2*sizeof(char*));
+        if( azName==0 ){ shell_out_of_memory();  /* Does not return */ }
+        azName[nName*2] = strdup(zSchema);
+        azName[nName*2+1] = strdup(zFile);
+        nName++;
+      }
     }
+    sqlite3_finalize(pStmt);
+    for(i=0; i<nName; i++){
+      int eTxn = sqlite3_txn_state(p->db, azName[i*2]);
+      int bRdonly = sqlite3_db_readonly(p->db, azName[i*2]);
+      const char *z = azName[i*2+1];
+      utf8_printf(p->out, "%s: %s %s%s\n",
+         azName[i*2],
+         z && z[0] ? z : "\"\"",
+         bRdonly ? "r/o" : "r/w",
+         eTxn==SQLITE_TXN_NONE ? "" :
+            eTxn==SQLITE_TXN_READ ? " read-txn" : " write-txn");
+      free(azName[i*2]);
+      free(azName[i*2+1]);
+    }
+    sqlite3_free(azName);
   }else
 
   if( c=='d' && n>=3 && strncmp(azArg[0], "dbconfig", n)==0 ){
