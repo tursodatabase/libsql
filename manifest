@@ -1,5 +1,5 @@
-C Enhance\sthe\s".databases"\scommand\sin\sthe\sCLI\sso\sthat\sit\sshows\sthe\sresult\nof\ssqlite3_db_readonly()\sand\ssqlite3_txn_state()\sfor\seach\sdatabase\sfile.
-D 2020-08-26T19:07:18.179
+C Do\snot\sattempt\sto\srun\stest\sscript\sanalyze3.test\sas\spart\sof\sthe\s"prepare"\spermutation.
+D 2020-08-27T14:53:47.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -649,7 +649,7 @@ F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7
 F test/altertab3.test d0d51e652aaa11e37de1f1215181d88334fefcb185f3b9bd91e06e98260c4694
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 547bb700f903107b38611b014ca645d6b5bb819f5210d7bf39c40802aafeb7d7
-F test/analyze3.test 01f0b122e3e54ad2544f14f7cc7dcb4c2cb8753cad5e88c6b8d49615b3fd6a2b
+F test/analyze3.test fca2a9de0017becfdcc201647f03b1cfd5ba0e7b5b5c852936e4ec62780cde49
 F test/analyze4.test cdf88f3f72b0f0643a1ff6c730fc5af1e42464d47478d9fbac84c333f72c014e
 F test/analyze5.test fa5131952303ac4146aba101b116b9c8cb89e2637531c334a6df7f7d19dddc0d
 F test/analyze6.test 6c3f7df2996cb6872f355a6ac1eb6d5de00a5a9288214bad7ef25c97d9cc72dc
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c716f4b556ea8f9c9f15cffd81cb970488eadf1d5da2ba6b366d3bdeb36e492
-R 5c84472adafd40f98e2c21d6cafe8196
-U drh
-Z 0b7b01fe50d1610940d1117a5b7f17be
+P 0ffd16d23dd3b6467cce31af506c70fde44c3796d386c2a03896e43a6d683e60
+R 0a9ec4e950ccbca50a9821725e4f3e70
+U dan
+Z 0c438145530981ed0b38843be794ab6e
