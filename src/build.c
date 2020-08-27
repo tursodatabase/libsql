@@ -1617,8 +1617,10 @@ primary_key_exit:
 ** Add a new CHECK constraint to the table currently under construction.
 */
 void sqlite3AddCheckConstraint(
-  Parse *pParse,    /* Parsing context */
-  Expr *pCheckExpr  /* The check expression */
+  Parse *pParse,      /* Parsing context */
+  Expr *pCheckExpr,   /* The check expression */
+  const char *zStart, /* Opening "(" */
+  const char *zEnd    /* Closing ")" */
 ){
 #ifndef SQLITE_OMIT_CHECK
   Table *pTab = pParse->pNewTable;
@@ -1629,6 +1631,13 @@ void sqlite3AddCheckConstraint(
     pTab->pCheck = sqlite3ExprListAppend(pParse, pTab->pCheck, pCheckExpr);
     if( pParse->constraintName.n ){
       sqlite3ExprListSetName(pParse, pTab->pCheck, &pParse->constraintName, 1);
+    }else{
+      Token t;
+      for(zStart++; sqlite3Isspace(zStart[0]); zStart++){}
+      while( sqlite3Isspace(zEnd[-1]) ){ zEnd--; }
+      t.z = zStart;
+      t.n = (int)(zEnd - t.z);
+      sqlite3ExprListSetName(pParse, pTab->pCheck, &t, 1);    
     }
   }else
 #endif
