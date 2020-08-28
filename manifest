@@ -1,5 +1,5 @@
-C Update\sLemon\sdocumentation.\s\sPatches\sfrom\ssgbeal.
-D 2020-08-28T13:10:00.216
+C Add\sthe\smiscellaneous\s'series'\sextension\sto\sthe\sshell.
+D 2020-08-28T18:47:39.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 233e884d7da6601486c7b93aedb97fd29302ae5c03742d0e0eccb4790638bb77
-F src/shell.c.in ee40209106b1f12e1ae803deb427f7ab153bd7ab6fed16ed3ba8b6a6d1fa74d5
+F src/shell.c.in 14385d8c121600bd9092824d5cf7646eb717137648bc342077987c49e16de216
 F src/sqlite.h.in b91e4a5b9b25eb95260be0bf9716d2bdba0da06b72eb439f41592b226f58881d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2d26f2b11317abd4f993faa1a4df7afcd1a2d4e448ecc69ca05e9ebf102cd62
-R 218381265e6cb716367061639a662304
-U drh
-Z cdee44e4fe786c40d615ee283889a90d
+P f5dc83442bf010bc4083e083b3a1acbb9918b7e685ca676dd899a0e09df196bc
+R 0da8852a3ea0f7fec760bfd24db5abb1
+U mistachkin
+Z 38cb6ddc65539c9d256db3cbd2220668
