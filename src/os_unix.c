@@ -4888,30 +4888,32 @@ static int unixShmLock(
   sqlite3_mutex_enter(pShmNode->pShmMutex);
   assert( assertLockingArrayOk(pShmNode) );
   if( flags & SQLITE_SHM_UNLOCK ){
-    int ii;
-    int bUnlock = 1;
+    if( (p->exclMask|p->sharedMask) & mask ){
+      int ii;
+      int bUnlock = 1;
 
-    for(ii=ofst; ii<ofst+n; ii++){
-      if( aLock[ii]>((p->sharedMask & (1<<ii)) ? 1 : 0) ){
-        bUnlock = 0;
+      for(ii=ofst; ii<ofst+n; ii++){
+        if( aLock[ii]>((p->sharedMask & (1<<ii)) ? 1 : 0) ){
+          bUnlock = 0;
+        }
       }
-    }
 
-    if( bUnlock ){
-      rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+      if( bUnlock ){
+        rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+        if( rc==SQLITE_OK ){
+          memset(&aLock[ofst], 0, sizeof(int)*n);
+        }
+      }else if( p->sharedMask & (1<<ofst) ){
+        assert( n==1 && aLock[ofst]>1 );
+        aLock[ofst]--;
+      }
+
+      /* Undo the local locks */
       if( rc==SQLITE_OK ){
-        memset(&aLock[ofst], 0, sizeof(int)*n);
-      }
-    }else if( p->sharedMask & (1<<ofst) ){
-      assert( n==1 && aLock[ofst]>1 );
-      aLock[ofst]--;
+        p->exclMask &= ~mask;
+        p->sharedMask &= ~mask;
+      } 
     }
-
-    /* Undo the local locks */
-    if( rc==SQLITE_OK ){
-      p->exclMask &= ~mask;
-      p->sharedMask &= ~mask;
-    } 
   }else if( flags & SQLITE_SHM_SHARED ){
     assert( n==1 );
     assert( (p->exclMask & (1<<ofst))==0 );

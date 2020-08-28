@@ -1,5 +1,5 @@
-C Modify\sthe\sunixShmLock()\sfunction\sto\savoid\siterating\sthrough\sthe\s(possibly\slarge)\sset\sof\sconnections\sto\sthe\ssame\sdatabase\sfile.
-D 2020-08-28T19:27:15.533
+C Fix\shandling\sof\san\sxShmLock(SHARED,\sUNLOCK)\scall\swhen\sthe\scaller\sdoes\snot\shold\sany\slock\son\sthe\sspecified\sslot,\sbut\sanother\sconnection\sin\sthe\ssame\sprocess\sholds\san\sEXCLUSIVE.
+D 2020-08-28T20:01:06.517
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -519,7 +519,7 @@ F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 0120726d5ceb10f0a932dbcca3cd2c4c0f110c7f8eab3a788b34cc7accdad6cc
+F src/os_unix.c d707ed2867a2fb32101469327acf3274165d9935e9ab9e27bdab0c1a7d661be7
 F src/os_win.c a2149ff0a85c1c3f9cc102a46c673ce87e992396ba3411bfb53db66813b32f1d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3700a1c55427a3d4168ad1f1b8a8b0cb9ace1d107e4506e30a8f1e66d8a1195e
@@ -1879,10 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a04920998368e56276fd0b100be8343609c6ff8a731cf8e26a0490f9c6dabdf
-R 2ca214335aa99f522db85aff8974dca1
-T *branch * unixshmlock-opt
-T *sym-unixshmlock-opt *
-T -sym-trunk *
+P e0faddf0dfc3a40b6b94408296dd781dd0264ecc9f2129ce4405438433fb00e0
+R e6bcf42bbee53ae5585d2ea1ed2212fa
 U dan
-Z 2322c300ab82408a3c9b557087654b84
+Z 13cfa1981b90fb57cb3c9a6bb39ef17d
