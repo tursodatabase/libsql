@@ -1,5 +1,5 @@
-C Add\sthe\smiscellaneous\s'series'\sextension\sto\sthe\sshell.
-D 2020-08-28T18:47:39.103
+C Improve\sperformance\sof\swal-mode\slocking\son\sunix\sin\scases\swhere\sthere\sare\shundreds\sof\sconnections\sto\sa\ssingle\sdatabase\swithin\sthe\ssame\sprocess.
+D 2020-08-29T15:15:07.650
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -519,7 +519,7 @@ F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 13553fb5ffbe8c0e60f5d7f553667560b7dece9e31cdfcf8b57b33092a11f226
+F src/os_unix.c d707ed2867a2fb32101469327acf3274165d9935e9ab9e27bdab0c1a7d661be7
 F src/os_win.c a2149ff0a85c1c3f9cc102a46c673ce87e992396ba3411bfb53db66813b32f1d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3700a1c55427a3d4168ad1f1b8a8b0cb9ace1d107e4506e30a8f1e66d8a1195e
@@ -1879,7 +1879,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f5dc83442bf010bc4083e083b3a1acbb9918b7e685ca676dd899a0e09df196bc
-R 0da8852a3ea0f7fec760bfd24db5abb1
-U mistachkin
-Z 38cb6ddc65539c9d256db3cbd2220668
+P fc0856dccfab273d50457052fa3c6da768d0eb2504ad04d9540da4e3222fc829 3eb365027b885e1f61965efd53a3643b6ff441ae01e79038a091314516a50dd4
+R e2ba8a5583c80bb95657ae8ebc8ad469
+T +closed 3eb365027b885e1f61965efd53a3643b6ff441ae01e79038a091314516a50dd4
+U dan
+Z 6b5d0c223b51bcc2c5b4ad0cc8397b1a
