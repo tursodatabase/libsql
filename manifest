@@ -1,5 +1,5 @@
-C Improve\sperformance\sof\swal-mode\slocking\son\sunix\sin\scases\swhere\sthere\sare\shundreds\sof\sconnections\sto\sa\ssingle\sdatabase\swithin\sthe\ssame\sprocess.
-D 2020-08-29T15:15:07.650
+C Fix\sa\ssanitizer\swarning\sin\szipfile.c.
+D 2020-08-29T19:00:19.686
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -332,7 +332,7 @@ F ext/misc/vfsstat.c 389ea13983d3af926504c314f06a83cc858d5adc24b40af74aaed1fece0
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 520f34c3099e5b7d546f13708607dc2fa173c46b68952eecf0d19cd675fec85e
-F ext/misc/zipfile.c d1be54ea83ac9ad71b8b6ffc4b60db8946ce2ceacdf6bff063fcd9489f41bb49
+F ext/misc/zipfile.c e35e035bc2765b1ccdcb15f9815c2112843fcbc8f36aa071f0e5935df7072228
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 8681f6157db6adc82c34af24b14ea8a3be0146ad2a3b6c1d5da6cb8a5796c8ce
 F ext/rbu/rbu1.test 221d9c18a5e600ac9ac6b1810d99d9f99163a7909ba61597876ab6e4d4beb3d6
@@ -1879,8 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc0856dccfab273d50457052fa3c6da768d0eb2504ad04d9540da4e3222fc829 3eb365027b885e1f61965efd53a3643b6ff441ae01e79038a091314516a50dd4
-R e2ba8a5583c80bb95657ae8ebc8ad469
-T +closed 3eb365027b885e1f61965efd53a3643b6ff441ae01e79038a091314516a50dd4
+P a1c19eea8f141b89a0921da0724096feb21a772ef6654f164e2c36ebf9f7871e
+R 013976b1ab715f8b9b4b654d4debfb7e
 U dan
-Z 6b5d0c223b51bcc2c5b4ad0cc8397b1a
+Z f2b0589b50a87bedaf2e843585ad4346
