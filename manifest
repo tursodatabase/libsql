@@ -1,5 +1,5 @@
-C Fix\sa\ssanitizer\swarning\sin\szipfile.c.
-D 2020-08-29T19:00:19.686
+C Fix\sthe\sdocumentation\sfor\sthe\sOP_IdxGT\sfamily\sof\sopcodes\sto\sshow\sthat\sthe\nP5\soperand\sis\snot\sused.
+D 2020-08-31T12:29:03.480
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c e88c94a53f571b6cdc67a8dbdc2ac49ddb3c5b2435aad72d68612b2464728faa
+F src/vdbe.c c5da1456c9de0993055be9c10ebc5f5eb2be75d28cb01c8abc2f083923835a2d
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 762abffb7709f19c2cb74af1bba73a900f762e64f80d69c31c9ae89ed1066b60
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1c19eea8f141b89a0921da0724096feb21a772ef6654f164e2c36ebf9f7871e
-R 013976b1ab715f8b9b4b654d4debfb7e
-U dan
-Z f2b0589b50a87bedaf2e843585ad4346
+P ded1a75b3cf39834d38a385f38ae969b296f6c9409856b7eea08645e861b1ac2
+R d9747280ab6c456500686b04f563aa50
+U drh
+Z 96026921b32a7e290f8ba5e4e39f8431

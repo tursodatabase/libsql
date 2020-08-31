@@ -5821,7 +5821,7 @@ case OP_FinishSeek: {
   break;
 }
 
-/* Opcode: IdxGE P1 P2 P3 P4 P5
+/* Opcode: IdxGE P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
@@ -5832,7 +5832,7 @@ case OP_FinishSeek: {
 ** If the P1 index entry is greater than or equal to the key value
 ** then jump to P2.  Otherwise fall through to the next instruction.
 */
-/* Opcode: IdxGT P1 P2 P3 P4 P5
+/* Opcode: IdxGT P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
@@ -5843,7 +5843,7 @@ case OP_FinishSeek: {
 ** If the P1 index entry is greater than the key value
 ** then jump to P2.  Otherwise fall through to the next instruction.
 */
-/* Opcode: IdxLT P1 P2 P3 P4 P5
+/* Opcode: IdxLT P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
@@ -5854,7 +5854,7 @@ case OP_FinishSeek: {
 ** If the P1 index entry is less than the key value then jump to P2.
 ** Otherwise fall through to the next instruction.
 */
-/* Opcode: IdxLE P1 P2 P3 P4 P5
+/* Opcode: IdxLE P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
@@ -5880,7 +5880,6 @@ case OP_IdxGE:  {       /* jump */
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0);
   assert( pC->deferredMoveto==0 );
-  assert( pOp->p5==0 || pOp->p5==1 );
   assert( pOp->p4type==P4_INT32 );
   r.pKeyInfo = pC->pKeyInfo;
   r.nField = (u16)pOp->p4.i;
