@@ -9873,6 +9873,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,  ""               },
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""               },
       { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"      },
+      { "seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,    ""               },
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -9935,7 +9936,6 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* sqlite3_test_control(int) */
         case SQLITE_TESTCTRL_PRNG_SAVE:
         case SQLITE_TESTCTRL_PRNG_RESTORE:
-        case SQLITE_TESTCTRL_PRNG_RESET:
         case SQLITE_TESTCTRL_BYTEORDER:
           if( nArg==2 ){
             rc2 = sqlite3_test_control(testctrl);
@@ -10008,6 +10008,14 @@ static int do_meta_command(char *zLine, ShellState *p){
             isOk = 3;
           }
           break;
+
+        case SQLITE_TESTCTRL_SEEK_COUNT: {
+          u64 x = 0;
+          rc2 = sqlite3_test_control(testctrl, p->db, &x);
+          utf8_printf(p->out, "%llu\n", x);
+          isOk = 3;
+          break;
+        }
 
 #ifdef YYCOVERAGE
         case SQLITE_TESTCTRL_PARSER_COVERAGE:
