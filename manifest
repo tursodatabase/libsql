@@ -1,5 +1,5 @@
-C Improve\sperformance\sof\swal-mode\slocking\son\sunix\sin\scases\swhere\sthere\sare\shundreds\sof\sconnections\sto\sa\ssingle\sdatabase\swithin\sthe\ssame\sprocess.
-D 2020-08-29T15:36:34.942
+C Update\sthis\sbranch\swith\sthe\s"PRAGMA\snoop_update"\sfix\sfrom\sbegin-concurrent-report.
+D 2020-08-31T20:37:00.353
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 4dc01b267593537e2a0d0efe9f80dabe24c5b6f7627bc6971c487fa6a1dacbbf
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
 F src/trigger.c ef67bde309a831515dc3c2173d792574309f2f42d45f8c078743fae9f7f98c75
-F src/update.c fb15bec5b54fd098f4b84f6abc83c7103b45ba8484011fff8edf5ae31656eab6
+F src/update.c 4fb5ffdc515da442a174a77e57e08e26554037899c40732bb25894426cad3266
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c8bf30c4356b091bcc3b624d0e24b2b4d11b8be4d6c90d8e0705971e15cc819b
@@ -1219,6 +1219,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
+F test/noop_update.test 74d71bbe5d37f7861cc2402ed620eb165b8e6b00159cdcada7df716420336651
 F test/normalize.test f23b6c5926c59548635fcf39678ac613e726121e073dd902a3062fbb83903b72
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -1896,11 +1897,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ee73880ed280f33d554269d4e964cce0c44b5c6c43937da4e547c39f16e860b
-Q +a1c19eea8f141b89a0921da0724096feb21a772ef6654f164e2c36ebf9f7871e
-R 0749a7fd76499ea288e0497f2ffe422d
-T *branch * begin-concurrent-unixshmlock-opt
-T *sym-begin-concurrent-unixshmlock-opt *
-T -sym-begin-concurrent-report *
+P 30214727f7af9b5471654b0dd2cd234f0e284b24661104e55a9be771baf9577a 3c0423f0a8685cf8ef165914e6f9bd8f191d32db1c8287aed2a3ba6e272fc9f0
+R 8414831f731e41c187bf652e236d0254
 U dan
-Z b30e9f5758699ae064eede4bc7397127
+Z 9d321d7497cdfa0c4d4a1078d8e37e70
