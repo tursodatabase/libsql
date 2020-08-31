@@ -1,0 +1,36 @@
+# 2020 September 01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix noop_update
+
+if {[db eval {PRAGMA noop_update}]==""} {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('a', 111);
+}
+do_execsql_test 1.1 {
+  UPDATE t1 SET y=222 WHERE x='a';
+  SELECT * FROM t1;
+} {a 222}
+do_execsql_test 1.2 {
+  PRAGMA noop_update = 1;
+  UPDATE t1 SET y=333 WHERE x='a';
+  SELECT * FROM t1;
+} {a 222}
+
+finish_test
