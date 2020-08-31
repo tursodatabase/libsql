@@ -1870,6 +1870,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){
+      if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
+        sqlite3VdbeAddOp2(v, OP_SeekHit, iIdxCur, 1);
+      }
       if( regBignull ){
         /* Except, skip the end-of-range check while doing the NULL-scan */
         sqlite3VdbeAddOp2(v, OP_IfNot, regBignull, sqlite3VdbeCurrentAddr(v)+3);
@@ -1902,7 +1905,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
 
     if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
-      sqlite3VdbeAddOp2(v, OP_SeekHit, iIdxCur, 1);
+      sqlite3VdbeAddOp2(v, OP_SeekHit, iIdxCur, 2);
     }
 
     /* Seek the table cursor, if required */
