@@ -112,6 +112,17 @@ int sqlite3_enable_shared_cache(int enable){
   #define hasReadConflicts(a, b) 0
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Return an reset the seek counter for a Btree object.
+*/
+sqlite3_uint64 sqlite3BtreeSeekCount(Btree *pBt){
+  u64 n =  pBt->nSeek;
+  pBt->nSeek = 0;
+  return n;
+}
+#endif
+
 /*
 ** Implementation of the SQLITE_CORRUPT_PAGE() macro. Takes a single
 ** (MemPage*) as an argument. The (MemPage*) must not be NULL.
@@ -5458,6 +5469,10 @@ int sqlite3BtreeMovetoUnpacked(
       }
     }
   }
+
+#ifdef SQLITE_DEBUG
+  pCur->pBtree->nSeek++;   /* Performance measurement during testing */
+#endif
 
   if( pIdxKey ){
     xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
