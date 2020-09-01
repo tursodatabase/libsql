@@ -4383,22 +4383,31 @@ seek_not_found:
   break;
 }
 
-/* Opcode: SeekHit P1 P2 * * *
-** Synopsis: seekHit=P2
+/* Opcode: SeekHit P1 P2 P3 * *
+** Synopsis: set P2<=seekHit<=P3
 **
-** Set the seekHit flag on cursor P1 to the value in P2.
-** The seekHit flag is used by the IfNoHope opcode.
+** Increase or decrease the seekHit value for cursor P1, if necessary,
+** so that it is no less than P2 and no greater than P3.
 **
-** P1 must be a valid b-tree cursor.  P2 must be a boolean value,
-** either 0 or 1.
+** The seekHit integer represents the maximum of terms in an index for which
+** there is known to be at least one match.  If the seekHit value is smaller
+** than the total number of equality terms in an index lookup, then the
+** OP_IfNoHope opcode might run to see if the IN loop can be abandoned
+** early, thus saving work.  This is part of the IN-early-out optimization.
+**
+** P1 must be a valid b-tree cursor.
 */
 case OP_SeekHit: {
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pOp->p2==0 || pOp->p2==1 );
-  pC->seekHit = pOp->p2 & 1;
+  assert( pOp->p3>=pOp->p2 );
+  if( pC->seekHit<pOp->p2 ){
+    pC->seekHit = pOp->p2;
+  }else if( pC->seekHit>pOp->p3 ){
+    pC->seekHit = pOp->p3;
+  }
   break;
 }
 
@@ -4456,16 +4465,20 @@ case OP_IfNotOpen: {        /* jump */
 ** Synopsis: key=r[P3@P4]
 **
 ** Register P3 is the first of P4 registers that form an unpacked
-** record.
+** record.  Cursor P1 is an index btree.  P2 is a jump destination.
+** In other words, the operands to this opcode are the same as the
+** operands to OP_NotFound and OP_IdxGT.
 **
-** Cursor P1 is on an index btree.  If the seekHit flag is set on P1, then
-** this opcode is a no-op.  But if the seekHit flag of P1 is clear, then
-** check to see if there is any entry in P1 that matches the
-** prefix identified by P3 and P4.  If no entry matches the prefix,
-** jump to P2.  Otherwise fall through.
+** This opcode is an optimization attempt only.  If this opcode always
+** falls through, the correct answer is still obtained, but extra works
+** is performed.
 **
-** This opcode behaves like OP_NotFound if the seekHit
-** flag is clear and it behaves like OP_Noop if the seekHit flag is set.
+** A value of N in the seekHit flag of cursor P1 means that there exists
+** a key P3:N that will match some record in the index.  We want to know
+** if it is possible for a record P3:P4 to match some record in the
+** index.  If it is not possible, we can skips some work.  So if seekHit
+** is less than P4, attempt to find out if a match is possible by running
+** OP_NotFound.
 **
 ** This opcode is used in IN clause processing for a multi-column key.
 ** If an IN clause is attached to an element of the key other than the
@@ -4507,7 +4520,7 @@ case OP_IfNoHope: {     /* jump, in3 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  if( pC->seekHit ) break;
+  if( pC->seekHit>=pOp->p4.i ) break;
   /* Fall through into OP_NotFound */
   /* no break */ deliberate_fall_through
 }
@@ -4589,6 +4602,7 @@ case OP_Found: {        /* jump, in3 */
   }else{
     VdbeBranchTaken(takeJump||alreadyExists==0,2);
     if( takeJump || !alreadyExists ) goto jump_to_p2;
+    if( pOp->opcode==OP_IfNoHope ) pC->seekHit = pOp->p4.i;
   }
   break;
 }

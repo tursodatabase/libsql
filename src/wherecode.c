@@ -570,6 +570,9 @@ static int codeEqualityTerm(
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
     }
+    if( iEq>0 ){
+      pLoop->wsFlags |= WHERE_IN_EARLYOUT;
+    }
 
     i = pLevel->u.in.nIn;
     pLevel->u.in.nIn += nEq;
@@ -596,7 +599,6 @@ static int codeEqualityTerm(
             if( iEq>0 ){
               pIn->iBase = iReg - i;
               pIn->nPrefix = i;
-              pLoop->wsFlags |= WHERE_IN_EARLYOUT;
             }else{
               pIn->nPrefix = 0;
             }
@@ -605,6 +607,9 @@ static int codeEqualityTerm(
           }
           pIn++;
         }
+      }
+      if( iEq>0 ){
+        sqlite3VdbeAddOp3(v, OP_SeekHit, pLevel->iIdxCur, 0, iEq);
       }
     }else{
       pLevel->u.in.nIn = 0;
@@ -1789,9 +1794,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** above has already left the cursor sitting on the correct row,
       ** so no further seeking is needed */
     }else{
-      if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
-        sqlite3VdbeAddOp1(v, OP_SeekHit, iIdxCur);
-      }
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_Integer, 1, regBignull);
         VdbeComment((v, "NULL-scan pass ctr"));
@@ -1902,7 +1904,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
 
     if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
-      sqlite3VdbeAddOp2(v, OP_SeekHit, iIdxCur, 1);
+      sqlite3VdbeAddOp3(v, OP_SeekHit, iIdxCur, nEq, nEq);
     }
 
     /* Seek the table cursor, if required */
