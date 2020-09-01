@@ -4249,6 +4249,7 @@ int sqlite3_test_control(int op, ...){
       sqlite3 *db = va_arg(ap, sqlite3*);
       u64 *pn = va_arg(ap, sqlite3_uint64*);
       *pn = sqlite3BtreeSeekCount(db->aDb->pBt);
+      (void)db;  /* Silence harmless unused variable warning */
       break;
     }
 

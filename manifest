@@ -1,5 +1,5 @@
-C New\stest-control\sthat\sreturns\sthe\snumber\sof\scalls\sto\nsqlite3BtreeMovetoUnpacked()\son\sthe\smain\sdatabase\sand\sthen\sresets\sthe\ncounter.\s\sThis\sonly\sworks\sfor\sSQLITE_DEBUG\sbuilds.
-D 2020-08-31T18:49:04.199
+C Fix\sa\sharmless\scompiler\swarning.
+D 2020-09-01T00:26:21.415
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -499,7 +499,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 7e081d33aab4a9d761c39dccf3c3872c35501565d2ed9db66301918d23bc7901
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 436af4968c6954d304fce9efa12719367bd8f37b19b93b71d6ad607e85adbb47
-F src/main.c e913d3c2a1743c065fee9a00debb50d5f95b289401435c49a981609f390ae537
+F src/main.c 1b7b95b6168e29c8235042b0b7102ecbb9e6765bbc82b74f2b96294b230f60f3
 F src/malloc.c 22d5bdd9fe88ae4fad1b91a1b9735104b82853ffef868f1f05517d60dc1875f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62f7d2a61259f296ffdcb3b3ee1a13925c4563ac8ed669f8a8a63fc7bc3a0a37
-R 36c4a7f200dd414f60f8ce85e07a7d72
+P dca5b91926431768babac28a6faf7674a5014db95caba727995b470e92b3182a
+R a054e4b5c94ece883c5cccfc8d30d6f5
 U drh
-Z c26168864fbe1f1e12628f6c3cbbb874
+Z d20f9b26275b88faf3b4eb1260a25f4c
