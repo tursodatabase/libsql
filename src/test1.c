@@ -6271,6 +6271,35 @@ static int SQLITE_TCLAPI file_control_tempfilename(
   return TCL_OK;  
 }
 
+/*
+** tclcmd:   file_control_shmlock_name DB DBNAME SHMLOCKNAME
+**
+** Return a string that is a temporary filename
+*/
+static int SQLITE_TCLAPI file_control_shmlock_name(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zDbName = "main";
+  char *zName = 0;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SHMLOCKNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zDbName = Tcl_GetString(objv[2]);
+  zName = Tcl_GetString(objv[3]);
+
+  sqlite3_file_control(db, zDbName, SQLITE_FCNTL_SHMLOCK_NAME, (void*)zName);
+  return TCL_OK;  
+}
+
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -7292,6 +7321,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_remember_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_shmlockvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7321,6 +7351,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "regexp",                sqlite3_regexp_init               },
     { "remember",              sqlite3_remember_init             },
     { "series",                sqlite3_series_init               },
+    { "shmlockvtab",           sqlite3_shmlockvtab_init          },
     { "spellfix",              sqlite3_spellfix_init             },
     { "totype",                sqlite3_totype_init               },
     { "unionvtab",             sqlite3_unionvtab_init            },
@@ -8161,6 +8192,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_powersafe_overwrite",file_control_powersafe_overwrite,0},
      { "file_control_vfsname",        file_control_vfsname,         0   },
      { "file_control_tempfilename",   file_control_tempfilename,    0   },
+     { "file_control_shmlock_name",   file_control_shmlock_name,    0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
 

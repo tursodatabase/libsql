@@ -1,5 +1,5 @@
-C In\sthe\sLemon\soutput,\sadd\sa\sprefix\scomment\sthat\sexplains\sthat\sthe\soutput\sfile\nis\sautomatically\sgenerated\sand\sshows\sthe\sname\sof\sthe\ssource\sfile.
-D 2020-09-01T12:26:55.781
+C Add\sfile-controls\sand\sa\svtab\sfrontend\sfor\squerying\sthe\sunix\sVFS\sfor\sthe\scurrently\sheld\sshm-locks.\sStill\ssome\sissues.
+D 2020-09-01T20:56:28.962
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -317,6 +317,7 @@ F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a
 F ext/misc/series.c 4057dda3579b38ff88b2d3b13b4dd92dbd9d6f90dac2b55c19b0a8ed87ee4959
 F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
 F ext/misc/shathree.c 135b7c145db4a09b1650c3e7aff9cb538763a9a361e834c015dd1aaf8d5c9a00
+F ext/misc/shmlockvtab.c 2cf63c9c57c47e551a92fe1f126f718a67a2de7d3714a6183b548ef3585a3639 w ext/misc/shmlocksvtab.c
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
@@ -457,7 +458,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk b1cd0bc6aedad7ebb667b7f74f835f932f60ee33be2a5c3051fd93eb465f5c75
+F main.mk 9702e0f4d4c530f3516fc062255c0874e5044000bfb81a5210507399ca2054ac
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -519,7 +520,7 @@ F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c d707ed2867a2fb32101469327acf3274165d9935e9ab9e27bdab0c1a7d661be7
+F src/os_unix.c 1f65273dc9635f4aeab61c4893d3cb809008c9658c5fce56bc069618f0cfa6eb
 F src/os_win.c a2149ff0a85c1c3f9cc102a46c673ce87e992396ba3411bfb53db66813b32f1d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3700a1c55427a3d4168ad1f1b8a8b0cb9ace1d107e4506e30a8f1e66d8a1195e
@@ -537,7 +538,7 @@ F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 233e884d7da6601486c7b93aedb97fd29302ae5c03742d0e0eccb4790638bb77
 F src/shell.c.in 9bae0c8397e7b592fb404678c4c1fc7944d9dc798a928d1eb40bcd608c33d21b
-F src/sqlite.h.in 473a79ff2c5c6d54a09af88206ea4d02c4b74558f7d29315a4ede05da8eb8732
+F src/sqlite.h.in 67c266c9e0893f8959ccba1de14b21df9c284315a60f2bb040adbbf82868389c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
 F src/sqliteInt.h d8d69318b1ba3906d4860da1cd1c6b3650b81c9595e5bc360c6469a1e54e09e1
@@ -545,7 +546,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c 9e52fb797bf74fa327295df38881aa3ade0824bfb0c14abd0719e555b169fd55
+F src/test1.c 1cfa55932b81c8f3980f6983b3f77a7836c2f8e53da1d39d7e831444e714f8a3
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1879,7 +1880,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84d54eb35716174195ee7e5ac846f47308e5dbb0056e8ff568daa133860bab74
-R 7f45e5b59f1c52d29dee23ebb0c2337a
-U drh
-Z 0e6fd8fbc683d31bd259b25e22ecc736
+P d34caf3bb63d0512ea116a8c8c8343b76aa39441bd4b3e98231747a705b91d54
+R 70d4b88230a783c0d9a1569eb690c6e9
+T *branch * shmlock-vtab
+T *sym-shmlock-vtab *
+T -sym-trunk *
+U dan
+Z 051d13975a42f6e641461833c8ed92f1
