@@ -5970,6 +5970,7 @@ case OP_IfNoHope: {     /* jump, in3, group */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_BTREE );
   if( pC->seekHit>=2 ){
     /* There has been one or more successful OP_IdxXX opcodes ("successful"
     ** in the sense that the jump was not taken because the key and index

@@ -4248,6 +4248,7 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_SEEK_COUNT: {
       sqlite3 *db = va_arg(ap, sqlite3*);
       u64 *pn = va_arg(ap, sqlite3_uint64*);
+      (void)db;  /* Silence a harmless warning */
       *pn = sqlite3BtreeSeekCount(db->aDb->pBt);
       break;
     }
