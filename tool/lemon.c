@@ -4422,7 +4422,6 @@ void ReportTable(
   if( lemp->tokenprefix ) prefix = lemp->tokenprefix;
   else                    prefix = "";
   if( mhflag ){
-    const char *prefix;
     fprintf(out,"#if INTERFACE\n"); lineno++;
   }else{
     fprintf(out,"#ifndef %s%s\n", prefix, lemp->symbols[1]->name);
