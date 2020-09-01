@@ -1,5 +1,5 @@
-C When\sdoing\san\sUPDATE\sor\sDELETE\susing\sa\smulti-column\sindex\swhere\sonly\sa\sfew\nof\sthe\searlier\scolumns\sof\sthe\sindex\sare\suseful\sfor\sthe\sindex\slookup,\npostpone\sdoing\sthe\smain\stable\sseek\suntil\safter\sall\sWHERE\sclause\sconstraints\nhave\sbeen\sevaluated,\sin\scase\sthose\sconstraints\scan\sbe\scovered\sby\sunused\nlater\sterms\sof\sthe\sindex,\sthus\savoiding\sunnecessary\smain\stable\sseeks.
-D 2020-08-17T21:03:53.364
+C Improvements\sto\sthe\sIN-early-out\soptimization\sso\sthat\sit\sworks\smore\nefficiently\swhen\sthere\sare\stwo\sor\smore\sindexed\sIN\sclauses\son\sa\ssingle\stable.
+D 2020-09-01T02:02:16.434
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,9 +590,9 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c e12939405e77906d06ab0b78c5f513dcd2b7cec2fbb553877b0abfece6067141
 F src/vacuum.c 72690ccb6877a88f8473a893cf9f6d7592236f3eebfebfa840b19c708acde574
-F src/vdbe.c 9f449f47eb74b4943f3075259aa4800a7a579514b761cdbe1a87d6e26ac86435
+F src/vdbe.c 2263fce9d8bf32dbbc26876dd148b6aaa4ae4af7dc0d8811ff7a7c56664475cf
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
-F src/vdbeInt.h f8dbb92cab1df4bea13e98c34b52502ff20fb5b886517bfcd3a86a8a338a3142
+F src/vdbeInt.h 1a928793190675799194bdee2778f13b10ee42bc20bc03b6635687e4d3d80874
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
 F src/vdbeaux.c cb1fcb880d19df072bdd8e4ace38ee7c3477ac72cc567cc47f92a640cd352a5c
 F src/vdbeblob.c f5c70f973ea3a9e915d1693278a5f890dc78594300cf4d54e64f2b0917c94191
@@ -606,7 +606,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 3a727c5265843abe32b67c2ee4e19f5bfab39206f5d1d68e359d58e7448a77dc
 F src/whereInt.h 7bf2fc8f036784f8d75780a38b44c4b772876651fe16cbdebbfc5018ccf5c5e9
-F src/wherecode.c fd8d83689a713e07a1c785d1d6c370709f091cde0c27bdd933956d35a8cabc29
+F src/wherecode.c 8e6776e9a1cc4b33f06b0020feb00585eb871f28e5146f18cd19f849f6d9376e
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
 F src/window.c 038c248267e74ff70a2bb9b1884d40fd145c5183b017823ecb6cbb14bc781478
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1654,7 +1654,7 @@ F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2a
 F test/walvfs.test c0faffda13d045a96dfc541347886bb1a3d6f3205857fc98e683edfab766ea88
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
 F test/wapptest.tcl 78aff97afe76fd9728cf5f84710a772412735bc68a612b4789279072177a424e x
-F test/where.test 0607caa5a1fbfe7b93b95705981b463a3a0408038f22ae6e9dc11b36902b0e95
+F test/where.test 5bb7d97919cc9b2e492c4baf6c9c82122f53d59ea7e9acc6944ab93e2e459ed2
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 2341a294e17193a6b1699ea7f192124a5286ca6acfcc3f4b06d16c931fbcda2c
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1819,8 +1819,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2325a6e1cfa19e9fd533c1f7dacfc8e5aa4f2e111fa066a5c7d3040418fc8ad
-Q +7fee0b1075d622835dc6828c061be516102da9e2809f52d9ab7c4bbef7dfb871
-R 1dd32833303c4bcbd8c64a088aaf8ddb
-U dan
-Z d7f012e10aa2ce7d564bcd424e3321d9
+P 0ecda433718f0bc973078099b19955dcfb0dcd15b68455e53156ac708e9d92e5
+Q +35505c68c1945c35babd2496e02bc4907a15c8e7b8d77f05f230bd0e9d4891d7
+R 34e80ec769980ce3f758c494a6190f92
+U drh
+Z e2ad73430dd32cf44379c565112b498e
