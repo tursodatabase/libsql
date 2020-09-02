@@ -6,6 +6,7 @@ use super::{Error, Result, Statement};
 use crate::types::{FromSql, FromSqlError, ValueRef};
 
 /// An handle for the resulting rows of a query.
+#[must_use = "Rows is lazy and will do nothing unless consumed"]
 pub struct Rows<'stmt> {
     pub(crate) stmt: Option<&'stmt Statement<'stmt>>,
     row: Option<Row<'stmt>>,
@@ -96,6 +97,7 @@ impl Drop for Rows<'_> {
 }
 
 /// `F` is used to tranform the _streaming_ iterator into a _fallible_ iterator.
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Map<'stmt, F> {
     rows: Rows<'stmt>,
     f: F,
@@ -119,6 +121,7 @@ where
 /// An iterator over the mapped resulting rows of a query.
 ///
 /// `F` is used to tranform the _streaming_ iterator into a _standard_ iterator.
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct MappedRows<'stmt, F> {
     rows: Rows<'stmt>,
     map: F,
@@ -150,6 +153,7 @@ where
 
 /// An iterator over the mapped resulting rows of a query, with an Error type
 /// unifying with Error.
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct AndThenRows<'stmt, F> {
     rows: Rows<'stmt>,
     map: F,
