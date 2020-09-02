@@ -1,0 +1,147 @@
+# 2015-08-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file implements tests for table-valued-functions implemented using
+# eponymous virtual tables.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set testprefix shmlockvtab
+
+ifcapable !vtab||!wal {
+  finish_test
+  return
+}
+
+load_static_extension db shmlockvtab
+do_execsql_test 1.0 {
+  SELECT * FROM shmlock
+}
+
+do_execsql_test 1.1 {
+  CREATE TABLE t1(a, b);
+  PRAGMA journal_mode = wal;
+  SELECT * FROM t1;
+  SELECT lock, locktype, mxframe FROM shmlock;
+} {
+  wal
+  READ(0) R 0
+}
+
+do_execsql_test 1.2 {
+  BEGIN EXCLUSIVE;
+    SELECT lock, locktype, coalesce(mxframe, 'NULL') FROM shmlock;
+} {
+  WRITE   W NULL
+  READ(0) R 0
+}
+
+do_execsql_test 1.3 {
+  INSERT INTO t1 VALUES(3, 4);
+  COMMIT;
+  SELECT lock, locktype, mxframe FROM shmlock;
+} {
+  READ(1) R 1
+}
+
+do_execsql_test 1.4 {
+  INSERT INTO t1 VALUES(5, 6);
+  INSERT INTO t1 VALUES(8, 7);
+  SELECT lock, locktype, mxframe FROM shmlock;
+} {
+  READ(1) R 3
+}
+
+do_test 1.5 {
+  execsql { SELECT connid FROM shmlock }
+} {/[0123456789ABCDEF]*/}
+
+do_test 1.6 {
+  file_control_shmlock_name db main thisdb
+  execsql { SELECT * FROM shmlock }
+} {thisdb READ(1) R 3}
+
+do_test 1.7 {
+  sqlite3 db2 test.db
+  load_static_extension db2 shmlockvtab
+  file_control_shmlock_name db2 main thisdb2
+  execsql { SELECT * FROM shmlock } db2
+} {thisdb2 READ(1) R 3}
+
+forcedelete test.db2
+
+do_execsql_test 1.8 {
+  ATTACH 'test.db2' AS aux;
+  SELECT * FROM shmlock('aux');
+} {}
+
+do_execsql_test 1.9 {
+  SELECT * FROM shmlock('main');
+} {thisdb READ(1) R 3}
+
+do_test 1.10 {
+  file_control_shmlock_name db aux auxdb
+  execsql {
+    PRAGMA aux.journal_mode = wal;
+    CREATE TABLE aux.t1(x);
+  }
+} {wal}
+
+do_execsql_test 1.11 {
+  SELECT * FROM shmlock('aux');
+} {}
+
+do_execsql_test 1.12 {
+  BEGIN EXCLUSIVE;
+    INSERT INTO aux.t1 VALUES('val');
+    SELECT * FROM shmlock('aux');
+} {
+  auxdb WRITE W {} 
+  auxdb READ(1) R 2
+}
+
+file_control_shmlock_name db aux {Fred's database}
+do_execsql_test 1.13 {
+  SELECT * FROM shmlock('aux'); 
+} {
+  {Fred's database} WRITE W {} 
+  {Fred's database} READ(1) R 2
+}
+
+do_multiclient_test tn {
+  code1 { load_static_extension db shmlockvtab }
+  do_test 2.$tn.0 {
+    sql1 {
+      CREATE TABLE t1(a, b);
+      PRAGMA journal_mode = wal;
+      INSERT INTO t1 VALUES('A', 'B');
+    }
+  } {wal}
+
+  do_test 2.$tn.1 {
+    sql2 {
+      BEGIN EXCLUSIVE;
+        SELECT * FROM t1
+    }
+    sql1 { 
+      SELECT lock, locktype, mxframe FROM shmlock WHERE lock='WRITE' 
+    }
+  } {WRITE W {}}
+  do_test 2.$tn.2 {
+    sql1 { SELECT lock, locktype, mxframe FROM shmlock ORDER BY 1 }
+  } {READ(1) R 1 READ(1) R 1 WRITE W {}}
+}
+
+
+finish_test
+
