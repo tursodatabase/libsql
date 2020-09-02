@@ -10,6 +10,9 @@
 **
 *************************************************************************
 **
+** This file contains the implementation of the "shmlock" eponymous 
+** virtual table module. The schema of which is effectively:
+**
 **   CREATE TABLE shmlock(
 **       connid TEXT, 
 **       lock TEXT, 
@@ -17,6 +20,48 @@
 **       mxFrame INTEGER,
 **       dbname HIDDEN
 **   );
+**
+** This virtual table may be used to query for the locks held on the main or
+** any attached database that is in wal mode. If the database is not in
+** wal mode, zero rows are returned. Otherwise, one row is returned for
+** each lock held on the database by a connection in either the current 
+** process, as well as - to the extent possible - one row for each lock held 
+** by another process. On unix, "to the extent possible" means that if
+** two or more external processes hold a SHARED wal-mode lock on the same
+** locking-slot, only one of them is reported on.
+**
+** To query for locks on the main database, either of:
+**
+**     SELECT * FROM shmlock;
+**     SELECT * FROM shmlock('main');
+**
+** To query for locks on the attached database named 'aux':
+**
+**     SELECT * FROM shmlock('aux');
+**
+** The non-HIDDEN columns of each row may be interpreted as follows:
+**
+** connid:
+**   String identifying the connection. For a local connection lock, this is
+**   either the string representation of an internal pointer value, or else a
+**   string configured using the file-control SQLITE_FCNTL_SHMLOCK_NAME.
+**   For a lock from an external process, the id takes the form "pid.123",
+**   where 123 is the process-id of the lock holder.
+**
+** lock:
+**   A text value representing the particular wal mode lock held. One of
+**   "WRITE", "CHECKPOINT", "RECOVER" or "READ(n)", where n is between 0 and
+**   4, inclusive.
+**
+** locktype:
+**   'R' for a shared (reader) lock, or 'W' for an exclusive (writer) lock.
+**
+** mxframe:
+**   When the lock is a shared lock held on a READ(n) slot, the integer value
+**   of the corresponding read-mark slot in shared-memory.
+**
+** This module currently only works with the "unix" VFS.
+**
 */
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
@@ -43,9 +88,9 @@ struct shmlock_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   char *zFcntl;
   int iFcntl;
+  char *aSpace;              /* Space to use for dequoted strings */
 
   const char *azCol[4];
-  int anCol[4];
   sqlite3_int64 iRowid;
 };
 
@@ -108,6 +153,7 @@ static int shmlockOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 static int shmlockClose(sqlite3_vtab_cursor *cur){
   shmlock_cursor *pCur = (shmlock_cursor*)cur;
   sqlite3_free(pCur->zFcntl);
+  sqlite3_free(pCur->aSpace);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
@@ -120,17 +166,30 @@ static int shmlockNext(sqlite3_vtab_cursor *cur){
   shmlock_cursor *pCur = (shmlock_cursor*)cur;
   int ii = pCur->iFcntl;
   const char *z = pCur->zFcntl;
+  char *a = pCur->aSpace;
   int iCol;
 
   memset(pCur->azCol, 0, sizeof(char*)*4);
-  memset(pCur->anCol, 0, sizeof(int)*4);
+  if( z[ii]=='\0' ) return SQLITE_OK;;
   for(iCol=0; iCol<4; iCol++){
-    pCur->azCol[iCol] = &z[ii];
-    while( z[ii]!=' ' && z[ii]!='\n' && z[ii]!='\0' ) ii++;
-    pCur->anCol[iCol] = &z[ii] - pCur->azCol[iCol];
-    if( z[ii]=='\0' ) break;
+    if( z[ii]!='\'' ) return SQLITE_ERROR;
+
+    pCur->azCol[iCol] = a;
     ii++;
-    if( z[ii-1]=='\n' ) break;
+    while( z[ii] ){
+      if( z[ii]=='\'' ){
+        ii++;
+        if( z[ii]!='\'' ) break;
+      }
+      *a++ = z[ii++];
+    }
+    *a++ = '\0';
+    while( z[ii]==' ' ) ii++;
+    if( z[ii]=='\0' ) break;
+    if( z[ii]=='\n' ){
+      ii++;
+      break;
+    }
   }
 
   pCur->iFcntl = ii;
@@ -149,7 +208,7 @@ static int shmlockColumn(
 ){
   shmlock_cursor *pCur = (shmlock_cursor*)cur;
   if( i<=3 && pCur->azCol[i] ){
-    sqlite3_result_text(ctx, pCur->azCol[i], pCur->anCol[i], SQLITE_TRANSIENT);
+    sqlite3_result_text(ctx, pCur->azCol[i], -1, SQLITE_TRANSIENT);
   }
   return SQLITE_OK;
 }
@@ -193,8 +252,9 @@ static int shmlockFilter(
     assert( argc==1 );
     zDb = (const char*)sqlite3_value_text(argv[0]);
   }
-  sqlite3_free(pCur->zFcntl);
+  sqlite3_free(pCur->aSpace);
   pCur->zFcntl = 0;
+  pCur->aSpace = 0;
   rc = sqlite3_file_control(
       pTab->db, zDb, SQLITE_FCNTL_SHMLOCK_GET, (void*)&pCur->zFcntl
   );
@@ -204,7 +264,13 @@ static int shmlockFilter(
     rc = SQLITE_OK;
   }
   if( pCur->zFcntl ){
-    rc = shmlockNext(pVtabCursor);
+    int n = strlen(pCur->zFcntl);
+    pCur->aSpace = sqlite3_malloc(n);
+    if( pCur->aSpace==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = shmlockNext(pVtabCursor);
+    }
   }
   return rc;
 }

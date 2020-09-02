@@ -4297,7 +4297,7 @@ struct unixShm {
   u8 id;                     /* Id of this connection within its unixShmNode */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
-  const char *zShmlockName;
+  const char *zShmlockName;  /* Name to use for FCNTL_SHMLOCK_GET */
 };
 
 /*
@@ -4306,23 +4306,30 @@ struct unixShm {
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
+/*
+** This is the implementation of the SQLITE_FCNTL_SHMLOCK_NAME file-control.
+*/
 static int unixFcntlShmlockName(unixFile *pFile, const char *zName){
   int rc = SQLITE_OK;
   assert( !pFile->pShm || pFile->pShm->zShmlockName==pFile->zShmlockName );
+  if( pFile->pShm ){
+    sqlite3_mutex_enter(pFile->pShm->pShmNode->pShmMutex);
+  }
   sqlite3_free(pFile->zShmlockName);
   pFile->zShmlockName = sqlite3_mprintf("%s", zName);
   if( pFile->zShmlockName==0 ){
     rc = SQLITE_NOMEM;
   }
-  if( pFile->pShm){
-    unixShmNode *pShmNode = pFile->pShm->pShmNode;
-    sqlite3_mutex_enter(pShmNode->pShmMutex);
+  if( pFile->pShm ){
     pFile->pShm->zShmlockName = pFile->zShmlockName;
-    sqlite3_mutex_leave(pShmNode->pShmMutex);
+    sqlite3_mutex_leave(pFile->pShm->pShmNode->pShmMutex);
   }
   return rc;
 }
 
+/*
+** This is the implementation of the SQLITE_FCNTL_SHMLOCK_GET file-control.
+*/
 static int unixFcntlShmlockGet(unixFile *pFile, char **pzOut){
   int rc = SQLITE_OK;
   unixShm *p = pFile->pShm;
@@ -4357,11 +4364,11 @@ static int unixFcntlShmlockGet(unixFile *pFile, char **pzOut){
             if( (1<<i) & (pX->exclMask|pX->sharedMask) ){
               int bWrite = (1<<i) & pX->exclMask;
               if( bWrite==0 && i>=3 ){
-                sqlite3_str_appendf(pStr, "%s %s R %d\n", 
+                sqlite3_str_appendf(pStr, "%Q %Q 'R' '%d'\n", 
                     zName, aLockName[i], aReadMark[i-3]
                 );
               }else{
-                sqlite3_str_appendf(pStr, "%s %s %s\n", 
+                sqlite3_str_appendf(pStr, "%Q %Q %Q\n", 
                     zName, aLockName[i], bWrite ? "W" : "R"
                 );
               }
@@ -4371,21 +4378,21 @@ static int unixFcntlShmlockGet(unixFile *pFile, char **pzOut){
         }
       }
       for(i=0; i<SQLITE_SHM_NLOCK; i++){
-        if( pShmNode->aLock[i]==0 ){
+        if( pShmNode->aLock[i]>=0 ){
           struct flock lock;
           lock.l_whence = SEEK_SET;
           lock.l_start = UNIX_SHM_BASE+i;
           lock.l_len = 1;
           lock.l_type = F_WRLCK;
-          if( osFcntl(pFile->h, F_GETLK, &lock) ){
+          if( osFcntl(pShmNode->hShm, F_GETLK, &lock) ){
             rc = SQLITE_IOERR_LOCK;
           }else if( lock.l_type!=F_UNLCK ){
             if( lock.l_type==F_RDLCK && i>=3 ){
-              sqlite3_str_appendf(pStr, "pid.%d %s R %d\n", 
-                  lock.l_pid, aLockName[i], aReadMark[i]
+              sqlite3_str_appendf(pStr, "'pid.%d' %Q 'R' '%d'\n", 
+                  lock.l_pid, aLockName[i], aReadMark[i-3]
               );
             }else{
-              sqlite3_str_appendf(pStr, "pid.%d %s %s\n", 
+              sqlite3_str_appendf(pStr, "'pid.%d' %Q %Q\n", 
                   lock.l_pid, aLockName[i], lock.l_type==F_WRLCK ? "W" : "R"
               );
             }

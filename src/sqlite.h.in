@@ -1126,6 +1126,24 @@ struct sqlite3_io_methods {
 ** in wal mode after the client has finished copying pages from the wal
 ** file to the database file, but before the *-shm file is updated to
 ** record the fact that the pages have been checkpointed.
+**
+** <li>[[SQLITE_FCNTL_SHMLOCK_GET]]
+** This file-control is currently only supported by the "unix" VFS. The
+** (void*) argument passed with this file-control must actually be
+** a (char**) pointer. If the database is in wal-mode, the target of the
+** pointer is set to point to a human readable description of all the
+** wal-mode locks held on the database, by the current and external 
+** processes. It is the responsibility of the caller to eventually free 
+** this string using sqlite3_free(). See also the virtual table module in 
+** file "shmlockvtab.c" of the source distribution.
+** </ul>
+**
+** <li>[[SQLITE_FCNTL_SHMLOCK_NAME]]
+** This file-control is currently only supported by the "unix" VFS. The
+** (void*) argument passed with this file-control should point to a
+** nul-terminated string. A copy of this string will be used in reports
+** returned by future calls to SQLITE_FCNTL_SHMLOCK_GET within the current
+** process to identify this connection.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1168,7 +1186,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CKPT_START             39
 
 #define SQLITE_FCNTL_SHMLOCK_GET            40
-#define SQLITE_FCNTL_SHMLOCK_NAME           42
+#define SQLITE_FCNTL_SHMLOCK_NAME           41
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
