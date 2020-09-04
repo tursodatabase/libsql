@@ -7749,6 +7749,33 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
   Tcl_SetObjResult(interp, Tcl_NewIntObj(v));
   return TCL_OK;
 }
+/*
+** tclcmd:   sqlite3_txn_state DB ?SCHEMA?
+**
+** Invoke sqlite3_txn_state(DB,SCHEMA) and return the
+** numeric value that results.  Use NULL for SCHEMA if the 3 argument
+** is omitted.
+*/
+static int SQLITE_TCLAPI test_sqlite3_txn_state(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  const char *zSchema;
+  int iTxn;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ?SCHEMA?");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSchema = objc==3 ? Tcl_GetString(objv[2]) : 0;
+  iTxn = sqlite3_txn_state(db, zSchema);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iTxn));
+  return TCL_OK;
+}
 
 /*
 ** Change the name of the main database schema from "main" to "icecube".
@@ -7985,6 +8012,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      void *clientData;
   } aObjCmd[] = {
      { "sqlite3_db_config",             test_sqlite3_db_config, 0 },
+     { "sqlite3_txn_state",             test_sqlite3_txn_state, 0 },
      { "bad_behavior",                  test_bad_behavior,  (void*)&iZero },
      { "register_dbstat_vtab",          test_register_dbstat_vtab  },
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },

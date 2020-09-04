@@ -112,6 +112,17 @@ int sqlite3_enable_shared_cache(int enable){
   #define hasReadConflicts(a, b) 0
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Return an reset the seek counter for a Btree object.
+*/
+sqlite3_uint64 sqlite3BtreeSeekCount(Btree *pBt){
+  u64 n =  pBt->nSeek;
+  pBt->nSeek = 0;
+  return n;
+}
+#endif
+
 /*
 ** Implementation of the SQLITE_CORRUPT_PAGE() macro. Takes a single
 ** (MemPage*) as an argument. The (MemPage*) must not be NULL.
@@ -5459,6 +5470,10 @@ int sqlite3BtreeMovetoUnpacked(
     }
   }
 
+#ifdef SQLITE_DEBUG
+  pCur->pBtree->nSeek++;   /* Performance measurement during testing */
+#endif
+
   if( pIdxKey ){
     xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
     pIdxKey->errCode = 0;
@@ -10310,11 +10325,12 @@ const char *sqlite3BtreeGetJournalname(Btree *p){
 }
 
 /*
-** Return non-zero if a transaction is active.
+** Return one of SQLITE_TXN_NONE, SQLITE_TXN_READ, or SQLITE_TXN_WRITE
+** to describe the current transaction state of Btree p.
 */
-int sqlite3BtreeIsInTrans(Btree *p){
+int sqlite3BtreeTxnState(Btree *p){
   assert( p==0 || sqlite3_mutex_held(p->db->mutex) );
-  return (p && (p->inTrans==TRANS_WRITE));
+  return p ? p->inTrans : 0;
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -10343,14 +10359,8 @@ int sqlite3BtreeCheckpoint(Btree *p, int eMode, int *pnLog, int *pnCkpt){
 #endif
 
 /*
-** Return non-zero if a read (or write) transaction is active.
+** Return true if there is currently a backup running on Btree p.
 */
-int sqlite3BtreeIsInReadTrans(Btree *p){
-  assert( p );
-  assert( sqlite3_mutex_held(p->db->mutex) );
-  return p->inTrans!=TRANS_NONE;
-}
-
 int sqlite3BtreeIsInBackup(Btree *p){
   assert( p );
   assert( sqlite3_mutex_held(p->db->mutex) );

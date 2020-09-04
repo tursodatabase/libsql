@@ -112,16 +112,16 @@ do_execsql_test istrue-520 {
 } {1 1 0 {} {}}
 do_catchsql_test istrue-521 {
   INSERT INTO t2 VALUES(2,false,false,null,null);
-} {1 {CHECK constraint failed: t2}}
+} {1 {CHECK constraint failed: b IS TRUE}}
 do_catchsql_test istrue-522 {
   INSERT INTO t2 VALUES(2,true,true,null,null);
-} {1 {CHECK constraint failed: t2}}
+} {1 {CHECK constraint failed: c IS FALSE}}
 do_catchsql_test istrue-523 {
   INSERT INTO t2 VALUES(2,true,false,true,null);
-} {1 {CHECK constraint failed: t2}}
+} {1 {CHECK constraint failed: d IS NOT TRUE}}
 do_catchsql_test istrue-524 {
   INSERT INTO t2 VALUES(2,true,false,null,false);
-} {1 {CHECK constraint failed: t2}}
+} {1 {CHECK constraint failed: e IS NOT FALSE}}
 
 foreach {tn val} [list 1 NaN 2 -NaN 3 NaN0 4 -NaN0 5 Inf 6 -Inf] {
   do_execsql_test istrue-600.$tn.1 {
@@ -193,7 +193,7 @@ do_execsql_test istrue-840 {
 } {}
 do_catchsql_test istrue-841 {
   INSERT INTO False VALUES(5,6,7);
-} {1 {CHECK constraint failed: false}}
+} {1 {CHECK constraint failed: 5 IN (false.false)}}
 do_execsql_test istrue-850 {
   SELECT 9 IN (false.false) FROM false;
 } {0}

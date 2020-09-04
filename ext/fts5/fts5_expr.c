@@ -2401,8 +2401,15 @@ static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
     int iTerm;
 
     if( pNear->pColset ){
-      int iCol = pNear->pColset->aiCol[0];
-      zRet = fts5PrintfAppend(zRet, "%s : ", pConfig->azCol[iCol]);
+      int ii;
+      Fts5Colset *pColset = pNear->pColset;
+      if( pColset->nCol>1 ) zRet = fts5PrintfAppend(zRet, "{");
+      for(ii=0; ii<pColset->nCol; ii++){
+        zRet = fts5PrintfAppend(zRet, "%s%s", 
+            pConfig->azCol[pColset->aiCol[ii]], ii==pColset->nCol-1 ? "" : " "
+        );
+      }
+      zRet = fts5PrintfAppend(zRet, "%s : ", pColset->nCol>1 ? "}" : "");
       if( zRet==0 ) return 0;
     }
 

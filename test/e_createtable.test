@@ -1433,20 +1433,20 @@ do_execsql_test 4.11 {
 }
 
 do_createtable_tests 4.11 -error {CHECK constraint failed: %s} {
-  1a    "INSERT INTO x1 VALUES('one', 0)"       {x1}
-  1b    "INSERT INTO t1 VALUES('one', -4.0)"    {t1}
+  1a    "INSERT INTO x1 VALUES('one', 0)"       {b>0}
+  1b    "INSERT INTO t1 VALUES('one', -4.0)"    {b>0}
 
-  2a    "INSERT INTO x2 VALUES('abc', 1)"       {x2}
-  2b    "INSERT INTO t2 VALUES('abc', 1)"       {t2}
+  2a    "INSERT INTO x2 VALUES('abc', 1)"       {a||b}
+  2b    "INSERT INTO t2 VALUES('abc', 1)"       {a||b}
 
-  3a    "INSERT INTO x2 VALUES(0, 'abc')"       {x2}
-  3b    "INSERT INTO t2 VALUES(0, 'abc')"       {t2}
+  3a    "INSERT INTO x2 VALUES(0, 'abc')"       {a||b}
+  3b    "INSERT INTO t2 VALUES(0, 'abc')"       {a||b}
 
-  4a    "UPDATE t1 SET b=-1 WHERE rowid=1"      {t1}
-  4b    "UPDATE x1 SET b=-1 WHERE rowid=1"      {x1}
+  4a    "UPDATE t1 SET b=-1 WHERE rowid=1"      {b>0}
+  4b    "UPDATE x1 SET b=-1 WHERE rowid=1"      {b>0}
 
-  4a    "UPDATE x2 SET a='' WHERE rowid=1"      {x2}
-  4b    "UPDATE t2 SET a='' WHERE rowid=1"      {t2}
+  4a    "UPDATE x2 SET a='' WHERE rowid=1"      {a||b}
+  4b    "UPDATE t2 SET a='' WHERE rowid=1"      {a||b}
 }
 
 # EVIDENCE-OF: R-34109-39108 If the CHECK expression evaluates to NULL,
@@ -1639,7 +1639,7 @@ do_execsql_test 4.18.1 {
 do_execsql_test  4.18.2 { BEGIN; INSERT INTO t4 VALUES(5, 6) }
 do_catchsql_test 4.18.3 { 
   INSERT INTO t4 SELECT a+4, b+4 FROM t4
-} {1 {CHECK constraint failed: t4}}
+} {1 {CHECK constraint failed: b!=10}}
 do_test e_createtable-4.18.4 { sqlite3_get_autocommit db } 0
 do_execsql_test 4.18.5 { SELECT * FROM t4 } {1 2 3 4 5 6}
 
