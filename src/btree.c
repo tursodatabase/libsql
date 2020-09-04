@@ -2616,7 +2616,7 @@ btree_open_out:
     ** do not change the pager-cache size.
     */
     if( sqlite3BtreeSchema(p, 0, 0)==0 ){
-      sqlite3PagerSetCachesize(p->pBt->pPager, SQLITE_DEFAULT_CACHE_SIZE);
+      sqlite3BtreeSetCacheSize(p, SQLITE_DEFAULT_CACHE_SIZE);
     }
 
     pFile = sqlite3PagerFile(pBt->pPager);
