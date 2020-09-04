@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sbusy-handler\scount\sis\sreset\sat\sthe\send\sof\seach\ssqlite3_file_control()\sand\ssqlite3_prepare()\s(and\s_v2()\sand\s_v3()).
-D 2020-09-04T17:30:59.717
+C Fix\sa\stsan\serror\sthat\scould\soccur\swhen\susing\sshared-cache\smode.
+D 2020-09-04T19:10:43.046
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 87f2c3f1812b49fbb700fefc4852216af2904016b42b22c2cd5b9c254cc6665a
+F src/btree.c 1fbb15cf6af2ccd4bc784f52bda7e6a860e303d677587b6a4b95d72ae36480a0
 F src/btree.h c64f1439377e2edf31f7c3a562586a96b71f8d0ca47e65756e7d122fd8f06928
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
 F src/build.c 92b61c2be1e35a619391f17c2d1b108901ad5e4df99becc0b064a934e6ec662a
@@ -1437,7 +1437,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 38a612ea62854349ed66372f330a40d73c5cf956
+F test/threadtest3.c e63013af10cf236c7610eb06d33bde08c861806dc64be811940ff4d9ddd34a4f
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
@@ -1613,6 +1613,7 @@ F test/trustschema1.test 4e970aef0bfe0cee139703cc7209d0e0f07725d999b180ba50770f4
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
+F test/tt3_shared.c b37d22defc944a2ac4c91c927fd06c1d48cd51e2ce9d004fe868625bd2399f93
 F test/tt3_stress.c f9a769ca8b026ecc76ee93ca8c9700a5619f8e51c581107c4053ba6ac97f616f
 F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
@@ -1879,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a711e8cd2c7b64e06241736ecef478ac64ddbe7b58e0933b6febba63f7fb06e1
-R 26f4f81a99efb7f9a6941c96218c958a
+P 5dd05940617fb05ee2faf212b15afc3a8e9695318eccb76761b37359fea681d1
+R 0274cf48514643c9c3f213a9959e5172
 U dan
-Z c330f4f258e7e0fb9ad4c93d21a78b2b
+Z c8e0642635bfc4eca0e83411ec752c32
