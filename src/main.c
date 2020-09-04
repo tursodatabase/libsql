@@ -3852,7 +3852,9 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
       }
       rc = SQLITE_OK;
     }else{
+      int nSave = db->busyHandler.nBusy;
       rc = sqlite3OsFileControl(fd, op, pArg);
+      db->busyHandler.nBusy = nSave;
     }
     sqlite3BtreeLeave(pBtree);
   }

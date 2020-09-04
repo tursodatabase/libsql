@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2020-09-01T19:02:52.344
+C Ensure\sthat\sthe\sbusy-handler\scount\sis\sreset\sat\sthe\send\sof\seach\ssqlite3_file_control()\sand\ssqlite3_prepare()\s(and\s_v2()\sand\s_v3()).
+D 2020-09-04T17:30:59.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -499,7 +499,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 7e081d33aab4a9d761c39dccf3c3872c35501565d2ed9db66301918d23bc7901
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 436af4968c6954d304fce9efa12719367bd8f37b19b93b71d6ad607e85adbb47
-F src/main.c 1b7b95b6168e29c8235042b0b7102ecbb9e6765bbc82b74f2b96294b230f60f3
+F src/main.c 54d61d1e94f225636053c862c930d7dd7b29162b93d3f3ecb00439910ccba02a
 F src/malloc.c 22d5bdd9fe88ae4fad1b91a1b9735104b82853ffef868f1f05517d60dc1875f5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -519,7 +519,7 @@ F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c d707ed2867a2fb32101469327acf3274165d9935e9ab9e27bdab0c1a7d661be7
+F src/os_unix.c 99a6ace048b97b0fa6cab3b9216b9e65c3f876095f2adb5adbce41fa1664bc92
 F src/os_win.c a2149ff0a85c1c3f9cc102a46c673ce87e992396ba3411bfb53db66813b32f1d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3700a1c55427a3d4168ad1f1b8a8b0cb9ace1d107e4506e30a8f1e66d8a1195e
@@ -530,7 +530,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
 F src/pragma.c 5435b9fe17f7728bd460f52d6d9388e7e45658c6f5549f28fc2d408be9efd2d5
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
-F src/prepare.c 38ae9c2e3550bfa496886a862a5344c420ded052fd92294f409a07a53f372ffe
+F src/prepare.c 270170a239c0f66bd3c228f373afe24447c2614a6829ae22080babc64f241931
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
@@ -728,7 +728,7 @@ F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
 F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1d6cc
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
-F test/busy2.test 2499cb62c9e58e18335892602c158cb35639c411803adca6423401b31e46c503
+F test/busy2.test 26ae3b8b74235c851f27326807de94292af4d359476c629f80dc106f35c8293e
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
@@ -1879,7 +1879,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d34caf3bb63d0512ea116a8c8c8343b76aa39441bd4b3e98231747a705b91d54
-R 3b0720b948ac82f32202ffcf9870e5f6
-U mistachkin
-Z 3e6d19f97d4c9ecb153999370e83af0d
+P a711e8cd2c7b64e06241736ecef478ac64ddbe7b58e0933b6febba63f7fb06e1
+R 26f4f81a99efb7f9a6941c96218c958a
+U dan
+Z c330f4f258e7e0fb9ad4c93d21a78b2b

@@ -746,6 +746,7 @@ static int sqlite3LockAndPrepare(
   sqlite3BtreeLeaveAll(db);
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
+  db->busyHandler.nBusy = 0;
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
