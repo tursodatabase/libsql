@@ -1,5 +1,5 @@
-C Remove\san\sartifical\slimitation\son\sthe\slength\sof\scolumns\sin\sthe\s"box"\noutput\smode\sof\sthe\scommand-line\sshell.
-D 2020-09-06T17:40:38.994
+C Fix\sanother\s(harmless\sin\spractice)\stsan\serror\sin\sshared-cache\smode.
+D 2020-09-07T11:14:27.389
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
 F src/vdbeaux.c b39d2e0e7126cd4629874dd7b67162b9f0d200b620d2b4c16d400949a2f1094b
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
-F src/vdbesort.c 2be76d26998ce2b3324cdcc9f6443728e54b6c7677c553ad909c7d7cfab587df
+F src/vdbesort.c f5b5e473a7cee44e47a94817b042fd7172cf3aa2c0a7928a8339d612bcfdec5a
 F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 430c5d1da57af452f236cc862139d84ab97b6020f6d327dae5268c58e6e83a87
-R 038528dd5dd276621573688d022a2cdf
-U drh
-Z b1d1b246b08e17091c7e8f5a7125e2a2
+P 783fa887c9ed1a7d72c310df1dd9de91c016061b05fdeec87fbb2a7eb0b952ea
+R 7ac49ea27f18cc1fbf6aa814b25b07be
+U dan
+Z d2eda3ed87ec86c73c6a2c785f68a36a
