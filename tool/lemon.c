@@ -2426,7 +2426,7 @@ static void parseonetoken(struct pstate *psp)
           psp->alias[psp->nrhs] = 0;
           psp->nrhs++;
         }
-      }else if( (x[0]=='|' || x[0]=='/') && psp->nrhs>0 ){
+      }else if( (x[0]=='|' || x[0]=='/') && psp->nrhs>0 && ISUPPER(x[1]) ){
         struct symbol *msp = psp->rhs[psp->nrhs-1];
         if( msp->type!=MULTITERMINAL ){
           struct symbol *origsp = msp;
