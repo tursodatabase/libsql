@@ -1,5 +1,5 @@
-C Fix\sanother\s(harmless\sin\spractice)\stsan\serror\sin\sshared-cache\smode.
-D 2020-09-07T11:14:27.389
+C If\san\samalgamation\sis\screated\susing\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT,\nensure\sthat\sit\scan\sstill\sbe\scompiled\swithout\sthat\soption\sby\ssetting\sthe\nSQLITE_UDL_CAPABLE_PARSER\sflag\sin\sthe\spreamble.
+D 2020-09-10T12:41:46.886
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1818,7 +1818,7 @@ F tool/mkshellc.tcl 70a9978e363b0f3280ca9ce1c46d72563ff479c1930a12a7375e3881b732
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl f4ef476510eca4124c874a72029f1e01bc54a896b1724e8f9eef0d8bfae0e84c
+F tool/mksqlite3c.tcl 00c4c0382eb000153182da2bee2547ca05554eeeed10177efe5894c54e4e6d4d
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 783fa887c9ed1a7d72c310df1dd9de91c016061b05fdeec87fbb2a7eb0b952ea
-R 7ac49ea27f18cc1fbf6aa814b25b07be
-U dan
-Z d2eda3ed87ec86c73c6a2c785f68a36a
+P 5a74fa3f0a64f462c8add9beae231a9bbdd19e54d07b54f08726cb1411fc8d3a
+R f2994ae8785f87ea558c8aaa5e215f74
+U drh
+Z dbf3dc39a96afb8f8baf72c142163fc9
