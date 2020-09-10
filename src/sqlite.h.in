@@ -6199,7 +6199,7 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
 ** <li value="1"> SQLITE_TXN_READ
 ** <li value="2"> SQLITE_TXN_WRITE
 ** </ol>
-** ^If the S argument to sqlite3_txn_state(D,S) is not in the name of
+** ^If the S argument to sqlite3_txn_state(D,S) is not the name of
 ** a valid schema, then -1 is returned.
 */
 int sqlite3_txn_state(sqlite3*,const char *zSchema);
