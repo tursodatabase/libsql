@@ -2409,7 +2409,9 @@ static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
             pConfig->azCol[pColset->aiCol[ii]], ii==pColset->nCol-1 ? "" : " "
         );
       }
-      zRet = fts5PrintfAppend(zRet, "%s : ", pColset->nCol>1 ? "}" : "");
+      if( zRet ){
+        zRet = fts5PrintfAppend(zRet, "%s : ", pColset->nCol>1 ? "}" : "");
+      }
       if( zRet==0 ) return 0;
     }
 

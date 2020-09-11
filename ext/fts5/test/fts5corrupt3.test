@@ -9691,7 +9691,7 @@ do_test 65.0 {
 
 do_catchsql_test 65.1 {
   SELECT ( MATCH (t1,591)) FROM t1 WHERE t1 MATCH 'e*eŸ'
-} {1 {database disk image is malformed}}
+} {1 {malformed database schema (t2) - invalid rootpage}}
 
 #-------------------------------------------------------------------------
 #

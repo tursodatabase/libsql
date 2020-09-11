@@ -429,9 +429,16 @@ static int fts5StorageDeleteFromIndex(
           zText, nText, (void*)&ctx, fts5StorageInsertCallback
       );
       p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
+      if( p->aTotalSize[iCol-1]<0 ){
+        rc = FTS5_CORRUPT;
+      }
     }
   }
-  p->nTotalRow--;
+  if( rc==SQLITE_OK && p->nTotalRow<1 ){
+    rc = FTS5_CORRUPT;
+  }else{
+    p->nTotalRow--;
+  }
 
   rc2 = sqlite3_reset(pSeek);
   if( rc==SQLITE_OK ) rc = rc2;
