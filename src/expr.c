@@ -44,7 +44,7 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 */
 char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
-  while( ExprHasProperty(pExpr, EP_Skip) ){
+  while( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
     assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
     pExpr = pExpr->pLeft;
     assert( pExpr!=0 );
@@ -115,7 +115,7 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
   while( pExpr && ExprHasProperty(pExpr, EP_Skip) ){
-    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+    assert( pExpr->op==TK_COLLATE );
     pExpr = pExpr->pLeft;
   }   
   return pExpr;
@@ -134,7 +134,7 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
     }else{
-      assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+      assert( pExpr->op==TK_COLLATE );
       pExpr = pExpr->pLeft;
     }
   }   
@@ -768,6 +768,7 @@ int sqlite3SelectExprHeight(Select *p){
 ** Expr.flags. 
 */
 void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
+  if( pParse->nErr ) return;
   if( p && p->x.pList && !ExprHasProperty(p, EP_xIsSelect) ){
     p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
   }
