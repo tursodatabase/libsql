@@ -681,6 +681,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     incr = 1;
   }else{
     incr = 2;
+    length &= ~1;
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && zNum[i]==0; i+=2){}
     nonNum = i<length;
