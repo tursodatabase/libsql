@@ -135,6 +135,11 @@ array set ::Configs [strip_comments {
     -DSQLITE_MUTATION_TEST
     --enable-fts5 --enable-json1
   }
+  "Debug-Two" {
+    -DSQLITE_DEFAULT_MEMSTATUS=0
+    -DSQLITE_MAX_EXPR_DEPTH=0
+    --enable-debug
+  }
   "Fast-One" {
     -O6
     -DSQLITE_ENABLE_FTS4=1
@@ -284,6 +289,7 @@ array set ::Platforms [strip_comments {
     "Check-Symbols*"          checksymbols
     "Fast-One"                "fuzztest test"
     "Debug-One"               "mptest test"
+    "Debug-Two"               "test"
     "Have-Not"                test
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"

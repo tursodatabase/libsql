@@ -768,6 +768,7 @@ int sqlite3SelectExprHeight(Select *p){
 ** Expr.flags. 
 */
 void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
+  if( pParse->nErr ) return;
   if( p && p->x.pList && !ExprHasProperty(p, EP_xIsSelect) ){
     p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
   }
