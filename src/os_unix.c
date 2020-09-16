@@ -2144,6 +2144,7 @@ static int unixClose(sqlite3_file *id){
   }
   sqlite3_mutex_leave(pInode->pLockMutex);
   releaseInodeInfo(pFile);
+  assert( pFile->pShm==0 );
   rc = closeUnixFile(id);
   unixLeaveMutex();
   return rc;
