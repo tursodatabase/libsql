@@ -1591,7 +1591,7 @@ static struct rule *Rule_merge(struct rule *pA, struct rule *pB){
 ** Sort a list of rules in order of increasing iRule value
 */
 static struct rule *Rule_sort(struct rule *rp){
-  int i;
+  unsigned int i;
   struct rule *pNext;
   struct rule *x[32];
   memset(x, 0, sizeof(x));
@@ -1625,8 +1625,7 @@ static void stats_line(const char *zLabel, int iValue){
 }
 
 /* The main program.  Parse the command line and do it... */
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
   static int version = 0;
   static int rpflag = 0;
   static int basisflag = 0;
@@ -1669,6 +1668,7 @@ int main(int argc, char **argv)
   struct lemon lem;
   struct rule *rp;
 
+  (void)argc;
   OptInit(argv,options,stderr);
   if( version ){
      printf("Lemon version 1.0\n");
@@ -2266,7 +2266,7 @@ static void parseonetoken(struct pstate *psp)
       psp->preccounter = 0;
       psp->firstrule = psp->lastrule = 0;
       psp->gp->nrule = 0;
-      /* Fall thru to next case */
+      /* fall through */
     case WAITING_FOR_DECL_OR_RULE:
       if( x[0]=='%' ){
         psp->state = WAITING_FOR_DECL_KEYWORD;
