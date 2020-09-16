@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sLemon.
-D 2020-09-16T16:55:56.989
+C Fix\sa\spair\sof\sassert()s\sin\s"PRAGMA\sforeign_key_check"\sthat\smight\shave\sgiven\na\sfalse-positive\sfollowing\san\sOOM.
+D 2020-09-16T19:48:23.775
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/parse.y 9ce4dfb772608ed5bd3c32f33e943e021e3b06cfd2c01932d4280888fdd2ebed
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
-F src/pragma.c 5435b9fe17f7728bd460f52d6d9388e7e45658c6f5549f28fc2d408be9efd2d5
+F src/pragma.c 6daaaecc26a4b09481d21722525b079ce756751a43a79cc1d8f122d686806193
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 270170a239c0f66bd3c228f373afe24447c2614a6829ae22080babc64f241931
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d35fa0be866213274fc09250225b345f6b08a9b4ec373d53d95e627e24512be
-R 27185f248a8d08f2569cea31fb11af65
+P 6c94ba4b1c16b676978808dcb24f63c2f22915af5dcfe9f635c037011affcf4b
+R 38e8b34a5e2ff3cf94eaf76807abdad3
 U drh
-Z d46cc13ad21ef0a53c46a80409f98715
+Z 188d1d8f2a6059fab39eb41cb4a67396
