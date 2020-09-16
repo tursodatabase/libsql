@@ -1,5 +1,5 @@
-C Fix\sanother\s(harmless\sin\spractice)\stsan\serror\sin\sshared-cache\smode.
-D 2020-09-16T16:44:57.580
+C Fix\sa\stsan\serror\sthat\scould\soccur\swhen\susing\sshared-cache\smode.
+D 2020-09-16T16:45:35.491
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c b1c90cd4110248c8e1273ff4578d3a84c0c34725e1b96dacd4a6294a908702de
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 1439fd9b45d4d1883c53752daef42af489adaa1a1508fa39dedbc9c80ea21a2f
+F src/btree.c 73a3e74e0f6116ba43175577d8fd5eee66794908ae30dde6a0dcf317d2abfd81
 F src/btree.h 7af72bbb4863c331c8f6753277ab40ee67d2a2125a63256d5c25489722ec162b
 F src/btreeInt.h 83166f6daeb91062b6ae9ee6247b3ad07e40eba58f3c05ba9e8dedad4ab1ea38
 F src/build.c dbdaee54ffef924a070eb6202017e10d6be56baab953ef0a8e714a6def683198
@@ -1437,7 +1437,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 38a612ea62854349ed66372f330a40d73c5cf956
+F test/threadtest3.c e63013af10cf236c7610eb06d33bde08c861806dc64be811940ff4d9ddd34a4f
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
@@ -1613,6 +1613,7 @@ F test/trustschema1.test 4e970aef0bfe0cee139703cc7209d0e0f07725d999b180ba50770f4
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
+F test/tt3_shared.c b37d22defc944a2ac4c91c927fd06c1d48cd51e2ce9d004fe868625bd2399f93
 F test/tt3_stress.c f9a769ca8b026ecc76ee93ca8c9700a5619f8e51c581107c4053ba6ac97f616f
 F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
@@ -1879,9 +1880,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b4801de2d4c24ba8aeed5df9d8c4dd6263969c6013626b6142346daa57a9d75
-Q +5a74fa3f0a64f462c8add9beae231a9bbdd19e54d07b54f08726cb1411fc8d3a
-Q +5dd05940617fb05ee2faf212b15afc3a8e9695318eccb76761b37359fea681d1
-R bc369b6132a9d26cab6ac0750fd88eaf
+P 553e20c3d7dcd35077d758987c411806c4574b0f8b8a1fbd63d3321dd076a0b0
+Q +de80bc87300257cc49d98e2d22e914211f213dce912f320c8b37b3883c73923c
+R 286669a37fca71d0e175626276bb973d
 U dan
-Z c7f08fd8eeae3f27af54a2d3b3d4e4cc
+Z 60bbc2c4ca2feb1b2bbc49267c238176
