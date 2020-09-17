@@ -4997,7 +4997,9 @@ static void fts5MergePrefixLists(
         ** at most 20 bytes of unexpected space. */
         fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
         fts5BufferZero(&tmp);
-        sqlite3Fts5BufferSize(&p->rc, &tmp, i1.nPoslist + i2.nPoslist + 10 + 10);
+        sqlite3Fts5BufferSize(&p->rc, &tmp, 
+            i1.nPoslist + i2.nPoslist + 10 + 10 + FTS5_DATA_ZERO_PADDING
+        );
         if( p->rc ) break;
 
         sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
@@ -5071,9 +5073,10 @@ static void fts5MergePrefixLists(
     }
     assert_nc( out.n<=(p1->n+p2->n+9) );
 
-    fts5BufferSet(&p->rc, p1, out.n, out.p);
+    fts5BufferFree(p1);
     fts5BufferFree(&tmp);
-    fts5BufferFree(&out);
+    memset(&out.p[out.n], 0, FTS5_DATA_ZERO_PADDING);
+    *p1 = out;
   }
 }
 
