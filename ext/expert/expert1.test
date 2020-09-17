@@ -326,6 +326,47 @@ do_setup_rec_test $tn.16 {
   SCAN TABLE t1
 }
 
+do_setup_rec_test $tn.17.1 {
+  CREATE TABLE example (A INTEGER, B INTEGER, C INTEGER, PRIMARY KEY (A,B));
+} {
+  SELECT * FROM example WHERE a=?
+} {
+  (no new indexes)
+  SEARCH TABLE example USING INDEX sqlite_autoindex_example_1 (A=?)
+}
+do_setup_rec_test $tn.17.2 {
+  CREATE TABLE example (A INTEGER, B INTEGER, C INTEGER, PRIMARY KEY (A,B));
+} {
+  SELECT * FROM example WHERE b=?
+} {
+  CREATE INDEX example_idx_00000042 ON example(B);
+  SEARCH TABLE example USING INDEX example_idx_00000042 (B=?)
+}
+do_setup_rec_test $tn.17.3 {
+  CREATE TABLE example (A INTEGER, B INTEGER, C INTEGER, PRIMARY KEY (A,B));
+} {
+  SELECT * FROM example WHERE a=? AND b=?
+} {
+  (no new indexes)
+  SEARCH TABLE example USING INDEX sqlite_autoindex_example_1 (A=? AND B=?)
+}
+do_setup_rec_test $tn.17.4 {
+  CREATE TABLE example (A INTEGER, B INTEGER, C INTEGER, PRIMARY KEY (A,B));
+} {
+  SELECT * FROM example WHERE a=? AND b>?
+} {
+  (no new indexes)
+  SEARCH TABLE example USING INDEX sqlite_autoindex_example_1 (A=? AND B>?)
+}
+do_setup_rec_test $tn.17.5 {
+  CREATE TABLE example (A INTEGER, B INTEGER, C INTEGER, PRIMARY KEY (A,B));
+} {
+  SELECT * FROM example WHERE a>? AND b=?
+} {
+  CREATE INDEX example_idx_0000cb3f ON example(B, A);
+  SEARCH TABLE example USING INDEX example_idx_0000cb3f (B=? AND A>?)
+}
+
 }
 
 proc do_candidates_test {tn sql res} {
