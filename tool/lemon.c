@@ -1598,7 +1598,7 @@ static struct rule *Rule_sort(struct rule *rp){
   while( rp ){
     pNext = rp->next;
     rp->next = 0;
-    for(i=0; i<sizeof(x)/sizeof(x[0]) && x[i]; i++){
+    for(i=0; i<sizeof(x)/sizeof(x[0])-1 && x[i]; i++){
       rp = Rule_merge(x[i], rp);
       x[i] = 0;
     }
@@ -3518,7 +3518,7 @@ PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
 {
   const char *pathlist;
   char *pathbufptr;
-  char *pathbuf;
+  char *pathbuf = 0;
   char *path,*cp;
   char c;
 
@@ -3552,8 +3552,8 @@ PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
         else pathbuf = &cp[1];
         if( access(path,modemask)==0 ) break;
       }
-      free(pathbufptr);
     }
+    free(pathbufptr);
   }
   return path;
 }
@@ -3637,6 +3637,7 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
   char buf[1000];
   FILE *in;
   char *tpltname;
+  char *toFree = 0;
   char *cp;
 
   /* first, see if user specified a template filename on the command line. */
@@ -3668,7 +3669,7 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
   }else if( access(templatename,004)==0 ){
     tpltname = templatename;
   }else{
-    tpltname = pathsearch(lemp->argv0,templatename,0);
+    toFree = tpltname = pathsearch(lemp->argv0,templatename,0);
   }
   if( tpltname==0 ){
     fprintf(stderr,"Can't find the parser driver template file \"%s\".\n",
@@ -3678,10 +3679,10 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
   }
   in = fopen(tpltname,"rb");
   if( in==0 ){
-    fprintf(stderr,"Can't open the template file \"%s\".\n",templatename);
+    fprintf(stderr,"Can't open the template file \"%s\".\n",tpltname);
     lemp->errorcnt++;
-    return 0;
   }
+  free(toFree);
   return in;
 }
 

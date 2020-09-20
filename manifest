@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sdocumentation\scomment\sfor\ssqlite3_preupdate_hook().
-D 2020-09-17T21:11:25.177
+C Attempt\sto\ssilence\sharmless\sstatic\sanalyzer\swarnings\sin\sLemon\sand\sin\sthe\nLemon-generated\sparser.
+D 2020-09-20T12:10:28.961
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1799,8 +1799,8 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 28a0641683fa8786dd52d401f2b99727a0137832ebe97d822de6a493fe658abc
-F tool/lempar.c 70243f14640759cb1a8f048024daa5e54505e80e79ec02bc979edfd1a7c5e810
+F tool/lemon.c a20eb41b9acd452211e10e769d7b679db0b023e2f1722bcd571c7142353ba812
+F tool/lempar.c 3de93047419c03240e680ab4d47f15aabb136e728540a07efbe9eee867fa4b31
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c666c85a433fbc83edef4dbfb0399672e570f5d7979ab61cb39ff5488595d822
-R e4b1233394b3f971fe6857532e618b21
-U dan
-Z b4f246e815a6b5019523f3bd510ab2ce
+P 4542d194e2fef5e21e1c3679914bd9e21fab31cfb111cf640524fb3514a8afa3
+R 124e67bad8553faf5aee7db449f4027c
+U drh
+Z f070be8086929fecf605cec35180f31a
