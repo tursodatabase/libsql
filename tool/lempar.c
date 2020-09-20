@@ -718,7 +718,6 @@ static YYACTIONTYPE yy_reduce(
   (void)yyLookahead;
   (void)yyLookaheadToken;
   yymsp = yypParser->yytos;
-  assert( yyruleno>=0 );
   assert( yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) );
 #ifndef NDEBUG
   if( yyTraceFILE ){
