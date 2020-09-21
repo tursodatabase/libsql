@@ -484,7 +484,7 @@ int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 /*
 ** Functions called by the storage module as part of integrity-check.
 */
-int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum);
+int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum, int bUseCksum);
 
 /* 
 ** Called during virtual module initialization to register UDF 
@@ -639,7 +639,7 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**);
 int sqlite3Fts5StorageContentInsert(Fts5Storage *p, sqlite3_value**, i64*);
 int sqlite3Fts5StorageIndexInsert(Fts5Storage *p, sqlite3_value**, i64);
 
-int sqlite3Fts5StorageIntegrity(Fts5Storage *p);
+int sqlite3Fts5StorageIntegrity(Fts5Storage *p, int iArg);
 
 int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt**, char**);
 void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);

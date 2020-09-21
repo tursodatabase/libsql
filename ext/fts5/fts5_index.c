@@ -6062,7 +6062,7 @@ static void fts5IndexIntegrityCheckSegment(
 ** error, or some other SQLite error code if another error (e.g. OOM)
 ** occurs.
 */
-int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
+int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
   int eDetail = p->pConfig->eDetail;
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
   Fts5Buffer poslist = {0,0,0};   /* Buffer used to hold a poslist */
@@ -6133,7 +6133,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);
 
   fts5MultiIterFree(pIter);
-  if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
+  if( p->rc==SQLITE_OK && bUseCksum && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
 
   fts5StructureRelease(pStruct);
 #ifdef SQLITE_DEBUG

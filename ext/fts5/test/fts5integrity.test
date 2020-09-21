@@ -273,7 +273,6 @@ do_execsql_test 9.1.2 {
   SELECT quote(x'37');
 } {X'37'}
 
-breakpoint
 do_execsql_test 9.2 {
   INSERT INTO vt0 VALUES (SUBSTR(x'37', 0));
 --  INSERT INTO vt0 VALUES (x'37');
@@ -281,5 +280,41 @@ do_execsql_test 9.2 {
 do_execsql_test 9.3 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.0 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, a, b);
+  CREATE VIRTUAL TABLE vt0 USING fts5(a, b, content=t1);
+  INSERT INTO vt0(rowid, a, b) VALUES(1, 'abc', 'def');
+}
+do_catchsql_test 10.1 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+} {0 {}}
+do_catchsql_test 10.2 {
+  INSERT INTO vt0(vt0, rank) VALUES('integrity-check', 0);
+} {0 {}}
+do_catchsql_test 10.3 {
+  INSERT INTO vt0(vt0, rank) VALUES('integrity-check', 1);
+} {1 {database disk image is malformed}}
+do_catchsql_test 10.3 {
+  INSERT INTO t1 VALUES(1, 'abc', 'def');
+  INSERT INTO vt0(vt0, rank) VALUES('integrity-check', 1);
+} {0 {}}
+
+do_execsql_test 10.4 {
+  CREATE VIRTUAL TABLE vt1 USING fts5(a, b, content=);
+  INSERT INTO vt1(rowid, a, b) VALUES(1, 'abc', 'def');
+}
+
+do_catchsql_test 10.5.1 {
+  INSERT INTO vt0(vt0, rank) VALUES('integrity-check', 0);
+} {0 {}}
+do_catchsql_test 10.5.2 {
+  INSERT INTO vt0(vt0, rank) VALUES('integrity-check', 1);
+} {0 {}}
+do_catchsql_test 10.5.3 {
+  INSERT INTO vt0(vt0) VALUES('integrity-check');
+} {0 {}}
 
 finish_test
