@@ -3517,7 +3517,7 @@ void ReportOutput(struct lemon *lemp)
 PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
 {
   const char *pathlist;
-  char *pathbufptr;
+  char *pathbufptr = 0;
   char *pathbuf = 0;
   char *path,*cp;
   char c;
