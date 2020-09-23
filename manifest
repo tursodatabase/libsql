@@ -1,11 +1,8 @@
 B 3d35fa0be866213274fc09250225b345f6b08a9b4ec373d53d95e627e24512be
-C Order\sbtree.h\sby\slogical\sfunction,\sadd\scomments
-D 2020-09-17T15:04:16.854
-F src/btree.h 595e94f8ce788b8cd633d70c1d0892de0216083e789d38020d6a5432f06f38e7
-P 3d35fa0be866213274fc09250225b345f6b08a9b4ec373d53d95e627e24512be
-R d928bc2530a56c66a8796118e1f78d44
-T *branch * btree-code-documentation
-T *sym-btree-code-documentation *
-T -sym-trunk *
+C Figured\sout\swhere/how\ssqlite3BtreeRowCountEst()\sis\scalled
+D 2020-09-23T17:31:30.742
+F src/btree.h a52b132ac5812afd3c894ec64a3313162734d4ed765a5c12bab671ddf016969b
+P ab53b317953c07c12970e530efda0ce39fa259dc29be980c1aa4784dcf9a39fb
+R 9819f6c7f8b826627bd979a42816ba96
 U shearer
-Z 0f4717f5a6349aba4c2f8ff699459ba7
+Z d1230908241e48c6115d197b68156142

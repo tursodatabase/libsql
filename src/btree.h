@@ -192,8 +192,9 @@ int sqlite3BtreeSavepoint(Btree *, int, int);
 int sqlite3BtreeIsReadonly(Btree *pBt);
 int sqlite3HeaderSizeBtree(void);
 
-/* Estimate number of rows in table */
-/* This is no longer exposed via EXPLAIN QUERY PLAN */
+/* Estimate number of rows in table
+ * called only by OP IsSmaller, from PRAGMA optimize
+*/
 i64 sqlite3BtreeRowCountEst(BtCursor*);  
 
 /*
