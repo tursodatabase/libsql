@@ -32,11 +32,6 @@
 #ifndef SQLITE_BTREE_H
 #define SQLITE_BTREE_H
 
-/* TODO: This definition is just included so other modules compile. It
-** needs to be revisited.
-*/
-#define SQLITE_N_BTREE_META 16
-
 /*
 ** Forward declarations of structure
 */
@@ -456,6 +451,13 @@ int sqlite3BtreeIncrVacuum(Btree *);
 #define BTREE_APPLICATION_ID      8
 #define BTREE_DATA_VERSION        15  /* A virtual meta-value */
 
+
+/* TODO: This definition is only used in asserts to determine whether 
+ * the metadata index (second parameter of Get/UpdateMeta functions) 
+ * is out of range. It is only included here so other modules compile. It
+ * ** needs to be revisited.
+ * */
+#define SQLITE_N_BTREE_META 16
 
 void sqlite3BtreeGetMeta(Btree *pBtree, int idx, u32 *pValue);
 int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
