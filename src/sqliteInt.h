@@ -17,15 +17,16 @@
 
 /* Special Comments:
 **
-** Some comments have special meaning to the tools that measure test
-** coverage:
+** Some comments have special meaning to the external tools that measure test
+** coverage of conditional brances (MC/DC testing, described in
+** https://en.wikipedia.org/wiki/Modified_condition/decision_coverage ).
 **
 **    NO_TEST                     - The branches on this line are not
 **                                  measured by branch coverage.  This is
 **                                  used on lines of code that actually
 **                                  implement parts of coverage testing.
 **
-**    OPTIMIZATION-IF-TRUE        - This branch is allowed to alway be false
+**    OPTIMIZATION-IF-TRUE        - This branch is allowed to always be false
 **                                  and the correct answer is still obtained,
 **                                  though perhaps more slowly.
 **
@@ -35,7 +36,11 @@
 **
 **    PREVENTS-HARMLESS-OVERREAD  - This branch prevents a buffer overread
 **                                  that would be harmless and undetectable
-**                                  if it did occur.  
+**                                  if it did occur.
+**
+** The OPTIMIZATION-* comments above are for mutation testing as described in
+** https://en.wikipedia.org/wiki/Mutation_testing and
+** https://www.sqlite.org/testing.html#mutationtests .
 **
 ** In all cases, the special comment must be enclosed in the usual
 ** slash-asterisk...asterisk-slash comment marks, with no spaces between the 
