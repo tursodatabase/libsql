@@ -173,7 +173,7 @@ int sqlite3BtreeCreateTable(Btree*, Pgno*, int flags);
 int sqlite3BtreeTxnState(Btree*);
 int sqlite3BtreeIsInBackup(Btree*);
 
-/* A savepoint refers to transactions implemented with or without WAL. */
+/* A savepoint refers to transactions implemented regardless of WAL. */
 /* References to 'savepoint' in btree.c relate to protected subtransactions */
 /* within the Btree, which relate to SQL COMMIT/ROLLBACK in general */
 /* including the SQL-level SAVEPOINT statement. */
