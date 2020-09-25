@@ -172,9 +172,14 @@ int sqlite3BtreeBeginStmt(Btree*,int);
 int sqlite3BtreeCreateTable(Btree*, Pgno*, int flags);
 int sqlite3BtreeTxnState(Btree*);
 int sqlite3BtreeIsInBackup(Btree*);
+
+/* A savepoint refers to transactions implemented with or without WAL. */
+/* References to 'savepoint' in btree.c relate to protected subtransactions */
+/* within the Btree, which relate to SQL COMMIT/ROLLBACK in general */
+/* including the SQL-level SAVEPOINT statement. */
 int sqlite3BtreeSavepoint(Btree *, int, int);
 
-/* A checkpoint is not the same as a savepoint. More research needed */
+/* A checkpoint refers to only to WAL. See https://sqlite.org/wal.html#ckpt */
 #ifndef SQLITE_OMIT_WAL
   int sqlite3BtreeCheckpoint(Btree*, int, int *, int *);  
 #endif
