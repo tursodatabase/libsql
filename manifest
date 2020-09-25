@@ -1,9 +1,10 @@
 B 3d35fa0be866213274fc09250225b345f6b08a9b4ec373d53d95e627e24512be
-C Added\scontext\sto\sexplain\sthat\sthe\stest\scoverage\sis\sabout\sMC/DC\sin\sgeneral,\snot\s\njust\san\sSQLite-specifc\stest\sharness.
-D 2020-09-24T11:41:18.469
+C Add\sreminder\scomment\sthat,\sby\sdefinition,\sthese\sfunctions\swon't\sbe\scalled\sfrom\nelsewhere\sin\sSQLite.\sUseful\sto\sremember\sfor\sbeginners\swho\smay\ssuspect\sunusued\scode.
+D 2020-09-25T08:17:58.869
 F src/btree.h a36f07d3b2a654293b477d80d6f0eff2ce2420dcf964c857eaa44980f1a15a6d
+F src/func.c 01d7b7226a02aaa471f667aad348206c55b59390f50250af84260a13aa77285e
 F src/sqliteInt.h 8cd4cbd10c3263d91a8aa316165f45d8cc9215156e04b635b9a4de8c28c491bb
-P 5c306f42514a42fce40fddbfed83df71c3897cc36843ed4e9e968de85ec80b42
-R 60440bb1c556853c2938c18383760027
+P 770dbedddc7ce7fa2355df5db5f77ef08c53549cf7c85d0496b1978e0612c1ab
+R 32b3794bc09b7ee1f1b6fdb12b6a4308
 U shearer
-Z 7cf7042cafcc05ab5168d6b809815715
+Z 0228ae7c068924d2613f708ab4a2497f
