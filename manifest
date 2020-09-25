@@ -1,6 +1,6 @@
 B 3d35fa0be866213274fc09250225b345f6b08a9b4ec373d53d95e627e24512be
-C More\sclassification\sof\sfunctions.\nFix\sincorrect\scomment\sthat\ssqlite3BtreeCursorHasHint()\sis\sonly\sused\swithin\nasserts.
-D 2020-09-25T13:56:31.904
+C Reset\sto\strunk's\sfunc.\sStill\slearning\sFossil.
+D 2020-09-25T14:26:49.818
 F ext/expert/expert1.test dba6e752cc701621771f925f3872b183fa688f7b4a9f4822631fc02bdbffc45a
 F ext/expert/sqlite3expert.c 2778d9f06b3a8bfa859cb6b75b82f004477bf5dd78edd17d954319750ca963f3
 F ext/fts5/fts5Int.h ba835c165bb87650fc806008969799a7a1fbe3e221fd5a850dd044eb6a87b243
@@ -14,7 +14,6 @@ F ext/fts5/test/fts5integrity.test e387b2bd1c83e50f4a12f58a5fd399111bbab36be2f1c
 F ext/rtree/rtree.c 60f6f1675134201974be4189dbd219494c13e1ed30e80bd92ae0dcc86df1b035
 F src/btree.c fb7970654479f968ab09321f6a6c8b796174860b641f7d8879f221dd6667e272
 F src/btree.h 3bf68d60824f6495904ceb0df9102a3413fed933d80c43aefc8e094875105e30
-F src/func.c 01d7b7226a02aaa471f667aad348206c55b59390f50250af84260a13aa77285e
 F src/pragma.c 6daaaecc26a4b09481d21722525b079ce756751a43a79cc1d8f122d686806193
 F src/select.c 6c3f7d60295f06ce7fa128bb23b1159648f0aa96a78c257af35dfef727ac63f1
 F src/sqlite.h.in cb9f0862e8d0f8691de95b18439ab60666f868c83bc65e3a17f0a0b44cc8f8a9
@@ -23,7 +22,7 @@ F src/wherecode.c 9afd600ca9fe831f342121cca48ad8839c8a18ca4e0372518a0a3c8123a8f0
 F test/with1.test 323659eaf309787add657d05e5943e437a7a3494f2b6602a0deb18fdebc1ab4c
 F tool/lemon.c 70eedc31614a58fe31a71025c17ebd1502a6ce9cfef0ed5e33acb0b5b737b291
 F tool/lempar.c 0e1d5eeb9736108d3dba782a9dd56f4e7cb69006b6ee181308b7ebfb15313a12
-P 3a576608e6f26ae8642ec4b2b1c2f2b91b1acda3dc9928b9d67e401684c254b3
-R fcbee21c7e42fda63f727e06739686dd
+P 78d8db7cb73284644cde1636a14e4e3598e1a2a7e94a04dfc7406422aab93ae5
+R bc0e1702bf8a1aafdab8ae0b180ad2bf
 U shearer
-Z bbb54d9bd1cac5be9cfe1852d403631f
+Z 9442bc333cd0ee23ba290ef720a3f91e

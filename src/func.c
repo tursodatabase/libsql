@@ -10,10 +10,8 @@
 **
 *************************************************************************
 ** This file contains the C-language implementations for many of the SQL
-** functions of SQLite.  (Some functions, and in particular the date and
+** functions of SQLite.  (Some function, and in particular the date and
 ** time functions, are implemented separately.)
-**
-** Many of these functions are never called from other parts of SQLite.
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -259,6 +257,32 @@ endInstrOOM:
   goto endInstr;
 }
 
+/*
+** Implementation of the printf() function.
+*/
+static void printfFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  PrintfArguments x;
+  StrAccum str;
+  const char *zFormat;
+  int n;
+  sqlite3 *db = sqlite3_context_db_handle(context);
+
+  if( argc>=1 && (zFormat = (const char*)sqlite3_value_text(argv[0]))!=0 ){
+    x.nArg = argc-1;
+    x.nUsed = 0;
+    x.apArg = argv+1;
+    sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
+    str.printfFlags = SQLITE_PRINTF_SQLFUNC;
+    sqlite3_str_appendf(&str, zFormat, &x);
+    n = str.nChar;
+    sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
+                        SQLITE_DYNAMIC);
+  }
+}
 
 /*
 ** Implementation of the substr() function.
@@ -1945,6 +1969,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
+    FUNCTION(printf,            -1, 0, 0, printfFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
