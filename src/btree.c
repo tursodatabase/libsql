@@ -10542,7 +10542,7 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
 
 /*
 ** Return true if the cursor has a hint specified.  This routine is
-** only used from within assert() statements
+** only used from within or around assert() statements
 */
 int sqlite3BtreeCursorHasHint(BtCursor *pCsr, unsigned int mask){
   return (pCsr->hints & mask)!=0;

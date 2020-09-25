@@ -182,15 +182,9 @@ int sqlite3BtreeSavepoint(Btree *, int, int);
 
 /*
 ** Reading and Traversing the Database Image
+**
+** Mostly functions for seeking and cursor control
 */
-
-int sqlite3BtreeIsReadonly(Btree *pBt);
-int sqlite3HeaderSizeBtree(void);
-
-/* Estimate number of rows in table
- * called only by OP IsSmaller, from PRAGMA optimize
-*/
-i64 sqlite3BtreeRowCountEst(BtCursor*);  
 
 /*
 ** Kinds of hints that can be passed into the sqlite3BtreeCursorHint()
@@ -270,6 +264,10 @@ int sqlite3BtreeCursor(
   struct KeyInfo*,                     /* First argument to compare function */
   BtCursor *pCursor                    /* Space to write cursor structure */
 );
+
+/* True if hint specified, used in or around assert statements only */
+int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask); 
+
 BtCursor *sqlite3BtreeFakeValidCursor(void);
 
 #ifdef SQLITE_DEBUG
@@ -327,6 +325,17 @@ int sqlite3BtreeCursorRestore(BtCursor*, int*);
 int sqlite3BtreeCursorInfo(BtCursor*, int*, int);  
 void sqlite3BtreeCursorList(Btree*);
 #endif
+
+/* Set all relevant cursors to error state on transaction rollback */
+int sqlite3BtreeTripAllCursors(Btree*, int, int);
+
+int sqlite3BtreeIsReadonly(Btree *pBt);
+
+/* Estimate number of rows in table
+ * called only by OP IsSmaller, from PRAGMA optimize
+*/
+i64 sqlite3BtreeRowCountEst(BtCursor*);  
+
 
 
 /*
@@ -452,6 +461,10 @@ int sqlite3BtreeIncrVacuum(Btree *);
 #define BTREE_DATA_VERSION        15  /* A virtual meta-value */
 
 
+/* Refers to the size of the per-page header, not per-database header */
+/* Used for configuring the size of the pages in the page cache */
+int sqlite3HeaderSizeBtree(void);
+
 /* TODO: This definition is only used in asserts to determine whether 
  * the metadata index (second parameter of Get/UpdateMeta functions) 
  * is out of range. It is only included here so other modules compile. It
@@ -464,12 +477,11 @@ int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
 
 /* This returns the size of the current database file, ie the same */
 /* result as sqlite3OsFileSize in os.h . */
-/* This is another kind of metadata */
 sqlite3_int64 sqlite3BtreeMaxRecordSize(BtCursor*);
 
-/* This may not in fact be even kind-of metadata. More research needed */
+/* Version number of the file format must be either 1 or 2 */
+/* 1=legacy, 2=WAL . Read and write versions set to same value */
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion); 
-
 
 
 /*
@@ -477,8 +489,6 @@ int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 */
 
 int sqlite3BtreeCopyFile(Btree *, Btree *);
-
-int sqlite3BtreeTripAllCursors(Btree*, int, int);
 
 char *sqlite3BtreeIntegrityCheck(sqlite3*,Btree*,Pgno*aRoot,int nRoot,int,int*);
 
@@ -489,8 +499,5 @@ int sqlite3BtreePayloadChecked(BtCursor*, u32 offset, u32 amt, void*);
 int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeIncrblobCursor(BtCursor *);
 #endif
-
-int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask); 
-
 
 #endif /* SQLITE_BTREE_H */
