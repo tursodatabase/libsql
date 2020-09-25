@@ -306,7 +306,6 @@ int sqlite3Fts5HashWrite(
       p->iCol = (pHash->eDetail==FTS5_DETAIL_FULL ? 0 : -1);
     }
 
-    nIncr += p->nData;
   }else{
 
     /* Appending to an existing hash-entry. Check that there is enough 

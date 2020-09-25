@@ -4997,7 +4997,9 @@ static void fts5MergePrefixLists(
         ** at most 20 bytes of unexpected space. */
         fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
         fts5BufferZero(&tmp);
-        sqlite3Fts5BufferSize(&p->rc, &tmp, i1.nPoslist + i2.nPoslist + 10 + 10);
+        sqlite3Fts5BufferSize(&p->rc, &tmp, 
+            i1.nPoslist + i2.nPoslist + 10 + 10 + FTS5_DATA_ZERO_PADDING
+        );
         if( p->rc ) break;
 
         sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
@@ -5071,9 +5073,10 @@ static void fts5MergePrefixLists(
     }
     assert_nc( out.n<=(p1->n+p2->n+9) );
 
-    fts5BufferSet(&p->rc, p1, out.n, out.p);
+    fts5BufferFree(p1);
     fts5BufferFree(&tmp);
-    fts5BufferFree(&out);
+    memset(&out.p[out.n], 0, FTS5_DATA_ZERO_PADDING);
+    *p1 = out;
   }
 }
 
@@ -6059,7 +6062,7 @@ static void fts5IndexIntegrityCheckSegment(
 ** error, or some other SQLite error code if another error (e.g. OOM)
 ** occurs.
 */
-int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
+int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
   int eDetail = p->pConfig->eDetail;
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
   Fts5Buffer poslist = {0,0,0};   /* Buffer used to hold a poslist */
@@ -6130,7 +6133,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);
 
   fts5MultiIterFree(pIter);
-  if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
+  if( p->rc==SQLITE_OK && bUseCksum && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
 
   fts5StructureRelease(pStruct);
 #ifdef SQLITE_DEBUG
