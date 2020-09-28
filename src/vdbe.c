@@ -4383,6 +4383,59 @@ seek_not_found:
   break;
 }
 
+
+/* Opcode: SeekScan
+** Synopsis: Scan-ahead up to P1 rows
+**
+** This opcode is a prefix.  It must be followed immediately by
+** OP_SeekGE and then OP_IdxGT.  This opcode should occur in no other
+** context.  That constraint is verified using assert() statements in
+** the code.
+**
+** This opcode helps to optimize IN operators on a multi-column index
+** where the IN operator is on the later terms of the index.
+**
+** The P3 and P4 operations of the OP_SeekGE opcode that follows this
+** opcode identify an unpacked key which is the desired entry that
+** we want to advance the cursor to.  Call this the "target".
+**
+** If the OP_SeekGE opcode that immediately follows this opcode has
+** never run before, then this opcode is a no-op and control passes
+** through into the OP_SeekGE.
+**
+** If the subsequent OP_SeekGE opcode has run before, then that prior
+** might OP_SeekGE might have left the cursor pointing any entry that
+** is close to the target.  This routine checks, and if possible
+** bypasses the OP_SeekGE.
+**
+** If the cursor is past the target, jump immediately to the
+** P2 of the subsequent OP_SeekGE.
+**
+** If the cursor is less than the target, then step forward up to P1
+** times trying to find a match.  If during these steps, the
+** cursor moves past the target, then jump immediately to
+** the P2 of the subsequent OP_SeekGE.  If a match is found, jump
+** to the first instruction past the OP_IdxGT that follows the
+** OP_SeekGE.  (In other words, skip over the next two opcodes).
+** If P1 steps are performed and the cursor is still less than the
+** target, then fall through into OP_SeekGE opcode.
+**
+** This opcode is an optimization.  This opcode can be a no-op and
+** the correct answer should still be obtained.  The purpose of this
+** opcode is to bypass unnecessary OP_SeekGE operations.
+*/
+case OP_SeekScan: {
+  assert( pOp[1].opcode==OP_SeekGE );
+  assert( pOp[2].opcode==OP_IdxGT );
+  assert( pOp[1].p1==pOp[2].p1 );
+  assert( pOp[1].p2==pOp[2].p2 );
+  assert( pOp[1].p3==pOp[2].p3 );
+  assert( pOp[1].p4.i==pOp[2].p4.i );
+  assert( pOp->p1>0 );
+  break;  /* No-op for now.  FIX ME. */
+}
+
+
 /* Opcode: SeekHit P1 P2 P3 * *
 ** Synopsis: set P2<=seekHit<=P3
 **

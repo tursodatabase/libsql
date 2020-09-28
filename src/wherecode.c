@@ -1804,6 +1804,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
+      if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 ){
+        assert( op==OP_SeekGE );
+        assert( regBignull==0 );
+        sqlite3VdbeAddOp1(v, OP_SeekScan, 10);
+      }
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       VdbeCoverage(v);
       VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );

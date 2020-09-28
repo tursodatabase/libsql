@@ -619,5 +619,6 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */
 #define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */
 #define WHERE_BIGNULL_SORT 0x00080000  /* Column nEq of index is BIGNULL */
+#define WHERE_IN_SEEKSCAN  0x00100000  /* Seek-scan optimization for IN */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */
