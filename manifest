@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2020-09-21T20:18:44.298
+C Avoid\sthe\spossibility\sof\sinteger\soverflow\son\sthe\s--pagecache\soption\sto\nthe\sCLI.\sSee\s[forum:10a2892377|forum\spost\s10a2892377]
+D 2020-09-28T13:34:05.229
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 6c3f7d60295f06ce7fa128bb23b1159648f0aa96a78c257af35dfef727ac63f1
-F src/shell.c.in 0fd9eca42731d94a293d7b12a76c6614976f8bdbb2874768ad2e6ddbb86dffd8
+F src/shell.c.in 4e6ea7bf44ace40faf2b4214b7cb336fd15d22d2f7d04b70b5aa10a7716f7be7
 F src/sqlite.h.in cb9f0862e8d0f8691de95b18439ab60666f868c83bc65e3a17f0a0b44cc8f8a9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 782163693f37aeb65209bebbaeb6659a36881b8c4b4bec778b366658488bf966
-R 5af95199526128dc811fede293f15c08
-U mistachkin
-Z 03a5a4cf0703ce5a197f76e2fac51ef2
+P 4591ee03d7a1ef3f0f6ad0629493fdb7a1c0ddb3277a9e87aa244cb0ca770593
+R 096d8fd2cb406180b5d1086b876d6b9e
+U drh
+Z 99fd9cfbb690a189978738ae4f65f4ca
