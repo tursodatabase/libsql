@@ -5360,7 +5360,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
         if( pIn->eEndLoopOp!=OP_Noop ){
           if( pIn->nPrefix ){
-            assert( pLoop->wsFlags & WHERE_IN_EARLYOUT );
+            int bEarlyOut = 
+                (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0
+                 && (pLoop->wsFlags & WHERE_IN_EARLYOUT)!=0;
             if( pLevel->iLeftJoin ){
               /* For LEFT JOIN queries, cursor pIn->iCur may not have been
               ** opened yet. This occurs for WHERE clauses such as
@@ -5371,12 +5373,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
               ** jump over the OP_Next or OP_Prev instruction about to
               ** be coded.  */
               sqlite3VdbeAddOp2(v, OP_IfNotOpen, pIn->iCur, 
-                  sqlite3VdbeCurrentAddr(v) + 2 + 
-                     ((pLoop->wsFlags & WHERE_VIRTUALTABLE)==0)
-              );
+                  sqlite3VdbeCurrentAddr(v) + 2 + bEarlyOut);
               VdbeCoverage(v);
             }
-            if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 ){
+            if( bEarlyOut ){
               sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
                   sqlite3VdbeCurrentAddr(v)+2,
                   pIn->iBase, pIn->nPrefix);

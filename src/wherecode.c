@@ -570,7 +570,7 @@ static int codeEqualityTerm(
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
     }
-    if( iEq>0 ){
+    if( iEq>0 && (pLoop->wsFlags && WHERE_IN_SEEKSCAN)==0 ){
       pLoop->wsFlags |= WHERE_IN_EARLYOUT;
     }
 
@@ -1911,7 +1911,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
     }
 
-    if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
+    if( (pLoop->wsFlags & WHERE_IN_EARLYOUT)!=0 ){
       sqlite3VdbeAddOp3(v, OP_SeekHit, iIdxCur, nEq, nEq);
     }
 

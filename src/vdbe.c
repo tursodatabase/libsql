@@ -4425,6 +4425,11 @@ seek_not_found:
 ** opcode is to bypass unnecessary OP_SeekGE operations.
 */
 case OP_SeekScan: {
+  VdbeCursor *pC;
+  int res;
+  int n;
+  UnpackedRecord r;
+
   assert( pOp[1].opcode==OP_SeekGE );
   assert( pOp[2].opcode==OP_IdxGT );
   assert( pOp[1].p1==pOp[2].p1 );
@@ -4432,7 +4437,61 @@ case OP_SeekScan: {
   assert( pOp[1].p3==pOp[2].p3 );
   assert( pOp[1].p4.i==pOp[2].p4.i );
   assert( pOp->p1>0 );
-  break;  /* No-op for now.  FIX ME. */
+  pC = p->apCsr[pOp[1].p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_BTREE );
+  assert( !pC->isTable );
+  if( pC->nullRow ){
+#ifdef SQLITE_DEBUG
+     if( db->flags&SQLITE_VdbeTrace ){
+       printf("... no prior seeks - fall through\n");
+     }        
+#endif
+    break;
+  }
+  n = pOp->p1;
+  assert( n>=1 );
+  r.pKeyInfo = pC->pKeyInfo;
+  r.nField = (u16)pOp[1].p4.i;
+  r.default_rc = 0;
+  r.aMem = &aMem[pOp[1].p3];
+#ifdef SQLITE_DEBUG
+  {
+    int i;
+    for(i=0; i<r.nField; i++){
+      assert( memIsValid(&r.aMem[i]) );
+      REGISTER_TRACE(pOp[1].p3+i, &aMem[pOp[1].p3+i]);
+    }
+  }
+#endif
+  res = 0;  /* Not needed.  Only used to silence a warning. */
+  while(1){
+    rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
+    if( rc ) goto abort_due_to_error;
+    if( res>0 ){
+#ifdef SQLITE_DEBUG
+     if( db->flags&SQLITE_VdbeTrace ){
+       printf("... %d steps and then skip\n", pOp->p1 - n);
+     }        
+#endif
+      pOp++;
+      goto jump_to_p2;
+    }
+    if( res==0 ){
+#ifdef SQLITE_DEBUG
+     if( db->flags&SQLITE_VdbeTrace ){
+       printf("... %d steps and then success\n", pOp->p1 - n);
+     }        
+#endif
+      pOp += 2;
+      break;
+    }
+    if( n<=0 ) break;
+    n--;
+    rc = sqlite3BtreeNext(pC->uc.pCursor, 0);
+    if( rc ) goto abort_due_to_error;
+  }
+  break;
 }
 
 
