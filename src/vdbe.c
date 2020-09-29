@@ -4407,10 +4407,8 @@ seek_not_found:
 ** is the desired entry that we want the cursor SeekGE.P1 to be pointing
 ** to.  Call this SeekGE.P4/P5 row the "target".
 **
-** If the OP_SeekGE opcode that immediately follows this opcode has
-** never run before, which is to say if the SeekGE.P1 cursor is not pointing
-** to a valid raow, then this opcode is a no-op and control passes
-** through into the OP_SeekGE.
+** If the SeekGE.P1 cursor is not currently pointing to a valid row,
+** then this opcode is a no-op and control passes through into the OP_SeekGE.
 **
 ** If the SeekGE.P1 cursor is pointing to a valid row, then that row
 ** might be the target row, or it might be near and slightly before the
@@ -4449,10 +4447,10 @@ case OP_SeekScan: {
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( !pC->isTable );
-  if( pC->nullRow ){
+  if( !sqlite3BtreeCursorIsValidNN(pC->uc.pCursor) ){
 #ifdef SQLITE_DEBUG
      if( db->flags&SQLITE_VdbeTrace ){
-       printf("... no prior seeks - fall through\n");
+       printf("... cursor not valid - fall through\n");
      }        
 #endif
     break;

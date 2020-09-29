@@ -1,5 +1,5 @@
-C Coverage\stesting\sof\sthe\sOP_SeekScan\sopcode.\s\sFix\sa\sproblem\sthat\scomes\sup\swhen\nOP_SeekScan\sreaches\sthe\send\sof\sthe\stable.
-D 2020-09-29T20:22:20.000
+C The\sOP_SeekScan\sopcode\sis\sa\sno-op\sif\sthe\scursor\sis\snot\spointing\sto\sa\svalid\nrow\supon\sentry.
+D 2020-09-29T23:52:25.083
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c a5f9dbd62905ce5f7fde94c4b6e9d24eeb0e1844a4f352d7ce7b447bad62afcb
+F src/vdbe.c 015caaa6afdce7cfa4f304b76cce6caaecc73c2fa36268d07de4df555dd33336
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6110fdd5bb7b4ae5c065404c802ae726362ef084966b73cffe58c4bfb98689d2
-R 5208a223b9abbea3e3bc1a7c83370262
+P 9e57e758a6a33f54d28a546b4eebfb5cfacef30dc4e0207e43bb9d2c06fc3439
+R 97102016c110374a118cc76eaed41921
 U drh
-Z 4e19dcf82e793fd815f6f64707a372c6
+Z 93d2589fdb32de312517637854e5029b
