@@ -4384,45 +4384,53 @@ seek_not_found:
 }
 
 
-/* Opcode: SeekScan
+/* Opcode: SeekScan  P1 * * * *
 ** Synopsis: Scan-ahead up to P1 rows
 **
-** This opcode is a prefix.  It must be followed immediately by
-** OP_SeekGE and then OP_IdxGT.  This opcode should occur in no other
-** context.  That constraint is verified using assert() statements in
-** the code.
+** This opcode is a prefix opcode to OP_SeekGE.  In other words, this
+** opcode must be immediately followed by OP_SeekGE.  Furthermore, the
+** OP_SeekGE must be followed by OP_IdxGT.  These constraints are
+** checked by assert() statements.
+**
+** This opcode uses the P1 through P4 operands of the subsequent
+** OP_SeekGE.  In the text that follows, the operands of the subsequent
+** OP_SeekGE opcode are denoted as SeekOP.P1 through SeekOP.P4.   Only
+** the P1 operand of this opcode is used, and it is denoted as This.P1.
 **
 ** This opcode helps to optimize IN operators on a multi-column index
-** where the IN operator is on the later terms of the index.
+** where the IN operator is on the later terms of the index by avoiding
+** unnecessary seeks on the btree, substituting steps to the next row
+** of the b-tree instead.  A correct answer is obtained if this opcode
+** is omitted or is a no-op.
 **
-** The P3 and P4 operations of the OP_SeekGE opcode that follows this
-** opcode identify an unpacked key which is the desired entry that
-** we want to advance the cursor to.  Call this the "target".
+** The SeekGE.P3 and SeekGE.P4 operands identify an unpacked key which
+** is the desired entry that we want the cursor SeekGE.P1 to be pointing
+** to.  Call this SeekGE.P4/P5 row the "target".
 **
 ** If the OP_SeekGE opcode that immediately follows this opcode has
-** never run before, then this opcode is a no-op and control passes
+** never run before, which is to say if the SeekGE.P1 cursor is not pointing
+** to a valid raow, then this opcode is a no-op and control passes
 ** through into the OP_SeekGE.
 **
-** If the subsequent OP_SeekGE opcode has run before, then that prior
-** might OP_SeekGE might have left the cursor pointing any entry that
-** is close to the target.  This routine checks, and if possible
-** bypasses the OP_SeekGE.
+** If the SeekGE.P1 cursor is pointing to a valid row, then that row
+** might be the target row, or it might be near and slightly before the
+** target row.  This opcode attempts to position the cursor on the target
+** row by, perhaps stepping by invoking sqlite3BtreeStep() on the cursor
+** between 0 and This.P1 times.
 **
-** If the cursor is past the target, jump immediately to the
-** P2 of the subsequent OP_SeekGE.
+** There are three possible outcomes from this opcode:<ol>
 **
-** If the cursor is less than the target, then step forward up to P1
-** times trying to find a match.  If during these steps, the
-** cursor moves past the target, then jump immediately to
-** the P2 of the subsequent OP_SeekGE.  If a match is found, jump
-** to the first instruction past the OP_IdxGT that follows the
-** OP_SeekGE.  (In other words, skip over the next two opcodes).
-** If P1 steps are performed and the cursor is still less than the
-** target, then fall through into OP_SeekGE opcode.
+** <li> If after This.P1 steps, the cursor is still point to a place that
+**      is earlier in the btree than the target row,
+**      then fall through into the subsquence OP_SeekGE opcode.
 **
-** This opcode is an optimization.  This opcode can be a no-op and
-** the correct answer should still be obtained.  The purpose of this
-** opcode is to bypass unnecessary OP_SeekGE operations.
+** <li> If the cursor is successfully moved to the target row by 0 or more
+**      sqlite3BtreeNext() calls, then jump to the first instruction after the
+**      OP_IdxGT opcode - or in other words, skip the next two opcodes.
+**
+** <li> If the cursor ends up past the target row (indicating the the target
+**      row does not exist in the btree) then jump to SeekOP.P2. 
+** </ol>
 */
 case OP_SeekScan: {
   VdbeCursor *pC;
