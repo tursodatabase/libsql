@@ -6026,8 +6026,31 @@ case OP_IdxGE:  {       /* jump */
     }
   }
 #endif
-  res = 0;  /* Not needed.  Only used to silence a warning. */
-  rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
+
+  /* Inlined version of sqlite3VdbeIdxKeyCompare() */
+  {
+    i64 nCellKey = 0;
+    BtCursor *pCur;
+    Mem m;
+
+    assert( pC->eCurType==CURTYPE_BTREE );
+    pCur = pC->uc.pCursor;
+    assert( sqlite3BtreeCursorIsValid(pCur) );
+    nCellKey = sqlite3BtreePayloadSize(pCur);
+    /* nCellKey will always be between 0 and 0xffffffff because of the way
+    ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
+    if( nCellKey<=0 || nCellKey>0x7fffffff ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto abort_due_to_error;
+    }
+    sqlite3VdbeMemInit(&m, db, 0);
+    rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
+    if( rc ) goto abort_due_to_error;
+    res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, &r, 0);
+    sqlite3VdbeMemRelease(&m);
+  }
+  /* End of inlined sqlite3VdbeIdxKeyCompare() */
+
   assert( (OP_IdxLE&1)==(OP_IdxLT&1) && (OP_IdxGE&1)==(OP_IdxGT&1) );
   if( (pOp->opcode&1)==(OP_IdxLT&1) ){
     assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxLT );
@@ -6037,7 +6060,7 @@ case OP_IdxGE:  {       /* jump */
     res++;
   }
   VdbeBranchTaken(res>0,2);
-  if( rc ) goto abort_due_to_error;
+  assert( rc==SQLITE_OK );
   if( res>0 ) goto jump_to_p2;
   break;
 }
