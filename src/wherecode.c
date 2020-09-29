@@ -570,7 +570,7 @@ static int codeEqualityTerm(
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
     }
-    if( iEq>0 && (pLoop->wsFlags && WHERE_IN_SEEKSCAN)==0 ){
+    if( iEq>0 && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0 ){
       pLoop->wsFlags |= WHERE_IN_EARLYOUT;
     }
 
@@ -608,7 +608,7 @@ static int codeEqualityTerm(
           pIn++;
         }
       }
-      if( iEq>0 ){
+      if( iEq>0 && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0 ){
         sqlite3VdbeAddOp3(v, OP_SeekHit, pLevel->iIdxCur, 0, iEq);
       }
     }else{
