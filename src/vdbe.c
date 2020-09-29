@@ -4477,28 +4477,47 @@ case OP_SeekScan: {
     rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
     if( rc ) goto abort_due_to_error;
     if( res>0 ){
+      seekscan_search_fail:
 #ifdef SQLITE_DEBUG
-     if( db->flags&SQLITE_VdbeTrace ){
-       printf("... %d steps and then skip\n", pOp->p1 - n);
-     }        
+      if( db->flags&SQLITE_VdbeTrace ){
+        printf("... %d steps and then skip\n", pOp->p1 - n);
+      }        
 #endif
       pOp++;
+      VdbeBranchTaken(1,3);
       goto jump_to_p2;
     }
     if( res==0 ){
 #ifdef SQLITE_DEBUG
-     if( db->flags&SQLITE_VdbeTrace ){
-       printf("... %d steps and then success\n", pOp->p1 - n);
-     }        
+      if( db->flags&SQLITE_VdbeTrace ){
+        printf("... %d steps and then success\n", pOp->p1 - n);
+      }        
 #endif
       pOp += 2;
+      VdbeBranchTaken(2,3);
       break;
     }
-    if( n<=0 ) break;
+    if( n<=0 ){
+#ifdef SQLITE_DEBUG
+      if( db->flags&SQLITE_VdbeTrace ){
+        printf("... fall through after %d steps\n", pOp->p1);
+      }        
+#endif
+      VdbeBranchTaken(0,3);
+      break;
+    }
     n--;
     rc = sqlite3BtreeNext(pC->uc.pCursor, 0);
-    if( rc ) goto abort_due_to_error;
+    if( rc ){
+      if( rc==SQLITE_DONE ){
+        rc = SQLITE_OK;
+        goto seekscan_search_fail;
+      }else{
+        goto abort_due_to_error;
+      }
+    }
   }
+  
   break;
 }
 
