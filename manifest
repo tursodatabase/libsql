@@ -1,5 +1,5 @@
-C Back\sout\sthe\sincorrect\soptimization\sof\scheck-in\s[e51ecadcbdef5ce6]\sas\nticket\s[5c4e7aa793943803]\sreports\sa\scase\swhere\sthe\soptimization\sdoes\snot\nwork.
-D 2020-09-30T17:32:22.269
+C Improved\squery\soptimization\sfor\smulti-column\sindexes\swhere\sthe\ssecond\sor\nlater\scolumns\sare\sconstrained\sby\san\sIN\soperator\sand\sthe\searlier\sindex\scolumns\nlimit\sthe\ssearch\sto\sa\ssmall\snumber\sof\srows.\s\sUse\sthe\snew\sOP_SeekScan\sopcode\nwhich\sdoes\sscanning\sof\sthe\srelevant\srange\sof\sthe\sindex\sbut\sgives\sup\sand\nfalls\sback\sto\sdoing\sa\sseek\sif\sthe\snumber\sof\srows\sscanned\sgrows\sto\slarge,\nin\sorder\sto\sguard\sagainst\spathological\scases\swhere\sthe\sestimated\snumber\nof\srows\sto\sbe\sscanned\sis\sfar\stoo\ssmall.
+D 2020-09-30T18:06:51.119
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 1fbb15cf6af2ccd4bc784f52bda7e6a860e303d677587b6a4b95d72ae36480a0
+F src/btree.c c678de5bf6f57933e0ad40578fbdb0fc8113b414bf517e0a2525cb319c379874
 F src/btree.h dcdff4037d75b3f032a5de0d922fcfaf35d48589417f634fa8627362709315f9
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
 F src/build.c 55faabe78044063eae7d1cb3767afa1bafd6edc41d950b6e2228abf601f87912
@@ -607,7 +607,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 6430a540012b8b4c81076565804fcb979040e1b1a43ce76d2381863884155d84
+F src/vdbe.c d3030d83fce74ba4678824a47f4d72e67dc26fd842ca64ff29a10efd1fd48551
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -622,9 +622,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 7ed6512e73e679231ebdeba470055e8d8e871a020b7f3f8dc75e993aaebdcbcd
-F src/whereInt.h db7472b6eb617b5853ae74bbd755383e2275be72ae03ff07cc8ea141bb146dc8
-F src/wherecode.c 13a212b333b53ded7732f6497fbb3cd01b57dc864baa9b43fbf12f13c31ce02c
+F src/where.c da9c0d503f81cc8444eb3525b75eec2bb3d198f4d5939b207977f2fc20d85b54
+F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
+F src/wherecode.c b6293c637ecfbf2f53ae4d454cc3543f671111b3018ecc30c7bc2b3007de3782
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1880,8 +1880,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69f9eb7343a416c5ab426c8e1b9f0ae576544b4ccc5d87f5481c8ff884f696e1
-Q -e51ecadcbdef5ce6e41d68412aee70aa4a1416c850358a6fa7e9a1ab443e719d
-R d888f761f75b8b1e3625e0c4f85e8209
+P 7395e96b8cc370c8ac2657fb805915b0992a15d80f8bf256d277b423fec64675 dc4172e6b8e1f62dc7329a3adb2223f290bc4c8055c265e88182ef432f4bcf10
+R 51c03f3e654933edf1a61c7fc932246b
+T +closed dc4172e6b8e1f62dc7329a3adb2223f290bc4c8055c265e88182ef432f4bcf10
 U drh
-Z a5f3d5d526894c5d84b026a8e4ccec60
+Z bbfb93b0824db2f472432135890f2a72
