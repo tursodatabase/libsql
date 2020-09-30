@@ -1025,5 +1025,18 @@ do_execsql_test join-24.2 {
   SELECT * FROM t2 LEFT JOIN t1 ON a=0 WHERE (x='x' OR x IS NULL);
 } {1 {} {}}
 
-finish_test
+# 2020-09-30 ticket 66e4b0e271c47145
+# The query flattener inserts an "expr AND expr" expression as a substitution
+# for the column of a view where that view column is part of an ON expression
+# of a LEFT JOIN.
+#
+reset_db
+do_execsql_test join-25.1 {
+  CREATE TABLE t0(c0 INT);
+  CREATE VIEW v0 AS SELECT (NULL AND 5) as c0 FROM t0;
+  INSERT INTO t0(c0) VALUES (NULL);
+  SELECT count(*)  FROM v0 LEFT JOIN t0 ON v0.c0;
+} {1}
 
+
+finish_test
