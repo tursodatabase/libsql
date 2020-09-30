@@ -1,5 +1,5 @@
-C Add\san\ssqlite3FaultSim()\scall\sto\sbtreeNext()\sto\smake\sit\seasier\sto\nsimulate\sI/O\serrors\sin\scalls\sto\ssqlite3BtreeNext(),\sand\sin\sOP_SeekScan.
-D 2020-09-30T00:48:45.754
+C For\sthe\sOP_SeekScan\sopcode,\sadjust\sthe\snumber\sof\ssteps\srun\sbefore\sgiving\nup\sbased\son\sthe\sestimated\snumber\sof\scomparisons\sneeded\sto\sperform\sa\sseek.
+D 2020-09-30T18:03:22.696
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c da9c0d503f81cc8444eb3525b75eec2bb3d198f4d5939b207977f2fc20d85b54
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
-F src/wherecode.c 8d5e5973bcb5348877ac07ec85fb98cc3bb3b3377b79845cb39b3e812194cc47
+F src/wherecode.c ccaedd1965710e9ae35beaea59ac0ae08eb3562ab33b3a4190624b62a2e73338
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61fbe7aa7cc0e8fe3e6b1c5aec277183d8cd7c86b1e835c38e0b37a9b8063343
-R 0b2a622435f87f89b0d6a9c8ee522f7c
+P 29cca775d3f5411624f0a8d55d34a038a24f1009d25b097315adb64e70c4b299
+R d48dd14bce0cf72df7149cdfd5f0b155
 U drh
-Z 26cac2281ed8a0b988e6ac47b2309f54
+Z 0a6d09a4ef2f63f11f949f8dfc05337e

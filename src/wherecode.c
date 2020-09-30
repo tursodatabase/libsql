@@ -1807,7 +1807,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 ){
         assert( op==OP_SeekGE );
         assert( regBignull==0 );
-        sqlite3VdbeAddOp1(v, OP_SeekScan, 10);  VdbeCoverage(v);
+        /* TUNING:  The OP_SeekScan opcode seeks to reduce the number
+        ** of expensive seek operations by replacing a single seek with
+        ** 1 or more step operations.  The question is, how many steps
+        ** should we try before giving up and going with a seek.  The cost
+        ** of a seek is proportional to the logarithm of the of the number
+        ** of entries in the tree, so basing the number of steps to try
+        ** on the estimated number of rows in the btree seems like a good
+        ** guess. */
+        sqlite3VdbeAddOp1(v, OP_SeekScan, (pIdx->aiRowLogEst[0]+9)/10);
+        VdbeCoverage(v);
       }
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       VdbeCoverage(v);
