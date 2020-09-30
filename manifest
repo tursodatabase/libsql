@@ -1,5 +1,5 @@
-C In\sthe\sOP_SeekScan\sopcode,\schanges\sto\spOp\smust\soccur\safter\sthe\scall\nto\sVdbeBranchTaken()\sso\sthat\sthe\sVdbeBranchTaken()\sattributes\sthe\sbranch\nto\sthe\scorrect\sopcode.
-D 2020-09-30T00:10:22.499
+C Add\san\ssqlite3FaultSim()\scall\sto\sbtreeNext()\sto\smake\sit\seasier\sto\nsimulate\sI/O\serrors\sin\scalls\sto\ssqlite3BtreeNext(),\sand\sin\sOP_SeekScan.
+D 2020-09-30T00:48:45.754
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 1fbb15cf6af2ccd4bc784f52bda7e6a860e303d677587b6a4b95d72ae36480a0
+F src/btree.c c678de5bf6f57933e0ad40578fbdb0fc8113b414bf517e0a2525cb319c379874
 F src/btree.h c64f1439377e2edf31f7c3a562586a96b71f8d0ca47e65756e7d122fd8f06928
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
 F src/build.c 55faabe78044063eae7d1cb3767afa1bafd6edc41d950b6e2228abf601f87912
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4afc96b5fe80bd192a23e0230edc207e641931c3bf48296b1a385c786386f1b7
-R 5eb606d017f17313f42a99e044d0774a
+P 61fbe7aa7cc0e8fe3e6b1c5aec277183d8cd7c86b1e835c38e0b37a9b8063343
+R 0b2a622435f87f89b0d6a9c8ee522f7c
 U drh
-Z 3b826fae3c541a8432a616bf2432412c
+Z 26cac2281ed8a0b988e6ac47b2309f54
