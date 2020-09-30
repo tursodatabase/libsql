@@ -284,6 +284,66 @@ int sqlite3Fts5ExprNew(
   return sParse.rc;
 }
 
+int sqlite3Fts5ExprPattern(
+  Fts5Config *pConfig, int iCol, const char *zText, Fts5Expr **pp
+){
+  i64 nText = strlen(zText);
+  char *zExpr = (char*)sqlite3_malloc64(nText*4 + 1);
+  int rc = SQLITE_OK;
+
+  if( zExpr==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    char aSpec[3];
+    int iOut = 0;
+    int i = 0;
+    int iFirst = 0;
+
+    if( pConfig->ePattern==FTS5_PATTERN_LIKE ){
+      aSpec[0] = '_';
+      aSpec[1] = '%';
+      aSpec[2] = 0;
+    }else{
+      aSpec[0] = '*';
+      aSpec[1] = '?';
+      aSpec[2] = '[';
+    }
+
+    while( i<=nText ){
+      if( i==nText 
+       || zText[i]==aSpec[0] || zText[i]==aSpec[1] || zText[i]==aSpec[2] 
+      ){
+        if( i-iFirst>=3 ){
+          int jj;
+          zExpr[iOut++] = '"';
+          for(jj=iFirst; jj<i; jj++){
+            zExpr[iOut++] = zText[jj];
+            if( zText[jj]=='"' ) zExpr[iOut++] = '"';
+          }
+          zExpr[iOut++] = '"';
+          zExpr[iOut++] = ' ';
+        }
+        if( zText[i]==aSpec[2] ){
+          i += 2;
+          if( zText[i-1]=='^' ) i++;
+          while( i<nText && zText[i]!=']' ) i++;
+        }
+        iFirst = i+1;
+      }
+      i++;
+    }
+    if( iOut>0 ){
+      zExpr[iOut] = '\0';
+      rc = sqlite3Fts5ExprNew(pConfig, iCol, zExpr, pp, pConfig->pzErrmsg);
+    }else{
+      *pp = 0;
+    }
+    sqlite3_free(zExpr);
+  }
+
+  return rc;
+}
+
 /*
 ** Free the expression node object passed as the only argument.
 */

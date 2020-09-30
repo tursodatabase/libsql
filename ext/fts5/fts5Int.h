@@ -184,6 +184,7 @@ struct Fts5Config {
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
   int bLock;                      /* True when table is preparing statement */
+  int ePattern;                   /* FTS_PATTERN_XXX constant */
 
   /* Values loaded from the %_config table */
   int iCookie;                    /* Incremented when %_config is modified */
@@ -204,17 +205,19 @@ struct Fts5Config {
 };
 
 /* Current expected value of %_config table 'version' field */
-#define FTS5_CURRENT_VERSION 4
+#define FTS5_CURRENT_VERSION  4
 
 #define FTS5_CONTENT_NORMAL   0
 #define FTS5_CONTENT_NONE     1
 #define FTS5_CONTENT_EXTERNAL 2
 
-#define FTS5_DETAIL_FULL    0
-#define FTS5_DETAIL_NONE    1
-#define FTS5_DETAIL_COLUMNS 2
+#define FTS5_DETAIL_FULL      0
+#define FTS5_DETAIL_NONE      1
+#define FTS5_DETAIL_COLUMNS   2
 
-
+#define FTS5_PATTERN_NONE     0
+#define FTS5_PATTERN_LIKE     65  /* matches SQLITE_INDEX_CONSTRAINT_LIKE */
+#define FTS5_PATTERN_GLOB     66  /* matches SQLITE_INDEX_CONSTRAINT_GLOB */
 
 int sqlite3Fts5ConfigParse(
     Fts5Global*, sqlite3*, int, const char **, Fts5Config**, char**
@@ -554,8 +557,7 @@ int sqlite3Fts5GetTokenizer(
   Fts5Global*, 
   const char **azArg,
   int nArg,
-  Fts5Tokenizer**,
-  fts5_tokenizer**,
+  Fts5Config*,
   char **pzErr
 );
 
@@ -797,6 +799,10 @@ int sqlite3Fts5AuxInit(fts5_api*);
 */
 
 int sqlite3Fts5TokenizerInit(fts5_api*);
+int sqlite3Fts5TokenizerPattern(
+    int (*xCreate)(void*, const char**, int, Fts5Tokenizer**),
+    Fts5Tokenizer *pTok
+);
 /*
 ** End of interface to code in fts5_tokenizer.c.
 **************************************************************************/

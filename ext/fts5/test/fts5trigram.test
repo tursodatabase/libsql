@@ -1,0 +1,121 @@
+# 2020 September 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# Tests for the fts5 "trigram" tokenizer.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5trigram
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y, tokenize=trigram);
+  INSERT INTO t1 VALUES('abcdefghijklm');
+  INSERT INTO t1 VALUES('กรุงเทพมหานคร');
+}
+
+foreach {tn s res} {
+  1 abc           "(abc)defghijklm"
+  2 defgh         "abc(defgh)ijklm"
+  3 abcdefghijklm "(abcdefghijklm)"
+  4 กรุ            "(กรุ)งเทพมหานคร"
+  5 งเทพมห        "กรุ(งเทพมห)านคร"
+  6 กรุงเทพมหานคร  "(กรุงเทพมหานคร)"
+  7 Abc           "(abc)defghijklm"
+  8 deFgh         "abc(defgh)ijklm"
+  9 aBcdefGhijKlm "(abcdefghijklm)"
+} {
+  do_execsql_test 1.1.$tn {
+    SELECT highlight(t1, 0, '(', ')') FROM t1($s)
+  } $res
+}
+
+do_execsql_test 1.2.0 {
+  SELECT fts5_expr('ABCD', 'tokenize=trigram')
+} {{"abc" + "bcd"}}
+
+do_execsql_test 1.2.1 {
+  SELECT * FROM t1 WHERE y LIKE ? ESCAPE 'a'
+}
+
+foreach {tn like res} {
+  1 {%cDef%}   1
+  2 {cDef%}    {}
+  3 {%f%}      1
+  4 {%f_h%}    1
+  5 {%f_g%}    {}
+  6 {abc%klm}  1
+  7 {ABCDEFG%} 1
+  8 {%รุงเ%}    2
+} {
+  do_execsql_test 1.3.$tn {
+    SELECT rowid FROM t1 WHERE y LIKE $like
+  } $res
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y, tokenize="trigram case_sensitive 1");
+  INSERT INTO t1 VALUES('abcdefghijklm');
+  INSERT INTO t1 VALUES('กรุงเทพมหานคร');
+}
+
+foreach {tn s res} {
+  1 abc           "(abc)defghijklm"
+  2 defgh         "abc(defgh)ijklm"
+  3 abcdefghijklm "(abcdefghijklm)"
+  4 กรุ            "(กรุ)งเทพมหานคร"
+  5 งเทพมห        "กรุ(งเทพมห)านคร"
+  6 กรุงเทพมหานคร  "(กรุงเทพมหานคร)"
+  7 Abc           ""
+  8 deFgh         ""
+  9 aBcdefGhijKlm ""
+} {
+  do_execsql_test 2.1.$tn {
+    SELECT highlight(t1, 0, '(', ')') FROM t1($s)
+  } $res
+}
+foreach {tn like res} {
+  1 {%cDef%}   1
+  2 {cDef%}    {}
+  3 {%f%}      1
+  4 {%f_h%}    1
+  5 {%f_g%}    {}
+  6 {abc%klm}  1
+  7 {ABCDEFG%} 1
+  8 {%รุงเ%}    2
+} {
+  do_execsql_test 2.2.$tn {
+    SELECT rowid FROM t1 WHERE y LIKE $like
+  } $res
+}
+foreach {tn like res} {
+  1 {*cdef*}     1
+  2 {cdef*}      {}
+  3 {*f*}        1
+  4 {*f?h*}      1
+  5 {*f?g*}      {}
+  6 {abc*klm}    1
+  7 {abcdefg*}   1
+  8 {*รุงเ*}      2
+  9 {abc[d]efg*} 1
+ 10 {abc[]d]efg*} 1
+ 11 {abc[^]d]efg*} {}
+ 12 {abc[^]XYZ]efg*} 1
+} {
+  do_execsql_test 2.3.$tn {
+    SELECT rowid FROM t1 WHERE y GLOB $like
+  } $res
+}
+
+finish_test
+
