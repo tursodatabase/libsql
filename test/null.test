@@ -296,5 +296,12 @@ do_execsql_test null-9.3 {
   SELECT * FROM t5 WHERE a IS NULL AND b = 'x';
 } {{} x two {} x ii}
 
+# 2020-09-30 ticket 5c4e7aa793943803
+reset_db
+do_execsql_test null-10.1 {
+  CREATE TABLE t0(c0 PRIMARY KEY DESC);
+  INSERT INTO t0(c0) VALUES (0);
+  SELECT * FROM t0 WHERE t0.c0 > NULL;
+} {}
 
 finish_test

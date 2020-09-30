@@ -1,5 +1,5 @@
-C In\sthe\squery\sflattener\swhen\ssubstituting\sexpression\sY\sin\splace\sof\sexpression\sX,\nif\sX\sis\smarked\shas\shaving\scome\sfrom\san\sON\sor\sUSING\sclause\sof\sa\sLEFT\sJOIN,\sthen\nbe\ssure\sthat\sall\ssubexpressions\sof\sY,\snot\sjust\sthe\sroot\snode\sof\sY,\sare\nsimilarly\smarked.\s\sOtherwise,\sif\sY\sis\san\sAND\soperator,\sit\swill\sbe\ssplit\sup\nduring\sWHERE\sclause\sanalysis\sand\sthe\ssubexpressions\swill\snot\sget\sthe\sspecial\ntreatment\sneeded\sby\sLEFT\sJOIN\sON/USING\sclauses.\nFix\sfor\sticket\s[66e4b0e271c47145].
-D 2020-09-30T15:36:03.192
+C Back\sout\sthe\sincorrect\soptimization\sof\scheck-in\s[e51ecadcbdef5ce6]\sas\nticket\s[5c4e7aa793943803]\sreports\sa\scase\swhere\sthe\soptimization\sdoes\snot\nwork.
+D 2020-09-30T17:32:22.269
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c 7ed6512e73e679231ebdeba470055e8d8e871a020b7f3f8dc75e993aaebdcbcd
 F src/whereInt.h db7472b6eb617b5853ae74bbd755383e2275be72ae03ff07cc8ea141bb146dc8
-F src/wherecode.c 895ff782a62370a823c99dc7e1bca09ffd90392c9fafc007b6d3df4811e88b4f
+F src/wherecode.c 13a212b333b53ded7732f6497fbb3cd01b57dc864baa9b43fbf12f13c31ce02c
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1207,7 +1207,7 @@ F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
-F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
+F test/null.test b7ff206a1c60fe01aa2abd33ef9ea83c93727d993ca8a613de86e925c9f2bc6f
 F test/nulls1.test 82c5bc33148405f21205865abf13c786084438d573a4ac4e87e11b6091cde526
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
@@ -1880,7 +1880,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce6d8d621505f25e4fd43e7cf27445e1a2ddd58d79108d63499c2ae30cc9f610
-R ca5748dca083fba63e24d1a1feb3742c
+P 69f9eb7343a416c5ab426c8e1b9f0ae576544b4ccc5d87f5481c8ff884f696e1
+Q -e51ecadcbdef5ce6e41d68412aee70aa4a1416c850358a6fa7e9a1ab443e719d
+R d888f761f75b8b1e3625e0c4f85e8209
 U drh
-Z e1c26467ce86b385fbc5e8735c1d70ec
+Z a5f3d5d526894c5d84b026a8e4ccec60

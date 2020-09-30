@@ -1763,8 +1763,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Expr *pRight = pRangeStart->pExpr->pRight;
       codeExprOrVector(pParse, pRight, regBase+nEq, nBtm);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
-      if( !bRev
-       && (pRangeStart->wtFlags & TERM_VNULL)==0
+      if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
@@ -1839,8 +1838,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       codeExprOrVector(pParse, pRight, regBase+nEq, nTop);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
-      if( bRev
-       && (pRangeEnd->wtFlags & TERM_VNULL)==0
+      if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
