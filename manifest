@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sIN-early-out\soptimization\sso\sthat\sit\sworks\smore\nefficiently\swhen\sthere\sare\stwo\sor\smore\sindexed\sIN\sclauses\son\sa\ssingle\stable.
-D 2020-09-01T02:02:16.434
+C Improved\squery\soptimization\sfor\smulti-column\sindexes\swhere\sthe\ssecond\sor\nlater\scolumns\sare\sconstrained\sby\san\sIN\soperator\sand\sthe\searlier\sindex\scolumns\nlimit\sthe\ssearch\sto\sa\ssmall\snumber\sof\srows.\s\sUse\sthe\snew\sOP_SeekScan\sopcode\nwhich\sdoes\sscanning\sof\sthe\srelevant\srange\sof\sthe\sindex\sbut\sgives\sup\sand\nfalls\sback\sto\sdoing\sa\sseek\sif\sthe\snumber\sof\srows\sscanned\sgrows\sto\slarge,\nin\sorder\sto\sguard\sagainst\spathological\scases\swhere\sthe\sestimated\snumber\nof\srows\sto\sbe\sscanned\sis\sfar\stoo\ssmall.
+D 2020-09-30T18:22:24.218
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -459,7 +459,7 @@ F src/auth.c 0fac71038875693a937e506bceb492c5f136dd7b1249fbd4ae70b4e8da14f9df
 F src/backup.c 78d3cecfbe28230a3a9a1793e2ead609f469be43e8f486ca996006be551857ab
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 958939f608e351a36756e3749596472baa0e5aae54eebd14e6beffe7a68aafc7
+F src/btree.c 47276c5c150c3d99d4b72e3d296a4c16e38a8531a3e8b3ece59fdf48208950d9
 F src/btree.h c11446f07ec0e9dc85af8041cb0855c52f5359c8b2a43e47e02a685282504d89
 F src/btreeInt.h 6111c15868b90669f79081039d19e7ea8674013f907710baa3c814dc3f8bfd3f
 F src/build.c 04bc5a6b6331a30348e59222ab132ecde7cf5dc04c0915a2182b0609d1ab3df0
@@ -590,7 +590,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c e12939405e77906d06ab0b78c5f513dcd2b7cec2fbb553877b0abfece6067141
 F src/vacuum.c 72690ccb6877a88f8473a893cf9f6d7592236f3eebfebfa840b19c708acde574
-F src/vdbe.c 2263fce9d8bf32dbbc26876dd148b6aaa4ae4af7dc0d8811ff7a7c56664475cf
+F src/vdbe.c 8b2799c514c70fd0c8d71d6e50b5c720d18db7c23b47157dfecc0fe34823aa00
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 1a928793190675799194bdee2778f13b10ee42bc20bc03b6635687e4d3d80874
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
@@ -604,9 +604,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 9eccc7ebb532a7b0fd3cabc16cff576b9afa763472272db67d84fb8cec96f5c0
 F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
-F src/where.c 3a727c5265843abe32b67c2ee4e19f5bfab39206f5d1d68e359d58e7448a77dc
-F src/whereInt.h 7bf2fc8f036784f8d75780a38b44c4b772876651fe16cbdebbfc5018ccf5c5e9
-F src/wherecode.c 8e6776e9a1cc4b33f06b0020feb00585eb871f28e5146f18cd19f849f6d9376e
+F src/where.c 4604336992184fa80fe9a8b176d18cb5c6b6e78f70b21f5d826d50275ed34791
+F src/whereInt.h bcbba483d0cd72c17ab9af97061dce3c00eb3695cd17a5d41cdfec2cb5a6e8ce
+F src/wherecode.c 3e46ac6aad7ac2a260f5e12375586ec652f467a0b31e56d6b72c22f9a017e16d
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
 F src/window.c 038c248267e74ff70a2bb9b1884d40fd145c5183b017823ecb6cbb14bc781478
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1819,8 +1819,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ecda433718f0bc973078099b19955dcfb0dcd15b68455e53156ac708e9d92e5
-Q +35505c68c1945c35babd2496e02bc4907a15c8e7b8d77f05f230bd0e9d4891d7
-R 34e80ec769980ce3f758c494a6190f92
+P 49b7631e86988d913b9bf926868a5d7c5db557c5a78ecfb8f25fe2d3ba17557a
+Q +4a43430fd23f88352c33b29c4c105b72f6dc821f94bf362040c41a1648c402e5
+R d293953ed3d6717eecae576fd45d3a21
 U drh
-Z e2ad73430dd32cf44379c565112b498e
+Z d13fdf54c676de3eeadb15809f5f40b1
