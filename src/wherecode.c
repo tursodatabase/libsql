@@ -608,7 +608,6 @@ static int codeEqualityTerm(
           pIn++;
         }
       }
-printf("iEq=%d wsFlags=0x%08x\n", iEq, pLoop->wsFlags); fflush(stdout);
       testcase( iEq>0
                 && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0
                 && (pLoop->wsFlags & WHERE_VIRTUALTABLE)!=0 );

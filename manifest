@@ -1,5 +1,5 @@
-C The\sIN-early-out\soptimization\sdoes\snot\swork\sfor\svirtual\stables.\s\sDo\nnot\stry\sto\suse\sit\sthere.\s\sFix\sfor\sticket\s[2d5a3163563d559f].\s\sTest\ncases\sin\sTH3.
-D 2020-10-01T14:36:15.462
+C Remove\sa\sdebugging\sprintf()\saccidentally\sleft\sin\sthe\sprevious\scheck-in.
+D 2020-10-01T14:38:39.049
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c da9c0d503f81cc8444eb3525b75eec2bb3d198f4d5939b207977f2fc20d85b54
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
-F src/wherecode.c dd05b1c064ca8f8e8dbd2d8ba028f1d6de11f8da8ca9826435125a773a74542f
+F src/wherecode.c 5fc7fe7186af2feb21bf3ff1227784bb73fea1be3690aee3cbe71a97b610e550
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a43430fd23f88352c33b29c4c105b72f6dc821f94bf362040c41a1648c402e5
-R 741e77c667ec454123453c4b44339c19
+P dbec6910d9648f4907373c818a5cb347a2e487784208751ccecfacca752ff99d
+R 9f4066930ef416a4744a7ef0d2254a3c
 U drh
-Z 211e23df85fca771cd54994f499b9652
+Z 5632d0f1ff49835c03f5448669082138
