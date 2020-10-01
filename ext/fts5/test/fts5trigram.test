@@ -117,5 +117,18 @@ foreach {tn like res} {
   } $res
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_catchsql_test 3.1 {
+  CREATE VIRTUAL TABLE ttt USING fts5(c, tokenize="trigram case_sensitive 2");
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 3.2 {
+  CREATE VIRTUAL TABLE ttt USING fts5(c, tokenize="trigram case_sensitive 11");
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 3.3 {
+  CREATE VIRTUAL TABLE ttt USING fts5(c, "tokenize=trigram case_sensitive 1");
+} {0 {}}
+
+
 finish_test
 

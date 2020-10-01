@@ -284,6 +284,14 @@ int sqlite3Fts5ExprNew(
   return sParse.rc;
 }
 
+/*
+** This function is only called when using the special 'trigram' tokenizer.
+** Argument zText contains the text of a LIKE or GLOB pattern matched
+** against column iCol. This function creates and compiles an FTS5 MATCH
+** expression that will match a superset of the rows matched by the LIKE or
+** GLOB. If successful, SQLITE_OK is returned. Otherwise, an SQLite error
+** code.
+*/
 int sqlite3Fts5ExprPattern(
   Fts5Config *pConfig, int iCol, const char *zText, Fts5Expr **pp
 ){

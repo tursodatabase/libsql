@@ -1261,10 +1261,9 @@ static int fts5PorterTokenize(
 /**************************************************************************
 ** Start of trigram implementation.
 */
-
 typedef struct TrigramTokenizer TrigramTokenizer;
 struct TrigramTokenizer {
-  int bFold;
+  int bFold;                      /* True to fold to lower-case */
 };
 
 /*
@@ -1359,6 +1358,17 @@ static int fts5TriTokenize(
   return rc;
 }
 
+/*
+** Argument xCreate is a pointer to a constructor function for a tokenizer.
+** pTok is a tokenizer previously created using the same method. This function
+** returns one of FTS5_PATTERN_NONE, FTS5_PATTERN_LIKE or FTS5_PATTERN_GLOB
+** indicating the style of pattern matching that the tokenizer can support.
+** In practice, this is:
+**
+**     "trigram" tokenizer, case_sensitive=1 - FTS5_PATTERN_GLOB
+**     "trigram" tokenizer, case_sensitive=0 (the default) - FTS5_PATTERN_LIKE
+**     all other tokenizers - FTS5_PATTERN_NONE
+*/
 int sqlite3Fts5TokenizerPattern(
     int (*xCreate)(void*, const char**, int, Fts5Tokenizer**),
     Fts5Tokenizer *pTok
