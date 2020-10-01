@@ -1,5 +1,5 @@
-C Add\stests\sfor\sthe\strigram\stokenizer.\sFix\sminor\sissues.
-D 2020-10-01T16:10:22.243
+C Add\sthe\s-trigram\soption\sto\sthe\sfts5txt2db.tcl\sscript.
+D 2020-10-01T17:15:12.635
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -229,7 +229,7 @@ F ext/fts5/test/fts5version.test c8f2cc105f0abf0224965f93e584633dee3e06c91478bc6
 F ext/fts5/test/fts5vocab.test 7ed80d9af1ddaaa1637da05e406327b5aac250848bc604c1c1cc667908b87760
 F ext/fts5/test/fts5vocab2.test e0fdc3a3095f6eda68ac9bf9a443ff929a124d46f00af19933604085712e9d47
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
-F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
+F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc2870b45c0c82f9f
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d7810c1aea93c0a3da1ccc4911dbce8a1b6e1dbfe1ab7e800289a0c783b5985
-R c7737548b4b859bb94163b777bb03b06
+P 897ced99b44085012aa44d3264940dcbd4c77b295a894a1b58fb2c03a0f7fee8
+R f0ac7902a5171a39eaf194e52bef0a98
 U dan
-Z afc946f18e97090d1c0b09338fc98cec
+Z 2da13f86d1d686cfa74ee427cae5fd66
