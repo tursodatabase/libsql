@@ -1,5 +1,5 @@
-C Remove\sa\sdebugging\sprintf()\saccidentally\sleft\sin\sthe\sprevious\scheck-in.
-D 2020-10-01T14:38:39.049
+C Fix\sthe\sOP_SeekScan\sopcode\sso\sthat\sits\svariable\snames\sdo\snot\scause\sproblems\nfor\sthe\stest/vdbe-compress.tcl\sscript.
+D 2020-10-01T15:46:21.737
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c d3030d83fce74ba4678824a47f4d72e67dc26fd842ca64ff29a10efd1fd48551
+F src/vdbe.c 21064a2779baa2350f47ace1f5397d458588b4f4d827b238e6c06df670219f76
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1880,7 +1880,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dbec6910d9648f4907373c818a5cb347a2e487784208751ccecfacca752ff99d
-R 9f4066930ef416a4744a7ef0d2254a3c
+P e9d1efa597fb073dc4bc4286e03059a350ed05d3e6476cd3247e6cde626f458b
+R 50705b7b849a006d315935f49428836a
 U drh
-Z 5632d0f1ff49835c03f5448669082138
+Z f6362e8d969d27a8a312e7ba48f00a9f
