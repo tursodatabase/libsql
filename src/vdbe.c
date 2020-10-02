@@ -4445,7 +4445,6 @@ case OP_SeekScan: {
   assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
   assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
   assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
-  assert( pOp[1].p4.i==aOp[pOp->p2-1].p4.i );
 
   assert( pOp->p1>0 );
   pC = p->apCsr[pOp[1].p1];

@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sstatement.\s\sAdd\snew\stest\scases.
-D 2020-10-02T12:42:51.317
+C Remove\san\sincorrect\sassert()\sfrom\sthe\sOP_SeekScan\sopcode.
+D 2020-10-02T12:49:06.118
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 4bfad8953765d4a10237fa939b18af69edb3a24dcf2a0392dcd00b04e0eede6a
+F src/vdbe.c 8893576da5e6c5e4251f745808e3e5a5cec9f09b117f92900d5765c186cfffac
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 091d71939411bf2079098f09ddc0525f11f380119fd27114e2b3eec9a8ac0db4
-R ab2660b8b3dcfc34d3f30bc4d246a05d
+P 80ecdb3da4558bb08ee3ec6edbde906ad5b3b8182e672b5ba0d5dfa8041cee0a
+R dfdf44d9d15025cae1d422e1f9b62b84
 U drh
-Z a26077e1b2dfaf7c2f33f5727d3e0262
+Z b28f55587f68b7dba642183fc1b4bbee
