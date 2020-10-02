@@ -4384,18 +4384,18 @@ seek_not_found:
 }
 
 
-/* Opcode: SeekScan  P1 * * * *
+/* Opcode: SeekScan  P1 P2 * * *
 ** Synopsis: Scan-ahead up to P1 rows
 **
 ** This opcode is a prefix opcode to OP_SeekGE.  In other words, this
-** opcode must be immediately followed by OP_SeekGE.  Furthermore, the
-** OP_SeekGE must be followed by OP_IdxGT.  These constraints are
+** opcode must be immediately followed by OP_SeekGE. This constraint is
 ** checked by assert() statements.
 **
 ** This opcode uses the P1 through P4 operands of the subsequent
 ** OP_SeekGE.  In the text that follows, the operands of the subsequent
 ** OP_SeekGE opcode are denoted as SeekOP.P1 through SeekOP.P4.   Only
-** the P1 operand of this opcode is used, and it is denoted as This.P1.
+** the P1 and P2 operands of this opcode are also used, and  are called
+** This.P1 and This.P2.
 **
 ** This opcode helps to optimize IN operators on a multi-column index
 ** where the IN operator is on the later terms of the index by avoiding
@@ -4413,7 +4413,7 @@ seek_not_found:
 ** If the SeekGE.P1 cursor is pointing to a valid row, then that row
 ** might be the target row, or it might be near and slightly before the
 ** target row.  This opcode attempts to position the cursor on the target
-** row by, perhaps stepping by invoking sqlite3BtreeStep() on the cursor
+** row by, perhaps by invoking sqlite3BtreeStep() on the cursor
 ** between 0 and This.P1 times.
 **
 ** There are three possible outcomes from this opcode:<ol>
@@ -4423,8 +4423,8 @@ seek_not_found:
 **      then fall through into the subsquence OP_SeekGE opcode.
 **
 ** <li> If the cursor is successfully moved to the target row by 0 or more
-**      sqlite3BtreeNext() calls, then jump to the first instruction after the
-**      OP_IdxGT opcode - or in other words, skip the next two opcodes.
+**      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
+**      past the OP_IdxGT opcode that follows the OP_SeekGE.
 **
 ** <li> If the cursor ends up past the target row (indicating the the target
 **      row does not exist in the btree) then jump to SeekOP.P2. 
@@ -4437,11 +4437,16 @@ case OP_SeekScan: {
   UnpackedRecord r;
 
   assert( pOp[1].opcode==OP_SeekGE );
-  assert( pOp[2].opcode==OP_IdxGT );
-  assert( pOp[1].p1==pOp[2].p1 );
-  assert( pOp[1].p2==pOp[2].p2 );
-  assert( pOp[1].p3==pOp[2].p3 );
-  assert( pOp[1].p4.i==pOp[2].p4.i );
+
+  /* pOp->p2 points to the first instruction past the OP_IdxGT that
+  ** follows the OP_SeekGE.  */
+  assert( pOp->p2>=(int)(pOp-aOp)+2 );
+  assert( aOp[pOp->p2-1].opcode==OP_IdxGT );
+  assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
+  assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
+  assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
+  assert( pOp[1].p4.i==aOp[pOp->p2-1].p4.i );
+
   assert( pOp->p1>0 );
   pC = p->apCsr[pOp[1].p1];
   assert( pC!=0 );
@@ -4492,7 +4497,7 @@ case OP_SeekScan: {
       }        
 #endif
       VdbeBranchTaken(2,3);
-      pOp += 2;
+      goto jump_to_p2;
       break;
     }
     if( nStep<=0 ){

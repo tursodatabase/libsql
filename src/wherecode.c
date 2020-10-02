@@ -1663,6 +1663,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
     int omitTable;               /* True if we use the index only */
     int regBignull = 0;          /* big-null flag register */
+    int addrSeekScan = 0;        /* Opcode of the OP_SeekScan, if any */
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
@@ -1823,7 +1824,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         ** of entries in the tree, so basing the number of steps to try
         ** on the estimated number of rows in the btree seems like a good
         ** guess. */
-        sqlite3VdbeAddOp1(v, OP_SeekScan, (pIdx->aiRowLogEst[0]+9)/10);
+        addrSeekScan = sqlite3VdbeAddOp1(v, OP_SeekScan, 
+                                         (pIdx->aiRowLogEst[0]+9)/10);
         VdbeCoverage(v);
       }
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1908,6 +1910,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
       testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
+      if( addrSeekScan ) sqlite3VdbeJumpHere(v, addrSeekScan);
     }
     if( regBignull ){
       /* During a NULL-scan, check to see if we have reached the end of

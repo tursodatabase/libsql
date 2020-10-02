@@ -1,5 +1,5 @@
-C Disable\sthe\sOP_SeekScan\sopcode\sof\sthe\sin-scan-vs-index\soptimization\swhen\nin\sPRAGMA\sreverse_unordered_selects\smode,\sas\sthe\sOP_SeekScan\sonly\sworks\nwith\sforwards\sscans.\s\sThanks\sto\sOSSFuzz\sfor\spointing\sout\sthe\sproblem\sto\nus.
-D 2020-10-02T02:02:18.404
+C For\sthe\sOP_SeekScan\soptimization,\sthe\sOP_IdxGT\sdoes\snot\snecessarily\scome\nright\safter\sthe\sOP_SeekGE.\s\s\sSo\suse\sthe\sP2\soperand\sof\sOP_SeekScan\sto\spoint\nto\sthe\sfirst\sinstruction\safter\sOP_IdxGT.\s\sProblem\sfound\sby\sdbsqlfuzz.
+D 2020-10-02T11:55:07.348
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 21064a2779baa2350f47ace1f5397d458588b4f4d827b238e6c06df670219f76
+F src/vdbe.c 4bfad8953765d4a10237fa939b18af69edb3a24dcf2a0392dcd00b04e0eede6a
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -626,7 +626,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c da9c0d503f81cc8444eb3525b75eec2bb3d198f4d5939b207977f2fc20d85b54
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
-F src/wherecode.c d19490e96a2829324813ac244e20d76864a463ae0c7d2dc89cb1a5aef858d416
+F src/wherecode.c 1a229b9d1f7dd306ee3e82e629caaf424f7ba2f67b045f944c0b0a064ea3c59f
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4e8ec7907de7cb9e610ef9f4930caf5c046618151fb4f61d5716b9fa3f31423
-R fa30a71b336d683cc8024e641011870d
+P c75c3a3b756635bfdab44e4b56a337e4a88af3a8803cd3e9a67abf3d0d3450dc
+R 77a10f931fe8a41cf53227c081acbc3f
 U drh
-Z 915215785688876043fcc94bb57ffcd9
+Z d91a0ab90aafbccf74379e7aee46aee8
