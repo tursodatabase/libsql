@@ -1,5 +1,5 @@
-C Add\sexperimental\s"trigram"\stokenizer\sto\sfts5.
-D 2020-10-01T17:24:36.768
+C Disable\sthe\sOP_SeekScan\sopcode\sof\sthe\sin-scan-vs-index\soptimization\swhen\nin\sPRAGMA\sreverse_unordered_selects\smode,\sas\sthe\sOP_SeekScan\sonly\sworks\nwith\sforwards\sscans.\s\sThanks\sto\sOSSFuzz\sfor\spointing\sout\sthe\sproblem\sto\nus.
+D 2020-10-02T02:02:18.404
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -626,7 +626,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
 F src/where.c da9c0d503f81cc8444eb3525b75eec2bb3d198f4d5939b207977f2fc20d85b54
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
-F src/wherecode.c 5fc7fe7186af2feb21bf3ff1227784bb73fea1be3690aee3cbe71a97b610e550
+F src/wherecode.c d19490e96a2829324813ac244e20d76864a463ae0c7d2dc89cb1a5aef858d416
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1722,7 +1722,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 75722434c486ac9e74718caa6cce234f45ba34c0b6c0f9555b29eb8bb5f6ade1
 F test/where8.test 461ca40265ed996a6305da99bb024b0e41602bb586acf544c08f95922358e49f
 F test/where9.test 8e3e0ff42cc17156f52361a1c012281550d0d632912fec92d1d6df74db7a8e6d
-F test/whereA.test 6c6a420ca7d313242f9b1bd471dc80e4d0f8323700ba9c78df0bb843d4daa3b4
+F test/whereA.test 9d1077b117f1b68d5f739d94f36956c36cf995eb87bb19b77b2e81af020edd20
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test c1c335e914e28b122e000e9310f02d2be83e1c9dbca2e29f46bd732703944d1b
@@ -1882,8 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a78274a072324b94d6f79e5b7a198b2fa9321ff5d6a528b51f57d3ee95c765b a394dd260252e7b7dcbc90fd321dfd40d9375f0598ea52b01001c568cbdbafce
-R 104c9174ee4e67de5600298bebaefb92
-T +closed a394dd260252e7b7dcbc90fd321dfd40d9375f0598ea52b01001c568cbdbafce
-U dan
-Z 65fad92c1f5f48b452b431c90b403063
+P c4e8ec7907de7cb9e610ef9f4930caf5c046618151fb4f61d5716b9fa3f31423
+R fa30a71b336d683cc8024e641011870d
+U drh
+Z 915215785688876043fcc94bb57ffcd9
