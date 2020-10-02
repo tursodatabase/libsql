@@ -2526,7 +2526,7 @@ static int whereLoopAddBtreeIndex(
         assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
                           ** changes "x IN (?)" into "x=?". */
       }
-      if( pProbe->hasStat1 ){
+      if( pProbe->hasStat1 && rLogSize>=10 ){
         LogEst M, logK, safetyMargin;
         /* Let:
         **   N = the total number of rows in the table
@@ -2545,7 +2545,8 @@ static int whereLoopAddBtreeIndex(
         ** a safety margin of 2 (LogEst: 10) that favors using the IN operator
         ** with the index, as using an index has better worst-case behavior.
         ** If we do not have real sqlite_stat1 data, always prefer to use
-        ** the index.
+        ** the index.  Do not bother with this optimization on very small
+        ** tables (less than 2 rows) as it is pointless in that case.
         */
         M = pProbe->aiRowLogEst[saved_nEq];
         logK = estLog(nIn);

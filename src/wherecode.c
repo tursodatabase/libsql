@@ -1690,12 +1690,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }else{
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
-      assert( op==OP_SeekGE
-           || (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0
-           || (db->flags & SQLITE_ReverseOrder)!=0 );
-      if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0
-       && op==OP_SeekGE            /* OP_SeekScan only does forward scans */
-      ){
+      if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 && op==OP_SeekGE ){
         /* TUNING:  The OP_SeekScan opcode seeks to reduce the number
         ** of expensive seek operations by replacing a single seek with
         ** 1 or more step operations.  The question is, how many steps
