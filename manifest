@@ -1,5 +1,5 @@
-C For\sthe\sOP_SeekScan\soptimization,\sthe\sOP_IdxGT\sdoes\snot\snecessarily\scome\nright\safter\sthe\sOP_SeekGE.\s\s\sSo\suse\sthe\sP2\soperand\sof\sOP_SeekScan\sto\spoint\nto\sthe\sfirst\sinstruction\safter\sOP_IdxGT.\s\sProblem\sfound\sby\sdbsqlfuzz.
-D 2020-10-02T11:55:07.348
+C Fix\sa\sfaulty\sassert()\sstatement.\s\sAdd\snew\stest\scases.
+D 2020-10-02T12:42:51.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,7 +489,7 @@ F src/date.c dace306a10d9b02ee553d454c8e1cf8d3c9b932e137738a6b15b90253a9bfc10
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c a2a603ab07cced8560065b0e2c4c9c842f2c5a2fd43d87355f95eb53bae7fe21
-F src/expr.c 4c8b9c2942adb896b9d1613794bd00cbf98c94e38c41cd5720b78bcdc21a965d
+F src/expr.c 2cfe739c81e9751123b900dee54f6d34f8ec4b747515a51f1771de8e2840650d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 83372403298e6a7dd989a47aaacdbaa5b4307b5199dbd56e07d4896066b3de72
 F src/func.c 2333eb4277f55a5efdc12ef754e7d7ec9105d257b2fd00301d23ce1e8fa67dc0
@@ -1037,7 +1037,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 99f99201280962430f3287e879e050ba88fe458d05cbf28e37ecab369ffe2e86
+F test/fuzzdata8.db f8451a1fd38efbea8c1a7cdf5d02259c4702446a9fabf566becd306b64a50236
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1314,7 +1314,7 @@ F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce
 F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972a5a2a51e
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/select1.test 009a6d8eacd9684d046302b8d13b50846a87e39d6f08e92178aa13e95ea29a2d
+F test/select1.test 0ed936740777f52858b6607f39ffac4b2b63b8fc7edf3ab2ebad3c3553ceecee
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
 F test/select4.test e8a2502e3623f3058871030599a48abb35789d2244d5b380ecf3696873fdd4a4
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c75c3a3b756635bfdab44e4b56a337e4a88af3a8803cd3e9a67abf3d0d3450dc
-R 77a10f931fe8a41cf53227c081acbc3f
+P 091d71939411bf2079098f09ddc0525f11f380119fd27114e2b3eec9a8ac0db4
+R ab2660b8b3dcfc34d3f30bc4d246a05d
 U drh
-Z d91a0ab90aafbccf74379e7aee46aee8
+Z a26077e1b2dfaf7c2f33f5727d3e0262
