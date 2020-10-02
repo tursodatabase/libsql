@@ -1,5 +1,5 @@
-C Improved\squery\soptimization\sfor\smulti-column\sindexes\swhere\sthe\ssecond\sor\nlater\scolumns\sare\sconstrained\sby\san\sIN\soperator\sand\sthe\searlier\sindex\scolumns\nlimit\sthe\ssearch\sto\sa\ssmall\snumber\sof\srows.\s\sUse\sthe\snew\sOP_SeekScan\sopcode\nwhich\sdoes\sscanning\sof\sthe\srelevant\srange\sof\sthe\sindex\sbut\sgives\sup\sand\nfalls\sback\sto\sdoing\sa\sseek\sif\sthe\snumber\sof\srows\sscanned\sgrows\sto\slarge,\nin\sorder\sto\sguard\sagainst\spathological\scases\swhere\sthe\sestimated\snumber\nof\srows\sto\sbe\sscanned\sis\sfar\stoo\ssmall.
-D 2020-09-30T18:22:24.218
+C Disable\sthe\sOP_SeekScan\sopcode\sof\sthe\sin-scan-vs-index\soptimization\swhen\nin\sPRAGMA\sreverse_unordered_selects\smode,\sas\sthe\sOP_SeekScan\sonly\sworks\nwith\sforwards\sscans.\s\sThanks\sto\sOSSFuzz\sfor\spointing\sout\sthe\sproblem\sto\nus.
+D 2020-10-02T02:07:12.901
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/wal.h 606292549f5a7be50b6227bd685fa76e3a4affad71bb8ac5ce4cb5c79f6a176a
 F src/walker.c 7607f1a68130c028255d8d56094ea602fc402c79e1e35a46e6282849d90d5fe4
 F src/where.c 4604336992184fa80fe9a8b176d18cb5c6b6e78f70b21f5d826d50275ed34791
 F src/whereInt.h bcbba483d0cd72c17ab9af97061dce3c00eb3695cd17a5d41cdfec2cb5a6e8ce
-F src/wherecode.c 3e46ac6aad7ac2a260f5e12375586ec652f467a0b31e56d6b72c22f9a017e16d
+F src/wherecode.c 40317cfface4707e23fa7745223784bc062fb6d4a6c3e75992666c889b2dac6d
 F src/whereexpr.c 90859652920f153d2c03f075488744be2926625ebd36911bcbcb17d0d29c891c
 F src/window.c 038c248267e74ff70a2bb9b1884d40fd145c5183b017823ecb6cbb14bc781478
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1663,7 +1663,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 75722434c486ac9e74718caa6cce234f45ba34c0b6c0f9555b29eb8bb5f6ade1
 F test/where8.test 461ca40265ed996a6305da99bb024b0e41602bb586acf544c08f95922358e49f
 F test/where9.test 4fb43ad451758d9535693e110d4398fb6a6e3e153dc57bba5e61f884566c725f
-F test/whereA.test 6c6a420ca7d313242f9b1bd471dc80e4d0f8323700ba9c78df0bb843d4daa3b4
+F test/whereA.test 9d1077b117f1b68d5f739d94f36956c36cf995eb87bb19b77b2e81af020edd20
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test 711d4df58d6d4fb9b3f5ce040b818564198be002
@@ -1819,8 +1819,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49b7631e86988d913b9bf926868a5d7c5db557c5a78ecfb8f25fe2d3ba17557a
-Q +4a43430fd23f88352c33b29c4c105b72f6dc821f94bf362040c41a1648c402e5
-R d293953ed3d6717eecae576fd45d3a21
+P f07ac3fb388630808c6299cc5b061426eb3a4832bf781a5cd4aa5ed2be7f8bf9
+Q +c75c3a3b756635bfdab44e4b56a337e4a88af3a8803cd3e9a67abf3d0d3450dc
+R 769c0c9cf9d33e7eb05a2c4c7df3c4fe
 U drh
-Z d13fdf54c676de3eeadb15809f5f40b1
+Z bd13cd4c7d86d3e1920d51832d663feb
