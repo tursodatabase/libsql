@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\scaused\sby\srunning\s"column\sLIKE\sNULL"\sagainst\san\sfts5\stable\susing\sthe\strigram\stokenizer.\sFix\sfor\s[e33ee62575fc22].
-D 2020-10-03T17:06:02.256
+C Do\snot\sapply\saffinities\swhen\screating\sentries\sfor\sautomatic\sindexes\son\sviews.\sFix\sfor\s[95302bdb].
+D 2020-10-03T19:16:36.025
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
 F src/date.c dace306a10d9b02ee553d454c8e1cf8d3c9b932e137738a6b15b90253a9bfc10
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
-F src/delete.c a2a603ab07cced8560065b0e2c4c9c842f2c5a2fd43d87355f95eb53bae7fe21
+F src/delete.c 927cf8f900583e79aca8f1a321979e0a8f053babd9a690b44b38f79de2cc09fe
 F src/expr.c 2cfe739c81e9751123b900dee54f6d34f8ec4b747515a51f1771de8e2840650d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 83372403298e6a7dd989a47aaacdbaa5b4307b5199dbd56e07d4896066b3de72
@@ -631,7 +631,7 @@ F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe3398
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
-F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
+F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 2f65ec8132e0ca896de550b9908094d49ad65a99116a9d79deeb6017604ad4f6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -740,7 +740,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
 F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
-F test/cast.test 2906ccab6a3ebd147ffa63304b635be903ce58264110d0a0eb4fd9939422bb53
+F test/cast.test 336fa21989b5170ebcaf90c24266be22dd97b3e23d1fad5ecf6ad4efb04c4423
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test 4a2a91ed67eee84a6be16057c48d5198b6fb24849cd6da6cd855981de3fbb416
 F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1d048748c054575425a4bebf0c5d09962f9329d5ce6a978cf54e508b238584c
-R db843e476d987749b38011a60ced2e8f
+P 6e72a08de764077f2bba6f7e3b99ea29001941671a971f2ccf7ceeb9c682fb1a
+R b5c2d2603dfe08fa61d71e85b04bd8e5
 U dan
-Z e0d69439135a8be7c73786eba62b7f8d
+Z 7b521d3697cf8721db6deda0bbf532cb
