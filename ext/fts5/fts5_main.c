@@ -1270,7 +1270,9 @@ static int fts5FilterMethod(
           iCol = iCol*10 + (idxStr[iIdxStr]-'0');
           iIdxStr++;
         }while( idxStr[iIdxStr]>='0' && idxStr[iIdxStr]<='9' );
-        rc = sqlite3Fts5ExprPattern(pConfig, iCol, zText, &pExpr);
+        if( zText ){
+          rc = sqlite3Fts5ExprPattern(pConfig, iCol, zText, &pExpr);
+        }
         if( rc==SQLITE_OK ){
           rc = sqlite3Fts5ExprAnd(&pCsr->pExpr, pExpr);
           pExpr = 0;

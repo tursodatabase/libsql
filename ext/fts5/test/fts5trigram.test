@@ -117,6 +117,10 @@ foreach {tn like res} {
   } $res
 }
 
+do_execsql_test 2.3.null.1 {
+  SELECT rowid FROM t1 WHERE y LIKE NULL
+}
+
 #-------------------------------------------------------------------------
 reset_db
 do_catchsql_test 3.1 {
