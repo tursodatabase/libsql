@@ -1333,11 +1333,13 @@ static int fts5TriTokenize(
     const unsigned char *zNext; 
 
     READ_UTF8(zIn, zEof, iCode);
+    if( iCode==0 ) break;
     zNext = zIn;
     if( zIn<zEof ){
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
       WRITE_UTF8(zOut, iCode);
       READ_UTF8(zIn, zEof, iCode);
+      if( iCode==0 ) break;
     }else{
       break;
     }
@@ -1345,6 +1347,7 @@ static int fts5TriTokenize(
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
       WRITE_UTF8(zOut, iCode);
       READ_UTF8(zIn, zEof, iCode);
+      if( iCode==0 ) break;
       if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
       WRITE_UTF8(zOut, iCode);
     }else{

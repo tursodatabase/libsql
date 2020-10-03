@@ -129,6 +129,17 @@ do_catchsql_test 3.3 {
   CREATE VIRTUAL TABLE ttt USING fts5(c, "tokenize=trigram case_sensitive 1");
 } {0 {}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t0 USING fts5(b, tokenize = "trigram");
+}
+do_execsql_test 4.1 {
+  INSERT INTO t0 VALUES (x'000b01');
+}
+do_execsql_test 4.2 {
+  INSERT INTO t0(t0) VALUES('integrity-check');
+}
 
 finish_test
 
