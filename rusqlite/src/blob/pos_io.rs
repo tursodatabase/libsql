@@ -19,6 +19,12 @@ impl<'conn> Blob<'conn> {
     /// Note: This is part of the positional I/O API, and thus takes an absolute
     /// position write to, instead of using the internal position that can be
     /// manipulated by the `std::io` traits.
+    ///
+    /// Unlike the similarly named [`FileExt::write_at`][fext_write_at] function
+    /// (from `std::os::unix`), it's always an error to perform a "short write".
+    ///
+    /// [fext_write_at]: https://doc.rust-lang.org/std/os/unix/fs/trait.FileExt.html#tymethod.write_at
+    #[inline]
     pub fn write_at(&mut self, buf: &[u8], write_start: usize) -> Result<()> {
         let len = self.len();
 
@@ -49,6 +55,16 @@ impl<'conn> Blob<'conn> {
         Ok(())
     }
 
+    /// An alias for `write_at` provided for compatibility with the conceptually
+    /// equivalent [`std::os::unix::FileExt::write_all_at`][write_all_at]
+    /// function from libstd:
+    ///
+    /// [write_all_at]: https://doc.rust-lang.org/std/os/unix/fs/trait.FileExt.html#method.write_all_at
+    #[inline]
+    pub fn write_all_at(&mut self, buf: &[u8], write_start: usize) -> Result<()> {
+        self.write_at(buf, write_start)
+    }
+
     /// Read as much as possible from `offset` to `offset + buf.len()` out of
     /// `self`, writing into `buf`. On success, returns the number of bytes
     /// written.
@@ -63,7 +79,8 @@ impl<'conn> Blob<'conn> {
     /// Note: This is part of the positional I/O API, and thus takes an absolute
     /// position to read from, instead of using the internal position that can
     /// be manipulated by the `std::io` traits. Consequently, it does not change
-    /// that value. either.
+    /// that value either.
+    #[inline]
     pub fn read_at(&self, buf: &mut [u8], read_start: usize) -> Result<usize> {
         // Safety: this is safe because `raw_read_at` never stores uninitialized
         // data into `as_uninit`.
@@ -85,7 +102,8 @@ impl<'conn> Blob<'conn> {
     /// Note: This is part of the positional I/O API, and thus takes an absolute
     /// position to read from, instead of using the internal position that can
     /// be manipulated by the `std::io` traits. Consequently, it does not change
-    /// that value. either.
+    /// that value either.
+    #[inline]
     pub fn raw_read_at<'a>(
         &self,
         buf: &'a mut [MaybeUninit<u8>],
@@ -146,6 +164,7 @@ impl<'conn> Blob<'conn> {
 
     /// Equivalent to [`Blob::read_at`], but returns a `BlobSizeError` if `buf`
     /// is not fully initialized.
+    #[inline]
     pub fn read_at_exact(&self, buf: &mut [u8], read_start: usize) -> Result<()> {
         let n = self.read_at(buf, read_start)?;
         if n != buf.len() {
@@ -157,6 +176,7 @@ impl<'conn> Blob<'conn> {
 
     /// Equivalent to [`Blob::raw_read_at`], but returns a `BlobSizeError` if
     /// `buf` is not fully initialized.
+    #[inline]
     pub fn raw_read_at_exact<'a>(
         &self,
         buf: &'a mut [MaybeUninit<u8>],
@@ -226,7 +246,7 @@ mod test {
         blob.read_at_exact(&mut [], 0).unwrap();
         blob.read_at_exact(&mut [], 5).unwrap();
 
-        blob.write_at(&[16, 17, 18, 19, 20], 5).unwrap();
+        blob.write_all_at(&[16, 17, 18, 19, 20], 5).unwrap();
         blob.read_at_exact(&mut s, 0).unwrap();
         assert_eq!(&s, &[1u8, 2, 3, 4, 5, 16, 17, 18, 19, 20]);
 
