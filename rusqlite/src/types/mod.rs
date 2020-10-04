@@ -17,7 +17,9 @@
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) functions.  If you
 //! want different storage for datetimes, you can use a newtype.
 //!
-#![cfg_attr(feature = "time", doc = r##"
+#![cfg_attr(
+    feature = "time",
+    doc = r##"
 For example, to store datetimes as `i64`s counting the number of seconds since
 the Unix epoch:
 
@@ -42,7 +44,8 @@ impl ToSql for DateTimeSql {
 }
 ```
 
-"##)]
+"##
+)]
 //! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T`
 //! implements `ToSql` or `FromSql` for the cases where you want to know if a
 //! value was NULL (which gets translated to `None`).
