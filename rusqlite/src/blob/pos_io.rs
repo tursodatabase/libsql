@@ -128,11 +128,9 @@ impl<'conn> Blob<'conn> {
         debug_assert!(read_start + read_len <= len);
 
         // These follow naturally.
-        debug_assert!(
-            buf.len() <= read_len
-                && i32::try_from(buf.len()).is_ok()
-                && i32::try_from(read_len).is_ok()
-        );
+        debug_assert!(buf.len() >= read_len);
+        debug_assert!(i32::try_from(buf.len()).is_ok());
+        debug_assert!(i32::try_from(read_len).is_ok());
 
         unsafe {
             check!(ffi::sqlite3_blob_read(
@@ -171,5 +169,79 @@ impl<'conn> Blob<'conn> {
         } else {
             Ok(initted)
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{Connection, DatabaseName, NO_PARAMS};
+    // to ensure we don't modify seek pos
+    use std::io::Seek as _;
+
+    #[test]
+    fn test_pos_io() {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE test_table(content BLOB);")
+            .unwrap();
+        db.execute(
+            "INSERT INTO test_table(content) VALUES (ZEROBLOB(10))",
+            NO_PARAMS,
+        )
+        .unwrap();
+
+        let rowid = db.last_insert_rowid();
+        let mut blob = db
+            .blob_open(DatabaseName::Main, "test_table", "content", rowid, false)
+            .unwrap();
+        // modify the seek pos to ensure we aren't using it or modifying it.
+        blob.seek(std::io::SeekFrom::Start(1)).unwrap();
+
+        let one2ten: [u8; 10] = [1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        blob.write_at(&one2ten, 0).unwrap();
+
+        let mut s = [0u8; 10];
+        blob.read_at_exact(&mut s, 0).unwrap();
+        assert_eq!(&s, &one2ten, "write should go through");
+        assert!(blob.read_at_exact(&mut s, 1).is_err());
+
+        blob.read_at_exact(&mut s, 0).unwrap();
+        assert_eq!(&s, &one2ten, "should be unchanged");
+
+        let mut fives = [0u8; 5];
+        blob.read_at_exact(&mut fives, 0).unwrap();
+        assert_eq!(&fives, &[1u8, 2, 3, 4, 5]);
+
+        blob.read_at_exact(&mut fives, 5).unwrap();
+        assert_eq!(&fives, &[6u8, 7, 8, 9, 10]);
+        assert!(blob.read_at_exact(&mut fives, 7).is_err());
+        assert!(blob.read_at_exact(&mut fives, 12).is_err());
+        assert!(blob.read_at_exact(&mut fives, 10).is_err());
+        assert!(blob.read_at_exact(&mut fives, i32::MAX as usize).is_err());
+        assert!(blob
+            .read_at_exact(&mut fives, i32::MAX as usize + 1)
+            .is_err());
+
+        // zero length writes are fine if in bounds
+        blob.read_at_exact(&mut [], 10).unwrap();
+        blob.read_at_exact(&mut [], 0).unwrap();
+        blob.read_at_exact(&mut [], 5).unwrap();
+
+        blob.write_at(&[16, 17, 18, 19, 20], 5).unwrap();
+        blob.read_at_exact(&mut s, 0).unwrap();
+        assert_eq!(&s, &[1u8, 2, 3, 4, 5, 16, 17, 18, 19, 20]);
+
+        assert!(blob.write_at(&[100, 99, 98, 97, 96], 6).is_err());
+        assert!(blob
+            .write_at(&[100, 99, 98, 97, 96], i32::MAX as usize)
+            .is_err());
+        assert!(blob
+            .write_at(&[100, 99, 98, 97, 96], i32::MAX as usize + 1)
+            .is_err());
+
+        blob.read_at_exact(&mut s, 0).unwrap();
+        assert_eq!(&s, &[1u8, 2, 3, 4, 5, 16, 17, 18, 19, 20]);
+
+        let end_pos = blob.seek(std::io::SeekFrom::Current(0)).unwrap();
+        assert_eq!(end_pos, 1);
     }
 }
