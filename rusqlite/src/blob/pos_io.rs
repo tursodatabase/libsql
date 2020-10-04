@@ -241,6 +241,20 @@ mod test {
         blob.read_at_exact(&mut s, 0).unwrap();
         assert_eq!(&s, &[1u8, 2, 3, 4, 5, 16, 17, 18, 19, 20]);
 
+        let mut s2: [std::mem::MaybeUninit<u8>; 10] = [std::mem::MaybeUninit::uninit(); 10];
+        {
+            let read = blob.raw_read_at_exact(&mut s2, 0).unwrap();
+            assert_eq!(read, &s);
+            assert!(std::ptr::eq(read.as_ptr(), s2.as_ptr().cast()));
+        }
+
+        let mut empty = [];
+        assert!(std::ptr::eq(
+            blob.raw_read_at_exact(&mut empty, 0).unwrap().as_ptr(),
+            empty.as_ptr().cast(),
+        ));
+        assert!(blob.raw_read_at_exact(&mut s2, 5).is_err());
+
         let end_pos = blob.seek(std::io::SeekFrom::Current(0)).unwrap();
         assert_eq!(end_pos, 1);
     }
