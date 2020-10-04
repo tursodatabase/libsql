@@ -13,19 +13,19 @@ env:
   RUST_BACKTRACE: 1
 jobs:
   test:
-    name: Test
+    name: Test ${{ matrix.target }}
 
     strategy:
       fail-fast: false
 
       matrix:
-        platform:
+        include:
           - { target: x86_64-pc-windows-msvc, os: windows-latest }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
           - { target: x86_64-apple-darwin, os: macos-latest }
           - { target: x86_64-pc-windows-gnu, os: windows-latest, host: -x86_64-pc-windows-gnu }
 
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
@@ -33,48 +33,26 @@ jobs:
       # we use actions-rs/toolchain.
       - uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: stable${{ matrix.platform.host }}
-          targets: ${{ matrix.platform.target }}
+          rust-version: stable${{ matrix.host }}
+          targets: ${{ matrix.target }}
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --features bundled --workspace --all-targets
+      - run: cargo build --features bundled --workspace --all-targets --verbose
+      - run: cargo test --features bundled --workspace --all-targets --verbose
+      - run: cargo test --features bundled --workspace --doc --verbose
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features bundled --workspace --all-targets
-
-      - name: "cargo test --features 'bundled-full session buildtime_bindgen'"
+      - name: Test Features
         # TODO: clang is installed on these -- but `bindgen` can't find it...
-        if: matrix.platform.os != 'windows-latest'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features 'bundled-full session buildtime_bindgen' --all-targets --workspace
-
-      - name: "cargo test --doc --features 'bundled-full session buildtime_bindgen'"
-        # TODO: clang is installed on these -- but `bindgen` can't find it...
-        if: matrix.platform.os != 'windows-latest'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features 'bundled-full session buildtime_bindgen' --doc --workspace
-
-      - name: "cargo test --features bundled-full"
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features bundled-full --all-targets --workspace
+        if: matrix.os != 'windows-latest'
+        run: |
+          cargo test --features 'bundled-full session buildtime_bindgen time' --all-targets --workspace --verbose
+          cargo test --features 'bundled-full session buildtime_bindgen time' --doc --workspace --verbose
 
       - name: Static build
         # Do we expect this to work / should we test with gnu toolchain?
-        if: matrix.platform.os == 'x86_64-pc-windows-msvc'
-        shell: cmd
-        run: |
-          set RUSTFLAGS=-Ctarget-feature=+crt-static
-          cargo build --features bundled
+        if: matrix.os == 'x86_64-pc-windows-msvc'
+        env:
+          RUSTFLAGS: -Ctarget-feature=+crt-static
+        run: cargo build --features bundled
 
   sanitizer:
     name: Address Sanitizer
@@ -82,11 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       # Need nightly rust.
-      - uses: actions-rs/toolchain@v1
+      - uses: hecrj/setup-rust-action@v1
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+          rust-version: nightly
           components: rust-src
       - name: Tests with asan
         env:
@@ -98,32 +74,20 @@ jobs:
           # leak sanitization, but we don't care about backtraces here, so long
           # as the other tests have them.
           RUST_BACKTRACE: '0'
-        run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen with-asan' --target x86_64-unknown-linux-gnu
+        run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen time with-asan' --target x86_64-unknown-linux-gnu
 
   # Ensure clippy doesn't complain.
   clippy:
     name: Clippy
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: hecrj/setup-rust-action@v1
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          # clippy with just bundled
-          args: --all-targets --workspace --features bundled -- -D warnings
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          # Clippy with all non-conflicting features
-          args: --all-targets --workspace --features 'bundled-full session buildtime_bindgen' -- -D warnings
+          components: clippy
+      - run: cargo clippy --all-targets --workspace --features bundled -- -D warnings
+      # Clippy with all non-conflicting features
+      - run: cargo clippy --all-targets --workspace --features 'bundled-full session buildtime_bindgen time' -- -D warnings
 
   # Ensure patch is formatted.
   fmt:
@@ -131,17 +95,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      # This has a matcher for rustfmt errors, so we use it even though
-      # elsewhere we use actions-rs/toolchain.
       - uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: stable
           components: rustfmt
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - run: cargo fmt --all -- --check
 
   # Detect cases where documentation links don't resolve and such.
   doc:
@@ -149,32 +106,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: hecrj/setup-rust-action@v1
         with:
-          profile: minimal
-          # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          # Need to use `cargo rustdoc` to actually get it to respect -D
-          # warnings... Note: this also requires nightly.
-          command: rustdoc
-          args: --features 'bundled-full session buildtime_bindgen' -- -D warnings
+          rust-version: nightly
+      # Need to use `cargo rustdoc` to actually get it to respect -D
+      # warnings... Note: this also requires nightly.
+      - run: cargo rustdoc --features 'bundled-full session buildtime_bindgen time' -- -D warnings
 
   codecov:
     name: Generate code coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
+      - uses: hecrj/setup-rust-action@v1
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
+          # Intentionally omit time feature until we're on time 0.3, at which
+          # point it should be added to `bundled-full`.
           args: '--features "bundled-full session buildtime_bindgen"'
 
       - name: Upload to codecov.io
