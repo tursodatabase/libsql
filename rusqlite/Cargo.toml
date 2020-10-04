@@ -144,7 +144,7 @@ name = "exec"
 harness = false
 
 [package.metadata.docs.rs]
-features = [ "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "time", "trace", "url", "vtab", "window", "modern_sqlite", "column_decltype" ]
+features = [ "array", "backup", "blob", "chrono", "collation", "functions", "limits", "load_extension", "serde_json", "time", "trace", "url", "vtab", "window", "modern_sqlite", "column_decltype" ]
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
