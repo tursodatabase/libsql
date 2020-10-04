@@ -54,6 +54,29 @@ jobs:
           RUSTFLAGS: -Ctarget-feature=+crt-static
         run: cargo build --features bundled
 
+  winsqlite3:
+    name: Test with winsqlite3
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hecrj/setup-rust-action@v1
+      # TODO: Should this test GNU toolchain? What about +crt-static?
+      # TODO: Is it worth testing other features?
+      - run: cargo build --features winsqlite3 --workspace --all-targets --verbose
+      - run: cargo test --features winsqlite3 --workspace --all-targets --verbose
+
+  sqlcipher:
+    name: Test with sqlcipher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hecrj/setup-rust-action@v1
+      - run: sudo apt-get install sqlcipher libsqlcipher-dev
+      - run: sqlcipher --version
+      # TODO: Is it worth testing other features?
+      - run: cargo build --features sqlcipher --workspace --all-targets --verbose
+      - run: cargo test --features sqlcipher --workspace --all-targets --verbose
+
   sanitizer:
     name: Address Sanitizer
     runs-on: ubuntu-latest
