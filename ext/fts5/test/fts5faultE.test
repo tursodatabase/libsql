@@ -37,7 +37,7 @@ do_execsql_test 2.0 {
 }
 
 faultsim_save_and_close
-do_faultsim_test 2 -faults ioerr-t* -prep {
+do_faultsim_test 2 -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { 
@@ -47,6 +47,24 @@ do_faultsim_test 2 -faults ioerr-t* -prep {
 } -test {
   faultsim_test_result {0 1} {1 {vtable constructor failed: t1}}
 }
+
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, tokenize=trigram, detail=none);
+  INSERT INTO t1 VALUES('abcdefghijklmnopqrstuvwxyz', NULL);
+}
+
+faultsim_save_and_close
+do_faultsim_test 3 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    SELECT count(*) FROM t1 WHERE x LIKE '%mnopqrs%' AND t1 MATCH 'abc'
+  }
+} -test {
+  faultsim_test_result {0 1} {1 {vtable constructor failed: t1}}
+}
+
 
 
 finish_test

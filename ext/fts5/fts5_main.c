@@ -464,6 +464,23 @@ static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 #endif
 }
 
+static int fts5UsePatternMatch(
+  Fts5Config *pConfig, 
+  struct sqlite3_index_constraint *p
+){
+  assert( FTS5_PATTERN_GLOB==SQLITE_INDEX_CONSTRAINT_GLOB );
+  assert( FTS5_PATTERN_LIKE==SQLITE_INDEX_CONSTRAINT_LIKE );
+  if( pConfig->ePattern==FTS5_PATTERN_GLOB && p->op==FTS5_PATTERN_GLOB ){
+    return 1;
+  }
+  if( pConfig->ePattern==FTS5_PATTERN_LIKE 
+   && (p->op==FTS5_PATTERN_LIKE || p->op==FTS5_PATTERN_GLOB)
+  ){
+    return 1;
+  }
+  return 0;
+}
+
 /*
 ** Implementation of the xBestIndex method for FTS5 tables. Within the 
 ** WHERE constraint, it searches for the following:
@@ -591,7 +608,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         pInfo->aConstraintUsage[i].omit = 1;
       }
     }else if( p->usable ){
-      if( iCol>=0 && iCol<nCol && pConfig->ePattern==p->op ){
+      if( iCol>=0 && iCol<nCol && fts5UsePatternMatch(pConfig, p) ){
         assert( p->op==FTS5_PATTERN_LIKE || p->op==FTS5_PATTERN_GLOB );
         idxStr[iIdxStr++] = p->op==FTS5_PATTERN_LIKE ? 'L' : 'G';
         sqlite3_snprintf(6, &idxStr[iIdxStr], "%d", iCol);
@@ -1252,7 +1269,7 @@ static int fts5FilterMethod(
           goto filter_out;
         }else{
           char **pzErr = &pTab->p.base.zErrMsg;
-          rc = sqlite3Fts5ExprNew(pConfig, iCol, zText, &pExpr, pzErr);
+          rc = sqlite3Fts5ExprNew(pConfig, 0, iCol, zText, &pExpr, pzErr);
           if( rc==SQLITE_OK ){
             rc = sqlite3Fts5ExprAnd(&pCsr->pExpr, pExpr);
             pExpr = 0;
@@ -1264,6 +1281,7 @@ static int fts5FilterMethod(
       }
       case 'L':
       case 'G': {
+        int bGlob = (idxStr[iIdxStr-1]=='G');
         const char *zText = (const char*)sqlite3_value_text(apVal[i]);
         iCol = 0;
         do{
@@ -1271,7 +1289,7 @@ static int fts5FilterMethod(
           iIdxStr++;
         }while( idxStr[iIdxStr]>='0' && idxStr[iIdxStr]<='9' );
         if( zText ){
-          rc = sqlite3Fts5ExprPattern(pConfig, iCol, zText, &pExpr);
+          rc = sqlite3Fts5ExprPattern(pConfig, bGlob, iCol, zText, &pExpr);
         }
         if( rc==SQLITE_OK ){
           rc = sqlite3Fts5ExprAnd(&pCsr->pExpr, pExpr);
