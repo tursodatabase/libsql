@@ -2,7 +2,7 @@
 
 use crate::raw_statement::RawStatement;
 use crate::{Connection, Result, Statement};
-use lru_cache::LruCache;
+use hashlink::LruCache;
 use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
@@ -54,7 +54,7 @@ impl Connection {
 }
 
 /// Prepared statements LRU cache.
-#[derive(Debug)]
+// #[derive(Debug)] // FIXME: https://github.com/kyren/hashlink/pull/4
 pub struct StatementCache(RefCell<LruCache<Arc<str>, RawStatement>>);
 
 /// Cacheable statement.
