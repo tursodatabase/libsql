@@ -16,8 +16,6 @@
 ** locking and concurrent access. See comments in btree.c for a detailed 
 ** description of each interface routine.
 **
-** Functions in this header file are grouped according to their logical task.
-**
 ** The btree module organises an SQL database of tables and rows into 
 ** multiple key-value pair stores, which in turn are represented as 
 ** fixed-size pages in the memory-based page cache. The BTree functions 
@@ -27,6 +25,37 @@
 ** opening and closing.
 **
 ** The architecture is described at https://www.sqlite.org/arch.html .
+**
+** A Btree record is also called a payload in SQLite source. A Btree
+** record for table data contains only two fields: the unique key value
+** ROWID, and the table row data. A Btree record for an index btree or 
+** a WITHOUT ROWID table contain an arbitary key and no (uninitialised) data.
+** Btree pages are a fixed size. There will usually be multiple payloads 
+** per page, but large payloads (eg BLOB data) may spill over to multiple
+** pages.
+**
+** Functions in this header file are grouped according to their logical task:
+**
+**      Opening and Closing Database Connections
+**
+**      Database Image Configuration and Querying
+**
+**      Btree Connection Configuration and Querying
+**
+**      Mutex Function Wrappers
+**
+**      Transaction and Savepoint Functions
+**
+**      Cursors and Cursor Functions
+**
+**      Record and Payload Handling Functions
+**
+**      Table Functions
+**
+**      Reading and Writing Metadata
+**
+**      Hard to Classify / More research needed
+**
 */
 
 #ifndef SQLITE_BTREE_H
@@ -94,7 +123,7 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p);
 
 
 /* 
-** Btreee Connection Configuration and Querying
+** Btree Connection Configuration and Querying
 */
 
 /* The flags parameter to sqlite3BtreeOpen can be the bitwise or of the
@@ -109,6 +138,14 @@ Pgno sqlite3BtreeMaxPageCount(Btree*,Pgno);
 Pgno sqlite3BtreeLastPage(Btree*);
 const char *sqlite3BtreeGetFilename(Btree *);
 const char *sqlite3BtreeGetJournalname(Btree *);
+
+int sqlite3BtreeIsReadonly(Btree *pBt);
+
+/* Estimate number of rows in table
+ * called only by OP IsSmaller, from PRAGMA optimize
+*/
+i64 sqlite3BtreeRowCountEst(BtCursor*);  
+
 
 /* 
 ** Mutex Function Wrappers 
@@ -168,27 +205,32 @@ int sqlite3BtreeCommitPhaseOne(Btree*, const char *zMaster);
 int sqlite3BtreeCommitPhaseTwo(Btree*, int);
 int sqlite3BtreeCommit(Btree*);
 int sqlite3BtreeRollback(Btree*,int,int);
-int sqlite3BtreeBeginStmt(Btree*,int);
 int sqlite3BtreeCreateTable(Btree*, Pgno*, int flags);
 int sqlite3BtreeTxnState(Btree*);
 int sqlite3BtreeIsInBackup(Btree*);
 
-/* A savepoint refers to transactions implemented regardless of WAL. */
-/* References to 'savepoint' in btree.c relate to protected subtransactions */
-/* within the Btree, which relate to SQL COMMIT/ROLLBACK in general */
-/* including the SQL-level SAVEPOINT statement. */
+/* Savepoints are named, nestable SQL transactions mostly implemented */
+/* in vdbe.c and pager.c See https://sqlite.org/lang_savepoint.html */
 int sqlite3BtreeSavepoint(Btree *, int, int);
+
+/* A statement sub-transaction is an internal-only transaction used */
+/* only by OP_Transaction, see comments in vdbe.c. A statement */
+/* sub-transaction is implemented as an anonymous savepoint. */
+int sqlite3BtreeBeginStmt(Btree*,int);
 
 /* A checkpoint refers to only to WAL. See https://sqlite.org/wal.html#ckpt */
 #ifndef SQLITE_OMIT_WAL
   int sqlite3BtreeCheckpoint(Btree*, int, int *, int *);  
 #endif
 
+/* Set all relevant cursors to error state on transaction rollback */
+int sqlite3BtreeTripAllCursors(Btree*, int, int);
+
+
 
 /*
-** Reading and Traversing the Database Image
+** Cursors and Cursor functions
 **
-** Mostly functions for seeking and cursor control
 */
 
 /*
@@ -331,43 +373,13 @@ int sqlite3BtreeCursorInfo(BtCursor*, int*, int);
 void sqlite3BtreeCursorList(Btree*);
 #endif
 
-/* Set all relevant cursors to error state on transaction rollback */
-int sqlite3BtreeTripAllCursors(Btree*, int, int);
-
-int sqlite3BtreeIsReadonly(Btree *pBt);
-
-/* Estimate number of rows in table
- * called only by OP IsSmaller, from PRAGMA optimize
-*/
-i64 sqlite3BtreeRowCountEst(BtCursor*);  
-
-
-
 /*
-**  Modifying The Database Image 
-*/
-
-/* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
-** of the flags shown below.
+** Record and Payload handling functions
 **
-** Every SQLite table must have either BTREE_INTKEY or BTREE_BLOBKEY set.
-** With BTREE_INTKEY, the table key is a 64-bit integer and arbitrary data
-** is stored in the leaves.  (BTREE_INTKEY is used for SQL tables.)  With
-** BTREE_BLOBKEY, the key is an arbitrary BLOB and no content is stored
-** anywhere - the key is the content.  (BTREE_BLOBKEY is used for SQL
-** indices.)
+** A Btree record is a key-value pair consisting of a rowid key, and arbitary 
+** data value. The record is also called a payload.
+**
 */
-
-#define BTREE_INTKEY     1    /* Table has only 64-bit signed integer keys */
-#define BTREE_BLOBKEY    2    /* Table has keys only - no data */
-
-int sqlite3BtreeDropTable(Btree*, int, int*);
-int sqlite3BtreeClearTable(Btree*, int, int*);
-int sqlite3BtreeClearTableOfCursor(BtCursor*);
-
-int sqlite3BtreeNewDb(Btree *p);
-
-int sqlite3BtreeDelete(BtCursor*, u8 flags);
 
 /* Allowed flags for sqlite3BtreeDelete() and sqlite3BtreeInsert() */
 #define BTREE_SAVEPOSITION 0x02  /* Leave cursor pointing at NEXT or PREV */
@@ -419,6 +431,9 @@ struct BtreePayload {
 
 int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
                        int flags, int seekResult);
+
+int sqlite3BtreeDelete(BtCursor*, u8 flags);
+
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
 i64 sqlite3BtreeOffset(BtCursor*);
 #endif
@@ -426,7 +441,29 @@ int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
 u32 sqlite3BtreePayloadSize(BtCursor*);
 
-int sqlite3BtreeIncrVacuum(Btree *);
+
+/*
+**  Table functions
+**
+*/
+
+/* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
+** of the flags shown below.
+**
+** Every SQLite table must have either BTREE_INTKEY or BTREE_BLOBKEY set.
+** With BTREE_INTKEY, the table key is a 64-bit integer and arbitrary data
+** is stored in the leaves.  (BTREE_INTKEY is used for SQL tables.)  With
+** BTREE_BLOBKEY, the key is an arbitrary BLOB and no content is stored
+** anywhere - the key is the content.  (BTREE_BLOBKEY is used for SQL
+** indices.)
+*/
+
+#define BTREE_INTKEY     1    /* Table has only 64-bit signed integer keys */
+#define BTREE_BLOBKEY    2    /* Table has keys only - no data */
+
+int sqlite3BtreeDropTable(Btree*, int, int*);
+int sqlite3BtreeClearTable(Btree*, int, int*);
+int sqlite3BtreeClearTableOfCursor(BtCursor*);
 
 
 /*
@@ -488,10 +525,15 @@ sqlite3_int64 sqlite3BtreeMaxRecordSize(BtCursor*);
 /* 1=legacy, 2=WAL . Read and write versions set to same value */
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion); 
 
+/* Initialize the first page of the database file and return */
+int sqlite3BtreeNewDb(Btree *p);
+
 
 /*
 ** Hard to Classify / More research needed
 */
+
+int sqlite3BtreeIncrVacuum(Btree *);
 
 int sqlite3BtreeCopyFile(Btree *, Btree *);
 

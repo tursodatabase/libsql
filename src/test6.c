@@ -550,13 +550,16 @@ static int cfDeviceCharacteristics(sqlite3_file *pFile){
 ** Pass-throughs for WAL support.
 */
 static int cfShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
-  return sqlite3OsShmLock(((CrashFile*)pFile)->pRealFile, ofst, n, flags);
+  sqlite3_file *pReal = ((CrashFile*)pFile)->pRealFile;
+  return pReal->pMethods->xShmLock(pReal, ofst, n, flags);
 }
 static void cfShmBarrier(sqlite3_file *pFile){
-  sqlite3OsShmBarrier(((CrashFile*)pFile)->pRealFile);
+  sqlite3_file *pReal = ((CrashFile*)pFile)->pRealFile;
+  pReal->pMethods->xShmBarrier(pReal);
 }
 static int cfShmUnmap(sqlite3_file *pFile, int delFlag){
-  return sqlite3OsShmUnmap(((CrashFile*)pFile)->pRealFile, delFlag);
+  sqlite3_file *pReal = ((CrashFile*)pFile)->pRealFile;
+  return pReal->pMethods->xShmUnmap(pReal, delFlag);
 }
 static int cfShmMap(
   sqlite3_file *pFile,            /* Handle open on database file */
@@ -565,7 +568,8 @@ static int cfShmMap(
   int w,                          /* True to extend file if necessary */
   void volatile **pp              /* OUT: Mapped memory */
 ){
-  return sqlite3OsShmMap(((CrashFile*)pFile)->pRealFile, iRegion, sz, w, pp);
+  sqlite3_file *pReal = ((CrashFile*)pFile)->pRealFile;
+  return pReal->pMethods->xShmMap(pReal, iRegion, sz, w, pp);
 }
 
 static const sqlite3_io_methods CrashFileVtab = {

@@ -191,7 +191,7 @@ static int devsymDeviceCharacteristics(sqlite3_file *pFile){
 */
 static int devsymShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   devsym_file *p = (devsym_file *)pFile;
-  return sqlite3OsShmLock(p->pReal, ofst, n, flags);
+  return p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
 }
 static int devsymShmMap(
   sqlite3_file *pFile, 
@@ -201,15 +201,15 @@ static int devsymShmMap(
   void volatile **pp
 ){
   devsym_file *p = (devsym_file *)pFile;
-  return sqlite3OsShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
+  return p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
 }
 static void devsymShmBarrier(sqlite3_file *pFile){
   devsym_file *p = (devsym_file *)pFile;
-  sqlite3OsShmBarrier(p->pReal);
+  p->pReal->pMethods->xShmBarrier(p->pReal);
 }
 static int devsymShmUnmap(sqlite3_file *pFile, int delFlag){
   devsym_file *p = (devsym_file *)pFile;
-  return sqlite3OsShmUnmap(p->pReal, delFlag);
+  return p->pReal->pMethods->xShmUnmap(p->pReal, delFlag);
 }
 
 

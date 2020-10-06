@@ -45,7 +45,9 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
   while( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
-    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+    assert( pExpr->op==TK_COLLATE
+         || pExpr->op==TK_IF_NULL_ROW
+         || (pExpr->op==TK_REGISTER && pExpr->op2==TK_IF_NULL_ROW) );
     pExpr = pExpr->pLeft;
     assert( pExpr!=0 );
   }
