@@ -1,5 +1,5 @@
-C Allow\sfts5\strigram\stables\screated\swith\sdetail=column\sor\sdetail=none\sto\soptimize\sLIKE\sand\sGLOB\squeries.\sAllow\scase-insensitive\stables\sto\soptimize\sGLOB\sas\swell\sas\sLIKE.
-D 2020-10-05T16:41:56.128
+C In\sthe\sCSV\sextension,\suse\sSQLITE_TRANSIENT\srather\sthan\sSQLITE_STATIC\son\nreturn\svalues\sthat\scan\sin\sfact\schange.
+D 2020-10-07T11:24:45.953
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -292,7 +292,7 @@ F ext/misc/cksumvfs.c 0f022867786b615d7f68fb3ab3a16627fe6a730442abf804735e18a73f
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8beb2f22b9
 F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
-F ext/misc/csv.c 3ed979c1eb35e35a98b30ef545a2facf62994594217681d9138b4b75faf6b0d7
+F ext/misc/csv.c 53b3338d4fa812eda51a2637df30233a4dae16b964ee5666e2051b9672ed8bb4
 F ext/misc/dbdata.c e316fba936571584e55abd5b974a32a191727a6b746053a0c9d439bd2cf93940
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
 F ext/misc/decimal.c 3ddbf8162015be4d5ec2395dee4538f1e638bb517174bb148274b132df6e1d08
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df12f097224ebc9473d9e2a8933bd7efed6490d09af2c012c9b59a7892369b7f
-R 9f99bc6eea7328683a4833687f438fc2
-U dan
-Z ee7ba08673592ab83794033954bbc420
+P 64782463be62b72b5cd0bfaa7c9b69aa487d807c5fe0e65a272080b7739fd21b
+R 07ccc3845e9f294225651eb5b75f3484
+U drh
+Z a7bb5ea9c5c3f77afe8a7f156af1253f
