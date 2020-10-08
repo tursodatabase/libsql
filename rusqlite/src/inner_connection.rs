@@ -250,8 +250,7 @@ impl InnerConnection {
         let tail = if c_tail.is_null() {
             0
         } else {
-            // TODO nightly feature ptr_offset_from #41079
-            let n = (c_tail as isize) - (c_sql as isize);
+            let n = unsafe { c_tail.offset_from(c_sql) };
             if n <= 0 || n >= len as isize {
                 0
             } else {
