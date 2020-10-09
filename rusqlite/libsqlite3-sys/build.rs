@@ -370,10 +370,7 @@ mod bindings {
     fn generating_bundled_bindings() -> bool {
         // Hacky way to know if we're generating the bundled bindings
         println!("cargo:rerun-if-env-changed=LIBSQLITE3_SYS_BUNDLING");
-        match std::env::var("LIBSQLITE3_SYS_BUNDLING") {
-            Ok(v) if v != "0" => true,
-            _ => false,
-        }
+        matches!(std::env::var("LIBSQLITE3_SYS_BUNDLING"), Ok(v) if v != "0")
     }
 
     pub fn write_to_out_dir(header: HeaderLocation, out_path: &Path) {
