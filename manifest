@@ -1,5 +1,5 @@
-C Add\sthe\s--nosys\soption\sto\sthe\s.schema\scommand\sin\sthe\sCLI.
-D 2020-10-12T14:56:47.095
+C Fix\sALTER\sTABLE\sso\sthat\sit\scan\srun\seven\sif\sthe\sschema\scontains\sunknown\scollation\ssequences.
+D 2020-10-12T15:27:50.366
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c c678de5bf6f57933e0ad40578fbdb0fc8113b414bf517e0a2525cb319c379874
 F src/btree.h dcdff4037d75b3f032a5de0d922fcfaf35d48589417f634fa8627362709315f9
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
-F src/build.c 633db5436505a5dd604439923e64324546184a02240f16e69574dff53b693547
+F src/build.c c4bfeaea9ffc91bd1b220a5ae6ff6cac3b966bd3acce370dd2616a4f2c5c6175
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -646,7 +646,7 @@ F test/altercol.test 1d6a6fe698b81e626baea4881f5717f9bc53d7d07f1cd23ee7ad1b931f1
 F test/alterlegacy.test 82022721ce0de29cedc9a7af63bc9fcc078b0ee000f8283b4b6ea9c3eab2f44b
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
-F test/altertab.test b8b2104212e8ea87c75c3cbe3cb78ed7236a6c828ee2e59ed09d3dbe9812d002
+F test/altertab.test 6d7bbac2c4a6ef71b775094a3298fa3a92274d95034ee23157ffba92768e47e6
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test d0d51e652aaa11e37de1f1215181d88334fefcb185f3b9bd91e06e98260c4694
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcb0bc6a7b7006f07adb7266b1fecca39bf85a0adea6d78a341623a3546f2c2a
-R f850d599307a07b99b6a57ce2a03a960
-U drh
-Z 491bb289f372fef2a84fd27131c88833
+P b72ee694532c0c5d2285dd580154546eb592fd6892cad9ad7a49e98737adb974
+R 0cc2860ae79d7e0974788561dcae0a54
+U dan
+Z c4962f97790029298d130122e4951577

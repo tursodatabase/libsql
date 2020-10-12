@@ -1656,7 +1656,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   char *zColl;              /* Dequoted name of collation sequence */
   sqlite3 *db;
 
-  if( (p = pParse->pNewTable)==0 ) return;
+  if( (p = pParse->pNewTable)==0 || IN_RENAME_OBJECT ) return;
   i = p->nCol-1;
   db = pParse->db;
   zColl = sqlite3NameFromToken(db, pToken);
