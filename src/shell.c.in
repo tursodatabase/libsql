@@ -1184,6 +1184,8 @@ struct ShellState {
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
 #define SHFLG_HeaderSet      0x00000080 /* .header has been used */
+#define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
+#define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -3710,13 +3712,17 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];
+  int dataOnly = (p->shellFlgs & SHFLG_DumpDataOnly)!=0;
+  int noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
-  if( strcmp(zTable, "sqlite_sequence")==0 ){
-    raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
-  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
-    raw_printf(p->out, "ANALYZE sqlite_schema;\n");
+  if( strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
+    if( !dataOnly ) raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
+  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
+    if( !dataOnly ) raw_printf(p->out, "ANALYZE sqlite_schema;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
+  }else if( dataOnly ){
+    /* no-op */
   }else if( strncmp(zSql, "CREATE VIRTUAL TABLE", 20)==0 ){
     char *zIns;
     if( !p->writableSchema ){
@@ -3889,8 +3895,10 @@ static const char *(azHelp[]) = {
   ".dbinfo ?DB?             Show status information about the database",
   ".dump ?TABLE?            Render database content as SQL",
   "   Options:",
-  "     --preserve-rowids      Include ROWID values in the output",
+  "     --data-only            Output only INSERT statements",
   "     --newlines             Allow unescaped newline characters in output",
+  "     --nosys                Omit system tables (ex: \"sqlite_stat1\")",
+  "     --preserve-rowids      Include ROWID values in the output",
   "   TABLE is a LIKE pattern for the tables to dump",
   "   Additional LIKE patterns can be given in subsequent arguments",
   ".echo on|off             Turn command echo on or off",
@@ -7692,7 +7700,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     int i;
     int savedShowHeader = p->showHeader;
     int savedShellFlags = p->shellFlgs;
-    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo);
+    ShellClearFlag(p, 
+       SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo
+       |SHFLG_DumpDataOnly|SHFLG_DumpNoSys);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -7711,6 +7721,12 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( strcmp(z,"newlines")==0 ){
           ShellSetFlag(p, SHFLG_Newlines);
         }else
+        if( strcmp(z,"data-only")==0 ){
+          ShellSetFlag(p, SHFLG_DumpDataOnly);
+        }else
+        if( strcmp(z,"nosys")==0 ){
+          ShellSetFlag(p, SHFLG_DumpNoSys);
+        }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
           rc = 1;
@@ -7727,11 +7743,13 @@ static int do_meta_command(char *zLine, ShellState *p){
 
     open_db(p, 0);
 
-    /* When playing back a "dump", the content might appear in an order
-    ** which causes immediate foreign key constraints to be violated.
-    ** So disable foreign-key constraint enforcement to prevent problems. */
-    raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
-    raw_printf(p->out, "BEGIN TRANSACTION;\n");
+    if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
+      /* When playing back a "dump", the content might appear in an order
+      ** which causes immediate foreign key constraints to be violated.
+      ** So disable foreign-key constraint enforcement to prevent problems. */
+      raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
+      raw_printf(p->out, "BEGIN TRANSACTION;\n");
+    }
     p->writableSchema = 0;
     p->showHeader = 0;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
@@ -7749,14 +7767,16 @@ static int do_meta_command(char *zLine, ShellState *p){
     );
     run_schema_dump_query(p,zSql);
     sqlite3_free(zSql);
-    zSql = sqlite3_mprintf(
-      "SELECT sql FROM sqlite_schema "
-      "WHERE (%s) AND sql NOT NULL"
-      "  AND type IN ('index','trigger','view')",
-      zLike
-    );
-    run_table_dump_query(p, zSql);
-    sqlite3_free(zSql);
+    if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
+      zSql = sqlite3_mprintf(
+        "SELECT sql FROM sqlite_schema "
+        "WHERE (%s) AND sql NOT NULL"
+        "  AND type IN ('index','trigger','view')",
+        zLike
+      );
+      run_table_dump_query(p, zSql);
+      sqlite3_free(zSql);
+    }
     sqlite3_free(zLike);
     if( p->writableSchema ){
       raw_printf(p->out, "PRAGMA writable_schema=OFF;\n");
@@ -7764,7 +7784,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
-    raw_printf(p->out, p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n");
+    if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
+      raw_printf(p->out, p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n");
+    }
     p->showHeader = savedShowHeader;
     p->shellFlgs = savedShellFlags;
   }else

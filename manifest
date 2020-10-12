@@ -1,5 +1,5 @@
-C Fix\sALTER\sTABLE\sso\sthat\sit\scan\srun\seven\sif\sthe\sschema\scontains\sunknown\scollation\ssequences.
-D 2020-10-12T15:27:50.366
+C Add\soptions\s--data-only\sand\s--nosys\sto\sthe\s".dump"\scommand\sin\sthe\sCLI.
+D 2020-10-12T16:54:28.560
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 0d9ce195bf062f45390c9f9fa0ab7402e26b57bee51b9f67b3034c32f9fc425a
-F src/shell.c.in ff8b8a597714839c5453eab5042b9ba9aed574677e1474857940b3a060bd189b
+F src/shell.c.in 76abb40d8359be88d4c85ede63ea9c2d9e76528451e8c9dc79bd7978f25fb36f
 F src/sqlite.h.in cb9f0862e8d0f8691de95b18439ab60666f868c83bc65e3a17f0a0b44cc8f8a9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b72ee694532c0c5d2285dd580154546eb592fd6892cad9ad7a49e98737adb974
-R 0cc2860ae79d7e0974788561dcae0a54
-U dan
-Z c4962f97790029298d130122e4951577
+P bc4bb9433fed519386511796cce475d74100b8ed707cdbffd8cbdf683b0faf35
+R cf24ea972cca1b42376319e48d3450b3
+U drh
+Z e5010285d2215a3aa775df1acaf7bf19
