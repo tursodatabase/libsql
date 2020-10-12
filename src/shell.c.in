@@ -4015,8 +4015,9 @@ static const char *(azHelp[]) = {
   ".save FILE               Write in-memory database into FILE",
   ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
   ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
-  "     Options:",
-  "         --indent            Try to pretty-print the schema",
+  "   Options:",
+  "      --indent             Try to pretty-print the schema",
+  "      --nosys              Omit objects whose names start with \"sqlite_\"",
   ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
   "       --init               Create a new SELFTEST table",
@@ -9088,6 +9089,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zName = 0;
     int iSchema = 0;
     int bDebug = 0;
+    int bNoSystemTabs = 0;
     int ii;
 
     open_db(p, 0);
@@ -9100,10 +9102,16 @@ static int do_meta_command(char *zLine, ShellState *p){
         data.cMode = data.mode = MODE_Pretty;
       }else if( optionMatch(azArg[ii],"debug") ){
         bDebug = 1;
+      }else if( optionMatch(azArg[ii],"nosys") ){
+        bNoSystemTabs = 1;
+      }else if( azArg[ii][0]=='-' ){
+        utf8_printf(stderr, "Unknown option: \"%s\"\n", azArg[ii]);
+        rc = 1;
+        goto meta_command_exit;
       }else if( zName==0 ){
         zName = azArg[ii];
       }else{
-        raw_printf(stderr, "Usage: .schema ?--indent? ?LIKE-PATTERN?\n");
+        raw_printf(stderr, "Usage: .schema ?--indent? ?--nosys? ?LIKE-PATTERN?\n");
         rc = 1;
         goto meta_command_exit;
       }
@@ -9189,7 +9197,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sSelect, " AND ", 0);
         sqlite3_free(zQarg);
       }
-      appendText(&sSelect, "type!='meta' AND sql IS NOT NULL"
+      if( bNoSystemTabs ){
+        appendText(&sSelect, "name NOT LIKE 'sqlite_%%' AND ", 0);
+      }
+      appendText(&sSelect, "sql IS NOT NULL"
                            " ORDER BY snum, rowid", 0);
       if( bDebug ){
         utf8_printf(p->out, "SQL: %s;\n", sSelect.z);

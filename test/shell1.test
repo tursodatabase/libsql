@@ -583,7 +583,7 @@ do_test shell1-3.21.2 {
 do_test shell1-3.21.3 {
   # too many arguments
   catchcmd "test.db" ".schema FOO BAD"
-} {1 {Usage: .schema ?--indent? ?LIKE-PATTERN?}}
+} {1 {Usage: .schema ?--indent? ?--nosys? ?LIKE-PATTERN?}}
 
 do_test shell1-3.21.4 {
   catchcmd "test.db" {
