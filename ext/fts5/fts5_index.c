@@ -1754,7 +1754,7 @@ static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
 
   ASSERT_SZLEAF_OK(pIter->pLeaf);
   while( 1 ){
-    i64 iDelta = 0;
+    u64 iDelta = 0;
 
     if( eDetail==FTS5_DETAIL_NONE ){
       /* todo */
@@ -1769,7 +1769,7 @@ static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
       i += nPos;
     }
     if( i>=n ) break;
-    i += fts5GetVarint(&a[i], (u64*)&iDelta);
+    i += fts5GetVarint(&a[i], &iDelta);
     pIter->iRowid += iDelta;
 
     /* If necessary, grow the pIter->aRowidOffset[] array. */
@@ -1868,7 +1868,7 @@ static void fts5SegIterNext_Reverse(
   if( pIter->iRowidOffset>0 ){
     u8 *a = pIter->pLeaf->p;
     int iOff;
-    i64 iDelta;
+    u64 iDelta;
 
     pIter->iRowidOffset--;
     pIter->iLeafOffset = pIter->aRowidOffset[pIter->iRowidOffset];
@@ -1877,7 +1877,7 @@ static void fts5SegIterNext_Reverse(
     if( p->pConfig->eDetail!=FTS5_DETAIL_NONE ){
       iOff += pIter->nPos;
     }
-    fts5GetVarint(&a[iOff], (u64*)&iDelta);
+    fts5GetVarint(&a[iOff], &iDelta);
     pIter->iRowid -= iDelta;
   }else{
     fts5SegIterReverseNewPage(p, pIter);
