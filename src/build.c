@@ -4657,7 +4657,16 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   if( !v ) return;
   if( type!=TK_DEFERRED ){
     for(i=0; i<db->nDb; i++){
-      sqlite3VdbeAddOp2(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1);
+      int eTxnType;
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt && sqlite3BtreeIsReadonly(pBt) ){
+        eTxnType = 0;  /* Read txn */
+      }else if( type==TK_EXCLUSIVE ){
+        eTxnType = 2;  /* Exclusive txn */
+      }else{
+        eTxnType = 1;  /* Write txn */
+      }
+      sqlite3VdbeAddOp2(v, OP_Transaction, i, eTxnType);
       sqlite3VdbeUsesBtree(v, i);
     }
   }

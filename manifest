@@ -1,5 +1,5 @@
-C In\sthe\sCSV\sextension,\suse\sSQLITE_TRANSIENT\srather\sthan\sSQLITE_STATIC\son\nreturn\svalues\sthat\scan\sin\sfact\schange.
-D 2020-10-07T11:24:45.953
+C Fix\sBEGIN\sIMMEDIATE\sand\sBEGIN\sEXCLUSIVE\sso\sthat\sthey\swork\seven\sif\sone\sor\nmore\sof\sthe\sdatabase\sfiles\sin\sthe\sconnection\sare\sread-only.\s\sTest\scases\nfor\sthis\sare\sin\sTH3.
+D 2020-10-12T13:24:00.371
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c c678de5bf6f57933e0ad40578fbdb0fc8113b414bf517e0a2525cb319c379874
 F src/btree.h dcdff4037d75b3f032a5de0d922fcfaf35d48589417f634fa8627362709315f9
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
-F src/build.c 55faabe78044063eae7d1cb3767afa1bafd6edc41d950b6e2228abf601f87912
+F src/build.c 633db5436505a5dd604439923e64324546184a02240f16e69574dff53b693547
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -609,7 +609,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 8893576da5e6c5e4251f745808e3e5a5cec9f09b117f92900d5765c186cfffac
+F src/vdbe.c 6f3fb4f058c478b38c5280ccfc939745076c6a693999e49846c99fdc761c9c90
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64782463be62b72b5cd0bfaa7c9b69aa487d807c5fe0e65a272080b7739fd21b
-R 07ccc3845e9f294225651eb5b75f3484
+P 54b54f02c66c5aeaa3504c52a04614e2fb4d7260da8367840d5ea5a71cdc2fda
+R 136690972287e409358f9a15fd758fa2
 U drh
-Z a7bb5ea9c5c3f77afe8a7f156af1253f
+Z 67c8eebb36eba61692c9bc6ff7a9e864
