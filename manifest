@@ -1,5 +1,5 @@
-C The\swindows\sVFS\saccepts\squery\sparameter\s"exclusive=true"\sto\scause\sit\sto\ntake\sa\smandatory\sfile\slock,\spreventing\sother\sapplications\sfrom\seven\nreading\sthe\sfile.
-D 2020-10-15T14:37:27.966
+C Minor\sfixes\sto\sthe\scksumvfs\sdocumentation\sin\sthe\sheader\scomment\sof\sthe\ssource\nfile.\s\sEnhance\sspeedtest1.c\sso\sthat\sit\scan\smore\seasily\sdo\sperformance\ncomparisons\sof\scksumvfs.
+D 2020-10-15T17:59:38.486
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -288,7 +288,7 @@ F ext/misc/appendvfs.c 55121d311d408ba9c62c3cfa367408887638f02f9522dd9859891d0ee
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c 91e9a7f512fda934894bed30464552fffa7d3073b5be04189ae0bd0c59f26bfd
-F ext/misc/cksumvfs.c 0f022867786b615d7f68fb3ab3a16627fe6a730442abf804735e18a73f835a83
+F ext/misc/cksumvfs.c 910848f3d9739908cf77cad66a76dd45001546f46ff5ef4ca5c20c5476e77e98
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8beb2f22b9
 F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
@@ -1387,7 +1387,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c ac0e6ebadb97b54b7ac45288d1beea633a219d5fb98aa3395cb8364c31c985cb
+F test/speedtest1.c 6f74bbfd6b78c8cf3aa9fc4d2cd3e261322bb140f42fee34df909c76b50fff53
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a8a4552112be6e39e3475e9a8579582b5157086d3efd37971463c0e3958068d
-R 59d27b8a8c42b2fc19b3984d3ba82ae0
+P 05b573fdb27abec7d75aa1375325d45043cfd674f5b346fb341f001d7e04d160
+R 736a37f7ca6167b1cc4523e63769ac24
 U drh
-Z fd58f80a511913a0ba2c1bfd344e55bf
+Z 082cf54be711a36770c11eefca500343

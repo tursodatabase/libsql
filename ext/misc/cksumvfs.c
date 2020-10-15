@@ -54,11 +54,11 @@
 ** statically linked against the application, initialize it using
 ** a single API call as follows:
 **
-**     sqlite3_cksumvfs_init();
+**     sqlite3_register_cksumvfs();
 **
 ** Cksumvfs is a VFS Shim. When loaded, "cksmvfs" becomes the new
 ** default VFS and it uses the prior default VFS as the next VFS
-** down in the stack.  This is normally what you want.  However, it
+** down in the stack.  This is normally what you want.  However, in
 ** complex situations where multiple VFS shims are being loaded,
 ** it might be important to ensure that cksumvfs is loaded in the
 ** correct order so that it sequences itself into the default VFS
@@ -79,7 +79,7 @@
 ** the reserve-bytes value to 8 by runing:
 **
 **    int n = 8;
-**    sqlite3_file_control(db, 0, SQLITE_FCNTL_RESERVED_BYTES, &n);
+**    sqlite3_file_control(db, 0, SQLITE_FCNTL_RESERVE_BYTES, &n);
 **
 ** If you do this immediately after creating a new database file,
 ** before anything else has been written into the file, then that
