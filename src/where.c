@@ -1758,7 +1758,7 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left={%d:%d}",
                        pTerm->leftCursor, pTerm->u.x.leftColumn);
     }else if( (pTerm->eOperator & WO_OR)!=0 && pTerm->u.pOrInfo!=0 ){
-      sqlite3_snprintf(sizeof(zLeft),zLeft,"indexable=0x%lld", 
+      sqlite3_snprintf(sizeof(zLeft),zLeft,"indexable=0x%llx", 
                        pTerm->u.pOrInfo->indexable);
     }else{
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left=%d", pTerm->leftCursor);

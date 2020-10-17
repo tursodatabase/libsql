@@ -1,5 +1,5 @@
-C Minor\sfixes\sto\sthe\scksumvfs\sdocumentation\sin\sthe\sheader\scomment\sof\sthe\ssource\nfile.\s\sEnhance\sspeedtest1.c\sso\sthat\sit\scan\smore\seasily\sdo\sperformance\ncomparisons\sof\scksumvfs.
-D 2020-10-15T17:59:38.486
+C Fix\san\sincorrect\sprintf()\sin\sdebugging\slogic\sin\swhere.c.\nProblem\sreported\s[forum:/info/80a9c47769772207|by\sforum\spost\s80a9c47769772207].
+D 2020-10-17T19:09:04.842
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 5f4c1467ef425065377ca51d2e3c20b2a90a108f22f21ae1712996f02c6cdc06
+F src/where.c 187174b27f561a8e3775bb13ea7302b90854b0167afa2ff21f1f30174ad4dc10
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
@@ -1882,7 +1882,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05b573fdb27abec7d75aa1375325d45043cfd674f5b346fb341f001d7e04d160
-R 736a37f7ca6167b1cc4523e63769ac24
+P ed3bb818f58b75c087f2875331ec944397b6c61a5b14d8af4b9ec6f376bd1872
+R 13274d6a012cd30d7f0c6f8ba7eefeac
 U drh
-Z 082cf54be711a36770c11eefca500343
+Z 1092a14e3c313f12740a7b1fa870b8ab
