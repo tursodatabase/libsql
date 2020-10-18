@@ -3706,14 +3706,16 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   const char *zType;
   const char *zSql;
   ShellState *p = (ShellState *)pArg;
+  int dataOnly;
+  int noSys;
 
   UNUSED_PARAMETER(azNotUsed);
   if( nArg!=3 || azArg==0 ) return 0;
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];
-  int dataOnly = (p->shellFlgs & SHFLG_DumpDataOnly)!=0;
-  int noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
+  dataOnly = (p->shellFlgs & SHFLG_DumpDataOnly)!=0;
+  noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
   if( strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
     if( !dataOnly ) raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
