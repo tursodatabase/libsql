@@ -4861,6 +4861,7 @@ static int withExpand(
          && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
         ){
           pItem->pTab = pTab;
+          pTab->nTabRef++;
           pItem->fg.isRecursive = 1;
           if( pRecTerm->selFlags & SF_Recursive ){
             sqlite3ErrorMsg(pParse,
@@ -4868,7 +4869,6 @@ static int withExpand(
             );
             return SQLITE_ERROR;
           }
-          pTab->nTabRef++;
           pRecTerm->selFlags |= SF_Recursive;
           if( iRecTab<0 ) iRecTab = pParse->nTab++;
           pItem->iCursor = iRecTab;
