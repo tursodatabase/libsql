@@ -1,5 +1,5 @@
-C Fix\sthe\sSQLITE_DESERIALIZE_FREEONCLOSE\sflag\sso\sthat\sit\sworks\sas\sit\sis\ndocumented\sto\swork.\nSee\s[forum:/forumpost/ba1dff667a|forum\spost\sba1dff667a]
-D 2020-10-17T22:13:16.902
+C Allow\smultiple\srecursive\sterms\sin\sthe\scompound\sSELECT\sof\sa\srecursive\sCTE.\nThis\sfacilitates\swriting\sa\squery\sto\sfind\sfind\sthe\sconnected\scomponents\sof\nan\sundirected\sgraph.
+D 2020-10-19T01:23:48.028
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c c678de5bf6f57933e0ad40578fbdb0fc8113b414bf517e0a2525cb319c379874
 F src/btree.h dcdff4037d75b3f032a5de0d922fcfaf35d48589417f634fa8627362709315f9
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
-F src/build.c c4bfeaea9ffc91bd1b220a5ae6ff6cac3b966bd3acce370dd2616a4f2c5c6175
+F src/build.c f6449d4e85e998e14d3f537e8ea898dca2fcb83c277db3e60945af9b9177db81
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e98518d2d3d4029a13c805e07313fb60c877be56db76e90dd5f3af73085d0ce6
@@ -537,7 +537,7 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 0d9ce195bf062f45390c9f9fa0ab7402e26b57bee51b9f67b3034c32f9fc425a
+F src/select.c aabd90874b280dd69498c83380fe9a9cd7a703bf578a12fdc68993a91979b17d
 F src/shell.c.in a04bec163dfafef8b14c36430685e73913b93569e7ae839533fa7e8c23837f6e
 F src/sqlite.h.in ff32663b457306eb88c3039868280aa39da31162ed69c4e71fa8e028684e7277
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1761,10 +1761,11 @@ F test/windowB.test 7a983ea1cc1cf72be7f378e4b32f6cb2d73014c5cd8b25aaee825164cd42
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 72375ae71031eabf96bc88d0af128c8628a091ddc99b5a394e848b3df5fc17ad
-F test/with1.test 323659eaf309787add657d05e5943e437a7a3494f2b6602a0deb18fdebc1ab4c
+F test/with1.test 780be387f01e290e768bdfd1827280f9e37ba37223eb4736aba386864fac5a94
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
-F test/with3.test 13b3336739da648a9e4dfa11bb04e73a920c97620041007c5f75d5d14084c346
+F test/with3.test a261f0ea225c4af0ce6447f1157bb603959b2a665f14a03951c2883d2ef1c0f0
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
+F test/with5.test 9bbf9823dace99ba8fd853ac0961c8f2e4a6df93a2b6846328b7d411a8540699
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test e4034c0849ccc2e8bb749c69f15bd69bb9fcf8fe77e8d17ce02369604242fe83
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
@@ -1882,7 +1883,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 883da4dadc88809192e4ed2f753f8883471fb43aa330bc58b017c66e1acedc6c
-R 9776eedd2cd9c8f1b609b4bc8dd4a475
+P d6fac8a1d3efeb2c4f03dae437b5b314765c93770a70603803a8039291dbcabb
+R 8cbf46bb87a6f92c4e833b5518759227
+T *branch * cte-enhancement
+T *sym-cte-enhancement *
+T -sym-trunk *
 U drh
-Z 34fe04425a6d42f6096c739434aec808
+Z c8e202423f476b36d763c0220ea16f8f

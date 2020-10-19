@@ -4460,7 +4460,7 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   assert(pList || pParse->db->mallocFailed );
   if( pList ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-      if( pItem->iCursor>=0 ) break;
+      if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;
       if( pItem->pSelect ){
         sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);

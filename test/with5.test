@@ -1,0 +1,96 @@
+# 2020-10-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is recursive common table expressions with
+# multiple recursive terms in the compound select.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix with5
+
+ifcapable {!cte} {
+  finish_test
+  return
+}
+
+do_execsql_test 100 {
+  CREATE TABLE link(aa INT, bb INT);
+  CREATE INDEX link_f ON link(aa,bb);
+  CREATE INDEX link_t ON link(bb,aa);
+  INSERT INTO link(aa,bb) VALUES
+    (1,3),
+    (5,3),
+    (7,1),
+    (7,9),
+    (9,9),
+    (5,11),
+    (11,7),
+    (2,4),
+    (4,6),
+    (8,6);
+} {}
+do_execsql_test 110 {
+  WITH RECURSIVE closure(x) AS (
+     VALUES(1)
+     UNION
+     SELECT aa FROM closure, link WHERE link.bb=closure.x
+     UNION
+     SELECT bb FROM closure, link WHERE link.aa=closure.x
+  )
+  SELECT x FROM closure ORDER BY x;
+} {1 3 5 7 9 11}
+do_execsql_test 111 {
+  WITH RECURSIVE closure(x) AS (
+     VALUES(1)
+     UNION
+     SELECT aa FROM link, closure WHERE link.bb=closure.x
+     UNION
+     SELECT bb FROM closure, link WHERE link.aa=closure.x
+  )
+  SELECT x FROM closure ORDER BY x;
+} {1 3 5 7 9 11}
+do_execsql_test 112 {
+  WITH RECURSIVE closure(x) AS (
+     VALUES(1)
+     UNION
+     SELECT bb FROM closure, link WHERE link.aa=closure.x
+     UNION
+     SELECT aa FROM link, closure WHERE link.bb=closure.x
+  )
+  SELECT x FROM closure ORDER BY x;
+} {1 3 5 7 9 11}
+do_execsql_test 113 {
+  WITH RECURSIVE closure(x) AS (
+     VALUES(1),(200),(300),(400)
+     INTERSECT
+     VALUES(1)
+     UNION
+     SELECT bb FROM closure, link WHERE link.aa=closure.x
+     UNION
+     SELECT aa FROM link, closure WHERE link.bb=closure.x
+  )
+  SELECT x FROM closure ORDER BY x;
+} {1 3 5 7 9 11}
+do_execsql_test 114 {
+  WITH RECURSIVE closure(x) AS (
+     VALUES(1),(200),(300),(400)
+     UNION ALL
+     VALUES(2)
+     UNION
+     SELECT bb FROM closure, link WHERE link.aa=closure.x
+     UNION
+     SELECT aa FROM link, closure WHERE link.bb=closure.x
+  )
+  SELECT x FROM closure ORDER BY x;
+} {1 2 3 4 5 6 7 8 9 11 200 300 400}
+
+finish_test
