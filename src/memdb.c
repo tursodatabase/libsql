@@ -576,8 +576,12 @@ int sqlite3_deserialize(
     goto end_deserialize;
   }    
   zSql = sqlite3_mprintf("ATTACH x AS %Q", zSchema);
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+  }
   if( rc ) goto end_deserialize;
   db->init.iDb = (u8)iDb;
   db->init.reopenMemdb = 1;

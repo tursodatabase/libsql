@@ -627,7 +627,7 @@ static int decodeDatabase(
   unsigned char **paDecode,      /* OUT: decoded database file */
   int *pnDecode                  /* OUT: Size of decoded database */
 ){
-  unsigned char *a;              /* Database under construction */
+  unsigned char *a, *aNew;       /* Database under construction */
   int mx = 0;                    /* Current size of the database */
   sqlite3_uint64 nAlloc = 4096;  /* Space allocated in a[] */
   unsigned int i;                /* Next byte of zIn[] to read */
@@ -673,11 +673,12 @@ static int decodeDatabase(
             }
             newSize = MX_FILE_SZ;
           }
-          a = sqlite3_realloc64( a, newSize );
-          if( a==0 ){
-            fprintf(stderr, "Out of memory!\n");
-            exit(1);
+          aNew = sqlite3_realloc64( a, newSize );
+          if( aNew==0 ){
+            sqlite3_free(a);
+            return -1;
           }
+          a = aNew;
           assert( newSize > nAlloc );
           memset(a+nAlloc, 0, (size_t)(newSize - nAlloc));
           nAlloc = newSize;
@@ -851,7 +852,8 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
     int nAlloc = 0;
     int nNotUsed = 0;
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &nAlloc, &nNotUsed, 0);
-    fprintf(stderr,"Memory leak in mutator: %lld bytes in %d allocations\n",
+    fprintf(stderr,"memory leak prior to test start:"
+                   " %lld bytes in %d allocations\n",
             sqlite3_memory_used(), nAlloc);
     exit(1);
   }
@@ -866,7 +868,10 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
     fflush(stdout);
   }
   rc = sqlite3_open(0, &cx.db);
-  if( rc ) return 1;
+  if( rc ){
+    sqlite3_free(aDb);
+    return 1;
+  }
   if( bVdbeDebug ){
     sqlite3_exec(cx.db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
   }
@@ -1410,7 +1415,8 @@ static void showHelp(void){
 "  --export-sql DIR     Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help               Show this help text\n"
 "  --info               Show information about SOURCE-DB w/o running tests\n"
-"  --limit-depth N      Limit expression depth to N\n"
+"  --limit-depth N      Limit expression depth to N.  Default: 500\n"
+"  --limit-heap N       Limit heap memory to N.  Default: 100M\n"
 "  --limit-mem N        Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe         Panic if any test runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...   Load SQL scripts fron files into SOURCE-DB\n"
@@ -1424,6 +1430,7 @@ static void showHelp(void){
 "  -q|--quiet           Reduced output\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
+"  --skip N             Skip the first N test cases\n"
 "  --spinner            Use a spinner to show progress\n"
 "  --sqlid N            Use only SQL where sqlid=N\n"
 "  --timeout N          Abort if any single test needs more than N seconds\n"
@@ -1451,6 +1458,7 @@ int main(int argc, char **argv){
   int rebuildFlag = 0;         /* --rebuild */
   int vdbeLimitFlag = 0;       /* --limit-vdbe */
   int infoFlag = 0;            /* --info */
+  int nSkip = 0;               /* --skip */
   int bSpinner = 0;            /* True for --spinner */
   int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
@@ -1520,6 +1528,10 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         depthLimit = integerValue(argv[++i]);
       }else
+      if( strcmp(z,"limit-heap")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        heapLimit = integerValue(argv[++i]);
+      }else
       if( strcmp(z,"limit-mem")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         nMem = integerValue(argv[++i]);
@@ -1577,6 +1589,10 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
+      }else
+      if( strcmp(z,"skip")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        nSkip = atoi(argv[++i]);
       }else
       if( strcmp(z,"spinner")==0 ){
         bSpinner = 1;
@@ -1898,7 +1914,11 @@ int main(int argc, char **argv){
             prevAmt = amt;
           }
         }
-        runCombinedDbSqlInput(pSql->a, pSql->sz);
+        if( nSkip>0 ){
+          nSkip--;
+        }else{
+          runCombinedDbSqlInput(pSql->a, pSql->sz);
+        }
         nTest++;
         g.zTestName[0] = 0;
         disableOom();
@@ -1926,6 +1946,10 @@ int main(int argc, char **argv){
             fflush(stdout);
             prevAmt = amt;
           }
+        }
+        if( nSkip>0 ){
+          nSkip--;
+          continue;
         }
         createVFile("main.db", pDb->sz, pDb->a);
         sqlite3_randomness(0,0);

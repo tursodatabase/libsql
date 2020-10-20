@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sinside\sof\sdebug-only\scode\sthat\scan\sfail\sfollowing\san\sOOM.
-D 2020-10-20T12:37:51.678
+C Fix\sthe\ssqlite3_hard_heap_limit()\sso\sthat\sit\sworks\swith\ssqlite3_realloc64()\nin\saddition\sto\ssqlite3_malloc64().\s\sImprovements\sto\sOOM\sprocessing\sand\ndebugging\saids\sin\sthe\sfuzzcheck\sutility.
+D 2020-10-20T14:40:53.201
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -502,13 +502,13 @@ F src/insert.c 7e081d33aab4a9d761c39dccf3c3872c35501565d2ed9db66301918d23bc7901
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 436af4968c6954d304fce9efa12719367bd8f37b19b93b71d6ad607e85adbb47
 F src/main.c 54d61d1e94f225636053c862c930d7dd7b29162b93d3f3ecb00439910ccba02a
-F src/malloc.c 22d5bdd9fe88ae4fad1b91a1b9735104b82853ffef868f1f05517d60dc1875f5
+F src/malloc.c 413b0ffea2b45c37c6cf2ed5509f6d6b508b0a033caa9b4bf90bed4ee044a2ff
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c b93b8762ab999a29ae7751532dadf0a1ac78040308a5fb1d17fcc365171d67eb
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 23e8f0b975e91e23f60794935252bec2040d8db09f598fd738d5903dd6c0143f
+F src/memdb.c ab0632d42407e866d2b616bd19d4211ac0ad1b430f04c4e187d60005b8700b98
 F src/memjournal.c 90b2ca7e2f465d57c16b69d15a9f3e3294af61088eb4938f2f7664d5ac50f813
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -1029,7 +1029,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 656ee850f331872a784e7d6a10649efe2af123bdaacb728b5a03e4faee8b959c
+F test/fuzzcheck.c 5f81f2cc65f13068620245f2e2c6059657d3b26be476df379ae2da539f17676d
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75a0288871ccb2a69a636cbb328fe19045a0d0ef96a193ecd118b9a196784d2d
-R 8238397a2980379334c8295b533cb894
+P 79da254f41a0d7d5fdc57f0cc40b3560bfcf7f79eed24a9fada1b6b4ca3adb5a
+R 80e6b2572c25cd544b35c7442c689807
 U drh
-Z 64f5a98fdc563dc665a2183f760ec9f1
+Z d733a42fa58690400682bda5195b036c
