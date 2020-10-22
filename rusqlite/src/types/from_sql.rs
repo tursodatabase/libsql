@@ -1,7 +1,7 @@
 use super::{Value, ValueRef};
+use std::convert::TryInto;
 use std::error::Error;
 use std::fmt;
-use std::convert::TryInto;
 
 /// Enum listing possible errors from `FromSql` trait.
 #[derive(Debug)]

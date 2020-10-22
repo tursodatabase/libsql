@@ -132,7 +132,7 @@ impl fmt::Display for Type {
 #[cfg(test)]
 mod test {
     use super::Value;
-    use crate::{Connection, Error, NO_PARAMS, params, Statement};
+    use crate::{params, Connection, Error, Statement, NO_PARAMS};
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
 
@@ -388,18 +388,24 @@ mod test {
 
     macro_rules! test_conversion {
         ($db_etc:ident, $insert_value:expr, $get_type:ty, expect $expected_value:expr) => {
-            $db_etc.insert_statement.execute(params![$insert_value]).unwrap();
-            let res = $db_etc.query_statement.query_row(NO_PARAMS, |row| {
-                row.get::<_, $get_type>(0)
-            });
+            $db_etc
+                .insert_statement
+                .execute(params![$insert_value])
+                .unwrap();
+            let res = $db_etc
+                .query_statement
+                .query_row(NO_PARAMS, |row| row.get::<_, $get_type>(0));
             assert_eq!(res.unwrap(), $expected_value);
             $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
         };
         ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_error) => {
-            $db_etc.insert_statement.execute(params![$insert_value]).unwrap();
-            let res = $db_etc.query_statement.query_row(NO_PARAMS, |row| {
-                row.get::<_, $get_type>(0)
-            });
+            $db_etc
+                .insert_statement
+                .execute(params![$insert_value])
+                .unwrap();
+            let res = $db_etc
+                .query_statement
+                .query_row(NO_PARAMS, |row| row.get::<_, $get_type>(0));
             res.unwrap_err();
             $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
         };
@@ -455,6 +461,5 @@ mod test {
         // Float to int conversion, never works even if the actual value is an
         // integer.
         test_conversion!(db_etc, 0f64, i64, expect_error);
-
     }
 }
