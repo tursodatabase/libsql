@@ -220,9 +220,15 @@ do_eqp_test 5.2.4 {
   SELECT * FROM t1 WHERE likely(b>?)
 } {SCAN TABLE t1}
 
-do_eqp_test 5.3.1 {
-  SELECT * FROM t1 WHERE a=?
-} {SEARCH TABLE t1 USING INDEX i1 (a=?)}
+ifcapable stat4 {
+  do_eqp_test 5.3.1.stat4 {
+    SELECT * FROM t1 WHERE a=?
+  } {SCAN TABLE t1}
+} else {
+  do_eqp_test 5.3.1 {
+    SELECT * FROM t1 WHERE a=?
+  } {SEARCH TABLE t1 USING INDEX i1}
+}
 do_eqp_test 5.3.2 {
   SELECT * FROM t1 WHERE likelihood(a=?, 0.9)
 } {SCAN TABLE t1}
