@@ -78,6 +78,12 @@ impl From<i64> for Value {
     }
 }
 
+impl From<f32> for Value {
+    fn from(f: f32) -> Value {
+        Value::Real(f.into())
+    }
+}
+
 impl From<f64> for Value {
     fn from(f: f64) -> Value {
         Value::Real(f)

@@ -4,11 +4,27 @@
 //! the `ToSql` and `FromSql` traits are provided for the basic types that
 //! SQLite provides methods for:
 //!
-//! * Integers (`i32` and `i64`; SQLite uses `i64` internally, so getting an
-//! `i32` will truncate   if the value is too large or too small).
-//! * Reals (`f64`)
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
+//! * Numbers
+//!
+//! The number situation is a little complicated due to the fact that all
+//! numbers in SQLite are stored as `INTEGER` (`i64`) or `REAL` (`f64`).
+//!
+//! `ToSql` cannot fail and is therefore implemented for all number types that
+//! can be losslessly converted to one of these types, i.e. `u8`, `u16`, `u32`,
+//! `i8`, `i16`, `i32`, `i64`, `isize`, `f32` and `f64`. It is *not* implemented
+//! for `u64` or `usize`.
+//!
+//! `FromSql` can fail, and is implemented for all primitive number types,
+//! however you may get a runtime error or rounding depending on the types
+//! and values.
+//!
+//! * `INTEGER` to integer: returns an `Error::IntegralValueOutOfRange` error
+//!   if the value does not fit.
+//! * `REAL` to integer: always returns an `Error::InvalidColumnType` error.
+//! * `INTEGER` to float: casts using `as` operator. Never fails.
+//! * `REAL` to float: casts using `as` operator. Never fails.
 //!
 //! Additionally, if the `time` feature is enabled, implementations are
 //! provided for `time::OffsetDateTime` that use the RFC 3339 date/time format,
@@ -116,7 +132,7 @@ impl fmt::Display for Type {
 #[cfg(test)]
 mod test {
     use super::Value;
-    use crate::{Connection, Error, NO_PARAMS};
+    use crate::{Connection, Error, NO_PARAMS, params, Statement};
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
 
@@ -368,5 +384,77 @@ mod test {
             x => panic!("Invalid Value {:?}", x),
         }
         assert_eq!(Value::Null, row.get::<_, Value>(4).unwrap());
+    }
+
+    macro_rules! test_conversion {
+        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect $expected_value:expr) => {
+            $db_etc.insert_statement.execute(params![$insert_value]).unwrap();
+            let res = $db_etc.query_statement.query_row(NO_PARAMS, |row| {
+                row.get::<_, $get_type>(0)
+            });
+            assert_eq!(res.unwrap(), $expected_value);
+            $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
+        };
+        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_error) => {
+            $db_etc.insert_statement.execute(params![$insert_value]).unwrap();
+            let res = $db_etc.query_statement.query_row(NO_PARAMS, |row| {
+                row.get::<_, $get_type>(0)
+            });
+            res.unwrap_err();
+            $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
+        };
+    }
+
+    #[test]
+    fn test_numeric_conversions() {
+        // Test what happens when we store an f32 and retrieve an i32 etc.
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE foo (x)").unwrap();
+
+        // SQLite actually ignores the column types, so we just need to test
+        // different numeric values.
+
+        struct DbEtc<'conn> {
+            insert_statement: Statement<'conn>,
+            query_statement: Statement<'conn>,
+            delete_statement: Statement<'conn>,
+        }
+
+        let mut db_etc = DbEtc {
+            insert_statement: db.prepare("INSERT INTO foo VALUES (?1)").unwrap(),
+            query_statement: db.prepare("SELECT x FROM foo").unwrap(),
+            delete_statement: db.prepare("DELETE FROM foo").unwrap(),
+        };
+
+        // Basic non-converting test.
+        test_conversion!(db_etc, 0u8, u8, expect 0u8);
+
+        // In-range integral conversions.
+        test_conversion!(db_etc, 100u8, i8, expect 100i8);
+        test_conversion!(db_etc, 200u8, u8, expect 200u8);
+        test_conversion!(db_etc, 100u16, i8, expect 100i8);
+        test_conversion!(db_etc, 200u16, u8, expect 200u8);
+        test_conversion!(db_etc, u32::MAX, u64, expect u32::MAX as u64);
+        test_conversion!(db_etc, i64::MIN, i64, expect i64::MIN);
+        test_conversion!(db_etc, i64::MAX, i64, expect i64::MAX);
+        test_conversion!(db_etc, i64::MAX, u64, expect i64::MAX as u64);
+
+        // Out-of-range integral conversions.
+        test_conversion!(db_etc, 200u8, i8, expect_error);
+        test_conversion!(db_etc, 400u16, i8, expect_error);
+        test_conversion!(db_etc, 400u16, u8, expect_error);
+        test_conversion!(db_etc, -1i8, u8, expect_error);
+        test_conversion!(db_etc, i64::MIN, u64, expect_error);
+
+        // Integer to float, always works.
+        test_conversion!(db_etc, i64::MIN, f32, expect i64::MIN as f32);
+        test_conversion!(db_etc, i64::MAX, f32, expect i64::MAX as f32);
+        test_conversion!(db_etc, i64::MIN, f64, expect i64::MIN as f64);
+        test_conversion!(db_etc, i64::MAX, f64, expect i64::MAX as f64);
+
+        // Float to int conversion, never works even if the actual value is an
+        // integer.
+        test_conversion!(db_etc, 0f64, i64, expect_error);
+
     }
 }

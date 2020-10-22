@@ -1,6 +1,7 @@
 use super::{Value, ValueRef};
 use std::error::Error;
 use std::fmt;
+use std::convert::TryInto;
 
 /// Enum listing possible errors from `FromSql` trait.
 #[derive(Debug)]
@@ -90,29 +91,12 @@ pub trait FromSql: Sized {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self>;
 }
 
-impl FromSql for isize {
-    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        i64::column_result(value).and_then(|i| {
-            if i < isize::min_value() as i64 || i > isize::max_value() as i64 {
-                Err(FromSqlError::OutOfRange(i))
-            } else {
-                Ok(i as isize)
-            }
-        })
-    }
-}
-
 macro_rules! from_sql_integral(
     ($t:ident) => (
         impl FromSql for $t {
             fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-                i64::column_result(value).and_then(|i| {
-                    if i < i64::from($t::min_value()) || i > i64::from($t::max_value()) {
-                        Err(FromSqlError::OutOfRange(i))
-                    } else {
-                        Ok(i as $t)
-                    }
-                })
+                let i = i64::column_result(value)?;
+                i.try_into().map_err(|_| FromSqlError::OutOfRange(i))
             }
         }
     )
@@ -121,13 +105,27 @@ macro_rules! from_sql_integral(
 from_sql_integral!(i8);
 from_sql_integral!(i16);
 from_sql_integral!(i32);
+// from_sql_integral!(i64); // Not needed because the native type is i64.
+from_sql_integral!(isize);
 from_sql_integral!(u8);
 from_sql_integral!(u16);
 from_sql_integral!(u32);
+from_sql_integral!(u64);
+from_sql_integral!(usize);
 
 impl FromSql for i64 {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_i64()
+    }
+}
+
+impl FromSql for f32 {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        match value {
+            ValueRef::Integer(i) => Ok(i as f32),
+            ValueRef::Real(f) => Ok(f as f32),
+            _ => Err(FromSqlError::InvalidType),
+        }
     }
 }
 

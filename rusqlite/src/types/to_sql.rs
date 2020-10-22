@@ -59,6 +59,7 @@ from_value!(isize);
 from_value!(u8);
 from_value!(u16);
 from_value!(u32);
+from_value!(f32);
 from_value!(f64);
 from_value!(Vec<u8>);
 
@@ -147,6 +148,7 @@ to_sql_self!(isize);
 to_sql_self!(u8);
 to_sql_self!(u16);
 to_sql_self!(u32);
+to_sql_self!(f32);
 to_sql_self!(f64);
 
 #[cfg(feature = "i128_blob")]
