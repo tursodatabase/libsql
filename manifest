@@ -1,5 +1,5 @@
-C Sometimes\sit\smakes\ssense\sto\sdo\sa\sfull\stable\sscan\srather\sthan\stry\sto\suse\nan\sindex\swhen\smost\sof\sthe\srows\swill\sbe\sselected.\s\sThis\sbranch\sis\strying\sto\ntune\sthe\squery\splanner\sto\smake\sthat\shappen\smore\soften.
-D 2020-10-22T15:47:48.417
+C Test\scase\supdates.
+D 2020-10-22T18:16:17.916
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1362,7 +1362,7 @@ F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test ed524bc86f27646b3a297f45d6557b55db338977b6838f8064b196b35848b31b
 F test/skipscan2.test 3eb703ce794f139e7b83567911046298bcde29606116727f9b700ce34f559d2d
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
-F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
+F test/skipscan5.test 980875ad45d8aacfe7bdec7c288343520cd1d14e84befdcfe50c785f9e6c8709
 F test/skipscan6.test 0b4cd1b4ac9f84d91454df513c99a4932fa07e8f27b8049bea605068b3e34ac7
 F test/snapshot.test a504f2e7009f512ef66c719f0ea1c55a556bdaf1e1312c80a04d46fc1a3e9632
 F test/snapshot2.test 8d6ff5dd9cc503f6e12d408a30409c3f9c653507b24408d9cd7195931c89bc54
@@ -1728,7 +1728,7 @@ F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test c1c335e914e28b122e000e9310f02d2be83e1c9dbca2e29f46bd732703944d1b
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 3d9412b1199d3e2bed34fcb76b4c48d0bf4df95d27e3f8dd27b6f8b4716d0d89
-F test/whereG.test 9363b2a97d914cb1b81aff5069ef0cf2a071a67e2b604eac6fe9c0114017d9aa
+F test/whereG.test 77127a4d214bb21da3b5c695cf4106cd9e418c60d9c24471ba55d3772067cd35
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test a2874062140ed4aba9ffae76e6190a3df6fc73d1373fdfa8fd632945082a5364
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
@@ -1883,10 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 602d7369166d406a26834aa47d71d565a17d377d32e41f308821a50b41f91896
-R ab709a26dfedc74dfc33ed96beba3bb5
-T *branch * avoid-bad-indexes
-T *sym-avoid-bad-indexes *
-T -sym-trunk *
+P 0f42099ad65855c94af8472f3a6fddac7fc2a82e8fdfcc06a298eb6683a28688
+R 095b8371453be15a7f4050e63d8f5ae1
 U drh
-Z cb46159555a32660890058f8ecf1c0c9
+Z 3bc0d725f8d222a4909fbd87d08e48ab
