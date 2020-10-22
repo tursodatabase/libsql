@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_hard_heap_limit()\sso\sthat\sit\sworks\swith\ssqlite3_realloc64()\nin\saddition\sto\ssqlite3_malloc64().\s\sImprovements\sto\sOOM\sprocessing\sand\ndebugging\saids\sin\sthe\sfuzzcheck\sutility.
-D 2020-10-20T14:40:53.201
+C Sometimes\sit\smakes\ssense\sto\sdo\sa\sfull\stable\sscan\srather\sthan\stry\sto\suse\nan\sindex\swhen\smost\sof\sthe\srows\swill\sbe\sselected.\s\sThis\sbranch\sis\strying\sto\ntune\sthe\squery\splanner\sto\smake\sthat\shappen\smore\soften.
+D 2020-10-22T15:47:48.417
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 805de23ddca536181f8f0439df989fdd4a2f76c40bc305ec9fe2f211f68c89e8
-F src/analyze.c 5cffff3d355858cd22bfc6e20ac7203510d2e1cc935086eb06f4abb2f579f628
+F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c 0f497c15c4cfe3bdcb214f0dbdbbb6c5ed7e8a9308ac445c7959f5e5780437a9
 F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
@@ -542,7 +542,7 @@ F src/shell.c.in b317d851046496c92e28529eb96f9d2ec1ad480590b1676e0362865f5466f88
 F src/sqlite.h.in ff32663b457306eb88c3039868280aa39da31162ed69c4e71fa8e028684e7277
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
-F src/sqliteInt.h 34319c13e900063b267052168b277c7bc1e124a1ceef457e450d53ce618bb96e
+F src/sqliteInt.h c01115c8dd967f7d334a98ba37ac821eafb04144c8085a795daaf2185743d27a
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -624,7 +624,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 187174b27f561a8e3775bb13ea7302b90854b0167afa2ff21f1f30174ad4dc10
+F src/where.c 03d35ea488e694849923e28ccdce1ef377a5c3738405b5323ff97eb9aa7569c1
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
 F src/whereexpr.c 2a05552e808047a93845278c98c6ca64a265fa8e9ffd087c161bb11bfe339866
@@ -830,7 +830,7 @@ F test/descidx2.test a0ba347037ff3b811f4c6ceca5fd0f9d5d72e74e59f2d9de346a9d2f6ad
 F test/descidx3.test 953c831df7ea219c73826dfbf2f6ee02d95040725aa88ccb4fa43d1a1999b926
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test e7d0cf371944dd0cbedff86420744e2f1ea2b528156451c97eb6ff41a99b9236
-F test/distinct2.test 11b0594c932098e969d084ba45ab81d5040f4d4e766db65d49146705a305ed98
+F test/distinct2.test cd1d15a4a2abf579298f7161e821ed50c0119136fe0424db85c52cf0adc230d1
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
@@ -1883,7 +1883,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79da254f41a0d7d5fdc57f0cc40b3560bfcf7f79eed24a9fada1b6b4ca3adb5a
-R 80e6b2572c25cd544b35c7442c689807
+P 602d7369166d406a26834aa47d71d565a17d377d32e41f308821a50b41f91896
+R ab709a26dfedc74dfc33ed96beba3bb5
+T *branch * avoid-bad-indexes
+T *sym-avoid-bad-indexes *
+T -sym-trunk *
 U drh
-Z d733a42fa58690400682bda5195b036c
+Z cb46159555a32660890058f8ecf1c0c9
