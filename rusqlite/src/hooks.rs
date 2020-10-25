@@ -364,4 +364,33 @@ mod test {
         db.execute_batch("INSERT INTO foo VALUES ('lisa')").unwrap();
         assert!(CALLED.load(Ordering::Relaxed));
     }
+
+    #[test]
+    fn test_progress_handler() {
+        let db = Connection::open_in_memory().unwrap();
+
+        lazy_static! {
+            static ref CALLED: AtomicBool = AtomicBool::new(false);
+        }
+        db.progress_handler(1, Some(|| {
+            CALLED.store(true, Ordering::Relaxed);
+            false
+        }));
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
+            .unwrap();
+        assert!(CALLED.load(Ordering::Relaxed));
+    }
+
+    #[test]
+    fn test_progress_handler_interrupt() {
+        let db = Connection::open_in_memory().unwrap();
+
+        fn handler() -> bool {
+            true
+        }
+
+        db.progress_handler(1, Some(handler));
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
+            .unwrap_err();
+    }
 }
