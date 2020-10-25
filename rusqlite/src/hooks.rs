@@ -372,10 +372,13 @@ mod test {
         lazy_static! {
             static ref CALLED: AtomicBool = AtomicBool::new(false);
         }
-        db.progress_handler(1, Some(|| {
-            CALLED.store(true, Ordering::Relaxed);
-            false
-        }));
+        db.progress_handler(
+            1,
+            Some(|| {
+                CALLED.store(true, Ordering::Relaxed);
+                false
+            }),
+        );
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
             .unwrap();
         assert!(CALLED.load(Ordering::Relaxed));
