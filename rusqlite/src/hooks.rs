@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 
 use std::os::raw::{c_char, c_int, c_void};
-use std::panic::catch_unwind;
+use std::panic::{catch_unwind, RefUnwindSafe};
 use std::ptr;
 
 use crate::ffi;
@@ -74,6 +74,19 @@ impl Connection {
     {
         self.db.borrow_mut().update_hook(hook);
     }
+
+    /// `feature = "hooks"` Register a query progress callback.
+    ///
+    /// The parameter `num_ops` is the approximate number of virtual machine instructions that are evaluated between successive invocations of the `handler`.
+    /// If `num_ops` is less than one then the progress handler is disabled.
+    ///
+    /// If the progress callback returns `true`, the operation is interrupted.
+    pub fn progress_handler<F>(&self, num_ops: c_int, handler: Option<F>)
+    where
+        F: FnMut() -> bool + Send + RefUnwindSafe + 'static,
+    {
+        self.db.borrow_mut().progress_handler(num_ops, handler);
+    }
 }
 
 impl InnerConnection {
@@ -81,6 +94,7 @@ impl InnerConnection {
         self.update_hook(None::<fn(Action, &str, &str, i64)>);
         self.commit_hook(None::<fn() -> bool>);
         self.rollback_hook(None::<fn()>);
+        self.progress_handler(0, None::<fn() -> bool>);
     }
 
     fn commit_hook<F>(&mut self, hook: Option<F>)
@@ -235,6 +249,45 @@ impl InnerConnection {
             }
         }
         self.free_update_hook = free_update_hook;
+    }
+
+    fn progress_handler<F>(&mut self, num_ops: c_int, handler: Option<F>)
+    where
+        F: FnMut() -> bool + Send + RefUnwindSafe + 'static,
+    {
+        unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
+        where
+            F: FnMut() -> bool,
+        {
+            let r = catch_unwind(|| {
+                let boxed_handler: *mut F = p_arg as *mut F;
+                (*boxed_handler)()
+            });
+            if let Ok(true) = r {
+                1
+            } else {
+                0
+            }
+        }
+
+        match handler {
+            Some(handler) => {
+                let boxed_handler = Box::new(handler);
+                unsafe {
+                    ffi::sqlite3_progress_handler(
+                        self.db(),
+                        num_ops,
+                        Some(call_boxed_closure::<F>),
+                        &*boxed_handler as *const F as *mut _,
+                    )
+                }
+                self.progress_handler = Some(boxed_handler);
+            }
+            _ => {
+                unsafe { ffi::sqlite3_progress_handler(self.db(), num_ops, None, ptr::null_mut()) }
+                self.progress_handler = None;
+            }
+        };
     }
 }
 
