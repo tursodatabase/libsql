@@ -1,5 +1,5 @@
-C Prevent\sfts5\stokenizer\sunicode61\sfrom\sconsidering\s'\\0'\sto\sbe\sa\stoken\scharacters,\seven\sif\sother\scharacters\sof\sclass\s"Cc"\sare.
-D 2020-10-26T13:24:36.019
+C Ensure\sthat\sthe\stable\sargument\spassed\sto\sTcl_GetIndexFromObjStruct()\sin\sthe\ssessions\smodule\stest\scode\sis\sdeclared\s"static".
+D 2020-10-26T16:22:31.769
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -452,7 +452,7 @@ F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c266
 F ext/session/sessionwor.test 67b5ab91d4f93ce65ff1f58240ac5ddf73f8670facc1ffa49cef56293d52818d
 F ext/session/sqlite3session.c 2c76b8c3a5d6dab736686f8a48833b8bdac0871ecc6f447f9839d28bd4a63d6c
 F ext/session/sqlite3session.h a2db5b72b938d12c727b4b4ec632254ca493670a9c0de597af3271a7f774fc57
-F ext/session/test_session.c 98797aba475a799376c9a42214f2d1debf2d0c3cb657d9c8bbf4f70bf3fb4aec
+F ext/session/test_session.c 24286d958dc6f4ca4d7e710f09bc0fa9d50956a40dd99fd8223e7488024c71fe
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e7e113d9f2c929c1f8a85e2cfad8e2e60f0e8770212b5e5320fb2a2c42911f8
-R a15b27345243be33c21a5da39e6aa93d
+P b7b7bde9b7a03665e3691c6d51118965f216d2dfb1617f138b9f9e60e418ed2f
+R dad6cead3cbd72618592cdb60bc9b8b8
 U dan
-Z e39d799402b3f14cd8d6cc9e6595e926
+Z d3867a9a7992a751788b3edc2b73c442
