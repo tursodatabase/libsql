@@ -1,10 +1,11 @@
 use super::{Null, Value, ValueRef};
 #[cfg(feature = "array")]
 use crate::vtab::array::Array;
-use crate::Result;
+use crate::{Error, Result};
 use std::borrow::Cow;
+use std::convert::TryFrom;
 
-/// `ToSqlOutput` represents the possible output types for implementors of the
+/// `ToSqlOutput` represents the possible output types for implementers of the
 /// `ToSql` trait.
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
@@ -86,7 +87,8 @@ impl ToSql for ToSqlOutput<'_> {
     }
 }
 
-/// A trait for types that can be converted into SQLite values.
+/// A trait for types that can be converted into SQLite values. Returns
+/// `Error::ToSqlConversionFailure` if the conversion fails.
 pub trait ToSql {
     /// Converts Rust value to SQLite value
     fn to_sql(&self) -> Result<ToSqlOutput<'_>>;
@@ -156,6 +158,25 @@ to_sql_self!(i128);
 
 #[cfg(feature = "uuid")]
 to_sql_self!(uuid::Uuid);
+
+macro_rules! to_sql_self_fallible(
+    ($t:ty) => (
+        impl ToSql for $t {
+            fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+                Ok(ToSqlOutput::Owned(Value::Integer(
+                    i64::try_from(*self).map_err(
+                        // TODO: Include the values in the error message.
+                        |err| Error::ToSqlConversionFailure(err.into())
+                    )?
+                )))
+            }
+        }
+    )
+);
+
+// Special implementations for usize and u64 because these conversions can fail.
+to_sql_self_fallible!(u64);
+to_sql_self_fallible!(usize);
 
 impl<T: ?Sized> ToSql for &'_ T
 where

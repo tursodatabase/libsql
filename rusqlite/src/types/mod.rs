@@ -11,22 +11,22 @@
 //! The number situation is a little complicated due to the fact that all
 //! numbers in SQLite are stored as `INTEGER` (`i64`) or `REAL` (`f64`).
 //!
-//! `ToSql` cannot fail and is therefore implemented for all number types that
-//! can be losslessly converted to one of these types, i.e. `u8`, `u16`, `u32`,
-//! `i8`, `i16`, `i32`, `i64`, `isize`, `f32` and `f64`. It is *not* implemented
-//! for `u64` or `usize`.
-//!
-//! `FromSql` can fail, and is implemented for all primitive number types,
-//! however you may get a runtime error or rounding depending on the types
-//! and values.
+//! `ToSql` and `FromSql` are implemented for all primitive number types.
+//! `FromSql` has different behaviour depending on the SQL and Rust types, and
+//! the value.
 //!
 //! * `INTEGER` to integer: returns an `Error::IntegralValueOutOfRange` error
-//!   if the value does not fit.
+//!   if the value does not fit in the Rust type.
 //! * `REAL` to integer: always returns an `Error::InvalidColumnType` error.
 //! * `INTEGER` to float: casts using `as` operator. Never fails.
 //! * `REAL` to float: casts using `as` operator. Never fails.
 //!
-//! Additionally, if the `time` feature is enabled, implementations are
+//! `ToSql` always succeeds except when storing a `u64` or `usize` value that
+//! cannot fit in an `INTEGER` (`i64`). Also note that SQLite ignores column
+//! types, so if you store an `i64` in a column with type `REAL` it will be
+//! stored as an `INTEGER`, not a `REAL`.
+//!
+//! If the `time` feature is enabled, implementations are
 //! provided for `time::OffsetDateTime` that use the RFC 3339 date/time format,
 //! `"%Y-%m-%dT%H:%M:%S.%fZ"`, to store time values as strings.  These values
 //! can be parsed by SQLite's builtin
@@ -398,7 +398,7 @@ mod test {
             assert_eq!(res.unwrap(), $expected_value);
             $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
         };
-        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_error) => {
+        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_from_sql_error) => {
             $db_etc
                 .insert_statement
                 .execute(params![$insert_value])
@@ -408,6 +408,12 @@ mod test {
                 .query_row(NO_PARAMS, |row| row.get::<_, $get_type>(0));
             res.unwrap_err();
             $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
+        };
+        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_to_sql_error) => {
+            $db_etc
+                .insert_statement
+                .execute(params![$insert_value])
+                .unwrap_err();
         };
     }
 
@@ -446,22 +452,28 @@ mod test {
         test_conversion!(db_etc, i64::MIN, i64, expect i64::MIN);
         test_conversion!(db_etc, i64::MAX, i64, expect i64::MAX);
         test_conversion!(db_etc, i64::MAX, u64, expect i64::MAX as u64);
+        test_conversion!(db_etc, 100usize, usize, expect 100usize);
+        test_conversion!(db_etc, 100u64, u64, expect 100u64);
+        test_conversion!(db_etc, i64::MAX as u64, u64, expect i64::MAX as u64);
 
         // Out-of-range integral conversions.
-        test_conversion!(db_etc, 200u8, i8, expect_error);
-        test_conversion!(db_etc, 400u16, i8, expect_error);
-        test_conversion!(db_etc, 400u16, u8, expect_error);
-        test_conversion!(db_etc, -1i8, u8, expect_error);
-        test_conversion!(db_etc, i64::MIN, u64, expect_error);
+        test_conversion!(db_etc, 200u8, i8, expect_from_sql_error);
+        test_conversion!(db_etc, 400u16, i8, expect_from_sql_error);
+        test_conversion!(db_etc, 400u16, u8, expect_from_sql_error);
+        test_conversion!(db_etc, -1i8, u8, expect_from_sql_error);
+        test_conversion!(db_etc, i64::MIN, u64, expect_from_sql_error);
+        test_conversion!(db_etc, u64::MAX, i64, expect_to_sql_error);
+        test_conversion!(db_etc, u64::MAX, u64, expect_to_sql_error);
+        test_conversion!(db_etc, i64::MAX as u64 + 1, u64, expect_to_sql_error);
 
-        // Integer to float, always works.
+        // FromSql integer to float, always works.
         test_conversion!(db_etc, i64::MIN, f32, expect i64::MIN as f32);
         test_conversion!(db_etc, i64::MAX, f32, expect i64::MAX as f32);
         test_conversion!(db_etc, i64::MIN, f64, expect i64::MIN as f64);
         test_conversion!(db_etc, i64::MAX, f64, expect i64::MAX as f64);
 
-        // Float to int conversion, never works even if the actual value is an
-        // integer.
-        test_conversion!(db_etc, 0f64, i64, expect_error);
+        // FromSql float to int conversion, never works even if the actual value
+        // is an integer.
+        test_conversion!(db_etc, 0f64, i64, expect_from_sql_error);
     }
 }
