@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\stable\sargument\spassed\sto\sTcl_GetIndexFromObjStruct()\sin\sthe\ssessions\smodule\stest\scode\sis\sdeclared\s"static".
-D 2020-10-26T16:22:31.769
+C Always\screate\sa\sstatement\sjournal\swhen\susing\sthe\sOP_ParseSchema\sopcode,\nas\syou\snever\sknow\swhen\sit\smight\sfail.\s\sSee\sthe\sdiscussion\son\n[forum:/forumpost/daa2c728cc|forum\spost\sdaa2c728cc].
+D 2020-10-26T18:14:12.864
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/vdbe.c 6f3fb4f058c478b38c5280ccfc939745076c6a693999e49846c99fdc761c9c90
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
-F src/vdbeaux.c e84dbc64cc7d8fffc41ce27b2fe17eed0e66043c471f1f872bf029eb89752d17
+F src/vdbeaux.c c4c0389aed3ac31f835904c3d1f730d6818742633f9474140d8ce174c10f2267
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
 F src/vdbesort.c f5b5e473a7cee44e47a94817b042fd7172cf3aa2c0a7928a8339d612bcfdec5a
@@ -1652,7 +1652,7 @@ F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 10ea54300a097d7c0337fd104abffe4a4786d1598b94017a37efe0e0d3e04dd5
+F test/view.test fd48eddb32a35a98c3de70062ebac66ebf4a2bbfc75a1cc1109159ef8bfc47a9
 F test/vtab1.test c5d9e90ed02bcacd776dcbb7360199d290f7f53c26b484ddece543060c54319f
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7b7bde9b7a03665e3691c6d51118965f216d2dfb1617f138b9f9e60e418ed2f
-R dad6cead3cbd72618592cdb60bc9b8b8
-U dan
-Z d3867a9a7992a751788b3edc2b73c442
+P 80eba105d6d1b49ba8ca2ad4e14ddec2de0bdc2f6686c2f8a1c1d24fc1fe846f
+R eea974520c1d74de24586e181010f011
+U drh
+Z c0d2472c8013bdcee23ed82f2bfd8f37
