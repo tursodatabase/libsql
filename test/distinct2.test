@@ -266,7 +266,7 @@ do_execsql_test 2030 {
   ANALYZE;
 }
 do_execsql_test 2040 {
-  SELECT DISTINCT a, b, x FROM t3 CROSS JOIN t2 ORDER BY a; 
+  SELECT DISTINCT a, b, x FROM t3 CROSS JOIN t2 ORDER BY a, +b; 
 } {
   one 0 1
   one 1 1

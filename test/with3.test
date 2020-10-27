@@ -30,7 +30,7 @@ do_catchsql_test 1.0 {
     SELECT 5 FROM t0 UNION SELECT 8 FROM m
   )
   SELECT * FROM i;
-} {1 {no such table: t0}}
+} {1 {no such table: m}}
 
 # 2019-11-09 dbfuzzcheck find
 do_catchsql_test 1.1 {

@@ -2192,6 +2192,7 @@ struct Table {
 #define TF_OOOHidden       0x0400    /* Out-of-Order hidden columns */
 #define TF_HasNotNull      0x0800    /* Contains NOT NULL constraints */
 #define TF_Shadow          0x1000    /* True for a shadow table */
+#define TF_HasStat4        0x2000    /* STAT4 info available for this table */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is

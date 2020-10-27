@@ -128,7 +128,7 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p);
 
 /* Implements PRAGMA integrity_check on a Btree and its associated file.
  * Only called from vdbe.c/OP_IntegrityCk */
-char *sqlite3BtreeIntegrityCheck(sqlite3*,Btree*,Pgno*aRoot,int nRoot,int,int*);`
+char *sqlite3BtreeIntegrityCheck(sqlite3*,Btree*,Pgno*aRoot,int nRoot,int,int*);
 
 /* A single step of an incremental vacuum. For PRAGMA incremental_vacuum(N) */
 /* Neither autovacuum mode nor the VACUUM SQLite command use this function. */

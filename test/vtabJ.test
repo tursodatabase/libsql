@@ -122,5 +122,33 @@ do_execsql_test 181 {
   SELECT name, value FROM tclvar where name = 'xx';
 } {}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 200 {
+  CREATE TABLE var(k TEXT, v TEXT);
+  INSERT INTO var VALUES('testvar1', 10);
+  INSERT INTO var VALUES('testvar2', 20);
+  INSERT INTO var VALUES('testvar3', 30);
+}
+
+do_test 210 {
+  foreach {testvar1 testvar2 testvar3} {1 2 3} {}
+  execsql {
+    UPDATE tclvar SET value = var.v FROM var WHERE name = var.k;
+  }
+  list $testvar1 $testvar2 $testvar3
+} {10 20 30}
+
+do_test 220 {
+  execsql {
+    CREATE TABLE nam(k TEXT, v TEXT);
+    INSERT INTO nam VALUES('testvar1', 'tv1');
+    INSERT INTO nam VALUES('testvar2', 'tv2');
+    INSERT INTO nam VALUES('testvar3', 'tv3');
+    UPDATE tclvar SET fullname = nam.v FROM nam WHERE name = nam.k;
+  }
+  list $tv1 $tv2 $tv3
+} {10 20 30}
+
 
 finish_test

@@ -352,7 +352,7 @@ do_catchsql_test 7.4 {
     SELECT i FROM tree WHERE p IN (SELECT id FROM t)
   ) 
   SELECT id FROM t;
-} {1 {recursive reference in a subquery: t}}
+} {1 {circular reference: t}}
 
 do_catchsql_test 7.5 {
   WITH t(id) AS (

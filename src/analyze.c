@@ -1772,6 +1772,7 @@ static int loadStatTbl(
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
     pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
+    pIdx->pTable->tabFlags |= TF_HasStat4;
     for(i=0; i<nSample; i++){
       pIdx->aSample[i].anEq = pSpace; pSpace += nIdxCol;
       pIdx->aSample[i].anLt = pSpace; pSpace += nIdxCol;

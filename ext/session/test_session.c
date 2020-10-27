@@ -227,7 +227,7 @@ static int SQLITE_TCLAPI test_session_cmd(
 ){
   TestSession *p = (TestSession*)clientData;
   sqlite3_session *pSession = p->pSession;
-  struct SessionSubcmd {
+  static struct SessionSubcmd {
     const char *zSub;
     int nArg;
     const char *zMsg;
@@ -1131,7 +1131,7 @@ static int SQLITE_TCLAPI test_rebaser_cmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  struct RebaseSubcmd {
+  static struct RebaseSubcmd {
     const char *zSub;
     int nArg;
     const char *zMsg;
@@ -1248,7 +1248,7 @@ static int SQLITE_TCLAPI test_sqlite3session_config(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  struct ConfigOpt {
+  static struct ConfigOpt {
     const char *zSub;
     int op;
   } aSub[] = {
