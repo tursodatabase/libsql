@@ -67,8 +67,10 @@ typedef struct BtCursor BtCursor;
 typedef struct BtShared BtShared;
 typedef struct BtreePayload BtreePayload;
 
-/* Functions for Opening and Closing Database Connections
-**
+/*
+********************************************
+*   Opening and Closing Database Connections
+********************************************
 */
 
 int sqlite3BtreeOpen(
@@ -96,7 +98,9 @@ int sqlite3BtreeOpen(
 int sqlite3BtreeClose(Btree*);
 
 /* 
-** Functions for Database Image Configuration and Querying
+**********************************************
+**   Database Image Configuration and Querying
+**********************************************
 */
 
 /*
@@ -139,8 +143,10 @@ int sqlite3BtreeIncrVacuum(Btree *);
 int sqlite3BtreeCopyFile(Btree *, Btree *);
 
 
-/* 
-** Btree Connection Configuration and Querying
+/*
+************************************************
+**   Btree Connection Configuration and Querying
+************************************************
 */
 
 
@@ -161,8 +167,10 @@ i64 sqlite3BtreeRowCountEst(BtCursor*);
 struct Pager *sqlite3BtreePager(Btree*);
 
 
-/* 
-** Mutex Function Wrappers 
+/*
+****************************
+**   Mutex Function Wrappers 
+****************************
 **
 ** Every lock applies to an entire BTree. These functions are
 ** wrappers for the sqlite3_mutex* functions, which are called  
@@ -211,7 +219,9 @@ struct Pager *sqlite3BtreePager(Btree*);
 
 
 /*
+****************************************
 **   Transaction and SavePoint Functions
+****************************************
 */
 
 int sqlite3BtreeBeginTrans(Btree*,int,int*);
@@ -242,7 +252,9 @@ int sqlite3BtreeTripAllCursors(Btree*, int, int);
 
 
 /*
-** Cursors and Cursor functions
+*********************************
+**   Cursors and Cursor functions
+*********************************
 **
 */
 
@@ -387,7 +399,9 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 
 /*
-** Record and Payload handling functions
+******************************************
+**   Record and Payload handling functions
+******************************************
 **
 ** A Btree record is a key-value pair consisting of a rowid key, and arbitary 
 ** data value. The record is also called a payload.
@@ -464,7 +478,9 @@ void sqlite3BtreeIncrblobCursor(BtCursor *);
 
 
 /*
-**  Table functions
+********************
+**   Table functions
+********************
 **
 */
 
@@ -488,7 +504,9 @@ int sqlite3BtreeClearTableOfCursor(BtCursor*);
 
 
 /*
-** Reading and Writing Metadata
+*********************************
+**   Reading and Writing Metadata
+*********************************
 **
 ** Note there is metadata which is not in the first database page
 ** including (as below) some visible via the os.h API
