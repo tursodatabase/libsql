@@ -54,8 +54,6 @@
 **
 **      Reading and Writing Metadata
 **
-**      Hard to Classify / More research needed
-**
 */
 
 #ifndef SQLITE_BTREE_H
@@ -81,6 +79,13 @@ int sqlite3BtreeOpen(
   int flags,               /* Flags */
   int vfsFlags             /* Flags passed through to VFS open */
 );
+
+/* The flags parameter to sqlite3BtreeOpen can be the bitwise OR of the
+** following values.
+**
+** NOTE:  These values must match the corresponding PAGER_ values in
+** pager.h.
+*/
 
 #define BTREE_OMIT_JOURNAL  1  /* No create/use journal in temp databases */
 #define BTREE_MEMORY        2  /* This is an in-memory DB */
@@ -121,17 +126,23 @@ int sqlite3BtreeSecureDelete(Btree*,int);
 int sqlite3BtreeGetRequestedReserve(Btree*);
 int sqlite3BtreeGetReserveNoMutex(Btree *p);
 
+/* Implements PRAGMA integrity_check on a Btree and its associated file.
+ * Only called from vdbe.c/OP_IntegrityCk */
+char *sqlite3BtreeIntegrityCheck(sqlite3*,Btree*,Pgno*aRoot,int nRoot,int,int*);`
+
+/* A single step of an incremental vacuum. For PRAGMA incremental_vacuum(N) */
+/* Neither autovacuum mode nor the VACUUM SQLite command use this function. */
+int sqlite3BtreeIncrVacuum(Btree *);
+
+/* Copy a complete Btree into another Btree, ie from one file into another */
+/* Used only in the case of a backup and vacuum operations */
+int sqlite3BtreeCopyFile(Btree *, Btree *);
+
 
 /* 
 ** Btree Connection Configuration and Querying
 */
 
-/* The flags parameter to sqlite3BtreeOpen can be the bitwise or of the
-** following values.
-**
-** NOTE:  These values must match the corresponding PAGER_ values in
-** pager.h.
-*/
 
 int sqlite3BtreeSetCacheSize(Btree*,int);
 Pgno sqlite3BtreeMaxPageCount(Btree*,Pgno);
@@ -145,6 +156,9 @@ int sqlite3BtreeIsReadonly(Btree *pBt);
  * called only by OP IsSmaller, from PRAGMA optimize
 */
 i64 sqlite3BtreeRowCountEst(BtCursor*);  
+
+/* Return the pager associated with a BTree */
+struct Pager *sqlite3BtreePager(Btree*);
 
 
 /* 
@@ -225,7 +239,6 @@ int sqlite3BtreeBeginStmt(Btree*,int);
 
 /* Set all relevant cursors to error state on transaction rollback */
 int sqlite3BtreeTripAllCursors(Btree*, int, int);
-
 
 
 /*
@@ -441,6 +454,14 @@ int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
 u32 sqlite3BtreePayloadSize(BtCursor*);
 
+/* These functions deal with arbitary-sized binary blobs in a Btree */
+#ifndef SQLITE_OMIT_INCRBLOB
+int sqlite3BtreePayloadChecked(BtCursor*, u32 offset, u32 amt, void*);
+int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
+void sqlite3BtreeIncrblobCursor(BtCursor *);
+#endif
+
+
 
 /*
 **  Table functions
@@ -528,23 +549,5 @@ int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 /* Initialize the first page of the database file and return */
 int sqlite3BtreeNewDb(Btree *p);
 
-
-/*
-** Hard to Classify / More research needed
-*/
-
-int sqlite3BtreeIncrVacuum(Btree *);
-
-int sqlite3BtreeCopyFile(Btree *, Btree *);
-
-char *sqlite3BtreeIntegrityCheck(sqlite3*,Btree*,Pgno*aRoot,int nRoot,int,int*);
-
-struct Pager *sqlite3BtreePager(Btree*);
-
-#ifndef SQLITE_OMIT_INCRBLOB
-int sqlite3BtreePayloadChecked(BtCursor*, u32 offset, u32 amt, void*);
-int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
-void sqlite3BtreeIncrblobCursor(BtCursor *);
-#endif
 
 #endif /* SQLITE_BTREE_H */
