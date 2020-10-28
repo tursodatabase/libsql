@@ -111,8 +111,8 @@ pub enum Error {
     InvalidParameterCount(usize, usize),
 
     /// Returned from various functions in the Blob IO positional API. For
-    /// example, [`Blob::raw_read_at_exact`](crate::blob::Blob::raw_read_at_exact)
-    /// will return it if the blob has insufficient data.
+    /// example, [`Blob::raw_read_at_exact`](crate::blob::Blob::
+    /// raw_read_at_exact) will return it if the blob has insufficient data.
     #[cfg(feature = "blob")]
     BlobSizeError,
 }

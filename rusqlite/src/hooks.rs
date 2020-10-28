@@ -77,8 +77,10 @@ impl Connection {
 
     /// `feature = "hooks"` Register a query progress callback.
     ///
-    /// The parameter `num_ops` is the approximate number of virtual machine instructions that are evaluated between successive invocations of the `handler`.
-    /// If `num_ops` is less than one then the progress handler is disabled.
+    /// The parameter `num_ops` is the approximate number of virtual machine
+    /// instructions that are evaluated between successive invocations of the
+    /// `handler`. If `num_ops` is less than one then the progress handler
+    /// is disabled.
     ///
     /// If the progress callback returns `true`, the operation is interrupted.
     pub fn progress_handler<F>(&self, num_ops: c_int, handler: Option<F>)
