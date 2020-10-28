@@ -334,15 +334,15 @@ impl Connection {
     /// # Failure
     ///
     /// Will return Err if the function could not be attached to the connection.
-    pub fn create_scalar_function<F, T>(
-        &self,
+    pub fn create_scalar_function<'c, F, T>(
+        &'c self,
         fn_name: &str,
         n_arg: c_int,
         flags: FunctionFlags,
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'static,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'c,
         T: ToSql,
     {
         self.db
@@ -411,15 +411,15 @@ impl Connection {
 }
 
 impl InnerConnection {
-    fn create_scalar_function<F, T>(
-        &mut self,
+    fn create_scalar_function<'c, F, T>(
+        &'c mut self,
         fn_name: &str,
         n_arg: c_int,
         flags: FunctionFlags,
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'static,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'c,
         T: ToSql,
     {
         unsafe extern "C" fn call_boxed_closure<F, T>(
