@@ -861,7 +861,7 @@ impl<'conn> fallible_iterator::FallibleIterator for Batch<'conn, '_> {
             }
             return Ok(Some(next));
         }
-        return Ok(None);
+        Ok(None)
     }
 }
 
