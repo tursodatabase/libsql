@@ -810,6 +810,61 @@ impl fmt::Debug for Connection {
     }
 }
 
+/// Batch iterator
+/// ```rust
+/// use fallible_iterator::FallibleIterator;
+/// use rusqlite::{Batch, Connection, Result, NO_PARAMS};
+///
+/// fn main() -> Result<()> {
+///     let conn = Connection::open_in_memory()?;
+///     let sql = r"
+///     CREATE TABLE tbl1 (col);
+///     CREATE TABLE tbl2 (col);
+///     ";
+///     let mut batch = Batch::new(&conn, sql);
+///     while let Some(mut stmt) = batch.next()? {
+///         stmt.execute(NO_PARAMS)?;
+///     }
+///     Ok(())
+/// }
+/// ```
+#[derive(Debug)]
+pub struct Batch<'conn, 'sql> {
+    conn: &'conn Connection,
+    sql: &'sql str,
+    tail: usize,
+}
+
+impl<'conn, 'sql> Batch<'conn, 'sql> {
+    /// Constructor
+    pub fn new(conn: &'conn Connection, sql: &'sql str) -> Batch<'conn, 'sql> {
+        Batch { conn, sql, tail: 0 }
+    }
+}
+
+impl<'conn> fallible_iterator::FallibleIterator for Batch<'conn, '_> {
+    type Error = Error;
+    type Item = Statement<'conn>;
+
+    fn next(&mut self) -> Result<Option<Statement<'conn>>> {
+        while self.tail < self.sql.len() {
+            let sql = &self.sql[self.tail..];
+            let next = self.conn.prepare(sql)?;
+            let tail = next.stmt.tail();
+            if tail == 0 {
+                self.tail = self.sql.len();
+            } else {
+                self.tail += tail;
+            }
+            if next.stmt.is_null() {
+                continue;
+            }
+            return Ok(Some(next));
+        }
+        return Ok(None);
+    }
+}
+
 bitflags::bitflags! {
     /// Flags for opening SQLite database connections.
     /// See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
