@@ -53,9 +53,9 @@ impl Session<'_> {
     }
 
     /// Set a table filter
-    pub fn table_filter<'s, F>(&'s mut self, filter: Option<F>)
+    pub fn table_filter<F>(&mut self, filter: Option<F>)
     where
-        F: Fn(&str) -> bool + Send + RefUnwindSafe + 's,
+        F: Fn(&str) -> bool + Send + RefUnwindSafe + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(
             p_arg: *mut c_void,
