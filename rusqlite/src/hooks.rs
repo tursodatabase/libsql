@@ -301,7 +301,6 @@ unsafe fn free_boxed_hook<F>(p: *mut c_void) {
 mod test {
     use super::Action;
     use crate::Connection;
-    use lazy_static::lazy_static;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
@@ -365,9 +364,7 @@ mod test {
     fn test_progress_handler() {
         let db = Connection::open_in_memory().unwrap();
 
-        lazy_static! {
-            static ref CALLED: AtomicBool = AtomicBool::new(false);
-        }
+        static CALLED: AtomicBool = AtomicBool::new(false);
         db.progress_handler(
             1,
             Some(|| {
