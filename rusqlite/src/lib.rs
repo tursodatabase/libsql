@@ -865,14 +865,6 @@ impl<'conn> fallible_iterator::FallibleIterator for Batch<'conn, '_> {
     }
 }
 
-impl<'conn> Iterator for Batch<'conn, '_> {
-    type Item = Result<Statement<'conn>, Error>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        fallible_iterator::FallibleIterator::next(self).transpose()
-    }
-}
-
 bitflags::bitflags! {
     /// Flags for opening SQLite database connections.
     /// See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
