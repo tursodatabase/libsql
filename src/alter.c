@@ -1196,13 +1196,21 @@ static int renameResolveTrigger(Parse *pParse){
         int i;
         for(i=0; i<pSrc->nSrc && rc==SQLITE_OK; i++){
           struct SrcList_item *p = &pSrc->a[i];
-          p->pTab = sqlite3LocateTableItem(pParse, 0, p);
           p->iCursor = pParse->nTab++;
-          if( p->pTab==0 ){
-            rc = SQLITE_ERROR;
+          if( p->pSelect ){
+            sqlite3SelectPrep(pParse, p->pSelect, 0);
+            sqlite3ExpandSubquery(pParse, p);
+            assert( i>0 );
+            assert( pStep->pFrom->a[i-1].pSelect );
+            sqlite3SelectPrep(pParse, pStep->pFrom->a[i-1].pSelect, 0);
           }else{
-            p->pTab->nTabRef++;
-            rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
+            p->pTab = sqlite3LocateTableItem(pParse, 0, p);
+            if( p->pTab==0 ){
+              rc = SQLITE_ERROR;
+            }else{
+              p->pTab->nTabRef++;
+              rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
+            }
           }
         }
         sNC.pSrcList = pSrc;
@@ -1263,6 +1271,12 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
       sqlite3WalkExprList(pWalker, pUpsert->pUpsertSet);
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertWhere);
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertTargetWhere);
+    }
+    if( pStep->pFrom ){
+      int i;
+      for(i=0; i<pStep->pFrom->nSrc; i++){
+        sqlite3WalkSelect(pWalker, pStep->pFrom->a[i].pSelect);
+      }
     }
   }
 }

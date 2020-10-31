@@ -600,5 +600,40 @@ do_execsql_test 25.1 {
 #  ALTER TABLE t2 RENAME COLUMN a TO aaa;
 #}
 
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 26.1 {
+  CREATE TABLE t1(x);
+
+  CREATE TABLE t3(y);
+  CREATE TABLE t4(z);
+
+  CREATE TRIGGER tr1 INSERT ON t3 BEGIN
+    UPDATE t3 SET y=z FROM (SELECT z FROM t4);
+  END;
+
+  CREATE TRIGGER tr2 INSERT ON t3 BEGIN
+    UPDATE t3 SET y=abc FROM (SELECT x AS abc FROM t1);
+  END;
+}
+
+do_execsql_test 26.2 {
+  ALTER TABLE t1 RENAME TO t2;
+}
+
+do_execsql_test 26.3 {
+  ALTER TABLE t2 RENAME x TO xx;
+}
+
+do_execsql_test 26.4 {
+  SELECT sql FROM sqlite_schema WHERE name='tr2'
+} {
+{CREATE TRIGGER tr2 INSERT ON t3 BEGIN
+    UPDATE t3 SET y=abc FROM (SELECT xx AS abc FROM "t2");
+  END}
+}
+
+
 finish_test
 
