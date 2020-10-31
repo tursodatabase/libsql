@@ -812,7 +812,6 @@ impl fmt::Debug for Connection {
 
 /// Batch iterator
 /// ```rust
-/// use fallible_iterator::FallibleIterator;
 /// use rusqlite::{Batch, Connection, Result, NO_PARAMS};
 ///
 /// fn main() -> Result<()> {
@@ -840,13 +839,12 @@ impl<'conn, 'sql> Batch<'conn, 'sql> {
     pub fn new(conn: &'conn Connection, sql: &'sql str) -> Batch<'conn, 'sql> {
         Batch { conn, sql, tail: 0 }
     }
-}
 
-impl<'conn> fallible_iterator::FallibleIterator for Batch<'conn, '_> {
-    type Error = Error;
-    type Item = Statement<'conn>;
-
-    fn next(&mut self) -> Result<Option<Statement<'conn>>> {
+    /// Iterates on each batch statements.
+    ///
+    /// Returns `Ok(None)` when batch is completed.
+    #[allow(clippy::should_implement_trait)] // fallible iterator
+    pub fn next(&mut self) -> Result<Option<Statement<'conn>>> {
         while self.tail < self.sql.len() {
             let sql = &self.sql[self.tail..];
             let next = self.conn.prepare(sql)?;
@@ -862,6 +860,14 @@ impl<'conn> fallible_iterator::FallibleIterator for Batch<'conn, '_> {
             return Ok(Some(next));
         }
         Ok(None)
+    }
+}
+
+impl<'conn> Iterator for Batch<'conn, '_> {
+    type Item = Result<Statement<'conn>>;
+
+    fn next(&mut self) -> Option<Result<Statement<'conn>>> {
+        self.next().transpose()
     }
 }
 
