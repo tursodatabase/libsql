@@ -10703,6 +10703,7 @@ static const char zOptions[] =
 #endif
   "   -stats               print memory stats before each finalize\n"
   "   -table               set output mode to 'table'\n"
+  "   -tabs                set output mode to 'tabs'\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
 #ifdef SQLITE_ENABLE_VFSTRACE
@@ -11138,10 +11139,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags |= SQLITE_OPEN_NOFOLLOW;
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
-                       SEP_Unit);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
-                       SEP_Record);
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Unit);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Record);
+    }else if( strcmp(z,"-tabs")==0 ){
+      data.mode = MODE_List;
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Tab);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
     }else if( strcmp(z,"-separator")==0 ){
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));

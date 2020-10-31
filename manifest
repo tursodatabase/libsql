@@ -1,5 +1,5 @@
-C Update\sthe\sALTER\sTABLE\scommand\sto\scorrectly\shandle\sUPDATE\s...\sFROM\sstatements\swithin\strigger\sprograms.
-D 2020-10-31T16:33:01.439
+C Add\sthe\s-tabs\scommand-line\soption\sto\sthe\sCLI.
+D 2020-10-31T18:58:37.360
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 97b91fb25d86881ff20c9ad2ad98412c6c1bb5f7d6c9bb044db250cbc9cfcd4b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 645aa47fb8ce95e95290d4852d44cf5997c89c3e754a74c91e010459a8db7a72
-F src/shell.c.in b317d851046496c92e28529eb96f9d2ec1ad480590b1676e0362865f5466f886
+F src/shell.c.in c0b4aea11596235e4206d671568590f9516f6db63755e82661cb75b662e3cbf2
 F src/sqlite.h.in ff32663b457306eb88c3039868280aa39da31162ed69c4e71fa8e028684e7277
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2d1af80082edffd71c6f96f70ad1ce6a4fb46615ad10291fc77fe0dea9ff0197
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa512f72cf5adfece6299db17bd122aeff0cdee2a25f83f60e2ebb05e99c9591
-R 68d5ed17ba605000020223b1af824531
-U dan
-Z ec947a61d2ba7d5b8de49fe03bf7f237
+P 3e6af890406b58da1c4aebec4d483be7ab0fdb589ef7a4c4e987d6bde18d6b97
+R cc927b012bbfe867cc7e69040611804b
+U drh
+Z c19547e30aa5c2edf92b17d7505f722e
