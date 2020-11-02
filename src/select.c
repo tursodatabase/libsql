@@ -1972,6 +1972,7 @@ int sqlite3ColumnsFromExprList(
   char *zName;                /* Column name */
   int nName;                  /* Size of name in zName[] */
   Hash ht;                    /* Hash table of column names */
+  Table *pTab;
 
   sqlite3HashInit(&ht);
   if( pEList ){
@@ -1998,11 +1999,9 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( pColExpr->op==TK_COLUMN ){
+      if( pColExpr->op==TK_COLUMN && (pTab = pColExpr->y.pTab)!=0 ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
-        Table *pTab = pColExpr->y.pTab;
-        assert( pTab!=0 );
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){

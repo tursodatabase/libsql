@@ -634,6 +634,18 @@ do_execsql_test 26.4 {
   END}
 }
 
+# 2020-11-02 OSSFuzz 
+#
+reset_db
+do_execsql_test 26.5 {
+  CREATE TABLE t1(xx);
+  CREATE TRIGGER xx INSERT ON t1 BEGIN
+     UPDATE t1 SET xx=xx FROM(SELECT xx);
+  END;
+} {}
+do_catchsql_test 26.6 {
+  ALTER TABLE t1 RENAME TO t2;
+} {1 {error in trigger xx: ambiguous column name: xx}}
+
 
 finish_test
-
