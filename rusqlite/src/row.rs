@@ -346,8 +346,18 @@ impl<'stmt> Row<'stmt> {
     }
 }
 
+mod sealed {
+    /// This trait exists just to ensure that the only impls of `trait Params`
+    /// that are allowed are ones in this crate.
+    pub trait Sealed {}
+    impl Sealed for usize {}
+    impl Sealed for &str {}
+}
+
 /// A trait implemented by types that can index into columns of a row.
-pub trait RowIndex {
+///
+/// It is only implemented for `usize` and `&str`.
+pub trait RowIndex: sealed::Sealed {
     /// Returns the index of the appropriate column, or `None` if no such
     /// column exists.
     fn idx(&self, stmt: &Statement<'_>) -> Result<usize>;
