@@ -130,9 +130,10 @@ impl SqliteMallocString {
                     // This is safe:
                     // - `align` is never 0
                     // - `align` is always a power of 2.
-                    // - `size` needs no realignment because it's guaranteed to be
-                    //   aligned (everything is aligned to 1)
-                    // - `size` is also never zero, although this function doesn't actually require it now.
+                    // - `size` needs no realignment because it's guaranteed to be aligned
+                    //   (everything is aligned to 1)
+                    // - `size` is also never zero, although this function doesn't actually require
+                    //   it now.
                     let layout = Layout::from_size_align_unchecked(s.len().saturating_add(1), 1);
                     // Note: This call does not return.
                     handle_alloc_error(layout);

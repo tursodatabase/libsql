@@ -136,7 +136,10 @@
 //!
 //! // Insert another BLOB, this time using a parameter passed in from
 //! // rust (potentially with a dynamic size).
-//! db.execute("INSERT INTO test_table (content) VALUES (?)", &[ZeroBlob(64)])?;
+//! db.execute(
+//!     "INSERT INTO test_table (content) VALUES (?)",
+//!     &[ZeroBlob(64)],
+//! )?;
 //!
 //! // given a new row ID, we can reopen the blob on that row
 //! let rowid = db.last_insert_rowid();
@@ -177,7 +180,10 @@
 //!
 //! // Insert another blob, this time using a parameter passed in from
 //! // rust (potentially with a dynamic size).
-//! db.execute("INSERT INTO test_table (content) VALUES (?)", &[ZeroBlob(64)])?;
+//! db.execute(
+//!     "INSERT INTO test_table (content) VALUES (?)",
+//!     &[ZeroBlob(64)],
+//! )?;
 //!
 //! // given a new row ID, we can reopen the blob on that row
 //! let rowid = db.last_insert_rowid();
@@ -196,8 +202,8 @@ use crate::{Connection, DatabaseName, Result};
 
 mod pos_io;
 
-/// `feature = "blob"` Handle to an open BLOB. See [`rusqlite::blob`](crate::blob) documentation for
-/// in-depth discussion.
+/// `feature = "blob"` Handle to an open BLOB. See
+/// [`rusqlite::blob`](crate::blob) documentation for in-depth discussion.
 pub struct Blob<'conn> {
     conn: &'conn Connection,
     blob: *mut ffi::sqlite3_blob,

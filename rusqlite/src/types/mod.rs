@@ -15,8 +15,8 @@
 //! `FromSql` has different behaviour depending on the SQL and Rust types, and
 //! the value.
 //!
-//! * `INTEGER` to integer: returns an `Error::IntegralValueOutOfRange` error
-//!   if the value does not fit in the Rust type.
+//! * `INTEGER` to integer: returns an `Error::IntegralValueOutOfRange` error if
+//!   the value does not fit in the Rust type.
 //! * `REAL` to integer: always returns an `Error::InvalidColumnType` error.
 //! * `INTEGER` to float: casts using `as` operator. Never fails.
 //! * `REAL` to float: casts using `as` operator. Never fails.
@@ -32,7 +32,6 @@
 //! can be parsed by SQLite's builtin
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) functions.  If you
 //! want different storage for datetimes, you can use a newtype.
-//!
 #![cfg_attr(
     feature = "time",
     doc = r##"
@@ -387,7 +386,7 @@ mod test {
     }
 
     macro_rules! test_conversion {
-        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect $expected_value:expr) => {
+        ($db_etc:ident, $insert_value:expr, $get_type:ty,expect $expected_value:expr) => {
             $db_etc
                 .insert_statement
                 .execute(params![$insert_value])
@@ -398,7 +397,7 @@ mod test {
             assert_eq!(res.unwrap(), $expected_value);
             $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
         };
-        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_from_sql_error) => {
+        ($db_etc:ident, $insert_value:expr, $get_type:ty,expect_from_sql_error) => {
             $db_etc
                 .insert_statement
                 .execute(params![$insert_value])
@@ -409,7 +408,7 @@ mod test {
             res.unwrap_err();
             $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
         };
-        ($db_etc:ident, $insert_value:expr, $get_type:ty, expect_to_sql_error) => {
+        ($db_etc:ident, $insert_value:expr, $get_type:ty,expect_to_sql_error) => {
             $db_etc
                 .insert_statement
                 .execute(params![$insert_value])

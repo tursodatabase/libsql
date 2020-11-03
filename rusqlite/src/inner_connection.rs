@@ -31,6 +31,8 @@ pub struct InnerConnection {
     pub free_rollback_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
     pub free_update_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
+    #[cfg(feature = "hooks")]
+    pub progress_handler: Option<Box<dyn FnMut() -> bool + Send>>,
     owned: bool,
 }
 
@@ -46,6 +48,8 @@ impl InnerConnection {
             free_rollback_hook: None,
             #[cfg(feature = "hooks")]
             free_update_hook: None,
+            #[cfg(feature = "hooks")]
+            progress_handler: None,
             owned,
         }
     }

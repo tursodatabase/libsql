@@ -819,9 +819,7 @@ mod test {
         db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
             .unwrap();
 
-        lazy_static::lazy_static! {
-            static ref CALLED: AtomicBool = AtomicBool::new(false);
-        }
+        static CALLED: AtomicBool = AtomicBool::new(false);
         db.apply(
             &changeset,
             None::<fn(&str) -> bool>,

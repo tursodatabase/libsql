@@ -22,10 +22,9 @@
 //!         FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
 //!         move |ctx| {
 //!             assert_eq!(ctx.len(), 2, "called with unexpected number of arguments");
-//!             let regexp: Arc<Regex> = ctx
-//!                 .get_or_create_aux(0, |vr| -> Result<_, BoxError> {
-//!                     Ok(Regex::new(vr.as_str()?)?)
-//!                 })?;
+//!             let regexp: Arc<Regex> = ctx.get_or_create_aux(0, |vr| -> Result<_, BoxError> {
+//!                 Ok(Regex::new(vr.as_str()?)?)
+//!             })?;
 //!             let is_match = {
 //!                 let text = ctx
 //!                     .get_raw(1)
@@ -334,15 +333,15 @@ impl Connection {
     /// # Failure
     ///
     /// Will return Err if the function could not be attached to the connection.
-    pub fn create_scalar_function<'a, F, T>(
-        &'a self,
+    pub fn create_scalar_function<'c, F, T>(
+        &'c self,
         fn_name: &str,
         n_arg: c_int,
         flags: FunctionFlags,
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'a,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'c,
         T: ToSql,
     {
         self.db
@@ -411,15 +410,15 @@ impl Connection {
 }
 
 impl InnerConnection {
-    fn create_scalar_function<'a, F, T>(
-        &'a mut self,
+    fn create_scalar_function<'c, F, T>(
+        &'c mut self,
         fn_name: &str,
         n_arg: c_int,
         flags: FunctionFlags,
         x_func: F,
     ) -> Result<()>
     where
-        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'a,
+        F: FnMut(&Context<'_>) -> Result<T> + Send + UnwindSafe + 'c,
         T: ToSql,
     {
         unsafe extern "C" fn call_boxed_closure<F, T>(

@@ -810,6 +810,67 @@ impl fmt::Debug for Connection {
     }
 }
 
+/// Batch iterator
+/// ```rust
+/// use rusqlite::{Batch, Connection, Result, NO_PARAMS};
+///
+/// fn main() -> Result<()> {
+///     let conn = Connection::open_in_memory()?;
+///     let sql = r"
+///     CREATE TABLE tbl1 (col);
+///     CREATE TABLE tbl2 (col);
+///     ";
+///     let mut batch = Batch::new(&conn, sql);
+///     while let Some(mut stmt) = batch.next()? {
+///         stmt.execute(NO_PARAMS)?;
+///     }
+///     Ok(())
+/// }
+/// ```
+#[derive(Debug)]
+pub struct Batch<'conn, 'sql> {
+    conn: &'conn Connection,
+    sql: &'sql str,
+    tail: usize,
+}
+
+impl<'conn, 'sql> Batch<'conn, 'sql> {
+    /// Constructor
+    pub fn new(conn: &'conn Connection, sql: &'sql str) -> Batch<'conn, 'sql> {
+        Batch { conn, sql, tail: 0 }
+    }
+
+    /// Iterates on each batch statements.
+    ///
+    /// Returns `Ok(None)` when batch is completed.
+    #[allow(clippy::should_implement_trait)] // fallible iterator
+    pub fn next(&mut self) -> Result<Option<Statement<'conn>>> {
+        while self.tail < self.sql.len() {
+            let sql = &self.sql[self.tail..];
+            let next = self.conn.prepare(sql)?;
+            let tail = next.stmt.tail();
+            if tail == 0 {
+                self.tail = self.sql.len();
+            } else {
+                self.tail += tail;
+            }
+            if next.stmt.is_null() {
+                continue;
+            }
+            return Ok(Some(next));
+        }
+        Ok(None)
+    }
+}
+
+impl<'conn> Iterator for Batch<'conn, '_> {
+    type Item = Result<Statement<'conn>>;
+
+    fn next(&mut self) -> Option<Result<Statement<'conn>>> {
+        self.next().transpose()
+    }
+}
+
 bitflags::bitflags! {
     /// Flags for opening SQLite database connections.
     /// See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
@@ -1749,63 +1810,77 @@ mod test {
                 err => panic!("Unexpected error {}", err),
             }
         }
+    }
 
-        #[test]
-        fn test_dynamic() {
-            let db = checked_memory_handle();
-            let sql = "BEGIN;
+    #[test]
+    fn test_dynamic() {
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
                        END;";
-            db.execute_batch(sql).unwrap();
+        db.execute_batch(sql).unwrap();
 
-            db.query_row("SELECT * FROM foo", params![], |r| {
-                assert_eq!(2, r.column_count());
-                Ok(())
-            })
-            .unwrap();
-        }
-        #[test]
-        fn test_dyn_box() {
-            let db = checked_memory_handle();
-            db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
-            let b: Box<dyn ToSql> = Box::new(5);
-            db.execute("INSERT INTO foo VALUES(?)", &[b]).unwrap();
-            db.query_row("SELECT x FROM foo", params![], |r| {
-                assert_eq!(5, r.get_unwrap::<_, i32>(0));
-                Ok(())
-            })
-            .unwrap();
-        }
+        db.query_row("SELECT * FROM foo", NO_PARAMS, |r| {
+            assert_eq!(2, r.column_count());
+            Ok(())
+        })
+        .unwrap();
+    }
+    #[test]
+    fn test_dyn_box() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+        let b: Box<dyn ToSql> = Box::new(5);
+        db.execute("INSERT INTO foo VALUES(?)", &[b]).unwrap();
+        db.query_row("SELECT x FROM foo", NO_PARAMS, |r| {
+            assert_eq!(5, r.get_unwrap::<_, i32>(0));
+            Ok(())
+        })
+        .unwrap();
+    }
 
-        #[test]
-        fn test_params() {
-            let db = checked_memory_handle();
-            db.query_row(
-                "SELECT
+    #[test]
+    fn test_params() {
+        let db = checked_memory_handle();
+        db.query_row(
+            "SELECT
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?;",
-                params![
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 1,
-                ],
-                |r| {
-                    assert_eq!(1, r.get_unwrap::<_, i32>(0));
-                    Ok(())
-                },
-            )
-            .unwrap();
-        }
+            params![
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1,
+            ],
+            |r| {
+                assert_eq!(1, r.get_unwrap::<_, i32>(0));
+                Ok(())
+            },
+        )
+        .unwrap();
+    }
 
-        #[test]
-        #[cfg(not(feature = "extra_check"))]
-        fn test_alter_table() {
-            let db = checked_memory_handle();
-            db.execute_batch("CREATE TABLE x(t);").unwrap();
-            // `execute_batch` should be used but `execute` should also work
-            db.execute("ALTER TABLE x RENAME TO y;", params![]).unwrap();
+    #[test]
+    #[cfg(not(feature = "extra_check"))]
+    fn test_alter_table() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE x(t);").unwrap();
+        // `execute_batch` should be used but `execute` should also work
+        db.execute("ALTER TABLE x RENAME TO y;", NO_PARAMS).unwrap();
+    }
+
+    #[test]
+    fn test_batch() {
+        let db = checked_memory_handle();
+        let sql = r"
+             CREATE TABLE tbl1 (col);
+             CREATE TABLE tbl2 (col);
+             ";
+        let batch = Batch::new(&db, sql);
+        for stmt in batch {
+            let mut stmt = stmt.unwrap();
+            stmt.execute(NO_PARAMS).unwrap();
         }
     }
 }
