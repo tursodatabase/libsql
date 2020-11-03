@@ -49,22 +49,21 @@ archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
      page.
 
 If you do want to use Fossil to check out the source tree, 
-first install Fossil version 2.0 or later.
+first install Fossil version 2.14 or later.
 (Source tarballs and precompiled binaries available
 [here](https://www.fossil-scm.org/fossil/uv/download.html).  Fossil is
 a stand-alone program.  To install, simply download or build the single 
 executable file and put that file someplace on your $PATH.)
-Then run commands like this:
+Then run:
 
-        mkdir ~/sqlite
-        cd ~/sqlite
         fossil clone https://www.sqlite.org/src sqlite.fossil
-        fossil open sqlite.fossil
-    
-After setting up a repository using the steps above, you can always
-update to the lastest version using:
 
-        fossil update trunk   ;# latest trunk check-in
+which will download the entire sqlite repository into the database file sqlite.fossil, 
+then check out the local repository into a new directory called "sqlite".
+    
+You can always update to the lastest version using:
+
+        fossil update trunk   ;# latest trunk check-in, or
         fossil update release ;# latest official release
 
 Or type "fossil ui" to get a web-based user interface.
@@ -77,7 +76,7 @@ build directory be separate from the source directory.  Cd into the
 build directory and then from the build directory run the configure
 script found at the root of the source tree.  Then run "make".
 
-For example:
+For example, if you downloaded a tarball rather than installing Fossil:
 
         tar xzf sqlite.tar.gz    ;#  Unpack the source tree into "sqlite"
         mkdir bld                ;#  Build will occur in a sibling directory

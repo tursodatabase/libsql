@@ -1,11 +1,8 @@
 B 6646d7898ca1d2f71ec906d9613fbfc5c59c6cf05f053529e6e32ab826d1cb78
-C Add\slinks,\sespecially\sfor\sthe\sdocsrc\srepo,\swhich\sis\sotherwise\shard\sto\sfind
-D 2020-11-03T11:20:29.403
-F README.md fe7e881308b8e8dfd0e4e81bc1f82bee2048fa938b2817a8c413f5613bd1185d
-P 6646d7898ca1d2f71ec906d9613fbfc5c59c6cf05f053529e6e32ab826d1cb78
-R 72d9c2591104382fbafe2024ff0b77bf
-T *branch * docupdate
-T *sym-docupdate *
-T -sym-trunk *
+C Update\sfor\snew\sgit-style\ssyntax\sin\sFossil
+D 2020-11-03T11:27:41.630
+F README.md 12dd29542b53ddaa6382da65620caa5ea40f2503667a062649fbae101e2bb1f0
+P e03867e2fbb6bb9c04e13442508c252fd952b397b40aa457cbff09ab1a17d4f7
+R 683a30ccba749d49e2f8cd73dc6190e8
 U shearer
-Z ffc6ef4d6ac77fa83fffdcbbdf2cb7d2
+Z f9f28980f7a0f036d904e7e655780d67
