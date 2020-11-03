@@ -29,7 +29,7 @@ pub struct Session<'conn> {
 
 impl Session<'_> {
     /// Create a new session object
-    pub fn new<'conn>(db: &'conn Connection) -> Result<Session<'conn>> {
+    pub fn new(db: &Connection) -> Result<Session<'_>> {
         Session::new_with_name(db, DatabaseName::Main)
     }
 
