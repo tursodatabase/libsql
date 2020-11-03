@@ -661,7 +661,7 @@ mod test {
     }
 
     fn insert(x: i32, conn: &Connection) {
-        conn.execute("INSERT INTO foo VALUES(?)", &[x]).unwrap();
+        conn.execute("INSERT INTO foo VALUES(?)", [x]).unwrap();
     }
 
     fn assert_current_sum(x: i32, conn: &Connection) {

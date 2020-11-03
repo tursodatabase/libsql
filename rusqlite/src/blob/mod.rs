@@ -138,7 +138,7 @@
 //! // rust (potentially with a dynamic size).
 //! db.execute(
 //!     "INSERT INTO test_table (content) VALUES (?)",
-//!     &[ZeroBlob(64)],
+//!     [ZeroBlob(64)],
 //! )?;
 //!
 //! // given a new row ID, we can reopen the blob on that row
@@ -182,7 +182,7 @@
 //! // rust (potentially with a dynamic size).
 //! db.execute(
 //!     "INSERT INTO test_table (content) VALUES (?)",
-//!     &[ZeroBlob(64)],
+//!     [ZeroBlob(64)],
 //! )?;
 //!
 //! // given a new row ID, we can reopen the blob on that row

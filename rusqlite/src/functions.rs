@@ -45,7 +45,7 @@
 //!
 //!     let is_match: bool = db.query_row(
 //!         "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
-//!         NO_PARAMS,
+//!         [],
 //!         |row| row.get(0),
 //!     )?;
 //!
@@ -311,7 +311,7 @@ impl Connection {
     /// # Example
     ///
     /// ```rust
-    /// # use rusqlite::{Connection, Result, NO_PARAMS};
+    /// # use rusqlite::{Connection, Result};
     /// # use rusqlite::functions::FunctionFlags;
     /// fn scalar_function_example(db: Connection) -> Result<()> {
     ///     db.create_scalar_function(
@@ -324,7 +324,7 @@ impl Connection {
     ///         },
     ///     )?;
     ///
-    ///     let six_halved: f64 = db.query_row("SELECT halve(6)", NO_PARAMS, |r| r.get(0))?;
+    ///     let six_halved: f64 = db.query_row("SELECT halve(6)", [], |r| r.get(0))?;
     ///     assert_eq!(six_halved, 3f64);
     ///     Ok(())
     /// }

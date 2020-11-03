@@ -94,7 +94,7 @@ mod value_ref;
 /// # use rusqlite::types::{Null};
 ///
 /// fn insert_null(conn: &Connection) -> Result<usize> {
-///     conn.execute("INSERT INTO people (name) VALUES (?)", &[Null])
+///     conn.execute("INSERT INTO people (name) VALUES (?)", [Null])
 /// }
 /// ```
 #[derive(Copy, Clone)]
@@ -188,7 +188,7 @@ mod test {
         let db = checked_memory_handle();
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[s.to_owned()])
+        db.execute("INSERT INTO foo(t) VALUES (?)", [s.to_owned()])
             .unwrap();
 
         let from: String = db
@@ -201,7 +201,7 @@ mod test {
     fn test_value() {
         let db = checked_memory_handle();
 
-        db.execute("INSERT INTO foo(i) VALUES (?)", &[Value::Integer(10)])
+        db.execute("INSERT INTO foo(i) VALUES (?)", [Value::Integer(10)])
             .unwrap();
 
         assert_eq!(

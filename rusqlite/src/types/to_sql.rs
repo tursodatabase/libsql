@@ -336,7 +336,7 @@ mod test {
                 (?, 'neg one'), (?, 'neg two'),
                 (?, 'pos one'), (?, 'pos two'),
                 (?, 'min'), (?, 'max')",
-            &[0i128, -1i128, -2i128, 1i128, 2i128, i128::MIN, i128::MAX],
+            [0i128, -1i128, -2i128, 1i128, 2i128, i128::MIN, i128::MAX],
         )
         .unwrap();
 
