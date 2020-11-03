@@ -909,7 +909,7 @@ pub enum StatementStatus {
 #[cfg(test)]
 mod test {
     use crate::types::ToSql;
-    use crate::{params_from_iter, Connection, Error, Result, NO_PARAMS};
+    use crate::{params_from_iter, Connection, Error, Result};
 
     #[test]
     #[allow(deprecated)]
@@ -1188,9 +1188,7 @@ mod test {
         stmt.execute(&[(":y", &"two")]).unwrap();
 
         let result: String = db
-            .query_row("SELECT x FROM test WHERE y = 'two'", NO_PARAMS, |row| {
-                row.get(0)
-            })
+            .query_row("SELECT x FROM test WHERE y = 'two'", [], |row| row.get(0))
             .unwrap();
         assert_eq!(result, "one");
     }
@@ -1297,7 +1295,7 @@ mod test {
                    END;";
         db.execute_batch(sql).unwrap();
         let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
-        let y: Result<i64> = stmt.query_row(NO_PARAMS, |r| r.get("y"));
+        let y: Result<i64> = stmt.query_row([], |r| r.get("y"));
         assert_eq!(3i64, y.unwrap());
     }
 
@@ -1366,7 +1364,7 @@ mod test {
         assert!(stmt.parameter_index("test").is_ok());
         assert!(stmt.step().is_err());
         stmt.reset();
-        assert!(stmt.execute(NO_PARAMS).is_err());
+        assert!(stmt.execute([]).is_err());
     }
 
     #[test]
@@ -1402,7 +1400,7 @@ mod test {
         db.execute("INSERT INTO foo(x) VALUES (?)", &[&expected])
             .unwrap();
         let actual: String = db
-            .query_row("SELECT x FROM foo", NO_PARAMS, |row| row.get(0))
+            .query_row("SELECT x FROM foo", [], |row| row.get(0))
             .unwrap();
         assert_eq!(expected, actual);
     }

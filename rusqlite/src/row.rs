@@ -40,9 +40,9 @@ impl<'stmt> Rows<'stmt> {
     /// implements `FallibleIterator`.
     /// ```rust,no_run
     /// use fallible_iterator::FallibleIterator;
-    /// # use rusqlite::{Result, Statement, NO_PARAMS};
+    /// # use rusqlite::{Result, Statement};
     /// fn query(stmt: &mut Statement) -> Result<Vec<i64>> {
-    ///     let rows = stmt.query(NO_PARAMS)?;
+    ///     let rows = stmt.query([])?;
     ///     rows.map(|r| r.get(0)).collect()
     /// }
     /// ```
@@ -193,9 +193,9 @@ where
 /// While these iterators cannot be used with Rust `for` loops, `while let`
 /// loops offer a similar level of ergonomics:
 /// ```rust,no_run
-/// # use rusqlite::{Result, Statement, NO_PARAMS};
+/// # use rusqlite::{Result, Statement};
 /// fn query(stmt: &mut Statement) -> Result<()> {
-///     let mut rows = stmt.query(NO_PARAMS)?;
+///     let mut rows = stmt.query([])?;
 ///     while let Some(row) = rows.next()? {
 ///         // scan columns value
 ///     }

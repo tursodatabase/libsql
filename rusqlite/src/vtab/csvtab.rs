@@ -362,7 +362,7 @@ impl From<csv::Error> for Error {
 #[cfg(test)]
 mod test {
     use crate::vtab::csvtab;
-    use crate::{Connection, Result, NO_PARAMS};
+    use crate::{Connection, Result};
     use fallible_iterator::FallibleIterator;
 
     #[test]
@@ -380,7 +380,7 @@ mod test {
             }
 
             let ids: Result<Vec<i32>> = s
-                .query(NO_PARAMS)
+                .query([])
                 .unwrap()
                 .map(|row| row.get::<_, i32>(0))
                 .collect();
@@ -405,7 +405,7 @@ mod test {
                 )
                 .unwrap();
 
-            let mut rows = s.query(NO_PARAMS).unwrap();
+            let mut rows = s.query([]).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get_unwrap::<_, i32>(0), 2);
         }

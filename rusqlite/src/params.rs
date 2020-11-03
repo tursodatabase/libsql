@@ -129,7 +129,7 @@ use sealed::Sealed;
 ///
 /// You can just use an empty array literal for no params. The
 /// `rusqlite::NO_PARAMS` constant which was so common in previous versions of
-/// this library is no longer needed.
+/// this library is no longer needed (and is now deprecated).
 ///
 /// ### Example (no parameters)
 ///

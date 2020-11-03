@@ -157,7 +157,7 @@ impl InnerConnection {
 
 #[cfg(test)]
 mod test {
-    use crate::{Connection, Result, NO_PARAMS};
+    use crate::{Connection, Result};
     use fallible_streaming_iterator::FallibleStreamingIterator;
     use std::cmp::Ordering;
     use unicase::UniCase;
@@ -185,7 +185,7 @@ mod test {
         let mut stmt = db
             .prepare("SELECT DISTINCT bar COLLATE unicase FROM foo ORDER BY 1")
             .unwrap();
-        let rows = stmt.query(NO_PARAMS).unwrap();
+        let rows = stmt.query([]).unwrap();
         assert_eq!(rows.count().unwrap(), 1);
     }
 

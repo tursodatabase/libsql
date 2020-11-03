@@ -194,7 +194,7 @@ impl<'conn> Blob<'conn> {
 
 #[cfg(test)]
 mod test {
-    use crate::{Connection, DatabaseName, NO_PARAMS};
+    use crate::{Connection, DatabaseName};
     // to ensure we don't modify seek pos
     use std::io::Seek as _;
 
@@ -203,11 +203,8 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE test_table(content BLOB);")
             .unwrap();
-        db.execute(
-            "INSERT INTO test_table(content) VALUES (ZEROBLOB(10))",
-            NO_PARAMS,
-        )
-        .unwrap();
+        db.execute("INSERT INTO test_table(content) VALUES (ZEROBLOB(10))", [])
+            .unwrap();
 
         let rowid = db.last_insert_rowid();
         let mut blob = db

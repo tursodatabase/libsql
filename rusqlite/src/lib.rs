@@ -133,12 +133,8 @@ const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 ///
 /// [sqlite-varparam]: https://sqlite.org/lang_expr.html#varparam
 ///
-/// Note that for most uses this is no longer necessary, and an empty array
-/// should be used instead.
-///
-/// That is, in previous rusqlite releases you would need to do
-/// `conn.execute(rusqlite::NO_PARAMS)`, however you can now do
-/// `conn.execute([])` which is equivalent.
+/// This is deprecated in favor of using an empty array literal.
+#[deprecated = "Use an empty array instead; `stmt.execute(NO_PARAMS)` => `stmt.execute([])`"]
 pub const NO_PARAMS: &[&dyn ToSql] = &[];
 
 /// A macro making it more convenient to pass heterogeneous or long lists of
@@ -165,7 +161,7 @@ pub const NO_PARAMS: &[&dyn ToSql] = &[];
 #[macro_export]
 macro_rules! params {
     () => {
-        $crate::NO_PARAMS
+        (&[] as &[&dyn $crate::ToSql])
     };
     ($($param:expr),+ $(,)?) => {
         &[$(&$param as &dyn $crate::ToSql),+] as &[&dyn $crate::ToSql]

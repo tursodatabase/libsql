@@ -100,7 +100,7 @@ pub unsafe fn wait_for_unlock_notify(_db: *mut ffi::sqlite3) -> c_int {
 #[cfg(feature = "unlock_notify")]
 #[cfg(test)]
 mod test {
-    use crate::{Connection, OpenFlags, Result, Transaction, TransactionBehavior, NO_PARAMS};
+    use crate::{Connection, OpenFlags, Result, Transaction, TransactionBehavior};
     use std::sync::mpsc::sync_channel;
     use std::thread;
     use std::time;
@@ -122,7 +122,7 @@ mod test {
             tx2.commit().unwrap();
         });
         assert_eq!(tx.recv().unwrap(), 1);
-        let the_answer: Result<i64> = db1.query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0));
+        let the_answer: Result<i64> = db1.query_row("SELECT x FROM foo", [], |r| r.get(0));
         assert_eq!(42i64, the_answer.unwrap());
         child.join().unwrap();
     }

@@ -306,7 +306,7 @@ impl Drop for Backup<'_, '_> {
 #[cfg(test)]
 mod test {
     use super::Backup;
-    use crate::{Connection, DatabaseName, NO_PARAMS};
+    use crate::{Connection, DatabaseName};
     use std::time::Duration;
 
     #[test]
@@ -326,7 +326,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0))
+            .query_row("SELECT x FROM foo", [], |r| r.get(0))
             .unwrap();
         assert_eq!(42, the_answer);
 
@@ -340,7 +340,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
+            .query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))
             .unwrap();
         assert_eq!(42 + 43, the_answer);
     }
@@ -364,7 +364,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0))
+            .query_row("SELECT x FROM foo", [], |r| r.get(0))
             .unwrap();
         assert_eq!(42, the_answer);
 
@@ -380,7 +380,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
+            .query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))
             .unwrap();
         assert_eq!(42 + 43, the_answer);
     }
@@ -409,7 +409,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0))
+            .query_row("SELECT x FROM foo", [], |r| r.get(0))
             .unwrap();
         assert_eq!(42, the_answer);
 
@@ -429,7 +429,7 @@ mod test {
         }
 
         let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
+            .query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))
             .unwrap();
         assert_eq!(42 + 43, the_answer);
     }

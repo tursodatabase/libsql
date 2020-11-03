@@ -101,7 +101,7 @@
 //!
 //! ```rust
 //! # use rusqlite::blob::ZeroBlob;
-//! # use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! # use rusqlite::{Connection, DatabaseName};
 //! # use std::error::Error;
 //! # use std::io::{Read, Seek, SeekFrom, Write};
 //! # fn main() -> Result<(), Box<dyn Error>> {
@@ -113,7 +113,7 @@
 //! // must be done via SQL.
 //! db.execute(
 //!     "INSERT INTO test_table (content) VALUES (ZEROBLOB(10))",
-//!     NO_PARAMS,
+//!     [],
 //! )?;
 //!
 //! // Get the row id off the BLOB we just inserted.
@@ -154,7 +154,7 @@
 //!
 //! ```rust
 //! # use rusqlite::blob::ZeroBlob;
-//! # use rusqlite::{Connection, DatabaseName, NO_PARAMS};
+//! # use rusqlite::{Connection, DatabaseName};
 //! # use std::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let db = Connection::open_in_memory()?;
@@ -164,7 +164,7 @@
 //! // must be done via SQL.
 //! db.execute(
 //!     "INSERT INTO test_table (content) VALUES (ZEROBLOB(10))",
-//!     NO_PARAMS,
+//!     [],
 //! )?;
 //! // Get the row id off the blob we just inserted.
 //! let rowid = db.last_insert_rowid();

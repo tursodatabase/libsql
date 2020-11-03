@@ -324,7 +324,7 @@ mod test {
     #[cfg(feature = "i128_blob")]
     #[test]
     fn test_i128() {
-        use crate::{Connection, NO_PARAMS};
+        use crate::Connection;
         use std::i128;
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)")
@@ -345,7 +345,7 @@ mod test {
             .unwrap();
 
         let res = stmt
-            .query_map(NO_PARAMS, |row| {
+            .query_map([], |row| {
                 Ok((row.get::<_, i128>(0)?, row.get::<_, String>(1)?))
             })
             .unwrap()

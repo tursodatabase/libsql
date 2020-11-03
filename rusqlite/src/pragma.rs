@@ -5,7 +5,7 @@ use std::ops::Deref;
 use crate::error::Error;
 use crate::ffi;
 use crate::types::{ToSql, ToSqlOutput, ValueRef};
-use crate::{Connection, DatabaseName, Result, Row, NO_PARAMS};
+use crate::{Connection, DatabaseName, Result, Row};
 
 pub struct Sql {
     buf: String,
@@ -176,7 +176,7 @@ impl Connection {
     {
         let mut query = Sql::new();
         query.push_pragma(schema_name, pragma_name)?;
-        self.query_row(&query, NO_PARAMS, f)
+        self.query_row(&query, [], f)
     }
 
     /// Query the current rows/values of `pragma_name`.
@@ -195,7 +195,7 @@ impl Connection {
         let mut query = Sql::new();
         query.push_pragma(schema_name, pragma_name)?;
         let mut stmt = self.prepare(&query)?;
-        let mut rows = stmt.query(NO_PARAMS)?;
+        let mut rows = stmt.query([])?;
         while let Some(result_row) = rows.next()? {
             let row = result_row;
             f(&row)?;
@@ -231,7 +231,7 @@ impl Connection {
         sql.push_value(pragma_value)?;
         sql.close_brace();
         let mut stmt = self.prepare(&sql)?;
-        let mut rows = stmt.query(NO_PARAMS)?;
+        let mut rows = stmt.query([])?;
         while let Some(result_row) = rows.next()? {
             let row = result_row;
             f(&row)?;
@@ -279,7 +279,7 @@ impl Connection {
         // The two syntaxes yield identical results.
         sql.push_equal_sign();
         sql.push_value(pragma_value)?;
-        self.query_row(&sql, NO_PARAMS, f)
+        self.query_row(&sql, [], f)
     }
 }
 
@@ -328,15 +328,11 @@ mod test {
     #[test]
     #[cfg(feature = "modern_sqlite")]
     fn pragma_func_query_value() {
-        use crate::NO_PARAMS;
-
         let db = Connection::open_in_memory().unwrap();
         let user_version: i32 = db
-            .query_row(
-                "SELECT user_version FROM pragma_user_version",
-                NO_PARAMS,
-                |row| row.get(0),
-            )
+            .query_row("SELECT user_version FROM pragma_user_version", [], |row| {
+                row.get(0)
+            })
             .unwrap();
         assert_eq!(0, user_version);
     }

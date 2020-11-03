@@ -131,7 +131,7 @@ impl fmt::Display for Type {
 #[cfg(test)]
 mod test {
     use super::Value;
-    use crate::{params, Connection, Error, Statement, NO_PARAMS};
+    use crate::{params, Connection, Error, Statement};
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
 
@@ -150,9 +150,7 @@ mod test {
         db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234])
             .unwrap();
 
-        let v: Vec<u8> = db
-            .query_row("SELECT b FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0)).unwrap();
         assert_eq!(v, v1234);
     }
 
@@ -164,9 +162,7 @@ mod test {
         db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty])
             .unwrap();
 
-        let v: Vec<u8> = db
-            .query_row("SELECT b FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0)).unwrap();
         assert_eq!(v, empty);
     }
 
@@ -177,9 +173,7 @@ mod test {
         let s = "hello, world!";
         db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
 
-        let from: String = db
-            .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
         assert_eq!(from, s);
     }
 
@@ -191,9 +185,7 @@ mod test {
         db.execute("INSERT INTO foo(t) VALUES (?)", [s.to_owned()])
             .unwrap();
 
-        let from: String = db
-            .query_row("SELECT t FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
         assert_eq!(from, s);
     }
 
@@ -206,7 +198,7 @@ mod test {
 
         assert_eq!(
             10i64,
-            db.query_row::<i64, _, _>("SELECT i FROM foo", NO_PARAMS, |r| r.get(0))
+            db.query_row::<i64, _, _>("SELECT i FROM foo", [], |r| r.get(0))
                 .unwrap()
         );
     }
@@ -224,7 +216,7 @@ mod test {
         let mut stmt = db
             .prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")
             .unwrap();
-        let mut rows = stmt.query(NO_PARAMS).unwrap();
+        let mut rows = stmt.query([]).unwrap();
 
         {
             let row1 = rows.next().unwrap().unwrap();
@@ -254,12 +246,12 @@ mod test {
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
-            NO_PARAMS,
+            [],
         )
         .unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query(NO_PARAMS).unwrap();
+        let mut rows = stmt.query([]).unwrap();
 
         let row = rows.next().unwrap().unwrap();
 
@@ -364,12 +356,12 @@ mod test {
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
-            NO_PARAMS,
+            [],
         )
         .unwrap();
 
         let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query(NO_PARAMS).unwrap();
+        let mut rows = stmt.query([]).unwrap();
 
         let row = rows.next().unwrap().unwrap();
         assert_eq!(Value::Blob(vec![1, 2]), row.get::<_, Value>(0).unwrap());
@@ -393,9 +385,9 @@ mod test {
                 .unwrap();
             let res = $db_etc
                 .query_statement
-                .query_row(NO_PARAMS, |row| row.get::<_, $get_type>(0));
+                .query_row([], |row| row.get::<_, $get_type>(0));
             assert_eq!(res.unwrap(), $expected_value);
-            $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
+            $db_etc.delete_statement.execute([]).unwrap();
         };
         ($db_etc:ident, $insert_value:expr, $get_type:ty,expect_from_sql_error) => {
             $db_etc
@@ -404,9 +396,9 @@ mod test {
                 .unwrap();
             let res = $db_etc
                 .query_statement
-                .query_row(NO_PARAMS, |row| row.get::<_, $get_type>(0));
+                .query_row([], |row| row.get::<_, $get_type>(0));
             res.unwrap_err();
-            $db_etc.delete_statement.execute(NO_PARAMS).unwrap();
+            $db_etc.delete_statement.execute([]).unwrap();
         };
         ($db_etc:ident, $insert_value:expr, $get_type:ty,expect_to_sql_error) => {
             $db_etc

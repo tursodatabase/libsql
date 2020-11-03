@@ -194,7 +194,7 @@ mod test {
         )
         .unwrap();
         let mut stmt = db.prepare("SELECT x as renamed, y FROM foo").unwrap();
-        let mut rows = stmt.query(crate::NO_PARAMS).unwrap();
+        let mut rows = stmt.query([]).unwrap();
         let row = rows.next().unwrap().unwrap();
         match row.get::<_, String>(0).unwrap_err() {
             Error::InvalidColumnType(idx, name, ty) => {

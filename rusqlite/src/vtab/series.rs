@@ -273,7 +273,7 @@ unsafe impl VTabCursor for SeriesTabCursor<'_> {
 mod test {
     use crate::ffi;
     use crate::vtab::series;
-    use crate::{Connection, NO_PARAMS};
+    use crate::Connection;
 
     #[test]
     fn test_series_module() {
@@ -287,7 +287,7 @@ mod test {
 
         let mut s = db.prepare("SELECT * FROM generate_series(0,20,5)").unwrap();
 
-        let series = s.query_map(NO_PARAMS, |row| row.get::<_, i32>(0)).unwrap();
+        let series = s.query_map([], |row| row.get::<_, i32>(0)).unwrap();
 
         let mut expected = 0;
         for value in series {
