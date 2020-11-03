@@ -1,8 +1,8 @@
 B 6646d7898ca1d2f71ec906d9613fbfc5c59c6cf05f053529e6e32ab826d1cb78
-C Update\sfor\snew\sgit-style\ssyntax\sin\sFossil
-D 2020-11-03T11:27:41.630
-F README.md 12dd29542b53ddaa6382da65620caa5ea40f2503667a062649fbae101e2bb1f0
-P e03867e2fbb6bb9c04e13442508c252fd952b397b40aa457cbff09ab1a17d4f7
-R 683a30ccba749d49e2f8cd73dc6190e8
+C Make\splatform\scompilation\sclearer,\sincluding\sthe\ssection\sthat\sapplies\sto\sboth\s*ix\sand\sWindows\nAdd\slink\sto\sthe\sdetailed\scompilation\sinstructions\nAdd\sbrief\sAndroid\ssection,\sit\sseems\sstrange\sto\somit\sit\ssince\sAndroid\sis\sthe\smajority\suse\scase\sby\snumbers
+D 2020-11-03T11:54:42.444
+F README.md dba93c9ca52fbed9c273cf424828501fdf2330044789800c5633d4568cfc9cf5
+P d46b6778b12be39dc101e5decfd9cde7643312d79d4b9af8d75a9bdc8a7481cd
+R 0fc7e728d66dd872dc94f2925583217a
 U shearer
-Z f9f28980f7a0f036d904e7e655780d67
+Z 8489fbb69780c82a81897a278314d28b

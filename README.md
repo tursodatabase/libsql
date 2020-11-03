@@ -68,7 +68,7 @@ You can always update to the lastest version using:
 
 Or type "fossil ui" to get a web-based user interface.
 
-## Compiling
+## Compiling - Linux and Unix-like Operating Systems
 
 First create a directory in which to place
 the build products.  It is recommended, but not required, that the
@@ -94,7 +94,7 @@ script does not work out for you, there is a generic makefile named
 can copy and edit to suit your needs.  Comments on the generic makefile
 show what changes are needed.
 
-## Using MSVC
+## Compiling - Using MSVC on Windows
 
 On Windows, all applicable build products can be compiled with MSVC.
 First open the command prompt window associated with the desired compiler
@@ -117,9 +117,19 @@ to the "sqlite3.dll" command line above.  When debugging into the SQLite
 code, adding the "DEBUG=1" argument to one of the above command lines is
 recommended.
 
+## Further Information for Windows and Linux/Unix
+
+You may want to refer to the [more detailed compilation instructions](https://www.sqlite.org/howtocompile.html) .
+
 SQLite does not require [Tcl](http://www.tcl.tk/) to run, but a Tcl installation
 is required by the makefiles (including those for MSVC).  SQLite contains
 a lot of generated code and Tcl is used to do much of that code generation.
+
+## Compiling - Android
+
+The [Android version of SQLite](https://sqlite.org/android/doc/trunk/www/install.wiki) is in
+its own repository. You will need the Android SDK and NDK, and to follow the 
+[Android-specific build instructions](https://sqlite.org/android/doc/trunk/www/install.wiki).
 
 ## Source Code Tour
 
