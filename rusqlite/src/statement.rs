@@ -34,11 +34,14 @@ impl Statement<'_> {
     /// # use rusqlite::{Connection, Result, params};
     /// fn update_rows(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?")?;
-    ///
+    ///     // The `rusqlite::params!` macro is mostly useful when the parameters do not
+    ///     // all have the same type, or if there are more than 32 parameters
+    ///     // at once.
     ///     stmt.execute(params![1i32])?;
-    ///     // Similarly...
+    ///     // However, it's not required, many cases are fine as:
     ///     stmt.execute(&[&2i32])?;
-    ///
+    ///     // Or even:
+    ///     stmt.execute([2i32])?;
     ///     Ok(())
     /// }
     /// ```
@@ -46,21 +49,18 @@ impl Statement<'_> {
     /// ### Use with named parameters
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// fn insert(conn: &Connection) -> Result<usize> {
-    ///     let mut stmt = conn.prepare("INSERT INTO test (name) VALUES (:name)")?;
-    ///     stmt.execute(&[(":name", &"one")])
-    /// }
-    /// ```
-    ///
-    /// Note, the `named_params` macro is provided for syntactic convenience,
-    /// and so the above example could also be written as:
-    ///
-    /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, named_params};
-    /// fn insert(conn: &Connection) -> Result<usize> {
-    ///     let mut stmt = conn.prepare("INSERT INTO test (name) VALUES (:name)")?;
-    ///     stmt.execute(named_params!{":name": "one"})
+    /// fn insert(conn: &Connection) -> Result<()> {
+    ///     let mut stmt = conn.prepare("INSERT INTO test (key, value) VALUES (:key, :value)")?;
+    ///     // The `rusqlite::named_params!` macro (like `params!`) is useful for heterogeneous
+    ///     // sets of parameters (where all parameters are not the same type), or for queries
+    ///     // with many (more than 32) statically known parameters.
+    ///     stmt.execute(named_params!{ ":key": "one", ":val": 2 })?;
+    ///     // However, named parameters can also be passed like:
+    ///     stmt.execute(&[(":key", "three"), (":val", "four")])?;
+    ///     // Or even: (note that a &T is required for the value type, currently)
+    ///     stmt.execute(&[(":key", &100), (":val", &200)])?;
+    ///     Ok(())
     /// }
     /// ```
     ///

@@ -187,7 +187,7 @@ macro_rules! params {
 /// }
 ///
 /// fn add_person(conn: &Connection, person: &Person) -> Result<()> {
-///     conn.execute_named(
+///     conn.execute(
 ///         "INSERT INTO person (name, age_in_years, data)
 ///          VALUES (:name, :age, :data)",
 ///         named_params!{
@@ -511,7 +511,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn insert(conn: &Connection) -> Result<usize> {
-    ///     conn.execute_named(
+    ///     conn.execute(
     ///         "INSERT INTO test (name) VALUES (:name)",
     ///         rusqlite::named_params!{ ":name": "one" },
     ///     )
