@@ -264,8 +264,8 @@ impl_for_array_ref!(
 ///
 /// ## Realistic use case
 ///
-/// Here's how you'd use `ParamsFromIter` to call a function with no `_iter`
-/// equivalent, e.g. [`Statement::exists`].
+/// Here's how you'd use `ParamsFromIter` to call [`Statement::exists`] with a
+/// dynamic number of parameters.
 ///
 /// ```rust,no_run
 /// use rusqlite::{Connection, Result};
