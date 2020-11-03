@@ -161,7 +161,7 @@ pub const NO_PARAMS: &[&dyn ToSql] = &[];
 #[macro_export]
 macro_rules! params {
     () => {
-        (&[] as &[&dyn $crate::ToSql])
+        &[] as &[&dyn $crate::ToSql]
     };
     ($($param:expr),+ $(,)?) => {
         &[$(&$param as &dyn $crate::ToSql),+] as &[&dyn $crate::ToSql]
@@ -198,12 +198,12 @@ macro_rules! params {
 #[macro_export]
 macro_rules! named_params {
     () => {
-        (&[] as &[(&str, &dyn $crate::ToSql)])
+        &[] as &[(&str, &dyn $crate::ToSql)]
     };
     // Note: It's a lot more work to support this as part of the same macro as
     // `params!`, unfortunately.
     ($($param_name:literal: $param_val:expr),+ $(,)?) => {
-        (&[$(($param_name, &$param_val as &dyn $crate::ToSql)),+] as &[(&str, &dyn $crate::ToSql)])
+        &[$(($param_name, &$param_val as &dyn $crate::ToSql)),+] as &[(&str, &dyn $crate::ToSql)]
     };
 }
 

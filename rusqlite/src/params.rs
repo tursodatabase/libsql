@@ -172,8 +172,11 @@ pub trait Params: Sealed {
 impl Sealed for [&dyn ToSql; 0] {}
 impl Params for [&dyn ToSql; 0] {
     #[inline]
-    fn bind_in(self, _: &mut Statement<'_>) -> Result<()> {
-        Ok(())
+    fn bind_in(self, stmt: &mut Statement<'_>) -> Result<()> {
+        // Note: Can't just return `Ok(())` — `Statement::bind_parameters`
+        // checks that the right number of params were passed too.
+        // TODO: we should have tests for `Error::InvalidParameterCount`...
+        stmt.bind_parameters(crate::params![])
     }
 }
 
