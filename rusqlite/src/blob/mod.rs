@@ -111,10 +111,7 @@
 //! // Insert a BLOB into the `content` column of `test_table`. Note that the Blob
 //! // I/O API provides no way of inserting or resizing BLOBs in the DB -- this
 //! // must be done via SQL.
-//! db.execute(
-//!     "INSERT INTO test_table (content) VALUES (ZEROBLOB(10))",
-//!     [],
-//! )?;
+//! db.execute("INSERT INTO test_table (content) VALUES (ZEROBLOB(10))", [])?;
 //!
 //! // Get the row id off the BLOB we just inserted.
 //! let rowid = db.last_insert_rowid();
@@ -162,10 +159,7 @@
 //! // Insert a blob into the `content` column of `test_table`. Note that the Blob
 //! // I/O API provides no way of inserting or resizing blobs in the DB -- this
 //! // must be done via SQL.
-//! db.execute(
-//!     "INSERT INTO test_table (content) VALUES (ZEROBLOB(10))",
-//!     [],
-//! )?;
+//! db.execute("INSERT INTO test_table (content) VALUES (ZEROBLOB(10))", [])?;
 //! // Get the row id off the blob we just inserted.
 //! let rowid = db.last_insert_rowid();
 //! // Open the blob we just inserted for IO.

@@ -43,11 +43,10 @@
 //!     let db = Connection::open_in_memory()?;
 //!     add_regexp_function(&db)?;
 //!
-//!     let is_match: bool = db.query_row(
-//!         "SELECT regexp('[aeiou]*', 'aaaaeeeiii')",
-//!         [],
-//!         |row| row.get(0),
-//!     )?;
+//!     let is_match: bool =
+//!         db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", [], |row| {
+//!             row.get(0)
+//!         })?;
 //!
 //!     assert!(is_match);
 //!     Ok(())
