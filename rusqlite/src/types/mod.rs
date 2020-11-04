@@ -119,11 +119,11 @@ pub enum Type {
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Type::Null => write!(f, "Null"),
-            Type::Integer => write!(f, "Integer"),
-            Type::Real => write!(f, "Real"),
-            Type::Text => write!(f, "Text"),
-            Type::Blob => write!(f, "Blob"),
+            Type::Null => f.pad("Null"),
+            Type::Integer => f.pad("Integer"),
+            Type::Real => f.pad("Real"),
+            Type::Text => f.pad("Text"),
+            Type::Blob => f.pad("Blob"),
         }
     }
 }
@@ -260,9 +260,9 @@ mod test {
         assert_eq!("text", row.get::<_, String>(1).unwrap());
         assert_eq!(1, row.get::<_, c_int>(2).unwrap());
         assert!((1.5 - row.get::<_, c_double>(3).unwrap()).abs() < EPSILON);
-        assert!(row.get::<_, Option<c_int>>(4).unwrap().is_none());
-        assert!(row.get::<_, Option<c_double>>(4).unwrap().is_none());
-        assert!(row.get::<_, Option<String>>(4).unwrap().is_none());
+        assert_eq!(row.get::<_, Option<c_int>>(4).unwrap(), None);
+        assert_eq!(row.get::<_, Option<c_double>>(4).unwrap(), None);
+        assert_eq!(row.get::<_, Option<String>>(4).unwrap(), None);
 
         // check some invalid types
 

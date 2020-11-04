@@ -155,6 +155,7 @@ fn make_nonnull(v: &str) -> String {
 }
 
 impl Drop for SqliteMallocString {
+    #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_free(self.ptr.as_ptr().cast()) };
     }

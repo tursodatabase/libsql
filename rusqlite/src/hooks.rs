@@ -25,6 +25,7 @@ pub enum Action {
 }
 
 impl From<i32> for Action {
+    #[inline]
     fn from(code: i32) -> Action {
         match code {
             ffi::SQLITE_DELETE => Action::SQLITE_DELETE,
@@ -40,6 +41,7 @@ impl Connection {
     /// a transaction is committed.
     ///
     /// The callback returns `true` to rollback.
+    #[inline]
     pub fn commit_hook<'c, F>(&'c self, hook: Option<F>)
     where
         F: FnMut() -> bool + Send + 'c,
@@ -51,6 +53,7 @@ impl Connection {
     /// a transaction is committed.
     ///
     /// The callback returns `true` to rollback.
+    #[inline]
     pub fn rollback_hook<'c, F>(&'c self, hook: Option<F>)
     where
         F: FnMut() + Send + 'c,
@@ -68,6 +71,7 @@ impl Connection {
     /// - the name of the database ("main", "temp", ...),
     /// - the name of the table that is updated,
     /// - the ROWID of the row that is updated.
+    #[inline]
     pub fn update_hook<'c, F>(&'c self, hook: Option<F>)
     where
         F: FnMut(Action, &str, &str, i64) + Send + 'c,
@@ -92,6 +96,7 @@ impl Connection {
 }
 
 impl InnerConnection {
+    #[inline]
     pub fn remove_hooks(&mut self) {
         self.update_hook(None::<fn(Action, &str, &str, i64)>);
         self.commit_hook(None::<fn() -> bool>);

@@ -354,6 +354,7 @@ unsafe impl VTabCursor for CSVTabCursor<'_> {
 }
 
 impl From<csv::Error> for Error {
+    #[cold]
     fn from(err: csv::Error) -> Error {
         Error::ModuleError(err.to_string())
     }

@@ -51,6 +51,7 @@ pub(crate) unsafe extern "C" fn free_array(p: *mut c_void) {
 pub type Array = Rc<Vec<Value>>;
 
 impl ToSql for Array {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::Array(self.clone()))
     }

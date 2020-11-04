@@ -166,12 +166,14 @@ impl PartialEq for Error {
 }
 
 impl From<str::Utf8Error> for Error {
+    #[cold]
     fn from(err: str::Utf8Error) -> Error {
         Error::Utf8Error(err)
     }
 }
 
 impl From<::std::ffi::NulError> for Error {
+    #[cold]
     fn from(err: ::std::ffi::NulError) -> Error {
         Error::NulError(err)
     }
@@ -182,6 +184,7 @@ const UNKNOWN_COLUMN: usize = std::usize::MAX;
 /// The conversion isn't precise, but it's convenient to have it
 /// to allow use of `get_raw(…).as_…()?` in callbacks that take `Error`.
 impl From<FromSqlError> for Error {
+    #[cold]
     fn from(err: FromSqlError) -> Error {
         // The error type requires index and type fields, but they aren't known in this
         // context.
@@ -327,10 +330,12 @@ impl error::Error for Error {
 
 // These are public but not re-exported by lib.rs, so only visible within crate.
 
+#[cold]
 pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
 
+#[cold]
 pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     let message = if db.is_null() {
         None

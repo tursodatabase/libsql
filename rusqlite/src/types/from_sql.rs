@@ -94,6 +94,7 @@ pub trait FromSql: Sized {
 macro_rules! from_sql_integral(
     ($t:ident) => (
         impl FromSql for $t {
+            #[inline]
             fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
                 let i = i64::column_result(value)?;
                 i.try_into().map_err(|_| FromSqlError::OutOfRange(i))
@@ -114,12 +115,14 @@ from_sql_integral!(u64);
 from_sql_integral!(usize);
 
 impl FromSql for i64 {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_i64()
     }
 }
 
 impl FromSql for f32 {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Integer(i) => Ok(i as f32),
@@ -130,6 +133,7 @@ impl FromSql for f32 {
 }
 
 impl FromSql for f64 {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Integer(i) => Ok(i as f64),
@@ -140,36 +144,42 @@ impl FromSql for f64 {
 }
 
 impl FromSql for bool {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         i64::column_result(value).map(|i| !matches!(i, 0))
     }
 }
 
 impl FromSql for String {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().map(ToString::to_string)
     }
 }
 
 impl FromSql for Box<str> {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().map(Into::into)
     }
 }
 
 impl FromSql for std::rc::Rc<str> {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().map(Into::into)
     }
 }
 
 impl FromSql for std::sync::Arc<str> {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().map(Into::into)
     }
 }
 
 impl FromSql for Vec<u8> {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_blob().map(|b| b.to_vec())
     }
@@ -177,6 +187,7 @@ impl FromSql for Vec<u8> {
 
 #[cfg(feature = "i128_blob")]
 impl FromSql for i128 {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         use byteorder::{BigEndian, ByteOrder};
 
@@ -192,6 +203,7 @@ impl FromSql for i128 {
 
 #[cfg(feature = "uuid")]
 impl FromSql for uuid::Uuid {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value
             .as_blob()
@@ -204,6 +216,7 @@ impl FromSql for uuid::Uuid {
 }
 
 impl<T: FromSql> FromSql for Option<T> {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Null => Ok(None),
@@ -213,6 +226,7 @@ impl<T: FromSql> FromSql for Option<T> {
 }
 
 impl FromSql for Value {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         Ok(value.into())
     }

@@ -7,6 +7,7 @@ use crate::Result;
 
 /// Serialize JSON `Value` to text.
 impl ToSql for Value {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(serde_json::to_string(self).unwrap()))
     }
@@ -14,6 +15,7 @@ impl ToSql for Value {
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value {
             ValueRef::Text(s) => serde_json::from_slice(s),

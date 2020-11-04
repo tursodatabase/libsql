@@ -55,6 +55,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
 
 /// `feature = "trace"` Write a message into the error log established by
 /// `config_log`.
+#[inline]
 pub fn log(err_code: c_int, msg: &str) {
     let msg = CString::new(msg).expect("SQLite log messages cannot contain embedded zeroes");
     unsafe {

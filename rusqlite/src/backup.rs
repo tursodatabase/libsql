@@ -180,6 +180,7 @@ impl Backup<'_, '_> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
+    #[inline]
     pub fn new<'a, 'b>(from: &'a Connection, to: &'b mut Connection) -> Result<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
@@ -225,6 +226,7 @@ impl Backup<'_, '_> {
     }
 
     /// Gets the progress of the backup as of the last call to `step`.
+    #[inline]
     pub fn progress(&self) -> Progress {
         unsafe {
             Progress {
@@ -246,6 +248,7 @@ impl Backup<'_, '_> {
     /// an error code other than `DONE`, `OK`, `BUSY`, or `LOCKED`. `BUSY` and
     /// `LOCKED` are transient errors and are therefore returned as possible
     /// `Ok` values.
+    #[inline]
     pub fn step(&self, num_pages: c_int) -> Result<StepResult> {
         use self::StepResult::{Busy, Done, Locked, More};
 
@@ -298,6 +301,7 @@ impl Backup<'_, '_> {
 }
 
 impl Drop for Backup<'_, '_> {
+    #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_backup_finish(self.b) };
     }

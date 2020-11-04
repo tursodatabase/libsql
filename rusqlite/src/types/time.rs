@@ -8,6 +8,7 @@ const SQLITE_DATETIME_FMT: &str = "%Y-%m-%dT%H:%M:%S.%NZ";
 const SQLITE_DATETIME_FMT_LEGACY: &str = "%Y-%m-%d %H:%M:%S:%N %z";
 
 impl ToSql for OffsetDateTime {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let time_string = self.to_offset(UtcOffset::UTC).format(SQLITE_DATETIME_FMT);
         Ok(ToSqlOutput::from(time_string))

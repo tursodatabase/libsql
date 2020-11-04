@@ -13,6 +13,7 @@ pub struct Rows<'stmt> {
 }
 
 impl<'stmt> Rows<'stmt> {
+    #[inline]
     fn reset(&mut self) {
         if let Some(stmt) = self.stmt.take() {
             stmt.reset();
@@ -31,6 +32,7 @@ impl<'stmt> Rows<'stmt> {
     /// consider using `query_map` or `query_and_then` instead, which
     /// return types that implement `Iterator`.
     #[allow(clippy::should_implement_trait)] // cannot implement Iterator
+    #[inline]
     pub fn next(&mut self) -> Result<Option<&Row<'stmt>>> {
         self.advance()?;
         Ok((*self).get())
@@ -47,6 +49,7 @@ impl<'stmt> Rows<'stmt> {
     /// }
     /// ```
     // FIXME Hide FallibleStreamingIterator::map
+    #[inline]
     pub fn map<F, B>(self, f: F) -> Map<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<B>,
@@ -56,6 +59,7 @@ impl<'stmt> Rows<'stmt> {
 
     /// Map over this `Rows`, converting it to a [`MappedRows`], which
     /// implements `Iterator`.
+    #[inline]
     pub fn mapped<F, B>(self, f: F) -> MappedRows<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<B>,
@@ -66,6 +70,7 @@ impl<'stmt> Rows<'stmt> {
     /// Map over this `Rows` with a fallible function, converting it to a
     /// [`AndThenRows`], which implements `Iterator` (instead of
     /// `FallibleStreamingIterator`).
+    #[inline]
     pub fn and_then<F, T, E>(self, f: F) -> AndThenRows<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<T, E>,
@@ -75,6 +80,7 @@ impl<'stmt> Rows<'stmt> {
 }
 
 impl<'stmt> Rows<'stmt> {
+    #[inline]
     pub(crate) fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows {
             stmt: Some(stmt),
@@ -82,6 +88,7 @@ impl<'stmt> Rows<'stmt> {
         }
     }
 
+    #[inline]
     pub(crate) fn get_expected_row(&mut self) -> Result<&Row<'stmt>> {
         match self.next()? {
             Some(row) => Ok(row),
@@ -91,6 +98,7 @@ impl<'stmt> Rows<'stmt> {
 }
 
 impl Drop for Rows<'_> {
+    #[inline]
     fn drop(&mut self) {
         self.reset();
     }
@@ -110,6 +118,7 @@ where
     type Error = Error;
     type Item = B;
 
+    #[inline]
     fn next(&mut self) -> Result<Option<B>> {
         match self.rows.next()? {
             Some(v) => Ok(Some((self.f)(v)?)),
@@ -127,21 +136,13 @@ pub struct MappedRows<'stmt, F> {
     map: F,
 }
 
-impl<'stmt, T, F> MappedRows<'stmt, F>
-where
-    F: FnMut(&Row<'_>) -> Result<T>,
-{
-    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
-        MappedRows { rows, map: f }
-    }
-}
-
 impl<T, F> Iterator for MappedRows<'_, F>
 where
     F: FnMut(&Row<'_>) -> Result<T>,
 {
     type Item = Result<T>;
 
+    #[inline]
     fn next(&mut self) -> Option<Result<T>> {
         let map = &mut self.map;
         self.rows
@@ -159,15 +160,6 @@ pub struct AndThenRows<'stmt, F> {
     map: F,
 }
 
-impl<'stmt, T, E, F> AndThenRows<'stmt, F>
-where
-    F: FnMut(&Row<'_>) -> Result<T, E>,
-{
-    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
-        AndThenRows { rows, map: f }
-    }
-}
-
 impl<T, E, F> Iterator for AndThenRows<'_, F>
 where
     E: convert::From<Error>,
@@ -175,6 +167,7 @@ where
 {
     type Item = Result<T, E>;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let map = &mut self.map;
         self.rows
@@ -206,6 +199,7 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
     type Error = Error;
     type Item = Row<'stmt>;
 
+    #[inline]
     fn advance(&mut self) -> Result<()> {
         match self.stmt {
             Some(ref stmt) => match stmt.step() {
@@ -231,6 +225,7 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
         }
     }
 
+    #[inline]
     fn get(&self) -> Option<&Row<'stmt>> {
         self.row.as_ref()
     }

@@ -69,6 +69,7 @@ impl Connection {
 }
 
 impl InnerConnection {
+    #[inline]
     fn busy_timeout(&mut self, timeout: c_int) -> Result<()> {
         let r = unsafe { ffi::sqlite3_busy_timeout(self.db, timeout) };
         self.decode_result(r)

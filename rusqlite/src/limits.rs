@@ -9,6 +9,7 @@ use crate::Connection;
 
 impl Connection {
     /// `feature = "limits"` Returns the current value of a limit.
+    #[inline]
     pub fn limit(&self, limit: Limit) -> i32 {
         let c = self.db.borrow();
         unsafe { ffi::sqlite3_limit(c.db(), limit as c_int, -1) }
@@ -16,6 +17,7 @@ impl Connection {
 
     /// `feature = "limits"` Changes the limit to `new_val`, returning the prior
     /// value of the limit.
+    #[inline]
     pub fn set_limit(&self, limit: Limit, new_val: i32) -> i32 {
         let c = self.db.borrow_mut();
         unsafe { ffi::sqlite3_limit(c.db(), limit as c_int, new_val) }

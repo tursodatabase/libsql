@@ -5,6 +5,7 @@ use std::ffi::CStr;
 /// 3.16.2.
 ///
 /// See [`sqlite3_libversion_number()`](https://www.sqlite.org/c3ref/libversion.html).
+#[inline]
 pub fn version_number() -> i32 {
     unsafe { ffi::sqlite3_libversion_number() }
 }
@@ -12,6 +13,7 @@ pub fn version_number() -> i32 {
 /// Returns the SQLite version as a string; e.g., `"3.16.2"` for version 3.16.2.
 ///
 /// See [`sqlite3_libversion()`](https://www.sqlite.org/c3ref/libversion.html).
+#[inline]
 pub fn version() -> &'static str {
     let cstr = unsafe { CStr::from_ptr(ffi::sqlite3_libversion()) };
     cstr.to_str()

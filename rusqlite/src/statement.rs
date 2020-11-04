@@ -80,6 +80,7 @@ impl Statement<'_> {
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
     /// underlying SQLite call fails.
+    #[inline]
     pub fn execute<P: Params>(&mut self, params: P) -> Result<usize> {
         params.bind_in(self)?;
         self.execute_with_bound_parameters()
@@ -104,6 +105,7 @@ impl Statement<'_> {
     /// returns rows (in which case `query` should be used instead), or the
     /// underlying SQLite call fails.
     #[deprecated = "You can use `execute` with named params now."]
+    #[inline]
     pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
         self.execute(params)
     }
@@ -121,6 +123,7 @@ impl Statement<'_> {
     /// # Failure
     ///
     /// Will return `Err` if no row is inserted or many rows are inserted.
+    #[inline]
     pub fn insert<P: Params>(&mut self, params: P) -> Result<i64> {
         let changes = self.execute(params)?;
         match changes {
@@ -215,6 +218,7 @@ impl Statement<'_> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[inline]
     pub fn query<P: Params>(&mut self, params: P) -> Result<Rows<'_>> {
         self.check_readonly()?;
         params.bind_in(self)?;
@@ -245,6 +249,8 @@ impl Statement<'_> {
     ///
     /// `f` is used to tranform the _streaming_ iterator into a _standard_
     /// iterator.
+    ///
+    /// This is equivalent to `stmt.query(params)?.mapped(f)`.
     ///
     /// ## Example
     ///
@@ -289,8 +295,7 @@ impl Statement<'_> {
         P: Params,
         F: FnMut(&Row<'_>) -> Result<T>,
     {
-        let rows = self.query(params)?;
-        Ok(MappedRows::new(rows, f))
+        self.query(params).map(|rows| rows.mapped(f))
     }
 
     /// Execute the prepared statement with named parameter(s), returning an
@@ -326,6 +331,8 @@ impl Statement<'_> {
     /// Executes the prepared statement and maps a function over the resulting
     /// rows, where the function returns a `Result` with `Error` type
     /// implementing `std::convert::From<Error>` (so errors can be unified).
+    ///
+    /// This is equivalent to `stmt.query(params)?.and_then(f)`.
     ///
     /// ## Example
     ///
@@ -376,14 +383,14 @@ impl Statement<'_> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[inline]
     pub fn query_and_then<T, E, P, F>(&mut self, params: P, f: F) -> Result<AndThenRows<'_, F>>
     where
         P: Params,
         E: convert::From<Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
-        let rows = self.query(params)?;
-        Ok(AndThenRows::new(rows, f))
+        self.query(params).map(|rows| rows.and_then(f))
     }
 
     /// Execute the prepared statement with named parameter(s), returning an
@@ -416,6 +423,7 @@ impl Statement<'_> {
 
     /// Return `true` if a query in the SQL statement it executes returns one
     /// or more rows and `false` if the SQL returns an empty set.
+    #[inline]
     pub fn exists<P: Params>(&mut self, params: P) -> Result<bool> {
         let mut rows = self.query(params)?;
         let exists = rows.next()?.is_some();
@@ -478,6 +486,7 @@ impl Statement<'_> {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
+    #[inline]
     pub fn finalize(mut self) -> Result<()> {
         self.finalize_()
     }
@@ -501,10 +510,12 @@ impl Statement<'_> {
     ///
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
+    #[inline]
     pub fn parameter_index(&self, name: &str) -> Result<Option<usize>> {
         Ok(self.stmt.bind_parameter_index(name))
     }
 
+    #[inline]
     pub(crate) fn bind_parameters<P>(&mut self, params: P) -> Result<()>
     where
         P: IntoIterator,
@@ -526,6 +537,7 @@ impl Statement<'_> {
         }
     }
 
+    #[inline]
     pub(crate) fn bind_parameters_named<T: ?Sized + ToSql>(
         &mut self,
         params: &[(&str, &T)],
@@ -542,6 +554,7 @@ impl Statement<'_> {
     }
 
     /// Return the number of parameters that can be bound to this statement.
+    #[inline]
     pub fn parameter_count(&self) -> usize {
         self.stmt.bind_parameter_count()
     }
@@ -584,6 +597,7 @@ impl Statement<'_> {
     ///     Ok(())
     /// }
     /// ```
+    #[inline]
     pub fn raw_bind_parameter<T: ToSql>(
         &mut self,
         one_based_col_index: usize,
@@ -608,6 +622,7 @@ impl Statement<'_> {
     ///
     /// Will return `Err` if the executed statement returns rows (in which case
     /// `query` should be used instead), or the underlying SQLite call fails.
+    #[inline]
     pub fn raw_execute(&mut self) -> Result<usize> {
         self.execute_with_bound_parameters()
     }
@@ -624,11 +639,13 @@ impl Statement<'_> {
     ///
     /// Note that if the SQL does not return results, [`Statement::raw_execute`]
     /// should be used instead.
+    #[inline]
     pub fn raw_query(&mut self) -> Rows<'_> {
         Rows::new(self)
     }
 
-    fn bind_parameter(&self, param: &dyn ToSql, col: usize) -> Result<()> {
+    // generic because many of these branches can constant fold away.
+    fn bind_parameter<P: ?Sized + ToSql>(&self, param: &P, col: usize) -> Result<()> {
         let value = param.to_sql()?;
 
         let ptr = unsafe { self.stmt.ptr() };
@@ -680,6 +697,7 @@ impl Statement<'_> {
         })
     }
 
+    #[inline]
     fn execute_with_bound_parameters(&mut self) -> Result<usize> {
         self.check_update()?;
         let r = self.stmt.step();
@@ -691,6 +709,7 @@ impl Statement<'_> {
         }
     }
 
+    #[inline]
     fn finalize_(&mut self) -> Result<()> {
         let mut stmt = unsafe { RawStatement::new(ptr::null_mut(), 0) };
         mem::swap(&mut stmt, &mut self.stmt);
@@ -748,17 +767,20 @@ impl Statement<'_> {
     }
 
     /// Get the value for one of the status counters for this statement.
+    #[inline]
     pub fn get_status(&self, status: StatementStatus) -> i32 {
         self.stmt.get_status(status, false)
     }
 
     /// Reset the value of one of the status counters for this statement,
+    #[inline]
     /// returning the value it had before resetting.
     pub fn reset_status(&self, status: StatementStatus) -> i32 {
         self.stmt.get_status(status, true)
     }
 
     #[cfg(feature = "extra_check")]
+    #[inline]
     pub(crate) fn check_no_tail(&self) -> Result<()> {
         if self.stmt.has_tail() {
             Err(Error::MultipleStatement)
@@ -776,6 +798,7 @@ impl Statement<'_> {
     /// Safety: This is unsafe, because using `sqlite3_stmt` after the
     /// connection has closed is illegal, but `RawStatement` does not enforce
     /// this, as it loses our protective `'conn` lifetime bound.
+    #[inline]
     pub(crate) unsafe fn into_raw(mut self) -> RawStatement {
         let mut stmt = RawStatement::new(ptr::null_mut(), 0);
         mem::swap(&mut stmt, &mut self.stmt);
@@ -800,12 +823,14 @@ impl fmt::Debug for Statement<'_> {
 
 impl Drop for Statement<'_> {
     #[allow(unused_must_use)]
+    #[inline]
     fn drop(&mut self) {
         self.finalize_();
     }
 }
 
 impl Statement<'_> {
+    #[inline]
     pub(super) fn new(conn: &Connection, stmt: RawStatement) -> Statement<'_> {
         Statement { conn, stmt }
     }
@@ -866,6 +891,7 @@ impl Statement<'_> {
         }
     }
 
+    #[inline]
     pub(super) fn step(&self) -> Result<bool> {
         match self.stmt.step() {
             ffi::SQLITE_ROW => Ok(true),
@@ -874,6 +900,7 @@ impl Statement<'_> {
         }
     }
 
+    #[inline]
     pub(super) fn reset(&self) -> c_int {
         self.stmt.reset()
     }

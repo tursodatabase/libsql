@@ -11,11 +11,13 @@ pub struct Column<'stmt> {
 
 impl Column<'_> {
     /// Returns the name of the column.
+    #[inline]
     pub fn name(&self) -> &str {
         self.name
     }
 
     /// Returns the type of the column (`None` for expression).
+    #[inline]
     pub fn decl_type(&self) -> Option<&str> {
         self.decl_type
     }
@@ -35,10 +37,12 @@ impl Statement<'_> {
 
     /// Return the number of columns in the result set returned by the prepared
     /// statement.
+    #[inline]
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
+    #[inline]
     pub(super) fn column_name_unwrap(&self, col: usize) -> &str {
         // Just panic if the bounds are wrong for now, we never call this
         // without checking first.
@@ -54,6 +58,7 @@ impl Statement<'_> {
     /// column range for this row.
     ///
     /// Panics when column name is not valid UTF-8.
+    #[inline]
     pub fn column_name(&self, col: usize) -> Result<&str> {
         self.stmt
             .column_name(col)
@@ -72,6 +77,7 @@ impl Statement<'_> {
     ///
     /// Will return an `Error::InvalidColumnName` when there is no column with
     /// the specified `name`.
+    #[inline]
     pub fn column_index(&self, name: &str) -> Result<usize> {
         let bytes = name.as_bytes();
         let n = self.column_count();
@@ -104,26 +110,31 @@ impl Statement<'_> {
 
 impl<'stmt> Rows<'stmt> {
     /// Get all the column names.
+    #[inline]
     pub fn column_names(&self) -> Option<Vec<&str>> {
         self.stmt.map(Statement::column_names)
     }
 
     /// Return the number of columns.
+    #[inline]
     pub fn column_count(&self) -> Option<usize> {
         self.stmt.map(Statement::column_count)
     }
 
     /// Return the name of the column.
+    #[inline]
     pub fn column_name(&self, col: usize) -> Option<Result<&str>> {
         self.stmt.map(|stmt| stmt.column_name(col))
     }
 
     /// Return the index of the column.
+    #[inline]
     pub fn column_index(&self, name: &str) -> Option<Result<usize>> {
         self.stmt.map(|stmt| stmt.column_index(name))
     }
 
     /// Returns a slice describing the columns of the Rows.
+    #[inline]
     #[cfg(feature = "column_decltype")]
     pub fn columns(&self) -> Option<Vec<Column>> {
         self.stmt.map(Statement::columns)
@@ -132,26 +143,31 @@ impl<'stmt> Rows<'stmt> {
 
 impl<'stmt> Row<'stmt> {
     /// Get all the column names of the Row.
+    #[inline]
     pub fn column_names(&self) -> Vec<&str> {
         self.stmt.column_names()
     }
 
     /// Return the number of columns in the current row.
+    #[inline]
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
     /// Return the name of the column.
+    #[inline]
     pub fn column_name(&self, col: usize) -> Result<&str> {
         self.stmt.column_name(col)
     }
 
     /// Return the index of the column.
+    #[inline]
     pub fn column_index(&self, name: &str) -> Result<usize> {
         self.stmt.column_index(name)
     }
 
     /// Returns a slice describing the columns of the Row.
+    #[inline]
     #[cfg(feature = "column_decltype")]
     pub fn columns(&self) -> Vec<Column> {
         self.stmt.columns()

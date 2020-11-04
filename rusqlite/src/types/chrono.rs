@@ -9,6 +9,7 @@ use crate::Result;
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
 impl ToSql for NaiveDate {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%Y-%m-%d").to_string();
         Ok(ToSqlOutput::from(date_str))
@@ -17,6 +18,7 @@ impl ToSql for NaiveDate {
 
 /// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value
             .as_str()
@@ -29,6 +31,7 @@ impl FromSql for NaiveDate {
 
 /// ISO 8601 time without timezone => "HH:MM:SS.SSS"
 impl ToSql for NaiveTime {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%H:%M:%S%.f").to_string();
         Ok(ToSqlOutput::from(date_str))
@@ -55,6 +58,7 @@ impl FromSql for NaiveTime {
 /// ISO 8601 combined date and time without timezone =>
 /// "YYYY-MM-DDTHH:MM:SS.SSS"
 impl ToSql for NaiveDateTime {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let date_str = self.format("%Y-%m-%dT%H:%M:%S%.f").to_string();
         Ok(ToSqlOutput::from(date_str))
@@ -84,6 +88,7 @@ impl FromSql for NaiveDateTime {
 /// Date and time with time zone => UTC RFC3339 timestamp
 /// ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
 impl<Tz: TimeZone> ToSql for DateTime<Tz> {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.with_timezone(&Utc).to_rfc3339()))
     }
@@ -120,6 +125,7 @@ impl FromSql for DateTime<Utc> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into `DateTime<Local>`.
 impl FromSql for DateTime<Local> {
+    #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let utc_dt = DateTime::<Utc>::column_result(value)?;
         Ok(utc_dt.with_timezone(&Local))

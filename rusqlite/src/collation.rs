@@ -15,6 +15,7 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 
 impl Connection {
     /// `feature = "collation"` Add or modify a collation.
+    #[inline]
     pub fn create_collation<'c, C>(&'c self, collation_name: &str, x_compare: C) -> Result<()>
     where
         C: Fn(&str, &str) -> Ordering + Send + UnwindSafe + 'c,
@@ -25,6 +26,7 @@ impl Connection {
     }
 
     /// `feature = "collation"` Collation needed callback
+    #[inline]
     pub fn collation_needed(
         &self,
         x_coll_needed: fn(&Connection, &str) -> Result<()>,
@@ -33,6 +35,7 @@ impl Connection {
     }
 
     /// `feature = "collation"` Remove collation.
+    #[inline]
     pub fn remove_collation(&self, collation_name: &str) -> Result<()> {
         self.db.borrow_mut().remove_collation(collation_name)
     }
@@ -139,6 +142,7 @@ impl InnerConnection {
         self.decode_result(r)
     }
 
+    #[inline]
     fn remove_collation(&mut self, collation_name: &str) -> Result<()> {
         let c_name = str_to_cstring(collation_name)?;
         let r = unsafe {

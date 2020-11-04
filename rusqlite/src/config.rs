@@ -74,6 +74,7 @@ impl Connection {
     ///   whether the QPSG is disabled or enabled
     /// - SQLITE_DBCONFIG_TRIGGER_EQP: return `false` to indicate
     ///   output-for-trigger are not disabled or `true` if it is
+    #[inline]
     pub fn db_config(&self, config: DbConfig) -> Result<bool> {
         let c = self.db.borrow();
         unsafe {
@@ -102,6 +103,7 @@ impl Connection {
     ///   enable QPSG
     /// - SQLITE_DBCONFIG_TRIGGER_EQP: `false` to disable output for trigger
     ///   programs, `true` to enable it
+    #[inline]
     pub fn set_db_config(&self, config: DbConfig, new_val: bool) -> Result<bool> {
         let c = self.db.borrow_mut();
         unsafe {
