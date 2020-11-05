@@ -1,5 +1,5 @@
-C Remove\sunused\svariable\sfrom\sspeedtest1.c
-D 2020-11-05T14:50:21.626
+C Suppress\serrors\sassociated\swith\sTEMP\striggers\sthat\sreference\sobjects\sin\nnon-TEMP\sdatabases.\s\sThis\sis\sa\scontinuation\sof\sthe\sfix\sfor\sticket\s#3810\nshown\sin\scheck-in\s[ba1afc040171810d]\nfrom\s[/timeline?c=trunk:200908061743|2009-08-06],\sbased\son\sa\sbug\sreport\sin\n[forum:/forumpost/157dc791df|forum\spost\s157dc791df]
+D 2020-11-05T19:13:44.063
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 4dc01b267593537e2a0d0efe9f80dabe24c5b6f7627bc6971c487fa6a1dacbbf
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
-F src/trigger.c ef67bde309a831515dc3c2173d792574309f2f42d45f8c078743fae9f7f98c75
+F src/trigger.c 515e79206d40d1d4149129318582e79a6e9db590a7b74e226fdb5b2a6c7e1b10
 F src/update.c 1f6167d4acff9f2ae800f7dade84877afbd595c155cdeb7d56f08165d75570c4
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1570,7 +1570,7 @@ F test/tkt3762.test 4d439ff7abdc8d9323150269d182c37c2d514576
 F test/tkt3773.test 7bca904d2a647a6a4a291bd86d7fd7c73855b789
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
 F test/tkt3793.test d90ffd75c52413908d15e1c44fc2ea9c80fcc449
-F test/tkt3810.test 09608d81c63a6ff3aaf7bc70717909c51f5f4048
+F test/tkt3810.test 3a3be9965d1861bd84019875851ad5ea90fd8d76b638361514a36a48ea53191b
 F test/tkt3824.test 150aa00bb6220672e5f0eb14dc8eaa36750425f0
 F test/tkt3832.test 2300d10d57562b89875b72148338ac3e14f8847d
 F test/tkt3838.test 292e72489101cd1320d7278dc111c173ebf334d4
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6646d7898ca1d2f71ec906d9613fbfc5c59c6cf05f053529e6e32ab826d1cb78
-R e1724ed14a78c71a4f7f90343fc78c7d
+P c0a18565e614021b74646de7efd11d3d46894ef9132fb26787ab0269dc6a647c
+R 6ad66b8699121ab033c31568ecea0a80
 U drh
-Z 2bdbec80ae76a029be3f0e353048f5fc
+Z bffb2b54796c0687b73d1a147809a672
