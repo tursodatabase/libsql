@@ -1890,11 +1890,12 @@ mod test {
 
     #[test]
     #[cfg(not(feature = "extra_check"))]
-    fn test_alter_table() -> Result<usize> {
+    fn test_alter_table() -> Result<()> {
         let db = checked_memory_handle();
         db.execute_batch("CREATE TABLE x(t);")?;
         // `execute_batch` should be used but `execute` should also work
-        db.execute("ALTER TABLE x RENAME TO y;", [])
+        db.execute("ALTER TABLE x RENAME TO y;", [])?;
+        Ok(())
     }
 
     #[test]
