@@ -2161,7 +2161,6 @@ int main(int argc, char **argv){
   int doPCache = 0;             /* True if --pcache is seen */
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
-  int nReserve = 0;             /* --reserve N.  */
   int mmapSize = 0;             /* How big of a memory map to use */
   int memDb = 0;                /* --memdb.  Use an in-memory database */
   char *zTSet = "main";         /* Which --testset torun */
