@@ -245,7 +245,6 @@ impl<T: ToSql> ToSql for Option<T> {
 #[cfg(test)]
 mod test {
     use super::ToSql;
-    use crate::Result;
 
     fn is_to_sql<T: ToSql>() {}
 
@@ -340,7 +339,7 @@ mod test {
 
     #[cfg(feature = "i128_blob")]
     #[test]
-    fn test_i128() -> Result<()> {
+    fn test_i128() -> crate::Result<()> {
         use crate::Connection;
         use std::i128;
         let db = Connection::open_in_memory()?;
@@ -380,7 +379,7 @@ mod test {
 
     #[cfg(feature = "uuid")]
     #[test]
-    fn test_uuid() -> Result<()> {
+    fn test_uuid() -> crate::Result<()> {
         use crate::{params, Connection};
         use uuid::Uuid;
 

@@ -1890,7 +1890,7 @@ mod test {
 
     #[test]
     #[cfg(not(feature = "extra_check"))]
-    fn test_alter_table() -> Result<()> {
+    fn test_alter_table() -> Result<usize> {
         let db = checked_memory_handle();
         db.execute_batch("CREATE TABLE x(t);")?;
         // `execute_batch` should be used but `execute` should also work
