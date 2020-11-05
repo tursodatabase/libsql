@@ -761,36 +761,36 @@ mod test {
     }
 
     #[test]
-    fn test_function_half() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_function_half() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.create_scalar_function(
             "half",
             1,
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             half,
-        )
-        .unwrap();
+        )?;
         let result: Result<f64> = db.query_row("SELECT half(6)", [], |r| r.get(0));
 
-        assert!((3f64 - result.unwrap()).abs() < EPSILON);
+        assert!((3f64 - result?).abs() < EPSILON);
+        Ok(())
     }
 
     #[test]
-    fn test_remove_function() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_remove_function() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.create_scalar_function(
             "half",
             1,
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             half,
-        )
-        .unwrap();
+        )?;
         let result: Result<f64> = db.query_row("SELECT half(6)", [], |r| r.get(0));
-        assert!((3f64 - result.unwrap()).abs() < EPSILON);
+        assert!((3f64 - result?).abs() < EPSILON);
 
-        db.remove_function("half", 1).unwrap();
+        db.remove_function("half", 1)?;
         let result: Result<f64> = db.query_row("SELECT half(6)", [], |r| r.get(0));
         assert!(result.is_err());
+        Ok(())
     }
 
     // This implementation of a regexp scalar function uses SQLite's auxilliary data
@@ -817,8 +817,8 @@ mod test {
     }
 
     #[test]
-    fn test_function_regexp_with_auxilliary() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_function_regexp_with_auxilliary() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.execute_batch(
             "BEGIN;
              CREATE TABLE foo (x string);
@@ -826,20 +826,18 @@ mod test {
              INSERT INTO foo VALUES ('lXsi');
              INSERT INTO foo VALUES ('lisX');
              END;",
-        )
-        .unwrap();
+        )?;
         db.create_scalar_function(
             "regexp",
             2,
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             regexp_with_auxilliary,
-        )
-        .unwrap();
+        )?;
 
         let result: Result<bool> =
             db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", [], |r| r.get(0));
 
-        assert_eq!(true, result.unwrap());
+        assert_eq!(true, result?);
 
         let result: Result<i64> = db.query_row(
             "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
@@ -847,12 +845,13 @@ mod test {
             |r| r.get(0),
         );
 
-        assert_eq!(2, result.unwrap());
+        assert_eq!(2, result?);
+        Ok(())
     }
 
     #[test]
-    fn test_varargs_function() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_varargs_function() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.create_scalar_function(
             "my_concat",
             -1,
@@ -867,42 +866,40 @@ mod test {
 
                 Ok(ret)
             },
-        )
-        .unwrap();
+        )?;
 
         for &(expected, query) in &[
             ("", "SELECT my_concat()"),
             ("onetwo", "SELECT my_concat('one', 'two')"),
             ("abc", "SELECT my_concat('a', 'b', 'c')"),
         ] {
-            let result: String = db.query_row(query, [], |r| r.get(0)).unwrap();
+            let result: String = db.query_row(query, [], |r| r.get(0))?;
             assert_eq!(expected, result);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_get_aux_type_checking() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_get_aux_type_checking() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.create_scalar_function("example", 2, FunctionFlags::default(), |ctx| {
             if !ctx.get::<bool>(1)? {
                 ctx.set_aux::<i64>(0, 100)?;
             } else {
                 assert_eq!(ctx.get_aux::<String>(0), Err(Error::GetAuxWrongType));
-                assert_eq!(*ctx.get_aux::<i64>(0).unwrap().unwrap(), 100);
+                assert_eq!(*ctx.get_aux::<i64>(0)?.unwrap(), 100);
             }
             Ok(true)
-        })
-        .unwrap();
+        })?;
 
-        let res: bool = db
-            .query_row(
-                "SELECT example(0, i) FROM (SELECT 0 as i UNION SELECT 1)",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
+        let res: bool = db.query_row(
+            "SELECT example(0, i) FROM (SELECT 0 as i UNION SELECT 1)",
+            [],
+            |r| r.get(0),
+        )?;
         // Doesn't actually matter, we'll assert in the function if there's a problem.
         assert!(res);
+        Ok(())
     }
 
     struct Sum;
@@ -939,52 +936,50 @@ mod test {
     }
 
     #[test]
-    fn test_sum() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_sum() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.create_aggregate_function(
             "my_sum",
             1,
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             Sum,
-        )
-        .unwrap();
+        )?;
 
         // sum should return NULL when given no columns (contrast with count below)
         let no_result = "SELECT my_sum(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
-        let result: Option<i64> = db.query_row(no_result, [], |r| r.get(0)).unwrap();
+        let result: Option<i64> = db.query_row(no_result, [], |r| r.get(0))?;
         assert!(result.is_none());
 
         let single_sum = "SELECT my_sum(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
-        let result: i64 = db.query_row(single_sum, [], |r| r.get(0)).unwrap();
+        let result: i64 = db.query_row(single_sum, [], |r| r.get(0))?;
         assert_eq!(4, result);
 
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
                         2, 1)";
-        let result: (i64, i64) = db
-            .query_row(dual_sum, [], |r| Ok((r.get(0)?, r.get(1)?)))
-            .unwrap();
+        let result: (i64, i64) = db.query_row(dual_sum, [], |r| Ok((r.get(0)?, r.get(1)?)))?;
         assert_eq!((4, 2), result);
+        Ok(())
     }
 
     #[test]
-    fn test_count() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_count() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.create_aggregate_function(
             "my_count",
             -1,
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             Count,
-        )
-        .unwrap();
+        )?;
 
         // count should return 0 when given no columns (contrast with sum above)
         let no_result = "SELECT my_count(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
-        let result: i64 = db.query_row(no_result, [], |r| r.get(0)).unwrap();
+        let result: i64 = db.query_row(no_result, [], |r| r.get(0))?;
         assert_eq!(result, 0);
 
         let single_sum = "SELECT my_count(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
-        let result: i64 = db.query_row(single_sum, [], |r| r.get(0)).unwrap();
+        let result: i64 = db.query_row(single_sum, [], |r| r.get(0))?;
         assert_eq!(2, result);
+        Ok(())
     }
 
     #[cfg(feature = "window")]
@@ -1001,17 +996,16 @@ mod test {
 
     #[test]
     #[cfg(feature = "window")]
-    fn test_window() {
+    fn test_window() -> Result<()> {
         use fallible_iterator::FallibleIterator;
 
-        let db = Connection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory()?;
         db.create_window_function(
             "sumint",
             1,
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             Sum,
-        )
-        .unwrap();
+        )?;
         db.execute_batch(
             "CREATE TABLE t3(x, y);
              INSERT INTO t3 VALUES('a', 4),
@@ -1019,24 +1013,19 @@ mod test {
                      ('c', 3),
                      ('d', 8),
                      ('e', 1);",
-        )
-        .unwrap();
+        )?;
 
-        let mut stmt = db
-            .prepare(
-                "SELECT x, sumint(y) OVER (
+        let mut stmt = db.prepare(
+            "SELECT x, sumint(y) OVER (
                    ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
                  ) AS sum_y
                  FROM t3 ORDER BY x;",
-            )
-            .unwrap();
+        )?;
 
         let results: Vec<(String, i64)> = stmt
-            .query([])
-            .unwrap()
+            .query([])?
             .map(|row| Ok((row.get("x")?, row.get("sum_y")?)))
-            .collect()
-            .unwrap();
+            .collect()?;
         let expected = vec![
             ("a".to_owned(), 9),
             ("b".to_owned(), 12),
@@ -1045,5 +1034,6 @@ mod test {
             ("e".to_owned(), 9),
         ];
         assert_eq!(expected, results);
+        Ok(())
     }
 }

@@ -131,95 +131,92 @@ impl fmt::Display for Type {
 #[cfg(test)]
 mod test {
     use super::Value;
-    use crate::{params, Connection, Error, Statement};
+    use crate::{params, Connection, Error, Result, Statement};
     use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
 
-    fn checked_memory_handle() -> Connection {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT, i INTEGER, f FLOAT, n)")
-            .unwrap();
-        db
+    fn checked_memory_handle() -> Result<Connection> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT, i INTEGER, f FLOAT, n)")?;
+        Ok(db)
     }
 
     #[test]
-    fn test_blob() {
-        let db = checked_memory_handle();
+    fn test_blob() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let v1234 = vec![1u8, 2, 3, 4];
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234])
-            .unwrap();
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234])?;
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0)).unwrap();
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
         assert_eq!(v, v1234);
+        Ok(())
     }
 
     #[test]
-    fn test_empty_blob() {
-        let db = checked_memory_handle();
+    fn test_empty_blob() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let empty = vec![];
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty])
-            .unwrap();
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty])?;
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0)).unwrap();
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
         assert_eq!(v, empty);
+        Ok(())
     }
 
     #[test]
-    fn test_str() {
-        let db = checked_memory_handle();
+    fn test_str() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s])?;
 
-        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(from, s);
+        Ok(())
     }
 
     #[test]
-    fn test_string() {
-        let db = checked_memory_handle();
+    fn test_string() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", [s.to_owned()])
-            .unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", [s.to_owned()])?;
 
-        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(from, s);
+        Ok(())
     }
 
     #[test]
-    fn test_value() {
-        let db = checked_memory_handle();
+    fn test_value() -> Result<()> {
+        let db = checked_memory_handle()?;
 
-        db.execute("INSERT INTO foo(i) VALUES (?)", [Value::Integer(10)])
-            .unwrap();
+        db.execute("INSERT INTO foo(i) VALUES (?)", [Value::Integer(10)])?;
 
         assert_eq!(
             10i64,
-            db.query_row::<i64, _, _>("SELECT i FROM foo", [], |r| r.get(0))
-                .unwrap()
+            db.query_row::<i64, _, _>("SELECT i FROM foo", [], |r| r.get(0))?
         );
+        Ok(())
     }
 
     #[test]
-    fn test_option() {
-        let db = checked_memory_handle();
+    fn test_option() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let s = Some("hello, world!");
         let b = Some(vec![1u8, 2, 3, 4]);
 
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&b]).unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s])?;
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&b])?;
 
-        let mut stmt = db
-            .prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")
-            .unwrap();
-        let mut rows = stmt.query([]).unwrap();
+        let mut stmt = db.prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")?;
+        let mut rows = stmt.query([])?;
 
         {
-            let row1 = rows.next().unwrap().unwrap();
+            let row1 = rows.next()?.unwrap();
             let s1: Option<String> = row1.get_unwrap(0);
             let b1: Option<Vec<u8>> = row1.get_unwrap(1);
             assert_eq!(s.unwrap(), s1.unwrap());
@@ -227,42 +224,42 @@ mod test {
         }
 
         {
-            let row2 = rows.next().unwrap().unwrap();
+            let row2 = rows.next()?.unwrap();
             let s2: Option<String> = row2.get_unwrap(0);
             let b2: Option<Vec<u8>> = row2.get_unwrap(1);
             assert!(s2.is_none());
             assert_eq!(b, b2);
         }
+        Ok(())
     }
 
     #[test]
     #[allow(clippy::cognitive_complexity)]
-    fn test_mismatched_types() {
+    fn test_mismatched_types() -> Result<()> {
         fn is_invalid_column_type(err: Error) -> bool {
             matches!(err, Error::InvalidColumnType(..))
         }
 
-        let db = checked_memory_handle();
+        let db = checked_memory_handle()?;
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
             [],
-        )
-        .unwrap();
+        )?;
 
-        let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query([]).unwrap();
+        let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo")?;
+        let mut rows = stmt.query([])?;
 
-        let row = rows.next().unwrap().unwrap();
+        let row = rows.next()?.unwrap();
 
         // check the correct types come back as expected
-        assert_eq!(vec![1, 2], row.get::<_, Vec<u8>>(0).unwrap());
-        assert_eq!("text", row.get::<_, String>(1).unwrap());
-        assert_eq!(1, row.get::<_, c_int>(2).unwrap());
-        assert!((1.5 - row.get::<_, c_double>(3).unwrap()).abs() < EPSILON);
-        assert_eq!(row.get::<_, Option<c_int>>(4).unwrap(), None);
-        assert_eq!(row.get::<_, Option<c_double>>(4).unwrap(), None);
-        assert_eq!(row.get::<_, Option<String>>(4).unwrap(), None);
+        assert_eq!(vec![1, 2], row.get::<_, Vec<u8>>(0)?);
+        assert_eq!("text", row.get::<_, String>(1)?);
+        assert_eq!(1, row.get::<_, c_int>(2)?);
+        assert!((1.5 - row.get::<_, c_double>(3)?).abs() < EPSILON);
+        assert_eq!(row.get::<_, Option<c_int>>(4)?, None);
+        assert_eq!(row.get::<_, Option<c_double>>(4)?, None);
+        assert_eq!(row.get::<_, Option<String>>(4)?, None);
 
         // check some invalid types
 
@@ -347,58 +344,50 @@ mod test {
         assert!(is_invalid_column_type(
             row.get::<_, time::OffsetDateTime>(4).err().unwrap()
         ));
+        Ok(())
     }
 
     #[test]
-    fn test_dynamic_type() {
+    fn test_dynamic_type() -> Result<()> {
         use super::Value;
-        let db = checked_memory_handle();
+        let db = checked_memory_handle()?;
 
         db.execute(
             "INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
             [],
-        )
-        .unwrap();
+        )?;
 
-        let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
-        let mut rows = stmt.query([]).unwrap();
+        let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo")?;
+        let mut rows = stmt.query([])?;
 
-        let row = rows.next().unwrap().unwrap();
-        assert_eq!(Value::Blob(vec![1, 2]), row.get::<_, Value>(0).unwrap());
-        assert_eq!(
-            Value::Text(String::from("text")),
-            row.get::<_, Value>(1).unwrap()
-        );
-        assert_eq!(Value::Integer(1), row.get::<_, Value>(2).unwrap());
-        match row.get::<_, Value>(3).unwrap() {
+        let row = rows.next()?.unwrap();
+        assert_eq!(Value::Blob(vec![1, 2]), row.get::<_, Value>(0)?);
+        assert_eq!(Value::Text(String::from("text")), row.get::<_, Value>(1)?);
+        assert_eq!(Value::Integer(1), row.get::<_, Value>(2)?);
+        match row.get::<_, Value>(3)? {
             Value::Real(val) => assert!((1.5 - val).abs() < EPSILON),
             x => panic!("Invalid Value {:?}", x),
         }
-        assert_eq!(Value::Null, row.get::<_, Value>(4).unwrap());
+        assert_eq!(Value::Null, row.get::<_, Value>(4)?);
+        Ok(())
     }
 
     macro_rules! test_conversion {
         ($db_etc:ident, $insert_value:expr, $get_type:ty,expect $expected_value:expr) => {
-            $db_etc
-                .insert_statement
-                .execute(params![$insert_value])
-                .unwrap();
+            $db_etc.insert_statement.execute(params![$insert_value])?;
             let res = $db_etc
                 .query_statement
                 .query_row([], |row| row.get::<_, $get_type>(0));
-            assert_eq!(res.unwrap(), $expected_value);
-            $db_etc.delete_statement.execute([]).unwrap();
+            assert_eq!(res?, $expected_value);
+            $db_etc.delete_statement.execute([])?;
         };
         ($db_etc:ident, $insert_value:expr, $get_type:ty,expect_from_sql_error) => {
-            $db_etc
-                .insert_statement
-                .execute(params![$insert_value])
-                .unwrap();
+            $db_etc.insert_statement.execute(params![$insert_value])?;
             let res = $db_etc
                 .query_statement
                 .query_row([], |row| row.get::<_, $get_type>(0));
             res.unwrap_err();
-            $db_etc.delete_statement.execute([]).unwrap();
+            $db_etc.delete_statement.execute([])?;
         };
         ($db_etc:ident, $insert_value:expr, $get_type:ty,expect_to_sql_error) => {
             $db_etc
@@ -409,12 +398,12 @@ mod test {
     }
 
     #[test]
-    fn test_numeric_conversions() {
+    fn test_numeric_conversions() -> Result<()> {
         #![allow(clippy::float_cmp)]
 
         // Test what happens when we store an f32 and retrieve an i32 etc.
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (x)").unwrap();
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (x)")?;
 
         // SQLite actually ignores the column types, so we just need to test
         // different numeric values.
@@ -426,9 +415,9 @@ mod test {
         }
 
         let mut db_etc = DbEtc {
-            insert_statement: db.prepare("INSERT INTO foo VALUES (?1)").unwrap(),
-            query_statement: db.prepare("SELECT x FROM foo").unwrap(),
-            delete_statement: db.prepare("DELETE FROM foo").unwrap(),
+            insert_statement: db.prepare("INSERT INTO foo VALUES (?1)")?,
+            query_statement: db.prepare("SELECT x FROM foo")?,
+            delete_statement: db.prepare("DELETE FROM foo")?,
         };
 
         // Basic non-converting test.
@@ -466,5 +455,6 @@ mod test {
         // FromSql float to int conversion, never works even if the actual value
         // is an integer.
         test_conversion!(db_etc, 0f64, i64, expect_from_sql_error);
+        Ok(())
     }
 }

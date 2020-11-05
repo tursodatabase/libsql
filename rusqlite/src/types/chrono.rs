@@ -137,114 +137,109 @@ mod test {
     use crate::{Connection, Result};
     use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-    fn checked_memory_handle() -> Connection {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT, b BLOB)")
-            .unwrap();
-        db
+    fn checked_memory_handle() -> Result<Connection> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT, b BLOB)")?;
+        Ok(db)
     }
 
     #[test]
-    fn test_naive_date() {
-        let db = checked_memory_handle();
+    fn test_naive_date() -> Result<()> {
+        let db = checked_memory_handle()?;
         let date = NaiveDate::from_ymd(2016, 2, 23);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&date])
-            .unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&date])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("2016-02-23", s);
-        let t: NaiveDate = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let t: NaiveDate = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(date, t);
+        Ok(())
     }
 
     #[test]
-    fn test_naive_time() {
-        let db = checked_memory_handle();
+    fn test_naive_time() -> Result<()> {
+        let db = checked_memory_handle()?;
         let time = NaiveTime::from_hms(23, 56, 4);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&time])
-            .unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&time])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("23:56:04", s);
-        let v: NaiveTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let v: NaiveTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(time, v);
+        Ok(())
     }
 
     #[test]
-    fn test_naive_date_time() {
-        let db = checked_memory_handle();
+    fn test_naive_date_time() -> Result<()> {
+        let db = checked_memory_handle()?;
         let date = NaiveDate::from_ymd(2016, 2, 23);
         let time = NaiveTime::from_hms(23, 56, 4);
         let dt = NaiveDateTime::new(date, time);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt])
-            .unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("2016-02-23T23:56:04", s);
-        let v: NaiveDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let v: NaiveDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(dt, v);
 
-        db.execute("UPDATE foo set b = datetime(t)", []).unwrap(); // "YYYY-MM-DD HH:MM:SS"
-        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", [], |r| r.get(0)).unwrap();
+        db.execute("UPDATE foo set b = datetime(t)", [])?; // "YYYY-MM-DD HH:MM:SS"
+        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
         assert_eq!(dt, hms);
+        Ok(())
     }
 
     #[test]
-    fn test_date_time_utc() {
-        let db = checked_memory_handle();
+    fn test_date_time_utc() -> Result<()> {
+        let db = checked_memory_handle()?;
         let date = NaiveDate::from_ymd(2016, 2, 23);
         let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
         let dt = NaiveDateTime::new(date, time);
         let utc = Utc.from_utc_datetime(&dt);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc])
-            .unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
 
-        let v1: DateTime<Utc> = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let v1: DateTime<Utc> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(utc, v1);
 
-        let v2: DateTime<Utc> = db
-            .query_row("SELECT '2016-02-23 23:56:04.789'", [], |r| r.get(0))
-            .unwrap();
+        let v2: DateTime<Utc> =
+            db.query_row("SELECT '2016-02-23 23:56:04.789'", [], |r| r.get(0))?;
         assert_eq!(utc, v2);
 
-        let v3: DateTime<Utc> = db
-            .query_row("SELECT '2016-02-23 23:56:04'", [], |r| r.get(0))
-            .unwrap();
+        let v3: DateTime<Utc> = db.query_row("SELECT '2016-02-23 23:56:04'", [], |r| r.get(0))?;
         assert_eq!(utc - Duration::milliseconds(789), v3);
 
-        let v4: DateTime<Utc> = db
-            .query_row("SELECT '2016-02-23 23:56:04.789+00:00'", [], |r| r.get(0))
-            .unwrap();
+        let v4: DateTime<Utc> =
+            db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", [], |r| r.get(0))?;
         assert_eq!(utc, v4);
+        Ok(())
     }
 
     #[test]
-    fn test_date_time_local() {
-        let db = checked_memory_handle();
+    fn test_date_time_local() -> Result<()> {
+        let db = checked_memory_handle()?;
         let date = NaiveDate::from_ymd(2016, 2, 23);
         let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
         let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&local])
-            .unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&local])?;
 
         // Stored string should be in UTC
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert!(s.ends_with("+00:00"));
 
-        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(local, v);
+        Ok(())
     }
 
     #[test]
-    fn test_sqlite_functions() {
-        let db = checked_memory_handle();
+    fn test_sqlite_functions() -> Result<()> {
+        let db = checked_memory_handle()?;
         let result: Result<NaiveTime> = db.query_row("SELECT CURRENT_TIME", [], |r| r.get(0));
         assert!(result.is_ok());
         let result: Result<NaiveDate> = db.query_row("SELECT CURRENT_DATE", [], |r| r.get(0));
@@ -255,5 +250,6 @@ mod test {
         let result: Result<DateTime<Utc>> =
             db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
         assert!(result.is_ok());
+        Ok(())
     }
 }

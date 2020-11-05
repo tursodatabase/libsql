@@ -2,7 +2,7 @@
 
 #[cfg(feature = "vtab")]
 #[test]
-fn test_dummy_module() {
+fn test_dummy_module() -> rusqlite::Result<()> {
     use rusqlite::types::ToSql;
     use rusqlite::vtab::{
         eponymous_only_module, sqlite3_vtab, sqlite3_vtab_cursor, Context, IndexInfo, VTab,
@@ -84,20 +84,18 @@ fn test_dummy_module() {
         }
     }
 
-    let db = Connection::open_in_memory().unwrap();
+    let db = Connection::open_in_memory()?;
 
-    db.create_module::<DummyTab>("dummy", &module, None)
-        .unwrap();
+    db.create_module::<DummyTab>("dummy", &module, None)?;
 
     let version = version_number();
     if version < 3_008_012 {
-        return;
+        return Ok(());
     }
 
-    let mut s = db.prepare("SELECT * FROM dummy()").unwrap();
+    let mut s = db.prepare("SELECT * FROM dummy()")?;
 
-    let dummy = s
-        .query_row(&[] as &[&dyn ToSql], |row| row.get::<_, i32>(0))
-        .unwrap();
+    let dummy = s.query_row(&[] as &[&dyn ToSql], |row| row.get::<_, i32>(0))?;
     assert_eq!(1, dummy);
+    Ok(())
 }

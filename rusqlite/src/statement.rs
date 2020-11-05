@@ -940,26 +940,23 @@ mod test {
 
     #[test]
     #[allow(deprecated)]
-    fn test_execute_named() {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
+    fn test_execute_named() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(x INTEGER)")?;
 
         assert_eq!(
-            db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])
-                .unwrap(),
+            db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)])?,
             1
         );
         assert_eq!(
-            db.execute("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])
-                .unwrap(),
+            db.execute("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)])?,
             1
         );
         assert_eq!(
             db.execute(
                 "INSERT INTO foo(x) VALUES (:x)",
                 crate::named_params! {":x": 3i32}
-            )
-            .unwrap(),
+            )?,
             1
         );
 
@@ -969,8 +966,7 @@ mod test {
                 "SELECT SUM(x) FROM foo WHERE x > :x",
                 &[(":x", &0i32)],
                 |r| r.get(0)
-            )
-            .unwrap()
+            )?
         );
         assert_eq!(
             5i32,
@@ -978,133 +974,118 @@ mod test {
                 "SELECT SUM(x) FROM foo WHERE x > :x",
                 &[(":x", &1i32)],
                 |r| r.get(0)
-            )
-            .unwrap()
+            )?
         );
+        Ok(())
     }
 
     #[test]
     #[allow(deprecated)]
-    fn test_stmt_execute_named() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_stmt_execute_named() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag \
                    INTEGER)";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("INSERT INTO test (name) VALUES (:name)")
-            .unwrap();
-        stmt.execute_named(&[(":name", &"one")]).unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (name) VALUES (:name)")?;
+        stmt.execute_named(&[(":name", &"one")])?;
 
-        let mut stmt = db
-            .prepare("SELECT COUNT(*) FROM test WHERE name = :name")
-            .unwrap();
+        let mut stmt = db.prepare("SELECT COUNT(*) FROM test WHERE name = :name")?;
         assert_eq!(
             1i32,
-            stmt.query_row_named::<i32, _>(&[(":name", &"one")], |r| r.get(0))
-                .unwrap()
+            stmt.query_row_named::<i32, _>(&[(":name", &"one")], |r| r.get(0))?
         );
         assert_eq!(
             1i32,
-            stmt.query_row::<i32, _, _>(&[(":name", &"one")], |r| r.get(0))
-                .unwrap()
+            stmt.query_row::<i32, _, _>(&[(":name", &"one")], |r| r.get(0))?
         );
+        Ok(())
     }
 
     #[test]
     #[allow(deprecated)]
-    fn test_query_named() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_named() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
         INSERT INTO test(id, name) VALUES (1, "one");
         "#;
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("SELECT id FROM test where name = :name")
-            .unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name")?;
         // legacy `_named` api
         {
-            let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
-            let id: Result<i32> = rows.next().unwrap().unwrap().get(0);
+            let mut rows = stmt.query_named(&[(":name", &"one")])?;
+            let id: Result<i32> = rows.next()?.unwrap().get(0);
             assert_eq!(Ok(1), id);
         }
 
         // plain api
         {
-            let mut rows = stmt.query(&[(":name", &"one")]).unwrap();
-            let id: Result<i32> = rows.next().unwrap().unwrap().get(0);
+            let mut rows = stmt.query(&[(":name", &"one")])?;
+            let id: Result<i32> = rows.next()?.unwrap().get(0);
             assert_eq!(Ok(1), id);
         }
+        Ok(())
     }
 
     #[test]
     #[allow(deprecated)]
-    fn test_query_map_named() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_map_named() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
         INSERT INTO test(id, name) VALUES (1, "one");
         "#;
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("SELECT id FROM test where name = :name")
-            .unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name")?;
         // legacy `_named` api
         {
-            let mut rows = stmt
-                .query_map_named(&[(":name", &"one")], |row| {
-                    let id: Result<i32> = row.get(0);
-                    id.map(|i| 2 * i)
-                })
-                .unwrap();
+            let mut rows = stmt.query_map_named(&[(":name", &"one")], |row| {
+                let id: Result<i32> = row.get(0);
+                id.map(|i| 2 * i)
+            })?;
 
-            let doubled_id: i32 = rows.next().unwrap().unwrap();
+            let doubled_id: i32 = rows.next().unwrap()?;
             assert_eq!(2, doubled_id);
         }
         // plain api
         {
-            let mut rows = stmt
-                .query_map(&[(":name", &"one")], |row| {
-                    let id: Result<i32> = row.get(0);
-                    id.map(|i| 2 * i)
-                })
-                .unwrap();
+            let mut rows = stmt.query_map(&[(":name", &"one")], |row| {
+                let id: Result<i32> = row.get(0);
+                id.map(|i| 2 * i)
+            })?;
 
-            let doubled_id: i32 = rows.next().unwrap().unwrap();
+            let doubled_id: i32 = rows.next().unwrap()?;
             assert_eq!(2, doubled_id);
         }
+        Ok(())
     }
 
     #[test]
     #[allow(deprecated)]
-    fn test_query_and_then_named() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_and_then_named() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
         INSERT INTO test(id, name) VALUES (1, "one");
         INSERT INTO test(id, name) VALUES (2, "one");
         "#;
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
-            .unwrap();
-        let mut rows = stmt
-            .query_and_then_named(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0)?;
-                if id == 1 {
-                    Ok(id)
-                } else {
-                    Err(Error::SqliteSingleThreadedMode)
-                }
-            })
-            .unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC")?;
+        let mut rows = stmt.query_and_then_named(&[(":name", &"one")], |row| {
+            let id: i32 = row.get(0)?;
+            if id == 1 {
+                Ok(id)
+            } else {
+                Err(Error::SqliteSingleThreadedMode)
+            }
+        })?;
 
         // first row should be Ok
-        let doubled_id: i32 = rows.next().unwrap().unwrap();
+        let doubled_id: i32 = rows.next().unwrap()?;
         assert_eq!(1, doubled_id);
 
         // second row should be Err
@@ -1114,34 +1095,31 @@ mod test {
             Err(Error::SqliteSingleThreadedMode) => (),
             Err(_) => panic!("invalid Err"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_query_and_then_by_name() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_and_then_by_name() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
         INSERT INTO test(id, name) VALUES (1, "one");
         INSERT INTO test(id, name) VALUES (2, "one");
         "#;
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
-            .unwrap();
-        let mut rows = stmt
-            .query_and_then(&[(":name", &"one")], |row| {
-                let id: i32 = row.get(0)?;
-                if id == 1 {
-                    Ok(id)
-                } else {
-                    Err(Error::SqliteSingleThreadedMode)
-                }
-            })
-            .unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC")?;
+        let mut rows = stmt.query_and_then(&[(":name", &"one")], |row| {
+            let id: i32 = row.get(0)?;
+            if id == 1 {
+                Ok(id)
+            } else {
+                Err(Error::SqliteSingleThreadedMode)
+            }
+        })?;
 
         // first row should be Ok
-        let doubled_id: i32 = rows.next().unwrap().unwrap();
+        let doubled_id: i32 = rows.next().unwrap()?;
         assert_eq!(1, doubled_id);
 
         // second row should be Err
@@ -1151,29 +1129,28 @@ mod test {
             Err(Error::SqliteSingleThreadedMode) => (),
             Err(_) => panic!("invalid Err"),
         }
+        Ok(())
     }
 
     #[test]
     #[allow(deprecated)]
-    fn test_unbound_parameters_are_null() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_unbound_parameters_are_null() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
-            .unwrap();
-        stmt.execute_named(&[(":x", &"one")]).unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")?;
+        stmt.execute_named(&[(":x", &"one")])?;
 
-        let result: Option<String> = db
-            .query_row("SELECT y FROM test WHERE x = 'one'", [], |row| row.get(0))
-            .unwrap();
+        let result: Option<String> =
+            db.query_row("SELECT y FROM test WHERE x = 'one'", [], |row| row.get(0))?;
         assert!(result.is_none());
+        Ok(())
     }
 
     #[test]
     fn test_raw_binding() -> Result<()> {
-        let db = Connection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE test (name TEXT, value INTEGER)")?;
         {
             let mut stmt = db.prepare("INSERT INTO test (name, value) VALUES (:name, ?3)")?;
@@ -1203,164 +1180,147 @@ mod test {
     }
 
     #[test]
-    fn test_unbound_parameters_are_reused() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_unbound_parameters_are_reused() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut stmt = db
-            .prepare("INSERT INTO test (x, y) VALUES (:x, :y)")
-            .unwrap();
-        stmt.execute(&[(":x", &"one")]).unwrap();
-        stmt.execute(&[(":y", &"two")]).unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")?;
+        stmt.execute(&[(":x", &"one")])?;
+        stmt.execute(&[(":y", &"two")])?;
 
-        let result: String = db
-            .query_row("SELECT x FROM test WHERE y = 'two'", [], |row| row.get(0))
-            .unwrap();
+        let result: String =
+            db.query_row("SELECT x FROM test WHERE y = 'two'", [], |row| row.get(0))?;
         assert_eq!(result, "one");
+        Ok(())
     }
 
     #[test]
-    fn test_insert() {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)")
-            .unwrap();
-        let mut stmt = db
-            .prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")
-            .unwrap();
-        assert_eq!(stmt.insert(&[&1i32]).unwrap(), 1);
-        assert_eq!(stmt.insert(&[&2i32]).unwrap(), 2);
+    fn test_insert() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)")?;
+        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")?;
+        assert_eq!(stmt.insert(&[&1i32])?, 1);
+        assert_eq!(stmt.insert(&[&2i32])?, 2);
         match stmt.insert(&[&1i32]).unwrap_err() {
             Error::StatementChangedRows(0) => (),
             err => panic!("Unexpected error {}", err),
         }
-        let mut multi = db
-            .prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")
-            .unwrap();
+        let mut multi = db.prepare("INSERT INTO foo (x) SELECT 3 UNION ALL SELECT 4")?;
         match multi.insert([]).unwrap_err() {
             Error::StatementChangedRows(2) => (),
             err => panic!("Unexpected error {}", err),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_insert_different_tables() {
+    fn test_insert_different_tables() -> Result<()> {
         // Test for https://github.com/rusqlite/rusqlite/issues/171
-        let db = Connection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory()?;
         db.execute_batch(
             r"
             CREATE TABLE foo(x INTEGER);
             CREATE TABLE bar(x INTEGER);
         ",
-        )
-        .unwrap();
+        )?;
 
-        assert_eq!(
-            db.prepare("INSERT INTO foo VALUES (10)")
-                .unwrap()
-                .insert([])
-                .unwrap(),
-            1
-        );
-        assert_eq!(
-            db.prepare("INSERT INTO bar VALUES (10)")
-                .unwrap()
-                .insert([])
-                .unwrap(),
-            1
-        );
+        assert_eq!(db.prepare("INSERT INTO foo VALUES (10)")?.insert([])?, 1);
+        assert_eq!(db.prepare("INSERT INTO bar VALUES (10)")?.insert([])?, 1);
+        Ok(())
     }
 
     #[test]
-    fn test_exists() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_exists() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(1);
                    INSERT INTO foo VALUES(2);
                    END;";
-        db.execute_batch(sql).unwrap();
-        let mut stmt = db.prepare("SELECT 1 FROM foo WHERE x = ?").unwrap();
-        assert!(stmt.exists([1i32]).unwrap());
-        assert!(stmt.exists(&[&2i32]).unwrap());
-        assert!(!stmt.exists([&0i32]).unwrap());
+        db.execute_batch(sql)?;
+        let mut stmt = db.prepare("SELECT 1 FROM foo WHERE x = ?")?;
+        assert!(stmt.exists([1i32])?);
+        assert!(stmt.exists(&[&2i32])?);
+        assert!(!stmt.exists([&0i32])?);
+        Ok(())
     }
 
     #[test]
-    fn test_query_row() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_row() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER, y INTEGER);
                    INSERT INTO foo VALUES(1, 3);
                    INSERT INTO foo VALUES(2, 4);
                    END;";
-        db.execute_batch(sql).unwrap();
-        let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?").unwrap();
+        db.execute_batch(sql)?;
+        let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?")?;
         let y: Result<i64> = stmt.query_row([1i32], |r| r.get(0));
-        assert_eq!(3i64, y.unwrap());
+        assert_eq!(3i64, y?);
+        Ok(())
     }
 
     #[test]
-    fn test_query_by_column_name() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_by_column_name() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER, y INTEGER);
                    INSERT INTO foo VALUES(1, 3);
                    END;";
-        db.execute_batch(sql).unwrap();
-        let mut stmt = db.prepare("SELECT y FROM foo").unwrap();
+        db.execute_batch(sql)?;
+        let mut stmt = db.prepare("SELECT y FROM foo")?;
         let y: Result<i64> = stmt.query_row([], |r| r.get("y"));
-        assert_eq!(3i64, y.unwrap());
+        assert_eq!(3i64, y?);
+        Ok(())
     }
 
     #[test]
-    fn test_query_by_column_name_ignore_case() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_query_by_column_name_ignore_case() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER, y INTEGER);
                    INSERT INTO foo VALUES(1, 3);
                    END;";
-        db.execute_batch(sql).unwrap();
-        let mut stmt = db.prepare("SELECT y as Y FROM foo").unwrap();
+        db.execute_batch(sql)?;
+        let mut stmt = db.prepare("SELECT y as Y FROM foo")?;
         let y: Result<i64> = stmt.query_row([], |r| r.get("y"));
-        assert_eq!(3i64, y.unwrap());
+        assert_eq!(3i64, y?);
+        Ok(())
     }
 
     #[test]
     #[cfg(feature = "modern_sqlite")]
-    fn test_expanded_sql() {
-        let db = Connection::open_in_memory().unwrap();
-        let stmt = db.prepare("SELECT ?").unwrap();
-        stmt.bind_parameter(&1, 1).unwrap();
+    fn test_expanded_sql() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        let stmt = db.prepare("SELECT ?")?;
+        stmt.bind_parameter(&1, 1)?;
         assert_eq!(Some("SELECT 1".to_owned()), stmt.expanded_sql());
+        Ok(())
     }
 
     #[test]
-    fn test_bind_parameters() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_bind_parameters() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         // dynamic slice:
         db.query_row(
             "SELECT ?1, ?2, ?3",
             &[&1u8 as &dyn ToSql, &"one", &Some("one")],
             |row| row.get::<_, u8>(0),
-        )
-        .unwrap();
+        )?;
         // existing collection:
         let data = vec![1, 2, 3];
         db.query_row("SELECT ?1, ?2, ?3", params_from_iter(&data), |row| {
             row.get::<_, u8>(0)
-        })
-        .unwrap();
+        })?;
         db.query_row(
             "SELECT ?1, ?2, ?3",
             params_from_iter(data.as_slice()),
             |row| row.get::<_, u8>(0),
-        )
-        .unwrap();
+        )?;
         db.query_row("SELECT ?1, ?2, ?3", params_from_iter(data), |row| {
             row.get::<_, u8>(0)
-        })
-        .unwrap();
+        })?;
 
         use std::collections::BTreeSet;
         let data: BTreeSet<String> = ["one", "two", "three"]
@@ -1369,76 +1329,73 @@ mod test {
             .collect();
         db.query_row("SELECT ?1, ?2, ?3", params_from_iter(&data), |row| {
             row.get::<_, String>(0)
-        })
-        .unwrap();
+        })?;
 
         let data = [0; 3];
         db.query_row("SELECT ?1, ?2, ?3", params_from_iter(&data), |row| {
             row.get::<_, u8>(0)
-        })
-        .unwrap();
+        })?;
         db.query_row("SELECT ?1, ?2, ?3", params_from_iter(data.iter()), |row| {
             row.get::<_, u8>(0)
-        })
-        .unwrap();
+        })?;
+        Ok(())
     }
 
     #[test]
-    fn test_empty_stmt() {
-        let conn = Connection::open_in_memory().unwrap();
-        let mut stmt = conn.prepare("").unwrap();
+    fn test_empty_stmt() -> Result<()> {
+        let conn = Connection::open_in_memory()?;
+        let mut stmt = conn.prepare("")?;
         assert_eq!(0, stmt.column_count());
         assert!(stmt.parameter_index("test").is_ok());
         assert!(stmt.step().is_err());
         stmt.reset();
         assert!(stmt.execute([]).is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_comment_stmt() {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.prepare("/*SELECT 1;*/").unwrap();
+    fn test_comment_stmt() -> Result<()> {
+        let conn = Connection::open_in_memory()?;
+        conn.prepare("/*SELECT 1;*/")?;
+        Ok(())
     }
 
     #[test]
-    fn test_comment_and_sql_stmt() {
-        let conn = Connection::open_in_memory().unwrap();
-        let stmt = conn.prepare("/*...*/ SELECT 1;").unwrap();
+    fn test_comment_and_sql_stmt() -> Result<()> {
+        let conn = Connection::open_in_memory()?;
+        let stmt = conn.prepare("/*...*/ SELECT 1;")?;
         assert_eq!(1, stmt.column_count());
+        Ok(())
     }
 
     #[test]
-    fn test_semi_colon_stmt() {
-        let conn = Connection::open_in_memory().unwrap();
-        let stmt = conn.prepare(";").unwrap();
+    fn test_semi_colon_stmt() -> Result<()> {
+        let conn = Connection::open_in_memory()?;
+        let stmt = conn.prepare(";")?;
         assert_eq!(0, stmt.column_count());
+        Ok(())
     }
 
     #[test]
-    fn test_utf16_conversion() {
-        let db = Connection::open_in_memory().unwrap();
-        db.pragma_update(None, "encoding", &"UTF-16le").unwrap();
-        let encoding: String = db
-            .pragma_query_value(None, "encoding", |row| row.get(0))
-            .unwrap();
+    fn test_utf16_conversion() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.pragma_update(None, "encoding", &"UTF-16le")?;
+        let encoding: String = db.pragma_query_value(None, "encoding", |row| row.get(0))?;
         assert_eq!("UTF-16le", encoding);
-        db.execute_batch("CREATE TABLE foo(x TEXT)").unwrap();
+        db.execute_batch("CREATE TABLE foo(x TEXT)")?;
         let expected = "テスト";
-        db.execute("INSERT INTO foo(x) VALUES (?)", &[&expected])
-            .unwrap();
-        let actual: String = db
-            .query_row("SELECT x FROM foo", [], |row| row.get(0))
-            .unwrap();
+        db.execute("INSERT INTO foo(x) VALUES (?)", &[&expected])?;
+        let actual: String = db.query_row("SELECT x FROM foo", [], |row| row.get(0))?;
         assert_eq!(expected, actual);
+        Ok(())
     }
 
     #[test]
-    fn test_nul_byte() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_nul_byte() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let expected = "a\x00b";
-        let actual: String = db
-            .query_row("SELECT ?", [expected], |row| row.get(0))
-            .unwrap();
+        let actual: String = db.query_row("SELECT ?", [expected], |row| row.get(0))?;
         assert_eq!(expected, actual);
+        Ok(())
     }
 }

@@ -1060,38 +1060,32 @@ mod test {
     }
 
     #[test]
-    fn test_concurrent_transactions_busy_commit() {
+    fn test_concurrent_transactions_busy_commit() -> Result<()> {
         use std::time::Duration;
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("transactions.db3");
 
-        Connection::open(&path)
-            .expect("create temp db")
-            .execute_batch(
-                "
+        Connection::open(&path)?.execute_batch(
+            "
             BEGIN; CREATE TABLE foo(x INTEGER);
             INSERT INTO foo VALUES(42); END;",
-            )
-            .expect("create temp db");
+        )?;
 
-        let mut db1 =
-            Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap();
-        let mut db2 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        let mut db1 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_WRITE)?;
+        let mut db2 = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
 
-        db1.busy_timeout(Duration::from_millis(0)).unwrap();
-        db2.busy_timeout(Duration::from_millis(0)).unwrap();
+        db1.busy_timeout(Duration::from_millis(0))?;
+        db2.busy_timeout(Duration::from_millis(0))?;
 
         {
-            let tx1 = db1.transaction().unwrap();
-            let tx2 = db2.transaction().unwrap();
+            let tx1 = db1.transaction()?;
+            let tx2 = db2.transaction()?;
 
             // SELECT first makes sqlite lock with a shared lock
-            tx1.query_row("SELECT x FROM foo LIMIT 1", [], |_| Ok(()))
-                .unwrap();
-            tx2.query_row("SELECT x FROM foo LIMIT 1", [], |_| Ok(()))
-                .unwrap();
+            tx1.query_row("SELECT x FROM foo LIMIT 1", [], |_| Ok(()))?;
+            tx2.query_row("SELECT x FROM foo LIMIT 1", [], |_| Ok(()))?;
 
-            tx1.execute("INSERT INTO foo VALUES(?1)", &[&1]).unwrap();
+            tx1.execute("INSERT INTO foo VALUES(?1)", &[&1])?;
             let _ = tx2.execute("INSERT INTO foo VALUES(?1)", [2]);
 
             let _ = tx1.commit();
@@ -1104,27 +1098,29 @@ mod test {
         let _ = db2
             .transaction()
             .expect("commit should have closed transaction");
+        Ok(())
     }
 
     #[test]
-    fn test_persistence() {
+    fn test_persistence() -> Result<()> {
         let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
         {
-            let db = Connection::open(&path).unwrap();
+            let db = Connection::open(&path)?;
             let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
         }
 
         let path_string = path.to_str().unwrap();
-        let db = Connection::open(&path_string).unwrap();
+        let db = Connection::open(&path_string)?;
         let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", [], |r| r.get(0));
 
-        assert_eq!(42i64, the_answer.unwrap());
+        assert_eq!(42i64, the_answer?);
+        Ok(())
     }
 
     #[test]
@@ -1157,7 +1153,7 @@ mod test {
 
     #[cfg(unix)]
     #[test]
-    fn test_invalid_unicode_file_names() {
+    fn test_invalid_unicode_file_names() -> Result<()> {
         use std::ffi::OsStr;
         use std::fs::File;
         use std::os::unix::ffi::OsStrExt;
@@ -1166,26 +1162,27 @@ mod test {
         let path = temp_dir.path();
         if File::create(path.join(OsStr::from_bytes(&[0xFE]))).is_err() {
             // Skip test, filesystem doesn't support invalid Unicode
-            return;
+            return Ok(());
         }
         let db_path = path.join(OsStr::from_bytes(&[0xFF]));
         {
-            let db = Connection::open(&db_path).unwrap();
+            let db = Connection::open(&db_path)?;
             let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
         }
 
-        let db = Connection::open(&db_path).unwrap();
+        let db = Connection::open(&db_path)?;
         let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", [], |r| r.get(0));
 
-        assert_eq!(42i64, the_answer.unwrap());
+        assert_eq!(42i64, the_answer?);
+        Ok(())
     }
 
     #[test]
-    fn test_close_retry() {
+    fn test_close_retry() -> Result<()> {
         let db = checked_memory_handle();
 
         // force the DB to be busy by preparing a statement; this must be done at the
@@ -1199,7 +1196,7 @@ mod test {
             let raw_db = db.db.borrow_mut().db;
             let sql = "SELECT 1";
             let mut raw_stmt: *mut ffi::sqlite3_stmt = ptr::null_mut();
-            let cstring = str_to_cstring(sql).unwrap();
+            let cstring = str_to_cstring(sql)?;
             let rc = unsafe {
                 ffi::sqlite3_prepare_v2(
                     raw_db,
@@ -1223,6 +1220,7 @@ mod test {
         assert_eq!(ffi::SQLITE_OK, unsafe { ffi::sqlite3_finalize(raw_stmt) });
 
         db.close().unwrap();
+        Ok(())
     }
 
     #[test]
@@ -1237,7 +1235,7 @@ mod test {
     }
 
     #[test]
-    fn test_execute_batch() {
+    fn test_execute_batch() -> Result<()> {
         let db = checked_memory_handle();
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
@@ -1246,33 +1244,27 @@ mod test {
                    INSERT INTO foo VALUES(3);
                    INSERT INTO foo VALUES(4);
                    END;";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        db.execute_batch("UPDATE foo SET x = 3 WHERE x < 3")
-            .unwrap();
+        db.execute_batch("UPDATE foo SET x = 3 WHERE x < 3")?;
 
         assert!(db.execute_batch("INVALID SQL").is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_execute() {
+    fn test_execute() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER)")?;
 
-        assert_eq!(
-            1,
-            db.execute("INSERT INTO foo(x) VALUES (?)", [1i32]).unwrap()
-        );
-        assert_eq!(
-            1,
-            db.execute("INSERT INTO foo(x) VALUES (?)", [2i32]).unwrap()
-        );
+        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [1i32])?);
+        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [2i32])?);
 
         assert_eq!(
             3i32,
-            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))
-                .unwrap()
+            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
         );
+        Ok(())
     }
 
     #[test]
@@ -1302,77 +1294,78 @@ mod test {
     }
 
     #[test]
-    fn test_prepare_column_names() {
+    fn test_prepare_column_names() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let stmt = db.prepare("SELECT * FROM foo").unwrap();
+        let stmt = db.prepare("SELECT * FROM foo")?;
         assert_eq!(stmt.column_count(), 1);
         assert_eq!(stmt.column_names(), vec!["x"]);
 
-        let stmt = db.prepare("SELECT x AS a, x AS b FROM foo").unwrap();
+        let stmt = db.prepare("SELECT x AS a, x AS b FROM foo")?;
         assert_eq!(stmt.column_count(), 2);
         assert_eq!(stmt.column_names(), vec!["a", "b"]);
+        Ok(())
     }
 
     #[test]
-    fn test_prepare_execute() {
+    fn test_prepare_execute() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)").unwrap();
-        assert_eq!(insert_stmt.execute([1i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute([2i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute([3i32]).unwrap(), 1);
+        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
+        assert_eq!(insert_stmt.execute([1i32])?, 1);
+        assert_eq!(insert_stmt.execute([2i32])?, 1);
+        assert_eq!(insert_stmt.execute([3i32])?, 1);
 
-        assert_eq!(insert_stmt.execute(["hello".to_string()]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute(["goodbye".to_string()]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute([types::Null]).unwrap(), 1);
+        assert_eq!(insert_stmt.execute(["hello".to_string()])?, 1);
+        assert_eq!(insert_stmt.execute(["goodbye".to_string()])?, 1);
+        assert_eq!(insert_stmt.execute([types::Null])?, 1);
 
-        let mut update_stmt = db.prepare("UPDATE foo SET x=? WHERE x<?").unwrap();
-        assert_eq!(update_stmt.execute([3i32, 3i32]).unwrap(), 2);
-        assert_eq!(update_stmt.execute([3i32, 3i32]).unwrap(), 0);
-        assert_eq!(update_stmt.execute([8i32, 8i32]).unwrap(), 3);
+        let mut update_stmt = db.prepare("UPDATE foo SET x=? WHERE x<?")?;
+        assert_eq!(update_stmt.execute([3i32, 3i32])?, 2);
+        assert_eq!(update_stmt.execute([3i32, 3i32])?, 0);
+        assert_eq!(update_stmt.execute([8i32, 8i32])?, 3);
+        Ok(())
     }
 
     #[test]
-    fn test_prepare_query() {
+    fn test_prepare_query() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)").unwrap();
-        assert_eq!(insert_stmt.execute([1i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute([2i32]).unwrap(), 1);
-        assert_eq!(insert_stmt.execute([3i32]).unwrap(), 1);
+        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
+        assert_eq!(insert_stmt.execute([1i32])?, 1);
+        assert_eq!(insert_stmt.execute([2i32])?, 1);
+        assert_eq!(insert_stmt.execute([3i32])?, 1);
 
-        let mut query = db
-            .prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC")
-            .unwrap();
+        let mut query = db.prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC")?;
         {
-            let mut rows = query.query([4i32]).unwrap();
+            let mut rows = query.query([4i32])?;
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next().unwrap() {
-                v.push(row.get(0).unwrap());
+            while let Some(row) = rows.next()? {
+                v.push(row.get(0)?);
             }
 
             assert_eq!(v, [3i32, 2, 1]);
         }
 
         {
-            let mut rows = query.query([3i32]).unwrap();
+            let mut rows = query.query([3i32])?;
             let mut v = Vec::<i32>::new();
 
-            while let Some(row) = rows.next().unwrap() {
-                v.push(row.get(0).unwrap());
+            while let Some(row) = rows.next()? {
+                v.push(row.get(0)?);
             }
 
             assert_eq!(v, [2i32, 1]);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_query_map() {
+    fn test_query_map() -> Result<()> {
         let db = checked_memory_handle();
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER, y TEXT);
@@ -1381,16 +1374,17 @@ mod test {
                    INSERT INTO foo VALUES(2, \"world\");
                    INSERT INTO foo VALUES(1, \"!\");
                    END;";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
-        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let results: Result<Vec<String>> = query.query([]).unwrap().map(|row| row.get(1)).collect();
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC")?;
+        let results: Result<Vec<String>> = query.query([])?.map(|row| row.get(1)).collect();
 
-        assert_eq!(results.unwrap().concat(), "hello, world!");
+        assert_eq!(results?.concat(), "hello, world!");
+        Ok(())
     }
 
     #[test]
-    fn test_query_row() {
+    fn test_query_row() -> Result<()> {
         let db = checked_memory_handle();
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
@@ -1399,12 +1393,11 @@ mod test {
                    INSERT INTO foo VALUES(3);
                    INSERT INTO foo VALUES(4);
                    END;";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
         assert_eq!(
             10i64,
-            db.query_row::<i64, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))
-                .unwrap()
+            db.query_row::<i64, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
         );
 
         let result: Result<i64> = db.query_row("SELECT x FROM foo WHERE x > 5", [], |r| r.get(0));
@@ -1416,22 +1409,23 @@ mod test {
         let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", [], |_| Ok(()));
 
         assert!(bad_query_result.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_optional() {
+    fn test_optional() -> Result<()> {
         let db = checked_memory_handle();
 
         let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 <> 0", [], |r| r.get(0));
         let result = result.optional();
-        match result.unwrap() {
+        match result? {
             None => (),
             _ => panic!("Unexpected result"),
         }
 
         let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 == 0", [], |r| r.get(0));
         let result = result.optional();
-        match result.unwrap() {
+        match result? {
             Some(1) => (),
             _ => panic!("Unexpected result"),
         }
@@ -1439,47 +1433,48 @@ mod test {
         let bad_query_result: Result<i64> = db.query_row("NOT A PROPER QUERY", [], |r| r.get(0));
         let bad_query_result = bad_query_result.optional();
         assert!(bad_query_result.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_pragma_query_row() {
+    fn test_pragma_query_row() -> Result<()> {
         let db = checked_memory_handle();
 
         assert_eq!(
             "memory",
-            db.query_row::<String, _, _>("PRAGMA journal_mode", [], |r| r.get(0))
-                .unwrap()
+            db.query_row::<String, _, _>("PRAGMA journal_mode", [], |r| r.get(0))?
         );
         assert_eq!(
             "off",
-            db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))
-                .unwrap()
+            db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))?
         );
+        Ok(())
     }
 
     #[test]
-    fn test_prepare_failures() {
+    fn test_prepare_failures() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
         let err = db.prepare("SELECT * FROM does_not_exist").unwrap_err();
         assert!(format!("{}", err).contains("does_not_exist"));
+        Ok(())
     }
 
     #[test]
-    fn test_last_insert_rowid() {
+    fn test_last_insert_rowid() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")
-            .unwrap();
-        db.execute_batch("INSERT INTO foo DEFAULT VALUES").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;
+        db.execute_batch("INSERT INTO foo DEFAULT VALUES")?;
 
         assert_eq!(db.last_insert_rowid(), 1);
 
-        let mut stmt = db.prepare("INSERT INTO foo DEFAULT VALUES").unwrap();
+        let mut stmt = db.prepare("INSERT INTO foo DEFAULT VALUES")?;
         for _ in 0i32..9 {
-            stmt.execute([]).unwrap();
+            stmt.execute([])?;
         }
         assert_eq!(db.last_insert_rowid(), 10);
+        Ok(())
     }
 
     #[test]
@@ -1493,32 +1488,34 @@ mod test {
 
     #[test]
     #[cfg(feature = "modern_sqlite")]
-    fn test_is_busy() {
+    fn test_is_busy() -> Result<()> {
         let db = checked_memory_handle();
         assert!(!db.is_busy());
-        let mut stmt = db.prepare("PRAGMA schema_version").unwrap();
+        let mut stmt = db.prepare("PRAGMA schema_version")?;
         assert!(!db.is_busy());
         {
-            let mut rows = stmt.query([]).unwrap();
+            let mut rows = stmt.query([])?;
             assert!(!db.is_busy());
-            let row = rows.next().unwrap();
+            let row = rows.next()?;
             assert!(db.is_busy());
             assert!(row.is_some());
         }
         assert!(!db.is_busy());
+        Ok(())
     }
 
     #[test]
-    fn test_statement_debugging() {
+    fn test_statement_debugging() -> Result<()> {
         let db = checked_memory_handle();
         let query = "SELECT 12345";
-        let stmt = db.prepare(query).unwrap();
+        let stmt = db.prepare(query)?;
 
         assert!(format!("{:?}", stmt).contains(query));
+        Ok(())
     }
 
     #[test]
-    fn test_notnull_constraint_error() {
+    fn test_notnull_constraint_error() -> Result<()> {
         // extended error codes for constraints were added in SQLite 3.7.16; if we're
         // running on our bundled version, we know the extended error code exists.
         #[cfg(feature = "modern_sqlite")]
@@ -1529,7 +1526,7 @@ mod test {
         fn check_extended_code(_extended_code: c_int) {}
 
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x NOT NULL)").unwrap();
+        db.execute_batch("CREATE TABLE foo(x NOT NULL)")?;
 
         let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", []);
         assert!(result.is_err());
@@ -1541,6 +1538,7 @@ mod test {
             }
             err => panic!("Unexpected error {}", err),
         }
+        Ok(())
     }
 
     #[test]
@@ -1555,7 +1553,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "functions")]
-    fn test_interrupt() {
+    fn test_interrupt() -> Result<()> {
         let db = checked_memory_handle();
 
         let interrupt_handle = db.get_interrupt_handle();
@@ -1568,14 +1566,12 @@ mod test {
                 interrupt_handle.interrupt();
                 Ok(0)
             },
-        )
-        .unwrap();
+        )?;
 
-        let mut stmt = db
-            .prepare("SELECT interrupt() FROM (SELECT 1 UNION SELECT 2 UNION SELECT 3)")
-            .unwrap();
+        let mut stmt =
+            db.prepare("SELECT interrupt() FROM (SELECT 1 UNION SELECT 2 UNION SELECT 3)")?;
 
-        let result: Result<Vec<i32>> = stmt.query([]).unwrap().map(|r| r.get(0)).collect();
+        let result: Result<Vec<i32>> = stmt.query([])?.map(|r| r.get(0)).collect();
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
@@ -1585,6 +1581,7 @@ mod test {
                 panic!("Unexpected error {}", err);
             }
         }
+        Ok(())
     }
 
     #[test]
@@ -1604,36 +1601,38 @@ mod test {
     }
 
     #[test]
-    fn test_get_raw() {
+    fn test_get_raw() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(i, x);").unwrap();
+        db.execute_batch("CREATE TABLE foo(i, x);")?;
         let vals = ["foobar", "1234", "qwerty"];
-        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)").unwrap();
+        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)")?;
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
-            assert_eq!(insert_stmt.execute(params![i_to_insert, v]).unwrap(), 1);
+            assert_eq!(insert_stmt.execute(params![i_to_insert, v])?, 1);
         }
 
-        let mut query = db.prepare("SELECT i, x FROM foo").unwrap();
-        let mut rows = query.query([]).unwrap();
+        let mut query = db.prepare("SELECT i, x FROM foo")?;
+        let mut rows = query.query([])?;
 
-        while let Some(row) = rows.next().unwrap() {
-            let i = row.get_raw(0).as_i64().unwrap();
+        while let Some(row) = rows.next()? {
+            let i = row.get_raw(0).as_i64()?;
             let expect = vals[i as usize];
-            let x = row.get_raw("x").as_str().unwrap();
+            let x = row.get_raw("x").as_str()?;
             assert_eq!(x, expect);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_from_handle() {
+    fn test_from_handle() -> Result<()> {
         let db = checked_memory_handle();
         let handle = unsafe { db.handle() };
         {
-            let db = unsafe { Connection::from_handle(handle) }.unwrap();
-            db.execute_batch("PRAGMA VACUUM").unwrap();
+            let db = unsafe { Connection::from_handle(handle) }?;
+            db.execute_batch("PRAGMA VACUUM")?;
         }
         db.close().unwrap();
+        Ok(())
     }
 
     mod query_and_then_tests {
@@ -1677,7 +1676,7 @@ mod test {
         type CustomResult<T> = Result<T, CustomError>;
 
         #[test]
-        fn test_query_and_then() {
+        fn test_query_and_then() -> Result<()> {
             let db = checked_memory_handle();
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
@@ -1686,19 +1685,18 @@ mod test {
                        INSERT INTO foo VALUES(2, \"world\");
                        INSERT INTO foo VALUES(1, \"!\");
                        END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
 
-            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-            let results: Result<Vec<String>> = query
-                .query_and_then([], |row| row.get(1))
-                .unwrap()
-                .collect();
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC")?;
+            let results: Result<Vec<String>> =
+                query.query_and_then([], |row| row.get(1))?.collect();
 
-            assert_eq!(results.unwrap().concat(), "hello, world!");
+            assert_eq!(results?.concat(), "hello, world!");
+            Ok(())
         }
 
         #[test]
-        fn test_query_and_then_fails() {
+        fn test_query_and_then_fails() -> Result<()> {
             let db = checked_memory_handle();
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
@@ -1707,32 +1705,28 @@ mod test {
                        INSERT INTO foo VALUES(2, \"world\");
                        INSERT INTO foo VALUES(1, \"!\");
                        END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
 
-            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-            let bad_type: Result<Vec<f64>> = query
-                .query_and_then([], |row| row.get(1))
-                .unwrap()
-                .collect();
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC")?;
+            let bad_type: Result<Vec<f64>> = query.query_and_then([], |row| row.get(1))?.collect();
 
             match bad_type.unwrap_err() {
                 Error::InvalidColumnType(..) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
-            let bad_idx: Result<Vec<String>> = query
-                .query_and_then([], |row| row.get(3))
-                .unwrap()
-                .collect();
+            let bad_idx: Result<Vec<String>> =
+                query.query_and_then([], |row| row.get(3))?.collect();
 
             match bad_idx.unwrap_err() {
                 Error::InvalidColumnIndex(_) => (),
                 err => panic!("Unexpected error {}", err),
             }
+            Ok(())
         }
 
         #[test]
-        fn test_query_and_then_custom_error() {
+        fn test_query_and_then_custom_error() -> CustomResult<()> {
             let db = checked_memory_handle();
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
@@ -1741,19 +1735,19 @@ mod test {
                        INSERT INTO foo VALUES(2, \"world\");
                        INSERT INTO foo VALUES(1, \"!\");
                        END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
 
-            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC")?;
             let results: CustomResult<Vec<String>> = query
-                .query_and_then([], |row| row.get(1).map_err(CustomError::Sqlite))
-                .unwrap()
+                .query_and_then([], |row| row.get(1).map_err(CustomError::Sqlite))?
                 .collect();
 
-            assert_eq!(results.unwrap().concat(), "hello, world!");
+            assert_eq!(results?.concat(), "hello, world!");
+            Ok(())
         }
 
         #[test]
-        fn test_query_and_then_custom_error_fails() {
+        fn test_query_and_then_custom_error_fails() -> Result<()> {
             let db = checked_memory_handle();
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
@@ -1762,12 +1756,11 @@ mod test {
                        INSERT INTO foo VALUES(2, \"world\");
                        INSERT INTO foo VALUES(1, \"!\");
                        END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
 
-            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC")?;
             let bad_type: CustomResult<Vec<f64>> = query
-                .query_and_then([], |row| row.get(1).map_err(CustomError::Sqlite))
-                .unwrap()
+                .query_and_then([], |row| row.get(1).map_err(CustomError::Sqlite))?
                 .collect();
 
             match bad_type.unwrap_err() {
@@ -1776,8 +1769,7 @@ mod test {
             }
 
             let bad_idx: CustomResult<Vec<String>> = query
-                .query_and_then([], |row| row.get(3).map_err(CustomError::Sqlite))
-                .unwrap()
+                .query_and_then([], |row| row.get(3).map_err(CustomError::Sqlite))?
                 .collect();
 
             match bad_idx.unwrap_err() {
@@ -1786,40 +1778,41 @@ mod test {
             }
 
             let non_sqlite_err: CustomResult<Vec<String>> = query
-                .query_and_then([], |_| Err(CustomError::SomeError))
-                .unwrap()
+                .query_and_then([], |_| Err(CustomError::SomeError))?
                 .collect();
 
             match non_sqlite_err.unwrap_err() {
                 CustomError::SomeError => (),
                 err => panic!("Unexpected error {}", err),
             }
+            Ok(())
         }
 
         #[test]
-        fn test_query_row_and_then_custom_error() {
+        fn test_query_row_and_then_custom_error() -> CustomResult<()> {
             let db = checked_memory_handle();
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
                        END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
 
             let query = "SELECT x, y FROM foo ORDER BY x DESC";
             let results: CustomResult<String> =
                 db.query_row_and_then(query, [], |row| row.get(1).map_err(CustomError::Sqlite));
 
-            assert_eq!(results.unwrap(), "hello");
+            assert_eq!(results?, "hello");
+            Ok(())
         }
 
         #[test]
-        fn test_query_row_and_then_custom_error_fails() {
+        fn test_query_row_and_then_custom_error_fails() -> Result<()> {
             let db = checked_memory_handle();
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
                        END;";
-            db.execute_batch(sql).unwrap();
+            db.execute_batch(sql)?;
 
             let query = "SELECT x, y FROM foo ORDER BY x DESC";
             let bad_type: CustomResult<f64> =
@@ -1845,39 +1838,38 @@ mod test {
                 CustomError::SomeError => (),
                 err => panic!("Unexpected error {}", err),
             }
+            Ok(())
         }
     }
 
     #[test]
-    fn test_dynamic() {
+    fn test_dynamic() -> Result<()> {
         let db = checked_memory_handle();
         let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
                        END;";
-        db.execute_batch(sql).unwrap();
+        db.execute_batch(sql)?;
 
         db.query_row("SELECT * FROM foo", [], |r| {
             assert_eq!(2, r.column_count());
             Ok(())
         })
-        .unwrap();
     }
     #[test]
-    fn test_dyn_box() {
+    fn test_dyn_box() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
         let b: Box<dyn ToSql> = Box::new(5);
-        db.execute("INSERT INTO foo VALUES(?)", [b]).unwrap();
+        db.execute("INSERT INTO foo VALUES(?)", [b])?;
         db.query_row("SELECT x FROM foo", [], |r| {
             assert_eq!(5, r.get_unwrap::<_, i32>(0));
             Ok(())
         })
-        .unwrap();
     }
 
     #[test]
-    fn test_params() {
+    fn test_params() -> Result<()> {
         let db = checked_memory_handle();
         db.query_row(
             "SELECT
@@ -1894,20 +1886,19 @@ mod test {
                 Ok(())
             },
         )
-        .unwrap();
     }
 
     #[test]
     #[cfg(not(feature = "extra_check"))]
-    fn test_alter_table() {
+    fn test_alter_table() -> Result<()> {
         let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE x(t);").unwrap();
+        db.execute_batch("CREATE TABLE x(t);")?;
         // `execute_batch` should be used but `execute` should also work
-        db.execute("ALTER TABLE x RENAME TO y;", []).unwrap();
+        db.execute("ALTER TABLE x RENAME TO y;", [])
     }
 
     #[test]
-    fn test_batch() {
+    fn test_batch() -> Result<()> {
         let db = checked_memory_handle();
         let sql = r"
              CREATE TABLE tbl1 (col);
@@ -1915,8 +1906,9 @@ mod test {
              ";
         let batch = Batch::new(&db, sql);
         for stmt in batch {
-            let mut stmt = stmt.unwrap();
-            stmt.execute([]).unwrap();
+            let mut stmt = stmt?;
+            stmt.execute([])?;
         }
+        Ok(())
     }
 }

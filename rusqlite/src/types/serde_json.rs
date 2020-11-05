@@ -29,30 +29,29 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use crate::types::ToSql;
-    use crate::Connection;
+    use crate::{Connection, Result};
 
-    fn checked_memory_handle() -> Connection {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (t TEXT, b BLOB)")
-            .unwrap();
-        db
+    fn checked_memory_handle() -> Result<Connection> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (t TEXT, b BLOB)")?;
+        Ok(db)
     }
 
     #[test]
-    fn test_json_value() {
-        let db = checked_memory_handle();
+    fn test_json_value() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let json = r#"{"foo": 13, "bar": "baz"}"#;
         let data: serde_json::Value = serde_json::from_str(json).unwrap();
         db.execute(
             "INSERT INTO foo (t, b) VALUES (?, ?)",
             &[&data as &dyn ToSql, &json.as_bytes()],
-        )
-        .unwrap();
+        )?;
 
-        let t: serde_json::Value = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+        let t: serde_json::Value = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(data, t);
-        let b: serde_json::Value = db.query_row("SELECT b FROM foo", [], |r| r.get(0)).unwrap();
+        let b: serde_json::Value = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
         assert_eq!(data, b);
+        Ok(())
     }
 }

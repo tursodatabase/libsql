@@ -305,26 +305,26 @@ unsafe fn free_boxed_hook<F>(p: *mut c_void) {
 #[cfg(test)]
 mod test {
     use super::Action;
-    use crate::Connection;
+    use crate::{Connection, Result};
     use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
-    fn test_commit_hook() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_commit_hook() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         let mut called = false;
         db.commit_hook(Some(|| {
             called = true;
             false
         }));
-        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
-            .unwrap();
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")?;
         assert!(called);
+        Ok(())
     }
 
     #[test]
-    fn test_fn_commit_hook() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_fn_commit_hook() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         fn hook() -> bool {
             true
@@ -333,24 +333,25 @@ mod test {
         db.commit_hook(Some(hook));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
             .unwrap_err();
+        Ok(())
     }
 
     #[test]
-    fn test_rollback_hook() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_rollback_hook() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         let mut called = false;
         db.rollback_hook(Some(|| {
             called = true;
         }));
-        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;")
-            .unwrap();
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;")?;
         assert!(called);
+        Ok(())
     }
 
     #[test]
-    fn test_update_hook() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_update_hook() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         let mut called = false;
         db.update_hook(Some(|action, db: &str, tbl: &str, row_id| {
@@ -360,14 +361,15 @@ mod test {
             assert_eq!(1, row_id);
             called = true;
         }));
-        db.execute_batch("CREATE TABLE foo (t TEXT)").unwrap();
-        db.execute_batch("INSERT INTO foo VALUES ('lisa')").unwrap();
+        db.execute_batch("CREATE TABLE foo (t TEXT)")?;
+        db.execute_batch("INSERT INTO foo VALUES ('lisa')")?;
         assert!(called);
+        Ok(())
     }
 
     #[test]
-    fn test_progress_handler() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_progress_handler() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         static CALLED: AtomicBool = AtomicBool::new(false);
         db.progress_handler(
@@ -377,14 +379,14 @@ mod test {
                 false
             }),
         );
-        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
-            .unwrap();
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")?;
         assert!(CALLED.load(Ordering::Relaxed));
+        Ok(())
     }
 
     #[test]
-    fn test_progress_handler_interrupt() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_progress_handler_interrupt() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         fn handler() -> bool {
             true
@@ -393,5 +395,6 @@ mod test {
         db.progress_handler(1, Some(handler));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
             .unwrap_err();
+        Ok(())
     }
 }

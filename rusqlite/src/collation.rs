@@ -171,26 +171,24 @@ mod test {
     }
 
     #[test]
-    fn test_unicase() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_unicase() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
-        db.create_collation("unicase", unicase_compare).unwrap();
+        db.create_collation("unicase", unicase_compare)?;
 
-        collate(db);
+        collate(db)
     }
 
-    fn collate(db: Connection) {
+    fn collate(db: Connection) -> Result<()> {
         db.execute_batch(
             "CREATE TABLE foo (bar);
              INSERT INTO foo (bar) VALUES ('Maße');
              INSERT INTO foo (bar) VALUES ('MASSE');",
-        )
-        .unwrap();
-        let mut stmt = db
-            .prepare("SELECT DISTINCT bar COLLATE unicase FROM foo ORDER BY 1")
-            .unwrap();
-        let rows = stmt.query([]).unwrap();
-        assert_eq!(rows.count().unwrap(), 1);
+        )?;
+        let mut stmt = db.prepare("SELECT DISTINCT bar COLLATE unicase FROM foo ORDER BY 1")?;
+        let rows = stmt.query([])?;
+        assert_eq!(rows.count()?, 1);
+        Ok(())
     }
 
     fn collation_needed(db: &Connection, collation_name: &str) -> Result<()> {
@@ -202,9 +200,9 @@ mod test {
     }
 
     #[test]
-    fn test_collation_needed() {
-        let db = Connection::open_in_memory().unwrap();
-        db.collation_needed(collation_needed).unwrap();
-        collate(db);
+    fn test_collation_needed() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.collation_needed(collation_needed)?;
+        collate(db)
     }
 }
