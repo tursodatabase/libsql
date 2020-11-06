@@ -413,53 +413,46 @@ tuples_try_from_row!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
 #[cfg(test)]
 mod tests {
     #![allow(clippy::redundant_closure)] // false positives due to lifetime issues; clippy issue #5594
+    use crate::{Connection, Result};
 
     #[test]
-    fn test_try_from_row_for_tuple_1() {
-        use crate::{Connection, ToSql};
+    fn test_try_from_row_for_tuple_1() -> Result<()> {
+        use crate::ToSql;
         use std::convert::TryFrom;
 
-        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
+        let conn = Connection::open_in_memory()?;
         conn.execute(
             "CREATE TABLE test (a INTEGER)",
             crate::params_from_iter(std::iter::empty::<&dyn ToSql>()),
-        )
-        .expect("failed to create table");
-        conn.execute("INSERT INTO test VALUES (42)", [])
-            .expect("failed to insert value");
-        let val = conn
-            .query_row("SELECT a FROM test", [], |row| <(u32,)>::try_from(row))
-            .expect("failed to query row");
+        )?;
+        conn.execute("INSERT INTO test VALUES (42)", [])?;
+        let val = conn.query_row("SELECT a FROM test", [], |row| <(u32,)>::try_from(row))?;
         assert_eq!(val, (42,));
         let fail = conn.query_row("SELECT a FROM test", [], |row| <(u32, u32)>::try_from(row));
         assert!(fail.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_try_from_row_for_tuple_2() {
-        use crate::Connection;
+    fn test_try_from_row_for_tuple_2() -> Result<()> {
         use std::convert::TryFrom;
 
-        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
-        conn.execute("CREATE TABLE test (a INTEGER, b INTEGER)", [])
-            .expect("failed to create table");
-        conn.execute("INSERT INTO test VALUES (42, 47)", [])
-            .expect("failed to insert value");
-        let val = conn
-            .query_row("SELECT a, b FROM test", [], |row| {
-                <(u32, u32)>::try_from(row)
-            })
-            .expect("failed to query row");
+        let conn = Connection::open_in_memory()?;
+        conn.execute("CREATE TABLE test (a INTEGER, b INTEGER)", [])?;
+        conn.execute("INSERT INTO test VALUES (42, 47)", [])?;
+        let val = conn.query_row("SELECT a, b FROM test", [], |row| {
+            <(u32, u32)>::try_from(row)
+        })?;
         assert_eq!(val, (42, 47));
         let fail = conn.query_row("SELECT a, b FROM test", [], |row| {
             <(u32, u32, u32)>::try_from(row)
         });
         assert!(fail.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_try_from_row_for_tuple_16() {
-        use crate::Connection;
+    fn test_try_from_row_for_tuple_16() -> Result<()> {
         use std::convert::TryFrom;
 
         let create_table = "CREATE TABLE test (
@@ -519,14 +512,10 @@ mod tests {
             u32,
         );
 
-        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
-        conn.execute(create_table, [])
-            .expect("failed to create table");
-        conn.execute(insert_values, [])
-            .expect("failed to insert value");
-        let val = conn
-            .query_row("SELECT * FROM test", [], |row| BigTuple::try_from(row))
-            .expect("failed to query row");
+        let conn = Connection::open_in_memory()?;
+        conn.execute(create_table, [])?;
+        conn.execute(insert_values, [])?;
+        let val = conn.query_row("SELECT * FROM test", [], |row| BigTuple::try_from(row))?;
         // Debug is not implemented for tuples of 16
         assert_eq!(val.0, 0);
         assert_eq!(val.1, 1);
@@ -546,5 +535,6 @@ mod tests {
         assert_eq!(val.15, 15);
 
         // We don't test one bigger because it's unimplemented
+        Ok(())
     }
 }

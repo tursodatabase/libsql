@@ -86,15 +86,13 @@ mod test {
     use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior};
 
     #[test]
-    fn test_default_busy() {
+    fn test_default_busy() -> Result<()> {
         let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
-        let mut db1 = Connection::open(&path).unwrap();
-        let tx1 = db1
-            .transaction_with_behavior(TransactionBehavior::Exclusive)
-            .unwrap();
-        let db2 = Connection::open(&path).unwrap();
+        let mut db1 = Connection::open(&path)?;
+        let tx1 = db1.transaction_with_behavior(TransactionBehavior::Exclusive)?;
+        let db2 = Connection::open(&path)?;
         let r: Result<()> = db2.query_row("PRAGMA schema_version", [], |_| unreachable!());
         match r.unwrap_err() {
             Error::SqliteFailure(err, _) => {
@@ -102,7 +100,7 @@ mod test {
             }
             err => panic!("Unexpected error {}", err),
         }
-        tx1.rollback().unwrap();
+        tx1.rollback()
     }
 
     #[test]

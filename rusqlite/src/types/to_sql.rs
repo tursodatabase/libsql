@@ -339,12 +339,11 @@ mod test {
 
     #[cfg(feature = "i128_blob")]
     #[test]
-    fn test_i128() {
+    fn test_i128() -> crate::Result<()> {
         use crate::Connection;
         use std::i128;
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)")
-            .unwrap();
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)")?;
         db.execute(
             "
             INSERT INTO foo(i128, desc) VALUES
@@ -353,20 +352,15 @@ mod test {
                 (?, 'pos one'), (?, 'pos two'),
                 (?, 'min'), (?, 'max')",
             [0i128, -1i128, -2i128, 1i128, 2i128, i128::MIN, i128::MAX],
-        )
-        .unwrap();
+        )?;
 
-        let mut stmt = db
-            .prepare("SELECT i128, desc FROM foo ORDER BY i128 ASC")
-            .unwrap();
+        let mut stmt = db.prepare("SELECT i128, desc FROM foo ORDER BY i128 ASC")?;
 
         let res = stmt
             .query_map([], |row| {
                 Ok((row.get::<_, i128>(0)?, row.get::<_, String>(1)?))
-            })
-            .unwrap()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         assert_eq!(
             res,
@@ -380,37 +374,35 @@ mod test {
                 (i128::MAX, "max".to_owned()),
             ]
         );
+        Ok(())
     }
 
     #[cfg(feature = "uuid")]
     #[test]
-    fn test_uuid() {
+    fn test_uuid() -> crate::Result<()> {
         use crate::{params, Connection};
         use uuid::Uuid;
 
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (id BLOB CHECK(length(id) = 16), label TEXT);")
-            .unwrap();
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (id BLOB CHECK(length(id) = 16), label TEXT);")?;
 
         let id = Uuid::new_v4();
 
         db.execute(
             "INSERT INTO foo (id, label) VALUES (?, ?)",
             params![id, "target"],
-        )
-        .unwrap();
+        )?;
 
-        let mut stmt = db
-            .prepare("SELECT id, label FROM foo WHERE id = ?")
-            .unwrap();
+        let mut stmt = db.prepare("SELECT id, label FROM foo WHERE id = ?")?;
 
-        let mut rows = stmt.query(params![id]).unwrap();
-        let row = rows.next().unwrap().unwrap();
+        let mut rows = stmt.query(params![id])?;
+        let row = rows.next()?.unwrap();
 
         let found_id: Uuid = row.get_unwrap(0);
         let found_label: String = row.get_unwrap(1);
 
         assert_eq!(found_id, id);
         assert_eq!(found_label, "target");
+        Ok(())
     }
 }

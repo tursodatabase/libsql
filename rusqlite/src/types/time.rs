@@ -37,16 +37,15 @@ mod test {
     use std::time::Duration;
     use time::OffsetDateTime;
 
-    fn checked_memory_handle() -> Connection {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT)")
-            .unwrap();
-        db
+    fn checked_memory_handle() -> Result<Connection> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT)")?;
+        Ok(db)
     }
 
     #[test]
-    fn test_offset_date_time() {
-        let db = checked_memory_handle();
+    fn test_offset_date_time() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         let mut ts_vec = vec![];
 
@@ -61,21 +60,23 @@ mod test {
         ts_vec.push(make_datetime(10_000_000_000, 0)); //November 20, 2286
 
         for ts in ts_vec {
-            db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts]).unwrap();
+            db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts])?;
 
-            let from: OffsetDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0)).unwrap();
+            let from: OffsetDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
 
-            db.execute("DELETE FROM foo", []).unwrap();
+            db.execute("DELETE FROM foo", [])?;
 
             assert_eq!(from, ts);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_sqlite_functions() {
-        let db = checked_memory_handle();
+    fn test_sqlite_functions() -> Result<()> {
+        let db = checked_memory_handle()?;
         let result: Result<OffsetDateTime> =
             db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
         assert!(result.is_ok());
+        Ok(())
     }
 }

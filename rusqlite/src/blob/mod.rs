@@ -434,22 +434,18 @@ mod test {
     }
 
     #[test]
-    fn test_blob() {
-        let (db, rowid) = db_with_test_blob().unwrap();
+    fn test_blob() -> Result<()> {
+        let (db, rowid) = db_with_test_blob()?;
 
-        let mut blob = db
-            .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-            .unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
         assert_eq!(4, blob.write(b"Clob").unwrap());
         assert_eq!(6, blob.write(b"567890xxxxxx").unwrap()); // cannot write past 10
         assert_eq!(0, blob.write(b"5678").unwrap()); // still cannot write past 10
 
-        blob.reopen(rowid).unwrap();
-        blob.close().unwrap();
+        blob.reopen(rowid)?;
+        blob.close()?;
 
-        blob = db
-            .blob_open(DatabaseName::Main, "test", "content", rowid, true)
-            .unwrap();
+        blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true)?;
         let mut bytes = [0u8; 5];
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"Clob5");
@@ -470,7 +466,7 @@ mod test {
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"56789");
 
-        blob.reopen(rowid).unwrap();
+        blob.reopen(rowid)?;
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"Clob5");
 
@@ -481,20 +477,19 @@ mod test {
 
         // write_all should detect when we return Ok(0) because there is no space left,
         // and return a write error
-        blob.reopen(rowid).unwrap();
+        blob.reopen(rowid)?;
         assert!(blob.write_all(b"0123456789x").is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_blob_in_bufreader() {
-        let (db, rowid) = db_with_test_blob().unwrap();
+    fn test_blob_in_bufreader() -> Result<()> {
+        let (db, rowid) = db_with_test_blob()?;
 
-        let mut blob = db
-            .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-            .unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
         assert_eq!(8, blob.write(b"one\ntwo\n").unwrap());
 
-        blob.reopen(rowid).unwrap();
+        blob.reopen(rowid)?;
         let mut reader = BufReader::new(blob);
 
         let mut line = String::new();
@@ -508,16 +503,15 @@ mod test {
         line.truncate(0);
         assert_eq!(2, reader.read_line(&mut line).unwrap());
         assert_eq!("\0\0", line);
+        Ok(())
     }
 
     #[test]
-    fn test_blob_in_bufwriter() {
-        let (db, rowid) = db_with_test_blob().unwrap();
+    fn test_blob_in_bufwriter() -> Result<()> {
+        let (db, rowid) = db_with_test_blob()?;
 
         {
-            let blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut writer = BufWriter::new(blob);
 
             // trying to write too much and then flush should fail
@@ -528,18 +522,14 @@ mod test {
 
         {
             // ... but it should've written the first 10 bytes
-            let mut blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
             assert_eq!(b"0123456701", &bytes);
         }
 
         {
-            let blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut writer = BufWriter::new(blob);
 
             // trying to write_all too much should fail
@@ -549,12 +539,11 @@ mod test {
 
         {
             // ... but it should've written the first 10 bytes
-            let mut blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
             assert_eq!(b"aaaaaaaaaa", &bytes);
+            Ok(())
         }
     }
 }

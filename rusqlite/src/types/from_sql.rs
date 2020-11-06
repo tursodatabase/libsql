@@ -235,15 +235,11 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use super::FromSql;
-    use crate::{Connection, Error};
-
-    fn checked_memory_handle() -> Connection {
-        Connection::open_in_memory().unwrap()
-    }
+    use crate::{Connection, Error, Result};
 
     #[test]
-    fn test_integral_ranges() {
-        let db = checked_memory_handle();
+    fn test_integral_ranges() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
         fn check_ranges<T>(db: &Connection, out_of_range: &[i64], in_range: &[i64])
         where
@@ -278,5 +274,6 @@ mod test {
         check_ranges::<u8>(&db, &[-2, -1, 256], &[0, 1, 255]);
         check_ranges::<u16>(&db, &[-2, -1, 65536], &[0, 1, 65535]);
         check_ranges::<u32>(&db, &[-2, -1, 4_294_967_296], &[0, 1, 4_294_967_295]);
+        Ok(())
     }
 }

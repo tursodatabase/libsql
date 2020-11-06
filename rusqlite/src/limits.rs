@@ -27,11 +27,11 @@ impl Connection {
 #[cfg(test)]
 mod test {
     use crate::ffi::Limit;
-    use crate::Connection;
+    use crate::{Connection, Result};
 
     #[test]
-    fn test_limit() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_limit() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.set_limit(Limit::SQLITE_LIMIT_LENGTH, 1024);
         assert_eq!(1024, db.limit(Limit::SQLITE_LIMIT_LENGTH));
 
@@ -70,5 +70,6 @@ mod test {
             db.set_limit(Limit::SQLITE_LIMIT_WORKER_THREADS, 2);
             assert_eq!(2, db.limit(Limit::SQLITE_LIMIT_WORKER_THREADS));
         }
+        Ok(())
     }
 }

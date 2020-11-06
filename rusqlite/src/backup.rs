@@ -310,96 +310,84 @@ impl Drop for Backup<'_, '_> {
 #[cfg(test)]
 mod test {
     use super::Backup;
-    use crate::{Connection, DatabaseName};
+    use crate::{Connection, DatabaseName, Result};
     use std::time::Duration;
 
     #[test]
-    fn test_backup() {
-        let src = Connection::open_in_memory().unwrap();
+    fn test_backup() -> Result<()> {
+        let src = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-        src.execute_batch(sql).unwrap();
+        src.execute_batch(sql)?;
 
-        let mut dst = Connection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory()?;
 
         {
-            let backup = Backup::new(&src, &mut dst).unwrap();
-            backup.step(-1).unwrap();
+            let backup = Backup::new(&src, &mut dst)?;
+            backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", [], |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
         assert_eq!(42, the_answer);
 
-        src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
+        src.execute_batch("INSERT INTO foo VALUES(43)")?;
 
         {
-            let backup = Backup::new(&src, &mut dst).unwrap();
-            backup
-                .run_to_completion(5, Duration::from_millis(250), None)
-                .unwrap();
+            let backup = Backup::new(&src, &mut dst)?;
+            backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(42 + 43, the_answer);
+        Ok(())
     }
 
     #[test]
-    fn test_backup_temp() {
-        let src = Connection::open_in_memory().unwrap();
+    fn test_backup_temp() -> Result<()> {
+        let src = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TEMPORARY TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-        src.execute_batch(sql).unwrap();
+        src.execute_batch(sql)?;
 
-        let mut dst = Connection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory()?;
 
         {
             let backup =
-                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
-                    .unwrap();
-            backup.step(-1).unwrap();
+                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)?;
+            backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", [], |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
         assert_eq!(42, the_answer);
 
-        src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
+        src.execute_batch("INSERT INTO foo VALUES(43)")?;
 
         {
             let backup =
-                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
-                    .unwrap();
-            backup
-                .run_to_completion(5, Duration::from_millis(250), None)
-                .unwrap();
+                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)?;
+            backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(42 + 43, the_answer);
+        Ok(())
     }
 
     #[test]
-    fn test_backup_attached() {
-        let src = Connection::open_in_memory().unwrap();
+    fn test_backup_attached() -> Result<()> {
+        let src = Connection::open_in_memory()?;
         let sql = "ATTACH DATABASE ':memory:' AS my_attached;
                    BEGIN;
                    CREATE TABLE my_attached.foo(x INTEGER);
                    INSERT INTO my_attached.foo VALUES(42);
                    END;";
-        src.execute_batch(sql).unwrap();
+        src.execute_batch(sql)?;
 
-        let mut dst = Connection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory()?;
 
         {
             let backup = Backup::new_with_names(
@@ -407,17 +395,14 @@ mod test {
                 DatabaseName::Attached("my_attached"),
                 &mut dst,
                 DatabaseName::Main,
-            )
-            .unwrap();
-            backup.step(-1).unwrap();
+            )?;
+            backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", [], |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
         assert_eq!(42, the_answer);
 
-        src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
+        src.execute_batch("INSERT INTO foo VALUES(43)")?;
 
         {
             let backup = Backup::new_with_names(
@@ -425,16 +410,12 @@ mod test {
                 DatabaseName::Attached("my_attached"),
                 &mut dst,
                 DatabaseName::Main,
-            )
-            .unwrap();
-            backup
-                .run_to_completion(5, Duration::from_millis(250), None)
-                .unwrap();
+            )?;
+            backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(42 + 43, the_answer);
+        Ok(())
     }
 }

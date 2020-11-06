@@ -781,80 +781,77 @@ mod test {
 
     use super::{Changeset, ChangesetIter, ConflictAction, ConflictType, Session};
     use crate::hooks::Action;
-    use crate::Connection;
+    use crate::{Connection, Result};
 
-    fn one_changeset() -> Changeset {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
-            .unwrap();
+    fn one_changeset() -> Result<Changeset> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")?;
 
-        let mut session = Session::new(&db).unwrap();
+        let mut session = Session::new(&db)?;
         assert!(session.is_empty());
 
-        session.attach(None).unwrap();
-        db.execute("INSERT INTO foo (t) VALUES (?);", &["bar"])
-            .unwrap();
+        session.attach(None)?;
+        db.execute("INSERT INTO foo (t) VALUES (?);", &["bar"])?;
 
-        session.changeset().unwrap()
+        session.changeset()
     }
 
-    fn one_changeset_strm() -> Vec<u8> {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
-            .unwrap();
+    fn one_changeset_strm() -> Result<Vec<u8>> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")?;
 
-        let mut session = Session::new(&db).unwrap();
+        let mut session = Session::new(&db)?;
         assert!(session.is_empty());
 
-        session.attach(None).unwrap();
-        db.execute("INSERT INTO foo (t) VALUES (?);", &["bar"])
-            .unwrap();
+        session.attach(None)?;
+        db.execute("INSERT INTO foo (t) VALUES (?);", &["bar"])?;
 
         let mut output = Vec::new();
-        session.changeset_strm(&mut output).unwrap();
-        output
+        session.changeset_strm(&mut output)?;
+        Ok(output)
     }
 
     #[test]
-    fn test_changeset() {
-        let changeset = one_changeset();
-        let mut iter = changeset.iter().unwrap();
-        let item = iter.next().unwrap();
+    fn test_changeset() -> Result<()> {
+        let changeset = one_changeset()?;
+        let mut iter = changeset.iter()?;
+        let item = iter.next()?;
         assert!(item.is_some());
 
         let item = item.unwrap();
-        let op = item.op().unwrap();
+        let op = item.op()?;
         assert_eq!("foo", op.table_name());
         assert_eq!(1, op.number_of_columns());
         assert_eq!(Action::SQLITE_INSERT, op.code());
         assert_eq!(false, op.indirect());
 
-        let pk = item.pk().unwrap();
+        let pk = item.pk()?;
         assert_eq!(&[1], pk);
 
-        let new_value = item.new_value(0).unwrap();
+        let new_value = item.new_value(0)?;
         assert_eq!(Ok("bar"), new_value.as_str());
+        Ok(())
     }
 
     #[test]
-    fn test_changeset_strm() {
-        let output = one_changeset_strm();
+    fn test_changeset_strm() -> Result<()> {
+        let output = one_changeset_strm()?;
         assert!(!output.is_empty());
         assert_eq!(14, output.len());
 
         let input: &mut dyn Read = &mut output.as_slice();
-        let mut iter = ChangesetIter::start_strm(&input).unwrap();
-        let item = iter.next().unwrap();
+        let mut iter = ChangesetIter::start_strm(&input)?;
+        let item = iter.next()?;
         assert!(item.is_some());
+        Ok(())
     }
 
     #[test]
-    fn test_changeset_apply() {
-        let changeset = one_changeset();
+    fn test_changeset_apply() -> Result<()> {
+        let changeset = one_changeset()?;
 
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
-            .unwrap();
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")?;
 
         static CALLED: AtomicBool = AtomicBool::new(false);
         db.apply(
@@ -864,15 +861,12 @@ mod test {
                 CALLED.store(true, Ordering::Relaxed);
                 ConflictAction::SQLITE_CHANGESET_OMIT
             },
-        )
-        .unwrap();
+        )?;
 
         assert!(!CALLED.load(Ordering::Relaxed));
-        let check = db
-            .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| {
-                row.get::<_, i32>(0)
-            })
-            .unwrap();
+        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| {
+            row.get::<_, i32>(0)
+        })?;
         assert_eq!(1, check);
 
         // conflict expected when same changeset applied again on the same db
@@ -886,68 +880,66 @@ mod test {
                 assert_eq!(Ok("bar"), conflict.as_str());
                 ConflictAction::SQLITE_CHANGESET_OMIT
             },
-        )
-        .unwrap();
+        )?;
         assert!(CALLED.load(Ordering::Relaxed));
+        Ok(())
     }
 
     #[test]
-    fn test_changeset_apply_strm() {
-        let output = one_changeset_strm();
+    fn test_changeset_apply_strm() -> Result<()> {
+        let output = one_changeset_strm()?;
 
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
-            .unwrap();
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")?;
 
         let mut input = output.as_slice();
         db.apply_strm(
             &mut input,
             None::<fn(&str) -> bool>,
             |_conflict_type, _item| ConflictAction::SQLITE_CHANGESET_OMIT,
-        )
-        .unwrap();
+        )?;
 
-        let check = db
-            .query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| {
-                row.get::<_, i32>(0)
-            })
-            .unwrap();
+        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?", &["bar"], |row| {
+            row.get::<_, i32>(0)
+        })?;
         assert_eq!(1, check);
+        Ok(())
     }
 
     #[test]
-    fn test_session_empty() {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")
-            .unwrap();
+    fn test_session_empty() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo(t TEXT PRIMARY KEY NOT NULL);")?;
 
-        let mut session = Session::new(&db).unwrap();
+        let mut session = Session::new(&db)?;
         assert!(session.is_empty());
 
-        session.attach(None).unwrap();
-        db.execute("INSERT INTO foo (t) VALUES (?);", &["bar"])
-            .unwrap();
+        session.attach(None)?;
+        db.execute("INSERT INTO foo (t) VALUES (?);", &["bar"])?;
 
         assert!(!session.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn test_session_set_enabled() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_session_set_enabled() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
-        let mut session = Session::new(&db).unwrap();
+        let mut session = Session::new(&db)?;
         assert!(session.is_enabled());
         session.set_enabled(false);
         assert!(!session.is_enabled());
+        Ok(())
     }
 
     #[test]
-    fn test_session_set_indirect() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_session_set_indirect() -> Result<()> {
+        let db = Connection::open_in_memory()?;
 
-        let mut session = Session::new(&db).unwrap();
+        let mut session = Session::new(&db)?;
         assert!(!session.is_indirect());
         session.set_indirect(true);
         assert!(session.is_indirect());
+        Ok(())
     }
 }

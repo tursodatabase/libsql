@@ -273,26 +273,27 @@ unsafe impl VTabCursor for SeriesTabCursor<'_> {
 mod test {
     use crate::ffi;
     use crate::vtab::series;
-    use crate::Connection;
+    use crate::{Connection, Result};
 
     #[test]
-    fn test_series_module() {
+    fn test_series_module() -> Result<()> {
         let version = unsafe { ffi::sqlite3_libversion_number() };
         if version < 3_008_012 {
-            return;
+            return Ok(());
         }
 
-        let db = Connection::open_in_memory().unwrap();
-        series::load_module(&db).unwrap();
+        let db = Connection::open_in_memory()?;
+        series::load_module(&db)?;
 
-        let mut s = db.prepare("SELECT * FROM generate_series(0,20,5)").unwrap();
+        let mut s = db.prepare("SELECT * FROM generate_series(0,20,5)")?;
 
-        let series = s.query_map([], |row| row.get::<_, i32>(0)).unwrap();
+        let series = s.query_map([], |row| row.get::<_, i32>(0))?;
 
         let mut expected = 0;
         for value in series {
-            assert_eq!(expected, value.unwrap());
+            assert_eq!(expected, value?);
             expected += 5;
         }
+        Ok(())
     }
 }

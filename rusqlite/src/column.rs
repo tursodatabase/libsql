@@ -176,15 +176,15 @@ impl<'stmt> Row<'stmt> {
 
 #[cfg(test)]
 mod test {
-    use crate::Connection;
+    use crate::{Connection, Result};
 
     #[test]
     #[cfg(feature = "column_decltype")]
-    fn test_columns() {
+    fn test_columns() -> Result<()> {
         use super::Column;
 
-        let db = Connection::open_in_memory().unwrap();
-        let query = db.prepare("SELECT * FROM sqlite_master").unwrap();
+        let db = Connection::open_in_memory()?;
+        let query = db.prepare("SELECT * FROM sqlite_master")?;
         let columns = query.columns();
         let column_names: Vec<&str> = columns.iter().map(Column::name).collect();
         assert_eq!(
@@ -196,22 +196,22 @@ mod test {
             &column_types[..3],
             &[Some("text"), Some("text"), Some("text"),]
         );
+        Ok(())
     }
 
     #[test]
-    fn test_column_name_in_error() {
+    fn test_column_name_in_error() -> Result<()> {
         use crate::{types::Type, Error};
-        let db = Connection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory()?;
         db.execute_batch(
             "BEGIN;
              CREATE TABLE foo(x INTEGER, y TEXT);
              INSERT INTO foo VALUES(4, NULL);
              END;",
-        )
-        .unwrap();
-        let mut stmt = db.prepare("SELECT x as renamed, y FROM foo").unwrap();
-        let mut rows = stmt.query([]).unwrap();
-        let row = rows.next().unwrap().unwrap();
+        )?;
+        let mut stmt = db.prepare("SELECT x as renamed, y FROM foo")?;
+        let mut rows = stmt.query([])?;
+        let row = rows.next()?.unwrap();
         match row.get::<_, String>(0).unwrap_err() {
             Error::InvalidColumnType(idx, name, ty) => {
                 assert_eq!(idx, 0);
@@ -232,5 +232,6 @@ mod test {
                 panic!("Unexpected error type: {:?}", e);
             }
         }
+        Ok(())
     }
 }
