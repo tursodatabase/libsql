@@ -4907,7 +4907,7 @@ static int unixShmLock(
         if( rc==SQLITE_OK ){
           memset(&aLock[ofst], 0, sizeof(int)*n);
         }
-      }else if( p->sharedMask & (1<<ofst) ){
+      }else if( ALWAYS(p->sharedMask & (1<<ofst)) ){
         assert( n==1 && aLock[ofst]>1 );
         aLock[ofst]--;
       }
@@ -4940,7 +4940,7 @@ static int unixShmLock(
     int ii;
     for(ii=ofst; ii<ofst+n; ii++){
       assert( (p->sharedMask & mask)==0 );
-      if( (p->exclMask & (1<<ii))==0 && aLock[ii] ){
+      if( ALWAYS((p->exclMask & (1<<ii))==0) && aLock[ii] ){
         rc = SQLITE_BUSY;
         break;
       }

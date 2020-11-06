@@ -1,5 +1,5 @@
-C Suppress\serrors\sassociated\swith\sTEMP\striggers\sthat\sreference\sobjects\sin\nnon-TEMP\sdatabases.\s\sThis\sis\sa\scontinuation\sof\sthe\sfix\sfor\sticket\s#3810\nshown\sin\scheck-in\s[ba1afc040171810d]\nfrom\s[/timeline?c=trunk:200908061743|2009-08-06],\sbased\son\sa\sbug\sreport\sin\n[forum:/forumpost/157dc791df|forum\spost\s157dc791df]
-D 2020-11-05T19:13:44.063
+C Add\sALWAYS()\sto\sconditionals\sassociated\swith\sSHM\slocking\sthat\sare\salways\strue.
+D 2020-11-06T16:48:55.396
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -521,7 +521,7 @@ F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c b16ae8f19de9fb91836164b8ff122c069d0b177179df7bb632cf41bf61308d89
+F src/os_unix.c ff10667369f3b05aa697278a72d58fe7a43aaa674cb3fa9654d0fe21cda265d0
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3700a1c55427a3d4168ad1f1b8a8b0cb9ace1d107e4506e30a8f1e66d8a1195e
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c0a18565e614021b74646de7efd11d3d46894ef9132fb26787ab0269dc6a647c
-R 6ad66b8699121ab033c31568ecea0a80
+P 991ca9b26bacd8f6b64498057fe28f2068466a220f372fd365b6685f583f0e92
+R f26b9e90b790a8d006742a6dcee07267
 U drh
-Z bffb2b54796c0687b73d1a147809a672
+Z 453afee97587daa6fc13b031ff46a5e1
