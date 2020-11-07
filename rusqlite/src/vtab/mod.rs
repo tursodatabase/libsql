@@ -261,7 +261,6 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
 /// See [Virtual Table Constraint Operator Codes](https://sqlite.org/c3ref/c_index_constraint_eq.html) for details.
 #[derive(Debug, PartialEq)]
 #[allow(non_snake_case, non_camel_case_types, missing_docs)]
-#[non_exhaustive]
 pub enum IndexConstraintOp {
     SQLITE_INDEX_CONSTRAINT_EQ,
     SQLITE_INDEX_CONSTRAINT_GT,
