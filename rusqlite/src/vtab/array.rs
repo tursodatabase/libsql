@@ -4,7 +4,7 @@
 //! define.
 //!
 //! Port of [carray](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/carray.c)
-//! C extension: https://www.sqlite.org/carray.html
+//! C extension: `https://www.sqlite.org/carray.html`
 //!
 //! # Example
 //!

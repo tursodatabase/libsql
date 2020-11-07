@@ -167,7 +167,7 @@ impl Context<'_> {
     /// parameter. This is intended to be an easier-to-use way of fetching it
     /// compared to calling `get_aux` and `set_aux` separately.
     ///
-    /// See https://www.sqlite.org/c3ref/get_auxdata.html for a discussion of
+    /// See `https://www.sqlite.org/c3ref/get_auxdata.html` for a discussion of
     /// this feature, or the unit tests of this module for an example.
     pub fn get_or_create_aux<T, E, F>(&self, arg: c_int, func: F) -> Result<Arc<T>>
     where
@@ -187,7 +187,7 @@ impl Context<'_> {
     }
 
     /// Sets the auxilliary data associated with a particular parameter. See
-    /// https://www.sqlite.org/c3ref/get_auxdata.html for a discussion of
+    /// `https://www.sqlite.org/c3ref/get_auxdata.html` for a discussion of
     /// this feature, or the unit tests of this module for an example.
     pub fn set_aux<T: Send + Sync + 'static>(&self, arg: c_int, value: T) -> Result<Arc<T>> {
         let orig: Arc<T> = Arc::new(value);
@@ -380,7 +380,7 @@ impl Connection {
     /// `feature = "window"` Attach a user-defined aggregate window function to
     /// this database connection.
     ///
-    /// See https://sqlite.org/windowfunctions.html#udfwinfunc for more
+    /// See `https://sqlite.org/windowfunctions.html#udfwinfunc` for more
     /// information.
     #[cfg(feature = "window")]
     #[inline]
