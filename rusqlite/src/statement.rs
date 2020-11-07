@@ -908,7 +908,7 @@ impl Statement<'_> {
 
 /// Prepared statement status counters.
 ///
-/// See https://www.sqlite.org/c3ref/c_stmtstatus_counter.html
+/// See `https://www.sqlite.org/c3ref/c_stmtstatus_counter.html`
 /// for explanations of each.
 ///
 /// Note that depending on your version of SQLite, all of these

@@ -1,7 +1,7 @@
 //! `feature = "csvtab"` CSV Virtual Table.
 //!
 //! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C
-//! extension: https://www.sqlite.org/csv.html
+//! extension: `https://www.sqlite.org/csv.html`
 //!
 //! # Example
 //!
