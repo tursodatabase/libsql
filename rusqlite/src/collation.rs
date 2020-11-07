@@ -96,7 +96,12 @@ impl InnerConnection {
                 Some(free_boxed_value::<C>),
             )
         };
-        self.decode_result(r)
+        let res = self.decode_result(r);
+        // The xDestroy callback is not called if the sqlite3_create_collation_v2() function fails.
+        if res.is_err() {
+            drop(unsafe { Box::from_raw(boxed_f) });
+        }
+        res
     }
 
     fn collation_needed(
