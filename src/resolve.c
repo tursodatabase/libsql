@@ -1284,6 +1284,7 @@ static int resolveCompoundOrderBy(
       Expr *pE, *pDup;
       if( pItem->done ) continue;
       pE = sqlite3ExprSkipCollateAndLikely(pItem->pExpr);
+      if( NEVER(pE==0) ) continue;
       if( sqlite3ExprIsInteger(pE, &iCol) ){
         if( iCol<=0 || iCol>pEList->nExpr ){
           resolveOutOfRangeError(pParse, "ORDER", i+1, pEList->nExpr);
@@ -1463,6 +1464,7 @@ static int resolveOrderGroupBy(
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     Expr *pE = pItem->pExpr;
     Expr *pE2 = sqlite3ExprSkipCollateAndLikely(pE);
+    if( NEVER(pE2==0) ) continue;
     if( zType[0]!='G' ){
       iCol = resolveAsName(pParse, pSelect->pEList, pE2);
       if( iCol>0 ){

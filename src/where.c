@@ -236,6 +236,16 @@ static void createMask(WhereMaskSet *pMaskSet, int iCursor){
 }
 
 /*
+** If the right-hand branch of the expression is a TK_COLUMN, then return
+** a pointer to the right-hand branch.  Otherwise, return NULL.
+*/
+static Expr *whereRightSubexprIsColumn(Expr *p){
+  p = sqlite3ExprSkipCollateAndLikely(p->pRight);
+  if( ALWAYS(p!=0) && p->op==TK_COLUMN ) return p;
+  return 0;
+}
+
+/*
 ** Advance to the next WhereTerm that matches according to the criteria
 ** established when the pScan object was initialized by whereScanInit().
 ** Return NULL if there are no more matching WhereTerms.
@@ -265,8 +275,7 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
-           && (pX = sqlite3ExprSkipCollateAndLikely(pTerm->pExpr->pRight))->op
-               ==TK_COLUMN
+           && (pX = whereRightSubexprIsColumn(pTerm->pExpr))!=0
           ){
             int j;
             for(j=0; j<pScan->nEquiv; j++){
@@ -462,7 +471,8 @@ static int findIndexCol(
 
   for(i=0; i<pList->nExpr; i++){
     Expr *p = sqlite3ExprSkipCollateAndLikely(pList->a[i].pExpr);
-    if( p->op==TK_COLUMN
+    if( ALWAYS(p!=0)
+     && p->op==TK_COLUMN
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
     ){
@@ -526,6 +536,7 @@ static int isDistinctRedundant(
   */
   for(i=0; i<pDistinct->nExpr; i++){
     Expr *p = sqlite3ExprSkipCollateAndLikely(pDistinct->a[i].pExpr);
+    if( NEVER(p==0) ) continue;
     if( p->op==TK_COLUMN && p->iTable==iBase && p->iColumn<0 ) return 1;
   }
 
@@ -2811,6 +2822,7 @@ static int indexMightHelpWithOrderBy(
   if( (pOB = pBuilder->pWInfo->pOrderBy)==0 ) return 0;
   for(ii=0; ii<pOB->nExpr; ii++){
     Expr *pExpr = sqlite3ExprSkipCollateAndLikely(pOB->a[ii].pExpr);
+    if( NEVER(pExpr==0) ) continue;
     if( pExpr->op==TK_COLUMN && pExpr->iTable==iCursor ){
       if( pExpr->iColumn<0 ) return 1;
       for(jj=0; jj<pIndex->nKeyCol; jj++){
@@ -3789,6 +3801,7 @@ static i8 wherePathSatisfiesOrderBy(
     for(i=0; i<nOrderBy; i++){
       if( MASKBIT(i) & obSat ) continue;
       pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[i].pExpr);
+      if( NEVER(pOBExpr==0) ) continue;
       if( pOBExpr->op!=TK_COLUMN ) continue;
       if( pOBExpr->iTable!=iCur ) continue;
       pTerm = sqlite3WhereFindTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
@@ -3915,6 +3928,7 @@ static i8 wherePathSatisfiesOrderBy(
           pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[i].pExpr);
           testcase( wctrlFlags & WHERE_GROUPBY );
           testcase( wctrlFlags & WHERE_DISTINCTBY );
+          if( NEVER(pOBExpr==0) ) continue;
           if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
           if( iColumn>=XN_ROWID ){
             if( pOBExpr->op!=TK_COLUMN ) continue;

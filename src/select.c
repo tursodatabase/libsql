@@ -1995,7 +1995,7 @@ int sqlite3ColumnsFromExprList(
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
     }else{
       Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pEList->a[i].pExpr);
-      while( pColExpr->op==TK_DOT ){
+      while( ALWAYS(pColExpr!=0) && pColExpr->op==TK_DOT ){
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }

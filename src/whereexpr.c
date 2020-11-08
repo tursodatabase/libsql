@@ -1451,6 +1451,7 @@ static void exprAnalyze(
 void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
   Expr *pE2 = sqlite3ExprSkipCollateAndLikely(pExpr);
   pWC->op = op;
+  assert( pE2!=0 || pExpr==0 );
   if( pE2==0 ) return;
   if( pE2->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
