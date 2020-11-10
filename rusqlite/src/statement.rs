@@ -438,7 +438,8 @@ impl Statement<'_> {
     ///
     /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
     /// query truly is optional, you can call `.optional()` on the result of
-    /// this to get a `Result<Option<T>>`.
+    /// this to get a `Result<Option<T>>` (requires that the trait `rusqlite::OptionalExtension`
+    /// is imported).
     ///
     /// # Failure
     ///
@@ -464,7 +465,8 @@ impl Statement<'_> {
     ///
     /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
     /// query truly is optional, you can call `.optional()` on the result of
-    /// this to get a `Result<Option<T>>`.
+    /// this to get a `Result<Option<T>>` (requires that the trait `rusqlite::OptionalExtension`
+    /// is imported).
     ///
     /// # Failure
     ///
