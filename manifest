@@ -1,5 +1,5 @@
-C Use\sNEVER\sand\sALWAYS\smacros\sto\sconfirm\sthat\sthe\sreturn\svalue\sfrom\nsqlite3ExprSkipCollateAndLikely()\sis\snever\sNULL\sin\ssome\sof\sits\suse\scases.
-D 2020-11-08T20:44:30.361
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2020-11-11T19:11:44.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 3df26a33dc4f54e8771600fb7fdebe1ece0896c2ad68c30ab40b017aa4395049
-F src/where.c 21f472adb5217f907d7e6d3aa8194f181ded3c04696933992a8632cf51a5ec5e
+F src/where.c 6c666bba746b5bb3791dea4e4084373fe9c1cc403bb95e2b6174e55071812e76
 F src/whereInt.h 59077fbd0b3d01bc8715e746c86a99ebf4c85bde8a57077ec04d2a23e59666ec
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
 F src/whereexpr.c 3a463e156ea388083c501502229c2c7f4f5c6b5330ea59bdf40d6eb6e155a25f
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b599e89076d60afede7d2b3503b9338ca863d0c2d25799afe4080a6186386ea9
-R 7beca53d7c8d22c465c9d56afbdf86de
+P 76d2eb86e109fc3cbdba2e8175c22ed7660b59bb9315f6c55c565587f33ad43b
+R 5260789610fba3dd2fd0ea1cb803625d
 U drh
-Z c36c228a67de698bd35d3d99e8941c75
+Z 576227cb219ebe8ac3f262820024d5b2
