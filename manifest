@@ -1,5 +1,5 @@
-C Improved\sdiagnostics\soutput\swith\s".wheretrace\s0x800".\s\sNo\schanges\sto\nnon-debug\sbuilds.
-D 2020-11-12T18:16:01.196
+C Modify\sUPDATE\sso\sthat\stwo-pass\supdates\son\sa\srowid\stable\suse\san\sephemeral\ntable\sto\sstore\srowids\srather\sthan\sa\sRowSet.\s\sThis\suses\sless\smemory,\sthough\nit\sis\sslower.
+D 2020-11-14T20:03:34.128
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 4dc01b267593537e2a0d0efe9f80dabe24c5b6f7627bc6971c487fa6a1dacbbf
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
 F src/trigger.c 515e79206d40d1d4149129318582e79a6e9db590a7b74e226fdb5b2a6c7e1b10
-F src/update.c 1f6167d4acff9f2ae800f7dade84877afbd595c155cdeb7d56f08165d75570c4
+F src/update.c 5d9894b53209e42f57141f1b3d9d86361993049c42b393243abbee0f4bdd49fa
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
@@ -1883,7 +1883,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 572f1ed59d29e74f810c74ef9e72ebc94c2d3e04befc03a1f88034f04a9c60a8
-R 4901674d935be395f9df3d7654b8445e
+P 772ae83c61c87a9004a614d8ec120ba843286bff1edbd20b987fd592ced84d79
+R 87198020f818dc0e1868a0bdd49e2aaf
+T *branch * lowmem-update-exp
+T *sym-lowmem-update-exp *
+T -sym-trunk *
 U drh
-Z 60f97595458aa54172137f4d47d1e884
+Z 026ca59c1df12878f7c57e2d3cf7ce51
