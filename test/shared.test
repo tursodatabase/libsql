@@ -160,11 +160,9 @@ do_test shared-$av.1.8 {
 } {}
 
 do_test shared-$av.2.1 {
-  # Open connection db3 to the database. Use a different path to the same
-  # file so that db3 does *not* share the same pager cache as db and db2
-  # (there should be two open file handles).
+  # Open connection db3 to the database.
   if {$::tcl_platform(platform)=="unix"} {
-    sqlite3 db3 ./test.db
+    sqlite3 db3 "file:test.db?cache=private" -uri 1
   } else {
     sqlite3 db3 TEST.DB
   }
@@ -800,7 +798,7 @@ do_test shared-$av.10.3 {
   # An external connection should be able to read the database, but not
   # prepare a write operation.
   if {$::tcl_platform(platform)=="unix"} {
-    sqlite3 db3 ./test.db
+    sqlite3 db3 "file:test.db?cache=private" -uri 1
   } else {
     sqlite3 db3 TEST.DB
   }
