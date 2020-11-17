@@ -1,5 +1,5 @@
-C Modify\sUPDATE\sso\sthat\stwo-pass\supdates\son\sa\srowid\stable\suse\san\sephemeral\ntable\sto\sstore\srowids\srather\sthan\sa\sRowSet.\s\sThis\suses\sless\smemory,\sthough\nit\sis\sslower.
-D 2020-11-14T20:03:34.128
+C Claw\sback\smost\sof\sthe\sperformance\slost\sin\sthe\sprevious\scommit.
+D 2020-11-17T21:26:13.913
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,12 +604,12 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 4dc01b267593537e2a0d0efe9f80dabe24c5b6f7627bc6971c487fa6a1dacbbf
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
 F src/trigger.c 515e79206d40d1d4149129318582e79a6e9db590a7b74e226fdb5b2a6c7e1b10
-F src/update.c 5d9894b53209e42f57141f1b3d9d86361993049c42b393243abbee0f4bdd49fa
+F src/update.c 9f126204a6acb96bbe47391ae48e0fc579105d8e76a6d9c4fab3271367476580
 F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 6f3fb4f058c478b38c5280ccfc939745076c6a693999e49846c99fdc761c9c90
+F src/vdbe.c 59e8caad2c5520c942ee8321a008991a0d36be2b0641fd16dd941d89e781ea97
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1883,10 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 772ae83c61c87a9004a614d8ec120ba843286bff1edbd20b987fd592ced84d79
-R 87198020f818dc0e1868a0bdd49e2aaf
-T *branch * lowmem-update-exp
-T *sym-lowmem-update-exp *
-T -sym-trunk *
+P 4673096dd8c5ed7aed098ff518a6d01d35c40fad991b89fddd91c19a727a4308
+R 4e4cd284a246b3e7da3720d189e4cd5f
 U drh
-Z 026ca59c1df12878f7c57e2d3cf7ce51
+Z 9ab365bfaa4c57c68b10ad5bd403164d
