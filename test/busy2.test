@@ -136,7 +136,6 @@ do_multiclient_test tn {
 # call to sqlite3_prepare() (or _v2(), or _v3()), it is still invoked
 # the next time an SQLITE_BUSY is encountered.
 #
-
 do_multiclient_test tn {
   code1 {
     set ::busy_called 0
@@ -158,13 +157,14 @@ do_multiclient_test tn {
 
   do_test 3.$tn.2 {
     set ::busy_called 0
-    list [catch { sql1 { SELECT * FROM t1 } } msg] $msg $::busy_called
-  } {1 {database is locked} 1}
+    list [catch { sql1 { SELECT * FROM t1 } } msg] $::busy_called
+  } {1 1}
 
   do_test 3.$tn.3 {
     set ::busy_called 0
-    list [catch { sql1 { SELECT * FROM t1 } } msg] $msg $::busy_called
-  } {1 {database is locked} 1}
+    list [catch { sql1 { SELECT * FROM t1 } } msg] $::busy_called
+  } {1 1}
+
 }
 
 finish_test

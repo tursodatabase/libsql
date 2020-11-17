@@ -1,5 +1,5 @@
-C Add\sa\ssingle-argument\sform\sto\sthe\sCARRAY\stable-valued\sfunction,\swith\ncontent\sbound\susing\sthe\ssqlite3_carray_bind()\sinterface\sthat\sis\sincluded\nwith\sthe\sextension.
-D 2020-11-17T14:41:37.097
+C Fix\stest\sfile\sbusy2.test\sso\sthat\sit\sworks\swith\sthe\s"inmemory_journal"\spermutation.
+D 2020-11-17T18:25:48.884
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -731,7 +731,7 @@ F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
 F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1d6cc
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
-F test/busy2.test 26ae3b8b74235c851f27326807de94292af4d359476c629f80dc106f35c8293e
+F test/busy2.test 0a1633fef7987fc8ea25ed5838f7eef2f08fc6d2a3dcc77d23e6402e53946a7a
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
@@ -1885,7 +1885,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 772ae83c61c87a9004a614d8ec120ba843286bff1edbd20b987fd592ced84d79
-R dda1ed32688d23b76f833a4d9835bd2c
-U drh
-Z 69dc23c53e350f7672399c3847d987a1
+P 7b229cb1202be203a87b8f47d284313f357deb1e6dfeb94bba7b46744c33512e
+R 94da5fd957c11cf4152e1820c907cfb0
+U dan
+Z 58b299c359ef0c819469c9e331b931a6
