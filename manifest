@@ -1,5 +1,5 @@
-C Improved\sdiagnostics\soutput\swith\s".wheretrace\s0x800".\s\sNo\schanges\sto\nnon-debug\sbuilds.
-D 2020-11-12T18:16:01.196
+C Add\sa\ssingle-argument\sform\sto\sthe\sCARRAY\stable-valued\sfunction,\swith\ncontent\sbound\susing\sthe\ssqlite3_carray_bind()\sinterface\sthat\sis\sincluded\nwith\sthe\sextension.
+D 2020-11-17T14:41:37.097
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -287,7 +287,8 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/appendvfs.c 55121d311d408ba9c62c3cfa367408887638f02f9522dd9859891d0ee69a7eba
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
-F ext/misc/carray.c 91e9a7f512fda934894bed30464552fffa7d3073b5be04189ae0bd0c59f26bfd
+F ext/misc/carray.c 6b3cb5217466f687f48e3c3a87c43fb628ae80db68a95e30bbd8074d099c29a4
+F ext/misc/carray.h de74ac70b2338f416723f7d538026e8ec0b7f1d388319f8f140c9a4d7677f02e
 F ext/misc/cksumvfs.c 910848f3d9739908cf77cad66a76dd45001546f46ff5ef4ca5c20c5476e77e98
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8beb2f22b9
@@ -547,7 +548,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c 9e52fb797bf74fa327295df38881aa3ade0824bfb0c14abd0719e555b169fd55
+F src/test1.c 385533d17fb06529c909defc73ef47dd2712dc198eedff94fc6df5bc23687c71
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -740,6 +741,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
 F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
+F test/carray01.test 3f2658bbddd75a013735a296ae2178ff441aca3f00ba623cfbae00b732ede792
 F test/cast.test 336fa21989b5170ebcaf90c24266be22dd97b3e23d1fad5ecf6ad4efb04c4423
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test 4a2a91ed67eee84a6be16057c48d5198b6fb24849cd6da6cd855981de3fbb416
@@ -1883,7 +1885,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 572f1ed59d29e74f810c74ef9e72ebc94c2d3e04befc03a1f88034f04a9c60a8
-R 4901674d935be395f9df3d7654b8445e
+P 772ae83c61c87a9004a614d8ec120ba843286bff1edbd20b987fd592ced84d79
+R dda1ed32688d23b76f833a4d9835bd2c
 U drh
-Z 60f97595458aa54172137f4d47d1e884
+Z 69dc23c53e350f7672399c3847d987a1

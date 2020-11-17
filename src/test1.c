@@ -3940,7 +3940,7 @@ static int SQLITE_TCLAPI test_bind_blob(
     char zBuf[200];
     sqlite3_snprintf(sizeof(zBuf), zBuf,
                      "cannot use %d blob bytes, have %d", bytes, len);
-    Tcl_AppendResult(interp, zBuf, -1);
+    Tcl_AppendResult(interp, zBuf, (char*)0);
     return TCL_ERROR;
   }
 
@@ -3950,6 +3950,193 @@ static int SQLITE_TCLAPI test_bind_blob(
     return TCL_ERROR;
   }
 
+  return TCL_OK;
+}
+
+
+/*
+** sqlite3_carray_bind [options...] STMT NAME VALUE ...
+**
+** Options:
+**    -transient
+**    -static
+**    -int32
+**    -int64
+**    -double
+**    -text
+**
+** Each call clears static data.  Called with no options does nothing
+** but clear static data.
+*/
+static int SQLITE_TCLAPI test_carray_bind(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int eType = 0;   /* CARRAY_INT32 */
+  int nData = 0;
+  void *aData = 0;
+  int isTransient = 0;
+  int isStatic = 0;
+  int idx;
+  int i, j;
+  int rc;
+  void (*xDel)(void*) = sqlite3_free;
+  static void *aStaticData = 0;
+  static int nStaticData = 0;
+  static int eStaticType = 0;
+  extern int sqlite3_carray_bind(
+    sqlite3_stmt *pStmt,
+    int i,
+    void *aData,
+    int nData,
+    int mFlags,
+    void (*xDestroy)(void*)
+  );
+  
+  if( aStaticData ){
+    /* Always clear preexisting static data on every call */
+    if( eStaticType==3 ){
+      for(i=0; i<nStaticData; i++){
+        sqlite3_free(((char**)aStaticData)[i]);
+      }
+    }
+    sqlite3_free(aStaticData);
+    aStaticData = 0;
+    nStaticData = 0;
+    eStaticType = 0;
+  }
+  if( objc==1 ) return TCL_OK;
+
+  for(i=1; i<objc && Tcl_GetString(objv[i])[0]=='-'; i++){
+    const char *z = Tcl_GetString(objv[i]);
+    if( strcmp(z, "-transient")==0 ){
+      isTransient = 1;
+      xDel = SQLITE_TRANSIENT;
+    }else
+    if( strcmp(z, "-static")==0 ){
+      isStatic = 1;
+      xDel = SQLITE_STATIC;
+    }else
+    if( strcmp(z, "-int32")==0 ){
+      eType = 0;  /* CARRAY_INT32 */
+    }else
+    if( strcmp(z, "-int64")==0 ){
+      eType = 1;  /* CARRAY_INT64 */
+    }else
+    if( strcmp(z, "-double")==0 ){
+      eType = 2;  /* CARRAY_DOUBLE */
+    }else
+    if( strcmp(z, "-text")==0 ){
+      eType = 3;  /* CARRAY_TEXT */
+    }else
+    if( strcmp(z, "--")==0 ){
+      break;
+    }else
+    {
+      Tcl_AppendResult(interp, "unknown option: ", z, (char*)0);
+      return TCL_ERROR;
+    }
+  }
+  if( eType==3 && !isStatic && !isTransient ){
+    Tcl_AppendResult(interp, "text data must be either -static or -transient",
+                     (char*)0);
+    return TCL_ERROR;
+  }
+  if( isStatic && isTransient ){
+    Tcl_AppendResult(interp, "cannot be both -static and -transient",
+                     (char*)0);
+    return TCL_ERROR;
+  }
+  if( objc-i < 2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "[OPTIONS] STMT IDX VALUE ...");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[i]), &pStmt) ) return TCL_ERROR;
+  i++;
+  if( Tcl_GetIntFromObj(interp, objv[i], &idx) ) return TCL_ERROR;
+  i++;
+  nData = objc - i;
+  switch( eType + 4*(nData<=0) ){
+    case 0: { /* INT32 */
+      int *a = sqlite3_malloc( sizeof(int)*nData );
+      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
+      for(j=0; j<nData; j++){
+        int v;
+        if( Tcl_GetIntFromObj(interp, objv[i+j], &v) ){
+          sqlite3_free(a);
+          return TCL_ERROR;
+        }
+        a[j] = v;
+      }
+      aData = a;
+      break;
+    }
+    case 1: { /* INT64 */
+      sqlite3_int64 *a = sqlite3_malloc( sizeof(sqlite3_int64)*nData );
+      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
+      for(j=0; j<nData; j++){
+        Tcl_WideInt v;
+        if( Tcl_GetWideIntFromObj(interp, objv[i+j], &v) ){
+          sqlite3_free(a);
+          return TCL_ERROR;
+        }
+        a[j] = v;
+      }
+      aData = a;
+      break;
+    }
+    case 2: { /* DOUBLE */
+      double *a = sqlite3_malloc( sizeof(double)*nData );
+      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
+      for(j=0; j<nData; j++){
+        double v;
+        if( Tcl_GetDoubleFromObj(interp, objv[i+j], &v) ){
+          sqlite3_free(a);
+          return TCL_ERROR;
+        }
+        a[j] = v;
+      }
+      aData = a;
+      break;
+    }
+    case 3: { /* TEXT */
+      char **a = sqlite3_malloc( sizeof(char*)*nData );
+      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
+      for(j=0; j<nData; j++){
+        const char *v = Tcl_GetString(objv[i+j]);
+        a[j] = sqlite3_mprintf("%s", v);
+      }
+      aData = a;
+      break;
+    }
+    case 4: { /* nData==0 */
+      aData = "";
+      xDel = SQLITE_STATIC;
+      isTransient = 0;
+      isStatic = 0;
+      break;
+    }
+  }
+  if( isStatic ){
+    aStaticData = aData;
+    nStaticData = nData;
+    eStaticType = eType;
+  }
+  rc = sqlite3_carray_bind(pStmt, idx, aData, nData, eType, xDel);
+  if( isTransient ){
+    if( eType==3 ){
+      for(i=0; i<nData; i++) sqlite3_free(((char**)aData)[i]);
+    }
+    sqlite3_free(aData);
+  }
+carray_bind_done:
+  if( rc ){
+    Tcl_AppendResult(interp, sqlite3_errstr(rc), (char*)0);
+    return TCL_ERROR;
+  }
   return TCL_OK;
 }
 
@@ -8029,6 +8216,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_text",             test_bind_text     ,0 },
      { "sqlite3_bind_text16",           test_bind_text16   ,0 },
      { "sqlite3_bind_blob",             test_bind_blob     ,0 },
+     { "sqlite3_carray_bind",           test_carray_bind   ,0 },
      { "sqlite3_bind_parameter_count",  test_bind_parameter_count, 0},
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
      { "sqlite3_bind_parameter_index",  test_bind_parameter_index, 0},
