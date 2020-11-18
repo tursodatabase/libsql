@@ -1,5 +1,5 @@
-C Update\stest\scode\sto\sfix\sa\sproblem\swith\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.
-D 2020-11-18T14:12:20.708
+C Fix\sa\sproblem\scausing\ssqlite3_carray_bind()\sto\sreturn\san\sundefined\svalue.
+D 2020-11-18T14:30:53.348
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -287,7 +287,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/appendvfs.c 55121d311d408ba9c62c3cfa367408887638f02f9522dd9859891d0ee69a7eba
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
-F ext/misc/carray.c 6b3cb5217466f687f48e3c3a87c43fb628ae80db68a95e30bbd8074d099c29a4
+F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
 F ext/misc/carray.h de74ac70b2338f416723f7d538026e8ec0b7f1d388319f8f140c9a4d7677f02e
 F ext/misc/cksumvfs.c 910848f3d9739908cf77cad66a76dd45001546f46ff5ef4ca5c20c5476e77e98
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
@@ -1885,7 +1885,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 272793e5edc47e431be77d589718a001f2696869e3e15f1371a1890645a995a7
-R 2c44665e3a5b0be33aac2329bca93faa
+P 29c779a07bf6ede1ec2cdb4695d801a5c113ab4b12d6cd22bcee8d2adb06891e
+R ea82dcf1d24d3a6d98936e0bb2a5ecaf
 U dan
-Z 117fdf5da6711f3fdf1728709cc0f40e
+Z d313a9fb23d8ac38dda9b0de8b657338
