@@ -3954,6 +3954,7 @@ static int SQLITE_TCLAPI test_bind_blob(
 }
 
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** sqlite3_carray_bind [options...] STMT NAME VALUE ...
 **
@@ -4139,6 +4140,7 @@ carray_bind_done:
   }
   return TCL_OK;
 }
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** Usage:   sqlite3_bind_parameter_count  STMT
@@ -8216,7 +8218,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_text",             test_bind_text     ,0 },
      { "sqlite3_bind_text16",           test_bind_text16   ,0 },
      { "sqlite3_bind_blob",             test_bind_blob     ,0 },
+#ifndef SQLITE_OMIT_VIRTUALTABLE
      { "sqlite3_carray_bind",           test_carray_bind   ,0 },
+#endif
      { "sqlite3_bind_parameter_count",  test_bind_parameter_count, 0},
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
      { "sqlite3_bind_parameter_index",  test_bind_parameter_index, 0},

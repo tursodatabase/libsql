@@ -1,5 +1,5 @@
-C Fix\strivial\smemory\sleaks\sin\sthe\sshell\sand\ssqldiff\sprograms.
-D 2020-11-17T21:09:56.874
+C Update\stest\scode\sto\sfix\sa\sproblem\swith\sSQLITE_OMIT_VIRTUAL_TABLE\sbuilds.
+D 2020-11-18T14:12:20.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -548,7 +548,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c 385533d17fb06529c909defc73ef47dd2712dc198eedff94fc6df5bc23687c71
+F src/test1.c b6da26302b87e9e22e2c17ebb716b203f5c9a5edf30d34b0c21829627cb5aa56
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1885,7 +1885,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b192fdddb63ac56fd6725032af110a069baac52347c0012c130bf34f3cbe69e4
-R c82023e65720caa1007ee5d3c2933c2e
+P 272793e5edc47e431be77d589718a001f2696869e3e15f1371a1890645a995a7
+R 2c44665e3a5b0be33aac2329bca93faa
 U dan
-Z 63e7d3fc62cc2655e0b754cd1bdd484b
+Z 117fdf5da6711f3fdf1728709cc0f40e
