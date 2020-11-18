@@ -442,6 +442,7 @@ TESTSRC += \
   $(TOP)/ext/expert/test_expert.c \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/carray.c \
+  $(TOP)/ext/misc/cksumvfs.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/decimal.c \
@@ -1234,6 +1235,7 @@ TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DESERIALIZE
+TESTFIXTURE_FLAGS += -DSQLITE_CKSUMVFS_STATIC
 
 TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.la
 TESTFIXTURE_SRC1 = sqlite3.c

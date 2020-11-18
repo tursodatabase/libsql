@@ -427,7 +427,7 @@ static Expr *removeUnindexableInClauseTerms(
 
     for(i=iEq; i<pLoop->nLTerm; i++){
       if( pLoop->aLTerm[i]->pExpr==pX ){
-        int iField = pLoop->aLTerm[i]->iField - 1;
+        int iField = pLoop->aLTerm[i]->u.x.iField - 1;
         if( pOrigRhs->a[iField].pExpr==0 ) continue; /* Duplicate PK column */
         pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
         pOrigRhs->a[iField].pExpr = 0;
@@ -570,7 +570,7 @@ static int codeEqualityTerm(
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
     }
-    if( iEq>0 ){
+    if( iEq>0 && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0 ){
       pLoop->wsFlags |= WHERE_IN_EARLYOUT;
     }
 
@@ -608,7 +608,12 @@ static int codeEqualityTerm(
           pIn++;
         }
       }
-      if( iEq>0 ){
+      testcase( iEq>0
+                && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0
+                && (pLoop->wsFlags & WHERE_VIRTUALTABLE)!=0 );
+      if( iEq>0 
+       && (pLoop->wsFlags & (WHERE_IN_SEEKSCAN|WHERE_VIRTUALTABLE))==0
+      ){
         sqlite3VdbeAddOp3(v, OP_SeekHit, pLevel->iIdxCur, 0, iEq);
       }
     }else{
@@ -1397,6 +1402,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
                       pLoop->u.vtab.needFree ? P4_DYNAMIC : P4_STATIC);
     VdbeCoverage(v);
     pLoop->u.vtab.needFree = 0;
+    /* An OOM inside of AddOp4(OP_VFilter) instruction above might have freed
+    ** the u.vtab.idxStr.  NULL it out to prevent a use-after-free */
+    if( db->mallocFailed ) pLoop->u.vtab.idxStr = 0;
     pLevel->p1 = iCur;
     pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
@@ -1655,6 +1663,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
     int omitTable;               /* True if we use the index only */
     int regBignull = 0;          /* big-null flag register */
+    int addrSeekScan = 0;        /* Opcode of the OP_SeekScan, if any */
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
@@ -1760,8 +1769,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Expr *pRight = pRangeStart->pExpr->pRight;
       codeExprOrVector(pParse, pRight, regBase+nEq, nBtm);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
-      if( !bRev
-       && (pRangeStart->wtFlags & TERM_VNULL)==0
+      if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
@@ -1801,6 +1809,20 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
+      if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 && op==OP_SeekGE ){
+        assert( regBignull==0 );
+        /* TUNING:  The OP_SeekScan opcode seeks to reduce the number
+        ** of expensive seek operations by replacing a single seek with
+        ** 1 or more step operations.  The question is, how many steps
+        ** should we try before giving up and going with a seek.  The cost
+        ** of a seek is proportional to the logarithm of the of the number
+        ** of entries in the tree, so basing the number of steps to try
+        ** on the estimated number of rows in the btree seems like a good
+        ** guess. */
+        addrSeekScan = sqlite3VdbeAddOp1(v, OP_SeekScan, 
+                                         (pIdx->aiRowLogEst[0]+9)/10);
+        VdbeCoverage(v);
+      }
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       VdbeCoverage(v);
       VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
@@ -1836,8 +1858,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       codeExprOrVector(pParse, pRight, regBase+nEq, nTop);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
-      if( bRev
-       && (pRangeEnd->wtFlags & TERM_VNULL)==0
+      if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
@@ -1884,6 +1905,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
       testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
+      if( addrSeekScan ) sqlite3VdbeJumpHere(v, addrSeekScan);
     }
     if( regBignull ){
       /* During a NULL-scan, check to see if we have reached the end of
@@ -1903,7 +1925,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
     }
 
-    if( pLoop->wsFlags & WHERE_IN_EARLYOUT ){
+    if( (pLoop->wsFlags & WHERE_IN_EARLYOUT)!=0 ){
       sqlite3VdbeAddOp3(v, OP_SeekHit, iIdxCur, nEq, nEq);
     }
 
@@ -2411,7 +2433,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 #endif
     assert( !ExprHasProperty(pE, EP_FromJoin) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
-    pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.leftColumn, notReady,
+    pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.x.leftColumn, notReady,
                     WO_EQ|WO_IN|WO_IS, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;

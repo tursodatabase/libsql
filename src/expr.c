@@ -45,7 +45,9 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
   while( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
-    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+    assert( pExpr->op==TK_COLLATE
+         || pExpr->op==TK_IF_NULL_ROW
+         || (pExpr->op==TK_REGISTER && pExpr->op2==TK_IF_NULL_ROW) );
     pExpr = pExpr->pLeft;
     assert( pExpr!=0 );
   }
@@ -3621,6 +3623,7 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 */
 static void exprToRegister(Expr *pExpr, int iReg){
   Expr *p = sqlite3ExprSkipCollateAndLikely(pExpr);
+  if( NEVER(p==0) ) return;
   p->op2 = p->op;
   p->op = TK_REGISTER;
   p->iTable = iReg;
@@ -4608,6 +4611,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   int r2;
   pExpr = sqlite3ExprSkipCollateAndLikely(pExpr);
   if( ConstFactorOk(pParse)
+   && ALWAYS(pExpr!=0)
    && pExpr->op!=TK_REGISTER
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){

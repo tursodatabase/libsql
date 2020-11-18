@@ -28,6 +28,7 @@ static const char zHelp[] =
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
+  "  --reserve N         Reserve N bytes on each database page\n"
   "  --serialized        Set serialized threading mode\n"
   "  --singlethread      Set single-threaded mode - disables all mutexing\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
@@ -93,6 +94,7 @@ static struct Global {
   int szTest;                /* Scale factor for test iterations */
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
+  int nReserve;              /* Reserve bytes */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -2135,6 +2137,10 @@ static void displayLinuxIoStats(FILE *out){
 #  define sqlite3_sourceid(X) "(before 3.6.18)"
 #endif
 
+#if SQLITE_CKSUMVFS_STATIC
+int sqlite3_register_cksumvfs(const char*);
+#endif
+
 static int xCompileOptions(void *pCtx, int nVal, char **azVal, char **azCol){
   printf("-- Compile option: %s\n", azVal[0]);
   return SQLITE_OK;
@@ -2168,6 +2174,10 @@ int main(int argc, char **argv){
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
+
+#ifdef SQLITE_CKSUMVFS_STATIC
+  sqlite3_register_cksumvfs(0);
+#endif
 
   /* Display the version of SQLite being tested */
   printf("-- Speedtest1 for SQLite %s %.48s\n",
@@ -2303,6 +2313,9 @@ int main(int argc, char **argv){
 #ifndef SPEEDTEST_OMIT_HASH
         HashInit();
 #endif
+      }else if( strcmp(z,"reserve")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        g.nReserve = atoi(argv[++i]);
       }else if( strcmp(z,"without-rowid")==0 ){
         g.zWR = "WITHOUT ROWID";
         g.zPK = "PRIMARY KEY";
@@ -2354,6 +2367,9 @@ int main(int argc, char **argv){
     if( rc ) fatal_error("lookaside configuration failed: %d\n", rc);
   }
 #endif
+  if( g.nReserve>0 ){
+    sqlite3_file_control(g.db, 0, SQLITE_FCNTL_RESERVE_BYTES, &g.nReserve);
+  }
 
   /* Set database connection options */
   sqlite3_create_function(g.db, "random", 0, SQLITE_UTF8, 0, randomFunc, 0, 0);

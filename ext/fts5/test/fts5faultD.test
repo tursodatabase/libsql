@@ -14,7 +14,7 @@
 
 source [file join [file dirname [info script]] fts5_common.tcl]
 source $testdir/malloc_common.tcl
-set testprefix fts5faultA
+set testprefix fts5faultD
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts5 {

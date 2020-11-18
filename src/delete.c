@@ -942,10 +942,6 @@ int sqlite3GenerateIndexKey(
   }
   if( regOut ){
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regOut);
-    if( pIdx->pTable->pSelect ){
-      const char *zAff = sqlite3IndexAffinityStr(pParse->db, pIdx);
-      sqlite3VdbeChangeP4(v, -1, zAff, P4_TRANSIENT);
-    }
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol);
   return regBase;

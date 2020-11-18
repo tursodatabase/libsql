@@ -1682,7 +1682,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   char *zColl;              /* Dequoted name of collation sequence */
   sqlite3 *db;
 
-  if( (p = pParse->pNewTable)==0 ) return;
+  if( (p = pParse->pNewTable)==0 || IN_RENAME_OBJECT ) return;
   i = p->nCol-1;
   db = pParse->db;
   zColl = sqlite3NameFromToken(db, pToken);
@@ -1917,12 +1917,15 @@ static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
   int nByte;
   if( pIdx->nColumn>=N ) return SQLITE_OK;
   assert( pIdx->isResized==0 );
-  nByte = (sizeof(char*) + sizeof(i16) + 1)*N;
+  nByte = (sizeof(char*) + sizeof(LogEst) + sizeof(i16) + 1)*N;
   zExtra = sqlite3DbMallocZero(db, nByte);
   if( zExtra==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(zExtra, pIdx->azColl, sizeof(char*)*pIdx->nColumn);
   pIdx->azColl = (const char**)zExtra;
   zExtra += sizeof(char*)*N;
+  memcpy(zExtra, pIdx->aiRowLogEst, sizeof(LogEst)*(pIdx->nKeyCol+1));
+  pIdx->aiRowLogEst = (LogEst*)zExtra;
+  zExtra += sizeof(LogEst)*N;
   memcpy(zExtra, pIdx->aiColumn, sizeof(i16)*pIdx->nColumn);
   pIdx->aiColumn = (i16*)zExtra;
   zExtra += sizeof(i16)*N;
@@ -4485,7 +4488,7 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   assert(pList || pParse->db->mallocFailed );
   if( pList ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-      if( pItem->iCursor>=0 ) break;
+      if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;
       if( pItem->pSelect ){
         sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);
@@ -4682,7 +4685,16 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   if( !v ) return;
   if( type!=TK_DEFERRED ){
     for(i=0; i<db->nDb; i++){
-      sqlite3VdbeAddOp2(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1);
+      int eTxnType;
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt && sqlite3BtreeIsReadonly(pBt) ){
+        eTxnType = 0;  /* Read txn */
+      }else if( type==TK_EXCLUSIVE ){
+        eTxnType = 2;  /* Exclusive txn */
+      }else{
+        eTxnType = 1;  /* Write txn */
+      }
+      sqlite3VdbeAddOp2(v, OP_Transaction, i, eTxnType);
       sqlite3VdbeUsesBtree(v, i);
     }
   }

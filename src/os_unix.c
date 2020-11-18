@@ -1545,6 +1545,9 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   return rc;
 }
 
+/* Forward declaration*/
+static int unixSleep(sqlite3_vfs*,int);
+
 /*
 ** Set a posix-advisory-lock.
 **
@@ -1574,7 +1577,7 @@ static int osSetPosixAdvisoryLock(
     ** generic posix, however, there is no such API.  So we simply try the
     ** lock once every millisecond until either the timeout expires, or until
     ** the lock is obtained. */
-    usleep(1000);
+    unixSleep(0,1000);
     rc = osFcntl(h,F_SETLK,pLock);
     tm--;
   }
@@ -4904,7 +4907,7 @@ static int unixShmLock(
         if( rc==SQLITE_OK ){
           memset(&aLock[ofst], 0, sizeof(int)*n);
         }
-      }else if( p->sharedMask & (1<<ofst) ){
+      }else if( ALWAYS(p->sharedMask & (1<<ofst)) ){
         assert( n==1 && aLock[ofst]>1 );
         aLock[ofst]--;
       }
@@ -4937,7 +4940,7 @@ static int unixShmLock(
     int ii;
     for(ii=ofst; ii<ofst+n; ii++){
       assert( (p->sharedMask & mask)==0 );
-      if( (p->exclMask & (1<<ii))==0 && aLock[ii] ){
+      if( ALWAYS((p->exclMask & (1<<ii))==0) && aLock[ii] ){
         rc = SQLITE_BUSY;
         break;
       }
@@ -6576,7 +6579,8 @@ static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
   UNUSED_PARAMETER(NotUsed);
   return microseconds;
 #elif defined(HAVE_USLEEP) && HAVE_USLEEP
-  usleep(microseconds);
+  if( microseconds>=1000000 ) sleep(microseconds/1000000);
+  if( microseconds%1000000 ) usleep(microseconds%1000000);
   UNUSED_PARAMETER(NotUsed);
   return microseconds;
 #else
@@ -7149,7 +7153,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
       
       if( nTries==1 ){
         conchModTime = buf.st_mtimespec;
-        usleep(500000); /* wait 0.5 sec and try the lock again*/
+        unixSleep(0,500000); /* wait 0.5 sec and try the lock again*/
         continue;  
       }
 
@@ -7175,7 +7179,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
           /* don't break the lock on short read or a version mismatch */
           return SQLITE_BUSY;
         }
-        usleep(10000000); /* wait 10 sec and try the lock again */
+        unixSleep(0,10000000); /* wait 10 sec and try the lock again */
         continue; 
       }
       

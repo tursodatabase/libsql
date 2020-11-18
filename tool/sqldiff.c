@@ -473,6 +473,7 @@ static void dump_table(const char *zTab, FILE *out){
     fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
   }
   sqlite3_finalize(pStmt);
+  sqlite3_free(zId);
 }
 
 

@@ -3487,7 +3487,8 @@ case OP_AutoCommit: {
 ** active.
 ** If P2 is non-zero, then a write-transaction is started, or if a 
 ** read-transaction is already active, it is upgraded to a write-transaction.
-** If P2 is zero, then a read-transaction is started.
+** If P2 is zero, then a read-transaction is started.  If P2 is 2 or more
+** then an exclusive transaction is started.
 **
 ** P1 is the index of the database file on which the transaction is
 ** started.  Index 0 is the main database file and index 1 is the
@@ -3521,6 +3522,7 @@ case OP_Transaction: {
 
   assert( p->bIsReader );
   assert( p->readOnly==0 || pOp->p2==0 );
+  assert( pOp->p2>=0 && pOp->p2<=2 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
   if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
@@ -4382,6 +4384,147 @@ seek_not_found:
   }
   break;
 }
+
+
+/* Opcode: SeekScan  P1 P2 * * *
+** Synopsis: Scan-ahead up to P1 rows
+**
+** This opcode is a prefix opcode to OP_SeekGE.  In other words, this
+** opcode must be immediately followed by OP_SeekGE. This constraint is
+** checked by assert() statements.
+**
+** This opcode uses the P1 through P4 operands of the subsequent
+** OP_SeekGE.  In the text that follows, the operands of the subsequent
+** OP_SeekGE opcode are denoted as SeekOP.P1 through SeekOP.P4.   Only
+** the P1 and P2 operands of this opcode are also used, and  are called
+** This.P1 and This.P2.
+**
+** This opcode helps to optimize IN operators on a multi-column index
+** where the IN operator is on the later terms of the index by avoiding
+** unnecessary seeks on the btree, substituting steps to the next row
+** of the b-tree instead.  A correct answer is obtained if this opcode
+** is omitted or is a no-op.
+**
+** The SeekGE.P3 and SeekGE.P4 operands identify an unpacked key which
+** is the desired entry that we want the cursor SeekGE.P1 to be pointing
+** to.  Call this SeekGE.P4/P5 row the "target".
+**
+** If the SeekGE.P1 cursor is not currently pointing to a valid row,
+** then this opcode is a no-op and control passes through into the OP_SeekGE.
+**
+** If the SeekGE.P1 cursor is pointing to a valid row, then that row
+** might be the target row, or it might be near and slightly before the
+** target row.  This opcode attempts to position the cursor on the target
+** row by, perhaps by invoking sqlite3BtreeStep() on the cursor
+** between 0 and This.P1 times.
+**
+** There are three possible outcomes from this opcode:<ol>
+**
+** <li> If after This.P1 steps, the cursor is still point to a place that
+**      is earlier in the btree than the target row,
+**      then fall through into the subsquence OP_SeekGE opcode.
+**
+** <li> If the cursor is successfully moved to the target row by 0 or more
+**      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
+**      past the OP_IdxGT opcode that follows the OP_SeekGE.
+**
+** <li> If the cursor ends up past the target row (indicating the the target
+**      row does not exist in the btree) then jump to SeekOP.P2. 
+** </ol>
+*/
+case OP_SeekScan: {
+  VdbeCursor *pC;
+  int res;
+  int nStep;
+  UnpackedRecord r;
+
+  assert( pOp[1].opcode==OP_SeekGE );
+
+  /* pOp->p2 points to the first instruction past the OP_IdxGT that
+  ** follows the OP_SeekGE.  */
+  assert( pOp->p2>=(int)(pOp-aOp)+2 );
+  assert( aOp[pOp->p2-1].opcode==OP_IdxGT );
+  assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
+  assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
+  assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
+
+  assert( pOp->p1>0 );
+  pC = p->apCsr[pOp[1].p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_BTREE );
+  assert( !pC->isTable );
+  if( !sqlite3BtreeCursorIsValidNN(pC->uc.pCursor) ){
+#ifdef SQLITE_DEBUG
+     if( db->flags&SQLITE_VdbeTrace ){
+       printf("... cursor not valid - fall through\n");
+     }        
+#endif
+    break;
+  }
+  nStep = pOp->p1;
+  assert( nStep>=1 );
+  r.pKeyInfo = pC->pKeyInfo;
+  r.nField = (u16)pOp[1].p4.i;
+  r.default_rc = 0;
+  r.aMem = &aMem[pOp[1].p3];
+#ifdef SQLITE_DEBUG
+  {
+    int i;
+    for(i=0; i<r.nField; i++){
+      assert( memIsValid(&r.aMem[i]) );
+      REGISTER_TRACE(pOp[1].p3+i, &aMem[pOp[1].p3+i]);
+    }
+  }
+#endif
+  res = 0;  /* Not needed.  Only used to silence a warning. */
+  while(1){
+    rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
+    if( rc ) goto abort_due_to_error;
+    if( res>0 ){
+      seekscan_search_fail:
+#ifdef SQLITE_DEBUG
+      if( db->flags&SQLITE_VdbeTrace ){
+        printf("... %d steps and then skip\n", pOp->p1 - nStep);
+      }        
+#endif
+      VdbeBranchTaken(1,3);
+      pOp++;
+      goto jump_to_p2;
+    }
+    if( res==0 ){
+#ifdef SQLITE_DEBUG
+      if( db->flags&SQLITE_VdbeTrace ){
+        printf("... %d steps and then success\n", pOp->p1 - nStep);
+      }        
+#endif
+      VdbeBranchTaken(2,3);
+      goto jump_to_p2;
+      break;
+    }
+    if( nStep<=0 ){
+#ifdef SQLITE_DEBUG
+      if( db->flags&SQLITE_VdbeTrace ){
+        printf("... fall through after %d steps\n", pOp->p1);
+      }        
+#endif
+      VdbeBranchTaken(0,3);
+      break;
+    }
+    nStep--;
+    rc = sqlite3BtreeNext(pC->uc.pCursor, 0);
+    if( rc ){
+      if( rc==SQLITE_DONE ){
+        rc = SQLITE_OK;
+        goto seekscan_search_fail;
+      }else{
+        goto abort_due_to_error;
+      }
+    }
+  }
+  
+  break;
+}
+
 
 /* Opcode: SeekHit P1 P2 P3 * *
 ** Synopsis: set P2<=seekHit<=P3
@@ -5914,8 +6057,31 @@ case OP_IdxGE:  {       /* jump */
     }
   }
 #endif
-  res = 0;  /* Not needed.  Only used to silence a warning. */
-  rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
+
+  /* Inlined version of sqlite3VdbeIdxKeyCompare() */
+  {
+    i64 nCellKey = 0;
+    BtCursor *pCur;
+    Mem m;
+
+    assert( pC->eCurType==CURTYPE_BTREE );
+    pCur = pC->uc.pCursor;
+    assert( sqlite3BtreeCursorIsValid(pCur) );
+    nCellKey = sqlite3BtreePayloadSize(pCur);
+    /* nCellKey will always be between 0 and 0xffffffff because of the way
+    ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
+    if( nCellKey<=0 || nCellKey>0x7fffffff ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto abort_due_to_error;
+    }
+    sqlite3VdbeMemInit(&m, db, 0);
+    rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
+    if( rc ) goto abort_due_to_error;
+    res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, &r, 0);
+    sqlite3VdbeMemRelease(&m);
+  }
+  /* End of inlined sqlite3VdbeIdxKeyCompare() */
+
   assert( (OP_IdxLE&1)==(OP_IdxLT&1) && (OP_IdxGE&1)==(OP_IdxGT&1) );
   if( (pOp->opcode&1)==(OP_IdxLT&1) ){
     assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxLT );
@@ -5925,7 +6091,7 @@ case OP_IdxGE:  {       /* jump */
     res++;
   }
   VdbeBranchTaken(res>0,2);
-  if( rc ) goto abort_due_to_error;
+  assert( rc==SQLITE_OK );
   if( res>0 ) goto jump_to_p2;
   break;
 }

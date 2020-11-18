@@ -6200,7 +6200,7 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
 ** <li value="1"> SQLITE_TXN_READ
 ** <li value="2"> SQLITE_TXN_WRITE
 ** </ol>
-** ^If the S argument to sqlite3_txn_state(D,S) is in the name of
+** ^If the S argument to sqlite3_txn_state(D,S) is not the name of
 ** a valid schema, then -1 is returned.
 */
 int sqlite3_txn_state(sqlite3*,const char *zSchema);
@@ -9245,10 +9245,11 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** CAPI3REF: Determine If Virtual Table Column Access Is For UPDATE
 **
 ** If the sqlite3_vtab_nochange(X) routine is called within the [xColumn]
-** method of a [virtual table], then it returns true if and only if the
+** method of a [virtual table], then it might return true if the
 ** column is being fetched as part of an UPDATE operation during which the
-** column value will not change.  Applications might use this to substitute
-** a return value that is less expensive to compute and that the corresponding
+** column value will not change.  The virtual table implementation can use
+** this hint as permission to substitute a return value that is less
+** expensive to compute and that the corresponding
 ** [xUpdate] method understands as a "no-change" value.
 **
 ** If the [xColumn] method calls sqlite3_vtab_nochange() and finds that
@@ -9257,6 +9258,12 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** any of the [sqlite3_result_int|sqlite3_result_xxxxx() interfaces].
 ** In that case, [sqlite3_value_nochange(X)] will return true for the
 ** same column in the [xUpdate] method.
+**
+** The sqlite3_vtab_nochange() routine is an optimization.  Virtual table
+** implementations should continue to give a correct answer even if the
+** sqlite3_vtab_nochange() interface were to always return false.  In the
+** current implementation, the sqlite3_vtab_nochange() interface does always
+** returns false for the enhanced [UPDATE FROM] statement.
 */
 int sqlite3_vtab_nochange(sqlite3_context*);
 
@@ -9472,7 +9479,7 @@ int sqlite3_db_cacheflush(sqlite3*);
 ** seventh parameter is the final rowid value of the row being inserted
 ** or updated. The value of the seventh parameter passed to the callback
 ** function is not defined for operations on WITHOUT ROWID tables, or for
-** INSERT operations on rowid tables.
+** DELETE operations on rowid tables.
 **
 ** The [sqlite3_preupdate_old()], [sqlite3_preupdate_new()],
 ** [sqlite3_preupdate_count()], and [sqlite3_preupdate_depth()] interfaces

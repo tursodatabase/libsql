@@ -477,6 +477,7 @@ void sqlite3VdbeAddParseSchemaOp(Parse *pParse, int iDb, char *zWhere){
   sqlite3SchemaWritable(pParse, iDb);
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
+  sqlite3MayAbort(p->pParse);
 }
 
 /*
@@ -705,7 +706,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
      || opcode==OP_VDestroy
      || opcode==OP_VCreate
-     || (opcode==OP_ParseSchema && pOp->p4.z==0)
+     || opcode==OP_ParseSchema
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
     ){
@@ -1523,7 +1524,7 @@ char *sqlite3VdbeDisplayComment(
               sqlite3_str_appendf(&x, "%d", v1);
             }else if( pCtx->argc>1 ){
               sqlite3_str_appendf(&x, "%d..%d", v1, v1+pCtx->argc-1);
-            }else{
+            }else if( x.accError==0 ){
               assert( x.nChar>2 );
               x.nChar -= 2;
               ii++;

@@ -234,7 +234,7 @@ static void updateFromSelect(
 #endif
       pList = sqlite3ExprListAppend(pParse, pList, pNew);
     }
-    eDest = SRT_Upfrom;
+    eDest = IsVirtual(pTab) ? SRT_Table : SRT_Upfrom;
   }else if( pTab->pSelect ){
     for(i=0; i<pTab->nCol; i++){
       pList = sqlite3ExprListAppend(pParse, pList, exprRowColumn(pParse, i));
@@ -1187,12 +1187,26 @@ static void updateVirtualTable(
   regArg = pParse->nMem + 1;
   pParse->nMem += nArg;
   if( pSrc->nSrc>1 ){
+    Index *pPk = 0;
     Expr *pRow;
     ExprList *pList;
-    if( pRowid ){
-      pRow = sqlite3ExprDup(db, pRowid, 0);
+    if( HasRowid(pTab) ){
+      if( pRowid ){
+        pRow = sqlite3ExprDup(db, pRowid, 0);
+      }else{
+        pRow = sqlite3PExpr(pParse, TK_ROW, 0, 0);
+      }
     }else{
-      pRow = sqlite3PExpr(pParse, TK_ROW, 0, 0);
+      i16 iPk;      /* PRIMARY KEY column */
+      pPk = sqlite3PrimaryKeyIndex(pTab);
+      assert( pPk!=0 );
+      assert( pPk->nKeyCol==1 );
+      iPk = pPk->aiColumn[0];
+      if( aXRef[iPk]>=0 ){
+        pRow = sqlite3ExprDup(db, pChanges->a[aXRef[iPk]].pExpr, 0);
+      }else{
+        pRow = exprRowColumn(pParse, iPk);
+      }
     }
     pList = sqlite3ExprListAppend(pParse, 0, pRow);
 
@@ -1206,7 +1220,7 @@ static void updateVirtualTable(
       }
     }
 
-    updateFromSelect(pParse, ephemTab, 0, pList, pSrc, pWhere, 0, 0);
+    updateFromSelect(pParse, ephemTab, pPk, pList, pSrc, pWhere, 0, 0);
     sqlite3ExprListDelete(db, pList);
     eOnePass = ONEPASS_OFF;
   }else{
