@@ -1,5 +1,5 @@
-C Add\stest\sinfrastructure\sfor\scksumvfs.\sAnd\supdate\scksumvfs\sso\sthat\sit\sworks\sin\sconcert\swith\sversion\s2\sVFSs.\sNo\schanges\sto\score\sSQLite.
-D 2020-11-18T18:36:43.808
+C Update\scksumvfs.c\sso\sthat\sif\sSQLITE_AMALGAMATION\sis\sdefined,\sSQLITE_CKSUMVFS_STATIC\sis\simplied.
+D 2020-11-18T20:55:01.090
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -289,7 +289,7 @@ F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0e
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
 F ext/misc/carray.h de74ac70b2338f416723f7d538026e8ec0b7f1d388319f8f140c9a4d7677f02e
-F ext/misc/cksumvfs.c 829d9cda84fead796ca4f912ed6afcf9e9ebc18420f427e6a0853e0dd1ea1631
+F ext/misc/cksumvfs.c c4e7ebeae5aa578df98f23bddb63ecbcbe913ee3c32b8b769525af100d752061
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8beb2f22b9
 F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
@@ -1885,7 +1885,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 083203a549d3cf26991d8626b308ff1e9e44be6abb72ab3d38e5fd53c99aed7f
-R 57741c95c35040c8cc534beb4c5421d5
+P 43d4801df5dc4625f6829ed8246758493842b2416ba609ee0423ef63155cece2
+R 819b2a35faf033f5ae6dd8bf0e39c618
 U dan
-Z 82ba1232e046d0885e306a6525629b59
+Z 008d2a9a3f8427ff308e19cdcb995f1d
