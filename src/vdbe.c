@@ -8157,7 +8157,11 @@ default: {          /* This is really OP_Noop, OP_Explain */
   ** an error of some kind.
   */
 abort_due_to_error:
-  if( db->mallocFailed ) rc = SQLITE_NOMEM_BKPT;
+  if( db->mallocFailed ){
+    rc = SQLITE_NOMEM_BKPT;
+  }else if( rc==SQLITE_IOERR_CORRUPTFS ){
+    rc = SQLITE_CORRUPT_BKPT;
+  }
   assert( rc );
   if( p->zErrMsg==0 && rc!=SQLITE_IOERR_NOMEM ){
     sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));

@@ -799,9 +799,6 @@ static SQLITE_NOINLINE int apiHandleError(sqlite3 *db, int rc){
     sqlite3Error(db, SQLITE_NOMEM);
     return SQLITE_NOMEM_BKPT;
   }
-  if( rc==SQLITE_IOERR_CORRUPTFS ){
-    return SQLITE_CORRUPT_BKPT;
-  }
   return rc & db->errMask;
 }
 

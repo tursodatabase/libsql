@@ -1,5 +1,5 @@
-C On\sunix,\sfor\scertain\serror\scodes\sof\sread()/pread()\sreturn\nSQLITE_IOERR_CORRUPTFS\sinstead\sof\sSQLITE_IOERR_READ.\s\sAnd\sthen\sconvert\sthis\nerror\sinto\sSQLITE_CORRUPT\sprior\sto\sreturning\sback\sto\sthe\sapplication.
-D 2020-11-18T12:48:48.926
+C Improvements\sto\sthe\smechanism\sthat\sattempts\sto\sreport\sSQLITE_CORRUPT\sif\npread()\ssays\sthat\sthe\sunderlying\sfilesystem\sis\scorrupt.
+D 2020-11-18T21:50:05.460
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F src/insert.c 7e081d33aab4a9d761c39dccf3c3872c35501565d2ed9db66301918d23bc7901
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 436af4968c6954d304fce9efa12719367bd8f37b19b93b71d6ad607e85adbb47
 F src/main.c 54d61d1e94f225636053c862c930d7dd7b29162b93d3f3ecb00439910ccba02a
-F src/malloc.c cef96fefb95a0d581a85207c61fbe4ec67cafc35dbe6556d1f7a50912b9a98a0
+F src/malloc.c c1af4ac5a463648cd2953fd4ac679b3ba9022ce5ec794a60806150ad69dfd33a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c b93b8762ab999a29ae7751532dadf0a1ac78040308a5fb1d17fcc365171d67eb
@@ -522,7 +522,7 @@ F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c cfd1ee5f8a5def522aa0ebf4eec6b30533b4bdb8c76df7cf77dc5c2b790d957d
+F src/os_unix.c c19f392825f4787dbdff2637371ba2210eef8aecfc268509c7aafa9beea3a653
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3700a1c55427a3d4168ad1f1b8a8b0cb9ace1d107e4506e30a8f1e66d8a1195e
@@ -610,7 +610,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 6f3fb4f058c478b38c5280ccfc939745076c6a693999e49846c99fdc761c9c90
+F src/vdbe.c 0f4402a3f8ab7d7f37fbed04d74007f978805aa6ca09738606331e0dc7b2b614
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1885,10 +1885,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 272793e5edc47e431be77d589718a001f2696869e3e15f1371a1890645a995a7
-R 09dfc711a919e75411f1e82c3f8f4a30
-T *branch * detect-corrupt-fs
-T *sym-detect-corrupt-fs *
-T -sym-trunk *
+P 9538ea8447e7b07c05197d6ff2208d3e97b45798736c85b63e8f0c7a3a98c1f3
+R 30998fa2d16edfdfc59fff25cd80e763
 U drh
-Z c20eedee5ebf78255c7079df1f62b80f
+Z 5500fbcb6527afad35cae4db67b7be4a

@@ -3384,7 +3384,6 @@ static int unixRead(
     */
     switch( pFile->lastErrno ){
       case ERANGE:
-      case ENOENT:
       case EIO:
 #ifdef ENXIO
       case ENXIO:
