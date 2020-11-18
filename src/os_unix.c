@@ -3375,7 +3375,25 @@ static int unixRead(
   if( got==amt ){
     return SQLITE_OK;
   }else if( got<0 ){
-    /* lastErrno set by seekAndRead */
+    /* pFile->lastErrno has been set by seekAndRead().
+    ** Usually we return SQLITE_IOERR_READ here, though for some
+    ** kinds of errors we return SQLITE_IOERR_CORRUPTFS.  The
+    ** SQLITE_IOERR_CORRUPTFS will be converted into SQLITE_CORRUPT
+    ** prior to returning to the application by the sqlite3ApiExit()
+    ** routine.
+    */
+    switch( pFile->lastErrno ){
+      case ERANGE:
+      case ENOENT:
+      case EIO:
+#ifdef ENXIO
+      case ENXIO:
+#endif
+#ifdef EDEVERR
+      case EDEVERR:
+#endif
+        return SQLITE_IOERR_CORRUPTFS;
+    }
     return SQLITE_IOERR_READ;
   }else{
     storeLastErrno(pFile, 0);   /* not a system error */
