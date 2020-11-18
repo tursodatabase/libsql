@@ -6429,6 +6429,36 @@ static int SQLITE_TCLAPI file_control_vfsname(
 }
 
 /*
+** tclcmd:   file_control_reservebytes DB N
+*/
+static int SQLITE_TCLAPI file_control_reservebytes(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zDbName = "main";
+  int n = 0;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB N");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db)
+   || Tcl_GetIntFromObj(interp, objv[2], &n) 
+  ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_file_control(db, zDbName, SQLITE_FCNTL_RESERVE_BYTES, (void*)&n);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_OK;  
+}
+
+
+/*
 ** tclcmd:   file_control_tempfilename DB ?AUXDB?
 **
 ** Return a string that is a temporary filename
@@ -8054,6 +8084,48 @@ static int SQLITE_TCLAPI test_write_db(
 }
 
 /*
+** Usage:  sqlite3_register_cksumvfs
+**
+*/
+static int SQLITE_TCLAPI test_register_cksumvfs(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }else{
+    extern int sqlite3_register_cksumvfs(const char*);
+    int rc = sqlite3_register_cksumvfs(0);
+    Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_unregister_cksumvfs
+**
+*/
+static int SQLITE_TCLAPI test_unregister_cksumvfs(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }else{
+    extern int sqlite3_unregister_cksumvfs(void);
+    int rc = sqlite3_unregister_cksumvfs();
+    Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage:  decode_hexdb TEXT
 **
 ** Example:   db deserialize [decode_hexdb $output_of_dbtotxt]
@@ -8352,6 +8424,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_persist_wal",    file_control_persist_wal,     0   },
      { "file_control_powersafe_overwrite",file_control_powersafe_overwrite,0},
      { "file_control_vfsname",        file_control_vfsname,         0   },
+     { "file_control_reservebytes",   file_control_reservebytes,    0   },
      { "file_control_tempfilename",   file_control_tempfilename,    0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
@@ -8422,6 +8495,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
      { "decode_hexdb",             test_decode_hexdb,       0 },
      { "test_write_db",            test_write_db,           0 },
+     { "sqlite3_register_cksumvfs", test_register_cksumvfs,  0 },
+     { "sqlite3_unregister_cksumvfs", test_unregister_cksumvfs,  0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
