@@ -791,12 +791,15 @@ void sqlite3OomClear(sqlite3 *db){
 }
 
 /*
-** Take actions at the end of an API call to indicate an OOM error
+** Take actions at the end of an API call to deal with error codes.
 */
-static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
-  sqlite3OomClear(db);
-  sqlite3Error(db, SQLITE_NOMEM);
-  return SQLITE_NOMEM_BKPT;
+static SQLITE_NOINLINE int apiHandleError(sqlite3 *db, int rc){
+  if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
+    sqlite3OomClear(db);
+    sqlite3Error(db, SQLITE_NOMEM);
+    return SQLITE_NOMEM_BKPT;
+  }
+  return rc & db->errMask;
 }
 
 /*
@@ -818,8 +821,8 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   */
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
-  if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
-    return apiOomError(db);
+  if( db->mallocFailed || rc ){
+    return apiHandleError(db, rc);
   }
   return rc & db->errMask;
 }
