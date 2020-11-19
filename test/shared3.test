@@ -70,13 +70,14 @@ do_test shared3-2.5 {
 # test case shared3-2.3 above). The goal of the following tests is to
 # ensure that the cache-size really is 10 pages.
 #
-if {$::tcl_platform(platform)=="unix"} {
-  set alternative_name ./test.db
-} else {
-  set alternative_name TEST.DB
-}
+#if {$::tcl_platform(platform)=="unix"} {
+#  set alternative_name ./test.db
+#} else {
+#  set alternative_name TEST.DB
+#}
 do_test shared3-2.6 {
-  sqlite3 db3 $alternative_name
+  #sqlite3 db3 $alternative_name
+  sqlite3 db3 "file:./test.db?cache=private" -uri 1
   catchsql {select count(*) from sqlite_master} db3
 } {0 1}
 do_test shared3-2.7 {
@@ -96,7 +97,7 @@ do_test shared3-2.8 {
   # statement above should have caused the pager to grab an exclusive lock
   # on the database file so that the cache could be spilled.
   #
-  catch { sqlite3 db3 $alternative_name }
+  catch { sqlite3 db3 "file:./test.db?cache=private" -uri 1 }
   catchsql {select count(*) from sqlite_master} db3
 } {1 {database is locked}}
 

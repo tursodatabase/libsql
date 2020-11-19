@@ -25,8 +25,10 @@ ifcapable !shared_cache||!attach {
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
 do_test tkt3793-1.1 {
+  db close
+  sqlite3 db "file:test.db" -uri 1
   sqlite3 db1 "file:test.db?cache=private" -uri 1
-  sqlite3 db2 test.db
+  sqlite3 db2 "file:test.db?cache=shared" -uri 1
   execsql {
     BEGIN;
     CREATE TABLE t1(a, b);

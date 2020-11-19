@@ -1,5 +1,5 @@
-C Fix\sthe\stkt3793\stest\scase\sso\sthat\swork\seven\swhen\sfilenames\sare\snormalized.
-D 2020-11-19T20:07:24.243
+C More\stest\scase\schanges\sso\sthat\sshared-cache\smode\stests\sall\swork\nwith\snormalized\sdatabase\snames.
+D 2020-11-19T21:01:11.755
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1336,7 +1336,7 @@ F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0
 F test/sessionfuzz.c f74c4e806bab5a093fb9c11b6123d17a6e0cf73fb7a0f49b12f5a75bf0b7b1a8
 F test/shared.test f022874d9d299fe913529dc10f52ad5a386e4e7ff709270b9b1111b3a0f3420a
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
-F test/shared3.test ab693f9b6e156b8bfb2a0ad94f29fe69602a5d38
+F test/shared3.test f8cd07c1a2b7cdb315c01671a0b2f8e3830b11ef31da6baa9a9cd8da88965403
 F test/shared4.test c75f476804e76e26bf6fa0e7b421fb0ca7d07558
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test a81e99f83e6c51b02ac99c96fb3a2a7b5978c956
@@ -1535,7 +1535,7 @@ F test/tkt2817.test f31839e01f4243cff7399ef654d3af3558cb8d8d
 F test/tkt2820.test 39940276b3436d125deb7d8ebeee053e4cf13213
 F test/tkt2822.test f391776423a7c0d0949edfce375708bfb0f3141e
 F test/tkt2832.test a9b0b74a02dca166a04d9e37739c414b10929caa
-F test/tkt2854.test e432965db29e27e16f539b2ba7f502eb2ccc49af
+F test/tkt2854.test 47a2ae03bf36812f675ec06806a7b958e0de75312261dd8280c187f4a4a8281a
 F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
 F test/tkt2927.test 4752868b9eeeb07a217f7f19f4cbaac98d6d086d
 F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
@@ -1569,7 +1569,7 @@ F test/tkt3761.test b95ea9c98f21cf91325f18a984887e62caceab33
 F test/tkt3762.test 4d439ff7abdc8d9323150269d182c37c2d514576
 F test/tkt3773.test 7bca904d2a647a6a4a291bd86d7fd7c73855b789
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
-F test/tkt3793.test ee95afaa8c950ec69c5410b2dd23e566099dbd452bdbfada1d726851b1607a0c
+F test/tkt3793.test 9ee9c6f300adce634e8990a131ad5e20e22241643a1240c6b372b351205ef7cb
 F test/tkt3810.test 3a3be9965d1861bd84019875851ad5ea90fd8d76b638361514a36a48ea53191b
 F test/tkt3824.test 150aa00bb6220672e5f0eb14dc8eaa36750425f0
 F test/tkt3832.test 2300d10d57562b89875b72148338ac3e14f8847d
@@ -1883,7 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ba89d3e5c68d970ed26c2ec6e6e34bae535c2cc0b22a022d20ac9ff4527b8ab
-R 40361254d6631e9816e560c440e5a0a0
+P e85d32ac6c82d39f5dc9b28f881d5d72f5e5a7e16df12c19315bfa8edea1b0b4
+R d6f4d784be7bd5d8f9c2ac433021e94e
 U drh
-Z 610ddd796adde40858f66c1214402146
+Z f744e95c5d535aa2faa8ffb35a575ff0
