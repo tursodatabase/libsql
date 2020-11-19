@@ -1,5 +1,5 @@
-C Enhance\sthe\sunix\sVFS\sso\sthat\sit\sremoves\sextra\s"/",\s"/./"\sand\s"/../"\sfrom\nthe\sdatabase\sfilename.
-D 2020-11-16T18:45:21.014
+C Fix\sthe\stkt3793\stest\scase\sso\sthat\swork\seven\swhen\sfilenames\sare\snormalized.
+D 2020-11-19T20:07:24.243
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1569,7 +1569,7 @@ F test/tkt3761.test b95ea9c98f21cf91325f18a984887e62caceab33
 F test/tkt3762.test 4d439ff7abdc8d9323150269d182c37c2d514576
 F test/tkt3773.test 7bca904d2a647a6a4a291bd86d7fd7c73855b789
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
-F test/tkt3793.test d90ffd75c52413908d15e1c44fc2ea9c80fcc449
+F test/tkt3793.test ee95afaa8c950ec69c5410b2dd23e566099dbd452bdbfada1d726851b1607a0c
 F test/tkt3810.test 3a3be9965d1861bd84019875851ad5ea90fd8d76b638361514a36a48ea53191b
 F test/tkt3824.test 150aa00bb6220672e5f0eb14dc8eaa36750425f0
 F test/tkt3832.test 2300d10d57562b89875b72148338ac3e14f8847d
@@ -1883,10 +1883,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 772ae83c61c87a9004a614d8ec120ba843286bff1edbd20b987fd592ced84d79
-R c29b95339ed23f814015f1859b8e38ba
-T *branch * stronger-nofollow
-T *sym-stronger-nofollow *
-T -sym-trunk *
+P 7ba89d3e5c68d970ed26c2ec6e6e34bae535c2cc0b22a022d20ac9ff4527b8ab
+R 40361254d6631e9816e560c440e5a0a0
 U drh
-Z e93bd4a1cafad979ab0b42cbc7cacd32
+Z 610ddd796adde40858f66c1214402146
