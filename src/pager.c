@@ -4782,6 +4782,7 @@ int sqlite3PagerOpen(
     nPathname + 8 + 1 +                  /* Journal filename */
 #ifndef SQLITE_OMIT_WAL
     nPathname + 4 + 1 +                  /* WAL filename */
+    nPathname + 5 + 1 +                  /* Second WAL filename */
 #endif
     3                                    /* Terminator */
   );
@@ -4834,6 +4835,8 @@ int sqlite3PagerOpen(
     sqlite3FileSuffix3(zFilename, pPager->zWal);
     pPtr = (u8*)(pPager->zWal + sqlite3Strlen30(pPager->zWal)+1);
 #endif
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
+    memcpy(pPtr, "-wal2", 5);             pPtr += 5 + 1;
   }else{
     pPager->zWal = 0;
   }

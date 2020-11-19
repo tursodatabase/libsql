@@ -1887,7 +1887,6 @@ int sqlite3WalOpen(
   int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
-  int nWalName;                   /* Length of zWalName in bytes */
   int nByte;                      /* Bytes of space to allocate */
 
   assert( zWalName && zWalName[0] );
@@ -1908,8 +1907,7 @@ int sqlite3WalOpen(
   assert( UNIX_SHM_BASE==WALINDEX_LOCK_OFFSET );
 #endif
 
-  nWalName = sqlite3Strlen30(zWalName);
-  nByte = sizeof(Wal) + pVfs->szOsFile*2 + nWalName+2;
+  nByte = sizeof(Wal) + pVfs->szOsFile*2;
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
@@ -1929,11 +1927,7 @@ int sqlite3WalOpen(
   pRet->padToSectorBoundary = 1;
   pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
   pRet->bWal2 = bWal2;
-
-  pRet->zWalName2 = (char*)pRet + sizeof(Wal) + 2*pVfs->szOsFile;
-  memcpy(pRet->zWalName2, zWalName, nWalName);
-  pRet->zWalName2[nWalName] = '2';
-  pRet->zWalName2[nWalName+1] = '\0';
+  pRet->zWalName2 = &zWalName[sqlite3Strlen30(zWalName)+1];
 
   /* Open a file handle on the first write-ahead log file. */
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_WAL);
