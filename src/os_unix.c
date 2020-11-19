@@ -6353,7 +6353,26 @@ static int unixAccess(
 }
 
 /*
+** If the last component of the pathname in z[0]..z[j-1] is something
+** other than ".." then back it out and return true.  If the last
+** component is empty or if it is ".." then return false.
+*/
+static int unixBackupDir(const char *z, int *pJ){
+  int j = *pJ;
+  int i;
+  if( j<=0 ) return 0;
+  for(i=j-1; i>0 && z[i-1]!='/'; i--){}
+  if( z[i]=='.' && i==j-2 && z[i+1]=='.' ) return 0;
+  *pJ = i-1;
+  return 1;
+}
+
+/*
+** Convert a relative pathname into a full pathname.  Also
+** simplify the pathname as follows:
 **
+**    Remove all instances of /./
+**    Remove all isntances of /X/../ for any X
 */
 static int mkFullPathname(
   const char *zPath,              /* Input path */
@@ -6362,6 +6381,7 @@ static int mkFullPathname(
 ){
   int nPath = sqlite3Strlen30(zPath);
   int iOff = 0;
+  int i, j;
   if( zPath[0]!='/' ){
     if( osGetcwd(zOut, nOut-2)==0 ){
       return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
@@ -6376,6 +6396,40 @@ static int mkFullPathname(
     return SQLITE_CANTOPEN_BKPT;
   }
   sqlite3_snprintf(nOut-iOff, &zOut[iOff], "%s", zPath);
+
+  /* Remove duplicate '/' characters.  Except, two // at the beginning
+  ** of a pathname is allowed since this is important on windows. */
+  for(i=j=1; zOut[i]; i++){
+    zOut[j++] = zOut[i];
+    while( zOut[i]=='/' && zOut[i+1]=='/' ) i++;
+  }
+  zOut[j] = 0;
+
+  for(i=j=0; zOut[i]; i++){
+    if( zOut[i]=='/' ){
+      /* Skip over internal "/." directory components */
+      if( zOut[i+1]=='.' && zOut[i+2]=='/' ){
+        i += 1;
+        continue;
+      }
+
+      /* If this is a "/.." directory component then back out the
+      ** previous term of the directory if it is something other than "..".
+      */
+      if( zOut[i+1]=='.'
+       && zOut[i+2]=='.'
+       && zOut[i+3]=='/'
+       && unixBackupDir(zOut, &j)
+      ){
+        i += 2;
+        continue;
+      }
+    }
+    if( j>=0 ) zOut[j] = zOut[i];
+    j++;
+  }
+  if( j==0 ) zOut[j++] = '/';
+  zOut[j] = 0;
   return SQLITE_OK;
 }
 
