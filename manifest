@@ -1,5 +1,5 @@
-C The\sxFullPathname\smethod\sof\sthe\sunix\sVFS\snow\snormalizes\sthe\sfilenames\sby\nomitting\ssurplus\s"/",\s"/./"\sand\s"/../"\sstrings.
-D 2020-11-19T21:12:08.560
+C Add\sfile\sdoc/vdbesort-memory.md,\scontaining\snotes\son\sthe\sway\svdbesort.c\suses\sheap\smemory.
+D 2020-11-20T14:16:41.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -41,6 +41,7 @@ F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html c5d8ba85ac1daef7be8c2d389899480eb62451ff5c09b0c28ff8157bb8770746
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
+F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F doc/wal-lock.md 781726aaba20bafeceb7ba9f91d5c98c6731691b30c954e37cf0b49a053d461d
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
@@ -1885,8 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 842c432772e6cd8464cdb7bfdb38789adeea9aa9e0486d4034cc9841f085f517 6f0d5f0949130a4688319adf05d37c5ccd683ca9ad2dacb7ce433a5fe18ac3c3
-R 9bca7f34bcf3572651c390350ebafdef
-T +closed 6f0d5f0949130a4688319adf05d37c5ccd683ca9ad2dacb7ce433a5fe18ac3c3
-U drh
-Z 8c74c867e3ffdcd79c4ff4d10ad118b3
+P c38dec6f52c01614c1bee8356daf0fcd9f708d029116e9bff51e06719a730dde
+R b9b1a27eff3b385f6d301a9808892950
+U dan
+Z d17ac9b00e741eb4707d9deb9c3699e7
