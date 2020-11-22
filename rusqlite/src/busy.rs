@@ -19,7 +19,7 @@ impl Connection {
     ///
     /// There can only be a single busy handler for a particular database
     /// connection at any given moment. If another busy handler was defined
-    /// (using `busy_handler`) prior to calling this routine, that other
+    /// (using [`busy_handler`](Connection::busy_handler)) prior to calling this routine, that other
     /// busy handler is cleared.
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
         let ms: i32 = timeout
@@ -45,7 +45,7 @@ impl Connection {
     ///
     /// There can only be a single busy handler defined for each database
     /// connection. Setting a new busy handler clears any previously set
-    /// handler. Note that calling `busy_timeout()` or evaluating `PRAGMA
+    /// handler. Note that calling [`busy_timeout()`](Connection::busy_timeout) or evaluating `PRAGMA
     /// busy_timeout=N` will change the busy handler and thus
     /// clear any previously set busy handler.
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {

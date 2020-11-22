@@ -1,4 +1,4 @@
-//! `ToSql` and `FromSql` implementation for JSON `Value`.
+//! [`ToSql`] and [`FromSql`] implementation for JSON `Value`.
 
 use serde_json::Value;
 

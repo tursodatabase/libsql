@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use std::error::Error;
 use std::fmt;
 
-/// Enum listing possible errors from `FromSql` trait.
+/// Enum listing possible errors from [`FromSql`] trait.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum FromSqlError {
@@ -26,7 +26,7 @@ pub enum FromSqlError {
     #[cfg(feature = "uuid")]
     InvalidUuidSize(usize),
 
-    /// An error case available for implementors of the `FromSql` trait.
+    /// An error case available for implementors of the [`FromSql`] trait.
     Other(Box<dyn Error + Send + Sync + 'static>),
 }
 
@@ -72,7 +72,7 @@ impl Error for FromSqlError {
     }
 }
 
-/// Result type for implementors of the `FromSql` trait.
+/// Result type for implementors of the [`FromSql`] trait.
 pub type FromSqlResult<T> = Result<T, FromSqlError>;
 
 /// A trait for types that can be created from a SQLite value.

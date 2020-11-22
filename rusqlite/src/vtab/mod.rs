@@ -1,10 +1,10 @@
 //! `feature = "vtab"` Create virtual tables.
 //!
 //! Follow these steps to create your own virtual table:
-//! 1. Write implemenation of `VTab` and `VTabCursor` traits.
-//! 2. Create an instance of the `Module` structure specialized for `VTab` impl.
+//! 1. Write implemenation of [`VTab`] and [`VTabCursor`] traits.
+//! 2. Create an instance of the [`Module`] structure specialized for [`VTab`] impl.
 //! from step 1.
-//! 3. Register your `Module` structure using `Connection.create_module`.
+//! 3. Register your [`Module`] structure using [`Connection::create_module`].
 //! 4. Run a `CREATE VIRTUAL TABLE` command that specifies the new module in the
 //! `USING` clause.
 //!
@@ -205,7 +205,7 @@ impl VTabConnection {
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
 pub unsafe trait VTab<'vtab>: Sized {
-    /// Client data passed to `Connection::create_module`.
+    /// Client data passed to [`Connection::create_module`].
     type Aux;
     /// Specific cursor implementation
     type Cursor: VTabCursor;
@@ -237,7 +237,7 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
     /// database connection that is executing the CREATE VIRTUAL TABLE
     /// statement.
     ///
-    /// Call `connect` by default.
+    /// Call [`connect`](VTab::connect) by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xcreate_method))
     fn create(
         db: &mut VTabConnection,
@@ -248,7 +248,7 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
     }
 
     /// Destroy the underlying table implementation. This method undoes the work
-    /// of `create`.
+    /// of [`create`](CreateVTab::create).
     ///
     /// Do nothing by default.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xdestroy_method))
@@ -302,7 +302,7 @@ impl From<u8> for IndexConstraintOp {
 }
 
 /// `feature = "vtab"` Pass information into and receive the reply from the
-/// `VTab.best_index` method.
+/// [`VTab::best_index`] method.
 ///
 /// (See [SQLite doc](http://sqlite.org/c3ref/index_info.html))
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
@@ -334,7 +334,7 @@ impl IndexInfo {
         unsafe { (*self.0).nOrderBy as usize }
     }
 
-    /// Information about what parameters to pass to `VTabCursor.filter`.
+    /// Information about what parameters to pass to [`VTabCursor::filter`].
     #[inline]
     pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage<'_> {
         let constraint_usages = unsafe {
@@ -425,11 +425,11 @@ impl IndexConstraint<'_> {
 }
 
 /// `feature = "vtab"` Information about what parameters to pass to
-/// `VTabCursor.filter`.
+/// [`VTabCursor::filter`].
 pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
 impl IndexConstraintUsage<'_> {
-    /// if `argv_index` > 0, constraint is part of argv to `VTabCursor.filter`
+    /// if `argv_index` > 0, constraint is part of argv to [`VTabCursor::filter`]
     #[inline]
     pub fn set_argv_index(&mut self, argv_index: c_int) {
         self.0.argvIndex = argv_index;
@@ -495,7 +495,7 @@ pub unsafe trait VTabCursor: Sized {
     /// Begin a search of a virtual table.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xfilter_method))
     fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values<'_>) -> Result<()>;
-    /// Advance cursor to the next row of a result set initiated by `filter`.
+    /// Advance cursor to the next row of a result set initiated by [`filter`](VTabCursor::filter).
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xnext_method))
     fn next(&mut self) -> Result<()>;
     /// Must return `false` if the cursor currently points to a valid row of
@@ -512,7 +512,7 @@ pub unsafe trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-/// `feature = "vtab"` Context is used by `VTabCursor.column` to specify the
+/// `feature = "vtab"` Context is used by [`VTabCursor::column`] to specify the
 /// cell value.
 pub struct Context(*mut ffi::sqlite3_context);
 
@@ -528,8 +528,8 @@ impl Context {
     // TODO sqlite3_vtab_nochange (http://sqlite.org/c3ref/vtab_nochange.html)
 }
 
-/// `feature = "vtab"` Wrapper to `VTabCursor.filter` arguments, the values
-/// requested by `VTab.best_index`.
+/// `feature = "vtab"` Wrapper to [`VTabCursor::filter`] arguments, the values
+/// requested by [`VTab::best_index`].
 pub struct Values<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
@@ -606,7 +606,7 @@ impl<'a> IntoIterator for &'a Values<'a> {
     }
 }
 
-/// `Values` iterator.
+/// [`Values`] iterator.
 pub struct ValueIter<'a> {
     iter: slice::Iter<'a, *mut ffi::sqlite3_value>,
 }

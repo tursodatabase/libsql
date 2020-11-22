@@ -1,4 +1,4 @@
-//! `ToSql` and `FromSql` implementation for [`time::OffsetDateTime`].
+//! [`ToSql`] and [`FromSql`] implementation for [`time::OffsetDateTime`].
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
 use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};

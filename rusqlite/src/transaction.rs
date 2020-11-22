@@ -377,8 +377,8 @@ impl Connection {
     /// Begin a new transaction with the default behavior (DEFERRED).
     ///
     /// The transaction defaults to rolling back when it is dropped. If you
-    /// want the transaction to commit, you must call `commit` or
-    /// `set_drop_behavior(DropBehavior::Commit)`.
+    /// want the transaction to commit, you must call [`commit`](Transaction::commit) or
+    /// [`set_drop_behavior(DropBehavior::Commit)`](Transaction::set_drop_behavior).
     ///
     /// ## Example
     ///
@@ -406,7 +406,7 @@ impl Connection {
 
     /// Begin a new transaction with a specified behavior.
     ///
-    /// See `transaction`.
+    /// See [`transaction`](Connection::transaction).
     ///
     /// # Failure
     ///
@@ -457,8 +457,8 @@ impl Connection {
     /// Begin a new savepoint with the default behavior (DEFERRED).
     ///
     /// The savepoint defaults to rolling back when it is dropped. If you want
-    /// the savepoint to commit, you must call `commit` or
-    /// `set_drop_behavior(DropBehavior::Commit)`.
+    /// the savepoint to commit, you must call [`commit`](Savepoint::commit) or
+    /// [`set_drop_behavior(DropBehavior::Commit)`](Savepoint::set_drop_behavior).
     ///
     /// ## Example
     ///
@@ -486,7 +486,7 @@ impl Connection {
 
     /// Begin a new savepoint with a specified name.
     ///
-    /// See `savepoint`.
+    /// See [`savepoint`](Connection::savepoint).
     ///
     /// # Failure
     ///

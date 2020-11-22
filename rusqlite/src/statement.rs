@@ -114,7 +114,7 @@ impl Statement<'_> {
     ///
     /// # Note
     ///
-    /// This function is a convenience wrapper around `execute()` intended for
+    /// This function is a convenience wrapper around [`execute()`](Statement::execute) intended for
     /// queries that insert a single item. It is possible to misuse this
     /// function in a way that it cannot detect, such as by calling it on a
     /// statement which _updates_ a single
@@ -136,8 +136,8 @@ impl Statement<'_> {
     /// rows.
     ///
     /// Due to lifetime restricts, the rows handle returned by `query` does not
-    /// implement the `Iterator` trait. Consider using `query_map` or
-    /// `query_and_then` instead, which do.
+    /// implement the `Iterator` trait. Consider using [`query_map`](Statement::query_map) or
+    /// [`query_and_then`](Statement::query_and_then) instead, which do.
     ///
     /// ## Example
     ///
@@ -437,7 +437,7 @@ impl Statement<'_> {
     /// ignored.
     ///
     /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
-    /// query truly is optional, you can call `.optional()` on the result of
+    /// query truly is optional, you can call [`.optional()`](crate::OptionalExtension::optional) on the result of
     /// this to get a `Result<Option<T>>` (requires that the trait `rusqlite::OptionalExtension`
     /// is imported).
     ///
@@ -464,7 +464,7 @@ impl Statement<'_> {
     /// ignored.
     ///
     /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
-    /// query truly is optional, you can call `.optional()` on the result of
+    /// query truly is optional, you can call [`.optional()`](crate::OptionalExtension::optional) on the result of
     /// this to get a `Result<Option<T>>` (requires that the trait `rusqlite::OptionalExtension`
     /// is imported).
     ///
@@ -493,7 +493,7 @@ impl Statement<'_> {
         self.finalize_()
     }
 
-    /// Return the (one-based) index of an SQL parameter given its name.
+    /// Return the (one-based) index of an SQL parameter given its name.
     ///
     /// Note that the initial ":" or "$" or "@" or "?" used to specify the
     /// parameter is included as part of the name.
@@ -563,7 +563,7 @@ impl Statement<'_> {
 
     /// Low level API to directly bind a parameter to a given index.
     ///
-    /// Note that the index is one-based, that is, the first parameter index is
+    /// Note that the index is one-based, that is, the first parameter index is
     /// 1 and not 0. This is consistent with the SQLite API and the values given
     /// to parameters bound as `?NNN`.
     ///
