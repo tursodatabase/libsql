@@ -20,7 +20,7 @@
 //!                   name            TEXT NOT NULL,
 //!                   data            BLOB
 //!                   )",
-//!         params![],
+//!         [],
 //!     )?;
 //!     let me = Person {
 //!         id: 0,
@@ -33,7 +33,7 @@
 //!     )?;
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
-//!     let person_iter = stmt.query_map(params![], |row| {
+//!     let person_iter = stmt.query_map([], |row| {
 //!         Ok(Person {
 //!             id: row.get(0)?,
 //!             name: row.get(1)?,
@@ -455,8 +455,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn create_tables(conn: &Connection) -> Result<()> {
-    ///     conn.execute_batch(
-    ///         "BEGIN;
+    ///     conn.execute_batch("BEGIN;
     ///                         CREATE TABLE foo(x INTEGER);
     ///                         CREATE TABLE bar(y TEXT);
     ///                         COMMIT;",
@@ -859,7 +858,7 @@ impl fmt::Debug for Connection {
 
 /// Batch iterator
 /// ```rust
-/// use rusqlite::{Batch, Connection, Result, NO_PARAMS};
+/// use rusqlite::{Batch, Connection, Result};
 ///
 /// fn main() -> Result<()> {
 ///     let conn = Connection::open_in_memory()?;
@@ -869,7 +868,7 @@ impl fmt::Debug for Connection {
 ///     ";
 ///     let mut batch = Batch::new(&conn, sql);
 ///     while let Some(mut stmt) = batch.next()? {
-///         stmt.execute(NO_PARAMS)?;
+///         stmt.execute([])?;
 ///     }
 ///     Ok(())
 /// }
