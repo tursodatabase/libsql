@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::convert::TryFrom;
 
 /// `ToSqlOutput` represents the possible output types for implementers of the
-/// `ToSql` trait.
+/// [`ToSql`] trait.
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum ToSqlOutput<'a> {
@@ -91,7 +91,7 @@ impl ToSql for ToSqlOutput<'_> {
 }
 
 /// A trait for types that can be converted into SQLite values. Returns
-/// `Error::ToSqlConversionFailure` if the conversion fails.
+/// [`Error::ToSqlConversionFailure`] if the conversion fails.
 pub trait ToSql {
     /// Converts Rust value to SQLite value
     fn to_sql(&self) -> Result<ToSqlOutput<'_>>;

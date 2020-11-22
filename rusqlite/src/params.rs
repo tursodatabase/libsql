@@ -21,7 +21,7 @@ use sealed::Sealed;
 ///
 /// Many functions in this library let you pass parameters to SQLite. Doing this
 /// lets you avoid any risk of SQL injection, and is simpler than escaping
-/// things manually. Aside from deprecated functions and a few helpers, this is
+/// things manually. Aside from deprecated functions and a few helpers, this is
 /// indicated by the function taking a generic argument that implements `Params`
 /// (this trait).
 ///

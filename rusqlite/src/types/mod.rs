@@ -1,7 +1,7 @@
 //! Traits dealing with SQLite data types.
 //!
 //! SQLite uses a [dynamic type system](https://www.sqlite.org/datatype3.html). Implementations of
-//! the `ToSql` and `FromSql` traits are provided for the basic types that
+//! the [`ToSql`] and [`FromSql`] traits are provided for the basic types that
 //! SQLite provides methods for:
 //!
 //! * Strings (`String` and `&str`)
@@ -11,17 +11,17 @@
 //! The number situation is a little complicated due to the fact that all
 //! numbers in SQLite are stored as `INTEGER` (`i64`) or `REAL` (`f64`).
 //!
-//! `ToSql` and `FromSql` are implemented for all primitive number types.
-//! `FromSql` has different behaviour depending on the SQL and Rust types, and
+//! [`ToSql`] and [`FromSql`] are implemented for all primitive number types.
+//! [`FromSql`] has different behaviour depending on the SQL and Rust types, and
 //! the value.
 //!
-//! * `INTEGER` to integer: returns an `Error::IntegralValueOutOfRange` error if
+//! * `INTEGER` to integer: returns an [`Error::IntegralValueOutOfRange`](crate::Error::IntegralValueOutOfRange) error if
 //!   the value does not fit in the Rust type.
-//! * `REAL` to integer: always returns an `Error::InvalidColumnType` error.
+//! * `REAL` to integer: always returns an [`Error::InvalidColumnType`](crate::Error::InvalidColumnType) error.
 //! * `INTEGER` to float: casts using `as` operator. Never fails.
 //! * `REAL` to float: casts using `as` operator. Never fails.
 //!
-//! `ToSql` always succeeds except when storing a `u64` or `usize` value that
+//! [`ToSql`] always succeeds except when storing a `u64` or `usize` value that
 //! cannot fit in an `INTEGER` (`i64`). Also note that SQLite ignores column
 //! types, so if you store an `i64` in a column with type `REAL` it will be
 //! stored as an `INTEGER`, not a `REAL`.
@@ -61,8 +61,8 @@ impl ToSql for DateTimeSql {
 
 "##
 )]
-//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T`
-//! implements `ToSql` or `FromSql` for the cases where you want to know if a
+//! [`ToSql`] and [`FromSql`] are also implemented for `Option<T>` where `T`
+//! implements [`ToSql`] or [`FromSql`] for the cases where you want to know if a
 //! value was NULL (which gets translated to `None`).
 
 pub use self::from_sql::{FromSql, FromSqlError, FromSqlResult};

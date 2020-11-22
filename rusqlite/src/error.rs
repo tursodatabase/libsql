@@ -43,11 +43,11 @@ pub enum Error {
     /// Error converting a file path to a string.
     InvalidPath(PathBuf),
 
-    /// Error returned when an `execute` call returns rows.
+    /// Error returned when an [`execute`](crate::Connection::execute) call returns rows.
     ExecuteReturnedResults,
 
     /// Error when a query that was expected to return at least one row (e.g.,
-    /// for `query_row`) did not return any.
+    /// for [`query_row`](crate::Connection::query_row)) did not return any.
     QueryReturnedNoRows,
 
     /// Error when the value of a particular column is requested, but the index
@@ -67,29 +67,29 @@ pub enum Error {
     /// any or insert many.
     StatementChangedRows(usize),
 
-    /// Error returned by `functions::Context::get` when the function argument
+    /// Error returned by [`functions::Context::get`](crate::functions::Context::get) when the function argument
     /// cannot be converted to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType(usize, Type),
-    /// Error returned by `vtab::Values::get` when the filter argument cannot
+    /// Error returned by [`vtab::Values::get`](crate::vtab::Values::get) when the filter argument cannot
     /// be converted to the requested type.
     #[cfg(feature = "vtab")]
     InvalidFilterParameterType(usize, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
-    /// `create_scalar_function`).
+    /// [`create_scalar_function`](crate::Connection::create_scalar_function)).
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
     UserFunctionError(Box<dyn error::Error + Send + Sync + 'static>),
 
-    /// Error available for the implementors of the `ToSql` trait.
+    /// Error available for the implementors of the [`ToSql`](crate::types::ToSql) trait.
     ToSqlConversionFailure(Box<dyn error::Error + Send + Sync + 'static>),
 
     /// Error when the SQL is not a `SELECT`, is not read-only.
     InvalidQuery,
 
     /// An error case available for implementors of custom modules (e.g.,
-    /// `create_module`).
+    /// [`create_module`](crate::Connection::create_module)).
     #[cfg(feature = "vtab")]
     #[allow(dead_code)]
     ModuleError(String),
@@ -98,8 +98,8 @@ pub enum Error {
     #[cfg(feature = "functions")]
     UnwindingPanic,
 
-    /// An error returned when `Context::get_aux` attempts to retrieve data
-    /// of a different type than what had been stored using `Context::set_aux`.
+    /// An error returned when [`Context::get_aux`](crate::functions::Context::get_aux) attempts to retrieve data
+    /// of a different type than what had been stored using [`Context::set_aux`](crate::functions::Context::set_aux).
     #[cfg(feature = "functions")]
     GetAuxWrongType,
 

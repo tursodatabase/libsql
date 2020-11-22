@@ -1,4 +1,4 @@
-//! `ToSql` and `FromSql` implementation for [`url::Url`].
+//! [`ToSql`] and [`FromSql`] implementation for [`url::Url`].
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
 use url::Url;

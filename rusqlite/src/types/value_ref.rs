@@ -4,7 +4,7 @@ use crate::types::{FromSqlError, FromSqlResult};
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
 /// memory backing this value is owned by SQLite.
 ///
-/// See [`Value`](enum.Value.html) for an owning dynamic type value.
+/// See [`Value`](Value) for an owning dynamic type value.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ValueRef<'a> {
     /// The value is a `NULL` value.
@@ -35,7 +35,7 @@ impl ValueRef<'_> {
 
 impl<'a> ValueRef<'a> {
     /// If `self` is case `Integer`, returns the integral value. Otherwise,
-    /// returns `Err(Error::InvalidColumnType)`.
+    /// returns [`Err(Error::InvalidColumnType)`](crate::Error::InvalidColumnType).
     #[inline]
     pub fn as_i64(&self) -> FromSqlResult<i64> {
         match *self {
@@ -45,7 +45,7 @@ impl<'a> ValueRef<'a> {
     }
 
     /// If `self` is case `Real`, returns the floating point value. Otherwise,
-    /// returns `Err(Error::InvalidColumnType)`.
+    /// returns [`Err(Error::InvalidColumnType)`](crate::Error::InvalidColumnType).
     #[inline]
     pub fn as_f64(&self) -> FromSqlResult<f64> {
         match *self {
@@ -55,7 +55,7 @@ impl<'a> ValueRef<'a> {
     }
 
     /// If `self` is case `Text`, returns the string value. Otherwise, returns
-    /// `Err(Error::InvalidColumnType)`.
+    /// [`Err(Error::InvalidColumnType)`](crate::Error::InvalidColumnType).
     #[inline]
     pub fn as_str(&self) -> FromSqlResult<&'a str> {
         match *self {
@@ -67,7 +67,7 @@ impl<'a> ValueRef<'a> {
     }
 
     /// If `self` is case `Blob`, returns the byte slice. Otherwise, returns
-    /// `Err(Error::InvalidColumnType)`.
+    /// [`Err(Error::InvalidColumnType)`](crate::Error::InvalidColumnType).
     #[inline]
     pub fn as_blob(&self) -> FromSqlResult<&'a [u8]> {
         match *self {

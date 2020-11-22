@@ -31,7 +31,7 @@ fn main() -> Result<()> {
                   name            TEXT NOT NULL,
                   data            BLOB
                   )",
-        params![],
+        [],
     )?;
     let me = Person {
         id: 0,
@@ -44,7 +44,7 @@ fn main() -> Result<()> {
     )?;
 
     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
-    let person_iter = stmt.query_map(params![], |row| {
+    let person_iter = stmt.query_map([], |row| {
         Ok(Person {
             id: row.get(0)?,
             name: row.get(1)?,

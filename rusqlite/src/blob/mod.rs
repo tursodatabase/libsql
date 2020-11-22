@@ -47,7 +47,7 @@
 //!    functions take a `&mut [MaybeUninit<u8>]` as the destination buffer,
 //!    where the "normal" functions take a `&mut [u8]`.
 //!
-//!    Using `MaybeUninit` here can be more efficient in some cases, but is
+//!    Using `MaybeUninit` here can be more efficient in some cases, but is
 //!    often inconvenient, so both are provided.
 //!
 //! 2. Exact/inexact refers to to whether or not the entire buffer must be

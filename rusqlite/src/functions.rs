@@ -126,7 +126,7 @@ impl Context<'_> {
     ///
     /// # Failure
     ///
-    /// Will panic if `idx` is greater than or equal to `self.len()`.
+    /// Will panic if `idx` is greater than or equal to [`self.len()`](Context::len).
     ///
     /// Will return Err if the underlying SQLite type cannot be converted to a
     /// `T`.
@@ -156,16 +156,16 @@ impl Context<'_> {
     ///
     /// # Failure
     ///
-    /// Will panic if `idx` is greater than or equal to `self.len()`.
+    /// Will panic if `idx` is greater than or equal to [`self.len()`](Context::len).
     #[inline]
     pub fn get_raw(&self, idx: usize) -> ValueRef<'_> {
         let arg = self.args[idx];
         unsafe { ValueRef::from_value(arg) }
     }
 
-    /// Fetch or insert the the auxilliary data associated with a particular
+    /// Fetch or insert the auxilliary data associated with a particular
     /// parameter. This is intended to be an easier-to-use way of fetching it
-    /// compared to calling `get_aux` and `set_aux` separately.
+    /// compared to calling [`get_aux`](Context::get_aux) and [`set_aux`](Context::set_aux) separately.
     ///
     /// See `https://www.sqlite.org/c3ref/get_auxdata.html` for a discussion of
     /// this feature, or the unit tests of this module for an example.
@@ -206,7 +206,7 @@ impl Context<'_> {
     }
 
     /// Gets the auxilliary data that was associated with a given parameter via
-    /// `set_aux`. Returns `Ok(None)` if no data has been associated, and
+    /// [`set_aux`](Context::set_aux). Returns `Ok(None)` if no data has been associated, and
     /// Ok(Some(v)) if it has. Returns an error if the requested type does not
     /// match.
     pub fn get_aux<T: Send + Sync + 'static>(&self, arg: c_int) -> Result<Option<Arc<T>>> {
@@ -235,7 +235,7 @@ where
     T: ToSql,
 {
     /// Initializes the aggregation context. Will be called prior to the first
-    /// call to `step()` to set up the context for an invocation of the
+    /// call to [`step()`](Aggregate::step) to set up the context for an invocation of the
     /// function. (Note: `init()` will not be called if there are no rows.)
     fn init(&self) -> A;
 
@@ -244,9 +244,9 @@ where
     fn step(&self, _: &mut Context<'_>, _: &mut A) -> Result<()>;
 
     /// Computes and returns the final result. Will be called exactly once for
-    /// each invocation of the function. If `step()` was called at least
+    /// each invocation of the function. If [`step()`](Aggregate::step) was called at least
     /// once, will be given `Some(A)` (the same `A` as was created by
-    /// `init` and given to `step`); if `step()` was not called (because
+    /// [`init`](Aggregate::init) and given to [`step`](Aggregate::step)); if [`step()`](Aggregate::step) was not called (because
     /// the function is running against 0 rows), will be given `None`.
     fn finalize(&self, _: Option<A>) -> Result<T>;
 }
@@ -309,7 +309,7 @@ impl Connection {
     /// given the same input, `deterministic` should be `true`.
     ///
     /// The function will remain available until the connection is closed or
-    /// until it is explicitly removed via `remove_function`.
+    /// until it is explicitly removed via [`remove_function`](Connection::remove_function).
     ///
     /// # Example
     ///
@@ -405,7 +405,7 @@ impl Connection {
     /// database connection.
     ///
     /// `fn_name` and `n_arg` should match the name and number of arguments
-    /// given to `create_scalar_function` or `create_aggregate_function`.
+    /// given to [`create_scalar_function`](Connection::create_scalar_function) or [`create_aggregate_function`](Connection::create_aggregate_function).
     ///
     /// # Failure
     ///
