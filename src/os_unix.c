@@ -6361,7 +6361,7 @@ static int unixBackupDir(const char *z, int *pJ){
   int j = *pJ;
   int i;
   if( j<=0 ) return 0;
-  for(i=j-1; i>0 && z[i-1]!='/'; i--){}
+  for(i=j-1; ALWAYS(i>0) && z[i-1]!='/'; i--){}
   if( z[i]=='.' && i==j-2 && z[i+1]=='.' ) return 0;
   *pJ = i-1;
   return 1;
@@ -6405,6 +6405,7 @@ static int mkFullPathname(
   }
   zOut[j] = 0;
 
+  assert( zOut[0]=='/' );
   for(i=j=0; zOut[i]; i++){
     if( zOut[i]=='/' ){
       /* Skip over internal "/." directory components */
@@ -6425,10 +6426,10 @@ static int mkFullPathname(
         continue;
       }
     }
-    if( j>=0 ) zOut[j] = zOut[i];
+    if( ALWAYS(j>=0) ) zOut[j] = zOut[i];
     j++;
   }
-  if( j==0 ) zOut[j++] = '/';
+  if( NEVER(j==0) ) zOut[j++] = '/';
   zOut[j] = 0;
   return SQLITE_OK;
 }
