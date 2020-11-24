@@ -6193,7 +6193,7 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
 **
 ** ^The sqlite3_txn_state(D,S) interface returns the current
 ** [transaction state] of schema S in database connection D.  ^If S is NULL,
-** then the highest transaction state of any schema on databse connection D
+** then the highest transaction state of any schema on database connection D
 ** is returned.  Transaction states are (in order of lowest to highest):
 ** <ol>
 ** <li value="0"> SQLITE_TXN_NONE
