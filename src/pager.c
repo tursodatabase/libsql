@@ -2512,12 +2512,12 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   if( rc!=SQLITE_OK ) goto delsuper_out;
   nSuperPtr = pVfs->mxPathname+1;
   zFree = sqlite3Malloc(4 + nSuperJournal + nSuperPtr + 2);
-  zFree[0] = zFree[1] = zFree[2] = zFree[3] = 0;
-  zSuperJournal = &zFree[4];
-  if( !zSuperJournal ){
+  if( !zFree ){
     rc = SQLITE_NOMEM_BKPT;
     goto delsuper_out;
   }
+  zFree[0] = zFree[1] = zFree[2] = zFree[3] = 0;
+  zSuperJournal = &zFree[4];
   zSuperPtr = &zSuperJournal[nSuperJournal+2];
   rc = sqlite3OsRead(pSuper, zSuperJournal, (int)nSuperJournal, 0);
   if( rc!=SQLITE_OK ) goto delsuper_out;
