@@ -1,5 +1,5 @@
-C Syntactic\schanges\sto\swork\saround\sa\sbug\sin\sgcov\s9.3.0.\s\sNo\schanges\sto\sthe\ngenerated\scode\sfor\srelease\sbuilds.
-D 2020-11-23T21:05:29.175
+C Remove\sthe\sVERSION_NUMBER\smacro\sfrom\sconfigure.ac\sas\sit\shas\sbeen\sunused\nsince\s2009\scheck-in\s[7f4810747b086498].\s\sSee\salso\n[forum:/forumpost/bb2c634fcd|forum\spost\sbb2c634fcd].
+D 2020-11-24T13:14:15.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -34,8 +34,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 63af83d31b9fdf304f2dbb1e1638530d4ceff31702d1e19550d1fbf3bdf9471e x
-F configure.ac 40d01e89cb325c28b33f5957e61fede0bd17da2b5e37d9b223a90c8a318e88d4
+F configure e7df2824b6e60d482d919fb3e7d823faf08467093b096ad47a4fe2eec3f0ba99 x
+F configure.ac 73545c21eebcef9398d85c982c7be260f07708256778221b541f83ae8c6f61eb
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html c5d8ba85ac1daef7be8c2d389899480eb62451ff5c09b0c28ff8157bb8770746
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b45a08e3c7edfa76b699d3e29f28daa5bd08039668ec57121e4e85edf36150f1
-R aa9c8539b4884f3a1b8400570d0da31a
+P 4f1573b146193e5d552981a9d1d11e50da4da4a843f790e4af1cf0cc19a0b020
+R ee9c2fcf93cfb72a42ce6077b49b4f8c
 U drh
-Z 342b4d94dd69f30e34f2169882746b1d
+Z f6a9d9cdd431b472fbbcfa7c1c30b581
