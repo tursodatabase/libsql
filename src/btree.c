@@ -114,7 +114,7 @@ int sqlite3_enable_shared_cache(int enable){
 
 #ifdef SQLITE_DEBUG
 /*
-** Return an reset the seek counter for a Btree object.
+** Return and reset the seek counter for a Btree object.
 */
 sqlite3_uint64 sqlite3BtreeSeekCount(Btree *pBt){
   u64 n =  pBt->nSeek;

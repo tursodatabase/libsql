@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sOOM\shandling\scode\sintroduced\sby\s[6a28713d].
-D 2020-11-24T17:55:34.487
+C Fix\sa\sharmless\stypo\sin\sa\scomment.
+D 2020-11-24T19:55:49.446
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -480,7 +480,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c c678de5bf6f57933e0ad40578fbdb0fc8113b414bf517e0a2525cb319c379874
+F src/btree.c ee14224322b9e4172d01e691e2f289f6c630ae39b7906f84b72dc780b9e42a76
 F src/btree.h dcdff4037d75b3f032a5de0d922fcfaf35d48589417f634fa8627362709315f9
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
 F src/build.c f6449d4e85e998e14d3f537e8ea898dca2fcb83c277db3e60945af9b9177db81
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a28713d59cde0882c3508160347c2ea18c7c4e9bfd1b053103af2d5e12a144c
-R c5ce126c57613764a5fb86a0f61f6a6e
-U dan
-Z 0a658712acd4eef927d03df3f7f8749d
+P 8a786ce99491401dd7660e54f1a1ba3b2300cecbe180b1a31e549ff5f5b77bdc
+R 2557e51a62a9504f91b00566c93988fc
+U drh
+Z 104be391b5b721a2af8ca2240884015a
