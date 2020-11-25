@@ -10643,8 +10643,11 @@ static void process_sqliterc(
     if( stdin_is_interactive ){
       utf8_printf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
-    process_input(p);
+    if( process_input(p) && bail_on_error ) exit(1);
     fclose(p->in);
+  }else if( sqliterc_override!=0 ){
+    utf8_printf(stderr,"cannot open: \"%s\"\n", sqliterc);
+    if( bail_on_error ) exit(1);
   }
   p->in = inSaved;
   p->lineno = savedLineno;
@@ -11030,6 +11033,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z, "-memtrace")==0 ){
       sqlite3MemTraceActivate(stderr);
+    }else if( strcmp(z,"-bail")==0 ){
+      bail_on_error = 1;
     }
   }
   verify_uninitialized();
@@ -11176,7 +11181,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       */
       ShellSetFlag(&data, SHFLG_Backslash);
     }else if( strcmp(z,"-bail")==0 ){
-      bail_on_error = 1;
+      /* No-op.  The bail_on_error flag should already be set. */
     }else if( strcmp(z,"-version")==0 ){
       printf("%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
       return 0;
