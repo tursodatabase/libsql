@@ -4441,10 +4441,11 @@ static void shellIdQuote(
 */
 static void shellUSleepFunc(
   sqlite3_context *context, 
-  int argc, 
+  int argcUnused, 
   sqlite3_value **argv
 ){
   int sleep = sqlite3_value_int(argv[0]);
+  (void)argcUnused;
   sqlite3_sleep(sleep/1000);
   sqlite3_result_int(context, sleep);
 }

@@ -1277,13 +1277,14 @@ static void fts5TriDelete(Fts5Tokenizer *p){
 ** Allocate a trigram tokenizer.
 */
 static int fts5TriCreate(
-  void *pCtx,
+  void *pUnused,
   const char **azArg,
   int nArg,
   Fts5Tokenizer **ppOut
 ){
   int rc = SQLITE_OK;
   TrigramTokenizer *pNew = (TrigramTokenizer*)sqlite3_malloc(sizeof(*pNew));
+  UNUSED_PARAM(pUnused);
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -1316,7 +1317,7 @@ static int fts5TriCreate(
 static int fts5TriTokenize(
   Fts5Tokenizer *pTok,
   void *pCtx,
-  int flags,
+  int unusedFlags,
   const char *pText, int nText,
   int (*xToken)(void*, int, const char*, int, int, int)
 ){
@@ -1327,6 +1328,7 @@ static int fts5TriTokenize(
   const unsigned char *zEof = &zIn[nText];
   u32 iCode;
 
+  UNUSED_PARAM(unusedFlags);
   while( 1 ){
     char *zOut = aBuf;
     int iStart = zIn - (const unsigned char*)pText;
