@@ -1,5 +1,5 @@
-C Change\sthe\s-init\soption\sto\sthe\scommand-line\sshell\sto\shonor\sthe\s-bail\soption.\nAlso\schange\sit\sto\sreport\san\serror\sif\sthe\sfilename\smentioned\scannot\sbe\nopened.
-D 2020-11-25T13:59:47.089
+C Fix\sthe\sshell1.test\stest\sscript\sso\sthat\sit\sworks\son\swindows.
+D 2020-11-25T14:50:42.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1349,7 +1349,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 420425dad149aa49efc3ebed6aa6330e23de8d3d06efc4c8a94e96b6be902d94
+F test/shell1.test 0ba53c72545de142e1b76fa793ee33293134aa02abb9b50b35398670481ea661
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
 F test/shell4.test 1c6aef11daaa2d6830acaba3ac9cbec93fbc1c3d5530743a637f39b3987d08ce
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5b4325295b2f17b7a4eaa2d3a30d06a24801992b3aa17c7d57e015f9f395fb95
-R c4f6b25061dfdbeeb9501716c8e6c710
+P a29f54bd2c032374d7235bb1f9d4c04c094611bbc7d274b7b92722b5b802050c
+R cc47a1e53f6910732a87b4f57ff24f49
 U drh
-Z 86fcf2b6b45178a1c655fcb17cde27b2
+Z f8bf15247107c5ffb47654dc8a4646b9
