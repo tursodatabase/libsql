@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sabout\sunused\sfunction\sparameters.
-D 2020-11-25T16:28:04.565
+C Update\sa\srequirement\smark\sin\sthe\se_expr.test\sscript.
+D 2020-11-25T18:44:20.962
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -844,7 +844,7 @@ F test/e_createtable.test 7107f5deda2324ea12dbf105044dc9265195401e9dbb3eead6a2c1
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 235c610f8bf8ec44513e222b9085c7e49fad65ad0c1975ac2577109dd06fd8fa
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
-F test/e_expr.test 62000e6675d5bcf4b09276fe011a27779629ff8f6678ba5937fb6f1b78d645ff
+F test/e_expr.test 6ba7a51ece7b3e7fc145f14f924eed25ebb5a24e7b8596c78f3838d372cf0385
 F test/e_fkey.test 0b458b85f192cdb9e9933d5891848bb19bcc44d3f49faf111a375f2844a164d3
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5665712e667a20d42a2e892d9d540f4273609eabd56f8178e1d5664280821f3
-R 5853d95465b779778b6d0c5bacf1cb47
+P 25d067c270966d9506db8bedf280883e32b69050b14bdbbeda4bb2d9a362619c
+R 9cd6f8c162cd2c68b854e8b486ee65b1
 U drh
-Z f29694147a3e76e20297775228c2e92b
+Z bbc45b90468712feefc207d4cad5b088
