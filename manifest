@@ -1,5 +1,5 @@
-C Fix\sthe\sshell1.test\stest\sscript\sso\sthat\sit\sworks\son\swindows.
-D 2020-11-25T14:50:42.510
+C Fix\sa\spotential\sNULL\spointer\sdereference\sin\sthe\sgeopoly_overlap()\sroutine\nof\sthe\sGeoPoly\sextension.
+D 2020-11-25T15:29:08.250
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -391,7 +391,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c f15cc6845d64a629035627d863cbe3eadc9cb30f9ca77bd823b0ca8a5a3f8b00
+F ext/rtree/geopoly.c 1b1ddecb79877b12331d35de9f393b80bbb731e0bf6db6c572f23191987ea803
 F ext/rtree/rtree.c 60f6f1675134201974be4189dbd219494c13e1ed30e80bd92ae0dcc86df1b035
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 00792b030a4e188ff1b22e8530e8aa0452bb5dd81c2b18cb004afc7dc63e040e
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a29f54bd2c032374d7235bb1f9d4c04c094611bbc7d274b7b92722b5b802050c
-R cc47a1e53f6910732a87b4f57ff24f49
+P 9bd15b07e58b1811c2a368ec76059ac683a2c35b163ef4bba01ccb8b7ca7288d
+R 227404ad8ddcf062da3db77df65316a9
 U drh
-Z f8bf15247107c5ffb47654dc8a4646b9
+Z 263ce2c694b02eb78a24ab57a2771a4e
