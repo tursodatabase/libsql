@@ -155,11 +155,6 @@ AC_SUBST(VERSION)
 RELEASE=`cat $srcdir/VERSION`
 AC_MSG_NOTICE(Release set to $RELEASE)
 AC_SUBST(RELEASE)
-VERSION_NUMBER=[`cat $srcdir/VERSION \
-                           | sed 's/[^0-9]/ /g' \
-                | awk '{printf "%d%03d%03d",$1,$2,$3}'`]
-AC_MSG_NOTICE(Version number set to $VERSION_NUMBER)
-AC_SUBST(VERSION_NUMBER)
 
 #########
 # Locate a compiler for the build machine.  This compiler should

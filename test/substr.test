@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the built-in SUBSTR() functions.
 #
-# $Id: substr.test,v 1.7 2009/02/03 13:10:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,7 +38,7 @@ proc substr-test {id string i1 i2 result} {
   set qstr '[string map {' ''} $string]'
   do_test substr-$id.2 [subst {
     execsql {
-      SELECT substr($qstr, $i1, $i2)
+      SELECT substring($qstr, $i1, $i2)
     }
   }] [list $result]
 }
@@ -55,7 +54,7 @@ proc subblob-test {id hex i1 i2 hexresult} {
   }] [list $hexresult]
   do_test substr-$id.2 [subst {
     execsql {
-      SELECT hex(substr(x'$hex', $i1, $i2))
+      SELECT hex(substring(x'$hex', $i1, $i2))
     }
   }] [list $hexresult]
 }
@@ -93,7 +92,7 @@ do_test substr-1.92 {
   db eval {SELECT ifnull(substr('abcdefg',NULL,1),'nil')}
 } nil
 do_test substr-1.93 {
-  db eval {SELECT ifnull(substr('abcdefg',NULL),'nil')}
+  db eval {SELECT ifnull(substring('abcdefg',NULL),'nil')}
 } nil
 do_test substr-1.94 {
   db eval {SELECT ifnull(substr('abcdefg',1,NULL),'nil')}
@@ -149,7 +148,7 @@ proc substr-2-test {id string idx result} {
   set qstr '[string map {' ''} $string]'
   do_test substr-$id.2 [subst {
     execsql {
-      SELECT substr($qstr, $idx)
+      SELECT substring($qstr, $idx)
     }
   }] [list $result]
 }

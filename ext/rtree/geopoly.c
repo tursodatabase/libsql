@@ -1075,7 +1075,7 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
   geopolyAddSegments(p, p1, 1);
   geopolyAddSegments(p, p2, 2);
   pThisEvent = geopolySortEventsByX(p->aEvent, p->nEvent);
-  rX = pThisEvent->x==0.0 ? -1.0 : 0.0;
+  rX = pThisEvent && pThisEvent->x==0.0 ? -1.0 : 0.0;
   memset(aOverlap, 0, sizeof(aOverlap));
   while( pThisEvent ){
     if( pThisEvent->x!=rX ){
