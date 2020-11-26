@@ -126,11 +126,14 @@ static const sqlite3_io_methods memdb_io_methods = {
 ** Close an memdb-file.
 **
 ** The pData pointer is owned by the application, so there is nothing
-** to free.
+** to free.  Unless the SQLITE_DESERIALIZE_FREEONCLOSE flag is set,
+** in which case we own the pData pointer and need to free it.
 */
 static int memdbClose(sqlite3_file *pFile){
   MemFile *p = (MemFile *)pFile;
-  if( p->mFlags & SQLITE_DESERIALIZE_FREEONCLOSE ) sqlite3_free(p->aData);
+  if( p->mFlags & SQLITE_DESERIALIZE_FREEONCLOSE ){
+    sqlite3_free(p->aData);
+  }
   return SQLITE_OK;
 }
 
@@ -573,8 +576,12 @@ int sqlite3_deserialize(
     goto end_deserialize;
   }    
   zSql = sqlite3_mprintf("ATTACH x AS %Q", zSchema);
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+  }
   if( rc ) goto end_deserialize;
   db->init.iDb = (u8)iDb;
   db->init.reopenMemdb = 1;
@@ -589,6 +596,7 @@ int sqlite3_deserialize(
     rc = SQLITE_ERROR;
   }else{
     p->aData = pData;
+    pData = 0;
     p->sz = szDb;
     p->szAlloc = szBuf;
     p->szMax = szBuf;
@@ -601,6 +609,9 @@ int sqlite3_deserialize(
 
 end_deserialize:
   sqlite3_finalize(pStmt);
+  if( pData && (mFlags & SQLITE_DESERIALIZE_FREEONCLOSE)!=0 ){
+    sqlite3_free(pData);
+  }
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }

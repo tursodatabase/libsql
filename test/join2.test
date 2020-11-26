@@ -294,7 +294,10 @@ do_execsql_test 8.1 {
 }
 
 #-------------------------------------------------------------------------
-# Ticket [45f4bf4eb].
+# Ticket [45f4bf4eb] reported by Manuel Rigger (2020-04-25)
+#
+# Follow up error reported by Eric Speckman on the SQLite forum
+# https://sqlite.org/forum/info/c49496d24d35bd7c (2020-08-19)
 #
 reset_db
 do_execsql_test 9.0 {
@@ -323,6 +326,18 @@ do_execsql_test 9.5 {
   SELECT * FROM t0 LEFT JOIN v0 ON v0.c0 >= '0' WHERE TRUE 
   UNION SELECT 0,0 WHERE 0; 
 } {0 0}
+
+do_execsql_test 9.10 {
+  CREATE TABLE t1 (aaa);
+  INSERT INTO t1 VALUES(23456);
+  CREATE TABLE t2(bbb);
+  CREATE VIEW v2(ccc) AS SELECT bbb IS 1234 FROM t2;
+  SELECT ccc, ccc IS NULL AS ddd FROM t1 LEFT JOIN v2;
+} {{} 1}
+optimization_control db query-flattener 0
+do_execsql_test 9.11 {
+  SELECT ccc, ccc IS NULL AS ddd FROM t1 LEFT JOIN v2;
+} {{} 1}
 
 
 finish_test

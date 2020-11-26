@@ -234,7 +234,7 @@ static void updateFromSelect(
 #endif
       pList = sqlite3ExprListAppend(pParse, pList, pNew);
     }
-    eDest = SRT_Upfrom;
+    eDest = IsVirtual(pTab) ? SRT_Table : SRT_Upfrom;
   }else if( pTab->pSelect ){
     for(i=0; i<pTab->nCol; i++){
       pList = sqlite3ExprListAppend(pParse, pList, exprRowColumn(pParse, i));
@@ -651,6 +651,8 @@ void sqlite3Update(
 
   if( nChangeFrom==0 && HasRowid(pTab) ){
     sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
+    iEph = pParse->nTab++;
+    addrOpen = sqlite3VdbeAddOp3(v, OP_OpenEphemeral, iEph, 0, regRowSet);
   }else{
     assert( pPk!=0 || HasRowid(pTab) );
     nPk = pPk ? pPk->nKeyCol : 0;
@@ -705,7 +707,7 @@ void sqlite3Update(
       ** be deleted as a result of REPLACE conflict handling. Any of these
       ** things might disturb a cursor being used to scan through the table
       ** or index, causing a single-pass approach to malfunction.  */
-      flags = WHERE_ONEPASS_DESIRED|WHERE_SEEK_UNIQ_TABLE;
+      flags = WHERE_ONEPASS_DESIRED;
       if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
         flags |= WHERE_ONEPASS_MULTIROW;
       }
@@ -742,9 +744,10 @@ void sqlite3Update(
       ** leave it in register regOldRowid.  */
       sqlite3VdbeAddOp2(v, OP_Rowid, iDataCur, regOldRowid);
       if( eOnePass==ONEPASS_OFF ){
-        /* We need to use regRowSet, so reallocate aRegIdx[nAllIdx] */
         aRegIdx[nAllIdx] = ++pParse->nMem;
-        sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, regOldRowid);
+        sqlite3VdbeAddOp3(v, OP_Insert, iEph, regRowSet, regOldRowid);
+      }else{
+        if( ALWAYS(addrOpen) ) sqlite3VdbeChangeToNoop(v, addrOpen);
       }
     }else{
       /* Read the PK of the current row into an array of registers. In
@@ -832,8 +835,9 @@ void sqlite3Update(
         VdbeCoverage(v);
       }
     }else{
-      labelContinue = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet,labelBreak,
-                               regOldRowid);
+      sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
+      labelContinue = sqlite3VdbeMakeLabel(pParse);
+      addrTop = sqlite3VdbeAddOp2(v, OP_Rowid, iEph, regOldRowid);
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
       VdbeCoverage(v);
@@ -1083,11 +1087,9 @@ void sqlite3Update(
   }else if( eOnePass==ONEPASS_MULTI ){
     sqlite3VdbeResolveLabel(v, labelContinue);
     sqlite3WhereEnd(pWInfo);
-  }else if( pPk || nChangeFrom ){
+  }else{
     sqlite3VdbeResolveLabel(v, labelContinue);
     sqlite3VdbeAddOp2(v, OP_Next, iEph, addrTop); VdbeCoverage(v);
-  }else{
-    sqlite3VdbeGoto(v, labelContinue);
   }
   sqlite3VdbeResolveLabel(v, labelBreak);
 
@@ -1187,12 +1189,26 @@ static void updateVirtualTable(
   regArg = pParse->nMem + 1;
   pParse->nMem += nArg;
   if( pSrc->nSrc>1 ){
+    Index *pPk = 0;
     Expr *pRow;
     ExprList *pList;
-    if( pRowid ){
-      pRow = sqlite3ExprDup(db, pRowid, 0);
+    if( HasRowid(pTab) ){
+      if( pRowid ){
+        pRow = sqlite3ExprDup(db, pRowid, 0);
+      }else{
+        pRow = sqlite3PExpr(pParse, TK_ROW, 0, 0);
+      }
     }else{
-      pRow = sqlite3PExpr(pParse, TK_ROW, 0, 0);
+      i16 iPk;      /* PRIMARY KEY column */
+      pPk = sqlite3PrimaryKeyIndex(pTab);
+      assert( pPk!=0 );
+      assert( pPk->nKeyCol==1 );
+      iPk = pPk->aiColumn[0];
+      if( aXRef[iPk]>=0 ){
+        pRow = sqlite3ExprDup(db, pChanges->a[aXRef[iPk]].pExpr, 0);
+      }else{
+        pRow = exprRowColumn(pParse, iPk);
+      }
     }
     pList = sqlite3ExprListAppend(pParse, 0, pRow);
 
@@ -1206,7 +1222,7 @@ static void updateVirtualTable(
       }
     }
 
-    updateFromSelect(pParse, ephemTab, 0, pList, pSrc, pWhere, 0, 0);
+    updateFromSelect(pParse, ephemTab, pPk, pList, pSrc, pWhere, 0, 0);
     sqlite3ExprListDelete(db, pList);
     eOnePass = ONEPASS_OFF;
   }else{

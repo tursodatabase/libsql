@@ -84,4 +84,20 @@ do_test tkt3810-6 {
 
 db2 close
 
+# 2020-11-06 forum post https://sqlite.org/forum/forumpost/157dc791df
+#
+reset_db
+do_test tkt3810-100 {
+  db eval {
+    ATTACH ':memory:' AS aux1;
+    CREATE TABLE aux1.t1(x);
+    CREATE TEMP TRIGGER r1 DELETE ON t1 BEGIN SELECT *; END;
+    CREATE VIEW t1 AS SELECT *;
+  }
+  catch {db eval {
+    CREATE VIRTUAL TABLE t2 USING nosuchmodule;
+  }}
+  db eval {CREATE TABLE t3(z);}
+} {}
+
 finish_test

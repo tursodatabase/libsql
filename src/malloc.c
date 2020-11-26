@@ -474,12 +474,17 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
   if( nOld==nNew ){
     pNew = pOld;
   }else if( sqlite3GlobalConfig.bMemstat ){
+    sqlite3_int64 nUsed;
     sqlite3_mutex_enter(mem0.mutex);
     sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, (int)nBytes);
     nDiff = nNew - nOld;
-    if( nDiff>0 && sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED) >= 
+    if( nDiff>0 && (nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)) >= 
           mem0.alarmThreshold-nDiff ){
       sqlite3MallocAlarm(nDiff);
+      if( mem0.hardLimit>0 && nUsed >= mem0.hardLimit - nDiff ){
+        sqlite3_mutex_leave(mem0.mutex);
+        return 0;
+      }
     }
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -786,12 +791,15 @@ void sqlite3OomClear(sqlite3 *db){
 }
 
 /*
-** Take actions at the end of an API call to indicate an OOM error
+** Take actions at the end of an API call to deal with error codes.
 */
-static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
-  sqlite3OomClear(db);
-  sqlite3Error(db, SQLITE_NOMEM);
-  return SQLITE_NOMEM_BKPT;
+static SQLITE_NOINLINE int apiHandleError(sqlite3 *db, int rc){
+  if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
+    sqlite3OomClear(db);
+    sqlite3Error(db, SQLITE_NOMEM);
+    return SQLITE_NOMEM_BKPT;
+  }
+  return rc & db->errMask;
 }
 
 /*
@@ -813,8 +821,8 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   */
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
-  if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
-    return apiOomError(db);
+  if( db->mallocFailed || rc ){
+    return apiHandleError(db, rc);
   }
   return rc & db->errMask;
 }

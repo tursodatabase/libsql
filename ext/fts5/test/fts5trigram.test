@@ -1,0 +1,201 @@
+# 2020 September 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# Tests for the fts5 "trigram" tokenizer.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5trigram
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y, tokenize=trigram);
+  INSERT INTO t1 VALUES('abcdefghijklm');
+  INSERT INTO t1 VALUES('กรุงเทพมหานคร');
+}
+
+foreach {tn s res} {
+  1 abc           "(abc)defghijklm"
+  2 defgh         "abc(defgh)ijklm"
+  3 abcdefghijklm "(abcdefghijklm)"
+  4 กรุ            "(กรุ)งเทพมหานคร"
+  5 งเทพมห        "กรุ(งเทพมห)านคร"
+  6 กรุงเทพมหานคร  "(กรุงเทพมหานคร)"
+  7 Abc           "(abc)defghijklm"
+  8 deFgh         "abc(defgh)ijklm"
+  9 aBcdefGhijKlm "(abcdefghijklm)"
+} {
+  do_execsql_test 1.1.$tn {
+    SELECT highlight(t1, 0, '(', ')') FROM t1($s)
+  } $res
+}
+
+do_execsql_test 1.2.0 {
+  SELECT fts5_expr('ABCD', 'tokenize=trigram')
+} {{"abc" + "bcd"}}
+
+do_execsql_test 1.2.1 {
+  SELECT * FROM t1 WHERE y LIKE ? ESCAPE 'a'
+}
+
+foreach {tn like res} {
+  1 {%cDef%}   1
+  2 {cDef%}    {}
+  3 {%f%}      1
+  4 {%f_h%}    1
+  5 {%f_g%}    {}
+  6 {abc%klm}  1
+  7 {ABCDEFG%} 1
+  8 {%รุงเ%}    2
+} {
+  do_execsql_test 1.3.$tn {
+    SELECT rowid FROM t1 WHERE y LIKE $like
+  } $res
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y, tokenize="trigram case_sensitive 1");
+  INSERT INTO t1 VALUES('abcdefghijklm');
+  INSERT INTO t1 VALUES('กรุงเทพมหานคร');
+}
+
+foreach {tn s res} {
+  1 abc           "(abc)defghijklm"
+  2 defgh         "abc(defgh)ijklm"
+  3 abcdefghijklm "(abcdefghijklm)"
+  4 กรุ            "(กรุ)งเทพมหานคร"
+  5 งเทพมห        "กรุ(งเทพมห)านคร"
+  6 กรุงเทพมหานคร  "(กรุงเทพมหานคร)"
+  7 Abc           ""
+  8 deFgh         ""
+  9 aBcdefGhijKlm ""
+} {
+  do_execsql_test 2.1.$tn {
+    SELECT highlight(t1, 0, '(', ')') FROM t1($s)
+  } $res
+}
+foreach {tn like res} {
+  1 {%cDef%}   1
+  2 {cDef%}    {}
+  3 {%f%}      1
+  4 {%f_h%}    1
+  5 {%f_g%}    {}
+  6 {abc%klm}  1
+  7 {ABCDEFG%} 1
+  8 {%รุงเ%}    2
+} {
+  do_execsql_test 2.2.$tn {
+    SELECT rowid FROM t1 WHERE y LIKE $like
+  } $res
+}
+foreach {tn like res} {
+  1 {*cdef*}     1
+  2 {cdef*}      {}
+  3 {*f*}        1
+  4 {*f?h*}      1
+  5 {*f?g*}      {}
+  6 {abc*klm}    1
+  7 {abcdefg*}   1
+  8 {*รุงเ*}      2
+  9 {abc[d]efg*} 1
+ 10 {abc[]d]efg*} 1
+ 11 {abc[^]d]efg*} {}
+ 12 {abc[^]XYZ]efg*} 1
+} {
+  do_execsql_test 2.3.$tn {
+    SELECT rowid FROM t1 WHERE y GLOB $like
+  } $res
+}
+
+do_execsql_test 2.3.null.1 {
+  SELECT rowid FROM t1 WHERE y LIKE NULL
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_catchsql_test 3.1 {
+  CREATE VIRTUAL TABLE ttt USING fts5(c, tokenize="trigram case_sensitive 2");
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 3.2 {
+  CREATE VIRTUAL TABLE ttt USING fts5(c, tokenize="trigram case_sensitive 11");
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 3.3 {
+  CREATE VIRTUAL TABLE ttt USING fts5(c, "tokenize=trigram case_sensitive 1");
+} {0 {}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t0 USING fts5(b, tokenize = "trigram");
+}
+do_execsql_test 4.1 {
+  INSERT INTO t0 VALUES (x'000b01');
+}
+do_execsql_test 4.2 {
+  INSERT INTO t0(t0) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+reset_db
+foreach_detail_mode $::testprefix {
+  foreach {ci} {0 1} {
+    reset_db
+    do_execsql_test 5.cs=$ci.0.1 "
+      CREATE VIRTUAL TABLE t1 USING fts5(
+          y, tokenize=\"trigram case_sensitive $ci\", detail=%DETAIL%
+      );
+    "
+    do_execsql_test 5.cs=$ci.0.2 {
+      INSERT INTO t1 VALUES('abcdefghijklm');
+      INSERT INTO t1 VALUES('กรุงเทพมหานคร');
+    }
+
+    foreach {tn like res} {
+      1 {%cDef%}   1
+      2 {cDef%}    {}
+      3 {%f%}      1
+      4 {%f_h%}    1
+      5 {%f_g%}    {}
+      6 {abc%klm}  1
+      7 {ABCDEFG%} 1
+      8 {%รุงเ%}    2
+    } {
+      do_execsql_test 5.cs=$ci.1.$tn {
+        SELECT rowid FROM t1 WHERE y LIKE $like
+      } $res
+    }
+  }
+}
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE ci0 USING fts5(x, tokenize="trigram");
+  CREATE VIRTUAL TABLE ci1 USING fts5(x, tokenize="trigram case_sensitive 1");
+}
+
+# LIKE and GLOB both work with case-insensitive tokenizers. Only GLOB works
+# with case-sensitive.
+do_eqp_test 6.1 {
+  SELECT * FROM ci0 WHERE x LIKE ?
+} {VIRTUAL TABLE INDEX 0:L0}
+do_eqp_test 6.2 {
+  SELECT * FROM ci0 WHERE x GLOB ?
+} {VIRTUAL TABLE INDEX 0:G0}
+do_eqp_test 6.3 {
+  SELECT * FROM ci1 WHERE x LIKE ?
+} {{SCAN TABLE ci1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 6.4 {
+  SELECT * FROM ci1 WHERE x GLOB ?
+} {VIRTUAL TABLE INDEX 0:G0}
+
+finish_test
+

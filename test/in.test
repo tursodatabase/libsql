@@ -332,7 +332,7 @@ do_test in-10.2 {
   catchsql {
     INSERT INTO t5 VALUES(4);
   }
-} {1 {CHECK constraint failed: t5}}
+} {1 {CHECK constraint failed: a IN (111,222,333)}}
 
 # Ticket #1821
 #
@@ -790,5 +790,11 @@ do_execsql_test in-19.40 {
   INSERT INTO t0(c0, c2) VALUES (0, NULL) ON CONFLICT(c2, c1, c0) DO NOTHING;
   PRAGMA integrity_check;
 } {ok}
+
+# Ticket f3ff1472887
+#
+do_execsql_test in-20.1 {
+  SELECT (1 IN (2 IS TRUE));
+} {1}
 
 finish_test

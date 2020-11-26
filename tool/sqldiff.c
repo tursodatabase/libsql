@@ -473,6 +473,7 @@ static void dump_table(const char *zTab, FILE *out){
     fprintf(out, "%s;\n", sqlite3_column_text(pStmt,0));
   }
   sqlite3_finalize(pStmt);
+  sqlite3_free(zId);
 }
 
 
@@ -1544,6 +1545,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
 
   /* Check that the schemas of the two tables match. Exit early otherwise. */
   checkSchemasMatch(zTab);
+  strInit(&sql);
 
   pStmt = db_prepare("PRAGMA main.table_info=%Q", zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -1565,7 +1567,6 @@ static void changeset_one_table(const char *zTab, FILE *out){
   }
   sqlite3_finalize(pStmt);
   if( nPk==0 ) goto end_changeset_one_table; 
-  strInit(&sql);
   if( nCol>nPk ){
     strPrintf(&sql, "SELECT %d", SQLITE_UPDATE);
     for(i=0; i<nCol; i++){
@@ -1707,6 +1708,8 @@ end_changeset_one_table:
   sqlite3_free(azCol);
   sqlite3_free(aiPk);
   sqlite3_free(zId);
+  sqlite3_free(aiFlg);
+  strFree(&sql);
 }
 
 /*
@@ -1971,6 +1974,8 @@ int main(int argc, char **argv){
 #endif
   zSql = sqlite3_mprintf("ATTACH %Q as aux;", zDb2);
   rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
+  sqlite3_free(zSql);
+  zSql = 0;
   if( rc || zErrMsg ){
     cmdlineError("cannot attach database \"%s\"", zDb2);
   }

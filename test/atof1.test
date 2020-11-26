@@ -75,10 +75,10 @@ do_execsql_test atof1-2.30 {
   CREATE INDEX i1 ON t1(a);
   SELECT count(*) FROM t1 WHERE substr(a,',');
 } {1}
-
-
-
-
+# 2020-08-27 OSSFuzz find related to the above.
+do_execsql_test atof1-2.40 {
+  SELECT randomblob(0) - 1;
+} {-1}
 
 
 finish_test

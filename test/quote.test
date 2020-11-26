@@ -122,7 +122,7 @@ do_execsql_test 2.3.1 {
 }
 do_catchsql_test 2.3.2 {
   INSERT INTO xyz VALUES(1, 2, 'null');
-} {1 {CHECK constraint failed: xyz}}
+} {1 {CHECK constraint failed: c!="null"}}
 
 do_execsql_test 2.4 {
   INSERT INTO t1 VALUES(1, 2, 3);

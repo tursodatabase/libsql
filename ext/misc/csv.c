@@ -776,7 +776,7 @@ static int csvtabColumn(
   CsvCursor *pCur = (CsvCursor*)cur;
   CsvTable *pTab = (CsvTable*)cur->pVtab;
   if( i>=0 && i<pTab->nCol && pCur->azVal[i]!=0 ){
-    sqlite3_result_text(ctx, pCur->azVal[i], -1, SQLITE_STATIC);
+    sqlite3_result_text(ctx, pCur->azVal[i], -1, SQLITE_TRANSIENT);
   }
   return SQLITE_OK;
 }

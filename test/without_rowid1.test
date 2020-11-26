@@ -341,7 +341,7 @@ do_execsql_test 7.1 {
 } {}
 do_catchsql_test 7.2 {
   INSERT INTO t70a(rowid,a,b) VALUES(33,99,'xyzzy');
-} {1 {CHECK constraint failed: t70a}}
+} {1 {CHECK constraint failed: rowid!=33}}
 do_catchsql_test 7.3 {
   CREATE TABLE t70b(
      a INT CHECK( rowid!=33 ),

@@ -895,7 +895,8 @@ static int tvfsShmMap(
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
   if( p->isFullshm ){
-    return sqlite3OsShmMap(pFd->pReal, iPage, pgsz, isWrite, pp);
+    sqlite3_file *pReal = pFd->pReal;
+    return pReal->pMethods->xShmMap(pReal, iPage, pgsz, isWrite, pp);
   }
 
   if( 0==pFd->pShm ){
@@ -945,7 +946,8 @@ static int tvfsShmLock(
   char zLock[80];
 
   if( p->isFullshm ){
-    return sqlite3OsShmLock(pFd->pReal, ofst, n, flags);
+    sqlite3_file *pReal = pFd->pReal;
+    return pReal->pMethods->xShmLock(pReal, ofst, n, flags);
   }
 
   if( p->pScript && p->mask&TESTVFS_SHMLOCK_MASK ){
@@ -1009,7 +1011,8 @@ static void tvfsShmBarrier(sqlite3_file *pFile){
   }
 
   if( p->isFullshm ){
-    sqlite3OsShmBarrier(pFd->pReal);
+    sqlite3_file *pReal = pFd->pReal;
+    pReal->pMethods->xShmBarrier(pReal);
     return;
   }
 }
@@ -1025,7 +1028,8 @@ static int tvfsShmUnmap(
   TestvfsFd **ppFd;
 
   if( p->isFullshm ){
-    return sqlite3OsShmUnmap(pFd->pReal, deleteFlag);
+    sqlite3_file *pReal = pFd->pReal;
+    return pReal->pMethods->xShmUnmap(pReal, deleteFlag);
   }
 
   if( !pBuffer ) return SQLITE_OK;

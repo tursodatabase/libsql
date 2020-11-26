@@ -2977,8 +2977,13 @@ static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
   }
 
   p->apValue = (sqlite3_value**)p->tblhdr.aBuf;
-  p->abPK = (u8*)&p->apValue[p->nCol*2];
-  p->zTab = (char*)&p->abPK[p->nCol];
+  if( p->apValue==0 ){
+    p->abPK = 0;
+    p->zTab = 0;
+  }else{
+    p->abPK = (u8*)&p->apValue[p->nCol*2];
+    p->zTab = p->abPK ? (char*)&p->abPK[p->nCol] : 0;
+  }
   return (p->rc = rc);
 }
 
