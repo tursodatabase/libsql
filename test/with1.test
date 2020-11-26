@@ -352,7 +352,7 @@ do_catchsql_test 7.4 {
     SELECT i FROM tree WHERE p IN (SELECT id FROM t)
   ) 
   SELECT id FROM t;
-} {1 {recursive reference in a subquery: t}}
+} {1 {circular reference: t}}
 
 do_catchsql_test 7.5 {
   WITH t(id) AS (
@@ -1170,5 +1170,41 @@ do_catchsql_test 26.0 {
   )
   SELECT x,O. * O FROM i ¬I,I? 10;
 } {1 {near "O": syntax error}}
+
+# 2020-09-17 ticket c51489c3b8f919c5
+# DISTINCT cannot be ignored in a UNION ALL recursive CTE
+#
+reset_db
+do_execsql_test 26.1 {
+  CREATE TABLE t (label VARCHAR(10), step INTEGER);
+  INSERT INTO T VALUES('a', 1);
+  INSERT INTO T VALUES('a', 1);
+  INSERT INTO T VALUES('b', 1);
+  WITH RECURSIVE cte(label, step) AS (
+      SELECT DISTINCT * FROM t 
+    UNION ALL 
+      SELECT label, step + 1 FROM cte WHERE step < 3
+  )
+  SELECT * FROM cte ORDER BY +label, +step;
+} {a 1 a 2 a 3 b 1 b 2 b 3}
+do_execsql_test 26.2 {
+  WITH RECURSIVE cte(label, step) AS (
+      SELECT * FROM t 
+    UNION
+      SELECT label, step + 1 FROM cte WHERE step < 3
+  )
+  SELECT * FROM cte ORDER BY +label, +step;
+} {a 1 a 2 a 3 b 1 b 2 b 3}
+do_execsql_test 26.3 {
+  CREATE TABLE tworow(x);
+  INSERT INTO tworow(x) VALUES(1),(2);
+  DELETE FROM t WHERE rowid=2;
+  WITH RECURSIVE cte(label, step) AS (
+      SELECT * FROM t
+    UNION ALL
+      SELECT DISTINCT label, step + 1 FROM cte, tworow WHERE step < 3
+  )
+  SELECT * FROM cte ORDER BY +label, +step;
+} {a 1 a 2 a 3 b 1 b 2 b 3}
 
 finish_test

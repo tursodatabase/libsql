@@ -362,6 +362,7 @@ TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/bgckpt.c \
   $(TOP)/ext/misc/carray.c \
+  $(TOP)/ext/misc/cksumvfs.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/decimal.c \
@@ -914,6 +915,7 @@ TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
 TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
+TESTFIXTURE_FLAGS += -DSQLITE_CKSUMVFS_STATIC
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \

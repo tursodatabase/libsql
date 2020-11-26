@@ -721,7 +721,7 @@ struct Wal {
   u32 iReCksum;              /* On commit, recalculate checksums from here */
   u32 nPriorFrame;           /* For sqlite3WalInfo() */
   const char *zWalName;      /* Name of WAL file */
-  char *zWalName2;           /* Name of second WAL file */
+  const char *zWalName2;     /* Name of second WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
   FastPrng sPrng;            /* Random number generator */
 #ifdef SQLITE_DEBUG
@@ -1890,7 +1890,6 @@ int sqlite3WalOpen(
   int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
-  int nWalName;                   /* Length of zWalName in bytes */
   int nByte;                      /* Bytes of space to allocate */
 
   assert( zWalName && zWalName[0] );
@@ -1911,8 +1910,7 @@ int sqlite3WalOpen(
   assert( UNIX_SHM_BASE==WALINDEX_LOCK_OFFSET );
 #endif
 
-  nWalName = sqlite3Strlen30(zWalName);
-  nByte = sizeof(Wal) + pVfs->szOsFile*2 + nWalName+2;
+  nByte = sizeof(Wal) + pVfs->szOsFile*2;
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
@@ -1933,11 +1931,7 @@ int sqlite3WalOpen(
   pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
   sqlite3FastPrngInit(&pRet->sPrng);
   pRet->bWal2 = bWal2;
-
-  pRet->zWalName2 = (char*)pRet + sizeof(Wal) + 2*pVfs->szOsFile;
-  memcpy(pRet->zWalName2, zWalName, nWalName);
-  pRet->zWalName2[nWalName] = '2';
-  pRet->zWalName2[nWalName+1] = '\0';
+  pRet->zWalName2 = &zWalName[sqlite3Strlen30(zWalName)+1];
 
   /* Open a file handle on the first write-ahead log file. */
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_WAL);
@@ -2611,9 +2605,10 @@ static int walCheckpoint(
         rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
         if( rc==SQLITE_OK && nSize<nReq ){
           i64 mx = pWal->hdr.mxFrame + (bWal2?walidxGetMxFrame(&pWal->hdr,1):0);
-          if( (nSize+mx*szPage)<nReq ){
+          if( (nSize+65536+mx*szPage)<nReq ){
             /* If the size of the final database is larger than the current
-            ** database plus the amount of data in the wal file, then there
+            ** database plus the amount of data in the wal file, plus the
+            ** maximum size of the pending-byte page (65536 bytes), then 
             ** must be corruption somewhere.  Or in the case of wal2 mode,
             ** plus the amount of data in both wal files. */
             rc = SQLITE_CORRUPT_BKPT;

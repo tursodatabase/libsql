@@ -1201,4 +1201,13 @@ do_execsql_test select-20.20 {
   SELECT ifnull(a, max((SELECT 123))), count(a) FROM t1 ;
 } {10 1}
 
+# 2020-10-02 dbsqlfuzz find
+reset_db
+do_execsql_test select-21.1 {
+  CREATE TABLE t1(a IMTEGES PRIMARY KEY,R);
+  CREATE TABLE t2(x UNIQUE);
+  CREATE VIEW v1a(z,y) AS SELECT x IS NULL, x FROM t2;
+  SELECT a,(+a)b,(+a)b,(+a)b,NOT EXISTS(SELECT null FROM t2),CASE z WHEN 487 THEN 992 WHEN 391 THEN 203 WHEN 10 THEN '?k<D Q' END,'' FROM t1 LEFT JOIN v1a ON z=b;
+} {}
+
 finish_test

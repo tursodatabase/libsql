@@ -261,9 +261,11 @@ struct WhereTerm {
   u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
-  int iField;             /* Field in (?,?,?) IN (SELECT...) vector */
   union {
-    int leftColumn;         /* Column number of X in "X <op> <expr>" */
+    struct {
+      int leftColumn;         /* Column number of X in "X <op> <expr>" */
+      int iField;             /* Field in (?,?,?) IN (SELECT...) vector */
+    } x;                    /* Opcode other than OP_OR or OP_AND */
     WhereOrInfo *pOrInfo;   /* Extra information if (eOperator & WO_OR)!=0 */
     WhereAndInfo *pAndInfo; /* Extra information if (eOperator& WO_AND)!=0 */
   } u;
@@ -488,6 +490,7 @@ struct WhereInfo {
   unsigned sorted :1;          /* True if really sorted (not just grouped) */
   LogEst nRowOut;           /* Estimated number of output rows */
   int iTop;                 /* The very beginning of the WHERE loop */
+  int iEndWhere;            /* End of the WHERE clause itself */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   WhereExprMod *pExprMods;  /* Expression modifications */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
@@ -616,5 +619,6 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 #define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */
 #define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */
 #define WHERE_BIGNULL_SORT 0x00080000  /* Column nEq of index is BIGNULL */
+#define WHERE_IN_SEEKSCAN  0x00100000  /* Seek-scan optimization for IN */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

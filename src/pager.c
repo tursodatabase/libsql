@@ -2526,6 +2526,7 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   i64 nSuperJournal;        /* Size of super-journal file */
   char *zJournal;           /* Pointer to one journal within MJ file */
   char *zSuperPtr;          /* Space to hold super-journal filename */
+  char *zFree = 0;          /* Free this buffer */
   int nSuperPtr;            /* Amount of space allocated to zSuperPtr[] */
 
   /* Allocate space for both the pJournal and pSuper file descriptors.
@@ -2550,11 +2551,13 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   rc = sqlite3OsFileSize(pSuper, &nSuperJournal);
   if( rc!=SQLITE_OK ) goto delsuper_out;
   nSuperPtr = pVfs->mxPathname+1;
-  zSuperJournal = sqlite3Malloc(nSuperJournal + nSuperPtr + 2);
-  if( !zSuperJournal ){
+  zFree = sqlite3Malloc(4 + nSuperJournal + nSuperPtr + 2);
+  if( !zFree ){
     rc = SQLITE_NOMEM_BKPT;
     goto delsuper_out;
   }
+  zFree[0] = zFree[1] = zFree[2] = zFree[3] = 0;
+  zSuperJournal = &zFree[4];
   zSuperPtr = &zSuperJournal[nSuperJournal+2];
   rc = sqlite3OsRead(pSuper, zSuperJournal, (int)nSuperJournal, 0);
   if( rc!=SQLITE_OK ) goto delsuper_out;
@@ -2602,7 +2605,7 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   rc = sqlite3OsDelete(pVfs, zSuper, 0);
 
 delsuper_out:
-  sqlite3_free(zSuperJournal);
+  sqlite3_free(zFree);
   if( pSuper ){
     sqlite3OsClose(pSuper);
     assert( !isOpen(pJournal) );
@@ -2940,7 +2943,11 @@ end_playback:
   pPager->changeCountDone = pPager->tempFile;
 
   if( rc==SQLITE_OK ){
-    zSuper = pPager->pTmpSpace;
+    /* Leave 4 bytes of space before the super-journal filename in memory.
+    ** This is because it may end up being passed to sqlite3OsOpen(), in
+    ** which case it requires 4 0x00 bytes in memory immediately before
+    ** the filename. */
+    zSuper = &pPager->pTmpSpace[4];
     rc = readSuperJournal(pPager->jfd, zSuper, pPager->pVfs->mxPathname+1);
     testcase( rc!=SQLITE_OK );
   }
@@ -2957,6 +2964,8 @@ end_playback:
     /* If there was a super-journal and this routine will return success,
     ** see if it is possible to delete the super-journal.
     */
+    assert( zSuper==&pPager->pTmpSpace[4] );
+    memset(&zSuper[-4], 0, 4);
     rc = pager_delsuper(pPager, zSuper);
     testcase( rc!=SQLITE_OK );
   }
@@ -4856,6 +4865,7 @@ int sqlite3PagerOpen(
     nPathname + 8 + 1 +                  /* Journal filename */
 #ifndef SQLITE_OMIT_WAL
     nPathname + 4 + 1 +                  /* WAL filename */
+    nPathname + 5 + 1 +                  /* Second WAL filename */
 #endif
     3                                    /* Terminator */
   );
@@ -4908,6 +4918,8 @@ int sqlite3PagerOpen(
     sqlite3FileSuffix3(zFilename, pPager->zWal);
     pPtr = (u8*)(pPager->zWal + sqlite3Strlen30(pPager->zWal)+1);
 #endif
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
+    memcpy(pPtr, "-wal2", 5);             pPtr += 5 + 1;
   }else{
     pPager->zWal = 0;
   }

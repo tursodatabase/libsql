@@ -188,7 +188,8 @@ static int fts3tokConnectMethod(
 
   assert( (rc==SQLITE_OK)==(pMod!=0) );
   if( rc==SQLITE_OK ){
-    const char * const *azArg = (const char * const *)&azDequote[1];
+    const char * const *azArg = 0;
+    if( nDequote>1 ) azArg = (const char * const *)&azDequote[1];
     rc = pMod->xCreate((nDequote>1 ? nDequote-1 : 0), azArg, &pTok);
   }
 

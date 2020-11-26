@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.41 2009/04/28 16:37:59 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -39,6 +38,19 @@ do_test trans-1.1 {
     SELECT b FROM two ORDER BY a;
   }
 } {I V X}
+do_test trans-1.2.1 {
+  sqlite3_txn_state db
+} {0}
+do_test trans-1.2.2 {
+  sqlite3_txn_state db main
+} {0}
+do_test trans-1.2.3 {
+  sqlite3_txn_state db temp
+} {0}
+do_test trans-1.2.4 {
+  sqlite3_txn_state db no-such-schema
+} {-1}
+
 do_test trans-1.9 {
   sqlite3 altdb test.db
   execsql {SELECT b FROM one ORDER BY a} altdb
@@ -55,6 +67,9 @@ do_test trans-2.1 {
   set v [catch {execsql {BEGIN}} msg]
   lappend v $msg
 } {0 {}}
+do_test trans-2.1b {
+  sqlite3_txn_state db
+} {0}
 do_test trans-2.2 {
   set v [catch {execsql {END}} msg]
   lappend v $msg
@@ -95,6 +110,16 @@ do_test trans-3.1 {
     SELECT a FROM one ORDER BY a;
   }
 } {1 2 3}
+do_test trans-3.1b {
+  sqlite3_txn_state db
+} {2}
+do_test trans-3.1c {
+  sqlite3_txn_state db main
+} {2}
+do_test trans-3.1d {
+  sqlite3_txn_state db temp
+} {0}
+
 do_test trans-3.2 {
   catchsql {
     SELECT a FROM two ORDER BY a;
@@ -139,6 +164,10 @@ do_test trans-3.9 {
 do_test trans-3.10 {
   execsql {END TRANSACTION}
 } {}
+do_test trans-3.10b {
+  sqlite3_txn_state db
+} {0}
+
 
 do_test trans-3.11 {
   set v [catch {execsql {
@@ -252,6 +281,15 @@ do_test trans-5.2 {
   execsql {BEGIN TRANSACTION}
   execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}
 } {}
+do_test trans-5.2b {
+  sqlite3_txn_state db
+} {1}
+do_test trans-5.2c {
+  sqlite3_txn_state db main
+} {1}
+do_test trans-5.2d {
+  sqlite3_txn_state db temp
+} {0}
 do_test trans-5.3 {
   execsql {CREATE TABLE one(a text, b int)}
   execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}

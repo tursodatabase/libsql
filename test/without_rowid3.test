@@ -417,14 +417,14 @@ do_test without_rowid3-3.1.2 {
 } {}
 do_test without_rowid3-3.1.3 {
   catchsql { UPDATE ab SET a = 5 }
-} {1 {CHECK constraint failed: ef}}
+} {1 {CHECK constraint failed: e!=5}}
 do_test without_rowid3-3.1.4 {
   execsql { SELECT * FROM ab }
 } {1 b}
 do_test without_rowid3-3.1.4 {
   execsql BEGIN;
   catchsql { UPDATE ab SET a = 5 }
-} {1 {CHECK constraint failed: ef}}
+} {1 {CHECK constraint failed: e!=5}}
 do_test without_rowid3-3.1.5 {
   execsql COMMIT;
   execsql { SELECT * FROM ab; SELECT * FROM cd; SELECT * FROM ef }

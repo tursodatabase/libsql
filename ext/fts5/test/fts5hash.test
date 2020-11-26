@@ -112,7 +112,7 @@ foreach_detail_mode $testprefix {
   # Add a small and very large token with the same hash value to an
   # empty table. At one point this would provoke an asan error.
   #
-  do_test 2.0 {
+  do_test 1.5 {
     set big [string repeat 12345 40]
     set hash [sqlite3_fts5_token_hash 1024 $big]
     while {1} {
@@ -127,5 +127,42 @@ foreach_detail_mode $testprefix {
   } {}
 
 } ;# foreach_detail_mode
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('hashsize', 1024);
+  INSERT INTO t1(t1, rank) VALUES('automerge', 0);
+  INSERT INTO t1(t1, rank) VALUES('crisismerge', 1000);
+}
+
+do_execsql_test 2.2 {
+  BEGIN;
+    INSERT INTO t1 VALUES('abc def ghi');
+    SELECT count(*) FROM t1_data;
+} {2}
+
+do_execsql_test 2.3 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1024
+  )
+  INSERT INTO t1 SELECT 'abc def ghi' FROM s;
+  SELECT (SELECT count(*) FROM t1_data) > 10;
+} {1}
+
+do_execsql_test 2.4 {
+  COMMIT;
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('hashsize', 1024);
+  INSERT INTO t1(t1, rank) VALUES('automerge', 0);
+  INSERT INTO t1(t1, rank) VALUES('crisismerge', 1000);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1024
+  )
+  INSERT INTO t1 SELECT 'abc' || i || ' def' || i || ' ghi' || i FROM s;
+  SELECT (SELECT count(*) FROM t1_data) > 100;
+} {1}
 
 finish_test

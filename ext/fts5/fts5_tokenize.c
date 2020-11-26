@@ -1258,6 +1258,133 @@ static int fts5PorterTokenize(
   );
 }
 
+/**************************************************************************
+** Start of trigram implementation.
+*/
+typedef struct TrigramTokenizer TrigramTokenizer;
+struct TrigramTokenizer {
+  int bFold;                      /* True to fold to lower-case */
+};
+
+/*
+** Free a trigram tokenizer.
+*/
+static void fts5TriDelete(Fts5Tokenizer *p){
+  sqlite3_free(p);
+}
+
+/*
+** Allocate a trigram tokenizer.
+*/
+static int fts5TriCreate(
+  void *pUnused,
+  const char **azArg,
+  int nArg,
+  Fts5Tokenizer **ppOut
+){
+  int rc = SQLITE_OK;
+  TrigramTokenizer *pNew = (TrigramTokenizer*)sqlite3_malloc(sizeof(*pNew));
+  UNUSED_PARAM(pUnused);
+  if( pNew==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    int i;
+    pNew->bFold = 1;
+    for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
+      const char *zArg = azArg[i+1];
+      if( 0==sqlite3_stricmp(azArg[i], "case_sensitive") ){
+        if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1] ){
+          rc = SQLITE_ERROR;
+        }else{
+          pNew->bFold = (zArg[0]=='0');
+        }
+      }else{
+        rc = SQLITE_ERROR;
+      }
+    }
+    if( rc!=SQLITE_OK ){
+      fts5TriDelete((Fts5Tokenizer*)pNew);
+      pNew = 0;
+    }
+  }
+  *ppOut = (Fts5Tokenizer*)pNew;
+  return rc;
+}
+
+/*
+** Trigram tokenizer tokenize routine.
+*/
+static int fts5TriTokenize(
+  Fts5Tokenizer *pTok,
+  void *pCtx,
+  int unusedFlags,
+  const char *pText, int nText,
+  int (*xToken)(void*, int, const char*, int, int, int)
+){
+  TrigramTokenizer *p = (TrigramTokenizer*)pTok;
+  int rc = SQLITE_OK;
+  char aBuf[32];
+  const unsigned char *zIn = (const unsigned char*)pText;
+  const unsigned char *zEof = &zIn[nText];
+  u32 iCode;
+
+  UNUSED_PARAM(unusedFlags);
+  while( 1 ){
+    char *zOut = aBuf;
+    int iStart = zIn - (const unsigned char*)pText;
+    const unsigned char *zNext; 
+
+    READ_UTF8(zIn, zEof, iCode);
+    if( iCode==0 ) break;
+    zNext = zIn;
+    if( zIn<zEof ){
+      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
+      WRITE_UTF8(zOut, iCode);
+      READ_UTF8(zIn, zEof, iCode);
+      if( iCode==0 ) break;
+    }else{
+      break;
+    }
+    if( zIn<zEof ){
+      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
+      WRITE_UTF8(zOut, iCode);
+      READ_UTF8(zIn, zEof, iCode);
+      if( iCode==0 ) break;
+      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
+      WRITE_UTF8(zOut, iCode);
+    }else{
+      break;
+    }
+    rc = xToken(pCtx, 0, aBuf, zOut-aBuf, iStart, iStart + zOut-aBuf);
+    if( rc!=SQLITE_OK ) break;
+    zIn = zNext;
+  }
+
+  return rc;
+}
+
+/*
+** Argument xCreate is a pointer to a constructor function for a tokenizer.
+** pTok is a tokenizer previously created using the same method. This function
+** returns one of FTS5_PATTERN_NONE, FTS5_PATTERN_LIKE or FTS5_PATTERN_GLOB
+** indicating the style of pattern matching that the tokenizer can support.
+** In practice, this is:
+**
+**     "trigram" tokenizer, case_sensitive=1 - FTS5_PATTERN_GLOB
+**     "trigram" tokenizer, case_sensitive=0 (the default) - FTS5_PATTERN_LIKE
+**     all other tokenizers - FTS5_PATTERN_NONE
+*/
+int sqlite3Fts5TokenizerPattern(
+    int (*xCreate)(void*, const char**, int, Fts5Tokenizer**),
+    Fts5Tokenizer *pTok
+){
+  if( xCreate==fts5TriCreate ){
+    TrigramTokenizer *p = (TrigramTokenizer*)pTok;
+    return p->bFold ? FTS5_PATTERN_LIKE : FTS5_PATTERN_GLOB;
+  }
+  return FTS5_PATTERN_NONE;
+}
+
 /*
 ** Register all built-in tokenizers with FTS5.
 */
@@ -1269,6 +1396,7 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
     { "unicode61", {fts5UnicodeCreate, fts5UnicodeDelete, fts5UnicodeTokenize}},
     { "ascii",     {fts5AsciiCreate, fts5AsciiDelete, fts5AsciiTokenize }},
     { "porter",    {fts5PorterCreate, fts5PorterDelete, fts5PorterTokenize }},
+    { "trigram",   {fts5TriCreate, fts5TriDelete, fts5TriTokenize}},
   };
   
   int rc = SQLITE_OK;             /* Return code */

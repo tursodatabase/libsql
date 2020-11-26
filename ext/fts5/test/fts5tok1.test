@@ -111,5 +111,40 @@ do_catchsql_test 2.1 {
   SELECT * FROM t4;
 } {1 {SQL logic error}}
 
+#-------------------------------------------------------------------------
+# Embedded 0x00 characters.
+#
+reset_db
+do_execsql_test 3.1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(z);
+  CREATE VIRTUAL TABLE tt USING fts5vocab(t1, 'instance');
+  INSERT INTO t1 VALUES('abc' || char(0) || 'def');
+  SELECT * FROM tt;
+} { abc 1 z 0 def 1 z 1 }
+do_execsql_test 3.1.1 {
+  SELECT hex(z) FROM t1;
+} {61626300646566}
+do_execsql_test 3.1.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {}
+
+do_execsql_test 3.2.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(z, 
+      tokenize="unicode61 categories 'L* N* Co Cc'"
+  );
+  CREATE VIRTUAL TABLE tu USING fts5vocab(t2, 'instance');
+
+  INSERT INTO t2 VALUES('abc' || char(0) || 'def');
+  SELECT * FROM tu;
+} { abc 1 z 0 def 1 z 1 }
+
+do_execsql_test 3.2.1 {
+  SELECT hex(z) FROM t1;
+} {61626300646566}
+
+do_execsql_test 3.2.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {}
+
 
 finish_test
