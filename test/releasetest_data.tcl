@@ -54,9 +54,10 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_DESERIALIZE
   }
   "Sanitize" {
-    CC=clang -fsanitize=undefined
+    CC=clang -fsanitize=address,undefined
     -DSQLITE_ENABLE_STAT4
-    --enable-session
+    --enable-debug
+    --enable-all
   }
   "Stdcall" {
     -DUSE_STDCALL=1
@@ -135,6 +136,11 @@ array set ::Configs [strip_comments {
     -DSQLITE_MUTATION_TEST
     --enable-fts5 --enable-json1
   }
+  "Debug-Two" {
+    -DSQLITE_DEFAULT_MEMSTATUS=0
+    -DSQLITE_MAX_EXPR_DEPTH=0
+    --enable-debug
+  }
   "Fast-One" {
     -O6
     -DSQLITE_ENABLE_FTS4=1
@@ -142,6 +148,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_RBU
     -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_MAX_MMAP_SIZE=12884901888
     -DLONGDOUBLE_TYPE=double
     --enable-session
   }
@@ -284,6 +291,7 @@ array set ::Platforms [strip_comments {
     "Check-Symbols*"          checksymbols
     "Fast-One"                "fuzztest test"
     "Debug-One"               "mptest test"
+    "Debug-Two"               "test"
     "Have-Not"                test
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
@@ -294,7 +302,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Apple"                   test
-    "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
+    "Sanitize"                {QUICKTEST_OMIT=crash*,shell*,sqldiff*,sessionB.test test}
     "Device-One"              fulltest
     "Default"                 "threadtest fulltest"
     "Valgrind*"               valgrindtest

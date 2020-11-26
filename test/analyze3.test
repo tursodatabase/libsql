@@ -23,6 +23,16 @@ ifcapable !stat4 {
   return
 }
 
+# This test cannot be run with the sqlite3_prepare() permutation, as it
+# tests that stat4 data can be used to influence the plans of queries
+# based on bound variable values. And this is not possible when using
+# sqlite3_prepare() - as queries cannot be internally re-prepared after
+# binding values are available.
+if {[permutation]=="prepare"} {
+  finish_test
+  return
+}
+
 #----------------------------------------------------------------------
 # Test Organization:
 #

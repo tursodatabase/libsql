@@ -1,0 +1,71 @@
+# 2016 February 2
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# This file is focused on OOM errors.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5faultE
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+faultsim_save_and_close
+do_faultsim_test 1 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts5(x, y, tokenize=trigram) }
+} -test {
+  faultsim_test_result {0 {}} {1 {vtable constructor failed: t1}} 
+}
+
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, tokenize=trigram);
+}
+
+faultsim_save_and_close
+do_faultsim_test 2 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    INSERT INTO t1 VALUES('abcdefghijklmnopqrstuvwxyz', NULL);
+    SELECT count(*) FROM t1 WHERE x LIKE '%mnop%' AND t1 MATCH 'jkl';
+  }
+} -test {
+  faultsim_test_result {0 1} {1 {vtable constructor failed: t1}}
+}
+
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, tokenize=trigram, detail=none);
+  INSERT INTO t1 VALUES('abcdefghijklmnopqrstuvwxyz', NULL);
+}
+
+faultsim_save_and_close
+do_faultsim_test 3 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    SELECT count(*) FROM t1 WHERE x LIKE '%mnopqrs%' AND t1 MATCH 'abc'
+  }
+} -test {
+  faultsim_test_result {0 1} {1 {vtable constructor failed: t1}}
+}
+
+
+
+finish_test
+

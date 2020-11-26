@@ -1558,6 +1558,7 @@ TESTEXT = \
   $(TOP)\ext\expert\test_expert.c \
   $(TOP)\ext\misc\amatch.c \
   $(TOP)\ext\misc\carray.c \
+  $(TOP)\ext\misc\cksumvfs.c \
   $(TOP)\ext\misc\closure.c \
   $(TOP)\ext\misc\csv.c \
   $(TOP)\ext\misc\decimal.c \
@@ -2208,6 +2209,7 @@ SHELL_SRC = \
         $(TOP)\ext\misc\decimal.c \
 	$(TOP)\ext\misc\fileio.c \
         $(TOP)\ext\misc\ieee754.c \
+        $(TOP)\ext\misc\series.c \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\uint.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
@@ -2386,6 +2388,7 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_JSON1=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DESERIALIZE=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CKSUMVFS_STATIC=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)

@@ -168,7 +168,7 @@ static int SQLITE_TCLAPI hexio_write(
   if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return TCL_ERROR;
   zFile = Tcl_GetString(objv[1]);
   zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[3], &nIn);
-  aOut = sqlite3_malloc( nIn/2 );
+  aOut = sqlite3_malloc( 1 + nIn/2 );
   if( aOut==0 ){
     return TCL_ERROR;
   }
@@ -213,7 +213,7 @@ static int SQLITE_TCLAPI hexio_get_int(
     return TCL_ERROR;
   }
   zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &nIn);
-  aOut = sqlite3_malloc( nIn/2 );
+  aOut = sqlite3_malloc( 1 + nIn/2 );
   if( aOut==0 ){
     return TCL_ERROR;
   }
@@ -309,7 +309,7 @@ static int SQLITE_TCLAPI utf8_to_utf8(
     return TCL_ERROR;
   }
   zOrig = (unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
-  z = sqlite3_malloc( n+3 );
+  z = sqlite3_malloc( n+4 );
   n = sqlite3TestHexToBin(zOrig, n, z);
   z[n] = 0;
   nOut = sqlite3Utf8To8(z);

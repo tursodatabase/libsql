@@ -787,4 +787,18 @@ do_execsql_test view-28.2 {
   SELECT 0 IN (c0) FROM (SELECT c0 FROM t0);
 } {0}
 
+#-------------------------------------------------------------------------
+# 2020-10-26.  https://sqlite.org/forum/forumpost/daa2c728cc
+#
+reset_db
+do_catchsql_test view-29.0 {
+  CREATE TABLE t1(a,b,c);
+  CREATE VIEW IF NOT EXISTS IF AS SELECT null;
+} {1 {malformed database schema (IF) - near "AS": syntax error}}
+do_catchsql_test view-29.1 {
+  CREATE TABLE t2(c,d,e);
+  SELECT name FROM sqlite_schema ORDER BY name;
+} {0 {t1 t2}}
+
+
 finish_test

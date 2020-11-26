@@ -677,4 +677,39 @@ do_execsql_test 22.1 {
   SELECT * FROM t1;
 } {1 2 78 a b 78}
 
+#-------------------------------------------------------------------------
+reset_db
+db collate compare64 compare64
+
+do_execsql_test 23.1 {
+  CREATE TABLE gigo(a text);
+  CREATE TABLE idx(x text COLLATE compare64);
+  CREATE VIEW v1 AS SELECT * FROM idx WHERE x='abc';
+}
+db close
+sqlite3 db test.db
+
+do_execsql_test 23.2 {
+  alter table gigo rename to ggiiggoo;
+  alter table idx rename to idx2;
+}
+
+do_execsql_test 23.3 {
+  SELECT sql FROM sqlite_master;
+} {
+  {CREATE TABLE "ggiiggoo"(a text)} 
+  {CREATE TABLE "idx2"(x text COLLATE compare64)}
+  {CREATE VIEW v1 AS SELECT * FROM "idx2" WHERE x='abc'}
+}
+
+do_execsql_test 23.4 {
+  ALTER TABLE idx2 RENAME x TO y;
+  SELECT sql FROM sqlite_master;
+} {
+  {CREATE TABLE "ggiiggoo"(a text)} 
+  {CREATE TABLE "idx2"(y text COLLATE compare64)}
+  {CREATE VIEW v1 AS SELECT * FROM "idx2" WHERE y='abc'}
+}
+
 finish_test
+

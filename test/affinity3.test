@@ -72,10 +72,10 @@ do_execsql_test affinity3-200 {
   CREATE TABLE mzed AS SELECT * FROM idmap;
 }
 
-do_execsql_test affinity3-210 {
-  PRAGMA automatic_index=ON;
-  SELECT * FROM data JOIN idmap USING(id);
-} {1 abc a 4 xyz e}
+#do_execsql_test affinity3-210 {
+  #PRAGMA automatic_index=ON;
+  #SELECT * FROM data JOIN idmap USING(id);
+#} {1 abc a 4 xyz e}
 do_execsql_test affinity3-220 {
   SELECT * FROM data JOIN mzed USING(id);
 } {1 abc a 4 xyz e}

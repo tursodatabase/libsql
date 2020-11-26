@@ -95,7 +95,7 @@ for {set i 0} {$i < 9} {incr i} {
     " [string map {"\n    " "\n"} "
       QUERY PLAN
       |--SCAN TABLE t$t AS o USING COVERING INDEX sqlite_autoindex_t${t}_1
-      `--CORRELATED SCALAR SUBQUERY
+      `--CORRELATED SCALAR SUBQUERY xxxxxx
          `--SEARCH TABLE t$t AS i USING INTEGER PRIMARY KEY (rowid=?)
     "]
   }

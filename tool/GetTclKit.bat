@@ -39,10 +39,11 @@ IF DEFINED DUMMY2 (
   GOTO usage
 )
 
-SET ROOT=%~dp0\..
-SET ROOT=%ROOT:\\=\%
+IF NOT DEFINED ENVDIR (
+  SET ENVDIR=%CD%
+)
 
-%_VECHO% Root = '%ROOT%'
+%_VECHO% EnvDir = '%ENVDIR%'
 
 SET TOOLS=%~dp0
 SET TOOLS=%TOOLS:~0,-1%
@@ -64,21 +65,42 @@ IF NOT DEFINED TEMP (
 %_VECHO% Temp = '%TEMP%'
 
 IF NOT DEFINED TCLKIT_URI (
-  SET TCLKIT_URI=https://tclsh.com/
+  SET TCLKIT_URI=https://urn.to/r/tclsh/
 )
 
 %_VECHO% TclKitUri = '%TCLKIT_URI%'
 
+IF NOT DEFINED TCLKIT_PATCHLEVEL (
+  SET TCLKIT_PATCHLEVEL=8.6.6
+)
+
+%_VECHO% TclKitPatchLevel = '%TCLKIT_PATCHLEVEL%'
+
+IF NOT DEFINED TCLKIT_EXE_PATCHLEVEL (
+  SET TCLKIT_EXE_PATCHLEVEL=8.6.4
+)
+
+%_VECHO% TclKitExePatchLevel = '%TCLKIT_EXE_PATCHLEVEL%'
+
 IF /I "%PROCESSOR%" == "x86" (
   CALL :fn_TclKitX86Variables
+
+  IF ERRORLEVEL 1 (
+    GOTO errors
+  )
 ) ELSE IF /I "%PROCESSOR%" == "x64" (
   CALL :fn_TclKitX64Variables
+
+  IF ERRORLEVEL 1 (
+    GOTO errors
+  )
 ) ELSE (
   GOTO usage
 )
 
 %_VECHO% TclKitVersion = '%TCLKIT_VERSION%'
 %_VECHO% TclKitPatchLevel = '%TCLKIT_PATCHLEVEL%'
+%_VECHO% TclKitExePatchLevel = '%TCLKIT_EXE_PATCHLEVEL%'
 %_VECHO% TclKitNoEnv = '%TCLKIT_NOENV%'
 %_VECHO% TclKitNoSdk = '%TCLKIT_NOSDK%'
 %_VECHO% TclKitExe = '%TCLKIT_EXE%'
@@ -173,20 +195,20 @@ IF ERRORLEVEL 1 (
 
 IF DEFINED TCLKIT_NOENV GOTO skip_sdkEnvironment
 
-%__ECHO% ECHO SET TCLSH_CMD=%TEMP%\%TCLKIT_EXE%%OVERWRITE%"%ROOT%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET TCLSH_CMD=%TEMP%\%TCLKIT_EXE%%OVERWRITE%"%ENVDIR%\SetTclKitEnv.bat"
 
 IF DEFINED TCLKIT_NOSDK GOTO skip_sdkVariables
 
-%__ECHO% ECHO SET TCLINCDIR=%TEMP%\%TCLKIT_SDK%\include%APPEND%"%ROOT%\SetTclKitEnv.bat"
-%__ECHO% ECHO SET TCLLIBDIR=%TEMP%\%TCLKIT_SDK%\lib%APPEND%"%ROOT%\SetTclKitEnv.bat"
-%__ECHO% ECHO SET LIBTCLPATH=%TEMP%\%TCLKIT_SDK%\lib%APPEND%"%ROOT%\SetTclKitEnv.bat"
-%__ECHO% ECHO SET LIBTCL=%TCLKIT_LIB%%APPEND%"%ROOT%\SetTclKitEnv.bat"
-%__ECHO% ECHO SET LIBTCLSTUB=%TCLKIT_LIB_STUB%%APPEND%"%ROOT%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET TCLINCDIR=%TEMP%\%TCLKIT_SDK%\include%APPEND%"%ENVDIR%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET TCLLIBDIR=%TEMP%\%TCLKIT_SDK%\lib%APPEND%"%ENVDIR%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET LIBTCLPATH=%TEMP%\%TCLKIT_SDK%\lib%APPEND%"%ENVDIR%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET LIBTCL=%TCLKIT_LIB%%APPEND%"%ENVDIR%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET LIBTCLSTUB=%TCLKIT_LIB_STUB%%APPEND%"%ENVDIR%\SetTclKitEnv.bat"
 
 :skip_sdkVariables
 
 ECHO.
-ECHO Wrote "%ROOT%\SetTclKitEnv.bat".
+ECHO Wrote "%ENVDIR%\SetTclKitEnv.bat".
 ECHO Please run it to set the necessary Tcl environment variables.
 ECHO.
 
@@ -202,12 +224,17 @@ GOTO no_errors
   REM       to be available for download.
   REM
   IF NOT DEFINED TCLKIT_PATCHLEVEL (
-    SET TCLKIT_PATCHLEVEL=8.6.6
+    ECHO The TCLKIT_PATCHLEVEL environment variable must be set first.
+    CALL :fn_SetErrorLevel
+    GOTO :EOF
   )
   SET TCLKIT_VERSION=%TCLKIT_PATCHLEVEL:.=%
   SET TCLKIT_VERSION=%TCLKIT_VERSION:~0,2%
-  REM SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
-  SET TCLKIT_EXE=tclkit-8.6.4.exe
+  IF DEFINED TCLKIT_EXE_PATCHLEVEL (
+    SET TCLKIT_EXE=tclkit-%TCLKIT_EXE_PATCHLEVEL%.exe
+  ) ELSE (
+    SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
+  )
   SET TCLKIT_LIB=libtclkit%TCLKIT_PATCHLEVEL:.=%.lib
   SET TCLKIT_LIB_STUB=libtclstub%TCLKIT_VERSION:.=%.a
   SET TCLKIT_SDK=libtclkit-sdk-x86-%TCLKIT_PATCHLEVEL%
@@ -226,12 +253,17 @@ GOTO no_errors
   REM       to be available for download.
   REM
   IF NOT DEFINED TCLKIT_PATCHLEVEL (
-    SET TCLKIT_PATCHLEVEL=8.6.6
+    ECHO The TCLKIT_PATCHLEVEL environment variable must be set first.
+    CALL :fn_SetErrorLevel
+    GOTO :EOF
   )
   SET TCLKIT_VERSION=%TCLKIT_PATCHLEVEL:.=%
   SET TCLKIT_VERSION=%TCLKIT_VERSION:~0,2%
-  REM SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
-  SET TCLKIT_EXE=tclkit-8.6.4.exe
+  IF DEFINED TCLKIT_EXE_PATCHLEVEL (
+    SET TCLKIT_EXE=tclkit-%TCLKIT_EXE_PATCHLEVEL%.exe
+  ) ELSE (
+    SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
+  )
   SET TCLKIT_LIB=libtclkit%TCLKIT_PATCHLEVEL:.=%.lib
   SET TCLKIT_LIB_STUB=libtclstub%TCLKIT_VERSION:.=%.a
   SET TCLKIT_SDK=libtclkit-sdk-x64-%TCLKIT_PATCHLEVEL%

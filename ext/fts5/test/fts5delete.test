@@ -50,4 +50,47 @@ do_test 1.2 {
   }
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE test (
+      id INTEGER PRIMARY KEY,
+      name TEXT,
+      value TEXT
+  );
+  CREATE VIRTUAL TABLE test_idx USING fts5(
+      name, content=test, content_rowid=id
+  );
+}
+
+do_catchsql_test 2.1 {
+  INSERT INTO test_idx (test_idx, rowid, name) VALUES('delete', 1, 'quick');
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 2.2 {
+  INSERT INTO test_idx(rowid, name) VALUES(123, 'one one one');
+  INSERT INTO test_idx (test_idx, rowid, name) VALUES('delete', 123, 'one');
+  INSERT INTO test_idx (test_idx, rowid, name) VALUES('delete', 123, 'one');
+} {1 {database disk image is malformed}}
+
+do_execsql_test 2.3 {
+  DROP TABLE test_idx;
+  CREATE VIRTUAL TABLE test_idx USING fts5(
+      name, content=test, content_rowid=id
+  );
+
+  INSERT INTO test_idx(rowid, name) VALUES(123, 'one one one');
+  INSERT INTO test_idx(rowid, name) VALUES(124, 'two two two');
+  INSERT INTO test_idx(rowid, name) VALUES(125, 'two two two');
+  INSERT INTO test_idx (test_idx, rowid, name) VALUES('delete', 123, 'one');
+  INSERT INTO test_idx (test_idx, rowid, name) VALUES('delete', 123, 'one');
+  INSERT INTO test_idx (test_idx, rowid, name) VALUES('delete', 123, 'one');
+}
+
+do_catchsql_test 2.4 {
+  SELECT rowid FROM test_idx WHERE test_idx MATCH 'two' ORDER BY rank;
+} {1 {database disk image is malformed}}
+
+
+
 finish_test
