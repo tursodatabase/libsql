@@ -86,7 +86,7 @@ struct VdbeCursor {
   Bool isEphemeral:1;     /* True for an ephemeral table */
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
-  Bool seekHit:1;         /* See the OP_SeekHit and OP_IfNoHope opcodes */
+  u16 seekHit;            /* See the OP_SeekHit and OP_IfNoHope opcodes */
   Btree *pBtx;            /* Separate file holding temporary table */
   i64 seqCount;           /* Sequence counter */
   u32 *aAltMap;           /* Mapping from table to index column numbers */

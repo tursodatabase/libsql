@@ -339,8 +339,8 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
        BTREE_APPLICATION_ID,     0,  /* Preserve the application id */
     };
 
-    assert( 1==sqlite3BtreeIsInTrans(pTemp) );
-    assert( pOut!=0 || 1==sqlite3BtreeIsInTrans(pMain) );
+    assert( SQLITE_TXN_WRITE==sqlite3BtreeTxnState(pTemp) );
+    assert( pOut!=0 || SQLITE_TXN_WRITE==sqlite3BtreeTxnState(pMain) );
 
     /* Copy Btree meta values */
     for(i=0; i<ArraySize(aCopy); i+=2){

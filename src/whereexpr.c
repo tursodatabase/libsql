@@ -798,7 +798,7 @@ static void exprAnalyzeOrTerm(
           assert( pOrTerm->wtFlags & (TERM_COPIED|TERM_VIRTUAL) );
           continue;
         }
-        iColumn = pOrTerm->u.leftColumn;
+        iColumn = pOrTerm->u.x.leftColumn;
         iCursor = pOrTerm->leftCursor;
         pLeft = pOrTerm->pExpr->pLeft;
         break;
@@ -820,7 +820,7 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         if( pOrTerm->leftCursor!=iCursor ){
           pOrTerm->wtFlags &= ~TERM_OR_OK;
-        }else if( pOrTerm->u.leftColumn!=iColumn || (iColumn==XN_EXPR 
+        }else if( pOrTerm->u.x.leftColumn!=iColumn || (iColumn==XN_EXPR 
                && sqlite3ExprCompare(pParse, pOrTerm->pExpr->pLeft, pLeft, -1)
         )){
           okToChngToIN = 0;
@@ -855,7 +855,7 @@ static void exprAnalyzeOrTerm(
         if( (pOrTerm->wtFlags & TERM_OR_OK)==0 ) continue;
         assert( pOrTerm->eOperator & WO_EQ );
         assert( pOrTerm->leftCursor==iCursor );
-        assert( pOrTerm->u.leftColumn==iColumn );
+        assert( pOrTerm->u.x.leftColumn==iColumn );
         pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
         pList = sqlite3ExprListAppend(pWInfo->pParse, pList, pDup);
         pLeft = pOrTerm->pExpr->pLeft;
@@ -1091,15 +1091,15 @@ static void exprAnalyze(
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
 
-    if( pTerm->iField>0 ){
+    if( pTerm->u.x.iField>0 ){
       assert( op==TK_IN );
       assert( pLeft->op==TK_VECTOR );
-      pLeft = pLeft->x.pList->a[pTerm->iField-1].pExpr;
+      pLeft = pLeft->x.pList->a[pTerm->u.x.iField-1].pExpr;
     }
 
     if( exprMightBeIndexed(pSrc, prereqLeft, aiCurCol, pLeft, op) ){
       pTerm->leftCursor = aiCurCol[0];
-      pTerm->u.leftColumn = aiCurCol[1];
+      pTerm->u.x.leftColumn = aiCurCol[1];
       pTerm->eOperator = operatorMask(op) & opMask;
     }
     if( op==TK_IS ) pTerm->wtFlags |= TERM_IS;
@@ -1109,7 +1109,7 @@ static void exprAnalyze(
       WhereTerm *pNew;
       Expr *pDup;
       u16 eExtraOp = 0;        /* Extra bits for pNew->eOperator */
-      assert( pTerm->iField==0 );
+      assert( pTerm->u.x.iField==0 );
       if( pTerm->leftCursor>=0 ){
         int idxNew;
         pDup = sqlite3ExprDup(db, pExpr, 0);
@@ -1135,7 +1135,7 @@ static void exprAnalyze(
       }
       pNew->wtFlags |= exprCommute(pParse, pDup);
       pNew->leftCursor = aiCurCol[0];
-      pNew->u.leftColumn = aiCurCol[1];
+      pNew->u.x.leftColumn = aiCurCol[1];
       testcase( (prereqLeft | extraRight) != prereqLeft );
       pNew->prereqRight = prereqLeft | extraRight;
       pNew->prereqAll = prereqAll;
@@ -1309,7 +1309,7 @@ static void exprAnalyze(
         pNewTerm = &pWC->a[idxNew];
         pNewTerm->prereqRight = prereqExpr;
         pNewTerm->leftCursor = pLeft->iTable;
-        pNewTerm->u.leftColumn = pLeft->iColumn;
+        pNewTerm->u.x.leftColumn = pLeft->iColumn;
         pNewTerm->eOperator = WO_AUX;
         pNewTerm->eMatchOp = eOp2;
         markTermAsChild(pWC, idxNew, idxTerm);
@@ -1356,13 +1356,13 @@ static void exprAnalyze(
   /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
   ** a virtual term for each vector component. The expression object
   ** used by each such virtual term is pExpr (the full vector IN(...) 
-  ** expression). The WhereTerm.iField variable identifies the index within
+  ** expression). The WhereTerm.u.x.iField variable identifies the index within
   ** the vector on the LHS that the virtual term represents.
   **
   ** This only works if the RHS is a simple SELECT (not a compound) that does
   ** not use window functions.
   */
-  if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->iField==0
+  if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->u.x.iField==0
    && pExpr->pLeft->op==TK_VECTOR
    && pExpr->x.pSelect->pPrior==0
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1373,7 +1373,7 @@ static void exprAnalyze(
     for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
       int idxNew;
       idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
-      pWC->a[idxNew].iField = i+1;
+      pWC->a[idxNew].u.x.iField = i+1;
       exprAnalyze(pSrc, pWC, idxNew);
       markTermAsChild(pWC, idxNew, idxTerm);
     }
@@ -1408,7 +1408,7 @@ static void exprAnalyze(
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = 0;
       pNewTerm->leftCursor = pLeft->iTable;
-      pNewTerm->u.leftColumn = pLeft->iColumn;
+      pNewTerm->u.x.leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_GT;
       markTermAsChild(pWC, idxNew, idxTerm);
       pTerm = &pWC->a[idxTerm];
@@ -1451,6 +1451,7 @@ static void exprAnalyze(
 void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
   Expr *pE2 = sqlite3ExprSkipCollateAndLikely(pExpr);
   pWC->op = op;
+  assert( pE2!=0 || pExpr==0 );
   if( pE2==0 ) return;
   if( pE2->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);

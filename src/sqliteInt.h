@@ -2208,6 +2208,7 @@ struct Table {
 #define TF_OOOHidden       0x0400    /* Out-of-Order hidden columns */
 #define TF_HasNotNull      0x0800    /* Contains NOT NULL constraints */
 #define TF_Shadow          0x1000    /* True for a shadow table */
+#define TF_HasStat4        0x2000    /* STAT4 info available for this table */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -2574,11 +2575,6 @@ struct AggInfo {
 };
 
 /*
-** Value for AggInfo.iAggMagic when the structure is valid
-*/
-#define AggInfoMagic  0x2059e99e
-
-/*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.
 ** Usually it is 16-bits.  But if SQLITE_MAX_VARIABLE_NUMBER is greater
 ** than 32767 we have to make it 32-bit.  16-bit is preferred because
@@ -2741,7 +2737,7 @@ struct Expr {
 #define EP_TokenOnly  0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
 #define EP_Win        0x008000 /* Contains window functions */
 #define EP_MemToken   0x010000 /* Need to sqlite3DbFree() Expr.zToken */
-                  /*  0x020000 // available for reuse */
+#define EP_IfNullRow  0x020000 /* The TK_IF_NULL_ROW opcode */
 #define EP_Unlikely   0x040000 /* unlikely() or likelihood() function */
 #define EP_ConstFunc  0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
 #define EP_CanBeNull  0x100000 /* Can be null despite NOT NULL constraint */
@@ -2979,9 +2975,9 @@ struct SrcList {
 #define WHERE_DISTINCTBY       0x0080 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0100 /* All output needs to be distinct */
 #define WHERE_SORTBYGROUP      0x0200 /* Support sqlite3WhereIsSorted() */
-#define WHERE_SEEK_TABLE       0x0400 /* Do not defer seeks on main table */
+                        /*     0x0400    not currently used */
 #define WHERE_ORDERBY_LIMIT    0x0800 /* ORDERBY+LIMIT on the inner loop */
-#define WHERE_SEEK_UNIQ_TABLE  0x1000 /* Do not defer seeks if unique */
+                        /*     0x1000    not currently used */
                         /*     0x2000    not currently used */
 #define WHERE_USE_LIMIT        0x4000 /* Use the LIMIT in cost estimates */
                         /*     0x8000    not currently used */
@@ -3178,9 +3174,6 @@ struct Select {
 **                     statements within triggers whose only purpose is
 **                     the side-effects of functions.
 **
-** All of the above are free to ignore their ORDER BY clause. Those that
-** follow must honor the ORDER BY clause.
-**
 **     SRT_Output      Generate a row of output (using the OP_ResultRow
 **                     opcode) for each row in the result set.
 **
@@ -3237,13 +3230,18 @@ struct Select {
 #define SRT_Except       2  /* Remove result from a UNION index */
 #define SRT_Exists       3  /* Store 1 if the result is not empty */
 #define SRT_Discard      4  /* Do not save the results anywhere */
-#define SRT_Fifo         5  /* Store result as data with an automatic rowid */
-#define SRT_DistFifo     6  /* Like SRT_Fifo, but unique results only */
+#define SRT_DistFifo     5  /* Like SRT_Fifo, but unique results only */
+#define SRT_DistQueue    6  /* Like SRT_Queue, but unique results only */
+
+/* The DISTINCT clause is ignored for all of the above.  Not that
+** IgnorableDistinct() implies IgnorableOrderby() */
+#define IgnorableDistinct(X) ((X->eDest)<=SRT_DistQueue)
+
 #define SRT_Queue        7  /* Store result in an queue */
-#define SRT_DistQueue    8  /* Like SRT_Queue, but unique results only */
+#define SRT_Fifo         8  /* Store result as data with an automatic rowid */
 
 /* The ORDER BY clause is ignored for all of the above */
-#define IgnorableOrderby(X) ((X->eDest)<=SRT_DistQueue)
+#define IgnorableOrderby(X) ((X->eDest)<=SRT_Fifo)
 
 #define SRT_Output       9  /* Output each row of result */
 #define SRT_Mem         10  /* Store result in a memory cell */
@@ -4210,7 +4208,7 @@ void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 void sqlite3AddColumn(Parse*,Token*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
-void sqlite3AddCheckConstraint(Parse*, Expr*);
+void sqlite3AddCheckConstraint(Parse*, Expr*, const char*, const char*);
 void sqlite3AddDefaultValue(Parse*,Expr*,const char*,const char*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3AddGenerated(Parse*,Expr*,Token*);

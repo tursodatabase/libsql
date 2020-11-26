@@ -44,8 +44,10 @@ char sqlite3TableColumnAffinity(Table *pTab, int iCol){
 */
 char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
-  while( ExprHasProperty(pExpr, EP_Skip) ){
-    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+  while( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
+    assert( pExpr->op==TK_COLLATE
+         || pExpr->op==TK_IF_NULL_ROW
+         || (pExpr->op==TK_REGISTER && pExpr->op2==TK_IF_NULL_ROW) );
     pExpr = pExpr->pLeft;
     assert( pExpr!=0 );
   }
@@ -115,7 +117,7 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
   while( pExpr && ExprHasProperty(pExpr, EP_Skip) ){
-    assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+    assert( pExpr->op==TK_COLLATE );
     pExpr = pExpr->pLeft;
   }   
   return pExpr;
@@ -134,7 +136,7 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
     }else{
-      assert( pExpr->op==TK_COLLATE || pExpr->op==TK_IF_NULL_ROW );
+      assert( pExpr->op==TK_COLLATE );
       pExpr = pExpr->pLeft;
     }
   }   
@@ -768,6 +770,7 @@ int sqlite3SelectExprHeight(Select *p){
 ** Expr.flags. 
 */
 void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
+  if( pParse->nErr ) return;
   if( p && p->x.pList && !ExprHasProperty(p, EP_xIsSelect) ){
     p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
   }
@@ -3620,6 +3623,7 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 */
 static void exprToRegister(Expr *pExpr, int iReg){
   Expr *p = sqlite3ExprSkipCollateAndLikely(pExpr);
+  if( NEVER(p==0) ) return;
   p->op2 = p->op;
   p->op = TK_REGISTER;
   p->iTable = iReg;
@@ -4607,6 +4611,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   int r2;
   pExpr = sqlite3ExprSkipCollateAndLikely(pExpr);
   if( ConstFactorOk(pParse)
+   && ALWAYS(pExpr!=0)
    && pExpr->op!=TK_REGISTER
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){

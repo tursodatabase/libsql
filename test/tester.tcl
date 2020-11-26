@@ -1731,6 +1731,9 @@ proc crashsql {args} {
       set msg "child process exited abnormally"
     }
   }
+  if {$r && [string match {*ERROR: LeakSanitizer*} $msg]} {
+    set msg "child process exited abnormally"
+  }
 
   lappend r $msg
 }

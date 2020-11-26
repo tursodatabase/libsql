@@ -22,17 +22,13 @@
 ** The following is the concatenation of all %include directives from the
 ** input grammar file:
 */
-#include <stdio.h>
-#include <assert.h>
 /************ Begin %include sections from the grammar ************************/
 %%
 /**************** End of %include directives **********************************/
-/* These constants specify the various numeric values for terminal symbols
-** in a format understandable to "makeheaders".  This section is blank unless
-** "lemon" is run with the "-m" command-line option.
-***************** Begin makeheaders token definitions *************************/
+/* These constants specify the various numeric values for terminal symbols.
+***************** Begin token definitions *************************************/
 %%
-/**************** End makeheaders token definitions ***************************/
+/**************** End token definitions ***************************************/
 
 /* The next sections is a series of control #defines.
 ** various aspects of the generated parser.
@@ -229,6 +225,7 @@ typedef struct yyParser yyParser;
 
 #ifndef NDEBUG
 #include <stdio.h>
+#include <assert.h>
 static FILE *yyTraceFILE = 0;
 static char *yyTracePrompt = 0;
 #endif /* NDEBUG */
@@ -562,7 +559,7 @@ static YYACTIONTYPE yy_find_shift_action(
 #endif /* YYWILDCARD */
       return yy_default[stateno];
     }else{
-      assert( i>=0 && i<sizeof(yy_action)/sizeof(yy_action[0]) );
+      assert( i>=0 && i<(int)(sizeof(yy_action)/sizeof(yy_action[0])) );
       return yy_action[i];
     }
   }while(1);
@@ -721,8 +718,9 @@ static YYACTIONTYPE yy_reduce(
   (void)yyLookahead;
   (void)yyLookaheadToken;
   yymsp = yypParser->yytos;
+  assert( yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) );
 #ifndef NDEBUG
-  if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
+  if( yyTraceFILE ){
     yysize = yyRuleInfoNRhs[yyruleno];
     if( yysize ){
       fprintf(yyTraceFILE, "%sReduce %d [%s]%s, pop back to state %d.\n",

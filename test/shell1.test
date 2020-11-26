@@ -64,6 +64,10 @@ do_test shell1-1.2.1 {
 } {1 1 1 1}
 
 # -init filename       read/process named file
+forcedelete FOO
+set out [open FOO w]
+puts $out ""
+close $out
 do_test shell1-1.3.1 {
   catchcmd "-init FOO test.db" ""
 } {0 {}}
@@ -247,6 +251,7 @@ do_test shell1-2.4.2 {
 do_test shell1-3.1.1 {
   catchcmd "test.db" ".backup"
 } {1 {missing FILENAME argument on .backup}}
+forcedelete FOO
 do_test shell1-3.1.2 {
   catchcmd "test.db" ".backup FOO"
 } {0 {}}
@@ -583,7 +588,7 @@ do_test shell1-3.21.2 {
 do_test shell1-3.21.3 {
   # too many arguments
   catchcmd "test.db" ".schema FOO BAD"
-} {1 {Usage: .schema ?--indent? ?LIKE-PATTERN?}}
+} {1 {Usage: .schema ?--indent? ?--nosys? ?LIKE-PATTERN?}}
 
 do_test shell1-3.21.4 {
   catchcmd "test.db" {
@@ -1165,5 +1170,58 @@ do_test shell1-7.1.7 {
 } {0 {CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
 
 }
+
+# Test case for the ieee754 and decimal extensions in the shell.
+# See the "floatingpoint.html" file in the documentation for more
+# information.
+#
+do_test shell1-8.1 {
+  catchcmd ":memory:" {
+    -- The pow2 table will hold all the necessary powers of two.
+    CREATE TABLE pow2(x INTEGER PRIMARY KEY, v TEXT);
+    WITH RECURSIVE c(x,v) AS (
+      VALUES(0,'1')
+      UNION ALL
+      SELECT x+1, decimal_mul(v,'2') FROM c WHERE x+1<=971
+    ) INSERT INTO pow2(x,v) SELECT x, v FROM c;
+    WITH RECURSIVE c(x,v) AS (
+      VALUES(-1,'0.5')
+      UNION ALL
+      SELECT x-1, decimal_mul(v,'0.5') FROM c WHERE x-1>=-1075
+    ) INSERT INTO pow2(x,v) SELECT x, v FROM c;
+    
+    -- This query finds the decimal representation of each value in the "c" table.
+    WITH c(n) AS (VALUES(47.49))
+                     ----XXXXX----------- Replace with whatever you want
+    SELECT decimal_mul(ieee754_mantissa(c.n),pow2.v)
+      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.n);
+  }
+} {0 47.49000000000000198951966012828052043914794921875}
+do_test shell1-8.2 {
+  catchcmd :memory: {
+.mode box
+SELECT ieee754(47.49) AS x;
+  }
+} {0 {┌───────────────────────────────┐
+│               x               │
+├───────────────────────────────┤
+│ ieee754(6683623321994527,-47) │
+└───────────────────────────────┘}}
+do_test shell1-8.3 {
+  catchcmd ":memory: --box" {
+    select ieee754(6683623321994527,-47) as x;
+  }
+} {0 {┌───────┐
+│   x   │
+├───────┤
+│ 47.49 │
+└───────┘}}
+do_test shell1-8.4 {
+  catchcmd ":memory: --table" {SELECT ieee754_mantissa(47.49) AS M, ieee754_exponent(47.49) AS E;}
+} {0 {+------------------+-----+
+|        M         |  E  |
++------------------+-----+
+| 6683623321994527 | -47 |
++------------------+-----+}}
 
 finish_test

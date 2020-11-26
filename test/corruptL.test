@@ -1314,6 +1314,9 @@ if {[wal_is_capable]} {
     INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
     INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
     INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
+    INSERT INTO t1(t) SELECT randomblob(123) FROM t1;
   
     PRAGMA journal_mode = wal;
     INSERT INTO t1 VALUES(-1, 'b');

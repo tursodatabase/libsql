@@ -157,22 +157,11 @@ void sqlite3BeginTrigger(
   pTab = sqlite3SrcListLookup(pParse, pTableName);
   if( !pTab ){
     /* The table does not exist. */
-    if( db->init.iDb==1 ){
-      /* Ticket #3810.
-      ** Normally, whenever a table is dropped, all associated triggers are
-      ** dropped too.  But if a TEMP trigger is created on a non-TEMP table
-      ** and the table is dropped by a different database connection, the
-      ** trigger is not visible to the database connection that does the
-      ** drop so the trigger cannot be dropped.  This results in an
-      ** "orphaned trigger" - a trigger whose associated table is missing.
-      */
-      db->init.orphanTrigger = 1;
-    }
-    goto trigger_cleanup;
+    goto trigger_orphan_error;
   }
   if( IsVirtual(pTab) ){
     sqlite3ErrorMsg(pParse, "cannot create triggers on virtual tables");
-    goto trigger_cleanup;
+    goto trigger_orphan_error;
   }
 
   /* Check that the trigger name is not reserved and that no trigger of the
@@ -210,12 +199,12 @@ void sqlite3BeginTrigger(
   if( pTab->pSelect && tr_tm!=TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create %s trigger on view: %S", 
         (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName, 0);
-    goto trigger_cleanup;
+    goto trigger_orphan_error;
   }
   if( !pTab->pSelect && tr_tm==TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create INSTEAD OF"
         " trigger on table: %S", pTableName, 0);
-    goto trigger_cleanup;
+    goto trigger_orphan_error;
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -275,6 +264,23 @@ trigger_cleanup:
   }else{
     assert( pParse->pNewTrigger==pTrigger );
   }
+  return;
+
+trigger_orphan_error:
+  if( db->init.iDb==1 ){
+    /* Ticket #3810.
+    ** Normally, whenever a table is dropped, all associated triggers are
+    ** dropped too.  But if a TEMP trigger is created on a non-TEMP table
+    ** and the table is dropped by a different database connection, the
+    ** trigger is not visible to the database connection that does the
+    ** drop so the trigger cannot be dropped.  This results in an
+    ** "orphaned trigger" - a trigger whose associated table is missing.
+    **
+    ** 2020-11-05 see also https://sqlite.org/forum/forumpost/157dc791df
+    */
+    db->init.orphanTrigger = 1;
+  }
+  goto trigger_cleanup;
 }
 
 /*

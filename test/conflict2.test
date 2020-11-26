@@ -811,7 +811,7 @@ do_test conflict2-13.1 {
   catchsql {
     REPLACE INTO t13 VALUES(2);
   }
-} {1 {CHECK constraint failed: t13}}
+} {1 {CHECK constraint failed: a!=2}}
 verify_ex_errcode conflict2-13.1b SQLITE_CONSTRAINT_CHECK
 do_test conflict2-13.2 {
   execsql {

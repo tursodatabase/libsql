@@ -478,6 +478,8 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_create_filename,
   sqlite3_free_filename,
   sqlite3_database_file_object,
+  /* Version 3.34.0 and later */
+  sqlite3_txn_state,
 };
 
 /* True if x is the directory separator character
