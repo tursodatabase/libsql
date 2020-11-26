@@ -381,32 +381,32 @@ ifcapable check {
     catchsql {
       INSERT INTO t1 (x) VALUES (NULL);
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.3 {
     catchsql {
       INSERT INTO t1 (x) VALUES (NULL);
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.4 {
     catchsql {
       INSERT INTO t1 (x) VALUES ('');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.5 {
     catchsql {
       INSERT INTO t1 (x) VALUES ('bad');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.6 {
     catchsql {
       INSERT INTO t1 (x) VALUES ('1234bad');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.7 {
     catchsql {
       INSERT INTO t1 (x) VALUES ('1234.56bad');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.8 {
     catchsql {
       INSERT INTO t1 (x) VALUES (1234);
@@ -416,7 +416,7 @@ ifcapable check {
     catchsql {
       INSERT INTO t1 (x) VALUES (1234.56);
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.10 {
     catchsql {
       INSERT INTO t1 (x) VALUES ('1234');
@@ -426,27 +426,27 @@ ifcapable check {
     catchsql {
       INSERT INTO t1 (x) VALUES ('1234.56');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.12 {
     catchsql {
       INSERT INTO t1 (x) VALUES (ZEROBLOB(4));
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.13 {
     catchsql {
       INSERT INTO t1 (x) VALUES (X'');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.14 {
     catchsql {
       INSERT INTO t1 (x) VALUES (X'1234');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.15 {
     catchsql {
       INSERT INTO t1 (x) VALUES (X'12345678');
     }
-  } {1 {CHECK constraint failed: t1}}
+  } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   do_test func4-3.16 {
     catchsql {
       INSERT INTO t1 (x) VALUES ('1234.00');
@@ -467,7 +467,7 @@ ifcapable check {
       catchsql {
         INSERT INTO t1 (x) VALUES (9223372036854775808);
       }
-    } {1 {CHECK constraint failed: t1}}
+    } {1 {CHECK constraint failed: tointeger(x) IS NOT NULL}}
   }
   do_execsql_test func4-3.20 {
     SELECT x FROM t1 WHERE x>0 ORDER BY x;
@@ -483,32 +483,32 @@ ifcapable check {
       catchsql {
         INSERT INTO t2 (x) VALUES (NULL);
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.3 {
       catchsql {
         INSERT INTO t2 (x) VALUES (NULL);
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.4 {
       catchsql {
         INSERT INTO t2 (x) VALUES ('');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.5 {
       catchsql {
         INSERT INTO t2 (x) VALUES ('bad');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.6 {
       catchsql {
         INSERT INTO t2 (x) VALUES ('1234bad');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.7 {
       catchsql {
         INSERT INTO t2 (x) VALUES ('1234.56bad');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.8 {
       catchsql {
         INSERT INTO t2 (x) VALUES (1234);
@@ -533,22 +533,22 @@ ifcapable check {
       catchsql {
         INSERT INTO t2 (x) VALUES (ZEROBLOB(4));
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.13 {
       catchsql {
         INSERT INTO t2 (x) VALUES (X'');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.14 {
       catchsql {
         INSERT INTO t2 (x) VALUES (X'1234');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_test func4-4.15 {
       catchsql {
         INSERT INTO t2 (x) VALUES (X'12345678');
       }
-    } {1 {CHECK constraint failed: t2}}
+    } {1 {CHECK constraint failed: toreal(x) IS NOT NULL}}
     do_execsql_test func4-4.16 {
       SELECT x FROM t2 ORDER BY x;
     } {1234.0 1234.0 1234.56 1234.56}

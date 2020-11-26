@@ -685,6 +685,7 @@ static int idxGetTableInfo(
   IdxTable *pNew = 0;
   int rc, rc2;
   char *pCsr = 0;
+  int nPk = 0;
 
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
@@ -695,6 +696,7 @@ static int idxGetTableInfo(
     );
     nByte += 1 + STRLEN(zCol);
     nCol++;
+    nPk += (sqlite3_column_int(p1, 5)>0);
   }
   rc2 = sqlite3_reset(p1);
   if( rc==SQLITE_OK ) rc = rc2;
@@ -714,7 +716,7 @@ static int idxGetTableInfo(
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     int nCopy = STRLEN(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
-    pNew->aCol[nCol].iPk = sqlite3_column_int(p1, 5);
+    pNew->aCol[nCol].iPk = (sqlite3_column_int(p1, 5)==1 && nPk==1);
     memcpy(pCsr, zCol, nCopy);
     pCsr += nCopy;
 

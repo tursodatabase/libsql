@@ -36,7 +36,7 @@ do_execsql_test date2-120 {
 } {2017-07-20 one}
 do_catchsql_test date2-130 {
   INSERT INTO t1(x,y) VALUES('2017-08-01','two');
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: date(x) BETWEEN '2017-07-01' AND '2017-07-31'}}
 
 do_execsql_test date2-200 {
   CREATE TABLE t2(x,y);
@@ -138,7 +138,7 @@ do_catchsql_test date2-601 {
 } {0 {}}
 do_catchsql_test date2-602 {
   INSERT INTO t601(a,b) VALUES(1e100, '1970-01-01');
-} {1 {CHECK constraint failed: t601}}
+} {1 {CHECK constraint failed: a<julianday(b)}}
 do_catchsql_test date2-603 {
   INSERT INTO t601(a,b) VALUES(10, 'now');
 } {1 {non-deterministic use of julianday() in a CHECK constraint}}

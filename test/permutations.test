@@ -136,9 +136,24 @@ if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
 }
 if {[info exists ::env(QUICKTEST_OMIT)]} {
-  foreach x [split $::env(QUICKTEST_OMIT) ,] {
-    regsub -all \\y$x\\y $allquicktests {} allquicktests
+  # If environment variable QUICKTEST_OMIT is set, it is a comma-separated
+  # list of regular expressions to match against test file names in
+  # the "allquicktests" set. Any matches are excluded. Only the filename
+  # is matched, not any directory component of the path.
+  set all [list]
+  foreach a $allquicktests {
+    set bIn 1
+    foreach x [split $::env(QUICKTEST_OMIT) ,] {
+      if {[regexp $x [file tail $a]]} {
+        set bIn 0
+        break
+      }
+    }
+    if {$bIn} {
+      lappend all $a
+    }
   }
+  set allquicktests $all
 }
 
 # If the TEST_FAILURE environment variable is set, it means that we what to

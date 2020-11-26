@@ -40,7 +40,7 @@ do_test check-1.3 {
   catchsql {
     INSERT INTO t1 VALUES(6,7);
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: x<5}}
 do_test check-1.4 {
   execsql {
     SELECT * FROM t1;
@@ -50,7 +50,7 @@ do_test check-1.5 {
   catchsql {
     INSERT INTO t1 VALUES(4,3);
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: y>x}}
 do_test check-1.6 {
   execsql {
     SELECT * FROM t1;
@@ -87,7 +87,7 @@ do_test check-1.12 {
   catchsql {
     UPDATE t1 SET x=7 WHERE x==2
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: x<5}}
 do_test check-1.13 {
   execsql {
     SELECT * FROM t1;
@@ -97,7 +97,7 @@ do_test check-1.14 {
   catchsql {
     UPDATE t1 SET x=5 WHERE x==2
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: x<5}}
 do_test check-1.15 {
   execsql {
     SELECT * FROM t1;
@@ -186,7 +186,7 @@ do_test check-2.11 {
   catchsql {
     INSERT INTO t2b VALUES('xyzzy','hi',5);
   }
-} {1 {CHECK constraint failed: t2b}}
+} {1 {CHECK constraint failed: typeof(coalesce(x,0))=='integer'}}
 do_test check-2.12 {
   execsql {
     CREATE TABLE t2c(
@@ -271,7 +271,7 @@ do_test check-3.9 {
   catchsql {
     INSERT INTO t3 VALUES(111,222,333);
   }
-} {1 {CHECK constraint failed: t3}}
+} {1 {CHECK constraint failed: t3.x<25}}
 
 do_test check-4.1 {
   execsql {
@@ -313,7 +313,10 @@ do_test check-4.6 {
   catchsql {
     UPDATE t4 SET x=0, y=1;
   }
-} {1 {CHECK constraint failed: t4}}
+} {1 {CHECK constraint failed: x+y==11
+        OR x*y==12
+        OR x/y BETWEEN 5 AND 8
+        OR -x==y+10}}
 do_test check-4.7 {
   execsql {
     SELECT * FROM t4;
@@ -335,7 +338,10 @@ do_test check-4.9 {
   catchsql {
     UPDATE t4 SET x=0, y=2;
   }
-} {1 {CHECK constraint failed: t4}}
+} {1 {CHECK constraint failed: x+y==11
+        OR x*y==12
+        OR x/y BETWEEN 5 AND 8
+        OR -x==y+10}}
 ifcapable vacuum {
   do_test check_4.10 {
     catchsql {
@@ -386,7 +392,7 @@ do_test check-6.5 {
   catchsql {
     UPDATE OR FAIL t1 SET x=7-x, y=y+1;
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: x<5}}
 do_test check-6.6 {
   execsql {
     SELECT * FROM t1;
@@ -398,7 +404,7 @@ do_test check-6.7 {
     INSERT INTO t1 VALUES(1,30.0);
     INSERT OR ROLLBACK INTO t1 VALUES(8,40.0);
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: x<5}}
 do_test check-6.8 {
   catchsql {
     COMMIT;
@@ -417,7 +423,7 @@ do_test check-6.12 {
   catchsql {
     REPLACE INTO t1 VALUES(6,7);
   }
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: x<5}}
 do_test check-6.13 {
   execsql {SELECT * FROM t1}
 } {3 12.0 2 20.0}
@@ -446,7 +452,7 @@ db func myfunc -deterministic myfunc
 do_execsql_test  7.1 { CREATE TABLE t6(a CHECK (myfunc(a))) }
 do_execsql_test  7.2 { INSERT INTO t6 VALUES(9)  }
 do_catchsql_test 7.3 { INSERT INTO t6 VALUES(11) } \
-          {1 {CHECK constraint failed: t6}}
+          {1 {CHECK constraint failed: myfunc(a)}}
 
 do_test 7.4 {
   sqlite3 db2 test.db
@@ -469,7 +475,7 @@ do_test 7.7 {
 do_test 7.8 {
   db2 func myfunc myfunc
   catchsql { INSERT INTO t6 VALUES(12) } db2
-} {1 {CHECK constraint failed: t6}}
+} {1 {CHECK constraint failed: myfunc(a)}}
 
 # 2013-08-02:  Silently ignore database name qualifiers in CHECK constraints.
 #
@@ -550,10 +556,10 @@ do_execsql_test 12.20 {
 } {}
 do_catchsql_test 12.21 {
   INSERT INTO t1(a) VALUES('xyz');
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: a<>+a}}
 do_catchsql_test 12.22 {
   INSERT INTO t1(a) VALUES(123);
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: a<>+a}}
 do_execsql_test 12.30 {
   DROP TABLE t1;
   CREATE TABLE t1(a TEXT, CHECK(NOT(a=+a)));
@@ -561,10 +567,10 @@ do_execsql_test 12.30 {
 } {}
 do_catchsql_test 12.31 {
   INSERT INTO t1(a) VALUES('xyz');
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: NOT(a=+a)}}
 do_catchsql_test 12.32 {
   INSERT INTO t1(a) VALUES(123);
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: NOT(a=+a)}}
 do_execsql_test 12.40 {
   DROP TABLE t1;
   CREATE TABLE t1(a TEXT, CHECK(NOT(a<>+a)));
@@ -585,7 +591,7 @@ do_execsql_test 12.60 {
 } {NULL}
 do_catchsql_test 12.61 {
   INSERT INTO t1(a) VALUES(456);
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: a NOT BETWEEN 0 AND +a}}
 do_execsql_test 12.70 {
   DROP TABLE t1;
   CREATE TABLE t1(a TEXT, CHECK(a BETWEEN +a AND 999999));
@@ -600,6 +606,6 @@ do_execsql_test 12.80 {
 } {NULL}
 do_catchsql_test 12.81 {
   INSERT INTO t1(a) VALUES(456);
-} {1 {CHECK constraint failed: t1}}
+} {1 {CHECK constraint failed: a NOT BETWEEN +a AND 999999}}
 
 finish_test

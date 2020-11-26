@@ -475,6 +475,7 @@ void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere){
   int j;
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
+  sqlite3MayAbort(p->pParse);
 }
 
 /*
@@ -703,7 +704,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
      || opcode==OP_VDestroy
      || opcode==OP_VCreate
-     || (opcode==OP_ParseSchema && pOp->p4.z==0)
+     || opcode==OP_ParseSchema
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
     ){
@@ -1521,7 +1522,7 @@ char *sqlite3VdbeDisplayComment(
               sqlite3_str_appendf(&x, "%d", v1);
             }else if( pCtx->argc>1 ){
               sqlite3_str_appendf(&x, "%d..%d", v1, v1+pCtx->argc-1);
-            }else{
+            }else if( x.accError==0 ){
               assert( x.nChar>2 );
               x.nChar -= 2;
               ii++;
@@ -2663,7 +2664,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   */ 
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
-    if( sqlite3BtreeIsInTrans(pBt) ){
+    if( sqlite3BtreeTxnState(pBt)==SQLITE_TXN_WRITE ){
       /* Whether or not a database might need a super-journal depends upon
       ** its journal mode (among other things).  This matrix determines which
       ** journal modes use a super-journal and which do not */
@@ -2798,7 +2799,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     */
     for(i=0; i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
-      if( sqlite3BtreeIsInTrans(pBt) ){
+      if( sqlite3BtreeTxnState(pBt)==SQLITE_TXN_WRITE ){
         char const *zFile = sqlite3BtreeGetJournalname(pBt);
         if( zFile==0 ){
           continue;  /* Ignore TEMP and :memory: databases */
@@ -4294,9 +4295,12 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
 static int sqlite3IntFloatCompare(i64 i, double r){
   if( sizeof(LONGDOUBLE_TYPE)>8 ){
     LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
+    testcase( x<r );
+    testcase( x>r );
+    testcase( x==r );
     if( x<r ) return -1;
-    if( x>r ) return +1;
-    return 0;
+    if( x>r ) return +1;  /*NO_TEST*/ /* work around bugs in gcov */
+    return 0;             /*NO_TEST*/ /* work around bugs in gcov */
   }else{
     i64 y;
     double s;

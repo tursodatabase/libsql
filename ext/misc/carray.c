@@ -57,20 +57,31 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 
+/* Allowed values for the mFlags parameter to sqlite3_carray_bind().
+** Must exactly match the definitions in carray.h.
+*/
+#define CARRAY_INT32     0      /* Data is 32-bit signed integers */
+#define CARRAY_INT64     1      /* Data is 64-bit signed integers */
+#define CARRAY_DOUBLE    2      /* Data is doubles */
+#define CARRAY_TEXT      3      /* Data is char* */
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /*
-** Allowed datatypes
-*/
-#define CARRAY_INT32    0
-#define CARRAY_INT64    1
-#define CARRAY_DOUBLE   2
-#define CARRAY_TEXT     3
-
-/*
-** Names of types
+** Names of allowed datatypes
 */
 static const char *azType[] = { "int32", "int64", "double", "char*" };
+
+/*
+** Structure used to hold the sqlite3_carray_bind() information
+*/
+typedef struct carray_bind carray_bind;
+struct carray_bind {
+  void *aData;                /* The data */
+  int nData;                  /* Number of elements */
+  int mFlags;                 /* Control flags */
+  void (*xDel)(void*);        /* Destructor for aData */
+};
 
 
 /* carray_cursor is a subclass of sqlite3_vtab_cursor which will
@@ -239,28 +250,39 @@ static int carrayFilter(
   int argc, sqlite3_value **argv
 ){
   carray_cursor *pCur = (carray_cursor *)pVtabCursor;
-  if( idxNum ){
-    pCur->pPtr = sqlite3_value_pointer(argv[0], "carray");
-    pCur->iCnt = pCur->pPtr ? sqlite3_value_int64(argv[1]) : 0;
-    if( idxNum<3 ){
-      pCur->eType = CARRAY_INT32;
-    }else{
-      unsigned char i;
-      const char *zType = (const char*)sqlite3_value_text(argv[2]);
-      for(i=0; i<sizeof(azType)/sizeof(azType[0]); i++){
-        if( sqlite3_stricmp(zType, azType[i])==0 ) break;
-      }
-      if( i>=sizeof(azType)/sizeof(azType[0]) ){
-        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-          "unknown datatype: %Q", zType);
-        return SQLITE_ERROR;
-      }else{
-        pCur->eType = i;
-      }
+  pCur->pPtr = 0;
+  pCur->iCnt = 0;
+  switch( idxNum ){
+    case 1: {
+      carray_bind *pBind = sqlite3_value_pointer(argv[0], "carray-bind");
+      if( pBind==0 ) break;
+      pCur->pPtr = pBind->aData;
+      pCur->iCnt = pBind->nData;
+      pCur->eType = pBind->mFlags & 0x03;
+      break;
     }
-  }else{
-    pCur->pPtr = 0;
-    pCur->iCnt = 0;
+    case 2:
+    case 3: {
+      pCur->pPtr = sqlite3_value_pointer(argv[0], "carray");
+      pCur->iCnt = pCur->pPtr ? sqlite3_value_int64(argv[1]) : 0;
+      if( idxNum<3 ){
+        pCur->eType = CARRAY_INT32;
+      }else{
+        unsigned char i;
+        const char *zType = (const char*)sqlite3_value_text(argv[2]);
+        for(i=0; i<sizeof(azType)/sizeof(azType[0]); i++){
+          if( sqlite3_stricmp(zType, azType[i])==0 ) break;
+        }
+        if( i>=sizeof(azType)/sizeof(azType[0]) ){
+          pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
+            "unknown datatype: %Q", zType);
+          return SQLITE_ERROR;
+        }else{
+          pCur->eType = i;
+        }
+      }
+      break;
+    }
   }
   pCur->iRowid = 1;
   return SQLITE_OK;
@@ -275,9 +297,16 @@ static int carrayFilter(
 ** In this implementation idxNum is used to represent the
 ** query plan.  idxStr is unused.
 **
-** idxNum is 2 if the pointer= and count= constraints exist,
-** 3 if the ctype= constraint also exists, and is 0 otherwise.
-** If idxNum is 0, then carray becomes an empty table.
+** idxNum is:
+**
+**    1    If only the pointer= constraint exists.  In this case, the
+**         parameter must be bound using sqlite3_carray_bind().
+**
+**    2    if the pointer= and count= constraints exist.
+**
+**    3    if the ctype= constraint also exists.
+**
+** idxNum is 0 otherwise and carray becomes an empty table.
 */
 static int carrayBestIndex(
   sqlite3_vtab *tab,
@@ -305,18 +334,21 @@ static int carrayBestIndex(
         break;
     }
   }
-  if( ptrIdx>=0 && cntIdx>=0 ){
+  if( ptrIdx>=0 ){
     pIdxInfo->aConstraintUsage[ptrIdx].argvIndex = 1;
     pIdxInfo->aConstraintUsage[ptrIdx].omit = 1;
-    pIdxInfo->aConstraintUsage[cntIdx].argvIndex = 2;
-    pIdxInfo->aConstraintUsage[cntIdx].omit = 1;
     pIdxInfo->estimatedCost = (double)1;
     pIdxInfo->estimatedRows = 100;
-    pIdxInfo->idxNum = 2;
-    if( ctypeIdx>=0 ){
-      pIdxInfo->aConstraintUsage[ctypeIdx].argvIndex = 3;
-      pIdxInfo->aConstraintUsage[ctypeIdx].omit = 1;
-      pIdxInfo->idxNum = 3;
+    pIdxInfo->idxNum = 1;
+    if( cntIdx>=0 ){
+      pIdxInfo->aConstraintUsage[cntIdx].argvIndex = 2;
+      pIdxInfo->aConstraintUsage[cntIdx].omit = 1;
+      pIdxInfo->idxNum = 2;
+      if( ctypeIdx>=0 ){
+        pIdxInfo->aConstraintUsage[ctypeIdx].argvIndex = 3;
+        pIdxInfo->aConstraintUsage[ctypeIdx].omit = 1;
+        pIdxInfo->idxNum = 3;
+      }
     }
   }else{
     pIdxInfo->estimatedCost = (double)2147483647;
@@ -352,6 +384,89 @@ static sqlite3_module carrayModule = {
   0,                         /* xFindMethod */
   0,                         /* xRename */
 };
+
+/*
+** Destructor for the carray_bind object
+*/
+static void carrayBindDel(void *pPtr){
+  carray_bind *p = (carray_bind*)pPtr;
+  if( p->xDel!=SQLITE_STATIC ){
+     p->xDel(p->aData);
+  }
+  sqlite3_free(p);
+}
+
+/*
+** Invoke this interface in order to bind to the single-argument
+** version of CARRAY().
+*/
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_carray_bind(
+  sqlite3_stmt *pStmt,
+  int idx,
+  void *aData,
+  int nData,
+  int mFlags,
+  void (*xDestroy)(void*)
+){
+  carray_bind *pNew;
+  int i;
+  pNew = sqlite3_malloc64(sizeof(*pNew));
+  if( pNew==0 ){
+    if( xDestroy!=SQLITE_STATIC && xDestroy!=SQLITE_TRANSIENT ){
+      xDestroy(aData);
+    }
+    return SQLITE_NOMEM;
+  }
+  pNew->nData = nData;
+  pNew->mFlags = mFlags;
+  if( xDestroy==SQLITE_TRANSIENT ){
+    sqlite3_int64 sz = nData;
+    switch( mFlags & 0x03 ){
+      case CARRAY_INT32:   sz *= 4;              break;
+      case CARRAY_INT64:   sz *= 8;              break;
+      case CARRAY_DOUBLE:  sz *= 8;              break;
+      case CARRAY_TEXT:    sz *= sizeof(char*);  break;
+    }
+    if( (mFlags & 0x03)==CARRAY_TEXT ){
+      for(i=0; i<nData; i++){
+        const char *z = ((char**)aData)[i];
+        if( z ) sz += strlen(z) + 1;
+      }
+    } 
+    pNew->aData = sqlite3_malloc64( sz );
+    if( pNew->aData==0 ){
+      sqlite3_free(pNew);
+      return SQLITE_NOMEM;
+    }
+    if( (mFlags & 0x03)==CARRAY_TEXT ){
+      char **az = (char**)pNew->aData;
+      char *z = (char*)&az[nData];
+      for(i=0; i<nData; i++){
+        const char *zData = ((char**)aData)[i];
+        sqlite3_int64 n;
+        if( zData==0 ){
+          az[i] = 0;
+          continue;
+        }
+        az[i] = z;
+        n = strlen(zData);
+        memcpy(z, zData, n+1);
+        z += n+1;
+      }
+    }else{
+      memcpy(pNew->aData, aData, sz*nData);
+    }
+    pNew->xDel = sqlite3_free;
+  }else{
+    pNew->aData = aData;
+    pNew->xDel = xDestroy;
+  }
+  return sqlite3_bind_pointer(pStmt, idx, pNew, "carray-bind", carrayBindDel);
+}
+
 
 /*
 ** For testing purpose in the TCL test harness, we need a method for

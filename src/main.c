@@ -897,7 +897,7 @@ int sqlite3_db_cacheflush(sqlite3 *db){
   sqlite3BtreeEnterAll(db);
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
-    if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+    if( pBt && sqlite3BtreeTxnState(pBt)==SQLITE_TXN_WRITE ){
       Pager *pPager = sqlite3BtreePager(pBt);
       rc = sqlite3PagerFlush(pPager);
       if( rc==SQLITE_BUSY ){
@@ -1242,6 +1242,36 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
 }
 
 /*
+** Return the transaction state for a single databse, or the maximum
+** transaction state over all attached databases if zSchema is null.
+*/
+int sqlite3_txn_state(sqlite3 *db, const char *zSchema){
+  int iDb, nDb;
+  int iTxn = -1;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return -1;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  if( zSchema ){
+    nDb = iDb = sqlite3FindDbName(db, zSchema);
+    if( iDb<0 ) nDb--;
+  }else{
+    iDb = 0;
+    nDb = db->nDb-1;
+  }
+  for(; iDb<=nDb; iDb++){
+    Btree *pBt = db->aDb[iDb].pBt;
+    int x = pBt!=0 ? sqlite3BtreeTxnState(pBt) : SQLITE_TXN_NONE;
+    if( x>iTxn ) iTxn = x;
+  }
+  sqlite3_mutex_leave(db->mutex);
+  return iTxn;
+}
+
+/*
 ** Two variations on the public interface for closing a database
 ** connection. The sqlite3_close() version returns SQLITE_BUSY and
 ** leaves the connection option if there are unfinalized prepared
@@ -1401,7 +1431,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
     if( p ){
-      if( sqlite3BtreeIsInTrans(p) ){
+      if( sqlite3BtreeTxnState(p)==SQLITE_TXN_WRITE ){
         inTrans = 1;
       }
       sqlite3BtreeRollback(p, tripCode, !schemaChange);
@@ -3822,7 +3852,9 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
       }
       rc = SQLITE_OK;
     }else{
+      int nSave = db->busyHandler.nBusy;
       rc = sqlite3OsFileControl(fd, op, pArg);
+      db->busyHandler.nBusy = nSave;
     }
     sqlite3BtreeLeave(pBtree);
   }
@@ -4095,7 +4127,7 @@ int sqlite3_test_control(int op, ...){
     ** 2020-07-22:  Disabling EXTRA_SCHEMA_CHECKS also disables the
     ** verification of rootpage numbers when parsing the schema.  This
     ** is useful to make it easier to reach strange internal error states
-    ** during testing.  The EXTRA_SCHEMA_CHECKS settting is always enabled
+    ** during testing.  The EXTRA_SCHEMA_CHECKS setting is always enabled
     ** in production.
     */
     case SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS: {
@@ -4205,6 +4237,25 @@ int sqlite3_test_control(int op, ...){
       sqlite3ResultIntReal(pCtx);
       break;
     }
+
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_SEEK_COUNT,
+    **    sqlite3 *db,    // Database connection
+    **    u64 *pnSeek     // Write seek count here
+    **  );
+    **
+    ** This test-control queries the seek-counter on the "main" database
+    ** file.  The seek-counter is written into *pnSeek and is then reset.
+    ** The seek-count is only available if compiled with SQLITE_DEBUG.
+    */
+    case SQLITE_TESTCTRL_SEEK_COUNT: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      u64 *pn = va_arg(ap, sqlite3_uint64*);
+      *pn = sqlite3BtreeSeekCount(db->aDb->pBt);
+      (void)db;  /* Silence harmless unused variable warning */
+      break;
+    }
+
+
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */
@@ -4440,7 +4491,7 @@ int sqlite3_snapshot_get(
     int iDb = sqlite3FindDbName(db, zDb);
     if( iDb==0 || iDb>1 ){
       Btree *pBt = db->aDb[iDb].pBt;
-      if( 0==sqlite3BtreeIsInTrans(pBt) ){
+      if( SQLITE_TXN_WRITE!=sqlite3BtreeTxnState(pBt) ){
         rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
         if( rc==SQLITE_OK ){
           rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
@@ -4476,10 +4527,10 @@ int sqlite3_snapshot_open(
     iDb = sqlite3FindDbName(db, zDb);
     if( iDb==0 || iDb>1 ){
       Btree *pBt = db->aDb[iDb].pBt;
-      if( sqlite3BtreeIsInTrans(pBt)==0 ){
+      if( sqlite3BtreeTxnState(pBt)!=SQLITE_TXN_WRITE ){
         Pager *pPager = sqlite3BtreePager(pBt);
         int bUnlock = 0;
-        if( sqlite3BtreeIsInReadTrans(pBt) ){
+        if( sqlite3BtreeTxnState(pBt)!=SQLITE_TXN_NONE ){
           if( db->nVdbeActive==0 ){
             rc = sqlite3PagerSnapshotCheck(pPager, pSnapshot);
             if( rc==SQLITE_OK ){
@@ -4528,7 +4579,7 @@ int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb){
   iDb = sqlite3FindDbName(db, zDb);
   if( iDb==0 || iDb>1 ){
     Btree *pBt = db->aDb[iDb].pBt;
-    if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
+    if( SQLITE_TXN_NONE==sqlite3BtreeTxnState(pBt) ){
       rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerSnapshotRecover(sqlite3BtreePager(pBt));

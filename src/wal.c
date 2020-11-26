@@ -2601,9 +2601,10 @@ static int walCheckpoint(
         rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
         if( rc==SQLITE_OK && nSize<nReq ){
           i64 mx = pWal->hdr.mxFrame + (bWal2?walidxGetMxFrame(&pWal->hdr,1):0);
-          if( (nSize+mx*szPage)<nReq ){
+          if( (nSize+65536+mx*szPage)<nReq ){
             /* If the size of the final database is larger than the current
-            ** database plus the amount of data in the wal file, then there
+            ** database plus the amount of data in the wal file, plus the
+            ** maximum size of the pending-byte page (65536 bytes), then 
             ** must be corruption somewhere.  Or in the case of wal2 mode,
             ** plus the amount of data in both wal files. */
             rc = SQLITE_CORRUPT_BKPT;

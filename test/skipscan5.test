@@ -30,7 +30,7 @@ do_execsql_test 1.1 {
 
 expr srand(4)
 do_test 1.2 {
-  for {set i 0} {$i < 100} {incr i} {
+  for {set i 0} {$i < 1000} {incr i} {
     set a [expr int(rand()*4.0) + 1]
     set b [expr int(rand()*20.0) + 1]
     execsql { INSERT INTO t1 VALUES($a, $b, NULL) }
@@ -43,7 +43,7 @@ foreach {tn q res} {
   2  "b > 12 AND b < 16"       {/*ANY(a) AND b>? AND b<?*/}
   3  "b > 2 AND b < 16"        {/*SCAN TABLE t1*/}
   4  "b > 18 AND b < 25"       {/*ANY(a) AND b>? AND b<?*/}
-  5  "b > 15"                  {/*ANY(a) AND b>?*/}
+  5  "b > 16"                  {/*ANY(a) AND b>?*/}
   6  "b > 5"                   {/*SCAN TABLE t1*/}
   7  "b < 15"                  {/*SCAN TABLE t1*/}
   8  "b < 5"                   {/*ANY(a) AND b<?*/}
@@ -52,7 +52,7 @@ foreach {tn q res} {
   11 "b > '12' AND b < '16'"   {/*ANY(a) AND b>? AND b<?*/}
   12 "b > '2' AND b < '16'"    {/*SCAN TABLE t1*/}
   13 "b > '18' AND b < '25'"   {/*ANY(a) AND b>? AND b<?*/}
-  14 "b > '15'"                {/*ANY(a) AND b>?*/}
+  14 "b > '16'"                {/*ANY(a) AND b>?*/}
   15 "b > '5'"                 {/*SCAN TABLE t1*/}
   16 "b < '15'"                {/*SCAN TABLE t1*/}
   17 "b < '5'"                 {/*ANY(a) AND b<?*/}
@@ -108,7 +108,7 @@ foreach {tn dbenc coll} {
     3 { c > 'q' }                     {/*ANY(a) AND ANY(b) AND c>?*/}
     4 { c > 'e' }                     {/*SCAN TABLE t2*/}
     5 { c < 'q' }                     {/*SCAN TABLE t2*/}
-    6 { c < 'c' }                     {/*ANY(a) AND ANY(b) AND c<?*/}
+    6 { c < 'b' }                     {/*ANY(a) AND ANY(b) AND c<?*/}
   } {
     set sql "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE $q" 
     do_execsql_test 2.$tn.$tn2 $sql $res

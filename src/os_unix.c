@@ -122,7 +122,8 @@
 # if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
                             (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
 #    if (!defined(TARGET_OS_EMBEDDED) || (TARGET_OS_EMBEDDED==0)) \
-         && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))
+        && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))\
+        && (!defined(TARGET_OS_MACCATALYST) || (TARGET_OS_MACCATALYST==0))
 #      undef HAVE_GETHOSTUUID
 #      define HAVE_GETHOSTUUID 1
 #    else
@@ -1544,6 +1545,9 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   return rc;
 }
 
+/* Forward declaration*/
+static int unixSleep(sqlite3_vfs*,int);
+
 /*
 ** Set a posix-advisory-lock.
 **
@@ -1573,7 +1577,7 @@ static int osSetPosixAdvisoryLock(
     ** generic posix, however, there is no such API.  So we simply try the
     ** lock once every millisecond until either the timeout expires, or until
     ** the lock is obtained. */
-    usleep(1000);
+    unixSleep(0,1000);
     rc = osFcntl(h,F_SETLK,pLock);
     tm--;
   }
@@ -2144,6 +2148,7 @@ static int unixClose(sqlite3_file *id){
   }
   sqlite3_mutex_leave(pInode->pLockMutex);
   releaseInodeInfo(pFile);
+  assert( pFile->pShm==0 );
   rc = closeUnixFile(id);
   unixLeaveMutex();
   return rc;
@@ -3370,7 +3375,24 @@ static int unixRead(
   if( got==amt ){
     return SQLITE_OK;
   }else if( got<0 ){
-    /* lastErrno set by seekAndRead */
+    /* pFile->lastErrno has been set by seekAndRead().
+    ** Usually we return SQLITE_IOERR_READ here, though for some
+    ** kinds of errors we return SQLITE_IOERR_CORRUPTFS.  The
+    ** SQLITE_IOERR_CORRUPTFS will be converted into SQLITE_CORRUPT
+    ** prior to returning to the application by the sqlite3ApiExit()
+    ** routine.
+    */
+    switch( pFile->lastErrno ){
+      case ERANGE:
+      case EIO:
+#ifdef ENXIO
+      case ENXIO:
+#endif
+#ifdef EDEVERR
+      case EDEVERR:
+#endif
+        return SQLITE_IOERR_CORRUPTFS;
+    }
     return SQLITE_IOERR_READ;
   }else{
     storeLastErrno(pFile, 0);   /* not a system error */
@@ -4254,6 +4276,7 @@ struct unixShmNode {
   char **apRegion;           /* Array of mapped shared-memory regions */
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
+  int aLock[SQLITE_SHM_NLOCK];  /* # shared locks on slot, -1==excl lock */
 #ifdef SQLITE_DEBUG
   u8 exclMask;               /* Mask of exclusive locks held */
   u8 sharedMask;             /* Mask of shared locks held */
@@ -4795,6 +4818,38 @@ shmpage_out:
 }
 
 /*
+** Check that the pShmNode->aLock[] array comports with the locking bitmasks
+** held by each client. Return true if it does, or false otherwise. This
+** is to be used in an assert(). e.g.
+**
+**     assert( assertLockingArrayOk(pShmNode) );
+*/
+#ifdef SQLITE_DEBUG
+static int assertLockingArrayOk(unixShmNode *pShmNode){
+  unixShm *pX;
+  int aLock[SQLITE_SHM_NLOCK];
+  assert( sqlite3_mutex_held(pShmNode->pShmMutex) );
+
+  memset(aLock, 0, sizeof(aLock));
+  for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+    int i;
+    for(i=0; i<SQLITE_SHM_NLOCK; i++){
+      if( pX->exclMask & (1<<i) ){
+        assert( aLock[i]==0 );
+        aLock[i] = -1;
+      }else if( pX->sharedMask & (1<<i) ){
+        assert( aLock[i]>=0 );
+        aLock[i]++;
+      }
+    }
+  }
+
+  assert( 0==memcmp(pShmNode->aLock, aLock, sizeof(aLock)) );
+  return (memcmp(pShmNode->aLock, aLock, sizeof(aLock))==0);
+}
+#endif
+
+/*
 ** Change the lock state for a shared-memory segment.
 **
 ** Note that the relationship between SHAREd and EXCLUSIVE locks is a little
@@ -4810,10 +4865,10 @@ static int unixShmLock(
 ){
   unixFile *pDbFd = (unixFile*)fd;      /* Connection holding shared memory */
   unixShm *p = pDbFd->pShm;             /* The shared memory being locked */
-  unixShm *pX;                          /* For looping over all siblings */
   unixShmNode *pShmNode = p->pShmNode;  /* The underlying file iNode */
   int rc = SQLITE_OK;                   /* Result code */
   u16 mask;                             /* Mask of locks to take or release */
+  int *aLock = pShmNode->aLock;
 
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
@@ -4852,78 +4907,76 @@ static int unixShmLock(
   mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );
   sqlite3_mutex_enter(pShmNode->pShmMutex);
+  assert( assertLockingArrayOk(pShmNode) );
   if( flags & SQLITE_SHM_UNLOCK ){
-    u16 allMask = 0; /* Mask of locks held by siblings */
+    if( (p->exclMask|p->sharedMask) & mask ){
+      int ii;
+      int bUnlock = 1;
 
-    /* See if any siblings hold this same lock */
-    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
-      if( pX==p ) continue;
-      assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
-      allMask |= pX->sharedMask;
+      for(ii=ofst; ii<ofst+n; ii++){
+        if( aLock[ii]>((p->sharedMask & (1<<ii)) ? 1 : 0) ){
+          bUnlock = 0;
+        }
+      }
+
+      if( bUnlock ){
+        rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+        if( rc==SQLITE_OK ){
+          memset(&aLock[ofst], 0, sizeof(int)*n);
+        }
+      }else if( ALWAYS(p->sharedMask & (1<<ofst)) ){
+        assert( n==1 && aLock[ofst]>1 );
+        aLock[ofst]--;
+      }
+
+      /* Undo the local locks */
+      if( rc==SQLITE_OK ){
+        p->exclMask &= ~mask;
+        p->sharedMask &= ~mask;
+      } 
     }
-
-    /* Unlock the system-level locks */
-    if( (mask & allMask)==0 ){
-      rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
-    }else{
-      rc = SQLITE_OK;
-    }
-
-    /* Undo the local locks */
-    if( rc==SQLITE_OK ){
-      p->exclMask &= ~mask;
-      p->sharedMask &= ~mask;
-    } 
   }else if( flags & SQLITE_SHM_SHARED ){
-    u16 allShared = 0;  /* Union of locks held by connections other than "p" */
-
-    /* Find out which shared locks are already held by sibling connections.
-    ** If any sibling already holds an exclusive lock, go ahead and return
-    ** SQLITE_BUSY.
-    */
-    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
-      if( (pX->exclMask & mask)!=0 ){
+    assert( n==1 );
+    assert( (p->exclMask & (1<<ofst))==0 );
+    if( (p->sharedMask & mask)==0 ){
+      if( aLock[ofst]<0 ){
         rc = SQLITE_BUSY;
-        break;
-      }
-      allShared |= pX->sharedMask;
-    }
-
-    /* Get shared locks at the system level, if necessary */
-    if( rc==SQLITE_OK ){
-      if( (allShared & mask)==0 ){
+      }else if( aLock[ofst]==0 ){
         rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
-      }else{
-        rc = SQLITE_OK;
       }
-    }
 
-    /* Get the local shared locks */
-    if( rc==SQLITE_OK ){
-      p->sharedMask |= mask;
+      /* Get the local shared locks */
+      if( rc==SQLITE_OK ){
+        p->sharedMask |= mask;
+        aLock[ofst]++;
+      }
     }
   }else{
     /* Make sure no sibling connections hold locks that will block this
-    ** lock.  If any do, return SQLITE_BUSY right away.
-    */
-    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
-      if( (pX->exclMask & mask)!=0 || (pX->sharedMask & mask)!=0 ){
+    ** lock.  If any do, return SQLITE_BUSY right away.  */
+    int ii;
+    for(ii=ofst; ii<ofst+n; ii++){
+      assert( (p->sharedMask & mask)==0 );
+      if( ALWAYS((p->exclMask & (1<<ii))==0) && aLock[ii] ){
         rc = SQLITE_BUSY;
         break;
       }
     }
-  
-    /* Get the exclusive locks at the system level.  Then if successful
-    ** also mark the local connection as being locked.
-    */
+
+    /* Get the exclusive locks at the system level. Then if successful
+    ** also update the in-memory values. */
     if( rc==SQLITE_OK ){
       rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
       if( rc==SQLITE_OK ){
         assert( (p->sharedMask & mask)==0 );
         p->exclMask |= mask;
+        for(ii=ofst; ii<ofst+n; ii++){
+          aLock[ii] = -1;
+        }
       }
     }
   }
+  assert( assertLockingArrayOk(pShmNode) );
   sqlite3_mutex_leave(pShmNode->pShmMutex);
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x\n",
            p->id, osGetpid(0), p->sharedMask, p->exclMask));
@@ -6300,7 +6353,26 @@ static int unixAccess(
 }
 
 /*
+** If the last component of the pathname in z[0]..z[j-1] is something
+** other than ".." then back it out and return true.  If the last
+** component is empty or if it is ".." then return false.
+*/
+static int unixBackupDir(const char *z, int *pJ){
+  int j = *pJ;
+  int i;
+  if( j<=0 ) return 0;
+  for(i=j-1; ALWAYS(i>0) && z[i-1]!='/'; i--){}
+  if( z[i]=='.' && i==j-2 && z[i+1]=='.' ) return 0;
+  *pJ = i-1;
+  return 1;
+}
+
+/*
+** Convert a relative pathname into a full pathname.  Also
+** simplify the pathname as follows:
 **
+**    Remove all instances of /./
+**    Remove all isntances of /X/../ for any X
 */
 static int mkFullPathname(
   const char *zPath,              /* Input path */
@@ -6309,6 +6381,7 @@ static int mkFullPathname(
 ){
   int nPath = sqlite3Strlen30(zPath);
   int iOff = 0;
+  int i, j;
   if( zPath[0]!='/' ){
     if( osGetcwd(zOut, nOut-2)==0 ){
       return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
@@ -6323,6 +6396,41 @@ static int mkFullPathname(
     return SQLITE_CANTOPEN_BKPT;
   }
   sqlite3_snprintf(nOut-iOff, &zOut[iOff], "%s", zPath);
+
+  /* Remove duplicate '/' characters.  Except, two // at the beginning
+  ** of a pathname is allowed since this is important on windows. */
+  for(i=j=1; zOut[i]; i++){
+    zOut[j++] = zOut[i];
+    while( zOut[i]=='/' && zOut[i+1]=='/' ) i++;
+  }
+  zOut[j] = 0;
+
+  assert( zOut[0]=='/' );
+  for(i=j=0; zOut[i]; i++){
+    if( zOut[i]=='/' ){
+      /* Skip over internal "/." directory components */
+      if( zOut[i+1]=='.' && zOut[i+2]=='/' ){
+        i += 1;
+        continue;
+      }
+
+      /* If this is a "/.." directory component then back out the
+      ** previous term of the directory if it is something other than "..".
+      */
+      if( zOut[i+1]=='.'
+       && zOut[i+2]=='.'
+       && zOut[i+3]=='/'
+       && unixBackupDir(zOut, &j)
+      ){
+        i += 2;
+        continue;
+      }
+    }
+    if( ALWAYS(j>=0) ) zOut[j] = zOut[i];
+    j++;
+  }
+  if( NEVER(j==0) ) zOut[j++] = '/';
+  zOut[j] = 0;
   return SQLITE_OK;
 }
 
@@ -6543,7 +6651,8 @@ static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
   UNUSED_PARAMETER(NotUsed);
   return microseconds;
 #elif defined(HAVE_USLEEP) && HAVE_USLEEP
-  usleep(microseconds);
+  if( microseconds>=1000000 ) sleep(microseconds/1000000);
+  if( microseconds%1000000 ) usleep(microseconds%1000000);
   UNUSED_PARAMETER(NotUsed);
   return microseconds;
 #else
@@ -7116,7 +7225,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
       
       if( nTries==1 ){
         conchModTime = buf.st_mtimespec;
-        usleep(500000); /* wait 0.5 sec and try the lock again*/
+        unixSleep(0,500000); /* wait 0.5 sec and try the lock again*/
         continue;  
       }
 
@@ -7142,7 +7251,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
           /* don't break the lock on short read or a version mismatch */
           return SQLITE_BUSY;
         }
-        usleep(10000000); /* wait 10 sec and try the lock again */
+        unixSleep(0,10000000); /* wait 10 sec and try the lock again */
         continue; 
       }
       

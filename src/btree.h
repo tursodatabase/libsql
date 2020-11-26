@@ -85,15 +85,23 @@ int sqlite3BtreeCommit(Btree*);
 int sqlite3BtreeRollback(Btree*,int,int);
 int sqlite3BtreeBeginStmt(Btree*,int);
 int sqlite3BtreeCreateTable(Btree*, Pgno*, int flags);
-int sqlite3BtreeIsInTrans(Btree*);
-int sqlite3BtreeIsInReadTrans(Btree*);
+int sqlite3BtreeTxnState(Btree*);
 int sqlite3BtreeIsInBackup(Btree*);
+
 void *sqlite3BtreeSchema(Btree *, int, void(*)(void *));
 int sqlite3BtreeSchemaLocked(Btree *pBtree);
 #ifndef SQLITE_OMIT_SHARED_CACHE
 int sqlite3BtreeLockTable(Btree *pBtree, int iTab, u8 isWriteLock);
 #endif
+
+/* Savepoints are named, nestable SQL transactions mostly implemented */ 
+/* in vdbe.c and pager.c See https://sqlite.org/lang_savepoint.html */
 int sqlite3BtreeSavepoint(Btree *, int, int);
+
+/* "Checkpoint" only refers to WAL. See https://sqlite.org/wal.html#ckpt */
+#ifndef SQLITE_OMIT_WAL
+  int sqlite3BtreeCheckpoint(Btree*, int, int *, int *);  
+#endif
 
 const char *sqlite3BtreeGetFilename(Btree *);
 const char *sqlite3BtreeGetJournalname(Btree *);
@@ -330,6 +338,12 @@ int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask);
 int sqlite3BtreeIsReadonly(Btree *pBt);
 int sqlite3HeaderSizeBtree(void);
+
+#ifdef SQLITE_DEBUG
+sqlite3_uint64 sqlite3BtreeSeekCount(Btree*);
+#else
+# define sqlite3BtreeSeekCount(X) 0
+#endif
 
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);

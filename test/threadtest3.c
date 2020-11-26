@@ -1433,6 +1433,7 @@ static void dynamic_triggers(int nMs){
 #include "tt3_lookaside1.c"
 #include "tt3_vacuum.c"
 #include "tt3_stress.c"
+#include "tt3_shared.c"
 
 int main(int argc, char **argv){
   struct ThreadTest {
@@ -1457,6 +1458,7 @@ int main(int argc, char **argv){
     { vacuum1,             "vacuum1", 10000 },
     { stress1,             "stress1", 10000 },
     { stress2,             "stress2", 60000 },
+    { shared1,             "shared1", 10000 },
   };
   static char *substArgv[] = { 0, "*", 0 };
   int i, iArg;
