@@ -566,7 +566,7 @@ static int fts5Bm25GetData(
   int rc = SQLITE_OK;             /* Return code */
   Fts5Bm25Data *p;                /* Object to return */
 
-  p = pApi->xGetAuxdata(pFts, 0);
+  p = (Fts5Bm25Data*)pApi->xGetAuxdata(pFts, 0);
   if( p==0 ){
     int nPhrase;                  /* Number of phrases in query */
     sqlite3_int64 nRow = 0;       /* Number of rows in table */
