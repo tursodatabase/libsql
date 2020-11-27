@@ -640,7 +640,7 @@ static void fts5Bm25Function(
 ){
   const double k1 = 1.2;          /* Constant "k1" from BM25 formula */
   const double b = 0.75;          /* Constant "b" from BM25 formula */
-  int rc = SQLITE_OK;             /* Error code */
+  int rc;                         /* Error code */
   double score = 0.0;             /* SQL function return value */
   Fts5Bm25Data *pData;            /* Values allocated/calculated once only */
   int i;                          /* Iterator variable */
