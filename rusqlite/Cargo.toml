@@ -96,7 +96,7 @@ bundled-full = [
 ]
 
 [dependencies]
-time = { version = "0.2", optional = true }
+time = { version = "0.2.23", optional = true }
 bitflags = "1.2"
 hashlink = "0.6"
 chrono = { version = "0.4", optional = true }
