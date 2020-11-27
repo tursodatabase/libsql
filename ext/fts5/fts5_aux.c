@@ -672,7 +672,8 @@ static void fts5Bm25Function(
     D = (double)nTok;
   }
 
-  /* Determine the BM25 score for the current row. */
+  /* Determine and return the BM25 score for the current row. Or, if an
+  ** error has occurred, throw an exception. */
   if( rc==SQLITE_OK ){
     for(i=0; i<pData->nPhrase; i++){
       score += pData->aIDF[i] * (
@@ -680,11 +681,6 @@ static void fts5Bm25Function(
           ( aFreq[i] + k1 * (1 - b + b * D / pData->avgdl) )
       );
     }
-  }
-  
-  /* If no error has occurred, return the calculated score. Otherwise,
-  ** throw an SQL exception.  */
-  if( rc==SQLITE_OK ){
     sqlite3_result_double(pCtx, -1.0 * score);
   }else{
     sqlite3_result_error_code(pCtx, rc);

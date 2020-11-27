@@ -1,5 +1,5 @@
-C Move\san\s"if(\src==SQLITE_OK\s)"\sto\soutside\sa\sloop\sbody\sin\sthe\sfts5\sbm25()\scode.
-D 2020-11-27T16:05:31.818
+C Remove\sa\sredundant\s"if(\src==SQLITE_OK\s)"\sfrom\sthe\sfts5\sbm25()\scode.
+D 2020-11-27T16:08:15.286
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -114,7 +114,7 @@ F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a0
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h c132a9323f22a972c4c93a8d5a3d901113a6e612faf30ca8e695788438c5ca2a
 F ext/fts5/fts5Int.h 26c74dd5776f798436fbf604a0bf0e8de263b35b5060b05c15f9085845d9fda2
-F ext/fts5/fts5_aux.c 90483e40206e600e8f3e3104d9fbe161e9fb39d9d02d43fd8a10d89ccd39801a
+F ext/fts5/fts5_aux.c e6dbf53bfe21597cf3d52a4385bba006f0a58a8001b1c520d2ed3689f32545f9
 F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6dc8aaca70
 F ext/fts5/fts5_config.c be54f44fca491e96c6923a4b9a736f2da2b13811600eb6e38d1bcc91c4ea2e61
 F ext/fts5/fts5_expr.c e527e3a7410393075598cec544e3831798a8c88b3e8878e2cfb7cb147113e925
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a32b4f650d2d543bd2773cbc8655c1679a20b35ac9ec4d08c7754ddf6d972acb
-R a59e0befa591e0cd3d83961f14ea5c6e
+P 14a4dcf3474566d072007a37d214c892397c21dd3b7f8b55ad0e5edfb7130dd6
+R dd07aa0753904b5aa7d82526799a8608
 U dan
-Z 96d5422c2a135757a9cad036d8e3f038
+Z 86f990987e42b1dda2e73f9540f5c419
