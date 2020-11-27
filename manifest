@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sin\sfts5_aux.c.
-D 2020-11-27T19:40:13.829
+C Improve\sthe\sspeed\sof\sthe\stokenizer\sby\srecognizing\sthat\stokens\sstarting\nwith\sletters\s"_",\s"Y",\sor\s"Z"\scan\snever\sbe\sSQL\skeywords\sand\smust\sbe\sordinary\nidentifiers.
+D 2020-11-27T20:56:16.951
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 4dc01b267593537e2a0d0efe9f80dabe24c5b6f7627bc6971c487fa6a1dacbbf
+F src/tokenize.c 01dba3023659dc6f6b1e054c14b35a0074bd35de10466b99454d33278191d97f
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
 F src/trigger.c 515e79206d40d1d4149129318582e79a6e9db590a7b74e226fdb5b2a6c7e1b10
 F src/update.c 9f126204a6acb96bbe47391ae48e0fc579105d8e76a6d9c4fab3271367476580
@@ -1886,7 +1886,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ff9673847c0b4174d9435e93d19af0ee7406b1a12edeb6edec98697e1646824
-R b9d507fc84194599f6126b12d3d5bf12
-U dan
-Z 59431772996995dfd9988b1c0c070b2d
+P 8edb983bc87898eff2cd2e7e672a32a47c71b2be9d818513d339e95560d45b2b
+R a0457978bc43ec4e3c0a4c4481e2d29f
+T *branch * faster-tokenizer
+T *sym-faster-tokenizer *
+T -sym-trunk *
+U drh
+Z 7f6094958178f08bfb909f826361ecf4
