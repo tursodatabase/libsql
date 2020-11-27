@@ -673,11 +673,13 @@ static void fts5Bm25Function(
   }
 
   /* Determine the BM25 score for the current row. */
-  for(i=0; rc==SQLITE_OK && i<pData->nPhrase; i++){
-    score += pData->aIDF[i] * (
-      ( aFreq[i] * (k1 + 1.0) ) / 
-      ( aFreq[i] + k1 * (1 - b + b * D / pData->avgdl) )
-    );
+  if( rc==SQLITE_OK ){
+    for(i=0; i<pData->nPhrase; i++){
+      score += pData->aIDF[i] * (
+          ( aFreq[i] * (k1 + 1.0) ) / 
+          ( aFreq[i] + k1 * (1 - b + b * D / pData->avgdl) )
+      );
+    }
   }
   
   /* If no error has occurred, return the calculated score. Otherwise,
