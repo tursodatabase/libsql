@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sin\sfts5_aux.c.
-D 2020-11-27T19:40:13.829
+C Do\snot\sreuse\sthe\sobsolete\sSQLITE_TESTCTRL_PRNG_RESET\svalue\sfor\nSQLITE_TESTCTRL_SEEK_COUNT.\s\sGive\sSEEK_COUNT\sits\sown\sunique\svalue.\nThis\savoids\sincompatibility\swith\slegacy\stest\scode.
+D 2020-11-30T14:20:17.728
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 31387e56f5e6d1adc798dfa04b946001289a61e65acf4615f7b7130f121f3b9c
 F src/shell.c.in 55113760ae91a05c6ce4558714a1c8fc7a44bf266f735de6e71ea40f79e69830
-F src/sqlite.h.in 457c991c9d2ff483e17e5b5eb1a83c6793516d478cc63a78e1ea7b362e27e678
+F src/sqlite.h.in 1dbae67057d999161c30b21c3c7fa45d51f665b510d397dd1b7d671287d772b0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
 F src/sqliteInt.h c01115c8dd967f7d334a98ba37ac821eafb04144c8085a795daaf2185743d27a
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ff9673847c0b4174d9435e93d19af0ee7406b1a12edeb6edec98697e1646824
-R b9d507fc84194599f6126b12d3d5bf12
-U dan
-Z 59431772996995dfd9988b1c0c070b2d
+P 8edb983bc87898eff2cd2e7e672a32a47c71b2be9d818513d339e95560d45b2b
+R 050282c47b4fc851bae29e813a40a644
+U drh
+Z 8621daefa84a7d6030d8188b7808faf8
