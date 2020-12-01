@@ -1,5 +1,5 @@
-C Version\s3.34.0
-D 2020-12-01T16:14:00.051
+C Add\sthe\s--lookaside\sSIZE\sCOUNT\scommand-line\soption\sto\sthe\sdbfuzz2\stesting\stool.
+D 2020-12-01T23:18:13.197
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -817,7 +817,7 @@ F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 55e1a3504f8dea84155e09912fe3b1c3ad77e0b1a938ec42ca03b8e51b321e30
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
-F test/dbfuzz2.c 40cc4600947f30600f0ab365a2714ec76a899c9adb2c0ccd63ba583b2f71390e
+F test/dbfuzz2.c db2a1710c0d30d38e1352ee1b52b717fcb224c8caacc6f10909ef540f73cc9e8
 F test/dbpage.test 650234ba683b9d82b899c6c51439819787e7609f17a0cc40e0080a7b6443bc38
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -1886,10 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 23212b1a054f05773a9f69f9802035eea6a9d759a2a09e22f46d1046c058b417
-R 02db8b9bcb7f3c64353edbc1fa9fbf5b
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.34.0 *
+P a26b6597e3ae272231b96f9982c3bcc17ddec2f2b6eb4df06a224b91089fed5b
+R 2c2b0393b1f5ca930e6c9ce57f506377
 U drh
-Z b7b093d44b407c1b4e832f8c913357ae
+Z 2700eec066243e283a576b1178e7dd55
