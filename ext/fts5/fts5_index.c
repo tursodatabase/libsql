@@ -6123,6 +6123,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
     }else{
       poslist.n = 0;
       fts5SegiterPoslist(p, &pIter->aSeg[pIter->aFirst[1].iFirst], 0, &poslist);
+      fts5BufferAppendBlob(&p->rc, &poslist, 4, (const u8*)"\0\0\0\0");
       while( 0==sqlite3Fts5PoslistNext64(poslist.p, poslist.n, &iOff, &iPos) ){
         int iCol = FTS5_POS2COLUMN(iPos);
         int iTokOff = FTS5_POS2OFFSET(iPos);
