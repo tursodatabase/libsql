@@ -5082,7 +5082,8 @@ static void fts5MergePrefixLists(
 static void fts5SetupPrefixIter(
   Fts5Index *p,                   /* Index to read from */
   int bDesc,                      /* True for "ORDER BY rowid DESC" */
-  const u8 *pToken,               /* Buffer containing prefix to match */
+  int iIdx,                       /* Index to scan for data */
+  u8 *pToken,                     /* Buffer containing prefix to match */
   int nToken,                     /* Size of buffer pToken in bytes */
   Fts5Colset *pColset,            /* Restrict matches to these columns */
   Fts5Iter **ppIter          /* OUT: New iterator */
@@ -5116,6 +5117,27 @@ static void fts5SetupPrefixIter(
     int bNewTerm = 1;
 
     memset(&doclist, 0, sizeof(doclist));
+    if( iIdx!=0 ){
+      int dummy = 0;
+      const int f2 = FTS5INDEX_QUERY_SKIPEMPTY|FTS5INDEX_QUERY_NOOUTPUT;
+      pToken[0] = FTS5_MAIN_PREFIX;
+      fts5MultiIterNew(p, pStruct, f2, pColset, pToken, nToken, -1, 0, &p1);
+      fts5IterSetOutputCb(&p->rc, p1);
+      for(;
+        fts5MultiIterEof(p, p1)==0;
+        fts5MultiIterNext2(p, p1, &dummy)
+      ){
+        Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
+        p1->xSetOutputs(p1, pSeg);
+        if( p1->base.nData ){
+          xAppend(p, p1->base.iRowid-iLastRowid, p1, &doclist);
+          iLastRowid = p1->base.iRowid;
+        }
+      }
+      fts5MultiIterFree(p1);
+    }
+
+    pToken[0] = FTS5_MAIN_PREFIX + iIdx;
     fts5MultiIterNew(p, pStruct, flags, pColset, pToken, nToken, -1, 0, &p1);
     fts5IterSetOutputCb(&p->rc, p1);
     for( /* no-op */ ;
@@ -5411,6 +5433,7 @@ int sqlite3Fts5IndexQuery(
 
   if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
     int iIdx = 0;                 /* Index to search */
+    int iPrefixIdx = 0;           /* +1 prefix index */
     if( nToken ) memcpy(&buf.p[1], pToken, nToken);
 
     /* Figure out which index to search and set iIdx accordingly. If this
@@ -5432,7 +5455,9 @@ int sqlite3Fts5IndexQuery(
     if( flags & FTS5INDEX_QUERY_PREFIX ){
       int nChar = fts5IndexCharlen(pToken, nToken);
       for(iIdx=1; iIdx<=pConfig->nPrefix; iIdx++){
-        if( pConfig->aPrefix[iIdx-1]==nChar ) break;
+        int nIdxChar = pConfig->aPrefix[iIdx-1];
+        if( nIdxChar==nChar ) break;
+        if( nIdxChar==nChar+1 ) iPrefixIdx = iIdx;
       }
     }
 
@@ -5449,8 +5474,7 @@ int sqlite3Fts5IndexQuery(
     }else{
       /* Scan multiple terms in the main index */
       int bDesc = (flags & FTS5INDEX_QUERY_DESC)!=0;
-      buf.p[0] = FTS5_MAIN_PREFIX;
-      fts5SetupPrefixIter(p, bDesc, buf.p, nToken+1, pColset, &pRet);
+      fts5SetupPrefixIter(p, bDesc, iPrefixIdx, buf.p, nToken+1, pColset,&pRet);
       assert( p->rc!=SQLITE_OK || pRet->pColset==0 );
       fts5IterSetOutputCb(&p->rc, pRet);
       if( p->rc==SQLITE_OK ){
