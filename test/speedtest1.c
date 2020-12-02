@@ -707,9 +707,9 @@ void testset_main(void){
   maxb = roundup_allones(sz);
   speedtest1_begin_test(100, "%d INSERTs into table with no index", n);
   speedtest1_exec("BEGIN");
-  speedtest1_exec("CREATE%s TABLE t1(a INTEGER %s, b INTEGER %s, c TEXT %s);",
+  speedtest1_exec("CREATE%s TABLE z1(a INTEGER %s, b INTEGER %s, c TEXT %s);",
                   isTemp(9), g.zNN, g.zNN, g.zNN);
-  speedtest1_prepare("INSERT INTO t1 VALUES(?1,?2,?3); --  %d times", n);
+  speedtest1_prepare("INSERT INTO z1 VALUES(?1,?2,?3); --  %d times", n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
     speedtest1_numbername(x1, zNum, sizeof(zNum));
@@ -726,9 +726,9 @@ void testset_main(void){
   speedtest1_begin_test(110, "%d ordered INSERTS with one index/PK", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec(
-     "CREATE%s TABLE t2(a INTEGER %s %s, b INTEGER %s, c TEXT %s) %s",
+     "CREATE%s TABLE z2(a INTEGER %s %s, b INTEGER %s, c TEXT %s) %s",
      isTemp(5), g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
-  speedtest1_prepare("INSERT INTO t2 VALUES(?1,?2,?3); -- %d times", n);
+  speedtest1_prepare("INSERT INTO z2 VALUES(?1,?2,?3); -- %d times", n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
     speedtest1_numbername(x1, zNum, sizeof(zNum));
@@ -768,7 +768,7 @@ void testset_main(void){
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM z1\n"
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -788,7 +788,7 @@ void testset_main(void){
   speedtest1_begin_test(140, "%d SELECTS, LIKE, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM z1\n"
     " WHERE c LIKE ?1; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -810,7 +810,7 @@ void testset_main(void){
   speedtest1_begin_test(142, "%d SELECTS w/ORDER BY, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    "SELECT a, b, c FROM z1 WHERE c LIKE ?1\n"
     " ORDER BY a; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -831,7 +831,7 @@ void testset_main(void){
   speedtest1_begin_test(145, "%d SELECTS w/ORDER BY and LIMIT, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    "SELECT a, b, c FROM z1 WHERE c LIKE ?1\n"
     " ORDER BY a LIMIT 10; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -851,10 +851,10 @@ void testset_main(void){
 
   speedtest1_begin_test(150, "CREATE INDEX five times");
   speedtest1_exec("BEGIN;");
-  speedtest1_exec("CREATE UNIQUE INDEX t1b ON t1(b);");
-  speedtest1_exec("CREATE INDEX t1c ON t1(c);");
-  speedtest1_exec("CREATE UNIQUE INDEX t2b ON t2(b);");
-  speedtest1_exec("CREATE INDEX t2c ON t2(c DESC);");
+  speedtest1_exec("CREATE UNIQUE INDEX t1b ON z1(b);");
+  speedtest1_exec("CREATE INDEX t1c ON z1(c);");
+  speedtest1_exec("CREATE UNIQUE INDEX t2b ON z2(b);");
+  speedtest1_exec("CREATE INDEX t2c ON z2(c DESC);");
   speedtest1_exec("CREATE INDEX t3bc ON t3(b,c);");
   speedtest1_exec("COMMIT;");
   speedtest1_end_test();
@@ -864,7 +864,7 @@ void testset_main(void){
   speedtest1_begin_test(160, "%d SELECTS, numeric BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM z1\n"
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -884,7 +884,7 @@ void testset_main(void){
   speedtest1_begin_test(161, "%d SELECTS, numeric BETWEEN, PK", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t2\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM z2\n"
     " WHERE a BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -904,7 +904,7 @@ void testset_main(void){
   speedtest1_begin_test(170, "%d SELECTS, text BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM z1\n"
     " WHERE c BETWEEN ?1 AND (?1||'~'); -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -930,14 +930,14 @@ void testset_main(void){
     isTemp(1), g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
   speedtest1_exec("CREATE INDEX t4b ON t4(b)");
   speedtest1_exec("CREATE INDEX t4c ON t4(c)");
-  speedtest1_exec("INSERT INTO t4 SELECT * FROM t1");
+  speedtest1_exec("INSERT INTO t4 SELECT * FROM z1");
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
   n = sz;
   speedtest1_begin_test(190, "DELETE and REFILL one table", n);
-  speedtest1_exec("DELETE FROM t2;");
-  speedtest1_exec("INSERT INTO t2 SELECT * FROM t1;");
+  speedtest1_exec("DELETE FROM z2;");
+  speedtest1_exec("INSERT INTO z2 SELECT * FROM z1;");
   speedtest1_end_test();
 
 
@@ -947,8 +947,8 @@ void testset_main(void){
 
 
   speedtest1_begin_test(210, "ALTER TABLE ADD COLUMN, and query");
-  speedtest1_exec("ALTER TABLE t2 ADD COLUMN d DEFAULT 123");
-  speedtest1_exec("SELECT sum(d) FROM t2");
+  speedtest1_exec("ALTER TABLE z2 ADD COLUMN d DEFAULT 123");
+  speedtest1_exec("SELECT sum(d) FROM z2");
   speedtest1_end_test();
 
 
@@ -956,7 +956,7 @@ void testset_main(void){
   speedtest1_begin_test(230, "%d UPDATES, numeric BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "UPDATE t2 SET d=b*2 WHERE b BETWEEN ?1 AND ?2; -- %d times", n
+    "UPDATE z2 SET d=b*2 WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%maxb;
@@ -973,7 +973,7 @@ void testset_main(void){
   speedtest1_begin_test(240, "%d UPDATES of individual rows", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "UPDATE t2 SET d=b*3 WHERE a=?1; -- %d times", n
+    "UPDATE z2 SET d=b*3 WHERE a=?1; -- %d times", n
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%sz + 1;
@@ -984,12 +984,12 @@ void testset_main(void){
   speedtest1_end_test();
 
   speedtest1_begin_test(250, "One big UPDATE of the whole %d-row table", sz);
-  speedtest1_exec("UPDATE t2 SET d=b*4");
+  speedtest1_exec("UPDATE z2 SET d=b*4");
   speedtest1_end_test();
 
 
   speedtest1_begin_test(260, "Query added column after filling");
-  speedtest1_exec("SELECT sum(d) FROM t2");
+  speedtest1_exec("SELECT sum(d) FROM z2");
   speedtest1_end_test();
 
 
@@ -998,7 +998,7 @@ void testset_main(void){
   speedtest1_begin_test(270, "%d DELETEs, numeric BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "DELETE FROM t2 WHERE b BETWEEN ?1 AND ?2; -- %d times", n
+    "DELETE FROM z2 WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%maxb + 1;
@@ -1027,16 +1027,16 @@ void testset_main(void){
 
 
   speedtest1_begin_test(290, "Refill two %d-row tables using REPLACE", sz);
-  speedtest1_exec("REPLACE INTO t2(a,b,c) SELECT a,b,c FROM t1");
-  speedtest1_exec("REPLACE INTO t3(a,b,c) SELECT a,b,c FROM t1");
+  speedtest1_exec("REPLACE INTO z2(a,b,c) SELECT a,b,c FROM z1");
+  speedtest1_exec("REPLACE INTO t3(a,b,c) SELECT a,b,c FROM z1");
   speedtest1_end_test();
 
   speedtest1_begin_test(300, "Refill a %d-row table using (b&1)==(a&1)", sz);
-  speedtest1_exec("DELETE FROM t2;");
-  speedtest1_exec("INSERT INTO t2(a,b,c)\n"
-                  " SELECT a,b,c FROM t1  WHERE (b&1)==(a&1);");
-  speedtest1_exec("INSERT INTO t2(a,b,c)\n"
-                  " SELECT a,b,c FROM t1  WHERE (b&1)<>(a&1);");
+  speedtest1_exec("DELETE FROM z2;");
+  speedtest1_exec("INSERT INTO z2(a,b,c)\n"
+                  " SELECT a,b,c FROM z1  WHERE (b&1)==(a&1);");
+  speedtest1_exec("INSERT INTO z2(a,b,c)\n"
+                  " SELECT a,b,c FROM z1  WHERE (b&1)<>(a&1);");
   speedtest1_end_test();
 
 
@@ -1044,11 +1044,11 @@ void testset_main(void){
   speedtest1_begin_test(310, "%d four-ways joins", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT t1.c FROM t1, t2, t3, t4\n"
+    "SELECT z1.c FROM z1, z2, t3, t4\n"
     " WHERE t4.a BETWEEN ?1 AND ?2\n"
     "   AND t3.a=t4.b\n"
-    "   AND t2.a=t3.b\n"
-    "   AND t1.c=t2.c"
+    "   AND z2.a=t3.b\n"
+    "   AND z1.c=z2.c"
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%sz + 1;
@@ -1063,8 +1063,8 @@ void testset_main(void){
   speedtest1_begin_test(320, "subquery in result set", n);
   speedtest1_prepare(
     "SELECT sum(a), max(c),\n"
-    "       avg((SELECT a FROM t2 WHERE 5+t2.b=t1.b) AND rowid<?1), max(c)\n"
-    " FROM t1 WHERE rowid<?1;"
+    "       avg((SELECT a FROM z2 WHERE 5+z2.b=z1.b) AND rowid<?1), max(c)\n"
+    " FROM z1 WHERE rowid<?1;"
   );
   sqlite3_bind_int(g.pStmt, 1, est_square_root(g.szTest)*50);
   speedtest1_run();
@@ -1282,10 +1282,10 @@ void testset_cte(void){
   speedtest1_begin_test(400, "EXCEPT operator on %d-element tables", nElem);
   speedtest1_prepare(
     "WITH RECURSIVE \n"
-    "  t1(x) AS (VALUES(2) UNION ALL SELECT x+2 FROM t1 WHERE x<%d),\n"
-    "  t2(y) AS (VALUES(3) UNION ALL SELECT y+3 FROM t2 WHERE y<%d)\n"
+    "  z1(x) AS (VALUES(2) UNION ALL SELECT x+2 FROM z1 WHERE x<%d),\n"
+    "  z2(y) AS (VALUES(3) UNION ALL SELECT y+3 FROM z2 WHERE y<%d)\n"
     "SELECT count(x), avg(x) FROM (\n"
-    "  SELECT x FROM t1 EXCEPT SELECT y FROM t2 ORDER BY 1\n"
+    "  SELECT x FROM z1 EXCEPT SELECT y FROM z2 ORDER BY 1\n"
     ");",
     nElem, nElem
   );
@@ -1318,9 +1318,9 @@ void testset_fp(void){
   n = g.szTest*5000;
   speedtest1_begin_test(100, "Fill a table with %d FP values", n*2);
   speedtest1_exec("BEGIN");
-  speedtest1_exec("CREATE%s TABLE t1(a REAL %s, b REAL %s);",
+  speedtest1_exec("CREATE%s TABLE z1(a REAL %s, b REAL %s);",
                   isTemp(1), g.zNN, g.zNN);
-  speedtest1_prepare("INSERT INTO t1 VALUES(?1,?2); -- %d times", n);
+  speedtest1_prepare("INSERT INTO z1 VALUES(?1,?2); -- %d times", n);
   for(i=1; i<=n; i++){
     speedtest1_random_ascii_fp(zFP1);
     speedtest1_random_ascii_fp(zFP2);
@@ -1333,7 +1333,7 @@ void testset_fp(void){
 
   n = g.szTest/25 + 2;
   speedtest1_begin_test(110, "%d range queries", n);
-  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  speedtest1_prepare("SELECT sum(b) FROM z1 WHERE a BETWEEN ?1 AND ?2");
   for(i=1; i<=n; i++){
     speedtest1_random_ascii_fp(zFP1);
     speedtest1_random_ascii_fp(zFP2);
@@ -1345,15 +1345,15 @@ void testset_fp(void){
 
   speedtest1_begin_test(120, "CREATE INDEX three times");
   speedtest1_exec("BEGIN;");
-  speedtest1_exec("CREATE INDEX t1a ON t1(a);");
-  speedtest1_exec("CREATE INDEX t1b ON t1(b);");
-  speedtest1_exec("CREATE INDEX t1ab ON t1(a,b);");
+  speedtest1_exec("CREATE INDEX t1a ON z1(a);");
+  speedtest1_exec("CREATE INDEX t1b ON z1(b);");
+  speedtest1_exec("CREATE INDEX t1ab ON z1(a,b);");
   speedtest1_exec("COMMIT;");
   speedtest1_end_test();
 
   n = g.szTest/3 + 2;
   speedtest1_begin_test(130, "%d indexed range queries", n);
-  speedtest1_prepare("SELECT sum(b) FROM t1 WHERE a BETWEEN ?1 AND ?2");
+  speedtest1_prepare("SELECT sum(b) FROM z1 WHERE a BETWEEN ?1 AND ?2");
   for(i=1; i<=n; i++){
     speedtest1_random_ascii_fp(zFP1);
     speedtest1_random_ascii_fp(zFP2);
@@ -1365,14 +1365,14 @@ void testset_fp(void){
 
   n = g.szTest*5000;
   speedtest1_begin_test(140, "%d calls to round()", n);
-  speedtest1_exec("SELECT sum(round(a,2)+round(b,4)) FROM t1;");
+  speedtest1_exec("SELECT sum(round(a,2)+round(b,4)) FROM z1;");
   speedtest1_end_test();
 
 
   speedtest1_begin_test(150, "%d printf() calls", n*4);
   speedtest1_exec(
     "WITH c(fmt) AS (VALUES('%%g'),('%%e'),('%%!g'),('%%.20f'))"
-    "SELECT sum(printf(fmt,a)) FROM t1, c"
+    "SELECT sum(printf(fmt,a)) FROM z1, c"
   );
   speedtest1_end_test();
 }
@@ -1458,8 +1458,8 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   speedtest1_begin_test(101, "Copy from rtree to a regular table");
-  speedtest1_exec("CREATE TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
-  speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
+  speedtest1_exec("CREATE TABLE z1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
+  speedtest1_exec("INSERT INTO z1 SELECT * FROM rt1");
   speedtest1_end_test();
 
   n = g.szTest*200;
@@ -1477,7 +1477,7 @@ void testset_rtree(int p1, int p2){
   if( g.bVerify ){
     n = g.szTest*200;
     speedtest1_begin_test(111, "Verify result from 1-D intersect slice queries");
-    speedtest1_prepare("SELECT count(*) FROM t1 WHERE x0>=?1 AND x1<=?2");
+    speedtest1_prepare("SELECT count(*) FROM z1 WHERE x0>=?1 AND x1<=?2");
     iStep = mxCoord/n;
     for(i=0; i<n; i++){
       sqlite3_bind_int(g.pStmt, 1, i*iStep);
@@ -1506,7 +1506,7 @@ void testset_rtree(int p1, int p2){
   if( g.bVerify ){
     n = g.szTest*200;
     speedtest1_begin_test(121, "Verify result from 1-D overlap slice queries");
-    speedtest1_prepare("SELECT count(*) FROM t1 WHERE y1>=?1 AND y0<=?2");
+    speedtest1_prepare("SELECT count(*) FROM z1 WHERE y1>=?1 AND y0<=?2");
     iStep = mxCoord/n;
     for(i=0; i<n; i++){
       sqlite3_bind_int(g.pStmt, 1, i*iStep);
@@ -1602,7 +1602,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   speedtest1_begin_test(170, "Restore deleted entries using INSERT OR IGNORE");
-  speedtest1_exec("INSERT OR IGNORE INTO rt1 SELECT * FROM t1");
+  speedtest1_exec("INSERT OR IGNORE INTO rt1 SELECT * FROM z1");
   speedtest1_end_test();
 }
 #endif /* SQLITE_ENABLE_RTREE */
@@ -1887,11 +1887,11 @@ void testset_trigger(void){
 
   speedtest1_exec(
       "BEGIN;"
-      "CREATE TABLE t1(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
-      "CREATE TABLE t2(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "CREATE TABLE z1(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
+      "CREATE TABLE z2(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
       "CREATE TABLE t3(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);"
-      "CREATE VIEW v1 AS SELECT rowid, i, t FROM t1;"
-      "CREATE VIEW v2 AS SELECT rowid, i, t FROM t2;"
+      "CREATE VIEW v1 AS SELECT rowid, i, t FROM z1;"
+      "CREATE VIEW v2 AS SELECT rowid, i, t FROM z2;"
       "CREATE VIEW v3 AS SELECT rowid, i, t FROM t3;"
   );
   for(jj=1; jj<=3; jj++){
@@ -1905,22 +1905,22 @@ void testset_trigger(void){
     }
   }
   speedtest1_exec(
-      "CREATE INDEX i1 ON t1(t);"
-      "CREATE INDEX i2 ON t2(t);"
+      "CREATE INDEX i1 ON z1(t);"
+      "CREATE INDEX i2 ON z2(t);"
       "CREATE INDEX i3 ON t3(t);"
       "COMMIT;"
   );
 
   speedtest1_begin_test(100, "speed4p-join1");
   speedtest1_prepare(
-      "SELECT * FROM t1, t2, t3 WHERE t1.oid = t2.oid AND t2.oid = t3.oid"
+      "SELECT * FROM z1, z2, t3 WHERE z1.oid = z2.oid AND z2.oid = t3.oid"
   );
   speedtest1_run();
   speedtest1_end_test();
 
   speedtest1_begin_test(110, "speed4p-join2");
   speedtest1_prepare(
-      "SELECT * FROM t1, t2, t3 WHERE t1.t = t2.t AND t2.t = t3.t"
+      "SELECT * FROM z1, z2, t3 WHERE z1.t = z2.t AND z2.t = t3.t"
   );
   speedtest1_run();
   speedtest1_end_test();
@@ -1957,8 +1957,8 @@ void testset_trigger(void){
 
   speedtest1_begin_test(150, "speed4p-subselect1");
   speedtest1_prepare("SELECT "
-      "(SELECT t FROM t1 WHERE rowid = ?1),"
-      "(SELECT t FROM t2 WHERE rowid = ?1),"
+      "(SELECT t FROM z1 WHERE rowid = ?1),"
+      "(SELECT t FROM z2 WHERE rowid = ?1),"
       "(SELECT t FROM t3 WHERE rowid = ?1)"
   );
   for(jj=0; jj<NROW2; jj++){
@@ -1969,7 +1969,7 @@ void testset_trigger(void){
 
   speedtest1_begin_test(160, "speed4p-rowid-update");
   speedtest1_exec("BEGIN");
-  speedtest1_prepare("UPDATE t1 SET i=i+1 WHERE rowid=?1");
+  speedtest1_prepare("UPDATE z1 SET i=i+1 WHERE rowid=?1");
   for(jj=0; jj<NROW2; jj++){
     sqlite3_bind_int(g.pStmt, 1, jj);
     speedtest1_run();
@@ -1979,7 +1979,7 @@ void testset_trigger(void){
 
   speedtest1_exec("CREATE TABLE t5(t TEXT PRIMARY KEY, i INTEGER);");
   speedtest1_begin_test(170, "speed4p-insert-ignore");
-  speedtest1_exec("INSERT OR IGNORE INTO t5 SELECT t, i FROM t1");
+  speedtest1_exec("INSERT OR IGNORE INTO t5 SELECT t, i FROM z1");
   speedtest1_end_test();
 
   speedtest1_exec(
