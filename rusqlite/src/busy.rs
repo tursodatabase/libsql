@@ -33,8 +33,8 @@ impl Connection {
 
     /// Register a callback to handle `SQLITE_BUSY` errors.
     ///
-    /// If the busy callback is `None`, then `SQLITE_BUSY is returned
-    /// immediately upon encountering the lock.` The argument to the busy
+    /// If the busy callback is `None`, then `SQLITE_BUSY` is returned
+    /// immediately upon encountering the lock. The argument to the busy
     /// handler callback is the number of times that the
     /// busy handler has been invoked previously for the
     /// same locking event. If the busy callback returns `false`, then no
