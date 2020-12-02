@@ -21,6 +21,9 @@ impl Connection {
     /// connection at any given moment. If another busy handler was defined
     /// (using [`busy_handler`](Connection::busy_handler)) prior to calling this routine, that other
     /// busy handler is cleared.
+    ///
+    /// Newly created connections currently have a default busy timeout of 5000ms, but this may be
+    /// subject to change.
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
         let ms: i32 = timeout
             .as_secs()
@@ -48,6 +51,9 @@ impl Connection {
     /// handler. Note that calling [`busy_timeout()`](Connection::busy_timeout) or evaluating `PRAGMA
     /// busy_timeout=N` will change the busy handler and thus
     /// clear any previously set busy handler.
+    ///
+    /// Newly created connections default to a [`busy_timeout()`](Connection::busy_timeout) handler
+    /// with a timeout of 5000ms, although this is subject to change.
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);
