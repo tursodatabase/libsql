@@ -3133,66 +3133,72 @@ static void fts5SegiterPoslist(
 }
 
 /*
-** IN/OUT parameter (*pa) points to a position list n bytes in size. If
-** the position list contains entries for column iCol, then (*pa) is set
-** to point to the sub-position-list for that column and the number of
-** bytes in it returned. Or, if the argument position list does not
-** contain any entries for column iCol, return 0.
+** Parameter pPos points to a buffer containing a position list, size nPos.
+** This function filters it according to pColset (which must be non-NULL)
+** and sets pIter->base.pData/nData to point to the new position list.
+** If memory is required for the new position list, use buffer pIter->poslist.
+** Or, if the new position list is a contiguous subset of the input, set
+** pIter->base.pData/nData to point directly to it.
+**
+** This function is a no-op if *pRc is other than SQLITE_OK when it is
+** called. If an OOM error is encountered, *pRc is set to SQLITE_NOMEM
+** before returning.
 */
-static int fts5IndexExtractCol(
-  const u8 **pa,                  /* IN/OUT: Pointer to poslist */
-  int n,                          /* IN: Size of poslist in bytes */
-  int iCol                        /* Column to extract from poslist */
-){
-  int iCurrent = 0;               /* Anything before the first 0x01 is col 0 */
-  const u8 *p = *pa;
-  const u8 *pEnd = &p[n];         /* One byte past end of position list */
-
-  while( iCol>iCurrent ){
-    /* Advance pointer p until it points to pEnd or an 0x01 byte that is
-    ** not part of a varint. Note that it is not possible for a negative
-    ** or extremely large varint to occur within an uncorrupted position 
-    ** list. So the last byte of each varint may be assumed to have a clear
-    ** 0x80 bit.  */
-    while( *p!=0x01 ){
-      while( *p++ & 0x80 );
-      if( p>=pEnd ) return 0;
-    }
-    *pa = p++;
-    iCurrent = *p++;
-    if( iCurrent & 0x80 ){
-      p--;
-      p += fts5GetVarint32(p, iCurrent);
-    }
-  }
-  if( iCol!=iCurrent ) return 0;
-
-  /* Advance pointer p until it points to pEnd or an 0x01 byte that is
-  ** not part of a varint */
-  while( p<pEnd && *p!=0x01 ){
-    while( *p++ & 0x80 );
-  }
-
-  return p - (*pa);
-}
-
 static void fts5IndexExtractColset(
   int *pRc,
   Fts5Colset *pColset,            /* Colset to filter on */
   const u8 *pPos, int nPos,       /* Position list */
-  Fts5Buffer *pBuf                /* Output buffer */
+  Fts5Iter *pIter
 ){
   if( *pRc==SQLITE_OK ){
-    int i;
-    fts5BufferZero(pBuf);
-    for(i=0; i<pColset->nCol; i++){
-      const u8 *pSub = pPos;
-      int nSub = fts5IndexExtractCol(&pSub, nPos, pColset->aiCol[i]);
-      if( nSub ){
-        fts5BufferAppendBlob(pRc, pBuf, nSub, pSub);
+    const u8 *p = pPos;
+    const u8 *aCopy = p;
+    const u8 *pEnd = &p[nPos];    /* One byte past end of position list */
+    int i = 0;
+    int iCurrent = 0;
+
+    if( pColset->nCol>1 && sqlite3Fts5BufferSize(pRc, &pIter->poslist, nPos) ){
+      return;
+    }
+
+    while( 1 ){
+      while( pColset->aiCol[i]<iCurrent ){
+        i++;
+        if( i==pColset->nCol ){
+          pIter->base.pData = pIter->poslist.p;
+          pIter->base.nData = pIter->poslist.n;
+          return;
+        }
+      }
+
+      /* Advance pointer p until it points to pEnd or an 0x01 byte that is
+      ** not part of a varint */
+      while( p<pEnd && *p!=0x01 ){
+        while( *p++ & 0x80 );
+      }
+
+      if( pColset->aiCol[i]==iCurrent ){
+        if( pColset->nCol==1 ){
+          pIter->base.pData = aCopy;
+          pIter->base.nData = p-aCopy;
+          return;
+        }
+        fts5BufferSafeAppendBlob(&pIter->poslist, aCopy, p-aCopy);
+      }
+      if( p==pEnd ){
+        pIter->base.pData = pIter->poslist.p;
+        pIter->base.nData = pIter->poslist.n;
+        return;
+      }
+      aCopy = p++;
+      iCurrent = *p++;
+      if( iCurrent & 0x80 ){
+        p--;
+        p += fts5GetVarint32(p, iCurrent);
       }
     }
   }
+
 }
 
 /*
@@ -3312,16 +3318,9 @@ static void fts5IterSetOutputs_Full(Fts5Iter *pIter, Fts5SegIter *pSeg){
     /* All data is stored on the current page. Populate the output 
     ** variables to point into the body of the page object. */
     const u8 *a = &pSeg->pLeaf->p[pSeg->iLeafOffset];
-    if( pColset->nCol==1 ){
-      pIter->base.nData = fts5IndexExtractCol(&a, pSeg->nPos,pColset->aiCol[0]);
-      pIter->base.pData = a;
-    }else{
-      int *pRc = &pIter->pIndex->rc;
-      fts5BufferZero(&pIter->poslist);
-      fts5IndexExtractColset(pRc, pColset, a, pSeg->nPos, &pIter->poslist);
-      pIter->base.pData = pIter->poslist.p;
-      pIter->base.nData = pIter->poslist.n;
-    }
+    int *pRc = &pIter->pIndex->rc;
+    fts5BufferZero(&pIter->poslist);
+    fts5IndexExtractColset(pRc, pColset, a, pSeg->nPos, pIter);
   }else{
     /* The data is distributed over two or more pages. Copy it into the
     ** Fts5Iter.poslist buffer and then set the output pointer to point

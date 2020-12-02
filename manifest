@@ -1,5 +1,5 @@
-C Parameterize\sthe\shash\sfunction\sin\smkkeywordhash.c.\s\sThis\swas\san\sattempt\sto\nfind\sa\sbetter\shash\sfunction,\swhich\sturned\sout\sto\snot\sbe\ssuccessful.
-D 2020-12-02T02:58:05.804
+C Improve\sperformance\sfor\sfts5\scolumn\sfilters\sthat\sfilter\sfor\smore\sthan\sone\scolumn.\se.g.\s"{col1\scol2\scol3}:phrase".
+D 2020-12-02T16:23:05.119
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -119,7 +119,7 @@ F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6
 F ext/fts5/fts5_config.c be54f44fca491e96c6923a4b9a736f2da2b13811600eb6e38d1bcc91c4ea2e61
 F ext/fts5/fts5_expr.c e527e3a7410393075598cec544e3831798a8c88b3e8878e2cfb7cb147113e925
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
-F ext/fts5/fts5_index.c 9f152a596df3a2227ddd59adb82549c2b6858ab36bc1d26fd8933f43d3d63d36
+F ext/fts5/fts5_index.c 728cb3b5dd5dffec055185ac89bdd441c97cd16de72c6dba8a85c7762cafa68f
 F ext/fts5/fts5_main.c b4e4931c7fcc9acfa0c3b8b5e5e80b5b424b8d9207aae3a22b674bd35ccf149d
 F ext/fts5/fts5_storage.c 58ba71e6cd3d43a5735815e7956ee167babb4d2cbfe206905174792af4d09d75
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edbabaa30823db7c7d169cb93722b5f74bc711359984fb7e139ca9d10fe7dae4
-R c0ed84786324d0934b9713477bd4d8aa
-U drh
-Z adef5cc1a128c4fbf04c3cd6ce9dd431
+P 2195d731f51a18f917c4299d8f4c7ee7c139c2527f62869d6da171a6d1d89ea6
+R 84d1ef02dfda4edec69fcccc96c127a4
+U dan
+Z 1f4e3f795e1d9fc6eeffa6c390d6646c
