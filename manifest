@@ -1,5 +1,5 @@
-C Improve\sperformance\sfor\sfts5\scolumn\sfilters\sthat\sfilter\sfor\smore\sthan\sone\scolumn.\se.g.\s"{col1\scol2\scol3}:phrase".
-D 2020-12-02T16:23:05.119
+C Fix\sthe\s".open"\scommand\sin\sthe\sCLI\sso\sthat\sit\saccepts\scommand-line\soptions\nboth\sbefore\sand\safter\sthe\sfilename.
+D 2020-12-02T18:27:48.742
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 31387e56f5e6d1adc798dfa04b946001289a61e65acf4615f7b7130f121f3b9c
-F src/shell.c.in 55113760ae91a05c6ce4558714a1c8fc7a44bf266f735de6e71ea40f79e69830
+F src/shell.c.in 771311fec4e9c7e06af2610f535343bd211ff34f615a72bf5bafe1bf4f63383e
 F src/sqlite.h.in 1dbae67057d999161c30b21c3c7fa45d51f665b510d397dd1b7d671287d772b0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1886,7 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2195d731f51a18f917c4299d8f4c7ee7c139c2527f62869d6da171a6d1d89ea6
-R 84d1ef02dfda4edec69fcccc96c127a4
-U dan
-Z 1f4e3f795e1d9fc6eeffa6c390d6646c
+P d8de2f236d43a88fac7550a0451951dd5a945eb304e32f82e662479cea7c2684
+R 514e397878ccd7b216cdd7d01f670ef0
+U drh
+Z 0bdc6b19b24e33aa04196376633bb49f

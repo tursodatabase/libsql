@@ -8680,9 +8680,9 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif /* SQLITE_DEBUG */
 
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
-    char *zNewFilename;  /* Name of the database file to open */
-    int iName = 1;       /* Index in azArg[] of the filename */
-    int newFlag = 0;     /* True to delete file before opening */
+    char *zNewFilename = 0;  /* Name of the database file to open */
+    int iName = 1;           /* Index in azArg[] of the filename */
+    int newFlag = 0;         /* True to delete file before opening */
     /* Close the existing database */
     session_close_all(p);
     close_db(p->db);
@@ -8694,7 +8694,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->openFlags = 0;
     p->szMax = 0;
     /* Check for command-line arguments */
-    for(iName=1; iName<nArg && azArg[iName][0]=='-'; iName++){
+    for(iName=1; iName<nArg; iName++){
       const char *z = azArg[iName];
       if( optionMatch(z,"new") ){
         newFlag = 1;
@@ -8720,10 +8720,15 @@ static int do_meta_command(char *zLine, ShellState *p){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
         goto meta_command_exit;
+      }else if( zNewFilename ){
+        utf8_printf(stderr, "extra argument: \"%s\"\n", z);
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        zNewFilename = sqlite3_mprintf("%s", z);
       }
     }
     /* If a filename is specified, try to open it first */
-    zNewFilename = nArg>iName ? sqlite3_mprintf("%s", azArg[iName]) : 0;
     if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag ) shellDeleteFile(zNewFilename);
       p->zDbFilename = zNewFilename;
