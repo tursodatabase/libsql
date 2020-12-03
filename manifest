@@ -1,5 +1,5 @@
-C Enhance\sthe\sgenerate_series()\stable-valued\sfunction\sto\ssupport\snegative\nstep\svalues.
-D 2020-12-03T14:21:26.970
+C Do\snot\ssimulate\sOOM\sfaults\son\sthe\sSQLITE_FCNTL_CKPT_START\sand\nSQLITE_FCNTL_CKPT_DONE\sfile-controls,\sas\sthose\sare\swrite-only\sand\nthe\sreturn\svalue\sis\salways\signored.
+D 2020-12-03T19:25:06.815
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c dd2b3f1cc1863079bc1349ac0fec395a500090c4fe4e11ab775310a49f2f956d
 F src/mutex_w32.c caa50e1c0258ac4443f52e00fe8aaea73b6d0728bd8856bedfff822cae418541
 F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
-F src/os.c 80e4cf3e5da06be03ca641661e331ce60eeeeabf0d7354dbb1c0e166d0eedbbe
+F src/os.c 2d6e646370b1aa78942c68d7edf124e518963adf4a90bce87f365a5a5495529a
 F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
@@ -1887,7 +1887,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c24f13448b5a55f45b4d4786a878fa73fe3395b5724f3bc2eea22e5e2b074353
-R ec29377d1f16dae2ba3a716418cfeb56
+P 9b60fc48706bb77b2d4fe27a7b5834a6dc229b4051a9285032da578e4f2849e6
+R f5fab051df652e60eae81cceafe92f35
 U drh
-Z 6d9cf1c7027aa6d139c9ca5d0fe86df8
+Z b8af11f99fdf7fdf74f4bc2f82c020b8
