@@ -3069,7 +3069,7 @@ static void fts5ChunkIterate(
   int pgno = pSeg->iLeafPgno;
   int pgnoSave = 0;
 
-  /* This function does notmwork with detail=none databases. */
+  /* This function does not work with detail=none databases. */
   assert( p->pConfig->eDetail!=FTS5_DETAIL_NONE );
 
   if( (pSeg->flags & FTS5_SEGITER_REVERSE)==0 ){
@@ -3082,6 +3082,9 @@ static void fts5ChunkIterate(
     fts5DataRelease(pData);
     if( nRem<=0 ){
       break;
+    }else if( pSeg->pSeg==0 ){
+      p->rc = FTS5_CORRUPT;
+      return;
     }else{
       pgno++;
       pData = fts5LeafRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, pgno));
@@ -4803,7 +4806,7 @@ static void fts5AppendPoslist(
 static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
   u8 *p = pIter->aPoslist + pIter->nSize + pIter->nPoslist;
 
-  assert( pIter->aPoslist );
+  assert( pIter->aPoslist || (p==0 && pIter->aPoslist==0) );
   if( p>=pIter->aEof ){
     pIter->aPoslist = 0;
   }else{
@@ -4887,16 +4890,19 @@ static void fts5NextRowid(Fts5Buffer *pBuf, int *piOff, i64 *piRowid){
 static void fts5MergeRowidLists(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5Buffer *p1,                 /* First list to merge */
-  Fts5Buffer *p2                  /* Second list to merge */
+  int nBuf,                       /* Number of entries in apBuf[] */
+  Fts5Buffer *aBuf                /* Array of other lists to merge into p1 */
 ){
   int i1 = 0;
   int i2 = 0;
   i64 iRowid1 = 0;
   i64 iRowid2 = 0;
   i64 iOut = 0;
+  Fts5Buffer *p2 = &aBuf[0];
 
   Fts5Buffer out;
   memset(&out, 0, sizeof(out));
+  assert( nBuf==1 );
   sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n);
   if( p->rc ) return;
 
@@ -4923,160 +4929,189 @@ static void fts5MergeRowidLists(
   fts5BufferFree(&out);
 }
 
+typedef struct PrefixMerger PrefixMerger;
+struct PrefixMerger {
+  Fts5DoclistIter iter;           /* Doclist iterator */
+  i64 iPos;                       /* For iterating through a position list */
+  int iOff;
+  u8 *aPos;
+  PrefixMerger *pNext;            /* Next in docid/poslist order */
+};
+
+static void fts5PrefixMergerInsertByRowid(
+  PrefixMerger **ppHead, 
+  PrefixMerger *p
+){
+  if( p->iter.aPoslist ){
+    PrefixMerger **pp = ppHead;
+    while( *pp && p->iter.iRowid>(*pp)->iter.iRowid ){
+      pp = &(*pp)->pNext;
+    }
+    p->pNext = *pp;
+    *pp = p;
+  }
+}
+
+static void fts5PrefixMergerInsertByPosition(
+  PrefixMerger **ppHead, 
+  PrefixMerger *p
+){
+  if( p->iPos>=0 ){
+    PrefixMerger **pp = ppHead;
+    while( *pp && p->iPos>(*pp)->iPos ){
+      pp = &(*pp)->pNext;
+    }
+    p->pNext = *pp;
+    *pp = p;
+  }
+}
+
+
 /*
-** Buffers p1 and p2 contain doclists. This function merges the content
-** of the two doclists together and sets buffer p1 to the result before
-** returning.
-**
-** If an error occurs, an error code is left in p->rc. If an error has
-** already occurred, this function is a no-op.
+** Array aBuf[] contains nBuf doclists. These are all merged in with the
+** doclist in buffer p1.
 */
 static void fts5MergePrefixLists(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5Buffer *p1,                 /* First list to merge */
-  Fts5Buffer *p2                  /* Second list to merge */
+  int nBuf,                       /* Number of buffers in array aBuf[] */
+  Fts5Buffer *aBuf                /* Other lists to merge in */ 
 ){
-  if( p2->n ){
-    i64 iLastRowid = 0;
-    Fts5DoclistIter i1;
-    Fts5DoclistIter i2;
-    Fts5Buffer out = {0, 0, 0};
-    Fts5Buffer tmp = {0, 0, 0};
+#define fts5PrefixMergerNextPosition(p) \
+  sqlite3Fts5PoslistNext64((p)->aPos,(p)->iter.nPoslist,&(p)->iOff,&(p)->iPos);
+#define FTS5_MERGE_NLIST 16
+  PrefixMerger aMerger[FTS5_MERGE_NLIST];
+  PrefixMerger *pHead = 0;
+  int i;
+  int nOut = 0;
+  Fts5Buffer out = {0, 0, 0};
+  Fts5Buffer tmp = {0, 0, 0};
+  i64 iLastRowid = 0;
 
-    /* The maximum size of the output is equal to the sum of the two 
-    ** input sizes + 1 varint (9 bytes). The extra varint is because if the
-    ** first rowid in one input is a large negative number, and the first in
-    ** the other a non-negative number, the delta for the non-negative
-    ** number will be larger on disk than the literal integer value
-    ** was.  
-    **
-    ** Or, if the input position-lists are corrupt, then the output might
-    ** include up to 2 extra 10-byte positions created by interpreting -1
-    ** (the value PoslistNext64() uses for EOF) as a position and appending
-    ** it to the output. This can happen at most once for each input 
-    ** position-list, hence two 10 byte paddings.  */
-    if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n + 9+10+10) ) return;
-    fts5DoclistIterInit(p1, &i1);
-    fts5DoclistIterInit(p2, &i2);
-
-    while( 1 ){
-      if( i1.iRowid<i2.iRowid ){
-        /* Copy entry from i1 */
-        fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
-        fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist+i1.nSize);
-        fts5DoclistIterNext(&i1);
-        if( i1.aPoslist==0 ) break;
-        assert( out.n<=((i1.aPoslist-p1->p) + (i2.aPoslist-p2->p)+9+10+10) );
-      }
-      else if( i2.iRowid!=i1.iRowid ){
-        /* Copy entry from i2 */
-        fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-        fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist+i2.nSize);
-        fts5DoclistIterNext(&i2);
-        if( i2.aPoslist==0 ) break;
-        assert( out.n<=((i1.aPoslist-p1->p) + (i2.aPoslist-p2->p)+9+10+10) );
-      }
-      else{
-        /* Merge the two position lists. */ 
-        i64 iPos1 = 0;
-        i64 iPos2 = 0;
-        int iOff1 = 0;
-        int iOff2 = 0;
-        u8 *a1 = &i1.aPoslist[i1.nSize];
-        u8 *a2 = &i2.aPoslist[i2.nSize];
-        int nCopy;
-        u8 *aCopy;
-
-        i64 iPrev = 0;
-        Fts5PoslistWriter writer;
-        memset(&writer, 0, sizeof(writer));
-
-        /* See the earlier comment in this function for an explanation of why
-        ** corrupt input position lists might cause the output to consume
-        ** at most 20 bytes of unexpected space. */
-        fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-        fts5BufferZero(&tmp);
-        sqlite3Fts5BufferSize(&p->rc, &tmp, 
-            i1.nPoslist + i2.nPoslist + 10 + 10 + FTS5_DATA_ZERO_PADDING
-        );
-        if( p->rc ) break;
-
-        sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
-        sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
-        assert_nc( iPos1>=0 && iPos2>=0 );
-
-        if( iPos1<iPos2 ){
-          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
-          sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
-        }else{
-          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
-          sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
-        }
-        if( iPos1>=0 && iPos2>=0 ){
-          while( 1 ){
-            if( iPos1<iPos2 ){
-              if( iPos1!=iPrev ){
-                sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
-              }
-              sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
-              if( iPos1<0 ) break;
-            }else{
-              assert_nc( iPos2!=iPrev );
-              sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
-              sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
-              if( iPos2<0 ) break;
-            }
-          }
-        }
-
-        if( iPos1>=0 ){
-          if( iPos1!=iPrev ){
-            sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
-          }
-          aCopy = &a1[iOff1];
-          nCopy = i1.nPoslist - iOff1;
-        }else{
-          assert_nc( iPos2>=0 && iPos2!=iPrev );
-          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
-          aCopy = &a2[iOff2];
-          nCopy = i2.nPoslist - iOff2;
-        }
-        if( nCopy>0 ){
-          fts5BufferSafeAppendBlob(&tmp, aCopy, nCopy);
-        }
-
-        /* WRITEPOSLISTSIZE */
-        assert_nc( tmp.n<=i1.nPoslist+i2.nPoslist );
-        assert( tmp.n<=i1.nPoslist+i2.nPoslist+10+10 );
-        if( tmp.n>i1.nPoslist+i2.nPoslist ){
-          if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
-          break;
-        }
-        fts5BufferSafeAppendVarint(&out, tmp.n * 2);
-        fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
-        fts5DoclistIterNext(&i1);
-        fts5DoclistIterNext(&i2);
-        assert_nc( out.n<=(p1->n+p2->n+9) );
-        if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
-        assert( out.n<=((i1.aPoslist-p1->p) + (i2.aPoslist-p2->p)+9+10+10) );
-      }
-    }
-
-    if( i1.aPoslist ){
-      fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
-      fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.aEof - i1.aPoslist);
-    }
-    else if( i2.aPoslist ){
-      fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-      fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.aEof - i2.aPoslist);
-    }
-    assert_nc( out.n<=(p1->n+p2->n+9) );
-
-    fts5BufferFree(p1);
-    fts5BufferFree(&tmp);
-    memset(&out.p[out.n], 0, FTS5_DATA_ZERO_PADDING);
-    *p1 = out;
+  /* Initialize a doclist-iterator for each input buffer. Arrange them in
+  ** a linked-list starting at pHead in ascending order of rowid. Avoid
+  ** linking any iterators already at EOF into the linked list at all. */ 
+  assert( nBuf+1<=sizeof(aMerger)/sizeof(aMerger[0]) );
+  memset(aMerger, 0, sizeof(PrefixMerger)*(nBuf+1));
+  pHead = &aMerger[nBuf];
+  fts5DoclistIterInit(p1, &pHead->iter);
+  for(i=0; i<nBuf; i++){
+    fts5DoclistIterInit(&aBuf[i], &aMerger[i].iter);
+    fts5PrefixMergerInsertByRowid(&pHead, &aMerger[i]);
+    nOut += aBuf[i].n;
   }
+  if( nOut==0 ) return;
+  nOut += p1->n + 9 + 10*nBuf;
+
+  /* The maximum size of the output is equal to the sum of the
+  ** input sizes + 1 varint (9 bytes). The extra varint is because if the
+  ** first rowid in one input is a large negative number, and the first in
+  ** the other a non-negative number, the delta for the non-negative
+  ** number will be larger on disk than the literal integer value
+  ** was.  
+  **
+  ** Or, if the input position-lists are corrupt, then the output might
+  ** include up to (nBuf+1) extra 10-byte positions created by interpreting -1
+  ** (the value PoslistNext64() uses for EOF) as a position and appending
+  ** it to the output. This can happen at most once for each input 
+  ** position-list, hence (nBuf+1) 10 byte paddings.  */
+  if( sqlite3Fts5BufferSize(&p->rc, &out, nOut) ) return;
+
+  while( pHead ){
+    fts5MergeAppendDocid(&out, iLastRowid, pHead->iter.iRowid);
+
+    if( pHead->pNext && iLastRowid==pHead->pNext->iter.iRowid ){
+      /* Merge data from two or more poslists */
+      i64 iPrev = 0;
+      int nTmp = FTS5_DATA_ZERO_PADDING;
+      int nMerge = 0;
+      PrefixMerger *pSave = pHead;
+      PrefixMerger *pThis = 0;
+      int nTail = 0;
+
+      pHead = 0;
+      while( pSave && pSave->iter.iRowid==iLastRowid ){
+        PrefixMerger *pNext = pSave->pNext;
+        pSave->iOff = 0;
+        pSave->iPos = 0;
+        pSave->aPos = &pSave->iter.aPoslist[pSave->iter.nSize];
+        fts5PrefixMergerNextPosition(pSave);
+        nTmp += pSave->iter.nPoslist + 10;
+        nMerge++;
+        fts5PrefixMergerInsertByPosition(&pHead, pSave);
+        pSave = pNext;
+      }
+
+      if( pHead==0 || pHead->pNext==0 ){
+        p->rc = FTS5_CORRUPT;
+        break;
+      }
+
+      /* See the earlier comment in this function for an explanation of why
+      ** corrupt input position lists might cause the output to consume
+      ** at most nMerge*10 bytes of unexpected space. */
+      if( sqlite3Fts5BufferSize(&p->rc, &tmp, nTmp+nMerge*10) ){
+        break;
+      }
+      fts5BufferZero(&tmp);
+
+      pThis = pHead;
+      pHead = pThis->pNext;
+      sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, pThis->iPos);
+      fts5PrefixMergerNextPosition(pThis);
+      fts5PrefixMergerInsertByPosition(&pHead, pThis);
+
+      while( pHead->pNext ){
+        pThis = pHead;
+        if( pThis->iPos!=iPrev ){
+          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, pThis->iPos);
+        }
+        fts5PrefixMergerNextPosition(pThis);
+        pHead = pThis->pNext;
+        fts5PrefixMergerInsertByPosition(&pHead, pThis);
+      }
+
+      if( pHead->iPos!=iPrev ){
+        sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, pHead->iPos);
+      }
+      nTail = pHead->iter.nPoslist - pHead->iOff;
+
+      /* WRITEPOSLISTSIZE */
+      assert( tmp.n+nTail<=nTmp );
+      if( tmp.n+nTail>nTmp-FTS5_DATA_ZERO_PADDING ){
+        if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
+        break;
+      }
+      fts5BufferSafeAppendVarint(&out, (tmp.n+nTail) * 2);
+      fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
+      if( nTail>0 ){
+        fts5BufferSafeAppendBlob(&out, &pHead->aPos[pHead->iOff], nTail);
+      }
+
+      pHead = pSave;
+      for(i=0; i<nBuf+1; i++){
+        PrefixMerger *pThis = &aMerger[i];
+        if( pThis->iter.aPoslist && pThis->iter.iRowid==iLastRowid ){
+          fts5DoclistIterNext(&pThis->iter);
+          fts5PrefixMergerInsertByRowid(&pHead, pThis);
+        }
+      }
+
+    }else{
+      /* Copy poslist from pHead to output */
+      PrefixMerger *pThis = pHead;
+      Fts5DoclistIter *pI = &pThis->iter;
+      fts5BufferSafeAppendBlob(&out, pI->aPoslist, pI->nPoslist+pI->nSize);
+      fts5DoclistIterNext(pI);
+      pHead = pThis->pNext;
+      fts5PrefixMergerInsertByRowid(&pHead, pThis);
+    }
+  }
+
+  fts5BufferFree(p1);
+  fts5BufferFree(&tmp);
+  memset(&out.p[out.n], 0, FTS5_DATA_ZERO_PADDING);
+  *p1 = out;
 }
 
 static void fts5SetupPrefixIter(
@@ -5090,14 +5125,17 @@ static void fts5SetupPrefixIter(
 ){
   Fts5Structure *pStruct;
   Fts5Buffer *aBuf;
-  const int nBuf = 32;
+  int nBuf = 32;
+  int nMerge = 1;
 
-  void (*xMerge)(Fts5Index*, Fts5Buffer*, Fts5Buffer*);
+  void (*xMerge)(Fts5Index*, Fts5Buffer*, int, Fts5Buffer*);
   void (*xAppend)(Fts5Index*, i64, Fts5Iter*, Fts5Buffer*);
   if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
     xMerge = fts5MergeRowidLists;
     xAppend = fts5AppendRowid;
   }else{
+    nMerge = FTS5_MERGE_NLIST-1;
+    nBuf = nMerge*8;   /* Sufficient to merge (16^8)==(2^32) lists */
     xMerge = fts5MergePrefixLists;
     xAppend = fts5AppendPoslist;
   }
@@ -5158,13 +5196,21 @@ static void fts5SetupPrefixIter(
 
       if( p1->base.iRowid<=iLastRowid && doclist.n>0 ){
         for(i=0; p->rc==SQLITE_OK && doclist.n; i++){
-          assert( i<nBuf );
-          if( aBuf[i].n==0 ){
-            fts5BufferSwap(&doclist, &aBuf[i]);
-            fts5BufferZero(&doclist);
-          }else{
-            xMerge(p, &doclist, &aBuf[i]);
-            fts5BufferZero(&aBuf[i]);
+          int i1 = i*nMerge;
+          int iStore;
+          assert( i1+nMerge<=nBuf );
+          for(iStore=i1; iStore<i1+nMerge; iStore++){
+            if( aBuf[iStore].n==0 ){
+              fts5BufferSwap(&doclist, &aBuf[iStore]);
+              fts5BufferZero(&doclist);
+              break;
+            }
+          }
+          if( iStore==i1+nMerge ){
+            xMerge(p, &doclist, nMerge, &aBuf[i1]);
+            for(iStore=i1; iStore<i1+nMerge; iStore++){
+              fts5BufferZero(&aBuf[iStore]);
+            }
           }
         }
         iLastRowid = 0;
@@ -5174,11 +5220,15 @@ static void fts5SetupPrefixIter(
       iLastRowid = p1->base.iRowid;
     }
 
-    for(i=0; i<nBuf; i++){
+    assert( (nBuf%nMerge)==0 );
+    for(i=0; i<nBuf; i+=nMerge){
+      int iFree;
       if( p->rc==SQLITE_OK ){
-        xMerge(p, &doclist, &aBuf[i]);
+        xMerge(p, &doclist, nMerge, &aBuf[i]);
       }
-      fts5BufferFree(&aBuf[i]);
+      for(iFree=i; iFree<i+nMerge; iFree++){
+        fts5BufferFree(&aBuf[iFree]);
+      }
     }
     fts5MultiIterFree(p1);
 

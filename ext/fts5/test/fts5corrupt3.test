@@ -8544,7 +8544,7 @@ do_test 59.0 {
 
 do_catchsql_test 59.1 {
   SELECT (matchinfo(591,t1)) FROM t1 WHERE t1 MATCH 'e*e'
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 do_test 60.0 {
