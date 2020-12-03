@@ -1,5 +1,5 @@
-C Prevent\spotential\ssegfault\sin\sthe\ssqlite-expert\sidxPopulateStat1\scontext\scleanup\scode.
-D 2020-12-02T20:07:49.067
+C Enhance\sthe\sgenerate_series()\stable-valued\sfunction\sto\ssupport\snegative\nstep\svalues.
+D 2020-12-03T14:21:26.970
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -319,7 +319,7 @@ F ext/misc/regexp.c 246244c714267f303df76acf73dcf110cf2eaf076896aaaba8db6d6d21a1
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c fbb8e6be97b54d10d2f235e163fa2f53a8f4421c66ebd532a233fd1c69c3f522
+F ext/misc/series.c c6bd5d249e5199a1b55aeee4d0e6576ff3a68702fc475dbd64503a32903516c7
 F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
 F ext/misc/shathree.c 135b7c145db4a09b1650c3e7aff9cb538763a9a361e834c015dd1aaf8d5c9a00
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1887,7 +1887,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 78a7801d8fc9e58a62e5168e35b52b7440340549123fc6a537e2abd571f6fe7b
-R 0dc0314b410c18e6ec4d64c3768bbb3e
-U mistachkin
-Z 5b4a67e54f42477a3294e08cc064af19
+P c24f13448b5a55f45b4d4786a878fa73fe3395b5724f3bc2eea22e5e2b074353
+R ec29377d1f16dae2ba3a716418cfeb56
+U drh
+Z 6d9cf1c7027aa6d139c9ca5d0fe86df8
