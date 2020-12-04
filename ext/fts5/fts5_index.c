@@ -4899,8 +4899,9 @@ static void fts5MergeRowidLists(
   i64 iRowid2 = 0;
   i64 iOut = 0;
   Fts5Buffer *p2 = &aBuf[0];
-
   Fts5Buffer out;
+
+  (void)nBuf;
   memset(&out, 0, sizeof(out));
   assert( nBuf==1 );
   sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n);
@@ -5090,10 +5091,10 @@ static void fts5MergePrefixLists(
 
       pHead = pSave;
       for(i=0; i<nBuf+1; i++){
-        PrefixMerger *pThis = &aMerger[i];
-        if( pThis->iter.aPoslist && pThis->iter.iRowid==iLastRowid ){
-          fts5DoclistIterNext(&pThis->iter);
-          fts5PrefixMergerInsertByRowid(&pHead, pThis);
+        PrefixMerger *pX = &aMerger[i];
+        if( pX->iter.aPoslist && pX->iter.iRowid==iLastRowid ){
+          fts5DoclistIterNext(&pX->iter);
+          fts5PrefixMergerInsertByRowid(&pHead, pX);
         }
       }
 

@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\s".eqp"\scommand\sof\sthe\sshell\sthat\swas\sintroduced\sby\sthe\nrecent\ssqlite3SelectTrace/SQLITE_TESTCTRL_TRACEFLAGS\schanges.
-D 2020-12-04T16:58:20.287
+C Fix\sharmless\scompiler\swarnings\sassociated\swith\sthe\srecent\sFTS5\senhancements.
+D 2020-12-04T17:05:16.189
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -119,7 +119,7 @@ F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6
 F ext/fts5/fts5_config.c be54f44fca491e96c6923a4b9a736f2da2b13811600eb6e38d1bcc91c4ea2e61
 F ext/fts5/fts5_expr.c e527e3a7410393075598cec544e3831798a8c88b3e8878e2cfb7cb147113e925
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
-F ext/fts5/fts5_index.c 3f00c9889425c6c19a8e5f5b9a0cd67d2e27340567b4c20bbe102b4f624ecf5a
+F ext/fts5/fts5_index.c 7be3a7dcf4458a2d58a1c6ae0290921c9df226bff7eb9bc82f14e667b27aeb20
 F ext/fts5/fts5_main.c b4e4931c7fcc9acfa0c3b8b5e5e80b5b424b8d9207aae3a22b674bd35ccf149d
 F ext/fts5/fts5_storage.c 58ba71e6cd3d43a5735815e7956ee167babb4d2cbfe206905174792af4d09d75
 F ext/fts5/fts5_tcl.c 39bcbae507f594aad778172fa914cad0f585bf92fd3b078c686e249282db0d95
@@ -1887,7 +1887,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 932e05e093192991589e70c2cbcc8a57fb3dcc6df1c2673962bfd06ba5cfdd97
-R 72c47bd3b237b1831a726f9d8517bab8
+P fd02dffceb0e21cd85c99d5481ab8567110d01c30ea701178547f32299944302
+R d3c2d5d830919ec315662cc1d113703f
 U drh
-Z 9b9504ab938901a398e00c8416a51c09
+Z d16f9ab88139a6919756f891af8788a5
