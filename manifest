@@ -1,5 +1,5 @@
-C Eliminate\sthe\ssqlite3_unsupported_selecttrace\sglobal\svariable\sby\screating\na\snew\stest-control\sto\scontrol\sSELECT\stracing.\s\sNote\sthat\sSELECT\stracing\sis\nonly\savailable\son\sdebug\sbuilds.
-D 2020-12-04T16:09:27.683
+C Fix\san\sincorrect\sdatatype\sno\sthe\ssqlite3WhereTrace\svariable\sin\stest1.c.
+D 2020-12-04T16:25:59.508
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c 3543dcebd67dbe8eb35114d7ea1d4306e9aa6ac1dcc1f6bd40aa701ae20fc8ee
+F src/test1.c 2197966d2f7211ef9eefaa6c3c7dd2c7d786d1f33f2aadef2f08c8c79eceec26
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1887,8 +1887,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 026a93508ec392ca5cd2578ae9eab64974f58beccda088e10d4cc951f237632f 3a4c98b989964e3e366fe9519e9b5ed935e893d5b69d92bc0388a14c7e7938e6
-R 7e0eae4df77dd74014280bc6a83dc3cd
-T +closed 3a4c98b989964e3e366fe9519e9b5ed935e893d5b69d92bc0388a14c7e7938e6
+P fb07c4e3c7ad3493c274cbfcf0dffdedcca18c0d90de04459134511d4e2a5277
+R ec7dd2e987372222def1ec4ae2f714bf
 U drh
-Z f9a73407194c3537b2bea93de0e6ddbd
+Z 07f297f45f5db93080b5cfd3b5bf2b1d

@@ -8512,7 +8512,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern LONG volatile sqlite3_os_type;
 #endif
 #ifdef SQLITE_DEBUG
-  extern int sqlite3WhereTrace;
+  extern u32 sqlite3WhereTrace;
   extern int sqlite3OSTrace;
   extern int sqlite3WalTrace;
 #endif
