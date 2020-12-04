@@ -984,21 +984,35 @@ typedef INT16_TYPE LogEst;
 ** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
 ** the Select query generator tracing logic is turned on.
 */
-#if defined(SQLITE_ENABLE_SELECTTRACE)
-# define SELECTTRACE_ENABLED 1
-#else
-# define SELECTTRACE_ENABLED 0
+#if !defined(SQLITE_AMALGAMATION)
+extern u32 sqlite3SelectTrace;
 #endif
-#if defined(SQLITE_ENABLE_SELECTTRACE)
+#if defined(SQLITE_DEBUG) \
+    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE))
 # define SELECTTRACE_ENABLED 1
 # define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3_unsupported_selecttrace&(K))   \
+  if(sqlite3SelectTrace&(K))   \
     sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
 # define SELECTTRACE_ENABLED 0
 #endif
+
+/*
+** Macros for "wheretrace"
+*/
+#if !defined(SQLITE_AMAGAMATION)
+extern u32 sqlite3WhereTrace;
+#endif
+#if defined(SQLITE_DEBUG) \
+    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
+# define WHERETRACE(K,X)  if(sqlite3WhereTrace&(K)) sqlite3DebugPrintf X
+# define WHERETRACE_ENABLED 1
+#else
+# define WHERETRACE(K,X)
+#endif
+
 
 /*
 ** An instance of the following structure is used to store the busy-handler
@@ -4594,7 +4608,6 @@ extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
-extern u32 sqlite3_unsupported_selecttrace;
 #ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
 #endif
