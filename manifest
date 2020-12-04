@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\sin\swalvfs.test.
-D 2020-12-04T16:26:25.602
+C Ensure\sthat\sfts5\sfunction\smatchinfo()\sis\sregistered\sbefore\srunning\stests\sthat\suse\sit\sin\sfts5corrupt3.test.
+D 2020-12-04T16:49:25.140
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -160,7 +160,7 @@ F ext/fts5/test/fts5connect.test 08030168fc96fc278fa81f28654fb7e90566f33aff269c0
 F ext/fts5/test/fts5content.test 213506436fb2c87567b8e31f6d43ab30aab99354cec74ed679f22aad0cdbf283
 F ext/fts5/test/fts5corrupt.test 77ae6f41a7eba10620efb921cf7dbe218b0ef232b04519deb43581cb17a57ebe
 F ext/fts5/test/fts5corrupt2.test 7453752ba12ce91690c469a6449d412561cc604b1dec994e16ab132952e7805f
-F ext/fts5/test/fts5corrupt3.test 09225c23d76c5538aab5199e239b1ecd234e8c0dd52f3b18af6d2bafe85015b0
+F ext/fts5/test/fts5corrupt3.test 1c26a651ea7e52fd69d54436fe4f02f6dd1268bc8b48ab851c7e1d374aa242b9
 F ext/fts5/test/fts5corrupt4.test f4c08e2182a48d8b70975fd869ee5391855c06d8a0ff87b6a2529e7c5a88a1d3
 F ext/fts5/test/fts5delete.test 4a15fb03b6c7eac62ac807a3a32b7f0dc74f0d479c410e3e3568ae96b9469290
 F ext/fts5/test/fts5detail.test 31b240dbf6d44ac3507e2f8b65f29fdc12465ffd531212378c7ce1066766f54e
@@ -1887,7 +1887,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e6dab30f6d6795ecec9d8c4489fa4d210a3002715ad89812d65a1a846c164b9
-R 07161e41d5089cc6ef28f0415edcb9d6
+P 4c5076fbe42cc6447c47bfc202501f945f78bd716cbe8e33599c67b7d0956611
+R 8d18d605e8483c2f8c8d19c49ca4aafe
 U dan
-Z 7e2ee23c5c662414c726391354dad230
+Z 0f37f3e2444904cd3595dc4b87688ea8
