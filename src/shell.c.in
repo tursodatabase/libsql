@@ -2884,10 +2884,11 @@ static void explain_data_delete(ShellState *p){
 static unsigned int savedSelectTrace;
 static unsigned int savedWhereTrace;
 static void disable_debug_trace_modes(void){
+  unsigned int zero = 0;
   sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &savedSelectTrace);
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, 0);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &zero);
   sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 2, &savedWhereTrace);
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, 0);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &zero);
 }
 static void restore_debug_trace_modes(void){
   sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &savedSelectTrace);
