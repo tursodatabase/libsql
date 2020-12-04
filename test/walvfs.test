@@ -146,16 +146,23 @@ proc xWrite {method file args} {
     incr ::cnt -1
     if {$::cnt==0} {
       sqlite3_memdebug_fail 1 -repeat 0
-      catchsql { SELECT 'a big long string!' }
+      # For this test to pass, the following statement must call malloc() at 
+      # least once. Even if the lookaside is enabled.
+      set ::xwrite_stmt_res [catchsql { SELECT hex(randomblob(4000)) }]
       sqlite3_interrupt db
     }
   }
   return SQLITE_OK
 }
 
+set ::xwrite_stmt_res ""
 do_catchsql_test 3.2 {
   PRAGMA wal_checkpoint
 } {1 {out of memory}}
+do_test 3.2.2 {
+  set ::xwrite_stmt_res
+} {1 {out of memory}}
+unset ::xwrite_stmt_res
 
 #-------------------------------------------------------------------------
 #

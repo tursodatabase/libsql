@@ -17,19 +17,6 @@
 #ifndef SQLITE_WHEREINT_H
 #define SQLITE_WHEREINT_H
 
-/*
-** Trace output macros
-*/
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-/***/ extern int sqlite3WhereTrace;
-#endif
-#if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
-# define WHERETRACE(K,X)  if(sqlite3WhereTrace&(K)) sqlite3DebugPrintf X
-# define WHERETRACE_ENABLED 1
-#else
-# define WHERETRACE(K,X)
-#endif
 
 /* Forward references
 */

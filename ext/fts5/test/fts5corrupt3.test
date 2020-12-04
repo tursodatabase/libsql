@@ -8346,6 +8346,7 @@ do_catchsql_test 58.1 {
 #-------------------------------------------------------------------------
 do_test 59.0 {
   sqlite3 db {}
+  sqlite3_fts5_register_matchinfo db
   db deserialize [decode_hexdb {
 .open --hexdb
 | size 32768 pagesize 4096 filename crash-96b136358d01ec.db
@@ -8544,11 +8545,12 @@ do_test 59.0 {
 
 do_catchsql_test 59.1 {
   SELECT (matchinfo(591,t1)) FROM t1 WHERE t1 MATCH 'e*e'
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 do_test 60.0 {
   sqlite3 db {}
+  sqlite3_fts5_register_matchinfo db
   db deserialize [decode_hexdb {
 .open --hexdb
 | size 32768 pagesize 4096 filename crash-c77b90b929dc92.db

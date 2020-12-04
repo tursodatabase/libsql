@@ -7766,7 +7766,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_PRNG_SEED               28
 #define SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS     29
 #define SQLITE_TESTCTRL_SEEK_COUNT              30
-#define SQLITE_TESTCTRL_LAST                    30  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_TRACEFLAGS              31
+#define SQLITE_TESTCTRL_LAST                    31  /* Largest TESTCTRL */
 
 /*
 ** CAPI3REF: SQL Keyword Checking
