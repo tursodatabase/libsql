@@ -4265,17 +4265,15 @@ int sqlite3_test_control(int op, ...){
     **   op==3       Set sqlite3WhereTrace to the value *ptr
     */
     case SQLITE_TESTCTRL_TRACEFLAGS: {
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-       int op = va_arg(ap, int);
+       int opTrace = va_arg(ap, int);
        u32 *ptr = va_arg(ap, u32*);
-       switch( op ){
+       switch( opTrace ){
          case 0:   *ptr = sqlite3SelectTrace;      break;
          case 1:   sqlite3SelectTrace = *ptr;      break;
          case 2:   *ptr = sqlite3WhereTrace;       break;
          case 3:   sqlite3WhereTrace = *ptr;       break;
        }
        break;
-#endif
     }
   }
   va_end(ap);

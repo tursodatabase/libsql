@@ -1,5 +1,5 @@
-C Alternative\simplementation\sof\s".selecttrace"\sand\s".wheretrace"\sthat\suses\na\stest-control\srather\sthan\sglobal\svariables.
-D 2020-12-04T01:17:57.176
+C Further\schanges\sto\sthe\strace\svariables\sto\stry\sto\seliminate\s(harmless)\scompiler\nwarnings\sin\sall\sconfigurations.
+D 2020-12-04T16:04:45.699
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 7e081d33aab4a9d761c39dccf3c3872c35501565d2ed9db66301918d23bc7901
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
-F src/main.c ca3b209ea63b40eccee188b167d429b7147b26c48e69c72364e248fe5968c33b
+F src/main.c 97e9f137354bc1f76dc9bb60a0a24f8c45cf73b33e80d3ee4c64155336fb820d
 F src/malloc.c c1af4ac5a463648cd2953fd4ac679b3ba9022ce5ec794a60806150ad69dfd33a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -540,7 +540,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c9b68506e5d8cc8d0e4b307b97a9800b050ac37dada80ae9c66f680f8fac3e09
-F src/shell.c.in ff0d0cd5c6b871791ce254f0eec6afb6df2a8f59b0a03385951fbbce2e952472
+F src/shell.c.in 3568822723cea63b4a6c6ce0704c606d2ea207d4fe024c67729a105230d4b148
 F src/sqlite.h.in 0e2b4259e49a0eda54d9118eb18a04fcd60e0727a2fd2c81aade0bf57520e706
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1886,10 +1886,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a26b6597e3ae272231b96f9982c3bcc17ddec2f2b6eb4df06a224b91089fed5b
-R 19e8e719b0f66addec921087b9d4d053
-T *branch * traceflags-test-control
-T *sym-traceflags-test-control *
-T -sym-trunk *
+P d36d6f2923a2393c751c0ac7634433453be20df7567fd914e57cbb1ae15f68b2
+R ef71c1d96862a5ef1769c7803a088f57
 U drh
-Z 26dc3f5c826a9bad51cca1ef93b249e4
+Z 7ead96ffcfc794dcb28dd96880ba576c

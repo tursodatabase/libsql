@@ -9233,7 +9233,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
-    unsigned int x = nArg>=2 ? (int)integerValue(azArg[1]) : 0xffffffff;
+    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
     sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &x);
   }else
 
