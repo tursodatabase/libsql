@@ -119,8 +119,8 @@ You can adjust this behavior in a number of ways:
 * If you use the `bundled` feature, `libsqlite3-sys` will use the
   [cc](https://crates.io/crates/cc) crate to compile SQLite from source and
   link against that. This source is embedded in the `libsqlite3-sys` crate and
-  is currently SQLite 3.33.0 (as of `rusqlite` 0.24.1 / `libsqlite3-sys`
-  0.20.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
+  is currently SQLite 3.34.0 (as of `rusqlite` 0.24.1 / `libsqlite3-sys`
+  0.21.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
   ```toml
   [dependencies.rusqlite]
   version = "0.24.2"
