@@ -123,7 +123,7 @@ You can adjust this behavior in a number of ways:
   0.20.0).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
   ```toml
   [dependencies.rusqlite]
-  version = "0.24.1"
+  version = "0.24.2"
   features = ["bundled"]
   ```
 * You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
