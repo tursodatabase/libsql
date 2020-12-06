@@ -98,7 +98,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * `url` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
   `Url` type from the [`url` crate](https://crates.io/crates/url).
-* `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
+* `bundled` uses a bundled version of SQLite.  This is a good option for cases where linking to SQLite is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 * `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
 * `unlock_notify` for [Unlock](https://sqlite.org/unlock_notify.html) notification.
@@ -174,7 +174,7 @@ If you enable the `modern_sqlite` feature, we'll use the bindings we would have
 included with the bundled build. You generally should have `buildtime_bindgen`
 enabled if you turn this on, as otherwise you'll need to keep the version of
 SQLite you link with in sync with what rusqlite would have bundled, (usually the
-most recent release of sqlite). Failing to do this will cause a runtime error.
+most recent release of SQLite). Failing to do this will cause a runtime error.
 
 ## Contributing
 
