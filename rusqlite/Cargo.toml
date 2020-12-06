@@ -63,10 +63,10 @@ column_decltype = []
 wasm32-wasi-vfs = ["libsqlite3-sys/wasm32-wasi-vfs"]
 winsqlite3 = ["libsqlite3-sys/winsqlite3"]
 
-# Helper feature for enabling both `bundled` and most non-build-related optional
-# features or dependencies. This is useful for running tests / clippy / etc. New
-# features and optional dependencies that don't conflict with anything else
-# should be added here.
+# Helper feature for enabling both `bundled` and most non-build-related
+# optional features or dependencies (except `session`). This is useful for
+# running tests / clippy / etc. New features and optional dependencies that
+# don't conflict with anything else should be added here.
 bundled-full = [
     "array",
     "backup",
