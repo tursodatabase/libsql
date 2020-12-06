@@ -182,7 +182,7 @@ Rusqlite has many features, and many of them impact the build configuration in
 incompatible ways. This is unfortunate, and makes testing changes hard.
 
 To help here: you generally should ensure that you run tests/lint for
-`--features bundled`, and `--features bundled-full session buildtime_bindgen`.
+`--features bundled`, and `--features "bundled-full session buildtime_bindgen"`.
 
 If running bindgen is problematic for you, `--features bundled-full` enables
 bundled and all features which don't require binding generation, and can be used
@@ -192,9 +192,9 @@ instead.
 
 - Run `cargo fmt` to ensure your Rust code is correctly formatted.
 - Ensure `cargo clippy --all-targets --workspace --features bundled` passes without warnings.
-- Ensure `cargo test --all-targets --workspace --features bundled-full session buildtime_bindgen` reports no failures.
+- Ensure `cargo test --all-targets --workspace --features "bundled-full session buildtime_bindgen"` reports no failures.
 - Ensure `cargo test --all-targets --workspace --features bundled` reports no failures.
-- Ensure `cargo test --all-targets --workspace --features bundled-full session buildtime_bindgen` reports no failures.
+- Ensure `cargo test --all-targets --workspace --features "bundled-full session buildtime_bindgen"` reports no failures.
 
 ## Author
 
