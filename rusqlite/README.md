@@ -192,7 +192,7 @@ instead.
 
 - Run `cargo fmt` to ensure your Rust code is correctly formatted.
 - Ensure `cargo clippy --all-targets --workspace --features bundled` passes without warnings.
-- Ensure `cargo test --all-targets --workspace --features "bundled-full session buildtime_bindgen"` reports no failures.
+- Ensure `cargo clippy --all-targets --workspace --features "bundled-full session buildtime_bindgen"` passes without warnings.
 - Ensure `cargo test --all-targets --workspace --features bundled` reports no failures.
 - Ensure `cargo test --all-targets --workspace --features "bundled-full session buildtime_bindgen"` reports no failures.
 
