@@ -2021,7 +2021,7 @@ static void math1Func(
   int argc,
   sqlite3_value **argv
 ){
-  assert( argc==2 );
+  assert( argc==1 );
   int type0;
   double v0, ans;
   double (*x)(double);
