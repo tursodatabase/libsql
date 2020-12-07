@@ -589,7 +589,7 @@ fi
 ##########
 # Do we want to support math functions
 #
-AC_ARG_ENABLE(threadsafe, 
+AC_ARG_ENABLE(math, 
 AC_HELP_STRING([--disable-math],[Disable math functions]))
 AC_MSG_CHECKING([whether to support math functions])
 if test "$enable_math" = "no"; then
