@@ -1904,6 +1904,75 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   return 1;
 }
 
+/* Extra math functions that require linking with -lm
+*/
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+/*
+** Implementation SQL functions:
+**
+**   ceil(X)
+**   ceiling(X)
+**   floor(X)
+**
+** The sqlite3_user_data() pointer is a pointer to the libm implementation
+** of the underlying C function.
+*/
+static void ceilingFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( argc==1 );
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_INTEGER:
+       sqlite3_result_int64(context, sqlite3_value_int64(argv[0]));
+       break;
+    case SQLITE_NULL:
+       break;
+    default: {
+       double (*x)(double) = (double(*)(double))sqlite3_user_data(context);
+       sqlite3_result_double(context, x(sqlite3_value_double(argv[0])));
+       break;
+    }
+  }
+}
+
+/*
+** Implementation of SQL functions:
+**
+**   ln(X)       - natural logarithm
+**   log(X)      - log base 10
+**   log10(X)    - log base 10
+**   log(X,Y)    - log base Y
+*/
+static void logFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  double x, y, ans;
+  assert( argc==1 || argc==2 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL
+   || (x = sqlite3_value_double(argv[0]))<0.0
+  ){
+    return;  /* Return NULL for a domain error */
+  }
+  ans = log(x);
+  if( argc==2 ){
+    if( sqlite3_value_type(argv[1])==SQLITE_NULL
+     || (y = sqlite3_value_double(argv[1]))<0.0
+    ){
+      return;  /* Return NULL for a domain error */
+    }
+    ans /= log(y);
+  }else if( sqlite3_user_data(context)!=0 ){
+    /* Convert from natural logarithm to log base 10 */
+    ans *= 0.43429448190325178672;
+  }
+  sqlite3_result_double(context, ans);
+}
+#endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
+
 /*
 ** All of the FuncDef structures in the aBuiltinFunc[] array above
 ** to the global function hash table.  This occurs at start-time (as
@@ -2024,6 +2093,15 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(coalesce,           0, 0, 0, 0                ),
     INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
     INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+    MFUNCTION(ceil,              1, ceil,      ceilingFunc ),
+    MFUNCTION(ceiling,           1, ceil,      ceilingFunc ),
+    MFUNCTION(floor,             1, floor,     ceilingFunc ),
+    FUNCTION(ln,                 1, 0, 0,      logFunc     ),
+    FUNCTION(log,                1, 1, 0,      logFunc     ),
+    FUNCTION(log10,              1, 1, 0,      logFunc     ),
+    FUNCTION(log,                2, 0, 0,      logFunc     ),
+#endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();

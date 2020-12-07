@@ -1864,6 +1864,9 @@ struct FuncDestructor {
 **     a single query.  The iArg is ignored.  The user-data is always set
 **     to a NULL pointer.  The bNC parameter is not used.
 **
+**   MFUNCTION(zName, nArg, xPtr, xFunc)
+**     For math-library functions.  xPtr is an arbitrary pointer.
+**
 **   PURE_DATE(zName, nArg, iArg, bNC, xFunc)
 **     Used for "pure" date/time functions, this macro is like DFUNCTION
 **     except that it does set the SQLITE_FUNC_CONSTANT flags.  iArg is
@@ -1899,6 +1902,9 @@ struct FuncDestructor {
 #define SFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8|SQLITE_DIRECTONLY|SQLITE_FUNC_UNSAFE, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
+#define MFUNCTION(zName, nArg, xPtr, xFunc) \
+  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
+   xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
   {nArg, SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
    SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
