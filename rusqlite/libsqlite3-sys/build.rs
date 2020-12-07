@@ -138,18 +138,18 @@ mod build_bundled {
         }
         println!("cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH");
 
-        if let Ok(extras) = env::var("LIBSQLITE3_FLAGS") {
+        if let Ok(extras) = env::var("SQLITE_FLAGS") {
             for extra in extras.split_whitespace() {
                 if extra.starts_with("-D") || extra.starts_with("-U") {
                     cfg.flag(extra);
                 } else if extra.starts_with("SQLITE_") {
                     cfg.flag(&format!("-D{}", extra));
                 } else {
-                    panic!("Don't understand {} in LIBSQLITE3_FLAGS", extra);
+                    panic!("Don't understand {} in SQLITE_FLAGS", extra);
                 }
             }
         }
-        println!("cargo:rerun-if-env-changed=LIBSQLITE3_FLAGS");
+        println!("cargo:rerun-if-env-changed=SQLITE_FLAGS");
 
         cfg.compile("libsqlite3.a");
 
