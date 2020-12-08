@@ -139,6 +139,7 @@ You can adjust this behavior in a number of ways:
   options. The default when using vcpkg is to dynamically link,
   which must be enabled by setting `VCPKGRS_DYNAMIC=1` environment variable before build.
   `vcpkg install sqlite3:x64-windows` will install the required library.
+* When linking against a SQLite library already on the system, you can set the `SQLITE3_STATIC` environment variable to 1 to request that the library be statically instead of dynamically linked.
 
 
 ### Binding generation
