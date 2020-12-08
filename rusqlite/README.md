@@ -131,6 +131,7 @@ You can adjust this behavior in a number of ways:
   version = "0.24.2"
   features = ["bundled"]
   ```
+* When using the `bundled` feature, the build script will honor `SQLITE_MAX_VARIABLE_NUMBER` and `SQLITE_MAX_EXPR_DEPTH` variables.
 
 * When linking against a SQLite library already on the system (so *not* using the `bundled` feature), you can set the `SQLITE3_LIB_DIR` environment variable to point to a directory containing the library. You can also set the `SQLITE3_INCLUDE_DIR` variable to point to the directory containing `sqlite3.h`.
 * Installing the sqlite3 development packages will usually be all that is required, but
