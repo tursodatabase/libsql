@@ -3071,6 +3071,7 @@ struct Upsert {
   Expr *pUpsertTargetWhere; /* WHERE clause for partial index targets */
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
+  Upsert *pNextUpsert;      /* Next ON CONFLICT clause in the list */
   /* The fields above comprise the parse tree for the upsert clause.
   ** The fields below are used to transfer information from the INSERT
   ** processing down into the UPDATE processing while generating code.
@@ -4824,15 +4825,15 @@ const char *sqlite3JournalModename(int);
 #define sqlite3WithDelete(x,y)
 #endif
 #ifndef SQLITE_OMIT_UPSERT
-  Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*);
+  Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*,Upsert*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
   int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
   void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
 #else
-#define sqlite3UpsertNew(v,w,x,y,z) ((Upsert*)0)
+#define sqlite3UpsertNew(u,v,w,x,y,z) ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)
-#define sqlite3UpsertDup(x,y)       ((Upsert*)0)
+#define sqlite3UpsertDup(x,y)         ((Upsert*)0)
 #endif
 
 
