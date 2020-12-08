@@ -3572,13 +3572,6 @@ case OP_Transaction: {
    && (iMeta!=pOp->p3
       || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
   ){
-    /*
-    ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
-    ** version is checked to ensure that the schema has not changed since the
-    ** SQL statement was prepared.
-    */
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
     ** stored with the in-memory representation of the schema, do
     ** not reload the schema from the database file.
@@ -3595,6 +3588,13 @@ case OP_Transaction: {
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
       sqlite3ResetOneSchema(db, pOp->p1);
     }
+    /*
+    ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
+    ** version is checked to ensure that the schema has not changed since the
+    ** SQL statement was prepared.
+    */
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     p->expired = 1;
     rc = SQLITE_SCHEMA;
   }
@@ -5140,6 +5140,30 @@ case OP_Insert: {
            (pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT,
            zDb, pTab->zName, x.nKey);
   }
+  break;
+}
+
+/* Opcode: Transfer P1 P2 P3 * *
+** Synopsis: intkey=r[P3]
+**
+** P1 and P2 are both cursors open on either intkey or index btrees. This
+** instruction reads the current row from P2 and writes it into the
+** table opened by P1. If P1 and P2 are opened on intkey tables, register
+** P3 contains the rowid value to use when inserting into P1.
+*/
+case OP_Transfer: {
+  VdbeCursor *pDest;              /* Cursor to write to */
+  VdbeCursor *pSrc;               /* Cursor to read from */
+  i64 iKey;                       /* Rowid value to insert with */
+
+  pDest = p->apCsr[pOp->p1];
+  pSrc = p->apCsr[pOp->p2];
+  iKey = aMem[pOp->p3].u.i;
+
+  rc = sqlite3BtreeTransfer(
+      pDest->uc.pCursor, pSrc->uc.pCursor, iKey, pDest->seekResult
+  );
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
   break;
 }
 

@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sassert()\sin\smath1Func().
-D 2020-12-07T23:14:25.210
+C Experimental\schanges\sto\svacuum\sto\savoid\sloading\slarge\srecords\sentirely\sinto\smemory.\sCurrently\sonly\sworks\sin\slimited\scases\sonly\s-\sfor\srowid\stables\swhen\sthe\spage-size\sdoes\snot\schange.
+D 2020-12-08T20:19:07.385
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,8 +481,8 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ee14224322b9e4172d01e691e2f289f6c630ae39b7906f84b72dc780b9e42a76
-F src/btree.h dcdff4037d75b3f032a5de0d922fcfaf35d48589417f634fa8627362709315f9
+F src/btree.c 6d5cfd0e411e1db8042c94593a4847d85fc5398fa4860689d6f0d74cefa4e534
+F src/btree.h cff4cd182eb0d97802d82f398e4c8447f01bd2f5e501f70386b1097c910091cb
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
 F src/build.c f6449d4e85e998e14d3f537e8ea898dca2fcb83c277db3e60945af9b9177db81
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
@@ -501,7 +501,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 7e081d33aab4a9d761c39dccf3c3872c35501565d2ed9db66301918d23bc7901
+F src/insert.c a64406fb5ae856fb30be018423eec9984a60a9b46d261447717c502b1fb781d3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 97e9f137354bc1f76dc9bb60a0a24f8c45cf73b33e80d3ee4c64155336fb820d
@@ -612,7 +612,7 @@ F src/upsert.c 2920de71b20f04fe25eb00b655d086f0ba60ea133c59d7fa3325c49838818e78
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c0c7977de7ef9b8cb10f6c85f2d0557889a658f817b0455909a49179ba4c8002
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c d24a43b6b1ed2dba893636a14f5e56001444ab3fd5465e3bca8ab01799840acd
+F src/vdbe.c 77fd09a782f72d5ff6e69363353e80e31d26bedd1d187e8813d781c74ba15770
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1888,7 +1888,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99ff6418492adcbaf2be728737735afa1c2997de5868395e69c53d08fc14491f
-R 747ed0f69719082482a4ff82786fa288
-U drh
-Z ac855459dfaf775bb9ffc51142afdf45
+P 4b286129138d44e6f8e9b3450289941e01d20fdfb9d0b5d846031425e8ca6b49
+R ebe894c92d077c4bc1f846403c247ebe
+T *branch * vacuum-lomem
+T *sym-vacuum-lomem *
+T -sym-trunk *
+U dan
+Z e00eb83dabf2298b62b079f62bce894b

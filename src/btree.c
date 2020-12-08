@@ -6500,6 +6500,10 @@ static int fillInCell(
   /* Fill in the header. */
   nHeader = pPage->childPtrSize;
   if( pPage->intKey ){
+    if( pX->pData==(const void*)pPage->pBt->pTmpSpace ){
+      *pnSize = pX->nData;
+      return SQLITE_OK;
+    }
     nPayload = pX->nData + pX->nZero;
     pSrc = pX->pData;
     nSrc = pX->nData;
@@ -8909,6 +8913,85 @@ int sqlite3BtreeInsert(
   assert( pCur->iPage<0 || pCur->pPage->nOverflow==0 );
 
 end_insert:
+  return rc;
+}
+
+int sqlite3BtreeTransfer(
+  BtCursor *pDest,
+  BtCursor *pSrc,
+  i64 iKey,
+  int seekResult
+){
+  int rc = SQLITE_OK;
+  BtreePayload x;
+
+  memset(&x, 0, sizeof(x));
+  x.nKey = iKey;
+  getCellInfo(pSrc);
+  if( pDest->pBt->usableSize!=pSrc->pBt->usableSize ){
+    void *pFree = 0;
+    x.nData = pSrc->info.nPayload;
+    if( pSrc->info.nLocal==pSrc->info.nPayload ){
+      x.pData = pSrc->info.pPayload;
+    }else{
+      x.pData = pFree = sqlite3_malloc(pSrc->info.nPayload);
+      if( pFree==0 ){
+        rc = SQLITE_NOMEM_BKPT;
+      }else{
+        rc = sqlite3BtreePayload(pSrc, 0, x.nData, pFree);
+      }
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3BtreeInsert(pDest, &x, OPFLAG_APPEND, seekResult);
+    }
+    sqlite3_free(pFree);
+  }else{
+    /* Page sizes match. This means each overflow page (if any) and the 
+    ** cell itself can be copied verbatim. */
+    u8 *pCell = pDest->pBt->pTmpSpace;
+    x.pData = pCell;
+    x.nData = putVarint32(pCell, pSrc->info.nPayload);
+    x.nData += putVarint(&pCell[x.nData], iKey);
+    memcpy(&pCell[x.nData], pSrc->info.pPayload, pSrc->info.nLocal);
+    x.nData += pSrc->info.nLocal;
+    assert( pSrc->info.nLocal<=pSrc->info.nPayload );
+    if( pSrc->info.nLocal<pSrc->info.nPayload ){
+      Pager *pSrcPager = pSrc->pBt->pPager;
+      u8 *pPgno = &pCell[x.nData];
+      Pgno ovfl; 
+      x.nData += 4;
+      ovfl = get4byte(pSrc->info.pPayload + pSrc->info.nLocal);
+      do{
+        MemPage *pNew = 0;
+        Pgno pgnoNew = 0;
+        if( rc==SQLITE_OK ){
+          rc = allocateBtreePage(pDest->pBt, &pNew, &pgnoNew, 0, 0);
+          put4byte(pPgno, pgnoNew);
+        }
+        if( rc==SQLITE_OK ){
+          pPgno = pNew->aData;
+          rc = sqlite3PagerWrite(pNew->pDbPage);
+        }
+        if( rc==SQLITE_OK ){
+          DbPage *pOrig = 0;
+          void *pOrigData;
+          rc = sqlite3PagerGet(pSrcPager, ovfl, &pOrig, PAGER_GET_READONLY);
+          if( rc==SQLITE_OK ){
+            pOrigData = sqlite3PagerGetData(pOrig);
+            memcpy(pNew->aData, pOrigData, pDest->pBt->usableSize);
+            put4byte(pNew->aData, 0);
+            ovfl = get4byte(pOrigData);
+          }
+          sqlite3PagerUnref(pOrig);
+        }
+        releasePage(pNew);
+      }while( rc==SQLITE_OK && ovfl>0 );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3BtreeInsert(pDest, &x, OPFLAG_APPEND, seekResult);
+    }
+  }
+
   return rc;
 }
 
