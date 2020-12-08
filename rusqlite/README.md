@@ -131,14 +131,15 @@ You can adjust this behavior in a number of ways:
   version = "0.24.2"
   features = ["bundled"]
   ```
-* You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
-  library.
+
+* When linking against a SQLite library already on the system (so *not* using the `bundled` feature), you can set the `SQLITE3_LIB_DIR` environment variable to point to a directory containing the library. You can also set the `SQLITE3_INCLUDE_DIR` variable to point to the directory containing `sqlite3.h`.
 * Installing the sqlite3 development packages will usually be all that is required, but
   the build helpers for [pkg-config](https://github.com/alexcrichton/pkg-config-rs)
   and [vcpkg](https://github.com/mcgoo/vcpkg-rs) have some additional configuration
   options. The default when using vcpkg is to dynamically link,
   which must be enabled by setting `VCPKGRS_DYNAMIC=1` environment variable before build.
   `vcpkg install sqlite3:x64-windows` will install the required library.
+
 
 ### Binding generation
 
