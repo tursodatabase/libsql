@@ -2304,16 +2304,22 @@ struct FKey {
 ** is returned.  REPLACE means that preexisting database rows that caused
 ** a UNIQUE constraint violation are removed so that the new insert or
 ** update can proceed.  Processing continues and no error is reported.
+** UPDATE applies to insert operations only and means that the insert
+** is omitted and the DO UPDATE clause of an upsert is run instead.
 **
-** RESTRICT, SETNULL, and CASCADE actions apply only to foreign keys.
+** RESTRICT, SETNULL, SETDFLT, and CASCADE actions apply only to foreign keys.
 ** RESTRICT is the same as ABORT for IMMEDIATE foreign keys and the
 ** same as ROLLBACK for DEFERRED keys.  SETNULL means that the foreign
-** key is set to NULL.  CASCADE means that a DELETE or UPDATE of the
+** key is set to NULL.  SETDFLT means that the foreign key is set
+** to its default value.  CASCADE means that a DELETE or UPDATE of the
 ** referenced table row is propagated into the row that holds the
 ** foreign key.
 **
+** The OE_Default value is a place holder that means to use whatever
+** conflict resolution algorthm is required from context.
+**
 ** The following symbolic values are used to record which type
-** of action to take.
+** of conflict resolution action to take.
 */
 #define OE_None     0   /* There is no constraint to check */
 #define OE_Rollback 1   /* Fail the operation and rollback the transaction */
@@ -3067,7 +3073,7 @@ struct NameContext {
 ** WHERE clause is omitted.
 */
 struct Upsert {
-  ExprList *pUpsertTarget;  /* Optional description of conflicting index */
+  ExprList *pUpsertTarget;  /* Optional description of conflict target */
   Expr *pUpsertTargetWhere; /* WHERE clause for partial index targets */
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
