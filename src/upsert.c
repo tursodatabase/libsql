@@ -25,6 +25,7 @@ static void SQLITE_NOINLINE upsertDelete(sqlite3 *db, Upsert *p){
     sqlite3ExprDelete(db, p->pUpsertTargetWhere);
     sqlite3ExprListDelete(db, p->pUpsertSet);
     sqlite3ExprDelete(db, p->pUpsertWhere);
+    sqlite3DbFree(db, p->pIdxList);
     sqlite3DbFree(db, p);
     p = pNext;
   }while( p );
@@ -60,7 +61,7 @@ Upsert *sqlite3UpsertNew(
   Upsert *pNext          /* Next ON CONFLICT clause in the list */
 ){
   Upsert *pNew;
-  pNew = sqlite3DbMallocRaw(db, sizeof(Upsert));
+  pNew = sqlite3DbMallocZero(db, sizeof(Upsert));
   if( pNew==0 ){
     sqlite3ExprListDelete(db, pTarget);
     sqlite3ExprDelete(db, pTargetWhere);
@@ -73,7 +74,6 @@ Upsert *sqlite3UpsertNew(
     pNew->pUpsertTargetWhere = pTargetWhere;
     pNew->pUpsertSet = pSet;
     pNew->pUpsertWhere = pWhere;
-    pNew->pUpsertIdx = 0;
     pNew->pNextUpsert = pNext;
   }
   return pNew;

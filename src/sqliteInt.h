@@ -3078,10 +3078,14 @@ struct Upsert {
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
   Upsert *pNextUpsert;      /* Next ON CONFLICT clause in the list */
-  /* The fields above comprise the parse tree for the upsert clause.
-  ** The fields below are used to transfer information from the INSERT
-  ** processing down into the UPDATE processing while generating code.
-  ** Upsert owns the memory allocated above, but not the memory below. */
+  /* Above this point is the parse tree for the ON CONFLICT clauses.
+  ** The next group of fields stores intermediate data. */
+  Index *pIdxList;
+  /* All fields above are owned by the Upsert object and must be freed
+  ** when the Upsert is destroyed.  The fields below are used to transfer
+  ** information from the INSERT processing down into the UPDATE processing
+  ** while generating code.  The fields below are owned by the INSERT
+  ** statement and will be freed by INSERT processing. */
   Index *pUpsertIdx;        /* Constraint that pUpsertTarget identifies */
   SrcList *pUpsertSrc;      /* Table to be updated */
   int regData;              /* First register holding array of VALUES */
