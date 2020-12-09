@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sassert()\sin\smath1Func().
-D 2020-12-07T23:14:25.210
+C Add\stests\sfor\sa\s'delete'\scommand\son\sa\scontentless\stable\swhere\svalues\sthat\sweren't\sactually\sinserted\sare\sNULL.
+D 2020-12-09T16:49:28.314
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -162,7 +162,7 @@ F ext/fts5/test/fts5corrupt.test 77ae6f41a7eba10620efb921cf7dbe218b0ef232b04519d
 F ext/fts5/test/fts5corrupt2.test 7453752ba12ce91690c469a6449d412561cc604b1dec994e16ab132952e7805f
 F ext/fts5/test/fts5corrupt3.test 1c26a651ea7e52fd69d54436fe4f02f6dd1268bc8b48ab851c7e1d374aa242b9
 F ext/fts5/test/fts5corrupt4.test f4c08e2182a48d8b70975fd869ee5391855c06d8a0ff87b6a2529e7c5a88a1d3
-F ext/fts5/test/fts5delete.test 4a15fb03b6c7eac62ac807a3a32b7f0dc74f0d479c410e3e3568ae96b9469290
+F ext/fts5/test/fts5delete.test 619295b20dbc1d840b403ee07c878f52378849c3c02e44f2ee143b3e978a0aa7
 F ext/fts5/test/fts5detail.test 31b240dbf6d44ac3507e2f8b65f29fdc12465ffd531212378c7ce1066766f54e
 F ext/fts5/test/fts5determin.test 1b77879b2ae818b5b71c859e534ee334dac088b7cf3ff3bf76a2c82b1c788d11
 F ext/fts5/test/fts5dlidx.test b90852c55881b29dbac6380b274de27beae623ac4b6d567c6c8fb9cdc315a86e
@@ -1888,7 +1888,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99ff6418492adcbaf2be728737735afa1c2997de5868395e69c53d08fc14491f
-R 747ed0f69719082482a4ff82786fa288
-U drh
-Z ac855459dfaf775bb9ffc51142afdf45
+P 4b286129138d44e6f8e9b3450289941e01d20fdfb9d0b5d846031425e8ca6b49
+R 37fc0afc3fe30eb3e2571a975a076869
+U dan
+Z 8a4734d621babbb70002204527e1408c
