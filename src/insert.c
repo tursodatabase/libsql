@@ -2851,13 +2851,16 @@ static int xferOptimization(
       if( i==pSrcIdx->nColumn ){
         idxInsFlags = OPFLAG_USESEEKRESULT;
         sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
+        sqlite3VdbeAddOp3(v, OP_Transfer, iDest, iSrc, 0);
       }
     }else if( !HasRowid(pSrc) && pDestIdx->idxType==SQLITE_IDXTYPE_PRIMARYKEY ){
       idxInsFlags |= OPFLAG_NCHANGE;
     }
-    sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-    sqlite3VdbeAddOp2(v, OP_IdxInsert, iDest, regData);
-    sqlite3VdbeChangeP5(v, idxInsFlags|OPFLAG_APPEND);
+    if( idxInsFlags!=OPFLAG_USESEEKRESULT ){
+      sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, iDest, regData);
+      sqlite3VdbeChangeP5(v, idxInsFlags|OPFLAG_APPEND);
+    }
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);

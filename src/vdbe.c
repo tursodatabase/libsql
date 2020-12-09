@@ -5158,7 +5158,7 @@ case OP_Transfer: {
 
   pDest = p->apCsr[pOp->p1];
   pSrc = p->apCsr[pOp->p2];
-  iKey = aMem[pOp->p3].u.i;
+  iKey = pOp->p3 ? aMem[pOp->p3].u.i : 0;
 
   rc = sqlite3BtreeTransfer(
       pDest->uc.pCursor, pSrc->uc.pCursor, iKey, pDest->seekResult

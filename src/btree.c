@@ -6518,10 +6518,6 @@ static int fillInCell(
   /* Fill in the header. */
   nHeader = pPage->childPtrSize;
   if( pPage->intKey ){
-    if( pX->nZero<0 ){
-      *pnSize = pX->nData;
-      return SQLITE_OK;
-    }
     nPayload = pX->nData + pX->nZero;
     pSrc = pX->pData;
     nSrc = pX->nData;
@@ -8682,7 +8678,8 @@ int sqlite3BtreeInsert(
   unsigned char *oldCell;
   unsigned char *newCell = 0;
 
-  assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND))==flags );
+  assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND|BTREE_PREFORMAT))==flags );
+  assert( (flags & BTREE_PREFORMAT)==0 || seekResult );
 
   if( pCur->eState==CURSOR_FAULT ){
     assert( pCur->skipNext!=SQLITE_OK );
@@ -8700,7 +8697,7 @@ int sqlite3BtreeInsert(
   ** keys with no associated data. If the cursor was opened expecting an
   ** intkey table, the caller should be inserting integer keys with a
   ** blob of associated data.  */
-  assert( (pX->pKey==0)==(pCur->pKeyInfo==0) );
+  assert( (pX->pKey==0)==(pCur->pKeyInfo==0) || (flags & BTREE_PREFORMAT) );
 
   /* Save the positions of any other cursors open on this table.
   **
@@ -8810,7 +8807,7 @@ int sqlite3BtreeInsert(
        || CORRUPT_DB );
 
   pPage = pCur->pPage;
-  assert( pPage->intKey || pX->nKey>=0 );
+  assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );
   assert( pPage->leaf || !pPage->intKey );
   if( pPage->nFree<0 ){
     if( pCur->eState>CURSOR_INVALID ){
@@ -8827,8 +8824,15 @@ int sqlite3BtreeInsert(
   assert( pPage->isInit );
   newCell = pBt->pTmpSpace;
   assert( newCell!=0 );
-  rc = fillInCell(pPage, newCell, pX, &szNew);
-  if( rc ) goto end_insert;
+  if( flags & BTREE_PREFORMAT ){
+    assert( pX->pData==pBt->pTmpSpace );
+    szNew = pX->nData;
+    if( szNew<4 ) szNew = 4;
+    rc = SQLITE_OK;
+  }else{
+    rc = fillInCell(pPage, newCell, pX, &szNew);
+    if( rc ) goto end_insert;
+  }
   assert( szNew==pPage->xCellSize(pPage, newCell) );
   assert( szNew <= MX_CELL_SIZE(pBt) );
   idx = pCur->ix;
@@ -8959,9 +8963,8 @@ int sqlite3BtreeTransfer(
   getCellInfo(pSrc);
 
   x.pData = pCell;
-  x.nData = putVarint32(pCell, pSrc->info.nPayload);
-  x.nData += putVarint(&pCell[x.nData], iKey);
-  x.nZero = -1;
+  x.nData += putVarint32(pCell, pSrc->info.nPayload);
+  if( pDest->pKeyInfo==0 ) x.nData += putVarint(&pCell[x.nData], iKey);
 
   nOut = btreePayloadToLocal(pDest->pPage, pSrc->info.nPayload);
   aOut = &pCell[x.nData];
@@ -9024,7 +9027,8 @@ int sqlite3BtreeTransfer(
   sqlite3PagerUnref(pPageIn);
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeInsert(pDest, &x, OPFLAG_APPEND, seekResult);
+    int flags = BTREE_APPEND|BTREE_PREFORMAT;
+    rc = sqlite3BtreeInsert(pDest, &x, flags, seekResult);
   }
 
   return rc;
