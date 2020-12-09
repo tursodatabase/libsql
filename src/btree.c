@@ -1144,6 +1144,24 @@ static SQLITE_NOINLINE void btreeParseCellAdjustSizeForOverflow(
 }
 
 /*
+** Given a record with nPayload bytes of payload stored within btree
+** page pPage, return the number of bytes of payload stored locally.
+*/
+static int btreePayloadToLocal(MemPage *pPage, int nPayload){
+  int maxLocal;  /* Maximum amount of payload held locally */
+  maxLocal = pPage->maxLocal;
+  if( nPayload<=maxLocal ){
+    return nPayload;
+  }else{
+    int minLocal;  /* Minimum amount of payload held locally */
+    int surplus;   /* Overflow payload available for local storage */
+    minLocal = pPage->minLocal;
+    surplus = minLocal + (nPayload - minLocal)%(pPage->pBt->usableSize-4);
+    return ( surplus <= maxLocal ) ? surplus : minLocal;
+  }
+}
+
+/*
 ** The following routines are implementations of the MemPage.xParseCell()
 ** method.
 **
@@ -6500,7 +6518,7 @@ static int fillInCell(
   /* Fill in the header. */
   nHeader = pPage->childPtrSize;
   if( pPage->intKey ){
-    if( pX->pData==(const void*)pPage->pBt->pTmpSpace ){
+    if( pX->nZero<0 ){
       *pnSize = pX->nData;
       return SQLITE_OK;
     }
@@ -8924,72 +8942,89 @@ int sqlite3BtreeTransfer(
 ){
   int rc = SQLITE_OK;
   BtreePayload x;
+  Pager *pSrcPager = pSrc->pBt->pPager;
+  u8 *pCell = pDest->pBt->pTmpSpace;
+  u8 *aOut;                     /* Pointer to next output buffer */
+  int nOut;                     /* Size of output buffer aOut[] */
+  const u8 *aIn;                /* Pointer to next input buffer */
+  int nIn;                      /* Size of input buffer aIn[] */
+  int nRem;                     /* Bytes of data still to copy */
+  u8 *pPgnoOut = 0;
+  Pgno ovflIn = 0;
+  DbPage *pPageIn = 0;
+  MemPage *pPageOut = 0;
 
   memset(&x, 0, sizeof(x));
   x.nKey = iKey;
   getCellInfo(pSrc);
-  if( pDest->pBt->usableSize!=pSrc->pBt->usableSize ){
-    void *pFree = 0;
-    x.nData = pSrc->info.nPayload;
-    if( pSrc->info.nLocal==pSrc->info.nPayload ){
-      x.pData = pSrc->info.pPayload;
-    }else{
-      x.pData = pFree = sqlite3_malloc(pSrc->info.nPayload);
-      if( pFree==0 ){
-        rc = SQLITE_NOMEM_BKPT;
-      }else{
-        rc = sqlite3BtreePayload(pSrc, 0, x.nData, pFree);
+
+  x.pData = pCell;
+  x.nData = putVarint32(pCell, pSrc->info.nPayload);
+  x.nData += putVarint(&pCell[x.nData], iKey);
+  x.nZero = -1;
+
+  nOut = btreePayloadToLocal(pDest->pPage, pSrc->info.nPayload);
+  aOut = &pCell[x.nData];
+  nIn = pSrc->info.nLocal;
+  aIn = pSrc->info.pPayload;
+  nRem = pSrc->info.nPayload;
+
+  x.nData += nOut;
+  if( nOut<pSrc->info.nPayload ){
+    pPgnoOut = &pCell[x.nData];
+    x.nData += 4;
+  }
+
+  if( nRem>nIn ){
+    ovflIn = get4byte(&pSrc->info.pPayload[nIn]);
+  }
+
+  do {
+    nRem -= nOut;
+    do{
+      assert( nOut>0 );
+      if( nIn>0 ){
+        int nCopy = MIN(nOut, nIn);
+        memcpy(aOut, aIn, nCopy);
+        nOut -= nCopy;
+        nIn -= nCopy;
+        aOut += nCopy;
+        aIn += nCopy;
+      }
+      if( nOut>0 ){
+        sqlite3PagerUnref(pPageIn);
+        pPageIn = 0;
+        rc = sqlite3PagerGet(pSrcPager, ovflIn, &pPageIn, PAGER_GET_READONLY);
+        if( rc==SQLITE_OK ){
+          aIn = (const u8*)sqlite3PagerGetData(pPageIn);
+          ovflIn = get4byte(aIn);
+          aIn += 4;
+          nIn = pSrc->pBt->usableSize - 4;
+        }
+      }
+    }while( rc==SQLITE_OK && nOut>0 );
+
+    if( rc==SQLITE_OK && nRem>0 ){
+      Pgno pgnoNew;
+      MemPage *pNew = 0;
+      rc = allocateBtreePage(pDest->pBt, &pNew, &pgnoNew, 0, 0);
+      put4byte(pPgnoOut, pgnoNew);
+      releasePage(pPageOut);
+      pPageOut = pNew;
+      if( pPageOut ){
+        pPgnoOut = pPageOut->aData;
+        put4byte(pPgnoOut, 0);
+        aOut = &pPgnoOut[4];
+        nOut = MIN(pDest->pBt->usableSize - 4, nRem);
       }
     }
-    if( rc==SQLITE_OK ){
-      rc = sqlite3BtreeInsert(pDest, &x, OPFLAG_APPEND, seekResult);
-    }
-    sqlite3_free(pFree);
-  }else{
-    /* Page sizes match. This means each overflow page (if any) and the 
-    ** cell itself can be copied verbatim. */
-    u8 *pCell = pDest->pBt->pTmpSpace;
-    x.pData = pCell;
-    x.nData = putVarint32(pCell, pSrc->info.nPayload);
-    x.nData += putVarint(&pCell[x.nData], iKey);
-    memcpy(&pCell[x.nData], pSrc->info.pPayload, pSrc->info.nLocal);
-    x.nData += pSrc->info.nLocal;
-    assert( pSrc->info.nLocal<=pSrc->info.nPayload );
-    if( pSrc->info.nLocal<pSrc->info.nPayload ){
-      Pager *pSrcPager = pSrc->pBt->pPager;
-      u8 *pPgno = &pCell[x.nData];
-      Pgno ovfl; 
-      x.nData += 4;
-      ovfl = get4byte(pSrc->info.pPayload + pSrc->info.nLocal);
-      do{
-        MemPage *pNew = 0;
-        Pgno pgnoNew = 0;
-        if( rc==SQLITE_OK ){
-          rc = allocateBtreePage(pDest->pBt, &pNew, &pgnoNew, 0, 0);
-          put4byte(pPgno, pgnoNew);
-        }
-        if( rc==SQLITE_OK ){
-          pPgno = pNew->aData;
-          rc = sqlite3PagerWrite(pNew->pDbPage);
-        }
-        if( rc==SQLITE_OK ){
-          DbPage *pOrig = 0;
-          void *pOrigData;
-          rc = sqlite3PagerGet(pSrcPager, ovfl, &pOrig, PAGER_GET_READONLY);
-          if( rc==SQLITE_OK ){
-            pOrigData = sqlite3PagerGetData(pOrig);
-            memcpy(pNew->aData, pOrigData, pDest->pBt->usableSize);
-            put4byte(pNew->aData, 0);
-            ovfl = get4byte(pOrigData);
-          }
-          sqlite3PagerUnref(pOrig);
-        }
-        releasePage(pNew);
-      }while( rc==SQLITE_OK && ovfl>0 );
-    }
-    if( rc==SQLITE_OK ){
-      rc = sqlite3BtreeInsert(pDest, &x, OPFLAG_APPEND, seekResult);
-    }
+  }while( nRem>0 && rc==SQLITE_OK );
+
+  releasePage(pPageOut);
+  sqlite3PagerUnref(pPageIn);
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3BtreeInsert(pDest, &x, OPFLAG_APPEND, seekResult);
   }
 
   return rc;

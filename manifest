@@ -1,5 +1,5 @@
-C Experimental\schanges\sto\svacuum\sto\savoid\sloading\slarge\srecords\sentirely\sinto\smemory.\sCurrently\sonly\sworks\sin\slimited\scases\sonly\s-\sfor\srowid\stables\swhen\sthe\spage-size\sdoes\snot\schange.
-D 2020-12-08T20:19:07.385
+C Avoid\sloading\slarge\sintkey\srows\swhen\sVACUUMing,\seven\sif\sthe\spage-size\sis\schanging.
+D 2020-12-09T16:32:11.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 6d5cfd0e411e1db8042c94593a4847d85fc5398fa4860689d6f0d74cefa4e534
+F src/btree.c 2dd52a7d6f473ef345ac028f49f3cc14e1207a3596b2d9fd92fe532e57da6328
 F src/btree.h cff4cd182eb0d97802d82f398e4c8447f01bd2f5e501f70386b1097c910091cb
 F src/btreeInt.h ffd66480520d9d70222171b3a026d78b80833b5cea49c89867949f3e023d5f43
 F src/build.c f6449d4e85e998e14d3f537e8ea898dca2fcb83c277db3e60945af9b9177db81
@@ -1650,10 +1650,11 @@ F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum-into.test 48f4cec354fb6f27c98ef58d2fe49a11b71ff131af0cd9140efacc9858b9f670
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
-F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
+F test/vacuum2.test 9fd45ce6ce29f5614c249e03938d3567c06a9e772d4f155949f8eafe2d8af520
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7c010
 F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2f48c
+F test/vacuum6.test 7d3aea27ef3c671dafccbad5adc7848205c38ab14ee7a1dabe592e0794e132d7
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -1888,10 +1889,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4b286129138d44e6f8e9b3450289941e01d20fdfb9d0b5d846031425e8ca6b49
-R ebe894c92d077c4bc1f846403c247ebe
-T *branch * vacuum-lomem
-T *sym-vacuum-lomem *
-T -sym-trunk *
+P c90e063ca9ddcdd1e9f1a2e25a3f7d6e7ee798373ad8acf65b90536b0a124c0d
+R 306b82fcb1780d3a4b54ba51609ce03f
 U dan
-Z e00eb83dabf2298b62b079f62bce894b
+Z fc13f09d46076f2b65a2bba6a14de43b
