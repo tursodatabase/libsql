@@ -34,6 +34,7 @@ do_execsql_test 1.1 {
 }
 
 #-------------------------------------------------------------------------
+#
 reset_db
 foreach {tn sz} {1 400 2 4000 3 9999} {
   reset_db
@@ -69,23 +70,29 @@ do_execsql_test 3.2 {
 } {ok}
 
 #-------------------------------------------------------------------------
+#
 reset_db
 do_execsql_test 4.0 {
   CREATE TABLE tx(a, b);
   CREATE INDEX i1 ON tx(b);
   WITH s(i) AS (
-      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+      SELECT 8000 UNION ALL SELECT i+1 FROM s WHERE i<10000
   )
   INSERT INTO tx SELECT i, randomblob(i) FROM s;
-}
-foreach {tn pgsz} {
-  1 2048
-  2 1024
-  3 65536
-  4 8192
+
+  SELECT sum(length(b)) FROM tx;
+} {18009000}
+foreach {tn pgsz av} {
+  1 2048   0
+  2 1024   1
+  3 65536  0
+  4 8192   1
+  5 512    0
+  6 4096   1
 } {
   do_execsql_test 4.1.$tn.1 "
-    PRAGMA page_size = $pgsz
+    PRAGMA page_size = $pgsz;
+    PRAGMA auto_vacuum = $av;
   "
   do_execsql_test 4.1.$tn.2 VACUUM
   integrity_check 4.1.$tn.3

@@ -8945,6 +8945,21 @@ end_insert:
   return rc;
 }
 
+/*
+** This function is used as part of copying the current row from cursor
+** pSrc into cursor pDest. If the cursors are open on intkey tables, then
+** parameter iKey is used as the rowid value when the record is copied
+** into pDest. Otherwise, the record is copied verbatim.
+**
+** This function does not actually write the new value to cursor pDest.
+** Instead, it creates and populates any required overflow pages and
+** writes the data for the new cell into the BtShared.pTmpSpace buffer
+** for the destination database. The size of the cell, in bytes, is left
+** in BtShared.nPreformatSize. The caller completes the insertion by
+** calling sqlite3BtreeInsert() with the BTREE_PREFORMAT flag specified.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
 int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   int rc = SQLITE_OK;
   BtShared *pBt = pDest->pBt;

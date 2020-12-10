@@ -3572,6 +3572,13 @@ case OP_Transaction: {
    && (iMeta!=pOp->p3
       || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
   ){
+    /*
+    ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
+    ** version is checked to ensure that the schema has not changed since the
+    ** SQL statement was prepared.
+    */
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
     ** stored with the in-memory representation of the schema, do
     ** not reload the schema from the database file.
@@ -3588,13 +3595,6 @@ case OP_Transaction: {
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
       sqlite3ResetOneSchema(db, pOp->p1);
     }
-    /*
-    ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
-    ** version is checked to ensure that the schema has not changed since the
-    ** SQL statement was prepared.
-    */
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     p->expired = 1;
     rc = SQLITE_SCHEMA;
   }
@@ -5145,12 +5145,22 @@ case OP_Insert: {
 }
 
 /* Opcode: RowCell P1 P2 P3 * *
+**
+** P1 and P2 are both open cursors. Both must be opened on the same type
+** of table - intkey or index. This opcode is used as part of copying
+** the current row from P2 into P1. If the cursors are opened on intkey
+** tables, register P3 contains the rowid to use with the new record in
+** P1. If they are opened on index tables, P3 is not used.
+**
+** This opcode must be followed by either an Insert or InsertIdx opcode
+** with the OPFLAG_PREFORMAT flag set to complete the insert operation.
 */
 case OP_RowCell: {
   VdbeCursor *pDest;              /* Cursor to write to */
   VdbeCursor *pSrc;               /* Cursor to read from */
   i64 iKey;                       /* Rowid value to insert with */
   assert( pOp[1].opcode==OP_Insert || pOp[1].opcode==OP_IdxInsert );
+  assert( pOp[1].p5 & OPFLAG_PREFORMAT );
   pDest = p->apCsr[pOp->p1];
   pSrc = p->apCsr[pOp->p2];
   iKey = pOp->p3 ? aMem[pOp->p3].u.i : 0;
