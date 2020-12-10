@@ -1144,6 +1144,24 @@ static SQLITE_NOINLINE void btreeParseCellAdjustSizeForOverflow(
 }
 
 /*
+** Given a record with nPayload bytes of payload stored within btree
+** page pPage, return the number of bytes of payload stored locally.
+*/
+static int btreePayloadToLocal(MemPage *pPage, int nPayload){
+  int maxLocal;  /* Maximum amount of payload held locally */
+  maxLocal = pPage->maxLocal;
+  if( nPayload<=maxLocal ){
+    return nPayload;
+  }else{
+    int minLocal;  /* Minimum amount of payload held locally */
+    int surplus;   /* Overflow payload available for local storage */
+    minLocal = pPage->minLocal;
+    surplus = minLocal + (nPayload - minLocal)%(pPage->pBt->usableSize-4);
+    return ( surplus <= maxLocal ) ? surplus : minLocal;
+  }
+}
+
+/*
 ** The following routines are implementations of the MemPage.xParseCell()
 ** method.
 **
@@ -8660,7 +8678,8 @@ int sqlite3BtreeInsert(
   unsigned char *oldCell;
   unsigned char *newCell = 0;
 
-  assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND))==flags );
+  assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND|BTREE_PREFORMAT))==flags );
+  assert( (flags & BTREE_PREFORMAT)==0 || seekResult || pCur->pKeyInfo==0 );
 
   if( pCur->eState==CURSOR_FAULT ){
     assert( pCur->skipNext!=SQLITE_OK );
@@ -8678,7 +8697,7 @@ int sqlite3BtreeInsert(
   ** keys with no associated data. If the cursor was opened expecting an
   ** intkey table, the caller should be inserting integer keys with a
   ** blob of associated data.  */
-  assert( (pX->pKey==0)==(pCur->pKeyInfo==0) );
+  assert( (pX->pKey==0)==(pCur->pKeyInfo==0) || (flags & BTREE_PREFORMAT) );
 
   /* Save the positions of any other cursors open on this table.
   **
@@ -8788,7 +8807,7 @@ int sqlite3BtreeInsert(
        || CORRUPT_DB );
 
   pPage = pCur->pPage;
-  assert( pPage->intKey || pX->nKey>=0 );
+  assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );
   assert( pPage->leaf || !pPage->intKey );
   if( pPage->nFree<0 ){
     if( pCur->eState>CURSOR_INVALID ){
@@ -8805,7 +8824,21 @@ int sqlite3BtreeInsert(
   assert( pPage->isInit );
   newCell = pBt->pTmpSpace;
   assert( newCell!=0 );
-  rc = fillInCell(pPage, newCell, pX, &szNew);
+  if( flags & BTREE_PREFORMAT ){
+    rc = SQLITE_OK;
+    szNew = pBt->nPreformatSize;
+    if( szNew<4 ) szNew = 4;
+    if( ISAUTOVACUUM && szNew>pPage->maxLocal ){
+      CellInfo info;
+      pPage->xParseCell(pPage, newCell, &info);
+      if( ISAUTOVACUUM && info.nPayload!=info.nLocal ){
+        Pgno ovfl = get4byte(&newCell[szNew-4]);
+        ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, &rc);
+      }
+    }
+  }else{
+    rc = fillInCell(pPage, newCell, pX, &szNew);
+  }
   if( rc ) goto end_insert;
   assert( szNew==pPage->xCellSize(pPage, newCell) );
   assert( szNew <= MX_CELL_SIZE(pBt) );
@@ -8909,6 +8942,108 @@ int sqlite3BtreeInsert(
   assert( pCur->iPage<0 || pCur->pPage->nOverflow==0 );
 
 end_insert:
+  return rc;
+}
+
+/*
+** This function is used as part of copying the current row from cursor
+** pSrc into cursor pDest. If the cursors are open on intkey tables, then
+** parameter iKey is used as the rowid value when the record is copied
+** into pDest. Otherwise, the record is copied verbatim.
+**
+** This function does not actually write the new value to cursor pDest.
+** Instead, it creates and populates any required overflow pages and
+** writes the data for the new cell into the BtShared.pTmpSpace buffer
+** for the destination database. The size of the cell, in bytes, is left
+** in BtShared.nPreformatSize. The caller completes the insertion by
+** calling sqlite3BtreeInsert() with the BTREE_PREFORMAT flag specified.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
+  int rc = SQLITE_OK;
+  BtShared *pBt = pDest->pBt;
+  u8 *aOut = pBt->pTmpSpace;    /* Pointer to next output buffer */
+  const u8 *aIn;                /* Pointer to next input buffer */
+  int nIn;                      /* Size of input buffer aIn[] */
+  int nRem;                     /* Bytes of data still to copy */
+
+  getCellInfo(pSrc);
+  aOut += putVarint32(aOut, pSrc->info.nPayload);
+  if( pDest->pKeyInfo==0 ) aOut += putVarint(aOut, iKey);
+  nIn = pSrc->info.nLocal;
+  aIn = pSrc->info.pPayload;
+  nRem = pSrc->info.nPayload;
+  if( nIn==nRem && nIn<pDest->pPage->maxLocal ){
+    memcpy(aOut, aIn, nIn);
+    pBt->nPreformatSize = nIn + (aOut - pBt->pTmpSpace);
+  }else{
+    Pager *pSrcPager = pSrc->pBt->pPager;
+    u8 *pPgnoOut = 0;
+    Pgno ovflIn = 0;
+    DbPage *pPageIn = 0;
+    MemPage *pPageOut = 0;
+    int nOut;                     /* Size of output buffer aOut[] */
+
+    nOut = btreePayloadToLocal(pDest->pPage, pSrc->info.nPayload);
+    pBt->nPreformatSize = nOut + (aOut - pBt->pTmpSpace);
+    if( nOut<pSrc->info.nPayload ){
+      pPgnoOut = &aOut[nOut];
+      pBt->nPreformatSize += 4;
+    }
+  
+    if( nRem>nIn ){
+      ovflIn = get4byte(&pSrc->info.pPayload[nIn]);
+    }
+  
+    do {
+      nRem -= nOut;
+      do{
+        assert( nOut>0 );
+        if( nIn>0 ){
+          int nCopy = MIN(nOut, nIn);
+          memcpy(aOut, aIn, nCopy);
+          nOut -= nCopy;
+          nIn -= nCopy;
+          aOut += nCopy;
+          aIn += nCopy;
+        }
+        if( nOut>0 ){
+          sqlite3PagerUnref(pPageIn);
+          pPageIn = 0;
+          rc = sqlite3PagerGet(pSrcPager, ovflIn, &pPageIn, PAGER_GET_READONLY);
+          if( rc==SQLITE_OK ){
+            aIn = (const u8*)sqlite3PagerGetData(pPageIn);
+            ovflIn = get4byte(aIn);
+            aIn += 4;
+            nIn = pSrc->pBt->usableSize - 4;
+          }
+        }
+      }while( rc==SQLITE_OK && nOut>0 );
+  
+      if( rc==SQLITE_OK && nRem>0 ){
+        Pgno pgnoNew;
+        MemPage *pNew = 0;
+        rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
+        put4byte(pPgnoOut, pgnoNew);
+        if( ISAUTOVACUUM && pPageOut ){
+          ptrmapPut(pBt, pgnoNew, PTRMAP_OVERFLOW2, pPageOut->pgno, &rc);
+        }
+        releasePage(pPageOut);
+        pPageOut = pNew;
+        if( pPageOut ){
+          pPgnoOut = pPageOut->aData;
+          put4byte(pPgnoOut, 0);
+          aOut = &pPgnoOut[4];
+          nOut = MIN(pBt->usableSize - 4, nRem);
+        }
+      }
+    }while( nRem>0 && rc==SQLITE_OK );
+  
+    releasePage(pPageOut);
+    sqlite3PagerUnref(pPageIn);
+  }
+
   return rc;
 }
 
