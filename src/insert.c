@@ -2748,6 +2748,7 @@ static int xferOptimization(
   iDest = pParse->nTab++;
   regAutoinc = autoIncBegin(pParse, iDbDest, pDest);
   regData = sqlite3GetTempReg(pParse);
+  sqlite3VdbeAddOp2(v, OP_Null, 0, regData);
   regRowid = sqlite3GetTempReg(pParse);
   sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
   assert( HasRowid(pDest) || destHasUniqueIdx );
@@ -2797,17 +2798,26 @@ static int xferOptimization(
       addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
       assert( (pDest->tabFlags & TF_Autoincrement)==0 );
     }
+
     if( db->mDbFlags & DBFLAG_Vacuum ){
       sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
-      insFlags = OPFLAG_APPEND|OPFLAG_USESEEKRESULT;
-      sqlite3VdbeAddOp3(v, OP_Transfer, iDest, iSrc, regRowid);
+      insFlags = OPFLAG_APPEND|OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
     }else{
-      insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND;
-      sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-      sqlite3VdbeAddOp4(v, OP_Insert, iDest, regData, regRowid,
-          (char*)pDest, P4_TABLE);
-      sqlite3VdbeChangeP5(v, insFlags);
+      insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND|OPFLAG_PREFORMAT;
     }
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    if( db->xPreUpdateCallback ){
+      sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
+      insFlags &= ~OPFLAG_PREFORMAT;
+    }else
+#endif
+    {
+      sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regRowid);
+    }
+    sqlite3VdbeAddOp4(v, OP_Insert, iDest, regData, regRowid,
+        (char*)pDest, P4_TABLE);
+    sqlite3VdbeChangeP5(v, insFlags);
+
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
@@ -2849,18 +2859,18 @@ static int xferOptimization(
         if( sqlite3_stricmp(sqlite3StrBINARY, zColl) ) break;
       }
       if( i==pSrcIdx->nColumn ){
-        idxInsFlags = OPFLAG_USESEEKRESULT;
+        idxInsFlags = OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
         sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
-        sqlite3VdbeAddOp3(v, OP_Transfer, iDest, iSrc, 0);
+        sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regData);
       }
     }else if( !HasRowid(pSrc) && pDestIdx->idxType==SQLITE_IDXTYPE_PRIMARYKEY ){
       idxInsFlags |= OPFLAG_NCHANGE;
     }
-    if( idxInsFlags!=OPFLAG_USESEEKRESULT ){
+    if( idxInsFlags!=(OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT) ){
       sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-      sqlite3VdbeAddOp2(v, OP_IdxInsert, iDest, regData);
-      sqlite3VdbeChangeP5(v, idxInsFlags|OPFLAG_APPEND);
     }
+    sqlite3VdbeAddOp2(v, OP_IdxInsert, iDest, regData);
+    sqlite3VdbeChangeP5(v, idxInsFlags|OPFLAG_APPEND);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);

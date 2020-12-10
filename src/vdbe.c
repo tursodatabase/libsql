@@ -5126,7 +5126,8 @@ case OP_Insert: {
   }
   x.pKey = 0;
   rc = sqlite3BtreeInsert(pC->uc.pCursor, &x,
-      (pOp->p5 & (OPFLAG_APPEND|OPFLAG_SAVEPOSITION)), seekResult
+      (pOp->p5 & (OPFLAG_APPEND|OPFLAG_SAVEPOSITION|OPFLAG_PREFORMAT)), 
+      seekResult
   );
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -5143,29 +5144,20 @@ case OP_Insert: {
   break;
 }
 
-/* Opcode: Transfer P1 P2 P3 * *
-** Synopsis: intkey=r[P3]
-**
-** P1 and P2 are both cursors open on either intkey or index btrees. This
-** instruction reads the current row from P2 and writes it into the
-** table opened by P1. If P1 and P2 are opened on intkey tables, register
-** P3 contains the rowid value to use when inserting into P1.
+/* Opcode: RowCell P1 P2 P3 * *
 */
-case OP_Transfer: {
+case OP_RowCell: {
   VdbeCursor *pDest;              /* Cursor to write to */
   VdbeCursor *pSrc;               /* Cursor to read from */
   i64 iKey;                       /* Rowid value to insert with */
-
+  assert( pOp[1].opcode==OP_Insert || pOp[1].opcode==OP_IdxInsert );
   pDest = p->apCsr[pOp->p1];
   pSrc = p->apCsr[pOp->p2];
   iKey = pOp->p3 ? aMem[pOp->p3].u.i : 0;
-
-  rc = sqlite3BtreeTransfer(
-      pDest->uc.pCursor, pSrc->uc.pCursor, iKey, pDest->seekResult
-  );
+  rc = sqlite3BtreeTransferRow(pDest->uc.pCursor, pSrc->uc.pCursor, iKey);
   if( rc!=SQLITE_OK ) goto abort_due_to_error;
   break;
-}
+};
 
 /* Opcode: Delete P1 P2 P3 P4 P5
 **
@@ -5822,7 +5814,7 @@ case OP_IdxInsert: {        /* in2 */
   assert( pC!=0 );
   assert( !isSorter(pC) );
   pIn2 = &aMem[pOp->p2];
-  assert( pIn2->flags & MEM_Blob );
+  assert( (pIn2->flags & MEM_Blob) || (pOp->p5 & OPFLAG_PREFORMAT) );
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->isTable==0 );
@@ -5833,7 +5825,7 @@ case OP_IdxInsert: {        /* in2 */
   x.aMem = aMem + pOp->p3;
   x.nMem = (u16)pOp->p4.i;
   rc = sqlite3BtreeInsert(pC->uc.pCursor, &x,
-       (pOp->p5 & (OPFLAG_APPEND|OPFLAG_SAVEPOSITION)), 
+       (pOp->p5 & (OPFLAG_APPEND|OPFLAG_SAVEPOSITION|OPFLAG_PREFORMAT)), 
       ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
       );
   assert( pC->deferredMoveto==0 );
