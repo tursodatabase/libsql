@@ -3086,11 +3086,12 @@ struct Upsert {
   ** information from the INSERT processing down into the UPDATE processing
   ** while generating code.  The fields below are owned by the INSERT
   ** statement and will be freed by INSERT processing. */
-  Index *pUpsertIdx;        /* Constraint that pUpsertTarget identifies */
+  Index *pUpsertIdx;        /* UNIQUE constraint specified by pUpsertTarget */
   SrcList *pUpsertSrc;      /* Table to be updated */
   int regData;              /* First register holding array of VALUES */
   int iDataCur;             /* Index of the data cursor */
   int iIdxCur;              /* Index of the first index cursor */
+  int addrGenericUpdate;    /* Address of routine for generic DO UPDATE */
 };
 
 /*

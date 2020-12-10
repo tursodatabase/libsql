@@ -229,11 +229,27 @@ void sqlite3UpsertDoUpdate(
   SrcList *pSrc;            /* FROM clause for the UPDATE */
   int iDataCur;
   int i;
+  Upsert *pTop = pUpsert;
 
   assert( v!=0 );
   assert( pUpsert!=0 );
-  VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
   iDataCur = pUpsert->iDataCur;
+  while(
+      pUpsert->pUpsertTarget!=0
+   && (pUpsert->pUpsertIdx==0 ? pIdx!=0 :
+          pUpsert->pUpsertIdx->zName!=pIdx->zName)
+  ){
+    assert( pUpsert->pNextUpsert!=0 );
+    pUpsert = pUpsert->pNextUpsert;
+  }
+  if( pUpsert->addrGenericUpdate>0 ){
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, pUpsert->addrGenericUpdate);
+    return;
+  }
+  VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
+  if( pUpsert->pUpsertTarget==0 ){
+    pUpsert->addrGenericUpdate = sqlite3VdbeCurrentAddr(v);
+  }
   if( pIdx && iCur!=iDataCur ){
     if( HasRowid(pTab) ){
       int regRowid = sqlite3GetTempReg(pParse);
@@ -263,13 +279,13 @@ void sqlite3UpsertDoUpdate(
       sqlite3VdbeJumpHere(v, i);
     }
   }
-  /* pUpsert does not own pUpsertSrc - the outer INSERT statement does.  So
-  ** we have to make a copy before passing it down into sqlite3Update() */
-  pSrc = sqlite3SrcListDup(db, pUpsert->pUpsertSrc, 0);
+  /* pUpsert does not own pTop->pUpsertSrc - the outer INSERT statement does.
+  ** So we have to make a copy before passing it down into sqlite3Update() */
+  pSrc = sqlite3SrcListDup(db, pTop->pUpsertSrc, 0);
   /* excluded.* columns of type REAL need to be converted to a hard real */
   for(i=0; i<pTab->nCol; i++){
     if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
-      sqlite3VdbeAddOp1(v, OP_RealAffinity, pUpsert->regData+i);
+      sqlite3VdbeAddOp1(v, OP_RealAffinity, pTop->regData+i);
     }
   }
   sqlite3Update(pParse, pSrc, pUpsert->pUpsertSet,
