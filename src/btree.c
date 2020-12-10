@@ -8831,7 +8831,7 @@ int sqlite3BtreeInsert(
     if( ISAUTOVACUUM && szNew>pPage->maxLocal ){
       CellInfo info;
       pPage->xParseCell(pPage, newCell, &info);
-      if( ISAUTOVACUUM && info.nPayload!=info.nLocal ){
+      if( info.nPayload!=info.nLocal ){
         Pgno ovfl = get4byte(&newCell[szNew-4]);
         ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, &rc);
       }
