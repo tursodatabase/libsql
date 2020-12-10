@@ -3080,7 +3080,7 @@ struct Upsert {
   Upsert *pNextUpsert;      /* Next ON CONFLICT clause in the list */
   /* Above this point is the parse tree for the ON CONFLICT clauses.
   ** The next group of fields stores intermediate data. */
-  Index *pIdxList;
+  void *pToFree;            /* Free memory when deleting the Upsert object */
   /* All fields above are owned by the Upsert object and must be freed
   ** when the Upsert is destroyed.  The fields below are used to transfer
   ** information from the INSERT processing down into the UPDATE processing

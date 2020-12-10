@@ -976,9 +976,6 @@ void sqlite3Insert(
 #ifndef SQLITE_OMIT_UPSERT
   if( pUpsert ){
     Upsert *pNx;
-    int nIdx;
-    Index *pIdxList;
-    int *aReg;
     if( IsVirtual(pTab) ){
       sqlite3ErrorMsg(pParse, "UPSERT not implemented for virtual table \"%s\"",
               pTab->zName);
@@ -1003,26 +1000,6 @@ void sqlite3Insert(
       }
       pNx = pNx->pNextUpsert;
     }while( pNx!=0 );
-    for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){
-      assert( pIdx );
-      assert( aRegIdx[nIdx]>0 );
-    }
-    if( nIdx==0 ){
-      pUpsert->pIdxList = 0;
-    }else{
-      u64 nByte = sizeof(Index)*nIdx + sizeof(int)*(nIdx+2);
-      pIdxList = sqlite3DbMallocRaw(db, nByte);
-      if( pIdxList==0 ) goto insert_cleanup;
-      aReg = (int*)&pIdxList[nIdx];
-      for(i=0, pIdx=pTab->pIndex; i<nIdx; pIdx=pIdx->pNext, i++){
-        memcpy(&pIdxList[i], pIdx, sizeof(Index));
-        pIdxList[i].pNext = 0;
-        if( i ) pIdxList[i-1].pNext = &pIdxList[i];
-        aReg[i] = aRegIdx[i];
-      }
-      aReg[i] = aRegIdx[i];
-      pUpsert->pIdxList = pIdxList;
-    }
   }
 #endif
 
@@ -1428,6 +1405,62 @@ int sqlite3ExprReferencesUpdatedColumn(
 }
 
 /*
+** The sqlite3GenerateConstraintChecks() routine usually wants to visit
+** the indexes of a table in the order provided in the Table->pIndex list.
+** However, sometimes (rarely - when there is an upsert) it wants to visit
+** the indexes in a different order.  The following data structures accomplish
+** this.
+**
+** The IndexIterator object is used to walk through all of the indexes
+** of a table in either Index.pNext order, or in some other order established
+** by an array of IndexListTerm objects.
+*/
+typedef struct IndexListTerm IndexListTerm;
+typedef struct IndexIterator IndexIterator;
+struct IndexIterator {
+  int eType;    /* 0 for Index.pNext list.  1 for an array of IndexListTerm */
+  int i;        /* Index of the current item from the list */
+  union {
+    struct {    /* Use this object for eType==0: A Index.pNext list */
+      Index *pIdx;   /* The current Index */
+    } lx;      
+    struct {    /* Use this object for eType==1; Array of IndexListTerm */
+      int nIdx;               /* Size of the array */
+      IndexListTerm *aIdx;    /* Array of IndexListTerms */
+    } ax;
+  } u;
+};
+
+/* When IndexIterator.eType==1, then each index is an array of instances
+** of the following object
+*/
+struct IndexListTerm {
+  Index *p;  /* The index */
+  int ix;    /* Which entry in the original Table.pIndex list is this index*/
+};
+
+/* Return the first index on the list */
+static Index *indexIteratorFirst(IndexIterator *pIter, int *pIx){
+  int i = pIter->i;
+  *pIx = i;
+  return pIter->eType ? pIter->u.ax.aIdx[i].p : pIter->u.lx.pIdx;
+}
+
+/* Return the next index from the list.  Return NULL when out of indexes */
+static Index *indexIteratorNext(IndexIterator *pIter, int *pIx){
+  int i = ++pIter->i;
+  if( pIter->eType ){
+    if( i>=pIter->u.ax.nIdx ) return 0;
+    *pIx = pIter->u.ax.aIdx[i].ix;
+    return pIter->u.ax.aIdx[i].p;
+  }else{
+    *pIx = i;
+    pIter->u.lx.pIdx = pIter->u.lx.pIdx->pNext;
+    return pIter->u.lx.pIdx;
+  }
+}
+  
+/*
 ** Generate code to do constraint checks prior to an INSERT or an UPDATE
 ** on table pTab.
 **
@@ -1557,6 +1590,7 @@ void sqlite3GenerateConstraintChecks(
   int lblRecheckOk = 0; /* Each recheck jumps to this label if it passes */
   Trigger *pTrigger;    /* List of DELETE triggers on the table pTab */
   int nReplaceTrig = 0; /* Number of replace triggers coded */
+  IndexIterator ixi;    /* Index iterator */
 
   isUpdate = regOldData!=0;
   db = pParse->db;
@@ -1769,6 +1803,9 @@ void sqlite3GenerateConstraintChecks(
       VdbeComment((v, "UPSERT constraint goes first"));
     }
   }
+  ixi.eType = 0;
+  ixi.i = 0;
+  ixi.u.lx.pIdx = pTab->pIndex;
 
   /* Determine if it is possible that triggers (either explicitly coded
   ** triggers or FK resolution actions) might run as a result of deletes
@@ -1953,8 +1990,10 @@ void sqlite3GenerateConstraintChecks(
   ** This loop also handles the case of the PRIMARY KEY index for a
   ** WITHOUT ROWID table.
   */
-  pIdx = pUpsert ? pUpsert->pIdxList : pTab->pIndex;
-  for(ix=0; pIdx; pIdx=pIdx->pNext, ix++){
+  for(pIdx = indexIteratorFirst(&ixi, &ix);
+      pIdx;
+      pIdx = indexIteratorNext(&ixi, &ix)
+  ){
     int regIdx;          /* Range of registers hold conent for pIdx */
     int regR;            /* Range of registers holding conflicting PK */
     int iThisCur;        /* Cursor for this UNIQUE index */

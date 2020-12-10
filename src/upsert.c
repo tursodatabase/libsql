@@ -25,7 +25,7 @@ static void SQLITE_NOINLINE upsertDelete(sqlite3 *db, Upsert *p){
     sqlite3ExprDelete(db, p->pUpsertTargetWhere);
     sqlite3ExprListDelete(db, p->pUpsertSet);
     sqlite3ExprDelete(db, p->pUpsertWhere);
-    sqlite3DbFree(db, p->pIdxList);
+    sqlite3DbFree(db, p->pToFree);
     sqlite3DbFree(db, p);
     p = pNext;
   }while( p );
