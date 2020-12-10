@@ -91,6 +91,27 @@ do_catchsql_test 2.4 {
   SELECT rowid FROM test_idx WHERE test_idx MATCH 'two' ORDER BY rank;
 } {1 {database disk image is malformed}}
 
-
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE tx USING fts5(a, b, c, d, content=);
+  INSERT INTO tx(rowid, a, c) VALUES(1, 'abc def', 'a b c');
+  INSERT INTO tx(rowid, a, c) VALUES(5, 'a b c', 'a b d def');
+}
+do_execsql_test 3.1 {
+  INSERT INTO tx(tx, rowid, a, b, c, d) 
+    VALUES('delete', 5, 'a b c', NULL, 'a b d def', NULL);
+}
+do_execsql_test 3.2 {
+  INSERT INTO tx(tx) VALUES('integrity-check');
+}
+do_execsql_test 3.3 {
+  INSERT INTO tx(tx, rowid, a, b, c, d) 
+    VALUES('delete', 1, 'abc def', NULL, 'a b c', NULL);
+}
+do_execsql_test 3.4 {
+  INSERT INTO tx(tx) VALUES('integrity-check');
+}
 
 finish_test
+

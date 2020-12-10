@@ -2021,10 +2021,10 @@ static void math1Func(
   int argc,
   sqlite3_value **argv
 ){
-  assert( argc==1 );
   int type0;
   double v0, ans;
   double (*x)(double);
+  assert( argc==1 );
   type0 = sqlite3_value_numeric_type(argv[0]);
   if( type0!=SQLITE_INTEGER && type0!=SQLITE_FLOAT ) return;
   v0 = sqlite3_value_double(argv[0]);
@@ -2043,10 +2043,10 @@ static void math2Func(
   int argc,
   sqlite3_value **argv
 ){
-  assert( argc==2 );
   int type0, type1;
   double v0, v1, ans;
   double (*x)(double,double);
+  assert( argc==2 );
   type0 = sqlite3_value_numeric_type(argv[0]);
   if( type0!=SQLITE_INTEGER && type0!=SQLITE_FLOAT ) return;
   type1 = sqlite3_value_numeric_type(argv[1]);
@@ -2082,9 +2082,9 @@ static void signFunc(
   int argc,
   sqlite3_value **argv
 ){
-  assert( argc==1 );
   int type0;
   double x;
+  assert( argc==1 );
   type0 = sqlite3_value_numeric_type(argv[0]);
   if( type0!=SQLITE_INTEGER && type0!=SQLITE_FLOAT ) return;
   x = sqlite3_value_double(argv[0]);
@@ -2213,7 +2213,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     MFUNCTION(ceil,              1, ceil,      ceilingFunc ),
     MFUNCTION(ceiling,           1, ceil,      ceilingFunc ),
     MFUNCTION(floor,             1, floor,     ceilingFunc ),
+#if SQLITE_HAVE_C99_MATH_FUNCS
     MFUNCTION(trunc,             1, trunc,     ceilingFunc ),
+#endif
     FUNCTION(ln,                 1, 0, 0,      logFunc     ),
     FUNCTION(log,                1, 1, 0,      logFunc     ),
     FUNCTION(log10,              1, 1, 0,      logFunc     ),
@@ -2233,9 +2235,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     MFUNCTION(cosh,              1, cosh,      math1Func   ),
     MFUNCTION(sinh,              1, sinh,      math1Func   ),
     MFUNCTION(tanh,              1, tanh,      math1Func   ),
+#if SQLITE_HAVE_C99_MATH_FUNCS
     MFUNCTION(acosh,             1, acosh,     math1Func   ),
     MFUNCTION(asinh,             1, asinh,     math1Func   ),
     MFUNCTION(atanh,             1, atanh,     math1Func   ),
+#endif
     MFUNCTION(sqrt,              1, sqrt,      math1Func   ),
     MFUNCTION(radians,           1, degToRad,  math1Func   ),
     MFUNCTION(degrees,           1, radToDeg,  math1Func   ),
