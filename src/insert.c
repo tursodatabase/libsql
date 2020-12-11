@@ -2338,6 +2338,7 @@ void sqlite3GenerateConstraintChecks(
     ){
       sqlite3VdbeGoto(v, upsertIpkDelay+1);
       sqlite3VdbeJumpHere(v, upsertIpkReturn);
+      upsertIpkReturn = 0;
     }
   }
 
