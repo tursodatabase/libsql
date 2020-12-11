@@ -31,7 +31,10 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
+
+#ifndef SQLITE_AMALGAMATION
 typedef sqlite3_uint64 u64;
+#endif /* SQLITE_AMALGAMATION */
 
 /******************************************************************************
 ** The Hash Engine
