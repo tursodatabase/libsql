@@ -1,5 +1,5 @@
-C Fix\sthe\sexpert\sextension\sso\sthat\sit\shandles\sgenerated\scolumns\scorrectly.
-D 2020-12-11T14:22:44.596
+C Fix\sthe\sconfigure\sscript\son\sthe\sautoconf\sdistribution\sso\sthat\sthe\n--disable-threadsafe\soption\sworks.\s\sSee\n[https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=244459|FreeBSD\sbug\s244459].
+D 2020-12-11T14:34:58.941
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -18,7 +18,7 @@ F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a
 F autoconf/Makefile.msc e0f1dafc48d000fd6ddfdb01815271528db55cbc7299ca888df5b93367f0d5a4
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 3cd933b959fe514eebd1ca1717dfddbf2c9b825b6bc2c5f744deaf5d63af9288
+F autoconf/configure.ac 55be6fc04a5b030b367fe317b72dc8c0eafc4713991fe6182cf647b02fb782cb
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1889,7 +1889,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4d6f6d728738710249ad74236c31a1872fdff7dadabd4c4a67d05826eb5df9e
-R fb55f5147e16371ec8e31fd2331cfcf7
-U dan
-Z 166ee843647c304936c75f8093a2d2ca
+P c2ae7ba6f8f4b10bd734051a0cfa8ed9675bd58c82ede4e9eadfd7cbcc03b82d
+R 081acf382e9d875924b95569479a3f66
+U drh
+Z 18dbb49cec21f6cfe4518d963fb09370
