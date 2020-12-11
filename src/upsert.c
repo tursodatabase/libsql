@@ -209,6 +209,38 @@ int sqlite3UpsertAnalyzeTarget(
 }
 
 /*
+** Return true if pUpsert is the last ON CONFLICT clause with a
+** conflict target, or if pUpsert is followed by another ON CONFLICT
+** clause that targets the INTEGER PRIMARY KEY.
+*/
+int sqlite3UpsertNextIsIPK(Upsert *pUpsert){
+  Upsert *pNext;
+  if( pUpsert==0 ) return 0;
+  pNext = pUpsert->pNextUpsert;
+  if( pNext==0 ) return 1;
+  if( pNext->pUpsertTarget==0 ) return 1;
+  if( pNext->pUpsertIdx==0 ) return 1;
+  return 0;
+}
+
+/*
+** Given the list of ON CONFLICT clauses described by pUpsert, and
+** a particular index pIdx, return a pointer to the particular ON CONFLICT
+** clause that applies to the index.  Or, if the index is not subject to
+** any ON CONFLICT clause, return NULL.
+*/
+Upsert *sqlite3UpsertOfIndex(Upsert *pUpsert, Index *pIdx){
+  while(
+      pUpsert
+   && pUpsert->pUpsertTarget!=0
+   && pUpsert->pUpsertIdx!=pIdx
+  ){
+     pUpsert = pUpsert->pNextUpsert;
+  }
+  return pUpsert;
+}
+
+/*
 ** Generate bytecode that does an UPDATE as part of an upsert.
 **
 ** If pIdx is NULL, then the UNIQUE constraint that failed was the IPK.
@@ -234,14 +266,7 @@ void sqlite3UpsertDoUpdate(
   assert( v!=0 );
   assert( pUpsert!=0 );
   iDataCur = pUpsert->iDataCur;
-  while(
-      pUpsert->pUpsertTarget!=0
-   && (pUpsert->pUpsertIdx==0 ? pIdx!=0 :
-          pUpsert->pUpsertIdx->zName!=pIdx->zName)
-  ){
-    assert( pUpsert->pNextUpsert!=0 );
-    pUpsert = pUpsert->pNextUpsert;
-  }
+  pUpsert = sqlite3UpsertOfIndex(pTop, pIdx);
   if( pUpsert->addrGenericUpdate>0 ){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pUpsert->addrGenericUpdate);
     return;

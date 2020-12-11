@@ -1450,7 +1450,10 @@ static Index *indexIteratorFirst(IndexIterator *pIter, int *pIx){
 static Index *indexIteratorNext(IndexIterator *pIter, int *pIx){
   int i = ++pIter->i;
   if( pIter->eType ){
-    if( i>=pIter->u.ax.nIdx ) return 0;
+    if( i>=pIter->u.ax.nIdx ){
+      *pIx = i;
+      return 0;
+    }
     *pIx = pIter->u.ax.aIdx[i].ix;
     return pIter->u.ax.aIdx[i].p;
   }else{
@@ -1576,11 +1579,11 @@ void sqlite3GenerateConstraintChecks(
   int onError;         /* Conflict resolution strategy */
   int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int nPkField;        /* Number of fields in PRIMARY KEY. 1 for ROWID tables */
-  Index *pUpIdx = 0;   /* Index to which to apply the upsert */
-  u8 isUpdate;         /* True if this is an UPDATE operation */
+  Upsert *pUpsertClause = 0;  /* The specific ON CONFLICT clause for pIdx */
+  u8 isUpdate;           /* True if this is an UPDATE operation */
   u8 bAffinityDone = 0;  /* True if the OP_Affinity operation has been run */
-  int upsertBypass = 0;  /* Address of Goto to bypass upsert subroutine */
-  int upsertJump = 0;    /* Address of Goto that jumps into upsert subroutine */
+  int upsertIpkReturn = 0; /* Address of Goto at end of IPK uniqueness check */
+  int upsertIpkDelay = 0;  /* Address of Goto to bypass initial IPK check */
   int ipkTop = 0;        /* Top of the IPK uniqueness check */
   int ipkBottom = 0;     /* OP_Goto at the end of the IPK uniqueness check */
   /* Variables associated with retesting uniqueness constraints after
@@ -1590,7 +1593,7 @@ void sqlite3GenerateConstraintChecks(
   int lblRecheckOk = 0; /* Each recheck jumps to this label if it passes */
   Trigger *pTrigger;    /* List of DELETE triggers on the table pTab */
   int nReplaceTrig = 0; /* Number of replace triggers coded */
-  IndexIterator ixi;    /* Index iterator */
+  IndexIterator sIdxIter;  /* Index iterator */
 
   isUpdate = regOldData!=0;
   db = pParse->db;
@@ -1788,24 +1791,64 @@ void sqlite3GenerateConstraintChecks(
   ** list of indexes attached to a table puts all OE_Replace indexes last
   ** in the list.  See sqlite3CreateIndex() for where that happens.
   */
-
+  sIdxIter.eType = 0;
+  sIdxIter.i = 0;
+  sIdxIter.u.lx.pIdx = pTab->pIndex;
   if( pUpsert ){
     if( pUpsert->pUpsertTarget==0 ){
-      /* An ON CONFLICT DO NOTHING clause, without a constraint-target.
-      ** Make all unique constraint resolution be OE_Ignore */
-      assert( pUpsert->pUpsertSet==0 );
-      overrideError = OE_Ignore;
-      pUpsert = 0;
-    }else if( (pUpIdx = pUpsert->pUpsertIdx)!=0 ){
-      /* If the constraint-target uniqueness check must be run first.
-      ** Jump to that uniqueness check now */
-      upsertJump = sqlite3VdbeAddOp0(v, OP_Goto);
-      VdbeComment((v, "UPSERT constraint goes first"));
+      /* There is just on ON CONFLICT clause and it has no constraint-target */
+      assert( pUpsert->pNextUpsert==0 );
+      if( pUpsert->pUpsertSet==0 ){
+        /* A single ON CONFLICT DO NOTHING clause, without a constraint-target.
+        ** Make all unique constraint resolution be OE_Ignore */
+        overrideError = OE_Ignore;
+        pUpsert = 0;
+      }else{
+        /* A single ON CONFLICT DO UPDATE.  Make all resolutions OE_Update */
+        overrideError = OE_Update;
+      }
+    }else if( pTab->pIndex!=0 ){
+      /* Otherwise, we'll need to run the IndexListTerm array version of the
+      ** iterator to ensure that all of the ON CONFLICT conditions are
+      ** checked first and in order. */
+      int nIdx, jj;
+      u64 nByte;
+      Upsert *pTerm;
+      u8 *bUsed;
+      for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){
+         assert( aRegIdx[nIdx]>0 );
+      }
+      sIdxIter.eType = 1;
+      sIdxIter.u.ax.nIdx = nIdx;
+      nByte = (sizeof(IndexListTerm)+1)*nIdx + nIdx;
+      sIdxIter.u.ax.aIdx = sqlite3DbMallocZero(db, nByte);
+      if( sIdxIter.u.ax.aIdx==0 ) return; /* OOM */
+      bUsed = (u8*)&sIdxIter.u.ax.aIdx[nIdx];
+      pUpsert->pToFree = sIdxIter.u.ax.aIdx;
+      for(i=0, pTerm=pUpsert; pTerm; pTerm=pTerm->pNextUpsert){
+        if( pTerm->pUpsertTarget==0 ) break;
+        if( pTerm->pUpsertIdx==0 ) continue;  /* Skip ON CONFLICT for the IPK */
+        jj = 0;
+        pIdx = pTab->pIndex;
+        while( ALWAYS(pIdx!=0) && pIdx!=pTerm->pUpsertIdx ){
+           pIdx = pIdx->pNext;
+           jj++;
+        }
+        if( bUsed[jj] ) continue; /* Duplicate ON CONFLICT clause ignored */
+        bUsed[jj] = 1;
+        sIdxIter.u.ax.aIdx[i].p = pIdx;
+        sIdxIter.u.ax.aIdx[i].ix = jj;
+        i++;
+      }
+      for(jj=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, jj++){
+        if( bUsed[jj] ) continue;
+        sIdxIter.u.ax.aIdx[i].p = pIdx;
+        sIdxIter.u.ax.aIdx[i].ix = jj;
+        i++;
+      }
+      assert( i==nIdx );
     }
   }
-  ixi.eType = 0;
-  ixi.i = 0;
-  ixi.u.lx.pIdx = pTab->pIndex;
 
   /* Determine if it is possible that triggers (either explicitly coded
   ** triggers or FK resolution actions) might run as a result of deletes
@@ -1866,11 +1909,20 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* figure out whether or not upsert applies in this case */
-    if( pUpsert && pUpsert->pUpsertIdx==0 ){
-      if( pUpsert->pUpsertSet==0 ){
-        onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
-      }else{
-        onError = OE_Update;  /* DO UPDATE */
+    if( pUpsert ){
+      pUpsertClause = sqlite3UpsertOfIndex(pUpsert,0);
+      if( pUpsertClause!=0 ){
+        if( pUpsertClause->pUpsertSet==0 ){
+          onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
+        }else{
+          onError = OE_Update;  /* DO UPDATE */
+        }
+      }
+      if( pUpsertClause!=pUpsert ){
+        /* The first ON CONFLICT clause has a conflict target other than
+        ** the IPK.  We have to jump ahead to that first ON CONFLICT clause
+        ** and then come back here and deal with the IPK afterwards */
+        upsertIpkDelay = sqlite3VdbeAddOp0(v, OP_Goto);
       }
     }
 
@@ -1977,7 +2029,9 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     sqlite3VdbeResolveLabel(v, addrRowidOk);
-    if( ipkTop ){
+    if( pUpsert && pUpsertClause!=pUpsert ){
+      upsertIpkReturn = sqlite3VdbeAddOp0(v, OP_Goto);
+    }else if( ipkTop ){
       ipkBottom = sqlite3VdbeAddOp0(v, OP_Goto);
       sqlite3VdbeJumpHere(v, ipkTop-1);
     }
@@ -1990,9 +2044,9 @@ void sqlite3GenerateConstraintChecks(
   ** This loop also handles the case of the PRIMARY KEY index for a
   ** WITHOUT ROWID table.
   */
-  for(pIdx = indexIteratorFirst(&ixi, &ix);
+  for(pIdx = indexIteratorFirst(&sIdxIter, &ix);
       pIdx;
-      pIdx = indexIteratorNext(&ixi, &ix)
+      pIdx = indexIteratorNext(&sIdxIter, &ix)
   ){
     int regIdx;          /* Range of registers hold conent for pIdx */
     int regR;            /* Range of registers holding conflicting PK */
@@ -2001,15 +2055,14 @@ void sqlite3GenerateConstraintChecks(
     int addrConflictCk;  /* First opcode in the conflict check logic */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
-    if( pUpIdx && pUpIdx->zName==pIdx->zName ){
-      addrUniqueOk = upsertJump+1;
-      upsertBypass = sqlite3VdbeGoto(v, 0);
-      VdbeComment((v, "Skip upsert subroutine"));
-      sqlite3VdbeJumpHere(v, upsertJump);
-    }else{
-      addrUniqueOk = sqlite3VdbeMakeLabel(pParse);
+    if( pUpsert ){
+      pUpsertClause = sqlite3UpsertOfIndex(pUpsert, pIdx);
+      if( upsertIpkDelay && pUpsertClause==pUpsert ){
+        sqlite3VdbeJumpHere(v, upsertIpkDelay);
+      }
     }
-    if( bAffinityDone==0 && (pUpIdx==0 || pUpIdx->zName==pIdx->zName) ){
+    addrUniqueOk = sqlite3VdbeMakeLabel(pParse);
+    if( bAffinityDone==0 ){
       sqlite3TableAffinity(v, pTab, regNewData+1);
       bAffinityDone = 1;
     }
@@ -2080,8 +2133,8 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Figure out if the upsert clause applies to this index */
-    if( pUpIdx && pUpIdx->zName==pIdx->zName ){
-      if( pUpsert->pUpsertSet==0 ){
+    if( pUpsertClause ){
+      if( pUpsertClause->pUpsertSet==0 ){
         onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
       }else{
         onError = OE_Update;  /* DO UPDATE */
@@ -2273,13 +2326,12 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    if( pUpIdx && pUpIdx->zName==pIdx->zName ){
-      sqlite3VdbeGoto(v, upsertJump+1);
-      sqlite3VdbeJumpHere(v, upsertBypass);
-    }else{
-      sqlite3VdbeResolveLabel(v, addrUniqueOk);
-    }
+    sqlite3VdbeResolveLabel(v, addrUniqueOk);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
+    if( pUpsertClause && sqlite3UpsertNextIsIPK(pUpsertClause) ){
+      sqlite3VdbeGoto(v, upsertIpkDelay+1);
+      sqlite3VdbeJumpHere(v, upsertIpkReturn);
+    }
   }
 
   /* If the IPK constraint is a REPLACE, run it last */

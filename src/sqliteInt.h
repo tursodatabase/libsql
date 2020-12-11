@@ -4841,10 +4841,14 @@ const char *sqlite3JournalModename(int);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
   int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
   void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
+  Upsert *sqlite3UpsertOfIndex(Upsert*,Index*);
+  int sqlite3UpsertNextIsIPK(Upsert*);
 #else
 #define sqlite3UpsertNew(u,v,w,x,y,z) ((Upsert*)0)
 #define sqlite3UpsertDelete(x,y)
 #define sqlite3UpsertDup(x,y)         ((Upsert*)0)
+#define sqlite3UpsertOfIndex(x,y)     ((Upsert*)0)
+#define sqlite3UpsertNextIsIPK(x)     0
 #endif
 
 
