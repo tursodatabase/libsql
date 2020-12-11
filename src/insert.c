@@ -1453,8 +1453,8 @@ static Index *indexIteratorFirst(IndexIterator *pIter, int *pIx){
 
 /* Return the next index from the list.  Return NULL when out of indexes */
 static Index *indexIteratorNext(IndexIterator *pIter, int *pIx){
-  int i = ++pIter->i;
   if( pIter->eType ){
+    int i = ++pIter->i;
     if( i>=pIter->u.ax.nIdx ){
       *pIx = i;
       return 0;
@@ -1462,7 +1462,7 @@ static Index *indexIteratorNext(IndexIterator *pIter, int *pIx){
     *pIx = pIter->u.ax.aIdx[i].ix;
     return pIter->u.ax.aIdx[i].p;
   }else{
-    *pIx = i;
+    ++(*pIx);
     pIter->u.lx.pIdx = pIter->u.lx.pIdx->pNext;
     return pIter->u.lx.pIdx;
   }
@@ -1798,6 +1798,7 @@ void sqlite3GenerateConstraintChecks(
   */
   sIdxIter.eType = 0;
   sIdxIter.i = 0;
+  sIdxIter.u.ax.aIdx = 0;  /* Silence harmless compiler warning */
   sIdxIter.u.lx.pIdx = pTab->pIndex;
   if( pUpsert ){
     if( pUpsert->pUpsertTarget==0 ){
@@ -2120,7 +2121,7 @@ void sqlite3GenerateConstraintChecks(
     ** of a WITHOUT ROWID table and there has been no change the
     ** primary key, then no collision is possible.  The collision detection
     ** logic below can all be skipped. */
-    if( isUpdate && pPk && pPk->zName==pIdx->zName && pkChng==0 ){
+    if( isUpdate && pPk==pIdx && pkChng==0 ){
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;
     }
@@ -2158,7 +2159,7 @@ void sqlite3GenerateConstraintChecks(
     ** is invoked.  */ 
 #ifndef SQLITE_ENABLE_PREUPDATE_HOOK
     if( (ix==0 && pIdx->pNext==0)                   /* Condition 3 */
-     && pPk && pPk->zName==pIdx->zName              /* Condition 2 */
+     && pPk==pIdx                                   /* Condition 2 */
      && onError==OE_Replace                         /* Condition 1 */
      && ( 0==(db->flags&SQLITE_RecTriggers) ||      /* Condition 4 */
           0==sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0))
@@ -2177,8 +2178,7 @@ void sqlite3GenerateConstraintChecks(
                            regIdx, pIdx->nKeyCol); VdbeCoverage(v);
 
     /* Generate code to handle collisions */
-    regR = (pPk && pIdx->zName==pPk->zName) ?
-              regIdx : sqlite3GetTempRange(pParse, nPkField);
+    regR = pIdx==pPk ? regIdx : sqlite3GetTempRange(pParse, nPkField);
     if( isUpdate || onError==OE_Replace ){
       if( HasRowid(pTab) ){
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iThisCur, regR);
@@ -2193,7 +2193,7 @@ void sqlite3GenerateConstraintChecks(
         int x;
         /* Extract the PRIMARY KEY from the end of the index entry and
         ** store it in registers regR..regR+nPk-1 */
-        if( pPk && pIdx->zName!=pPk->zName ){
+        if( pIdx!=pPk ){
           for(i=0; i<pPk->nKeyCol; i++){
             assert( pPk->aiColumn[i]>=0 );
             x = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[i]);
@@ -2274,8 +2274,7 @@ void sqlite3GenerateConstraintChecks(
         }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
             regR, nPkField, 0, OE_Replace,
-            (pPk && pIdx->zName==pPk->zName ? ONEPASS_SINGLE : ONEPASS_OFF),
-            iThisCur);
+            (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), iThisCur);
         if( pTrigger && isUpdate ){
           sqlite3VdbeAddOp1(v, OP_CursorUnlock, iDataCur);
         }
