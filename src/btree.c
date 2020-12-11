@@ -8697,7 +8697,7 @@ int sqlite3BtreeInsert(
   ** keys with no associated data. If the cursor was opened expecting an
   ** intkey table, the caller should be inserting integer keys with a
   ** blob of associated data.  */
-  assert( (pX->pKey==0)==(pCur->pKeyInfo==0) || (flags & BTREE_PREFORMAT) );
+  assert( (flags & BTREE_PREFORMAT) || (pX->pKey==0)==(pCur->pKeyInfo==0) );
 
   /* Save the positions of any other cursors open on this table.
   **
