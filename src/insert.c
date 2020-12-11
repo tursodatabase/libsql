@@ -1441,9 +1441,14 @@ struct IndexListTerm {
 
 /* Return the first index on the list */
 static Index *indexIteratorFirst(IndexIterator *pIter, int *pIx){
-  int i = pIter->i;
-  *pIx = i;
-  return pIter->eType ? pIter->u.ax.aIdx[i].p : pIter->u.lx.pIdx;
+  assert( pIter->i==0 );
+  if( pIter->eType ){
+    *pIx = pIter->u.ax.aIdx[0].ix;
+    return pIter->u.ax.aIdx[0].p;
+  }else{
+    *pIx = 0;
+    return pIter->u.lx.pIdx;
+  }
 }
 
 /* Return the next index from the list.  Return NULL when out of indexes */
@@ -2328,7 +2333,10 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeResolveLabel(v, addrUniqueOk);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
-    if( pUpsertClause && sqlite3UpsertNextIsIPK(pUpsertClause) ){
+    if( pUpsertClause 
+     && upsertIpkReturn
+     && sqlite3UpsertNextIsIPK(pUpsertClause)
+    ){
       sqlite3VdbeGoto(v, upsertIpkDelay+1);
       sqlite3VdbeJumpHere(v, upsertIpkReturn);
     }
