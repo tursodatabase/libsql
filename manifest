@@ -1,5 +1,5 @@
-C New\stest\scases\swith\scorresponding\sbug\sfixes.
-D 2020-12-12T00:28:15.628
+C More\stest\scases.\s\sNo\snew\sproblems\sdiscovered.
+D 2020-12-12T00:43:52.775
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1643,7 +1643,7 @@ F test/upsert1.test 88f9e258c6a0eeeb85937b08831e8daad440ba41f125af48439e9d33f266
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
-F test/upsert5.test 32ff55ed7e3dcfe62a8e54897c20e074d4629ddf72297092e79997f82ccf06b5
+F test/upsert5.test f49faf5f15b5c3641c6f5d7c7cc531ef5ac997567b2b6bb7bc96f7c88753ca0b
 F test/upsertfault.test f21ca47740841fdb4d61acfa7b17646d773e67724fe8c185b71c018db8a94b35
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
@@ -1889,7 +1889,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aadd67ddf2a191629b5356395f75e4556aac904a6e2f6b83742fa4f26e4253a4
-R ebc93beb1a5a9905106ef56cc676e95d
+P f22c21a94ca4cad0217f91c1a5a275bc348cb6ba0f3a54c927533bc8d8c96a90
+R 5a5b9a84e82bccc93a94b5f0a9cd7326
 U drh
-Z 4e2db7f4f46c9338f10a1365883b3835
+Z 16b3f3b436b8a24d4c2a8d5d463d0b17

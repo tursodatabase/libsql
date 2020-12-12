@@ -271,6 +271,127 @@ foreach {tn sql} {
     SELECT a,b,c,d,e FROM t1;
   } {1 d 3 4 5}
 
+  do_execsql_test 1.$tn.410 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,94,95)
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+  do_execsql_test 1.$tn.411 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,93,94,5)
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+  do_execsql_test 1.$tn.412 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,93,4,95)
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+  do_execsql_test 1.$tn.413 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,3,94,95)
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+
+  do_execsql_test 1.$tn.420 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,94,95)
+      ON CONFLICT(c) DO NOTHING
+      ON CONFLICT(d) DO NOTHING
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+  do_execsql_test 1.$tn.421 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,93,94,5)
+      ON CONFLICT(c) DO NOTHING
+      ON CONFLICT(d) DO NOTHING
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+  do_execsql_test 1.$tn.422 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,93,4,95)
+      ON CONFLICT(c) DO NOTHING
+      ON CONFLICT(d) DO NOTHING
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 2 3 4 5}
+  do_execsql_test 1.$tn.423 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,3,94,95)
+      ON CONFLICT(c) DO NOTHING
+      ON CONFLICT(d) DO NOTHING
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 2 3 4 5}
+
+  do_execsql_test 1.$tn.500 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,94,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO NOTHING;
+    SELECT a,b,c,d,e FROM t1;
+  } {1 2 3 4 5}
+  do_execsql_test 1.$tn.501 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,93,94,5)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO NOTHING;
+    SELECT a,b,c,d,e FROM t1;
+  } {1 2 3 4 5}
+  do_execsql_test 1.$tn.502 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,94,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO NOTHING;
+    SELECT a,b,c,d,e FROM t1;
+  } {1 2 3 4 5}
+  do_execsql_test 1.$tn.503 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,3,94,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO NOTHING;
+    SELECT a,b,c,d,e FROM t1;
+  } {1 c 3 4 5}
+  do_execsql_test 1.$tn.504 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,3,4,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO NOTHING;
+    SELECT a,b,c,d,e FROM t1;
+  } {1 c 3 4 5}
+  do_execsql_test 1.$tn.505 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,4,5)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO NOTHING;
+    SELECT a,b,c,d,e FROM t1;
+  } {1 d 3 4 5}
+
 }
 
 finish_test
