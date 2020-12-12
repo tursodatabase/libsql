@@ -1804,7 +1804,7 @@ void sqlite3GenerateConstraintChecks(
     if( pUpsert->pUpsertTarget==0 ){
       /* There is just on ON CONFLICT clause and it has no constraint-target */
       assert( pUpsert->pNextUpsert==0 );
-      if( pUpsert->pUpsertSet==0 ){
+      if( pUpsert->isDoUpdate==0 ){
         /* A single ON CONFLICT DO NOTHING clause, without a constraint-target.
         ** Make all unique constraint resolution be OE_Ignore */
         overrideError = OE_Ignore;
@@ -1918,7 +1918,7 @@ void sqlite3GenerateConstraintChecks(
     if( pUpsert ){
       pUpsertClause = sqlite3UpsertOfIndex(pUpsert,0);
       if( pUpsertClause!=0 ){
-        if( pUpsertClause->pUpsertSet==0 ){
+        if( pUpsertClause->isDoUpdate==0 ){
           onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
         }else{
           onError = OE_Update;  /* DO UPDATE */
@@ -2140,7 +2140,7 @@ void sqlite3GenerateConstraintChecks(
 
     /* Figure out if the upsert clause applies to this index */
     if( pUpsertClause ){
-      if( pUpsertClause->pUpsertSet==0 ){
+      if( pUpsertClause->isDoUpdate==0 ){
         onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
       }else{
         onError = OE_Update;  /* DO UPDATE */

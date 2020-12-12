@@ -3078,6 +3078,7 @@ struct Upsert {
   ExprList *pUpsertSet;     /* The SET clause from an ON CONFLICT UPDATE */
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
   Upsert *pNextUpsert;      /* Next ON CONFLICT clause in the list */
+  u8 isDoUpdate;            /* True for DO UPDATE.  False for DO NOTHING */
   /* Above this point is the parse tree for the ON CONFLICT clauses.
   ** The next group of fields stores intermediate data. */
   void *pToFree;            /* Free memory when deleting the Upsert object */
@@ -3091,7 +3092,6 @@ struct Upsert {
   int regData;              /* First register holding array of VALUES */
   int iDataCur;             /* Index of the data cursor */
   int iIdxCur;              /* Index of the first index cursor */
-  int addrGenericUpdate;    /* Address of routine for generic DO UPDATE */
 };
 
 /*

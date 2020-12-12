@@ -74,6 +74,7 @@ Upsert *sqlite3UpsertNew(
     pNew->pUpsertTargetWhere = pTargetWhere;
     pNew->pUpsertSet = pSet;
     pNew->pUpsertWhere = pWhere;
+    pNew->isDoUpdate = pSet!=0;
     pNew->pNextUpsert = pNext;
   }
   return pNew;
@@ -267,14 +268,7 @@ void sqlite3UpsertDoUpdate(
   assert( pUpsert!=0 );
   iDataCur = pUpsert->iDataCur;
   pUpsert = sqlite3UpsertOfIndex(pTop, pIdx);
-  if( pUpsert->addrGenericUpdate>0 ){
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, pUpsert->addrGenericUpdate);
-    return;
-  }
   VdbeNoopComment((v, "Begin DO UPDATE of UPSERT"));
-  if( pUpsert->pUpsertTarget==0 ){
-    pUpsert->addrGenericUpdate = sqlite3VdbeCurrentAddr(v);
-  }
   if( pIdx && iCur!=iDataCur ){
     if( HasRowid(pTab) ){
       int regRowid = sqlite3GetTempReg(pParse);
@@ -313,10 +307,8 @@ void sqlite3UpsertDoUpdate(
       sqlite3VdbeAddOp1(v, OP_RealAffinity, pTop->regData+i);
     }
   }
-  sqlite3Update(pParse, pSrc, pUpsert->pUpsertSet,
-      pUpsert->pUpsertWhere, OE_Abort, 0, 0, pUpsert);
-  pUpsert->pUpsertSet = 0;    /* Will have been deleted by sqlite3Update() */
-  pUpsert->pUpsertWhere = 0;  /* Will have been deleted by sqlite3Update() */
+  sqlite3Update(pParse, pSrc, sqlite3ExprListDup(db,pUpsert->pUpsertSet,0),
+      sqlite3ExprDup(db,pUpsert->pUpsertWhere,0), OE_Abort, 0, 0, pUpsert);
   VdbeNoopComment((v, "End DO UPDATE of UPSERT"));
 }
 

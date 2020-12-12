@@ -216,7 +216,6 @@ foreach {tn sql} {
     SELECT a,b,c,d,e FROM t1;
   } {1 e 3 4 5}
 
-if {0} {
   do_execsql_test 1.$tn.400 {
     DELETE FROM t1;
     INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
@@ -235,7 +234,42 @@ if {0} {
       ON CONFLICT DO UPDATE set b='x';
     SELECT a,b,c,d,e FROM t1;
   } {1 x 3 4 5}
-}
+  do_execsql_test 1.$tn.402 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,94,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 x 3 4 5}
+  do_execsql_test 1.$tn.403 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,3,94,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 c 3 4 5}
+  do_execsql_test 1.$tn.404 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(91,NULL,3,4,95)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 c 3 4 5}
+  do_execsql_test 1.$tn.405 {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,NULL,93,4,5)
+      ON CONFLICT(c) DO UPDATE SET b='c'
+      ON CONFLICT(d) DO UPDATE SET b='d'
+      ON CONFLICT DO UPDATE set b='x';
+    SELECT a,b,c,d,e FROM t1;
+  } {1 d 3 4 5}
 
 }
 
