@@ -262,6 +262,7 @@ int sqlite3BtreeDelete(BtCursor*, u8 flags);
 #define BTREE_SAVEPOSITION 0x02  /* Leave cursor pointing at NEXT or PREV */
 #define BTREE_AUXDELETE    0x04  /* not the primary delete operation */
 #define BTREE_APPEND       0x08  /* Insert is likely an append */
+#define BTREE_PREFORMAT    0x80  /* Insert is likely an append */
 
 /* An instance of the BtreePayload object describes the content of a single
 ** entry in either an index or table btree.
@@ -362,6 +363,8 @@ void sqlite3BtreeCursorList(Btree*);
 #ifndef SQLITE_OMIT_WAL
   int sqlite3BtreeCheckpoint(Btree*, int, int *, int *);
 #endif
+
+int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
 
 /*
 ** If we are not using shared cache, then there is no need to

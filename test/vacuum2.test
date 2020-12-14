@@ -56,7 +56,7 @@ do_test vacuum2-2.1 {
   }
   hexio_get_int [hexio_read test.db 24 4]
 } [expr {[hexio_get_int [hexio_read test.db 24 4]]+3}]
-do_test vacuum2-2.1 {
+do_test vacuum2-2.2 {
   execsql {
     VACUUM
   }

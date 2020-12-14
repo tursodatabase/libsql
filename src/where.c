@@ -37,12 +37,6 @@ struct HiddenIndexInfo {
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
 
-/* Test variable that can be set to enable WHERE tracing */
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-/***/ int sqlite3WhereTrace = 0;
-#endif
-
-
 /*
 ** Return the estimated number of output rows from a WHERE clause
 */
