@@ -381,6 +381,14 @@ static void reorder(int *pFrom){
   reorder(&aKeywordTable[i].iNext);
 }
 
+/* Parameter to the hash function
+*/
+#define HASH_OP ^
+#define HASH_CC '^'
+#define HASH_C0 4
+#define HASH_C1 3
+#define HASH_C2 1
+
 /*
 ** This routine does the work.  The generated code is printed on standard
 ** output.
@@ -411,8 +419,9 @@ int main(int argc, char **argv){
     assert( p->len<sizeof(p->zOrigName) );
     memcpy(p->zOrigName, p->zName, p->len+1);
     totalLen += p->len;
-    p->hash = (charMap(p->zName[0])*4) ^
-              (charMap(p->zName[p->len-1])*3) ^ (p->len*1);
+    p->hash = (charMap(p->zName[0])*HASH_C0) HASH_OP
+              (charMap(p->zName[p->len-1])*HASH_C1) HASH_OP
+              (p->len*HASH_C2);
     p->id = i+1;
   }
 
@@ -648,8 +657,9 @@ int main(int argc, char **argv){
   printf("  int i, j;\n");
   printf("  const char *zKW;\n");
   printf("  if( n>=2 ){\n");
-  printf("    i = ((charMap(z[0])*4) ^ (charMap(z[n-1])*3) ^ n) %% %d;\n",
-          bestSize);
+  printf("    i = ((charMap(z[0])*%d) %c", HASH_C0, HASH_CC);
+  printf(" (charMap(z[n-1])*%d) %c", HASH_C1, HASH_CC);
+  printf(" n*%d) %% %d;\n", HASH_C2, bestSize);
   printf("    for(i=((int)aKWHash[i])-1; i>=0; i=((int)aKWNext[i])-1){\n");
   printf("      if( aKWLen[i]!=n ) continue;\n");
   printf("      zKW = &zKWText[aKWOffset[i]];\n");

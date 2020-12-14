@@ -87,7 +87,9 @@ AC_SUBST(READLINE_LIBS)
 AC_ARG_ENABLE(threadsafe, [AS_HELP_STRING(
   [--enable-threadsafe], [build a thread-safe library [default=yes]])], 
   [], [enable_threadsafe=yes])
-if test x"$enable_threadsafe" != "xno"; then
+if test x"$enable_threadsafe" == "xno"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_THREADSAFE=0"
+else
   BUILD_CFLAGS="$BUILD_CFLAGS -D_REENTRANT=1 -DSQLITE_THREADSAFE=1"
   AC_SEARCH_LIBS(pthread_create, pthread)
   AC_SEARCH_LIBS(pthread_mutexattr_init, pthread)
