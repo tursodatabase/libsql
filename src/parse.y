@@ -952,7 +952,12 @@ cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES.
 }
 
 %type upsert {Upsert*}
-%destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
+
+// Because upsert only occurs at the tip end of the INSERT rule for cmd,
+// there is never a case where the value of the upsert pointer will not
+// be destroyed by the cmd action.  So comment-out the destructor to
+// avoid unreachable code.
+//%destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
 upsert(A) ::= . { A = 0; }
 upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW)
               DO UPDATE SET setlist(Z) where_opt(W) upsert(N).

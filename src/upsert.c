@@ -216,7 +216,7 @@ int sqlite3UpsertAnalyzeTarget(
 */
 int sqlite3UpsertNextIsIPK(Upsert *pUpsert){
   Upsert *pNext;
-  if( pUpsert==0 ) return 0;
+  if( NEVER(pUpsert==0) ) return 0;
   pNext = pUpsert->pNextUpsert;
   if( pNext==0 ) return 1;
   if( pNext->pUpsertTarget==0 ) return 1;
