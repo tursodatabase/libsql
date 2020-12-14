@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sbroken\sby\srecent\schanges\sto\svacuum.
-D 2020-12-11T19:01:24.454
+C Fix\san\sinteger\soverflow\sproblem\sin\snew\sVACUUM\scode.
+D 2020-12-14T15:25:14.417
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F src/auth.c a3d5bfdba83d25abed1013a8c7a5f204e2e29b0c25242a56bc02bb0c07bf1e06
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ea5e8bfe904d4818d97cae4eee229d7ce21a0a090ef5402ebac68840dc16713f
+F src/btree.c f8cdad7e00eedad4e4f5183aee8db354dd3622604a27bd2223811eeb182236fb
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
 F src/build.c f6449d4e85e998e14d3f537e8ea898dca2fcb83c277db3e60945af9b9177db81
@@ -1889,7 +1889,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b411f29e1a6415f4a241777c45591b8389e746cd8b40d9b225e073bcb0a3bdbf
-R 5f1281ebbbf31df2eed9d78849a16b43
+P dd058da85ca54ae70e26cb0bdc75ff42998d4a8b29a5e2dcac44ee0e45776a85
+R 0d937f0ec9f044837ba6918ca3838d82
 U dan
-Z 63f7dff9f8374ff08b8e0cc7e378c500
+Z 57f4f0625729074fba29cd7d21629db2

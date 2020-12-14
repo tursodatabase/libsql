@@ -1147,7 +1147,7 @@ static SQLITE_NOINLINE void btreeParseCellAdjustSizeForOverflow(
 ** Given a record with nPayload bytes of payload stored within btree
 ** page pPage, return the number of bytes of payload stored locally.
 */
-static int btreePayloadToLocal(MemPage *pPage, int nPayload){
+static int btreePayloadToLocal(MemPage *pPage, i64 nPayload){
   int maxLocal;  /* Maximum amount of payload held locally */
   maxLocal = pPage->maxLocal;
   if( nPayload<=maxLocal ){
