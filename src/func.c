@@ -2084,6 +2084,7 @@ static void signFunc(
 ){
   int type0;
   double x;
+  UNUSED_PARAMETER(argc);
   assert( argc==1 );
   type0 = sqlite3_value_numeric_type(argv[0]);
   if( type0!=SQLITE_INTEGER && type0!=SQLITE_FLOAT ) return;

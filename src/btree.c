@@ -8965,7 +8965,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   BtShared *pBt = pDest->pBt;
   u8 *aOut = pBt->pTmpSpace;    /* Pointer to next output buffer */
   const u8 *aIn;                /* Pointer to next input buffer */
-  int nIn;                      /* Size of input buffer aIn[] */
+  u32 nIn;                      /* Size of input buffer aIn[] */
   u32 nRem;                     /* Bytes of data still to copy */
 
   getCellInfo(pSrc);
@@ -8983,7 +8983,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
     Pgno ovflIn = 0;
     DbPage *pPageIn = 0;
     MemPage *pPageOut = 0;
-    int nOut;                     /* Size of output buffer aOut[] */
+    u32 nOut;                     /* Size of output buffer aOut[] */
 
     nOut = btreePayloadToLocal(pDest->pPage, pSrc->info.nPayload);
     pBt->nPreformatSize = nOut + (aOut - pBt->pTmpSpace);
