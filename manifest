@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\sand\sincorrect\s#ifdef.\s\sFix\sharmless\scompiler\swarnings.
-D 2020-12-16T14:20:45.731
+C Allow\ssub-queries\sthat\suse\sUNION\sALL\sto\sbe\sflattened,\seven\sif\sthe\sparent\squery\sis\sa\sjoin.\sStill\ssome\sproblems\son\sthis\sbranch.
+D 2020-12-16T20:00:46.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c c9b68506e5d8cc8d0e4b307b97a9800b050ac37dada80ae9c66f680f8fac3e09
+F src/select.c 85f02c7d6bcc81c369da37e3c5decf45e326d8a4988b44f7111a06352d9c8830
 F src/shell.c.in e9f674ee4ec6c345679e8a5b16c869c6c59eb1540dd98ac69e4736ecddce0090
 F src/sqlite.h.in 5b7593bb0f3658e682a9fcd1cd8fcedf244ec45ca93d645055a53172f55eb783
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1331,7 +1331,7 @@ F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
 F test/selectA.test 68de52409e45a3313d00b8461b48bef4fb729faf36ade9067a994eae55cc86f4
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
-F test/selectC.test e25243f8ca503e06f252eb0218976d07cfeceac3
+F test/selectC.test fec14c9015ed4ec941508bbc144f30b42e40ac34a4bb33001450369865dd0b75
 F test/selectD.test fc20452847a01775710090383cfb4423275d2f745fed61f34fbf37573ac0d214
 F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
@@ -1627,6 +1627,8 @@ F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
+F test/unionall.test 52a4324f59c70df2525188298a0593d650d983ccbfa9441a8a411ac99e1d6644
+F test/unionallfault.test 8dcc3f680ace498d8d3110ddcfdaa6a3d8aa1843bc7c266b990f13815ee6d7fe
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
@@ -1741,7 +1743,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test a2874062140ed4aba9ffae76e6190a3df6fc73d1373fdfa8fd632945082a5364
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/whereL.test e05cedc9389c6f09ad55bd5999a3fddccebec90672fb989433c145dcdaf26996
+F test/whereL.test 1afe47227f093dc0547236491fb37529b7be9724b8575925a321001b80e6a23a
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1891,7 +1893,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 48301edc90fe5811df0394b106edce7726d0ea86ac562c9f4db511b812a76433
-R bc270d52af99cca590351162eea6886b
-U drh
-Z 53bb33e2ab1210ebb52c38429ca9bfe7
+P 31cd1bbfa5b06723288d99d1cb423f88353bdef770b82e9103f71a796d66f660
+R 1855283db3260c0b82311305192dc3a1
+T *branch * union-all-flattener
+T *sym-union-all-flattener *
+T -sym-trunk *
+U dan
+Z cdcd89c0fb8db082c205bd2de653ec39
