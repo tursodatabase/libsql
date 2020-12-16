@@ -8973,6 +8973,9 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   if( pDest->pKeyInfo==0 ) aOut += putVarint(aOut, iKey);
   nIn = pSrc->info.nLocal;
   aIn = pSrc->info.pPayload;
+  if( aIn+nIn>pSrc->pPage->aDataEnd ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   nRem = pSrc->info.nPayload;
   if( nIn==nRem && nIn<pDest->pPage->maxLocal ){
     memcpy(aOut, aIn, nIn);
@@ -8993,6 +8996,9 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
     }
   
     if( nRem>nIn ){
+      if( aIn+nIn+4>pSrc->pPage->aDataEnd ){
+        return SQLITE_CORRUPT_BKPT;
+      }
       ovflIn = get4byte(&pSrc->info.pPayload[nIn]);
     }
   
