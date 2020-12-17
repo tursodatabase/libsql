@@ -77,6 +77,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * [`functions`](https://docs.rs/rusqlite/~0/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
   Note: This feature requires SQLite 3.7.3 or later.
+* `window` for [window function](https://www.sqlite.org/windowfunctions.html) support (`fun(...) OVER ...`). (Implies `functions`.)
 * [`trace`](https://docs.rs/rusqlite/~0/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs. Note: This feature
   requires SQLite 3.6.23 or later.
@@ -97,16 +98,20 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * `url` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
   `Url` type from the [`url` crate](https://crates.io/crates/url).
-* `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
+* `bundled` uses a bundled version of SQLite.  This is a good option for cases where linking to SQLite is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature is mutually exclusive with `bundled`.
 * `hooks` for [Commit, Rollback](http://sqlite.org/c3ref/commit_hook.html) and [Data Change](http://sqlite.org/c3ref/update_hook.html) notification callbacks.
 * `unlock_notify` for [Unlock](https://sqlite.org/unlock_notify.html) notification.
 * `vtab` for [virtual table](https://sqlite.org/vtab.html) support (allows you to write virtual table implementations in Rust). Currently, only read-only virtual tables are supported.
-* [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust.
-* [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function.
+* `series` exposes [`generate_series(...)`](https://www.sqlite.org/series.html) Table-Valued Function. (Implies `vtab`.)
+* [`csvtab`](https://sqlite.org/csv.html), CSV virtual table written in Rust. (Implies `vtab`.)
+* [`array`](https://sqlite.org/carray.html), The `rarray()` Table-Valued Function. (Implies `vtab`.)
 * `i128_blob` allows storing values of type `i128` type in SQLite databases. Internally, the data is stored as a 16 byte big-endian blob, with the most significant bit flipped, which allows ordering and comparison between different blobs storing i128s to work as expected.
 * `uuid` allows storing and retrieving `Uuid` values from the [`uuid`](https://docs.rs/uuid/) crate using blobs.
-* [`session`](https://sqlite.org/sessionintro.html), Session module extension. Requires `buildtime_bindgen` feature.
+* [`session`](https://sqlite.org/sessionintro.html), Session module extension. Requires `buildtime_bindgen` feature. (Implies `hooks`.)
+* `extra_check` fail when a query passed to execute is readonly or has a column count > 0.
+* `column_decltype` provides `columns()` method for Statements and Rows; omit if linking to a version of SQLite/SQLCipher compiled with `-DSQLITE_OMIT_DECLTYPE`.
+* `collation` exposes [`sqlite3_create_collation_v2`](https://sqlite.org/c3ref/create_collation.html).
 
 ## Notes on building rusqlite and libsqlite3-sys
 
@@ -126,14 +131,17 @@ You can adjust this behavior in a number of ways:
   version = "0.24.2"
   features = ["bundled"]
   ```
-* You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
-  library.
+* When using the `bundled` feature, the build script will honor `SQLITE_MAX_VARIABLE_NUMBER` and `SQLITE_MAX_EXPR_DEPTH` variables. It will also honor a `LIBSQLITE3_FLAGS` variable, which can have a format like `"-USQLITE_ALPHA -DSQLITE_BETA SQLITE_GAMMA ..."`. That would disable the `SQLITE_ALPHA` flag, and set the `SQLITE_BETA` and `SQLITE_GAMMA` flags. (The initial `-D` can be omitted, as on the last one.)
+
+* When linking against a SQLite library already on the system (so *not* using the `bundled` feature), you can set the `SQLITE3_LIB_DIR` environment variable to point to a directory containing the library. You can also set the `SQLITE3_INCLUDE_DIR` variable to point to the directory containing `sqlite3.h`.
 * Installing the sqlite3 development packages will usually be all that is required, but
   the build helpers for [pkg-config](https://github.com/alexcrichton/pkg-config-rs)
   and [vcpkg](https://github.com/mcgoo/vcpkg-rs) have some additional configuration
   options. The default when using vcpkg is to dynamically link,
   which must be enabled by setting `VCPKGRS_DYNAMIC=1` environment variable before build.
   `vcpkg install sqlite3:x64-windows` will install the required library.
+* When linking against a SQLite library already on the system, you can set the `SQLITE3_STATIC` environment variable to 1 to request that the library be statically instead of dynamically linked.
+
 
 ### Binding generation
 
@@ -169,7 +177,7 @@ If you enable the `modern_sqlite` feature, we'll use the bindings we would have
 included with the bundled build. You generally should have `buildtime_bindgen`
 enabled if you turn this on, as otherwise you'll need to keep the version of
 SQLite you link with in sync with what rusqlite would have bundled, (usually the
-most recent release of sqlite). Failing to do this will cause a runtime error.
+most recent release of SQLite). Failing to do this will cause a runtime error.
 
 ## Contributing
 
@@ -177,7 +185,7 @@ Rusqlite has many features, and many of them impact the build configuration in
 incompatible ways. This is unfortunate, and makes testing changes hard.
 
 To help here: you generally should ensure that you run tests/lint for
-`--features bundled`, and `--features bundled-full session buildtime_bindgen`.
+`--features bundled`, and `--features "bundled-full session buildtime_bindgen"`.
 
 If running bindgen is problematic for you, `--features bundled-full` enables
 bundled and all features which don't require binding generation, and can be used
@@ -187,9 +195,9 @@ instead.
 
 - Run `cargo fmt` to ensure your Rust code is correctly formatted.
 - Ensure `cargo clippy --all-targets --workspace --features bundled` passes without warnings.
-- Ensure `cargo test --all-targets --workspace --features bundled-full session buildtime_bindgen` reports no failures.
+- Ensure `cargo clippy --all-targets --workspace --features "bundled-full session buildtime_bindgen"` passes without warnings.
 - Ensure `cargo test --all-targets --workspace --features bundled` reports no failures.
-- Ensure `cargo test --all-targets --workspace --features bundled-full session buildtime_bindgen` reports no failures.
+- Ensure `cargo test --all-targets --workspace --features "bundled-full session buildtime_bindgen"` reports no failures.
 
 ## Author
 
