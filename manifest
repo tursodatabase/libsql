@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3BtreeTransferRow()\sroutine\sso\sthat\sit\sdoes\smore\scareful\nchecks\sfor\scorrupt\sdatabase\spages.
-D 2020-12-16T21:09:45.084
+C Fix\sa\sproblem\swith\ssqlite3_expanded_sql()\sthat\scould\soccur\swith\sstatements\sthat\suse\sboth\snumbered\s(e.g.\s"?1")\sand\sunnumbered\s(i.e.\s"?")\sparameters.
+D 2020-12-17T11:24:26.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -620,7 +620,7 @@ F src/vdbeaux.c c76b7e96e189f5056d1de914d33d07bd03d3b88741f75375c8e18c9b11ffd379
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
 F src/vdbesort.c f5b5e473a7cee44e47a94817b042fd7172cf3aa2c0a7928a8339d612bcfdec5a
-F src/vdbetrace.c fa3bf238002f0bbbdfb66cc8afb0cea284ff9f148d6439bc1f6f2b4c3b7143f0
+F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb724
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 5f5fc793092f53bbdfde296c50f563fb7bda58cf48e9cf6a8bdfbc5abd409845
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
@@ -1595,7 +1595,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 7c4eb8cdd79c568f46d344b3e789c9fdb8a766d112871352704861f3fca32a2a
 F test/trace.test a659a9862957f4789e37a92b3bf6d2caf5c86b02cdeefc41e850ae53acf6992a
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
-F test/trace3.test 1dff966888773ff1bfea01c080caf15417892b3f998408fe920c4791f7337144
+F test/trace3.test ae2004df24b585fed9046cc0bae4601762bc6fc4aa321d475f1350bba5047f31
 F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f439
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
@@ -1891,7 +1891,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31cd1bbfa5b06723288d99d1cb423f88353bdef770b82e9103f71a796d66f660
-R be1e2d0f672e56f934d1c99d7dc679ec
-U drh
-Z e48ee7782ade3dd763b30b3828175795
+P 85952e71175dae73c4e587a3b80783825d91fe8567a819e072da651c1ff4131b
+R 8413851e616b40793979ba3b0b321ea0
+U dan
+Z a9095f79474677b3701cc55eacd5797f
