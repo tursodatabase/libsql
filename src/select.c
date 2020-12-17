@@ -3761,8 +3761,8 @@ static void recomputeColumnsUsed(
 **        syntax error and return a detailed message.
 **
 **  (18)  If the sub-query is a compound select, then all terms of the
-**        ORDER BY clause of the parent must be simple references to 
-**        columns of the sub-query.
+**        ORDER BY clause of the parent must be copies of a term returned
+**        by the parent query.
 **
 **  (19)  If the subquery uses LIMIT then the outer query may not
 **        have a WHERE clause.
