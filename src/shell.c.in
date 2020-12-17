@@ -7863,16 +7863,17 @@ static int do_meta_command(char *zLine, ShellState *p){
        int ctrlCode;            /* Integer code for that option */
        const char *zUsage;      /* Usage notes */
     } aCtrl[] = {
-      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
       { "chunk_size",     SQLITE_FCNTL_CHUNK_SIZE,      "SIZE"           },
-   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
-      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
-      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
-   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
-      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+      { "data_version",   SQLITE_FCNTL_DATA_VERSION,    ""               },
       { "has_moved",      SQLITE_FCNTL_HAS_MOVED,       ""               },  
       { "lock_timeout",   SQLITE_FCNTL_LOCK_TIMEOUT,    "MILLISEC"       },
+      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
+   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
+      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
       { "reserve_bytes",  SQLITE_FCNTL_RESERVE_BYTES,   "[N]"            },
+      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
+      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
     };
     int filectrl = -1;
     int iCtrl = -1;
@@ -7959,6 +7960,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           isOk = 1;
           break;
         }
+        case SQLITE_FCNTL_DATA_VERSION:
         case SQLITE_FCNTL_HAS_MOVED: {
           int x;
           if( nArg!=2 ) break;
