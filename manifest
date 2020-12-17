@@ -1,5 +1,5 @@
-C Allow\ssub-queries\sthat\suse\sUNION\sALL\sto\sbe\sflattened,\seven\sif\sthe\sparent\squery\sis\sa\sjoin.\sStill\ssome\sproblems\son\sthis\sbranch.
-D 2020-12-16T20:00:46.479
+C Add\stest\scases\sand\sminor\sfixes\sto\sthis\sbranch.
+D 2020-12-17T16:48:04.003
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 85f02c7d6bcc81c369da37e3c5decf45e326d8a4988b44f7111a06352d9c8830
+F src/select.c f80a2081645e3e841417f2d280ba7badfe44cee2537376035bf3dfb5f2fbdf73
 F src/shell.c.in e9f674ee4ec6c345679e8a5b16c869c6c59eb1540dd98ac69e4736ecddce0090
 F src/sqlite.h.in 5b7593bb0f3658e682a9fcd1cd8fcedf244ec45ca93d645055a53172f55eb783
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1627,7 +1627,7 @@ F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
-F test/unionall.test 52a4324f59c70df2525188298a0593d650d983ccbfa9441a8a411ac99e1d6644
+F test/unionall.test d2a6956fa3f01e0566b2cb81b2eea6e10be67c54ca1b1623685c6dbff8bd465b
 F test/unionallfault.test 8dcc3f680ace498d8d3110ddcfdaa6a3d8aa1843bc7c266b990f13815ee6d7fe
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
@@ -1893,10 +1893,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31cd1bbfa5b06723288d99d1cb423f88353bdef770b82e9103f71a796d66f660
-R 1855283db3260c0b82311305192dc3a1
-T *branch * union-all-flattener
-T *sym-union-all-flattener *
-T -sym-trunk *
+P 00e4bf74d3dfb87666a2266905f7d1a2afc6eb088d22cfd4f38f048733d6b936
+R 4cf81f06ce809058bd00b1e229a42929
 U dan
-Z cdcd89c0fb8db082c205bd2de653ec39
+Z 4e0770b4a8bae0abb40b2b1a928fba76
