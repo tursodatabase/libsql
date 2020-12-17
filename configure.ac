@@ -587,6 +587,20 @@ else
 fi
 
 ##########
+# Do we want to support math functions
+#
+AC_ARG_ENABLE(math, 
+AC_HELP_STRING([--disable-math],[Disable math functions]))
+AC_MSG_CHECKING([whether to support math functions])
+if test "$enable_math" = "no"; then
+  AC_MSG_RESULT([no])
+else
+  AC_MSG_RESULT([yes])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
+  AC_SEARCH_LIBS(ceil, m)
+fi
+
+##########
 # Do we want to support memsys3 and/or memsys5
 #
 AC_ARG_ENABLE(memsys5, 
