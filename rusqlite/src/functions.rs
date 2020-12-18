@@ -223,12 +223,12 @@ impl Context<'_> {
         }
     }
 
-    /// Get the db connection handle via sqlite3_context_db_handle
-    /// https://www.sqlite.org/c3ref/context_db_handle.html
+    /// Get the db connection handle via [sqlite3_context_db_handle](https://www.sqlite.org/c3ref/context_db_handle.html)
+    ///
+    /// # Safety
     ///
     /// This function is marked unsafe because there is a potential for other
-    /// references to the connection to be sent across threads
-    /// https://github.com/rusqlite/rusqlite/issues/643#issuecomment-640181213
+    /// references to the connection to be sent across threads, [see this comment](https://github.com/rusqlite/rusqlite/issues/643#issuecomment-640181213).
     pub unsafe fn get_connection(&self) -> Result<ConnectionRef<'_>> {
         let handle = ffi::sqlite3_context_db_handle(self.ctx);
         Ok(ConnectionRef {
