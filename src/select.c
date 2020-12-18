@@ -3673,11 +3673,10 @@ static void srclistRenumberCursors(
   struct SrcList_item *pItem;
   for(i=0, pItem=pSrc->a; i<pSrc->nSrc; i++, pItem++){
     if( i!=iExcept ){
-      int iNew = pParse->nTab++;
-      aCsrMap[pItem->iCursor] = iNew;
-      pItem->iCursor = iNew;
-      if( pItem->pSelect ){
-        srclistRenumberCursors(pParse, aCsrMap, pItem->pSelect->pSrc, -1);
+      Select *p;
+      pItem->iCursor = aCsrMap[pItem->iCursor] = pParse->nTab++;
+      for(p=pItem->pSelect; p; p=p->pPrior){
+        srclistRenumberCursors(pParse, aCsrMap, p->pSrc, -1);
       }
     }
   }

@@ -197,5 +197,52 @@ do_execsql_test 2.2.9b {
   2 TWO 5 v 3 three 5 v 3 THREE 5 v
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t1 VALUES(1,2);
+  CREATE TABLE t3_a(k INTEGER PRIMARY KEY, v TEXT);
+  INSERT INTO t3_a VALUES(2,'ii');
+  CREATE TABLE t3_b(k INTEGER PRIMARY KEY, v TEXT);
+  CREATE VIEW t3 AS
+    SELECT * FROM t3_a
+    UNION ALL
+    SELECT * FROM t3_b;
+} {}
+
+do_execsql_test 3.1 {
+  SELECT * FROM t1, t3 ORDER BY k;
+} {1 2 2 ii}
+
+reset_db
+do_execsql_test 4.0 {
+
+  CREATE TABLE t1_a(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1_a VALUES(123, 't1_a');
+  CREATE TABLE t1_b(c INTEGER PRIMARY KEY, d TEXT);
+
+  CREATE VIEW t1 AS
+    SELECT a, b FROM t1_a
+    UNION ALL
+    SELECT c, d FROM t1_b;
+
+  CREATE TABLE t3_a(k INTEGER PRIMARY KEY, v TEXT);
+  INSERT INTO t3_a VALUES(456, 't3_a');
+  CREATE TABLE t3_b(k INTEGER PRIMARY KEY, v TEXT);
+
+  CREATE VIEW t3 AS
+    SELECT * FROM t3_a
+    UNION ALL
+    SELECT * FROM t3_b;
+}
+
+do_execsql_test 4.1 {
+  SELECT * FROM t1, t3 ORDER BY k;
+} {123 t1_a 456 t3_a}
+
+do_execsql_test 4.2 {
+  SELECT * FROM (SELECT * FROM t1, t3) ORDER BY k;
+} {123 t1_a 456 t3_a}
 
 finish_test
