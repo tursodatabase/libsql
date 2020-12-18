@@ -911,7 +911,7 @@ mod test {
     struct Count;
 
     impl Aggregate<i64, Option<i64>> for Sum {
-        fn init(&self) -> i64 {
+        fn init(&self, _: &mut Context<'_>) -> i64 {
             0
         }
 
@@ -920,13 +920,13 @@ mod test {
             Ok(())
         }
 
-        fn finalize(&self, sum: Option<i64>) -> Result<Option<i64>> {
+        fn finalize(&self, _: &mut Context<'_>, sum: Option<i64>) -> Result<Option<i64>> {
             Ok(sum)
         }
     }
 
     impl Aggregate<i64, i64> for Count {
-        fn init(&self) -> i64 {
+        fn init(&self, _: &mut Context<'_>) -> i64 {
             0
         }
 
@@ -935,7 +935,7 @@ mod test {
             Ok(())
         }
 
-        fn finalize(&self, sum: Option<i64>) -> Result<i64> {
+        fn finalize(&self, _: &mut Context<'_>, sum: Option<i64>) -> Result<i64> {
             Ok(sum.unwrap_or(0))
         }
     }
