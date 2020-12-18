@@ -58,6 +58,8 @@ use std::panic::{catch_unwind, RefUnwindSafe, UnwindSafe};
 use std::ptr;
 use std::slice;
 use std::sync::Arc;
+use std::marker::PhantomData;
+use std::ops::Deref;
 
 use crate::ffi;
 use crate::ffi::sqlite3_context;
@@ -220,7 +222,42 @@ impl Context<'_> {
                 .map_err(|_| Error::GetAuxWrongType)
         }
     }
+
+
+    /// Get the db connection handle via sqlite3_context_db_handle
+    /// https://www.sqlite.org/c3ref/context_db_handle.html
+    ///
+    /// This function is marked unsafe because there is a potential for other
+    /// references to the connection to be sent across threads
+    /// https://github.com/rusqlite/rusqlite/issues/643#issuecomment-640181213
+    pub unsafe fn get_connection(&self) -> Result<ConnectionRef<'_>> {
+        let handle = ffi::sqlite3_context_db_handle(self.ctx);
+        Ok(ConnectionRef {
+            conn: Connection::from_handle(handle)?,
+            phantom: PhantomData
+        })
+    }
 }
+
+/// A reference to a connection handle with a lifetime bound to something.
+pub struct ConnectionRef<'ctx> {
+	// comes from Connection::from_handle(sqlite3_context_db_handle(...))
+    // and is non-owning
+    conn: Connection,
+    phantom: PhantomData<&'ctx Context<'ctx>>,
+}
+
+impl Deref for ConnectionRef<'_> {
+    type Target = Connection;
+
+    #[inline]
+    fn deref(&self) -> &Connection {
+        &self.conn
+    }
+}
+
+
+
 
 type AuxInner = Arc<dyn Any + Send + Sync + 'static>;
 
