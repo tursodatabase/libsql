@@ -248,7 +248,9 @@ where
     /// once, will be given `Some(A)` (the same `A` as was created by
     /// [`init`](Aggregate::init) and given to [`step`](Aggregate::step)); if [`step()`](Aggregate::step) was not called (because
     /// the function is running against 0 rows), will be given `None`.
-    fn finalize(&self, _: Option<A>) -> Result<T>;
+    ///
+    /// The passed context will have no arguments.
+    fn finalize(&self, _: &mut Context<'_>, _: Option<A>) -> Result<T>;
 }
 
 /// `feature = "window"` WindowAggregate is the callback interface for
@@ -684,7 +686,11 @@ where
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"
         );
-        (*boxed_aggr).finalize(a)
+        let mut ctx = Context {
+            ctx,
+            args: &mut [],
+        };
+        (*boxed_aggr).finalize(&mut ctx, a)
     });
     let t = match r {
         Err(_) => {
