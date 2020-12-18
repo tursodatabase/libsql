@@ -3651,6 +3651,86 @@ static void recomputeColumnsUsed(
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
+** Assign new cursor numbers to each of the items in pSrc. For each
+** new cursor number assigned, set an entry in the aCsrMap[] array 
+** to map the old cursor number to the new:
+**
+**     aCsrMap[iOld] = iNew;
+**
+** The array is guaranteed by the caller to be large enough for all
+** existing cursor numbers in pSrc.
+**
+** If pSrc contains any sub-selects, call this routine recursively
+** on the FROM clause of each such sub-select, with iExcept set to -1.
+*/
+static void srclistRenumberCursors(
+  Parse *pParse,                  /* Parse context */
+  int *aCsrMap,                   /* Array to store cursor mappings in */
+  SrcList *pSrc,                  /* FROM clause to renumber */
+  int iExcept                     /* FROM clause item to skip */
+){
+  int i;
+  struct SrcList_item *pItem;
+  for(i=0, pItem=pSrc->a; i<pSrc->nSrc; i++, pItem++){
+    if( i!=iExcept ){
+      int iNew = pParse->nTab++;
+      aCsrMap[pItem->iCursor] = iNew;
+      pItem->iCursor = iNew;
+      if( pItem->pSelect ){
+        srclistRenumberCursors(pParse, aCsrMap, pItem->pSelect->pSrc, -1);
+      }
+    }
+  }
+}
+
+/*
+** Expression walker callback used by renumberCursors() to update
+** Expr objects to match newly assigned cursor numbers.
+*/
+static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
+  int *aCsrMap = pWalker->u.aiCol;
+  if( pExpr->op==TK_COLUMN && aCsrMap[pExpr->iTable] ){
+    pExpr->iTable = aCsrMap[pExpr->iTable];
+  }
+  return WRC_Continue;
+}
+
+/*
+** Assign a new cursor number to each cursor in the FROM clause (Select.pSrc)
+** of the SELECT statement passed as the second argument, and to each 
+** cursor in the FROM clause of any FROM clause sub-selects, recursively.
+** Except, do not assign a new cursor number to the iExcept'th element in
+** the FROM clause of (*p). Update all expressions and other references 
+** to refer to the new cursor numbers.
+**
+** Argument aCsrMap is an array that may be used for temporary working
+** space. Two guarantees are made by the caller:
+**
+**   * the array is larger than the largest cursor number used within the
+**     select statement passed as an argument, and
+**
+**   * the array entries for all cursor numbers that do *not* appear in 
+**     FROM clauses of the select statement as described above are 
+**     initialized to zero.
+*/
+static void renumberCursors(
+  Parse *pParse,                  /* Parse context */
+  Select *p,                      /* Select to renumber cursors within */
+  int iExcept,                    /* FROM clause item to skip */
+  int *aCsrMap                    /* Working space */
+){
+  Walker w;
+  srclistRenumberCursors(pParse, aCsrMap, p->pSrc, iExcept);
+  memset(&w, 0, sizeof(w));
+  w.u.aiCol = aCsrMap;
+  w.xExprCallback = renumberCursorsCb;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
+  sqlite3WalkSelect(&w, p);
+}
+#endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+/*
 ** This routine attempts to flatten subqueries as a performance optimization.
 ** This routine returns 1 if it makes changes and 0 if no flattening occurs.
 **
@@ -3824,6 +3904,7 @@ static int flattenSubquery(
   struct SrcList_item *pSubitem;   /* The subquery */
   sqlite3 *db = pParse->db;
   Walker w;                        /* Walker to persist agginfo data */
+  int *aCsrMap = 0;
 
   /* Check to see if flattening is permitted.  Return 0 if not.
   */
@@ -3950,6 +4031,10 @@ static int flattenSubquery(
 
     /* Restriction (23) */
     if( (p->selFlags & SF_Recursive) ) return 0;
+
+    if( pSrc->nSrc>1 ){
+      aCsrMap = sqlite3DbMallocZero(db, pParse->nTab*sizeof(int));
+    }
   }
 
   /***** If we reach this point, flattening is permitted. *****/
@@ -4024,6 +4109,9 @@ static int flattenSubquery(
     if( pNew==0 ){
       p->pPrior = pPrior;
     }else{
+      if( aCsrMap && db->mallocFailed==0 ){
+        renumberCursors(pParse, pNew, iFrom, aCsrMap);
+      }
       pNew->pPrior = pPrior;
       if( pPrior ) pPrior->pNext = pNew;
       pNew->pNext = p;
@@ -4032,10 +4120,11 @@ static int flattenSubquery(
                               " creates %u as peer\n",pNew->selId));
     }
     assert( pSubitem->pSelect==0 );
-    if( db->mallocFailed ){
-      pSubitem->pSelect = pSub1;
-      return 1;
-    }
+  }
+  sqlite3DbFree(db, aCsrMap);
+  if( db->mallocFailed ){
+    pSubitem->pSelect = pSub1;
+    return 1;
   }
 
   /* Defer deleting the Table object associated with the

@@ -165,6 +165,37 @@ do_execsql_test 2.2.8 {
   3 three 3 iii 
   3 THREE 3 iii 
 }
+do_execsql_test 2.2.9a {
+  SELECT * FROM t1, t2 ORDER BY +k
+} {
+  1 one 2 ii 1 ONE 2 ii 2 two 2 ii 
+  2 TWO 2 ii 3 three 2 ii 3 THREE 2 ii 
+  
+  1 one 3 iii 1 ONE 3 iii 2 two 3 iii 
+  2 TWO 3 iii 3 three 3 iii 3 THREE 3 iii 
+
+  1 one 4 iv 1 ONE 4 iv 2 two 4 iv 
+  2 TWO 4 iv 3 three 4 iv 3 THREE 4 iv 
+
+  1 one 5 v 1 ONE 5 v 2 two 5 v 
+  2 TWO 5 v 3 three 5 v 3 THREE 5 v
+}
+
+do_execsql_test 2.2.9b {
+  SELECT * FROM t1, t2 ORDER BY k
+} {
+  1 one 2 ii 1 ONE 2 ii 2 two 2 ii 
+  2 TWO 2 ii 3 three 2 ii 3 THREE 2 ii 
+  
+  1 one 3 iii 1 ONE 3 iii 2 two 3 iii 
+  2 TWO 3 iii 3 three 3 iii 3 THREE 3 iii 
+
+  1 one 4 iv 1 ONE 4 iv 2 two 4 iv 
+  2 TWO 4 iv 3 three 4 iv 3 THREE 4 iv 
+
+  1 one 5 v 1 ONE 5 v 2 two 5 v 
+  2 TWO 5 v 3 three 5 v 3 THREE 5 v
+}
 
 
 finish_test

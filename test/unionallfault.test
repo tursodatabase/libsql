@@ -25,9 +25,9 @@ do_faultsim_test 1 -faults oom-t* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql {
-    SELECT * FROM (
+    SELECT * FROM t1, (
       SELECT x FROM t1 UNION ALL SELECT y FROM t1
-    )
+    ), t3
   }
 } -test {
   faultsim_test_result {0 {}}
