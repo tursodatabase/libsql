@@ -237,7 +237,7 @@ where
     /// Initializes the aggregation context. Will be called prior to the first
     /// call to [`step()`](Aggregate::step) to set up the context for an invocation of the
     /// function. (Note: `init()` will not be called if there are no rows.)
-    fn init(&self) -> A;
+    fn init(&self, _: &mut Context<'_>) -> A;
 
     /// "step" function called once for each row in an aggregate group. May be
     /// called 0 times if there are no rows.
@@ -591,13 +591,15 @@ unsafe extern "C" fn call_boxed_step<A, D, T>(
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"
         );
-        if (*pac as *mut A).is_null() {
-            *pac = Box::into_raw(Box::new((*boxed_aggr).init()));
-        }
         let mut ctx = Context {
             ctx,
             args: slice::from_raw_parts(argv, argc as usize),
         };
+
+        if (*pac as *mut A).is_null() {
+            *pac = Box::into_raw(Box::new((*boxed_aggr).init(&mut ctx)));
+        }
+
         (*boxed_aggr).step(&mut ctx, &mut **pac)
     });
     let r = match r {
