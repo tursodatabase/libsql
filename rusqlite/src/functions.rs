@@ -686,10 +686,7 @@ where
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"
         );
-        let mut ctx = Context {
-            ctx,
-            args: &mut [],
-        };
+        let mut ctx = Context { ctx, args: &mut [] };
         (*boxed_aggr).finalize(&mut ctx, a)
     });
     let t = match r {
