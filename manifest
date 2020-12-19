@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sadd\sthe\s".filectrl\sdata_version"\scommand.\s\sAnd\sput\sthe\svarious\n".filectrl"\ssubcommands\sin\salphabetical\sorder.
-D 2020-12-17T15:17:42.367
+C Allow\sUNION\sALL\ssub-queriesto\sbe\sflattened\seven\sif\sthe\sparent\squery\sis\sa\sjoin.
+D 2020-12-19T13:58:06.688
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c c9b68506e5d8cc8d0e4b307b97a9800b050ac37dada80ae9c66f680f8fac3e09
+F src/select.c deeed19d210db99369cb66d6804c889426851d541484fcc35ad554a19859ae8d
 F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e3416134
 F src/sqlite.h.in 5b7593bb0f3658e682a9fcd1cd8fcedf244ec45ca93d645055a53172f55eb783
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1331,7 +1331,7 @@ F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
 F test/selectA.test 68de52409e45a3313d00b8461b48bef4fb729faf36ade9067a994eae55cc86f4
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
-F test/selectC.test e25243f8ca503e06f252eb0218976d07cfeceac3
+F test/selectC.test fec14c9015ed4ec941508bbc144f30b42e40ac34a4bb33001450369865dd0b75
 F test/selectD.test fc20452847a01775710090383cfb4423275d2f745fed61f34fbf37573ac0d214
 F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
@@ -1627,6 +1627,8 @@ F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
+F test/unionall.test 9dcc5faefe8caa4e2e4084fd4f45ad783abb7cfb86fcb87a3b74204e03f86014
+F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
@@ -1741,7 +1743,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test a2874062140ed4aba9ffae76e6190a3df6fc73d1373fdfa8fd632945082a5364
 F test/whereJ.test 88287550f6ee604422403b053455b1ad894eeaa5c35d348532dfa1439286cb9a
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/whereL.test e05cedc9389c6f09ad55bd5999a3fddccebec90672fb989433c145dcdaf26996
+F test/whereL.test 1afe47227f093dc0547236491fb37529b7be9724b8575925a321001b80e6a23a
 F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test 592081800806d297dd7449b1030c863d2883d6d42901837ccd2e5a9bd962edb0
@@ -1891,7 +1893,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a6cd6833e44dd6a2ac388815f43be6508f6fa6db5e451e964276a6c87e6c5ae
-R 8fec60d5d4f6323f9e214e52e3dfbcc8
+P 3434452148eef39ba3ba2f40a6fedb6ec4f5157cbc2763b3ec90ec7f2b126382 63c5cfb9ae8f4598a523bed2a60c0e69172179952961a573113fcf756c06551d
+R 01abc47468d8209e3de01dce0ca29125
+T +closed 63c5cfb9ae8f4598a523bed2a60c0e69172179952961a573113fcf756c06551d
 U drh
-Z 8df200953f9823684b5ad2b1a02406fd
+Z 9a839de521f6f5591d18cd2ba96a1b41
