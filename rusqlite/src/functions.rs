@@ -237,7 +237,7 @@ where
     /// Initializes the aggregation context. Will be called prior to the first
     /// call to [`step()`](Aggregate::step) to set up the context for an invocation of the
     /// function. (Note: `init()` will not be called if there are no rows.)
-    fn init(&self, _: &mut Context<'_>) -> A;
+    fn init(&self, _: &mut Context<'_>) -> Result<A>;
 
     /// "step" function called once for each row in an aggregate group. May be
     /// called 0 times if there are no rows.
@@ -599,7 +599,7 @@ unsafe extern "C" fn call_boxed_step<A, D, T>(
         };
 
         if (*pac as *mut A).is_null() {
-            *pac = Box::into_raw(Box::new((*boxed_aggr).init(&mut ctx)));
+            *pac = Box::into_raw(Box::new((*boxed_aggr).init(&mut ctx)?));
         }
 
         (*boxed_aggr).step(&mut ctx, &mut **pac)
@@ -911,8 +911,8 @@ mod test {
     struct Count;
 
     impl Aggregate<i64, Option<i64>> for Sum {
-        fn init(&self, _: &mut Context<'_>) -> i64 {
-            0
+        fn init(&self, _: &mut Context<'_>) -> Result<i64> {
+            Ok(0)
         }
 
         fn step(&self, ctx: &mut Context<'_>, sum: &mut i64) -> Result<()> {
@@ -926,8 +926,8 @@ mod test {
     }
 
     impl Aggregate<i64, i64> for Count {
-        fn init(&self, _: &mut Context<'_>) -> i64 {
-            0
+        fn init(&self, _: &mut Context<'_>) -> Result<i64> {
+            Ok(0)
         }
 
         fn step(&self, _ctx: &mut Context<'_>, sum: &mut i64) -> Result<()> {
