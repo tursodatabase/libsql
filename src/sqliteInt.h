@@ -1014,9 +1014,9 @@ extern u32 sqlite3SelectTrace;
 /*
 ** Macros for "wheretrace"
 */
+extern u32 sqlite3WhereTrace;
 #if defined(SQLITE_DEBUG) \
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
-extern u32 sqlite3WhereTrace;
 # define WHERETRACE(K,X)  if(sqlite3WhereTrace&(K)) sqlite3DebugPrintf X
 # define WHERETRACE_ENABLED 1
 #else

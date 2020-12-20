@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sfts5\sthat\scould\sbe\striggered\sby\scorrupt\sdatabase\srecords.
-D 2020-12-19T15:39:10.157
+C Always\sdeclare\sthe\ssqlite3WhereTrace\svariable,\seven\sfor\snon-debug\sbuilds.
+D 2020-12-20T14:51:17.806
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e341613
 F src/sqlite.h.in 5b7593bb0f3658e682a9fcd1cd8fcedf244ec45ca93d645055a53172f55eb783
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 6d8363d245354e360b5efa5f1dc4a7658f252dc80b1c9010264d64dfe77fdf1b
+F src/sqliteInt.h 830d395a43449bd9980fa227d60ca20396e7035e5e8ab54be26214fb5379f531
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1893,7 +1893,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df1d6482f9e92dafdca1948e96eef52d8646eef9c356394afabe431d6357dd34
-R f1d4aca5ede0c75d21614cee261645e8
-U dan
-Z 700032770407797204dd07cf99586f0c
+P b79f59f9ad897d5bd4b9d17e6219bc765b02450bfe14dc020485f221ba6b02cb
+R 44577f8a1c7518c34582de96a91b2e8b
+U drh
+Z 174bdbab8294579fbf084a8c0c09510f
