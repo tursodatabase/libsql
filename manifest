@@ -1,5 +1,5 @@
-C Add\sthe\s--timer\soption\sto\sfuzzcheck.\s\sGet\sthe\s--timeout\soption\sworking\sin\nfuzzcheck\swhen\srunning\sdbsql\stests.
-D 2020-12-21T12:14:59.759
+C Enhance\sdocumentation\sto\sshow\sthat\s"ro"\sis\sthe\scorrect\sway\sto\ssay\s"readonly"\nin\sthe\smode=\squery\sparameter.
+D 2020-12-21T14:51:33.242
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c deeed19d210db99369cb66d6804c889426851d541484fcc35ad554a19859ae8d
 F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e3416134
-F src/sqlite.h.in 5b7593bb0f3658e682a9fcd1cd8fcedf244ec45ca93d645055a53172f55eb783
+F src/sqlite.h.in 0af968a1fa3c717261e1df0ed105fa7bddb4d82de7e0adb3eab49e6aa81b4de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
 F src/sqliteInt.h 830d395a43449bd9980fa227d60ca20396e7035e5e8ab54be26214fb5379f531
@@ -1893,7 +1893,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88d93ee380b6fd87474545f20ade874ba05c784c787ce9c45ebfcffed3795308
-R 27ec1c9c08574b257c1035ec83dd9754
+P 3b0c9b41a877c7344ef3b7c5b6981436005716e25b41b1a1ffc145520243abd3
+R b74c560d3085cb3bea733f18ec03ab77
 U drh
-Z b0ca2a90328c04cad0677f000624e900
+Z 76c875139f02e2b74c2635d603850742
