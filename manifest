@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhen\sflattening\sjoins\sbetween\sa\sUNION\sALL\ssub-query\sand\sanother\ssub-query\sthat\suses\smore\sthan\sone\swindow\sfunction.
-D 2020-12-21T18:39:58.008
+C Fix\sproblems\swith\sjoining\sUNION\sALL\ssub-queries\sagainst\sother\ssub-queries\sthat\scontain\sLEFT\sJOIN.
+D 2020-12-21T19:50:10.786
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,12 +540,12 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c deeed19d210db99369cb66d6804c889426851d541484fcc35ad554a19859ae8d
+F src/select.c 610ca9552475310eb73d0f815c8558279910f3bbf5c5391476853c33400e302f
 F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e3416134
 F src/sqlite.h.in 0af968a1fa3c717261e1df0ed105fa7bddb4d82de7e0adb3eab49e6aa81b4de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 830d395a43449bd9980fa227d60ca20396e7035e5e8ab54be26214fb5379f531
+F src/sqliteInt.h 53c440c2e62844aede29ce692ead431c8c7edd858ed6030f72829bc4bbe5a362
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1627,7 +1627,8 @@ F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
-F test/unionall.test 70d6ec7bce279cf63edc11589b0541ddf289ef6efe51c24cbf4efaceeb4ce5b8
+F test/unionall.test 25fe866e51b6b590f59117d713ee5e88f5ad8d1fea136a0c4b0c597904e07887
+F test/unionall2.test c9a62db63350bcbce3a7bec50dd8c5410f08be33f8af435473756286d4657215
 F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
@@ -1893,7 +1894,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 788b96851d9ced84757c48dc3e0414cab27ee7e50e9730dab30b2e42a7762397
-R 8f0537d0e7a9b2ba57d49d118851dfa2
+P ef9733fe1c6b31849a5da1037d21915f82e0e4ab42d1a23ead8a121012f1bace
+R 080e6ee530ae0ca63a2553bcffc20a5b
 U dan
-Z 750efdd05db1f99dfea3008ae72af1b9
+Z a4fa2089cbf5bf716d3ea10acbb07023

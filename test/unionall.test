@@ -275,4 +275,12 @@ do_execsql_test 4.3 {
   123 t1_a 456 t3_a 123 123 123 123 123 123 123 123 123
 }
 
+do_execsql_test 4.3 {
+  SELECT * FROM (SELECT * FROM t1, t3) AS o, (
+    SELECT * FROM t1 LEFT JOIN t3 ON a=k
+  );
+} {
+  123 t1_a 456 t3_a 123 t1_a {} {}
+}
+
 finish_test

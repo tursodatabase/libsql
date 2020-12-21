@@ -347,7 +347,7 @@ static void addWhereTerm(
     ExprSetProperty(pEq, EP_FromJoin);
     assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(pEq, EP_NoReduce);
-    pEq->iRightJoinTable = (i16)pE2->iTable;
+    pEq->iRightJoinTable = pE2->iTable;
   }
   *ppWhere = sqlite3ExprAnd(pParse, *ppWhere, pEq);
 }
@@ -383,7 +383,7 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
     ExprSetProperty(p, EP_FromJoin);
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
-    p->iRightJoinTable = (i16)iTable;
+    p->iRightJoinTable = iTable;
     if( p->op==TK_FUNCTION && p->x.pList ){
       int i;
       for(i=0; i<p->x.pList->nExpr; i++){
@@ -3690,6 +3690,9 @@ static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
   int *aCsrMap = pWalker->u.aiCol;
   if( pExpr->op==TK_COLUMN && aCsrMap[pExpr->iTable] ){
     pExpr->iTable = aCsrMap[pExpr->iTable];
+  }
+  if( ExprHasProperty(pExpr, EP_FromJoin) && aCsrMap[pExpr->iRightJoinTable] ){
+    pExpr->iRightJoinTable = aCsrMap[pExpr->iRightJoinTable];
   }
   return WRC_Continue;
 }
