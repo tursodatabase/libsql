@@ -1,5 +1,5 @@
-C Always\sdeclare\sthe\ssqlite3WhereTrace\svariable,\seven\sfor\snon-debug\sbuilds.
-D 2020-12-20T14:51:17.806
+C Add\sthe\s--timer\soption\sto\sfuzzcheck.\s\sGet\sthe\s--timeout\soption\sworking\sin\nfuzzcheck\swhen\srunning\sdbsql\stests.
+D 2020-12-21T12:14:59.759
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1035,7 +1035,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 5f81f2cc65f13068620245f2e2c6059657d3b26be476df379ae2da539f17676d
+F test/fuzzcheck.c 95427205d6cedb8fdb95bf7738e95785c790febf782d9c1e6067baaa1adc871d
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1893,7 +1893,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b79f59f9ad897d5bd4b9d17e6219bc765b02450bfe14dc020485f221ba6b02cb
-R 44577f8a1c7518c34582de96a91b2e8b
+P 88d93ee380b6fd87474545f20ade874ba05c784c787ce9c45ebfcffed3795308
+R 27ec1c9c08574b257c1035ec83dd9754
 U drh
-Z 174bdbab8294579fbf084a8c0c09510f
+Z b0ca2a90328c04cad0677f000624e900
