@@ -245,4 +245,34 @@ do_execsql_test 4.2 {
   SELECT * FROM (SELECT * FROM t1, t3) ORDER BY k;
 } {123 t1_a 456 t3_a}
 
+do_execsql_test 4.3 {
+  SELECT * FROM (SELECT * FROM t1, t3), (
+    SELECT max(a) OVER () FROM t1
+      UNION ALL
+    SELECT min(a) OVER () FROM t1
+  )
+  ORDER BY k;
+} {
+  123 t1_a 456 t3_a 123
+  123 t1_a 456 t3_a 123
+}
+
+do_execsql_test 4.3 {
+  SELECT * FROM (SELECT * FROM t1, t3), (
+    SELECT group_concat(a) OVER (ORDER BY a), 
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a),
+           group_concat(a) OVER (ORDER BY a)
+    FROM t1
+  )
+  ORDER BY k;
+} {
+  123 t1_a 456 t3_a 123 123 123 123 123 123 123 123 123
+}
+
 finish_test
