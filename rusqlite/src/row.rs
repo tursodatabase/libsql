@@ -241,7 +241,7 @@ impl<'stmt> Row<'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if calling `row.get(idx)` would return an error,
+    /// Panics if calling [`row.get(idx)`](Row::get) would return an error,
     /// including:
     ///
     /// * If the underlying SQLite column type is not a valid type as a source
@@ -303,7 +303,7 @@ impl<'stmt> Row<'stmt> {
     /// This `ValueRef` is valid only as long as this Row, which is enforced by
     /// it's lifetime. This means that while this method is completely safe,
     /// it can be somewhat difficult to use, and most callers will be better
-    /// served by `get` or `get`.
+    /// served by [`get`](Row::get) or [`get_unwrap`](Row::get_unwrap).
     ///
     /// ## Failure
     ///
@@ -312,7 +312,7 @@ impl<'stmt> Row<'stmt> {
     ///
     /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column
     /// name for this row.
-    pub fn get_raw_checked<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
+    pub fn get_ref<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
         let idx = idx.idx(self.stmt)?;
         // Narrowing from `ValueRef<'stmt>` (which `self.stmt.value_ref(idx)`
         // returns) to `ValueRef<'a>` is needed because it's only valid until
@@ -327,17 +327,31 @@ impl<'stmt> Row<'stmt> {
     /// This `ValueRef` is valid only as long as this Row, which is enforced by
     /// it's lifetime. This means that while this method is completely safe,
     /// it can be difficult to use, and most callers will be better served by
-    /// `get` or `get`.
+    /// [`get`](Row::get) or [`get_unwrap`](Row::get_unwrap).
     ///
     /// ## Failure
     ///
-    /// Panics if calling `row.get_raw_checked(idx)` would return an error,
+    /// Panics if calling [`row.get_ref(idx)`](Row::get_ref) would return an error,
     /// including:
     ///
     /// * If `idx` is outside the range of columns in the returned query.
     /// * If `idx` is not a valid column name for this row.
+    pub fn get_ref_unwrap<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
+        self.get_ref(idx).unwrap()
+    }
+
+    /// Renamed to [`get_ref`](Row::get_ref).
+    #[deprecated = "Use [`get_ref`](Row::get_ref) instead."]
+    #[inline]
+    pub fn get_raw_checked<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
+        self.get_ref(idx)
+    }
+
+    /// Renamed to [`get_ref_unwrap`](Row::get_ref_unwrap).
+    #[deprecated = "Use [`get_ref_unwrap`](Row::get_ref_unwrap) instead."]
+    #[inline]
     pub fn get_raw<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
-        self.get_raw_checked(idx).unwrap()
+        self.get_ref_unwrap(idx)
     }
 }
 
