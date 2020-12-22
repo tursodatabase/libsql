@@ -6970,15 +6970,13 @@ select_end:
   if( pAggInfo && !db->mallocFailed ){
     for(i=0; i<pAggInfo->nColumn; i++){
       Expr *pExpr = pAggInfo->aCol[i].pCExpr;
-      assert( pExpr!=0 || db->mallocFailed );
-      if( pExpr==0 ) continue;
+      assert( pExpr!=0 );
       assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }
     for(i=0; i<pAggInfo->nFunc; i++){
       Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
-      assert( pExpr!=0 || db->mallocFailed );
-      if( pExpr==0 ) continue;
+      assert( pExpr!=0 );
       assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }
