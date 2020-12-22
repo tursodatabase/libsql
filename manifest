@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\saggregate-function\sanalysis\serror\sdetection\slogic\sat\nthe\send\sof\ssqlite3Select().
-D 2020-12-22T14:54:20.628
+C Fix\sa\sproblem\shandling\ssub-queries\swith\sboth\sa\scorrelated\sWHERE\sclause\sand\sa\s"HAVING\s0"\sclause\swhere\sthe\sparent\squery\sis\sitself\san\saggregate.
+D 2020-12-22T16:23:29.675
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 8626f34077f95d39a3a1b87bf19a3f107508dc075f946b8f44bf95360c9817bc
+F src/select.c 85c7cec9a4a983416d4bd023b2c4fbbeb608ae8dfb069781f80c8ed08b0c7a7c
 F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e3416134
 F src/sqlite.h.in 0af968a1fa3c717261e1df0ed105fa7bddb4d82de7e0adb3eab49e6aa81b4de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1050,7 +1050,7 @@ F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test b05e6c5edb9b10d48efb634ed07342441bddc89d225043e17095c36e567521a0
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
+F test/having.test ea5cb01cdf3d90fd1b516ef36b1fbde518dbbd61c50141f5eb830d8101844040
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test e97382e68e4379838e888756d653afd159f5f14780315ff97b70360d3d8485bc
@@ -1894,7 +1894,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d554f710a5abbe64022f47a14ef67227c861a8f0991d85d240434e9a709cf8b8
-R c76471a509e5f704181ef32470d9334a
-U drh
-Z 75d6a966e9bdbb44ee6e2e92dddb1757
+P 82884438e30ad8241f8249927fe92e0856d78b64d7ade38f3d5bb1c931d958d0
+R 5b9b1eafbef4593babef1f4d206a30c6
+U dan
+Z a856915eaf20f0d711508df4b26bec16
