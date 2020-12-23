@@ -1,5 +1,5 @@
-C Fix\sSQLITE_OMIT_WINDOWFUNC\sbuilds\sby\smoving\sdeclaration\sof\ssqlite3ExpandSubquery\sout\sof\s"ifndef\sSQLITE_OMIT_WINDOWFUNC"\sblock.
-D 2020-12-22T20:35:22.397
+C Add\sthe\ssqlite3session_memory_used()\sAPI\sto\sthe\ssessions\smodule.\sFor\squerying\sthe\samount\sof\sheap\smemory\scurrently\sbeing\sused\sby\sa\ssession\sobject.
+D 2020-12-23T16:46:39.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -453,9 +453,9 @@ F ext/session/sessioninvert.test 04075517a9497a80d39c495ba6b44f3982c7371129b89e2
 F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2f05e82363b9142810
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 67b5ab91d4f93ce65ff1f58240ac5ddf73f8670facc1ffa49cef56293d52818d
-F ext/session/sqlite3session.c 2c76b8c3a5d6dab736686f8a48833b8bdac0871ecc6f447f9839d28bd4a63d6c
-F ext/session/sqlite3session.h a2db5b72b938d12c727b4b4ec632254ca493670a9c0de597af3271a7f774fc57
-F ext/session/test_session.c 24286d958dc6f4ca4d7e710f09bc0fa9d50956a40dd99fd8223e7488024c71fe
+F ext/session/sqlite3session.c d2aaaf05241ac7d23a1b1eaa8b1f165c90f7ff0fe57ff1932a87c6b89b886117
+F ext/session/sqlite3session.h f53c99731882bf59c7362855cdeba176ce1fe8eeba089e38a8cce0172f8473aa
+F ext/session/test_session.c 93ca965112d2b4d9d669c9c0be6b1e52942a268796050a145612df1eee175ce0
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -1894,7 +1894,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 907ddf86766ebdbe39bdc89543c1a7bbd65c710c9f3a3a4d796845b2c02b711b
-R dd30694e4f91ee91b88bcc802eb6d9cd
+P 9587fa8b29fc2f91d751a71b909f574014656f24d276b4974f47fcc18dbadcb8
+R 8a19a9976fc51c3ed2ff74d48489d86a
 U dan
-Z c8215834a8a499c013c16379be6fc471
+Z bb9f93711cbcff6309bc973aaedad8c7

@@ -48,6 +48,7 @@ struct sqlite3_session {
   int rc;                         /* Non-zero if an error has occurred */
   void *pFilterCtx;               /* First argument to pass to xTableFilter */
   int (*xTableFilter)(void *pCtx, const char *zTab);
+  i64 nMalloc;                    /* Number of bytes of data allocated */
   sqlite3_value *pZeroBlob;       /* Value containing X'' */
   sqlite3_session *pNext;         /* Next session object on same db. */
   SessionTable *pTable;           /* List of attached tables */
@@ -431,6 +432,26 @@ static int sessionSerializeValue(
   return SQLITE_OK;
 }
 
+/*
+** Allocate and return a pointer to a buffer nByte bytes in size. If
+** pSession is not NULL, increase the sqlite3_session.nMalloc variable
+** by the number of bytes allocated.
+*/
+static void *sessionMalloc64(sqlite3_session *pSession, i64 nByte){
+  void *pRet = sqlite3_malloc64(nByte);
+  if( pSession ) pSession->nMalloc += sqlite3_msize(pRet);
+  return pRet;
+}
+
+/*
+** Free buffer pFree, which must have been allocated by an earlier
+** call to sessionMalloc64(). If pSession is not NULL, decrease the
+** sqlite3_session.nMalloc counter by the number of bytes freed.
+*/
+static void sessionFree(sqlite3_session *pSession, void *pFree){
+  if( pSession ) pSession->nMalloc -= sqlite3_msize(pFree);
+  sqlite3_free(pFree);
+}
 
 /*
 ** This macro is used to calculate hash key values for data structures. In
@@ -898,13 +919,19 @@ static int sessionPreupdateEqual(
 ** Growing the hash table in this case is a performance optimization only,
 ** it is not required for correct operation.
 */
-static int sessionGrowHash(int bPatchset, SessionTable *pTab){
+static int sessionGrowHash(
+  sqlite3_session *pSession,      /* For memory accounting. May be NULL */
+  int bPatchset, 
+  SessionTable *pTab
+){
   if( pTab->nChange==0 || pTab->nEntry>=(pTab->nChange/2) ){
     int i;
     SessionChange **apNew;
     sqlite3_int64 nNew = 2*(sqlite3_int64)(pTab->nChange ? pTab->nChange : 128);
 
-    apNew = (SessionChange **)sqlite3_malloc64(sizeof(SessionChange *) * nNew);
+    apNew = (SessionChange**)sessionMalloc64(
+        pSession, sizeof(SessionChange*) * nNew
+    );
     if( apNew==0 ){
       if( pTab->nChange==0 ){
         return SQLITE_ERROR;
@@ -925,7 +952,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
       }
     }
 
-    sqlite3_free(pTab->apChange);
+    sessionFree(pSession, pTab->apChange);
     pTab->nChange = nNew;
     pTab->apChange = apNew;
   }
@@ -959,6 +986,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 ** be freed using sqlite3_free() by the caller
 */
 static int sessionTableInfo(
+  sqlite3_session *pSession,      /* For memory accounting. May be NULL */
   sqlite3 *db,                    /* Database connection */
   const char *zDb,                /* Name of attached database (e.g. "main") */
   const char *zThis,              /* Table name */
@@ -1013,7 +1041,7 @@ static int sessionTableInfo(
 
   if( rc==SQLITE_OK ){
     nByte += nDbCol * (sizeof(const char *) + sizeof(u8) + 1);
-    pAlloc = sqlite3_malloc64(nByte);
+    pAlloc = sessionMalloc64(pSession, nByte);
     if( pAlloc==0 ){
       rc = SQLITE_NOMEM;
     }
@@ -1056,7 +1084,7 @@ static int sessionTableInfo(
     *pabPK = 0;
     *pnCol = 0;
     if( pzTab ) *pzTab = 0;
-    sqlite3_free(azCol);
+    sessionFree(pSession, azCol);
   }
   sqlite3_finalize(pStmt);
   return rc;
@@ -1078,7 +1106,7 @@ static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
   if( pTab->nCol==0 ){
     u8 *abPK;
     assert( pTab->azCol==0 || pTab->abPK==0 );
-    pSession->rc = sessionTableInfo(pSession->db, pSession->zDb, 
+    pSession->rc = sessionTableInfo(pSession, pSession->db, pSession->zDb, 
         pTab->zName, &pTab->nCol, 0, &pTab->azCol, &abPK
     );
     if( pSession->rc==SQLITE_OK ){
@@ -1169,7 +1197,7 @@ static void sessionPreupdateOneChange(
   }
 
   /* Grow the hash table if required */
-  if( sessionGrowHash(0, pTab) ){
+  if( sessionGrowHash(pSession, 0, pTab) ){
     pSession->rc = SQLITE_NOMEM;
     return;
   }
@@ -1236,7 +1264,7 @@ static void sessionPreupdateOneChange(
       }
   
       /* Allocate the change object */
-      pChange = (SessionChange *)sqlite3_malloc64(nByte);
+      pChange = (SessionChange *)sessionMalloc64(pSession, nByte);
       if( !pChange ){
         rc = SQLITE_NOMEM;
         goto error_out;
@@ -1609,7 +1637,7 @@ int sqlite3session_diff(
       int nCol;                   /* Columns in zFrom.zTbl */
       u8 *abPK;
       const char **azCol = 0;
-      rc = sessionTableInfo(db, zFrom, zTbl, &nCol, 0, &azCol, &abPK);
+      rc = sessionTableInfo(0, db, zFrom, zTbl, &nCol, 0, &azCol, &abPK);
       if( rc==SQLITE_OK ){
         if( pTo->nCol!=nCol ){
           bMismatch = 1;
@@ -1707,7 +1735,7 @@ int sqlite3session_create(
 ** Free the list of table objects passed as the first argument. The contents
 ** of the changed-rows hash tables are also deleted.
 */
-static void sessionDeleteTable(SessionTable *pList){
+static void sessionDeleteTable(sqlite3_session *pSession, SessionTable *pList){
   SessionTable *pNext;
   SessionTable *pTab;
 
@@ -1719,12 +1747,12 @@ static void sessionDeleteTable(SessionTable *pList){
       SessionChange *pNextChange;
       for(p=pTab->apChange[i]; p; p=pNextChange){
         pNextChange = p->pNext;
-        sqlite3_free(p);
+        sessionFree(pSession, p);
       }
     }
-    sqlite3_free((char*)pTab->azCol);  /* cast works around VC++ bug */
-    sqlite3_free(pTab->apChange);
-    sqlite3_free(pTab);
+    sessionFree(pSession, (char*)pTab->azCol);  /* cast works around VC++ bug */
+    sessionFree(pSession, pTab->apChange);
+    sessionFree(pSession, pTab);
   }
 }
 
@@ -1752,9 +1780,11 @@ void sqlite3session_delete(sqlite3_session *pSession){
 
   /* Delete all attached table objects. And the contents of their 
   ** associated hash-tables. */
-  sessionDeleteTable(pSession->pTable);
+  sessionDeleteTable(pSession, pSession->pTable);
 
-  /* Free the session object itself. */
+  /* Assert that all allocations have been freed and then free the 
+  ** session object itself. */
+  assert( pSession->nMalloc==0 );
   sqlite3_free(pSession);
 }
 
@@ -1801,7 +1831,8 @@ int sqlite3session_attach(
 
     if( !pTab ){
       /* Allocate new SessionTable object. */
-      pTab = (SessionTable *)sqlite3_malloc64(sizeof(SessionTable) + nName + 1);
+      int nByte = sizeof(SessionTable) + nName + 1;
+      pTab = (SessionTable*)sessionMalloc64(pSession, nByte);
       if( !pTab ){
         rc = SQLITE_NOMEM;
       }else{
@@ -2398,7 +2429,7 @@ static int sessionGenerateChangeset(
       int nNoop;                  /* Size of buffer after writing tbl header */
 
       /* Check the table schema is still Ok. */
-      rc = sessionTableInfo(db, pSession->zDb, zName, &nCol, 0, &azCol, &abPK);
+      rc = sessionTableInfo(0, db, pSession->zDb, zName, &nCol, 0,&azCol,&abPK);
       if( !rc && (pTab->nCol!=nCol || memcmp(abPK, pTab->abPK, nCol)) ){
         rc = SQLITE_SCHEMA;
       }
@@ -2571,6 +2602,13 @@ int sqlite3session_isempty(sqlite3_session *pSession){
   sqlite3_mutex_leave(sqlite3_db_mutex(pSession->db));
 
   return (ret==0);
+}
+
+/*
+** Return the amount of heap memory in use.
+*/
+sqlite3_int64 sqlite3session_memory_used(sqlite3_session *pSession){
+  return pSession->nMalloc;
 }
 
 /*
@@ -4384,7 +4422,7 @@ static int sessionChangesetApply(
         int i;
 
         sqlite3changeset_pk(pIter, &abPK, 0);
-        rc = sessionTableInfo(
+        rc = sessionTableInfo(0, 
             db, "main", zNew, &sApply.nCol, &zTab, &sApply.azCol, &sApply.abPK
         );
         if( rc!=SQLITE_OK ) break;
@@ -4863,7 +4901,7 @@ static int sessionChangesetToHash(
       }
     }
 
-    if( sessionGrowHash(pIter->bPatchset, pTab) ){
+    if( sessionGrowHash(0, pIter->bPatchset, pTab) ){
       rc = SQLITE_NOMEM;
       break;
     }
@@ -5049,7 +5087,7 @@ int sqlite3changegroup_output_strm(
 */
 void sqlite3changegroup_delete(sqlite3_changegroup *pGrp){
   if( pGrp ){
-    sessionDeleteTable(pGrp->pList);
+    sessionDeleteTable(0, pGrp->pList);
     sqlite3_free(pGrp);
   }
 }
@@ -5450,7 +5488,7 @@ int sqlite3rebaser_rebase_strm(
 */
 void sqlite3rebaser_delete(sqlite3_rebaser *p){
   if( p ){
-    sessionDeleteTable(p->grp.pList);
+    sessionDeleteTable(0, p->grp.pList);
     sqlite3_free(p);
   }
 }
