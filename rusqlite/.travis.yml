@@ -14,7 +14,7 @@ matrix:
 
 addons:
   apt:
-    packages: # recommanded versions for rust-bindgen
+    packages: # recommended versions for rust-bindgen
       - llvm-3.9-dev
       - libclang-3.9-dev
       - libsqlcipher-dev
