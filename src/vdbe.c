@@ -5160,6 +5160,8 @@ case OP_RowCell: {
   VdbeCursor *pSrc;               /* Cursor to read from */
   i64 iKey;                       /* Rowid value to insert with */
   assert( pOp[1].opcode==OP_Insert || pOp[1].opcode==OP_IdxInsert );
+  assert( pOp[1].opcode==OP_Insert    || pOp->p3==0 );
+  assert( pOp[1].opcode==OP_IdxInsert || pOp->p3>0 );
   assert( pOp[1].p5 & OPFLAG_PREFORMAT );
   pDest = p->apCsr[pOp->p1];
   pSrc = p->apCsr[pOp->p2];

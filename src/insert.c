@@ -2991,7 +2991,7 @@ static int xferOptimization(
       if( i==pSrcIdx->nColumn ){
         idxInsFlags = OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
         sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
-        sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regData);
+        sqlite3VdbeAddOp2(v, OP_RowCell, iDest, iSrc);
       }
     }else if( !HasRowid(pSrc) && pDestIdx->idxType==SQLITE_IDXTYPE_PRIMARYKEY ){
       idxInsFlags |= OPFLAG_NCHANGE;
