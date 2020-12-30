@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\scursor\srenumbering\sin\sthe\sUNION\sALL\squery\sflattener.
-D 2020-12-30T13:10:57.397
+C New\stest\scase\sfor\sthe\sHAVING\sfix\sof\scheck-in\s[f62f983b56623f0e].
+D 2020-12-30T13:20:27.167
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1050,7 +1050,7 @@ F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test b05e6c5edb9b10d48efb634ed07342441bddc89d225043e17095c36e567521a0
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/having.test ea5cb01cdf3d90fd1b516ef36b1fbde518dbbd61c50141f5eb830d8101844040
+F test/having.test a89236dd8d55aa50c4805f82ac9daf64d477a44d712d8209c118978d0ca21ec9
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test e97382e68e4379838e888756d653afd159f5f14780315ff97b70360d3d8485bc
@@ -1894,7 +1894,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eef070a4aadf02a845d0ed00767be049d3b76e811e24797a116776fa836d1b03
-R 9df7a36b340e01b8e6a68b556d08634a
+P 270babf259750f3d6c490a08df608a101b24b3c06b9e8a938a0e09a854af6a20
+R 09227fec8aad1c60b1b910c5f099b057
 U drh
-Z 1966d3d59e34224433c9949aacd8ed2d
+Z 6d7124961a0c65e002372f290392ee57

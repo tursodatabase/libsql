@@ -174,5 +174,18 @@ do_execsql_test 5.1 {
   ) FROM t1;
 } {b {}}
 
+# From chromium
+# https://bugs.chromium.org/p/chromium/issues/detail?id=1161869
+#
+do_execsql_test 5.2 {
+  SELECT EXISTS (
+    SELECT * FROM (
+      SELECT * FROM (
+        SELECT 1
+      ) WHERE Col0 = 1   GROUP BY 1
+    )   WHERE 0
+  )
+  FROM (SELECT 1 Col0)   GROUP BY 1
+} {0}
 
 finish_test
