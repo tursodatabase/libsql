@@ -1378,6 +1378,9 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c
 	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
 
+startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
+	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/startup.c sqlite3.c $(TLIBS)
+
 KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 
 kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c

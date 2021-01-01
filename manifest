@@ -1,9 +1,9 @@
-C Do\snot\sattempt\sto\stake\sa\spointer\sto\sthe\sceil()\sand\sfloor()\sfunctions\sas\nthose\sroutines\sare\sintrinsics\son\ssome\sversions\sof\sMSVC.
-D 2021-01-01T01:44:06.406
+C Add\sthe\s"startup"\stest\sprogram\sdesigned\sto\smeasure\sstartup\sperformance,\nand\sin\sparticular\sschema\sparsing\stime.
+D 2021-01-01T15:13:17.551
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 0e88f5d095213a9ccd45c5bbd871c8ead498f886dff4493471fbf48b1f867f9d
+F Makefile.in 2e13f6830ef6ee26bdc72dd50536cbd4f5599834185213b50ee5648a393db82d
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc ad07bbd645132533e1fd7164a03acfa9afecda378b3787c10f62ab4c7c45e6ea
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
@@ -1401,6 +1401,7 @@ F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
 F test/sqllimits1.test 264f4b0f941800ba139d25e33ee919c5d95fea06dfbe8ac291d6811a30984ca5
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
+F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
 F test/stat.test 15a3106eddedfc882f64bc09f237b4169be4b92dd57c93031b8ff8b13af3e7c5
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
@@ -1894,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45f46317ab8bd92dcd346bf00ba3a33b0cfd030b790c04e19ef33cff124d8d7f
-R 7df46009733971e381ace45b945cc6c1
+P e5d7209e118a84537a85c0c9cd2b7ca4cd6ccf04181dc840b19339b4c93840cd
+R 4199bcdca03d0dfcf22a616708200b54
 U drh
-Z 8b481f25827e97ba1d6b3da4a1f709c6
+Z 0a6e287c5f9af8cda46993666a938c17
