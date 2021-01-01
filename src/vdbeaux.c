@@ -2358,6 +2358,8 @@ void sqlite3VdbeMakeReady(
   assert( pParse!=0 );
   assert( p->magic==VDBE_MAGIC_INIT );
   assert( pParse==p->pParse );
+  p->pVList = pParse->pVList;
+  pParse->pVList =  0;
   db = p->db;
   assert( db->mallocFailed==0 );
   nVar = pParse->nVar;
@@ -2442,8 +2444,6 @@ void sqlite3VdbeMakeReady(
     }
   }
 
-  p->pVList = pParse->pVList;
-  pParse->pVList =  0;
   if( db->mallocFailed ){
     p->nVar = 0;
     p->nCursor = 0;

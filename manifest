@@ -1,5 +1,5 @@
-C Streamline\sprocessing\sof\sthe\sauthenticator\scallback\sfor\sthe\scommon\scase\nwhen\sthere\sis\sno\scallback.
-D 2021-01-01T16:43:26.044
+C Small\ssize\sreduction\sand\sperformance\simprovement\sin\ssqlite3VdbeMakeReady()\nby\slinking\sthe\snew\sprepared\sstatement\sinto\sthe\sprepared\sstatement\slist\ssooner\nrather\sthan\slater.
+D 2021-01-01T17:01:33.478
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/vdbe.c 67de20067fa3a2ee8566342c751e941a2fe3fd88940fd9886ca5115f04165cce
 F src/vdbe.h 83603854bfa5851af601fc0947671eb260f4363e62e960e8a994fb9bbcd2aaa1
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
-F src/vdbeaux.c c76b7e96e189f5056d1de914d33d07bd03d3b88741f75375c8e18c9b11ffd379
+F src/vdbeaux.c e91d74e24babcf61969279b193e228cf4f8bc724a9cc59ed287db064326876f8
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
 F src/vdbesort.c f5b5e473a7cee44e47a94817b042fd7172cf3aa2c0a7928a8339d612bcfdec5a
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b3b31efb0047c5a461f487905cffba2b0ddb1518a6e757ca092eb40e1e2cd49
-R 489f030d394b5dc73ee4610f953c57c4
+P d3196685d958bf22b5c362e96bbf8e1df58cc09cc3abc4bfa94bb33bc28c61aa
+R bad67f6d73ac47ab0047b97a3d4436f2
 U drh
-Z b8fcdd693d25c5b93d4d26cc00dbdbe9
+Z 8e16a28d94f61b89d64b2b5c78bce681
