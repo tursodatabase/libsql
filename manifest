@@ -1,5 +1,5 @@
-C New\stest\scase\sfor\sthe\sHAVING\sfix\sof\scheck-in\s[f62f983b56623f0e].
-D 2020-12-30T13:20:27.167
+C Do\snot\sattempt\sto\stake\sa\spointer\sto\sthe\sceil()\sand\sfloor()\sfunctions\sas\nthose\sroutines\sare\sintrinsics\son\ssome\sversions\sof\sMSVC.
+D 2021-01-01T01:44:06.406
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/delete.c 927cf8f900583e79aca8f1a321979e0a8f053babd9a690b44b38f79de2cc09fe
 F src/expr.c 0d196ed5a2ebf96be7e8df88add4fabfad0dce16c0fed81a4b8f6a26e259797f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 83372403298e6a7dd989a47aaacdbaa5b4307b5199dbd56e07d4896066b3de72
-F src/func.c 2163afb2cfabb71768f9254b95dbab3b7d4cd94394f6cffb86704e0b7e6ccabe
+F src/func.c 6fb20c0bd604af514fa77456446e6f7725e6818dbc21f560fce4616320a06f28
 F src/global.c ed55af196a9b66e198aaeda3f5454c3aa7d7d050c6c938181fd044b70d180a81
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -1894,7 +1894,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 270babf259750f3d6c490a08df608a101b24b3c06b9e8a938a0e09a854af6a20
-R 09227fec8aad1c60b1b910c5f099b057
+P 45f46317ab8bd92dcd346bf00ba3a33b0cfd030b790c04e19ef33cff124d8d7f
+R 7df46009733971e381ace45b945cc6c1
 U drh
-Z 6d7124961a0c65e002372f290392ee57
+Z 8b481f25827e97ba1d6b3da4a1f709c6
