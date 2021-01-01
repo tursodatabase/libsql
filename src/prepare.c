@@ -671,12 +671,6 @@ static int sqlite3Prepare(
   }
   assert( 0==sParse.nQueryLoop );
 
-  if( sParse.rc==SQLITE_DONE ){
-    sParse.rc = SQLITE_OK;
-  }
-  if( sParse.checkSchema ){
-    schemaIsValid(&sParse);
-  }
   if( pzTail ){
     *pzTail = sParse.zTail;
   }
@@ -687,20 +681,28 @@ static int sqlite3Prepare(
   if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM_BKPT;
   }
-  rc = sParse.rc;
-  if( rc!=SQLITE_OK ){
-    if( sParse.pVdbe ) sqlite3VdbeFinalize(sParse.pVdbe);
-    assert(!(*ppStmt));
+  if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE ){
+    if( sParse.checkSchema ){
+      schemaIsValid(&sParse);
+    }
+    if( sParse.pVdbe ){
+      sqlite3VdbeFinalize(sParse.pVdbe);
+    }
+    assert( 0==(*ppStmt) );
+    rc = sParse.rc;
+    if( zErrMsg ){
+      sqlite3ErrorWithMsg(db, rc, "%s", zErrMsg);
+      sqlite3DbFree(db, zErrMsg);
+    }else{
+      sqlite3Error(db, rc);
+    }
   }else{
+    assert( zErrMsg==0 );
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
+    rc = SQLITE_OK;
+    sqlite3ErrorClear(db);
   }
 
-  if( zErrMsg ){
-    sqlite3ErrorWithMsg(db, rc, "%s", zErrMsg);
-    sqlite3DbFree(db, zErrMsg);
-  }else{
-    sqlite3Error(db, rc);
-  }
 
   /* Delete any TriggerPrg structures allocated while parsing this statement. */
   while( sParse.pTriggerPrg ){
