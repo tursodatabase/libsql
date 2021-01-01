@@ -1255,6 +1255,8 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   char *zType;
   Column *pCol;
   sqlite3 *db = pParse->db;
+  u8 hName;
+
   if( (p = pParse->pNewTable)==0 ) return;
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
@@ -1266,8 +1268,9 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   memcpy(z, pName->z, pName->n);
   z[pName->n] = 0;
   sqlite3Dequote(z);
+  hName = sqlite3StrIHash(z);
   for(i=0; i<p->nCol; i++){
-    if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
+    if( p->aCol[i].hName==hName && sqlite3StrICmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqlite3DbFree(db, z);
       return;
@@ -1285,7 +1288,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
-  pCol->hName = sqlite3StrIHash(z);
+  pCol->hName = hName;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
   if( pType->n==0 ){

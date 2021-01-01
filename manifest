@@ -1,5 +1,5 @@
-C Modify\sthe\smakefile\srule\sfor\s"startup"\sso\sthat\sit\salways\sbuilds\swith\n-Os\sand\s-DSQLITE_THREADSAFE=0\sand\sno\sother\soptions,\sfor\sconsistency\sof\nperformance.
-D 2021-01-01T18:32:15.639
+C Use\sthe\scolumn\sname\shash\sto\simprove\sperformance\sof\scolumn\sname\scollision\ndetection\swhile\sparsing\sCREATE\sTABLE\sstatements.
+D 2021-01-01T19:17:01.346
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -484,7 +484,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 0f9cb686871ae668817673f0823b55d1bcadbc86ea28bd22c590b064a8322d5a
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c f6449d4e85e998e14d3f537e8ea898dca2fcb83c277db3e60945af9b9177db81
+F src/build.c f5610708b09e6e2aed20e9f87e41abc9cb7d9c524b2af473b6b8f979185fcc3c
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41f45c8e894f48049325ccfef12cec0887b636bfad5d531a47628eb9e8612924
-R c6a646e99c7a838404fe08a2f6524679
+P 5ac939e0adc923378173297e934c3664254a4fefbcddcc842bf4cc42dbaacf4f
+R 76ed3eb5d9ad1369259443b69c6d4eb4
 U drh
-Z f3be154d8c50c2d6e064126a71c3cb12
+Z 392a8d945c1dcd1bc8026b48aa7097cf
