@@ -2564,7 +2564,7 @@ void sqlite3EndTable(
         pCons = pEnd;
       }
       nName = (int)((const char *)pCons->z - zName);
-      p->addColOffset = 13 + sqlite3Utf8CharLen(zName, nName);
+      p->addColOffset = 13 + nName;
     }
 #endif
   }
