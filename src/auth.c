@@ -209,11 +209,7 @@ int sqlite3AuthCheck(
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
   assert( !IN_RENAME_OBJECT || db->xAuth==0 );
-  if( db->init.busy || IN_SPECIAL_PARSE ){
-    return SQLITE_OK;
-  }
-
-  if( db->xAuth==0 ){
+  if( db->xAuth==0 || db->init.busy || IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }
 
