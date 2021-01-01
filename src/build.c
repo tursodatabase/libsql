@@ -143,6 +143,10 @@ void sqlite3FinishCoding(Parse *pParse){
   /* Begin by generating some termination code at the end of the
   ** vdbe program
   */
+  if( pParse->pVdbe==0 && db->init.busy ){
+    pParse->rc = SQLITE_DONE;
+    return;
+  }
   v = sqlite3GetVdbe(pParse);
   assert( !pParse->isMultiWrite 
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));

@@ -1,5 +1,5 @@
-C Faster\sand\ssmaller\stest\sto\sensure\sthat\sthe\ssqlite_schema.sql\sfield\sis\salways\na\sCREATE\sstatement\sof\ssome\skind.
-D 2021-01-01T21:02:37.996
+C Avoid\sallocating\sspace\sto\shold\sthe\sprepared\sstatements\sfor\sCREATE\sstatements\nwhen\sparsing\sthe\sschema\sof\san\sexisting\sdatabase,\ssince\sthose\sprepared\nstatements\sare\snever\sused..\s\sThis\shelps\sto\smake\sstartup\sfaster,
+D 2021-01-01T22:06:17.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -484,7 +484,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 0f9cb686871ae668817673f0823b55d1bcadbc86ea28bd22c590b064a8322d5a
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c 7a9983015d707482329820eb0ab6bc014554cbd89f8f0312e88ee47ca924257d
+F src/build.c d4c06261b0e532523ede58dc511381a7a9c155132e4b65a6bb2ff76fe657793a
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f25f2529f1495a26129d7d407979906e4962b2de351f901d41cb037d05ba780
-R b56645f386266a2944ab2c45a4a49580
+P 76de2bb04b1c02a6c0300cd61d9b3d2477d845aa0d1cdb9dbe4f354b9fedd923
+R df14a0f8e3c8c0f24b4bc5fa275286c3
 U drh
-Z 5ad0d6addcb4bd606a3544d738c2cf50
+Z f56f3715fca7ebd8ed5abb62c2ed9411
