@@ -1,5 +1,5 @@
-C Change\sthe\sunions\sof\sthe\sTable.addColOffset\sfield\sfrom\scharacters\sto\sbytes.\nThis\smakes\sthe\squery\sthat\simplements\sALTER\sTABLE\sADD\sCOLUMN\smore\scomplex\sand\nslightly\sslower,\sbut\salso\smakes\sCREATE\sTABLE\sstatement\sparsing\sfaster\sby\navoiding\sa\scall\sto\ssqlite3UtfCharLen().\s\sSince,\sCREATE\sTABLE\sparsing\sis\sfar\nmore\scommon\sthan\sALTER\sTABLE,\sthis\sis\sa\snet\swin\sfor\sperformance.
-D 2021-01-01T20:04:34.680
+C Faster\sand\ssmaller\stest\sto\sensure\sthat\sthe\ssqlite_schema.sql\sfield\sis\salways\na\sCREATE\sstatement\sof\ssome\skind.
+D 2021-01-01T21:02:37.996
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -535,7 +535,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
 F src/pragma.c 6daaaecc26a4b09481d21722525b079ce756751a43a79cc1d8f122d686806193
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
-F src/prepare.c 7acf95d1f84853d3b1152909497002f1333c3b2ee26bc7fe8e43a167ab5fb003
+F src/prepare.c a6bac9100b5f171189f6bb7ee12dfeeda7f3a8fd0c89be4a7958f14df13fa746
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d02820f03575e4633a7917427f11c19f99bd7b92f37d0ffe6fdc2418ad729813
-R d65e8365f48ba6717e932860e31b53aa
+P 6f25f2529f1495a26129d7d407979906e4962b2de351f901d41cb037d05ba780
+R b56645f386266a2944ab2c45a4a49580
 U drh
-Z 862f00eca17b025046c1fc8e371a884b
+Z 5ad0d6addcb4bd606a3544d738c2cf50
