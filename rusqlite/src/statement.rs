@@ -718,14 +718,12 @@ impl Statement<'_> {
         self.conn.decode_result(stmt.finalize())
     }
 
-    #[allow(clippy::unnecessary_wraps)]
     #[cfg(not(feature = "modern_sqlite"))]
     #[inline]
     fn check_readonly(&self) -> Result<()> {
         Ok(())
     }
 
-    #[allow(clippy::unnecessary_wraps)]
     #[cfg(feature = "modern_sqlite")]
     #[inline]
     fn check_readonly(&self) -> Result<()> {
