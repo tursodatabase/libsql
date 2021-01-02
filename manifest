@@ -1,5 +1,5 @@
-C Avoid\sallocating\sspace\sto\shold\sthe\sprepared\sstatements\sfor\sCREATE\sstatements\nwhen\sparsing\sthe\sschema\sof\san\sexisting\sdatabase,\ssince\sthose\sprepared\nstatements\sare\snever\sused..\s\sThis\shelps\sto\smake\sstartup\sfaster,
-D 2021-01-01T22:06:17.152
+C In\sLemon,\sfactor\sthe\sparser\sstack\soverflow\sdetection\slogic\sout\sof\sthe\nyy_reduce()\ssubroutine\sand\sinto\sthe\smain\sparser\sroutine,\sso\sthat\swhen\soverflow\nis\sdetected,\sit\scan\sexit\simmediately.\s\sThis\ssaves\sa\ssingle\sconditional\sin\nthe\smain\sloop\sof\sthe\sparser.
+D 2021-01-02T23:56:37.261
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1815,7 +1815,7 @@ F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 70eedc31614a58fe31a71025c17ebd1502a6ce9cfef0ed5e33acb0b5b737b291
-F tool/lempar.c 0e1d5eeb9736108d3dba782a9dd56f4e7cb69006b6ee181308b7ebfb15313a12
+F tool/lempar.c 1d3d075da18681c67ecc66c1f171e7094e18cd2cfba6a8a1bd4f3f639d6656e1
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76de2bb04b1c02a6c0300cd61d9b3d2477d845aa0d1cdb9dbe4f354b9fedd923
-R df14a0f8e3c8c0f24b4bc5fa275286c3
+P d01e9f2d00dc439c529cd8885a219fcddbaad73b9f471b020e2a0c18e2add69b
+R 30317f78042211a4eaf8fdf4d0539bb2
 U drh
-Z f56f3715fca7ebd8ed5abb62c2ed9411
+Z 16a40d4bd4688bf574b37b863bb32871
