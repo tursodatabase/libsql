@@ -1953,7 +1953,7 @@ static void ceilingFunc(
 
 /*
 ** On some systems, ceil() and floor() are intrinsic function.  You are
-** unable to take a pointer to this functions.  Hence, we here wrap them
+** unable to take a pointer to these functions.  Hence, we here wrap them
 ** in our own actual functions.
 */
 static double xCeil(double x){ return ceil(x); }
