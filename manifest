@@ -1,5 +1,5 @@
-C Fix\sharmless\stypos\sin\scomments\sper\s\n[forum:/forumpost/7849e58dd5|forum\spost\s7849e58dd5]
-D 2021-01-07T16:10:14.503
+C Fix\sproblems\swith\ssome\s"crashsql"\stests.
+D 2021-01-07T16:29:34.204
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -800,7 +800,7 @@ F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 8f5de9d32ab9ab95475a9efe7f47a940aa889418
 F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
-F test/crash5.test f14ff37eddc41991be4eb63568f86caa306fd9962a0ae3750db8836777bb7aae
+F test/crash5.test 98f77ad22bceaea9043bf87088d5b61d004a1f40bb7c9dc3b6a7c70bd502c0bb
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
 F test/crash8.test 64366e459c28dd62edfb7ad87253a409c7533b92d16fcc479a6a8131bdcc3100
@@ -1435,7 +1435,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 754521f0db534d51ab504b2d14fe0bdca1f1c15de731ceb8ee5bfd78372a2a5f
+F test/tester.tcl 56c059c88c5b96a624f1193ba48b0bac034190b79cd9c75cb4acbfe84baf7ec5
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2c2c7e945f5d5700d91b8e779117e70e388ffc613912a434885ae27f5fe4e22
-R 001c230a08957ce4d5a03839716e575b
-U drh
-Z 3adc05f7c3c6f4fad03349029fbaefe8
+P d1e22e2f76cce7eb9f9029646176daef2d9e41c7bb1d3e1da182fbdd0096605c
+R f2a08ccfa9bd07e6fe085165034f514e
+U dan
+Z ff87a608ac05b1370695f464c3f563ec

@@ -1689,9 +1689,12 @@ proc crashsql {args} {
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
+  puts $f "sqlite3_initialize ; sqlite3_shutdown"
+  puts $f "catch { install_malloc_faultsim 1 }"
   puts $f "sqlite3_crash_enable 1 $dfltvfs"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  puts $f "autoinstall_test_functions"
 
   # This block sets the cache size of the main database to 10
   # pages. This is done in case the build is configured to omit
@@ -1719,7 +1722,7 @@ proc crashsql {args} {
   }
   close $f
   set r [catch {
-    exec [info nameofexec] crash.tcl >@stdout
+    exec [info nameofexec] crash.tcl >@stdout 2>@stdout
   } msg]
 
   # Windows/ActiveState TCL returns a slightly different
