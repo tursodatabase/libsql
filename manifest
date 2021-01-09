@@ -1,5 +1,5 @@
-C More\sdetailed\scompile-time\stesting\sbefore\sattempting\sto\suse\satomic\sload\nintrinsics.\s\sSee\n[forum:/forumpost/fc0237a39b30ac0a|forum\spost\sfc0237a39b30ac0a].
-D 2021-01-09T18:24:33.207
+C New\sCLI\scommand:\s\s".stats\svmstep"\senables\sthe\sdisplay\sof\sthe\svirtual-machine\nstep\scount\sonly,\safter\seach\scommand.\s\sUseful\sfor\soptimization\sproblems.
+D 2021-01-09T19:10:04.989
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 85c7cec9a4a983416d4bd023b2c4fbbeb608ae8dfb069781f80c8ed08b0c7a7c
-F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e3416134
+F src/shell.c.in 79bceb990e4bac23a09bb8dd65783ea4867b8bfca9242b5a82b884043e65109a
 F src/sqlite.h.in 0af968a1fa3c717261e1df0ed105fa7bddb4d82de7e0adb3eab49e6aa81b4de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1352,10 +1352,10 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 0ba53c72545de142e1b76fa793ee33293134aa02abb9b50b35398670481ea661
+F test/shell1.test 56a7358a2a05e850e9e4aa24629db9c8975e8038dbe8debd2d95be22a5f03612
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test ac8c2b744014c3e9a0e26bfd829ab65f00923dc1a91ffd044863e9423cc91494
-F test/shell4.test 1c6aef11daaa2d6830acaba3ac9cbec93fbc1c3d5530743a637f39b3987d08ce
+F test/shell4.test 3ed6c4b42fd695efcbc25d69ef759dbb15855ca8e52ba6c5ee076f8b435f48be
 F test/shell5.test 84a30b55722a95a5b72989e691c469a999ca7591e7aa00b7fabc783ea5c9a6fe
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 24baab9a9faab50c26d7167821031cd66aaf784baefbc0f92354ae54ac43a714
-R f436034378e7ad8864e7bea1bcf5d189
+P 5204c2c4a7b73a64764b0d2d1d7c53709bb64e0d2685a829c7bf31af13bab5e7
+R 08e016b91a617b99baf0add20ffab4d1
 U drh
-Z fd75732825704368b80a067191a5a63f
+Z 8b24dd36b9adf4430f5fd36c021c9d5f
