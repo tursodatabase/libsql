@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\ssha3_query()\swhen\sthe\sfirst\sargument\scontains\sblank\nSQL\sstatements.
-D 2021-01-08T19:53:18.684
+C More\sdetailed\scompile-time\stesting\sbefore\sattempting\sto\suse\satomic\sload\nintrinsics.\s\sSee\n[forum:/forumpost/fc0237a39b30ac0a|forum\spost\sfc0237a39b30ac0a].
+D 2021-01-09T18:24:33.207
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/shell.c.in 6dd0d9260220f807d6d1b8e57dd6e163fe55bd0e97fa416c8c139162e341613
 F src/sqlite.h.in 0af968a1fa3c717261e1df0ed105fa7bddb4d82de7e0adb3eab49e6aa81b4de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 1ae150649f0a5752e6b83f65089c05301966969df2b2beac7286c351581ac6ee
+F src/sqliteInt.h 0eb4c251a6df26fb97fcd0c285c5dd442f90f0d0305c14f2a9d0cfc006a0e1da
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c71f6cadcc8c2172ad4113bbe4026aac4ebb8a91485454e8a14de32d197a93aa
-R cc767b37e9c2c0feee110e02581211ee
+P 24baab9a9faab50c26d7167821031cd66aaf784baefbc0f92354ae54ac43a714
+R f436034378e7ad8864e7bea1bcf5d189
 U drh
-Z 1c7fa074713d00a24e24cef3301f23ad
+Z fd75732825704368b80a067191a5a63f
