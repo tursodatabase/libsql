@@ -570,14 +570,50 @@ void sqlite3ParserReset(Parse *pParse){
     agginfoFree(db, pThis);
     pThis = pNext;
   }
+  while( pParse->pCleanup ){
+    ParseCleanup *pThis = pParse->pCleanup;
+    pParse->pCleanup = pThis->pNext;
+    pThis->xCleanup(db, pThis->pPtr);
+    sqlite3DbFree(db, pThis);
+  }
   sqlite3DbFree(db, pParse->aLabel);
-  sqlite3ExprListDelete(db, pParse->pConstExpr);
+  if( pParse->pConstExpr ){
+    sqlite3ExprListDelete(db, pParse->pConstExpr);
+  }
   if( db ){
     assert( db->lookaside.bDisable >= pParse->disableLookaside );
     db->lookaside.bDisable -= pParse->disableLookaside;
     db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
   }
   pParse->disableLookaside = 0;
+}
+
+/*
+** Add a new cleanup operation to a Parser.  The cleanup should happen when
+** the parser object is destroyed.
+**
+** Use this mechanism for uncommon cleanups.  There is a higher setup
+** cost, so this should not be used for common cleanups.  But for less
+** common cleanups, we save a single NULL-pointer comparison in
+** sqlite3ParserReset(), which makes a surprising difference in total
+** performance.
+**
+** If a memory allocation error occurs, then the cleanup happens immediately.
+*/
+void sqlite3ParserAddCleanup(
+  Parse *pParse,
+  void (*xCleanup)(sqlite3*,void*),
+  void *pPtr
+){
+  ParseCleanup *pCleanup = sqlite3DbMallocRaw(pParse->db, sizeof(*pCleanup));
+  if( pCleanup ){
+    pCleanup->pNext = pParse->pCleanup;
+    pParse->pCleanup = pCleanup;
+    pCleanup->pPtr = pPtr;
+    pCleanup->xCleanup = xCleanup;
+  }else{
+    xCleanup(pParse->db, pPtr);
+  }
 }
 
 /*
