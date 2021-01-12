@@ -1000,7 +1000,6 @@ static TriggerPrg *codeRowTrigger(
     sqlite3VdbeDelete(v);
   }
 
-  assert( !pSubParse->pAinc       && !pSubParse->pZombieTab );
   assert( !pSubParse->pTriggerPrg && !pSubParse->nMaxArg );
   sqlite3ParserReset(pSubParse);
   sqlite3StackFree(db, pSubParse);
