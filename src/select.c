@@ -4143,6 +4143,7 @@ static int flattenSubquery(
       sqlite3ParserAddCleanup(pToplevel, 
          (void(*)(sqlite3*,void*))sqlite3DeleteTable,
          pTabToDel);
+      testcase( pToplevel->earlyCleanup );
     }else{
       pTabToDel->nTabRef--;
     }
@@ -4865,6 +4866,7 @@ void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
       sqlite3ParserAddCleanup(pParse, 
          (void(*)(sqlite3*,void*))sqlite3WithDelete,
          pWith);
+      testcase( pParse->earlyCleanup );
     }
   }
 }

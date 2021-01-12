@@ -590,20 +590,28 @@ void sqlite3ParserReset(Parse *pParse){
 
 /*
 ** Add a new cleanup operation to a Parser.  The cleanup should happen when
-** the parser object is destroyed.
+** the parser object is destroyed.  But, beware: the cleanup might happen
+** immediately.
 **
 ** Use this mechanism for uncommon cleanups.  There is a higher setup
-** cost, so this should not be used for common cleanups.  But for less
+** cost for this mechansim (an extra malloc), so it should not be used
+** for common cleanups that happen on most calls.  But for less
 ** common cleanups, we save a single NULL-pointer comparison in
-** sqlite3ParserReset(), which makes a surprising difference in total
-** performance.
+** sqlite3ParserReset(), which reduces the total CPU cycle count.
 **
 ** If a memory allocation error occurs, then the cleanup happens immediately.
+** When eithr SQLITE_DEBUG or SQLITE_COVERAGE_TEST are defined, the
+** pParse->earlyCleanup flag is set in that case.  Calling code show verify
+** that test cases exist for which this happens, to guard against possible
+** use-after-free errors following an OOM.  The preferred way to do this is
+** to immediately follow the call to this routine with:
+**
+**       testcase( pParse->earlyCleanup );
 */
 void sqlite3ParserAddCleanup(
-  Parse *pParse,
-  void (*xCleanup)(sqlite3*,void*),
-  void *pPtr
+  Parse *pParse,                      /* Destroy when this Parser finishes */
+  void (*xCleanup)(sqlite3*,void*),   /* The cleanup routine */
+  void *pPtr                          /* Pointer to object to be cleaned up */
 ){
   ParseCleanup *pCleanup = sqlite3DbMallocRaw(pParse->db, sizeof(*pCleanup));
   if( pCleanup ){
@@ -613,6 +621,9 @@ void sqlite3ParserAddCleanup(
     pCleanup->xCleanup = xCleanup;
   }else{
     xCleanup(pParse->db, pPtr);
+#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
+    pParse->earlyCleanup = 1;
+#endif
   }
 }
 
