@@ -2027,6 +2027,7 @@ static int shell_callback(
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         int w = aExplainWidth[i];
+        if( i==nArg-1 ) w = 0;
         if( azArg[i] && strlenChar(azArg[i])>w ){
           w = strlenChar(azArg[i]);
         }
