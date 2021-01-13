@@ -4640,7 +4640,11 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   assert( *ppMinMax==0 );
   assert( pFunc->op==TK_AGG_FUNCTION );
   assert( !IsWindowFunc(pFunc) );
-  if( pEList==0 || pEList->nExpr!=1 || ExprHasProperty(pFunc, EP_WinFunc) ){
+  if( pEList==0 
+   || pEList->nExpr!=1
+   || ExprHasProperty(pFunc, EP_WinFunc)
+   || OptimizationDisabled(db, SQLITE_MinMaxOpt)
+  ){
     return eRet;
   }
   zFunc = pFunc->u.zToken;

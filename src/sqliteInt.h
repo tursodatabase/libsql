@@ -1496,7 +1496,7 @@ struct sqlite3 {
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
   int iSysErrno;                /* Errno value from last system error */
-  u16 dbOptFlags;               /* Flags to enable/disable optimizations */
+  u32 dbOptFlags;               /* Flags to enable/disable optimizations */
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
@@ -1703,24 +1703,25 @@ struct sqlite3 {
 ** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface to
 ** selectively disable various optimizations.
 */
-#define SQLITE_QueryFlattener 0x0001   /* Query flattening */
-#define SQLITE_WindowFunc     0x0002   /* Use xInverse for window functions */
-#define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
-#define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
-#define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */
-#define SQLITE_CoverIdxScan   0x0020   /* Covering index scans */
-#define SQLITE_OrderByIdxJoin 0x0040   /* ORDER BY of joins via index */
-#define SQLITE_Transitive     0x0080   /* Transitive constraints */
-#define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
-#define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
-#define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
-#define SQLITE_Stat4          0x0800   /* Use STAT4 data */
-   /* TH3 expects the Stat4   ^^^^^^ value to be 0x0800.  Don't change it */
-#define SQLITE_PushDown       0x1000   /* The push-down optimization */
-#define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
-#define SQLITE_SkipScan       0x4000   /* Skip-scans */
-#define SQLITE_PropagateConst 0x8000   /* The constant propagation opt */
-#define SQLITE_AllOpts        0xffff   /* All optimizations */
+#define SQLITE_QueryFlattener 0x00000001 /* Query flattening */
+#define SQLITE_WindowFunc     0x00000002 /* Use xInverse for window functions */
+#define SQLITE_GroupByOrder   0x00000004 /* GROUPBY cover of ORDERBY */
+#define SQLITE_FactorOutConst 0x00000008 /* Constant factoring */
+#define SQLITE_DistinctOpt    0x00000010 /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan   0x00000020 /* Covering index scans */
+#define SQLITE_OrderByIdxJoin 0x00000040 /* ORDER BY of joins via index */
+#define SQLITE_Transitive     0x00000080 /* Transitive constraints */
+#define SQLITE_OmitNoopJoin   0x00000100 /* Omit unused tables in joins */
+#define SQLITE_CountOfView    0x00000200 /* The count-of-view optimization */
+#define SQLITE_CursorHints    0x00000400 /* Add OP_CursorHint opcodes */
+#define SQLITE_Stat4          0x00000800 /* Use STAT4 data */
+   /* TH3 expects this value  ^^^^^^^^^^ to be 0x0000800. Don't change it */
+#define SQLITE_PushDown       0x00001000 /* The push-down optimization */
+#define SQLITE_SimplifyJoin   0x00002000 /* Convert LEFT JOIN to JOIN */
+#define SQLITE_SkipScan       0x00004000 /* Skip-scans */
+#define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
+#define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
+#define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
