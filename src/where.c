@@ -100,6 +100,29 @@ int sqlite3WhereOrderByLimitOptLabel(WhereInfo *pWInfo){
 }
 
 /*
+** While generating code for the min/max optimization, after handling
+** the aggregate-step call to min() or max(), check to see if any
+** additional looping is required.  If the output order is such that
+** we are certain that the correct answer has already been found, then
+** code an OP_Goto to by pass subsequent processing.
+**
+** Any extra OP_Goto that is coded here is an optimization.  The
+** correct answer should be obtained regardless.  This OP_Goto just
+** makes the answer appear faster.
+*/
+void sqlite3WhereMinMaxOptEarlyOut(Vdbe *v, WhereInfo *pWInfo){
+  WhereLevel *pInner;
+  if( !pWInfo->bOrderedInnerLoop ) return;
+  if( pWInfo->nOBSat==0 ) return;
+  pInner = &pWInfo->a[pWInfo->nLevel-1];
+  if( (pInner->pWLoop->wsFlags & WHERE_COLUMN_IN)==0 ){
+    sqlite3VdbeGoto(v, pWInfo->iBreak);
+  }else if( pInner->addrNxt!=pWInfo->iContinue ){
+    sqlite3VdbeGoto(v, pInner->addrNxt);
+  }
+}
+
+/*
 ** Return the VDBE address or label to jump to in order to continue
 ** immediately with the next row of a WHERE clause.
 */
