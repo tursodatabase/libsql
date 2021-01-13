@@ -1,5 +1,5 @@
-C Expand\sthe\snumber\sof\soptimization-disable\sbits\sfrom\s16\sto\s32.\s\sUse\sone\sof\nthe\snew\sbits\sto\sdisable\sthe\smin/max\soptimization,\sso\sthat\swe\scan\smore\seasily\nverify\sthat\swe\sget\sthe\ssame\sanswer\sboth\swith\sand\swithin\sthat\soptimization.
-D 2021-01-13T19:28:17.446
+C Fix\sa\sharmless\scompiler\swarning.
+D 2021-01-13T21:05:07.314
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -535,7 +535,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
 F src/pragma.c 6daaaecc26a4b09481d21722525b079ce756751a43a79cc1d8f122d686806193
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
-F src/prepare.c cfe5a0ec9fd612c89b4d50acfd4b796bd5fe850441cab0d866d72fa3aa982c45
+F src/prepare.c f288cbc35f79eb32e162de7e80a63ebe00d80e639dcfac071bee11570cbdb16f
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 188772a1dbaf066fbddd39c718fdd87478b19a920622f4640bcb79d4ef065331
-R fee2bff3fc3f4ab0866b8b2d20b15a63
+P fd0c9a123b58b7b134ed67f26dbb4196b61e56227f078422cc7e9a3497054c2d
+R 066b14d85f5f9812b58b6c0444ced87b
 U drh
-Z b04c23448445719d4a662625f97c5411
+Z 1cdf44f5345d423ffb8022710ae292a6
