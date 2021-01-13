@@ -1,5 +1,5 @@
-C Merge\sthe\sParseCleanup\senhancement\sto\strunk.
-D 2021-01-12T16:26:36.110
+C In\sthe\s.selecttrace\soutput,\sshow\sthe\sORDER\sBY\sclause\sadded\sby\sthe\sMin/Max\noptimization.
+D 2021-01-13T11:44:51.022
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c a9c38abfbaaf1230fa9079b4d1d43694cac335a85efa39684bd4969a5c877a19
+F src/select.c 74655feb1ba3767f0f376029acdf1e488942e6b02aa0e65679a75181c2fbe88f
 F src/shell.c.in 79bceb990e4bac23a09bb8dd65783ea4867b8bfca9242b5a82b884043e65109a
 F src/sqlite.h.in 0af968a1fa3c717261e1df0ed105fa7bddb4d82de7e0adb3eab49e6aa81b4de7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1895,8 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f3ab5da4c8906b63e2c1a0021a3ba4f60e7199e8640518060f998876a002663 38ef8ab9830e12acd2c710e113939b1f8dced02612c6933c37a3c948a4030d0a
-R a2b97b3e175b432108521b3e9366ef42
-T +closed 38ef8ab9830e12acd2c710e113939b1f8dced02612c6933c37a3c948a4030d0a
+P 35824c1bcbd89ae4a94acfbe511bfbd888c418b981819e72bc9a991fc82d136c
+R 61cf4ac944232eaafcf9775988abf565
 U drh
-Z 9c0d514193cce7631d3a6adc01edb18c
+Z 998402e9038a172631ad95c2c70da3a5
