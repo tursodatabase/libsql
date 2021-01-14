@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2021-01-13T21:05:07.314
+C The\searly-out\sof\sthe\sinner\sloop\son\sthe\smin/max\soptimization\swas\soverly\naggressive\sfor\sthe\scases\swhere\sthere\sis\sa\sjoin\sand\souter\sloops\scontain\nIN\soperators.\s\sFix\sthis.\s\sTest\scase\sin\sTH3.
+D 2021-01-14T00:53:14.879
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
-F src/where.c dee929890fe399993d4e78a5a89d4b289f7ab015446e157d2e4c25477fdfa060
+F src/where.c 0e6abb22a2323fec80b450825593c26a2ad8f4815d1ee3af9969d8f6144bf681
 F src/whereInt.h 9a3f577619f07700d16d89eeb2f3d94d6b7ed7f109c2dacf0ce8844921549506
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
 F src/whereexpr.c 3a463e156ea388083c501502229c2c7f4f5c6b5330ea59bdf40d6eb6e155a25f
@@ -1895,7 +1895,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd0c9a123b58b7b134ed67f26dbb4196b61e56227f078422cc7e9a3497054c2d
-R 066b14d85f5f9812b58b6c0444ced87b
+P 83ec01e38cbd22147ba544e15eae32c72e0523a55b54851e483dc2effc64f206
+R 3dc0d948d76c5e90d01be3a954f85921
 U drh
-Z 1cdf44f5345d423ffb8022710ae292a6
+Z 4b60af58a6a03c91f6ab835dbd142db0
