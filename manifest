@@ -1,5 +1,5 @@
-C Update\sheader\scomments\sfor\sroutines\sadded\sby\sthis\sbranch.
-D 2021-01-15T16:37:32.495
+C Add\sOOM\sinjection\stests\sfor\snew\scode\son\sthis\sbranch.
+D 2021-01-15T17:51:56.060
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -875,6 +875,7 @@ F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
 F test/exists2.test 1022fe1c85ee162ae55efda6c00497b29d1f61ecb21e7d5f1c014eb46245c70a
+F test/existsfault.test 74f7edc713f5a335e7ff47adf503067bf05c6f8630f88b2a19c24f0fa5486ab8
 F test/expr.test 26cd01e8485bc48c8aa6a1add598e9ce1e706b4eb4f3f554e0b0223022e8c2cf
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
@@ -1896,7 +1897,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a373baae12c914e48fd84de77998e301fdd3da43b06b9d64ac24a14418ed48cd
-R e59675eaf8d9cef929f4570c41e8d7b0
+P 950030d679933f9ccd2b86ee650a4a78d338278a3629f0d289cca720a43e686b
+R 9a769128390cc86c331540163e8fa29c
 U dan
-Z 99df7f39e80917b2e7ef225da7aeef0d
+Z a3f9abfbc145e44a2a1bba02d43a960d
