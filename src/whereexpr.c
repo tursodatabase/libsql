@@ -1153,6 +1153,7 @@ static void exprAnalyzeExists(
   Expr *pInLhs = 0;
   Expr **ppAnd = 0;
   int idxNew;
+  sqlite3 *db = pParse->db;
 
   assert( pExpr->op==TK_EXISTS );
   assert( (pExpr->flags & EP_VarSelect) && (pExpr->flags & EP_xIsSelect) );
@@ -1162,10 +1163,13 @@ static void exprAnalyzeExists(
   if( pSel->pWhere==0 ) return;
   if( 0==exprAnalyzeExistsFindEq(pSel, 0, 0) ) return;
 
-  pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
-  if( pDup==0 ) return;
+  pDup = sqlite3ExprDup(db, pExpr, 0);
+  if( db->mallocFailed ){
+    sqlite3ExprDelete(db, pDup);
+    return;
+  }
   pSel = pDup->x.pSelect;
-  sqlite3ExprListDelete(pParse->db, pSel->pEList);
+  sqlite3ExprListDelete(db, pSel->pEList);
   pSel->pEList = 0;
 
   pInLhs = exprAnalyzeExistsFindEq(pSel, &pEq, &ppAnd);
@@ -1184,13 +1188,13 @@ static void exprAnalyzeExists(
     Expr *pAnd = *ppAnd;
     Expr *pOther = (pAnd->pLeft==pEq) ? pAnd->pRight : pAnd->pLeft;
     pAnd->pLeft = pAnd->pRight = 0;
-    sqlite3ExprDelete(pParse->db, pAnd);
+    sqlite3ExprDelete(db, pAnd);
     *ppAnd = pOther;
   }else{
     assert( pSel->pWhere==pEq );
     pSel->pWhere = 0;
   }
-  sqlite3ExprDelete(pParse->db, pEq);
+  sqlite3ExprDelete(db, pEq);
 
   idxNew = whereClauseInsert(pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
   if( idxNew ){
