@@ -1175,12 +1175,18 @@ static void exprAnalyzeExists(
   pInLhs = exprAnalyzeExistsFindEq(pSel, &pEq, &ppAnd);
   assert( pInLhs && pEq );
   assert( pEq==pSel->pWhere || ppAnd );
+  if( pInLhs==pEq->pLeft ){
+    pRet = pEq->pRight;
+  }else{
+    CollSeq *p = sqlite3ExprCompareCollSeq(pParse, pEq);
+    pInLhs = sqlite3ExprAddCollateString(pParse, pInLhs, p?p->zName:"BINARY");
+    pRet = pEq->pLeft;
+  }
 
   assert( pDup->pLeft==0 );
   pDup->op = TK_IN;
   pDup->pLeft = pInLhs;
   pDup->flags &= ~EP_VarSelect;
-  pRet = (pInLhs==pEq->pLeft) ? pEq->pRight : pEq->pLeft;
   pSel->pEList = sqlite3ExprListAppend(pParse, 0, pRet);
   pEq->pLeft = 0;
   pEq->pRight = 0;
