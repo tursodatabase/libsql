@@ -1062,18 +1062,14 @@ struct ExistsToInCtx {
   Expr **ppParent;
 };
 
-static int exprExistsToInIter(
-  struct ExistsToInCtx *p, 
-  Expr *pExpr, 
-  Expr **ppExpr
-){
-  assert( ppExpr==0 || *ppExpr==pExpr );
+static int exprExistsToInIter(struct ExistsToInCtx *p, Expr **ppExpr){
+  Expr *pExpr = *ppExpr;
   switch( pExpr->op ){
     case TK_AND:
       p->ppParent = ppExpr;
-      if( exprExistsToInIter(p, pExpr->pLeft, &pExpr->pLeft) ) return 1;
+      if( exprExistsToInIter(p, &pExpr->pLeft) ) return 1;
       p->ppParent = ppExpr;
-      if( exprExistsToInIter(p, pExpr->pRight, &pExpr->pRight) ) return 1;
+      if( exprExistsToInIter(p, &pExpr->pRight) ) return 1;
       break;
     case TK_EQ: {
       int bLeft = exprUsesSrclist(p->pSrc, pExpr->pLeft, 0);
@@ -1081,9 +1077,9 @@ static int exprExistsToInIter(
       if( bLeft || bRight ){
         if( (bLeft && bRight) || p->pInLhs ) return 1;
         p->pInLhs = bLeft ? pExpr->pLeft : pExpr->pRight;
+        if( exprUsesSrclist(p->pSrc, p->pInLhs, 1) ) return 1;
         p->pEq = pExpr;
         p->ppAnd = p->ppParent;
-        if( exprUsesSrclist(p->pSrc, p->pInLhs, 1) ) return 1;
       }
       break;
     }
@@ -1098,15 +1094,14 @@ static int exprExistsToInIter(
 }
 
 static Expr *exprAnalyzeExistsFindEq(
-  SrcList *pSrc,
-  Expr *pWhere,                   /* WHERE clause to traverse */
+  Select *pSel,
   Expr **ppEq,                    /* OUT: == node from WHERE clause */
   Expr ***pppAnd                  /* OUT: Pointer to parent of ==, if any */
 ){
   struct ExistsToInCtx ctx;
   memset(&ctx, 0, sizeof(ctx));
-  ctx.pSrc = pSrc;
-  if( exprExistsToInIter(&ctx, pWhere, 0) ){
+  ctx.pSrc = pSel->pSrc;
+  if( exprExistsToInIter(&ctx, &pSel->pWhere) ){
     return 0;
   }
   if( ppEq ) *ppEq = ctx.pEq;
@@ -1165,7 +1160,7 @@ static void exprAnalyzeExists(
   if( (pSel->selFlags & SF_Aggregate) || pSel->pWin ) return;
   if( pSel->pPrior ) return;
   if( pSel->pWhere==0 ) return;
-  if( 0==exprAnalyzeExistsFindEq(pSel->pSrc, pSel->pWhere, 0, 0) ) return;
+  if( 0==exprAnalyzeExistsFindEq(pSel, 0, 0) ) return;
 
   pDup = sqlite3ExprDup(pParse->db, pExpr, 0);
   if( pDup==0 ) return;
@@ -1173,7 +1168,9 @@ static void exprAnalyzeExists(
   sqlite3ExprListDelete(pParse->db, pSel->pEList);
   pSel->pEList = 0;
 
-  pInLhs = exprAnalyzeExistsFindEq(pSel->pSrc, pSel->pWhere, &pEq, &ppAnd);
+  pInLhs = exprAnalyzeExistsFindEq(pSel, &pEq, &ppAnd);
+  assert( pInLhs && pEq );
+  assert( pEq==pSel->pWhere || ppAnd );
 
   assert( pDup->pLeft==0 );
   pDup->op = TK_IN;
