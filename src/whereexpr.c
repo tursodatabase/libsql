@@ -1054,6 +1054,10 @@ static int exprUsesSrclist(SrcList *pSrc, Expr *pExpr, int bUses){
   return (sqlite3WalkExpr(&sWalker, pExpr)==WRC_Abort);
 }
 
+/*
+** Context object used by exprExistsToInIter() as it iterates through an
+** expression tree.
+*/
 struct ExistsToInCtx {
   SrcList *pSrc;
   Expr *pInLhs;
@@ -1062,6 +1066,15 @@ struct ExistsToInCtx {
   Expr **ppParent;
 };
 
+/*
+** Iterate through all AND connected nodes in the expression tree
+** headed by (*ppExpr), populating the structure passed as the first
+** argument with the values required by exprAnalyzeExistsFindEq().
+**
+** This function returns non-zero if the expression tree does not meet
+** the two conditions described by the header comment for
+** exprAnalyzeExistsFindEq(), or zero if it does.
+*/
 static int exprExistsToInIter(struct ExistsToInCtx *p, Expr **ppExpr){
   Expr *pExpr = *ppExpr;
   switch( pExpr->op ){
@@ -1093,6 +1106,30 @@ static int exprExistsToInIter(struct ExistsToInCtx *p, Expr **ppExpr){
   return 0;
 }
 
+/*
+** This function is by exprAnalyzeExists() when creating virtual IN(...)
+** terms equivalent to user-supplied EXIST(...) clauses. It splits the WHERE
+** clause of the Select object passed as the first argument into one or more
+** expressions joined by AND operators, and then tests if the following are
+** true:
+**
+**   1. Exactly one of the AND separated terms refers to the outer
+**      query, and it is an == (TK_EQ) expression.
+**
+**   2. Only one side of the == expression refers to the outer query, and 
+**      it does not refer to any columns from the inner query.
+**
+** If both these conditions are true, then a pointer to the side of the ==
+** expression that refers to the outer query is returned. The caller will
+** use this expression as the LHS of the IN(...) virtual term. Or, if one
+** or both of the above conditions are not true, NULL is returned.
+**
+** If non-NULL is returned and ppEq is non-NULL, *ppEq is set to point
+** to the == expression node before returning. If pppAnd is non-NULL and
+** the == node is not the root of the WHERE clause, then *pppAnd is set
+** to point to the pointer to the AND node that is the parent of the ==
+** node within the WHERE expression tree.
+*/
 static Expr *exprAnalyzeExistsFindEq(
   Select *pSel,
   Expr **ppEq,                    /* OUT: == node from WHERE clause */

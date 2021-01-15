@@ -1,5 +1,5 @@
-C Ensure\sthe\sEXISTS->IN\stransformation\spreserves\sthe\scollation\ssequence\sof\sthe\scomparison\soperation.
-D 2021-01-15T15:32:09.587
+C Update\sheader\scomments\sfor\sroutines\sadded\sby\sthis\sbranch.
+D 2021-01-15T16:37:32.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
 F src/where.c 0e6abb22a2323fec80b450825593c26a2ad8f4815d1ee3af9969d8f6144bf681
 F src/whereInt.h 9a3f577619f07700d16d89eeb2f3d94d6b7ed7f109c2dacf0ce8844921549506
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
-F src/whereexpr.c d63dcb44253f7ad67449759bca6da63cac1c352aba7bea46ba3210154ad21e22
+F src/whereexpr.c 0462a66ccabeea05c2d41a1e650a9c4db5bc696b9a3b42b48a43a89a2ba81474
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1896,7 +1896,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ce3cb90965771530c0021173d98720fc4c76bb99e69f7a879f80471dea0aace
-R bc5d3e0052171a4a3fcfe5fb2a3891b3
+P a373baae12c914e48fd84de77998e301fdd3da43b06b9d64ac24a14418ed48cd
+R e59675eaf8d9cef929f4570c41e8d7b0
 U dan
-Z 4e48cccd8bd31a2f422fbd932b326f93
+Z 99df7f39e80917b2e7ef225da7aeef0d
