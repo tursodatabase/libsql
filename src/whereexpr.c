@@ -1385,6 +1385,14 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
+  else if( pExpr->op==TK_EXISTS ){
+    /* Perhaps treat an EXISTS operator as an IN operator */
+    if( (pExpr->flags & EP_VarSelect)!=0 ){
+      exprAnalyzeExists(pSrc, pWC, idxTerm);
+    }
+  }
+
+
 #ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
@@ -1610,10 +1618,6 @@ static void exprAnalyze(
     }
   }
 #endif /* SQLITE_ENABLE_STAT4 */
-
-  if( pExpr->op==TK_EXISTS && (pExpr->flags & EP_VarSelect) ){
-    exprAnalyzeExists(pSrc, pWC, idxTerm);
-  }
 
   /* Prevent ON clause terms of a LEFT JOIN from being used to drive
   ** an index for tables to the left of the join.
