@@ -1387,7 +1387,9 @@ static void exprAnalyze(
 
   else if( pExpr->op==TK_EXISTS ){
     /* Perhaps treat an EXISTS operator as an IN operator */
-    if( (pExpr->flags & EP_VarSelect)!=0 ){
+    if( (pExpr->flags & EP_VarSelect)!=0
+     && OptimizationEnabled(db, SQLITE_ExistsToIN)
+    ){
       exprAnalyzeExists(pSrc, pWC, idxTerm);
     }
   }
