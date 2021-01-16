@@ -1,5 +1,5 @@
-C Give\sthe\sEXISTS-to-IN\soptimization\sthe\sability\sto\shandle\ssome\scases\sthat\ninvolve\svector\scomparisons,\sinstead\sof\sthrowing\sa\smysterious\serror\sin\sthose\ncases.
-D 2021-01-16T18:55:10.186
+C Improved\shandling\sof\svector\sequalities\sin\sthe\sEXISTS-to-IN\stranslator.
+D 2021-01-16T20:22:11.928
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/date.c dace306a10d9b02ee553d454c8e1cf8d3c9b932e137738a6b15b90253a9bfc10
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 927cf8f900583e79aca8f1a321979e0a8f053babd9a690b44b38f79de2cc09fe
-F src/expr.c 0d196ed5a2ebf96be7e8df88add4fabfad0dce16c0fed81a4b8f6a26e259797f
+F src/expr.c 47c85263e6d179424e6b09e2c79db5704ab5b8cbc2fae2ee3285faa2566f2e74
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 83372403298e6a7dd989a47aaacdbaa5b4307b5199dbd56e07d4896066b3de72
 F src/func.c 251b5953cecd0ce3e282213c5e623134415793d3569d7804d13460559d7e45ff
@@ -630,7 +630,7 @@ F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
 F src/where.c 0e6abb22a2323fec80b450825593c26a2ad8f4815d1ee3af9969d8f6144bf681
 F src/whereInt.h 9a3f577619f07700d16d89eeb2f3d94d6b7ed7f109c2dacf0ce8844921549506
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
-F src/whereexpr.c 0a3fd3667cb78d5ced831d103a9769e9429b69cc06336a557f7436a36298a08d
+F src/whereexpr.c 9fdbed19035077e41ca993ab469114e9b6b0746c18ea4e7675a850713b35fc72
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -874,7 +874,7 @@ F test/exclusive.test 7ff63be7503990921838d5c9f77f6e33e68e48ed1a9d48cd28745bf650
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/exists2.test 3e6741849880410a438e1e016878aee518e82fc14c9df7bb8b975414e822960a
+F test/exists2.test 3e5726d6a67ebd4bd3466db58be424c09156c1f276c7594abb260cbf6ad494d3
 F test/existsfault.test 74f7edc713f5a335e7ff47adf503067bf05c6f8630f88b2a19c24f0fa5486ab8
 F test/expr.test 26cd01e8485bc48c8aa6a1add598e9ce1e706b4eb4f3f554e0b0223022e8c2cf
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
@@ -1897,7 +1897,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0dad5ce34ad8a59200b013453c9334f8898e07f2c0107c8c734ecc34b67de572
-R dac9991b639e128a44072e06099f9d5a
+P 87e78a19bb3ae1caf57aeeae53a5ab4efdccb57265f25d5c19b62eae53747aff
+R 9040bb485a8bcb3beab221382ed76aaa
 U drh
-Z 4c2faa19ecfc2a7e1d7bc30b27d619e2
+Z 15d0a474b0220437a1e81a3ea0fc01b3

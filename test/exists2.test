@@ -105,16 +105,16 @@ do_execsql_eqp_test 1.7 {
 #
 reset_db
 do_execsql_test 2.0 {
-  CREATE TABLE t3(a TEXT PRIMARY KEY, b TEXT) WITHOUT ROWID;
-  CREATE TABLE t4(c TEXT COLLATE nocase);
+  CREATE TABLE t3(a TEXT PRIMARY KEY, b TEXT, x INT) WITHOUT ROWID;
+  CREATE TABLE t4(c TEXT COLLATE nocase, y INT);
 
-  INSERT INTO t3 VALUES('one', 'i');
-  INSERT INTO t3 VALUES('two', 'ii');
-  INSERT INTO t3 VALUES('three', 'iii');
-  INSERT INTO t3 VALUES('four', 'iv');
-  INSERT INTO t3 VALUES('five', 'v');
+  INSERT INTO t3 VALUES('one', 'i', 1);
+  INSERT INTO t3 VALUES('two', 'ii', 2);
+  INSERT INTO t3 VALUES('three', 'iii', 3);
+  INSERT INTO t3 VALUES('four', 'iv', 4);
+  INSERT INTO t3 VALUES('five', 'v', 5);
 
-  INSERT INTO t4 VALUES('FIVE'), ('four'), ('TWO'), ('one');
+  INSERT INTO t4 VALUES('FIVE',5), ('four',4), ('TWO',2), ('one',1);
 }
 
 do_execsql_test 2.1 { SELECT a FROM t3, t4 WHERE a=c } {four one}
@@ -137,7 +137,7 @@ do_execsql_eqp_test 2.4 {
 }
 
 do_execsql_test 2.5 {
-  CREATE INDEX t3anc ON t3(a COLLATE nocase);
+  CREATE INDEX t3anc ON t3(a COLLATE nocase, x);
 }
 
 do_execsql_eqp_test 2.6 {
@@ -147,11 +147,19 @@ do_execsql_eqp_test 2.6 {
 } {
   five four one two
 }
+do_execsql_test 2.6a {
+  SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE (c,y)=(a,x))
+} {five four one two}
 
 do_execsql_eqp_test 2.7 {
   SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE a=c)
 } {
   SEARCH TABLE t3 USING PRIMARY KEY
+} {
+  four one
+}
+do_execsql_test 2.7a {
+  SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE (a,x)=(c,y))
 } {
   four one
 }

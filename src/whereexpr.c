@@ -1215,11 +1215,9 @@ static void exprAnalyzeExists(
   if( pInLhs==pEq->pLeft ){
     pRet = pEq->pRight;
   }else{
+    CollSeq *p = sqlite3ExprCompareCollSeq(pParse, pEq);
+    pInLhs = sqlite3ExprAddCollateString(pParse, pInLhs, p?p->zName:"BINARY");
     pRet = pEq->pLeft;
-    if( pRet->op!=TK_VECTOR ){
-      CollSeq *p = sqlite3ExprCompareCollSeq(pParse, pEq);
-      pInLhs = sqlite3ExprAddCollateString(pParse, pInLhs, p?p->zName:"BINARY");
-    }
   }
 
   assert( pDup->pLeft==0 );
