@@ -1107,7 +1107,7 @@ static int exprExistsToInIter(struct ExistsToInCtx *p, Expr **ppExpr){
 }
 
 /*
-** This function is by exprAnalyzeExists() when creating virtual IN(...)
+** This function is used by exprAnalyzeExists() when creating virtual IN(...)
 ** terms equivalent to user-supplied EXIST(...) clauses. It splits the WHERE
 ** clause of the Select object passed as the first argument into one or more
 ** expressions joined by AND operators, and then tests if the following are
@@ -1239,6 +1239,14 @@ static void exprAnalyzeExists(
   }
   sqlite3ExprDelete(db, pEq);
 
+#ifdef WHERETRACE_ENABLED  /* 0x20 */
+  if( sqlite3WhereTrace & 0x20 ){
+    sqlite3DebugPrintf("Convert EXISTS:\n");
+    sqlite3TreeViewExpr(0, pExpr, 0);
+    sqlite3DebugPrintf("into IN:\n");
+    sqlite3TreeViewExpr(0, pDup, 0);
+  }
+#endif
   idxNew = whereClauseInsert(pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
   if( idxNew ){
     exprAnalyze(pSrc, pWC, idxNew);
