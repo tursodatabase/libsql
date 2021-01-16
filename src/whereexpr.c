@@ -1215,16 +1215,24 @@ static void exprAnalyzeExists(
   if( pInLhs==pEq->pLeft ){
     pRet = pEq->pRight;
   }else{
-    CollSeq *p = sqlite3ExprCompareCollSeq(pParse, pEq);
-    pInLhs = sqlite3ExprAddCollateString(pParse, pInLhs, p?p->zName:"BINARY");
     pRet = pEq->pLeft;
+    if( pRet->op!=TK_VECTOR ){
+      CollSeq *p = sqlite3ExprCompareCollSeq(pParse, pEq);
+      pInLhs = sqlite3ExprAddCollateString(pParse, pInLhs, p?p->zName:"BINARY");
+    }
   }
 
   assert( pDup->pLeft==0 );
   pDup->op = TK_IN;
   pDup->pLeft = pInLhs;
   pDup->flags &= ~EP_VarSelect;
-  pSel->pEList = sqlite3ExprListAppend(pParse, 0, pRet);
+  if( pRet->op==TK_VECTOR ){
+    pSel->pEList = pRet->x.pList;
+    pRet->x.pList = 0;
+    sqlite3ExprDelete(db, pRet);
+  }else{
+    pSel->pEList = sqlite3ExprListAppend(pParse, 0, pRet);
+  }
   pEq->pLeft = 0;
   pEq->pRight = 0;
   if( ppAnd ){
