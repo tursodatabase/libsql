@@ -1254,11 +1254,9 @@ static void exprAnalyzeExists(
   }
 #endif
   idxNew = whereClauseInsert(pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
-  if( idxNew ){
-    exprAnalyze(pSrc, pWC, idxNew);
-    markTermAsChild(pWC, idxNew, idxTerm);
-    pWC->a[idxTerm].wtFlags |= TERM_COPIED;
-  }
+  exprAnalyze(pSrc, pWC, idxNew);
+  markTermAsChild(pWC, idxNew, idxTerm);
+  pWC->a[idxTerm].wtFlags |= TERM_COPIED;
 }
 
 /*

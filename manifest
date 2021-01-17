@@ -1,5 +1,5 @@
-C Improved\shandling\sof\svector\sequalities\sin\sthe\sEXISTS-to-IN\stranslator.
-D 2021-01-16T20:22:11.928
+C Minor\ssimplification\sof\sthe\sEXISTS-to-IN\slogic.
+D 2021-01-17T00:13:12.097
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
 F src/where.c 0e6abb22a2323fec80b450825593c26a2ad8f4815d1ee3af9969d8f6144bf681
 F src/whereInt.h 9a3f577619f07700d16d89eeb2f3d94d6b7ed7f109c2dacf0ce8844921549506
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
-F src/whereexpr.c 9fdbed19035077e41ca993ab469114e9b6b0746c18ea4e7675a850713b35fc72
+F src/whereexpr.c 9886a16b52af66e01ded9e69e3e2913f25d8e34bdeaa5e583d7c8c9a1ffe71d2
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1897,7 +1897,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87e78a19bb3ae1caf57aeeae53a5ab4efdccb57265f25d5c19b62eae53747aff
-R 9040bb485a8bcb3beab221382ed76aaa
+P ef49ee4a3766146963bfb6b013472f9836afb9c5b0d21a8533871cf961139e38
+R ed5d5749a7ed1103ef3bdb4ce2a908bc
 U drh
-Z 15d0a474b0220437a1e81a3ea0fc01b3
+Z beb39ea924321eafaa423b5e3b964772
