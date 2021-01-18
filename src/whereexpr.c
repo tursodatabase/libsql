@@ -1036,13 +1036,26 @@ static int exprUsesSrclistSelectCb(Walker *p, Select *pSelect){
 ** This function always returns true if expression pExpr contains
 ** a sub-select.
 **
-** If there is no sub-select and bUses is 1, then true is returned
-** if the expression contains at least one TK_COLUMN node that refers
-** to a table in pSrc.
+** If there is no sub-select in pExpr, then return true if pExpr
+** contains a TK_COLUMN node for a table that is (bUses==1)
+** or is not (bUses==0) in pSrc.
 **
-** Or, if there is no sub-select and bUses is 0, then true is returned
-** if the expression contains at least one TK_COLUMN node that refers
-** to a table that is not in pSrc.
+** Said another way:
+**
+**   bUses      Return     Meaning
+**   --------   ------     ------------------------------------------------
+**
+**   bUses==1   true       pExpr contains either a sub-select or a
+**                         TK_COLUMN referencing pSrc.
+**
+**   bUses==1   false      pExpr contains no sub-selects and all TK_COLUMN
+**                         nodes reference tables not found in pSrc
+**
+**   bUses==0   true       pExpr contains either a sub-select or a TK_COLUMN
+**                         that references a table not in pSrc.
+**
+**   bUses==0   false      pExpr contains no sub-selects and all TK_COLUMN
+**                         nodes reference pSrc
 */
 static int exprUsesSrclist(SrcList *pSrc, Expr *pExpr, int bUses){
   Walker sWalker;
@@ -1059,11 +1072,11 @@ static int exprUsesSrclist(SrcList *pSrc, Expr *pExpr, int bUses){
 ** expression tree.
 */
 struct ExistsToInCtx {
-  SrcList *pSrc;
-  Expr *pInLhs;
-  Expr *pEq;
-  Expr **ppAnd;
-  Expr **ppParent;
+  SrcList *pSrc;    /* The tables in an EXISTS(SELECT ... FROM <here> ...) */
+  Expr *pInLhs;     /* OUT:  Use this as the LHS of the IN operator */
+  Expr *pEq;        /* OUT:  The == term that include pInLhs */
+  Expr **ppAnd;     /* OUT:  The AND operator that includes pEq as a child */
+  Expr **ppParent;  /* The AND operator currently being examined */
 };
 
 /*
@@ -1131,7 +1144,7 @@ static int exprExistsToInIter(struct ExistsToInCtx *p, Expr **ppExpr){
 ** node within the WHERE expression tree.
 */
 static Expr *exprAnalyzeExistsFindEq(
-  Select *pSel,
+  Select *pSel,                   /* The SELECT of the EXISTS */
   Expr **ppEq,                    /* OUT: == node from WHERE clause */
   Expr ***pppAnd                  /* OUT: Pointer to parent of ==, if any */
 ){
