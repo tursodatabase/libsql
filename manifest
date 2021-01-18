@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\splanner\sso\sthat\sit\sis\sable\sto\scode\sEXISTS\soperators\sin\nthe\sWHERE\sclause\sas\sif\sthey\swere\sIN\soperators,\swhen\sappropriate.
-D 2021-01-18T12:35:16.581
+C Update\stest\shelper\sprocedure\s'get_pwd'\sto\shandle\sthe\sComSpec\senvironment\svariable\sbeing\sabsent.
+D 2021-01-18T19:27:56.252
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -800,7 +800,7 @@ F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 8f5de9d32ab9ab95475a9efe7f47a940aa889418
 F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
-F test/crash5.test 98f77ad22bceaea9043bf87088d5b61d004a1f40bb7c9dc3b6a7c70bd502c0bb
+F test/crash5.test 4aa55e7ac3c4bc511873e457aa65d2827d52da9b51e061511899dadcfe22b1e8
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
 F test/crash8.test 64366e459c28dd62edfb7ad87253a409c7533b92d16fcc479a6a8131bdcc3100
@@ -1437,7 +1437,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 56c059c88c5b96a624f1193ba48b0bac034190b79cd9c75cb4acbfe84baf7ec5
+F test/tester.tcl e5e4f5707fbf791ff8e06438fd0d4d71fe4c1d48753b7dd415efe72e853ef877
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1897,8 +1897,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ffb2ffa0ea147edd88632d2bbe29cc1d66d0911ce8e1068c406c81dd5a20242 92cc29099f796f5f244dd80ee431c48d36d01eaece6f150119ead5ecd14eaae1
-R e9622ae2cc2f8f16e772e641d8b24f1c
-T +closed 92cc29099f796f5f244dd80ee431c48d36d01eaece6f150119ead5ecd14eaae1
-U drh
-Z f5a7eb36d087a773f1b509e693ef42b1
+P c1862abb44873f06ec0d772469d8a2d128ae4670b1e98c2d97b0e2da18df9a04
+R 3b894a27798e4da33503e4ea0791a039
+U mistachkin
+Z 4d9421bedbee9a79d4853a9ab24d8edd

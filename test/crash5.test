@@ -21,7 +21,7 @@ source $testdir/tester.tcl
 # Only run these tests if memory debugging is turned on.
 #
 ifcapable !crashtest||!memorymanage {
-   puts "Skipping crash5 tests: not compiled with -DSQLITE_MEMDEBUG..."
+   puts "Skipping crash5 tests: not compiled with -DSQLITE_ENABLE_MEMORY_MANAGEMENT..."
    finish_test
    return
 }
@@ -49,8 +49,14 @@ for {set ii 0} {$ii < 10} {incr ii} {
         [list set iFail $jj] {
         proc get_pwd {} {
           if {$::tcl_platform(platform) eq "windows"} {
+            if {[info exists ::env(ComSpec)]} {
+              set comSpec $::env(ComSpec)
+            } else {
+              # NOTE: Hard-code the typical default value.
+              set comSpec {C:\Windows\system32\cmd.exe}
+            }
             return [string map [list \\ /] \
-              [string trim [exec -- $::env(ComSpec) /c echo %CD%]]]
+              [string trim [exec -- $comSpec /c echo %CD%]]]
           } else {
             return [pwd]
           }
