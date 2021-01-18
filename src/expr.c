@@ -95,7 +95,18 @@ Expr *sqlite3ExprAddCollateToken(
   const Token *pCollName,  /* Name of collating sequence */
   int dequote              /* True to dequote pCollName */
 ){
-  if( pCollName->n>0 ){
+  assert( pExpr!=0 || pParse->db->mallocFailed );
+  if( pExpr==0 ) return 0;
+  if( pExpr->op==TK_VECTOR ){
+    ExprList *pList = pExpr->x.pList;
+    if( ALWAYS(pList!=0) ){
+      int i;
+      for(i=0; i<pList->nExpr; i++){
+        pList->a[i].pExpr = sqlite3ExprAddCollateToken(pParse,pList->a[i].pExpr,
+                                                       pCollName, dequote);
+      }
+    }
+  }else if( pCollName->n>0 ){
     Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, dequote);
     if( pNew ){
       pNew->pLeft = pExpr;
