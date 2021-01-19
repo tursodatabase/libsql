@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.34.1.
-D 2021-01-19T20:17:46.747
+C Fix\san\sissue\swith\ssha3_query()\swhen\sthe\sfirst\sargument\scontains\sblank\nSQL\sstatements.
+D 2021-01-19T20:38:13.990
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -320,7 +320,7 @@ F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d385
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c fbb8e6be97b54d10d2f235e163fa2f53a8f4421c66ebd532a233fd1c69c3f522
 F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
-F ext/misc/shathree.c 135b7c145db4a09b1650c3e7aff9cb538763a9a361e834c015dd1aaf8d5c9a00
+F ext/misc/shathree.c 86bee126b89dc7f3a9edc6d31497588a0f1e78ab867025a766b67f52bcf1f656
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
@@ -1886,7 +1886,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30a4c323650cc9498a6dacd1760dd5170d7cc7848c4e96ff6bd64da365f96366
-R 45d7b7f7146b1af00732eaee31894c83
+P cea7d0f8a3d9b3f5caae63ad555de25b53c577fc8e004127ec18cc7f0c6f1714
+Q +24baab9a9faab50c26d7167821031cd66aaf784baefbc0f92354ae54ac43a714
+R 58ed0e2a70acf908b3c6a7c54bbafc77
 U drh
-Z fb64391d7804a03754f90da529123f5d
+Z 06bdc155b9b24fcf0ab2e8467b69a07c
