@@ -379,7 +379,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         let mut table_info = db.prepare("SELECT * FROM pragma_table_info(?)")?;
         let mut columns = Vec::new();
-        let mut rows = table_info.query(&["sqlite_master"])?;
+        let mut rows = table_info.query(["sqlite_master"])?;
 
         while let Some(row) = rows.next()? {
             let row = row;

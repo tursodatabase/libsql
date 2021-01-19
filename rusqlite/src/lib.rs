@@ -522,7 +522,7 @@ impl Connection {
     /// fn insert(conn: &Connection) -> Result<usize> {
     ///     conn.execute(
     ///         "INSERT INTO test (name) VALUES (:name)",
-    ///         rusqlite::named_params!{ ":name": "one" },
+    ///         &[(":name", "one")],
     ///     )
     /// }
     /// ```
@@ -673,8 +673,8 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("INSERT INTO People (name) VALUES (?)")?;
-    ///     stmt.execute(&["Joe Smith"])?;
-    ///     stmt.execute(&["Bob Jones"])?;
+    ///     stmt.execute(["Joe Smith"])?;
+    ///     stmt.execute(["Bob Jones"])?;
     ///     Ok(())
     /// }
     /// ```
@@ -1084,7 +1084,7 @@ mod test {
             tx1.query_row("SELECT x FROM foo LIMIT 1", [], |_| Ok(()))?;
             tx2.query_row("SELECT x FROM foo LIMIT 1", [], |_| Ok(()))?;
 
-            tx1.execute("INSERT INTO foo VALUES(?1)", &[&1])?;
+            tx1.execute("INSERT INTO foo VALUES(?1)", [1])?;
             let _ = tx2.execute("INSERT INTO foo VALUES(?1)", [2]);
 
             let _ = tx1.commit();
@@ -1317,8 +1317,8 @@ mod test {
         assert_eq!(insert_stmt.execute([2i32])?, 1);
         assert_eq!(insert_stmt.execute([3i32])?, 1);
 
-        assert_eq!(insert_stmt.execute(["hello".to_string()])?, 1);
-        assert_eq!(insert_stmt.execute(["goodbye".to_string()])?, 1);
+        assert_eq!(insert_stmt.execute(["hello"])?, 1);
+        assert_eq!(insert_stmt.execute(["goodbye"])?, 1);
         assert_eq!(insert_stmt.execute([types::Null])?, 1);
 
         let mut update_stmt = db.prepare("UPDATE foo SET x=? WHERE x<?")?;

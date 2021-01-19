@@ -176,7 +176,7 @@ impl Params for [&dyn ToSql; 0] {
         // Note: Can't just return `Ok(())` — `Statement::bind_parameters`
         // checks that the right number of params were passed too.
         // TODO: we should have tests for `Error::InvalidParameterCount`...
-        stmt.bind_parameters(crate::params![])
+        stmt.bind_parameters(&[] as &[&dyn ToSql])
     }
 }
 

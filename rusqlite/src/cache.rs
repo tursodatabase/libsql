@@ -18,13 +18,13 @@ impl Connection {
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
     ///     {
     ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?)")?;
-    ///         stmt.execute(&["Joe Smith"])?;
+    ///         stmt.execute(["Joe Smith"])?;
     ///     }
     ///     {
     ///         // This will return the same underlying SQLite statement handle without
     ///         // having to prepare it again.
     ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?)")?;
-    ///         stmt.execute(&["Bob Jones"])?;
+    ///         stmt.execute(["Bob Jones"])?;
     ///     }
     ///     Ok(())
     /// }

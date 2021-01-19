@@ -60,7 +60,7 @@ mod test {
         ts_vec.push(make_datetime(10_000_000_000, 0)); //November 20, 2286
 
         for ts in ts_vec {
-            db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts])?;
+            db.execute("INSERT INTO foo(t) VALUES (?)", [ts])?;
 
             let from: OffsetDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
 

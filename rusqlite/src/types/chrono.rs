@@ -147,7 +147,7 @@ mod test {
     fn test_naive_date() -> Result<()> {
         let db = checked_memory_handle()?;
         let date = NaiveDate::from_ymd(2016, 2, 23);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&date])?;
+        db.execute("INSERT INTO foo (t) VALUES (?)", [date])?;
 
         let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("2016-02-23", s);
@@ -160,7 +160,7 @@ mod test {
     fn test_naive_time() -> Result<()> {
         let db = checked_memory_handle()?;
         let time = NaiveTime::from_hms(23, 56, 4);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&time])?;
+        db.execute("INSERT INTO foo (t) VALUES (?)", [time])?;
 
         let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("23:56:04", s);
@@ -176,7 +176,7 @@ mod test {
         let time = NaiveTime::from_hms(23, 56, 4);
         let dt = NaiveDateTime::new(date, time);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt])?;
+        db.execute("INSERT INTO foo (t) VALUES (?)", [dt])?;
 
         let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("2016-02-23T23:56:04", s);
@@ -197,7 +197,7 @@ mod test {
         let dt = NaiveDateTime::new(date, time);
         let utc = Utc.from_utc_datetime(&dt);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc])?;
+        db.execute("INSERT INTO foo (t) VALUES (?)", [utc])?;
 
         let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
@@ -226,7 +226,7 @@ mod test {
         let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&local])?;
+        db.execute("INSERT INTO foo (t) VALUES (?)", [local])?;
 
         // Stored string should be in UTC
         let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
