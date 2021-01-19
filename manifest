@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\ssqlite3_free_filename()\sdocumentation.
-D 2020-12-16T13:20:15.419
+C Prevent\spotential\ssegfault\sin\sthe\ssqlite-expert\sidxPopulateStat1\scontext\scleanup\scode.
+D 2021-01-19T20:04:37.866
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -51,7 +51,7 @@ F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a4980828
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test dba6e752cc701621771f925f3872b183fa688f7b4a9f4822631fc02bdbffc45a
-F ext/expert/sqlite3expert.c 2778d9f06b3a8bfa859cb6b75b82f004477bf5dd78edd17d954319750ca963f3
+F ext/expert/sqlite3expert.c 216e250acc54b8aaa9ff5c1e1b2256788abc3994dd1d757626102718122e6a91
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1886,11 +1886,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a26b6597e3ae272231b96f9982c3bcc17ddec2f2b6eb4df06a224b91089fed5b
-Q +48301edc90fe5811df0394b106edce7726d0ea86ac562c9f4db511b812a76433
-R dfa71158eb8994eb8d67f5eeb809f80b
-T *branch * branch-3.34
-T *sym-branch-3.34 *
-T -sym-trunk *
+P 7316ee19c590854545019a56799968143109929049424a8cc1dcf9624f98a544
+Q +c24f13448b5a55f45b4d4786a878fa73fe3395b5724f3bc2eea22e5e2b074353
+R f81793baabdebfe65d144259b6219c5e
 U drh
-Z 1634547ed3887f0015d820da892eaf88
+Z 79579e3c0ce441ae1594c5f48d8ad671
