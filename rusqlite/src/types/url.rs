@@ -37,7 +37,7 @@ mod test {
     }
 
     fn get_url(db: &Connection, id: i64) -> Result<Url> {
-        db.query_row("SELECT v FROM urls WHERE i = ?", params![id], |r| r.get(0))
+        db.query_row("SELECT v FROM urls WHERE i = ?", [id], |r| r.get(0))
     }
 
     #[test]

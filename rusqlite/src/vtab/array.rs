@@ -18,7 +18,7 @@
 //!     // Note: A `Rc<Vec<Value>>` must be used as the parameter.
 //!     let values = Rc::new(v.iter().copied().map(Value::from).collect::<Vec<Value>>());
 //!     let mut stmt = db.prepare("SELECT value from rarray(?);")?;
-//!     let rows = stmt.query_map(params![values], |row| row.get::<_, i64>(0))?;
+//!     let rows = stmt.query_map([values], |row| row.get::<_, i64>(0))?;
 //!     for value in rows {
 //!         println!("{}", value?);
 //!     }

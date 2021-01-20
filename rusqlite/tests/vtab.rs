@@ -3,7 +3,6 @@
 #[cfg(feature = "vtab")]
 #[test]
 fn test_dummy_module() -> rusqlite::Result<()> {
-    use rusqlite::types::ToSql;
     use rusqlite::vtab::{
         eponymous_only_module, sqlite3_vtab, sqlite3_vtab_cursor, Context, IndexInfo, VTab,
         VTabConnection, VTabCursor, Values,
@@ -95,7 +94,7 @@ fn test_dummy_module() -> rusqlite::Result<()> {
 
     let mut s = db.prepare("SELECT * FROM dummy()")?;
 
-    let dummy = s.query_row(&[] as &[&dyn ToSql], |row| row.get::<_, i32>(0))?;
+    let dummy = s.query_row([], |row| row.get::<_, i32>(0))?;
     assert_eq!(1, dummy);
     Ok(())
 }
