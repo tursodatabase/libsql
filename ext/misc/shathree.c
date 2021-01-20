@@ -621,9 +621,11 @@ static void sha3QueryFunc(
     }
     nCol = sqlite3_column_count(pStmt);
     z = sqlite3_sql(pStmt);
-    n = (int)strlen(z);
-    hash_step_vformat(&cx,"S%d:",n);
-    SHA3Update(&cx,(unsigned char*)z,n);
+    if( z ){
+      n = (int)strlen(z);
+      hash_step_vformat(&cx,"S%d:",n);
+      SHA3Update(&cx,(unsigned char*)z,n);
+    }
 
     /* Compute a hash over the result of the query */
     while( SQLITE_ROW==sqlite3_step(pStmt) ){

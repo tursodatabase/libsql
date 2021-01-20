@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\slatest\strunk\schanges.
-D 2020-12-04T18:47:28.471
+C Incorporate\sthe\s3.34.1\spatches\sinto\sthe\sreuse-schema\sbranch.
+D 2021-01-20T15:10:48.635
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 2ebc6d03e09710d5dddc6e8417276ff8ef7bfaaa0cb6ced02791889f2601560f
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc ced17643f4198195bfce76310930ee6f2ebdf8ba2e0d6f7ab1f361fa2cc650a3
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
-F VERSION 92f3e4c5cdee6f0779aef1eae857dfc21d0eabb1f2af169dc90e63cd76b15bb2
+F VERSION 9633e2edacc7963299a285b89cbeb832f73316c9ccc58f9a70701a5e8b16513c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -322,7 +322,7 @@ F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d385
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c c6bd5d249e5199a1b55aeee4d0e6576ff3a68702fc475dbd64503a32903516c7
 F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
-F ext/misc/shathree.c 135b7c145db4a09b1650c3e7aff9cb538763a9a361e834c015dd1aaf8d5c9a00
+F ext/misc/shathree.c 86bee126b89dc7f3a9edc6d31497588a0f1e78ab867025a766b67f52bcf1f656
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
@@ -541,9 +541,9 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 1948a92ca9eab776632816b97e57c61d933474a78aad4f4ef835c916a83dbb1c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c c9b68506e5d8cc8d0e4b307b97a9800b050ac37dada80ae9c66f680f8fac3e09
+F src/select.c f17dbddf9044aea177464514f33ff235a46cabd6448a08844b5a0acc120859cd
 F src/shell.c.in e18bd7ab9f43919f26a5dafc3d22f9286913216163ea7911438d7c2cade91f59
-F src/sqlite.h.in a730b36fdb3f418ef98066a41878c6a4d4f8b34d0425853adda0cda704deb80e
+F src/sqlite.h.in cdee22392f1d6ca1437a8d112079252ead4e9fd85f8a3077c19a2b0a0338cce2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
 F src/sqliteInt.h c62e228ba6f2eac15bad42812f148f48f16195531ce7994f6d5efb9aac212bd7
@@ -1050,7 +1050,7 @@ F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test b05e6c5edb9b10d48efb634ed07342441bddc89d225043e17095c36e567521a0
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/having.test e4098a4b8962f9596035c3b87a8928a10648acc509f1bb8d6f96413bbf79a1b3
+F test/having.test ea5cb01cdf3d90fd1b516ef36b1fbde518dbbd61c50141f5eb830d8101844040
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test e97382e68e4379838e888756d653afd159f5f14780315ff97b70360d3d8485bc
@@ -1897,7 +1897,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73b5f614cd6603d6cf9605ac4ccb510a2560fca70a8a3f3f930cf2a4e853c301 1db7c751912beb57a697ac8e85b9c29e30da7b6c89207e9828bf08e56c58242f
-R 0a0cd3f6dc7d7a2ed4f824c3b5f54a44
-U dan
-Z a637d8c8811fdbe0dc1e41aaa95a98fc
+P 846e8444f761a4f3e3e0fb89e87b329799a6e8dd32ac7580dc20eb6ff9ed0d36 10e20c0b43500cfb9bbc0eaa061c57514f715d87238f4d835880cd846b9ebd1f
+R c3bca53baf6ecb114d5b954d3fbf96c3
+T *branch * reuse-schema-3.34
+T *sym-reuse-schema-3.34 *
+T -sym-reuse-schema *
+U drh
+Z d7f43de9fad3ffe4577da84774a1c766
