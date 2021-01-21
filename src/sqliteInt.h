@@ -1137,6 +1137,7 @@ typedef struct Bitvec Bitvec;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Db Db;
+typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
@@ -3651,21 +3652,6 @@ struct TriggerStep {
 };
 
 /*
-** The following structure contains information used by the sqliteFix...
-** routines as they walk the parse tree to make database references
-** explicit.
-*/
-typedef struct DbFixer DbFixer;
-struct DbFixer {
-  Parse *pParse;      /* The parsing context.  Error messages written here */
-  Schema *pSchema;    /* Fix items to this schema */
-  u8 bTemp;           /* True for TEMP schema entries */
-  const char *zDb;    /* Make sure all objects are contained in this database */
-  const char *zType;  /* Type of the container - used for error messages */
-  const Token *pName; /* Name of the container - used for error messages */
-};
-
-/*
 ** An objected used to accumulate the text of a string where we
 ** do not necessarily know how big the string will be in the end.
 */
@@ -3815,7 +3801,23 @@ struct Walker {
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
     struct Table *pTab;                       /* Table of generated column */
     struct SrcList_item *pSrcItem;            /* A single FROM clause item */
+    DbFixer *pFix;
   } u;
+};
+
+/*
+** The following structure contains information used by the sqliteFix...
+** routines as they walk the parse tree to make database references
+** explicit.
+*/
+struct DbFixer {
+  Parse *pParse;      /* The parsing context.  Error messages written here */
+  Walker w;           /* Walker object */
+  Schema *pSchema;    /* Fix items to this schema */
+  u8 bTemp;           /* True for TEMP schema entries */
+  const char *zDb;    /* Make sure all objects are contained in this database */
+  const char *zType;  /* Type of the container - used for error messages */
+  const Token *pName; /* Name of the container - used for error messages */
 };
 
 /* Forward declarations */
@@ -4527,7 +4529,6 @@ void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
-int sqlite3FixExprList(DbFixer*, ExprList*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 int sqlite3RealSameAsInt(double,sqlite3_int64);
 void sqlite3Int64ToText(i64,char*);
