@@ -1466,6 +1466,41 @@ static void exprAnalyze(
     }
   }
 
+  /* The form "x IS NOT NULL" can sometimes be evaluated more efficiently
+  ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
+  ** virtual term of that form.
+  **
+  ** The virtual term must be tagged with TERM_VNULL.
+  */
+  else if( pExpr->op==TK_NOTNULL ){
+    if( pExpr->pLeft->op==TK_COLUMN
+     && pExpr->pLeft->iColumn>=0
+     && !ExprHasProperty(pExpr, EP_FromJoin)
+    ){
+      Expr *pNewExpr;
+      Expr *pLeft = pExpr->pLeft;
+      int idxNew;
+      WhereTerm *pNewTerm;
+  
+      pNewExpr = sqlite3PExpr(pParse, TK_GT,
+                              sqlite3ExprDup(db, pLeft, 0),
+                              sqlite3ExprAlloc(db, TK_NULL, 0, 0));
+  
+      idxNew = whereClauseInsert(pWC, pNewExpr,
+                                TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
+      if( idxNew ){
+        pNewTerm = &pWC->a[idxNew];
+        pNewTerm->prereqRight = 0;
+        pNewTerm->leftCursor = pLeft->iTable;
+        pNewTerm->u.x.leftColumn = pLeft->iColumn;
+        pNewTerm->eOperator = WO_GT;
+        markTermAsChild(pWC, idxNew, idxTerm);
+        pTerm = &pWC->a[idxTerm];
+        pTerm->wtFlags |= TERM_COPIED;
+        pNewTerm->prereqAll = pTerm->prereqAll;
+      }
+    }
+  }
 
 #ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
   /* Add constraints to reduce the search space on a LIKE or GLOB
@@ -1637,7 +1672,9 @@ static void exprAnalyze(
   ** This only works if the RHS is a simple SELECT (not a compound) that does
   ** not use window functions.
   */
-  if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->u.x.iField==0
+  if( pWC->op==TK_AND
+   && pExpr->op==TK_IN
+   && pTerm->u.x.iField==0
    && pExpr->pLeft->op==TK_VECTOR
    && pExpr->x.pSelect->pPrior==0
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1653,45 +1690,6 @@ static void exprAnalyze(
       markTermAsChild(pWC, idxNew, idxTerm);
     }
   }
-
-#ifdef SQLITE_ENABLE_STAT4
-  /* When sqlite_stat4 histogram data is available an operator of the
-  ** form "x IS NOT NULL" can sometimes be evaluated more efficiently
-  ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
-  ** virtual term of that form.
-  **
-  ** Note that the virtual term must be tagged with TERM_VNULL.
-  */
-  if( pExpr->op==TK_NOTNULL
-   && pExpr->pLeft->op==TK_COLUMN
-   && pExpr->pLeft->iColumn>=0
-   && !ExprHasProperty(pExpr, EP_FromJoin)
-   && OptimizationEnabled(db, SQLITE_Stat4)
-  ){
-    Expr *pNewExpr;
-    Expr *pLeft = pExpr->pLeft;
-    int idxNew;
-    WhereTerm *pNewTerm;
-
-    pNewExpr = sqlite3PExpr(pParse, TK_GT,
-                            sqlite3ExprDup(db, pLeft, 0),
-                            sqlite3ExprAlloc(db, TK_NULL, 0, 0));
-
-    idxNew = whereClauseInsert(pWC, pNewExpr,
-                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
-    if( idxNew ){
-      pNewTerm = &pWC->a[idxNew];
-      pNewTerm->prereqRight = 0;
-      pNewTerm->leftCursor = pLeft->iTable;
-      pNewTerm->u.x.leftColumn = pLeft->iColumn;
-      pNewTerm->eOperator = WO_GT;
-      markTermAsChild(pWC, idxNew, idxTerm);
-      pTerm = &pWC->a[idxTerm];
-      pTerm->wtFlags |= TERM_COPIED;
-      pNewTerm->prereqAll = pTerm->prereqAll;
-    }
-  }
-#endif /* SQLITE_ENABLE_STAT4 */
 
   /* Prevent ON clause terms of a LEFT JOIN from being used to drive
   ** an index for tables to the left of the join.
