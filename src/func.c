@@ -1865,7 +1865,9 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
   int nExpr;
-  if( pExpr->op!=TK_FUNCTION || !pExpr->x.pList ){
+  assert( pExpr!=0 );
+  assert( pExpr->op==TK_FUNCTION );
+  if( !pExpr->x.pList ){
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
