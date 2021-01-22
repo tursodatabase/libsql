@@ -1466,6 +1466,42 @@ static void exprAnalyze(
     }
   }
 
+  /* The form "x IS NOT NULL" can sometimes be evaluated more efficiently
+  ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
+  ** virtual term of that form.
+  **
+  ** The virtual term must be tagged with TERM_VNULL.
+  */
+  else if( pExpr->op==TK_NOTNULL ){
+    if( pExpr->pLeft->op==TK_COLUMN
+     && pExpr->pLeft->iColumn>=0
+     && !ExprHasProperty(pExpr, EP_FromJoin)
+    ){
+      Expr *pNewExpr;
+      Expr *pLeft = pExpr->pLeft;
+      int idxNew;
+      WhereTerm *pNewTerm;
+  
+      pNewExpr = sqlite3PExpr(pParse, TK_GT,
+                              sqlite3ExprDup(db, pLeft, 0),
+                              sqlite3ExprAlloc(db, TK_NULL, 0, 0));
+  
+      idxNew = whereClauseInsert(pWC, pNewExpr,
+                                TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
+      if( idxNew ){
+        pNewTerm = &pWC->a[idxNew];
+        pNewTerm->prereqRight = 0;
+        pNewTerm->leftCursor = pLeft->iTable;
+        pNewTerm->u.x.leftColumn = pLeft->iColumn;
+        pNewTerm->eOperator = WO_GT;
+        markTermAsChild(pWC, idxNew, idxTerm);
+        pTerm = &pWC->a[idxTerm];
+        pTerm->wtFlags |= TERM_COPIED;
+        pNewTerm->prereqAll = pTerm->prereqAll;
+      }
+    }
+  }
+
 
 #ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
   /* Add constraints to reduce the search space on a LIKE or GLOB
@@ -1481,7 +1517,8 @@ static void exprAnalyze(
   ** bound is made all lowercase so that the bounds also work when comparing
   ** BLOBs.
   */
-  if( pWC->op==TK_AND 
+  else if( pExpr->op==TK_FUNCTION
+   && pWC->op==TK_AND
    && isLikeOrGlob(pParse, pExpr, &pStr1, &isComplete, &noCase)
   ){
     Expr *pLeft;       /* LHS of LIKE/GLOB operator */
@@ -1551,6 +1588,65 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
+  /* If there is a vector == or IS term - e.g. "(a, b) == (?, ?)" - create
+  ** new terms for each component comparison - "a = ?" and "b = ?".  The
+  ** new terms completely replace the original vector comparison, which is
+  ** no longer used.
+  **
+  ** This is only required if at least one side of the comparison operation
+  ** is not a sub-select.  */
+  if( (pExpr->op==TK_EQ || pExpr->op==TK_IS)
+   && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
+   && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
+   && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
+     || (pExpr->pRight->flags & EP_xIsSelect)==0)
+   && pWC->op==TK_AND
+  ){
+    int i;
+    for(i=0; i<nLeft; i++){
+      int idxNew;
+      Expr *pNew;
+      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
+      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
+
+      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
+      transferJoinMarkings(pNew, pExpr);
+      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
+      exprAnalyze(pSrc, pWC, idxNew);
+    }
+    pTerm = &pWC->a[idxTerm];
+    pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
+    pTerm->eOperator = 0;
+  }
+
+  /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
+  ** a virtual term for each vector component. The expression object
+  ** used by each such virtual term is pExpr (the full vector IN(...) 
+  ** expression). The WhereTerm.u.x.iField variable identifies the index within
+  ** the vector on the LHS that the virtual term represents.
+  **
+  ** This only works if the RHS is a simple SELECT (not a compound) that does
+  ** not use window functions.
+  */
+  else if( pExpr->op==TK_IN
+   && pTerm->u.x.iField==0
+   && pExpr->pLeft->op==TK_VECTOR
+   && pExpr->x.pSelect->pPrior==0
+#ifndef SQLITE_OMIT_WINDOWFUNC
+   && pExpr->x.pSelect->pWin==0
+#endif
+   && pWC->op==TK_AND
+  ){
+    int i;
+    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
+      int idxNew;
+      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
+      pWC->a[idxNew].u.x.iField = i+1;
+      exprAnalyze(pSrc, pWC, idxNew);
+      markTermAsChild(pWC, idxNew, idxTerm);
+    }
+  }
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   /* Add a WO_AUX auxiliary term to the constraint set if the
   ** current expression is of the form "column OP expr" where OP
@@ -1561,7 +1657,7 @@ static void exprAnalyze(
   ** virtual tables.  The native query optimizer does not attempt
   ** to do anything with MATCH functions.
   */
-  if( pWC->op==TK_AND ){
+  else if( pWC->op==TK_AND ){
     Expr *pRight = 0, *pLeft = 0;
     int res = isAuxiliaryVtabOperator(db, pExpr, &eOp2, &pLeft, &pRight);
     while( res-- > 0 ){
@@ -1596,102 +1692,6 @@ static void exprAnalyze(
     }
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-  /* If there is a vector == or IS term - e.g. "(a, b) == (?, ?)" - create
-  ** new terms for each component comparison - "a = ?" and "b = ?".  The
-  ** new terms completely replace the original vector comparison, which is
-  ** no longer used.
-  **
-  ** This is only required if at least one side of the comparison operation
-  ** is not a sub-select.  */
-  if( pWC->op==TK_AND 
-  && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
-  && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
-  && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
-  && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
-    || (pExpr->pRight->flags & EP_xIsSelect)==0)
-  ){
-    int i;
-    for(i=0; i<nLeft; i++){
-      int idxNew;
-      Expr *pNew;
-      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
-      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
-
-      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
-      transferJoinMarkings(pNew, pExpr);
-      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
-      exprAnalyze(pSrc, pWC, idxNew);
-    }
-    pTerm = &pWC->a[idxTerm];
-    pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
-    pTerm->eOperator = 0;
-  }
-
-  /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
-  ** a virtual term for each vector component. The expression object
-  ** used by each such virtual term is pExpr (the full vector IN(...) 
-  ** expression). The WhereTerm.u.x.iField variable identifies the index within
-  ** the vector on the LHS that the virtual term represents.
-  **
-  ** This only works if the RHS is a simple SELECT (not a compound) that does
-  ** not use window functions.
-  */
-  if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->u.x.iField==0
-   && pExpr->pLeft->op==TK_VECTOR
-   && pExpr->x.pSelect->pPrior==0
-#ifndef SQLITE_OMIT_WINDOWFUNC
-   && pExpr->x.pSelect->pWin==0
-#endif
-  ){
-    int i;
-    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
-      int idxNew;
-      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
-      pWC->a[idxNew].u.x.iField = i+1;
-      exprAnalyze(pSrc, pWC, idxNew);
-      markTermAsChild(pWC, idxNew, idxTerm);
-    }
-  }
-
-#ifdef SQLITE_ENABLE_STAT4
-  /* When sqlite_stat4 histogram data is available an operator of the
-  ** form "x IS NOT NULL" can sometimes be evaluated more efficiently
-  ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
-  ** virtual term of that form.
-  **
-  ** Note that the virtual term must be tagged with TERM_VNULL.
-  */
-  if( pExpr->op==TK_NOTNULL
-   && pExpr->pLeft->op==TK_COLUMN
-   && pExpr->pLeft->iColumn>=0
-   && !ExprHasProperty(pExpr, EP_FromJoin)
-   && OptimizationEnabled(db, SQLITE_Stat4)
-  ){
-    Expr *pNewExpr;
-    Expr *pLeft = pExpr->pLeft;
-    int idxNew;
-    WhereTerm *pNewTerm;
-
-    pNewExpr = sqlite3PExpr(pParse, TK_GT,
-                            sqlite3ExprDup(db, pLeft, 0),
-                            sqlite3ExprAlloc(db, TK_NULL, 0, 0));
-
-    idxNew = whereClauseInsert(pWC, pNewExpr,
-                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
-    if( idxNew ){
-      pNewTerm = &pWC->a[idxNew];
-      pNewTerm->prereqRight = 0;
-      pNewTerm->leftCursor = pLeft->iTable;
-      pNewTerm->u.x.leftColumn = pLeft->iColumn;
-      pNewTerm->eOperator = WO_GT;
-      markTermAsChild(pWC, idxNew, idxTerm);
-      pTerm = &pWC->a[idxTerm];
-      pTerm->wtFlags |= TERM_COPIED;
-      pNewTerm->prereqAll = pTerm->prereqAll;
-    }
-  }
-#endif /* SQLITE_ENABLE_STAT4 */
 
   /* Prevent ON clause terms of a LEFT JOIN from being used to drive
   ** an index for tables to the left of the join.

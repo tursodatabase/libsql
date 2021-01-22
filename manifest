@@ -1,5 +1,5 @@
-C Do\snot\sallow\sVACUUM\sto\sresize\sthe\spage_size\sto\s512\sif\sthe\sreserve_byte\svalue\nis\s31\sor\sgreater.\s[forum:/forumpost/e807885dc5|forum\spost\se807885dc5].
-D 2021-01-21T21:36:25.588
+C Enhance\sthe\squery\splanner\sto\senable\sit\sto\suse\san\sindex\sfor\sIS\sNOT\sNULL\nconstraints,\seven\sif\sSTAT4\sis\snot\senabled.
+D 2021-01-22T21:23:12.101
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -496,7 +496,7 @@ F src/delete.c 927cf8f900583e79aca8f1a321979e0a8f053babd9a690b44b38f79de2cc09fe
 F src/expr.c 47c85263e6d179424e6b09e2c79db5704ab5b8cbc2fae2ee3285faa2566f2e74
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 83372403298e6a7dd989a47aaacdbaa5b4307b5199dbd56e07d4896066b3de72
-F src/func.c 251b5953cecd0ce3e282213c5e623134415793d3569d7804d13460559d7e45ff
+F src/func.c 796a7a4a0ff5eee82a04ee3c8265c5ebf9c6a9f5625621c5f97ed94f6224d7d9
 F src/global.c ed55af196a9b66e198aaeda3f5454c3aa7d7d050c6c938181fd044b70d180a81
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -629,9 +629,9 @@ F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
 F src/where.c 0e6abb22a2323fec80b450825593c26a2ad8f4815d1ee3af9969d8f6144bf681
-F src/whereInt.h 9a3f577619f07700d16d89eeb2f3d94d6b7ed7f109c2dacf0ce8844921549506
+F src/whereInt.h ae03b5e3a4cca9bd9cb1b7d3c63faf8f1f177200fc8cecc87d3d0cab6ca338e6
 F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
-F src/whereexpr.c a022b4f447c0fb0674e172a9a303537ea5055df60d579f99cec7ead18e8c453f
+F src/whereexpr.c a182038cf7d10aa9a95a96b8563a34f34990323cf307dee6559e995961966d43
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1898,7 +1898,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02264ab6a02d6cc95cf865920bcbaf4307d034640e6e4f3371b009ae9818540e
-R 48ee8ca426c1edea6b9f06bdf29c3bdc
+P d5ea75a09d4bf61262cead2604e35d8331b727c504807592d09f5d9e01ce794a 0b42f9eb5dd710991af3cf4b16464b22db9539361d618e50eaa4d43c811577b4
+R dd365517921749a64a3732b6a8560730
+T +closed 0b42f9eb5dd710991af3cf4b16464b22db9539361d618e50eaa4d43c811577b4
 U drh
-Z cbe3ac807720d5b866771e6277e15b90
+Z 6ed219298d2cd360981b4aacc96226a6
