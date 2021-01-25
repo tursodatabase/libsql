@@ -5912,7 +5912,7 @@ case OP_IdxDelete: {
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
     if( rc ) goto abort_due_to_error;
   }else if( pOp->p5 ){
-    rc = SQLITE_CORRUPT_INDEX;
+    rc = sqlite3ReportError(SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
     goto abort_due_to_error;
   }
   assert( pC->deferredMoveto==0 );
