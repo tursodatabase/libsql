@@ -4909,8 +4909,10 @@ case OP_NewRowid: {           /* out2 */
   VdbeCursor *pC;        /* Cursor of table to get the new rowid */
   int res;               /* Result of an sqlite3BtreeLast() */
   int cnt;               /* Counter to limit the number of searches */
+#ifndef SQLITE_OMIT_AUTOINCREMENT
   Mem *pMem;             /* Register holding largest rowid for AUTOINCREMENT */
   VdbeFrame *pFrame;     /* Root frame of VDBE */
+#endif
 
   v = 0;
   res = 0;
@@ -5910,7 +5912,7 @@ case OP_IdxDelete: {
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
     if( rc ) goto abort_due_to_error;
   }else if( pOp->p5 ){
-    rc = SQLITE_CORRUPT_INDEX;
+    rc = sqlite3ReportError(SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
     goto abort_due_to_error;
   }
   assert( pC->deferredMoveto==0 );

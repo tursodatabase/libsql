@@ -4640,7 +4640,11 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   assert( *ppMinMax==0 );
   assert( pFunc->op==TK_AGG_FUNCTION );
   assert( !IsWindowFunc(pFunc) );
-  if( pEList==0 || pEList->nExpr!=1 || ExprHasProperty(pFunc, EP_WinFunc) ){
+  if( pEList==0 
+   || pEList->nExpr!=1
+   || ExprHasProperty(pFunc, EP_WinFunc)
+   || OptimizationDisabled(db, SQLITE_MinMaxOpt)
+  ){
     return eRet;
   }
   zFunc = pFunc->u.zToken;
@@ -6580,6 +6584,10 @@ int sqlite3Select(
       int ii;
       SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
+      if( minMaxFlag ){
+        sqlite3DebugPrintf("MIN/MAX Optimization (0x%02x) adds:\n", minMaxFlag);
+        sqlite3TreeViewExprList(0, pMinMaxOrderBy, 0, "ORDERBY");
+      }
       for(ii=0; ii<pAggInfo->nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
             ii, pAggInfo->aCol[ii].iMem);
@@ -6769,7 +6777,7 @@ int sqlite3Select(
       /* End of the loop
       */
       if( groupBySort ){
-        sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx, addrTopOfLoop);
+        sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx,addrTopOfLoop);
         VdbeCoverage(v);
       }else{
         sqlite3WhereEnd(pWInfo);
@@ -6881,7 +6889,6 @@ int sqlite3Select(
         explainSimpleCount(pParse, pTab, pBest);
       }else{
         int regAcc = 0;           /* "populate accumulators" flag */
-        int addrSkip;
 
         /* If there are accumulator registers but no min() or max() functions
         ** without FILTER clauses, allocate register regAcc. Register regAcc
@@ -6930,9 +6937,8 @@ int sqlite3Select(
         }
         updateAccumulator(pParse, regAcc, pAggInfo);
         if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);
-        addrSkip = sqlite3WhereOrderByLimitOptLabel(pWInfo);
-        if( addrSkip!=sqlite3WhereContinueLabel(pWInfo) ){
-          sqlite3VdbeGoto(v, addrSkip);
+        if( minMaxFlag ){
+          sqlite3WhereMinMaxOptEarlyOut(v, pWInfo);
         }
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, pAggInfo);

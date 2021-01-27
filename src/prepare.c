@@ -571,10 +571,10 @@ void sqlite3ParserReset(Parse *pParse){
     pThis = pNext;
   }
   while( pParse->pCleanup ){
-    ParseCleanup *pThis = pParse->pCleanup;
-    pParse->pCleanup = pThis->pNext;
-    pThis->xCleanup(db, pThis->pPtr);
-    sqlite3DbFree(db, pThis);
+    ParseCleanup *pCleanup = pParse->pCleanup;
+    pParse->pCleanup = pCleanup->pNext;
+    pCleanup->xCleanup(db, pCleanup->pPtr);
+    sqlite3DbFree(db, pCleanup);
   }
   sqlite3DbFree(db, pParse->aLabel);
   if( pParse->pConstExpr ){

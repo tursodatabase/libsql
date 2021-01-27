@@ -174,8 +174,14 @@ proc get_pwd {} {
     #       case of the result to what Tcl considers canonical, which would
     #       defeat the purpose of this procedure.
     #
+    if {[info exists ::env(ComSpec)]} {
+      set comSpec $::env(ComSpec)
+    } else {
+      # NOTE: Hard-code the typical default value.
+      set comSpec {C:\Windows\system32\cmd.exe}
+    }
     return [string map [list \\ /] \
-        [string trim [exec -- $::env(ComSpec) /c echo %CD%]]]
+        [string trim [exec -- $comSpec /c echo %CD%]]]
   } else {
     return [pwd]
   }
