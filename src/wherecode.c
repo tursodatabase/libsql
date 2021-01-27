@@ -1743,6 +1743,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       SWAP(u8, nBtm, nTop);
     }
 
+    if( iLevel>0 && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 ){
+      /* In case OP_SeekScan is used, ensure that the index cursor does not
+      ** point to a valid row for the first iteration of this loop. */
+      sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+    }
+
     /* Generate code to evaluate all constraint terms using == or IN
     ** and store the values of those terms in an array of registers
     ** starting at regBase.

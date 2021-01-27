@@ -1,5 +1,5 @@
-C Add\san\sextra\slog\smessage\sin\sthe\scase\sof\san\sSQLITE_CORRUPT_INDEX\serror.
-D 2021-01-25T21:24:14.510
+C Ensure\sa\scursor\sused\sby\sthe\sSeekScan\soperator\sdoes\snot\spoint\sto\sa\svalid\srow\son\sthe\sfirst\siteration\sof\sthe\sloop.\sPossible\sfix\sfor\s[2d6e8400].
+D 2021-01-27T17:15:06.938
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
 F src/where.c 0e6abb22a2323fec80b450825593c26a2ad8f4815d1ee3af9969d8f6144bf681
 F src/whereInt.h ae03b5e3a4cca9bd9cb1b7d3c63faf8f1f177200fc8cecc87d3d0cab6ca338e6
-F src/wherecode.c a3a1aff30fe99a818d8e7c607980f033f40c68d890e03ed25838b9dbb7908bee
+F src/wherecode.c 43a63441f8662ddf86b15975683a502ec33f08167e9636f4d19e38e265e95fd9
 F src/whereexpr.c a182038cf7d10aa9a95a96b8563a34f34990323cf307dee6559e995961966d43
 F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1064,7 +1064,7 @@ F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 688ed2011d922d83141a45af431601738674a4c0bdde34b6351f688b82a169b3
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test 65460600d48933adba4283c6ebd089aae173d16136ab9d01f74c89089090c5a5
+F test/in4.test 64ac9c767ac5af562f066a40163d4202f8fa3be05d264ec65d6258e74606b30c
 F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test 8562d0945195cab3cc4ab3794e9118e72cb44c43f785c2b04d48a9d06ca6b4ec
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
@@ -1898,7 +1898,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b2a7c7314d2239992dc1d707280f3b75ba75bb074ba1e77b55cad01ca7fd51b
-R c809d928cb746073aedc3f5cce34c965
-U drh
-Z 375659ad9a05c828e459b8457d7233ea
+P 0571c24177d77ac966bcf42cb8ab00fdf541ce84af1468c8ef0b60c48c45a22f
+R 4574041b82ab28e377188abbe28af4d5
+T *branch * fix-2d6e8400
+T *sym-fix-2d6e8400 *
+T -sym-trunk *
+U dan
+Z e3d30b9ac2ed7bc4de1a15a8bab650b5
