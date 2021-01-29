@@ -65,11 +65,16 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     while( p ){
       Trigger *pTrig = (Trigger *)sqliteHashData(p);
       if( pTrig->pTabSchema==pTab->pSchema
-       && 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
+       && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
       ){
         pTrig->pNext = pList;
         pList = pTrig;
-      }
+      }else if( pTrig->op==TK_RETURNING ){
+        pTrig->table = pTab->zName;
+        pTrig->pTabSchema = pTab->pSchema;
+        pTrig->pNext = pList;
+        pList = pTrig;
+      }        
       p = sqliteHashNext(p);    
     }
   }
@@ -405,6 +410,7 @@ TriggerStep *sqlite3TriggerSelectStep(
     return 0;
   }
   pTriggerStep->op = TK_SELECT;
+  pTriggerStep->eTrigDest = SRT_Discard;
   pTriggerStep->pSelect = pSelect;
   pTriggerStep->orconf = OE_Default;
   pTriggerStep->zSpan = triggerSpanDup(db, zStart, zEnd);
@@ -563,6 +569,7 @@ TriggerStep *sqlite3TriggerDeleteStep(
 */
 void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
   if( pTrigger==0 ) return;
+  assert( !pTrigger->bReturning );
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);
@@ -734,6 +741,9 @@ Trigger *sqlite3TriggersExist(
   for(p=pList; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
       mask |= p->tr_tm;
+    }else if( p->op==TK_RETURNING ){
+      p->op = op;
+      mask |= TRIGGER_AFTER;
     }
   }
   if( pMask ){
@@ -849,7 +859,7 @@ static int codeTriggerProgram(
       default: assert( pStep->op==TK_SELECT ); {
         SelectDest sDest;
         Select *pSelect = sqlite3SelectDup(db, pStep->pSelect, 0);
-        sqlite3SelectDestInit(&sDest, SRT_Discard, 0);
+        sqlite3SelectDestInit(&sDest, pStep->eTrigDest, 0);
         sqlite3Select(pParse, pSelect, &sDest);
         sqlite3SelectDelete(db, pSelect);
         break;
@@ -947,6 +957,7 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->pToplevel = pTop;
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
+  pSubParse->bReturning = pTrigger->bReturning;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
   pSubParse->disableVtab = pParse->disableVtab;
 
@@ -995,6 +1006,9 @@ static TriggerPrg *codeRowTrigger(
     transferParseError(pParse, pSubParse);
     if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
+    }
+    if( pTrigger->bReturning ){
+      sqlite3VdbeColumnInfoXfer(pParse->pVdbe, v);
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;

@@ -1244,12 +1244,54 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 #endif
 
 /*
+** Name of the magic TEMP trigger used to implement RETURNING
+*/
+#define RETURNING_TRIGGER  "sqlite_returning"
+
+/*
+** Delete the data structures associated with the RETURNING clause.
+*/
+static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
+  Hash *pHash;
+  pHash = &(db->aDb[1].pSchema->trigHash);
+  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER)==&pRet->retTrig );
+  sqlite3HashInsert(pHash, RETURNING_TRIGGER, 0);
+  sqlite3ExprListDelete(db, pRet->pReturnEL);
+  sqlite3DbFree(db, pRet);
+}
+
+/*
 ** Add the RETURNING clause to the parser currently underway.
 */
 void sqlite3AddReturning(Parse *pParse, ExprList *pList){
+  Returning *pRet;
+  Hash *pHash;
+  sqlite3 *db = pParse->db;
+  pRet = sqlite3DbMallocZero(db, sizeof(*pRet));
+  if( pRet==0 ){
+    sqlite3ExprListDelete(db, pList);
+    return;
+  }
+  pRet->pParse = pParse;
+  pRet->pReturnEL = pList;
   sqlite3ParserAddCleanup(pParse,
-     (void(*)(sqlite3*,void*))sqlite3ExprListDelete, pList);
-  pParse->pReturning = pList;
+     (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
+  pRet->retTrig.zName = "sqlite_returning";
+  pRet->retTrig.op = TK_RETURNING;
+  pRet->retTrig.tr_tm = TRIGGER_AFTER;
+  pRet->retTrig.bReturning = 1;
+  pRet->retTrig.pSchema = db->aDb[1].pSchema;
+  pRet->retTrig.step_list = &pRet->retTStep;
+  pRet->retTStep.op = TK_SELECT;
+  pRet->retTStep.eTrigDest = SRT_Output;
+  pRet->retTStep.pTrig = &pRet->retTrig;
+  pRet->retTStep.pSelect = &pRet->retSel;
+  pRet->retSel.op = TK_ALL;
+  pRet->retSel.pEList = pList;
+  pRet->retSel.pSrc = (SrcList*)&pRet->retSrcList;
+  pHash = &(db->aDb[1].pSchema->trigHash);
+  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER)==0 );
+  sqlite3HashInsert(pHash, "sqlite_returning", &pRet->retTrig);
 }
 
 /*

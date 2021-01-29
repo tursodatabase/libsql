@@ -1159,6 +1159,7 @@ typedef struct ParseCleanup ParseCleanup;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
 typedef struct RenameToken RenameToken;
+typedef struct Returning Returning;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
@@ -3429,6 +3430,7 @@ struct Parse {
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
+  u8 bReturning;       /* Coding a RETURNING trigger */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
   u8 disableTriggers;  /* True to disable triggers */
 
@@ -3441,7 +3443,6 @@ struct Parse {
 
   int aTempReg[8];        /* Holding area for temporary registers */
   Token sNameToken;       /* Token with unqualified schema object name */
-  ExprList *pReturning;   /* The RETURNING clause, if any */
 
   /************************************************************************
   ** Above is constant between recursions.  Below is reset before and after
@@ -3579,6 +3580,7 @@ struct Trigger {
   char *table;            /* The table or view to which the trigger applies */
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
+  u8 bReturning;          /* This trigger implements a RETURNING clause */
   Expr *pWhen;            /* The WHEN clause of the expression (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
@@ -3639,6 +3641,7 @@ struct Trigger {
 struct TriggerStep {
   u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
   u8 orconf;           /* OE_Rollback etc. */
+  u8 eTrigDest;        /* SRT_ destination value for SELECT */
   Trigger *pTrig;      /* The trigger that this step is a part of */
   Select *pSelect;     /* SELECT statement or RHS of INSERT INTO SELECT ... */
   char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
@@ -3650,6 +3653,18 @@ struct TriggerStep {
   char *zSpan;         /* Original SQL text of this command */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
+};
+
+/*
+** Information about a RETURNING clause
+*/
+struct Returning {
+  Parse *pParse;        /* The parse that includes the RETURNING clause */
+  ExprList *pReturnEL;  /* List of expressions to return */
+  Trigger retTrig;      /* The transient trigger that implements RETURNING */
+  TriggerStep retTStep; /* The trigger step */
+  Select retSel;        /* The SELECT statement that implements RETURNING */
+  u64 retSrcList;       /* The empty FROM clause of the SELECT */
 };
 
 /*
