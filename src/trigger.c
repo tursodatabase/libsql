@@ -567,8 +567,7 @@ TriggerStep *sqlite3TriggerDeleteStep(
 ** Recursively delete a Trigger structure
 */
 void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
-  if( pTrigger==0 ) return;
-  assert( !pTrigger->bReturning );
+  if( pTrigger==0 || pTrigger->bReturning ) return;
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);

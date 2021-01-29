@@ -1254,7 +1254,6 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
   Hash *pHash;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER)==&pRet->retTrig );
   sqlite3HashInsert(pHash, RETURNING_TRIGGER, 0);
   sqlite3ExprListDelete(db, pRet->pReturnEL);
   sqlite3DbFree(db, pRet);
