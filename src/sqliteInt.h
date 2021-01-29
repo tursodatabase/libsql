@@ -3408,7 +3408,6 @@ struct Parse {
   int nLabelAlloc;     /* Number of slots in aLabel */
   int *aLabel;         /* Space to hold the labels */
   ExprList *pConstExpr;/* Constant expressions */
-  ExprList *pReturning;/* The RETURNING clause, if any */
   Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
@@ -3442,6 +3441,7 @@ struct Parse {
 
   int aTempReg[8];        /* Holding area for temporary registers */
   Token sNameToken;       /* Token with unqualified schema object name */
+  ExprList *pReturning;   /* The RETURNING clause, if any */
 
   /************************************************************************
   ** Above is constant between recursions.  Below is reset before and after

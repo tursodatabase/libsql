@@ -48,28 +48,32 @@ void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerStep){
 ** pTab as well as the triggers lised in pTab->pTrigger.
 */
 Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
-  Schema * const pTmpSchema = pParse->db->aDb[1].pSchema;
-  Trigger *pList = 0;                  /* List of triggers to return */
+  Schema *pTmpSchema;       /* Schema of the pTab table */
+  Trigger *pList;           /* List of triggers to return */
+  HashElem *p;              /* Loop variable for TEMP triggers */
 
   if( pParse->disableTriggers ){
     return 0;
   }
-
+  pTmpSchema = pParse->db->aDb[1].pSchema;
+  p = sqliteHashFirst(&pTmpSchema->trigHash);
+  if( p==0 ){
+    return pTab->pTrigger;
+  }
+  pList = pTab->pTrigger;
   if( pTmpSchema!=pTab->pSchema ){
-    HashElem *p;
-    assert( sqlite3SchemaMutexHeld(pParse->db, 0, pTmpSchema) );
-    for(p=sqliteHashFirst(&pTmpSchema->trigHash); p; p=sqliteHashNext(p)){
+    while( p ){
       Trigger *pTrig = (Trigger *)sqliteHashData(p);
       if( pTrig->pTabSchema==pTab->pSchema
        && 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
       ){
-        pTrig->pNext = (pList ? pList : pTab->pTrigger);
+        pTrig->pNext = pList;
         pList = pTrig;
       }
+      p = sqliteHashNext(p);    
     }
   }
-
-  return (pList ? pList : pTab->pTrigger);
+  return pList;  
 }
 
 /*
