@@ -1282,8 +1282,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTrig.bReturning = 1;
   pRet->retTrig.pSchema = db->aDb[1].pSchema;
   pRet->retTrig.step_list = &pRet->retTStep;
-  pRet->retTStep.op = TK_SELECT;
-  pRet->retTStep.eTrigDest = SRT_Output;
+  pRet->retTStep.op = TK_RETURNING;
   pRet->retTStep.pTrig = &pRet->retTrig;
   pRet->retTStep.pSelect = &pRet->retSel;
   pRet->retSel.op = TK_ALL;

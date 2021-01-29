@@ -3639,9 +3639,9 @@ struct Trigger {
  *
  */
 struct TriggerStep {
-  u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
+  u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT,
+                       ** or TK_RETURNING */
   u8 orconf;           /* OE_Rollback etc. */
-  u8 eTrigDest;        /* SRT_ destination value for SELECT */
   Trigger *pTrig;      /* The trigger that this step is a part of */
   Select *pSelect;     /* SELECT statement or RHS of INSERT INTO SELECT ... */
   char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */

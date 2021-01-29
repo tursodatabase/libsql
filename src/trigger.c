@@ -410,7 +410,6 @@ TriggerStep *sqlite3TriggerSelectStep(
     return 0;
   }
   pTriggerStep->op = TK_SELECT;
-  pTriggerStep->eTrigDest = SRT_Discard;
   pTriggerStep->pSelect = pSelect;
   pTriggerStep->orconf = OE_Default;
   pTriggerStep->zSpan = triggerSpanDup(db, zStart, zEnd);
@@ -788,6 +787,46 @@ SrcList *sqlite3TriggerStepSrc(
   return pSrc;
 }
 
+/* The input list pList is the list of result set terms from a RETURNING
+** clause.  The table that we are returning from is pTab.
+**
+** This routine makes a copy of the pList, and at the same time expands
+** any "*" wildcards to be the complete set of columns from pTab.
+*/
+static ExprList *sqlite3ExpandReturning(
+  Parse *pParse,        /* Parsing context */
+  ExprList *pList,      /* The arguments to RETURNING */
+  Table *pTab           /* The table being updated */
+){
+  ExprList *pNew = 0;
+  sqlite3 *db = pParse->db;
+  int i;
+  for(i=0; i<pList->nExpr; i++){
+    Expr *pOldExpr = pList->a[i].pExpr;
+    if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
+      int j;
+      for(j=0; j<pTab->nCol; j++){
+        Expr *pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[j].zName);
+        pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
+        if( !db->mallocFailed ){
+          struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
+          pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[j].zName);
+          pItem->eEName = ENAME_NAME;
+        }
+      }
+    }else{
+      Expr *pNewExpr = sqlite3ExprDup(db, pOldExpr, 0);
+      pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
+      if( pList->a[i].zEName!=0 && !db->mallocFailed ){
+        struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
+        pItem->zEName = sqlite3DbStrDup(db, pList->a[i].zEName);
+        pItem->eEName = pList->a[i].eEName;
+      }
+    }
+  }
+  return pNew;
+}
+
 /*
 ** Generate VDBE code for the statements inside the body of a single 
 ** trigger.
@@ -837,6 +876,7 @@ static int codeTriggerProgram(
           sqlite3ExprDup(db, pStep->pWhere, 0), 
           pParse->eOrconf, 0, 0, 0
         );
+        sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
       case TK_INSERT: {
@@ -847,6 +887,7 @@ static int codeTriggerProgram(
           pParse->eOrconf,
           sqlite3UpsertDup(db, pStep->pUpsert)
         );
+        sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
       case TK_DELETE: {
@@ -854,20 +895,30 @@ static int codeTriggerProgram(
           sqlite3TriggerStepSrc(pParse, pStep),
           sqlite3ExprDup(db, pStep->pWhere, 0), 0, 0
         );
+        sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
-      default: assert( pStep->op==TK_SELECT ); {
+      case TK_SELECT: {
         SelectDest sDest;
         Select *pSelect = sqlite3SelectDup(db, pStep->pSelect, 0);
-        sqlite3SelectDestInit(&sDest, pStep->eTrigDest, 0);
+        sqlite3SelectDestInit(&sDest, SRT_Discard, 0);
         sqlite3Select(pParse, pSelect, &sDest);
         sqlite3SelectDelete(db, pSelect);
         break;
       }
+      default: assert( pStep->op==TK_RETURNING ); {
+        Select *pSelect = pStep->pSelect;
+        ExprList *pList = pSelect->pEList;
+        SelectDest sDest;
+        pSelect->pEList =
+           sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
+        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
+        sqlite3Select(pParse, pSelect, &sDest);
+        sqlite3ExprListDelete(db, pSelect->pEList);
+        pSelect->pEList = pList;
+        break;
+      }
     } 
-    if( pStep->op!=TK_SELECT ){
-      sqlite3VdbeAddOp0(v, OP_ResetCount);
-    }
   }
 
   return 0;
