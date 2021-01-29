@@ -1267,6 +1267,8 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   Returning *pRet;
   Hash *pHash;
   sqlite3 *db = pParse->db;
+  assert( !pParse->bReturning );
+  pParse->bReturning = 1;
   pRet = sqlite3DbMallocZero(db, sizeof(*pRet));
   if( pRet==0 ){
     sqlite3ExprListDelete(db, pList);

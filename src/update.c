@@ -643,6 +643,7 @@ void sqlite3Update(
   if( (db->flags&SQLITE_CountRows)!=0
    && !pParse->pTriggerTab
    && !pParse->nested
+   && !pParse->bReturning
    && pUpsert==0
   ){
     regRowCount = ++pParse->nMem;
