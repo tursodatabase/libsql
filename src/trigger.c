@@ -740,7 +740,8 @@ Trigger *sqlite3TriggersExist(
   for(p=pList; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
       mask |= p->tr_tm;
-    }else if( p->bReturning && (p->op==TK_RETURNING || p->op!=TK_DELETE) ){
+    }else if( p->bReturning
+           && (p->op==TK_RETURNING || (p->op!=TK_DELETE && op!=TK_DELETE)) ){
       p->op = op;
       mask |= TRIGGER_AFTER;
     }
@@ -1221,6 +1222,7 @@ void sqlite3CodeRowTrigger(
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
     ){
+      p->op = op;
       sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
     }
   }
