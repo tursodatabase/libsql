@@ -1,5 +1,5 @@
-C Chagne\sthe\sOP_ResultRow\sopcode\sso\sthat\sit\sdoes\snot\scancel\npending\sstatement\stransactions.
-D 2021-01-30T14:17:18.189
+C Add\san\sALWAYS()\sto\san\sunreachable\sbranch.
+D 2021-01-30T16:16:42.507
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c f288cbc35f79eb32e162de7e80a63ebe00d80e639dcfac071bee11570cbdb16f
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c b714e6f9f3cdfb6ba287bb5ef76888ec8cd9e15c98a608c82bc3300b99a245d7
+F src/resolve.c f6761473ea4b51190fc52f8f2121498b78717266e106e7bff12849ea2d52165f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 738cb746189f721f59972993c13085fa2975c4cbfd04ba26445f3b42c81237dc
 F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 138b10d54a83e1e7d5b3cdbe593a5073b05e632d1823e1b74d85835435b9ee3d
-R 570c84bd891a98ecddec602b36250bc2
+P fea91e3a511b14dafcc4da92c59188f927ec60ed91441335183da6b4e7866c1b
+R 8cd82e0fb3b2559278f1acef6be93a28
 U drh
-Z 60be8821ffce46f579893c6cfdf10955
+Z 32c0d1eece5071f19ef4a6007df09364
