@@ -83,7 +83,7 @@ mod test {
     #[test]
     fn test_param() -> Result<()> {
         let db = checked_memory_handle()?;
-        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 seconds') AND datetime('now', '+1 seconds')", [OffsetDateTime::now_utc()], |r| r.get(0));
+        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [OffsetDateTime::now_utc()], |r| r.get(0));
         assert!(result.is_ok());
         Ok(())
     }
