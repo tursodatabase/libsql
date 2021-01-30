@@ -567,7 +567,8 @@ TriggerStep *sqlite3TriggerDeleteStep(
 ** Recursively delete a Trigger structure
 */
 void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
-  if( pTrigger==0 || pTrigger->bReturning ) return;
+  if( pTrigger==0 ) return;
+  assert( !pTrigger->bReturning );
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);
@@ -739,7 +740,7 @@ Trigger *sqlite3TriggersExist(
   for(p=pList; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
       mask |= p->tr_tm;
-    }else if( p->op==TK_RETURNING ){
+    }else if( p->bReturning ){
       p->op = op;
       mask |= TRIGGER_AFTER;
     }
@@ -912,6 +913,7 @@ static int codeTriggerProgram(
         pSelect->pEList =
            sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
         sqlite3SelectDestInit(&sDest, SRT_Output, 0);
+        pSelect->selFlags = 0;
         sqlite3Select(pParse, pSelect, &sDest);
         sqlite3ExprListDelete(db, pSelect->pEList);
         pSelect->pEList = pList;
@@ -1215,7 +1217,7 @@ void sqlite3CodeRowTrigger(
          || p->pSchema==pParse->db->aDb[1].pSchema );
 
     /* Determine whether we should code this trigger */
-    if( p->op==op 
+    if( (p->op==op || p->bReturning)
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
     ){

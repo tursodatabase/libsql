@@ -2602,7 +2602,10 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 void sqlite3VdbeColumnInfoXfer(Vdbe *pTo, Vdbe *pFrom){
   sqlite3 *db = pTo->db;
   assert( db==pFrom->db );
-  sqlite3DbFree(db, pTo->aColName);
+  if( pTo->nResColumn ){
+    releaseMemArray(pTo->aColName, pTo->nResColumn*COLNAME_N);
+    sqlite3DbFree(db, pTo->aColName);
+  }
   pTo->aColName = pFrom->aColName;
   pFrom->aColName = 0;
   pTo->nResColumn = pFrom->nResColumn;
