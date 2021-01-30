@@ -1470,9 +1470,10 @@ case OP_ResultRow: {
     goto abort_due_to_error;
   }
 
-  /* If the SQLITE_CountRows flag is set in sqlite3.flags mask, then 
-  ** DML statements invoke this opcode to return the number of rows 
-  ** modified to the user. This is the only way that a VM that
+  /* DML statements can invoke this opcode to return the number of rows 
+  ** modified to the user if the "PRAGMA count_changes=ON" pragma has been
+  ** run.  DML statement triggers can invoke this satement to implement
+  ** the RETURNING clause. Thess are the only ways that a VM that
   ** opens a statement transaction may invoke this opcode.
   **
   ** In case this is such a statement, close any statement transaction
@@ -1485,7 +1486,7 @@ case OP_ResultRow: {
   ** The statement transaction is never a top-level transaction.  Hence
   ** the RELEASE call below can never fail.
   */
-  assert( p->iStatement==0 || db->flags&SQLITE_CountRows );
+  assert( p->iStatement==0 || db->flags&SQLITE_CountRows || p->pFrame );
   rc = sqlite3VdbeCloseStatement(p, SAVEPOINT_RELEASE);
   assert( rc==SQLITE_OK );
 

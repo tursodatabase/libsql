@@ -1292,7 +1292,10 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retSel.pSrc = (SrcList*)&pRet->retSrcList;
   pHash = &(db->aDb[1].pSchema->trigHash);
   assert( sqlite3HashFind(pHash, RETURNING_TRIGGER)==0 );
-  sqlite3HashInsert(pHash, "sqlite_returning", &pRet->retTrig);
+  if( sqlite3HashInsert(pHash, "sqlite_returning", &pRet->retTrig)
+          ==&pRet->retTrig ){
+    sqlite3OomFault(db);
+  }
 }
 
 /*
