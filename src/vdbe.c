@@ -1470,26 +1470,6 @@ case OP_ResultRow: {
     goto abort_due_to_error;
   }
 
-  /* DML statements can invoke this opcode to return the number of rows 
-  ** modified to the user if the "PRAGMA count_changes=ON" pragma has been
-  ** run.  DML statement triggers can invoke this satement to implement
-  ** the RETURNING clause. Thess are the only ways that a VM that
-  ** opens a statement transaction may invoke this opcode.
-  **
-  ** In case this is such a statement, close any statement transaction
-  ** opened by this VM before returning control to the user. This is to
-  ** ensure that statement-transactions are always nested, not overlapping.
-  ** If the open statement-transaction is not closed here, then the user
-  ** may step another VM that opens its own statement transaction. This
-  ** may lead to overlapping statement transactions.
-  **
-  ** The statement transaction is never a top-level transaction.  Hence
-  ** the RELEASE call below can never fail.
-  */
-  assert( p->iStatement==0 || db->flags&SQLITE_CountRows || p->pFrame );
-  rc = sqlite3VdbeCloseStatement(p, SAVEPOINT_RELEASE);
-  assert( rc==SQLITE_OK );
-
   /* Invalidate all ephemeral cursor row caches */
   p->cacheCtr = (p->cacheCtr + 2)|1;
 

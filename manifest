@@ -1,5 +1,5 @@
-C Fix\sa\sobsolete\sassert()\sin\sthe\sbytecode\sengine.\s\sImproved\sOOM\sdetection\nin\ssqlite3AddReturning().
-D 2021-01-30T12:07:32.582
+C Chagne\sthe\sOP_ResultRow\sopcode\sso\sthat\sit\sdoes\snot\scancel\npending\sstatement\stransactions.
+D 2021-01-30T14:17:18.189
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 5761ca995715f12825faba7a465c6aa1c92cf88f3199fc221d312268edfde6f5
+F src/vdbe.c d715b1eeb37168afec92185bcf3dc6da175abafd247821af200ac7eeab68a706
 F src/vdbe.h a71bf43572d3de57923d1928ac01ae8d355cd67e94462ba4f7462265cedbef9a
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 52204cd768f115d13249ff0e3a252b716620f7ad16a6962e1192a09137a78596
-R 2383351840f532b10fd8d9e8187ff10e
+P 138b10d54a83e1e7d5b3cdbe593a5073b05e632d1823e1b74d85835435b9ee3d
+R 570c84bd891a98ecddec602b36250bc2
 U drh
-Z 835a3a4123d883b7f5aa3b3a2eaef96a
+Z 60be8821ffce46f579893c6cfdf10955
