@@ -1244,23 +1244,38 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 #endif
 
 /*
-** Name of the magic TEMP trigger used to implement RETURNING
+** Name of the special TEMP trigger used to implement RETURNING.  The
+** name begins with "sqlite_" so that it is guaranteed not to collide
+** with any application-generated triggers.
 */
-#define RETURNING_TRIGGER  "sqlite_returning"
+#define RETURNING_TRIGGER_NAME  "sqlite_returning"
 
 /*
-** Delete the data structures associated with the RETURNING clause.
+** Clean up the data structures associated with the RETURNING clause.
 */
 static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
   Hash *pHash;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  sqlite3HashInsert(pHash, RETURNING_TRIGGER, 0);
+  sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, 0);
   sqlite3ExprListDelete(db, pRet->pReturnEL);
   sqlite3DbFree(db, pRet);
 }
 
 /*
-** Add the RETURNING clause to the parser currently underway.
+** Add the RETURNING clause to the parse currently underway.
+**
+** This routine creates a special TEMP trigger that will fire for each row
+** of the DML statement.  That TEMP trigger contains a single SELECT
+** statement with a result set that is the argument of the RETURNING clause.
+** The trigger has the Trigger.bReturning flag and an opcode of
+** TK_RETURNING instead of TK_SELECT, so that the trigger code generator
+** knows to handle it specially.  The TEMP trigger is automatically
+** removed at the end of the parse.
+**
+** When this routine is called, we do not yet know if the RETURNING clause
+** is attached to a DELETE, INSERT, or UPDATE, so construct it as a
+** RETURNING trigger instead.  It will then be converted into the appropriate
+** type on the first call to sqlite3TriggersExist().
 */
 void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   Returning *pRet;
@@ -1278,7 +1293,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   sqlite3ParserAddCleanup(pParse,
      (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
   if( db->mallocFailed ) return;
-  pRet->retTrig.zName = "sqlite_returning";
+  pRet->retTrig.zName = RETURNING_TRIGGER_NAME;
   pRet->retTrig.op = TK_RETURNING;
   pRet->retTrig.tr_tm = TRIGGER_AFTER;
   pRet->retTrig.bReturning = 1;
@@ -1291,8 +1306,8 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retSel.pEList = pList;
   pRet->retSel.pSrc = (SrcList*)&pRet->retSrcList;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER)==0 );
-  if( sqlite3HashInsert(pHash, "sqlite_returning", &pRet->retTrig)
+  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0 );
+  if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
           ==&pRet->retTrig ){
     sqlite3OomFault(db);
   }

@@ -739,9 +739,13 @@ Trigger *sqlite3TriggersExist(
   for(p=pList; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
       mask |= p->tr_tm;
-    }else if( p->bReturning
-           && (p->op==TK_RETURNING || (p->op!=TK_DELETE && op!=TK_DELETE)) ){
+    }else if( p->op==TK_RETURNING ){
+      /* The first time a RETURNING trigger is seen, the "op" value tells
+      ** us what time of trigger it should be. */
       p->op = op;
+      mask |= TRIGGER_AFTER;
+    }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE ){
+      /* Also fire a RETURNING trigger for INSERT on the UPDATE of an UPSERT */
       mask |= TRIGGER_AFTER;
     }
   }
@@ -1216,13 +1220,19 @@ void sqlite3CodeRowTrigger(
     assert( p->pSchema==p->pTabSchema 
          || p->pSchema==pParse->db->aDb[1].pSchema );
 
-    /* Determine whether we should code this trigger */
-    if( (p->op==op || (p->bReturning && p->op!=TK_DELETE))
+    /* Determine whether we should code this trigger.  One of two choices:
+    **   1. The trigger is an exact match to the current DML statement
+    **   2. This is a RETURNING trigger for INSERT but we are currently
+    **      doing the UPDATE part of an UPSERT.
+    */
+    if( (p->op==op || (p->bReturning && p->op==TK_INSERT && op==TK_UPDATE))
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
     ){
+      u8 origOp = p->op;
       p->op = op;
       sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
+      p->op = origOp;
     }
   }
 }
