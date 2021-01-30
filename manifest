@@ -1,5 +1,5 @@
-C Another\sattempt\sto\sget\strigger\sselection\scorrect\sfor\sRETURNING\striggers.
-D 2021-01-30T02:34:47.012
+C Fix\sa\smemory\sdeallocation\sproblem\sthat\scomes\sup\swhen\sdoing\sa\sRETURNING\squery\non\sa\scorrupt\sdatabase.\s\sI\sthink\sI\sfixed\sthis\sbefore,\sbut\sit\sgot\sunfixed\swith\nstale\seditor\scontent.
+D 2021-01-30T02:43:26.023
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
-F src/trigger.c 6b312904df04c5e8bac6d801448736b5170d7902ea62d87615845938cf466836
+F src/trigger.c ec5ba098328dccba9b5c2e5e9946df4dab1d551ae8b7d1b0bdaec65914bf2bfa
 F src/update.c 3dbc7189ffcf361c2149f1b1d0841a8a9689d27f15c5e72e6f14ebc447e6b0c0
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c7a6e04ddde34961d8e9d0443913e572a80853cf14a8263cec19523c39ca744
-R 62218e74d94127b5c670903aeb07216b
+P 1b8ed52275a54800df90682d694b482f55f26c6c4a420659f9a3b7bfc61e8abe
+R cf21e41910dc0faee5037ce4e11838eb
 U drh
-Z 08397caac37c2d39eeda13ae69545f62
+Z 8a2777d3702d0168b2e6293ee5f1e515
