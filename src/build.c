@@ -1277,6 +1277,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->pReturnEL = pList;
   sqlite3ParserAddCleanup(pParse,
      (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
+  if( db->mallocFailed ) return;
   pRet->retTrig.zName = "sqlite_returning";
   pRet->retTrig.op = TK_RETURNING;
   pRet->retTrig.tr_tm = TRIGGER_AFTER;
