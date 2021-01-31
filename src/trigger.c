@@ -1064,7 +1064,7 @@ static TriggerPrg *codeRowTrigger(
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
     if( pTrigger->bReturning ){
-      sqlite3VdbeColumnInfoXfer(pParse->pVdbe, v);
+      sqlite3VdbeColumnInfoXfer(sqlite3ParseToplevel(pParse)->pVdbe, v);
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
