@@ -82,7 +82,7 @@ impl Statement<'_> {
     /// underlying SQLite call fails.
     #[inline]
     pub fn execute<P: Params>(&mut self, params: P) -> Result<usize> {
-        params.bind_in(self)?;
+        params.__bind_in(self)?;
         self.execute_with_bound_parameters()
     }
 
@@ -221,7 +221,7 @@ impl Statement<'_> {
     #[inline]
     pub fn query<P: Params>(&mut self, params: P) -> Result<Rows<'_>> {
         self.check_readonly()?;
-        params.bind_in(self)?;
+        params.__bind_in(self)?;
         Ok(Rows::new(self))
     }
 
