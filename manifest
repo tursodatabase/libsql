@@ -1,5 +1,5 @@
-C When\ssetting\sthe\snumber\sof\sresult\scolumns\sin\sa\sRETURNING\strigger,\sbe\ssure\nto\sset\sthat\svalue\sin\sthe\stop-level\sbytecode\sprogram,\snot\sin\sthe\simmediate\ncaller\sof\sthe\strigger.
-D 2021-01-31T12:41:20.387
+C New\sopcode\sOP_ChngCntRow\sused\sto\soutput\sthe\sresult\sof\sPRAGMA\schange_count.\nOnly\sthis\snew\sopcode,\sand\snot\sOP_ResultRow,\schecks\sfor\sforeign\skey\serrors.\nFaster\sperformance,\sand\snow\salso\sworks\swith\sRETURNING.
+D 2021-01-31T15:50:36.442
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
 F src/date.c dace306a10d9b02ee553d454c8e1cf8d3c9b932e137738a6b15b90253a9bfc10
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
-F src/delete.c a4b3a6db02d2e705edf41bdb378d4c53c106f305fd8e7b441713fe87f69ea624
+F src/delete.c 352ea931218c45a3daf17472d4141b9c7fc026d85da3f1ade404ea5bb6d67f77
 F src/expr.c 47c85263e6d179424e6b09e2c79db5704ab5b8cbc2fae2ee3285faa2566f2e74
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 02e4a3311885cd2b31eb17fd58dc2fc738cd2c823d0d39e4dd5595169c6f8bc3
@@ -502,7 +502,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 8f725611e5c5943cfd40461a8fa518538d8be666ef09097a29f7272ccd3ab0a0
+F src/insert.c 97be36c52c667a64aacbba76398544d224268d62444b67d011a077c486e375bb
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 1c5de7b3fabcdf05f4fe563aab5d81d175b89c67a8678a12ba86629356afa356
@@ -608,12 +608,12 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
 F src/trigger.c 424f81a5631a06dda99d70c6bfa3e7e6ead74ab9eb757b77f75a14a18ef7d419
-F src/update.c 3dbc7189ffcf361c2149f1b1d0841a8a9689d27f15c5e72e6f14ebc447e6b0c0
+F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c d715b1eeb37168afec92185bcf3dc6da175abafd247821af200ac7eeab68a706
+F src/vdbe.c 9b9a714318e49b59a282b4e175080dc53a07b8099895fa21613e6b80fbad3727
 F src/vdbe.h a71bf43572d3de57923d1928ac01ae8d355cd67e94462ba4f7462265cedbef9a
 F src/vdbeInt.h 3ca5e9fd6e095a8b6cf6bc3587a46fc93499503b2fe48951e1034ba9e2ce2f6e
 F src/vdbeapi.c c5e7cb2ab89a24d7f723e87b508f21bfb1359a04db5277d8a99fd1e015c12eb9
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a38f0c1d7c1d7635732ac370d8fbc7e6a2005378e4621da7bc4f51a2f99912d1
-R 34ba0ebdbec7699355883290972263ed
+P 1f1ce7ceb9807d22efea496f33908040ee196a31cd192f27ec0fb3e23afb729c
+R ed51f62c70425c1aaf20f4ecddc8579f
 U drh
-Z 1a944974e641f069223aa2fcb2319010
+Z 39d7fe9d2d8727b4a3ee19f9ebc8e8e1

@@ -1319,7 +1319,7 @@ insert_end:
   ** invoke the callback function.
   */
   if( regRowCount ){
-    sqlite3VdbeAddOp2(v, OP_ResultRow, regRowCount, 1);
+    sqlite3VdbeAddOp2(v, OP_ChngCntRow, regRowCount, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows inserted", SQLITE_STATIC);
   }
