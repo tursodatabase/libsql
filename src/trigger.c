@@ -742,9 +742,11 @@ Trigger *sqlite3TriggersExist(
     }else if( p->op==TK_RETURNING ){
       /* The first time a RETURNING trigger is seen, the "op" value tells
       ** us what time of trigger it should be. */
+      assert( sqlite3IsToplevel(pParse) );
       p->op = op;
       mask |= TRIGGER_AFTER;
-    }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE ){
+    }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
+              && sqlite3IsToplevel(pParse) ){
       /* Also fire a RETURNING trigger for INSERT on the UPDATE of an UPSERT */
       mask |= TRIGGER_AFTER;
     }
@@ -1228,6 +1230,7 @@ void sqlite3CodeRowTrigger(
     if( (p->op==op || (p->bReturning && p->op==TK_INSERT && op==TK_UPDATE))
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
+     && (sqlite3IsToplevel(pParse) || !p->bReturning)
     ){
       u8 origOp = p->op;
       p->op = op;
