@@ -746,6 +746,11 @@ Trigger *sqlite3TriggersExist(
       assert( sqlite3IsToplevel(pParse) );
       p->op = op;
       mask |= TRIGGER_AFTER;
+      if( IsVirtual(pTab) && op!=TK_INSERT ){
+        sqlite3ErrorMsg(pParse,
+           "%s RETURNING is not available on virtual tables",
+           op==TK_DELETE ? "DELETE" : "UPDATE");
+      }
     }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
               && sqlite3IsToplevel(pParse) ){
       /* Also fire a RETURNING trigger for INSERT on the UPDATE of an UPSERT */
