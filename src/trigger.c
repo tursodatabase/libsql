@@ -923,13 +923,20 @@ static int codeTriggerProgram(
         Select *pSelect = pStep->pSelect;
         ExprList *pList = pSelect->pEList;
         SelectDest sDest;
+        Select *pNew;
         pSelect->pEList =
            sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
         sqlite3SelectDestInit(&sDest, SRT_Output, 0);
-        pSelect->selFlags = 0;
-        sqlite3Select(pParse, pSelect, &sDest);
+        pNew = sqlite3SelectDup(db, pSelect, 0);
+        if( pNew ){
+          sqlite3Select(pParse, pNew, &sDest);
+          if( pNew->selFlags & (SF_Aggregate|SF_HasAgg|SF_WinRewrite) ){
+            sqlite3ErrorMsg(pParse, "aggregates not allowed in RETURNING");
+          }
+          sqlite3SelectDelete(db, pNew);
+        }
         sqlite3ExprListDelete(db, pSelect->pEList);
-        pSelect->pEList = pList;
+        pStep->pSelect->pEList = pList;
         break;
       }
     } 
