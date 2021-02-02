@@ -1,5 +1,5 @@
-C Add\sa\sfew\stest\scases\sfor\sRETURNING\stogether\swith\sUPDATE/DELETE\sLIMIT.
-D 2021-02-01T21:26:09.061
+C Allow\sthe\sRETURNING\strigger\sto\sexist\sfor\svirtual\stables.
+D 2021-02-02T00:16:15.269
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
-F src/trigger.c 30cb8be5ef144f5c9036cf45faa007aeb8cfebe3bc766fc58072730416d6bc57
+F src/trigger.c 80c38e0d22bf062b2076a348885f40450dea5a0f5a4335916b71201653962e61
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e62470a737cbde7f3fdcd027b98eb0b3dd11d063c63501d3c18448e93f5959f
-R ebbe9120e496309466d7b572d1580227
+P 7611c77d6baa84086ff18cbd045127fd682c6d5c434af5404e34fbe631fedfe1
+R 037a63c21faae44932a1c96611422080
 U drh
-Z 59e7c95767d01f130d57c6f24563b271
+Z 602a59ff4156534125d9199fea478bc0

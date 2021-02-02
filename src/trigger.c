@@ -735,7 +735,8 @@ Trigger *sqlite3TriggersExist(
   if( (pParse->db->flags & SQLITE_EnableTrigger)!=0 ){
     pList = sqlite3TriggerList(pParse, pTab);
   }
-  assert( pList==0 || IsVirtual(pTab)==0 );
+  assert( pList==0 || IsVirtual(pTab)==0 
+           || (pList->bReturning && pList->pNext==0) );
   for(p=pList; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
       mask |= p->tr_tm;
@@ -810,13 +811,14 @@ static ExprList *sqlite3ExpandReturning(
   for(i=0; i<pList->nExpr; i++){
     Expr *pOldExpr = pList->a[i].pExpr;
     if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
-      int j;
-      for(j=0; j<pTab->nCol; j++){
-        Expr *pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[j].zName);
+      int jj;
+      for(jj=0; jj<pTab->nCol; jj++){
+        if( IsHiddenColumn(pTab->aCol+jj) ) continue;
+        Expr *pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[jj].zName);
         pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
         if( !db->mallocFailed ){
           struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
-          pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[j].zName);
+          pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zName);
           pItem->eEName = ENAME_NAME;
         }
       }
