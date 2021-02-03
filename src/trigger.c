@@ -732,31 +732,48 @@ Trigger *sqlite3TriggersExist(
   Trigger *pList = 0;
   Trigger *p;
 
-  if( (pParse->db->flags & SQLITE_EnableTrigger)!=0 ){
-    pList = sqlite3TriggerList(pParse, pTab);
-  }
+  pList = sqlite3TriggerList(pParse, pTab);
   assert( pList==0 || IsVirtual(pTab)==0 
            || (pList->bReturning && pList->pNext==0) );
-  for(p=pList; p; p=p->pNext){
-    if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
-      mask |= p->tr_tm;
-    }else if( p->op==TK_RETURNING ){
-      /* The first time a RETURNING trigger is seen, the "op" value tells
-      ** us what time of trigger it should be. */
-      assert( sqlite3IsToplevel(pParse) );
-      p->op = op;
-      mask |= TRIGGER_AFTER;
-      if( IsVirtual(pTab) && op!=TK_INSERT ){
-        sqlite3ErrorMsg(pParse,
-           "%s RETURNING is not available on virtual tables",
-           op==TK_DELETE ? "DELETE" : "UPDATE");
+  if( pList!=0 ){
+    p = pList;
+    if( (pParse->db->flags & SQLITE_EnableTrigger)==0
+     && pTab->pTrigger!=0
+    ){
+      /* The SQLITE_DBCONFIG_ENABLE_TRIGGER setting is off.  That means that
+      ** only TEMP triggers are allowed.  Truncate the pList so that it
+      ** includes only TEMP triggers */
+      if( pList==pTab->pTrigger ){
+        pList = 0;
+        goto exit_triggers_exist;
       }
-    }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
-              && sqlite3IsToplevel(pParse) ){
-      /* Also fire a RETURNING trigger for INSERT on the UPDATE of an UPSERT */
-      mask |= TRIGGER_AFTER;
+      while( ALWAYS(p->pNext) && p->pNext!=pTab->pTrigger ) p = p->pNext;
+      p->pNext = 0;
+      p = pList;
     }
+    do{
+      if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
+        mask |= p->tr_tm;
+      }else if( p->op==TK_RETURNING ){
+        /* The first time a RETURNING trigger is seen, the "op" value tells
+        ** us what time of trigger it should be. */
+        assert( sqlite3IsToplevel(pParse) );
+        p->op = op;
+        mask |= TRIGGER_AFTER;
+        if( IsVirtual(pTab) && op!=TK_INSERT ){
+          sqlite3ErrorMsg(pParse,
+             "%s RETURNING is not available on virtual tables",
+             op==TK_DELETE ? "DELETE" : "UPDATE");
+        }
+      }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
+                && sqlite3IsToplevel(pParse) ){
+        /* Also fire a RETURNING trigger for an UPSERT */
+        mask |= TRIGGER_AFTER;
+      }
+      p = p->pNext;
+    }while( p );
   }
+exit_triggers_exist:
   if( pMask ){
     *pMask = mask;
   }
