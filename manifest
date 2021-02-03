@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2021-02-03T13:20:12.253
+C Avoid\sdoing\sany\sforeign-key\sconstraint\srelated\sprocessing\sfor\san\sUPDATE\sstatement\sthat\sdoes\snot\smodify\sany\scolumns\sthat\sare\spart\sof\sFK\sconstraints,\seven\sif\sthe\stable\shas\sa\sself-referencing\sFK.
+D 2021-02-03T14:20:56.465
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 352ea931218c45a3daf17472d4141b9c7fc026d85da3f1ade404ea5bb6d67f77
 F src/expr.c 47c85263e6d179424e6b09e2c79db5704ab5b8cbc2fae2ee3285faa2566f2e74
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 02e4a3311885cd2b31eb17fd58dc2fc738cd2c823d0d39e4dd5595169c6f8bc3
+F src/fkey.c 73adaca988d0dd517d373b432dc9dfa2cd7fa3108b114260132a80832de19037
 F src/func.c 2ea99e9e0531b7f020d5e8e167d25344d618afc718ddc94dd91fa8fef1c85a91
 F src/global.c ed55af196a9b66e198aaeda3f5454c3aa7d7d050c6c938181fd044b70d180a81
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 416c898bfb8ff9639ffbaefcfb47fce3782763af1fc67969fa91c5f01a336676
-R 22f5f05df54d41491893560077891588
-U drh
-Z c0e52194d9465bf18726b8f5537bde36
+P 1eb69c64ed4a11601698000573c507684bc4b0366336ba0748ebd661644d0902
+R beb98a80dee252f5d30d5bb137b97d58
+U dan
+Z 08ea3f42cb5505c3408631e0be2e285f
