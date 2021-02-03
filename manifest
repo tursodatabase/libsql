@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sVdbe.magic\sto\sVdbe.iVdbeMagic\sto\sdisambiguate\swith\nsqlite3.magic.
-D 2021-02-03T18:32:25.893
+C Corrections\sto\sthe\s'filepath_normalize'\stest\ssuite\shelper\sprocedure.
+D 2021-02-03T19:38:40.978
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1439,7 +1439,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl e5e4f5707fbf791ff8e06438fd0d4d71fe4c1d48753b7dd415efe72e853ef877
+F test/tester.tcl 19d2a19a6dd55a2b4e2b943963959a05a2c088495dd5f5274b04e0494ce86d66
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f3b036e730153ac22933b03a52d4ec3978c9ecab1399d8cc79fe533893321e3
-R da1e9977e016fead3ba113e856c385ff
-U drh
-Z f627ee51e8367fe2ca61dde2a77a6558
+P 6b29e549bb34933bfd0758e31085e65dcc0f75446c478fc775d96cf01c22cf43
+R 85ac248a64299c59878f72d774654f84
+U mistachkin
+Z cd094eb04790b0c848908f94f1895107
