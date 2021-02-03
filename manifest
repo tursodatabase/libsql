@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\sRETURNING\sclause\sfollowing\sPostgreSQL\ssyntax.
-D 2021-02-03T13:08:09.152
+C Fix\sa\sharmless\scompiler\swarning.
+D 2021-02-03T13:20:12.253
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -477,7 +477,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 36cae0d6e3e91a1996e1a472f8c7242c31a4e38ba4295e3056da198c04fd2a87
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
-F src/attach.c 87102aba5ddac8ef3a8a033ab657e4cae9cc8e846efe93b14029cfffaaf8831e
+F src/attach.c e80162a47411f296bea550ed8fafd730481f4aa71e89ece23ba9c957eed15d4a
 F src/auth.c 8d1df0e2ef8bafbedd4f1fe4baff03eb27507da4bf6e449df3613d383c4018b2
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1899,8 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06b15b17be38c804dd2641d8616a2a7bd396d2eb9901a0fbf94edd8bd508cf9c a10c5a2503ff2998f6ee40f721aab8c9579052e535dc141bd57d10551eaea387
-R 10c9b96c07db17433ca188cab65447b4
-T +closed a10c5a2503ff2998f6ee40f721aab8c9579052e535dc141bd57d10551eaea387
+P 416c898bfb8ff9639ffbaefcfb47fce3782763af1fc67969fa91c5f01a336676
+R 22f5f05df54d41491893560077891588
 U drh
-Z 40f463993ad19f6f3483715fa2a6abfe
+Z c0e52194d9465bf18726b8f5537bde36

@@ -480,7 +480,6 @@ static int fixSelectCb(Walker *p, Select *pSelect){
 #endif
   }
   if( pSelect->pWith ){
-    int i;
     for(i=0; i<pSelect->pWith->nCte; i++){
       if( sqlite3WalkSelect(p, pSelect->pWith->a[i].pSelect) ){
         return WRC_Abort;
