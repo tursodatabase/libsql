@@ -35,7 +35,7 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   p->pNext = db->pVdbe;
   p->pPrev = 0;
   db->pVdbe = p;
-  p->magic = VDBE_MAGIC_INIT;
+  p->iVdbeMagic = VDBE_MAGIC_INIT;
   p->pParse = pParse;
   pParse->pVdbe = p;
   assert( pParse->aLabel==0 );
@@ -236,7 +236,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   VdbeOp *pOp;
 
   i = p->nOp;
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT );
   assert( op>=0 && op<0xff );
   if( p->nOpAlloc<=i ){
     return growOp3(p, op, p1, p2, p3);
@@ -565,7 +565,7 @@ static SQLITE_NOINLINE void resizeResolveLabel(Parse *p, Vdbe *v, int j){
 void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   Parse *p = v->pParse;
   int j = ADDR(x);
-  assert( v->magic==VDBE_MAGIC_INIT );
+  assert( v->iVdbeMagic==VDBE_MAGIC_INIT );
   assert( j<-p->nLabel );
   assert( j>=0 );
 #ifdef SQLITE_DEBUG
@@ -890,7 +890,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 ** Return the address of the next instruction to be inserted.
 */
 int sqlite3VdbeCurrentAddr(Vdbe *p){
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT );
   return p->nOp;
 }
 
@@ -975,7 +975,7 @@ VdbeOp *sqlite3VdbeAddOpList(
   int i;
   VdbeOp *pOut, *pFirst;
   assert( nOp>0 );
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp > p->nOpAlloc && growOpArray(p, nOp) ){
     return 0;
   }
@@ -1299,7 +1299,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   sqlite3 *db;
   assert( p!=0 );
   db = p->db;
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT );
   assert( p->aOp!=0 || db->mallocFailed );
   if( db->mallocFailed ){
     if( n!=P4_VTAB ) freeP4(db, n, (void*)*(char**)&zP4);
@@ -1428,7 +1428,7 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   /* C89 specifies that the constant "dummy" will be initialized to all
   ** zeros, which is correct.  MSVC generates a warning, nevertheless. */
   static VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT );
   if( addr<0 ){
     addr = p->nOp - 1;
   }
@@ -2113,7 +2113,7 @@ int sqlite3VdbeList(
   Op *pOp;                             /* Current opcode */
 
   assert( p->explain );
-  assert( p->magic==VDBE_MAGIC_RUN );
+  assert( p->iVdbeMagic==VDBE_MAGIC_RUN );
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY || p->rc==SQLITE_NOMEM );
 
   /* Even though this opcode does not use dynamic strings for
@@ -2293,14 +2293,14 @@ void sqlite3VdbeRewind(Vdbe *p){
   int i;
 #endif
   assert( p!=0 );
-  assert( p->magic==VDBE_MAGIC_INIT || p->magic==VDBE_MAGIC_RESET );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT || p->iVdbeMagic==VDBE_MAGIC_RESET );
 
   /* There should be at least one opcode.
   */
   assert( p->nOp>0 );
 
   /* Set the magic to VDBE_MAGIC_RUN sooner rather than later. */
-  p->magic = VDBE_MAGIC_RUN;
+  p->iVdbeMagic = VDBE_MAGIC_RUN;
 
 #ifdef SQLITE_DEBUG
   for(i=0; i<p->nMem; i++){
@@ -2356,7 +2356,7 @@ void sqlite3VdbeMakeReady(
   assert( p!=0 );
   assert( p->nOp>0 );
   assert( pParse!=0 );
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->iVdbeMagic==VDBE_MAGIC_INIT );
   assert( pParse==p->pParse );
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
@@ -3058,7 +3058,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
-  if( p->magic!=VDBE_MAGIC_RUN ){
+  if( p->iVdbeMagic!=VDBE_MAGIC_RUN ){
     return SQLITE_OK;
   }
   if( db->mallocFailed ){
@@ -3216,7 +3216,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     assert( db->nVdbeRead>=db->nVdbeWrite );
     assert( db->nVdbeWrite>=0 );
   }
-  p->magic = VDBE_MAGIC_HALT;
+  p->iVdbeMagic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
@@ -3389,7 +3389,7 @@ int sqlite3VdbeReset(Vdbe *p){
     }
   }
 #endif
-  p->magic = VDBE_MAGIC_RESET;
+  p->iVdbeMagic = VDBE_MAGIC_RESET;
   return p->rc & db->errMask;
 }
  
@@ -3399,7 +3399,7 @@ int sqlite3VdbeReset(Vdbe *p){
 */
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
-  if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
+  if( p->iVdbeMagic==VDBE_MAGIC_RUN || p->iVdbeMagic==VDBE_MAGIC_HALT ){
     rc = sqlite3VdbeReset(p);
     assert( (rc & p->db->errMask)==rc );
   }
@@ -3460,7 +3460,7 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
     vdbeFreeOpArray(db, pSub->aOp, pSub->nOp);
     sqlite3DbFree(db, pSub);
   }
-  if( p->magic!=VDBE_MAGIC_INIT ){
+  if( p->iVdbeMagic!=VDBE_MAGIC_INIT ){
     releaseMemArray(p->aVar, p->nVar);
     sqlite3DbFree(db, p->pVList);
     sqlite3DbFree(db, p->pFree);
@@ -3508,7 +3508,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( p->pNext ){
     p->pNext->pPrev = p->pPrev;
   }
-  p->magic = VDBE_MAGIC_DEAD;
+  p->iVdbeMagic = VDBE_MAGIC_DEAD;
   p->db = 0;
   sqlite3DbFreeNN(db, p);
 }
