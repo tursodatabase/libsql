@@ -35,7 +35,7 @@ proc test_reset {} {
 
 test_reset
 do_execsql_test 1.0 { 
-  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE TABLE t1(a INT PRIMARY KEY, b);
   INSERT INTO t1 VALUES('i', 'one');
 }
 do_iterator_test 1.1 t1 {
@@ -184,7 +184,7 @@ set set_of_tests {
 
 test_reset
 do_common_sql {
-  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE TABLE t1(a int PRIMARY KEY, b);
   CREATE TABLE t2(a, b INTEGER PRIMARY KEY);
   CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b));
   CREATE TABLE t4(a, b, PRIMARY KEY(b, a));
@@ -206,17 +206,17 @@ sqlite3 db3 test.db3
 do_test 3.0 {
   execsql {
     ATTACH 'test.db3' AS 'aux';
-    CREATE TABLE t1(a, b PRIMARY KEY);
+    CREATE TABLE t1(a int, b PRIMARY KEY);
     CREATE TABLE t2(x, y, z);
     CREATE TABLE t3(a);
 
-    CREATE TABLE aux.t1(a PRIMARY KEY, b);
+    CREATE TABLE aux.t1(a int PRIMARY KEY, b);
     CREATE TABLE aux.t2(a, b INTEGER PRIMARY KEY);
     CREATE TABLE aux.t3(a, b, c, PRIMARY KEY(a, b));
     CREATE TABLE aux.t4(a, b, PRIMARY KEY(b, a));
   }
   execsql {
-    CREATE TABLE t1(a PRIMARY KEY, b);
+    CREATE TABLE t1(a int PRIMARY KEY, b);
     CREATE TABLE t2(a, b INTEGER PRIMARY KEY);
     CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b));
     CREATE TABLE t4(a, b, PRIMARY KEY(b, a));
@@ -587,5 +587,53 @@ do_execsql_test 10.2 {
   SELECT enable(-1);
 } {0 0 1 1}
 S delete
+
+#-------------------------------------------------------------------------
+test_reset
+do_common_sql {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d, e, f);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<32
+  )
+  INSERT INTO t1 SELECT NULL, 0, 0, 0, 0, 0 FROM s
+}
+
+do_then_apply_sql {
+  UPDATE t1 SET                             f=f+1 WHERE a=1;
+  UPDATE t1 SET                      e=e+1        WHERE a=2;
+  UPDATE t1 SET                      e=e+1, f=f+1 WHERE a=3;
+  UPDATE t1 SET               d=d+1               WHERE a=4;
+  UPDATE t1 SET               d=d+1,        f=f+1 WHERE a=5;
+  UPDATE t1 SET               d=d+1, e=e+1        WHERE a=6;
+  UPDATE t1 SET               d=d+1, e=e+1, f=f+1 WHERE a=7;
+  UPDATE t1 SET        c=c+1                      WHERE a=8;
+  UPDATE t1 SET        c=c+1,               f=f+1 WHERE a=9;
+  UPDATE t1 SET        c=c+1,        e=e+1        WHERE a=10;
+  UPDATE t1 SET        c=c+1,        e=e+1, f=f+1 WHERE a=11;
+  UPDATE t1 SET        c=c+1, d=d+1               WHERE a=12;
+  UPDATE t1 SET        c=c+1, d=d+1,        f=f+1 WHERE a=13;
+  UPDATE t1 SET        c=c+1, d=d+1, e=e+1        WHERE a=14;
+  UPDATE t1 SET        c=c+1, d=d+1, e=e+1, f=f+1 WHERE a=15;
+  UPDATE t1 SET d=d+1                             WHERE a=16;
+  UPDATE t1 SET d=d+1,                      f=f+1 WHERE a=17;
+  UPDATE t1 SET d=d+1,               e=e+1        WHERE a=18;
+  UPDATE t1 SET d=d+1,               e=e+1, f=f+1 WHERE a=19;
+  UPDATE t1 SET d=d+1,        d=d+1               WHERE a=20;
+  UPDATE t1 SET d=d+1,        d=d+1,        f=f+1 WHERE a=21;
+  UPDATE t1 SET d=d+1,        d=d+1, e=e+1        WHERE a=22;
+  UPDATE t1 SET d=d+1,        d=d+1, e=e+1, f=f+1 WHERE a=23;
+  UPDATE t1 SET d=d+1, c=c+1                      WHERE a=24;
+  UPDATE t1 SET d=d+1, c=c+1,               f=f+1 WHERE a=25;
+  UPDATE t1 SET d=d+1, c=c+1,        e=e+1        WHERE a=26;
+  UPDATE t1 SET d=d+1, c=c+1,        e=e+1, f=f+1 WHERE a=27;
+  UPDATE t1 SET d=d+1, c=c+1, d=d+1               WHERE a=28;
+  UPDATE t1 SET d=d+1, c=c+1, d=d+1,        f=f+1 WHERE a=29;
+  UPDATE t1 SET d=d+1, c=c+1, d=d+1, e=e+1        WHERE a=30;
+  UPDATE t1 SET d=d+1, c=c+1, d=d+1, e=e+1, f=f+1 WHERE a=31;
+}
+
+do_test 11.0 {
+  compare_db db db2
+} {}
 
 finish_test

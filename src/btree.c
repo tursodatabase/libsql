@@ -7975,6 +7975,9 @@ static int balance_nonroot(
       apOld[i] = 0;
       rc = sqlite3PagerWrite(pNew->pDbPage);
       nNew++;
+      if( sqlite3PagerPageRefcount(pNew->pDbPage)!=1+(i==(iParentIdx-nxDiv)) ){
+        rc = SQLITE_CORRUPT_BKPT;
+      }
       if( rc ) goto balance_cleanup;
     }else{
       assert( i>0 );
