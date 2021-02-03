@@ -1352,7 +1352,7 @@ static Trigger *fkActionTrigger(
 
     switch( action ){
       case OE_Restrict:
-        pStep->op = TK_SELECT; 
+        pStep->op = TK_SELECT;
         break;
       case OE_Cascade: 
         if( !pChanges ){ 

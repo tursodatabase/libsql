@@ -65,11 +65,16 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     while( p ){
       Trigger *pTrig = (Trigger *)sqliteHashData(p);
       if( pTrig->pTabSchema==pTab->pSchema
-       && 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
+       && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
       ){
         pTrig->pNext = pList;
         pList = pTrig;
-      }
+      }else if( pTrig->op==TK_RETURNING ){
+        pTrig->table = pTab->zName;
+        pTrig->pTabSchema = pTab->pSchema;
+        pTrig->pNext = pList;
+        pList = pTrig;
+      }        
       p = sqliteHashNext(p);    
     }
   }
@@ -562,7 +567,7 @@ TriggerStep *sqlite3TriggerDeleteStep(
 ** Recursively delete a Trigger structure
 */
 void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
-  if( pTrigger==0 ) return;
+  if( pTrigger==0 || pTrigger->bReturning ) return;
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);
@@ -727,15 +732,48 @@ Trigger *sqlite3TriggersExist(
   Trigger *pList = 0;
   Trigger *p;
 
-  if( (pParse->db->flags & SQLITE_EnableTrigger)!=0 ){
-    pList = sqlite3TriggerList(pParse, pTab);
-  }
-  assert( pList==0 || IsVirtual(pTab)==0 );
-  for(p=pList; p; p=p->pNext){
-    if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
-      mask |= p->tr_tm;
+  pList = sqlite3TriggerList(pParse, pTab);
+  assert( pList==0 || IsVirtual(pTab)==0 
+           || (pList->bReturning && pList->pNext==0) );
+  if( pList!=0 ){
+    p = pList;
+    if( (pParse->db->flags & SQLITE_EnableTrigger)==0
+     && pTab->pTrigger!=0
+    ){
+      /* The SQLITE_DBCONFIG_ENABLE_TRIGGER setting is off.  That means that
+      ** only TEMP triggers are allowed.  Truncate the pList so that it
+      ** includes only TEMP triggers */
+      if( pList==pTab->pTrigger ){
+        pList = 0;
+        goto exit_triggers_exist;
+      }
+      while( ALWAYS(p->pNext) && p->pNext!=pTab->pTrigger ) p = p->pNext;
+      p->pNext = 0;
+      p = pList;
     }
+    do{
+      if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
+        mask |= p->tr_tm;
+      }else if( p->op==TK_RETURNING ){
+        /* The first time a RETURNING trigger is seen, the "op" value tells
+        ** us what time of trigger it should be. */
+        assert( sqlite3IsToplevel(pParse) );
+        p->op = op;
+        mask |= TRIGGER_AFTER;
+        if( IsVirtual(pTab) && op!=TK_INSERT ){
+          sqlite3ErrorMsg(pParse,
+             "%s RETURNING is not available on virtual tables",
+             op==TK_DELETE ? "DELETE" : "UPDATE");
+        }
+      }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
+                && sqlite3IsToplevel(pParse) ){
+        /* Also fire a RETURNING trigger for an UPSERT */
+        mask |= TRIGGER_AFTER;
+      }
+      p = p->pNext;
+    }while( p );
   }
+exit_triggers_exist:
   if( pMask ){
     *pMask = mask;
   }
@@ -776,6 +814,47 @@ SrcList *sqlite3TriggerStepSrc(
     sqlite3DbFree(db, zName);
   }
   return pSrc;
+}
+
+/* The input list pList is the list of result set terms from a RETURNING
+** clause.  The table that we are returning from is pTab.
+**
+** This routine makes a copy of the pList, and at the same time expands
+** any "*" wildcards to be the complete set of columns from pTab.
+*/
+static ExprList *sqlite3ExpandReturning(
+  Parse *pParse,        /* Parsing context */
+  ExprList *pList,      /* The arguments to RETURNING */
+  Table *pTab           /* The table being updated */
+){
+  ExprList *pNew = 0;
+  sqlite3 *db = pParse->db;
+  int i;
+  for(i=0; i<pList->nExpr; i++){
+    Expr *pOldExpr = pList->a[i].pExpr;
+    if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
+      int jj;
+      for(jj=0; jj<pTab->nCol; jj++){
+        if( IsHiddenColumn(pTab->aCol+jj) ) continue;
+        Expr *pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[jj].zName);
+        pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
+        if( !db->mallocFailed ){
+          struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
+          pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zName);
+          pItem->eEName = ENAME_NAME;
+        }
+      }
+    }else{
+      Expr *pNewExpr = sqlite3ExprDup(db, pOldExpr, 0);
+      pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
+      if( !db->mallocFailed && ALWAYS(pList->a[i].zEName!=0) ){
+        struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
+        pItem->zEName = sqlite3DbStrDup(db, pList->a[i].zEName);
+        pItem->eEName = pList->a[i].eEName;
+      }
+    }
+  }
+  return pNew;
 }
 
 /*
@@ -827,6 +906,7 @@ static int codeTriggerProgram(
           sqlite3ExprDup(db, pStep->pWhere, 0), 
           pParse->eOrconf, 0, 0, 0
         );
+        sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
       case TK_INSERT: {
@@ -837,6 +917,7 @@ static int codeTriggerProgram(
           pParse->eOrconf,
           sqlite3UpsertDup(db, pStep->pUpsert)
         );
+        sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
       case TK_DELETE: {
@@ -844,9 +925,10 @@ static int codeTriggerProgram(
           sqlite3TriggerStepSrc(pParse, pStep),
           sqlite3ExprDup(db, pStep->pWhere, 0), 0, 0
         );
+        sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
-      default: assert( pStep->op==TK_SELECT ); {
+      case TK_SELECT: {
         SelectDest sDest;
         Select *pSelect = sqlite3SelectDup(db, pStep->pSelect, 0);
         sqlite3SelectDestInit(&sDest, SRT_Discard, 0);
@@ -854,10 +936,27 @@ static int codeTriggerProgram(
         sqlite3SelectDelete(db, pSelect);
         break;
       }
+      default: assert( pStep->op==TK_RETURNING ); {
+        Select *pSelect = pStep->pSelect;
+        ExprList *pList = pSelect->pEList;
+        SelectDest sDest;
+        Select *pNew;
+        pSelect->pEList =
+           sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
+        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
+        pNew = sqlite3SelectDup(db, pSelect, 0);
+        if( pNew ){
+          sqlite3Select(pParse, pNew, &sDest);
+          if( pNew->selFlags & (SF_Aggregate|SF_HasAgg|SF_WinRewrite) ){
+            sqlite3ErrorMsg(pParse, "aggregates not allowed in RETURNING");
+          }
+          sqlite3SelectDelete(db, pNew);
+        }
+        sqlite3ExprListDelete(db, pSelect->pEList);
+        pStep->pSelect->pEList = pList;
+        break;
+      }
     } 
-    if( pStep->op!=TK_SELECT ){
-      sqlite3VdbeAddOp0(v, OP_ResetCount);
-    }
   }
 
   return 0;
@@ -947,6 +1046,7 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->pToplevel = pTop;
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
+  pSubParse->bReturning = pTrigger->bReturning;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
   pSubParse->disableVtab = pParse->disableVtab;
 
@@ -995,6 +1095,9 @@ static TriggerPrg *codeRowTrigger(
     transferParseError(pParse, pSubParse);
     if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
+    }
+    if( pTrigger->bReturning ){
+      sqlite3VdbeColumnInfoXfer(sqlite3ParseToplevel(pParse)->pVdbe, v);
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
@@ -1150,12 +1253,20 @@ void sqlite3CodeRowTrigger(
     assert( p->pSchema==p->pTabSchema 
          || p->pSchema==pParse->db->aDb[1].pSchema );
 
-    /* Determine whether we should code this trigger */
-    if( p->op==op 
+    /* Determine whether we should code this trigger.  One of two choices:
+    **   1. The trigger is an exact match to the current DML statement
+    **   2. This is a RETURNING trigger for INSERT but we are currently
+    **      doing the UPDATE part of an UPSERT.
+    */
+    if( (p->op==op || (p->bReturning && p->op==TK_INSERT && op==TK_UPDATE))
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
+     && (sqlite3IsToplevel(pParse) || !p->bReturning)
     ){
+      u8 origOp = p->op;
+      p->op = op;
       sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
+      p->op = origOp;
     }
   }
 }

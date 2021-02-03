@@ -371,23 +371,26 @@ static int lookupName(
     ** it is a new.* or old.* trigger argument reference.  Or
     ** maybe it is an excluded.* from an upsert.
     */
-    if( zDb==0 && zTab!=0 && cntTab==0 ){
+    if( zDb==0 && cntTab==0 ){
       pTab = 0;
 #ifndef SQLITE_OMIT_TRIGGER
       if( pParse->pTriggerTab!=0 ){
         int op = pParse->eTriggerOp;
         assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
-        if( op!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
+        if( op!=TK_DELETE && zTab && sqlite3StrICmp("new",zTab) == 0 ){
           pExpr->iTable = 1;
           pTab = pParse->pTriggerTab;
-        }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
+        }else if( op!=TK_INSERT && zTab && sqlite3StrICmp("old",zTab)==0 ){
           pExpr->iTable = 0;
+          pTab = pParse->pTriggerTab;
+        }else if( pParse->bReturning ){
+          pExpr->iTable = op!=TK_DELETE;
           pTab = pParse->pTriggerTab;
         }
       }
 #endif /* SQLITE_OMIT_TRIGGER */
 #ifndef SQLITE_OMIT_UPSERT
-      if( (pNC->ncFlags & NC_UUpsert)!=0 ){
+      if( (pNC->ncFlags & NC_UUpsert)!=0 && ALWAYS(zTab) ){
         Upsert *pUpsert = pNC->uNC.pUpsert;
         if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
           pTab = pUpsert->pUpsertSrc->a[0].pTab;

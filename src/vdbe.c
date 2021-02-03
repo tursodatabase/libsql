@@ -1445,6 +1445,26 @@ case OP_IntCopy: {            /* out2 */
   break;
 }
 
+/* Opcode: ChngCntRow P1 P2 * * *
+** Synopsis: output=r[P1]
+**
+** Output value in register P1 as the chance count for a DML statement,
+** due to the "PRAGMA count_changes=ON" setting.  Or, if there was a
+** foreign key error in the statement, trigger the error now.
+**
+** This opcode is a variant of OP_ResultRow that checks the foreign key
+** immediate constraint count and throws an error if the count is
+** non-zero.  The P2 opcode must be 1.
+*/
+case OP_ChngCntRow: {
+  assert( pOp->p2==1 );
+  if( (rc = sqlite3VdbeCheckFk(p,0))!=SQLITE_OK ){
+    goto abort_due_to_error;
+  }
+  /* Fall through to the next case, OP_String */
+  /* no break */ deliberate_fall_through
+}
+
 /* Opcode: ResultRow P1 P2 * * *
 ** Synopsis: output=r[P1@P2]
 **
@@ -1460,34 +1480,6 @@ case OP_ResultRow: {
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
-
-  /* If this statement has violated immediate foreign key constraints, do
-  ** not return the number of rows modified. And do not RELEASE the statement
-  ** transaction. It needs to be rolled back.  */
-  if( SQLITE_OK!=(rc = sqlite3VdbeCheckFk(p, 0)) ){
-    assert( db->flags&SQLITE_CountRows );
-    assert( p->usesStmtJournal );
-    goto abort_due_to_error;
-  }
-
-  /* If the SQLITE_CountRows flag is set in sqlite3.flags mask, then 
-  ** DML statements invoke this opcode to return the number of rows 
-  ** modified to the user. This is the only way that a VM that
-  ** opens a statement transaction may invoke this opcode.
-  **
-  ** In case this is such a statement, close any statement transaction
-  ** opened by this VM before returning control to the user. This is to
-  ** ensure that statement-transactions are always nested, not overlapping.
-  ** If the open statement-transaction is not closed here, then the user
-  ** may step another VM that opens its own statement transaction. This
-  ** may lead to overlapping statement transactions.
-  **
-  ** The statement transaction is never a top-level transaction.  Hence
-  ** the RELEASE call below can never fail.
-  */
-  assert( p->iStatement==0 || db->flags&SQLITE_CountRows );
-  rc = sqlite3VdbeCloseStatement(p, SAVEPOINT_RELEASE);
-  assert( rc==SQLITE_OK );
 
   /* Invalidate all ephemeral cursor row caches */
   p->cacheCtr = (p->cacheCtr + 2)|1;
