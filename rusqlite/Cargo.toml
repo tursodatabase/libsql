@@ -12,7 +12,6 @@ license = "MIT"
 categories = ["database"]
 
 [badges]
-travis-ci = { repository = "rusqlite/rusqlite" }
 appveyor = { repository = "rusqlite/rusqlite" }
 codecov = { repository = "rusqlite/rusqlite" }
 maintenance = { status = "actively-developed" }
