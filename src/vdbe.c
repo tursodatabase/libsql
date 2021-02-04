@@ -1445,6 +1445,60 @@ case OP_IntCopy: {            /* out2 */
   break;
 }
 
+/* Opcode: Returning P1 P2 * * *
+** Synopsis: output=r[P1@P2]
+**
+** The registers P1 through P1+P2-1 contain a single row of
+** results. This opcode causes the sqlite3_step() call to terminate
+** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
+** structure to provide access to the r(P1)..r(P1+P2-1) values as
+** the result row.
+**
+** This opcode is like OP_ResultRow with the addition that it enforces
+** nesting order for concurrent prepared statements.  This opcode
+** is always followed immediately by an OP_CkNesting opcode which does
+** the actual nesting test.  DML statement that have a RETURNING clause
+** use this opcode, rather than OP_ResultRow, to return their results,
+** and thus prevent interleaved DML statements.
+*/
+case OP_Returning: {
+  assert( pOp[1].opcode==OP_CkNesting );
+  if( p->pPrev ){
+    p->pPrev->pNext = p->pNext;
+    if( p->pNext ) p->pNext->pPrev = p->pPrev;
+    p->pPrev = 0;
+    p->pNext = db->pVdbe;
+    db->pVdbe = p;
+  }
+  p->bUsesReturning = 1;
+  goto result_row_opcode_body;
+}
+
+
+/* Opcode: CkNested * * * * *
+** 
+** This opcode always follows an OP_Returning opcode.  Thus, it is
+** the first opcode to run on the next sqlite3_step() call after
+** receiving the results of a RETURNING clause in a DML statement.
+**
+** This opcode checks to verify that the DML statements are properly
+** nested.  If an error occurs, it returns SQLITE_BUSY_NESTING.
+*/
+case OP_CkNesting: {
+  Vdbe *pX;
+  for(pX=db->pVdbe; pX!=p && ALWAYS(pX!=0); pX=pX->pNext){
+    if( pX->bUsesReturning
+     && pX->iVdbeMagic==VDBE_MAGIC_RUN
+     && pX->pc>0
+    ){
+      rc = SQLITE_BUSY;
+      goto vdbe_return;
+    }
+  }
+  break;
+}
+
+
 /* Opcode: ChngCntRow P1 P2 * * *
 ** Synopsis: output=r[P1]
 **
@@ -1477,6 +1531,8 @@ case OP_ChngCntRow: {
 case OP_ResultRow: {
   Mem *pMem;
   int i;
+
+  result_row_opcode_body:
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );

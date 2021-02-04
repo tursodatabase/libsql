@@ -3201,7 +3201,9 @@ struct Select {
 **                     the side-effects of functions.
 **
 **     SRT_Output      Generate a row of output (using the OP_ResultRow
-**                     opcode) for each row in the result set.
+**                     opcode) for each row in the result set.  If iSDParm
+**                     is negative, then enforce strict nesting order
+**                     on concurrent statements.
 **
 **     SRT_Mem         Only valid if the result is a single column.
 **                     Store the first column of the first result row

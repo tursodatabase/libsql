@@ -2954,7 +2954,7 @@ static SQLITE_NOINLINE int vdbeCloseStatement(Vdbe *p, int eOp){
 
   assert( eOp==SAVEPOINT_ROLLBACK || eOp==SAVEPOINT_RELEASE);
   assert( db->nStatement>0 );
-  assert( p->iStatement==(db->nStatement+db->nSavepoint) );
+  /* assert( p->iStatement==(db->nStatement+db->nSavepoint) ); */
 
   for(i=0; i<db->nDb; i++){ 
     int rc2 = SQLITE_OK;

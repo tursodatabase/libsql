@@ -943,7 +943,7 @@ static int codeTriggerProgram(
         Select *pNew;
         pSelect->pEList =
            sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
-        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
+        sqlite3SelectDestInit(&sDest, SRT_Output, -1);
         pNew = sqlite3SelectDup(db, pSelect, 0);
         if( pNew ){
           sqlite3Select(pParse, pNew, &sDest);

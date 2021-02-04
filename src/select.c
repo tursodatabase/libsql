@@ -1210,10 +1210,15 @@ static void selectInnerLoop(
       if( pSort ){
         pushOntoSorter(pParse, pSort, p, regResult, regOrig, nResultCol,
                        nPrefixReg);
-      }else if( eDest==SRT_Coroutine ){
-        sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
+      }else if( eDest==SRT_Output ){
+        if( pDest->iSDParm>=0 ){
+          sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nResultCol);
+        }else{
+          sqlite3VdbeAddOp2(v, OP_Returning, regResult, nResultCol);
+          sqlite3VdbeAddOp0(v, OP_CkNesting);
+        }
       }else{
-        sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nResultCol);
+        sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }
       break;
     }

@@ -634,6 +634,9 @@ static int sqlite3Step(Vdbe *p){
     ** previous sqlite3_step() returned something other than a SQLITE_LOCKED
     ** or SQLITE_BUSY error.
     */
+    if( p->iVDbeMagic==VDBE_MAGIC_ABORT ){
+      return SQLITE_ABORT;
+    }
 #ifdef SQLITE_OMIT_AUTORESET
     if( (rc = p->rc&0xff)==SQLITE_BUSY || rc==SQLITE_LOCKED ){
       sqlite3_reset((sqlite3_stmt*)p);
