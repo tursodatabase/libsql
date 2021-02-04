@@ -259,7 +259,6 @@ void sqlite3VdbeResetStepResult(Vdbe*);
 void sqlite3VdbeRewind(Vdbe*);
 int sqlite3VdbeReset(Vdbe*);
 void sqlite3VdbeSetNumCols(Vdbe*,int);
-void sqlite3VdbeColumnInfoXfer(Vdbe*,Vdbe*);
 int sqlite3VdbeSetColName(Vdbe*, int, int, const char *, void(*)(void*));
 void sqlite3VdbeCountChanges(Vdbe*);
 sqlite3 *sqlite3VdbeDb(Vdbe*);

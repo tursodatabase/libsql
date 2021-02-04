@@ -761,16 +761,21 @@ Trigger *sqlite3TriggersExist(
         ** us what time of trigger it should be. */
         assert( sqlite3IsToplevel(pParse) );
         p->op = op;
-        mask |= TRIGGER_AFTER;
-        if( IsVirtual(pTab) && op!=TK_INSERT ){
-          sqlite3ErrorMsg(pParse,
-             "%s RETURNING is not available on virtual tables",
-             op==TK_DELETE ? "DELETE" : "UPDATE");
+        if( IsVirtual(pTab) ){
+          if( op!=TK_INSERT ){
+            sqlite3ErrorMsg(pParse,
+              "%s RETURNING is not available on virtual tables",
+              op==TK_DELETE ? "DELETE" : "UPDATE");
+          }
+          p->tr_tm = TRIGGER_BEFORE;
+        }else{
+          p->tr_tm = TRIGGER_AFTER;
         }
+        mask |= p->tr_tm;
       }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
                 && sqlite3IsToplevel(pParse) ){
         /* Also fire a RETURNING trigger for an UPSERT */
-        mask |= TRIGGER_AFTER;
+        mask |= p->tr_tm;
       }
       p = p->pNext;
     }while( p );
@@ -1091,7 +1096,6 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->pToplevel = pTop;
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
-  pSubParse->bReturning = pTrigger->bReturning;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
   pSubParse->disableVtab = pParse->disableVtab;
 
@@ -1140,9 +1144,6 @@ static TriggerPrg *codeRowTrigger(
     transferParseError(pParse, pSubParse);
     if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
-    }
-    if( pTrigger->bReturning ){
-      sqlite3VdbeColumnInfoXfer(sqlite3ParseToplevel(pParse)->pVdbe, v);
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
