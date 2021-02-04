@@ -70,6 +70,8 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
         pTrig->pNext = pList;
         pList = pTrig;
       }else if( pTrig->op==TK_RETURNING ){
+        assert( pParse->bReturning );
+        assert( &(pParse->u1.pReturning->retTrig) == pTrig );
         pTrig->table = pTab->zName;
         pTrig->pTabSchema = pTab->pSchema;
         pTrig->pNext = pList;
@@ -858,6 +860,55 @@ static ExprList *sqlite3ExpandReturning(
 }
 
 /*
+** Generate code for the RETURNING trigger.  Unlike other triggers
+** that invoke a subprogram in the bytecode, the code for RETURNING
+** is generated in-line.
+*/
+static void codeReturningTrigger(
+  Parse *pParse,       /* Parse context */
+  Trigger *pTrigger,   /* The trigger step that defines the RETURNING */
+  Table *pTab,         /* The table to code triggers from */
+  int reg              /* The first in an array of registers */
+){
+  Vdbe *v = pParse->pVdbe;
+  ExprList *pNew;
+  Returning *pReturning;
+
+  assert( v!=0 );
+  assert( pParse->bReturning );
+  pReturning = pParse->u1.pReturning;
+  assert( pTrigger == &(pReturning->retTrig) );
+  sqlite3VdbeAddOp0(v, OP_Noop);
+  VdbeComment((v, "RETURNING trigger goes here"));
+  pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
+  if( pNew ){
+    pReturning->nRetCol = pNew->nExpr;
+    pReturning->iRetCur = pParse->nTab++;
+    sqlite3ExprListDelete(pParse->db, pNew);
+  }
+
+#if 0
+        pSelect->pEList =
+           sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
+        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
+        pNew = sqlite3SelectDup(db, pSelect, 0);
+        if( pNew ){
+          sqlite3Select(pParse, pNew, &sDest);
+          if( pNew->selFlags & (SF_Aggregate|SF_HasAgg|SF_WinRewrite) ){
+            sqlite3ErrorMsg(pParse, "aggregates not allowed in RETURNING");
+          }
+          sqlite3SelectDelete(db, pNew);
+        }
+        sqlite3ExprListDelete(db, pSelect->pEList);
+        pStep->pSelect->pEList = pList;
+        break;
+      }
+#endif
+}
+
+
+
+/*
 ** Generate VDBE code for the statements inside the body of a single 
 ** trigger.
 */
@@ -928,32 +979,12 @@ static int codeTriggerProgram(
         sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
-      case TK_SELECT: {
+      default: assert( pStep->op==TK_SELECT ); {
         SelectDest sDest;
         Select *pSelect = sqlite3SelectDup(db, pStep->pSelect, 0);
         sqlite3SelectDestInit(&sDest, SRT_Discard, 0);
         sqlite3Select(pParse, pSelect, &sDest);
         sqlite3SelectDelete(db, pSelect);
-        break;
-      }
-      default: assert( pStep->op==TK_RETURNING ); {
-        Select *pSelect = pStep->pSelect;
-        ExprList *pList = pSelect->pEList;
-        SelectDest sDest;
-        Select *pNew;
-        pSelect->pEList =
-           sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
-        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
-        pNew = sqlite3SelectDup(db, pSelect, 0);
-        if( pNew ){
-          sqlite3Select(pParse, pNew, &sDest);
-          if( pNew->selFlags & (SF_Aggregate|SF_HasAgg|SF_WinRewrite) ){
-            sqlite3ErrorMsg(pParse, "aggregates not allowed in RETURNING");
-          }
-          sqlite3SelectDelete(db, pNew);
-        }
-        sqlite3ExprListDelete(db, pSelect->pEList);
-        pStep->pSelect->pEList = pList;
         break;
       }
     } 
@@ -1208,7 +1239,7 @@ void sqlite3CodeRowTriggerDirect(
 **   ...            ...
 **   reg+N          OLD.* value of right-most column of pTab
 **   reg+N+1        NEW.rowid
-**   reg+N+2        OLD.* value of left-most column of pTab
+**   reg+N+2        NEW.* value of left-most column of pTab
 **   ...            ...
 **   reg+N+N+1      NEW.* value of right-most column of pTab
 **
@@ -1261,12 +1292,12 @@ void sqlite3CodeRowTrigger(
     if( (p->op==op || (p->bReturning && p->op==TK_INSERT && op==TK_UPDATE))
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
-     && (sqlite3IsToplevel(pParse) || !p->bReturning)
     ){
-      u8 origOp = p->op;
-      p->op = op;
-      sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
-      p->op = origOp;
+      if( !p->bReturning ){
+        sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
+      }else if( sqlite3IsToplevel(pParse) ){
+        codeReturningTrigger(pParse, p, pTab, reg);
+      }
     }
   }
 }
@@ -1311,13 +1342,18 @@ u32 sqlite3TriggerColmask(
 
   assert( isNew==1 || isNew==0 );
   for(p=pTrigger; p; p=p->pNext){
-    if( p->op==op && (tr_tm&p->tr_tm)
+    if( p->op==op
+     && (tr_tm&p->tr_tm)
      && checkColumnOverlap(p->pColumns,pChanges)
     ){
-      TriggerPrg *pPrg;
-      pPrg = getRowTrigger(pParse, p, pTab, orconf);
-      if( pPrg ){
-        mask |= pPrg->aColmask[isNew];
+      if( p->bReturning ){
+        mask = 0xffffffff;
+      }else{
+        TriggerPrg *pPrg;
+        pPrg = getRowTrigger(pParse, p, pTab, orconf);
+        if( pPrg ){
+          mask |= pPrg->aColmask[isNew];
+        }
       }
     }
   }

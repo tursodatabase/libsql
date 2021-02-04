@@ -3425,7 +3425,10 @@ struct Parse {
   Table *pTriggerTab;  /* Table triggers are being coded for */
   Parse *pParentParse; /* Parent parser if this parser is nested */
   AggInfo *pAggList;   /* List of all AggInfo objects */
-  int addrCrTab;       /* Address of OP_CreateBtree opcode on CREATE TABLE */
+  union {
+    int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
+    Returning *pReturning; /* The RETURNING clause */
+  } u1;
   u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
@@ -3647,7 +3650,7 @@ struct TriggerStep {
   char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
   SrcList *pFrom;      /* FROM clause for UPDATE statement (if any) */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
-  ExprList *pExprList; /* SET clause for UPDATE */
+  ExprList *pExprList; /* SET clause for UPDATE, or RETURNING clause */
   IdList *pIdList;     /* Column names for INSERT */
   Upsert *pUpsert;     /* Upsert clauses on an INSERT */
   char *zSpan;         /* Original SQL text of this command */
@@ -3663,8 +3666,8 @@ struct Returning {
   ExprList *pReturnEL;  /* List of expressions to return */
   Trigger retTrig;      /* The transient trigger that implements RETURNING */
   TriggerStep retTStep; /* The trigger step */
-  Select retSel;        /* The SELECT statement that implements RETURNING */
-  u64 retSrcList;       /* The empty FROM clause of the SELECT */
+  int iRetCur;          /* Transient table holding RETURNING results */
+  int nRetCol;          /* Number of in pReturnEL after expansion */
 };
 
 /*

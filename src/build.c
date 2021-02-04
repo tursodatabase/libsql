@@ -155,6 +155,24 @@ void sqlite3FinishCoding(Parse *pParse){
   assert( !pParse->isMultiWrite 
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));
   if( v ){
+    if( pParse->bReturning ){
+      Returning *pReturning = pParse->u1.pReturning;
+      int addrRewind;
+      int i;
+      int reg;
+
+      sqlite3VdbeAddOp0(v, OP_Noop);  VdbeComment((v, "TODO: Commit changes"));
+      addrRewind =
+         sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+      reg = pParse->nMem+1;
+      pParse->nMem += pReturning->nRetCol;
+      for(i=0; i<pReturning->nRetCol; i++){
+        sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
+      }
+      sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
+      sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+      sqlite3VdbeJumpHere(v, addrRewind);
+    }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
 #if SQLITE_USER_AUTHENTICATION
@@ -230,6 +248,11 @@ void sqlite3FinishCoding(Parse *pParse){
             sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
           }
         }
+      }
+
+      if( pParse->bReturning ){
+        Returning *pRet = pParse->u1.pReturning;
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
       }
 
       /* Finally, jump back to the beginning of the executable code. */
@@ -1213,7 +1236,8 @@ void sqlite3StartTable(
     }else
 #endif
     {
-      pParse->addrCrTab =
+      assert( !pParse->bReturning );
+      pParse->u1.addrCrTab =
          sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, reg2, BTREE_INTKEY);
     }
     sqlite3OpenSchemaTable(pParse, iDb);
@@ -1291,6 +1315,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
     sqlite3ExprListDelete(db, pList);
     return;
   }
+  pParse->u1.pReturning = pRet;
   pRet->pParse = pParse;
   pRet->pReturnEL = pList;
   sqlite3ParserAddCleanup(pParse,
@@ -1304,10 +1329,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTrig.step_list = &pRet->retTStep;
   pRet->retTStep.op = TK_RETURNING;
   pRet->retTStep.pTrig = &pRet->retTrig;
-  pRet->retTStep.pSelect = &pRet->retSel;
-  pRet->retSel.op = TK_ALL;
-  pRet->retSel.pEList = pList;
-  pRet->retSel.pSrc = (SrcList*)&pRet->retSrcList;
+  pRet->retTStep.pExprList = pList;
   pHash = &(db->aDb[1].pSchema->trigHash);
   assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0 );
   if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
@@ -2147,9 +2169,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   /* Convert the P3 operand of the OP_CreateBtree opcode from BTREE_INTKEY
   ** into BTREE_BLOBKEY.
   */
-  if( pParse->addrCrTab ){
+  assert( !pParse->bReturning );
+  if( pParse->u1.addrCrTab ){
     assert( v );
-    sqlite3VdbeChangeP3(v, pParse->addrCrTab, BTREE_BLOBKEY);
+    sqlite3VdbeChangeP3(v, pParse->u1.addrCrTab, BTREE_BLOBKEY);
   }
 
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
