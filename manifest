@@ -1,5 +1,5 @@
-C Corrections\sto\sthe\s'filepath_normalize'\stest\ssuite\shelper\sprocedure.
-D 2021-02-03T19:38:40.978
+C Performance\soptimization\sin\ssqlite3FinishCoding().
+D 2021-02-04T13:44:42.342
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 4da25694985ac8f5f714bfa58a6cd453f9161d7da9394a95605aaa4db2752757
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c 118e1076282415229420d04f9cc25bb148a2c412d82ea3c319136d2122c842e5
+F src/build.c 4a70f3ce393dba6963e7d74f72fab0108da6c87e43f1d8afe3fdb31034e190f6
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b29e549bb34933bfd0758e31085e65dcc0f75446c478fc775d96cf01c22cf43
-R 85ac248a64299c59878f72d774654f84
-U mistachkin
-Z cd094eb04790b0c848908f94f1895107
+P 32f4d04470bf953b08eea285543f16e03de13d5448c1ebccbba1578ca3b5363e
+R cafbcf0e593374a18560abb41780f369
+U drh
+Z bc6fff01a90b824647bf326788fdbb3d
