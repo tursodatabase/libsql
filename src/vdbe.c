@@ -30,7 +30,7 @@
 ** be changed out from under the copy.  This macro verifies that nothing
 ** like that ever happens.
 */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 # define memAboutToChange(P,M) sqlite3VdbeMemAboutToChange(P,M)
 #else
 # define memAboutToChange(P,M)
@@ -117,7 +117,7 @@ int sqlite3_found_count = 0;
 # define UPDATE_MAX_BLOBSIZE(P)
 #endif
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 /* This routine provides a convenient place to set a breakpoint during
 ** tracing with PRAGMA vdbe_trace=on.  The breakpoint fires right after
 ** each opcode is printed.  Variables "pc" (program counter) and pOp are
@@ -476,7 +476,7 @@ static u16 numericType(Mem *pMem){
   return 0;
 }
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 /*
 ** Write a nice string representation of the contents of cell pMem
 ** into buffer zBuf, length nBuf.
@@ -537,7 +537,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
 }
 #endif
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 /*
 ** Print the value of a register for tracing purposes:
 */
@@ -578,7 +578,7 @@ static void registerTrace(int iReg, Mem *p){
 }
 #endif
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 /*
 ** Show the values of all registers in the virtual machine.  Used for
 ** interactive debugging.
@@ -590,7 +590,7 @@ void sqlite3VdbeRegisterDump(Vdbe *v){
 #endif /* SQLITE_DEBUG */
 
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 #  define REGISTER_TRACE(R,M) if(db->flags&SQLITE_VdbeTrace)registerTrace(R,M)
 #else
 #  define REGISTER_TRACE(R,M)
@@ -660,10 +660,10 @@ int sqlite3VdbeExec(
 ){
   Op *aOp = p->aOp;          /* Copy of p->aOp */
   Op *pOp = aOp;             /* Current operation */
-#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE) || defined(DEBUG_VIRTUAL_MACHINE)
   Op *pOrigOp;               /* Value of pOp at the top of the loop */
 #endif
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   int nExtraDelete = 0;      /* Verifies FORDELETE and AUXDELETE flags */
 #endif
   int rc = SQLITE_OK;        /* Value to return */
@@ -711,7 +711,7 @@ int sqlite3VdbeExec(
   db->busyHandler.nBusy = 0;
   if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   sqlite3BeginBenignMalloc();
   if( p->pc==0
    && (p->db->flags & (SQLITE_VdbeListing|SQLITE_VdbeEQP|SQLITE_VdbeTrace))!=0
@@ -752,9 +752,9 @@ int sqlite3VdbeExec(
     if( p->anExec ) p->anExec[(int)(pOp-aOp)]++;
 #endif
 
-    /* Only allow tracing if SQLITE_DEBUG is defined.
+    /* Only allow tracing if SQLITE_DEBUG or DEBUG_VIRTUAL_MACHINE is defined.
     */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     if( db->flags & SQLITE_VdbeTrace ){
       sqlite3VdbePrintOp(stdout, (int)(pOp - aOp), pOp);
       test_trace_breakpoint((int)(pOp - aOp),pOp,p);
@@ -775,7 +775,7 @@ int sqlite3VdbeExec(
 #endif
 
     /* Sanity checking on other operands */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     {
       u8 opProperty = sqlite3OpcodeProperty[pOp->opcode];
       if( (opProperty & OPFLG_IN1)!=0 ){
@@ -811,7 +811,7 @@ int sqlite3VdbeExec(
       }
     }
 #endif
-#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE) || defined(DEBUG_VIRTUAL_MACHINE)
     pOrigOp = pOp;
 #endif
   
@@ -866,7 +866,7 @@ int sqlite3VdbeExec(
 */
 case OP_Goto: {             /* jump */
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   /* In debuggging mode, when the p5 flags is set on an OP_Goto, that
   ** means we should really jump back to the preceeding OP_ReleaseReg
   ** instruction. */
@@ -1028,7 +1028,7 @@ case OP_Yield: {            /* in1, jump */
 */
 case OP_HaltIfNull: {      /* in3 */
   pIn3 = &aMem[pOp->p3];
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
   if( (pIn3->flags & MEM_Null)==0 ) break;
@@ -1071,7 +1071,7 @@ case OP_Halt: {
   int pcx;
 
   pcx = (int)(pOp - aOp);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
   if( pOp->p1==SQLITE_OK && p->pFrame ){
@@ -1258,7 +1258,7 @@ case OP_Null: {           /* out2 */
   assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
   pOut->flags = nullFlag = pOp->p1 ? (MEM_Null|MEM_Cleared) : MEM_Null;
   pOut->n = 0;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pOut->uTemp = 0;
 #endif
   while( cnt>0 ){
@@ -1356,7 +1356,7 @@ case OP_Move: {
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
     sqlite3VdbeMemMove(pOut, pIn1);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     pIn1->pScopyFrom = 0;
     { int i;
       for(i=1; i<p->nMem; i++){
@@ -1393,7 +1393,7 @@ case OP_Copy: {
     memAboutToChange(p, pOut);
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     Deephemeralize(pOut);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     pOut->pScopyFrom = 0;
 #endif
     REGISTER_TRACE(pOp->p2+pOp->p3-n, pOut);
@@ -1422,7 +1422,7 @@ case OP_SCopy: {            /* out2 */
   pOut = &aMem[pOp->p2];
   assert( pOut!=pIn1 );
   sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pOut->pScopyFrom = pIn1;
   pOut->mScopyFlags = pIn1->flags;
 #endif
@@ -1496,7 +1496,7 @@ case OP_ResultRow: {
             || (pMem[i].flags & (MEM_Str|MEM_Blob))==0 );
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     REGISTER_TRACE(pOp->p1+i, &pMem[i]);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     /* The registers in the result will not be used again when the
     ** prepared statement restarts.  This is because sqlite3_column()
     ** APIs might have caused type conversions of made other changes to
@@ -2180,7 +2180,7 @@ compare_op:
 */
 case OP_ElseNotEq: {       /* same as TK_ESCAPE, jump */
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   /* Verify the preconditions of this opcode - that it follows an OP_Lt or
   ** OP_Gt with the SQLITE_STOREP2 flag set, with zero or more intervening
   ** OP_ReleaseReg opcodes */
@@ -2264,7 +2264,7 @@ case OP_Compare: {
   assert( pKeyInfo!=0 );
   p1 = pOp->p1;
   p2 = pOp->p2;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( aPermute ){
     int k, mx = 0;
     for(k=0; k<n; k++) if( aPermute[k]>(u32)mx ) mx = aPermute[k];
@@ -3837,7 +3837,7 @@ case OP_OpenWrite:
   pCur->nullRow = 1;
   pCur->isOrdered = 1;
   pCur->pgnoRoot = p2;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pCur->wrFlag = wrFlag;
 #endif
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->uc.pCursor);
@@ -4223,7 +4223,7 @@ case OP_SeekGT: {       /* jump, in3, group */
   oc = pOp->opcode;
   eqOnly = 0;
   pC->nullRow = 0;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pC->seekOp = pOp->opcode;
 #endif
 
@@ -4327,7 +4327,7 @@ case OP_SeekGT: {       /* jump, in3, group */
     assert( oc!=OP_SeekLT || r.default_rc==+1 );
 
     r.aMem = &aMem[pOp->p3];
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
     r.eqSeen = 0;
@@ -4459,7 +4459,7 @@ case OP_SeekScan: {
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( !pC->isTable );
   if( !sqlite3BtreeCursorIsValidNN(pC->uc.pCursor) ){
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
      if( db->flags&SQLITE_VdbeTrace ){
        printf("... cursor not valid - fall through\n");
      }        
@@ -4472,7 +4472,7 @@ case OP_SeekScan: {
   r.nField = (u16)pOp[1].p4.i;
   r.default_rc = 0;
   r.aMem = &aMem[pOp[1].p3];
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   {
     int i;
     for(i=0; i<r.nField; i++){
@@ -4487,7 +4487,7 @@ case OP_SeekScan: {
     if( rc ) goto abort_due_to_error;
     if( res>0 ){
       seekscan_search_fail:
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... %d steps and then skip\n", pOp->p1 - nStep);
       }        
@@ -4497,7 +4497,7 @@ case OP_SeekScan: {
       goto jump_to_p2;
     }
     if( res==0 ){
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... %d steps and then success\n", pOp->p1 - nStep);
       }        
@@ -4507,7 +4507,7 @@ case OP_SeekScan: {
       break;
     }
     if( nStep<=0 ){
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... fall through after %d steps\n", pOp->p1);
       }        
@@ -4692,7 +4692,7 @@ case OP_Found: {        /* jump, in3 */
   assert( pOp->p4type==P4_INT32 );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pC->seekOp = pOp->opcode;
 #endif
   pIn3 = &aMem[pOp->p3];
@@ -4703,7 +4703,7 @@ case OP_Found: {        /* jump, in3 */
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
     r.aMem = pIn3;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     for(ii=0; ii<r.nField; ii++){
       assert( memIsValid(&r.aMem[ii]) );
       assert( (r.aMem[ii].flags & MEM_Zero)==0 || r.aMem[ii].n==0 );
@@ -4835,7 +4835,7 @@ case OP_NotExists:          /* jump, in3 */
 notExistsWithKey:
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( pOp->opcode==OP_SeekRowid ) pC->seekOp = OP_SeekRowid;
 #endif
   assert( pC->isTable );
@@ -5215,7 +5215,7 @@ case OP_Delete: {
   assert( pC->deferredMoveto==0 );
   sqlite3VdbeIncrWriteCounter(p, pC);
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( pOp->p4type==P4_TABLE
    && HasRowid(pOp->p4.pTab)
    && pOp->p5==0
@@ -5268,7 +5268,7 @@ case OP_Delete: {
   assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
   assert( OPFLAG_AUXDELETE==BTREE_AUXDELETE );
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( p->pFrame==0 ){
     if( pC->isEphemeral==0
         && (pOp->p5 & OPFLAG_AUXDELETE)==0
@@ -5508,7 +5508,7 @@ case OP_NullRow: {
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
   }
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( pC->seekOp==0 ) pC->seekOp = OP_NullRow;
 #endif
   break;
@@ -5549,7 +5549,7 @@ case OP_Last: {        /* jump */
   pCrsr = pC->uc.pCursor;
   res = 0;
   assert( pCrsr!=0 );
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pC->seekOp = pOp->opcode;
 #endif
   if( pOp->opcode==OP_SeekEnd ){
@@ -5653,7 +5653,7 @@ case OP_Rewind: {        /* jump */
   assert( pC!=0 );
   assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
   res = 1;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   pC->seekOp = OP_Rewind;
 #endif
   if( isSorter(pC) ){
@@ -6083,7 +6083,7 @@ case OP_IdxGE:  {       /* jump */
     r.default_rc = 0;
   }
   r.aMem = &aMem[pOp->p3];
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   {
     int i;
     for(i=0; i<r.nField; i++){
@@ -6316,7 +6316,7 @@ case OP_ParseSchema: {
   ** on every btree.  This is a prerequisite for invoking 
   ** sqlite3InitCallback().
   */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   for(iDb=0; iDb<db->nDb; iDb++){
     assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
   }
@@ -6685,7 +6685,7 @@ case OP_Program: {        /* jump */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
 #endif
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     pFrame->iFrameMagic = SQLITE_FRAME_MAGIC;
 #endif
 
@@ -6724,7 +6724,7 @@ case OP_Program: {        /* jump */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   p->anExec = 0;
 #endif
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   /* Verify that second and subsequent executions of the same trigger do not
   ** try to reuse register values from the first use. */
   {
@@ -7015,7 +7015,7 @@ case OP_AggStep1: {
   pCtx = pOp->p4.pCtx;
   pMem = &aMem[pOp->p3];
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( pOp->p1 ){
     /* This is an OP_AggInverse call.  Verify that xStep has always
     ** been called at least once prior to any xInverse call. */
@@ -7035,7 +7035,7 @@ case OP_AggStep1: {
     for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
   }
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   for(i=0; i<pCtx->argc; i++){
     assert( memIsValid(pCtx->argv[i]) );
     REGISTER_TRACE(pOp->p2+i, pCtx->argv[i]);
@@ -7909,7 +7909,7 @@ case OP_Function: {            /* group */
   assert( pCtx->pVdbe==p );
 
   memAboutToChange(p, pOut);
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   for(i=0; i<pCtx->argc; i++){
     assert( memIsValid(pCtx->argv[i]) );
     REGISTER_TRACE(pOp->p2+i, pCtx->argv[i]);
@@ -8017,7 +8017,7 @@ case OP_Init: {          /* jump */
     }
   }
 #endif /* SQLITE_USE_FCNTL_TRACE */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
   if( (db->flags & SQLITE_SqlTrace)!=0
    && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0
   ){
@@ -8061,7 +8061,7 @@ case OP_CursorHint: {
 }
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 /* Opcode:  Abortable   * * * * *
 **
 ** Verify that an Abort can happen.  Assert if an Abort at this point
@@ -8077,7 +8077,7 @@ case OP_Abortable: {
 }
 #endif
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
 /* Opcode:  ReleaseReg   P1 P2 P3 * P5
 ** Synopsis: release r[P1@P2] mask P3
 **
@@ -8167,7 +8167,7 @@ default: {          /* This is really OP_Noop, OP_Explain */
 #ifndef NDEBUG
     assert( pOp>=&aOp[-1] && pOp<&aOp[p->nOp-1] );
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(DEBUG_VIRTUAL_MACHINE)
     if( db->flags & SQLITE_VdbeTrace ){
       u8 opProperty = sqlite3OpcodeProperty[pOrigOp->opcode];
       if( rc!=0 ) printf("rc=%d\n",rc);

@@ -1,5 +1,5 @@
-C Add\sNEVER()\sto\sa\sbranch\sthat\scheck-in\s[5d54d9fd40638138]\sapparently\smade\nunreachable.
-D 2021-02-04T13:52:34.346
+C Initial\scommit
+D 2021-02-04T21:19:24.732
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -546,7 +546,7 @@ F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a087
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 0fda3b2c05b1559135aa2c4ecb8e75bd2085ba4433310bbb5427d97c2d81315d
+F src/sqliteInt.h eb303ae364d57210a745bbcba1bc2fb9b0dd004682fd86a7645a63d65156876a
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -613,7 +613,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c b3c9a3f9d546d4848a2a8c88a3c40875cd6ba3d248d9b99d01b1eeb38b29c171
+F src/vdbe.c 50350d7db53b676c6efa120f95da7f6b1ce3588f4ddbd75907ad744c173a0c06
 F src/vdbe.h a71bf43572d3de57923d1928ac01ae8d355cd67e94462ba4f7462265cedbef9a
 F src/vdbeInt.h 3df118924e1711f1bbc8e30c46260d0ab6c3b029b32dd411f789111f76434f3c
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1899,7 +1899,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f34f241d37cc4f31dc657a6fc33815fa5e24298487121cb27c29118524b8ee7
-R cff545e4a39efc504a1ff4bec6444fd1
-U drh
-Z e8f529c01cdfd85106db62be4d9db740
+P 5c8e6296aa9f69a092364524b716ba894f113f7f1e6024b9a2eaa01c239e65c1
+R 070e022aecbc893ee01aafb7a2c4ea5f
+T *branch * selective-debug
+T *sym-selective-debug *
+T -sym-trunk *
+U shearer
+Z e1856ad9f09c03d3f05e46c1ad06680d

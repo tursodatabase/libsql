@@ -294,6 +294,26 @@
 #  endif
 #endif
 
+/* 
+** These are the Selective Debugging macros, which give finer-grained debugging 
+** than available via SQLITE_DEBUG. No use of SQLITE_DEBUG is disturbed   
+** if code uses Selective Debugging. Selective Debugging introduces both
+** debug levels (ie a value for DEBUG_LEVEL) and also debug classes (for 
+** example, DEBUG_VIRTUAL_MACHINE or DEBUG_STORAGE).
+** 
+** Levels of Debugging Info, currently 3 levels 1-3
+**
+** Level 3 is the default, and applies if DEBUG_LEVEL is undefined
+**
+**
+** Level 1      status labels, such as "Flag status in Opcode XX is %s". Also
+**              useful for ad-hoc debugging 
+** Level 2      Level 1 plus flow labels, such as notification of 
+**              "Entering/Leaving Function X"
+** Level 3      Level 2 plus data structure dumps, and anything else
+*/
+
+
 /*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
@@ -4171,11 +4191,45 @@ struct PrintfArguments {
 
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
-#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE) || defined(SQLITE_SELECTIVE_DEBUG)
   void sqlite3DebugPrintf(const char*, ...);
 #endif
 #if defined(SQLITE_TEST)
   void *sqlite3TestTextToPtr(const char*);
+#endif
+
+#if defined(SQLITE_SELECTIVE_DEBUG)
+	#define SELECTIVE_DEBUG(l) DEBUG_ALL || (l)
+
+	#if !defined(DEBUG_LEVEL) /* default to 3 */
+	#define DEBUG_LEVEL 3
+	#endif
+
+	#if (DEBUG_LEVEL < 1) || (DEBUG_LEVEL > 3)
+	#error "DEBUG_LEVEL must be between 1 and 3. Default is 3"
+	#endif
+#else
+	#define SELECTIVE_DEBUG(l) 0
+
+	#if defined(DEBUG_ALL)
+	#error "DEBUG_ALL specified without SQLITE_SELECTIVE_DEBUG"
+	#endif
+
+	#if defined(DEBUG_LEVEL)
+	#error "DEBUG_LEVEL specified without SQLITE_SELECTIVE_DEBUG"
+	#endif
+
+#endif
+
+#if defined(SELECTIVE_DEBUG)
+
+	#define DEBUG_PRINT(level,x) \
+		if (level <= DEBUG_LEVEL) { \
+	       		sqlite3DebugPrintf("Level: %d file:%s line:%d %s\n",level,__FILE__,__LINE__,x); \
+		}
+		
+#else
+	#define DEBUG_PRINT(x) do {} while (0)
 #endif
 
 #if defined(SQLITE_DEBUG)
