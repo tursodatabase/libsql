@@ -832,6 +832,7 @@ static ExprList *sqlite3ExpandReturning(
   ExprList *pNew = 0;
   sqlite3 *db = pParse->db;
   int i;
+
   for(i=0; i<pList->nExpr; i++){
     Expr *pOldExpr = pList->a[i].pExpr;
     if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
@@ -856,6 +857,15 @@ static ExprList *sqlite3ExpandReturning(
       }
     }
   }
+  if( !db->mallocFailed ){
+    Vdbe *v = pParse->pVdbe;
+    assert( v!=0 );
+    sqlite3VdbeSetNumCols(v, pNew->nExpr);
+    for(i=0; i<pNew->nExpr; i++){
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, pNew->a[i].zEName,
+                            SQLITE_TRANSIENT);
+    }
+  }
   return pNew;
 }
 
@@ -868,7 +878,7 @@ static void codeReturningTrigger(
   Parse *pParse,       /* Parse context */
   Trigger *pTrigger,   /* The trigger step that defines the RETURNING */
   Table *pTab,         /* The table to code triggers from */
-  int reg              /* The first in an array of registers */
+  int regIn            /* The first in an array of registers */
 ){
   Vdbe *v = pParse->pVdbe;
   ExprList *pNew;
@@ -882,28 +892,32 @@ static void codeReturningTrigger(
   VdbeComment((v, "RETURNING trigger goes here"));
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
   if( pNew ){
+    NameContext sNC;
+    memset(&sNC, 0, sizeof(sNC));
     pReturning->nRetCol = pNew->nExpr;
     pReturning->iRetCur = pParse->nTab++;
-    sqlite3ExprListDelete(pParse->db, pNew);
-  }
-
-#if 0
-        pSelect->pEList =
-           sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
-        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
-        pNew = sqlite3SelectDup(db, pSelect, 0);
-        if( pNew ){
-          sqlite3Select(pParse, pNew, &sDest);
-          if( pNew->selFlags & (SF_Aggregate|SF_HasAgg|SF_WinRewrite) ){
-            sqlite3ErrorMsg(pParse, "aggregates not allowed in RETURNING");
-          }
-          sqlite3SelectDelete(db, pNew);
-        }
-        sqlite3ExprListDelete(db, pSelect->pEList);
-        pStep->pSelect->pEList = pList;
-        break;
+    sNC.pParse = pParse;
+    sNC.uNC.iBaseReg = regIn;
+    sNC.ncFlags = NC_UBaseReg;
+    pParse->eTriggerOp = pTrigger->op;
+    pParse->pTriggerTab = pTab;
+    if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK ){
+      int i;
+      int nCol = pNew->nExpr;
+      int reg = pParse->nMem+1;
+      pParse->nMem += nCol+2;
+      pReturning->iRetReg = reg;
+      for(i=0; i<nCol; i++){
+        sqlite3ExprCodeFactorable(pParse, pNew->a[i].pExpr, reg+i);
       }
-#endif
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);
+      sqlite3VdbeAddOp3(v, OP_Insert, pReturning->iRetCur, reg+i, reg+i+1);
+    }
+    sqlite3ExprListDelete(pParse->db, pNew);
+    pParse->eTriggerOp = 0;
+    pParse->pTriggerTab = 0;
+  }
 }
 
 

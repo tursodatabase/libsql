@@ -1,5 +1,5 @@
-C Preliminary\schanges\sfor\sa\snew\simplementation\sof\sRETURNING\sthat\scaptures\sall\nresults\sin\sa\sbuffer\sand\splays\sthem\sall\sback\safter\sthe\sDML\sstatement\ncompletes.\s\sThis\savoids\sproblems\swith\sinterleaved\sDML\sstatements.\nThis\sparticular\scheck-in\sis\sa\snon-functional\swork\sin\sprogress.
-D 2021-02-04T17:29:04.659
+C Snapshot.\s\sNew\sdesign\sappears\sto\swork\son\sa\ssimple\stest\scase.
+D 2021-02-04T20:52:20.449
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 694020ad8a3af3d79b09f74c8f1421272a419cdea42a13401e3b0f7dea6e9c3e
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c 5285b8d1e4cf21dd9e12619fe0a6067bcb036ee7f7ad5cd31a39a05c5823e2a2
+F src/build.c 1b8d3d59dcd52c5d74847a56174e6819713012cd370809352375422d0907c8bf
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -539,14 +539,14 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c f288cbc35f79eb32e162de7e80a63ebe00d80e639dcfac071bee11570cbdb16f
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c f6761473ea4b51190fc52f8f2121498b78717266e106e7bff12849ea2d52165f
+F src/resolve.c 397c3e889fea46fc7aa0bbe98ffd91046b7b44ade2cdab6b2357a4b7ddd10b13
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 738cb746189f721f59972993c13085fa2975c4cbfd04ba26445f3b42c81237dc
 F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 596729ed0c2509a32cb17cecc7baf2a3499299064c03dbe79f8daca08d4daf7c
+F src/sqliteInt.h c51a21569e193f377f6d70a2fed0031fd88f141e112a5902cb9e31c1f79f5194
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -607,7 +607,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
-F src/trigger.c 803db1f98d84a86b31a13e8a42715936bc760d0192bc4264d57a96f362c2a591
+F src/trigger.c 5da6ba6d4067b5dcdd11a6da37ce3cb56586df75a7be685efb534c46d5c773c8
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1899,10 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c8e6296aa9f69a092364524b716ba894f113f7f1e6024b9a2eaa01c239e65c1
-R 9ba8b89a255b185f318ef97355eff6b3
-T *branch * returning-manifested
-T *sym-returning-manifested *
-T -sym-trunk *
+P 04b77d63216ce11b4e797946953bcde504fc005807c7a5ac757fbf47d78698dc
+R 3969643abefe6509994dc8b8c75efd08
 U drh
-Z 04ce06a70e76b82a776d153a576955fb
+Z b4647d4c6645877bc3632b5ebc38eb6e

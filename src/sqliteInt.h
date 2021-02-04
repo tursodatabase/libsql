@@ -3037,6 +3037,7 @@ struct NameContext {
     ExprList *pEList;    /* Optional list of result-set columns */
     AggInfo *pAggInfo;   /* Information about aggregates at this level */
     Upsert *pUpsert;     /* ON CONFLICT clause information from an upsert */
+    int iBaseReg;        /* For TK_REGISTER when parsing RETURNING */
   } uNC;
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
@@ -3065,6 +3066,7 @@ struct NameContext {
 #define NC_UEList    0x00080  /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
 #define NC_UUpsert   0x00200  /* True if uNC.pUpsert is used */
+#define NC_UBaseReg  0x00400  /* True if uNC.iBaseReg is used */
 #define NC_MinMaxAgg 0x01000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x02000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x04000  /* Window functions are allowed here */
@@ -3668,6 +3670,7 @@ struct Returning {
   TriggerStep retTStep; /* The trigger step */
   int iRetCur;          /* Transient table holding RETURNING results */
   int nRetCol;          /* Number of in pReturnEL after expansion */
+  int iRetReg;          /* Register array for holding a row of RETURNING */
 };
 
 /*

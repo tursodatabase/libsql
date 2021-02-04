@@ -164,8 +164,7 @@ void sqlite3FinishCoding(Parse *pParse){
       sqlite3VdbeAddOp0(v, OP_Noop);  VdbeComment((v, "TODO: Commit changes"));
       addrRewind =
          sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
-      reg = pParse->nMem+1;
-      pParse->nMem += pReturning->nRetCol;
+      reg = pReturning->iRetReg;
       for(i=0; i<pReturning->nRetCol; i++){
         sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
       }
