@@ -828,7 +828,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       Table *pNew = sParse.pNewTable;
       Index *pIdx;
       pTab->aCol = pNew->aCol;
-      pTab->nCol = pNew->nCol;
+      pTab->nNVCol = pTab->nCol = pNew->nCol;
       pTab->tabFlags |= pNew->tabFlags & (TF_WithoutRowid|TF_NoVisibleRowid);
       pNew->nCol = 0;
       pNew->aCol = 0;

@@ -371,7 +371,7 @@ static int lookupName(
     ** it is a new.* or old.* trigger argument reference.  Or
     ** maybe it is an excluded.* from an upsert.
     */
-    if( zDb==0 && cntTab==0 ){
+    if( cntTab==0 && zDb==0 ){
       pTab = 0;
 #ifndef SQLITE_OMIT_TRIGGER
       if( pParse->pTriggerTab!=0 ){
@@ -434,22 +434,27 @@ static int lookupName(
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {
-#ifndef SQLITE_OMIT_TRIGGER
-            if( iCol<0 ){
-              pExpr->affExpr = SQLITE_AFF_INTEGER;
-            }else if( pExpr->iTable==0 ){
-              testcase( iCol==31 );
-              testcase( iCol==32 );
-              pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
-            }else{
-              testcase( iCol==31 );
-              testcase( iCol==32 );
-              pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
-            }
             pExpr->y.pTab = pTab;
-            pExpr->iColumn = (i16)iCol;
-            eNewExprOp = TK_TRIGGER;
+            if( iCol<0 ) pExpr->affExpr = SQLITE_AFF_INTEGER;
+            if( pParse->bReturning ){
+              eNewExprOp = TK_REGISTER;
+              pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
+                                   + iCol + 1;
+            }else{
+              pExpr->iColumn = (i16)iCol;
+              eNewExprOp = TK_TRIGGER;
+#ifndef SQLITE_OMIT_TRIGGER
+              if( pExpr->iTable==0 ){
+                testcase( iCol==31 );
+                testcase( iCol==32 );
+                pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+              }else{
+                testcase( iCol==31 );
+                testcase( iCol==32 );
+                pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+              }
 #endif /* SQLITE_OMIT_TRIGGER */
+            }
           }
         }
       }
@@ -630,7 +635,10 @@ static int lookupName(
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    if( !ExprHasProperty(pExpr, EP_Alias) ){
+    if( pParse->db->xAuth
+     && !ExprHasProperty(pExpr, EP_Alias)
+     && pExpr->op!=TK_REGISTER
+    ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }
     /* Increment the nRef value on all name contexts from TopNC up to

@@ -3037,6 +3037,7 @@ struct NameContext {
     ExprList *pEList;    /* Optional list of result-set columns */
     AggInfo *pAggInfo;   /* Information about aggregates at this level */
     Upsert *pUpsert;     /* ON CONFLICT clause information from an upsert */
+    int iBaseReg;        /* For TK_REGISTER when parsing RETURNING */
   } uNC;
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
@@ -3065,6 +3066,7 @@ struct NameContext {
 #define NC_UEList    0x00080  /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
 #define NC_UUpsert   0x00200  /* True if uNC.pUpsert is used */
+#define NC_UBaseReg  0x00400  /* True if uNC.iBaseReg is used */
 #define NC_MinMaxAgg 0x01000  /* min/max aggregates seen.  See note above */
 #define NC_Complex   0x02000  /* True if a function or subquery seen */
 #define NC_AllowWin  0x04000  /* Window functions are allowed here */
@@ -3425,7 +3427,10 @@ struct Parse {
   Table *pTriggerTab;  /* Table triggers are being coded for */
   Parse *pParentParse; /* Parent parser if this parser is nested */
   AggInfo *pAggList;   /* List of all AggInfo objects */
-  int addrCrTab;       /* Address of OP_CreateBtree opcode on CREATE TABLE */
+  union {
+    int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
+    Returning *pReturning; /* The RETURNING clause */
+  } u1;
   u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
@@ -3647,7 +3652,7 @@ struct TriggerStep {
   char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
   SrcList *pFrom;      /* FROM clause for UPDATE statement (if any) */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
-  ExprList *pExprList; /* SET clause for UPDATE */
+  ExprList *pExprList; /* SET clause for UPDATE, or RETURNING clause */
   IdList *pIdList;     /* Column names for INSERT */
   Upsert *pUpsert;     /* Upsert clauses on an INSERT */
   char *zSpan;         /* Original SQL text of this command */
@@ -3663,8 +3668,9 @@ struct Returning {
   ExprList *pReturnEL;  /* List of expressions to return */
   Trigger retTrig;      /* The transient trigger that implements RETURNING */
   TriggerStep retTStep; /* The trigger step */
-  Select retSel;        /* The SELECT statement that implements RETURNING */
-  u64 retSrcList;       /* The empty FROM clause of the SELECT */
+  int iRetCur;          /* Transient table holding RETURNING results */
+  int nRetCol;          /* Number of in pReturnEL after expansion */
+  int iRetReg;          /* Register array for holding a row of RETURNING */
 };
 
 /*

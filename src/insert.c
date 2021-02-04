@@ -1143,11 +1143,6 @@ void sqlite3Insert(
       sqlite3VdbeAddOp1(v, OP_MustBeInt, regCols); VdbeCoverage(v);
     }
 
-    /* Cannot have triggers on a virtual table. If it were possible,
-    ** this block would have to account for hidden column.
-    */
-    assert( !IsVirtual(pTab) );
-
     /* Copy the new data already generated. */
     assert( pTab->nNVCol>0 );
     sqlite3VdbeAddOp3(v, OP_Copy, regRowid+1, regCols+1, pTab->nNVCol-1);

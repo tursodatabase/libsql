@@ -70,6 +70,8 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
         pTrig->pNext = pList;
         pList = pTrig;
       }else if( pTrig->op==TK_RETURNING ){
+        assert( pParse->bReturning );
+        assert( &(pParse->u1.pReturning->retTrig) == pTrig );
         pTrig->table = pTab->zName;
         pTrig->pTabSchema = pTab->pSchema;
         pTrig->pNext = pList;
@@ -759,16 +761,21 @@ Trigger *sqlite3TriggersExist(
         ** us what time of trigger it should be. */
         assert( sqlite3IsToplevel(pParse) );
         p->op = op;
-        mask |= TRIGGER_AFTER;
-        if( IsVirtual(pTab) && op!=TK_INSERT ){
-          sqlite3ErrorMsg(pParse,
-             "%s RETURNING is not available on virtual tables",
-             op==TK_DELETE ? "DELETE" : "UPDATE");
+        if( IsVirtual(pTab) ){
+          if( op!=TK_INSERT ){
+            sqlite3ErrorMsg(pParse,
+              "%s RETURNING is not available on virtual tables",
+              op==TK_DELETE ? "DELETE" : "UPDATE");
+          }
+          p->tr_tm = TRIGGER_BEFORE;
+        }else{
+          p->tr_tm = TRIGGER_AFTER;
         }
+        mask |= p->tr_tm;
       }else if( p->bReturning && p->op==TK_INSERT && op==TK_UPDATE
                 && sqlite3IsToplevel(pParse) ){
         /* Also fire a RETURNING trigger for an UPSERT */
-        mask |= TRIGGER_AFTER;
+        mask |= p->tr_tm;
       }
       p = p->pNext;
     }while( p );
@@ -830,6 +837,7 @@ static ExprList *sqlite3ExpandReturning(
   ExprList *pNew = 0;
   sqlite3 *db = pParse->db;
   int i;
+
   for(i=0; i<pList->nExpr; i++){
     Expr *pOldExpr = pList->a[i].pExpr;
     if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
@@ -854,8 +862,70 @@ static ExprList *sqlite3ExpandReturning(
       }
     }
   }
+  if( !db->mallocFailed && !pParse->colNamesSet ){
+    Vdbe *v = pParse->pVdbe;
+    assert( v!=0 );
+    sqlite3VdbeSetNumCols(v, pNew->nExpr);
+    for(i=0; i<pNew->nExpr; i++){
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, pNew->a[i].zEName,
+                            SQLITE_TRANSIENT);
+    }
+  }
   return pNew;
 }
+
+/*
+** Generate code for the RETURNING trigger.  Unlike other triggers
+** that invoke a subprogram in the bytecode, the code for RETURNING
+** is generated in-line.
+*/
+static void codeReturningTrigger(
+  Parse *pParse,       /* Parse context */
+  Trigger *pTrigger,   /* The trigger step that defines the RETURNING */
+  Table *pTab,         /* The table to code triggers from */
+  int regIn            /* The first in an array of registers */
+){
+  Vdbe *v = pParse->pVdbe;
+  ExprList *pNew;
+  Returning *pReturning;
+
+  assert( v!=0 );
+  assert( pParse->bReturning );
+  pReturning = pParse->u1.pReturning;
+  assert( pTrigger == &(pReturning->retTrig) );
+  pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
+  if( pNew ){
+    NameContext sNC;
+    memset(&sNC, 0, sizeof(sNC));
+    if( pReturning->nRetCol==0 ){
+      pReturning->nRetCol = pNew->nExpr;
+      pReturning->iRetCur = pParse->nTab++;
+    }
+    sNC.pParse = pParse;
+    sNC.uNC.iBaseReg = regIn;
+    sNC.ncFlags = NC_UBaseReg;
+    pParse->eTriggerOp = pTrigger->op;
+    pParse->pTriggerTab = pTab;
+    if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK ){
+      int i;
+      int nCol = pNew->nExpr;
+      int reg = pParse->nMem+1;
+      pParse->nMem += nCol+2;
+      pReturning->iRetReg = reg;
+      for(i=0; i<nCol; i++){
+        sqlite3ExprCodeFactorable(pParse, pNew->a[i].pExpr, reg+i);
+      }
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);
+      sqlite3VdbeAddOp3(v, OP_Insert, pReturning->iRetCur, reg+i, reg+i+1);
+    }
+    sqlite3ExprListDelete(pParse->db, pNew);
+    pParse->eTriggerOp = 0;
+    pParse->pTriggerTab = 0;
+  }
+}
+
+
 
 /*
 ** Generate VDBE code for the statements inside the body of a single 
@@ -928,32 +998,12 @@ static int codeTriggerProgram(
         sqlite3VdbeAddOp0(v, OP_ResetCount);
         break;
       }
-      case TK_SELECT: {
+      default: assert( pStep->op==TK_SELECT ); {
         SelectDest sDest;
         Select *pSelect = sqlite3SelectDup(db, pStep->pSelect, 0);
         sqlite3SelectDestInit(&sDest, SRT_Discard, 0);
         sqlite3Select(pParse, pSelect, &sDest);
         sqlite3SelectDelete(db, pSelect);
-        break;
-      }
-      default: assert( pStep->op==TK_RETURNING ); {
-        Select *pSelect = pStep->pSelect;
-        ExprList *pList = pSelect->pEList;
-        SelectDest sDest;
-        Select *pNew;
-        pSelect->pEList =
-           sqlite3ExpandReturning(pParse, pList, pParse->pTriggerTab);
-        sqlite3SelectDestInit(&sDest, SRT_Output, 0);
-        pNew = sqlite3SelectDup(db, pSelect, 0);
-        if( pNew ){
-          sqlite3Select(pParse, pNew, &sDest);
-          if( pNew->selFlags & (SF_Aggregate|SF_HasAgg|SF_WinRewrite) ){
-            sqlite3ErrorMsg(pParse, "aggregates not allowed in RETURNING");
-          }
-          sqlite3SelectDelete(db, pNew);
-        }
-        sqlite3ExprListDelete(db, pSelect->pEList);
-        pStep->pSelect->pEList = pList;
         break;
       }
     } 
@@ -1046,7 +1096,6 @@ static TriggerPrg *codeRowTrigger(
   pSubParse->pToplevel = pTop;
   pSubParse->zAuthContext = pTrigger->zName;
   pSubParse->eTriggerOp = pTrigger->op;
-  pSubParse->bReturning = pTrigger->bReturning;
   pSubParse->nQueryLoop = pParse->nQueryLoop;
   pSubParse->disableVtab = pParse->disableVtab;
 
@@ -1095,9 +1144,6 @@ static TriggerPrg *codeRowTrigger(
     transferParseError(pParse, pSubParse);
     if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
-    }
-    if( pTrigger->bReturning ){
-      sqlite3VdbeColumnInfoXfer(sqlite3ParseToplevel(pParse)->pVdbe, v);
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
@@ -1208,7 +1254,7 @@ void sqlite3CodeRowTriggerDirect(
 **   ...            ...
 **   reg+N          OLD.* value of right-most column of pTab
 **   reg+N+1        NEW.rowid
-**   reg+N+2        OLD.* value of left-most column of pTab
+**   reg+N+2        NEW.* value of left-most column of pTab
 **   ...            ...
 **   reg+N+N+1      NEW.* value of right-most column of pTab
 **
@@ -1261,12 +1307,12 @@ void sqlite3CodeRowTrigger(
     if( (p->op==op || (p->bReturning && p->op==TK_INSERT && op==TK_UPDATE))
      && p->tr_tm==tr_tm 
      && checkColumnOverlap(p->pColumns, pChanges)
-     && (sqlite3IsToplevel(pParse) || !p->bReturning)
     ){
-      u8 origOp = p->op;
-      p->op = op;
-      sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
-      p->op = origOp;
+      if( !p->bReturning ){
+        sqlite3CodeRowTriggerDirect(pParse, p, pTab, reg, orconf, ignoreJump);
+      }else if( sqlite3IsToplevel(pParse) ){
+        codeReturningTrigger(pParse, p, pTab, reg);
+      }
     }
   }
 }
@@ -1311,13 +1357,18 @@ u32 sqlite3TriggerColmask(
 
   assert( isNew==1 || isNew==0 );
   for(p=pTrigger; p; p=p->pNext){
-    if( p->op==op && (tr_tm&p->tr_tm)
+    if( p->op==op
+     && (tr_tm&p->tr_tm)
      && checkColumnOverlap(p->pColumns,pChanges)
     ){
-      TriggerPrg *pPrg;
-      pPrg = getRowTrigger(pParse, p, pTab, orconf);
-      if( pPrg ){
-        mask |= pPrg->aColmask[isNew];
+      if( p->bReturning ){
+        mask = 0xffffffff;
+      }else{
+        TriggerPrg *pPrg;
+        pPrg = getRowTrigger(pParse, p, pTab, orconf);
+        if( pPrg ){
+          mask |= pPrg->aColmask[isNew];
+        }
       }
     }
   }

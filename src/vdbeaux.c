@@ -2596,23 +2596,6 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 }
 
 /*
-** Transfer the column count and name information from one Vdbe to
-** another.
-*/
-void sqlite3VdbeColumnInfoXfer(Vdbe *pTo, Vdbe *pFrom){
-  sqlite3 *db = pTo->db;
-  assert( db==pFrom->db );
-  if( pTo->nResColumn ){
-    releaseMemArray(pTo->aColName, pTo->nResColumn*COLNAME_N);
-    sqlite3DbFree(db, pTo->aColName);
-  }
-  pTo->aColName = pFrom->aColName;
-  pFrom->aColName = 0;
-  pTo->nResColumn = pFrom->nResColumn;
-  pFrom->nResColumn = 0;
-}
-
-/*
 ** Set the name of the idx'th column to be returned by the SQL statement.
 ** zName must be a pointer to a nul terminated string.
 **
