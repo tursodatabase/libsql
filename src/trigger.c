@@ -857,7 +857,7 @@ static ExprList *sqlite3ExpandReturning(
       }
     }
   }
-  if( !db->mallocFailed ){
+  if( !db->mallocFailed && !pParse->colNamesSet ){
     Vdbe *v = pParse->pVdbe;
     assert( v!=0 );
     sqlite3VdbeSetNumCols(v, pNew->nExpr);
@@ -888,14 +888,14 @@ static void codeReturningTrigger(
   assert( pParse->bReturning );
   pReturning = pParse->u1.pReturning;
   assert( pTrigger == &(pReturning->retTrig) );
-  sqlite3VdbeAddOp0(v, OP_Noop);
-  VdbeComment((v, "RETURNING trigger goes here"));
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
   if( pNew ){
     NameContext sNC;
     memset(&sNC, 0, sizeof(sNC));
-    pReturning->nRetCol = pNew->nExpr;
-    pReturning->iRetCur = pParse->nTab++;
+    if( pReturning->nRetCol==0 ){
+      pReturning->nRetCol = pNew->nExpr;
+      pReturning->iRetCur = pParse->nTab++;
+    }
     sNC.pParse = pParse;
     sNC.uNC.iBaseReg = regIn;
     sNC.ncFlags = NC_UBaseReg;
