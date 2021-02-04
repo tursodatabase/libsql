@@ -8014,7 +8014,7 @@ static int balance_nonroot(
     aPgOrder[i] = aPgno[i] = apNew[i]->pgno;
     aPgFlags[i] = apNew[i]->pDbPage->flags;
     for(j=0; j<i; j++){
-      if( aPgno[j]==aPgno[i] ){
+      if( NEVER(aPgno[j]==aPgno[i]) ){
         /* This branch is taken if the set of sibling pages somehow contains
         ** duplicate entries. This can happen if the database is corrupt. 
         ** It would be simpler to detect this as part of the loop below, but
