@@ -112,7 +112,6 @@ static void resolveAlias(
     }
     sqlite3DbFree(db, pDup);
   }
-  ExprSetProperty(pExpr, EP_Alias);
 }
 
 
@@ -429,7 +428,6 @@ static int lookupName(
               pExpr->iTable = pNC->uNC.pUpsert->regData +
                  sqlite3TableColumnToStorage(pTab, iCol);
               eNewExprOp = TK_REGISTER;
-              ExprSetProperty(pExpr, EP_Alias);
             }
           }else
 #endif /* SQLITE_OMIT_UPSERT */
@@ -636,8 +634,7 @@ lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
     if( pParse->db->xAuth
-     && !ExprHasProperty(pExpr, EP_Alias)
-     && pExpr->op!=TK_REGISTER
+     && (pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER)
     ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }

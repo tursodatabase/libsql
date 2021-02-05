@@ -862,7 +862,7 @@ static ExprList *sqlite3ExpandReturning(
       }
     }
   }
-  if( !db->mallocFailed && !pParse->colNamesSet ){
+  if( !db->mallocFailed ){
     Vdbe *v = pParse->pVdbe;
     assert( v!=0 );
     sqlite3VdbeSetNumCols(v, pNew->nExpr);

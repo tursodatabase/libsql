@@ -1,5 +1,5 @@
-C Change\sthe\sRETURNING\salgorithm\sso\sthat\soutputs\saccumulate\sin\san\sephemeral\ntable\suntil\sall\smodifications\shave\sbeen\scompleted,\sand\sonly\sthen\sdo\sresults\nstart\sbeing\sreturned.\s\sThis\sshould\shelp\sprevent\sproblems\swith\sinterleaved\nsqlite3_step()\scalls\son\stwo\sseparate\sDML\sstatements.\s\sIt\salso\sseems\sto\sbe\ncloser\sto\show\sPostgreSQL\sworks,\swhich\smight\sprevent\scompatibility\sproblems.
-D 2021-02-04T23:20:13.904
+C Remove\sunreachable\scode.\s\sFix\sa\sshift\sUB\sproblem\sintroduced\syesterday\nand\sdiscovered\sby\sOSSFuzz.
+D 2021-02-05T17:34:47.616
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 36cae0d6e3e91a1996e1a472f8c7242c31a4e38ba4295e3056da198c04fd2a87
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c e80162a47411f296bea550ed8fafd730481f4aa71e89ece23ba9c957eed15d4a
-F src/auth.c 8d1df0e2ef8bafbedd4f1fe4baff03eb27507da4bf6e449df3613d383c4018b2
+F src/auth.c 807c65bbe66806cd0a4b1cf2dbda12023002093b2c572e94a783f48b60e64441
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
@@ -539,14 +539,14 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c f288cbc35f79eb32e162de7e80a63ebe00d80e639dcfac071bee11570cbdb16f
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 397c3e889fea46fc7aa0bbe98ffd91046b7b44ade2cdab6b2357a4b7ddd10b13
+F src/resolve.c d94f65ad822a8a4ea1eec1d192093855c097c913be617c15de5afea35449bb5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 738cb746189f721f59972993c13085fa2975c4cbfd04ba26445f3b42c81237dc
 F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h c51a21569e193f377f6d70a2fed0031fd88f141e112a5902cb9e31c1f79f5194
+F src/sqliteInt.h fc56cfde306778a431c133803676fdd1c962ee3e75b5f2483c20fa069cb056e4
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -607,7 +607,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
 F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
-F src/trigger.c a018d5bd5f1d429572fd08ebdf3ca8c1d11891cf73abf6013c3919aec45756c8
+F src/trigger.c f5b6d20b53f6ced4ce5f8c5b526a1ab9d0a4d07f680cb6abf5c685eee2e1f9a7
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1899,8 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c8e6296aa9f69a092364524b716ba894f113f7f1e6024b9a2eaa01c239e65c1 dbfa38699c87ab4bf390666e411dda8d375c7b53b9b4fb131adacbf575867a72
-R 88d822e5d89f75ce7408ba510079f31a
-T +closed dbfa38699c87ab4bf390666e411dda8d375c7b53b9b4fb131adacbf575867a72
+P c4615eb28c3dd2d473daf104f32e60d02799f3158d9d275a899c39129cc71401
+R ff024c949e3f9255ec1e795290e75e4c
 U drh
-Z a2b37659b7969f20723dc948c328e70a
+Z 12f6db35869c69dae1575bf57bae19b1
