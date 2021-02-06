@@ -163,7 +163,7 @@ void sqlite3AuthRead(
     pTab = pParse->pTriggerTab;
   }else{
     assert( pTabList );
-    for(iSrc=0; ALWAYS(iSrc<pTabList->nSrc); iSrc++){
+    for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
       if( pExpr->iTable==pTabList->a[iSrc].iCursor ){
         pTab = pTabList->a[iSrc].pTab;
         break;
@@ -171,7 +171,7 @@ void sqlite3AuthRead(
     }
   }
   iCol = pExpr->iColumn;
-  if( NEVER(pTab==0) ) return;
+  if( pTab==0 ) return;
 
   if( iCol>=0 ){
     assert( iCol<pTab->nCol );
