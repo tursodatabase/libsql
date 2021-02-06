@@ -433,7 +433,6 @@ static int lookupName(
 #endif /* SQLITE_OMIT_UPSERT */
           {
             pExpr->y.pTab = pTab;
-            if( iCol<0 ) pExpr->affExpr = SQLITE_AFF_INTEGER;
             if( pParse->bReturning ){
               eNewExprOp = TK_REGISTER;
               pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
@@ -442,7 +441,9 @@ static int lookupName(
               pExpr->iColumn = (i16)iCol;
               eNewExprOp = TK_TRIGGER;
 #ifndef SQLITE_OMIT_TRIGGER
-              if( pExpr->iTable==0 ){
+              if( iCol<0 ){
+                pExpr->affExpr = SQLITE_AFF_INTEGER;
+              }else if( pExpr->iTable==0 ){
                 testcase( iCol==31 );
                 testcase( iCol==32 );
                 pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
