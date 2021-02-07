@@ -1028,7 +1028,9 @@ static int exprUsesSrclistCb(Walker *p, Expr *pExpr){
 /*
 ** Select callback for exprUsesSrclist().
 */
-static int exprUsesSrclistSelectCb(Walker *p, Select *pSelect){
+static int exprUsesSrclistSelectCb(Walker *NotUsed1, Select *NotUsed2){
+  UNUSED_PARAMETER(NotUsed1);
+  UNUSED_PARAMETER(NotUsed2);
   return WRC_Abort;
 }
 

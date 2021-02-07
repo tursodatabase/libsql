@@ -843,8 +843,9 @@ static ExprList *sqlite3ExpandReturning(
     if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
       int jj;
       for(jj=0; jj<pTab->nCol; jj++){
+        Expr *pNewExpr;
         if( IsHiddenColumn(pTab->aCol+jj) ) continue;
-        Expr *pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[jj].zName);
+        pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[jj].zName);
         pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
         if( !db->mallocFailed ){
           struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
