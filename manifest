@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2021-02-07T12:59:43.373
+C Do\snot\sallow\sRETURNING\sin\sthe\sDML\sstatements\sof\sa\strigger.
+D 2021-02-07T23:28:20.174
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 694020ad8a3af3d79b09f74c8f1421272a419cdea42a13401e3b0f7dea6e9c3e
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c e6f5ed03c843fcb016b085835e40108a8625fb296716d3babb15cd81b8bb8c57
+F src/build.c 1bae5588bfdf21bdf41e634f0a053d633fb1ae3a2896117b4eea76412b76c2e0
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b469327e2949352325d3db815bd4782f9734239c378f08afd2f00ffa54bef924
-R e1ce577f863fec71881e8440ed5dbc05
+P 5f8bf99579e6663fc701cdc94f685584a86398c4687e25e7e241de755398f17d
+R a856103465991ee8605c1021fc58e7ff
 U drh
-Z 17b4317a1f1bb914fafc7a0f7a28c210
+Z ce7bda39131bfdba5d6961a4ae1bd760

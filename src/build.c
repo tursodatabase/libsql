@@ -1306,7 +1306,11 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   Returning *pRet;
   Hash *pHash;
   sqlite3 *db = pParse->db;
-  assert( !pParse->bReturning );
+  if( pParse->pNewTrigger ){
+    sqlite3ErrorMsg(pParse, "cannot use RETURNING in a trigger");
+  }else{
+    assert( pParse->bReturning==0 );
+  }
   pParse->bReturning = 1;
   pRet = sqlite3DbMallocZero(db, sizeof(*pRet));
   if( pRet==0 ){
@@ -1329,7 +1333,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTStep.pTrig = &pRet->retTrig;
   pRet->retTStep.pExprList = pList;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0 );
+  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0 || pParse->nErr );
   if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
           ==&pRet->retTrig ){
     sqlite3OomFault(db);
