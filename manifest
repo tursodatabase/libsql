@@ -1,5 +1,5 @@
-C Do\snot\sallow\sRETURNING\sin\sthe\sDML\sstatements\sof\sa\strigger.
-D 2021-02-07T23:28:20.174
+C Improved\sname\sresolution\sfor\sreferences\sto\sa\stable\sbegin\smodified\sfrom\nwithin\sa\ssubquery\sin\sthe\sRETURNING\sclause.
+D 2021-02-08T13:41:17.019
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c f288cbc35f79eb32e162de7e80a63ebe00d80e639dcfac071bee11570cbdb16f
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c d0a77f10614c80e0e4a1127391370ab512d78af32e87f12906673c485d5ff118
+F src/resolve.c 3d77986c0b3b4254c6480844ecc21466251dedeb9dafe1c914581ef6e6683c76
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 738cb746189f721f59972993c13085fa2975c4cbfd04ba26445f3b42c81237dc
 F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f8bf99579e6663fc701cdc94f685584a86398c4687e25e7e241de755398f17d
-R a856103465991ee8605c1021fc58e7ff
+P 7a8fe6463a9728bc4e34465688a059afb74f3c373cde8fdf570d5d148fdde04d
+R 961443c7bac5377cba010ae78e1611b5
 U drh
-Z ce7bda39131bfdba5d6961a4ae1bd760
+Z d9624b59094cb9e104494bd0199a6b01

@@ -368,9 +368,10 @@ static int lookupName(
 #if !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_UPSERT)
     /* If we have not already resolved the name, then maybe 
     ** it is a new.* or old.* trigger argument reference.  Or
-    ** maybe it is an excluded.* from an upsert.
+    ** maybe it is an excluded.* from an upsert.  Or maybe it is
+    ** a reference in the RETURNING clause to a table being modified.
     */
-    if( cntTab==0 && zDb==0 ){
+    if( cnt==0 && zDb==0 ){
       pTab = 0;
 #ifndef SQLITE_OMIT_TRIGGER
       if( pParse->pTriggerTab!=0 ){
@@ -389,7 +390,7 @@ static int lookupName(
       }
 #endif /* SQLITE_OMIT_TRIGGER */
 #ifndef SQLITE_OMIT_UPSERT
-      if( (pNC->ncFlags & NC_UUpsert)!=0 && ALWAYS(zTab) ){
+      if( (pNC->ncFlags & NC_UUpsert)!=0 && zTab!=0 ){
         Upsert *pUpsert = pNC->uNC.pUpsert;
         if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
           pTab = pUpsert->pUpsertSrc->a[0].pTab;
@@ -434,8 +435,13 @@ static int lookupName(
           {
             pExpr->y.pTab = pTab;
             if( pParse->bReturning ){
+              NameContext *pUp = pNC;
+              while( (pUp->ncFlags & NC_UBaseReg)==0 && ALWAYS(pUp->pNext) ){
+                pUp = pUp->pNext;
+              }
+              assert( pUp->ncFlags & NC_UBaseReg );
               eNewExprOp = TK_REGISTER;
-              pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
+              pExpr->iTable = pUp->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
                                    + iCol + 1;
             }else{
               pExpr->iColumn = (i16)iCol;
@@ -1648,7 +1654,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** Minor point: If this is the case, then the expression will be
     ** re-evaluated for each reference to it.
     */
-    assert( (sNC.ncFlags & (NC_UAggInfo|NC_UUpsert))==0 );
+    assert( (sNC.ncFlags & (NC_UAggInfo|NC_UUpsert|NC_UBaseReg))==0 );
     sNC.uNC.pEList = p->pEList;
     sNC.ncFlags |= NC_UEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
