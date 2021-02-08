@@ -383,7 +383,7 @@ static int lookupName(
         }else if( op!=TK_INSERT && zTab && sqlite3StrICmp("old",zTab)==0 ){
           pExpr->iTable = 0;
           pTab = pParse->pTriggerTab;
-        }else if( pParse->bReturning ){
+        }else if( pParse->bReturning && (pNC->ncFlags & NC_UBaseReg)!=0 ){
           pExpr->iTable = op!=TK_DELETE;
           pTab = pParse->pTriggerTab;
         }
@@ -435,14 +435,9 @@ static int lookupName(
           {
             pExpr->y.pTab = pTab;
             if( pParse->bReturning ){
-              NameContext *pUp = pNC;
-              while( (pUp->ncFlags & NC_UBaseReg)==0 && ALWAYS(pUp->pNext) ){
-                pUp = pUp->pNext;
-              }
-              assert( pUp->ncFlags & NC_UBaseReg );
               eNewExprOp = TK_REGISTER;
-              pExpr->iTable = pUp->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
-                                   + iCol + 1;
+              pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
+                                + iCol + 1;
             }else{
               pExpr->iColumn = (i16)iCol;
               eNewExprOp = TK_TRIGGER;
