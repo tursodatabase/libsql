@@ -1,5 +1,5 @@
-C In\sRBU,\savoid\spassing\sVFS\sxShmLock\scalls\sthrough\sto\sthe\sunderlying\sVFS\sin\scases\swhere\sxShmMap\scalls\smay\snot\sbe.\sThis\sfixes\sa\sbad\sinteraction\swith\sZipVFS.
-D 2021-02-10T17:31:50.767
+C Fix\sa\slongstanding\sproblem\scausing\san\sRBU\svacuum\sto\somit\sreleasing\ssome\slocks\sbefore\sfinishing.
+D 2021-02-10T20:00:40.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -379,7 +379,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c faf05a0eb4a7ca08781c6df818387657df7a77f4b1b52dbcad920594a7ac978e
+F ext/rbu/sqlite3rbu.c e6531884442b72f9e0ba47036fb5c4641ea817ff659a642b3984c10b8535b0fd
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1899,7 +1899,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b43cfa04922a401442b9d1708e3e4a88d3cfa2c591f9a6b253d99ba83f4b280a
-R a6fc5ec0146d48de2a325dbfaebfd9dc
+P bd1e9e0a4c0e07901ef59fe3b7e6f7b9cc66ccfcd5192f576e1620820891de99 fb36ac4dc60ccc6c5fba3f23e13fcab985f27ebef0527c929806cda5f9d3660c
+R f4fc3fdf82de1da25700d7b06c4d78f5
+T +closed fb36ac4dc60ccc6c5fba3f23e13fcab985f27ebef0527c929806cda5f9d3660c
 U dan
-Z 6adabe12ed5563ac984baebbb7742b7f
+Z e97f611a0a7197a91080c2d49e7edf82
