@@ -138,11 +138,18 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[3]==0 ){
     corruptSchema(pData, argv[1], 0);
-  }else if( sqlite3_strnicmp(argv[4],"create ",7)==0 ){
+  }else if( argv[4]
+         && 'c'==sqlite3UpperToLower[(unsigned char)argv[4][0]]
+         && 'r'==sqlite3UpperToLower[(unsigned char)argv[4][1]] ){
     /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
     ** But because db->init.busy is set to 1, no VDBE code is generated
     ** or executed.  All the parser does is build the internal data
     ** structures that describe the table, index, or view.
+    **
+    ** No other valid SQL statement, other than the variable CREATE statements,
+    ** can begin with the letters "C" and "R".  Thus, it is not possible run
+    ** any other kind of statement while parsing the schema, even a corrupt
+    ** schema.
     */
     int rc;
     u8 saved_iDb = db->init.iDb;
@@ -673,14 +680,61 @@ void sqlite3ParserReset(Parse *pParse){
     agginfoFree(db, pThis);
     pThis = pNext;
   }
+  while( pParse->pCleanup ){
+    ParseCleanup *pCleanup = pParse->pCleanup;
+    pParse->pCleanup = pCleanup->pNext;
+    pCleanup->xCleanup(db, pCleanup->pPtr);
+    sqlite3DbFree(db, pCleanup);
+  }
   sqlite3DbFree(db, pParse->aLabel);
-  sqlite3ExprListDelete(db, pParse->pConstExpr);
+  if( pParse->pConstExpr ){
+    sqlite3ExprListDelete(db, pParse->pConstExpr);
+  }
   if( db ){
     assert( db->lookaside.bDisable >= pParse->disableLookaside );
     db->lookaside.bDisable -= pParse->disableLookaside;
     db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
   }
   pParse->disableLookaside = 0;
+}
+
+/*
+** Add a new cleanup operation to a Parser.  The cleanup should happen when
+** the parser object is destroyed.  But, beware: the cleanup might happen
+** immediately.
+**
+** Use this mechanism for uncommon cleanups.  There is a higher setup
+** cost for this mechansim (an extra malloc), so it should not be used
+** for common cleanups that happen on most calls.  But for less
+** common cleanups, we save a single NULL-pointer comparison in
+** sqlite3ParserReset(), which reduces the total CPU cycle count.
+**
+** If a memory allocation error occurs, then the cleanup happens immediately.
+** When eithr SQLITE_DEBUG or SQLITE_COVERAGE_TEST are defined, the
+** pParse->earlyCleanup flag is set in that case.  Calling code show verify
+** that test cases exist for which this happens, to guard against possible
+** use-after-free errors following an OOM.  The preferred way to do this is
+** to immediately follow the call to this routine with:
+**
+**       testcase( pParse->earlyCleanup );
+*/
+void sqlite3ParserAddCleanup(
+  Parse *pParse,                      /* Destroy when this Parser finishes */
+  void (*xCleanup)(sqlite3*,void*),   /* The cleanup routine */
+  void *pPtr                          /* Pointer to object to be cleaned up */
+){
+  ParseCleanup *pCleanup = sqlite3DbMallocRaw(pParse->db, sizeof(*pCleanup));
+  if( pCleanup ){
+    pCleanup->pNext = pParse->pCleanup;
+    pParse->pCleanup = pCleanup;
+    pCleanup->pPtr = pPtr;
+    pCleanup->xCleanup = xCleanup;
+  }else{
+    xCleanup(pParse->db, pPtr);
+#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
+    pParse->earlyCleanup = 1;
+#endif
+  }
 }
 
 /*
@@ -781,12 +835,6 @@ static int sqlite3Prepare(
   }
   assert( 0==sParse.nQueryLoop );
 
-  if( sParse.rc==SQLITE_DONE ){
-    sParse.rc = SQLITE_OK;
-  }
-  if( sParse.checkSchema ){
-    schemaIsValid(&sParse);
-  }
   if( pzTail ){
     *pzTail = sParse.zTail;
   }
@@ -797,20 +845,28 @@ static int sqlite3Prepare(
   if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM_BKPT;
   }
-  rc = sParse.rc;
-  if( rc!=SQLITE_OK ){
-    if( sParse.pVdbe ) sqlite3VdbeFinalize(sParse.pVdbe);
-    assert(!(*ppStmt));
+  if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE ){
+    if( sParse.checkSchema ){
+      schemaIsValid(&sParse);
+    }
+    if( sParse.pVdbe ){
+      sqlite3VdbeFinalize(sParse.pVdbe);
+    }
+    assert( 0==(*ppStmt) );
+    rc = sParse.rc;
+    if( zErrMsg ){
+      sqlite3ErrorWithMsg(db, rc, "%s", zErrMsg);
+      sqlite3DbFree(db, zErrMsg);
+    }else{
+      sqlite3Error(db, rc);
+    }
   }else{
+    assert( zErrMsg==0 );
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
+    rc = SQLITE_OK;
+    sqlite3ErrorClear(db);
   }
 
-  if( zErrMsg ){
-    sqlite3ErrorWithMsg(db, rc, "%s", zErrMsg);
-    sqlite3DbFree(db, zErrMsg);
-  }else{
-    sqlite3Error(db, rc);
-  }
 
   /* Delete any TriggerPrg structures allocated while parsing this statement. */
   while( sParse.pTriggerPrg ){

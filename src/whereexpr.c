@@ -1008,6 +1008,273 @@ static int exprMightBeIndexed(
 }
 
 /*
+** Expression callback for exprUsesSrclist().
+*/
+static int exprUsesSrclistCb(Walker *p, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN ){
+    SrcList *pSrc = p->u.pSrcList;
+    int iCsr = pExpr->iTable;
+    int ii;
+    for(ii=0; ii<pSrc->nSrc; ii++){
+      if( pSrc->a[ii].iCursor==iCsr ){
+        return p->eCode ? WRC_Abort : WRC_Continue;
+      }
+    }
+    return p->eCode ? WRC_Continue : WRC_Abort;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Select callback for exprUsesSrclist().
+*/
+static int exprUsesSrclistSelectCb(Walker *NotUsed1, Select *NotUsed2){
+  UNUSED_PARAMETER(NotUsed1);
+  UNUSED_PARAMETER(NotUsed2);
+  return WRC_Abort;
+}
+
+/*
+** This function always returns true if expression pExpr contains
+** a sub-select.
+**
+** If there is no sub-select in pExpr, then return true if pExpr
+** contains a TK_COLUMN node for a table that is (bUses==1)
+** or is not (bUses==0) in pSrc.
+**
+** Said another way:
+**
+**   bUses      Return     Meaning
+**   --------   ------     ------------------------------------------------
+**
+**   bUses==1   true       pExpr contains either a sub-select or a
+**                         TK_COLUMN referencing pSrc.
+**
+**   bUses==1   false      pExpr contains no sub-selects and all TK_COLUMN
+**                         nodes reference tables not found in pSrc
+**
+**   bUses==0   true       pExpr contains either a sub-select or a TK_COLUMN
+**                         that references a table not in pSrc.
+**
+**   bUses==0   false      pExpr contains no sub-selects and all TK_COLUMN
+**                         nodes reference pSrc
+*/
+static int exprUsesSrclist(SrcList *pSrc, Expr *pExpr, int bUses){
+  Walker sWalker;
+  memset(&sWalker, 0, sizeof(Walker));
+  sWalker.eCode = bUses;
+  sWalker.u.pSrcList = pSrc;
+  sWalker.xExprCallback = exprUsesSrclistCb;
+  sWalker.xSelectCallback = exprUsesSrclistSelectCb;
+  return (sqlite3WalkExpr(&sWalker, pExpr)==WRC_Abort);
+}
+
+/*
+** Context object used by exprExistsToInIter() as it iterates through an
+** expression tree.
+*/
+struct ExistsToInCtx {
+  SrcList *pSrc;    /* The tables in an EXISTS(SELECT ... FROM <here> ...) */
+  Expr *pInLhs;     /* OUT:  Use this as the LHS of the IN operator */
+  Expr *pEq;        /* OUT:  The == term that include pInLhs */
+  Expr **ppAnd;     /* OUT:  The AND operator that includes pEq as a child */
+  Expr **ppParent;  /* The AND operator currently being examined */
+};
+
+/*
+** Iterate through all AND connected nodes in the expression tree
+** headed by (*ppExpr), populating the structure passed as the first
+** argument with the values required by exprAnalyzeExistsFindEq().
+**
+** This function returns non-zero if the expression tree does not meet
+** the two conditions described by the header comment for
+** exprAnalyzeExistsFindEq(), or zero if it does.
+*/
+static int exprExistsToInIter(struct ExistsToInCtx *p, Expr **ppExpr){
+  Expr *pExpr = *ppExpr;
+  switch( pExpr->op ){
+    case TK_AND:
+      p->ppParent = ppExpr;
+      if( exprExistsToInIter(p, &pExpr->pLeft) ) return 1;
+      p->ppParent = ppExpr;
+      if( exprExistsToInIter(p, &pExpr->pRight) ) return 1;
+      break;
+    case TK_EQ: {
+      int bLeft = exprUsesSrclist(p->pSrc, pExpr->pLeft, 0);
+      int bRight = exprUsesSrclist(p->pSrc, pExpr->pRight, 0);
+      if( bLeft || bRight ){
+        if( (bLeft && bRight) || p->pInLhs ) return 1;
+        p->pInLhs = bLeft ? pExpr->pLeft : pExpr->pRight;
+        if( exprUsesSrclist(p->pSrc, p->pInLhs, 1) ) return 1;
+        p->pEq = pExpr;
+        p->ppAnd = p->ppParent;
+      }
+      break;
+    }
+    default:
+      if( exprUsesSrclist(p->pSrc, pExpr, 0) ){
+        return 1;
+      }
+      break;
+  }
+
+  return 0;
+}
+
+/*
+** This function is used by exprAnalyzeExists() when creating virtual IN(...)
+** terms equivalent to user-supplied EXIST(...) clauses. It splits the WHERE
+** clause of the Select object passed as the first argument into one or more
+** expressions joined by AND operators, and then tests if the following are
+** true:
+**
+**   1. Exactly one of the AND separated terms refers to the outer
+**      query, and it is an == (TK_EQ) expression.
+**
+**   2. Only one side of the == expression refers to the outer query, and 
+**      it does not refer to any columns from the inner query.
+**
+** If both these conditions are true, then a pointer to the side of the ==
+** expression that refers to the outer query is returned. The caller will
+** use this expression as the LHS of the IN(...) virtual term. Or, if one
+** or both of the above conditions are not true, NULL is returned.
+**
+** If non-NULL is returned and ppEq is non-NULL, *ppEq is set to point
+** to the == expression node before returning. If pppAnd is non-NULL and
+** the == node is not the root of the WHERE clause, then *pppAnd is set
+** to point to the pointer to the AND node that is the parent of the ==
+** node within the WHERE expression tree.
+*/
+static Expr *exprAnalyzeExistsFindEq(
+  Select *pSel,                   /* The SELECT of the EXISTS */
+  Expr **ppEq,                    /* OUT: == node from WHERE clause */
+  Expr ***pppAnd                  /* OUT: Pointer to parent of ==, if any */
+){
+  struct ExistsToInCtx ctx;
+  memset(&ctx, 0, sizeof(ctx));
+  ctx.pSrc = pSel->pSrc;
+  if( exprExistsToInIter(&ctx, &pSel->pWhere) ){
+    return 0;
+  }
+  if( ppEq ) *ppEq = ctx.pEq;
+  if( pppAnd ) *pppAnd = ctx.ppAnd;
+  return ctx.pInLhs;
+}
+
+/*
+** Term idxTerm of the WHERE clause passed as the second argument is an
+** EXISTS expression with a correlated SELECT statement on the RHS.
+** This function analyzes the SELECT statement, and if possible adds an
+** equivalent "? IN(SELECT...)" virtual term to the WHERE clause. 
+**
+** For an EXISTS term such as the following:
+**
+**     EXISTS (SELECT ... FROM <srclist> WHERE <e1> = <e2> AND <e3>)
+**
+** The virtual IN() term added is:
+**
+**     <e1> IN (SELECT <e2> FROM <srclist> WHERE <e3>)
+**
+** The virtual term is only added if the following conditions are met:
+**
+**     1. The sub-select must not be an aggregate or use window functions,
+**
+**     2. The sub-select must not be a compound SELECT,
+**
+**     3. Expression <e1> must refer to at least one column from the outer
+**        query, and must not refer to any column from the inner query 
+**        (i.e. from <srclist>).
+**
+**     4. <e2> and <e3> must not refer to any values from the outer query.
+**        In other words, once <e1> has been removed, the inner query
+**        must not be correlated.
+**
+*/
+static void exprAnalyzeExists(
+  SrcList *pSrc,            /* the FROM clause */
+  WhereClause *pWC,         /* the WHERE clause */
+  int idxTerm               /* Index of the term to be analyzed */
+){
+  Parse *pParse = pWC->pWInfo->pParse;
+  WhereTerm *pTerm = &pWC->a[idxTerm];
+  Expr *pExpr = pTerm->pExpr;
+  Select *pSel = pExpr->x.pSelect;
+  Expr *pDup = 0;
+  Expr *pEq = 0;
+  Expr *pRet = 0;
+  Expr *pInLhs = 0;
+  Expr **ppAnd = 0;
+  int idxNew;
+  sqlite3 *db = pParse->db;
+
+  assert( pExpr->op==TK_EXISTS );
+  assert( (pExpr->flags & EP_VarSelect) && (pExpr->flags & EP_xIsSelect) );
+
+  if( (pSel->selFlags & SF_Aggregate) || pSel->pWin ) return;
+  if( pSel->pPrior ) return;
+  if( pSel->pWhere==0 ) return;
+  if( 0==exprAnalyzeExistsFindEq(pSel, 0, 0) ) return;
+
+  pDup = sqlite3ExprDup(db, pExpr, 0);
+  if( db->mallocFailed ){
+    sqlite3ExprDelete(db, pDup);
+    return;
+  }
+  pSel = pDup->x.pSelect;
+  sqlite3ExprListDelete(db, pSel->pEList);
+  pSel->pEList = 0;
+
+  pInLhs = exprAnalyzeExistsFindEq(pSel, &pEq, &ppAnd);
+  assert( pInLhs && pEq );
+  assert( pEq==pSel->pWhere || ppAnd );
+  if( pInLhs==pEq->pLeft ){
+    pRet = pEq->pRight;
+  }else{
+    CollSeq *p = sqlite3ExprCompareCollSeq(pParse, pEq);
+    pInLhs = sqlite3ExprAddCollateString(pParse, pInLhs, p?p->zName:"BINARY");
+    pRet = pEq->pLeft;
+  }
+
+  assert( pDup->pLeft==0 );
+  pDup->op = TK_IN;
+  pDup->pLeft = pInLhs;
+  pDup->flags &= ~EP_VarSelect;
+  if( pRet->op==TK_VECTOR ){
+    pSel->pEList = pRet->x.pList;
+    pRet->x.pList = 0;
+    sqlite3ExprDelete(db, pRet);
+  }else{
+    pSel->pEList = sqlite3ExprListAppend(pParse, 0, pRet);
+  }
+  pEq->pLeft = 0;
+  pEq->pRight = 0;
+  if( ppAnd ){
+    Expr *pAnd = *ppAnd;
+    Expr *pOther = (pAnd->pLeft==pEq) ? pAnd->pRight : pAnd->pLeft;
+    pAnd->pLeft = pAnd->pRight = 0;
+    sqlite3ExprDelete(db, pAnd);
+    *ppAnd = pOther;
+  }else{
+    assert( pSel->pWhere==pEq );
+    pSel->pWhere = 0;
+  }
+  sqlite3ExprDelete(db, pEq);
+
+#ifdef WHERETRACE_ENABLED  /* 0x20 */
+  if( sqlite3WhereTrace & 0x20 ){
+    sqlite3DebugPrintf("Convert EXISTS:\n");
+    sqlite3TreeViewExpr(0, pExpr, 0);
+    sqlite3DebugPrintf("into IN:\n");
+    sqlite3TreeViewExpr(0, pDup, 0);
+  }
+#endif
+  idxNew = whereClauseInsert(pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
+  exprAnalyze(pSrc, pWC, idxNew);
+  markTermAsChild(pWC, idxNew, idxTerm);
+  pWC->a[idxTerm].wtFlags |= TERM_COPIED;
+}
+
+/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -1192,6 +1459,52 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
+  else if( pExpr->op==TK_EXISTS ){
+    /* Perhaps treat an EXISTS operator as an IN operator */
+    if( (pExpr->flags & EP_VarSelect)!=0
+     && OptimizationEnabled(db, SQLITE_ExistsToIN)
+    ){
+      exprAnalyzeExists(pSrc, pWC, idxTerm);
+    }
+  }
+
+  /* The form "x IS NOT NULL" can sometimes be evaluated more efficiently
+  ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
+  ** virtual term of that form.
+  **
+  ** The virtual term must be tagged with TERM_VNULL.
+  */
+  else if( pExpr->op==TK_NOTNULL ){
+    if( pExpr->pLeft->op==TK_COLUMN
+     && pExpr->pLeft->iColumn>=0
+     && !ExprHasProperty(pExpr, EP_FromJoin)
+    ){
+      Expr *pNewExpr;
+      Expr *pLeft = pExpr->pLeft;
+      int idxNew;
+      WhereTerm *pNewTerm;
+  
+      pNewExpr = sqlite3PExpr(pParse, TK_GT,
+                              sqlite3ExprDup(db, pLeft, 0),
+                              sqlite3ExprAlloc(db, TK_NULL, 0, 0));
+  
+      idxNew = whereClauseInsert(pWC, pNewExpr,
+                                TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
+      if( idxNew ){
+        pNewTerm = &pWC->a[idxNew];
+        pNewTerm->prereqRight = 0;
+        pNewTerm->leftCursor = pLeft->iTable;
+        pNewTerm->u.x.leftColumn = pLeft->iColumn;
+        pNewTerm->eOperator = WO_GT;
+        markTermAsChild(pWC, idxNew, idxTerm);
+        pTerm = &pWC->a[idxTerm];
+        pTerm->wtFlags |= TERM_COPIED;
+        pNewTerm->prereqAll = pTerm->prereqAll;
+      }
+    }
+  }
+
+
 #ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
@@ -1206,7 +1519,8 @@ static void exprAnalyze(
   ** bound is made all lowercase so that the bounds also work when comparing
   ** BLOBs.
   */
-  if( pWC->op==TK_AND 
+  else if( pExpr->op==TK_FUNCTION
+   && pWC->op==TK_AND
    && isLikeOrGlob(pParse, pExpr, &pStr1, &isComplete, &noCase)
   ){
     Expr *pLeft;       /* LHS of LIKE/GLOB operator */
@@ -1276,6 +1590,65 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
+  /* If there is a vector == or IS term - e.g. "(a, b) == (?, ?)" - create
+  ** new terms for each component comparison - "a = ?" and "b = ?".  The
+  ** new terms completely replace the original vector comparison, which is
+  ** no longer used.
+  **
+  ** This is only required if at least one side of the comparison operation
+  ** is not a sub-select.  */
+  if( (pExpr->op==TK_EQ || pExpr->op==TK_IS)
+   && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
+   && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
+   && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
+     || (pExpr->pRight->flags & EP_xIsSelect)==0)
+   && pWC->op==TK_AND
+  ){
+    int i;
+    for(i=0; i<nLeft; i++){
+      int idxNew;
+      Expr *pNew;
+      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
+      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
+
+      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
+      transferJoinMarkings(pNew, pExpr);
+      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
+      exprAnalyze(pSrc, pWC, idxNew);
+    }
+    pTerm = &pWC->a[idxTerm];
+    pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
+    pTerm->eOperator = 0;
+  }
+
+  /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
+  ** a virtual term for each vector component. The expression object
+  ** used by each such virtual term is pExpr (the full vector IN(...) 
+  ** expression). The WhereTerm.u.x.iField variable identifies the index within
+  ** the vector on the LHS that the virtual term represents.
+  **
+  ** This only works if the RHS is a simple SELECT (not a compound) that does
+  ** not use window functions.
+  */
+  else if( pExpr->op==TK_IN
+   && pTerm->u.x.iField==0
+   && pExpr->pLeft->op==TK_VECTOR
+   && pExpr->x.pSelect->pPrior==0
+#ifndef SQLITE_OMIT_WINDOWFUNC
+   && pExpr->x.pSelect->pWin==0
+#endif
+   && pWC->op==TK_AND
+  ){
+    int i;
+    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
+      int idxNew;
+      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
+      pWC->a[idxNew].u.x.iField = i+1;
+      exprAnalyze(pSrc, pWC, idxNew);
+      markTermAsChild(pWC, idxNew, idxTerm);
+    }
+  }
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   /* Add a WO_AUX auxiliary term to the constraint set if the
   ** current expression is of the form "column OP expr" where OP
@@ -1286,7 +1659,7 @@ static void exprAnalyze(
   ** virtual tables.  The native query optimizer does not attempt
   ** to do anything with MATCH functions.
   */
-  if( pWC->op==TK_AND ){
+  else if( pWC->op==TK_AND ){
     Expr *pRight = 0, *pLeft = 0;
     int res = isAuxiliaryVtabOperator(db, pExpr, &eOp2, &pLeft, &pRight);
     while( res-- > 0 ){
@@ -1321,102 +1694,6 @@ static void exprAnalyze(
     }
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-  /* If there is a vector == or IS term - e.g. "(a, b) == (?, ?)" - create
-  ** new terms for each component comparison - "a = ?" and "b = ?".  The
-  ** new terms completely replace the original vector comparison, which is
-  ** no longer used.
-  **
-  ** This is only required if at least one side of the comparison operation
-  ** is not a sub-select.  */
-  if( pWC->op==TK_AND 
-  && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
-  && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
-  && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
-  && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
-    || (pExpr->pRight->flags & EP_xIsSelect)==0)
-  ){
-    int i;
-    for(i=0; i<nLeft; i++){
-      int idxNew;
-      Expr *pNew;
-      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
-      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
-
-      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
-      transferJoinMarkings(pNew, pExpr);
-      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
-      exprAnalyze(pSrc, pWC, idxNew);
-    }
-    pTerm = &pWC->a[idxTerm];
-    pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
-    pTerm->eOperator = 0;
-  }
-
-  /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
-  ** a virtual term for each vector component. The expression object
-  ** used by each such virtual term is pExpr (the full vector IN(...) 
-  ** expression). The WhereTerm.u.x.iField variable identifies the index within
-  ** the vector on the LHS that the virtual term represents.
-  **
-  ** This only works if the RHS is a simple SELECT (not a compound) that does
-  ** not use window functions.
-  */
-  if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->u.x.iField==0
-   && pExpr->pLeft->op==TK_VECTOR
-   && pExpr->x.pSelect->pPrior==0
-#ifndef SQLITE_OMIT_WINDOWFUNC
-   && pExpr->x.pSelect->pWin==0
-#endif
-  ){
-    int i;
-    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
-      int idxNew;
-      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
-      pWC->a[idxNew].u.x.iField = i+1;
-      exprAnalyze(pSrc, pWC, idxNew);
-      markTermAsChild(pWC, idxNew, idxTerm);
-    }
-  }
-
-#ifdef SQLITE_ENABLE_STAT4
-  /* When sqlite_stat4 histogram data is available an operator of the
-  ** form "x IS NOT NULL" can sometimes be evaluated more efficiently
-  ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
-  ** virtual term of that form.
-  **
-  ** Note that the virtual term must be tagged with TERM_VNULL.
-  */
-  if( pExpr->op==TK_NOTNULL
-   && pExpr->pLeft->op==TK_COLUMN
-   && pExpr->pLeft->iColumn>=0
-   && !ExprHasProperty(pExpr, EP_FromJoin)
-   && OptimizationEnabled(db, SQLITE_Stat4)
-  ){
-    Expr *pNewExpr;
-    Expr *pLeft = pExpr->pLeft;
-    int idxNew;
-    WhereTerm *pNewTerm;
-
-    pNewExpr = sqlite3PExpr(pParse, TK_GT,
-                            sqlite3ExprDup(db, pLeft, 0),
-                            sqlite3ExprAlloc(db, TK_NULL, 0, 0));
-
-    idxNew = whereClauseInsert(pWC, pNewExpr,
-                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
-    if( idxNew ){
-      pNewTerm = &pWC->a[idxNew];
-      pNewTerm->prereqRight = 0;
-      pNewTerm->leftCursor = pLeft->iTable;
-      pNewTerm->u.x.leftColumn = pLeft->iColumn;
-      pNewTerm->eOperator = WO_GT;
-      markTermAsChild(pWC, idxNew, idxTerm);
-      pTerm = &pWC->a[idxTerm];
-      pTerm->wtFlags |= TERM_COPIED;
-      pNewTerm->prereqAll = pTerm->prereqAll;
-    }
-  }
-#endif /* SQLITE_ENABLE_STAT4 */
 
   /* Prevent ON clause terms of a LEFT JOIN from being used to drive
   ** an index for tables to the left of the join.

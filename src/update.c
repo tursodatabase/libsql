@@ -643,6 +643,7 @@ void sqlite3Update(
   if( (db->flags&SQLITE_CountRows)!=0
    && !pParse->pTriggerTab
    && !pParse->nested
+   && !pParse->bReturning
    && pUpsert==0
   ){
     regRowCount = ++pParse->nMem;
@@ -1106,7 +1107,7 @@ void sqlite3Update(
   ** that information.
   */
   if( regRowCount ){
-    sqlite3VdbeAddOp2(v, OP_ResultRow, regRowCount, 1);
+    sqlite3VdbeAddOp2(v, OP_ChngCntRow, regRowCount, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows updated", SQLITE_STATIC);
   }

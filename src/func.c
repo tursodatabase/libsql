@@ -1865,7 +1865,9 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
   int nExpr;
-  if( pExpr->op!=TK_FUNCTION || !pExpr->x.pList ){
+  assert( pExpr!=0 );
+  assert( pExpr->op==TK_FUNCTION );
+  if( !pExpr->x.pList ){
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
@@ -1952,6 +1954,14 @@ static void ceilingFunc(
 }
 
 /*
+** On some systems, ceil() and floor() are intrinsic function.  You are
+** unable to take a pointer to these functions.  Hence, we here wrap them
+** in our own actual functions.
+*/
+static double xCeil(double x){ return ceil(x); }
+static double xFloor(double x){ return floor(x); }
+
+/*
 ** Implementation of SQL functions:
 **
 **   ln(X)       - natural logarithm
@@ -1970,7 +1980,7 @@ static void logFunc(
     case SQLITE_INTEGER:
     case SQLITE_FLOAT:
       x = sqlite3_value_double(argv[0]);
-      if( x<0.0 ) return;
+      if( x<=0.0 ) return;
       break;
     default:
       return;
@@ -1979,14 +1989,15 @@ static void logFunc(
     switch( sqlite3_value_numeric_type(argv[0]) ){
       case SQLITE_INTEGER:
       case SQLITE_FLOAT:
-        b = x;
+        b = log(x);
+        if( b<=0.0 ) return;
         x = sqlite3_value_double(argv[1]);
-        if( x<0.0 ) return;
+        if( x<=0.0 ) return;
         break;
      default:
         return;
     }
-    ans = log(x)/log(b);
+    ans = log(x)/b;
   }else{
     ans = log(x);
     switch( SQLITE_PTR_TO_INT(sqlite3_user_data(context)) ){
@@ -2211,9 +2222,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(coalesce,           1, 0, 0, 0                ),
     FUNCTION(coalesce,           0, 0, 0, 0                ),
 #ifdef SQLITE_ENABLE_MATH_FUNCTIONS
-    MFUNCTION(ceil,              1, ceil,      ceilingFunc ),
-    MFUNCTION(ceiling,           1, ceil,      ceilingFunc ),
-    MFUNCTION(floor,             1, floor,     ceilingFunc ),
+    MFUNCTION(ceil,              1, xCeil,     ceilingFunc ),
+    MFUNCTION(ceiling,           1, xCeil,     ceilingFunc ),
+    MFUNCTION(floor,             1, xFloor,    ceilingFunc ),
 #if SQLITE_HAVE_C99_MATH_FUNCS
     MFUNCTION(trunc,             1, trunc,     ceilingFunc ),
 #endif

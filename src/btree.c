@@ -2901,6 +2901,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
         ((pageSize-1)&pageSize)==0 ){
     assert( (pageSize & 7)==0 );
     assert( !pBt->pCursor );
+    if( nReserve>32 && pageSize==512 ) pageSize = 1024;
     pBt->pageSize = (u32)pageSize;
     freeTempSpace(pBt);
   }
@@ -7974,6 +7975,9 @@ static int balance_nonroot(
       apOld[i] = 0;
       rc = sqlite3PagerWrite(pNew->pDbPage);
       nNew++;
+      if( sqlite3PagerPageRefcount(pNew->pDbPage)!=1+(i==(iParentIdx-nxDiv)) ){
+        rc = SQLITE_CORRUPT_BKPT;
+      }
       if( rc ) goto balance_cleanup;
     }else{
       assert( i>0 );
@@ -8010,7 +8014,7 @@ static int balance_nonroot(
     aPgOrder[i] = aPgno[i] = apNew[i]->pgno;
     aPgFlags[i] = apNew[i]->pDbPage->flags;
     for(j=0; j<i; j++){
-      if( aPgno[j]==aPgno[i] ){
+      if( NEVER(aPgno[j]==aPgno[i]) ){
         /* This branch is taken if the set of sibling pages somehow contains
         ** duplicate entries. This can happen if the database is corrupt. 
         ** It would be simpler to detect this as part of the loop below, but

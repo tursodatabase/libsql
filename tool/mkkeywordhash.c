@@ -155,10 +155,16 @@ struct Keyword {
 #  define WINDOWFUNC 0x00100000
 #endif
 #ifdef SQLITE_OMIT_GENERATED_COLUMNS
-#  define GENCOL 0
+#  define GENCOL     0
 #else
-#  define GENCOL 0x00200000
+#  define GENCOL     0x00200000
 #endif
+#ifdef SQLITE_OMIT_RETURNING
+#  define RETURNING  0
+#else
+#  define RETURNING  0x00400000
+#endif
+
 
 /*
 ** These are the keywords
@@ -280,6 +286,7 @@ static Keyword aKeywordTable[] = {
   { "RENAME",           "TK_RENAME",       ALTER,            1      },
   { "REPLACE",          "TK_REPLACE",      CONFLICT,         10     },
   { "RESTRICT",         "TK_RESTRICT",     FKEY,             1      },
+  { "RETURNING",        "TK_RETURNING",    RETURNING,        10     },
   { "RIGHT",            "TK_JOIN_KW",      ALWAYS,           0      },
   { "ROLLBACK",         "TK_ROLLBACK",     ALWAYS,           1      },
   { "ROW",              "TK_ROW",          TRIGGER,          1      },

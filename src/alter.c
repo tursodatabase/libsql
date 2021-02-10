@@ -381,11 +381,14 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       *zEnd-- = '\0';
     }
     db->mDbFlags |= DBFLAG_PreferBuiltin;
+    /* substr() operations on characters, but addColOffset is in bytes. So we
+    ** have to use printf() to translate between these units: */
     sqlite3NestedParse(pParse, 
         "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
-          "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
+          "sql = printf('%%.%ds, ',sql) || %Q"
+          " || substr(sql,1+length(printf('%%.%ds',sql))) "
         "WHERE type = 'table' AND name = %Q", 
-      zDb, pNew->addColOffset, zCol, pNew->addColOffset+1,
+      zDb, pNew->addColOffset, zCol, pNew->addColOffset,
       zTab
     );
     sqlite3DbFree(db, zCol);

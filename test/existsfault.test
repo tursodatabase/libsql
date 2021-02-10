@@ -1,0 +1,52 @@
+# 2021 January 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing cases where EXISTS expressions are
+# transformed to IN() expressions by where.c
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix existsfault
+
+do_execsql_test 1 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+  INSERT INTO t1 VALUES(5, 'five');
+  INSERT INTO t1 VALUES(6, 'six');
+  INSERT INTO t1 VALUES(7, 'seven');
+
+  CREATE TABLE t2(c INTEGER, d INTEGER);
+  INSERT INTO t2 VALUES(1, 1);
+  INSERT INTO t2 VALUES(3, 2);
+  INSERT INTO t2 VALUES(5, 3);
+  INSERT INTO t2 VALUES(7, 4);
+}
+faultsim_save_and_close
+
+do_faultsim_test 1 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT t1.* FROM t1 WHERE EXISTS(
+        SELECT * FROM t2 WHERE t2.c=t1.a AND d IN (1, 2, 3)
+    )
+  }
+} -test {
+  faultsim_test_result {0 {1 one 3 three 5 five}}
+}
+
+
+finish_test
+

@@ -112,7 +112,6 @@ static void resolveAlias(
     }
     sqlite3DbFree(db, pDup);
   }
-  ExprSetProperty(pExpr, EP_Alias);
 }
 
 
@@ -369,25 +368,29 @@ static int lookupName(
 #if !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_UPSERT)
     /* If we have not already resolved the name, then maybe 
     ** it is a new.* or old.* trigger argument reference.  Or
-    ** maybe it is an excluded.* from an upsert.
+    ** maybe it is an excluded.* from an upsert.  Or maybe it is
+    ** a reference in the RETURNING clause to a table being modified.
     */
-    if( zDb==0 && zTab!=0 && cntTab==0 ){
+    if( cnt==0 && zDb==0 ){
       pTab = 0;
 #ifndef SQLITE_OMIT_TRIGGER
       if( pParse->pTriggerTab!=0 ){
         int op = pParse->eTriggerOp;
         assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
-        if( op!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
+        if( op!=TK_DELETE && zTab && sqlite3StrICmp("new",zTab) == 0 ){
           pExpr->iTable = 1;
           pTab = pParse->pTriggerTab;
-        }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
+        }else if( op!=TK_INSERT && zTab && sqlite3StrICmp("old",zTab)==0 ){
           pExpr->iTable = 0;
+          pTab = pParse->pTriggerTab;
+        }else if( pParse->bReturning && (pNC->ncFlags & NC_UBaseReg)!=0 ){
+          pExpr->iTable = op!=TK_DELETE;
           pTab = pParse->pTriggerTab;
         }
       }
 #endif /* SQLITE_OMIT_TRIGGER */
 #ifndef SQLITE_OMIT_UPSERT
-      if( (pNC->ncFlags & NC_UUpsert)!=0 ){
+      if( (pNC->ncFlags & NC_UUpsert)!=0 && zTab!=0 ){
         Upsert *pUpsert = pNC->uNC.pUpsert;
         if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
           pTab = pUpsert->pUpsertSrc->a[0].pTab;
@@ -426,27 +429,32 @@ static int lookupName(
               pExpr->iTable = pNC->uNC.pUpsert->regData +
                  sqlite3TableColumnToStorage(pTab, iCol);
               eNewExprOp = TK_REGISTER;
-              ExprSetProperty(pExpr, EP_Alias);
             }
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {
-#ifndef SQLITE_OMIT_TRIGGER
-            if( iCol<0 ){
-              pExpr->affExpr = SQLITE_AFF_INTEGER;
-            }else if( pExpr->iTable==0 ){
-              testcase( iCol==31 );
-              testcase( iCol==32 );
-              pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
-            }else{
-              testcase( iCol==31 );
-              testcase( iCol==32 );
-              pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
-            }
             pExpr->y.pTab = pTab;
-            pExpr->iColumn = (i16)iCol;
-            eNewExprOp = TK_TRIGGER;
+            if( pParse->bReturning ){
+              eNewExprOp = TK_REGISTER;
+              pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
+                                + iCol + 1;
+            }else{
+              pExpr->iColumn = (i16)iCol;
+              eNewExprOp = TK_TRIGGER;
+#ifndef SQLITE_OMIT_TRIGGER
+              if( iCol<0 ){
+                pExpr->affExpr = SQLITE_AFF_INTEGER;
+              }else if( pExpr->iTable==0 ){
+                testcase( iCol==31 );
+                testcase( iCol==32 );
+                pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+              }else{
+                testcase( iCol==31 );
+                testcase( iCol==32 );
+                pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+              }
 #endif /* SQLITE_OMIT_TRIGGER */
+            }
           }
         }
       }
@@ -627,7 +635,9 @@ static int lookupName(
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    if( !ExprHasProperty(pExpr, EP_Alias) ){
+    if( pParse->db->xAuth
+     && (pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER)
+    ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }
     /* Increment the nRef value on all name contexts from TopNC up to
@@ -1639,7 +1649,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** Minor point: If this is the case, then the expression will be
     ** re-evaluated for each reference to it.
     */
-    assert( (sNC.ncFlags & (NC_UAggInfo|NC_UUpsert))==0 );
+    assert( (sNC.ncFlags & (NC_UAggInfo|NC_UUpsert|NC_UBaseReg))==0 );
     sNC.uNC.pEList = p->pEList;
     sNC.ncFlags |= NC_UEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;

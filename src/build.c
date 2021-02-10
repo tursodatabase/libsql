@@ -143,10 +143,34 @@ void sqlite3FinishCoding(Parse *pParse){
   /* Begin by generating some termination code at the end of the
   ** vdbe program
   */
-  v = sqlite3GetVdbe(pParse);
+  v = pParse->pVdbe;
+  if( v==0 ){
+    if( db->init.busy ){
+      pParse->rc = SQLITE_DONE;
+      return;
+    }
+    v = sqlite3GetVdbe(pParse);
+    if( v==0 ) pParse->rc = SQLITE_ERROR;
+  }
   assert( !pParse->isMultiWrite 
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));
   if( v ){
+    if( pParse->bReturning ){
+      Returning *pReturning = pParse->u1.pReturning;
+      int addrRewind;
+      int i;
+      int reg;
+
+      addrRewind =
+         sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+      reg = pReturning->iRetReg;
+      for(i=0; i<pReturning->nRetCol; i++){
+        sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
+      }
+      sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
+      sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+      sqlite3VdbeJumpHere(v, addrRewind);
+    }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
 #if SQLITE_USER_AUTHENTICATION
@@ -224,11 +248,15 @@ void sqlite3FinishCoding(Parse *pParse){
         }
       }
 
+      if( pParse->bReturning ){
+        Returning *pRet = pParse->u1.pReturning;
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
+      }
+
       /* Finally, jump back to the beginning of the executable code. */
       sqlite3VdbeGoto(v, 1);
     }
   }
-
 
   /* Get the VDBE program ready for execution
   */
@@ -1232,7 +1260,8 @@ void sqlite3StartTable(
     }else
 #endif
     {
-      pParse->addrCrTab =
+      assert( !pParse->bReturning );
+      pParse->u1.addrCrTab =
          sqlite3VdbeAddOp3(v, OP_CreateBtree, iDb, reg2, BTREE_INTKEY);
     }
     sqlite3OpenSchemaTable(pParse, iDb);
@@ -1265,6 +1294,77 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 }
 #endif
 
+/*
+** Name of the special TEMP trigger used to implement RETURNING.  The
+** name begins with "sqlite_" so that it is guaranteed not to collide
+** with any application-generated triggers.
+*/
+#define RETURNING_TRIGGER_NAME  "sqlite_returning"
+
+/*
+** Clean up the data structures associated with the RETURNING clause.
+*/
+static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
+  Hash *pHash;
+  pHash = &(db->aDb[1].pSchema->trigHash);
+  sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, 0);
+  sqlite3ExprListDelete(db, pRet->pReturnEL);
+  sqlite3DbFree(db, pRet);
+}
+
+/*
+** Add the RETURNING clause to the parse currently underway.
+**
+** This routine creates a special TEMP trigger that will fire for each row
+** of the DML statement.  That TEMP trigger contains a single SELECT
+** statement with a result set that is the argument of the RETURNING clause.
+** The trigger has the Trigger.bReturning flag and an opcode of
+** TK_RETURNING instead of TK_SELECT, so that the trigger code generator
+** knows to handle it specially.  The TEMP trigger is automatically
+** removed at the end of the parse.
+**
+** When this routine is called, we do not yet know if the RETURNING clause
+** is attached to a DELETE, INSERT, or UPDATE, so construct it as a
+** RETURNING trigger instead.  It will then be converted into the appropriate
+** type on the first call to sqlite3TriggersExist().
+*/
+void sqlite3AddReturning(Parse *pParse, ExprList *pList){
+  Returning *pRet;
+  Hash *pHash;
+  sqlite3 *db = pParse->db;
+  if( pParse->pNewTrigger ){
+    sqlite3ErrorMsg(pParse, "cannot use RETURNING in a trigger");
+  }else{
+    assert( pParse->bReturning==0 );
+  }
+  pParse->bReturning = 1;
+  pRet = sqlite3DbMallocZero(db, sizeof(*pRet));
+  if( pRet==0 ){
+    sqlite3ExprListDelete(db, pList);
+    return;
+  }
+  pParse->u1.pReturning = pRet;
+  pRet->pParse = pParse;
+  pRet->pReturnEL = pList;
+  sqlite3ParserAddCleanup(pParse,
+     (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
+  if( db->mallocFailed ) return;
+  pRet->retTrig.zName = RETURNING_TRIGGER_NAME;
+  pRet->retTrig.op = TK_RETURNING;
+  pRet->retTrig.tr_tm = TRIGGER_AFTER;
+  pRet->retTrig.bReturning = 1;
+  pRet->retTrig.pSchema = db->aDb[1].pSchema;
+  pRet->retTrig.step_list = &pRet->retTStep;
+  pRet->retTStep.op = TK_RETURNING;
+  pRet->retTStep.pTrig = &pRet->retTrig;
+  pRet->retTStep.pExprList = pList;
+  pHash = &(db->aDb[1].pSchema->trigHash);
+  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0 || pParse->nErr );
+  if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
+          ==&pRet->retTrig ){
+    sqlite3OomFault(db);
+  }
+}
 
 /*
 ** Add a new column to the table currently being constructed.
@@ -1281,6 +1381,8 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   char *zType;
   Column *pCol;
   sqlite3 *db = pParse->db;
+  u8 hName;
+
   if( (p = pParse->pNewTable)==0 ) return;
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
@@ -1292,8 +1394,9 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   memcpy(z, pName->z, pName->n);
   z[pName->n] = 0;
   sqlite3Dequote(z);
+  hName = sqlite3StrIHash(z);
   for(i=0; i<p->nCol; i++){
-    if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
+    if( p->aCol[i].hName==hName && sqlite3StrICmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqlite3DbFree(db, z);
       return;
@@ -1311,7 +1414,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
-  pCol->hName = sqlite3StrIHash(z);
+  pCol->hName = hName;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
   if( pType->n==0 ){
@@ -2094,9 +2197,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   /* Convert the P3 operand of the OP_CreateBtree opcode from BTREE_INTKEY
   ** into BTREE_BLOBKEY.
   */
-  if( pParse->addrCrTab ){
+  assert( !pParse->bReturning );
+  if( pParse->u1.addrCrTab ){
     assert( v );
-    sqlite3VdbeChangeP3(v, pParse->addrCrTab, BTREE_BLOBKEY);
+    sqlite3VdbeChangeP3(v, pParse->u1.addrCrTab, BTREE_BLOBKEY);
   }
 
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
@@ -2587,7 +2691,7 @@ void sqlite3EndTable(
         pCons = pEnd;
       }
       nName = (int)((const char *)pCons->z - zName);
-      p->addColOffset = 13 + sqlite3Utf8CharLen(zName, nName);
+      p->addColOffset = 13 + nName;
     }
 #endif
   }

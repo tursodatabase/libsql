@@ -100,6 +100,32 @@ int sqlite3WhereOrderByLimitOptLabel(WhereInfo *pWInfo){
 }
 
 /*
+** While generating code for the min/max optimization, after handling
+** the aggregate-step call to min() or max(), check to see if any
+** additional looping is required.  If the output order is such that
+** we are certain that the correct answer has already been found, then
+** code an OP_Goto to by pass subsequent processing.
+**
+** Any extra OP_Goto that is coded here is an optimization.  The
+** correct answer should be obtained regardless.  This OP_Goto just
+** makes the answer appear faster.
+*/
+void sqlite3WhereMinMaxOptEarlyOut(Vdbe *v, WhereInfo *pWInfo){
+  WhereLevel *pInner;
+  int i;
+  if( !pWInfo->bOrderedInnerLoop ) return;
+  if( pWInfo->nOBSat==0 ) return;
+  for(i=pWInfo->nLevel-1; i>=0; i--){
+    pInner = &pWInfo->a[i];
+    if( (pInner->pWLoop->wsFlags & WHERE_COLUMN_IN)!=0 ){
+      sqlite3VdbeGoto(v, pInner->addrNxt);
+      return;
+    }
+  }
+  sqlite3VdbeGoto(v, pWInfo->iBreak);
+}
+
+/*
 ** Return the VDBE address or label to jump to in order to continue
 ** immediately with the next row of a WHERE clause.
 */
@@ -2605,7 +2631,7 @@ static int whereLoopAddBtreeIndex(
       pBtm = pTerm;
       pTop = 0;
       if( pTerm->wtFlags & TERM_LIKEOPT ){
-        /* Range contraints that come from the LIKE optimization are
+        /* Range constraints that come from the LIKE optimization are
         ** always used in pairs. */
         pTop = &pTerm[1];
         assert( (pTop-(pTerm->pWC->a))<pTerm->pWC->nTerm );
@@ -5539,7 +5565,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #endif
       pOp = sqlite3VdbeGetOp(v, k);
       pLastOp = pOp + (last - k);
-      assert( pOp<pLastOp );
+      assert( pOp<pLastOp || (pParse->nErr>0 && pOp==pLastOp) );
       do{
         if( pOp->p1!=pLevel->iTabCur ){
           /* no-op */

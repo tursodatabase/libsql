@@ -65,8 +65,8 @@ foreach {tn sql1 sql2} {
   3 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE binary HAVING a=2"
     "SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a COLLATE binary"
 
-  5 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE binary HAVING 0"
-    "SELECT a, sum(b) FROM t1 WHERE 0 GROUP BY a COLLATE binary"
+  5 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE binary HAVING 1"
+    "SELECT a, sum(b) FROM t1 WHERE 1 GROUP BY a COLLATE binary"
 
   6 "SELECT count(*) FROM t1,t2 WHERE a=c GROUP BY b, d HAVING b=d"
     "SELECT count(*) FROM t1,t2 WHERE a=c AND b=d GROUP BY b, d"
@@ -154,5 +154,38 @@ do_execsql_test 4.3 {
   SELECT a, sum(b) FROM t3 WHERE nondeter(a) GROUP BY a
 } {1 4 2 2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(x, y);
+  INSERT INTO t1 VALUES('a', 'b');
+}
+
+# The WHERE clause (a=2), uses an aggregate column from the outer query.
+# If the HAVING term (0) is moved into the WHERE clause in this case,
+# SQLite would at one point optimize (a=2 AND 0) to simply (0). Which
+# is logically correct, but happened to cause problems in aggregate
+# processing for the outer query. This test case verifies that those 
+# problems are no longer present.
+do_execsql_test 5.1 {
+  SELECT min(b), (
+    SELECT x FROM t2 WHERE a=2 GROUP BY y HAVING 0
+  ) FROM t1;
+} {b {}}
+
+# From chromium
+# https://bugs.chromium.org/p/chromium/issues/detail?id=1161869
+#
+do_execsql_test 5.2 {
+  SELECT EXISTS (
+    SELECT * FROM (
+      SELECT * FROM (
+        SELECT 1
+      ) WHERE Col0 = 1   GROUP BY 1
+    )   WHERE 0
+  )
+  FROM (SELECT 1 Col0)   GROUP BY 1
+} {0}
 
 finish_test
