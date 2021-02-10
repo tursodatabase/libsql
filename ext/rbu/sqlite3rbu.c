@@ -4842,11 +4842,10 @@ static int rbuVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
     if( pRbu && pRbu->eStage==RBU_STAGE_CAPTURE ){
       bCapture = 1;
     }
-
     if( bCapture==0 || 0==(flags & SQLITE_SHM_UNLOCK) ){
       rc = p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
       if( bCapture && rc==SQLITE_OK ){
-        pRbu->mLock |= (1 << ofst);
+        pRbu->mLock |= ((1<<n) - 1) << ofst;
       }
     }
   }

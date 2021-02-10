@@ -5022,6 +5022,7 @@ static int unixShmUnmap(
   if( p==0 ) return SQLITE_OK;
   pShmNode = p->pShmNode;
 
+  assert( p->exclMask==0 && p->sharedMask==0 );
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
 
