@@ -1,5 +1,5 @@
-C Merge\schanges\son\s3.31\sbranch\sinto\sreuse-schema.
-D 2020-02-06T11:08:08.172
+C In\sRBU,\savoid\spassing\sVFS\sxShmLock\scalls\sthrough\sto\sthe\sunderlying\sVFS\sin\scases\swhere\sxShmMap\scalls\smay\snot\sbe.\sThis\sfixes\sa\sbad\sinteraction\swith\sZipVFS.
+D 2021-02-11T16:19:12.056
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -371,7 +371,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c 77a47f3231f5f363b2c584dba3e310a7efdaf073ad8c18728ab846b38de2879c
+F ext/rbu/sqlite3rbu.c 41424d130e4b66e6c487b9134e3adab0cd0c679bf37321105e700c59a046c2af
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1867,10 +1867,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f418afa1bfde909bb90a60990e16be6beace9788319a5e1871e94b442fcd688c 6279f69f0fe3c7bb7b2eddd5ca51e28f003044ed0a3629260991a3aa8e521850
-R 4f5e38cae51bf846c680e6313e96373b
-T *branch * reuse-schema-3.31
-T *sym-reuse-schema-3.31 *
-T -sym-reuse-schema *
+P 6dbb8cb0e3dd86c54579531fbb27db7608af556bcd766633239b814630cd0231
+Q +bd1e9e0a4c0e07901ef59fe3b7e6f7b9cc66ccfcd5192f576e1620820891de99
+R ef6994f4568a49b87305403cf06b5d34
 U dan
-Z ab1a201da85341bd349a436c1c1e3584
+Z 6cab51a154d7fe0b4a3ec2eeef25076d
