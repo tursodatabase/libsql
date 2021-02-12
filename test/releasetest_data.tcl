@@ -289,7 +289,7 @@ if {$tcl_platform(os)=="Darwin"} {
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols*"          checksymbols
-    "Fast-One"                "fuzztest test"
+    "Fast-One"                "QUICKTEST_INCLUDE=rbu.test fuzztest test"
     "Debug-One"               "mptest test"
     "Debug-Two"               "test"
     "Have-Not"                test
