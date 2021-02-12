@@ -5204,6 +5204,45 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
 }
 
 #ifndef SQLITE_OMIT_CTE
+/*
+** Create a new CTE object
+*/
+Cte *sqlite3CteNew(
+  Parse *pParse,          /* Parsing context */
+  Token *pName,           /* Name of the common-table */
+  ExprList *pArglist,     /* Optional column name list for the table */
+  Select *pQuery          /* Query used to initialize the table */
+){
+  Cte *pNew;
+  sqlite3 *db = pParse->db;
+
+  pNew = sqlite3DbMallocZero(db, sizeof(*pNew));
+  assert( pNew!=0 || db->mallocFailed );
+
+  if( db->mallocFailed ){
+    sqlite3ExprListDelete(db, pArglist);
+    sqlite3SelectDelete(db, pQuery);
+  }else{
+    pNew->pSelect = pQuery;
+    pNew->pCols = pArglist;
+    pNew->zName = sqlite3NameFromToken(pParse->db, pName);
+    pNew->zCteErr = 0;
+  }
+  return pNew;
+}
+
+/*
+** Free the contents of the CTE object passed as the second argument.
+*/
+void sqlite3CteDelete(sqlite3 *db, Cte *pCte){
+  if( pCte ){
+    sqlite3ExprListDelete(db, pCte->pCols);
+    sqlite3SelectDelete(db, pCte->pSelect);
+    sqlite3DbFree(db, pCte->zName);
+    sqlite3DbFree(db, pCte);
+  }
+}
+
 /* 
 ** This routine is invoked once per CTE by the parser while parsing a 
 ** WITH clause. 
@@ -5211,17 +5250,20 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
 With *sqlite3WithAdd(
   Parse *pParse,          /* Parsing context */
   With *pWith,            /* Existing WITH clause, or NULL */
-  Token *pName,           /* Name of the common-table */
-  ExprList *pArglist,     /* Optional column name list for the table */
-  Select *pQuery          /* Query used to initialize the table */
+  Cte *pCte               /* The CTE to add to the WITH clause */
 ){
   sqlite3 *db = pParse->db;
   With *pNew;
   char *zName;
 
+
+  if( pCte==0 ){
+    return pWith;
+  }
+
   /* Check that the CTE name is unique within this WITH clause. If
   ** not, store an error in the Parse structure. */
-  zName = sqlite3NameFromToken(pParse->db, pName);
+  zName = pCte->zName;
   if( zName && pWith ){
     int i;
     for(i=0; i<pWith->nCte; i++){
@@ -5237,21 +5279,15 @@ With *sqlite3WithAdd(
   }else{
     pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
   }
-  assert( (pNew!=0 && zName!=0) || db->mallocFailed );
 
   if( db->mallocFailed ){
-    sqlite3ExprListDelete(db, pArglist);
-    sqlite3SelectDelete(db, pQuery);
-    sqlite3DbFree(db, zName);
+    sqlite3CteDelete(db, pCte);
     pNew = pWith;
   }else{
-    pNew->a[pNew->nCte].pSelect = pQuery;
-    pNew->a[pNew->nCte].pCols = pArglist;
-    pNew->a[pNew->nCte].zName = zName;
-    pNew->a[pNew->nCte].zCteErr = 0;
+    pNew->a[pNew->nCte] = *pCte;
+    sqlite3DbFree(db, pCte);
     pNew->nCte++;
   }
-
   return pNew;
 }
 

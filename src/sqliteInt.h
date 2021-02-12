@@ -1136,6 +1136,7 @@ typedef struct AutoincInfo AutoincInfo;
 typedef struct Bitvec Bitvec;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
+typedef struct Cte Cte;
 typedef struct Db Db;
 typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
@@ -3870,15 +3871,16 @@ void sqlite3SelectWalkAssert2(Walker*, Select*);
 ** An instance of this structure represents a set of one or more CTEs
 ** (common table expressions) created by a single WITH clause.
 */
+struct Cte {
+  char *zName;                  /* Name of this CTE */
+  ExprList *pCols;              /* List of explicit column names, or NULL */
+  Select *pSelect;              /* The definition of this CTE */
+  const char *zCteErr;          /* Error message for circular references */
+};
 struct With {
-  int nCte;                       /* Number of CTEs in the WITH clause */
-  With *pOuter;                   /* Containing WITH clause, or NULL */
-  struct Cte {                    /* For each CTE in the WITH clause.... */
-    char *zName;                    /* Name of this CTE */
-    ExprList *pCols;                /* List of explicit column names, or NULL */
-    Select *pSelect;                /* The definition of this CTE */
-    const char *zCteErr;            /* Error message for circular references */
-  } a[1];
+  int nCte;                     /* Number of CTEs in the WITH clause */
+  With *pOuter;                 /* Containing WITH clause, or NULL */
+  Cte a[1];                     /* The CTEs of this WITH clause */
 };
 
 #ifdef SQLITE_DEBUG
@@ -4882,7 +4884,9 @@ const char *sqlite3JournalModename(int);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
 #ifndef SQLITE_OMIT_CTE
-  With *sqlite3WithAdd(Parse*,With*,Token*,ExprList*,Select*);
+  Cte *sqlite3CteNew(Parse*,Token*,ExprList*,Select*);
+  With *sqlite3WithAdd(Parse*,With*,Cte*);
+  void sqlite3CteDelete(sqlite3*,Cte*);
   void sqlite3WithDelete(sqlite3*,With*);
   void sqlite3WithPush(Parse*, With*, u8);
 #else

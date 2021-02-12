@@ -1658,17 +1658,36 @@ anylist ::= anylist ANY.
 //////////////////////// COMMON TABLE EXPRESSIONS ////////////////////////////
 %type wqlist {With*}
 %destructor wqlist {sqlite3WithDelete(pParse->db, $$);}
+%type wqitem {Cte*}
+%destructor wqitem {sqlite3CteDelete(pParse->db, $$);}
 
 with ::= .
 %ifndef SQLITE_OMIT_CTE
 with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
 with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
-wqlist(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
-  A = sqlite3WithAdd(pParse, 0, &X, Y, Z); /*A-overwrites-X*/
+wqitem(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
+  A = sqlite3CteNew(pParse, &X, Y, Z); /*A-overwrites-X*/
 }
-wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
-  A = sqlite3WithAdd(pParse, A, &X, Y, Z);
+wqitem(A) ::= nm eidlist_opt AS LP DELETE FROM nm dbnm where_opt_ret RP. {
+  sqlite3ErrorMsg(pParse, "DELETE in WITH clauses not yet implemented");
+  A = 0;
+}
+wqitem(A) ::= nm eidlist_opt AS LP
+              insert_cmd INTO nm dbnm idlist_opt select upsert RP. {
+  sqlite3ErrorMsg(pParse, "INSERT in WITH clauses not yet implemented");
+  A = 0;
+}
+wqitem(A) ::= nm eidlist_opt AS LP
+              UPDATE orconf nm dbnm SET setlist from where_opt_ret RP. {
+  sqlite3ErrorMsg(pParse, "UPDATE in WITH clauses not yet implemented");
+  A = 0;
+}
+wqlist(A) ::= wqitem(X). {
+  A = sqlite3WithAdd(pParse, 0, X); /*A-overwrites-X*/
+}
+wqlist(A) ::= wqlist(A) COMMA wqitem(X). {
+  A = sqlite3WithAdd(pParse, A, X);
 }
 %endif  SQLITE_OMIT_CTE
 
