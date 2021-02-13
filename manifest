@@ -1,5 +1,5 @@
-C Avoid\smanifesting\sa\sCTE\s(or\sother\sview)\smultiple\stimes\swhen\sit\sis\spossible\sto\nreuse\sthe\sfirst\smanifestation.
-D 2021-02-13T16:39:24.888
+C Fix\sincorrect\stest\sname\slabels\sin\sthe\sselect1.test\sscript.
+D 2021-02-13T18:14:15.205
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1324,7 +1324,7 @@ F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce
 F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972a5a2a51e
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/select1.test 0ed936740777f52858b6607f39ffac4b2b63b8fc7edf3ab2ebad3c3553ceecee
+F test/select1.test 3d23f66bf9ba77570acfe2ca5f1540ece17037cc64ab1a00efec9758ac29c268
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
 F test/select4.test e8a2502e3623f3058871030599a48abb35789d2244d5b380ecf3696873fdd4a4
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4f8a79fd8b3be9bf8add5f5e1c66bc2fe78da4e50ea500ab0b8370d30e31ba5
-R fcb006f6d71d2e850d377aff55f1cc80
+P 9692f510803c9b9725abb687d7c10fbc0d5ed784479ec6f3fcc55925a87fe16d
+R 0c64c86089d6aa467750f9eba3dbafff
 U drh
-Z 1875864fd8db78218d6a73a66447730a
+Z bef3ac59ff66799b655a50d5e67ecd31
