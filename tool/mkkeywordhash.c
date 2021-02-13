@@ -229,7 +229,7 @@ static Keyword aKeywordTable[] = {
   { "FOREIGN",          "TK_FOREIGN",      FKEY,             1      },
   { "FROM",             "TK_FROM",         ALWAYS,           10     },
   { "FULL",             "TK_JOIN_KW",      ALWAYS,           3      },
-  { "GENERATED",        "TK_GENERATED",    GENCOL,           1      },
+  { "GENERATED",        "TK_GENERATED",    ALWAYS,           1      },
   { "GLOB",             "TK_LIKE_KW",      ALWAYS,           3      },
   { "GROUP",            "TK_GROUP",        ALWAYS,           5      },
   { "GROUPS",           "TK_GROUPS",       WINDOWFUNC,       2      },

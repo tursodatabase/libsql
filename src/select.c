@@ -4938,6 +4938,7 @@ static int withExpand(
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
     assert( pFrom->pSelect );
+    if( pCte->bOptBarrier ) pFrom->pSelect->selFlags |= SF_OptBarrier;
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;
@@ -6070,6 +6071,9 @@ int sqlite3Select(
       continue;
     }
 
+    /* Do not flatten across an optimization barrier */
+    if( pSub->selFlags & SF_OptBarrier ) continue;
+
     if( flattenSubquery(pParse, p, i, isAgg) ){
       if( pParse->nErr ) goto select_end;
       /* This subquery can be absorbed into its parent. */
@@ -6194,6 +6198,7 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( OptimizationEnabled(db, SQLITE_PushDown)
+     && (pSub->selFlags & SF_OptBarrier)==0
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){
@@ -6214,16 +6219,22 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine if the subquery is
+    ** The subquery is implemented as a co-routine if (1) the subquery is
     ** guaranteed to be the outer loop (so that it does not need to be
-    ** computed more than once)
+    ** computed more than once) and if (2) the subquery is not optimization
+    ** barrier.
     **
-    ** TODO: Are there other reasons beside (1) to use a co-routine
+    ** TODO: Are there other reasons beside (1) and (2) to use a co-routine
     ** implementation?
+    **
+    ** TODO: We might should allow a subquery that is an optimization barrier
+    ** to be implemented as a co-routine as long as we know that it is the
+    ** only use of the subquery.
     */
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
+     && (pSub->selFlags & SF_OptBarrier)==0                         /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
