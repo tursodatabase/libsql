@@ -326,4 +326,33 @@ do_execsql_test 5.20 {
   SELECT *, '+' FROM t1 LEFT JOIN t3 ON (a NOT IN(SELECT v FROM t1 LEFT JOIN t2 ON (a=k))=k);
 } {0 {} {} {} + 1 one {} {} + 2 two {} {} + 5 five {} {} + 3 three {} {} + 6 six {} {} +}
 
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1 VALUES(1,2);
+  CREATE TABLE t2(a,b);
+  INSERT INTO t2 VALUES(3,4);
+
+  CREATE TABLE t3(a,b);
+  INSERT INTO t3 VALUES(5,6);
+  CREATE TABLE t4(a,b);
+  INSERT INTO t4 VALUES(7,8);
+
+  CREATE TABLE t5(a,b);
+  INSERT INTO t5 VALUES(9,10);
+}
+
+do_execsql_test 6.1 {
+  WITH x(c) AS (
+    SELECT 1000 FROM t1 UNION ALL SELECT 800 FROM t2
+  ),
+  y(d) AS (
+    SELECT  100 FROM t3 UNION ALL SELECT 400 FROM t4
+  )
+  SELECT * FROM t5, x, y;
+} {
+  9 10 1000 100     9 10 1000 400
+  9 10 800 100      9 10 800 400
+}
+
 finish_test

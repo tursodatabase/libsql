@@ -3688,7 +3688,8 @@ static void srclistRenumberCursors(
 */
 static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
   int *aCsrMap = pWalker->u.aiCol;
-  if( pExpr->op==TK_COLUMN && aCsrMap[pExpr->iTable] ){
+  int op = pExpr->op;
+  if( (op==TK_COLUMN || op==TK_IF_NULL_ROW) && aCsrMap[pExpr->iTable] ){
     pExpr->iTable = aCsrMap[pExpr->iTable];
   }
   if( ExprHasProperty(pExpr, EP_FromJoin) && aCsrMap[pExpr->iRightJoinTable] ){
