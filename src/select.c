@@ -4593,6 +4593,7 @@ static int pushDownWhereTerms(
   }
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
     nChng++;
+    pSubq->selFlags |= SF_PushDown;
     while( pSubq ){
       SubstContext x;
       pNew = sqlite3ExprDup(pParse->db, pWhere, 0);
@@ -5765,6 +5766,8 @@ static struct SrcList_item *isSelfJoinView(
   struct SrcList_item *pThis   /* Search for prior reference to this subquery */
 ){
   struct SrcList_item *pItem;
+  assert( pThis->pSelect!=0 );
+  if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
   for(pItem = pTabList->a; pItem<pThis; pItem++){
     Select *pS1;
     if( pItem->pSelect==0 ) continue;
@@ -5780,9 +5783,7 @@ static struct SrcList_item *isSelfJoinView(
       ** names in the same FROM clause. */
       continue;
     }
-    if( sqlite3ExprCompare(0, pThis->pSelect->pWhere, pS1->pWhere, -1)
-     || sqlite3ExprCompare(0, pThis->pSelect->pHaving, pS1->pHaving, -1) 
-    ){
+    if( pItem->pSelect->selFlags & SF_PushDown ){
       /* The view was modified by some other optimization such as
       ** pushDownWhereTerms() */
       continue;
@@ -6203,6 +6204,7 @@ int sqlite3Select(
         sqlite3TreeViewSelect(0, p, 0);
       }
 #endif
+      assert( pItem->pSelect && (pItem->pSelect->selFlags & SF_PushDown)!=0 );
     }else{
       SELECTTRACE(0x100,pParse,p,("Push-down not possible\n"));
     }
