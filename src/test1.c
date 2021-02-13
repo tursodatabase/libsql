@@ -6657,6 +6657,36 @@ static int SQLITE_TCLAPI prng_seed(
 }
 
 /*
+** tclcmd:  optimization_barrier_like_pattern PATTERN ?DB?
+**
+** Use the SQLITE_TESTCTRL_OPTBARRIER_LIKE test-control to set a LIKE
+** pattern that creates optimization barriers on views, common table
+** expressions, and subqueries.  An empty-string pattern disables this
+** feature.
+*/
+static int SQLITE_TCLAPI optbarrier_like(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int i = 0;
+  sqlite3 *db = 0;
+  const char *zPattern;
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATTERN ?DB?");
+    return TCL_ERROR;
+  }
+  zPattern = Tcl_GetString(objv[1]);
+  if( zPattern && zPattern[0]==0 ) zPattern = 0;
+  if( objc==3 && getDbPointer(interp, Tcl_GetString(objv[2]), &db) ){
+    return TCL_ERROR;
+  }
+  sqlite3_test_control(SQLITE_TESTCTRL_OPTBARRIER_LIKE, db, zPattern);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  extra_schema_checks BOOLEAN
 **
 ** Enable or disable schema checks when parsing the sqlite_schema file.
@@ -8354,6 +8384,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
      { "prng_seed",                     prng_seed,          0 },
+     { "optimization_barrier_like_pattern",
+                                        optbarrier_like,        0},
      { "extra_schema_checks",           extra_schema_checks,    0},
      { "database_never_corrupt",        database_never_corrupt, 0},
      { "database_may_be_corrupt",       database_may_be_corrupt, 0},

@@ -1,5 +1,5 @@
-C Fix\sincorrect\stest\sname\slabels\sin\sthe\sselect1.test\sscript.
-D 2021-02-13T18:14:15.205
+C Add\sa\stest-control\sthat\sallows\ssetting\sa\sLIKE\spattern\sfor\scommon\stable\nexpression\snames\ssuch\sthat\sCTEs\swith\smatching\snames\sbecome\san\noptimization\sbarrier\s-\sThey\sare\snot\sflattened\sand\sare\simplemented\sby\nmaterialization.
+D 2021-02-13T21:01:31.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -505,7 +505,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3d17e465c4cdb7e02e4b2a9d0a6cee08d23c478a01bd7eb5c5d4024fc70c5e5c
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
-F src/main.c 1c5de7b3fabcdf05f4fe563aab5d81d175b89c67a8678a12ba86629356afa356
+F src/main.c cd31d12a11dc688bcdb74f798396f3f6999453d8542f5fb44d3017a54cfcf5c7
 F src/malloc.c c1af4ac5a463648cd2953fd4ac679b3ba9022ce5ec794a60806150ad69dfd33a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -541,17 +541,17 @@ F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 89e4faf6171e179edf279905e8e45c4f9dd108777dc60716396729fbd7cb045e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 9b4c84fd2703ee3c8b5d4b189387482a84c26acf2c38ca4835db5b48c68a09d4
-F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
-F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
+F src/select.c 9415f7aa051ce6130eb3cea4cf1df66cc014b40e1cc35684e35abb5b95ac2742
+F src/shell.c.in c51718e42071dc61773c438838a734b4b43b2a74f062293799cd79b7268da6cf
+F src/sqlite.h.in dfb3bc794602ecbc0e330347b8be22d44558eed2bf6d929980055e425cab1544
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 4cb469678a0dbf814e4efbde4488a0161a5398e9a63141830d9f676b4e9fb0cc
+F src/sqliteInt.h e5de6401f539dc1fa7eda72f9d094ddc91cdbcb718a85c87045c9b470769ff95
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c 2197966d2f7211ef9eefaa6c3c7dd2c7d786d1f33f2aadef2f08c8c79eceec26
+F src/test1.c 6a0c649bcde43b0817258809aabacc35f7513160ef1d1f27816658e062fac752
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1899,7 +1899,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9692f510803c9b9725abb687d7c10fbc0d5ed784479ec6f3fcc55925a87fe16d
-R 0c64c86089d6aa467750f9eba3dbafff
+P 179c79ea0deb0f5adaa8d369cfcad06d959a9cc18a8a41e01ef013b2d90acd61
+R e0e6fb25237319b02038c6709b13c495
+T *branch * optbarrier-test-ctrl
+T *sym-optbarrier-test-ctrl *
+T -sym-trunk *
 U drh
-Z bef3ac59ff66799b655a50d5e67ecd31
+Z 1c66b6635d9f626e4ac88dfb239b3101

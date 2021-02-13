@@ -1395,6 +1395,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   ** structure?
   */
   sqlite3DbFree(db, db->aDb[1].pSchema);
+  sqlite3DbFree(db, db->zOptBarrierLike);
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
@@ -4274,6 +4275,28 @@ int sqlite3_test_control(int op, ...){
          case 3:   sqlite3WhereTrace = *ptr;       break;
        }
        break;
+    }
+
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_OPTBARRIER_LIKE, db, zPattern);
+    **
+    ** The zPattern argument is a LIKE pattern, or NULL.  After this call,
+    ** subqueries, common table expressions, and views whose names
+    ** match the LIKE pattern, assuming a \ escape character, are
+    ** treated as optimization barriers.  They are not flattened.
+    ** The are implemented by materialization.
+    **
+    ** Setting the LIKE pattern to NULL disables this setting.  The
+    ** default state is disabled.
+    **
+    ** This database connection makes its own copy of the pattern.  The
+    ** zPattern argument does not need to persist after this routine returns.
+    */
+    case SQLITE_TESTCTRL_OPTBARRIER_LIKE: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      const char *zPattern = va_arg(ap, const char*);
+      sqlite3DbFree(db, db->zOptBarrierLike);
+      db->zOptBarrierLike = sqlite3DbStrDup(db, zPattern);
+      break;
     }
   }
   va_end(ap);

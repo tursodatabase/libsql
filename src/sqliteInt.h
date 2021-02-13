@@ -1598,6 +1598,7 @@ struct sqlite3 {
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
   i64 nDeferredImmCons;         /* Net deferred immediate constraints */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
+  char *zOptBarrierLike;        /* LIKE pattern for SF_OptBarrier SELECTs */
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MAIN
   ** mutex, not by sqlite3.mutex. They are used by code in notify.c.
@@ -3185,6 +3186,7 @@ struct Select {
 #define SF_NoopOrderBy   0x0400000 /* ORDER BY is ignored for this query */
 #define SF_UpdateFrom    0x0800000 /* Statement is an UPDATE...FROM */
 #define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
+#define SF_OptBarrier    0x2000000 /* This SELECT is an optimization barrier */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined

@@ -9942,6 +9942,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""               },
       { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"      },
       { "seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,    ""               },
+      { "optbarrier_like",    SQLITE_TESTCTRL_OPTBARRIER_LIKE, "?PATTERN?"    },
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -10081,6 +10082,16 @@ static int do_meta_command(char *zLine, ShellState *p){
           u64 x = 0;
           rc2 = sqlite3_test_control(testctrl, p->db, &x);
           utf8_printf(p->out, "%llu\n", x);
+          isOk = 3;
+          break;
+        }
+
+        case SQLITE_TESTCTRL_OPTBARRIER_LIKE: {
+          if( nArg>=3 ){
+            rc2 = sqlite3_test_control(testctrl, p->db, azArg[2]);
+          }else{
+            rc2 = sqlite3_test_control(testctrl, p->db, 0);
+          }
           isOk = 3;
           break;
         }

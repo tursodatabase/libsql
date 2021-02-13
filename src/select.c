@@ -4938,6 +4938,11 @@ static int withExpand(
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
     assert( pFrom->pSelect );
+    if( db->zOptBarrierLike
+     && sqlite3_strlike(db->zOptBarrierLike, pTab->zName, '\\')==0
+    ){
+      pFrom->pSelect->selFlags |= SF_OptBarrier;
+    }
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;
@@ -6070,6 +6075,9 @@ int sqlite3Select(
       continue;
     }
 
+    /* Do not flatten if the subquery is an optimization barrier */
+    if( pSub->selFlags & SF_OptBarrier ) continue;
+
     if( flattenSubquery(pParse, p, i, isAgg) ){
       if( pParse->nErr ) goto select_end;
       /* This subquery can be absorbed into its parent. */
@@ -6214,16 +6222,18 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine if the subquery is
+    ** The subquery is implemented as a co-routine if (1) the subquery is
     ** guaranteed to be the outer loop (so that it does not need to be
-    ** computed more than once)
+    ** computed more than once) and if (2) the subquery is not an
+    ** optimization barrier.
     **
-    ** TODO: Are there other reasons beside (1) to use a co-routine
+    ** TODO: Are there other reasons beside (1) and (2) to use a co-routine
     ** implementation?
     */
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
+     && (pSub->selFlags & SF_OptBarrier)==0                         /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
