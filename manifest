@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\stest\scase\sfix\sin\s[ecd71203].
-D 2021-02-15T11:14:53.674
+C Ensure\sthat\sthe\sALTER\sTABLE\sstatements\sreturn\s0\sfor\nsqlite3_column_count().
+D 2021-02-15T13:17:19.534
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 36cae0d6e3e91a1996e1a472f8c7242c31a4e38ba4295e3056da198c04fd2a87
+F src/alter.c c4a973d7fc68f81fbc5d1d028a88ddb2cb212faef8c6f63433175b8d5ecd83dc
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c e80162a47411f296bea550ed8fafd730481f4aa71e89ece23ba9c957eed15d4a
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 179c79ea0deb0f5adaa8d369cfcad06d959a9cc18a8a41e01ef013b2d90acd61
-R 5f0aad5d7f182c557891a16fbaaa8cc0
-U dan
-Z ba1469c6a8636da747e8ff0251d05f6d
+P 5411bfa41ea9a492ca1f567327d8e0a1b3db047292fec1753bfef8a157cf8c1d
+R 26a1b41fc224209a7df396ceab19e9c5
+U drh
+Z 636bc50c9ef75b6ac02dee0a656e0aee
