@@ -1,5 +1,5 @@
-C Fix\sincorrect\stest\sname\slabels\sin\sthe\sselect1.test\sscript.
-D 2021-02-13T18:14:15.205
+C Fix\san\serror\sin\sthe\stest\scase\sfix\sin\s[ecd71203].
+D 2021-02-15T11:14:53.674
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -697,7 +697,7 @@ F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
-F test/backup2.test f52e3b87f39d1b826d4f622eafe5d30260ae5bdb05764843ff7c83057b05ed49
+F test/backup2.test 8facb54df1388419d34b362ab1f7e233310ff3a3af64e8ad5ec47ba3c2bbe5cf
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
@@ -1899,7 +1899,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9692f510803c9b9725abb687d7c10fbc0d5ed784479ec6f3fcc55925a87fe16d
-R 0c64c86089d6aa467750f9eba3dbafff
-U drh
-Z bef3ac59ff66799b655a50d5e67ecd31
+P 179c79ea0deb0f5adaa8d369cfcad06d959a9cc18a8a41e01ef013b2d90acd61
+R 5f0aad5d7f182c557891a16fbaaa8cc0
+U dan
+Z ba1469c6a8636da747e8ff0251d05f6d

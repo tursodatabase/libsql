@@ -152,8 +152,8 @@ do_test backup2-10 {
   forcedelete bu3.db
   file mkdir bu3.db
   set rc [catch {db restore temp bu3.db} res]
-  if {0==[string match *BSD $tcl_platform(os)]} { lappend rc $res }
-  set rc
+  if {[string match *BSD $tcl_platform(os)]} { set res "" }
+  list $rc $res
 } [list 1 $msg]
 
 # Try to restore from something that is not a database file.
