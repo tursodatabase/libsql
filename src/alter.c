@@ -50,6 +50,7 @@ static int isAlterableTable(Parse *pParse, Table *pTab){
 ** objects unusable.
 */
 static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
+  pParse->colNamesSet = 1;
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
       "FROM \"%w\"." DFLT_SCHEMA_TABLE " "

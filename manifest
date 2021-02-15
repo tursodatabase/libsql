@@ -1,5 +1,5 @@
-C If\sthe\sGENERATED\skeyword\soccurs\sbefore\sthe\sAS\skeyword\sin\sa\scommon\stable\nexpression\s(CTE)\sdefinition,\sthen\sthat\sCTE\sbecomes\san\s"optimization\sbarrier".\nFor\snow,\sthat\smeans\sthe\sCTE\sis\salways\smaterialized.\s\sIt\salso\smeans\sthat\nquery\sflattener\sor\spushdown\soptimizations\sthat\scross\sthe\sCTE\sboundary\sare\nomitted.
-D 2021-02-13T23:46:26.876
+C Merge\sminor\sfixes\sfrom\strunk.
+D 2021-02-15T14:55:04.034
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 36cae0d6e3e91a1996e1a472f8c7242c31a4e38ba4295e3056da198c04fd2a87
+F src/alter.c c4a973d7fc68f81fbc5d1d028a88ddb2cb212faef8c6f63433175b8d5ecd83dc
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c e80162a47411f296bea550ed8fafd730481f4aa71e89ece23ba9c957eed15d4a
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -697,7 +697,7 @@ F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
-F test/backup2.test f52e3b87f39d1b826d4f622eafe5d30260ae5bdb05764843ff7c83057b05ed49
+F test/backup2.test 8facb54df1388419d34b362ab1f7e233310ff3a3af64e8ad5ec47ba3c2bbe5cf
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
@@ -766,6 +766,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151ecac0b95
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 87ad5458bb8709312dac0d6755fd30e8e4ca83298d0a9ef6e5c24277a3c3390e
+F test/columncount.test eff33d402a7b0fde0a52a1920d238af200ca573327021e0ce3b7e5688de41449
 F test/conflict.test ac0667090f66130ac77d5fb764655558ca6600dd6d88f670ca9123b61c448337
 F test/conflict2.test 5557909ce683b1073982f5d1b61dfb1d41e369533bfdaf003180c5bc87282dd1
 F test/conflict3.test 81865d9599609aca394fb3b9cd5f561d4729ea5b176bece3644f6ecb540f88ac
@@ -1899,10 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 179c79ea0deb0f5adaa8d369cfcad06d959a9cc18a8a41e01ef013b2d90acd61 964ff68d8fa4d72b1b4d510f1ec62a9674b75d4ebae4ba254bc2f99432857628
-R 1e58442e28f61184e5599226680b1725
-T *branch * with-generated-as
-T *sym-with-generated-as *
-T -sym-trunk *
+P 186ec18b24d16c5d4d7a5b5e98c7504892950a1018774cb7bb214fc011ec09f4 7cc65ae57183b3c16f1102fca5603a36acda432e5d45e22a2996e5ebe069fc6a
+R a2f6f346026d9af00d1e82669d1b4d44
 U drh
-Z 34848bab44cd045c96efef9184fac0b9
+Z acb715e4019dbfc9dce21a3fc5809594
