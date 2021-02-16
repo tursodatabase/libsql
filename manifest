@@ -1,5 +1,5 @@
-C New\sSELECTTRACE\smacros\smore\sclearly\sdeliniate\swhen\sthe\squery\splanner\sis\ninvoked\sin\sthe\smiddle\sof\sPRAGMA\svdbe_addoptrace\soutput.
-D 2021-02-16T20:01:08.164
+C Simplification\sto\sthe\sresolveAlias()\sroutine.
+D 2021-02-16T20:32:17.668
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c f288cbc35f79eb32e162de7e80a63ebe00d80e639dcfac071bee11570cbdb16f
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 89e4faf6171e179edf279905e8e45c4f9dd108777dc60716396729fbd7cb045e
+F src/resolve.c 172d0f27c021b1d572e73b6f04f3e2695f2932233d3f5e675bd85b028fa2fb75
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d009aafcd9304b8406809fc808ce8c2cd55471552d242b98bd3006d0ad55cd12
 F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
@@ -1900,7 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27d4117980d125975b5e70eeea58a6ab07bcf066e71b5fcb81b822e05afdbab0
-R d43052c777aaa14629da9c7e3bc44da1
+P 7c03ce49b74f72b63dd75c3a02625e671bfd771f71b24e808994322b00d97677
+R 1b54c7cb4db039e6ced5272704b39604
 U drh
-Z eeb77f51dc50205cf2215ff7ac94a3a0
+Z 6cadfbe2d2e5d960db064c83d646ea7d
