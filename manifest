@@ -1,5 +1,5 @@
-C Trying\sto\sget\sthe\snew\sAS\sMATERIALIZE\ssyntax\sof\sCTEs\sto\swork.\s\sThere\sare\nstill\sperformance\sand\smemory\smanagement\sissues.\s\sThis\sis\sa\sWIP\scheck-in.
-D 2021-02-16T16:32:07.810
+C Remove\sunnecessarily\scomplexity\sfrom\ssqlite3WithReleaseByParse().\s\sImproved\nTreeView\soutput\sfor\sthe\senhanced\sCTE\sstructures.\s\sThis\scode\sstill\sdoes\snot\nwork\s100%.\s\sI'm\ssaving\smy\splace\sin\sorder\sto\s(maybe)\scome\sback\sto\sit\slater.
+D 2021-02-16T19:29:44.683
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 694020ad8a3af3d79b09f74c8f1421272a419cdea42a13401e3b0f7dea6e9c3e
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c 9d51da4a93227beb389ec6f6f97d4153ec59ffcbdf415f508de8fdf7ac48c0b9
+F src/build.c 224b8d5d6f206903dbcad3b365ce2c33b9e36456689be7ca593655cd3a649189
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -606,7 +606,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
-F src/treeview.c 4b92992176fb2caefbe06ba5bd06e0e0ebcde3d5564758da672631f17aa51cda
+F src/treeview.c 734a65babc2a0bb725a5af33cf3e677f7a8b20ad5be6dc04e07c2ff6081c16e6
 F src/trigger.c 983c7c8464c46840dac1ffe0461a6c447ac12c965746975c108eb5f4283e8801
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
@@ -1900,10 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 78dcddd9697d95629c18131ab0842aa4d08bc3c7451cd0e7a8d83e4dde277bda
-R 3e33372448628596b79c8e4959bb7ced
-T *branch * using-materialize
-T *sym-using-materialize *
-T -sym-with-generated-as *
+P bf0fd9b23a77a8fc1be5f8f8f9f7dce62b924d2f4eecaf13f0b21cc58bfd3a61
+R e3228d2a0a1955d5b3e8f76b5179bb19
 U drh
-Z 4d1724c077b98d0e6366cdc6b7fd4796
+Z b496c3d5115f8ebebdee583ef890099a

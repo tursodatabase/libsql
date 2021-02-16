@@ -90,7 +90,8 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
   if( pWith==0 ) return;
   if( pWith->nCte==0 ) return;
   if( pWith->pOuter ){
-    sqlite3TreeViewLine(pView, "WITH (0x%p, pOuter=0x%p)",pWith,pWith->pOuter);
+    sqlite3TreeViewLine(pView, "WITH (0x%p, pOuter=0x%p)",
+                                pWith,pWith->pOuter);
   }else{
     sqlite3TreeViewLine(pView, "WITH (0x%p)", pWith);
   }
@@ -101,7 +102,10 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
       char zLine[1000];
       const struct Cte *pCte = &pWith->a[i];
       sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-      sqlite3_str_appendf(&x, "%s", pCte->zName);
+      sqlite3_str_appendf(&x, "%s%s (0x%p, n=%d)", pCte->zName,
+          pCte->eMaterialize==Materialize_Any ? "" :
+          pCte->eMaterialize==Materialize_Yes ? " MATERIALIZED" :
+          " NOT MATERIALIZED", pCte, pCte->nRefCte);
       if( pCte->pCols && pCte->pCols->nExpr>0 ){
         char cSep = '(';
         int j;
@@ -149,6 +153,9 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     }
     if( pItem->fg.fromDDL ){
       sqlite3_str_appendf(&x, " DDL");
+    }
+    if( pItem->fg.isCte && pItem->u2.pCteSrc ){
+      sqlite3_str_appendf(&x, " CTE=0x%p", pItem->u2.pCteSrc);
     }
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1); 

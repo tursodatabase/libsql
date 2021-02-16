@@ -5363,12 +5363,9 @@ void sqlite3WithReleaseBySelect(sqlite3 *db, With *pWith){
 }
 void sqlite3WithReleaseByParse(sqlite3 *db, With *pWith){
   if( pWith==0 ) return;
-  if( db && db->pnBytesFreed ){
-    sqlite3WithDelete(db, pWith);
-  }else{
-    pWith->mOwner &= ~WithOwnedByParse;
-    if( pWith->mOwner==0 ) sqlite3WithDelete(db, pWith);
-  }
+  assert( db==0 || db->pnBytesFreed==0 );
+  pWith->mOwner &= ~WithOwnedByParse;
+  if( pWith->mOwner==0 ) sqlite3WithDelete(db, pWith);
 }
 
 /*
