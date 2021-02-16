@@ -4938,7 +4938,9 @@ static int withExpand(
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
     assert( pFrom->pSelect );
-    if( pCte->bOptBarrier ) pFrom->pSelect->selFlags |= SF_OptBarrier;
+    if( pCte->eMaterialized==MAT_Yes ){
+      pFrom->pSelect->selFlags |= SF_OptBarrier;
+    }
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;

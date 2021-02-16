@@ -255,6 +255,7 @@ static Keyword aKeywordTable[] = {
   { "LIKE",             "TK_LIKE_KW",      ALWAYS,           5      },
   { "LIMIT",            "TK_LIMIT",        ALWAYS,           3      },
   { "MATCH",            "TK_MATCH",        ALWAYS,           2      },
+  { "MATERIALIZED",     "TK_MATERIALIZED", CTE,              12     },
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS,           3      },
   { "NO",               "TK_NO",           FKEY|WINDOWFUNC,  2      },
   { "NOT",              "TK_NOT",          ALWAYS,           10     },

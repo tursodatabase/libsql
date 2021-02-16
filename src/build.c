@@ -5212,11 +5212,13 @@ Cte *sqlite3CteNew(
   Token *pName,           /* Name of the common-table */
   ExprList *pArglist,     /* Optional column name list for the table */
   Select *pQuery,         /* Query used to initialize the table */
-  int bOptBarrier         /* This CTE should be an optimization barrier*/
+  int eMaterialized       /* Force or prohibit materialization */
 ){
   Cte *pNew;
   sqlite3 *db = pParse->db;
 
+  assert( eMaterialized==MAT_NotSpec || eMaterialized==MAT_Yes
+            || eMaterialized==MAT_No );
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew));
   assert( pNew!=0 || db->mallocFailed );
 
@@ -5228,7 +5230,7 @@ Cte *sqlite3CteNew(
     pNew->pCols = pArglist;
     pNew->zName = sqlite3NameFromToken(pParse->db, pName);
     pNew->zCteErr = 0;
-    pNew->bOptBarrier = bOptBarrier;
+    pNew->eMaterialized = (u8)eMaterialized;
   }
   return pNew;
 }

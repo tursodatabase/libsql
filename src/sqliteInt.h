@@ -3870,6 +3870,13 @@ void sqlite3SelectWalkAssert2(Walker*, Select*);
 #define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
+** Allowed values for Cte.eMAterialized
+*/
+#define MAT_NotSpec     0   /* Not specified */
+#define MAT_Yes         1   /* AS MATERIALIZED ... */
+#define MAT_No          2   /* AS NOT MATERIALIZED.  Not currently used */
+
+/*
 ** An instance of this structure represents a set of one or more CTEs
 ** (common table expressions) created by a single WITH clause.
 */
@@ -3878,7 +3885,7 @@ struct Cte {
   ExprList *pCols;              /* List of explicit column names, or NULL */
   Select *pSelect;              /* The definition of this CTE */
   const char *zCteErr;          /* Error message for circular references */
-  u8 bOptBarrier;               /* Treat this CTE as an optimization barrier */
+  u8 eMaterialized;             /* One of the MAT_* values */
 };
 struct With {
   int nCte;                     /* Number of CTEs in the WITH clause */

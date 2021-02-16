@@ -247,9 +247,11 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
   CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
   EXCLUDE GROUPS OTHERS TIES
 %endif SQLITE_OMIT_WINDOWFUNC
-  GENERATED
 %ifndef SQLITE_OMIT_GENERATED_COLUMNS
-  ALWAYS
+  GENERATED ALWAYS
+%endif
+%ifndef SQLITE_OMIT_CTE
+  MATERIALIZED
 %endif
   REINDEX RENAME CTIME_KW IF
   .
@@ -1661,16 +1663,17 @@ anylist ::= anylist ANY.
 %destructor wqlist {sqlite3WithDelete(pParse->db, $$);}
 %type wqitem {Cte*}
 %destructor wqitem {sqlite3CteDelete(pParse->db, $$);}
-%type wqgen {int}
+%type wqas {int}
 
 with ::= .
 %ifndef SQLITE_OMIT_CTE
 with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
 with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
-wqgen(A) ::= .           {A=0;}
-wqgen(A) ::= GENERATED.  {A=1;}
-wqitem(A) ::= nm(X) eidlist_opt(Y) wqgen(F) AS LP select(Z) RP. {
+wqas(A)   ::= AS.                   {A=MAT_NotSpec;}
+wqas(A)   ::= AS MATERIALIZED.      {A=MAT_Yes;}
+//wqas(A) ::= AS NOT MATERIALIZED.  {A=MAT_No;}
+wqitem(A) ::= nm(X) eidlist_opt(Y) wqas(F) LP select(Z) RP. {
   A = sqlite3CteNew(pParse, &X, Y, Z, F); /*A-overwrites-X*/
 }
 wqlist(A) ::= wqitem(X). {
