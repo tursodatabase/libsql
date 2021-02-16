@@ -90,7 +90,7 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
       sqlite3WindowListDelete(db, p->pWinDefn);
     }
 #endif
-    if( OK_IF_ALWAYS_TRUE(p->pWith) ) sqlite3WithDelete(db, p->pWith);
+    if( p->pWith ) sqlite3WithReleaseBySelect(db, p->pWith);
     if( bFree ) sqlite3DbFreeNN(db, p);
     p = pPrior;
     bFree = 1;
@@ -4723,7 +4723,9 @@ int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
       pParse->checkSchema = 1;
       return SQLITE_ERROR;
     }
-    pFrom->pIBIndex = pIdx;
+    assert( pFrom->fg.isCte==0 );
+    assert( pFrom->pSelect==0 );
+    pFrom->u2.pIBIndex = pIdx;
   }
   return SQLITE_OK;
 }
@@ -4855,25 +4857,13 @@ static struct Cte *searchWith(
 
 /* The code generator maintains a stack of active WITH clauses
 ** with the inner-most WITH clause being at the top of the stack.
-**
-** This routine pushes the WITH clause passed as the second argument
-** onto the top of the stack. If argument bFree is true, then this
-** WITH clause will never be popped from the stack. In this case it
-** should be freed along with the Parse object. In other cases, when
-** bFree==0, the With object will be freed along with the SELECT 
-** statement with which it is associated.
 */
-void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
+void sqlite3WithPush(Parse *pParse, With *pWith){
   if( pWith ){
     assert( pParse->pWith!=pWith );
     pWith->pOuter = pParse->pWith;
     pParse->pWith = pWith;
-    if( bFree ){
-      sqlite3ParserAddCleanup(pParse, 
-         (void(*)(sqlite3*,void*))sqlite3WithDelete,
-         pWith);
-      testcase( pParse->earlyCleanup );
-    }
+    sqlite3WithClaimedByParse(pParse, pWith);
   }
 }
 
@@ -4938,9 +4928,17 @@ static int withExpand(
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
     assert( pFrom->pSelect );
-    if( pCte->eMaterialized==MAT_Yes ){
+    if( pCte->eMaterialize==Materialize_Yes ){
       pFrom->pSelect->selFlags |= SF_OptBarrier;
     }
+    assert( !pFrom->fg.isIndexedBy );
+    pFrom->fg.isCte = 1;
+    assert( (pCte->eCteMagic==0 && pCte->nRefCte==0)
+         || (pCte->eCteMagic==CTE_MAGIC && pCte->nRefCte>0) );
+    pFrom->u2.pCteSrc = pCte;
+    sqlite3WithClaimedByParse(pParse, pWith);
+    pCte->nRefCte++;
+    VVA_ONLY( pCte->eCteMagic = CTE_MAGIC );
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;
@@ -5121,7 +5119,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
-  sqlite3WithPush(pParse, p->pWith, 0);
+  sqlite3WithPush(pParse, p->pWith);
 
   /* Make sure cursor numbers have been assigned to all entries in
   ** the FROM clause of the SELECT statement.
@@ -5760,9 +5758,10 @@ static void havingToWhere(Parse *pParse, Select *p){
 }
 
 /*
-** Check to see if the pThis entry of pTabList is a self-join of a prior view.
-** If it is, then return the SrcList_item for the prior view.  If it is not,
-** then return 0.
+** Check to see if the pThis entry of pTabList is a self-join of a prior view,
+** or any reuse of a CTE that is not necessarily a self-join.
+** If it is, then return the SrcList_item for the prior view or CTE.
+** If it is not, then return 0.
 */
 static struct SrcList_item *isSelfJoinView(
   SrcList *pTabList,           /* Search for self-joins in this FROM clause */
@@ -5771,6 +5770,11 @@ static struct SrcList_item *isSelfJoinView(
   struct SrcList_item *pItem;
   assert( pThis->pSelect!=0 );
   if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
+  if( pThis->fg.isCte ){
+    Cte *pCte = pThis->u2.pCteSrc;
+    sqlite3AssertValidCteBackRef(pThis);
+    return pCte->pCteMat;
+  }
   for(pItem = pTabList->a; pItem<pThis; pItem++){
     Select *pS1;
     if( pItem->pSelect==0 ) continue;
@@ -6141,6 +6145,7 @@ int sqlite3Select(
   */
   for(i=0; i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
+    struct SrcList_item *pPrior;
     SelectDest dest;
     Select *pSub;
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
@@ -6219,12 +6224,15 @@ int sqlite3Select(
     zSavedAuthContext = pParse->zAuthContext;
     pParse->zAuthContext = pItem->zName;
 
+    /* Verify that the CTE back-reference information is valid */
+    sqlite3AssertValidCteBackRef(pItem);
+
     /* Generate code to implement the subquery
     **
     ** The subquery is implemented as a co-routine if (1) the subquery is
     ** guaranteed to be the outer loop (so that it does not need to be
-    ** computed more than once) and if (2) the subquery is not optimization
-    ** barrier.
+    ** computed more than once) and if (2) the subquery is a CTE that is
+    ** used only this one time.
     **
     ** TODO: Are there other reasons beside (1) and (2) to use a co-routine
     ** implementation?
@@ -6236,7 +6244,7 @@ int sqlite3Select(
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
-     && (pSub->selFlags & SF_OptBarrier)==0                         /* (2) */
+     && (pItem->fg.isCte && pItem->u2.pCteSrc->nRefCte==1)          /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
@@ -6256,16 +6264,20 @@ int sqlite3Select(
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
+    }else if( (pPrior = isSelfJoinView(pTabList,pItem))!=0 ){
+      /* This view has been previously materialized.  Use the
+      ** prior materialization */
+      if( pPrior->addrFillSub ){
+        sqlite3VdbeAddOp2(v, OP_Gosub, pPrior->regReturn, pPrior->addrFillSub);
+      }
+      sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
+      assert( pPrior->pSelect!=0 );
+      pSub->nSelectRow = pPrior->pSelect->nSelectRow;
     }else{
-      /* Generate a subroutine that will fill an ephemeral table with
-      ** the content of this subquery.  pItem->addrFillSub will point
-      ** to the address of the generated subroutine.  pItem->regReturn
-      ** is a register allocated to hold the subroutine return address
-      */
+      /* Materialize the view */
       int topAddr;
       int onceAddr = 0;
       int retAddr;
-      struct SrcList_item *pPrior;
 
       testcase( pItem->addrFillSub==0 ); /* Ticket c52b09c7f38903b1311 */
       pItem->regReturn = ++pParse->nMem;
@@ -6280,15 +6292,12 @@ int sqlite3Select(
       }else{
         VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }
-      pPrior = isSelfJoinView(pTabList, pItem);
-      if( pPrior ){
-        sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
-        assert( pPrior->pSelect!=0 );
-        pSub->nSelectRow = pPrior->pSelect->nSelectRow;
-      }else{
-        sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-        ExplainQueryPlan((pParse, 1, "MATERIALIZE %u", pSub->selId));
-        sqlite3Select(pParse, pSub, &dest);
+      sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
+      ExplainQueryPlan((pParse, 1, "MATERIALIZE %u", pSub->selId));
+      sqlite3Select(pParse, pSub, &dest);
+      if( pItem->fg.isCte ){
+        sqlite3AssertValidCteBackRef(pItem);
+        pItem->u2.pCteSrc->pCteMat = pItem;
       }
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);

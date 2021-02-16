@@ -209,7 +209,7 @@ Expr *sqlite3LimitWhere(
   pSrc->a[0].pTab = 0;
   pSelectSrc = sqlite3SrcListDup(pParse->db, pSrc, 0);
   pSrc->a[0].pTab = pTab;
-  pSrc->a[0].pIBIndex = 0;
+  pSrc->a[0].u2.pIBIndex = 0; assert( !pSrc->a[0].fg.isCte );
 
   /* generate the SELECT expression tree. */
   pSelect = sqlite3SelectNew(pParse, pEList, pSelectSrc, pWhere, 0 ,0, 

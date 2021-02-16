@@ -2952,6 +2952,7 @@ struct SrcList {
       unsigned viaCoroutine :1;  /* Implemented as a co-routine */
       unsigned isRecursive :1;   /* True for recursive reference in WITH */
       unsigned fromDDL :1;       /* Comes from sqlite_schema */
+      unsigned isCte :1;         /* True if table is a CTE */
     } fg;
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
@@ -2961,7 +2962,10 @@ struct SrcList {
       char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
       ExprList *pFuncArg;  /* Arguments to table-valued-function */
     } u1;
-    Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
+    union {
+      Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
+      Cte *pCteSrc;     /* The original CTE, if fg.isCte is true */
+    } u2;
   } a[1];             /* One entry for each identifier on the list */
 };
 
@@ -3870,28 +3874,54 @@ void sqlite3SelectWalkAssert2(Walker*, Select*);
 #define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
-** Allowed values for Cte.eMAterialized
+** Allowed values for Cte.eMaterialize
 */
-#define MAT_NotSpec     0   /* Not specified */
-#define MAT_Yes         1   /* AS MATERIALIZED ... */
-#define MAT_No          2   /* AS NOT MATERIALIZED.  Not currently used */
+#define Materialize_Any   0   /* Not specified */
+#define Materialize_Yes   1   /* AS MATERIALIZED ... */
+#define Materialize_No    2   /* AS NOT MATERIALIZED.  Not currently used */
 
 /*
 ** An instance of this structure represents a set of one or more CTEs
 ** (common table expressions) created by a single WITH clause.
+**
+** A With object describes an entire WITH clause, which is composed of
+** one or more Cte objects.  During parsing, the Cte objects are created
+** separately for each common-table-expression, then copied into the
+** With object container.
+**
+** DUAL OWNERSHIP
+** The With object can be owned by a Select object (via the Select.pWith
+** field), or it can be owned by the Parse object of the current parse,
+** or by both.  The With.mOwner bitmask determines who owns each With object.
+** The object is not deallocated until all owners have released it.
 */
 struct Cte {
   char *zName;                  /* Name of this CTE */
   ExprList *pCols;              /* List of explicit column names, or NULL */
   Select *pSelect;              /* The definition of this CTE */
   const char *zCteErr;          /* Error message for circular references */
-  u8 eMaterialized;             /* One of the MAT_* values */
+  u8 eMaterialize;              /* One of the Materialize_* options */
+  u16 eCteMagic;                /* Magic number for sanity checking */
+  u32 nRefCte;                  /* Number of times used */
+  struct SrcList_item *pCteMat; /* The materialization of this CTE */
 };
 struct With {
   int nCte;                     /* Number of CTEs in the WITH clause */
+  int mOwner;                   /* Mask of bits to discribe ownership */
   With *pOuter;                 /* Containing WITH clause, or NULL */
   Cte a[1];                     /* The CTEs of this WITH clause */
 };
+
+/*
+** The correct value for Cte.eCteMagic if the Cte object is valid
+*/
+#define CTE_MAGIC  0x3f96  /* Magic number for valid Cte objects */
+
+/*
+** Ownership flags for With.
+*/
+#define WithOwnedBySelect 0x01  /* Owned by a Select object */
+#define WithOwnedByParse  0x10  /* Owned by the Parse object */
 
 #ifdef SQLITE_DEBUG
 /*
@@ -4879,7 +4909,7 @@ sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 void sqlite3ParserReset(Parse*);
-void sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
+void *sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
 #ifdef SQLITE_ENABLE_NORMALIZE
 char *sqlite3Normalize(Vdbe*, const char*);
 #endif
@@ -4898,11 +4928,25 @@ const char *sqlite3JournalModename(int);
   With *sqlite3WithAdd(Parse*,With*,Cte*);
   void sqlite3CteDelete(sqlite3*,Cte*);
   void sqlite3WithDelete(sqlite3*,With*);
-  void sqlite3WithPush(Parse*, With*, u8);
-#else
-#define sqlite3WithPush(x,y,z)
-#define sqlite3WithDelete(x,y)
-#endif
+  void sqlite3WithReleaseBySelect(sqlite3*,With*);
+  void sqlite3WithReleaseByParse(sqlite3*,With*);
+  void sqlite3WithClaimedBySelect(With*);
+  With *sqlite3WithClaimedByParse(Parse*,With*);
+  void sqlite3WithPush(Parse*, With*);
+# ifdef SQLITE_DEBUG
+    void sqlite3AssertValidCteBackRef(struct SrcList_item*);
+# else
+#   define sqlite3AssertValidCteBackRef(X)
+# endif
+#else /* if defined(SQLITE_OMIT_CTE) */
+# define sqlite3WithPush(PARSE,W)
+# deifne sqlite3WithDelete(Db,W)
+# define sqlite3WithReleaseBySelect(DB,W)
+# define sqlite3WithReleaseByParse(DB,W)
+# define sqlite3WithClaimedBySelect(W)
+# define sqlite3WithClaimedByParse(PARSE,W);
+# define sqlite3AssertValidCteBackRef(X)
+#endif /* SQLITE_OMIT_CTE */
 #ifndef SQLITE_OMIT_UPSERT
   Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*,Upsert*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);

@@ -513,29 +513,29 @@ cmd ::= select(X).  {
       }
     }
   }
-}
+#ifndef SQLITE_OMIT_CTE
+  /* Link a With object to a Select object.
+  ** Both Select- and Parse-ownership is assigned to the With object
+  */
+  static Select *linkWithToSelect(Parse *pParse, Select *pSelect, With *pWith){
+    assert( pWith->mOwner==0 );
+    if( pSelect ){
+      pSelect->pWith = pWith;
+      sqlite3WithClaimedBySelect(pWith);
+      parserDoubleLinkSelect(pParse, pSelect);
+    }else{
+      sqlite3WithClaimedByParse(pParse,pWith);
+    }
+    return pSelect;
+  }
+#endif /* SQLITE_OMIT_CTE */
+} // end %include
+
 
 %ifndef SQLITE_OMIT_CTE
-select(A) ::= WITH wqlist(W) selectnowith(X). {
-  Select *p = X;
-  if( p ){
-    p->pWith = W;
-    parserDoubleLinkSelect(pParse, p);
-  }else{
-    sqlite3WithDelete(pParse->db, W);
-  }
-  A = p;
-}
-select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X). {
-  Select *p = X;
-  if( p ){
-    p->pWith = W;
-    parserDoubleLinkSelect(pParse, p);
-  }else{
-    sqlite3WithDelete(pParse->db, W);
-  }
-  A = p;
-}
+select(A) ::= WITH wqlist(W) selectnowith(X). { A = linkWithToSelect(pParse,X,W); }
+select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
+                                              { A = linkWithToSelect(pParse,X,W); }
 %endif /* SQLITE_OMIT_CTE */
 select(A) ::= selectnowith(X). {
   Select *p = X;
@@ -1660,19 +1660,19 @@ anylist ::= anylist ANY.
 
 //////////////////////// COMMON TABLE EXPRESSIONS ////////////////////////////
 %type wqlist {With*}
-%destructor wqlist {sqlite3WithDelete(pParse->db, $$);}
+%destructor wqlist {if($$)sqlite3WithDelete(pParse->db, $$);}
 %type wqitem {Cte*}
 %destructor wqitem {sqlite3CteDelete(pParse->db, $$);}
 %type wqas {int}
 
 with ::= .
 %ifndef SQLITE_OMIT_CTE
-with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
-with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
+with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W); }
+with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W); }
 
-wqas(A)   ::= AS.                   {A=MAT_NotSpec;}
-wqas(A)   ::= AS MATERIALIZED.      {A=MAT_Yes;}
-//wqas(A) ::= AS NOT MATERIALIZED.  {A=MAT_No;}
+wqas(A) ::= AS.                   {A = Materialize_Any;}
+wqas(A) ::= AS MATERIALIZED.      {A = Materialize_Yes;}
+wqas(A) ::= AS NOT MATERIALIZED.  {A = Materialize_No;}
 wqitem(A) ::= nm(X) eidlist_opt(Y) wqas(F) LP select(Z) RP. {
   A = sqlite3CteNew(pParse, &X, Y, Z, F); /*A-overwrites-X*/
 }

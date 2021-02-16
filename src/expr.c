@@ -1401,6 +1401,7 @@ static With *withDup(sqlite3 *db, With *p){
     if( pRet ){
       int i;
       pRet->nCte = p->nCte;
+      pRet->mOwner = WithOwnedBySelect;
       for(i=0; i<p->nCte; i++){
         pRet->a[i].pSelect = sqlite3SelectDup(db, p->a[i].pSelect, 0);
         pRet->a[i].pCols = sqlite3ExprListDup(db, p->a[i].pCols, 0);
@@ -1544,7 +1545,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     if( pNewItem->fg.isIndexedBy ){
       pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
     }
-    pNewItem->pIBIndex = pOldItem->pIBIndex;
+    pNewItem->u2 = pOldItem->u2;
     if( pNewItem->fg.isTabFunc ){
       pNewItem->u1.pFuncArg = 
           sqlite3ExprListDup(db, pOldItem->u1.pFuncArg, flags);

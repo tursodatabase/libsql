@@ -5212,13 +5212,14 @@ Cte *sqlite3CteNew(
   Token *pName,           /* Name of the common-table */
   ExprList *pArglist,     /* Optional column name list for the table */
   Select *pQuery,         /* Query used to initialize the table */
-  int eMaterialized       /* Force or prohibit materialization */
+  int eMaterialize        /* Force or prohibit materialization */
 ){
   Cte *pNew;
   sqlite3 *db = pParse->db;
 
-  assert( eMaterialized==MAT_NotSpec || eMaterialized==MAT_Yes
-            || eMaterialized==MAT_No );
+  assert( eMaterialize==Materialize_Any
+       || eMaterialize==Materialize_Yes
+       || eMaterialize==Materialize_No );
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew));
   assert( pNew!=0 || db->mallocFailed );
 
@@ -5230,9 +5231,43 @@ Cte *sqlite3CteNew(
     pNew->pCols = pArglist;
     pNew->zName = sqlite3NameFromToken(pParse->db, pName);
     pNew->zCteErr = 0;
-    pNew->eMaterialized = (u8)eMaterialized;
+    pNew->eMaterialize = (u8)eMaterialize;
   }
   return pNew;
+}
+
+#ifdef SQLITE_DEBUG
+/*
+** Validate the back-reference from a SrcList_item back to its Cte object.
+** Raise an assertion fault if anything is wrong.  This routine is for
+** sanity and design checking and does not appear in release builds.
+*/
+void sqlite3AssertValidCteBackRef(struct SrcList_item *pItem){
+  Cte *pCte;
+  if( !pItem->fg.isCte ) return;   /* Nothing to check here */
+  assert( pItem->pSelect!=0 );
+  pCte = pItem->u2.pCteSrc;
+  if( pCte==0 ) return;
+  assert( pCte->eCteMagic==CTE_MAGIC );
+  assert( pItem->pTab!=0 );
+  assert( sqlite3_stricmp(pCte->zName, pItem->pTab->zName)==0 );
+  assert( pCte->nRefCte>=1 );
+}
+#endif /* SQLITE_DEBUG */
+
+/*
+** Clear information from a Cte object, but do not deallocate storage.
+*/
+static void cteClear(sqlite3 *db, Cte *pCte){
+  sqlite3ExprListDelete(db, pCte->pCols);
+  sqlite3SelectDelete(db, pCte->pSelect);
+  sqlite3DbFree(db, pCte->zName);
+#ifdef SQLITE_DEBUG
+  if( db==0 || db->pnBytesFreed==0 ){
+    pCte->zName = 0;
+    pCte->eCteMagic = 0;
+  }
+#endif
 }
 
 /*
@@ -5240,16 +5275,21 @@ Cte *sqlite3CteNew(
 */
 void sqlite3CteDelete(sqlite3 *db, Cte *pCte){
   if( pCte ){
-    sqlite3ExprListDelete(db, pCte->pCols);
-    sqlite3SelectDelete(db, pCte->pSelect);
-    sqlite3DbFree(db, pCte->zName);
+    cteClear(db, pCte);
     sqlite3DbFree(db, pCte);
   }
 }
 
 /* 
 ** This routine is invoked once per CTE by the parser while parsing a 
-** WITH clause. 
+** WITH clause.   Construct a new Cte object and append it to the
+** input With object, reallocating the With object as needed.  If the
+** pWith input is NULL, then create a new With object.
+**
+** The returned With object is unowned.  The caller needs to assign
+** ownership.  Note, however, that ownership should not be assigned
+** until the object stops growing.  The input pWith parameter must be
+** either NULL or a pointer to an unowned With object.
 */
 With *sqlite3WithAdd(
   Parse *pParse,          /* Parsing context */
@@ -5260,6 +5300,8 @@ With *sqlite3WithAdd(
   With *pNew;
   char *zName;
 
+  /* The input WITH clause is yet unowned */
+  assert( pWith==0 || pWith->mOwner==0 );
 
   if( pCte==0 ){
     return pWith;
@@ -5297,17 +5339,62 @@ With *sqlite3WithAdd(
 
 /*
 ** Free the contents of the With object passed as the second argument.
+**
+** The sqlite3WithReleaseBySelect() causes the Select-object ownership
+** to be released, and sqlite3WithReleaseByParse() causes the Parse-object
+** ownership to be released.  The With object is only deallocated after
+** both owners release it. 
 */
 void sqlite3WithDelete(sqlite3 *db, With *pWith){
-  if( pWith ){
-    int i;
-    for(i=0; i<pWith->nCte; i++){
-      struct Cte *pCte = &pWith->a[i];
-      sqlite3ExprListDelete(db, pCte->pCols);
-      sqlite3SelectDelete(db, pCte->pSelect);
-      sqlite3DbFree(db, pCte->zName);
-    }
-    sqlite3DbFree(db, pWith);
+  int i;
+  for(i=0; i<pWith->nCte; i++){
+    cteClear(db, &pWith->a[i]);
+  }
+  sqlite3DbFree(db, pWith);
+}
+void sqlite3WithReleaseBySelect(sqlite3 *db, With *pWith){
+  if( pWith==0 ) return;
+  if( db && db->pnBytesFreed ){
+    if( pWith->mOwner==WithOwnedBySelect ) sqlite3WithDelete(db, pWith);
+  }else{
+    pWith->mOwner &= ~WithOwnedBySelect;
+    if( pWith->mOwner==0 ) sqlite3WithDelete(db, pWith);
   }
 }
+void sqlite3WithReleaseByParse(sqlite3 *db, With *pWith){
+  if( pWith==0 ) return;
+  if( db && db->pnBytesFreed ){
+    sqlite3WithDelete(db, pWith);
+  }else{
+    pWith->mOwner &= ~WithOwnedByParse;
+    if( pWith->mOwner==0 ) sqlite3WithDelete(db, pWith);
+  }
+}
+
+/*
+** Add Select-object or Parse-object ownership to a With object.  If
+** the With object is already owned appropriately, then these routines
+** are no-ops.
+**
+** The first time that a With becomes owned by a Parse-object, make
+** arrangements to automatically release the ownership when the Parse
+** object is destroyed using a call to sqlite3ParserAddCleanup().
+** This involves a memory allocation.  If that memory allocation fails,
+** the With object might be destroyed immediately.  In that
+** case, return a NULL pointer. But usually, return a copy of the pWith
+** pointer.
+*/
+void sqlite3WithClaimedBySelect(With *pWith){
+  pWith->mOwner |= WithOwnedBySelect;
+}
+With *sqlite3WithClaimedByParse(Parse *pParse, With *pWith){
+  if( (pWith->mOwner & WithOwnedByParse)==0 ){
+    pWith->mOwner |= WithOwnedByParse;
+    pWith = (With*)sqlite3ParserAddCleanup(pParse,
+                     (void(*)(sqlite3*,void*))sqlite3WithReleaseByParse,
+                     (void*)pWith);
+  }
+  return pWith;
+}
+   
 #endif /* !defined(SQLITE_OMIT_CTE) */
