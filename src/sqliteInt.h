@@ -4531,6 +4531,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
+int sqlite3ColumnIndex(Table *pTab, const char *zCol);
 void sqlite3SetJoinExpr(Expr*,int);
 void sqlite3CreateForeignKey(Parse*, ExprList*, Token*, ExprList*, int);
 void sqlite3DeferForeignKey(Parse*, int);
@@ -4715,6 +4716,7 @@ int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
+void sqlite3AlterDropColumn(Parse*, SrcList*, Token*);
 void *sqlite3RenameTokenMap(Parse*, void*, Token*);
 void sqlite3RenameTokenRemap(Parse*, void *pTo, void *pFrom);
 void sqlite3RenameExprUnmap(Parse*, Expr*);

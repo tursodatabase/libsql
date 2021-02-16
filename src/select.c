@@ -262,7 +262,7 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
 ** Return the index of a column in a table.  Return -1 if the column
 ** is not contained in the table.
 */
-static int columnIndex(Table *pTab, const char *zCol){
+int sqlite3ColumnIndex(Table *pTab, const char *zCol){
   int i;
   u8 h = sqlite3StrIHash(zCol);
   Column *pCol;
@@ -294,7 +294,7 @@ static int tableAndColumnIndex(
 
   assert( (piTab==0)==(piCol==0) );  /* Both or neither are NULL */
   for(i=0; i<N; i++){
-    iCol = columnIndex(pSrc->a[i].pTab, zCol);
+    iCol = sqlite3ColumnIndex(pSrc->a[i].pTab, zCol);
     if( iCol>=0 
      && (bIgnoreHidden==0 || IsHiddenColumn(&pSrc->a[i].pTab->aCol[iCol])==0)
     ){
@@ -504,7 +504,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         int iRightCol;   /* Column number of matching column on the right */
 
         zName = pList->a[j].zName;
-        iRightCol = columnIndex(pRightTab, zName);
+        iRightCol = sqlite3ColumnIndex(pRightTab, zName);
         if( iRightCol<0
          || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 0)
         ){

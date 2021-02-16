@@ -1621,6 +1621,10 @@ cmd ::= ALTER TABLE add_column_fullname
   Y.n = (int)(pParse->sLastToken.z-Y.z) + pParse->sLastToken.n;
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
+cmd ::= ALTER TABLE fullname(X) DROP COLUMNKW nm(Y). {
+  sqlite3AlterDropColumn(pParse, X, &Y);
+}
+
 add_column_fullname ::= fullname(X). {
   disableLookaside(pParse);
   sqlite3AlterBeginAddColumn(pParse, X);

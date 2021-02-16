@@ -870,23 +870,33 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
 
 /*
 ** Search the Parse object passed as the first argument for a RenameToken
-** object associated with parse tree element pPtr. If found, remove it
-** from the Parse object and add it to the list maintained by the
-** RenameCtx object passed as the second argument.
+** object associated with parse tree element pPtr. If found, return a pointer
+** to it. Otherwise, return NULL.
+**
+** If the second argument passed to this function is not NULL and a matching
+** RenameToken object is found, remove it from the Parse object and add it to
+** the list maintained by the RenameCtx object.
 */
-static void renameTokenFind(Parse *pParse, struct RenameCtx *pCtx, void *pPtr){
+static RenameToken *renameTokenFind(
+  Parse *pParse, 
+  struct RenameCtx *pCtx, 
+  void *pPtr
+){
   RenameToken **pp;
   assert( pPtr!=0 );
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
-      *pp = pToken->pNext;
-      pToken->pNext = pCtx->pList;
-      pCtx->pList = pToken;
-      pCtx->nList++;
-      break;
+      if( pCtx ){
+        *pp = pToken->pNext;
+        pToken->pNext = pCtx->pList;
+        pCtx->pList = pToken;
+        pCtx->nList++;
+      }
+      return pToken;
     }
   }
+  return 0;
 }
 
 /*
@@ -1752,13 +1762,186 @@ static void renameTableTest(
 }
 
 /*
+** Arguments:
+**
+**  argv[0]: An integer - the index of the schema containing the table
+**  argv[1]: CREATE TABLE statement to modify.
+**  argv[2]: An integer - the index of the column to remove.
+**  argv[3]: Byte offset of first byte after last column definition in argv[1]
+*/
+static void dropColumnFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  int iSchema = sqlite3_value_int(argv[0]);
+  const char *zSql = (const char*)sqlite3_value_text(argv[1]);
+  int iCol = sqlite3_value_int(argv[2]);
+  int iAddColOffset = sqlite3_value_int(argv[3]);
+  const char *zDb = db->aDb[iSchema].zDbSName;
+  int rc;
+  Parse sParse;
+  RenameToken *pCol;
+  Table *pTab;
+  const char *zEnd;
+  char *zNew = 0;
+
+  rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
+  if( rc!=SQLITE_OK ) goto drop_column_done;
+  pTab = sParse.pNewTable;
+
+  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zName);
+  if( iCol<pTab->nCol-1 ){
+    RenameToken *pEnd;
+    pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zName);
+    zEnd = (const char*)pEnd->t.z;
+  }else{
+    zEnd = (const char*)&zSql[iAddColOffset];
+    while( pCol->t.z[0]!=',' && pCol->t.z[1]!='(' ) pCol->t.z--;
+  }
+
+  zNew = sqlite3_mprintf("%.*s%s", pCol->t.z-zSql, zSql, zEnd);
+  sqlite3_result_text(context, zNew, -1, SQLITE_TRANSIENT);
+  sqlite3_free(zNew);
+
+drop_column_done:
+  renameParseCleanup(&sParse);
+}
+
+void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
+  Table *pTab;
+  int i;
+  int iSchema = 0;
+  const char *zDb = 0;
+  sqlite3 *db = pParse->db;
+  char *zCol = 0;
+  int iCol = 0;
+  Vdbe *v;
+  int iCur;
+  int addr;
+  int reg;
+  int regRec;
+  Index *pIdx;
+  Index *pPk = 0;
+
+  /* Look up the table being altered. */
+  assert( pParse->pNewTable==0 );
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  if( db->mallocFailed ) goto exit_drop_column;
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  if( !pTab ) goto exit_drop_column;
+
+  /* Which schema holds the table to be altered */  
+  iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iSchema>=0 );
+  zDb = db->aDb[iSchema].zDbSName;
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "virtual tables may not be altered");
+    goto exit_drop_column;
+  }
+#endif
+
+  /* Make sure this is not an attempt to ALTER a view. */
+  if( pTab->pSelect ){
+    sqlite3ErrorMsg(pParse, "cannot drop a column from a view");
+    goto exit_drop_column;
+  }
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
+    goto exit_drop_column;
+  }
+
+  /* Find the index of the column being dropped. */
+  zCol = sqlite3NameFromToken(db, pName);
+  if( zCol==0 ){
+    assert( db->mallocFailed );
+    goto exit_drop_column;
+  }
+  iCol = sqlite3ColumnIndex(pTab, zCol);
+  if( iCol<0 ){
+    sqlite3ErrorMsg(pParse, "no such column: \"%s\"", zCol);
+    goto exit_drop_column;
+  }
+
+  /* Do not allow the user to drop a PRIMARY KEY column or a column 
+  ** constrained by a UNIQUE constraint.  */
+  if( pTab->iPKey==iCol ){
+    sqlite3ErrorMsg(pParse, "cannot drop PRIMARY KEY column: \"%s\"", zCol);
+    goto exit_drop_column;
+  }
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    int ii;
+    for(ii=0; ii<pIdx->nKeyCol; ii++){
+      if( iCol==pIdx->aiColumn[ii] 
+       && sqlite3_strnicmp("sqlite_", pIdx->zName, 7)==0
+      ){
+        sqlite3ErrorMsg(pParse, "cannot drop %s column: \"%s\"", 
+          pIdx->idxType==2 ? "PRIMARY KEY" : "UNIQUE", zCol
+        );
+        goto exit_drop_column;
+      }
+    }
+  }
+
+  sqlite3NestedParse(pParse, 
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
+      "sql = sqlite_drop_column(%d, sql, %d, %d) "
+      "WHERE (type=='table' AND tbl_name=%Q COLLATE nocase)"
+      , zDb, iSchema, iCol, pTab->addColOffset, pTab->zName
+  );
+
+  /* Drop and reload the database schema. */
+  renameReloadSchema(pParse, iSchema);
+  renameTestSchema(pParse, zDb, iSchema==1);
+
+  /* Edit rows of table on disk */
+  v = sqlite3GetVdbe(pParse);
+  iCur = pParse->nTab++;
+  sqlite3OpenTable(pParse, iCur, iSchema, pTab, OP_OpenWrite);
+  addr = sqlite3VdbeAddOp1(v, OP_Rewind, iCur);
+  reg = ++pParse->nMem;
+  pParse->nMem += pTab->nCol;
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp2(v, OP_Rowid, iCur, reg);
+  }else{
+    pPk = sqlite3PrimaryKeyIndex(pTab);
+  }
+  for(i=0; i<pTab->nCol; i++){
+    if( i!=iCol ){
+      int iPos = (pPk ? sqlite3TableColumnToIndex(pPk, i) : i);
+      int iColPos = (pPk ? sqlite3TableColumnToIndex(pPk, iCol) : iCol);
+      int regOut = reg+1+iPos-(iPos>iColPos);
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+    }
+  }
+  regRec = reg + pTab->nCol;
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, pTab->nCol-1, regRec);
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
+  }else{
+    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iCur, regRec, reg+1, pPk->nKeyCol);
+  }
+
+  sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1);
+  sqlite3VdbeJumpHere(v, addr);
+
+exit_drop_column:
+  sqlite3DbFree(db, zCol);
+  sqlite3SrcListDelete(db, pSrc);
+  return;
+}
+
+/*
 ** Register built-in functions used to help implement ALTER TABLE
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
-    INTERNAL_FUNCTION(sqlite_rename_column, 9, renameColumnFunc),
-    INTERNAL_FUNCTION(sqlite_rename_table,  7, renameTableFunc),
-    INTERNAL_FUNCTION(sqlite_rename_test,   5, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
+    INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
+    INTERNAL_FUNCTION(sqlite_rename_test,    5, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_drop_column,    4, dropColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
