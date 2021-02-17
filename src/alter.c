@@ -1807,7 +1807,7 @@ static void dropColumnFunc(
     while( pCol->t.z[0]!=',' && pCol->t.z[1]!='(' ) pCol->t.z--;
   }
 
-  zNew = sqlite3_mprintf("%.*s%s", pCol->t.z-zSql, zSql, zEnd);
+  zNew = sqlite3MPrintf(db, "%.*s%s", pCol->t.z-zSql, zSql, zEnd);
   sqlite3_result_text(context, zNew, -1, SQLITE_TRANSIENT);
   sqlite3_free(zNew);
 
@@ -1881,7 +1881,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
   renameTestSchema(pParse, zDb, iDb==1);
 
   /* Edit rows of table on disk */
-  if( (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
+  if( pParse->nErr==0 && (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
     int i;
     int addr;
     int reg;
