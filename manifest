@@ -1,5 +1,5 @@
-C Fix\svarious\sissues\swith\sthe\schanges\son\sthis\sbranch.\sAdd\stest\scases\sfor\sthe\ssame.
-D 2021-02-17T20:08:22.323
+C Merge\strunk\schanges\sinto\sthis\sbranch.
+D 2021-02-17T20:19:13.331
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,10 +539,10 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 77c7410c0c5c95278f6eb5e0d4cb82fdff3cb3e51434a7ab9f2b64b501a86974
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 89e4faf6171e179edf279905e8e45c4f9dd108777dc60716396729fbd7cb045e
+F src/resolve.c 172d0f27c021b1d572e73b6f04f3e2695f2932233d3f5e675bd85b028fa2fb75
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 4bd3b7d21d0d58dfdb4134f71d0330915e962a036ae1e1c8cde2f7f8b45de7e9
-F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
+F src/select.c 825c2bfea30052904db7aa5d51d5ee8d772a5fda244ee1bdb96e0799c4739cd0
+F src/shell.c.in 844417f84df1f6c4fce1c815629a888cfdcf219e86513e9c332bbcc38832f477
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1901,7 +1901,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0217937d7306fb595727e61e871e8b03d8c881d339a0865bfd0117d90d42e4e
-R 35acba48cd575f61e2691128781d8577
+P 10538ec6fc1642dfc2ca6cef06ce6cb9e124847b421ccf01f5842064fad379ab c46a94a624c2cc6c49ac916a206a913081e1628c24805987cabc75c9057ea36b
+R cd9a0e3d809cc9e7ce63f07940cfcccd
 U dan
-Z 437b0700aa4a252237abb9f1d982595f
+Z a10b1b1ec1f77c18dc4beea8a7cf3e36

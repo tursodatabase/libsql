@@ -8753,7 +8753,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
    || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
-    const char *zFile = 0;
+    char *zFile = 0;
     int bTxtMode = 0;
     int i;
     int eMode = 0;
@@ -8783,17 +8783,22 @@ static int do_meta_command(char *zLine, ShellState *p){
           rc = 1;
           goto meta_command_exit;
         }
-      }else if( zFile==0 ){
-        zFile = z;
+      }else if( zFile==0 && eMode!='e' && eMode!='x' ){
+        zFile = sqlite3_mprintf("%s", z);
+        if( zFile[0]=='|' ){
+          while( i+1<nArg ) zFile = sqlite3_mprintf("%z %s", zFile, azArg[++i]);
+          break;
+        }
       }else{
         utf8_printf(p->out,"ERROR: extra parameter: \"%s\".  Usage:\n",
                     azArg[i]);
         showHelp(p->out, azArg[0]);
         rc = 1;
+        sqlite3_free(zFile);
         goto meta_command_exit;
       }
     }
-    if( zFile==0 ) zFile = "stdout";
+    if( zFile==0 ) zFile = sqlite3_mprintf("stdout");
     if( bOnce ){
       p->outCount = 2;
     }else{
@@ -8816,7 +8821,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         newTempFile(p, "txt");
         bTxtMode = 1;
       }
-      zFile = p->zTempFile;
+      sqlite3_free(zFile);
+      zFile = sqlite3_mprintf("%s", p->zTempFile);
     }
 #endif /* SQLITE_NOHAVE_SYSTEM */
     if( zFile[0]=='|' ){
@@ -8848,6 +8854,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
+    sqlite3_free(zFile);
   }else
 
   if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
