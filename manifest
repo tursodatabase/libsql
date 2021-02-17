@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\sresolveAlias()\sroutine.
-D 2021-02-16T20:32:17.668
+C Enhance\sthe\s".once"\sand\s".output"\scommands\sin\sthe\sCLI\sso\sthat\sif\sthe\nfilename\sargument\sbegins\swith\s"|"\sthe\sname\sbecomes\sthe\sconcatenation\nof\sall\ssubsequent\sarguments.\s\sHence,\scommands\slike\s".once\s|\sopen\s-f"\sbecome\npossible\swithout\sthe\sneed\sfor\squotes.
+D 2021-02-17T13:19:22.550
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 172d0f27c021b1d572e73b6f04f3e2695f2932233d3f5e675bd85b028fa2fb75
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d009aafcd9304b8406809fc808ce8c2cd55471552d242b98bd3006d0ad55cd12
-F src/shell.c.in 9ebc74e4f05cfbd0f4a36060fdaeff1da4e9af4458358722bc08c5a1ab9a0879
+F src/shell.c.in 844417f84df1f6c4fce1c815629a888cfdcf219e86513e9c332bbcc38832f477
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1900,7 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c03ce49b74f72b63dd75c3a02625e671bfd771f71b24e808994322b00d97677
-R 1b54c7cb4db039e6ced5272704b39604
+P 00bead3931135af80475c22f08cbb26c914518e8f2c7e73c2b8be1cee4ac4d5e
+R c958a1f70e224efabdacd339f843bfe0
 U drh
-Z 6cadfbe2d2e5d960db064c83d646ea7d
+Z 21b3dfef27853d212520b4c1b1451b1a
