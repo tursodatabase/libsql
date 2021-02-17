@@ -2638,7 +2638,7 @@ void sqlite3EndTable(
 
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
-           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName));
+           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -4126,7 +4126,7 @@ void sqlite3CreateIndex(
         sqlite3RefillIndex(pParse, pIndex, iMem);
         sqlite3ChangeCookie(pParse, iDb);
         sqlite3VdbeAddParseSchemaOp(v, iDb,
-            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
+            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 0);
         sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
       }
 

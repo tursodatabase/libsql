@@ -21,7 +21,7 @@
 */
 static void corruptSchema(
   InitData *pData,     /* Initialization context */
-  const char *zObj,    /* Object being parsed at the point of error */
+  char **azObj,        /* Type and name of object being parsed */
   const char *zExtra   /* Error information */
 ){
   sqlite3 *db = pData->db;
@@ -29,14 +29,18 @@ static void corruptSchema(
     pData->rc = SQLITE_NOMEM_BKPT;
   }else if( pData->pzErrMsg[0]!=0 ){
     /* A error message has already been generated.  Do not overwrite it */
-  }else if( pData->mInitFlags & INITFLAG_AlterTable ){
-    *pData->pzErrMsg = sqlite3DbStrDup(db, zExtra);
+  }else if( pData->mInitFlags & (INITFLAG_AlterRename|INITFLAG_AlterDrop) ){
+    *pData->pzErrMsg = sqlite3MPrintf(db, 
+        "error in %s %s after %s: %s", azObj[0], azObj[1], 
+        (pData->mInitFlags & INITFLAG_AlterRename) ? "rename" : "drop column",
+        zExtra
+    );
     pData->rc = SQLITE_ERROR;
   }else if( db->flags & SQLITE_WriteSchema ){
     pData->rc = SQLITE_CORRUPT_BKPT;
   }else{
     char *z;
-    if( zObj==0 ) zObj = "?";
+    const char *zObj = azObj[1] ? azObj[1] : "?";
     z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
     if( zExtra && zExtra[0] ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
     *pData->pzErrMsg = z;
@@ -94,14 +98,14 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   db->mDbFlags |= DBFLAG_EncodingFixed;
   pData->nInitRow++;
   if( db->mallocFailed ){
-    corruptSchema(pData, argv[1], 0);
+    corruptSchema(pData, argv, 0);
     return 1;
   }
 
   assert( iDb>=0 && iDb<db->nDb );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[3]==0 ){
-    corruptSchema(pData, argv[1], 0);
+    corruptSchema(pData, argv, 0);
   }else if( argv[4]
          && 'c'==sqlite3UpperToLower[(unsigned char)argv[4][0]]
          && 'r'==sqlite3UpperToLower[(unsigned char)argv[4][1]] ){
@@ -126,7 +130,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
      || (db->init.newTnum>pData->mxPage && pData->mxPage>0)
     ){
       if( sqlite3Config.bExtraSchemaChecks ){
-        corruptSchema(pData, argv[1], "invalid rootpage");
+        corruptSchema(pData, argv, "invalid rootpage");
       }
     }
     db->init.orphanTrigger = 0;
@@ -145,13 +149,13 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         if( rc==SQLITE_NOMEM ){
           sqlite3OomFault(db);
         }else if( rc!=SQLITE_INTERRUPT && (rc&0xFF)!=SQLITE_LOCKED ){
-          corruptSchema(pData, argv[1], sqlite3_errmsg(db));
+          corruptSchema(pData, argv, sqlite3_errmsg(db));
         }
       }
     }
     sqlite3_finalize(pStmt);
   }else if( argv[1]==0 || (argv[4]!=0 && argv[4][0]!=0) ){
-    corruptSchema(pData, argv[1], 0);
+    corruptSchema(pData, argv, 0);
   }else{
     /* If the SQL column is blank it means this is an index that
     ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
@@ -162,7 +166,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     Index *pIndex;
     pIndex = sqlite3FindIndex(db, argv[1], db->aDb[iDb].zDbSName);
     if( pIndex==0 ){
-      corruptSchema(pData, argv[1], "orphan index");
+      corruptSchema(pData, argv, "orphan index");
     }else
     if( sqlite3GetUInt32(argv[3],&pIndex->tnum)==0
      || pIndex->tnum<2
@@ -170,7 +174,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
      || sqlite3IndexHasDuplicateRootPage(pIndex)
     ){
       if( sqlite3Config.bExtraSchemaChecks ){
-        corruptSchema(pData, argv[1], "invalid rootpage");
+        corruptSchema(pData, argv, "invalid rootpage");
       }
     }
   }
