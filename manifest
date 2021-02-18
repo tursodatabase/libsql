@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\sresolver.
-D 2021-02-18T00:59:16.830
+C Add\smissing\sVdbeCoverage()\smacros\sto\ssome\sof\sthe\snew\sRETURNING\scode.
+D 2021-02-18T01:02:03.701
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 694020ad8a3af3d79b09f74c8f1421272a419cdea42a13401e3b0f7dea6e9c3e
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c 1bae5588bfdf21bdf41e634f0a053d633fb1ae3a2896117b4eea76412b76c2e0
+F src/build.c c5f94b2a879f2a827accfe3f66facdb70558eafefa22d3614d5b72546c716667
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1900,7 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16ac213c57196361a9d14df4c0d1ccc6f67ac522365b345ea364d1aec61fa3f2
-R 88777051eb54ed65a5d815fe0ac16f7f
+P 1aafb94d4e3f28a8322e5e43be737d84b1a09f0063408f4a466a6071fa95b39b
+R 014c63d56957b1a4cbfecbd6b659f75e
 U drh
-Z 74868408efd584dc66181e50a9627e38
+Z 0284a99401abab438415cb1d9101e226

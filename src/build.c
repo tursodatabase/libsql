@@ -163,12 +163,14 @@ void sqlite3FinishCoding(Parse *pParse){
 
       addrRewind =
          sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+      VdbeCoverage(v);
       reg = pReturning->iRetReg;
       for(i=0; i<pReturning->nRetCol; i++){
         sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
       }
       sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
       sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+      VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrRewind);
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
