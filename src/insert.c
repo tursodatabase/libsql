@@ -930,19 +930,21 @@ void sqlite3Insert(
       }
     }
 #endif
-  }
 
-  /* Make sure the number of columns in the source data matches the number
-  ** of columns to be inserted into the table.
-  */
-  for(i=0; i<pTab->nCol; i++){
-    if( pTab->aCol[i].colFlags & COLFLAG_NOINSERT ) nHidden++;
-  }
-  if( pColumn==0 && nColumn && nColumn!=(pTab->nCol-nHidden) ){
-    sqlite3ErrorMsg(pParse, 
-       "table %S has %d columns but %d values were supplied",
-       pTabList, 0, pTab->nCol-nHidden, nColumn);
-    goto insert_cleanup;
+    /* Make sure the number of columns in the source data matches the number
+    ** of columns to be inserted into the table.
+    */
+    if( IsVirtual(pTab) || (pTab->tabFlags & TF_HasGenerated)!=0 ){
+      for(i=0; i<pTab->nCol; i++){
+        if( pTab->aCol[i].colFlags & COLFLAG_NOINSERT ) nHidden++;
+      }
+    }
+    if( nColumn!=(pTab->nCol-nHidden) ){
+      sqlite3ErrorMsg(pParse, 
+         "table %S has %d columns but %d values were supplied",
+         pTabList, 0, pTab->nCol-nHidden, nColumn);
+     goto insert_cleanup;
+    }
   }
   if( pColumn!=0 && nColumn!=pColumn->nId ){
     sqlite3ErrorMsg(pParse, "%d values for %d columns", nColumn, pColumn->nId);

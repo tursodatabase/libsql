@@ -82,7 +82,7 @@ static void resolveAlias(
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup!=0 ){
-    if( nSubquery ) incrAggFunctionDepth(pDup, nSubquery);
+    incrAggFunctionDepth(pDup, nSubquery);
     if( pExpr->op==TK_COLLATE ){
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
