@@ -1908,7 +1908,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
     Vdbe *v = sqlite3GetVdbe(pParse);
     iCur = pParse->nTab++;
     sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite);
-    addr = sqlite3VdbeAddOp1(v, OP_Rewind, iCur);
+    addr = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
     reg = ++pParse->nMem;
     pParse->nMem += pTab->nCol;
     if( HasRowid(pTab) ){
@@ -1938,7 +1938,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
       sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
     }
 
-    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1);
+    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
   }
 
