@@ -1062,7 +1062,7 @@ static int renameParseSql(
   p->eParseMode = PARSE_MODE_RENAME;
   p->db = db;
   p->nQueryLoop = 1;
-  rc = sqlite3RunParser(p, zSql, &zErr);
+  rc = zSql ? sqlite3RunParser(p, zSql, &zErr) : SQLITE_NOMEM;
   assert( p->zErrMsg==0 );
   assert( rc!=SQLITE_OK || zErr==0 );
   p->zErrMsg = zErr;
