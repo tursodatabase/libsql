@@ -2426,6 +2426,7 @@ static void codeWithoutRowidPreupdate(
   Vdbe *v = pParse->pVdbe;
   int r = sqlite3GetTempReg(pParse);
   assert( !HasRowid(pTab) );
+  assert( 0==(pParse->db->mDbFlags & DBFLAG_Vacuum) );
   sqlite3VdbeAddOp2(v, OP_Integer, 0, r);
   sqlite3VdbeAddOp4(v, OP_Insert, iCur, regData, r, (char*)pTab, P4_TABLE);
   sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP);
@@ -2958,13 +2959,18 @@ static int xferOptimization(
       insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND|OPFLAG_PREFORMAT;
     }
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-    sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-    insFlags &= ~OPFLAG_PREFORMAT;
-#else
-    sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regRowid);
+    if( (db->mDbFlags & DBFLAG_Vacuum)==0 ){
+      sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
+      insFlags &= ~OPFLAG_PREFORMAT;
+    }else
 #endif
-    sqlite3VdbeAddOp4(v, OP_Insert, iDest, regData, regRowid,
-        (char*)pDest, P4_TABLE);
+    {
+      sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regRowid);
+    }
+    sqlite3VdbeAddOp3(v, OP_Insert, iDest, regData, regRowid);
+    if( (db->mDbFlags & DBFLAG_Vacuum)==0 ){
+      sqlite3VdbeChangeP4(v, -1, (char*)pDest, P4_TABLE);
+    }
     sqlite3VdbeChangeP5(v, insFlags);
 
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1); VdbeCoverage(v);
@@ -3003,26 +3009,24 @@ static int xferOptimization(
       ** might change the definition of a collation sequence and then run
       ** a VACUUM command. In that case keys may not be written in strictly
       ** sorted order.  */
-#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-      if( (HasRowid(pDest) || !IsPrimaryKeyIndex(pDestIdx)) )
-#endif
-      {
-        for(i=0; i<pSrcIdx->nColumn; i++){
-          const char *zColl = pSrcIdx->azColl[i];
-          if( sqlite3_stricmp(sqlite3StrBINARY, zColl) ) break;
-        }
-        if( i==pSrcIdx->nColumn ){
-          idxInsFlags = OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
-          sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
-          sqlite3VdbeAddOp2(v, OP_RowCell, iDest, iSrc);
-        }
+      for(i=0; i<pSrcIdx->nColumn; i++){
+        const char *zColl = pSrcIdx->azColl[i];
+        if( sqlite3_stricmp(sqlite3StrBINARY, zColl) ) break;
+      }
+      if( i==pSrcIdx->nColumn ){
+        idxInsFlags = OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
+        sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
+        sqlite3VdbeAddOp2(v, OP_RowCell, iDest, iSrc);
       }
     }else if( !HasRowid(pSrc) && pDestIdx->idxType==SQLITE_IDXTYPE_PRIMARYKEY ){
       idxInsFlags |= OPFLAG_NCHANGE;
     }
     if( idxInsFlags!=(OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT) ){
       sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-      if( !HasRowid(pDest) && IsPrimaryKeyIndex(pDestIdx) ){
+      if( (db->mDbFlags & DBFLAG_Vacuum)==0 
+       && !HasRowid(pDest) 
+       && IsPrimaryKeyIndex(pDestIdx) 
+      ){
         codeWithoutRowidPreupdate(pParse, pDest, iDest, regData);
       }
     }
