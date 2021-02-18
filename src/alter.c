@@ -1800,6 +1800,11 @@ static void dropColumnFunc(
   const char *zEnd;
   char *zNew = 0;
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+  db->xAuth = 0;
+#endif
+
   rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
@@ -1820,6 +1825,9 @@ static void dropColumnFunc(
 
 drop_column_done:
   renameParseCleanup(&sParse);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
 }
 
 /*
@@ -1937,7 +1945,6 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
 exit_drop_column:
   sqlite3DbFree(db, zCol);
   sqlite3SrcListDelete(db, pSrc);
-  return;
 }
 
 /*
