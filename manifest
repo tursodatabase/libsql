@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\spre-update\shook\sis\sinvoked\sfor\sINSERT\soperations\son\sWITHOUT\sROWID\stables\sthat\suse\sthe\sxfer\soptimization.
-D 2021-02-18T12:18:10.995
+C Disable\sthe\soptimization\sof\s[16ac213c57196361]\swhen\sthe\nSQLITE_ENABLE_HIDDEN_COLUMN\scompile-time\soption\sis\sused,\sas\sthe\soptimization\ndoes\snot\swork\sin\sthat\scase.
+D 2021-02-18T14:27:43.194
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -502,7 +502,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 225c8776218d56f63d218579d753b528347f2138d828438de88cbde976da6d5e
+F src/insert.c fdcd29544946ed7597471aaac3b50fea0836db91f49948e01390f8be48cdbd33
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 1c5de7b3fabcdf05f4fe563aab5d81d175b89c67a8678a12ba86629356afa356
@@ -1900,7 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53a5390909822b3aef8c5f522144bc2e86cc31318b2d3e310a064ae7202b4a15
-R 781eea4e5f846e02b7fa70a51cb3a0ee
-U dan
-Z 800c1b7cf896beb329dcd482f50ca3c5
+P 66bbad239b4527ac8ae8b487a0c71d88b1861a8dfe1edc25109600dc447c60c4
+R b3dd5e522fd45ccbd523cfd6d2ce1f5b
+U drh
+Z 4838bf50459457dc91014b363c54c8bb

@@ -934,7 +934,10 @@ void sqlite3Insert(
     /* Make sure the number of columns in the source data matches the number
     ** of columns to be inserted into the table.
     */
-    if( IsVirtual(pTab) || (pTab->tabFlags & TF_HasGenerated)!=0 ){
+#ifndef SQLITE_ENABLE_HIDDEN_COLUMNS
+    if( IsVirtual(pTab) || (pTab->tabFlags & TF_HasGenerated)!=0 )
+#endif
+    {
       for(i=0; i<pTab->nCol; i++){
         if( pTab->aCol[i].colFlags & COLFLAG_NOINSERT ) nHidden++;
       }
