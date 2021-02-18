@@ -625,10 +625,12 @@ static int lookupName(
 
   /* Clean up and return
   */
-  sqlite3ExprDelete(db, pExpr->pLeft);
-  pExpr->pLeft = 0;
-  sqlite3ExprDelete(db, pExpr->pRight);
-  pExpr->pRight = 0;
+  if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+    sqlite3ExprDelete(db, pExpr->pLeft);
+    pExpr->pLeft = 0;
+    sqlite3ExprDelete(db, pExpr->pRight);
+    pExpr->pRight = 0;
+  }
   pExpr->op = eNewExprOp;
   ExprSetProperty(pExpr, EP_Leaf);
 lookupname_end:

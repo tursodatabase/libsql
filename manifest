@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\scode\sgenerator\sfor\sINSERT\sfor\sthe\scommon\ncase\swhere\sthe\starget\stable\shas\sneither\sgenerated\snor\shidden\scolumns.\nAlso\sfix\sa\sredundant\s(and\sthus\sunreachable)\sbranch\sin\sthe\sresolver.
-D 2021-02-18T00:26:11.149
+C Performance\soptimization\sin\sthe\sresolver.
+D 2021-02-18T00:59:16.830
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c a25c7df3a71be19c31231d59d0694e950183837fc54b1828549c5a766538fcf7
 F src/printf.c 30e92b638fac71dcd85cdea1d12ecfae354c9adee2c71e8e1ae4727cde7c91ed
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 065d8ab56a0c6fcd70462d487527c45820ff45e5b7abc3f600f79ebfd0f890cd
+F src/resolve.c 52f81603cc40f78449f5b6aed96dbea9484b194771ecb1937e8c0f6547c186a0
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 8acabad7dd5f2843b834d59a268aa186c987e469c13a777b6c62be35f2f17fad
 F src/shell.c.in 844417f84df1f6c4fce1c815629a888cfdcf219e86513e9c332bbcc38832f477
@@ -1900,7 +1900,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a1399671fa10c64d5358cc4d364d24c643fe9dd8da923356462267ee7962f61
-R 2a75ab3203514692b6cbe52f335b0341
+P 16ac213c57196361a9d14df4c0d1ccc6f67ac522365b345ea364d1aec61fa3f2
+R 88777051eb54ed65a5d815fe0ac16f7f
 U drh
-Z 1b7be3c7e4ab1fb3c1aac42d1ac5aa16
+Z 74868408efd584dc66181e50a9627e38
