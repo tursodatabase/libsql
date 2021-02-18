@@ -207,6 +207,21 @@ foreach {tn wo vs} {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE p1(a PRIMARY KEY, b UNIQUE);
+  CREATE TABLE c1(x, y, z REFERENCES p1(c));
+  CREATE TABLE c2(x, y, z, w REFERENCES p1(b));
+}
+do_execsql_test 5.1 {
+  ALTER TABLE c1 DROP COLUMN z;
+  ALTER TABLE c2 DROP COLUMN z;
+  SELECT sql FROM sqlite_schema WHERE name IN ('c1', 'c2');
+} {
+  {CREATE TABLE c1(x, y)} 
+  {CREATE TABLE c2(x, y, w REFERENCES p1(b))}
+}
 
 
 finish_test
