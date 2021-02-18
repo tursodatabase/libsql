@@ -2408,6 +2408,31 @@ void sqlite3SetMakeRecordP5(Vdbe *v, Table *pTab){
 #endif
 
 /*
+** Table pTab is a WITHOUT ROWID table that is being written to. The cursor
+** number is iCur, and register regData contains the new record for the
+** PK index. This function adds code to invoke the pre-update hook,
+** if one is registered.
+*/
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+static void codeWithoutRowidPreupdate(
+  Parse *pParse,                  /* Parse context */
+  Table *pTab,                    /* Table being updated */
+  int iCur,                       /* Cursor number for table */
+  int regData                     /* Data containing new record */
+){
+  Vdbe *v = pParse->pVdbe;
+  int r = sqlite3GetTempReg(pParse);
+  assert( !HasRowid(pTab) );
+  sqlite3VdbeAddOp2(v, OP_Integer, 0, r);
+  sqlite3VdbeAddOp4(v, OP_Insert, iCur, regData, r, (char*)pTab, P4_TABLE);
+  sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP);
+  sqlite3ReleaseTempReg(pParse, r);
+}
+#else
+# define codeWithoutRowidPreupdate(a,b,c,d)
+#endif
+
+/*
 ** This routine generates code to finish the INSERT or UPDATE operation
 ** that was started by a prior call to sqlite3GenerateConstraintChecks.
 ** A consecutive range of registers starting at regNewData contains the
@@ -2455,17 +2480,9 @@ void sqlite3CompleteInsertion(
       assert( pParse->nested==0 );
       pik_flags |= OPFLAG_NCHANGE;
       pik_flags |= (update_flags & OPFLAG_SAVEPOSITION);
-#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
       if( update_flags==0 ){
-        int r = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, r);
-        sqlite3VdbeAddOp4(v, OP_Insert, 
-            iIdxCur+i, aRegIdx[i], r, (char*)pTab, P4_TABLE
-        );
-        sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP);
-        sqlite3ReleaseTempReg(pParse, r);
+        codeWithoutRowidPreupdate(pParse, pTab, iIdxCur+i, aRegIdx[i]);
       }
-#endif
     }
     sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i],
                          aRegIdx[i]+1,
@@ -2938,14 +2955,11 @@ static int xferOptimization(
       insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND|OPFLAG_PREFORMAT;
     }
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-    if( db->xPreUpdateCallback ){
-      sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
-      insFlags &= ~OPFLAG_PREFORMAT;
-    }else
+    sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
+    insFlags &= ~OPFLAG_PREFORMAT;
+#else
+    sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regRowid);
 #endif
-    {
-      sqlite3VdbeAddOp3(v, OP_RowCell, iDest, iSrc, regRowid);
-    }
     sqlite3VdbeAddOp4(v, OP_Insert, iDest, regData, regRowid,
         (char*)pDest, P4_TABLE);
     sqlite3VdbeChangeP5(v, insFlags);
@@ -2986,20 +3000,28 @@ static int xferOptimization(
       ** might change the definition of a collation sequence and then run
       ** a VACUUM command. In that case keys may not be written in strictly
       ** sorted order.  */
-      for(i=0; i<pSrcIdx->nColumn; i++){
-        const char *zColl = pSrcIdx->azColl[i];
-        if( sqlite3_stricmp(sqlite3StrBINARY, zColl) ) break;
-      }
-      if( i==pSrcIdx->nColumn ){
-        idxInsFlags = OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
-        sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
-        sqlite3VdbeAddOp2(v, OP_RowCell, iDest, iSrc);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+      if( (HasRowid(pDest) || !IsPrimaryKeyIndex(pDestIdx)) )
+#endif
+      {
+        for(i=0; i<pSrcIdx->nColumn; i++){
+          const char *zColl = pSrcIdx->azColl[i];
+          if( sqlite3_stricmp(sqlite3StrBINARY, zColl) ) break;
+        }
+        if( i==pSrcIdx->nColumn ){
+          idxInsFlags = OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT;
+          sqlite3VdbeAddOp1(v, OP_SeekEnd, iDest);
+          sqlite3VdbeAddOp2(v, OP_RowCell, iDest, iSrc);
+        }
       }
     }else if( !HasRowid(pSrc) && pDestIdx->idxType==SQLITE_IDXTYPE_PRIMARYKEY ){
       idxInsFlags |= OPFLAG_NCHANGE;
     }
     if( idxInsFlags!=(OPFLAG_USESEEKRESULT|OPFLAG_PREFORMAT) ){
       sqlite3VdbeAddOp3(v, OP_RowData, iSrc, regData, 1);
+      if( !HasRowid(pDest) && IsPrimaryKeyIndex(pDestIdx) ){
+        codeWithoutRowidPreupdate(pParse, pDest, iDest, regData);
+      }
     }
     sqlite3VdbeAddOp2(v, OP_IdxInsert, iDest, regData);
     sqlite3VdbeChangeP5(v, idxInsFlags|OPFLAG_APPEND);

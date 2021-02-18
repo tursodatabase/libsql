@@ -956,5 +956,47 @@ ifcapable analyze {
   }]
 }
 
+#-------------------------------------------------------------------------
+# Test that the pre-update hook is fired for INSERT statements that use
+# the xfer optimization on without rowid tables.
+#
+reset_db
+do_execsql_test 12.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b) WITHOUT ROWID;
+
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t2 VALUES(5, 6);
+  INSERT INTO t2 VALUES(7, 8);
+
+  CREATE TABLE t3 (a INTEGER PRIMARY KEY, b) WITHOUT ROWID;
+}
+
+db preupdate hook preupdate_cb
+db update_hook update_cb
+
+proc preupdate_cb {args} { lappend ::res "preupdate" $args }
+proc update_cb {args} { lappend ::res "update" $args }
+
+#set ::res [list]
+#do_test 11.2 {
+#  execsql VACUUM
+#  set ::res
+#} {}
+
+do_test 11.3 {
+  set ::res [list]
+  execsql { INSERT INTO t3 SELECT a, b FROM t2 }
+  set ::res
+} {preupdate {INSERT main t3 0 0} preupdate {INSERT main t3 0 0}}
+
+do_test 11.4 {
+  execsql { DELETE FROM t3 }
+  set ::res [list]
+  execsql { INSERT INTO t3 SELECT * FROM t2 }
+  set ::res
+} {preupdate {INSERT main t3 0 0} preupdate {INSERT main t3 0 0}}
 
 finish_test
+
