@@ -49,16 +49,21 @@ static int isAlterableTable(Parse *pParse, Table *pTab){
 ** statement to ensure that the operation has not rendered any schema
 ** objects unusable.
 */
-static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
+static void renameTestSchema(
+  Parse *pParse,                  /* Parse context */
+  const char *zDb,                /* Name of db to verify schema of */
+  int bTemp,                      /* True if this is the temp db */
+  const char *zWhen               /* "when" part of error message */
+){
   pParse->colNamesSet = 1;
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
       "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
-      " AND sqlite_rename_test(%Q, sql, type, name, %d)=NULL ",
+      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q)=NULL ",
       zDb,
-      zDb, bTemp
+      zDb, bTemp, zWhen
   );
 
   if( bTemp==0 ){
@@ -67,8 +72,8 @@ static void renameTestSchema(Parse *pParse, const char *zDb, int bTemp){
         "FROM temp." DFLT_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
-        " AND sqlite_rename_test(%Q, sql, type, name, 1)=NULL ",
-        zDb 
+        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q)=NULL ",
+        zDb, zWhen
     );
   }
 }
@@ -231,7 +236,7 @@ void sqlite3AlterRenameTable(
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase AND "
-              "          sqlite_rename_test(%Q, sql, type, name, 1) "
+              "    sqlite_rename_test(%Q, sql, type, name, 1, 'after rename') "
               "THEN %Q ELSE tbl_name END "
             "WHERE type IN ('view', 'trigger')"
         , zDb, zTabName, zName, zTabName, zDb, zName);
@@ -251,7 +256,7 @@ void sqlite3AlterRenameTable(
 #endif
 
   renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iDb==1);
+  renameTestSchema(pParse, zDb, iDb==1, "after rename");
 
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
@@ -619,7 +624,7 @@ void sqlite3AlterRenameColumn(
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iSchema==1);
+  renameTestSchema(pParse, zDb, iSchema==1, "after rename");
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
@@ -968,7 +973,7 @@ static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
 */
 static void renameColumnParseError(
   sqlite3_context *pCtx, 
-  int bPost,
+  const char *zWhen,
   sqlite3_value *pType,
   sqlite3_value *pObject,
   Parse *pParse
@@ -977,8 +982,8 @@ static void renameColumnParseError(
   const char *zN = (const char*)sqlite3_value_text(pObject);
   char *zErr;
 
-  zErr = sqlite3_mprintf("error in %s %s%s: %s", 
-      zT, zN, (bPost ? " after rename" : ""),
+  zErr = sqlite3_mprintf("error in %s %s%s%s: %s", 
+      zT, zN, (zWhen[0] ? " " : ""), zWhen,
       pParse->zErrMsg
   );
   sqlite3_result_error(pCtx, zErr, -1);
@@ -1484,7 +1489,7 @@ static void renameColumnFunc(
 renameColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( sParse.zErrMsg ){
-      renameColumnParseError(context, 0, argv[1], argv[2], &sParse);
+      renameColumnParseError(context, "", argv[1], argv[2], &sParse);
     }else{
       sqlite3_result_error_code(context, rc);
     }
@@ -1673,7 +1678,7 @@ static void renameTableFunc(
     }
     if( rc!=SQLITE_OK ){
       if( sParse.zErrMsg ){
-        renameColumnParseError(context, 0, argv[1], argv[2], &sParse);
+        renameColumnParseError(context, "", argv[1], argv[2], &sParse);
       }else{
         sqlite3_result_error_code(context, rc);
       }
@@ -1702,6 +1707,7 @@ static void renameTableFunc(
 **   2: Object type ("view", "table", "trigger" or "index").
 **   3: Object name.
 **   4: True if object is from temp schema.
+**   5: "when" part of error message.
 **
 ** Unless it finds an error, this function normally returns NULL. However, it
 ** returns integer value 1 if:
@@ -1719,6 +1725,7 @@ static void renameTableTest(
   char const *zInput = (const char*)sqlite3_value_text(argv[1]);
   int bTemp = sqlite3_value_int(argv[4]);
   int isLegacy = (db->flags & SQLITE_LegacyAlter);
+  char const *zWhen = (const char*)sqlite3_value_text(argv[5]);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;
@@ -1751,8 +1758,8 @@ static void renameTableTest(
       }
     }
 
-    if( rc!=SQLITE_OK ){
-      renameColumnParseError(context, 1, argv[2], argv[3], &sParse);
+    if( rc!=SQLITE_OK && zWhen ){
+      renameColumnParseError(context, zWhen, argv[2], argv[3],&sParse);
     }
     renameParseCleanup(&sParse);
   }
@@ -1869,6 +1876,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 );
   zDb = db->aDb[iDb].zDbSName;
+  renameTestSchema(pParse, zDb, iDb==1, "");
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_drop_column(%d, sql, %d, %d) "
@@ -1878,7 +1886,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iDb, INITFLAG_AlterDrop);
-  renameTestSchema(pParse, zDb, iDb==1);
+  renameTestSchema(pParse, zDb, iDb==1, "after drop column");
 
   /* Edit rows of table on disk */
   if( pParse->nErr==0 && (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
@@ -1939,7 +1947,7 @@ void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
-    INTERNAL_FUNCTION(sqlite_rename_test,    5, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_rename_test,    6, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    4, dropColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));

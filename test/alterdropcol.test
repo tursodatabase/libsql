@@ -223,6 +223,37 @@ do_execsql_test 5.1 {
   {CREATE TABLE c2(x, y, w REFERENCES p1(b))}
 }
 
+do_execsql_test 5.2.1 {
+  CREATE VIEW v1 AS SELECT d, e FROM p1
+}
+do_catchsql_test 5.2.2 {
+  ALTER TABLE c1 DROP COLUMN x
+} {1 {error in view v1: no such column: d}}
+do_execsql_test 5.3.1 {
+  DROP VIEW v1;
+  CREATE VIEW v1 AS SELECT x, y FROM c1;
+}
+do_catchsql_test 5.3.2 {
+  ALTER TABLE c1 DROP COLUMN x
+} {1 {error in view v1 after drop column: no such column: x}}
+
+do_execsql_test 5.4.1 {
+  CREATE TRIGGER tr AFTER INSERT ON c1 BEGIN
+    INSERT INTO p1 VALUES(new.y, new.xyz);
+  END;
+}
+do_catchsql_test 5.4.2 {
+  ALTER TABLE c1 DROP COLUMN y
+} {1 {error in trigger tr: no such column: new.xyz}}
+do_execsql_test 5.5.1 {
+  DROP TRIGGER tr;
+  CREATE TRIGGER tr AFTER INSERT ON c1 BEGIN
+    INSERT INTO p1 VALUES(new.y, new.z);
+  END;
+}
+do_catchsql_test 5.5.2 {
+  ALTER TABLE c1 DROP COLUMN y
+} {1 {error in trigger tr: no such column: new.z}}
 
 finish_test
 
