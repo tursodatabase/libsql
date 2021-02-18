@@ -555,30 +555,15 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 }
 
 /*
-** Deallocate a single AggInfo object
-*/
-static void agginfoFree(sqlite3 *db, AggInfo *p){
-  sqlite3DbFree(db, p->aCol);
-  sqlite3DbFree(db, p->aFunc);
-  sqlite3DbFree(db, p);
-}
-
-/*
 ** Free all memory allocations in the pParse object
 */
 void sqlite3ParserReset(Parse *pParse){
   sqlite3 *db = pParse->db;
-  AggInfo *pThis = pParse->pAggList;
-  while( pThis ){
-    AggInfo *pNext = pThis->pNext;
-    agginfoFree(db, pThis);
-    pThis = pNext;
-  }
   while( pParse->pCleanup ){
     ParseCleanup *pCleanup = pParse->pCleanup;
     pParse->pCleanup = pCleanup->pNext;
     pCleanup->xCleanup(db, pCleanup->pPtr);
-    sqlite3DbFree(db, pCleanup);
+    sqlite3DbFreeNN(db, pCleanup);
   }
   sqlite3DbFree(db, pParse->aLabel);
   if( pParse->pConstExpr ){
