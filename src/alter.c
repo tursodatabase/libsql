@@ -1880,6 +1880,12 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
     goto exit_drop_column;
   }
 
+  /* Do not allow the number of columns to go to zero */
+  if( pTab->nCol<=1 ){
+    sqlite3ErrorMsg(pParse, "cannot drop column \"%s\": no other columns exist",zCol);
+    goto exit_drop_column;
+  }
+
   /* Edit the sqlite_schema table */
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 );

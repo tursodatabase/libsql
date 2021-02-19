@@ -72,7 +72,7 @@ do_execsql_test 1.7.2 {
 
 do_catchsql_test 1.7.3 {
   ALTER TABLE t1 DROP COLUMN a;
-} {1 {error in table t1 after drop column: near ")": syntax error}}
+} {1 {cannot drop column "a": no other columns exist}}
 
 
 do_catchsql_test 1.8 {
@@ -256,5 +256,3 @@ do_catchsql_test 5.5.2 {
 } {1 {error in trigger tr: no such column: new.z}}
 
 finish_test
-
-
