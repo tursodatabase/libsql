@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\s"ALTER\sTABLE\s...\sDROP\sCOLUMN\s..."\scommands.
-D 2021-02-19T14:32:58.535
+C Add\stests\sfor\sALTER\sTABLE\sDROP\sCOLUMN\scommands.
+D 2021-02-19T15:34:16.257
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -649,6 +649,7 @@ F test/alterauth2.test 794ac5cef251819fe364b4fe20f12f86e9c5d68070513c7fd26c17cb2
 F test/altercol.test 1d6a6fe698b81e626baea4881f5717f9bc53d7d07f1cd23ee7ad1b931f117ddf
 F test/altercorrupt.test cb17a81f655a0d71bc1e48e44741a5e0905a3b3efbbe485b0b6c7648f2af3eed
 F test/alterdropcol.test baad37ff9b07078ea02dcc33dbfb82bde655f3eee5c453e218f69501c36f02ba
+F test/alterdropcol2.test 3948c805ca52f4621051b35968c18c09d107eb117e2b656c78cee3b2870650c0
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
@@ -1903,8 +1904,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c25cb4ab8885a50e2a485fe76f5ffd5dd8ebe1306aca8c0989e0b7fd7dd18d2 126ee1ec4f3565c0cccca98885fa3665a641ea3df251511de16eed2a1c396124
-R a9f6b9c36a39e6908ea00fd7298f0619
-T +closed 126ee1ec4f3565c0cccca98885fa3665a641ea3df251511de16eed2a1c396124
+P c844a331e78949850fde8ed95058cb34f863566944bc9e92e3ae042768f130e1
+R bd5254ae46e1e31d2902be2dbd124020
 U dan
-Z c1e3973235fcf41f620261cabeb4df13
+Z 3710b56eea4906fb9c766789f57cac08
