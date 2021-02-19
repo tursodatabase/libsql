@@ -1,5 +1,5 @@
-C Give\sa\sbetter\serror\smessage\son\sDROP\sCOLUMN\swhen\sattempting\sto\sdrop\nthe\slast\scolumn\sof\sa\stable.
-D 2021-02-19T09:09:07.189
+C The\sCOLUMN\skeyword\sin\sALTER\sTABLE\sDROP\sCOLUMN\sis\soptional.
+D 2021-02-19T09:36:50.687
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,7 +530,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c c49952ac5e9cc536778eff528091d79d38b3e45cbeeed4695dc05e207dc6547d
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 8170885f22f4815c2adba3430ac7c990a39b60e04a0bcc4d02cce54e33475975
+F src/parse.y cdc4e5efaf1618d82f6b241a30f1a586188bf37e9c55f967258ed15fe24c51a2
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 6596e10baf3d8f84cc1585d226cf1ab26564a5f5caf85a15757a281ff977d51a
@@ -1902,7 +1902,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 963f498ae64cf7530fb7a405fa476c411ad66523f62f5eefa5a16596cd19a481
-R aa22eacb2d5994361fbd57544a6b9a8f
+P 5e1f362bc3e53c60f9e6f771346d10c6e6a6cb3ff1eec5608101f9c5d6d2a5a4
+R d4c9013c313cab1e0a7971c4b14f44ef
 U drh
-Z 3143b8a85ae4a74a1f1f600bf54bbab2
+Z f136680b9ca40f702c72664ef013c51c
