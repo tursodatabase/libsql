@@ -2658,20 +2658,17 @@ void sqlite3EndTable(
     }
     pParse->pNewTable = 0;
     db->mDbFlags |= DBFLAG_SchemaChange;
+  }
 
 #ifndef SQLITE_OMIT_ALTERTABLE
-    if( !p->pSelect ){
-      const char *zName = (const char *)pParse->sNameToken.z;
-      int nName;
-      assert( !pSelect && pCons && pEnd );
-      if( pCons->z==0 ){
-        pCons = pEnd;
-      }
-      nName = (int)((const char *)pCons->z - zName);
-      p->addColOffset = 13 + nName;
+  if( !pSelect && !p->pSelect ){
+    assert( pCons && pEnd );
+    if( pCons->z==0 ){
+      pCons = pEnd;
     }
-#endif
+    p->addColOffset = 13 + (int)(pCons->z - pParse->sNameToken.z);
   }
+#endif
 }
 
 #ifndef SQLITE_OMIT_VIEW

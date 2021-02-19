@@ -1777,7 +1777,6 @@ static void renameTableTest(
 **  argv[0]: An integer - the index of the schema containing the table
 **  argv[1]: CREATE TABLE statement to modify.
 **  argv[2]: An integer - the index of the column to remove.
-**  argv[3]: Byte offset of first byte after last column definition in argv[1]
 **
 ** The value returned is a string containing the CREATE TABLE statement
 ** with column argv[2] removed.
@@ -1791,7 +1790,6 @@ static void dropColumnFunc(
   int iSchema = sqlite3_value_int(argv[0]);
   const char *zSql = (const char*)sqlite3_value_text(argv[1]);
   int iCol = sqlite3_value_int(argv[2]);
-  int iAddColOffset = sqlite3_value_int(argv[3]);
   const char *zDb = db->aDb[iSchema].zDbSName;
   int rc;
   Parse sParse;
@@ -1808,7 +1806,7 @@ static void dropColumnFunc(
   rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
-  if( iCol>=pTab->nCol ){ 
+  if( pTab->nCol==1 || iCol>=pTab->nCol ){ 
     /* This can happen if the sqlite_schema table is corrupt */
     rc = SQLITE_CORRUPT_BKPT;
     goto drop_column_done;
@@ -1820,7 +1818,7 @@ static void dropColumnFunc(
     pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zName);
     zEnd = (const char*)pEnd->t.z;
   }else{
-    zEnd = (const char*)&zSql[iAddColOffset];
+    zEnd = (const char*)&zSql[pTab->addColOffset];
     while( ALWAYS(pCol->t.z[0]!=0) && pCol->t.z[0]!=',' ) pCol->t.z--;
   }
 
@@ -1901,9 +1899,9 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
   renameTestSchema(pParse, zDb, iDb==1, "");
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
-      "sql = sqlite_drop_column(%d, sql, %d, %d) "
+      "sql = sqlite_drop_column(%d, sql, %d) "
       "WHERE (type=='table' AND tbl_name=%Q COLLATE nocase)"
-      , zDb, iDb, iCol, pTab->addColOffset, pTab->zName
+      , zDb, iDb, iCol, pTab->zName
   );
 
   /* Drop and reload the database schema. */
@@ -1969,7 +1967,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
     INTERNAL_FUNCTION(sqlite_rename_test,    6, renameTableTest),
-    INTERNAL_FUNCTION(sqlite_drop_column,    4, dropColumnFunc),
+    INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
