@@ -1808,6 +1808,11 @@ static void dropColumnFunc(
   rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
+  if( iCol>=pTab->nCol ){ 
+    /* This can happen if the sqlite_schema table is corrupt */
+    rc = SQLITE_CORRUPT_BKPT;
+    goto drop_column_done;
+  }
 
   pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zName);
   if( iCol<pTab->nCol-1 ){
@@ -1828,6 +1833,9 @@ drop_column_done:
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = xAuth;
 #endif
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(context, rc);
+  }
 }
 
 /*
