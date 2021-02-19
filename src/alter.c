@@ -1816,7 +1816,7 @@ static void dropColumnFunc(
     zEnd = (const char*)pEnd->t.z;
   }else{
     zEnd = (const char*)&zSql[iAddColOffset];
-    while( pCol->t.z[0]!=',' && pCol->t.z[1]!='(' ) pCol->t.z--;
+    while( ALWAYS(pCol->t.z[0]!=0) && pCol->t.z[0]!=',' ) pCol->t.z--;
   }
 
   zNew = sqlite3MPrintf(db, "%.*s%s", pCol->t.z-zSql, zSql, zEnd);
