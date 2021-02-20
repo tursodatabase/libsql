@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\shandling\scorrupt\sdatabase\sfiles\sin\sthe\sALTER\sTABLE\sDROP\sCOLUMN\scode.
-D 2021-02-19T18:39:32.279
+C Simplification\sto\swhere.c\smanually\scherrypicked\sfrom\sthe\sas-materialize\nbranch.
+D 2021-02-20T13:36:14.978
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d9c4e454ebb9499e908aa62d55b8994c375cf5355ac78f60d45af17f7890701c
-F src/where.c 6efc4a10bfe0ec908c4f3c9112afb7675c952204b4b0b255672f488860141fec
+F src/where.c 5737a9bd24115e7b3a9e6f637eba462d98e61272170618dd1cd9ac3baa854ed7
 F src/whereInt.h ae03b5e3a4cca9bd9cb1b7d3c63faf8f1f177200fc8cecc87d3d0cab6ca338e6
 F src/wherecode.c 43a63441f8662ddf86b15975683a502ec33f08167e9636f4d19e38e265e95fd9
 F src/whereexpr.c f7b5469e83db3c3b9eb14e4ba44559a2e125523761d12e5ac8d8fb88301af393
@@ -1904,7 +1904,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05dbea9b26bdcb096194dc531816333f3784eca50b133fe3efede6ab0d233472
-R 654376f36a79c8c3f0a8b98f1eb136d6
-U dan
-Z 6b0bcca992d79748743aedfd1336dec2
+P 9edf2ddc4799c8830c4b7b91d7aacee50029a4b9db329fd4c5674fbedea33034
+R b70134b2efeeef7df7d7ac293b45ba53
+U drh
+Z c54216abf02d6bbe69ae719b87b3ac9c

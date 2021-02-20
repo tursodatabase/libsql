@@ -2954,7 +2954,7 @@ static int whereLoopAddBtree(
   pWC = pBuilder->pWC;
   assert( !IsVirtual(pSrc->pTab) );
 
-  if( pSrc->pIBIndex ){
+  if( pSrc->fg.isIndexedBy ){
     /* An INDEXED BY clause specifies a particular index to use */
     pProbe = pSrc->pIBIndex;
   }else if( !HasRowid(pTab) ){
@@ -2992,7 +2992,7 @@ static int whereLoopAddBtree(
   if( !pBuilder->pOrSet      /* Not part of an OR optimization */
    && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
-   && pSrc->pIBIndex==0      /* Has no INDEXED BY clause */
+   && !pSrc->fg.isIndexedBy  /* Has no INDEXED BY clause */
    && !pSrc->fg.notIndexed   /* Has no NOT INDEXED clause */
    && HasRowid(pTab)         /* Not WITHOUT ROWID table. (FIXME: Why not?) */
    && !pSrc->fg.isCorrelated /* Not a correlated subquery */
@@ -3042,7 +3042,7 @@ static int whereLoopAddBtree(
   /* Loop over all indices. If there was an INDEXED BY clause, then only 
   ** consider index pProbe.  */
   for(; rc==SQLITE_OK && pProbe; 
-      pProbe=(pSrc->pIBIndex ? 0 : pProbe->pNext), iSortIdx++
+      pProbe=(pSrc->fg.isIndexedBy ? 0 : pProbe->pNext), iSortIdx++
   ){
     int isLeft = (pSrc->fg.jointype & JT_OUTER)!=0;
     if( pProbe->pPartIdxWhere!=0
