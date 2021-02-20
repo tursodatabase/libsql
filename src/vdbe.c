@@ -6330,7 +6330,7 @@ case OP_ParseSchema: {
   if( pOp->p4.z==0 ){
     sqlite3SchemaClear(db->aDb[iDb].pSchema);
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
-    rc = sqlite3InitOne(db, iDb, &p->zErrMsg, INITFLAG_AlterTable);
+    rc = sqlite3InitOne(db, iDb, &p->zErrMsg, pOp->p5);
     db->mDbFlags |= DBFLAG_SchemaChange;
     p->expired = 0;
   }else

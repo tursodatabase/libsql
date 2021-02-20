@@ -70,7 +70,6 @@ static void resolveAlias(
   ExprList *pEList,      /* A result set */
   int iCol,              /* A column in the result set.  0..pEList->nExpr-1 */
   Expr *pExpr,           /* Transform this into an alias to the result set */
-  const char *zType,     /* "GROUP" or "ORDER" or "" */
   int nSubquery          /* Number of subqueries that the label is moving */
 ){
   Expr *pOrig;           /* The iCol-th column of the result set */
@@ -83,7 +82,7 @@ static void resolveAlias(
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup!=0 ){
-    if( zType[0]!='G' ) incrAggFunctionDepth(pDup, nSubquery);
+    incrAggFunctionDepth(pDup, nSubquery);
     if( pExpr->op==TK_COLLATE ){
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
@@ -524,7 +523,7 @@ static int lookupName(
             sqlite3ErrorMsg(pParse, "row value misused");
             return WRC_Abort;
           }
-          resolveAlias(pParse, pEList, j, pExpr, "", nSubquery);
+          resolveAlias(pParse, pEList, j, pExpr, nSubquery);
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
@@ -626,10 +625,12 @@ static int lookupName(
 
   /* Clean up and return
   */
-  sqlite3ExprDelete(db, pExpr->pLeft);
-  pExpr->pLeft = 0;
-  sqlite3ExprDelete(db, pExpr->pRight);
-  pExpr->pRight = 0;
+  if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+    sqlite3ExprDelete(db, pExpr->pLeft);
+    pExpr->pLeft = 0;
+    sqlite3ExprDelete(db, pExpr->pRight);
+    pExpr->pRight = 0;
+  }
   pExpr->op = eNewExprOp;
   ExprSetProperty(pExpr, EP_Leaf);
 lookupname_end:
@@ -1401,8 +1402,7 @@ int sqlite3ResolveOrderGroupBy(
         resolveOutOfRangeError(pParse, zType, i+1, pEList->nExpr);
         return 1;
       }
-      resolveAlias(pParse, pEList, pItem->u.x.iOrderByCol-1, pItem->pExpr,
-                   zType,0);
+      resolveAlias(pParse, pEList, pItem->u.x.iOrderByCol-1, pItem->pExpr,0);
     }
   }
   return 0;

@@ -163,12 +163,14 @@ void sqlite3FinishCoding(Parse *pParse){
 
       addrRewind =
          sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+      VdbeCoverage(v);
       reg = pReturning->iRetReg;
       for(i=0; i<pReturning->nRetCol; i++){
         sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
       }
       sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
       sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+      VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrRewind);
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
@@ -1262,6 +1264,7 @@ begin_table_error:
 void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
   if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
     pCol->colFlags |= COLFLAG_HIDDEN;
+    if( pTab ) pTab->tabFlags |= TF_HasHidden;
   }else if( pTab && pCol!=pTab->aCol && (pCol[-1].colFlags & COLFLAG_HIDDEN) ){
     pTab->tabFlags |= TF_OOOHidden;
   }
@@ -2638,7 +2641,7 @@ void sqlite3EndTable(
 
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
-           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName));
+           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -2655,20 +2658,17 @@ void sqlite3EndTable(
     }
     pParse->pNewTable = 0;
     db->mDbFlags |= DBFLAG_SchemaChange;
+  }
 
 #ifndef SQLITE_OMIT_ALTERTABLE
-    if( !p->pSelect ){
-      const char *zName = (const char *)pParse->sNameToken.z;
-      int nName;
-      assert( !pSelect && pCons && pEnd );
-      if( pCons->z==0 ){
-        pCons = pEnd;
-      }
-      nName = (int)((const char *)pCons->z - zName);
-      p->addColOffset = 13 + nName;
+  if( !pSelect && !p->pSelect ){
+    assert( pCons && pEnd );
+    if( pCons->z==0 ){
+      pCons = pEnd;
     }
-#endif
+    p->addColOffset = 13 + (int)(pCons->z - pParse->sNameToken.z);
   }
+#endif
 }
 
 #ifndef SQLITE_OMIT_VIEW
@@ -4126,7 +4126,7 @@ void sqlite3CreateIndex(
         sqlite3RefillIndex(pParse, pIndex, iMem);
         sqlite3ChangeCookie(pParse, iDb);
         sqlite3VdbeAddParseSchemaOp(v, iDb,
-            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
+            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 0);
         sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
       }
 
