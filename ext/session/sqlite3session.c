@@ -91,6 +91,7 @@ struct sqlite3_changeset_iter {
   SessionBuffer tblhdr;           /* Buffer to hold apValue/zTab/abPK/ */
   int bPatchset;                  /* True if this is a patchset */
   int bInvert;                    /* True to invert changeset */
+  int bSkipEmpty;                 /* Skip noop UPDATE changes */
   int rc;                         /* Iterator error code */
   sqlite3_stmt *pConflict;        /* Points to conflicting row, if any */
   char *zTab;                     /* Current table */
@@ -2620,7 +2621,8 @@ static int sessionChangesetStart(
   void *pIn,
   int nChangeset,                 /* Size of buffer pChangeset in bytes */
   void *pChangeset,               /* Pointer to buffer containing changeset */
-  int bInvert                     /* True to invert changeset */
+  int bInvert,                    /* True to invert changeset */
+  int bSkipEmpty                  /* True to skip empty UPDATE changes */
 ){
   sqlite3_changeset_iter *pRet;   /* Iterator to return */
   int nByte;                      /* Number of bytes to allocate for iterator */
@@ -2641,6 +2643,7 @@ static int sessionChangesetStart(
   pRet->in.pIn = pIn;
   pRet->in.bEof = (xInput ? 0 : 1);
   pRet->bInvert = bInvert;
+  pRet->bSkipEmpty = bSkipEmpty;
 
   /* Populate the output variable and return success. */
   *pp = pRet;
@@ -2655,7 +2658,7 @@ int sqlite3changeset_start(
   int nChangeset,                 /* Size of buffer pChangeset in bytes */
   void *pChangeset                /* Pointer to buffer containing changeset */
 ){
-  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, 0);
+  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, 0, 0);
 }
 int sqlite3changeset_start_v2(
   sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
@@ -2664,7 +2667,7 @@ int sqlite3changeset_start_v2(
   int flags
 ){
   int bInvert = !!(flags & SQLITE_CHANGESETSTART_INVERT);
-  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, bInvert);
+  return sessionChangesetStart(pp, 0, 0, nChangeset, pChangeset, bInvert, 0);
 }
 
 /*
@@ -2675,7 +2678,7 @@ int sqlite3changeset_start_strm(
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn
 ){
-  return sessionChangesetStart(pp, xInput, pIn, 0, 0, 0);
+  return sessionChangesetStart(pp, xInput, pIn, 0, 0, 0, 0);
 }
 int sqlite3changeset_start_v2_strm(
   sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
@@ -2684,7 +2687,7 @@ int sqlite3changeset_start_v2_strm(
   int flags
 ){
   int bInvert = !!(flags & SQLITE_CHANGESETSTART_INVERT);
-  return sessionChangesetStart(pp, xInput, pIn, 0, 0, bInvert);
+  return sessionChangesetStart(pp, xInput, pIn, 0, 0, bInvert, 0);
 }
 
 /*
@@ -2810,11 +2813,14 @@ static int sessionReadRecord(
   SessionInput *pIn,              /* Input data */
   int nCol,                       /* Number of values in record */
   u8 *abPK,                       /* Array of primary key flags, or NULL */
-  sqlite3_value **apOut           /* Write values to this array */
+  sqlite3_value **apOut,          /* Write values to this array */
+  int *pbEmpty
 ){
   int i;                          /* Used to iterate through columns */
   int rc = SQLITE_OK;
 
+  assert( pbEmpty==0 || *pbEmpty==0 );
+  if( pbEmpty ) *pbEmpty = 1;
   for(i=0; i<nCol && rc==SQLITE_OK; i++){
     int eType = 0;                /* Type of value (SQLITE_NULL, TEXT etc.) */
     if( abPK && abPK[i]==0 ) continue;
@@ -2826,6 +2832,7 @@ static int sessionReadRecord(
         eType = pIn->aData[pIn->iNext++];
         assert( apOut[i]==0 );
         if( eType ){
+          if( pbEmpty ) *pbEmpty = 0;
           apOut[i] = sqlite3ValueNew(0);
           if( !apOut[i] ) rc = SQLITE_NOMEM;
         }
@@ -3005,31 +3012,27 @@ static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
 }
 
 /*
-** Advance the changeset iterator to the next change.
+** Advance the changeset iterator to the next change. The differences between
+** this function and sessionChangesetNext() are that
 **
-** If both paRec and pnRec are NULL, then this function works like the public
-** API sqlite3changeset_next(). If SQLITE_ROW is returned, then the
-** sqlite3changeset_new() and old() APIs may be used to query for values.
+**   * If pbEmpty is not NULL and the change is a no-op UPDATE (an UPDATE
+**     that modifies no columns), this function sets (*pbEmpty) to 1.
 **
-** Otherwise, if paRec and pnRec are not NULL, then a pointer to the change
-** record is written to *paRec before returning and the number of bytes in
-** the record to *pnRec.
-**
-** Either way, this function returns SQLITE_ROW if the iterator is 
-** successfully advanced to the next change in the changeset, an SQLite 
-** error code if an error occurs, or SQLITE_DONE if there are no further 
-** changes in the changeset.
+**   * If the iterator is configured to skip no-op UPDATEs,
+**     sessionChangesetNext() does that. This function does not.
 */
-static int sessionChangesetNext(
+static int sessionChangesetNextOne(
   sqlite3_changeset_iter *p,      /* Changeset iterator */
   u8 **paRec,                     /* If non-NULL, store record pointer here */
   int *pnRec,                     /* If non-NULL, store size of record here */
-  int *pbNew                      /* If non-NULL, true if new table */
+  int *pbNew,                     /* If non-NULL, true if new table */
+  int *pbEmpty
 ){
   int i;
   u8 op;
 
   assert( (paRec==0 && pnRec==0) || (paRec && pnRec) );
+  assert( pbEmpty==0 || *pbEmpty==0 );
 
   /* If the iterator is in the error-state, return immediately. */
   if( p->rc!=SQLITE_OK ) return p->rc;
@@ -3102,13 +3105,13 @@ static int sessionChangesetNext(
     /* If this is an UPDATE or DELETE, read the old.* record. */
     if( p->op!=SQLITE_INSERT && (p->bPatchset==0 || p->op==SQLITE_DELETE) ){
       u8 *abPK = p->bPatchset ? p->abPK : 0;
-      p->rc = sessionReadRecord(&p->in, p->nCol, abPK, apOld);
+      p->rc = sessionReadRecord(&p->in, p->nCol, abPK, apOld, 0);
       if( p->rc!=SQLITE_OK ) return p->rc;
     }
 
     /* If this is an INSERT or UPDATE, read the new.* record. */
     if( p->op!=SQLITE_DELETE ){
-      p->rc = sessionReadRecord(&p->in, p->nCol, 0, apNew);
+      p->rc = sessionReadRecord(&p->in, p->nCol, 0, apNew, pbEmpty);
       if( p->rc!=SQLITE_OK ) return p->rc;
     }
 
@@ -3133,6 +3136,37 @@ static int sessionChangesetNext(
   }
 
   return SQLITE_ROW;
+}
+
+/*
+** Advance the changeset iterator to the next change.
+**
+** If both paRec and pnRec are NULL, then this function works like the public
+** API sqlite3changeset_next(). If SQLITE_ROW is returned, then the
+** sqlite3changeset_new() and old() APIs may be used to query for values.
+**
+** Otherwise, if paRec and pnRec are not NULL, then a pointer to the change
+** record is written to *paRec before returning and the number of bytes in
+** the record to *pnRec.
+**
+** Either way, this function returns SQLITE_ROW if the iterator is 
+** successfully advanced to the next change in the changeset, an SQLite 
+** error code if an error occurs, or SQLITE_DONE if there are no further 
+** changes in the changeset.
+*/
+static int sessionChangesetNext(
+  sqlite3_changeset_iter *p,      /* Changeset iterator */
+  u8 **paRec,                     /* If non-NULL, store record pointer here */
+  int *pnRec,                     /* If non-NULL, store size of record here */
+  int *pbNew                      /* If non-NULL, true if new table */
+){
+  int bEmpty;
+  int rc;
+  do {
+    bEmpty = 0;
+    rc = sessionChangesetNextOne(p, paRec, pnRec, pbNew, &bEmpty);
+  }while( rc==SQLITE_ROW && p->bSkipEmpty && bEmpty);
+  return rc;
 }
 
 /*
@@ -3407,9 +3441,9 @@ static int sessionChangesetInvert(
 
         /* Read the old.* and new.* records for the update change. */
         pInput->iNext += 2;
-        rc = sessionReadRecord(pInput, nCol, 0, &apVal[0]);
+        rc = sessionReadRecord(pInput, nCol, 0, &apVal[0], 0);
         if( rc==SQLITE_OK ){
-          rc = sessionReadRecord(pInput, nCol, 0, &apVal[nCol]);
+          rc = sessionReadRecord(pInput, nCol, 0, &apVal[nCol], 0);
         }
 
         /* Write the new old.* record. Consists of the PK columns from the
@@ -4357,7 +4391,7 @@ static int sessionRetryConstraints(
     memset(&pApply->constraints, 0, sizeof(SessionBuffer));
 
     rc = sessionChangesetStart(
-        &pIter2, 0, 0, cons.nBuf, cons.aBuf, pApply->bInvertConstraints
+        &pIter2, 0, 0, cons.nBuf, cons.aBuf, pApply->bInvertConstraints, 1
     );
     if( rc==SQLITE_OK ){
       size_t nByte = 2*pApply->nCol*sizeof(sqlite3_value*);
@@ -4613,8 +4647,8 @@ int sqlite3changeset_apply_v2(
   int flags
 ){
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
-  int bInverse = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
-  int rc = sessionChangesetStart(&pIter, 0, 0, nChangeset, pChangeset,bInverse);
+  int bInv = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
+  int rc = sessionChangesetStart(&pIter, 0, 0, nChangeset, pChangeset, bInv, 1);
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(
         db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
@@ -4672,7 +4706,7 @@ int sqlite3changeset_apply_v2_strm(
 ){
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
   int bInverse = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
-  int rc = sessionChangesetStart(&pIter, xInput, pIn, 0, 0, bInverse);
+  int rc = sessionChangesetStart(&pIter, xInput, pIn, 0, 0, bInverse, 1);
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(
         db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
@@ -5292,7 +5326,7 @@ static void sessionAppendPartialUpdate(
       int n1 = sessionSerialLen(a1);
       int n2 = sessionSerialLen(a2);
       if( pIter->abPK[i] || a2[0]==0 ){
-        if( !pIter->abPK[i] ) bData = 1;
+        if( !pIter->abPK[i] && a1[0] ) bData = 1;
         memcpy(pOut, a1, n1);
         pOut += n1;
       }else if( a2[0]!=0xFF ){
