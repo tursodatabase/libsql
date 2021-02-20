@@ -1136,6 +1136,7 @@ typedef struct AutoincInfo AutoincInfo;
 typedef struct Bitvec Bitvec;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
+typedef struct Cte Cte;
 typedef struct Db Db;
 typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
@@ -3874,18 +3875,23 @@ void sqlite3SelectWalkAssert2(Walker*, Select*);
 #define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
-** An instance of this structure represents a set of one or more CTEs
-** (common table expressions) created by a single WITH clause.
+** A single common table expression
+*/
+struct Cte {
+  char *zName;            /* Name of this CTE */
+  ExprList *pCols;        /* List of explicit column names, or NULL */
+  Select *pSelect;        /* The definition of this CTE */
+  const char *zCteErr;    /* Error message for circular references */
+};
+
+/*
+** An instance of the With object represents a WITH clause containing
+** one or more CTEs (common table expressions).
 */
 struct With {
-  int nCte;                       /* Number of CTEs in the WITH clause */
-  With *pOuter;                   /* Containing WITH clause, or NULL */
-  struct Cte {                    /* For each CTE in the WITH clause.... */
-    char *zName;                    /* Name of this CTE */
-    ExprList *pCols;                /* List of explicit column names, or NULL */
-    Select *pSelect;                /* The definition of this CTE */
-    const char *zCteErr;            /* Error message for circular references */
-  } a[1];
+  int nCte;               /* Number of CTEs in the WITH clause */
+  With *pOuter;           /* Containing WITH clause, or NULL */
+  Cte a[1];               /* For each CTE in the WITH clause.... */
 };
 
 #ifdef SQLITE_DEBUG
@@ -4891,12 +4897,17 @@ const char *sqlite3JournalModename(int);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
 #ifndef SQLITE_OMIT_CTE
-  With *sqlite3WithAdd(Parse*,With*,Token*,ExprList*,Select*);
+  Cte *sqlite3CteNew(Parse*,Token*,ExprList*,Select*);
+  void sqlite3CteDelete(sqlite3*,Cte*);
+  With *sqlite3WithAdd(Parse*,With*,Cte*);
   void sqlite3WithDelete(sqlite3*,With*);
   void sqlite3WithPush(Parse*, With*, u8);
 #else
-#define sqlite3WithPush(x,y,z)
-#define sqlite3WithDelete(x,y)
+# define sqlite3CteNew(P,T,E,S)   ((void*)0)
+# define sqlite3CteDelete(D,C)
+# define sqlite3CteWithAdd(P,W,C) ((void*)0)
+# define sqlite3WithDelete(x,y)
+# define sqlite3WithPush(x,y,z)
 #endif
 #ifndef SQLITE_OMIT_UPSERT
   Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*,Upsert*);
