@@ -37,9 +37,9 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   pItem->pTab = pTab;
   if( pTab ){
     pTab->nTabRef++;
-  }
-  if( sqlite3IndexedByLookup(pParse, pItem) ){
-    pTab = 0;
+    if( pItem->fg.isIndexedBy && sqlite3IndexedByLookup(pParse, pItem) ){
+      pTab = 0;
+    }
   }
   return pTab;
 }
