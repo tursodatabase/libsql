@@ -435,8 +435,8 @@ static void unsetJoinExpr(Expr *p, int iTable){
 static int sqliteProcessJoin(Parse *pParse, Select *p){
   SrcList *pSrc;                  /* All tables in the FROM clause */
   int i, j;                       /* Loop counters */
-  struct SrcList_item *pLeft;     /* Left table being joined */
-  struct SrcList_item *pRight;    /* Right table being joined */
+  SrcItem *pLeft;                 /* Left table being joined */
+  SrcItem *pRight;                /* Right table being joined */
 
   pSrc = p->pSrc;
   pLeft = &pSrc->a[0];
@@ -3597,7 +3597,7 @@ static void substSelect(
   int doPrior           /* Do substitutes on p->pPrior too */
 ){
   SrcList *pSrc;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   int i;
   if( !p ) return;
   do{
@@ -3627,7 +3627,7 @@ static void substSelect(
 ** pSrcItem->colUsed mask.
 */
 static int recomputeColumnsUsedExpr(Walker *pWalker, Expr *pExpr){
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
   pItem = pWalker->u.pSrcItem;
   if( pItem->iCursor!=pExpr->iTable ) return WRC_Continue;
@@ -3637,7 +3637,7 @@ static int recomputeColumnsUsedExpr(Walker *pWalker, Expr *pExpr){
 }
 static void recomputeColumnsUsed(
   Select *pSelect,                 /* The complete SELECT statement */
-  struct SrcList_item *pSrcItem    /* Which FROM clause item to recompute */
+  SrcItem *pSrcItem                /* Which FROM clause item to recompute */
 ){
   Walker w;
   if( NEVER(pSrcItem->pTab==0) ) return;
@@ -3671,7 +3671,7 @@ static void srclistRenumberCursors(
   int iExcept                     /* FROM clause item to skip */
 ){
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   for(i=0, pItem=pSrc->a; i<pSrc->nSrc; i++, pItem++){
     if( i!=iExcept ){
       Select *p;
@@ -3905,7 +3905,7 @@ static int flattenSubquery(
   int isLeftJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
   int i;              /* Loop counter */
   Expr *pWhere;                    /* The WHERE clause */
-  struct SrcList_item *pSubitem;   /* The subquery */
+  SrcItem *pSubitem;               /* The subquery */
   sqlite3 *db = pParse->db;
   Walker w;                        /* Walker to persist agginfo data */
   int *aCsrMap = 0;
@@ -4710,7 +4710,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
 ** SQLITE_ERROR and leave an error in pParse. Otherwise, populate 
 ** pFrom->pIndex and return SQLITE_OK.
 */
-int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
+int sqlite3IndexedByLookup(Parse *pParse, SrcItem *pFrom){
   Table *pTab = pFrom->pTab;
   char *zIndexedBy = pFrom->u1.zIndexedBy;
   Index *pIdx;
@@ -4816,7 +4816,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
 ** arguments.  If it does, leave an error message in pParse and return
 ** non-zero, since pFrom is not allowed to be a table-valued function.
 */
-static int cannotBeFunction(Parse *pParse, struct SrcList_item *pFrom){
+static int cannotBeFunction(Parse *pParse, SrcItem *pFrom){
   if( pFrom->fg.isTabFunc ){
     sqlite3ErrorMsg(pParse, "'%s' is not a function", pFrom->zName);
     return 1;
@@ -4837,7 +4837,7 @@ static int cannotBeFunction(Parse *pParse, struct SrcList_item *pFrom){
 */
 static struct Cte *searchWith(
   With *pWith,                    /* Current innermost WITH clause */
-  struct SrcList_item *pItem,     /* FROM clause element to resolve */
+  SrcItem *pItem,                 /* FROM clause element to resolve */
   With **ppContext                /* OUT: WITH clause return value belongs to */
 ){
   const char *zName = pItem->zName;
@@ -4897,7 +4897,7 @@ void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
 static int resolveFromTermToCte(
   Parse *pParse,                  /* The parsing context */
   Walker *pWalker,                /* Current tree walker */
-  struct SrcList_item *pFrom      /* The FROM clause term to check */
+  SrcItem *pFrom                  /* The FROM clause term to check */
 ){
   Cte *pCte;               /* Matched CTE (or NULL if no match) */
   With *pWith;             /* The matching WITH */
@@ -4954,7 +4954,7 @@ static int resolveFromTermToCte(
       SrcList *pSrc = pRecTerm->pSrc;
       assert( pRecTerm->pPrior!=0 );
       for(i=0; i<pSrc->nSrc; i++){
-        struct SrcList_item *pItem = &pSrc->a[i];
+        SrcItem *pItem = &pSrc->a[i];
         if( pItem->zDatabase==0 
          && pItem->zName!=0 
          && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
@@ -5054,7 +5054,7 @@ static void selectPopWith(Walker *pWalker, Select *p){
 ** SQLITE_OK is returned. Otherwise, if an OOM error is encountered,
 ** SQLITE_NOMEM.
 */
-int sqlite3ExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
+int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
   Select *pSel = pFrom->pSelect;
   Table *pTab;
 
@@ -5105,7 +5105,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   int i, j, k, rc;
   SrcList *pTabList;
   ExprList *pEList;
-  struct SrcList_item *pFrom;
+  SrcItem *pFrom;
   sqlite3 *db = pParse->db;
   Expr *pE, *pRight, *pExpr;
   u16 selFlags = p->selFlags;
@@ -5446,7 +5446,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   Parse *pParse;
   int i;
   SrcList *pTabList;
-  struct SrcList_item *pFrom;
+  SrcItem *pFrom;
 
   assert( p->selFlags & SF_Resolved );
   if( p->selFlags & SF_HasTypeInfo ) return;
@@ -5770,11 +5770,11 @@ static void havingToWhere(Parse *pParse, Select *p){
 ** If it is, then return the SrcList_item for the prior view.  If it is not,
 ** then return 0.
 */
-static struct SrcList_item *isSelfJoinView(
+static SrcItem *isSelfJoinView(
   SrcList *pTabList,           /* Search for self-joins in this FROM clause */
-  struct SrcList_item *pThis   /* Search for prior reference to this subquery */
+  SrcItem *pThis               /* Search for prior reference to this subquery */
 ){
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   assert( pThis->pSelect!=0 );
   if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
   for(pItem = pTabList->a; pItem<pThis; pItem++){
@@ -5978,9 +5978,9 @@ int sqlite3Select(
   ** In this case, it is an error if the target object (pSrc->a[0]) name 
   ** or alias is duplicated within FROM clause (pSrc->a[1..n]).  */
   if( p->selFlags & SF_UpdateFrom ){
-    struct SrcList_item *p0 = &p->pSrc->a[0];
+    SrcItem *p0 = &p->pSrc->a[0];
     for(i=1; i<p->pSrc->nSrc; i++){
-      struct SrcList_item *p1 = &p->pSrc->a[i];
+      SrcItem *p1 = &p->pSrc->a[i];
       if( p0->pTab==p1->pTab && 0==sqlite3_stricmp(p0->zAlias, p1->zAlias) ){
         sqlite3ErrorMsg(pParse, 
             "target object/alias may not appear in FROM clause: %s", 
@@ -6018,7 +6018,7 @@ int sqlite3Select(
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
-    struct SrcList_item *pItem = &pTabList->a[i];
+    SrcItem *pItem = &pTabList->a[i];
     Select *pSub = pItem->pSelect;
     Table *pTab = pItem->pTab;
 
@@ -6152,7 +6152,7 @@ int sqlite3Select(
   ** (2) Generate code for all sub-queries
   */
   for(i=0; i<pTabList->nSrc; i++){
-    struct SrcList_item *pItem = &pTabList->a[i];
+    SrcItem *pItem = &pTabList->a[i];
     SelectDest dest;
     Select *pSub;
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
@@ -6270,7 +6270,7 @@ int sqlite3Select(
       int topAddr;
       int onceAddr = 0;
       int retAddr;
-      struct SrcList_item *pPrior;
+      SrcItem *pPrior;
 
       testcase( pItem->addrFillSub==0 ); /* Ticket c52b09c7f38903b1311 */
       pItem->regReturn = ++pParse->nMem;

@@ -1853,7 +1853,7 @@ void sqlite3WhereExprAnalyze(
 */
 void sqlite3WhereTabFuncArgs(
   Parse *pParse,                    /* Parsing context */
-  struct SrcList_item *pItem,       /* The FROM clause term to process */
+  SrcItem *pItem,                   /* The FROM clause term to process */
   WhereClause *pWC                  /* Xfer function arguments to here */
 ){
   Table *pTab;

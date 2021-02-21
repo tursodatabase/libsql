@@ -1024,7 +1024,7 @@ void sqlite3FkCheck(
     ** child table as a SrcList for sqlite3WhereBegin() */
     pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( pSrc ){
-      struct SrcList_item *pItem = pSrc->a;
+      SrcItem *pItem = pSrc->a;
       pItem->pTab = pFKey->pFrom;
       pItem->zName = pFKey->pFrom->zName;
       pItem->pTab->nTabRef++;

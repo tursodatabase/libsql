@@ -245,8 +245,8 @@ static int lookupName(
   int cntTab = 0;                   /* Number of matching table names */
   int nSubquery = 0;                /* How many levels of subquery */
   sqlite3 *db = pParse->db;         /* The database connection */
-  struct SrcList_item *pItem;       /* Use for looping over pSrcList items */
-  struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
+  SrcItem *pItem;                   /* Use for looping over pSrcList items */
+  SrcItem *pMatch = 0;              /* The matching pSrcList item */
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
   int eNewExprOp = TK_COLUMN;       /* New value for pExpr->op on success */
@@ -662,7 +662,7 @@ lookupname_end:
 Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
   if( p ){
-    struct SrcList_item *pItem = &pSrc->a[iSrc];
+    SrcItem *pItem = &pSrc->a[iSrc];
     Table *pTab = p->y.pTab = pItem->pTab;
     p->iTable = pItem->iCursor;
     if( p->y.pTab->iPKey==iCol ){
@@ -774,7 +774,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     */
     case TK_ROW: {
       SrcList *pSrcList = pNC->pSrcList;
-      struct SrcList_item *pItem;
+      SrcItem *pItem;
       assert( pSrcList && pSrcList->nSrc>=1 );
       pItem = pSrcList->a;
       pExpr->op = TK_COLUMN;
@@ -1587,7 +1587,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     /* Recursively resolve names in all subqueries
     */
     for(i=0; i<p->pSrc->nSrc; i++){
-      struct SrcList_item *pItem = &p->pSrc->a[i];
+      SrcItem *pItem = &p->pSrc->a[i];
       if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
         NameContext *pNC;         /* Used to iterate name contexts */
         int nRef = 0;             /* Refcount for pOuterNC and outer contexts */
@@ -1657,7 +1657,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
 
     /* Resolve names in table-valued-function arguments */
     for(i=0; i<p->pSrc->nSrc; i++){
-      struct SrcList_item *pItem = &p->pSrc->a[i];
+      SrcItem *pItem = &p->pSrc->a[i];
       if( pItem->fg.isTabFunc
        && sqlite3ResolveExprListNames(&sNC, pItem->u1.pFuncArg) 
       ){

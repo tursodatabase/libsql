@@ -1530,8 +1530,8 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
   if( pNew==0 ) return 0;
   pNew->nSrc = pNew->nAlloc = p->nSrc;
   for(i=0; i<p->nSrc; i++){
-    struct SrcList_item *pNewItem = &pNew->a[i];
-    struct SrcList_item *pOldItem = &p->a[i];
+    SrcItem *pNewItem = &pNew->a[i];
+    SrcItem *pOldItem = &p->a[i];
     Table *pTab;
     pNewItem->pSchema = pOldItem->pSchema;
     pNewItem->zDatabase = sqlite3DbStrDup(db, pOldItem->zDatabase);
@@ -5861,7 +5861,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       /* Check to see if the column is in one of the tables in the FROM
       ** clause of the aggregate query */
       if( ALWAYS(pSrcList!=0) ){
-        struct SrcList_item *pItem = pSrcList->a;
+        SrcItem *pItem = pSrcList->a;
         for(i=0; i<pSrcList->nSrc; i++, pItem++){
           struct AggInfo_col *pCol;
           assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );

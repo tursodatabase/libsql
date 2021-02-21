@@ -478,7 +478,7 @@ Table *sqlite3LocateTable(
 Table *sqlite3LocateTableItem(
   Parse *pParse, 
   u32 flags,
-  struct SrcList_item *p
+  SrcItem *p
 ){
   const char *zDb;
   assert( p->pSchema==0 || p->zDatabase==0 );
@@ -4519,7 +4519,7 @@ SrcList *sqlite3SrcListAppend(
   Token *pTable,      /* Table to append */
   Token *pDatabase    /* Database of the table */
 ){
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   sqlite3 *db;
   assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
   assert( pParse!=0 );
@@ -4560,7 +4560,7 @@ SrcList *sqlite3SrcListAppend(
 */
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   assert(pList || pParse->db->mallocFailed );
   if( pList ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
@@ -4578,7 +4578,7 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
 */
 void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
     if( pItem->zDatabase ) sqlite3DbFreeNN(db, pItem->zDatabase);
@@ -4620,7 +4620,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
   Expr *pOn,              /* The ON clause of a join */
   IdList *pUsing          /* The USING clause of a join */
 ){
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   sqlite3 *db = pParse->db;
   if( !p && (pOn || pUsing) ){
     sqlite3ErrorMsg(pParse, "a JOIN clause is required before %s", 
@@ -4664,7 +4664,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
 void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
   assert( pIndexedBy!=0 );
   if( p && pIndexedBy->n>0 ){
-    struct SrcList_item *pItem;
+    SrcItem *pItem;
     assert( p->nSrc>0 );
     pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
@@ -4694,7 +4694,7 @@ SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
       sqlite3SrcListDelete(pParse->db, p2);
     }else{
       p1 = pNew;
-      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(struct SrcList_item));
+      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(SrcItem));
       sqlite3DbFree(pParse->db, p2);
     }
   }
@@ -4707,7 +4707,7 @@ SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
 */
 void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
   if( p ){
-    struct SrcList_item *pItem = &p->a[p->nSrc-1];
+    SrcItem *pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
     assert( pItem->fg.isTabFunc==0 );

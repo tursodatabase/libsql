@@ -1215,7 +1215,7 @@ static int renameResolveTrigger(Parse *pParse){
       if( pSrc ){
         int i;
         for(i=0; i<pSrc->nSrc && rc==SQLITE_OK; i++){
-          struct SrcList_item *p = &pSrc->a[i];
+          SrcItem *p = &pSrc->a[i];
           p->iCursor = pParse->nTab++;
           if( p->pSelect ){
             sqlite3SelectPrep(pParse, p->pSelect, 0);
@@ -1527,7 +1527,7 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
     return WRC_Abort;
   }
   for(i=0; i<pSrc->nSrc; i++){
-    struct SrcList_item *pItem = &pSrc->a[i];
+    SrcItem *pItem = &pSrc->a[i];
     if( pItem->pTab==p->pTab ){
       renameTokenFind(pWalker->pParse, p, pItem->zName);
     }

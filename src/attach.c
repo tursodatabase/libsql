@@ -456,7 +456,7 @@ static int fixExprCb(Walker *p, Expr *pExpr){
 static int fixSelectCb(Walker *p, Select *pSelect){
   DbFixer *pFix = p->u.pFix;
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   sqlite3 *db = pFix->pParse->db;
   int iDb = sqlite3FindDbName(db, pFix->zDb);
   SrcList *pList = pSelect->pSrc;

@@ -856,7 +856,7 @@ void sqlite3_str_vappendf(
       case etSRCLIST: {
         SrcList *pSrc;
         int k;
-        struct SrcList_item *pItem;
+        SrcItem *pItem;
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
         pSrc = va_arg(ap, SrcList*);
         k = va_arg(ap, int);

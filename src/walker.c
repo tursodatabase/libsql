@@ -154,7 +154,7 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
 int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   SrcList *pSrc;
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
 
   pSrc = p->pSrc;
   if( pSrc ){
