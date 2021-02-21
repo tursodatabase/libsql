@@ -4840,16 +4840,16 @@ static struct Cte *searchWith(
   struct SrcList_item *pItem,     /* FROM clause element to resolve */
   With **ppContext                /* OUT: WITH clause return value belongs to */
 ){
-  const char *zName;
-  if( pItem->zDatabase==0 && (zName = pItem->zName)!=0 ){
-    With *p;
-    for(p=pWith; p; p=p->pOuter){
-      int i;
-      for(i=0; i<p->nCte; i++){
-        if( sqlite3StrICmp(zName, p->a[i].zName)==0 ){
-          *ppContext = p;
-          return &p->a[i];
-        }
+  const char *zName = pItem->zName;
+  With *p;
+  assert( pItem->zDatabase==0 );
+  assert( zName!=0 );
+  for(p=pWith; p; p=p->pOuter){
+    int i;
+    for(i=0; i<p->nCte; i++){
+      if( sqlite3StrICmp(zName, p->a[i].zName)==0 ){
+        *ppContext = p;
+        return &p->a[i];
       }
     }
   }
@@ -4882,35 +4882,39 @@ void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
 
 /*
 ** This function checks if argument pFrom refers to a CTE declared by 
-** a WITH clause on the stack currently maintained by the parser. And,
-** if currently processing a CTE expression, if it is a recursive
-** reference to the current CTE.
+** a WITH clause on the stack currently maintained by the parser (on the
+** pParse->pWith linked list).  And if currently processing a CTE
+** CTE expression, through routine checks to see if the reference is
+** a recursive reference to the CTE.
 **
-** If pFrom falls into either of the two categories above, pFrom->pTab
-** and other fields are populated accordingly. The caller should check
-** (pFrom->pTab!=0) to determine whether or not a successful match
-** was found.
+** If pFrom matches a CTE according to either of these two above, pFrom->pTab
+** and other fields are populated accordingly.
 **
-** Whether or not a match is found, SQLITE_OK is returned if no error
-** occurs. If an error does occur, an error message is stored in the
-** parser and some error code other than SQLITE_OK returned.
+** Return 0 if no match is found. 
+** Return 1 if a match is found.
+** Return 2 if an error condition is detected.
 */
-static int withExpand(
-  Walker *pWalker, 
-  struct SrcList_item *pFrom
+static int resolveFromTermToCte(
+  Parse *pParse,                  /* The parsing context */
+  Walker *pWalker,                /* Current tree walker */
+  struct SrcList_item *pFrom      /* The FROM clause term to check */
 ){
-  Parse *pParse = pWalker->pParse;
-  sqlite3 *db = pParse->db;
-  struct Cte *pCte;               /* Matched CTE (or NULL if no match) */
-  With *pWith;                    /* WITH clause that pCte belongs to */
+  Cte *pCte;               /* Matched CTE (or NULL if no match) */
+  With *pWith;             /* The matching WITH */
 
   assert( pFrom->pTab==0 );
-  if( pParse->nErr ){
-    return SQLITE_ERROR;
+  if( pParse->pWith==0 ){
+    /* There are no WITH clauses in the stack.  No match is possible */
+    return 0;
   }
-
+  if( pFrom->zDatabase!=0 ){
+    /* The FROM term contains a schema qualifier (ex: main.t1) and so
+    ** it cannot possibly be a CTE reference. */
+    return 0;
+  }
   pCte = searchWith(pParse->pWith, pFrom, &pWith);
   if( pCte ){
+    sqlite3 *db = pParse->db;
     Table *pTab;
     ExprList *pEList;
     Select *pSel;
@@ -4926,20 +4930,20 @@ static int withExpand(
     ** In this case, proceed.  */
     if( pCte->zCteErr ){
       sqlite3ErrorMsg(pParse, pCte->zCteErr, pCte->zName);
-      return SQLITE_ERROR;
+      return 2;
     }
-    if( cannotBeFunction(pParse, pFrom) ) return SQLITE_ERROR;
+    if( cannotBeFunction(pParse, pFrom) ) return 2;
 
     assert( pFrom->pTab==0 );
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
-    if( pTab==0 ) return WRC_Abort;
+    if( pTab==0 ) return 2;
     pTab->nTabRef = 1;
     pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
     pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
     pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
-    if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
+    if( db->mallocFailed ) return 2;
     assert( pFrom->pSelect );
 
     /* Check if this is a recursive CTE. */
@@ -4962,7 +4966,7 @@ static int withExpand(
             sqlite3ErrorMsg(pParse,
                "multiple references to recursive table: %s", pCte->zName
             );
-            return SQLITE_ERROR;
+            return 2;
           }
           pRecTerm->selFlags |= SF_Recursive;
           if( iRecTab<0 ) iRecTab = pParse->nTab++;
@@ -4998,7 +5002,7 @@ static int withExpand(
             pCte->zName, pEList->nExpr, pCte->pCols->nExpr
         );
         pParse->pWith = pSavedWith;
-        return SQLITE_ERROR;
+        return 2;
       }
       pEList = pCte->pCols;
     }
@@ -5014,9 +5018,9 @@ static int withExpand(
     }
     pCte->zCteErr = 0;
     pParse->pWith = pSavedWith;
+    return 1;  /* Success */
   }
-
-  return SQLITE_OK;
+  return 0;  /* No match */
 }
 #endif
 
@@ -5098,7 +5102,7 @@ int sqlite3ExpandSubquery(Parse *pParse, struct SrcList_item *pFrom){
 */
 static int selectExpander(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
-  int i, j, k;
+  int i, j, k, rc;
   SrcList *pTabList;
   ExprList *pEList;
   struct SrcList_item *pFrom;
@@ -5137,10 +5141,6 @@ static int selectExpander(Walker *pWalker, Select *p){
     assert( pFrom->fg.isRecursive==0 || pFrom->pTab!=0 );
     if( pFrom->pTab ) continue;
     assert( pFrom->fg.isRecursive==0 );
-#ifndef SQLITE_OMIT_CTE
-    if( withExpand(pWalker, pFrom) ) return WRC_Abort;
-    if( pFrom->pTab ) {} else
-#endif
     if( pFrom->zName==0 ){
 #ifndef SQLITE_OMIT_SUBQUERY
       Select *pSel = pFrom->pSelect;
@@ -5149,6 +5149,12 @@ static int selectExpander(Walker *pWalker, Select *p){
       assert( pFrom->pTab==0 );
       if( sqlite3WalkSelect(pWalker, pSel) ) return WRC_Abort;
       if( sqlite3ExpandSubquery(pParse, pFrom) ) return WRC_Abort;
+#endif
+#ifndef SQLITE_OMIT_CTE
+    }else if( (rc = resolveFromTermToCte(pParse, pWalker, pFrom))!=0 ){
+      if( rc>1 ) return WRC_Abort;
+      pTab = pFrom->pTab;
+      assert( pTab!=0 );
 #endif
     }else{
       /* An ordinary table or view name in the FROM clause */
