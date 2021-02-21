@@ -1137,6 +1137,7 @@ typedef struct Bitvec Bitvec;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Cte Cte;
+typedef struct CteUse CteUse;
 typedef struct Db Db;
 typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
@@ -2941,6 +2942,7 @@ struct SrcItem {
     unsigned viaCoroutine :1;  /* Implemented as a co-routine */
     unsigned isRecursive :1;   /* True for recursive reference in WITH */
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
+    unsigned isCte :1;         /* This is a CTE */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   Expr *pOn;        /* The ON clause of a join */
@@ -2950,7 +2952,10 @@ struct SrcItem {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
     ExprList *pFuncArg;  /* Arguments to table-valued-function */
   } u1;
-  Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
+  union {
+    Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
+    CteUse *pCteUse;  /* CTE Usage info info fg.isCte is true */
+  } u2;
 };
 
 /*
@@ -3889,6 +3894,7 @@ struct Cte {
   ExprList *pCols;        /* List of explicit column names, or NULL */
   Select *pSelect;        /* The definition of this CTE */
   const char *zCteErr;    /* Error message for circular references */
+  CteUse *pUse;           /* Usage information for this CTE */
 };
 
 /*
@@ -3900,6 +3906,26 @@ struct With {
   With *pOuter;           /* Containing WITH clause, or NULL */
   Cte a[1];               /* For each CTE in the WITH clause.... */
 };
+
+/*
+** The Cte object is not guaranteed to persist for the entire duration
+** of code generation.  (The query flattener or other parser tree
+** edits might delete it.)  The following object records information
+** about each Common Table Expression that must be preserved for the
+** duration of the parse.
+**
+** The CteUse objects are freed using sqlite3ParserAddCleanup() rather
+** than sqlite3SelectDelete(), which is what enables them to persist
+** until the end of code generation.
+*/
+struct CteUse {
+  int nUse;              /* Number of users of this CTE */
+  int addrM9e;           /* Start of subroutine to compute materialization */
+  int regRtn;            /* Return address register for addrM9e subroutine */
+  int iCur;              /* Ephemeral table holding the materialization */
+  LogEst nRowEst;        /* Estimated number of rows in the table */
+};
+
 
 #ifdef SQLITE_DEBUG
 /*
@@ -4889,7 +4915,7 @@ sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 void sqlite3ParserReset(Parse*);
-void sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
+void *sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
 #ifdef SQLITE_ENABLE_NORMALIZE
 char *sqlite3Normalize(Vdbe*, const char*);
 #endif

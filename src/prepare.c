@@ -597,7 +597,7 @@ void sqlite3ParserReset(Parse *pParse){
 **
 **       testcase( pParse->earlyCleanup );
 */
-void sqlite3ParserAddCleanup(
+void *sqlite3ParserAddCleanup(
   Parse *pParse,                      /* Destroy when this Parser finishes */
   void (*xCleanup)(sqlite3*,void*),   /* The cleanup routine */
   void *pPtr                          /* Pointer to object to be cleaned up */
@@ -610,10 +610,12 @@ void sqlite3ParserAddCleanup(
     pCleanup->xCleanup = xCleanup;
   }else{
     xCleanup(pParse->db, pPtr);
+    pPtr = 0;
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
     pParse->earlyCleanup = 1;
 #endif
   }
+  return pPtr;
 }
 
 /*
