@@ -4540,6 +4540,10 @@ static int propagateConstants(
 **       changes to the WHERE clause of the inner query could change the 
 **       window over which window functions are calculated).
 **
+**   (7) The inner query is a Common Table Expression (CTE) that should
+**       be materialized.  (This restriction is implemented in the calling
+**       routine.)
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -4726,7 +4730,7 @@ int sqlite3IndexedByLookup(Parse *pParse, SrcItem *pFrom){
     pParse->checkSchema = 1;
     return SQLITE_ERROR;
   }
-  pFrom->pIBIndex = pIdx;
+  pFrom->u2.pIBIndex = pIdx;
   return SQLITE_OK;
 }
 
@@ -4923,6 +4927,7 @@ static int resolveFromTermToCte(
     int bMayRecursive;            /* True if compound joined by UNION [ALL] */
     With *pSavedWith;             /* Initial value of pParse->pWith */
     int iRecTab = -1;             /* Cursor for recursive table */
+    CteUse *pCteUse;
 
     /* If pCte->zCteErr is non-NULL at this point, then this is an illegal
     ** recursive reference to CTE pCte. Leave an error in pParse and return
@@ -4935,8 +4940,20 @@ static int resolveFromTermToCte(
     if( cannotBeFunction(pParse, pFrom) ) return 2;
 
     assert( pFrom->pTab==0 );
-    pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
+    pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return 2;
+    pCteUse = pCte->pUse;
+    if( pCteUse==0 ){
+      pCte->pUse = pCteUse = sqlite3DbMallocZero(db, sizeof(pCteUse[0]));
+      if( pCteUse==0
+       || sqlite3ParserAddCleanup(pParse,sqlite3DbFree,pCteUse)==0
+      ){
+        sqlite3DbFree(db, pTab);
+        return 2;
+      }
+      pCteUse->eM10d = pCte->eM10d;
+    }
+    pFrom->pTab = pTab;
     pTab->nTabRef = 1;
     pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
@@ -4945,6 +4962,12 @@ static int resolveFromTermToCte(
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return 2;
     assert( pFrom->pSelect );
+    pFrom->fg.isCte = 1;
+    pFrom->u2.pCteUse = pCteUse;
+    pCteUse->nUse++;
+    if( pCteUse->nUse>=2 && pCteUse->eM10d==M10d_Any ){
+      pCteUse->eM10d = M10d_Yes;
+    }
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;
@@ -6153,6 +6176,7 @@ int sqlite3Select(
   */
   for(i=0; i<pTabList->nSrc; i++){
     SrcItem *pItem = &pTabList->a[i];
+    SrcItem *pPrior;
     SelectDest dest;
     Select *pSub;
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
@@ -6212,6 +6236,7 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( OptimizationEnabled(db, SQLITE_PushDown)
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){
@@ -6232,16 +6257,18 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine if the subquery is
-    ** guaranteed to be the outer loop (so that it does not need to be
-    ** computed more than once)
+    ** The subquery is implemented as a co-routine if:
+    **    (1)  the subquery is guaranteed to be the outer loop (so that
+    **         it does not need to be computed more than once), and
+    **    (2)  the subquery is not a CTE that should be materialized
     **
-    ** TODO: Are there other reasons beside (1) to use a co-routine
+    ** TODO: Are there other reasons beside (1) and (2) to use a co-routine
     ** implementation?
     */
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)  /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
@@ -6261,16 +6288,30 @@ int sqlite3Select(
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
+    }else if( pItem->fg.isCte && pItem->u2.pCteUse->addrM9e>0 ){
+      /* This is a CTE for which materialization code has already been
+      ** generated.  Invoke the subroutine to compute the materialization,
+      ** the make the pItem->iCursor be a copy of the ephemerial table that
+      ** holds the result of the materialization. */
+      CteUse *pCteUse = pItem->u2.pCteUse;
+      sqlite3VdbeAddOp2(v, OP_Gosub, pCteUse->regRtn, pCteUse->addrM9e);
+      if( pItem->iCursor!=pCteUse->iCur ){
+        sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pCteUse->iCur);
+      }
+      pSub->nSelectRow = pCteUse->nRowEst;
+    }else if( (pPrior = isSelfJoinView(pTabList, pItem))!=0 ){
+      /* This view has already been materialized by a prior entry in
+      ** this same FROM clause.  Reuse it. */
+      if( pPrior->addrFillSub ){
+        sqlite3VdbeAddOp2(v, OP_Gosub, pPrior->regReturn, pPrior->addrFillSub);
+      }
+      sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
+      pSub->nSelectRow = pPrior->pSelect->nSelectRow;
     }else{
-      /* Generate a subroutine that will fill an ephemeral table with
-      ** the content of this subquery.  pItem->addrFillSub will point
-      ** to the address of the generated subroutine.  pItem->regReturn
-      ** is a register allocated to hold the subroutine return address
-      */
+      /* Generate a subroutine that will materialize the view. */
       int topAddr;
       int onceAddr = 0;
       int retAddr;
-      SrcItem *pPrior;
 
       testcase( pItem->addrFillSub==0 ); /* Ticket c52b09c7f38903b1311 */
       pItem->regReturn = ++pParse->nMem;
@@ -6285,22 +6326,22 @@ int sqlite3Select(
       }else{
         VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }
-      pPrior = isSelfJoinView(pTabList, pItem);
-      if( pPrior ){
-        sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
-        assert( pPrior->pSelect!=0 );
-        pSub->nSelectRow = pPrior->pSelect->nSelectRow;
-      }else{
-        sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-        ExplainQueryPlan((pParse, 1, "MATERIALIZE %u", pSub->selId));
-        sqlite3Select(pParse, pSub, &dest);
-      }
+      sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
+      ExplainQueryPlan((pParse, 1, "MATERIALIZE %u", pSub->selId));
+      sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
       VdbeComment((v, "end %s", pItem->pTab->zName));
       sqlite3VdbeChangeP1(v, topAddr, retAddr);
       sqlite3ClearTempRegCache(pParse);
+      if( pItem->fg.isCte ){
+        CteUse *pCteUse = pItem->u2.pCteUse;
+        pCteUse->addrM9e = pItem->addrFillSub;
+        pCteUse->regRtn = pItem->regReturn;
+        pCteUse->iCur = pItem->iCursor;
+        pCteUse->nRowEst = pSub->nSelectRow;
+      }
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);

@@ -1544,7 +1544,10 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     if( pNewItem->fg.isIndexedBy ){
       pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
     }
-    pNewItem->pIBIndex = pOldItem->pIBIndex;
+    pNewItem->u2 = pOldItem->u2;
+    if( pNewItem->fg.isCte ){
+      pNewItem->u2.pCteUse->nUse++;
+    }
     if( pNewItem->fg.isTabFunc ){
       pNewItem->u1.pFuncArg = 
           sqlite3ExprListDup(db, pOldItem->u1.pFuncArg, flags);

@@ -250,6 +250,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %ifndef SQLITE_OMIT_GENERATED_COLUMNS
   GENERATED ALWAYS
 %endif
+  MATERIALIZED
   REINDEX RENAME CTIME_KW IF
   .
 %wildcard ANY.
@@ -1666,8 +1667,12 @@ with ::= .
 with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
 with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
-wqitem(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
-  A = sqlite3CteNew(pParse, &X, Y, Z); /*A-overwrites-X*/
+%type wqas {u8}
+wqas(A)   ::= AS.                  {A = M10d_Any;}
+wqas(A)   ::= AS MATERIALIZED.     {A = M10d_Yes;}
+wqas(A)   ::= AS NOT MATERIALIZED. {A = M10d_No;}
+wqitem(A) ::= nm(X) eidlist_opt(Y) wqas(M) LP select(Z) RP. {
+  A = sqlite3CteNew(pParse, &X, Y, Z, M); /*A-overwrites-X*/
 }
 wqlist(A) ::= wqitem(X). {
   A = sqlite3WithAdd(pParse, 0, X); /*A-overwrites-X*/

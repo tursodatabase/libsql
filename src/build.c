@@ -5211,7 +5211,8 @@ Cte *sqlite3CteNew(
   Parse *pParse,          /* Parsing context */
   Token *pName,           /* Name of the common-table */
   ExprList *pArglist,     /* Optional column name list for the table */
-  Select *pQuery          /* Query used to initialize the table */
+  Select *pQuery,         /* Query used to initialize the table */
+  u8 eM10d                /* The MATERIALIZED flag */
 ){
   Cte *pNew;
   sqlite3 *db = pParse->db;
@@ -5226,6 +5227,7 @@ Cte *sqlite3CteNew(
     pNew->pSelect = pQuery;
     pNew->pCols = pArglist;
     pNew->zName = sqlite3NameFromToken(pParse->db, pName);
+    pNew->eM10d = eM10d;
   }
   return pNew;
 }
