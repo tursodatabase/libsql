@@ -6236,7 +6236,7 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( OptimizationEnabled(db, SQLITE_PushDown)
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d==M10d_Yes)
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){

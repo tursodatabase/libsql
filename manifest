@@ -1,5 +1,5 @@
-C Add\sthe\sAS\sMATERIALIZED\sand\sAS\sNOT\sMATERIALIZED\ssyntax\sthat\sworks\slike\sit\ndoes\sin\sPostgreSQL.
-D 2021-02-22T03:04:25.485
+C Fix\sinverted\slogic\sregarding\sthe\smaterialization\shint\son\sthe\spush-down\noptimization.
+D 2021-02-22T11:07:25.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 10e61ec79dd9d41fdc77afee4e0df04fbb427f309c043118fe0b26a7d7db488a
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c263fa5b255a03314c2418f936386e903d01c3e7cbec25a363a586ef3f10b249
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c be6b8ee55be7c87ea7bed39dc880940868620011eae549ea77fa6ea3f28f10b9
+F src/select.c 09f15067366d8276c7444badc82863cae782e241ab1636c4bea8137dc61451e4
 F src/shell.c.in 844417f84df1f6c4fce1c815629a888cfdcf219e86513e9c332bbcc38832f477
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1905,7 +1905,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba59159fbe6b83fb6d79fbfee22d983768b0ebbaac7e99d2ac66c810e5e04100
-R 03d676d4ba542b6ee47b63d9756152cc
+P a6bb272ec0c758ab069bfc07443624e0ea7910b1f23224ee078d050fa3ccf068
+R b8b4e3face4849b33a986c73cf6dafe8
 U drh
-Z 02dd76bc8630787a973103223b94fcef
+Z b61abdd611c185be39fb533ed32c975a
