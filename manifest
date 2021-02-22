@@ -1,5 +1,5 @@
-C Fix\sinverted\slogic\sregarding\sthe\smaterialization\shint\son\sthe\spush-down\noptimization.
-D 2021-02-22T11:07:25.045
+C Add\san\sALWAYS()\son\sa\sbranch\sthat\sis\snow\sunreachable.
+D 2021-02-22T14:25:40.130
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 9766281c0febf25f30a043d98b2417011acc7b04f287d3c671c3e59f656fc208
+F src/vdbe.c d8d2f2a1247bada7db7acf1f4ae65088bc09f020f4acf15810ef67f4aabe1ce9
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 3df118924e1711f1bbc8e30c46260d0ab6c3b029b32dd411f789111f76434f3c
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1905,7 +1905,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6bb272ec0c758ab069bfc07443624e0ea7910b1f23224ee078d050fa3ccf068
-R b8b4e3face4849b33a986c73cf6dafe8
+P b66a49570852cf118a372a6ac44be3070cf9b4254696f16315b7c79a614e6c35
+R 35005ad1dc5275fcaf2f3b302048786b
 U drh
-Z b61abdd611c185be39fb533ed32c975a
+Z 9982ff2e051fdcf6655f0be4d2ebfac0
