@@ -1304,15 +1304,19 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
 ** SELECT, or (b) the windows already linked use a compatible window frame.
 */
 void sqlite3WindowLink(Select *pSel, Window *pWin){
-  if( pSel!=0
-   && (0==pSel->pWin || 0==sqlite3WindowCompare(0, pSel->pWin, pWin, 0))
-  ){
-    pWin->pNextWin = pSel->pWin;
-    if( pSel->pWin ){
-      pSel->pWin->ppThis = &pWin->pNextWin;
+  if( pSel ){
+    if( 0==pSel->pWin || 0==sqlite3WindowCompare(0, pSel->pWin, pWin, 0) ){
+      pWin->pNextWin = pSel->pWin;
+      if( pSel->pWin ){
+        pSel->pWin->ppThis = &pWin->pNextWin;
+      }
+      pSel->pWin = pWin;
+      pWin->ppThis = &pSel->pWin;
+    }else{
+      if( sqlite3ExprListCompare(pWin->pPartition, pSel->pWin->pPartition,-1) ){
+        pSel->selFlags |= SF_MultiPart;
+      }
     }
-    pSel->pWin = pWin;
-    pWin->ppThis = &pSel->pWin;
   }
 }
 

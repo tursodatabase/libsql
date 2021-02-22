@@ -1,5 +1,5 @@
-C Add\sa\sfew\ssimple\stest\scases\sfor\sMATERIALIZED\sand\sNOT\sMATERIALIZED.
-D 2021-02-22T19:57:58.697
+C Allow\sWHERE\sterms\sto\sbe\spushed\sdown\sinto\ssub-queries\sthat\scontain\swindow\sfunctions,\sprovided\sthat\sthe\sWHERE\sterm\sis\smade\sup\sof\sentirely\sof\sconstants\sand\scopies\sof\sexpressions\sfound\sin\sthe\sPARTITION\sBY\sclauses\sof\sall\swindow\sfunctions\sin\sthe\ssub-query.
+D 2021-02-22T20:56:13.828
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,12 +542,12 @@ F src/printf.c 10e61ec79dd9d41fdc77afee4e0df04fbb427f309c043118fe0b26a7d7db488a
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c263fa5b255a03314c2418f936386e903d01c3e7cbec25a363a586ef3f10b249
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 09f15067366d8276c7444badc82863cae782e241ab1636c4bea8137dc61451e4
+F src/select.c 5d66f394afb481eb812927283a3036f7ffbda48442e3a0517d1fa1c3248aca8c
 F src/shell.c.in 844417f84df1f6c4fce1c815629a888cfdcf219e86513e9c332bbcc38832f477
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h d7982229bd90ad5646e9250729125fb2f8a429de965c8825a8e378400e9d3c32
+F src/sqliteInt.h 11b9d47e9b9520b123bc75254da7a4e215463e811e62b89518fc5e9a192a0222
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -633,7 +633,7 @@ F src/where.c a02138440d7230493b5e508664d629f3e1e7615737a5d83aac3a2955d3a654ff
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c e57a8690311a75d06e723e8d379f9831de04aba300e07174d236e32a7f9c7a13
 F src/whereexpr.c 2dc51263e1fb8d8723e97a077a9a137ab0534e59e4cb88b3195f65edbe43cc32
-F src/window.c edd6f5e25a1e8f2b6f5305b7f5f7da7bb35f07f0d432b255b1d4c2fcab4205aa
+F src/window.c fdf01316f6cecf060378aa1713a29e527ab683823ba7d15b8978ec70165e8bdb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
@@ -1783,6 +1783,7 @@ F test/windowB.test 7a983ea1cc1cf72be7f378e4b32f6cb2d73014c5cd8b25aaee825164cd42
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 72375ae71031eabf96bc88d0af128c8628a091ddc99b5a394e848b3df5fc17ad
+F test/windowpushd.test c92a53ac3786d76dbf3ba95b42582c1324f1f1da0c319e670ec620ab5567f822
 F test/with1.test 780be387f01e290e768bdfd1827280f9e37ba37223eb4736aba386864fac5a94
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 85e059bf4c2ef5626411ee59f399b4bb4b4a0f009bcb7db86f254e570ed11831
@@ -1906,7 +1907,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5a0778cc5a98a864bea72670f83262da940aceb91fa4cdf46ec097337a38a95
-R a0e8651539d2046a2eacfb9a26cd3050
-U drh
-Z 9ff3dc4427ac90918959bed5bdbcba59
+P 64878124c160f790bc5861fd799ada03bd7db0c4426b8abc3b7ad1f7aa181168
+R e2a54658db8d3d8e6c4194562e3b87a8
+T *branch * window-functions-pushdown
+T *sym-window-functions-pushdown *
+T -sym-trunk *
+U dan
+Z df00d38ff47c226052c8b6acf25da8b9

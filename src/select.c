@@ -4490,6 +4490,35 @@ static int propagateConstants(
 }
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+# if !defined(SQLITE_OMIT_WINDOWFUNC)
+/*
+** This function is called to determine whether or not it is safe to
+** push WHERE clause expression pExpr down to FROM clause sub-query
+** pSubq, which contains at least one window function. Return 1
+** if it is safe and the expression should be pushed down, or 0 
+** otherwise.
+**
+** It is only safe to push the expression down if it consists only 
+** of constants and copies of expressions that appear in the PARTITION
+** BY clause of all window function used by the sub-query. It is safe
+** to filter out entire partitions, but not rows within partitions, as
+** this may change the results of the window functions.
+**
+** At the time this function is called it is guaranteed that 
+**
+**   * the sub-query uses only one distinct window frame, and 
+**   * that the window frame has a PARTITION BY clase.
+*/
+static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
+  assert( pSubq->pWin->pPartition );
+  assert( (pSubq->selFlags & SF_MultiPart)==0 );
+  assert( pSubq->pPrior==0 );
+  return sqlite3ExprIsConstantOrGroupBy(pParse, pExpr, pSubq->pWin->pPartition);
+}
+# endif /* SQLITE_OMIT_WINDOWFUNC */
+#endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
 ** Make copies of relevant WHERE clause terms of the outer query into
 ** the WHERE clause of subquery.  Example:
@@ -4536,9 +4565,20 @@ static int propagateConstants(
 **       But if the (b2=2) term were to be pushed down into the bb subquery,
 **       then the (1,1,NULL) row would be suppressed.
 **
-**   (6) The inner query features one or more window-functions (since 
-**       changes to the WHERE clause of the inner query could change the 
-**       window over which window functions are calculated).
+**   (6) Window functions make things tricky as changes to the WHERE clause 
+**       of the inner query could change the window over which window 
+**       functions are calculated. Therefore, do not attempt the optimization
+**       if:
+**
+**     (6a) The inner query uses multiple incompatible window partitions.
+**
+**     (6b) The inner query is a compound and uses window-functions. 
+**
+**     (6c) The WHERE clause does not consist entirely of constants and
+**          copies of expressions found in the PARTITION BY clause of
+**          all window-functions used by the sub-query. It is safe to
+**          filter out entire partitions, as this does not change the 
+**          window over which any window-function is calculated.
 **
 **   (7) The inner query is a Common Table Expression (CTE) that should
 **       be materialized.  (This restriction is implemented in the calling
@@ -4556,13 +4596,17 @@ static int pushDownWhereTerms(
 ){
   Expr *pNew;
   int nChng = 0;
-  Select *pSel;
   if( pWhere==0 ) return 0;
-  if( pSubq->selFlags & SF_Recursive ) return 0;  /* restriction (2) */
+  if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  for(pSel=pSubq; pSel; pSel=pSel->pPrior){
-    if( pSel->pWin ) return 0;    /* restriction (6) */
+  if( pSubq->pPrior ){
+    Select *pSel;
+    for(pSel=pSubq; pSel; pSel=pSel->pPrior){
+      if( pSel->pWin ) return 0;    /* restriction (6b) */
+    }
+  }else{
+    if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
   }
 #endif
 
@@ -4609,6 +4653,14 @@ static int pushDownWhereTerms(
       x.isLeftJoin = 0;
       x.pEList = pSubq->pEList;
       pNew = substExpr(&x, pNew);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      if( pSubq->pWin && 0==pushDownWindowCheck(pParse, pSubq, pNew) ){
+        /* Restriction 6c has prevented push-down in this case */
+        sqlite3ExprDelete(pParse->db, pNew);
+        nChng--;
+        break;
+      }
+#endif
       if( pSubq->selFlags & SF_Aggregate ){
         pSubq->pHaving = sqlite3ExprAnd(pParse, pSubq->pHaving, pNew);
       }else{
