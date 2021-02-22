@@ -4540,6 +4540,10 @@ static int propagateConstants(
 **       changes to the WHERE clause of the inner query could change the 
 **       window over which window functions are calculated).
 **
+**   (7) The inner query is a Common Table Expression (CTE) that should
+**       be materialized.  (This restriction is implemented in the calling
+**       routine.)
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -4923,6 +4927,7 @@ static int resolveFromTermToCte(
     int bMayRecursive;            /* True if compound joined by UNION [ALL] */
     With *pSavedWith;             /* Initial value of pParse->pWith */
     int iRecTab = -1;             /* Cursor for recursive table */
+    CteUse *pCteUse;
 
     /* If pCte->zCteErr is non-NULL at this point, then this is an illegal
     ** recursive reference to CTE pCte. Leave an error in pParse and return
@@ -4937,14 +4942,16 @@ static int resolveFromTermToCte(
     assert( pFrom->pTab==0 );
     pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return 2;
-    if( pCte->pUse==0 ){
-      pCte->pUse = sqlite3DbMallocZero(db, sizeof(pCte->pUse[0]));
-      if( pCte->pUse==0
-       || sqlite3ParserAddCleanup(pParse,sqlite3DbFree,pCte->pUse)==0
+    pCteUse = pCte->pUse;
+    if( pCteUse==0 ){
+      pCte->pUse = pCteUse = sqlite3DbMallocZero(db, sizeof(pCteUse[0]));
+      if( pCteUse==0
+       || sqlite3ParserAddCleanup(pParse,sqlite3DbFree,pCteUse)==0
       ){
         sqlite3DbFree(db, pTab);
         return 2;
       }
+      pCteUse->eM10d = pCte->eM10d;
     }
     pFrom->pTab = pTab;
     pTab->nTabRef = 1;
@@ -4956,8 +4963,11 @@ static int resolveFromTermToCte(
     if( db->mallocFailed ) return 2;
     assert( pFrom->pSelect );
     pFrom->fg.isCte = 1;
-    pFrom->u2.pCteUse = pCte->pUse;
-    pCte->pUse->nUse++;
+    pFrom->u2.pCteUse = pCteUse;
+    pCteUse->nUse++;
+    if( pCteUse->nUse>=2 && pCteUse->eM10d==M10d_Any ){
+      pCteUse->eM10d = M10d_Yes;
+    }
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;
@@ -6226,7 +6236,7 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( OptimizationEnabled(db, SQLITE_PushDown)
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->nUse<=1)
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d==M10d_Yes)
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){
@@ -6250,7 +6260,7 @@ int sqlite3Select(
     ** The subquery is implemented as a co-routine if:
     **    (1)  the subquery is guaranteed to be the outer loop (so that
     **         it does not need to be computed more than once), and
-    **    (2)  the subquery is not a CTE that is used more then once.
+    **    (2)  the subquery is not a CTE that should be materialized
     **
     ** TODO: Are there other reasons beside (1) and (2) to use a co-routine
     ** implementation?
@@ -6258,7 +6268,7 @@ int sqlite3Select(
     if( i==0
      && (pTabList->nSrc==1
             || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->nUse<2)           /* (2) */
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)  /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
