@@ -1,5 +1,5 @@
-C Implement\sthe\sMATERIALIZED\sand\sNOT\sMATERIALIZED\shints\son\scommon\ntable\sexpressions.
-D 2021-02-22T16:42:09.548
+C Add\sa\sfew\ssimple\stest\scases\sfor\sMATERIALIZED\sand\sNOT\sMATERIALIZED.
+D 2021-02-22T19:57:58.697
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1788,6 +1788,7 @@ F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1
 F test/with3.test 85e059bf4c2ef5626411ee59f399b4bb4b4a0f009bcb7db86f254e570ed11831
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
+F test/with6.test 3001b59179cbdc26a8c67ff8f46944e3141fdece9ab064c49bbf08459b67b207
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test e4034c0849ccc2e8bb749c69f15bd69bb9fcf8fe77e8d17ce02369604242fe83
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
@@ -1905,8 +1906,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bfd5bf2c73110fcb36db9ba2a949ff516131fbd3e89325f88fe9f5c2b4ed87b2 ace54c5bd50176db7c60b7e3cf9293a86d9ecf2fea897467044020b9684c0af3
-R 35005ad1dc5275fcaf2f3b302048786b
-T +closed ace54c5bd50176db7c60b7e3cf9293a86d9ecf2fea897467044020b9684c0af3
+P b5a0778cc5a98a864bea72670f83262da940aceb91fa4cdf46ec097337a38a95
+R a0e8651539d2046a2eacfb9a26cd3050
 U drh
-Z 8fbd20db3052ba56fcae9ee5726a7d36
+Z 9ff3dc4427ac90918959bed5bdbcba59
