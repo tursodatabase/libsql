@@ -84,6 +84,16 @@ do_execsql_test 2.0 {
       max(d) OVER (PARTITION BY b),
       row_number() OVER (PARTITION BY b)
   FROM t1;
+
+  CREATE TABLE t2(x, y, z);
+  INSERT INTO t2 VALUES('W', 3, 1);
+  INSERT INTO t2 VALUES('W', 2, 2);
+  INSERT INTO t2 VALUES('X', 1, 4);
+  INSERT INTO t2 VALUES('X', 5, 7);
+  INSERT INTO t2 VALUES('Y', 1, 9);
+  INSERT INTO t2 VALUES('Y', 4, 2);
+  INSERT INTO t2 VALUES('Z', 3, 3);
+  INSERT INTO t2 VALUES('Z', 3, 4);
 }
 
 foreach tn {0 1} {
@@ -149,6 +159,62 @@ foreach tn {0 1} {
     do_eqp_test 2.$tn.3.3 {
       SELECT * FROM v3 WHERE b='E'
     } {USING INDEX i2 (b=?)}
+    do_eqp_test 2.$tn.3.4 {
+      SELECT * FROM v3 WHERE b>'C'
+    } {USING INDEX i2 (b>?)}
+  }
+
+  do_execsql_test 2.$tn.4.1 {
+    SELECT * FROM (
+      SELECT x, sum(y) AS s, max(z) AS m 
+      FROM t2 GROUP BY x
+    )
+  } {
+    W 5 2
+    X 6 7
+    Y 5 9
+    Z 6 4
+  }
+
+  do_execsql_test 2.$tn.4.1 {
+    SELECT * FROM (
+      SELECT x, sum(y) AS s, max(z) AS m,
+        max( max(z) ) OVER (PARTITION BY sum(y) 
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        )
+      FROM t2 GROUP BY x
+    )
+  } {
+    W 5 2   9
+    Y 5 9   9
+    X 6 7   7
+    Z 6 4   7
+  }
+
+  do_execsql_test 2.$tn.4.2 {
+    SELECT * FROM (
+      SELECT x, sum(y) AS s, max(z) AS m,
+        max( max(z) ) OVER (PARTITION BY sum(y) 
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        )
+      FROM t2 GROUP BY x
+    ) WHERE s=6
+  } {
+    X 6 7   7
+    Z 6 4   7
+  }
+
+  do_execsql_test 2.$tn.4.3 {
+    SELECT * FROM (
+      SELECT x, sum(y) AS s, max(z) AS m,
+        max( max(z) ) OVER (PARTITION BY sum(y) 
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        )
+      FROM t2 GROUP BY x
+    ) WHERE s<6
+  } {
+    W 5 2   9
+    Y 5 9   9
   }
 
 }

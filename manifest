@@ -1,5 +1,5 @@
-C Allow\sWHERE\sterms\sto\sbe\spushed\sdown\sinto\ssub-queries\sthat\scontain\swindow\sfunctions,\sprovided\sthat\sthe\sWHERE\sterm\sis\smade\sup\sof\sentirely\sof\sconstants\sand\scopies\sof\sexpressions\sfound\sin\sthe\sPARTITION\sBY\sclauses\sof\sall\swindow\sfunctions\sin\sthe\ssub-query.
-D 2021-02-22T20:56:13.828
+C Further\stests\sfor\sthe\spush-down\soptimization\swith\swindow\sfunctions.
+D 2021-02-23T15:36:06.380
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1782,8 +1782,8 @@ F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af
 F test/windowB.test 7a983ea1cc1cf72be7f378e4b32f6cb2d73014c5cd8b25aaee825164cd4269e5
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
-F test/windowfault.test 72375ae71031eabf96bc88d0af128c8628a091ddc99b5a394e848b3df5fc17ad
-F test/windowpushd.test c92a53ac3786d76dbf3ba95b42582c1324f1f1da0c319e670ec620ab5567f822
+F test/windowfault.test d543d46571b32d19f198cb04b6505747fabf3cc369970daae47074ee793612be
+F test/windowpushd.test 2f442e00639117aad235bcd576c85a9bb24d5b011e9e0be784062a9656921a40
 F test/with1.test 780be387f01e290e768bdfd1827280f9e37ba37223eb4736aba386864fac5a94
 F test/with2.test e0030e2f0267a910d6c0e4f46f2dfe941c1cc0d4f659ba69b3597728e7e8f1ab
 F test/with3.test 85e059bf4c2ef5626411ee59f399b4bb4b4a0f009bcb7db86f254e570ed11831
@@ -1907,10 +1907,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64878124c160f790bc5861fd799ada03bd7db0c4426b8abc3b7ad1f7aa181168
-R e2a54658db8d3d8e6c4194562e3b87a8
-T *branch * window-functions-pushdown
-T *sym-window-functions-pushdown *
-T -sym-trunk *
+P dac51f303bba1a0aac7768c688b0c134deb7641062cce2071d546f2d8f241dec
+R 01aa28d00e9dcb21c3691c72496bc468
 U dan
-Z df00d38ff47c226052c8b6acf25da8b9
+Z 2da9e360e2569fcff88e5b35e5221c66
