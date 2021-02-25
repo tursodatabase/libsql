@@ -586,9 +586,15 @@ proc main_tests {args} {
     puts "$config \"$target\""
     if {$bNodebug==0 && $bNosynthetic==0} {
       set iHas [string first SQLITE_DEBUG $::Configs($config)]
-      set dtarget test
-      if {$target=="tcltest"} {
-        set dtarget tcltest
+      set dtarget [list]
+      set iQTI [lsearch -glob $target QUICKTEST_*]
+      if {$iQTI>=0} {
+        lappend dtarget [lindex $target $iQTI]
+      }
+      if {[lsearch $target tcltest]>=0} {
+        lappend dtarget tcltest
+      } else {
+        lappend dtarget test
       }
       if {$iHas>=0} {
         puts "$config-ndebug \"$dtarget\""
