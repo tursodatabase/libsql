@@ -2859,6 +2859,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       assert( pTable->aCol==0 );
       pTable->nCol = pSelTab->nCol;
       pTable->aCol = pSelTab->aCol;
+      pTable->tabFlags |= (pSelTab->tabFlags & COLFLAG_NOINSERT);
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
       assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );

@@ -1,5 +1,5 @@
-C Ensure\sthat\stests\slike\s"rbu.test"\sand\s"notify2.test"\sthat\sare\sonly\srun\sby\sspecific\sconfigurations\sduring\srelease\stesting\sare\srun\sfor\sboth\srelease\sand\sdebug\sversions\sof\sthe\stests.
-D 2021-02-25T15:50:19.870
+C Fix\shandling\sof\sINSERT\son\sviews\swith\simplicitly\snamed\shidden\scolumns\sin\sSQLITE_ENABLE_HIDDEN_COLUMNS\sbuilds.
+D 2021-02-25T16:55:47.813
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 694020ad8a3af3d79b09f74c8f1421272a419cdea42a13401e3b0f7dea6e9c3e
 F src/btree.h 285f8377aa1353185a32bf455faafa9ff9a0d40d074d60509534d14990c7829e
 F src/btreeInt.h 7614cae30f95b6aed0c7cac7718276a55cfe2c77058cbfd8bef5b75329757331
-F src/build.c 30e069b646bbc94593c46e1b1ebe1822de271bf0a3791dff7b3d0af26e71fe9f
+F src/build.c e1790f21cd19708af231ceed5e52f495b94c4b2609e27d2b5ce2805a9aa3464e
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1907,7 +1907,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 23ca23894af352ea351c9efcdd7d86b82455f4c81b6001052a6d13aa2d705e84
-R 72612dcbce4a940c7913dd85945718e5
+P 911df43f98297bf645688dc51e988106a0297cb60bb97dde699c2848404fcf72
+R 541ccd041b03ce231d83952665e3168b
 U dan
-Z fabac3dbdfdef97c7359526eae4bbff6
+Z 90ed53b5ee6ecc7b7169558c64d4ba1b
