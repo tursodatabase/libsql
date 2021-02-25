@@ -90,10 +90,8 @@ do_test 1.0 {
 | end crash-685346d89b5e5f.db
 }]} {}
 
-do_execsql_test 1.1 {
+do_catchsql_test 1.1 {
   ALTER TABLE t2 DROP COLUMN e;
-}
-do_catchsql_test 1.2 {
   ALTER TABLE t1 DROP COLUMN f;
 } {1 {database disk image is malformed}}
 
