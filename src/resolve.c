@@ -1589,25 +1589,24 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     for(i=0; i<p->pSrc->nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
       if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
-        NameContext *pNC;         /* Used to iterate name contexts */
-        int nRef = 0;             /* Refcount for pOuterNC and outer contexts */
+        int nRef = pOuterNC ? pOuterNC->nRef : 0;
         const char *zSavedContext = pParse->zAuthContext;
-
-        /* Count the total number of references to pOuterNC and all of its
-        ** parent contexts. After resolving references to expressions in
-        ** pItem->pSelect, check if this value has changed. If so, then
-        ** SELECT statement pItem->pSelect must be correlated. Set the
-        ** pItem->fg.isCorrelated flag if this is the case. */
-        for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef += pNC->nRef;
 
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
         sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC);
         pParse->zAuthContext = zSavedContext;
         if( pParse->nErr || db->mallocFailed ) return WRC_Abort;
 
-        for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef -= pNC->nRef;
-        assert( pItem->fg.isCorrelated==0 && nRef<=0 );
-        pItem->fg.isCorrelated = (nRef!=0);
+        /* If the number of references to the outer context changed when
+        ** expressions in the sub-select were resolved, the sub-select
+        ** is correlated. It is not required to check the refcount on any
+        ** but the innermost outer context object, as lookupName() increments
+        ** the refcount on all contexts between the current one and the
+        ** context containing the column when it resolves a name. */
+        if( pOuterNC ){
+          assert( pItem->fg.isCorrelated==0 && pOuterNC->nRef>=nRef );
+          pItem->fg.isCorrelated = (pOuterNC->nRef>nRef);
+        }
       }
     }
   
