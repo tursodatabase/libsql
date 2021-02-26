@@ -785,6 +785,44 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
 
+    /* An "<expr> IS NOT NULL" or "<expr> IS NULL". After resolving the
+    ** LHS, check if there is a NOT NULL constraint in the schema that
+    ** means the value of the expression can be determined immediately.
+    ** If that is the case, replace the current expression node with 
+    ** a TK_TRUEFALSE node.
+    **
+    ** If the node is replaced with a TK_TRUEFALSE node, then also restore
+    ** the NameContext ref-counts to the state they where in before the
+    ** LHS expression was resolved. This prevents the current select
+    ** from being erroneously marked as correlated in some cases.
+    */
+    case TK_NOTNULL:
+    case TK_ISNULL: {
+      int anRef[8];
+      NameContext *p;
+      int i;
+      for(i=0, p=pNC; p && i<ArraySize(anRef); p=p->pNext, i++){ 
+        anRef[i] = p->nRef;
+      }
+      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      if( 0==sqlite3ExprCanBeNull(pExpr->pLeft) ){
+        if( pExpr->op==TK_NOTNULL ){
+          pExpr->u.zToken = "true";
+          ExprSetProperty(pExpr, EP_IsTrue);
+        }else{
+          pExpr->u.zToken = "false";
+          ExprSetProperty(pExpr, EP_IsFalse);
+        }
+        pExpr->op = TK_TRUEFALSE;
+        for(i=0, p=pNC; p && i<ArraySize(anRef); p=p->pNext, i++){
+          p->nRef = anRef[i];
+        }
+        sqlite3ExprDelete(pParse->db, pExpr->pLeft);
+        pExpr->pLeft = 0;
+      }
+      return WRC_Prune;
+    }
+
     /* A column name:                    ID
     ** Or table name and column name:    ID.ID
     ** Or a database, table and column:  ID.ID.ID

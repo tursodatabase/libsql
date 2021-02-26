@@ -407,6 +407,9 @@ static void unsetJoinExpr(Expr *p, int iTable){
      && (iTable<0 || p->iRightJoinTable==iTable) ){
       ExprClearProperty(p, EP_FromJoin);
     }
+    if( p->op==TK_COLUMN && p->iTable==iTable ){
+      ExprClearProperty(p, EP_CanBeNull);
+    }
     if( p->op==TK_FUNCTION && p->x.pList ){
       int i;
       for(i=0; i<p->x.pList->nExpr; i++){
