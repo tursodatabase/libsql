@@ -86,6 +86,16 @@ do_vmstep_test 1.5.2 {
   )
 } +100000 {1000}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE T1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE T3(k, v);
+}
+
+do_execsql_test 2.1 {
+  SELECT * FROM (SELECT a, b FROM t1) LEFT JOIN t3 ON a IS NULL;
+}
 
 finish_test
 

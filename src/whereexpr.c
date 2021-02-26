@@ -1409,6 +1409,7 @@ static void exprAnalyze(
       pNew->eOperator = (operatorMask(pDup->op) + eExtraOp) & opMask;
     }else if( op==TK_ISNULL && 0==sqlite3ExprCanBeNull(pLeft) ){
       pExpr->op = TK_TRUEFALSE;
+      pExpr->u.zToken = "false";
       ExprSetProperty(pExpr, EP_IsFalse);
       pTerm->prereqAll = 0;
       pTerm->eOperator = 0;
