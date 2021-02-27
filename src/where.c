@@ -4991,7 +4991,7 @@ WhereInfo *sqlite3WhereBegin(
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
      pWInfo->revMask = ALLBITS;
   }
-  if( pParse->nErr || NEVER(db->mallocFailed) ){
+  if( pParse->nErr || db->mallocFailed ){
     goto whereBeginError;
   }
 #ifdef WHERETRACE_ENABLED

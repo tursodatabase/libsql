@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\swhen\soptimizing\sa\sNOT\sNULL\sconstraint\sagainst\san\sIPK\scolumn\sof\sa\ssub-query.
-D 2021-02-26T21:39:34.145
+C Remove\sa\sNEVER()\sthat\smight\ssometimes\sbe\stree\sfollowing\san\sOOM.
+D 2021-02-27T15:12:24.523
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -629,7 +629,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
-F src/where.c a02138440d7230493b5e508664d629f3e1e7615737a5d83aac3a2955d3a654ff
+F src/where.c 10d06b16670a1d2a992d52a9f08e49426d38a08fb0a7ae5f7f62fd023d560e1e
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c e57a8690311a75d06e723e8d379f9831de04aba300e07174d236e32a7f9c7a13
 F src/whereexpr.c dbae38ffb500b5b8ba18d8d46666b2794efc5c5ff99e7a97fed07fec3b86c52a
@@ -1908,7 +1908,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de9c86c9e4cdb34f4b7d65f160d1e589fb969bbf64c66d2b24c502d1ee424dbb
-R de868ee79aa60e57e3171e3ba507ccd9
-U dan
-Z 7175c7b1fd51dbcd25c6978dccae9f7d
+P e4d1970ef17b2330f78c750d71d625c2997f79ed1445d0351ec32b482485a954
+R 3f067e5dcddb5320f5bc837e2a5fba4f
+U drh
+Z 49f860ab9b6c770a11b39db8b01a8b49
