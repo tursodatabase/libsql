@@ -105,7 +105,10 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
             constraint_usage.set_omit(true);
         }
         if !(unusable_mask & !idx_num).is_empty() {
-            return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_CONSTRAINT), None));
+            return Err(Error::SqliteFailure(
+                ffi::Error::new(ffi::SQLITE_CONSTRAINT),
+                None,
+            ));
         }
         if idx_num.contains(QueryPlanFlags::BOTH) {
             // Both start= and stop= boundaries are available.
