@@ -1210,7 +1210,10 @@ static void exprAnalyzeExists(
   assert( pExpr->op==TK_EXISTS );
   assert( (pExpr->flags & EP_VarSelect) && (pExpr->flags & EP_xIsSelect) );
 
-  if( (pSel->selFlags & SF_Aggregate) || pSel->pWin ) return;
+  if( pSel->selFlags & SF_Aggregate ) return;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( pSel->pWin ) return;
+#endif
   if( pSel->pPrior ) return;
   if( pSel->pWhere==0 ) return;
   if( 0==exprAnalyzeExistsFindEq(pSel, 0, 0) ) return;
