@@ -267,7 +267,7 @@ static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
     for(pIter=p->pFirst; ALWAYS(pIter) && iOff<=size; pIter=pIter->pNext){
       iOff += p->nChunkSize;
     }
-    if( pIter ){
+    if( ALWAYS(pIter) ){
       memjrnlFreeChunks(pIter->pNext);
       pIter->pNext = 0;
     }
