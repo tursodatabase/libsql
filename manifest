@@ -1,9 +1,9 @@
-C Fix\sa\scase\swhere\sfts3\swas\serroneously\sreporting\scorruption.
-D 2021-03-03T16:00:26.353
+C Remove\sthe\s--timeout\soption\sfrom\sthe\svalgrindfuzz\sMakefile\starget.
+D 2021-03-03T16:46:03.440
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 4e7322b4992da471f6644b86f174ca92e7b782b84f1f0eafb7d8daff0067a8ee
+F Makefile.in 047036a560b7db51e7b7e459cd12cbe80e10ca5420b0ea5ddda023b44ab46466
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc ad07bbd645132533e1fd7164a03acfa9afecda378b3787c10f62ab4c7c45e6ea
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
@@ -464,7 +464,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 443a4ec1ca89ad267cbde45dadc68861154b99c7bd26e7b7dc74303a664002b8
+F main.mk 32765eed1aa69739a876b7e1632a092188106f99e8ad6c9d30ea982f4f9b3a46
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1908,7 +1908,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27a0388ad616f80e8dcc986c247a5c23a8565dae9081b04ff85bac0d357e531b
-R e5c0eb34647a6c0313ec053d90365f5c
+P e6c7683c7503ac743d1d476c60c31f887b7ad829e26e812c25acdd4366044db8
+R e77cda0b369ceea50b416b8516f743d1
 U dan
-Z fd9193ef1dccf35779afbe7b97c23e4c
+Z 0efa4696a72192981e7924beabc49254
