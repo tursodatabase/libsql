@@ -6034,8 +6034,18 @@ int sqlite3Select(
            pDest->eDest==SRT_Except     || pDest->eDest==SRT_Discard ||
            pDest->eDest==SRT_DistQueue  || pDest->eDest==SRT_DistFifo );
     /* All of these destinations are also able to ignore the ORDER BY clause */
-    sqlite3ExprListDelete(db, p->pOrderBy);
-    p->pOrderBy = 0;
+    if( p->pOrderBy ){
+#if SELECTTRACE_ENABLED
+      SELECTTRACE(1,pParse,p, ("dropping superfluous ORDER BY:\n"));
+      if( sqlite3SelectTrace & 0x100 ){
+        sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
+      }
+#endif    
+      sqlite3ParserAddCleanup(pParse,
+        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
+        p->pOrderBy);
+      p->pOrderBy = 0;
+    }
     p->selFlags &= ~SF_Distinct;
     p->selFlags |= SF_NoopOrderBy;
   }
