@@ -856,7 +856,7 @@ void sqlite3_str_vappendf(
       case etSRCLIST: {
         SrcList *pSrc;
         int k;
-        struct SrcList_item *pItem;
+        SrcItem *pItem;
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
         pSrc = va_arg(ap, SrcList*);
         k = va_arg(ap, int);
@@ -921,7 +921,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
   }else{
     char *zOld = isMalloced(p) ? p->zText : 0;
     i64 szNew = p->nChar;
-    szNew += N + 1;
+    szNew += (sqlite3_int64)N + 1;
     if( szNew+p->nChar<=p->mxAlloc ){
       /* Force exponential buffer size growth as long as it does not overflow,
       ** to avoid having to call this routine too often */

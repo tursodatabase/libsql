@@ -17,19 +17,6 @@
 #ifndef SQLITE_WHEREINT_H
 #define SQLITE_WHEREINT_H
 
-/*
-** Trace output macros
-*/
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-/***/ extern int sqlite3WhereTrace;
-#endif
-#if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
-# define WHERETRACE(K,X)  if(sqlite3WhereTrace&(K)) sqlite3DebugPrintf X
-# define WHERETRACE_ENABLED 1
-#else
-# define WHERETRACE(K,X)
-#endif
 
 /* Forward references
 */
@@ -283,11 +270,7 @@ struct WhereTerm {
 #define TERM_ORINFO     0x0010 /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x0020 /* Need to free the WhereTerm.u.pAndInfo obj */
 #define TERM_OR_OK      0x0040 /* Used during OR-clause processing */
-#ifdef SQLITE_ENABLE_STAT4
-#  define TERM_VNULL    0x0080 /* Manufactured x>NULL or x<=NULL term */
-#else
-#  define TERM_VNULL    0x0000 /* Disabled if not using stat4 */
-#endif
+#define TERM_VNULL      0x0080 /* Manufactured x>NULL or x<=NULL term */
 #define TERM_LIKEOPT    0x0100 /* Virtual terms from the LIKE optimization */
 #define TERM_LIKECOND   0x0200 /* Conditionally this LIKE operator term */
 #define TERM_LIKE       0x0400 /* The original LIKE operator */
@@ -557,7 +540,7 @@ Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprUsageNN(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
 void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
-void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
+void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 
 
 

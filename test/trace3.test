@@ -251,4 +251,83 @@ do_test trace3-11.2 {
   set ::stmtlist(record)
 } {/^-?\d+$/}
 
+#-------------------------------------------------------------------------
+reset_db
+do_test 12.1.0 {
+  set ::STMT [sqlite3_prepare_v2 $DB \
+    "SELECT ?1 || ?1 || ?1 || ?2 || ?3 || ?4 || ? || ?1 || ?" -1 TAIL
+  ]
+  sqlite3_bind_parameter_count $::STMT
+} {6}
+
+do_test 12.1.1 {
+  sqlite3_bind_text $STMT 1 "A" 1
+  sqlite3_bind_text $STMT 2 "B" 1
+  sqlite3_bind_text $STMT 3 "C" 1
+  sqlite3_bind_text $STMT 4 "D" 1
+  sqlite3_bind_text $STMT 5 "E" 1
+  sqlite3_bind_text $STMT 6 "F" 1
+  sqlite3_expanded_sql $STMT
+} {SELECT 'A' || 'A' || 'A' || 'B' || 'C' || 'D' || 'E' || 'A' || 'F'}
+
+do_test 12.1.2 {
+  sqlite3_step $STMT
+  sqlite3_column_text $STMT 0
+} {AAABCDEAF}
+
+do_test 12.1.3 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+
+do_test 12.2.0 {
+  execsql {
+    CREATE TABLE nameFtsFuzzySearchTable(
+      word, distance, langid, score, top, scope
+    );
+  }
+  set ::STMT [sqlite3_prepare_v2 $DB {
+    SELECT
+      substr(word,1,length(?1)-1) AS term,
+      distance,
+      langid,
+      score
+    FROM
+      nameFtsFuzzySearchTable
+    WHERE
+      word MATCH (?1) AND abs(?1) = abs(term)
+      AND top = ?2 AND distance > ?3 AND scope = ?4 AND langid = ?
+    GROUP BY term, langid 
+    HAVING (1.0 - ((distance / 100.0) / CAST( length(?1) - 1 AS REAL ))) >= ?
+  } -1 TAIL]
+  sqlite3_bind_parameter_count $::STMT
+} {6}
+
+do_test 12.1.1 {
+  sqlite3_bind_text $STMT 1 "A" 1
+  sqlite3_bind_text $STMT 2 "B" 1
+  sqlite3_bind_text $STMT 3 "C" 1
+  sqlite3_bind_text $STMT 4 "D" 1
+  sqlite3_bind_text $STMT 5 "E" 1
+  sqlite3_bind_text $STMT 6 "F" 1
+  sqlite3_expanded_sql $STMT
+} {
+    SELECT
+      substr(word,1,length('A')-1) AS term,
+      distance,
+      langid,
+      score
+    FROM
+      nameFtsFuzzySearchTable
+    WHERE
+      word MATCH ('A') AND abs('A') = abs(term)
+      AND top = 'B' AND distance > 'C' AND scope = 'D' AND langid = 'E'
+    GROUP BY term, langid 
+    HAVING (1.0 - ((distance / 100.0) / CAST( length('A') - 1 AS REAL ))) >= 'F'
+  }
+
+do_test 12.1.2 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+
+
 finish_test

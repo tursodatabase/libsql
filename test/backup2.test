@@ -144,7 +144,7 @@ do_test backup2-9 {
 if {$tcl_platform(platform)=="windows"} {
   set msg {cannot open source database: unable to open database file}
 } elseif {[string match *BSD $tcl_platform(os)]} {
-  set msg {restore failed: file is not a database}
+  set msg {}
 } else {
   set msg {cannot open source database: disk I/O error}
 }
@@ -152,7 +152,8 @@ do_test backup2-10 {
   forcedelete bu3.db
   file mkdir bu3.db
   set rc [catch {db restore temp bu3.db} res]
-  lappend rc $res
+  if {[string match *BSD $tcl_platform(os)]} { set res "" }
+  list $rc $res
 } [list 1 $msg]
 
 # Try to restore from something that is not a database file.

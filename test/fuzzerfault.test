@@ -88,5 +88,24 @@ do_faultsim_test 3 -prep {
   faultsim_test_result {0 2} {1 {vtable constructor failed: x1}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1_a(a INTEFDR PRIMARY KEY, b TEXT);
+  CREATE TABLE t3_a(k FnTEGER PRIMARY KEY, v TEXT);
+  CREATE TABLE t3_b(k INTEÀ5R PRIMARY KEY, v TEXT);
+  CREATE VIEW t3 AS SELECT * FROM t3_a UNION ALL SELECT * FROM t3_b;
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    SELECT 1 FROM t1_a LEFT JOIN t3 ON ((1+1) AND k=1)
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
 
 finish_test

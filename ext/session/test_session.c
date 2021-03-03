@@ -243,6 +243,7 @@ static int SQLITE_TCLAPI test_session_cmd(
     { "patchset",     0, "",           }, /* 7 */
     { "diff",         2, "FROMDB TBL"  }, /* 8 */
     { "fullchangeset",0, ""            }, /* 9 */
+    { "memory_used",  0, "",           }, /* 9 */
     { 0 }
   };
   int iSub;
@@ -350,6 +351,12 @@ static int SQLITE_TCLAPI test_session_cmd(
       if( rc ){
         return test_session_error(interp, rc, zErr);
       }
+      break;
+    }
+
+    case 9: {      /* memory_used */
+      sqlite3_int64 nMalloc = sqlite3session_memory_used(pSession);
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nMalloc));
       break;
     }
   }

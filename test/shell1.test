@@ -642,7 +642,7 @@ do_test shell1-3.23.2 {
 # .stats ON|OFF          Turn stats on or off
 #do_test shell1-3.23b.1 {
 #  catchcmd "test.db" ".stats"
-#} {1 {Usage: .stats on|off}}
+#} {1 {Usage: .stats on|off|stmt|vmstep}}
 do_test shell1-3.23b.2 {
   catchcmd "test.db" ".stats ON"
 } {0 {}}
@@ -652,7 +652,7 @@ do_test shell1-3.23b.3 {
 do_test shell1-3.23b.4 {
   # too many arguments
   catchcmd "test.db" ".stats OFF BAD"
-} {1 {Usage: .stats ?on|off?}}
+} {1 {Usage: .stats ?on|off|stmt|vmstep?}}
 
 # Ticket 7be932dfa60a8a6b3b26bcf7623ec46e0a403ddb 2018-06-07
 # Adverse interaction between .stats and .eqp

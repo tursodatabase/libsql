@@ -28,6 +28,7 @@ if {[info commands sqlite3_expert_new]==""} {
   return
 }
 
+
 set CLI [test_binary_name sqlite3]
 set CMD [test_binary_name sqlite3_expert]
 
@@ -367,6 +368,29 @@ do_setup_rec_test $tn.17.5 {
   SEARCH TABLE example USING INDEX example_idx_0000cb3f (B=? AND A>?)
 }
 
+do_setup_rec_test $tn.18.0 {
+  CREATE TABLE SomeObject (
+     a INTEGER PRIMARY KEY,
+     x TEXT GENERATED ALWAYS AS(HEX(a)) VIRTUAL
+  );
+} {
+  SELECT x FROM SomeObject;
+} {
+  (no new indexes)
+  SCAN TABLE SomeObject
+}
+do_setup_rec_test $tn.18.1 {
+  CREATE TABLE SomeObject (
+     a INTEGER PRIMARY KEY,
+     x TEXT GENERATED ALWAYS AS(HEX(a)) VIRTUAL
+  );
+} {
+  SELECT * FROM SomeObject WHERE x=?;
+} {
+  CREATE INDEX SomeObject_idx_00000078 ON SomeObject(x);
+  SEARCH TABLE SomeObject USING COVERING INDEX SomeObject_idx_00000078 (x=?)
+}
+
 }
 
 proc do_candidates_test {tn sql res} {
@@ -430,5 +454,5 @@ do_execsql_test 5.3 {
   t2 t2_idx_0001295b {100 20 5}
 }
 
-
 finish_test
+

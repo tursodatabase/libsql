@@ -434,6 +434,62 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
 #endif /* SQLITE_OMIT_ATTACH */
 
 /*
+** Expression callback used by sqlite3FixAAAA() routines.
+*/
+static int fixExprCb(Walker *p, Expr *pExpr){
+  DbFixer *pFix = p->u.pFix;
+  if( !pFix->bTemp ) ExprSetProperty(pExpr, EP_FromDDL);
+  if( pExpr->op==TK_VARIABLE ){
+    if( pFix->pParse->db->init.busy ){
+      pExpr->op = TK_NULL;
+    }else{
+      sqlite3ErrorMsg(pFix->pParse, "%s cannot use variables", pFix->zType);
+      return WRC_Abort;
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** Select callback used by sqlite3FixAAAA() routines.
+*/
+static int fixSelectCb(Walker *p, Select *pSelect){
+  DbFixer *pFix = p->u.pFix;
+  int i;
+  SrcItem *pItem;
+  sqlite3 *db = pFix->pParse->db;
+  int iDb = sqlite3FindDbName(db, pFix->zDb);
+  SrcList *pList = pSelect->pSrc;
+
+  if( NEVER(pList==0) ) return WRC_Continue;
+  for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
+    if( pFix->bTemp==0 ){
+      if( pItem->zDatabase && iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
+        sqlite3ErrorMsg(pFix->pParse,
+            "%s %T cannot reference objects in database %s",
+            pFix->zType, pFix->pName, pItem->zDatabase);
+        return WRC_Abort;
+      }
+      sqlite3DbFree(db, pItem->zDatabase);
+      pItem->zDatabase = 0;
+      pItem->pSchema = pFix->pSchema;
+      pItem->fg.fromDDL = 1;
+    }
+#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
+    if( sqlite3WalkExpr(&pFix->w, pList->a[i].pOn) ) return WRC_Abort;
+#endif
+  }
+  if( pSelect->pWith ){
+    for(i=0; i<pSelect->pWith->nCte; i++){
+      if( sqlite3WalkSelect(p, pSelect->pWith->a[i].pSelect) ){
+        return WRC_Abort;
+      }
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
 ** Initialize a DbFixer structure.  This routine must be called prior
 ** to passing the structure to one of the sqliteFixAAAA() routines below.
 */
@@ -444,9 +500,7 @@ void sqlite3FixInit(
   const char *zType,  /* "view", "trigger", or "index" */
   const Token *pName  /* Name of the view, trigger, or index */
 ){
-  sqlite3 *db;
-
-  db = pParse->db;
+  sqlite3 *db = pParse->db;
   assert( db->nDb>iDb );
   pFix->pParse = pParse;
   pFix->zDb = db->aDb[iDb].zDbSName;
@@ -454,6 +508,13 @@ void sqlite3FixInit(
   pFix->zType = zType;
   pFix->pName = pName;
   pFix->bTemp = (iDb==1);
+  pFix->w.pParse = pParse;
+  pFix->w.xExprCallback = fixExprCb;
+  pFix->w.xSelectCallback = fixSelectCb;
+  pFix->w.xSelectCallback2 = 0;
+  pFix->w.walkerDepth = 0;
+  pFix->w.eCode = 0;
+  pFix->w.u.pFix = pFix;
 }
 
 /*
@@ -474,115 +535,27 @@ int sqlite3FixSrcList(
   DbFixer *pFix,       /* Context of the fixation */
   SrcList *pList       /* The Source list to check and modify */
 ){
-  int i;
-  struct SrcList_item *pItem;
-  sqlite3 *db = pFix->pParse->db;
-  int iDb = sqlite3FindDbName(db, pFix->zDb);
-
-  if( NEVER(pList==0) ) return 0;
-
-  for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pFix->bTemp==0 ){
-      if( pItem->zDatabase && iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
-        sqlite3ErrorMsg(pFix->pParse,
-            "%s %T cannot reference objects in database %s",
-            pFix->zType, pFix->pName, pItem->zDatabase);
-        return 1;
-      }
-      sqlite3DbFree(db, pItem->zDatabase);
-      pItem->zDatabase = 0;
-      pItem->pSchema = pFix->pSchema;
-      pItem->fg.fromDDL = 1;
-    }
-#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
-    if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
-    if( sqlite3FixExpr(pFix, pItem->pOn) ) return 1;
-#endif
-    if( pItem->fg.isTabFunc && sqlite3FixExprList(pFix, pItem->u1.pFuncArg) ){
-      return 1;
-    }
+  int res = 0;
+  if( pList ){
+    Select s; 
+    memset(&s, 0, sizeof(s));
+    s.pSrc = pList;
+    res = sqlite3WalkSelect(&pFix->w, &s);
   }
-  return 0;
+  return res;
 }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
 int sqlite3FixSelect(
   DbFixer *pFix,       /* Context of the fixation */
   Select *pSelect      /* The SELECT statement to be fixed to one database */
 ){
-  while( pSelect ){
-    if( sqlite3FixExprList(pFix, pSelect->pEList) ){
-      return 1;
-    }
-    if( sqlite3FixSrcList(pFix, pSelect->pSrc) ){
-      return 1;
-    }
-    if( sqlite3FixExpr(pFix, pSelect->pWhere) ){
-      return 1;
-    }
-    if( sqlite3FixExprList(pFix, pSelect->pGroupBy) ){
-      return 1;
-    }
-    if( sqlite3FixExpr(pFix, pSelect->pHaving) ){
-      return 1;
-    }
-    if( sqlite3FixExprList(pFix, pSelect->pOrderBy) ){
-      return 1;
-    }
-    if( sqlite3FixExpr(pFix, pSelect->pLimit) ){
-      return 1;
-    }
-    if( pSelect->pWith ){
-      int i;
-      for(i=0; i<pSelect->pWith->nCte; i++){
-        if( sqlite3FixSelect(pFix, pSelect->pWith->a[i].pSelect) ){
-          return 1;
-        }
-      }
-    }
-    pSelect = pSelect->pPrior;
-  }
-  return 0;
+  return sqlite3WalkSelect(&pFix->w, pSelect);
 }
 int sqlite3FixExpr(
   DbFixer *pFix,     /* Context of the fixation */
   Expr *pExpr        /* The expression to be fixed to one database */
 ){
-  while( pExpr ){
-    if( !pFix->bTemp ) ExprSetProperty(pExpr, EP_FromDDL);
-    if( pExpr->op==TK_VARIABLE ){
-      if( pFix->pParse->db->init.busy ){
-        pExpr->op = TK_NULL;
-      }else{
-        sqlite3ErrorMsg(pFix->pParse, "%s cannot use variables", pFix->zType);
-        return 1;
-      }
-    }
-    if( ExprHasProperty(pExpr, EP_TokenOnly|EP_Leaf) ) break;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
-    }else{
-      if( sqlite3FixExprList(pFix, pExpr->x.pList) ) return 1;
-    }
-    if( sqlite3FixExpr(pFix, pExpr->pRight) ){
-      return 1;
-    }
-    pExpr = pExpr->pLeft;
-  }
-  return 0;
-}
-int sqlite3FixExprList(
-  DbFixer *pFix,     /* Context of the fixation */
-  ExprList *pList    /* The expression to be fixed to one database */
-){
-  int i;
-  struct ExprList_item *pItem;
-  if( pList==0 ) return 0;
-  for(i=0, pItem=pList->a; i<pList->nExpr; i++, pItem++){
-    if( sqlite3FixExpr(pFix, pItem->pExpr) ){
-      return 1;
-    }
-  }
-  return 0;
+  return sqlite3WalkExpr(&pFix->w, pExpr);
 }
 #endif
 
@@ -592,25 +565,20 @@ int sqlite3FixTriggerStep(
   TriggerStep *pStep /* The trigger step be fixed to one database */
 ){
   while( pStep ){
-    if( sqlite3FixSelect(pFix, pStep->pSelect) ){
-      return 1;
-    }
-    if( sqlite3FixExpr(pFix, pStep->pWhere) ){
-      return 1;
-    }
-    if( sqlite3FixExprList(pFix, pStep->pExprList) ){
-      return 1;
-    }
-    if( pStep->pFrom && sqlite3FixSrcList(pFix, pStep->pFrom) ){
+    if( sqlite3WalkSelect(&pFix->w, pStep->pSelect)
+     || sqlite3WalkExpr(&pFix->w, pStep->pWhere) 
+     || sqlite3WalkExprList(&pFix->w, pStep->pExprList)
+     || sqlite3FixSrcList(pFix, pStep->pFrom)
+    ){
       return 1;
     }
 #ifndef SQLITE_OMIT_UPSERT
     if( pStep->pUpsert ){
       Upsert *pUp = pStep->pUpsert;
-      if( sqlite3FixExprList(pFix, pUp->pUpsertTarget)
-       || sqlite3FixExpr(pFix, pUp->pUpsertTargetWhere)
-       || sqlite3FixExprList(pFix, pUp->pUpsertSet)
-       || sqlite3FixExpr(pFix, pUp->pUpsertWhere)
+      if( sqlite3WalkExprList(&pFix->w, pUp->pUpsertTarget)
+       || sqlite3WalkExpr(&pFix->w, pUp->pUpsertTargetWhere)
+       || sqlite3WalkExprList(&pFix->w, pUp->pUpsertSet)
+       || sqlite3WalkExpr(&pFix->w, pUp->pUpsertWhere)
       ){
         return 1;
       }
@@ -618,6 +586,7 @@ int sqlite3FixTriggerStep(
 #endif
     pStep = pStep->pNext;
   }
+
   return 0;
 }
 #endif

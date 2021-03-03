@@ -8548,7 +8548,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern LONG volatile sqlite3_os_type;
 #endif
 #ifdef SQLITE_DEBUG
-  extern int sqlite3WhereTrace;
+  extern u32 sqlite3WhereTrace;
   extern int sqlite3OSTrace;
   extern int sqlite3WalTrace;
 #endif
@@ -8556,9 +8556,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_FTS3
   extern int sqlite3_fts3_enable_parentheses;
 #endif
-#endif
-#if defined(SQLITE_ENABLE_SELECTTRACE)
-  extern u32 sqlite3_unsupported_selecttrace;
 #endif
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
@@ -8647,7 +8644,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_fullsync_count, TCL_LINK_INT);
 #if defined(SQLITE_ENABLE_SELECTTRACE)
   Tcl_LinkVar(interp, "sqlite3_unsupported_selecttrace",
-      (char*)&sqlite3_unsupported_selecttrace, TCL_LINK_INT);
+      (char*)&sqlite3SelectTrace, TCL_LINK_INT);
 #endif
 #if defined(SQLITE_ENABLE_FTS3) && defined(SQLITE_TEST)
   Tcl_LinkVar(interp, "sqlite_fts3_enable_parentheses",

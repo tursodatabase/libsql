@@ -266,6 +266,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %ifndef SQLITE_OMIT_GENERATED_COLUMNS
   GENERATED ALWAYS
 %endif
+  MATERIALIZED
   REINDEX RENAME CTIME_KW IF
   .
 %wildcard ANY.
@@ -525,29 +526,25 @@ cmd ::= select(X).  {
       }
     }
   }
+
+  /* Attach a With object describing the WITH clause to a Select
+  ** object describing the query for which the WITH clause is a prefix.
+  */
+  static Select *attachWithToSelect(Parse *pParse, Select *pSelect, With *pWith){
+    if( pSelect ){
+      pSelect->pWith = pWith;
+      parserDoubleLinkSelect(pParse, pSelect);
+    }else{
+      sqlite3WithDelete(pParse->db, pWith);
+    }
+    return pSelect;
+  }
 }
 
 %ifndef SQLITE_OMIT_CTE
-select(A) ::= WITH wqlist(W) selectnowith(X). {
-  Select *p = X;
-  if( p ){
-    p->pWith = W;
-    parserDoubleLinkSelect(pParse, p);
-  }else{
-    sqlite3WithDelete(pParse->db, W);
-  }
-  A = p;
-}
-select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X). {
-  Select *p = X;
-  if( p ){
-    p->pWith = W;
-    parserDoubleLinkSelect(pParse, p);
-  }else{
-    sqlite3WithDelete(pParse->db, W);
-  }
-  A = p;
-}
+select(A) ::= WITH wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W);}
+select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
+                                              {A = attachWithToSelect(pParse,X,W);}
 %endif /* SQLITE_OMIT_CTE */
 select(A) ::= selectnowith(X). {
   Select *p = X;
@@ -714,8 +711,8 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
     }else if( F->nSrc==1 ){
       A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,0,N,U);
       if( A ){
-        struct SrcList_item *pNew = &A->a[A->nSrc-1];
-        struct SrcList_item *pOld = F->a;
+        SrcItem *pNew = &A->a[A->nSrc-1];
+        SrcItem *pOld = F->a;
         pNew->zName = pOld->zName;
         pNew->zDatabase = pOld->zDatabase;
         pNew->pSelect = pOld->pSelect;
@@ -883,7 +880,7 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 /////////////////////////// The DELETE statement /////////////////////////////
 //
 %if SQLITE_ENABLE_UPDATE_DELETE_LIMIT || SQLITE_UDL_CAPABLE_PARSER
-cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W) 
+cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt_ret(W)
         orderby_opt(O) limit_opt(L). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
 #ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
@@ -896,7 +893,7 @@ cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W)
   sqlite3DeleteFrom(pParse,X,W,O,L);
 }
 %else
-cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W). {
+cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt_ret(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W,0,0);
 }
@@ -904,15 +901,23 @@ cmd ::= with DELETE FROM xfullname(X) indexed_opt(I) where_opt(W). {
 
 %type where_opt {Expr*}
 %destructor where_opt {sqlite3ExprDelete(pParse->db, $$);}
+%type where_opt_ret {Expr*}
+%destructor where_opt_ret {sqlite3ExprDelete(pParse->db, $$);}
 
 where_opt(A) ::= .                    {A = 0;}
 where_opt(A) ::= WHERE expr(X).       {A = X;}
+where_opt_ret(A) ::= .                                      {A = 0;}
+where_opt_ret(A) ::= WHERE expr(X).                         {A = X;}
+where_opt_ret(A) ::= RETURNING selcollist(X).               
+       {sqlite3AddReturning(pParse,X); A = 0;}
+where_opt_ret(A) ::= WHERE expr(X) RETURNING selcollist(Y).
+       {sqlite3AddReturning(pParse,Y); A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
 %if SQLITE_ENABLE_UPDATE_DELETE_LIMIT || SQLITE_UDL_CAPABLE_PARSER
 cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
-        where_opt(W) orderby_opt(O) limit_opt(L).  {
+        where_opt_ret(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   X = sqlite3SrcListAppendList(pParse, X, F);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
@@ -927,7 +932,7 @@ cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
 }
 %else
 cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
-        where_opt(W). {
+        where_opt_ret(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   X = sqlite3SrcListAppendList(pParse, X, F);
@@ -961,7 +966,7 @@ cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) select(S)
         upsert(U). {
   sqlite3Insert(pParse, X, S, F, R, U);
 }
-cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES.
+cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES returning.
 {
   sqlite3Insert(pParse, X, 0, F, R, 0);
 }
@@ -974,13 +979,19 @@ cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES.
 // avoid unreachable code.
 //%destructor upsert {sqlite3UpsertDelete(pParse->db,$$);}
 upsert(A) ::= . { A = 0; }
+upsert(A) ::= RETURNING selcollist(X).  { A = 0; sqlite3AddReturning(pParse,X); }
 upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW)
-              DO UPDATE SET setlist(Z) where_opt(W).
-              { A = sqlite3UpsertNew(pParse->db,T,TW,Z,W);}
-upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW) DO NOTHING.
-              { A = sqlite3UpsertNew(pParse->db,T,TW,0,0); }
-upsert(A) ::= ON CONFLICT DO NOTHING.
-              { A = sqlite3UpsertNew(pParse->db,0,0,0,0); }
+              DO UPDATE SET setlist(Z) where_opt(W) upsert(N).
+              { A = sqlite3UpsertNew(pParse->db,T,TW,Z,W,N);}
+upsert(A) ::= ON CONFLICT LP sortlist(T) RP where_opt(TW) DO NOTHING upsert(N).
+              { A = sqlite3UpsertNew(pParse->db,T,TW,0,0,N); }
+upsert(A) ::= ON CONFLICT DO NOTHING returning.
+              { A = sqlite3UpsertNew(pParse->db,0,0,0,0,0); }
+upsert(A) ::= ON CONFLICT DO UPDATE SET setlist(Z) where_opt(W) returning.
+              { A = sqlite3UpsertNew(pParse->db,0,0,Z,W,0);}
+
+returning ::= RETURNING selcollist(X).  {sqlite3AddReturning(pParse,X);}
+returning ::= .
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
@@ -1622,6 +1633,10 @@ cmd ::= ALTER TABLE add_column_fullname
   Y.n = (int)(pParse->sLastToken.z-Y.z) + pParse->sLastToken.n;
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
+cmd ::= ALTER TABLE fullname(X) DROP kwcolumn_opt nm(Y). {
+  sqlite3AlterDropColumn(pParse, X, &Y);
+}
+
 add_column_fullname ::= fullname(X). {
   disableLookaside(pParse);
   sqlite3AlterBeginAddColumn(pParse, X);
@@ -1659,17 +1674,26 @@ anylist ::= anylist ANY.
 //////////////////////// COMMON TABLE EXPRESSIONS ////////////////////////////
 %type wqlist {With*}
 %destructor wqlist {sqlite3WithDelete(pParse->db, $$);}
+%type wqitem {Cte*}
+// %destructor wqitem {sqlite3CteDelete(pParse->db, $$);} // not reachable
 
 with ::= .
 %ifndef SQLITE_OMIT_CTE
 with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
 with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
-wqlist(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
-  A = sqlite3WithAdd(pParse, 0, &X, Y, Z); /*A-overwrites-X*/
+%type wqas {u8}
+wqas(A)   ::= AS.                  {A = M10d_Any;}
+wqas(A)   ::= AS MATERIALIZED.     {A = M10d_Yes;}
+wqas(A)   ::= AS NOT MATERIALIZED. {A = M10d_No;}
+wqitem(A) ::= nm(X) eidlist_opt(Y) wqas(M) LP select(Z) RP. {
+  A = sqlite3CteNew(pParse, &X, Y, Z, M); /*A-overwrites-X*/
 }
-wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
-  A = sqlite3WithAdd(pParse, A, &X, Y, Z);
+wqlist(A) ::= wqitem(X). {
+  A = sqlite3WithAdd(pParse, 0, X); /*A-overwrites-X*/
+}
+wqlist(A) ::= wqlist(A) COMMA wqitem(X). {
+  A = sqlite3WithAdd(pParse, A, X);
 }
 %endif  SQLITE_OMIT_CTE
 

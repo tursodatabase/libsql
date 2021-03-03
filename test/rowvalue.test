@@ -644,4 +644,17 @@ do_catchsql_test 27.10 {
   INSERT INTO t0(c0) VALUES(0) ON CONFLICT(c0) DO UPDATE SET c0 = 3;
 } {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
 
+# 2021-02-03
+# https://bugs.chromium.org/p/chromium/issues/detail?id=1173511
+# Faulty assert() statement.
+#
+reset_db
+do_catchsql_test 28.10 {
+  CREATE TABLE t0(c0 PRIMARY KEY, c1);
+  CREATE TRIGGER trigger0 BEFORE DELETE ON t0 BEGIN
+   SELECT (SELECT c0,c1  FROM t0)  FROM t0;
+  END ;
+  DELETE FROM t0;
+} {1 {sub-select returns 2 columns - expected 1}}
+
 finish_test

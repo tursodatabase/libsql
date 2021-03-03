@@ -174,8 +174,14 @@ proc get_pwd {} {
     #       case of the result to what Tcl considers canonical, which would
     #       defeat the purpose of this procedure.
     #
+    if {[info exists ::env(ComSpec)]} {
+      set comSpec $::env(ComSpec)
+    } else {
+      # NOTE: Hard-code the typical default value.
+      set comSpec {C:\Windows\system32\cmd.exe}
+    }
     return [string map [list \\ /] \
-        [string trim [exec -- $::env(ComSpec) /c echo %CD%]]]
+        [string trim [exec -- $comSpec /c echo %CD%]]]
   } else {
     return [pwd]
   }
@@ -903,8 +909,8 @@ proc catchcmdex {db {cmd ""}} {
 proc filepath_normalize {p} {
   # test cases should be written to assume "unix"-like file paths
   if {$::tcl_platform(platform)!="unix"} {
-    # lreverse*2 as a hack to remove any unneeded {} after the string map
-    lreverse [lreverse [string map {\\ /} [regsub -nocase -all {[a-z]:[/\\]+} $p {/}]]]
+    string map [list \\ / \{/ / .db\} .db] \
+        [regsub -nocase -all {[a-z]:[/\\]+} $p {/}]
   } {
     set p
   }
@@ -1690,9 +1696,12 @@ proc crashsql {args} {
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
+  puts $f "sqlite3_initialize ; sqlite3_shutdown"
+  puts $f "catch { install_malloc_faultsim 1 }"
   puts $f "sqlite3_crash_enable 1 $dfltvfs"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  puts $f "autoinstall_test_functions"
 
   # This block sets the cache size of the main database to 10
   # pages. This is done in case the build is configured to omit
@@ -1720,7 +1729,7 @@ proc crashsql {args} {
   }
   close $f
   set r [catch {
-    exec [info nameofexec] crash.tcl >@stdout
+    exec [info nameofexec] crash.tcl >@stdout 2>@stdout
   } msg]
 
   # Windows/ActiveState TCL returns a slightly different

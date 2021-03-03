@@ -467,6 +467,14 @@ int sqlite3session_patchset(
 int sqlite3session_isempty(sqlite3_session *pSession);
 
 /*
+** CAPI3REF: Query for the amount of heap memory used by a session object.
+**
+** This API returns the total amount of heap memory in bytes currently 
+** used by the session object passed as the only argument.
+*/
+sqlite3_int64 sqlite3session_memory_used(sqlite3_session *pSession);
+
+/*
 ** CAPI3REF: Create An Iterator To Traverse A Changeset 
 ** CONSTRUCTOR: sqlite3_changeset_iter
 **

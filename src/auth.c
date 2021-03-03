@@ -143,7 +143,6 @@ void sqlite3AuthRead(
   Schema *pSchema,      /* The schema of the expression */
   SrcList *pTabList     /* All table that pExpr might refer to */
 ){
-  sqlite3 *db = pParse->db;
   Table *pTab = 0;      /* The table being read */
   const char *zCol;     /* Name of the column of the table */
   int iSrc;             /* Index in pTabList->a[] of table being read */
@@ -151,8 +150,8 @@ void sqlite3AuthRead(
   int iCol;             /* Index of column in table */
 
   assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
-  assert( !IN_RENAME_OBJECT || db->xAuth==0 );
-  if( db->xAuth==0 ) return;
+  assert( !IN_RENAME_OBJECT );
+  assert( pParse->db->xAuth!=0 );
   iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
     /* An attempt to read a column out of a subquery or other
@@ -164,7 +163,7 @@ void sqlite3AuthRead(
     pTab = pParse->pTriggerTab;
   }else{
     assert( pTabList );
-    for(iSrc=0; ALWAYS(iSrc<pTabList->nSrc); iSrc++){
+    for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
       if( pExpr->iTable==pTabList->a[iSrc].iCursor ){
         pTab = pTabList->a[iSrc].pTab;
         break;
@@ -172,7 +171,7 @@ void sqlite3AuthRead(
     }
   }
   iCol = pExpr->iColumn;
-  if( NEVER(pTab==0) ) return;
+  if( pTab==0 ) return;
 
   if( iCol>=0 ){
     assert( iCol<pTab->nCol );
@@ -183,7 +182,7 @@ void sqlite3AuthRead(
   }else{
     zCol = "ROWID";
   }
-  assert( iDb>=0 && iDb<db->nDb );
+  assert( iDb>=0 && iDb<pParse->db->nDb );
   if( SQLITE_IGNORE==sqlite3AuthReadCol(pParse, pTab->zName, zCol, iDb) ){
     pExpr->op = TK_NULL;
   }
@@ -209,11 +208,7 @@ int sqlite3AuthCheck(
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
   assert( !IN_RENAME_OBJECT || db->xAuth==0 );
-  if( db->init.busy || IN_SPECIAL_PARSE ){
-    return SQLITE_OK;
-  }
-
-  if( db->xAuth==0 ){
+  if( db->xAuth==0 || db->init.busy || IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }
 

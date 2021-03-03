@@ -40,7 +40,7 @@ do_execsql_test 1.1 {
 # slightly different - it rejects the change and rolls back the transaction.
 do_catchsql_test 1.2 {
   ALTER TABLE t1 RENAME TO t1new;
-} {1 {no such column: t1.a}}
+} {1 {error in table t1new after rename: no such column: t1.a}}
 
 do_execsql_test 1.3 {
   CREATE TABLE t3(c, d);
@@ -59,7 +59,7 @@ do_execsql_test 1.4 {
 
 do_catchsql_test 1.3 {
   ALTER TABLE t2 RENAME TO t2new;
-} {1 {no such column: t2.b}}
+} {1 {error in index t2expr after rename: no such column: t2.b}}
 do_execsql_test 1.4 {
   SELECT sql FROM sqlite_master
 } {
