@@ -1024,7 +1024,7 @@ void sqlite3FkCheck(
     ** child table as a SrcList for sqlite3WhereBegin() */
     pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( pSrc ){
-      struct SrcList_item *pItem = pSrc->a;
+      SrcItem *pItem = pSrc->a;
       pItem->pTab = pFKey->pFrom;
       pItem->zName = pFKey->pFrom->zName;
       pItem->pTab->nTabRef++;
@@ -1112,7 +1112,9 @@ u32 sqlite3FkOldmask(
 **
 ** For an UPDATE, this function returns 2 if:
 **
-**   * There are any FKs for which pTab is the child and the parent table, or
+**   * There are any FKs for which pTab is the child and the parent table
+**     and any FK processing at all is required (even of a different FK), or
+**
 **   * the UPDATE modifies one or more parent keys for which the action is
 **     not "NO ACTION" (i.e. is CASCADE, SET DEFAULT or SET NULL).
 **
@@ -1124,13 +1126,14 @@ int sqlite3FkRequired(
   int *aChange,                   /* Non-NULL for UPDATE operations */
   int chngRowid                   /* True for UPDATE that affects rowid */
 ){
-  int eRet = 0;
+  int eRet = 1;                   /* Value to return if bHaveFK is true */
+  int bHaveFK = 0;                /* If FK processing is required */
   if( pParse->db->flags&SQLITE_ForeignKeys ){
     if( !aChange ){
       /* A DELETE operation. Foreign key processing is required if the 
       ** table in question is either the child or parent table for any 
       ** foreign key constraint.  */
-      eRet = (sqlite3FkReferences(pTab) || pTab->pFKey);
+      bHaveFK = (sqlite3FkReferences(pTab) || pTab->pFKey);
     }else{
       /* This is an UPDATE. Foreign key processing is only required if the
       ** operation modifies one or more child or parent key columns. */
@@ -1138,9 +1141,9 @@ int sqlite3FkRequired(
 
       /* Check if any child key columns are being modified. */
       for(p=pTab->pFKey; p; p=p->pNextFrom){
-        if( 0==sqlite3_stricmp(pTab->zName, p->zTo) ) return 2;
         if( fkChildIsModified(pTab, p, aChange, chngRowid) ){
-          eRet = 1;
+          if( 0==sqlite3_stricmp(pTab->zName, p->zTo) ) eRet = 2;
+          bHaveFK = 1;
         }
       }
 
@@ -1148,12 +1151,12 @@ int sqlite3FkRequired(
       for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
         if( fkParentIsModified(pTab, p, aChange, chngRowid) ){
           if( p->aAction[1]!=OE_None ) return 2;
-          eRet = 1;
+          bHaveFK = 1;
         }
       }
     }
   }
-  return eRet;
+  return bHaveFK ? eRet : 0;
 }
 
 /*
@@ -1352,7 +1355,7 @@ static Trigger *fkActionTrigger(
 
     switch( action ){
       case OE_Restrict:
-        pStep->op = TK_SELECT; 
+        pStep->op = TK_SELECT;
         break;
       case OE_Cascade: 
         if( !pChanges ){ 

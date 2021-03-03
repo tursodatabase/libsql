@@ -22,7 +22,7 @@
 ** Walk all expressions linked into the list of Window objects passed
 ** as the second argument.
 */
-static int walkWindowList(Walker *pWalker, Window *pList){
+static int walkWindowList(Walker *pWalker, Window *pList, int bOneOnly){
   Window *pWin;
   for(pWin=pList; pWin; pWin=pWin->pNextWin){
     int rc;
@@ -41,6 +41,7 @@ static int walkWindowList(Walker *pWalker, Window *pList){
     if( NEVER(rc) ) return WRC_Abort;
     rc = sqlite3WalkExpr(pWalker, pWin->pEnd);
     if( NEVER(rc) ) return WRC_Abort;
+    if( bOneOnly ) break;
   }
   return WRC_Continue;
 }
@@ -88,7 +89,7 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
         }
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( ExprHasProperty(pExpr, EP_WinFunc) ){
-          if( walkWindowList(pWalker, pExpr->y.pWin) ) return WRC_Abort;
+          if( walkWindowList(pWalker, pExpr->y.pWin, 1) ) return WRC_Abort;
         }
 #endif
       }
@@ -135,7 +136,7 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
     if( pParse && IN_RENAME_OBJECT ){
       /* The following may return WRC_Abort if there are unresolvable
       ** symbols (e.g. a table that does not exist) in a window definition. */
-      int rc = walkWindowList(pWalker, p->pWinDefn);
+      int rc = walkWindowList(pWalker, p->pWinDefn, 0);
       return rc;
     }
   }
@@ -153,7 +154,7 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
 int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   SrcList *pSrc;
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
 
   pSrc = p->pSrc;
   if( pSrc ){

@@ -111,7 +111,10 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
         }
         sqlite3_str_appendf(&x, ")");
       }
-      sqlite3_str_appendf(&x, " AS");
+      if( pCte->pUse ){
+        sqlite3_str_appendf(&x, " (pUse=0x%p, nUse=%d)", pCte->pUse,
+                 pCte->pUse->nUse);
+      }
       sqlite3StrAccumFinish(&x);
       sqlite3TreeViewItem(pView, zLine, i<pWith->nCte-1);
       sqlite3TreeViewSelect(pView, pCte->pSelect, 0);
@@ -127,7 +130,7 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
 void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
   int i;
   for(i=0; i<pSrc->nSrc; i++){
-    const struct SrcList_item *pItem = &pSrc->a[i];
+    const SrcItem *pItem = &pSrc->a[i];
     StrAccum x;
     char zLine[100];
     sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
@@ -149,6 +152,9 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     }
     if( pItem->fg.fromDDL ){
       sqlite3_str_appendf(&x, " DDL");
+    }
+    if( pItem->fg.isCte ){
+      sqlite3_str_appendf(&x, " CteUse=0x%p", pItem->u2.pCteUse);
     }
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1); 

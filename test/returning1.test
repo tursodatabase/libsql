@@ -1,0 +1,87 @@
+# 2021-01-28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is the new RETURNING clause
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix returning1
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c DEFAULT 'pax');
+  INSERT INTO t1(b) VALUES(10),('happy'),(NULL) RETURNING a,b,c;
+} {1 10 pax 2 happy pax 3 {} pax}
+do_execsql_test 1.1 {
+  SELECT * FROM t1;
+} {1 10 pax 2 happy pax 3 {} pax}
+do_execsql_test 1.2 {
+  INSERT INTO t1(b,c) VALUES(5,99) RETURNING b,c,a,rowid;
+} {5 99 4 4}
+do_execsql_test 1.3 {
+  SELECT * FROM t1;
+} {1 10 pax 2 happy pax 3 {} pax 4 5 99}
+do_execsql_test 1.4 {
+  INSERT INTO t1 DEFAULT VALUES RETURNING *;
+} {5 {} pax}
+do_execsql_test 1.5 {
+  SELECT * FROM t1;
+} {1 10 pax 2 happy pax 3 {} pax 4 5 99 5 {} pax}
+do_execsql_test 1.6 {
+  CREATE TABLE t2(x,y,z);
+  INSERT INTO t2 VALUES(11,12,13),(21,'b','c'),(31,'b-value',4.75);
+}
+do_execsql_test 1.7 {
+  INSERT INTO t1 SELECT * FROM t2 RETURNING *;
+} {11 12 13 21 b c 31 b-value 4.75}
+do_execsql_test 1.8 {
+  SELECT *, '|' FROM t1;
+} {1 10 pax | 2 happy pax | 3 {} pax | 4 5 99 | 5 {} pax | 11 12 13 | 21 b c | 31 b-value 4.75 |}
+
+do_execsql_test 2.1 {
+  UPDATE t1 SET c='bellum' WHERE c='pax' RETURNING rowid, b, '|';
+} {1 10 | 2 happy | 3 {} | 5 {} |}
+do_execsql_test 2.2 {
+  SELECT *, '|' FROM t1;
+} {1 10 bellum | 2 happy bellum | 3 {} bellum | 4 5 99 | 5 {} bellum | 11 12 13 | 21 b c | 31 b-value 4.75 |}
+
+do_execsql_test 3.1 {
+  DELETE FROM t1 WHERE c='bellum' RETURNING rowid, *, '|';
+} {1 1 10 bellum | 2 2 happy bellum | 3 3 {} bellum | 5 5 {} bellum |}
+do_execsql_test 3.2 {
+  SELECT *, '|' FROM t1;
+} {4 5 99 | 11 12 13 | 21 b c | 31 b-value 4.75 |}
+
+do_execsql_test 4.1 {
+  CREATE TABLE t4(a INT, b INT DEFAULT 1234, c INT DEFAULT -16);
+  CREATE UNIQUE INDEX t4a ON t4(a);
+  INSERT INTO t4(a,b,c) VALUES(1,2,3);
+} {}
+do_execsql_test 4.2 {
+  INSERT INTO t4(a,b,c) VALUES(1,22,33)
+  ON CONFLICT(a) DO UPDATE SET b=44
+  RETURNING *;
+} {1 44 3}
+do_execsql_test 4.3 {
+  SELECT * FROM t4;
+} {1 44 3}
+do_execsql_test 4.4 {
+  DELETE FROM t4;
+  INSERT INTO t4 VALUES(1,2,3),(4,5,6),(7,8,9);
+} {}
+do_execsql_test 4.5 {
+  INSERT INTO t4(a,b,c) VALUES(2,3,4),(4,5,6),(5,6,7)
+  ON CONFLICT(a) DO UPDATE SET b=100
+  RETURNING *, '|';
+} {2 3 4 | 4 100 6 | 5 6 7 |}
+
+
+finish_test

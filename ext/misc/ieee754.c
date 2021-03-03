@@ -167,6 +167,14 @@ static void ieee754func(
     int isNeg = 0;
     m = sqlite3_value_int64(argv[0]);
     e = sqlite3_value_int64(argv[1]);
+
+    /* Limit the range of e.  Ticket 22dea1cfdb9151e4 2021-03-02 */
+    if( e>10000 ){
+      e = 10000;
+    }else if( e<-10000 ){
+      e = -10000;
+    }
+
     if( m<0 ){
       isNeg = 1;
       m = -m;

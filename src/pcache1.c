@@ -461,6 +461,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     p->page.pExtra = &p[1];
     p->isBulkLocal = 0;
     p->isAnchor = 0;
+    p->pLruPrev = 0;           /* Initializing this saves a valgrind error */
   }
   (*pCache->pnPurgeable)++;
   return p;

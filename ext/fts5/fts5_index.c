@@ -2070,14 +2070,10 @@ static void fts5SegIterNext(
     }else{
       /* The following could be done by calling fts5SegIterLoadNPos(). But
       ** this block is particularly performance critical, so equivalent
-      ** code is inlined. 
-      **
-      ** Later: Switched back to fts5SegIterLoadNPos() because it supports
-      ** detail=none mode. Not ideal.
-      */
+      ** code is inlined.  */
       int nSz;
       assert( p->rc==SQLITE_OK );
-      assert( pIter->iLeafOffset<=pIter->pLeaf->nn );
+      assert_nc( pIter->iLeafOffset<=pIter->pLeaf->nn );
       fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
       pIter->bDel = (nSz & 0x0001);
       pIter->nPos = nSz>>1;
