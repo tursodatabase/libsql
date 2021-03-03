@@ -1131,4 +1131,11 @@ do_execsql_test 17.1 {
   SELECT id FROM t1 WHERE x LIKE 'abc__' ESCAPE '_';
 } {2}
 
+# 2021-02-15 ticket c0aeea67d58ae0fd
+#
+do_execsql_test 17.1 {
+  SELECT 'x' LIKE '%' ESCAPE '_';
+} {1}
+
+
 finish_test

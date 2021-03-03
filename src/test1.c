@@ -6648,7 +6648,7 @@ static int SQLITE_TCLAPI prng_seed(
     Tcl_WrongNumArgs(interp, 1, objv, "SEED ?DB?");
     return TCL_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp,objv[0],&i) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp,objv[1],&i) ) return TCL_ERROR;
   if( objc==3 && getDbPointer(interp, Tcl_GetString(objv[2]), &db) ){
     return TCL_ERROR;
   }

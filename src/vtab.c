@@ -507,7 +507,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 
     sqlite3VdbeAddOp0(v, OP_Expire);
     zWhere = sqlite3MPrintf(db, "name=%Q AND sql=%Q", pTab->zName, zStmt);
-    sqlite3VdbeAddParseSchemaOp(pParse, iDb, zWhere);
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb, zWhere, 0);
     sqlite3DbFree(db, zStmt);
 
     iReg = ++pParse->nMem;
@@ -697,6 +697,7 @@ static int vtabCallConstructor(
             zType[i-1] = '\0';
           }
           pTab->aCol[iCol].colFlags |= COLFLAG_HIDDEN;
+          pTab->tabFlags |= TF_HasHidden;
           oooHidden = TF_OOOHidden;
         }else{
           pTab->tabFlags |= oooHidden;

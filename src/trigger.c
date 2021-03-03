@@ -377,7 +377,7 @@ void sqlite3FinishTrigger(
     sqlite3DbFree(db, z);
     sqlite3ChangeCookie(pParse, iDb);
     sqlite3VdbeAddParseSchemaOp(pParse, iDb,
-        sqlite3MPrintf(db, "type='trigger' AND name='%q'", zName));
+        sqlite3MPrintf(db, "type='trigger' AND name='%q'", zName), 0);
   }
 
   if( db->init.busy ){

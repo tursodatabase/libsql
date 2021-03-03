@@ -163,12 +163,14 @@ void sqlite3FinishCoding(Parse *pParse){
 
       addrRewind =
          sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+      VdbeCoverage(v);
       reg = pReturning->iRetReg;
       for(i=0; i<pReturning->nRetCol; i++){
         sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
       }
       sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
       sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+      VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrRewind);
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
@@ -502,7 +504,7 @@ Table *sqlite3LocateTable(
 Table *sqlite3LocateTableItem(
   Parse *pParse, 
   u32 flags,
-  struct SrcList_item *p
+  SrcItem *p
 ){
   const char *zDb;
   assert( p->pSchema==0 || p->zDatabase==0 );
@@ -1288,6 +1290,7 @@ begin_table_error:
 void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
   if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
     pCol->colFlags |= COLFLAG_HIDDEN;
+    if( pTab ) pTab->tabFlags |= TF_HasHidden;
   }else if( pTab && pCol!=pTab->aCol && (pCol[-1].colFlags & COLFLAG_HIDDEN) ){
     pTab->tabFlags |= TF_OOOHidden;
   }
@@ -2664,7 +2667,7 @@ void sqlite3EndTable(
 
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(pParse, iDb,
-           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName));
+           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -2681,20 +2684,17 @@ void sqlite3EndTable(
     }
     pParse->pNewTable = 0;
     db->mDbFlags |= DBFLAG_SchemaChange;
+  }
 
 #ifndef SQLITE_OMIT_ALTERTABLE
-    if( !p->pSelect ){
-      const char *zName = (const char *)pParse->sNameToken.z;
-      int nName;
-      assert( !pSelect && pCons && pEnd );
-      if( pCons->z==0 ){
-        pCons = pEnd;
-      }
-      nName = (int)((const char *)pCons->z - zName);
-      p->addColOffset = 13 + nName;
+  if( !pSelect && !p->pSelect ){
+    assert( pCons && pEnd );
+    if( pCons->z==0 ){
+      pCons = pEnd;
     }
-#endif
+    p->addColOffset = 13 + (int)(pCons->z - pParse->sNameToken.z);
   }
+#endif
 }
 
 #ifndef SQLITE_OMIT_VIEW
@@ -2885,6 +2885,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       assert( pTable->aCol==0 );
       pTable->nCol = pSelTab->nCol;
       pTable->aCol = pSelTab->aCol;
+      pTable->tabFlags |= (pSelTab->tabFlags & COLFLAG_NOINSERT);
       pSelTab->nCol = 0;
       pSelTab->aCol = 0;
       assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
@@ -4153,7 +4154,7 @@ void sqlite3CreateIndex(
         sqlite3RefillIndex(pParse, pIndex, iMem);
         sqlite3ChangeCookie(pParse, iDb);
         sqlite3VdbeAddParseSchemaOp(pParse, iDb,
-            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
+            sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 0);
         sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
       }
 
@@ -4547,7 +4548,7 @@ SrcList *sqlite3SrcListAppend(
   Token *pTable,      /* Table to append */
   Token *pDatabase    /* Database of the table */
 ){
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   sqlite3 *db;
   assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
   assert( pParse!=0 );
@@ -4588,7 +4589,7 @@ SrcList *sqlite3SrcListAppend(
 */
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   assert(pList || pParse->db->mallocFailed );
   if( pList ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
@@ -4606,7 +4607,7 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
 */
 void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
     if( pItem->zDatabase ) sqlite3DbFreeNN(db, pItem->zDatabase);
@@ -4648,7 +4649,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
   Expr *pOn,              /* The ON clause of a join */
   IdList *pUsing          /* The USING clause of a join */
 ){
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   sqlite3 *db = pParse->db;
   if( !p && (pOn || pUsing) ){
     sqlite3ErrorMsg(pParse, "a JOIN clause is required before %s", 
@@ -4692,7 +4693,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
 void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
   assert( pIndexedBy!=0 );
   if( p && pIndexedBy->n>0 ){
-    struct SrcList_item *pItem;
+    SrcItem *pItem;
     assert( p->nSrc>0 );
     pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
@@ -4722,7 +4723,7 @@ SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
       sqlite3SrcListDelete(pParse->db, p2);
     }else{
       p1 = pNew;
-      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(struct SrcList_item));
+      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(SrcItem));
       sqlite3DbFree(pParse->db, p2);
     }
   }
@@ -4735,7 +4736,7 @@ SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
 */
 void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
   if( p ){
-    struct SrcList_item *pItem = &p->a[p->nSrc-1];
+    SrcItem *pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
     assert( pItem->fg.isTabFunc==0 );
@@ -5232,24 +5233,76 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
 }
 
 #ifndef SQLITE_OMIT_CTE
+/*
+** Create a new CTE object
+*/
+Cte *sqlite3CteNew(
+  Parse *pParse,          /* Parsing context */
+  Token *pName,           /* Name of the common-table */
+  ExprList *pArglist,     /* Optional column name list for the table */
+  Select *pQuery,         /* Query used to initialize the table */
+  u8 eM10d                /* The MATERIALIZED flag */
+){
+  Cte *pNew;
+  sqlite3 *db = pParse->db;
+
+  pNew = sqlite3DbMallocZero(db, sizeof(*pNew));
+  assert( pNew!=0 || db->mallocFailed );
+
+  if( db->mallocFailed ){
+    sqlite3ExprListDelete(db, pArglist);
+    sqlite3SelectDelete(db, pQuery);
+  }else{
+    pNew->pSelect = pQuery;
+    pNew->pCols = pArglist;
+    pNew->zName = sqlite3NameFromToken(pParse->db, pName);
+    pNew->eM10d = eM10d;
+  }
+  return pNew;
+}
+
+/*
+** Clear information from a Cte object, but do not deallocate storage
+** for the object itself.
+*/
+static void cteClear(sqlite3 *db, Cte *pCte){
+  assert( pCte!=0 );
+  sqlite3ExprListDelete(db, pCte->pCols);
+  sqlite3SelectDelete(db, pCte->pSelect);
+  sqlite3DbFree(db, pCte->zName);
+}
+
+/*
+** Free the contents of the CTE object passed as the second argument.
+*/
+void sqlite3CteDelete(sqlite3 *db, Cte *pCte){
+  assert( pCte!=0 );
+  cteClear(db, pCte);
+  sqlite3DbFree(db, pCte);
+}
+
 /* 
 ** This routine is invoked once per CTE by the parser while parsing a 
-** WITH clause. 
+** WITH clause.  The CTE described by teh third argument is added to
+** the WITH clause of the second argument.  If the second argument is
+** NULL, then a new WITH argument is created.
 */
 With *sqlite3WithAdd(
   Parse *pParse,          /* Parsing context */
   With *pWith,            /* Existing WITH clause, or NULL */
-  Token *pName,           /* Name of the common-table */
-  ExprList *pArglist,     /* Optional column name list for the table */
-  Select *pQuery          /* Query used to initialize the table */
+  Cte *pCte               /* CTE to add to the WITH clause */
 ){
   sqlite3 *db = pParse->db;
   With *pNew;
   char *zName;
 
+  if( pCte==0 ){
+    return pWith;
+  }
+
   /* Check that the CTE name is unique within this WITH clause. If
   ** not, store an error in the Parse structure. */
-  zName = sqlite3NameFromToken(pParse->db, pName);
+  zName = pCte->zName;
   if( zName && pWith ){
     int i;
     for(i=0; i<pWith->nCte; i++){
@@ -5268,16 +5321,11 @@ With *sqlite3WithAdd(
   assert( (pNew!=0 && zName!=0) || db->mallocFailed );
 
   if( db->mallocFailed ){
-    sqlite3ExprListDelete(db, pArglist);
-    sqlite3SelectDelete(db, pQuery);
-    sqlite3DbFree(db, zName);
+    sqlite3CteDelete(db, pCte);
     pNew = pWith;
   }else{
-    pNew->a[pNew->nCte].pSelect = pQuery;
-    pNew->a[pNew->nCte].pCols = pArglist;
-    pNew->a[pNew->nCte].zName = zName;
-    pNew->a[pNew->nCte].zCteErr = 0;
-    pNew->nCte++;
+    pNew->a[pNew->nCte++] = *pCte;
+    sqlite3DbFree(db, pCte);
   }
 
   return pNew;
@@ -5290,10 +5338,7 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
   if( pWith ){
     int i;
     for(i=0; i<pWith->nCte; i++){
-      struct Cte *pCte = &pWith->a[i];
-      sqlite3ExprListDelete(db, pCte->pCols);
-      sqlite3SelectDelete(db, pCte->pSelect);
-      sqlite3DbFree(db, pCte->zName);
+      cteClear(db, &pWith->a[i]);
     }
     sqlite3DbFree(db, pWith);
   }

@@ -435,6 +435,7 @@ struct PagerSavepoint {
   Bitvec *pInSavepoint;        /* Set of pages in this savepoint */
   Pgno nOrig;                  /* Original number of pages in file */
   Pgno iSubRec;                /* Index of first record in sub-journal */
+  int bTruncateOnRelease;      /* If stmt journal may be truncated on RELEASE */
 #ifndef SQLITE_OMIT_WAL
   u32 aWalData[WAL_SAVEPOINT_NDATA];        /* WAL savepoint context */
 #endif
@@ -1070,6 +1071,9 @@ static int subjRequiresPage(PgHdr *pPg){
   for(i=0; i<pPager->nSavepoint; i++){
     p = &pPager->aSavepoint[i];
     if( p->nOrig>=pgno && 0==sqlite3BitvecTestNotNull(p->pInSavepoint, pgno) ){
+      for(i=i+1; i<pPager->nSavepoint; i++){
+        pPager->aSavepoint[i].bTruncateOnRelease = 0;
+      }
       return 1;
     }
   }
@@ -6848,6 +6852,7 @@ static SQLITE_NOINLINE int pagerOpenSavepoint(Pager *pPager, int nSavepoint){
     }
     aNew[ii].iSubRec = pPager->nSubRec;
     aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
+    aNew[ii].bTruncateOnRelease = 1;
     if( !aNew[ii].pInSavepoint ){
       return SQLITE_NOMEM_BKPT;
     }
@@ -6929,13 +6934,15 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
     /* If this is a release of the outermost savepoint, truncate 
     ** the sub-journal to zero bytes in size. */
     if( op==SAVEPOINT_RELEASE ){
-      if( nNew==0 && isOpen(pPager->sjfd) ){
+      PagerSavepoint *pRel = &pPager->aSavepoint[nNew];
+      if( pRel->bTruncateOnRelease && isOpen(pPager->sjfd) ){
         /* Only truncate if it is an in-memory sub-journal. */
         if( sqlite3JournalIsInMemory(pPager->sjfd) ){
-          rc = sqlite3OsTruncate(pPager->sjfd, 0);
+          i64 sz = (pPager->pageSize+4)*pRel->iSubRec;
+          rc = sqlite3OsTruncate(pPager->sjfd, sz);
           assert( rc==SQLITE_OK );
         }
-        pPager->nSubRec = 0;
+        pPager->nSubRec = pRel->iSubRec;
       }
     }
     /* Else this is a rollback operation, playback the specified savepoint.

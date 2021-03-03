@@ -471,11 +471,12 @@ void sqlite3VdbeExplainPop(Parse *pParse){
 ** The zWhere string must have been obtained from sqlite3_malloc().
 ** This routine will take ownership of the allocated memory.
 */
-void sqlite3VdbeAddParseSchemaOp(Parse *pParse, int iDb, char *zWhere){
+void sqlite3VdbeAddParseSchemaOp(Parse *pParse, int iDb, char *zWhere, u16 p5){
   Vdbe *p = pParse->pVdbe;
   int j;
   sqlite3SchemaWritable(pParse, iDb);
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
+  sqlite3VdbeChangeP5(p, p5);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
   sqlite3MayAbort(p->pParse);
 }
