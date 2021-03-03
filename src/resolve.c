@@ -807,7 +807,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         anRef[i] = p->nRef;
       }
       sqlite3WalkExpr(pWalker, pExpr->pLeft);
-      if( 0==sqlite3ExprCanBeNull(pExpr->pLeft) ){
+      if( 0==sqlite3ExprCanBeNull(pExpr->pLeft) && !IN_RENAME_OBJECT ){
         if( pExpr->op==TK_NOTNULL ){
           pExpr->u.zToken = "true";
           ExprSetProperty(pExpr, EP_IsTrue);
