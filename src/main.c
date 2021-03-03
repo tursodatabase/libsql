@@ -4080,7 +4080,7 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_OPTIMIZATIONS: {
       sqlite3 *db = va_arg(ap, sqlite3*);
-      db->dbOptFlags = (u16)(va_arg(ap, int) & 0xffff);
+      db->dbOptFlags = va_arg(ap, u32);
       break;
     }
 
@@ -4255,7 +4255,26 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, op, ptr)
+    **
+    **  "ptr" is a pointer to a u32.  
+    **
+    **   op==0       Store the current sqlite3SelectTrace in *ptr
+    **   op==1       Set sqlite3SelectTrace to the value *ptr
+    **   op==3       Store the current sqlite3WhereTrace in *ptr
+    **   op==3       Set sqlite3WhereTrace to the value *ptr
+    */
+    case SQLITE_TESTCTRL_TRACEFLAGS: {
+       int opTrace = va_arg(ap, int);
+       u32 *ptr = va_arg(ap, u32*);
+       switch( opTrace ){
+         case 0:   *ptr = sqlite3SelectTrace;      break;
+         case 1:   sqlite3SelectTrace = *ptr;      break;
+         case 2:   *ptr = sqlite3WhereTrace;       break;
+         case 3:   sqlite3WhereTrace = *ptr;       break;
+       }
+       break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */

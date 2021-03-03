@@ -29,7 +29,7 @@
 **
 */
 Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
-  struct SrcList_item *pItem = pSrc->a;
+  SrcItem *pItem = pSrc->a;
   Table *pTab;
   assert( pItem && pSrc->nSrc>=1 );
   pTab = sqlite3LocateTableItem(pParse, 0, pItem);
@@ -37,9 +37,9 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   pItem->pTab = pTab;
   if( pTab ){
     pTab->nTabRef++;
-  }
-  if( sqlite3IndexedByLookup(pParse, pItem) ){
-    pTab = 0;
+    if( pItem->fg.isIndexedBy && sqlite3IndexedByLookup(pParse, pItem) ){
+      pTab = 0;
+    }
   }
   return pTab;
 }
@@ -207,9 +207,15 @@ Expr *sqlite3LimitWhere(
   /* duplicate the FROM clause as it is needed by both the DELETE/UPDATE tree
   ** and the SELECT subtree. */
   pSrc->a[0].pTab = 0;
-  pSelectSrc = sqlite3SrcListDup(pParse->db, pSrc, 0);
+  pSelectSrc = sqlite3SrcListDup(db, pSrc, 0);
   pSrc->a[0].pTab = pTab;
-  pSrc->a[0].pIBIndex = 0;
+  if( pSrc->a[0].fg.isIndexedBy ){
+    pSrc->a[0].u2.pIBIndex = 0;
+    pSrc->a[0].fg.isIndexedBy = 0;
+    sqlite3DbFree(db, pSrc->a[0].u1.zIndexedBy);
+  }else if( pSrc->a[0].fg.isCte ){
+    pSrc->a[0].u2.pCteUse->nUse++;
+  }
 
   /* generate the SELECT expression tree. */
   pSelect = sqlite3SelectNew(pParse, pEList, pSelectSrc, pWhere, 0 ,0, 
@@ -387,6 +393,7 @@ void sqlite3DeleteFrom(
   if( (db->flags & SQLITE_CountRows)!=0
    && !pParse->nested
    && !pParse->pTriggerTab
+   && !pParse->bReturning
   ){
     memCnt = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, memCnt);
@@ -608,7 +615,7 @@ void sqlite3DeleteFrom(
   ** invoke the callback function.
   */
   if( memCnt ){
-    sqlite3VdbeAddOp2(v, OP_ResultRow, memCnt, 1);
+    sqlite3VdbeAddOp2(v, OP_ChngCntRow, memCnt, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows deleted", SQLITE_STATIC);
   }

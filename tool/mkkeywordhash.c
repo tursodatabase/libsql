@@ -155,10 +155,16 @@ struct Keyword {
 #  define WINDOWFUNC 0x00100000
 #endif
 #ifdef SQLITE_OMIT_GENERATED_COLUMNS
-#  define GENCOL 0
+#  define GENCOL     0
 #else
-#  define GENCOL 0x00200000
+#  define GENCOL     0x00200000
 #endif
+#ifdef SQLITE_OMIT_RETURNING
+#  define RETURNING  0
+#else
+#  define RETURNING  0x00400000
+#endif
+
 
 /*
 ** These are the keywords
@@ -223,7 +229,7 @@ static Keyword aKeywordTable[] = {
   { "FOREIGN",          "TK_FOREIGN",      FKEY,             1      },
   { "FROM",             "TK_FROM",         ALWAYS,           10     },
   { "FULL",             "TK_JOIN_KW",      ALWAYS,           3      },
-  { "GENERATED",        "TK_GENERATED",    GENCOL,           1      },
+  { "GENERATED",        "TK_GENERATED",    ALWAYS,           1      },
   { "GLOB",             "TK_LIKE_KW",      ALWAYS,           3      },
   { "GROUP",            "TK_GROUP",        ALWAYS,           5      },
   { "GROUPS",           "TK_GROUPS",       WINDOWFUNC,       2      },
@@ -249,6 +255,7 @@ static Keyword aKeywordTable[] = {
   { "LIKE",             "TK_LIKE_KW",      ALWAYS,           5      },
   { "LIMIT",            "TK_LIMIT",        ALWAYS,           3      },
   { "MATCH",            "TK_MATCH",        ALWAYS,           2      },
+  { "MATERIALIZED",     "TK_MATERIALIZED", CTE,              12     },
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS,           3      },
   { "NO",               "TK_NO",           FKEY|WINDOWFUNC,  2      },
   { "NOT",              "TK_NOT",          ALWAYS,           10     },
@@ -280,6 +287,7 @@ static Keyword aKeywordTable[] = {
   { "RENAME",           "TK_RENAME",       ALTER,            1      },
   { "REPLACE",          "TK_REPLACE",      CONFLICT,         10     },
   { "RESTRICT",         "TK_RESTRICT",     FKEY,             1      },
+  { "RETURNING",        "TK_RETURNING",    RETURNING,        10     },
   { "RIGHT",            "TK_JOIN_KW",      ALWAYS,           0      },
   { "ROLLBACK",         "TK_ROLLBACK",     ALWAYS,           1      },
   { "ROW",              "TK_ROW",          TRIGGER,          1      },
@@ -381,6 +389,14 @@ static void reorder(int *pFrom){
   reorder(&aKeywordTable[i].iNext);
 }
 
+/* Parameter to the hash function
+*/
+#define HASH_OP ^
+#define HASH_CC '^'
+#define HASH_C0 4
+#define HASH_C1 3
+#define HASH_C2 1
+
 /*
 ** This routine does the work.  The generated code is printed on standard
 ** output.
@@ -411,8 +427,9 @@ int main(int argc, char **argv){
     assert( p->len<sizeof(p->zOrigName) );
     memcpy(p->zOrigName, p->zName, p->len+1);
     totalLen += p->len;
-    p->hash = (charMap(p->zName[0])*4) ^
-              (charMap(p->zName[p->len-1])*3) ^ (p->len*1);
+    p->hash = (charMap(p->zName[0])*HASH_C0) HASH_OP
+              (charMap(p->zName[p->len-1])*HASH_C1) HASH_OP
+              (p->len*HASH_C2);
     p->id = i+1;
   }
 
@@ -648,8 +665,9 @@ int main(int argc, char **argv){
   printf("  int i, j;\n");
   printf("  const char *zKW;\n");
   printf("  if( n>=2 ){\n");
-  printf("    i = ((charMap(z[0])*4) ^ (charMap(z[n-1])*3) ^ n) %% %d;\n",
-          bestSize);
+  printf("    i = ((charMap(z[0])*%d) %c", HASH_C0, HASH_CC);
+  printf(" (charMap(z[n-1])*%d) %c", HASH_C1, HASH_CC);
+  printf(" n*%d) %% %d;\n", HASH_C2, bestSize);
   printf("    for(i=((int)aKWHash[i])-1; i>=0; i=((int)aKWNext[i])-1){\n");
   printf("      if( aKWLen[i]!=n ) continue;\n");
   printf("      zKW = &zKWText[aKWOffset[i]];\n");

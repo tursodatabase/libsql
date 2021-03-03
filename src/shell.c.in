@@ -1085,12 +1085,12 @@ struct ShellState {
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   u8 autoEQPtest;        /* autoEQP is in test mode */
   u8 autoEQPtrace;       /* autoEQP is in trace mode */
-  u8 statsOn;            /* True to display memory stats before each finalize */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
+  unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
@@ -2027,6 +2027,7 @@ static int shell_callback(
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         int w = aExplainWidth[i];
+        if( i==nArg-1 ) w = 0;
         if( azArg[i] && strlenChar(azArg[i])>w ){
           w = strlenChar(azArg[i]);
         }
@@ -2591,7 +2592,7 @@ static int display_stats(
   if( pArg==0 || pArg->out==0 ) return 0;
   out = pArg->out;
 
-  if( pArg->pStmt && (pArg->statsOn & 2) ){
+  if( pArg->pStmt && pArg->statsOn==2 ){
     int nCol, i, x;
     sqlite3_stmt *pStmt = pArg->pStmt;
     char z[100];
@@ -2613,6 +2614,14 @@ static int display_stats(
       utf8_printf(out, "%-36s %s\n", z, sqlite3_column_origin_name(pStmt,i));
 #endif
     }
+  }
+
+  if( pArg->statsOn==3 ){
+    if( pArg->pStmt ){
+      iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
+      raw_printf(pArg->out, "VM-steps: %d\n", iCur);
+    }
+    return 0;
   }
 
   displayStatLine(pArg, "Memory Used:",
@@ -2881,31 +2890,18 @@ static void explain_data_delete(ShellState *p){
 /*
 ** Disable and restore .wheretrace and .selecttrace settings.
 */
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
-extern unsigned int sqlite3_unsupported_selecttrace;
-static int savedSelectTrace;
-#endif
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
-extern int sqlite3WhereTrace;
-static int savedWhereTrace;
-#endif
+static unsigned int savedSelectTrace;
+static unsigned int savedWhereTrace;
 static void disable_debug_trace_modes(void){
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
-  savedSelectTrace = sqlite3_unsupported_selecttrace;
-  sqlite3_unsupported_selecttrace = 0;
-#endif
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
-  savedWhereTrace = sqlite3WhereTrace;
-  sqlite3WhereTrace = 0;
-#endif
+  unsigned int zero = 0;
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &savedSelectTrace);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &zero);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 2, &savedWhereTrace);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &zero);
 }
 static void restore_debug_trace_modes(void){
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
-  sqlite3_unsupported_selecttrace = savedSelectTrace;
-#endif
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
-  sqlite3WhereTrace = savedWhereTrace;
-#endif
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &savedSelectTrace);
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
 }
 
 /* Create the TEMP table used to store parameter bindings */
@@ -4060,7 +4056,11 @@ static const char *(azHelp[]) = {
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
   ".show                    Show the current values for various settings",
-  ".stats ?on|off?          Show stats or turn stats on or off",
+  ".stats ?ARG?             Show stats or turn stats on or off",
+  "   off                      Turn off automatic stat display",
+  "   on                       Turn on automatic stat display",
+  "   stmt                     Show statement stats",
+  "   vmstep                   Show the virtual machine step count only",
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 #endif
@@ -7876,16 +7876,17 @@ static int do_meta_command(char *zLine, ShellState *p){
        int ctrlCode;            /* Integer code for that option */
        const char *zUsage;      /* Usage notes */
     } aCtrl[] = {
-      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
       { "chunk_size",     SQLITE_FCNTL_CHUNK_SIZE,      "SIZE"           },
-   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
-      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
-      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
-   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
-      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+      { "data_version",   SQLITE_FCNTL_DATA_VERSION,    ""               },
       { "has_moved",      SQLITE_FCNTL_HAS_MOVED,       ""               },  
       { "lock_timeout",   SQLITE_FCNTL_LOCK_TIMEOUT,    "MILLISEC"       },
+      { "persist_wal",    SQLITE_FCNTL_PERSIST_WAL,     "[BOOLEAN]"      },
+   /* { "pragma",         SQLITE_FCNTL_PRAGMA,          "NAME ARG"       },*/
+      { "psow",       SQLITE_FCNTL_POWERSAFE_OVERWRITE, "[BOOLEAN]"      },
       { "reserve_bytes",  SQLITE_FCNTL_RESERVE_BYTES,   "[N]"            },
+      { "size_limit",     SQLITE_FCNTL_SIZE_LIMIT,      "[LIMIT]"        },
+      { "tempfilename",   SQLITE_FCNTL_TEMPFILENAME,    ""               },
+   /* { "win32_av_retry", SQLITE_FCNTL_WIN32_AV_RETRY,  "COUNT DELAY"    },*/
     };
     int filectrl = -1;
     int iCtrl = -1;
@@ -7972,6 +7973,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           isOk = 1;
           break;
         }
+        case SQLITE_FCNTL_DATA_VERSION:
         case SQLITE_FCNTL_HAS_MOVED: {
           int x;
           if( nArg!=2 ) break;
@@ -8680,9 +8682,9 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif /* SQLITE_DEBUG */
 
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
-    char *zNewFilename;  /* Name of the database file to open */
-    int iName = 1;       /* Index in azArg[] of the filename */
-    int newFlag = 0;     /* True to delete file before opening */
+    char *zNewFilename = 0;  /* Name of the database file to open */
+    int iName = 1;           /* Index in azArg[] of the filename */
+    int newFlag = 0;         /* True to delete file before opening */
     /* Close the existing database */
     session_close_all(p);
     close_db(p->db);
@@ -8694,7 +8696,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->openFlags = 0;
     p->szMax = 0;
     /* Check for command-line arguments */
-    for(iName=1; iName<nArg && azArg[iName][0]=='-'; iName++){
+    for(iName=1; iName<nArg; iName++){
       const char *z = azArg[iName];
       if( optionMatch(z,"new") ){
         newFlag = 1;
@@ -8720,10 +8722,15 @@ static int do_meta_command(char *zLine, ShellState *p){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
         goto meta_command_exit;
+      }else if( zNewFilename ){
+        utf8_printf(stderr, "extra argument: \"%s\"\n", z);
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        zNewFilename = sqlite3_mprintf("%s", z);
       }
     }
     /* If a filename is specified, try to open it first */
-    zNewFilename = nArg>iName ? sqlite3_mprintf("%s", azArg[iName]) : 0;
     if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag ) shellDeleteFile(zNewFilename);
       p->zDbFilename = zNewFilename;
@@ -8746,7 +8753,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
    || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
-    const char *zFile = 0;
+    char *zFile = 0;
     int bTxtMode = 0;
     int i;
     int eMode = 0;
@@ -8776,17 +8783,22 @@ static int do_meta_command(char *zLine, ShellState *p){
           rc = 1;
           goto meta_command_exit;
         }
-      }else if( zFile==0 ){
-        zFile = z;
+      }else if( zFile==0 && eMode!='e' && eMode!='x' ){
+        zFile = sqlite3_mprintf("%s", z);
+        if( zFile[0]=='|' ){
+          while( i+1<nArg ) zFile = sqlite3_mprintf("%z %s", zFile, azArg[++i]);
+          break;
+        }
       }else{
         utf8_printf(p->out,"ERROR: extra parameter: \"%s\".  Usage:\n",
                     azArg[i]);
         showHelp(p->out, azArg[0]);
         rc = 1;
+        sqlite3_free(zFile);
         goto meta_command_exit;
       }
     }
-    if( zFile==0 ) zFile = "stdout";
+    if( zFile==0 ) zFile = sqlite3_mprintf("stdout");
     if( bOnce ){
       p->outCount = 2;
     }else{
@@ -8809,7 +8821,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         newTempFile(p, "txt");
         bTxtMode = 1;
       }
-      zFile = p->zTempFile;
+      sqlite3_free(zFile);
+      zFile = sqlite3_mprintf("%s", p->zTempFile);
     }
 #endif /* SQLITE_NOHAVE_SYSTEM */
     if( zFile[0]=='|' ){
@@ -8841,6 +8854,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
+    sqlite3_free(zFile);
   }else
 
   if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
@@ -9246,11 +9260,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
-    sqlite3_unsupported_selecttrace = nArg>=2 ? (int)integerValue(azArg[1]) : 0xffff;
+    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
+    sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &x);
   }else
-#endif
 
 #if defined(SQLITE_ENABLE_SESSION)
   if( c=='s' && strncmp(azArg[0],"session",n)==0 && n>=3 ){
@@ -9731,6 +9744,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && strncmp(azArg[0], "show", n)==0 ){
     static const char *azBool[] = { "off", "on", "trigger", "full"};
+    const char *zOut;
     int i;
     if( nArg!=1 ){
       raw_printf(stderr, "Usage: .show\n");
@@ -9755,7 +9769,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     utf8_printf(p->out,"%12.12s: ", "rowseparator");
       output_c_string(p->out, p->rowSeparator);
       raw_printf(p->out, "\n");
-    utf8_printf(p->out, "%12.12s: %s\n","stats", azBool[p->statsOn!=0]);
+    switch( p->statsOn ){
+      case 0:  zOut = "off";     break;
+      default: zOut = "on";      break;
+      case 2:  zOut = "stmt";    break;
+      case 3:  zOut = "vmstep";  break;
+    }
+    utf8_printf(p->out, "%12.12s: %s\n","stats", zOut);
     utf8_printf(p->out, "%12.12s: ", "width");
     for (i=0;i<p->nWidth;i++) {
       raw_printf(p->out, "%d ", p->colWidth[i]);
@@ -9767,11 +9787,17 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
     if( nArg==2 ){
-      p->statsOn = (u8)booleanValue(azArg[1]);
+      if( strcmp(azArg[1],"stmt")==0 ){
+        p->statsOn = 2;
+      }else if( strcmp(azArg[1],"vmstep")==0 ){
+        p->statsOn = 3;
+      }else{
+        p->statsOn = (u8)booleanValue(azArg[1]);
+      }
     }else if( nArg==1 ){
       display_stats(p->db, p, 0);
     }else{
-      raw_printf(stderr, "Usage: .stats ?on|off?\n");
+      raw_printf(stderr, "Usage: .stats ?on|off|stmt|vmstep?\n");
       rc = 1;
     }
   }else
@@ -9976,7 +10002,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* sqlite3_test_control(int, db, int) */
         case SQLITE_TESTCTRL_OPTIMIZATIONS:
           if( nArg==3 ){
-            int opt = (int)strtol(azArg[2], 0, 0);
+            unsigned int opt = (unsigned int)strtol(azArg[2], 0, 0);
             rc2 = sqlite3_test_control(testctrl, p->db, opt);
             isOk = 3;
           }
@@ -10305,11 +10331,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
   if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
-    sqlite3WhereTrace = nArg>=2 ? booleanValue(azArg[1]) : 0xff;
+    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
+    sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);
   }else
-#endif
 
   if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
     int j;

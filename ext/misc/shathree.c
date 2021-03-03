@@ -31,7 +31,10 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
+
+#ifndef SQLITE_AMALGAMATION
 typedef sqlite3_uint64 u64;
+#endif /* SQLITE_AMALGAMATION */
 
 /******************************************************************************
 ** The Hash Engine
@@ -621,9 +624,11 @@ static void sha3QueryFunc(
     }
     nCol = sqlite3_column_count(pStmt);
     z = sqlite3_sql(pStmt);
-    n = (int)strlen(z);
-    hash_step_vformat(&cx,"S%d:",n);
-    SHA3Update(&cx,(unsigned char*)z,n);
+    if( z ){
+      n = (int)strlen(z);
+      hash_step_vformat(&cx,"S%d:",n);
+      SHA3Update(&cx,(unsigned char*)z,n);
+    }
 
     /* Compute a hash over the result of the query */
     while( SQLITE_ROW==sqlite3_step(pStmt) ){

@@ -125,7 +125,7 @@ char *sqlite3VdbeExpandSql(
         assert( idx>0 );
       }
       zRawSql += nToken;
-      nextIndex = idx + 1;
+      nextIndex = MAX(idx + 1, nextIndex);
       assert( idx>0 && idx<=p->nVar );
       pVar = &p->aVar[idx-1];
       if( pVar->flags & MEM_Null ){

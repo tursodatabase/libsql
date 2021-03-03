@@ -69,7 +69,9 @@ foreach {tn wo} {
 } {
   reset_db
 
-  do_execsql_test 2.$tn.0 "CREATE TABLE t1(a INTEGER PRIMARY KEY, b) $wo ;"
+  do_execsql_test 2.$tn.0.1 "CREATE TABLE t1(a INTEGER PRIMARY KEY, b) $wo ;"
+  do_execsql_test 2.$tn.0.2 "CREATE TABLE t2(a INTEGER PRIMARY KEY, b) $wo ;"
+  do_execsql_test 2.$tn.0.3 "CREATE TABLE t3(a INTEGER PRIMARY KEY, b) $wo ;"
   
   do_iterator_test 1.1 t1 {
     INSERT INTO t1 VALUES(1, 'two');
@@ -93,6 +95,27 @@ foreach {tn wo} {
     DELETE FROM t1;
   } {
     {DELETE t1 0 X. {i 1 t four} {}}
+  }
+
+  do_execsql_test 2.$tn.5 {
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+    INSERT INTO t1 VALUES(3, 'three');
+  }
+
+  do_iterator_test 2.$tn.6 t2 {
+    INSERT INTO t2 SELECT a, b FROM t1
+  } {
+    {INSERT t2 0 X. {} {i 1 t one}} 
+    {INSERT t2 0 X. {} {i 2 t two}}
+    {INSERT t2 0 X. {} {i 3 t three}}
+  }
+  do_iterator_test 2.$tn.7 t3 {
+    INSERT INTO t3 SELECT * FROM t1
+  } {
+    {INSERT t3 0 X. {} {i 1 t one}} 
+    {INSERT t3 0 X. {} {i 2 t two}}
+    {INSERT t3 0 X. {} {i 3 t three}}
   }
 }
 

@@ -134,8 +134,10 @@ AC_ARG_VAR([TCLLIBDIR], [Where to install tcl plugin])
 if test "x${TCLLIBDIR+set}" != "xset" ; then
   TCLLIBDIR='$(libdir)'
   for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
-    TCLLIBDIR=$i
-    break
+    if test -d $i ; then
+      TCLLIBDIR=$i
+      break
+    fi
   done
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
@@ -584,6 +586,20 @@ if test "${enable_load_extension}" = "yes" ; then
   AC_SEARCH_LIBS(dlopen, dl)
 else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+fi
+
+##########
+# Do we want to support math functions
+#
+AC_ARG_ENABLE(math, 
+AC_HELP_STRING([--disable-math],[Disable math functions]))
+AC_MSG_CHECKING([whether to support math functions])
+if test "$enable_math" = "no"; then
+  AC_MSG_RESULT([no])
+else
+  AC_MSG_RESULT([yes])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
+  AC_SEARCH_LIBS(ceil, m)
 fi
 
 ##########

@@ -356,6 +356,41 @@ static void cksmVerifyFunc(
   sqlite3_result_int(context, memcmp(data+nByte-8,cksum,8)==0);
 }
 
+#ifdef SQLITE_CKSUMVFS_INIT_FUNCNAME
+/*
+** SQL function:    initialize_cksumvfs(SCHEMANAME)
+**
+** This SQL functions (whose name is actually determined at compile-time
+** by the value of the SQLITE_CKSUMVFS_INIT_FUNCNAME macro) invokes:
+**
+**   sqlite3_file_control(db, SCHEMANAME, SQLITE_FCNTL_RESERVE_BYTE, &n);
+**
+** In order to set the reserve bytes value to 8, so that cksumvfs will
+** operation.  This feature is provided (if and only if the
+** SQLITE_CKSUMVFS_INIT_FUNCNAME compile-time option is set to a string
+** which is the name of the SQL function) so as to provide the ability
+** to invoke the file-control in programming languages that lack
+** direct access to the sqlite3_file_control() interface (ex: Java).
+**
+** This interface is undocumented, apart from this comment.  Usage
+** example:
+**
+**    1.  Compile with -DSQLITE_CKSUMVFS_INIT_FUNCNAME="ckvfs_init"
+**    2.  Run:  "SELECT cksum_init('main'); VACUUM;"
+*/
+static void cksmInitFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int nByte = 8;
+  const char *zSchemaName = (const char*)sqlite3_value_text(argv[0]);
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  sqlite3_file_control(db, zSchemaName, SQLITE_FCNTL_RESERVE_BYTES, &nByte);
+  /* Return NULL */
+}
+#endif /* SQLITE_CKSUMBFS_INIT_FUNCNAME */
+
 /*
 ** Close a cksm-file.
 */
@@ -715,7 +750,17 @@ static int cksmGetLastError(sqlite3_vfs *pVfs, int a, char *b){
   return ORIGVFS(pVfs)->xGetLastError(ORIGVFS(pVfs), a, b);
 }
 static int cksmCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *p){
-  return ORIGVFS(pVfs)->xCurrentTimeInt64(ORIGVFS(pVfs), p);
+  sqlite3_vfs *pOrig = ORIGVFS(pVfs);
+  int rc;
+  assert( pOrig->iVersion>=2 );
+  if( pOrig->xCurrentTimeInt64 ){
+    rc = pOrig->xCurrentTimeInt64(pOrig, p);
+  }else{
+    double r;
+    rc = pOrig->xCurrentTime(pOrig, &r);
+    *p = (sqlite3_int64)(r*86400000.0);
+  }
+  return rc;
 }
 static int cksmSetSystemCall(
   sqlite3_vfs *pVfs,
@@ -746,6 +791,11 @@ static int cksmRegisterFunc(
   rc = sqlite3_create_function(db, "verify_checksum", 1,
                    SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                    0, cksmVerifyFunc, 0, 0);
+#ifdef SQLITE_CKSUMVFS_INIT_FUNCNAME
+  (void)sqlite3_create_function(db, SQLITE_CKSUMVFS_INIT_FUNCNAME, 1,
+                   SQLITE_UTF8|SQLITE_DIRECTONLY,
+                   0, cksmInitFunc, 0, 0);
+#endif
   return rc;
 }
 

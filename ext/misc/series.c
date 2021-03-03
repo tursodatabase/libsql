@@ -247,7 +247,8 @@ static int seriesEof(sqlite3_vtab_cursor *cur){
 **    4:    step=VALUE
 **
 ** Also, if bit 8 is set, that means that the series should be output
-** in descending order rather than in ascending order.
+** in descending order rather than in ascending order.  If bit 16 is
+** set, then output must appear in ascending order.
 **
 ** This routine should initialize the cursor and position it so that it
 ** is pointing at the first row, or pointing off the end of the table
@@ -273,7 +274,12 @@ static int seriesFilter(
   }
   if( idxNum & 4 ){
     pCur->iStep = sqlite3_value_int64(argv[i++]);
-    if( pCur->iStep<1 ) pCur->iStep = 1;
+    if( pCur->iStep==0 ){
+      pCur->iStep = 1;
+    }else if( pCur->iStep<0 ){
+      pCur->iStep = -pCur->iStep;
+      if( (idxNum & 16)==0 ) idxNum |= 8;
+    }
   }else{
     pCur->iStep = 1;
   }
@@ -367,7 +373,11 @@ static int seriesBestIndex(
     pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
     pIdxInfo->estimatedRows = 1000;
     if( pIdxInfo->nOrderBy==1 ){
-      if( pIdxInfo->aOrderBy[0].desc ) idxNum |= 8;
+      if( pIdxInfo->aOrderBy[0].desc ){
+        idxNum |= 8;
+      }else{
+        idxNum |= 16;
+      }
       pIdxInfo->orderByConsumed = 1;
     }
   }else{

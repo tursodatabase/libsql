@@ -26,14 +26,13 @@ do_eqp_test 110 {
   SELECT * FROM t1, v4 WHERE t1.a=?1 AND v4.a=t1.a;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
-  |  `--COMPOUND QUERY
-  |     |--LEFT-MOST SUBQUERY
-  |     |  `--SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
-  |     `--UNION ALL
-  |        `--SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (a=?)
-  |--SCAN SUBQUERY xxxxxx
-  `--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  |--SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
+     |  `--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+     `--UNION ALL
+        |--SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (a=?)
+        `--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
 }
 
 # The scan of the t1 table goes first since that enables the ORDER BY

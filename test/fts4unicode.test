@@ -567,4 +567,22 @@ do_execsql_test 11.1 {
   berlin@street sydney.road
 }
 
+# Test for embedded nul characters in fts4 unicode index.
+#
+do_execsql_test 12.0 {
+  CREATE VIRTUAL TABLE t12 USING fts4(tokenize=unicode61);
+  INSERT INTO t12 VALUES('abc' || char(0) || 'def');
+  SELECT hex(CAST(content AS blob)) FROM t12;
+} {61626300646566}
+do_execsql_test 12.1 {
+  INSERT INTO t12(t12) VALUES('integrity-check');
+} {}
+do_execsql_test 12.2 { 
+  CREATE VIRTUAL TABLE t12aux USING fts4aux(t12);
+  SELECT * FROM t12aux;
+} {abc * 1 1 abc 0 1 1}
+do_execsql_test 12.3 { 
+  SELECT hex(CAST(content AS blob)) FROM t12 WHERE t12 MATCH 'abc'
+} {61626300646566}
+
 finish_test

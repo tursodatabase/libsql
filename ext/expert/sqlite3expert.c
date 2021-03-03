@@ -687,7 +687,7 @@ static int idxGetTableInfo(
   char *pCsr = 0;
   int nPk = 0;
 
-  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
+  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_xinfo=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     nByte += 1 + STRLEN(zCol);
@@ -1721,10 +1721,12 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   idxFinalize(&rc, pIndexXInfo);
   idxFinalize(&rc, pWrite);
 
-  for(i=0; i<pCtx->nSlot; i++){
-    sqlite3_free(pCtx->aSlot[i].z);
+  if( pCtx ){
+    for(i=0; i<pCtx->nSlot; i++){
+      sqlite3_free(pCtx->aSlot[i].z);
+    }
+    sqlite3_free(pCtx);
   }
-  sqlite3_free(pCtx);
 
   if( rc==SQLITE_OK ){
     rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_schema", 0, 0, 0);

@@ -1,0 +1,101 @@
+# 2021 February 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing optimizations associated with "IS NULL"
+# and "IS NOT NULL" operators on columns with NOT NULL constraints.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix notnull2
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d NOT NULL);
+
+  WITH x(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<1000
+  )
+  INSERT INTO t1 SELECT i, i FROM x;
+  INSERT INTO t2 SELECT * FROM t1;
+}
+
+proc do_vmstep_test {tn sql nstep {res {}}} {
+  uplevel [list do_execsql_test $tn.0 $sql $res]
+
+  set vmstep [db status vmstep]
+  if {[string range $nstep 0 0]=="+"} {
+    set body "if {$vmstep<$nstep} {
+      error \"got $vmstep, expected more than [string range $nstep 1 end]\"
+    }"
+  } else {
+    set body "if {$vmstep>$nstep} {
+      error \"got $vmstep, expected less than $nstep\"
+    }"
+  }
+
+  # set name "$tn.vmstep=$vmstep,expect=$nstep"
+  set name "$tn.1"
+  uplevel [list do_test $name $body {}]
+}
+
+do_vmstep_test 1.1.1 {
+  SELECT * FROM t1 LEFT JOIN t2 WHERE a=c AND d IS NULL;
+} 100 {}
+do_vmstep_test 1.1.2 {
+  SELECT * FROM t1 LEFT JOIN t2 WHERE a=c AND c IS NULL;
+} +1000 {}
+
+do_vmstep_test 1.2.1 {
+  SELECT * FROM ( SELECT * FROM t2 ) WHERE d IS NULL
+} 100 {}
+do_vmstep_test 1.2.2 {
+  SELECT * FROM ( SELECT * FROM t2 ) WHERE c IS NULL
+} +1000 {}
+
+do_vmstep_test 1.3.1 {
+  SELECT * FROM t2 WHERE d IS NULL
+} 100 {}
+do_vmstep_test 1.3.2 {
+  SELECT * FROM t2 WHERE c IS NULL
+} +1000 {}
+
+do_vmstep_test 1.4.1 {
+  SELECT (d IS NOT NULL) FROM t2 WHERE 0==( d IS NOT NULL )
+} 100 {}
+do_vmstep_test 1.4.2 {
+  SELECT * FROM t2 WHERE 0==( c IS NOT NULL )
+} +1000 {}
+
+do_vmstep_test 1.5.1 {
+  SELECT count(*) FROM t2 WHERE EXISTS(
+    SELECT t2.d IS NULL FROM t1 WHERE t1.a=450
+  )
+} 10000 {1000}
+do_vmstep_test 1.5.2 {
+  SELECT count(*) FROM t2 WHERE EXISTS(
+    SELECT t2.c IS NULL FROM t1 WHERE t1.a=450
+  )
+} +100000 {1000}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE T1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE T3(k, v);
+}
+
+do_execsql_test 2.1 {
+  SELECT * FROM (SELECT a, b FROM t1) LEFT JOIN t3 ON a IS NULL;
+}
+
+finish_test
+

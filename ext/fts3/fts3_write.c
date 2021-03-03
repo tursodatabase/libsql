@@ -4335,17 +4335,20 @@ static int fts3IncrmergeLoad(
           while( reader.aNode && rc==SQLITE_OK ) rc = nodeReaderNext(&reader);
           blobGrowBuffer(&pNode->key, reader.term.n, &rc);
           if( rc==SQLITE_OK ){
-            memcpy(pNode->key.a, reader.term.a, reader.term.n);
+            assert_fts3_nc( reader.term.n>0 || reader.aNode==0 );
+            if( reader.term.n>0 ){
+              memcpy(pNode->key.a, reader.term.a, reader.term.n);
+            }
             pNode->key.n = reader.term.n;
             if( i>0 ){
               char *aBlock = 0;
               int nBlock = 0;
               pNode = &pWriter->aNodeWriter[i-1];
               pNode->iBlock = reader.iChild;
-              rc = sqlite3Fts3ReadBlock(p, reader.iChild, &aBlock, &nBlock, 0);
+              rc = sqlite3Fts3ReadBlock(p, reader.iChild, &aBlock, &nBlock,0);
               blobGrowBuffer(&pNode->block, 
                   MAX(nBlock, p->nNodeSize)+FTS3_NODE_PADDING, &rc
-              );
+                  );
               if( rc==SQLITE_OK ){
                 memcpy(pNode->block.a, aBlock, nBlock);
                 pNode->block.n = nBlock;
