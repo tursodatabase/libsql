@@ -713,19 +713,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   if( !IN_RENAME_OBJECT ){
     sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   }
-
-  if( pParse->pWithToFree ) sqlite3WithDelete(db, pParse->pWithToFree);
   sqlite3DbFree(db, pParse->pVList);
-  while( pParse->pAinc ){
-    AutoincInfo *p = pParse->pAinc;
-    pParse->pAinc = p->pNext;
-    sqlite3DbFreeNN(db, p);
-  }
-  while( pParse->pZombieTab ){
-    Table *p = pParse->pZombieTab;
-    pParse->pZombieTab = p->pNextZombie;
-    sqlite3DeleteTable(db, p);
-  }
   db->pParse = pParse->pParentParse;
   pParse->pParentParse = 0;
   assert( nErr==0 || pParse->rc!=SQLITE_OK );

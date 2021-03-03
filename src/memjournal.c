@@ -70,7 +70,6 @@ struct MemJournal {
   int nChunkSize;                 /* In-memory chunk-size */
 
   int nSpill;                     /* Bytes of data before flushing */
-  int nSize;                      /* Bytes of data currently in memory */
   FileChunk *pFirst;              /* Head of in-memory chunk-list */
   FilePoint endpoint;             /* Pointer to the end of the file */
   FilePoint readpoint;            /* Pointer to the end of the last xRead() */
@@ -131,14 +130,13 @@ static int memjrnlRead(
 /*
 ** Free the list of FileChunk structures headed at MemJournal.pFirst.
 */
-static void memjrnlFreeChunks(MemJournal *p){
+static void memjrnlFreeChunks(FileChunk *pFirst){
   FileChunk *pIter;
   FileChunk *pNext;
-  for(pIter=p->pFirst; pIter; pIter=pNext){
+  for(pIter=pFirst; pIter; pIter=pNext){
     pNext = pIter->pNext;
     sqlite3_free(pIter);
   } 
-  p->pFirst = 0;
 }
 
 /*
@@ -165,7 +163,7 @@ static int memjrnlCreateFile(MemJournal *p){
     }
     if( rc==SQLITE_OK ){
       /* No error has occurred. Free the in-memory buffers. */
-      memjrnlFreeChunks(&copy);
+      memjrnlFreeChunks(copy.pFirst);
     }
   }
   if( rc!=SQLITE_OK ){
@@ -248,7 +246,6 @@ static int memjrnlWrite(
         nWrite -= iSpace;
         p->endpoint.iOffset += iSpace;
       }
-      p->nSize = iAmt + iOfst;
     }
   }
 
@@ -256,22 +253,30 @@ static int memjrnlWrite(
 }
 
 /*
-** Truncate the file.
-**
-** If the journal file is already on disk, truncate it there. Or, if it
-** is still in main memory but is being truncated to zero bytes in size,
-** ignore 
+** Truncate the in-memory file.
 */
 static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
   MemJournal *p = (MemJournal *)pJfd;
-  if( ALWAYS(size==0) ){
-    memjrnlFreeChunks(p);
-    p->nSize = 0;
-    p->endpoint.pChunk = 0;
-    p->endpoint.iOffset = 0;
-    p->readpoint.pChunk = 0;
-    p->readpoint.iOffset = 0;
+  FileChunk *pIter = 0;
+
+  if( size==0 ){
+    memjrnlFreeChunks(p->pFirst);
+    p->pFirst = 0;
+  }else{
+    i64 iOff = p->nChunkSize;
+    for(pIter=p->pFirst; ALWAYS(pIter) && iOff<=size; pIter=pIter->pNext){
+      iOff += p->nChunkSize;
+    }
+    if( ALWAYS(pIter) ){
+      memjrnlFreeChunks(pIter->pNext);
+      pIter->pNext = 0;
+    }
   }
+
+  p->endpoint.pChunk = pIter;
+  p->endpoint.iOffset = size;
+  p->readpoint.pChunk = 0;
+  p->readpoint.iOffset = 0;
   return SQLITE_OK;
 }
 
@@ -280,7 +285,7 @@ static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
 */
 static int memjrnlClose(sqlite3_file *pJfd){
   MemJournal *p = (MemJournal *)pJfd;
-  memjrnlFreeChunks(p);
+  memjrnlFreeChunks(p->pFirst);
   return SQLITE_OK;
 }
 

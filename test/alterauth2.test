@@ -95,4 +95,21 @@ do_auth_test 1.2 {
   {SQLITE_UPDATE sqlite_temp_master sql temp {}}
 }
 
+do_auth_test 1.3 {
+  ALTER TABLE t2 DROP COLUMN c;
+} {
+  {SQLITE_FUNCTION {} like {} {}} 
+  {SQLITE_FUNCTION {} sqlite_drop_column {} {}}
+  {SQLITE_FUNCTION {} sqlite_rename_test {} {}} 
+  {SQLITE_READ sqlite_master name main {}} 
+  {SQLITE_READ sqlite_master sql main {}} 
+  {SQLITE_READ sqlite_master tbl_name main {}} 
+  {SQLITE_READ sqlite_master type main {}} 
+  {SQLITE_READ sqlite_temp_master name temp {}} 
+  {SQLITE_READ sqlite_temp_master sql temp {}} 
+  {SQLITE_READ sqlite_temp_master type temp {}} 
+  {SQLITE_SELECT {} {} {} {}} 
+  {SQLITE_UPDATE sqlite_master sql main {}}
+}
+
 finish_test

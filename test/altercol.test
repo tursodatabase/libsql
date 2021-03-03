@@ -13,8 +13,6 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... RENAME COLUMN ... TO".
 #
-# $Id: alter4.test,v 1.1 2009/02/02 18:03:22 drh Exp $
-#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -804,6 +802,25 @@ do_execsql_test 20.110 {
   SELECT sql FROM sqlite_master WHERE name='t1';
 } {{CREATE TABLE t1(xx UNIQUE,yy UNIQUE,zz UNIQUE,UNIQUE(xx),PRIMARY KEY(yy),UNIQUE(zz))}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 21.0 {
+  CREATE TABLE t1(a, b, c NOT NULL);
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 WHEN new.c IS NOT NULL BEGIN
+    SELECT c NOT NULL FROM t1;
+  END;
+}
+
+do_execsql_test 21.1 {
+  ALTER TABLE t1 RENAME c TO d;
+}
+
+do_execsql_test 21.2 {
+  SELECT sql FROM sqlite_schema WHERE name IS 'tr1'
+} {{CREATE TRIGGER tr1 AFTER INSERT ON t1 WHEN new.d IS NOT NULL BEGIN
+    SELECT d NOT NULL FROM t1;
+  END}
+}
 
 
 finish_test

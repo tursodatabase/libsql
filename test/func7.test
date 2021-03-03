@@ -202,11 +202,11 @@ do_execsql_test func7-mysql-210 {
 #} {0.6931472 NULL}
 # log() means natural logarithm in MySQL
 do_execsql_test func7-mysql-230 {
-   SELECT log(2,65536), log(10,100), quote(log(1,100));
-} {16.0 2.0 Inf}
+   SELECT log(2,65536), log(10,100), quote(log(1,100)), quote(log(0,100));
+} {16.0 2.0 NULL NULL}
 do_execsql_test func7-mysql-240 {
-   SELECT log2(65536), quote(log2(-100));
-} {16.0 NULL}
+   SELECT log2(65536), quote(log2(-100)), quote(log2(0));
+} {16.0 NULL NULL}
 do_execsql_test func7-mysql-250 {
    SELECT round(log10(2),7), log10(100), quote(log10(-100));
 } {0.30103 2.0 NULL}

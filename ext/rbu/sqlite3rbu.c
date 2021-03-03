@@ -4828,22 +4828,24 @@ static int rbuVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
 #endif
 
   assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB) );
-  if( pRbu && (pRbu->eStage==RBU_STAGE_OAL || pRbu->eStage==RBU_STAGE_MOVE) ){
-    /* Magic number 1 is the WAL_CKPT_LOCK lock. Preventing SQLite from
-    ** taking this lock also prevents any checkpoints from occurring. 
-    ** todo: really, it's not clear why this might occur, as 
-    ** wal_autocheckpoint ought to be turned off.  */
+  if( pRbu && (
+       pRbu->eStage==RBU_STAGE_OAL 
+    || pRbu->eStage==RBU_STAGE_MOVE 
+    || pRbu->eStage==RBU_STAGE_DONE
+  )){
+    /* Prevent SQLite from taking a shm-lock on the target file when it 
+    ** is supplying heap memory to the upper layer in place of *-shm 
+    ** segments. */
     if( ofst==WAL_LOCK_CKPT && n==1 ) rc = SQLITE_BUSY;
   }else{
     int bCapture = 0;
     if( pRbu && pRbu->eStage==RBU_STAGE_CAPTURE ){
       bCapture = 1;
     }
-
     if( bCapture==0 || 0==(flags & SQLITE_SHM_UNLOCK) ){
       rc = p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
       if( bCapture && rc==SQLITE_OK ){
-        pRbu->mLock |= (1 << ofst);
+        pRbu->mLock |= ((1<<n) - 1) << ofst;
       }
     }
   }

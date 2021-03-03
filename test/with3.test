@@ -198,4 +198,33 @@ do_execsql_test 4.2 {
   GROUP BY 1;
 } {elvis}
 
+# 2021-02-13
+# Avoid manifesting the same CTE multiple times.
+#
+do_eqp_test 5.1 {
+  WITH RECURSIVE c(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM c WHERE x<1)
+  SELECT x1.x||x2.x||x3.x||x4.x FROM c AS x1, c AS x2, c AS x3, c AS x4
+  ORDER BY 1;
+} {
+  QUERY PLAN
+  |--MATERIALIZE xxxxxx
+  |  |--SETUP
+  |  |  `--SCAN CONSTANT ROW
+  |  `--RECURSIVE STEP
+  |     `--SCAN TABLE c
+  |--SCAN SUBQUERY xxxxxx AS x1
+  |--SCAN SUBQUERY xxxxxx AS x2
+  |--SCAN SUBQUERY xxxxxx AS x3
+  |--SCAN SUBQUERY xxxxxx AS x4
+  `--USE TEMP B-TREE FOR ORDER BY
+}
+do_execsql_test 5.2 {
+  WITH RECURSIVE c(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM c WHERE x<1)
+  SELECT x1.x||x2.x||x3.x||x4.x FROM c AS x1, c AS x2, c AS x3, c AS x4
+  ORDER BY 1;
+} {0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111}
+
+
+
+
 finish_test

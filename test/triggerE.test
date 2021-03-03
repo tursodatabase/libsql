@@ -58,6 +58,8 @@ foreach {tn defn} {
   8 { BEFORE UPDATE ON t1 BEGIN UPDATE t2 SET c = ?; END; }
   9 { BEFORE UPDATE ON t1 BEGIN UPDATE t2 SET c = 1 WHERE d = ?; END; }
  10 { AFTER INSERT ON t1 BEGIN SELECT * FROM pragma_stats(?); END; }
+ 11 { BEFORE INSERT ON t1 BEGIN 
+      INSERT INTO t1 SELECT max(b) OVER(ORDER BY $1) FROM t1; END }
 } {
   catchsql {drop trigger tr1}
   do_catchsql_test 1.1.$tn "CREATE TRIGGER tr1 $defn" [list 1 $errmsg]

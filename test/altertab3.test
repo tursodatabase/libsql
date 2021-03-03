@@ -253,7 +253,7 @@ do_execsql_test 11.1 {
 
 do_catchsql_test 11.2 {
   ALTER TABLE t1 RENAME TO t1x;
-} {1 {error in trigger b: no such table: abc}}
+} {1 {error in trigger b: no such table: main.abc}}
 
 do_execsql_test 11.3 {
   DROP TRIGGER b;
