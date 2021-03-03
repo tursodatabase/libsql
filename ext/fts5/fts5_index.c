@@ -4822,6 +4822,9 @@ static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
     }
 
     pIter->aPoslist = p;
+    if( &pIter->aPoslist[pIter->nPoslist]>pIter->aEof ){
+      pIter->aPoslist = 0;
+    }
   }
 }
 
