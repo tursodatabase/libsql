@@ -1127,7 +1127,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       assert( !ExprHasProperty(pExpr, EP_Reduced) );
       /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
       ** and "x IS NOT FALSE". */
-      if( pRight && (pRight->op==TK_ID || pRight->op==TK_TRUEFALSE) ){
+      if( ALWAYS(pRight) && (pRight->op==TK_ID || pRight->op==TK_TRUEFALSE) ){
         int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
         if( pRight->op==TK_TRUEFALSE ){
