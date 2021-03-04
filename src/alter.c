@@ -1803,6 +1803,7 @@ static void dropColumnFunc(
   db->xAuth = 0;
 #endif
 
+  UNUSED_PARAMETER(NotUsed);
   rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;

@@ -1,5 +1,5 @@
-C Put\sALWAYS()\son\sa\sbranch\sthat\sis\snow\salways\strue\sbecause\sof\schanges\nin\sOOM\sbehavior\sdue\sto\scheck-in\s[9adf6e2469d18bc3].
-D 2021-03-04T18:34:54.016
+C Mark\sthe\sNotUsed\sparameter\sto\sthe\sdropColumnFunc()\sfunction\sas\sunused,\nto\savoid\sa\sharmless\scompiler\swarning.
+D 2021-03-04T19:44:01.487
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c d5fd529509880eade9ea59ddb24a56e9fe0579ee7f2e9e18bac62b7bd05b3a10
+F src/alter.c ba30a3a5678ca1541a5ee743ca065cb288af661105c38f6d7f98ea758a3f86f1
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c 9cbe761e464025694df8e6f6ee4d9f41432c3a255ca9443ccbb4130eeb87cf72
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -1909,7 +1909,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99e6a0f020fadda4011e4ca370d2421dbf2f97f6fb004fcbba9bd6c76faf7a73
-R 9cce259d8f3bbb9344c7275c766df98e
+P 8a1bb9c3e92085fb71d75eb36f64eb85053a4730fd314acd401e7ad32c274748
+R 3f829008faf6bb2f8b2a8086ffa5bb99
 U drh
-Z c0b3e80106ce53c25b91b8940f804e9d
+Z 85d5f9ab82472e3865823562acfd170f
