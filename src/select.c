@@ -3036,10 +3036,8 @@ static int generateOutputSubroutine(
     ** if it is the RHS of a row-value IN operator.
     */
     case SRT_Mem: {
-      if( pParse->nErr==0 ){
-        testcase( pIn->nSdst>1 );
-        sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSDParm, pIn->nSdst);
-      }
+      testcase( pIn->nSdst>1 );
+      sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSDParm, pIn->nSdst);
       /* The LIMIT clause will jump out of the loop for us */
       break;
     }
