@@ -4795,6 +4795,7 @@ void sqlite3KeyInfoUnref(KeyInfo*);
 KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
 KeyInfo *sqlite3KeyInfoOfIndex(Parse*, Index*);
 KeyInfo *sqlite3KeyInfoFromExprList(Parse*, ExprList*, int, int);
+const char *sqlite3SelectOpName(int);
 int sqlite3HasExplicitNulls(Parse*, ExprList*);
 
 #ifdef SQLITE_DEBUG

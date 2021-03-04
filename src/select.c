@@ -1390,7 +1390,7 @@ KeyInfo *sqlite3KeyInfoFromExprList(
 /*
 ** Name of the connection operator, used for error messages.
 */
-static const char *selectOpName(int id){
+const char *sqlite3SelectOpName(int id){
   char *z;
   switch( id ){
     case TK_ALL:       z = "UNION ALL";   break;
@@ -2609,12 +2609,8 @@ static int multiSelect(
   db = pParse->db;
   pPrior = p->pPrior;
   dest = *pDest;
-  if( pPrior->pOrderBy || pPrior->pLimit ){
-    sqlite3ErrorMsg(pParse,"%s clause should come after %s not before",
-      pPrior->pOrderBy!=0 ? "ORDER BY" : "LIMIT", selectOpName(p->op));
-    rc = 1;
-    goto multi_select_end;
-  }
+  assert( pPrior->pOrderBy==0 );
+  assert( pPrior->pLimit==0 );
 
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );  /* The VDBE already created by calling function */
@@ -2757,7 +2753,7 @@ static int multiSelect(
         p->pLimit = 0;
         uniondest.eDest = op;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
-                          selectOpName(p->op)));
+                          sqlite3SelectOpName(p->op)));
         rc = sqlite3Select(pParse, p, &uniondest);
         testcase( rc!=SQLITE_OK );
         assert( p->pOrderBy==0 );
@@ -2833,7 +2829,7 @@ static int multiSelect(
         p->pLimit = 0;
         intersectdest.iSDParm = tab2;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
-                          selectOpName(p->op)));
+                          sqlite3SelectOpName(p->op)));
         rc = sqlite3Select(pParse, p, &intersectdest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -2942,7 +2938,8 @@ void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
     sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
   }else{
     sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
-      " do not have the same number of result columns", selectOpName(p->op));
+      " do not have the same number of result columns",
+      sqlite3SelectOpName(p->op));
   }
 }
 
@@ -3334,7 +3331,7 @@ static int multiSelectOrderBy(
   sqlite3SelectDestInit(&destA, SRT_Coroutine, regAddrA);
   sqlite3SelectDestInit(&destB, SRT_Coroutine, regAddrB);
 
-  ExplainQueryPlan((pParse, 1, "MERGE (%s)", selectOpName(p->op)));
+  ExplainQueryPlan((pParse, 1, "MERGE (%s)", sqlite3SelectOpName(p->op)));
 
   /* Generate a coroutine to evaluate the SELECT statement to the
   ** left of the compound operator - the "A" select.

@@ -497,11 +497,21 @@ cmd ::= select(X).  {
   static void parserDoubleLinkSelect(Parse *pParse, Select *p){
     assert( p!=0 );
     if( p->pPrior ){
-      Select *pNext = 0, *pLoop;
-      int mxSelect, cnt = 0;
-      for(pLoop=p; pLoop; pNext=pLoop, pLoop=pLoop->pPrior, cnt++){
+      Select *pNext = 0, *pLoop = p;
+      int mxSelect, cnt = 1;
+      while(1){
         pLoop->pNext = pNext;
         pLoop->selFlags |= SF_Compound;
+        pNext = pLoop;
+        pLoop = pLoop->pPrior;
+        if( pLoop==0 ) break;
+        cnt++;        
+        if( pLoop->pOrderBy || pLoop->pLimit ){
+          sqlite3ErrorMsg(pParse,"%s clause should come after %s not before",
+             pLoop->pOrderBy!=0 ? "ORDER BY" : "LIMIT",
+             sqlite3SelectOpName(pNext->op));
+          break;
+        }
       }
       if( (p->selFlags & SF_MultiValue)==0 && 
         (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0 &&
