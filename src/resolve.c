@@ -1052,6 +1052,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           assert( pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
             sqlite3WindowUpdate(pParse, pSel ? pSel->pWinDefn : 0, pWin, pDef);
+            if( pParse->db->mallocFailed ) break;
           }
           sqlite3WalkExprList(pWalker, pWin->pPartition);
           sqlite3WalkExprList(pWalker, pWin->pOrderBy);
