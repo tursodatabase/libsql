@@ -83,5 +83,37 @@ do_execsql_test 4.5 {
   RETURNING *, '|';
 } {2 3 4 | 4 100 6 | 5 6 7 |}
 
+#-------------------------------------------------------------------------
+# Test RETURNING on a table with virtual columns.
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(xyz);
+  CREATE TABLE t2(a as (1+1), b);
+}
+
+do_execsql_test 5.1 {
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
+} {}
+
+do_execsql_test 5.2 {
+  INSERT INTO t2(b) VALUES('abc');
+}
+
+do_execsql_test 5.3 {
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
+} {{}}
+
+do_execsql_test 5.4 {
+  INSERT INTO t2(b) VALUES('abc');
+  INSERT INTO t1(xyz) VALUES(1);
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING b;
+} {123}
+
+do_execsql_test 5.5 {
+  INSERT INTO t2(b) VALUES('abc');
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
+} {123}
 
 finish_test
+

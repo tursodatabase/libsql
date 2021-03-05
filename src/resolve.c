@@ -417,6 +417,7 @@ static int lookupName(
         }
         if( iCol<pTab->nCol ){
           cnt++;
+          pMatch = 0;
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==EXCLUDED_TABLE_NUMBER ){
             testcase( iCol==(-1) );
@@ -435,8 +436,8 @@ static int lookupName(
             pExpr->y.pTab = pTab;
             if( pParse->bReturning ){
               eNewExprOp = TK_REGISTER;
-              pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable
-                                + iCol + 1;
+              pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable +
+                 sqlite3TableColumnToStorage(pTab, iCol) + 1;
             }else{
               pExpr->iColumn = (i16)iCol;
               eNewExprOp = TK_TRIGGER;
