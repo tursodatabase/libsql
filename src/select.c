@@ -5254,7 +5254,10 @@ static int selectExpander(Walker *pWalker, Select *p){
         u8 eCodeOrig = pWalker->eCode;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
-        if( pTab->pSelect && (db->flags & SQLITE_EnableView)==0 ){
+        if( pTab->pSelect
+         && (db->flags & SQLITE_EnableView)==0
+         && pTab->pSchema!=db->aDb[1].pSchema
+        ){
           sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
             pTab->zName);
         }
