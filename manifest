@@ -1,5 +1,5 @@
-C Mark\sthe\sNotUsed\sparameter\sto\sthe\sdropColumnFunc()\sfunction\sas\sunused,\nto\savoid\sa\sharmless\scompiler\swarning.
-D 2021-03-04T19:44:01.487
+C Fix\sthe\sprocessing\sof\simplied\sLIMIT\sclauses\swhen\sflattening\sa\scompound\nquery.
+D 2021-03-05T14:08:45.691
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 2b03a80d7c11bb422115dca175a18bf430e9c9dbaa0eee63b758f0c022f8f34f
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c da978d6fdfc9648dda88366e92467a2061945ae42dd102ecd977b04458365abe
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c c213c99cfb85cee59138c18969d656a206a5b7ef0f3a1734b4b617f3cda82f84
+F src/select.c 297724a06fb8ecfcebae72f80c4d0f579bd28d428e011a61a75be366da644323
 F src/shell.c.in af18a2e980aabe739a8188266464866fe7947b100674e07480e7ba3e37595947
 F src/sqlite.h.in 8855a19f37ade8dad189a9e48233a2ebe1b46faf469c7eb0906a654e252dcc57
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1144,7 +1144,7 @@ F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d676
 F test/like.test 0b7b4765ca59d95a1f92dfab9e4d810c9fb8280b5edd6332a01340a20db9e0ed
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 03d1bdf848483b78d2cfd1db283d75c4ec2e37c8b8eccc006813f3978d78fbbd
-F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
+F test/limit.test 350f5d03c29e7dff9a2cde016f84f8d368d40bcd02fa2b2a52fa10c4bf3cbfaf
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/loadext.test faa4f6eed07a5aac35d57fdd7bc07f8fc82464cfd327567c10cf0ba3c86cde04
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
@@ -1909,7 +1909,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a1bb9c3e92085fb71d75eb36f64eb85053a4730fd314acd401e7ad32c274748
-R 3f829008faf6bb2f8b2a8086ffa5bb99
+P 23459071091248e94202e609bb8031c3e34722b8ae8ff5a66851dcc528a2d2c2
+R c1d662d56306e63f65ed27b58c3ee657
 U drh
-Z 85d5f9ab82472e3865823562acfd170f
+Z 4f52a223c05cef0d5932b9c09c091c51
