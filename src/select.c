@@ -2667,7 +2667,7 @@ static int multiSelect(
         pPrior->iOffset = p->iOffset;
         pPrior->pLimit = p->pLimit;
         rc = sqlite3Select(pParse, pPrior, &dest);
-        p->pLimit = 0;
+        pPrior->pLimit = 0;
         if( rc ){
           goto multi_select_end;
         }
@@ -2688,8 +2688,8 @@ static int multiSelect(
         pDelete = p->pPrior;
         p->pPrior = pPrior;
         p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
-        if( pPrior->pLimit
-         && sqlite3ExprIsInteger(pPrior->pLimit->pLeft, &nLimit)
+        if( p->pLimit
+         && sqlite3ExprIsInteger(p->pLimit->pLeft, &nLimit)
          && nLimit>0 && p->nSelectRow > sqlite3LogEst((u64)nLimit) 
         ){
           p->nSelectRow = sqlite3LogEst((u64)nLimit);
@@ -5254,7 +5254,10 @@ static int selectExpander(Walker *pWalker, Select *p){
         u8 eCodeOrig = pWalker->eCode;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
-        if( pTab->pSelect && (db->flags & SQLITE_EnableView)==0 ){
+        if( pTab->pSelect
+         && (db->flags & SQLITE_EnableView)==0
+         && pTab->pSchema!=db->aDb[1].pSchema
+        ){
           sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
             pTab->zName);
         }
