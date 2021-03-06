@@ -1,5 +1,5 @@
-C Ensure\sthe\scorrect\scollation\ssequence\sis\sused\sfor\scomparisons\swhen\sdelimiting\sa\sRANGE\swindow.
-D 2021-03-06T14:46:24.660
+C Limit\sparenthesis\snesting\sdepth\sin\sFTS3\sexpressions\sto\nSQLITE_MAX_EXPR_DEPTH.
+D 2021-03-06T15:13:26.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -88,7 +88,7 @@ F ext/fts3/fts3.c 7b449348226a91cc851fe969f5c1932d4f00c359a32fd17f2afea92bf87514
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 045179f538c478ced266ca14327269cde8ad8d573c5be902230a5ebaa5636c59
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
-F ext/fts3/fts3_expr.c f081e38da641724cd72c20e23b71db2bf4d0c9517c14637442f6910259f11a34
+F ext/fts3/fts3_expr.c 5853cd7a35a79d193614add9b4c461b2d56f465d90899ca4309f05d9d1536558
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
@@ -1909,7 +1909,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 609d94996324f3d3c12bb8cc04a2527d1d86c35cdb2267b5b34053c961158986
-R db89e2b7d3c5e3a81e5723194d4b07e1
-U dan
-Z b79cc13d3c50fae401db3bee2bc7108c
+P 01eae68e85b31b7a9f08733459765bbd9bf9dad592bf64f10fc2fa32e02a89c2
+R 02b7be7b0db655498be572d780795257
+U drh
+Z 8b3ef9b5e97e19a6fa18878f5257830d
