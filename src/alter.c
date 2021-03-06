@@ -1807,7 +1807,7 @@ static void dropColumnFunc(
   rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
-  if( pTab->nCol==1 || iCol>=pTab->nCol ){ 
+  if( pTab==0 || pTab->nCol==1 || iCol>=pTab->nCol ){ 
     /* This can happen if the sqlite_schema table is corrupt */
     rc = SQLITE_CORRUPT_BKPT;
     goto drop_column_done;

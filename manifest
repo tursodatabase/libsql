@@ -1,5 +1,5 @@
-C Modify\sthe\sSQLITE_DBCONFIG_ENABLE_VIEW\soption\sso\sthat\sit\salways\spermits\nTEMP\sviews,\sjust\sas\sSQLITE_DBCONFIG_ENABLE_TRIGGER\salways\spermits\sTEMP\ntriggers.
-D 2021-03-05T18:33:01.185
+C Fix\sa\spossible\sNULL\spointer\sdereference\swhen\sapplying\sa\sDROP\sCOLUMN\sto\sa\ncorrupt\sdatabase\sschema.\s\sdbsqlfuzz\s419aa525df93db6e463772c686ac6da27b46da9e
+D 2021-03-06T13:02:12.531
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c ba30a3a5678ca1541a5ee743ca065cb288af661105c38f6d7f98ea758a3f86f1
+F src/alter.c 99618c6098c02b5e4ca73f8861895ad94539d37103e5058e00b519d9bdf23b5d
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c 9cbe761e464025694df8e6f6ee4d9f41432c3a255ca9443ccbb4130eeb87cf72
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -649,7 +649,7 @@ F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256b
 F test/alterauth2.test 794ac5cef251819fe364b4fe20f12f86e9c5d68070513c7fd26c17cb244c89af
 F test/altercol.test 65eef562f0eea7a1f5ddd4a140c4274c2bfc5712bb2ab2096f738852b0efce86
 F test/altercorrupt.test 584d707a80e106952d6382790c8919bcf9f0db678ed3a1c09fd98b7f9d1d3a10
-F test/alterdropcol.test baad37ff9b07078ea02dcc33dbfb82bde655f3eee5c453e218f69501c36f02ba
+F test/alterdropcol.test 596623cb8a72d9570bfb8417b0f302810efe007873796f03c17a9e9ff28dade1
 F test/alterdropcol2.test 3948c805ca52f4621051b35968c18c09d107eb117e2b656c78cee3b2870650c0
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
@@ -1909,7 +1909,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b41b136fbfc0b56a6948f2306b69fb1d69306adb86674a15a87fe3b52062512
-R 2b8fdfb64aa0287e9dad9e4deafc2264
+P 83dab8b358b6832a221a58e74dd5e99b9cdea4eee65124bb6799881e867d989c
+R 2ab2b4158df160ad1d5d72fc4ecf15ba
 U drh
-Z 2672fe284ccfad8e2f3910b2a1b2092c
+Z 305267156f6c2c6b812a01b9b3e78e2e
