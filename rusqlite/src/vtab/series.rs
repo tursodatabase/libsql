@@ -274,6 +274,7 @@ mod test {
     use crate::ffi;
     use crate::vtab::series;
     use crate::{Connection, Result};
+    use fallible_iterator::FallibleIterator;
 
     #[test]
     fn test_series_module() -> Result<()> {
@@ -294,6 +295,18 @@ mod test {
             assert_eq!(expected, value?);
             expected += 5;
         }
+
+        let mut s =
+            db.prepare("SELECT * FROM generate_series WHERE start=1 AND stop=9 AND step=2")?;
+        let series: Vec<i32> = s.query([])?.map(|r| r.get(0)).collect()?;
+        assert_eq!(vec![1, 3, 5, 7, 9], series);
+        let mut s = db.prepare("SELECT * FROM generate_series LIMIT 5")?;
+        let series: Vec<i32> = s.query([])?.map(|r| r.get(0)).collect()?;
+        assert_eq!(vec![0, 1, 2, 3, 4], series);
+        let mut s = db.prepare("SELECT * FROM generate_series(0,32,5) ORDER BY value DESC")?;
+        let series: Vec<i32> = s.query([])?.map(|r| r.get(0)).collect()?;
+        assert_eq!(vec![30, 25, 20, 15, 10, 5, 0], series);
+
         Ok(())
     }
 }
