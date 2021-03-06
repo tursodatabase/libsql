@@ -1,0 +1,76 @@
+# 2021-03-06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file implements tests for the appendvfs extension.
+#
+# Tests performed:
+# avfs-1. Test that an appendvfs DB can be added to a simple text file.
+# avfs-2. Test that the DB can be read with correct content upon reopen.
+# avfs-3. Test that the simple text file retains its initial text.
+# ...
+# (more to come)
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix avfs
+
+load_static_extension db appendvfs
+
+set ::fa file1.adb
+set ::result {}
+
+do_test 1.0 {
+  set results {}
+  forcedelete $::fa
+  set out [open $::fa wb]
+  set ::tlo { "Just some text," "and more text," "ending at 3 lines." }
+  puts $out [join $::tlo "\n"]
+  close $out
+  set adbSz [file size $::fa]
+  sqlite3 adb "file:$::fa?mode=rwc&vfs=apndvfs" -uri 1
+  adb eval {
+    PRAGMA page_size=512;
+    CREATE TABLE t1(a TEXT);
+    INSERT INTO t1 VALUES ('dog'),('cat');
+    SELECT group_concat(a) as pets FROM t1;
+  } { lappend results $pets }
+  adb close
+  set adaSz [file size $::fa]
+  lappend results "Bytes before/after $adbSz/$adaSz"
+  set ::result [join $results " | "]
+} {dog,cat | Bytes before/after 50/5145}
+
+do_test 2.0 {
+  set results {}
+  sqlite3 adb "file:$::fa?mode=rw&vfs=apndvfs" -uri 1
+  adb eval {
+    SELECT group_concat(a) as pets FROM t1;
+  } { lappend results $pets }
+  adb close
+  set ::result [join $results " | "]
+} {dog,cat}
+
+do_test 3.0 {
+  set in [open $::fa r]
+  set tli [list [gets $in] [gets $in] [gets $in]]
+  close $in
+  if { [join $tli ":"] ne [join $::tlo ":"] } {
+    set ::result "Appendee changed."
+  } else {
+    set ::result "Appendee intact."
+  }
+} {Appendee intact.}
+
+unset ::fa ::tlo ::result
+
+#  forcedelete $::fa
+
+finish_test
