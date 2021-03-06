@@ -493,6 +493,11 @@ static int getNextNode(
     if( *zInput=='(' ){
       int nConsumed = 0;
       pParse->nNest++;
+#if !defined(SQLITE_MAX_EXPR_DEPTH)
+      if( pParse->nNest>1000 ) return SQLITE_ERROR;
+#elif SQLITE_MAX_EXPR_DEPTH>0
+      if( pParse->nNest>SQLITE_MAX_EXPR_DEPTH ) return SQLITE_ERROR;
+#endif
       rc = fts3ExprParse(pParse, zInput+1, nInput-1, ppExpr, &nConsumed);
       *pnConsumed = (int)(zInput - z) + 1 + nConsumed;
       return rc;
