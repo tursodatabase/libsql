@@ -170,6 +170,7 @@ impl RawStatement {
         r
     }
 
+    // does not work for PRAGMA
     #[inline]
     #[cfg(all(feature = "extra_check", feature = "modern_sqlite"))] // 3.7.4
     pub fn readonly(&self) -> bool {
