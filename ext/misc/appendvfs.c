@@ -75,7 +75,9 @@ SQLITE_EXTENSION_INIT1
 /*
 ** Size of storage page upon which to align appendvfs portion.
 */
+#ifndef APND_ROUNDUP_BITS
 #define APND_ROUNDUP_BITS 12
+#endif
 
 /*
 ** Forward declaration of objects used by this utility
@@ -116,7 +118,7 @@ typedef struct ApndFile ApndFile;
  * overwrite an existing (or yet to be written) append mark.
  */
 struct ApndFile {
-  /* IO methods of the underlying file */
+  /* Access to IO methods of the underlying file */
   sqlite3_file base;
   /* File offset to beginning of appended content (unchanging) */
   sqlite3_int64 iPgOne;
@@ -230,33 +232,35 @@ static int apndRead(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  ApndFile *p = (ApndFile *)pFile;
+  ApndFile *paf = (ApndFile *)pFile;
   pFile = ORIGFILE(pFile);
-  return pFile->pMethods->xRead(pFile, zBuf, iAmt, iOfst+p->iPgOne);
+  return pFile->pMethods->xRead(pFile, zBuf, iAmt, paf->iPgOne+iOfst);
 }
 
 /*
 ** Add the append-mark onto what should become the end of the file.
-*  If and only if this succeeds, the ApndFile.iMark is updated.
-*  If it fails, there is little reason to proceed with content writes.
-*  Parameter imoNext is the appendvfs-relative offset of the new mark.
+*  If and only if this succeeds, internal ApndFile.iMark is updated.
+*  Parameter iWriteEnd is the appendvfs-relative offset of the new mark.
 */
 static int apndWriteMark(
-  ApndFile *p,
+  ApndFile *paf,
   sqlite3_file *pFile,
-  sqlite_int64 imoNext
+  sqlite_int64 iWriteEnd
 ){
+  sqlite_int64 iPgOne = paf->iPgOne;
   unsigned char a[APND_MARK_SIZE];
-  int ibs = (APND_MARK_FOS_SZ - 1) * 8;
-  int i, rc;
+  int i = APND_MARK_FOS_SZ;
+  int rc;
+  assert(pFile == ORIGFILE(paf));
   memcpy(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ);
-  for(i=0; i<APND_MARK_FOS_SZ; ibs -= 8, i++){
-    a[APND_MARK_PREFIX_SZ+i] = (p->iPgOne >> ibs) & 0xff;
+  while (--i >= 0) {
+    a[APND_MARK_PREFIX_SZ+i] = (unsigned char)(iPgOne & 0xff);
+    iPgOne >>= 8;
   }
-  imoNext += p->iPgOne;
+  iWriteEnd += paf->iPgOne;
   if( SQLITE_OK==(rc = pFile->pMethods->xWrite
-                  (pFile, a, APND_MARK_SIZE, imoNext)) ){
-    p->iMark = imoNext;
+                  (pFile, a, APND_MARK_SIZE, iWriteEnd)) ){
+    paf->iMark = iWriteEnd;
   }
   return rc;
 }
@@ -270,33 +274,30 @@ static int apndWrite(
   int iAmt,
   sqlite_int64 iOfst
 ){
-  ApndFile *p = (ApndFile *)pFile;
-  sqlite_int64 imoNext = iOfst + iAmt;
-  if( imoNext>=APND_MAX_SIZE ) return SQLITE_FULL;
+  ApndFile *paf = (ApndFile *)pFile;
+  sqlite_int64 iWriteEnd = iOfst + iAmt;
+  if( iWriteEnd>=APND_MAX_SIZE ) return SQLITE_FULL;
   pFile = ORIGFILE(pFile);
-  if( p->iMark < 0 || imoNext + p->iPgOne > p->iMark ){
-    int rc = apndWriteMark(p, pFile, imoNext);
+  /* If append-mark is absent or will be overwritten, write it. */
+  if( paf->iMark < 0 || paf->iPgOne + iWriteEnd > paf->iMark ){
+    int rc = apndWriteMark(paf, pFile, iWriteEnd);
     if( SQLITE_OK!=rc )
       return rc;
   }
-  return pFile->pMethods->xWrite(pFile, zBuf, iAmt, iOfst+p->iPgOne);
+  return pFile->pMethods->xWrite(pFile, zBuf, iAmt, paf->iPgOne+iOfst);
 }
 
 /*
 ** Truncate an apnd-file.
 */
 static int apndTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  int rc;
-  ApndFile *p = (ApndFile *)pFile;
-  sqlite_int64 iomNext = size+p->iPgOne;
+  ApndFile *paf = (ApndFile *)pFile;
   pFile = ORIGFILE(pFile);
-  rc = apndWriteMark(p, pFile, iomNext);
-  if( rc==SQLITE_OK ){
-    rc = pFile->pMethods->xTruncate(pFile, size+p->iPgOne+APND_MARK_SIZE);
-    if( rc==SQLITE_OK )
-      p->iMark = iomNext;
-  }
-  return rc;
+  /* The append mark goes out first so truncate failure does not lose it. */
+  if( SQLITE_OK!=apndWriteMark(paf, pFile, size) )
+    return SQLITE_IOERR;
+  /* Truncate underlying file just past append mark */
+  return pFile->pMethods->xTruncate(pFile, paf->iMark+APND_MARK_SIZE);
 }
 
 /*
@@ -345,12 +346,12 @@ static int apndCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 ** File control method. For custom operations on an apnd-file.
 */
 static int apndFileControl(sqlite3_file *pFile, int op, void *pArg){
-  ApndFile *p = (ApndFile *)pFile;
+  ApndFile *paf = (ApndFile *)pFile;
   int rc;
   pFile = ORIGFILE(pFile);
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
-    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", p->iPgOne, *(char**)pArg);
+    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne, *(char**)pArg);
   }
   return rc;
 }
