@@ -26,11 +26,11 @@
 **
 **  (1)  An empty file is an ordinary database.
 **
-**  (2)  If the file begins with the standard SQLite prefix string
-**       "SQLite format 3", that file is an ordinary database.
-**
 **  (2)  If the file ends with the appendvfs trailer string
 **       "Start-Of-SQLite3-NNNNNNNN" that file is an appended database.
+**
+**  (3)  If the file begins with the standard SQLite prefix string
+**       "SQLite format 3", that file is an ordinary database.
 **
 **  (4)  If none of the above apply and the SQLITE_OPEN_CREATE flag is
 **       set, then a new database is appended to the already existing file.
@@ -44,7 +44,7 @@
 ** database, then keep it in a separate file.
 **
 ** If the file being opened is a plain database (not an appended one), then
-** this shim is a pass-through into the default underlying VFS. (rule 2)
+** this shim is a pass-through into the default underlying VFS. (rule 3)
 **/
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -472,7 +472,7 @@ static int apndIsAppendvfsDatabase(sqlite3_int64 sz, sqlite3_file *pFile){
 */
 static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
   char zHdr[16];
-  if( apndIsAppendvfsDatabase(sz, pFile) /* rule 3 */
+  if( apndIsAppendvfsDatabase(sz, pFile) /* rule 2 */
    || (sz & 0x1ff) != 0
    || SQLITE_OK!=pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), 0)
    || memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))!=0
