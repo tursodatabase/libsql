@@ -1989,6 +1989,8 @@ int main(int argc, char **argv){
           sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 50);
           if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
           setAlarm((iTimeout+999)/1000);
+          /* Enable test functions */
+          sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, db);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
           if( sqlFuzz || vdbeLimitFlag ){
             sqlite3_progress_handler(db, 100000, progressHandler,

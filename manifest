@@ -1,5 +1,5 @@
-C Added\stest/avfs.test\s(missing\sfrom\sbranch\smerge\sfor\ssome\sreason.)
-D 2021-03-08T14:32:26.373
+C Enable\sinternal\sfunctions\sfor\sfuzzcheck.
+D 2021-03-08T16:13:52.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1045,7 +1045,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 95427205d6cedb8fdb95bf7738e95785c790febf782d9c1e6067baaa1adc871d
+F test/fuzzcheck.c f802e8ab0e7ddaf4a22ca6da0da7b8bda2d6f12662ab93c01987aac29c860766
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63fcf301fedf1f3708e2226ed499a53b3e9c1d2cc2b17d4b0b736e36aff0ae74
-R 95e6ca76a30ea77bdd3f5fbf1f80121b
-U larrybr
-Z 49c48cadd3907bebdbe489bc225ec6e8
+P 08fa67053c20d223c9b5334fe2e85adc95588b91046c100d7fe8e8e2535e485f
+R 505188421181a41512f699c1a7f75128
+U drh
+Z d6088f5c0b1c9f2ef01dda3eed5c2329
