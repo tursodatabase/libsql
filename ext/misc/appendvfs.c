@@ -490,8 +490,9 @@ static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
 }
 
 /* Round-up used to get appendvfs portion to begin at a page boundary. */
-#define APND_START_ROUNDUP(fsz, nPageBits) \
-  (((fsz) + ((1<<nPageBits)-1)) & ~(sqlite3_int64)((1<<nPageBits)-1))
+#define APND_ALIGN_MASK(nbits) ((1<<nbits)-1)
+#define APND_START_ROUNDUP(fsz, nbits) \
+ ( ((fsz)+APND_ALIGN_MASK(nbits)) & ~(sqlite3_int64)APND_ALIGN_MASK(nbits) )
 
 /*
 ** Open an apnd file handle.

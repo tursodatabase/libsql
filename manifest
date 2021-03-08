@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sALTER\sTABLE.
-D 2021-03-08T17:22:01.712
+C Add\stests\sfor\stoo-tiny\sappended\sDBs,\sclarify\salign\smacro.
+D 2021-03-08T20:13:43.440
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c cf3366965c99ad1e09a4b75e67b6c73e63bb608089b1da4bc55996854ed7ffd5
+F ext/misc/appendvfs.c c7cd6cbd33965c5f66c4a53f800e9ccd7b5721a4dac65af6d505f1cf0fedf63e
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -699,7 +699,7 @@ F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test a5d72fe8c217cc0ea356dc6fa06a282a8a3fc53aa807709d79dba07a8f248102
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
-F test/avfs.test fcef698d4363182e54f4288c09799313c7b8074db81804a8e0680d4739607ff0
+F test/avfs.test dc53cf4cf6bb4d625dc697f09790dfed8cd217a1a4903c1a2a614f6449b2f57d
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f13e0d12f137cd6b4e83e92bd36652431d8416e6eed4797313e061f2e390d39b
-R f9de7ca9f057059fa9533f91ff672e89
-U dan
-Z e860451ea7454ca8ef2d0c3618d92e27
+P 9c9ba36e859e330c50ed40ede4b93eeb0a5c3337240465d953a7be9115a81390
+R 4d1785eb4283241007d7b3b4a37989ad
+U larrybr
+Z 2a5394d1d6ba424c40bac755be51427c
