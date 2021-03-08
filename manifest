@@ -1,5 +1,5 @@
-C Enable\sinternal\sfunctions\sfor\sfuzzcheck.
-D 2021-03-08T16:13:52.680
+C Fix\sa\sharmless\scompiler\swarning\sin\sappendvfs.c
+D 2021-03-08T16:29:06.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 12744a3cedbe1987ad7bab252f9392e1f265cc34ad266dd7f8f6bbba61c778e5
+F ext/misc/appendvfs.c cf3366965c99ad1e09a4b75e67b6c73e63bb608089b1da4bc55996854ed7ffd5
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 08fa67053c20d223c9b5334fe2e85adc95588b91046c100d7fe8e8e2535e485f
-R 505188421181a41512f699c1a7f75128
+P 79281603b951b438303130820deb6b05baeca366c2cd93be7d8909d3232bcc96
+R e360fdd513841cb62b5b2f6db5e2d59e
 U drh
-Z d6088f5c0b1c9f2ef01dda3eed5c2329
+Z 0f21e4d86da337cea1ec1ab7f49e9219
