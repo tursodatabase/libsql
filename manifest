@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sassert\sin\sRENAME\sCOLUMN.\ndbsqlfuzz\s3f0a7245b69cd08617d7d7781ebaedb0fe765a93.
-D 2021-03-08T17:17:38.979
+C Add\stest\scases\sfor\sALTER\sTABLE.
+D 2021-03-08T17:22:01.712
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -655,7 +655,7 @@ F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e2
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altermalloc3.test 2c7bbd8cf3e9c4a91e28675bb62bcc2ef70f227967fa74349f03d9f4642f0615
-F test/altertab.test 6d7bbac2c4a6ef71b775094a3298fa3a92274d95034ee23157ffba92768e47e6
+F test/altertab.test 7691872aadfe00a94b459af9086504bcf399dd936336e486da1b182930744b77
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test 2b82fa2236a3a91553d53ae5555d8e723c7eec174c41f1fa62ff497355398479
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f538961a8058cc327d64c8ec317f1b4f8bbb604f90261160c6c27f26f4800682
-R 97bfa854862dba47ba656835586ffccf
-U drh
-Z e3079ed2e9e97deefa6bfe1e3658f244
+P f13e0d12f137cd6b4e83e92bd36652431d8416e6eed4797313e061f2e390d39b
+R f9de7ca9f057059fa9533f91ff672e89
+U dan
+Z e860451ea7454ca8ef2d0c3618d92e27

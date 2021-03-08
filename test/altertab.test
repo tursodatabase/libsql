@@ -711,5 +711,31 @@ do_execsql_test 23.4 {
   {CREATE VIEW v1 AS SELECT * FROM "idx2" WHERE y='abc'}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 24.1.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    INSERT INTO nosuchtable VALUES(new.a) ON CONFLICT(a) DO NOTHING;
+  END;
+}
+do_catchsql_test 24.1.1 {
+  ALTER TABLE t1 RENAME TO t2;
+} {1 {error in trigger AFTER: no such table: main.nosuchtable}}
+
+reset_db
+do_execsql_test 24.2.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    INSERT INTO v1 VALUES(new.a) ON CONFLICT(a) DO NOTHING;
+  END;
+  CREATE VIEW v1 AS SELECT * FROM nosuchtable;
+}
+do_catchsql_test 24.2.1 {
+  ALTER TABLE t1 RENAME TO t2;
+} {1 {error in trigger AFTER: no such table: main.nosuchtable}}
+
+
 finish_test
 
