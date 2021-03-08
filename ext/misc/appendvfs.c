@@ -21,18 +21,16 @@
 **
 ** When opening a database using this VFS, the connection might treat
 ** the file as an ordinary SQLite database, or it might treat it as a
-** database appended onto some other file.  Here are the rules:
+** database appended onto some other file.  The decision is made by
+** applying the following rules in order:
 **
-**  (1)  When opening a new empty file, that file is treated as an ordinary
-**       database.
+**  (1)  An empty file is an ordinary database.
 **
-**  (2)  When opening a file that ends with the appendvfs trailer string
-**       "Start-Of-SQLite3-NNNNNNNN" that file is treated as an appended
-**       database, even if rule 3 otherwise applies.
+**  (2)  If the file begins with the standard SQLite prefix string
+**       "SQLite format 3", that file is an ordinary database.
 **
-**  (3)  When opening a file that begins with the standard SQLite prefix
-**       string "SQLite format 3", that file is treated as an ordinary
-**       database, unless rule 2 applies.
+**  (2)  If the file ends with the appendvfs trailer string
+**       "Start-Of-SQLite3-NNNNNNNN" that file is an appended database.
 **
 **  (4)  If none of the above apply and the SQLITE_OPEN_CREATE flag is
 **       set, then a new database is appended to the already existing file.
@@ -46,7 +44,7 @@
 ** database, then keep it in a separate file.
 **
 ** If the file being opened is a plain database (not an appended one), then
-** this shim is a pass-through into the default underlying VFS. (rule 3)
+** this shim is a pass-through into the default underlying VFS. (rule 2)
 **/
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -351,7 +349,7 @@ static int apndFileControl(sqlite3_file *pFile, int op, void *pArg){
   pFile = ORIGFILE(pFile);
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
-    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne, *(char**)pArg);
+    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne,*(char**)pArg);
   }
   return rc;
 }
@@ -474,12 +472,15 @@ static int apndIsAppendvfsDatabase(sqlite3_int64 sz, sqlite3_file *pFile){
 */
 static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
   char zHdr[16];
-  if( apndIsAppendvfsDatabase(sz, pFile) /* rule 2 */
-      || (sz & 0x1ff) != 0
-      || SQLITE_OK!=pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), 0)
-      || memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))!=0 )
+  if( apndIsAppendvfsDatabase(sz, pFile) /* rule 3 */
+   || (sz & 0x1ff) != 0
+   || SQLITE_OK!=pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), 0)
+   || memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))!=0
+  ){
     return 0;
-  return 1;
+  }else{
+    return 1;
+  }
 }
 
 /* Round-up used to get appendvfs portion to begin at a page boundary. */
@@ -502,11 +503,8 @@ static int apndOpen(
   int rc;
   sqlite3_int64 sz;
   pSubVfs = ORIGVFS(pVfs);
-  /* The appendvfs is not to be used for auxillary DB files. 
-   * Attempting such will result in simply opening the named
-   * file however the underlying VFS does that.
-   */
   if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
+    /* The appendvfs is not to be used for transient or temporary databases. */
     return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
   }
   p = (ApndFile*)pFile;
