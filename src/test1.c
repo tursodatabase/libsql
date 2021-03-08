@@ -7494,6 +7494,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   Tcl_Obj *CONST objv[]
 ){
   extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_appendvfs_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_carray_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -7523,6 +7524,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
   } aExtension[] = {
     { "amatch",                sqlite3_amatch_init               },
+    { "appendvfs",             sqlite3_appendvfs_init            },
     { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
@@ -7571,7 +7573,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     }else{
       rc = SQLITE_OK;
     }
-    if( rc!=SQLITE_OK || zErrMsg ){
+    if( (rc!=SQLITE_OK && rc!=SQLITE_OK_LOAD_PERMANENTLY) || zErrMsg ){
       Tcl_AppendResult(interp, "initialization of ", zName, " failed: ", zErrMsg,
                        (char*)0);
       sqlite3_free(zErrMsg);
