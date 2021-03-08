@@ -90,6 +90,7 @@ const ZERO_MODULE: ffi::sqlite3_module = unsafe {
 pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab, T> {
     // The xConnect and xCreate methods do the same thing, but they must be
     // different so that the virtual table is not an eponymous virtual table.
+    #[allow(clippy::needless_update)]
     &Module {
         base: ffi::sqlite3_module {
             // We don't use V3
@@ -129,6 +130,7 @@ pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, 
     // A virtual table is eponymous if its xCreate method is the exact same function
     // as the xConnect method For eponymous-only virtual tables, the xCreate
     // method is NULL
+    #[allow(clippy::needless_update)]
     &Module {
         base: ffi::sqlite3_module {
             // We don't use V3
