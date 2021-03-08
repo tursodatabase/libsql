@@ -19,12 +19,18 @@
 # avfs-2.1. Test that the simple text file retains its initial text.
 # avfs-3.1. Test that the appendvfs can grow and shrink, remaining intact.
 # avfs-3.2. Test that appendvfs is intact after grow/shrink/close/reopen.
+# avfs-4.1. Test shell's ability to append to a non-appendvfs file.
+# avfs-4.2. Test shell's ability to append to empty or nonexistent file.
+# avfs-4.3. Test shell's ability to reopen and alter an appendvfs file.
 # ...
 # (more to come)
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix avfs
+set CLI [test_find_cli]
+db close
+forcedelete test.db
 
 load_static_extension db appendvfs
 
@@ -188,8 +194,62 @@ do_test 3.2 {
   set ::result [join $results " | "]
 } {ok}
 
-#forcedelete $::fa $::fd
+do_test 4.1 {
+  set shdo "sh_app1.sql"
+  set shod "sh_app1.adb"
+  forcedelete $shdo $shod
+  set ofd [open $shdo w]
+  puts $ofd ".ar -c"
+  puts $ofd ".tables"
+  puts $ofd ".q"
+  close $ofd
+  set ofd [open $shod wb]
+  puts $ofd "Some text."
+  close $ofd
+  set res [catchcmd "-append -batch -init $shdo $shod" ""]
+  lappend res [fosAvfs $shod]
+  forcedelete $shdo $shod
+  set ::result [join $res " | "]
+} {0 | sqlar | 4096}
 
-#unset ::fa ::fd ::tlo ::result ::randints
+do_test 4.2 {
+  set shdo "sh_app1.sql"
+  set shod "sh_app1.adb"
+  forcedelete $shdo $shod
+  set ofd [open $shdo w]
+  puts $ofd ".ar -c"
+  puts $ofd ".tables"
+  puts $ofd ".q"
+  close $ofd
+  set ofd [open $shod wb]
+  close $ofd
+  set res [catchcmd "-append -batch -init $shdo $shod" ""]
+  lappend res [fosAvfs $shod]
+  forcedelete $shdo ; # Leave $shod for next test.
+  set ::result [join $res " | "]
+} {0 | sqlar | 0}
+
+do_test 4.3 {
+  set shdo "sh_app1.sql"
+  set shod "sh_app1.adb" ; # Same as test 4.2, reusing ADB.
+  forcedelete $shdo
+  set ofd [open $shdo w]
+  puts $ofd ".ar -u $shdo"
+  puts $ofd "select count(*) from sqlar where name = '$shdo';"
+  puts $ofd ".q"
+  close $ofd
+  set res [catchcmd "-append -batch -init $shdo $shod" ""]
+  sqlite3 adb "file:$shod?mode=rw$::vf" -uri 1
+  adb eval {
+    SELECT count(*) as n FROM sqlar
+  } { lappend res $n }
+  adb close
+  forcedelete $shdo $shod;
+  set ::result [join $res " | "]
+} {0 | 1 | 1}
+
+forcedelete $::fa $::fza
+
+unset -nocomplain ::fa ::fza ::tlo ::result ::randints
 
 finish_test
