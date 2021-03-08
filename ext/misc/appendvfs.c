@@ -425,6 +425,10 @@ static int apndUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *pPage){
 ** Try to read the append-mark off the end of a file.  Return the
 ** start of the appended database if the append-mark is present.
 ** If there is no valid append-mark, return -1;
+**
+** An append-mark is only valid if the NNNNNNNN start-of-database offset
+** indicates that the appended database contains at least one page.  The
+** start-of-database value must be a multiple of 512.
 */
 static sqlite3_int64 apndReadMark(sqlite3_int64 sz, sqlite3_file *pFile){
   int rc, i;
@@ -441,6 +445,8 @@ static sqlite3_int64 apndReadMark(sqlite3_int64 sz, sqlite3_file *pFile){
     msbs -= 8;
     iMark |= (sqlite3_int64)a[APND_MARK_PREFIX_SZ+i]<<msbs;
   }
+  if( iMark > (sz - APND_MARK_SIZE - 512) ) return -1;
+  if( iMark & 0x1ff ) return -1;
   return iMark;
 }
 
