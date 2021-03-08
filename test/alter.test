@@ -903,4 +903,16 @@ ifcapable rtree {
   } {1 1.0 2.0 3 1.5 3.5}
 }
 
+# 2021-03-08 dbsqlfuzz 3f0a7245b69cd08617d7d7781ebaedb0fe765a93
+reset_db
+do_catchsql_test alter-18.1 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE log(a INTEGER PRIMARY KEY,b,c);
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO logx(a,b,c) VALUES(new.a,new.b,new.c)
+    ON CONFLICT(a) DO UPDATE SET c=excluded.c, b=new.b;
+  END;
+  ALTER TABLE log RENAME COLUMN a TO x;
+} {1 {error in trigger tr1: no such table: main.logx}}
+
 finish_test

@@ -1241,9 +1241,8 @@ static int renameResolveTrigger(Parse *pParse){
           rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
         }
         assert( !pStep->pUpsert || (!pStep->pWhere && !pStep->pExprList) );
-        if( pStep->pUpsert ){
+        if( pStep->pUpsert && rc==SQLITE_OK ){
           Upsert *pUpsert = pStep->pUpsert;
-          assert( rc==SQLITE_OK );
           pUpsert->pUpsertSrc = pSrc;
           sNC.uNC.pUpsert = pUpsert;
           sNC.ncFlags = NC_UUpsert;
