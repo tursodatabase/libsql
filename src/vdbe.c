@@ -1461,7 +1461,7 @@ case OP_ChngCntRow: {
   if( (rc = sqlite3VdbeCheckFk(p,0))!=SQLITE_OK ){
     goto abort_due_to_error;
   }
-  /* Fall through to the next case, OP_String */
+  /* Fall through to the next case, OP_ResultRow */
   /* no break */ deliberate_fall_through
 }
 

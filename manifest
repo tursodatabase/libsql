@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\sNOT\sNULL\sstrength\sreduction\soptimization.
-D 2021-03-09T19:52:15.121
+C Fix\sa\sbad\scomment\s(copy-paste\serror)\sin\sthe\sbyte\scode\sengine.\s\sNo\scode\schanges.
+D 2021-03-09T20:58:21.447
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c d8d2f2a1247bada7db7acf1f4ae65088bc09f020f4acf15810ef67f4aabe1ce9
+F src/vdbe.c b79b222f07690874d436eef4ad5e76845b2796e7094b1d0545cc94333f0d8e50
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 3df118924e1711f1bbc8e30c46260d0ab6c3b029b32dd411f789111f76434f3c
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c3c8691121e6cb7bfc326212cc81a7472c0e6f22e655ab024bd4bd885e1cd878
-R 5194ad2c2b4aa2abc9c790b24065e147
+P a85d72293914b48edbb39171fd591d37ffb09570d8103140a052203ec71d49ee
+R 455d8b28cdec7687cee589746cd2a762
 U drh
-Z a0573751157ef7d8069d3366c3f1599b
+Z 7eee3c6e11a2a7066a22e79160828d02
