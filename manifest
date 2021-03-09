@@ -1,5 +1,5 @@
-C Math\sfunctions\sare\senabled\sby\sdefault\sin\sthe\smain\sconfigure\sscript.
-D 2021-03-09T16:35:14.946
+C Add\s--enable-math\sto\sthe\samalgamation\sautoconf.\s\sOn\sbe\sdefault.\s\sImproved\nlogging\sof\sthe\samalgamation\sautoconf.
+D 2021-03-09T17:09:00.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -18,7 +18,7 @@ F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a
 F autoconf/Makefile.msc e0f1dafc48d000fd6ddfdb01815271528db55cbc7299ca888df5b93367f0d5a4
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 55be6fc04a5b030b367fe317b72dc8c0eafc4713991fe6182cf647b02fb782cb
+F autoconf/configure.ac a8ba2a9e61216f5093d44f3b7d2cb8fe1890d6b7dc330a02f802d8efaa1fdc79
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c79c6d18dee608e54ae31388b240cc521218309094502d8815111bb4ddf7d9ef
-R f581e1d9050c425139b43d0cdb2da613
+P b7456e0715c63308b7b3acf49eb66ecd947481400d4688ae459e2e1499447bcd
+R 4165f82602a168bcea691e4e1e36ce56
 U drh
-Z bb7c5f3d3cf2818db8710511bff707ec
+Z d31682e574664a952888580a6a26e7e1
