@@ -903,8 +903,8 @@ with_readline_inc
 enable_debug
 enable_amalgamation
 enable_load_extension
-enable_all
 enable_math
+enable_all
 enable_memsys5
 enable_memsys3
 enable_fts3
@@ -1558,8 +1558,8 @@ Optional Features:
                           separately
   --disable-load-extension
                           Disable loading of external extensions
-  --enable-all            Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions
   --disable-math          Disable math functions
+  --enable-all            Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions
   --enable-memsys5        Enable MEMSYS5
   --enable-memsys3        Enable MEMSYS3
   --enable-fts3           Enable the FTS3 extension
@@ -11421,16 +11421,6 @@ else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 
-
-########
-# The --enable-all argument is short-hand to enable
-# multiple extensions.
-# Check whether --enable-all was given.
-if test "${enable_all+set}" = set; then :
-  enableval=$enable_all;
-fi
-
-
 ##########
 # Do we want to support math functions
 #
@@ -11441,7 +11431,10 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support math functions" >&5
 $as_echo_n "checking whether to support math functions... " >&6; }
-if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
+if test "$enable_math" = "no"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
@@ -11501,10 +11494,17 @@ if test "$ac_res" != no; then :
 
 fi
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 fi
+
+
+########
+# The --enable-all argument is short-hand to enable
+# multiple extensions.
+# Check whether --enable-all was given.
+if test "${enable_all+set}" = set; then :
+  enableval=$enable_all;
+fi
+
 
 ##########
 # Do we want to support memsys3 and/or memsys5

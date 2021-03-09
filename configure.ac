@@ -591,26 +591,26 @@ else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 
-
-########
-# The --enable-all argument is short-hand to enable
-# multiple extensions.
-AC_ARG_ENABLE(all, AC_HELP_STRING([--enable-all],
-      [Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions]))
-
 ##########
 # Do we want to support math functions
 #
 AC_ARG_ENABLE(math, 
 AC_HELP_STRING([--disable-math],[Disable math functions]))
 AC_MSG_CHECKING([whether to support math functions])
-if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
+if test "$enable_math" = "no"; then
+  AC_MSG_RESULT([no])
+else
   AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
   AC_SEARCH_LIBS(ceil, m)
-else
-  AC_MSG_RESULT([no])
 fi
+
+
+########
+# The --enable-all argument is short-hand to enable
+# multiple extensions.
+AC_ARG_ENABLE(all, AC_HELP_STRING([--enable-all],
+      [Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions]))
 
 ##########
 # Do we want to support memsys3 and/or memsys5
