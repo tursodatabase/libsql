@@ -1,5 +1,5 @@
-C Extra\scomments\sand\stestcase()\smacros\sassociated\swith\sthe\snew\nsqlite3ParserAddCleanup()\smechanism.\s\sNo\schanges\sto\srelease\sbuilds.
-D 2021-03-09T19:32:37.488
+C Improved\scomments\son\sthe\sNOT\sNULL\sstrength\sreduction\soptimization.
+D 2021-03-09T19:52:15.121
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c e21b54489b5c73b06ada15e6fc79b5c6f64b06701924a6ca98944ae59e06256f
 F src/printf.c 2b03a80d7c11bb422115dca175a18bf430e9c9dbaa0eee63b758f0c022f8f34f
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 688070848f0a0c41bcc545a4b4b052921d9abc29ba3102985d3d6f7595d9637c
+F src/resolve.c d95db73d3e6a5c689e5f6604b4d2521350e45f2a0f0f84f5a2dc2bfee56580a0
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c fc904a7aa7ebfd5c7a57a0141d829c9f5388ac7773e0d1d9668768c1bbc87fc3
 F src/shell.c.in af18a2e980aabe739a8188266464866fe7947b100674e07480e7ba3e37595947
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85d28b52250e1817b722dc10da3b7b73abf7539cbe7aa913b5960ae4da40d5f8
-R d17cbf155a86829dd5e4cb02d43d6be1
+P c3c8691121e6cb7bfc326212cc81a7472c0e6f22e655ab024bd4bd885e1cd878
+R 5194ad2c2b4aa2abc9c790b24065e147
 U drh
-Z 544f2bbbf57a7528504952e032cce28b
+Z a0573751157ef7d8069d3366c3f1599b
