@@ -1,11 +1,11 @@
-C Update\sa\scomment\sin\sbtree.h.
-D 2021-03-09T21:20:12.542
+C Add\sappendvfs.c\sto\sthe\sMSVC\smakefile.
+D 2021-03-09T23:38:27.366
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in fe6cc1db11e02b308f3ab0ec2504344697b9eaaa410fa73f48d16a143462e5d3
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc ad07bbd645132533e1fd7164a03acfa9afecda378b3787c10f62ab4c7c45e6ea
+F Makefile.msc 6b5428cef2af1288e02faeb602dabe68fbf2de7bc8a8e29c7299778ee08cd35c
 F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
 F VERSION 92f3e4c5cdee6f0779aef1eae857dfc21d0eabb1f2af169dc90e63cd76b15bb2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c01745734c7b62a8c792f743aae08dfbb9e047dc92fef8da067fec152b20fd5
-R 331a0797a5699954135584673e7e1dac
-U dan
-Z df8a1530f5f54958bfe061b364cf25e7
+P 9645fe1a050e8b61aea1fba2f142819c387ecb043741392c5719bf7ad303bf8b
+R a7e104100d3c650b7d7704b957240448
+U drh
+Z 30eda141d16052b31d8fd3fdb55fda28
