@@ -6046,6 +6046,7 @@ int sqlite3Select(
       sqlite3ParserAddCleanup(pParse,
         (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
         p->pOrderBy);
+      testcase( pParse->earlyCleanup );
       p->pOrderBy = 0;
     }
     p->selFlags &= ~SF_Distinct;
@@ -6666,6 +6667,7 @@ int sqlite3Select(
     if( pAggInfo ){
       sqlite3ParserAddCleanup(pParse,
           (void(*)(sqlite3*,void*))agginfoFree, pAggInfo);
+      testcase( pParse->earlyCleanup );
     }
     if( db->mallocFailed ){
       goto select_end;

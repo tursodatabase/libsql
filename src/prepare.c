@@ -589,13 +589,21 @@ void sqlite3ParserReset(Parse *pParse){
 ** sqlite3ParserReset(), which reduces the total CPU cycle count.
 **
 ** If a memory allocation error occurs, then the cleanup happens immediately.
-** When eithr SQLITE_DEBUG or SQLITE_COVERAGE_TEST are defined, the
+** When either SQLITE_DEBUG or SQLITE_COVERAGE_TEST are defined, the
 ** pParse->earlyCleanup flag is set in that case.  Calling code show verify
 ** that test cases exist for which this happens, to guard against possible
 ** use-after-free errors following an OOM.  The preferred way to do this is
 ** to immediately follow the call to this routine with:
 **
 **       testcase( pParse->earlyCleanup );
+**
+** This routine returns a copy of its pPtr input (the third parameter)
+** except if an early cleanup occurs, in which case it returns NULL.  So
+** another way to check for early cleanup is to check the return value.
+** Or, stop using the pPtr parameter with this call and use only its
+** return value thereafter.  Something like this:
+**
+**       pObj = sqlite3ParserAddCleanup(pParse, destructor, pObj);
 */
 void *sqlite3ParserAddCleanup(
   Parse *pParse,                      /* Destroy when this Parser finishes */
