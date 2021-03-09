@@ -903,10 +903,10 @@ with_readline_inc
 enable_debug
 enable_amalgamation
 enable_load_extension
+enable_all
 enable_math
 enable_memsys5
 enable_memsys3
-enable_all
 enable_fts3
 enable_fts4
 enable_fts5
@@ -1558,10 +1558,10 @@ Optional Features:
                           separately
   --disable-load-extension
                           Disable loading of external extensions
+  --enable-all            Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions
   --disable-math          Disable math functions
   --enable-memsys5        Enable MEMSYS5
   --enable-memsys3        Enable MEMSYS3
-  --enable-all            Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions
   --enable-fts3           Enable the FTS3 extension
   --enable-fts4           Enable the FTS4 extension
   --enable-fts5           Enable the FTS5 extension
@@ -11251,10 +11251,16 @@ if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking build type" >&5
+$as_echo_n "checking build type... " >&6; }
 if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug" >&5
+$as_echo "debug" >&6; }
 else
   TARGET_DEBUG="-DNDEBUG"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: release" >&5
+$as_echo "release" >&6; }
 fi
 
 
@@ -11415,6 +11421,16 @@ else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 
+
+########
+# The --enable-all argument is short-hand to enable
+# multiple extensions.
+# Check whether --enable-all was given.
+if test "${enable_all+set}" = set; then :
+  enableval=$enable_all;
+fi
+
+
 ##########
 # Do we want to support math functions
 #
@@ -11425,10 +11441,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support math functions" >&5
 $as_echo_n "checking whether to support math functions... " >&6; }
-if test "$enable_math" = "no"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-else
+if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
@@ -11488,6 +11501,9 @@ if test "$ac_res" != no; then :
 
 fi
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 ##########
@@ -11524,15 +11540,6 @@ else
 $as_echo "no" >&6; }
 fi
 
-########
-# The --enable-extensions argument is short-hand to enable
-# multiple extensions.
-# Check whether --enable-all was given.
-if test "${enable_all+set}" = set; then :
-  enableval=$enable_all;
-fi
-
-
 #########
 # See whether we should enable Full Text Search extensions
 # Check whether --enable-fts3 was given.
@@ -11540,15 +11547,26 @@ if test "${enable_fts3+set}" = set; then :
   enableval=$enable_fts3;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support FTS3" >&5
+$as_echo_n "checking whether to support FTS3... " >&6; }
 if test "${enable_fts3}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 # Check whether --enable-fts4 was given.
 if test "${enable_fts4+set}" = set; then :
   enableval=$enable_fts4;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support FTS4" >&5
+$as_echo_n "checking whether to support FTS4... " >&6; }
 if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing log" >&5
 $as_echo_n "checking for library containing log... " >&6; }
@@ -11606,13 +11624,20 @@ if test "$ac_res" != no; then :
 
 fi
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 # Check whether --enable-fts5 was given.
 if test "${enable_fts5+set}" = set; then :
   enableval=$enable_fts5;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support FTS5" >&5
+$as_echo_n "checking whether to support FTS5... " >&6; }
 if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing log" >&5
 $as_echo_n "checking for library containing log... " >&6; }
@@ -11670,6 +11695,9 @@ if test "$ac_res" != no; then :
 
 fi
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########
@@ -11679,8 +11707,15 @@ if test "${enable_json1+set}" = set; then :
   enableval=$enable_json1;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support JSON" >&5
+$as_echo_n "checking whether to support JSON... " >&6; }
 if test "${enable_json1}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########
@@ -11691,8 +11726,15 @@ if test "${enable_update_limit+set}" = set; then :
   enableval=$enable_update_limit;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support LIMIT on UPDATE and DELETE statements" >&5
+$as_echo_n "checking whether to support LIMIT on UPDATE and DELETE statements... " >&6; }
 if test "${enable_update_limit}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########
@@ -11704,9 +11746,16 @@ else
   enable_geopoly=no
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support GEOPOLY" >&5
+$as_echo_n "checking whether to support GEOPOLY... " >&6; }
 if test "${enable_geopoly}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_GEOPOLY"
   enable_rtree=yes
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########
@@ -11716,8 +11765,15 @@ if test "${enable_rtree+set}" = set; then :
   enableval=$enable_rtree;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support RTREE" >&5
+$as_echo_n "checking whether to support RTREE... " >&6; }
 if test "${enable_rtree}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########
@@ -11727,9 +11783,16 @@ if test "${enable_session+set}" = set; then :
   enableval=$enable_session;
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support SESSION" >&5
+$as_echo_n "checking whether to support SESSION... " >&6; }
 if test "${enable_session}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########

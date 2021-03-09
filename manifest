@@ -1,5 +1,5 @@
-C Update\sthe\sauthorizer\sin\sfuzzcheck\sto\salign\swith\sdbsqlfuzz.
-D 2021-03-09T13:12:58.120
+C Improvements\sto\sthe\sconfigure\sscript.\s\sMath\sfunctions\sare\senabled\nby\s--enable-all.
+D 2021-03-09T13:53:39.913
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -34,8 +34,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 91893a81f698778dda4d8fb24bfca606ded31ef02bcfbc2ab072d30fb67138d6 x
-F configure.ac 412b65c6107e41c098ad7f5f2e6a3f74ac02ffc6e92b9a6264b9f1060c235a04
+F configure 93d61f9bf141b9843b827e46d4ea965ece9344ac24cfffcba480d42d96ef62be x
+F configure.ac 839cabc5eb36b510dd9480d2890bee78f2b3db2c794fe03e1284106d299600dc
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html 1bb72ece6271df0d901d233551dd985f2c6ba30d09382cf2d321ed951ab57491
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb40a8dea6afe6890ddda989de83f3d4ae03b112bf78bfc818dfbd57cc5b5b2a
-R 10dcd1428fc8b5891323b2e4e579662a
+P f86d8fae3b29de014d8bfcae38a15bdb15ddceabfcfff7829f3145cfd69dff2a
+R b60d7a43de7f3890003ba8300f69aac6
 U drh
-Z 6571c1c9e872139e19a5c8b59ef2a9a8
+Z 5304f26683ff2b02766a55ec7d7248c3
