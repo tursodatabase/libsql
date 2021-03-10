@@ -33,7 +33,7 @@ source $testdir/tester.tcl
 set ::testprefix avfs
 set CLI [test_find_cli]
 db close
-forcedelete test.db
+# forcedelete test.db
 
 load_static_extension db appendvfs
 
@@ -41,6 +41,16 @@ set ::fa avfs.adb
 set ::fza avfs.sdb
 forcedelete $::fa $::fza
 set ::result {}
+
+proc shellDoesAr {} {
+  set shdo "sh_app1.sql"
+  forcedelete $shdo
+  set fd [open $shdo w]
+  puts $fd ".help\n.q"
+  close $fd
+  set res [catchcmd "-batch -cmd \".read $shdo\""]
+  return [regexp {^.archive} [lindex $res 1]]
+}
 
 set ::vf "&vfs=apndvfs"
 
@@ -200,12 +210,19 @@ do_test 3.2 {
   set ::result [join $results " | "]
 } {ok}
 
+set ::cliDoesAr [shellDoesAr]
+
 do_test 4.1 {
   set shdo "sh_app1.sql"
   set shod "sh_app1.adb"
   forcedelete $shdo $shod
   set ofd [open $shdo w]
-  puts $ofd ".ar -c"
+  if {$::cliDoesAr} {
+    puts $ofd ".ar -c"
+  } else {
+    puts $ofd "pragma page_size=512;"
+    puts $ofd "create table sqlar (a);"
+  }
   puts $ofd ".tables"
   puts $ofd ".q"
   close $ofd
@@ -223,7 +240,12 @@ do_test 4.2 {
   set shod "sh_app1.adb"
   forcedelete $shdo $shod
   set ofd [open $shdo w]
-  puts $ofd ".ar -c"
+  if {$::cliDoesAr} {
+    puts $ofd ".ar -c"
+  } else {
+    puts $ofd "pragma page_size=512;"
+    puts $ofd "create table sqlar (a);"
+  }
   puts $ofd ".tables"
   puts $ofd ".q"
   close $ofd
@@ -240,8 +262,13 @@ do_test 4.3 {
   set shod "sh_app1.adb" ; # Same as test 4.2, reusing ADB.
   forcedelete $shdo
   set ofd [open $shdo w]
-  puts $ofd ".ar -u $shdo"
-  puts $ofd "select count(*) from sqlar where name = '$shdo';"
+  if {$::cliDoesAr} {
+    puts $ofd ".ar -u $shdo"
+    puts $ofd "select count(*) from sqlar where name = '$shdo';"
+  } else {
+    puts $ofd "insert into sqlar values (1);"
+    puts $ofd "select count(*) from sqlar;"
+  }
   puts $ofd ".q"
   close $ofd
   set res [catchcmd "-append -batch -init $shdo $shod" ""]
@@ -296,6 +323,6 @@ do_test 5.2 {
 
 forcedelete $::fa $::fza
 
-unset -nocomplain ::fa ::fza ::tlo ::result ::randints
+unset -nocomplain ::fa ::fza ::tlo ::result ::randints ::cliDoesAr
 
 finish_test
