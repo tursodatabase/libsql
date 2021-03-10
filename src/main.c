@@ -2397,7 +2397,6 @@ int sqlite3_wal_checkpoint_v2(
   sqlite3_mutex_enter(db->mutex);
   if( zDb && zDb[0] ){
     iDb = sqlite3FindDbName(db, zDb);
-    testcase( iDb==SQLITE_MAX_ATTACHED ); /* See forum post a006d86f72 */
   }else{
     iDb = SQLITE_MAX_DB;   /* This means process all schemas */
   }
@@ -2463,6 +2462,8 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
   assert( sqlite3_mutex_held(db->mutex) );
   assert( !pnLog || *pnLog==-1 );
   assert( !pnCkpt || *pnCkpt==-1 );
+  testcase( iDb==SQLITE_MAX_ATTACHED ); /* See forum post a006d86f72 */
+  testcase( iDb==SQLITE_MAX_DB );
 
   for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
     if( i==iDb || iDb==SQLITE_MAX_DB ){

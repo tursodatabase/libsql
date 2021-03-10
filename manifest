@@ -1,5 +1,5 @@
-C Improvement\sto\sthe\sATTACH-abuse\sauthorizer\slogic\sin\sfuzzcheck.
-D 2021-03-10T17:52:59.889
+C Improved\stestcase()\srelated\sthe\sSQLITE_MAX_ATTACHED\svs.\sSQLITE_MAX_DB\sproblem.
+D 2021-03-10T18:21:18.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -506,7 +506,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8942baede303a54ba3b6d06200d5b74c9bc25ababec8a55823e06309748cd4a3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
-F src/main.c 6589cee67a39b2963d7c0834ef81c80fbed762e02633e25041689c7ee7652036
+F src/main.c 2a7ece3a67c646e5fe9984ffe0277d6a76f80ce9715bf2faa591d8cb66b9d913
 F src/malloc.c c1af4ac5a463648cd2953fd4ac679b3ba9022ce5ec794a60806150ad69dfd33a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ab6957a2238a2ab713a50d21dbd9921c944e8141197275bbfe7dae303fee7d0
-R 238c59e570a2c7057b45eb0374388222
+P 88132f698a7a9b7d41dd1dd393592cbda130d2bf1a9fd18c509503e1891b9655
+R ef906d434aa1d09af6a59abed9ad1e8d
 U drh
-Z 1a4dc37d8791bd05f2ae1bef6a480f59
+Z 149fb13e49c444a84e74758dcee8a2bc
