@@ -4864,7 +4864,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 static void sqlite3CodeVerifySchemaAtToplevel(Parse *pToplevel, int iDb){
   assert( iDb>=0 && iDb<pToplevel->db->nDb );
   assert( pToplevel->db->aDb[iDb].pBt!=0 || iDb==1 );
-  assert( iDb<SQLITE_MAX_ATTACHED+2 );
+  assert( iDb<SQLITE_MAX_DB );
   assert( sqlite3SchemaMutexHeld(pToplevel->db, iDb, 0) );
   if( DbMaskTest(pToplevel->cookieMask, iDb)==0 ){
     DbMaskSet(pToplevel->cookieMask, iDb);
