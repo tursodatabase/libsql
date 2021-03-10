@@ -760,10 +760,7 @@ static int block_troublesome_sql(
       oomCounter = atoi(zArg2);
     }
   }else if( eCode==SQLITE_ATTACH ){
-    if( zArg1!=0
-     && zArg1[0]!=0
-     && strcmp(zArg1,":memory:")!=0
-    ){
+    if( zArg1==0 || (zArg1[0]!=0 && strcmp(zArg1,":memory:")!=0) ){
       return SQLITE_DENY;
     }
   }
