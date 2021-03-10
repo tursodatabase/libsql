@@ -1,5 +1,5 @@
-C Do\snot\sconfuse\sthe\sconstant\sSQLITE_MAX_ATTACHED\swith\sthe\smaximum\snumber\sof\nschemas.\s\sAdd\sthe\snew\sSQLITE_MAX_DB\sconstant\sfor\sthe\smaximum\snumber\sof\nschemas.\s\s[forum:/forumpost/a006d86f72|Forum\spost\sa006d86f72].
-D 2021-03-10T16:35:37.194
+C Do\snot\srun\savfs.test\swhen\stesting\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
+D 2021-03-10T17:43:18.428
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -699,7 +699,7 @@ F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test a5d72fe8c217cc0ea356dc6fa06a282a8a3fc53aa807709d79dba07a8f248102
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
-F test/avfs.test 8a645118acb222aa0d055d497bc5e0f6e0ab221dee68f540fb82766e261a08b8
+F test/avfs.test 67a27e590b1baae5249bc857d10814a13231dbe2d624c64f2aa78c4ba85afff9
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c6078ebe797dd2cb6045b5f13e6d92a6b49393ecf96f9fd7222412f5a3eefd5
-R 0c0ae09e7a29c3a68ebdef9283173656
-U drh
-Z 9f5e4ac1ede54e1a34eeed2df795fe80
+P 7b65fb9f7bd616f834633afd64b3448bf9ca2b6e4cc6d6c01e75d1d877c88a79
+R b384c5b91576c59be44e657e1c500b11
+U dan
+Z 42a4775fe609f75933ebf491e0b55c30
