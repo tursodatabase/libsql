@@ -1,5 +1,5 @@
-C Fix\sa\sfew\ssanitizer\scomplaints\sin\sfts5.
-D 2021-03-10T14:57:10.929
+C Fix\stest\sfile\savfs.test\sso\sthat\sit\sworks\swith\sSQLITE_DEFAULT_AUTOVACUUM\sbuilds.\sDo\snot\srun\savfs.test\sunder\stest\spermutation\s"journaltest".
+D 2021-03-10T15:10:20.598
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -699,7 +699,7 @@ F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test a5d72fe8c217cc0ea356dc6fa06a282a8a3fc53aa807709d79dba07a8f248102
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
-F test/avfs.test 3069a5c1db3d8c4a97520bf5a285f621f1869f0e78292fba1633dfe5f74397d9
+F test/avfs.test 8a645118acb222aa0d055d497bc5e0f6e0ab221dee68f540fb82766e261a08b8
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
@@ -1263,7 +1263,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test e02c8a58efca31dfadbd2a0d168e26a542664d4ff31a3d819b80cd55f974c27c
+F test/permutations.test 9c079ee05234f0402393a771b430febbfa69371cb06419f953debfc482c02984
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 50b91bedea9324d3ab48e793f908ee7d2c7dcf84bfa2281e792838be59641ec8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f762d7df2a41a88560a4251d744e0887f42812f8160af4f0129d22a71c0fa48b
-R 47aabc330bb603dfa33b94581f692c43
+P 4fe4fee00e9294fa384bd073ed8e9a2a4ad10dcf653b6ad4851e44a64443ede9
+R 942b97142ffa168ca10cef95138f145e
 U dan
-Z 76b2c0ebf778f1a4d167ebd189e68988
+Z 9a0f01ddaa5a9fb603a53c77d2a064bf

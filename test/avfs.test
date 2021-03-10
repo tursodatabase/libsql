@@ -109,6 +109,7 @@ do_test 1.2 {
   set adbSz [file size $::fa]
   sqlite3 adb "file:$::fa?mode=rwc$::vf" -uri 1
   adb eval {
+    PRAGMA auto_vacuum = 0;
     PRAGMA page_size=512;
     PRAGMA cache_size=0;
     CREATE TABLE t1(a TEXT);
