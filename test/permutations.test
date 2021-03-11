@@ -1138,11 +1138,20 @@ proc run_tests {name args} {
   set ::G(perm:presql)       $options(-presql)
 
   foreach file [lsort $options(-files)] {
-    uplevel $options(-initialize)
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
+
+    if {[info exists ::env(SQLITE_TEST_PATTERN_LIST)]} {
+      set ok 0
+      foreach p $::env(SQLITE_TEST_PATTERN_LIST) {
+        set p [string map {% *} $p]
+        if {[string match $p [file tail $file]]} {set ok 1 ; break}
+      }
+      if {!$ok} continue
+    }
+
+    uplevel $options(-initialize)
     slave_test_file $file
     uplevel $options(-shutdown)
-
     unset -nocomplain ::G(perm:sqlite3_args)
   }
 
