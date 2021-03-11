@@ -2065,6 +2065,7 @@ static void windowCodeRangeTest(
   int regString = ++pParse->nMem;           /* Reg. for constant value '' */
   int arith = OP_Add;                       /* OP_Add or OP_Subtract */
   int addrGe;                               /* Jump destination */
+  CollSeq *pColl;
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( pOrderBy && pOrderBy->nExpr==1 );
@@ -2155,6 +2156,8 @@ static void windowCodeRangeTest(
   ** control skips over this test if the BIGNULL flag is set and either
   ** reg1 or reg2 contain a NULL value.  */
   sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
+  pColl = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[0].pExpr);
+  sqlite3VdbeAppendP4(v, (void*)pColl, P4_COLLSEQ);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );

@@ -146,7 +146,10 @@ static int SQLITE_TCLAPI test_sql_exec_changeset(
 static int test_tcl_integer(Tcl_Interp *interp, const char *zVar){
   Tcl_Obj *pObj;
   int iVal = 0;
-  pObj = Tcl_ObjGetVar2(interp, Tcl_NewStringObj(zVar, -1), 0, TCL_GLOBAL_ONLY);
+  Tcl_Obj *pName = Tcl_NewStringObj(zVar, -1);
+  Tcl_IncrRefCount(pName);
+  pObj = Tcl_ObjGetVar2(interp, pName, 0, TCL_GLOBAL_ONLY);
+  Tcl_DecrRefCount(pName);
   if( pObj ) Tcl_GetIntFromObj(0, pObj, &iVal);
   return iVal;
 }
@@ -243,7 +246,7 @@ static int SQLITE_TCLAPI test_session_cmd(
     { "patchset",     0, "",           }, /* 7 */
     { "diff",         2, "FROMDB TBL"  }, /* 8 */
     { "fullchangeset",0, ""            }, /* 9 */
-    { "memory_used",  0, "",           }, /* 9 */
+    { "memory_used",  0, "",           }, /* 10 */
     { 0 }
   };
   int iSub;
@@ -354,7 +357,7 @@ static int SQLITE_TCLAPI test_session_cmd(
       break;
     }
 
-    case 9: {      /* memory_used */
+    case 10: {      /* memory_used */
       sqlite3_int64 nMalloc = sqlite3session_memory_used(pSession);
       Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nMalloc));
       break;

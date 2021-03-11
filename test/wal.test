@@ -1515,5 +1515,36 @@ foreach mode {OFF MEMORY PERSIST DELETE TRUNCATE WAL} {
   db close
 }
 
+# 2021-03-10 forum post https://sqlite.org/forum/forumpost/a006d86f72
+#
+file delete test.db
+sqlite3 db test.db
+db eval {PRAGMA journal_mode=WAL}
+for {set i 0} {$i<$SQLITE_MAX_ATTACHED} {incr i} {
+  do_test wal-26.1.$i {
+    file delete attached-$i.db
+    db eval "ATTACH 'attached-$i.db' AS a$i;"
+    db eval "PRAGMA a$i.journal_mode=WAL;"
+    db eval "CREATE TABLE a$i.t$i (x);"
+    db eval "INSERT INTO t$i VALUES(zeroblob(10000));"
+    db eval "DELETE FROM t$i;"
+    db eval "INSERT INTO t$i VALUES(randomblob(10000));"
+    expr {[file size attached-$i.db-wal]>10000}
+  } {1}
+}
+for {set i [expr {$SQLITE_MAX_ATTACHED-1}]} {$i>=0} {incr i -1} {
+  do_test wal-26.2.$i {
+    db eval "PRAGMA a$i.wal_checkpoint(TRUNCATE);"
+    file size attached-$i.db-wal
+  } {0}
+  for {set j 0} {$j<$i} {incr j} {
+    do_test wal-26.2.$i.$j {
+      expr {[file size attached-$j.db-wal]>10000}
+    } {1}
+  }
+}
+db close
+
+
 test_restore_config_pagecache
 finish_test

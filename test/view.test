@@ -44,12 +44,17 @@ do_test view-1.1.100 {
     SELECT * FROM v1 ORDER BY a;
   }
 } {1 {access to view "v1" prohibited}}
+do_execsql_test view-1.1.101 {
+  CREATE TEMP VIEW v1temp AS SELECT a, b FROM t1;
+  SELECT * FROM v1temp ORDER BY a;
+} {1 2 4 5 7 8}
 do_test view-1.1.110 {
   db config enable_view on
   catchsql {
     SELECT * FROM v1 ORDER BY a;
+    SELECT * FROM v1temp ORDER BY a;
   }
-} {0 {1 2 4 5 7 8}}
+} {0 {1 2 4 5 7 8 1 2 4 5 7 8}}
 do_test view-1.2 {
   catchsql {
     ROLLBACK;

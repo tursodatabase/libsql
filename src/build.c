@@ -1327,6 +1327,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->pReturnEL = pList;
   sqlite3ParserAddCleanup(pParse,
      (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
+  testcase( pParse->earlyCleanup );
   if( db->mallocFailed ) return;
   pRet->retTrig.zName = RETURNING_TRIGGER_NAME;
   pRet->retTrig.op = TK_RETURNING;
@@ -4865,7 +4866,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 static void sqlite3CodeVerifySchemaAtToplevel(Parse *pToplevel, int iDb){
   assert( iDb>=0 && iDb<pToplevel->db->nDb );
   assert( pToplevel->db->aDb[iDb].pBt!=0 || iDb==1 );
-  assert( iDb<SQLITE_MAX_ATTACHED+2 );
+  assert( iDb<SQLITE_MAX_DB );
   assert( sqlite3SchemaMutexHeld(pToplevel->db, iDb, 0) );
   if( DbMaskTest(pToplevel->cookieMask, iDb)==0 ){
     DbMaskSet(pToplevel->cookieMask, iDb);

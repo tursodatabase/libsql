@@ -283,7 +283,7 @@ array set ::Configs [strip_comments {
   FuzzFail2 {-O0}
 }]
 if {$tcl_platform(os)=="Darwin"} {
-  lappend Configs(Apple -DSQLITE_ENABLE_LOCKING_STYLE=1
+  lappend Configs(Apple) -DSQLITE_ENABLE_LOCKING_STYLE=1
 }
 
 array set ::Platforms [strip_comments {
@@ -302,7 +302,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Apple"                   test
-    "Sanitize"                {QUICKTEST_OMIT=crash*,shell*,sqldiff*,sessionB.test test}
+    "Sanitize"                test
     "Device-One"              fulltest
     "Default"                 "threadtest fulltest"
     "Valgrind*"               valgrindtest
@@ -354,6 +354,14 @@ array set ::Platforms [strip_comments {
     FuzzFail2* "TEST_FAILURE=5 valgrindtest"
   }
 }]
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# End of configuration section.
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
 
 # Configuration verification: Check that each entry in the list of configs
 # specified for each platforms exists.
