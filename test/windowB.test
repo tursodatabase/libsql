@@ -336,4 +336,25 @@ do_execsql_test 7.4 {
   ) FROM t1;
 } {{} 45 {} 45  7 {} 7 {} 8 {} 8 {}  abc 1001 abc 1001 xyz 3333}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  BEGIN TRANSACTION;
+    CREATE TABLE t1(a, c);
+    INSERT INTO t1 VALUES('aa', 111);
+    INSERT INTO t1 VALUES('BB', 660);
+    INSERT INTO t1 VALUES('CC', 938);
+    INSERT INTO t1 VALUES('dd', 979);
+  COMMIT;
+
+  CREATE INDEX i1 ON t1(a COLLATE nocase);
+}
+
+do_execsql_test 8.1 {
+  SELECT sum(c) OVER
+    (ORDER BY a COLLATE nocase RANGE BETWEEN 10.0 PRECEDING AND 5.0 PRECEDING)
+  FROM t1;
+} {111 660 938 979}
+
+
 finish_test

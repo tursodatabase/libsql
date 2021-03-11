@@ -759,9 +759,10 @@ static int block_troublesome_sql(
     if( sqlite3_stricmp("oom",zArg1)==0 && zArg2!=0 && zArg2[0]!=0 ){
       oomCounter = atoi(zArg2);
     }
-  }else if( (eCode==SQLITE_ATTACH || eCode==SQLITE_DETACH)
-            && zArg1 && zArg1[0] ){
-    return SQLITE_DENY;
+  }else if( eCode==SQLITE_ATTACH ){
+    if( zArg1==0 || (zArg1[0]!=0 && strcmp(zArg1,":memory:")!=0) ){
+      return SQLITE_DENY;
+    }
   }
   return SQLITE_OK;
 }
@@ -1989,6 +1990,8 @@ int main(int argc, char **argv){
           sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 50);
           if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
           setAlarm((iTimeout+999)/1000);
+          /* Enable test functions */
+          sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, db);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
           if( sqlFuzz || vdbeLimitFlag ){
             sqlite3_progress_handler(db, 100000, progressHandler,
