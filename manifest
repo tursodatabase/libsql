@@ -1,5 +1,5 @@
-C Have\sthe\sTcl\stests\ssupport\senvironment\svariable\sSQLITE_TEST_PATTERN_LIST,\sso\sthat\sif\sit\sis\sset\sit\sis\sinterpreted\sas\sa\slist\sof\spatterns\sthat\sare\smatched\sagainst\stests\sfile\snames.\sOnly\stest\sfiles\sthat\smatch\sat\sleast\sone\spattern\sare\srun.
-D 2021-03-11T08:49:52.837
+C Bug\sfix\sin\sappendvfs.c:\s\sAdjust\sthe\ssize\sparameter\sfor\nSQLITE_FCNTL_SIZE_HINT\sto\saccount\sfor\sthe\sprefix.
+D 2021-03-11T13:43:29.264
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c c7cd6cbd33965c5f66c4a53f800e9ccd7b5721a4dac65af6d505f1cf0fedf63e
+F ext/misc/appendvfs.c 7fff57cd4a5d63758d20a1dd1a96c64c7c123cf48fd98bbd36cfe8b063236e3d
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 424b39eaeb578f85e58214af4b467e6e363431308ab7a327774e62fa70d3c2db
-R ecc2e846c4cf0e972a30284fd51a1f86
-U dan
-Z 990c0729defefc588b938a5aa30281d1
+P b7c92e1d08f213865f026d8dbdc4e805fb5c119b7f206506ed06e83a878de657
+R 2f8a1462de1047e3ffc4376afd9ad435
+U drh
+Z 9f896bc562e0aa6269091d041696ca79

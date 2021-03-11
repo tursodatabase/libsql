@@ -347,6 +347,7 @@ static int apndFileControl(sqlite3_file *pFile, int op, void *pArg){
   ApndFile *paf = (ApndFile *)pFile;
   int rc;
   pFile = ORIGFILE(pFile);
+  if( op==SQLITE_FCNTL_SIZE_HINT ) *(sqlite3_int64*)pArg += paf->iPgOne;
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
     *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne,*(char**)pArg);
