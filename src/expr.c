@@ -95,7 +95,18 @@ Expr *sqlite3ExprAddCollateToken(
   const Token *pCollName,  /* Name of collating sequence */
   int dequote              /* True to dequote pCollName */
 ){
-  if( pCollName->n>0 ){
+  assert( pExpr!=0 || pParse->db->mallocFailed );
+  if( pExpr==0 ) return 0;
+  if( pExpr->op==TK_VECTOR ){
+    ExprList *pList = pExpr->x.pList;
+    if( ALWAYS(pList!=0) ){
+      int i;
+      for(i=0; i<pList->nExpr; i++){
+        pList->a[i].pExpr = sqlite3ExprAddCollateToken(pParse,pList->a[i].pExpr,
+                                                       pCollName, dequote);
+      }
+    }
+  }else if( pCollName->n>0 ){
     Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, dequote);
     if( pNew ){
       pNew->pLeft = pExpr;
@@ -1519,8 +1530,8 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
   if( pNew==0 ) return 0;
   pNew->nSrc = pNew->nAlloc = p->nSrc;
   for(i=0; i<p->nSrc; i++){
-    struct SrcList_item *pNewItem = &pNew->a[i];
-    struct SrcList_item *pOldItem = &p->a[i];
+    SrcItem *pNewItem = &pNew->a[i];
+    SrcItem *pOldItem = &p->a[i];
     Table *pTab;
     pNewItem->pSchema = pOldItem->pSchema;
     pNewItem->zDatabase = sqlite3DbStrDup(db, pOldItem->zDatabase);
@@ -1533,7 +1544,10 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     if( pNewItem->fg.isIndexedBy ){
       pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
     }
-    pNewItem->pIBIndex = pOldItem->pIBIndex;
+    pNewItem->u2 = pOldItem->u2;
+    if( pNewItem->fg.isCte ){
+      pNewItem->u2.pCteUse->nUse++;
+    }
     if( pNewItem->fg.isTabFunc ){
       pNewItem->u1.pFuncArg = 
           sqlite3ExprListDup(db, pOldItem->u1.pFuncArg, flags);
@@ -2571,7 +2585,7 @@ int sqlite3FindInIndex(
 
     /* Code an OP_Transaction and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    assert( iDb>=0 && iDb<SQLITE_MAX_ATTACHED );
+    assert( iDb>=0 && iDb<SQLITE_MAX_DB );
     sqlite3CodeVerifySchema(pParse, iDb);
     sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
@@ -5850,7 +5864,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       /* Check to see if the column is in one of the tables in the FROM
       ** clause of the aggregate query */
       if( ALWAYS(pSrcList!=0) ){
-        struct SrcList_item *pItem = pSrcList->a;
+        SrcItem *pItem = pSrcList->a;
         for(i=0; i<pSrcList->nSrc; i++, pItem++){
           struct AggInfo_col *pCol;
           assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );

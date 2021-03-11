@@ -989,7 +989,7 @@ test_suite "journaltest" -description {
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
   delete_db.test shmlock.test chunksize.test
-  busy2.test
+  busy2.test avfs.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -1062,7 +1062,8 @@ test_suite "no_optimization" -description {
     where6.test where7.test where8.test where9.test                  \
     whereA.test whereB.test wherelimit.test                          \
     select1.test select2.test select3.test select4.test select5.test \
-    select7.test select8.test selectA.test selectC.test     
+    select7.test select8.test selectA.test selectC.test              \
+    -exclude windowpushd.test
 ] -dbconfig {
   optimization_control $::dbhandle all 0
 }
@@ -1137,11 +1138,20 @@ proc run_tests {name args} {
   set ::G(perm:presql)       $options(-presql)
 
   foreach file [lsort $options(-files)] {
-    uplevel $options(-initialize)
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
+
+    if {[info exists ::env(SQLITE_TEST_PATTERN_LIST)]} {
+      set ok 0
+      foreach p $::env(SQLITE_TEST_PATTERN_LIST) {
+        set p [string map {% *} $p]
+        if {[string match $p [file tail $file]]} {set ok 1 ; break}
+      }
+      if {!$ok} continue
+    }
+
+    uplevel $options(-initialize)
     slave_test_file $file
     uplevel $options(-shutdown)
-
     unset -nocomplain ::G(perm:sqlite3_args)
   }
 

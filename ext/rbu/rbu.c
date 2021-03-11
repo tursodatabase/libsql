@@ -183,6 +183,13 @@ int main(int argc, char **argv){
       break;
   }
 
+  if( nStatStep>0 ){
+    sqlite3_int64 nUsed;
+    sqlite3_int64 nHighwater;
+    sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &nUsed, &nHighwater, 0);
+    fprintf(stdout, "memory used=%lld highwater=%lld\n", nUsed, nHighwater);
+  }
+
   sqlite3_free(zErrmsg);
   return (rc==SQLITE_OK || rc==SQLITE_DONE) ? 0 : 1;
 }

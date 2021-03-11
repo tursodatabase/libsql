@@ -287,16 +287,24 @@ int LLVMFuzzerInitialize(int *pArgc, char ***pArgv){
         sqlite3MemTraceActivate(stdout);
         continue;
       }
-      if( strcmp(z,"mem")==0 ){
-        bVdbeDebug = 1;
-        continue;
-      }
       if( strcmp(z,"max-db-size")==0 ){
         if( i+1==argc ){
           fprintf(stderr, "missing argument to %s\n", argv[i]);
           exit(1);
         }
         szMax = strtol(argv[++i], 0, 0);
+        continue;
+      }
+      if( strcmp(z, "lookaside")==0 ){
+        int sz, nSlot;
+        if( i+2>=argc ){
+          fprintf(stderr, 
+             "--lookaside requires two arguments: slot-size num-slots\n");
+          exit(1);
+        }
+        sz = atoi(argv[++i]);
+        nSlot = atoi(argv[++i]);
+        sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, nSlot);
         continue;
       }
 #ifndef _WIN32

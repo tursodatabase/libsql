@@ -462,6 +462,7 @@ struct BtShared {
 #ifndef SQLITE_OMIT_CONCURRENT
   BtreePtrmap *pMap;
 #endif
+  int nPreformatSize;   /* Size of last cell written by TransferRow() */
 };
 
 /*

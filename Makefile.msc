@@ -380,6 +380,9 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
 !ENDIF
 
+# Always enable math functions on Windows
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MATH_FUNCTIONS
+
 # Should the rbu extension be enabled?  If so, add compilation options
 # to enable it.
 #
@@ -1557,6 +1560,7 @@ TESTEXT = \
   $(TOP)\ext\expert\sqlite3expert.c \
   $(TOP)\ext\expert\test_expert.c \
   $(TOP)\ext\misc\amatch.c \
+  $(TOP)\ext\misc\appendvfs.c \
   $(TOP)\ext\misc\carray.c \
   $(TOP)\ext\misc\cksumvfs.c \
   $(TOP)\ext\misc\closure.c \

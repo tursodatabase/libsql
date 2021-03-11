@@ -21,7 +21,7 @@ source $testdir/tester.tcl
 # Only run these tests if memory debugging is turned on.
 #
 ifcapable !crashtest||!memorymanage {
-   puts "Skipping crash5 tests: not compiled with -DSQLITE_MEMDEBUG..."
+   puts "Skipping crash5 tests: not compiled with -DSQLITE_ENABLE_MEMORY_MANAGEMENT..."
    finish_test
    return
 }
@@ -29,7 +29,7 @@ ifcapable !crashtest||!memorymanage {
 db close
 
 for {set ii 0} {$ii < 10} {incr ii} {
-  for {set jj 50} {$jj < 100} {incr jj} {
+  for {set jj 1} {$jj < 100} {incr jj} {
 
     # Set up the database so that it is an auto-vacuum database 
     # containing a single table (root page 3) with a single row. 
@@ -47,6 +47,20 @@ for {set ii 0} {$ii < 10} {incr ii} {
     do_test crash5-$ii.$jj.1 {
       crashsql -delay 1 -file test.db-journal -seed $ii -tclbody [join [list \
         [list set iFail $jj] {
+        proc get_pwd {} {
+          if {$::tcl_platform(platform) eq "windows"} {
+            if {[info exists ::env(ComSpec)]} {
+              set comSpec $::env(ComSpec)
+            } else {
+              # NOTE: Hard-code the typical default value.
+              set comSpec {C:\Windows\system32\cmd.exe}
+            }
+            return [string map [list \\ /] \
+              [string trim [exec -- $comSpec /c echo %CD%]]]
+          } else {
+            return [pwd]
+          }
+        }
         sqlite3_crashparams 0 [file join [get_pwd] test.db-journal]
       
         # Begin a transaction and evaluate a "CREATE INDEX" statement
@@ -61,36 +75,39 @@ for {set ii 0} {$ii < 10} {incr ii} {
         #
         db eval BEGIN
         sqlite3_memdebug_fail $iFail -repeat 0
-        catch {db eval { CREATE UNIQUE INDEX i1 ON t1(a); }} msg
-        # puts "$n $msg ac=[sqlite3_get_autocommit db]"
+        set rc [catch {db eval { CREATE UNIQUE INDEX i1 ON t1(a); }} msg]
+#       puts "$msg ac=[sqlite3_get_autocommit db] iFail=$iFail"
+#       puts "fail=[sqlite3_memdebug_fail -1]"
       
-        # If the transaction is still active (it may not be if the malloc()
-        # failure occurred in the OS layer), write to the database. Make sure
-        # page 4 is among those written.
-        #
-        if {![sqlite3_get_autocommit db]} {
-          db eval {
-            DELETE FROM t1;  -- This will put page 4 on the free list.
-            INSERT INTO t1 VALUES('111111111', '2222222222', '33333333');
-            INSERT INTO t1 SELECT * FROM t1;                     -- 2
-            INSERT INTO t1 SELECT * FROM t1;                     -- 4
-            INSERT INTO t1 SELECT * FROM t1;                     -- 8
-            INSERT INTO t1 SELECT * FROM t1;                     -- 16
-            INSERT INTO t1 SELECT * FROM t1;                     -- 32
-            INSERT INTO t1 SELECT * FROM t1 WHERE rowid%2;       -- 48
+        if {$rc} {
+          # If the transaction is still active (it may not be if the malloc()
+          # failure occurred in the OS layer), write to the database. Make sure
+          # page 4 is among those written.
+          #
+          if {![sqlite3_get_autocommit db]} {
+            db eval {
+              DELETE FROM t1;  -- This will put page 4 on the free list.
+              INSERT INTO t1 VALUES('111111111', '2222222222', '33333333');
+              INSERT INTO t1 SELECT * FROM t1;                     -- 2
+              INSERT INTO t1 SELECT * FROM t1;                     -- 4
+              INSERT INTO t1 SELECT * FROM t1;                     -- 8
+              INSERT INTO t1 SELECT * FROM t1;                     -- 16
+              INSERT INTO t1 SELECT * FROM t1;                     -- 32
+              INSERT INTO t1 SELECT * FROM t1 WHERE rowid%2;       -- 48
+            }
           }
+          
+          # If the right malloc() failed during the 'CREATE INDEX' above and
+          # the transaction was not rolled back, then the sqlite cache now 
+          # has a dirty page 4 that it incorrectly believes is already safely
+          # in the synced part of the journal file. When 
+          # sqlite3_release_memory() is called sqlite tries to free memory
+          # by writing page 4 out to the db file. If it crashes later on,
+          # before syncing the journal... Corruption!
+          #
+          sqlite3_crashparams 1 [file join [get_pwd] test.db-journal]
+          sqlite3_release_memory 8092
         }
-        
-        # If the right malloc() failed during the 'CREATE INDEX' above and
-        # the transaction was not rolled back, then the sqlite cache now 
-        # has a dirty page 4 that it incorrectly believes is already safely
-        # in the synced part of the journal file. When 
-        # sqlite3_release_memory() is called sqlite tries to free memory
-        # by writing page 4 out to the db file. If it crashes later on,
-        # before syncing the journal... Corruption!
-        #
-        sqlite3_crashparams 1 [file join [get_pwd] test.db-journal]
-        sqlite3_release_memory 8092
       }]] {}
       expr 1
     } {1}

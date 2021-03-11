@@ -455,7 +455,12 @@ static void blobListFree(Blob *p){
   }
 }
 
-/* Return the current wall-clock time */
+/* Return the current wall-clock time
+**
+** The number of milliseconds since the julian epoch.
+** 1907-01-01 00:00:00  ->  210866716800000
+** 2021-01-01 00:00:00  ->  212476176000000
+*/
 static sqlite3_int64 timeOfDay(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
@@ -713,6 +718,7 @@ static int progress_handler(void *pClientData) {
   sqlite3_int64 iNow = timeOfDay();
   int rc = iNow>=p->iCutoffTime;
   sqlite3_int64 iDiff = iNow - p->iLastCb;
+  /* printf("time-remaining: %lld\n", p->iCutoffTime - iNow); */
   if( iDiff > p->mxInterval ) p->mxInterval = iDiff;
   p->nCb++;
   if( rc==0 && p->mxCb>0 && p->mxCb<=p->nCb ) rc = 1;
@@ -753,9 +759,10 @@ static int block_troublesome_sql(
     if( sqlite3_stricmp("oom",zArg1)==0 && zArg2!=0 && zArg2[0]!=0 ){
       oomCounter = atoi(zArg2);
     }
-  }else if( (eCode==SQLITE_ATTACH || eCode==SQLITE_DETACH)
-            && zArg1 && zArg1[0] ){
-    return SQLITE_DENY;
+  }else if( eCode==SQLITE_ATTACH ){
+    if( zArg1==0 || (zArg1[0]!=0 && strcmp(zArg1,":memory:")!=0) ){
+      return SQLITE_DENY;
+    }
   }
   return SQLITE_OK;
 }
@@ -835,7 +842,7 @@ static int runDbSql(sqlite3 *db, const char *zSql){
 }
 
 /* Invoke this routine to run a single test case */
-int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
+int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte, int iTimeout){
   int rc;                    /* SQLite API return value */
   int iSql;                  /* Index in aData[] of start of SQL */
   unsigned char *aDb = 0;    /* Decoded database content */
@@ -882,7 +889,7 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte){
   ** elapsed since the start of the test.
   */
   cx.iLastCb = timeOfDay();
-  cx.iCutoffTime = cx.iLastCb + giTimeout;  /* Now + giTimeout seconds */
+  cx.iCutoffTime = cx.iLastCb + (iTimeout<giTimeout ? iTimeout : giTimeout);
   cx.mxCb = mxProgressCb;
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   sqlite3_progress_handler(cx.db, 10, progress_handler, (void*)&cx);
@@ -1433,7 +1440,7 @@ static void showHelp(void){
 "  --skip N             Skip the first N test cases\n"
 "  --spinner            Use a spinner to show progress\n"
 "  --sqlid N            Use only SQL where sqlid=N\n"
-"  --timeout N          Abort if any single test needs more than N seconds\n"
+"  --timeout N          Maximum time for any one test in N millseconds\n"
 "  -v|--verbose         Increased output.  Repeat for more output.\n"
 "  --vdbe-debug         Activate VDBE debugging.\n"
   );
@@ -1471,7 +1478,7 @@ int main(int argc, char **argv){
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE env variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
   int sqlFuzz = 0;             /* True for SQL fuzz. False for DB fuzz */
-  int iTimeout = 120;          /* Default 120-second timeout */
+  int iTimeout = 120000;       /* Default 120-second timeout */
   int nMem = 0;                /* Memory limit override */
   int nMemThisDb = 0;          /* Memory limit set by the CONFIG table */
   char *zExpDb = 0;            /* Write Databases to files in this directory */
@@ -1482,7 +1489,9 @@ int main(int argc, char **argv){
   int nativeMalloc = 0;        /* Turn off MEMSYS3/5 and lookaside if true */
   sqlite3_vfs *pDfltVfs;       /* The default VFS */
   int openFlags4Data;          /* Flags for sqlite3_open_v2() */
+  int bTimer = 0;              /* Show elapse time for each test */
   int nV;                      /* How much to increase verbosity with -vvvv */
+  sqlite3_int64 tmStart;       /* Start of each test */
 
   registerOomSimulator();
   sqlite3_initialize();
@@ -1596,6 +1605,9 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"spinner")==0 ){
         bSpinner = 1;
+      }else
+      if( strcmp(z,"timer")==0 ){
+        bTimer = 1;
       }else
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
@@ -1894,6 +1906,7 @@ int main(int argc, char **argv){
     */
     if( !verboseFlag && !quietFlag && !bSpinner ) printf("%s:", zDbName);
     for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
+      tmStart = timeOfDay();
       if( isDbSql(pSql->a, pSql->sz) ){
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d",pSql->id);
         if( bSpinner ){
@@ -1917,9 +1930,13 @@ int main(int argc, char **argv){
         if( nSkip>0 ){
           nSkip--;
         }else{
-          runCombinedDbSqlInput(pSql->a, pSql->sz);
+          runCombinedDbSqlInput(pSql->a, pSql->sz, iTimeout);
         }
         nTest++;
+        if( bTimer ){
+          sqlite3_int64 tmEnd = timeOfDay();
+          printf("%lld %s\n", tmEnd - tmStart, g.zTestName);
+        }
         g.zTestName[0] = 0;
         disableOom();
         continue;
@@ -1972,7 +1989,9 @@ int main(int argc, char **argv){
           sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 100000000);
           sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 50);
           if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
-          setAlarm(iTimeout);
+          setAlarm((iTimeout+999)/1000);
+          /* Enable test functions */
+          sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, db);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
           if( sqlFuzz || vdbeLimitFlag ){
             sqlite3_progress_handler(db, 100000, progressHandler,
@@ -1998,6 +2017,10 @@ int main(int argc, char **argv){
         }
         reformatVfs();
         nTest++;
+        if( bTimer ){
+          sqlite3_int64 tmEnd = timeOfDay();
+          printf("%lld %s\n", tmEnd - tmStart, g.zTestName);
+        }
         g.zTestName[0] = 0;
 
         /* Simulate an error if the TEST_FAILURE environment variable is "5".

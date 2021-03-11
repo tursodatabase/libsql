@@ -617,7 +617,7 @@ static int sqlite3Step(Vdbe *p){
   int rc;
 
   assert(p);
-  if( p->magic!=VDBE_MAGIC_RUN ){
+  if( p->iVdbeMagic!=VDBE_MAGIC_RUN ){
     /* We used to require that sqlite3_reset() be called before retrying
     ** sqlite3_step() after any error or after SQLITE_DONE.  But beginning
     ** with version 3.7.0, we changed this so that sqlite3_reset() would
@@ -1333,7 +1333,7 @@ static int vdbeUnbind(Vdbe *p, int i){
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(p->db->mutex);
-  if( p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
+  if( p->iVdbeMagic!=VDBE_MAGIC_RUN || p->pc>=0 ){
     sqlite3Error(p->db, SQLITE_MISUSE);
     sqlite3_mutex_leave(p->db->mutex);
     sqlite3_log(SQLITE_MISUSE, 
@@ -1687,7 +1687,7 @@ int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
   Vdbe *v = (Vdbe*)pStmt;
-  return v!=0 && v->magic==VDBE_MAGIC_RUN && v->pc>=0;
+  return v!=0 && v->iVdbeMagic==VDBE_MAGIC_RUN && v->pc>=0;
 }
 
 /*

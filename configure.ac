@@ -134,8 +134,10 @@ AC_ARG_VAR([TCLLIBDIR], [Where to install tcl plugin])
 if test "x${TCLLIBDIR+set}" != "xset" ; then
   TCLLIBDIR='$(libdir)'
   for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
-    TCLLIBDIR=$i
-    break
+    if test -d $i ; then
+      TCLLIBDIR=$i
+      break
+    fi
   done
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
@@ -553,10 +555,13 @@ AC_SEARCH_LIBS(fdatasync, [rt])
 #########
 # check for debug enabled
 AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]))
+AC_MSG_CHECKING([build type])
 if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
+  AC_MSG_RESULT([debug])
 else
   TARGET_DEBUG="-DNDEBUG"
+  AC_MSG_RESULT([release])
 fi
 AC_SUBST(TARGET_DEBUG)
 
@@ -587,6 +592,27 @@ else
 fi
 
 ##########
+# Do we want to support math functions
+#
+AC_ARG_ENABLE(math, 
+AC_HELP_STRING([--disable-math],[Disable math functions]))
+AC_MSG_CHECKING([whether to support math functions])
+if test "$enable_math" = "no"; then
+  AC_MSG_RESULT([no])
+else
+  AC_MSG_RESULT([yes])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
+  AC_SEARCH_LIBS(ceil, m)
+fi
+
+
+########
+# The --enable-all argument is short-hand to enable
+# multiple extensions.
+AC_ARG_ENABLE(all, AC_HELP_STRING([--enable-all],
+      [Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions]))
+
+##########
 # Do we want to support memsys3 and/or memsys5
 #
 AC_ARG_ENABLE(memsys5, 
@@ -608,37 +634,47 @@ else
   AC_MSG_RESULT([no])
 fi
 
-########
-# The --enable-extensions argument is short-hand to enable
-# multiple extensions.
-AC_ARG_ENABLE(all, AC_HELP_STRING([--enable-all],
-      [Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions]))
-
 #########
 # See whether we should enable Full Text Search extensions
 AC_ARG_ENABLE(fts3, AC_HELP_STRING([--enable-fts3],
       [Enable the FTS3 extension]))
+AC_MSG_CHECKING([whether to support FTS3])
 if test "${enable_fts3}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
 fi
 AC_ARG_ENABLE(fts4, AC_HELP_STRING([--enable-fts4],
       [Enable the FTS4 extension]))
+AC_MSG_CHECKING([whether to support FTS4])
 if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
+  AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
   AC_SEARCH_LIBS([log],[m])
+else
+  AC_MSG_RESULT([no])
 fi
 AC_ARG_ENABLE(fts5, AC_HELP_STRING([--enable-fts5],
       [Enable the FTS5 extension]))
+AC_MSG_CHECKING([whether to support FTS5])
 if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
+  AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   AC_SEARCH_LIBS([log],[m])
+else
+  AC_MSG_RESULT([no])
 fi
 
 #########
 # See whether we should enable JSON1
 AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],[Enable the JSON1 extension]))
+AC_MSG_CHECKING([whether to support JSON])
 if test "${enable_json1}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
 fi
 
 #########
@@ -646,8 +682,12 @@ fi
 # statements.
 AC_ARG_ENABLE(update-limit, AC_HELP_STRING([--enable-update-limit],
       [Enable the UPDATE/DELETE LIMIT clause]))
+AC_MSG_CHECKING([whether to support LIMIT on UPDATE and DELETE statements])
 if test "${enable_update_limit}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
 fi
 
 #########
@@ -655,26 +695,38 @@ fi
 AC_ARG_ENABLE(geopoly, AC_HELP_STRING([--enable-geopoly],
       [Enable the GEOPOLY extension]),
       [enable_geopoly=yes],[enable_geopoly=no])
+AC_MSG_CHECKING([whether to support GEOPOLY])
 if test "${enable_geopoly}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_GEOPOLY"
   enable_rtree=yes
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
 fi
 
 #########
 # See whether we should enable RTREE
 AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
       [Enable the RTREE extension]))
+AC_MSG_CHECKING([whether to support RTREE])
 if test "${enable_rtree}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
 fi
 
 #########
 # See whether we should enable the SESSION extension
 AC_ARG_ENABLE(session, AC_HELP_STRING([--enable-session],
       [Enable the SESSION extension]))
+AC_MSG_CHECKING([whether to support SESSION])
 if test "${enable_session}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
 fi
 
 #########

@@ -87,7 +87,9 @@ AC_SUBST(READLINE_LIBS)
 AC_ARG_ENABLE(threadsafe, [AS_HELP_STRING(
   [--enable-threadsafe], [build a thread-safe library [default=yes]])], 
   [], [enable_threadsafe=yes])
-if test x"$enable_threadsafe" != "xno"; then
+if test x"$enable_threadsafe" == "xno"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_THREADSAFE=0"
+else
   BUILD_CFLAGS="$BUILD_CFLAGS -D_REENTRANT=1 -DSQLITE_THREADSAFE=1"
   AC_SEARCH_LIBS(pthread_create, pthread)
   AC_SEARCH_LIBS(pthread_mutexattr_init, pthread)
@@ -110,13 +112,33 @@ AC_MSG_RESULT($enable_dynamic_extensions)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
+#   --enable-math
+#
+AC_ARG_ENABLE(math, [AS_HELP_STRING(
+  [--enable-math], [SQL math functions [default=yes]])],
+  [], [enable_math=yes])
+AC_MSG_CHECKING([SQL math functions])
+if test x"$enable_math" = "xyes"; then
+  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_MATH_FUNCTIONS"
+  AC_MSG_RESULT([enabled])
+  AC_SEARCH_LIBS(ceil, m)
+else
+  AC_MSG_RESULT([disabled])
+fi
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
 #   --enable-fts4
 #
 AC_ARG_ENABLE(fts4, [AS_HELP_STRING(
   [--enable-fts4], [include fts4 support [default=yes]])], 
   [], [enable_fts4=yes])
+AC_MSG_CHECKING([FTS4 extension])
 if test x"$enable_fts4" = "xyes"; then
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_FTS4"
+  AC_MSG_RESULT([enabled])
+else
+  AC_MSG_RESULT([disabled])
 fi
 #-----------------------------------------------------------------------
 
@@ -126,8 +148,12 @@ fi
 AC_ARG_ENABLE(fts3, [AS_HELP_STRING(
   [--enable-fts3], [include fts3 support [default=no]])], 
   [], [])
+AC_MSG_CHECKING([FTS3 extension])
 if test x"$enable_fts3" = "xyes" -a x"$enable_fts4" = "xno"; then
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_FTS3"
+  AC_MSG_RESULT([enabled])
+else
+  AC_MSG_RESULT([disabled])
 fi
 #-----------------------------------------------------------------------
 
@@ -137,9 +163,13 @@ fi
 AC_ARG_ENABLE(fts5, [AS_HELP_STRING(
   [--enable-fts5], [include fts5 support [default=yes]])], 
   [], [enable_fts5=yes])
+AC_MSG_CHECKING([FTS5 extension])
 if test x"$enable_fts5" = "xyes"; then
+  AC_MSG_RESULT([enabled])
   AC_SEARCH_LIBS(log, m)
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_FTS5"
+else
+  AC_MSG_RESULT([disabled])
 fi
 #-----------------------------------------------------------------------
 
@@ -149,8 +179,12 @@ fi
 AC_ARG_ENABLE(json1, [AS_HELP_STRING(
   [--enable-json1], [include json1 support [default=yes]])], 
   [],[enable_json1=yes])
+AC_MSG_CHECKING([JSON functions])
 if test x"$enable_json1" = "xyes"; then
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_JSON1"
+  AC_MSG_RESULT([enabled])
+else
+  AC_MSG_RESULT([disabled])
 fi
 #-----------------------------------------------------------------------
 
@@ -160,8 +194,12 @@ fi
 AC_ARG_ENABLE(rtree, [AS_HELP_STRING(
   [--enable-rtree], [include rtree support [default=yes]])], 
   [], [enable_rtree=yes])
+AC_MSG_CHECKING([RTREE extension])
 if test x"$enable_rtree" = "xyes"; then
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_GEOPOLY"
+  AC_MSG_RESULT([enabled])
+else
+  AC_MSG_RESULT([disabled])
 fi
 #-----------------------------------------------------------------------
 
@@ -171,8 +209,12 @@ fi
 AC_ARG_ENABLE(session, [AS_HELP_STRING(
   [--enable-session], [enable the session extension [default=no]])], 
   [], [])
+AC_MSG_CHECKING([Session extension])
 if test x"$enable_session" = "xyes"; then
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  AC_MSG_RESULT([enabled])
+else
+  AC_MSG_RESULT([disabled])
 fi
 #-----------------------------------------------------------------------
 
@@ -182,9 +224,13 @@ fi
 AC_ARG_ENABLE(debug, [AS_HELP_STRING(
   [--enable-debug], [build with debugging features enabled [default=no]])], 
   [], [])
+AC_MSG_CHECKING([Build type])
 if test x"$enable_debug" = "xyes"; then
   BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_DEBUG -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE"
   CFLAGS="-g -O0"
+  AC_MSG_RESULT([debug])
+else
+  AC_MSG_RESULT([release])
 fi
 #-----------------------------------------------------------------------
 

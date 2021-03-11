@@ -261,10 +261,10 @@ do_execsql_test 5.2 {
 }
 
 do_execsql_test 5.3 {
-  SELECT * FROM x1, (SELECT b FROM vvv UNION ALL SELECT c from x3);
+  SELECT * FROM x1, (SELECT b FROM vvv UNION ALL SELECT c from x3) ORDER BY 1,2;
 } {
-  a 21 a 22 a 23 a 24 a 25 a 302 a 303 a 301
-  b 21 b 22 b 23 b 24 b 25 b 302 b 303 b 301
+  a 21 a 22 a 23 a 24 a 25 a 301 a 302 a 303
+  b 21 b 22 b 23 b 24 b 25 b 301 b 302 b 303
 }
 
 finish_test

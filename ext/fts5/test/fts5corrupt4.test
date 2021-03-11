@@ -29,6 +29,8 @@ do_execsql_test 1.0 {
   INSERT INTO ttt SELECT a||a, b||b FROM ttt;   
 }
 
+expr srand(1)
+
 proc mutate {blob i} {
   set o [expr {$i % [string length $blob]}]
   set a [string range $blob 0 $o-1]

@@ -742,6 +742,7 @@ proc print_categories {lMap} {
         }
         iTbl++;
       }
+      aAscii[0] = 0;                  /* 0x00 is never a token character */
     }
   }]
 }
