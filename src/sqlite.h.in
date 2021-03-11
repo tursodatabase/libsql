@@ -2132,7 +2132,13 @@ struct sqlite3_mem_methods {
 ** The second parameter is a pointer to an integer into which
 ** is written 0 or 1 to indicate whether views are disabled or enabled
 ** following this call.  The second parameter may be a NULL pointer, in
-** which case the view setting is not reported back. </dd>
+** which case the view setting is not reported back.
+**
+** <p>Originally this option disabled all views.  ^(However, since
+** SQLite version 3.35.0, TEMP views are still allowed even if
+** this option is off.  So, in other words, this option now only disables
+** views in the main database schema or in the schemas of ATTACH-ed
+** databases.)^ </dd>
 **
 ** [[SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
