@@ -910,4 +910,19 @@ do_execsql_test attach-12.1 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2021-03-10 Forum post https://sqlite.org/forum/forumpost/a006d86f72
+#
+reset_db
+do_test attach-13.1 {
+  sqlite3 db :memory:
+  db eval {CREATE TABLE base(x);}
+  for {set i 0} {$i<$SQLITE_MAX_ATTACHED} {incr i} {
+    db eval "ATTACH ':memory:' AS a$i"
+  }
+  set m "a[expr {$SQLITE_MAX_ATTACHED-1}]"
+  db eval "CREATE TABLE $m.t1(a INTEGER PRIMARY KEY, b);"
+  db eval "CREATE TABLE $m.t2(a INTEGER PRIMARY KEY, b);"
+  db eval {SELECT a FROM t1 WHERE b IN (SELECT a FROM t2);}
+} {}
+
 finish_test
