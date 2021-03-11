@@ -29,7 +29,7 @@ do_test 1.0 {
     WITH s(i) AS (
       VALUES(1) UNION ALL SELECT i+1 FROM s WHERe i<10000
     )
-    INSERT INTO t1 SELECT 'abcde', randomblob(16), i FROM s;
+    INSERT INTO t1 SELECT 'abcde', randomblob(18), i FROM s;
   }
   compare_db db db2
 } {}

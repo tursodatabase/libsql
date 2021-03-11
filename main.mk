@@ -360,6 +360,7 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/appendvfs.c \
   $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/cksumvfs.c \
   $(TOP)/ext/misc/closure.c \

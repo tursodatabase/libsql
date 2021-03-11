@@ -1490,6 +1490,11 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 #endif /* SQLITE_OMIT_DEPRECATED */
 #define SQLITE_TRACE_NONLEGACY_MASK  0x0f     /* Normal flags */
 
+/*
+** Maximum number of sqlite3.aDb[] entries.  This is the number of attached
+** databases plus 2 for "main" and "temp".
+*/
+#define SQLITE_MAX_DB (SQLITE_MAX_ATTACHED+2)
 
 /*
 ** Each database connection is an instance of the following structure.
@@ -4818,6 +4823,7 @@ void sqlite3KeyInfoUnref(KeyInfo*);
 KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
 KeyInfo *sqlite3KeyInfoOfIndex(Parse*, Index*);
 KeyInfo *sqlite3KeyInfoFromExprList(Parse*, ExprList*, int, int);
+const char *sqlite3SelectOpName(int);
 int sqlite3HasExplicitNulls(Parse*, ExprList*);
 
 #ifdef SQLITE_DEBUG

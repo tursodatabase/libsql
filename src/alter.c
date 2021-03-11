@@ -1241,9 +1241,8 @@ static int renameResolveTrigger(Parse *pParse){
           rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
         }
         assert( !pStep->pUpsert || (!pStep->pWhere && !pStep->pExprList) );
-        if( pStep->pUpsert ){
+        if( pStep->pUpsert && rc==SQLITE_OK ){
           Upsert *pUpsert = pStep->pUpsert;
-          assert( rc==SQLITE_OK );
           pUpsert->pUpsertSrc = pSrc;
           sNC.uNC.pUpsert = pUpsert;
           sNC.ncFlags = NC_UUpsert;
@@ -1803,10 +1802,11 @@ static void dropColumnFunc(
   db->xAuth = 0;
 #endif
 
+  UNUSED_PARAMETER(NotUsed);
   rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
-  if( pTab->nCol==1 || iCol>=pTab->nCol ){ 
+  if( pTab==0 || pTab->nCol==1 || iCol>=pTab->nCol ){ 
     /* This can happen if the sqlite_schema table is corrupt */
     rc = SQLITE_CORRUPT_BKPT;
     goto drop_column_done;

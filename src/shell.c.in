@@ -10823,7 +10823,8 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 }
 
 #ifndef SQLITE_SHELL_IS_UTF8
-#  if (defined(_WIN32) || defined(WIN32)) && defined(_MSC_VER)
+#  if (defined(_WIN32) || defined(WIN32)) \
+   && (defined(_MSC_VER) || (defined(UNICODE) && defined(__GNUC__)))
 #    define SQLITE_SHELL_IS_UTF8          (0)
 #  else
 #    define SQLITE_SHELL_IS_UTF8          (1)
