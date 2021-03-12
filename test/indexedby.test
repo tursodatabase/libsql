@@ -90,9 +90,9 @@ do_test indexedby-2.4 {
   catchsql { SELECT * FROM t1 INDEXED BY i3 WHERE a = 'one' AND b = 'two'}
 } {1 {no such index: i3}}
 
-# EVIDENCE-OF: R-62112-42456 If the query optimizer is unable to use the
-# index specified by the INDEX BY clause, then the query will fail with
-# an error.
+# EVIDENCE-OF: R-05301-32681 If the query optimizer is unable to use the
+# index specified by the INDEXED BY clause, then the query will fail
+# with an error.
 do_test indexedby-2.4.1 {
   catchsql { SELECT b FROM t1 INDEXED BY i1 WHERE b = 'two' }
 } {0 {}}

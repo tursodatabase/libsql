@@ -57,7 +57,7 @@ proc do_atdc_error_test {tn schema atdc error} {
 # and does not have a UNIQUE constraint.
 #
 
-# EVIDENCE-OF: R-05184-13006 The column is a PRIMARY KEY.
+# EVIDENCE-OF: R-52436-31752 The column is a PRIMARY KEY or part of one.
 #
 do_atdc_error_test 2.1.1 {
   CREATE TABLE x1(a PRIMARY KEY, b, c);
@@ -65,6 +65,13 @@ do_atdc_error_test 2.1.1 {
   ALTER TABLE x1 DROP COLUMN a 
 } {
   cannot drop PRIMARY KEY column: "a"
+}
+do_atdc_error_test 2.1.2 {
+  CREATE TABLE x1(a,b,c,d,e, PRIMARY KEY(b,c,d));
+} { 
+  ALTER TABLE x1 DROP COLUMN c
+} {
+  cannot drop PRIMARY KEY column: "c"
 }
 
 # EVIDENCE-OF: R-43412-16016 The column has a UNIQUE constraint.
@@ -84,7 +91,7 @@ do_atdc_error_test 2.2.2 {
   error in table x1 after drop column: no such column: c
 }
 
-# EVIDENCE-OF: R-46731-08965: The column is indexed.
+# EVIDENCE-OF: R-46731-08965 The column is indexed.
 #
 do_atdc_error_test 2.3.1 {
   CREATE TABLE 'one two'('x y', 'z 1', 'a b');
@@ -103,7 +110,7 @@ do_atdc_error_test 2.3.2 {
   error in index idx after drop column: no such column: a
 }
 
-# EVIDENCE-OF: R-46731-08965: The column is indexed.
+# EVIDENCE-OF: R-46731-08965 The column is indexed.
 #
 do_atdc_error_test 2.4.1 {
   CREATE TABLE x1234(a, b, c PRIMARY KEY) WITHOUT ROWID;
@@ -114,7 +121,8 @@ do_atdc_error_test 2.4.1 {
   error in index i1 after drop column: no such column: a
 }
 
-# EVIDENCE-OF: R-18825-17786 The column appears in a table CHECK constraint.
+# EVIDENCE-OF: R-47838-03249 The column is named in a table or column
+# CHECK constraint not associated with the column being dropped.
 #
 do_atdc_error_test 2.5.1 {
   CREATE TABLE x1234(a, b, c PRIMARY KEY, CHECK(((a+5)%10)!=0)) WITHOUT ROWID;
@@ -187,7 +195,7 @@ do_atdc_error_test 2.8.3 {
 # if the CHECK constraint was specified as part of the column definition.
 #
 
-# EVIDENCE-OF: R-60924-11170 However, the column being deleted can be used in a
+# STALE-EVIDENCE: R-60924-11170 However, the column being deleted can be used in a
 # column CHECK constraint because the column CHECK constraint is dropped
 # together with the column itself.
 do_execsql_test 3.0 {
