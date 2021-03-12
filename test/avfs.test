@@ -12,25 +12,36 @@
 # This file implements tests for the appendvfs extension.
 #
 # Tests performed:
-# avfs-1.0. Test that an appendvfs DB can be added to an empty file.
+# avfs-1.0. Test that an appendvfs DB can be added to an empty (ZLF) file.
 # avfs-1.1. Test that the DB can be read with correct content upon reopen.
 # avfs-1.2. Test that an appendvfs DB can be added to a simple text file.
 # avfs-1.3. Test that the DB can be read with correct content upon reopen.
+# avfs-1.4. Test that appended DB is aligned to default page boundary.
 # avfs-2.1. Test that the simple text file retains its initial text.
 # avfs-3.1. Test that the appendvfs can grow and shrink, remaining intact.
 # avfs-3.2. Test that appendvfs is intact after grow/shrink/close/reopen.
 # avfs-4.1. Test shell's ability to append to a non-appendvfs file.
 # avfs-4.2. Test shell's ability to append to empty or nonexistent file.
 # avfs-4.3. Test shell's ability to reopen and alter an appendvfs file.
+# avfs-5.1. Test appendvfs refusal to open too-tiny DB appended onto ZLF.
+# avfs-5.2. Test appendvfs refusal to open too-tiny DB appended on other.
 # ...
 # (more to come)
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix avfs
+
+# Do not attempt this test if SQLITE_OMIT_VIRTUALTABLE is defined. 
+#
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 set CLI [test_find_cli]
 db close
-forcedelete test.db
+# forcedelete test.db
 
 load_static_extension db appendvfs
 
@@ -38,6 +49,16 @@ set ::fa avfs.adb
 set ::fza avfs.sdb
 forcedelete $::fa $::fza
 set ::result {}
+
+proc shellDoesAr {} {
+  set shdo "sh_app1.sql"
+  forcedelete $shdo
+  set fd [open $shdo w]
+  puts $fd ".help\n.q"
+  close $fd
+  set res [catchcmd "-batch -cmd \".read $shdo\""]
+  return [regexp {^.archive} [lindex $res 1]]
+}
 
 set ::vf "&vfs=apndvfs"
 
@@ -96,6 +117,7 @@ do_test 1.2 {
   set adbSz [file size $::fa]
   sqlite3 adb "file:$::fa?mode=rwc$::vf" -uri 1
   adb eval {
+    PRAGMA auto_vacuum = 0;
     PRAGMA page_size=512;
     PRAGMA cache_size=0;
     CREATE TABLE t1(a TEXT);
@@ -115,9 +137,12 @@ do_test 1.3 {
     SELECT group_concat(a) as pets FROM (SELECT a FROM t1 ORDER BY a DESC);
   } { lappend results $pets }
   adb close
-  lappend results [fosAvfs $fa]
   set ::result [join $results " | "]
-} {pig,dog,cat | 4096}
+} {pig,dog,cat}
+
+do_test 1.4 {
+  set ::result [fosAvfs $fa]
+} {4096}
 
 do_test 2.1 {
   set in [open $::fa r]
@@ -194,12 +219,19 @@ do_test 3.2 {
   set ::result [join $results " | "]
 } {ok}
 
+set ::cliDoesAr [shellDoesAr]
+
 do_test 4.1 {
   set shdo "sh_app1.sql"
   set shod "sh_app1.adb"
   forcedelete $shdo $shod
   set ofd [open $shdo w]
-  puts $ofd ".ar -c"
+  if {$::cliDoesAr} {
+    puts $ofd ".ar -c"
+  } else {
+    puts $ofd "pragma page_size=512;"
+    puts $ofd "create table sqlar (a);"
+  }
   puts $ofd ".tables"
   puts $ofd ".q"
   close $ofd
@@ -217,7 +249,12 @@ do_test 4.2 {
   set shod "sh_app1.adb"
   forcedelete $shdo $shod
   set ofd [open $shdo w]
-  puts $ofd ".ar -c"
+  if {$::cliDoesAr} {
+    puts $ofd ".ar -c"
+  } else {
+    puts $ofd "pragma page_size=512;"
+    puts $ofd "create table sqlar (a);"
+  }
   puts $ofd ".tables"
   puts $ofd ".q"
   close $ofd
@@ -234,8 +271,13 @@ do_test 4.3 {
   set shod "sh_app1.adb" ; # Same as test 4.2, reusing ADB.
   forcedelete $shdo
   set ofd [open $shdo w]
-  puts $ofd ".ar -u $shdo"
-  puts $ofd "select count(*) from sqlar where name = '$shdo';"
+  if {$::cliDoesAr} {
+    puts $ofd ".ar -u $shdo"
+    puts $ofd "select count(*) from sqlar where name = '$shdo';"
+  } else {
+    puts $ofd "insert into sqlar values (1);"
+    puts $ofd "select count(*) from sqlar;"
+  }
   puts $ofd ".q"
   close $ofd
   set res [catchcmd "-append -batch -init $shdo $shod" ""]
@@ -248,8 +290,48 @@ do_test 4.3 {
   set ::result [join $res " | "]
 } {0 | 1 | 1}
 
+do_test 5.1 {
+  set fake "faketiny.sdb"
+  forcedelete $fake
+  set ofd [open $fake wb]
+  puts -nonewline $ofd "SQLite format 3"
+  puts -nonewline $ofd [binary format "c" 0]
+  puts -nonewline $ofd "Start-Of-SQLite3-"
+  puts -nonewline $ofd [binary format "W" 0]
+  close $ofd
+  if {[catch {sqlite3 adb "file:$fake?mode=rw$::vf" -uri 1}]} {
+    set res "Open failed."
+  } else {
+    adb close
+    set res "Opened when should not."
+  }
+  forcedelete $fake
+  set ::result $res
+} {Open failed.}
+
+do_test 5.2 {
+  set fake "faketiny.sdb"
+  forcedelete $fake
+  set ofd [open $fake wb]
+  set fakeAppendee "Dog ate my homework.\n"
+  puts -nonewline $ofd $fakeAppendee
+  puts -nonewline $ofd "SQLite format 3"
+  puts -nonewline $ofd [binary format "c" 0]
+  puts -nonewline $ofd "Start-Of-SQLite3-"
+  puts -nonewline $ofd [binary format "W" [string length $fakeAppendee]]
+  close $ofd
+  if {[catch {sqlite3 adb "file:$fake?mode=rw$::vf" -uri 1}]} {
+    set res "Open failed."
+  } else {
+    adb close
+    set res "Opened when should not."
+  }
+  forcedelete $fake
+  set ::result $res
+} {Open failed.}
+
 forcedelete $::fa $::fza
 
-unset -nocomplain ::fa ::fza ::tlo ::result ::randints
+unset -nocomplain ::fa ::fza ::tlo ::result ::randints ::cliDoesAr
 
 finish_test

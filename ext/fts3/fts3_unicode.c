@@ -285,6 +285,7 @@ static int unicodeOpen(
   pCsr->aInput = (const unsigned char *)aInput;
   if( aInput==0 ){
     pCsr->nInput = 0;
+    pCsr->aInput = (const unsigned char*)"";
   }else if( nInput<0 ){
     pCsr->nInput = (int)strlen(aInput);
   }else{

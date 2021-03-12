@@ -788,16 +788,19 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
 
-    /* An "<expr> IS NOT NULL" or "<expr> IS NULL". After resolving the
-    ** LHS, check if there is a NOT NULL constraint in the schema that
-    ** means the value of the expression can be determined immediately.
-    ** If that is the case, replace the current expression node with 
-    ** a TK_TRUEFALSE node.
+    /* An optimization:  Attempt to convert
     **
-    ** If the node is replaced with a TK_TRUEFALSE node, then also restore
-    ** the NameContext ref-counts to the state they where in before the
-    ** LHS expression was resolved. This prevents the current select
-    ** from being erroneously marked as correlated in some cases.
+    **      "expr IS NOT NULL"  -->  "TRUE"
+    **      "expr IS NULL"      -->  "FALSE"
+    **
+    ** if we can prove that "expr" is never NULL.  Call this the
+    ** "NOT NULL strength reduction optimization".
+    **
+    ** If this optimization occurs, also restore the NameContext ref-counts
+    ** to the state they where in before the "column" LHS expression was
+    ** resolved.  This prevents "column" from being counted as having been
+    ** referenced, which might prevent a SELECT from being erroneously
+    ** marked as correlated.
     */
     case TK_NOTNULL:
     case TK_ISNULL: {

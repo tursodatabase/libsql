@@ -1969,7 +1969,7 @@ void sqlite3Pragma(
   ** Checkpoint the database.
   */
   case PragTyp_WAL_CHECKPOINT: {
-    int iBt = (pId2->z?iDb:SQLITE_MAX_ATTACHED);
+    int iBt = (pId2->z?iDb:SQLITE_MAX_DB);
     int eMode = SQLITE_CHECKPOINT_PASSIVE;
     if( zRight ){
       if( sqlite3StrICmp(zRight, "full")==0 ){
