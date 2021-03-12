@@ -2055,9 +2055,9 @@ do_test e_fkey-44.5 {
 #-------------------------------------------------------------------------
 # Test SET DEFAULT actions.
 #
-# EVIDENCE-OF: R-43054-54832 The "SET DEFAULT" actions are similar to
+# EVIDENCE-OF: R-55814-22637 The "SET DEFAULT" actions are similar to
 # "SET NULL", except that each of the child key columns is set to
-# contain the columns default value instead of NULL.
+# contain the column's default value instead of NULL.
 #
 drop_all_tables
 do_test e_fkey-45.1 {
