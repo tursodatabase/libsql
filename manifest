@@ -1,5 +1,5 @@
-C Conform\sdescription\sof\ssqlite3changeset_op()\sarguments\sto\simplemented\sbehavior,\ssome\sreformatting.\nThis\sis\sa\scomment-only\schange;\sno\scode\sis\saffected.
-D 2021-03-12T00:44:10.419
+C Fix\sthe\s".read"\scommand\sin\sthe\sCLI\sso\sthat\sSQLITE_OMIT_POPEN\sdisables\nreading\sfrom\sa\spipeline.
+D 2021-03-12T01:49:08.236
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -543,7 +543,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d95db73d3e6a5c689e5f6604b4d2521350e45f2a0f0f84f5a2dc2bfee56580a0
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c fc904a7aa7ebfd5c7a57a0141d829c9f5388ac7773e0d1d9668768c1bbc87fc3
-F src/shell.c.in af18a2e980aabe739a8188266464866fe7947b100674e07480e7ba3e37595947
+F src/shell.c.in 35adf1212d759069b00e468a9304a05a67710c8f8f50e7312335e23cac985d8c
 F src/sqlite.h.in 3426a080ea1f222a73e3bd91e7eacbd30570a0117c03d42c6dde606f33e5e318
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07150cf15ad36c7fc681a911f66db23d610ddf110a7be7f1fcefbd8750cd135a
-R f81dccf913eae7b6d8d57d3676a5e913
-U larrybr
-Z dd58b0c8c1bef4990a7861879528581c
+P 9d6e544c47b9a5d97bd02a658db5cd202bd1952f8ba3bc50e8cf47d7206041c0
+R 8423c0661daaf9ba8568de41b16ee2d0
+U drh
+Z 4bad0f2be62fa6cc0585721a6a18ada9
