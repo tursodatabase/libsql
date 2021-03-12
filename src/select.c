@@ -749,7 +749,7 @@ static void codeOffset(
 ** on the value of parameter eTnctType:
 **
 **   WHERE_DISTINCT_UNORDERED/WHERE_DISTINCT_NOOP:
-**     The ephemeral cursor table is queries for a record identical to the
+**     The ephemeral cursor table is queried for a record identical to the
 **     record formed by the current array of registers. If one is found,
 **     jump to VM address addrRepeat. Otherwise, insert a new record into
 **     the ephemeral cursor and proceed.
@@ -771,40 +771,27 @@ static void codeOffset(
 ** collation sequences that should be used for the comparisons if 
 ** eTnctType is WHERE_DISTINCT_ORDERED.
 */
-static void codeDistinct(
+static int codeDistinct(
   Parse *pParse,     /* Parsing and code generating context */
   int eTnctType,     /* WHERE_DISTINCT_* value */
   int iTab,          /* A sorting index used to test for distinctness */
-  int iTabAddr,      /* Address of OP_OpenEphemeral instruction for iTab */
   int addrRepeat,    /* Jump to here if not distinct */
   ExprList *pEList,  /* Expression for each element */
   int regElem        /* First element */
 ){
+  int iRet = 0;
   int nResultCol = pEList->nExpr;
   Vdbe *v = pParse->pVdbe;
 
   switch( eTnctType ){
     case WHERE_DISTINCT_ORDERED: {
       int i;
-      VdbeOp *pOp;            /* No longer required OpenEphemeral instr. */
       int iJump;              /* Jump destination */
       int regPrev;            /* Previous row content */
 
       /* Allocate space for the previous row */
-      regPrev = pParse->nMem+1;
+      iRet = regPrev = pParse->nMem+1;
       pParse->nMem += nResultCol;
-
-      /* Change the OP_OpenEphemeral coded earlier to an OP_Null
-      ** sets the MEM_Cleared bit on the first register of the
-      ** previous value.  This will cause the OP_Ne below to always
-      ** fail on the first iteration of the loop even if the first
-      ** row is all NULLs.  */
-      sqlite3VdbeChangeToNoop(v, iTabAddr);
-      pOp = sqlite3VdbeGetOp(v, iTabAddr);
-      pOp->opcode = OP_Null;
-      pOp->p1 = 1;
-      pOp->p2 = regPrev;
-      pOp = 0;  /* Ensure pOp is not used after sqlite3VdbeAddOp() */
 
       iJump = sqlite3VdbeCurrentAddr(v) + nResultCol;
       for(i=0; i<nResultCol; i++){
@@ -825,7 +812,7 @@ static void codeDistinct(
     }
 
     case WHERE_DISTINCT_UNIQUE: {
-      sqlite3VdbeChangeToNoop(v, iTabAddr);
+      /* nothing to do */
       break;
     }
 
@@ -837,7 +824,32 @@ static void codeDistinct(
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r1, regElem, nResultCol);
       sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
       sqlite3ReleaseTempReg(pParse, r1);
+      iRet = iTab;
       break;
+    }
+  }
+
+  return iRet;
+}
+
+static void fixDistinctOpenEph(
+  Parse *pParse,     /* Parsing and code generating context */
+  int eTnctType,     /* WHERE_DISTINCT_* value */
+  int iVal,          /* Value returned by codeDistinct() */
+  int iTabAddr       /* Address of OP_OpenEphemeral instruction for iTab */
+){
+  if( eTnctType==WHERE_DISTINCT_UNIQUE || eTnctType==WHERE_DISTINCT_ORDERED ){
+    Vdbe *v = pParse->pVdbe;
+    sqlite3VdbeChangeToNoop(v, iTabAddr);
+    if( eTnctType==WHERE_DISTINCT_ORDERED ){
+      /* Change the OP_OpenEphemeral to an OP_Null that sets the MEM_Cleared 
+      ** bit on the first register of the previous value.  This will cause the
+      ** OP_Ne added in codeDistinct() to always fail on the first iteration of
+      ** the loop even if the first row is all NULLs.  */
+      VdbeOp *pOp = sqlite3VdbeGetOp(v, iTabAddr);
+      pOp->opcode = OP_Null;
+      pOp->p1 = 1;
+      pOp->p2 = iVal;
     }
   }
 }
@@ -1087,9 +1099,11 @@ static void selectInnerLoop(
   ** part of the result.
   */
   if( hasDistinct ){
+    int eType = pDistinct->eTnctType;
+    int iTab = pDistinct->tabTnct;
     assert( nResultCol==p->pEList->nExpr );
-    codeDistinct(pParse, pDistinct->eTnctType, pDistinct->tabTnct, 
-        pDistinct->addrTnct, iContinue, p->pEList, regResult);
+    iTab = codeDistinct(pParse, eType, iTab, iContinue, p->pEList, regResult);
+    fixDistinctOpenEph(pParse, eType, iTab, pDistinct->addrTnct);
     if( pSort==0 ){
       codeOffset(v, p->iOffset, iContinue);
     }
@@ -5749,8 +5763,8 @@ static void updateAccumulator(
       }
       testcase( nArg==0 );  /* Error condition */
       testcase( nArg>1 );   /* Also an error */
-      codeDistinct(pParse, eDistinctType, pF->iDistinct, pF->iDistAddr, 
-          addrNext, pList, regAgg);
+      pF->iDistinct = codeDistinct(pParse, eDistinctType, 
+          pF->iDistinct, addrNext, pList, regAgg);
     }
     if( pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
       CollSeq *pColl = 0;
@@ -6778,6 +6792,20 @@ int sqlite3Select(
       int addrSortingIdx; /* The OP_OpenEphemeral for the sorting index */
       int addrReset;      /* Subroutine for resetting the accumulator */
       int regReset;       /* Return address register for reset subroutine */
+      ExprList *pDistinct = 0;
+      u16 distFlag = 0;
+      int eDist = WHERE_DISTINCT_NOOP;
+
+      if( pAggInfo->nFunc==1 
+       && pAggInfo->aFunc[0].iDistinct>=0
+       && pAggInfo->aFunc[0].pFExpr->x.pList 
+      ){
+        Expr *pExpr = pAggInfo->aFunc[0].pFExpr->x.pList->a[0].pExpr;
+        pExpr = sqlite3ExprDup(db, pExpr, 0);
+        pDistinct = sqlite3ExprListDup(db, pGroupBy, 0);
+        pDistinct = sqlite3ExprListAppend(pParse, pDistinct, pExpr);
+        distFlag = pDistinct ? WHERE_WANT_DISTINCT : 0;
+      }
 
       /* If there is a GROUP BY clause we might need a sorting index to
       ** implement it.  Allocate that sorting index now.  If it turns out
@@ -6814,8 +6842,8 @@ int sqlite3Select(
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       SELECTTRACE(1,pParse,p,("WhereBegin\n"));
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0,
-          WHERE_GROUPBY | (orderByGrp ? WHERE_SORTBYGROUP : 0), 0
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, pDistinct,
+          WHERE_GROUPBY | (orderByGrp ? WHERE_SORTBYGROUP : 0) | distFlag, 0
       );
       if( pWInfo==0 ) goto select_end;
       SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
@@ -6935,7 +6963,8 @@ int sqlite3Select(
       ** the current row
       */
       sqlite3VdbeJumpHere(v, addr1);
-      updateAccumulator(pParse, iUseFlag, pAggInfo, WHERE_DISTINCT_UNORDERED);
+      eDist = sqlite3WhereIsDistinct(pWInfo);
+      updateAccumulator(pParse, iUseFlag, pAggInfo, eDist);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iUseFlag);
       VdbeComment((v, "indicate data in accumulator"));
 
@@ -6991,7 +7020,13 @@ int sqlite3Select(
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
       VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp1(v, OP_Return, regReset);
-     
+
+      if( eDist!=WHERE_DISTINCT_NOOP ){
+        struct AggInfo_func *pF = &pAggInfo->aFunc[0];
+        fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
+      }
+
+      sqlite3ExprListDelete(db, pDistinct);
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
       Table *pTab;
@@ -7057,6 +7092,7 @@ int sqlite3Select(
         int regAcc = 0;           /* "populate accumulators" flag */
         ExprList *pDistinct = 0;
         u16 distFlag = 0;
+        int eDist;
 
         /* If there are accumulator registers but no min() or max() functions
         ** without FILTER clauses, allocate register regAcc. Register regAcc
@@ -7107,9 +7143,13 @@ int sqlite3Select(
           goto select_end;
         }
         SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
-        updateAccumulator(
-            pParse, regAcc, pAggInfo, sqlite3WhereIsDistinct(pWInfo)
-        );
+        eDist = sqlite3WhereIsDistinct(pWInfo);
+        updateAccumulator(pParse, regAcc, pAggInfo, eDist);
+        if( eDist!=WHERE_DISTINCT_NOOP ){
+          struct AggInfo_func *pF = &pAggInfo->aFunc[0];
+          fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
+        }
+
         if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);
         if( minMaxFlag ){
           sqlite3WhereMinMaxOptEarlyOut(v, pWInfo);
