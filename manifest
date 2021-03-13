@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sin\snew\scode\son\sthis\sbranch.
-D 2021-03-12T21:09:20.890
+C Fix\stypos\sin\scomments\sand\sadd\stest\scases.
+D 2021-03-13T17:21:24.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -547,7 +547,7 @@ F src/shell.c.in 35adf1212d759069b00e468a9304a05a67710c8f8f50e7312335e23cac985d8
 F src/sqlite.h.in 3426a080ea1f222a73e3bd91e7eacbd30570a0117c03d42c6dde606f33e5e318
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h 312fc96be9050903b7d01dca7f80800b9188ffab6074506f1a73077e3f1cafec
+F src/sqliteInt.h d10a181d069075fe335f5965829b498d17d66ea4afb2c0a04dea5633a62fdf79
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -629,7 +629,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
-F src/where.c 6fcbfab409b4a60dd92abd4c5f3fca44f5df3f8ea24f689d2ea620f05da89d96
+F src/where.c 07d1232df6fc4705815b0ef5182fe3e56bdba6ac09ce52bd66ecb207626aac2b
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c e57a8690311a75d06e723e8d379f9831de04aba300e07174d236e32a7f9c7a13
 F src/whereexpr.c 53452fe2fb07be2f4cb17f55cc721416fae0092c00717f106faf289c990b6494
@@ -844,7 +844,7 @@ F test/descidx3.test 953c831df7ea219c73826dfbf2f6ee02d95040725aa88ccb4fa43d1a199
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test e7d0cf371944dd0cbedff86420744e2f1ea2b528156451c97eb6ff41a99b9236
 F test/distinct2.test cd1d15a4a2abf579298f7161e821ed50c0119136fe0424db85c52cf0adc230d1
-F test/distinctagg.test bfdd84af7919687d416997bc8f156b11d693c2cc4d002bdb44c5884ec9eb757a
+F test/distinctagg.test fd74c3783700f1d99c67a5d906bba97fb6650f4559f3ea7b1873f793ffc601c9
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
 F test/e_blobopen.test e95e1d40f995056f6f322cd5e1a1b83a27e1a145
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 198bc510d64b5794559584ad5c9de41dc966dce4eb78be15b12adba43dfcb639
-R 6377899be744d0cc8507f339ce2d0263
+P c05ed2a8a9c4975c69bdfa733598ed90c1509d52b3c39dedbd829ab148777e1d
+R 457fb9da170354f72baa7acae0abf7b9
 U dan
-Z baf0281e2435d9e0d6e51472154aad62
+Z 04936f8ca7b90bfb2cf6a7dfa6671741

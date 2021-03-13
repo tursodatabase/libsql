@@ -5025,7 +5025,9 @@ WhereInfo *sqlite3WhereBegin(
   /* Attempt to omit tables from the join that do not affect the result.
   ** For a table to not affect the result, the following must be true:
   **
-  **   1) The query must not be an aggregate.
+  **   1) The query must not be an aggregate. Or it must be an aggregate
+  **      that contains only one aggregate function with the DISTINCT 
+  **      qualifier. e.g. "SELECT count(DISTINCT ...) FROM".
   **   2) The table must be the RHS of a LEFT JOIN.
   **   3) Either the query must be DISTINCT, or else the ON or USING clause
   **      must contain a constraint that limits the scan of the table to 

@@ -144,6 +144,10 @@ do_execsql_test 3.0 {
   INSERT INTO t2 VALUES(2, 3, 'x');
   INSERT INTO t2 VALUES(2, 3, 'y');
   INSERT INTO t2 VALUES(2, 3, 'z');
+
+  CREATE TABLE t3(x, y, z);
+  INSERT INTO t3 VALUES(1,1,1);
+  INSERT INTO t3 VALUES(2,2,2);
 }
 
 foreach {tn use_eph sql res} {
@@ -162,6 +166,28 @@ foreach {tn use_eph sql res} {
   } $use_eph
 
   do_execsql_test 4.$tn.2 $sql $res
+}
+
+
+set t3root [db one {SELECT rootpage FROM sqlite_schema WHERE name='t3'}]
+foreach {tn use_t3 sql res} {
+  1 1 "SELECT count(*) FROM t3"   2
+  2 0 "SELECT count(*) FROM t1"   10
+  2 1 "SELECT count(DISTINCT a) FROM t1, t3" 4
+  3 0 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3" 4
+  4 1 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 WHERE t3.x=1" 4
+  5 1 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 WHERE t3.x=0" 0
+  6 0 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 ON (t3.x=0)"  4
+} {
+  do_test 5.$tn.1 {
+    set bUse 0
+    db eval "EXPLAIN $sql" a {
+      if {$a(opcode)=="OpenRead" && $a(p2)==$t3root} {set bUse 1}
+    }
+    set bUse
+  } $use_t3
+
+  do_execsql_test 5.$tn.2 $sql $res
 }
 
 finish_test
