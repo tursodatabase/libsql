@@ -1,5 +1,5 @@
-C An\salternative\sapproach\sfor\sfixing\sticket\s[1c24a659e6d7f3a1].
-D 2021-03-14T19:55:40.456
+C An\sadditional\stest\scase
+D 2021-03-14T20:17:06.460
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1282,7 +1282,7 @@ F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
 F test/quota.test bfb269ce81ea52f593f9648316cd5013d766dd2a
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
-F test/quote.test a626b6ada95eb60361eb61a3c20f84e8fa731bad85bc17cda12853c0fcea6b3a
+F test/quote.test b8ddaba6b81dcf63bb31243219e28a2f96e04396adc50108cc7e5593019c3eb5
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
@@ -1910,10 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9f8f488ff9d47fe7bb8838e683bae4fea038f7278ef885ecf292143a0dd88ed
-R fc9f9d8e73dcd138412d5e504baa211a
-T *branch * tkt-1c24a659-b
-T *sym-tkt-1c24a659-b *
-T -sym-trunk *
+P a2adae907a28e169e64cfe69d97d7b68cb94e6ba07d2dfa995e3fbc6672fafdd
+R 7efc992597193ee315e52dfcbc967a14
 U drh
-Z edd18b4182e47ec8e1ea3e607922fbaf
+Z 11c283259a83f4e587c2a4c2c63c3389

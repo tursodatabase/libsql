@@ -172,5 +172,12 @@ do_catchsql_test 3.4 {
   INSERT INTO t1 VALUES(1,2,3),(1,4,5);
   ALTER TABLE t1 DROP COLUMN b;
 } {1 {error in index x1 after drop column: no such column: b}}
+do_catchsql_test 3.5 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX x1 ON t1("a"||"x");
+  INSERT INTO t1 VALUES(1,2,3),(1,4,5);
+  ALTER TABLE t1 DROP COLUMN b;
+} {0 {}}
 
 finish_test
