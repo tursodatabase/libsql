@@ -6,8 +6,8 @@ cd "$SCRIPT_DIR" || { echo "fatal error"; exit 1; }
 export SQLITE3_LIB_DIR=$SCRIPT_DIR/sqlite3
 
 # Download and extract amalgamation
-SQLITE=sqlite-amalgamation-3340000
-curl -O https://sqlite.org/2020/$SQLITE.zip
+SQLITE=sqlite-amalgamation-3350000
+curl -O https://sqlite.org/2021/$SQLITE.zip
 unzip -p "$SQLITE.zip" "$SQLITE/sqlite3.c" > "$SQLITE3_LIB_DIR/sqlite3.c"
 unzip -p "$SQLITE.zip" "$SQLITE/sqlite3.h" > "$SQLITE3_LIB_DIR/sqlite3.h"
 unzip -p "$SQLITE.zip" "$SQLITE/sqlite3ext.h" > "$SQLITE3_LIB_DIR/sqlite3ext.h"
