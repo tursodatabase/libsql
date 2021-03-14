@@ -561,7 +561,7 @@ static int lookupName(
      && areDoubleQuotedStringsEnabled(db, pTopNC)
     ){
       /* If a double-quoted identifier does not match any known column name,
-      ** then treat it as a string.
+      ** then treat it as a string.  tag-20210313-001
       **
       ** This hack was added in the early days of SQLite in a misguided attempt
       ** to be compatible with MySQL 3.x, which used double-quotes for strings.

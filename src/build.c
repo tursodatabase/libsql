@@ -1604,14 +1604,24 @@ void sqlite3AddDefaultValue(
 ** accept it.  This routine does the necessary conversion.  It converts
 ** the expression given in its argument from a TK_STRING into a TK_ID
 ** if the expression is just a TK_STRING with an optional COLLATE clause.
-** If the expression is anything other than TK_STRING, the expression is
-** unchanged.
+**
+** If the expression is already a TK_ID, clear the EP_DblQuoted flag (if
+** that flag exists) to prevent this expression from being converted into
+** a string literal by the double-quoted-string-literal hack in
+** lookupName, tag-20210313-001.  Ticket 1c24a659e6d7f3a1.
+**
+** If the expression is anything other than TK_STRING or TK_ID, the
+** expression is unchanged.
 */
 static void sqlite3StringToId(Expr *p){
   if( p->op==TK_STRING ){
     p->op = TK_ID;
   }else if( p->op==TK_COLLATE && p->pLeft->op==TK_STRING ){
     p->pLeft->op = TK_ID;
+  }else if( p->op==TK_ID ){
+    /* Prevent this ID from being converted into a string literal.
+    ** Ticket 1c24a659e6d7f3a1. */
+    ExprClearProperty(p, EP_DblQuoted);
   }
 }
 
