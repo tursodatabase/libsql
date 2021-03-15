@@ -1,0 +1,63 @@
+# 2021 March 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. This
+# script focuses on testing internal function sqlite_rename_quotefix()
+# directly.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix alterqf
+
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE xyz(a CHECK (a!="str"), b);
+}
+
+foreach {tn before after} {
+  1 {CREATE VIEW v1 AS SELECT "a", "b", "notacolumn!", "c" FROM t1}
+    {CREATE VIEW v1 AS SELECT "a", "b", 'notacolumn!', "c" FROM t1}
+
+  2 {CREATE VIEW v1 AS SELECT "a", "b", "not'a'column!", "c" FROM t1}
+    {CREATE VIEW v1 AS SELECT "a", "b", 'not''a''column!', "c" FROM t1}
+
+  3 {CREATE VIEW v1 AS SELECT "a", "b", "not""a""column!", "c" FROM t1}
+    {CREATE VIEW v1 AS SELECT "a", "b", 'not"a"column!', "c" FROM t1}
+
+  4 {CREATE VIEW v1 AS SELECT "val", count("b") FROM t1 GROUP BY "abc"}
+    {CREATE VIEW v1 AS SELECT 'val', count("b") FROM t1 GROUP BY 'abc'}
+
+  5 {CREATE TABLE xyz(a CHECK (a!="str"), b AS (a||"str"))}
+    {CREATE TABLE xyz(a CHECK (a!='str'), b AS (a||'str'))}
+
+  6 {CREATE INDEX i1 ON t1(a || "str", "b", "val")}
+    {CREATE INDEX i1 ON t1(a || 'str', "b", 'val')}
+
+  7 {CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN SELECT "abcd"; END}
+    {CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN SELECT 'abcd'; END}
+
+  8 {CREATE VIEW v1 AS SELECT "string"'alias' FROM t1}
+    {CREATE VIEW v1 AS SELECT 'string' 'alias' FROM t1}
+
+  9 {CREATE INDEX i1 ON t1(a) WHERE "b"="bb"}
+    {CREATE INDEX i1 ON t1(a) WHERE "b"='bb'}
+
+} {
+  do_execsql_test 1.$tn {
+    SELECT sqlite_rename_quotefix('main', $before)
+  } [list $after]
+}
+
+
+finish_test

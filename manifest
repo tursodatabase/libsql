@@ -1,5 +1,5 @@
-C Update\sgenerated\sautoconf/Makefile.msc\sto\sreflect\sits\ssource.
-D 2021-03-12T23:15:08.537
+C Add\sinternal\sSQL\sfunction\ssqlite_rename_quotefix().\sFor\sconverting\sdouble-quoted\sstrings\sto\stheir\ssingle-quoted\scounterparts\sin\sDDL\sstatements.
+D 2021-03-15T20:22:34.220
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 1f9383846b52e655d40479a5a5659bf60300ed43f7467e6e85d66588ba48f51b
+F src/alter.c 3be93b32c606533808b8ca785d6c4adb55fced922f61ed9e8ba61e9764df9ebf
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c 9cbe761e464025694df8e6f6ee4d9f41432c3a255ca9443ccbb4130eeb87cf72
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -655,6 +655,7 @@ F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e2
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altermalloc3.test 2c7bbd8cf3e9c4a91e28675bb62bcc2ef70f227967fa74349f03d9f4642f0615
+F test/alterqf.test 8bb0ab4fcf7ecbe44a6ba8d017605bfece8bc2f0316727e4df70848e6b689578
 F test/altertab.test 7691872aadfe00a94b459af9086504bcf399dd936336e486da1b182930744b77
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test 2b82fa2236a3a91553d53ae5555d8e723c7eec174c41f1fa62ff497355398479
@@ -1910,7 +1911,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P acd63062eb06748bfe9e4886639e4f2b54ea6a496a83f10716abbaba4115500b
-R 17f134cb27374fc63f087829be8f2d98
-U larrybr
-Z f38b52cd66603df216d7879edb7bd2e5
+P d9f8f488ff9d47fe7bb8838e683bae4fea038f7278ef885ecf292143a0dd88ed
+R 648b014b70c7f6df9ebb9162a19c79e7
+T *branch * alter-quotefix
+T *sym-alter-quotefix *
+T -sym-trunk *
+U dan
+Z bed13b8bcfee4ae93f7eef5cee7d76af
