@@ -53,7 +53,8 @@ static void renameTestSchema(
   Parse *pParse,                  /* Parse context */
   const char *zDb,                /* Name of db to verify schema of */
   int bTemp,                      /* True if this is the temp db */
-  const char *zWhen               /* "when" part of error message */
+  const char *zWhen,              /* "when" part of error message */
+  const char *zDropColumn         /* Name of column being dropped */
 ){
   pParse->colNamesSet = 1;
   sqlite3NestedParse(pParse, 
@@ -61,9 +62,9 @@ static void renameTestSchema(
       "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
-      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q)=NULL ",
+      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q, %Q)=NULL ",
       zDb,
-      zDb, bTemp, zWhen
+      zDb, bTemp, zWhen, zDropColumn
   );
 
   if( bTemp==0 ){
@@ -72,8 +73,8 @@ static void renameTestSchema(
         "FROM temp." DFLT_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
-        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q)=NULL ",
-        zDb, zWhen
+        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q, %Q)=NULL ",
+        zDb, zWhen, zDropColumn
     );
   }
 }
@@ -236,7 +237,7 @@ void sqlite3AlterRenameTable(
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase AND "
-              "    sqlite_rename_test(%Q, sql, type, name, 1, 'after rename') "
+              "  sqlite_rename_test(%Q, sql, type, name, 1, 'after rename',0) "
               "THEN %Q ELSE tbl_name END "
             "WHERE type IN ('view', 'trigger')"
         , zDb, zTabName, zName, zTabName, zDb, zName);
@@ -256,7 +257,7 @@ void sqlite3AlterRenameTable(
 #endif
 
   renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iDb==1, "after rename");
+  renameTestSchema(pParse, zDb, iDb==1, "after rename", 0);
 
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
@@ -624,7 +625,7 @@ void sqlite3AlterRenameColumn(
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iSchema==1, "after rename");
+  renameTestSchema(pParse, zDb, iSchema==1, "after rename", 0);
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
@@ -1048,12 +1049,17 @@ static int renameParseSql(
   const char *zDb,                /* Name of schema SQL belongs to */
   sqlite3 *db,                    /* Database handle */
   const char *zSql,               /* SQL to parse */
-  int bTemp                       /* True if SQL is from temp schema */
+  int bTemp,                      /* True if SQL is from temp schema */
+  const char *zDropColumn         /* Name of column being dropped */
 ){
   int rc;
   char *zErr = 0;
 
   db->init.iDb = bTemp ? 1 : sqlite3FindDbName(db, zDb);
+  if( zDropColumn ){
+    db->init.bDropColumn = 1;
+    db->init.azInit = (char**)&zDropColumn;
+  }
 
   /* Parse the SQL statement passed as the first argument. If no error
   ** occurs and the parse does not result in a new table, index or
@@ -1086,6 +1092,7 @@ static int renameParseSql(
 #endif
 
   db->init.iDb = 0;
+  db->init.bDropColumn = 0;
   return rc;
 }
 
@@ -1387,7 +1394,7 @@ static void renameColumnFunc(
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = 0;
 #endif
-  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
+  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp, 0);
 
   /* Find tokens that need to be replaced. */
   memset(&sWalker, 0, sizeof(Walker));
@@ -1591,7 +1598,7 @@ static void renameTableFunc(
     sWalker.xSelectCallback = renameTableSelectCb;
     sWalker.u.pRename = &sCtx;
 
-    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
+    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp, 0);
 
     if( rc==SQLITE_OK ){
       int isLegacy = (db->flags & SQLITE_LegacyAlter);
@@ -1707,6 +1714,7 @@ static void renameTableFunc(
 **   3: Object name.
 **   4: True if object is from temp schema.
 **   5: "when" part of error message.
+**   6: Name of column being dropped, or NULL.
 **
 ** Unless it finds an error, this function normally returns NULL. However, it
 ** returns integer value 1 if:
@@ -1725,6 +1733,7 @@ static void renameTableTest(
   int bTemp = sqlite3_value_int(argv[4]);
   int isLegacy = (db->flags & SQLITE_LegacyAlter);
   char const *zWhen = (const char*)sqlite3_value_text(argv[5]);
+  char const *zDropColumn = (const char*)sqlite3_value_text(argv[6]);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;
@@ -1735,7 +1744,7 @@ static void renameTableTest(
   if( zDb && zInput ){
     int rc;
     Parse sParse;
-    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
+    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp, zDropColumn);
     if( rc==SQLITE_OK ){
       if( isLegacy==0 && sParse.pNewTable && sParse.pNewTable->pSelect ){
         NameContext sNC;
@@ -1803,7 +1812,7 @@ static void dropColumnFunc(
 #endif
 
   UNUSED_PARAMETER(NotUsed);
-  rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
+  rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1, 0);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
   if( pTab==0 || pTab->nCol==1 || iCol>=pTab->nCol ){ 
@@ -1896,7 +1905,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 );
   zDb = db->aDb[iDb].zDbSName;
-  renameTestSchema(pParse, zDb, iDb==1, "");
+  renameTestSchema(pParse, zDb, iDb==1, "", 0);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_drop_column(%d, sql, %d) "
@@ -1906,7 +1915,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iDb, INITFLAG_AlterDrop);
-  renameTestSchema(pParse, zDb, iDb==1, "after drop column");
+  renameTestSchema(pParse, zDb, iDb==1, "after drop column", zCol);
 
   /* Edit rows of table on disk */
   if( pParse->nErr==0 && (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
@@ -1966,7 +1975,7 @@ void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
-    INTERNAL_FUNCTION(sqlite_rename_test,    6, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
