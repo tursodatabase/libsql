@@ -38,6 +38,13 @@ do_catchsql_test date2-130 {
   INSERT INTO t1(x,y) VALUES('2017-08-01','two');
 } {1 {CHECK constraint failed: date(x) BETWEEN '2017-07-01' AND '2017-07-31'}}
 
+# 2021-03-16 Forum post https://sqlite.org/forum/forumpost/464afd4086
+do_catchsql_test date2-140 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x, y, z AS (date()));
+  INSERT INTO t1(x,y) VALUES(1,2);
+} {1 {non-deterministic use of date() in a generated column}}
+
 do_execsql_test date2-200 {
   CREATE TABLE t2(x,y);
   INSERT INTO t2(x,y) VALUES(1, '2017-07-20'), (2, 'xyzzy');
