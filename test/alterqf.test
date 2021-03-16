@@ -9,8 +9,7 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library. This
-# script focuses on testing internal function sqlite_rename_quotefix()
-# directly.
+# script focuses on testing internal function sqlite_rename_quotefix().
 #
 
 
@@ -22,7 +21,6 @@ sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c);
-  CREATE TABLE xyz(a CHECK (a!="str"), b);
 }
 
 foreach {tn before after} {
@@ -53,10 +51,60 @@ foreach {tn before after} {
   9 {CREATE INDEX i1 ON t1(a) WHERE "b"="bb"}
     {CREATE INDEX i1 ON t1(a) WHERE "b"='bb'}
 
+ 10 {CREATE TABLE t2(abc, xyz CHECK (xyz != "123"))} 
+    {CREATE TABLE t2(abc, xyz CHECK (xyz != '123'))} 
+
+ 11 {
+    CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
+      SELECT max("str", new."a") FROM t1 
+          WHERE group_concat("b", ",") OVER (ORDER BY c||"str");
+      UPDATE t1 SET c= b + "str";
+      DELETE FROM t1 WHERE EXISTS (
+        SELECT 1 FROM t1 AS o WHERE o."a" = "o.a" AND t1.b IN("t1.b")
+      );
+    END;
+ } {
+    CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
+      SELECT max('str', new."a") FROM t1 
+          WHERE group_concat("b", ',') OVER (ORDER BY c||'str');
+      UPDATE t1 SET c= b + 'str';
+      DELETE FROM t1 WHERE EXISTS (
+        SELECT 1 FROM t1 AS o WHERE o."a" = 'o.a' AND t1.b IN('t1.b')
+      );
+    END;
+ }
+
 } {
   do_execsql_test 1.$tn {
     SELECT sqlite_rename_quotefix('main', $before)
   } [list $after]
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE x1(
+      one, two, three, PRIMARY KEY(one), 
+      CHECK (three!="xyz"), CHECK (two!="one")
+  ) WITHOUT ROWID;
+  CREATE INDEX x1i ON x1(one+"two"+"four") WHERE "five";
+  CREATE TEMP TRIGGER AFTER INSERT ON x1 BEGIN
+    UPDATE x1 SET two=new.three || "new" WHERE one=new.one||"";
+  END;
+}
+
+do_execsql_test 2.1 {
+  ALTER TABLE x1 RENAME two TO 'four';
+  SELECT sql FROM sqlite_schema;
+  SELECT sql FROM sqlite_temp_schema;
+} {{CREATE TABLE x1(
+      one, "four", three, PRIMARY KEY(one), 
+      CHECK (three!='xyz'), CHECK ("four"!="one")
+  ) WITHOUT ROWID}
+  {CREATE INDEX x1i ON x1(one+"four"+'four') WHERE 'five'}
+  {CREATE TRIGGER AFTER INSERT ON x1 BEGIN
+    UPDATE x1 SET "four"=new.three || 'new' WHERE one=new.one||'';
+  END}
 }
 
 

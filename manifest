@@ -1,5 +1,5 @@
-C Have\sALTER\sTABLE\sRENAME\sCOLUMN\sand\sDROP\sCOLUMN\suse\ssqlite_rename_quotefix()\sto\sconvert\sany\sdouble-quoted\sstrings\sin\sthe\sdatabase\sschema\sto\stheir\ssingle-quoted\sequivalents.
-D 2021-03-16T16:14:48.466
+C Add\stests\sfor\ssqlite_rename_quotefix().\sFix\sa\smemory\sleak\sin\sthe\ssame.
+D 2021-03-16T18:24:49.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 4f2c88554c65dea16cc5fb37ba464a4ec23147e51d87d22651f96a39fdbe2134
+F src/alter.c 842bb68d8fe651a9c997a30ca212f892b9f293a1e6446d748aa2de6e78345f15
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c 9cbe761e464025694df8e6f6ee4d9f41432c3a255ca9443ccbb4130eeb87cf72
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -654,8 +654,8 @@ F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a54328
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
-F test/altermalloc3.test 2c7bbd8cf3e9c4a91e28675bb62bcc2ef70f227967fa74349f03d9f4642f0615
-F test/alterqf.test 8bb0ab4fcf7ecbe44a6ba8d017605bfece8bc2f0316727e4df70848e6b689578
+F test/altermalloc3.test 7a21b042413c3e9571af4f583e327a6961ec2b7a34eae57a530f89b236a46a72
+F test/alterqf.test 67568ad152db8c1187b15633b801242cf960f1beafc51261a3d1725d910baeb2
 F test/altertab.test 7691872aadfe00a94b459af9086504bcf399dd936336e486da1b182930744b77
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test 2b82fa2236a3a91553d53ae5555d8e723c7eec174c41f1fa62ff497355398479
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f15d51054afb1e3fec87938f2b04a5a0d0611b08248367850450de7c4166e3d1
-R ab802f6c03d96d9f26abdd92e7d8cf40
+P 6446c0961077396086251670102ea7bf17d54a6b0f0ca56c6af89028a1ff9039
+R b66159d3defa695ee162d96725abba18
 U dan
-Z cd13fbb96f280d93ac5264d668cf2de0
+Z c919991679b7a45f0f2c00ac17619d54

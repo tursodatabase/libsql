@@ -1849,6 +1849,7 @@ static void renameQuotefixFunc(
       if( rc==SQLITE_OK ){ 
         rc = renameEditSql(context, &sCtx, zInput, 0, 0);
       }
+      renameTokenFree(db, sCtx.pList);
     }
     if( rc!=SQLITE_OK ){
       sqlite3_result_error_code(context, rc);
