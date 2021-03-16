@@ -53,7 +53,8 @@ static void renameTestSchema(
   Parse *pParse,                  /* Parse context */
   const char *zDb,                /* Name of db to verify schema of */
   int bTemp,                      /* True if this is the temp db */
-  const char *zWhen               /* "when" part of error message */
+  const char *zWhen,              /* "when" part of error message */
+  int bNoDQS                      /* Do not allow DQS in the schema */
 ){
   pParse->colNamesSet = 1;
   sqlite3NestedParse(pParse, 
@@ -61,9 +62,9 @@ static void renameTestSchema(
       "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
-      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q)=NULL ",
+      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q, %d)=NULL ",
       zDb,
-      zDb, bTemp, zWhen
+      zDb, bTemp, zWhen, bNoDQS
   );
 
   if( bTemp==0 ){
@@ -72,8 +73,32 @@ static void renameTestSchema(
         "FROM temp." DFLT_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
-        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q)=NULL ",
-        zDb, zWhen
+        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q, %d)=NULL ",
+        zDb, zWhen, bNoDQS
+    );
+  }
+}
+
+/*
+** Generate VM code to replace any double-quoted strings (but not double-quoted
+** identifiers) within the "sql" column of the sqlite_schema table in 
+** database zDb with their single-quoted equivalents. If argument bTemp is
+** not true, similarly update all SQL statements in the sqlite_schema table
+** of the temp db.
+*/
+static void renameFixQuotes(Parse *pParse, const char *zDb, int bTemp){
+  sqlite3NestedParse(pParse, 
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE 
+      " SET sql = sqlite_rename_quotefix(%Q, sql)"
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
+      " AND sql NOT LIKE 'create virtual%%'" , zDb, zDb
+  );
+  if( bTemp==0 ){
+    sqlite3NestedParse(pParse, 
+      "UPDATE temp." DFLT_SCHEMA_TABLE
+      " SET sql = sqlite_rename_quotefix('temp', sql)"
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
+      " AND sql NOT LIKE 'create virtual%%'"
     );
   }
 }
@@ -236,7 +261,7 @@ void sqlite3AlterRenameTable(
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase AND "
-              "    sqlite_rename_test(%Q, sql, type, name, 1, 'after rename') "
+              "  sqlite_rename_test(%Q, sql, type, name, 1, 'after rename', 0) "
               "THEN %Q ELSE tbl_name END "
             "WHERE type IN ('view', 'trigger')"
         , zDb, zTabName, zName, zTabName, zDb, zName);
@@ -256,7 +281,7 @@ void sqlite3AlterRenameTable(
 #endif
 
   renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iDb==1, "after rename");
+  renameTestSchema(pParse, zDb, iDb==1, "after rename", 0);
 
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
@@ -595,6 +620,10 @@ void sqlite3AlterRenameColumn(
     goto exit_rename_column;
   }
 
+  /* Ensure the schema contains no double-quoted strings */
+  renameTestSchema(pParse, zDb, iSchema==1, "", 0);
+  renameFixQuotes(pParse, zDb, iSchema==1);
+
   /* Do the rename operation using a recursive UPDATE statement that
   ** uses the sqlite_rename_column() SQL function to compute the new
   ** CREATE statement text for the sqlite_schema table.
@@ -624,7 +653,7 @@ void sqlite3AlterRenameColumn(
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iSchema==1, "after rename");
+  renameTestSchema(pParse, zDb, iSchema==1, "after rename", 1);
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
@@ -1847,6 +1876,7 @@ static void renameQuotefixFunc(
 **   3: Object name.
 **   4: True if object is from temp schema.
 **   5: "when" part of error message.
+**   6: True to disable the DQS quirk when parsing SQL.
 **
 ** Unless it finds an error, this function normally returns NULL. However, it
 ** returns integer value 1 if:
@@ -1865,6 +1895,7 @@ static void renameTableTest(
   int bTemp = sqlite3_value_int(argv[4]);
   int isLegacy = (db->flags & SQLITE_LegacyAlter);
   char const *zWhen = (const char*)sqlite3_value_text(argv[5]);
+  int bNoDQS = sqlite3_value_int(argv[6]);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;
@@ -1872,10 +1903,14 @@ static void renameTableTest(
 #endif
 
   UNUSED_PARAMETER(NotUsed);
+
   if( zDb && zInput ){
     int rc;
     Parse sParse;
+    int flags = db->flags;
+    if( bNoDQS ) db->flags &= ~(SQLITE_DqsDML|SQLITE_DqsDDL);
     rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
+    db->flags |= (flags & (SQLITE_DqsDML|SQLITE_DqsDDL));
     if( rc==SQLITE_OK ){
       if( isLegacy==0 && sParse.pNewTable && sParse.pNewTable->pSelect ){
         NameContext sNC;
@@ -2036,7 +2071,8 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 );
   zDb = db->aDb[iDb].zDbSName;
-  renameTestSchema(pParse, zDb, iDb==1, "");
+  renameTestSchema(pParse, zDb, iDb==1, "", 0);
+  renameFixQuotes(pParse, zDb, iDb==1);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_drop_column(%d, sql, %d) "
@@ -2046,7 +2082,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iDb, INITFLAG_AlterDrop);
-  renameTestSchema(pParse, zDb, iDb==1, "after drop column");
+  renameTestSchema(pParse, zDb, iDb==1, "after drop column", 1);
 
   /* Edit rows of table on disk */
   if( pParse->nErr==0 && (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
@@ -2106,7 +2142,7 @@ void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
     INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
-    INTERNAL_FUNCTION(sqlite_rename_test,    6, renameTableTest),
+    INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
   };
