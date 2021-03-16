@@ -1,5 +1,5 @@
-C Create\snew\sbranch\snamed\s"appendvfs_fix"
-D 2021-03-16T04:03:59.658
+C Fix\sappendvfs\sbug\sexposed\swith\sbigger\sfiles,\sand\sadd\stests\sfor\ssuch\sconditions.
+D 2021-03-16T06:41:51.332
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 7fff57cd4a5d63758d20a1dd1a96c64c7c123cf48fd98bbd36cfe8b063236e3d
+F ext/misc/appendvfs.c 714118d14b610c00973aae124c1f8c24d338682bdef77bbe8f0cd2ff26952c65
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -699,7 +699,7 @@ F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test a5d72fe8c217cc0ea356dc6fa06a282a8a3fc53aa807709d79dba07a8f248102
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
-F test/avfs.test 67a27e590b1baae5249bc857d10814a13231dbe2d624c64f2aa78c4ba85afff9
+F test/avfs.test 0c3a38e03cccb0fc3127838462dc05dc3f4c1480d770c084b388304c25de3652
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
@@ -1910,10 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9f8f488ff9d47fe7bb8838e683bae4fea038f7278ef885ecf292143a0dd88ed
-R 17f134cb27374fc63f087829be8f2d98
-T *branch * appendvfs_fix
-T *sym-appendvfs_fix *
-T -sym-trunk *
+P 026edd601444d86858a503ffc3be17667a62a29f09c001009d9a678400b3b0a1
+R 3f7323614d0b0269053ff308d3cf0c77
 U larrybr
-Z bbee4d88175664ad835a258941f99787
+Z 1150e673d6f8e609bf947bc6b9f00cc8
