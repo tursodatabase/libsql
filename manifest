@@ -1,5 +1,5 @@
-C Merge\sfrom\strunk.
-D 2021-03-16T06:50:39.815
+C Fix\sassert\stypo.
+D 2021-03-16T07:06:29.878
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 714118d14b610c00973aae124c1f8c24d338682bdef77bbe8f0cd2ff26952c65
+F ext/misc/appendvfs.c 1dad6e7dc162ad36367513c1f985a1b474c3f3517f53ba22a6a89ce980843098
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19b1f53a1c0a14440ae8ac71660a2595d37a4a5b201055c19366c7dca75d6660 aea12399bf1fdc76af43499d4624c3afa17c3e6c2459b71c195804bb98def66a
-R 7ca2567aac2bb3bf35e5b9b280905d1f
+P eae8236f3b9bc326648d1c8fca61cb3c38f821d06fe915fd0978cffeb1f6152b
+R 32b396e0e85126b3386d72e2bc6e8e4c
 U larrybr
-Z 4b3a7e0be93199f4ec9eb27099986229
+Z f8d4366505c35a746a63af41266ec4f5

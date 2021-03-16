@@ -221,7 +221,7 @@ static const sqlite3_io_methods apnd_io_methods = {
 ** Close an apnd-file.
 */
 static int apndClose(sqlite3_file *pFile){
-  assert((ApndFile *pFile)pFile == ORIGFILE(pFile));
+  assert((ApndFile*)pFile == ORIGFILE(pFile));
   pFile = ORIGFILE(pFile);
   return pFile->pMethods->xClose(pFile);
 }
