@@ -822,5 +822,18 @@ do_execsql_test 21.2 {
   END}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, othername, extra AS (c + 1));
+  ALTER TABLE t1 RENAME a to othername;
+  SELECT sql FROM sqlite_schema;
+} {
+  {CREATE TABLE t1(othername, b)}
+  {CREATE TABLE t2(c, othername, extra AS (c + 1))}
+}
+
 
 finish_test

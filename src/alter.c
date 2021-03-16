@@ -1457,12 +1457,12 @@ static void renameColumnFunc(
         for(pIdx=sParse.pNewIndex; pIdx; pIdx=pIdx->pNext){
           sqlite3WalkExprList(&sWalker, pIdx->aColExpr);
         }
-      }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-      for(i=0; i<sParse.pNewTable->nCol; i++){
-        sqlite3WalkExpr(&sWalker, sParse.pNewTable->aCol[i].pDflt);
-      }
+        for(i=0; i<sParse.pNewTable->nCol; i++){
+          sqlite3WalkExpr(&sWalker, sParse.pNewTable->aCol[i].pDflt);
+        }
 #endif
+      }
 
       for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
         for(i=0; i<pFKey->nCol; i++){
