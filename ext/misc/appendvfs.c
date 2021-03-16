@@ -38,8 +38,8 @@
 **  (5)  Otherwise, SQLITE_CANTOPEN is returned.
 **
 ** To avoid unnecessary complications with the PENDING_BYTE, the size of
-** the file containing the database is limited to 1GB. (1000013824 bytes)
-** This VFS will not read or write past the 1GB mark.  This restriction
+** the file containing the database is limited to 1GiB. (1073741824 bytes)
+** This VFS will not read or write past the 1GiB mark.  This restriction
 ** might be lifted in future versions.  For now, if you need a larger
 ** database, then keep it in a separate file.
 **
@@ -68,14 +68,16 @@ SQLITE_EXTENSION_INIT1
 ** Maximum size of the combined prefix + database + append-mark.  This
 ** must be less than 0x40000000 to avoid locking issues on Windows.
 */
-#define APND_MAX_SIZE  (65536*15259)
+#define APND_MAX_SIZE  (0x40000000)
 
 /*
-** Size of storage page upon which to align appendvfs portion.
+** Try to align the database to an even multiple of APND_ROUNDUP bytes.
 */
-#ifndef APND_ROUNDUP_BITS
-#define APND_ROUNDUP_BITS 12
+#ifndef APND_ROUNDUP
+#define APND_ROUNDUP 4096
 #endif
+#define APND_ALIGN_MASK         ((sqlite3_int64)(APND_ROUNDUP-1))
+#define APND_START_ROUNDUP(fsz) (((fsz)+APND_ALIGN_MASK) & ~APND_ALIGN_MASK)
 
 /*
 ** Forward declaration of objects used by this utility
@@ -89,39 +91,45 @@ typedef struct ApndFile ApndFile;
 #define ORIGVFS(p)  ((sqlite3_vfs*)((p)->pAppData))
 #define ORIGFILE(p) ((sqlite3_file*)(((ApndFile*)(p))+1))
 
-/* Invariants for an open appendvfs file:
- * Once an appendvfs file is opened, it will be in one of three states:
- * State 0: Never written. Underlying file (if any) is unaltered.
- * State 1: Append mark is persisted, content write is in progress.
- * State 2: Append mark is persisted, content writes are complete.
- * 
- * State 0 is persistent in the sense that nothing will have been done
- * to the underlying file, including any attempt to convert it to an
- * appendvfs file.
- *
- * State 1 is normally transitory. However, if a write operation ends
- * abnormally (disk full, power loss, process kill, etc.), then State 1
- * may be persistent on disk with an incomplete content write-out. This
- * is logically equivalent to an interrupted write to an ordinary file,
- * where some unknown portion of to-be-written data is persisted while
- * the remainder is not. Database integrity in such cases is maintained
- * (or not) by the same measures available for ordinary file access.
- *
- * State 2 is persistent under normal circumstances (when there is no
- * abnormal termination of a write operation such that data provided
- * to the underlying VFS write method has not yet reached storage.)
- *
- * In order to maintain the state invariant, the append mark is written
- * in advance of content writes where any part of such content would
- * overwrite an existing (or yet to be written) append mark.
- */
+/* An open appendvfs file
+**
+** An instance of this structure describes the appended database file.
+** A separate sqlite3_file object is always appended. The appended
+** sqlite3_file object (which can be accessed using ORIGFILE()) describes
+** the entire file, including the prefix, the database, and the
+** append-mark.
+**
+** The structure of an AppendVFS database is like this:
+**
+**   +-------------+---------+----------+-------------+
+**   | prefix-file | padding | database | append-mark |
+**   +-------------+---------+----------+-------------+
+**                           ^          ^
+**                           |          |
+**                         iPgOne      iMark
+**
+**
+** "prefix file" -  file onto which the database has been appended.
+** "padding"     -  zero or more bytes inserted so that "database"
+**                  starts on an APND_ROUNDUP boundary
+** "database"    -  The SQLite database file
+** "append-mark" -  The 25-byte "Start-Of-SQLite3-NNNNNNNN" that indicates
+**                  the offset from the start of prefix-file to the start
+**                  of "database".
+**
+** The size of the database is iMark - iPgOne.
+**
+** The NNNNNNNN in the "Start-Of-SQLite3-NNNNNNNN" suffix is the value
+** of iPgOne stored as a big-ending 64-bit integer.
+**
+** iMark will be the size of the underlying file minus 25 (APND_MARKSIZE).
+** Or, iMark is -1 to indicate that it has not yet been written.
+*/
 struct ApndFile {
-  /* Access to IO methods of the underlying file */
-  sqlite3_file base;
-  /* File offset to beginning of appended content (unchanging) */
-  sqlite3_int64 iPgOne;
-  /* File offset of written append-mark, or -1 if unwritten */
-  sqlite3_int64 iMark;
+  sqlite3_file base;        /* Subclass.  MUST BE FIRST! */
+  sqlite3_int64 iPgOne;     /* Offset to the start of the database */
+  sqlite3_int64 iMark;      /* Offset of the append mark.  -1 if unwritten */
+  /* Always followed by another sqlite3_file that describes the whole file */
 };
 
 /*
@@ -251,7 +259,7 @@ static int apndWriteMark(
   int rc;
   assert(pFile == ORIGFILE(paf));
   memcpy(a, APND_MARK_PREFIX, APND_MARK_PREFIX_SZ);
-  while (--i >= 0) {
+  while( --i >= 0 ){
     a[APND_MARK_PREFIX_SZ+i] = (unsigned char)(iPgOne & 0xff);
     iPgOne >>= 8;
   }
@@ -279,8 +287,7 @@ static int apndWrite(
   /* If append-mark is absent or will be overwritten, write it. */
   if( paf->iMark < 0 || paf->iPgOne + iWriteEnd > paf->iMark ){
     int rc = apndWriteMark(paf, pFile, iWriteEnd);
-    if( SQLITE_OK!=rc )
-      return rc;
+    if( SQLITE_OK!=rc ) return rc;
   }
   return pFile->pMethods->xWrite(pFile, zBuf, iAmt, paf->iPgOne+iOfst);
 }
@@ -292,8 +299,7 @@ static int apndTruncate(sqlite3_file *pFile, sqlite_int64 size){
   ApndFile *paf = (ApndFile *)pFile;
   pFile = ORIGFILE(pFile);
   /* The append mark goes out first so truncate failure does not lose it. */
-  if( SQLITE_OK!=apndWriteMark(paf, pFile, size) )
-    return SQLITE_IOERR;
+  if( SQLITE_OK!=apndWriteMark(paf, pFile, size) ) return SQLITE_IOERR;
   /* Truncate underlying file just past append mark */
   return pFile->pMethods->xTruncate(pFile, paf->iMark+APND_MARK_SIZE);
 }
@@ -409,8 +415,9 @@ static int apndFetch(
   void **pp
 ){
   ApndFile *p = (ApndFile *)pFile;
-  if( p->iMark < 0 || iOfst+iAmt > p->iMark)
+  if( p->iMark < 0 || iOfst+iAmt > p->iMark ){
     return SQLITE_IOERR; /* Cannot read what is not yet there. */
+  }
   pFile = ORIGFILE(pFile);
   return pFile->pMethods->xFetch(pFile, iOfst+p->iPgOne, iAmt, pp);
 }
@@ -461,14 +468,18 @@ static int apndIsAppendvfsDatabase(sqlite3_int64 sz, sqlite3_file *pFile){
   char zHdr[16];
   sqlite3_int64 iMark = apndReadMark(sz, pFile);
   if( iMark>=0 ){
-    /* If file has right end-marker, the expected odd size, and the
-     * SQLite DB type marker where the end-marker puts it, then it
-     * is an appendvfs database (to be treated as such.)
-     */
+    /* If file has the correct end-marker, the expected odd size, and the
+    ** SQLite DB type marker where the end-marker puts it, then it
+    ** is an appendvfs database.
+    */
     rc = pFile->pMethods->xRead(pFile, zHdr, sizeof(zHdr), iMark);
-    if( SQLITE_OK==rc && memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))==0
-        && (sz & 0x1ff)== APND_MARK_SIZE && sz>=512+APND_MARK_SIZE )
+    if( SQLITE_OK==rc
+     && memcmp(zHdr, apvfsSqliteHdr, sizeof(zHdr))==0
+     && (sz & 0x1ff) == APND_MARK_SIZE
+     && sz>=512+APND_MARK_SIZE
+    ){
       return 1; /* It's an appendvfs database */
+    }
   }
   return 0;
 }
@@ -490,66 +501,65 @@ static int apndIsOrdinaryDatabaseFile(sqlite3_int64 sz, sqlite3_file *pFile){
   }
 }
 
-/* Round-up used to get appendvfs portion to begin at a page boundary. */
-#define APND_ALIGN_MASK(nbits) ((1<<nbits)-1)
-#define APND_START_ROUNDUP(fsz, nbits) \
- ( ((fsz)+APND_ALIGN_MASK(nbits)) & ~(sqlite3_int64)APND_ALIGN_MASK(nbits) )
-
 /*
 ** Open an apnd file handle.
 */
 static int apndOpen(
-  sqlite3_vfs *pVfs,
+  sqlite3_vfs *pApndVfs,
   const char *zName,
   sqlite3_file *pFile,
   int flags,
   int *pOutFlags
 ){
-  ApndFile *p;
-  sqlite3_file *pSubFile;
-  sqlite3_vfs *pSubVfs;
+  ApndFile *pApndFile = (ApndFile*)pFile;
+  sqlite3_file *pBaseFile = ORIGFILE(pFile);
+  sqlite3_vfs *pBaseVfs = ORIGVFS(pApndVfs);
   int rc;
   sqlite3_int64 sz;
-  pSubVfs = ORIGVFS(pVfs);
   if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
-    /* The appendvfs is not to be used for transient or temporary databases. */
-    return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
+    /* The appendvfs is not to be used for transient or temporary databases.
+    ** Just use the base VFS open to initialize the given file object and
+    ** open the underlying file. (Appendvfs is then unused for this file.)
+    */
+    return pBaseVfs->xOpen(pBaseVfs, zName, pFile, flags, pOutFlags);
   }
-  p = (ApndFile*)pFile;
-  memset(p, 0, sizeof(*p));
-  pSubFile = ORIGFILE(pFile);
+  memset(pApndFile, 0, sizeof(ApndFile));
   pFile->pMethods = &apnd_io_methods;
-  rc = pSubVfs->xOpen(pSubVfs, zName, pSubFile, flags, pOutFlags);
-  if( rc ) goto apnd_open_done;
-  rc = pSubFile->pMethods->xFileSize(pSubFile, &sz);
-  if( rc ){
-    pSubFile->pMethods->xClose(pSubFile);
-    goto apnd_open_done;
+  pApndFile->iMark = -1;    /* Append mark not yet written */
+
+  rc = pBaseVfs->xOpen(pBaseVfs, zName, pBaseFile, flags, pOutFlags);
+  if( rc==SQLITE_OK ){
+    rc = pBaseFile->pMethods->xFileSize(pBaseFile, &sz);
   }
-  if( apndIsOrdinaryDatabaseFile(sz, pSubFile) ){
-    memmove(pFile, pSubFile, pSubVfs->szOsFile);
+  if( rc ){
+    pBaseFile->pMethods->xClose(pBaseFile);
+    pFile->pMethods = 0;
+    return rc;
+  }
+  if( apndIsOrdinaryDatabaseFile(sz, pBaseFile) ){
+    /* The file being opened appears to be just an ordinary DB. Copy
+    ** the base dispatch-table so this instance mimics the base VFS. 
+    */
+    memmove(pApndFile, pBaseFile, pBaseVfs->szOsFile);
     return SQLITE_OK;
   }
-  /* Record that append mark has not been written until seen otherwise. */
-  p->iMark = -1;
-  p->iPgOne = apndReadMark(sz, pFile);
-  if( p->iPgOne>=0 ){
-    /* Append mark was found, infer its offset */
-    p->iMark = sz - p->iPgOne - APND_MARK_SIZE;
+  pApndFile->iPgOne = apndReadMark(sz, pFile);
+  if( pApndFile->iPgOne>=0 ){
+    pApndFile->iMark = sz - APND_MARK_SIZE; /* Append mark found */
     return SQLITE_OK;
   }
   if( (flags & SQLITE_OPEN_CREATE)==0 ){
-    pSubFile->pMethods->xClose(pSubFile);
+    pBaseFile->pMethods->xClose(pBaseFile);
     rc = SQLITE_CANTOPEN;
+    pFile->pMethods = 0;
+  }else{
+    /* Round newly added appendvfs location to #define'd page boundary. 
+    ** Note that nothing has yet been written to the underlying file.
+    ** The append mark will be written along with first content write.
+    ** Until then, paf->iMark value indicates it is not yet written.
+    */
+    pApndFile->iPgOne = APND_START_ROUNDUP(sz);
   }
-  /* Round newly added appendvfs location to #define'd page boundary. 
-   * Note that nothing has yet been written to the underlying file.
-   * The append mark will be written along with first content write.
-   * Until then, the p->iMark value indicates it is not yet written.
-   */
-  p->iPgOne = APND_START_ROUNDUP(sz, APND_ROUNDUP_BITS);
-apnd_open_done:
-  if( rc ) pFile->pMethods = 0;
   return rc;
 }
 
