@@ -881,6 +881,7 @@ static int isDate(
   int eType;
   memset(p, 0, sizeof(*p));
   if( argc==0 ){
+    if( !sqlite3NotPureFunc(context) ) return 1;
     return setDateTimeToCurrent(context, p);
   }
   if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
