@@ -515,7 +515,7 @@ static int apndOpen(
   sqlite3_file *pBaseFile = ORIGFILE(pFile);
   sqlite3_vfs *pBaseVfs = ORIGVFS(pApndVfs);
   int rc;
-  sqlite3_int64 sz;
+  sqlite3_int64 sz = 0;
   if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
     /* The appendvfs is not to be used for transient or temporary databases.
     ** Just use the base VFS open to initialize the given file object and

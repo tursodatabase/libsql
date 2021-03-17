@@ -1,5 +1,5 @@
-C If\sthere\sare\salready\s500\sor\smore\ssimple\sSELECTs\sin\sa\squery,\sdo\snot\sadd\smore\sby\sflattening\sUNION\sALL\ssub-queries\sinto\sparent\sjoin\squeries.
-D 2021-03-17T14:29:37.603
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sappendvfs.c\sextension.
+D 2021-03-17T19:05:59.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 390c411f14e66abb2f30b9023ebc57334288780c9388cdc6e0a25deb5d40e3b2
+F ext/misc/appendvfs.c bdc9de0a0e61c21327e975da178b4fd6f57de9c46123044aa6ee3a20798c5db2
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1737e4fdfc9a3628415b234338a68a64cbbaadb23598517761e571ab7ed7ad14
-R 8c58aa13916791fb5364f91b2d4478a9
-U dan
-Z e82f61f6b1d596f3a228da08a334106b
+P 9520bed2bd87dc56543ee58123323d293e960ecd84707b77f15f41669a2c9c3d
+R 6b9cbc5338ab96ec85af6f269ca8689c
+U drh
+Z 04a9df7e9b945264b407c6e0d0cbfe76
