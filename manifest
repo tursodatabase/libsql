@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sappendvfs.c\sextension.
-D 2021-03-17T19:05:59.152
+C Version\s3.35.2
+D 2021-03-17T19:07:21.223
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1910,7 +1910,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9520bed2bd87dc56543ee58123323d293e960ecd84707b77f15f41669a2c9c3d
+P 0ed7eb9115510511f13dca715bb2b178580648517d8d30436a992d70a2e85ac1
 R 6b9cbc5338ab96ec85af6f269ca8689c
+T +sym-release *
+T +sym-version-3.35.2 *
 U drh
-Z 04a9df7e9b945264b407c6e0d0cbfe76
+Z df8a52cb5f4a5da779c9bf4ff3cf1b0f
