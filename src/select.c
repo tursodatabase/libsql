@@ -4039,6 +4039,7 @@ static int flattenSubquery(
     if( (p->selFlags & SF_Recursive) ) return 0;
 
     if( pSrc->nSrc>1 ){
+      if( pParse->nSelect>500 ) return 0;
       aCsrMap = sqlite3DbMallocZero(db, pParse->nTab*sizeof(int));
     }
   }
@@ -4115,6 +4116,7 @@ static int flattenSubquery(
     if( pNew==0 ){
       p->pPrior = pPrior;
     }else{
+      pNew->selId = ++pParse->nSelect;
       if( aCsrMap && db->mallocFailed==0 ){
         renumberCursors(pParse, pNew, iFrom, aCsrMap);
       }
