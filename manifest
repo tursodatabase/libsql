@@ -1,5 +1,5 @@
-C Date/time\sfunctions\swith\sno\sarguments\s(ex:\sdate()\sor\stime())\sshould\sbe\nnon-deterministic.\s\sFix\sfor\sticket\s[2c6c8689fb5f3d2f].
-D 2021-03-16T18:41:20.462
+C Fix\sa\sproblem\sin\ssqldiff\svirtual\stable\shanlding\sto\sdo\swith\stab\sand\sother\snon-space\swhitespace\scharacters\sin\sthe\sCREATE\sVIRTUAL\sTABLE\sstatement.
+D 2021-03-17T11:25:42.193
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -359,7 +359,7 @@ F ext/rbu/rbu_common.tcl 60d904133ff843fe72cc0514e9dd2486707181e6e0fbab20979da28
 F ext/rbu/rbucollate.test cac528a9a46318cba42e61258bb42660bbbf4fdb9a8c863de5a54ad0c658d197
 F ext/rbu/rbucrash.test 000981a1fe8a6e4d9a684232f6a129e66a3ef595f5ed74655e2f9c68ffa613b4
 F ext/rbu/rbucrash2.test efa143cc94228eb0266d3f1abfbee60a5838a84cef7cc3fcb8c145b74d96fd41
-F ext/rbu/rbudiff.test 156957851136b63c143478518dc1bda6c832103cdbe8ac1d7cdd47edb3cbe0a3
+F ext/rbu/rbudiff.test abe895a8d479e4d33acb40e244e3d8e2cd25f55a18dfa8b9f83e13d00073f600
 F ext/rbu/rbudor.test e3e8623926012f43eebe51fedf06a102df2640750d971596b052495f2536db20
 F ext/rbu/rbuexpr.test 10d0420537c3bc7666e576d72adeffe7e86cfbb00dcc30aa9ce096c042415190
 F ext/rbu/rbufault.test 2d7f567b79d558f6e093c58808cab4354f8a174e3802f69e7790a9689b3c09f8
@@ -1875,7 +1875,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
-F tool/sqldiff.c 4151108387cb56c08906e5ac8d6a353dcfe8fc6014eeded0f0910e2230ea0f5b
+F tool/sqldiff.c 21226ef092ec1e543b237c5d3d2d32d344a60f2437eadfea04f65b348fbd00e4
 F tool/sqlite3_analyzer.c.in 7eeaae8b0d7577662acaabbb11107af0659d1b41bc1dfdd4d91422de27127968
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a211b3f09b17b758ac43c3ed14e3f90c55459077412a57baca0f7cadff47fbf
-R dd9db537d7438077a73654ea2cdef93c
-U drh
-Z 52a4ccdcc1c4ac4a8964e528ecbca892
+P 1734c332e7f609769fc30f82cf7af097c2964e08900ee3e297f6a25e6df60555
+R 83313da3f8929ffe9d0ca9cc05a1ce38
+U dan
+Z d615638e73fe2252aa958c3bc8bb6a2b
