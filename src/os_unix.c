@@ -6361,7 +6361,8 @@ static int unixBackupDir(const char *z, int *pJ){
   int j = *pJ;
   int i;
   if( j<=0 ) return 0;
-  for(i=j-1; ALWAYS(i>0) && z[i-1]!='/'; i--){}
+  for(i=j-1; i>0 && z[i-1]!='/'; i--){}
+  if( i==0 ) return 0;
   if( z[i]=='.' && i==j-2 && z[i+1]=='.' ) return 0;
   *pJ = i-1;
   return 1;
