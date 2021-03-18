@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\siDataVersion\sfield\sof\sBtree\sto\siBDataVersion\sto\smake\nit\sdistinct\sfrom\sPager.iDataVersion.
-D 2021-03-18T12:36:09.974
+C New\sassert\sstatements\sassociated\swith\sEphemeral\scursors\sin\sthe\sbytecode\sengine.
+D 2021-03-18T13:19:41.275
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,11 +614,11 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c b79b222f07690874d436eef4ad5e76845b2796e7094b1d0545cc94333f0d8e50
+F src/vdbe.c 2cdbdb1e2df46fd65a72bcb2da7da2f9978407fa89b4af446e27e8f5c37a329e
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 3df118924e1711f1bbc8e30c46260d0ab6c3b029b32dd411f789111f76434f3c
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
-F src/vdbeaux.c fb51483c2bcaf45c5de63c26cce8649ef37f1332e8e035867033d21ef5e7fc2c
+F src/vdbeaux.c e982cb548cc29841a5b571eb56f666c3fe93e8c209ed172275fae3ff13b1ad88
 F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
 F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
 F src/vdbesort.c f5b5e473a7cee44e47a94817b042fd7172cf3aa2c0a7928a8339d612bcfdec5a
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea80f3002f4120f5dcee76e8779dfdc88e1e096c5cdd06904c20fd26d50c3827
-R b0277a2c96226726a6a1ac5f90403a49
+P e4c44c0bca317c03f8e6d3aa7cc88e5f96159a3d91c07257d408f7db028fd151
+R f278259754fd52f20047295482ff6a9f
 U drh
-Z 2b062f4ea76948f8d8e63fb487249a52
+Z 8215ad2629ec1b5e26923675b0791bde
