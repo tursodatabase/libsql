@@ -272,11 +272,6 @@ static VdbeCursor *allocateCursor(
 
   assert( iCur>=0 && iCur<p->nCursor );
   if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
-    /* Before calling sqlite3VdbeFreeCursor(), ensure the isEphemeral flag
-    ** is clear. Otherwise, if this is an ephemeral cursor created by 
-    ** OP_OpenDup, the cursor will not be closed and will still be part
-    ** of a BtShared.pCursor list.  */
-    if( p->apCsr[iCur]->pBtx==0 ) p->apCsr[iCur]->isEphemeral = 0;
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
@@ -3873,7 +3868,7 @@ case OP_OpenDup: {
 
   pOrig = p->apCsr[pOp->p2];
   assert( pOrig );
-  assert( pOrig->pBtx );  /* Only ephemeral cursors can be duplicated */
+  assert( pOrig->isEphemeral );  /* Only ephemeral cursors can be duplicated */
 
   pCx = allocateCursor(p, pOp->p1, pOrig->nField, -1, CURTYPE_BTREE);
   if( pCx==0 ) goto no_mem;
@@ -3884,6 +3879,8 @@ case OP_OpenDup: {
   pCx->pgnoRoot = pOrig->pgnoRoot;
   pCx->isOrdered = pOrig->isOrdered;
   pCx->pBtx = pOrig->pBtx;
+  pCx->hasBeenDuped = 1;
+  pOrig->hasBeenDuped = 1;
   rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR, 
                           pCx->pKeyInfo, pCx->uc.pCursor);
   /* The sqlite3BtreeCursor() routine can only fail for the first cursor
@@ -3950,9 +3947,10 @@ case OP_OpenEphemeral: {
     aMem[pOp->p3].z = "";
   }
   pCx = p->apCsr[pOp->p1];
-  if( pCx && ALWAYS(pCx->pBtx) ){
-    /* If the ephermeral table is already open, erase all existing content
-    ** so that the table is empty again, rather than creating a new table. */
+  if( pCx && !pCx->hasBeenDuped ){
+    /* If the ephermeral table is already open and has no duplicates from
+    ** OP_OpenDup, then erase all existing content so that the table is
+    ** empty again, rather than creating a new table. */
     assert( pCx->isEphemeral );
     pCx->seqCount = 0;
     pCx->cacheStatus = CACHE_STALE;

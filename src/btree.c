@@ -2737,20 +2737,24 @@ static void freeTempSpace(BtShared *pBt){
 */
 int sqlite3BtreeClose(Btree *p){
   BtShared *pBt = p->pBt;
-  BtCursor *pCur;
 
   /* Close all cursors opened via this handle.  */
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
-  pBt->openFlags &= ~BTREE_SINGLE;
-  pCur = pBt->pCursor;
-  while( pCur ){
-    BtCursor *pTmp = pCur;
-    pCur = pCur->pNext;
-    if( pTmp->pBtree==p ){
-      sqlite3BtreeCloseCursor(pTmp);
+
+  /* Verify that no other cursors have this Btree open */
+#ifdef SQLITE_DEBUG
+  {
+    BtCursor *pCur = pBt->pCursor;
+    while( pCur ){
+      BtCursor *pTmp = pCur;
+      pCur = pCur->pNext;
+      assert( pTmp->pBtree!=p );
+
     }
   }
+#endif
+  pBt->openFlags &= ~BTREE_SINGLE;
 
   /* Rollback any active transaction and free the handle structure.
   ** The call to sqlite3BtreeRollback() drops any table-locks held by
