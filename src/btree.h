@@ -363,7 +363,6 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 
 int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
-Btree *sqlite3BtreeGetBtree(BtCursor*);
 
 /*
 ** If we are not using shared cache, then there is no need to
