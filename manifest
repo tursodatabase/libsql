@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sspurious\s"<cte>:\scircular\sreference"\serrors\sto\sbe\sreported\swhen\sthere\sis\sactually\sa\sdifferent\serror\sin\sthe\sSQL\sstatement.
-D 2021-03-18T18:25:43.205
+C Disable\sa\stest\scase\srequiring\sgenerate_series\swhen\svirtual\stables\sare\snot\navailable.
+D 2021-03-18T18:27:37.932
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1788,7 +1788,7 @@ F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3c
 F test/windowfault.test d543d46571b32d19f198cb04b6505747fabf3cc369970daae47074ee793612be
 F test/windowpushd.test 5b9c114e8173c3addacf58a0fcd941437b14649f2033700184479a13f188ad00
 F test/with1.test 780be387f01e290e768bdfd1827280f9e37ba37223eb4736aba386864fac5a94
-F test/with2.test 7f890304fad815e49123d658012f4e463c7a2e9682044187ce21495e34a08ab9
+F test/with2.test de3b9070ab4e4a8fdbba8d46dd06a17e47088314a3070479bd3882f178f61593
 F test/with3.test 2f1e05aef7aeef9a741cbf36deeb4be73003dc541921c3abc78becbbf5b7852d
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 259b7c3e219873f3f679b00d3a89ecdac8a02c3472176d3a260f399e1faf3611
-R 87bb7655910ac16aa65d6c367aed678c
-U dan
-Z eecbc2a453d999ec62ca8a2284bb3550
+P 9981223618782bf867dfc8988d0c634a42f569228880c5c5e00aa4ae762cfff2
+R d3f85bdc4c6bc6470e1b838410b3768f
+U drh
+Z e3e3cb902cadc8dca562e6564c365de6

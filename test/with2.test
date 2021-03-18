@@ -425,6 +425,7 @@ do_execsql_test 9.1 {
     SELECT * FROM xyz UNION ALL SELECT * FROM xyz
   );
 } {1234 1234 1234 1234 1234 1234}
+ifcapable vtab {
 load_static_extension db series
 do_execsql_test 9.2 {
   WITH
@@ -530,5 +531,6 @@ do_execsql_test 9.2 {
     )
   SELECT * FROM radygrid , ypos;
 } {}
+} ;# end ifcapable vtab
 
 finish_test
