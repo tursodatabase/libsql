@@ -2754,7 +2754,6 @@ int sqlite3BtreeClose(Btree *p){
     }
   }
 #endif
-  pBt->openFlags &= ~BTREE_SINGLE;
 
   /* Rollback any active transaction and free the handle structure.
   ** The call to sqlite3BtreeRollback() drops any table-locks held by
