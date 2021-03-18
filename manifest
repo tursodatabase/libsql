@@ -1,5 +1,5 @@
-C Increase\sthe\spatch\slevel\sto\s3.35.3.
-D 2021-03-18T16:52:06.934
+C Fix\sa\sproblem\scausing\sspurious\s"<cte>:\scircular\sreference"\serrors\sto\sbe\sreported\swhen\sthere\sis\sactually\sa\sdifferent\serror\sin\sthe\sSQL\sstatement.
+D 2021-03-18T18:25:43.205
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 2b03a80d7c11bb422115dca175a18bf430e9c9dbaa0eee63b758f0c022f8f34f
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c dd47248c2c914feb0d4428c27d782e2723971d32cfa5536f49306d080df4d45a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c e9c9c78567745b958a22d3f2bed054ec2ce0d67837cbd1c4faf3d9a660464a0b
+F src/select.c bbad9e0daf1f722eccd492d74a145f8aafbeb78c8c4d713097fe02637d1ef5d5
 F src/shell.c.in 8df3912a7ca4873a1443d4adef1b25baee8c086ab479fd9c4f13ab03f98049ab
 F src/sqlite.h.in 3426a080ea1f222a73e3bd91e7eacbd30570a0117c03d42c6dde606f33e5e318
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1789,7 +1789,7 @@ F test/windowfault.test d543d46571b32d19f198cb04b6505747fabf3cc369970daae47074ee
 F test/windowpushd.test 5b9c114e8173c3addacf58a0fcd941437b14649f2033700184479a13f188ad00
 F test/with1.test 780be387f01e290e768bdfd1827280f9e37ba37223eb4736aba386864fac5a94
 F test/with2.test 7f890304fad815e49123d658012f4e463c7a2e9682044187ce21495e34a08ab9
-F test/with3.test 85e059bf4c2ef5626411ee59f399b4bb4b4a0f009bcb7db86f254e570ed11831
+F test/with3.test 2f1e05aef7aeef9a741cbf36deeb4be73003dc541921c3abc78becbbf5b7852d
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
 F test/with6.test 3001b59179cbdc26a8c67ff8f46944e3141fdece9ab064c49bbf08459b67b207
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcbe5308f3a3b94f965b0f5627cb29cce2e09343b86d757e2de889f7773576e7
-R d32d5ada3212499f083fd0abd9069f85
-U drh
-Z 663daccc09d43f33f771cca109536b74
+P 259b7c3e219873f3f679b00d3a89ecdac8a02c3472176d3a260f399e1faf3611
+R 87bb7655910ac16aa65d6c367aed678c
+U dan
+Z eecbc2a453d999ec62ca8a2284bb3550

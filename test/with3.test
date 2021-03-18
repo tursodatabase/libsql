@@ -224,6 +224,23 @@ do_execsql_test 5.2 {
   ORDER BY 1;
 } {0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111}
 
+#-------------------------------------------------------------------------
+# At one point this would incorrectly report "circular reference: cte1"
+#
+do_catchsql_test 6.0 {
+  with
+    cte1(x, y) AS ( select 1, 2, 3 ),
+    cte2(z) as ( select 1 from cte1 )
+  select * from cte2, cte1;
+} {1 {table cte1 has 3 values for 2 columns}}
+
+do_catchsql_test 6.1 {
+  with
+    cte1(x, y) AS ( select 1, 2, 3 ),
+    cte2(z) as ( select 1 from cte1 UNION ALL SELECT z+1 FROM cte2 WHERE z<5)
+  select * from cte2, cte1;
+} {1 {table cte1 has 3 values for 2 columns}}
+
 
 
 

@@ -5060,16 +5060,24 @@ static int resolveFromTermToCte(
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
     if( pSel->selFlags & SF_Recursive ){
+      int rc;
       assert( pRecTerm!=0 );
       assert( (pRecTerm->selFlags & SF_Recursive)==0 );
       assert( pRecTerm->pNext!=0 );
       assert( (pRecTerm->pNext->selFlags & SF_Recursive)!=0 );
       assert( pRecTerm->pWith==0 );
       pRecTerm->pWith = pSel->pWith;
-      sqlite3WalkSelect(pWalker, pRecTerm);
+      rc = sqlite3WalkSelect(pWalker, pRecTerm);
       pRecTerm->pWith = 0;
+      if( rc ){
+        pParse->pWith = pSavedWith;
+        return 2;
+      }
     }else{
-      sqlite3WalkSelect(pWalker, pSel);
+      if( sqlite3WalkSelect(pWalker, pSel) ){
+        pParse->pWith = pSavedWith;
+        return 2;
+      }
     }
     pParse->pWith = pWith;
 
