@@ -10705,6 +10705,14 @@ int sqlite3BtreeIsReadonly(Btree *p){
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
 
+/*
+** Return the Btree object used to open the cursor provided as an
+** argument.
+*/
+Btree *sqlite3BtreeGetBtree(BtCursor *pCsr){
+  return pCsr->pBtree;
+}
+
 #if !defined(SQLITE_OMIT_SHARED_CACHE)
 /*
 ** Return true if the Btree passed as the only argument is sharable.
