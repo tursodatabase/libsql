@@ -1,5 +1,5 @@
-C Correlated\sCTEs\sshould\snot\sgenerate\sa\smaterialization\ssubroutine.\s\sIf\sthey\nneed\sto\sbe\smaterialized,\seach\suse\scase\smust\sbe\smaterialized\sseparately.\ndbsqlfuzz\s01b8355086998f0a452cb31208e80b9d29ca739a.
-D 2021-03-19T13:53:34.650
+C Fix\sa\scrash\sthat\scould\soccur\swhen\san\sINSERT\shas\smore\sthan\sone\sON\sCONFLICT\sclause,\sat\sleast\sone\sof\swhich\scontains\san\sunresolvable\ssymbol.
+D 2021-03-19T14:26:24.807
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 8942baede303a54ba3b6d06200d5b74c9bc25ababec8a55823e06309748cd4a3
+F src/insert.c 9b2a2cf53ef800d85f9068a29d5ed8a0e97f230f69670a13e7682c646194a06b
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 2a7ece3a67c646e5fe9984ffe0277d6a76f80ce9715bf2faa591d8cb66b9d913
@@ -1661,7 +1661,7 @@ F test/upsert1.test 88f9e258c6a0eeeb85937b08831e8daad440ba41f125af48439e9d33f266
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
-F test/upsert5.test f49faf5f15b5c3641c6f5d7c7cc531ef5ac997567b2b6bb7bc96f7c88753ca0b
+F test/upsert5.test fff0dcfce73c649204543088d8e5bde01172676063ec9b8f8fc7f195abc386fe
 F test/upsertfault.test f21ca47740841fdb4d61acfa7b17646d773e67724fe8c185b71c018db8a94b35
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 114d9780aecdd9f03f235fc1f2ab81ef89cb00b3bafa61cff612e939595ff5f0
-R 5b9e8bca84d94a1c983f6d5cd7f00b21
-U drh
-Z 816415a058e22d518551f844fc582ad4
+P d72d865d3e8503a545603038eb26044bee42e4e8725522be678059ce6517fc8d
+R bcb15951d277d096d901a816b4d30958
+U dan
+Z c79e8253e90008ac8a8434f522d3d1f4

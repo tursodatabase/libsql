@@ -1004,7 +1004,9 @@ void sqlite3Insert(
       pNx->iDataCur = iDataCur;
       pNx->iIdxCur = iIdxCur;
       if( pNx->pUpsertTarget ){
-        sqlite3UpsertAnalyzeTarget(pParse, pTabList, pNx);
+        if( sqlite3UpsertAnalyzeTarget(pParse, pTabList, pNx) ){
+          goto insert_cleanup;
+        }
       }
       pNx = pNx->pNextUpsert;
     }while( pNx!=0 );
