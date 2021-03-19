@@ -1,5 +1,5 @@
-C Restore\sthe\sNEVER()\sthat\swas\staken\sout\sby\s[f481636f1a0333c6]\sbecause\sthat\ncase\sis\sno\slonger\sreachable\safter\sthe\sprevious\scheck-in.
-D 2021-03-19T14:51:15.769
+C Fix\stokenizer's\sclassification\sof\sEBCDIC\snewline.
+D 2021-03-19T15:02:59.810
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
+F src/tokenize.c 0b9c82fa628b5adce93e2bcaf935a24d43eb83344fb51551f7835526d0693fc4
 F src/treeview.c c6260e1fa5f41c361b2409edc9b0050bcaef5bc4d6abc467fbc45f0d7ccf3d84
 F src/trigger.c 861c3ec2c5b0fc830bdf82470454a9324fad70cbaa96d2e208fb54577c9e8d28
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74208386508012326a0e88ec5b4a995d1b99607720bb05785a01c2d89ea03543
-R d7e56a775f22fa2f94d209a470f2d469
-U drh
-Z 01cc36894d56ba5c965c1565c13dffa4
+P e3a78b2a237a2e101faf01dde913f63641da8854720a9daa4b45a9c5dfe30b1b
+R 167f43555244d0f5e16a9a8c35eced48
+U larrybr
+Z b41157889309f12fd102fb371fb7b655
