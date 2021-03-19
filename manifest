@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk.
-D 2021-03-19T19:09:24.666
+C Further\ssimplification\sof\sthe\sEQP\soutput.\s\sOnly\sshow\s"SUBQUERY\sn"\sif\sthe\nsubquery\sis\sanonymous.
+D 2021-03-19T19:44:56.303
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c e21b54489b5c73b06ada15e6fc79b5c6f64b06701924a6ca98944ae59e06256f
-F src/printf.c 59c2222594b692bbf323b44e14c9d3c095799e91f1b10ca66fee0859fe24323e
+F src/printf.c 492d108f65b45fe44ce1bbbcc22905913d9f74b9b148b0991cdc8f1d71cbb553
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c dd47248c2c914feb0d4428c27d782e2723971d32cfa5536f49306d080df4d45a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -607,7 +607,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 0b9c82fa628b5adce93e2bcaf935a24d43eb83344fb51551f7835526d0693fc4
-F src/treeview.c c6260e1fa5f41c361b2409edc9b0050bcaef5bc4d6abc467fbc45f0d7ccf3d84
+F src/treeview.c 70f57a2b77e20b354724ea69b8ed1ea1df946c48296d695320c741c7d174be90
 F src/trigger.c f555123aabf7f3d175cbe6d33c02783302cbdc0a7236203fa2a0539baf2d890e
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f8faec0222a7ca07cc1a5ed16cc08d92c6e20bbcb34851b4eff9e624de53601 f12b54042e27b2fe99f23f97c103ee4371f8d4df3b049d9bb5d64891db56eee5
-R b1c29a6e3125d2bf75454721444d7112
+P d192d737755876293a2914fcb9a0d5efbe07f3cd281c038666ea5aa879c06321
+R 8ac03dd6ce9964e338a0be1a587d3ab0
 U drh
-Z e489e4a1a305f57f100d2d980cdadf52
+Z eccc7f04bdba355f6e2efe4a8c6f321e

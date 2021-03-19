@@ -870,16 +870,13 @@ void sqlite3_str_vappendf(
         }
         if( pItem->zName ){
           sqlite3_str_appendall(pAccum, pItem->zName);
-        }else{
-          sqlite3_str_append(pAccum, "(anonymous)", 11);
+        }else if( pItem->pSelect ){
+          sqlite3_str_appendf(pAccum, "SUBQUERY %u", pItem->pSelect->selId);
         }
         if( flag_altform2 ){
           if( pItem->zAlias ){
             sqlite3_str_append(pAccum, " AS ", 4);
             sqlite3_str_appendall(pAccum, pItem->zAlias );
-          }
-          if( pItem->pSelect ){
-            sqlite3_str_appendf(pAccum, " SUBQUERY %u", pItem->pSelect->selId);
           }
         }
         length = width = 0;
