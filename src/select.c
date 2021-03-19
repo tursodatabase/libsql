@@ -6386,7 +6386,9 @@ int sqlite3Select(
       sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
       pSub->nSelectRow = pPrior->pSelect->nSelectRow;
     }else{
-      /* Generate a subroutine that will materialize the view. */
+      /* Materalize the view.  If the view is not correlated, generate a
+      ** subroutine to do the materialization so that subsequent uses of
+      ** the same view can reuse the materialization. */
       int topAddr;
       int onceAddr = 0;
       int retAddr;
@@ -6413,7 +6415,7 @@ int sqlite3Select(
       VdbeComment((v, "end %!S", pItem));
       sqlite3VdbeChangeP1(v, topAddr, retAddr);
       sqlite3ClearTempRegCache(pParse);
-      if( pItem->fg.isCte ){
+      if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
         CteUse *pCteUse = pItem->u2.pCteUse;
         pCteUse->addrM9e = pItem->addrFillSub;
         pCteUse->regRtn = pItem->regReturn;
