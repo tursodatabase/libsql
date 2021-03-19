@@ -1,5 +1,5 @@
-C Dbsqlfuzz\sfound\sa\snew\sway\sto\smake\sthat\sbranch\sin\scodeVectorCompare\nreachable.
-D 2021-03-19T16:29:40.489
+C In\sthe\swholenumber\svirtual\stable,\sincrease\sthe\scost\spenalty\sfor\srunning\nopen-loop.\s\sThis\sappears\sto\sfix\sthe\sproblem\sreported\sby\n[https://sqlite.org/forum/forumpost/b52a020ce4|forum\spost\sb52a020ce4].
+D 2021-03-19T17:54:43.183
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -336,7 +336,7 @@ F ext/misc/vfslog.c 3b25c2f56ba60788db247287be6ab024b53c4afffd412b4876db563389be
 F ext/misc/vfsstat.c 389ea13983d3af926504c314f06a83cc858d5adc24b40af74aaed1fece00c118
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
-F ext/misc/wholenumber.c 520f34c3099e5b7d546f13708607dc2fa173c46b68952eecf0d19cd675fec85e
+F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
 F ext/misc/zipfile.c e35e035bc2765b1ccdcb15f9815c2112843fcbc8f36aa071f0e5935df7072228
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c b880ca5cb857d6d6f52e72eb7397813058ef48c78c5402cd04ff2b6b5437f622
@@ -1910,8 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8680f6a8fb34b9c0ea9b4286888b4df5df427d2df10c782d198bc3f2fdcd0704
-Q -e3a78b2a237a2e101faf01dde913f63641da8854720a9daa4b45a9c5dfe30b1b
-R 0c398f65129257e7e775e6833cec8370
+P 959272c27555e39f180d46257afe45d41da1f5df38ea269196c06741ff6a278e
+R 51ac7d994705198c73d6f6e97c1c36d1
 U drh
-Z c6f0a90e3c4ced48d29dbd1f0482c120
+Z 90da41d95168d1eeb1398c4f34c1c25f
