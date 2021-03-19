@@ -817,7 +817,7 @@ void sqlite3Insert(
           bIdListInOrder = 0;
         }else{
           sqlite3ErrorMsg(pParse, "table %S has no column named %s",
-              pTabList, 0, pColumn->a[i].zName);
+              pTabList->a, pColumn->a[i].zName);
           pParse->checkSchema = 1;
           goto insert_cleanup;
         }
@@ -945,7 +945,7 @@ void sqlite3Insert(
     if( nColumn!=(pTab->nCol-nHidden) ){
       sqlite3ErrorMsg(pParse, 
          "table %S has %d columns but %d values were supplied",
-         pTabList, 0, pTab->nCol-nHidden, nColumn);
+         pTabList->a, pTab->nCol-nHidden, nColumn);
      goto insert_cleanup;
     }
   }

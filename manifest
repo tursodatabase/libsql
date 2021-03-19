@@ -1,5 +1,5 @@
-C Add\sa\sNEVER()\son\sa\sbranch\sthat\swas\smade\sunreachable\sby\sthe\n"circular\sreference"\sfix.
-D 2021-03-18T20:04:46.953
+C Improved\slabeling\sof\sEXPLAIN\sQUERY\sPLAN\soutput.\s\sMany\stest\sfailures\sdue\sto\nthe\sdifferent\soutput\sformat.
+D 2021-03-19T13:00:28.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c cfd2a37794532d765e235a2550ad2732924a6d06b07a3bc9f6a71750e3b3cca1
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c fec73c39d756f31d35ccbaa80fe1e040a8d675a318d4d30f41c444167bf3b860
+F src/build.c ef2a6632323b5705febb2b2fe14ab87068fbc8d17a3c70937e110b8a24113306
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -503,7 +503,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 8942baede303a54ba3b6d06200d5b74c9bc25ababec8a55823e06309748cd4a3
+F src/insert.c 0f893f734487729a9d48a0335dcbb541f1e479e7f048d996e3a0b9dc69d427a2
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 2a7ece3a67c646e5fe9984ffe0277d6a76f80ce9715bf2faa591d8cb66b9d913
@@ -538,11 +538,11 @@ F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c e21b54489b5c73b06ada15e6fc79b5c6f64b06701924a6ca98944ae59e06256f
-F src/printf.c 2b03a80d7c11bb422115dca175a18bf430e9c9dbaa0eee63b758f0c022f8f34f
+F src/printf.c 59c2222594b692bbf323b44e14c9d3c095799e91f1b10ca66fee0859fe24323e
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c dd47248c2c914feb0d4428c27d782e2723971d32cfa5536f49306d080df4d45a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 72b2a58bf6e01812c7ea392ab3dc9c7faa814d5558f98d9e4fd6a142f562c608
+F src/select.c f8ef9023982ebbc3bfa47b96590aa03d944d8766038ce5970d6762ff9949248b
 F src/shell.c.in 8df3912a7ca4873a1443d4adef1b25baee8c086ab479fd9c4f13ab03f98049ab
 F src/sqlite.h.in 3426a080ea1f222a73e3bd91e7eacbd30570a0117c03d42c6dde606f33e5e318
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -608,7 +608,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c c64c49d7c2ec4490c2fef1f24350167ba16b03b0c6cee58ad1a1d70a4325d4e9
 F src/treeview.c c6260e1fa5f41c361b2409edc9b0050bcaef5bc4d6abc467fbc45f0d7ccf3d84
-F src/trigger.c 861c3ec2c5b0fc830bdf82470454a9324fad70cbaa96d2e208fb54577c9e8d28
+F src/trigger.c f555123aabf7f3d175cbe6d33c02783302cbdc0a7236203fa2a0539baf2d890e
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -631,7 +631,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
 F src/where.c 10d06b16670a1d2a992d52a9f08e49426d38a08fb0a7ae5f7f62fd023d560e1e
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
-F src/wherecode.c e57a8690311a75d06e723e8d379f9831de04aba300e07174d236e32a7f9c7a13
+F src/wherecode.c 40a5d24cd042fea137ec821725c57c3586d8b92a08da8a47e870c0695bff0817
 F src/whereexpr.c 53452fe2fb07be2f4cb17f55cc721416fae0092c00717f106faf289c990b6494
 F src/window.c 7e89ac4b6cd6bb9b7772234a625d19c39b530f4ac06e43688a8b7e6a1ab512a2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1910,7 +1910,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee86e2f4c5999a090a5d2fe8251107cf55e621a6b988f315eb82f462cc1e377d
-R 51db1a8cd353cea4b335d0a191e38003
+P 114d9780aecdd9f03f235fc1f2ab81ef89cb00b3bafa61cff612e939595ff5f0
+R 710195bef3f0d2c17fb0c771d4c8fb88
+T *branch * eqp-improvements
+T *sym-eqp-improvements *
+T -sym-trunk *
 U drh
-Z 06f86de8c8593bdbc3934905423493ca
+Z c0a2560796cb72b7c4ee37f12bd1d09c
