@@ -533,4 +533,20 @@ do_execsql_test 9.2 {
 } {}
 } ;# end ifcapable vtab
 
+# 2021-03-19
+# dbsqlfuzz 01b8355086998f0a452cb31208e80b9d29ca739a
+#
+# Correlated CTEs should not be materialized.
+#
+reset_db
+do_execsql_test 10.1 {
+  SELECT 1 AS c WHERE (
+    SELECT (
+      WITH t1(a) AS (VALUES( c ))
+      SELECT ( SELECT t1a.a FROM t1 AS t1a, t1 AS t1x )
+      FROM t1 AS xyz GROUP BY 1
+    )
+  )
+} {1}
+
 finish_test
