@@ -615,7 +615,7 @@ static void codeVectorCompare(
   int isCommuted = ExprHasProperty(pExpr,EP_Commuted);
 
   assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
-  if( pParse->nErr ) return;
+  if( NEVER(pParse->nErr) ) return;
   if( nLeft!=sqlite3ExprVectorSize(pRight) ){
     sqlite3ErrorMsg(pParse, "row value misused");
     return;
