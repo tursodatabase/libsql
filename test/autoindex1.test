@@ -183,18 +183,18 @@ do_eqp_test autoindex1-500.1 {
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
 } {
   QUERY PLAN
-  |--SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH t501 USING INTEGER PRIMARY KEY (rowid=?)
   `--LIST SUBQUERY xxxxxx
-     `--SCAN TABLE t502
+     `--SCAN t502
 }
 do_eqp_test autoindex1-501 {
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
   QUERY PLAN
-  |--SCAN TABLE t501
+  |--SCAN t501
   `--CORRELATED LIST SUBQUERY xxxxxx
-     `--SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?)
+     `--SEARCH t502 USING AUTOMATIC COVERING INDEX (y=?)
 }
 do_eqp_test autoindex1-502 {
   SELECT b FROM t501
@@ -202,9 +202,9 @@ do_eqp_test autoindex1-502 {
      AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
   QUERY PLAN
-  |--SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH t501 USING INTEGER PRIMARY KEY (rowid=?)
   `--CORRELATED LIST SUBQUERY xxxxxx
-     `--SCAN TABLE t502
+     `--SCAN t502
 }
 
 # The following code checks a performance regression reported on the
@@ -277,13 +277,13 @@ do_eqp_test autoindex1-600a {
    ORDER BY x.registering_flock;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
-  |  |--SCAN TABLE sheep AS s
-  |  |--SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)
+  |--MATERIALIZE y
+  |  |--SCAN s
+  |  |--SEARCH prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)
   |  `--CORRELATED SCALAR SUBQUERY xxxxxx
-  |     `--SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)
-  |--SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index
-  `--SEARCH SUBQUERY xxxxxx AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)
+  |     `--SEARCH later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)
+  |--SCAN x USING INDEX sheep_reg_flock_index
+  `--SEARCH y USING AUTOMATIC COVERING INDEX (sheep_no=?)
 }
 
 
@@ -294,7 +294,7 @@ do_eqp_test autoindex1-700a {
   SELECT a FROM t5 WHERE b=10 ORDER BY c;
 } {
   QUERY PLAN
-  |--SCAN TABLE t5
+  |--SCAN t5
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -413,7 +413,7 @@ do_execsql_test autoindex1-800 {
              JOIN raw_contacts ON (data.raw_contact_id=raw_contacts._id) 
              JOIN accounts ON (raw_contacts.account_id=accounts._id)
    WHERE mimetype_id=10 AND data14 IS NOT NULL;
-} {/SEARCH TABLE data .*SEARCH TABLE raw_contacts/}
+} {/SEARCH data .*SEARCH raw_contacts/}
 do_execsql_test autoindex1-801 {
   EXPLAIN QUERY PLAN
   SELECT * FROM 
@@ -421,7 +421,7 @@ do_execsql_test autoindex1-801 {
              JOIN raw_contacts ON (data.raw_contact_id=raw_contacts._id) 
              JOIN accounts ON (raw_contacts.account_id=accounts._id)
    WHERE mimetypes._id=10 AND data14 IS NOT NULL;
-} {/SEARCH TABLE data .*SEARCH TABLE raw_contacts/}
+} {/SEARCH data .*SEARCH raw_contacts/}
 
 # Another test case from an important user of SQLite.  The key feature of
 # this test is that the "aggindex" subquery should make use of an

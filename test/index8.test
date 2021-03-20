@@ -41,7 +41,7 @@ do_execsql_test 1.0 {
 do_execsql_test 1.0eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM t1 WHERE c=4 ORDER BY a, b LIMIT 2;
-} {/SCAN TABLE t1 USING INDEX t1abc/}
+} {/SCAN t1 USING INDEX t1abc/}
 
 # If we change the index so that it no longer covers the WHERE clause,
 # then we should (correctly) revert to using a table scan.

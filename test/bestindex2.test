@@ -89,40 +89,40 @@ do_execsql_test 1.0 {
 
 do_eqp_test 1.1 {
   SELECT * FROM t1 WHERE a='abc'
-} {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
+} {SCAN t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
 
 do_eqp_test 1.2 {
   SELECT * FROM t1 WHERE a='abc' AND b='def'
-} {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=? AND b=?)}
+} {SCAN t1 VIRTUAL TABLE INDEX 0:indexed(a=? AND b=?)}
 
 do_eqp_test 1.3 {
   SELECT * FROM t1 WHERE a='abc' AND a='def'
-} {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
+} {SCAN t1 VIRTUAL TABLE INDEX 0:indexed(a=?)}
 
 do_eqp_test 1.4 {
   SELECT * FROM t1,t2 WHERE c=a
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
-  `--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  |--SCAN t1 VIRTUAL TABLE INDEX 0:
+  `--SCAN t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
 }
 
 do_eqp_test 1.5 {
   SELECT * FROM t1, t2 CROSS JOIN t3 WHERE t2.c = +t1.b AND t3.e=t2.d
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
-  |--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
-  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
+  |--SCAN t1 VIRTUAL TABLE INDEX 0:
+  |--SCAN t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  `--SCAN t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
 }
 
 do_eqp_test 1.6 {
   SELECT * FROM t1, t2, t3 WHERE t2.c = +t1.b AND t3.e = t2.d
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
-  |--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
-  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
+  |--SCAN t1 VIRTUAL TABLE INDEX 0:
+  |--SCAN t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  `--SCAN t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
 }
 
 do_execsql_test 1.7.1 {
@@ -133,10 +133,10 @@ do_eqp_test 1.7.2 {
     WHERE t1.a = t2.c AND t1.b = t3.e
 } {
   QUERY PLAN
-  |--SCAN TABLE x1
-  |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:
-  |--SCAN TABLE t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
-  `--SCAN TABLE t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
+  |--SCAN x1
+  |--SCAN t1 VIRTUAL TABLE INDEX 0:
+  |--SCAN t2 VIRTUAL TABLE INDEX 0:indexed(c=?)
+  `--SCAN t3 VIRTUAL TABLE INDEX 0:indexed(e=?)
 }
 
 finish_test

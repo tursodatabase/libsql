@@ -119,29 +119,29 @@ do_eqp_test fts3query-4.2 {
   SELECT t1.number FROM t1, ft WHERE t1.number=ft.rowid ORDER BY t1.date
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 USING COVERING INDEX i1
-  `--SCAN TABLE ft VIRTUAL TABLE INDEX 1:
+  |--SCAN t1 USING COVERING INDEX i1
+  `--SCAN ft VIRTUAL TABLE INDEX 1:
 }
 do_eqp_test fts3query-4.3 {
   SELECT t1.number FROM ft, t1 WHERE t1.number=ft.rowid ORDER BY t1.date
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 USING COVERING INDEX i1
-  `--SCAN TABLE ft VIRTUAL TABLE INDEX 1:
+  |--SCAN t1 USING COVERING INDEX i1
+  `--SCAN ft VIRTUAL TABLE INDEX 1:
 }
 do_eqp_test fts3query-4.4 {
   SELECT t1.number FROM t1, bt WHERE t1.number=bt.rowid ORDER BY t1.date
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 USING COVERING INDEX i1
-  `--SEARCH TABLE bt USING INTEGER PRIMARY KEY (rowid=?)
+  |--SCAN t1 USING COVERING INDEX i1
+  `--SEARCH bt USING INTEGER PRIMARY KEY (rowid=?)
 }
 do_eqp_test fts3query-4.5 {
   SELECT t1.number FROM bt, t1 WHERE t1.number=bt.rowid ORDER BY t1.date
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 USING COVERING INDEX i1
-  `--SEARCH TABLE bt USING INTEGER PRIMARY KEY (rowid=?)
+  |--SCAN t1 USING COVERING INDEX i1
+  `--SEARCH bt USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 

@@ -864,20 +864,16 @@ void sqlite3_str_vappendf(
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
         pItem = va_arg(ap, SrcItem*);
         assert( bArgList==0 );
-        if( pItem->zDatabase ){
-          sqlite3_str_appendall(pAccum, pItem->zDatabase);
-          sqlite3_str_append(pAccum, ".", 1);
-        }
-        if( pItem->zName ){
+        if( pItem->zAlias ){
+          sqlite3_str_appendall(pAccum, pItem->zAlias);
+        }else if( pItem->zName ){
+          if( pItem->zDatabase ){
+            sqlite3_str_appendall(pAccum, pItem->zDatabase);
+            sqlite3_str_append(pAccum, ".", 1);
+          }
           sqlite3_str_appendall(pAccum, pItem->zName);
         }else if( pItem->pSelect ){
           sqlite3_str_appendf(pAccum, "SUBQUERY %u", pItem->pSelect->selId);
-        }
-        if( flag_altform2 ){
-          if( pItem->zAlias ){
-            sqlite3_str_append(pAccum, " AS ", 4);
-            sqlite3_str_appendall(pAccum, pItem->zAlias );
-          }
         }
         length = width = 0;
         break;

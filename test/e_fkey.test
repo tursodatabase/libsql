@@ -992,15 +992,15 @@ do_detail_test e_fkey-25.2 {
   EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
   EXPLAIN QUERY PLAN SELECT rowid FROM track WHERE trackartist = ?;
 } {
-  {SCAN TABLE artist} 
-  {SCAN TABLE track}
+  {SCAN artist} 
+  {SCAN track}
 }
 do_detail_test e_fkey-25.3 {
   PRAGMA foreign_keys = ON;
   EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
 } {
-  {SCAN TABLE artist} 
-  {SCAN TABLE track}
+  {SCAN artist} 
+  {SCAN track}
 }
 do_test e_fkey-25.4 {
   execsql {
@@ -1117,15 +1117,15 @@ do_test e_fkey-27.2 {
 do_detail_test e_fkey-27.3 {
   EXPLAIN QUERY PLAN UPDATE artist SET artistid = ?, artistname = ?
 } {
-  {SCAN TABLE artist} 
-  {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)} 
-  {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)}
+  {SCAN artist} 
+  {SEARCH track USING COVERING INDEX trackindex (trackartist=?)} 
+  {SEARCH track USING COVERING INDEX trackindex (trackartist=?)}
 }
 do_detail_test e_fkey-27.4 {
   EXPLAIN QUERY PLAN DELETE FROM artist
 } {
-  {SCAN TABLE artist} 
-  {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?)}
+  {SCAN artist} 
+  {SEARCH track USING COVERING INDEX trackindex (trackartist=?)}
 }
 
 ###########################################################################

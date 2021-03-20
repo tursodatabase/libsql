@@ -54,4 +54,3 @@ do_ccsql_test 1.6 { DROP TABLE t3 } {0}
 
 
 finish_test
-

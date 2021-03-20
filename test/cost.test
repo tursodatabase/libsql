@@ -25,8 +25,8 @@ do_eqp_test 1.2 {
   SELECT e FROM t3, t4 WHERE b=c ORDER BY b, d;
 } {
   QUERY PLAN
-  |--SCAN TABLE t3 USING COVERING INDEX i3
-  `--SEARCH TABLE t4 USING INDEX i4 (c=?)
+  |--SCAN t3 USING COVERING INDEX i3
+  `--SEARCH t4 USING INDEX i4 (c=?)
 }
 
 
@@ -39,7 +39,7 @@ do_execsql_test 2.1 {
 # if the index is a non-covering index.
 do_eqp_test 2.2 {
   SELECT * FROM t1 ORDER BY a;
-} {SCAN TABLE t1 USING INDEX i1}
+} {SCAN t1 USING INDEX i1}
 
 do_execsql_test 3.1 {
   CREATE TABLE t5(a INTEGER PRIMARY KEY,b,c,d,e,f,g);
@@ -59,11 +59,11 @@ do_eqp_test 3.2 {
   QUERY PLAN
   |--MULTI-INDEX OR
   |  |--INDEX 1
-  |  |  `--SEARCH TABLE t5 USING INDEX t5b (b=?)
+  |  |  `--SEARCH t5 USING INDEX t5b (b=?)
   |  |--INDEX 2
-  |  |  `--SEARCH TABLE t5 USING INDEX t5c (c=?)
+  |  |  `--SEARCH t5 USING INDEX t5c (c=?)
   |  `--INDEX 3
-  |     `--SEARCH TABLE t5 USING INDEX t5d (d=?)
+  |     `--SEARCH t5 USING INDEX t5d (d=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -83,11 +83,11 @@ do_execsql_test 4.1 {
 }
 do_eqp_test 4.2 {
   SELECT * FROM t1 WHERE likelihood(a=?, 0.014) AND b BETWEEN ? AND ?;
-} {SEARCH TABLE t1 USING INDEX i1 (a=?)}
+} {SEARCH t1 USING INDEX i1 (a=?)}
 
 do_eqp_test 4.3 {
   SELECT * FROM t1 WHERE likelihood(a=?, 0.016) AND b BETWEEN ? AND ?;
-} {SEARCH TABLE t1 USING INDEX i2 (b>? AND b<?)}
+} {SEARCH t1 USING INDEX i2 (b>? AND b<?)}
 
 
 #-------------------------------------------------------------------------
@@ -102,7 +102,7 @@ do_eqp_test 5.2 {
   SELECT * FROM t2 ORDER BY x, y;
 } {
   QUERY PLAN
-  |--SCAN TABLE t2 USING INDEX t2i1
+  |--SCAN t2 USING INDEX t2i1
   `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
 }
 
@@ -110,7 +110,7 @@ do_eqp_test 5.3 {
   SELECT * FROM t2 WHERE x BETWEEN ? AND ? ORDER BY rowid;
 } {
   QUERY PLAN
-  |--SEARCH TABLE t2 USING INDEX t2i1 (x>? AND x<?)
+  |--SEARCH t2 USING INDEX t2i1 (x>? AND x<?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -128,9 +128,9 @@ do_eqp_test 6.2 {
   QUERY PLAN
   |--MULTI-INDEX OR
   |  |--INDEX 1
-  |  |  `--SEARCH TABLE t3 USING INDEX t3i1 (b>? AND b<?)
+  |  |  `--SEARCH t3 USING INDEX t3i1 (b>? AND b<?)
   |  `--INDEX 2
-  |     `--SEARCH TABLE t3 USING INDEX t3i2 (c=?)
+  |     `--SEARCH t3 USING INDEX t3i2 (c=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -155,9 +155,9 @@ do_eqp_test 7.2 {
   QUERY PLAN
   |--MULTI-INDEX OR
   |  |--INDEX 1
-  |  |  `--SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)
+  |  |  `--SEARCH t1 USING INDEX t1b (b>? AND b<?)
   |  `--INDEX 2
-  |     `--SEARCH TABLE t1 USING INDEX t1b (b=?)
+  |     `--SEARCH t1 USING INDEX t1b (b=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -166,11 +166,11 @@ do_eqp_test 7.3 {
   WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
-} {SCAN TABLE t1}
+} {SCAN t1}
 
 do_eqp_test 7.4 {
   SELECT rowid FROM t1 WHERE (+b IS NULL AND c NOT NULL) OR c IS NULL
-} {SCAN TABLE t1}
+} {SCAN t1}
 
 #-------------------------------------------------------------------------
 #
@@ -202,9 +202,9 @@ do_eqp_test 8.2 {
      AND unlikely(album.aid=track.aid);
 } {
   QUERY PLAN
-  |--SCAN TABLE track
-  |--SEARCH TABLE album USING INTEGER PRIMARY KEY (rowid=?)
-  |--SEARCH TABLE composer USING INTEGER PRIMARY KEY (rowid=?)
+  |--SCAN track
+  |--SEARCH album USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH composer USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR DISTINCT
 }
 
@@ -271,19 +271,19 @@ ifcapable stat4 {
 
   do_eqp_test 10.3 {
     SELECT rowid FROM t6 WHERE a=0 AND c=0
-  } {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
+  } {SEARCH t6 USING INDEX t6i2 (c=?)}
 
   do_eqp_test 10.4 {
     SELECT rowid FROM t6 WHERE a=0 AND b='xyz' AND c=0
-  } {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
+  } {SEARCH t6 USING INDEX t6i2 (c=?)}
 
   do_eqp_test 10.5 {
     SELECT rowid FROM t6 WHERE likelihood(a=0, 0.1) AND c=0
-  } {SEARCH TABLE t6 USING INDEX t6i1 (a=?)}
+  } {SEARCH t6 USING INDEX t6i1 (a=?)}
 
   do_eqp_test 10.6 {
     SELECT rowid FROM t6 WHERE likelihood(a=0, 0.1) AND b='xyz' AND c=0
-  } {SEARCH TABLE t6 USING INDEX t6i1 (a=? AND b=?)}
+  } {SEARCH t6 USING INDEX t6i1 (a=? AND b=?)}
 }
 
 finish_test

@@ -341,7 +341,7 @@ optimization_control db skip-scan 0
 do_execsql_test skipscan1-9.3 {
   EXPLAIN QUERY PLAN
   SELECT  * FROM t9a WHERE b IN (SELECT x FROM t9b WHERE y!=5);
-} {/{SCAN TABLE t9a}/}
+} {/{SCAN t9a}/}
 optimization_control db skip-scan 1
 
 do_execsql_test skipscan1-2.1 {
@@ -394,7 +394,7 @@ do_eqp_test skipscan1-3.2 {
     FROM t1 WHERE t1.c3 = 1;
 } {
   QUERY PLAN
-  |--SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (ANY(c4) AND c3=?)
+  |--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (ANY(c4) AND c3=?)
   `--USE TEMP B-TREE FOR DISTINCT
 }
 
