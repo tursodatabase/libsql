@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\sOP_SkipScan\sopcode.\ndbsqlfuzz\sa15a9b2ca82e812ad52f62c86cc93dca0dc72f01.\nTest\scases\sin\sTH3.
-D 2021-03-20T01:00:26.136
+C Fix\sthe\s"box"\soutput\smode\sin\sthe\sshell\swhen\sstatement\sreturns\szero-column\nrows\s(for\sexample\sfrom\s"PRAGMA\sincremental_vacuum").
+D 2021-03-20T23:15:52.238
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -543,7 +543,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c dd47248c2c914feb0d4428c27d782e2723971d32cfa5536f49306d080df4d45a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 734cf12e42f81f2fe461e41214e6552375e55b62a802784a4f0066ac592e7f4a
-F src/shell.c.in 8df3912a7ca4873a1443d4adef1b25baee8c086ab479fd9c4f13ab03f98049ab
+F src/shell.c.in aa28256887d049badaf93aa30ab5c76a2ec88143a674d685c0e739056702e5c3
 F src/sqlite.h.in 3426a080ea1f222a73e3bd91e7eacbd30570a0117c03d42c6dde606f33e5e318
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f12b54042e27b2fe99f23f97c103ee4371f8d4df3b049d9bb5d64891db56eee5
-R 3946eb391c7f82539961f86f3d33028d
+P 1805b9aaf1172e36e08271f78ebb7676bba9f3c4c28e077ee94cc31b8e7ec741
+R db4d8e4e65e8222a9a7f3090dc1a41c7
 U drh
-Z 2aafb66ec89596d51745eda09eacc9b6
+Z 389fb9ea41c4380263594a1b6a568a85
