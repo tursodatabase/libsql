@@ -207,7 +207,7 @@ do_eqp_test 5.1 {
   ORDER BY 1;
 } {
   QUERY PLAN
-  |--MATERIALIZE x1
+  |--MATERIALIZE c
   |  |--SETUP
   |  |  `--SCAN CONSTANT ROW
   |  `--RECURSIVE STEP

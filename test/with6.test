@@ -30,7 +30,7 @@ do_eqp_test 101 {
   SELECT c1.x||c2.x||c3.x FROM c c1, c c2, c c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
   |--SCAN c1
   |--SCAN c2
@@ -46,7 +46,7 @@ do_eqp_test 111 {
   SELECT c1.x||c2.x||c3.x FROM c c1, c c2, c c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
   |--SCAN c1
   |--SCAN c2
@@ -65,7 +65,7 @@ do_eqp_test 121 {
   SELECT c1.x||c2.x||c3.x FROM c c1, c c2, c c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
   |--SCAN c1
   |--SCAN c2
@@ -175,7 +175,7 @@ do_eqp_test 161 {
     FROM c AS c2 WHERE c2.x<10;
 } {
   QUERY PLAN
-  |--MATERIALIZE c2
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
   |--SCAN c2
   `--CORRELATED SCALAR SUBQUERY xxxxxx
@@ -193,7 +193,7 @@ do_eqp_test 171 {
     FROM c AS c2 WHERE c2.x<10;
 } {
   QUERY PLAN
-  |--CO-ROUTINE c2
+  |--CO-ROUTINE c
   |  `--SCAN 2 CONSTANT ROWS
   |--SCAN c2
   `--CORRELATED SCALAR SUBQUERY xxxxxx

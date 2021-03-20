@@ -102,7 +102,7 @@ static const et_info fmtinfo[] = {
 /* Notes:
 **
 **    %S    Takes a pointer to SrcItem.  Shows name or database.name
-**    %!S   Like %S but also shows AS alias if an alias is available
+**    %!S   Like %S but prefer the zName over the zAlias
 */
 
 /* Floating point constants used for rounding */
@@ -864,7 +864,7 @@ void sqlite3_str_vappendf(
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
         pItem = va_arg(ap, SrcItem*);
         assert( bArgList==0 );
-        if( pItem->zAlias ){
+        if( pItem->zAlias && !flag_altform2 ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
         }else if( pItem->zName ){
           if( pItem->zDatabase ){
@@ -872,6 +872,8 @@ void sqlite3_str_vappendf(
             sqlite3_str_append(pAccum, ".", 1);
           }
           sqlite3_str_appendall(pAccum, pItem->zName);
+        }else if( pItem->zAlias ){
+          sqlite3_str_appendall(pAccum, pItem->zAlias);
         }else if( pItem->pSelect ){
           sqlite3_str_appendf(pAccum, "SUBQUERY %u", pItem->pSelect->selId);
         }
