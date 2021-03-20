@@ -4427,13 +4427,13 @@ seek_not_found:
 **
 ** There are three possible outcomes from this opcode:<ol>
 **
-** <li> If after This.P1 steps, the cursor is still point to a place that
-**      is earlier in the btree than the target row,
-**      then fall through into the subsquence OP_SeekGE opcode.
+** <li> If after This.P1 steps, the cursor is still pointing to a place that
+**      is earlier in the btree than the target row, then fall through
+**      into the subsquence OP_SeekGE opcode.
 **
 ** <li> If the cursor is successfully moved to the target row by 0 or more
 **      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
-**      past the OP_IdxGT opcode that follows the OP_SeekGE.
+**      past the OP_IdxGT or OP_IdxGE opcode that follows the OP_SeekGE.
 **
 ** <li> If the cursor ends up past the target row (indicating the the target
 **      row does not exist in the btree) then jump to SeekOP.P2. 
@@ -4450,7 +4450,8 @@ case OP_SeekScan: {
   /* pOp->p2 points to the first instruction past the OP_IdxGT that
   ** follows the OP_SeekGE.  */
   assert( pOp->p2>=(int)(pOp-aOp)+2 );
-  assert( aOp[pOp->p2-1].opcode==OP_IdxGT );
+  assert( aOp[pOp->p2-1].opcode==OP_IdxGT || aOp[pOp->p2-1].opcode==OP_IdxGE );
+  testcase( aOp[pOp->p2-1].opcode==OP_IdxGE );
   assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
   assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
   assert( pOp[1].p3==aOp[pOp->p2-1].p3 );

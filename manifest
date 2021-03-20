@@ -1,5 +1,5 @@
-C In\sthe\swholenumber\svirtual\stable,\sincrease\sthe\scost\spenalty\sfor\srunning\nopen-loop.\s\sThis\sappears\sto\sfix\sthe\sproblem\sreported\sby\n[https://sqlite.org/forum/forumpost/b52a020ce4|forum\spost\sb52a020ce4].
-D 2021-03-19T17:54:43.183
+C Fix\sa\sfaulty\sassert()\sin\sthe\sOP_SkipScan\sopcode.\ndbsqlfuzz\sa15a9b2ca82e812ad52f62c86cc93dca0dc72f01.\nTest\scases\sin\sTH3.
+D 2021-03-20T01:00:26.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 95105c16c8b6decd90645ac8cf3bf0bd34e08f3371fcdaa597853547bb114360
+F src/vdbe.c 5001a0d3003d3664615dd7ac3cedab1d51e2391b5bdd0878f40a41fdcd942e13
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 000d9ab1ea4cb55a80de15e28f3f595645b4fddef34bca4347fb3db8031d9041
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 959272c27555e39f180d46257afe45d41da1f5df38ea269196c06741ff6a278e
-R 51ac7d994705198c73d6f6e97c1c36d1
+P f12b54042e27b2fe99f23f97c103ee4371f8d4df3b049d9bb5d64891db56eee5
+R 3946eb391c7f82539961f86f3d33028d
 U drh
-Z 90da41d95168d1eeb1398c4f34c1c25f
+Z 2aafb66ec89596d51745eda09eacc9b6
