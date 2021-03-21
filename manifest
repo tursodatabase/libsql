@@ -1,5 +1,5 @@
-C Fix\sthe\s"box"\soutput\smode\sin\sthe\sshell\swhen\sstatement\sreturns\szero-column\nrows\s(for\sexample\sfrom\s"PRAGMA\sincremental_vacuum").
-D 2021-03-20T23:15:52.238
+C Add\sa\sbetter\scomment\sand\san\sassert()\son\sthe\scode\sinside\ssqlite3CreateIndex()\nthat\sREPLACE\sindexes\scome\sat\sthe\send\sof\sthe\sindex\slist.\n[forum:/forumpost/ceb51d83f7|forum\spost\sceb51d83f7]
+D 2021-03-21T17:52:47.692
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c cfd2a37794532d765e235a2550ad2732924a6d06b07a3bc9f6a71750e3b3cca1
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c fec73c39d756f31d35ccbaa80fe1e040a8d675a318d4d30f41c444167bf3b860
+F src/build.c 066c44421bf7b73c6fa47f6fb0c0fcf1357c10552bcf8f3f94c6ebede581cd01
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1805b9aaf1172e36e08271f78ebb7676bba9f3c4c28e077ee94cc31b8e7ec741
-R db4d8e4e65e8222a9a7f3090dc1a41c7
+P 34439fe3aeea7cbbc817245d39c345a7f5df7a82ac15ee4d71bb9a4d818198ed
+R 94a6696dd066ae3c18ce169901c260e2
 U drh
-Z 389fb9ea41c4380263594a1b6a568a85
+Z a74e3b4e333eec02834c3779be47be06
