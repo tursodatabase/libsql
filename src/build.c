@@ -4149,7 +4149,11 @@ void sqlite3CreateIndex(
   /* Clean up before exiting */
 exit_create_index:
   if( pIndex ) sqlite3FreeIndex(db, pIndex);
-  if( pTab ){  /* Ensure all REPLACE indexes are at the end of the list */
+  if( pTab ){
+    /* Ensure all REPLACE indexes on pTab are at the end of the pIndex list.
+    ** The list was already ordered when this routine was entered, so at this
+    ** point at most a single index (the newly added index) will be out of
+    ** order.  So we have to reorder at most one index. */
     Index **ppFrom = &pTab->pIndex;
     Index *pThis;
     for(ppFrom=&pTab->pIndex; (pThis = *ppFrom)!=0; ppFrom=&pThis->pNext){
@@ -4163,6 +4167,16 @@ exit_create_index:
       }
       break;
     }
+#ifdef SQLITE_DEBUG
+    /* Verify that all REPLACE indexes really are now at the end
+    ** of the index list.  In other words, no other index type ever
+    ** comes after a REPLACE index on the list. */
+    for(pThis = pTab->pIndex; pThis; pThis=pThis->pNext){
+      assert( pThis->onError!=OE_Replace
+           || pThis->pNext==0
+           || pThis->pNext->onError==OE_Replace );
+    }
+#endif
   }
   sqlite3ExprDelete(db, pPIWhere);
   sqlite3ExprListDelete(db, pList);
