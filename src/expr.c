@@ -1478,6 +1478,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   pNew = sqlite3DbMallocRawNN(db, sqlite3DbMallocSize(db, p));
   if( pNew==0 ) return 0;
   pNew->nExpr = p->nExpr;
+  pNew->nAlloc = p->nAlloc;
   pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
@@ -1650,41 +1651,64 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
 ** that the new entry was successfully appended.
 */
+static const struct ExprList_item zeroItem;
+SQLITE_NOINLINE ExprList *sqlite3ExprListAppendNew(
+  sqlite3 *db,            /* Database handle.  Used for memory allocation */
+  Expr *pExpr             /* Expression to be appended. Might be NULL */
+){
+  struct ExprList_item *pItem;
+  ExprList *pList;
+
+  pList = sqlite3DbMallocRawNN(db, sizeof(ExprList)+sizeof(pList->a[0])*4 );
+  if( pList==0 ){
+    sqlite3ExprDelete(db, pExpr);
+    return 0;
+  }
+  pList->nAlloc = 4;
+  pList->nExpr = 1;
+  pItem = &pList->a[0];
+  *pItem = zeroItem;
+  pItem->pExpr = pExpr;
+  return pList;
+}
+SQLITE_NOINLINE ExprList *sqlite3ExprListAppendGrow(
+  sqlite3 *db,            /* Database handle.  Used for memory allocation */
+  ExprList *pList,        /* List to which to append. Might be NULL */
+  Expr *pExpr             /* Expression to be appended. Might be NULL */
+){
+  struct ExprList_item *pItem;
+  ExprList *pNew;
+  pList->nAlloc *= 2;
+  pNew = sqlite3DbRealloc(db, pList, 
+       sizeof(*pList)+(pList->nAlloc-1)*sizeof(pList->a[0]));
+  if( pNew==0 ){
+    sqlite3ExprListDelete(db, pList);
+    sqlite3ExprDelete(db, pExpr);
+    return 0;
+  }else{
+    pList = pNew;
+  }
+  pItem = &pList->a[pList->nExpr++];
+  *pItem = zeroItem;
+  pItem->pExpr = pExpr;
+  return pList;
+}
 ExprList *sqlite3ExprListAppend(
   Parse *pParse,          /* Parsing context */
   ExprList *pList,        /* List to which to append. Might be NULL */
   Expr *pExpr             /* Expression to be appended. Might be NULL */
 ){
   struct ExprList_item *pItem;
-  sqlite3 *db = pParse->db;
-  assert( db!=0 );
   if( pList==0 ){
-    pList = sqlite3DbMallocRawNN(db, sizeof(ExprList) );
-    if( pList==0 ){
-      goto no_mem;
-    }
-    pList->nExpr = 0;
-  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
-    ExprList *pNew;
-    pNew = sqlite3DbRealloc(db, pList, 
-         sizeof(*pList)+(2*(sqlite3_int64)pList->nExpr-1)*sizeof(pList->a[0]));
-    if( pNew==0 ){
-      goto no_mem;
-    }
-    pList = pNew;
+    return sqlite3ExprListAppendNew(pParse->db,pExpr);
+  }
+  if( pList->nAlloc<pList->nExpr+1 ){
+    return sqlite3ExprListAppendGrow(pParse->db,pList,pExpr);
   }
   pItem = &pList->a[pList->nExpr++];
-  assert( offsetof(struct ExprList_item,zEName)==sizeof(pItem->pExpr) );
-  assert( offsetof(struct ExprList_item,pExpr)==0 );
-  memset(&pItem->zEName,0,sizeof(*pItem)-offsetof(struct ExprList_item,zEName));
+  *pItem = zeroItem;
   pItem->pExpr = pExpr;
   return pList;
-
-no_mem:     
-  /* Avoid leaking memory if malloc has failed. */
-  sqlite3ExprDelete(db, pExpr);
-  sqlite3ExprListDelete(db, pList);
-  return 0;
 }
 
 /*
