@@ -567,7 +567,7 @@ do_execsql_test 13.1.6 {
 
 do_catchsql_test 13.1.7 {
   ALTER TABLE x1 RENAME COLUMN t TO ttt;
-} {1 {database disk image is malformed}}
+} {1 {error in index x1i: }}
 
 do_execsql_test 13.1.8 {
   DELETE FROM sqlite_master WHERE name = 'x1i';
@@ -834,6 +834,19 @@ do_execsql_test 22.0 {
   {CREATE TABLE t1(othername, b)}
   {CREATE TABLE t2(c, othername, extra AS (c + 1))}
 }
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX x1 on t1("c"=b);
+  INSERT INTO t1 VALUES('a', 'a');
+  INSERT INTO t1 VALUES('b', 'b');
+  INSERT INTO t1 VALUES('c', 'c');
+  ALTER TABLE t1 RENAME COLUMN a TO "c";
+  PRAGMA integrity_check;
+} {ok}
 
 
 finish_test

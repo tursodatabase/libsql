@@ -82,6 +82,7 @@ do_auth_test 1.2 {
   {SQLITE_ALTER_TABLE main t2 {} {}} 
   {SQLITE_FUNCTION {} like {} {}} 
   {SQLITE_FUNCTION {} sqlite_rename_column {} {}} 
+  {SQLITE_FUNCTION {} sqlite_rename_quotefix {} {}} 
   {SQLITE_FUNCTION {} sqlite_rename_test {} {}} 
   {SQLITE_READ sqlite_master name main {}} 
   {SQLITE_READ sqlite_master sql main {}} 
@@ -100,6 +101,7 @@ do_auth_test 1.3 {
 } {
   {SQLITE_FUNCTION {} like {} {}} 
   {SQLITE_FUNCTION {} sqlite_drop_column {} {}}
+  {SQLITE_FUNCTION {} sqlite_rename_quotefix {} {}} 
   {SQLITE_FUNCTION {} sqlite_rename_test {} {}} 
   {SQLITE_READ sqlite_master name main {}} 
   {SQLITE_READ sqlite_master sql main {}} 
@@ -110,6 +112,7 @@ do_auth_test 1.3 {
   {SQLITE_READ sqlite_temp_master type temp {}} 
   {SQLITE_SELECT {} {} {} {}} 
   {SQLITE_UPDATE sqlite_master sql main {}}
+  {SQLITE_UPDATE sqlite_temp_master sql temp {}}
 }
 
 finish_test
