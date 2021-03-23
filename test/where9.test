@@ -362,12 +362,12 @@ ifcapable explain {
     WHERE t1.a=80 AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
+    |--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
        |--INDEX 1
-       |  `--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       |  `--SEARCH t2 USING INDEX t2d (d=?)
        `--INDEX 3
-          `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+          `--SEARCH t2 USING COVERING INDEX t2f (f=?)
   }]
   do_eqp_test where9-3.2 {
     SELECT coalesce(t2.a,9999)
@@ -375,12 +375,12 @@ ifcapable explain {
     WHERE t1.a=80
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
+    |--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
        |--INDEX 1
-       |  `--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       |  `--SEARCH t2 USING INDEX t2d (d=?)
        `--INDEX 2
-          `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+          `--SEARCH t2 USING COVERING INDEX t2f (f=?)
   }]
 } 
 
@@ -461,23 +461,23 @@ do_eqp_test where9-5.1 {
   QUERY PLAN
   `--MULTI-INDEX OR
      |--INDEX 1
-     |  `--SEARCH TABLE t1 USING INDEX t1c (c=?)
+     |  `--SEARCH t1 USING INDEX t1c (c=?)
      `--INDEX 2
-        `--SEARCH TABLE t1 USING INDEX t1d (d=?)
+        `--SEARCH t1 USING INDEX t1d (d=?)
 }
 
 # In contrast, b=1000 is preferred over any OR-clause.
 #
 do_eqp_test where9-5.2 {
   SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
-} {SEARCH TABLE t1 USING INDEX t1b (b=?)}
+} {SEARCH t1 USING INDEX t1b (b=?)}
 
 # Likewise, inequalities in an AND are preferred over inequalities in
 # an OR.
 #
 do_eqp_test where9-5.3 {
   SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
-} {SEARCH TABLE t1 USING INDEX t1b (b>?)}
+} {SEARCH t1 USING INDEX t1b (b>?)}
 
 ############################################################################
 # Make sure OR-clauses work correctly on UPDATE and DELETE statements.

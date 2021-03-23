@@ -50,7 +50,7 @@ do_execsql_eqp_test 1.1 {
 do_execsql_eqp_test 1.2 {
   SELECT t1.* FROM t1 WHERE EXISTS(SELECT * FROM t2 WHERE t2.c=t1.a);
 } {
-  SEARCH TABLE t1 USING INTEGER PRIMARY KEY
+  SEARCH t1 USING INTEGER PRIMARY KEY
 } {
   1 one 3 three 5 five 7 seven
 }
@@ -58,7 +58,7 @@ do_execsql_eqp_test 1.2 {
 do_execsql_eqp_test 1.3 {
   SELECT t1.* FROM t1 WHERE EXISTS(SELECT * FROM t2 WHERE t2.c+1=t1.a);
 } {
-  SEARCH TABLE t1 USING INTEGER PRIMARY KEY
+  SEARCH t1 USING INTEGER PRIMARY KEY
 } {
   2 two 4 four 6 six
 }
@@ -66,7 +66,7 @@ do_execsql_eqp_test 1.3 {
 do_execsql_eqp_test 1.4 {
   SELECT t1.* FROM t1 WHERE EXISTS(SELECT * FROM t2 WHERE t2.c+1=t1.a+1);
 } {
-  SCAN TABLE t1
+  SCAN t1
 } {
   1 one 3 three 5 five 7 seven
 }
@@ -76,7 +76,7 @@ do_execsql_eqp_test 1.5 {
     SELECT * FROM t2 WHERE t1.a=t2.c AND d IN (1, 2, 3)
   );
 } {
-  SEARCH TABLE t1 USING INTEGER PRIMARY KEY
+  SEARCH t1 USING INTEGER PRIMARY KEY
 } {
   1 one 3 three 5 five
 }
@@ -86,7 +86,7 @@ do_execsql_eqp_test 1.6 {
     SELECT * FROM t2 WHERE d IN (1, 2, 3)AND t1.a=t2.c 
   );
 } {
-  SEARCH TABLE t1 USING INTEGER PRIMARY KEY
+  SEARCH t1 USING INTEGER PRIMARY KEY
 } {
   1 one 3 three 5 five
 }
@@ -96,7 +96,7 @@ do_execsql_eqp_test 1.7 {
     SELECT * FROM t2 WHERE d IN (1, 2, 3)AND t1.a=t2.c 
   );
 } {
-  SEARCH TABLE t1 USING INTEGER PRIMARY KEY
+  SEARCH t1 USING INTEGER PRIMARY KEY
 } {
   1 one 3 three 5 five
 }
@@ -123,7 +123,7 @@ do_execsql_test 2.2 { SELECT a FROM t3, t4 WHERE c=a } {five four one two}
 do_execsql_eqp_test 2.3 {
   SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE a=c)
 } {
-  SEARCH TABLE t3 USING PRIMARY KEY
+  SEARCH t3 USING PRIMARY KEY
 } {
   four one
 }
@@ -131,7 +131,7 @@ do_execsql_eqp_test 2.3 {
 do_execsql_eqp_test 2.4 {
   SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE c=a)
 } {
-  SCAN TABLE t3
+  SCAN t3
 } {
   five four one two
 }
@@ -143,7 +143,7 @@ do_execsql_test 2.5 {
 do_execsql_eqp_test 2.6 {
   SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE c=a)
 } {
-  SEARCH TABLE t3 USING COVERING INDEX t3anc
+  SEARCH t3 USING COVERING INDEX t3anc
 } {
   five four one two
 }
@@ -154,7 +154,7 @@ do_execsql_test 2.6a {
 do_execsql_eqp_test 2.7 {
   SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE a=c)
 } {
-  SEARCH TABLE t3 USING PRIMARY KEY
+  SEARCH t3 USING PRIMARY KEY
 } {
   four one
 }

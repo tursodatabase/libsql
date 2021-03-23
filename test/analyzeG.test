@@ -57,7 +57,7 @@ do_execsql_test 1.0 {
 do_scan_order_test 1.1.1 {
   SELECT * FROM t1, t2 WHERE a=44 AND b=44;
 } {
-  {SCAN TABLE t1} {SCAN TABLE t2}
+  {SCAN t1} {SCAN TABLE t2}
 }
 do_scan_order_test 1.1.2 {
   SELECT * FROM t2, t1 WHERE a=44 AND b=44 

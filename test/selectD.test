@@ -169,6 +169,6 @@ do_execsql_test selectD-4.1 {
                WHERE x1.d>5
                GROUP BY x1.d) AS x2
                   ON t41.b=x2.d;
-} {/*SEARCH SUBQUERY * AS x2 USING AUTOMATIC*/}
+} {/SEARCH x2 USING AUTOMATIC/}
 
 finish_test
