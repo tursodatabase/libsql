@@ -1150,15 +1150,11 @@ static int renameEditSql(
     ** ALTER TABLE statement was quoted (bQuote==1), then set zNew to
     ** point to zQuot so that all substitutions are made using the
     ** quoted version of the new column name.  */
-    zQuot = sqlite3MPrintf(db, "\"%w\"", zNew);
+    zQuot = sqlite3MPrintf(db, "\"%w\" ", zNew);
     if( zQuot==0 ){
       return SQLITE_NOMEM;
     }else{
-      nQuot = sqlite3Strlen30(zQuot);
-    }
-    if( bQuote ){
-      zNew = zQuot;
-      nNew = nQuot;
+      nQuot = sqlite3Strlen30(zQuot)-1;
     }
 
     assert( nQuot>=nNew );
@@ -1185,12 +1181,13 @@ static int renameEditSql(
       RenameToken *pBest = renameColumnTokenNext(pRename);
 
       if( zNew ){
-        if( sqlite3IsIdChar(*pBest->t.z) ){
+        if( bQuote==0 && sqlite3IsIdChar(*pBest->t.z) ){
           nReplace = nNew;
           zReplace = zNew;
         }else{
           nReplace = nQuot;
           zReplace = zQuot;
+          if( pBest->t.z[pBest->t.n]=='"' ) nReplace++;
         }
       }else{
         /* Dequote the double-quoted token. Then requote it again, this time
