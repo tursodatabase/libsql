@@ -1,5 +1,5 @@
-C When\sdoing\sschema\supdates,\stry\sto\sconvert\s(incorrect)\sdouble-quoted\sstrings\ninto\s(SQL-standard)\ssingle-quoted\sstrings.
-D 2021-03-23T16:34:13.598
+C Test\sresult\sadjustments\sin\stest/misc7.test\sdue\sto\sthe\sEQP\sformat\schange.
+D 2021-03-23T19:39:27.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1202,7 +1202,7 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
 F test/misc5.test c4aeaa0fa28faa08f2485309c38db4719e6cd1364215d5687a5b96d340a3fa58
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 747f376edb3ffef54248de1f880707b881a4193038e032c650f1cb54b56d8016
+F test/misc7.test d912f3d45c2989191b797504a220ca225d6be80b21acad22ba0d35f4a9ee4579
 F test/misc8.test 8782708f4c8a459591c3e8fe1215bd2048bffb4024b3df249e9b9ed407dc61ed
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 28a08d5cb5fb5b5702a46e19176e45e964e0800d1f894677169e79f34030e152
@@ -1911,8 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2eb28afd01f43143a9c0cd6cea68f3095f993952d54ee06b781514a7754490cd 531550056c38589c99c9a97b6afdbf8f34ff8d2131d74e9d42af3506e8045064
-R aab22ac2508293d1e9023d896ea6f587
-T +closed 531550056c38589c99c9a97b6afdbf8f34ff8d2131d74e9d42af3506e8045064
+P 0770470488e140fa21cb5097c26d58e21da85544af8b69faced1670bbc6d6089
+R 1fdab9c4c3397b6e48c33b136123e29c
 U drh
-Z 0b217fc8614676d990a942b0e6a0bc1d
+Z d3c988649c7e8cbfb59197b2e1f5c51e
