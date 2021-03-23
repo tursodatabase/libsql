@@ -1,5 +1,5 @@
-C Add\sthe\sExprList.nAlloc\scolumn\sand\suse\sit\sto\smake\sthe\ssqlite3ExprListAppend()\nroutine\smuch\sfaster.
-D 2021-03-23T14:27:35.868
+C Fix\sa\stest\scase\sin\sbigmmap.test\sso\sthat\sit\sworks\swith\sthe\snew\s\nEXPLAIN\sQUERY\sPLAN\soutput\sformat.
+D 2021-03-23T14:33:35.659
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -721,7 +721,7 @@ F test/bestindex7.test a11348824aed0de2bb9030f092636929000cd72882bdf919adacc3792
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
-F test/bigmmap.test 591bcf0563dd5e87df7f05b689eaf017b136d6637f1e3f16a7705fe0c6bf6a78
+F test/bigmmap.test b820c234daa56d24bc3bf006e3ac7aa9d9623c8ac656a38f59063b444a2d65d1
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8e28308fdb45fbdef30003320d653410d69bb8ec92eef35c4245a99e2d0603b
-R 1cbc2c59a37c000c5e08f004024699d7
+P 1d3c4662c2f522ac695d97441324069f3fc65f3fa0b87194c7094dfb8cd549f2
+R b561a4fa037cab5d44b8e08ade479fb0
 U drh
-Z 02264e1fe3d1242b0fb1e324e35ad2ff
+Z ff135066fbd615318706026b58275ff2
