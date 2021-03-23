@@ -1,5 +1,5 @@
-C Test\sresult\sadjustments\sin\stest/misc7.test\sdue\sto\sthe\sEQP\sformat\schange.
-D 2021-03-23T19:39:27.212
+C Add\san\sALWAYS()\son\sa\sbranch\sthat\sis\salways\staken.
+D 2021-03-23T21:02:24.414
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c e21b54489b5c73b06ada15e6fc79b5c6f64b06701924a6ca98944ae59e06256f
-F src/printf.c 85d3413fa526404f053a2a13150492f94900639fca4c1b2f74a312b5d777a5c3
+F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d95db73d3e6a5c689e5f6604b4d2521350e45f2a0f0f84f5a2dc2bfee56580a0
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0770470488e140fa21cb5097c26d58e21da85544af8b69faced1670bbc6d6089
-R 1fdab9c4c3397b6e48c33b136123e29c
+P d3ade8c7fe58e05af9d44a79478776b050a680c1338188f2d4b222b937e682ea
+R 396e0963e55984487083361a6d3ebe20
 U drh
-Z d3c988649c7e8cbfb59197b2e1f5c51e
+Z 1ec6cd7cb2ecaa9b39417e5a93e0851c

@@ -874,7 +874,7 @@ void sqlite3_str_vappendf(
           sqlite3_str_appendall(pAccum, pItem->zName);
         }else if( pItem->zAlias ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
-        }else if( pItem->pSelect ){
+        }else if( ALWAYS(pItem->pSelect) ){
           sqlite3_str_appendf(pAccum, "SUBQUERY %u", pItem->pSelect->selId);
         }
         length = width = 0;
