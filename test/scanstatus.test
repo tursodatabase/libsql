@@ -215,9 +215,9 @@ do_execsql_test 3.3.1 {
 } {90}
 do_scanstatus_test 3.2.2 {
   nLoop 1 nVisit 10 nEst 16384.0 zName a1bc 
-  zExplain {SEARCH a1 AS y USING COVERING INDEX a1bc (b>? AND b<?)}
+  zExplain {SEARCH y USING COVERING INDEX a1bc (b>? AND b<?)}
   nLoop 10 nVisit 90 nEst 16384.0 zName a1a
-  zExplain {SEARCH a1 AS x USING COVERING INDEX a1a (a>? AND a<?)}
+  zExplain {SEARCH x USING COVERING INDEX a1a (a>? AND a<?)}
 }
 
 do_execsql_test 3.4.1 {
@@ -313,7 +313,7 @@ do_execsql_test 5.1.1 {
 } {2}
 do_scanstatus_test 5.1.2 { 
   nLoop 1 nVisit 10 nEst 10.0 zName t1bc 
-  zExplain {SCAN t1 AS ii USING COVERING INDEX t1bc}
+  zExplain {SCAN ii USING COVERING INDEX t1bc}
   nLoop 1 nVisit 2 nEst 8.0 zName sqlite_autoindex_t1_1
   zExplain {SEARCH t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
 }

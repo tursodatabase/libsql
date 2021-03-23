@@ -1,5 +1,5 @@
-C Changes\sto\stest/analyzeG.test\sto\sconform\sto\sthe\snew\sEXPLAIN\sQUERY\sPLAN\ssyntax.
-D 2021-03-23T15:07:17.789
+C Tweaks\sto\stest/scanstatus.test\sto\saccount\sfor\sthe\snew\sEQP\sformat.
+D 2021-03-23T15:39:02.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1323,7 +1323,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test 049b8704919a9727887f7ab2939a9ba858fa27c5aef5a0625d7a0773c8dd3ad8
+F test/scanstatus.test 9a0ed37ab6d57b50567282788fffdf832d9b16739ecc41bff9d77a8d767cf317
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1910,7 +1910,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ac064fe2aee4aa1423e7c8043dfec52ecf2af3e8361ebb7d9c104cca82b4d23
-R 995047e473f704c6f3cc7a43bca1e224
+P d8afde1bf1d41a349a161a293533a9fdf23ff23b8f1bcc323e79e806c5c526f1
+R 9577b87fee220b0885d79b3942175082
 U drh
-Z 3f3eddbdacbf4197236d24688551244d
+Z 2236ed07a95fd128b28b01a2b203e820
