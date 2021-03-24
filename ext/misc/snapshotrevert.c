@@ -63,6 +63,12 @@ static int snapshotRevertUnlock(sqlite3_file *pFd, int eLock){
 ** not have an open read or write transction on zDb when this function is
 ** called.
 **
+** This function uses normal SQLite locks to ensure that the database is
+** not corrupted by a simultaneous writer or checkpointer. However, the
+** effects of a successful call to this function on readers that are
+** reading from a snapshot newer than the snapshot supplied as the 
+** third argument are undefined.
+**
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise.
 */
 int sqlite3_snapshot_revert(
