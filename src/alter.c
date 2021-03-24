@@ -1140,7 +1140,7 @@ static int renameEditSql(
   int rc = SQLITE_OK;
   char *zQuot = 0;
   char *zOut;
-  int nQuot;
+  int nQuot = 0;
   char *zBuf1 = 0;
   char *zBuf2 = 0;
 
