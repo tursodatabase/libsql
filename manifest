@@ -1,5 +1,5 @@
-C Improvements\sto\sdistinct\saggregates\ssuch\sthat\sthey\scan\ssometimes\savoid\nusing\san\sephermeral\stable\sto\stest\sfor\sduplicates\sif\sthe\scolumn\sthat\sis\ndistinct\sis\spart\sof\san\sindex.
-D 2021-03-24T17:28:11.642
+C Comment\simprovements\sto\son\sthe\sdistinct-agg\soptimization.\s\sShow\sa\sline\sin\nthe\sEQP\soutput\swhen\susing\san\sephemeral\stable\sto\simplement\sDISTINCT\son\san\naggregate.
+D 2021-03-24T19:44:01.340
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d95db73d3e6a5c689e5f6604b4d2521350e45f2a0f0f84f5a2dc2bfee56580a0
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 9109ca4a3179eb46770e10c04f01fd226751ccf0caeea8db58000e3371f9fa21
+F src/select.c 22b0309a334e683cb453bfb16ca5cd423bfebc16b3360fe424707baf900b5919
 F src/shell.c.in dcce260883836c9b58847505fbccce8d5546af925046f7dacd9443e922ece036
 F src/sqlite.h.in 3426a080ea1f222a73e3bd91e7eacbd30570a0117c03d42c6dde606f33e5e318
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -843,7 +843,7 @@ F test/descidx1.test edc8adee58d491b06c7157c50364eaf1c3605c9c19f8093cb1ea2b6184f
 F test/descidx2.test a0ba347037ff3b811f4c6ceca5fd0f9d5d72e74e59f2d9de346a9d2f6ad78298
 F test/descidx3.test 953c831df7ea219c73826dfbf2f6ee02d95040725aa88ccb4fa43d1a1999b926
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
-F test/distinct.test e7d0cf371944dd0cbedff86420744e2f1ea2b528156451c97eb6ff41a99b9236
+F test/distinct.test eefe5a8e47fcb761aaa745838e355ab28586f9f75786a1c098016881344b2a5e
 F test/distinct2.test cd1d15a4a2abf579298f7161e821ed50c0119136fe0424db85c52cf0adc230d1
 F test/distinctagg.test fd74c3783700f1d99c67a5d906bba97fb6650f4559f3ea7b1873f793ffc601c9
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
@@ -1911,8 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 26b005a95e4f3e378e3bc40f57321ffbab72b6fc990d13b56b3121990d325f63 0817cf2ec08fdefd3c1d41790df7b5d6d490767757b44bb0229694023c8e40fc
-R 299a3406efa01e76d5f6f5a54ae9efc6
-T +closed 0817cf2ec08fdefd3c1d41790df7b5d6d490767757b44bb0229694023c8e40fc
+P ef4ac0ddd297bbd38351410c5a387e1628561b3f1bec9e4c2c9d76fbe29f955a
+R dcb5dee51b0acb34e00007490cfee341
 U drh
-Z 8f54305fe91515917058141910a21763
+Z c32591fb9c8184cbc930f8b40bd7a719
