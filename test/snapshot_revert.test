@@ -1,0 +1,157 @@
+# 2021 March 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the sqlite3_snapshot_revert() extension.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !snapshot {finish_test; return}
+set testprefix snapshot_revert
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  PRAGMA journal_mode = wal;
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+  INSERT INTO t1 VALUES(7, 8, 9);
+} {wal}
+
+do_test 1.1 {
+  execsql BEGIN
+  set ::snap1 [sqlite3_snapshot_get db main]
+  execsql COMMIT
+} {}
+
+do_execsql_test 1.2 {
+  INSERT INTO t1 VALUES(10, 11, 12);
+  INSERT INTO t1 VALUES(13, 14, 15);
+}
+
+sqlite3 db2 test.db
+do_execsql_test -db db2 1.3 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15}
+
+do_test 1.4 {
+  sqlite3_snapshot_revert db main $::snap1
+} {}
+sqlite3_snapshot_free $::snap1
+
+do_execsql_test -db db2 1.5 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6 7 8 9}
+db2 close
+
+db_save_and_close
+db_restore_and_reopen
+
+do_execsql_test 1.6 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6 7 8 9}
+
+#-------------------------------------------------------------------------
+# Test some error conditions:
+#
+#   2.1.* Error - already in non-auto-commit mode.
+#   2.2.* Error - snapshot has already been checkpointed away.
+#   2.3.* Error - cannot get WRITER lock.
+#   2.4.* Check that CHECKPOINTER is released if cannot get WRITER
+#
+reset_db
+do_execsql_test 2.0.1 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE x1(x, y);
+  INSERT INTO x1 VALUES('A', 'B'), ('C', 'D');
+} {wal}
+do_test 2.0.2 {
+  execsql BEGIN
+  set ::snap1 [sqlite3_snapshot_get db main]
+  execsql COMMIT
+} {}
+
+do_test 2.1.0 {
+  execsql BEGIN
+  list [catch { sqlite3_snapshot_revert db main $::snap1 } msg] $msg
+} {1 SQLITE_ERROR}
+do_test 2.1.1 {
+  execsql COMMIT
+  list [catch { sqlite3_snapshot_revert db main $::snap1 } msg] $msg
+} {0 {}}
+
+do_test 2.2.0 {
+  execsql {
+    INSERT INTO x1 VALUES('E', 'F');
+    DELETE FROM x1 WHERE x='A';
+    PRAGMA wal_checkpoint;
+  }
+  list [catch { sqlite3_snapshot_revert db main $::snap1 } msg] $msg
+} {1 SQLITE_ERROR_SNAPSHOT}
+sqlite3_snapshot_free $::snap1
+
+sqlite3 db2 test.db
+do_test 2.3.0 {
+  execsql {
+    INSERT INTO x1 VALUES('G', 'H');
+    BEGIN;
+  }
+  set ::snap1 [sqlite3_snapshot_get db main]
+  execsql {
+    DELETE FROM x1 WHERE x='C';
+    COMMIT;
+  }
+} {}
+do_test 2.3.1 {
+  execsql { BEGIN EXCLUSIVE } db2
+  list [catch { sqlite3_snapshot_revert db main $::snap1 } msg] $msg
+} {1 SQLITE_BUSY}
+do_execsql_test 2.3.2 {
+  SELECT * FROM x1
+} {E F G H}
+do_test 2.3.3 {
+  execsql { COMMIT } db2
+  list [catch { sqlite3_snapshot_revert db main $::snap1 } msg] $msg
+} {0 {}}
+do_execsql_test 2.3.4 {
+  SELECT * FROM x1
+} {C D E F G H}
+sqlite3_snapshot_free $::snap1
+
+do_test 2.4.0 {
+  execsql {
+    BEGIN;
+  }
+  set ::snap1 [sqlite3_snapshot_get db main]
+  execsql {
+    INSERT INTO x1 VALUES('I', 'J');
+    DELETE FROM x1 WHERE x IN ('C', 'E');
+    COMMIT;
+  }
+} {}
+do_execsql_test -db db2 2.4.1 {
+  BEGIN EXCLUSIVE;
+  SELECT * FROM x1;
+} {G H I J}
+do_test 2.4.2 {
+  list [catch { sqlite3_snapshot_revert db main $::snap1 } msg] $msg
+} {1 SQLITE_BUSY}
+do_execsql_test -db db2 2.4.3 {
+  COMMIT;
+  PRAGMA wal_checkpoint;
+} {0 2 2}
+sqlite3_snapshot_free $::snap1
+
+
+db close
+db2 close
+finish_test
+

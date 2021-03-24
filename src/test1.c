@@ -2574,6 +2574,41 @@ static int SQLITE_TCLAPI test_snapshot_cmp_blob(
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_revert DB DBNAME SNAPSHOT
+*/
+static int SQLITE_TCLAPI test_snapshot_revert(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int sqlite3_snapshot_revert(sqlite3*, const char*, sqlite3_snapshot*);
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  sqlite3_snapshot *pSnapshot;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SNAPSHOT");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+  pSnapshot = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[3]));
+
+  rc = sqlite3_snapshot_revert(db, zName, pSnapshot);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    Tcl_ResetResult(interp);
+  }
+  return TCL_OK;
+}
+#endif
+
 /*
 ** Usage: sqlite3_delete_database FILENAME
 */
@@ -8525,6 +8560,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_get_blob", test_snapshot_get_blob, 0 },
      { "sqlite3_snapshot_open_blob", test_snapshot_open_blob, 0 },
      { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
+     { "sqlite3_snapshot_revert", test_snapshot_revert, 0 },
 #endif
      { "sqlite3_delete_database", test_delete_database, 0 },
      { "sqlite3_wal_info", test_wal_info, 0 },
