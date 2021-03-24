@@ -5811,8 +5811,6 @@ static void updateAccumulator(
       if( addrNext==0 ){ 
         addrNext = sqlite3VdbeMakeLabel(pParse);
       }
-      testcase( nArg==0 );  /* Error condition */
-      testcase( nArg>1 );   /* Also an error */
       pF->iDistinct = codeDistinct(pParse, eDistinctType, 
           pF->iDistinct, addrNext, pList, regAgg);
     }
@@ -6852,7 +6850,7 @@ int sqlite3Select(
 
       if( pAggInfo->nFunc==1 
        && pAggInfo->aFunc[0].iDistinct>=0
-       && pAggInfo->aFunc[0].pFExpr->x.pList 
+       && pAggInfo->aFunc[0].pFExpr->x.pList
       ){
         Expr *pExpr = pAggInfo->aFunc[0].pFExpr->x.pList->a[0].pExpr;
         pExpr = sqlite3ExprDup(db, pExpr, 0);
