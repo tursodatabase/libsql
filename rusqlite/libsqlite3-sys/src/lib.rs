@@ -18,6 +18,7 @@ pub fn SQLITE_TRANSIENT() -> sqlite3_destructor_type {
 /// Run-Time Limit Categories
 #[repr(i32)]
 #[non_exhaustive]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Limit {
     /// The maximum size of any string or BLOB or table row, in bytes.
     SQLITE_LIMIT_LENGTH = SQLITE_LIMIT_LENGTH,

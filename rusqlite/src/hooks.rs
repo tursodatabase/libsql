@@ -13,6 +13,7 @@ use crate::{Connection, InnerConnection};
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Action {
     /// Unsupported / unexpected action
     UNKNOWN = -1,

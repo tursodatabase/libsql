@@ -109,6 +109,7 @@ impl InnerConnection {
         x_coll_needed: fn(&Connection, &str) -> Result<()>,
     ) -> Result<()> {
         use std::mem;
+        #[allow(clippy::needless_return)]
         unsafe extern "C" fn collation_needed_callback(
             arg1: *mut c_void,
             arg2: *mut ffi::sqlite3,

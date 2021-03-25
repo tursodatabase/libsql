@@ -23,7 +23,7 @@ pub enum ErrorCode {
     /// Operation terminated by sqlite3_interrupt()
     OperationInterrupted,
     /// Some kind of disk I/O error occurred
-    SystemIOFailure,
+    SystemIoFailure,
     /// The database disk image is malformed
     DatabaseCorrupt,
     /// Unknown opcode in sqlite3_file_control()
@@ -43,7 +43,7 @@ pub enum ErrorCode {
     /// Data type mismatch
     TypeMismatch,
     /// Library used incorrectly
-    APIMisuse,
+    ApiMisuse,
     /// Uses OS features not supported on host
     NoLargeFileSupport,
     /// Authorization denied
@@ -73,7 +73,7 @@ impl Error {
             super::SQLITE_NOMEM => ErrorCode::OutOfMemory,
             super::SQLITE_READONLY => ErrorCode::ReadOnly,
             super::SQLITE_INTERRUPT => ErrorCode::OperationInterrupted,
-            super::SQLITE_IOERR => ErrorCode::SystemIOFailure,
+            super::SQLITE_IOERR => ErrorCode::SystemIoFailure,
             super::SQLITE_CORRUPT => ErrorCode::DatabaseCorrupt,
             super::SQLITE_NOTFOUND => ErrorCode::NotFound,
             super::SQLITE_FULL => ErrorCode::DiskFull,
@@ -83,7 +83,7 @@ impl Error {
             super::SQLITE_TOOBIG => ErrorCode::TooBig,
             super::SQLITE_CONSTRAINT => ErrorCode::ConstraintViolation,
             super::SQLITE_MISMATCH => ErrorCode::TypeMismatch,
-            super::SQLITE_MISUSE => ErrorCode::APIMisuse,
+            super::SQLITE_MISUSE => ErrorCode::ApiMisuse,
             super::SQLITE_NOLFS => ErrorCode::NoLargeFileSupport,
             super::SQLITE_AUTH => ErrorCode::AuthorizationForStatementDenied,
             super::SQLITE_RANGE => ErrorCode::ParameterOutOfRange,

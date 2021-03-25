@@ -10,6 +10,7 @@ use crate::{Connection, Result};
 #[repr(i32)]
 #[allow(non_snake_case, non_camel_case_types)]
 #[non_exhaustive]
+#[allow(clippy::upper_case_acronyms)]
 pub enum DbConfig {
     //SQLITE_DBCONFIG_MAINDBNAME = 1000, /* const char* */
     //SQLITE_DBCONFIG_LOOKASIDE = 1001,  /* void* int int */
