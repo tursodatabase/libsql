@@ -1986,7 +1986,7 @@ int sqlite3ColumnsFromExprList(
     nCol = pEList->nExpr;
     aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
     testcase( aCol==0 );
-    if( nCol>32767 ) nCol = 32767;
+    if( NEVER(nCol>32767) ) nCol = 32767;
   }else{
     nCol = 0;
     aCol = 0;
@@ -5060,16 +5060,24 @@ static int resolveFromTermToCte(
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
     if( pSel->selFlags & SF_Recursive ){
+      int rc;
       assert( pRecTerm!=0 );
       assert( (pRecTerm->selFlags & SF_Recursive)==0 );
       assert( pRecTerm->pNext!=0 );
       assert( (pRecTerm->pNext->selFlags & SF_Recursive)!=0 );
       assert( pRecTerm->pWith==0 );
       pRecTerm->pWith = pSel->pWith;
-      sqlite3WalkSelect(pWalker, pRecTerm);
+      rc = sqlite3WalkSelect(pWalker, pRecTerm);
       pRecTerm->pWith = 0;
+      if( rc ){
+        pParse->pWith = pSavedWith;
+        return 2;
+      }
     }else{
-      sqlite3WalkSelect(pWalker, pSel);
+      if( sqlite3WalkSelect(pWalker, pSel) ){
+        pParse->pWith = pSavedWith;
+        return 2;
+      }
     }
     pParse->pWith = pWith;
 
@@ -6378,7 +6386,9 @@ int sqlite3Select(
       sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
       pSub->nSelectRow = pPrior->pSelect->nSelectRow;
     }else{
-      /* Generate a subroutine that will materialize the view. */
+      /* Materalize the view.  If the view is not correlated, generate a
+      ** subroutine to do the materialization so that subsequent uses of
+      ** the same view can reuse the materialization. */
       int topAddr;
       int onceAddr = 0;
       int retAddr;
@@ -6405,7 +6415,7 @@ int sqlite3Select(
       VdbeComment((v, "end %s", pItem->pTab->zName));
       sqlite3VdbeChangeP1(v, topAddr, retAddr);
       sqlite3ClearTempRegCache(pParse);
-      if( pItem->fg.isCte ){
+      if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
         CteUse *pCteUse = pItem->u2.pCteUse;
         pCteUse->addrM9e = pItem->addrFillSub;
         pCteUse->regRtn = pItem->regReturn;

@@ -657,4 +657,10 @@ do_catchsql_test 28.10 {
   DELETE FROM t0;
 } {1 {sub-select returns 2 columns - expected 1}}
 
+# 2021-03-19
+# dbsqlfuzz find of a NEVER().
+do_catchsql_test 29.1 {
+  SELECT (SELECT 1 WHERE ((SELECT 1 WHERE (2,(2,0)) IS (2,(20))),(2,0)) IS (2,(20))) WHERE (2,(2,0)) IS (2 IN(SELECT 1 WHERE (2,(2,2,0)) IS (2,(20))),(20));
+} {1 {row value misused}}
+
 finish_test
