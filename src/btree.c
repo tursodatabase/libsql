@@ -2988,19 +2988,23 @@ static void freeTempSpace(BtShared *pBt){
 */
 int sqlite3BtreeClose(Btree *p){
   BtShared *pBt = p->pBt;
-  BtCursor *pCur;
 
   /* Close all cursors opened via this handle.  */
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
-  pCur = pBt->pCursor;
-  while( pCur ){
-    BtCursor *pTmp = pCur;
-    pCur = pCur->pNext;
-    if( pTmp->pBtree==p ){
-      sqlite3BtreeCloseCursor(pTmp);
+
+  /* Verify that no other cursors have this Btree open */
+#ifdef SQLITE_DEBUG
+  {
+    BtCursor *pCur = pBt->pCursor;
+    while( pCur ){
+      BtCursor *pTmp = pCur;
+      pCur = pCur->pNext;
+      assert( pTmp->pBtree!=p );
+
     }
   }
+#endif
 
   /* Rollback any active transaction and free the handle structure.
   ** The call to sqlite3BtreeRollback() drops any table-locks held by
@@ -4578,7 +4582,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup){
       sqlite3BtreeLeave(p);
       return rc;
     }
-    p->iDataVersion--;  /* Compensate for pPager->iDataVersion++; */
+    p->iBDataVersion--;  /* Compensate for pPager->iDataVersion++; */
     pBt->inTransaction = TRANS_READ;
     btreeClearHasContent(pBt);
   }
@@ -4992,7 +4996,14 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     unlockBtreeIfUnused(pBt);
     sqlite3_free(pCur->aOverflow);
     sqlite3_free(pCur->pKey);
-    sqlite3BtreeLeave(pBtree);
+    if( (pBt->openFlags & BTREE_SINGLE) && pBt->pCursor==0 ){
+      /* Since the BtShared is not sharable, there is no need to
+      ** worry about the missing sqlite3BtreeLeave() call here.  */
+      assert( pBtree->sharable==0 );
+      sqlite3BtreeClose(pBtree);
+    }else{
+      sqlite3BtreeLeave(pBtree);
+    }
     pCur->pBtree = 0;
   }
   return SQLITE_OK;
@@ -10126,7 +10137,7 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   assert( idx>=0 && idx<=15 );
 
   if( idx==BTREE_DATA_VERSION ){
-    *pMeta = sqlite3PagerDataVersion(pBt->pPager) + p->iDataVersion;
+    *pMeta = sqlite3PagerDataVersion(pBt->pPager) + p->iBDataVersion;
   }else{
     *pMeta = get4byte(&pBt->pPage1->aData[36 + idx*4]);
   }

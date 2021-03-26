@@ -394,4 +394,18 @@ foreach {tn sql} {
 
 }
 
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t2(a, b, c REAL, d, e, PRIMARY KEY(a,b)) WITHOUT ROWID;
+  CREATE UNIQUE INDEX t2c ON t2(c);
+}
+
+do_catchsql_test 2.1 {
+  INSERT INTO t2(a,b,c,e,d) VALUES(1,2,3,4,5)
+      ON CONFLICT(c) DO UPDATE SET b=''
+      ON CONFLICT((SELECT t2 FROM nosuchtable)) DO NOTHING;
+
+} {1 {no such table: nosuchtable}}
+
 finish_test

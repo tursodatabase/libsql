@@ -3063,6 +3063,7 @@ static void exec_prepared_stmt_columnar(
   if( rc!=SQLITE_ROW ) return;
   nColumn = sqlite3_column_count(pStmt);
   nAlloc = nColumn*4;
+  if( nAlloc<=0 ) nAlloc = 1;
   azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
   if( azData==0 ) shell_out_of_memory();
   for(i=0; i<nColumn; i++){
@@ -3102,6 +3103,7 @@ static void exec_prepared_stmt_columnar(
     if( n>p->actualWidth[j] ) p->actualWidth[j] = n;
   }
   if( seenInterrupt ) goto columnar_end;
+  if( nColumn==0 ) goto columnar_end;
   switch( p->cMode ){
     case MODE_Column: {
       colSep = "  ";
@@ -3891,13 +3893,13 @@ static const char *(azHelp[]) = {
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
   ".dbinfo ?DB?             Show status information about the database",
-  ".dump ?TABLE?            Render database content as SQL",
+  ".dump ?OBJECTS?          Render database content as SQL",
   "   Options:",
   "     --data-only            Output only INSERT statements",
   "     --newlines             Allow unescaped newline characters in output",
   "     --nosys                Omit system tables (ex: \"sqlite_stat1\")",
   "     --preserve-rowids      Include ROWID values in the output",
-  "   TABLE is a LIKE pattern for the tables to dump",
+  "   OBJECTS is a LIKE pattern for tables, indexes, triggers or views to dump",
   "   Additional LIKE patterns can be given in subsequent arguments",
   ".echo on|off             Turn command echo on or off",
   ".eqp on|off|full|...     Enable or disable automatic EXPLAIN QUERY PLAN",
