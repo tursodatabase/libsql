@@ -735,7 +735,7 @@ static int progress_handler(void *pClientData) {
 ** "PRAGMA parser_trace" since they can dramatically increase the
 ** amount of output without actually testing anything useful.
 **
-** Also block ATTACH and DETACH
+** Also block ATTACH if attaching a file from the filesystem.
 */
 static int block_troublesome_sql(
   void *Notused,
@@ -750,13 +750,15 @@ static int block_troublesome_sql(
   (void)zArg3;
   (void)zArg4;
   if( eCode==SQLITE_PRAGMA ){
-    if( sqlite3_strnicmp("vdbe_", zArg1, 5)==0
-     || sqlite3_stricmp("parser_trace", zArg1)==0
-     || sqlite3_stricmp("temp_store_directory", zArg1)==0
-    ){
-      return SQLITE_DENY;
-    }
-    if( sqlite3_stricmp("oom",zArg1)==0 && zArg2!=0 && zArg2[0]!=0 ){
+   if( eVerbosity==0 ){
+      if( sqlite3_strnicmp("vdbe_", zArg1, 5)==0
+       || sqlite3_stricmp("parser_trace", zArg1)==0
+       || sqlite3_stricmp("temp_store_directory", zArg1)==0
+      ){
+        return SQLITE_DENY;
+      }
+    }else if( sqlite3_stricmp("oom",zArg1)==0
+             && zArg2!=0 && zArg2[0]!=0 ){
       oomCounter = atoi(zArg2);
     }
   }else if( eCode==SQLITE_ATTACH ){
