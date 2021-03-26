@@ -414,5 +414,139 @@ do_execsql_test 8.3 {
   SELECT * FROM q;
 } {1 2 3 4 5}
 
+# 2021-03-18
+# Ticket bb8a9fd4a9b7fce5
+reset_db
+do_execsql_test 9.1 {
+  WITH xyz(a) AS (
+    WITH abc AS ( SELECT 1234 ) SELECT * FROM abc
+  )
+  SELECT * FROM xyz AS one, xyz AS two, (
+    SELECT * FROM xyz UNION ALL SELECT * FROM xyz
+  );
+} {1234 1234 1234 1234 1234 1234}
+ifcapable vtab {
+load_static_extension db series
+do_execsql_test 9.2 {
+  WITH
+    cst(rsx, rsy) AS  (
+      SELECT 100, 100
+    ),
+    cst2(minx, maxx, stepx, miny, maxy, stepy, qualitativex, qualitativey) AS (
+      SELECT NULL, NULL, NULL, NULL, NULL, NULL, 0, 0
+    ),
+    ds0(m, n, x, y, x2, y2, title, size, mark, label, markmode) AS (
+      SELECT 1, 2, 3, 4, 5, 6, 7 , 8, 9, 10, 11
+    ),
+    ds(m, n, x, y, x2, y2, title, size, mark, label, markmode) AS (
+      SELECT m, n, x,
+        y, x2,
+        y2,
+        title, size, mark, label, markmode
+      FROM ds0
+      WINDOW w AS (PARTITION BY m, x ORDER BY n)
+    ),
+    d(m, n, x, y, x2, y2, labelx,labely,title,size,mark,label,markmode) AS (
+      SELECT m, n, x, y,  x2, y2, x, y, title, size, mark, label, markmode
+      FROM ds, cst2
+    ),
+    ylabels(y, label) AS (
+      SELECT y, MIN(labely) FROM d GROUP BY y
+    ),
+    yaxis(maxy, miny, stepy , minstepy) AS (
+      WITH
+        xt0(minx, maxx) AS (
+          SELECT  coalesce(miny, min(min(y2),
+                  min(y))), coalesce(maxy, max(max(y2),
+                  max(y))) + qualitativey
+           FROM d, cst2
+        ),
+        xt1(mx, mn) AS (SELECT maxx, minx FROM xt0),
+        xt2(mx, mn, step) AS (SELECT mx, mn, (mx-mn)  FROM xt1),
+        
+        xt3(mx, mn, ms) AS (
+          SELECT mx, mn, first_value(rs) OVER (order by x desc) AS ms
+            FROM (SELECT mx, mn, step, f,(mx-mn) as rng,
+                         1.0*step/f as rs, 1.0*(mx-mn)/(step/f) AS x
+                    FROM xt2, (SELECT 1 AS f UNION ALL SELECT 2
+                                UNION ALL SELECT 4
+                                UNION ALL SELECT 5)) AS src
+                   WHERE x < 10 limit 1),
+        xt4(minstepy) AS (
+          SELECT MIN(abs(y2-y)) FROM d WHERE y2 != y
+        )
+      SELECT (mx/ms)*ms, (mn/ms)*ms, coalesce(stepy, ms),
+                     coalesce(minstepy, ms, stepy)  FROM xt3, cst2,xt4
+    ),
+    distinct_mark_n_m(mark, ze, zem, title) AS (
+      SELECT DISTINCT mark, n AS ze, m AS zem, title FROM ds0
+    ),
+    facet0(m, mi, title, radial) AS (
+      SELECT md, row_number() OVER () - 1, title, 'radial'
+                      IN (SELECT mark FROM distinct_mark_n_m WHERE zem = md)
+      FROM (SELECT DISTINCT zem AS md, title AS title
+                       FROM distinct_mark_n_m ORDER BY 2, 1)
+    ),
+    facet(m, mi, xorigin, yorigin, title, radial) AS (
+      SELECT m, mi,
+        rsx * 1.2 * IFNULL(CASE WHEN (
+          0
+        ) > 0 THEN mi / (
+          0
+        ) ELSE mi % (
+          2
+        )  END, mi),
+        rsy  * 1.2 * IFNULL(CASE WHEN (
+          2
+        ) > 0 THEN mi / (
+          2
+        ) ELSE mi / (
+          0
+        )  END, 0),
+        title, radial FROM facet0, cst
+    ),
+    radygrid(m, mi, tty, wty, ttx, ttx2, xorigin, yorigin) AS (
+      SELECT m, mi,  rsy / 2 / ((maxy-miny)/stepy) * (value-1) AS tty,
+             coalesce(NULL, miny + stepy * (value-1)) AS wty,
+             xorigin, xorigin+rsx, xorigin + rsx / 2,
+             yorigin + rsy / 2
+        FROM generate_series(1), yaxis, cst,
+             facet LEFT JOIN ylabels ON ylabels.y = (miny + (value-1) * stepy)
+       WHERE radial AND stop = 1+1.0*(maxy-miny)/stepy
+    ),
+    ypos(m, mi, pcx, pcy, radial) AS (
+      SELECT m, mi, xorigin, yorigin + CASE
+        WHEN 0 BETWEEN miny AND maxy THEN
+          rsy - (0 - miny) * rsy / (maxy-miny)
+        WHEN 0 >= maxy THEN 0
+        ELSE  rsy
+      END, radial FROM yaxis, cst, facet WHERE NOT radial
+      UNION ALL
+      SELECT m, mi, xorigin + rsx / 2, yorigin + (CASE
+        WHEN 0 BETWEEN miny AND maxy THEN
+          rsy - (0 - miny) * rsy / 2 / (maxy-miny)
+        WHEN 0 >= maxy THEN 0
+        ELSE  rsy
+      END ) / 2, radial FROM yaxis, cst, facet WHERE radial
+    )
+  SELECT * FROM radygrid , ypos;
+} {}
+} ;# end ifcapable vtab
+
+# 2021-03-19
+# dbsqlfuzz 01b8355086998f0a452cb31208e80b9d29ca739a
+#
+# Correlated CTEs should not be materialized.
+#
+reset_db
+do_execsql_test 10.1 {
+  SELECT 1 AS c WHERE (
+    SELECT (
+      WITH t1(a) AS (VALUES( c ))
+      SELECT ( SELECT t1a.a FROM t1 AS t1a, t1 AS t1x )
+      FROM t1 AS xyz GROUP BY 1
+    )
+  )
+} {1}
 
 finish_test

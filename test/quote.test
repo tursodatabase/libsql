@@ -110,7 +110,7 @@ do_execsql_test 2.2 {
   PRAGMA writable_schema = 1;
   CREATE TABLE xyz(a, b, c CHECK (c!="null") );
   CREATE INDEX i2 ON t1(x, y, z||"abc");
-  CREATE INDEX i3 ON t1("w");
+  CREATE INDEX i3 ON t1("w"||"");
   CREATE INDEX i4 ON t1(x) WHERE z="w";
 }
 
@@ -135,10 +135,49 @@ do_execsql_test 2.5 {
   {CREATE TABLE t1(x, y, z)}
   {CREATE TABLE xyz(a, b, c CHECK (c!="null") )}
   {CREATE INDEX i2 ON t1(x, y, z||"abc")}
-  {CREATE INDEX i3 ON t1("w")}
+  {CREATE INDEX i3 ON t1("w"||"")}
   {CREATE INDEX i4 ON t1(x) WHERE z="w"}
 }
 
-
+# 2021-03-13
+# ticket 1c24a659e6d7f3a1
+reset_db
+do_catchsql_test 3.0 {
+  CREATE TABLE t1(a,b);
+  CREATE INDEX x1 on t1("b");
+  ALTER TABLE t1 DROP COLUMN b;
+} {1 {error in index x1 after drop column: no such column: b}}
+do_catchsql_test 3.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a,"b");
+  CREATE INDEX x1 on t1("b");
+  ALTER TABLE t1 DROP COLUMN b;
+} {1 {error in index x1 after drop column: no such column: b}}
+do_catchsql_test 3.2 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a,'b');
+  CREATE INDEX x1 on t1("b");
+  ALTER TABLE t1 DROP COLUMN b;
+} {1 {error in index x1 after drop column: no such column: b}}
+do_catchsql_test 3.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a,"b");
+  CREATE INDEX x1 on t1('b');
+  ALTER TABLE t1 DROP COLUMN b;
+} {1 {error in index x1 after drop column: no such column: b}}
+do_catchsql_test 3.4 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX x1 ON t1("a"||"b");
+  INSERT INTO t1 VALUES(1,2,3),(1,4,5);
+  ALTER TABLE t1 DROP COLUMN b;
+} {1 {error in index x1 after drop column: no such column: b}}
+do_catchsql_test 3.5 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX x1 ON t1("a"||"x");
+  INSERT INTO t1 VALUES(1,2,3),(1,4,5);
+  ALTER TABLE t1 DROP COLUMN b;
+} {0 {}}
 
 finish_test
