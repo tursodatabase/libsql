@@ -3825,9 +3825,11 @@ static int SQLITE_TCLAPI test_bind_text(
 ){
   sqlite3_stmt *pStmt;
   int idx;
+  int trueLength = 0;
   int bytes;
   char *value;
   int rc;
+  char *toFree = 0;
 
   if( objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -3837,13 +3839,23 @@ static int SQLITE_TCLAPI test_bind_text(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  value = (char*)Tcl_GetByteArrayFromObj(objv[3], &bytes);
+  value = (char*)Tcl_GetByteArrayFromObj(objv[3], &trueLength);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
-
+  if( bytes<0 ){
+    toFree = malloc( trueLength + 1 );
+    if( toFree==0 ){
+      Tcl_AppendResult(interp, "out of memory", (void*)0);
+      return TCL_ERROR;
+    }
+    memcpy(toFree, value, trueLength);
+    toFree[trueLength] = 0;
+    value = toFree;
+  }
   rc = sqlite3_bind_text(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
+  free(toFree);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), (void*)0);
     return TCL_ERROR;
   }
 
@@ -3869,7 +3881,9 @@ static int SQLITE_TCLAPI test_bind_text16(
   int idx;
   int bytes;
   char *value;
+  char *toFree = 0;
   int rc;
+  int trueLength = 0;
 
   void (*xDel)(void*) = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
   Tcl_Obj *oStmt    = objv[objc-4];
@@ -3885,10 +3899,21 @@ static int SQLITE_TCLAPI test_bind_text16(
 
   if( getStmtPointer(interp, Tcl_GetString(oStmt), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, oN, &idx) ) return TCL_ERROR;
-  value = (char*)Tcl_GetByteArrayFromObj(oString, 0);
+  value = (char*)Tcl_GetByteArrayFromObj(oString, &trueLength);
   if( Tcl_GetIntFromObj(interp, oBytes, &bytes) ) return TCL_ERROR;
-
+  if( bytes<0 && xDel==SQLITE_TRANSIENT ){
+    toFree = malloc( trueLength + 2 );
+    if( toFree==0 ){
+      Tcl_AppendResult(interp, "out of memory", (void*)0);
+      return TCL_ERROR;
+    }
+    memcpy(toFree, value, trueLength);
+    toFree[trueLength] = 0;
+    toFree[trueLength+1] = 0;
+    value = toFree;
+  }
   rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, xDel);
+  free(toFree);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

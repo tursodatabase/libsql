@@ -1,5 +1,5 @@
-C Remove\sold\stestcases()\smacros.\s\sAlso\sremove\ssurplus\send-of-line\swhitespace.
-D 2021-03-24T23:30:06.986
+C In\sthe\ssqlite3_bind_text\sand\ssqlite3_bind_text16\sTCL\scommands\sof\sthe\stest\nsuite,\sensure\sthat\sthe\sstring\sis\szero-terminated\sif\sthe\ssize\sargument\sis\nnegative.
+D 2021-03-26T23:59:37.423
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 986b6391f02cd9b53c1d688be55899f6ffddeb8e8014cd83c1b73ff912579a71
-F src/test1.c cff43d8e21be543b77651b4d2caf49bd6488fee220f8540ecd9f71d13169dbd1
+F src/test1.c d5d0d715657a6b75e88d287a7a66c8411818d91e8412d75fdd815449ed5143d8
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 037ca79e6032ca962b4f6182187bc12a7d91170d73630c8cd6fb191d2c183ee4
-R 4917cb97cf7d2f0464ec24d8aec9c1db
+P 54b41915ed8ef993b4116b2de00f3f4bba7570a1d28ad6bb93ba158a6b89eff3
+R 9b354d3e9bd417dba394c6169f3261ae
 U drh
-Z b164854ca6947409852c4f03609cd09b
+Z e1dfb5d13124d8522e37c5a32d2e98f5
