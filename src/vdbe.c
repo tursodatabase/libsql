@@ -272,11 +272,6 @@ static VdbeCursor *allocateCursor(
 
   assert( iCur>=0 && iCur<p->nCursor );
   if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
-    /* Before calling sqlite3VdbeFreeCursor(), ensure the isEphemeral flag
-    ** is clear. Otherwise, if this is an ephemeral cursor created by 
-    ** OP_OpenDup, the cursor will not be closed and will still be part
-    ** of a BtShared.pCursor list.  */
-    if( p->apCsr[iCur]->pBtx==0 ) p->apCsr[iCur]->isEphemeral = 0;
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
@@ -3873,7 +3868,7 @@ case OP_OpenDup: {
 
   pOrig = p->apCsr[pOp->p2];
   assert( pOrig );
-  assert( pOrig->pBtx!=0 );  /* Only ephemeral cursors can be duplicated */
+  assert( pOrig->isEphemeral );  /* Only ephemeral cursors can be duplicated */
 
   pCx = allocateCursor(p, pOp->p1, pOrig->nField, -1, CURTYPE_BTREE);
   if( pCx==0 ) goto no_mem;
@@ -3883,7 +3878,10 @@ case OP_OpenDup: {
   pCx->isTable = pOrig->isTable;
   pCx->pgnoRoot = pOrig->pgnoRoot;
   pCx->isOrdered = pOrig->isOrdered;
-  rc = sqlite3BtreeCursor(pOrig->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
+  pCx->pBtx = pOrig->pBtx;
+  pCx->hasBeenDuped = 1;
+  pOrig->hasBeenDuped = 1;
+  rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR, 
                           pCx->pKeyInfo, pCx->uc.pCursor);
   /* The sqlite3BtreeCursor() routine can only fail for the first cursor
   ** opened for a database.  Since there is already an open cursor when this
@@ -3949,9 +3947,10 @@ case OP_OpenEphemeral: {
     aMem[pOp->p3].z = "";
   }
   pCx = p->apCsr[pOp->p1];
-  if( pCx && ALWAYS(pCx->pBtx) ){
-    /* If the ephermeral table is already open, erase all existing content
-    ** so that the table is empty again, rather than creating a new table. */
+  if( pCx && !pCx->hasBeenDuped ){
+    /* If the ephermeral table is already open and has no duplicates from
+    ** OP_OpenDup, then erase all existing content so that the table is
+    ** empty again, rather than creating a new table. */
     assert( pCx->isEphemeral );
     pCx->seqCount = 0;
     pCx->cacheStatus = CACHE_STALE;
@@ -3965,33 +3964,36 @@ case OP_OpenEphemeral: {
                           vfsFlags);
     if( rc==SQLITE_OK ){
       rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
-    }
-    if( rc==SQLITE_OK ){
-      /* If a transient index is required, create it by calling
-      ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
-      ** opening it. If a transient table is required, just use the
-      ** automatically created table with root-page 1 (an BLOB_INTKEY table).
-      */
-      if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
-        assert( pOp->p4type==P4_KEYINFO );
-        rc = sqlite3BtreeCreateTable(pCx->pBtx, &pCx->pgnoRoot,
-                                     BTREE_BLOBKEY | pOp->p5); 
-        if( rc==SQLITE_OK ){
-          assert( pCx->pgnoRoot==SCHEMA_ROOT+1 );
-          assert( pKeyInfo->db==db );
-          assert( pKeyInfo->enc==ENC(db) );
-          rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
-                                  pKeyInfo, pCx->uc.pCursor);
+      if( rc==SQLITE_OK ){
+        /* If a transient index is required, create it by calling
+        ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
+        ** opening it. If a transient table is required, just use the
+        ** automatically created table with root-page 1 (an BLOB_INTKEY table).
+        */
+        if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
+          assert( pOp->p4type==P4_KEYINFO );
+          rc = sqlite3BtreeCreateTable(pCx->pBtx, &pCx->pgnoRoot,
+              BTREE_BLOBKEY | pOp->p5); 
+          if( rc==SQLITE_OK ){
+            assert( pCx->pgnoRoot==SCHEMA_ROOT+1 );
+            assert( pKeyInfo->db==db );
+            assert( pKeyInfo->enc==ENC(db) );
+            rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
+                pKeyInfo, pCx->uc.pCursor);
+          }
+          pCx->isTable = 0;
+        }else{
+          pCx->pgnoRoot = SCHEMA_ROOT;
+          rc = sqlite3BtreeCursor(pCx->pBtx, SCHEMA_ROOT, BTREE_WRCSR,
+              0, pCx->uc.pCursor);
+          pCx->isTable = 1;
         }
-        pCx->isTable = 0;
-      }else{
-        pCx->pgnoRoot = SCHEMA_ROOT;
-        rc = sqlite3BtreeCursor(pCx->pBtx, SCHEMA_ROOT, BTREE_WRCSR,
-                                0, pCx->uc.pCursor);
-        pCx->isTable = 1;
+      }
+      pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
+      if( rc ){
+        sqlite3BtreeClose(pCx->pBtx);
       }
     }
-    pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   }
   if( rc ) goto abort_due_to_error;
   pCx->nullRow = 1;
@@ -4425,13 +4427,13 @@ seek_not_found:
 **
 ** There are three possible outcomes from this opcode:<ol>
 **
-** <li> If after This.P1 steps, the cursor is still point to a place that
-**      is earlier in the btree than the target row,
-**      then fall through into the subsquence OP_SeekGE opcode.
+** <li> If after This.P1 steps, the cursor is still pointing to a place that
+**      is earlier in the btree than the target row, then fall through
+**      into the subsquence OP_SeekGE opcode.
 **
 ** <li> If the cursor is successfully moved to the target row by 0 or more
 **      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
-**      past the OP_IdxGT opcode that follows the OP_SeekGE.
+**      past the OP_IdxGT or OP_IdxGE opcode that follows the OP_SeekGE.
 **
 ** <li> If the cursor ends up past the target row (indicating the the target
 **      row does not exist in the btree) then jump to SeekOP.P2. 
@@ -4448,7 +4450,8 @@ case OP_SeekScan: {
   /* pOp->p2 points to the first instruction past the OP_IdxGT that
   ** follows the OP_SeekGE.  */
   assert( pOp->p2>=(int)(pOp-aOp)+2 );
-  assert( aOp[pOp->p2-1].opcode==OP_IdxGT );
+  assert( aOp[pOp->p2-1].opcode==OP_IdxGT || aOp[pOp->p2-1].opcode==OP_IdxGE );
+  testcase( aOp[pOp->p2-1].opcode==OP_IdxGE );
   assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
   assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
   assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
@@ -5983,6 +5986,8 @@ case OP_IdxRowid: {           /* out2 */
       pTabCur->deferredMoveto = 1;
       assert( pOp->p4type==P4_INTARRAY || pOp->p4.ai==0 );
       pTabCur->aAltMap = pOp->p4.ai;
+      assert( !pC->isEphemeral );
+      assert( !pTabCur->isEphemeral );
       pTabCur->pAltCursor = pC;
     }else{
       pOut = out2Prerelease(p, pOp);

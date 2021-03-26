@@ -1713,19 +1713,27 @@ end_changeset_one_table:
 }
 
 /*
+** Return true if the ascii character passed as the only argument is a
+** whitespace character. Otherwise return false.
+*/
+static int is_whitespace(char x){
+  return (x==' ' || x=='\t' || x=='\n' || x=='\r');
+}
+
+/*
 ** Extract the next SQL keyword or quoted string from buffer zIn and copy it
 ** (or a prefix of it if it will not fit) into buffer zBuf, size nBuf bytes.
 ** Return a pointer to the character within zIn immediately following 
 ** the token or quoted string just extracted.
 */
-const char *gobble_token(const char *zIn, char *zBuf, int nBuf){
+static const char *gobble_token(const char *zIn, char *zBuf, int nBuf){
   const char *p = zIn;
   char *pOut = zBuf;
   char *pEnd = &pOut[nBuf-1];
   char q = 0;                     /* quote character, if any */
 
   if( p==0 ) return 0;
-  while( *p==' ' ) p++;
+  while( is_whitespace(*p) ) p++;
   switch( *p ){
     case '"': q = '"'; break;
     case '\'': q = '\''; break;
@@ -1744,7 +1752,7 @@ const char *gobble_token(const char *zIn, char *zBuf, int nBuf){
       p++;
     }
   }else{
-    while( *p && *p!=' ' && *p!='(' ){
+    while( *p && !is_whitespace(*p) && *p!='(' ){
       if( pOut<pEnd ) *pOut++ = *p;
       p++;
     }

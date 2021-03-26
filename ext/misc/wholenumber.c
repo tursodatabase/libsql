@@ -220,7 +220,7 @@ static int wholenumberBestIndex(
     pIdxInfo->orderByConsumed = 1;
   }
   if( (idxNum & 12)==0 ){
-    pIdxInfo->estimatedCost = (double)100000000;
+    pIdxInfo->estimatedCost = 1e99;
   }else if( (idxNum & 3)==0 ){
     pIdxInfo->estimatedCost = (double)5;
   }else{

@@ -20,6 +20,9 @@
 # avfs-2.1. Test that the simple text file retains its initial text.
 # avfs-3.1. Test that the appendvfs can grow and shrink, remaining intact.
 # avfs-3.2. Test that appendvfs is intact after grow/shrink/close/reopen.
+# avfs-3.3. Test that appendvfs can grow by many pages and be written.
+# avfs-3.4. Test that grown appendvfs can be reopened and appear intact.
+# avfs-3.5. Test that much grown appendvfs can shrink and reopen intact.
 # avfs-4.1. Test shell's ability to append to a non-appendvfs file.
 # avfs-4.2. Test shell's ability to append to empty or nonexistent file.
 # avfs-4.3. Test shell's ability to reopen and alter an appendvfs file.
@@ -159,11 +162,12 @@ do_test 2.1 {
 } {Appendee intact.}
 
 # Set of repeatable random integers for a couple tests.
+set ::nrint 50000
 proc rint {v} {
   return [::tcl::mathfunc::int [expr $v * 100000]]
 }
 array set ::randints [list 0 [rint [::tcl::mathfunc::srand 0]]]
-for {set i 1} {$i < 10000} {incr i} {
+for {set i 1} {$i < $::nrint} {incr i} {
   set ::randints($i) [rint [::tcl::mathfunc::rand]]
 }
 
@@ -176,7 +180,7 @@ do_test 3.1 {
     CREATE TABLE ri (i INTEGER);
     BEGIN;
   }
-  for {set i 0} {$i < 10000} {incr i} {
+  for {set i 0} {$i < $::nrint} {incr i} {
     set r $::randints($i)
     set s $::randints([incr i])
     set t $::randints([incr i])
@@ -203,11 +207,11 @@ do_test 3.1 {
   adb close
   set adaSz [file size $::fa]
   set adba [expr ($adbSz + 0.1)/$adaSz]
-  # lappend results $adbSz $adaSz
+  # lappend results $adba
   set results [concat $results [lrange $qr 0 2]]
-  lappend results [expr {$adba > 10.0 && $adba < 20.0}]
+  lappend results [expr {$adba > 10.0}]
   set ::result [join $results " | "]
-} {ok | 10000 | ok | ok | 1}
+} "ok | $::nrint | ok | ok | 1"
 
 do_test 3.2 {
   set results {}
@@ -218,6 +222,60 @@ do_test 3.2 {
   adb close
   set ::result [join $results " | "]
 } {ok}
+
+# avfs-3.3. Test that appendvfs can grow by many pages and be written.
+do_test 3.3 {
+  set results {}
+  sqlite3 adb "file:$::fa?mode=rw$::vf" -uri 1
+  set npages 300
+  adb eval { BEGIN }
+  while {$npages > 0} {
+    adb eval { INSERT INTO ri VALUES (randomblob(1500)) }
+    incr npages -1
+  }
+  adb eval { COMMIT }
+  adb eval {
+    SELECT integrity_check as ic FROM pragma_integrity_check();
+  } { lappend results $ic }
+  adb close
+  set adaSzr [expr [file size $::fa] / 300.0 / 1500 ]
+  set okSzr [expr $adaSzr > 1.0 && $adaSzr < 1.3 ]
+  lappend results $okSzr
+  set ::result [join $results " | "]
+} {ok | 1}
+
+# avfs-3.4. Test that grown appendvfs can be reopened and appear intact.
+do_test 3.4 {
+  set results {}
+  sqlite3 adb "file:$::fa?mode=rw$::vf" -uri 1
+  adb eval {
+    SELECT integrity_check as ic FROM pragma_integrity_check();
+  } { lappend results $ic }
+  adb close
+  set ::result $ic
+} {ok}
+
+# avfs-3.5. Test that much grown appendvfs can shrink and reopen intact.
+do_test 3.5 {
+  set results {}
+  set adbsz [file size $::fa]
+  sqlite3 adb "file:$::fa?mode=rw$::vf" -uri 1
+  adb eval {
+    DELETE FROM ri WHERE rowid % 8 <> 0;
+    SELECT integrity_check as ic FROM pragma_integrity_check();
+    VACUUM;
+    SELECT integrity_check as ic FROM pragma_integrity_check();
+  } { lappend results $ic }
+  adb close
+  set adasz [file size $::fa]
+  lappend results [expr {$adbsz/$adasz > 5}]
+  sqlite3 adb "file:$::fa?mode=rw$::vf" -uri 1
+  adb eval {
+    SELECT integrity_check as ic FROM pragma_integrity_check();
+  } { lappend results $ic }
+  adb close
+  set ::result [join $results " | "]
+} {ok | ok | 1 | ok}
 
 set ::cliDoesAr [shellDoesAr]
 
@@ -332,6 +390,6 @@ do_test 5.2 {
 
 forcedelete $::fa $::fza
 
-unset -nocomplain ::fa ::fza ::tlo ::result ::randints ::cliDoesAr
+unset -nocomplain ::fa ::fza ::tlo ::result ::randints ::nrint ::cliDoesAr
 
 finish_test
