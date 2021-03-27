@@ -3902,14 +3902,13 @@ static int SQLITE_TCLAPI test_bind_text16(
   value = (char*)Tcl_GetByteArrayFromObj(oString, &trueLength);
   if( Tcl_GetIntFromObj(interp, oBytes, &bytes) ) return TCL_ERROR;
   if( bytes<0 && xDel==SQLITE_TRANSIENT ){
-    toFree = malloc( trueLength + 2 );
+    toFree = malloc( trueLength + 3 );
     if( toFree==0 ){
       Tcl_AppendResult(interp, "out of memory", (void*)0);
       return TCL_ERROR;
     }
     memcpy(toFree, value, trueLength);
-    toFree[trueLength] = 0;
-    toFree[trueLength+1] = 0;
+    memset(toFree+trueLength, 0, 3);
     value = toFree;
   }
   rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, xDel);
