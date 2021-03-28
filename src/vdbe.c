@@ -2111,15 +2111,12 @@ compare_op:
   ** order:  NE, EQ, GT, LE, LT, GE */
   assert( OP_Eq==OP_Ne+1 ); assert( OP_Gt==OP_Ne+2 ); assert( OP_Le==OP_Ne+3 );
   assert( OP_Lt==OP_Ne+4 ); assert( OP_Ge==OP_Ne+5 );
-  if( res<0 ){                        /* ne, eq, gt, le, lt, ge */
-    static const unsigned char aLTb[] = { 1,  0,  0,  1,  1,  0 };
-    res2 = aLTb[pOp->opcode - OP_Ne];
+  if( res<0 ){
+    res2 = sqlite3aLTb[pOp->opcode];
   }else if( res==0 ){
-    static const unsigned char aEQb[] = { 0,  1,  0,  1,  0,  1 };
-    res2 = aEQb[pOp->opcode - OP_Ne];
+    res2 = sqlite3aEQb[pOp->opcode];
   }else{
-    static const unsigned char aGTb[] = { 1,  0,  1,  0,  0,  1 };
-    res2 = aGTb[pOp->opcode - OP_Ne];
+    res2 = sqlite3aGTb[pOp->opcode];
   }
 
   /* Undo any changes made by applyAffinity() to the input registers. */
