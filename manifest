@@ -1,5 +1,5 @@
-C For\sthe\ssqlite3_bind_text16\sTCL\sbinding\sused\sfor\stesting,\sensure\sthat\sthere\nare\sat\sleast\s3\sterminating\szeros,\sso\sthat\sthere\swill\salways\sbe\sa\s\\u0000\ncharacter\seven\sif\sthe\soriginal\sbyte\ssequence\sis\san\sodd\snumber\sof\sbytes.
-D 2021-03-27T16:21:34.590
+C Document\sthe\s"%token"\sdirective\sfor\sLemon.\s\sThis\sdirective\shas\sbeen\sin\splace\nfor\sa\swhile,\sbut\swas\spreviously\sundocumented.
+D 2021-03-28T20:44:01.313
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -38,7 +38,7 @@ F configure c658869fc056a2460a2212fb2960e410cd24e3fb9c55640fbc78d15b48810936 x
 F configure.ac 4e4b58b32f88c8da9914a2f2c3158f80e69907eccc019fcc7e3ba14ffd91c640
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/lemon.html 1bb72ece6271df0d901d233551dd985f2c6ba30d09382cf2d321ed951ab57491
+F doc/lemon.html efc0cd2345d66905505d98f862e1c571512def0ceb5b016cb658fd4918eb76a3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
@@ -1830,7 +1830,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c d44ba4f03427c9bd34b601f315fe77c2b6d4bd215801a0259aeedbcc4c94a95c
+F tool/lemon.c a5acddd3eec6a388872aae6efc7563336348a9c45e5563642f77e8e3a50e859d
 F tool/lempar.c 1d3d075da18681c67ecc66c1f171e7094e18cd2cfba6a8a1bd4f3f639d6656e1
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f472fd64434cb2eac169587faa34bec489bc82002d529bc72dbfbba5251e5517
-R 9e091a36f447c6ad777be9227680f2e9
+P c23d092f37c535f88a47e9f55aa7b2fd40cfd5c50eec9191a68073d7f9141ecd
+R 1962b187e50d8ed528041ea3add6901a
 U drh
-Z bdab8b445f301b8530dd8bb9c8ad1843
+Z 89ccc7976bdb2c2ae9dddc0aacedcb7d
