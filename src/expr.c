@@ -611,6 +611,7 @@ static void codeVectorCompare(
   int regLeft = 0;
   int regRight = 0;
   u8 opx = op;
+  int addrCmp = 0;
   int addrDone = sqlite3VdbeMakeLabel(pParse);
   int isCommuted = ExprHasProperty(pExpr,EP_Commuted);
 
@@ -630,21 +631,24 @@ static void codeVectorCompare(
   assert( p5==0 || pExpr->op!=op );
   assert( p5==SQLITE_NULLEQ || pExpr->op==op );
 
-  p5 |= SQLITE_STOREP2;
-  if( opx==TK_LE ) opx = TK_LT;
-  if( opx==TK_GE ) opx = TK_GT;
+  if( op==TK_LE ) opx = TK_LT;
+  if( op==TK_GE ) opx = TK_GT;
+  if( op==TK_NE ) opx = TK_EQ;
 
   regLeft = exprCodeSubselect(pParse, pLeft);
   regRight = exprCodeSubselect(pParse, pRight);
 
+  sqlite3VdbeAddOp2(v, OP_Integer, 1, dest);
   for(i=0; 1 /*Loop exits by "break"*/; i++){
     int regFree1 = 0, regFree2 = 0;
     Expr *pL, *pR; 
     int r1, r2;
     assert( i>=0 && i<nLeft );
+    if( addrCmp ) sqlite3VdbeJumpHere(v, addrCmp);
     r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
     r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
-    codeCompare(pParse, pL, pR, opx, r1, r2, dest, p5, isCommuted);
+    addrCmp = sqlite3VdbeCurrentAddr(v);
+    codeCompare(pParse, pL, pR, opx, r1, r2, addrDone, p5, isCommuted);
     testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
     testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
     testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
@@ -653,26 +657,32 @@ static void codeVectorCompare(
     testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
     sqlite3ReleaseTempReg(pParse, regFree1);
     sqlite3ReleaseTempReg(pParse, regFree2);
+    if( (opx==TK_LT || opx==TK_GT) && i<nLeft-1 ){
+      addrCmp = sqlite3VdbeAddOp0(v, OP_ElseEq);
+      testcase(opx==TK_LT); VdbeCoverageIf(v,opx==TK_LT);
+      testcase(opx==TK_GT); VdbeCoverageIf(v,opx==TK_GT);
+    }
+    if( p5==SQLITE_NULLEQ ){
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, dest);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_ZeroOrNull, r1, dest, r2);
+    }
     if( i==nLeft-1 ){
       break;
     }
     if( opx==TK_EQ ){
-      sqlite3VdbeAddOp2(v, OP_IfNot, dest, addrDone); VdbeCoverage(v);
-      p5 |= SQLITE_KEEPNULL;
-    }else if( opx==TK_NE ){
-      sqlite3VdbeAddOp2(v, OP_If, dest, addrDone); VdbeCoverage(v);
-      p5 |= SQLITE_KEEPNULL;
+      sqlite3VdbeAddOp2(v, OP_NotNull, dest, addrDone); VdbeCoverage(v);
     }else{
       assert( op==TK_LT || op==TK_GT || op==TK_LE || op==TK_GE );
-      sqlite3VdbeAddOp2(v, OP_ElseNotEq, 0, addrDone);
-      VdbeCoverageIf(v, op==TK_LT);
-      VdbeCoverageIf(v, op==TK_GT);
-      VdbeCoverageIf(v, op==TK_LE);
-      VdbeCoverageIf(v, op==TK_GE);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrDone);
       if( i==nLeft-2 ) opx = op;
     }
   }
+  sqlite3VdbeJumpHere(v, addrCmp);
   sqlite3VdbeResolveLabel(v, addrDone);
+  if( op==TK_NE ){
+    sqlite3VdbeAddOp2(v, OP_Not, dest, dest);
+  }
 }
 
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -4054,8 +4064,9 @@ expr_code_doover:
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-        codeCompare(pParse, pLeft, pExpr->pRight, op,
-            r1, r2, inReg, SQLITE_STOREP2 | p5,
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, inReg);
+        codeCompare(pParse, pLeft, pExpr->pRight, op, r1, r2,
+            sqlite3VdbeCurrentAddr(v)+2, p5,
             ExprHasProperty(pExpr,EP_Commuted));
         assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
         assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
@@ -4063,6 +4074,11 @@ expr_code_doover:
         assert(TK_GE==OP_Ge); testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
         assert(TK_EQ==OP_Eq); testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
         assert(TK_NE==OP_Ne); testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
+        if( p5==SQLITE_NULLEQ ){
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, inReg);
+        }else{
+          sqlite3VdbeAddOp3(v, OP_ZeroOrNull, r1, inReg, r2);
+        }
         testcase( regFree1==0 );
         testcase( regFree2==0 );
       }
