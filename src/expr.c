@@ -4054,9 +4054,15 @@ expr_code_doover:
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-        codeCompare(pParse, pLeft, pExpr->pRight, op,
-            r1, r2, inReg, SQLITE_STOREP2 | p5,
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, inReg);
+        codeCompare(pParse, pLeft, pExpr->pRight, op, r1, r2,
+            sqlite3VdbeCurrentAddr(v)+2, p5,
             ExprHasProperty(pExpr,EP_Commuted));
+        if( p5==SQLITE_NULLEQ ){
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, inReg);
+        }else{
+          sqlite3VdbeAddOp3(v, OP_ZeroOrNull, r1, inReg, r2);
+        }
         assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
         assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
         assert(TK_GT==OP_Gt); testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);

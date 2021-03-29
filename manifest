@@ -1,5 +1,5 @@
-C The\scomparison\sopcodes\s(ex:\sOP_Eq)\snow\sset\sthe\siCompare\sflag\sso\sthat\sthe\nresult\sof\scomparison\scan\sbe\sused\sby\ssubsequent\sOP_Jump\sor\sOP_ElseNotEq\nopcodes.
-D 2021-03-29T13:47:20.333
+C Add\sthe\sOP_ZeroOrNull\sopcode\sand\suse\sit\sto\scompute\sboolean\svalues\sfor\nscalar\scomparisons,\srather\sthan\sthe\sSQLITE_STOREP2\sparameter\sto\sthe\scomparison\nopcode.
+D 2021-03-29T14:40:48.732
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 73f57a9a183532c344a3135cf8f2a5589376e39183e0b5f562d6b61b2af0f4d8
-F src/expr.c 030391f7a19e74e10ce9f2791f26158b34ee303c13993add67dff87501673d49
+F src/expr.c 39f37546a861477c7272a4d2c84ce343fd2b105bbd5ef7890c66d01274d4a68f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c 479f6929be027eb0210cbdde9d3529c012facf082d64a6b854a9415940761e5e
@@ -614,7 +614,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c ea4ab60e1752dbfeecac18805f12d04da310febd1054e15fc247fac45ea4a93f
+F src/vdbe.c 0defb9346e5fe5f275fef6dfd1ba9e012756469cb67ed22a6cdc2464ae0fd95a
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 000d9ab1ea4cb55a80de15e28f3f595645b4fddef34bca4347fb3db8031d9041
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1911,10 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afb18f64541effaeaada2d72c7c91adfe5ec3e2b1418c0bc281083125fb5badb
-R 710aa276e8312c2c05d4d33f5218ed6e
-T *branch * compare-opcode-opt
-T *sym-compare-opcode-opt *
-T -sym-trunk *
+P bd00df8f07b7163b0712590d2bb517e838a36c994dc47d7b39b5a07d14e6e6af
+R 724563e963bf6a8015327aa3621da692
 U drh
-Z f0d21120c3a7328d4a1225e5a853d72e
+Z c14837012fd78d1d74d6f076ec1e06a4

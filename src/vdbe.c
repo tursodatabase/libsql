@@ -2502,6 +2502,24 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
   break;
 }
 
+/* Opcode: ZeroOrNull P1 P2 P3 * *
+** Synopsis: r[P2] = (P1,P3 NOT NULL) ? 0 : NULL;
+**
+** If both registers P1 and P3 are NOT NULL, then store a zero in
+** register P2.  If either register P1 or register P3 or both contain
+** a NULL then store a NULL in register P2.
+*/
+case OP_ZeroOrNull: {            /* in1, out2, in3 */
+  if( (aMem[pOp->p1].flags & MEM_Null)!=0
+   || (aMem[pOp->p3].flags & MEM_Null)!=0
+  ){
+    sqlite3VdbeMemSetNull(aMem + pOp->p2);
+  }else{
+    sqlite3VdbeMemSetInt64(aMem + pOp->p2, 0);
+  }
+  break;
+}
+
 /* Opcode: NotNull P1 P2 * * *
 ** Synopsis: if r[P1]!=NULL goto P2
 **
