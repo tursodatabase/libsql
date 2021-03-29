@@ -164,6 +164,12 @@ do_execsql_test 2.7a {
   four one
 }
 
+do_execsql_test 2.7b {
+  SELECT a FROM t3 WHERE EXISTS (SELECT 1 FROM t4 WHERE (a,x)=(c,y) LIMIT 1)
+} {
+  four one
+}
+
 # EXISTS clauses using vector expressions in the WHERE clause.
 #
 reset_db
