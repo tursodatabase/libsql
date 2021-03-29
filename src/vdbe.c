@@ -1945,6 +1945,9 @@ case OP_Cast: {                  /* in1 */
 ** If both SQLITE_STOREP2 and SQLITE_KEEPNULL flags are set then the
 ** content of r[P2] is only changed if the new value is NULL or 0 (false).
 ** In other words, a prior r[P2] value will not be overwritten by 1 (true).
+**
+** This opcode saves the result of comparison for use by the new
+** OP_Jump opcode.
 */
 /* Opcode: Ne P1 P2 P3 P4 P5
 ** Synopsis: IF r[P3]!=r[P1]
@@ -1985,6 +1988,9 @@ case OP_Cast: {                  /* in1 */
 ** numeric, then a numeric comparison is used. If the two values
 ** are of different types, then numbers are considered less than
 ** strings and strings are considered less than blobs.
+**
+** This opcode saves the result of comparison for use by the new
+** OP_Jump opcode.
 */
 /* Opcode: Le P1 P2 P3 P4 P5
 ** Synopsis: IF r[P3]<=r[P1]
@@ -2044,9 +2050,9 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** then the result is always NULL.
       ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
       */
+      iCompare = 1;    /* Operands are not equal */
       if( pOp->p5 & SQLITE_STOREP2 ){
         pOut = &aMem[pOp->p2];
-        iCompare = 1;    /* Operands are not equal */
         memAboutToChange(p, pOut);
         MemSetTypeFlag(pOut, MEM_Null);
         REGISTER_TRACE(pOp->p2, pOut);
@@ -2118,6 +2124,7 @@ compare_op:
   }else{
     res2 = sqlite3aGTb[pOp->opcode];
   }
+  iCompare = res;
 
   /* Undo any changes made by applyAffinity() to the input registers. */
   assert( (pIn3->flags & MEM_Dyn) == (flags3 & MEM_Dyn) );
@@ -2127,7 +2134,6 @@ compare_op:
 
   if( pOp->p5 & SQLITE_STOREP2 ){
     pOut = &aMem[pOp->p2];
-    iCompare = res;
     if( (pOp->p5 & SQLITE_KEEPNULL)!=0 ){
       /* The KEEPNULL flag prevents OP_Eq from overwriting a NULL with 1
       ** and prevents OP_Ne from overwriting NULL with 0.  This flag
