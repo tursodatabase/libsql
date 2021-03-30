@@ -115,4 +115,18 @@ do_execsql_test 5.5 {
   UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
 } {123}
 
+# Ticket 132994c8b1063bfb
+reset_db
+do_catchsql_test 6.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY);
+  CREATE TABLE t2(x INT, y INT);
+  INSERT INTO t1 VALUES(1),(2),(4),(9);
+  INSERT INTO t2 VALUES(3,7), (4,25), (5,99);
+  UPDATE t1 SET id=id+y FROM t2 WHERE t1.id=t2.x RETURNING t2.*;
+} {1 {RETURNING may not use "TABLE.*" wildcards}}
+do_catchsql_test 6.1 {
+  UPDATE t1 SET id=id+y FROM t2 WHERE t1.id=t2.x RETURNING *, '|';
+  SELECT * FROM t1 ORDER BY id;
+} {0 {29 | 1 2 9 29}}
+
 finish_test

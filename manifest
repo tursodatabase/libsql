@@ -1,5 +1,5 @@
-C Do\snot\sdo\sthe\sEXISTS-to-IN\stransformation\sif\sthe\ssub-select\shas\sLIMIT\sclause.
-D 2021-03-29T20:28:27.817
+C Raise\san\serror\sif\sa\sterm\sof\sthe\sform\s"TABLE.*"\sappears\sin\sthe\sRETURNING\sclause,\nas\sSQLite\sdoes\snot\s(yet)\sknow\show\sto\shandle\sthat.\nTicket\s[132994c8b1063bfb].
+D 2021-03-30T01:52:21.906
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 0b9c82fa628b5adce93e2bcaf935a24d43eb83344fb51551f7835526d0693fc4
 F src/treeview.c 70f57a2b77e20b354724ea69b8ed1ea1df946c48296d695320c741c7d174be90
-F src/trigger.c f555123aabf7f3d175cbe6d33c02783302cbdc0a7236203fa2a0539baf2d890e
+F src/trigger.c 7bb95fda4d9c9dd4009a7fc6ef2194c76ba1ba60e4b49c364e1cb3a064704e39
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1296,7 +1296,7 @@ F test/releasetest.tcl fb76d8fcc95ac29d6356cd9e52b726ab9e43a24082897618dfbcb7c2b
 F test/releasetest_data.tcl 3d41ddb3f04f474ac9d925485da24ce6576ff0ebc4c7201c8a340bc09846c261
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test ed4baff6a22d8fb0052dcace0181395fbd67d4629cb0ee194175a1cfd097f24d
+F test/returning1.test 95b126217324d34f3435927d72d5918790c16907dbf4d05e39dc1d49fe1b7710
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 004559544e661f9afa60306c4ac6842c29a8630b3663d62aa0cdc637f176932e
-R 21c9ca6c2695bb2d9140608749c56751
-U dan
-Z b9cc465f4747d3c383642817355eee84
+P d07e246f9b6d4d7aef63a6debcb7ab2832bff6f80a245f50bcebb3f8de1bacc7
+R 0211958bc0e48bea92088360bc7cfd28
+U drh
+Z 2c47eb39c6eb438f00feb50a463c8ac1
