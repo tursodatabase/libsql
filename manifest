@@ -1,5 +1,5 @@
-C Raise\san\serror\sif\sa\sterm\sof\sthe\sform\s"TABLE.*"\sappears\sin\sthe\sRETURNING\sclause,\nas\sSQLite\sdoes\snot\s(yet)\sknow\show\sto\shandle\sthat.\nTicket\s[132994c8b1063bfb].
-D 2021-03-30T01:52:21.906
+C Ensure\sthat\snegative\snumbers\smay\snot\sbe\sused\sin\sframe\soffset\sclauses\seven\sif\sthey\sare\sinitially\stext\svalue.\se.g.\s(RANGE\sBETWEEN\s'-1'\sPRECEDING\s...).
+D 2021-03-31T11:31:19.995
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/where.c 07d1232df6fc4705815b0ef5182fe3e56bdba6ac09ce52bd66ecb207626aac2b
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c c7354c9749f015f37bc32e15a4257a5155fa5d2b79f605f528bd09f3b9f1b4e6
 F src/whereexpr.c 4ba94b8ebbff97c658b212de6ccdb6d3a41847800bdf99e7a2a967c250269f2c
-F src/window.c 7e89ac4b6cd6bb9b7772234a625d19c39b530f4ac06e43688a8b7e6a1ab512a2
+F src/window.c 32b03808aff2e7263889cce0cbcb2a68efefc2a9d5187514ddb6a2a1046dc7f5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
@@ -1781,7 +1781,7 @@ F test/window7.tcl 6a1210f05d40ec89c22960213a22cd3f98d4e2f2eb20646c83c8c30d4d761
 F test/window7.test 1d31276961ae7801edc72173edaf7593e3cbc79c06d1f1f09e20d8418af403cd
 F test/window8.tcl f2711aa3571e4e6b0dad98db8d95fd6cb8d9db0c92bbdf535f153b07606a1ce2
 F test/window8.test c4331b27a6f66d69fa8f8bab10cc731db1a81d293ae108a68f7c3487fa94e65b
-F test/window9.test 4d8c875b73febdbac9b8f2b52ec132b98f48261cdafd6b08db62bc6d8ff913fc
+F test/window9.test 349c71eab4288a1ffc19e2f65872ec2c37e6cf8a1dda2ad300364b7450ae4836
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
 F test/windowB.test 6e601f8178ba8ba28b2f19e74fe613815084bb4a8d2ad942defc7d42e191e521
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d07e246f9b6d4d7aef63a6debcb7ab2832bff6f80a245f50bcebb3f8de1bacc7
-R 0211958bc0e48bea92088360bc7cfd28
-U drh
-Z 2c47eb39c6eb438f00feb50a463c8ac1
+P 3039bcaff95bb5d096c80b5eefdaeda6abd1d1337e829f32fd28a968f663f481
+R 7b19f4193fff66a2a9516f68b5ccb188
+U dan
+Z 82b60d1644919097b1f10e4e15aa5fcc
