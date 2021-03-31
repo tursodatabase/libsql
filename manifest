@@ -1,5 +1,5 @@
-C When\sresolving\scolumn\snames\sin\sthe\sRETURNING\sclause,\sdo\snot\signore\san\nincorrect\stable\sname\squalifier.\s\sRaise\san\serror\sinstead.\nSee\s[forum:forumpost/85aef8bc01|forum\spost\s85aef8bc01]\sfor\scontext.
-D 2021-03-31T17:42:24.040
+C When\sresolving\snames\sin\sthe\sRETURNING\sclause,\sdo\snot\saccept\strigger\snames\neven\swithin\ssubquires.\s\sSee\n[forum:/info/34c81d83c9177f46|forum\spost\s34c81d83c9177f46]\sfor\scontext.
+D 2021-03-31T23:56:55.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c e21b54489b5c73b06ada15e6fc79b5c6f64b06701924a6ca98944ae59e06256f
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 1b8a9278f32852ec0bd07fe70b70f584976d681f2df75cfe7ed3e465d070cbd9
+F src/resolve.c fc136d935f19966747663bed605ad7f06f84f9fe7bf7bf79e9bf844ef5c7556d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 2d7a1f3d9f5970962b407cb4b38416fedc1a3b55efd010b40af375088653b6ce
 F src/shell.c.in dcce260883836c9b58847505fbccce8d5546af925046f7dacd9443e922ece036
@@ -1296,7 +1296,7 @@ F test/releasetest.tcl fb76d8fcc95ac29d6356cd9e52b726ab9e43a24082897618dfbcb7c2b
 F test/releasetest_data.tcl 3d41ddb3f04f474ac9d925485da24ce6576ff0ebc4c7201c8a340bc09846c261
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 8b46d362cf93efbc486ed07b7685f9b9be266a2a2fbd1aeeb88d905efc07d6f0
+F test/returning1.test 541a4b5746279d308d6c15e033de4ed3158f4c80260ff4222dab511c4887ce10
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1911,7 +1911,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c36b43589abd9f62a709bdb47b8748e0c1e8743487a3d83d1eb35eb06b65d763
-R fb010501eeaed0e309b9da6d2f7b021f
+P 51d5c50b2fb373e4c7ddb7e26657c26ad39dc9c2fc629bba5c2522b4150d8fac
+R 3a741475768035cf21a3bbabb91b90d2
 U drh
-Z 1d604e234dac14d87beabcaf26ec0b5d
+Z c512d8a314e5bf5beb44a97f116f574c
