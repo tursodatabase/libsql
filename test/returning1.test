@@ -166,6 +166,23 @@ do_catchsql_test 7.8 {
   UPDATE t1 AS alias SET b=alias.b+1000 RETURNING t1.b;
 } {0 1032}
 
+# Forum: https://sqlite.org/forum/info/34c81d83c9177f46
+reset_db
+do_execsql_test 8.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b,c);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t2 VALUES(3,40);
+} {}
+do_catchsql_test 8.2 {
+  INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE new.a=t2.b) AS x;
+} {1 {no such column: new.a}}
+do_catchsql_test 8.3 {
+  INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE old.a=t2.b) AS x;
+} {1 {no such column: old.a}}
+do_catchsql_test 8.4 {
+  INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE t1.a=t2.b) AS x;
+} {0 {3 40}}
 
 finish_test
 
