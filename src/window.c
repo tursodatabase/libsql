@@ -1469,6 +1469,7 @@ static void windowCheckValue(Parse *pParse, int reg, int eCond){
     VdbeCoverageIf(v, eCond==2);
   }
   sqlite3VdbeAddOp3(v, aOp[eCond], regZero, sqlite3VdbeCurrentAddr(v)+2, reg);
+  sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC);
   VdbeCoverageNeverNullIf(v, eCond==0); /* NULL case captured by */
   VdbeCoverageNeverNullIf(v, eCond==1); /*   the OP_MustBeInt */
   VdbeCoverageNeverNullIf(v, eCond==2);

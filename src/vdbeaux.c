@@ -1487,11 +1487,7 @@ char *sqlite3VdbeDisplayComment(
     char c;
     zSynopsis = zOpName += nOpName + 1;
     if( strncmp(zSynopsis,"IF ",3)==0 ){
-      if( pOp->p5 & SQLITE_STOREP2 ){
-        sqlite3_snprintf(sizeof(zAlt), zAlt, "r[P2] = (%s)", zSynopsis+3);
-      }else{
-        sqlite3_snprintf(sizeof(zAlt), zAlt, "if %s goto P2", zSynopsis+3);
-      }
+      sqlite3_snprintf(sizeof(zAlt), zAlt, "if %s goto P2", zSynopsis+3);
       zSynopsis = zAlt;
     }
     for(ii=0; (c = zSynopsis[ii])!=0; ii++){

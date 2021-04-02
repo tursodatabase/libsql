@@ -209,12 +209,12 @@ void sqlite3BeginTrigger(
   */
   if( pTab->pSelect && tr_tm!=TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create %s trigger on view: %S", 
-        (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName, 0);
+        (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName->a);
     goto trigger_orphan_error;
   }
   if( !pTab->pSelect && tr_tm==TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create INSTEAD OF"
-        " trigger on table: %S", pTableName, 0);
+        " trigger on table: %S", pTableName->a);
     goto trigger_orphan_error;
   }
 
@@ -611,7 +611,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   }
   if( !pTrigger ){
     if( !noErr ){
-      sqlite3ErrorMsg(pParse, "no such trigger: %S", pName, 0);
+      sqlite3ErrorMsg(pParse, "no such trigger: %S", pName->a);
     }else{
       sqlite3CodeVerifyNamedSchema(pParse, zDb);
     }
@@ -823,6 +823,25 @@ SrcList *sqlite3TriggerStepSrc(
   return pSrc;
 }
 
+/*
+** Return true if the pExpr term from the RETURNING clause argument
+** list is of the form "*".  Raise an error if the terms if of the
+** form "table.*".
+*/
+static int isAsteriskTerm(
+  Parse *pParse,      /* Parsing context */
+  Expr *pTerm         /* A term in the RETURNING clause */
+){
+  assert( pTerm!=0 );
+  if( pTerm->op==TK_ASTERISK ) return 1;
+  if( pTerm->op!=TK_DOT ) return 0;
+  assert( pTerm->pRight!=0 );
+  assert( pTerm->pLeft!=0 );
+  if( pTerm->pRight->op!=TK_ASTERISK ) return 0;
+  sqlite3ErrorMsg(pParse, "RETURNING may not use \"TABLE.*\" wildcards");
+  return 1;
+}
+
 /* The input list pList is the list of result set terms from a RETURNING
 ** clause.  The table that we are returning from is pTab.
 **
@@ -840,7 +859,8 @@ static ExprList *sqlite3ExpandReturning(
 
   for(i=0; i<pList->nExpr; i++){
     Expr *pOldExpr = pList->a[i].pExpr;
-    if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
+    if( NEVER(pOldExpr==0) ) continue;
+    if( isAsteriskTerm(pParse, pOldExpr) ){
       int jj;
       for(jj=0; jj<pTab->nCol; jj++){
         Expr *pNewExpr;

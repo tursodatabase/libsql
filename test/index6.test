@@ -158,7 +158,7 @@ do_test index6-2.2 {
     EXPLAIN QUERY PLAN
     SELECT * FROM t2 WHERE a=5;
   }
-} {/.* TABLE t2 USING INDEX t2a1 .*/}
+} {/(SEARCH|SCAN) t2 USING INDEX t2a1 /}
 ifcapable stat4 {
   execsql ANALYZE
   do_test index6-2.3stat4 {
@@ -166,21 +166,21 @@ ifcapable stat4 {
       EXPLAIN QUERY PLAN
       SELECT * FROM t2 WHERE a IS NOT NULL;
     }
-  } {/.* TABLE t2 USING INDEX t2a1 .*/}
+  } {/(SEARCH|SCAN) t2 USING INDEX t2a1 /}
 } else {
   do_test index6-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
       SELECT * FROM t2 WHERE a IS NOT NULL AND a>0;
     }
-  } {/.* TABLE t2 USING INDEX t2a1 .*/}
+  } {/(SEARCH|SCANE) t2 USING INDEX t2a1 /}
 }
 do_test index6-2.4 {
   execsql {
     EXPLAIN QUERY PLAN
     SELECT * FROM t2 WHERE a IS NULL;
   }
-} {~/.*INDEX t2a1.*/}
+} {~/INDEX t2a1/}
 
 do_execsql_test index6-2.101 {
   DROP INDEX t2a1;
@@ -319,8 +319,8 @@ do_eqp_test index6-8.1 {
   SELECT * FROM t8a LEFT JOIN t8b ON (x = 'value' AND y = a)
 } {
   QUERY PLAN
-  |--SCAN TABLE t8a
-  `--SEARCH TABLE t8b USING INDEX i8c (y=?)
+  |--SCAN t8a
+  `--SEARCH t8b USING INDEX i8c (y=?)
 }
 
 do_execsql_test index6-8.2 {

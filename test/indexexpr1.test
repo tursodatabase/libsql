@@ -97,14 +97,14 @@ do_execsql_test indexexpr1-170 {
 do_execsql_test indexexpr1-170eqp {
   EXPLAIN QUERY PLAN
   SELECT length(a) FROM t1 ORDER BY length(a);
-} {/SCAN TABLE t1 USING INDEX t1alen/}
+} {/SCAN t1 USING INDEX t1alen/}
 do_execsql_test indexexpr1-171 {
   SELECT length(a) FROM t1 ORDER BY length(a) DESC;
 } {52 38 29 27 25 20}
 do_execsql_test indexexpr1-171eqp {
   EXPLAIN QUERY PLAN
   SELECT length(a) FROM t1 ORDER BY length(a) DESC;
-} {/SCAN TABLE t1 USING INDEX t1alen/}
+} {/SCAN t1 USING INDEX t1alen/}
 
 do_execsql_test indexexpr1-200 {
   DROP TABLE t1;

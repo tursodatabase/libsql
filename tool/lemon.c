@@ -2708,7 +2708,7 @@ static void parseonetoken(struct pstate *psp)
       ** in order to control their assigned integer number.  The number for
       ** each token is assigned when it is first seen.  So by including
       **
-      **     %token ONE TWO THREE
+      **     %token ONE TWO THREE.
       **
       ** early in the grammar file, that assigns small consecutive values
       ** to each of the tokens ONE TWO and THREE.

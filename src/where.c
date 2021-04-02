@@ -492,7 +492,7 @@ static int findIndexCol(
   for(i=0; i<pList->nExpr; i++){
     Expr *p = sqlite3ExprSkipCollateAndLikely(pList->a[i].pExpr);
     if( ALWAYS(p!=0)
-     && p->op==TK_COLUMN
+     && (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN)
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
     ){
@@ -557,7 +557,8 @@ static int isDistinctRedundant(
   for(i=0; i<pDistinct->nExpr; i++){
     Expr *p = sqlite3ExprSkipCollateAndLikely(pDistinct->a[i].pExpr);
     if( NEVER(p==0) ) continue;
-    if( p->op==TK_COLUMN && p->iTable==iBase && p->iColumn<0 ) return 1;
+    if( p->op!=TK_COLUMN && p->op!=TK_AGG_COLUMN ) continue;
+    if( p->iTable==iBase && p->iColumn<0 ) return 1;
   }
 
   /* Loop through all indices on the table, checking each to see if it makes
@@ -3822,7 +3823,7 @@ static i8 wherePathSatisfiesOrderBy(
       if( MASKBIT(i) & obSat ) continue;
       pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[i].pExpr);
       if( NEVER(pOBExpr==0) ) continue;
-      if( pOBExpr->op!=TK_COLUMN ) continue;
+      if( pOBExpr->op!=TK_COLUMN && pOBExpr->op!=TK_AGG_COLUMN ) continue;
       if( pOBExpr->iTable!=iCur ) continue;
       pTerm = sqlite3WhereFindTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
                        ~ready, eqOpMask, 0);
@@ -3951,7 +3952,7 @@ static i8 wherePathSatisfiesOrderBy(
           if( NEVER(pOBExpr==0) ) continue;
           if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
           if( iColumn>=XN_ROWID ){
-            if( pOBExpr->op!=TK_COLUMN ) continue;
+            if( pOBExpr->op!=TK_COLUMN && pOBExpr->op!=TK_AGG_COLUMN ) continue;
             if( pOBExpr->iTable!=iCur ) continue;
             if( pOBExpr->iColumn!=iColumn ) continue;
           }else{
@@ -5024,7 +5025,9 @@ WhereInfo *sqlite3WhereBegin(
   /* Attempt to omit tables from the join that do not affect the result.
   ** For a table to not affect the result, the following must be true:
   **
-  **   1) The query must not be an aggregate.
+  **   1) The query must not be an aggregate. Or it must be an aggregate
+  **      that contains only one aggregate function with the DISTINCT 
+  **      qualifier. e.g. "SELECT count(DISTINCT ...) FROM".
   **   2) The table must be the RHS of a LEFT JOIN.
   **   3) Either the query must be DISTINCT, or else the ON or USING clause
   **      must contain a constraint that limits the scan of the table to 

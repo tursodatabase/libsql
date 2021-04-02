@@ -1216,6 +1216,7 @@ static void exprAnalyzeExists(
 #endif
   if( pSel->pPrior ) return;
   if( pSel->pWhere==0 ) return;
+  if( pSel->pLimit ) return;
   if( 0==exprAnalyzeExistsFindEq(pSel, 0, 0) ) return;
 
   pDup = sqlite3ExprDup(db, pExpr, 0);

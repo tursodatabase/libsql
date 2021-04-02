@@ -192,10 +192,9 @@ do_eqp_test 6.2 {
 } {VIRTUAL TABLE INDEX 0:G0}
 do_eqp_test 6.3 {
   SELECT * FROM ci1 WHERE x LIKE ?
-} {{SCAN TABLE ci1 VIRTUAL TABLE INDEX 0:}}
+} {{SCAN ci1 VIRTUAL TABLE INDEX 0:}}
 do_eqp_test 6.4 {
   SELECT * FROM ci1 WHERE x GLOB ?
 } {VIRTUAL TABLE INDEX 0:G0}
 
 finish_test
-

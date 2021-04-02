@@ -738,4 +738,3 @@ do_catchsql_test 24.2.1 {
 
 
 finish_test
-

@@ -1393,13 +1393,13 @@ do_execsql_test 4.10.0 {
 }
 do_createtable_tests 4.10 {
   1    "EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b = 5" 
-       {/*SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (b=?)*/}
+       {/*SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (b=?)*/}
 
   2    "EXPLAIN QUERY PLAN SELECT * FROM t2 ORDER BY b, c"
-       {/*SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1*/}
+       {/*SCAN t2 USING INDEX sqlite_autoindex_t2_1*/}
 
   3    "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE b=10 AND c>10"
-       {/*SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)*/}
+       {/*SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)*/}
 }
 
 # EVIDENCE-OF: R-45493-35653 A CHECK constraint may be attached to a
