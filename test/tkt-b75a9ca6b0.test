@@ -32,8 +32,8 @@ do_execsql_test 1.1 {
   CREATE INDEX i1 ON t1(x, y);
 } 
 
-set idxscan {SCAN TABLE t1 USING COVERING INDEX i1}
-set tblscan {SCAN TABLE t1}
+set idxscan {SCAN t1 USING COVERING INDEX i1}
+set tblscan {SCAN t1}
 set grpsort {USE TEMP B-TREE FOR GROUP BY}
 set sort    {USE TEMP B-TREE FOR ORDER BY}
 

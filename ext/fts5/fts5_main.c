@@ -22,7 +22,9 @@
 ** assert() conditions in the fts5 code are activated - conditions that are
 ** only true if it is guaranteed that the fts5 database is not corrupt.
 */
+#ifdef SQLITE_DEBUG
 int sqlite3_fts5_may_be_corrupt = 1;
+#endif
 
 
 typedef struct Fts5Auxdata Fts5Auxdata;

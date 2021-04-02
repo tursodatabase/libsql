@@ -683,7 +683,7 @@ static GeoPoly *geopolyBBox(
       aCoord[2].f = mnY;
       aCoord[3].f = mxY;
     }
-  }else{
+  }else if( aCoord ){
     memset(aCoord, 0, sizeof(RtreeCoord)*4);
   }
   return pOut;

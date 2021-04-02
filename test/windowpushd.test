@@ -51,7 +51,7 @@ do_execsql_test 1.3 {
 
 do_eqp_test 1.4 {
   SELECT * FROM lll WHERE grp_id=2
-} {SEARCH TABLE t1 USING COVERING INDEX i1 (grp_id=?)}
+} {SEARCH t1 USING COVERING INDEX i1 (grp_id=?)}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -158,10 +158,10 @@ foreach tn {0 1} {
   if {$tn==1} {
     do_eqp_test 2.$tn.3.3 {
       SELECT * FROM v3 WHERE b='E'
-    } {SEARCH TABLE t1 USING INDEX i2 (b=?)}
+    } {SEARCH t1 USING INDEX i2 (b=?)}
     do_eqp_test 2.$tn.3.4 {
       SELECT * FROM v3 WHERE b>'C'
-    } {SEARCH TABLE t1 USING INDEX i2 (b>?)}
+    } {SEARCH t1 USING INDEX i2 (b>?)}
   }
 
   do_execsql_test 2.$tn.3.5 { SELECT * FROM v3 WHERE d<0.55; } { 
@@ -172,7 +172,7 @@ foreach tn {0 1} {
   if {$tn==1} {
     do_eqp_test 2.$tn.3.6 {
       SELECT * FROM v3 WHERE d<0.55
-    } {SCAN TABLE t1 USING INDEX i2}
+    } {SCAN t1 USING INDEX i2}
   }
 
   do_execsql_test 2.$tn.4.1 {
@@ -234,4 +234,3 @@ foreach tn {0 1} {
 
 
 finish_test
-

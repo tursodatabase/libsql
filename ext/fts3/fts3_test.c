@@ -585,6 +585,7 @@ static int SQLITE_TCLAPI fts3_may_be_corrupt(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifdef SQLITE_DEBUG
   int bOld = sqlite3_fts3_may_be_corrupt;
 
   if( objc!=2 && objc!=1 ){
@@ -598,6 +599,7 @@ static int SQLITE_TCLAPI fts3_may_be_corrupt(
   }
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(bOld));
+#endif
   return TCL_OK;
 }
 

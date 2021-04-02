@@ -29,7 +29,7 @@
 #define etSQLESCAPE2 10 /* Strings with '\'' doubled and enclosed in '',
                           NULL pointers replaced by SQL NULL.  %Q */
 #define etTOKEN      11 /* a pointer to a Token structure */
-#define etSRCLIST    12 /* a pointer to a SrcList */
+#define etSRCITEM    12 /* a pointer to a SrcItem */
 #define etPOINTER    13 /* The %p conversion */
 #define etSQLESCAPE3 14 /* %w -> Strings with '\"' doubled */
 #define etORDINAL    15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
@@ -95,9 +95,15 @@ static const et_info fmtinfo[] = {
 
   /* All the rest are undocumented and are for internal use only */
   {  'T',  0, 0, etTOKEN,      0,  0 },
-  {  'S',  0, 0, etSRCLIST,    0,  0 },
+  {  'S',  0, 0, etSRCITEM,    0,  0 },
   {  'r', 10, 1, etORDINAL,    0,  0 },
 };
+
+/* Notes:
+**
+**    %S    Takes a pointer to SrcItem.  Shows name or database.name
+**    %!S   Like %S but prefer the zName over the zAlias
+*/
 
 /* Floating point constants used for rounding */
 static const double arRound[] = {
@@ -853,21 +859,24 @@ void sqlite3_str_vappendf(
         length = width = 0;
         break;
       }
-      case etSRCLIST: {
-        SrcList *pSrc;
-        int k;
+      case etSRCITEM: {
         SrcItem *pItem;
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
-        pSrc = va_arg(ap, SrcList*);
-        k = va_arg(ap, int);
-        pItem = &pSrc->a[k];
+        pItem = va_arg(ap, SrcItem*);
         assert( bArgList==0 );
-        assert( k>=0 && k<pSrc->nSrc );
-        if( pItem->zDatabase ){
-          sqlite3_str_appendall(pAccum, pItem->zDatabase);
-          sqlite3_str_append(pAccum, ".", 1);
+        if( pItem->zAlias && !flag_altform2 ){
+          sqlite3_str_appendall(pAccum, pItem->zAlias);
+        }else if( pItem->zName ){
+          if( pItem->zDatabase ){
+            sqlite3_str_appendall(pAccum, pItem->zDatabase);
+            sqlite3_str_append(pAccum, ".", 1);
+          }
+          sqlite3_str_appendall(pAccum, pItem->zName);
+        }else if( pItem->zAlias ){
+          sqlite3_str_appendall(pAccum, pItem->zAlias);
+        }else if( ALWAYS(pItem->pSelect) ){
+          sqlite3_str_appendf(pAccum, "SUBQUERY %u", pItem->pSelect->selId);
         }
-        sqlite3_str_appendall(pAccum, pItem->zName);
         length = width = 0;
         break;
       }

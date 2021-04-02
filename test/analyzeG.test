@@ -20,16 +20,6 @@ ifcapable !stat4 {
 }
 set testprefix analyzeG
 
-proc do_scan_order_test {tn sql expect} {
-  uplevel [list do_test $tn [subst -nocommands {
-    set res ""
-    db eval "explain query plan $sql" {
-      lappend res [set detail]
-    }
-    set res
-  }] [list {*}$expect]]
-}
-
 #-------------------------------------------------------------------------
 # Test cases 1.* seek to verify that even if an index is not used, its
 # stat4 data may be used by the planner to estimate the number of
@@ -54,15 +44,17 @@ do_execsql_test 1.0 {
 # know this, so it has no preference as to which order the tables are
 # scanned in. In practice this means that tables are scanned in the order
 # they are specified in in the FROM clause.
-do_scan_order_test 1.1.1 {
+do_eqp_test 1.1.1 {
   SELECT * FROM t1, t2 WHERE a=44 AND b=44;
 } {
-  {SCAN TABLE t1} {SCAN TABLE t2}
+
 }
-do_scan_order_test 1.1.2 {
+do_eqp_test 1.1.2 {
   SELECT * FROM t2, t1 WHERE a=44 AND b=44 
 } {
-  {SCAN TABLE t2} {SCAN TABLE t1} 
+  QUERY PLAN
+  |--SCAN t2
+  `--SCAN t1
 }
 
 do_execsql_test 1.2 {
@@ -73,15 +65,19 @@ do_execsql_test 1.2 {
 # Now, with the ANALYZE data, the planner knows that (b=44) matches a 
 # large number of rows. So it elects to scan table "t1" first, regardless
 # of the order in which the tables are specified in the FROM clause.
-do_scan_order_test 1.3.1 {
+do_eqp_test 1.3.1 {
   SELECT * FROM t1, t2 WHERE a=44 AND b=44;
 } {
-  {SCAN TABLE t1} {SCAN TABLE t2}
+  QUERY PLAN
+  |--SCAN t1
+  `--SCAN t2
 }
-do_scan_order_test 1.3.2 {
+do_eqp_test 1.3.2 {
   SELECT * FROM t2, t1 WHERE a=44 AND b=44 
 } {
-  {SCAN TABLE t1} {SCAN TABLE t2} 
+  QUERY PLAN
+  |--SCAN t1
+  `--SCAN t2
 }
 
 

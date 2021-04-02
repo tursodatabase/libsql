@@ -125,7 +125,7 @@ do_eqp_test like3-5.101 {
   SELECT x FROM t5a WHERE x LIKE '/%';
 } {
   QUERY PLAN
-  `--SCAN TABLE t5a
+  `--SCAN t5a
 }
 do_execsql_test like3-5.110 {
   SELECT x FROM t5a WHERE x LIKE '/a%';
@@ -135,7 +135,7 @@ do_eqp_test like3-5.111 {
   SELECT x FROM t5a WHERE x LIKE '/a%';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t5a USING COVERING INDEX sqlite_autoindex_t5a_1 (x>? AND x<?)
+  `--SEARCH t5a USING COVERING INDEX sqlite_autoindex_t5a_1 (x>? AND x<?)
 }
 }
 do_execsql_test like3-5.120 {
@@ -145,7 +145,7 @@ do_eqp_test like3-5.121 {
   SELECT x FROM t5a WHERE x LIKE '^12%' ESCAPE '^';
 } {
   QUERY PLAN
-  `--SCAN TABLE t5a
+  `--SCAN t5a
 }
 do_execsql_test like3-5.122 {
   SELECT x FROM t5a WHERE x LIKE '^-2%' ESCAPE '^';
@@ -154,7 +154,7 @@ do_eqp_test like3-5.123 {
   SELECT x FROM t5a WHERE x LIKE '^12%' ESCAPE '^';
 } {
   QUERY PLAN
-  `--SCAN TABLE t5a
+  `--SCAN t5a
 }
 
 do_execsql_test like3-5.200 {
@@ -166,7 +166,7 @@ do_eqp_test like3-5.201 {
   SELECT x FROM t5b WHERE x GLOB '/*';
 } {
   QUERY PLAN
-  `--SCAN TABLE t5b
+  `--SCAN t5b
 }
 do_execsql_test like3-5.210 {
   SELECT x FROM t5b WHERE x GLOB '/a*';
@@ -175,7 +175,7 @@ do_eqp_test like3-5.211 {
   SELECT x FROM t5b WHERE x GLOB '/a*';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t5b USING COVERING INDEX sqlite_autoindex_t5b_1 (x>? AND x<?)
+  `--SEARCH t5b USING COVERING INDEX sqlite_autoindex_t5b_1 (x>? AND x<?)
 }
 
 # 2019-05-01
@@ -234,13 +234,13 @@ do_eqp_test like3-6.110 {
   SELECT * FROM t1 WHERE path LIKE 'a%';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t1 USING PRIMARY KEY (path>? AND path<?)
+  `--SEARCH t1 USING PRIMARY KEY (path>? AND path<?)
 }
 do_eqp_test like3-6.120 {
   SELECT * FROM t1 WHERE path LIKE 'a%' ESCAPE 'x';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t1 USING PRIMARY KEY (path>? AND path<?)
+  `--SEARCH t1 USING PRIMARY KEY (path>? AND path<?)
 }
 do_execsql_test like3-6.200 {
   DROP TABLE IF EXISTS t2;
@@ -252,26 +252,26 @@ do_eqp_test like3-6.210 {
   SELECT * FROM t2 WHERE path LIKE 'a%';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t2 USING INDEX t2path (path>? AND path<?)
+  `--SEARCH t2 USING INDEX t2path (path>? AND path<?)
 }
 do_eqp_test like3-6.220 {
   SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '\';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t2 USING INDEX t2path (path>? AND path<?)
+  `--SEARCH t2 USING INDEX t2path (path>? AND path<?)
 }
 db eval {PRAGMA case_sensitive_like=ON}
 do_eqp_test like3-6.230 {
   SELECT * FROM t2 WHERE path LIKE 'a%';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)
+  `--SEARCH t2 USING INDEX t2path2 (path>? AND path<?)
 }
 do_eqp_test like3-6.240 {
   SELECT * FROM t2 WHERE path LIKE 'a%' ESCAPE '\';
 } {
   QUERY PLAN
-  `--SEARCH TABLE t2 USING INDEX t2path2 (path>? AND path<?)
+  `--SEARCH t2 USING INDEX t2path2 (path>? AND path<?)
 }
 }
 

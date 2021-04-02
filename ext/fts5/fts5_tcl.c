@@ -29,7 +29,9 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef SQLITE_DEBUG
 extern int sqlite3_fts5_may_be_corrupt;
+#endif
 extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
 extern int sqlite3Fts5TestRegisterTok(sqlite3*, fts5_api*);
 
@@ -1011,6 +1013,7 @@ static int SQLITE_TCLAPI f5tMayBeCorrupt(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifdef SQLITE_DEBUG
   int bOld = sqlite3_fts5_may_be_corrupt;
 
   if( objc!=2 && objc!=1 ){
@@ -1024,6 +1027,7 @@ static int SQLITE_TCLAPI f5tMayBeCorrupt(
   }
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(bOld));
+#endif
   return TCL_OK;
 }
 

@@ -330,7 +330,7 @@ do_execsql_test in4-6.1 {
 do_execsql_test in4-6.1-eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM t6a, t6b WHERE a=3 AND b IN (c);
-} {~/SCAN TABLE t6a/}
+} {~/SCAN t6a/}
 do_execsql_test in4-6.2 {
   SELECT * FROM t6a, t6b WHERE a=3 AND c IN (b);
 } {3 4 4 44}

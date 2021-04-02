@@ -402,7 +402,7 @@ do_eqp_test 3.4 {
     a = 4 AND b BETWEEN 20 AND 80           -- Matches 80 rows
       AND
     c BETWEEN 150 AND 160                   -- Matches 10 rows
-} {SEARCH TABLE t1 USING INDEX idx_c (c>? AND c<?)}
+} {SEARCH t1 USING INDEX idx_c (c>? AND c<?)}
 
 # This one should use index "idx_ab".
 do_eqp_test 3.5 {
@@ -410,7 +410,7 @@ do_eqp_test 3.5 {
     a = 5 AND b BETWEEN 20 AND 80           -- Matches 1 row
       AND
     c BETWEEN 150 AND 160                   -- Matches 10 rows
-} {SEARCH TABLE t1 USING INDEX idx_ab (a=? AND b>? AND b<?)}
+} {SEARCH t1 USING INDEX idx_ab (a=? AND b>? AND b<?)}
 
 ###########################################################################################
 
@@ -633,7 +633,7 @@ do_execsql_test 4.2 {
      AND px.cx_id = cx.cx_id
      AND px.px_tid = 0
      AND px.le_id = le.le_id;
-} {/.*SCAN TABLE cx.*SEARCH TABLE px.*SEARCH TABLE le.*/}
+} {/.*SCAN cx.*SEARCH px.*SEARCH le.*/}
 
 
 # The following test is derived from a performance problem reported from

@@ -89,13 +89,13 @@ ifcapable analyze {
     SELECT * FROM cnt, y1 WHERE i=a
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--MATERIALIZE xxxxxx
+    |--MATERIALIZE cnt
     |  |--SETUP
     |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
-    |     `--SCAN TABLE cnt
-    |--SCAN SUBQUERY xxxxxx
-    `--SEARCH TABLE y1 USING INDEX y1a (a=?)
+    |     `--SCAN cnt
+    |--SCAN cnt
+    `--SEARCH y1 USING INDEX y1a (a=?)
   }]
 
   do_eqp_test 3.1.3 {
@@ -103,13 +103,13 @@ ifcapable analyze {
     SELECT * FROM cnt, y1 WHERE i=a
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--MATERIALIZE xxxxxx
+    |--MATERIALIZE cnt
     |  |--SETUP
     |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
-    |     `--SCAN TABLE cnt
-    |--SCAN TABLE y1
-    `--SEARCH SUBQUERY xxxxxx USING AUTOMATIC COVERING INDEX (i=?)
+    |     `--SCAN cnt
+    |--SCAN y1
+    `--SEARCH cnt USING AUTOMATIC COVERING INDEX (i=?)
   }]
 }
 
@@ -125,17 +125,17 @@ do_eqp_test 3.2.2 {
      WHERE c.id=w2.pk AND c.id=w1.pk;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c
   |  |--SETUP
   |  |  |--SCAN CONSTANT ROW
   |  |  `--SCALAR SUBQUERY xxxxxx
-  |  |     `--SCAN TABLE w2
+  |  |     `--SCAN w2
   |  `--RECURSIVE STEP
-  |     |--SCAN TABLE w1
-  |     `--SCAN TABLE c
-  |--SCAN SUBQUERY xxxxxx
-  |--SEARCH TABLE w2 USING INTEGER PRIMARY KEY (rowid=?)
-  `--SEARCH TABLE w1 USING INTEGER PRIMARY KEY (rowid=?)
+  |     |--SCAN w1
+  |     `--SCAN c
+  |--SCAN c
+  |--SEARCH w2 USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH w1 USING INTEGER PRIMARY KEY (rowid=?)
 }
 
 do_execsql_test 4.0 {
@@ -207,15 +207,15 @@ do_eqp_test 5.1 {
   ORDER BY 1;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c
   |  |--SETUP
   |  |  `--SCAN CONSTANT ROW
   |  `--RECURSIVE STEP
-  |     `--SCAN TABLE c
-  |--SCAN SUBQUERY xxxxxx AS x1
-  |--SCAN SUBQUERY xxxxxx AS x2
-  |--SCAN SUBQUERY xxxxxx AS x3
-  |--SCAN SUBQUERY xxxxxx AS x4
+  |     `--SCAN c
+  |--SCAN x1
+  |--SCAN x2
+  |--SCAN x3
+  |--SCAN x4
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_execsql_test 5.2 {

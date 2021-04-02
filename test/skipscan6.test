@@ -179,13 +179,13 @@ do_execsql_test 3.0 {
 #
 do_eqp_test 3.1 {
   SELECT * FROM t3 WHERE a = ? AND c = ?
-} {SEARCH TABLE t3 USING INDEX t3_a (a=?)}
+} {SEARCH t3 USING INDEX t3_a (a=?)}
 
 # The same query on table t2. This should use index "t2_a", for the
 # same reason. At one point though, it was mistakenly using a skip-scan.
 #
 do_eqp_test 3.2 {
   SELECT * FROM t2 WHERE a = ? AND c = ?
-} {SEARCH TABLE t2 USING INDEX t2_a (a=?)}
+} {SEARCH t2 USING INDEX t2_a (a=?)}
 
 finish_test

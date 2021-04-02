@@ -1578,10 +1578,7 @@ struct sqlite3 {
     unsigned orphanTrigger : 1; /* Last statement is orphaned TEMP trigger */
     unsigned imposterTable : 1; /* Building an imposter table */
     unsigned reopenMemdb : 1;   /* ATTACH is really a reopen using MemDB */
-    unsigned bDropColumn : 1;   /* Doing schema check after DROP COLUMN */
     char **azInit;              /* "type", "name", and "tbl_name" columns */
-                                /*   or if bDropColumn, then azInit[0] is the */
-                                /*   name of the column being dropped */
   } init;
   int nVdbeActive;              /* Number of VDBEs currently running */
   int nVdbeRead;                /* Number of active VDBEs that read or write */
@@ -2162,9 +2159,7 @@ struct CollSeq {
 ** operator is NULL.  It is added to certain comparison operators to
 ** prove that the operands are always NOT NULL.
 */
-#define SQLITE_KEEPNULL     0x08  /* Used by vector == or <> */
 #define SQLITE_JUMPIFNULL   0x10  /* jumps if either operand is NULL */
-#define SQLITE_STOREP2      0x20  /* Store result in reg[P2] rather than jump */
 #define SQLITE_NULLEQ       0x80  /* NULL=NULL */
 #define SQLITE_NOTNULL      0x90  /* Assert that operands are never NULL */
 
@@ -2661,6 +2656,7 @@ struct AggInfo {
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iMem;                /* Memory location that acts as accumulator */
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
+    int iDistAddr;           /* Address of OP_OpenEphemeral */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   u32 selId;              /* Select to which this AggInfo belongs */
@@ -2933,6 +2929,7 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
+  int nAlloc;            /* Number of a[] slots allocated */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zEName;           /* Token associated with this expression */
@@ -4345,6 +4342,7 @@ Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprFunctionUsable(Parse*,Expr*,FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
+void sqlite3ExprDeferredDelete(Parse*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
@@ -4798,6 +4796,9 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3UpperToLower[];
+extern const unsigned char *sqlite3aLTb;
+extern const unsigned char *sqlite3aEQb;
+extern const unsigned char *sqlite3aGTb;
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
