@@ -184,4 +184,9 @@ do_catchsql_test 8.4 {
   INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE t1.a=t2.b) AS x;
 } {0 {3 40}}
 
+# dbsqlfuzz finds/crash-486f791cbe2dc45839310073e71367a1d8ad22dd
+do_catchsql_test 9.1 {
+  UPDATE pragma_encoding SET encoding='UTF-8' RETURNING a, b, *;
+} {1 {table pragma_encoding may not be modified}}
+
 finish_test
