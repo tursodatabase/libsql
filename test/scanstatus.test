@@ -45,8 +45,8 @@ proc do_scanstatus_test {tn res} {
 
 do_execsql_test 1.1 { SELECT count(*) FROM t1, t2; } 6
 do_scanstatus_test 1.2 {
-  nLoop 1 nVisit 2 nEst 1048576.0 zName t1 zExplain {SCAN TABLE t1}
-  nLoop 2 nVisit 6 nEst 1048576.0 zName t2 zExplain {SCAN TABLE t2}
+  nLoop 1 nVisit 2 nEst 1048576.0 zName t1 zExplain {SCAN t1}
+  nLoop 2 nVisit 6 nEst 1048576.0 zName t2 zExplain {SCAN t2}
 }
 
 do_execsql_test 1.3 {
@@ -54,8 +54,8 @@ do_execsql_test 1.3 {
   SELECT count(*) FROM t1, t2;
 } 6
 do_scanstatus_test 1.4 {
-  nLoop 1 nVisit 2 nEst 2.0 zName t1 zExplain {SCAN TABLE t1}
-  nLoop 2 nVisit 6 nEst 3.0 zName t2 zExplain {SCAN TABLE t2}
+  nLoop 1 nVisit 2 nEst 2.0 zName t1 zExplain {SCAN t1}
+  nLoop 2 nVisit 6 nEst 3.0 zName t2 zExplain {SCAN t2}
 }
 
 do_execsql_test 1.5 { ANALYZE }
@@ -64,8 +64,8 @@ do_execsql_test 1.6 {
 } 4
 do_scanstatus_test 1.7 {
   nLoop 1 nVisit 2 nEst 2.0 zName t2 zExplain 
-  {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid>?)}
-  nLoop 2 nVisit 4 nEst 2.0 zName t1 zExplain {SCAN TABLE t1}
+  {SEARCH t2 USING INTEGER PRIMARY KEY (rowid>?)}
+  nLoop 2 nVisit 4 nEst 2.0 zName t1 zExplain {SCAN t1}
 }
 
 do_execsql_test 1.8 {
@@ -74,8 +74,8 @@ do_execsql_test 1.8 {
 
 do_scanstatus_test 1.9 {
   nLoop 2 nVisit 4 nEst 2.0 zName t2 zExplain 
-  {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid>?)}
-  nLoop 4 nVisit 8 nEst 2.0 zName t1 zExplain {SCAN TABLE t1}
+  {SEARCH t2 USING INTEGER PRIMARY KEY (rowid>?)}
+  nLoop 4 nVisit 8 nEst 2.0 zName t1 zExplain {SCAN t1}
 }
 
 do_test 1.9 {
@@ -84,8 +84,8 @@ do_test 1.9 {
 
 do_scanstatus_test 1.10 {
   nLoop 0 nVisit 0 nEst 2.0 zName t2 zExplain 
-  {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid>?)}
-  nLoop 0 nVisit 0 nEst 2.0 zName t1 zExplain {SCAN TABLE t1}
+  {SEARCH t2 USING INTEGER PRIMARY KEY (rowid>?)}
+  nLoop 0 nVisit 0 nEst 2.0 zName t1 zExplain {SCAN t1}
 }
 
 #-------------------------------------------------------------------------
@@ -105,7 +105,7 @@ do_execsql_test 2.1 {
 
 do_scanstatus_test 2.2 {
   nLoop 1 nVisit 1 nEst 1.0 zName x1 
-  zExplain {SEARCH TABLE x1 USING INTEGER PRIMARY KEY (rowid=?)}
+  zExplain {SEARCH x1 USING INTEGER PRIMARY KEY (rowid=?)}
 }
 
 do_execsql_test 2.3.1 {
@@ -113,7 +113,7 @@ do_execsql_test 2.3.1 {
 } {2 two}
 do_scanstatus_test 2.3.2 {
   nLoop 1 nVisit 1 nEst 10.0 zName x1j 
-  zExplain {SEARCH TABLE x1 USING COVERING INDEX x1j (j=?)}
+  zExplain {SEARCH x1 USING COVERING INDEX x1j (j=?)}
 }
 
 do_execsql_test 2.4.1 {
@@ -121,7 +121,7 @@ do_execsql_test 2.4.1 {
 } {4 four 1 one 3 three}
 do_scanstatus_test 2.4.2 {
   nLoop 1 nVisit 3 nEst 262144.0 zName x1j 
-  zExplain {SEARCH TABLE x1 USING COVERING INDEX x1j (j<?)}
+  zExplain {SEARCH x1 USING COVERING INDEX x1j (j<?)}
 }
 
 do_execsql_test 2.5.1 {
@@ -129,7 +129,7 @@ do_execsql_test 2.5.1 {
 } {2 two}
 do_scanstatus_test 2.5.2 {
   nLoop 1 nVisit 1 nEst 262144.0 zName x1j 
-  zExplain {SEARCH TABLE x1 USING COVERING INDEX x1j (j>?)}
+  zExplain {SEARCH x1 USING COVERING INDEX x1j (j>?)}
 }
 
 do_execsql_test 2.6.1 {
@@ -137,7 +137,7 @@ do_execsql_test 2.6.1 {
 } {3 three 2 two}
 do_scanstatus_test 2.6.2 {
   nLoop 1 nVisit 2 nEst 16384.0 zName x1j 
-  zExplain {SEARCH TABLE x1 USING COVERING INDEX x1j (j>? AND j<?)}
+  zExplain {SEARCH x1 USING COVERING INDEX x1j (j>? AND j<?)}
 }
 
 do_execsql_test 2.7.1 {
@@ -150,7 +150,7 @@ do_execsql_test 2.7.1 {
 
 do_scanstatus_test 2.7.2 {
   nLoop 1 nVisit 2 nEst 16384.0 zName x2j 
-  zExplain {SEARCH TABLE x2 USING INDEX x2j (j>? AND j<?)}
+  zExplain {SEARCH x2 USING INDEX x2j (j>? AND j<?)}
 }
 
 do_execsql_test 2.8.1 {
@@ -158,7 +158,7 @@ do_execsql_test 2.8.1 {
 }
 do_scanstatus_test 2.8.2 {
   nLoop 1 nVisit 0 nEst 8.0 zName x2ij 
-  zExplain {SEARCH TABLE x2 USING INDEX x2ij (i=? AND j=?)}
+  zExplain {SEARCH x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
 do_execsql_test 2.9.1 {
@@ -166,7 +166,7 @@ do_execsql_test 2.9.1 {
 }
 do_scanstatus_test 2.9.2 {
   nLoop 1 nVisit 0 nEst 8.0 zName x2ij 
-  zExplain {SEARCH TABLE x2 USING INDEX x2ij (i=? AND j=?)}
+  zExplain {SEARCH x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
 do_execsql_test 2.10.1 {
@@ -174,7 +174,7 @@ do_execsql_test 2.10.1 {
 } {3 three {3 three}}
 do_scanstatus_test 2.10.2 {
   nLoop 1 nVisit 1 nEst 8.0 zName x2ij 
-  zExplain {SEARCH TABLE x2 USING INDEX x2ij (i=? AND j=?)}
+  zExplain {SEARCH x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
 #-------------------------------------------------------------------------
@@ -194,9 +194,9 @@ do_execsql_test 3.2.1 {
 } {4 13}
 do_scanstatus_test 3.2.2 {
   nLoop 1 nVisit 1 nEst 10.0 zName a1a 
-  zExplain {SEARCH TABLE a1 USING INDEX a1a (a=?)}
+  zExplain {SEARCH a1 USING INDEX a1a (a=?)}
   nLoop 1 nVisit 1 nEst 10.0 zName a1bc 
-  zExplain {SEARCH TABLE a1 USING INDEX a1bc (b=?)}
+  zExplain {SEARCH a1 USING INDEX a1bc (b=?)}
 }
 
 do_execsql_test 3.2.1 {
@@ -204,9 +204,9 @@ do_execsql_test 3.2.1 {
 } {30}
 do_scanstatus_test 3.2.2 {
   nLoop 1 nVisit 9 nEst 16384.0 zName a1a 
-  zExplain {SEARCH TABLE a1 USING INDEX a1a (a>? AND a<?)}
+  zExplain {SEARCH a1 USING INDEX a1a (a>? AND a<?)}
   nLoop 1 nVisit 21 nEst 16384.0 zName a1bc
-  zExplain {SEARCH TABLE a1 USING INDEX a1bc (b>? AND b<?)}
+  zExplain {SEARCH a1 USING INDEX a1bc (b>? AND b<?)}
 }
 
 do_execsql_test 3.3.1 {
@@ -215,9 +215,9 @@ do_execsql_test 3.3.1 {
 } {90}
 do_scanstatus_test 3.2.2 {
   nLoop 1 nVisit 10 nEst 16384.0 zName a1bc 
-  zExplain {SEARCH TABLE a1 AS y USING COVERING INDEX a1bc (b>? AND b<?)}
+  zExplain {SEARCH y USING COVERING INDEX a1bc (b>? AND b<?)}
   nLoop 10 nVisit 90 nEst 16384.0 zName a1a
-  zExplain {SEARCH TABLE a1 AS x USING COVERING INDEX a1a (a>? AND a<?)}
+  zExplain {SEARCH x USING COVERING INDEX a1a (a>? AND a<?)}
 }
 
 do_execsql_test 3.4.1 {
@@ -225,7 +225,7 @@ do_execsql_test 3.4.1 {
 } {4}
 do_scanstatus_test 3.4.2 {
   nLoop 1 nVisit 4 nEst 40.0 zName a1a 
-  zExplain {SEARCH TABLE a1 USING COVERING INDEX a1a (a=?)}
+  zExplain {SEARCH a1 USING COVERING INDEX a1a (a=?)}
 }
 
 do_execsql_test 3.4.1 {
@@ -233,7 +233,7 @@ do_execsql_test 3.4.1 {
 } {4}
 do_scanstatus_test 3.4.2 {
   nLoop 1 nVisit 4 nEst 4.0 zName a1
-  zExplain {SEARCH TABLE a1 USING INTEGER PRIMARY KEY (rowid=?)}
+  zExplain {SEARCH a1 USING INTEGER PRIMARY KEY (rowid=?)}
 }
 
 #-------------------------------------------------------------------------
@@ -266,9 +266,9 @@ do_execsql_test 4.2 {
 do_execsql_test    4.2.1 { DELETE FROM p1 WHERE x=4 }
 do_scanstatus_test 4.2.2 { 
   nLoop 1 nVisit 1 nEst 1.0 zName sqlite_autoindex_p1_1 
-  zExplain {SEARCH TABLE p1 USING INDEX sqlite_autoindex_p1_1 (x=?)}
+  zExplain {SEARCH p1 USING INDEX sqlite_autoindex_p1_1 (x=?)}
 
-  nLoop 1 nVisit 3 nEst 262144.0 zName c1 zExplain {SCAN TABLE c1}
+  nLoop 1 nVisit 3 nEst 262144.0 zName c1 zExplain {SCAN c1}
 }
 
 #-------------------------------------------------------------------------
@@ -313,9 +313,9 @@ do_execsql_test 5.1.1 {
 } {2}
 do_scanstatus_test 5.1.2 { 
   nLoop 1 nVisit 10 nEst 10.0 zName t1bc 
-  zExplain {SCAN TABLE t1 AS ii USING COVERING INDEX t1bc}
+  zExplain {SCAN ii USING COVERING INDEX t1bc}
   nLoop 1 nVisit 2 nEst 8.0 zName sqlite_autoindex_t1_1
-  zExplain {SEARCH TABLE t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
+  zExplain {SEARCH t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
 }
 
 do_execsql_test 5.2.1 {
@@ -323,51 +323,51 @@ do_execsql_test 5.2.1 {
 } {2}
 do_scanstatus_test 5.2.2 { 
   nLoop 1 nVisit 2 nEst 2.0 zName sqlite_autoindex_t1_1
-  zExplain {SEARCH TABLE t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
+  zExplain {SEARCH t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
 }
 
 do_eqp_test 5.3.1 {
   SELECT count(*) FROM t2 WHERE y = 'j';
-} {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+} {SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 do_execsql_test 5.3.2 {
   SELECT count(*) FROM t2 WHERE y = 'j';
 } {19}
 do_scanstatus_test 5.3.3 { 
   nLoop 1 nVisit 19 nEst 56.0 zName t2xy zExplain
-  {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+  {SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 }
 
 do_eqp_test 5.4.1 {
   SELECT count(*) FROM t1, t2 WHERE y = c;
 } {
   QUERY PLAN
-  |--SCAN TABLE t1 USING COVERING INDEX t1bc
-  `--SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)
+  |--SCAN t1 USING COVERING INDEX t1bc
+  `--SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)
 }
 do_execsql_test 5.4.2 {
   SELECT count(*) FROM t1, t2 WHERE y = c;
 } {200}
 do_scanstatus_test 5.4.3 { 
   nLoop 1 nVisit 10 nEst 10.0 zName t1bc 
-  zExplain {SCAN TABLE t1 USING COVERING INDEX t1bc}
+  zExplain {SCAN t1 USING COVERING INDEX t1bc}
   nLoop 10 nVisit 200 nEst 56.0 zName t2xy 
-  zExplain {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+  zExplain {SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 }
 
 do_eqp_test 5.5.1 {
   SELECT count(*) FROM t1, t3 WHERE y = c;
 } {
   QUERY PLAN
-  |--SCAN TABLE t3
-  `--SEARCH TABLE t1 USING AUTOMATIC COVERING INDEX (c=?)
+  |--SCAN t3
+  `--SEARCH t1 USING AUTOMATIC COVERING INDEX (c=?)
 }
 do_execsql_test 5.5.2 {
   SELECT count(*) FROM t1, t3 WHERE y = c;
 } {200}
 do_scanstatus_test 5.5.3 { 
-  nLoop 1 nVisit 501 nEst 480.0 zName t3 zExplain {SCAN TABLE t3}
+  nLoop 1 nVisit 501 nEst 480.0 zName t3 zExplain {SCAN t3}
   nLoop 501 nVisit 200 nEst 20.0 zName auto-index zExplain
-  {SEARCH TABLE t1 USING AUTOMATIC COVERING INDEX (c=?)}
+  {SEARCH t1 USING AUTOMATIC COVERING INDEX (c=?)}
 }
 
 #-------------------------------------------------------------------------
@@ -392,7 +392,7 @@ ifcapable fts3 {
   } {6}
   do_scanstatus_test 6.1.2 { 
     nLoop 1 nVisit 6 nEst 24.0 zName ft1 zExplain 
-    {SCAN TABLE ft1 VIRTUAL TABLE INDEX 3:}
+    {SCAN ft1 VIRTUAL TABLE INDEX 3:}
   }
 }
 

@@ -376,14 +376,18 @@ static int lookupName(
       if( pParse->pTriggerTab!=0 ){
         int op = pParse->eTriggerOp;
         assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
-        if( op!=TK_DELETE && zTab && sqlite3StrICmp("new",zTab) == 0 ){
+        if( pParse->bReturning ){
+          if( (pNC->ncFlags & NC_UBaseReg)!=0
+           && (zTab==0 || sqlite3StrICmp(zTab,pParse->pTriggerTab->zName)==0)
+          ){
+            pExpr->iTable = op!=TK_DELETE;
+            pTab = pParse->pTriggerTab;
+          }
+        }else if( op!=TK_DELETE && zTab && sqlite3StrICmp("new",zTab) == 0 ){
           pExpr->iTable = 1;
           pTab = pParse->pTriggerTab;
         }else if( op!=TK_INSERT && zTab && sqlite3StrICmp("old",zTab)==0 ){
           pExpr->iTable = 0;
-          pTab = pParse->pTriggerTab;
-        }else if( pParse->bReturning && (pNC->ncFlags & NC_UBaseReg)!=0 ){
-          pExpr->iTable = op!=TK_DELETE;
           pTab = pParse->pTriggerTab;
         }
       }
@@ -559,7 +563,6 @@ static int lookupName(
     assert( pExpr->op==TK_ID );
     if( ExprHasProperty(pExpr,EP_DblQuoted)
      && areDoubleQuotedStringsEnabled(db, pTopNC)
-     && (db->init.bDropColumn==0 || sqlite3StrICmp(zCol, db->init.azInit[0])!=0)
     ){
       /* If a double-quoted identifier does not match any known column name,
       ** then treat it as a string.
@@ -574,11 +577,6 @@ static int lookupName(
       ** Someday, I hope to get rid of this hack. Unfortunately there is
       ** a huge amount of legacy SQL that uses it. So for now, we just
       ** issue a warning.
-      **
-      ** 2021-03-15: ticket 1c24a659e6d7f3a1
-      ** Do not do the ID-to-STRING conversion when doing the schema
-      ** sanity check following a DROP COLUMN if the identifer name matches
-      ** the name of the column being dropped.
       */
       sqlite3_log(SQLITE_WARNING,
         "double-quoted string literal: \"%w\"", zCol);

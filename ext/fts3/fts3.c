@@ -326,7 +326,9 @@ int sqlite3Fts3Never(int b)  { assert( !b ); return b; }
 ** assert() conditions in the fts3 code are activated - conditions that are
 ** only true if it is guaranteed that the fts3 database is not corrupt.
 */
+#ifdef SQLITE_DEBUG
 int sqlite3_fts3_may_be_corrupt = 1;
+#endif
 
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].

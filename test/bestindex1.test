@@ -51,11 +51,11 @@ do_execsql_test 1.0 {
 
 do_eqp_test 1.1 {
   SELECT * FROM x1 WHERE a = 'abc'
-} {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
+} {SCAN x1 VIRTUAL TABLE INDEX 555:eq!}
 
 do_eqp_test 1.2 {
   SELECT * FROM x1 WHERE a IN ('abc', 'def');
-} {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
+} {SCAN x1 VIRTUAL TABLE INDEX 555:eq!}
 
 #-------------------------------------------------------------------------
 #
@@ -141,17 +141,17 @@ foreach {tn mode} {
 
   set plan(use) {
     QUERY PLAN
-    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
+    |--SCAN t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
     `--USE TEMP B-TREE FOR ORDER BY
   }
   set plan(omit) {
     QUERY PLAN
-    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
+    |--SCAN t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
     `--USE TEMP B-TREE FOR ORDER BY
   }
   set plan(use2) {
     QUERY PLAN
-    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x
+    |--SCAN t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x
     `--USE TEMP B-TREE FOR ORDER BY
   }
 

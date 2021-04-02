@@ -137,4 +137,3 @@ foreach {tn create_table} {
 }
 
 finish_test
-

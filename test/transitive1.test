@@ -344,13 +344,13 @@ do_execsql_test transitive1-560 {
 do_execsql_test transitive1-560eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM c1 WHERE x=y AND y=z AND z='abc';
-} {/SCAN TABLE c1/}
+} {/SCAN c1/}
 do_execsql_test transitive1-570 {
   SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
 } {}
 do_execsql_test transitive1-570eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
-} {/SEARCH TABLE c1 USING INDEX c1x/}
+} {/SEARCH c1 USING INDEX c1x/}
 
 finish_test

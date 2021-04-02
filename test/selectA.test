@@ -1339,10 +1339,10 @@ do_eqp_test 4.1.2 {
   QUERY PLAN
   `--MERGE (UNION ALL)
      |--LEFT
-     |  |--SCAN TABLE t5 USING INDEX i2
+     |  |--SCAN t5 USING INDEX i2
      |  `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
      `--RIGHT
-        |--SCAN TABLE t4 USING INDEX i1
+        |--SCAN t4 USING INDEX i1
         `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
 }
 

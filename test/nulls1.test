@@ -184,7 +184,7 @@ do_eqp_test 5.3 {
   SELECT * FROM t4 WHERE a IN (1, 2, 3) ORDER BY a, b NULLS LAST
 } {
   QUERY PLAN
-  `--SEARCH TABLE t4 USING INDEX t4ab (a=?)
+  `--SEARCH t4 USING INDEX t4ab (a=?)
 }
 
 do_execsql_test 5.4 {
@@ -198,7 +198,7 @@ do_eqp_test 5.5 {
   SELECT * FROM t4 WHERE a IN (1, 2, 3) ORDER BY a DESC, b DESC NULLS FIRST
 } {
   QUERY PLAN
-  `--SEARCH TABLE t4 USING INDEX t4ab (a=?)
+  `--SEARCH t4 USING INDEX t4ab (a=?)
 }
 
 #-------------------------------------------------------------------------
@@ -224,7 +224,7 @@ do_eqp_test 6.1.2 {
   SELECT a,b FROM t5 WHERE a=1 ORDER BY b NULLS LAST, c;
 } {
   QUERY PLAN
-  `--SEARCH TABLE t5 USING COVERING INDEX t5ab (a=?)
+  `--SEARCH t5 USING COVERING INDEX t5ab (a=?)
 }
 do_execsql_test 6.2.1 {
   SELECT a,b FROM t5 WHERE a=1 ORDER BY b DESC NULLS FIRST, c DESC 
@@ -233,7 +233,7 @@ do_eqp_test 6.2.2 {
   SELECT a,b FROM t5 WHERE a=1 ORDER BY b DESC NULLS FIRST, c DESC 
 } {
   QUERY PLAN
-  `--SEARCH TABLE t5 USING COVERING INDEX t5ab (a=?)
+  `--SEARCH t5 USING COVERING INDEX t5ab (a=?)
 }
 
 #-------------------------------------------------------------------------
@@ -294,7 +294,7 @@ do_execsql_test 9.3 {
 do_eqp_test 9.4 {
   SELECT c1, c2, ifnull(c3, 'NULL') FROM v0 
   WHERE c2=10 ORDER BY c1, c3 NULLS LAST
-} {SEARCH TABLE v0 USING COVERING INDEX v3 (ANY(c1) AND c2=?)}
+} {SEARCH v0 USING COVERING INDEX v3 (ANY(c1) AND c2=?)}
 
 
 # 2020-03-01 ticket e12a0ae526bb51c7

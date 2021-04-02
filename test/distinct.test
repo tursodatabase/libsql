@@ -30,12 +30,11 @@ proc is_distinct_noop {sql} {
   set program1 [list]
   set program2 [list]
   db eval "EXPLAIN $sql1" {
-    if {$opcode != "Noop"} { lappend program1 $opcode }
+    if {$opcode != "Noop" && $opcode != "Explain"} { lappend program1 $opcode }
   }
   db eval "EXPLAIN $sql2" {
-    if {$opcode != "Noop"} { lappend program2 $opcode }
+    if {$opcode != "Noop" && $opcode != "Explain"} { lappend program2 $opcode }
   }
-
   return [expr {$program1==$program2}]
 }
 

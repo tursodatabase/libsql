@@ -212,25 +212,25 @@ do_eqp_test count-7.2 {
   SELECT count(1) FROM t1;
 } {
   QUERY PLAN
-  `--SCAN TABLE t1 USING COVERING INDEX t1b
+  `--SCAN t1 USING COVERING INDEX t1b
 }
 do_eqp_test count-7.3 {
   SELECT count(1) FROM t1 NOT INDEXED
 } {
   QUERY PLAN
-  `--SCAN TABLE t1
+  `--SCAN t1
 }
 do_eqp_test count-7.3 {
   SELECT count(*) FROM t1;
 } {
   QUERY PLAN
-  `--SCAN TABLE t1 USING COVERING INDEX t1b
+  `--SCAN t1 USING COVERING INDEX t1b
 }
 do_eqp_test count-7.4 {
   SELECT count(*) FROM t1 NOT INDEXED
 } {
   QUERY PLAN
-  `--SCAN TABLE t1
+  `--SCAN t1
 }
 
 
