@@ -6514,6 +6514,42 @@ static int SQLITE_TCLAPI file_control_tempfilename(
   return TCL_OK;  
 }
 
+/*
+** tclcmd:   file_control_external_reader DB ?AUXDB?
+**
+** Return a string that is a temporary filename
+*/
+static int SQLITE_TCLAPI file_control_external_reader(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zName = "main";
+  int iRes = 0;
+  int rc = SQLITE_OK;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 ){
+    zName = Tcl_GetString(objv[2]);
+  }
+  rc = sqlite3_file_control(db, zName, SQLITE_FCNTL_EXTERNAL_READER, &iRes);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iRes));
+  return TCL_OK;
+}
+
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -8452,6 +8488,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_vfsname",        file_control_vfsname,         0   },
      { "file_control_reservebytes",   file_control_reservebytes,    0   },
      { "file_control_tempfilename",   file_control_tempfilename,    0   },
+     { "file_control_external_reader",   file_control_external_reader,    0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
 
