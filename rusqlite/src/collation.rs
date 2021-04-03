@@ -130,7 +130,7 @@ impl InnerConnection {
                 let conn = Connection::from_handle(arg2).unwrap();
                 let collation_name = {
                     let c_slice = CStr::from_ptr(arg3).to_bytes();
-                    str::from_utf8(c_slice).expect("illegal coallation sequence name")
+                    str::from_utf8(c_slice).expect("illegal collation sequence name")
                 };
                 callback(&conn, collation_name)
             });
