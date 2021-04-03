@@ -35,7 +35,8 @@ impl ValueRef<'_> {
 
 impl<'a> ValueRef<'a> {
     /// If `self` is case `Integer`, returns the integral value. Otherwise,
-    /// returns [`Err(Error::InvalidColumnType)`](crate::Error::InvalidColumnType).
+    /// returns [`Err(Error::InvalidColumnType)`](crate::Error::
+    /// InvalidColumnType).
     #[inline]
     pub fn as_i64(&self) -> FromSqlResult<i64> {
         match *self {
@@ -45,7 +46,8 @@ impl<'a> ValueRef<'a> {
     }
 
     /// If `self` is case `Real`, returns the floating point value. Otherwise,
-    /// returns [`Err(Error::InvalidColumnType)`](crate::Error::InvalidColumnType).
+    /// returns [`Err(Error::InvalidColumnType)`](crate::Error::
+    /// InvalidColumnType).
     #[inline]
     pub fn as_f64(&self) -> FromSqlResult<f64> {
         match *self {

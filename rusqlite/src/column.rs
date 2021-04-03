@@ -25,6 +25,10 @@ impl Column<'_> {
 
 impl Statement<'_> {
     /// Get all the column names in the result set of the prepared statement.
+    ///
+    /// If associated DB schema can be altered concurrently, you should make
+    /// sure that current statement has already been stepped once before
+    /// calling this method.
     pub fn column_names(&self) -> Vec<&str> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
@@ -37,11 +41,34 @@ impl Statement<'_> {
 
     /// Return the number of columns in the result set returned by the prepared
     /// statement.
+    ///
+    /// If associated DB schema can be altered concurrently, you should make
+    /// sure that current statement has already been stepped once before
+    /// calling this method.
     #[inline]
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
+    /// Check that column name reference lifetime is limited:
+    /// https://www.sqlite.org/c3ref/column_name.html
+    /// > The returned string pointer is valid...
+    ///
+    /// `column_name` reference can become invalid if `stmt` is reprepared
+    /// (because of schema change) when `query_row` is called. So we assert
+    /// that a compilation error happens if this reference is kept alive:
+    /// ```compile_fail
+    /// use rusqlite::{Connection, Result};
+    /// fn main() -> Result<()> {
+    ///     let db = Connection::open_in_memory()?;
+    ///     let mut stmt = db.prepare("SELECT 1 as x")?;
+    ///     let column_name = stmt.column_name(0)?;
+    ///     let x = stmt.query_row([], |r| r.get::<_, i64>(0))?; // E0502
+    ///     assert_eq!(1, x);
+    ///     assert_eq!("x", column_name);
+    ///     Ok(())
+    /// }
+    /// ```
     #[inline]
     pub(super) fn column_name_unwrap(&self, col: usize) -> &str {
         // Just panic if the bounds are wrong for now, we never call this
@@ -51,6 +78,10 @@ impl Statement<'_> {
 
     /// Returns the name assigned to a particular column in the result set
     /// returned by the prepared statement.
+    ///
+    /// If associated DB schema can be altered concurrently, you should make
+    /// sure that current statement has already been stepped once before
+    /// calling this method.
     ///
     /// ## Failure
     ///
@@ -73,6 +104,10 @@ impl Statement<'_> {
     /// If there is no AS clause then the name of the column is unspecified and
     /// may change from one release of SQLite to the next.
     ///
+    /// If associated DB schema can be altered concurrently, you should make
+    /// sure that current statement has already been stepped once before
+    /// calling this method.
+    ///
     /// # Failure
     ///
     /// Will return an `Error::InvalidColumnName` when there is no column with
@@ -92,6 +127,10 @@ impl Statement<'_> {
     }
 
     /// Returns a slice describing the columns of the result of the query.
+    ///
+    /// If associated DB schema can be altered concurrently, you should make
+    /// sure that current statement has already been stepped once before
+    /// calling this method.
     #[cfg(feature = "column_decltype")]
     pub fn columns(&self) -> Vec<Column> {
         let n = self.column_count();
@@ -232,6 +271,26 @@ mod test {
                 panic!("Unexpected error type: {:?}", e);
             }
         }
+        Ok(())
+    }
+
+    /// `column_name` reference should stay valid until `stmt` is reprepared (or
+    /// reset) even if DB schema is altered (SQLite documentation is
+    /// ambiguous here because it says reference "is valid until (...) the next
+    /// call to sqlite3_column_name() or sqlite3_column_name16() on the same
+    /// column.". We assume that reference is valid if only `sqlite3_column_name()` is used):
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn test_column_name_reference() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE y (x);")?;
+        let stmt = db.prepare("SELECT x FROM y;")?;
+        let column_name = stmt.column_name(0)?;
+        assert_eq!("x", column_name);
+        db.execute_batch("ALTER TABLE y RENAME COLUMN x TO z;")?;
+        // column name is not refreshed until statement is re-prepared
+        let same_column_name = stmt.column_name(0)?;
+        assert_eq!(same_column_name, column_name);
         Ok(())
     }
 }

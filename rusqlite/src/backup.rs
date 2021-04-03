@@ -3,9 +3,10 @@
 //! To create a [`Backup`], you must have two distinct [`Connection`]s - one
 //! for the source (which can be used while the backup is running) and one for
 //! the destination (which cannot).  A [`Backup`] handle exposes three methods:
-//! [`step`](Backup::step) will attempt to back up a specified number of pages, [`progress`](Backup::progress) gets
-//! the current progress of the backup as of the last call to [`step`](Backup::step), and
-//! [`run_to_completion`](Backup::run_to_completion) will attempt to back up the entire source database,
+//! [`step`](Backup::step) will attempt to back up a specified number of pages,
+//! [`progress`](Backup::progress) gets the current progress of the backup as of
+//! the last call to [`step`](Backup::step), and [`run_to_completion`](Backup::run_to_completion)
+//! will attempt to back up the entire source database,
 //! allowing you to specify how many pages are backed up at a time and how long
 //! the thread should sleep between chunks of pages.
 //!
@@ -130,7 +131,8 @@ impl Connection {
     }
 }
 
-/// `feature = "backup"` Possible successful results of calling [`Backup::step`].
+/// `feature = "backup"` Possible successful results of calling
+/// [`Backup::step`].
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum StepResult {
@@ -152,9 +154,10 @@ pub enum StepResult {
 
 /// `feature = "backup"` Struct specifying the progress of a backup. The
 /// percentage completion can be calculated as `(pagecount - remaining) /
-/// pagecount`. The progress of a backup is as of the last call to [`step`](Backup::step) - if
-/// the source database is modified after a call to [`step`](Backup::step), the progress value
-/// will become outdated and potentially incorrect.
+/// pagecount`. The progress of a backup is as of the last call to
+/// [`step`](Backup::step) - if the source database is modified after a call to
+/// [`step`](Backup::step), the progress value will become outdated and
+/// potentially incorrect.
 #[derive(Copy, Clone, Debug)]
 pub struct Progress {
     /// Number of pages in the source database that still need to be backed up.
@@ -225,7 +228,8 @@ impl Backup<'_, '_> {
         })
     }
 
-    /// Gets the progress of the backup as of the last call to [`step`](Backup::step).
+    /// Gets the progress of the backup as of the last call to
+    /// [`step`](Backup::step).
     #[inline]
     pub fn progress(&self) -> Progress {
         unsafe {
@@ -240,7 +244,8 @@ impl Backup<'_, '_> {
     /// negative, will attempt to back up all remaining pages. This will hold a
     /// lock on the source database for the duration, so it is probably not
     /// what you want for databases that are currently active (see
-    /// [`run_to_completion`](Backup::run_to_completion) for a better alternative).
+    /// [`run_to_completion`](Backup::run_to_completion) for a better
+    /// alternative).
     ///
     /// # Failure
     ///
@@ -262,12 +267,12 @@ impl Backup<'_, '_> {
         }
     }
 
-    /// Attempts to run the entire backup. Will call [`step(pages_per_step)`](Backup::step) as
-    /// many times as necessary, sleeping for `pause_between_pages` between
-    /// each call to give the source database time to process any pending
-    /// queries. This is a direct implementation of "Example 2: Online Backup
-    /// of a Running Database" from [SQLite's Online Backup API
-    /// documentation](https://www.sqlite.org/backup.html).
+    /// Attempts to run the entire backup. Will call
+    /// [`step(pages_per_step)`](Backup::step) as many times as necessary,
+    /// sleeping for `pause_between_pages` between each call to give the
+    /// source database time to process any pending queries. This is a
+    /// direct implementation of "Example 2: Online Backup of a Running
+    /// Database" from [SQLite's Online Backup API documentation](https://www.sqlite.org/backup.html).
     ///
     /// If `progress` is not `None`, it will be called after each step with the
     /// current progress of the backup. Note that is possible the progress may
@@ -276,7 +281,8 @@ impl Backup<'_, '_> {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if any of the calls to [`step`](Backup::step) return `Err`.
+    /// Will return `Err` if any of the calls to [`step`](Backup::step) return
+    /// `Err`.
     pub fn run_to_completion(
         &self,
         pages_per_step: c_int,

@@ -63,7 +63,8 @@ pub struct StatementCache(RefCell<LruCache<Arc<str>, RawStatement>>);
 /// Cacheable statement.
 ///
 /// Statement will return automatically to the cache by default.
-/// If you want the statement to be discarded, call [`discard()`](CachedStatement::discard) on it.
+/// If you want the statement to be discarded, call
+/// [`discard()`](CachedStatement::discard) on it.
 pub struct CachedStatement<'conn> {
     stmt: Option<Statement<'conn>>,
     cache: &'conn StatementCache,

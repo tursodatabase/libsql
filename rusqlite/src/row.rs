@@ -29,7 +29,8 @@ impl<'stmt> Rows<'stmt> {
     /// This interface is not compatible with Rust's `Iterator` trait, because
     /// the lifetime of the returned row is tied to the lifetime of `self`.
     /// This is a fallible "streaming iterator". For a more natural interface,
-    /// consider using [`query_map`](crate::Statement::query_map) or [`query_and_then`](crate::Statement::query_and_then) instead, which
+    /// consider using [`query_map`](crate::Statement::query_map) or
+    /// [`query_and_then`](crate::Statement::query_and_then) instead, which
     /// return types that implement `Iterator`.
     #[allow(clippy::should_implement_trait)] // cannot implement Iterator
     #[inline]
@@ -331,8 +332,8 @@ impl<'stmt> Row<'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if calling [`row.get_ref(idx)`](Row::get_ref) would return an error,
-    /// including:
+    /// Panics if calling [`row.get_ref(idx)`](Row::get_ref) would return an
+    /// error, including:
     ///
     /// * If `idx` is outside the range of columns in the returned query.
     /// * If `idx` is not a valid column name for this row.

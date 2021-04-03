@@ -3,7 +3,8 @@ use super::{Null, Type};
 /// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
 /// dictated by SQLite (not by the caller).
 ///
-/// See [`ValueRef`](crate::types::ValueRef) for a non-owning dynamic type value.
+/// See [`ValueRef`](crate::types::ValueRef) for a non-owning dynamic type
+/// value.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.

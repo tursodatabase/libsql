@@ -97,7 +97,8 @@ impl InnerConnection {
             )
         };
         let res = self.decode_result(r);
-        // The xDestroy callback is not called if the sqlite3_create_collation_v2() function fails.
+        // The xDestroy callback is not called if the sqlite3_create_collation_v2()
+        // function fails.
         if res.is_err() {
             drop(unsafe { Box::from_raw(boxed_f) });
         }

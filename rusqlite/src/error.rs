@@ -43,7 +43,8 @@ pub enum Error {
     /// Error converting a file path to a string.
     InvalidPath(PathBuf),
 
-    /// Error returned when an [`execute`](crate::Connection::execute) call returns rows.
+    /// Error returned when an [`execute`](crate::Connection::execute) call
+    /// returns rows.
     ExecuteReturnedResults,
 
     /// Error when a query that was expected to return at least one row (e.g.,
@@ -67,12 +68,13 @@ pub enum Error {
     /// any or insert many.
     StatementChangedRows(usize),
 
-    /// Error returned by [`functions::Context::get`](crate::functions::Context::get) when the function argument
-    /// cannot be converted to the requested type.
+    /// Error returned by
+    /// [`functions::Context::get`](crate::functions::Context::get) when the
+    /// function argument cannot be converted to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType(usize, Type),
-    /// Error returned by [`vtab::Values::get`](crate::vtab::Values::get) when the filter argument cannot
-    /// be converted to the requested type.
+    /// Error returned by [`vtab::Values::get`](crate::vtab::Values::get) when
+    /// the filter argument cannot be converted to the requested type.
     #[cfg(feature = "vtab")]
     InvalidFilterParameterType(usize, Type),
 
@@ -82,7 +84,8 @@ pub enum Error {
     #[allow(dead_code)]
     UserFunctionError(Box<dyn error::Error + Send + Sync + 'static>),
 
-    /// Error available for the implementors of the [`ToSql`](crate::types::ToSql) trait.
+    /// Error available for the implementors of the
+    /// [`ToSql`](crate::types::ToSql) trait.
     ToSqlConversionFailure(Box<dyn error::Error + Send + Sync + 'static>),
 
     /// Error when the SQL is not a `SELECT`, is not read-only.
@@ -98,8 +101,10 @@ pub enum Error {
     #[cfg(feature = "functions")]
     UnwindingPanic,
 
-    /// An error returned when [`Context::get_aux`](crate::functions::Context::get_aux) attempts to retrieve data
-    /// of a different type than what had been stored using [`Context::set_aux`](crate::functions::Context::set_aux).
+    /// An error returned when
+    /// [`Context::get_aux`](crate::functions::Context::get_aux) attempts to
+    /// retrieve data of a different type than what had been stored using
+    /// [`Context::set_aux`](crate::functions::Context::set_aux).
     #[cfg(feature = "functions")]
     GetAuxWrongType,
 

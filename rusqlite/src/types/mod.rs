@@ -15,9 +15,11 @@
 //! [`FromSql`] has different behaviour depending on the SQL and Rust types, and
 //! the value.
 //!
-//! * `INTEGER` to integer: returns an [`Error::IntegralValueOutOfRange`](crate::Error::IntegralValueOutOfRange) error if
-//!   the value does not fit in the Rust type.
-//! * `REAL` to integer: always returns an [`Error::InvalidColumnType`](crate::Error::InvalidColumnType) error.
+//! * `INTEGER` to integer: returns an
+//!   [`Error::IntegralValueOutOfRange`](crate::Error::IntegralValueOutOfRange)
+//!   error if the value does not fit in the Rust type.
+//! * `REAL` to integer: always returns an
+//!   [`Error::InvalidColumnType`](crate::Error::InvalidColumnType) error.
 //! * `INTEGER` to float: casts using `as` operator. Never fails.
 //! * `REAL` to float: casts using `as` operator. Never fails.
 //!
@@ -62,8 +64,8 @@ impl ToSql for DateTimeSql {
 "##
 )]
 //! [`ToSql`] and [`FromSql`] are also implemented for `Option<T>` where `T`
-//! implements [`ToSql`] or [`FromSql`] for the cases where you want to know if a
-//! value was NULL (which gets translated to `None`).
+//! implements [`ToSql`] or [`FromSql`] for the cases where you want to know if
+//! a value was NULL (which gets translated to `None`).
 
 pub use self::from_sql::{FromSql, FromSqlError, FromSqlResult};
 pub use self::to_sql::{ToSql, ToSqlOutput};
