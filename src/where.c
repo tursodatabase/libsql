@@ -5025,9 +5025,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Attempt to omit tables from the join that do not affect the result.
   ** For a table to not affect the result, the following must be true:
   **
-  **   1) The query must not be an aggregate. Or it must be an aggregate
-  **      that contains only one aggregate function with the DISTINCT 
-  **      qualifier. e.g. "SELECT count(DISTINCT ...) FROM".
+  **   1) The query must not be an aggregate.
   **   2) The table must be the RHS of a LEFT JOIN.
   **   3) Either the query must be DISTINCT, or else the ON or USING clause
   **      must contain a constraint that limits the scan of the table to 
@@ -5055,7 +5053,8 @@ WhereInfo *sqlite3WhereBegin(
   */
   notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2
-   && pResultSet!=0               /* guarantees condition (1) above */
+   && pResultSet!=0                         /* these two combine to guarantee */
+   && 0==(wctrlFlags & WHERE_AGG_DISTINCT)  /* condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
     int i;
