@@ -101,9 +101,9 @@ impl FromSql for DateTime<Utc> {
             let s = value.as_str()?;
 
             let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
-                "%FT%T%.f%:z"
+                "%FT%T%.f%#z"
             } else {
-                "%F %T%.f%:z"
+                "%F %T%.f%#z"
             };
 
             if let Ok(dt) = DateTime::parse_from_str(s, fmt) {
@@ -127,7 +127,10 @@ impl FromSql for DateTime<Local> {
 
 #[cfg(test)]
 mod test {
-    use crate::{Connection, Result};
+    use crate::{
+        types::{FromSql, ValueRef},
+        Connection, Result,
+    };
     use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
     fn checked_memory_handle() -> Result<Connection> {
@@ -260,5 +263,11 @@ mod test {
         let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now()], |r| r.get(0));
         assert!(result.is_ok());
         Ok(())
+    }
+
+    #[test]
+    fn test_lenient_parse_timezone() {
+        assert!(DateTime::<Utc>::column_result(ValueRef::Text(b"1970-01-01T00:00:00Z")).is_ok());
+        assert!(DateTime::<Utc>::column_result(ValueRef::Text(b"1970-01-01T00:00:00+00")).is_ok());
     }
 }
