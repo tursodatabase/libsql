@@ -733,6 +733,7 @@ static int sqlite3Prepare(
   }
   if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM_BKPT;
+    sParse.checkSchema = 0;
   }
   if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE ){
     if( sParse.checkSchema ){

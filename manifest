@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sin\shandling\squeries\sof\sthe\sform\s"SELECT\saggregate(DISTINCT\stbl.col)\sFROM\s...\sLEFT\sJOIN\stbl\s...".\sFixes\sa\sproblem\sintroduced\sby\s[ef4ac0ddd297bbd3].
-D 2021-04-03T19:23:59.990
+C Take\scare\snot\sto\schange\san\sSQLITE_NOMEM\serror\sinto\sSQLITE_SCHEMA.
+D 2021-04-03T20:35:08.732
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
-F src/prepare.c e21b54489b5c73b06ada15e6fc79b5c6f64b06701924a6ca98944ae59e06256f
+F src/prepare.c dd46de641753035c8a62a83c1886929afd068a786164384fb687ec6df1d03957
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c fc136d935f19966747663bed605ad7f06f84f9fe7bf7bf79e9bf844ef5c7556d
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 778a9a6e6f8d960fd55ac9be7eea20b1875a46192db85e63dddc61b632b30173
-R 8e7491f95f5def69f8f53350692c8afa
-U dan
-Z 2396774cc48a628f8ba66378b6a8f6cc
+P 0dcf808ddf23da834da724d88b1715ed06565f1f1290713ff42a3fcf6ffb802e
+R 1cf9e495012dc3b357688e52007fdf07
+U drh
+Z 6b0560fcd580bcc9ef028068848073f8
