@@ -69,7 +69,11 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
       ){
         pTrig->pNext = pList;
         pList = pTrig;
-      }else if( pTrig->op==TK_RETURNING && pParse->db->pVtabCtx==0 ){
+      }else if( pTrig->op==TK_RETURNING
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+                && pParse->db->pVtabCtx==0
+#endif
+                ){
         assert( pParse->bReturning );
         assert( &(pParse->u1.pReturning->retTrig) == pTrig );
         pTrig->table = pTab->zName;

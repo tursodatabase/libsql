@@ -1,5 +1,5 @@
-C Make\sshell\s.parameter\sfeature\stype-agnostic.\sHush\sharmless\scompiler\swarning.
-D 2021-04-04T12:52:58.015
+C Avoid\scompile\serror\swhen\sSQLITE_OMIT_VIRTUALTABLE\sdefined.
+D 2021-04-04T14:22:02.952
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 0b9c82fa628b5adce93e2bcaf935a24d43eb83344fb51551f7835526d0693fc4
 F src/treeview.c 70f57a2b77e20b354724ea69b8ed1ea1df946c48296d695320c741c7d174be90
-F src/trigger.c 28f439bb454a46ba191817c8c5b6468f7ef236233b14155fd3b10c12bc6f868e
+F src/trigger.c 9ef94b525f283397f69290989eb53e2c620686e68da46fb7115fa4ca87649d9c
 F src/update.c 0f5a61f0787199983530a33f6fffe4f52742f35fcdf6ccfad1078b1a8bc17723
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35ff7cbf547d41109b7cd4217a5439b3b4a1a4c310309c572c88f596fbc1b099
-R 6c0bb533f4343f80560612636080c44c
+P 35cf295e026d067c9f059fde6b150e65163fe171d37501eb1e5742e691793340
+R b6856395b3d64a18c31c1a89e8403e8e
 U larrybr
-Z bcadad631b54c620265da7d8ff025bfa
+Z 6e18e0790944042125cd753bd1390b1e
