@@ -5394,7 +5394,9 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
     for(ii=0; ii<pCur->iPage; ii++){
       assert( pCur->aiIdx[ii]==pCur->apPage[ii]->nCell );
     }
-    assert( pCur->ix==pCur->pPage->nCell-1 );
+    assert( pCur->ix==pCur->pPage->nCell-1 || CORRUPT_DB );
+    testcase( pCur->ix!=pCur->pPage->nCell-1 );
+    /* ^-- dbsqlfuzz b92b72e4de80b5140c30ab71372ca719b8feb618 */
     assert( pCur->pPage->leaf );
 #endif
     *pRes = 0;
