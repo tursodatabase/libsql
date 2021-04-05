@@ -7326,7 +7326,7 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
           assert( rc==SQLITE_OK );
           rc = pagerLockDb(pPager, RESERVED_LOCK);
         }
-        if( rc==SQLITE_OK ){
+        if( rc==SQLITE_OK && pPager->pVfs->xDelete!=0 ){
           sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
         }
         if( rc==SQLITE_OK && state==PAGER_READER ){
