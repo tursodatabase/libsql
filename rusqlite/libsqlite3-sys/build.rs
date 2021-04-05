@@ -393,32 +393,32 @@ mod bindings {
         if cfg!(all(windows, feature = "winsqlite3")) {
             bindings = bindings
                 .clang_arg("-DBINDGEN_USE_WINSQLITE3")
-                .blacklist_item("NTDDI_.+")
-                .blacklist_item("WINAPI_FAMILY.*")
-                .blacklist_item("_WIN32_.+")
-                .blacklist_item("_VCRT_COMPILER_PREPROCESSOR")
-                .blacklist_item("_SAL_VERSION")
-                .blacklist_item("__SAL_H_VERSION")
-                .blacklist_item("_USE_DECLSPECS_FOR_SAL")
-                .blacklist_item("_USE_ATTRIBUTES_FOR_SAL")
-                .blacklist_item("_CRT_PACKING")
-                .blacklist_item("_HAS_EXCEPTIONS")
-                .blacklist_item("_STL_LANG")
-                .blacklist_item("_HAS_CXX17")
-                .blacklist_item("_HAS_CXX20")
-                .blacklist_item("_HAS_NODISCARD")
-                .blacklist_item("WDK_NTDDI_VERSION")
-                .blacklist_item("OSVERSION_MASK")
-                .blacklist_item("SPVERSION_MASK")
-                .blacklist_item("SUBVERSION_MASK")
-                .blacklist_item("WINVER")
-                .blacklist_item("__security_cookie")
-                .blacklist_type("size_t")
-                .blacklist_type("__vcrt_bool")
-                .blacklist_type("wchar_t")
-                .blacklist_function("__security_init_cookie")
-                .blacklist_function("__report_gsfailure")
-                .blacklist_function("__va_start");
+                .blocklist_item("NTDDI_.+")
+                .blocklist_item("WINAPI_FAMILY.*")
+                .blocklist_item("_WIN32_.+")
+                .blocklist_item("_VCRT_COMPILER_PREPROCESSOR")
+                .blocklist_item("_SAL_VERSION")
+                .blocklist_item("__SAL_H_VERSION")
+                .blocklist_item("_USE_DECLSPECS_FOR_SAL")
+                .blocklist_item("_USE_ATTRIBUTES_FOR_SAL")
+                .blocklist_item("_CRT_PACKING")
+                .blocklist_item("_HAS_EXCEPTIONS")
+                .blocklist_item("_STL_LANG")
+                .blocklist_item("_HAS_CXX17")
+                .blocklist_item("_HAS_CXX20")
+                .blocklist_item("_HAS_NODISCARD")
+                .blocklist_item("WDK_NTDDI_VERSION")
+                .blocklist_item("OSVERSION_MASK")
+                .blocklist_item("SPVERSION_MASK")
+                .blocklist_item("SUBVERSION_MASK")
+                .blocklist_item("WINVER")
+                .blocklist_item("__security_cookie")
+                .blocklist_type("size_t")
+                .blocklist_type("__vcrt_bool")
+                .blocklist_type("wchar_t")
+                .blocklist_function("__security_init_cookie")
+                .blocklist_function("__report_gsfailure")
+                .blocklist_function("__va_start");
         }
 
         // When cross compiling unless effort is taken to fix the issue, bindgen
@@ -440,14 +440,14 @@ mod bindings {
         if generating_bundled_bindings() || is_cross_compiling {
             // Get rid of va_list, as it's not
             bindings = bindings
-                .blacklist_function("sqlite3_vmprintf")
-                .blacklist_function("sqlite3_vsnprintf")
-                .blacklist_function("sqlite3_str_vappendf")
-                .blacklist_type("va_list")
-                .blacklist_type("__builtin_va_list")
-                .blacklist_type("__gnuc_va_list")
-                .blacklist_type("__va_list_tag")
-                .blacklist_item("__GNUC_VA_LIST");
+                .blocklist_function("sqlite3_vmprintf")
+                .blocklist_function("sqlite3_vsnprintf")
+                .blocklist_function("sqlite3_str_vappendf")
+                .blocklist_type("va_list")
+                .blocklist_type("__builtin_va_list")
+                .blocklist_type("__gnuc_va_list")
+                .blocklist_type("__va_list_tag")
+                .blocklist_item("__GNUC_VA_LIST");
         }
 
         bindings
