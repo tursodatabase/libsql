@@ -5567,7 +5567,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #endif
       pOp = sqlite3VdbeGetOp(v, k);
       pLastOp = pOp + (last - k);
-      assert( pOp<pLastOp || (pParse->nErr>0 && pOp==pLastOp) );
+      assert( pOp<=pLastOp );
       do{
         if( pOp->p1!=pLevel->iTabCur ){
           /* no-op */
