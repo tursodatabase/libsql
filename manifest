@@ -1,12 +1,12 @@
-C Do\snot\sallow\sfloating\spoint\srounding\serrors\sto\scause\sa\swindow\sfunction\sxInverse()\sfunction\sto\sbe\sinvoked\sbefore\sthe\scorresponding\sxStep()\scall.
-D 2021-04-05T19:05:18.685
+C Adjust\sthe\sREADME.md\sfile\sso\sthat\sbuild\sinstructions\swork\sfor\sFossil\sversion\n2.12\sand\slater.\s\s[forum:/forumpost/51f28bb701|Forum\spost\s51f28bb701].
+D 2021-04-05T19:23:18.119
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in fe6cc1db11e02b308f3ab0ec2504344697b9eaaa410fa73f48d16a143462e5d3
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 6b5428cef2af1288e02faeb602dabe68fbf2de7bc8a8e29c7299778ee08cd35c
-F README.md 1514a365ffca3c138e00c5cc839906108a01011a6b082bad19b09781e3aa498a
+F README.md 2a71913f398ecac5f3e10945fcf438aed425c2e9ed9874de561156ba77fb7023
 F VERSION 8c392f6d70d82e513a0eac622bdf23c43df3e084cb630288beba8cef3012c812
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 15b801016fa204b8e4b7c89e236adb73dd57687959d825664de5097370b24030
-R 9ed7be239ef92bce010fca3c3056debb
-U dan
-Z 77a45f13627348a5a5bf0b83d3d22bff
+P 7a19fed4f222bc6c20e13a1367c8235916d21ba5e6f5a31cd26842efe748e744
+R 043ce42fcb644fa3be4bc871a26bcdaa
+U drh
+Z 63658cb62992e1345db8b140d8a41b67
