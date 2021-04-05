@@ -1,5 +1,5 @@
-C Adjust\sthe\sREADME.md\sfile\sso\sthat\sbuild\sinstructions\swork\sfor\sFossil\sversion\n2.12\sand\slater.\s\s[forum:/forumpost/51f28bb701|Forum\spost\s51f28bb701].
-D 2021-04-05T19:23:18.119
+C Add\sa\smissing\sCORRUPT_DB\sto\san\sassert\sin\sthe\sOP_ResultRow\sopcode.
+D 2021-04-05T22:30:56.497
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c c2990a6f877a15b2fd7cc8cb624033699a4a602740f5b9f576762861cc86d3ce
+F src/vdbe.c 1e0c840714b508898326de757b5eec42990ddbb3bea560a672f603aea9a64202
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 000d9ab1ea4cb55a80de15e28f3f595645b4fddef34bca4347fb3db8031d9041
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1055,7 +1055,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 364b573f0675f562fef951ddbbae613c071efa840fb91f19351686126e938616
+F test/fuzzdata8.db 99f4567a5abd881c858d9b61aff0ea301ecc1a4e78d3c52bd58c192a2e089dd1
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a19fed4f222bc6c20e13a1367c8235916d21ba5e6f5a31cd26842efe748e744
-R 043ce42fcb644fa3be4bc871a26bcdaa
+P 51f87adc7f90935484eadad82f751f1df8c1607d463dae9589a71aeda2184b3a
+R ee365809ed2d620bdf673f300f88b640
 U drh
-Z 63658cb62992e1345db8b140d8a41b67
+Z d244eb2f9f9acbbde1e94533dd51f1ef
