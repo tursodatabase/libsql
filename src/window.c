@@ -2048,7 +2048,7 @@ static void windowIfNewPeer(
 **   if( csr1.peerVal - regVal <= csr2.peerVal ) goto lbl;
 **
 ** A special type of arithmetic is used such that if csr1.peerVal is not
-** a numeric type (real or integer), then the result of the addition addition
+** a numeric type (real or integer), then the result of the addition
 ** or subtraction is a a copy of csr1.peerVal.
 */
 static void windowCodeRangeTest(
@@ -2067,7 +2067,12 @@ static void windowCodeRangeTest(
   int regString = ++pParse->nMem;           /* Reg. for constant value '' */
   int arith = OP_Add;                       /* OP_Add or OP_Subtract */
   int addrGe;                               /* Jump destination */
+  int addrDone = sqlite3VdbeMakeLabel(pParse);   /* Address past OP_Ge */
   CollSeq *pColl;
+
+  /* Read the peer-value from each cursor into a register */
+  windowReadPeerValues(p, csr1, reg1);
+  windowReadPeerValues(p, csr2, reg2);
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( pOrderBy && pOrderBy->nExpr==1 );
@@ -2080,33 +2085,10 @@ static void windowCodeRangeTest(
     arith = OP_Subtract;
   }
 
-  /* Read the peer-value from each cursor into a register */
-  windowReadPeerValues(p, csr1, reg1);
-  windowReadPeerValues(p, csr2, reg2);
-
   VdbeModuleComment((v, "CodeRangeTest: if( R%d %s R%d %s R%d ) goto lbl",
       reg1, (arith==OP_Add ? "+" : "-"), regVal,
       ((op==OP_Ge) ? ">=" : (op==OP_Le) ? "<=" : (op==OP_Gt) ? ">" : "<"), reg2
   ));
-
-  /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
-  ** This block adds (or subtracts for DESC) the numeric value in regVal
-  ** from it. Or, if reg1 is not numeric (it is a NULL, a text value or a blob),
-  ** then leave reg1 as it is. In pseudo-code, this is implemented as:
-  **
-  **   if( reg1>='' ) goto addrGe;
-  **   reg1 = reg1 +/- regVal
-  **   addrGe:
-  **
-  ** Since all strings and blobs are greater-than-or-equal-to an empty string,
-  ** the add/subtract is skipped for these, as required. If reg1 is a NULL,
-  ** then the arithmetic is performed, but since adding or subtracting from
-  ** NULL is always NULL anyway, this case is handled as required too.  */
-  sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
-  addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
-  VdbeCoverage(v);
-  sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
-  sqlite3VdbeJumpHere(v, addrGe);
 
   /* If the BIGNULL flag is set for the ORDER BY, then it is required to 
   ** consider NULL values to be larger than all other values, instead of 
@@ -2144,15 +2126,37 @@ static void windowCodeRangeTest(
         break;
       default: assert( op==OP_Lt ); /* no-op */ break;
     }
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrDone);
 
     /* This block runs if reg1 is not NULL, but reg2 is. */
     sqlite3VdbeJumpHere(v, addr);
     sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
     if( op==OP_Gt || op==OP_Ge ){
-      sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+      sqlite3VdbeChangeP2(v, -1, addrDone);
     }
   }
+
+  /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
+  ** This block adds (or subtracts for DESC) the numeric value in regVal
+  ** from it. Or, if reg1 is not numeric (it is a NULL, a text value or a blob),
+  ** then leave reg1 as it is. In pseudo-code, this is implemented as:
+  **
+  **   if( reg1>='' ) goto addrGe;
+  **   reg1 = reg1 +/- regVal
+  **   addrGe:
+  **
+  ** Since all strings and blobs are greater-than-or-equal-to an empty string,
+  ** the add/subtract is skipped for these, as required. If reg1 is a NULL,
+  ** then the arithmetic is performed, but since adding or subtracting from
+  ** NULL is always NULL anyway, this case is handled as required too.  */
+  sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
+  addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
+  VdbeCoverage(v);
+  if( (op==OP_Ge && arith==OP_Add) || (op==OP_Le && arith==OP_Subtract) ){
+    sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
+  }
+  sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
+  sqlite3VdbeJumpHere(v, addrGe);
 
   /* Compare registers reg2 and reg1, taking the jump if required. Note that
   ** control skips over this test if the BIGNULL flag is set and either
@@ -2161,6 +2165,7 @@ static void windowCodeRangeTest(
   pColl = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[0].pExpr);
   sqlite3VdbeAppendP4(v, (void*)pColl, P4_COLLSEQ);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+  sqlite3VdbeResolveLabel(v, addrDone);
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );
   testcase(op==OP_Ge); VdbeCoverageIf(v, op==OP_Ge);
