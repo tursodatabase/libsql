@@ -2448,6 +2448,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sEAlt = *pAlt->pExpr;
     sEAlt.pLeft = pE->pLeft;
     sqlite3ExprIfFalse(pParse, &sEAlt, addrCont, SQLITE_JUMPIFNULL);
+    pAlt->wtFlags |= TERM_CODED;
   }
 
   /* For a LEFT OUTER JOIN, generate code that will record the fact that

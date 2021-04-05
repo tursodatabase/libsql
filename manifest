@@ -1,5 +1,5 @@
-C Do\snot\sinvoke\sthe\sxDelete\smethod\swhen\sconverting\sto\sPRAGMA\sjournal_mode=OFF\nif\sthe\sunderlying\sVFS\sdoes\snot\ssupport\sthat\smethod.\ndbsqlfuzz\s39d6af88ef5242f866c4f9b21ede330c5c1e36a8.
-D 2021-04-05T13:41:42.119
+C Avoid\scoding\sunindexed\sWHERE\sconstraints\sif\san\sequivalent\stransitive\sterm\shas\salready\sbeen\scoded\sby\san\souter\sloop.
+D 2021-04-05T16:20:59.183
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
 F src/where.c f81b47aeed660808c315290aec02fefe21ffce55e988c603254a2c81d20a0eb5
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
-F src/wherecode.c c7354c9749f015f37bc32e15a4257a5155fa5d2b79f605f528bd09f3b9f1b4e6
+F src/wherecode.c 8bdc239eae3d39f9f6ace4299eeb86e1e0c56eed88b60f9c473dc85ae79f4e89
 F src/whereexpr.c 4ba94b8ebbff97c658b212de6ccdb6d3a41847800bdf99e7a2a967c250269f2c
 F src/window.c 547e7a0eee7dca3f246573ca87973831c5804c2127b764835755332dea25fb4b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1644,7 +1644,7 @@ F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unionall.test 369dac51f4e7b94442b054d3d7f2e6755cd6994274718228878e3bd47c425f6d
-F test/unionall2.test c9a62db63350bcbce3a7bec50dd8c5410f08be33f8af435473756286d4657215
+F test/unionall2.test 71e8fa08d5699d50dc9f9dc0c9799c2e7a6bb7931a330d369307a4df7f157fa1
 F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5045c8a748f0065638d0ff4f6e3ccd124183fbc518cb9b0418d125b04dbc1491
-R cde81bb53fd262e4f921df03755797f7
-U drh
-Z acea419643fa9f724a3b80b1ba776e22
+P d91450847a3a3a7217f8f5947adea9a4d12cf77607d40f9724d6ba093919b524
+R 0fe8f60dd97b824b3ba2774d422f8e15
+U dan
+Z 1082f6a177979668eb3c5e113731ad28
