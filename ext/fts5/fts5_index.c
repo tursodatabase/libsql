@@ -6226,6 +6226,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
 ** function only.
 */
 
+#ifdef SQLITE_TEST
 /*
 ** Decode a segment-data rowid from the %_data table. This function is
 ** the opposite of macro FTS5_SEGMENT_ROWID().
@@ -6248,7 +6249,9 @@ static void fts5DecodeRowid(
 
   *piSegid = (int)(iRowid & (((i64)1 << FTS5_DATA_ID_B) - 1));
 }
+#endif /* SQLITE_TEST */
 
+#ifdef SQLITE_TEST
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
   int iSegid, iHeight, iPgno, bDlidx;       /* Rowid compenents */
   fts5DecodeRowid(iKey, &iSegid, &bDlidx, &iHeight, &iPgno);
@@ -6266,7 +6269,9 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
     );
   }
 }
+#endif /* SQLITE_TEST */
 
+#ifdef SQLITE_TEST
 static void fts5DebugStructure(
   int *pRc,                       /* IN/OUT: error code */
   Fts5Buffer *pBuf,
@@ -6288,6 +6293,7 @@ static void fts5DebugStructure(
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
   }
 }
+#endif /* SQLITE_TEST */
 
 #ifdef SQLITE_TEST
 /*

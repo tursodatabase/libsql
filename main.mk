@@ -386,8 +386,7 @@ TESTSRC += \
   $(TOP)/ext/misc/zipfile.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
-  $(TOP)/ext/fts5/fts5_test_tok.c \
-  fts5.c
+  $(TOP)/ext/fts5/fts5_test_tok.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -440,7 +439,8 @@ TESTSRC2 = \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/misc/stmt.c \
   $(TOP)/ext/session/sqlite3session.c \
-  $(TOP)/ext/session/test_session.c
+  $(TOP)/ext/session/test_session.c \
+  fts5.c
 
 # Header files used by all library source files.
 #
