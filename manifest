@@ -1,5 +1,5 @@
-C Avoid\sa\suse-after-free\sthat\smay\soccur\swhen\saccessing\sa\scorrupt\sdatabase\sschema\swith\s"PRAGMA\swritable_schema\s=\s1"\sset.
-D 2021-04-06T16:16:15.609
+C Silence\san\smsan\swarning\striggered\sby\sa\scorrupt\sdatabase\sby\sinitializing\sa\slocal\svariable\sin\ssqlite3Insert().
+D 2021-04-06T16:42:05.167
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c e0a8c59cfcb3979170e413d17e85057754dca008935f316f2c502165640b4c61
+F src/insert.c 1f5511255cafe9c37e53afcf7af707966319d96418d4054c382ebac77cfe7bdf
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 2a7ece3a67c646e5fe9984ffe0277d6a76f80ce9715bf2faa591d8cb66b9d913
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3088bf15ca53fac3bad94f241e648836631b6d801d42837c238ff27d85074ca4
-R 082e95278b8d103739613699b11e16ad
+P a1d823f6879ce1acfd251de35ffdfdf5ce7d8e0552205c2c4a1fee179e3a6972
+R 5ac1f0f0814321aca2602f85d0f5e2a6
 U dan
-Z b22591b45ae4ab6b1cd04bf714d373fa
+Z 5a95ed70e8725cf8c105a0cd147225be

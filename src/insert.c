@@ -1248,7 +1248,7 @@ void sqlite3Insert(
     }else
 #endif
     {
-      int isReplace;    /* Set to true if constraints may cause a replace */
+      int isReplace = 0;/* Set to true if constraints may cause a replace */
       int bUseSeek;     /* True to use OPFLAG_SEEKRESULT */
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
           regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0, pUpsert
