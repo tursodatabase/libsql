@@ -163,6 +163,33 @@ do_catchsql_test 3.1 {
   INSERT INTO t1(y) VALUES('abc');
 } {1 {database disk image is malformed}}
 
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b UNIQUE, c UNIQUE);
+  INSERT INTO x1 VALUES(1, 1, 2);
+  INSERT INTO x1 VALUES(2, 2, 3);
+  INSERT INTO x1 VALUES(3, 3, 4);
+  INSERT INTO x1 VALUES(4, 5, 6);
+  PRAGMA writable_schema = 1;
+
+  UPDATE sqlite_schema SET rootpage = (
+    SELECT rootpage FROM sqlite_schema WHERE name = 'sqlite_autoindex_x1_2'
+  ) WHERE name = 'sqlite_autoindex_x1_1';
+}
+
+db close
+sqlite3 db test.db
+breakpoint
+do_catchsql_test 3.1 {
+  PRAGMA writable_schema = 1;
+  PRAGMA vdbe_trace = 1;
+  REPLACE INTO x1 VALUES(5, 2, 3);
+} {1 {database disk image is malformed}}
+
+explain_i {
+  REPLACE INTO x1 VALUES(5, 2, 3);
+  }
+
 
 
 finish_test

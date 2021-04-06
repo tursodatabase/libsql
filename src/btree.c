@@ -9110,7 +9110,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     rc = btreeRestoreCursorPosition(pCur);
     if( rc ) return rc;
   }
-  assert( pCur->eState==CURSOR_VALID );
+  assert( CORRUPT_DB || pCur->eState==CURSOR_VALID );
 
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->ix;
