@@ -1,5 +1,5 @@
-C Further\simprovements\s(subsequent\sto\s[d91450847a3a3a72])\sto\shandling\sof\sattempts\nto\sdelete\sa\sjournal\susing\sthe\smemdb\sVFS.\ndbsqlfuzz\sac61dab357279a6a531de067f040e9a4828d2df0.
-D 2021-04-06T13:03:06.229
+C Handle\s"RETURNING\srowid"\sclauses\sattached\sto\sINSERTs\son\sviews\swithout\scausing\san\sassert()\sto\sfail.\sFixes\sdbsqlfuzz\scrash\s0081f863d7b2002045ac2361879fc80dfebb98f1.
+D 2021-04-06T13:53:10.506
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c f8d462ab6174a2c30476b5a1fc77f4d66ce7d9dd45c994966b9f4445db1131f0
+F src/insert.c e0a8c59cfcb3979170e413d17e85057754dca008935f316f2c502165640b4c61
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
 F src/main.c 2a7ece3a67c646e5fe9984ffe0277d6a76f80ce9715bf2faa591d8cb66b9d913
@@ -1297,7 +1297,7 @@ F test/releasetest.tcl fb76d8fcc95ac29d6356cd9e52b726ab9e43a24082897618dfbcb7c2b
 F test/releasetest_data.tcl 3d41ddb3f04f474ac9d925485da24ce6576ff0ebc4c7201c8a340bc09846c261
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 23dd8e28e69fb2f4e1a2173a241d5fb84846cac651096ad378980e4b7a79b434
+F test/returning1.test 3cfd13ace933d0ff6a8e5c7c5e48f14c2172ed65c8e7e7a4cf552ce261a986ab
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d46df73132e46abb32b9dc129b6beb978d34dac3d372fb004ca283b0832d04c
-R 34a91e01d98da9a038d058ca9e6ea654
-U drh
-Z b0363eb04a20da942cdbd023b5943bc6
+P a0839406426a0d8ec52cc3116ea7d8b582344b44f3f8c9365bbf5187370c3386
+R 1cd934283beb63a1aa322277384e9db9
+U dan
+Z 0886e616098964715b9c67539bffb339
