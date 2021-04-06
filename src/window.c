@@ -900,7 +900,11 @@ static ExprList *exprListAppendList(
       sqlite3 *db = pParse->db;
       Expr *pDup = sqlite3ExprDup(db, pAppend->a[i].pExpr, 0);
       assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
-      if( bIntToNull && db->mallocFailed==0 ){
+      if( db->mallocFailed ){
+        sqlite3ExprDelete(db, pDup);
+        break;
+      }
+      if( bIntToNull ){
         int iDummy;
         Expr *pSub;
         for(pSub=pDup; ExprHasProperty(pSub, EP_Skip); pSub=pSub->pLeft){

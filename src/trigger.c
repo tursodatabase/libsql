@@ -1147,8 +1147,8 @@ static TriggerPrg *codeRowTrigger(
     ** OP_Halt inserted at the end of the program.  */
     if( pTrigger->pWhen ){
       pWhen = sqlite3ExprDup(db, pTrigger->pWhen, 0);
-      if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
-       && db->mallocFailed==0 
+      if( db->mallocFailed==0
+       && SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
       ){
         iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
