@@ -1,5 +1,5 @@
-C Silence\san\smsan\swarning\striggered\sby\sa\scorrupt\sdatabase\sby\sinitializing\sa\slocal\svariable\sin\ssqlite3Insert().
-D 2021-04-06T16:42:05.167
+C New\stest\scases\sadded\sto\sfuzzdata8.db.
+D 2021-04-06T16:55:30.363
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1055,7 +1055,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 99f4567a5abd881c858d9b61aff0ea301ecc1a4e78d3c52bd58c192a2e089dd1
+F test/fuzzdata8.db e37bff5455921d0692dd9ece29949b59a6c794a7778ed731a5628317264cced2
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1d823f6879ce1acfd251de35ffdfdf5ce7d8e0552205c2c4a1fee179e3a6972
-R 5ac1f0f0814321aca2602f85d0f5e2a6
-U dan
-Z 5a95ed70e8725cf8c105a0cd147225be
+P f64deecee1691cf21b4f3d27d8490ecc8eae65cf26df7a22f8d15317f0cecd5b
+R c04eebace688fd50895558489ff071fd
+U drh
+Z 464bbc6a91b9b7a3573d69d9236cc7e3
