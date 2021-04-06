@@ -788,6 +788,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
     case TK_AGG_FUNCTION:
     case TK_COLUMN: {
       int iCol = -1;
+      if( pParse->db->mallocFailed ) return WRC_Abort;
       if( p->pSub ){
         int i;
         for(i=0; i<p->pSub->nExpr; i++){

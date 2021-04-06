@@ -1,5 +1,5 @@
-C Handle\s"RETURNING\srowid"\sclauses\sattached\sto\sINSERTs\son\sviews\swithout\scausing\san\sassert()\sto\sfail.\sFixes\sdbsqlfuzz\scrash\s0081f863d7b2002045ac2361879fc80dfebb98f1.
-D 2021-04-06T13:53:10.506
+C Earlier\sdetection\sof\sOOM\serrors\sduring\swindow\sfunction\sprocessing.\ndbsqlfuzz\sb08676f5a0437552c95d2a5d7ef285f8c451ea35.
+D 2021-04-06T13:56:46.570
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/where.c 9accf968b0e75804b0e99a7500f5310e5213bc3f5a2bd6810e51da354d2cc3b5
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 8bdc239eae3d39f9f6ace4299eeb86e1e0c56eed88b60f9c473dc85ae79f4e89
 F src/whereexpr.c 4ba94b8ebbff97c658b212de6ccdb6d3a41847800bdf99e7a2a967c250269f2c
-F src/window.c 1bc737c35faf229d83d997562dfdd4d75e3cef0101b13935d227d39d581cb190
+F src/window.c 3c7135f2df541e6f58846daab57457dac45c3b2bb19c92b153d2e2974ae83a60
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0839406426a0d8ec52cc3116ea7d8b582344b44f3f8c9365bbf5187370c3386
-R 1cd934283beb63a1aa322277384e9db9
-U dan
-Z 0886e616098964715b9c67539bffb339
+P 9c5b7386d013a7f22a93c69722c4648e2ab60eef180f48b5470bfea6fa74b3da
+R 6f2954b880a1e7a6044988d7596f3eb6
+U drh
+Z 93c4b66e0370a4708a9ffdd962a13a85
