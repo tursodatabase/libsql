@@ -1,5 +1,5 @@
-C Update\san\sassert\sstatement\sthat\scould\sfail\swhen\susing\s"PRAGMA\swritable_schema\s=\s1"\sto\saccess\sa\sdatabase\swith\sa\scorrupt\sschema.
-D 2021-04-06T18:02:17.700
+C Raise\san\serror\sif\sa\squery\stries\sto\saccess\sthe\s"rowid"\sof\sa\sview,\sas\sviews\ndo\snot\shave\srowids.
+D 2021-04-06T19:13:44.770
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 36a162403b7e897668ea3f894e40c647ec8cf7b0e533b8c9e4d0f4450f3b52b0
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 927ec1d6a02642509c3ff55e74753e396036ef01cab4ef01ea0756349976854b
+F src/build.c 9d6002cf6bf15b07c50ce27abb24cefe94355eaa9f517ef8e17a5289d85be308
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1198,7 +1198,7 @@ F test/minmax2.test 1edf66901ddfab26ae1e04165e8da834c8d3284e2b20aefb26b80ef21796
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc1.test 7ce84b25df9872e7d7878613a96815d2ba5bc974ac4e15a50118dde8f3917599
-F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
+F test/misc2.test 3d8f161cc5daf7523ef81c13e88e32d4d111636a24cefa396bbf76273d983d7c
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
 F test/misc5.test c4aeaa0fa28faa08f2485309c38db4719e6cd1364215d5687a5b96d340a3fa58
@@ -1297,7 +1297,7 @@ F test/releasetest.tcl fb76d8fcc95ac29d6356cd9e52b726ab9e43a24082897618dfbcb7c2b
 F test/releasetest_data.tcl 3d41ddb3f04f474ac9d925485da24ce6576ff0ebc4c7201c8a340bc09846c261
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 3cfd13ace933d0ff6a8e5c7c5e48f14c2172ed65c8e7e7a4cf552ce261a986ab
+F test/returning1.test b7ebb065d807c9ed8ebed98e96ca7ab1dea0f64e57d8b70808034201d4d56a6c
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1624,7 +1624,7 @@ F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test e7ce54bfda67a88d778aea42544e151c465547a7e617127b6914c2221a6d53c1
 F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
-F test/trigger9.test 2226ec795a33b0460ab5cf8891e9054cc7edef41
+F test/trigger9.test fd49aff8b724ae1a6238989ecf84320d88c0e8f8d9142a891b93f826dfe37b59
 F test/triggerA.test 837be862d8721f903dba3f3ceff05b32e0bee5214cf6ea3da5fadf12d3650e9d
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 29f5a28d0fe39e6e2c01f6e1f53f08c0955170ae10a63ad023e33cb0a1682a51
@@ -1912,7 +1912,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7491acc0c93b7b0b5a27130d956bb23f876b90ced11cdd416a86727af076ee1
-R aad8c23802ec7058efd7b1a15ae0887a
-U dan
-Z 287be7e7ee318d60143976869f040e7c
+P 55cad6f628a4313c6652b36474c3397f097ac5c2503ae94605c030a54dc40916
+R 5881319da5f75e2988cac64bf40b8cc2
+T *branch * no-rowid-on-view
+T *sym-no-rowid-on-view *
+T -sym-trunk *
+U drh
+Z 8a4e43d596f67bf58ef1d84979a7c8d3

@@ -2702,6 +2702,7 @@ void sqlite3CreateView(
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ) goto create_view_fail;
+  p->tabFlags |= TF_NoVisibleRowid;
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
   sqlite3FixInit(&sFix, pParse, iDb, "view", pName);

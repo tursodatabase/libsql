@@ -61,12 +61,10 @@ ifcapable subquery {
   } {{} 1 2 3 7 8 9}
 }
 ifcapable view {
-  do_test misc2-2.3 {
-    execsql {
-      CREATE VIEW v1 AS SELECT * FROM t1, t2;
-      SELECT rowid, * FROM v1;
-    }
-  } {{} 1 2 3 7 8 9}
+  do_catchsql_test misc2-2.3 {
+    CREATE VIEW v1 AS SELECT * FROM t1, t2;
+    SELECT rowid, * FROM v1;
+  } {1 {no such column: rowid}}
 } ;# ifcapable view
 
 # Ticket #2002 and #1952.
