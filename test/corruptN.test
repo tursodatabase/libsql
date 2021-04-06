@@ -148,6 +148,21 @@ WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
 INSERT INTO t1(a) SELECT randomblob(null) FROM c;
 } {1 {database disk image is malformed}}
 
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY AUTOINCREMENT, y);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema 
+    SET sql = 'CREATE TABLE sqlite_sequence(name-seq)' 
+    WHERE name = 'sqlite_sequence';
+}
+db close
+sqlite3 db test.db
+do_catchsql_test 3.1 {
+  PRAGMA writable_schema = 1;
+  INSERT INTO t1(y) VALUES('abc');
+} {1 {database disk image is malformed}}
+
 
 
 finish_test

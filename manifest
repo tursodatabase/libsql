@@ -1,5 +1,5 @@
-C Remove\ssome\stest\sroutines\sfrom\srelease\sbuilds\sof\sfts5.
-D 2021-04-06T14:46:50.157
+C Avoid\sa\suse-after-free\sthat\smay\soccur\swhen\saccessing\sa\scorrupt\sdatabase\sschema\swith\s"PRAGMA\swritable_schema\s=\s1"\sset.
+D 2021-04-06T16:16:15.609
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 800eb0b92406897130cec04073dfb0089bcda1e77acc0864ee60acb5fec5c5a2
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 06089aaf769ec1e91d1ba607442aa32c22aeb97200d47fe405ceb373adbdf2d7
+F src/build.c 927ec1d6a02642509c3ff55e74753e396036ef01cab4ef01ea0756349976854b
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -800,7 +800,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test 22589f503602cc5984e80f27f46c4de2134f24f1515ba2440513c377cb692258
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/corruptN.test c9d458e1cd456c1f7a2482ee4a14869755273a3d62ec1aaad7bcb48d3372db7a
+F test/corruptN.test 0cbe7d96492110e557be65834305f911a1ed64802d01f020a525696e78cd3211
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
 F test/count.test 5364003488249957750a5f15ee42ca1cd7b100b1131c2dc71fff266a1250bf55
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20d21ff9be558c5f7773efa4efba7d36752f56c9a0caf1fd9c601aab5562dcef
-R 0426895bf655a353276832ee7767f24c
+P 3088bf15ca53fac3bad94f241e648836631b6d801d42837c238ff27d85074ca4
+R 082e95278b8d103739613699b11e16ad
 U dan
-Z b046d476272944739c7b527253cbf3b4
+Z b22591b45ae4ab6b1cd04bf714d373fa
