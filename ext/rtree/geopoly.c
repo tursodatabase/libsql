@@ -310,6 +310,10 @@ static GeoPoly *geopolyFuncParam(
   ){
     const unsigned char *a = sqlite3_value_blob(pVal);
     int nVertex;
+    if( a==0 ){
+      sqlite3_result_error_nomem(pCtx);
+      return 0;
+    }
     nVertex = (a[1]<<16) + (a[2]<<8) + a[3];
     if( (a[0]==0 || a[0]==1)
      && (nVertex*2*sizeof(GeoCoord) + 4)==(unsigned int)nByte
