@@ -1686,15 +1686,15 @@ static void windowAggStep(
       }
       
       if( pWin->bExprArgs ){
-        int iStart = sqlite3VdbeCurrentAddr(v);
-        VdbeOp *pOp, *pEnd;
+        int iOp = sqlite3VdbeCurrentAddr(v);
+        int iEnd;
 
         nArg = pWin->pOwner->x.pList->nExpr;
         regArg = sqlite3GetTempRange(pParse, nArg);
         sqlite3ExprCodeExprList(pParse, pWin->pOwner->x.pList, regArg, 0, 0);
 
-        pEnd = sqlite3VdbeGetOp(v, -1);
-        for(pOp=sqlite3VdbeGetOp(v, iStart); pOp<=pEnd; pOp++){
+        for(iEnd=sqlite3VdbeCurrentAddr(v); iOp<iEnd; iOp++){
+          VdbeOp *pOp = sqlite3VdbeGetOp(v, iOp);
           if( pOp->opcode==OP_Column && pOp->p1==pWin->iEphCsr ){
             pOp->p1 = csr;
           }

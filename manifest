@@ -1,5 +1,5 @@
-C Update\san\sassert\sstatement\sthat\scould\sfail\swhen\susing\s"PRAGMA\swritable_schema\s=\s1"\sto\saccess\sa\sdatabase\swith\sa\scorrupt\sschema.
-D 2021-04-06T18:02:17.700
+C Restructure\sa\sloop\sin\swindow.c\sto\savoid\shitting\san\sassert()\sfollowing\san\sOOM.\sdbsqlfuzz\stest\scase\s6ef74a9659de87e9be3d8694ad062c448aa7ef1d.
+D 2021-04-06T18:40:27.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/where.c 9accf968b0e75804b0e99a7500f5310e5213bc3f5a2bd6810e51da354d2cc3b5
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 8bdc239eae3d39f9f6ace4299eeb86e1e0c56eed88b60f9c473dc85ae79f4e89
 F src/whereexpr.c 4ba94b8ebbff97c658b212de6ccdb6d3a41847800bdf99e7a2a967c250269f2c
-F src/window.c 3c7135f2df541e6f58846daab57457dac45c3b2bb19c92b153d2e2974ae83a60
+F src/window.c ae9fbd0cbaa39e1b384c13289ed769f9981383bde7b2f262c70ad6c42e5ab226
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7491acc0c93b7b0b5a27130d956bb23f876b90ced11cdd416a86727af076ee1
-R aad8c23802ec7058efd7b1a15ae0887a
+P 55cad6f628a4313c6652b36474c3397f097ac5c2503ae94605c030a54dc40916
+R b502ee77b1b130709f2eeb35bafb000a
 U dan
-Z 287be7e7ee318d60143976869f040e7c
+Z 2d22ad4166814d461d32beca1b8c9ac2
