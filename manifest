@@ -1,5 +1,5 @@
-C Fix\san\sassert\sin\sthe\sautomatic-index\sconstructor\sthat\scan\sbe\sfalse\sfollowing\nan\sOOM\serror.\s\sdbsqlfuzz\see04d66c627ed5b5301e0ce09e24db47e0f1544e.
-D 2021-04-07T12:36:58.610
+C In\sFTS3,\sif\sthe\sxBegin\smethod\sfails\sto\sstart\sa\stransaction\sdue\sto\san\sOOM\nerror,\sthen\smake\ssure\sthat\sthe\svirtual\stable\sis\sleft\sin\sa\sconsistent\sstate.\ndbsqlfuzz\s85ef48423fda4eef79a551654445d8ef3537a590.
+D 2021-04-07T12:59:09.271
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -84,7 +84,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c d91986eb52b0a640f7e5e545deabab708db53e886750a4e994e919784a1bcd86
+F ext/fts3/fts3.c 8912fedb1bf647eb05fa940032af0cc77ed492225da8b180228233bc5ebf8158
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h bde280294d56ff50ee29d03e5140f0b6953b44d1c969bb5831e8ae85e3e76715
 F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1bf0d987578160f002035ff41ec7c82011288f1c0449414a4b3da39b20f871c
-R d899c40e7a3f11646de32c2ce046e5bb
+P cc6463fe6d23febeea5171f9a1bcb1e5f980f7f44b7e85022d5fd8662b471160
+R eea276111807cb2f776e89a3d75186d1
 U drh
-Z b837fda7d0fb492e0b25393fa9d5bd5a
+Z 4f522b80c811e91aec435ca0eb6531d7
