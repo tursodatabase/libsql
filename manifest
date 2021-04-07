@@ -1,5 +1,5 @@
-C In\sFTS3,\sif\sthe\sxBegin\smethod\sfails\sto\sstart\sa\stransaction\sdue\sto\san\sOOM\nerror,\sthen\smake\ssure\sthat\sthe\svirtual\stable\sis\sleft\sin\sa\sconsistent\sstate.\ndbsqlfuzz\s85ef48423fda4eef79a551654445d8ef3537a590.
-D 2021-04-07T12:59:09.271
+C Unnecessary\slocal\svariable\sinitialization\sto\sfix\sa\sharmless\scompiler\swarning.
+D 2021-04-07T13:20:34.690
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c fc136d935f19966747663bed605ad7f06f84f9fe7bf7bf79e9bf844ef5c7556d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 06df4a2a94df253b580d38b32573f4b6462fbe39abc31101c9a9fa95215c8479
+F src/select.c e0521ed2541e9fafdc98de6a3e05b97de1e896489f0c7778cbde8a2f1ab4450c
 F src/shell.c.in 9320b476fde0f7c46700e5695b69b435f1e46843a1513cdd187ac426cdbee016
 F src/sqlite.h.in 18ec33e32001721fd4e9c4705a24a85dff04956ac2c0a21775058884ba845b09
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc6463fe6d23febeea5171f9a1bcb1e5f980f7f44b7e85022d5fd8662b471160
-R eea276111807cb2f776e89a3d75186d1
+P dd553578333f49950a197fe894d02e08cce011c9ae1a7270604186af204dcf6d
+R 33d048f63ed1b885ca66d4f7523cd20b
 U drh
-Z 4f522b80c811e91aec435ca0eb6531d7
+Z 065da737e6c5de377dc8534b2cd0221b
