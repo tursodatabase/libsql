@@ -1552,7 +1552,7 @@ TESTSRC = \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
   $(TOP)\ext\rbu\test_rbu.c \
-  $(TOP)\ext\session\test_session.c
+  $(TOP)\ext\session\test_session.c 
 
 # Statically linked extensions.
 #
@@ -1585,7 +1585,8 @@ TESTEXT = \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\unionvtab.c \
-  $(TOP)\ext\misc\wholenumber.c
+  $(TOP)\ext\misc\wholenumber.c \
+  fts5.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #

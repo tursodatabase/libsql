@@ -5852,7 +5852,9 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
     for(ii=0; ii<pCur->iPage; ii++){
       assert( pCur->aiIdx[ii]==pCur->apPage[ii]->nCell );
     }
-    assert( pCur->ix==pCur->pPage->nCell-1 );
+    assert( pCur->ix==pCur->pPage->nCell-1 || CORRUPT_DB );
+    testcase( pCur->ix!=pCur->pPage->nCell-1 );
+    /* ^-- dbsqlfuzz b92b72e4de80b5140c30ab71372ca719b8feb618 */
     assert( pCur->pPage->leaf );
 #endif
     *pRes = 0;
@@ -6629,7 +6631,7 @@ static int allocateBtreePage(
 
         iPage = get4byte(&aData[8+closest*4]);
         testcase( iPage==mxPage );
-        if( iPage>mxPage ){
+        if( iPage>mxPage || iPage<2 ){
           rc = SQLITE_CORRUPT_PGNO(iTrunk);
           goto end_allocate_page;
         }
@@ -9576,7 +9578,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     rc = btreeRestoreCursorPosition(pCur);
     if( rc ) return rc;
   }
-  assert( pCur->eState==CURSOR_VALID );
+  assert( CORRUPT_DB || pCur->eState==CURSOR_VALID );
 
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->ix;

@@ -3588,14 +3588,20 @@ static int fts3SetHasStat(Fts3Table *p){
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
   Fts3Table *p = (Fts3Table*)pVtab;
+  int rc;
   UNUSED_PARAMETER(pVtab);
   assert( p->pSegments==0 );
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=1 );
-  TESTONLY( p->inTransaction = 1 );
-  TESTONLY( p->mxSavepoint = -1; );
   p->nLeafAdd = 0;
-  return fts3SetHasStat(p);
+  rc = fts3SetHasStat(p);
+#ifdef SQLITE_DEBUG
+  if( rc==SQLITE_OK ){
+    p->inTransaction = 1;
+    p->mxSavepoint = -1;
+  }
+#endif
+  return rc;
 }
 
 /*

@@ -1677,7 +1677,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
 ** that the new entry was successfully appended.
 */
-static const struct ExprList_item zeroItem;
+static const struct ExprList_item zeroItem = {0};
 SQLITE_NOINLINE ExprList *sqlite3ExprListAppendNew(
   sqlite3 *db,            /* Database handle.  Used for memory allocation */
   Expr *pExpr             /* Expression to be appended. Might be NULL */
@@ -3389,6 +3389,7 @@ static void sqlite3ExprCodeIN(
   if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
+    if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
     if( sqlite3ExprCanBeNull(p) ){
       sqlite3VdbeAddOp2(v, OP_IsNull, rLhs+i, destStep2);
       VdbeCoverage(v);

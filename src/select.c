@@ -2737,7 +2737,7 @@ static int multiSelect(
     switch( p->op ){
       case TK_ALL: {
         int addr = 0;
-        int nLimit;
+        int nLimit = 0;  /* Initialize to suppress harmless compiler warning */
         assert( !pPrior->pLimit );
         pPrior->iLimit = p->iLimit;
         pPrior->iOffset = p->iOffset;
@@ -6856,7 +6856,7 @@ int sqlite3Select(
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         pDistinct = sqlite3ExprListDup(db, pGroupBy, 0);
         pDistinct = sqlite3ExprListAppend(pParse, pDistinct, pExpr);
-        distFlag = pDistinct ? WHERE_WANT_DISTINCT : 0;
+        distFlag = pDistinct ? (WHERE_WANT_DISTINCT|WHERE_AGG_DISTINCT) : 0;
       }
 
       /* If there is a GROUP BY clause we might need a sorting index to
@@ -7169,7 +7169,7 @@ int sqlite3Select(
           }
         }else if( pAggInfo->nFunc==1 && pAggInfo->aFunc[0].iDistinct>=0 ){
           pDistinct = pAggInfo->aFunc[0].pFExpr->x.pList;
-          distFlag = pDistinct ? WHERE_WANT_DISTINCT : 0;
+          distFlag = pDistinct ? (WHERE_WANT_DISTINCT|WHERE_AGG_DISTINCT) : 0;
         }
 
         /* This case runs if the aggregate has no GROUP BY clause.  The

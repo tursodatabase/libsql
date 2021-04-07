@@ -4004,7 +4004,8 @@ static void assertTruncateConstraint(Pager *pPager){
 ** then continue writing to the database.
 */
 void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
-  assert( pPager->dbSize>=nPage );
+  assert( pPager->dbSize>=nPage || CORRUPT_DB );
+  testcase( pPager->dbSize<nPage );
   assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   pPager->dbSize = nPage;
 
