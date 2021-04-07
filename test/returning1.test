@@ -210,20 +210,16 @@ do_execsql_test 10.2 {
   END;
 }
 
-do_execsql_test 10.3 {
+do_catchsql_test 10.3 {
   INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
-} {-1}
+} {1 {no such column: rowid}}
 
-do_execsql_test 10.3 {
+do_catchsql_test 10.3 {
   UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
-} {1 2 3}
+} {1 {no such column: rowid}}
 
 do_execsql_test 10.4 {
   SELECT * FROM log;
-} {
-  insert -1 1234 5678 update 1 z y update 2 z y update 3 z y
-}
-
+} {}
 
 finish_test
-

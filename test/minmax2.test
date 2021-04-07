@@ -283,17 +283,22 @@ do_test minmax2-8.2 {
 # is a subquery.
 #
 ifcapable {compound && subquery} {
+  do_test minmax2-9.0 {
+    execsql {
+      SELECT max(rowid) FROM t4 UNION SELECT max(rowid) FROM t5
+    }
+  } {3}
   do_test minmax2-9.1 {
     execsql {
-      SELECT max(rowid) FROM (
-        SELECT max(rowid) FROM t4 UNION SELECT max(rowid) FROM t5
+      SELECT max(yy) FROM (
+        SELECT max(rowid) AS yy FROM t4 UNION SELECT max(rowid) FROM t5
       )
     }
-  } {{}}
+  } {3}
   do_test minmax2-9.2 {
     execsql {
-      SELECT max(rowid) FROM (
-        SELECT max(rowid) FROM t4 EXCEPT SELECT max(rowid) FROM t5
+      SELECT max(yy) FROM (
+        SELECT max(rowid) AS yy FROM t4 EXCEPT SELECT max(rowid) FROM t5
       )
     }
   } {{}}
