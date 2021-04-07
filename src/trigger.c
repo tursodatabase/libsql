@@ -1093,7 +1093,9 @@ static TriggerPrg *codeRowTrigger(
   Parse *pSubParse;           /* Parse context for sub-vdbe */
   int iEndTrigger = 0;        /* Label to jump to if WHEN is false */
 
-  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) );
+  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger)
+       || IsSharedSchema(pParse->db)
+  );
   assert( pTop->pVdbe );
 
   /* Allocate the TriggerPrg and SubProgram objects. To ensure that they
@@ -1201,7 +1203,9 @@ static TriggerPrg *getRowTrigger(
   Parse *pRoot = sqlite3ParseToplevel(pParse);
   TriggerPrg *pPrg;
 
-  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) );
+  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) 
+       || IsSharedSchema(pParse->db)
+  );
 
   /* It may be that this trigger has already been coded (or is in the
   ** process of being coded). If this is the case, then an entry with
