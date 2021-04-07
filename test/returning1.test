@@ -115,5 +115,74 @@ do_execsql_test 5.5 {
   UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
 } {123}
 
+# Ticket 132994c8b1063bfb
+reset_db
+do_catchsql_test 6.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY);
+  CREATE TABLE t2(x INT, y INT);
+  INSERT INTO t1 VALUES(1),(2),(4),(9);
+  INSERT INTO t2 VALUES(3,7), (4,25), (5,99);
+  UPDATE t1 SET id=id+y FROM t2 WHERE t1.id=t2.x RETURNING t2.*;
+} {1 {RETURNING may not use "TABLE.*" wildcards}}
+do_catchsql_test 6.1 {
+  UPDATE t1 SET id=id+y FROM t2 WHERE t1.id=t2.x RETURNING *, '|';
+  SELECT * FROM t1 ORDER BY id;
+} {0 {29 | 1 2 9 29}}
+
+# Forum https://sqlite.org/forum/forumpost/85aef8bc01
+# Do not silently ignore nonsense table names in the RETURNING clause.
+# Raise an error.
+#
+reset_db
+do_execsql_test 7.1 {
+  CREATE TABLE t1(a INT, b INT);
+  CREATE TABLE t2(x INT, y INT);
+  INSERT INTO t1(a,b) VALUES(1,2);
+  INSERT INTO t2(x,y) VALUES(1,30);
+} {}
+do_catchsql_test 7.2 {
+  UPDATE t1 SET b=b+1 RETURNING new.b;
+} {1 {no such column: new.b}}
+do_catchsql_test 7.3 {
+  UPDATE t1 SET b=b+1 RETURNING old.b;
+} {1 {no such column: old.b}}
+do_catchsql_test 7.4 {
+  UPDATE t1 SET b=b+1 RETURNING another.b;
+} {1 {no such column: another.b}}
+do_catchsql_test 7.5 {
+  UPDATE t1 SET b=b+y FROM t2 WHERE t2.x=t1.a RETURNING t2.x;
+} {1 {no such column: t2.x}}
+do_catchsql_test 7.6 {
+  UPDATE t1 SET b=b+y FROM t2 WHERE t2.x=t1.a RETURNING t1.b;
+} {0 32}
+
+# This is goofy:  The RETURNING clause does not honor the alias
+# for the table being modified.  This might change in the future.
+#
+do_catchsql_test 7.7 {
+  UPDATE t1 AS alias SET b=123 RETURNING alias.b;
+} {1 {no such column: alias.b}}
+do_catchsql_test 7.8 {
+  UPDATE t1 AS alias SET b=alias.b+1000 RETURNING t1.b;
+} {0 1032}
+
+# Forum: https://sqlite.org/forum/info/34c81d83c9177f46
+reset_db
+do_execsql_test 8.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b,c);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t2 VALUES(3,40);
+} {}
+do_catchsql_test 8.2 {
+  INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE new.a=t2.b) AS x;
+} {1 {no such column: new.a}}
+do_catchsql_test 8.3 {
+  INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE old.a=t2.b) AS x;
+} {1 {no such column: old.a}}
+do_catchsql_test 8.4 {
+  INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE t1.a=t2.b) AS x;
+} {0 {3 40}}
+
 finish_test
 

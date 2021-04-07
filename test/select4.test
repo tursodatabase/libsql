@@ -1025,5 +1025,19 @@ do_execsql_test select4-18.3 {
    WHERE abs(z1.aa)=z2.aa AND z1.aa=123;
 } {123}
 
+# 2021-03-31 Fix an assert() problem in the logic at the end of sqlite3Select()
+# that validates AggInfo.  The checks to ensure that AggInfo.aCol[].pCExpr
+# references a valid expression was looking at an expression that had been
+# deleted by the truth optimization in sqlite3ExprAnd() which was invoked by
+# the push-down optimization.  This is harmless in delivery builds, as that code
+# only runs with SQLITE_DEBUG.  But it should still be fixed.  The problem
+# was discovered by dbsqlfuzz (crash-dece7b67a3552ed7e571a7bda903afd1f7bd9b21)
+#
+reset_db
+do_execsql_test select4-19.1 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(99);
+  SELECT sum((SELECT 1 FROM (SELECT 2 WHERE x IS NULL) WHERE 0)) FROM t1;
+} {{}}
 
 finish_test

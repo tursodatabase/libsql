@@ -958,8 +958,8 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
   }else if( (ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight)) 
          && !IN_RENAME_OBJECT
   ){
-    sqlite3ExprDelete(db, pLeft);
-    sqlite3ExprDelete(db, pRight);
+    sqlite3ExprDeferredDelete(pParse, pLeft);
+    sqlite3ExprDeferredDelete(pParse, pRight);
     return sqlite3Expr(db, TK_INTEGER, "0");
   }else{
     return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
@@ -1154,6 +1154,22 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 }
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
+}
+
+
+/*
+** Arrange to cause pExpr to be deleted when the pParse is deleted.
+** This is similar to sqlite3ExprDelete() except that the delete is
+** deferred untilthe pParse is deleted.
+**
+** The pExpr might be deleted immediately on an OOM error.
+**
+** The deferred delete is (currently) implemented by adding the
+** pExpr to the pParse->pConstExpr list with a register number of 0.
+*/
+void sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
+  pParse->pConstExpr = 
+      sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
 }
 
 /* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
@@ -5781,8 +5797,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
           pAggInfo->aCol[iAgg].pCExpr = pExpr;
-          pParse->pConstExpr = 
-             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+          sqlite3ExprDeferredDelete(pParse, pExpr);
         }
       }
     }else{
@@ -5791,8 +5806,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
           pAggInfo->aFunc[iAgg].pFExpr = pExpr;
-          pParse->pConstExpr = 
-             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+          sqlite3ExprDeferredDelete(pParse, pExpr);
         }
       }
     }

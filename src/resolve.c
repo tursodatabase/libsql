@@ -376,14 +376,18 @@ static int lookupName(
       if( pParse->pTriggerTab!=0 ){
         int op = pParse->eTriggerOp;
         assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
-        if( op!=TK_DELETE && zTab && sqlite3StrICmp("new",zTab) == 0 ){
+        if( pParse->bReturning ){
+          if( (pNC->ncFlags & NC_UBaseReg)!=0
+           && (zTab==0 || sqlite3StrICmp(zTab,pParse->pTriggerTab->zName)==0)
+          ){
+            pExpr->iTable = op!=TK_DELETE;
+            pTab = pParse->pTriggerTab;
+          }
+        }else if( op!=TK_DELETE && zTab && sqlite3StrICmp("new",zTab) == 0 ){
           pExpr->iTable = 1;
           pTab = pParse->pTriggerTab;
         }else if( op!=TK_INSERT && zTab && sqlite3StrICmp("old",zTab)==0 ){
           pExpr->iTable = 0;
-          pTab = pParse->pTriggerTab;
-        }else if( pParse->bReturning && (pNC->ncFlags & NC_UBaseReg)!=0 ){
-          pExpr->iTable = op!=TK_DELETE;
           pTab = pParse->pTriggerTab;
         }
       }
