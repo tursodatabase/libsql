@@ -293,4 +293,13 @@ do_execsql_test 7.1 {
   WHERE (t1.a=t3.a) AND (SELECT count(*) FROM t2 AS y WHERE t4.x!='abc')=t1.a
 } {2 2 2}
 
+# 2021-04-06 forum post https://sqlite.org/forum/forumpost/66954e9ece
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE person ( pid INT) ;
+  CREATE UNIQUE INDEX idx ON person ( pid ) WHERE pid == 1;
+  INSERT INTO person VALUES (1), (10), (10);
+  SELECT DISTINCT pid FROM person where pid = 10;
+} {10}
+
 finish_test

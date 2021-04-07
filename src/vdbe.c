@@ -1473,7 +1473,7 @@ case OP_ResultRow: {
   Mem *pMem;
   int i;
   assert( p->nResColumn==pOp->p2 );
-  assert( pOp->p1>0 );
+  assert( pOp->p1>0 || CORRUPT_DB );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
 
   /* Invalidate all ephemeral cursor row caches */

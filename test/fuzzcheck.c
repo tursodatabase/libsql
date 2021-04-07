@@ -936,7 +936,12 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte, int iTimeout){
   sqlite3_set_authorizer(cx.db, block_troublesome_sql, 0);
 
   /* Consistent PRNG seed */
+#ifdef SQLITE_TESTCTRL_PRNG_SEED
+  sqlite3_table_column_metadata(cx.db, 0, "x", 0, 0, 0, 0, 0, 0);
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, 1, cx.db);
+#else
   sqlite3_randomness(0,0);
+#endif
 
   zSql = sqlite3_malloc( nSql + 1 );
   if( zSql==0 ){
@@ -980,6 +985,8 @@ testrun_finished:
             sqlite3_memory_used(), nAlloc);
     exit(1);
   }
+  sqlite3_hard_heap_limit64(0);
+  sqlite3_soft_heap_limit64(0);
   return 0;
 }
 

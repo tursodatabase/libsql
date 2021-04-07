@@ -498,6 +498,7 @@ static void schemaIsValid(Parse *pParse){
       rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
       if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
         sqlite3OomFault(db);
+        pParse->rc = SQLITE_NOMEM;
       }
       if( rc!=SQLITE_OK ) return;
       openedTransaction = 1;
@@ -733,6 +734,7 @@ static int sqlite3Prepare(
   }
   if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM_BKPT;
+    sParse.checkSchema = 0;
   }
   if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE ){
     if( sParse.checkSchema ){

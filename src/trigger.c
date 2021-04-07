@@ -69,7 +69,11 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
       ){
         pTrig->pNext = pList;
         pList = pTrig;
-      }else if( pTrig->op==TK_RETURNING ){
+      }else if( pTrig->op==TK_RETURNING
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+                && pParse->db->pVtabCtx==0
+#endif
+                ){
         assert( pParse->bReturning );
         assert( &(pParse->u1.pReturning->retTrig) == pTrig );
         pTrig->table = pTab->zName;
@@ -1143,8 +1147,8 @@ static TriggerPrg *codeRowTrigger(
     ** OP_Halt inserted at the end of the program.  */
     if( pTrigger->pWhen ){
       pWhen = sqlite3ExprDup(db, pTrigger->pWhen, 0);
-      if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
-       && db->mallocFailed==0 
+      if( db->mallocFailed==0
+       && SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
       ){
         iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);

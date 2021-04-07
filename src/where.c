@@ -576,6 +576,7 @@ static int isDistinctRedundant(
   */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( !IsUniqueIndex(pIdx) ) continue;
+    if( pIdx->pPartIdxWhere ) continue;
     for(i=0; i<pIdx->nKeyCol; i++){
       if( 0==sqlite3WhereFindTerm(pWC, iBase, i, ~(Bitmask)0, WO_EQ, pIdx) ){
         if( findIndexCol(pParse, pDistinct, iBase, pIdx, i)<0 ) break;
@@ -802,7 +803,7 @@ static void constructAutomaticIndex(
       }
     }
   }
-  assert( nKeyCol>0 );
+  assert( nKeyCol>0 || pParse->db->mallocFailed );
   pLoop->u.btree.nEq = pLoop->nLTerm = nKeyCol;
   pLoop->wsFlags = WHERE_COLUMN_EQ | WHERE_IDX_ONLY | WHERE_INDEXED
                      | WHERE_AUTO_INDEX;
@@ -5025,9 +5026,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Attempt to omit tables from the join that do not affect the result.
   ** For a table to not affect the result, the following must be true:
   **
-  **   1) The query must not be an aggregate. Or it must be an aggregate
-  **      that contains only one aggregate function with the DISTINCT 
-  **      qualifier. e.g. "SELECT count(DISTINCT ...) FROM".
+  **   1) The query must not be an aggregate.
   **   2) The table must be the RHS of a LEFT JOIN.
   **   3) Either the query must be DISTINCT, or else the ON or USING clause
   **      must contain a constraint that limits the scan of the table to 
@@ -5055,7 +5054,8 @@ WhereInfo *sqlite3WhereBegin(
   */
   notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2
-   && pResultSet!=0               /* guarantees condition (1) above */
+   && pResultSet!=0                         /* these two combine to guarantee */
+   && 0==(wctrlFlags & WHERE_AGG_DISTINCT)  /* condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
     int i;
@@ -5568,7 +5568,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #endif
       pOp = sqlite3VdbeGetOp(v, k);
       pLastOp = pOp + (last - k);
-      assert( pOp<pLastOp || (pParse->nErr>0 && pOp==pLastOp) );
+      assert( pOp<=pLastOp );
       do{
         if( pOp->p1!=pLevel->iTabCur ){
           /* no-op */

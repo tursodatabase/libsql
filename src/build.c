@@ -1175,17 +1175,6 @@ void sqlite3StartTable(
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 
-  /* If this is the magic sqlite_sequence table used by autoincrement,
-  ** then record a pointer to this table in the main database structure
-  ** so that INSERT can find the table easily.
-  */
-#ifndef SQLITE_OMIT_AUTOINCREMENT
-  if( !pParse->nested && strcmp(zName, "sqlite_sequence")==0 ){
-    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-    pTable->pSchema->pSeqTab = pTable;
-  }
-#endif
-
   /* Begin generating the code that will insert the table record into
   ** the schema table.  Note in particular that we must go ahead
   ** and allocate the record number for the table entry now.  Before any
@@ -2630,7 +2619,7 @@ void sqlite3EndTable(
     /* Check to see if we need to create an sqlite_sequence table for
     ** keeping track of autoincrement keys.
     */
-    if( (p->tabFlags & TF_Autoincrement)!=0 ){
+    if( (p->tabFlags & TF_Autoincrement)!=0 && !IN_SPECIAL_PARSE ){
       Db *pDb = &db->aDb[iDb];
       assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
       if( pDb->pSchema->pSeqTab==0 ){
@@ -2661,6 +2650,17 @@ void sqlite3EndTable(
     }
     pParse->pNewTable = 0;
     db->mDbFlags |= DBFLAG_SchemaChange;
+
+    /* If this is the magic sqlite_sequence table used by autoincrement,
+    ** then record a pointer to this table in the main database structure
+    ** so that INSERT can find the table easily.  */
+    assert( !pParse->nested );
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+    if( strcmp(p->zName, "sqlite_sequence")==0 ){
+      assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+      p->pSchema->pSeqTab = p;
+    }
+#endif
   }
 
 #ifndef SQLITE_OMIT_ALTERTABLE

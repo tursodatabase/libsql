@@ -184,4 +184,46 @@ do_catchsql_test 8.4 {
   INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE t1.a=t2.b) AS x;
 } {0 {3 40}}
 
+# dbsqlfuzz finds/crash-486f791cbe2dc45839310073e71367a1d8ad22dd
+do_catchsql_test 9.1 {
+  UPDATE pragma_encoding SET encoding='UTF-8' RETURNING a, b, *;
+} {1 {table pragma_encoding may not be modified}}
+
+# dbsqlfuzz crash-0081f863d7b2002045ac2361879fc80dfebb98f1
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE t1_a(a, b);
+  CREATE VIEW t1 AS SELECT a, b FROM t1_a;
+
+  INSERT INTO t1_a VALUES('x', 'y');
+  INSERT INTO t1_a VALUES('x', 'y');
+  INSERT INTO t1_a VALUES('x', 'y');
+
+  CREATE TABLE log(op, r, a, b);
+}
+do_execsql_test 10.2 {
+  CREATE TRIGGER tr1 INSTEAD OF INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('insert', new.rowid, new.a, new.b);
+  END;
+  CREATE TRIGGER tr2 INSTEAD OF UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('update', new.rowid, new.a, new.b);
+  END;
+}
+
+do_execsql_test 10.3 {
+  INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
+} {-1}
+
+do_execsql_test 10.3 {
+  UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
+} {1 2 3}
+
+do_execsql_test 10.4 {
+  SELECT * FROM log;
+} {
+  insert -1 1234 5678 update 1 z y update 2 z y update 3 z y
+}
+
+
 finish_test
+
