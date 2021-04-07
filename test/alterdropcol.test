@@ -293,4 +293,22 @@ do_execsql_test 7.3 {
   SELECT * FROM t1;
 } {1 2 4 5}
 
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b)'
+}
+db close
+sqlite3 db test.db
+do_execsql_test 8.1 {
+  ALTER TABLE t1 DROP COLUMN b;                
+}
+do_execsql_test 8.2 {
+  SELECT sql FROM sqlite_schema;
+} {{CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT)}}
+
+
+
 finish_test
