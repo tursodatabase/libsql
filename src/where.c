@@ -803,7 +803,7 @@ static void constructAutomaticIndex(
       }
     }
   }
-  assert( nKeyCol>0 );
+  assert( nKeyCol>0 || pParse->db->mallocFailed );
   pLoop->u.btree.nEq = pLoop->nLTerm = nKeyCol;
   pLoop->wsFlags = WHERE_COLUMN_EQ | WHERE_IDX_ONLY | WHERE_INDEXED
                      | WHERE_AUTO_INDEX;
