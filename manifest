@@ -1,5 +1,5 @@
-C Do\snot\sapply\sthe\soptimization\sthat\somits\sDISTINCT\sif\sall\sresult\sterms\sare\npart\sof\sa\sUNIQUE\sindex\sif\sthe\sindex\sis\salso\sa\spartial\sindex.\nFix\sfor\sthe\sbug\sreported\sby\n[forum:/forumpost/66954e9ece|forum\spost\s66954e9ece].
-D 2021-04-06T23:29:41.053
+C Fix\sseg-fault\supon\sappendvfs\sattempt\sto\sopen\snon-existent\sfile.
+D 2021-04-07T09:31:32.646
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -286,7 +286,7 @@ F ext/lsm1/tool/mklsm1c.tcl f31561bbee5349f0a554d1ad7236ac1991fc09176626f529f607
 F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f238c240
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c bdc9de0a0e61c21327e975da178b4fd6f57de9c46123044aa6ee3a20798c5db2
+F ext/misc/appendvfs.c 500fef0736caafc629ca1dbae348a121367eaa4ed8c385c291cb9ad65ea790fb
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b75a0f207391038bf1540d3372f482a95c3613511c7c474db51ede1196321c7c
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7237117595a3519717a0a4b03eb427c6ec55b214e7ecd6d0f63a613adec355d4
-R 1899601feb23988c5e65b761fe060cde
-U drh
-Z a2419e8e60af677f58e1ac87f712ec74
+P c2f940b02883e165172a4ca21c7095ffbef84ddc5367853dfeca93fda20d6056
+R 78e51a008e7d176ca31f9620ce131c9b
+U larrybr
+Z 2ec9482dd03794503104b5cc601f75d5
