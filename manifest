@@ -1,5 +1,5 @@
-C Also\sprohibit\sthe\suse\sof\srowid\sfrom\sa\ssubquery.\s\sAdd\sthe\nSQLITE_ALLOW_ROWID_IN_VIEW\scompile-time\soption\sto\srestore\slegacy\sbehavior\nin\scase\ssomebody\sactually\sneeds\sit.
-D 2021-04-07T15:45:01.945
+C Add\sthe\sSQLITE_ALLOW_ROWID_IN_VIEW\soption\sto\somitttest.tcl.
+D 2021-04-07T18:08:23.577
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1855,7 +1855,7 @@ F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
-F tool/omittest.tcl 6616fbf384f0f630113eab27d41d4530435dd94e2883307759988b45f0604a3b
+F tool/omittest.tcl 38c3e409ae0070df177ca49164f5ed19ad4f3d5b574ee3272d521a94b59bdb84
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a73c6166bb1d9f2e2de280fa4e973db152caaf6cc76b8e6a92cfe9560ddc224
-R 0032824dbcc54de12ba5dee3d7eadcdf
+P 14b1d56ef84b0e62b7f9c4e5f7f985ca10e770c8db59f54004ad892c2a2dcbfb
+R d33d8d0b55631365479e60903c2b4a02
 U drh
-Z 53cda2b8f4055af11e267e9b175be4c9
+Z e476de4e1cc703b756f68023938454e2
