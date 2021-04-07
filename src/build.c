@@ -2702,7 +2702,16 @@ void sqlite3CreateView(
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ) goto create_view_fail;
+
+  /* Legacy versions of SQLite allowed the use of the magic "rowid" column
+  ** on a view, even though views do not have rowids.  The following flag
+  ** setting fixes this problem.  But the fix can be disabled by compiling
+  ** with -DSQLITE_ALLOW_ROWID_IN_VIEW in case there are legacy apps that
+  ** depend upon the old buggy behavior. */
+#ifndef SQLITE_ALLOW_ROWID_IN_VIEW
   p->tabFlags |= TF_NoVisibleRowid;
+#endif
+
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
   sqlite3FixInit(&sFix, pParse, iDb, "view", pName);

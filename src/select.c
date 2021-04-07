@@ -1807,7 +1807,13 @@ static const char *columnTypeImpl(
         ** of the SELECT statement. Return the declaration type and origin
         ** data for the result-set column of the sub-select.
         */
-        if( iCol>=0 && iCol<pS->pEList->nExpr ){
+        if( iCol<pS->pEList->nExpr
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+         && iCol>=0
+#else
+         && ALWAYS(iCol>=0)
+#endif
+        ){ 
           /* If iCol is less than zero, then the expression requests the
           ** rowid of the sub-select or view. This expression is legal (see 
           ** test case misc2.2.2) - it always evaluates to NULL.
@@ -3593,9 +3599,12 @@ static Expr *substExpr(
    && pExpr->iTable==pSubst->iTable
    && !ExprHasProperty(pExpr, EP_FixedCol)
   ){
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
     if( pExpr->iColumn<0 ){
       pExpr->op = TK_NULL;
-    }else{
+    }else
+#endif
+    {
       Expr *pNew;
       Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
       Expr ifNullRow;
@@ -5234,7 +5243,13 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
   sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
   pTab->iPKey = -1;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
-  pTab->tabFlags |= TF_Ephemeral;
+#ifndef SQLITE_ALLOW_ROWID_IN_VIEW
+  /* The usual case - do not allow ROWID on a subquery */
+  pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
+#else
+  pTab->tabFlags |= TF_Ephemeral;  /* Legacy compatibility mode */
+#endif
+
 
   return pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
 }

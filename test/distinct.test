@@ -127,7 +127,6 @@ foreach {tn noop sql} {
   21  0   "SELECT DISTINCT c2 FROM t3"
 
   22  0   "SELECT DISTINCT * FROM (SELECT 1, 2, 3 UNION SELECT 4, 5, 6)"
-  23  1   "SELECT DISTINCT rowid FROM (SELECT 1, 2, 3 UNION SELECT 4, 5, 6)"
 
   24  0   "SELECT DISTINCT rowid/2 FROM t1"
   25  1   "SELECT DISTINCT rowid/2, rowid FROM t1"
