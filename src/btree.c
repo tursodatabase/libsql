@@ -6163,7 +6163,7 @@ static int allocateBtreePage(
 
         iPage = get4byte(&aData[8+closest*4]);
         testcase( iPage==mxPage );
-        if( iPage>mxPage ){
+        if( iPage>mxPage || iPage<2 ){
           rc = SQLITE_CORRUPT_PGNO(iTrunk);
           goto end_allocate_page;
         }
