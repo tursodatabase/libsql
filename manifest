@@ -1,5 +1,5 @@
-C Handle\sa\sspecial\scase\sof\scorruption\sthat\scan\spresent\sif\s"PRAGMA\swritable_schema=1"\sis\sset.\sFix\sfor\sdbsqlfuzz\stest\scase\s6229ad63de49e3ba0630aaf0058868f36008bcca.
-D 2021-04-08T15:19:46.185
+C Handle\sthe\scorruption\sfixed\sby\sthe\sprevious\scommit\sin\sa\sdifferent\sway\sso\sas\sto\salso\sfix\sdbsqlfuzz\scrash\s753de0a0ac5b25b18f1e4d41e650d3333cdc270c.
+D 2021-04-08T19:39:00.906
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 829bf06416fcc8b3ab1bca01475c82ff47d75e06b2786a0dcebc695d37ae239e
+F src/btree.c 223f8a50e050f510942d3591c5c55aed7b2d0944370245b47c3c0a295e9b239e
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c 3a63a0dd142e238247fba0c20d6321ef1a8917de7814657ad279a02d2ff6da78
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f375f541efee520042be83548ad96dfa889e2c349eda5db7612ac2336dd4e4f9
-R 399e530b9b47e95d4c487623c13f5939
+P 58f36af2271517abafa9f4a46f2a5f97e66c001675c17868282197d599603d1b
+R f66b0623947ba640e8e730eba8454a06
 U dan
-Z a74485b8a62e83c22667a323b825dd17
+Z 6c99339f28beab6b463fc646e3d6a411

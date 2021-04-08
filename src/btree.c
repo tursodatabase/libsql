@@ -8698,20 +8698,9 @@ int sqlite3BtreeInsert(
   assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND|BTREE_PREFORMAT))==flags );
   assert( (flags & BTREE_PREFORMAT)==0 || seekResult || pCur->pKeyInfo==0 );
 
-  if( pCur->eState>=CURSOR_REQUIRESEEK ){
-    /* The cursor can be in REQUIRESEEK state when seekResult is non-zero
-    ** only if the schema is corrupt such that there is more than one table or
-    ** index with the same root page as used by the cursor. Which can only
-    ** happen if the SQLITE_NoSchemaError flag was set when the schema was
-    ** loaded. This cannot be asserted though, as a user might set the flag,
-    ** load the schema, and then unset the flag.  */
-    assert( pCur->eState==CURSOR_REQUIRESEEK || pCur->eState==CURSOR_FAULT );
-    assert( pCur->eState==CURSOR_REQUIRESEEK || pCur->skipNext!=SQLITE_OK );
-    if( pCur->eState==CURSOR_REQUIRESEEK ){
-      if( seekResult ) return SQLITE_CORRUPT_BKPT;
-    }else{
-      return pCur->skipNext;
-    }
+  if( pCur->eState==CURSOR_FAULT ){
+    assert( pCur->skipNext!=SQLITE_OK );
+    return pCur->skipNext;
   }
 
   assert( cursorOwnsBtShared(pCur) );
@@ -8741,6 +8730,14 @@ int sqlite3BtreeInsert(
   if( pCur->curFlags & BTCF_Multiple ){
     rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
     if( rc ) return rc;
+    if( loc && pCur->iPage<0 ){
+      /* This can only happen if the schema is corrupt such that there is more
+      ** than one table or index with the same root page as used by the cursor.
+      ** Which can only happen if the SQLITE_NoSchemaError flag was set when
+      ** the schema was loaded. This cannot be asserted though, as a user might
+      ** set the flag, load the schema, and then unset the flag.  */
+      return SQLITE_CORRUPT_BKPT;
+    }
   }
 
   if( pCur->pKeyInfo==0 ){
@@ -8828,7 +8825,6 @@ int sqlite3BtreeInsert(
         return btreeOverwriteCell(pCur, &x2);
       }
     }
-
   }
   assert( pCur->eState==CURSOR_VALID 
        || (pCur->eState==CURSOR_INVALID && loc)
