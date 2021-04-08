@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sassert()\sfrom\ssqlite3EndTable().\ndbsqlfuzz\s4af45bcda779592449b1985433bca90b0e683b9b.
-D 2021-04-08T13:52:11.290
+C Hardden\sthe\sfilter_over\sgrammar\srule\sagainst\sOOM\sfaults.\ndbsqlfuzz\se47c54502a9c36778a5ed553199d5870e2ebd9f2
+D 2021-04-08T14:15:26.728
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -531,7 +531,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9c46e887c1c342d00deebe0797cc723c7f0942349776cb37d752cf5d7beab985
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 2107aff88e361bbf8388fdede3fed20fda875f23ba7585ec83b20e3e16a95670
+F src/parse.y 77039cf996d9cde8ee1e947ad9284566c30e48cc227766a7be1d475ec7aed9dd
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be7cd9ebb1ba360c60469073b2e526cb1cceea702e43fcc07f47b47986908c8f
-R b63c9e35895366acea301a21f1e4e41d
+P 38a1085cbd5b6dd5f418efa15c6da05de781f794b8f3dad3f871c96019fed099
+R 1d7c0bfa4648db3fd607bbdef3ff6d40
 U drh
-Z 382e1728fd15de814d3b653c6bd9589b
+Z ef9e8dda92779cb066dd8a613f6189de

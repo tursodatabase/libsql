@@ -1801,7 +1801,11 @@ frame_exclude(A) ::= GROUP|TIES(X).  {A = @X; /*A-overwrites-X*/}
 window_clause(A) ::= WINDOW windowdefn_list(B). { A = B; }
 
 filter_over(A) ::= filter_clause(F) over_clause(O). {
-  O->pFilter = F;
+  if( O ){
+    O->pFilter = F;
+  }else{
+    sqlite3ExprDelete(pParse->db, F);
+  }
   A = O;
 }
 filter_over(A) ::= over_clause(O). {
