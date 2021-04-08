@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sthat\smight\sbe\sfalse\sunder\svery\sunusual\scircumstances.\ndbsqlfuzz\s300261f469ace7ecc57ed32ea7b0de3ea9d7dbf.\s\sTest\scase\sin\sTH3.
-D 2021-04-08T19:56:58.010
+C Fix\sa\suse-after-free\serror\sthat\scould\soccur\swhen\sprocessing\s"SELECT\saggregate(DISTINCT\s<expr>)..."\squeries.
+D 2021-04-08T20:29:12.532
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c fc136d935f19966747663bed605ad7f06f84f9fe7bf7bf79e9bf844ef5c7556d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c b426e9e2fb984811684744eb37d486d516eebada54a9f599474deb4c7c8e3e35
+F src/select.c 47f6d9e1196b23232a7ab36aa2baef56593c6a211b486152461aae122206193c
 F src/shell.c.in 9320b476fde0f7c46700e5695b69b435f1e46843a1513cdd187ac426cdbee016
 F src/sqlite.h.in 18ec33e32001721fd4e9c4705a24a85dff04956ac2c0a21775058884ba845b09
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -845,7 +845,7 @@ F test/descidx3.test 953c831df7ea219c73826dfbf2f6ee02d95040725aa88ccb4fa43d1a199
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 3e4210ef9cd1985aeec44939ad912c4621fbea9bb4a9c565696cebfe184b2ec5
 F test/distinct2.test cd1d15a4a2abf579298f7161e821ed50c0119136fe0424db85c52cf0adc230d1
-F test/distinctagg.test 2ff06cbc65cbc25fff8c9b00004da3aa3431b7001601bdfc7d4eb700ece1c4d0
+F test/distinctagg.test d76ef2e91fe810630c176d6bd0a58c14d5851c3125f0a1d977db87ba76359639
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
 F test/e_blobopen.test e95e1d40f995056f6f322cd5e1a1b83a27e1a145
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb27ce25095ab9b5acbe4bf010c7f6d8a71191c2f79b3bf3e63d8655b4fe0769
-R 020de4969459832aee161bf32445ebf7
-U drh
-Z 68d218f21dd2d52fe942989c2320ee36
+P 466f508973e7adc983a4c9bd7c86b4d9269e3b990183fc7f95a50fe72b832ad0
+R dc4f4e7df3f2755f0ab15328cef32677
+U dan
+Z 60fabc9af77c328e9b10bc80fdc4b65d

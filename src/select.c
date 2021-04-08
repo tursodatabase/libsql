@@ -6912,8 +6912,10 @@ int sqlite3Select(
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, pDistinct,
           WHERE_GROUPBY | (orderByGrp ? WHERE_SORTBYGROUP : 0) | distFlag, 0
       );
-      sqlite3ExprListDelete(db, pDistinct);
-      if( pWInfo==0 ) goto select_end;
+      if( pWInfo==0 ){
+        sqlite3ExprListDelete(db, pDistinct);
+        goto select_end;
+      }
       eDist = sqlite3WhereIsDistinct(pWInfo);
       SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
       if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
@@ -7046,6 +7048,7 @@ int sqlite3Select(
         sqlite3WhereEnd(pWInfo);
         sqlite3VdbeChangeToNoop(v, addrSortingIdx);
       }
+      sqlite3ExprListDelete(db, pDistinct);
 
       /* Output the final row of result
       */
