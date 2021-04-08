@@ -2392,7 +2392,6 @@ void sqlite3EndTable(
   if( pEnd==0 && pSelect==0 ){
     return;
   }
-  assert( !db->mallocFailed );
   p = pParse->pNewTable;
   if( p==0 ) return;
 
