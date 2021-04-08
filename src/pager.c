@@ -5837,7 +5837,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   assert( pPager->eState>=PAGER_READER && pPager->eState<PAGER_ERROR );
   pPager->subjInMemory = (u8)subjInMemory;
 
-  if( ALWAYS(pPager->eState==PAGER_READER) ){
+  if( pPager->eState==PAGER_READER ){
     assert( pPager->pInJournal==0 );
 
     if( pagerUseWal(pPager) ){
