@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\suse\sof\srowid\sfor\sviews\sand\ssubqueries\sunless\scompiled\nwith\s-DSQLITE_ALLOW_ROWID_IN_VIEW.
-D 2021-04-07T18:17:53.626
+C Fix\san\sobscure\smemory\sleak\sin\sFTS3.\s\sdbsqlfuzz\s26a51001beeff35649d2e328b05ec06f93c577a5
+D 2021-04-08T13:41:20.171
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -87,7 +87,7 @@ F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 8912fedb1bf647eb05fa940032af0cc77ed492225da8b180228233bc5ebf8158
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h bde280294d56ff50ee29d03e5140f0b6953b44d1c969bb5831e8ae85e3e76715
-F ext/fts3/fts3_aux.c 96708c8b3a7d9b8ca1b68ea2b7e503e283f20e95f145becadedfad096dbd0f34
+F ext/fts3/fts3_aux.c 1af58af8f2b00a49f4fb1c2602f8da2054ad60076f46c8ebf85c5410eccccb65
 F ext/fts3/fts3_expr.c 5853cd7a35a79d193614add9b4c461b2d56f465d90899ca4309f05d9d1536558
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
@@ -1912,8 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c22e47c77a35ebcd1fdfc0caea9119dd5e24e76d5fdd0f2ffbb58205a7242297 83b8e4c281c5295950fbf2330a45193b73054b0749b51a6c2c4fbc79a7a5f82d
-R 6183df7717405231e03d277ef4600684
-T +closed 83b8e4c281c5295950fbf2330a45193b73054b0749b51a6c2c4fbc79a7a5f82d
+P a2ddb89b206c13876d34c5f9e3db41cda72d6eb3fea31ffa8cc6daa1e1580e16
+R 43b18b76ae65df479af55bbb8c2758aa
 U drh
-Z a8b953e03b1d0e1c8a660962fbca94a1
+Z b6053fe60094e2c8058843b28c7248cb
