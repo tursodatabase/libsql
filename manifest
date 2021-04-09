@@ -1,5 +1,5 @@
-C Have\sthe\sVFS\sin\smemdb.c\sreturn\sSQLITE_IOERR_NOMEM\sinstead\sof\sSQLITE_NOMEM\swhen\san\sOOM\serror\sis\sencountered.\sThis\sis\srequired\sto\sget\sthe\spager\smodule\sto\shandle\ssuch\sOOM\serrors\scorrectly\sin\ssome\scases.
-D 2021-04-09T20:50:40.257
+C Remove\san\sALWAYS()\sthat\sis\sactually\sreachable\sfollowing\san\sOOM\son\san\nUPDATE\sFROM\sof\sa\svirtual\stable.\ndbsqlfuzz\saa03237ef7c4a028c7cdaf8bbcde2b62e2bcd36e
+D 2021-04-09T22:20:20.951
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 0b9c82fa628b5adce93e2bcaf935a24d43eb83344fb51551f7835526d0693fc4
 F src/treeview.c 70f57a2b77e20b354724ea69b8ed1ea1df946c48296d695320c741c7d174be90
 F src/trigger.c f8493674f5c8f103c1a2cd0616af9dca85c7058450f9fe47cacd15cf5d512d52
-F src/update.c 3130bb21a2eb5db2620c084db3225b646834ad3a6d6c2929dcc3dd542eefb3ae
+F src/update.c b3abdaf4a314bbed238da69a6ca54c0f21262119389b412ee5778fffe62dd3cc
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e4789860b81c31d3a6d1f9f8340042ce1d08a82bf6119c783fcab85180b1b63
-R 1dcd3387f72b40469fd0f94d61b83e14
-U dan
-Z 8f211435e3db29442c2817270ff32961
+P 09c96b4c026746f285a8aef5199bd247ecca590095ee42dde4f4dfa4996ce0bd
+R 5c43dd4043e1a7a66c55a9040596d360
+U drh
+Z 4a95bf68f015f799d9f5c1fe598c06fb
