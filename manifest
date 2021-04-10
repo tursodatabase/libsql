@@ -1,5 +1,5 @@
-C Refactor\sNameContext.nErr\sinto\snNcErr\sto\savoid\sconfusion\swith\sParse.nErr.\nDo\snot\sabandon\ssqlite3ResolveExprList()\son\snNcErr\sif\snErr\sis\sstill\szero\nas\swe\smight\shave\shit\sa\sproblem\swith\sORDER\sBY\sresolution\sthat\sshould\sbe\sa\nsuppressed\serror.\s\sdbsqlfuzz\s41b9dad40919d3549ca7e52d893da81a6dded4ad
-D 2021-04-10T13:37:04.419
+C Fix\sa\sproblem\swith\shandling\sexpressions\slike\s"(col\sIS\sNULL\sAND\s<expr1>)\sOR\scol\s==\sNULL"\sin\sWHERE\sclauses.
+D 2021-04-10T14:49:45.172
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
 F src/where.c 516790825454a104fca2cc9544e279d42217b22e86cec2f73ab1a9d00586b60a
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 8bdc239eae3d39f9f6ace4299eeb86e1e0c56eed88b60f9c473dc85ae79f4e89
-F src/whereexpr.c 4ba94b8ebbff97c658b212de6ccdb6d3a41847800bdf99e7a2a967c250269f2c
+F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
 F src/window.c ae9fbd0cbaa39e1b384c13289ed769f9981383bde7b2f262c70ad6c42e5ab226
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1227,7 +1227,7 @@ F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
-F test/notnull2.test 9b09c3405f1dfaf8c1725fb16d815407a5ceb4bb5bc7300e7a506348b3e78cd9
+F test/notnull2.test 131365171d973c57fe694fcc46c1e645f6e24ceb43b230ad5011a0ea2182f215
 F test/notnullfault.test fc4bb7845582a2b3db376001ef49118393b1b11abe0d24adb03db057ee2b73d5
 F test/null.test b7ff206a1c60fe01aa2abd33ef9ea83c93727d993ca8a613de86e925c9f2bc6f
 F test/nulls1.test 7a5e4346ee4285034100b4cd20e6784f16a9d6c927e44ecdf10034086bbee9c9
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c174f5d32b8c6bbad102065b2d5acae70ddb153f863a2842da836cf7db3f683f
-R ab9a69e5f59365e2aa4e518c7b479e96
-U drh
-Z 8d0d11fb9fd2bef35d8666298721b623
+P 7d674970741bd9b228b818c701c1ae010b90cc287a4c60a872f18b66353d164d
+R d9ebb4317f562cba7219ced248df767d
+U dan
+Z e0238411756859b56ec8476d4ae8819b
