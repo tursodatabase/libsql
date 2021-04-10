@@ -433,7 +433,10 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
   sqlite3_int64 ix;
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 );
   assert( (pMem->flags & (MEM_Str|MEM_Blob))!=0 );
-  ExpandBlob(pMem);
+  if( ExpandBlob(pMem) ){
+    pMem->u.i = 0;
+    return MEM_Int;
+  }
   rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
   if( rc<=0 ){
     if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
