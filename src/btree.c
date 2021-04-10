@@ -8834,7 +8834,7 @@ int sqlite3BtreeInsert(
   assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );
   assert( pPage->leaf || !pPage->intKey );
   if( pPage->nFree<0 ){
-    if( pCur->eState>CURSOR_INVALID ){
+    if( NEVER(pCur->eState>CURSOR_INVALID) ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       rc = btreeComputeFreeSpace(pPage);
