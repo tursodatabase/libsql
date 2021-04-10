@@ -607,7 +607,7 @@ static int lookupName(
       sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
     pParse->checkSchema = 1;
-    pTopNC->nErr++;
+    pTopNC->nNcErr++;
   }
 
   /* If a column from a table in pSrcList is referenced, then record
@@ -914,7 +914,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
               sqlite3ErrorMsg(pParse,
                 "second argument to likelihood() must be a "
                 "constant between 0.0 and 1.0");
-              pNC->nErr++;
+              pNC->nNcErr++;
             }
           }else{
             /* EVIDENCE-OF: R-61304-29449 The unlikely(X) function is
@@ -936,7 +936,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             if( auth==SQLITE_DENY ){
               sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
                                       pDef->zName);
-              pNC->nErr++;
+              pNC->nNcErr++;
             }
             pExpr->op = TK_NULL;
             return WRC_Prune;
@@ -992,7 +992,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           sqlite3ErrorMsg(pParse, 
               "%.*s() may not be used as a window function", nId, zId
           );
-          pNC->nErr++;
+          pNC->nNcErr++;
         }else if( 
               (is_agg && (pNC->ncFlags & NC_AllowAgg)==0)
            || (is_agg && (pDef->funcFlags&SQLITE_FUNC_WINDOW) && !pWin)
@@ -1005,13 +1005,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             zType = "aggregate";
           }
           sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
-          pNC->nErr++;
+          pNC->nNcErr++;
           is_agg = 0;
         }
 #else
         if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
           sqlite3ErrorMsg(pParse,"misuse of aggregate function %.*s()",nId,zId);
-          pNC->nErr++;
+          pNC->nNcErr++;
           is_agg = 0;
         }
 #endif
@@ -1021,11 +1021,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
         ){
           sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
-          pNC->nErr++;
+          pNC->nNcErr++;
         }else if( wrong_num_args ){
           sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
                nId, zId);
-          pNC->nErr++;
+          pNC->nNcErr++;
         }
 #ifndef SQLITE_OMIT_WINDOWFUNC
         else if( is_agg==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
@@ -1033,7 +1033,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
               "FILTER may not be used with non-aggregate %.*s()", 
               nId, zId
           );
-          pNC->nErr++;
+          pNC->nNcErr++;
         }
 #endif
         if( is_agg ){
@@ -1258,7 +1258,7 @@ static int resolveOrderByTermToExprList(
   nc.pSrcList = pSelect->pSrc;
   nc.uNC.pEList = pEList;
   nc.ncFlags = NC_AllowAgg|NC_UEList;
-  nc.nErr = 0;
+  nc.nNcErr = 0;
   db = pParse->db;
   savedSuppErr = db->suppressErr;
   if( IN_RENAME_OBJECT==0 ) db->suppressErr = 1;
@@ -1883,7 +1883,7 @@ int sqlite3ResolveExprNames(
   testcase( pNC->ncFlags & NC_HasWin );
   ExprSetProperty(pExpr, pNC->ncFlags & (NC_HasAgg|NC_HasWin) );
   pNC->ncFlags |= savedHasAgg;
-  return pNC->nErr>0 || w.pParse->nErr>0;
+  return pNC->nNcErr>0 || w.pParse->nErr>0;
 }
 
 /*
@@ -1928,7 +1928,7 @@ int sqlite3ResolveExprListNames(
       savedHasAgg |= pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
       pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
     }
-    if( pNC->nErr>0 || w.pParse->nErr>0 ) return WRC_Abort;
+    if( w.pParse->nErr>0 ) return WRC_Abort;
   }
   pNC->ncFlags |= savedHasAgg;
   return WRC_Continue;
