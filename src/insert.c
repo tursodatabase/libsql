@@ -358,7 +358,7 @@ static int autoIncBegin(
     ** Ticket d8dc2b3a58cd5dc2918a1d4acb 2018-05-23 */
     if( pSeqTab==0
      || !HasRowid(pSeqTab)
-     || IsVirtual(pSeqTab)
+     || NEVER(IsVirtual(pSeqTab))
      || pSeqTab->nCol!=2
     ){
       pParse->nErr++;
