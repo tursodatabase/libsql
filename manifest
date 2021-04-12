@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\sif\sthe\sORDER\sBY\sclause\sof\sa\scompound\sSELECT\scontains\sa\ssub-select\sthat\suses\sone\sor\smore\swindow\sfunctions.
-D 2021-04-12T16:59:28.732
+C Add\san\sassert()\sto\sshow\sthat\sthe\sSF_Resolved\sflag\sdoes\snot\sget\sset\sif\nerrors\sare\sbeing\ssuppressed.
+D 2021-04-12T17:34:03.033
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 7a0fc6866748541af55e59f950f3461aa419f137d6e6a16c6246c115b9198287
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 90503542110852f365137b27be799f6e5b407c59eaae908fae7fffd38d117b47
+F src/resolve.c 059d183511b8211bd019715e66632ac7d314bd90075223a2499a9cc0be4103de
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c ed07c4ad9c6f21b7b5b71a4eb844d4c52908324b8a3a48f00e0c0923337150c9
 F src/shell.c.in 9320b476fde0f7c46700e5695b69b435f1e46843a1513cdd187ac426cdbee016
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28ecb3810b40ca58c2e04a752bbc2234c64c27185aef2cb3fe7c933082dc2578
-R 62bc949f2e959c0595e9131b28ace0cd
-U dan
-Z a8d1690d44ebe253332d3b34a770214c
+P 5ba15ebb34c3af85ef6c54bbb3acb57176d629cda83774881b2a6467e138e904
+R 2430ed3ebb0f173c82c7b5569aac04d2
+U drh
+Z 862796c7843f93900822158f67e87287
