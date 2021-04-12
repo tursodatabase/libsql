@@ -1,5 +1,5 @@
-C Avoid\san\sassert()\sfailure\swhen\sa\scompound\sscalar\ssub-select\sis,\sdue\sto\sa\s"WHERE\s(sub-select)\sAND\s(...\sOR\s...)"\sclause,\scoded\stwice\sby\sthe\scode\sgenerator.
-D 2021-04-12T12:02:49.820
+C Fix\sthe\sdisplay\sof\sSrcList\sin\sthe\ssqlite3TreeView\sdebugging\sroutines.
+D 2021-04-12T12:58:55.116
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 0b9c82fa628b5adce93e2bcaf935a24d43eb83344fb51551f7835526d0693fc4
-F src/treeview.c 70f57a2b77e20b354724ea69b8ed1ea1df946c48296d695320c741c7d174be90
+F src/treeview.c e483aeedf6f207000db1f90eb6abd816350493314c30e8749d319bdb9ab3b08c
 F src/trigger.c f8493674f5c8f103c1a2cd0616af9dca85c7058450f9fe47cacd15cf5d512d52
 F src/update.c b3abdaf4a314bbed238da69a6ca54c0f21262119389b412ee5778fffe62dd3cc
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 785a553e71e2ecf108ec4140d470d718ceeb2d03896f7aab36ce10cf0e99e72e
-R 2bb068f9c427edfbbb49240d84e33e24
-U dan
-Z 8ca136af64949b0996dcf4c85f280d81
+P a4e3f13329332f91a250bc18459fd4100990a1ac0516f8a0a6b21ff117db9795
+R 69ebcba1c2ed8bedc6bebbd2142e3727
+U drh
+Z 80313787b667b082cab0e4bdbe569436
