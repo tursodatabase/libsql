@@ -1,5 +1,5 @@
-C Avoid\staking\sthe\saddress\sof\sa\sNULL\spointer\sfollowing\san\sOOM\sin\sFTS5.\s\sDoing\nso\sis\sharmless\sin\sactual\spractice,\sbut\sit\stechnically\sUB\sso\swe\swant\sto\navoid\sit.
-D 2021-04-12T18:32:33.380
+C Fix\san\sassert()\sin\sOP_ParseSchema\sso\sthat\sit\sworks\seven\safter\san\sOOM.
+D 2021-04-12T22:39:46.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c c98340e85fae3a784d3efb88ad98a148282aa65402217ed2b44534294529506c
+F src/vdbe.c 045088321542f47419b30be7088137097a9a80946e8eee163899d3ab3d5d9312
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 000d9ab1ea4cb55a80de15e28f3f595645b4fddef34bca4347fb3db8031d9041
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f455c5b0bda3d303f9269db37efaa8ff0b356622b2df0a7544f83bb334118180
-R cf1b8d6292a5a7fcdbf2243ea6e99f61
+P 1cfcd9dceb56b5987e6900a36a0ec092f0e1b13a7e754b8c3d8efb943e5bcc66
+R 9796ff13f341cbbd883bfba0b029e229
 U drh
-Z 212d59562138396a66caf514d3fa4b90
+Z 75ac750988d1ea436d9d4ea3f83a69d5
