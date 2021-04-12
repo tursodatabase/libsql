@@ -3545,6 +3545,9 @@ static int multiSelectOrderBy(
   p->pPrior = pPrior;
   pPrior->pNext = p;
 
+  sqlite3ExprListDelete(db, pPrior->pOrderBy);
+  pPrior->pOrderBy = 0;
+
   /*** TBD:  Insert subroutine calls to close cursors on incomplete
   **** subqueries ****/
   ExplainQueryPlanPop(pParse);
