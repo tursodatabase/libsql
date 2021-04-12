@@ -2045,4 +2045,19 @@ foreach {tn spec res} {
   " $res
 }
 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 67.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(a, b, c);
+}
+
+do_catchsql_test 67.1 {
+  SELECT a,c,b FROM t1 INTERSECT SELECT a,b,c FROM t1 ORDER BY (             
+      SELECT nth_value(a,2) OVER w1 
+      WINDOW w1 AS ( ORDER BY ((SELECT 1 FROM v1)) )
+  )
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
 finish_test

@@ -1257,7 +1257,7 @@ static int resolveOrderByTermToExprList(
   nc.pParse = pParse;
   nc.pSrcList = pSelect->pSrc;
   nc.uNC.pEList = pEList;
-  nc.ncFlags = NC_AllowAgg|NC_UEList;
+  nc.ncFlags = NC_AllowAgg|NC_UEList|NC_NoSelect;
   nc.nNcErr = 0;
   db = pParse->db;
   savedSuppErr = db->suppressErr;
@@ -1864,7 +1864,7 @@ int sqlite3ResolveExprNames(
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin);
   w.pParse = pNC->pParse;
   w.xExprCallback = resolveExprStep;
-  w.xSelectCallback = resolveSelectStep;
+  w.xSelectCallback = (pNC->ncFlags & NC_NoSelect) ? 0 : resolveSelectStep;
   w.xSelectCallback2 = 0;
   w.u.pNC = pNC;
 #if SQLITE_MAX_EXPR_DEPTH>0
