@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sshow\sthat\sthe\sSF_Resolved\sflag\sdoes\snot\sget\sset\sif\nerrors\sare\sbeing\ssuppressed.
-D 2021-04-12T17:34:03.033
+C Avoid\staking\sthe\saddress\sof\sa\sNULL\spointer\sfollowing\san\sOOM\sin\sFTS5.\s\sDoing\nso\sis\sharmless\sin\sactual\spractice,\sbut\sit\stechnically\sUB\sso\swe\swant\sto\navoid\sit.
+D 2021-04-12T18:32:33.380
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -116,7 +116,7 @@ F ext/fts5/fts5.h c132a9323f22a972c4c93a8d5a3d901113a6e612faf30ca8e695788438c5ca
 F ext/fts5/fts5Int.h 26c74dd5776f798436fbf604a0bf0e8de263b35b5060b05c15f9085845d9fda2
 F ext/fts5/fts5_aux.c f558e1fb9f0f86a4f7489e258c162e1f947de5ff2709087fbb465fddb7092f98
 F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6dc8aaca70
-F ext/fts5/fts5_config.c be54f44fca491e96c6923a4b9a736f2da2b13811600eb6e38d1bcc91c4ea2e61
+F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7fa1842ff3
 F ext/fts5/fts5_expr.c 016bd06030679bd31b0f07ef87d62c42031e5da25cb3174a84e5b0f6ef4b47b0
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
 F ext/fts5/fts5_index.c 27c83f0ca4f97b5f525014f277d15262ffbccdf8153b92919fd1b9035d23f0b1
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ba15ebb34c3af85ef6c54bbb3acb57176d629cda83774881b2a6467e138e904
-R 2430ed3ebb0f173c82c7b5569aac04d2
+P f455c5b0bda3d303f9269db37efaa8ff0b356622b2df0a7544f83bb334118180
+R cf1b8d6292a5a7fcdbf2243ea6e99f61
 U drh
-Z 862796c7843f93900822158f67e87287
+Z 212d59562138396a66caf514d3fa4b90

@@ -537,7 +537,7 @@ int sqlite3Fts5ConfigParse(
 
   nByte = nArg * (sizeof(char*) + sizeof(u8));
   pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, nByte);
-  pRet->abUnindexed = (u8*)&pRet->azCol[nArg];
+  pRet->abUnindexed = pRet->azCol ? (u8*)&pRet->azCol[nArg] : 0;
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
