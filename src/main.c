@@ -1274,7 +1274,7 @@ int sqlite3_txn_state(sqlite3 *db, const char *zSchema){
 /*
 ** Two variations on the public interface for closing a database
 ** connection. The sqlite3_close() version returns SQLITE_BUSY and
-** leaves the connection option if there are unfinalized prepared
+** leaves the connection open if there are unfinalized prepared
 ** statements or unfinished sqlite3_backups.  The sqlite3_close_v2()
 ** version forces the connection to become a zombie if there are
 ** unclosed resources, and arranges for deallocation when the last

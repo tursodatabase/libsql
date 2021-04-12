@@ -1,5 +1,5 @@
-C Add\sNEVER()\sto\sa\sbranch\sthat\sis\sno\slonger\sreachable\sdue\sto\ncheck-in\s[a1d823f6879ce1ac].
-D 2021-04-11T00:11:56.289
+C Fix\sharmless\scomment\stypo\sin\smain.c.
+D 2021-04-12T11:51:32.654
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -506,7 +506,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2189e0e596010a0dc5405d9f14f78db1ee2fa71138c931f5b6ea96610b95bfc1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
-F src/main.c 2a7ece3a67c646e5fe9984ffe0277d6a76f80ce9715bf2faa591d8cb66b9d913
+F src/main.c 7db30c6293bb86c45c11638b1de38419e663623b549c74959be6981e7731eb5e
 F src/malloc.c c1af4ac5a463648cd2953fd4ac679b3ba9022ce5ec794a60806150ad69dfd33a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8096f7aee497f852b1404e13cdc8bafb54fcf6c540cd58addbc01eb2e27011b3
-R 700839b8d2d96e5657c7b37119e0b3d1
+P 5fda21feda2448de880088f4f53f20875ef02b47172c48091638b80173f983d7
+R ce86d2abefb5f772940ef5ac84480c77
 U drh
-Z 741a4d994dbe9dd0257d6b2702a3937e
+Z 82a15376523c6f94b37a36b672088fd0
