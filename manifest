@@ -1,5 +1,5 @@
-C In\sthe\srtreedepth()\sfunction,\sdetect\sOOM\swhen\sconverting\sa\szeroblob()\son\ninput.\s\sdbsqlfuzz\sed23eda7cc3a8a054f85ea19d55c59ba2ca72744.
-D 2021-04-13T12:28:55.386
+C Earlier\sdetection\sempty_result_callbacks\sin\ssqlite3InitCallbac()\sto\savoid\nproblems\swith\scorrupt\sschemas\san\swritable_schema=ON.\ndbsqlfuzz\sca4ca43bdb22eab9859de4979aec615af851e111.
+D 2021-04-13T13:01:07.405
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
-F src/prepare.c 7a0fc6866748541af55e59f950f3461aa419f137d6e6a16c6246c115b9198287
+F src/prepare.c b7e9bb094622b693859f39fc509ebbb9dcfe1e907b5b6b5410b55aa693c6ac14
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 059d183511b8211bd019715e66632ac7d314bd90075223a2499a9cc0be4103de
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e718a62ed1d5ba9b1404ba67fae1ad731809e2ebd9253edc57d2b34a19fbef24
-R 1d8b77d255a7bcb7d3413be91d67a42e
+P 69f843c8fa6e21500b5777169c3b394453ba818b4e32427428480dca5b4ed615
+R 2c4ad5fcc8c36287acf12d403dfcc0a6
 U drh
-Z 5e89c1af61b5fcb8690ac876b5916bc8
+Z 03af19fd6cb1005d4863de667a86ba99
