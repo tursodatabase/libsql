@@ -4541,14 +4541,14 @@ static void fts5FlushOneHash(Fts5Index *p){
         fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
       }else{
         i64 iRowid = 0;
-        i64 iDelta = 0;
+        u64 iDelta = 0;
         int iOff = 0;
 
         /* The entire doclist will not fit on this leaf. The following 
         ** loop iterates through the poslists that make up the current 
         ** doclist.  */
         while( p->rc==SQLITE_OK && iOff<nDoclist ){
-          iOff += fts5GetVarint(&pDoclist[iOff], (u64*)&iDelta);
+          iOff += fts5GetVarint(&pDoclist[iOff], &iDelta);
           iRowid += iDelta;
           
           if( writer.bFirstRowidInPage ){

@@ -42,5 +42,26 @@ do_execsql_test 1.2 {
   INSERT INTO ccc(ccc) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE tx USING fts5(x);
+}
+
+set doc [string repeat "abc " 5000]
+do_execsql_test 2.2 {
+  BEGIN;
+    INSERT INTO tx(rowid, x) VALUES(-9000000000000000000, $doc);
+    INSERT INTO tx(rowid, x) VALUES(9000000000000000000, $doc);
+  COMMIT;
+}
+
+do_execsql_test 2.3 {
+  SELECT rowid FROM tx('abc');
+} {
+  -9000000000000000000
+   9000000000000000000
+}
 
 finish_test
