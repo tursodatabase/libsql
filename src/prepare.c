@@ -380,15 +380,17 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   if( db->mallocFailed ){
     rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
-  }
+  }else
   if( rc==SQLITE_OK || (db->flags&SQLITE_NoSchemaError)){
-    /* Black magic: If the SQLITE_NoSchemaError flag is set, then consider
-    ** the schema loaded, even if errors occurred. In this situation the 
-    ** current sqlite3_prepare() operation will fail, but the following one
-    ** will attempt to compile the supplied statement against whatever subset
-    ** of the schema was loaded before the error occurred. The primary
-    ** purpose of this is to allow access to the sqlite_schema table
-    ** even when its contents have been corrupted.
+    /* Hack: If the SQLITE_NoSchemaError flag is set, then consider
+    ** the schema loaded, even if errors (other than OOM) occurred. In
+    ** this situation the current sqlite3_prepare() operation will fail,
+    ** but the following one will attempt to compile the supplied statement
+    ** against whatever subset of the schema was loaded before the error
+    ** occurred.
+    **
+    ** The primary purpose of this is to allow access to the sqlite_schema
+    ** table even when its contents have been corrupted.
     */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     rc = SQLITE_OK;
