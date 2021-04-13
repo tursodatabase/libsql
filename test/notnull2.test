@@ -97,5 +97,17 @@ do_execsql_test 2.1 {
   SELECT * FROM (SELECT a, b FROM t1) LEFT JOIN t3 ON a IS NULL;
 }
 
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t0(c0 PRIMARY KEY);
+  INSERT INTO t0(c0) VALUES (0);
+}
+do_execsql_test 3.1 {
+  SELECT * FROM t0 WHERE ((c0 NOT NULL) AND 1) OR (c0 == NULL);
+} {0}
+
 finish_test
 
