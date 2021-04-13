@@ -1,5 +1,5 @@
-C The\sSQLITE_NoSchemaError\sflag\sshould\snot\sapply\sto\sOOM\serrors\swhile\sparsing\sthe\nschema.
-D 2021-04-13T13:20:55.915
+C Do\snot\sleave\sa\sWITHOUT\sROWID\stable\swithout\sa\sprimary\skey\sindex\sstructure\ndue\sto\san\sOOM\serror.\s\sThis\sprevents\sdownstream\stroubles\sin\sthe\scase\sof\nPRAGMA\swritable_schema=ON.\ndbsqlfuzz\s69fb32cc82d59b4d790881566e3f6c727e616122
+D 2021-04-13T13:48:31.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 15cfe91aa3b3b91d3dc20faaa7c64b627ca9794b22be8b184054cb6b947505fc
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 3a63a0dd142e238247fba0c20d6321ef1a8917de7814657ad279a02d2ff6da78
+F src/build.c 9f15ff3e074d3989cc1396f575118eb4c28fb677d33f54393ec263799c94b5bd
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb305fe077a0058861427f107957fcc3d2b1443cdd11a7f145df138ca3bb9f4e
-R 16d2df35bbd6b7e36a26a7b3428902ad
+P 9cc484ad1a42f0821e53be6df46b1811dc8059e5aaf2f6c3e667105a55893b97
+R 251fed4b3f9e0fd7365e7ace01b2ae49
 U drh
-Z 656f71d21e31ebbc749d2994697a3864
+Z c08c9ca90948154693571a1bdfd1ec20

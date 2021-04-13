@@ -2188,7 +2188,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
-    if( db->mallocFailed || pParse->nErr ) return;
+    if( db->mallocFailed || pParse->nErr ){
+      pTab->tabFlags &= ~TF_WithoutRowid;
+      return;
+    }
     pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk->nKeyCol==1 );
   }else{
