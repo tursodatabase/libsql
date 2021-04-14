@@ -1898,8 +1898,8 @@ static void jsonArrayStep(
       jsonAppendChar(pStr, '[');
     }else if( pStr->nUsed>1 ){
       jsonAppendChar(pStr, ',');
-      pStr->pCtx = ctx;
     }
+    pStr->pCtx = ctx;
     jsonAppendValue(pStr, argv[0]);
   }
 }
