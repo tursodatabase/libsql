@@ -1,5 +1,5 @@
-C Fix\sa\spotential\scrash\swhen\susing\sjson_group_array()\sas\sa\swindow\sfunction.
-D 2021-04-14T12:11:39.100
+C Prevent\san\sassert()\sfrom\sfailing\sif\ssqlite3_blob_reopen()\sis\scalled\son\sa\sblob-handle\sthat\shas\salready\shit\san\sSQLITE_CORRUPT\serror.
+D 2021-04-14T15:25:10.656
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -418,7 +418,7 @@ F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b5879
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
-F ext/rtree/rtreefuzz001.test eef1ed593bb15886cd5d5367a2f2492f81e315848896cdf7afb6e21454978827
+F ext/rtree/rtreefuzz001.test 61bb834390f25d6c7eb46391170a473265f2029f748695924da46caf7db22dd7
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
@@ -619,7 +619,7 @@ F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 000d9ab1ea4cb55a80de15e28f3f595645b4fddef34bca4347fb3db8031d9041
 F src/vdbeapi.c 4a43e303ec3354c785f453e881521969378e85628278ab74ba4a9df790c0d93b
 F src/vdbeaux.c 1ffaf15d48b1678dfd403c02ee60061c10a5dd447051860e793cd3393ab019fe
-F src/vdbeblob.c 253ed82894924c362a7fa3079551d3554cd1cdace39aa833da77d3bc67e7c1b1
+F src/vdbeblob.c 37d627ef71aca9a11b3c4063b3d7f1a5f14c4364f9abded40016e37bf15ba392
 F src/vdbemem.c 947f2a65910edb4014dc981d33e414a68c51f169f9df8c4c493a0ba840b6eb1f
 F src/vdbesort.c f5b5e473a7cee44e47a94817b042fd7172cf3aa2c0a7928a8339d612bcfdec5a
 F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb724
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 427e83eb583a4f63650912f078122e7373fe8c7ea11acfdab464d748b4235261
-R ceae815ce2ef1a29e9ff09e2a73419d0
+P 3c266690c753d093c2cb74138a46ed69276d85cd119d687a6858c84211e84eaf
+R 1229821373c94710c6cfca65316fcc76
 U dan
-Z b89ff9094a0d8891dc70faa756674a50
+Z d1d1b9d93c24f2fe354e7ba5f2704dee
