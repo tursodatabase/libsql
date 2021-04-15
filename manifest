@@ -1,5 +1,5 @@
-C Prevent\san\sassert()\sfrom\sfailing\sif\ssqlite3_blob_reopen()\sis\scalled\son\sa\sblob-handle\sthat\shas\salready\shit\san\sSQLITE_CORRUPT\serror.
-D 2021-04-14T15:25:10.656
+C Bring\spragma\scompile_options\sup\sto\sdate.\sAnd\smake\smkctimec.tcl\shelp\sdo\sso.
+D 2021-04-15T00:26:34.919
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,7 +489,7 @@ F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae
 F src/build.c 9f15ff3e074d3989cc1396f575118eb4c28fb677d33f54393ec263799c94b5bd
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 2a322b9a3d75771fb4d99e0702851f4f68dda982507a0f798eefb0712969a410
+F src/ctime.c 39fb02038fa3091cf8bc443083f7778f95b8cd7d44b007a1a86095759e7c359a
 F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
@@ -1839,7 +1839,7 @@ F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
-F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
+F tool/mkctimec.tcl 064bd59aa21ebb97d150b9355876c4444dc6886528551fa8f164d241f7df26be
 F tool/mkkeywordhash.c 08b6e4d7a482a7f37a9a0032e7ba968e26624a027b6b2e9ba589be6f5e3d8c2c
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c266690c753d093c2cb74138a46ed69276d85cd119d687a6858c84211e84eaf
-R 1229821373c94710c6cfca65316fcc76
-U dan
-Z d1d1b9d93c24f2fe354e7ba5f2704dee
+P b5dc7aba036cfd6d09c68dd17608328063634ca99ff341f97bab2dc2a1f59b11
+R b95c72c4911ad1a00cf52d8c60561403
+U larrybr
+Z a3c0c1fe90ff7f207fa76ea789d0c43a
