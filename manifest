@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sWhereInfo.pExprMods\slist\sis\sproperly\scleared\swhen\sexisting\nsqlite3WhereBegin()\searly\sdue\sto\san\sOOM\sfault.\ndbsqlfuzz\s1247a51318047aba42e7f6991dfa62577cb7a151.
-D 2021-04-15T12:56:44.601
+C Add\sextra\stest\scase\sfor\sOOM\shandling\sin\swhere.c.
+D 2021-04-15T13:26:29.500
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1761,7 +1761,7 @@ F test/whereI.test c4bb7e2ca56d49bd8ab5c7bd085b8b83e353922b46904d68aefb3c7468643
 F test/whereJ.test fc05e374cc9f2dc204148d6c06822c380ad388895fe97a6d335b94a26a08aecf
 F test/whereK.test 0270ab7f04ba5436fb9156d31d642a1c82727f4c4bfe5ba90d435c78cf44684a
 F test/whereL.test 7717caf61ff4b09d05ddd2978701c4cf5661408bd4dce31d38eff482f60f44f3
-F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
+F test/wherefault.test 6cf2a9c5712952d463d3f45ebee7f6caf400984df51a195d884cfb7eb0e837a7
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test afb46397c6d7e964e6e294ba3569864a0c570fe3807afc634236c2b752372f31
 F test/wherelimit2.test 657a3f24aadee62d058c5091ea682dc4af4b95ffe32f137155be49799a58e721
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5dc7aba036cfd6d09c68dd17608328063634ca99ff341f97bab2dc2a1f59b11
-R e5a83f7ee0ee38847ddb8ea9b3542d9b
-U drh
-Z 0c50054693c17120ddefe2f62d9f2e68
+P 0e19af72d84f96245cb4a5cfc37232579b6f5fdebd525f8b6515a4f2cc84e273
+R 80af88ce0f24fd91f696db7dc9e671f3
+U dan
+Z b81370fc38a26cfbb0e02a050e47c87c
