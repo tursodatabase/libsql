@@ -4,16 +4,33 @@
 #
 #   const char **azCompileOpt[]
 #
-# declaration used in src/ctime.c, run this script.
+# definition used in src/ctime.c, run this script from
+# the checkout root. It alters src/ctime.c in-place.
 #
 
-# All Boolean compile time options.
+# All Boolean compile time options which default to something
+# other than 0 or empty. The default is paired with the PP
+# symbol so that a differing define can be detected.
 #
-set boolean_options {
+set boolean_defnnz_options {
+  {SQLITE_HOMEGROWN_RECURSIVE_MUTEX 1}
+  {SQLITE_OMIT_LOAD_EXTENSION 1}
+  {SQLITE_POWERSAFE_OVERWRITE 1}
+  {SQLITE_DEFAULT_MEMSTATUS 1}
+  {SQLITE_SYSTEM_MALLOC 1}
+  {SQLITE_OMIT_DATETIME_FUNCS 1}
+  {SQLITE_OMIT_TRACE 1}
+  {SQLITE_ENABLE_FTS3 1}
+  {SQLITE_ALLOW_COVERING_INDEX_SCAN 1}
+  {SQLITE_MUTEX_NREF 1}
+}
+
+# All Boolean compile time options which default to 0 or empty.
+#
+set boolean_defnil_options {
   SQLITE_32BIT_ROWID
   SQLITE_4_BYTE_ALIGNED_MALLOC
   SQLITE_64BIT_STATS
-  SQLITE_ALLOW_COVERING_INDEX_SCAN
   SQLITE_ALLOW_URI_AUTHORITY
   SQLITE_BUG_COMPATIBLE_20160819
   SQLITE_CASE_SENSITIVE_LIKE
@@ -25,7 +42,6 @@ set boolean_options {
   SQLITE_DEFAULT_CKPTFULLFSYNC
   SQLITE_DEFAULT_FOREIGN_KEYS
   SQLITE_DEFAULT_LOCKING_MODE
-  SQLITE_DEFAULT_MEMSTATUS
   SQLITE_DEFAULT_RECURSIVE_TRIGGERS
   SQLITE_DEFAULT_SYNCHRONOUS
   SQLITE_DEFAULT_WAL_SYNCHRONOUS
@@ -51,8 +67,6 @@ set boolean_options {
   SQLITE_ENABLE_DESERIALIZE
   SQLITE_ENABLE_EXPENSIVE_ASSERT
   SQLITE_ENABLE_EXPLAIN_COMMENTS
-  SQLITE_ENABLE_FTS1
-  SQLITE_ENABLE_FTS2
   SQLITE_ENABLE_FTS3
   SQLITE_ENABLE_FTS3_PARENTHESIS
   SQLITE_ENABLE_FTS3_TOKENIZER
@@ -97,7 +111,6 @@ set boolean_options {
   SQLITE_EXTRA_IFNULLROW
   SQLITE_FTS5_ENABLE_TEST_MI
   SQLITE_FTS5_NO_WITHOUT_ROWID
-  SQLITE_HOMEGROWN_RECURSIVE_MUTEX
   SQLITE_IGNORE_AFP_LOCK_ERRORS
   SQLITE_IGNORE_FLOCK_LOCK_ERRORS
   SQLITE_INLINE_MEMCPY
@@ -109,7 +122,6 @@ set boolean_options {
   SQLITE_MIXED_ENDIAN_64BIT_FLOAT
   SQLITE_MMAP_READWRITE
   SQLITE_MUTEX_NOOP
-  SQLITE_MUTEX_NREF
   SQLITE_MUTEX_OMIT
   SQLITE_MUTEX_PTHREADS
   SQLITE_MUTEX_W32
@@ -133,7 +145,6 @@ set boolean_options {
   SQLITE_OMIT_COMPOUND_SELECT
   SQLITE_OMIT_CONFLICT_CLAUSE
   SQLITE_OMIT_CTE
-  SQLITE_OMIT_DATETIME_FUNCS
   SQLITE_OMIT_DECLTYPE
   SQLITE_OMIT_DEPRECATED
   SQLITE_OMIT_DISKIO
@@ -147,7 +158,6 @@ set boolean_options {
   SQLITE_OMIT_INTEGRITY_CHECK
   SQLITE_OMIT_INTROSPECTION_PRAGMAS
   SQLITE_OMIT_LIKE_OPTIMIZATION
-  SQLITE_OMIT_LOAD_EXTENSION
   SQLITE_OMIT_LOCALTIME
   SQLITE_OMIT_LOOKASIDE
   SQLITE_OMIT_MEMORYDB
@@ -167,7 +177,6 @@ set boolean_options {
   SQLITE_OMIT_TCL_VARIABLE
   SQLITE_OMIT_TEMPDB
   SQLITE_OMIT_TEST_CONTROL
-  SQLITE_OMIT_TRACE
   SQLITE_OMIT_TRIGGER
   SQLITE_OMIT_TRUNCATE_OPTIMIZATION
   SQLITE_OMIT_UTF16
@@ -179,7 +188,6 @@ set boolean_options {
   SQLITE_OMIT_XFER_OPT
   SQLITE_PCACHE_SEPARATE_HEADER
   SQLITE_PERFORMANCE_TRACE
-  SQLITE_POWERSAFE_OVERWRITE
   SQLITE_PREFER_PROXY_LOCKING
   SQLITE_PROXY_DEBUG
   SQLITE_REVERSE_UNORDERED_SELECTS
@@ -188,7 +196,6 @@ set boolean_options {
   SQLITE_SMALL_STACK
   SQLITE_SOUNDEX
   SQLITE_SUBSTR_COMPATIBILITY
-  SQLITE_SYSTEM_MALLOC
   SQLITE_TCL
   SQLITE_TEST
   SQLITE_UNLINK_AFTER_CLOSE
@@ -298,7 +305,20 @@ proc trim_name {in} {
   return $ret
 }
 
-foreach b $boolean_options {
+foreach name_defval $boolean_defnnz_options {
+  set b [lindex $name_defval 0]
+  set defval [lindex $name_defval 1]
+  set name [trim_name $b]
+  set options($name) [subst {
+#ifdef $b
+# if $b != $defval
+  "$name=" CTIMEOPT_VAL($b),
+# endif
+#endif
+}]
+}
+
+foreach b $boolean_defnil_options {
   set name [trim_name $b]
   set options($name) [subst {
 #if $b

@@ -261,7 +261,9 @@ static void createMask(WhereMaskSet *pMaskSet, int iCursor){
 */
 static Expr *whereRightSubexprIsColumn(Expr *p){
   p = sqlite3ExprSkipCollateAndLikely(p->pRight);
-  if( ALWAYS(p!=0) && p->op==TK_COLUMN ) return p;
+  if( ALWAYS(p!=0) && p->op==TK_COLUMN && !ExprHasProperty(p, EP_FixedCol) ){
+    return p;
+  }
   return 0;
 }
 
@@ -1981,6 +1983,17 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   }
   assert( pWInfo->pExprMods==0 );
   sqlite3DbFreeNN(db, pWInfo);
+}
+
+/* Undo all Expr node modifications
+*/
+static void whereUndoExprMods(WhereInfo *pWInfo){
+  while( pWInfo->pExprMods ){
+    WhereExprMod *p = pWInfo->pExprMods;
+    pWInfo->pExprMods = p->pNext;
+    memcpy(p->pExpr, &p->orig, sizeof(p->orig));
+    sqlite3DbFree(pWInfo->pParse->db, p);
+  }
 }
 
 /*
@@ -5314,6 +5327,8 @@ WhereInfo *sqlite3WhereBegin(
   /* Jump here if malloc fails */
 whereBeginError:
   if( pWInfo ){
+    testcase( pWInfo->pExprMods!=0 );
+    whereUndoExprMods(pWInfo);
     pParse->nQueryLoop = pWInfo->savedNQueryLoop;
     whereInfoFree(db, pWInfo);
   }
@@ -5613,16 +5628,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
   }
 
-  /* Undo all Expr node modifications */
-  while( pWInfo->pExprMods ){
-    WhereExprMod *p = pWInfo->pExprMods;
-    pWInfo->pExprMods = p->pNext;
-    memcpy(p->pExpr, &p->orig, sizeof(p->orig));
-    sqlite3DbFree(db, p);
-  }
-
   /* Final cleanup
   */
+  if( pWInfo->pExprMods ) whereUndoExprMods(pWInfo);
   pParse->nQueryLoop = pWInfo->savedNQueryLoop;
   whereInfoFree(db, pWInfo);
   return;
