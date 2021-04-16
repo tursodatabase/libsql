@@ -83,6 +83,13 @@ mod build_bundled {
             .flag("-D_POSIX_THREAD_SAFE_FUNCTIONS") // cross compile with MinGW
             .warnings(false);
 
+        // on android sqlite can't figure out where to put the temp files.
+        // the bundled sqlite on android also uses `SQLITE_TEMP_STORE=3`.
+        // https://android.googlesource.com/platform/external/sqlite/+/2c8c9ae3b7e6f340a19a0001c2a889a211c9d8b2/dist/Android.mk
+        if cfg!(target_os = "android") {
+            cfg.flag("-DSQLITE_TEMP_STORE=3");
+        }
+
         if cfg!(feature = "with-asan") {
             cfg.flag("-fsanitize=address");
         }
