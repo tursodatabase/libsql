@@ -1,5 +1,5 @@
-C Do\snot\sinvoke\ssqlite3ExprAffinity()\sif\sthere\sis\sa\spossibility\sthat\sthe\sExpr\nis\sincomplete\sdue\sto\sa\sprior\sOOM.\ndbsqlfuzz\sb8a824706914488bd236da51118eb9174ceb870f
-D 2021-04-16T01:03:16.932
+C Fix\sthe\scomment\son\sthe\simplementation\sof\sthe\spi()\sSQL\sfunction.\s\sNo\schanges\nto\scode.
+D 2021-04-16T11:05:19.637
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -497,7 +497,7 @@ F src/delete.c 73f57a9a183532c344a3135cf8f2a5589376e39183e0b5f562d6b61b2af0f4d8
 F src/expr.c f18126b29be917d7369ec87b64466ac9dfc2a565df23c828fdaf432389ec7da7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
-F src/func.c 479f6929be027eb0210cbdde9d3529c012facf082d64a6b854a9415940761e5e
+F src/func.c 88fd711754a7241cb9f8eb1391370fd0c0cea756b3358efa274c5d1efd59af93
 F src/global.c 56d6762a3a44495ab035e2d3185eeccbc98579e18c06038e1bb9af346105bc84
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2363a14ca723c0343fbe350f6c19787a7a47c2289fd9af136c97a451b53b5226
-R 1b807f7b5fbd51b7f8566b4336ed35b6
+P e8a1515b44380cc52aca1838814ca398012e4e9cf5728d40b404546e812a39b7
+R 0c09a9128f5e2a0a325d5124e728bd12
 U drh
-Z bcb5423f89b5818431a20238dcd969bb
+Z 44d3ad50a92e89df3e0feb6719422873
