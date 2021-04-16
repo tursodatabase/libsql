@@ -475,11 +475,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_MUTEX_NOOP
   "MUTEX_NOOP",
 #endif
-#ifdef SQLITE_MUTEX_NREF
-# if SQLITE_MUTEX_NREF != 1
-  "MUTEX_NREF=" CTIMEOPT_VAL(SQLITE_MUTEX_NREF),
-# endif
-#endif
 #if SQLITE_MUTEX_OMIT
   "MUTEX_OMIT",
 #endif
@@ -549,10 +544,8 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_OMIT_CTE
   "OMIT_CTE",
 #endif
-#ifdef SQLITE_OMIT_DATETIME_FUNCS
-# if SQLITE_OMIT_DATETIME_FUNCS != 1
-  "OMIT_DATETIME_FUNCS=" CTIMEOPT_VAL(SQLITE_OMIT_DATETIME_FUNCS),
-# endif
+#if defined(SQLITE_OMIT_DATETIME_FUNCS) || defined(SQLITE_OMIT_FLOATING_POINT)
+  "OMIT_DATETIME_FUNCS",
 #endif
 #if SQLITE_OMIT_DECLTYPE
   "OMIT_DECLTYPE",
@@ -593,10 +586,8 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_OMIT_LIKE_OPTIMIZATION
   "OMIT_LIKE_OPTIMIZATION",
 #endif
-#ifdef SQLITE_OMIT_LOAD_EXTENSION
-# if SQLITE_OMIT_LOAD_EXTENSION != 1
-  "OMIT_LOAD_EXTENSION=" CTIMEOPT_VAL(SQLITE_OMIT_LOAD_EXTENSION),
-# endif
+#if SQLITE_OMIT_LOAD_EXTENSION
+  "OMIT_LOAD_EXTENSION",
 #endif
 #if SQLITE_OMIT_LOCALTIME
   "OMIT_LOCALTIME",
@@ -731,10 +722,11 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_SUBSTR_COMPATIBILITY
   "SUBSTR_COMPATIBILITY",
 #endif
-#ifdef SQLITE_SYSTEM_MALLOC
-# if SQLITE_SYSTEM_MALLOC != 1
-  "SYSTEM_MALLOC=" CTIMEOPT_VAL(SQLITE_SYSTEM_MALLOC),
-# endif
+#if (!defined(SQLITE_WIN32_MALLOC) \
+     && !defined(SQLITE_ZERO_MALLOC) \
+     && !defined(SQLITE_MEMDEBUG) \
+    ) || defined(SQLITE_SYSTEM_MALLOC)
+  "SYSTEM_MALLOC",
 #endif
 #if SQLITE_TCL
   "TCL",
