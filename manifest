@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sfrom\sa\sbranch\sin\ssqlite3ExprAddCollateToken()\swhich\scan\nbe\sfalse\sfollowing\san\sOOM.\ndbsqlfuzz\s9e8516bf1e786c84e520ae43141b75b7399f8618.
-D 2021-04-16T12:33:52.638
+C Avoid\ssigned\sinteger\soverflow\swhen\sfinding\ssnippets\sin\sfts3\sby\susing\s64-bit\sinteger\soffsets.
+D 2021-04-16T16:55:28.621
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -93,7 +93,7 @@ F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c 86e7e947a176f0f005720b3ca17631aca2fd2f9daa6729d4adbf2d16ab1b9613
+F ext/fts3/fts3_snippet.c 57e1965906f3ecfcb5251a14aea98ac2d2dd1868a123bcd5a569601719ab9ead
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
 F ext/fts3/fts3_test.c d8d7b2734f894e8a489987447658e374cdd3a3bc8575c401decf1911cb7c6454
 F ext/fts3/fts3_tokenize_vtab.c 8d15b148e7d88a4280389a200b26e8d52abda4c4ec2e9a35e9d7a1fa50e5aa03
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5cb40e53edcb1e54cde0e54c38a647144bc3158435df0161f95c89732de086e6
-R ddfb443f324f92c0f7d01464d567a778
-U drh
-Z 4128704ba35132d25cf1033fb5faf21a
+P 6af4e6d054efd8445e1010aabd584f36e70dfad0de13bd0e2f1761cad4d9a7d6
+R bb2fc97da9924027621d054c5f109d3c
+U dan
+Z d63dd194e7fabc0d0616c3cb1802e30f
