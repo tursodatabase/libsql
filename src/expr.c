@@ -99,7 +99,7 @@ Expr *sqlite3ExprAddCollateToken(
   if( pExpr==0 ) return 0;
   if( pExpr->op==TK_VECTOR ){
     ExprList *pList = pExpr->x.pList;
-    if( ALWAYS(pList!=0) ){
+    if( pList!=0 ){
       int i;
       for(i=0; i<pList->nExpr; i++){
         pList->a[i].pExpr = sqlite3ExprAddCollateToken(pParse,pList->a[i].pExpr,
