@@ -5130,16 +5130,15 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
 #ifndef SQLITE_DISABLE_FTS4_DEFERRED
   if( rc==SQLITE_OK && nToken>1 && pTab->bFts4 ){
     Fts3TokenAndCost *aTC;
-    Fts3Expr **apOr;
     aTC = (Fts3TokenAndCost *)sqlite3_malloc64(
         sizeof(Fts3TokenAndCost) * nToken
       + sizeof(Fts3Expr *) * nOr * 2
     );
-    apOr = (Fts3Expr **)&aTC[nToken];
 
     if( !aTC ){
       rc = SQLITE_NOMEM;
     }else{
+      Fts3Expr **apOr = (Fts3Expr **)&aTC[nToken];
       int ii;
       Fts3TokenAndCost *pTC = aTC;
       Fts3Expr **ppOr = apOr;
