@@ -1,5 +1,5 @@
-C Add\snew\sdbsqlfuzz-generated\scases\sto\stest/fuzzdata8.db.
-D 2021-04-16T19:25:47.212
+C Make\sa\stest\sconditioned\son\sfeature\sused.
+D 2021-04-16T21:29:07.815
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -798,7 +798,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test 016cdc9141b0f62b516019f4c3e583a0eda671eb7f8d367bc7adec28021d0106
+F test/corruptL.test df132ba9ffd6fa15038380b4154998b9904ab8f1ea78400d7da53c920cb3b13d
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test 352c8f006b46130c27c06d4894c0919123308440473d699ec796b9c04f828ad8
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fac3ff857c4abdb44f59849af80d93a5bd4b64f088e5164fb5ad0be8d14748b7
-R 070d3fbd75cb19a37c9069c39b1bf5d8
-U drh
-Z 27d90f0a883ee275b75ba9ff9606b2ac
+P 1ac0a056a07895cc4ae62d01cbba5525402be3af3b8f97fd1dfaba2236ef912b
+R 6c3aef28e462120c9d2f45a57cb08e36
+U larrybr
+Z 85333cd8cf81ca15cfaa68d55d67acae

@@ -1415,6 +1415,7 @@ do_test 18.0 {
 | end crash-40d5739835cbdb.db
 }]} {}
 
+ifcapable json1 {
 do_catchsql_test 18.1 {
   SELECT 
     json_group_array(c) OVER win4 
@@ -1423,6 +1424,6 @@ do_catchsql_test 18.1 {
         ORDER BY a COLLATE nocase RANGE BETWEEN 1.0 PRECEDING AND CURRENT ROW
     )
 } {1 {JSON cannot hold BLOB values}}
-
+} ;# ifcapable json1
 
 finish_test
