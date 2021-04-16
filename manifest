@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sfts3\sthat\smight\sfail\swhen\shanding\scorrupt\srecords.
-D 2021-04-16T11:25:37.964
+C Fix\san\sassert()\sin\swhereLoopAddOr()\sthat\scan\sbe\swrong\sif\san\sOOM\soccurs\sin\nan\sOR\sconstraint\son\sa\svirtual\stable\sif\sone\sof\sthe\sterms\sof\sthe\sOR\sis\san\sIN\noperator.\s\sdbsqlfuzz\s5ee7350b40014f5a878c5d6e76913a2d619f5146
+D 2021-04-16T12:13:39.917
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -629,7 +629,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
-F src/where.c a96a99ec5acb186f789d5597249a2c1eb1a8602173fe2fee745be5510f590e27
+F src/where.c 1c305bab0996a63219a6cb3d4718587f3a5dc5608120c4448985aa2bef88b7f5
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 0e42f4ad53962e90349462520891734ed3217c7852f41c69ffac7a9eeaf31451
 F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5620bd466eb10fd4daf51af9b88d8221f981dc0ceabfa84a0e1d5c817f635429
-R 4f5c640440401aeed37f68d54bcdff49
-U dan
-Z 18bae14c6eca1fc28ec07f58312ffb19
+P d0e2d6742f314f71562e404980aad20de6b17e0b04c08582c18bbc4fd0360751
+R 332bb44b67c02aac523458d51b6b816e
+U drh
+Z ea3687369fc6da14ed3df05290b695f6
