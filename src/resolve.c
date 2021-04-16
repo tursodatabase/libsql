@@ -498,8 +498,8 @@ static int lookupName(
     ** is supported for backwards compatibility only. Hence, we issue a warning
     ** on sqlite3_log() whenever the capability is used.
     */
-    if( (pNC->ncFlags & NC_UEList)!=0
-     && cnt==0
+    if( cnt==0
+     && (pNC->ncFlags & NC_UEList)!=0
      && zTab==0
     ){
       pEList = pNC->uNC.pEList;
@@ -1517,7 +1517,7 @@ static int resolveOrderGroupBy(
   Parse *pParse;                 /* Parsing context */
   int nResult;                   /* Number of terms in the result set */
 
-  if( pOrderBy==0 ) return 0;
+  assert( pOrderBy!=0 );
   nResult = pSelect->pEList->nExpr;
   pParse = pNC->pParse;
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
@@ -1684,13 +1684,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       sNC.ncFlags &= ~NC_AllowAgg;
     }
   
-    /* If a HAVING clause is present, then there must be a GROUP BY clause.
-    */
-    if( p->pHaving && !pGroupBy ){
-      sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
-      return WRC_Abort;
-    }
-  
     /* Add the output column list to the name-context before parsing the
     ** other expressions in the SELECT statement. This is so that
     ** expressions in the WHERE clause (etc.) can refer to expressions by
@@ -1702,7 +1695,13 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     assert( (sNC.ncFlags & (NC_UAggInfo|NC_UUpsert|NC_UBaseReg))==0 );
     sNC.uNC.pEList = p->pEList;
     sNC.ncFlags |= NC_UEList;
-    if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
+    if( p->pHaving ){
+      if( !pGroupBy ){
+        sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
+        return WRC_Abort;
+      }
+      if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
+    }
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
 
     /* Resolve names in table-valued-function arguments */
@@ -1742,7 +1741,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** is not detected until much later, and so we need to go ahead and
     ** resolve those symbols on the incorrect ORDER BY for consistency.
     */
-    if( isCompound<=nCompound  /* Defer right-most ORDER BY of a compound */
+    if( p->pOrderBy!=0
+     && isCompound<=nCompound  /* Defer right-most ORDER BY of a compound */
      && resolveOrderGroupBy(&sNC, p, p->pOrderBy, "ORDER")
     ){
       return WRC_Abort;

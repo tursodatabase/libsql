@@ -1194,6 +1194,8 @@ do_test rtreefuzz001-600 {
 | end crash-7b37d80f000235.db
 }]} {}
 
+ifcapable geopoly {
+
 do_catchsql_test rtreefuzz001-601 {
   SAVEPOINT one;
   UPDATE geo1 SET clr=CASE WHEN rowid IN ( SELECT geo1.rowid FROM geo1, querypoly ) THEN 'e' ELSE 'blue' END;
@@ -1203,5 +1205,7 @@ do_catchsql_test rtreefuzz001-602 {
   SELECT geopoly_svg(_shape, printf('j',geo1.clr)) 
     FROM geo1, querypoly WHERE geopoly_overlap(_shape, poly);
 } {1 {database disk image is malformed}}
+
+} ;# ifcapable geopoly
 
 finish_test
