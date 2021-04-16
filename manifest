@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sinteraction\sbetween\sconstant\spropagation\sand\stransitive\sterm\shandling\scausing\spatterns\slike\s"WHERE\sunlikely(t1.x=t1.y)\sAND\st1.y=?"\sto\sreturn\snon-matching\srows.
-D 2021-04-15T19:09:19.856
+C Do\snot\sinvoke\ssqlite3ExprAffinity()\sif\sthere\sis\sa\spossibility\sthat\sthe\sExpr\nis\sincomplete\sdue\sto\sa\sprior\sOOM.\ndbsqlfuzz\sb8a824706914488bd236da51118eb9174ceb870f
+D 2021-04-16T01:03:16.932
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c d42d6c80ea363ef689a462e65eefcfe87deab924c50de5baa37ecb6af7d7ddaa
 F src/where.c a96a99ec5acb186f789d5597249a2c1eb1a8602173fe2fee745be5510f590e27
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
-F src/wherecode.c 8bdc239eae3d39f9f6ace4299eeb86e1e0c56eed88b60f9c473dc85ae79f4e89
+F src/wherecode.c 0e42f4ad53962e90349462520891734ed3217c7852f41c69ffac7a9eeaf31451
 F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
 F src/window.c ae9fbd0cbaa39e1b384c13289ed769f9981383bde7b2f262c70ad6c42e5ab226
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7163de3dea0445bf25dba47a54c50f35bb5c7edc7bdae9630b51c1ca970ec6cf
-R cdb109bf0cd813339477f712ee9d6153
-U dan
-Z 0bcb2e3640ff6543fca05af9e2907230
+P 2363a14ca723c0343fbe350f6c19787a7a47c2289fd9af136c97a451b53b5226
+R 1b807f7b5fbd51b7f8566b4336ed35b6
+U drh
+Z bcb5423f89b5818431a20238dcd969bb
