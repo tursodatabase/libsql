@@ -3833,6 +3833,7 @@ struct Walker {
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   int walkerDepth;                          /* Number of subqueries */
   u16 eCode;                                /* A small processing code */
+  unsigned bWalkWinDefn : 1;                /* True to walk pWinDefn */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                         /* Naming context */
     int n;                                    /* A counter */

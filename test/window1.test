@@ -374,6 +374,19 @@ do_execsql_test 9.3 {
   SELECT *, min(z) OVER (ORDER BY x) FROM aaa ORDER BY 1;
 } {1 g g g   2 i i g   3 l l g   4 g l g   5 a l g   6 m m g}
 
+do_catchsql_test 9.4 {
+  -- 2021-04-17 dbsqlfuzz d9cf66100064952b66951845dfab41de1c124611
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,d);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x,y);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2(x,y)
+      SELECT a, max(d) OVER w1 FROM t1
+        WINDOW w1 AS (PARTITION BY EXISTS(SELECT 1 FROM t1 WHERE c=?1) );
+  END;
+} {1 {trigger cannot use variables}}
+
 #-------------------------------------------------------------------------
 #
 do_execsql_test 10.0 {
