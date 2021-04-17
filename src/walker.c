@@ -32,15 +32,10 @@ static int walkWindowList(Walker *pWalker, Window *pList, int bOneOnly){
     if( rc ) return WRC_Abort;
     rc = sqlite3WalkExpr(pWalker, pWin->pFilter);
     if( rc ) return WRC_Abort;
-
-    /* The next two are purely for calls to sqlite3RenameExprUnmap()
-    ** within sqlite3WindowOffsetExpr().  Because of constraints imposed
-    ** by sqlite3WindowOffsetExpr(), they can never fail.  The results do
-    ** not matter anyhow. */
     rc = sqlite3WalkExpr(pWalker, pWin->pStart);
-    if( NEVER(rc) ) return WRC_Abort;
+    if( rc ) return WRC_Abort;
     rc = sqlite3WalkExpr(pWalker, pWin->pEnd);
-    if( NEVER(rc) ) return WRC_Abort;
+    if( rc ) return WRC_Abort;
     if( bOneOnly ) break;
   }
   return WRC_Continue;

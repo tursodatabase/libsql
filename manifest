@@ -1,5 +1,5 @@
-C Bring\sin\spermutations\smod.
-D 2021-04-17T20:04:40.828
+C Remove\sa\scouple\sof\sNEVER()\smacros\sfrom\sthe\scode\sfor\swalking\swindow\slists.
+D 2021-04-17T20:13:53.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vtab.c 032a0165c147fda16927e6a3230e90c068d4af93f887ce94e26f678fe48e5e4c
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
-F src/walker.c df4f432b10011cd587b16afa861ae8878ef1b872dd042565efa4db346bbdc793
+F src/walker.c 49a9c0b8fb1de273aa0bce2e3f671056c11db8220c04ca1120ed1ce5b619f227
 F src/where.c 1c305bab0996a63219a6cb3d4718587f3a5dc5608120c4448985aa2bef88b7f5
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 0e42f4ad53962e90349462520891734ed3217c7852f41c69ffac7a9eeaf31451
@@ -1770,7 +1770,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 4baffc3acb2e5188a5e3a895b2b543ed09e62f7c72d713c1feebf76222fe9976
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 515512f47c654e1b19e9708aa53d269dfe7acafd3c458e1dfdda783ac8822150
+F test/window1.test 54e160bdeb8b06fb3b97993e0eec45ee4c3294f39ad63007c921c40961298815
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0dd9cf2d7045d3634294bcf2722d3d7b0a6c4c3ef713b0f7f54fbe31432027f 9f5f16cf093cd8b8c7649f664eaf2ad8128fd50e182720dbddf05a6d9227c037
-R 87aec11a4649f0fdf92c1e3a7b1989d4
-U larrybr
-Z 0c46d5306f1cd3c2e7d5358adc5fc62f
+P 7a1316f32c857b5ec9e50c5d341f977f998dbf404f4758e3fe317fd8ef25f41e
+R 30207d0f4281a6cd8ec3b314354fd0f5
+U dan
+Z 3ba541f2adb5c2a2b0eb425e20d42a84
