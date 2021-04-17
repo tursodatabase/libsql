@@ -130,10 +130,12 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
   if( sqlite3WalkExpr(pWalker, p->pHaving) ) return WRC_Abort;
   if( sqlite3WalkExprList(pWalker, p->pOrderBy) ) return WRC_Abort;
   if( sqlite3WalkExpr(pWalker, p->pLimit) ) return WRC_Abort;
-#if !defined(SQLITE_OMIT_WINDOWFUNC) && !defined(SQLITE_OMIT_ALTERTABLE)
-  {
-    Parse *pParse = pWalker->pParse;
-    if( pParse && IN_RENAME_OBJECT ){
+#if !defined(SQLITE_OMIT_WINDOWFUNC)
+  if( p->pWinDefn ){
+    Parse *pParse;
+    if( pWalker->bWalkWinDefn
+     || ((pParse = pWalker->pParse)!=0 && IN_RENAME_OBJECT)
+    ){
       /* The following may return WRC_Abort if there are unresolvable
       ** symbols (e.g. a table that does not exist) in a window definition. */
       int rc = walkWindowList(pWalker, p->pWinDefn, 0);

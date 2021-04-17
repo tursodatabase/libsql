@@ -514,6 +514,7 @@ void sqlite3FixInit(
   pFix->w.xSelectCallback2 = 0;
   pFix->w.walkerDepth = 0;
   pFix->w.eCode = 0;
+  pFix->w.bWalkWinDefn = 1;
   pFix->w.u.pFix = pFix;
 }
 
