@@ -6197,8 +6197,7 @@ int sqlite3Select(
   }
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  rc = sqlite3WindowRewrite(pParse, p);
-  if( rc ){
+  if( sqlite3WindowRewrite(pParse, p) ){
     assert( db->mallocFailed || pParse->nErr>0 );
     goto select_end;
   }
@@ -7266,6 +7265,8 @@ int sqlite3Select(
   ** successful coding of the SELECT.
   */
 select_end:
+  assert( db->mallocFailed==0 || db->mallocFailed==1 );
+  pParse->nErr += db->mallocFailed;
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
 #ifdef SQLITE_DEBUG
   if( pAggInfo && !db->mallocFailed ){
