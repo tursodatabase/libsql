@@ -1,5 +1,5 @@
-C Add\snew\sdbsqlfuzz\scases\sto\stest/fuzzdata8.db.
-D 2021-04-17T18:39:39.769
+C Do\snot\srun\sexternal_reader.test\sas\spart\sof\spermutation\s"journaltest",\sas\sit\srequires\swal\smode.
+D 2021-04-17T19:59:14.493
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1266,7 +1266,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 0a7cf0b6b1283cdd4f0d6e31cb7afbde81d20b1caef60b73914e85b6bf660b8a
+F test/permutations.test 9bb03106a024e9938d329a33380ea7fd91b6e45516881db68663505c444b3242
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 50b91bedea9324d3ab48e793f908ee7d2c7dcf84bfa2281e792838be59641ec8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62efe2eee34fdb147cc456290576d8fc3801487867c78aadd4485f85468d9ffc
-R e6d4f215d327dee505dbd3cfb3329e50
-U drh
-Z 27c775b084279a5bc5248aeaf9fef513
+P d18793e589a4ee7706e994a1f3d24ba7df190467d92fa6ac040258f4debc149d
+R ca230a7aaa2868b098ca02a3b0eadadb
+U dan
+Z 802c5528301092966a4f4497a5a38b24
