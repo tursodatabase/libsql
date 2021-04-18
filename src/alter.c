@@ -1954,7 +1954,11 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
         }else{
           regOut = reg+1+nField;
         }
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+        if( i==pTab->iPKey ){
+          sqlite3VdbeAddOp2(v, OP_Null, 0, regOut);
+        }else{
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+        }
         nField++;
       }
     }
@@ -1964,6 +1968,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
     }else{
       sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
     }
+    sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
 
     sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
