@@ -1,5 +1,5 @@
-C An\simprovement\sto\scheck-in\s[1a341378ab24a509]\sthat\somits\sthe\snew\nWalker.bWalkWinDefn\sboolean\s(which\sis\snot\salways\sinitialized)\sand\suses\na\sspecial\svalue\sfor\sxSelectCallback2\sinstead.
-D 2021-04-19T19:59:16.863
+C Improvement\sto\scheck-in\s[d564d8882ef18b55]\sto\sdetect\sthe\sOOM\sfault\seven\nif\sit\soccurs\sdeep\sdown\sinside\sthe\sduplicated\sexpression.
+D 2021-04-19T20:36:13.043
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e299d53c4077fc32bc63741b5b27fdf8a1328cb8e812b9fafb55441c4c73a80a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 8b466a1c0d48d2210e93b7af46f5586fb7f80ccc0bc0f9859a4a2a7038d18d47
+F src/select.c 2c4f89257327581f918863d49aded6087552926de799c0d0ebea70200c478cb2
 F src/shell.c.in 9320b476fde0f7c46700e5695b69b435f1e46843a1513cdd187ac426cdbee016
 F src/sqlite.h.in 18ec33e32001721fd4e9c4705a24a85dff04956ac2c0a21775058884ba845b09
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41228350a620a7de1ee748a4e19a96749c4d39418853fe8b68c43cf401dbd7cd
-R c0c275822c8f8667f4e8b17de48e016f
+P bef2238de9550de84d4cd1c970a542b43db288d73d09a3c3ced7f98bb3188fd3
+R 9cdbf20427098ae8915fe3c4c7011236
 U drh
-Z 2d9c6d7cb083a0246b23dde2c969e400
+Z 0ff14260d9ccebe4f6d06776ae79e9ce
