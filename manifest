@@ -1,5 +1,5 @@
-C In\sthe\squery\sflattener,\savoid\sinvalidating\san\sexpression\sif\san\sOOM\soccurs.\nThis\sprevents\sproblems\sin\shigher-level\sroutines\sthat\smight\snot\scheck\sfor\nthe\sOOM\safter\sprocessing\sa\ssubquery.\ndbsqlfuzz\sfb70fa8602421f87673e0670b0712ff2b5240ea0
-D 2021-04-19T15:05:27.545
+C Remove\sfts5\stest\sfunctions\sfts5_expr(),\sfts5_expr_tcl(),\sfts5_isalnum()\sand\sfts5_fold()\sfrom\srelease\sbuilds.
+D 2021-04-19T16:45:09.148
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -117,7 +117,7 @@ F ext/fts5/fts5Int.h 26c74dd5776f798436fbf604a0bf0e8de263b35b5060b05c15f9085845d
 F ext/fts5/fts5_aux.c f558e1fb9f0f86a4f7489e258c162e1f947de5ff2709087fbb465fddb7092f98
 F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6dc8aaca70
 F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7fa1842ff3
-F ext/fts5/fts5_expr.c 016bd06030679bd31b0f07ef87d62c42031e5da25cb3174a84e5b0f6ef4b47b0
+F ext/fts5/fts5_expr.c 5d0ab73f08af31837b1a4cbcaf571e74d7bb87f4f15bf79709de1b67ff4bfc05
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
 F ext/fts5/fts5_index.c a2ee22478318ad2c176fb06b0a7a752b770056cde6a0a8d8a50968f3afcc306e
 F ext/fts5/fts5_main.c f497ca97cb2802311ec93733b595762dc5b044ce3c6c8ce5fb3e871dd3fccd5d
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 354a4db5cb769c6aed386f43ee26d7e42342e92f781eef100c09751dc5b51751
-R d34f55f4a0ce3de7a5176125f81c3be7
-U drh
-Z ca72275528f30884ea5a49fdd0fac3b4
+P d564d8882ef18b55ebf93e838426b485281c7ebe3a9b321a2f984ed0f229cc25
+R 864bb68049ae279060a9cc19673f4524
+U dan
+Z 3936923389936689750015fb37ea53e3
