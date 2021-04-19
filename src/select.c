@@ -3627,10 +3627,11 @@ static Expr *substExpr(
         }
         testcase( ExprHasProperty(pCopy, EP_Subquery) );
         pNew = sqlite3ExprDup(db, pCopy, 0);
-        if( pNew && pSubst->isLeftJoin ){
+        if( pNew==0 ) return pExpr;
+        if( pSubst->isLeftJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
         }
-        if( pNew && ExprHasProperty(pExpr,EP_FromJoin) ){
+        if( ExprHasProperty(pExpr,EP_FromJoin) ){
           sqlite3SetJoinExpr(pNew, pExpr->iRightJoinTable);
         }
         sqlite3ExprDelete(db, pExpr);
@@ -3638,15 +3639,13 @@ static Expr *substExpr(
 
         /* Ensure that the expression now has an implicit collation sequence,
         ** just as it did when it was a column of a view or sub-query. */
-        if( pExpr ){
-          if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE ){
-            CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
-            pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr, 
-                (pColl ? pColl->zName : "BINARY")
-            );
-          }
-          ExprClearProperty(pExpr, EP_Collate);
+        if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE ){
+          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
+          pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr, 
+              (pColl ? pColl->zName : "BINARY")
+          );
         }
+        ExprClearProperty(pExpr, EP_Collate);
       }
     }
   }else{

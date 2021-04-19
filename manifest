@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\srecords\sare\supdated\sby\ssetting\sthe\sOPFLAG_SAVEPOSITION\sflag\swhen\supdating\srecords\sas\spart\sof\sALTER\sTABLE\sDROP\sCOLUMN.
-D 2021-04-18T05:30:39.861
+C In\sthe\squery\sflattener,\savoid\sinvalidating\san\sexpression\sif\san\sOOM\soccurs.\nThis\sprevents\sproblems\sin\shigher-level\sroutines\sthat\smight\snot\scheck\sfor\nthe\sOOM\safter\sprocessing\sa\ssubquery.\ndbsqlfuzz\sfb70fa8602421f87673e0670b0712ff2b5240ea0
+D 2021-04-19T15:05:27.545
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c e299d53c4077fc32bc63741b5b27fdf8a1328cb8e812b9fafb55441c4c73a80a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c ab7dcf61ffe21e51c4ed8df5f22aaff6473d27d19f62914f38ebcb30fe404c44
+F src/select.c 8b466a1c0d48d2210e93b7af46f5586fb7f80ccc0bc0f9859a4a2a7038d18d47
 F src/shell.c.in 9320b476fde0f7c46700e5695b69b435f1e46843a1513cdd187ac426cdbee016
 F src/sqlite.h.in 18ec33e32001721fd4e9c4705a24a85dff04956ac2c0a21775058884ba845b09
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ec9ef4bcd12bd9ba5e1a2424f75479070d12c25f1272548c6cf3f89be826b8c
-R ad21a6d9a36497d430b1bdf7e1327f29
-U dan
-Z 9d80b290d00ddd51864fc31db6dbc49c
+P 354a4db5cb769c6aed386f43ee26d7e42342e92f781eef100c09751dc5b51751
+R d34f55f4a0ce3de7a5176125f81c3be7
+U drh
+Z ca72275528f30884ea5a49fdd0fac3b4
