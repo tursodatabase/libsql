@@ -3833,7 +3833,6 @@ struct Walker {
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   int walkerDepth;                          /* Number of subqueries */
   u16 eCode;                                /* A small processing code */
-  unsigned bWalkWinDefn : 1;                /* True to walk pWinDefn */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                         /* Naming context */
     int n;                                    /* A counter */
@@ -3881,6 +3880,7 @@ int sqlite3SelectWalkNoop(Walker*, Select*);
 int sqlite3SelectWalkFail(Walker*, Select*);
 int sqlite3WalkerDepthIncrease(Walker*,Select*);
 void sqlite3WalkerDepthDecrease(Walker*,Select*);
+void sqlite3WalkWinDefnDummyCallback(Walker*,Select*);
 
 #ifdef SQLITE_DEBUG
 void sqlite3SelectWalkAssert2(Walker*, Select*);
