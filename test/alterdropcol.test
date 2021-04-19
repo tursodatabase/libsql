@@ -276,4 +276,44 @@ do_catchsql_test 6.1 {
   ALTER TABLE t2 DROP COLUMN z;
 } {1 {database disk image is malformed}}
 
+# 2021-04-06 dbsqlfuzz crash-331c5c29bb76257b198f1318eef3288f9624c8ce
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a COLLATE nocase, a)) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+}
+do_execsql_test 7.1 {
+  ALTER TABLE t1 DROP COLUMN c;                
+}
+do_execsql_test 7.2 {
+  SELECT sql FROM sqlite_schema;
+} {{CREATE TABLE t1(a, b, PRIMARY KEY(a COLLATE nocase, a)) WITHOUT ROWID}}
+do_execsql_test 7.3 {
+  SELECT * FROM t1;
+} {1 2 4 5}
+
+foreach {tn wo} {
+  1 {}
+  2 {WITHOUT ROWID}
+} {
+  reset_db
+  do_execsql_test 9.$tn.0 "
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) $wo;
+  "
+  do_execsql_test 9.$tn.1 {
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50000
+    )
+    INSERT INTO t1(a, b, c) SELECT i, 123, 456 FROM s;
+  }
+  do_execsql_test 9.$tn.2 {
+    ALTER TABLE t1 DROP COLUMN b;
+  }
+
+  do_execsql_test 9.$tn.3 {
+    SELECT count(*), c FROM t1 GROUP BY c;
+  } {50000 456}
+}
+
 finish_test
