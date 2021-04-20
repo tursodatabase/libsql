@@ -7030,7 +7030,6 @@ static int rebuildPage(
     if( pData < pCellptr ) return SQLITE_CORRUPT_BKPT;
     memcpy(pData, pCell, sz);
     assert( sz==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
-    testcase( sz!=pPg->xCellSize(pPg,pCell) )
     i++;
     if( i>=iEnd ) break;
     if( pCArray->ixNx[k]<=i ){
