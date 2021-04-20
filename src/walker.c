@@ -164,7 +164,7 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   SrcItem *pItem;
 
   pSrc = p->pSrc;
-  if( pSrc ){
+  if( ALWAYS(pSrc) ){
     for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
       if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
         return WRC_Abort;

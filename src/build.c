@@ -4595,8 +4595,8 @@ SrcList *sqlite3SrcListAppend(
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
   SrcItem *pItem;
-  assert(pList || pParse->db->mallocFailed );
-  if( pList ){
+  assert( pList || pParse->db->mallocFailed );
+  if( ALWAYS(pList) ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
       if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;

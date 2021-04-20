@@ -1648,6 +1648,14 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     if( p->pWin && db->mallocFailed==0 ) gatherSelectWindows(pNew);
 #endif
     pNew->selId = p->selId;
+    if( db->mallocFailed ){
+      /* Any prior OOM might have left the Select object incomplete.
+      ** Delete the whole thing rather than allow an incomplete Select
+      ** to be used by the code generator. */
+      pNew->pNext = 0;
+      sqlite3SelectDelete(db, pNew);
+      break;
+    }
     *pp = pNew;
     pp = &pNew->pPrior;
     pNext = pNew;

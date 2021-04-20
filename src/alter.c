@@ -1575,7 +1575,7 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
   if( pSelect->selFlags & SF_View ) return WRC_Prune;
-  if( pSrc==0 ){
+  if( NEVER(pSrc==0) ){
     assert( pWalker->pParse->db->mallocFailed );
     return WRC_Abort;
   }

@@ -4207,7 +4207,7 @@ static int flattenSubquery(
       p->pPrior = pPrior;
     }else{
       pNew->selId = ++pParse->nSelect;
-      if( aCsrMap && db->mallocFailed==0 ){
+      if( aCsrMap && ALWAYS(db->mallocFailed==0) ){
         renumberCursors(pParse, pNew, iFrom, aCsrMap);
       }
       pNew->pPrior = pPrior;
