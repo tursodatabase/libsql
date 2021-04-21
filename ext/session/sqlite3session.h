@@ -325,6 +325,17 @@ int sqlite3session_changeset(
 
 /*
 ** CAPI3REF: Load The Difference Between Tables Into A Session
+** METHOD: sqlite3session_changeset_size()
+**
+** This function returns an upper limit, in bytes, of the size of the
+** changeset that might be produced if sqlite3session_changeset() were
+** called. The final changeset size might be equal to or smaller than
+** the size in bytes returned by this function.
+*/
+sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession);
+
+/*
+** CAPI3REF: Load The Difference Between Tables Into A Session
 ** METHOD: sqlite3_session
 **
 ** If it is not already attached to the session object passed as the first
