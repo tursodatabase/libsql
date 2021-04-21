@@ -1,5 +1,5 @@
-C Initialize\sthe\skey\sregisters\sin\sthe\sskip-scan\soptimization\sto\sNULL,\sin\scase\nthe\squery\sis\srun\son\sa\scorrupt\sdatabase\sthat\scauses\sthe\sinitialization\sof\sthe\nkey\sto\sbe\sbypassed.\ndbsqlfuzz\s62fdf2bece00d24cac8a4edf2cf562e6eeac779d
-D 2021-04-21T11:58:45.294
+C Add\srecent\sdbsqlfuzz\stest\scases\sto\stest/fuzzdata8.db.
+D 2021-04-21T12:03:36.478
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1056,7 +1056,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 74b8510c083d3d59cd66a5336051960b7d6517590cc9bfdcb2f68fcbd26dd18f
+F test/fuzzdata8.db a5f04edee03f0446759272e976f7e68568201077b8adf5c769f5b2a8ddc3e10d
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a28910a17dc5b3ce43062fdf879f9622f6ec2db19ed780fa7fe5cae781be7b7
-R 7954326a489059bc0b41d93e80081e98
+P 8b54102a00852b72783b5b2f336c7a093adbdc8e1b94d46b7d315ae6e5d9476b
+R 164f9f0b95c7a15d85aa81eeb6367354
 U drh
-Z f97fdbdacd88c3e91a37650b0d0d7542
+Z 7326b988597bb541d036316f91b93fa0
