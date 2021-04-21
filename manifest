@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sallowing\sSQL\svariables\sto\sbe\sused\sexpressions\swithin\sthe\ssecond\sand\ssubsequent\sON\sCONFLICT\sclauses\sof\san\sUPSERT\swithin\sa\strigger.
-D 2021-04-21T11:32:22.033
+C Initialize\sthe\skey\sregisters\sin\sthe\sskip-scan\soptimization\sto\sNULL,\sin\scase\nthe\squery\sis\srun\son\sa\scorrupt\sdatabase\sthat\scauses\sthe\sinitialization\sof\sthe\nkey\sto\sbe\sbypassed.\ndbsqlfuzz\s62fdf2bece00d24cac8a4edf2cf562e6eeac779d
+D 2021-04-21T11:58:45.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c 1c305bab0996a63219a6cb3d4718587f3a5dc5608120c4448985aa2bef88b7f5
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
-F src/wherecode.c 0e42f4ad53962e90349462520891734ed3217c7852f41c69ffac7a9eeaf31451
+F src/wherecode.c b4f24544fbaf5ecf0d060d9581e14df7c0de51b5e6c37af5b98048a9ba551b72
 F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
 F src/window.c ae9fbd0cbaa39e1b384c13289ed769f9981383bde7b2f262c70ad6c42e5ab226
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca70c8ac72c9fe3b92f8e63151229bebdccc769c5c4d603ad4f466dc4bcd11e0
-R 488802624573ed85b9dab18218ec296a
-U dan
-Z 006370ce7463f27ee095e187ed12f536
+P 2a28910a17dc5b3ce43062fdf879f9622f6ec2db19ed780fa7fe5cae781be7b7
+R 7954326a489059bc0b41d93e80081e98
+U drh
+Z f97fdbdacd88c3e91a37650b0d0d7542
