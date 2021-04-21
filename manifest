@@ -1,5 +1,5 @@
-C Remove\sa\stestcase()\sthat\sis\sno\slonger\srelevant\sdue\sto\sthe\sprevious\scheck-in.
-D 2021-04-20T22:48:25.584
+C Fix\sa\sproblem\sallowing\sSQL\svariables\sto\sbe\sused\sexpressions\swithin\sthe\ssecond\sand\ssubsequent\sON\sCONFLICT\sclauses\sof\san\sUPSERT\swithin\sa\strigger.
+D 2021-04-21T11:32:22.033
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c e7caf3eefce268250dc1d10322eec637319de486aa1bae7f48c606259455537e
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
-F src/attach.c 8783d67d2c61371dfae46e4043158d44b73c14154d62560cd4cb1e0dfc6337a1
+F src/attach.c a7d1a7df69f053951ec1665e5894c61184fda3f677323762f1c3679ebd27d5c7
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1618,7 +1618,7 @@ F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test 239eec5343388983f112c16d666aa89960cd85302b6af6cd8408ce8edb7b3316
 F test/trigger1.test d30cd09ae8ac365a088f09daba583cc5c0b8fc7d4e1d70809d0b4be3bf6ae2ab
-F test/trigger2.test d15da46f7012832faf3e0c536b47024409d5fb1722d2bb77e29c06d96d704bb1
+F test/trigger2.test 6e35bd7321c49e63d540aee980eb95dec63e1d1caca175224101045bcc80871f
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a18c65068b16eae3c0725356d7f4775774b23e248c700cef8c15f23459fba68f
-R 5da520d950e2a8ca4b2fc54669f1ae8e
-U drh
-Z 554a359b2c97402a5807dfb93b98164e
+P ca70c8ac72c9fe3b92f8e63151229bebdccc769c5c4d603ad4f466dc4bcd11e0
+R 488802624573ed85b9dab18218ec296a
+U dan
+Z 006370ce7463f27ee095e187ed12f536
