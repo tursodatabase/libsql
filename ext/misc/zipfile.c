@@ -720,34 +720,24 @@ static int zipfileScanExtra(u8 *aExtra, int nExtra, u32 *pmTime){
 ** https://msdn.microsoft.com/en-us/library/9kkf9tah.aspx
 */
 static u32 zipfileMtime(ZipfileCDS *pCDS){
-  int Y = (1980 + ((pCDS->mDate >> 9) & 0x7F));
-  int M = ((pCDS->mDate >> 5) & 0x0F);
-  int D = (pCDS->mDate & 0x1F);
-  int B = -13;
-
-  int sec = (pCDS->mTime & 0x1F)*2;
-  int min = (pCDS->mTime >> 5) & 0x3F;
-  int hr = (pCDS->mTime >> 11) & 0x1F;
-  i64 JD;
-
-  /* JD = INT(365.25 * (Y+4716)) + INT(30.6001 * (M+1)) + D + B - 1524.5 */
-
-  /* Calculate the JD in seconds for noon on the day in question */
-  if( M<3 ){
-    Y = Y-1;
-    M = M+12;
+  int Y,M,D,X1,X2,A,B,sec,min,hr;
+  i64 JDsec;
+  Y = (1980 + ((pCDS->mDate >> 9) & 0x7F));
+  M = ((pCDS->mDate >> 5) & 0x0F);
+  D = (pCDS->mDate & 0x1F);
+  sec = (pCDS->mTime & 0x1F)*2;
+  min = (pCDS->mTime >> 5) & 0x3F;
+  hr = (pCDS->mTime >> 11) & 0x1F;
+  if( M<=2 ){
+    Y--;
+    M += 12;
   }
-  JD = (i64)(24*60*60) * (
-      (int)(365.25 * (Y + 4716))
-    + (int)(30.6001 * (M + 1))
-    + D + B - 1524
-  );
-
-  /* Correct the JD for the time within the day */
-  JD += (hr-12) * 3600 + min * 60 + sec;
-
-  /* Convert JD to unix timestamp (the JD epoch is 2440587.5) */
-  return (u32)(JD - (i64)(24405875) * 24*60*6);
+  X1 = 36525*(Y+4716)/100;
+  X2 = 306001*(M+1)/10000;
+  A = Y/100;
+  B = 2 - A + (A/4);
+  JDsec = (i64)((X1 + X2 + D + B - 1524.5)*86400) + hr*3600 + min*60 + sec;
+  return (u32)(JDsec - (i64)24405875*(i64)8640);
 }
 
 /*

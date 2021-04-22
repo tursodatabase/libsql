@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\stypedefs\sfor\sspecific-length\sintegers\sin\szipfile.c\sare\ncorrect.
-D 2021-04-22T13:59:54.423
+C Fix\sthe\sdate/time\stranslation\slogic\sin\sthe\szipfile\sextension\sso\sthat\sit\nworks\swith\sboundary\scases.\sSee\n[forum:/forumpost/d82289d69f|forum\spost\sd82289d69f]\sfor\sthe\strouble\sreport.
+D 2021-04-22T14:43:16.313
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -337,7 +337,7 @@ F ext/misc/vfsstat.c 389ea13983d3af926504c314f06a83cc858d5adc24b40af74aaed1fece0
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
-F ext/misc/zipfile.c 5fe27e5dd6527bfce5d734b5a039a8a65b4893fe86b225f89bcac9f062f9c8ac
+F ext/misc/zipfile.c acbad31bd9c9ec3540fa72b2e3fcd6f757eb33117d51528c0e13d0da5c836908
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c b880ca5cb857d6d6f52e72eb7397813058ef48c78c5402cd04ff2b6b5437f622
 F ext/rbu/rbu1.test 221d9c18a5e600ac9ac6b1810d99d9f99163a7909ba61597876ab6e4d4beb3d6
@@ -1808,7 +1808,7 @@ F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912ade
 F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501ddd910cc
 F test/zeroblob.test 07a5b11ab591d1f26c626945fb7f228f68b993533b2ada77273edf6ee29db174
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 429cb81c518487fa1b644b6b04b6e9af704a4fa767bd1a110204c5f03b2e8616
+F test/zipfile.test 0d8758d8c0d63f16644f959689f78969d223789d998964276554039f067b4548
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4258708c08c5b1956052f9febbf22c1e94c8352a25059063746921d2cc373b7
-R 68effacd960bb41901ef2b804dd3c9b2
+P f1f2a49007e938ea7a00dda6f8898b1cd38525c0de1e1cac00a7aebcd7b625f5
+R 47aeeb02b3e6db8af535c3912f07085e
 U drh
-Z c5ba6536955e62a1fdaffb0e62c18960
+Z 9069cf44b16e12ef7fd701f145234e86

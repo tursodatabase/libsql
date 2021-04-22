@@ -843,4 +843,16 @@ do_catchsql_test 16.20 {
   REPLACE INTO zipfile VALUES(null,null,null,null,null,123,null);
 } {1 {zipfile: missing filename}}
 
+# 2021-04-22 forum https://sqlite.org/forum/forumpost/d82289d69f
+do_execsql_test 17.1 {
+  WITH vlist(x) AS (
+     VALUES(9223372036854775807),
+           (-9223372036854775808),
+           (9223372036854775806),
+           (-9223372036854775807)
+  )
+  SELECT DISTINCT typeof(zipfile(0,0,x,0)) FROM vlist;
+} {blob}
+  
+
 finish_test
