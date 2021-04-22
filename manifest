@@ -1,5 +1,5 @@
-C Fix\sthe\sdate/time\stranslation\slogic\sin\sthe\szipfile\sextension\sso\sthat\sit\nworks\swith\sboundary\scases.\sSee\n[forum:/forumpost/d82289d69f|forum\spost\sd82289d69f]\sfor\sthe\strouble\sreport.
-D 2021-04-22T14:43:16.313
+C Improved\shandling\sof\serrors\sin\sALTER\sTABLE\sRENAME.\ndbsqlfuzz\s3e3e2e076e53d02288f80af41a11143a6ddf8c88
+D 2021-04-22T16:54:34.579
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c e7caf3eefce268250dc1d10322eec637319de486aa1bae7f48c606259455537e
+F src/alter.c 0fe0f82a9cf3c4c136aa5fe7bce147a12ff3389cd009a29d8a62ce4037763e5d
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a7d1a7df69f053951ec1665e5894c61184fda3f677323762f1c3679ebd27d5c7
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f1f2a49007e938ea7a00dda6f8898b1cd38525c0de1e1cac00a7aebcd7b625f5
-R 47aeeb02b3e6db8af535c3912f07085e
+P c8de5f061359c174e143e5e81ade8aa9b7d71ba57287459cf0f4f2c94459c345
+R 9f8e3aa4e06604d48764d6477368e363
 U drh
-Z 9069cf44b16e12ef7fd701f145234e86
+Z ad07977beb7e233f7ead65c4a88efde4

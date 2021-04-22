@@ -918,7 +918,10 @@ static RenameToken *renameTokenFind(
   void *pPtr
 ){
   RenameToken **pp;
-  assert( pPtr!=0 );
+  if( pPtr==0 ){
+    assert( pParse->nErr || pParse->db->mallocFailed );
+    return 0;
+  }
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
