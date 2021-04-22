@@ -9546,6 +9546,15 @@ int sqlite3_db_cacheflush(sqlite3*);
 ** triggers; or 2 for changes resulting from triggers called by top-level
 ** triggers; and so forth.
 **
+** When the [sqlite3_blob_write()] API is used to update a blob column,
+** the pre-update hook is invoked with SQLITE_DELETE. This is because the
+** in this case the new values are not available. In this case, when a
+** callback made with op==SQLITE_DELETE is actuall a write using the
+** sqlite3_blob_write() API, the [sqlite3_preupdate_blobwrite()] returns
+** the index of the column being written. In other cases, where the
+** pre-update hook is being invoked for some other reason, including a
+** regular DELETE, sqlite3_preupdate_blobwrite() returns -1.
+**
 ** See also:  [sqlite3_update_hook()]
 */
 #if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
@@ -9566,6 +9575,7 @@ int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
 int sqlite3_preupdate_count(sqlite3 *);
 int sqlite3_preupdate_depth(sqlite3 *);
 int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
+int sqlite3_preupdate_blobwrite(sqlite3 *);
 #endif
 
 /*
