@@ -1,5 +1,5 @@
-C Raise\san\serror\son\san\sattempt\sto\srename\san\seponymous\svirtual\stable.
-D 2021-04-22T18:02:48.159
+C Change\sto\scomments\sin\ssqlite3session.h.\sNo\schanges\sto\scode.
+D 2021-04-22T18:39:02.999
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -457,7 +457,7 @@ F ext/session/sessionsize.test 6f644aff31c7f1e4871e9ff3542766e18da68fc7e587b83a3
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c 703634ca25b4b903ae8ec25045802a8c8deca36a65d2b993c4bc8888f6d6c7ee
-F ext/session/sqlite3session.h 874b084ea97252a57ff1b79bb5da172ab4156f6302a8d3e3f5c88ce2748480d8
+F ext/session/sqlite3session.h ec62833f3ec760a00b23a0e2a975d2b94eddf02b0e2782d3656c2d4cb31462cd
 F ext/session/test_session.c f433f68a8a8c64b0f5bc74dc725078f12483301ad4ae8375205eef790274a787
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3de544d495fee553d95fde3fb656745d633138115d25ed39760a1ea7c8c3fae6
-R 6a9c7cdbbc90921854925aabbca2bec9
-U drh
-Z f41afbcd09712ab0e6057d2e621e731f
+P c7909e8e0d0577c6109f13c0b14fb565239aae8af8963d659f363e124f3437fc
+R 228bf6971f815b2ca44e384d3a7a930f
+U dan
+Z decb5ec2c0a760459a806819d684ee15
