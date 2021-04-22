@@ -2806,6 +2806,7 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
   }
 #else
   int rc = SQLITE_OK;
+  UNUSED_PARAM2(pGlobal,db);
 #endif
 
   /* Avoid warnings indicating that sqlite3Fts5ParserTrace() and

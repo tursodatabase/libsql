@@ -6720,6 +6720,7 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
   return rc;
 #else
   return SQLITE_OK;
+  UNUSED_PARAM(db);
 #endif
 }
 
