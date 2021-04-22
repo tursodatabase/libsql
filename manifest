@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3session_changeset_size()\sAPI.
-D 2021-04-21T20:52:17.903
+C Add\sthe\ssqlite3session_object_config()\sAPI.\sCurrent\sused\sto\senable/disable\scollecting\sdata\sfor\ssqlite3session_changeset_size().
+D 2021-04-22T17:40:28.167
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -453,12 +453,12 @@ F ext/session/sessioninvert.test 04075517a9497a80d39c495ba6b44f3982c7371129b89e2
 F ext/session/sessionmem.test f2a735db84a3e9e19f571033b725b0b2daf847f3f28b1da55a0c1a4e74f1de09
 F ext/session/sessionnoop.test a9366a36a95ef85f8a3687856ebef46983df399541174cb1ede2ee53b8011bc7
 F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2f05e82363b9142810
-F ext/session/sessionsize.test 32ce42e9fed589276ef072b68c6f325e54ef7ef67c37ccd3ec8c822dd997f3c7
+F ext/session/sessionsize.test 6f644aff31c7f1e4871e9ff3542766e18da68fc7e587b83a347ea9820a002dd8
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c b205b57eecfb93aee23653ba4b07be6930afaa3760317c22ad9872a0bc451d3f
-F ext/session/sqlite3session.h 7d05ae78d03f778bf13f8160595b263d9436260137a8f50c78dc956f4d5121e2
-F ext/session/test_session.c b3d03f73b73d3794007392cf5a9bc27d1a2d3e970d500ab52026c726fa528142
+F ext/session/sqlite3session.c 703634ca25b4b903ae8ec25045802a8c8deca36a65d2b993c4bc8888f6d6c7ee
+F ext/session/sqlite3session.h 874b084ea97252a57ff1b79bb5da172ab4156f6302a8d3e3f5c88ce2748480d8
+F ext/session/test_session.c f433f68a8a8c64b0f5bc74dc725078f12483301ad4ae8375205eef790274a787
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -1914,10 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6fe50dcc239d2d1fc2a38aa705f4c75cbe26b3e48d098537306d96d6a4005659
-R e870b873cf49a44c733c175dd8b4c0b8
-T *branch * session-changeset-size
-T *sym-session-changeset-size *
-T -sym-trunk *
+P b5564a6fd54875db1de884fdc0e5eeabcd6aa5595ad03a8a60843503e830a2d8
+R fa53b8d1cc3def8dc3ef8249968de9f0
 U dan
-Z c5add95d4af95f7f7d5a36a6c86b17cc
+Z 5eb2943cb766ada953003dbe5c9f5486

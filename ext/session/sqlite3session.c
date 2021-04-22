@@ -42,6 +42,7 @@ struct SessionHook {
 struct sqlite3_session {
   sqlite3 *db;                    /* Database handle session is attached to */
   char *zDb;                      /* Name of database session is attached to */
+  int bEnableSize;                /* True if changeset_size() enabled */
   int bEnable;                    /* True if currently recording */
   int bIndirect;                  /* True if all changes are indirect */
   int bAutoAttach;                /* True to auto-attach tables */
@@ -1124,9 +1125,11 @@ static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
         pTab->bStat1 = 1;
       }
 
-      pSession->nMaxChangesetSize += (
-        1 + sessionVarintLen(pTab->nCol) + pTab->nCol + strlen(pTab->zName) + 1
-      );
+      if( pSession->bEnableSize ){
+        pSession->nMaxChangesetSize += (
+          1 + sessionVarintLen(pTab->nCol) + pTab->nCol + strlen(pTab->zName)+1
+        );
+      }
     }
   }
   return (pSession->rc || pTab->abPK==0);
@@ -1411,7 +1414,9 @@ static void sessionPreupdateOneChange(
     }
 
     assert( rc==SQLITE_OK );
-    rc = sessionUpdateMaxSize(op, pSession, pTab, pC);
+    if( pSession->bEnableSize ){
+      rc = sessionUpdateMaxSize(op, pSession, pTab, pC);
+    }
   }
 
 
@@ -2627,7 +2632,9 @@ int sqlite3session_changeset(
   void **ppChangeset              /* OUT: Buffer containing changeset */
 ){
   int rc = sessionGenerateChangeset(pSession, 0, 0, 0, pnChangeset,ppChangeset);
-  assert( rc || pnChangeset==0 || *pnChangeset<=pSession->nMaxChangesetSize );
+  assert( rc || pnChangeset==0 
+       || pSession->bEnableSize==0 || *pnChangeset<=pSession->nMaxChangesetSize 
+  );
   return rc;
 }
 
@@ -2718,6 +2725,32 @@ int sqlite3session_isempty(sqlite3_session *pSession){
 */
 sqlite3_int64 sqlite3session_memory_used(sqlite3_session *pSession){
   return pSession->nMalloc;
+}
+
+/*
+** Configure the session object passed as the first argument.
+*/
+int sqlite3session_object_config(sqlite3_session *pSession, int op, void *pArg){
+  int rc = SQLITE_OK;
+  switch( op ){
+    case SQLITE_SESSION_OBJCONFIG_SIZE: {
+      int iArg = *(int*)pArg;
+      if( iArg>=0 ){
+        if( pSession->pTable ){
+          rc = SQLITE_MISUSE;
+        }else{
+          pSession->bEnableSize = (iArg!=0);
+        }
+      }
+      *(int*)pArg = pSession->bEnableSize;
+      break;
+    }
+
+    default:
+      rc = SQLITE_MISUSE;
+  }
+
+  return rc;
 }
 
 /*

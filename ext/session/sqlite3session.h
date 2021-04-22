@@ -79,6 +79,33 @@ int sqlite3session_create(
 */
 void sqlite3session_delete(sqlite3_session *pSession);
 
+/*
+** CAPIREF: Conigure a Session Object
+** METHOD: sqlite3_session
+*/
+int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
+
+/*
+** CAPI3REF: Arguments for sqlite3session_object_config()
+**
+** The following values may passed as the the 4th parameter to
+** [sqlite3session_object_config].
+**
+** <dt>SQLITE_SESSION_OBJCONFIG_SIZE <dd>
+**   This option is used to set, clear or query the flag that enables
+**   the [sqlite3session_changeset_size()] API. Because it imposes some
+**   computational overhead, this API is disabled by default. Argument
+**   pArg must point to a value of type (int). If the value is initially
+**   0, then the sqlite3session_changeset_size() API is disabled. If it
+**   is greater than 0, then the same API is enabled. Or, if the initial
+**   value is less than zero, no change is made. In all cases the (int)
+**   variable is set to 1 if the sqlite3session_changeset_size() API is
+**   enabled following the current call, or 0 otherwise.
+**
+**   It is an error (SQLITE_MISUSE) to attempt to modify this setting after 
+**   the first table has been attached to the session object.
+*/
+#define SQLITE_SESSION_OBJCONFIG_SIZE 1
 
 /*
 ** CAPI3REF: Enable Or Disable A Session Object
