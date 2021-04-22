@@ -227,6 +227,50 @@ do_test tabfunc01-751 {
   }
 } {5.0 x5 | 7.0 x7 | 13.0 x13 | 17.0 x17 | 23.0 x23 |}
 
+ifcapable altertable {
+  do_test tabfunc01-800 {
+    catchsql {
+      ALTER TABLE generate_series ADD COLUMN col2;
+    }
+  } {1 {virtual tables may not be altered}}
+  do_test tabfunc01-810 {
+    catchsql {
+      ALTER TABLE generate_series RENAME TO flubber;
+    }
+  } {1 {table generate_series may not be altered}}
+  do_test tabfunc01-820 {
+    catchsql {
+      ALTER TABLE generate_series RENAME  start TO flubber;
+    }
+  } {1 {table generate_series may not be altered}}
+  do_test tabfunc01-830 {
+    catchsql {
+      ALTER TABLE generate_series DROP COLUMN start;
+    }
+  } {1 {table generate_series may not be altered}}
+  do_test tabfunc01-900 {
+    catchsql {
+      ALTER TABLE pragma_compile_options ADD COLUMN col2;
+    }
+  } {1 {virtual tables may not be altered}}
+  do_test tabfunc01-910 {
+    catchsql {
+      ALTER TABLE pragma_compile_options RENAME TO flubber;
+    }
+  } {1 {table pragma_compile_options may not be altered}}
+  do_test tabfunc01-920 {
+    catchsql {
+      ALTER TABLE pragma_compile_options RENAME  start TO flubber;
+    }
+  } {1 {table pragma_compile_options may not be altered}}
+  do_test tabfunc01-930 {
+    catchsql {
+      ALTER TABLE pragma_compile_options DROP COLUMN start;
+    }
+  } {1 {table pragma_compile_options may not be altered}}
+}
+
+
 # Free up memory allocations
 intarray_addr
 int64array_addr

@@ -2236,6 +2236,7 @@ struct Table {
 #define TF_Shadow          0x1000    /* True for a shadow table */
 #define TF_HasStat4        0x2000    /* STAT4 info available for this table */
 #define TF_Ephemeral       0x4000    /* An ephemeral table */
+#define TF_Eponymous       0x8000    /* An eponymous virtual table */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is

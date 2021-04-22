@@ -29,8 +29,9 @@
 ** Or, if zName is not a system table, zero is returned.
 */
 static int isAlterableTable(Parse *pParse, Table *pTab){
-  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) 
+  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7)
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+   || (pTab->tabFlags & TF_Eponymous)!=0
    || ( (pTab->tabFlags & TF_Shadow)!=0
         && sqlite3ReadOnlyShadowTables(pParse->db)
    )
@@ -918,8 +919,7 @@ static RenameToken *renameTokenFind(
   void *pPtr
 ){
   RenameToken **pp;
-  if( pPtr==0 ){
-    assert( pParse->nErr || pParse->db->mallocFailed );
+  if( NEVER(pPtr==0) ){
     return 0;
   }
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
