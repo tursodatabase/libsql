@@ -1,5 +1,5 @@
-C Change\sa\smemcpy()\sinto\sa\smemmove()\sto\sprevent\sa\swarning\sabout\soverlapping\nregions\spassed\sto\smemcpy()\sin\scase\sof\ssome\sobscure\sand\sunlikely\sdatabase\ncorruption.
-D 2021-04-22T20:01:02.989
+C Improved\sOOM\sdetection\sin\ssqlite3ExprCheckIN().\ndbsqlfuzz\s46ae2d8f473ac672f3042cc14ab67aeab9ffa6c2
+D 2021-04-23T00:59:38.110
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 73f57a9a183532c344a3135cf8f2a5589376e39183e0b5f562d6b61b2af0f4d8
-F src/expr.c 2b79c16f167b7ec74dfbd325b6f9cd9ff026908017f6804a5af6ba451c13b5b1
+F src/expr.c a658bd4ee3a7873545ec1813875e42322693124413ac1aee8492cd7a529307eb
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c 88fd711754a7241cb9f8eb1391370fd0c0cea756b3358efa274c5d1efd59af93
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14273915979f8fbf80111e795b5511a6ee24638896b9d434d6ccf4bf7f7a7f62
-R c9ee6b07c5b3bb7ab60fe0fd462562c3
+P bab132cbd18a529389a0315e60f30ccf1b565823116e0ec9b4f7684db1914c80
+R 259277b673035beade7ee2dd59080902
 U drh
-Z 41223c7313ced80558031a39a6e27102
+Z 1f0ec772a56912a103f4a51a8e42c261

@@ -3207,7 +3207,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 */
 int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
   int nVector = sqlite3ExprVectorSize(pIn->pLeft);
-  if( (pIn->flags & EP_xIsSelect) ){
+  if( (pIn->flags & EP_xIsSelect)!=0 && !pParse->db->mallocFailed ){
     if( nVector!=pIn->x.pSelect->pEList->nExpr ){
       sqlite3SubselectError(pParse, pIn->x.pSelect->pEList->nExpr, nVector);
       return 1;
