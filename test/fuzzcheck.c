@@ -2050,7 +2050,8 @@ int main(int argc, char **argv){
       }
     }
     if( bSpinner ){
-      printf("\n");
+      int nTotal = g.nDb*g.nSql;
+      printf("\r%s: %d/%d   \n", zDbName, nTotal, nTotal);
     }else if( !quietFlag && !verboseFlag ){
       printf(" 100%% - %d tests\n", g.nDb*g.nSql);
     }
