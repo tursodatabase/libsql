@@ -1781,10 +1781,10 @@ int main(int argc, char **argv){
       for(i=iFirstInsArg; i<argc; i++){
         if( strcmp(argv[i],"-")==0 ){
           /* A filename of "-" means read multiple filenames from stdin */
-          unsigned char zLine[2000];
+          char zLine[2000];
           while( rc==0 && fgets(zLine,sizeof(zLine),stdin)!=0 ){
             size_t kk = strlen(zLine);
-            while( kk>0 && isspace(zLine[kk-1]) ) kk--;
+            while( kk>0 && (zLine[kk]=='\n' || zLine[kk]=='\r')) kk--;
             sqlite3_bind_text(pStmt, 1, zLine, kk, SQLITE_STATIC);
             sqlite3_step(pStmt);
             rc = sqlite3_reset(pStmt);
