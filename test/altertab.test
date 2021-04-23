@@ -736,5 +736,18 @@ do_catchsql_test 24.2.1 {
   ALTER TABLE t1 RENAME TO t2;
 } {1 {error in trigger AFTER: no such table: main.nosuchtable}}
 
+#--------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 25.1 {
+  CREATE TABLE xx(x);
+  CREATE VIEW v3(b) AS WITH b AS (SELECT b FROM (SELECT * FROM t2)) VALUES(1);
+}
+
+breakpoint
+do_catchsql_test 25.2 {
+  ALTER TABLE json_each RENAME TO t4;
+} {1 {}}
+
 
 finish_test
