@@ -521,6 +521,30 @@ impl Statement<'_> {
         Ok(self.stmt.bind_parameter_index(name))
     }
 
+    /// Return the SQL parameter name given its (one-based) index (the inverse of
+    /// [`Statement::parameter_index`]).
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn example(conn: &Connection) -> Result<()> {
+    ///     let stmt = conn.prepare("SELECT * FROM test WHERE name = :example")?;
+    ///     let index = stmt.parameter_name(1);
+    ///     assert_eq!(index, Some(":example"));
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `None` if the column index is out of bounds or if the parameter
+    /// is positional.
+    #[inline]
+    pub fn parameter_name(&self, index: usize) -> Option<&'_ str> {
+        self.stmt.bind_parameter_name(index as i32).map(|name| {
+            str::from_utf8(name.to_bytes()).expect("Invalid UTF-8 sequence in parameter name")
+        })
+    }
+
     #[inline]
     pub(crate) fn bind_parameters<P>(&mut self, params: P) -> Result<()>
     where
@@ -1331,6 +1355,17 @@ mod test {
         db.query_row("SELECT ?1, ?2, ?3", params_from_iter(data.iter()), |row| {
             row.get::<_, u8>(0)
         })?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_parameter_name() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE test (name TEXT, value INTEGER)")?;
+        let stmt = db.prepare("INSERT INTO test (name, value) VALUES (:name, ?3)")?;
+        assert_eq!(stmt.parameter_name(0), None);
+        assert_eq!(stmt.parameter_name(1), Some(":name"));
+        assert_eq!(stmt.parameter_name(2), None);
         Ok(())
     }
 
