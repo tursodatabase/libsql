@@ -1,5 +1,5 @@
-C Make\swindow\srange\squeries\smore\srobust\sagainst\scorrupt\sdatabase\sfiles.\ndbsqlfuzz\sf22df3a7b2aab0937a415484514fc2f68a293c99.
-D 2021-04-24T23:40:05.083
+C Skip\stest\swhen\sno\sJSON.
+D 2021-04-25T23:13:04.410
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -657,7 +657,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altermalloc3.test 059841a3de6b6780efd9f0b30bf1d9b4443c555f68d39975cbcac2583167b239
 F test/alterqf.test 67568ad152db8c1187b15633b801242cf960f1beafc51261a3d1725d910baeb2
-F test/altertab.test 51e744cd230f3a37119a6593c5955a9669993c51a453feed581bd8e46ed48928
+F test/altertab.test 2f5a008e0cc8ce1d8adbb3ee665836d143fcdf5573b288402080a4443116d863
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test 2b82fa2236a3a91553d53ae5555d8e723c7eec174c41f1fa62ff497355398479
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d55c21c167631f42d155aadec544e629bd078de9992aa5a74694d08bc52052b
-R 046b16c6ecc6c0794b90790e7eea9c3c
-U drh
-Z e9d04fc2504496c7597cf6435acf852a
+P 506333742103c1f440db5da819a36f3b518f7b49e94a7b74419b02bbcadc5a78
+R a3adb437018949e904deac97f67bdced
+U larrybr
+Z a369a5f1b7d7ca6da895ee1e87f6f32e
