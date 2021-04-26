@@ -182,13 +182,35 @@ sqlite3 db test.db
 breakpoint
 do_catchsql_test 3.1 {
   PRAGMA writable_schema = 1;
-  PRAGMA vdbe_trace = 1;
   REPLACE INTO x1 VALUES(5, 2, 3);
 } {1 {database disk image is malformed}}
 
-explain_i {
-  REPLACE INTO x1 VALUES(5, 2, 3);
-  }
+#-------------------------------------------------------------------------
+
+reset_db
+db func strreplace strreplace
+proc strreplace {orig a b} {
+  string map [list $a $b] $orig
+}
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX t1a ON t1(a);
+  CREATE INDEX t1b ON t1(b);
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema 
+    SET sql = strreplace(sql, 't1', 'json_each') 
+    WHERE type='index';
+}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 4.1 {
+  PRAGMA writable_schema = 1;
+  SELECT * FROM t1
+}
 
 
 
