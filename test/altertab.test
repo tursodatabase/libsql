@@ -744,7 +744,7 @@ do_execsql_test 25.1 {
   CREATE VIEW v3(b) AS WITH b AS (SELECT b FROM (SELECT * FROM t2)) VALUES(1);
 }
 
-ifcapable json1 {
+ifcapable json1&&vtab {
   do_catchsql_test 25.2 {
     ALTER TABLE json_each RENAME TO t4;
   } {1 {table json_each may not be altered}}
