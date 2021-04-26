@@ -1,5 +1,5 @@
-C Do\snot\sinitialize\seponymous\svirtual\stables\swhen\sparsing\sthe\sschema.\sThis\scan\shappen\sif\sthe\sdb\sis\scorrupt.
-D 2021-04-26T14:09:48.640
+C When\sdoing\sthe\soptimization\sthat\sattempts\sto\savoid\ssorting\son\sa\nGROUP\sBY,\sdo\snot\sassume\sthat\sthe\svalues\sin\san\sindex\son\san\sexpression\sare\nnon-NULL.\s\sBug\sdiscovered\sby\sWang\sKe's\sfuzzer\sand\sreported\sat\n[forum:/forumpost/74330094d8|forum\spost\s74330094d8].
+D 2021-04-26T14:32:48.507
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
-F src/where.c cb76c17d0bded653040cb16e2f4532fa7b20f5f8c205f4078d346562821107a2
+F src/where.c 22705995adaa97f7fb9163f31b9277c457d6995dcb0c4fcf52d1b317d9594d1f
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 992bf0d7520bffd345472fb9bc83a1ca0134e46d9e904879bb21e1e77957fcc3
 F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
@@ -1341,7 +1341,7 @@ F test/select1.test 3d23f66bf9ba77570acfe2ca5f1540ece17037cc64ab1a00efec9758ac29
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
 F test/select4.test f0684d3da3bccacbe2a1ebadf6fb49d9df6f53acb4c6ebc228a88d0d6054cc7b
-F test/select5.test df9ec0d218cedceb4fe7b63262025b547b50a55e59148c6f40b60ca25f1d4546
+F test/select5.test 8afc5e5dcdebc2be54472e73ebd9cd1adef1225fd15d37a1c62f969159f390ae
 F test/select6.test 319d45e414cdd321bf17cfacedaf19e3935ad64dac357c53f1492338c6e9b801
 F test/select7.test f659f231489349e8c5734e610803d7654207318f
 F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6fcb2438f88a70ed67e19103bfa263a6c98b06962207f153559c9516d8c7b5d5
-R 4aa43db253eb81fd5ee71cacf2798ab6
-U dan
-Z 0aa56f60b5e694663814cab953c70c9d
+P cb8c41aa20bb351c4c712ed7a3617187ceeb0905ede1e6f561bc1d89f31c95ea
+R 2da26e596e1a7e2946b3d9957b9e2544
+U drh
+Z 7e0cb4449b883dc9661e9768d506cfb3
