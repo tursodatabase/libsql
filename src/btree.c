@@ -9114,7 +9114,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   assert( (flags & ~(BTREE_SAVEPOSITION | BTREE_AUXDELETE))==0 );
   if( pCur->eState==CURSOR_REQUIRESEEK ){
     rc = btreeRestoreCursorPosition(pCur);
-    if( rc ) return rc;
+    assert( rc!=SQLITE_OK || CORRUPT_DB || pCur->eState==CURSOR_VALID );
+    if( rc || pCur->eState!=CURSOR_VALID ) return rc;
   }
   assert( CORRUPT_DB || pCur->eState==CURSOR_VALID );
 

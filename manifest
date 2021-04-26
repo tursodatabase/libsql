@@ -1,5 +1,5 @@
-C More\saggressive\sdetection\sof\sOOM\serrors\sin\sresolveAlias().\ndbsqlfuzz\s7f96832c2ef7ee472022ed805b064e55e41094b2
-D 2021-04-26T15:28:06.192
+C Fix\sa\sproblem\sthat\scould\scause\sa\scrash\sin\ssqlite3BtreeDelete()\swhen\soperating\son\sa\scorrupt\sdatabase\sfile.
+D 2021-04-26T15:32:36.748
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -484,7 +484,7 @@ F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 054bd037a6b759eb5d6af7916df8226972f6a852514aee8110022ddac10aaf7f
+F src/btree.c 0555f7e97ede886ac3d7aaec363b44498c9716dd45f3f0484de31eb90e30a37e
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c f4072218dacf42f45b733d1a9a98b3a4d7b8c676a7e5d8ff17d70b60aff687ae
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7178dc3a32c3a4a33e437fd5026f6f72e4809ceb7d2cd12a25a74b80d5c95d33
-R ada4d10a3f13ea7772d60432e91e1a7f
-U drh
-Z 9a742d1c6c9822afcbd83680adccc0b5
+P e99faf4f82746761c389e24db1b00ee94b9f849e7bcb29517fa0ca10290afc41
+R c7130d9859bde8d12c0aa5a6e27eb502
+U dan
+Z e8491501cdc34da079f5af9614d000fd
