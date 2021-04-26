@@ -1,5 +1,5 @@
-C New\sdbsqlfuzz\scases\sadded\sto\stest/fuzzdata8.db.
-D 2021-04-26T22:30:49.648
+C Improved\srobustness\sof\sthe\s"showdb"\sdebugging\sprogram\swhen\sit\sis\sparsing\ncorrupt\sdatabase\sfiles.
+D 2021-04-26T23:57:02.468
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1864,7 +1864,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 49e810f5c414c792b5bf38cd5557ca9639713ebfef32aaff32faf7cb7ccce513
+F tool/showdb.c d99bd18f8386fd83f8236b1c367e464a6d58e65681f2de25856dfa5076fa67cb
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f80d7bb2c305c1dd4658767660b33259032c048a91f18c654a6bda7332c54a0c
-R d8e1326693278e6f1513c26703f6c0aa
+P 88d20500c516fe89ad1cd42f7366ca190c3790f911f11ab332b86b675f5f69ba
+R a7a438a7a1e4a8c7f93ba3c58bbec3f4
 U drh
-Z bb52e9bce99951a04289010ee988307c
+Z 323bfb66712236d14601f16d2826d127
