@@ -3767,7 +3767,10 @@ static void srclistRenumberCursors(
   for(i=0, pItem=pSrc->a; i<pSrc->nSrc; i++, pItem++){
     if( i!=iExcept ){
       Select *p;
-      pItem->iCursor = aCsrMap[pItem->iCursor] = pParse->nTab++;
+      if( !pItem->fg.isRecursive || aCsrMap[pItem->iCursor]==0 ){
+        aCsrMap[pItem->iCursor] = pParse->nTab++;
+      }
+      pItem->iCursor = aCsrMap[pItem->iCursor];
       for(p=pItem->pSelect; p; p=p->pPrior){
         srclistRenumberCursors(pParse, aCsrMap, p->pSrc, -1);
       }
