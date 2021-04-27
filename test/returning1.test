@@ -280,4 +280,18 @@ do_execsql_test 11.6 {
   DELETE FROM log;
 } {U3 1 101 U3 2 102 U3 3 103 D3 1 101 D3 2 102 D3 3 103}
 
+reset_db
+do_execsql_test 11.11 {
+  CREATE TEMP TABLE t1(a,b);
+  CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN SELECT 1; END;
+  DELETE FROM t1 RETURNING *;
+  DROP TRIGGER r1;
+  INSERT INTO t1 VALUES(5,30);
+} {}
+do_execsql_test 11.12 {
+  SELECT * FROM t1;
+} {5 30}
+
+
+
 finish_test

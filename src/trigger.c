@@ -57,19 +57,13 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   }
   pTmpSchema = pParse->db->aDb[1].pSchema;
   p = sqliteHashFirst(&pTmpSchema->trigHash);
-  if( p==0 ){
-    return pTab->pTrigger;
-  }
-  if( pTmpSchema==pTab->pSchema ){
-    pList = 0;
-  }else{
-    pList = pTab->pTrigger;
-  }
+  pList = pTab->pTrigger;
   while( p ){
     Trigger *pTrig = (Trigger *)sqliteHashData(p);
     if( pTrig->pTabSchema==pTab->pSchema
      && pTrig->table
      && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
+     && pTrig->pTabSchema!=pTmpSchema
     ){
       pTrig->pNext = pList;
       pList = pTrig;
