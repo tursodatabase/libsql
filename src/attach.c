@@ -511,10 +511,9 @@ void sqlite3FixInit(
   pFix->w.pParse = pParse;
   pFix->w.xExprCallback = fixExprCb;
   pFix->w.xSelectCallback = fixSelectCb;
-  pFix->w.xSelectCallback2 = 0;
+  pFix->w.xSelectCallback2 = sqlite3WalkWinDefnDummyCallback;
   pFix->w.walkerDepth = 0;
   pFix->w.eCode = 0;
-  pFix->w.bWalkWinDefn = 1;
   pFix->w.u.pFix = pFix;
 }
 
@@ -574,14 +573,16 @@ int sqlite3FixTriggerStep(
       return 1;
     }
 #ifndef SQLITE_OMIT_UPSERT
-    if( pStep->pUpsert ){
-      Upsert *pUp = pStep->pUpsert;
-      if( sqlite3WalkExprList(&pFix->w, pUp->pUpsertTarget)
-       || sqlite3WalkExpr(&pFix->w, pUp->pUpsertTargetWhere)
-       || sqlite3WalkExprList(&pFix->w, pUp->pUpsertSet)
-       || sqlite3WalkExpr(&pFix->w, pUp->pUpsertWhere)
-      ){
-        return 1;
+    {
+      Upsert *pUp;
+      for(pUp=pStep->pUpsert; pUp; pUp=pUp->pNextUpsert){
+        if( sqlite3WalkExprList(&pFix->w, pUp->pUpsertTarget)
+         || sqlite3WalkExpr(&pFix->w, pUp->pUpsertTargetWhere)
+         || sqlite3WalkExprList(&pFix->w, pUp->pUpsertSet)
+         || sqlite3WalkExpr(&pFix->w, pUp->pUpsertWhere)
+        ){
+          return 1;
+        }
       }
     }
 #endif

@@ -387,6 +387,25 @@ do_catchsql_test 9.4 {
   END;
 } {1 {trigger cannot use variables}}
 
+do_catchsql_test 9.4.2 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t1(a,b) 
+        SELECT a, max(d) OVER w1 FROM t1
+        WINDOW w1 AS (
+          ORDER BY a ROWS BETWEEN ? PRECEDING AND UNBOUNDED FOLLOWING
+        );
+  END;
+} {1 {trigger cannot use variables}}
+do_catchsql_test 9.4.3 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t1(a,b) 
+        SELECT a, max(d) OVER w1 FROM t1
+        WINDOW w1 AS (
+          ORDER BY a ROWS BETWEEN UNBOUNDED PRECEDING AND ? FOLLOWING
+        );
+  END;
+} {1 {trigger cannot use variables}}
+
 #-------------------------------------------------------------------------
 #
 do_execsql_test 10.0 {

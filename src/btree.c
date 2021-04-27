@@ -7015,7 +7015,7 @@ static int rebuildPage(
     u8 *pCell = pCArray->apCell[i];
     u16 sz = pCArray->szCell[i];
     assert( sz>0 );
-    if( SQLITE_WITHIN(pCell,aData,pEnd) ){
+    if( SQLITE_WITHIN(pCell,aData+j,pEnd) ){
       if( ((uptr)(pCell+sz))>(uptr)pEnd ) return SQLITE_CORRUPT_BKPT;
       pCell = &pTmp[pCell - aData];
     }else if( (uptr)(pCell+sz)>(uptr)pSrcEnd
@@ -7028,9 +7028,8 @@ static int rebuildPage(
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
     if( pData < pCellptr ) return SQLITE_CORRUPT_BKPT;
-    memcpy(pData, pCell, sz);
+    memmove(pData, pCell, sz);
     assert( sz==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
-    testcase( sz!=pPg->xCellSize(pPg,pCell) )
     i++;
     if( i>=iEnd ) break;
     if( pCArray->ixNx[k]<=i ){
@@ -7822,7 +7821,7 @@ static int balance_nonroot(
       b.szCell[b.nCell] = b.szCell[b.nCell] - leafCorrection;
       if( !pOld->leaf ){
         assert( leafCorrection==0 );
-        assert( pOld->hdrOffset==0 );
+        assert( pOld->hdrOffset==0 || CORRUPT_DB );
         /* The right pointer of the child page pOld becomes the left
         ** pointer of the divider cell */
         memcpy(b.apCell[b.nCell], &pOld->aData[8], 4);
@@ -9115,7 +9114,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   assert( (flags & ~(BTREE_SAVEPOSITION | BTREE_AUXDELETE))==0 );
   if( pCur->eState==CURSOR_REQUIRESEEK ){
     rc = btreeRestoreCursorPosition(pCur);
-    if( rc ) return rc;
+    assert( rc!=SQLITE_OK || CORRUPT_DB || pCur->eState==CURSOR_VALID );
+    if( rc || pCur->eState!=CURSOR_VALID ) return rc;
   }
   assert( CORRUPT_DB || pCur->eState==CURSOR_VALID );
 

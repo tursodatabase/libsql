@@ -438,7 +438,7 @@ Table *sqlite3LocateTable(
     /* If zName is the not the name of a table in the schema created using
     ** CREATE, then check to see if it is the name of an virtual table that
     ** can be an eponymous virtual table. */
-    if( pParse->disableVtab==0 ){
+    if( pParse->disableVtab==0 && db->init.busy==0 ){
       Module *pMod = (Module*)sqlite3HashFind(&db->aModule, zName);
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
@@ -461,6 +461,8 @@ Table *sqlite3LocateTable(
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zMsg, zName);
     }
+  }else{
+    assert( HasRowid(p) || p->iPKey<0 );
   }
 
   return p;
@@ -2179,7 +2181,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     sqlite3TokenInit(&ipkToken, pTab->aCol[pTab->iPKey].zName);
     pList = sqlite3ExprListAppend(pParse, 0, 
                   sqlite3ExprAlloc(db, TK_ID, &ipkToken, 0));
-    if( pList==0 ) return;
+    if( pList==0 ){
+      pTab->tabFlags &= ~TF_WithoutRowid;
+      return;
+    }
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenRemap(pParse, pList->a[0].pExpr, &pTab->iPKey);
     }
@@ -2642,6 +2647,7 @@ void sqlite3EndTable(
     Table *pOld;
     Schema *pSchema = p->pSchema;
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    assert( HasRowid(p) || p->iPKey<0 );
     pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName, p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
@@ -4589,8 +4595,8 @@ SrcList *sqlite3SrcListAppend(
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
   SrcItem *pItem;
-  assert(pList || pParse->db->mallocFailed );
-  if( pList ){
+  assert( pList || pParse->db->mallocFailed );
+  if( ALWAYS(pList) ){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
       if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;

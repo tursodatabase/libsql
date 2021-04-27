@@ -99,7 +99,7 @@ Expr *sqlite3ExprAddCollateToken(
   if( pExpr==0 ) return 0;
   if( pExpr->op==TK_VECTOR ){
     ExprList *pList = pExpr->x.pList;
-    if( pList!=0 ){
+    if( ALWAYS(pList!=0) ){
       int i;
       for(i=0; i<pList->nExpr; i++){
         pList->a[i].pExpr = sqlite3ExprAddCollateToken(pParse,pList->a[i].pExpr,
@@ -1324,6 +1324,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
   if( pzBuffer ){
     zAlloc = *pzBuffer;
     staticFlag = EP_Static;
+    assert( zAlloc!=0 );
   }else{
     zAlloc = sqlite3DbMallocRawNN(db, dupedExprSize(p, dupFlags));
     staticFlag = 0;
@@ -1648,6 +1649,14 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     if( p->pWin && db->mallocFailed==0 ) gatherSelectWindows(pNew);
 #endif
     pNew->selId = p->selId;
+    if( db->mallocFailed ){
+      /* Any prior OOM might have left the Select object incomplete.
+      ** Delete the whole thing rather than allow an incomplete Select
+      ** to be used by the code generator. */
+      pNew->pNext = 0;
+      sqlite3SelectDelete(db, pNew);
+      break;
+    }
     *pp = pNew;
     pp = &pNew->pPrior;
     pNext = pNew;
@@ -2348,8 +2357,10 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
 */
 int sqlite3ExprCanBeNull(const Expr *p){
   u8 op;
+  assert( p!=0 );
   while( p->op==TK_UPLUS || p->op==TK_UMINUS ){
     p = p->pLeft;
+    assert( p!=0 );
   }
   op = p->op;
   if( op==TK_REGISTER ) op = p->op2;
@@ -3199,7 +3210,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 */
 int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
   int nVector = sqlite3ExprVectorSize(pIn->pLeft);
-  if( (pIn->flags & EP_xIsSelect) ){
+  if( (pIn->flags & EP_xIsSelect)!=0 && !pParse->db->mallocFailed ){
     if( nVector!=pIn->x.pSelect->pEList->nExpr ){
       sqlite3SubselectError(pParse, pIn->x.pSelect->pEList->nExpr, nVector);
       return 1;
