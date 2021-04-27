@@ -917,12 +917,12 @@ static void page_usage_btree(
 
       cellidx = cellstart + i*2;
       if( cellidx+1 >= g.pagesize ){
-        page_usage_msg(pgno, "too many cells");
+        printf("ERROR: page %d too many cells (%d)\n", pgno, nCell);
         break;
       }
       ofst = a[cellidx]*256 + a[cellidx+1];
       if( ofst<cellidx+2 || ofst+4>=g.pagesize ){
-        page_usage_msg(pgno, "cell %d out of bounds", i);
+        printf("ERROR: page %d cell %d out of bounds\n", pgno, i);
         continue;
       }
       child = decodeInt32(a+ofst);
