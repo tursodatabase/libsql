@@ -60,30 +60,44 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   if( p==0 ){
     return pTab->pTrigger;
   }
-  pList = pTab->pTrigger;
-  if( pTmpSchema!=pTab->pSchema ){
-    while( p ){
-      Trigger *pTrig = (Trigger *)sqliteHashData(p);
-      if( pTrig->pTabSchema==pTab->pSchema
-       && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
-      ){
-        pTrig->pNext = pList;
-        pList = pTrig;
-      }else if( pTrig->op==TK_RETURNING
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-                && pParse->db->pVtabCtx==0
-#endif
-                ){
-        assert( pParse->bReturning );
-        assert( &(pParse->u1.pReturning->retTrig) == pTrig );
-        pTrig->table = pTab->zName;
-        pTrig->pTabSchema = pTab->pSchema;
-        pTrig->pNext = pList;
-        pList = pTrig;
-      }        
-      p = sqliteHashNext(p);    
-    }
+  if( pTmpSchema==pTab->pSchema ){
+    pList = 0;
+  }else{
+    pList = pTab->pTrigger;
   }
+  while( p ){
+    Trigger *pTrig = (Trigger *)sqliteHashData(p);
+    if( pTrig->pTabSchema==pTab->pSchema
+     && pTrig->table
+     && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
+    ){
+      pTrig->pNext = pList;
+      pList = pTrig;
+    }else if( pTrig->op==TK_RETURNING
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+              && pParse->db->pVtabCtx==0
+#endif
+    ){
+      assert( pParse->bReturning );
+      assert( &(pParse->u1.pReturning->retTrig) == pTrig );
+      pTrig->table = pTab->zName;
+      pTrig->pTabSchema = pTab->pSchema;
+      pTrig->pNext = pList;
+      pList = pTrig;
+    }        
+    p = sqliteHashNext(p);    
+  }
+#if 0
+  if( pList ){
+    Trigger *pX;
+    printf("Triggers for %s:", pTab->zName);
+    for(pX=pList; pX; pX=pX->pNext){
+      printf(" %s", pX->zName);
+    }
+    printf("\n");
+    fflush(stdout);
+  }
+#endif
   return pList;  
 }
 

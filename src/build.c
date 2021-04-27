@@ -1323,6 +1323,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTrig.tr_tm = TRIGGER_AFTER;
   pRet->retTrig.bReturning = 1;
   pRet->retTrig.pSchema = db->aDb[1].pSchema;
+  pRet->retTrig.pTabSchema = db->aDb[1].pSchema;
   pRet->retTrig.step_list = &pRet->retTStep;
   pRet->retTStep.op = TK_RETURNING;
   pRet->retTStep.pTrig = &pRet->retTrig;

@@ -224,4 +224,60 @@ do_execsql_test 10.4 {
   SELECT * FROM log;
 } {}
 
+# 2021-04-27 dbsqlfuzz 78b9400770ef8cc7d9427dfba26f4fcf46ea7dc2
+# Returning clauses on TEMP tables with triggers.
+#
+reset_db
+do_execsql_test 11.1 {
+  CREATE TEMP TABLE t1(a,b);
+  CREATE TEMP TABLE t2(c,d);
+  CREATE TEMP TABLE t3(e,f);
+  CREATE TEMP TABLE log(op,x,y);
+  CREATE TEMP TRIGGER t1r1 AFTER INSERT ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('I1',new.a,new.b);
+  END;
+  CREATE TEMP TRIGGER t1r2 BEFORE DELETE ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('D1',old.a,old.b);
+  END;
+  CREATE TEMP TRIGGER t2r3 AFTER UPDATE ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('U1',new.a,new.b);
+  END;
+  CREATE TEMP TRIGGER t2r1 BEFORE INSERT ON t2 BEGIN
+     INSERT INTO log(op,x,y) VALUES('I2',new.c,new.d);
+  END;
+  CREATE TEMP TRIGGER t3r1 AFTER DELETE ON t3 BEGIN
+     INSERT INTO log(op,x,y) VALUES('D3',old.e,old.f);
+  END;
+  CREATE TEMP TRIGGER t3r2 BEFORE UPDATE ON t3 BEGIN
+     INSERT INTO log(op,x,y) VALUES('U3',new.e,new.f);
+  END;
+  INSERT INTO t1(a,b) VALUES(1,2),('happy','glad') RETURNING a, b, '|';
+} {1 2 | happy glad |}
+do_execsql_test 11.2 {
+  UPDATE t1 SET b=9 WHERE a=1 RETURNING a, b, 'x';
+} {1 9 x}
+do_execsql_test 11.3 {
+  DELETE FROM t1 WHERE a<>'xray' RETURNING a, b, '@';
+} {1 9 @ happy glad @}
+do_execsql_test 11.4 {
+  SELECT * FROM log;
+  DELETE FROM log;
+} {I1 1 2 I1 happy glad U1 1 9 D1 1 9 D1 happy glad}
+do_execsql_test 11.5 {
+  INSERT INTO t2 VALUES('bravo','charlie') RETURNING d, c, 'z';
+} {charlie bravo z}
+do_execsql_test 11.6 {
+  SELECT * FROM log;
+  DELETE FROM log;
+} {I2 bravo charlie}
+do_execsql_test 11.7 {
+  INSERT INTO t3(e) VALUES(1),(2),(3) RETURNING 'I', e;
+  UPDATE t3 SET f=e+100 RETURNING 'U', e, f;
+  DELETE FROM t3 WHERE f>100 RETURNING 'D', e, f;
+} {I 1 I 2 I 3 U 1 101 U 2 102 U 3 103 D 1 101 D 2 102 D 3 103}
+do_execsql_test 11.6 {
+  SELECT * FROM log;
+  DELETE FROM log;
+} {U3 1 101 U3 2 102 U3 3 103 D3 1 101 D3 2 102 D3 3 103}
+
 finish_test
