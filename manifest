@@ -1,5 +1,5 @@
-C Adjust\sa\sVDBE\scoverage\smacros\sdue\sto\sthe\senhancement\sat\s[506333742103c1f4].
-D 2021-04-28T15:43:36.887
+C Ignore\sthe\sTEMP\sor\sTEMPORARY\skeyword\son\sCREATE\sstatements\swhich\sparsing\nthe\sschema\sout\sof\san\sexisting\sdatabase\sfile.\s\sThose\skeywords\sshould\snever\sbe\nthere.\s\sThis\schange\ssimply\sadds\srobustness\sin\scase\sa\slegacy\sor\sdamaged\sdatabase\nis\sseen.
+D 2021-04-28T17:37:26.943
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -532,7 +532,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 0c84ba222cc58825098ae7d693db85c69f1700ba2a74d9d395033337a511b4e6
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 77039cf996d9cde8ee1e947ad9284566c30e48cc227766a7be1d475ec7aed9dd
+F src/parse.y ac294bd2891c4310b0b23a67ea3bbca2d0bf5b7662c4444b6517c3986be4a437
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff3538ae37a02f4f36a15cddd1245171e724aac9c84b2e576980fd3806302775
-R cb2838159fee0181be25d280238c0439
+P daed59b4f96a6899d2404274ad985be3f22f407c1502b3f8ffd7977441a9fe9a
+R 0402fcc6ddd47b1d4413594f4740f8f5
 U drh
-Z 40dbed53710037e9c47e1b6211cc51d8
+Z 8d411c198a078d4369329f4a3fb95ab6
