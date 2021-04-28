@@ -2263,7 +2263,7 @@ static int windowCodeOp(
     }else if( p->regRowid ){
       sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid1);
       sqlite3VdbeAddOp3(v, OP_Ge, p->regRowid, lblDone, regRowid1);
-      VdbeCoverage(v);
+      VdbeCoverageNeverNull(v);
     }
     sqlite3ReleaseTempReg(pParse, regRowid1);
     sqlite3ReleaseTempReg(pParse, regRowid2);
