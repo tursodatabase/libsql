@@ -86,14 +86,11 @@ void sqlite3session_delete(sqlite3_session *pSession);
 ** This method is used to configure a session object after it has been
 ** created. At present the only valid value for the second parameter is
 ** [SQLITE_SESSION_OBJCONFIG_SIZE].
-*/
-int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
-
-/*
-** CAPI3REF: Arguments for sqlite3session_object_config()
+**
+** Arguments for sqlite3session_object_config()
 **
 ** The following values may passed as the the 4th parameter to
-** [sqlite3session_object_config].
+** sqlite3session_object_config().
 **
 ** <dt>SQLITE_SESSION_OBJCONFIG_SIZE <dd>
 **   This option is used to set, clear or query the flag that enables
@@ -108,6 +105,10 @@ int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
 **
 **   It is an error (SQLITE_MISUSE) to attempt to modify this setting after 
 **   the first table has been attached to the session object.
+*/
+int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
+
+/*
 */
 #define SQLITE_SESSION_OBJCONFIG_SIZE 1
 
@@ -356,11 +357,11 @@ int sqlite3session_changeset(
 
 /*
 ** CAPI3REF: Return An Upper-limit For The Size Of The Changeset
-** METHOD: sqlite3session_changeset_size()
+** METHOD: sqlite3_session
 **
 ** By default, this function always returns 0. For it to return
 ** a useful result, the sqlite3_session object must have been configured
-** to enable this API using [sqlite3session_object_config()] with the
+** to enable this API using sqlite3session_object_config() with the
 ** SQLITE_SESSION_OBJCONFIG_SIZE verb.
 **
 ** When enabled, this function returns an upper limit, in bytes, for the size 
