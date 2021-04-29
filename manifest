@@ -1,5 +1,5 @@
-C Enhanced\s"PRAGMA\svdbe_trace=on"\soutput\sassociated\swith\sthe\sseekHit\sflag.
-D 2021-04-29T13:58:28.373
+C Fix\sthe\sIN-early-out\soptimization\sso\sthat\sit\sworks\seven\sfor\sthe\scorner\scase\nwhere\sthe\sNULL\sbypass\sfires\sbefore\sthe\saffinity\sof\sthe\sLHS\soperator\shas\sbeen\nset.\s\sFix\sfor\sthe\sproblem\sdescribed\sin\n[forum:/forumpost/6a3ec138e9|forum\spost\s6a3ec138e9].
+D 2021-04-29T15:49:34.719
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
-F src/where.c c6e020d87235c7da91414a0075342339d9560c981b15ad4ed099e6c3fa1bdd20
+F src/where.c 33bae7248e206b874456982a07b859acd880fb7b137678b2dc1e277c234b8b6f
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 992bf0d7520bffd345472fb9bc83a1ca0134e46d9e904879bb21e1e77957fcc3
 F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
@@ -1077,7 +1077,7 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test cd08375ba470b248c3dc4ab30fd5dbcb682deafe3862d8249ba0ad6a11dd25ea
 F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
-F test/in6.test 8562d0945195cab3cc4ab3794e9118e72cb44c43f785c2b04d48a9d06ca6b4ec
+F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b8da7924cc78710ae4bbe12b57140fdaeae5efb0e6ac10073ae9c98b7f8d7a4
-R c9961ebb679b5956c54d8a22972f2273
+P 683950009300657b0321d7d3f77f2585a28696ff93cedef399d1cd4aa484b2d4
+R 2fa8e2441473674deda1256a612f82a3
 U drh
-Z 5db4b3f7b88ff23bda45bc815f5f8c05
+Z cf36b9a5e331b2b6911dc39680ad6acd
