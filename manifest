@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.\nSee\s[forum:/forumpost/256140e470|forum\spost\s256140e470].
-D 2021-04-29T13:37:36.601
+C Enhanced\s"PRAGMA\svdbe_trace=on"\soutput\sassociated\swith\sthe\sseekHit\sflag.
+D 2021-04-29T13:58:28.373
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c ff3ccdd969774e6ce821b54d076286c84137e2f0e6387b1133bafbaa7470f749
+F src/vdbe.c 12fa250059e6bc396bc7e9f2ca9b16d9ddc0c5b9ca20446fb6f5db29d6e76d74
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 58980223a32495ad059d10581b83e133abdc77248b1bab85c080cab8a13bd819
 F src/vdbeapi.c d9e99daf59fec928986838b3389a7337e82fec6b3b5de30206cb99fb4661b94e
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bce2ea393a872b5b70ef3b9cedce3d406725dcc56d8800ee4f7ec29562cc3f9b
-R deecf614464402dbeea64ce83a7545e6
+P 1b8da7924cc78710ae4bbe12b57140fdaeae5efb0e6ac10073ae9c98b7f8d7a4
+R c9961ebb679b5956c54d8a22972f2273
 U drh
-Z 6fa4302a368a2cf57f4ceedec409bd25
+Z 5db4b3f7b88ff23bda45bc815f5f8c05
