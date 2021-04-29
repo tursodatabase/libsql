@@ -4247,7 +4247,7 @@ void sqlite3DefaultRowEst(Index *pIdx){
   if( x<99 ){
     pIdx->pTable->nRowLogEst = x = 99;
   }
-  if( pIdx->pPartIdxWhere!=0 ) x -= 10;  assert( 10==sqlite3LogEst(2) );
+  if( pIdx->pPartIdxWhere!=0 ){ x -= 10;  assert( 10==sqlite3LogEst(2) ); }
   a[0] = x;
 
   /* Estimate that a[1] is 10, a[2] is 9, a[3] is 8, a[4] is 7, a[5] is

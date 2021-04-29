@@ -4145,7 +4145,7 @@ static LogEst whereSortingCost(
   }else if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT) ){
     /* TUNING: In the sort for a DISTINCT operator, assume that the DISTINCT
     ** reduces the number of output rows by a factor of 2 */
-    if( nRow>10 ) nRow -= 10;  assert( 10==sqlite3LogEst(2) );
+    if( nRow>10 ){ nRow -= 10;  assert( 10==sqlite3LogEst(2) ); }
   }
   rSortCost += estLog(nRow);
   return rSortCost;
