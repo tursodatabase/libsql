@@ -1,5 +1,5 @@
-C Reduce\sAPI\slifetime\srequirement\sfor\sobjects\spassed\sto\ssqlite3_bind_...()\swith\sSQLITE_STATIC.\nAlso\sfix\sbroken\ssession\sdoc\slinks\s(by\szapping\srefs.)
-D 2021-04-29T19:30:35.687
+C Fix\sa\sharmless\s"unused\svariable"\swarning\swhen\scompiling\swith\n-DSQLITE_COVERAGE_TEST.
+D 2021-04-30T12:30:35.445
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c b928405ccb66040fc6c3a11eaa93ddb02cbf20f9ab6860b301b222b9b50dc089
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 69e770e96fd56cc21608992bf2c6f1f3dc5cf2572d0495c6a643b06c3a679f14
+F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c 33bae7248e206b874456982a07b859acd880fb7b137678b2dc1e277c234b8b6f
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f18b3cbee7e1342fdd66e45ef744fea3db2ba4513943c0582ff8ef98974865e
-R a78d350c59fe6553720f9550ece78cd1
-U larrybr
-Z 074c9b08e89236747ec4bf43138da321
+P 327eb4792f9b98f6220fd35ba744002d36ed53f43a016924117b3cea32343947
+R 849f11fee0019002e3fc000f9bf9fd50
+U drh
+Z 1a79bf8b3bf3f34270f16cfd6fcfea77
