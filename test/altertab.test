@@ -750,4 +750,22 @@ ifcapable json1&&vtab {
   } {1 {table json_each may not be altered}}
 }
 
+# 2021-05-01 dbsqlfuzz bc17a306a09329bba0ecc61547077f6178bcf321
+# Remove a NEVER() inserted on 2019-12-09 that is reachable after all.
+#
+reset_db
+do_execsql_test 26.1 {
+  CREATE TABLE t1(k,v);
+  CREATE TABLE t2_a(k,v);
+  CREATE VIEW t2 AS SELECT * FROM t2_a;
+  CREATE TRIGGER r2 AFTER INSERT ON t1 BEGIN
+    UPDATE t1 
+       SET (k,v)=((WITH cte1(a) AS (SELECT 1 FROM t2) SELECT t2.k FROM t2, cte1),1);
+  END;
+  ALTER TABLE t1 RENAME TO t1x;
+  INSERT INTO t2_a VALUES(2,3);
+  INSERT INTO t1x VALUES(98,99);
+  SELECT * FROM t1x;
+} {2 1}
+
 finish_test
