@@ -4,7 +4,7 @@
 //!
 //! Adding a `regexp` function to a connection in which compiled regular
 //! expressions are cached in a `HashMap`. For an alternative implementation
-//! that uses SQLite's [Function Auxilliary Data](https://www.sqlite.org/c3ref/get_auxdata.html) interface
+//! that uses SQLite's [Function Auxiliary Data](https://www.sqlite.org/c3ref/get_auxdata.html) interface
 //! to avoid recompiling regular expressions, see the unit tests for this
 //! module.
 //!
@@ -167,7 +167,7 @@ impl Context<'_> {
         unsafe { ValueRef::from_value(arg) }
     }
 
-    /// Fetch or insert the auxilliary data associated with a particular
+    /// Fetch or insert the auxiliary data associated with a particular
     /// parameter. This is intended to be an easier-to-use way of fetching it
     /// compared to calling [`get_aux`](Context::get_aux) and
     /// [`set_aux`](Context::set_aux) separately.
@@ -191,7 +191,7 @@ impl Context<'_> {
         }
     }
 
-    /// Sets the auxilliary data associated with a particular parameter. See
+    /// Sets the auxiliary data associated with a particular parameter. See
     /// `https://www.sqlite.org/c3ref/get_auxdata.html` for a discussion of
     /// this feature, or the unit tests of this module for an example.
     pub fn set_aux<T: Send + Sync + 'static>(&self, arg: c_int, value: T) -> Result<Arc<T>> {
@@ -210,7 +210,7 @@ impl Context<'_> {
         Ok(orig)
     }
 
-    /// Gets the auxilliary data that was associated with a given parameter via
+    /// Gets the auxiliary data that was associated with a given parameter via
     /// [`set_aux`](Context::set_aux). Returns `Ok(None)` if no data has been
     /// associated, and Ok(Some(v)) if it has. Returns an error if the
     /// requested type does not match.
@@ -839,7 +839,7 @@ mod test {
         Ok(())
     }
 
-    // This implementation of a regexp scalar function uses SQLite's auxilliary data
+    // This implementation of a regexp scalar function uses SQLite's auxiliary data
     // (https://www.sqlite.org/c3ref/get_auxdata.html) to avoid recompiling the regular
     // expression multiple times within one query.
     fn regexp_with_auxilliary(ctx: &Context<'_>) -> Result<bool> {

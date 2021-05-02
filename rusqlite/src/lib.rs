@@ -974,7 +974,7 @@ impl Default for OpenFlags {
 ///
 /// This function is unsafe because if you call it and SQLite has actually been
 /// configured to run in single-thread mode,
-/// you may enounter memory errors or data corruption or any number of terrible
+/// you may encounter memory errors or data corruption or any number of terrible
 /// things that should not be possible when you're using Rust.
 pub unsafe fn bypass_sqlite_initialization() {
     BYPASS_SQLITE_INIT.store(true, Ordering::Relaxed);

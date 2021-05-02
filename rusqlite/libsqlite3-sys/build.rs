@@ -96,7 +96,7 @@ mod build_bundled {
 
         // Older versions of visual studio don't support c99 (including isnan), which
         // causes a build failure when the linker fails to find the `isnan`
-        // function. `sqlite` provides its own implmentation, using the fact
+        // function. `sqlite` provides its own implementation, using the fact
         // that x != x when x is NaN.
         //
         // There may be other platforms that don't support `isnan`, they should be

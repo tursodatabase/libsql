@@ -1,7 +1,7 @@
 //! `feature = "vtab"` Create virtual tables.
 //!
 //! Follow these steps to create your own virtual table:
-//! 1. Write implemenation of [`VTab`] and [`VTabCursor`] traits.
+//! 1. Write implementation of [`VTab`] and [`VTabCursor`] traits.
 //! 2. Create an instance of the [`Module`] structure specialized for [`VTab`]
 //! impl. from step 1.
 //! 3. Register your [`Module`] structure using [`Connection::create_module`].
@@ -680,7 +680,7 @@ impl InnerConnection {
     }
 }
 
-/// `feature = "vtab"` Escape double-quote (`"`) character occurences by
+/// `feature = "vtab"` Escape double-quote (`"`) character occurrences by
 /// doubling them (`""`).
 pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {

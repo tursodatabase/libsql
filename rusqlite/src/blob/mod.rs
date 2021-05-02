@@ -54,11 +54,11 @@
 //!    filled in order for the call to be considered a success.
 //!
 //!    The "exact" functions require the provided buffer be entirely filled, or
-//!    they return an error, wheras the "inexact" functions read as much out of
+//!    they return an error, whereas the "inexact" functions read as much out of
 //!    the blob as is available, and return how much they were able to read.
 //!
-//!    The inexact functions are preferrable if you do not know the size of the
-//!    blob already, and the exact functions are preferrable if you do.
+//!    The inexact functions are preferable if you do not know the size of the
+//!    blob already, and the exact functions are preferable if you do.
 //!
 //! ### Comparison to using the `std::io` traits:
 //!

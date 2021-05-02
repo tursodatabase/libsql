@@ -143,7 +143,7 @@ pub enum StepResult {
     /// backed up.
     More,
 
-    /// The step failed because appropriate locks could not be aquired. This is
+    /// The step failed because appropriate locks could not be acquired. This is
     /// not a fatal error - the step can be retried.
     Busy,
 

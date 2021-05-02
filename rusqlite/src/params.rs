@@ -198,7 +198,7 @@ impl Params for &[(&str, &dyn ToSql)] {
 
 macro_rules! impl_for_array_ref {
     ($($N:literal)+) => {$(
-        // These are already generic, and theres a shitload of them, so lets
+        // These are already generic, and there's a shedload of them, so lets
         // avoid the compile time hit from making them all inline for now.
         impl<T: ToSql + ?Sized> Sealed for &[&T; $N] {}
         impl<T: ToSql + ?Sized> Params for &[&T; $N] {

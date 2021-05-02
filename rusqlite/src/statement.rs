@@ -247,7 +247,7 @@ impl Statement<'_> {
     /// Executes the prepared statement and maps a function over the resulting
     /// rows, returning an iterator over the mapped function results.
     ///
-    /// `f` is used to tranform the _streaming_ iterator into a _standard_
+    /// `f` is used to transform the _streaming_ iterator into a _standard_
     /// iterator.
     ///
     /// This is equivalent to `stmt.query(params)?.mapped(f)`.
@@ -310,7 +310,7 @@ impl Statement<'_> {
     /// most-recently bound value from a previous call to `query_named`,
     /// or `NULL` if they have never been bound.
     ///
-    /// `f` is used to tranform the _streaming_ iterator into a _standard_
+    /// `f` is used to transform the _streaming_ iterator into a _standard_
     /// iterator.
     ///
     /// ## Failure

@@ -117,7 +117,7 @@ lazy_static = "1.4"
 regex = "1.3"
 uuid = { version = "0.8", features = ["v4"] }
 unicase = "2.6.0"
-# Use `bencher` over criterion becasue it builds much faster and we don't have
+# Use `bencher` over criterion because it builds much faster and we don't have
 # many benchmarks
 bencher = "0.1"
 

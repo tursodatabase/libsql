@@ -162,7 +162,7 @@ struct SeriesTabCursor<'vtab> {
     row_id: i64,
     /// Current value ("value")
     value: i64,
-    /// Mimimum value ("start")
+    /// Minimum value ("start")
     min_value: i64,
     /// Maximum value ("stop")
     max_value: i64,
