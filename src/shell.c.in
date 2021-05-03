@@ -6717,6 +6717,7 @@ static void shellExec(sqlite3 *db, int *pRc, const char *zSql){
     if( rc!=SQLITE_OK ){
       raw_printf(stderr, "SQL error: %s\n", zErr);
     }
+    sqlite3_free(zErr);
     *pRc = rc;
   }
 }
@@ -8021,7 +8022,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
     ShellState data;
-    char *zErrMsg = 0;
     int doStats = 0;
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
@@ -8043,7 +8043,7 @@ static int do_meta_command(char *zLine, ShellState *p){
        "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_schema) "
        "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
        "ORDER BY rowid",
-       callback, &data, &zErrMsg
+       callback, &data, 0
     );
     if( rc==SQLITE_OK ){
       sqlite3_stmt *pStmt;
@@ -8059,12 +8059,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       raw_printf(p->out, "ANALYZE sqlite_schema;\n");
       sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_schema'",
-                   callback, &data, &zErrMsg);
+                   callback, &data, 0);
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
-      shell_exec(&data, "SELECT * FROM sqlite_stat1", &zErrMsg);
+      shell_exec(&data, "SELECT * FROM sqlite_stat1", 0);
       data.zDestTable = "sqlite_stat4";
-      shell_exec(&data, "SELECT * FROM sqlite_stat4", &zErrMsg);
+      shell_exec(&data, "SELECT * FROM sqlite_stat4", 0);
       raw_printf(p->out, "ANALYZE sqlite_schema;\n");
     }
   }else
