@@ -338,6 +338,18 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
             }
             pScan->pWC = pWC;
             pScan->k = k+1;
+#ifdef WHERETRACE_ENABLED
+            if( sqlite3WhereTrace & 0x20000 ){
+              int ii;
+              sqlite3DebugPrintf("SCAN-TERM %p: nEquiv=%d",
+                 pTerm, pScan->nEquiv);
+              for(ii=0; ii<pScan->nEquiv; ii++){
+                sqlite3DebugPrintf(" {%d:%d}",
+                   pScan->aiCur[ii], pScan->aiColumn[ii]);
+              }
+              sqlite3DebugPrintf("\n");
+            }
+#endif
             return pTerm;
           }
         }

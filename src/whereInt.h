@@ -293,8 +293,8 @@ struct WhereScan {
   const char *zCollName;     /* Required collating sequence, if not NULL */
   Expr *pIdxExpr;            /* Search for this index expression */
   char idxaff;               /* Must match this affinity, if zCollName!=NULL */
-  unsigned char nEquiv;      /* Number of entries in aEquiv[] */
-  unsigned char iEquiv;      /* Next unused slot in aEquiv[] */
+  unsigned char nEquiv;      /* Number of entries in aiCur[] and aiColumn[] */
+  unsigned char iEquiv;      /* Next unused slot in aiCur[] and aiColumn[] */
   u32 opMask;                /* Acceptable operators */
   int k;                     /* Resume scanning at this->pWC->a[this->k] */
   int aiCur[11];             /* Cursors in the equivalence class */
