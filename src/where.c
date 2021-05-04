@@ -2646,6 +2646,7 @@ static int whereLoopAddBtreeIndex(
           pNew->wsFlags |= WHERE_UNQ_WANTED;
         }
       }
+      if( scan.iEquiv>1 ) pNew->wsFlags |= WHERE_TRANSCONS;
     }else if( eOp & WO_ISNULL ){
       pNew->wsFlags |= WHERE_COLUMN_NULL;
     }else if( eOp & (WO_GT|WO_GE) ){

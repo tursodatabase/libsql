@@ -603,5 +603,6 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_IN_EARLYOUT  0x00040000  /* Perhaps quit IN loops early */
 #define WHERE_BIGNULL_SORT 0x00080000  /* Column nEq of index is BIGNULL */
 #define WHERE_IN_SEEKSCAN  0x00100000  /* Seek-scan optimization for IN */
+#define WHERE_TRANSCONS    0x00200000  /* Uses a transitive constraint */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

@@ -1,5 +1,5 @@
-C Also\sfor\sthe\s0x20000\sbit\sof\s".wheretrace",\sshow\swhen\sWHERE\sclause\sterms\sare\ndisabled.
-D 2021-05-04T18:24:56.739
+C When\sapplying\sthe\soptimization\sthat\sdisables\sWHERE\sclause\sterms\sthat\sdrive\nindexes,\smake\ssure\snot\sto\sdo\sso\sif\sthe\sterm\sbeing\sdisabled\sis\sa\stransitive\nconstraint.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum:forumpost/eb8613976a|forum\spost\seb8613976a].
+D 2021-05-04T23:21:35.526
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,9 +630,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
-F src/where.c 8c05e12a6bd0ea15e104d170872032a7d8ccfacb5300fe15cc237d64bed7f15d
-F src/whereInt.h e2c7d2e9342a7b06410bb415c1d9de4b3930230734aa62afeca1e2c8e0c6e640
-F src/wherecode.c 4cce3dc584b1254c0332ee701bdd6b46fe31bcde284eaad4670ef1d107e395a4
+F src/where.c beb01392745d9badba63802c9cf18daa9aa2d99c34dd2d21d62bad217e9d70d4
+F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
+F src/wherecode.c 4a14b647a68d1a4015139837a31ac756f1ae2f48b6c7ce3e4560c4b5f7ac1d1b
 F src/whereexpr.c 811f339ca85540157f3a400333ba90237ffbe7a2ba82dac63ce0677f4c4109d0
 F src/window.c 2e092a03ee2e7e6541dd44fa6cb4cd0abdd142fc9c9ed6bac2788daa53316e33
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1615,7 +1615,7 @@ F test/trace3.test ae2004df24b585fed9046cc0bae4601762bc6fc4aa321d475f1350bba5047
 F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f439
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/transitive1.test 239eec5343388983f112c16d666aa89960cd85302b6af6cd8408ce8edb7b3316
+F test/transitive1.test 06bcfeeb2ed719abf6ae582f9f65a6b07642dd1363fa648ae9a74a35e83a825c
 F test/trigger1.test d30cd09ae8ac365a088f09daba583cc5c0b8fc7d4e1d70809d0b4be3bf6ae2ab
 F test/trigger2.test 6e35bd7321c49e63d540aee980eb95dec63e1d1caca175224101045bcc80871f
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9280e3d994656344d4feb346156df8a278da80181f6efe0ff8e0340b6f0f91cb
-R 66d79c3d4f6c2b173790009b7ee64904
+P 625fb253eecd6c10fce5d0127d516361df0c1d1661502b396fc418dcdb4ae999
+R fc9428e1e84cc459623c4cb5fd643660
 U drh
-Z 5ef6f50bf7210ab862dd3752df3bc411
+Z 77c8f6fc1b9f65abd817f039fe767b40
