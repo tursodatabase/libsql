@@ -1,5 +1,5 @@
-C Fix\sminor\scoverity\swarnings\sin\sthe\sCLI.
-D 2021-05-03T13:35:00.853
+C Back\sout\sthe\sEXISTS-to-IN\soptimization.\s\sIt\sslows\sthings\sdown\srather\sthan\nspeeds\sthem\sup\sdepending\son\sthe\squery.\s\sAnd\s(see\n[forum:/forumpost/8692d94725|forum\spost\s8692d94725])\sit\ssometimes\sresults\sin\nan\sincorrect\sanswer.\s\sWe\smay\scome\sback\sand\srevisit\sthis\soptimization\slater,\nbut\sfor\snow\sit\sseems\sbest\sjust\sto\sdisable\sit.
+D 2021-05-04T12:07:16.531
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 73f57a9a183532c344a3135cf8f2a5589376e39183e0b5f562d6b61b2af0f4d8
-F src/expr.c 70e2cf6e270bb97ab6602336c82060bee0720cd887483f85c645ac1df97d4a34
+F src/expr.c 1d5171fe602cd56ab8b9c9ecbd48d9917e6020cafd6bd87ceac5949e8a1ed2d8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c 88fd711754a7241cb9f8eb1391370fd0c0cea756b3358efa274c5d1efd59af93
@@ -548,7 +548,7 @@ F src/shell.c.in 7725921bdd612c7a5cadc30db81ce17a5d522ccb61b6771359429ec20f20c85
 F src/sqlite.h.in 325474dd22536800a5ffe9da4c12f753086a5b75aa8ecb22b3eb89b96003c3f6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
-F src/sqliteInt.h a00cc0642e2a4e26367313dc553781253e278a0e571e7211cc56245a8db3e0e7
+F src/sqliteInt.h fa1af0cba6b07c7423da78572c8182ccba4eaf897407af43a78b301345ede8d0
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -633,7 +633,7 @@ F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c 33bae7248e206b874456982a07b859acd880fb7b137678b2dc1e277c234b8b6f
 F src/whereInt.h 446e5e8018f83358ef917cf32d8e6a86dc8430113d0b17e720f1839d3faa44c4
 F src/wherecode.c 992bf0d7520bffd345472fb9bc83a1ca0134e46d9e904879bb21e1e77957fcc3
-F src/whereexpr.c d8cafcf6781cf871082f04d7540862cf0fe30cb381dd1b2145a380376364fe8e
+F src/whereexpr.c 811f339ca85540157f3a400333ba90237ffbe7a2ba82dac63ce0677f4c4109d0
 F src/window.c 2e092a03ee2e7e6541dd44fa6cb4cd0abdd142fc9c9ed6bac2788daa53316e33
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -884,8 +884,6 @@ F test/exclusive.test 7ff63be7503990921838d5c9f77f6e33e68e48ed1a9d48cd28745bf650
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/exists2.test 92d563a97019a70f7adcbe3cbaab16f9fc696affbf0f9ede1796ea5f7cc5a3ac
-F test/existsfault.test 72a0036c1424d9204d49f4d976c3277a1b8bb2eed3c67aa124ba2df2f1331c7c
 F test/expr.test 26cd01e8485bc48c8aa6a1add598e9ce1e706b4eb4f3f554e0b0223022e8c2cf
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/exprfault.test 497cc0b8fe6a677f49b55cb485e040f709ec2834b84f25912fe9c2dfeeda33db
@@ -1914,7 +1912,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5127f7376776e6220eb8f83a30aa6b823c23ae0ac76e7ae41b33ca4e03ce236a
-R f037b4ec26eae2b6b1667d1bcd74e769
+P 204086a94202fc631371b75c7a8286df2f66116399628ac27ef54533641b8f20
+Q -c1862abb44873f06ec0d772469d8a2d128ae4670b1e98c2d97b0e2da18df9a04
+R f628cb24055240816ba06b9a4320261c
 U drh
-Z db8934e8c24fc9eaaad92bc8aa68e8cf
+Z 02e047978739c3f696576a32fee6343b
