@@ -1,5 +1,5 @@
-C Additional\sdebugging\soutput\sfor\swhereScanNext()\sshowing\sequivalence\sclasses\nwhen\sthe\s".wheretrace"\ssetting\scontains\sthe\s0x20000\sbit.
-D 2021-05-04T16:51:52.122
+C Also\sfor\sthe\s0x20000\sbit\sof\s".wheretrace",\sshow\swhen\sWHERE\sclause\sterms\sare\ndisabled.
+D 2021-05-04T18:24:56.739
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c 8c05e12a6bd0ea15e104d170872032a7d8ccfacb5300fe15cc237d64bed7f15d
 F src/whereInt.h e2c7d2e9342a7b06410bb415c1d9de4b3930230734aa62afeca1e2c8e0c6e640
-F src/wherecode.c 992bf0d7520bffd345472fb9bc83a1ca0134e46d9e904879bb21e1e77957fcc3
+F src/wherecode.c 4cce3dc584b1254c0332ee701bdd6b46fe31bcde284eaad4670ef1d107e395a4
 F src/whereexpr.c 811f339ca85540157f3a400333ba90237ffbe7a2ba82dac63ce0677f4c4109d0
 F src/window.c 2e092a03ee2e7e6541dd44fa6cb4cd0abdd142fc9c9ed6bac2788daa53316e33
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16252d73fa73569fd7506676f6ffbbcd43addfb105384fb74449d30ca720904a
-R ed3e85a77b46e0c46715c64f5f0bc657
+P 9280e3d994656344d4feb346156df8a278da80181f6efe0ff8e0340b6f0f91cb
+R 66d79c3d4f6c2b173790009b7ee64904
 U drh
-Z 92f743b35f73493441b99d86eb148538
+Z 5ef6f50bf7210ab862dd3752df3bc411
