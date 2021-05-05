@@ -261,7 +261,7 @@ impl InnerConnection {
         let tail = if c_tail.is_null() {
             0
         } else {
-            let n = unsafe { c_tail.offset_from(c_sql) };
+            let n = (c_tail as isize) - (c_sql as isize);
             if n <= 0 || n >= len as isize {
                 0
             } else {

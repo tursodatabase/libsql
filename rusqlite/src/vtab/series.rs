@@ -185,6 +185,7 @@ impl SeriesTabCursor<'_> {
         }
     }
 }
+#[allow(clippy::comparison_chain)]
 unsafe impl VTabCursor for SeriesTabCursor<'_> {
     fn filter(&mut self, idx_num: c_int, _idx_str: Option<&str>, args: &Values<'_>) -> Result<()> {
         let mut idx_num = QueryPlanFlags::from_bits_truncate(idx_num);
@@ -203,7 +204,6 @@ unsafe impl VTabCursor for SeriesTabCursor<'_> {
         }
         if idx_num.contains(QueryPlanFlags::STEP) {
             self.step = args.get(i)?;
-            #[allow(clippy::comparison_chain)]
             if self.step == 0 {
                 self.step = 1;
             } else if self.step < 0 {
