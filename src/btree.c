@@ -7168,7 +7168,9 @@ static int pageFreeArray(
         }
         pFree = pCell;
         szFree = sz;
-        if( pFree+sz>pEnd ) return 0;
+        if( NEVER(pFree+sz>pEnd) ){
+          return 0;  /* Corruption - should be previously detected */
+        }
       }else{
         pFree = pCell;
         szFree += sz;
@@ -8144,6 +8146,7 @@ static int balance_nonroot(
     u8 *pCell;
     u8 *pTemp;
     int sz;
+    u8 *pSrcEnd;
     MemPage *pNew = apNew[i];
     j = cntNew[i];
 
@@ -8187,6 +8190,12 @@ static int balance_nonroot(
     iOvflSpace += sz;
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
+    for(k=0; b.ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
+    pSrcEnd = b.apEnd[k];
+    if( SQLITE_WITHIN(pSrcEnd, pCell, pCell+sz) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
+    }
     insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno, &rc);
     if( rc!=SQLITE_OK ) goto balance_cleanup;
     assert( sqlite3PagerIswriteable(pParent->pDbPage) );

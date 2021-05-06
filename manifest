@@ -1,5 +1,5 @@
-C Provide\sthe\ssqlite3PrintMem()\sroutine\son\sSQLITE_DEBUG\sbuilds,\swhich\scan\sbe\ninvoked\sfrom\sa\sdebugger\sto\sget\sa\ssummary\sof\sthe\sstatus\sof\san\ssqlite3_value\nor\sMem\sobject.
-D 2021-05-05T19:46:50.337
+C Improved\sdetection\sof\soversized\scells\sin\sbalance_nonroot(),\sespecially\sin\nindex\sb-trees\swhen\sa\scell\sis\sbeing\smoved\sfrom\sa\schild\spage\sinto\sthe\sparent\npage\sin\sorder\sto\sbecome\sa\snew\sdivider\scell.
+D 2021-05-06T11:02:55.386
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -484,7 +484,7 @@ F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 0555f7e97ede886ac3d7aaec363b44498c9716dd45f3f0484de31eb90e30a37e
+F src/btree.c 3b1f4a53cdcad0a176d1d2c9b0aa6330993948ff566006d33ed2647d6f319fd1
 F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c bf4f76eb77ff0193ef826f9dbd0285e8b55fe8ecb24d1f6b14bf72b68df6a422
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0bf931bd712037e44e8d7cac3c00a6715c1b451f222bad3184d3ecab1a4c7f4
-R de47a9b0373ce8c1c5df8b319e4ad008
+P 5ac24179f5ef16dccc1b65248e33376c9748767b14c75c1056f3b0d08b7a89a7
+R 951a39ca954ef54629fc580f2dc5a169
 U drh
-Z 4e5dd415c341a39b8fd14e8180e1725f
+Z 84595d3a49e07176680062e151a0ae2d
