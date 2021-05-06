@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\soversized\scells\sin\sbalance_nonroot(),\sespecially\sin\nindex\sb-trees\swhen\sa\scell\sis\sbeing\smoved\sfrom\sa\schild\spage\sinto\sthe\sparent\npage\sin\sorder\sto\sbecome\sa\snew\sdivider\scell.
-D 2021-05-06T11:02:55.386
+C Remove\san\sassert()\sin\sFTS5\sthat\scan\s(rarely)\sbe\sfalse\sin\sthe\sevent\sof\san\nOOM\swhile\sprocessing\sa\scorrupt\sdatabase\sfile.
+D 2021-05-06T13:45:37.374
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -119,7 +119,7 @@ F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6
 F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7fa1842ff3
 F ext/fts5/fts5_expr.c 9462249a3bb82d0e49b163500f9d2197c2e4cd95bf440a9bbfc3906b22ea1e1b
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
-F ext/fts5/fts5_index.c 3e81816a451dc37d4359e7e3628809bc7f1a3526084c8780b6f50e0ba47b7c52
+F ext/fts5/fts5_index.c 222b5e56f51139ca5400985e26ea9971165901c7a45a2c17499bd2be3695c697
 F ext/fts5/fts5_main.c f497ca97cb2802311ec93733b595762dc5b044ce3c6c8ce5fb3e871dd3fccd5d
 F ext/fts5/fts5_storage.c 58ba71e6cd3d43a5735815e7956ee167babb4d2cbfe206905174792af4d09d75
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ac24179f5ef16dccc1b65248e33376c9748767b14c75c1056f3b0d08b7a89a7
-R 951a39ca954ef54629fc580f2dc5a169
+P 9080d3d5f5aaddbb3410158bcc446649651b7dce3940eb3491620ec9208914b4
+R 1281a46234a543941d16bb52eb47f7e6
 U drh
-Z 84595d3a49e07176680062e151a0ae2d
+Z 8b93b6a9f64641881bc1cb8a448a36bc

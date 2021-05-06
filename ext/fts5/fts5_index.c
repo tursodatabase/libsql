@@ -2072,7 +2072,6 @@ static void fts5SegIterNext(
       ** this block is particularly performance critical, so equivalent
       ** code is inlined.  */
       int nSz;
-      assert( p->rc==SQLITE_OK );
       assert_nc( pIter->iLeafOffset<=pIter->pLeaf->nn );
       fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
       pIter->bDel = (nSz & 0x0001);
