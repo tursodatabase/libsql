@@ -5,10 +5,10 @@
 //! the destination (which cannot).  A [`Backup`] handle exposes three methods:
 //! [`step`](Backup::step) will attempt to back up a specified number of pages,
 //! [`progress`](Backup::progress) gets the current progress of the backup as of
-//! the last call to [`step`](Backup::step), and [`run_to_completion`](Backup::run_to_completion)
-//! will attempt to back up the entire source database,
-//! allowing you to specify how many pages are backed up at a time and how long
-//! the thread should sleep between chunks of pages.
+//! the last call to [`step`](Backup::step), and
+//! [`run_to_completion`](Backup::run_to_completion) will attempt to back up the
+//! entire source database, allowing you to specify how many pages are backed up
+//! at a time and how long the thread should sleep between chunks of pages.
 //!
 //! The following example is equivalent to "Example 2: Online Backup of a
 //! Running Database" from [SQLite's Online Backup API

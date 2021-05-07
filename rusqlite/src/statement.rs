@@ -137,8 +137,8 @@ impl Statement<'_> {
     ///
     /// Due to lifetime restricts, the rows handle returned by `query` does not
     /// implement the `Iterator` trait. Consider using
-    /// [`query_map`](Statement::query_map) or [`query_and_then`](Statement::query_and_then)
-    /// instead, which do.
+    /// [`query_map`](Statement::query_map) or
+    /// [`query_and_then`](Statement::query_and_then) instead, which do.
     ///
     /// ## Example
     ///
@@ -521,8 +521,8 @@ impl Statement<'_> {
         Ok(self.stmt.bind_parameter_index(name))
     }
 
-    /// Return the SQL parameter name given its (one-based) index (the inverse of
-    /// [`Statement::parameter_index`]).
+    /// Return the SQL parameter name given its (one-based) index (the inverse
+    /// of [`Statement::parameter_index`]).
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
@@ -536,8 +536,8 @@ impl Statement<'_> {
     ///
     /// # Failure
     ///
-    /// Will return `None` if the column index is out of bounds or if the parameter
-    /// is positional.
+    /// Will return `None` if the column index is out of bounds or if the
+    /// parameter is positional.
     #[inline]
     pub fn parameter_name(&self, index: usize) -> Option<&'_ str> {
         self.stmt.bind_parameter_name(index as i32).map(|name| {

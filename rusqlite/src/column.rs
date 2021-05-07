@@ -278,7 +278,8 @@ mod test {
     /// reset) even if DB schema is altered (SQLite documentation is
     /// ambiguous here because it says reference "is valid until (...) the next
     /// call to sqlite3_column_name() or sqlite3_column_name16() on the same
-    /// column.". We assume that reference is valid if only `sqlite3_column_name()` is used):
+    /// column.". We assume that reference is valid if only
+    /// `sqlite3_column_name()` is used):
     #[test]
     #[cfg(feature = "modern_sqlite")]
     fn test_column_name_reference() -> Result<()> {
