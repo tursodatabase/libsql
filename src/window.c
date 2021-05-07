@@ -941,6 +941,14 @@ static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 
+static int disallowAggregatesInOrderByCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION && pExpr->pAggInfo==0 ){
+    sqlite3ErrorMsg(pWalker->pParse,
+         "misuse of aggregate: %s()", pExpr->u.zToken);
+  }
+  return WRC_Continue;
+}
+
 /*
 ** If the SELECT statement passed as the second argument does not invoke
 ** any SQL window functions, this function is a no-op. Otherwise, it 
@@ -974,6 +982,10 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     }
     sqlite3AggInfoPersistWalkerInit(&w, pParse);
     sqlite3WalkSelect(&w, p);
+    if( (p->selFlags & SF_Aggregate)==0 ){
+      w.xExprCallback = disallowAggregatesInOrderByCb;
+      sqlite3WalkExprList(&w, p->pOrderBy);
+    }
 
     p->pSrc = 0;
     p->pWhere = 0;
