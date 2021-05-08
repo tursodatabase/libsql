@@ -1,5 +1,5 @@
-C Detect\smisuse\sof\saggregate\sfunctions\sin\sthe\sORDER\sBY\sclause\sof\sa\squery\neven\sif\sthe\squery\salso\scontains\swindow\sfunctions.
-D 2021-05-07T15:46:37.000
+C Fix\shelp-text\stypo\sin\sthe\sCLI.
+D 2021-05-08T11:57:35.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c38bbb89d7ba7a8673ec4f59b63e0980eb859c39ff2acc5df8b3d0f2dcd33115
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 57dbb27e0d0cb2438487c797365a4c17294d0df3c25c970ca87f123105f33ed0
-F src/shell.c.in 7725921bdd612c7a5cadc30db81ce17a5d522ccb61b6771359429ec20f20c85d
+F src/shell.c.in caabf56fcaa9e3ce67047473024c86a61b5ee2a3326d195c184131765832e5fb
 F src/sqlite.h.in fb25e53b1fc4ab35a9ea9de58cc7d661ca757a843a165fcc54b7c98382001237
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1912,7 +1912,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f35f6972cdcf16915cc37908b65a3780742a1f75f65e974714b16e86f0c9e3f0
-R d24d9d7d19668c441be4636c06147330
+P 0d11d777c8d368f0b6e9faf3afccf7da1b041d303a68782e43aebd713aaecf51
+R 2054db29ed2186d3169658a6987199c7
 U drh
-Z 057041a9e5f934338ae91fc2d8ade3cd
+Z eb1ae6f94e0252a2136ba6b72377dde7

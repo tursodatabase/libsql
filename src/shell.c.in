@@ -3979,7 +3979,7 @@ static const char *(azHelp[]) = {
   "     Options:",
   "        --append        Use appendvfs to append database to the end of FILE",
 #ifdef SQLITE_ENABLE_DESERIALIZE
-  "        --deserialize   Load into memory useing sqlite3_deserialize()",
+  "        --deserialize   Load into memory using sqlite3_deserialize()",
   "        --hexdb         Load the output of \"dbtotxt\" as an in-memory db",
   "        --maxsize N     Maximum size for --hexdb or --deserialized database",
 #endif
