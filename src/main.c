@@ -305,7 +305,7 @@ int sqlite3_initialize(void){
       sqlite3GlobalConfig.isPCacheInit = 1;
       rc = sqlite3OsInit();
     }
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     if( rc==SQLITE_OK ){
       rc = sqlite3MemdbInit();
     }
@@ -720,12 +720,12 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_ENABLE_SORTER_REFERENCES */
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     case SQLITE_CONFIG_MEMDB_MAXSIZE: {
       sqlite3GlobalConfig.mxMemdbSize = va_arg(ap, sqlite3_int64);
       break;
     }
-#endif /* SQLITE_ENABLE_DESERIALIZE */
+#endif /* SQLITE_OMIT_DESERIALIZE */
 
     default: {
       rc = SQLITE_ERROR;

@@ -17,7 +17,7 @@
 ** sqlite3_deserialize().
 */
 #include "sqliteInt.h"
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
 
 /*
 ** Forward declaration of objects used by this utility
@@ -632,4 +632,4 @@ int sqlite3MemdbInit(void){
   memdb_vfs.szOsFile = sz;
   return sqlite3_vfs_register(&memdb_vfs, 0);
 }
-#endif /* SQLITE_ENABLE_DESERIALIZE */
+#endif /* SQLITE_OMIT_DESERIALIZE */

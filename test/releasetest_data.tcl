@@ -51,7 +51,6 @@ array set ::Configs [strip_comments {
     -O2
     --disable-amalgamation --disable-shared
     --enable-session
-    -DSQLITE_ENABLE_DESERIALIZE
   }
   "Sanitize" {
     CC=clang -fsanitize=address,undefined
@@ -170,6 +169,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_VIRTUALTABLE=1
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_TEMP_STORE=3
+    -DSQLITE_OMIT_DESERIALIZE=1
     --enable-json1
   }
   "Device-Two" {
@@ -188,7 +188,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
-    -DSQLITE_ENABLE_DESERIALIZE=1
     --enable-json1 --enable-fts5 --enable-session
   }
   "Locking-Style" {
@@ -629,5 +628,3 @@ if {[string match ${cmd}* configurations] && $n==0} {
 } else {
   usage
 }
-
-

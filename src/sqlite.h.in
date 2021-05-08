@@ -9822,8 +9822,8 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 ** SQLITE_SERIALIZE_NOCOPY bit is omitted from argument F if a memory
 ** allocation error occurs.
 **
-** This interface is only available if SQLite is compiled with the
-** [SQLITE_ENABLE_DESERIALIZE] option.
+** This interface is omitted if SQLite is compiled with the
+** [SQLITE_OMIT_DESERIALIZE] option.
 */
 unsigned char *sqlite3_serialize(
   sqlite3 *db,           /* The database connection */
@@ -9874,8 +9874,8 @@ unsigned char *sqlite3_serialize(
 ** SQLITE_DESERIALIZE_FREEONCLOSE bit is set in argument F, then
 ** [sqlite3_free()] is invoked on argument P prior to returning.
 **
-** This interface is only available if SQLite is compiled with the
-** [SQLITE_ENABLE_DESERIALIZE] option.
+** This interface is omitted if SQLite is compiled with the
+** [SQLITE_OMIT_DESERIALIZE] option.
 */
 int sqlite3_deserialize(
   sqlite3 *db,            /* The database connection */
