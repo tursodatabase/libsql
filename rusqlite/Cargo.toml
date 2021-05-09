@@ -94,8 +94,6 @@ bundled-full = [
     "window",
 ]
 
-default = ["bundled-full"]
-
 [dependencies]
 time = { version = "0.2.23", optional = true }
 bitflags = "1.2"
