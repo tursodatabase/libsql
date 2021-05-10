@@ -49,8 +49,8 @@ do_test attach2-1.1 {
 #
 proc db_list {db} {
   set list {}
-  foreach {idx name file} [execsql {PRAGMA database_list} $db] {
-    lappend list $idx $name
+  db eval {SELECT seq, name FROM pragma_database_list} {
+    lappend list $seq $name
   }
   return $list
 }

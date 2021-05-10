@@ -656,8 +656,8 @@ ifcapable tempdb&&attach {
   do_test pragma-6.1 {
     set res {}
     execsql {SELECT * FROM sqlite_temp_master}
-    foreach {idx name file} [execsql {pragma database_list}] {
-      lappend res $idx $name
+    db eval {SELECT seq, name FROM pragma_database_list} {
+      lappend res $seq $name
     }
     set res
   } {0 main 1 temp 2 aux}

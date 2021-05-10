@@ -1673,7 +1673,7 @@ ifcapable attach {
     }
   } {1 {not authorized}}
   do_test auth-1.254 {
-    lindex [execsql {PRAGMA database_list}] 7
+    lindex [execsql {PRAGMA database_list}] 15
   } {}
   do_test auth-1.255 {
     catchsql {DETACH DATABASE test1}
@@ -1689,7 +1689,7 @@ ifcapable attach {
     }
   } {0 {}}
   do_test auth-1.256 {
-    lindex [execsql {PRAGMA database_list}] 7
+    lindex [execsql {PRAGMA database_list}] 15
   } {}
   do_test auth-1.257 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1705,7 +1705,7 @@ ifcapable attach {
     }
   } {0 {}}
   do_test auth-1.258 {
-    lindex [execsql {PRAGMA database_list}] 7
+    lindex [execsql {PRAGMA database_list}] 15
   } {}
   do_test auth-1.259 {
     execsql {ATTACH DATABASE ':memory:' AS test1}
@@ -1723,7 +1723,7 @@ ifcapable attach {
   ifcapable tempdb {
     ifcapable schema_pragmas {
     do_test auth-1.260 {
-      lindex [execsql {PRAGMA database_list}] 7
+      lindex [execsql {PRAGMA database_list}] 15
     } {test1}
     } ;# ifcapable schema_pragmas
     do_test auth-1.261 {
@@ -1740,7 +1740,7 @@ ifcapable attach {
     } {1 {not authorized}}
     ifcapable schema_pragmas {
     do_test auth-1.262 {
-      lindex [execsql {PRAGMA database_list}] 7
+      lindex [execsql {PRAGMA database_list}] 15
     } {test1}
     } ;# ifcapable schema_pragmas
     db authorizer {}

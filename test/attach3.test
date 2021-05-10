@@ -255,7 +255,7 @@ do_test attach3-11.2 {
 #
 proc db_list {} {
   set x [execsql {
-    PRAGMA database_list;
+    SELECT seq, name, file FROM pragma_database_list;
   }]
   set y {}
   foreach {n id file} $x {lappend y $id}

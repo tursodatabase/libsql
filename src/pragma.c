@@ -1287,14 +1287,30 @@ void sqlite3Pragma(
 
   case PragTyp_DATABASE_LIST: {
     int i;
-    pParse->nMem = 3;
+    Pager *pPager;
+    char *zVfsname;
+    sqlite3_file *fd;
+    pParse->nMem = 7;
     for(i=0; i<db->nDb; i++){
       if( db->aDb[i].pBt==0 ) continue;
       assert( db->aDb[i].zDbSName!=0 );
-      sqlite3VdbeMultiLoad(v, 1, "iss",
+      assert( sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
+      pPager = sqlite3BtreePager(db->aDb[i].pBt);
+      assert( pPager!=0 );
+      fd = sqlite3PagerFile(pPager);
+      assert( fd!=0 );
+      zVfsname = 0;
+      sqlite3OsFileControl(fd, SQLITE_FCNTL_VFSNAME, &zVfsname);
+      sqlite3VdbeMultiLoad(v, 1, "issssii",
          i,
          db->aDb[i].zDbSName,
-         sqlite3BtreeGetFilename(db->aDb[i].pBt));
+         sqlite3BtreeGetFilename(db->aDb[i].pBt),
+         zVfsname,
+         sqlite3JournalModename(sqlite3PagerGetJournalMode(pPager)),
+         sqlite3PagerIsreadonly(pPager),
+         sqlite3BtreeGetPageSize(db->aDb[i].pBt)
+      );
+      sqlite3_free(zVfsname);
     }
   }
   break;

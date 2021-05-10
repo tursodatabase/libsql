@@ -2162,7 +2162,8 @@ proc drop_all_tables {{db db}} {
     set pk [$db one "PRAGMA foreign_keys"]
     $db eval "PRAGMA foreign_keys = OFF"
   }
-  foreach {idx name file} [db eval {PRAGMA database_list}] {
+  foreach {idx name file} [db eval {
+       SELECT seq AS idx, name, file FROM pragma_database_list}] {
     if {$idx==1} {
       set master sqlite_temp_master
     } else {

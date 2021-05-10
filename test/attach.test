@@ -120,8 +120,8 @@ do_test attach-1.11 {
 } {}
 proc db_list {db} {
   set list {}
-  foreach {idx name file} [execsql {PRAGMA database_list} $db] {
-    lappend list $idx $name
+  db eval {PRAGMA database_list} {
+    lappend list $seq $name
   }
   return $list
 }
@@ -877,9 +877,9 @@ do_test attach-10.1 {
   }
 } {noname inmem}
 do_test attach-10.2 {
-  lrange [execsql {
-    PRAGMA database_list;
-  }] 9 end
+  execsql {
+    SELECT seq, name, file FROM pragma_database_list WHERE seq>=4
+  }
 } {4 noname {} 5 inmem {}}
 
 # Attach with a very long URI filename.
