@@ -7168,8 +7168,8 @@ static int pageFreeArray(
         }
         pFree = pCell;
         szFree = sz;
-        if( NEVER(pFree+sz>pEnd) ){
-          return 0;  /* Corruption - should be previously detected */
+        if( pFree+sz>pEnd ){
+          return 0;
         }
       }else{
         pFree = pCell;
