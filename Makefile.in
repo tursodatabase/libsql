@@ -1427,6 +1427,9 @@ threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
 threadtest: threadtest3$(TEXE)
 	./threadtest3$(TEXE)
 
+threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
+	$(LTLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
+
 releasetest:
 	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
@@ -1480,6 +1483,7 @@ clean:
 	rm -f sqldiff sqldiff.exe
 	rm -f dbhash dbhash.exe
 	rm -f fts5.* fts5parse.*
+	rm -f threadtest5
 
 distclean:	clean
 	rm -f config.h config.log config.status libtool Makefile sqlite3.pc

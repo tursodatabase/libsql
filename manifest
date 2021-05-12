@@ -1,9 +1,9 @@
-C Enhance\sthe\smemdb\sVFS\sso\sthat\sit\sis\sable\sto\sshare\sdatabases\samong\smultiple\ndatabase\sconnections\sin\sthe\ssame\sprocess,\sas\slong\sas\sthe\sdatabase\sfilename\nbegins\swith\s"/".\s\sThis\sprovides\sa\sway\sfor\sthreads\sto\sshare\san\sin-memory\ndatabase\swithout\sthe\suse\sof\sshared-cache\smode.
-D 2021-05-12T11:55:59.991
+C Add\sthe\snew\sthreadtest5\stest\sprogram\sfor\sstressing\smultiple\sdatabase\nconnections\sin\sthe\ssame\sprocess\shammering\son\sa\ssingle\sdatabase.\nPrimarily\sdesigned\sto\stest\smemdb,\sbut\sworks\son\sany\sdatabase.
+D 2021-05-12T14:17:20.226
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in b0982835aa57c66a43a618679b278a0e6e0e6ec08cb940b25ca9928b7c409ddc
+F Makefile.in 30c6d39386246695e951a676973e0bf57aabbd1e37024c07e657af89dd332555
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 6443729ba6a013a0fea4f999b22e54760f36e73c2e691554f0c4bfa1dbe4d070
 F README.md 2a71913f398ecac5f3e10945fcf438aed425c2e9ed9874de561156ba77fb7023
@@ -465,7 +465,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 6871d77dc5966921c48c50e1a12598a82a900c8b845d4fdf04c56d2a5cc6dc5d
+F main.mk d1654e2923a7195603a7d6564dabe037a3a20ea5b3817002db534ffc4ad8cecf
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1463,6 +1463,7 @@ F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
 F test/threadtest3.c e63013af10cf236c7610eb06d33bde08c861806dc64be811940ff4d9ddd34a4f
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
+F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421 w test/memdb-threads-1.c
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-18458b1a.test 6a62cb1ee50fa3c620da59e3a6f531eb38fceaf7e2166203816b724524e6f1d6
@@ -1912,8 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f39666e64d6d32420170c54f874d8314eb8c6f91df625f7b28f9ccffb9474dc0 98dae595d861941bb0bcd12126ee02492587c466e6da579a58b5dc4a4d655917
-R 1441e09faa39fd11227f415ae28549ff
-T +closed 98dae595d861941bb0bcd12126ee02492587c466e6da579a58b5dc4a4d655917
+P 533fffc4a39b01c3aba75bd3271fd6ccd9516d9681ed04adbe19bd7de03f4c16
+R 4fefc92ffd76e6c05a1532a9460cad0d
 U drh
-Z bbd64c76e9984e3f1696dac12550f00b
+Z d3fbbeb2377b80ce42b7a7b26e8ca8a8
