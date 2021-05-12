@@ -1,5 +1,5 @@
-C Fix\sthe\squery\splan\sfor\san\sindexed\slookup\son\sa\sWITHOUT\sROWID\stable\swith\na\sDESC\sprimary\skey\swhen\sthe\sprimary\skey\sis\sconstrained\sby\san\sinequality.\nSee\s[forum:/forumpost/8988341615|forum\spost\s8988341615].\sTest\scases\sin\sTH3.
-D 2021-05-12T22:02:14.122
+C Further\ssimplification\sof\sthe\sreverse-order\sscan\slogic\sof\sthe\sprevious\ncheck-in.
+D 2021-05-12T22:15:44.517
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c beb01392745d9badba63802c9cf18daa9aa2d99c34dd2d21d62bad217e9d70d4
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
-F src/wherecode.c bc8f176a9a712c49cb322e1281cab63f319dc591268d6a6283d5f3ed2738fbc5
+F src/wherecode.c b4c21439f0549bb5c571214e08ddb5ec58d5e972f4b4c87c0cc79351edd43704
 F src/whereexpr.c 811f339ca85540157f3a400333ba90237ffbe7a2ba82dac63ce0677f4c4109d0
 F src/window.c 0c910a222f357e3e175a998874abd12f3e2f312e10950d304f3d28b0fb6bc509
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b635375dbe22bd31c437ca574eb0c014c0b045de6cc0816c32d2ceceff9191fb
-R 9e3d9e076e71ba79b78c69605efe5523
+P f65c929bf189cf5ca5f1cacdbbb8eec014c9960f767b135023bd2323cd26f279
+R af7ea7364cc3c11d08d2a3b8c3f9b4af
 U drh
-Z f803a48acbbf7e4d81c97b63e7e27689
+Z 50b7760566229c41277c6b46b9e08bf8
