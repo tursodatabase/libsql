@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sthat\scan\slead\sto\sdeadlock\sin\sthe\smemdb\sVFS\sif\sone\nthread\sis\strying\sto\sopen\san\sexisting\sdatabase\sat\sthe\ssame\smoment\sthat\nanother\sthread\sthat\sis\sthe\sonly\sprior\suser\sof\sthat\sdatabase\sis\strying\sto\nclose\sit.
-D 2021-05-12T15:39:02.959
+C Fix\sthe\squery\splan\sfor\san\sindexed\slookup\son\sa\sWITHOUT\sROWID\stable\swith\na\sDESC\sprimary\skey\swhen\sthe\sprimary\skey\sis\sconstrained\sby\san\sinequality.\nSee\s[forum:/forumpost/8988341615|forum\spost\s8988341615].\sTest\scases\sin\sTH3.
+D 2021-05-12T22:02:14.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c beb01392745d9badba63802c9cf18daa9aa2d99c34dd2d21d62bad217e9d70d4
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
-F src/wherecode.c 4a14b647a68d1a4015139837a31ac756f1ae2f48b6c7ce3e4560c4b5f7ac1d1b
+F src/wherecode.c bc8f176a9a712c49cb322e1281cab63f319dc591268d6a6283d5f3ed2738fbc5
 F src/whereexpr.c 811f339ca85540157f3a400333ba90237ffbe7a2ba82dac63ce0677f4c4109d0
 F src/window.c 0c910a222f357e3e175a998874abd12f3e2f312e10950d304f3d28b0fb6bc509
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8db1c06958b8e1691440d4fd392648b74a1940b721852dabd315005efad520fc
-R 1abbc8f5df29e63c759567b710531636
+P b635375dbe22bd31c437ca574eb0c014c0b045de6cc0816c32d2ceceff9191fb
+R 9e3d9e076e71ba79b78c69605efe5523
 U drh
-Z 05516c08485b60e7b77e8989ba53becd
+Z f803a48acbbf7e4d81c97b63e7e27689
