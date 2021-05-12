@@ -204,7 +204,9 @@ static int memdbClose(sqlite3_file *pFile){
     }
     if( p->zFName ){
       int i;
+#ifndef SQLITE_MUTEX_OMIT
       sqlite3_mutex *pVfsMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+#endif
       sqlite3_mutex_enter(pVfsMutex);
       for(i=0; ALWAYS(i<memdb_g.nMemStore); i++){
         if( memdb_g.apMemStore[i]==p ){
@@ -489,7 +491,9 @@ static int memdbOpen(
   szName = sqlite3Strlen30(zName);
   if( szName>1 && zName[0]=='/' ){
     int i;
+#ifndef SQLITE_MUTEX_OMIT
     sqlite3_mutex *pVfsMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+#endif
     sqlite3_mutex_enter(pVfsMutex);
     for(i=0; i<memdb_g.nMemStore; i++){
       if( strcmp(memdb_g.apMemStore[i]->zFName,zName)==0 ){
@@ -519,6 +523,12 @@ static int memdbOpen(
       p->zFName = (char*)&p[1];
       memcpy(p->zFName, zName, szName+1);
       p->pMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      if( p->pMutex==0 ){
+        memdb_g.nMemStore--;
+        sqlite3_free(p);
+        sqlite3_mutex_leave(pVfsMutex);
+        return SQLITE_NOMEM;
+      }
       p->nRef = 1;
       memdbEnter(p);
     }else{
