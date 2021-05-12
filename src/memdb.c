@@ -196,29 +196,33 @@ static void memdbLeave(MemStore *p){
 */
 static int memdbClose(sqlite3_file *pFile){
   MemStore *p = ((MemFile*)pFile)->pStore;
-  memdbEnter(p);
-  p->nRef--;
-  if( p->nRef<=0 ){
-    if( p->mFlags & SQLITE_DESERIALIZE_FREEONCLOSE ){
-      sqlite3_free(p->aData);
-    }
-    if( p->zFName ){
-      int i;
+  if( p->zFName ){
+    int i;
 #ifndef SQLITE_MUTEX_OMIT
-      sqlite3_mutex *pVfsMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+    sqlite3_mutex *pVfsMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 #endif
-      sqlite3_mutex_enter(pVfsMutex);
-      for(i=0; ALWAYS(i<memdb_g.nMemStore); i++){
-        if( memdb_g.apMemStore[i]==p ){
+    sqlite3_mutex_enter(pVfsMutex);
+    for(i=0; ALWAYS(i<memdb_g.nMemStore); i++){
+      if( memdb_g.apMemStore[i]==p ){
+        memdbEnter(p);
+        if( p->nRef==1 ){
           memdb_g.apMemStore[i] = memdb_g.apMemStore[--memdb_g.nMemStore];
           if( memdb_g.nMemStore==0 ){
             sqlite3_free(memdb_g.apMemStore);
             memdb_g.apMemStore = 0;
           }
-          break;
         }
+        break;
       }
-      sqlite3_mutex_leave(pVfsMutex);
+    }
+    sqlite3_mutex_leave(pVfsMutex);
+  }else{
+    memdbEnter(p);
+  }
+  p->nRef--;
+  if( p->nRef<=0 ){
+    if( p->mFlags & SQLITE_DESERIALIZE_FREEONCLOSE ){
+      sqlite3_free(p->aData);
     }
     memdbLeave(p);
     sqlite3_mutex_free(p->pMutex);

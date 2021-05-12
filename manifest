@@ -1,5 +1,5 @@
-C Add\sthe\snew\sthreadtest5\stest\sprogram\sfor\sstressing\smultiple\sdatabase\nconnections\sin\sthe\ssame\sprocess\shammering\son\sa\ssingle\sdatabase.\nPrimarily\sdesigned\sto\stest\smemdb,\sbut\sworks\son\sany\sdatabase.
-D 2021-05-12T14:17:20.226
+C Fix\sa\srace\scondition\sthat\scan\slead\sto\sdeadlock\sin\sthe\smemdb\sVFS\sif\sone\nthread\sis\strying\sto\sopen\san\sexisting\sdatabase\sat\sthe\ssame\smoment\sthat\nanother\sthread\sthat\sis\sthe\sonly\sprior\suser\sof\sthat\sdatabase\sis\strying\sto\nclose\sit.
+D 2021-05-12T15:39:02.959
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -514,7 +514,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c b93b8762ab999a29ae7751532dadf0a1ac78040308a5fb1d17fcc365171d67eb
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 0c95e0299cc81e19d8695d2e7b81c338a5e77d083aa7849643eafcc2a3b1115a
+F src/memdb.c 41acf2b1a80a20b38a05f03711564b51c67e6dc376cc3f6b829ae644be25ad93
 F src/memjournal.c 431c70a111223a8a6e2e7e9f014afc6c88d818d357d866afc563195f2277d50e
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -1463,7 +1463,7 @@ F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
 F test/threadtest3.c e63013af10cf236c7610eb06d33bde08c861806dc64be811940ff4d9ddd34a4f
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
-F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421 w test/memdb-threads-1.c
+F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-18458b1a.test 6a62cb1ee50fa3c620da59e3a6f531eb38fceaf7e2166203816b724524e6f1d6
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 533fffc4a39b01c3aba75bd3271fd6ccd9516d9681ed04adbe19bd7de03f4c16
-R 4fefc92ffd76e6c05a1532a9460cad0d
+P 8db1c06958b8e1691440d4fd392648b74a1940b721852dabd315005efad520fc
+R 1abbc8f5df29e63c759567b710531636
 U drh
-Z d3fbbeb2377b80ce42b7a7b26e8ca8a8
+Z 05516c08485b60e7b77e8989ba53becd
