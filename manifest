@@ -1,5 +1,5 @@
-C Fix\sa\sNEVER()\sthat\scan\ssometimes\sbe\strue.\ndbsqlfuzz\s9a86fb3830977e216fde061bfbe1c1e5c2e9bfc4
-D 2021-05-11T10:47:41.595
+C Enhance\sthe\smemdb\sVFS\sso\sthat\sit\sis\sable\sto\sshare\sdatabases\samong\smultiple\ndatabase\sconnections\sin\sthe\ssame\sprocess,\sas\slong\sas\sthe\sdatabase\sfilename\nbegins\swith\s"/".\s\sThis\sprovides\sa\sway\sfor\sthreads\sto\sshare\san\sin-memory\ndatabase\swithout\sthe\suse\sof\sshared-cache\smode.
+D 2021-05-12T11:55:59.991
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -514,7 +514,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c b93b8762ab999a29ae7751532dadf0a1ac78040308a5fb1d17fcc365171d67eb
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 4dac796ed620f061fc67ddd1060a5ae1e9cdbb6a4e2b03397306864f2af190b3
+F src/memdb.c 0c95e0299cc81e19d8695d2e7b81c338a5e77d083aa7849643eafcc2a3b1115a
 F src/memjournal.c 431c70a111223a8a6e2e7e9f014afc6c88d818d357d866afc563195f2277d50e
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -1912,7 +1912,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6df3b03e00b1143be8fed3a39a58ce81063020275aa1ac13d87c84f1ceda6e27
-R 888429298506a7a430e45d7ff6f16cee
+P f39666e64d6d32420170c54f874d8314eb8c6f91df625f7b28f9ccffb9474dc0 98dae595d861941bb0bcd12126ee02492587c466e6da579a58b5dc4a4d655917
+R 1441e09faa39fd11227f415ae28549ff
+T +closed 98dae595d861941bb0bcd12126ee02492587c466e6da579a58b5dc4a4d655917
 U drh
-Z 3810e14a95fb243baca7c6b1006c9619
+Z bbd64c76e9984e3f1696dac12550f00b
