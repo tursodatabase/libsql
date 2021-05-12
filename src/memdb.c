@@ -280,7 +280,9 @@ static int memdbWrite(
 ){
   MemStore *p = ((MemFile*)pFile)->pStore;
   memdbEnter(p);
-  if( p->mFlags & SQLITE_DESERIALIZE_READONLY ){
+  if( NEVER(p->mFlags & SQLITE_DESERIALIZE_READONLY) ){
+    /* Can't happen: memdbLock() will return SQLITE_READONLY before
+    ** reaching this point */
     memdbLeave(p);
     return SQLITE_IOERR_WRITE;
   }
