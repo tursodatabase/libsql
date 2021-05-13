@@ -4198,6 +4198,15 @@ const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 ** [BEGIN] merely sets internal flags, but the [BEGIN|BEGIN IMMEDIATE] and
 ** [BEGIN|BEGIN EXCLUSIVE] commands do touch the database and so
 ** sqlite3_stmt_readonly() returns false for those commands.
+**
+** ^This routine returns false if there is any possibility that the
+** statement might change the database file.  ^A false return does
+** not guarantee that the statement will change the database file.
+** ^For example, an UPDATE statement might have a WHERE clause that
+** makes it a no-op, but the sqlite3_stmt_readonly() result would still
+** be false.  ^Similarly, a CREATE TABLE IF NOT EXISTS statement is a
+** read-only no-op if the table already exists, but 
+** sqlite3_stmt_readonly() still returns false for such a statement.
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 

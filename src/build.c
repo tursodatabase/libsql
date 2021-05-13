@@ -1049,6 +1049,22 @@ i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
 #endif
 
 /*
+** Insert a single OP_JournalMode query opcode in order to force the
+** prepared statement to return false for sqlite3_stmt_readonly().  This
+** is used by CREATE TABLE IF NOT EXISTS and similar if the table already
+** exists, so that the prepared statement for CREATE TABLE IF NOT EXISTS
+** will return false for sqlite3_stmt_readonly() even if that statement
+** is a read-only no-op.
+*/
+static void sqlite3ForceNotReadOnly(Parse *pParse){
+  int iReg = ++pParse->nMem;
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  if( v ){
+    sqlite3VdbeAddOp3(v, OP_JournalMode, 0, iReg, PAGER_JOURNALMODE_QUERY);
+  }
+}
+
+/*
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
 ** to a CREATE TABLE statement.  In particular, this routine is called
@@ -1147,6 +1163,7 @@ void sqlite3StartTable(
       }else{
         assert( !db->init.busy || CORRUPT_DB );
         sqlite3CodeVerifySchema(pParse, iDb);
+        sqlite3ForceNotReadOnly(pParse);
       }
       goto begin_table_error;
     }
@@ -3197,7 +3214,10 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   if( noErr ) db->suppressErr--;
 
   if( pTab==0 ){
-    if( noErr ) sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+    if( noErr ){
+      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }
     goto exit_drop_table;
   }
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -3767,6 +3787,7 @@ void sqlite3CreateIndex(
         }else{
           assert( !db->init.busy );
           sqlite3CodeVerifySchema(pParse, iDb);
+          sqlite3ForceNotReadOnly(pParse);
         }
         goto exit_create_index;
       }
@@ -4285,6 +4306,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
       sqlite3ErrorMsg(pParse, "no such index: %S", pName->a);
     }else{
       sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
     }
     pParse->checkSchema = 1;
     goto exit_drop_index;
