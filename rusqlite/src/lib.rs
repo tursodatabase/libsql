@@ -310,7 +310,7 @@ pub const TEMP_DB: DatabaseName<'static> = DatabaseName::Temp;
 ))]
 impl DatabaseName<'_> {
     #[inline]
-    fn to_cstring(&self) -> Result<util::SmallCString> {
+    fn as_cstring(&self) -> Result<util::SmallCString> {
         use self::DatabaseName::{Attached, Main, Temp};
         match *self {
             Main => str_to_cstring("main"),
@@ -1016,7 +1016,7 @@ impl InterruptHandle {
 
 #[cfg(feature = "modern_sqlite")] // 3.7.10
 unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
-    let db_name = DatabaseName::Main.to_cstring().unwrap();
+    let db_name = DatabaseName::Main.as_cstring().unwrap();
     let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
     if db_filename.is_null() {
         None

@@ -883,7 +883,7 @@ mod test {
         let result: Result<bool> =
             db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')", [], |r| r.get(0));
 
-        assert_eq!(true, result?);
+        assert!(result?);
 
         let result: Result<i64> = db.query_row(
             "SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",

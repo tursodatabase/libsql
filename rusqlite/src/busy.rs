@@ -169,7 +169,7 @@ mod test {
         let _ = db2
             .query_row("PRAGMA schema_version", [], |row| row.get::<_, i32>(0))
             .expect("unexpected error");
-        assert_eq!(CALLED.load(Ordering::Relaxed), true);
+        assert!(CALLED.load(Ordering::Relaxed));
 
         child.join().unwrap();
     }

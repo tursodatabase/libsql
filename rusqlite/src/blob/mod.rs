@@ -225,7 +225,7 @@ impl Connection {
     ) -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
-        let db = db.to_cstring()?;
+        let db = db.as_cstring()?;
         let table = super::str_to_cstring(table)?;
         let column = super::str_to_cstring(column)?;
         let rc = unsafe {
