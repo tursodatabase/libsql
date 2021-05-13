@@ -2513,6 +2513,8 @@ static int whereLoopAddBtreeIndex(
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
   assert( pNew->u.btree.nEq<pProbe->nColumn );
+  assert( pNew->u.btree.nEq<pProbe->nKeyCol
+       || pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY );
 
   saved_nEq = pNew->u.btree.nEq;
   saved_nBtm = pNew->u.btree.nBtm;
@@ -2790,6 +2792,8 @@ static int whereLoopAddBtreeIndex(
 
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<pProbe->nColumn
+     && (pNew->u.btree.nEq<pProbe->nKeyCol ||
+           pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY)
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }

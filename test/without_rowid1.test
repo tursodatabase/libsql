@@ -452,5 +452,18 @@ do_execsql_test 13.10 {
   PRAGMA integrity_check;
   SELECT * FROM t0, t1;
 } {ok abc xyz abc xyz}
+
+# 2021-05-13 https://sqlite.org/forum/forumpost/6c8960f545
+reset_db
+do_execsql_test 14.1 {
+  CREATE TABLE t1(a INT PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1(a) VALUES(10);
+  ALTER TABLE t1 ADD COLUMN b INT;
+  SELECT * FROM t1 WHERE a=20 OR (a=10 AND b=10);
+} {}
+do_execsql_test 14.2 {
+  CREATE TABLE dual AS SELECT 'X' AS dummy;
+  EXPLAIN QUERY PLAN SELECT * FROM dual, t1 WHERE a=10 AND b=10;
+} {~/b=/}
   
 finish_test
