@@ -547,7 +547,8 @@ static void invalidateIncrblobCursors(
   int isClearTable        /* True if all rows are being deleted */
 ){
   BtCursor *p;
-  if( pBtree->hasIncrblobCur==0 ) return;
+  // if( pBtree->hasIncrblobCur==0 ) return;
+  assert( pBtree->hasIncrblobCur );
   assert( sqlite3BtreeHoldsMutex(pBtree) );
   pBtree->hasIncrblobCur = 0;
   for(p=pBtree->pBt->pCursor; p; p=p->pNext){
@@ -8752,7 +8753,9 @@ int sqlite3BtreeInsert(
     assert( pX->pKey==0 );
     /* If this is an insert into a table b-tree, invalidate any incrblob 
     ** cursors open on the row being replaced */
-    invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
+    if( p->hasIncrblobCur ){
+      invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
+    }
 
     /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
     ** to a row with the same key as the new entry being inserted.
@@ -9179,7 +9182,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
 
   /* If this is a delete operation to remove a row from a table b-tree,
   ** invalidate any incrblob cursors open on the row being deleted.  */
-  if( pCur->pKeyInfo==0 ){
+  if( pCur->pKeyInfo==0 && p->hasIncrblobCur ){
     invalidateIncrblobCursors(p, pCur->pgnoRoot, pCur->info.nKey, 0);
   }
 
@@ -9523,7 +9526,9 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
     /* Invalidate all incrblob cursors open on table iTable (assuming iTable
     ** is the root of a table b-tree - if it is not, the following call is
     ** a no-op).  */
-    invalidateIncrblobCursors(p, (Pgno)iTable, 0, 1);
+    if( p->hasIncrblobCur ){
+      invalidateIncrblobCursors(p, (Pgno)iTable, 0, 1);
+    }
     rc = clearDatabasePage(pBt, (Pgno)iTable, 0, pnChange);
   }
   sqlite3BtreeLeave(p);
