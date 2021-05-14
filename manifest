@@ -1,5 +1,5 @@
-C Modify\sthe\ssqlite3_stmt_readonly()\sinterface\sso\sthat\sit\sreturns\sfalse\sfor\nCREATE\sTABLE\sIF\sNOT\sEXISTS\sstatements\seven\sif\sthe\stable\salready\sexists\sand\nthe\sstatement\sis\sreally\sa\sread-only\sno-op.\s\sLikewise\sfor\sDROP\sTABLE,\s\nCREATE\sINDEX,\sand\sDROP\sINDEX.\s\sUpdate\sthe\sdocumentation\sfor\nsqlite3_stmt_readonly()\sto\sreflect\sthis\snew\sbehavior.
-D 2021-05-13T18:24:22.567
+C Fix\san\sover-length\ssource\scode\scomment\sin\swhereexpr.c.\s\sNo\slogic\schanges.
+D 2021-05-14T13:32:07.999
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c 32f41c3c93c6785e0077e3a2cdc669c3ccfe70173787847be77f294c18fc7dc3
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c b4c21439f0549bb5c571214e08ddb5ec58d5e972f4b4c87c0cc79351edd43704
-F src/whereexpr.c 811f339ca85540157f3a400333ba90237ffbe7a2ba82dac63ce0677f4c4109d0
+F src/whereexpr.c f53c2676cb74233d4de1ec81e830a9f2998018b9e71760d8a4065d7b194742bf
 F src/window.c 0c910a222f357e3e175a998874abd12f3e2f312e10950d304f3d28b0fb6bc509
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c21bc5a2353e660f2acf5ed916921a4ee416910d0b3f2deb512a05c54138d1c0
-R 2e9914ba2c75f0fbf85c89829a93e146
+P cf8eb465974e596a13df56f3efbc98e098e7b74de9af4fde9ad58312db9750e4
+R 26942ccaa21de3a6819e168f70290519
 U drh
-Z 708e967733b505d5e67438dc1caa81fb
+Z 5729f1b3a97769375f0e3764fb21d884
