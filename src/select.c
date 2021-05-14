@@ -4469,7 +4469,7 @@ static void constInsert(
 */
 static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   Expr *pRight, *pLeft;
-  if( pExpr==0 ) return;
+  if( NEVER(pExpr==0) ) return;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
   if( pExpr->op==TK_AND ){
     findConstInWhere(pConst, pExpr->pRight);
@@ -6328,7 +6328,8 @@ int sqlite3Select(
   ** as the equivalent optimization will be handled by query planner in
   ** sqlite3WhereBegin().
   */
-  if( pTabList->nSrc>1
+  if( p->pWhere!=0
+   && p->pWhere->op==TK_AND
    && OptimizationEnabled(db, SQLITE_PropagateConst)
    && propagateConstants(pParse, p)
   ){

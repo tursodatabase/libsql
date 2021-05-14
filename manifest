@@ -1,5 +1,5 @@
-C Fix\san\sover-length\ssource\scode\scomment\sin\swhereexpr.c.\s\sNo\slogic\schanges.
-D 2021-05-14T13:32:07.999
+C Attempt\sthe\s[/info/f4229707ac08d66c|constant\spropagation\soptimization]\son\sany\nWHERE\sclause\sthat\shas\sa\stop-level\sAND\soperator,\seven\sif\sthe\squery\sis\snot\na\sjoin.\s\sThis\sis\san\sattempt\sto\spartially\saddress\sthe\sconcern\sraised\sin\n[forum:/forumpost/830d37b928|forum\spost\s830d37b928].
+D 2021-05-14T14:26:57.861
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -543,7 +543,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c c38bbb89d7ba7a8673ec4f59b63e0980eb859c39ff2acc5df8b3d0f2dcd33115
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 57dbb27e0d0cb2438487c797365a4c17294d0df3c25c970ca87f123105f33ed0
+F src/select.c c380cca3aea949c7af58c39cd73defaedf7cb3f7fb4aa436b3a622e393579341
 F src/shell.c.in 1b32ba2918ede13b68df47c7b92b72ba0d06e68d384e78bb9d7456527271d400
 F src/sqlite.h.in 5c950066775ca9efdaa49077c05d38d0bef6418f3bd07d2dce0210f1d2f3c326
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf8eb465974e596a13df56f3efbc98e098e7b74de9af4fde9ad58312db9750e4
-R 26942ccaa21de3a6819e168f70290519
+P af5eb902e7b13f50a8890098b85ae64a9d2ff4f122f3ab46ddb2c048b5c846a0
+R 35bf1f0273372183855a0e7812e0396c
 U drh
-Z 5729f1b3a97769375f0e3764fb21d884
+Z 03666a41f2d5f3954c859eee7afb90ed
