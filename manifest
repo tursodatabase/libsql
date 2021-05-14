@@ -1,5 +1,5 @@
-C Attempt\sthe\s[/info/f4229707ac08d66c|constant\spropagation\soptimization]\son\sany\nWHERE\sclause\sthat\shas\sa\stop-level\sAND\soperator,\seven\sif\sthe\squery\sis\snot\na\sjoin.\s\sThis\sis\san\sattempt\sto\spartially\saddress\sthe\sconcern\sraised\sin\n[forum:/forumpost/830d37b928|forum\spost\s830d37b928].
-D 2021-05-14T14:26:57.861
+C Avoid\sadding\ssuperfluous\svirtual\sWHERE\sclause\sterms\sthat\smight\sarise\sdue\nto\sthe\sconstant\spropagation\soptimization.
+D 2021-05-14T15:37:00.870
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/walker.c 6e540867a30d81e00205995fa2dc0e3d25365a7402251c9fd5d19aa4ff5e60b6
 F src/where.c 32f41c3c93c6785e0077e3a2cdc669c3ccfe70173787847be77f294c18fc7dc3
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c b4c21439f0549bb5c571214e08ddb5ec58d5e972f4b4c87c0cc79351edd43704
-F src/whereexpr.c f53c2676cb74233d4de1ec81e830a9f2998018b9e71760d8a4065d7b194742bf
+F src/whereexpr.c 5a9c9f5d2dac4bcdcaae3035034b4667523f731df228e0bb1d4efc669efa9da5
 F src/window.c 0c910a222f357e3e175a998874abd12f3e2f312e10950d304f3d28b0fb6bc509
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1761,7 +1761,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test c4bb7e2ca56d49bd8ab5c7bd085b8b83e353922b46904d68aefb3c7468643581
 F test/whereJ.test fc05e374cc9f2dc204148d6c06822c380ad388895fe97a6d335b94a26a08aecf
 F test/whereK.test 0270ab7f04ba5436fb9156d31d642a1c82727f4c4bfe5ba90d435c78cf44684a
-F test/whereL.test 7717caf61ff4b09d05ddd2978701c4cf5661408bd4dce31d38eff482f60f44f3
+F test/whereL.test 50171e3ec00b4c8ad5ec773119a35d9e9642cec45154b44c366d628326479f4d
 F test/wherefault.test 6cf2a9c5712952d463d3f45ebee7f6caf400984df51a195d884cfb7eb0e837a7
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test afb46397c6d7e964e6e294ba3569864a0c570fe3807afc634236c2b752372f31
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af5eb902e7b13f50a8890098b85ae64a9d2ff4f122f3ab46ddb2c048b5c846a0
-R 35bf1f0273372183855a0e7812e0396c
+P e994c9f29f7a561dd5f30573865b0f793fb1388af09a2afb9b1a5b037ea52f89
+R f40d700cac45a3fbd24f4a4f0d5ee607
 U drh
-Z 03666a41f2d5f3954c859eee7afb90ed
+Z 0bdc8a9f4500418f11b804dea881401d
