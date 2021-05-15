@@ -275,18 +275,36 @@ static VdbeCursor *allocateCursor(
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
-  if( SQLITE_OK==sqlite3VdbeMemClearAndResize(pMem, nByte) ){
-    p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->z;
-    memset(pCx, 0, offsetof(VdbeCursor,pAltCursor));
-    pCx->eCurType = eCurType;
-    pCx->iDb = iDb;
-    pCx->nField = nField;
-    pCx->aOffset = &pCx->aType[nField];
-    if( eCurType==CURTYPE_BTREE ){
-      pCx->uc.pCursor = (BtCursor*)
-          &pMem->z[ROUND8(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
-      sqlite3BtreeCursorZero(pCx->uc.pCursor);
+
+  /* There used to be a call to sqlite3VdbeMemClearAndResize() to make sure
+  ** the pMem used to hold space for the cursor has enough storage available
+  ** in pMem->zMalloc.  But for the special case of the aMem[] entries used
+  ** to hold cursors, it is faster to in-line the logic. */
+  assert( pMem->flags==MEM_Undefined );
+  assert( (pMem->flags & MEM_Dyn)==0 );
+  assert( pMem->szMalloc==0 || pMem->z==pMem->zMalloc );
+  if( pMem->szMalloc<nByte ){
+    if( pMem->szMalloc>0 ){
+      sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
     }
+    pMem->z = pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, nByte);
+    if( pMem->zMalloc==0 ){
+      pMem->szMalloc = 0;
+      return 0;
+    }
+    pMem->szMalloc = nByte;
+  }
+
+  p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->zMalloc;
+  memset(pCx, 0, offsetof(VdbeCursor,pAltCursor));
+  pCx->eCurType = eCurType;
+  pCx->iDb = iDb;
+  pCx->nField = nField;
+  pCx->aOffset = &pCx->aType[nField];
+  if( eCurType==CURTYPE_BTREE ){
+    pCx->uc.pCursor = (BtCursor*)
+        &pMem->z[ROUND8(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
+    sqlite3BtreeCursorZero(pCx->uc.pCursor);
   }
   return pCx;
 }
