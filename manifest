@@ -1,5 +1,5 @@
-C Performance\simprovement\sin\ssqlite3TableLock().
-D 2021-05-17T11:19:32.196
+C When\sdeleting\san\sSQL\sfunction\sthat\sdoes\snot\sexist,\sreturn\swithout\sdoing\nanything\sat\sall\srather\sthan\screating\sa\stombstone\sfunction.\s\sIn\sthis\sway,\nfunction\sdeletes\sthat\shappen\sinside\svirtual-table\sdestructors\sthat\sare\srun\nwhen\sa\sdatabase\sconnection\sis\sclosing\sdo\snot\screate\snew\stombstones\sin\sthe\nfunction\stable\safter\sthe\sfunction\stable\shas\salready\sbeen\spurged.\n[forum:/forumpost/726219164b|forum\spost\s726219164b].
+D 2021-05-17T13:11:24.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -507,7 +507,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2189e0e596010a0dc5405d9f14f78db1ee2fa71138c931f5b6ea96610b95bfc1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
-F src/main.c 00556c7c4107cea7d5e75dfae48cced9036d04bfc924601bde7bced4f85ff565
+F src/main.c 2b2044221a10e7c5f49a98f50563ce9a944511241ba5946d1754dcc2a7437a07
 F src/malloc.c c1af4ac5a463648cd2953fd4ac679b3ba9022ce5ec794a60806150ad69dfd33a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -560,7 +560,7 @@ F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
 F src/test6.c ae73a3a42bbc982fb9e301b84d30bda65a307be48c6dff20aba1461e17a9b0ce
 F src/test7.c 5612e9aecf934d6df7bba6ce861fdf5ba5456010
-F src/test8.c 7fb971777c2c79c734bb52757191d68d4af659b8de9b4a071be3f527a9d19a02
+F src/test8.c 0c856d6ff6b0d2ff6696addc467a15ed17c6910f14475302cd5b3b4e54406161
 F src/test9.c 12e5ba554d2d1cbe0158f6ab3f7ffcd7a86ee4e5
 F src/test_async.c 195ab49da082053fdb0f949c114b806a49ca770a
 F src/test_autoext.c 915d245e736652a219a907909bb6710f0d587871
@@ -1681,7 +1681,7 @@ F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test ea88361d5e9bc8eabf9f573185a16aea73a885be9b6c6a95ae84908913416a80
-F test/vtab1.test c5d9e90ed02bcacd776dcbb7360199d290f7f53c26b484ddece543060c54319f
+F test/vtab1.test 99c0c13b5336ca7f87f137459de144b2f396bb8563fbd602e46bfaa425e3d8cc
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
@@ -1913,7 +1913,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9d16323d14370b737399eb52b69b70cc614f78fb8a1e93f21a348c34a30dd456
-R 49f4093e56e27024e4b9b5507fcc332a
+P 0d77e371c47107f67550e9bedfd26808fcfd84c7473f94b6053f75f0e3463c73
+R 5520b01c6892a5b553d075270b83a75a
 U drh
-Z 08c2b8c4a4858391c43042a8ccf90e53
+Z da5b9c2841a8220ca7f95ee9ed964538
