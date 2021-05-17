@@ -152,7 +152,10 @@ static sqlite3_vfs memdb_vfs = {
   memdbSleep,                  /* xSleep */
   0, /* memdbCurrentTime, */   /* xCurrentTime */
   memdbGetLastError,           /* xGetLastError */
-  memdbCurrentTimeInt64        /* xCurrentTimeInt64 */
+  memdbCurrentTimeInt64,       /* xCurrentTimeInt64 */
+  0,                           /* xSetSystemCall */
+  0,                           /* xGetSystemCall */
+  0,                           /* xNextSystemCall */
 };
 
 static const sqlite3_io_methods memdb_io_methods = {
@@ -180,12 +183,21 @@ static const sqlite3_io_methods memdb_io_methods = {
 /*
 ** Enter/leave the mutex on a MemStore
 */
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE==0
+static void memdbEnter(MemStore *p){
+  UNUSED_PARAMETER(p);
+}
+static void memdbLeave(MemStore *p){
+  UNUSED_PARAMETER(p);
+}
+#else
 static void memdbEnter(MemStore *p){
   sqlite3_mutex_enter(p->pMutex);
 }
 static void memdbLeave(MemStore *p){
   sqlite3_mutex_leave(p->pMutex);
 }
+#endif
 
 
 
@@ -332,6 +344,8 @@ static int memdbTruncate(sqlite3_file *pFile, sqlite_int64 size){
 ** Sync an memdb-file.
 */
 static int memdbSync(sqlite3_file *pFile, int flags){
+  UNUSED_PARAMETER(pFile);
+  UNUSED_PARAMETER(flags);
   return SQLITE_OK;
 }
 
@@ -441,6 +455,7 @@ static int memdbSectorSize(sqlite3_file *pFile){
 ** Return the device characteristic flags supported by an memdb-file.
 */
 static int memdbDeviceCharacteristics(sqlite3_file *pFile){
+  UNUSED_PARAMETER(pFile);
   return SQLITE_IOCAP_ATOMIC | 
          SQLITE_IOCAP_POWERSAFE_OVERWRITE |
          SQLITE_IOCAP_SAFE_APPEND |
@@ -469,6 +484,8 @@ static int memdbFetch(
 /* Release a memory-mapped page */
 static int memdbUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *pPage){
   MemStore *p = ((MemFile*)pFile)->pStore;
+  UNUSED_PARAMETER(iOfst);
+  UNUSED_PARAMETER(pPage);
   memdbEnter(p);
   p->nMmap--;
   memdbLeave(p);
@@ -581,6 +598,9 @@ static int memdbAccess(
   int flags, 
   int *pResOut
 ){
+  UNUSED_PARAMETER(pVfs);
+  UNUSED_PARAMETER(zPath);
+  UNUSED_PARAMETER(flags);
   *pResOut = 0;
   return SQLITE_OK;
 }
@@ -596,6 +616,7 @@ static int memdbFullPathname(
   int nOut, 
   char *zOut
 ){
+  UNUSED_PARAMETER(pVfs);
   sqlite3_snprintf(nOut, zOut, "%s", zPath);
   return SQLITE_OK;
 }
@@ -840,7 +861,7 @@ end_deserialize:
 */
 int sqlite3MemdbInit(void){
   sqlite3_vfs *pLower = sqlite3_vfs_find(0);
-  int sz = pLower->szOsFile;
+  unsigned int sz = pLower->szOsFile;
   memdb_vfs.pAppData = pLower;
   /* The following conditional can only be true when compiled for
   ** Windows x86 and SQLITE_MAX_MMAP_SIZE=0.  We always leave
