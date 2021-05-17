@@ -140,6 +140,9 @@ int sqlite3WalkSelectExpr(Walker *pWalker, Select *p){
     Parse *pParse;
     if( pWalker->xSelectCallback2==sqlite3WalkWinDefnDummyCallback
      || ((pParse = pWalker->pParse)!=0 && IN_RENAME_OBJECT)
+#ifndef SQLITE_OMIT_CTE
+     || pWalker->xSelectCallback2==sqlite3SelectPopWith
+#endif
     ){
       /* The following may return WRC_Abort if there are unresolvable
       ** symbols (e.g. a table that does not exist) in a window definition. */

@@ -768,4 +768,35 @@ do_execsql_test 26.1 {
   SELECT * FROM t1x;
 } {2 1}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 27.1 {
+
+ create table t_sa (
+ c_muyat INTEGER NOT NULL,
+ c_d4u TEXT 
+ );
+
+ create table t2 ( abc );
+
+ CREATE TRIGGER trig AFTER DELETE ON t_sa
+   BEGIN
+   DELETE FROM t_sa WHERE (
+       SELECT 123 FROM t2
+       WINDOW oamat7fzf AS ( PARTITION BY t_sa.c_d4u )
+   );
+   END;
+}
+
+
+breakpoint
+do_execsql_test 27.2 {
+  alter table t_sa rename column c_muyat to c_dg;
+}
+
+
+
+
+
 finish_test

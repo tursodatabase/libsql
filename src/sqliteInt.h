@@ -3886,6 +3886,12 @@ void sqlite3WalkWinDefnDummyCallback(Walker*,Select*);
 void sqlite3SelectWalkAssert2(Walker*, Select*);
 #endif
 
+#ifndef SQLITE_OMIT_CTE
+void sqlite3SelectPopWith(Walker*, Select*);
+#else
+# define sqlite3SelectPopWith 0
+#endif
+
 /*
 ** Return code from the parse-tree walking primitives and their
 ** callbacks.
