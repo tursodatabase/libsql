@@ -592,7 +592,7 @@ static void registerTrace(int iReg, Mem *p){
   printf("\n");
   sqlite3VdbeCheckMemInvariants(p);
 }
-void sqlite3PrintMem(Mem *pMem){
+/**/ void sqlite3PrintMem(Mem *pMem){
   memTracePrint(pMem);
   printf("\n");
   fflush(stdout);
