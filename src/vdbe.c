@@ -2045,7 +2045,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   flags1 = pIn1->flags;
   flags3 = pIn3->flags;
   if( (flags1 & flags3 & MEM_Int)!=0 ){
-    assert( (pOp->p5 & SQLITE_AFF_MASK)!=SQLITE_AFF_TEXT );
+    assert( (pOp->p5 & SQLITE_AFF_MASK)!=SQLITE_AFF_TEXT || CORRUPT_DB );
     /* Common case of comparison of two integers */
     if( pIn3->u.i > pIn1->u.i ){
       iCompare = +1;
