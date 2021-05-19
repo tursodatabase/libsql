@@ -472,6 +472,22 @@ execsql_test 8.4 {
   );
 }
 
+==========
+
+execsql_test 9.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER);
+  CREATE TABLE t2(y INTEGER);
+}
+
+execsql_test 9.2 {
+  SELECT (
+    SELECT max(a) OVER ( ORDER BY (SELECT sum(a) FROM t1) )
+         + min(a) OVER() 
+  )
+  FROM t1
+}
 
 
 finish_test

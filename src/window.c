@@ -984,6 +984,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     sqlite3WalkSelect(&w, p);
     if( (p->selFlags & SF_Aggregate)==0 ){
       w.xExprCallback = disallowAggregatesInOrderByCb;
+      w.xSelectCallback = 0;
       sqlite3WalkExprList(&w, p->pOrderBy);
     }
 
