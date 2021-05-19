@@ -89,12 +89,12 @@ struct MemFile {
 };
 
 /*
-** Global variables for holding the memdb files that are accessible
+** File-scope variables for holding the memdb files that are accessible
 ** to multiple database connections in separate threads.
 **
 ** Must hold SQLITE_MUTEX_STATIC_VFS1 to access any part of this object.
 */
-struct MemFS {
+static struct MemFS {
   int nMemStore;                  /* Number of shared MemStore objects */
   MemStore **apMemStore;          /* Array of all shared MemStore objects */
 } memdb_g;

@@ -161,7 +161,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_VIRTUALTABLE=1
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_TEMP_STORE=3
-    -DSQLITE_OMIT_DESERIALIZE=1
     --enable-json1
   }
   "Device-Two" {
