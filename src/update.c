@@ -220,6 +220,10 @@ static void updateFromSelect(
 
   assert( pTabList->nSrc>1 );
   if( pSrc ){
+    if( pSrc->a[0].zDatabase==0 ){
+      int iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
+      pSrc->a[0].zDatabase = sqlite3DbStrDup(db, db->aDb[iSchema].zDbSName);
+    }
     pSrc->a[0].iCursor = -1;
     pSrc->a[0].pTab->nTabRef--;
     pSrc->a[0].pTab = 0;

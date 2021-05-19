@@ -492,7 +492,7 @@ Table *sqlite3LocateTableItem(
   SrcItem *p
 ){
   const char *zDb;
-  assert( p->pSchema==0 || p->zDatabase==0 );
+  /*  assert( p->pSchema==0 || p->zDatabase==0 ); FIX-ME */
   if( p->pSchema ){
     int iDb = sqlite3SchemaToIndex(pParse->db, p->pSchema);
     zDb = pParse->db->aDb[iDb].zDbSName;
