@@ -547,7 +547,7 @@ static void invalidateIncrblobCursors(
   int isClearTable        /* True if all rows are being deleted */
 ){
   BtCursor *p;
-  if( pBtree->hasIncrblobCur==0 ) return;
+  assert( pBtree->hasIncrblobCur );
   assert( sqlite3BtreeHoldsMutex(pBtree) );
   pBtree->hasIncrblobCur = 0;
   for(p=pBtree->pBt->pCursor; p; p=p->pNext){
@@ -6419,10 +6419,9 @@ static void freePage(MemPage *pPage, int *pRC){
 }
 
 /*
-** Free any overflow pages associated with the given Cell.  Store
-** size information about the cell in pInfo.
+** Free the overflow pages associated with the given Cell.
 */
-static int clearCell(
+static SQLITE_NOINLINE int clearCellOverflow(
   MemPage *pPage,          /* The page that contains the Cell */
   unsigned char *pCell,    /* First byte of the Cell */
   CellInfo *pInfo          /* Size information about the cell */
@@ -6434,10 +6433,7 @@ static int clearCell(
   u32 ovflPageSize;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  pPage->xParseCell(pPage, pCell, pInfo);
-  if( pInfo->nLocal==pInfo->nPayload ){
-    return SQLITE_OK;  /* No overflow pages. Return without doing anything */
-  }
+  assert( pInfo->nLocal!=pInfo->nPayload );
   testcase( pCell + pInfo->nSize == pPage->aDataEnd );
   testcase( pCell + (pInfo->nSize-1) == pPage->aDataEnd );
   if( pCell + pInfo->nSize > pPage->aDataEnd ){
@@ -6492,6 +6488,21 @@ static int clearCell(
   }
   return SQLITE_OK;
 }
+
+/* Call xParseCell to compute the size of a cell.  If the cell contains
+** overflow, then invoke cellClearOverflow to clear out that overflow.
+** STore the result code (SQLITE_OK or some error code) in rc.
+**
+** Implemented as macro to force inlining for performance.
+*/
+#define BTREE_CLEAR_CELL(rc, pPage, pCell, sInfo)   \
+  pPage->xParseCell(pPage, pCell, &sInfo);          \
+  if( sInfo.nLocal!=sInfo.nPayload ){               \
+    rc = clearCellOverflow(pPage, pCell, &sInfo);   \
+  }else{                                            \
+    rc = SQLITE_OK;                                 \
+  }
+
 
 /*
 ** Create the byte sequence used to represent a cell on page pPage
@@ -7168,7 +7179,9 @@ static int pageFreeArray(
         }
         pFree = pCell;
         szFree = sz;
-        if( pFree+sz>pEnd ) return 0;
+        if( pFree+sz>pEnd ){
+          return 0;
+        }
       }else{
         pFree = pCell;
         szFree += sz;
@@ -8144,6 +8157,7 @@ static int balance_nonroot(
     u8 *pCell;
     u8 *pTemp;
     int sz;
+    u8 *pSrcEnd;
     MemPage *pNew = apNew[i];
     j = cntNew[i];
 
@@ -8187,6 +8201,12 @@ static int balance_nonroot(
     iOvflSpace += sz;
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
+    for(k=0; b.ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
+    pSrcEnd = b.apEnd[k];
+    if( SQLITE_WITHIN(pSrcEnd, pCell, pCell+sz) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
+    }
     insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno, &rc);
     if( rc!=SQLITE_OK ) goto balance_cleanup;
     assert( sqlite3PagerIswriteable(pParent->pDbPage) );
@@ -8743,7 +8763,9 @@ int sqlite3BtreeInsert(
     assert( pX->pKey==0 );
     /* If this is an insert into a table b-tree, invalidate any incrblob 
     ** cursors open on the row being replaced */
-    invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
+    if( p->hasIncrblobCur ){
+      invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
+    }
 
     /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
     ** to a row with the same key as the new entry being inserted.
@@ -8877,7 +8899,7 @@ int sqlite3BtreeInsert(
     if( !pPage->leaf ){
       memcpy(newCell, oldCell, 4);
     }
-    rc = clearCell(pPage, oldCell, &info);
+    BTREE_CLEAR_CELL(rc, pPage, oldCell, info);
     testcase( pCur->curFlags & BTCF_ValidOvfl );
     invalidateOverflowCache(pCur);
     if( info.nSize==szNew && info.nLocal==info.nPayload 
@@ -9170,7 +9192,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
 
   /* If this is a delete operation to remove a row from a table b-tree,
   ** invalidate any incrblob cursors open on the row being deleted.  */
-  if( pCur->pKeyInfo==0 ){
+  if( pCur->pKeyInfo==0 && p->hasIncrblobCur ){
     invalidateIncrblobCursors(p, pCur->pgnoRoot, pCur->info.nKey, 0);
   }
 
@@ -9179,7 +9201,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** itself from within the page.  */
   rc = sqlite3PagerWrite(pPage->pDbPage);
   if( rc ) return rc;
-  rc = clearCell(pPage, pCell, &info);
+  BTREE_CLEAR_CELL(rc, pPage, pCell, info);
   dropCell(pPage, iCellIdx, info.nSize, &rc);
   if( rc ) return rc;
 
@@ -9466,7 +9488,7 @@ static int clearDatabasePage(
       rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange);
       if( rc ) goto cleardatabasepage_out;
     }
-    rc = clearCell(pPage, pCell, &info);
+    BTREE_CLEAR_CELL(rc, pPage, pCell, info);
     if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){
@@ -9514,7 +9536,9 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
     /* Invalidate all incrblob cursors open on table iTable (assuming iTable
     ** is the root of a table b-tree - if it is not, the following call is
     ** a no-op).  */
-    invalidateIncrblobCursors(p, (Pgno)iTable, 0, 1);
+    if( p->hasIncrblobCur ){
+      invalidateIncrblobCursors(p, (Pgno)iTable, 0, 1);
+    }
     rc = clearDatabasePage(pBt, (Pgno)iTable, 0, pnChange);
   }
   sqlite3BtreeLeave(p);

@@ -129,19 +129,21 @@ set pgnoChild [get4byte $fd $offChild]
 put4byte $fd $offChild 1
 close $fd
 
-sqlite3 db test.db
-do_catchsql_test 2.2 {
-  PRAGMA writable_schema = 1;
-  SELECT * FROM sqlite_schema;
-} {1 {database disk image is malformed}}
+if {![info exists ::G(perm:presql)]} {
+  sqlite3 db test.db
 
-do_test 2.3 {
-  list [catch {
-    for {set ii $nView} {$ii<$nView*2} {incr ii} {
-      execsql "INSERT INTO sqlite_master VALUES(1, 2, 3, 4, 5)"
-    }
-  } msg] $msg
-} {1 {database disk image is malformed}}
+  do_catchsql_test 2.2 {
+    PRAGMA writable_schema = 1;
+    SELECT * FROM sqlite_schema;
+  } {1 {database disk image is malformed}}
 
+  do_test 2.3 {
+    list [catch {
+      for {set ii $nView} {$ii<$nView*2} {incr ii} {
+        execsql "INSERT INTO sqlite_master VALUES(1, 2, 3, 4, 5)"
+      }
+    } msg] $msg
+  } {1 {database disk image is malformed}}
+}
 
 finish_test

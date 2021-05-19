@@ -279,7 +279,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* xVdbeBranch */
    0,                         /* pVbeBranchArg */
 #endif
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
    SQLITE_MEMDB_DEFAULT_MAXSIZE,   /* mxMemdbSize */
 #endif
 #ifndef SQLITE_UNTESTABLE

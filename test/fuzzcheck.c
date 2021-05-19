@@ -1784,14 +1784,16 @@ int main(int argc, char **argv){
           char zLine[2000];
           while( rc==0 && fgets(zLine,sizeof(zLine),stdin)!=0 ){
             size_t kk = strlen(zLine);
-            while( kk>0 && (zLine[kk]=='\n' || zLine[kk]=='\r')) kk--;
+            while( kk>0 && zLine[kk-1]<=' ' ) kk--;
             sqlite3_bind_text(pStmt, 1, zLine, kk, SQLITE_STATIC);
+            if( verboseFlag ) printf("loading %.*s\n", (int)kk, zLine);
             sqlite3_step(pStmt);
             rc = sqlite3_reset(pStmt);
             if( rc ) fatalError("insert failed for %s", zLine);
           }
         }else{
           sqlite3_bind_text(pStmt, 1, argv[i], -1, SQLITE_STATIC);
+          if( verboseFlag ) printf("loading %s\n", argv[i]);
           sqlite3_step(pStmt);
           rc = sqlite3_reset(pStmt);
           if( rc ) fatalError("insert failed for %s", argv[i]);

@@ -1731,7 +1731,6 @@ struct sqlite3 {
 #define SQLITE_SkipScan       0x00004000 /* Skip-scans */
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
-#define SQLITE_ExistsToIN     0x00020000 /* The EXISTS-to-IN optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3794,7 +3793,7 @@ struct Sqlite3Config {
   void (*xVdbeBranch)(void*,unsigned iSrcLine,u8 eThis,u8 eMx);  /* Callback */
   void *pVdbeBranchArg;                                     /* 1st argument */
 #endif
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
   sqlite3_int64 mxMemdbSize;        /* Default max memdb size */
 #endif
 #ifndef SQLITE_UNTESTABLE
@@ -3885,6 +3884,12 @@ void sqlite3WalkWinDefnDummyCallback(Walker*,Select*);
 
 #ifdef SQLITE_DEBUG
 void sqlite3SelectWalkAssert2(Walker*, Select*);
+#endif
+
+#ifndef SQLITE_OMIT_CTE
+void sqlite3SelectPopWith(Walker*, Select*);
+#else
+# define sqlite3SelectPopWith 0
 #endif
 
 /*
@@ -4312,6 +4317,7 @@ void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
+void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
 void sqlite3SelectAddColumnTypeAndCollation(Parse*,Table*,Select*,char);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
@@ -4690,7 +4696,7 @@ int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrName(int);
 #endif
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
 int sqlite3MemdbInit(void);
 #endif
 

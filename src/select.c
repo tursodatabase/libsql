@@ -1955,7 +1955,7 @@ static void generateColumnTypes(
 **                              then the result column name with the table name
 **                              prefix, ex: TABLE.COLUMN.  Otherwise use zSpan.
 */
-static void generateColumnNames(
+void sqlite3GenerateColumnNames(
   Parse *pParse,      /* Parser context */
   Select *pSelect     /* Generate column names for this SELECT statement */
 ){
@@ -2045,7 +2045,7 @@ static void generateColumnNames(
 ** and will break if those assumptions changes.  Hence, use extreme caution
 ** when modifying this routine to avoid breaking legacy.
 **
-** See Also: generateColumnNames()
+** See Also: sqlite3GenerateColumnNames()
 */
 int sqlite3ColumnsFromExprList(
   Parse *pParse,          /* Parsing context */
@@ -2748,6 +2748,7 @@ static int multiSelect(
         pPrior->iLimit = p->iLimit;
         pPrior->iOffset = p->iOffset;
         pPrior->pLimit = p->pLimit;
+        SELECTTRACE(1, pParse, p, ("multiSelect UNION ALL left...\n"));
         rc = sqlite3Select(pParse, pPrior, &dest);
         pPrior->pLimit = 0;
         if( rc ){
@@ -2765,6 +2766,7 @@ static int multiSelect(
           }
         }
         ExplainQueryPlan((pParse, 1, "UNION ALL"));
+        SELECTTRACE(1, pParse, p, ("multiSelect UNION ALL right...\n"));
         rc = sqlite3Select(pParse, p, &dest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -2817,6 +2819,7 @@ static int multiSelect(
         */
         assert( !pPrior->pOrderBy );
         sqlite3SelectDestInit(&uniondest, priorOp, unionTab);
+        SELECTTRACE(1, pParse, p, ("multiSelect EXCEPT/UNION left...\n"));
         rc = sqlite3Select(pParse, pPrior, &uniondest);
         if( rc ){
           goto multi_select_end;
@@ -2836,6 +2839,7 @@ static int multiSelect(
         uniondest.eDest = op;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
+        SELECTTRACE(1, pParse, p, ("multiSelect EXCEPT/UNION right...\n"));
         rc = sqlite3Select(pParse, p, &uniondest);
         testcase( rc!=SQLITE_OK );
         assert( p->pOrderBy==0 );
@@ -2896,6 +2900,7 @@ static int multiSelect(
         /* Code the SELECTs to our left into temporary table "tab1".
         */
         sqlite3SelectDestInit(&intersectdest, SRT_Union, tab1);
+        SELECTTRACE(1, pParse, p, ("multiSelect INTERSECT left...\n"));
         rc = sqlite3Select(pParse, pPrior, &intersectdest);
         if( rc ){
           goto multi_select_end;
@@ -2912,6 +2917,7 @@ static int multiSelect(
         intersectdest.iSDParm = tab2;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
+        SELECTTRACE(1, pParse, p, ("multiSelect INTERSECT right...\n"));
         rc = sqlite3Select(pParse, p, &intersectdest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -4469,7 +4475,7 @@ static void constInsert(
 */
 static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   Expr *pRight, *pLeft;
-  if( pExpr==0 ) return;
+  if( NEVER(pExpr==0) ) return;
   if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
   if( pExpr->op==TK_AND ){
     findConstInWhere(pConst, pExpr->pRight);
@@ -5213,7 +5219,7 @@ static int resolveFromTermToCte(
 ** sqlite3SelectExpand() when walking a SELECT tree to resolve table
 ** names and other FROM clause elements. 
 */
-static void selectPopWith(Walker *pWalker, Select *p){
+void sqlite3SelectPopWith(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   if( OK_IF_ALWAYS_TRUE(pParse->pWith) && p->pPrior==0 ){
     With *pWith = findRightmost(p)->pWith;
@@ -5223,8 +5229,6 @@ static void selectPopWith(Walker *pWalker, Select *p){
     }
   }
 }
-#else
-#define selectPopWith 0
 #endif
 
 /*
@@ -5611,7 +5615,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
-  w.xSelectCallback2 = selectPopWith;
+  w.xSelectCallback2 = sqlite3SelectPopWith;
   w.eCode = 0;
   sqlite3WalkSelect(&w, pSelect);
 }
@@ -6198,7 +6202,7 @@ int sqlite3Select(
   }
 
   if( pDest->eDest==SRT_Output ){
-    generateColumnNames(pParse, p);
+    sqlite3GenerateColumnNames(pParse, p);
   }
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -6328,7 +6332,8 @@ int sqlite3Select(
   ** as the equivalent optimization will be handled by query planner in
   ** sqlite3WhereBegin().
   */
-  if( pTabList->nSrc>1
+  if( p->pWhere!=0
+   && p->pWhere->op==TK_AND
    && OptimizationEnabled(db, SQLITE_PropagateConst)
    && propagateConstants(pParse, p)
   ){

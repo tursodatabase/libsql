@@ -193,7 +193,7 @@ ifnotexists(A) ::= .              {A = 0;}
 ifnotexists(A) ::= IF NOT EXISTS. {A = 1;}
 %type temp {int}
 %ifndef SQLITE_OMIT_TEMPDB
-temp(A) ::= TEMP.  {A = 1;}
+temp(A) ::= TEMP.  {A = pParse->db->init.busy==0;}
 %endif  SQLITE_OMIT_TEMPDB
 temp(A) ::= .      {A = 0;}
 create_table_args ::= LP columnlist conslist_opt(X) RP(E) table_options(F). {

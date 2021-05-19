@@ -6469,4 +6469,75 @@ do_execsql_test 7.4.9 {
   );
 } {4   4   4   {}   {}   {}}
 
+#==========================================================================
+
+do_execsql_test 8.0 {
+  DROP TABLE IF EXISTS tx;
+  CREATE TABLE tx(a INTEGER PRIMARY KEY);
+  INSERT INTO tx VALUES(1), (2), (3), (4), (5), (6);
+
+  DROP TABLE IF EXISTS map;
+  CREATE TABLE map(v INTEGER PRIMARY KEY, t TEXT);
+  INSERT INTO map VALUES
+    (1, 'odd'), (2, 'even'), (3, 'odd'), 
+    (4, 'even'), (5, 'odd'), (6, 'even');
+} {}
+
+do_execsql_test 8.1 {
+  SELECT sum(a) OVER (
+    PARTITION BY (
+      SELECT t FROM map WHERE v=a
+    ) ORDER BY a
+  ) FROM tx;
+} {2   6   12   1   4   9}
+
+do_execsql_test 8.2 {
+  SELECT sum(a) OVER win FROM tx
+  WINDOW win AS (
+    PARTITION BY (
+      SELECT t FROM map WHERE v=a
+    ) ORDER BY a
+  );
+} {2   6   12   1   4   9}
+
+do_execsql_test 8.3 {
+  WITH map2 AS (
+    SELECT * FROM map
+  )
+  SELECT sum(a) OVER (
+    PARTITION BY (
+      SELECT t FROM map2 WHERE v=a
+    ) ORDER BY a
+  ) FROM tx;
+} {2   6   12   1   4   9}
+
+do_execsql_test 8.4 {
+  WITH map2 AS (
+    SELECT * FROM map
+  )
+  SELECT sum(a) OVER win FROM tx
+  WINDOW win AS (
+    PARTITION BY (
+      SELECT t FROM map2 WHERE v=a
+    ) ORDER BY a
+  );
+} {2   6   12   1   4   9}
+
+#==========================================================================
+
+do_execsql_test 9.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER);
+  CREATE TABLE t2(y INTEGER);
+} {}
+
+do_execsql_test 9.2 {
+  SELECT (
+    SELECT max(a) OVER ( ORDER BY (SELECT sum(a) FROM t1) )
+         + min(a) OVER() 
+  )
+  FROM t1
+} {}
+
 finish_test
