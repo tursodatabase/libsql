@@ -221,9 +221,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_DBSTAT_VTAB
   "ENABLE_DBSTAT_VTAB",
 #endif
-#if SQLITE_ENABLE_DESERIALIZE
-  "ENABLE_DESERIALIZE",
-#endif
 #if SQLITE_ENABLE_EXPENSIVE_ASSERT
   "ENABLE_EXPENSIVE_ASSERT",
 #endif
@@ -552,6 +549,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #if SQLITE_OMIT_DEPRECATED
   "OMIT_DEPRECATED",
+#endif
+#if SQLITE_OMIT_DESERIALIZE
+  "OMIT_DESERIALIZE",
 #endif
 #if SQLITE_OMIT_DISKIO
   "OMIT_DISKIO",
