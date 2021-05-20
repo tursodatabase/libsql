@@ -1070,6 +1070,7 @@ static void sqlite3ForceNotReadOnly(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp3(v, OP_JournalMode, 0, iReg, PAGER_JOURNALMODE_QUERY);
+    sqlite3VdbeUsesBtree(v, 0);
   }
 }
 

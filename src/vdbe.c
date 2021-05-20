@@ -7247,6 +7247,7 @@ case OP_JournalMode: {    /* out2 */
   pPager = sqlite3BtreePager(pBt);
   eOld = sqlite3PagerGetJournalMode(pPager);
   if( eNew==PAGER_JOURNALMODE_QUERY ) eNew = eOld;
+  assert( sqlite3BtreeHoldsMutex(pBt) );
   if( !sqlite3PagerOkToChangeJournalMode(pPager) ) eNew = eOld;
 
 #ifndef SQLITE_OMIT_WAL
