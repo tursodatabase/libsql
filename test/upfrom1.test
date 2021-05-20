@@ -191,4 +191,20 @@ do_execsql_test 4.2 {
   SELECT x, y FROM t1, t2;
 } {104 2}
 
+# 2021-05-20
+# Forum https://sqlite.org/forum/forumpost/339f487de5 by Yu Liang
+# A bad assert()
+#
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1(a) VALUES(5);
+  CREATE VIEW t2 AS SELECT a FROM t1 UNION ALL SELECT a FROM t1;
+  CREATE TABLE t3(b,c);
+  INSERT INTO t3(b,c) VALUES(1,2);
+  UPDATE t3 SET (c,b) = (SELECT 3,4) FROM t1, t2;
+  SELECT * FROM t3;
+} {4 3}
+
+
 finish_test

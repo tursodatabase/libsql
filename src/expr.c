@@ -1508,7 +1508,8 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     ){
       assert( pNewExpr->iColumn==0 || i>0 );
       if( pNewExpr->iColumn==0 ){
-        assert( pOldExpr->pLeft==pOldExpr->pRight );
+        assert( pOldExpr->pLeft==pOldExpr->pRight
+             || ExprHasProperty(pOldExpr->pLeft, EP_Subquery) );
         pPriorSelectCol = pNewExpr->pLeft = pNewExpr->pRight;
       }else{
         assert( i>0 );
