@@ -1,5 +1,5 @@
-C Ensure\sthat\sobjects\swithin\sview\sdefinitions\sare\snot\sincorrectly\sresolved\sto\sCTEs\sthat\sare\spart\sof\sthe\sstatement\susing\sthe\sview.
-D 2021-05-20T17:15:06.495
+C Enhance\sone\stest\scase\sto\suse\svarious\salternative\sdefinitions\sof\sDUAL.
+D 2021-05-20T18:11:45.187
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1791,7 +1791,7 @@ F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 21919e601f20b976ea2a73aa401220c89ed0e8d203c4f69476ea55bce3726496
 F test/windowpushd.test d8895d08870b7226f7693665bd292eb177e62ca06799184957b3ca7dc03067df
-F test/with1.test 8a4f82b10447a672cd1a7032bbe026c41070a26936f7625425e6989149b133d8
+F test/with1.test 7bc5abfe4c80c0cef8a90f5a66d60b9982e8ccd7350c8eb70611323a3b8e07ba
 F test/with2.test 000fb95f1f29dae868cea0f41505eb5126077d49eb967ff88f9ee46212ad8863
 F test/with3.test ad32d13ad50661e6fa305f62a0717649c348792e7b658bf2644976227a9e0373
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67bde01614edd944b769ab28488bac1dbbf17d88beee62ca7f1e45681aa3d402
-R 8205d992cd257307d8f0d0caa8555ac1
-U dan
-Z f80d82b396967304361a3337392c852f
+P f7dcc4b5197c6413be31384b390bb98a737d3f9edb7964433448c3b90b35a436
+R d4a02e9a084f5bbb2c359cb623736dd9
+U drh
+Z f8e8c5b8a9d1d3c48b2b626d971de917

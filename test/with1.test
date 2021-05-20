@@ -1149,20 +1149,26 @@ do_execsql_test 24.2 {
 # had to continue to recognize "true" and "false" as identifiers for
 # backwards compatibility.
 #
-reset_db
-do_execsql_test 25.1 {
-  CREATE TABLE dual(dummy);
-  INSERT INTO dual(dummy) VALUES('X');
-  WITH cte1 AS (
-    SELECT TRUE, (
-      WITH cte2 AS (SELECT avg(DISTINCT TRUE) FROM dual)
-      SELECT 2571 FROM cte2
-    ) AS subquery1
-    FROM dual
-    GROUP BY 1
-  )
-  SELECT (SELECT 1324 FROM cte1) FROM cte1;
-} {1324}
+foreach {id dual} {
+  1  {CREATE TABLE dual AS SELECT 'X' AS dummy}
+  2  {CREATE TEMP TABLE dual AS SELECT 'X' AS dummy}
+  3  {CREATE VIEW dual(dummy) AS VALUES('X')}
+  4  {CREATE TEMP VIEW dual(dummy) AS VALUES('X')}
+} {
+  reset_db
+  db eval $dual
+  do_execsql_test 25.$id {
+    WITH cte1 AS (
+      SELECT TRUE, (
+        WITH cte2 AS (SELECT avg(DISTINCT TRUE) FROM dual)
+        SELECT 2571 FROM cte2
+      ) AS subquery1
+      FROM dual
+      GROUP BY 1
+    )
+    SELECT (SELECT 1324 FROM cte1) FROM cte1;
+  } {1324}
+}
 
 do_catchsql_test 26.0 {
   WITH i(x) AS ( 
