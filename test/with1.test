@@ -1207,4 +1207,28 @@ do_execsql_test 26.3 {
   SELECT * FROM cte ORDER BY +label, +step;
 } {a 1 a 2 a 3 b 1 b 2 b 3}
 
+# 2021-05-20
+# forum post https://sqlite.org/forum/forumpost/8590e3f6dc
+#
+reset_db
+do_execsql_test 27.1 {
+  CREATE TABLE t1(k);
+  CREATE TABLE log(k, cte_map, main_map);
+  CREATE TABLE map(k, v);
+  INSERT INTO map VALUES(1, 'main1'), (2, 'main2');
+  
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO log
+        WITH map(k,v) AS (VALUES(1,'cte1'),(2,'cte2'))
+        SELECT
+          new.k,
+          (SELECT v FROM map WHERE k=new.k),
+          (SELECT v FROM main.map WHERE k=new.k);
+  END;
+  
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  SELECT k, cte_map, main_map, '|' FROM log ORDER BY k;
+} {1 cte1 main1 | 2 cte2 main2 |}
+
 finish_test

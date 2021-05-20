@@ -464,14 +464,17 @@ static int fixSelectCb(Walker *p, Select *pSelect){
   if( NEVER(pList==0) ) return WRC_Continue;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pFix->bTemp==0 ){
-      if( pItem->zDatabase && iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
-        sqlite3ErrorMsg(pFix->pParse,
-            "%s %T cannot reference objects in database %s",
-            pFix->zType, pFix->pName, pItem->zDatabase);
-        return WRC_Abort;
+      if( pItem->zDatabase ){
+        if( iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
+          sqlite3ErrorMsg(pFix->pParse,
+              "%s %T cannot reference objects in database %s",
+              pFix->zType, pFix->pName, pItem->zDatabase);
+          return WRC_Abort;
+        }
+        sqlite3DbFree(db, pItem->zDatabase);
+        pItem->zDatabase = 0;
+        pItem->fg.notCte = 1;
       }
-      sqlite3DbFree(db, pItem->zDatabase);
-      pItem->zDatabase = 0;
       pItem->pSchema = pFix->pSchema;
       pItem->fg.fromDDL = 1;
     }

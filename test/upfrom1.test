@@ -175,4 +175,20 @@ do_execsql_test 3.1 {
   SELECT * FROM t0, t1;
 } {}
 
+# Problem described by forum post https://sqlite.org/forum/forumpost/a274248080
+#
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE t1(x INT);  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(y INT);  INSERT INTO t2 VALUES(2);
+  WITH t1 AS (SELECT y+100 AS x FROM t2) 
+    UPDATE t1 SET x=(SELECT x FROM t1);
+  SELECT x, y FROM t1, t2;
+} {102 2}
+do_execsql_test 4.2 {
+  WITH t1 AS (SELECT y+100 AS x FROM t2)
+    UPDATE t1 SET x=x+y FROM t2;
+  SELECT x, y FROM t1, t2;
+} {104 2}
+
 finish_test

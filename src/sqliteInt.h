@@ -2948,6 +2948,7 @@ struct SrcItem {
     unsigned isRecursive :1;   /* True for recursive reference in WITH */
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
     unsigned isCte :1;         /* This is a CTE */
+    unsigned notCte :1;        /* This item may not match a CTE */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   Expr *pOn;        /* The ON clause of a join */

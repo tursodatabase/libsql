@@ -5071,6 +5071,14 @@ static int resolveFromTermToCte(
     ** it cannot possibly be a CTE reference. */
     return 0;
   }
+  if( pFrom->fg.notCte ){
+    /* The FROM term is specifically excluded from matching a CTE.
+    **   (1)  It is part of a trigger that used to have zDatabase but had
+    **        zDatabase removed by sqlite3FixTriggerStep().
+    **   (2)  This is the first term in the FROM clause of an UPDATE.
+    */
+    return 0;
+  }
   pCte = searchWith(pParse->pWith, pFrom, &pWith);
   if( pCte ){
     sqlite3 *db = pParse->db;
