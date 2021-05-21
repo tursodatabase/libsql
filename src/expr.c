@@ -52,6 +52,10 @@ char sqlite3ExprAffinity(const Expr *pExpr){
     assert( pExpr!=0 );
   }
   op = pExpr->op;
+  if( op==TK_REGISTER ) op = pExpr->op2;
+  if( (op==TK_COLUMN || op==TK_AGG_COLUMN) && pExpr->y.pTab ){
+    return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
+  }
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
     assert( pExpr->x.pSelect!=0 );
@@ -59,16 +63,12 @@ char sqlite3ExprAffinity(const Expr *pExpr){
     assert( pExpr->x.pSelect->pEList->a[0].pExpr!=0 );
     return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
   }
-  if( op==TK_REGISTER ) op = pExpr->op2;
 #ifndef SQLITE_OMIT_CAST
   if( op==TK_CAST ){
     assert( !ExprHasProperty(pExpr, EP_IntValue) );
     return sqlite3AffinityType(pExpr->u.zToken, 0);
   }
 #endif
-  if( (op==TK_AGG_COLUMN || op==TK_COLUMN) && pExpr->y.pTab ){
-    return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
-  }
   if( op==TK_SELECT_COLUMN ){
     assert( pExpr->pLeft->flags&EP_xIsSelect );
     return sqlite3ExprAffinity(
@@ -95,18 +95,7 @@ Expr *sqlite3ExprAddCollateToken(
   const Token *pCollName,  /* Name of collating sequence */
   int dequote              /* True to dequote pCollName */
 ){
-  assert( pExpr!=0 || pParse->db->mallocFailed );
-  if( pExpr==0 ) return 0;
-  if( pExpr->op==TK_VECTOR ){
-    ExprList *pList = pExpr->x.pList;
-    if( ALWAYS(pList!=0) ){
-      int i;
-      for(i=0; i<pList->nExpr; i++){
-        pList->a[i].pExpr = sqlite3ExprAddCollateToken(pParse,pList->a[i].pExpr,
-                                                       pCollName, dequote);
-      }
-    }
-  }else if( pCollName->n>0 ){
+  if( pCollName->n>0 ){
     Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, dequote);
     if( pNew ){
       pNew->pLeft = pExpr;
@@ -611,6 +600,7 @@ static void codeVectorCompare(
   int regLeft = 0;
   int regRight = 0;
   u8 opx = op;
+  int addrCmp = 0;
   int addrDone = sqlite3VdbeMakeLabel(pParse);
   int isCommuted = ExprHasProperty(pExpr,EP_Commuted);
 
@@ -630,21 +620,24 @@ static void codeVectorCompare(
   assert( p5==0 || pExpr->op!=op );
   assert( p5==SQLITE_NULLEQ || pExpr->op==op );
 
-  p5 |= SQLITE_STOREP2;
-  if( opx==TK_LE ) opx = TK_LT;
-  if( opx==TK_GE ) opx = TK_GT;
+  if( op==TK_LE ) opx = TK_LT;
+  if( op==TK_GE ) opx = TK_GT;
+  if( op==TK_NE ) opx = TK_EQ;
 
   regLeft = exprCodeSubselect(pParse, pLeft);
   regRight = exprCodeSubselect(pParse, pRight);
 
+  sqlite3VdbeAddOp2(v, OP_Integer, 1, dest);
   for(i=0; 1 /*Loop exits by "break"*/; i++){
     int regFree1 = 0, regFree2 = 0;
     Expr *pL, *pR; 
     int r1, r2;
     assert( i>=0 && i<nLeft );
+    if( addrCmp ) sqlite3VdbeJumpHere(v, addrCmp);
     r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
     r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
-    codeCompare(pParse, pL, pR, opx, r1, r2, dest, p5, isCommuted);
+    addrCmp = sqlite3VdbeCurrentAddr(v);
+    codeCompare(pParse, pL, pR, opx, r1, r2, addrDone, p5, isCommuted);
     testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
     testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
     testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
@@ -653,26 +646,32 @@ static void codeVectorCompare(
     testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
     sqlite3ReleaseTempReg(pParse, regFree1);
     sqlite3ReleaseTempReg(pParse, regFree2);
+    if( (opx==TK_LT || opx==TK_GT) && i<nLeft-1 ){
+      addrCmp = sqlite3VdbeAddOp0(v, OP_ElseEq);
+      testcase(opx==TK_LT); VdbeCoverageIf(v,opx==TK_LT);
+      testcase(opx==TK_GT); VdbeCoverageIf(v,opx==TK_GT);
+    }
+    if( p5==SQLITE_NULLEQ ){
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, dest);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_ZeroOrNull, r1, dest, r2);
+    }
     if( i==nLeft-1 ){
       break;
     }
     if( opx==TK_EQ ){
-      sqlite3VdbeAddOp2(v, OP_IfNot, dest, addrDone); VdbeCoverage(v);
-      p5 |= SQLITE_KEEPNULL;
-    }else if( opx==TK_NE ){
-      sqlite3VdbeAddOp2(v, OP_If, dest, addrDone); VdbeCoverage(v);
-      p5 |= SQLITE_KEEPNULL;
+      sqlite3VdbeAddOp2(v, OP_NotNull, dest, addrDone); VdbeCoverage(v);
     }else{
       assert( op==TK_LT || op==TK_GT || op==TK_LE || op==TK_GE );
-      sqlite3VdbeAddOp2(v, OP_ElseNotEq, 0, addrDone);
-      VdbeCoverageIf(v, op==TK_LT);
-      VdbeCoverageIf(v, op==TK_GT);
-      VdbeCoverageIf(v, op==TK_LE);
-      VdbeCoverageIf(v, op==TK_GE);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrDone);
       if( i==nLeft-2 ) opx = op;
     }
   }
+  sqlite3VdbeJumpHere(v, addrCmp);
   sqlite3VdbeResolveLabel(v, addrDone);
+  if( op==TK_NE ){
+    sqlite3VdbeAddOp2(v, OP_Not, dest, dest);
+  }
 }
 
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -958,8 +957,8 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
   }else if( (ExprAlwaysFalse(pLeft) || ExprAlwaysFalse(pRight)) 
          && !IN_RENAME_OBJECT
   ){
-    sqlite3ExprDelete(db, pLeft);
-    sqlite3ExprDelete(db, pRight);
+    sqlite3ExprDeferredDelete(pParse, pLeft);
+    sqlite3ExprDeferredDelete(pParse, pRight);
     return sqlite3Expr(db, TK_INTEGER, "0");
   }else{
     return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
@@ -1156,6 +1155,22 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
 
+
+/*
+** Arrange to cause pExpr to be deleted when the pParse is deleted.
+** This is similar to sqlite3ExprDelete() except that the delete is
+** deferred untilthe pParse is deleted.
+**
+** The pExpr might be deleted immediately on an OOM error.
+**
+** The deferred delete is (currently) implemented by adding the
+** pExpr to the pParse->pConstExpr list with a register number of 0.
+*/
+void sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
+  pParse->pConstExpr = 
+      sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+}
+
 /* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
 ** expression.
 */
@@ -1298,6 +1313,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
   if( pzBuffer ){
     zAlloc = *pzBuffer;
     staticFlag = EP_Static;
+    assert( zAlloc!=0 );
   }else{
     zAlloc = sqlite3DbMallocRawNN(db, dupedExprSize(p, dupFlags));
     staticFlag = 0;
@@ -1376,7 +1392,8 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
           assert( p->iColumn==0 || p->pRight==0 );
-          assert( p->pRight==0  || p->pRight==p->pLeft );
+          assert( p->pRight==0  || p->pRight==p->pLeft
+                                || ExprHasProperty(p->pLeft, EP_Subquery) );
         }else{
           pNew->pLeft = sqlite3ExprDup(db, p->pLeft, 0);
         }
@@ -1478,6 +1495,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   pNew = sqlite3DbMallocRawNN(db, sqlite3DbMallocSize(db, p));
   if( pNew==0 ) return 0;
   pNew->nExpr = p->nExpr;
+  pNew->nAlloc = p->nAlloc;
   pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
@@ -1490,7 +1508,8 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     ){
       assert( pNewExpr->iColumn==0 || i>0 );
       if( pNewExpr->iColumn==0 ){
-        assert( pOldExpr->pLeft==pOldExpr->pRight );
+        assert( pOldExpr->pLeft==pOldExpr->pRight
+             || ExprHasProperty(pOldExpr->pLeft, EP_Subquery) );
         pPriorSelectCol = pNewExpr->pLeft = pNewExpr->pRight;
       }else{
         assert( i>0 );
@@ -1620,6 +1639,14 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
     if( p->pWin && db->mallocFailed==0 ) gatherSelectWindows(pNew);
 #endif
     pNew->selId = p->selId;
+    if( db->mallocFailed ){
+      /* Any prior OOM might have left the Select object incomplete.
+      ** Delete the whole thing rather than allow an incomplete Select
+      ** to be used by the code generator. */
+      pNew->pNext = 0;
+      sqlite3SelectDelete(db, pNew);
+      break;
+    }
     *pp = pNew;
     pp = &pNew->pPrior;
     pNext = pNew;
@@ -1650,41 +1677,64 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
 ** that the new entry was successfully appended.
 */
+static const struct ExprList_item zeroItem = {0};
+SQLITE_NOINLINE ExprList *sqlite3ExprListAppendNew(
+  sqlite3 *db,            /* Database handle.  Used for memory allocation */
+  Expr *pExpr             /* Expression to be appended. Might be NULL */
+){
+  struct ExprList_item *pItem;
+  ExprList *pList;
+
+  pList = sqlite3DbMallocRawNN(db, sizeof(ExprList)+sizeof(pList->a[0])*4 );
+  if( pList==0 ){
+    sqlite3ExprDelete(db, pExpr);
+    return 0;
+  }
+  pList->nAlloc = 4;
+  pList->nExpr = 1;
+  pItem = &pList->a[0];
+  *pItem = zeroItem;
+  pItem->pExpr = pExpr;
+  return pList;
+}
+SQLITE_NOINLINE ExprList *sqlite3ExprListAppendGrow(
+  sqlite3 *db,            /* Database handle.  Used for memory allocation */
+  ExprList *pList,        /* List to which to append. Might be NULL */
+  Expr *pExpr             /* Expression to be appended. Might be NULL */
+){
+  struct ExprList_item *pItem;
+  ExprList *pNew;
+  pList->nAlloc *= 2;
+  pNew = sqlite3DbRealloc(db, pList, 
+       sizeof(*pList)+(pList->nAlloc-1)*sizeof(pList->a[0]));
+  if( pNew==0 ){
+    sqlite3ExprListDelete(db, pList);
+    sqlite3ExprDelete(db, pExpr);
+    return 0;
+  }else{
+    pList = pNew;
+  }
+  pItem = &pList->a[pList->nExpr++];
+  *pItem = zeroItem;
+  pItem->pExpr = pExpr;
+  return pList;
+}
 ExprList *sqlite3ExprListAppend(
   Parse *pParse,          /* Parsing context */
   ExprList *pList,        /* List to which to append. Might be NULL */
   Expr *pExpr             /* Expression to be appended. Might be NULL */
 ){
   struct ExprList_item *pItem;
-  sqlite3 *db = pParse->db;
-  assert( db!=0 );
   if( pList==0 ){
-    pList = sqlite3DbMallocRawNN(db, sizeof(ExprList) );
-    if( pList==0 ){
-      goto no_mem;
-    }
-    pList->nExpr = 0;
-  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
-    ExprList *pNew;
-    pNew = sqlite3DbRealloc(db, pList, 
-         sizeof(*pList)+(2*(sqlite3_int64)pList->nExpr-1)*sizeof(pList->a[0]));
-    if( pNew==0 ){
-      goto no_mem;
-    }
-    pList = pNew;
+    return sqlite3ExprListAppendNew(pParse->db,pExpr);
+  }
+  if( pList->nAlloc<pList->nExpr+1 ){
+    return sqlite3ExprListAppendGrow(pParse->db,pList,pExpr);
   }
   pItem = &pList->a[pList->nExpr++];
-  assert( offsetof(struct ExprList_item,zEName)==sizeof(pItem->pExpr) );
-  assert( offsetof(struct ExprList_item,pExpr)==0 );
-  memset(&pItem->zEName,0,sizeof(*pItem)-offsetof(struct ExprList_item,zEName));
+  *pItem = zeroItem;
   pItem->pExpr = pExpr;
   return pList;
-
-no_mem:     
-  /* Avoid leaking memory if malloc has failed. */
-  sqlite3ExprDelete(db, pExpr);
-  sqlite3ExprListDelete(db, pList);
-  return 0;
 }
 
 /*
@@ -2297,8 +2347,10 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
 */
 int sqlite3ExprCanBeNull(const Expr *p){
   u8 op;
+  assert( p!=0 );
   while( p->op==TK_UPLUS || p->op==TK_UMINUS ){
     p = p->pLeft;
+    assert( p!=0 );
   }
   op = p->op;
   if( op==TK_REGISTER ) op = p->op2;
@@ -3148,7 +3200,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 */
 int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
   int nVector = sqlite3ExprVectorSize(pIn->pLeft);
-  if( (pIn->flags & EP_xIsSelect) ){
+  if( (pIn->flags & EP_xIsSelect)!=0 && !pParse->db->mallocFailed ){
     if( nVector!=pIn->x.pSelect->pEList->nExpr ){
       sqlite3SubselectError(pParse, pIn->x.pSelect->pEList->nExpr, nVector);
       return 1;
@@ -3339,6 +3391,7 @@ static void sqlite3ExprCodeIN(
   if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
+    if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
     if( sqlite3ExprCanBeNull(p) ){
       sqlite3VdbeAddOp2(v, OP_IsNull, rLhs+i, destStep2);
       VdbeCoverage(v);
@@ -3964,7 +4017,7 @@ expr_code_doover:
       ** Expr node to be passed into this function, it will be handled
       ** sanely and not crash.  But keep the assert() to bring the problem
       ** to the attention of the developers. */
-      assert( op==TK_NULL );
+      assert( op==TK_NULL || pParse->db->mallocFailed );
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       return target;
     }
@@ -4030,8 +4083,9 @@ expr_code_doover:
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-        codeCompare(pParse, pLeft, pExpr->pRight, op,
-            r1, r2, inReg, SQLITE_STOREP2 | p5,
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, inReg);
+        codeCompare(pParse, pLeft, pExpr->pRight, op, r1, r2,
+            sqlite3VdbeCurrentAddr(v)+2, p5,
             ExprHasProperty(pExpr,EP_Commuted));
         assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
         assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
@@ -4039,6 +4093,11 @@ expr_code_doover:
         assert(TK_GE==OP_Ge); testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
         assert(TK_EQ==OP_Eq); testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
         assert(TK_NE==OP_Ne); testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
+        if( p5==SQLITE_NULLEQ ){
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, inReg);
+        }else{
+          sqlite3VdbeAddOp3(v, OP_ZeroOrNull, r1, inReg, r2);
+        }
         testcase( regFree1==0 );
         testcase( regFree2==0 );
       }
@@ -5781,8 +5840,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
           pAggInfo->aCol[iAgg].pCExpr = pExpr;
-          pParse->pConstExpr = 
-             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+          sqlite3ExprDeferredDelete(pParse, pExpr);
         }
       }
     }else{
@@ -5791,8 +5849,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
           pAggInfo->aFunc[iAgg].pFExpr = pExpr;
-          pParse->pConstExpr = 
-             sqlite3ExprListAppend(pParse, pParse->pConstExpr, pExpr);
+          sqlite3ExprDeferredDelete(pParse, pExpr);
         }
       }
     }

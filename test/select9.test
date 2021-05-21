@@ -436,19 +436,19 @@ do_test select9-5.1 {
     EXPLAIN QUERY PLAN
        SELECT * FROM v5 WHERE x='12345' ORDER BY y;
   }
-} {~/SCAN TABLE/}  ;# Uses indices with "*"
+} {~/SCAN/}  ;# Uses indices with "*"
 do_test select9-5.2 {
   db eval {
     EXPLAIN QUERY PLAN
        SELECT x, y FROM v5 WHERE x='12345' ORDER BY y;
   }
-} {~/SCAN TABLE/}  ;# Uses indices with "x, y"
+} {~/SCAN/}  ;# Uses indices with "x, y"
 do_test select9-5.3 {
   db eval {
     EXPLAIN QUERY PLAN
        SELECT x, y FROM v5 WHERE +x='12345' ORDER BY y;
   }
-} {/SCAN TABLE/}   ;# Full table scan if the "+x" prevents index usage.
+} {/SCAN/}   ;# Full table scan if the "+x" prevents index usage.
 
 # 2013-07-09:  Ticket [490a4b7235624298]: 
 # "WHERE 0" on the first element of a UNION causes an assertion fault

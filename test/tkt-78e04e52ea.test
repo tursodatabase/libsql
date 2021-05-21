@@ -42,7 +42,7 @@ do_test tkt-78e04-1.3 {
 } {}
 do_test tkt-78e04-1.4 {
  db eval {EXPLAIN QUERY PLAN SELECT "" FROM "" WHERE "" LIKE '1e5%';}
-} {/*SCAN TABLE  USING COVERING INDEX i1*/}
+} {/*SCAN  USING COVERING INDEX i1*/}
 do_test tkt-78e04-1.5 {
   execsql {
     DROP TABLE "";
@@ -55,12 +55,12 @@ do_test tkt-78e04-2.1 {
     CREATE INDEX "" ON t2(x);
     EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE x=5;
   }
-} {/*SEARCH TABLE t2 USING COVERING INDEX  (x=?)*/}
+} {/*SEARCH t2 USING COVERING INDEX  (x=?)*/}
 do_test tkt-78e04-2.2 {
   execsql {
     DROP INDEX "";
     EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE x=2;
   }
-} {/*SCAN TABLE t2*/}
+} {/*SCAN t2*/}
 
 finish_test

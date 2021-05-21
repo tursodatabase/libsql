@@ -134,18 +134,11 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     StrAccum x;
     char zLine[100];
     sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-    sqlite3_str_appendf(&x, "{%d:*}", pItem->iCursor);
-    if( pItem->zDatabase ){
-      sqlite3_str_appendf(&x, " %s.%s", pItem->zDatabase, pItem->zName);
-    }else if( pItem->zName ){
-      sqlite3_str_appendf(&x, " %s", pItem->zName);
-    }
+    x.printfFlags |= SQLITE_PRINTF_INTERNAL;
+    sqlite3_str_appendf(&x, "{%d:*} %!S", pItem->iCursor, pItem);
     if( pItem->pTab ){
       sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p used=%llx",
            pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab, pItem->colUsed);
-    }
-    if( pItem->zAlias ){
-      sqlite3_str_appendf(&x, " (AS %s)", pItem->zAlias);
     }
     if( pItem->fg.jointype & JT_LEFT ){
       sqlite3_str_appendf(&x, " LEFT-JOIN");

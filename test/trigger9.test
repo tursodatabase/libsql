@@ -242,15 +242,12 @@ do_execsql_test 4.1 {
   END;
 }
 
-do_execsql_test 4.2 {
+do_catchsql_test 4.2 {
   DELETE FROM v1 WHERE rowid=1;
-} {}
+} {1 {no such column: rowid}}
 
-do_execsql_test 4.3 {
+do_catchsql_test 4.3 {
   UPDATE v1 SET a=b WHERE rowid=2;
-} {}
-
-
-
+} {1 {no such column: rowid}}
 
 finish_test

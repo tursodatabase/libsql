@@ -30,12 +30,11 @@ proc is_distinct_noop {sql} {
   set program1 [list]
   set program2 [list]
   db eval "EXPLAIN $sql1" {
-    if {$opcode != "Noop"} { lappend program1 $opcode }
+    if {$opcode != "Noop" && $opcode != "Explain"} { lappend program1 $opcode }
   }
   db eval "EXPLAIN $sql2" {
-    if {$opcode != "Noop"} { lappend program2 $opcode }
+    if {$opcode != "Noop" && $opcode != "Explain"} { lappend program2 $opcode }
   }
-
   return [expr {$program1==$program2}]
 }
 
@@ -128,7 +127,6 @@ foreach {tn noop sql} {
   21  0   "SELECT DISTINCT c2 FROM t3"
 
   22  0   "SELECT DISTINCT * FROM (SELECT 1, 2, 3 UNION SELECT 4, 5, 6)"
-  23  1   "SELECT DISTINCT rowid FROM (SELECT 1, 2, 3 UNION SELECT 4, 5, 6)"
 
   24  0   "SELECT DISTINCT rowid/2 FROM t1"
   25  1   "SELECT DISTINCT rowid/2, rowid FROM t1"
@@ -293,5 +291,14 @@ do_execsql_test 7.1 {
     t4 CROSS JOIN t3 CROSS JOIN t1 
   WHERE (t1.a=t3.a) AND (SELECT count(*) FROM t2 AS y WHERE t4.x!='abc')=t1.a
 } {2 2 2}
+
+# 2021-04-06 forum post https://sqlite.org/forum/forumpost/66954e9ece
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE person ( pid INT) ;
+  CREATE UNIQUE INDEX idx ON person ( pid ) WHERE pid == 1;
+  INSERT INTO person VALUES (1), (10), (10);
+  SELECT DISTINCT pid FROM person where pid = 10;
+} {10}
 
 finish_test

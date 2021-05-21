@@ -74,8 +74,8 @@ do_execsql_test 210 {
 
 # At one point, SQLite was using the inferior plan:
 #
-#   0|0|1|SEARCH TABLE v USING INDEX ve (e>?)
-#   0|1|0|SEARCH TABLE u USING COVERING INDEX uab (ANY(a) AND b=?)
+#   0|0|1|SEARCH v USING INDEX ve (e>?)
+#   0|1|0|SEARCH u USING COVERING INDEX uab (ANY(a) AND b=?)
 #
 # on the basis that the real index "uab" must be better than the automatic
 # index. This is not right - a skip-scan is not necessarily better than an
@@ -85,8 +85,8 @@ do_eqp_test 220 {
   select count(*) from u, v where u.b = v.b and v.e > 34;
 } {
   QUERY PLAN
-  |--SEARCH TABLE v USING INDEX ve (e>?)
-  `--SEARCH TABLE u USING AUTOMATIC COVERING INDEX (b=?)
+  |--SEARCH v USING INDEX ve (e>?)
+  `--SEARCH u USING AUTOMATIC COVERING INDEX (b=?)
 }
 
 

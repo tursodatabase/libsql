@@ -362,12 +362,12 @@ ifcapable explain {
     WHERE t1.a=80 AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
+    |--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
        |--INDEX 1
-       |  `--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       |  `--SEARCH t2 USING INDEX t2d (d=?)
        `--INDEX 3
-          `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+          `--SEARCH t2 USING COVERING INDEX t2f (f=?)
   }]
   do_eqp_test where9-3.2 {
     SELECT coalesce(t2.a,9999)
@@ -375,12 +375,12 @@ ifcapable explain {
     WHERE t1.a=80
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
+    |--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
        |--INDEX 1
-       |  `--SEARCH TABLE t2 USING INDEX t2d (d=?)
+       |  `--SEARCH t2 USING INDEX t2d (d=?)
        `--INDEX 2
-          `--SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)
+          `--SEARCH t2 USING COVERING INDEX t2f (f=?)
   }]
 } 
 
@@ -461,23 +461,23 @@ do_eqp_test where9-5.1 {
   QUERY PLAN
   `--MULTI-INDEX OR
      |--INDEX 1
-     |  `--SEARCH TABLE t1 USING INDEX t1c (c=?)
+     |  `--SEARCH t1 USING INDEX t1c (c=?)
      `--INDEX 2
-        `--SEARCH TABLE t1 USING INDEX t1d (d=?)
+        `--SEARCH t1 USING INDEX t1d (d=?)
 }
 
 # In contrast, b=1000 is preferred over any OR-clause.
 #
 do_eqp_test where9-5.2 {
   SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
-} {SEARCH TABLE t1 USING INDEX t1b (b=?)}
+} {SEARCH t1 USING INDEX t1b (b=?)}
 
 # Likewise, inequalities in an AND are preferred over inequalities in
 # an OR.
 #
 do_eqp_test where9-5.3 {
   SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
-} {SEARCH TABLE t1 USING INDEX t1b (b>?)}
+} {SEARCH t1 USING INDEX t1b (b>?)}
 
 ############################################################################
 # Make sure OR-clauses work correctly on UPDATE and DELETE statements.
@@ -982,6 +982,23 @@ do_test where9-10.2 {
   }
 } {1 {} 1}
 
-
+# dbsqlfuzz 9df1d53c24c4c96af0dae15ee764897af415ac76
+# The MULTI-INDEX OR processing evaluates the same WHERE-clause sub-expression
+# twice.  But if that sub-expression contains a UNION ALL SELECT statement
+# subject to query flattening, the sub-expression might be transformed in a
+# way that it can only be code-generated once.  An assert() will fail on
+# the second attempt to generate code from the same sub-expression.
+# The solution is to make a copy of sub-expressions used by MULTI-INDEX OR
+#
+reset_db
+do_execsql_test where9-11.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE t2_a(k INTEGER PRIMARY KEY, v TEXT);
+  CREATE TABLE t2_b(k INTEGER PRIMARY KEY, v TEXT);
+  CREATE VIEW t2 AS SELECT * FROM t2_a UNION ALL SELECT * FROM t2_b;
+  SELECT 1 FROM t1 JOIN t1 USING(a)
+   WHERE (a=1)
+      OR (a=2 AND (SELECT 4 FROM t2,(SELECT 5 FROM t1 ORDER BY a) WHERE a));
+} {}
 
 finish_test

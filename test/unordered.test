@@ -40,27 +40,27 @@ foreach idxmode {ordered unordered} {
   sqlite3 db test.db
   foreach {tn sql r(ordered) r(unordered)} {
     1   "SELECT * FROM t1 ORDER BY a"
-        {SCAN TABLE t1 USING INDEX i1}
-        {SCAN TABLE t1*USE TEMP B-TREE FOR ORDER BY}
+        {SCAN t1 USING INDEX i1}
+        {SCAN t1*USE TEMP B-TREE FOR ORDER BY}
     2   "SELECT * FROM t1 WHERE a > 100"
-        {SEARCH TABLE t1 USING INDEX i1 (a>?)}
-        {SCAN TABLE t1}
+        {SEARCH t1 USING INDEX i1 (a>?)}
+        {SCAN t1}
     3   "SELECT * FROM t1 WHERE a = ? ORDER BY rowid"
-        {SEARCH TABLE t1 USING INDEX i1 (a=?)}
-        {SEARCH TABLE t1 USING INDEX i1 (a=?)*USE TEMP B-TREE FOR ORDER BY}
+        {SEARCH t1 USING INDEX i1 (a=?)}
+        {SEARCH t1 USING INDEX i1 (a=?)*USE TEMP B-TREE FOR ORDER BY}
     4   "SELECT max(a) FROM t1"
-        {SEARCH TABLE t1 USING COVERING INDEX i1}
-        {SEARCH TABLE t1}
+        {SEARCH t1 USING COVERING INDEX i1}
+        {SEARCH t1}
     5   "SELECT group_concat(b) FROM t1 GROUP BY a"
-        {SCAN TABLE t1 USING INDEX i1}
-        {SCAN TABLE t1*USE TEMP B-TREE FOR GROUP BY}
+        {SCAN t1 USING INDEX i1}
+        {SCAN t1*USE TEMP B-TREE FOR GROUP BY}
 
     6   "SELECT * FROM t1 WHERE a = ?"
-        {SEARCH TABLE t1 USING INDEX i1 (a=?)}
-        {SEARCH TABLE t1 USING INDEX i1 (a=?)}
+        {SEARCH t1 USING INDEX i1 (a=?)}
+        {SEARCH t1 USING INDEX i1 (a=?)}
     7   "SELECT count(*) FROM t1"
-        {SCAN TABLE t1 USING COVERING INDEX i1}
-        {SCAN TABLE t1}
+        {SCAN t1 USING COVERING INDEX i1}
+        {SCAN t1}
   } {
     do_eqp_test 1.$idxmode.$tn $sql $r($idxmode)
   }

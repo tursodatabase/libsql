@@ -113,7 +113,7 @@ do_execsql_test index7-1.7 {
 do_execsql_test index7-1.7eqp {
   EXPLAIN QUERY PLAN
   SELECT b FROM t1 WHERE a NOT LIKE 'abc%' AND a=7 ORDER BY +b;
-} {/SEARCH TABLE t1 USING COVERING INDEX bad1 /}
+} {/SEARCH t1 USING COVERING INDEX bad1 /}
 do_execsql_test index7-1.8 {
   DELETE FROM t1 WHERE c>=101;
   DROP INDEX IF EXISTS bad1;
@@ -202,28 +202,28 @@ do_test index7-2.2 {
     EXPLAIN QUERY PLAN
     SELECT * FROM t2 WHERE a=5;
   }
-} {/.* TABLE t2 USING COVERING INDEX t2a1 .*/}
+} {/(SCAN|SEARCH) t2 USING COVERING INDEX t2a1 /}
 ifcapable stat4 {
   do_test index7-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
       SELECT * FROM t2 WHERE a IS NOT NULL;
     }
-  } {/.* TABLE t2 USING COVERING INDEX t2a1 .*/}
+  } {/(SCAN|SEARCH) t2 USING COVERING INDEX t2a1 /}
 } else {
   do_test index7-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
       SELECT * FROM t2 WHERE a IS NOT NULL AND a>0;
     }
-  } {/.* TABLE t2 USING COVERING INDEX t2a1 .*/}
+  } {/(SCAN|SEARCH) t2 USING COVERING INDEX t2a1 /}
 }
 do_test index7-2.4 {
   execsql {
     EXPLAIN QUERY PLAN
     SELECT * FROM t2 WHERE a IS NULL;
   }
-} {~/.*INDEX t2a1.*/}
+} {~/INDEX t2a1/}
 
 do_execsql_test index7-2.101 {
   DROP INDEX t2a1;
@@ -321,7 +321,7 @@ do_execsql_test index7-6.3 {
 }
 do_eqp_test index7-6.4 {
   SELECT * FROM v4 WHERE d='xyz' AND c='def'
-} {SEARCH TABLE t4 USING INDEX i4 (c=?)}
+} {SEARCH t4 USING INDEX i4 (c=?)}
 
 do_catchsql_test index7-6.5 {
   CREATE INDEX t5a ON t5(a) WHERE a=#1;
@@ -349,7 +349,7 @@ do_execsql_test index7-8.1 {
   INSERT INTO t1(x) VALUES(1),(2);
   ANALYZE;
   EXPLAIN QUERY PLAN SELECT 1 FROM t1 WHERE y=5;
-} {/SEARCH TABLE t1 USING COVERING INDEX t1y/}
+} {/SEARCH t1 USING COVERING INDEX t1y/}
 
 
 finish_test

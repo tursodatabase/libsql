@@ -2412,6 +2412,7 @@ Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
   return pRet;
 }
 
+#ifdef SQLITE_TEST
 static char *fts5ExprTermPrint(Fts5ExprTerm *pTerm){
   sqlite3_int64 nByte = 0;
   Fts5ExprTerm *p;
@@ -2778,12 +2779,14 @@ static void fts5ExprFold(
     sqlite3_result_int(pCtx, sqlite3Fts5UnicodeFold(iCode, bRemoveDiacritics));
   }
 }
+#endif /* ifdef SQLITE_TEST */
 
 /*
 ** This is called during initialization to register the fts5_expr() scalar
 ** UDF with the SQLite handle passed as the only argument.
 */
 int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
+#ifdef SQLITE_TEST
   struct Fts5ExprFunc {
     const char *z;
     void (*x)(sqlite3_context*,int,sqlite3_value**);
@@ -2801,6 +2804,10 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     struct Fts5ExprFunc *p = &aFunc[i];
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
+#else
+  int rc = SQLITE_OK;
+  UNUSED_PARAM2(pGlobal,db);
+#endif
 
   /* Avoid warnings indicating that sqlite3Fts5ParserTrace() and
   ** sqlite3Fts5ParserFallback() are unused */

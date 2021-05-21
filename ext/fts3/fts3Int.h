@@ -134,7 +134,7 @@ SQLITE_EXTENSION_INIT3
 ** is used for assert() conditions that are true only if it can be 
 ** guranteed that the database is not corrupt.
 */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
+#ifdef SQLITE_DEBUG
 extern int sqlite3_fts3_may_be_corrupt;
 # define assert_fts3_nc(x) assert(sqlite3_fts3_may_be_corrupt || (x))
 #else

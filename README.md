@@ -55,11 +55,11 @@ a stand-alone program.  To install, simply download or build the single
 executable file and put that file someplace on your $PATH.)
 Then run commands like this:
 
-        mkdir ~/sqlite
+        mkdir -p ~/sqlite ~/Fossils
         cd ~/sqlite
-        fossil clone https://www.sqlite.org/src sqlite.fossil
-        fossil open sqlite.fossil
-    
+        fossil clone https://www.sqlite.org/src ~/Fossils/sqlite.fossil
+        fossil open ~/Fossils/sqlite.fossil
+
 After setting up a repository using the steps above, you can always
 update to the lastest version using:
 

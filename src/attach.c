@@ -95,7 +95,7 @@ static void attachFunc(
   if( zFile==0 ) zFile = "";
   if( zName==0 ) zName = "";
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
 # define REOPEN_AS_MEMDB(db)  (db->init.reopenMemdb)
 #else
 # define REOPEN_AS_MEMDB(db)  (0)
@@ -464,14 +464,17 @@ static int fixSelectCb(Walker *p, Select *pSelect){
   if( NEVER(pList==0) ) return WRC_Continue;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pFix->bTemp==0 ){
-      if( pItem->zDatabase && iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
-        sqlite3ErrorMsg(pFix->pParse,
-            "%s %T cannot reference objects in database %s",
-            pFix->zType, pFix->pName, pItem->zDatabase);
-        return WRC_Abort;
+      if( pItem->zDatabase ){
+        if( iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
+          sqlite3ErrorMsg(pFix->pParse,
+              "%s %T cannot reference objects in database %s",
+              pFix->zType, pFix->pName, pItem->zDatabase);
+          return WRC_Abort;
+        }
+        sqlite3DbFree(db, pItem->zDatabase);
+        pItem->zDatabase = 0;
+        pItem->fg.notCte = 1;
       }
-      sqlite3DbFree(db, pItem->zDatabase);
-      pItem->zDatabase = 0;
       pItem->pSchema = pFix->pSchema;
       pItem->fg.fromDDL = 1;
     }
@@ -511,7 +514,7 @@ void sqlite3FixInit(
   pFix->w.pParse = pParse;
   pFix->w.xExprCallback = fixExprCb;
   pFix->w.xSelectCallback = fixSelectCb;
-  pFix->w.xSelectCallback2 = 0;
+  pFix->w.xSelectCallback2 = sqlite3WalkWinDefnDummyCallback;
   pFix->w.walkerDepth = 0;
   pFix->w.eCode = 0;
   pFix->w.u.pFix = pFix;
@@ -573,14 +576,16 @@ int sqlite3FixTriggerStep(
       return 1;
     }
 #ifndef SQLITE_OMIT_UPSERT
-    if( pStep->pUpsert ){
-      Upsert *pUp = pStep->pUpsert;
-      if( sqlite3WalkExprList(&pFix->w, pUp->pUpsertTarget)
-       || sqlite3WalkExpr(&pFix->w, pUp->pUpsertTargetWhere)
-       || sqlite3WalkExprList(&pFix->w, pUp->pUpsertSet)
-       || sqlite3WalkExpr(&pFix->w, pUp->pUpsertWhere)
-      ){
-        return 1;
+    {
+      Upsert *pUp;
+      for(pUp=pStep->pUpsert; pUp; pUp=pUp->pNextUpsert){
+        if( sqlite3WalkExprList(&pFix->w, pUp->pUpsertTarget)
+         || sqlite3WalkExpr(&pFix->w, pUp->pUpsertTargetWhere)
+         || sqlite3WalkExprList(&pFix->w, pUp->pUpsertSet)
+         || sqlite3WalkExpr(&pFix->w, pUp->pUpsertWhere)
+        ){
+          return 1;
+        }
       }
     }
 #endif

@@ -1312,7 +1312,6 @@ static void walCleanupHash(Wal *pWal){
   int iLimit = 0;                 /* Zero values greater than this */
   int nByte;                      /* Number of bytes to zero in aPgno[] */
   int i;                          /* Used to iterate through aHash[] */
-  int rc;                         /* Return code form walHashGet() */
   int iWal = walidxGetFile(&pWal->hdr);
   u32 mxFrame = walidxGetMxFrame(&pWal->hdr, iWal);
 
@@ -1337,8 +1336,8 @@ static void walCleanupHash(Wal *pWal){
   */
   assert( pWal->nWiData>walFramePage(iExternal) );
   assert( pWal->apWiData[walFramePage(iExternal)] );
-  rc = walHashGet(pWal, walFramePage(iExternal), &sLoc);
-  if( NEVER(rc) ) return; /* Defense-in-depth, in case (1) above is wrong */
+  i = walHashGet(pWal, walFramePage(iExternal), &sLoc);
+  if( NEVER(i) ) return; /* Defense-in-depth, in case (1) above is wrong */
 
   /* Zero all hash-table entries that correspond to frame numbers greater
   ** than pWal->hdr.mxFrame.

@@ -983,6 +983,7 @@ do_test vtab1.10-5 {
 proc match_func {args} {return ""}
 do_test vtab1.10-6 {
   set echo_module ""
+  sqlite_delete_function db match
   db function match match_func
   execsql {
     SELECT * FROM e WHERE match('pattern', rowid, 'pattern2');

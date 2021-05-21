@@ -101,7 +101,7 @@ do_rollback_test 2.2 -setup {
 #
 do_eqp_test 3.1 {
   SELECT i FROM t1 WHERE (i%2)==0 ORDER BY h DESC;
-} {SCAN TABLE t1 USING INDEX i1}
+} {SCAN t1 USING INDEX i1}
 do_rollback_test 3.2 -setup {
   BEGIN;
     DELETE FROM t1 WHERE (i%2)==1;
@@ -131,7 +131,7 @@ do_execsql_test 4.1 { UPDATE t1 SET h = $leader || h; }
 
 do_eqp_test 4.2 {
   SELECT i FROM t1 WHERE (i%2)==0 ORDER BY h ASC;
-} {SCAN TABLE t1 USING INDEX i1}
+} {SCAN t1 USING INDEX i1}
 do_rollback_test 4.3 -setup {
   BEGIN;
     DELETE FROM t1 WHERE (i%2)==1;

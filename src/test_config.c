@@ -65,6 +65,13 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options","casesensitivelike","0",TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef CONFIG_SLOWDOWN_FACTOR
+  Tcl_SetVar2(interp, "sqlite_options","configslower",
+              STRINGVALUE(CONFIG_SLOWDOWN_FACTOR),TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options","configslower","1.0",TCL_GLOBAL_ONLY);
+#endif
+
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   Tcl_SetVar2(interp, "sqlite_options", "curdir", "1", TCL_GLOBAL_ONLY);
 #else
@@ -148,7 +155,7 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "hiddencolumns", "0", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
   Tcl_SetVar2(interp, "sqlite_options", "deserialize", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "deserialize", "0", TCL_GLOBAL_ONLY);
@@ -224,6 +231,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "atomicwrite", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "atomicwrite", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_GEOPOLY
+  Tcl_SetVar2(interp, "sqlite_options", "geopoly", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "geopoly", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_JSON1

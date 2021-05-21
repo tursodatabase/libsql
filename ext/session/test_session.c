@@ -246,6 +246,8 @@ static int SQLITE_TCLAPI test_session_cmd(
     { "patchset",     0, "",           }, /* 7 */
     { "diff",         2, "FROMDB TBL", }, /* 8 */
     { "memory_used",  0, "",           }, /* 9 */
+    { "changeset_size", 0, "",         }, /* 10 */
+    { "object_config_size", 1, "INTEGER", }, /* 11 */
     { 0 }
   };
   int iSub;
@@ -357,6 +359,29 @@ static int SQLITE_TCLAPI test_session_cmd(
       Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nMalloc));
       break;
     }
+
+    case 10: {
+      sqlite3_int64 nSize = sqlite3session_changeset_size(pSession);
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nSize));
+      break;
+    }
+    case 11: {
+      int rc;
+      int iArg;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iArg) ){
+        return TCL_ERROR;
+      }
+      rc = sqlite3session_object_config(
+          pSession, SQLITE_SESSION_OBJCONFIG_SIZE, &iArg
+      );
+      if( rc!=SQLITE_OK ){
+        extern const char *sqlite3ErrName(int);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+      }else{
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(iArg));
+      }
+      break;
+    }
   }
 
   return TCL_OK;
@@ -382,6 +407,7 @@ static int SQLITE_TCLAPI test_sqlite3session(
   Tcl_CmdInfo info;
   int rc;                         /* sqlite3session_create() return code */
   TestSession *p;                 /* New wrapper object */
+  int iArg = -1;
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "CMD DB-HANDLE DB-NAME");
@@ -401,6 +427,13 @@ static int SQLITE_TCLAPI test_sqlite3session(
     ckfree((char*)p);
     return test_session_error(interp, rc, 0);
   }
+
+  /* Query the SQLITE_SESSION_OBJCONFIG_SIZE option to ensure that it
+  ** is clear by default. Then set it. */
+  sqlite3session_object_config(p->pSession,SQLITE_SESSION_OBJCONFIG_SIZE,&iArg);
+  assert( iArg==0 );
+  iArg = 1;
+  sqlite3session_object_config(p->pSession,SQLITE_SESSION_OBJCONFIG_SIZE,&iArg);
 
   Tcl_CreateObjCommand(
       interp, Tcl_GetString(objv[1]), test_session_cmd, (ClientData)p,

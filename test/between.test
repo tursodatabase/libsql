@@ -58,10 +58,10 @@ proc queryplan {sql} {
   set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
   # puts eqp=$eqp
   foreach {a b c x} $eqp {
-    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
-        $x all as tab idx]} {
+    if {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all ss as tab idx]} {
       lappend data $tab $idx
-    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+)\y} $x all ss as tab]} {
       lappend data $tab *
     }
   }
