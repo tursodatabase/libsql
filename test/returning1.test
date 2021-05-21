@@ -184,4 +184,138 @@ do_catchsql_test 8.4 {
   INSERT INTO t1 VALUES(3) RETURNING a, (SELECT c FROM t2 WHERE t1.a=t2.b) AS x;
 } {0 {3 40}}
 
+ifcapable vtab {
+# dbsqlfuzz finds/crash-486f791cbe2dc45839310073e71367a1d8ad22dd
+do_catchsql_test 9.1 {
+  UPDATE pragma_encoding SET encoding='UTF-8' RETURNING a, b, *;
+} {1 {table pragma_encoding may not be modified}}
+} ;# ifcapable vtab
+
+# dbsqlfuzz crash-0081f863d7b2002045ac2361879fc80dfebb98f1
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE t1_a(a, b);
+  CREATE VIEW t1 AS SELECT a, b FROM t1_a;
+
+  INSERT INTO t1_a VALUES('x', 'y');
+  INSERT INTO t1_a VALUES('x', 'y');
+  INSERT INTO t1_a VALUES('x', 'y');
+
+  CREATE TABLE log(op, r, a, b);
+}
+do_execsql_test 10.2 {
+  CREATE TRIGGER tr1 INSTEAD OF INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('insert', new.rowid, new.a, new.b);
+  END;
+  CREATE TRIGGER tr2 INSTEAD OF UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('update', new.rowid, new.a, new.b);
+  END;
+}
+
+do_catchsql_test 10.3 {
+  INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
+} {1 {no such column: rowid}}
+
+do_catchsql_test 10.3 {
+  UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
+} {1 {no such column: rowid}}
+
+do_execsql_test 10.4 {
+  SELECT * FROM log;
+} {}
+
+# 2021-04-27 dbsqlfuzz 78b9400770ef8cc7d9427dfba26f4fcf46ea7dc2
+# Returning clauses on TEMP tables with triggers.
+#
+reset_db
+do_execsql_test 11.1 {
+  CREATE TEMP TABLE t1(a,b);
+  CREATE TEMP TABLE t2(c,d);
+  CREATE TEMP TABLE t3(e,f);
+  CREATE TEMP TABLE log(op,x,y);
+  CREATE TEMP TRIGGER t1r1 AFTER INSERT ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('I1',new.a,new.b);
+  END;
+  CREATE TEMP TRIGGER t1r2 BEFORE DELETE ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('D1',old.a,old.b);
+  END;
+  CREATE TEMP TRIGGER t2r3 AFTER UPDATE ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('U1',new.a,new.b);
+  END;
+  CREATE TEMP TRIGGER t2r1 BEFORE INSERT ON t2 BEGIN
+     INSERT INTO log(op,x,y) VALUES('I2',new.c,new.d);
+  END;
+  CREATE TEMP TRIGGER t3r1 AFTER DELETE ON t3 BEGIN
+     INSERT INTO log(op,x,y) VALUES('D3',old.e,old.f);
+  END;
+  CREATE TEMP TRIGGER t3r2 BEFORE UPDATE ON t3 BEGIN
+     INSERT INTO log(op,x,y) VALUES('U3',new.e,new.f);
+  END;
+  INSERT INTO t1(a,b) VALUES(1,2),('happy','glad') RETURNING a, b, '|';
+} {1 2 | happy glad |}
+do_execsql_test 11.2 {
+  UPDATE t1 SET b=9 WHERE a=1 RETURNING a, b, 'x';
+} {1 9 x}
+do_execsql_test 11.3 {
+  DELETE FROM t1 WHERE a<>'xray' RETURNING a, b, '@';
+} {1 9 @ happy glad @}
+do_execsql_test 11.4 {
+  SELECT * FROM log;
+  DELETE FROM log;
+} {I1 1 2 I1 happy glad U1 1 9 D1 1 9 D1 happy glad}
+do_execsql_test 11.5 {
+  INSERT INTO t2 VALUES('bravo','charlie') RETURNING d, c, 'z';
+} {charlie bravo z}
+do_execsql_test 11.6 {
+  SELECT * FROM log;
+  DELETE FROM log;
+} {I2 bravo charlie}
+do_execsql_test 11.7 {
+  INSERT INTO t3(e) VALUES(1),(2),(3) RETURNING 'I', e;
+  UPDATE t3 SET f=e+100 RETURNING 'U', e, f;
+  DELETE FROM t3 WHERE f>100 RETURNING 'D', e, f;
+} {I 1 I 2 I 3 U 1 101 U 2 102 U 3 103 D 1 101 D 2 102 D 3 103}
+do_execsql_test 11.6 {
+  SELECT * FROM log;
+  DELETE FROM log;
+} {U3 1 101 U3 2 102 U3 3 103 D3 1 101 D3 2 102 D3 3 103}
+
+reset_db
+do_execsql_test 11.11 {
+  CREATE TEMP TABLE t1(a,b);
+  CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN SELECT 1; END;
+  DELETE FROM t1 RETURNING *;
+  DROP TRIGGER r1;
+  INSERT INTO t1 VALUES(5,30);
+} {}
+do_execsql_test 11.12 {
+  SELECT * FROM t1;
+} {5 30}
+
+# RETURNING column names are dequoted.
+# https://sqlite.org/forum/forumpost/033daf0b32
+#
+reset_db
+do_test 12.1 {
+  db eval {CREATE TABLE t1(x INT, y INT)}
+  unset -nocomplain cname
+  db eval {INSERT INTO t1(x) VALUES(1) RETURNING "x";} cname {}
+  lsort [array names cname]
+} {* x}
+do_test 12.2 {
+  unset -nocomplain cname
+  db eval {INSERT INTO t1(x) VALUES(2) RETURNING [x];} cname {}
+  lsort [array names cname]
+} {* x} 
+do_test 12.3 {
+  unset -nocomplain cname
+  db eval {INSERT INTO t1(x) VALUES(3) RETURNING x AS [xyz];} cname {}
+  lsort [array names cname]
+} {* xyz}
+do_test 12.4 {
+  unset -nocomplain cname
+  db eval {INSERT INTO t1(x,y) VALUES(4,5) RETURNING "x"+"y";} cname {}
+  lsort [array names cname]
+} {{"x"+"y"} *}
+
 finish_test

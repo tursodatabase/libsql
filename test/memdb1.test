@@ -157,6 +157,16 @@ do_execsql_test 410 {
   PRAGMA integrity_check;
   SELECT * FROM t4;
 } {ok hello world!}
+do_execsql_test 420 {
+  PRAGMA journal_mode=TRUNCATE;
+  PRAGMA journal_mode=OFF;
+  PRAGMA journal_mode=DELETE;
+  PRAGMA journal_mode=WAL;
+  PRAGMA journal_mode=PERSIST;
+  PRAGMA journal_mode=MEMORY;
+  PRAGMA journal_mode=OFF;
+  PRAGMA journal_mode=DELETE;
+} {truncate off delete delete persist memory off delete}
 
 # Deserialize something that is not a database.
 #

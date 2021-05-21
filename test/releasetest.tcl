@@ -50,11 +50,11 @@ array set ::Configs [strip_comments {
     -O2
     --disable-amalgamation --disable-shared
     --enable-session
-    -DSQLITE_ENABLE_DESERIALIZE
   }
   "Sanitize" {
     CC=clang -fsanitize=undefined
     -DSQLITE_ENABLE_STAT4
+    -DCONFIG_SLOWDOWN_FACTOR=5.0
     --enable-session
   }
   "Stdcall" {
@@ -179,7 +179,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
-    -DSQLITE_ENABLE_DESERIALIZE=1
     --enable-json1 --enable-fts5 --enable-session
   }
   "Locking-Style" {
@@ -254,6 +253,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
+    -DCONFIG_SLOWDOWN_FACTOR=8.0
     --enable-json1
   }
 

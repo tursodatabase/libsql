@@ -26,7 +26,6 @@
 */
 #define SQLITE_THREADSAFE 0
 #define SQLITE_OMIT_LOAD_EXTENSION 1
-#define SQLITE_ENABLE_DESERIALIZE 1
 #include "sqlite3.c"
 
 /* Content of the read-only test database */

@@ -97,4 +97,23 @@ do_execsql_test in6-3.110 {
   SELECT quote(v5) FROM v0 LEFT JOIN v3 ON v4 = NULL AND v5 IN(0);
 } {NULL}
 
+# 2021-04-29 forum https://sqlite.org/forum/forumpost/6a3ec138e9
+# An early OP_IsNull bypass might skip over the OP_Affinity and
+# cause the OP_IfNoHope to jump on a false-positive, resulting in
+# incomplete output.
+#
+reset_db
+do_execsql_test in6-3.120 {
+  CREATE TABLE t1(a TEXT, b TEXT);
+  INSERT INTO t1 VALUES(null,10),(0,10),(10,10);
+  CREATE INDEX t1ab ON t1(a,b);
+  SELECT quote(a), quote(b), '|' FROM t1 WHERE b in (SELECT a FROM t1) AND a=0;
+} {'0' '10' |}
+do_execsql_test in6-3.130 {
+  CREATE TABLE t2(x TEXT);
+  INSERT INTO t2(x) VALUES(NULL),(0),(10);
+  SELECT quote(x), quote(a), quote(b), 'x'
+    FROM t2 LEFT JOIN t1 ON a=x AND b in (null,0,10);
+} {NULL NULL NULL x '0' '0' '10' x '10' '10' '10' x}
+
 finish_test

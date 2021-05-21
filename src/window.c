@@ -788,6 +788,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
     case TK_AGG_FUNCTION:
     case TK_COLUMN: {
       int iCol = -1;
+      if( pParse->db->mallocFailed ) return WRC_Abort;
       if( p->pSub ){
         int i;
         for(i=0; i<p->pSub->nExpr; i++){
@@ -897,9 +898,14 @@ static ExprList *exprListAppendList(
     int i;
     int nInit = pList ? pList->nExpr : 0;
     for(i=0; i<pAppend->nExpr; i++){
-      Expr *pDup = sqlite3ExprDup(pParse->db, pAppend->a[i].pExpr, 0);
+      sqlite3 *db = pParse->db;
+      Expr *pDup = sqlite3ExprDup(db, pAppend->a[i].pExpr, 0);
       assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
-      if( bIntToNull && pDup ){
+      if( db->mallocFailed ){
+        sqlite3ExprDelete(db, pDup);
+        break;
+      }
+      if( bIntToNull ){
         int iDummy;
         Expr *pSub;
         for(pSub=pDup; ExprHasProperty(pSub, EP_Skip); pSub=pSub->pLeft){
@@ -931,6 +937,14 @@ static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
    && pExpr->op2>=pWalker->walkerDepth
   ){
     pExpr->op2++;
+  }
+  return WRC_Continue;
+}
+
+static int disallowAggregatesInOrderByCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION && pExpr->pAggInfo==0 ){
+    sqlite3ErrorMsg(pWalker->pParse,
+         "misuse of aggregate: %s()", pExpr->u.zToken);
   }
   return WRC_Continue;
 }
@@ -968,6 +982,11 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     }
     sqlite3AggInfoPersistWalkerInit(&w, pParse);
     sqlite3WalkSelect(&w, p);
+    if( (p->selFlags & SF_Aggregate)==0 ){
+      w.xExprCallback = disallowAggregatesInOrderByCb;
+      w.xSelectCallback = 0;
+      sqlite3WalkExprList(&w, p->pOrderBy);
+    }
 
     p->pSrc = 0;
     p->pWhere = 0;
@@ -1564,6 +1583,7 @@ struct WindowCodeArg {
   int regGosub;              /* Register used with OP_Gosub(addrGosub) */
   int regArg;                /* First in array of accumulator registers */
   int eDelete;               /* See above */
+  int regRowid;
 
   WindowCsrAndReg start;
   WindowCsrAndReg current;
@@ -1680,15 +1700,15 @@ static void windowAggStep(
       }
       
       if( pWin->bExprArgs ){
-        int iStart = sqlite3VdbeCurrentAddr(v);
-        VdbeOp *pOp, *pEnd;
+        int iOp = sqlite3VdbeCurrentAddr(v);
+        int iEnd;
 
         nArg = pWin->pOwner->x.pList->nExpr;
         regArg = sqlite3GetTempRange(pParse, nArg);
         sqlite3ExprCodeExprList(pParse, pWin->pOwner->x.pList, regArg, 0, 0);
 
-        pEnd = sqlite3VdbeGetOp(v, -1);
-        for(pOp=sqlite3VdbeGetOp(v, iStart); pOp<=pEnd; pOp++){
+        for(iEnd=sqlite3VdbeCurrentAddr(v); iOp<iEnd; iOp++){
+          VdbeOp *pOp = sqlite3VdbeGetOp(v, iOp);
           if( pOp->opcode==OP_Column && pOp->p1==pWin->iEphCsr ){
             pOp->p1 = csr;
           }
@@ -2047,7 +2067,7 @@ static void windowIfNewPeer(
 **   if( csr1.peerVal - regVal <= csr2.peerVal ) goto lbl;
 **
 ** A special type of arithmetic is used such that if csr1.peerVal is not
-** a numeric type (real or integer), then the result of the addition addition
+** a numeric type (real or integer), then the result of the addition
 ** or subtraction is a a copy of csr1.peerVal.
 */
 static void windowCodeRangeTest(
@@ -2066,7 +2086,12 @@ static void windowCodeRangeTest(
   int regString = ++pParse->nMem;           /* Reg. for constant value '' */
   int arith = OP_Add;                       /* OP_Add or OP_Subtract */
   int addrGe;                               /* Jump destination */
+  int addrDone = sqlite3VdbeMakeLabel(pParse);   /* Address past OP_Ge */
   CollSeq *pColl;
+
+  /* Read the peer-value from each cursor into a register */
+  windowReadPeerValues(p, csr1, reg1);
+  windowReadPeerValues(p, csr2, reg2);
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( pOrderBy && pOrderBy->nExpr==1 );
@@ -2079,33 +2104,10 @@ static void windowCodeRangeTest(
     arith = OP_Subtract;
   }
 
-  /* Read the peer-value from each cursor into a register */
-  windowReadPeerValues(p, csr1, reg1);
-  windowReadPeerValues(p, csr2, reg2);
-
   VdbeModuleComment((v, "CodeRangeTest: if( R%d %s R%d %s R%d ) goto lbl",
       reg1, (arith==OP_Add ? "+" : "-"), regVal,
       ((op==OP_Ge) ? ">=" : (op==OP_Le) ? "<=" : (op==OP_Gt) ? ">" : "<"), reg2
   ));
-
-  /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
-  ** This block adds (or subtracts for DESC) the numeric value in regVal
-  ** from it. Or, if reg1 is not numeric (it is a NULL, a text value or a blob),
-  ** then leave reg1 as it is. In pseudo-code, this is implemented as:
-  **
-  **   if( reg1>='' ) goto addrGe;
-  **   reg1 = reg1 +/- regVal
-  **   addrGe:
-  **
-  ** Since all strings and blobs are greater-than-or-equal-to an empty string,
-  ** the add/subtract is skipped for these, as required. If reg1 is a NULL,
-  ** then the arithmetic is performed, but since adding or subtracting from
-  ** NULL is always NULL anyway, this case is handled as required too.  */
-  sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
-  addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
-  VdbeCoverage(v);
-  sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
-  sqlite3VdbeJumpHere(v, addrGe);
 
   /* If the BIGNULL flag is set for the ORDER BY, then it is required to 
   ** consider NULL values to be larger than all other values, instead of 
@@ -2143,15 +2145,37 @@ static void windowCodeRangeTest(
         break;
       default: assert( op==OP_Lt ); /* no-op */ break;
     }
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrDone);
 
     /* This block runs if reg1 is not NULL, but reg2 is. */
     sqlite3VdbeJumpHere(v, addr);
     sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
     if( op==OP_Gt || op==OP_Ge ){
-      sqlite3VdbeChangeP2(v, -1, sqlite3VdbeCurrentAddr(v)+1);
+      sqlite3VdbeChangeP2(v, -1, addrDone);
     }
   }
+
+  /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
+  ** This block adds (or subtracts for DESC) the numeric value in regVal
+  ** from it. Or, if reg1 is not numeric (it is a NULL, a text value or a blob),
+  ** then leave reg1 as it is. In pseudo-code, this is implemented as:
+  **
+  **   if( reg1>='' ) goto addrGe;
+  **   reg1 = reg1 +/- regVal
+  **   addrGe:
+  **
+  ** Since all strings and blobs are greater-than-or-equal-to an empty string,
+  ** the add/subtract is skipped for these, as required. If reg1 is a NULL,
+  ** then the arithmetic is performed, but since adding or subtracting from
+  ** NULL is always NULL anyway, this case is handled as required too.  */
+  sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
+  addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, reg1);
+  VdbeCoverage(v);
+  if( (op==OP_Ge && arith==OP_Add) || (op==OP_Le && arith==OP_Subtract) ){
+    sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
+  }
+  sqlite3VdbeAddOp3(v, arith, regVal, reg1, reg1);
+  sqlite3VdbeJumpHere(v, addrGe);
 
   /* Compare registers reg2 and reg1, taking the jump if required. Note that
   ** control skips over this test if the BIGNULL flag is set and either
@@ -2160,6 +2184,7 @@ static void windowCodeRangeTest(
   pColl = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[0].pExpr);
   sqlite3VdbeAppendP4(v, (void*)pColl, P4_COLLSEQ);
   sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+  sqlite3VdbeResolveLabel(v, addrDone);
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Lt || op==OP_Le );
   testcase(op==OP_Ge); VdbeCoverageIf(v, op==OP_Ge);
@@ -2235,16 +2260,24 @@ static int windowCodeOp(
   /* If this is a (RANGE BETWEEN a FOLLOWING AND b FOLLOWING) or
   ** (RANGE BETWEEN b PRECEDING AND a PRECEDING) frame, ensure the 
   ** start cursor does not advance past the end cursor within the 
-  ** temporary table. It otherwise might, if (a>b).  */
+  ** temporary table. It otherwise might, if (a>b). Also ensure that,
+  ** if the input cursor is still finding new rows, that the end
+  ** cursor does not go past it to EOF. */
   if( pMWin->eStart==pMWin->eEnd && regCountdown
-   && pMWin->eFrmType==TK_RANGE && op==WINDOW_AGGINVERSE
+   && pMWin->eFrmType==TK_RANGE
   ){
     int regRowid1 = sqlite3GetTempReg(pParse);
     int regRowid2 = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp2(v, OP_Rowid, p->start.csr, regRowid1);
-    sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid2);
-    sqlite3VdbeAddOp3(v, OP_Ge, regRowid2, lblDone, regRowid1);
-    VdbeCoverage(v);
+    if( op==WINDOW_AGGINVERSE ){
+      sqlite3VdbeAddOp2(v, OP_Rowid, p->start.csr, regRowid1);
+      sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid2);
+      sqlite3VdbeAddOp3(v, OP_Ge, regRowid2, lblDone, regRowid1);
+      VdbeCoverage(v);
+    }else if( p->regRowid ){
+      sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid1);
+      sqlite3VdbeAddOp3(v, OP_Ge, p->regRowid, lblDone, regRowid1);
+      VdbeCoverageNeverNull(v);
+    }
     sqlite3ReleaseTempReg(pParse, regRowid1);
     sqlite3ReleaseTempReg(pParse, regRowid2);
     assert( pMWin->eStart==TK_PRECEDING || pMWin->eStart==TK_FOLLOWING );
@@ -2741,7 +2774,6 @@ void sqlite3WindowCodeStep(
   int addrEmpty;                  /* Address of OP_Rewind in flush: */
   int regNew;                     /* Array of registers holding new input row */
   int regRecord;                  /* regNew array in record form */
-  int regRowid;                   /* Rowid for regRecord in eph table */
   int regNewPeer = 0;             /* Peer values for new row (part of regNew) */
   int regPeer = 0;                /* Peer values for current row */
   int regFlushPart = 0;           /* Register for "Gosub flush_partition" */
@@ -2813,7 +2845,7 @@ void sqlite3WindowCodeStep(
   regNew = pParse->nMem+1;
   pParse->nMem += nInput;
   regRecord = ++pParse->nMem;
-  regRowid = ++pParse->nMem;
+  s.regRowid = ++pParse->nMem;
 
   /* If the window frame contains an "<expr> PRECEDING" or "<expr> FOLLOWING"
   ** clause, allocate registers to store the results of evaluating each
@@ -2869,9 +2901,9 @@ void sqlite3WindowCodeStep(
   }
 
   /* Insert the new row into the ephemeral table */
-  sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, regRowid);
-  sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, regRowid);
-  addrNe = sqlite3VdbeAddOp3(v, OP_Ne, pMWin->regOne, 0, regRowid);
+  sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, s.regRowid);
+  sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, s.regRowid);
+  addrNe = sqlite3VdbeAddOp3(v, OP_Ne, pMWin->regOne, 0, s.regRowid);
   VdbeCoverageNeverNull(v);
 
   /* This block is run for the first row of each partition */
@@ -2989,6 +3021,7 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeJumpHere(v, addrGosubFlush);
   }
 
+  s.regRowid = 0;
   addrEmpty = sqlite3VdbeAddOp1(v, OP_Rewind, csrWrite);
   VdbeCoverage(v);
   if( pMWin->eEnd==TK_PRECEDING ){

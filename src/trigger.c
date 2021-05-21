@@ -57,29 +57,41 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   }
   pTmpSchema = pParse->db->aDb[1].pSchema;
   p = sqliteHashFirst(&pTmpSchema->trigHash);
-  if( p==0 ){
-    return pTab->pTrigger;
-  }
   pList = pTab->pTrigger;
-  if( pTmpSchema!=pTab->pSchema ){
-    while( p ){
-      Trigger *pTrig = (Trigger *)sqliteHashData(p);
-      if( pTrig->pTabSchema==pTab->pSchema
-       && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
-      ){
-        pTrig->pNext = pList;
-        pList = pTrig;
-      }else if( pTrig->op==TK_RETURNING ){
-        assert( pParse->bReturning );
-        assert( &(pParse->u1.pReturning->retTrig) == pTrig );
-        pTrig->table = pTab->zName;
-        pTrig->pTabSchema = pTab->pSchema;
-        pTrig->pNext = pList;
-        pList = pTrig;
-      }        
-      p = sqliteHashNext(p);    
-    }
+  while( p ){
+    Trigger *pTrig = (Trigger *)sqliteHashData(p);
+    if( pTrig->pTabSchema==pTab->pSchema
+     && pTrig->table
+     && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
+     && pTrig->pTabSchema!=pTmpSchema
+    ){
+      pTrig->pNext = pList;
+      pList = pTrig;
+    }else if( pTrig->op==TK_RETURNING
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+              && pParse->db->pVtabCtx==0
+#endif
+    ){
+      assert( pParse->bReturning );
+      assert( &(pParse->u1.pReturning->retTrig) == pTrig );
+      pTrig->table = pTab->zName;
+      pTrig->pTabSchema = pTab->pSchema;
+      pTrig->pNext = pList;
+      pList = pTrig;
+    }        
+    p = sqliteHashNext(p);    
   }
+#if 0
+  if( pList ){
+    Trigger *pX;
+    printf("Triggers for %s:", pTab->zName);
+    for(pX=pList; pX; pX=pX->pNext){
+      printf(" %s", pX->zName);
+    }
+    printf("\n");
+    fflush(stdout);
+  }
+#endif
   return pList;  
 }
 
@@ -883,15 +895,6 @@ static ExprList *sqlite3ExpandReturning(
       }
     }
   }
-  if( !db->mallocFailed ){
-    Vdbe *v = pParse->pVdbe;
-    assert( v!=0 );
-    sqlite3VdbeSetNumCols(v, pNew->nExpr);
-    for(i=0; i<pNew->nExpr; i++){
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, pNew->a[i].zEName,
-                            SQLITE_TRANSIENT);
-    }
-  }
   return pNew;
 }
 
@@ -907,13 +910,27 @@ static void codeReturningTrigger(
   int regIn            /* The first in an array of registers */
 ){
   Vdbe *v = pParse->pVdbe;
+  sqlite3 *db = pParse->db;
   ExprList *pNew;
   Returning *pReturning;
+  Select sSelect;
+  SrcList sFrom;
 
   assert( v!=0 );
   assert( pParse->bReturning );
   pReturning = pParse->u1.pReturning;
   assert( pTrigger == &(pReturning->retTrig) );
+  memset(&sSelect, 0, sizeof(sSelect));
+  memset(&sFrom, 0, sizeof(sFrom));
+  sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);
+  sSelect.pSrc = &sFrom;
+  sFrom.nSrc = 1;
+  sFrom.a[0].pTab = pTab;
+  sqlite3SelectPrep(pParse, &sSelect, 0);
+  if( db->mallocFailed==0 && pParse->nErr==0 ){
+    sqlite3GenerateColumnNames(pParse, &sSelect);
+  }
+  sqlite3ExprListDelete(db, sSelect.pEList);
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
   if( pNew ){
     NameContext sNC;
@@ -934,13 +951,14 @@ static void codeReturningTrigger(
       pParse->nMem += nCol+2;
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
-        sqlite3ExprCodeFactorable(pParse, pNew->a[i].pExpr, reg+i);
+        Expr *pCol = pNew->a[i].pExpr;
+        sqlite3ExprCodeFactorable(pParse, pCol, reg+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);
       sqlite3VdbeAddOp3(v, OP_Insert, pReturning->iRetCur, reg+i, reg+i+1);
     }
-    sqlite3ExprListDelete(pParse->db, pNew);
+    sqlite3ExprListDelete(db, pNew);
     pParse->eTriggerOp = 0;
     pParse->pTriggerTab = 0;
   }
@@ -1143,8 +1161,8 @@ static TriggerPrg *codeRowTrigger(
     ** OP_Halt inserted at the end of the program.  */
     if( pTrigger->pWhen ){
       pWhen = sqlite3ExprDup(db, pTrigger->pWhen, 0);
-      if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
-       && db->mallocFailed==0 
+      if( db->mallocFailed==0
+       && SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
       ){
         iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);

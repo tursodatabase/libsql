@@ -17,6 +17,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifndef SQLITE_AMALGAMATION
+typedef sqlite3_int64 i64;
+#endif
+
 /*
 ** Characters that may appear in the second argument to matchinfo().
 */
@@ -67,9 +71,9 @@ struct SnippetIter {
 struct SnippetPhrase {
   int nToken;                     /* Number of tokens in phrase */
   char *pList;                    /* Pointer to start of phrase position list */
-  int iHead;                      /* Next value in position list */
+  i64 iHead;                      /* Next value in position list */
   char *pHead;                    /* Position list data following iHead */
-  int iTail;                      /* Next value in trailing position list */
+  i64 iTail;                      /* Next value in trailing position list */
   char *pTail;                    /* Position list data following iTail */
 };
 
@@ -234,7 +238,7 @@ void sqlite3Fts3MIBufferFree(MatchinfoBuffer *p){
 ** After it returns, *piPos contains the value of the next element of the
 ** list and *pp is advanced to the following varint.
 */
-static void fts3GetDeltaPosition(char **pp, int *piPos){
+static void fts3GetDeltaPosition(char **pp, i64 *piPos){
   int iVal;
   *pp += fts3GetVarint32(*pp, &iVal);
   *piPos += (iVal-2);
@@ -343,10 +347,10 @@ static int fts3ExprPhraseCount(Fts3Expr *pExpr){
 ** arguments so that it points to the first element with a value greater
 ** than or equal to parameter iNext.
 */
-static void fts3SnippetAdvance(char **ppIter, int *piIter, int iNext){
+static void fts3SnippetAdvance(char **ppIter, i64 *piIter, int iNext){
   char *pIter = *ppIter;
   if( pIter ){
-    int iIter = *piIter;
+    i64 iIter = *piIter;
 
     while( iIter<iNext ){
       if( 0==(*pIter & 0xFE) ){
@@ -429,7 +433,7 @@ static void fts3SnippetDetails(
     SnippetPhrase *pPhrase = &pIter->aPhrase[i];
     if( pPhrase->pTail ){
       char *pCsr = pPhrase->pTail;
-      int iCsr = pPhrase->iTail;
+      i64 iCsr = pPhrase->iTail;
 
       while( iCsr<(iStart+pIter->nSnippet) && iCsr>=iStart ){
         int j;
@@ -475,7 +479,7 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
   rc = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->iCol, &pCsr);
   assert( rc==SQLITE_OK || pCsr==0 );
   if( pCsr ){
-    int iFirst = 0;
+    i64 iFirst = 0;
     pPhrase->pList = pCsr;
     fts3GetDeltaPosition(&pCsr, &iFirst);
     if( iFirst<0 ){
@@ -1539,8 +1543,8 @@ typedef struct TermOffsetCtx TermOffsetCtx;
 
 struct TermOffset {
   char *pList;                    /* Position-list */
-  int iPos;                       /* Position just read from pList */
-  int iOff;                       /* Offset of this term from read positions */
+  i64 iPos;                       /* Position just read from pList */
+  i64 iOff;                       /* Offset of this term from read positions */
 };
 
 struct TermOffsetCtx {
@@ -1559,7 +1563,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int nTerm;                      /* Number of tokens in phrase */
   int iTerm;                      /* For looping through nTerm phrase terms */
   char *pList;                    /* Pointer to position list for phrase */
-  int iPos = 0;                   /* First position in position-list */
+  i64 iPos = 0;                   /* First position in position-list */
   int rc;
 
   UNUSED_PARAMETER(iPhrase);

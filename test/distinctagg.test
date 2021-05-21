@@ -174,10 +174,15 @@ foreach {tn use_t3 sql res} {
   1 1 "SELECT count(*) FROM t3"   2
   2 0 "SELECT count(*) FROM t1"   10
   2 1 "SELECT count(DISTINCT a) FROM t1, t3" 4
-  3 0 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3" 4
+  3 1 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3" 4
   4 1 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 WHERE t3.x=1" 4
   5 1 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 WHERE t3.x=0" 0
-  6 0 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 ON (t3.x=0)"  4
+  6 1 "SELECT count(DISTINCT a) FROM t1 LEFT JOIN t3 ON (t3.x=0)"  4
+  7 1 "SELECT count(DISTINCT x) FROM t1 LEFT JOIN t3" 2
+  8 1 "SELECT count(DISTINCT x) FROM t1 LEFT JOIN t3 WHERE t3.x=1" 1
+  9 1 "SELECT count(DISTINCT x) FROM t1 LEFT JOIN t3 WHERE t3.x=0" 0
+ 10 1 "SELECT count(DISTINCT x) FROM t1 LEFT JOIN t3 ON (t3.x=0)"  0
+
 } {
   do_test 5.$tn.1 {
     set bUse 0
@@ -189,6 +194,24 @@ foreach {tn use_t3 sql res} {
 
   do_execsql_test 5.$tn.2 $sql $res
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  INSERT INTO t1 VALUES(123,456);
+  INSERT INTO t2 VALUES(123,456);
+}
+do_execsql_test 6.1 {
+  SELECT count(DISTINCT c) FROM t1 LEFT JOIN t2;
+} {1}
+
+do_execsql_test 7.0 {
+  CREATE TABLE v1 ( v2 UNIQUE, v3 AS( TYPEOF ( NULL ) ) UNIQUE ); 
+  SELECT COUNT ( DISTINCT TRUE ) FROM v1 GROUP BY likelihood ( v3 , 0.100000 );
+}
+
 
 finish_test
 
