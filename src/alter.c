@@ -29,8 +29,9 @@
 ** Or, if zName is not a system table, zero is returned.
 */
 static int isAlterableTable(Parse *pParse, Table *pTab){
-  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) 
+  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7)
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+   || (pTab->tabFlags & TF_Eponymous)!=0
    || ( (pTab->tabFlags & TF_Shadow)!=0
         && sqlite3ReadOnlyShadowTables(pParse->db)
    )
@@ -834,7 +835,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( NEVER(p->selFlags & SF_View) ) return WRC_Prune;
+  if( p->selFlags & SF_View ) return WRC_Prune;
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
@@ -918,7 +919,9 @@ static RenameToken *renameTokenFind(
   void *pPtr
 ){
   RenameToken **pp;
-  assert( pPtr!=0 );
+  if( NEVER(pPtr==0) ){
+    return 0;
+  }
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
@@ -1575,7 +1578,7 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
   if( pSelect->selFlags & SF_View ) return WRC_Prune;
-  if( pSrc==0 ){
+  if( NEVER(pSrc==0) ){
     assert( pWalker->pParse->db->mallocFailed );
     return WRC_Abort;
   }
@@ -2119,7 +2122,11 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
         }else{
           regOut = reg+1+nField;
         }
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+        if( i==pTab->iPKey ){
+          sqlite3VdbeAddOp2(v, OP_Null, 0, regOut);
+        }else{
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+        }
         nField++;
       }
     }
@@ -2129,6 +2136,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
     }else{
       sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
     }
+    sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
 
     sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);

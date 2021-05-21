@@ -96,6 +96,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   UNUSED_PARAMETER2(NotUsed, argc);
   assert( sqlite3_mutex_held(db->mutex) );
   db->mDbFlags |= DBFLAG_EncodingFixed;
+  if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   pData->nInitRow++;
   if( db->mallocFailed ){
     corruptSchema(pData, argv, 0);
@@ -103,7 +104,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   }
 
   assert( iDb>=0 && iDb<db->nDb );
-  if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[3]==0 ){
     corruptSchema(pData, argv, 0);
   }else if( argv[4]
@@ -380,15 +380,17 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   if( db->mallocFailed ){
     rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
-  }
+  }else
   if( rc==SQLITE_OK || (db->flags&SQLITE_NoSchemaError)){
-    /* Black magic: If the SQLITE_NoSchemaError flag is set, then consider
-    ** the schema loaded, even if errors occurred. In this situation the 
-    ** current sqlite3_prepare() operation will fail, but the following one
-    ** will attempt to compile the supplied statement against whatever subset
-    ** of the schema was loaded before the error occurred. The primary
-    ** purpose of this is to allow access to the sqlite_schema table
-    ** even when its contents have been corrupted.
+    /* Hack: If the SQLITE_NoSchemaError flag is set, then consider
+    ** the schema loaded, even if errors (other than OOM) occurred. In
+    ** this situation the current sqlite3_prepare() operation will fail,
+    ** but the following one will attempt to compile the supplied statement
+    ** against whatever subset of the schema was loaded before the error
+    ** occurred.
+    **
+    ** The primary purpose of this is to allow access to the sqlite_schema
+    ** table even when its contents have been corrupted.
     */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     rc = SQLITE_OK;

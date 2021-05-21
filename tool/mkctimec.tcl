@@ -4,16 +4,28 @@
 #
 #   const char **azCompileOpt[]
 #
-# declaration used in src/ctime.c, run this script.
+# definition used in src/ctime.c, run this script from
+# the checkout root. It alters src/ctime.c in-place.
 #
 
-# All Boolean compile time options.
+# All Boolean compile time options which default to something
+# other than 0 or empty. The default is paired with the PP
+# symbol so that a differing define can be detected.
 #
-set boolean_options {
+set boolean_defnnz_options {
+  {SQLITE_HOMEGROWN_RECURSIVE_MUTEX 1}
+  {SQLITE_POWERSAFE_OVERWRITE 1}
+  {SQLITE_DEFAULT_MEMSTATUS 1}
+  {SQLITE_OMIT_TRACE 1}
+  {SQLITE_ALLOW_COVERING_INDEX_SCAN 1}
+}
+
+# All Boolean compile time options which default to 0 or empty.
+#
+set boolean_defnil_options {
   SQLITE_32BIT_ROWID
   SQLITE_4_BYTE_ALIGNED_MALLOC
   SQLITE_64BIT_STATS
-  SQLITE_ALLOW_COVERING_INDEX_SCAN
   SQLITE_ALLOW_URI_AUTHORITY
   SQLITE_BUG_COMPATIBLE_20160819
   SQLITE_CASE_SENSITIVE_LIKE
@@ -25,7 +37,6 @@ set boolean_options {
   SQLITE_DEFAULT_CKPTFULLFSYNC
   SQLITE_DEFAULT_FOREIGN_KEYS
   SQLITE_DEFAULT_LOCKING_MODE
-  SQLITE_DEFAULT_MEMSTATUS
   SQLITE_DEFAULT_RECURSIVE_TRIGGERS
   SQLITE_DEFAULT_SYNCHRONOUS
   SQLITE_DEFAULT_WAL_SYNCHRONOUS
@@ -40,40 +51,49 @@ set boolean_options {
   SQLITE_ENABLE_8_3_NAMES
   SQLITE_ENABLE_API_ARMOR
   SQLITE_ENABLE_ATOMIC_WRITE
-  SQLITE_ENABLE_CEROD
+  SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+  SQLITE_ENABLE_BYTECODE_VTAB
   SQLITE_ENABLE_COLUMN_METADATA
   SQLITE_ENABLE_COLUMN_USED_MASK
   SQLITE_ENABLE_COSTMULT
   SQLITE_ENABLE_CURSOR_HINTS
+  SQLITE_ENABLE_DBPAGE_VTAB
   SQLITE_ENABLE_DBSTAT_VTAB
   SQLITE_ENABLE_EXPENSIVE_ASSERT
-  SQLITE_ENABLE_FTS1
-  SQLITE_ENABLE_FTS2
+  SQLITE_ENABLE_EXPLAIN_COMMENTS
   SQLITE_ENABLE_FTS3
   SQLITE_ENABLE_FTS3_PARENTHESIS
   SQLITE_ENABLE_FTS3_TOKENIZER
   SQLITE_ENABLE_FTS4
   SQLITE_ENABLE_FTS5
+  SQLITE_ENABLE_GEOPOLY
   SQLITE_ENABLE_HIDDEN_COLUMNS
   SQLITE_ENABLE_ICU
   SQLITE_ENABLE_IOTRACE
   SQLITE_ENABLE_JSON1
   SQLITE_ENABLE_LOAD_EXTENSION
   SQLITE_ENABLE_LOCKING_STYLE
+  SQLITE_ENABLE_MATH_FUNCTIONS
   SQLITE_ENABLE_MEMORY_MANAGEMENT
   SQLITE_ENABLE_MEMSYS3
   SQLITE_ENABLE_MEMSYS5
   SQLITE_ENABLE_MULTIPLEX
+  SQLITE_ENABLE_NORMALIZE
   SQLITE_ENABLE_NULL_TRIM
+  SQLITE_ENABLE_OFFSET_SQL_FUNC
   SQLITE_ENABLE_OVERSIZE_CELL_CHECK
   SQLITE_ENABLE_PREUPDATE_HOOK
+  SQLITE_ENABLE_QPSG
   SQLITE_ENABLE_RBU
   SQLITE_ENABLE_RTREE
   SQLITE_ENABLE_SELECTTRACE
   SQLITE_ENABLE_SESSION
   SQLITE_ENABLE_SNAPSHOT
+  SQLITE_ENABLE_SORTER_REFERENCES
   SQLITE_ENABLE_SQLLOG
+  SQLITE_ENABLE_STAT4
   SQLITE_ENABLE_STMT_SCANSTATUS
+  SQLITE_ENABLE_STMTVTAB
   SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
   SQLITE_ENABLE_UNLOCK_NOTIFY
   SQLITE_ENABLE_UPDATE_DELETE_LIMIT
@@ -85,8 +105,6 @@ set boolean_options {
   SQLITE_EXTRA_IFNULLROW
   SQLITE_FTS5_ENABLE_TEST_MI
   SQLITE_FTS5_NO_WITHOUT_ROWID
-  SQLITE_HAS_CODEC
-  SQLITE_HOMEGROWN_RECURSIVE_MUTEX
   SQLITE_IGNORE_AFP_LOCK_ERRORS
   SQLITE_IGNORE_FLOCK_LOCK_ERRORS
   SQLITE_INLINE_MEMCPY
@@ -98,7 +116,6 @@ set boolean_options {
   SQLITE_MIXED_ENDIAN_64BIT_FLOAT
   SQLITE_MMAP_READWRITE
   SQLITE_MUTEX_NOOP
-  SQLITE_MUTEX_NREF
   SQLITE_MUTEX_OMIT
   SQLITE_MUTEX_PTHREADS
   SQLITE_MUTEX_W32
@@ -116,16 +133,15 @@ set boolean_options {
   SQLITE_OMIT_AUTOVACUUM
   SQLITE_OMIT_BETWEEN_OPTIMIZATION
   SQLITE_OMIT_BLOB_LITERAL
-  SQLITE_OMIT_BTREECOUNT
   SQLITE_OMIT_CAST
   SQLITE_OMIT_CHECK
   SQLITE_OMIT_COMPLETE
   SQLITE_OMIT_COMPOUND_SELECT
   SQLITE_OMIT_CONFLICT_CLAUSE
   SQLITE_OMIT_CTE
-  SQLITE_OMIT_DATETIME_FUNCS
   SQLITE_OMIT_DECLTYPE
   SQLITE_OMIT_DEPRECATED
+  SQLITE_OMIT_DESERIALIZE
   SQLITE_OMIT_DISKIO
   SQLITE_OMIT_EXPLAIN
   SQLITE_OMIT_FLAG_PRAGMAS
@@ -135,6 +151,7 @@ set boolean_options {
   SQLITE_OMIT_HEX_INTEGER
   SQLITE_OMIT_INCRBLOB
   SQLITE_OMIT_INTEGRITY_CHECK
+  SQLITE_OMIT_INTROSPECTION_PRAGMAS
   SQLITE_OMIT_LIKE_OPTIMIZATION
   SQLITE_OMIT_LOAD_EXTENSION
   SQLITE_OMIT_LOCALTIME
@@ -156,7 +173,6 @@ set boolean_options {
   SQLITE_OMIT_TCL_VARIABLE
   SQLITE_OMIT_TEMPDB
   SQLITE_OMIT_TEST_CONTROL
-  SQLITE_OMIT_TRACE
   SQLITE_OMIT_TRIGGER
   SQLITE_OMIT_TRUNCATE_OPTIMIZATION
   SQLITE_OMIT_UTF16
@@ -168,7 +184,6 @@ set boolean_options {
   SQLITE_OMIT_XFER_OPT
   SQLITE_PCACHE_SEPARATE_HEADER
   SQLITE_PERFORMANCE_TRACE
-  SQLITE_POWERSAFE_OVERWRITE
   SQLITE_PREFER_PROXY_LOCKING
   SQLITE_PROXY_DEBUG
   SQLITE_REVERSE_UNORDERED_SELECTS
@@ -177,7 +192,6 @@ set boolean_options {
   SQLITE_SMALL_STACK
   SQLITE_SOUNDEX
   SQLITE_SUBSTR_COMPATIBILITY
-  SQLITE_SYSTEM_MALLOC
   SQLITE_TCL
   SQLITE_TEST
   SQLITE_UNLINK_AFTER_CLOSE
@@ -191,7 +205,15 @@ set boolean_options {
   SQLITE_ZERO_MALLOC
 }
 
-# All compile time options for which the assigned value is other than boolean.
+# All compile time options for which the assigned value is other than boolean
+# and is a comma-separated scalar pair.
+#
+set value2_options {
+  SQLITE_DEFAULT_LOOKASIDE
+}
+
+# All compile time options for which the assigned value is other than boolean
+# and is a single scalar.
 #
 set value_options {
   SQLITE_BITMASK_TYPE
@@ -200,7 +222,6 @@ set value_options {
   SQLITE_DEFAULT_FILE_PERMISSIONS
   SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT
   SQLITE_DEFAULT_LOCKING_MODE
-  SQLITE_DEFAULT_LOOKASIDE
   SQLITE_DEFAULT_MMAP_SIZE
   SQLITE_DEFAULT_PAGE_SIZE
   SQLITE_DEFAULT_PCACHE_INITSZ
@@ -212,6 +233,7 @@ set value_options {
   SQLITE_DEFAULT_WAL_SYNCHRONOUS
   SQLITE_DEFAULT_WORKER_THREADS
   SQLITE_ENABLE_8_3_NAMES
+  SQLITE_ENABLE_CEROD
   SQLITE_ENABLE_LOCKING_STYLE
   SQLITE_EXTRA_INIT
   SQLITE_EXTRA_SHUTDOWN
@@ -245,13 +267,6 @@ set value_options {
 
 # Options that require custom code.
 #
-set options(ENABLE_STAT3) {
-#if defined(SQLITE_ENABLE_STAT4)
-  "ENABLE_STAT4",
-#elif defined(SQLITE_ENABLE_STAT3)
-  "ENABLE_STAT3",
-#endif
-}
 set options(COMPILER) {
 #if defined(__clang__) && defined(__clang_major__)
   "COMPILER=clang-" CTIMEOPT_VAL(__clang_major__) "."
@@ -268,13 +283,26 @@ set options(HAVE_ISNAN) {
   "HAVE_ISNAN",
 #endif
 }
+set options(OMIT_DATETIME_FUNCS) {
+#if defined(SQLITE_OMIT_DATETIME_FUNCS) || defined(SQLITE_OMIT_FLOATING_POINT)
+  "OMIT_DATETIME_FUNCS",
+#endif
+}
+set options(SYSTEM_MALLOC) "\
+#if (!defined(SQLITE_WIN32_MALLOC) \\
+     && !defined(SQLITE_ZERO_MALLOC) \\
+     && !defined(SQLITE_MEMDEBUG) \\
+    ) || defined(SQLITE_SYSTEM_MALLOC)
+  \"SYSTEM_MALLOC\",
+#endif
+"
 set options(THREADSAFE) {
 #if defined(SQLITE_THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
 #elif defined(THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(THREADSAFE),
 #else
-  "THREADSAFE=1"
+  "THREADSAFE=1",
 #endif
 }
 
@@ -286,7 +314,20 @@ proc trim_name {in} {
   return $ret
 }
 
-foreach b $boolean_options {
+foreach name_defval $boolean_defnnz_options {
+  set b [lindex $name_defval 0]
+  set defval [lindex $name_defval 1]
+  set name [trim_name $b]
+  set options($name) [subst {
+#ifdef $b
+# if $b != $defval
+  "$name=" CTIMEOPT_VAL($b),
+# endif
+#endif
+}]
+}
+
+foreach b $boolean_defnil_options {
   set name [trim_name $b]
   set options($name) [subst {
 #if $b
@@ -303,9 +344,70 @@ foreach v $value_options {
 #endif
 }]
 }
+  
+foreach v $value2_options {
+  set name [trim_name $v]
+  set options($name) [subst {
+#ifdef $v
+  "$name=" CTIMEOPT_VAL2($v),
+#endif
+}]
+}
 
-foreach o [lsort [array names options]] {
-  puts [string trim $options($o)]
+# Split a string on a regex, return all parts in order.
+# Any elements with an even index may be empty.
+# Elements with odd indices will match the regex.
+proc split_on_re {re str {nrepps 1}} {
+  set chunks {}
+  set cix 0
+  set resm [regexp -all -inline -indices $re $str]
+  if {[llength $resm]==0} {
+    return $str
+  }
+  set rix 0
+  while {$rix < [llength $resm]} {
+    set mre [lindex $resm $rix]
+    incr rix $nrepps
+    set mbx [lindex $mre 0]
+    set mex [lindex $mre 1]
+    lappend chunks [string range $str $cix [expr $mbx - 1]]
+    lappend chunks [string range $str $mbx $mex]
+    set cix [expr $mex + 1]
+  }
+  lappend chunks [string range $str $cix end]
+  return $chunks
 }
 
 
+set ctime_c "src/ctime.c"
+if {[catch {set cfd [open $ctime_c r]}]!=0} {
+  puts stderr "File '$ctime_c' unreadable. Run this script from checkout root."
+  exit 1;
+}
+
+set ctfc [read $cfd]
+close $cfd
+
+set re {/\*\s+\*+\s*((BEGIN)|(END)) CODE GENERATED BY (\S+)\s+\*/\s+}
+set renpp 5
+
+set ctfcChunks [split_on_re $re $ctfc $renpp]
+if {[llength $ctfcChunks] != 5} {
+  puts stderr "File '$ctime_c' has too few generated code markers."
+  exit 1;
+}
+
+if {[catch {set cfd [open $ctime_c w]}]!=0} {
+  puts stderr "File '$ctime_c' unwritable."
+  exit 1;
+}
+
+puts -nonewline $cfd [lindex $ctfcChunks 0]
+puts -nonewline $cfd [lindex $ctfcChunks 1]
+foreach o [lsort [array names options]] {
+  puts $cfd [string trim $options($o)]
+}
+puts -nonewline $cfd [lindex $ctfcChunks 3]
+puts -nonewline $cfd [lindex $ctfcChunks 4]
+
+close $cfd

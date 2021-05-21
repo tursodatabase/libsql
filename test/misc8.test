@@ -100,7 +100,7 @@ do_execsql_test misc8-2.1 {
 
 # 2016-02-26: An assertion fault found by the libFuzzer project
 #
-do_execsql_test misc8-3.0 {
+do_catchsql_test misc8-3.0 {
   SELECT *
     FROM
          (
@@ -110,7 +110,7 @@ do_execsql_test misc8-3.0 {
          (SELECT 6 AS j UNION ALL SELECT 7) AS x4
    WHERE i<rowid
    ORDER BY 1;
-} {0 1 6 0 1 7}
+} {1 {no such column: rowid}}
 
 # The SQLITE_DBCONFIG_MAINDBNAME interface
 #

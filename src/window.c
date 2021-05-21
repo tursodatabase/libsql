@@ -941,6 +941,14 @@ static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 
+static int disallowAggregatesInOrderByCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION && pExpr->pAggInfo==0 ){
+    sqlite3ErrorMsg(pWalker->pParse,
+         "misuse of aggregate: %s()", pExpr->u.zToken);
+  }
+  return WRC_Continue;
+}
+
 /*
 ** If the SELECT statement passed as the second argument does not invoke
 ** any SQL window functions, this function is a no-op. Otherwise, it 
@@ -974,6 +982,11 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     }
     sqlite3AggInfoPersistWalkerInit(&w, pParse);
     sqlite3WalkSelect(&w, p);
+    if( (p->selFlags & SF_Aggregate)==0 ){
+      w.xExprCallback = disallowAggregatesInOrderByCb;
+      w.xSelectCallback = 0;
+      sqlite3WalkExprList(&w, p->pOrderBy);
+    }
 
     p->pSrc = 0;
     p->pWhere = 0;
@@ -1570,6 +1583,7 @@ struct WindowCodeArg {
   int regGosub;              /* Register used with OP_Gosub(addrGosub) */
   int regArg;                /* First in array of accumulator registers */
   int eDelete;               /* See above */
+  int regRowid;
 
   WindowCsrAndReg start;
   WindowCsrAndReg current;
@@ -2246,16 +2260,24 @@ static int windowCodeOp(
   /* If this is a (RANGE BETWEEN a FOLLOWING AND b FOLLOWING) or
   ** (RANGE BETWEEN b PRECEDING AND a PRECEDING) frame, ensure the 
   ** start cursor does not advance past the end cursor within the 
-  ** temporary table. It otherwise might, if (a>b).  */
+  ** temporary table. It otherwise might, if (a>b). Also ensure that,
+  ** if the input cursor is still finding new rows, that the end
+  ** cursor does not go past it to EOF. */
   if( pMWin->eStart==pMWin->eEnd && regCountdown
-   && pMWin->eFrmType==TK_RANGE && op==WINDOW_AGGINVERSE
+   && pMWin->eFrmType==TK_RANGE
   ){
     int regRowid1 = sqlite3GetTempReg(pParse);
     int regRowid2 = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp2(v, OP_Rowid, p->start.csr, regRowid1);
-    sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid2);
-    sqlite3VdbeAddOp3(v, OP_Ge, regRowid2, lblDone, regRowid1);
-    VdbeCoverage(v);
+    if( op==WINDOW_AGGINVERSE ){
+      sqlite3VdbeAddOp2(v, OP_Rowid, p->start.csr, regRowid1);
+      sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid2);
+      sqlite3VdbeAddOp3(v, OP_Ge, regRowid2, lblDone, regRowid1);
+      VdbeCoverage(v);
+    }else if( p->regRowid ){
+      sqlite3VdbeAddOp2(v, OP_Rowid, p->end.csr, regRowid1);
+      sqlite3VdbeAddOp3(v, OP_Ge, p->regRowid, lblDone, regRowid1);
+      VdbeCoverageNeverNull(v);
+    }
     sqlite3ReleaseTempReg(pParse, regRowid1);
     sqlite3ReleaseTempReg(pParse, regRowid2);
     assert( pMWin->eStart==TK_PRECEDING || pMWin->eStart==TK_FOLLOWING );
@@ -2752,7 +2774,6 @@ void sqlite3WindowCodeStep(
   int addrEmpty;                  /* Address of OP_Rewind in flush: */
   int regNew;                     /* Array of registers holding new input row */
   int regRecord;                  /* regNew array in record form */
-  int regRowid;                   /* Rowid for regRecord in eph table */
   int regNewPeer = 0;             /* Peer values for new row (part of regNew) */
   int regPeer = 0;                /* Peer values for current row */
   int regFlushPart = 0;           /* Register for "Gosub flush_partition" */
@@ -2824,7 +2845,7 @@ void sqlite3WindowCodeStep(
   regNew = pParse->nMem+1;
   pParse->nMem += nInput;
   regRecord = ++pParse->nMem;
-  regRowid = ++pParse->nMem;
+  s.regRowid = ++pParse->nMem;
 
   /* If the window frame contains an "<expr> PRECEDING" or "<expr> FOLLOWING"
   ** clause, allocate registers to store the results of evaluating each
@@ -2880,9 +2901,9 @@ void sqlite3WindowCodeStep(
   }
 
   /* Insert the new row into the ephemeral table */
-  sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, regRowid);
-  sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, regRowid);
-  addrNe = sqlite3VdbeAddOp3(v, OP_Ne, pMWin->regOne, 0, regRowid);
+  sqlite3VdbeAddOp2(v, OP_NewRowid, csrWrite, s.regRowid);
+  sqlite3VdbeAddOp3(v, OP_Insert, csrWrite, regRecord, s.regRowid);
+  addrNe = sqlite3VdbeAddOp3(v, OP_Ne, pMWin->regOne, 0, s.regRowid);
   VdbeCoverageNeverNull(v);
 
   /* This block is run for the first row of each partition */
@@ -3000,6 +3021,7 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeJumpHere(v, addrGosubFlush);
   }
 
+  s.regRowid = 0;
   addrEmpty = sqlite3VdbeAddOp1(v, OP_Rewind, csrWrite);
   VdbeCoverage(v);
   if( pMWin->eEnd==TK_PRECEDING ){

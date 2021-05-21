@@ -132,6 +132,11 @@ foreach {tn3 create_vfs destroy_vfs} {
   } {
     sqlite3rbu_destroy_vfs myrbu
   }
+  3 {
+    sqlite3_register_cksumvfs
+  } {
+    sqlite3_unregister_cksumvfs
+  }
 } {
 
   eval $create_vfs

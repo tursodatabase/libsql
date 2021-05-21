@@ -472,6 +472,7 @@ struct PreUpdate {
   UnpackedRecord *pUnpacked;      /* Unpacked version of aRecord[] */
   UnpackedRecord *pNewUnpacked;   /* Unpacked version of new.* record */
   int iNewReg;                    /* Register for new.* values */
+  int iBlobWrite;                 /* Value returned by preupdate_blobwrite() */
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
   Mem *aNew;                      /* Array of new.* values */
@@ -560,7 +561,8 @@ void sqlite3VdbeFrameMemDel(void*);      /* Destructor on Mem */
 void sqlite3VdbeFrameDelete(VdbeFrame*); /* Actually deletes the Frame */
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-void sqlite3VdbePreUpdateHook(Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int);
+void sqlite3VdbePreUpdateHook(
+    Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int,int);
 #endif
 int sqlite3VdbeTransferError(Vdbe *p);
 

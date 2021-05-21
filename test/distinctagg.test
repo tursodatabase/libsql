@@ -207,6 +207,11 @@ do_execsql_test 6.1 {
   SELECT count(DISTINCT c) FROM t1 LEFT JOIN t2;
 } {1}
 
+do_execsql_test 7.0 {
+  CREATE TABLE v1 ( v2 UNIQUE, v3 AS( TYPEOF ( NULL ) ) UNIQUE ); 
+  SELECT COUNT ( DISTINCT TRUE ) FROM v1 GROUP BY likelihood ( v3 , 0.100000 );
+}
+
 
 finish_test
 

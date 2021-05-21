@@ -220,6 +220,7 @@ static void updateFromSelect(
 
   assert( pTabList->nSrc>1 );
   if( pSrc ){
+    pSrc->a[0].fg.notCte = 1;
     pSrc->a[0].iCursor = -1;
     pSrc->a[0].pTab->nTabRef--;
     pSrc->a[0].pTab = 0;
@@ -249,7 +250,8 @@ static void updateFromSelect(
     }
 #endif
   }
-  if( ALWAYS(pChanges) ){
+  assert( pChanges!=0 || pParse->db->mallocFailed );
+  if( pChanges ){
     for(i=0; i<pChanges->nExpr; i++){
       pList = sqlite3ExprListAppend(pParse, pList, 
           sqlite3ExprDup(db, pChanges->a[i].pExpr, 0)
@@ -810,7 +812,12 @@ void sqlite3Update(
   
     /* Top of the update loop */
     if( eOnePass!=ONEPASS_OFF ){
-      if( !isView && aiCurOnePass[0]!=iDataCur && aiCurOnePass[1]!=iDataCur ){
+      if( aiCurOnePass[0]!=iDataCur
+       && aiCurOnePass[1]!=iDataCur
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+       && !isView
+#endif
+      ){
         assert( pPk );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey,nKey);
         VdbeCoverage(v);

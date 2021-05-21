@@ -28,11 +28,11 @@ do_eqp_test 110 {
   QUERY PLAN
   `--COMPOUND QUERY
      |--LEFT-MOST SUBQUERY
-     |  |--SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
-     |  `--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+     |  |--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+     |  `--SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
      `--UNION ALL
-        |--SEARCH t3 USING INDEX sqlite_autoindex_t3_1 (a=?)
-        `--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+        |--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+        `--SEARCH t3 USING INDEX sqlite_autoindex_t3_1 (a=?)
 }
 
 # The scan of the t1 table goes first since that enables the ORDER BY

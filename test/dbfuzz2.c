@@ -31,8 +31,7 @@
 **
 **     mkdir dir
 **     cp dbfuzz2-seed*.db dir
-**     clang-6.0 -I. -g -O1 -fsanitize=fuzzer \
-**       -DTHREADSAFE=0 -DSQLITE_ENABLE_DESERIALIZE \
+**     clang-6.0 -I. -g -O1 -fsanitize=fuzzer -DTHREADSAFE=0 \
 **       -DSQLITE_ENABLE_DBSTAT_VTAB dbfuzz2.c sqlite3.c -ldl
 **     ./a.out dir
 */
