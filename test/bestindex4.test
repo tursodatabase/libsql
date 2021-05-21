@@ -159,16 +159,16 @@ do_eqp_test 2.1 {
   SELECT * FROM t1, x1 WHERE x1.d=t1.x;
 } {
   QUERY PLAN
-  |--SCAN TABLE x1 VIRTUAL TABLE INDEX 0:
-  `--SEARCH TABLE t1 USING COVERING INDEX sqlite_autoindex_t1_1 (x=?)
+  |--SCAN x1 VIRTUAL TABLE INDEX 0:
+  `--SEARCH t1 USING COVERING INDEX sqlite_autoindex_t1_1 (x=?)
 }
 
 do_eqp_test 2.2 {
   SELECT * FROM t1, x1(t1.x)
 } {
   QUERY PLAN
-  |--SCAN TABLE t1
-  `--SCAN TABLE x1 VIRTUAL TABLE INDEX 555:
+  |--SCAN t1
+  `--SCAN x1 VIRTUAL TABLE INDEX 555:
 }
 
 

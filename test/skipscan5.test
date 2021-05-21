@@ -41,20 +41,20 @@ do_test 1.2 {
 foreach {tn q res} {
   1  "b = 5"                   {/*ANY(a) AND b=?*/}
   2  "b > 12 AND b < 16"       {/*ANY(a) AND b>? AND b<?*/}
-  3  "b > 2 AND b < 16"        {/*SCAN TABLE t1*/}
+  3  "b > 2 AND b < 16"        {/*SCAN t1*/}
   4  "b > 18 AND b < 25"       {/*ANY(a) AND b>? AND b<?*/}
   5  "b > 16"                  {/*ANY(a) AND b>?*/}
-  6  "b > 5"                   {/*SCAN TABLE t1*/}
-  7  "b < 15"                  {/*SCAN TABLE t1*/}
+  6  "b > 5"                   {/*SCAN t1*/}
+  7  "b < 15"                  {/*SCAN t1*/}
   8  "b < 5"                   {/*ANY(a) AND b<?*/}
   9  "5 > b"                   {/*ANY(a) AND b<?*/}
   10 "b = '5'"                 {/*ANY(a) AND b=?*/}
   11 "b > '12' AND b < '16'"   {/*ANY(a) AND b>? AND b<?*/}
-  12 "b > '2' AND b < '16'"    {/*SCAN TABLE t1*/}
+  12 "b > '2' AND b < '16'"    {/*SCAN t1*/}
   13 "b > '18' AND b < '25'"   {/*ANY(a) AND b>? AND b<?*/}
   14 "b > '16'"                {/*ANY(a) AND b>?*/}
-  15 "b > '5'"                 {/*SCAN TABLE t1*/}
-  16 "b < '15'"                {/*SCAN TABLE t1*/}
+  15 "b > '5'"                 {/*SCAN t1*/}
+  16 "b < '15'"                {/*SCAN t1*/}
   17 "b < '5'"                 {/*ANY(a) AND b<?*/}
   18 "'5' > b"                 {/*ANY(a) AND b<?*/}
 } {
@@ -104,10 +104,10 @@ foreach {tn dbenc coll} {
 
   foreach {tn2 q res} {
     1 { c BETWEEN 'd' AND 'e' }       {/*ANY(a) AND ANY(b) AND c>? AND c<?*/}
-    2 { c BETWEEN 'b' AND 'r' }       {/*SCAN TABLE t2*/}
+    2 { c BETWEEN 'b' AND 'r' }       {/*SCAN t2*/}
     3 { c > 'q' }                     {/*ANY(a) AND ANY(b) AND c>?*/}
-    4 { c > 'e' }                     {/*SCAN TABLE t2*/}
-    5 { c < 'q' }                     {/*SCAN TABLE t2*/}
+    4 { c > 'e' }                     {/*SCAN t2*/}
+    5 { c < 'q' }                     {/*SCAN t2*/}
     6 { c < 'b' }                     {/*ANY(a) AND ANY(b) AND c<?*/}
   } {
     set sql "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE $q" 
@@ -169,11 +169,11 @@ do_test 3.2 {
 
 foreach {tn q res} {
   1 "b BETWEEN -10000 AND -8000"       {/*ANY(a) AND b>? AND b<?*/}
-  2 "b BETWEEN -10000 AND 'qqq'"       {/*SCAN TABLE t3*/}
-  3 "b < X'5555'"                      {/*SCAN TABLE t3*/}
+  2 "b BETWEEN -10000 AND 'qqq'"       {/*SCAN t3*/}
+  3 "b < X'5555'"                      {/*SCAN t3*/}
   4 "b > X'5555'"                      {/*ANY(a) AND b>?*/}
   5 "b > 'zzz'"                        {/*ANY(a) AND b>?*/}
-  6 "b < 'zzz'"                        {/*SCAN TABLE t3*/}
+  6 "b < 'zzz'"                        {/*SCAN t3*/}
 } {
   set sql "EXPLAIN QUERY PLAN SELECT * FROM t3 WHERE $q" 
   do_execsql_test 3.3.$tn $sql $res

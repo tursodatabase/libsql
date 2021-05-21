@@ -374,6 +374,38 @@ do_execsql_test 9.3 {
   SELECT *, min(z) OVER (ORDER BY x) FROM aaa ORDER BY 1;
 } {1 g g g   2 i i g   3 l l g   4 g l g   5 a l g   6 m m g}
 
+do_catchsql_test 9.4 {
+  -- 2021-04-17 dbsqlfuzz d9cf66100064952b66951845dfab41de1c124611
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,d);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x,y);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2(x,y)
+      SELECT a, max(d) OVER w1 FROM t1
+        WINDOW w1 AS (PARTITION BY EXISTS(SELECT 1 FROM t1 WHERE c=?1) );
+  END;
+} {1 {trigger cannot use variables}}
+
+do_catchsql_test 9.4.2 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t1(a,b) 
+        SELECT a, max(d) OVER w1 FROM t1
+        WINDOW w1 AS (
+          ORDER BY a ROWS BETWEEN ? PRECEDING AND UNBOUNDED FOLLOWING
+        );
+  END;
+} {1 {trigger cannot use variables}}
+do_catchsql_test 9.4.3 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t1(a,b) 
+        SELECT a, max(d) OVER w1 FROM t1
+        WINDOW w1 AS (
+          ORDER BY a ROWS BETWEEN UNBOUNDED PRECEDING AND ? FOLLOWING
+        );
+  END;
+} {1 {trigger cannot use variables}}
+
 #-------------------------------------------------------------------------
 #
 do_execsql_test 10.0 {
@@ -1883,11 +1915,59 @@ do_execsql_test 60.1 {
 # the Parse object is destroyed.
 #
 reset_db
-do_execsql_test 61.1 {
+do_catchsql_test 61.1 {
 CREATE TABLE t1(a);
 INSERT INTO t1 VALUES(5),(NULL),('seventeen');
 SELECT (SELECT max(x)OVER(ORDER BY x) % min(x)OVER(ORDER BY CASE x WHEN 889 THEN x WHEN x THEN x END)) FROM (SELECT (SELECT sum(CAST(a IN(SELECT (SELECT max(x)OVER(ORDER BY CASE x WHEN 889 THEN 299 WHEN 863 THEN 863 END)) FROM (SELECT (SELECT sum(CAST((SELECT (SELECT max(x)OVER(ORDER BY x) / min(x)OVER(ORDER BY CASE x WHEN 889 THEN 299 WHEN -true THEN 863 END)) FROM (SELECT (SELECT sum(CAST(a IN(SELECT (SELECT max(x) & sum ( a )OVER(ORDER BY CASE x WHEN -8 THEN 299 WHEN 863 THEN 863 END)) FROM (SELECT (SELECT sum(CAST(a AS )) FROM t1) AS x FROM t1)) AS t1 )) FROM t1) AS x FROM t1)) AS x )) FROM t1) AS x FROM t1)) AS real)) FROM t1) AS x FROM t1);
-} {{} {} {}}
+} {0 {{} {} {}}}
+
+foreach tn {1 2} {
+  if {$tn==2} { optimization_control db query-flattener 0 }
+  do_catchsql_test 61.2.$tn {
+    SELECT 
+      (SELECT max(x)OVER(ORDER BY x) / min(x) OVER() ) 
+    FROM (
+      SELECT (SELECT sum(a) FROM t1 ) AS x FROM t1
+    )
+
+  } {0 {1.0 1.0 1.0}}
+}
+
+reset_db
+optimization_control db all 0 
+do_execsql_test 61.3.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(y);
+}
+
+do_execsql_test 61.3.1 {
+  SELECT (
+    SELECT count(a) OVER ( ORDER BY (SELECT sum(y) FROM t2) )
+         + total(a) OVER() 
+  )
+  FROM t1
+} {}
+do_execsql_test 61.4.2 {
+  SELECT (
+    SELECT count(a) OVER ( ORDER BY sum(a) )
+         + total(a) OVER() 
+  )
+  FROM t1
+} {0.0}
+
+do_catchsql_test 61.4.3 {
+  SELECT 
+    sum(a) OVER ( ORDER BY a ) 
+  FROM t1 
+  ORDER BY (SELECT sum(a) FROM t2)
+} {1 {misuse of aggregate: sum()}}
+do_execsql_test 61.4.4 {
+  SELECT 
+    sum(a) OVER ( ORDER BY a ) 
+  FROM t1 
+  ORDER BY (SELECT sum(y) FROM t2)
+} 
+
 
 #-------------------------------------------------------------------------
 reset_db
@@ -2000,5 +2080,83 @@ do_execsql_test 65.4 {
   )
   FROM t1;
 } {{}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 66.1 {
+  CREATE TABLE t1(a INTEGER);
+  INSERT INTO t1 VALUES(3578824042033200656);
+  INSERT INTO t1 VALUES(3029012920382354029);
+}
+
+foreach {tn spec} {
+  1 "ORDER BY a RANGE BETWEEN 0.3 PRECEDING AND 10 FOLLOWING"
+  2 "ORDER BY a RANGE BETWEEN 0.3 PRECEDING AND 0.1 PRECEDING"
+  3 "ORDER BY a RANGE BETWEEN 0.3 FOLLOWING AND 10 FOLLOWING"
+  4 "ORDER BY a DESC RANGE BETWEEN 0.3 PRECEDING AND 10 FOLLOWING"
+  5 "ORDER BY a NULLS LAST RANGE BETWEEN 0.3 PRECEDING AND 10 FOLLOWING"
+  6 "ORDER BY a RANGE BETWEEN 1.0 PRECEDING AND 2.0 PRECEDING"
+} {
+  do_execsql_test 66.2.$tn "
+    SELECT total(a) OVER ( $spec ) FROM t1 ORDER BY a
+  " {
+    3.02901292038235e+18 3.5788240420332e+18
+  }
+}
+
+
+do_execsql_test 66.3 {
+  CREATE TABLE t2(a INTEGER);
+  INSERT INTO t2 VALUES(45);
+  INSERT INTO t2 VALUES(30);
+}
+
+foreach {tn spec res} {
+  1 "ORDER BY a RANGE BETWEEN 0.3 PRECEDING AND 10 FOLLOWING"   {30.0 45.0}
+  2 "ORDER BY a RANGE BETWEEN 0.3 PRECEDING AND 0.1 PRECEDING"  {0.0 0.0}
+  3 "ORDER BY a RANGE BETWEEN 0.3 FOLLOWING AND 10 FOLLOWING"   {0.0 0.0}
+  4 "ORDER BY a DESC RANGE BETWEEN 0.3 PRECEDING AND 10 FOLLOWING" {30.0 45.0}
+  5 "ORDER BY a NULLS LAST RANGE BETWEEN 0.3 PRECEDING AND 10 FOLLOWING" {30.0 45.0}
+  6 "ORDER BY a RANGE BETWEEN 1.0 PRECEDING AND 2.0 PRECEDING" {0.0 0.0}
+} {
+  do_execsql_test 66.2.$tn "
+    SELECT total(a) OVER ( $spec ) FROM t2 ORDER BY a
+  " $res
+}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 67.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(a, b, c);
+}
+
+do_catchsql_test 67.1 {
+  SELECT a,c,b FROM t1 INTERSECT SELECT a,b,c FROM t1 ORDER BY (             
+      SELECT nth_value(a,2) OVER w1 
+      WINDOW w1 AS ( ORDER BY ((SELECT 1 FROM v1)) )
+  )
+} {1 {no such table: v1}}
+
+do_catchsql_test 67.2 {
+  SELECT a,c,b FROM t1 INTERSECT SELECT a,b,c FROM t1 ORDER BY (             
+      SELECT nth_value(a,2) OVER w1 
+      WINDOW w1 AS ( ORDER BY ((SELECT 1 FROM t2)) )
+  )
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+# 2021-05-07
+# Do not allow aggregate functions in the ORDER BY clause even if
+# there are window functions in the result set.
+# Forum: /forumpost/540fdfef77
+#
+reset_db
+do_catchsql_test 68.0 {
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1(a,b) VALUES(0,0),(1,1),(2,4),(3,9),(4,99);
+  SELECT rowid, a, b, sum(a)OVER() FROM t1 ORDER BY count(b);
+} {1 {misuse of aggregate: count()}}
 
 finish_test

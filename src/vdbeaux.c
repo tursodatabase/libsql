@@ -1487,11 +1487,7 @@ char *sqlite3VdbeDisplayComment(
     char c;
     zSynopsis = zOpName += nOpName + 1;
     if( strncmp(zSynopsis,"IF ",3)==0 ){
-      if( pOp->p5 & SQLITE_STOREP2 ){
-        sqlite3_snprintf(sizeof(zAlt), zAlt, "r[P2] = (%s)", zSynopsis+3);
-      }else{
-        sqlite3_snprintf(sizeof(zAlt), zAlt, "if %s goto P2", zSynopsis+3);
-      }
+      sqlite3_snprintf(sizeof(zAlt), zAlt, "if %s goto P2", zSynopsis+3);
       zSynopsis = zAlt;
     }
     for(ii=0; (c = zSynopsis[ii])!=0; ii++){
@@ -5213,7 +5209,8 @@ void sqlite3VdbePreUpdateHook(
   const char *zDb,                /* Database name */
   Table *pTab,                    /* Modified table */
   i64 iKey1,                      /* Initial key value */
-  int iReg                        /* Register for new.* record */
+  int iReg,                       /* Register for new.* record */
+  int iBlobWrite
 ){
   sqlite3 *db = v->db;
   i64 iKey2;
@@ -5249,6 +5246,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;
+  preupdate.iBlobWrite = iBlobWrite;
 
   db->pPreUpdate = &preupdate;
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);

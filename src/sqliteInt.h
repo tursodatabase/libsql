@@ -1544,10 +1544,7 @@ struct sqlite3 {
     unsigned orphanTrigger : 1; /* Last statement is orphaned TEMP trigger */
     unsigned imposterTable : 1; /* Building an imposter table */
     unsigned reopenMemdb : 1;   /* ATTACH is really a reopen using MemDB */
-    unsigned bDropColumn : 1;   /* Doing schema check after DROP COLUMN */
     char **azInit;              /* "type", "name", and "tbl_name" columns */
-                                /*   or if bDropColumn, then azInit[0] is the */
-                                /*   name of the column being dropped */
   } init;
   int nVdbeActive;              /* Number of VDBEs currently running */
   int nVdbeRead;                /* Number of active VDBEs that read or write */
@@ -1753,7 +1750,6 @@ struct sqlite3 {
 #define SQLITE_SkipScan       0x00004000 /* Skip-scans */
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
-#define SQLITE_ExistsToIN     0x00020000 /* The EXISTS-to-IN optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -2126,9 +2122,7 @@ struct CollSeq {
 ** operator is NULL.  It is added to certain comparison operators to
 ** prove that the operands are always NOT NULL.
 */
-#define SQLITE_KEEPNULL     0x08  /* Used by vector == or <> */
 #define SQLITE_JUMPIFNULL   0x10  /* jumps if either operand is NULL */
-#define SQLITE_STOREP2      0x20  /* Store result in reg[P2] rather than jump */
 #define SQLITE_NULLEQ       0x80  /* NULL=NULL */
 #define SQLITE_NOTNULL      0x90  /* Assert that operands are never NULL */
 
@@ -2260,6 +2254,7 @@ struct Table {
 #define TF_Shadow          0x1000    /* True for a shadow table */
 #define TF_HasStat4        0x2000    /* STAT4 info available for this table */
 #define TF_Ephemeral       0x4000    /* An ephemeral table */
+#define TF_Eponymous       0x8000    /* An eponymous virtual table */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -2625,6 +2620,7 @@ struct AggInfo {
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iMem;                /* Memory location that acts as accumulator */
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
+    int iDistAddr;           /* Address of OP_OpenEphemeral */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   u32 selId;              /* Select to which this AggInfo belongs */
@@ -2897,6 +2893,7 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
+  int nAlloc;            /* Number of a[] slots allocated */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zEName;           /* Token associated with this expression */
@@ -2970,6 +2967,7 @@ struct SrcItem {
     unsigned isRecursive :1;   /* True for recursive reference in WITH */
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
     unsigned isCte :1;         /* This is a CTE */
+    unsigned notCte :1;        /* This item may not match a CTE */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   Expr *pOn;        /* The ON clause of a join */
@@ -3041,7 +3039,7 @@ struct SrcList {
 #define WHERE_DISTINCTBY       0x0080 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0100 /* All output needs to be distinct */
 #define WHERE_SORTBYGROUP      0x0200 /* Support sqlite3WhereIsSorted() */
-                        /*     0x0400    not currently used */
+#define WHERE_AGG_DISTINCT     0x0400 /* Query is "SELECT agg(DISTINCT ...)" */
 #define WHERE_ORDERBY_LIMIT    0x0800 /* ORDERBY+LIMIT on the inner loop */
                         /*     0x1000    not currently used */
                         /*     0x2000    not currently used */
@@ -3087,7 +3085,7 @@ struct NameContext {
   } uNC;
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
-  int nErr;            /* Number of errors encountered while resolving names */
+  int nNcErr;          /* Number of errors encountered while resolving names */
   int ncFlags;         /* Zero or more NC_* flags defined below */
   Select *pWinSelect;  /* SELECT statement for any window functions */
 };
@@ -3120,6 +3118,7 @@ struct NameContext {
 #define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
 #define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
 #define NC_FromDDL   0x40000  /* SQL text comes from sqlite_schema */
+#define NC_NoSelect  0x80000  /* Do not descend into sub-selects */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3814,7 +3813,7 @@ struct Sqlite3Config {
   void (*xVdbeBranch)(void*,unsigned iSrcLine,u8 eThis,u8 eMx);  /* Callback */
   void *pVdbeBranchArg;                                     /* 1st argument */
 #endif
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
   sqlite3_int64 mxMemdbSize;        /* Default max memdb size */
 #endif
 #ifndef SQLITE_UNTESTABLE
@@ -3901,9 +3900,16 @@ int sqlite3SelectWalkNoop(Walker*, Select*);
 int sqlite3SelectWalkFail(Walker*, Select*);
 int sqlite3WalkerDepthIncrease(Walker*,Select*);
 void sqlite3WalkerDepthDecrease(Walker*,Select*);
+void sqlite3WalkWinDefnDummyCallback(Walker*,Select*);
 
 #ifdef SQLITE_DEBUG
 void sqlite3SelectWalkAssert2(Walker*, Select*);
+#endif
+
+#ifndef SQLITE_OMIT_CTE
+void sqlite3SelectPopWith(Walker*, Select*);
+#else
+# define sqlite3SelectPopWith 0
 #endif
 
 /*
@@ -3939,6 +3945,7 @@ struct Cte {
 */
 struct With {
   int nCte;               /* Number of CTEs in the WITH clause */
+  int bView;              /* Belongs to the outermost Select of a view */
   With *pOuter;           /* Containing WITH clause, or NULL */
   Cte a[1];               /* For each CTE in the WITH clause.... */
 };
@@ -4309,6 +4316,7 @@ Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*, int);
 void sqlite3ExprFunctionUsable(Parse*,Expr*,FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
+void sqlite3ExprDeferredDelete(Parse*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
@@ -4330,6 +4338,7 @@ void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
+void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
 void sqlite3SelectAddColumnTypeAndCollation(Parse*,Table*,Select*,char);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
@@ -4710,7 +4719,7 @@ int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrName(int);
 #endif
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
 int sqlite3MemdbInit(void);
 #endif
 
@@ -4761,6 +4770,9 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3UpperToLower[];
+extern const unsigned char *sqlite3aLTb;
+extern const unsigned char *sqlite3aEQb;
+extern const unsigned char *sqlite3aGTb;
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;

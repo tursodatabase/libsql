@@ -129,7 +129,7 @@ do_test intpkey-1.12.2 {
     EXPLAIN QUERY PLAN
     SELECT * FROM t1 WHERE a==4;
   }
-} {/SEARCH TABLE t1 /}
+} {/SEARCH t1 /}
 
 # Try to insert a non-integer value into the primary key field.  This
 # should result in a data type mismatch.

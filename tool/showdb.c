@@ -912,10 +912,19 @@ static void page_usage_btree(
     int cellstart = hdr+12;
     u32 child;
     for(i=0; i<nCell; i++){
+      u32 cellidx;
       u32 ofst;
 
-      ofst = cellstart + i*2;
-      ofst = a[ofst]*256 + a[ofst+1];
+      cellidx = cellstart + i*2;
+      if( cellidx+1 >= g.pagesize ){
+        printf("ERROR: page %d too many cells (%d)\n", pgno, nCell);
+        break;
+      }
+      ofst = a[cellidx]*256 + a[cellidx+1];
+      if( ofst<cellidx+2 || ofst+4>=g.pagesize ){
+        printf("ERROR: page %d cell %d out of bounds\n", pgno, i);
+        continue;
+      }
       child = decodeInt32(a+ofst);
       page_usage_btree(child, pgno, i, zName);
     }

@@ -2073,9 +2073,7 @@ static void math2Func(
 }
 
 /*
-** Implementation of 2-argument SQL math functions:
-**
-**   power(X,Y)  - Compute X to the Y-th power
+** Implementation of 0-argument pi() function.
 */
 static void piFunc(
   sqlite3_context *context,

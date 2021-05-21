@@ -229,7 +229,7 @@ int sqlite3OsOpen(
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   DO_OS_MALLOC_TEST(0);
   assert( dirSync==0 || dirSync==1 );
-  return pVfs->xDelete(pVfs, zPath, dirSync);
+  return pVfs->xDelete!=0 ? pVfs->xDelete(pVfs, zPath, dirSync) : SQLITE_OK;
 }
 int sqlite3OsAccess(
   sqlite3_vfs *pVfs,

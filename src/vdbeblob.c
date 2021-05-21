@@ -420,7 +420,7 @@ static int blobReadWrite(
       sqlite3_int64 iKey;
       iKey = sqlite3BtreeIntegerKey(p->pCsr);
       sqlite3VdbePreUpdateHook(
-          v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1
+          v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1, p->iCol
       );
     }
 #endif
@@ -491,6 +491,7 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
     rc = SQLITE_ABORT;
   }else{
     char *zErr;
+    ((Vdbe*)p->pStmt)->rc = SQLITE_OK;
     rc = blobSeekToRow(p, iRow, &zErr);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : 0), zErr);

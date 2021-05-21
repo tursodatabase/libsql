@@ -299,7 +299,7 @@ static void jsonAppendSeparator(JsonString *p){
 */
 static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   u32 i;
-  if( (N+p->nUsed+2 >= p->nAlloc) && jsonGrow(p,N+2)!=0 ) return;
+  if( zIn==0 || ((N+p->nUsed+2 >= p->nAlloc) && jsonGrow(p,N+2)!=0) ) return;
   p->zBuf[p->nUsed++] = '"';
   for(i=0; i<N; i++){
     unsigned char c = ((unsigned const char*)zIn)[i];
@@ -1898,8 +1898,8 @@ static void jsonArrayStep(
       jsonAppendChar(pStr, '[');
     }else if( pStr->nUsed>1 ){
       jsonAppendChar(pStr, ',');
-      pStr->pCtx = ctx;
     }
+    pStr->pCtx = ctx;
     jsonAppendValue(pStr, argv[0]);
   }
 }
@@ -1959,11 +1959,7 @@ static void jsonGroupInverse(
   if( NEVER(!pStr) ) return;
 #endif
   z = pStr->zBuf;
-  for(i=1; (c = z[i])!=',' || inStr || nNest; i++){
-    if( i>=pStr->nUsed ){
-      pStr->nUsed = 1;
-      return;
-    }
+  for(i=1; i<pStr->nUsed && ((c = z[i])!=',' || inStr || nNest); i++){
     if( c=='"' ){
       inStr = !inStr;
     }else if( c=='\\' ){
@@ -1973,8 +1969,13 @@ static void jsonGroupInverse(
       if( c=='}' || c==']' ) nNest--;
     }
   }
-  pStr->nUsed -= i;      
-  memmove(&z[1], &z[i+1], (size_t)pStr->nUsed-1);
+  if( i<pStr->nUsed ){
+    pStr->nUsed -= i;
+    memmove(&z[1], &z[i+1], (size_t)pStr->nUsed-1);
+    z[pStr->nUsed] = 0;
+  }else{
+    pStr->nUsed = 1;
+  }
 }
 #else
 # define jsonGroupInverse 0
