@@ -5067,6 +5067,11 @@ static int resolveFromTermToCte(
     /* There are no WITH clauses in the stack.  No match is possible */
     return 0;
   }
+  if( pParse->nErr ){
+    /* Prior errors might have left pParse->pWith in a goofy state, so
+    ** go no further. */
+    return 0;
+  }
   if( pFrom->zDatabase!=0 ){
     /* The FROM term contains a schema qualifier (ex: main.t1) and so
     ** it cannot possibly be a CTE reference. */
