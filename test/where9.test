@@ -982,6 +982,23 @@ do_test where9-10.2 {
   }
 } {1 {} 1}
 
-
+# dbsqlfuzz 9df1d53c24c4c96af0dae15ee764897af415ac76
+# The MULTI-INDEX OR processing evaluates the same WHERE-clause sub-expression
+# twice.  But if that sub-expression contains a UNION ALL SELECT statement
+# subject to query flattening, the sub-expression might be transformed in a
+# way that it can only be code-generated once.  An assert() will fail on
+# the second attempt to generate code from the same sub-expression.
+# The solution is to make a copy of sub-expressions used by MULTI-INDEX OR
+#
+reset_db
+do_execsql_test where9-11.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE t2_a(k INTEGER PRIMARY KEY, v TEXT);
+  CREATE TABLE t2_b(k INTEGER PRIMARY KEY, v TEXT);
+  CREATE VIEW t2 AS SELECT * FROM t2_a UNION ALL SELECT * FROM t2_b;
+  SELECT 1 FROM t1 JOIN t1 USING(a)
+   WHERE (a=1)
+      OR (a=2 AND (SELECT 4 FROM t2,(SELECT 5 FROM t1 ORDER BY a) WHERE a));
+} {}
 
 finish_test

@@ -736,5 +736,67 @@ do_catchsql_test 24.2.1 {
   ALTER TABLE t1 RENAME TO t2;
 } {1 {error in trigger AFTER: no such table: main.nosuchtable}}
 
+#--------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 25.1 {
+  CREATE TABLE xx(x);
+  CREATE VIEW v3(b) AS WITH b AS (SELECT b FROM (SELECT * FROM t2)) VALUES(1);
+}
+
+ifcapable json1&&vtab {
+  do_catchsql_test 25.2 {
+    ALTER TABLE json_each RENAME TO t4;
+  } {1 {table json_each may not be altered}}
+}
+
+# 2021-05-01 dbsqlfuzz bc17a306a09329bba0ecc61547077f6178bcf321
+# Remove a NEVER() inserted on 2019-12-09 that is reachable after all.
+#
+reset_db
+do_execsql_test 26.1 {
+  CREATE TABLE t1(k,v);
+  CREATE TABLE t2_a(k,v);
+  CREATE VIEW t2 AS SELECT * FROM t2_a;
+  CREATE TRIGGER r2 AFTER INSERT ON t1 BEGIN
+    UPDATE t1 
+       SET (k,v)=((WITH cte1(a) AS (SELECT 1 FROM t2) SELECT t2.k FROM t2, cte1),1);
+  END;
+  ALTER TABLE t1 RENAME TO t1x;
+  INSERT INTO t2_a VALUES(2,3);
+  INSERT INTO t1x VALUES(98,99);
+  SELECT * FROM t1x;
+} {2 1}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 27.1 {
+
+ create table t_sa (
+ c_muyat INTEGER NOT NULL,
+ c_d4u TEXT 
+ );
+
+ create table t2 ( abc );
+
+ CREATE TRIGGER trig AFTER DELETE ON t_sa
+   BEGIN
+   DELETE FROM t_sa WHERE (
+       SELECT 123 FROM t2
+       WINDOW oamat7fzf AS ( PARTITION BY t_sa.c_d4u )
+   );
+   END;
+}
+
+
+breakpoint
+do_execsql_test 27.2 {
+  alter table t_sa rename column c_muyat to c_dg;
+}
+
+
+
+
 
 finish_test

@@ -1899,7 +1899,7 @@ static int fts3ScanInteriorNode(
   char *zBuffer = 0;              /* Buffer to load terms into */
   i64 nAlloc = 0;                 /* Size of allocated buffer */
   int isFirstTerm = 1;            /* True when processing first term on page */
-  sqlite3_int64 iChild;           /* Block id of child node to descend to */
+  u64 iChild;                     /* Block id of child node to descend to */
   int nBuffer = 0;                /* Total term size */
 
   /* Skip over the 'height' varint that occurs at the start of every 
@@ -1915,8 +1915,8 @@ static int fts3ScanInteriorNode(
   ** table, then there are always 20 bytes of zeroed padding following the
   ** nNode bytes of content (see sqlite3Fts3ReadBlock() for details).
   */
-  zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
-  zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
+  zCsr += sqlite3Fts3GetVarintU(zCsr, &iChild);
+  zCsr += sqlite3Fts3GetVarintU(zCsr, &iChild);
   if( zCsr>zEnd ){
     return FTS_CORRUPT_VTAB;
   }
@@ -1969,20 +1969,20 @@ static int fts3ScanInteriorNode(
     */
     cmp = memcmp(zTerm, zBuffer, (nBuffer>nTerm ? nTerm : nBuffer));
     if( piFirst && (cmp<0 || (cmp==0 && nBuffer>nTerm)) ){
-      *piFirst = iChild;
+      *piFirst = (i64)iChild;
       piFirst = 0;
     }
 
     if( piLast && cmp<0 ){
-      *piLast = iChild;
+      *piLast = (i64)iChild;
       piLast = 0;
     }
 
     iChild++;
   };
 
-  if( piFirst ) *piFirst = iChild;
-  if( piLast ) *piLast = iChild;
+  if( piFirst ) *piFirst = (i64)iChild;
+  if( piLast ) *piLast = (i64)iChild;
 
  finish_scan:
   sqlite3_free(zBuffer);
@@ -5130,16 +5130,15 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
 #ifndef SQLITE_DISABLE_FTS4_DEFERRED
   if( rc==SQLITE_OK && nToken>1 && pTab->bFts4 ){
     Fts3TokenAndCost *aTC;
-    Fts3Expr **apOr;
     aTC = (Fts3TokenAndCost *)sqlite3_malloc64(
         sizeof(Fts3TokenAndCost) * nToken
       + sizeof(Fts3Expr *) * nOr * 2
     );
-    apOr = (Fts3Expr **)&aTC[nToken];
 
     if( !aTC ){
       rc = SQLITE_NOMEM;
     }else{
+      Fts3Expr **apOr = (Fts3Expr **)&aTC[nToken];
       int ii;
       Fts3TokenAndCost *pTC = aTC;
       Fts3Expr **ppOr = apOr;

@@ -1435,9 +1435,10 @@ static void showHelp(void){
 "  --limit-heap N       Limit heap memory to N.  Default: 100M\n"
 "  --limit-mem N        Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe         Panic if any test runs for more than 100,000 cycles\n"
-"  --load-sql ARGS...   Load SQL scripts fron files into SOURCE-DB\n"
-"  --load-db ARGS...    Load template databases from files into SOURCE_DB\n"
-"  --load-dbsql ARGS..  Load dbsqlfuzz outputs into the xsql table\n"
+"  --load-sql   FILE..  Load SQL scripts fron files into SOURCE-DB\n"
+"  --load-db    FILE..  Load template databases from files into SOURCE_DB\n"
+"  --load-dbsql FILE..  Load dbsqlfuzz outputs into the xsql table\n"
+"               ^^^^------ Use \"-\" for FILE to read filenames from stdin\n"
 "  -m TEXT              Add a description to the database\n"
 "  --native-vfs         Use the native VFS for initially empty database files\n"
 "  --native-malloc      Turn off MEMSYS3/5 and Lookaside\n"
@@ -1778,10 +1779,25 @@ int main(int argc, char **argv){
       rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
       if( rc ) fatalError("cannot start a transaction");
       for(i=iFirstInsArg; i<argc; i++){
-        sqlite3_bind_text(pStmt, 1, argv[i], -1, SQLITE_STATIC);
-        sqlite3_step(pStmt);
-        rc = sqlite3_reset(pStmt);
-        if( rc ) fatalError("insert failed for %s", argv[i]);
+        if( strcmp(argv[i],"-")==0 ){
+          /* A filename of "-" means read multiple filenames from stdin */
+          char zLine[2000];
+          while( rc==0 && fgets(zLine,sizeof(zLine),stdin)!=0 ){
+            size_t kk = strlen(zLine);
+            while( kk>0 && zLine[kk-1]<=' ' ) kk--;
+            sqlite3_bind_text(pStmt, 1, zLine, kk, SQLITE_STATIC);
+            if( verboseFlag ) printf("loading %.*s\n", (int)kk, zLine);
+            sqlite3_step(pStmt);
+            rc = sqlite3_reset(pStmt);
+            if( rc ) fatalError("insert failed for %s", zLine);
+          }
+        }else{
+          sqlite3_bind_text(pStmt, 1, argv[i], -1, SQLITE_STATIC);
+          if( verboseFlag ) printf("loading %s\n", argv[i]);
+          sqlite3_step(pStmt);
+          rc = sqlite3_reset(pStmt);
+          if( rc ) fatalError("insert failed for %s", argv[i]);
+        }
       }
       sqlite3_finalize(pStmt);
       rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
@@ -2050,7 +2066,8 @@ int main(int argc, char **argv){
       }
     }
     if( bSpinner ){
-      printf("\n");
+      int nTotal = g.nDb*g.nSql;
+      printf("\r%s: %d/%d   \n", zDbName, nTotal, nTotal);
     }else if( !quietFlag && !verboseFlag ){
       printf(" 100%% - %d tests\n", g.nDb*g.nSql);
     }

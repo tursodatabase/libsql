@@ -305,7 +305,7 @@ int sqlite3_initialize(void){
       sqlite3GlobalConfig.isPCacheInit = 1;
       rc = sqlite3OsInit();
     }
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     if( rc==SQLITE_OK ){
       rc = sqlite3MemdbInit();
     }
@@ -720,12 +720,12 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_ENABLE_SORTER_REFERENCES */
 
-#ifdef SQLITE_ENABLE_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
     case SQLITE_CONFIG_MEMDB_MAXSIZE: {
       sqlite3GlobalConfig.mxMemdbSize = va_arg(ap, sqlite3_int64);
       break;
     }
-#endif /* SQLITE_ENABLE_DESERIALIZE */
+#endif /* SQLITE_OMIT_DESERIALIZE */
 
     default: {
       rc = SQLITE_ERROR;
@@ -1274,7 +1274,7 @@ int sqlite3_txn_state(sqlite3 *db, const char *zSchema){
 /*
 ** Two variations on the public interface for closing a database
 ** connection. The sqlite3_close() version returns SQLITE_BUSY and
-** leaves the connection option if there are unfinalized prepared
+** leaves the connection open if there are unfinalized prepared
 ** statements or unfinished sqlite3_backups.  The sqlite3_close_v2()
 ** version forces the connection to become a zombie if there are
 ** unclosed resources, and arranges for deallocation when the last
@@ -1888,6 +1888,10 @@ int sqlite3CreateFunc(
     }else{
       sqlite3ExpirePreparedStatements(db, 0);
     }
+  }else if( xSFunc==0 && xFinal==0 ){
+    /* Trying to delete a function that does not exist.  This is a no-op.
+    ** https://sqlite.org/forum/forumpost/726219164b */
+    return SQLITE_OK;
   }
 
   p = sqlite3FindFunction(db, zFunctionName, nArg, (u8)enc, 1);

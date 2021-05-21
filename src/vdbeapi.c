@@ -1908,6 +1908,17 @@ int sqlite3_preupdate_depth(sqlite3 *db){
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
+** This function is designed to be called from within a pre-update callback
+** only. 
+*/
+int sqlite3_preupdate_blobwrite(sqlite3 *db){
+  PreUpdate *p = db->pPreUpdate;
+  return (p ? p->iBlobWrite : -1);
+}
+#endif
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+/*
 ** This function is called from within a pre-update callback to retrieve
 ** a field of the row currently being updated or inserted.
 */

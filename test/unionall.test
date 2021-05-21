@@ -355,4 +355,13 @@ do_execsql_test 6.1 {
   9 10 800 100      9 10 800 400
 }
 
+# 2021-04-26 dbsqlfuzz 88ed5c66789fced139d148aed823cba7c0926dd7
+reset_db
+do_execsql_test 7.1 {
+  WITH c1(x) AS (VALUES(0) UNION ALL SELECT 100+x FROM c1 WHERE x<100 UNION ALL SELECT 1+x FROM c1 WHERE x<1)
+  SELECT x, y, '|'
+    FROM c1 AS x1, (SELECT x+1 AS y FROM c1 WHERE x<1 UNION ALL SELECT 1+x FROM c1 WHERE 1<x) AS x2
+   ORDER BY x, y;
+} {0 1 | 0 101 | 0 102 | 1 1 | 1 101 | 1 102 | 100 1 | 100 101 | 100 102 | 101 1 | 101 101 | 101 102 |}
+
 finish_test

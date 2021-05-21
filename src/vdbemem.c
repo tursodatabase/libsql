@@ -75,7 +75,9 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
 
   /* The szMalloc field holds the correct memory allocation size */
   assert( p->szMalloc==0
-       || p->szMalloc==sqlite3DbMallocSize(p->db,p->zMalloc) );
+       || (p->flags==MEM_Undefined 
+           && p->szMalloc<=sqlite3DbMallocSize(p->db,p->zMalloc))
+       || p->szMalloc==sqlite3DbMallocSize(p->db,p->zMalloc));
 
   /* If p holds a string or blob, the Mem.z must point to exactly
   ** one of the following:
@@ -239,7 +241,9 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   testcase( bPreserve && pMem->z==0 );
 
   assert( pMem->szMalloc==0
-       || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
+       || (pMem->flags==MEM_Undefined 
+           && pMem->szMalloc<=sqlite3DbMallocSize(pMem->db,pMem->zMalloc))
+       || pMem->szMalloc==sqlite3DbMallocSize(pMem->db,pMem->zMalloc));
   if( pMem->szMalloc>0 && bPreserve && pMem->z==pMem->zMalloc ){
     if( pMem->db ){
       pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);

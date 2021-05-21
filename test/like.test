@@ -1036,16 +1036,18 @@ do_test like-14.1 {
   set x [lindex [time {
     db one {SELECT 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz'GLOB'*a*a*a*a*a*a*a*a*y'}
   }] 0]
-  puts -nonewline " ($x ms - want less than 1000) "
-  expr {$x<1000}
+  set tlimit [expr {1000 * $::sqlite_options(configslower)}]
+  puts -nonewline " ($x ms - want less than $tlimit) "
+  expr {$x<$tlimit}
 } {1}
 ifcapable !icu {
   do_test like-14.2 {
     set x [lindex [time {
       db one {SELECT 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz'LIKE'%a%a%a%a%a%a%a%a%y'}
     }] 0]
-    puts -nonewline " ($x ms - want less than 1000) "
-    expr {$x<1000}
+  set tlimit [expr {1000 * $::sqlite_options(configslower)}]
+  puts -nonewline " ($x ms - want less than $tlimit) "
+  expr {$x<$tlimit}
   } {1}
 }
 

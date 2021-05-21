@@ -12,7 +12,6 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.20 2008/08/21 14:15:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -251,7 +250,13 @@ do_test select5-8.8 {
   }
 } {two 3 one 9}
 
+# 2021-04-26 forum https://sqlite.org/forum/forumpost/74330094d8
+reset_db
+do_execsql_test select5-9.1 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1(a,b) VALUES(1,null),(null,null),(1,null);
+  CREATE UNIQUE INDEX t1b ON t1(abs(b));
+  SELECT quote(a), quote(b), '|' FROM t1 GROUP BY a, abs(b);
+} {NULL NULL | 1 NULL |}
 
-
- 
 finish_test
