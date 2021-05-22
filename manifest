@@ -1,5 +1,5 @@
-C If\sthere\sare\serrors\sin\sa\snested\sCTE,\sbe\ssure\sto\sabandon\sprocessing.\s\sDo\snot\ncontinue\ssince\sthe\sparse\stree\smay\shave\sbeen\sleft\sin\sa\sgoofy\sstate\swhich\scould\ncause\suse-after-free\sand\ssegfaults.\nSee\s[forum:/forumpost/aa4a7a3980|forum\spost\saa4a7a3980]\sfor\san\sexample.
-D 2021-05-21T21:49:07.197
+C If\san\sFTS5\sCursor\sfails\sto\senlarge\sthe\sspace\sfor\sthe\saInst\sarray,\sset\sthe\nsize\sof\sthe\saInst\sarray\sto\szero.\ndbsqlfuzz\s294254b8105cca409f27a711f1eb2e9e63cbcac5.
+D 2021-05-22T01:30:30.860
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -120,7 +120,7 @@ F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7
 F ext/fts5/fts5_expr.c 9462249a3bb82d0e49b163500f9d2197c2e4cd95bf440a9bbfc3906b22ea1e1b
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
 F ext/fts5/fts5_index.c 222b5e56f51139ca5400985e26ea9971165901c7a45a2c17499bd2be3695c697
-F ext/fts5/fts5_main.c f497ca97cb2802311ec93733b595762dc5b044ce3c6c8ce5fb3e871dd3fccd5d
+F ext/fts5/fts5_main.c ff58907c51e347808ea4691f2cb341bb3d5558448a0c17a25a26a0740ea47a09
 F ext/fts5/fts5_storage.c 58ba71e6cd3d43a5735815e7956ee167babb4d2cbfe206905174792af4d09d75
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c18dbe2f389f4ba7b219b7995d4f7009d1bc249ef8f93a30b262c6d2c008319d
-R ddcc3a411d04466b180e47749d964e86
+P 94225d693932eb0b5d7799d40513afbd31ed40e1e156675eb92ad7216f1ff20f
+R 7ab0547b25495b9c2ea308d91c7abcea
 U drh
-Z cac7574e7912a186bd75c53237363cb1
+Z 2300f3100b43ff3fe1a9ea7184b73bea

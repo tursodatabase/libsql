@@ -1956,6 +1956,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
           if( aInst ){
             pCsr->aInst = aInst;
           }else{
+            pCsr->nInstAlloc = nInst = 0;
             rc = SQLITE_NOMEM;
             break;
           }
