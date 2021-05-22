@@ -199,7 +199,7 @@ do_test skipscan2-3.2 {
 } {}
 do_eqp_test skipscan2-3.3eqp {
   SELECT * FROM t3 WHERE b=42;
-} {SEARCH TABLE t3 USING PRIMARY KEY (ANY(a) AND b=?)}
+} {SEARCH t3 USING PRIMARY KEY (ANY(a) AND b=?)}
 
 
 

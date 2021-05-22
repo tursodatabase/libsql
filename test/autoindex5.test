@@ -102,7 +102,7 @@ do_eqp_test autoindex5-1.1 {
      AND ( sp.release = 'sid' OR sp.release = 'stretch' OR sp.release = 'jessie'
             OR sp.release = 'wheezy' OR sp.release = 'squeeze' )
   ORDER BY sp.name, st.bug_name, sp.release, sp.subrelease;
-} {SEARCH SUBQUERY * USING AUTOMATIC COVERING INDEX (bug_name=?)}
+} {SEARCH debian_cve USING AUTOMATIC COVERING INDEX (bug_name=?)}
 
 #-------------------------------------------------------------------------
 # Test that ticket [8a2adec1] has been fixed.
@@ -123,7 +123,7 @@ do_execsql_test 2.1 {
       SELECT sum(z) FROM vvv WHERE x='aaa'
   ) FROM one;
 } {8.0}
-do_execsql_test 2.2 {
+do_catchsql_test 2.2 {
   DROP TABLE t1;
   CREATE TABLE t1(aaa);
   INSERT INTO t1(aaa) VALUES(9);
@@ -136,7 +136,7 @@ do_execsql_test 2.2 {
       ) WHERE bbb = 1
     )
   );
-} {9}
+} {1 {no such column: rowid}}
 
 # Ticket https://www.sqlite.org/src/info/787fa716be3a7f65
 # Segfault due to multiple uses of the same subquery where the

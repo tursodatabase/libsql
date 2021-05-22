@@ -344,13 +344,40 @@ do_execsql_test transitive1-560 {
 do_execsql_test transitive1-560eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM c1 WHERE x=y AND y=z AND z='abc';
-} {/SCAN TABLE c1/}
+} {/SCAN c1/}
 do_execsql_test transitive1-570 {
   SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
 } {}
 do_execsql_test transitive1-570eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
-} {/SEARCH TABLE c1 USING INDEX c1x/}
+} {/SEARCH c1 USING INDEX c1x/}
+
+# 2021-05-04 forum https://sqlite.org/forum/forumpost/eb8613976a
+reset_db
+do_execsql_test transitive1-600 {
+  CREATE TABLE t0(a0 INT, b1 INT);
+  CREATE INDEX t0b1 ON t0(b1);
+  CREATE TABLE t1(w,x,y,z3 INT);
+  INSERT INTO t0(a0, b1) VALUES (0,1);
+  INSERT INTO t1(w,x,y,z3) VALUES (7,8,9,1);
+} {}
+do_execsql_test transitive1-610 {
+  SELECT ALL * FROM t0,t1 WHERE b1=z3 AND a0=z3;
+} {}
+do_execsql_test transitive1-620 {
+  SELECT ALL * FROM t0,t1 WHERE likely(b1=z3) AND a0=z3;
+} {}
+do_execsql_test transitive1-630 {
+  DROP TABLE t0;
+  DROP TABLE t1;
+  CREATE TABLE t0(c0 INT, c1 INT UNIQUE);
+  CREATE TABLE t1(c0 INT);
+  INSERT INTO t0(c0, c1) VALUES (0, 1);
+  INSERT INTO t1(c0) VALUES (1);
+  SELECT ALL * FROM t1 NATURAL JOIN t0 WHERE (t1.c0=t0.c1);
+  SELECT ALL * FROM t1 NATURAL JOIN t0 WHERE (likely(t1.c0=t0.c1));
+  SELECT ALL * FROM t1,t0 WHERE (likely(t1.c0=t0.c1) AND t1.c0=t0.c0);
+} {}
 
 finish_test

@@ -168,13 +168,13 @@ proc queryplan {sql} {
   set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
   # puts eqp=$eqp
   foreach {a b c x} $eqp {
-    if {[regexp { TABLE (\w+ AS )?(\w+) USING COVERING INDEX (\w+)\y} \
-        $x all as tab idx]} {
+    if {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+) USING COVERING INDEX (\w+)\y} \
+        $x all ss as tab idx]} {
       lappend data {} $idx
-    } elseif {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
-        $x all as tab idx]} {
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all ss as tab idx]} {
       lappend data $tab $idx
-    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+)\y} $x all ss as tab]} {
       lappend data $tab *
     }
   }
@@ -726,7 +726,7 @@ ifcapable like_opt&&!icu {
       set res [sqlite3_exec_hex db {
          EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%ff%25'
       }]
-      regexp {SCAN TABLE t2} $res
+      regexp {SCAN t2} $res
     } {1}
   }
   do_test like-9.5.1 {
@@ -1036,16 +1036,18 @@ do_test like-14.1 {
   set x [lindex [time {
     db one {SELECT 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz'GLOB'*a*a*a*a*a*a*a*a*y'}
   }] 0]
-  puts -nonewline " ($x ms - want less than 1000) "
-  expr {$x<1000}
+  set tlimit [expr {1000 * $::sqlite_options(configslower)}]
+  puts -nonewline " ($x ms - want less than $tlimit) "
+  expr {$x<$tlimit}
 } {1}
 ifcapable !icu {
   do_test like-14.2 {
     set x [lindex [time {
       db one {SELECT 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz'LIKE'%a%a%a%a%a%a%a%a%y'}
     }] 0]
-    puts -nonewline " ($x ms - want less than 1000) "
-    expr {$x<1000}
+  set tlimit [expr {1000 * $::sqlite_options(configslower)}]
+  puts -nonewline " ($x ms - want less than $tlimit) "
+  expr {$x<$tlimit}
   } {1}
 }
 

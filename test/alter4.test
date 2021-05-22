@@ -318,16 +318,16 @@ ifcapable trigger&&tempdb {
       END;
   
       INSERT INTO t1 VALUES(1, 2);
-      SELECT * FROM log;
+      SELECT * FROM log ORDER BY trig, a, b;
     }
-  } {b 1 2 a 1 2}
+  } {a 1 2 b 1 2}
   do_test alter4-6.2 {
     execsql {
       ALTER TABLE t1 ADD COLUMN c DEFAULT 'c';
       INSERT INTO t1(a, b) VALUES(3, 4);
-      SELECT * FROM log;
+      SELECT * FROM log ORDER BY trig, a, b;
     }
-  } {b 1 2 a 1 2 b 3 4 a 3 4}
+  } {a 1 2 a 3 4 b 1 2 b 3 4}
 }
 
 # Ticket #1183 - Make sure adding columns to large tables does not cause

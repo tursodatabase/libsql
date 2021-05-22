@@ -1807,7 +1807,7 @@ static int fts3SegReaderCmp(Fts3SegReader *pLhs, Fts3SegReader *pRhs){
   if( rc==0 ){
     rc = pRhs->iIdx - pLhs->iIdx;
   }
-  assert( rc!=0 );
+  assert_fts3_nc( rc!=0 );
   return rc;
 }
 

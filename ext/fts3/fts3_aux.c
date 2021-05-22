@@ -406,6 +406,7 @@ static int fts3auxFilterMethod(
   sqlite3Fts3SegReaderFinish(&pCsr->csr);
   sqlite3_free((void *)pCsr->filter.zTerm);
   sqlite3_free(pCsr->aStat);
+  sqlite3_free(pCsr->zStop);
   memset(&pCsr->csr, 0, ((u8*)&pCsr[1]) - (u8*)&pCsr->csr);
 
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;

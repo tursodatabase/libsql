@@ -111,10 +111,12 @@ proc queryplan {sql} {
   set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
   # puts eqp=$eqp
   foreach {a b c x} $eqp {
-    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
-        $x all as tab idx]} {
+    if {[regexp {SCAN CONSTANT} $x]} {
+      # noop
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all ss as tab idx]} {
       lappend data $tab $idx
-    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+)\y} $x all ss as tab]} {
       lappend data $tab *
     }
   }
@@ -240,15 +242,15 @@ do_eqp_test where3-3.0a {
   SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
 } {
   QUERY PLAN
-  |--SCAN TABLE t302
-  `--SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SCAN t302
+  `--SEARCH t301 USING INTEGER PRIMARY KEY (rowid=?)
 }
 do_eqp_test where3-3.1 {
   SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
 } {
   QUERY PLAN
-  |--SCAN TABLE t302
-  `--SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SCAN t302
+  `--SEARCH t301 USING INTEGER PRIMARY KEY (rowid=?)
 }
 do_execsql_test where3-3.2 {
   SELECT * FROM t301 WHERE c=3 AND a IS NULL;
@@ -269,25 +271,25 @@ do_execsql_test where3-4.0 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t400, t401, t402 WHERE t402.z GLOB 'abc*';
 } {
-  0 0 2 {SCAN TABLE t402} 
-  0 1 0 {SCAN TABLE t400} 
-  0 2 1 {SCAN TABLE t401}
+  0 0 2 {SCAN t402} 
+  0 1 0 {SCAN t400} 
+  0 2 1 {SCAN t401}
 }
 do_execsql_test where3-4.1 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t400, t401, t402 WHERE t401.r GLOB 'abc*';
 } {
-  0 0 1 {SCAN TABLE t401} 
-  0 1 0 {SCAN TABLE t400} 
-  0 2 2 {SCAN TABLE t402}
+  0 0 1 {SCAN t401} 
+  0 1 0 {SCAN t400} 
+  0 2 2 {SCAN t402}
 }
 do_execsql_test where3-4.2 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t400, t401, t402 WHERE t400.c GLOB 'abc*';
 } {
-  0 0 0 {SCAN TABLE t400} 
-  0 1 1 {SCAN TABLE t401} 
-  0 2 2 {SCAN TABLE t402}
+  0 0 0 {SCAN t400} 
+  0 1 1 {SCAN t401} 
+  0 2 2 {SCAN t402}
 }
 } ;# endif
 
@@ -321,8 +323,8 @@ do_eqp_test where3-5.0a {
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
   QUERY PLAN
-  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
-  |--SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH bbb USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test where3-5.1 {
@@ -334,8 +336,8 @@ do_eqp_test where3-5.1 {
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
   QUERY PLAN
-  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
-  |--SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH bbb USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test where3-5.2 {
@@ -347,8 +349,8 @@ do_eqp_test where3-5.2 {
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
   QUERY PLAN
-  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
-  |--SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH bbb USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test where3-5.3 {
@@ -360,8 +362,8 @@ do_eqp_test where3-5.3 {
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
   QUERY PLAN
-  |--SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)
-  |--SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH aaa USING INDEX aaa_333 (fk=?)
+  |--SEARCH bbb USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 

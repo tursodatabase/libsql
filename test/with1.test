@@ -1025,10 +1025,10 @@ do_eqp_test 19.1b {
   SELECT * FROM t1;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE x1
   |  `--SCAN CONSTANT ROW
-  |--SCAN SUBQUERY xxxxxx
-  `--SCAN SUBQUERY xxxxxx
+  |--SCAN x1
+  `--SCAN x1
 }
 
 # 2017-10-28.
@@ -1149,20 +1149,26 @@ do_execsql_test 24.2 {
 # had to continue to recognize "true" and "false" as identifiers for
 # backwards compatibility.
 #
-reset_db
-do_execsql_test 25.1 {
-  CREATE TABLE dual(dummy);
-  INSERT INTO dual(dummy) VALUES('X');
-  WITH cte1 AS (
-    SELECT TRUE, (
-      WITH cte2 AS (SELECT avg(DISTINCT TRUE) FROM dual)
-      SELECT 2571 FROM cte2
-    ) AS subquery1
-    FROM dual
-    GROUP BY 1
-  )
-  SELECT (SELECT 1324 FROM cte1) FROM cte1;
-} {1324}
+foreach {id dual} {
+  1  {CREATE TABLE dual AS SELECT 'X' AS dummy}
+  2  {CREATE TEMP TABLE dual AS SELECT 'X' AS dummy}
+  3  {CREATE VIEW dual(dummy) AS VALUES('X')}
+  4  {CREATE TEMP VIEW dual(dummy) AS VALUES('X')}
+} {
+  reset_db
+  db eval $dual
+  do_execsql_test 25.$id {
+    WITH cte1 AS (
+      SELECT TRUE, (
+        WITH cte2 AS (SELECT avg(DISTINCT TRUE) FROM dual)
+        SELECT 2571 FROM cte2
+      ) AS subquery1
+      FROM dual
+      GROUP BY 1
+    )
+    SELECT (SELECT 1324 FROM cte1) FROM cte1;
+  } {1324}
+}
 
 do_catchsql_test 26.0 {
   WITH i(x) AS ( 
@@ -1206,5 +1212,29 @@ do_execsql_test 26.3 {
   )
   SELECT * FROM cte ORDER BY +label, +step;
 } {a 1 a 2 a 3 b 1 b 2 b 3}
+
+# 2021-05-20
+# forum post https://sqlite.org/forum/forumpost/8590e3f6dc
+#
+reset_db
+do_execsql_test 27.1 {
+  CREATE TABLE t1(k);
+  CREATE TABLE log(k, cte_map, main_map);
+  CREATE TABLE map(k, v);
+  INSERT INTO map VALUES(1, 'main1'), (2, 'main2');
+  
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO log
+        WITH map(k,v) AS (VALUES(1,'cte1'),(2,'cte2'))
+        SELECT
+          new.k,
+          (SELECT v FROM map WHERE k=new.k),
+          (SELECT v FROM main.map WHERE k=new.k);
+  END;
+  
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  SELECT k, cte_map, main_map, '|' FROM log ORDER BY k;
+} {1 cte1 main1 | 2 cte2 main2 |}
 
 finish_test

@@ -265,4 +265,21 @@ do_execsql_test 8.4 {
   FROM v1;
 } {0.0 0.0}
 
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(NULL,'bb',356);
+  INSERT INTO t1 VALUES('CB','aa',158);
+  INSERT INTO t1 VALUES('BB','aa',399);
+  INSERT INTO t1 VALUES('FF','bb',938);
+}
+
+do_catchsql_test 9.1 {
+  SELECT sum(c) OVER (
+    ORDER BY c RANGE BETWEEN 0 PRECEDING AND '-700' PRECEDING
+  )
+  FROM t1
+} {1 {frame ending offset must be a non-negative number}}
+
 finish_test

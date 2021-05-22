@@ -165,13 +165,13 @@ do_test tpch01-1.1 {
        order by
                o_year;}]
   set ::eqpres
-} {/*SEARCH TABLE part USING INDEX bootleg_pti *SEARCH TABLE lineitem USING INDEX lpki2*/}
+} {/*SEARCH part USING INDEX bootleg_pti *SEARCH lineitem USING INDEX lpki2*/}
 do_test tpch01-1.1b {
   set ::eqpres
-} {/.* customer .* nation AS n1 .*/}
+} {/.* customer .* n1 .*/}
 do_test tpch01-1.1c {
   set ::eqpres
-} {/.* supplier .* nation AS n2 .*/}
+} {/.* supplier .* n2 .*/}
 
 do_eqp_test tpch01-1.2 {
 select
@@ -189,10 +189,10 @@ order by
     revenue desc;
 } {
   QUERY PLAN
-  |--SEARCH TABLE orders USING INDEX odi (O_ORDERDATE>? AND O_ORDERDATE<?)
-  |--SEARCH TABLE customer USING INDEX cpki (C_CUSTKEY=?)
-  |--SEARCH TABLE nation USING INDEX npki (N_NATIONKEY=?)
-  |--SEARCH TABLE lineitem USING INDEX lpki (L_ORDERKEY=?)
+  |--SEARCH orders USING INDEX odi (O_ORDERDATE>? AND O_ORDERDATE<?)
+  |--SEARCH customer USING INDEX cpki (C_CUSTKEY=?)
+  |--SEARCH nation USING INDEX npki (N_NATIONKEY=?)
+  |--SEARCH lineitem USING INDEX lpki (L_ORDERKEY=?)
   |--USE TEMP B-TREE FOR GROUP BY
   `--USE TEMP B-TREE FOR ORDER BY
 }

@@ -30,11 +30,11 @@ do_eqp_test 101 {
   SELECT c1.x||c2.x||c3.x FROM c c1, c c2, c c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  `--SCAN SUBQUERY xxxxxx AS c3
+  |--SCAN c1
+  |--SCAN c2
+  `--SCAN c3
 }
 
 do_execsql_test 110 {
@@ -46,11 +46,11 @@ do_eqp_test 111 {
   SELECT c1.x||c2.x||c3.x FROM c c1, c c2, c c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  `--SCAN SUBQUERY xxxxxx AS c3
+  |--SCAN c1
+  |--SCAN c2
+  `--SCAN c3
 }
 
 # Even though the CTE is not materialized, the self-join optimization
@@ -65,11 +65,11 @@ do_eqp_test 121 {
   SELECT c1.x||c2.x||c3.x FROM c c1, c c2, c c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  `--SCAN SUBQUERY xxxxxx AS c3
+  |--SCAN c1
+  |--SCAN c2
+  `--SCAN c3
 }
 
 do_execsql_test 130 {
@@ -87,21 +87,21 @@ do_eqp_test 131 {
          (SELECT x FROM c LIMIT 5) AS c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
-  |  |--CO-ROUTINE xxxxxx
+  |--MATERIALIZE c1
+  |  |--CO-ROUTINE c
   |  |  `--SCAN 2 CONSTANT ROWS
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  |--CO-ROUTINE xxxxxx
+  |  `--SCAN c
+  |--MATERIALIZE c2
+  |  |--CO-ROUTINE c
   |  |  `--SCAN 2 CONSTANT ROWS
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  |--CO-ROUTINE xxxxxx
+  |  `--SCAN c
+  |--MATERIALIZE c3
+  |  |--CO-ROUTINE c
   |  |  `--SCAN 2 CONSTANT ROWS
-  |  `--SCAN SUBQUERY xxxxxx
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  `--SCAN SUBQUERY xxxxxx AS c3
+  |  `--SCAN c
+  |--SCAN c1
+  |--SCAN c2
+  `--SCAN c3
 }
 
 # The (SELECT x FROM c LIMIT N) subqueries get materialized once each.
@@ -123,17 +123,17 @@ do_eqp_test 141 {
          (SELECT x FROM c LIMIT 7) AS c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
-  |  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c1
+  |  |--MATERIALIZE c
   |  |  `--SCAN 2 CONSTANT ROWS
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  `--SCAN SUBQUERY xxxxxx
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  `--SCAN SUBQUERY xxxxxx AS c3
+  |  `--SCAN c
+  |--MATERIALIZE c2
+  |  `--SCAN c
+  |--MATERIALIZE c3
+  |  `--SCAN c
+  |--SCAN c1
+  |--SCAN c2
+  `--SCAN c3
 }
 
 do_execsql_test 150 {
@@ -151,17 +151,17 @@ do_eqp_test 151 {
          (SELECT x FROM c LIMIT 7) AS c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
-  |  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c1
+  |  |--MATERIALIZE c
   |  |  `--SCAN 2 CONSTANT ROWS
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  `--SCAN SUBQUERY xxxxxx
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  `--SCAN SUBQUERY xxxxxx AS c3
+  |  `--SCAN c
+  |--MATERIALIZE c2
+  |  `--SCAN c
+  |--MATERIALIZE c3
+  |  `--SCAN c
+  |--SCAN c1
+  |--SCAN c2
+  `--SCAN c3
 }
 
 do_execsql_test 160 {
@@ -175,11 +175,11 @@ do_eqp_test 161 {
     FROM c AS c2 WHERE c2.x<10;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c
   |  `--SCAN 2 CONSTANT ROWS
-  |--SCAN SUBQUERY xxxxxx AS c2
+  |--SCAN c2
   `--CORRELATED SCALAR SUBQUERY xxxxxx
-     `--SCAN SUBQUERY xxxxxx
+     `--SCAN c
 }
 
 do_execsql_test 170 {
@@ -193,13 +193,13 @@ do_eqp_test 171 {
     FROM c AS c2 WHERE c2.x<10;
 } {
   QUERY PLAN
-  |--CO-ROUTINE xxxxxx
+  |--CO-ROUTINE c
   |  `--SCAN 2 CONSTANT ROWS
-  |--SCAN SUBQUERY xxxxxx AS c2
+  |--SCAN c2
   `--CORRELATED SCALAR SUBQUERY xxxxxx
-     |--CO-ROUTINE xxxxxx
+     |--CO-ROUTINE c
      |  `--SCAN 2 CONSTANT ROWS
-     `--SCAN SUBQUERY xxxxxx
+     `--SCAN c
 }
 
 
@@ -228,15 +228,15 @@ do_eqp_test 211 {
   SELECT y FROM t2 ORDER BY y;
 } {
   QUERY PLAN
-  |--MATERIALIZE xxxxxx
-  |  |--MATERIALIZE xxxxxx
+  |--MATERIALIZE c1
+  |  |--MATERIALIZE c
   |  |  `--SCAN 3 CONSTANT ROWS
-  |  `--SCAN SUBQUERY xxxxxx
-  |--MATERIALIZE xxxxxx
-  |  `--SCAN SUBQUERY xxxxxx
-  |--SCAN SUBQUERY xxxxxx AS c1
-  |--SCAN SUBQUERY xxxxxx AS c2
-  |--SCAN TABLE t1
+  |  `--SCAN c
+  |--MATERIALIZE c2
+  |  `--SCAN c
+  |--SCAN c1
+  |--SCAN c2
+  |--SCAN t1
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_execsql_test 220 {

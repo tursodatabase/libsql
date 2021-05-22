@@ -29,8 +29,9 @@
 ** Or, if zName is not a system table, zero is returned.
 */
 static int isAlterableTable(Parse *pParse, Table *pTab){
-  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) 
+  if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7)
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+   || (pTab->tabFlags & TF_Eponymous)!=0
    || ( (pTab->tabFlags & TF_Shadow)!=0
         && sqlite3ReadOnlyShadowTables(pParse->db)
    )
@@ -54,7 +55,7 @@ static void renameTestSchema(
   const char *zDb,                /* Name of db to verify schema of */
   int bTemp,                      /* True if this is the temp db */
   const char *zWhen,              /* "when" part of error message */
-  const char *zDropColumn         /* Name of column being dropped */
+  int bNoDQS                      /* Do not allow DQS in the schema */
 ){
   pParse->colNamesSet = 1;
   sqlite3NestedParse(pParse, 
@@ -62,9 +63,9 @@ static void renameTestSchema(
       "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
-      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q, %Q)=NULL ",
+      " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q, %d)=NULL ",
       zDb,
-      zDb, bTemp, zWhen, zDropColumn
+      zDb, bTemp, zWhen, bNoDQS
   );
 
   if( bTemp==0 ){
@@ -73,8 +74,32 @@ static void renameTestSchema(
         "FROM temp." DFLT_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
-        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q, %Q)=NULL ",
-        zDb, zWhen, zDropColumn
+        " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q, %d)=NULL ",
+        zDb, zWhen, bNoDQS
+    );
+  }
+}
+
+/*
+** Generate VM code to replace any double-quoted strings (but not double-quoted
+** identifiers) within the "sql" column of the sqlite_schema table in 
+** database zDb with their single-quoted equivalents. If argument bTemp is
+** not true, similarly update all SQL statements in the sqlite_schema table
+** of the temp db.
+*/
+static void renameFixQuotes(Parse *pParse, const char *zDb, int bTemp){
+  sqlite3NestedParse(pParse, 
+      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE 
+      " SET sql = sqlite_rename_quotefix(%Q, sql)"
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
+      " AND sql NOT LIKE 'create virtual%%'" , zDb, zDb
+  );
+  if( bTemp==0 ){
+    sqlite3NestedParse(pParse, 
+      "UPDATE temp." DFLT_SCHEMA_TABLE
+      " SET sql = sqlite_rename_quotefix('temp', sql)"
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
+      " AND sql NOT LIKE 'create virtual%%'"
     );
   }
 }
@@ -237,7 +262,7 @@ void sqlite3AlterRenameTable(
             "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, 1), "
             "tbl_name = "
               "CASE WHEN tbl_name=%Q COLLATE nocase AND "
-              "  sqlite_rename_test(%Q, sql, type, name, 1, 'after rename',0) "
+              "  sqlite_rename_test(%Q, sql, type, name, 1, 'after rename', 0) "
               "THEN %Q ELSE tbl_name END "
             "WHERE type IN ('view', 'trigger')"
         , zDb, zTabName, zName, zTabName, zDb, zName);
@@ -596,6 +621,10 @@ void sqlite3AlterRenameColumn(
     goto exit_rename_column;
   }
 
+  /* Ensure the schema contains no double-quoted strings */
+  renameTestSchema(pParse, zDb, iSchema==1, "", 0);
+  renameFixQuotes(pParse, zDb, iSchema==1);
+
   /* Do the rename operation using a recursive UPDATE statement that
   ** uses the sqlite_rename_column() SQL function to compute the new
   ** CREATE statement text for the sqlite_schema table.
@@ -625,7 +654,7 @@ void sqlite3AlterRenameColumn(
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
-  renameTestSchema(pParse, zDb, iSchema==1, "after rename", 0);
+  renameTestSchema(pParse, zDb, iSchema==1, "after rename", 1);
 
  exit_rename_column:
   sqlite3SrcListDelete(db, pSrc);
@@ -806,7 +835,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( NEVER(p->selFlags & SF_View) ) return WRC_Prune;
+  if( p->selFlags & SF_View ) return WRC_Prune;
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
@@ -890,7 +919,9 @@ static RenameToken *renameTokenFind(
   void *pPtr
 ){
   RenameToken **pp;
-  assert( pPtr!=0 );
+  if( NEVER(pPtr==0) ){
+    return 0;
+  }
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
     if( (*pp)->p==pPtr ){
       RenameToken *pToken = *pp;
@@ -1049,17 +1080,12 @@ static int renameParseSql(
   const char *zDb,                /* Name of schema SQL belongs to */
   sqlite3 *db,                    /* Database handle */
   const char *zSql,               /* SQL to parse */
-  int bTemp,                      /* True if SQL is from temp schema */
-  const char *zDropColumn         /* Name of column being dropped */
+  int bTemp                       /* True if SQL is from temp schema */
 ){
   int rc;
   char *zErr = 0;
 
   db->init.iDb = bTemp ? 1 : sqlite3FindDbName(db, zDb);
-  if( zDropColumn ){
-    db->init.bDropColumn = 1;
-    db->init.azInit = (char**)&zDropColumn;
-  }
 
   /* Parse the SQL statement passed as the first argument. If no error
   ** occurs and the parse does not result in a new table, index or
@@ -1092,7 +1118,6 @@ static int renameParseSql(
 #endif
 
   db->init.iDb = 0;
-  db->init.bDropColumn = 0;
   return rc;
 }
 
@@ -1116,47 +1141,72 @@ static int renameEditSql(
   int nSql = sqlite3Strlen30(zSql);
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
   int rc = SQLITE_OK;
-  char *zQuot;
+  char *zQuot = 0;
   char *zOut;
-  int nQuot;
+  int nQuot = 0;
+  char *zBuf1 = 0;
+  char *zBuf2 = 0;
 
-  /* Set zQuot to point to a buffer containing a quoted copy of the 
-  ** identifier zNew. If the corresponding identifier in the original 
-  ** ALTER TABLE statement was quoted (bQuote==1), then set zNew to
-  ** point to zQuot so that all substitutions are made using the
-  ** quoted version of the new column name.  */
-  zQuot = sqlite3MPrintf(db, "\"%w\"", zNew);
-  if( zQuot==0 ){
-    return SQLITE_NOMEM;
+  if( zNew ){
+    /* Set zQuot to point to a buffer containing a quoted copy of the 
+    ** identifier zNew. If the corresponding identifier in the original 
+    ** ALTER TABLE statement was quoted (bQuote==1), then set zNew to
+    ** point to zQuot so that all substitutions are made using the
+    ** quoted version of the new column name.  */
+    zQuot = sqlite3MPrintf(db, "\"%w\" ", zNew);
+    if( zQuot==0 ){
+      return SQLITE_NOMEM;
+    }else{
+      nQuot = sqlite3Strlen30(zQuot)-1;
+    }
+
+    assert( nQuot>=nNew );
+    zOut = sqlite3DbMallocZero(db, nSql + pRename->nList*nQuot + 1);
   }else{
-    nQuot = sqlite3Strlen30(zQuot);
-  }
-  if( bQuote ){
-    zNew = zQuot;
-    nNew = nQuot;
+    zOut = (char*)sqlite3DbMallocZero(db, (nSql*2+1) * 3);
+    if( zOut ){
+      zBuf1 = &zOut[nSql*2+1];
+      zBuf2 = &zOut[nSql*4+2];
+    }
   }
 
   /* At this point pRename->pList contains a list of RenameToken objects
   ** corresponding to all tokens in the input SQL that must be replaced
-  ** with the new column name. All that remains is to construct and
-  ** return the edited SQL string. */
-  assert( nQuot>=nNew );
-  zOut = sqlite3DbMallocZero(db, nSql + pRename->nList*nQuot + 1);
+  ** with the new column name, or with single-quoted versions of themselves. 
+  ** All that remains is to construct and return the edited SQL string. */
   if( zOut ){
     int nOut = nSql;
     memcpy(zOut, zSql, nSql);
     while( pRename->pList ){
       int iOff;                   /* Offset of token to replace in zOut */
-      RenameToken *pBest = renameColumnTokenNext(pRename);
-
       u32 nReplace;
       const char *zReplace;
-      if( sqlite3IsIdChar(*pBest->t.z) ){
-        nReplace = nNew;
-        zReplace = zNew;
+      RenameToken *pBest = renameColumnTokenNext(pRename);
+
+      if( zNew ){
+        if( bQuote==0 && sqlite3IsIdChar(*pBest->t.z) ){
+          nReplace = nNew;
+          zReplace = zNew;
+        }else{
+          nReplace = nQuot;
+          zReplace = zQuot;
+          if( pBest->t.z[pBest->t.n]=='"' ) nReplace++;
+        }
       }else{
-        nReplace = nQuot;
-        zReplace = zQuot;
+        /* Dequote the double-quoted token. Then requote it again, this time
+        ** using single quotes. If the character immediately following the
+        ** original token within the input SQL was a single quote ('), then
+        ** add another space after the new, single-quoted version of the
+        ** token. This is so that (SELECT "string"'alias') maps to
+        ** (SELECT 'string' 'alias'), and not (SELECT 'string''alias').  */
+        memcpy(zBuf1, pBest->t.z, pBest->t.n);
+        zBuf1[pBest->t.n] = 0;
+        sqlite3Dequote(zBuf1);
+        sqlite3_snprintf(nSql*2, zBuf2, "%Q%s", zBuf1,
+            pBest->t.z[pBest->t.n]=='\'' ? " " : ""
+        );
+        zReplace = zBuf2;
+        nReplace = sqlite3Strlen30(zReplace);
       }
 
       iOff = pBest->t.z - zSql;
@@ -1394,7 +1444,7 @@ static void renameColumnFunc(
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = 0;
 #endif
-  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp, 0);
+  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
 
   /* Find tokens that need to be replaced. */
   memset(&sWalker, 0, sizeof(Walker));
@@ -1528,7 +1578,7 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
   if( pSelect->selFlags & SF_View ) return WRC_Prune;
-  if( pSrc==0 ){
+  if( NEVER(pSrc==0) ){
     assert( pWalker->pParse->db->mallocFailed );
     return WRC_Abort;
   }
@@ -1598,7 +1648,7 @@ static void renameTableFunc(
     sWalker.xSelectCallback = renameTableSelectCb;
     sWalker.u.pRename = &sCtx;
 
-    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp, 0);
+    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
 
     if( rc==SQLITE_OK ){
       int isLegacy = (db->flags & SQLITE_LegacyAlter);
@@ -1701,6 +1751,119 @@ static void renameTableFunc(
   return;
 }
 
+static int renameQuotefixExprCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_STRING && (pExpr->flags & EP_DblQuoted) ){
+    renameTokenFind(pWalker->pParse, pWalker->u.pRename, (void*)pExpr);
+  }
+  return WRC_Continue;
+}
+
+/*
+** The implementation of an SQL scalar function that rewrites DDL statements
+** so that any string literals that use double-quotes are modified so that
+** they use single quotes.
+**
+** Two arguments must be passed:
+**
+**   0: Database name ("main", "temp" etc.).
+**   1: SQL statement to edit.
+**
+** The returned value is the modified SQL statement. For example, given
+** the database schema:
+**
+**   CREATE TABLE t1(a, b, c);
+**
+**   SELECT sqlite_rename_quotefix('main', 
+**       'CREATE VIEW v1 AS SELECT "a", "string" FROM t1'
+**   );
+**
+** returns the string:
+** 
+**   CREATE VIEW v1 AS SELECT "a", 'string' FROM t1
+*/
+static void renameQuotefixFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  char const *zDb = (const char*)sqlite3_value_text(argv[0]);
+  char const *zInput = (const char*)sqlite3_value_text(argv[1]);
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+  db->xAuth = 0;
+#endif
+
+  sqlite3BtreeEnterAll(db);
+
+  UNUSED_PARAMETER(NotUsed);
+  if( zDb && zInput ){
+    int rc;
+    Parse sParse;
+    rc = renameParseSql(&sParse, zDb, db, zInput, 0);
+
+    if( rc==SQLITE_OK ){
+      RenameCtx sCtx;
+      Walker sWalker;
+
+      /* Walker to find tokens that need to be replaced. */
+      memset(&sCtx, 0, sizeof(RenameCtx));
+      memset(&sWalker, 0, sizeof(Walker));
+      sWalker.pParse = &sParse;
+      sWalker.xExprCallback = renameQuotefixExprCb;
+      sWalker.xSelectCallback = renameColumnSelectCb;
+      sWalker.u.pRename = &sCtx;
+
+      if( sParse.pNewTable ){
+        Select *pSelect = sParse.pNewTable->pSelect;
+        if( pSelect ){
+          pSelect->selFlags &= ~SF_View;
+          sParse.rc = SQLITE_OK;
+          sqlite3SelectPrep(&sParse, pSelect, 0);
+          rc = (db->mallocFailed ? SQLITE_NOMEM : sParse.rc);
+          if( rc==SQLITE_OK ){
+            sqlite3WalkSelect(&sWalker, pSelect);
+          }
+        }else{
+          int i;
+          sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+          for(i=0; i<sParse.pNewTable->nCol; i++){
+            sqlite3WalkExpr(&sWalker, sParse.pNewTable->aCol[i].pDflt);
+          }
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+        }
+      }else if( sParse.pNewIndex ){
+        sqlite3WalkExprList(&sWalker, sParse.pNewIndex->aColExpr);
+        sqlite3WalkExpr(&sWalker, sParse.pNewIndex->pPartIdxWhere);
+      }else{
+#ifndef SQLITE_OMIT_TRIGGER
+        rc = renameResolveTrigger(&sParse);
+        if( rc==SQLITE_OK ){
+          renameWalkTrigger(&sWalker, sParse.pNewTrigger);
+        }
+#endif /* SQLITE_OMIT_TRIGGER */
+      }
+
+      if( rc==SQLITE_OK ){ 
+        rc = renameEditSql(context, &sCtx, zInput, 0, 0);
+      }
+      renameTokenFree(db, sCtx.pList);
+    }
+    if( rc!=SQLITE_OK ){
+      sqlite3_result_error_code(context, rc);
+    }
+    renameParseCleanup(&sParse);
+  }
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
+
+  sqlite3BtreeLeaveAll(db);
+}
+
 /*
 ** An SQL user function that checks that there are no parse or symbol
 ** resolution problems in a CREATE TRIGGER|TABLE|VIEW|INDEX statement.
@@ -1714,7 +1877,7 @@ static void renameTableFunc(
 **   3: Object name.
 **   4: True if object is from temp schema.
 **   5: "when" part of error message.
-**   6: Name of column being dropped, or NULL.
+**   6: True to disable the DQS quirk when parsing SQL.
 **
 ** Unless it finds an error, this function normally returns NULL. However, it
 ** returns integer value 1 if:
@@ -1733,7 +1896,7 @@ static void renameTableTest(
   int bTemp = sqlite3_value_int(argv[4]);
   int isLegacy = (db->flags & SQLITE_LegacyAlter);
   char const *zWhen = (const char*)sqlite3_value_text(argv[5]);
-  char const *zDropColumn = (const char*)sqlite3_value_text(argv[6]);
+  int bNoDQS = sqlite3_value_int(argv[6]);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth = db->xAuth;
@@ -1741,10 +1904,14 @@ static void renameTableTest(
 #endif
 
   UNUSED_PARAMETER(NotUsed);
+
   if( zDb && zInput ){
     int rc;
     Parse sParse;
-    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp, zDropColumn);
+    int flags = db->flags;
+    if( bNoDQS ) db->flags &= ~(SQLITE_DqsDML|SQLITE_DqsDDL);
+    rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
+    db->flags |= (flags & (SQLITE_DqsDML|SQLITE_DqsDDL));
     if( rc==SQLITE_OK ){
       if( isLegacy==0 && sParse.pNewTable && sParse.pNewTable->pSelect ){
         NameContext sNC;
@@ -1812,7 +1979,7 @@ static void dropColumnFunc(
 #endif
 
   UNUSED_PARAMETER(NotUsed);
-  rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1, 0);
+  rc = renameParseSql(&sParse, zDb, db, zSql, iSchema==1);
   if( rc!=SQLITE_OK ) goto drop_column_done;
   pTab = sParse.pNewTable;
   if( pTab==0 || pTab->nCol==1 || iCol>=pTab->nCol ){ 
@@ -1906,6 +2073,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
   assert( iDb>=0 );
   zDb = db->aDb[iDb].zDbSName;
   renameTestSchema(pParse, zDb, iDb==1, "", 0);
+  renameFixQuotes(pParse, zDb, iDb==1);
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_drop_column(%d, sql, %d) "
@@ -1915,7 +2083,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
 
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iDb, INITFLAG_AlterDrop);
-  renameTestSchema(pParse, zDb, iDb==1, "after drop column", zCol);
+  renameTestSchema(pParse, zDb, iDb==1, "after drop column", 1);
 
   /* Edit rows of table on disk */
   if( pParse->nErr==0 && (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
@@ -1931,33 +2099,44 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
     sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite);
     addr = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
     reg = ++pParse->nMem;
-    pParse->nMem += pTab->nCol;
     if( HasRowid(pTab) ){
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, reg);
+      pParse->nMem += pTab->nCol;
     }else{
       pPk = sqlite3PrimaryKeyIndex(pTab);
+      pParse->nMem += pPk->nColumn;
+      for(i=0; i<pPk->nKeyCol; i++){
+        sqlite3VdbeAddOp3(v, OP_Column, iCur, i, reg+i+1);
+      }
+      nField = pPk->nKeyCol;
     }
+    regRec = ++pParse->nMem;
     for(i=0; i<pTab->nCol; i++){
       if( i!=iCol && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
         int regOut;
         if( pPk ){
           int iPos = sqlite3TableColumnToIndex(pPk, i);
           int iColPos = sqlite3TableColumnToIndex(pPk, iCol);
+          if( iPos<pPk->nKeyCol ) continue;
           regOut = reg+1+iPos-(iPos>iColPos);
         }else{
           regOut = reg+1+nField;
         }
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+        if( i==pTab->iPKey ){
+          sqlite3VdbeAddOp2(v, OP_Null, 0, regOut);
+        }else{
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+        }
         nField++;
       }
     }
-    regRec = reg + pTab->nCol;
     sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, nField, regRec);
     if( pPk ){
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iCur, regRec, reg+1, pPk->nKeyCol);
     }else{
       sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
     }
+    sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
 
     sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
@@ -1977,6 +2156,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
     INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
+    INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

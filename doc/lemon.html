@@ -697,6 +697,7 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 <li><tt><a href='#stack_size'>%stack_size</a></tt>
 <li><tt><a href='#start_symbol'>%start_symbol</a></tt>
 <li><tt><a href='#syntax_error'>%syntax_error</a></tt>
+<li><tt><a href='#token'>%token</a></tt>
 <li><tt><a href='#token_class'>%token_class</a></tt>
 <li><tt><a href='#token_destructor'>%token_destructor</a></tt>
 <li><tt><a href='#token_prefix'>%token_prefix</a></tt>
@@ -1079,14 +1080,37 @@ can choose a different start symbol using the
 
 <p>See <a href='#errors'>Error Processing</a>.</p>
 
+<a id='token'></a>
+<h4>4.4.20 The <tt>%token</tt> directive</h4>
+
+<p>Tokens are normally created automatically, the first time they are used.
+Any identifier that begins with an upper-case letter is a token.
+
+<p>Sometimes it is useful to declare tokens in advance, however.  The
+integer values assigned to each token determined by the order in which
+the tokens are seen.  So by declaring tokens in advance, it is possible to
+cause some tokens to have low-numbered values, which might be desirable in
+some grammers, or to have sequential values assigned to a sequence of
+related tokens.  For this reason, the %token directive is provided to
+declare tokens in advance.  The syntax is as follows:
+
+<blockquote>
+<tt>%token</tt> <i>TOKEN</i> <i>TOKEN...</i> <b>.</b>
+</blockquote></p>
+
+<p>The %token directive is followed by zero or more token symbols and
+terminated by a single ".".  Each token named is created if it does not
+already exist.  Tokens are created in order.
+
+
 <a id='token_class'></a>
-<h4>4.4.20 The <tt>%token_class</tt> directive</h4>
+<h4>4.4.21 The <tt>%token_class</tt> directive</h4>
 
 <p>Undocumented.  Appears to be related to the MULTITERMINAL concept.
 <a href='http://sqlite.org/src/fdiff?v1=796930d5fc2036c7&v2=624b24c5dc048e09&sbs=0'>Implementation</a>.</p>
 
 <a id='token_destructor'></a>
-<h4>4.4.21 The <tt>%token_destructor</tt> directive</h4>
+<h4>4.4.22 The <tt>%token_destructor</tt> directive</h4>
 
 <p>The <tt>%destructor</tt> directive assigns a destructor to a non-terminal
 symbol.  (See the description of the
@@ -1102,7 +1126,7 @@ Other than that, the token destructor works just like the non-terminal
 destructors.</p>
 
 <a id='token_prefix'></a>
-<h4>4.4.22 The <tt>%token_prefix</tt> directive</h4>
+<h4>4.4.23 The <tt>%token_prefix</tt> directive</h4>
 
 <p>Lemon generates #defines that assign small integer constants
 to each terminal symbol in the grammar.  If desired, Lemon will
@@ -1129,7 +1153,7 @@ to each of the #defines it generates.</p>
 </pre>
 
 <a id='token_type'></a><a id='ptype'></a>
-<h4>4.4.23 The <tt>%token_type</tt> and <tt>%type</tt> directives</h4>
+<h4>4.4.24 The <tt>%token_type</tt> and <tt>%type</tt> directives</h4>
 
 <p>These directives are used to specify the data types for values
 on the parser's stack associated with terminal and non-terminal
@@ -1166,7 +1190,7 @@ entry parser stack will require 100K of heap space.  If you are willing
 and able to pay that price, fine.  You just need to know.</p>
 
 <a id='pwildcard'></a>
-<h4>4.4.24 The <tt>%wildcard</tt> directive</h4>
+<h4>4.4.25 The <tt>%wildcard</tt> directive</h4>
 
 <p>The <tt>%wildcard</tt> directive is followed by a single token name and a
 period.  This directive specifies that the identified token should

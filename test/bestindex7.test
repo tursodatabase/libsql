@@ -76,4 +76,3 @@ do_execsql_test 1.11 { select * from vt1 WHERE a IN (0, NULL) } {0}
 do_execsql_test 1.12 { select * from vt1 WHERE a IN (NULL) } {}
 
 finish_test
-

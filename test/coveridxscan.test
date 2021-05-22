@@ -109,11 +109,11 @@ do_execsql_test 5.1.0 "
 
 do_eqp_test 5.1.1 {
   SELECT * FROM t1 ORDER BY c1, c2;
-} {SCAN TABLE t1 USING COVERING INDEX i1}
+} {SCAN t1 USING COVERING INDEX i1}
 
 do_eqp_test 5.1.2 {
   SELECT * FROM t2 ORDER BY c1, c2;
-} {SCAN TABLE t2 USING COVERING INDEX i2}
+} {SCAN t2 USING COVERING INDEX i2}
 
 
 finish_test

@@ -52,49 +52,67 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Trigger *pList;           /* List of triggers to return */
   HashElem *p;              /* Loop variable for TEMP triggers */
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  char *zSchema = 0;
+  sqlite3 *db = pParse->db;
+  if( IsSharedSchema(db) ){
+    zSchema = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
+  }
+#endif
+
   if( pParse->disableTriggers ){
     return 0;
   }
   pTmpSchema = pParse->db->aDb[1].pSchema;
   p = sqliteHashFirst(&pTmpSchema->trigHash);
-  if( p==0 ){
-    return pTab->pTrigger;
-  }
   pList = pTab->pTrigger;
-  if( pTmpSchema!=pTab->pSchema ){
-    sqlite3 *db = pParse->db;
+  while( p ){
+    Trigger *pTrig = (Trigger *)sqliteHashData(p);
+
+    int bSchemaMatch;
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
-    char *zSchema = 0;
-    if( IsSharedSchema(db) ){
-      zSchema = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
-    }
+    if( zSchema ){
+      /* Shared-schema */
+      bSchemaMatch = (0==sqlite3StrICmp(pTrig->zTabSchema, zSchema));
+    }else
 #endif
-    assert( sqlite3SchemaMutexHeld(db, 0, pTmpSchema) );
-    while( p ){
-      Trigger *pTrig = (Trigger *)sqliteHashData(p);
-#ifdef SQLITE_ENABLE_SHARED_SCHEMA
-      if( ( (zSchema==0 && pTrig->pTabSchema==pTab->pSchema)
-         || (zSchema!=0 && 0==sqlite3StrICmp(pTrig->zTabSchema, zSchema)) 
-          ) && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
-      ){
-#else 
-      if( pTrig->pTabSchema==pTab->pSchema
-       && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
-      ){
-#endif
-        pTrig->pNext = pList;
-        pList = pTrig;
-      }else if( pTrig->op==TK_RETURNING ){
-        assert( pParse->bReturning );
-        assert( &(pParse->u1.pReturning->retTrig) == pTrig );
-        pTrig->table = pTab->zName;
-        pTrig->pTabSchema = pTab->pSchema;
-        pTrig->pNext = pList;
-        pList = pTrig;
-      }        
-      p = sqliteHashNext(p);    
+    {
+      /* Non-shared-schema */
+      bSchemaMatch = (pTrig->pTabSchema==pTab->pSchema);
     }
+
+    if( bSchemaMatch
+     && pTrig->table
+     && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
+     && pTrig->pTabSchema!=pTmpSchema
+    ){
+      pTrig->pNext = pList;
+      pList = pTrig;
+    }else if( pTrig->op==TK_RETURNING
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+              && pParse->db->pVtabCtx==0
+#endif 
+    ){
+      assert( pParse->bReturning );
+      assert( &(pParse->u1.pReturning->retTrig) == pTrig );
+      pTrig->table = pTab->zName;
+      pTrig->pTabSchema = pTab->pSchema;
+      pTrig->pNext = pList;
+      pList = pTrig;
+    }        
+    p = sqliteHashNext(p);    
   }
+#if 0
+  if( pList ){
+    Trigger *pX;
+    printf("Triggers for %s:", pTab->zName);
+    for(pX=pList; pX; pX=pX->pNext){
+      printf(" %s", pX->zName);
+    }
+    printf("\n");
+    fflush(stdout);
+  }
+#endif
   return pList;  
 }
 
@@ -224,12 +242,12 @@ void sqlite3BeginTrigger(
   */
   if( pTab->pSelect && tr_tm!=TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create %s trigger on view: %S", 
-        (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName, 0);
+        (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName->a);
     goto trigger_orphan_error;
   }
   if( !pTab->pSelect && tr_tm==TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create INSTEAD OF"
-        " trigger on table: %S", pTableName, 0);
+        " trigger on table: %S", pTableName->a);
     goto trigger_orphan_error;
   }
 
@@ -635,7 +653,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   }
   if( !pTrigger ){
     if( !noErr ){
-      sqlite3ErrorMsg(pParse, "no such trigger: %S", pName, 0);
+      sqlite3ErrorMsg(pParse, "no such trigger: %S", pName->a);
     }else{
       sqlite3CodeVerifyNamedSchema(pParse, zDb);
     }
@@ -848,6 +866,25 @@ SrcList *sqlite3TriggerStepSrc(
   return pSrc;
 }
 
+/*
+** Return true if the pExpr term from the RETURNING clause argument
+** list is of the form "*".  Raise an error if the terms if of the
+** form "table.*".
+*/
+static int isAsteriskTerm(
+  Parse *pParse,      /* Parsing context */
+  Expr *pTerm         /* A term in the RETURNING clause */
+){
+  assert( pTerm!=0 );
+  if( pTerm->op==TK_ASTERISK ) return 1;
+  if( pTerm->op!=TK_DOT ) return 0;
+  assert( pTerm->pRight!=0 );
+  assert( pTerm->pLeft!=0 );
+  if( pTerm->pRight->op!=TK_ASTERISK ) return 0;
+  sqlite3ErrorMsg(pParse, "RETURNING may not use \"TABLE.*\" wildcards");
+  return 1;
+}
+
 /* The input list pList is the list of result set terms from a RETURNING
 ** clause.  The table that we are returning from is pTab.
 **
@@ -865,7 +902,8 @@ static ExprList *sqlite3ExpandReturning(
 
   for(i=0; i<pList->nExpr; i++){
     Expr *pOldExpr = pList->a[i].pExpr;
-    if( ALWAYS(pOldExpr!=0) && pOldExpr->op==TK_ASTERISK ){
+    if( NEVER(pOldExpr==0) ) continue;
+    if( isAsteriskTerm(pParse, pOldExpr) ){
       int jj;
       for(jj=0; jj<pTab->nCol; jj++){
         Expr *pNewExpr;
@@ -888,15 +926,6 @@ static ExprList *sqlite3ExpandReturning(
       }
     }
   }
-  if( !db->mallocFailed ){
-    Vdbe *v = pParse->pVdbe;
-    assert( v!=0 );
-    sqlite3VdbeSetNumCols(v, pNew->nExpr);
-    for(i=0; i<pNew->nExpr; i++){
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, pNew->a[i].zEName,
-                            SQLITE_TRANSIENT);
-    }
-  }
   return pNew;
 }
 
@@ -912,13 +941,27 @@ static void codeReturningTrigger(
   int regIn            /* The first in an array of registers */
 ){
   Vdbe *v = pParse->pVdbe;
+  sqlite3 *db = pParse->db;
   ExprList *pNew;
   Returning *pReturning;
+  Select sSelect;
+  SrcList sFrom;
 
   assert( v!=0 );
   assert( pParse->bReturning );
   pReturning = pParse->u1.pReturning;
   assert( pTrigger == &(pReturning->retTrig) );
+  memset(&sSelect, 0, sizeof(sSelect));
+  memset(&sFrom, 0, sizeof(sFrom));
+  sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);
+  sSelect.pSrc = &sFrom;
+  sFrom.nSrc = 1;
+  sFrom.a[0].pTab = pTab;
+  sqlite3SelectPrep(pParse, &sSelect, 0);
+  if( db->mallocFailed==0 && pParse->nErr==0 ){
+    sqlite3GenerateColumnNames(pParse, &sSelect);
+  }
+  sqlite3ExprListDelete(db, sSelect.pEList);
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
   if( pNew ){
     NameContext sNC;
@@ -939,13 +982,14 @@ static void codeReturningTrigger(
       pParse->nMem += nCol+2;
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
-        sqlite3ExprCodeFactorable(pParse, pNew->a[i].pExpr, reg+i);
+        Expr *pCol = pNew->a[i].pExpr;
+        sqlite3ExprCodeFactorable(pParse, pCol, reg+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);
       sqlite3VdbeAddOp3(v, OP_Insert, pReturning->iRetCur, reg+i, reg+i+1);
     }
-    sqlite3ExprListDelete(pParse->db, pNew);
+    sqlite3ExprListDelete(db, pNew);
     pParse->eTriggerOp = 0;
     pParse->pTriggerTab = 0;
   }
@@ -1093,8 +1137,8 @@ static TriggerPrg *codeRowTrigger(
   Parse *pSubParse;           /* Parse context for sub-vdbe */
   int iEndTrigger = 0;        /* Label to jump to if WHEN is false */
 
-  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger)
-       || IsSharedSchema(pParse->db)
+  assert( pTrigger->zName==0 || IsSharedSchema(pParse->db)
+      || pTab==tableOfTrigger(pTrigger)
   );
   assert( pTop->pVdbe );
 
@@ -1150,8 +1194,8 @@ static TriggerPrg *codeRowTrigger(
     ** OP_Halt inserted at the end of the program.  */
     if( pTrigger->pWhen ){
       pWhen = sqlite3ExprDup(db, pTrigger->pWhen, 0);
-      if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
-       && db->mallocFailed==0 
+      if( db->mallocFailed==0
+       && SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
       ){
         iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
@@ -1203,8 +1247,8 @@ static TriggerPrg *getRowTrigger(
   Parse *pRoot = sqlite3ParseToplevel(pParse);
   TriggerPrg *pPrg;
 
-  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) 
-       || IsSharedSchema(pParse->db)
+  assert( pTrigger->zName==0 || IsSharedSchema(pParse->db)
+      || pTab==tableOfTrigger(pTrigger) 
   );
 
   /* It may be that this trigger has already been coded (or is in the

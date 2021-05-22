@@ -76,10 +76,12 @@ proc queryplan {sql} {
   set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
   # puts eqp=$eqp
   foreach {a b c x} $eqp {
-    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
-        $x all as tab idx]} {
+    if {[regexp {SCAN CONSTANT} $x]} {
+      # noop
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all ss as tab idx]} {
       lappend data $tab $idx
-    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+    } elseif {[regexp {(SCAN|SEARCH) (\w+ AS )?(\w+)\y} $x all ss as tab]} {
       lappend data $tab *
     }
   }
@@ -753,7 +755,7 @@ do_execsql_test where2-12.1 {
     SELECT a.x, b.x
       FROM t12 AS a JOIN t12 AS b ON a.y=b.x
      WHERE (b.x=$abc OR b.y=$abc);
-} {/.*SEARCH TABLE t12 AS b .*SEARCH TABLE t12 AS b .*/}
+} {/SEARCH b .*SEARCH b /}
 }
 
 # Verify that all necessary OP_OpenRead opcodes occur in the OR optimization.

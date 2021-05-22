@@ -3951,6 +3951,7 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
 
 /* Forward declaration */
 static int unixGetTempname(int nBuf, char *zBuf);
+static int unixFcntlExternalReader(unixFile*, int*);
 
 /*
 ** Information and control of an open file handle.
@@ -4067,6 +4068,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return proxyFileControl(id,op,pArg);
     }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
+
+    case SQLITE_FCNTL_EXTERNAL_READER: {
+      return unixFcntlExternalReader((unixFile*)id, (int*)pArg);
+    }
   }
   return SQLITE_NOTFOUND;
 }
@@ -4311,6 +4316,40 @@ struct unixShm {
 */
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
+
+/*
+** Use F_GETLK to check whether or not there are any readers with open
+** wal-mode transactions in other processes on database file pFile. If
+** no error occurs, return SQLITE_OK and set (*piOut) to 1 if there are 
+** such transactions, or 0 otherwise. If an error occurs, return an
+** SQLite error code. The final value of *piOut is undefined in this
+** case.
+*/
+static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
+  int rc = SQLITE_OK;
+  *piOut = 0;
+  if( pFile->pShm){
+    unixShmNode *pShmNode = pFile->pShm->pShmNode;
+    struct flock f;
+
+    memset(&f, 0, sizeof(f));
+    f.l_type = F_WRLCK;
+    f.l_whence = SEEK_SET;
+    f.l_start = UNIX_SHM_BASE + 3;
+    f.l_len = SQLITE_SHM_NLOCK - 3;
+
+    sqlite3_mutex_enter(pShmNode->pShmMutex);
+    if( osFcntl(pShmNode->hShm, F_GETLK, &f)<0 ){
+      rc = SQLITE_IOERR_LOCK;
+    }else{
+      *piOut = (f.l_type!=F_UNLCK);
+    }
+    sqlite3_mutex_leave(pShmNode->pShmMutex);
+  }
+
+  return rc;
+}
+
 
 /*
 ** Apply posix advisory locks for all bytes from ofst through ofst+n-1.
@@ -8028,6 +8067,22 @@ int sqlite3_os_init(void){
     sqlite3_vfs_register(&aVfs[i], i==0);
   }
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+
+  /* Validate lock assumptions */
+  assert( SQLITE_SHM_NLOCK==8 );  /* Number of available locks */
+  assert( UNIX_SHM_BASE==120  );  /* Start of locking area */
+  /* Locks:
+  **    WRITE       UNIX_SHM_BASE      120
+  **    CKPT        UNIX_SHM_BASE+1    121
+  **    RECOVER     UNIX_SHM_BASE+2    122
+  **    READ-0      UNIX_SHM_BASE+3    123
+  **    READ-1      UNIX_SHM_BASE+4    124
+  **    READ-2      UNIX_SHM_BASE+5    125
+  **    READ-3      UNIX_SHM_BASE+6    126
+  **    READ-4      UNIX_SHM_BASE+7    127
+  **    DMS         UNIX_SHM_BASE+8    128
+  */
+  assert( UNIX_SHM_DMS==128   );  /* Byte offset of the deadman-switch */
   return SQLITE_OK; 
 }
 
