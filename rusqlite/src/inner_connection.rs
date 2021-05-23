@@ -33,6 +33,8 @@ pub struct InnerConnection {
     pub free_update_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
     pub progress_handler: Option<Box<dyn FnMut() -> bool + Send>>,
+    #[cfg(feature = "hooks")]
+    pub authorizer: Option<crate::hooks::BoxedAuthorizer>,
     owned: bool,
 }
 
@@ -51,6 +53,8 @@ impl InnerConnection {
             free_update_hook: None,
             #[cfg(feature = "hooks")]
             progress_handler: None,
+            #[cfg(feature = "hooks")]
+            authorizer: None,
             owned,
         }
     }
