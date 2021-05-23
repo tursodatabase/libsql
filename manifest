@@ -1,5 +1,5 @@
-C Do\snot\sinvoke\ssqlite3ExprAffinity()\safter\sa\ssyntax\serror\sthat\smight\shave\nleft\sthe\stree\sin\san\sinconsistent\sstate.\s\sSee\salso\s[e8a1515b44380cc5]\sand\n[forum:/forumpost/7e484e225c|forum\spost\s7e484e225c].
-D 2021-05-22T11:23:20.366
+C Do\snot\spush\sa\sWITH\sclause\sonto\sthe\sprocessing\sstack\sif\sprior\serrors\shave\noccurred.\s\sdbsqlfuzz\s6b7a144674e215f06ddfeb9042c873d9ee956ac0.
+D 2021-05-23T17:47:04.747
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -543,7 +543,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 40e216d9a72e52841a9c8e0aec7d367bade8e2df17b804653b539b20c1ab5660
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c dd81ee4c1afeeb91047c5df7778701ea445bbaee24bfb5aeb980c7a32d2844d0
+F src/select.c 531612539a0058b6e953a5b5497d9a2066f483089764002d9f2745dd7600d6f7
 F src/shell.c.in 1b32ba2918ede13b68df47c7b92b72ba0d06e68d384e78bb9d7456527271d400
 F src/sqlite.h.in 5c950066775ca9efdaa49077c05d38d0bef6418f3bd07d2dce0210f1d2f3c326
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1792,7 +1792,7 @@ F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3c
 F test/windowfault.test 21919e601f20b976ea2a73aa401220c89ed0e8d203c4f69476ea55bce3726496
 F test/windowpushd.test d8895d08870b7226f7693665bd292eb177e62ca06799184957b3ca7dc03067df
 F test/with1.test 7bc5abfe4c80c0cef8a90f5a66d60b9982e8ccd7350c8eb70611323a3b8e07ba
-F test/with2.test 858070ce1c71a198bff63691dab7eb3ce6c74fa46da3fff6b6c4c34c83f141fe
+F test/with2.test bbf82609bbacc0a7a01d822022aed7b2fa702436dd3d0ecf942023564d2bba13
 F test/with3.test ad32d13ad50661e6fa305f62a0717649c348792e7b658bf2644976227a9e0373
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 57087ab2f297e4d96da5b9f3b89a26d8dd2bc4d22c2be8045b5d956d86282f39
-R 66a15b9d8fd951142648a451f7618484
+P b986600520696b0c91c4ccc6aff1b698391b4bcaf8a3ea436be1967883faa2fe
+R eb17d4980cec26c3ee5100c600887bbf
 U drh
-Z e6443cef6f675f9efc24bfe89410552e
+Z 47c85be57ec11e908122d7690b7c8f04

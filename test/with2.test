@@ -600,4 +600,15 @@ do_catchsql_test 11.5 {
   ) SELECT * from t1;
 } {0 55}
 
+# 2021-05-23 dbsqlfuzz 6b7a144674e215f06ddfeb9042c873d9ee956ac0 */
+reset_db
+do_execsql_test 12.1 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1),('hello'),(4.25),(NULL),(x'3c626c6f623e');
+  CREATE VIEW v2(c) AS WITH x AS (WITH y AS (WITH z AS(SELECT * FROM t1) SELECT * FROM v2) SELECT a) SELECT * from t1;
+  CREATE VIEW v3(c) AS WITH x AS (WITH y AS (WITH z AS(SELECT * FROM v2) SELECT * FROM v3) SELECT a) SELECT * from t1;
+  ALTER TABLE t1 RENAME TO t1x;
+  SELECT quote(c) FROM v3;
+} {1 'hello' 4.25 NULL X'3C626C6F623E'}
+
 finish_test
