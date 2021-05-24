@@ -1,5 +1,5 @@
-C Additional\sdefenses\s(above\sand\sbeyond\s[b986600520696b0c])\sto\sprevent\san\ninvalid\ssubquery\sfrom\scausing\sproblems\sdownstream.\s\sIf\san\serror\sis\sfound\nwhile\sanalyzing\sa\ssubquery\sexpression,\schange\sthe\sexpression\sto\sTK_ERROR\nso\sinhibit\sfurther\sprocessing\son\sthat\sexpression.\ndbsqlfuzz\scf624b8c0484c66e0f552bf6475e3e3f2c22b24e.
-D 2021-05-24T00:17:04.520
+C Fix\sthe\sTreeView\smodule\sso\sthat\sit\sworks\swith\sthe\sTK_ERROR\sexprssion.\nAlso\sfix\san\sassert()\sthat\swas\sfailing\sdue\sto\sthe\srecent\sTK_ERROR\saddition.
+D 2021-05-24T11:35:16.772
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 73f57a9a183532c344a3135cf8f2a5589376e39183e0b5f562d6b61b2af0f4d8
-F src/expr.c d4fd1850355d580f31a97bac8d640827b76de774bbcdc7ee105bbd1033da2bf9
+F src/expr.c fcca84eb7b96038a45b1d7f67fa1e65667c5d50ff65f1235ce2fee82903899e3
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c 88fd711754a7241cb9f8eb1391370fd0c0cea756b3358efa274c5d1efd59af93
@@ -608,7 +608,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
-F src/treeview.c e483aeedf6f207000db1f90eb6abd816350493314c30e8749d319bdb9ab3b08c
+F src/treeview.c 21449a944d5abd3ac07b7eab76f7221e20c9480d06f01798f8dc66d9bc361769
 F src/trigger.c e0fd347b2571a2d956318cdc6d011ccca7ce862d10a0ca04188a37920ef5440c
 F src/update.c 56fa0458b1ffc1042629f926443e8ed44203983df3ab2b0db2ba556e6ceed68c
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2066dde53b9872dbb991e27419dd031791c942fe23826556f52efbd66c51662
-R 431d781874723b1ee1c951d35c5f209c
+P 0be6b6c9f7c562e764792a4a5eb53ed11b230174b19361f7cd7778c743314bbd
+R 864ff1884742300c9d9725780964fbda
 U drh
-Z 0c99c528950e729ac1ad6bba2e782e3e
+Z 20a5f66a072e10dabc92731ce9bb2356
