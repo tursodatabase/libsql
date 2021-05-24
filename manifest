@@ -1,5 +1,5 @@
-C Minor\scomment\simprovements\sin\sfuzzcheck.c.
-D 2021-05-24T12:28:13.639
+C Fix\sa\sproblem\sin\sthe\sin-memory\sjournal\scode\sthat\scould\soccasionally\slead\sto\sa\ssegfault\swhen\sa\ssub-transaction\sthat\smodified\szero\spages\swas\scommitted.
+D 2021-05-24T14:35:19.500
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F src/mem2.c b93b8762ab999a29ae7751532dadf0a1ac78040308a5fb1d17fcc365171d67eb
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memdb.c f6ce717b26cd51a24cda62fce611b4b72b3db367113374aa498e489a69470715
-F src/memjournal.c 431c70a111223a8a6e2e7e9f014afc6c88d818d357d866afc563195f2277d50e
+F src/memjournal.c a85f0dc5c02a42453d0bc3819ecfb5666cb6433e5deefcd93ccbe05c9f088b83
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
@@ -1190,6 +1190,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memdb1.test 7b76c3262d63c46dd6b408d18f5721071776f2df4ffeb11e668824e427127594
+F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1914,7 +1915,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5bb5c9ec049488f95e47bbd9f1db9038ffabad3cfafa613acdaa790ab4034eee
-R 8abf47bfcd09099416b7e0ebf8da1954
-U drh
-Z 7413c02b9058cd69a9060ec55f66578b
+P 7aca8d52c16c2192d9c1ff03a976c482a60365cef8d2474b540ff4c84e8737b4
+R 063cf7670c70a45b325de4faeffc140b
+U dan
+Z 2105d14c8908ec3b52c696f7307f25a5
