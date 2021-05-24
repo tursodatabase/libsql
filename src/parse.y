@@ -1855,6 +1855,7 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
   IF_NULL_ROW     /* the if-null-row operator */
   ASTERISK        /* The "*" in count(*) and similar */
   SPAN            /* The span operator */
+  ERROR           /* An expression containing an error */
 .
 /* There must be no more than 255 tokens defined above.  If this grammar
 ** is extended with new rules and tokens, they must either be so few in

@@ -561,7 +561,7 @@ static int exprVectorRegister(
   int *pRegFree                   /* OUT: Temp register to free */
 ){
   u8 op = pVector->op;
-  assert( op==TK_VECTOR || op==TK_REGISTER || op==TK_SELECT );
+  assert( op==TK_VECTOR || op==TK_REGISTER || op==TK_SELECT || op==TK_ERROR );
   if( op==TK_REGISTER ){
     *ppExpr = sqlite3VectorFieldSubexpr(pVector, iField);
     return pVector->iTable+iField;
@@ -570,8 +570,11 @@ static int exprVectorRegister(
     *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
      return regSelect+iField;
   }
-  *ppExpr = pVector->x.pList->a[iField].pExpr;
-  return sqlite3ExprCodeTemp(pParse, *ppExpr, pRegFree);
+  if( op==TK_VECTOR ){
+    *ppExpr = pVector->x.pList->a[iField].pExpr;
+    return sqlite3ExprCodeTemp(pParse, *ppExpr, pRegFree);
+  }
+  return 0;
 }
 
 /*
@@ -3093,6 +3096,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 
   Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
+  if( pParse->nErr ) return 0;
   testcase( pExpr->op==TK_EXISTS );
   testcase( pExpr->op==TK_SELECT );
   assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
@@ -3174,6 +3178,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   }
   pSel->iLimit = 0;
   if( sqlite3Select(pParse, pSel, &dest) ){
+    if( pParse->nErr ) pExpr->op = TK_ERROR;
     return 0;
   }
   pExpr->iTable = rReg = dest.iSDParm;
@@ -4017,7 +4022,7 @@ expr_code_doover:
       ** Expr node to be passed into this function, it will be handled
       ** sanely and not crash.  But keep the assert() to bring the problem
       ** to the attention of the developers. */
-      assert( op==TK_NULL || pParse->db->mallocFailed );
+      assert( op==TK_NULL || op==TK_ERROR || pParse->db->mallocFailed );
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       return target;
     }
@@ -4360,7 +4365,8 @@ expr_code_doover:
       if( pExpr->pLeft->iTable==0 ){
         pExpr->pLeft->iTable = sqlite3CodeSubselect(pParse, pExpr->pLeft);
       }
-      assert( pExpr->iTable==0 || pExpr->pLeft->op==TK_SELECT );
+      assert( pExpr->iTable==0 || pExpr->pLeft->op==TK_SELECT
+               || pExpr->pLeft->op==TK_ERROR );
       if( pExpr->iTable!=0
        && pExpr->iTable!=(n = sqlite3ExprVectorSize(pExpr->pLeft))
       ){

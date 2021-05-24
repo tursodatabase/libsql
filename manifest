@@ -1,5 +1,5 @@
-C Do\snot\spush\sa\sWITH\sclause\sonto\sthe\sprocessing\sstack\sif\sprior\serrors\shave\noccurred.\s\sdbsqlfuzz\s6b7a144674e215f06ddfeb9042c873d9ee956ac0.
-D 2021-05-23T17:47:04.747
+C Additional\sdefenses\s(above\sand\sbeyond\s[b986600520696b0c])\sto\sprevent\san\ninvalid\ssubquery\sfrom\scausing\sproblems\sdownstream.\s\sIf\san\serror\sis\sfound\nwhile\sanalyzing\sa\ssubquery\sexpression,\schange\sthe\sexpression\sto\sTK_ERROR\nso\sinhibit\sfurther\sprocessing\son\sthat\sexpression.\ndbsqlfuzz\scf624b8c0484c66e0f552bf6475e3e3f2c22b24e.
+D 2021-05-24T00:17:04.520
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 73f57a9a183532c344a3135cf8f2a5589376e39183e0b5f562d6b61b2af0f4d8
-F src/expr.c c56c74d40d1ca5359177f1425d2eb2aa050c30da0b49e014da1f109aa38ece0f
+F src/expr.c d4fd1850355d580f31a97bac8d640827b76de774bbcdc7ee105bbd1033da2bf9
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c 88fd711754a7241cb9f8eb1391370fd0c0cea756b3358efa274c5d1efd59af93
@@ -532,7 +532,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 95c255256b13827caf038c8f963d334784073f38ab6ef9d70371d9d04f3c43e0
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y ac294bd2891c4310b0b23a67ea3bbca2d0bf5b7662c4444b6517c3986be4a437
+F src/parse.y 8920f4444957d7827ca458029b2e41ffa32dd3b72917be0b52cae0aace3eadb5
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
@@ -1771,7 +1771,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 4baffc3acb2e5188a5e3a895b2b543ed09e62f7c72d713c1feebf76222fe9976
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test b7ed3bc8188b0c4036a2a19136405518939e63cf167c37ea2ceb78dd21c9a1f8
+F test/window1.test 49eadb28b0bae0f916518c9983b1fb7450c198915664f323b2bfc480cc98c431
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1914,7 +1914,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b986600520696b0c91c4ccc6aff1b698391b4bcaf8a3ea436be1967883faa2fe
-R eb17d4980cec26c3ee5100c600887bbf
+P c2066dde53b9872dbb991e27419dd031791c942fe23826556f52efbd66c51662
+R 431d781874723b1ee1c951d35c5f209c
 U drh
-Z 47c85be57ec11e908122d7690b7c8f04
+Z 0c99c528950e729ac1ad6bba2e782e3e
