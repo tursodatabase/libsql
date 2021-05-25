@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sin-memory\sjournal\scode\sthat\scould\soccasionally\slead\sto\sa\ssegfault\swhen\sa\ssub-transaction\sthat\smodified\szero\spages\swas\scommitted.
-D 2021-05-24T14:35:19.500
+C Enhance\sthe\sshell\stool\s".dump\sPATTERN"\scommand\sso\sthat\sit\sdumps\sthe\scontents\sof\sshadow\stables\swhen\sa\svirtual\stable\sis\sidentified\sby\sthe\sPATTERN.
+D 2021-05-25T11:39:14.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 40e216d9a72e52841a9c8e0aec7d367bade8e2df17b804653b539b20c1ab5660
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 531612539a0058b6e953a5b5497d9a2066f483089764002d9f2745dd7600d6f7
-F src/shell.c.in 1b32ba2918ede13b68df47c7b92b72ba0d06e68d384e78bb9d7456527271d400
+F src/shell.c.in 2a2b06d463933ee3a5bb0242d5d2200ca36769493fd6f4d939a0574113f3d6d8
 F src/sqlite.h.in 5c950066775ca9efdaa49077c05d38d0bef6418f3bd07d2dce0210f1d2f3c326
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1915,7 +1915,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7aca8d52c16c2192d9c1ff03a976c482a60365cef8d2474b540ff4c84e8737b4
-R 063cf7670c70a45b325de4faeffc140b
+P 17960165f5840cab45b7a8bb02779ebfb321c68f33ec6da9ab14063ccd134fa4
+R 566b3231aafb0b1c4d92f8d47e61c4a9
 U dan
-Z 2105d14c8908ec3b52c696f7307f25a5
+Z b40b0f8d44019306141de12b3f25d01c
