@@ -20,6 +20,11 @@ source [file join [file dirname [info script]] session_common.tcl]
 source $testdir/tester.tcl
 ifcapable !session {finish_test; return}
 
+if {[permutation]=="session_strm" || [permutation]=="session_eec"} {
+  finish_test
+  return
+}
+
 set testprefix sessionbig
 
 forcedelete test.db2

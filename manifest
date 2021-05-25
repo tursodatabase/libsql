@@ -1,5 +1,5 @@
-C Update\san\sallocation\sroutine\sin\sthe\ssessions\smodule\sto\sallow\sit\sto\sallocate\sthe\smaximum\ssize\spermitted\sby\ssqlite3_realloc64().
-D 2021-05-25T15:21:54.821
+C Do\snot\srun\ssessionbig.test\sas\spart\sof\sthe\ssession_strm\spermutation.\sIt\sis\stoo\sslow.
+D 2021-05-25T16:10:12.465
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -446,7 +446,7 @@ F ext/session/sessionH.test b17afdbd3b8f17e9bab91e235acf167cf35485db2ab2df0ea889
 F ext/session/session_common.tcl f613174665456b2d916ae8df3e5735092a1c1712f36f46840172e9a01e8cc53e
 F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8be518b62d6cbdef88b3
 F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28f0c1cc142c3ec
-F ext/session/sessionbig.test 2a12fabf53f079042ac00e2ff01a445e774f4d4eedd54a1ada27b25c14e780d9
+F ext/session/sessionbig.test 5851fc7f9981e2ccf1c7d9e7cb239dc530db07d5e878ebbb2f6d993d27872a43
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test dd593f80b6b4786f7adfe83c5939620bc505559770cc181332da26f29cddd7bb
@@ -1916,7 +1916,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0bc5ab9ceec496ac260ccfd53b51a2b53a81576fbe04c97b99f6705b063c59f
-R ef39c7464543ee69b4de0503a2bec5a4
+P 0b45e821911e4a852edd6d9e9cfe5f9de33337edf76fb12b79adaf11a4b83e8a
+R e5e65b96cfadc0ae4669cc65c5b6cd06
 U dan
-Z c10587a9d81e2ad7ca989feae2bbdfdd
+Z 9a7abfbe0eb3b33eb92b702ee941abb0
