@@ -1861,7 +1861,7 @@ mod test {
         db.execute_batch(sql)?;
 
         db.query_row("SELECT * FROM foo", [], |r| {
-            assert_eq!(2, r.column_count());
+            assert_eq!(2, r.as_ref().column_count());
             Ok(())
         })
     }

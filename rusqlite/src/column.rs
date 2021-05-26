@@ -1,6 +1,6 @@
 use std::str;
 
-use crate::{Error, Result, Row, Rows, Statement};
+use crate::{Error, Result, Statement};
 
 /// Information about a column of a SQLite query.
 #[derive(Debug)]
@@ -144,72 +144,6 @@ impl Statement<'_> {
             cols.push(Column { name, decl_type });
         }
         cols
-    }
-}
-
-impl<'stmt> Rows<'stmt> {
-    /// Get all the column names.
-    #[inline]
-    pub fn column_names(&self) -> Option<Vec<&str>> {
-        self.stmt.map(Statement::column_names)
-    }
-
-    /// Return the number of columns.
-    #[inline]
-    pub fn column_count(&self) -> Option<usize> {
-        self.stmt.map(Statement::column_count)
-    }
-
-    /// Return the name of the column.
-    #[inline]
-    pub fn column_name(&self, col: usize) -> Option<Result<&str>> {
-        self.stmt.map(|stmt| stmt.column_name(col))
-    }
-
-    /// Return the index of the column.
-    #[inline]
-    pub fn column_index(&self, name: &str) -> Option<Result<usize>> {
-        self.stmt.map(|stmt| stmt.column_index(name))
-    }
-
-    /// Returns a slice describing the columns of the Rows.
-    #[inline]
-    #[cfg(feature = "column_decltype")]
-    pub fn columns(&self) -> Option<Vec<Column>> {
-        self.stmt.map(Statement::columns)
-    }
-}
-
-impl<'stmt> Row<'stmt> {
-    /// Get all the column names of the Row.
-    #[inline]
-    pub fn column_names(&self) -> Vec<&str> {
-        self.stmt.column_names()
-    }
-
-    /// Return the number of columns in the current row.
-    #[inline]
-    pub fn column_count(&self) -> usize {
-        self.stmt.column_count()
-    }
-
-    /// Return the name of the column.
-    #[inline]
-    pub fn column_name(&self, col: usize) -> Result<&str> {
-        self.stmt.column_name(col)
-    }
-
-    /// Return the index of the column.
-    #[inline]
-    pub fn column_index(&self, name: &str) -> Result<usize> {
-        self.stmt.column_index(name)
-    }
-
-    /// Returns a slice describing the columns of the Row.
-    #[inline]
-    #[cfg(feature = "column_decltype")]
-    pub fn columns(&self) -> Vec<Column> {
-        self.stmt.columns()
     }
 }
 
