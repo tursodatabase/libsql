@@ -1,5 +1,5 @@
-C Avoid\sassuming\sthat\san\sexpression\slike\s"x=10"\sin\sa\sWHERE\sclause\simplies\sthat\sCASE(x\sAS\sTEXT)=='10'.
-D 2021-05-26T18:51:57.863
+C Add\snew\stest\sfile\swhereM.test.\sContaining\stests\sfor\sthe\schange\son\sthis\sbranch.
+D 2021-05-26T19:37:27.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1765,6 +1765,7 @@ F test/whereI.test c4bb7e2ca56d49bd8ab5c7bd085b8b83e353922b46904d68aefb3c7468643
 F test/whereJ.test fc05e374cc9f2dc204148d6c06822c380ad388895fe97a6d335b94a26a08aecf
 F test/whereK.test 0270ab7f04ba5436fb9156d31d642a1c82727f4c4bfe5ba90d435c78cf44684a
 F test/whereL.test 50171e3ec00b4c8ad5ec773119a35d9e9642cec45154b44c366d628326479f4d
+F test/whereM.test 0dbc9998783458ddcf3cc078ca7c2951d8b2677d472ecf0028f449ed327c0250
 F test/wherefault.test 6cf2a9c5712952d463d3f45ebee7f6caf400984df51a195d884cfb7eb0e837a7
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test afb46397c6d7e964e6e294ba3569864a0c570fe3807afc634236c2b752372f31
@@ -1916,10 +1917,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3e2c36a8272ab3c1777638c0ed8222e7ff04657fe1c40f74a63b99a5a90258cc
-R cffb4f3f02576d8a42daeb09373618f5
-T *branch * constant-propagation-fix
-T *sym-constant-propagation-fix *
-T -sym-trunk *
+P 389ec669f416c74d651e25572f6e007c2a62ddd4027524f553107b06db5c55eb
+R cf3825b1c4ece40bade1233f60e8347b
 U dan
-Z 5eeb8299cfa9877533e1ce28b95ad785
+Z 109f39ba8a2ad6a213793823e9e155e4
