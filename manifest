@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\swhereM.test.\sContaining\stests\sfor\sthe\schange\son\sthis\sbranch.
-D 2021-05-26T19:37:27.717
+C Minor\soptimization\sto\sopcode\scomparison\slogic\sin\sthe\sfixes\sto\nthe\sconstant-propagation\soptimization\son\sthis\sbranch.
+D 2021-05-26T19:52:21.111
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 40e216d9a72e52841a9c8e0aec7d367bade8e2df17b804653b539b20c1ab5660
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c c4cb9151f29451fb9375c8034b2381f0ec714d2c53c81a70afe959d96b7fc3b6
+F src/select.c d5c307553eee86e5b0f17da1bd32cdb11ed9075450e54c7eb2c097a4eafa8690
 F src/shell.c.in 2a2b06d463933ee3a5bb0242d5d2200ca36769493fd6f4d939a0574113f3d6d8
 F src/sqlite.h.in 5c950066775ca9efdaa49077c05d38d0bef6418f3bd07d2dce0210f1d2f3c326
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1917,7 +1917,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 389ec669f416c74d651e25572f6e007c2a62ddd4027524f553107b06db5c55eb
-R cf3825b1c4ece40bade1233f60e8347b
-U dan
-Z 109f39ba8a2ad6a213793823e9e155e4
+P c4c76b824c41afb5b4d7b397c4d3142698aa303ea3a368c0cc7af4884e3a10bd
+R 7605ce2b0c251b353f8b555563472bec
+U drh
+Z e16e744a131327b16a7c67438b84f063

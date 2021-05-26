@@ -4557,12 +4557,12 @@ static int propagateConstantExprRewriteOne(
 */
 static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
   WhereConst *pConst = pWalker->u.pConst;
+  assert( TK_GT==TK_EQ+1 );
+  assert( TK_LE==TK_EQ+2 );
+  assert( TK_LT==TK_EQ+3 );
+  assert( TK_GE==TK_EQ+4 );
   if( pConst->bHasAffBlob ){
-    if( pExpr->op==TK_EQ
-     || pExpr->op==TK_LE
-     || pExpr->op==TK_GE
-     || pExpr->op==TK_LT
-     || pExpr->op==TK_GT
+    if( (pExpr->op>=TK_EQ && pExpr->op<=TK_GE)
      || pExpr->op==TK_IS
     ){
       propagateConstantExprRewriteOne(pConst, pExpr->pLeft, 0);
