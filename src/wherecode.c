@@ -1122,7 +1122,7 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
       }
     }
   }else{
-    assert( nReg==1 );
+    assert( nReg==1 || pParse->nErr );
     sqlite3ExprCode(pParse, p, iReg);
   }
 }
