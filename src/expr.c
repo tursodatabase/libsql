@@ -2985,19 +2985,23 @@ void sqlite3CodeRhsOfIN(
     /* If the LHS and RHS of the IN operator do not match, that
     ** error will have been caught long before we reach this point. */
     if( ALWAYS(pEList->nExpr==nVal) ){
+      Select *pCopy;
       SelectDest dest;
       int i;
+      int rc;
       sqlite3SelectDestInit(&dest, SRT_Set, iTab);
       dest.zAffSdst = exprINAffinity(pParse, pExpr);
       pSelect->iLimit = 0;
       testcase( pSelect->selFlags & SF_Distinct );
       testcase( pKeyInfo==0 ); /* Caused by OOM in sqlite3KeyInfoAlloc() */
-      if( sqlite3Select(pParse, pSelect, &dest) ){
-        sqlite3DbFree(pParse->db, dest.zAffSdst);
+      pCopy = sqlite3SelectDup(pParse->db, pSelect, 0);
+      rc = pParse->db->mallocFailed ? 1 :sqlite3Select(pParse, pCopy, &dest);
+      sqlite3SelectDelete(pParse->db, pCopy);
+      sqlite3DbFree(pParse->db, dest.zAffSdst);
+      if( rc ){
         sqlite3KeyInfoUnref(pKeyInfo);
         return;
-      }
-      sqlite3DbFree(pParse->db, dest.zAffSdst);
+      }      
       assert( pKeyInfo!=0 ); /* OOM will cause exit after sqlite3Select() */
       assert( pEList!=0 );
       assert( pEList->nExpr>0 );
@@ -3103,6 +3107,23 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   assert( ExprHasProperty(pExpr, EP_xIsSelect) );
   pSel = pExpr->x.pSelect;
 
+  /* If this routine has already been coded, then invoke it as a
+  ** subroutine. */
+  if( ExprHasProperty(pExpr, EP_Subrtn) ){
+    ExplainQueryPlan((pParse, 0, "REUSE SUBQUERY %d", pSel->selId));
+    sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
+                      pExpr->y.sub.iAddr);
+    return pExpr->iTable;
+  }
+
+  /* Begin coding the subroutine */
+  ExprSetProperty(pExpr, EP_Subrtn);
+  pExpr->y.sub.regReturn = ++pParse->nMem;
+  pExpr->y.sub.iAddr =
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
+  VdbeComment((v, "return address"));
+
+
   /* The evaluation of the EXISTS/SELECT must be repeated every time it
   ** is encountered if any of the following is true:
   **
@@ -3114,22 +3135,6 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasProperty(pExpr, EP_VarSelect) ){
-    /* If this routine has already been coded, then invoke it as a
-    ** subroutine. */
-    if( ExprHasProperty(pExpr, EP_Subrtn) ){
-      ExplainQueryPlan((pParse, 0, "REUSE SUBQUERY %d", pSel->selId));
-      sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
-                        pExpr->y.sub.iAddr);
-      return pExpr->iTable;
-    }
-
-    /* Begin coding the subroutine */
-    ExprSetProperty(pExpr, EP_Subrtn);
-    pExpr->y.sub.regReturn = ++pParse->nMem;
-    pExpr->y.sub.iAddr =
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
-    VdbeComment((v, "return address"));
-
     addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
   
@@ -3188,13 +3193,12 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ExprSetVVAProperty(pExpr, EP_NoReduce);
   if( addrOnce ){
     sqlite3VdbeJumpHere(v, addrOnce);
-
-    /* Subroutine return */
-    sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
-    sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
-    sqlite3ClearTempRegCache(pParse);
   }
 
+  /* Subroutine return */
+  sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
+  sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+  sqlite3ClearTempRegCache(pParse);
   return rReg;
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
