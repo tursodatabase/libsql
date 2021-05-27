@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER\sthat\sis\sreachable\sfollowing\sOOM\sin\swritable_schema=ON\smode\nwith\sa\scorrupt\sschema.
-D 2021-05-27T10:23:16.388
+C Improved\scomment\son\sthe\sprpagateConstants()\sroutine.\s\sNo\schanges\sto\sexecutable\ncode.
+D 2021-05-27T14:09:01.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 40e216d9a72e52841a9c8e0aec7d367bade8e2df17b804653b539b20c1ab5660
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c f2d664297fccfe3eff7ac3b4e387ddb5cda1d53300f262d881869055b2299b85
+F src/select.c 2f4429e0b0ca031e360489c45dca5dfa06cd85480e12c0d1360b91e1c8e7f7a2
 F src/shell.c.in 2a2b06d463933ee3a5bb0242d5d2200ca36769493fd6f4d939a0574113f3d6d8
 F src/sqlite.h.in 5c950066775ca9efdaa49077c05d38d0bef6418f3bd07d2dce0210f1d2f3c326
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1917,7 +1917,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9be208a6d70582c6808abe6e016ab9cd8d10f0deefb8c7a8c0543372cca15b12
-R 8892243aaa7d6362f74772ffbfc7a32c
+P 4eb80b0cc61526c1ff7478b1b855b29fa4326daee61facd1d85e4297bb32ac9d
+R 816e0d4f9adc95e1495d0ff38bde7776
 U drh
-Z b2475892e25c19e3c04350a708cba5bc
+Z 0be2b6d4391de9cac15cfbee3096d192

@@ -4609,6 +4609,21 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
 ** routines know to generate the constant "123" instead of looking up the
 ** column value.  Also, to avoid collation problems, this optimization is
 ** only attempted if the "a=123" term uses the default BINARY collation.
+**
+** 2021-05-25 forum post 6a06202608: Another troublesome case is...
+**
+**    CREATE TABLE t1(x);
+**    INSERT INTO t1 VALUES(10.0);
+**    SELECT 1 FROM t1 WHERE x=10 AND x LIKE 10;
+**
+** The query should return no rows, because the t1.x value is '10.0' not '10'
+** and '10.0' is not LIKE '10'.  But if we are not careful, the first WHERE
+** term "x=10" will cause the second WHERE term to become "10 LIKE 10",
+** resulting in a false positive.  To avoid this, constant propagation for
+** columns with BLOB affinity is only allowed if the constant is used with
+** operators ==, <=, <, >=, >, or IS in a way that will cause the correct
+** type conversions to occur.  See logic associated with the bHasAffBlob flag
+** for details.
 */
 static int propagateConstants(
   Parse *pParse,   /* The parsing context */
