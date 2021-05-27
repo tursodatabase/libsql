@@ -140,6 +140,7 @@ GCOV_LDFLAGS1 = -lgcov
 USE_GCOV = @USE_GCOV@
 LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
 LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
+LTCOMPILE_EXTRAS += -DSQLITE_ENABLE_SHARED_SCHEMA
 
 
 # The directory into which to store package information for

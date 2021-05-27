@@ -1,9 +1,9 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2021-05-22T15:05:02.152
+C The\sSQLITE_ENABLE_SHARED_SCHEMA\scompile-time\soption\sis\son\sby\sdefault\sin\sthe\nconfigure-generated\smakefile,\spermitting\sa\scomplete\stest\sof\sthis\sbranch\nusing\s"./configure\s&&\smake\stest".
+D 2021-05-27T15:24:59.921
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in b497ef724bb181d85e5c77fa84f48696f2f8756d4418e89de30284d107eaeb9a
+F Makefile.in e1ebc64fd4ec8d4760a75bdb1aa4284f1428a703bbd1b6493c17ce35f15d5ac1
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc af85412e8473f170a6dffad929a21e3362103700f79c71d292b13b5540513381
 F README.md 2a71913f398ecac5f3e10945fcf438aed425c2e9ed9874de561156ba77fb7023
@@ -1924,7 +1924,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e69f29892e5226957578b06e9f7966a8e820fc72c0a8b0a83773fb168caa500f c18dbe2f389f4ba7b219b7995d4f7009d1bc249ef8f93a30b262c6d2c008319d
-R 242cb57b68b557f8cbd908cf0c13b86b
-U dan
-Z 75d80add83f649ef62ad4701836608da
+P dbc65a695877306e2add75aba2a279efbb30bfadb5339883cf74aa417f11de86
+R 07e5621df822d6aa7f3f99a8cf8cb5d5
+U drh
+Z 6dfff0b0a422e028aa6dcda0f1aa5f5b
