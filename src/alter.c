@@ -919,7 +919,7 @@ static RenameToken *renameTokenFind(
   void *pPtr
 ){
   RenameToken **pp;
-  if( NEVER(pPtr==0) ){
+  if( pPtr==0 ){
     return 0;
   }
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){

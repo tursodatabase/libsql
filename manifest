@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sconstant-propagation\soptimization\sin\sorder\sto\sbetter\ndeal\swith\sunusual\saffinities.\s\sSee\n[forum:/forumpost/6a06202608|forum\spost\s6a06202608]\sfor\smore\sdetail.
-D 2021-05-26T23:10:19.141
+C Remove\sa\sNEVER\sthat\sis\sreachable\sfollowing\sOOM\sin\swritable_schema=ON\smode\nwith\sa\scorrupt\sschema.
+D 2021-05-27T10:23:16.388
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c df53c39fd4f32528fc7ad8188b3bf2b506e1a8b3bb975b14f16a1bc6e901950f
+F src/alter.c e2e0e6be8a53cc5c145d9ff4f82a2c8d6851468a366ac8b5bd7306c792e37619
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -1917,8 +1917,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f30fb19ff763a7cbe768ea49954704e14d6400f69bb4257c9c890e1564e14835 f17dec40a0ccc044bd32e035fc10797552329af242408a45f36125ed8d2ef088
-R f9b4579ee085374536d0f78bf690bce2
-T +closed f17dec40a0ccc044bd32e035fc10797552329af242408a45f36125ed8d2ef088
+P 9be208a6d70582c6808abe6e016ab9cd8d10f0deefb8c7a8c0543372cca15b12
+R 8892243aaa7d6362f74772ffbfc7a32c
 U drh
-Z 8281f9c417505202be530b0457855632
+Z b2475892e25c19e3c04350a708cba5bc
