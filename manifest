@@ -1,5 +1,5 @@
-C Add\sthe\smerge-test.tcl\sscript\sto\sease\sverification\sof\sLTS\sbranches.
-D 2021-05-27T16:31:04.311
+C Fix\sa\spotential\smemory\sleak\sin\sjson_group_object()\sfollowing\san\serror.\ndbsqlfuzz\scd32630de3ff039d97089592b63cb3616f8ec9dd
+D 2021-05-28T12:15:19.049
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -305,7 +305,7 @@ F ext/misc/fileio.c 9b69e25da3b51d4a1d905a464ccb96709792ad627a742ba09215bc0d1447
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c cd6ab89f85fda8a020559b3f4d03001a8a62dd856beda5af3f558621d12be913
-F ext/misc/json1.c 2c5c0dbc7fa303f0213f008e5878db9f0e5875fe8ff59a7c2d9f235b18e323a7
+F ext/misc/json1.c 76c5d9e0960fd15b4be79dacb76d872b4d0d983ce13e72ebfe9481d82cb9345d
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c ab36f49e02ebcdf85a1e08dc4d8599ea8f343e073ac9e0bca18a98b7e1ec9567
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d61a875df48d8baab3ada0174c8e0312a9268bbd11bf104b4385eff9e2744266
-R 5e30c1492c2c1677fa63079c20b0d339
+P f958ffbc61c693b71538cc3aa5f95ce0f0b5d4906efbb0c075f543e19883a669
+R 96a7d9abe665dfd5611578e638dd272f
 U drh
-Z bcd233e14e52403e9c9befb82a37b462
+Z d6e9a2d658f734ee79d64b1f37f13952
