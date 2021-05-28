@@ -752,11 +752,16 @@ static int codeAllEqualityTerms(
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, regBase+j);
     if( r1!=regBase+j ){
+      assert( pTerm->pExpr->op==TK_EQ || pTerm->pExpr->op==TK_IS );
       if( nReg==1 ){
         sqlite3ReleaseTempReg(pParse, regBase);
         regBase = r1;
       }else{
-        sqlite3VdbeAddOp2(v, OP_Copy, r1, regBase+j);
+        if( ExprHasProperty(pTerm->pExpr->pRight, EP_VarSelect) ){
+          sqlite3VdbeAddOp3(v, OP_Move, r1, regBase+j, 1);
+        }else{
+          sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
+        }
       }
     }
     if( pTerm->eOperator & WO_IN ){
