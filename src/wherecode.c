@@ -756,7 +756,7 @@ static int codeAllEqualityTerms(
         sqlite3ReleaseTempReg(pParse, regBase);
         regBase = r1;
       }else{
-        sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
+        sqlite3VdbeAddOp2(v, OP_Copy, r1, regBase+j);
       }
     }
     if( pTerm->eOperator & WO_IN ){
