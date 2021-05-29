@@ -2914,7 +2914,8 @@ static int whereUsablePartialIndex(
     pExpr = pTerm->pExpr;
     if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
      && (isLeft==0 || ExprHasProperty(pExpr, EP_FromJoin))
-     && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab) 
+     && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab)
+     && (pTerm->wtFlags & TERM_VNULL)==0
     ){
       return 1;
     }
