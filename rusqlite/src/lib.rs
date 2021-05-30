@@ -537,6 +537,16 @@ impl Connection {
             .and_then(|mut stmt| stmt.check_no_tail().and_then(|_| stmt.execute(params)))
     }
 
+    /// Returns the path to the database file, if one exists and is known.
+    ///
+    /// Note that in some cases [PRAGMA
+    /// database_list](https://sqlite.org/pragma.html#pragma_database_list) is
+    /// likely to be more robust.
+    #[inline]
+    pub fn path(&self) -> Option<&Path> {
+        self.path.as_deref()
+    }
+
     /// Convenience method to prepare and execute a single SQL statement with
     /// named parameter(s).
     ///
