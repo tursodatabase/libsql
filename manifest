@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srunning\sALTER\sTABLE\sagainst\sschemas\sthat\scontain\scompound\sSELECT\sstatements\swith\sORDER\sBY\sclauses\scontaining\sone\sor\smore\sreferences\sto\sthe\ssecond\sor\ssubsequent\scomponent\sSELECT\sstatements.
-D 2021-06-01T15:37:14.513
+C Fix\sissue\sin\s'mkopcodeh.tcl'\stool\sthat\sprevented\sits\stermination\sin\srare\scircumstances.
+D 2021-06-01T21:07:49.044
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1849,7 +1849,7 @@ F tool/mkctimec.tcl 06b0d503ee0e6c2d4abe83563b43d4925a12e31ec9fb3249ce39661f53fb
 F tool/mkkeywordhash.c 08b6e4d7a482a7f37a9a0032e7ba968e26624a027b6b2e9ba589be6f5e3d8c2c
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
-F tool/mkopcodeh.tcl acc798757e2c60e4b6e16745505b9595fca76c206815c8ada576a136cf3608ed
+F tool/mkopcodeh.tcl 130b88697da6ec5b89b41844d955d08fb62c2552e889dec8c7bcecb28d8f50bd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl ae5585ae76ca26e4d6ccd5ea9cdebaf5efefb318bf989497a0e846cd711d9ab1
 F tool/mkshellc.tcl 70a9978e363b0f3280ca9ce1c46d72563ff479c1930a12a7375e3881b7325712
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cc23931d61b7d78521acce93fc2603649c5813c7a0869cb2c1bde2c8c4e51b4
-R 1e5d2af30db5fdc50b309212c57979f4
-U dan
-Z 59a6bb7e776c02bc744130f0bc937781
+P 587a3044468a40707c714d013cb766d8a4d9eb13bb20871846a0e8c34bea8cf4
+R 28996daffb0e59933544ba8f6a6b21ff
+U mistachkin
+Z 45822110f0419a0d61a2348a085e7f10
