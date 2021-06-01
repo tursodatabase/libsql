@@ -1,5 +1,5 @@
-C Do\snot\sconfuse\sthe\s">"\soperator\swith\sIS\sNOT\sNULL\swhen\schecking\sto\ssee\sif\na\spartial\sindex\sis\susable.\n[forum:/forumpost/d813704d7c|Forum\spost\sd813704d7c].
-D 2021-05-29T23:07:59.634
+C Fix\sa\sproblem\swith\srunning\sALTER\sTABLE\sagainst\sschemas\sthat\scontain\scompound\sSELECT\sstatements\swith\sORDER\sBY\sclauses\scontaining\sone\sor\smore\sreferences\sto\sthe\ssecond\sor\ssubsequent\scomponent\sSELECT\sstatements.
+D 2021-06-01T15:37:14.513
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c d778af9986f3b0107c5b255dcfe2696e8e99e00fb77c5115bbfea4e92c3302e7
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c 40e216d9a72e52841a9c8e0aec7d367bade8e2df17b804653b539b20c1ab5660
+F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 2f4429e0b0ca031e360489c45dca5dfa06cd85480e12c0d1360b91e1c8e7f7a2
 F src/shell.c.in 2a2b06d463933ee3a5bb0242d5d2200ca36769493fd6f4d939a0574113f3d6d8
@@ -658,7 +658,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test fa7b1c1139ea39b8dec407cf1feb032ca8e0076bd429574969b619175ad0174b
 F test/altermalloc3.test 059841a3de6b6780efd9f0b30bf1d9b4443c555f68d39975cbcac2583167b239
 F test/alterqf.test 67568ad152db8c1187b15633b801242cf960f1beafc51261a3d1725d910baeb2
-F test/altertab.test c7966d92e4da535050b911e1e9972ecb3a5befb0b2d22026b132cf5003d43dec
+F test/altertab.test a96e2169bbb2c5a754b0ddac8a396e15b4ad6f34a5fbf6fbfad76bdfb339479f
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test 2b82fa2236a3a91553d53ae5555d8e723c7eec174c41f1fa62ff497355398479
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a5ec81eb49e55fc03591666f336c09e5469785c8680f253ec3cc5366ac2fa45a
-R fece908df531511de4c3e13a7b5636c9
-U drh
-Z a53952856d84541f7fe1749541be6df3
+P 8cc23931d61b7d78521acce93fc2603649c5813c7a0869cb2c1bde2c8c4e51b4
+R 1e5d2af30db5fdc50b309212c57979f4
+U dan
+Z 59a6bb7e776c02bc744130f0bc937781

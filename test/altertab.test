@@ -789,14 +789,34 @@ do_execsql_test 27.1 {
    END;
 }
 
-
-breakpoint
 do_execsql_test 27.2 {
   alter table t_sa rename column c_muyat to c_dg;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 28.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b,c);
+  INSERT INTO t2 VALUES(1,2),(1,3),(2,5);
+  CREATE VIEW v3 AS 
+    WITH RECURSIVE t3(x,y,z) AS (
+        SELECT b,c,NULL FROM t2
+        UNION
+        SELECT x,y,NULL FROM t3, t2 WHERE b=x
+        ORDER BY y
+    )
+  SELECT * FROM t3;
+}
 
+do_execsql_test 28.2 {
+  SELECT * FROM v3
+} {
+  1 2 {} 1 3 {} 2 5 {}
+}
 
-
+do_execsql_test 28.3 {
+  ALTER TABLE t1 RENAME a TO a2; -- fails in v3
+} 
 
 finish_test
