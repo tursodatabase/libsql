@@ -2627,7 +2627,7 @@ static int whereLoopAddBtreeIndex(
             ("IN operator (N=%d M=%d logK=%d nIn=%d rLogSize=%d x=%d) "
              "prefers indexed lookup\n",
              saved_nEq, M, logK, nIn, rLogSize, x));
-        }else if( x < -nInMul ){
+        }else if( nInMul<2 ){
           WHERETRACE(0x40,
             ("IN operator (N=%d M=%d logK=%d nIn=%d rLogSize=%d x=%d"
              " nInMul=%d) prefers skip-scan\n",

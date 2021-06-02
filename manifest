@@ -1,5 +1,5 @@
-C This\sis\san\sattempt\sto\saddress\sthe\sOP_SeekScan\sperformance\sissue\sidentified\sby\n[forum:/forumpost/b4fcb8a598|forum\spost\sb4fcb8a598].
-D 2021-06-02T12:44:26.088
+C Never\suse\sWHERE_IN_SEEKSCAN\sfor\sthe\s2nd\sor\ssubsequent\sIN\soperator.
+D 2021-06-02T17:14:50.729
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
-F src/where.c 2a6ae34252a15de5e6e1102d037ec899bd22c020d4f3e3df30f7afc1d9d3e349
+F src/where.c fbb2da2b618c4a382a803d2a68795ade50702fa1cc21cd7c5b42f48ce811050a
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c d0963d5a2aaae8c18f459a7e72dc6c7ca897f3a4ddb40fd56a12384b725e9e0a
 F src/whereexpr.c 5a9c9f5d2dac4bcdcaae3035034b4667523f731df228e0bb1d4efc669efa9da5
@@ -1074,7 +1074,7 @@ F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 688ed2011d922d83141a45af431601738674a4c0bdde34b6351f688b82a169b3
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test cd08375ba470b248c3dc4ab30fd5dbcb682deafe3862d8249ba0ad6a11dd25ea
+F test/in4.test 3f68dd68bda673e677c561b81e71cc7a42da1f08c3e172cb2ddab6c55f505269
 F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
@@ -1918,10 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8d921136f8ab132279984a77d0eeaf355342cdb0a98d7e1e59c8e6c8ed9459c
-R c9d14953d90f0bc10aff723dd24fc8cd
-T *branch * seekscan-improvements
-T *sym-seekscan-improvements *
-T -sym-trunk *
+P d58efb3f21a4150b8136197e43837c7b646c42d492a7c24ddc7591dba415a2c8
+R 8ad2053968a5fcd14ddf59995bbbadeb
 U drh
-Z 37cec0fe3735838a40d15474ed3bffee
+Z 725e8b4bd380dc24d27ee8c2d8e9d784
