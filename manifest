@@ -1,5 +1,5 @@
-C Never\suse\sWHERE_IN_SEEKSCAN\sfor\sthe\s2nd\sor\ssubsequent\sIN\soperator.
-D 2021-06-02T17:14:50.729
+C Tighten\sassert()\srestrictions\son\sthe\sOP_SeekScan\sopcode.
+D 2021-06-02T17:32:51.158
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 73e5a8b64a77359f4287d76f168e89d12ba967cbb72a3d7619650568e9c1d66c
+F src/vdbe.c bcb074ce72ad18723ce01d21d389dac60069270a42fb5e832dc567ccc62b6a13
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 58980223a32495ad059d10581b83e133abdc77248b1bab85c080cab8a13bd819
 F src/vdbeapi.c d9e99daf59fec928986838b3389a7337e82fec6b3b5de30206cb99fb4661b94e
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d58efb3f21a4150b8136197e43837c7b646c42d492a7c24ddc7591dba415a2c8
-R 8ad2053968a5fcd14ddf59995bbbadeb
+P d0b98619082038ed451912bcdf56568835a8577989a25cacf25591f2366d4f52
+R d26fe6f59a48492df417195f3011ada4
 U drh
-Z 725e8b4bd380dc24d27ee8c2d8e9d784
+Z ccfc7cbcce94189a4dff82a83cd75efc
