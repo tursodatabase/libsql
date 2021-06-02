@@ -1933,7 +1933,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "bundled")] // SQLite >= 3.35.0
+    #[cfg(all(feature = "bundled", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.35.0
     fn test_returning() -> Result<()> {
         let db = checked_memory_handle();
         db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;

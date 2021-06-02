@@ -15,6 +15,8 @@ categories = ["external-ffi-bindings"]
 default = ["min_sqlite_version_3_6_8"]
 bundled = ["cc", "bundled_bindings"]
 bundled-windows = ["cc", "bundled_bindings"]
+bundled-sqlcipher = ["bundled"]
+bundled-sqlcipher-vendored-openssl = ["bundled-sqlcipher", "openssl-sys/vendored"]
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
 sqlcipher = []
 min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
@@ -35,6 +37,9 @@ with-asan = []
 wasm32-wasi-vfs = []
 # lowest version shipped with Windows 10.0.10586 was 3.8.8.3
 winsqlite3 = ["min_sqlite_version_3_7_16"]
+
+[dependencies]
+openssl-sys = { version = "0.9.58", optional = true }
 
 [build-dependencies]
 bindgen = { version = "0.58", optional = true, default-features = false, features = ["runtime"] }

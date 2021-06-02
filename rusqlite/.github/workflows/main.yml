@@ -8,7 +8,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: '00 01 * * *'
+    - cron: "00 01 * * *"
 env:
   RUST_BACKTRACE: 1
 jobs:
@@ -23,7 +23,11 @@ jobs:
           - { target: x86_64-pc-windows-msvc, os: windows-latest }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
           - { target: x86_64-apple-darwin, os: macos-latest }
-          - { target: x86_64-pc-windows-gnu, os: windows-latest, host: -x86_64-pc-windows-gnu }
+          - {
+              target: x86_64-pc-windows-gnu,
+              os: windows-latest,
+              host: -x86_64-pc-windows-gnu,
+            }
 
     runs-on: ${{ matrix.os }}
 
@@ -53,6 +57,42 @@ jobs:
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
         run: cargo build --features bundled
+
+  test-sqlcipher-bundled:
+    name: Test ${{ matrix.os }} (bundled SQLcipher + OpenSSL)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        # TODO: find a way to test this on windows :(
+
+    steps:
+      - uses: actions/checkout@v2
+      # This has a matcher for test panics, so we use it even though elsewhere
+      # we use actions-rs/toolchain.
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable${{ matrix.host }}
+          targets: ${{ matrix.target }}
+
+      - run: cargo test --features 'bundled-sqlcipher' --workspace --all-targets --verbose
+      - run: cargo test --features 'bundled-sqlcipher' --workspace --doc --verbose
+
+      - run: cargo test --features 'modern-full bundled-sqlcipher' --workspace --all-targets --verbose
+      - run: cargo test --features 'modern-full bundled-sqlcipher' --workspace --doc --verbose
+
+      - run: cargo test --features 'bundled-sqlcipher-vendored-openssl' --workspace --all-targets --verbose
+      - run: cargo test --features 'bundled-sqlcipher-vendored-openssl' --workspace --doc --verbose
+
+      - run: cargo test --features 'modern-full bundled-sqlcipher-vendored-openssl' --all-targets --workspace --verbose
+      - run: cargo test --features 'modern-full bundled-sqlcipher-vendored-openssl' --doc --workspace --verbose
+
+      - name: Test Features
+        if: matrix.os != 'windows-latest'
+        run: |
+          cargo test --features 'bundled-full session buildtime_bindgen time' --all-targets --workspace --verbose
+          cargo test --features 'bundled-full session buildtime_bindgen time' --doc --workspace --verbose
 
   winsqlite3:
     name: Test with winsqlite3
@@ -91,12 +131,12 @@ jobs:
         env:
           RUSTFLAGS: -Zsanitizer=address
           RUSTDOCFLAGS: -Zsanitizer=address
-          ASAN_OPTIONS: 'detect_stack_use_after_return=1:detect_leaks=0'
+          ASAN_OPTIONS: "detect_stack_use_after_return=1:detect_leaks=0"
           # Work around https://github.com/rust-lang/rust/issues/59125 by
           # disabling backtraces. In an ideal world we'd probably suppress the
           # leak sanitization, but we don't care about backtraces here, so long
           # as the other tests have them.
-          RUST_BACKTRACE: '0'
+          RUST_BACKTRACE: "0"
         run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen time with-asan' --target x86_64-unknown-linux-gnu
 
   # Ensure clippy doesn't complain.
