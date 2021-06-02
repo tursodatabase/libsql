@@ -1731,6 +1731,7 @@ struct sqlite3 {
 #define SQLITE_SkipScan       0x00004000 /* Skip-scans */
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
+#define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
