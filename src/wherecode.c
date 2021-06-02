@@ -1827,7 +1827,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
-      if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 && op==OP_SeekGE ){
+      if( (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 && ALWAYS(op==OP_SeekGE) ){
         assert( regBignull==0 );
         /* TUNING:  The OP_SeekScan opcode seeks to reduce the number
         ** of expensive seek operations by replacing a single seek with
