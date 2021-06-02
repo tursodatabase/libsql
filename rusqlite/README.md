@@ -216,4 +216,14 @@ Currently there's a gitter channel set up for rusqlite [here](https://gitter.im/
 
 ## License
 
-Rusqlite is available under the MIT license. See the LICENSE file for more info.
+Rusqlite and libsqlite3-sys are available under the MIT license. See the LICENSE file for more info.
+
+### Licenses of Bundled Software
+
+Depending on the set of enabled cargo `features`, rusqlite and libsqlite3-sys will also bundle other libraries, which have their own licensing terms:
+
+- If `--features=bundled-sqlcipher` is enabled, the vendored source of [SQLcipher](https://github.com/sqlcipher/sqlcipher) will be compiled and statically linked in. SQLcipher is distributed under a BSD-style license, as described [here](libsqlite3-sys/sqlcipher/LICENSE).
+
+- If `--features=bundled` is enabled, the vendored source of SQLite will be compiled and linked in. SQLite is in the public domain, as described [here](https://www.sqlite.org/copyright.html).
+
+Both of these are quite permissive, have no bearing on the license of the code in `rusqlite` or `libsqlite3-sys` themselves, and can be entirely ignored if you do not use the feature in question.
