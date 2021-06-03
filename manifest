@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sregexp\sextension\sin\swhich\sthe\s"."\swildcard\swould\smatch\nthe\s0x00\sterminator\sat\sthe\send\sof\sthe\scomparison\sstring.
-D 2021-06-03T13:44:19.048
+C Add\sthe\sregexp()\sand\sregexpi()\sextension\sfunctions\sto\sthe\sCLI.
+D 2021-06-03T13:51:31.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 2f4429e0b0ca031e360489c45dca5dfa06cd85480e12c0d1360b91e1c8e7f7a2
-F src/shell.c.in 2a2b06d463933ee3a5bb0242d5d2200ca36769493fd6f4d939a0574113f3d6d8
+F src/shell.c.in ab37c8869390a7624e594cb1459277319d16521d4644c42f4ee6a3866cf5f0cd
 F src/sqlite.h.in 5c950066775ca9efdaa49077c05d38d0bef6418f3bd07d2dce0210f1d2f3c326
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a8e43cc1b7969c40140dd7fd481d5ffd9de80e214eb494567c286d93a2b06e5
-R d7c85c11bdc28911b881e7d6006294f2
+P fa23108b299fc70e80540c449500e50ac6344a152f4f6b9c1b1f568bbda8f6e1
+R 10e18e5c8351d48b79324cb92f1ac65f
 U drh
-Z dc5a449eaeacd8e519ce2e5a9848e34f
+Z 8ae1da0c921582126dbed75196d61b62
