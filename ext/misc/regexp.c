@@ -248,7 +248,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_ANY: {
-          re_add_state(pNext, x+1);
+          if( c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_WORD: {
