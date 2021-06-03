@@ -428,6 +428,9 @@ void sqlite3DeleteFrom(
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->pSchema==pTab->pSchema );
       sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
+      if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
+        sqlite3VdbeChangeP3(v, -1, memCnt ? memCnt : -1);
+      }
     }
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
