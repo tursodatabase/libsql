@@ -6241,11 +6241,10 @@ case OP_Destroy: {     /* out2 */
 ** P2==1 then the table to be clear is in the auxiliary database file
 ** that is used to store tables create using CREATE TEMPORARY TABLE.
 **
-** If the P3 value is non-zero, then the table referred to must be an
-** intkey table (an SQL table, not an index). In this case the row change 
-** count is incremented by the number of rows in the table being cleared. 
-** If P3 is greater than zero, then the value stored in register P3 is
-** also incremented by the number of rows in the table being cleared.
+** If the P3 value is non-zero, then the row change count is incremented
+** by the number of rows in the table being cleared. If P3 is greater
+** than zero, then the value stored in register P3 is also incremented
+** by the number of rows in the table being cleared.
 **
 ** See also: Destroy
 */
@@ -6256,9 +6255,7 @@ case OP_Clear: {
   nChange = 0;
   assert( p->readOnly==0 );
   assert( DbMaskTest(p->btreeMask, pOp->p2) );
-  rc = sqlite3BtreeClearTable(
-      db->aDb[pOp->p2].pBt, (u32)pOp->p1, (pOp->p3 ? &nChange : 0)
-  );
+  rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, (u32)pOp->p1, &nChange);
   if( pOp->p3 ){
     p->nChange += nChange;
     if( pOp->p3>0 ){

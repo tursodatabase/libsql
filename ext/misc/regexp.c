@@ -248,7 +248,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_ANY: {
-          re_add_state(pNext, x+1);
+          if( c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_WORD: {
@@ -673,7 +673,7 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   ** regex engine over the string.  Do not worry able trying to match
   ** unicode characters beyond plane 0 - those are very rare and this is
   ** just an optimization. */
-  if( pRe->aOp[0]==RE_OP_ANYSTAR ){
+  if( pRe->aOp[0]==RE_OP_ANYSTAR && !noCase ){
     for(j=0, i=1; j<sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
       unsigned x = pRe->aArg[i];
       if( x<=127 ){
@@ -719,7 +719,7 @@ static void re_sql_func(
   if( pRe==0 ){
     zPattern = (const char*)sqlite3_value_text(argv[0]);
     if( zPattern==0 ) return;
-    zErr = re_compile(&pRe, zPattern, 0);
+    zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
     if( zErr ){
       re_free(pRe);
       sqlite3_result_error(context, zErr, -1);
@@ -756,5 +756,11 @@ int sqlite3_regexp_init(
   SQLITE_EXTENSION_INIT2(pApi);
   rc = sqlite3_create_function(db, "regexp", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
                                0, re_sql_func, 0, 0);
+  if( rc==SQLITE_OK ){
+    /* The regexpi(PATTERN,STRING) function is a case-insensitive version
+    ** of regexp(PATTERN,STRING). */
+    rc = sqlite3_create_function(db, "regexpi", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
+                                 (void*)db, re_sql_func, 0, 0);
+  }
   return rc;
 }
