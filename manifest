@@ -1,5 +1,5 @@
-C Fix\smore\scases\sin\sthe\sregexp\sextension\swhere\sthe\s0x00\sterminator\sat\sthe\send\nof\sthe\sinput\sstring\sis\sbeing\spattern\smatched.\n[forum/forumpost/9104f0d9e7|Forum\spost\s9104f0d9e7].
-D 2021-06-04T15:56:43.442
+C Fix\sharmless\scompiler\swarnings.
+D 2021-06-04T16:11:19.069
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -315,7 +315,7 @@ F ext/misc/noop.c 81efe4cad9ec740e64388b14281cb983e6e2c223fed43eb77ab3e34946e0c1
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
-F ext/misc/regexp.c 14f9ea26fa402b595e7b209d74221bff325e74cdc5dd62058fa2ad2ae1598c4c
+F ext/misc/regexp.c 35fa6349ea4af66537520e13b74ee4b076c33ac076f59da0afe842034e14d18c
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -496,7 +496,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 930e63df768dcb197242b1efa0ed9fcdcc9a7b7556c236ee01a9959b61cf527b
-F src/expr.c f175b34cc0da572f899bb6591fd3510b17200702dce7d80226cd4e454f7cd83a
+F src/expr.c 57534c739e1280de1cef333a4dc4c42ac1f8524acb71b715ae21406bf4363f57
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c 88fd711754a7241cb9f8eb1391370fd0c0cea756b3358efa274c5d1efd59af93
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a587c3492faa99490fd67ca1de9fceafcdc12d220f42817791923be258b73f1
-R 1388ff0f8d589b267d6560d7292d604f
+P 569e00d4acd426667990d675ca5da48a1859ac84af2412464ecd29c7c5da828c
+R 0d9e861014d82b4faa1a9ba21bfe42f2
 U drh
-Z f1274c6e186ac07cf9d2283fcacc2af8
+Z ca70033f52afc9f08bf639903196adbd

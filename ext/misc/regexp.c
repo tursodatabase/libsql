@@ -677,7 +677,7 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   ** unicode characters beyond plane 0 - those are very rare and this is
   ** just an optimization. */
   if( pRe->aOp[0]==RE_OP_ANYSTAR && !noCase ){
-    for(j=0, i=1; j<sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
+    for(j=0, i=1; j<(int)sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
       unsigned x = pRe->aArg[i];
       if( x<=127 ){
         pRe->zInit[j++] = (unsigned char)x;
@@ -718,6 +718,7 @@ static void re_sql_func(
   const char *zErr;         /* Compile error message */
   int setAux = 0;           /* True to invoke sqlite3_set_auxdata() */
 
+  (void)argc;  /* Unused */
   pRe = sqlite3_get_auxdata(context, 0);
   if( pRe==0 ){
     zPattern = (const char*)sqlite3_value_text(argv[0]);
@@ -757,6 +758,7 @@ int sqlite3_regexp_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused */
   rc = sqlite3_create_function(db, "regexp", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
                                0, re_sql_func, 0, 0);
   if( rc==SQLITE_OK ){
