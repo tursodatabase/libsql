@@ -1,11 +1,11 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2021-06-04T16:11:19.069
+C Add\sthe\s(missing)\sdependency\sof\sregexp.c\sto\sthe\sshell.c\srule\sin\sthe\smakefiles.\nThis\sdependency\sshould\shave\sbeen\sadded\sby\s[5d4535bfb603d7c8]\sbut\swas\smissed.
+D 2021-06-04T16:17:38.971
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 30c6d39386246695e951a676973e0bf57aabbd1e37024c07e657af89dd332555
+F Makefile.in ff5ac24ec9cb700135ee4453fa14c18ea371e94250d3673bda1f2cb56e1108ce
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 6443729ba6a013a0fea4f999b22e54760f36e73c2e691554f0c4bfa1dbe4d070
+F Makefile.msc 8285e1ea7264f32b08702866d69dd127c0f663bbc2002323d853c68c27c6b6e4
 F README.md 2a71913f398ecac5f3e10945fcf438aed425c2e9ed9874de561156ba77fb7023
 F VERSION 8c392f6d70d82e513a0eac622bdf23c43df3e084cb630288beba8cef3012c812
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -466,7 +466,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d1654e2923a7195603a7d6564dabe037a3a20ea5b3817002db534ffc4ad8cecf
+F main.mk c0c95f0aa2e3b731eb0c5a85869d4d6abef91647ec8e87a4013059bd1b910c0a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 569e00d4acd426667990d675ca5da48a1859ac84af2412464ecd29c7c5da828c
-R 0d9e861014d82b4faa1a9ba21bfe42f2
+P 83aca2d8704e51eeed5652b1506c6fc883c0397728cda456f229369788b8608a
+R f21bb0c9aca0f2f99e6cb97aa8cc41b9
 U drh
-Z ca70033f52afc9f08bf639903196adbd
+Z d8be7c9aa67f8410dd7011c1d63c866b
