@@ -9974,6 +9974,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""               },
       { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"      },
       { "seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,    ""               },
+      { "tune",               SQLITE_TESTCTRL_TUNE,          "ID VALUE"       },
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -10118,11 +10119,24 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
 
 #ifdef YYCOVERAGE
-        case SQLITE_TESTCTRL_PARSER_COVERAGE:
+        case SQLITE_TESTCTRL_PARSER_COVERAGE: {
           if( nArg==2 ){
             sqlite3_test_control(testctrl, p->out);
             isOk = 3;
           }
+          break;
+        }
+#endif
+#ifdef SQLITE_DEBUG
+        case SQLITE_TESTCTRL_TUNE: {
+          if( nArg==4 ){
+            int id = (int)integerValue(azArg[2]);
+            i64 val = integerValue(azArg[3]);
+            rc2 = sqlite3_test_control(testctrl, id, val);
+            isOk = 3;
+          }
+          break;
+        }
 #endif
       }
     }

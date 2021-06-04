@@ -3741,6 +3741,20 @@ typedef struct {
 #define INITFLAG_AlterRename   0x0001  /* Reparse after a RENAME */
 #define INITFLAG_AlterDrop     0x0002  /* Reparse after a DROP COLUMN */
 
+/* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
+** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
+** parameters are for temporary use during development, to help find
+** optimial values for parameters in the query planner.  The should not
+** be used on trunk check-ins.  They are a temporary mechanism available
+** for transient development builds only.
+*/
+#define SQLITE_NTUNE  6             /* Should be zero for all trunk check-ins */
+#ifdef SQLITE_DEBUG
+# define Tuning(X)  (sqlite3Config.aTune[X])
+#else
+# define Tuning(X)  0
+#endif
+
 /*
 ** Structure containing global configuration data for the SQLite library.
 **
@@ -3805,6 +3819,10 @@ struct Sqlite3Config {
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
+  /* vvvv--- must be last ---vvv */
+#ifdef SQLITE_DEBUG
+  sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
+#endif
 };
 
 /*

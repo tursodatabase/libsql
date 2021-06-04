@@ -4283,6 +4283,29 @@ int sqlite3_test_control(int op, ...){
        }
        break;
     }
+
+#ifdef SQLITE_DEBUG
+    /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, val)
+    **
+    ** "id" must be an integer between 0 and SQLITE_NTUNE-1.  "val"
+    ** is a 64-bit signed integer.  This test-control sets tuning parameter
+    ** id to the value val.  
+    **
+    ** Tuning parameters are for use during transient development builds,
+    ** to help find the best values for constants in the query planner.
+    ** Access tuning parameters using the Tuning(ID) macro.  Set the
+    ** parameters in the CLI using ".testctrl tune ID VALUE".
+    **
+    ** Transient use only.  Tuning parameters should not be used in
+    ** checked-in code.
+    */
+    case SQLITE_TESTCTRL_TUNE: {
+      int id = va_arg(ap, int);
+      int val = va_arg(ap, sqlite3_int64);
+      if( id>=0 && id<SQLITE_NTUNE ) Tuning(id) = val;
+      break;
+    }
+#endif
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */
