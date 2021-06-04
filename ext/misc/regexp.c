@@ -256,7 +256,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_NOTWORD: {
-          if( !re_word_char(c) ) re_add_state(pNext, x+1);
+          if( !re_word_char(c) && c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_DIGIT: {
@@ -264,7 +264,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_NOTDIGIT: {
-          if( !re_digit_char(c) ) re_add_state(pNext, x+1);
+          if( !re_digit_char(c) && c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_SPACE: {
@@ -272,7 +272,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_NOTSPACE: {
-          if( !re_space_char(c) ) re_add_state(pNext, x+1);
+          if( !re_space_char(c) && c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_BOUNDARY: {
@@ -297,8 +297,11 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           rc = 1;
           goto re_match_end;
         }
-        case RE_OP_CC_INC:
         case RE_OP_CC_EXC: {
+          if( c==0 ) break;
+          /* fall-through */
+        }
+        case RE_OP_CC_INC: {
           int j = 1;
           int n = pRe->aArg[x];
           int hit = 0;
