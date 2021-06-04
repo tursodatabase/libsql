@@ -4285,11 +4285,12 @@ int sqlite3_test_control(int op, ...){
     }
 
 #ifdef SQLITE_DEBUG
-    /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, val)
+    /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **
-    ** "id" must be an integer between 0 and SQLITE_NTUNE-1.  "val"
-    ** is a 64-bit signed integer.  This test-control sets tuning parameter
-    ** id to the value val.  
+    ** If "id" is an integer between 1 and SQLITE_NTUNE then set the value
+    ** of the id-th tuning parameter to *piValue.  If "id" is between -1
+    ** and -SQLITE_NTUNE, then write the current value of the (-id)-th
+    ** tuning parameter into *piValue.
     **
     ** Tuning parameters are for use during transient development builds,
     ** to help find the best values for constants in the query planner.
@@ -4301,8 +4302,14 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_TUNE: {
       int id = va_arg(ap, int);
-      int val = va_arg(ap, sqlite3_int64);
-      if( id>=0 && id<SQLITE_NTUNE ) Tuning(id) = val;
+      int *piValue = va_arg(ap, int*);
+      if( id>0 && id<=SQLITE_NTUNE ){
+        Tuning(id) = *piValue;
+      }else if( id<0 && id>=-SQLITE_NTUNE ){
+        *piValue = Tuning(-id);
+      }else{
+        rc = SQLITE_NOTFOUND;
+      }
       break;
     }
 #endif

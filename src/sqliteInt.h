@@ -3747,10 +3747,12 @@ typedef struct {
 ** optimial values for parameters in the query planner.  The should not
 ** be used on trunk check-ins.  They are a temporary mechanism available
 ** for transient development builds only.
+**
+** Tuning parameters are numbered starting with 1.
 */
 #define SQLITE_NTUNE  6             /* Should be zero for all trunk check-ins */
 #ifdef SQLITE_DEBUG
-# define Tuning(X)  (sqlite3Config.aTune[X])
+# define Tuning(X)  (sqlite3Config.aTune[(X)-1])
 #else
 # define Tuning(X)  0
 #endif
