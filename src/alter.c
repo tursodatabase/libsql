@@ -919,7 +919,7 @@ static RenameToken *renameTokenFind(
   void *pPtr
 ){
   RenameToken **pp;
-  if( pPtr==0 ){
+  if( NEVER(pPtr==0) ){
     return 0;
   }
   for(pp=&pParse->pRename; (*pp); pp=&(*pp)->pNext){
@@ -1473,9 +1473,11 @@ static void renameColumnFunc(
       assert( sParse.pNewTable->pSelect==0 );
       sCtx.pTab = sParse.pNewTable;
       if( bFKOnly==0 ){
-        renameTokenFind(
-            &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
-        );
+        if( iCol<sParse.pNewTable->nCol ){
+          renameTokenFind(
+              &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
+          );
+        }
         if( sCtx.iCol<0 ){
           renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
         }
