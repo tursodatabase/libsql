@@ -3183,7 +3183,7 @@ static void fts5IndexExtractColset(
         }
         fts5BufferSafeAppendBlob(&pIter->poslist, aCopy, p-aCopy);
       }
-      if( p==pEnd ){
+      if( p>=pEnd ){
         pIter->base.pData = pIter->poslist.p;
         pIter->base.nData = pIter->poslist.n;
         return;
