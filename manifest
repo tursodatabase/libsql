@@ -1,5 +1,5 @@
-C Add\srecent\sdbsqlfuzz\stest\scases\sto\stest/fuzzdata8.db.
-D 2021-06-07T14:21:03.109
+C Fix\sa\sbuffer\soverrun\sin\sfts3\sthat\scould\soccur\swhen\shandling\scorrupt\srecords\sand\s'^'\squeries.
+D 2021-06-07T15:28:33.462
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -102,7 +102,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c aa751c4559a0d1b885206c5f4421c5b34a8ec7ea3d3d04127b7747a5a83a2f4e
+F ext/fts3/fts3_write.c b0441839fd34bc23cce2e1bcdfb9489f716ff6ee0ef24308cea70ddfb5f14162
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
@@ -972,7 +972,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test 79a32ffdcd5254e2f7fa121d9656e61949ad049c3c6554229911b7ceac37c9c6
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 2b61991318db59b3c569d630660c4df0f22b0b2fe59f3bfbc111863b3bda6f14
+F test/fts3corrupt4.test 1b3333822577b0888c95de8490a1a6152c47cb33a763fe62c54825202c31812f
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test d274f139ec173392002c768631f404fefc007ae02ffa1b03d8cbd096c3fc00f9
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35e40d75754ec6fb93fe57c6ecbe731104e77c997d7e17ef1a22984837dfcab2
-R 937e997f3be9ea2e638b1b3d5bddd533
-U drh
-Z 8e18d53031185b37081375f301b82b09
+P 162022003c2b4a393296939e2616bd3c7bbfd65b198ba6c9894e4234de2d3122
+R 0d5e4bee21661798cf35b466387af9ed
+U dan
+Z d0ffcf2b467dcfb0c9a83ba45df381bb
