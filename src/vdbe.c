@@ -6361,7 +6361,9 @@ case OP_ParseSchema: {
 
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
-  assert( DbHasProperty(db, iDb, DB_SchemaLoaded) || db->mallocFailed );
+  assert( DbHasProperty(db, iDb, DB_SchemaLoaded)
+           || db->mallocFailed
+           || (CORRUPT_DB && (db->flags & SQLITE_NoSchemaError)!=0) );
 
 #ifndef SQLITE_OMIT_ALTERTABLE
   if( pOp->p4.z==0 ){
