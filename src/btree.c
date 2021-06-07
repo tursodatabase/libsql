@@ -1535,7 +1535,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
     if( temp==0 ){
       if( cbrk==pc ) continue;
       temp = sqlite3PagerTempSpace(pPage->pBt->pPager);
-      memcpy(&temp[iCellStart], &data[iCellStart], (cbrk+size) - iCellStart);
+      memcpy(&temp[iCellStart], &data[iCellStart], usableSize - iCellStart);
       src = temp;
     }
     memcpy(&data[cbrk], &src[pc], size);
