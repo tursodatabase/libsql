@@ -322,7 +322,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           }
           if( pRe->aOp[x]==RE_OP_CC_EXC ) hit = !hit;
           if( hit ) re_add_state(pNext, x+n);
-          break;            
+          break;
         }
       }
     }
@@ -483,7 +483,7 @@ static const char *re_subcompile_string(ReCompiled *p){
     iStart = p->nState;
     switch( c ){
       case '|':
-      case '$': 
+      case '$':
       case ')': {
         p->sIn.i--;
         return 0;
@@ -499,7 +499,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         if( rePeek(p)=='*' ){
           re_append(p, RE_OP_ANYSTAR, 0);
           p->sIn.i++;
-        }else{ 
+        }else{
           re_append(p, RE_OP_ANY, 0);
         }
         break;
@@ -708,8 +708,8 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
 ** is implemented as regexp(B,A).
 */
 static void re_sql_func(
-  sqlite3_context *context, 
-  int argc, 
+  sqlite3_context *context,
+  int argc,
   sqlite3_value **argv
 ){
   ReCompiled *pRe;          /* Compiled regular expression */
