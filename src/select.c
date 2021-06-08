@@ -5463,6 +5463,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             pTab->zName);
         }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+        assert( SQLITE_VTABRISK_Normal==1 && SQLITE_VTABRISK_High==2 );
         if( IsVirtual(pTab)
          && pFrom->fg.fromDDL
          && ALWAYS(pTab->pVTable!=0)
