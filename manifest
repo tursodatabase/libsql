@@ -1,5 +1,5 @@
-C Try\sto\savoid\sa\sdouble-free\sin\sthe\sshowdb\sutility\sprogram\swhen\srunning\npgidx\son\sa\scorrupt\sdatabase.\nSee\s[forum:/forumpost/a60ea5a4d4|forum\spost\sa60ea5a4d4]\sfor\scontext
-D 2021-06-08T17:56:16.029
+C Remove\stwo\sassert()s\sin\sFTS5\sthat\schecks\sfor\sdatabase\scorruption\sright\sbefore\nactual\scode\sdoes\sthe\ssame\scheck.\ndbsqlfuzz\s9680db8f5338cb9b6060eb3a02d984555d4472e3.
+D 2021-06-08T23:46:59.097
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -119,7 +119,7 @@ F ext/fts5/fts5_buffer.c 5a5fe0159752c0fb0a5a93c722e9db2662822709490769d482b76a6
 F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7fa1842ff3
 F ext/fts5/fts5_expr.c 9462249a3bb82d0e49b163500f9d2197c2e4cd95bf440a9bbfc3906b22ea1e1b
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
-F ext/fts5/fts5_index.c a2ce620e1f03c70cede1afcc78c9a82697f0d1c59525f1c3b425d6126885abcf
+F ext/fts5/fts5_index.c 104ba1088ffbc1453ae8ae6f8ba896ab3ac62bb21829bf403b6c86eb7cd2857f
 F ext/fts5/fts5_main.c 35ebbcae681a4a40027c47bc2e94d7e7c81e331dc406bb9b23c546454ee8f98a
 F ext/fts5/fts5_storage.c 58ba71e6cd3d43a5735815e7956ee167babb4d2cbfe206905174792af4d09d75
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -1056,7 +1056,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db bc52deef6091b1c3ae73c1d86de5eabbb643dbe2eb9595caf379db139b5fe376
+F test/fuzzdata8.db 98f0e365370523732a5ae916af0e231b34a7645e82d1aa9b9fedad35730dd926
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33babdb582ca712cc089165a953972096b57d1cb683954fa830df5e7befaadba
-R 19dbe72723f34ef6ef6d8bd4121ff075
+P e3188a866362894d98521b3006fb5b9a63fe4a3bb2ff4f1b58acb6eb4e52da8f
+R 498a508e08d4a68fa12e51791716d97d
 U drh
-Z f32a8ef337e0790972e06c7ccf978fb1
+Z a25454f0647dd4b7e8930ab999ad558e

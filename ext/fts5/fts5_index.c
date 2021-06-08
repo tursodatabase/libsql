@@ -5078,8 +5078,6 @@ static void fts5MergePrefixLists(
       nTail = pHead->iter.nPoslist - pHead->iOff;
 
       /* WRITEPOSLISTSIZE */
-      assert_nc( tmp.n+nTail<=nTmp );
-      assert( tmp.n+nTail<=nTmp+nMerge*10 );
       if( tmp.n+nTail>nTmp-FTS5_DATA_ZERO_PADDING ){
         if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
         break;
