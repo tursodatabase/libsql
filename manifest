@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sprevent\sthe\svalue\sof\sthe\sSQLITE_VTABRISK\smacros\sfrom\sbeing\nchanged\sin\sa\sway\sthat\swould\sbreak\slogic.
-D 2021-06-08T12:22:24.457
+C Try\sto\savoid\sa\sdouble-free\sin\sthe\sshowdb\sutility\sprogram\swhen\srunning\npgidx\son\sa\scorrupt\sdatabase.\nSee\s[forum:/forumpost/a60ea5a4d4|forum\spost\sa60ea5a4d4]\sfor\scontext
+D 2021-06-08T17:56:16.029
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1868,7 +1868,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 8c6b1cbb86ee25ca2173497183f8fcd444d4e26923e4cf57ddabe66c633b4dab
+F tool/showdb.c 6554d4af7690404f5b9242cf0349a74b59cafbda95fcf8f31c36303faf8539da
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45f459d2fa4be97d9bbb970efbc0b5d40efaf93f52ed111fd0fcdc572c24327b
-R f24c3388372fbfff30e1a783fa15bb17
+P 33babdb582ca712cc089165a953972096b57d1cb683954fa830df5e7befaadba
+R 19dbe72723f34ef6ef6d8bd4121ff075
 U drh
-Z 0441089d1a94c0851a7c37efba5ddd60
+Z f32a8ef337e0790972e06c7ccf978fb1

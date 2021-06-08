@@ -1041,6 +1041,8 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
   for(i=1; i<=g.mxPage; i++){
     if( zPageUse[i]==0 ) page_usage_btree(i, -1, 0, 0);
     printf("%5u: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
+  }
+  for(i=1; i<=g.mxPage; i++){
     sqlite3_free(zPageUse[i]);
   }
   sqlite3_free(zPageUse);
