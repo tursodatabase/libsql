@@ -14791,7 +14791,7 @@ do_test 75.0 {
 
 do_catchsql_test 75.1 {
   SELECT rowid, quote(matchinfo(t1,'pcxybs')) FROM t1 WHERE t1 MATCH 'e*';
-} {1 {database disk image is malformed}}
+} {1 {unable to use function matchinfo in the requested context}}
 
 #-------------------------------------------------------------------------
 reset_db
