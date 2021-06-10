@@ -1,5 +1,5 @@
-C Set\sthe\sdatabase\sconnection\serror\scode\sfor\san\soversize\sargument\sto\nsqlite3_bind_blob64()\sor\ssqlite3_bind_text64().\n[forum:/info/a636276f0d451667|Forum\spost\sa636276f0d451667]\sand\n[forum/forumpost/33821c8db543c|33821c8db543c].
-D 2021-06-09T14:45:02.707
+C Improved\srobustness\sfollowing\sOOM\sin\sthe\sconstant\spropagation\soptimization.\ndbsqlfuzz\s001a20255c0df7495c21df62a20ea5b51e22c390.
+D 2021-06-10T14:36:23.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c f0c7f050b85c902044e090d6bbe6425723d98f982c370ef573c0be40990bd9d4
+F src/select.c 96d8a8c19d8dd4a605f55166e3eefe4f8a3cd4d3e9255096b4bc740c75159593
 F src/shell.c.in a4bc0e2ba9be798e293790f354dcc0099c6370127eec18cf49cb161b9dae2fbc
 F src/sqlite.h.in f450394634eac00bc680c0e91582b818359c6ad61149f49f90fb6ecbd526b51f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a99c29b5efaf17e34506cda5ce017ec0112b3cb24bf8a2f1831f0c14a8aa8d30
-R 1aa848d7704aa0b4f54bd178d5a6c4bf
+P 56ff58c0b8905aa10c85f1418da8d6089d23fd9a220c5cb17027d46affe05002
+R 18566ccb2436921d616b19510604cebd
 U drh
-Z fc69d50bb08ad8b0f40bec3dc604333f
+Z c0637a6bda27d46672c1c58f8de8002f
