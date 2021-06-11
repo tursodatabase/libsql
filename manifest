@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sin\snew\sALTER\sTABLE\scode\sthat\scould\sfollow\san\sOOM.
-D 2021-06-11T12:14:58.334
+C Avoid\sbugs\sin\ssome\simplementations\sof\sdlopen()\sby\savoiding\scalls\sto\ndlopen()\swith\sa\sfilename\sargument\sthat\sexceeds\sFILENAME_MAX\sbytes.\n[forum:/forumpost/08a0d6d9bf|Forum\spost\s08a0d6d9bf].
+D 2021-06-11T12:41:14.442
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -507,7 +507,7 @@ F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2189e0e596010a0dc5405d9f14f78db1ee2fa71138c931f5b6ea96610b95bfc1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c 8c9c8cd2bd8eecdb06d9b6e89de7e9e65bae45cc8fc33609cc74023a5c296067
+F src/loadext.c 12684b3f19cd103cea97cdf14d0758196d0c646e12a898d7245141a9abfde9a4
 F src/main.c 7a1b7017af16977b298ef5a0b824b1153f1c878f94885a098620c3c1b1078ce9
 F src/malloc.c cbc93cdd429c4594912017d92ab656e2579aca64dbd1c6888551275bed46f25b
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -524,8 +524,8 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c dd2b3f1cc1863079bc1349ac0fec395a500090c4fe4e11ab775310a49f2f956d
 F src/mutex_w32.c caa50e1c0258ac4443f52e00fe8aaea73b6d0728bd8856bedfff822cae418541
 F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
-F src/os.c 6e94cd64b134c9317e52ad534117578e3df66ec180d70dbf4b1d7eb1db8e5a5d
-F src/os.h 48388821692e87da174ea198bf96b1b2d9d83be5dfc908f673ee21fafbe0d432
+F src/os.c 59ed1f503347e8b5434c0ce7d7d0f02a3f24a72fea8b26d0bba2de8dfaef778b
+F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c efa60c1cb54dba767abbba3c6dd67d3df5ef8aa26e2e499c37f055f56a374068
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 852ee0e91ceae090157c4ab2805530f5d7985a490ce77f54d7b148f56e466f79
-R 4908855f822587627e5ff1f9cc5f199c
-U dan
-Z 6050252f76b9f756fd3413a1f8f80a55
+P 6f1f2a0a9cd75ca43b81cc325296b843ccefe6f8040da8f2e873f49928423f10
+R 23cea976e993f7dc439db4b62b27e10a
+U drh
+Z 412447a47d8555a8bfce30ac9e03c884
