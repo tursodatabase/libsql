@@ -802,27 +802,27 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
   if( pWith ){
     Parse *pParse = pWalker->pParse;
     int i;
-    With *pCopy;
-
-    /* Push a copy of the With object onto the with-stack. We use a copy
-    ** here as the original will be expanded and resolved (flags SF_Expanded
-    ** and SF_Resolved) below. And the parser code that uses the with-stack
-    ** fails if the Select objects on it have already been expanded and
-    ** resolved.  */
+    With *pCopy = 0;
     assert( pWith->nCte>0 );
-    assert( (pWith->a[0].pSelect->selFlags & SF_Expanded)==0 );
-    pCopy = sqlite3WithDup(pParse->db, pWith);
-    if( pCopy ){
+    if( (pWith->a[0].pSelect->selFlags & SF_Expanded)==0 ){
+      /* Push a copy of the With object onto the with-stack. We use a copy
+      ** here as the original will be expanded and resolved (flags SF_Expanded
+      ** and SF_Resolved) below. And the parser code that uses the with-stack
+      ** fails if the Select objects on it have already been expanded and
+      ** resolved.  */
+      pCopy = sqlite3WithDup(pParse->db, pWith);
       sqlite3WithPush(pParse, pCopy, 1);
-      for(i=0; i<pWith->nCte; i++){
-        Select *p = pWith->a[i].pSelect;
-        NameContext sNC;
-        memset(&sNC, 0, sizeof(sNC));
-        sNC.pParse = pParse;
-        sqlite3SelectPrep(sNC.pParse, p, &sNC);
-        sqlite3WalkSelect(pWalker, p);
-        sqlite3RenameExprlistUnmap(pParse, pWith->a[i].pCols);
-      }
+    }
+    for(i=0; i<pWith->nCte; i++){
+      Select *p = pWith->a[i].pSelect;
+      NameContext sNC;
+      memset(&sNC, 0, sizeof(sNC));
+      sNC.pParse = pParse;
+      if( pCopy ) sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      sqlite3WalkSelect(pWalker, p);
+      sqlite3RenameExprlistUnmap(pParse, pWith->a[i].pCols);
+    }
+    if( pCopy && pParse->pWith==pCopy ){
       pParse->pWith = pCopy->pOuter;
     }
   }
