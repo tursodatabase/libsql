@@ -98,4 +98,25 @@ do_faultsim_test 4 -faults oom-* -prep {
   faultsim_test_result {0 {}} 
 }
 
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE rr(a, b);
+  CREATE VIEW vv AS SELECT * FROM (
+    WITH abc(d, e) AS (SELECT * FROM rr)
+    SELECT * FROM abc
+  );
+} {}
+
+faultsim_save_and_close
+do_faultsim_test 5 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM sqlite_master }
+} -body {
+  execsql {
+    ALTER TABLE rr RENAME TO c;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
 finish_test
