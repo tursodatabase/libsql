@@ -85,9 +85,7 @@ modern-full = [
     "load_extension",
     "serde_json",
     "series",
-    # time v0.2 does not work with tarpaulin v0.14.0. See time-rs/time#265.
-    # Re-enable when time v0.3 is released with the fix.
-    # "time",
+    "time",
     "trace",
     "unlock_notify",
     "url",

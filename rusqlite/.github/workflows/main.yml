@@ -48,8 +48,8 @@ jobs:
         # TODO: clang is installed on these -- but `bindgen` can't find it...
         if: matrix.os != 'windows-latest'
         run: |
-          cargo test --features 'bundled-full session buildtime_bindgen time' --all-targets --workspace --verbose
-          cargo test --features 'bundled-full session buildtime_bindgen time' --doc --workspace --verbose
+          cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
+          cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
 
       - name: Static build
         # Do we expect this to work / should we test with gnu toolchain?
@@ -91,8 +91,8 @@ jobs:
       - name: Test Features
         if: matrix.os != 'windows-latest'
         run: |
-          cargo test --features 'bundled-full session buildtime_bindgen time' --all-targets --workspace --verbose
-          cargo test --features 'bundled-full session buildtime_bindgen time' --doc --workspace --verbose
+          cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
+          cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
 
   winsqlite3:
     name: Test with winsqlite3
@@ -137,7 +137,7 @@ jobs:
           # leak sanitization, but we don't care about backtraces here, so long
           # as the other tests have them.
           RUST_BACKTRACE: "0"
-        run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen time with-asan' --target x86_64-unknown-linux-gnu
+        run: cargo -Z build-std test --features 'bundled-full session buildtime_bindgen with-asan' --target x86_64-unknown-linux-gnu
 
   # Ensure clippy doesn't complain.
   clippy:
@@ -150,7 +150,7 @@ jobs:
           components: clippy
       - run: cargo clippy --all-targets --workspace --features bundled -- -D warnings
       # Clippy with all non-conflicting features
-      - run: cargo clippy --all-targets --workspace --features 'bundled-full session buildtime_bindgen time' -- -D warnings
+      - run: cargo clippy --all-targets --workspace --features 'bundled-full session buildtime_bindgen' -- -D warnings
 
   # Ensure patch is formatted.
   fmt:
@@ -174,7 +174,7 @@ jobs:
           rust-version: nightly
       # Need to use `cargo rustdoc` to actually get it to respect -D
       # warnings... Note: this also requires nightly.
-      - run: cargo rustdoc --features 'bundled-full session buildtime_bindgen time' -- -D warnings
+      - run: cargo rustdoc --features 'bundled-full session buildtime_bindgen' -- -D warnings
 
   codecov:
     name: Generate code coverage
@@ -185,8 +185,6 @@ jobs:
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
-          # Intentionally omit time feature until we're on time 0.3, at which
-          # point it should be added to `bundled-full`.
           args: '--features "bundled-full session buildtime_bindgen"'
 
       - name: Upload to codecov.io
