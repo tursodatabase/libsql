@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sALTER\sTABLE\sand\sschemas\sthat\scontain\sviews\swith\ssome\srecursive\sCTEs,\sor\sCTEs\sthat\sreference\sother\sCTEs.
-D 2021-06-11T11:14:24.212
+C Remove\san\sunreachable\sbranch\sadded\sby\sthe\sprevious\scommit.
+D 2021-06-11T12:02:00.076
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 3de695d859627b1a80f673c16155260a12af310b5853012da411f81e6f4442a4
+F src/alter.c 3e76100bb48f1564e643119af8d9b12fd3d50eb4ca146ade027bcbb67dd77edd
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8658a64d414db6900b55281f5e67180ea74b82627199b927634a727ed28030c2
-R 3e7137855bcb4cdf964662c585c92d6f
+P 8b1f9a51e962cd9a5593a1ecf4da6c86e34c4f9ff96ffcea0fb421880c8836cb
+R a593835381f24a892eaf7459ea247fea
 U dan
-Z 5e06bfe97c02741d63caecdb97ff3417
+Z a43fa53c46b2ebe85b882f7033342509
