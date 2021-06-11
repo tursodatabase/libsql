@@ -4,13 +4,15 @@ use crate::Result;
 use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
 const CURRENT_TIMESTAMP_FMT: &str = "%Y-%m-%d %H:%M:%S";
-const SQLITE_DATETIME_FMT: &str = "%Y-%m-%d %H:%M:%S.%NZ";
+const SQLITE_DATETIME_FMT: &str = "%Y-%m-%d %H:%M:%S.%N";
+const SQLITE_DATETIME_Z_FMT: &str = "%Y-%m-%d %H:%M:%S.%NZ";
 const SQLITE_DATETIME_FMT_LEGACY: &str = "%Y-%m-%d %H:%M:%S:%N %z";
 
 impl ToSql for OffsetDateTime {
     #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
-        let time_string = self.to_offset(UtcOffset::UTC).format(SQLITE_DATETIME_FMT);
+        // FIXME keep original offset
+        let time_string = self.to_offset(UtcOffset::UTC).format(SQLITE_DATETIME_Z_FMT);
         Ok(ToSqlOutput::from(time_string))
     }
 }
@@ -20,11 +22,18 @@ impl FromSql for OffsetDateTime {
         value.as_str().and_then(|s| {
             match s.len() {
                 19 => PrimitiveDateTime::parse(s, CURRENT_TIMESTAMP_FMT).map(|d| d.assume_utc()),
-                _ => PrimitiveDateTime::parse(s, SQLITE_DATETIME_FMT)
-                    .map(|d| d.assume_utc())
-                    .or_else(|err| {
-                        OffsetDateTime::parse(s, SQLITE_DATETIME_FMT_LEGACY).map_err(|_| err)
-                    }),
+                _ => {
+                    let format = if s.ends_with('Z') {
+                        SQLITE_DATETIME_Z_FMT
+                    } else {
+                        SQLITE_DATETIME_FMT
+                    };
+                    PrimitiveDateTime::parse(s, format)
+                        .map(|d| d.assume_utc())
+                        .or_else(|err| {
+                            OffsetDateTime::parse(s, SQLITE_DATETIME_FMT_LEGACY).map_err(|_| err)
+                        })
+                }
             }
             .map_err(|err| FromSqlError::Other(Box::new(err)))
         })
@@ -67,6 +76,21 @@ mod test {
             db.execute("DELETE FROM foo", [])?;
 
             assert_eq!(from, ts);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_string_values() -> Result<()> {
+        let db = checked_memory_handle()?;
+        for s in [
+            "2013-10-07 08:23:19.120",
+            "2013-10-07 08:23:19.120Z",
+            //"2013-10-07T08:23:19.120Z", // TODO
+            "2013-10-07 04:23:19.120-04:00", // FIXME offset is lost!!!
+        ] {
+            let result: Result<OffsetDateTime> = db.query_row("SELECT ?", [s], |r| r.get(0));
+            assert!(result.is_ok());
         }
         Ok(())
     }
