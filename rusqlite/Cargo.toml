@@ -97,7 +97,7 @@ modern-full = [
 bundled-full = ["modern-full", "bundled"]
 
 [dependencies]
-time = { version = "0.2.23", optional = true }
+time = { version = "0.3.0-alpha-1", features = ["formatting", "parsing"], optional = true }
 bitflags = "1.2"
 hashlink = "0.7"
 chrono = { version = "0.4", optional = true }
