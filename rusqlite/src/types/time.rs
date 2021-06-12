@@ -1,18 +1,15 @@
 //! [`ToSql`] and [`FromSql`] implementation for [`time::OffsetDateTime`].
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
-use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
-
-const CURRENT_TIMESTAMP_FMT: &str = "%Y-%m-%d %H:%M:%S";
-const SQLITE_DATETIME_FMT: &str = "%Y-%m-%d %H:%M:%S.%N";
-const SQLITE_DATETIME_Z_FMT: &str = "%Y-%m-%d %H:%M:%S.%NZ";
-const SQLITE_DATETIME_FMT_LEGACY: &str = "%Y-%m-%d %H:%M:%S:%N %z";
+use time::{Format, OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
 impl ToSql for OffsetDateTime {
     #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         // FIXME keep original offset
-        let time_string = self.to_offset(UtcOffset::UTC).format(SQLITE_DATETIME_Z_FMT);
+        let time_string = self
+            .to_offset(UtcOffset::UTC)
+            .format("%Y-%m-%d %H:%M:%S.%NZ");
         Ok(ToSqlOutput::from(time_string))
     }
 }
@@ -21,18 +18,33 @@ impl FromSql for OffsetDateTime {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().and_then(|s| {
             match s.len() {
-                19 => PrimitiveDateTime::parse(s, CURRENT_TIMESTAMP_FMT).map(|d| d.assume_utc()),
+                len if len <= 10 => PrimitiveDateTime::parse(s, "%Y-%m-%d").map(|d| d.assume_utc()),
+                len if len <= 19 => {
+                    // TODO YYYY-MM-DDTHH:MM:SS
+                    PrimitiveDateTime::parse(s, "%Y-%m-%d %H:%M:%S").map(|d| d.assume_utc())
+                }
+                _ if s.ends_with('Z') => {
+                    // TODO YYYY-MM-DDTHH:MM:SS.SSS
+                    // FIXME time bug: %N specifier doesn't parse millis correctly (https://github.com/time-rs/time/issues/329)
+                    PrimitiveDateTime::parse(s, "%Y-%m-%d %H:%M:%S.%NZ").map(|d| d.assume_utc())
+                }
+                _ if s.as_bytes()[10] == b'T' => {
+                    // YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM
+                    OffsetDateTime::parse(s, Format::Rfc3339)
+                }
+                _ if s.as_bytes()[19] == b':' => {
+                    // legacy
+                    // FIXME time bug: %N specifier doesn't parse millis correctly (https://github.com/time-rs/time/issues/329)
+                    OffsetDateTime::parse(s, "%Y-%m-%d %H:%M:%S:%N %z")
+                }
                 _ => {
-                    let format = if s.ends_with('Z') {
-                        SQLITE_DATETIME_Z_FMT
-                    } else {
-                        SQLITE_DATETIME_FMT
-                    };
-                    PrimitiveDateTime::parse(s, format)
-                        .map(|d| d.assume_utc())
-                        .or_else(|err| {
-                            OffsetDateTime::parse(s, SQLITE_DATETIME_FMT_LEGACY).map_err(|_| err)
-                        })
+                    // FIXME time bug: %N specifier doesn't parse millis correctly (https://github.com/time-rs/time/issues/329)
+                    // FIXME time bug: %z does not support ':' (https://github.com/time-rs/time/issues/241)
+                    OffsetDateTime::parse(s, "%Y-%m-%d %H:%M:%S.%N%z").or_else(|err| {
+                        PrimitiveDateTime::parse(s, "%Y-%m-%d %H:%M:%S.%N")
+                            .map(|d| d.assume_utc())
+                            .map_err(|_| err)
+                    })
                 }
             }
             .map_err(|err| FromSqlError::Other(Box::new(err)))
@@ -44,7 +56,7 @@ impl FromSql for OffsetDateTime {
 mod test {
     use crate::{Connection, Result};
     use std::time::Duration;
-    use time::OffsetDateTime;
+    use time::{date, offset, OffsetDateTime, Time};
 
     fn checked_memory_handle() -> Result<Connection> {
         let db = Connection::open_in_memory()?;
@@ -83,14 +95,44 @@ mod test {
     #[test]
     fn test_string_values() -> Result<()> {
         let db = checked_memory_handle()?;
-        for s in [
-            "2013-10-07 08:23:19.120",
-            "2013-10-07 08:23:19.120Z",
+        for (s, t) in vec![
+            (
+                "2013-10-07 08:23:19.120",
+                Ok(date!(2013 - 10 - 07)
+                    .with_time(
+                        Time::/*FIXME time bug try_from_hms_milli*/try_from_hms_nano(
+                            8, 23, 19, 120,
+                        )
+                        .unwrap(),
+                    )
+                    .assume_utc()),
+            ),
+            (
+                "2013-10-07 08:23:19.120Z",
+                Ok(date!(2013 - 10 - 07)
+                    .with_time(
+                        Time::/*FIXME time bug try_from_hms_milli*/try_from_hms_nano(
+                            8, 23, 19, 120,
+                        )
+                        .unwrap(),
+                    )
+                    .assume_utc()),
+            ),
             //"2013-10-07T08:23:19.120Z", // TODO
-            "2013-10-07 04:23:19.120-04:00", // FIXME offset is lost!!!
+            (
+                "2013-10-07 04:23:19.120-04:00",
+                Ok(date!(2013 - 10 - 07)
+                    .with_time(
+                        Time::/*FIXME time bug try_from_hms_milli*/try_from_hms_nano(
+                            4, 23, 19, 120,
+                        )
+                        .unwrap(),
+                    )
+                    .assume_offset(offset!(-4))),
+            ),
         ] {
             let result: Result<OffsetDateTime> = db.query_row("SELECT ?", [s], |r| r.get(0));
-            assert!(result.is_ok());
+            assert_eq!(result, t);
         }
         Ok(())
     }
