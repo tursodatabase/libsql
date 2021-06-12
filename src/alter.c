@@ -811,7 +811,7 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
       ** fails if the Select objects on it have already been expanded and
       ** resolved.  */
       pCopy = sqlite3WithDup(pParse->db, pWith);
-      sqlite3WithPush(pParse, pCopy, 1);
+      pCopy = sqlite3WithPush(pParse, pCopy, 1);
     }
     for(i=0; i<pWith->nCte; i++){
       Select *p = pWith->a[i].pSelect;
