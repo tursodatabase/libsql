@@ -42,14 +42,14 @@ impl From<i32> for Action {
 /// See <https://sqlite.org/c3ref/set_authorizer.html> for more info.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AuthContext<'c> {
-    // The action to be authorized.
+    /// The action to be authorized.
     pub action: AuthAction<'c>,
 
     /// The database name, if applicable.
     pub database_name: Option<&'c str>,
 
-    // The inner-most trigger or view responsible for the access attempt.
-    // `None` if the access attempt was made by top-level SQL code.
+    /// The inner-most trigger or view responsible for the access attempt.
+    /// `None` if the access attempt was made by top-level SQL code.
     pub accessor: Option<&'c str>,
 }
 
@@ -254,7 +254,7 @@ impl<'c> AuthAction<'c> {
                 table_name,
                 column_name,
             },
-            (ffi::SQLITE_SELECT, _, _) => Self::Select,
+            (ffi::SQLITE_SELECT, ..) => Self::Select,
             (ffi::SQLITE_TRANSACTION, Some(operation_str), _) => Self::Transaction {
                 operation: TransactionOperation::from_str(operation_str),
             },
@@ -286,7 +286,7 @@ impl<'c> AuthAction<'c> {
                 savepoint_name,
             },
             #[cfg(feature = "modern_sqlite")]
-            (ffi::SQLITE_RECURSIVE, _, _) => Self::Recursive,
+            (ffi::SQLITE_RECURSIVE, ..) => Self::Recursive,
             (code, arg1, arg2) => Self::Unknown { code, arg1, arg2 },
         }
     }
@@ -298,6 +298,7 @@ pub(crate) type BoxedAuthorizer =
 /// `feature = "hooks"` A transaction operation.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
+#[allow(missing_docs)]
 pub enum TransactionOperation {
     Unknown,
     Begin,
@@ -316,6 +317,7 @@ impl TransactionOperation {
     }
 }
 
+/// [`authorizer`](Connection::authorizer) return code
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum Authorization {
