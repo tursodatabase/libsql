@@ -441,5 +441,33 @@ do_execsql_test 10.0 {
   SELECT d FROM t1 WHERE 0=a AND b IN (-17,-4,-3,1,5,25,7798);
 } {10}
 
+# 2021-06-13 dbsqlfuzz e41762333a4d6e90a49e628f488d0873b2dba4c5
+# The opcode that preceeds OP_SeekScan is usually OP_IdxGT, but can
+# sometimes be OP_IdxGE
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE t1(a TEXT, b INT, c INT, d INT);
+  INSERT INTO t1 VALUES('abc',123,4,5);
+  INSERT INTO t1 VALUES('xyz',1,'abcdefxyz',99);
+  CREATE INDEX t1abc ON t1(b,b,c);
+  ANALYZE sqlite_schema;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1abc','10000 5 00 2003 10');
+  ANALYZE sqlite_schema;
+} {}
+do_execsql_test 11.1 {
+  SELECT * FROM t1
+   WHERE b IN (345, (SELECT 1 FROM t1 
+                      WHERE b IN (345 NOT GLOB 510)
+                        AND c GLOB 'abc*xyz'))
+     AND c BETWEEN 'abc' AND 'xyz';
+} {xyz 1 abcdefxyz 99}
+do_execsql_test 11.2 {
+  EXPLAIN SELECT * FROM t1
+   WHERE b IN (345, (SELECT 1 FROM t1 
+                      WHERE b IN (345 NOT GLOB 510)
+                        AND c GLOB 'abc*xyz'))
+     AND c BETWEEN 'abc' AND 'xyz';
+} {/ SeekScan /}
 
 finish_test

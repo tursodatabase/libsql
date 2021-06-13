@@ -1,5 +1,5 @@
-C Improved\sdefense\sagainst\sOOM\serrors\sin\ssqliteInitOne().\ndbsqlfuzz\s429db39cd5777c46479641e8637c48c62890042d
-D 2021-06-13T17:55:58.092
+C The\sopcode\sthat\spreceeds\sOP_SeekScan\sis\susually\sOP_IdxGT\sbut\scan\ssometimes\nbe\sOP_IdxGE.\s\sAdjust\sasserts\saccordingly.\s\sFollow-up\sto\n[9a2ab6092d644fc3].\s\sdbsqlfuzz\se41762333a4d6e90a49e628f488d0873b2dba4c5
+D 2021-06-13T19:14:14.260
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 87d29d763c0398d8128ecc9f043aab7108123b15c919ec92d4b57e5e4385818c
+F src/vdbe.c 6ece0ee94fa3a95601372efdc4ec6d068cd6cc58e28af8852f3407b90be4b7f8
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 465fcb494db4ca6630fb9c19b2f3dfed597fbe885b0d4204193a5093b0dd7dc6
 F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
@@ -1074,7 +1074,7 @@ F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 688ed2011d922d83141a45af431601738674a4c0bdde34b6351f688b82a169b3
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test 3ce7e79419bcd7942744bee2394f125b45513186819ffe771c78d04caa547d54
+F test/in4.test addf1416fdbbcf2f082ab7974e4813f38b4759b95699a683a31c37a3fffe7b57
 F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de9d0f9548106f5a59c57dbf947fc63c0411b1e975033a4c4097cefbbe86ee5f
-R 3f8a67a4c6e2ce0a9df64fde1e1d98d1
+P b6c57e0e2a9658417a0a5548e73007faa59c837b9ad87293bc216feef980717a
+R a1f22de204f5020e5d4febb4ff68729b
 U drh
-Z 76c7bd276946c9855e2f7586c4e2beb7
+Z c2466d7ec6e514ce193cbbff00ec2eb4
