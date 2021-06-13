@@ -1,4 +1,4 @@
-//! `feature = "hooks"` Commit, Data Change and Rollback Notification Callbacks
+//! Commit, Data Change and Rollback Notification Callbacks
 #![allow(non_camel_case_types)]
 
 use std::os::raw::{c_char, c_int, c_void};
@@ -9,11 +9,12 @@ use crate::ffi;
 
 use crate::{Connection, InnerConnection};
 
-/// `feature = "hooks"` Action Codes
+/// Action Codes
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
+#[cfg_attr(docsrs, doc(cfg(feature = "hooks")))]
 pub enum Action {
     /// Unsupported / unexpected action
     UNKNOWN = -1,
@@ -37,7 +38,7 @@ impl From<i32> for Action {
     }
 }
 
-/// `feature = "hooks"` The context recieved by an authorizer hook.
+/// The context recieved by an authorizer hook.
 ///
 /// See <https://sqlite.org/c3ref/set_authorizer.html> for more info.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -53,7 +54,7 @@ pub struct AuthContext<'c> {
     pub accessor: Option<&'c str>,
 }
 
-/// `feature = "hooks"` Actions and arguments found within a statement during
+/// Actions and arguments found within a statement during
 /// preparation.
 ///
 /// See <https://sqlite.org/c3ref/c_alter_table.html> for more info.
@@ -254,7 +255,7 @@ impl<'c> AuthAction<'c> {
                 table_name,
                 column_name,
             },
-            (ffi::SQLITE_SELECT, _, _) => Self::Select,
+            (ffi::SQLITE_SELECT, ..) => Self::Select,
             (ffi::SQLITE_TRANSACTION, Some(operation_str), _) => Self::Transaction {
                 operation: TransactionOperation::from_str(operation_str),
             },
@@ -286,7 +287,7 @@ impl<'c> AuthAction<'c> {
                 savepoint_name,
             },
             #[cfg(feature = "modern_sqlite")]
-            (ffi::SQLITE_RECURSIVE, _, _) => Self::Recursive,
+            (ffi::SQLITE_RECURSIVE, ..) => Self::Recursive,
             (code, arg1, arg2) => Self::Unknown { code, arg1, arg2 },
         }
     }
@@ -295,7 +296,7 @@ impl<'c> AuthAction<'c> {
 pub(crate) type BoxedAuthorizer =
     Box<dyn for<'c> FnMut(AuthContext<'c>) -> Authorization + Send + 'static>;
 
-/// `feature = "hooks"` A transaction operation.
+/// A transaction operation.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum TransactionOperation {
@@ -338,7 +339,7 @@ impl Authorization {
 }
 
 impl Connection {
-    /// `feature = "hooks"` Register a callback function to be invoked whenever
+    /// Register a callback function to be invoked whenever
     /// a transaction is committed.
     ///
     /// The callback returns `true` to rollback.
@@ -350,7 +351,7 @@ impl Connection {
         self.db.borrow_mut().commit_hook(hook);
     }
 
-    /// `feature = "hooks"` Register a callback function to be invoked whenever
+    /// Register a callback function to be invoked whenever
     /// a transaction is committed.
     ///
     /// The callback returns `true` to rollback.
@@ -362,7 +363,7 @@ impl Connection {
         self.db.borrow_mut().rollback_hook(hook);
     }
 
-    /// `feature = "hooks"` Register a callback function to be invoked whenever
+    /// Register a callback function to be invoked whenever
     /// a row is updated, inserted or deleted in a rowid table.
     ///
     /// The callback parameters are:
@@ -380,7 +381,7 @@ impl Connection {
         self.db.borrow_mut().update_hook(hook);
     }
 
-    /// `feature = "hooks"` Register a query progress callback.
+    /// Register a query progress callback.
     ///
     /// The parameter `num_ops` is the approximate number of virtual machine
     /// instructions that are evaluated between successive invocations of the
@@ -395,7 +396,7 @@ impl Connection {
         self.db.borrow_mut().progress_handler(num_ops, handler);
     }
 
-    /// `feature = "hooks"` Register an authorizer callback that's invoked
+    /// Register an authorizer callback that's invoked
     /// as a statement is being prepared.
     #[inline]
     pub fn authorizer<'c, F>(&self, hook: Option<F>)

@@ -1,4 +1,4 @@
-//! `feature = "array"` Array Virtual Table.
+//! Array Virtual Table.
 //!
 //! Note: `rarray`, not `carray` is the name of the table valued function we
 //! define.
@@ -57,7 +57,7 @@ impl ToSql for Array {
     }
 }
 
-/// `feature = "array"` Register the "rarray" module.
+/// Register the "rarray" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
     conn.create_module("rarray", eponymous_only_module::<ArrayTab>(), aux)

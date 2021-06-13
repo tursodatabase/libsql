@@ -1,4 +1,4 @@
-//! `feature = "functions"` Create or redefine SQL functions.
+//! Create or redefine SQL functions.
 //!
 //! # Example
 //!
@@ -104,7 +104,7 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     drop(Box::from_raw(p as *mut T));
 }
 
-/// `feature = "functions"` Context is a wrapper for the SQLite function
+/// Context is a wrapper for the SQLite function
 /// evaluation context.
 pub struct Context<'a> {
     ctx: *mut sqlite3_context,
@@ -260,7 +260,7 @@ impl Deref for ConnectionRef<'_> {
 
 type AuxInner = Arc<dyn Any + Send + Sync + 'static>;
 
-/// `feature = "functions"` Aggregate is the callback interface for user-defined
+/// Aggregate is the callback interface for user-defined
 /// aggregate function.
 ///
 /// `A` is the type of the aggregation context and `T` is the type of the final
@@ -292,9 +292,10 @@ where
     fn finalize(&self, _: &mut Context<'_>, _: Option<A>) -> Result<T>;
 }
 
-/// `feature = "window"` WindowAggregate is the callback interface for
+/// WindowAggregate is the callback interface for
 /// user-defined aggregate window function.
 #[cfg(feature = "window")]
+#[cfg_attr(docsrs, doc(cfg(feature = "window")))]
 pub trait WindowAggregate<A, T>: Aggregate<A, T>
 where
     A: RefUnwindSafe + UnwindSafe,
@@ -341,7 +342,7 @@ impl Default for FunctionFlags {
 }
 
 impl Connection {
-    /// `feature = "functions"` Attach a user-defined scalar function to
+    /// Attach a user-defined scalar function to
     /// this database connection.
     ///
     /// `fn_name` is the name the function will be accessible from SQL.
@@ -395,7 +396,7 @@ impl Connection {
             .create_scalar_function(fn_name, n_arg, flags, x_func)
     }
 
-    /// `feature = "functions"` Attach a user-defined aggregate function to this
+    /// Attach a user-defined aggregate function to this
     /// database connection.
     ///
     /// # Failure
@@ -419,12 +420,13 @@ impl Connection {
             .create_aggregate_function(fn_name, n_arg, flags, aggr)
     }
 
-    /// `feature = "window"` Attach a user-defined aggregate window function to
+    /// Attach a user-defined aggregate window function to
     /// this database connection.
     ///
     /// See `https://sqlite.org/windowfunctions.html#udfwinfunc` for more
     /// information.
     #[cfg(feature = "window")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "window")))]
     #[inline]
     pub fn create_window_function<A, W, T>(
         &self,
@@ -443,7 +445,7 @@ impl Connection {
             .create_window_function(fn_name, n_arg, flags, aggr)
     }
 
-    /// `feature = "functions"` Removes a user-defined function from this
+    /// Removes a user-defined function from this
     /// database connection.
     ///
     /// `fn_name` and `n_arg` should match the name and number of arguments

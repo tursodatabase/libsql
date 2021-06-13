@@ -1,4 +1,4 @@
-//! `feature = "series"` Generate series virtual table.
+//! Generate series virtual table.
 //!
 //! Port of C [generate series
 //! "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c):
@@ -15,7 +15,7 @@ use crate::vtab::{
 };
 use crate::{Connection, Error, Result};
 
-/// `feature = "series"` Register the "generate_series" module.
+/// Register the "generate_series" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
     conn.create_module("generate_series", eponymous_only_module::<SeriesTab>(), aux)

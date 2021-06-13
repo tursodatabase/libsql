@@ -16,13 +16,15 @@ pub enum ToSqlOutput<'a> {
     /// An owned SQLite-representable value.
     Owned(Value),
 
-    /// `feature = "blob"` A BLOB of the given length that is filled with
+    /// A BLOB of the given length that is filled with
     /// zeroes.
     #[cfg(feature = "blob")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
     ZeroBlob(i32),
 
     /// `feature = "array"`
     #[cfg(feature = "array")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "array")))]
     Array(Array),
 }
 
@@ -70,9 +72,11 @@ from_value!(Vec<u8>);
 // `i128` needs in `Into<Value>`, but it's probably fine for the moment, and not
 // worth adding another case to Value.
 #[cfg(feature = "i128_blob")]
+#[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
 from_value!(i128);
 
 #[cfg(feature = "uuid")]
+#[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
 from_value!(uuid::Uuid);
 
 impl ToSql for ToSqlOutput<'_> {
@@ -162,9 +166,11 @@ to_sql_self!(f32);
 to_sql_self!(f64);
 
 #[cfg(feature = "i128_blob")]
+#[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
 to_sql_self!(i128);
 
 #[cfg(feature = "uuid")]
+#[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
 to_sql_self!(uuid::Uuid);
 
 macro_rules! to_sql_self_fallible(

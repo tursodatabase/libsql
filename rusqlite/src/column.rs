@@ -132,6 +132,7 @@ impl Statement<'_> {
     /// sure that current statement has already been stepped once before
     /// calling this method.
     #[cfg(feature = "column_decltype")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "column_decltype")))]
     pub fn columns(&self) -> Vec<Column> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);

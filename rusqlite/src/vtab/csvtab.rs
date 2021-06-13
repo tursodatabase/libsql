@@ -1,4 +1,4 @@
-//! `feature = "csvtab"` CSV Virtual Table.
+//! CSV Virtual Table.
 //!
 //! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C
 //! extension: `https://www.sqlite.org/csv.html`
@@ -35,7 +35,7 @@ use crate::vtab::{
 };
 use crate::{Connection, Error, Result};
 
-/// `feature = "csvtab"` Register the "csv" module.
+/// Register the "csv" module.
 /// ```sql
 /// CREATE VIRTUAL TABLE vtab USING csv(
 ///   filename=FILENAME -- Name of file containing CSV content
