@@ -1,5 +1,5 @@
-C Correct\slink\sin\s.ar\shelp.
-D 2021-06-13T08:23:28.322
+C Improved\sdefense\sagainst\sOOM\serrors\sin\ssqliteInitOne().\ndbsqlfuzz\s429db39cd5777c46479641e8637c48c62890042d
+D 2021-06-13T17:55:58.092
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
-F src/prepare.c d778af9986f3b0107c5b255dcfe2696e8e99e00fb77c5115bbfea4e92c3302e7
+F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P baa3f96250763b42391fbb4dea283a4b6140fdbf775d85081a9efd6e6258f7b4
-R ef5c9aaeef37f976cb4a94e50d9b811f
-U larrybr
-Z dc18297140fe7f47c4b68b1ec10754aa
+P de9d0f9548106f5a59c57dbf947fc63c0411b1e975033a4c4097cefbbe86ee5f
+R 3f8a67a4c6e2ce0a9df64fde1e1d98d1
+U drh
+Z 76c7bd276946c9855e2f7586c4e2beb7
