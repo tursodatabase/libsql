@@ -223,7 +223,7 @@ impl Connection {
         row_id: i64,
         read_only: bool,
     ) -> Result<Blob<'a>> {
-        let mut c = self.db.borrow_mut();
+        let c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
         let db = db.as_cstring()?;
         let table = super::str_to_cstring(table)?;

@@ -136,7 +136,7 @@ impl InnerConnection {
     }
 
     #[inline]
-    pub fn decode_result(&mut self, code: c_int) -> Result<()> {
+    pub fn decode_result(&self, code: c_int) -> Result<()> {
         unsafe { InnerConnection::decode_result_raw(self.db(), code) }
     }
 
@@ -278,7 +278,7 @@ impl InnerConnection {
     }
 
     #[inline]
-    pub fn changes(&mut self) -> usize {
+    pub fn changes(&self) -> usize {
         unsafe { ffi::sqlite3_changes(self.db()) as usize }
     }
 
