@@ -3877,7 +3877,7 @@ static const char *(azHelp[]) = {
   "     .ar -tf ARCHIVE          # List members of ARCHIVE",
   "     .ar -xvf ARCHIVE         # Verbosely extract files from ARCHIVE",
   "   See also:",
-  "      http://sqlite.org/cli.html#sqlar_archive_support",
+  "      http://sqlite.org/cli.html#sqlite_archive_support",
 #endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   ".auth ON|OFF             Show authorizer callbacks",

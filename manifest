@@ -1,5 +1,5 @@
-C The\ssqlite3WithPush()\sroutine\smight\sdestroy\sits\ssecond\sargument\sif\sthere\swas\na\sprior\sOOM.\s\sDo\snot\suse\sthe\ssecond\sargument\sof\ssqlite3WithPush()\sif\sthis\nhappens.
-D 2021-06-12T18:12:59.775
+C Correct\slink\sin\s.ar\shelp.
+D 2021-06-13T08:23:28.322
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 371cf15116b20b236f099c15daafd2ab6ef4bba43a263100aef60506f25cb3ff
-F src/shell.c.in a4bc0e2ba9be798e293790f354dcc0099c6370127eec18cf49cb161b9dae2fbc
+F src/shell.c.in 586493be0d3a2fc1e6803577d683697dfefc0fb305cc966bb389ce4045cbc19d
 F src/sqlite.h.in f450394634eac00bc680c0e91582b818359c6ad61149f49f90fb6ecbd526b51f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 61b38c073d5e1e96a3d45271b257aef27d0d13da2bea5347692ae579475cd95e
@@ -1918,8 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 230fedd923c87741d20caf55f29e8464cc6df344536f9b89331e0a0059a926f7 6796b7a2485eca279db9d777595a886bc0d1dd7ec9551e1797e0032ef5493559
-R ba0b1c0a7ea04e269896819b2a1250df
-T +closed 6796b7a2485eca279db9d777595a886bc0d1dd7ec9551e1797e0032ef5493559
-U drh
-Z c3c98555039acb2765b853d05e7fc36d
+P baa3f96250763b42391fbb4dea283a4b6140fdbf775d85081a9efd6e6258f7b4
+R ef5c9aaeef37f976cb4a94e50d9b811f
+U larrybr
+Z dc18297140fe7f47c4b68b1ec10754aa
