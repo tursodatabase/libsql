@@ -832,7 +832,7 @@ impl Connection {
 
     #[inline]
     fn decode_result(&self, code: c_int) -> Result<()> {
-        self.db.borrow_mut().decode_result(code)
+        self.db.borrow().decode_result(code)
     }
 
     /// Return the number of rows modified, inserted or deleted by the most
@@ -840,7 +840,7 @@ impl Connection {
     /// connection.
     #[inline]
     fn changes(&self) -> usize {
-        self.db.borrow_mut().changes()
+        self.db.borrow().changes()
     }
 
     /// Test for auto-commit mode.

@@ -64,7 +64,7 @@ impl Connection {
                 0
             }
         }
-        let mut c = self.db.borrow_mut();
+        let c = self.db.borrow_mut();
         let r = match callback {
             Some(f) => unsafe {
                 ffi::sqlite3_busy_handler(c.db(), Some(busy_handler_callback), f as *mut c_void)
