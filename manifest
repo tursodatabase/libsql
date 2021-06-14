@@ -1,5 +1,5 @@
-C Avoid\sallocating\soversized\scolumn\snames\sin\sthe\ssqllimit1.test\smodule.
-D 2021-06-14T11:20:30.394
+C An\sindex\son\sthe\sexpression\s"likely(X)"\sshould\sstore\sthe\strue\svalue\sof\sX,\neven\sif\sX\sis\sa\sreal\snumber\swith\sno\sfractional\spart.\s\sThe\soptimization\sof\nstoring\ssome\sREAL\sindexed\svalues\sas\sINT\s(see\s[10d851353c2abead])\sshould\nbe\somitted\sfor\sindex\scolumns\sthat\sare\sexpressions.\n[forum:/forumpost/3b940c437a|Forum\spost\s3b940c437a].
+D 2021-06-14T14:00:09.237
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/ctime.c 3052b6b05ed9ef547a3dd66b8e01bfa9d582e78752ad6ed327da84652641e038
 F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
-F src/delete.c 930e63df768dcb197242b1efa0ed9fcdcc9a7b7556c236ee01a9959b61cf527b
+F src/delete.c 62451bba9fe641159e9c0b7d9d2bab1c48d0cff11e16de2d14000603d2af1fcf
 F src/expr.c 30a2abf526531ce6bd45fbc85bfec0fc3f6e5a0fb490cd2350855f2fc34dd789
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
@@ -1759,7 +1759,7 @@ F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test c1c335e914e28b122e000e9310f02d2be83e1c9dbca2e29f46bd732703944d1b
 F test/whereE.test 0ac7e61c6225354a980666996539da154991b4325af943a25a9079079c82fb03
 F test/whereF.test 926b65519608e3f2aa28720822b9154fb5c7b13519dd78194f434a511ab3dac5
-F test/whereG.test 8f1a753826d07ed7ae107fbec0d482d348bac6d7edf9db9c5736c06b0b3e9961
+F test/whereG.test b2a479f425f7d0a432df7e842e8484560908ef703fe0fd407888ff85e7097238
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test c4bb7e2ca56d49bd8ab5c7bd085b8b83e353922b46904d68aefb3c7468643581
 F test/whereJ.test fc05e374cc9f2dc204148d6c06822c380ad388895fe97a6d335b94a26a08aecf
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6803ed8dc4b1eb4d4dc100728acb4a4aa1479732f0fcb94eb23b7f7702ef65c
-R 8c7d04711bfedbd418a79102af251070
+P 7068f1f69b4feef49260e80902e6bdae47c21a0daa16c96ed1a0984dd1f14cdc
+R 974ce41a0966560f83eb180996ffcd22
 U drh
-Z d90ad49de9331abfbc8cf1a30420f0ba
+Z f5df566069add941ebed465cd1ba1b9e
