@@ -73,8 +73,6 @@ pub use crate::cache::CachedStatement;
 pub use crate::column::Column;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
-#[cfg(feature = "hooks")]
-pub use crate::hooks::Action;
 #[cfg(feature = "load_extension")]
 pub use crate::load_extension_guard::LoadExtensionGuard;
 pub use crate::params::{params_from_iter, Params, ParamsFromIter};
@@ -102,7 +100,7 @@ mod context;
 #[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "hooks")]
-mod hooks;
+pub mod hooks;
 mod inner_connection;
 #[cfg(feature = "limits")]
 pub mod limits;
