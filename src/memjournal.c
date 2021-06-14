@@ -257,26 +257,28 @@ static int memjrnlWrite(
 */
 static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
   MemJournal *p = (MemJournal *)pJfd;
-  FileChunk *pIter = 0;
+  assert( p->endpoint.pChunk==0 || p->endpoint.pChunk->pNext==0 );
+  if( size<p->endpoint.iOffset ){
+    FileChunk *pIter = 0;
+    if( size==0 ){
+      memjrnlFreeChunks(p->pFirst);
+      p->pFirst = 0;
+    }else{
+      i64 iOff = p->nChunkSize;
+      for(pIter=p->pFirst; ALWAYS(pIter) && iOff<=size; pIter=pIter->pNext){
+        iOff += p->nChunkSize;
+      }
+      if( ALWAYS(pIter) ){
+        memjrnlFreeChunks(pIter->pNext);
+        pIter->pNext = 0;
+      }
+    }
 
-  if( size==0 ){
-    memjrnlFreeChunks(p->pFirst);
-    p->pFirst = 0;
-  }else{
-    i64 iOff = p->nChunkSize;
-    for(pIter=p->pFirst; ALWAYS(pIter) && iOff<=size; pIter=pIter->pNext){
-      iOff += p->nChunkSize;
-    }
-    if( ALWAYS(pIter) ){
-      memjrnlFreeChunks(pIter->pNext);
-      pIter->pNext = 0;
-    }
+    p->endpoint.pChunk = pIter;
+    p->endpoint.iOffset = size;
+    p->readpoint.pChunk = 0;
+    p->readpoint.iOffset = 0;
   }
-
-  p->endpoint.pChunk = pIter;
-  p->endpoint.iOffset = size;
-  p->readpoint.pChunk = 0;
-  p->readpoint.iOffset = 0;
   return SQLITE_OK;
 }
 

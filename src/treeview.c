@@ -706,6 +706,14 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
     }
+    case TK_ERROR: {
+      Expr tmp;
+      sqlite3TreeViewLine(pView, "ERROR");
+      tmp = *pExpr;
+      tmp.op = pExpr->op2;
+      sqlite3TreeViewExpr(pView, &tmp, 0);
+      break;
+    }
     default: {
       sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
       break;

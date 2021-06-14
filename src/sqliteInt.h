@@ -1749,6 +1749,7 @@ struct sqlite3 {
 #define SQLITE_SkipScan       0x00004000 /* Skip-scans */
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
+#define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3758,6 +3759,22 @@ typedef struct {
 #define INITFLAG_AlterRename   0x0001  /* Reparse after a RENAME */
 #define INITFLAG_AlterDrop     0x0002  /* Reparse after a DROP COLUMN */
 
+/* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
+** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
+** parameters are for temporary use during development, to help find
+** optimial values for parameters in the query planner.  The should not
+** be used on trunk check-ins.  They are a temporary mechanism available
+** for transient development builds only.
+**
+** Tuning parameters are numbered starting with 1.
+*/
+#define SQLITE_NTUNE  6             /* Should be zero for all trunk check-ins */
+#ifdef SQLITE_DEBUG
+# define Tuning(X)  (sqlite3Config.aTune[(X)-1])
+#else
+# define Tuning(X)  0
+#endif
+
 /*
 ** Structure containing global configuration data for the SQLite library.
 **
@@ -3822,6 +3839,10 @@ struct Sqlite3Config {
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
+  /* vvvv--- must be last ---vvv */
+#ifdef SQLITE_DEBUG
+  sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
+#endif
 };
 
 /*
@@ -4575,6 +4596,7 @@ void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 int sqlite3SafetyCheckOk(sqlite3*);
 int sqlite3SafetyCheckSickOrOk(sqlite3*);
 void sqlite3ChangeCookie(Parse*, int);
+With *sqlite3WithDup(sqlite3 *db, With *p);
 
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
 void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
@@ -4985,7 +5007,7 @@ const char *sqlite3JournalModename(int);
   void sqlite3CteDelete(sqlite3*,Cte*);
   With *sqlite3WithAdd(Parse*,With*,Cte*);
   void sqlite3WithDelete(sqlite3*,With*);
-  void sqlite3WithPush(Parse*, With*, u8);
+  With *sqlite3WithPush(Parse*, With*, u8);
 #else
 # define sqlite3CteNew(P,T,E,S)   ((void*)0)
 # define sqlite3CteDelete(D,C)

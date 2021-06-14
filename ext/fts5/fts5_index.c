@@ -3183,7 +3183,7 @@ static void fts5IndexExtractColset(
         }
         fts5BufferSafeAppendBlob(&pIter->poslist, aCopy, p-aCopy);
       }
-      if( p==pEnd ){
+      if( p>=pEnd ){
         pIter->base.pData = pIter->poslist.p;
         pIter->base.nData = pIter->poslist.n;
         return;
@@ -4979,7 +4979,7 @@ static void fts5MergePrefixLists(
   Fts5Buffer *aBuf                /* Other lists to merge in */ 
 ){
 #define fts5PrefixMergerNextPosition(p) \
-  sqlite3Fts5PoslistNext64((p)->aPos,(p)->iter.nPoslist,&(p)->iOff,&(p)->iPos);
+  sqlite3Fts5PoslistNext64((p)->aPos,(p)->iter.nPoslist,&(p)->iOff,&(p)->iPos)
 #define FTS5_MERGE_NLIST 16
   PrefixMerger aMerger[FTS5_MERGE_NLIST];
   PrefixMerger *pHead = 0;
