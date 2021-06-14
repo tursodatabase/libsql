@@ -208,8 +208,9 @@ for {set i 0} {$i<$nOp} {incr i} {
 for {set g 0} {$g<$nGroup} {incr g} {
   set gLen [llength $groups($g)]
   set ok 0; set start -1
+  set seek $cnt
   while {!$ok} {
-    set seek $cnt; incr seek
+    incr seek
     while {[info exists used($seek)]} {incr seek}
     set ok 1; set start $seek
     for {set j 0} {$j<$gLen} {incr j} {

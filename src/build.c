@@ -888,7 +888,7 @@ int sqlite3TwoPartName(
       return -1;
     }
   }else{
-    assert( db->init.iDb==0 || db->init.busy || IN_RENAME_OBJECT
+    assert( db->init.iDb==0 || db->init.busy || IN_SPECIAL_PARSE
              || (db->mDbFlags & DBFLAG_Vacuum)!=0);
     iDb = db->init.iDb;
     *pUnqual = pName1;

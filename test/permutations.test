@@ -130,6 +130,7 @@ set allquicktests [test_set $alltests -exclude {
   fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
 
   rtree4.test
+  sessionbig.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]

@@ -372,7 +372,7 @@ db eval {DROP TABLE t4}
 sqlite3_limit db SQLITE_LIMIT_SQL_LENGTH 0x7fffffff
 set strvalue [string repeat A $::SQLITE_LIMIT_LENGTH]
 do_test sqllimits1-5.16 {
-  catchsql "SELECT '$strvalue'"
+  catchsql "SELECT '$strvalue' AS x"
 } [list 0 $strvalue]
 do_test sqllimits1-5.17.1 {
   catchsql "SELECT 'A$strvalue'"
@@ -387,7 +387,7 @@ do_test sqllimits1-5.17.3 {
 } [list 1 {string or blob too big}]
 set blobvalue [string repeat 41 $::SQLITE_LIMIT_LENGTH]
 do_test sqllimits1-5.18 {
-  catchsql "SELECT x'$blobvalue'"
+  catchsql "SELECT x'$blobvalue' AS x"
 } [list 0 $strvalue]
 do_test sqllimits1-5.19 {
   catchsql "SELECT '41$blobvalue'"
