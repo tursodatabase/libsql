@@ -851,8 +851,8 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   int i;
   if( pParse->nErr ) return WRC_Abort;
   if( p->selFlags & (SF_View|SF_CopyCte) ){
-    testcase( pSelect->selFlags & SF_View );
-    testcase( pSelect->selFlags & SF_CopyCte );
+    testcase( p->selFlags & SF_View );
+    testcase( p->selFlags & SF_CopyCte );
     return WRC_Prune;
   }
   if( ALWAYS(p->pEList) ){
@@ -963,8 +963,8 @@ static RenameToken *renameTokenFind(
 */
 static int renameColumnSelectCb(Walker *pWalker, Select *p){
   if( p->selFlags & (SF_View|SF_CopyCte) ){
-    testcase( pSelect->selFlags & SF_View );
-    testcase( pSelect->selFlags & SF_CopyCte );
+    testcase( p->selFlags & SF_View );
+    testcase( p->selFlags & SF_CopyCte );
     return WRC_Prune;
   }
   renameWalkWith(pWalker, p);
