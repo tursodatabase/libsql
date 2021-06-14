@@ -498,4 +498,14 @@ do_execsql_test index6-17.3 {
   SELECT COUNT(*) FROM t0 WHERE t0.c0 GLOB t0.c0;
 } {1}
 
+# 2021-05-29
+# Forum https://sqlite.org/forum/forumpost/d813704d7c
+reset_db
+do_execsql_test index6-18.1 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1 VALUES(10,10);
+  CREATE UNIQUE INDEX t1b ON t1(b) WHERE a>NULL;
+  SELECT * FROM t1 WHERE a IS NOT NULL;
+} {10 10}
+
 finish_test

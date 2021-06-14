@@ -800,15 +800,30 @@ static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
 static void renameWalkWith(Walker *pWalker, Select *pSelect){
   With *pWith = pSelect->pWith;
   if( pWith ){
+    Parse *pParse = pWalker->pParse;
     int i;
+    With *pCopy = 0;
+    assert( pWith->nCte>0 );
+    if( (pWith->a[0].pSelect->selFlags & SF_Expanded)==0 ){
+      /* Push a copy of the With object onto the with-stack. We use a copy
+      ** here as the original will be expanded and resolved (flags SF_Expanded
+      ** and SF_Resolved) below. And the parser code that uses the with-stack
+      ** fails if the Select objects on it have already been expanded and
+      ** resolved.  */
+      pCopy = sqlite3WithDup(pParse->db, pWith);
+      pCopy = sqlite3WithPush(pParse, pCopy, 1);
+    }
     for(i=0; i<pWith->nCte; i++){
       Select *p = pWith->a[i].pSelect;
       NameContext sNC;
       memset(&sNC, 0, sizeof(sNC));
-      sNC.pParse = pWalker->pParse;
-      sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      sNC.pParse = pParse;
+      if( pCopy ) sqlite3SelectPrep(sNC.pParse, p, &sNC);
       sqlite3WalkSelect(pWalker, p);
-      sqlite3RenameExprlistUnmap(pWalker->pParse, pWith->a[i].pCols);
+      sqlite3RenameExprlistUnmap(pParse, pWith->a[i].pCols);
+    }
+    if( pCopy && pParse->pWith==pCopy ){
+      pParse->pWith = pCopy->pOuter;
     }
   }
 }
@@ -1473,9 +1488,11 @@ static void renameColumnFunc(
       assert( sParse.pNewTable->pSelect==0 );
       sCtx.pTab = sParse.pNewTable;
       if( bFKOnly==0 ){
-        renameTokenFind(
-            &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
-        );
+        if( iCol<sParse.pNewTable->nCol ){
+          renameTokenFind(
+              &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
+          );
+        }
         if( sCtx.iCol<0 ){
           renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
         }

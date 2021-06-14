@@ -248,7 +248,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_ANY: {
-          re_add_state(pNext, x+1);
+          if( c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_WORD: {
@@ -256,7 +256,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_NOTWORD: {
-          if( !re_word_char(c) ) re_add_state(pNext, x+1);
+          if( !re_word_char(c) && c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_DIGIT: {
@@ -264,7 +264,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_NOTDIGIT: {
-          if( !re_digit_char(c) ) re_add_state(pNext, x+1);
+          if( !re_digit_char(c) && c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_SPACE: {
@@ -272,7 +272,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           break;
         }
         case RE_OP_NOTSPACE: {
-          if( !re_space_char(c) ) re_add_state(pNext, x+1);
+          if( !re_space_char(c) && c!=0 ) re_add_state(pNext, x+1);
           break;
         }
         case RE_OP_BOUNDARY: {
@@ -297,8 +297,11 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           rc = 1;
           goto re_match_end;
         }
-        case RE_OP_CC_INC:
         case RE_OP_CC_EXC: {
+          if( c==0 ) break;
+          /* fall-through */
+        }
+        case RE_OP_CC_INC: {
           int j = 1;
           int n = pRe->aArg[x];
           int hit = 0;
@@ -319,7 +322,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
           }
           if( pRe->aOp[x]==RE_OP_CC_EXC ) hit = !hit;
           if( hit ) re_add_state(pNext, x+n);
-          break;            
+          break;
         }
       }
     }
@@ -480,7 +483,7 @@ static const char *re_subcompile_string(ReCompiled *p){
     iStart = p->nState;
     switch( c ){
       case '|':
-      case '$': 
+      case '$':
       case ')': {
         p->sIn.i--;
         return 0;
@@ -496,7 +499,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         if( rePeek(p)=='*' ){
           re_append(p, RE_OP_ANYSTAR, 0);
           p->sIn.i++;
-        }else{ 
+        }else{
           re_append(p, RE_OP_ANY, 0);
         }
         break;
@@ -673,8 +676,8 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   ** regex engine over the string.  Do not worry able trying to match
   ** unicode characters beyond plane 0 - those are very rare and this is
   ** just an optimization. */
-  if( pRe->aOp[0]==RE_OP_ANYSTAR ){
-    for(j=0, i=1; j<sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
+  if( pRe->aOp[0]==RE_OP_ANYSTAR && !noCase ){
+    for(j=0, i=1; j<(int)sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
       unsigned x = pRe->aArg[i];
       if( x<=127 ){
         pRe->zInit[j++] = (unsigned char)x;
@@ -705,8 +708,8 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
 ** is implemented as regexp(B,A).
 */
 static void re_sql_func(
-  sqlite3_context *context, 
-  int argc, 
+  sqlite3_context *context,
+  int argc,
   sqlite3_value **argv
 ){
   ReCompiled *pRe;          /* Compiled regular expression */
@@ -715,11 +718,12 @@ static void re_sql_func(
   const char *zErr;         /* Compile error message */
   int setAux = 0;           /* True to invoke sqlite3_set_auxdata() */
 
+  (void)argc;  /* Unused */
   pRe = sqlite3_get_auxdata(context, 0);
   if( pRe==0 ){
     zPattern = (const char*)sqlite3_value_text(argv[0]);
     if( zPattern==0 ) return;
-    zErr = re_compile(&pRe, zPattern, 0);
+    zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
     if( zErr ){
       re_free(pRe);
       sqlite3_result_error(context, zErr, -1);
@@ -754,7 +758,14 @@ int sqlite3_regexp_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused */
   rc = sqlite3_create_function(db, "regexp", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
                                0, re_sql_func, 0, 0);
+  if( rc==SQLITE_OK ){
+    /* The regexpi(PATTERN,STRING) function is a case-insensitive version
+    ** of regexp(PATTERN,STRING). */
+    rc = sqlite3_create_function(db, "regexpi", 2, SQLITE_UTF8|SQLITE_INNOCUOUS,
+                                 (void*)db, re_sql_func, 0, 0);
+  }
   return rc;
 }

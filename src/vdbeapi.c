@@ -392,7 +392,7 @@ static int invokeValueDestructor(
   }else{
     xDel((void*)p);
   }
-  if( pCtx ) sqlite3_result_error_toobig(pCtx);
+  sqlite3_result_error_toobig(pCtx);
   return SQLITE_TOOBIG;
 }
 void sqlite3_result_blob(
@@ -1374,7 +1374,7 @@ static int bindText(
   sqlite3_stmt *pStmt,   /* The statement to bind against */
   int i,                 /* Index of the parameter to bind */
   const void *zData,     /* Pointer to the data to be bound */
-  int nData,             /* Number of bytes of data to be bound */
+  i64 nData,             /* Number of bytes of data to be bound */
   void (*xDel)(void*),   /* Destructor for the data */
   u8 encoding            /* Encoding for the data */
 ){
@@ -1426,11 +1426,7 @@ int sqlite3_bind_blob64(
   void (*xDel)(void*)
 ){
   assert( xDel!=SQLITE_DYNAMIC );
-  if( nData>0x7fffffff ){
-    return invokeValueDestructor(zData, xDel, 0);
-  }else{
-    return bindText(pStmt, i, zData, (int)nData, xDel, 0);
-  }
+  return bindText(pStmt, i, zData, nData, xDel, 0);
 }
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   int rc;
@@ -1500,12 +1496,8 @@ int sqlite3_bind_text64(
   unsigned char enc
 ){
   assert( xDel!=SQLITE_DYNAMIC );
-  if( nData>0x7fffffff ){
-    return invokeValueDestructor(zData, xDel, 0);
-  }else{
-    if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
-    return bindText(pStmt, i, zData, (int)nData, xDel, enc);
-  }
+  if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+  return bindText(pStmt, i, zData, nData, xDel, enc);
 }
 #ifndef SQLITE_OMIT_UTF16
 int sqlite3_bind_text16(
