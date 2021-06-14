@@ -120,5 +120,25 @@ do_execsql_test 3.0 {
   SELECT * FROM t6;
 } {eab dea}
 
+# 2021-06-04 Forum https://sqlite.org/forum/forumpost/9104f0d9e7
+#
+do_execsql_test 4.1 {SELECT 'abc' REGEXP '\W'} {0}
+do_execsql_test 4.2 {SELECT 'a c' REGEXP '\W'} {1}
+do_execsql_test 4.3 {SELECT '   ' REGEXP '\W'} {1}
+do_execsql_test 4.4 {SELECT 'abc' REGEXP '\w'} {1}
+do_execsql_test 4.5 {SELECT 'a c' REGEXP '\w'} {1}
+do_execsql_test 4.6 {SELECT '   ' REGEXP '\w'} {0}
+do_execsql_test 4.7 {SELECT 'abc' REGEXP '\D'} {1}
+do_execsql_test 4.8 {SELECT 'abc' REGEXP '[^a-z]'} {0}
+do_execsql_test 4.9 {SELECT 'a c' REGEXP '[^a-z]'} {1}
+do_execsql_test 4.10 {SELECT '   ' REGEXP '[^a-z]'} {1}
+do_execsql_test 4.11 {SELECT 'abc' REGEXP '[a-z]'} {1}
+do_execsql_test 4.12 {SELECT 'a c' REGEXP '[a-z]'} {1}
+do_execsql_test 4.13 {SELECT '   ' REGEXP '[a-z]'} {0}
+do_execsql_test 4.14 {SELECT 'abc' REGEXP '[^a-z]{2}'} {0}
+do_execsql_test 4.15 {SELECT 'a c' REGEXP '[^a-z]{2}'} {0}
+do_execsql_test 4.16 {SELECT '   ' REGEXP '[^a-z]{2}'} {1}
+do_execsql_test 4.17 {SELECT 'abc' REGEXP '\W{1,1}'} {0}
+do_execsql_test 4.18 {SELECT 'abc' REGEXP '\W{1}'} {0}
 
 finish_test

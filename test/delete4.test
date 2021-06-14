@@ -59,14 +59,22 @@ do_execsql_test 2.3 {
 #-------------------------------------------------------------------------
 #
 reset_db
-do_execsql_test 3.1 {
+do_execsql_test 3.0.1 {
   CREATE TABLE t1(a, b, PRIMARY KEY(a, b)) WITHOUT ROWID;
   INSERT INTO t1 VALUES(1, 2);
   INSERT INTO t1 VALUES(2, 4);
   INSERT INTO t1 VALUES(1, 5);
   DELETE FROM t1 WHERE a=1;
+  SELECT printf('(%d)',changes());
   SELECT * FROM t1;
-} {2 4}
+} {(2) 2 4}
+do_execsql_test 3.0.2 {
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+     INSERT INTO t1(a,b) SELECT x, x+1 FROM c;
+  SELECT printf('(%d)',changes());
+  DELETE FROM t1;
+  SELECT printf('(%d)',changes());
+} {(100) (101)}
 
 #-------------------------------------------------------------------------
 # DELETE statement that uses the OR optimization

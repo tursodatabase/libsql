@@ -1535,7 +1535,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
     if( temp==0 ){
       if( cbrk==pc ) continue;
       temp = sqlite3PagerTempSpace(pPage->pBt->pPager);
-      memcpy(&temp[iCellStart], &data[iCellStart], (cbrk+size) - iCellStart);
+      memcpy(&temp[iCellStart], &data[iCellStart], usableSize - iCellStart);
       src = temp;
     }
     memcpy(&data[cbrk], &src[pc], size);
@@ -9494,8 +9494,8 @@ static int clearDatabasePage(
   if( !pPage->leaf ){
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
-  }else if( pnChange ){
-    assert( pPage->intKey || CORRUPT_DB );
+  }
+  if( pnChange ){
     testcase( !pPage->intKey );
     *pnChange += pPage->nCell;
   }
@@ -9520,9 +9520,8 @@ cleardatabasepage_out:
 ** read cursors on the table.  Open write cursors are moved to the
 ** root of the table.
 **
-** If pnChange is not NULL, then table iTable must be an intkey table. The
-** integer value pointed to by pnChange is incremented by the number of
-** entries in the table.
+** If pnChange is not NULL, then the integer value pointed to by pnChange
+** is incremented by the number of entries in the table.
 */
 int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
   int rc;
