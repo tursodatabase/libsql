@@ -392,5 +392,82 @@ do_execsql_test 8.3 {
   SELECT t1.x FROM t2 CROSS JOIN t1 WHERE t2.z = t1.y AND t1.x IN (111, 222);
 } {222 111}
 
+# 2021-06-02 forum post https://sqlite.org/forum/forumpost/b4fcb8a598
+# OP_SeekScan changes from check-in 4a43430fd23f8835 on 2020-09-30 causes
+# performance regression.
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE node(node_id INTEGER PRIMARY KEY);
+  CREATE TABLE edge(node_from INT, node_to INT);
+  CREATE TABLE sub_nodes(node_id INTEGER PRIMARY KEY);
+  CREATE INDEX edge_from_to ON edge(node_from,node_to);
+  CREATE INDEX edge_to_from ON edge(node_to,node_from);
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1 VALUES
+    ('sub_nodes',NULL,'1000000'),
+    ('edge','edge_to_from','20000000 2 2'),
+    ('edge','edge_from_to','20000000 2 2'),
+    ('node',NULL,'10000000');
+  ANALYZE sqlite_schema;
+} {}
+do_eqp_test 9.1 {
+SELECT count(*) FROM edge
+ WHERE node_from IN sub_nodes AND node_to IN sub_nodes;
+} {
+  QUERY PLAN
+  |--SEARCH edge USING COVERING INDEX edge_to_from (node_to=?)
+  |--USING ROWID SEARCH ON TABLE sub_nodes FOR IN-OPERATOR
+  `--USING ROWID SEARCH ON TABLE sub_nodes FOR IN-OPERATOR
+}
+# ^^^^^ the key to the above is that the index should only use a single
+#       term (node_to=?), not two terms (node_to=? AND node_from=).
+
+# dbsqlfuzz case
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a,b,c,d,PRIMARY KEY(a,b,c)) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c,d) VALUES
+    (0,-2,2,3),
+    (0,2,3,4),
+    (0,5,8,10),
+    (1,7,11,13);
+  ANALYZE sqlite_schema;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1','10 3 2 1');
+  ANALYZE sqlite_schema;
+  PRAGMA reverse_unordered_selects(1);
+  SELECT d FROM t1 WHERE 0=a AND b IN (-17,-4,-3,1,5,25,7798);
+} {10}
+
+# 2021-06-13 dbsqlfuzz e41762333a4d6e90a49e628f488d0873b2dba4c5
+# The opcode that preceeds OP_SeekScan is usually OP_IdxGT, but can
+# sometimes be OP_IdxGE
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE t1(a TEXT, b INT, c INT, d INT);
+  INSERT INTO t1 VALUES('abc',123,4,5);
+  INSERT INTO t1 VALUES('xyz',1,'abcdefxyz',99);
+  CREATE INDEX t1abc ON t1(b,b,c);
+  ANALYZE sqlite_schema;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1abc','10000 5 00 2003 10');
+  ANALYZE sqlite_schema;
+} {}
+do_execsql_test 11.1 {
+  SELECT * FROM t1
+   WHERE b IN (345, (SELECT 1 FROM t1 
+                      WHERE b IN (345 NOT GLOB 510)
+                        AND c GLOB 'abc*xyz'))
+     AND c BETWEEN 'abc' AND 'xyz';
+} {xyz 1 abcdefxyz 99}
+do_execsql_test 11.2 {
+  EXPLAIN SELECT * FROM t1
+   WHERE b IN (345, (SELECT 1 FROM t1 
+                      WHERE b IN (345 NOT GLOB 510)
+                        AND c GLOB 'abc*xyz'))
+     AND c BETWEEN 'abc' AND 'xyz';
+} {/ SeekScan /}
 
 finish_test

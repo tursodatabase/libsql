@@ -68,7 +68,7 @@ update to the lastest version using:
 
 Or type "fossil ui" to get a web-based user interface.
 
-## Compiling
+## Compiling for Unix-like systems
 
 First create a directory in which to place
 the build products.  It is recommended, but not required, that the
@@ -94,22 +94,22 @@ script does not work out for you, there is a generic makefile named
 can copy and edit to suit your needs.  Comments on the generic makefile
 show what changes are needed.
 
-## Using MSVC
+## Using MSVC for Windows systems
 
 On Windows, all applicable build products can be compiled with MSVC.
 First open the command prompt window associated with the desired compiler
 version (e.g. "Developer Command Prompt for VS2013").  Next, use NMAKE
 with the provided "Makefile.msc" to build one of the supported targets.
 
-For example:
+For example, from the parent directory of the source subtree named "sqlite":
 
         mkdir bld
         cd bld
-        nmake /f Makefile.msc TOP=..\sqlite
-        nmake /f Makefile.msc sqlite3.c TOP=..\sqlite
-        nmake /f Makefile.msc sqlite3.dll TOP=..\sqlite
-        nmake /f Makefile.msc sqlite3.exe TOP=..\sqlite
-        nmake /f Makefile.msc test TOP=..\sqlite
+        nmake /f ..\sqlite\Makefile.msc TOP=..\sqlite
+        nmake /f ..\sqlite\Makefile.msc sqlite3.c TOP=..\sqlite
+        nmake /f ..\sqlite\Makefile.msc sqlite3.dll TOP=..\sqlite
+        nmake /f ..\sqlite\Makefile.msc sqlite3.exe TOP=..\sqlite
+        nmake /f ..\sqlite\Makefile.msc test TOP=..\sqlite
 
 There are several build options that can be set via the NMAKE command
 line.  For example, to build for WinRT, simply add "FOR_WINRT=1" argument

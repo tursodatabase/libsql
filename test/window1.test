@@ -2159,4 +2159,21 @@ do_catchsql_test 68.0 {
   SELECT rowid, a, b, sum(a)OVER() FROM t1 ORDER BY count(b);
 } {1 {misuse of aggregate: count()}}
 
+# 2021-05-22
+# Forum https://sqlite.org/forum/forumpost/7e484e225c
+#
+reset_db
+do_catchsql_test 69.0 {
+  CREATE TABLE t1(a,b);
+  CREATE INDEX t1ba ON t1(b,a);
+  SELECT * FROM t1 WHERE b = (SELECT b FROM t1 ORDER BY lead(b) OVER () AND sum(a));
+} {1 {misuse of aggregate: sum()}}
+do_catchsql_test 69.1 {
+  SELECT * FROM t1 WHERE b >= (SELECT b FROM t1 ORDER BY lead(b) OVER () AND sum(a));
+} {1 {misuse of aggregate: sum()}}
+do_catchsql_test 69.2 {
+  SELECT * FROM t1 WHERE b <= (SELECT b FROM t1 ORDER BY lead(b) OVER () AND sum(a));
+} {1 {misuse of aggregate: sum()}}
+
+
 finish_test

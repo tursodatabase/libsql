@@ -63,7 +63,7 @@
 ** of the global variable g.zTextName[] will identify the specific XSQL and
 ** DB values that were running when the crash occurred.
 **
-** DBSQLFUZZ:
+** DBSQLFUZZ: (Added 2020-02-25)
 **
 ** The dbsqlfuzz fuzzer includes both a database file and SQL to run against
 ** that database in its input.  This utility can now process dbsqlfuzz
@@ -108,10 +108,10 @@ typedef unsigned char uint8_t;
 */
 typedef struct VFile VFile;
 struct VFile {
-  char *zFilename;        /* Filename.  NULL for delete-on-close. From malloc() */
-  int sz;                 /* Size of the file in bytes */
-  int nRef;               /* Number of references to this file */
-  unsigned char *a;       /* Content of the file.  From malloc() */
+  char *zFilename;      /* Filename.  NULL for delete-on-close. From malloc() */
+  int sz;               /* Size of the file in bytes */
+  int nRef;             /* Number of references to this file */
+  unsigned char *a;     /* Content of the file.  From malloc() */
 };
 typedef struct VHandle VHandle;
 struct VHandle {
@@ -219,7 +219,7 @@ static int progressHandler(void *pVdbeLimitFlag){
 #endif
 
 /*
-** Reallocate memory.  Show and error and quit if unable.
+** Reallocate memory.  Show an error and quit if unable.
 */
 static void *safe_realloc(void *pOld, int szNew){
   void *pNew = realloc(pOld, szNew<=0 ? 1 : szNew);
@@ -617,8 +617,8 @@ static int isOffset(
 
 /*
 ** Decode the text starting at zIn into a binary database file.
-** The maximum length of zIn is nIn bytes.  Compute the binary database
-** file contain in space obtained from sqlite3_malloc().
+** The maximum length of zIn is nIn bytes.  Store the binary database
+** file in space obtained from sqlite3_malloc().
 **
 ** Return the number of bytes of zIn consumed.  Or return -1 if there
 ** is an error.  One potential error is that the recipe specifies a

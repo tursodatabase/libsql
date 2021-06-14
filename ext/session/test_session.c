@@ -247,8 +247,8 @@ static int SQLITE_TCLAPI test_session_cmd(
     { "diff",         2, "FROMDB TBL"  }, /* 8 */
     { "fullchangeset",0, ""            }, /* 9 */
     { "memory_used",  0, "",           }, /* 10 */
-    { "changeset_size", 0, "",         }, /* 10 */
-    { "object_config_size", 1, "INTEGER", }, /* 11 */
+    { "changeset_size", 0, "",         }, /* 11 */
+    { "object_config_size", 1, "INTEGER", }, /* 12 */
     { 0 }
   };
   int iSub;
@@ -365,12 +365,12 @@ static int SQLITE_TCLAPI test_session_cmd(
       break;
     }
 
-    case 10: {
+    case 11: {
       sqlite3_int64 nSize = sqlite3session_changeset_size(pSession);
       Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nSize));
       break;
     }
-    case 11: {
+    case 12: {
       int rc;
       int iArg;
       if( Tcl_GetIntFromObj(interp, objv[2], &iArg) ){

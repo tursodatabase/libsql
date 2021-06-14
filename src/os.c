@@ -252,6 +252,8 @@ int sqlite3OsFullPathname(
 }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 void *sqlite3OsDlOpen(sqlite3_vfs *pVfs, const char *zPath){
+  assert( zPath!=0 );
+  assert( strlen(zPath)<=SQLITE_MAX_PATHLEN );  /* tag-20210611-1 */
   return pVfs->xDlOpen(pVfs, zPath);
 }
 void sqlite3OsDlError(sqlite3_vfs *pVfs, int nByte, char *zBufOut){

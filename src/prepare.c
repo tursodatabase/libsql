@@ -377,9 +377,11 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     }
 #endif
   }
+  assert( pDb == &(db->aDb[iDb]) );
   if( db->mallocFailed ){
     rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
+    pDb = &db->aDb[iDb];
   }else
   if( rc==SQLITE_OK || (db->flags&SQLITE_NoSchemaError)){
     /* Hack: If the SQLITE_NoSchemaError flag is set, then consider
