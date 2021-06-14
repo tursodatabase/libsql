@@ -33,6 +33,12 @@
 # define SET_FULLSYNC(x,y)
 #endif
 
+/* Maximum pathname length.  Note: FILENAME_MAX defined by stdio.h
+*/
+#ifndef SQLITE_MAX_PATHLEN
+# define SQLITE_MAX_PATHLEN FILENAME_MAX
+#endif
+
 /*
 ** The default size of a disk sector
 */
