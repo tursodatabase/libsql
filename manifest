@@ -1,5 +1,5 @@
-C The\sopcode\sthat\spreceeds\sOP_SeekScan\sis\susually\sOP_IdxGT\sbut\scan\ssometimes\nbe\sOP_IdxGE.\s\sAdjust\sasserts\saccordingly.\s\sFollow-up\sto\n[9a2ab6092d644fc3].\s\sdbsqlfuzz\se41762333a4d6e90a49e628f488d0873b2dba4c5
-D 2021-06-13T19:14:14.260
+C Avoid\sallocating\soversized\scolumn\snames\sin\sthe\ssqllimit1.test\smodule.
+D 2021-06-14T11:20:30.394
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1416,7 +1416,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
-F test/sqllimits1.test 264f4b0f941800ba139d25e33ee919c5d95fea06dfbe8ac291d6811a30984ca5
+F test/sqllimits1.test 3f9030e5d35375ad3b912b4908094aa806335c8e9d804b8ffff70c5e9c664ab2
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
 F test/stat.test 15a3106eddedfc882f64bc09f237b4169be4b92dd57c93031b8ff8b13af3e7c5
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6c57e0e2a9658417a0a5548e73007faa59c837b9ad87293bc216feef980717a
-R a1f22de204f5020e5d4febb4ff68729b
+P d6803ed8dc4b1eb4d4dc100728acb4a4aa1479732f0fcb94eb23b7f7702ef65c
+R 8c7d04711bfedbd418a79102af251070
 U drh
-Z c2466d7ec6e514ce193cbbff00ec2eb4
+Z d90ad49de9331abfbc8cf1a30420f0ba
