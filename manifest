@@ -1,5 +1,5 @@
-C An\sindex\son\sthe\sexpression\s"likely(X)"\sshould\sstore\sthe\strue\svalue\sof\sX,\neven\sif\sX\sis\sa\sreal\snumber\swith\sno\sfractional\spart.\s\sThe\soptimization\sof\nstoring\ssome\sREAL\sindexed\svalues\sas\sINT\s(see\s[10d851353c2abead])\sshould\nbe\somitted\sfor\sindex\scolumns\sthat\sare\sexpressions.\n[forum:/forumpost/3b940c437a|Forum\spost\s3b940c437a].
-D 2021-06-14T14:00:09.237
+C Fix\sa\stest\sscript\sproblem\sin\scorruptN.test.
+D 2021-06-14T14:52:27.395
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -802,7 +802,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test df132ba9ffd6fa15038380b4154998b9904ab8f1ea78400d7da53c920cb3b13d
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/corruptN.test f56e3417fe9a444efd765ae55acbe65595d7b8f747785fe0fd785dbdc424932a
+F test/corruptN.test c2a96ff81386027f7d7e95858783aa36f82ba1532106969575e3c8f90903a5bb
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
 F test/count.test 5364003488249957750a5f15ee42ca1cd7b100b1131c2dc71fff266a1250bf55
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7068f1f69b4feef49260e80902e6bdae47c21a0daa16c96ed1a0984dd1f14cdc
-R 974ce41a0966560f83eb180996ffcd22
-U drh
-Z f5df566069add941ebed465cd1ba1b9e
+P 791473bc6677c2ae76f558082a4b43ca1eaf9895b76624d5b55d58f2af898ff3
+R 1ec73471740d8ca9cec873343ba25025
+U dan
+Z 3165e89d56a12ef29c6e244373f60df3
