@@ -151,7 +151,8 @@ impl FromSql for OffsetDateTime {
 #[cfg(test)]
 mod test {
     use crate::{Connection, Result};
-    use time::{Date, Month, OffsetDateTime, Time, UtcOffset};
+    use time::OffsetDateTime;
+    use time::format_description::well_known::Rfc3339;
 
     fn checked_memory_handle() -> Result<Connection> {
         let db = Connection::open_in_memory()?;
@@ -194,25 +195,16 @@ mod test {
         for (s, t) in vec![
             (
                 "2013-10-07 08:23:19.120",
-                Ok(Date::from_calendar_date(2013, Month::October, 7)
-                    .unwrap()
-                    .with_time(Time::from_hms_milli(8, 23, 19, 120).unwrap())
-                    .assume_utc()),
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap())
             ),
             (
                 "2013-10-07 08:23:19.120Z",
-                Ok(Date::from_calendar_date(2013, Month::October, 7)
-                    .unwrap()
-                    .with_time(Time::from_hms_milli(8, 23, 19, 120).unwrap())
-                    .assume_utc()),
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap())
             ),
             //"2013-10-07T08:23:19.120Z", // TODO
             (
                 "2013-10-07 04:23:19.120-04:00",
-                Ok(Date::from_calendar_date(2013, Month::October, 7)
-                    .unwrap()
-                    .with_time(Time::from_hms_milli(4, 23, 19, 120).unwrap())
-                    .assume_offset(UtcOffset::from_hms(-4, 0, 0).unwrap())),
+                Ok(OffsetDateTime::parse("2013-10-07T04:23:19.120-04:00", &Rfc3339).unwrap())
             ),
         ] {
             let result: Result<OffsetDateTime> = db.query_row("SELECT ?", [s], |r| r.get(0));
