@@ -599,7 +599,7 @@ impl InnerConnection {
         };
     }
 
-    pub fn authorizer<'c, F>(&'c mut self, authorizer: Option<F>)
+    fn authorizer<'c, F>(&'c mut self, authorizer: Option<F>)
     where
         F: for<'r> FnMut(AuthContext<'r>) -> Authorization + Send + RefUnwindSafe + 'static,
     {
